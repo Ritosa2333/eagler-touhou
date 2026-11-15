@@ -347,4 +347,65 @@ TEST(spell_presentation_capture_bonus_digits_match_42a430_case0) {
     }
 }
 
+TEST(spell_presentation_failed_card_still_shows_break_time_like_42a430_case1) {
+    // 0x42a430 case1（收取失败/超时，00413b9a ebx=1）：front script60 横幅，
+    // 无结算数字，但同样置 stage+0x120=1（0x42a92d）并建 front script95
+    //（0x42a95b）→ 0x4279ea 门打开，击破时间与实时间照常绘制。
+    GameRandom random;
+    AnmEnvironment environment;
+    AnmManager manager(random, environment);
+    for (const auto& asset : {std::pair<i32, const char*>{0, "text.anm"},
+                              {2, "ascii.anm"}, {3, "front.anm"}, {8, "effect.anm"}}) {
+        const auto bytes = read_asset(asset.second);
+        CHECK(!bytes.empty());
+        CHECK(manager.load(asset.first, bytes.data(), u32(bytes.size())));
+        if (asset.first == 2) CHECK(manager.sprite_fallback(2));
+    }
+    AnmResource stage;
+    for (const char* name : {"enemy.anm", "st01enm.anm"}) {
+        const auto bytes = read_asset(name);
+        CHECK(!bytes.empty());
+        CHECK(stage.append(bytes.data(), u32(bytes.size())));
+    }
+    CHECK(manager.adopt(4, std::move(stage)));
+    SpellPresentation presentation(manager);
+    SpellState state;
+    const float position[3] = {0, 128, 0};
+    CHECK(presentation.consume(state.begin(0, "synthetic", 3000, 1, 0), position, {}, 6));
+    for (i32 i = 0; i < 125; ++i) CHECK(state.step(false));
+    state.phase_timeout(false);
+    const auto failed = state.end();
+    CHECK(!failed.captured());
+    CHECK(presentation.consume(failed, position, {}, 6));
+    for (i32 i = 0; i < 8; ++i) CHECK_EQ(presentation.bonus_digit_handle(i), 0u);
+    CHECK_EQ(presentation.bonus_separator_million_handle(), 0u);
+    CHECK_EQ(presentation.bonus_separator_thousand_handle(), 0u);
+    const u32 first_effect = presentation.bonus_capture_effect_handle();
+    auto* effect = manager.registry.find(first_effect);
+    CHECK(effect != nullptr);
+    if (effect) {
+        CHECK_EQ(effect->source_script, 95);
+        effect->visual.color = 0xff000000u;
+    }
+    TextSink times;
+    CHECK(presentation.draw_capture_times(times, encode_spell_elapsed_time(2.5)));
+    CHECK_EQ(times.texts.size(), size_t(4));
+    if (times.texts.size() == 4) {
+        CHECK_EQ(times.texts[0].text, std::string("  2."));
+        CHECK_EQ(times.texts[1].text, std::string("10s"));
+        CHECK_EQ(times.texts[2].text, std::string("  2."));
+        CHECK_EQ(times.texts[3].text, std::string("50s"));
+    }
+    // A following card overwrites +0x118 without retiring the previous
+    // script95; that VM finishes on its own (front script95 deletes at 170).
+    CHECK(presentation.consume(state.begin(1, "next", 3000, 1, 0), position, {}, 6));
+    for (i32 i = 0; i < 30; ++i) CHECK(state.step(false));
+    CHECK(presentation.consume(state.end(), position, {}, 6));
+    const u32 second_effect = presentation.bonus_capture_effect_handle();
+    CHECK(second_effect != 0u && second_effect != first_effect);
+    CHECK(manager.registry.find(first_effect) != nullptr);
+    for (i32 i = 0; i < 200; ++i) CHECK(manager.update());
+    CHECK(manager.registry.find(first_effect) == nullptr);
+}
+
 int main() { return th13test::run_all("spell_records_presentation_test"); }
