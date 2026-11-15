@@ -16,7 +16,7 @@ bool GameBattle::setup_coop(const std::array<Th14CoopLoadout,3>& loadouts,u32 se
        loadouts[0].character!=enemy_environment.character||loadouts[0].subtype!=enemy_environment.subtype)
         return unavailable("invalid TH14 co-op setup");
     coop_seats=seats;coop_viewer=viewer;coop_challenge=challenge;coop_observer=observer;
-    if(!hud.layout_coop(seats))return unavailable("TH14 multiplayer HUD setup");
+    if(!hud.layout_coop(seats,challenge))return unavailable("TH14 multiplayer HUD setup");
     player->shots.coop_draw_file=20;
     if(challenge){economy.lives=0;economy.life_fragments=0;economy.th14_bomb_fragments=0;}
     economy.th14_initial_bombs=challenge?0:std::max(0,economy.th14_bombs-1);
@@ -354,7 +354,10 @@ bool GameBattle::draw_coop_players(AnmRenderer& renderer){
 u8 GameBattle::coop_sprite_opacity(const void* context,const AnmVm& vm){
     const auto& battle=*static_cast<const GameBattle*>(context);
     auto* root=&vm;
-    while(root->parent)root=root->parent;
+    for(;;root=root->parent){
+        if(battle.coop_challenge&&root->reserved_3a0==Hud::coop_life_stock_tag)return 0;
+        if(!root->parent)break;
+    }
     if(battle.coop_observer)return 255;
     const auto local=battle.pilot(battle.coop_viewer).motion.state.position;
     const auto opacity=[&](u32 seat)->u8 {
@@ -389,15 +392,17 @@ bool GameBattle::queue_coop_hud(){
         const u32 opacity=icon?icon->color&0xff000000u:alpha;
         const float life=hud.life_row(seat),bomb=hud.bomb_row(seat),power=hud.power_row(seat);
         style.horizontal=1;style.font=1;style.scale={1,1};
+        style.color=opacity|0xffffffu;
+        if(coop_challenge&&!text(438,life+3,"MISS"))return false;
         style.color=opacity|(seat==coop_viewer?0xffff80u:0xffffffu);
         std::snprintf(number,sizeof(number),"%uP",seat+1);
         if(!text(491,life+3,number))return false;
         style.font=4;style.scale={.6f,.6f};style.color=opacity|0xffffffu;
         if(coop_challenge){
-            style.font=2;
-            std::snprintf(number,sizeof(number),"MISS %u",e.th14_practice_misses);
-            if(!text(581,life+22,number)||!text(581,bomb+22,"OFF"))return false;
-            style.font=4;
+            style.horizontal=2;style.scale={1,1};
+            th14_grouped_number(number,e.th14_practice_misses);
+            if(!text(620,life+8,number))return false;
+            style.horizontal=1;style.scale={.6f,.6f};
         }else if(!pilot_live(seat)){
             style.font=2;
             if(!text(580,life+22,"GHOST"))return false;
@@ -406,10 +411,8 @@ bool GameBattle::queue_coop_hud(){
             std::snprintf(number,sizeof(number),"%d/%d",e.life_fragments,th14_coop_life_pieces);
             if(!text(580,life+22,number))return false;
         }
-        if(!coop_challenge){
-            std::snprintf(number,sizeof(number),"%d/%d",e.th14_bomb_fragments,th14_coop_bomb_pieces(coop_seats));
-            if(!text(580,bomb+22,number))return false;
-        }
+        std::snprintf(number,sizeof(number),"%d/%d",e.th14_bomb_fragments,th14_coop_bomb_pieces(coop_seats));
+        if(!text(580,bomb+22,number))return false;
         style.scale={1,1};style.color=opacity|0xff8030;
         std::snprintf(number,sizeof(number),"%d.",e.power/e.power_step);
         if(!text(540,power-2,number))return false;
