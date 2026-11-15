@@ -2513,8 +2513,18 @@ int th128_world_enable_bullets(const void* profile,std::uint32_t profileSize,con
             if(!playerFireConfigured){error="ice-item reward requires owning Z/ice context";return false;}
             if(!motivationFlag){
                 const int next=motivationRaw+1;
-                if(next/10000>motivationRaw/10000){error="unimplemented ice-item motivation notice at 0x424b80";return false;}
-                motivationRaw=std::min(next,100000);
+                const bool notice=next/10000>motivationRaw/10000;
+                if(notice){
+                    if(!perfectHudConfigured){error="ice-item notification requires the actual front HUD owner";return false;}
+                    if(grazeSounds.size()>=65535){error="ice-item notice and collection sound journal budget";return false;}
+                }
+                // Original kind9 calls 0x427260(+1): value, sound18, front49, cap; then collect sound38.
+                motivationRaw=next;
+                if(notice){
+                    grazeSounds.push_back({18,0});
+                    if(!perfectHud->motivationNotice(error))return false;
+                }
+                motivationRaw=std::min(motivationRaw,100000);
             }
             scoreRaw=std::min(scoreRaw+1,999999999);
             if(grazeSounds.size()>=65536){error="ice-item collection sound journal budget";return false;}

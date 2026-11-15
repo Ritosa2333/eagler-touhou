@@ -963,13 +963,14 @@ function captureHighFramerateWorld(){
   highFramerateRaw=raw;return captured;
 }
 function readNativeWorldPresentation(){
-  const module=state.module,records=JSON.parse(module.UTF8ToString(module._th128_world_bullet_draws()));
+  const module=state.module,records=state.extraPresentation?.draws??JSON.parse(module.UTF8ToString(module._th128_world_bullet_draws()));
   const drawError=module.UTF8ToString(module._th128_world_bullet_draw_error());if(drawError)throw new Error(drawError);
   const stageError=stageIntroDrawFailure(module);if(stageError)throw new Error(stageError);
   const world=JSON.parse(module.UTF8ToString(module._th128_world_state()));
   return {world,records};
 }
 function worldPresentationForDraw(){
+  if(state.extraPresentation)return readNativeWorldPresentation();
   if(!highFramerateEligible())return readNativeWorldPresentation();
   if(!highFramerateOwnerMatches()||!highFramerateRaw)captureHighFramerateWorld();
   return highFramerateRaw;
@@ -1340,6 +1341,7 @@ function worldMovementInput(pressed=0,released=0){
   let holding=0;for(const [code,bit] of movementKeys)if(state.pressed.has(code)&&(state.shotMode||(bit&240)!==0))holding|=bit;
   if(gameplayXHeld())holding|=perfectFreezeXBit;
   if(!state.shotMode){pressed&=240;released&=240;}
+  if(state.extraRun){state.extraRun.queueInput(holding,pressed,released);return;}
   if(!state.module._th128_world_input(holding,pressed,released))status(state.module.UTF8ToString(state.module._th128_world_error()));
 }
 
@@ -1668,6 +1670,7 @@ function draw(interpolation=1){
 }
 
 function stopAudio({keepContext=false}={}){
+  state.extraRun?.close();state.extraRun=null;state.extraPresentation=null;
   closeOrdinaryWorldAudio();
   disposeOriginalMain();
   state.replayStore?.close();state.replayStore=null;state.replaySlots=null;state.replayNativeBound=false;state.replayClockLast=null;
@@ -2224,7 +2227,7 @@ async function finishExtraPostrun(snapshot){
     controller.input.adoptHeld(state.pressed);if(state.paused)controller.input.release();state.normalPostrun=controller;
     state.normalPostrunPausePromise=state.normalPostrunResumePromise=null;state.normalPostrunPauseBinding=state.normalPostrunResumeBinding=null;
     state.autoFlow=false;clock.reset();resetHighFrameratePresentation();status('EX 按真实终局交接姓名、录像与主菜单；辅助开启。');
-  }catch(e){controller?.close();throw e;}
+  }catch(e){controller?.close();if(current())throw e;}
 }
 async function finishOrdinaryEndingReturn(host,snapshot){
   const ticket=state.endingTicket,module=state.module,action=state.action,selection=state.stageSelection;
@@ -2363,6 +2366,7 @@ async function advance(){
 async function advanceSerial(){
   if(state.endingHost||state.endingLoading)throw new Error('Original ending must use its serial asynchronous scene owner');
   if(state.worldMode){
+    if(state.extraRun)return advanceExtraRun();
     const endingRequest=pendingOriginalEndingRequest();
     if(endingRequest){
       if(endingRequest.kind==='ordinary'&&(!state.module._th128_world_terminal_preupdate||!state.module._th128_world_terminal_preupdate()))
@@ -2402,6 +2406,26 @@ async function advanceSerial(){
   if(state.mainSaveDebugBusy)return;
   await originalMainController().step();
   syncNativeMenuState();
+}
+
+async function advanceExtraRun(){
+  const owner=state.extraRun,module=state.module,action=state.action;
+  const current=()=>state.extraRun===owner&&state.module===module&&state.action===action;
+  const result=await owner.step({
+    drainAudio:async()=>{await drainGameSounds();await drainMusicControl();},
+    render:presentation=>{
+      if(!current())throw new DOMException('EX presentation owner changed','AbortError');
+      state.background?.tick();state.extraPresentation=presentation;
+      try{draw();}finally{state.extraPresentation=null;}
+    },
+    onGameOver:()=>openOriginalNativePause(true)
+  });
+  if(result.retired){
+    if(!current())throw new DOMException('EX terminal owner changed','AbortError');
+    await finishExtraPostrun(result.snapshot);
+    if(current()){owner.close();state.extraRun=null;}
+  }
+  return result;
 }
 
 function nativeMainRows(){
@@ -2512,7 +2536,7 @@ async function observeOriginalExtraQualification(module,signal){
   if(!record)return {record:null,qualification:null,token};
   const names=new OwnedLastNameFieldStore();let name;try{name=await names.observe();}finally{names.close();}check();
   const qualification=await evaluateOwnedQualification({record,name,owner,token});check();
-  return {record,qualification,token};
+  return {record,name,qualification,token};
 }
 async function prepareOriginalMain(){
   const module=state.module,signal=state.controller.signal;
@@ -3066,10 +3090,10 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
   let transitionEnabled=false,routeChoiceEnabled=false;
   const action=emission?++state.action:state.action;
   const stale=()=>ticket!==state.loading||(emission&&action!==state.action);
-  let mutated=false;
+  let mutated=false,observedExtra=null,extraRun=null;
   if(selection?.ownedExtraProfileSHA256){
-    const observed=await observeOriginalExtraQualification(module,signal);
-    if(stale()||!observed.qualification?.eligible||observed.qualification.record.sha256!==selection.ownedExtraProfileSHA256)
+    observedExtra=await observeOriginalExtraQualification(module,signal);
+    if(stale()||!observedExtra.qualification?.eligible||observedExtra.qualification.record.sha256!==selection.ownedExtraProfileSHA256)
       throw new Error('EX owned six-route profile changed before original World start');
   }
   let pendingAudio=null,preparedEnding=null,preparedTextRasters=null;
@@ -3318,7 +3342,13 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
     state.stageIntroLoaded=false;state.stageIntroStage=0;state.stageIntroCaptionKey='';
     cancelOriginalEnding();
     state.module=module;flowCapabilitiesReady();
-    module._th128_world_reset();
+    if(observedExtra){
+      const {OriginalExtraRunController}=await import('./runtime/native-extra-run.mjs');
+      if(stale())return;
+      extraRun=new OriginalExtraRunController({module,isCurrent:()=>!stale()&&!signal.aborted&&module===state.module});
+      await extraRun.prepare({...observedExtra,seed:selection.seed});
+      if(stale())return;
+    }else module._th128_world_reset();
     syncDebugRespawnUI(null);
     if(emission){
       await renderer.loadBank(0,bulletMetadata,base,{signal});
@@ -3343,6 +3373,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
     const started=module._th128_world_start(pointer,encoded.length,selection.difficulty,selection.seed);module._free(pointer);
     if(!started)throw new Error(module.UTF8ToString(module._th128_world_error()));
     if(state.replayPlayback){if(module._th128_world_set_debug_infinite_respawn(0)!==1)throw new Error('Replay requires original finite gameplay mode');}
+    else if(extraRun){if(module._th128_world_set_debug_infinite_respawn(1)!==1)throw new Error(module.UTF8ToString(module._th128_world_error()));}
     else applyDebugInfiniteRespawn(module,selection);
     if(carryToken){
       const target=new TextEncoder().encode(stage.ecl),targetPointer=memory(target);
@@ -3386,7 +3417,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         if(!updateReady)throw new Error(module.UTF8ToString(module._th128_world_error()));
         if(!module._th128_world_enable_graze(0,10000,0x1234))throw new Error(module.UTF8ToString(module._th128_world_error()));
         const playerPointer=memory(playerBytes);
-        const playerReady=module._th128_world_enable_player_context(playerPointer,playerBytes.length,1,0,120,0,0,0,0,0,0);
+        const playerReady=module._th128_world_enable_player_context(playerPointer,playerBytes.length,1,extraRun?2:0,extraRun?65535:120,0,0,0,0,0,0);
         module._free(playerPointer);
         if(!playerReady)throw new Error(module.UTF8ToString(module._th128_world_error()));
         if(!module._th128_world_enable_player_motion(state.replayPlayback?.stageInitial().horizontal??0,state.replayPlayback?.stageInitial().vertical??51200))throw new Error(module.UTF8ToString(module._th128_world_error()));
@@ -3498,7 +3529,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
           module._free(icePointer);module._free(maskPointer);
           if(!zReady)throw new Error(module.UTF8ToString(module._th128_world_error())||'Z/ice runtime is unavailable; rebuild required');
           if(!module._th128_world_enable_focus_indicator?.())throw new Error(module.UTF8ToString(module._th128_world_error())||'Original focus marker runtime is unavailable');
-          if(terminalStageIds.has(stage.id)){
+          if(terminalStageIds.has(stage.id)||extraRun){
             if(!flowReady||typeof module._th128_world_enable_stage_transition!=='function')
               throw new Error('terminal requires the original scene owner interface');
             const terminalPointer=memory(frontBytes);
@@ -3527,6 +3558,11 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
           state.pendingCarryToken=0;
           delete selection.carryToken;
         }
+        if(extraRun){
+          const assets=[];
+          for(const [bank,name]of [[0,'front'],[24,'title'],[25,'title_v'],[11,'ascii']])assets.push({bank,bytes:await bytesAt('runtime/'+name+'.anm')});
+          if(stale())return;extraRun.bind(assets);
+        }
         verifyFreshExtraOwner(JSON.parse(module.UTF8ToString(module._th128_world_state())),selection);
         state.shotMode=shots;find('#emit-shot').disabled=!shots;
         state.worldMode=true;state.active=true;state.paused=window.__TH128_DIAGNOSTIC_PAUSED__===true;clock.reset();resetHighFrameratePresentation();stopAudio();
@@ -3534,9 +3570,10 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         if(pendingAudio){state.audio=pendingAudio.audio;state.gain=pendingAudio.gain;state.gameSounds=pendingAudio.queue;
           state.stageMusic=pendingAudio.music;state.stageMusic.start();recordOwnedHeardTrack(state.stageMusic.track.name).catch(error);pendingAudio=null;state.soundCursor=0;state.soundWindow=null;}
         state.stageSelection=selection;state.endingResources=preparedEnding;
+        if(extraRun){state.extraRun=extraRun;extraRun=null;}
         disposeOriginalStageTextRasters(state.stageTextRasters);state.stageTextRasters=preparedTextRasters;preparedTextRasters=null;
         if(state.replayPlayback){state.replayNativeBound=false;state.replayPlayback.bindNativeStage(module);}
-        else if(!selection.debugJump&&!find('#debug-infinite-respawn').checked){
+        else if(!state.extraRun&&!selection.debugJump&&!find('#debug-infinite-respawn').checked){
           if(typeof module._th128_world_replay_begin!=='function')throw new Error('正常录像录制内核未载入');
           if(!carryToken){
             const store=state.nativeScoreStore??=new OwnedNativeTitleRecordStore(),observed=await store.observe();
@@ -3581,7 +3618,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
     find(resultTarget).textContent=problem.message;
     if(mutated){state.active=false;state.paused=true;state.worldMode=false;state.shotMode=false;find('#emit-shot').disabled=true;clock.reset();resetHighFrameratePresentation();find('#pause').disabled=true;status('关卡配置失败，已停止；旧局已不可继续，不能假装回退。');}
   }}
-  finally{disposeOriginalStageTextRasters(preparedTextRasters);if(pendingAudio){pendingAudio.queue.dispose();pendingAudio.music.dispose();pendingAudio.audio.close().catch(()=>{});}if(ticket===state.loading){find('#world').disabled=false;find('#emission').disabled=!module._th128_world_enable_bullets;find('#segment').disabled=!module._th128_world_enable_bullet_updates;find('#shots').disabled=!module._th128_world_enable_player_shots;find('#play-stage').disabled=!module._th128_world_enable_z_fire;}}
+  finally{extraRun?.close();disposeOriginalStageTextRasters(preparedTextRasters);if(pendingAudio){pendingAudio.queue.dispose();pendingAudio.music.dispose();pendingAudio.audio.close().catch(()=>{});}if(ticket===state.loading){find('#world').disabled=false;find('#emission').disabled=!module._th128_world_enable_bullets;find('#segment').disabled=!module._th128_world_enable_bullet_updates;find('#shots').disabled=!module._th128_world_enable_player_shots;find('#play-stage').disabled=!module._th128_world_enable_z_fire;}}
 }
 function prepareStage(stageId,{difficulty=1,seed=34772,progress=0,debugExtra=false}={}){
   assertStageStartAllowed(stageId,difficulty,{debugExtra});

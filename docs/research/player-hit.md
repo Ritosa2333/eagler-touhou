@@ -31,8 +31,10 @@ executed by this API. No function provides invented initial player snapshots.
 `Timer` fields correspond to a native 20-byte timer, in order:
 `previous` signed int32, `current` signed int32, `fractional` binary32,
 `clockSource` opaque original pointer identity, `flags` uint32. Every field is an
-explicit input. Signed integer and flag domains are complete; floats must be
-finite of magnitude at most 65536, including signed zero and subnormals. Unsupported
+explicit input. Signed integer and flag domains are complete. Position floats remain
+finite with magnitude at most 65536. Since the long-session repair in private100,
+timer fractional values instead require finite signed-int32 range, including signed
+zero and subnormals. This separates elapsed time from coordinate bounds. Unsupported
 input is `nullopt`, not a no-op or a successful player hit.
 
 | Timer binding | previous | current | fractional | clockSource | flags |

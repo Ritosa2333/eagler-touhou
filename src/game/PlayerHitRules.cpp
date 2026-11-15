@@ -12,8 +12,15 @@ bool bounded(float value) noexcept {
     return std::isfinite(value) && std::abs(value) <= 65536.0f;
 }
 
+bool boundedTimerValue(float value) noexcept {
+    // Timers can outlive the coordinate domain; conversion still requires int32 range.
+    return std::isfinite(value)
+        && static_cast<double>(value) >= std::numeric_limits<std::int32_t>::min()
+        && static_cast<double>(value) <= std::numeric_limits<std::int32_t>::max();
+}
+
 bool bounded(Timer timer) noexcept {
-    return bounded(timer.fractional);
+    return boundedTimerValue(timer.fractional);
 }
 
 Timer setTimer(Timer timer, std::int32_t value) noexcept {
@@ -61,7 +68,7 @@ std::optional<Timer> counterStep(Timer counter, std::optional<float> resolvedClo
     const auto clock = *resolvedClock;
     const auto step = clock > 0.9900000095367431640625 && clock < 1.0099999904632568359375 ? 1.0f : clock;
     const auto fractional = static_cast<float>(static_cast<double>(counter.fractional) - step);
-    if (!bounded(fractional)) return std::nullopt;
+    if (!boundedTimerValue(fractional)) return std::nullopt;
     counter.previous = counter.current;
     counter.fractional = fractional;
     counter.current = static_cast<std::int32_t>(fractional);

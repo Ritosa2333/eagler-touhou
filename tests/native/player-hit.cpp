@@ -45,6 +45,10 @@ void checkUnsupported() {
         assert(!entryPrefix(1, {value, 0, 0}));
         assert(!entryPrefix(1, {0, value, 0}));
         assert(!entryPrefix(1, {0, 0, value}));
+    }
+    for (const auto value : std::array{std::numeric_limits<float>::quiet_NaN(),
+            std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(),
+            2147483648.0f, -2147483904.0f}) {
         auto invalid = timer;
         invalid.fractional = value;
         assert(!timerResetPrefix(invalid, {false, 0}));
@@ -71,7 +75,7 @@ void checkUnsupported() {
     assert(!counterStep(nativeClockTimer, -1.0f));
     assert(!counterStep(nativeClockTimer, 4.01f));
     assert(!counterStep(nativeClockTimer, std::numeric_limits<float>::quiet_NaN()));
-    nativeClockTimer.fractional = -65536.0f;
+    nativeClockTimer.fractional = -2147483904.0f;
     assert(!counterStep(nativeClockTimer, 4.0f));
     auto stopped = timer;
     stopped.current = 0;

@@ -12,7 +12,12 @@ SITE_FILES = {'index.html', 'app.mjs', 'inspector.mjs', 'style.css', 'play.html'
               'runtime/replay.mjs', 'runtime/build.json', 'runtime/sound.mjs', 'runtime/background.mjs',
               'runtime/last-name-field.mjs', 'runtime/status.json',
               'runtime/native-ending-browser-host-v4.mjs', 'runtime/native-ending-bridge-v6.mjs',
-              'runtime/native-ending-pixels.mjs', 'runtime/renderer-owned-ending-v2.mjs'}
+              'runtime/native-ending-pixels.mjs', 'runtime/renderer-owned-ending-v2.mjs',
+              'runtime/native-normal-postrun.mjs', 'runtime/native-extra-run.mjs',
+              'runtime/ex-qualification.mjs', 'runtime/original-bullet-type33.mjs',
+              'runtime/original-bullet-type33-record.mjs', 'runtime/title-records.mjs',
+              'runtime/extra-menu.mjs', 'runtime/extra-menu.css', 'runtime/extra-eligibility.mjs',
+              'runtime/bullet-type9-profile.json'}
 
 
 def resolve_request(request, site, local):

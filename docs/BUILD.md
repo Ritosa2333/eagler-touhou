@@ -4,7 +4,7 @@
 
 ## 原生核心
 
-已验收 private99 使用 Emscripten 4.0.22。`build/private99.rsp` 来自当次成功构建的参数，仅把本机绝对路径转换为仓库相对路径，并把输出放到 `build/local/core.mjs`。
+private100 使用 Emscripten 4.0.22，已完成首次完整链接与隔离浏览器检查。`build/private100.rsp` 保留该版本的编译参数，将本机绝对路径转换为仓库相对路径，输出为 `build/local/core.mjs`。
 
 它保留 83 个翻译单元、205 个导出符号、1 MiB 栈、64 MiB 初始内存、C++20、异常与浮点选项。源文件摘要记录在 `docs/native-source-manifest.json`。
 
@@ -12,12 +12,12 @@
 
 ```powershell
 New-Item -ItemType Directory -Force build/local
-emcc '@build/private99.rsp'
+emcc '@build/private100.rsp'
 ```
 
-此配方在本次备份中仅做参数/文件检查，没有重新编译成功的 private99。构建输出不会自动发布到浏览器，也没有承诺跨机器生成完全相同的二进制摘要。
+本源码检出目录中的相对路径配方完成了文件与参数核对；private100的实际构建在隔离验收目录完成。构建输出不会自动发布到浏览器，也不承诺跨机器生成完全相同的二进制摘要。
 
-`tools/build-runtime.mjs` 是历史脚本，保留作研究参考；其导出清单和发布逻辑早于本快照，不作为 private99 的构建入口。
+`tools/build-runtime.mjs` 是历史脚本，保留作研究参考；其导出清单和发布逻辑早于本快照，不作为 private100 的构建入口。
 
 ## 原作资源
 
@@ -31,8 +31,14 @@ python -X utf8 tools/prepare.py --original '你的原作安装目录' --thtk '�
 
 ## 浏览器宿主与测试
 
-`site/` 保留最新完整前端候选源码，但新 EX API 的生产浏览器接线尚待验收。当前未提供一键部署流程；历史 `tools/serve.py` 与部分测试仍有旧版本假设，不能将启动旧脚本等同于验收新版本。
+`site/` 包含最新前端候选与EX控制器；原生菜单、持久化和EX前段已分别在隔离浏览器中验证。`tools/serve.py` 已补齐新增模块的显式路由并通过现有7项服务器测试。完整终局与独立检出目录的一键部署流程仍待验收。
 
 `tests/` 为保留的测试源码。部分测试依赖本地原版资源、未分发的私有黄金记录、编译器或运行时。缺失依赖导致的跳过不等于测试通过。
 
-原有六线和 EX 成功证据没有因上传源码而重跑。当前快照的完整性检查只核对文件摘要、相对导入、编译参数和所选源码的语法。
+原有六线和EX成功证据保持不变。新增测试使用针对性组件、实际核心短序列和独立浏览器，不重复完整路线。
+
+新增回归源码：
+
+- `tests/native/player-hit-long-session.cpp`：真实PlayerHitHost正常计时65754帧后受击，另含数值与坐标边界；运行参数为本地原始pl00.anm。
+- `tests/native/ice-item-motivation-notice.cpp`：真实ItemHost与PerfectHud的拾取通知测试；先用 `node tests/extract-item-collection.mjs <隔离输出目录>` 提取当前完整生产回调，运行参数为本地front.anm和bullet.anm。
+- `tests/native-extra-run-lifecycle.mjs`：生产EX控制器的顺序、取消、渲染失败及严格收据测试；通过 `TH128_ACCEPTANCE_ROOT` 指向已验收的本地case目录，以只读复用541档案和对应元数据。此测试的native与device接口明确为模拟实现。

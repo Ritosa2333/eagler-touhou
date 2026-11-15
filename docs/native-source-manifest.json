@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-11-15",
-  "generation": "f8c2169cbbfc73fcc51f9f31b04c2fc51acb0123144afba99428eac7afa222bb",
+  "generation": "27975d257ac10553c39475250b19c2864a458f9d1717297d20f4897f5483e43b",
   "sourceFiles": {
     "src/animation/AnmLogic.cpp": "8181699a119c123274e04883ffbb072ac3b4a0a1c0b18ccb2c6fa16850995b27",
     "src/animation/AnmLogic.hpp": "cb157319e0f57d007aae669d60a3840be7d31adfd1f384f02459146c56c8c88b",
@@ -176,7 +176,7 @@
     "src/game/PlayerFireRules.hpp": "5cb68131cd70dec1222e391bcaba4563b2c4be4e2bb9f60d8a989335f3fa7695",
     "src/game/PlayerHitHost.cpp": "0fe474d8c92d6a063fa1bb01ea46ef187c4da7e56b964633baa1989e85dd5e5d",
     "src/game/PlayerHitHost.hpp": "7e897487b3e0a2a82e17814e1fde410498825b020397775e8e800c534ef38915",
-    "src/game/PlayerHitRules.cpp": "4855a431a65487e542dff074380062cae47aa5a3a86377f5b38a7eebcaf1240d",
+    "src/game/PlayerHitRules.cpp": "d466d1b4c820c1a1000f93777aea878f0e7dc37297ba2cbc0d366c9621e0310c",
     "src/game/PlayerHitRules.hpp": "313943900b0287023ea55d19999a92f9815c622857e26cca6dba6e6c77df1930",
     "src/game/PlayerRespawnRules.cpp": "8945264adb6c63a9060c5f116188d8824c05bc08725088ac01c1337d78c1e57f",
     "src/game/PlayerRespawnRules.hpp": "d000b3e0c861bac6dcccc738b7ceaa0c6620d7cb8a5eef63f7f3b75297b1dbc4",
@@ -228,7 +228,7 @@
     "src/runtime/Exports.cpp": "a53590d490e09517d9bdad2feec85799e136f9e1e44470a2981bbaa1767b5b3f",
     "src/runtime/Memory.hpp": "bc209020ad0f2a2bd9e649440f239f3517a97ec480e4d27d2c3395a1c5d3a1b0",
     "src/runtime/PlayerExports.cpp": "72c6abe64a18786d2c40f78addcfb4a22335e48d3ac4ccdf855233f0fb1e3a5f",
-    "src/runtime/WorldExports.cpp": "94a59495c64270d56c339cdeece4691b1b66d54e651c8591f25fadc31d98a329"
+    "src/runtime/WorldExports.cpp": "8b75b01f421ab13934803fe7075425890a68ec97a748f39ee00e90484752d73e"
   },
   "translationUnits": [
     "src/runtime/Exports.cpp",
@@ -528,11 +528,15 @@
       "sha256": "846c39a7ef04f958af7a8267e9afc1b25bca73e86b14e88f5b4a4462ce74f987"
     },
     "core.wasm": {
-      "bytes": 2167738,
-      "sha256": "be8e80e7fd901c9386bab1fa29877a32adbda875f6f42882728b4d30f8b9adc2"
+      "bytes": 2168031,
+      "sha256": "32acdae1906362a50083f5146860736be54b9f2128397561d0892c1376754c77"
     }
   },
   "acceptedAssistedScope": "six normal routes and EX; CPU functional chain",
   "browserAcceptance": false,
-  "rebuiltForUpload": false
+  "rebuiltForUpload": false,
+  "coreOrdinal": 100,
+  "browserEntryAccepted": true,
+  "browserAcceptanceEvidence": "completion-checkpoint-20261115.json",
+  "rebuildReason": "First core100 build after actual long-timer and item-notice failures;prior core99 unchanged"
 }
