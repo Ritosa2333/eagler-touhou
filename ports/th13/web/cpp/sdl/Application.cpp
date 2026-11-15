@@ -582,6 +582,7 @@ void ApplicationState::release_run(bool preserve_hud) {
     // 与 0xa/0xb Retry 存活，只在 begin_title/析构退役。故这里不释放它，
     // 并保留它引用的 effect(8)/astral(25) bank。
     const bool transition_alive = run_transition.active();
+    stage_assets.discard();
     // 0x44a373（ThreadInf 声音对象销毁）：or eax,-1 → 0x460d40(-1) 停全部
     // SE voice。原版场景退出销毁声音线程对象时 loop 声（se_lazer00.wav id55、
     // se_lazer02.wav id20）随之终止；web 的 voices 与 BGM 流分离，stop(-1)
@@ -638,12 +639,28 @@ bool ApplicationState::preload_scenery_animation(i32 bank, const std::string& na
     // STD 引用 ANM 装载（begin_run 场景期专用；release_run 随对局 bank 卸载）。
     std::vector<u8> bytes;
     if (animations.resource(bank)) return true;
+    if (adopt_staged_bank(bank, name)) {
+        animations.name_resource(bank, name);
+        return true;
+    }
     if (!read(name, bytes) || !animations.load(bank, bytes.data(), u32(bytes.size())))
         return fail("Scenery ANM load: " + name + ": " + animations.error);
     animations.name_resource(bank, name);
     if (!graphics.preload(*animations.resource(bank)))
         return fail("Scenery ANM preload: " + name + ": " + graphics.error);
     return true;
+}
+
+bool ApplicationState::adopt_staged_bank(i32 bank, const std::string& key) {
+    auto staged = stage_assets.take(key);
+    if (!staged) return false;
+    const AnmResource* source = staged.get();
+    if (!animations.adopt(bank, std::move(*staged))) {
+        graphics.unload(*source);
+        return false;
+    }
+    graphics.rebind(*source, *animations.resource(bank));
+    return graphics.preload(*animations.resource(bank));
 }
 
 bool ApplicationState::begin_title(i32 reason) {
@@ -823,22 +840,29 @@ bool ApplicationState::begin_run() {
     EclResource head;
     if (!head.open(ecl.data(), u32(ecl.size())) || head.animations.empty())
         return fail("Stage ECL ANIM list unavailable");
-    AnmResource stage;
-    for (const auto& name : head.animations) {
-        if (!read(name, bytes)) return fail("Stage ANM missing: " + name);
-        if (!stage.append(bytes.data(), u32(bytes.size())))
-            return fail("Stage ANM invalid: " + name);
+    // 0xc 换关：门内已预备的 bank 直接接管（StageAssetStager）；新局/Retry
+    // 或预备被放弃时按原序同步装载。
+    if (!stage_assets.staged_for(progress.stage)) stage_assets.discard();
+    if (!adopt_staged_bank(kStageBank, StageAssetStager::kStageKey)) {
+        AnmResource stage;
+        for (const auto& name : head.animations) {
+            if (!read(name, bytes)) return fail("Stage ANM missing: " + name);
+            if (!stage.append(bytes.data(), u32(bytes.size())))
+                return fail("Stage ANM invalid: " + name);
+        }
+        if (!animations.adopt(kStageBank, std::move(stage)) ||
+            !graphics.preload(*animations.resource(kStageBank)))
+            return fail("Stage ANM bank: " + animations.error + graphics.error);
     }
-    if (!animations.adopt(kStageBank, std::move(stage)) ||
-        !graphics.preload(*animations.resource(kStageBank)))
-        return fail("Stage ANM bank: " + animations.error + graphics.error);
-    if (!read("bullet.anm", bytes) ||
-        !animations.load(kBulletBank, bytes.data(), u32(bytes.size())) ||
-        !graphics.preload(*animations.resource(kBulletBank)))
+    if (!adopt_staged_bank(kBulletBank, "bullet.anm") &&
+        (!read("bullet.anm", bytes) ||
+         !animations.load(kBulletBank, bytes.data(), u32(bytes.size())) ||
+         !graphics.preload(*animations.resource(kBulletBank))))
         return fail("Bullet ANM bank: " + animations.error + graphics.error);
-    if (!read("astral.anm", bytes) ||
-        !animations.load(kSpiritBank, bytes.data(), u32(bytes.size())) ||
-        !graphics.preload(*animations.resource(kSpiritBank)))
+    if (!adopt_staged_bank(kSpiritBank, "astral.anm") &&
+        (!read("astral.anm", bytes) ||
+         !animations.load(kSpiritBank, bytes.data(), u32(bytes.size())) ||
+         !graphics.preload(*animations.resource(kSpiritBank))))
         return fail("Spirit ANM bank: " + animations.error + graphics.error);
     animations.name_resource(kSpiritBank, "astral.anm");
     const char* player_files[4] = {"pl00.anm", "pl01.anm", "pl02.anm", "pl03.anm"};
@@ -1111,6 +1135,10 @@ bool ApplicationState::prepare_next_stage() {
     transition_scenery_pending = true;
     transition_scenery_bank = bank;
     transition_scenery_std = name;
+    stage_assets.begin(progress.stage, &graphics,
+                       [this](const std::string& asset, std::vector<u8>& bytes) {
+                           return read(asset, bytes, false);
+                       });
     // 0x42b6d0 的 option 根 label3 中断（见上方门首注释）：句柄保留，
     // deferred pending=3 使本帧主链 tick 不前进计时器，卫星出生顺延一帧。
     // 0x42b6d0 已在 clear 帧（msg_stage_clear）下发；门只在尚未下发时兜底。
@@ -1149,6 +1177,7 @@ bool ApplicationState::activate_next_stage() {
     }
     progress.new_run = false;
     if (!begin_run()) return false;
+    stage_assets.discard();
     pending_replay_stage = nullptr;
     stage_transition_active = false;
     stage_startup_age = -1;
@@ -1304,6 +1333,7 @@ bool ApplicationState::quit() {
     if (exiting) return true;
     // 0043a390 -> 004399e0 saves the shared score, including ending bits.
     if (!files.save_score()) return fail(files.error);
+    if (!files.advance_pending_writes(~0u)) return fail(files.error);
     ordinary_records_dirty = false;
     exiting = true;
     return true;
@@ -1459,6 +1489,10 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
     physical_input = nullptr;
     ending_fades.erase(std::remove_if(ending_fades.begin(), ending_fades.end(),
         [this](const auto& fade) { return !scheduler.contains(fade->update); }), ending_fades.end());
+    // 0xc 换关门内每帧推进一步下一关资产预备（读取/解析/上传各占一帧）。
+    if (stage_transition_active && !stage_assets.done()) stage_assets.step();
+    // scoreth13.dat 镜像压缩按帧分片（保存点只登记镜像，见 FileStore）。
+    if (!files.advance_pending_writes()) return fail(files.error);
     audio_device.update();
     if (!audio_device.error.empty()) return fail(audio_device.error);
     frames++;

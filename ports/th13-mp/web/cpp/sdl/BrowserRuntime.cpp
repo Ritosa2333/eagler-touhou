@@ -199,11 +199,18 @@ double previous_frame = -1;
 double presentation_window_start = -1;
 u32 presentation_count = 0;
 float presentation_fps = 60;
+// vsync：画布只在显示回调（rAF）提交，每个刷新周期恰一次呈现。异步工作回调
+// 完成的帧留在离屏面，由下一个 rAF 提交；没有新帧的 rAF 重复呈现上一帧，
+// 呈现率即刷新率。rAF 停摆（后台/嵌入式宿主）超过 kDisplayStaleMs 时，手动
+// 泵接管呈现。
+constexpr double kDisplayStaleMs = 250.;
+double last_display_callback_ms = -1;
 
 void reset_presentation_window() {
     presentation_window_start = -1;
     presentation_count = 0;
     presentation_fps = 60;
+    last_display_callback_ms = -1;
 }
 
 void sample_presentation_rate(double now_ms) {
@@ -404,7 +411,8 @@ bool sample_and_tick(float fps = 60.f, unsigned* simulated = nullptr) {
            app->commit(fps) && app->present();
 }
 
-// Elapsed monotonic time owns fresh frames, shared by display and receive callbacks.
+// Elapsed monotonic time owns fresh frames; display callbacks earn it, receive
+// callbacks only spend credit that is already due.
 multiplayer::FrameSchedule mp_schedule;
 multiplayer::FrameClock mp_clock;
 multiplayer::SlowdownGovernor mp_governor;
@@ -827,7 +835,12 @@ bool drive_one_frame(double delta, unsigned source = 0) {
     } else {
         ticks = cadence.advance(delta);
     }
-    sample_presentation_rate(begin);
+    const bool display_callback = source == 1;
+    if (display_callback) last_display_callback_ms = begin;
+    const bool presents = display_callback ||
+        (source == 3 && (last_display_callback_ms < 0 ||
+                         begin - last_display_callback_ms > kDisplayStaleMs));
+    if (presents) sample_presentation_rate(begin);
     bool ok = true;
     const bool mp_active = multiplayer::session.Active();
     app->graphics.backend.defer = true;
@@ -836,9 +849,12 @@ bool drive_one_frame(double delta, unsigned source = 0) {
                        : sample_and_tick(presentation_fps, &attempted);
         if (app->exiting || app->pending_load) break;
     }
-    if (app->graphics.backend.commit()) {
+    // The readout counts fresh frames reaching the display: a repeated
+    // presentation keeps the refresh cadence but is not a new frame.
+    const bool fresh = app->graphics.backend.pending_presentation();
+    if (presents && app->graphics.backend.commit(display_callback)) {
         presentation_at = emscripten_get_now();
-        ++presentation_count;
+        if (fresh) ++presentation_count;
         if (live_mp && multiplayer::session.SimFrame())
             multiplayer::session.TraceTiming("present", multiplayer::session.SimFrame() - 1);
     }
@@ -877,9 +893,12 @@ void queue_mp_work(bool received) {
             !multiplayer::session.Simulating() || multiplayer::session.Spectator() ||
             mp_playback_pending) return;
         if (mp_tasks_remaining) --mp_tasks_remaining;
-        // Both callbacks consume one monotonic clock. Packet count creates
-        // no credit, but time spent replaying history still makes input due.
-        drive_one_frame(mp_clock.elapsed(emscripten_get_now()), 2);
+        // Only display callbacks turn elapsed time into fresh frames: the time
+        // since the last rAF stays on the clock for the next one. This callback
+        // spends credit the display callback already earned (catch-up,
+        // corrections, confirmations), so steady-state forward frames and
+        // their input samples stay vsync-aligned.
+        drive_one_frame(0, 2);
     }, reinterpret_cast<void*>(uintptr_t(ticket)), 0);
 }
 }
@@ -1072,6 +1091,12 @@ EMSCRIPTEN_KEEPALIVE int th13_room_return() {
     return 1;
     }();
     return work.finish(result, result != 0);
+}
+
+// 只读呈现率埋点（诊断面）：右下角 fps 文本的数据源（每秒到达显示的新帧
+// 数），供 vsync 探针核对读数；不参与任何生产判定。
+EMSCRIPTEN_KEEPALIVE float th13_debug_presentation_fps() {
+    return th13::sdl::presentation_fps;
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned th13_frame() { return th13::sdl::app ? th13::sdl::app->frames : 0; }
@@ -1440,12 +1465,30 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_net_state() {
                   "{\"active\":%d,\"sim_frame\":%u,\"confirmed\":%u,"
                   "\"local_seat\":%u,\"players\":%u,\"can_start\":%d,"
                   "\"connected\":%d,\"simulating\":%d,\"capture_frame\":%u,"
-                  "\"stretch\":%.3f,\"error\":\"%s\"}",
+                  "\"stretch\":%.3f,\"run_released\":%d,\"error\":\"%s\"}",
                   session.Active() ? 1 : 0, session.SimFrame(),
                   session.ConfirmedThrough(), unsigned(session.LocalSeat()),
                   session.PlayerCount(), session.CanStart() ? 1 : 0,
                   session.Connected() ? 1 : 0, session.Simulating() ? 1 : 0,
-                  session.CaptureFrame(), mp_governor.stretch(), session.Error());
+                  session.CaptureFrame(), mp_governor.stretch(),
+                  session.RunReleased() ? 1 : 0, session.Error());
+    report = buffer;
+    return report.c_str();
+}
+
+// th13_debug_mp_terminal：终局交接观测（PumpTerminal 的退役/释放进度）。
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_terminal() {
+    static std::string report;
+    const auto t = th13::multiplayer::session.Runtime().Terminal();
+    char buffer[320];
+    std::snprintf(buffer, sizeof buffer,
+                  "{\"last_simulated\":%u,\"confirmed\":%u,\"acknowledged\":%u,"
+                  "\"channel_active\":%d,\"retiring\":%d,\"released\":%d,"
+                  "\"spectators_settled\":%d,\"started_ms\":%llu,\"release_ms\":%llu}",
+                  t.last_simulated, t.confirmed, t.acknowledged, t.channel_active ? 1 : 0,
+                  t.retiring ? 1 : 0, t.released ? 1 : 0, t.spectators_settled ? 1 : 0,
+                  static_cast<unsigned long long>(t.started_ms),
+                  static_cast<unsigned long long>(t.release_ms));
     report = buffer;
     return report.c_str();
 }
@@ -2865,6 +2908,64 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_game_over() {
     return 1;
 }
 
+// Debug 直入对局（仅诊断面）：标题菜单 start_game 的同一入口排队
+// Destination::Run，随即 apply_destination → begin_run（th13_debug_ending 同式）。
+// spell_slot >= 0 时按符卡练习入口选卡（SpellCatalog 同一 variant 查表）。
+// 换关/符卡性能探针用它绕过标题菜单键序。
+EMSCRIPTEN_KEEPALIVE int th13_debug_start_run(int stage, int character, int difficulty,
+                                              int spell_slot) {
+    using namespace th13::sdl;
+    if (!app || !app->initialized || app->run || th13::multiplayer::session.Active()) return 0;
+    app->progress.character = character;
+    app->progress.difficulty = difficulty;
+    app->progress.run_mode_flags = 0;
+    app->progress.practice_mode = 0;
+    app->progress.selected_spell_id = -1;
+    if (spell_slot >= 0) {
+        const auto* card = app->spell_catalog.variant(stage, spell_slot, difficulty);
+        if (!card) { last_error = "Spell card slot unavailable"; return 0; }
+        app->progress.selected_spell_id = card->id;
+        app->progress.run_mode_flags = 0x20u;
+    }
+    app->title.reset();
+    if (!app->start_game(stage) || !app->apply_destination()) {
+        last_error = app->failure;
+        return 0;
+    }
+    clear_inputs();
+    cadence.reset();
+    return 1;
+}
+
+// Debug 关终了（仅诊断面）：ECL 事件 -2 的同一链 RunScene::open_dialog(-2)
+//（0x428820:106-113 无死亡分支 → 0x42cd40），用于在任意帧触发关清 → 120 帧
+// HUD 门 → 装载门 → 下一关的完整换关序列。MP 会话中各端必须在同一模拟帧调用。
+EMSCRIPTEN_KEEPALIVE int th13_debug_stage_clear() {
+    using namespace th13::sdl;
+    if (!app || !app->run || app->stage_transition_active || app->stage_transition_loading) return 0;
+    app->run->open_dialog(-2);
+    if (!app->run->error.empty()) { last_error = app->run->error; return 0; }
+    return 1;
+}
+
+// 只读换关状态埋点（诊断面）：关清门/装载门/激活帧的相位，供换关性能探针
+// 给每帧贴标签；不参与任何生产判定。
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_transition_state() {
+    using namespace th13::sdl;
+    static char report[256];
+    if (!app) { std::snprintf(report, sizeof report, "{\"run\":false}"); return report; }
+    const int clear_age = app->run && (app->run->hud.flags & 0x100u) ? app->run->hud.clear_age.current : -1;
+    std::snprintf(report, sizeof report,
+        "{\"run\":%s,\"stage\":%d,\"stage_frame\":%d,\"loading\":%s,\"transition\":%s,"
+        "\"startup_age\":%d,\"clear_age\":%d,\"pending_destination\":%d,\"pending_load\":%u,"
+        "\"loading_waiting\":%s}",
+        app->run ? "true" : "false", app->progress.stage, app->progress.stage_frame,
+        app->stage_transition_loading ? "true" : "false",
+        app->stage_transition_active ? "true" : "false", app->stage_startup_age, clear_age,
+        app->pending_destination, app->pending_load, app->loading_waiting() ? "true" : "false");
+    return report;
+}
+
 // 只读暂停覆盖层状态埋点（诊断面）：GameOver/名前录入验证时观察
 // screen/phase/age/名字缓冲与门控位，不参与任何生产判定。
 EMSCRIPTEN_KEEPALIVE const char* th13_debug_pause_state() {
@@ -2904,7 +3005,9 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_result_state() {
 
 // 确定性单帧泵：固定 1/60 步长、恰一逻辑帧 + 绘制提交，不经过 rAF 帧钟与
 // FrameCadence。装载挡板（正常启动序）按同一步长推进。1 = ok，0 = 失败。
-EMSCRIPTEN_KEEPALIVE int th13_debug_frame() {
+// present=0 时完整绘制但不把离屏面提交到画布（性能探针：无头浏览器的画布
+// 合成节流不计入帧成本；下一次提交照常呈现最新离屏面）。
+EMSCRIPTEN_KEEPALIVE int th13_debug_frame_present(unsigned present) {
     using namespace th13::sdl;
     if (!app) return 0;
     if (!app->failure.empty()) return 0;
@@ -2916,12 +3019,14 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_frame() {
     const double begin = emscripten_get_now();
     app->graphics.backend.defer = true;
     const bool ok = sample_and_tick();
-    app->graphics.backend.commit();
+    if (present) app->graphics.backend.commit();
     app->graphics.backend.defer = false;
     app->audio_device.pump();
     th13_browser_frame(ok ? 1 : 0, emscripten_get_now() - begin, 1);
     return ok ? 1 : 0;
 }
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_frame() { return th13_debug_frame_present(1); }
 
 // 回放会话帧号（已消费输入帧数；golden 游戏帧 F ↔ 消费 F+1 后的画面）。
 EMSCRIPTEN_KEEPALIVE unsigned th13_debug_replay_frame() {

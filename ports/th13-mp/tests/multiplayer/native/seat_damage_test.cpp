@@ -78,7 +78,8 @@ TEST(all_seats_sum_hits_once_and_keep_their_registration_side_effects) {
     for(i32 count:{2,3}) for(bool boss:{false,true}) {
         Fixture f;CHECK(f.boot(count));if(boss)f.enemy().flags|=0x1000000u;
         for(i32 seat=0;seat<count;++seat)f.arm(seat,12);
-        CHECK_EQ(f.collide(),float(count*(boss?(count==2?9:8):12)));
+        // Boss absorbs 25% of 24 (two seats) or 50% of 36 (three seats).
+        CHECK_EQ(f.collide(),float(boss?18:count*12));
         CHECK_EQ(f.score.score,count);
         for(i32 seat=0;seat<count;++seat) {
             CHECK_EQ(f.battle.seats[size_t(seat)].shots[0].state,2);
@@ -101,21 +102,21 @@ TEST(owner_phase_reductions_and_ghosts_do_not_follow_observer_window) {
 TEST(boss_fractional_damage_survives_dynamic_operable_counts) {
     for(i32 count:{2,3}) {
         Fixture f;CHECK(f.boot(count));f.enemy().flags|=0x1000000u;
+        // Two seats: 3/4 per point lands as 0,1,1,1; three seats: 2/4 as 0,1.
         const std::array<float,4> expected=count==2?std::array<float,4>{0,1,1,1}
-                                                  :std::array<float,4>{0,1,1,0};
-        const i32 period=count==2?4:3;
-        for(i32 hit=0;hit<period;++hit) { f.arm(1,1);CHECK_EQ(f.collide(),expected[size_t(hit)]); }
+                                                  :std::array<float,4>{0,1,0,1};
+        for(i32 hit=0;hit<4;++hit) { f.arm(1,1);CHECK_EQ(f.collide(),expected[size_t(hit)]); }
         CHECK_EQ(f.enemy().mp_boss_damage_remainder,0);
         CHECK_EQ(f.enemy().spirit_accum,float(count==2?3:2));
     }
     Fixture f;CHECK(f.boot(3));f.enemy().flags|=0x1000000u;
-    f.arm(0,1);CHECK_EQ(f.collide(),0.f);CHECK_EQ(f.enemy().mp_boss_damage_remainder,8);
+    f.arm(0,1);CHECK_EQ(f.collide(),0.f);CHECK_EQ(f.enemy().mp_boss_damage_remainder,2);
     f.battle.seats[2].ghost=true;
-    f.arm(0,1);CHECK_EQ(f.collide(),1.f);CHECK_EQ(f.enemy().mp_boss_damage_remainder,5);
+    f.arm(0,1);CHECK_EQ(f.collide(),1.f);CHECK_EQ(f.enemy().mp_boss_damage_remainder,1);
     f.battle.seats[1].ghost=true;
-    f.arm(0,1);CHECK_EQ(f.collide(),1.f);CHECK_EQ(f.enemy().mp_boss_damage_remainder,5);
+    f.arm(0,1);CHECK_EQ(f.collide(),1.f);CHECK_EQ(f.enemy().mp_boss_damage_remainder,1);
     f.battle.seats[1].ghost=false;
-    f.arm(0,1);CHECK_EQ(f.collide(),1.f);CHECK_EQ(f.enemy().mp_boss_damage_remainder,2);
+    f.arm(0,1);CHECK_EQ(f.collide(),1.f);CHECK_EQ(f.enemy().mp_boss_damage_remainder,0);
     // A pilot on their final death stops counting before the later ghost
     // transition; a pilot with remaining lives still counts while respawning.
     Fixture final;CHECK(final.boot());final.enemy().flags|=0x1000000u;
@@ -130,7 +131,7 @@ TEST(boss_remainder_is_authoritative_and_restores_before_replay) {
     const u64 digest=saved.digest();
     f.enemy().mp_boss_damage_remainder=0;
     multiplayer::WorldState changed;CHECK(changed.capture(f.battle,f.visual));CHECK(changed.digest()!=digest);
-    CHECK(saved.restore(f.battle,f.visual));CHECK_EQ(f.enemy().mp_boss_damage_remainder,9);
+    CHECK(saved.restore(f.battle,f.visual));CHECK_EQ(f.enemy().mp_boss_damage_remainder,3);
     std::array<u64,12> expected{};
     for(i32 frame=0;frame<12;++frame) {
         f.arm(1,float(frame%4+1));f.collide();

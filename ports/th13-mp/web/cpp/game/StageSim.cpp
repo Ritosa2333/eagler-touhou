@@ -2088,6 +2088,20 @@ bool StageSim::death_effects_and_drops(StageEnemy& enemy) {
     return error_.empty();
 }
 
+float StageSim::absorb(StageEnemy& enemy, float amount) {
+    // Boss 侧减伤只在伤害真能落血的状态消费余数：无敌/退场/不可击门与
+    // damage() 的早退一致，门外的命中不动余数。
+    if (!(enemy.flags & 0x1000000u) || (enemy.flags & 0x31u) || enemy.invulnerable > 0 ||
+        !operable_seats) return amount;
+    const i32 operable = operable_seats();
+    if (operable < 2) return amount;
+    // 进入血量的四分之几：2 席 3/4（减免 25%），3 席 2/4（减免 50%）。
+    const i32 quarters = operable >= 3 ? 2 : 3;
+    const i32 scaled = i32(amount) * quarters + enemy.mp_boss_damage_remainder;
+    enemy.mp_boss_damage_remainder = scaled % 4;
+    return float(scaled / 4);
+}
+
 void StageSim::damage(StageEnemy& enemy, float amount) {
     if (enemy.dead || amount <= 0 || (enemy.flags & 0x31u) ||
         enemy.invulnerable > 0 || (dialog_host && dialog_host->dialog_active())) return;

@@ -108,10 +108,21 @@ public:
     }
 
     // 帧泵：信道收发 + 门推进。world_ready = 宿主世界可用（frame0 后）。
+    // 对端离线时：本地已模拟帧全部确认（无预测帧、无回滚请求）即继续——
+    // 已到齐的输入足以把世界推进到终局交接；缺输入停等的帧才经
+    // NoteInputStarved 报告断线。
     bool Pump(bool world_ready, std::uint64_t now_ms);
     // Keep the final input/ACK answerable while the room is displayed. A
     // slower peer must be able to finish before the next launch closes it.
+    // Once every peer acknowledged the complete input history (Retire) and
+    // the spectator tape is closed, the seat leaves the relay's run
+    // (signaling + relay lane) while the peer data channels stay open: the
+    // lobby learns that this seat is done without any peer losing its last
+    // inputs. A peer that never answers releases at kTerminalTailMs.
     bool PumpTerminal(std::uint64_t now_ms);
+    bool TerminalReleased() const { return terminal_released_; }
+    // Session 停等门：缺输入的帧在对端离线/失败时把断线转为终态错误。
+    void NoteInputStarved();
 
     // 本地输入采集：capture_frame 的物理输入 → 延迟窗（frame+delay 生效）。
     bool Capture(std::uint32_t capture_frame, const Netplay::FrameInput& input,
@@ -232,6 +243,18 @@ public:
         return core_.ConfirmedThroughAllRemotes();
     }
     std::uint32_t LastSimulated() const { return core_.LastSimulatedFrame(); }
+    // 终局交接观测面（调试导出）。
+    struct TerminalReport {
+        std::uint32_t last_simulated, confirmed, acknowledged;
+        bool channel_active, retiring, released, spectators_settled;
+        std::uint64_t started_ms, release_ms;
+    };
+    TerminalReport Terminal() const {
+        return {core_.LastSimulatedFrame(), core_.ConfirmedThroughAllRemotes(),
+                core_.AcknowledgedLocalThroughAllRemotes(), channel_.Active(),
+                channel_.Retiring(), terminal_released_, SpectatorsSettled(),
+                terminal_started_ms_, terminal_release_ms_};
+    }
     // 设备席位隔离：本地席位号（远端输入按 peer 席位路由，本地席位
     // 恒为 setup_.local_player——设备与席位一一绑定）。
     std::uint8_t LocalSeat() const { return setup_.local_player; }
@@ -242,6 +265,17 @@ private:
     // 观众端收流（Pump 的 spectator_ 分支）：transport 收包 → 事件/帧
     // 解码 → stage_playback_。超时/失配置终态 error_。
     bool DrainSpectator(std::uint64_t now_ms);
+    // 终局交接：离开 relay 的 run（见 PumpTerminal）。
+    void ReleaseTerminalTransport();
+    // 已模拟帧全部确认且无回滚请求——世界不再依赖网络输入。
+    bool InputHistoryComplete() const;
+    // 观战磁带已收尾（End 已发/发布线退役/本席不发布）。
+    bool SpectatorsSettled() const {
+        return publish_finished_ || publish_failed_ || !publish_started_ || setup_.local_player != 0;
+    }
+    // Retire 后给终局 ACK 重发留出的窗口；对端始终不应答时的释放上限。
+    static constexpr std::uint64_t kTerminalLingerMs = 1000;
+    static constexpr std::uint64_t kTerminalTailMs = 8000;
 
     SessionSetup setup_{};
     bool configured_ = false;
@@ -261,6 +295,12 @@ private:
     std::uint32_t digest_mismatch_frame_ = 0;
     std::uint64_t digests_sent_ = 0, digests_received_ = 0, desync_detected_ = 0;
     std::string error_;
+    // ---- 终局交接（PumpTerminal）----
+    bool transport_lost_ = false;        // 缺输入时观测到断线（终态）
+    bool terminal_released_ = false;     // 已离开 relay 的 run
+    bool publish_finished_ = false;      // 观战 End 事件已发出
+    std::uint64_t terminal_started_ms_ = 0;  // 首次 PumpTerminal 时刻
+    std::uint64_t terminal_release_ms_ = 0;  // Retire 后的释放时刻（0 = 未定）
     // ---- M9/P6：观战面 ----
     bool spectator_ = false;             // 观众端（ConnectSpectator 置位）
     bool stage_received_ = false;        // 首个 stage 事件已到

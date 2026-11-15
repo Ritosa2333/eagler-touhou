@@ -171,8 +171,8 @@ TEST(reimu_trance_shot_real_sht_to_boss_and_rollback) {
         CHECK(f.find_boss()); if(!f.find_boss()) continue;
         auto collide_and_fade=[&](std::vector<u64>& digests) {
             f.battle.sim.enemy_hit(f.boss());
-            CHECK_EQ(hp-f.boss().life,29.f); // 44 * 2/3, remainder 4/12
-            CHECK_EQ(f.boss().mp_boss_damage_remainder,4);
+            CHECK_EQ(hp-f.boss().life,22.f); // three seats: the Boss absorbs half of 44
+            CHECK_EQ(f.boss().mp_boss_damage_remainder,0);
             for(size_t i=0;i<2;++i) {
                 const auto& reg=f.battle.seats[size_t(shooter)].damage_registrations[size_t(registration[i])];
                 CHECK(!reg.active && !(reg.flags&1u)); CHECK_EQ(reg.accumulated_damage,22);
@@ -288,8 +288,9 @@ TEST(reimu_team_trance_nonowner_natural_boss_and_geometry_boundaries) {
         CHECK(f.find_boss());if(!f.find_boss())continue;
         prepare(0.f);
         CHECK(f.frame({0,0,0})); CHECK(f.find_boss());if(!f.find_boss())continue;
-        CHECK_EQ(10000.f-f.boss().life,count==2?16.f:14.f);
-        CHECK_EQ(f.boss().mp_boss_damage_remainder,count==2?6:8);
+        // 22 points: 3/4 lands 16 (remainder 2/4); 2/4 lands 11 exactly.
+        CHECK_EQ(10000.f-f.boss().life,count==2?16.f:11.f);
+        CHECK_EQ(f.boss().mp_boss_damage_remainder,count==2?2:0);
         CHECK_EQ(f.battle.seats[size_t(shooter)].shots[0].state,2);
         (void)half_y;
     }

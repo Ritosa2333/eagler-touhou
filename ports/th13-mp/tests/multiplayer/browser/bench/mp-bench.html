@@ -39,7 +39,7 @@ const fetchBytes = async path => {
 };
 window.__bench = {samples: [], failure: null, started: false, begin: 0, raf: 0, timeouts: 0, rafGapMax: 0};
 try {
-  const Module = await import('/artifacts/sdl3/th13-sdl.mjs');
+  const Module = await import(params.get('runtime') ?? '/artifacts/sdl3/th13-sdl.mjs');
   const mod = await Module.default({
     canvas: document.getElementById('canvas'),
     print: t => console.log('[th13]', t),

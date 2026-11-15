@@ -116,6 +116,10 @@ void NetplayRuntime::Clear() {
     digest_mismatch_frame_ = 0;
     digests_sent_ = digests_received_ = desync_detected_ = 0;
     error_.clear();
+    transport_lost_ = false;
+    terminal_released_ = false;
+    publish_finished_ = false;
+    terminal_started_ms_ = terminal_release_ms_ = 0;
     // M9/P6：观战面随会话重置（发布器/回放/缓冲全清）。
     spectator_ = false;
     stage_received_ = false;
@@ -243,7 +247,10 @@ bool NetplayRuntime::FinishSpectator(std::uint32_t end_frame) {
         end_frame, [&](const std::vector<std::uint8_t>& wire) {
             return transport_.SendSpectator(wire.data(), wire.size());
         });
-    if (finished) transport_.StopSpectators(true);
+    if (finished) {
+        transport_.StopSpectators(true);
+        publish_finished_ = true;
+    }
     return finished;
 }
 
@@ -345,14 +352,34 @@ bool NetplayRuntime::DrainSpectator(std::uint64_t now_ms) {
     return true;
 }
 
+bool NetplayRuntime::InputHistoryComplete() const {
+    const auto simulated = core_.LastSimulatedFrame();
+    const auto confirmed = core_.ConfirmedThroughAllRemotes();
+    return simulated != Netplay::INVALID_FRAME && confirmed != Netplay::INVALID_FRAME &&
+           confirmed >= simulated && !core_.HasRollbackRequest();
+}
+
+void NetplayRuntime::NoteInputStarved() {
+    if (!configured_ || local_simulation_ || spectator_ || transport_lost_ ||
+        transport_.Recovering() || !(transport_.Disconnected() || transport_.Failed()))
+        return;
+    transport_lost_ = true;
+    error_ = transport_.Failed() ? "TH13 gameplay transport failed" : "TH13 gameplay transport disconnected";
+}
+
 bool NetplayRuntime::Pump(bool world_ready, std::uint64_t now_ms) {
     if (!configured_) return true;  // 未配置：静默（单席/本地模式）
     // P3.4：失配是终态（error_ 已含帧号；Error() 优先返回它）。
-    if (digest_mismatch_) return false;
+    if (digest_mismatch_ || transport_lost_) return false;
     // 观众端：只收流，不推进玩家信道/门。
     if (spectator_) return DrainSpectator(now_ms);
     if (!local_simulation_ && !transport_.Recovering() &&
         (transport_.Disconnected() || transport_.Failed())) {
+        // A peer whose complete input history already arrived may leave:
+        // every simulated frame is confirmed, so the world keeps committing
+        // from stored inputs up to its title handoff. The first frame that
+        // waits on the missing peer reports the loss (NoteInputStarved).
+        if (world_ready && !transport_.Failed() && InputHistoryComplete()) return true;
         error_ = transport_.Failed() ? "TH13 gameplay transport failed" : "TH13 gameplay transport disconnected";
         return false;
     }
@@ -381,18 +408,43 @@ bool NetplayRuntime::Pump(bool world_ready, std::uint64_t now_ms) {
 }
 
 bool NetplayRuntime::PumpTerminal(std::uint64_t now_ms) {
-    if (!configured_ || local_simulation_ || spectator_ ||
-        transport_.Disconnected() || transport_.Failed()) return true;
-    if (channel_.Active()) {
-        if (!channel_.Pump(gate_, core_, now_ms, false)) return false;
-        const auto terminal = core_.LastSimulatedFrame();
-        if (terminal == Netplay::INVALID_FRAME) return true;
-        if (!channel_.FlushRetirementFence(core_, terminal, now_ms)) return false;
-        if (channel_.CanRetire(core_, terminal))
-            return channel_.Retire(core_, terminal, now_ms);
+    if (!configured_ || local_simulation_ || spectator_) return true;
+    // The room preview also pumps the next run's handshake through here;
+    // only a run with simulated frames has a terminal to hand over.
+    const auto terminal = core_.LastSimulatedFrame();
+    if (terminal == Netplay::INVALID_FRAME) {
+        if (transport_.Disconnected() || transport_.Failed()) return true;
+        if (channel_.Active()) return channel_.Pump(gate_, core_, now_ms, false);
+        return !channel_.Retiring() || channel_.PumpRetirement(now_ms);
+    }
+    if (!terminal_started_ms_) terminal_started_ms_ = now_ms;
+    // A peer that left already holds everything it acknowledged; nothing on
+    // this side still needs the relay's run.
+    if (transport_.Disconnected() || transport_.Failed()) {
+        ReleaseTerminalTransport();
         return true;
     }
-    return !channel_.Retiring() || channel_.PumpRetirement(now_ms);
+    // The data channels keep answering after the release: a slower peer
+    // still collects this seat's final inputs and ACKs from them.
+    if (channel_.Active()) {
+        if (!channel_.Pump(gate_, core_, now_ms, false)) return false;
+        if (!channel_.FlushRetirementFence(core_, terminal, now_ms)) return false;
+        if (channel_.CanRetire(core_, terminal)) {
+            if (!channel_.Retire(core_, terminal, now_ms)) return false;
+            terminal_release_ms_ = now_ms + kTerminalLingerMs;
+        }
+    } else if (channel_.Retiring() && !channel_.PumpRetirement(now_ms)) return false;
+    const bool retired = terminal_release_ms_ && now_ms >= terminal_release_ms_;
+    if (!terminal_released_ &&
+        ((retired && SpectatorsSettled()) || now_ms - terminal_started_ms_ >= kTerminalTailMs))
+        ReleaseTerminalTransport();
+    return true;
+}
+
+void NetplayRuntime::ReleaseTerminalTransport() {
+    if (terminal_released_) return;
+    terminal_released_ = true;
+    transport_.ReleaseRelayPresence();
 }
 
 bool NetplayRuntime::Capture(std::uint32_t capture_frame,

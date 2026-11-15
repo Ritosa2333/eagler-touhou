@@ -310,6 +310,16 @@ bool StageBattle::load(EclResourceProvider& provider, const char* stage_file, i3
         collide_shots(enemy);
         if (!error_.empty()) sim.error_ = error_;
     };
+    // R-G Boss 减伤的可操作席位计数：幽灵与已出局（残机 < 0）席不计；
+    // 死亡演出中仍有残机的席位照计。单席恒为 1（无减伤）。
+    sim.operable_seats = [this]() -> i32 {
+        if (seat_count < 2) return 1;
+        i32 operable = 0;
+        for (i32 seat = 0; seat < seat_count; ++seat)
+            if (!seats[size_t(seat)].ghost && seat_huds[size_t(seat)].extra_lives >= 0)
+                ++operable;
+        return operable;
+    };
     sim.enemy_body_collision = [this](StageEnemy& enemy) {
         if (seat_count < 2) collide_enemy_body(enemy);
         else if (enemy_body_collidable(enemy)) {
@@ -1541,20 +1551,10 @@ void StageBattle::collide_shots(StageEnemy& state) {
     // hit_anim_timer=30），因此本处不新增 return。
     if (spell.active() && (spell.flags & kSpellBombProtection) != 0)
         applied = float(i32(applied) / 30);
-    if (seat_count >= 2 && (enemy->flags & 0x1000000u) &&
-        !(enemy->flags & 0x31u) && enemy->invulnerable <= 0) {
-        // R-G: ordinary enemies retain SP damage. Bosses receive the team
-        // coefficient after each owner's SP reductions, with exact credit
-        // across hits and changing live counts. Ghosts cannot operate.
-        i32 operable = 0;
-        for (i32 seat = 0; seat < seat_count; ++seat)
-            if (!seats[size_t(seat)].ghost && seat_huds[size_t(seat)].extra_lives >= 0)
-                ++operable;
-        const i32 numerator = operable >= 3 ? 8 : operable == 2 ? 9 : 12;
-        const i32 scaled = i32(applied) * numerator + enemy->mp_boss_damage_remainder;
-        applied = float(scaled / 12);
-        enemy->mp_boss_damage_remainder = scaled % 12;
-    }
+    // R-G: ordinary enemies retain SP damage. A Boss absorbs part of every
+    // incoming point on its own side (StageSim::absorb) after each owner's SP
+    // reductions, so shots, Bombs and Trance damage share one rule.
+    applied = sim.absorb(*enemy, applied);
     // 临时只读探针（TH13_DAMAGE_PROBE=1 复用门控）：对比原生 0x419d2f 的
     // (serial, damage, accum) 序列；只打印，不改变数值。
     if (damage_probe_enabled) {

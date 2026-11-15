@@ -6,6 +6,7 @@
 //   /artifacts/<file>     → web/artifacts（sdl3 构建产物：th13-sdl.mjs/.wasm/build.json）
 //   /replays/<file>       → 外层 games/replays（th13_01.rpy 等合法私有资产）
 //   /bench/<file>         → tests/multiplayer/browser/bench（性能会话驱动页）
+//   /sp/artifacts/<file>  → ../th13/web/artifacts（单机版构建产物，同一探针页比对两版）
 //   /<file>               → web/sdl-runtime（th13-debug.html 及页内模块）
 // 仅 127.0.0.1 回环监听、只读固定目录、路径穿越拒绝（resolve 前缀校验同配方）。
 //
@@ -29,6 +30,7 @@ export const WORKSPACE = resolve(PORT_ROOT, '..', '..', '..');
 const RUNTIME_DIR = join(PORT_ROOT, 'web/sdl-runtime');
 const BENCH_DIR = join(HERE, 'bench');
 const BUILD_DIR = join(PORT_ROOT, 'web/artifacts');
+const SP_BUILD_DIR = join(REPO_ROOT, 'ports/th13/web/artifacts');
 const RAW_DIR = join(WORKSPACE, 'artifacts/reference/raw');
 const REPLAYS_DIR = join(WORKSPACE, 'games/replays');
 
@@ -44,6 +46,7 @@ export async function startServe({host = '127.0.0.1'} = {}) {
   const routes = [
     ['/bench/', BENCH_DIR, 'bench'],
     ['/assets/', join(RUNTIME_DIR, 'assets'), 'assets'],
+    ['/sp/artifacts/', SP_BUILD_DIR, 'sp-artifacts'],
     ['/artifacts/', BUILD_DIR, 'artifacts'],
     ['/replays/', REPLAYS_DIR, 'replays'],
     ['/', RUNTIME_DIR, 'runtime'],

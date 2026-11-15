@@ -64,6 +64,9 @@ public:
     bool capture_region_to_texture(const AnmResource& file, u32 texture_index,
                                    const i32 source[4], const i32 destination[4]);
     void unload(const AnmResource&);
+    // 预备阶段上传的纹理随 AnmResource 对象迁移到接管它的 bank（对象地址
+    // 变化、纹理句柄不变）。
+    void rebind(const AnmResource& from, const AnmResource& to);
     u32 texture(const AnmResource&, u32) override;
     TextureImage* pixels(u32 handle) {
         auto it = textures.find(handle);

@@ -129,6 +129,8 @@ public:
     void Stop();
     void Stop(bool keep_terminal_transport);
     bool PumpTerminal(std::uint64_t now_ms) { return runtime_.PumpTerminal(now_ms); }
+    // 终局交接完成：本席已离开 relay 的 run（大厅据此复位）。
+    bool RunReleased() const { return runtime_.TerminalReleased(); }
     // R-G: after the last confirmed battle frame, ending/results use local input.
     bool FinishWorldSimulation(bool completed = false);
     bool WorldCompleted() const { return world_completed_; }

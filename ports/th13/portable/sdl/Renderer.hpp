@@ -39,7 +39,14 @@ public:
         return true;
     }
     Renderer(int version,Resolve,void*);~Renderer();
-    bool initialize();void flush();void discard();bool commit();
+    bool initialize();void flush();void discard();
+    // commit blits the pending surface to the window. repeat=true presents the
+    // last shown surface again when nothing new is pending (vsync: one
+    // presentation per display refresh even for a repeated image).
+    bool commit(bool repeat=false);
+    // True while a newly presented surface awaits commit (a fresh frame, as
+    // opposed to a repeated presentation of the last one).
+    bool pending_presentation() const { return pending != 0; }
 #if TH_ENABLE_THPRAC
     void render_imgui(const struct ::ImDrawData*,u32);
     u32 create_imgui_texture(u32 width,u32 height,const u8* rgba);
@@ -76,7 +83,7 @@ private:
     UnormBlendProfile unorm_blend_profile=UnormBlendProfile::NativeGles;u32 unorm_blend_target=0;
     Stream vertices{},indices{},instances{};State batchState{};
     std::vector<u8> batchBytes,batchScratch,quad,worlds,pixels;Topology batchTopology=Topology::Triangles;bool batching=false,instancing=false;
-    u32 batchCount=0,pending=0;std::string failure;
+    u32 batchCount=0,pending=0,presented=0;std::string failure;
     GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32);
     void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);
     void select(const State&);void uniform(int,int,const float*);void integer(int,int);

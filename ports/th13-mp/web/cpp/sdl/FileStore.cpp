@@ -29,21 +29,23 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 // localStorage 持久化（宿主无文件系统持久卷）：base64 文本。任何异常/限额
-// 都返回 false —— 失败可见，不吞。
-EM_JS(bool, th13_save_write_js, (const char* data, int length), {
+// 都返回 false —— 失败可见，不吞。编码按 32 KiB 片经 String.fromCharCode
+// 批量转换：保存点落在关终门帧与关首激活帧上，编码成本直接计入这两帧。
+EM_JS(bool, th13_storage_write_js, (const char* key, const char* data, int length), {
     try {
-        let binary = "";
         const bytes = new Uint8Array(HEAPU8.buffer, data, length);
-        for (let i = 0; i < length; ++i) binary += String.fromCharCode(bytes[i]);
-        localStorage.setItem("th13.save", btoa(binary));
+        const parts = [];
+        for (let at = 0; at < length; at += 0x8000)
+            parts.push(String.fromCharCode.apply(null, bytes.subarray(at, Math.min(length, at + 0x8000))));
+        localStorage.setItem(UTF8ToString(key), btoa(parts.join("")));
         return true;
     } catch (e) {
         return false;
     }
 });
-EM_JS(int, th13_save_read_js, (char* out, int capacity), {
+EM_JS(int, th13_storage_read_js, (const char* key, char* out, int capacity), {
     try {
-        const text = localStorage.getItem("th13.save");
+        const text = localStorage.getItem(UTF8ToString(key));
         if (text === null || text === "") return 0;
         const binary = atob(text);
         if (binary.length > capacity) return 0;
@@ -56,31 +58,19 @@ EM_JS(int, th13_save_read_js, (char* out, int capacity), {
         return 0;
     }
 });
+static bool th13_save_write_js(const char* data, int length) {
+    return th13_storage_write_js("th13.save", data, length);
+}
+static int th13_save_read_js(char* out, int capacity) {
+    return th13_storage_read_js("th13.save", out, capacity);
+}
 // scoreth13.dat 原版格式通道（base64，同上语义）。
-EM_JS(bool, th13_scoredat_write_js, (const char* data, int length), {
-    try {
-        let binary = "";
-        const bytes = new Uint8Array(HEAPU8.buffer, data, length);
-        for (let i = 0; i < length; ++i) binary += String.fromCharCode(bytes[i]);
-        localStorage.setItem("th13.scoredat", btoa(binary));
-        return true;
-    } catch (e) {
-        return false;
-    }
-});
-EM_JS(int, th13_scoredat_read_js, (char* out, int capacity), {
-    try {
-        const text = localStorage.getItem("th13.scoredat");
-        if (text === null || text === "") return 0;
-        const binary = atob(text);
-        if (binary.length > capacity) return 0;
-        const bytes = new Uint8Array(HEAPU8.buffer, out, binary.length);
-        for (let i = 0; i < binary.length; ++i) bytes[i] = binary.charCodeAt(i);
-        return binary.length;
-    } catch (e) {
-        return 0;
-    }
-});
+static bool th13_scoredat_write_js(const char* data, int length) {
+    return th13_storage_write_js("th13.scoredat", data, length);
+}
+static int th13_scoredat_read_js(char* out, int capacity) {
+    return th13_storage_read_js("th13.scoredat", out, capacity);
+}
 #endif
 
 namespace th13::sdl {
@@ -597,10 +587,16 @@ bool FileStore::write_save(bool commit_ending) {
     std::copy(pre_ending_save_bytes_.begin(), pre_ending_save_bytes_.end(),
               buffer.data() + kPreEndingArchiveOffset);
 #ifdef __EMSCRIPTEN__
-    if (!th13_save_write_js(reinterpret_cast<const char*>(buffer.data()),
-                            int(buffer.size()))) {
-        error = "Save storage write failed";
-        return false;
+    // 存储层写入只在序列化字节变化时发生：原版每个保存点（关终门、关首、
+    // 续关、结局）都重写整档，端口保留这些保存点，但同一份字节不重复提交给
+    // localStorage——关终/关首帧因此只承担序列化，不承担 I/O。
+    if (buffer != persisted_save_bytes_) {
+        if (!th13_save_write_js(reinterpret_cast<const char*>(buffer.data()),
+                                int(buffer.size()))) {
+            error = "Save storage write failed";
+            return false;
+        }
+        persisted_save_bytes_ = buffer;
     }
     if (commit_ending) committed_ending_bytes_ = ending_seen_bytes;
     return true;
@@ -656,20 +652,48 @@ bool FileStore::read_score_dat(std::vector<u8>& out) {
 bool FileStore::write_score_dat() {
 #ifdef __EMSCRIPTEN__
     if (!score_dat_file_ready()) return true;  // 阶段 B 门（见上）
-    std::vector<u8> file;
-    if (!score_dat.build_file(file)) {
+    // 0x458c30 LZ 压缩是保存点最重的一步（镜像 0x1B678 字节）。镜像体未变
+    // 时文件逐字节相同，压缩与存储写入都省去：关终门帧/关首激活帧只在
+    // 榜表真正变化时才付出压缩成本。
+    std::vector<u8> image(ScoreDat::kImageSize);
+    const size_t uncomp = score_dat.build_image(image.data(), image.size());
+    if (uncomp == 0) {
         error = "ScoreDat build failed: " + score_dat.error;
         return false;
     }
+    image.resize(uncomp);
+    if (image == persisted_score_dat_image_) {
+        pending_score_dat_image_.clear();
+        score_dat_encoder_ = LzssEncoder{};
+        return true;
+    }
+    if (score_dat_encoder_.active() && image == pending_score_dat_image_) return true;
+    score_dat_encoder_.begin(image.data(), image.size());
+    pending_score_dat_image_ = std::move(image);
+    return true;
+#else
+    // native/WASI 构建通道不激活：不落盘（save_score 语义 = 仅写 v6，与旧版
+    // 逐字节一致）。镜像仍由 sync_score_face_to_dat() 留在内存供测试检视。
+    return true;
+#endif
+}
+
+bool FileStore::advance_pending_writes(u32 tokens) {
+#ifdef __EMSCRIPTEN__
+    if (!score_dat_encoder_.active()) return true;
+    if (!score_dat_encoder_.step(tokens)) return true;
+    std::vector<u8> file;
+    ScoreDat::wrap_file(score_dat_encoder_.take(), pending_score_dat_image_.size(), file);
     if (!th13_scoredat_write_js(reinterpret_cast<const char*>(file.data()),
                                 int(file.size()))) {
         error = "ScoreDat storage write failed";
         return false;
     }
+    persisted_score_dat_image_ = std::move(pending_score_dat_image_);
+    pending_score_dat_image_.clear();
     return true;
 #else
-    // native/WASI 构建通道不激活：不落盘（save_score 语义 = 仅写 v6，与旧版
-    // 逐字节一致）。镜像仍由 sync_score_face_to_dat() 留在内存供测试检视。
+    (void)tokens;
     return true;
 #endif
 }

@@ -94,6 +94,34 @@ private:
     }
 };
 
+// 0x458c30 压缩器的可分片形式：同一算法、同一输出，token 粒度可中断。
+// 宿主把长镜像（scoreth13.dat 0x1B678 字节）的压缩分摊到多帧：每帧 step()
+// 推进有限个 token，finished() 后 take() 取走完整码流。ReplayFile::deflate
+// 即一次性跑完本编码器。
+class LzssEncoder {
+public:
+    void begin(const u8* src, size_t size);
+    // 推进至多 tokens 个输出 token（字面量或拷贝）；返回 finished()。
+    bool step(u32 tokens);
+    bool finished() const { return finished_; }
+    bool active() const { return active_; }
+    std::vector<u8> take();
+
+private:
+    void put_bit(u32 bit);
+    u32 tree_insert(u32 p);
+    void advance(u32 count);
+
+    std::vector<u8> src_;
+    std::vector<u8> out_;
+    std::vector<u8> ring_;
+    std::vector<i32> dad_, lft_, rgt_;
+    u32 acc_ = 0, mask_ = 0x80;
+    u32 lookahead_ = 0, wp_ = 1, match_len_ = 0, match_pos_ = 0;
+    size_t fill_ = 0;
+    bool active_ = false, finished_ = false;
+};
+
 // 回放输入游标：逐帧产 ReplayFrame；越界/EOF 后 valid() 为假（回放侧
 // 0x448200:26 EOF 即停，越界读零态 0x448200:14-19）。
 class ReplayInputCursor {

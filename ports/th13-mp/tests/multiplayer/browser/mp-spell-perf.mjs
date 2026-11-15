@@ -99,7 +99,7 @@ try {
     pages.push(page);
     sessions.push(session);
     const query = new URLSearchParams({seat, players, chars: chars.join(','), room, relay: relay.url,
-      stage, slot, diff, delay, protect: 1, gov: governor});
+      stage, slot, diff, delay, protect: 1, gov: governor, runtime: env('TH13_RUNTIME', '/artifacts/sdl3/th13-sdl.mjs')});
     await page.goto(`${server.origin}/bench/mp-bench.html?${query}`);
   }
   const deadline = Date.now() + 240_000;
@@ -120,6 +120,7 @@ try {
       net: JSON.parse(m.UTF8ToString(m._th13_debug_mp_net_state())),
       rollback: JSON.parse(m.UTF8ToString(m._th13_debug_mp_net_rollback())),
       stageFrame: m._th13_debug_stage_frame(),
+      readoutFps: m._th13_debug_presentation_fps ? +m._th13_debug_presentation_fps().toFixed(1) : -1,
       now: performance.now(),
     };
   });
@@ -141,7 +142,7 @@ try {
       raf: window.__bench.raf, rafGapMax: Math.round(window.__bench.rafGapMax),
       timers: window.__bench.timeouts, timerGapMax: Math.round(window.__bench.timerGapMax || 0)}))));
     timeline.push(states.map((s, index) => ({sim: s.net.sim_frame, confirmed: s.net.confirmed, stage: s.stageFrame,
-      restores: s.rollback.restores, stall: s.rollback.stall_frames, stretch: s.net.stretch,
+      restores: s.rollback.restores, stall: s.rollback.stall_frames, stretch: s.net.stretch, fps: s.readoutFps,
       raf: cadence[index].raf, rafGap: cadence[index].rafGapMax, timerGap: cadence[index].timerGapMax,
       err: s.net.error})));
     console.log(JSON.stringify(timeline.at(-1)));
@@ -191,6 +192,8 @@ try {
       simPerCallback: dist(active.map(row => row.sim)),
       zeroSimCallbacks: active.filter(row => row.sim === 0).length,
       presentIntervalMs: dist(intervals),
+      readoutFps: end.readoutFps,
+      readoutFpsTimeline: timeline.map(row => row[seat].fps),
       rollbackRestores: end.rollback.restores - mark[seat].state.rollback.restores,
       resimulated: end.rollback.resimulated - mark[seat].state.rollback.resimulated,
       maxDistance: end.rollback.maxDistance,

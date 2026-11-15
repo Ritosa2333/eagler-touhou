@@ -293,6 +293,7 @@ bool Session::CanSimulate() {
     const auto decision = runtime_.Prepare(sim_frame_);
     if (!decision.canAdvance) {
         ++stall_frames_;  // 输入不足：纯延迟停等/预测窗尽
+        runtime_.NoteInputStarved();  // 对端已离线：停等即断线终态
         return false;
     }
     // P3.3：确认帧门——暂停/换关过渡期不建预测帧：本帧停等下一确认
@@ -302,7 +303,10 @@ bool Session::CanSimulate() {
     bool menu_edge = false;
     for (unsigned seat = 0; seat < PlayerCount(); ++seat)
         menu_edge |= (decision.inputs[seat].buttons & InputLanes::Pause) != 0;
-    if ((prediction_barrier_ || menu_edge) && decision.predictedMask != 0) return false;
+    if ((prediction_barrier_ || menu_edge) && decision.predictedMask != 0) {
+        runtime_.NoteInputStarved();
+        return false;
+    }
     // M8：预测帧 checkpoint（predictedMask != 0——回滚恢复点）。纯延迟
     // 帧（全员实际输入）永不产生纠正请求，无需快照。
     // 拍摄时点 = 远端注入之前：checkpoint 的沿是「上一帧推进后」的干净

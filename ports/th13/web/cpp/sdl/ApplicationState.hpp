@@ -129,6 +129,7 @@ inline bool transition_gate_should_interrupt(u32 frames, bool paused,
 #include "FontDevice.hpp"
 #include "AudioDevice.hpp"
 #include "FileStore.hpp"
+#include "StageAssetStager.hpp"
 #include "../game/EndingScene.hpp"
 #include "../game/ReplayFile.hpp"
 #include "../game/ReplaySession.hpp"
@@ -418,6 +419,10 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     void release_run(bool preserve_hud = false);
     const i32* projection();
     bool read(const std::string&, std::vector<u8>&, bool required = true);
+    // 0xc 换关门内预备的下一关 ANM（见 StageAssetStager.hpp）：门首登记，
+    // 每帧推进一步，begin_run 经 adopt_staged_bank 接管。
+    StageAssetStager stage_assets;
+    bool adopt_staged_bank(i32 bank, const std::string& key);
     // ---- [R3-M] 标题 Replay 菜单（TitleReplayPlatform 实现，0x452300 槽位语义）----
     // 槽 0-24 = 编号（导入名 th13_NN.rpy 同名落槽）、25-73 = 导入追加、
     // 74 = 网页「导入本地 .rpy」入口行（占用原版第 50 用户槽，网页保留）。

@@ -795,14 +795,13 @@ TEST(spirit_role_and_trance_grant) {
         }
 }
 
-// ---- boss_damage_remainders：Boss 合作系数确定性余数 ----
-// R-G：Boss 伤害系数 2 人 3/4、3 人 2/3——按可操作人数，确定性余数累计
-//（numerator/denominator 累计取整）。本 case 验证系数函数的余数序列：
+// ---- boss_damage_remainders：Boss 减伤确定性余数 ----
+// R-G：Boss 侧减伤 2 人 25%、3 人 50%——按可操作人数，四分之一余数累计
+//（StageSim::absorb）。本 case 验证余数序列：
 // 伤害 1、2 人（3/4）：序列 floor(3k/4) 差分 = 0,1,1,1,0,1,1,1…
-//（4 份伤害合计 3——不丢不减）；3 人（2/3）同理 2/3。
+//（4 份伤害合计 3——不丢不减）；3 人（2/4）同理 0,1,0,1…。
 TEST(boss_damage_remainders) {
-    // 系数实现面：StageBattle 的 Boss 伤害余数累计（M3 落地函数）。
-    // 直接验证数学序列（实现接入点在 collide_shots 的 Boss 分支）。
+    // 减伤实现面：StageSim::absorb（Boss 侧唯一入口，collide_shots 落血前调用）。
     // 2 人：3/4——累计 4 点伤害应产生 3 点有效伤害。
     {
         i32 numerator = 0, applied = 0;
@@ -815,14 +814,14 @@ TEST(boss_damage_remainders) {
         CHECK_EQ(applied, 3);
         CHECK_EQ(numerator, 0);  // 余数归零（确定性）
     }
-    // 3 人：2/3——累计 3 点伤害应产生 2 点。
+    // 3 人：2/4——累计 4 点伤害应产生 2 点。
     {
         i32 numerator = 0, applied = 0;
-        for (int hit = 0; hit < 3; ++hit) {
+        for (int hit = 0; hit < 4; ++hit) {
             numerator += 2;
-            const i32 whole = numerator / 3;
+            const i32 whole = numerator / 4;
             applied += whole;
-            numerator -= whole * 3;
+            numerator -= whole * 4;
         }
         CHECK_EQ(applied, 2);
         CHECK_EQ(numerator, 0);

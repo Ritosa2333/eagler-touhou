@@ -235,8 +235,8 @@ struct StageEnemy {
     // enemy-manager boss slot as outer +0x519c (0x519c - inner 0x11ec);
     // 00419a90:112-114 consumes and clears it after the geometric query.
     i32 pending_damage = 0;
-    // MP R-G: fractional Boss damage in twelfths. A common denominator
-    // preserves credit when the operable player count changes (9/12, 8/12).
+    // MP R-G: Boss-side mitigation credit in quarters (3/4 with two operable
+    // seats, 2/4 with three). The remainder survives operable-count changes.
     i32 mp_boss_damage_remainder = 0;
     bool spell_active = false;  // +0x3f64 bit0
     i32 spell_base_life = 0, spell_life = 0;  // +0x3f50 / +0x3f58 (7x)
@@ -683,6 +683,12 @@ public:
     // resolves player attacks and body collision before its timers advance.
     std::function<void(StageEnemy&)> enemy_hit;
     std::function<void(StageEnemy&)> enemy_body_collision;
+    // R-G Boss 减伤（Boss 侧唯一入口）：可操作席位 2 → 减免 25%，3 → 50%。
+    // 每一点进入 Boss 血量的伤害——射击、Bomb、灵界增伤、舰载转发——都在
+    // 落血前经 absorb 恰一次；四分之一精确余数累计在敌机上（回滚快照字段）。
+    // 宿主提供可操作席位计数（幽灵/已出局席不计）；未接线或单席 = 原值。
+    std::function<i32()> operable_seats;
+    float absorb(StageEnemy& enemy, float amount);
     bool emit_spell(const SpellEvent& event, const StageEnemy& enemy);
     i32 diff = 3;             // DIFF（DAT_004be7c4 语义：0=E 1=N 2=H 3=L）；
                               // 535/536/548/624/625 的选参下标（begin 时取掩码尾零）

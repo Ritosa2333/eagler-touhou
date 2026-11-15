@@ -149,6 +149,18 @@ double previous_frame = -1;
 double presentation_elapsed = 0;
 u32 presentation_count = 0;
 float presentation_fps = 60;
+// vsync：画布只在显示回调（rAF）提交，每个刷新周期恰一次呈现；没有新帧的
+// rAF 重复呈现上一帧，呈现率即刷新率。rAF 停摆（后台/嵌入式宿主）超过
+// kDisplayStaleMs 时，手动泵接管呈现。
+constexpr double kDisplayStaleMs = 250.;
+double last_display_callback_ms = -1;
+
+void reset_presentation_window() {
+    presentation_elapsed = 0;
+    presentation_count = 0;
+    presentation_fps = 60;
+    last_display_callback_ms = -1;
+}
 
 void add_controller(SDL_JoystickID id) {
     if (controller) return;
@@ -301,11 +313,18 @@ bool drive_one_frame(double delta, unsigned source) {
         return finish(true, true);
     }
     const auto ticks = cadence.advance(delta);
-    presentation_elapsed += std::max(0., delta);
-    if (presentation_elapsed >= 1.) {
-        presentation_fps = float(presentation_count / presentation_elapsed);
-        presentation_elapsed = 0;
-        presentation_count = 0;
+    const bool display_callback = source == 1;
+    if (display_callback) last_display_callback_ms = begin;
+    const bool presents = display_callback ||
+        (source == 3 && (last_display_callback_ms < 0 ||
+                         begin - last_display_callback_ms > kDisplayStaleMs));
+    if (presents) {
+        presentation_elapsed += std::max(0., delta);
+        if (presentation_elapsed >= 1.) {
+            presentation_fps = float(presentation_count / presentation_elapsed);
+            presentation_elapsed = 0;
+            presentation_count = 0;
+        }
     }
     bool ok = true;
     app->graphics.backend.defer = true;
@@ -313,9 +332,12 @@ bool drive_one_frame(double delta, unsigned source) {
         ok = sample_and_tick(presentation_fps, &simulated);
         if (app->exiting || app->pending_load) break;
     }
-    if (app->graphics.backend.commit()) {
+    // The readout counts fresh frames reaching the display: a repeated
+    // presentation keeps the refresh cadence but is not a new frame.
+    const bool fresh = app->graphics.backend.pending_presentation();
+    if (presents && app->graphics.backend.commit(display_callback)) {
         presentation_at = emscripten_get_now();
-        ++presentation_count;
+        if (fresh) ++presentation_count;
     }
     app->graphics.backend.defer = false;
     app->audio_device.pump();
@@ -406,6 +428,12 @@ EMSCRIPTEN_KEEPALIVE const char* th13_error() {
 EMSCRIPTEN_KEEPALIVE unsigned th13_phase() {
     using namespace th13::sdl;
     return !app ? 4 : app->exiting ? 4 : app->title ? 0 : app->pause && app->pause->active() ? 2 : 1;
+}
+
+// 只读呈现率埋点（诊断面）：右下角 fps 文本的数据源（每秒到达显示的新帧
+// 数），供 vsync 探针核对读数；不参与任何生产判定。
+EMSCRIPTEN_KEEPALIVE float th13_debug_presentation_fps() {
+    return th13::sdl::presentation_fps;
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned th13_frame() { return th13::sdl::app ? th13::sdl::app->frames : 0; }
@@ -504,6 +532,7 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_pause(unsigned enabled) {
     suspended = enabled != 0;
     previous_frame = -1;
     cadence.reset();
+    reset_presentation_window();
     if (app) app->audio_device.suspend(suspended);
 }
 
@@ -519,6 +548,7 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_start() {
     suspended = false;
     previous_frame = -1;
     cadence.reset();
+    reset_presentation_window();
     clear_inputs();
     initialize_controller();
     app->audio_device.suspend(false);
@@ -719,9 +749,69 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_result_state() {
     return report.c_str();
 }
 
+// Debug 直入对局（仅诊断面）：标题菜单 start_game 的同一入口排队
+// Destination::Run，随即 apply_destination → begin_run（th13_debug_ending 同式）。
+// spell_slot >= 0 时按符卡练习入口选卡（SpellCatalog 同一 variant 查表）。
+// 换关/符卡性能探针用它绕过标题菜单键序。
+EMSCRIPTEN_KEEPALIVE int th13_debug_start_run(int stage, int character, int difficulty,
+                                              int spell_slot) {
+    using namespace th13::sdl;
+    if (!app || !app->initialized || app->run) return 0;
+    app->progress.character = character;
+    app->progress.difficulty = difficulty;
+    app->progress.run_mode_flags = 0;
+    app->progress.practice_mode = 0;
+    app->progress.selected_spell_id = -1;
+    if (spell_slot >= 0) {
+        const auto* card = app->spell_catalog.variant(stage, spell_slot, difficulty);
+        if (!card) { last_error = "Spell card slot unavailable"; return 0; }
+        app->progress.selected_spell_id = card->id;
+        app->progress.run_mode_flags = 0x20u;
+    }
+    app->title.reset();
+    if (!app->start_game(stage) || !app->apply_destination()) {
+        last_error = app->failure;
+        return 0;
+    }
+    clear_inputs();
+    cadence.reset();
+    return 1;
+}
+
+// Debug 关终了（仅诊断面）：ECL 事件 -2 的同一链 RunScene::open_dialog(-2)
+//（0x428820:106-113 无死亡分支 → 0x42cd40），用于在任意帧触发关清 → 120 帧
+// HUD 门 → 装载门 → 下一关的完整换关序列。
+EMSCRIPTEN_KEEPALIVE int th13_debug_stage_clear() {
+    using namespace th13::sdl;
+    if (!app || !app->run || app->stage_transition_active || app->stage_transition_loading) return 0;
+    app->run->open_dialog(-2);
+    if (!app->run->error.empty()) { last_error = app->run->error; return 0; }
+    return 1;
+}
+
+// 只读换关状态埋点（诊断面）：关清门/装载门/激活帧的相位，供换关性能探针
+// 给每帧贴标签；不参与任何生产判定。
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_transition_state() {
+    using namespace th13::sdl;
+    static char report[256];
+    if (!app) { std::snprintf(report, sizeof report, "{\"run\":false}"); return report; }
+    const int clear_age = app->run && (app->run->hud.flags & 0x100u) ? app->run->hud.clear_age.current : -1;
+    std::snprintf(report, sizeof report,
+        "{\"run\":%s,\"stage\":%d,\"stage_frame\":%d,\"loading\":%s,\"transition\":%s,"
+        "\"startup_age\":%d,\"clear_age\":%d,\"pending_destination\":%d,\"pending_load\":%u,"
+        "\"loading_waiting\":%s}",
+        app->run ? "true" : "false", app->progress.stage, app->progress.stage_frame,
+        app->stage_transition_loading ? "true" : "false",
+        app->stage_transition_active ? "true" : "false", app->stage_startup_age, clear_age,
+        app->pending_destination, app->pending_load, app->loading_waiting() ? "true" : "false");
+    return report;
+}
+
 // 确定性单帧泵：固定 1/60 步长、恰一逻辑帧 + 绘制提交，不经过 rAF 帧钟与
 // FrameCadence。装载挡板（正常启动序）按同一步长推进。1 = ok，0 = 失败。
-EMSCRIPTEN_KEEPALIVE int th13_debug_frame() {
+// present=0 时完整绘制但不把离屏面提交到画布（性能探针：无头浏览器的画布
+// 合成节流不计入帧成本；下一次提交照常呈现最新离屏面）。
+EMSCRIPTEN_KEEPALIVE int th13_debug_frame_present(unsigned present) {
     using namespace th13::sdl;
     if (!app) return 0;
     if (!app->failure.empty()) return 0;
@@ -733,12 +823,14 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_frame() {
     const double begin = emscripten_get_now();
     app->graphics.backend.defer = true;
     const bool ok = sample_and_tick();
-    app->graphics.backend.commit();
+    if (present) app->graphics.backend.commit();
     app->graphics.backend.defer = false;
     app->audio_device.pump();
     th13_browser_frame(ok ? 1 : 0, emscripten_get_now() - begin, 1);
     return ok ? 1 : 0;
 }
+
+EMSCRIPTEN_KEEPALIVE int th13_debug_frame() { return th13_debug_frame_present(1); }
 
 // 回放会话帧号（已消费输入帧数；golden 游戏帧 F ↔ 消费 F+1 后的画面）。
 EMSCRIPTEN_KEEPALIVE unsigned th13_debug_replay_frame() {
