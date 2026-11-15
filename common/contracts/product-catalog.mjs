@@ -645,6 +645,7 @@ export const PRODUCT_GAMES = Object.freeze({
         package: Object.freeze({
             dataFileId: "game-data",
             dataTarget: "/th13.data",
+            rawDataImport: Object.freeze({fileNames: Object.freeze(["th13.data"])}),
             musicSourceDirectories: Object.freeze({ ogg: "bgm-ogg" }),
             musicMounts: Object.freeze({ ogg: "/assets" }),
         }),
@@ -697,6 +698,14 @@ export const PRODUCT_GAMES = Object.freeze({
             musicMounts: Object.freeze({ogg: "/music"}),
         }),
         replay: Object.freeze({prefix: "th14"}),
+        multiplayerRuntime: "./runtime/th14/multiplayer/th14.html",
+        multiplayer: Object.freeze({
+            titleKey: "game.title.th14mp", gameplay: "cooperative",
+            playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
+            loadouts: TH07_MULTIPLAYER_LOADOUTS, peerTransportGlobal: "__th14PeerTransport",
+            spectator: true, titleRoomEntry: false,
+            inputTiming: Object.freeze({rollbackLimit: 12, sendPredictionLimit: 12, manualDelayLimit: 9}),
+        }),
         thpracRuntime: Object.freeze({session: "native"}),
         thpracExtraFunctionKeys: Object.freeze(["U"]),
         features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),

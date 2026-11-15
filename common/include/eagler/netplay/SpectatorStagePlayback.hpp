@@ -12,13 +12,17 @@ public:
     enum class Action { Pause, Play, Seek, Live };
     enum class RestoreMode { Stage, Run };
     SpectatorStagePlayback() = default;
-    explicit SpectatorStagePlayback(RestoreMode mode,
-            std::size_t frame_limit = SpectatorStageHistory::MaxFrames)
-        : history_(frame_limit), mode_(mode) {}
+    // 帧限历史构造（th13-mp 全程录像）：限定历史容量，不入 live。
+    explicit SpectatorStagePlayback(RestoreMode mode, std::size_t frame_limit)
+        : SpectatorStagePlayback(mode, frame_limit, false) {}
+    // joinLive 构造（旁观入场）：默认容量，Bootstrap 后直取前沿。
+    explicit SpectatorStagePlayback(RestoreMode mode, bool joinLive = false)
+        : SpectatorStagePlayback(mode, SpectatorStageHistory::MaxFrames, joinLive) {}
     bool Receive(const SpectatorStageEvent& event) {
         if (event.kind == SpectatorEventKind::Bootstrap) {
             if (bootstrapped_ || !history_.BootstrapMatches(event)) return false;
             bootstrapped_ = true;
+            if (join_live_) return Request(Edge(), true, true);
             if (mode_ == RestoreMode::Run)
                 return Request(std::min(Edge(), history_.Segments().back().checkpoint.frame), false, true);
             // Joining starts at the first available native Replay stage.
@@ -121,8 +125,7 @@ public:
     std::uint32_t Target() const {return target_;}
     bool Paused() const {return paused_;}
     bool Seeking() const {return seeking_;}
-    // Only an explicit Seek/Live operation may request bounded fast-forward.
-    // Following, delayed input and bootstrap all keep normal playback pace.
+    // A seek to a fixed target can catch up in bounded batches.
     bool FastForwarding() const {
         return seeking_ && accelerated_;
     }
@@ -137,8 +140,10 @@ public:
     }
     bool Failed() const {return failed_;}
     const SpectatorStageHistory& History() const {return history_;}
-    void Clear() {*this = SpectatorStagePlayback(mode_, history_.FrameLimit());}
+    void Clear() {*this = SpectatorStagePlayback(mode_, history_.FrameLimit(), join_live_);}
 private:
+    explicit SpectatorStagePlayback(RestoreMode mode, std::size_t frame_limit, bool joinLive)
+        : history_(frame_limit), mode_(mode), join_live_(joinLive) {}
     const SpectatorStageHistory::Segment* RestoreSegment(std::uint32_t frame) const {
         return mode_ == RestoreMode::Run ? &history_.Segments().front() : history_.Locate(frame);
     }
@@ -154,6 +159,7 @@ private:
     }
     SpectatorStageHistory history_;
     RestoreMode mode_ = RestoreMode::Stage;
+    bool join_live_ = false;
     std::uint32_t position_ = 0, target_ = 0;
     std::uint32_t restored_checkpoint_serial_ = 0;
     bool bootstrapped_ = false, restore_ = false;

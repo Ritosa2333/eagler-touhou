@@ -174,6 +174,8 @@
 
 ## 运行验收记录
 
+2026-10-28 multiplayer：高刷使用当前帧外推，最多向前一个逻辑帧；原始逻辑与回放沿用 60 Hz 更新。构建、原生检查和 Presentation Lab 的验证范围见[外推记录](../../archive/motion-extrapolation-153-20261028/README.md)。
+
 WASI32 的多人规则兼容检查使用内存通道运行原生 NetplayRuntime、公共协议和输入核心，覆盖双人、三人录像准入。入口为 `portable/check-multiplayer-rules.mjs --suite multiplayer-rules-compatibility`。
 
 给命回滚检查使用真实席位按键边沿，覆盖第五次低速按下迟到七帧后的重新演算。恢复同时核对给命进度、双方生命、幽灵状态和输入归属，见 `portable/check-multiplayer-rules.mjs --suite cooperative-rollback`。

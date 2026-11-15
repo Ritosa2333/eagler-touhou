@@ -790,25 +790,6 @@
   #roomForm .lobby-form-pair:has(> :last-child[hidden]) {
     grid-template-columns: minmax(0, 1fr);
   }
-  .lobby-create-rules {
-    border-block: 1px solid var(--kit-border);
-  }
-  .lobby-create-rules > summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-height: 44px;
-    color: var(--kit-muted-foreground);
-    font: 500 13px / 1.5 var(--kit-font);
-    cursor: pointer;
-    list-style: none;
-  }
-  .lobby-create-rules > summary::-webkit-details-marker { display: none; }
-  .lobby-create-rules > summary:is(:hover, :focus-visible),
-  .lobby-create-rules[open] > summary { color: var(--kit-foreground); }
-  .lobby-create-rules[open] > summary > svg { transform: rotate(180deg); }
-  .lobby-create-rules > .lobby-form-pair { padding-block: 4px 14px; }
   #roomForm :is(.lobby-form-pair, .lobby-field, .lobby-form-error)[hidden] {
     display: none;
   }

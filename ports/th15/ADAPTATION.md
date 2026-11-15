@@ -174,6 +174,8 @@
 
 ## 运行验收记录
 
+2026-10-28 normal：高刷使用当前帧外推，最多向前一个逻辑帧；原始逻辑与回放沿用 60 Hz 更新。构建、原生检查和 Presentation Lab 的验证范围见[外推记录](../../archive/motion-extrapolation-153-20261028/README.md)。
+
 ### 2026-10-24 | 关卡交接
 
 普通版在开场与 Stage Clear 期间持续推进自机逻辑，换关保留键盘长按与按键边沿。使用 Emscripten 6.0.9 完整构建通过，源码回执为 `artifacts/validation/source-builds/th15-normal.json`。关卡交接规则见[输入规范](../../docs/adaptation/input.md)。

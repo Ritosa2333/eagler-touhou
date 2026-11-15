@@ -313,6 +313,11 @@
             "thprac": false
           },
           "cache": {}
+        },
+        "multiplayer": {
+          "workspaceRepository": "th14mp",
+          "features": { "thcrap": false, "thprac": false },
+          "cache": {}
         }
       }
     },

@@ -22,8 +22,8 @@ function decrypt(input, key, step, block, limit = input.length) {
   return result;
 }
 
-function lzss(bytes, size) {
-  if (size <= 0 || size > tableLimit) throw Error('Archive table or BGM index exceeds the supported size');
+function lzss(bytes, size, maxSize = tableLimit) {
+  if (size <= 0 || size > maxSize) throw Error('Archive decompressed size exceeds the supported limit');
   let bit = 0;
   function read(count) {
     if (bit + count > bytes.length * 8) throw Error('Truncated archive compression stream');
@@ -116,23 +116,30 @@ export async function readRetailArchive(blob, game) {
   return entries.map((entry, index) => ({...entry, end: entries[index + 1]?.start ?? offset}));
 }
 
+export async function readRetailThaEntry(blob, game, entry, maxSize) {
+  if (entry.length <= 0 || entry.length > maxSize || entry.end < entry.start)
+    throw Error('Invalid THA member size: ' + entry.name);
+  const packed = await bytes(blob, entry.start, entry.end);
+  const keys = game === 'th10' || game === 'th11' ? earlyKeys : lateKeys;
+  const [key, step, block, limit] = keys[entry.keyIndex];
+  const decoded = decrypt(packed, key, step, block, game === 'th13' && entry.keyIndex === 4 ? 0x6e00 : limit);
+  return decoded.length === entry.length ? decoded : lzss(decoded, entry.length, maxSize);
+}
+
 export async function readRetailBgmIndex(blob, game, entries) {
   const entry = entries.find(item => item.name.split('/').at(-1) === 'thbgm.fmt');
   if (!entry || entry.end - entry.start > tableLimit || entry.length > tableLimit) throw Error('Game DAT has no usable thbgm.fmt');
+  if (!['th07', 'th08', 'th09'].includes(game)) return readRetailThaEntry(blob, game, entry, tableLimit);
   const packed = await bytes(blob, entry.start, entry.end);
   if (game === 'th07') return lzss(packed, entry.length);
-  if (game === 'th08' || game === 'th09') {
-    const content = lzss(packed, entry.length);
-    if (!magic(content, 'edz')) return content;
-    const type = String.fromCharCode(content[3]);
-    let key = pbgzKeys[type];
-    if (!key) throw Error('Unknown PBGZ resource key');
-    if (game === 'th09' && 'AJW'.includes(type)) key = [...key.slice(0, 2), 0x400, 0x400];
-    if (game === 'th09' && type === 'M') key = [...key.slice(0, 3), 0x2800];
-    return decrypt(content.subarray(4), ...key);
-  }
-  const content = decrypt(packed, ...(game === 'th10' || game === 'th11' ? earlyKeys : lateKeys)[entry.keyIndex]);
-  return content.length === entry.length ? content : lzss(content, entry.length);
+  const content = lzss(packed, entry.length);
+  if (!magic(content, 'edz')) return content;
+  const type = String.fromCharCode(content[3]);
+  let key = pbgzKeys[type];
+  if (!key) throw Error('Unknown PBGZ resource key');
+  if (game === 'th09' && 'AJW'.includes(type)) key = [...key.slice(0, 2), 0x400, 0x400];
+  if (game === 'th09' && type === 'M') key = [...key.slice(0, 3), 0x2800];
+  return decrypt(content.subarray(4), ...key);
 }
 
 export function parseBgmTracks(index, size) {

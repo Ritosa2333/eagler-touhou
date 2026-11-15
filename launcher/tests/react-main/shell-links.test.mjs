@@ -141,27 +141,21 @@ test('source-only preview keeps account routes gated unless accounts are explici
   assert.equal(sourceOnly.accountsEnabled, false);
   assert.equal(sourceOnly.isPreviewOnlyPage('/ui-review.html'), false);
   for (const path of ['/login.html', '/profile.html', '/u/reimu.1_test']) assert.equal(sourceOnly.isPreviewOnlyPage(path), true);
+  assert.equal(owners.resolveReleaseFeatures({DEV: true, VITE_ACCOUNTS_ENABLED: 'true'}).accountsEnabled, true);
   assert.equal(owners.accountsEnabled, true, 'the synthetic component harness opts into account navigation');
 });
 
-test('production hides account routes by default and supports account-only opt-in', () => {
+test('production enables accounts by default and supports an explicit opt-out', () => {
+  const accountPaths = ['/login.html', '/profile.html', '/ratings.html', '/u/reimu.1_test'];
   const production = owners.resolveReleaseFeatures({DEV: false});
-  assert.equal(production.accountsEnabled, false);
-  for (const path of ['/login.html', '/profile.html', '/u/reimu.1_test']) assert.equal(production.isPreviewOnlyPage(path), true, path);
+  assert.equal(production.accountsEnabled, true);
+  for (const path of accountPaths) assert.equal(production.isPreviewOnlyPage(path), false, path);
+  assert.equal(production.isPreviewOnlyPage('/ui-review.html'), true);
 
-  const accountOptIn = owners.resolveReleaseFeatures({DEV: false, VITE_ACCOUNTS_ENABLED: 'true'});
-  assert.equal(accountOptIn.accountsEnabled, true);
-  for (const path of ['/login.html', '/profile.html', '/u/reimu.1_test']) assert.equal(accountOptIn.isPreviewOnlyPage(path), false, path);
-  assert.equal(accountOptIn.isPreviewOnlyPage('/ui-review.html'), true, 'account opt-in does not publish the UI review page');
-
-  const previewOptIn = owners.resolveReleaseFeatures({DEV: false, VITE_PREVIEW_FEATURES: 'true'});
-  assert.equal(previewOptIn.accountsEnabled, false, 'generic preview does not enable accounts');
+  const previewOptIn = owners.resolveReleaseFeatures({DEV: false, VITE_PREVIEW_FEATURES: 'true', VITE_ACCOUNTS_ENABLED: 'false'});
+  assert.equal(previewOptIn.accountsEnabled, false);
   assert.equal(previewOptIn.isPreviewOnlyPage('/ui-review.html'), false);
-  for (const path of ['/login.html', '/profile.html', '/u/reimu.1_test']) assert.equal(previewOptIn.isPreviewOnlyPage(path), true, path);
-
-  const combinedOptIn = owners.resolveReleaseFeatures({DEV: false, VITE_PREVIEW_FEATURES: 'true', VITE_ACCOUNTS_ENABLED: 'true'});
-  assert.equal(combinedOptIn.isPreviewOnlyPage('/ui-review.html'), false);
-  assert.equal(combinedOptIn.isPreviewOnlyPage('/login.html'), false);
+  for (const path of accountPaths) assert.equal(previewOptIn.isPreviewOnlyPage(path), true, path);
 });
 
 

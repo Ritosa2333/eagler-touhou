@@ -1295,7 +1295,9 @@
   },
   "th09.ratingGames": {
     "id": "th09_ratingGames",
-    "params": ["games"]
+    "params": [
+      "games"
+    ]
   },
   "th09.matchEnded": {
     "id": "th09_matchEnded",
@@ -1307,7 +1309,9 @@
   },
   "th09.firstRating": {
     "id": "th09_firstRating",
-    "params": ["rating"]
+    "params": [
+      "rating"
+    ]
   },
   "th09.matchInformation": {
     "id": "th09_matchInformation",
@@ -1808,6 +1812,16 @@
   "lobby.stale": {
     "id": "lobby_stale",
     "params": []
+  },
+  "lobby.longWait": {
+    "id": "lobby_longWait",
+    "params": []
+  },
+  "lobby.waitTime": {
+    "id": "lobby_waitTime",
+    "params": [
+      "time"
+    ]
   },
   "lobby.recruiting": {
     "id": "lobby_recruiting",
@@ -2500,6 +2514,10 @@
     "id": "multiplayer_loadout_th15_reisen",
     "params": []
   },
+  "game.title.th14mp": {
+    "id": "game_title_th14mp",
+    "params": []
+  },
   "game.title.th17mp": {
     "id": "game_title_th17mp",
     "params": []
@@ -2714,6 +2732,10 @@
   },
   "settings.bgmVolume": {
     "id": "settings_bgmVolume",
+    "params": []
+  },
+  "settings.quickChatVolume": {
+    "id": "settings_quickChatVolume",
     "params": []
   },
   "settings.sfxVolume": {
@@ -9135,6 +9157,20 @@
     "id": "chat_title",
     "params": []
   },
+  "chat.newMessages": {
+    "id": "chat_newMessages",
+    "params": [
+      "count"
+    ]
+  },
+  "chat.sending": {
+    "id": "chat_sending",
+    "params": []
+  },
+  "chat.sendFailed": {
+    "id": "chat_sendFailed",
+    "params": []
+  },
   "chat.historyScroll": {
     "id": "chat_historyScroll",
     "params": []
@@ -10469,6 +10505,26 @@
   },
   "multiplayer.loadout.th13_youmu": {
     "id": "multiplayer_loadout_th13_youmu",
+    "params": []
+  },
+  "replay.th14BeamCopy": {
+    "id": "replay_th14BeamCopy",
+    "params": []
+  },
+  "replay.th14BeamCopyConfirm": {
+    "id": "replay_th14BeamCopyConfirm",
+    "params": []
+  },
+  "replay.th14BeamCopyDownload": {
+    "id": "replay_th14BeamCopyDownload",
+    "params": []
+  },
+  "replay.th14BeamAlreadyTagged": {
+    "id": "replay_th14BeamAlreadyTagged",
+    "params": []
+  },
+  "replay.th14BeamCopyInvalid": {
+    "id": "replay_th14BeamCopyInvalid",
     "params": []
   }
 }

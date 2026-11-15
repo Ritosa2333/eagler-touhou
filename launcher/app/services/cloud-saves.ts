@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {isGameId, isProductId, type GameId} from '../../src/contracts/product-catalog.mts';
+import {isGameId, isMultiplayerProductId, isProductId, type GameId} from '../../src/contracts/product-catalog.mts';
 import {accountRequest, AccountRequestError} from './account-client';
 
 const count=z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).nullable(),time=z.number().finite().nonnegative().nullable();
@@ -21,6 +21,10 @@ export type CloudSaveSnapshot=z.infer<typeof snapshot>;
 export type SaveStatistics=z.infer<typeof statistics>;
 export type SaveProgress=SaveStatistics['progress'][number];
 export type ProfileStatistics=z.infer<typeof profile>;
+export function supportsCloudSaveSync(product: string) {
+  // TH17 writes version 2 records, which the cloud parser rejects.
+  return isProductId(product) && product !== 'th17' && !isMultiplayerProductId(product);
+}
 export function cloudSaveFileName(allowed:readonly string[],name:string) {
   const normalized=name.normalize('NFC').toLowerCase();
   const matches=allowed.filter(path=>{const value=path.normalize('NFC').toLowerCase();return value===normalized||value.slice(value.lastIndexOf('/')+1)===normalized;});

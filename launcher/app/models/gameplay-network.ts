@@ -7,13 +7,15 @@ import {parseSpectatorPlayback} from '../../src/launcher/spectator-playback.mts'
 
 export interface GameplayNetworkContext extends NetplayDisplayContext {
   product: ProductId; spectator: boolean; replayViewer: boolean;
+  swarmSelected?: boolean;
 }
+type GameplayPeerStatus = NetplayPeerStatus & {title?: string; routeLabel?: 'Swarm' | 'NAT4'};
 export interface GameplayNetworkSnapshot {
   connection: Readonly<NetplayConnectionView> | null;
   returnToRoom: boolean;
   calibrationEligible: boolean;
   playerStatusVisible: boolean;
-  playerStatus: readonly (NetplayPeerStatus & {title?: string})[];
+  playerStatus: readonly GameplayPeerStatus[];
   diagnostics: Readonly<Record<string, string>>;
 }
 export interface GameplayNetworkOptions {
@@ -61,7 +63,7 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
     const count = Math.max(2, Math.min(3, Number(context.playerCount) || 2));
     const local = Math.max(0, Math.min(count - 1, Number(context.player) || 0));
     const paths = new Map(net.rtcPaths.filter(entry => Number.isInteger(Number(entry.peer)) && Number(entry.peer) >= 0 && Number(entry.peer) < count).map(entry => [Number(entry.peer), entry]));
-    const rows: (NetplayPeerStatus & {title?: string})[] = [];
+    const rows: GameplayPeerStatus[] = [];
     for (let peerId = 0; peerId < count; peerId++) {
       if (peerId === local) continue;
       const peer = net.peerState?.peers.get(peerId), pcState = String(peer?.pc?.connectionState || peer?.pc?.iceConnectionState || '');
@@ -71,8 +73,10 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
       else if (ready || pcState === 'connected' || pcState === 'completed') connected = true;
       else if (['disconnected', 'failed', 'closed'].includes(pcState) || net.failed) connected = false;
       const path = paths.get(peerId), route = net.transport === 'relay' ? 'relay' : path?.path || (net.path === 'mixed' ? 'rtc' : net.path), sample = quality.peers.get(peerId);
-      const row: NetplayPeerStatus & {title?: string} = describeNetplayPeerStatus({player: peerId, route, rttMs: sample?.rttMs, variationMs: sample?.variationMs, connected});
-      if (row.rttMs != null) row.title = `${row.label} ${[row.route, path?.protocol, path?.family].filter(Boolean).join('/')} | RTT ${row.rttMs}ms` + (row.variationMs != null ? ` | variation ${row.variationMs}ms` : '');
+      const row: GameplayPeerStatus = describeNetplayPeerStatus({player: peerId, route, rttMs: sample?.rttMs, variationMs: sample?.variationMs, connected});
+      if (net.transport === 'rtc' && route === 'turn' && context.swarmSelected === true) row.routeLabel = 'Swarm';
+      if (net.transport === 'rtc' && route === 'direct' && sample?.nat4 && sample.pc === peer?.pc) row.routeLabel = 'NAT4';
+      if (row.rttMs != null) row.title = `${row.label} ${[row.routeLabel ?? row.route, path?.protocol, path?.family].filter(Boolean).join('/')} | RTT ${row.rttMs}ms` + (row.variationMs != null ? ` | variation ${row.variationMs}ms` : '');
       rows.push(row);
     }
     return rows;
@@ -118,13 +122,17 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
         if (!current()) return;
         if (transport.peers.get(peerId)?.pc !== pc) {quality.peers.delete(peerId); continue;}
         const pair = selectedRtcPair(stats), route = selectedRtcPath(stats, pair);
+        const selectedRemote = pc.sctp?.transport?.iceTransport?.getSelectedCandidatePair?.()?.remote;
+        // The Relay appends "next" to the foundation when predicting a different UDP port.
+        const nat4 = route.path === 'direct' && selectedRemote?.type === 'srflx' &&
+          selectedRemote.protocol === 'udp' && /^[A-Za-z0-9+/]{1,28}next$/.test(selectedRemote.foundation ?? '');
         const pairId = String(pair?.id || `${pair?.localCandidateId || ''}/${pair?.remoteCandidateId || ''}`);
         const rttMs = typeof pair?.currentRoundTripTime === 'number' ? pair.currentRoundTripTime * 1000 : NaN;
         let sample = quality.peers.get(peerId);
         if (!sample || sample.pc !== pc || sample.pairId !== pairId) {
-          sample = {pc, pairId, ...route, samples: [], rttMs: null, variationMs: null, connectionState: '', iceState: ''}; quality.peers.set(peerId, sample);
+          sample = {pc, pairId, ...route, nat4, samples: [], rttMs: null, variationMs: null, connectionState: '', iceState: ''}; quality.peers.set(peerId, sample);
         }
-        Object.assign(sample, route, appendRttSample(sample.samples, rttMs));
+        Object.assign(sample, route, {nat4}, appendRttSample(sample.samples, rttMs));
         sample.connectionState = String(pc.connectionState || ''); sample.iceState = String(pc.iceConnectionState || '');
       }
       if (current()) for (const peerId of quality.peers.keys()) if (!seen.has(peerId)) quality.peers.delete(peerId);

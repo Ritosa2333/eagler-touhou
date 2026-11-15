@@ -1,6 +1,8 @@
 import {BookButton} from '../launcher/BookButton';
 import {useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {BOOK_PREFERENCES_EVENT, readBookPreference, stringArray} from '../launcher/book-preferences';
+import {multiplayerGroup} from '../launcher/products';
+import {gameIdForProduct} from '../../../src/contracts/product-catalog.mts';
 import {beginFilterReorder,useFavoriteReorder} from '../launcher/favorite-reorder';
 import {useLocale} from '../../i18n';
 import {LobbySurface, type LobbySurfaceProps} from '../launcher/LobbySurface';
@@ -55,7 +57,11 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
     : surface.productFilters !== undefined ? snapshot.rooms : snapshot.visibleRooms;
   const filteredRooms = surface.productFilters?.length ? visibleRooms.filter(room => surface.productFilters!.includes(room.product))
     : surface.viewingProduct ? visibleRooms.filter(room => room.product === surface.viewingProduct) : visibleRooms;
-  const filtered = filterDirectoryRooms(filteredRooms, roomFilter).sort((a, b) => Number(favorites.includes(b.product)) - Number(favorites.includes(a.product)));
+  const allGames = !surface.productFilters?.length && !surface.viewingProduct && !snapshot.selectedProduct;
+  const oldGame = (room: DirectoryRoom) => multiplayerGroup({gameId: gameIdForProduct(room.product)}) === 'pc98';
+  const filtered = filterDirectoryRooms(filteredRooms, roomFilter).sort((a, b) =>
+    Number(favorites.includes(b.product)) - Number(favorites.includes(a.product)) ||
+    (allGames ? Number(oldGame(a)) - Number(oldGame(b)) : 0));
   const th09Rooms = filtered.filter(room => room.product === 'th09mp');
   const {players, mine, cards} = useTh09Ratings(surface.interactive !== false && th09Rooms.length > 0,
     th09Rooms.flatMap(room => room.seats.map(seat => seat?.profile?.username)));
@@ -92,7 +98,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
   const rows = {...state, visibleRooms: [...state.visibleRooms, ...exiting.filter(room => !snapshot.rooms.some(live => live.product === room.product && live.code === room.code))]};
   const disabled = state.connection !== 'live' || !!state.mine || state.leaving || !state.products.length;
   const warning = <aside className="lobby-warning lobby-connection-warning" id="connectionWarning" role="alert" hidden={!state.connectionInterrupted}>
-    <div><strong><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 4.7 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.7a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg><span id="connectionWarningTitle">{t(state.connection === 'unsupported' ? 'lobby.unsupported' : state.rooms.length ? 'lobby.disconnected' : 'lobby.offline')}</span></strong><p id="connectionWarningHint">{t(state.connection === 'unsupported' ? 'lobby.unsupportedHint' : state.connection === 'missing' ? 'lobby.noService' : 'lobby.refreshHint')}{state.connectionDetail && ` | ${state.connectionDetail}`}</p></div>
+    <div><svg className="lobby-connection-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 4.7 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.7a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg><strong id="connectionWarningTitle">{t(state.connection === 'unsupported' ? 'lobby.unsupported' : state.rooms.length ? 'lobby.disconnected' : 'lobby.offline')}</strong><p id="connectionWarningHint">{t(state.connection === 'unsupported' ? 'lobby.unsupportedHint' : state.connection === 'missing' ? 'lobby.noService' : 'lobby.refreshHint')}{state.connectionDetail && ` | ${state.connectionDetail}`}</p></div>
     <BookButton variant="action" className="lobby-button" id="connectionRefresh" type="button" onClick={service.retry}>{t('lobby.refresh')}</BookButton>
   </aside>;
   const membership = <aside className="lobby-membership" id="membership" hidden={!state.mine}><strong id="membershipTitle">{state.mine ? t('lobby.mine', {code: state.mine.code}) : ''}</strong><p id="membershipHint">{t(state.supportsRecovery ? 'lobby.mineHint' : 'lobby.releaseUnsupported')}</p><BookButton variant="action" className="lobby-button" id="releaseMembership" type="button" hidden={!state.mine || !state.supportsRecovery} disabled={!!state.recovering || state.connection !== 'live' || state.leaving || !state.mine?.recoveryToken} onClick={service.releaseMembership}>{t(state.recovering ? 'lobby.releasing' : 'lobby.release')}</BookButton></aside>;

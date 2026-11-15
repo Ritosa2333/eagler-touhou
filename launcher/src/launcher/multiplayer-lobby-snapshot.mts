@@ -75,6 +75,7 @@ export interface NormalizedMultiplayerLobbySnapshot {
   spectators: MultiplayerLobbySpectator[];
   spectatorCount: number;
   spectatorTimeline?: boolean;
+  swarmSelected?: boolean;
   seats: Array<MultiplayerLobbySeat | null>;
   localSeat: number | null;
   localSpectator: boolean;
@@ -257,6 +258,7 @@ export function normalizeMultiplayerLobbySnapshot(
     spectators,
     spectatorCount,
     ...(source.spectatorTimeline === true ? { spectatorTimeline: true } : {}),
+    ...(source.swarmSelected === true ? { swarmSelected: true } : {}),
     seats,
     localSeat,
     localSpectator,

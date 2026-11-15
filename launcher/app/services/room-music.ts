@@ -239,6 +239,8 @@ export function createRoomMusic({
   function playerAudio() {
     if (audio) return audio;
     audio = createAudio();
+    // Room audio is loaded from a separate origin under the launcher's embedder policy.
+    audio.crossOrigin = 'anonymous';
     audio.preload = 'auto';
     audio.volume = snapshot.volume;
     audio.addEventListener('playing', sounding);

@@ -13,7 +13,8 @@ try{
  window.__th15Runtime={core,canvas,timing,scanCodes,async launch(){
   const {buffer}=await parent.__eaglerPrepareManagedRuntimeDataV1({game:'th15',epoch});
   for(const dir of ['/fonts','/save','/music'])core.FS.mkdir(dir);
-  for(const name of [...Array.from({length:8},(_,n)=>'font'+n+'.bin'),'cp932.bin','blend4444.bin']){const response=await fetch('/fonts/'+name);if(!response.ok)throw Error('Missing measured font '+name);core.FS.writeFile('/fonts/'+name,new Uint8Array(await response.arrayBuffer()));}
+  for(const name of ['cp932.bin']){const response=await fetch('/fonts/'+name);if(!response.ok)throw Error('Missing measured font '+name);core.FS.writeFile('/fonts/'+name,new Uint8Array(await response.arrayBuffer()));}
+  const fontResponse=await fetch('/msgothic.ttc');if(!fontResponse.ok)throw Error('Shared Gothic font unavailable');core.FS.writeFile('/msgothic.ttc',new Uint8Array(await fontResponse.arrayBuffer()));
   core.FS.writeFile('/th15.dat',new Uint8Array(buffer));core._th15_music_enabled(0);core._th15_render_scale(2);
   if(!core._th15_initialize())throw Error('TH15 initialize failed');core._th15_loop_start();canvas.focus();
  },stop(){core._th15_loop_stop();core._th15_audio_close();}};

@@ -26,6 +26,7 @@ export interface RoomSessionOptions extends Omit<
   settingsModel: GameSettingsModel;
   sitePreferences: SitePreferencesModel;
   runtime(): RuntimeService | null;
+  publicRelayUrl?(): string;
   replayViewer(): boolean;
   titleOverlayOpen(): boolean;
   onMusicAudibleChange?(audible: boolean): void;
@@ -44,7 +45,7 @@ export function createRoomSession(options: RoomSessionOptions) {
     send: (message) => {
       service.sendControl(message);
     },
-    voice: playQuickChatVoice,
+    voice: phrase => playQuickChatVoice(phrase, options.sitePreferences.getSnapshot().quickChatVolume / 100),
     notify: code => options.notify(options.translate(({
       'reported':'chat.reported','report-rate-limited':'chat.reportRateLimited','report-in-progress':'chat.reportInProgress',
       'chat-banned':'chat.banned','send-rate-limited':'chat.sendRateLimited','sign-in-required':'chat.signInRequired',
@@ -68,7 +69,13 @@ export function createRoomSession(options: RoomSessionOptions) {
     }
   }
   const music = musicEndpoint ? createRoomMusic({
-    provider: createMetingProvider(musicEndpoint.href),
+    provider: createMetingProvider(musicEndpoint.href, fetch, () => {
+      const relay = options.publicRelayUrl?.();
+      if (!relay) return undefined;
+      const url = new URL('/_eagler/netease-playlist', relay);
+      url.protocol = url.protocol === 'wss:' ? 'https:' : 'http:';
+      return url.href;
+    }),
     storage: options.storage, send: message => service.sendControl(message),
     createAudio: () => document.createElement('audio'),
     onAudibleChange: options.onMusicAudibleChange,

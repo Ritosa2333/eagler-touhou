@@ -1,6 +1,7 @@
 #include "PracticeUiTh14.hpp"
 #if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
 #include "../game/GameSession.hpp"
+#include "GraphicsDevice.hpp"
 #include "../../../portable/sdl/Renderer.hpp"
 #include <eagler/thprac/PracticeMobilePanels.hpp>
 #include <eagler/thprac/PracticePointer.hpp>
@@ -122,8 +123,13 @@ void cheat_options(){
 void export_keys(){
     const auto csv=key_monitor.csv();
     EM_ASM({
-        const url=URL.createObjectURL(new Blob([UTF8ToString($0)],{type:'text/csv;charset=utf-8'}));
-        const a=document.createElement('a');a.href=url;a.download='APS.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+        // The same-origin launcher owns hosted downloads. Keep standalone and
+        // cross-origin embedding on the game's own document.
+        let owner=window;
+        try{if(window.parent!==window&&window.parent.document)owner=window.parent;}catch{}
+        const url=owner.URL.createObjectURL(new owner.Blob([UTF8ToString($0)],{type:'text/csv;charset=utf-8'}));
+        const a=owner.document.createElement('a');a.href=url;a.download='APS.csv';a.click();
+        owner.setTimeout(()=>owner.URL.revokeObjectURL(url),1000);
     },csv.c_str());
 }
 #include "PracticeAdvancedPurpleTh14.inc"
@@ -138,6 +144,7 @@ bool ensure_context(){
     ImGui::StyleColorsDark();
     ImFontGlyphRangesBuilder glyphs;
     glyphs.AddRanges(io.Fonts->GetGlyphRangesDefault());
+    glyphs.AddText("↑←↓→ΔΣ");
     for(const auto* row:purple_glyphs)glyphs.AddText(label(*row));
     for(const auto& row:browser_text)glyphs.AddText(label(row));
     for(const auto& item:practice_labels)for(const auto& row:item.names)for(const auto* text:row)glyphs.AddText(text);
@@ -156,6 +163,9 @@ void configure(GameSession& s,bool enabled,int language){
     params={};params.stage=1;rank=1;shot=0;
     speed={};reset_speed_ui=true;reaction_test.Reset();everlasting_bgm=false;
     key_monitor={};key_monitor_on=show_lock_timer=show_items=show_bonus=show_hitboxes=show_drop_bar=show_license=false;
+    s.practice_key_sample=[](u32 bits){
+        if(game&&game->practice_enabled&&key_monitor_on)key_monitor.record(14,bits);
+    };
     s.purple_show_history=s.purple_fast_retry=false;s.purple_laser={};boss_range=.5f;
     for(bool& open:opt_open)open=true;
     lock_running=false;lock_frames=last_sample_stage=last_sample_frame=0;
@@ -171,9 +181,8 @@ double speed_scale() noexcept{
         !game->state.demo&&!modal()?
         std::min(8.,(1./60.)/speed.interval(game->state.replay,held[17],held[16],held[32])):1.;
 }
-void sample_keys(u32 bits){
+void sample_keys(u32){
     if(!game||!game->practice_enabled||game->state.phase!=GameSessionPhase::stage)return;
-    if(key_monitor_on)key_monitor.record(14,bits);
     if(game->state.stage!=last_sample_stage||game->state.frame<last_sample_frame)lock_running=false;
     last_sample_stage=game->state.stage;last_sample_frame=game->state.frame;
     if(game->practice_tools&PrTime){if(!lock_running)lock_frames=0;++lock_frames;lock_running=true;}
@@ -270,10 +279,12 @@ void sync_setup(){
     }else spell_setup=-1;
     setup=active;setup_popup=false;publish();
 }
-void draw(GameSession& s,touhou::sdl::Renderer& renderer){
+bool draw(GameSession& s,GraphicsDevice& graphics){
+    graphics.preserve_capture_screen(false);
+    auto& renderer=graphics.backend;
     sync_setup();
     const bool hud=s.practice_enabled&&on_stage()&&(key_monitor_on||show_drop_bar||show_hitboxes||(show_lock_timer&&lock_running));
-    if(!s.practice_enabled||(!visible()&&!hud)||!ensure_context())return;
+    if(!s.practice_enabled||(!visible()&&!hud)||!ensure_context())return true;
     auto& io=ImGui::GetIO();io.DeltaTime=1.f/60;io.MousePos={mouse_x,mouse_y};
     if(!edges.empty()){auto e=edges.front();edges.pop_front();mouse_down=e.down;io.MousePos={e.x,e.y};}
     io.MouseWheel=mouse_wheel;mouse_wheel=0;
@@ -319,8 +330,13 @@ void draw(GameSession& s,touhou::sdl::Renderer& renderer){
     if(on_stage()&&!modal()&&(tracker||Mobile::visible))information();
     publish();
     ImGui::Render();
-    renderer.render_imgui(ImGui::GetDrawData(),1);
+    const auto* data=ImGui::GetDrawData();
+    if(data&&data->CmdListsCount>0&&data->TotalVtxCount>0&&data->TotalIdxCount>0){
+        if(!graphics.preserve_capture_screen(true))return false;
+        renderer.render_imgui(data,GraphicsDevice::screen);
+    }
     pressed.fill(false);
+    return true;
 }
 }
 #endif

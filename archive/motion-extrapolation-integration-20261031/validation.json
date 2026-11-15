@@ -1,0 +1,175 @@
+{
+  "schema": "motion-extrapolation-integration/1",
+  "sourceRevision": "19198cb07df52f328361d6286ccbb34b41c425e5",
+  "issue": 153,
+  "scope": [
+    "th06",
+    "th07",
+    "th08",
+    "th10",
+    "th11",
+    "th12",
+    "th15"
+  ],
+  "unchanged": [
+    "th09",
+    "th075",
+    "th17",
+    "th20"
+  ],
+  "clock": "60 Hz authoritative simulation; current endpoint plus at most one tick of display prediction",
+  "checks": {
+    "wasmContracts": "clock and six actual presentation owners passed",
+    "moduleTests": {
+      "passed": 25,
+      "failed": 0
+    },
+    "sourceContracts": "all 20 targets passed; final TH15 checks passed after retaining challenge rules"
+  },
+  "variants": {
+    "th06-multiplayer": [
+      {
+        "path": "th06.js",
+        "bytes": 328204,
+        "sha256": "0f24f5df203ae2e92dbb23a8148d02eaa1b08710984856bf4796b2b3a8a3ad92"
+      },
+      {
+        "path": "th06.wasm",
+        "bytes": 2805261,
+        "sha256": "c5e75e113d48bf0788b7675c485e54c047bee691dda6c2f80eff7fe718b18d2d"
+      }
+    ],
+    "th06-normal": [
+      {
+        "path": "th06.js",
+        "bytes": 254102,
+        "sha256": "673b90046564fa763ba9edeec1ba36bfcaac87c575e6dcc8d34242f43be32968"
+      },
+      {
+        "path": "th06.wasm",
+        "bytes": 2598783,
+        "sha256": "476224af3c772745e64b0fcb699de91a44b9db568991f39077986dff7dd27a8d"
+      }
+    ],
+    "th07-multiplayer": [
+      {
+        "path": "th07.js",
+        "bytes": 331732,
+        "sha256": "cc0185065c2e33516eff4c08cfa5d0b59c16d977a406e79ebc2be22beccb47f2"
+      },
+      {
+        "path": "th07.wasm",
+        "bytes": 3127578,
+        "sha256": "a4b20a08490efcd923d00b973b6f2873f33a150824f38a3d13c5c754ed94137d"
+      }
+    ],
+    "th07-normal": [
+      {
+        "path": "th07.js",
+        "bytes": 252517,
+        "sha256": "186e17360e4df3cec5937ffbbea7870e75a486690f0c88a00ef760ba524b3738"
+      },
+      {
+        "path": "th07.wasm",
+        "bytes": 2857111,
+        "sha256": "27a2d32394ed2ae30c848dcf30ec119da93b1bcf45936b89c815eab34fa30ca5"
+      }
+    ],
+    "th08-multiplayer": [
+      {
+        "path": "th08-sdl.mjs",
+        "bytes": 297030,
+        "sha256": "beff27915c727f99aac1d18277d3742c7c24be4e9a21c6f9e20fb8f4d5e2e882"
+      },
+      {
+        "path": "th08-sdl.wasm",
+        "bytes": 3783647,
+        "sha256": "4f2ae6189152c6464ff0b59e76d6a61565e96583f650a760f3cd7554f5bd10cd"
+      }
+    ],
+    "th08-normal": [
+      {
+        "path": "th08-sdl.mjs",
+        "bytes": 236300,
+        "sha256": "6efad81e9aa7af3e0fa7c28a99849920e9c801c21e798df48b32131d452a58b7"
+      },
+      {
+        "path": "th08-sdl.wasm",
+        "bytes": 3465803,
+        "sha256": "4e70f839977a9dea62d1ac52047759c197eb37cfca6aab76ab90522c952592e5"
+      }
+    ],
+    "th10-multiplayer": [
+      {
+        "path": "th10-sdl.mjs",
+        "bytes": 317876,
+        "sha256": "ab2a0fffad5ab21a3a3abf72cfdb23d9b202625764d3e4d0f1006b600435029f"
+      },
+      {
+        "path": "th10-sdl.wasm",
+        "bytes": 3335996,
+        "sha256": "9fcd2bd7b51d53820991d3a3653264e686cec4204bff9222da7fda853c18a47e"
+      }
+    ],
+    "th10-normal": [
+      {
+        "path": "th10-sdl.mjs",
+        "bytes": 250556,
+        "sha256": "a2a3f00de5bcb367376c69b0956d3b2aa6a834ea86eea267a6a9255a5169fd1e"
+      },
+      {
+        "path": "th10-sdl.wasm",
+        "bytes": 3358507,
+        "sha256": "1d968f922a443e127320953c9ddced22db3d8857da03bf217c81a789f65b876c"
+      }
+    ],
+    "th11-multiplayer": [
+      {
+        "path": "th11-sdl.mjs",
+        "bytes": 291130,
+        "sha256": "0404cf89ac18c22fec83304c3b0ecc417f35743aab5e2b7447fb5993276c5814"
+      },
+      {
+        "path": "th11-sdl.wasm",
+        "bytes": 3001304,
+        "sha256": "c9ec03a6fcc9a640e7e93148f2bb88471eea496a1b7b040cbfe3fde26260221f"
+      }
+    ],
+    "th11-normal": [
+      {
+        "path": "th11-sdl.mjs",
+        "bytes": 232956,
+        "sha256": "bf238a9a4fd43b5073de20a9c4b7ec43410162fed4c1e6ec7ae6bce45a0ed376"
+      },
+      {
+        "path": "th11-sdl.wasm",
+        "bytes": 3083315,
+        "sha256": "40ffe15caabece4c16581d8b8bcedf4bf881d86db16753c4c1bb9243bc6bd715"
+      }
+    ],
+    "th15-multiplayer": [
+      {
+        "path": "th15.mjs",
+        "bytes": 287795,
+        "sha256": "cd9bd0722ca8ab01c71570783a9352b59891fe22912a09dce3c7b0af9348700e"
+      },
+      {
+        "path": "th15.wasm",
+        "bytes": 3598940,
+        "sha256": "62df0fef4a9c5d785ac9a57c9892867068bc521c8e4a393f54d084f5b80cbcae"
+      }
+    ],
+    "th15-normal": [
+      {
+        "path": "th15.mjs",
+        "bytes": 232108,
+        "sha256": "3c32dfb5a9db7c5cc3623b53ca30f9c9983a751609419b8613dce3e136f3871e"
+      },
+      {
+        "path": "th15.wasm",
+        "bytes": 3621774,
+        "sha256": "21b86be87e7884028388a03858942a0ab5a51b8a135153d8029b3e3ba629bfef"
+      }
+    ]
+  }
+}

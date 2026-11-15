@@ -89,6 +89,7 @@ bool present_position(const AnmVm& current,Vec3& out) noexcept {
     if(!high_refresh::interpolating())return false;
     const auto found=samples.find(key(current));
     if(found==samples.end()||found->second.tick!=current_tick)return false;
+    if(found->second.spawn_tick==std::uint32_t(current_tick))return false;
     const auto& before=found->second.sample;
     if(before.id!=current.id||before.file!=current.resource||before.script!=current.script_index)return false;
     const bool visible=(current.flags&3u)==3u;

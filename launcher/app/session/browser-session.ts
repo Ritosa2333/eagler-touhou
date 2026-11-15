@@ -8,6 +8,7 @@ import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manife
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
 import {isAbortError, linkAbortSignals, waitWithAbort} from '../services/abort-signals';
 import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, productRequiresImport, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
+import {isPc98MultiplayerCandidate} from '../services/published-multiplayer';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {detectUiLocale, isUiLocale, isUiMessageKey, localeHome, UI_LOCALE_STORAGE_KEY, type UiLocale} from '../../src/launcher/i18n.mts';
 import {replayImportAcceptFor} from '../../src/launcher/replay-files.mts';
@@ -287,7 +288,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   function settingsContext(product: ProductId, locale: string) {const room = roomSession?.service.getSnapshot(); return {...metadata.settingsContext(product, locale), mobile: preferTouchSettings(), forbidUnlimitedMovement: !!room?.room?.disableCheatMovement && room.seat != null};}
   const directoryEntry = /\/lobby(?:\.html)?\/?$/.test(entryUrl.pathname);
   const rawInitialProduct = directoryEntry ? null : routedProductFromUrl(entryUrl, new Set(PRODUCT_IDS));
-  const initialProduct = rawInitialProduct && productEnabledForBuild(rawInitialProduct, testBuild) ? rawInitialProduct : DEFAULT_PRODUCT_ID;
+  const initialProduct = rawInitialProduct && (productEnabledForBuild(rawInitialProduct, testBuild) || isPc98MultiplayerCandidate(rawInitialProduct)) ? rawInitialProduct : DEFAULT_PRODUCT_ID;
   settings.hydrate(settingsContext(DEFAULT_PRODUCT_ID, snapshot.locale));
   if (initialProduct !== DEFAULT_PRODUCT_ID) settings.hydrate(settingsContext(initialProduct, snapshot.locale));
   touchLayout.setGame(settings.getSnapshot()?.gameId ?? DEFAULT_PRODUCT_ID);
@@ -322,7 +323,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (firstHost && !runtime?.getSnapshot().launched) settings.restoreHostPreferences(settingsContext(product, snapshot.locale));
       appliedHost = host;
       localPackageMaintenance.schedule();
-      const hadSelection = pendingHostSelection?.hasSelection ?? navigation?.hasSelection ?? (!!rawInitialProduct && productEnabledForBuild(rawInitialProduct, testBuild));
+    const hadSelection = pendingHostSelection?.hasSelection ?? navigation?.hasSelection ?? (!!rawInitialProduct && (productEnabledForBuild(rawInitialProduct, testBuild) || isPc98MultiplayerCandidate(rawInitialProduct)));
       pendingHostSelection = {productId: product, hasSelection: hadSelection && current.products.includes(product)};
       if (navigation) {navigation.applyHostSelection(pendingHostSelection); pendingHostSelection = null;}
       if (roomSession?.service.getSnapshot().room && host.shared.netplayRelay) roomSession.service.reconnect();
@@ -682,6 +683,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         const room = roomSession?.service.getSnapshot();
         const product = activeSettings?.context.productId ?? DEFAULT_PRODUCT_ID;
         return {product, runtimeVariant: control?.runtimeVariant ?? 'normal', roomCode: room?.room?.code ?? null,
+          swarmSelected: room?.room?.swarmSelected === true,
           player: config?.netplayPlayer ?? 0, playerCount: config?.netplayPlayerCount ?? 2,
           inputDelay: config?.netplayInputDelay ?? 0, adonisMode: config?.netplayAdonisMode ?? 0,
           adonisSupported: multiplayerConfigForProduct(product)?.inputTiming?.measuredStartup === true,
@@ -1205,6 +1207,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const roomPreparation = createRoomPreparation({acquisition, metadataReady: metadata.initialize, baseUrl, translate: t,
     activeWorker: () => appShellOwner.activeWorker(), network});
   roomSession = createRoomSession({document, window, storage, identity, sessions, memberId: multiplayerMemberId,
+    publicRelayUrl: () => metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? '',
     createSocket: url => relayRouting.createSocket(url), relayUrl: () => relayRouting.resolve(metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? ''),
     settingsModel: settings, sitePreferences: preferences, runtime: () => runtime, replayViewer: () => snapshot.replayViewer,
     titleOverlayOpen: () => snapshot.th09NetworkOverlayOpen,
@@ -1215,6 +1218,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     settings: () => ({touchEnabled: settings.getSnapshot()?.options.touchEnabled === true, touchMovementMode: settings.getSnapshot()?.options.touchMovementMode ?? DEFAULT_GAME_OPTIONS.touchMovementMode, ...(settings.getSnapshot()?.context.productId === 'th09mp' ? {replayAutoSave: settings.getSnapshot()?.replayAutoSave} : {}), mobileDevice: mobile, iceServers: [{urls: ['stun:stun.cloudflare.com:3478']}]}),
     setMovementMode: mode => settings.setOption('touchMovementMode', mode), decisions, translate: t, notify: feedback.toast,
     prepareResources(context, report) {
+      cloudSync?.prepareLocalLaunch();
       const task = roomPreloadTask.catch(() => {}).then(async () => {
         async function presentPreview(epoch: number) {
           const owner = requiredRuntime();
@@ -1224,7 +1228,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
             roomMusicConsentEpoch = epoch;
           }
           if (!context.isCurrent() || owner.getSnapshot().roomPreview) return;
-          await waitWithAbort(owner.prepareRoomPreview(epoch), context.signal);
+          // Runtime title previews are optional; a prepared iframe can still start a room.
+          if (owner.getSnapshot().roomPreviewSupported)
+            await waitWithAbort(owner.prepareRoomPreview(epoch), context.signal);
           if (!context.isCurrent()) return;
           const updateReady = await waitWithAbort(owner.checkPreparedCodeUpdate(epoch), context.signal);
           if (!context.isCurrent()) return;
@@ -1315,7 +1321,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       settleInvite: () => requiredNavigation().settleRoomInvite(), leave: input => {
         // Main758–761 carries terminal closure copy into the directory's
         // persistent notice. Store it before that destination resumes.
-        if (input.message) {
+        if (input.message && !input.removed) {
           try {sessionStorage?.setItem('eagler-lobby-message', input.message);} catch {}
         }
         const destination = requiredNavigation().leaveRoomRoute(input);
@@ -1323,7 +1329,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
           pendingRoomReturnProduct = settings.getSnapshot()!.context.productId;
           publish({});
         }
-        if (input.message && destination === 'options') feedback.toast(input.message);
+        if (input.removed && input.message) void decisions.askDecision({title:input.message, confirmText:t('action.confirm'), tone:'danger', hideCancel:true});
+        else if (input.message && destination === 'options') feedback.toast(input.message);
       }},
   });
   const room = roomSession;
@@ -1379,7 +1386,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   const cloudSyncReady=accountsEnabled&&storage ? import('../services/cloud-save-sync').then(({createCloudSaveSync})=>{
     if(disposed)return;
-    cloudSync=createCloudSaveSync({storage:storage!,read:readLocalSaves,isRunning:()=>!!runtime?.getSnapshot().launched||!!launchPending,isPlaying:()=>!!runtime?.getSnapshot().launched,notify:key=>feedback.toast(t(key)),
+    cloudSync=createCloudSaveSync({storage:storage!,read:readLocalSaves,isRunning:()=>!!runtime?.getSnapshot().launched||!!launchPending||!!roomSession?.service.getSnapshot().room,isPlaying:()=>!!runtime?.getSnapshot().launched,notify:key=>feedback.toast(t(key)),
       readForLaunch:(product,names)=>readLocalSaveFiles(product,names,capturedSettings(product).language,window.indexedDB),
       async decideStart(kind, signal) {
         const remote = kind === 'other-device';

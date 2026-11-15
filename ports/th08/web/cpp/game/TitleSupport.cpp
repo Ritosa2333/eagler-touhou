@@ -2,8 +2,8 @@
 #include "TitleMenus.hpp"
 namespace th08 {
 bool TitleContext::IsExtraUnlockedForCharacter(i32 character)const{
-    if(default_all_content_unlocked)return character>=0&&character<12;
-    if(character>3)return true;if(character<0)return false;
+    if(character<0||character>=12)return false;
+    if(character>3)return IsExtraUnlockedWithAllTeams();
     for(u32 i=0;i<4;++i)if(clears[character].without_retries[i]&0x4000)return true;return false;
 }
 bool TitleContext::IsSpellPracticeUnlockedForCharacter(i32 character)const{

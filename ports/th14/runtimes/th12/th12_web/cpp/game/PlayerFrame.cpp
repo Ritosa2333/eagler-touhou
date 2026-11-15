@@ -163,7 +163,7 @@ bool PlayerFrame::start_stage(){
     if(!rebuild_options()){if(last_error<100)last_error=93;return false;}
     return true;
 }
-bool PlayerFrame::draw(AnmRenderer& renderer){
+bool PlayerFrame::draw(AnmRenderer& renderer,bool local_hitbox){
     if(state.life_state==2)return true;
 #if PORT_TITLE == 16
     // Retail443730 copies world coordinates and sets origin1 before468490.
@@ -178,6 +178,16 @@ bool PlayerFrame::draw(AnmRenderer& renderer){
     }else motion.body.position=screen(motion.state.position);
 #endif
     if(renderer.draw(motion.body)==-2){last_error=5;return false;}
+#if PORT_TITLE == 14
+    if(local_hitbox&&always_hitbox&&state.life_state==1&&!motion.focus_animation){
+        const auto& pos=motion.state.position;
+        const float x=pos.x+224.f,y=pos.y+16.f;
+        renderer.solid_rectangle(x-2,y-2,x+2,y+2,0xff320a0au);
+        renderer.solid_rectangle(x-1,y-1,x+1,y+1,0xffffeeeeu);
+    }
+#else
+    (void)local_hitbox;
+#endif
     // No shipped option constructor installs the optional native draw callback.
     if constexpr(kPortTitle!=16)for(const auto& option:motion.options)if(option.reservede0){last_error=6;return false;}
     return true;
