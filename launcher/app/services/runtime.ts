@@ -1145,21 +1145,25 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     const product = PRODUCT_GAMES[plan.game];
     const directory = 'runtimeFileLayout' in product && product.runtimeFileLayout === 'directory';
     const networked = plan.configure.options?.netplayMode === 'lan';
+    // TH12 multiplayer acknowledges an empty replay viewer before it has a
+    // replay to present. Inspect must be able to run before playback opens.
+    const waitingForReplay = plan.game === 'th12' && plan.runtimeVariant === 'multiplayer' &&
+      plan.configure.options?.replayViewer === true && !plan.configure.options?.replayPath;
     launchRequested = true;
     if (snapshot.roomReturnSupported) roomLaunchSerial++;
     const serial = roomLaunchSerial;
     update({ phase: 'launching' });
-    const presented = awaitFirstFrame ? waitFor('first-frame', token, options.timeouts?.firstFrame ?? (directory || networked ? 122_000 : 14_000)) : null;
+    const presented = awaitFirstFrame && !waitingForReplay ? waitFor('first-frame', token, options.timeouts?.firstFrame ?? (directory || networked ? 122_000 : 14_000)) : null;
     if (presented) void presented.catch(() => {});
     // Main app.mts4241–4289: networked launch has no local watchdog; ordinary
     // launch does not require a first-frame event to acknowledge running.
-    if (networked) clearFirstFrameWatchdog();
+    if (networked || waitingForReplay) clearFirstFrameWatchdog();
     else armFirstFrameWatchdog(token, directory ? 122_000 : 12_000);
     try {
       await send('launch', snapshot.roomReturnSupported ? {launchSerial:roomLaunchSerial} : {}, options.timeouts?.launch ?? (directory ? 120_000 : 15_000));
       assertCurrent(token);
       if (snapshot.roomReturnSupported && (serial !== roomLaunchSerial || !launchRequested)) throw new RuntimeSessionSupersededError();
-      if (directory && !networked && !snapshot.firstFrame) armFirstFrameWatchdog(token, 12_000);
+      if (directory && !networked && !waitingForReplay && !snapshot.firstFrame) armFirstFrameWatchdog(token, 12_000);
       update({ launched: true, roomPreview: false, phase: 'running' });
       const pendingUpdate = codeUpdate;
       if (!snapshot.multiplayerPreflight && pendingUpdate?.epoch === token.id) {
