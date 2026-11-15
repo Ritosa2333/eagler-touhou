@@ -108,7 +108,14 @@ bool shot_th14_beam_hit(ShotState& shot,ShotPlayer& player,Th14DamageArea& area,
             u32 scratch=stack.beam_fallback_scratch();
             if(stack.practice_laser)scratch=stack.practice_laser->access(scratch);
             const u32 bits=NativeStackTh14::fallback_bits(scratch);
-            std::memcpy(&shot.th14_beam_length,&bits,4);
+            float fallback;std::memcpy(&fallback,&bits,4);
+            // Explicit thprac journals retain their recorded correction semantics.
+            // Ordinary mode uses the same bounded fallback as the normal Runtime.
+            const bool traced=stack.practice_laser&&stack.practice_laser->mode!=0;
+            constexpr float maximum_length=512.f+18.f;
+            if(!traced&&stack.bounded_beam_fallback&&(!std::isfinite(fallback)||fallback>maximum_length))
+                fallback=std::isfinite(shot.th14_beam_length)?std::clamp(shot.th14_beam_length,0.f,maximum_length):0.f;
+            shot.th14_beam_length=fallback;
         }else{
             const float t=y/r;shot.th14_beam_length=std::max(0.f,x-float(std::sqrt(double(1.f-t*t)))*r+8.f);
         }

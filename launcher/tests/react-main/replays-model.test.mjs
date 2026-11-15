@@ -337,3 +337,43 @@ test('late native inspection cannot repopulate a renamed, deleted or replaced fi
   await f.model.refresh();gate.resolve({character:0,difficulty:1,stages:[{id:1,score:0}]});await pending;
   assert.equal(f.model.getSnapshot().descriptions['replay/th6_01.rpy'],undefined);
 });
+
+// Container-only fixtures exercise model I/O. Actual Replay acceptance is tested
+// by tools/th14-check-replay-beam-annotation.mjs in the TH14 source repository.
+function untaggedBeamContainer() {
+  const b=Buffer.alloc(37);b.write('t13r');b.writeUInt16LE(2,4);b.writeUInt32LE(1,28);b.writeUInt32LE(112,32);return [...b];
+}
+test('TH14 compatibility download keeps original storage and uses a read-only file session',async()=>{
+  const f=fixture(),path='replay/th14_ud0000.rpy',bytes=untaggedBeamContainer();f.files.clear();f.files.set(path,bytes);
+  await f.model.open('th14');f.events.length=0;await f.model.downloadBeamCompatibilityCopy(path);
+  assert.equal(f.downloads.length,1);assert.equal(f.confirms.length,1);assert.equal(f.downloads[0].name,'th14_ud0000-compat.rpy');
+  assert.deepEqual(f.downloads[0].bytes.slice(0,bytes.length),bytes);assert.equal(f.downloads[0].bytes.length,bytes.length+20);
+  assert.deepEqual(f.files.get(path),bytes);assert.equal(f.files.size,1);assert.ok(!f.events.some(e=>e.startsWith('write:')||e.startsWith('remove:')));
+});
+test('TH14 compatibility download cancellation reads nothing',async()=>{
+  const f=fixture(),path='replay/th14_ud0000.rpy';f.files.set(path,untaggedBeamContainer());await f.model.open('th14');f.events.length=0;f.confirm(false);
+  await f.model.downloadBeamCompatibilityCopy(path);assert.equal(f.downloads.length,0);assert.ok(!f.events.some(e=>e.startsWith('read:')));
+});
+test('TH14 compatibility download rejects an already declared rule',async()=>{
+  const f=fixture(),path='replay/th14_ud0000.rpy',bytes=Buffer.from(untaggedBeamContainer()),tail=Buffer.alloc(20);
+  tail.write('USER');tail.writeUInt32LE(20,4);tail.writeUInt32LE(0x42343154,8);tail.writeUInt32LE(1,12);tail.writeUInt32LE(1,16);
+  f.files.set(path,[...bytes,...tail]);await f.model.open('th14');await f.model.downloadBeamCompatibilityCopy(path);
+  assert.equal(f.downloads.length,0);assert.ok(f.toasts.some(s=>s.includes('replay.th14BeamAlreadyTagged')));assert.deepEqual(f.files.get(path),[...bytes,...tail]);
+});
+test('TH14 compatibility download rejects malformed trailers',async()=>{
+  const f=fixture(),path='replay/th14_ud0000.rpy';f.files.set(path,[...untaggedBeamContainer(),1]);await f.model.open('th14');await f.model.downloadBeamCompatibilityCopy(path);
+  assert.equal(f.downloads.length,0);assert.ok(f.toasts.some(s=>s.includes('replay.th14BeamCopyInvalid')));
+});
+test('TH14 compatibility download is unavailable to other products or missing rows',async()=>{
+  const f=fixture();await f.model.open('th06');await f.model.downloadBeamCompatibilityCopy('replay/th6_01.rpy');assert.equal(f.confirms.length,0);
+  await f.model.open('th14');await f.model.downloadBeamCompatibilityCopy('replay/missing.rpy');assert.equal(f.confirms.length,0);assert.equal(f.downloads.length,0);
+});
+test('TH14 compatibility download reads persisted storage without acquiring a runtime',async()=>{
+  const path='replay/th14_ud0000.rpy',bytes=new Uint8Array(untaggedBeamContainer()),f=fixture({storage:{read:async()=>[{path,size:bytes.length,bytes}]}});
+  await f.model.open('th14');f.events.length=0;await f.model.downloadBeamCompatibilityCopy(path);assert.equal(f.downloads.length,1);assert.ok(!f.events.includes('lock'));assert.deepEqual([...bytes],untaggedBeamContainer());
+});
+test('TH14 compatibility download cannot publish into a superseded product view',async()=>{
+  const gate=deferred(),path='replay/th14_ud0000.rpy',bytes=new Uint8Array(untaggedBeamContainer());
+  const f=fixture({storage:{read:async(_product,selection)=>{if(selection?.path)await gate.promise;return [{path,size:bytes.length,bytes}];}}});
+  await f.model.open('th14');const pending=f.model.downloadBeamCompatibilityCopy(path);await tick();f.model.close();gate.resolve();await pending;assert.equal(f.downloads.length,0);
+});

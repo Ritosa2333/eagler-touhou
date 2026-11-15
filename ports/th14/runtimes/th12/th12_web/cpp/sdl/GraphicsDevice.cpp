@@ -120,6 +120,34 @@ bool GraphicsDevice::initialize(){
 #endif
     SDL_SetWindowTitle(backend.native_window(),kPortTitle==16?"东方天空璋":kPortTitle==14?"东方辉针城 · 移植验证":"Touhou 11");backend.state.target=screen;backend.state.depth=depth;initialize_game_pipeline();return true;
 }
+#if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
+bool GraphicsDevice::restore_capture_screen(){
+    if(!overlay_capture_valid)return preserve_capture_screen(true);
+    const auto& display=textures.at(screen).image;
+    const i32 rectangle[]={0,0,i32(display.width),i32(display.height)};
+    if(!backend.resample(overlay_capture,rectangle,screen,rectangle,nullptr,0,0)){
+        error="TH14 paused practice scene restoration failed";return false;
+    }
+    changed(screen);return true;
+}
+bool GraphicsDevice::preserve_capture_screen(bool overlay_visible){
+    overlay_capture_valid=false;
+    if(!overlay_visible)return true;
+    const auto& display=textures.at(screen).image;
+    if(!overlay_capture)overlay_capture=next_handle++;
+    auto& saved=textures[overlay_capture];
+    if(saved.image.width!=display.width||saved.image.height!=display.height){
+        backend.release(overlay_capture);
+        saved.image=display; // One reusable surface, never a CPU readback.
+        ++saved.revision;
+    }
+    const i32 rectangle[]={0,0,i32(display.width),i32(display.height)};
+    if(!backend.resample(screen,rectangle,overlay_capture,rectangle,nullptr,0,0)){
+        error="TH14 clean pause capture preservation failed";return false;
+    }
+    changed(overlay_capture);overlay_capture_valid=true;return true;
+}
+#endif
 bool GraphicsDevice::prepare_texture(AnmResource& file,u32 index,u32& handle,bool low_color){
 #if PORT_TITLE == 14
     auto& source=file.textures[index];

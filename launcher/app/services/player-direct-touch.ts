@@ -47,7 +47,7 @@ export function bindPlayerDirectTouch({surface, frame, ios, zoom, context, allow
     if (p) Object.assign(contact, p); points.delete(event.pointerId);
     if (zoom.isActive()) zoom.endPointer(event);
     const runtime = context();
-    if (event.type !== 'pointerup' && runtime.game === 'hsob') postTouchCancel(runtime);
+    if (event.type !== 'pointerup' && (runtime.game === 'hsob' || runtime.game === 'th14')) postTouchCancel(runtime);
     else postDirectTouch(runtime, 'up', contact);
     if (!points.size) invalidate();
   }
@@ -72,7 +72,7 @@ export function bindPlayerDirectTouch({surface, frame, ios, zoom, context, allow
   const releaseIos = (event: TouchEvent) => {
     if (!ios) return; event.preventDefault();
     const runtime = context();
-    const cancelled = event.type === 'touchcancel' && runtime.game === 'hsob';
+    const cancelled = event.type === 'touchcancel' && (runtime.game === 'hsob' || runtime.game === 'th14');
     for (const touch of Array.from(event.changedTouches)) {
       const contact = points.get(touch.identifier); if (!contact) continue;
       const p = point(touch, zoom.isActive()); if (p) Object.assign(contact, p);

@@ -64,8 +64,14 @@ export function touchControls(core,options,message) {
  core.sdl_touch_controls(!!c.fireEnabled,!!c.focusEnabled,c.bombSerial>>>0,c.escapeSerial>>>0,axis(c.joystickX),axis(c.joystickY));
 }
 const detachedRuntimeAudioNodes=new WeakSet();
+// A delayed AudioContext.resume must not retire a newer pause/stop request.
+const runtimeAudioRevisions=new WeakMap();
+function nextRuntimeAudioRevision(core){
+ const revision=(runtimeAudioRevisions.get(core)??0)+1;runtimeAudioRevisions.set(core,revision);return revision;
+}
 export function suspendRuntimeAudio(Module,core) {
  if(!core)return false;
+ nextRuntimeAudioRevision(core);
  const node=Module?.SDL3?.audio_playback?.scriptProcessorNode;
  if(node&&!detachedRuntimeAudioNodes.has(node)){
   try{node.disconnect();detachedRuntimeAudioNodes.add(node);}catch{}
@@ -75,11 +81,13 @@ export function suspendRuntimeAudio(Module,core) {
 }
 export async function resumeRuntimeAudio(Module,core,isForeground=()=>true) {
  if(!core||!isForeground())return false;
+ const revision=nextRuntimeAudioRevision(core);
+ const current=()=>runtimeAudioRevisions.get(core)===revision&&isForeground();
  const context=Module?.SDL3?.audioContext;
  if(context&&context.state!=='running'){
   try{await context.resume();}catch{}
  }
- if(!isForeground()||(context&&context.state!=='running'))return false;
+ if(!current()||(context&&context.state!=='running'))return false;
  const node=Module?.SDL3?.audio_playback?.scriptProcessorNode;
  if(node&&detachedRuntimeAudioNodes.has(node)){
   if(!context)return false;
@@ -187,7 +195,7 @@ export function createReplayViewerHostTh14({read,describe,open,status,step,rate,
   const entry=owner.timeline.find(s=>s.id===native.stage);
   if(!entry||!native.active)return;
   owner.state.stage=native.stage;owner.state.frame=entry.start+Math.min(native.frame,entry.frames);owner.state.ended=!!native.ended;
-  if(native.ended){owner.state.frame=entry.start+entry.frames;owner.state.paused=true;await pause(true);}
+  if(native.ended){owner.state.paused=true;await pause(true);}
   if(owner===active)publish();
  }
  function poll(){

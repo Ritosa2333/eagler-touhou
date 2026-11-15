@@ -838,6 +838,9 @@ bool GameBattle::update(const std::function<bool()>& sample_input
     if(player_live&&player){
         player->spell={spell_flags,spell_elapsed,spell_bonus};
         if(before_player_update)before_player_update(*this);
+#if PORT_TITLE == 14
+        if(practice_key_sample)practice_key_sample(player_input.movement.held);
+#endif
         if(!player->update()){if(!last_error)last_error=-601;const std::string inner="player update failed: "+std::to_string(player->last_error)+" motion="+std::to_string(player->motion.last_error)+" shots="+std::to_string(player->shots.last_error)+" state="+std::to_string(player->state.life_state)+" timer="+std::to_string(player->state.state_timer.current);error=error.empty()?inner:inner+" ("+error+")";return false;}
         spell_flags=player->spell.flags;spell_bonus=player->spell.bonus;
     }

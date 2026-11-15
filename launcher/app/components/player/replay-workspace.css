@@ -8,6 +8,7 @@
 #player.replay-workspace .player-stage{position:relative;grid-column:1;grid-row:2;display:flex;flex-direction:column;min-width:0;padding:16px;border:1px solid var(--kit-border);border-radius:10px;background:var(--kit-card);overflow:hidden;container:replay-stage/inline-size}
 #player.replay-workspace .game-viewport{position:relative;inset:auto;flex:1;min-height:0;border-radius:4px;background:#000;overflow:hidden}
 #player.replay-workspace #gameFrame{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;touch-action:pan-y}
+#player.replay-workspace #gameFrame[data-th14-practice-panel="open"]{pointer-events:auto;touch-action:none}
 #player.replay-workspace :is(.touch-utility-row,.th09-player-information,.touch-control,.touch-button,.touch-joystick,.touch-hud,.touch-gestures,.touch-help-open){display:none!important}
 #player.replay-workspace #transfer{position:absolute;top:100px;left:36px;max-width:min(320px,calc(100vw - 72px))}
 .replay-workspace-idle{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;background:#080808;color:var(--kit-muted-foreground);text-align:center}

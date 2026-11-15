@@ -1,3 +1,4 @@
+import {bindReplayPracticePointer} from '../../services/replay-practice-pointer';
 import {useLocale} from '../../i18n';
 import {createContext, useLayoutEffect, useState, type CSSProperties, type ReactNode, type RefCallback} from 'react';
 import {useWorkspaceViewport} from './use-workspace-viewport';
@@ -14,6 +15,10 @@ export function PlayerSurface({open, editing, replayWorkspace = false, roomWorks
   const {t} = useLocale();
   const [stage, setStage] = useState<HTMLDivElement | null>(null);
   useWorkspaceViewport(stage, roomWorkspace || replayWorkspace);
+  useLayoutEffect(() => {
+    const frame = stage?.querySelector('iframe');
+    if (replayWorkspace && frame) return bindReplayPracticePointer(frame);
+  }, [stage, replayWorkspace]);
   useLayoutEffect(() => {
     const frame = stage?.querySelector('iframe');
     if (!roomWorkspace || !frame) return;
