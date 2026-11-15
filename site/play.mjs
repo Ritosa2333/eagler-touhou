@@ -4135,7 +4135,7 @@ window.addEventListener('keydown',event=>{
   }
 });
 window.addEventListener('keyup',event=>{
-  if(state.normalPostrun){state.normalPostrun.input.up(event.code);return;}
+  if(state.normalPostrun){state.pressed.delete(event.code);suppressedKeys.delete(event.code);state.normalPostrun.input.up(event.code);return;}
   if(!state.worldMode)state.mainController?.keyUp(event.code);
   if(menu.pauseOpen&&state.nativePause){state.pressed.delete(event.code);suppressedKeys.delete(event.code);state.nativePause.keyUp(event.code);return;}
   if(state.endingHost){state.pressed.delete(event.code);suppressedKeys.delete(event.code);state.endingHost.owner.input.up(event.code);return;}
