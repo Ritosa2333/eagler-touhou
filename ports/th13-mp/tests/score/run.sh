@@ -20,14 +20,14 @@ mkdir -p "$out_dir"
 
 # 游戏源自动发现 + FileStore/ScoreDat（sdl 层仅 FileStore 依赖，无 SDL/EM 依赖时
 # 原生可编）。
-sources=(eagler-touhou/ports/th13/web/cpp/game/*.cpp
-         eagler-touhou/ports/th13/web/cpp/sdl/FileStore.cpp)
+sources=(eagler-touhou/ports/th13-mp/web/cpp/game/*.cpp
+         eagler-touhou/ports/th13-mp/web/cpp/sdl/FileStore.cpp)
 
 status=0
 for suite in "$script_dir"/*_test.cpp; do
   name="$(basename "$suite" .cpp)"
   g++ -std=c++17 $flags -fno-exceptions -fno-rtti -ffp-contract=off \
-    -Ieagler-touhou/ports/th13/web/cpp \
+    -Ieagler-touhou/ports/th13-mp/web/cpp -Ieagler-touhou/common/include \
     "${sources[@]}" "$suite" \
     -o "$out_dir/$name" || status=1
 done
