@@ -14,7 +14,7 @@ import {useLocale, type UiMessageKey} from '../../i18n';
 import {AccountRequestError} from '../../services/account-client';
 import type {LocalSaveReader} from '../../services/local-save-storage';
 import {compareSaveVersions, localSaveFingerprint, relateSaveVersions, saveComparisonCards, type SaveVersionComparison} from '../../services/cloud-save-comparison';
-import {cloudSaveFileName, deleteCloudSave, downloadCloudSave, listCloudSaves, uploadCloudSave, type CloudSaveList, type CloudSaveSnapshot} from '../../services/cloud-saves';
+import {cloudSaveFileName, deleteCloudSave, downloadCloudSave, listCloudSaves, supportsCloudSaveSync, uploadCloudSave, type CloudSaveList, type CloudSaveSnapshot} from '../../services/cloud-saves';
 import {bookGameArtwork} from './book-artwork';
 import './cloud-saves.css';
 
@@ -47,7 +47,7 @@ export function CloudSaves({readLocalSaves, sync}: {readLocalSaves?: LocalSaveRe
 
   const [product, setProduct] = useState('');
   useEffect(()=>{
-    if(!product||!data)return;
+    if(!supportsCloudSaveSync(product)||!data)return;
     const current=data.products.find(item=>item.id===product);if(!current||!isProductId(product))return;
     const selected=product,controller=new AbortController();setComparison({product:selected});
     if(!readLocalSaves){setComparison({product:selected,failed:true});return;}
@@ -94,7 +94,7 @@ export function CloudSaves({readLocalSaves, sync}: {readLocalSaves?: LocalSaveRe
   })) ?? [];
   const listed = rows.filter(row => row.latest || row.status || row.item.id === product ||
     (row.item.id === draft.product && draft.files.length));
-  const other = rows.filter(row => !listed.includes(row));
+  const other = rows.filter(row => supportsCloudSaveSync(row.item.id) && !listed.includes(row));
 
   const refresh = useCallback(async () => {
     listTask.current?.abort();
@@ -217,6 +217,7 @@ export function CloudSaves({readLocalSaves, sync}: {readLocalSaves?: LocalSaveRe
       {data && !listed.length && <p className="cloud-save-empty">{t('cloudSave.noSave')}</p>}
       {!!listed.length && <ul className="cloud-save-list">{listed.map(({item, latest, status}) => {
         const open = product === item.id;
+        const supported = supportsCloudSaveSync(item.id);
         const review = isProductId(item.id) && sync?.hasLocalPending(item.id);
         const artwork = bookGameArtwork(item.game);
         const detailId = 'cloud-save-details-' + item.id;
@@ -237,7 +238,7 @@ export function CloudSaves({readLocalSaves, sync}: {readLocalSaves?: LocalSaveRe
               {enabled && syncStatus.error === 'cloudSave.syncPending' && <Button variant="outline" size="sm" disabled={busy}
                 onClick={() => void perform(async () => {await sync?.flush();})}>{t('action.retry')}</Button>}
             </div>}
-              {comparison?.product===item.id&&comparison.value?<SaveComparisonCards value={saveComparisonCards(comparison.value,locale,t)}/>:<p className="cloud-save-hint">{t(comparison?.failed?'cloudSave.localReadFailed':'cloudSave.comparing')}</p>}
+              {supported && (comparison?.product===item.id&&comparison.value?<SaveComparisonCards value={saveComparisonCards(comparison.value,locale,t)}/>:<p className="cloud-save-hint">{t(comparison?.failed?'cloudSave.localReadFailed':'cloudSave.comparing')}</p>)}
             {latest && <div className="cloud-save-current">
               <div className="cloud-save-version"><strong>{t('cloudSave.latest')}</strong>
                 <Button variant="outline" size="sm" disabled={busy} onClick={() => download(latest)}><Download/>{t('cloudSave.download')}</Button>
@@ -247,7 +248,7 @@ export function CloudSaves({readLocalSaves, sync}: {readLocalSaves?: LocalSaveRe
               {latest.statistics.warnings.includes('backup-used') && <p className="cloud-save-hint">{t('cloudSave.backupUsed')}</p>}
 
             </div>}
-            <div className="cloud-save-upload">
+            {supported && <div className="cloud-save-upload">
               <input ref={input} type="file" className="sr-only" multiple accept=".dat,.cfg,.ini,.txt" disabled={busy} tabIndex={-1}
                 aria-label={t('cloudSave.choose')} onChange={event => {choose(Array.from(event.target.files ?? [])); event.target.value = '';}}/>
               <div className="cloud-save-actions">
@@ -278,7 +279,7 @@ export function CloudSaves({readLocalSaves, sync}: {readLocalSaves?: LocalSaveRe
                   <Button variant="ghost" size="sm" disabled={busy} onClick={() => choose([])}>{t('action.cancel')}</Button>
                 </div>
               </>}
-            </div>
+            </div>}
             {error && <p className="cloud-save-error" role="alert">{t(error)}</p>}
             {message && <p className="cloud-save-hint" role="status">{t(message)}</p>}
             {latest && <div className="cloud-save-danger">
