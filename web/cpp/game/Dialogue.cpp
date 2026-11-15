@@ -28,8 +28,14 @@ bool Dialogue::balloon(i32 style,float value){
     if(!animations.retire(bubble))return false;
     auto anchor=position;anchor.z=0;
     if(line_widths[0]>=0||line_widths[1]>=0){
-        const float reach=value+112.f;
-        anchor.x=speaker==0?std::min(anchor.x,1280.f-reach):std::max(anchor.x,reach);
+        // Balloon coordinates use the 1280-wide ANM space. The gameplay
+        // viewport starts at x=32 and spans 384 pixels at 640x480.
+        constexpr float field_left=2.f*32.f+8.f;
+        constexpr float field_right=2.f*(32.f+384.f)-8.f;
+        constexpr float tip_padding=24.f;
+        const float body_reach=value+112.f;
+        anchor.x=speaker==0?std::clamp(anchor.x,field_left+tip_padding,field_right-body_reach)
+                           :std::clamp(anchor.x,field_left+body_reach,field_right-tip_padding);
     }
     bubble=create(resources.front,287+style,anchor);
     if(!bubble)return false;
