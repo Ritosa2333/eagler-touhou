@@ -72,7 +72,9 @@ struct ResultHost final : TitleScenePlatform {
         return save_ok;
     }
     std::string last_name = "        ";
+    bool ranking_available = true;
     std::string last_result_name() const override { return last_name; }
+    bool result_ranking_available() const override { return ranking_available; }
     bool can_save_replay() const override { return true; }
     bool record_result_name(const std::string& name) override {
         recorded.push_back(name);
@@ -439,3 +441,26 @@ TEST(result_name_editor_starts_from_last_confirmed_name) {
     CHECK_EQ(h.scene->state.result_name, std::string("REI"));
     CHECK_EQ(h.host.sounds.back(), 7);  // 0x454da8 → 0x454e58
 }
+
+TEST(result_without_ordinary_ranking_continues_to_replay_save) {
+    ResultHarness h;
+    h.host.ranking_available = false;
+    h.host.replay_available = true;
+    h.frame();
+    CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::ResultReplaySlot));
+    CHECK_EQ(h.scene->state.handles[107], 0u);
+    CHECK(h.host.recorded.empty());
+    h.enter_replay_slots();
+}
+
+TEST(result_without_ordinary_ranking_or_replay_returns_main) {
+    ResultHarness h;
+    h.host.ranking_available = false;
+    h.host.replay_available = false;
+    h.frame();
+    CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Main));
+    CHECK(h.host.recorded.empty());
+    CHECK_EQ(h.host.music, std::vector<std::string>{"th13_00.wav"});
+}
+
+int main() { return th13test::run_all("Title result flow"); }
