@@ -11,6 +11,8 @@ import {
 import { quickChatPhrase } from '../../../common/contracts/multiplayer-quick-chat.mjs';
 import { createHmac } from 'node:crypto';
 import { createTurnConfigReader } from './turn-config.mjs';
+import { createNat4CandidateExchange, readNat4PortSteps } from './nat4-candidates.mjs';
+import { allocateSwarmPort, createSwarmWorkers } from './swarm-workers.mjs';
 import { WebSocket, WebSocketServer } from 'ws';
 import { roomProbeEnvelope } from './room-probe-policy.mjs';
 import { createRoomDirectory, publicControlMode } from './room-directory.mjs';
@@ -223,6 +225,37 @@ const turnUrls = envValue('EAGLER_NETPLAY_TURN_URLS', ['TH07_TURN_URLS'])
 const turnSharedSecret = envValue('EAGLER_NETPLAY_TURN_SHARED_SECRET', ['TH07_TURN_SHARED_SECRET']);
 const turnUsername = envValue('EAGLER_NETPLAY_TURN_USERNAME', ['TH07_TURN_USERNAME']);
 const turnCredential = envValue('EAGLER_NETPLAY_TURN_CREDENTIAL', ['TH07_TURN_CREDENTIAL']);
+const swarmTurnUrls = envValue('EAGLER_NETPLAY_SWARM_TURN_URLS', [])
+  .split(',').map(value => value.trim()).filter(Boolean);
+const swarmTurnSecret = envValue('EAGLER_NETPLAY_SWARM_TURN_SHARED_SECRET', []);
+const swarmAvailable = swarmTurnSecret.length >= 24 && swarmTurnUrls.length > 0
+  && swarmTurnUrls.every(url => /^turns?:[^\s]+$/i.test(url));
+const swarmControlUrl = envValue('EAGLER_NETPLAY_SWARM_CONTROL_URL', [], 'ws://124.223.180.38:50429/core');
+const swarmAccessToken = envValue('SWARM_ACCESS_TOKEN', []);
+const swarmWorkers = createSwarmWorkers(swarmAvailable ? swarmControlUrl : '');
+if (swarmAvailable) {
+  const refreshSwarmWorkers = async () => {
+    const previous = swarmWorkers.current();
+    await swarmWorkers.refresh();
+    const current = swarmWorkers.current();
+    if (JSON.stringify(previous) !== JSON.stringify(current)) {
+      for (const room of rooms.values()) if (room.lobbyClients.size) broadcastLobby(room);
+    }
+  };
+  setInterval(() => void refreshSwarmWorkers().catch(() => {}), 30_000).unref();
+}
+const nat4PortSteps = readNat4PortSteps(envValue('EAGLER_NETPLAY_NAT4_PORT_STEPS', []));
+const nat4Observers = [...new Set(envValue('EAGLER_NETPLAY_NAT4_OBSERVERS', []).split(',')
+  .map(url => url.trim()).filter(Boolean))];
+if (nat4Observers.length && (nat4Observers.length !== 3 || !nat4Observers.every(url => /^stun:[^\s]+$/i.test(url))))
+  throw new Error('EAGLER_NETPLAY_NAT4_OBSERVERS requires three distinct STUN URLs');
+
+function nat4ExchangeFor(run, addresses, send) {
+  if (addresses[0] === addresses[1] || addresses.some(address => !address)) return;
+  const configured = addresses.filter(address => nat4PortSteps.has(address)).length;
+  if (configured === 2 || (run.rtcReplacementAllowed && nat4Observers.length))
+    return createNat4CandidateExchange(addresses, nat4PortSteps, send, nat4Observers);
+}
 const readTurnConfig = createTurnConfigReader(envValue('EAGLER_NETPLAY_TURN_CONFIG_FILE', []), {
   urls: turnUrls, sharedSecret: turnSharedSecret,
 });
@@ -312,12 +345,17 @@ const lobbyBroadcaster = createRoomBroadcaster({
   coalesceMs: lobbyStateCoalesceMs,
 });
 
-function iceServersFor(roomId, runId, player) {
+function iceServersFor(roomId, runId, player, swarm = false, swarmWorker, stun = stunUrls) {
   const servers = [];
-  if (stunUrls.length) servers.push({ urls: stunUrls });
-  const activeTurn = readTurnConfig();
+  if (stun.length) servers.push({ urls: stun });
   const expires = Math.floor(Date.now() / 1000) + turnTtlSeconds;
-  const username = `${expires}:${roomId}-${runId}-p${player}`;
+  const identity = `${roomId}-${runId}-p${player}`;
+  const username = `${expires}:${swarm && swarmWorker != null ? `swarm-${swarmWorker}/` : ''}${identity}`;
+  if (swarm) {
+    const credential = createHmac('sha1', swarmTurnSecret).update(username).digest('base64');
+    return [...servers, {urls: swarmTurnUrls, username, credential}];
+  }
+  const activeTurn = readTurnConfig();
   for (const node of [activeTurn, ...(activeTurn.backups ?? [])]) {
     if (!node.urls.length) continue;
     if (node.sharedSecret) {
@@ -443,6 +481,11 @@ function getRun(room, runId) {
       clients: new Map(),
       signalClients: new Map(),
       rtcReady: new Set(),
+      rtcReplacementClients: new Set(),
+      rtcGeneration: 0,
+      rtcReplacement: null,
+      rtcReplacementRequested: false,
+      signalReconnectTimer: null,
       rtcFailed: false,
       playerCount: 0,
       route: null,
@@ -466,6 +509,7 @@ function getRun(room, runId) {
 }
 
 function maybeDeleteRun(room, runId, run) {
+  if (run.signalReconnectTimer && !run.ended && !run.releasedPlayers?.size) return;
   if (
     run.spectatorTimeline &&
     run.route &&
@@ -480,6 +524,9 @@ function maybeDeleteRun(room, runId, run) {
     return;
   if (run.routeTimer) clearTimeout(run.routeTimer);
   if (run.spectatorGraceTimer) clearTimeout(run.spectatorGraceTimer);
+  clearTimeout(run.rtcReplacement?.timer);
+  clearTimeout(run.signalReconnectTimer);
+  run.rtcReplacement?.nat4?.close();
   room.runs.delete(runId);
   if (String(room.lobby.startSerial) === String(runId)) resetLobbyAfterRun(room);
 }
@@ -652,9 +699,10 @@ function maybeDeleteRoom(roomId, room) {
     room.clients.size === 0 &&
     room.lobbyClients.size === 0 &&
     room.lobbyDisconnectTimers.size === 0 &&
-    room.runs.size === 0 &&
     rooms.get(roomId) === room
   ) {
+    for (const [runId, run] of room.runs) maybeDeleteRun(room, runId, run);
+    if (room.runs.size) return;
     lobbyBroadcaster.clear(room);
     listenTogether?.close(room);
     rooms.delete(roomId);
@@ -726,7 +774,8 @@ function chooseRoute(roomId, runId, room, run, route) {
     }
     broadcastLobby(room);
   }
-  console.log(`ROUTE room=${roomId} run=${runId} mode=${route}`);
+  const swarmPath = run.swarmDirectPlayer == null ? '' : ` desktopSwarm=${run.swarmDirectSelected ? 'selected' : 'not-selected'}`;
+  console.log(`ROUTE room=${roomId} run=${runId} mode=${route}${swarmPath}`);
   // Signaling is preferred, but a browser/network can leave one signaling
   // WebSocket stuck in CONNECTING while both gameplay relay sockets are live.
   // Deliver the barrier on both channels so fallback never depends on the
@@ -768,7 +817,7 @@ function maybeStartRouteTimer(roomId, runId, room, run) {
     run.routeTimer = null;
     run.rtcFailed = true;
     maybeResolveRoute(roomId, runId, room, run);
-  }, rtcTimeoutMs);
+  }, run.swarmDirectPlayer != null ? Math.max(12000, rtcTimeoutMs) : run.nat4 ? Math.max(7500, rtcTimeoutMs) : rtcTimeoutMs);
 }
 
 function maybeResolveRoute(roomId, runId, room, run) {
@@ -800,7 +849,56 @@ function acceptTh09PlayerReport(room, run, runId, player, message) {
     broadcastLobby(room);
 }
 
-function handleSignalConnection(socket, roomId, runId, player, playerCount) {
+function failRtcReplacement(run, reason) {
+  const replacement = run.rtcReplacement;
+  if (!replacement) return;
+  clearTimeout(replacement.timer);
+  replacement.nat4?.close();
+  run.rtcReplacement = null;
+  run.ended = true;
+  console.log(`RTC REPLACE FAILED generation=${run.rtcGeneration} reason=${reason}`);
+  broadcastSignal(run, {type:'rtc-replace-failed', generation:run.rtcGeneration});
+  for (const socket of run.signalClients.values()) socket.close(1013, 'RTC replacement failed');
+}
+
+async function replaceRtcTransport(run) {
+  const generation = ++run.rtcGeneration;
+  const replacement = {ready:new Set(), started:false, nat4:null, timer:null};
+  run.rtcReplacement = replacement;
+  replacement.timer = setTimeout(() => failRtcReplacement(run, 'timeout'), 15000);
+  replacement.timer.unref();
+  broadcastSignal(run, {type:'rtc-replacing', generation});
+  let grant;
+  if (run.swarmDirectPlayer != null) {
+    run.swarmGrant = allocateSwarmPort(swarmControlUrl, swarmAccessToken, run.swarmWorkers[run.swarmDirectPlayer] ?? 0)
+      .catch(() => undefined);
+    grant = await run.swarmGrant;
+  }
+  if (run.rtcReplacement !== replacement || run.ended) return;
+  const addresses = [0, 1].map(seat => run.signalClients.get(seat)?.relayAddress);
+  replacement.nat4 = nat4ExchangeFor(run, addresses, (from, signal) => {
+      const target = run.signalClients.get(1 - from);
+      if (target) sendSignal(target, {type:'signal', from, generation, ...signal});
+  });
+  replacement.started = true;
+  for (const [seat, socket] of run.signalClients)
+    sendSignal(socket, {type:'rtc-replace', generation,
+      ...(seat === run.swarmDirectPlayer && grant ? {swarmGrant:grant} : {})});
+}
+
+function maybeReplaceRtcTransport(roomId, runId, run) {
+  if (!run.rtcReplacementRequested || run.signalClients.size !== 2) return;
+  run.rtcReplacementRequested = false;
+  if (run.ended || run.rtcReplacement || run.disconnectedPlayers?.size || run.releasedPlayers?.size) return;
+  if ([...run.signalClients.values()].some(socket => socket.readyState !== WebSocket.OPEN)) {
+    run.rtcReplacementRequested = true;
+    return;
+  }
+  console.log(`RTC REPLACE room=${roomId} run=${runId} generation=${run.rtcGeneration + 1}`);
+  void replaceRtcTransport(run).catch(() => failRtcReplacement(run, 'setup'));
+}
+
+async function handleSignalConnection(socket, roomId, runId, player, playerCount) {
   const room = getRoom(roomId, socket);
   if (!room) return;
   const run = getRun(room, runId);
@@ -817,16 +915,50 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
     return;
   }
   run.playerCount = playerCount;
+  const useDesktopSwarm = run.swarmDirectPlayer != null;
+  let swarmGrant;
+  if (player === run.swarmDirectPlayer) {
+    run.swarmGrant ??= allocateSwarmPort(swarmControlUrl, swarmAccessToken, run.swarmWorkers[player] ?? 0)
+      .catch(() => undefined);
+    swarmGrant = await run.swarmGrant;
+    if (socket.readyState !== WebSocket.OPEN || rooms.get(roomId) !== room || room.runs.get(runId) !== run ||
+        run.ended || run.releasedPlayers?.has(player)) {
+      socket.close(4008, 'membership released');
+      return;
+    }
+  }
   const previous = run.signalClients.get(player);
   if (previous && previous !== socket && previous.readyState === WebSocket.OPEN)
     previous.close(1000, 'signaling reconnected');
   const existingPeers = [...run.signalClients.keys()].filter((peer) => peer !== player);
   run.signalClients.set(player, socket);
+  clearTimeout(run.signalReconnectTimer);
+  run.signalReconnectTimer = null;
+  const observeStun = run.rtcReplacementAllowed && nat4Observers.length > 0 && !nat4PortSteps.has(socket.relayAddress);
+  const stun = observeStun ? nat4Observers : stunUrls;
+  function forwardSignal(from, signal) {
+    const target = run.signalClients.get(1 - from);
+    if (target) sendSignal(target, {type: 'signal', from, ...signal});
+  }
+  if (!run.nat4 && !run.route && playerCount === 2 && run.signalClients.size === 2) {
+    const addresses = [0, 1].map(seat => run.signalClients.get(seat).relayAddress);
+    run.nat4 = nat4ExchangeFor(run, addresses, forwardSignal);
+    if (run.nat4) {
+      if (run.routeTimer) {
+        clearTimeout(run.routeTimer);
+        run.routeTimer = null;
+      }
+    }
+  }
   sendSignal(socket, {
     type: 'peers',
     peers: existingPeers,
     route: run.route,
-    iceServers: iceServersFor(roomId, runId, player),
+    iceServers: useDesktopSwarm ? (stun.length ? [{urls:stun}] : [])
+      : iceServersFor(roomId, runId, player, run.swarm, run.swarmWorkers?.[player], stun),
+    ...(swarmGrant ? {swarmGrant} : {}),
+    ...(observeStun ? {nat4Observers} : {}),
+    ...(run.rtcReplacementClients.size === 2 ? {rtcReplace:true} : {}),
     ...(roomId.startsWith('th09mp-') && run.memberIds ? {th09MatchReport:true} : {}),
   });
   for (const [peer, target] of run.signalClients) {
@@ -836,6 +968,7 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
     `SIGNAL JOIN room=${roomId} run=${runId} player=${player} peers=${run.signalClients.size}`,
   );
   maybeResolveRoute(roomId, runId, room, run);
+  maybeReplaceRtcTransport(roomId, runId, run);
 
   const acceptSignal = createRelayMessageGate({
     maxBytes: RELAY_LIMITS.controlBytes,
@@ -874,13 +1007,23 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
       const to = Number(message.to);
       if (!Number.isInteger(to) || to < 0 || to >= playerCount || to === player) return;
       const target = run.signalClients.get(to);
-      if (!target) return;
+      if (!target || run.signalClients.get(player) !== socket) return;
       const signal = normalizeRelaySignal(message);
       if (!signal) {
         socket.close(1008, 'invalid signaling payload');
         return;
       }
-      sendSignal(target, {
+      const observation = {...signal, observer: message.observer};
+      if (message.observer != null && (!signal.candidate || signal.description || !nat4Observers.includes(message.observer)))
+        return;
+      if (run.rtcGeneration) {
+        if (run.ended || message.generation !== run.rtcGeneration) return;
+        const exchange = run.rtcReplacement?.nat4;
+        if (exchange) exchange.send(player, observation);
+        else if (message.observer == null) sendSignal(target, {type:'signal', from:player, generation:run.rtcGeneration, ...signal});
+      } else if (message.generation != null) return;
+      else if (run.nat4 && !run.route) run.nat4.send(player, observation);
+      else if (message.observer == null) sendSignal(target, {
         type: 'signal',
         from: player,
         ...signal,
@@ -888,8 +1031,37 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
       return;
     }
     if (message.type === 'rtc-ready') {
+      if (run.signalClients.get(player) !== socket) return;
+      if (run.rtcGeneration) {
+        const replacement = run.rtcReplacement;
+        if (!replacement || message.generation !== run.rtcGeneration || !replacement.started) return;
+        replacement.ready.add(player);
+        if (replacement.ready.size === playerCount) {
+          clearTimeout(replacement.timer);
+          replacement.nat4?.close();
+          run.rtcReplacement = null;
+          broadcastSignal(run, {type:'rtc-replaced', generation:run.rtcGeneration});
+        }
+        return;
+      }
+      if (message.rtcReplace === true && run.rtcReplacementAllowed) run.rtcReplacementClients.add(player);
+      if (run.rtcReplacementClients.size === 2 && !run.route)
+        broadcastSignal(run, {type:'rtc-replace-capable'});
+      if (player === run.swarmDirectPlayer) run.swarmDirectSelected = message.swarmDirect === true;
       run.rtcReady.add(player);
       maybeResolveRoute(roomId, runId, room, run);
+      return;
+    }
+    if (message.type === 'rtc-replace-request' && run.route === 'rtc' && run.signalClients.get(player) === socket &&
+        !run.ended && run.rtcReplacementClients.size === 2 && !run.rtcReplacement &&
+        message.generation === run.rtcGeneration && !run.disconnectedPlayers?.size && !run.releasedPlayers?.size) {
+      run.rtcReplacementRequested = true;
+      maybeReplaceRtcTransport(roomId, runId, run);
+      return;
+    }
+    if (message.type === 'rtc-replace-failed' && run.signalClients.get(player) === socket &&
+        message.generation === run.rtcGeneration) {
+      failRtcReplacement(run, `player-${player}`);
       return;
     }
     if (message.type === 'ice-restart-request' && run.route === 'rtc') {
@@ -918,10 +1090,21 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
     }
   });
 
-  socket.on('close', () => {
+  socket.on('close', code => {
     if (run.signalClients.get(player) === socket) {
+      if (run.rtcReplacement) failRtcReplacement(run, 'signaling closed');
+      run.nat4?.close();
       run.signalClients.delete(player);
       run.rtcReady.delete(player);
+      if (code === 1006 && run.route === 'rtc' && run.rtcReplacementClients.size === 2 &&
+          !run.ended && !run.signalClients.size && !run.releasedPlayers?.size && !run.disconnectedPlayers?.size) {
+        run.signalReconnectTimer = setTimeout(() => {
+          run.signalReconnectTimer = null;
+          maybeDeleteRun(room, runId, run);
+          maybeDeleteRoom(roomId, room);
+        }, lobbyReconnectGraceMs);
+        run.signalReconnectTimer.unref();
+      }
       if (!run.route) {
         run.rtcFailed = true;
         maybeResolveRoute(roomId, runId, room, run);
@@ -931,6 +1114,10 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
     maybeDeleteRun(room, runId, run);
     maybeDeleteRoom(roomId, room);
   });
+}
+
+function prefersSwarm(seat, index) {
+  return seat?.swarmOverride ?? (seat?.preferSwarm === true || index === 0 && seat?.nativeRuntime === true);
 }
 
 function lobbySnapshot(room) {
@@ -958,6 +1145,10 @@ function lobbySnapshot(room) {
     predictionLimit: room.lobby.predictionLimit,
     settingsVersion: room.lobby.settingsVersion,
     phase: room.lobby.phase,
+    ...(swarmAvailable ? {swarmAvailable: true} : {}),
+    ...(swarmAvailable ? {swarmWorkers: swarmWorkers.current()} : {}),
+    ...(room.lobby.phase !== 'lobby' && room.runs.get(String(room.lobby.startSerial))?.swarm
+      ? {swarmSelected: true} : {}),
     ...(room.lobby.phase !== 'lobby' && room.runs.get(String(room.lobby.startSerial))?.runtimeGeneration
       ? {runtimeGeneration: room.runs.get(String(room.lobby.startSerial)).runtimeGeneration} : {}),
     startSerial: room.lobby.startSerial,
@@ -967,7 +1158,7 @@ function lobbySnapshot(room) {
         room.runs.get(String(room.lobby.startSerial))?.spectatorStages
       ? { spectatorTimeline: true }
       : {}),
-    seats: room.lobby.seats.map((seat) =>
+    seats: room.lobby.seats.map((seat, index) =>
       seat
         ? {
             clientId: seat.clientId,
@@ -979,6 +1170,8 @@ function lobbySnapshot(room) {
             controlMode: publicControlMode(seat),
             ...(typeof seat.touchEnabled === 'boolean' ? { touchEnabled: seat.touchEnabled } : {}),
             mobileDevice: seat.mobileDevice === true,
+            ...(seat.nativeRuntime ? {nativeRuntime: true} : {}),
+            ...(swarmAvailable && prefersSwarm(seat, index) ? {preferSwarm: true} : {}),
             resource: seat.resource || null,
             ready: !!seat.ready && seat.readyVersion === room.lobby.settingsVersion,
             ...(seat.runtimeGeneration ? {runtimeGeneration: seat.runtimeGeneration} : {}),
@@ -1123,6 +1316,10 @@ function switchLobbyProduct(room, product) {
 }
 
 function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initialPolicy) {
+  if (swarmAvailable) void swarmWorkers.refresh().then(() => {
+    const room = rooms.get(roomId);
+    if (room?.lobbyClients.get(clientId) === socket) broadcastLobby(room);
+  }).catch(() => {});
   const code = numericRoomCode(roomId);
   const current = roomCodes.get(code);
   if (current && current !== roomId) {
@@ -1342,6 +1539,11 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         movementMode: message.movementMode,
         touchEnabled: typeof message.touchEnabled === 'boolean' ? message.touchEnabled : undefined,
         mobileDevice: message.mobileDevice === true,
+        nativeRuntime: message.nativeRuntime === true,
+        preferSwarm: swarmAvailable && message.preferSwarm === true,
+        swarmOverride: previousEntry?.swarmOverride,
+        swarmWorker: previousEntry?.swarmWorker,
+        swarmWorkerManual: previousEntry?.swarmWorkerManual,
         ready: preserveReady,
         runtimeGeneration: previousEntry?.runtimeGeneration,
         readyVersion: preserveReady ? room.lobby.settingsVersion : 0,
@@ -1479,6 +1681,23 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       return;
     }
     const occupant = room.lobby.seats[seat];
+    if (message.type === 'relay-preference') {
+      if (!swarmAvailable || room.lobby.phase !== 'lobby' || typeof message.swarm !== 'boolean') return;
+      const automatic = message.automatic === true;
+      if (automatic && (!message.swarm || !prefersSwarm(occupant, seat) ||
+          (occupant.swarmWorkerManual && swarmWorkers.current().some(node => node.id === occupant.swarmWorker)))) return;
+      const worker = message.swarm && swarmWorkers.current().some(node => node.id === message.worker)
+        ? message.worker : undefined;
+      const override = automatic ? occupant.swarmOverride : message.swarm;
+      const manual = !automatic && worker != null;
+      if (occupant.swarmOverride !== override || occupant.swarmWorker !== worker || occupant.swarmWorkerManual !== manual) {
+        occupant.swarmOverride = override;
+        occupant.swarmWorker = worker;
+        occupant.swarmWorkerManual = manual;
+        broadcastLobby(room);
+      }
+      return;
+    }
     if (message.type === 'timing-settings') {
       const timing = multiplayerInputTimingPolicy(room.multiplayer), choice = message.timingChoice;
       if (seat !== 0 || room.lobby.phase !== 'lobby' || !room.multiplayer?.inputTiming ||
@@ -1527,10 +1746,12 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         percent:
           message.status === 'ready' ? 100 : rawPercent === null ? null : Math.round(rawPercent),
       };
-      if (JSON.stringify(occupant.resource) !== JSON.stringify(resource)) {
+      const nativeRuntime = typeof message.nativeRuntime === 'boolean' ? message.nativeRuntime : occupant.nativeRuntime;
+      if (occupant.nativeRuntime !== nativeRuntime || JSON.stringify(occupant.resource) !== JSON.stringify(resource)) {
         if (room.lobby.phase === 'lobby' && resource.status !== 'ready' &&
             (occupant.resource?.status === 'ready' || occupant.ready)) invalidateLobbyReady(room);
         occupant.resource = resource;
+        occupant.nativeRuntime = nativeRuntime;
         broadcastLobby(room);
       }
       return;
@@ -1658,6 +1879,10 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       occupant.touchEnabled =
         typeof message.touchEnabled === 'boolean' ? message.touchEnabled : undefined;
       occupant.mobileDevice = message.mobileDevice === true;
+      occupant.nativeRuntime = message.nativeRuntime === true;
+      occupant.swarmDirect = occupant.nativeRuntime && message.swarmDirect === true;
+      if (typeof message.preferSwarm === 'boolean')
+        occupant.preferSwarm = swarmAvailable && message.preferSwarm;
       const wasReady = occupant.ready && occupant.readyVersion === room.lobby.settingsVersion;
       occupant.ready = !!message.ready;
       if (message.ready) occupant.runtimeGeneration = generation;
@@ -1880,7 +2105,21 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       bindTh09Duel(room, run);
       const seatedClients = new Set(activeSeats.map((entry) => entry.clientId));
       run.playerCount = room.lobby.playerCount;
+      run.rtcReplacementAllowed = activeSeats.length === 2 && activeSeats.some(seat => seat.nativeRuntime);
       run.runtimeGeneration = runtimeGeneration;
+      run.swarm = swarmAvailable && activeSeats.some(prefersSwarm);
+      if (run.swarm) {
+        const available = swarmWorkers.current();
+        const workerFor = (entry, seat) => prefersSwarm(entry, seat) && available.some(node => node.id === entry.swarmWorker)
+          ? entry.swarmWorker : undefined;
+        const preferred = activeSeats.map(workerFor);
+        const defaultWorker = preferred.find(worker => worker != null) ?? available[0]?.id;
+        run.swarmWorkers = preferred.map(worker => worker ?? defaultWorker);
+        if (swarmAccessToken && activeSeats.length === 2) {
+          const native = activeSeats.findIndex(seat => seat.nativeRuntime && seat.swarmDirect);
+          if (native !== -1) run.swarmDirectPlayer = native;
+        }
+      }
       run.admittedSpectators = new Set(
         [...room.lobby.spectators.keys()].filter(
           (id) => room.lobbyClients.has(id) && !seatedClients.has(id),
@@ -2190,7 +2429,7 @@ server.on('connection', (socket, request) => {
   }
 
   if (signaling) {
-    handleSignalConnection(socket, roomId, runId, player, playerCount);
+    void handleSignalConnection(socket, roomId, runId, player, playerCount).catch(() => socket.close(1011, 'signaling unavailable'));
     return;
   }
 
