@@ -10,6 +10,7 @@ struct ReplayPlaybackInitial {
     unsigned stage=0,rank=0,seed=0,shot=0,continues=0,generation=0,worldFrame=0;
     std::int32_t score=0,pointValue=0,horizontal=0,vertical=0,motivation=0,perfect=0;
     float frozenArea=0;
+    std::int32_t graze=0;
 };
 class OwnedReplayPlaybackInput {
     std::vector<std::uint8_t> input_;
@@ -36,7 +37,9 @@ public:
             &&std::bit_cast<std::int32_t>(word(bytes,28))==actual.vertical
             &&std::bit_cast<std::int32_t>(word(bytes,128))==actual.motivation
             &&std::bit_cast<std::int32_t>(word(bytes,132))==actual.perfect
-            &&word(bytes,136)==std::bit_cast<std::uint32_t>(actual.frozenArea);
+            &&word(bytes,136)==std::bit_cast<std::uint32_t>(actual.frozenArea)
+            &&actual.graze>=0&&actual.graze<=1000000000
+            &&std::bit_cast<std::int32_t>(word(bytes,0x28))==actual.graze;
         if(!exact)throw std::runtime_error("recorded replay header differs from actual stage seed resources or position");
         std::vector<std::uint8_t> candidate(bytes.begin()+144,bytes.end());
         input_=std::move(candidate);generation_=actual.generation;stage_=stage;rank_=actual.rank;

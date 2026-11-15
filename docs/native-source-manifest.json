@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-11-16",
-  "generation": "ea55af4aea7f1f979857d3c6e32ce80205019bc598b690013b52f29ae0020b2a",
+  "generation": "d0b240a8b4804f1af936d61d9db10b8d15a6f7a53ca82706d31c5896c03e0241",
   "sourceFiles": {
     "src/animation/AnmLogic.cpp": "8181699a119c123274e04883ffbb072ac3b4a0a1c0b18ccb2c6fa16850995b27",
     "src/animation/AnmLogic.hpp": "cb157319e0f57d007aae669d60a3840be7d31adfd1f384f02459146c56c8c88b",
@@ -146,7 +146,7 @@
     "src/game/NativeReplaySaveMenu.hpp": "2b809559a38ee149709b2d8d4de0d1055aadb7bb8da0d1970a1c96b0f1713870",
     "src/game/NativeReplaySlotPreview.hpp": "00deba3e2294216caa92a0c855b113c8b25116a6fab58fcecb8733e9be65dcfe",
     "src/game/NativeReplayStageBinding.hpp": "314976fee180cfd2529e5cb126a9ad086bb011d20f5f5c197da453bcd0febcfc",
-    "src/game/NativeRunReplay.hpp": "c14e2bf6c2e8245aaf1e2c5bae3b3e06dd0ad336c27719d4ed157c17ab35740f",
+    "src/game/NativeRunReplay.hpp": "2892ae81e27c3e21f203e93b88d93ce5ab4a54899353e13cf1ee87d2976e0a7d",
     "src/game/NativeScoreContainer.hpp": "861e87fb87d53cea53c984d31997685d7de2878d7c623bf73703f4a4e30395c7",
     "src/game/NativeScoreProfile.hpp": "e35257ed0ad8da60ffeec9a4473be16505d05197f453d3cfa6f30fa199538bb5",
     "src/game/OrdinaryTerminalDrain.hpp": "5ec32699cefe4381659b528b614f3dec2e1864b5724e03871f89ac02fa0be691",
@@ -159,7 +159,7 @@
     "src/game/OriginalReplayNameContext.hpp": "4087bcec485e6ea2979e95670ba86315f965300df3a1aaacdcaa3c284bfe15a2",
     "src/game/OriginalReplayNameGlyphs.hpp": "5458dbed93599a5b1b2aee4b304a4fd87b66b3aa0cf2873f951d55beba876be5",
     "src/game/OriginalScoreNameGlyphs.hpp": "b6731385691398ccedee5fd22c0e5b1a83ce2bfc73d5bc2e95ea9c3306fd9c3e",
-    "src/game/OwnedReplayPlaybackInput.hpp": "5e5a13612ace3f6e46b78f377c25a0c0b0a9c73c99dbf5d5cfc5c15e3637e192",
+    "src/game/OwnedReplayPlaybackInput.hpp": "95cb441ea27f0c3174ab16ec853fa2e505355ac14d447a02baf67e8f28328097",
     "src/game/PauseGameOverHost.hpp": "be230510da3d870ac80570387a6029de77201e96033b9412ff9779694f3b8766",
     "src/game/PercentHud.hpp": "6c71313089bd1ef543412a4617d50ebc8b1ae78971146486c15ae31dd248ac9a",
     "src/game/PerfectFreezeHost.cpp": "ab72fa7bd4011f28176d9ccbd00c65cd6e1198f84d9b310b7b858a886a0f59e8",
@@ -228,7 +228,7 @@
     "src/runtime/Exports.cpp": "a53590d490e09517d9bdad2feec85799e136f9e1e44470a2981bbaa1767b5b3f",
     "src/runtime/Memory.hpp": "bc209020ad0f2a2bd9e649440f239f3517a97ec480e4d27d2c3395a1c5d3a1b0",
     "src/runtime/PlayerExports.cpp": "72c6abe64a18786d2c40f78addcfb4a22335e48d3ac4ccdf855233f0fb1e3a5f",
-    "src/runtime/WorldExports.cpp": "c8dfd4085f71770b6a21a317568f9dec34e7ff8656c13fda5092d3322625c6e0"
+    "src/runtime/WorldExports.cpp": "60702a47486f6fae2e2ea6e7e85e3ef43a3483752c0fa57ae82e12cb150312eb"
   },
   "translationUnits": [
     "src/runtime/Exports.cpp",
@@ -524,37 +524,45 @@
   ],
   "referenceArtifacts": {
     "core.mjs": {
-      "bytes": 134110,
-      "sha256": "846c39a7ef04f958af7a8267e9afc1b25bca73e86b14e88f5b4a4462ce74f987"
+      "bytes": 134120,
+      "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
     },
     "core.wasm": {
-      "bytes": 2169078,
-      "sha256": "b2c4db56f3f449f78618288e06e0be407dc53ae70d708304eb703e670217c9a7"
+      "bytes": 2169195,
+      "sha256": "c15bea7d29b6d5b1249c364a0cde495b44ca9440847ee39feda2fa07428fa143"
     }
   },
   "acceptedAssistedScope": "Historical six normal routes on private98 and EX on private99; not rerun on private101.",
   "browserAcceptance": false,
   "rebuiltForUpload": false,
-  "coreOrdinal": 101,
+  "coreOrdinal": 102,
   "browserEntryAccepted": false,
   "browserAcceptanceEvidence": null,
-  "rebuildReason": "First private101 link614 after continued-carry commit-provenance fix612 and complete-TU syntax613; prior successful cores unchanged.",
+  "rebuildReason": "First private102 link626 after actual621 lost replaygraze, producer/restore/bind623RED624GREEN and625completeaffectedTUs syntax; successful101 unchanged.",
   "relativeHeaderEdges": 390,
   "buildAcceptance": {
-    "case": 614,
+    "case": 626,
     "compilerCalls": 1,
     "compilerExit": 0,
     "compilerStdoutBytes": 0,
     "compilerStderrBytes": 0
   },
   "runtimeAcceptance": {
-    "case": 615,
+    "case": 627,
     "Factories": 1,
+    "WorldStarts": 1,
+    "worldTickCalls": 0,
     "callableExports": 205,
-    "unownedActionsRejected": 5,
-    "WorldStarts": 0,
+    "headerGraze": 2529,
+    "restoredGraze": 2529,
+    "mismatchedGrazeBindRejected": true,
+    "rejectedBindCreatedOwner": false,
+    "originalPacketBound": true,
+    "inputFramesConsumed": 0,
+    "powerAndRNGUnchanged": true,
+    "normalRecordBound": false,
     "browser": 0,
-    "scope": "actual instantiate/export/memory and no-owner rejection; continued-terminal positive path pending"
+    "scope": "actual original header restore and strict playbackbind at0ticks; not full23707/continuedterminal/browser acceptance"
   },
   "historicalBrowserEvidence": {
     "coreOrdinal": 100,

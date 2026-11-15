@@ -1,0 +1,135 @@
+{
+  "schema": 1,
+  "date": "2026-11-16",
+  "sourceCore": 102,
+  "sourceCandidate": "case624-replay-graze-producer-restore-green/candidate",
+  "frontend": "case619 unchanged",
+  "baselineActual": {
+    "case": 621,
+    "core": 101,
+    "expectedGraze": 2529,
+    "actualGraze": 0,
+    "Factories": 1,
+    "WorldStarts": 1,
+    "ticks": 0,
+    "rawSHA256": "b35340373b43b611f21cad27707a73afacb3a4670870c601d39b83ad3850218d"
+  },
+  "fixtureOnlyFailure": {
+    "case": 622,
+    "compilerExit": 1,
+    "runtimeStarted": false,
+    "missingDependency": "kStageEclNames"
+  },
+  "component": {
+    "red": 623,
+    "green": 624,
+    "redFailures": 10,
+    "redBaselines": 3,
+    "greenAssertions": 13,
+    "UBSan": true,
+    "realProducerRestoreBind": true,
+    "realPerfectHud": true,
+    "WorldCarryInputSynthetic": true,
+    "WorldStarts": 0
+  },
+  "syntax": {
+    "case": 625,
+    "fullTUs": 3,
+    "sourceFiles": 226,
+    "includeEdges": 390,
+    "logsEmpty": true
+  },
+  "build": {
+    "case": 626,
+    "compilerCalls": 1,
+    "passed": true,
+    "generation": "d0b240a8b4804f1af936d61d9db10b8d15a6f7a53ca82706d31c5896c03e0241",
+    "artifacts": {
+      "core.mjs": {
+        "bytes": 134120,
+        "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
+      },
+      "core.wasm": {
+        "bytes": 2169195,
+        "sha256": "c15bea7d29b6d5b1249c364a0cde495b44ca9440847ee39feda2fa07428fa143"
+      }
+    },
+    "sources": 226,
+    "translationUnits": 83,
+    "exports": 205,
+    "changedSources": [
+      "src/game/NativeRunReplay.hpp",
+      "src/game/OwnedReplayPlaybackInput.hpp",
+      "src/runtime/WorldExports.cpp"
+    ]
+  },
+  "actualRuntime": {
+    "case": 627,
+    "Factories": 1,
+    "WorldStarts": 1,
+    "worldTickCalls": 0,
+    "callableExports": 205,
+    "restore": {
+      "headerGraze": 2529,
+      "beforeGraze": 0,
+      "afterGraze": 2529,
+      "frame": 0,
+      "powerBefore": 10000,
+      "powerAfter": 10000,
+      "rngBefore": {
+        "seed": 41297,
+        "calls": 0
+      },
+      "rngAfter": {
+        "seed": 41297,
+        "calls": 0
+      },
+      "normalRecord": {
+        "bound": false,
+        "started": false,
+        "prepared": false,
+        "acknowledged": false,
+        "generation": 2,
+        "route": 0,
+        "rank": 0,
+        "frames": 0,
+        "serial": 0,
+        "bytes": 0,
+        "digest": 0,
+        "terminalStatsPrepared": false,
+        "terminalScore": 0,
+        "terminalContinues": 0,
+        "tainted": false,
+        "normalClear": false,
+        "provenance": "ordinary-native-postrun"
+      },
+      "afterBindGraze": 2529
+    },
+    "binding": {
+      "active": true,
+      "stage": 2,
+      "rank": 3,
+      "generation": 2,
+      "consumed": 0,
+      "frames": 23707,
+      "complete": false,
+      "auxiliaryKnown": true,
+      "auxiliaryLive": false
+    },
+    "mismatchedGrazeBindRejected": true,
+    "rejectedBindAtomic": true
+  },
+  "range": {
+    "replayAndCarryMax": 1000000000,
+    "initialGrazeAPIMax": 99999999,
+    "physicsCapChanged": false
+  },
+  "limits": {
+    "original617EarlyGameOverFixed": false,
+    "full23707Passed": false,
+    "newBrowserAcceptance": false,
+    "publicRuntimeChanged": false,
+    "normalClearClaimed": false,
+    "oldSuccessRebuilt": false
+  }
+}

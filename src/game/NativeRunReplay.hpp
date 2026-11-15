@@ -41,10 +41,10 @@ public:
     bool configuredFor(unsigned id)const{return !stages_.empty()&&lastStage_==id;}
     void begin(unsigned stage,unsigned rank,unsigned seed,unsigned shot,unsigned continues,std::int32_t score,
                std::int32_t pointValue,std::int32_t motivation,std::int32_t perfect,float frozenArea,
-               std::int32_t horizontal,std::int32_t vertical){
+               std::int32_t horizontal,std::int32_t vertical,std::int32_t graze=0){
         if(stage<1||stage>16||rank>4||(rank==4)!=(stage==16)||seed>65535||shot>15||continues>9||score<0||score>999999999
            ||pointValue<0||motivation<0||motivation>100000||perfect<0||perfect>30000||!std::isfinite(frozenArea)||frozenArea<0
-           ||stages_.size()>=3)throw std::runtime_error("normal replay initial native stage fields rejected");
+           ||graze<0||graze>1000000000||stages_.size()>=3)throw std::runtime_error("normal replay initial native stage fields rejected");
         if(stages_.empty()){
             if(stage!=1&&stage!=6&&stage!=11&&stage!=16)throw std::runtime_error("normal replay must start at original route beginning");
         }else if(rank!=rank_||!nextStage(lastStage_,stage))throw std::runtime_error("normal replay stage carry identity rejected");
@@ -53,6 +53,7 @@ public:
         store32(candidate.header,0xc,std::bit_cast<std::uint32_t>(score));store16(candidate.header,0x10,std::uint16_t(shot));
         store32(candidate.header,0x14,std::bit_cast<std::uint32_t>(pointValue));store32(candidate.header,0x18,std::bit_cast<std::uint32_t>(horizontal));
         store32(candidate.header,0x1c,std::bit_cast<std::uint32_t>(vertical));store32(candidate.header,0x20,continues);
+        store32(candidate.header,0x28,std::bit_cast<std::uint32_t>(graze));
         std::uint32_t value=0;for(unsigned index=0;index<20;++index){store32(candidate.header,0x30+index*4,value);value-=0x21522153u;}
         store32(candidate.header,0x80,std::bit_cast<std::uint32_t>(motivation));store32(candidate.header,0x84,std::bit_cast<std::uint32_t>(perfect));
         store32(candidate.header,0x88,std::bit_cast<std::uint32_t>(frozenArea));store32(candidate.header,0x8c,1);

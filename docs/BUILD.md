@@ -4,7 +4,7 @@
 
 ## 原生核心
 
-private101使用Emscripten 4.0.22，case614完成首次完整链接，case615完成实际加载、205个导出接口与5项缺少有效会话的拒绝检查。没有在101上启动World或浏览器。`build/private101.rsp`从该次成功编译参数转换为仓库相对路径，输出为`build/local/core.mjs`；`build/private100.rsp`保留为历史配方。两版编译参数相同，原生源码仅WorldExports.cpp变化。
+private102使用Emscripten 4.0.22，case626首次完整链接通过；case627实际检查205个导出接口，在1个World、0次tick下验证原版录像累计擦弹数恢复和严格绑定。`build/private102.rsp`来自该次成功编译参数的仓库相对路径转换，输出为`build/local/core.mjs`。private100/101配方保留为历史资料；相同编译参数不代表相同源码或产物。
 
 它保留 83 个翻译单元、205 个导出符号、1 MiB 栈、64 MiB 初始内存、C++20、异常与浮点选项。源文件摘要记录在 `docs/native-source-manifest.json`。
 
@@ -12,12 +12,12 @@ private101使用Emscripten 4.0.22，case614完成首次完整链接，case615完
 
 ```powershell
 New-Item -ItemType Directory -Force build/local
-emcc '@build/private101.rsp'
+emcc '@build/private102.rsp'
 ```
 
-本源码检出目录中的相对路径配方完成了文件与参数核对；private101的实际构建在隔离验收目录完成。此前private100的浏览器检查作为历史证据保留，不能视为101已完成浏览器验收。构建输出不会自动发布到浏览器，也不承诺跨机器生成完全相同的二进制摘要。
+本源码检出目录中的相对路径配方完成了文件与参数核对；private102的实际构建在隔离验收目录完成。此前private100的浏览器检查作为历史证据保留，不能视为102已完成浏览器验收。构建输出不会自动发布到浏览器，也不承诺跨机器生成完全相同的二进制摘要。
 
-`tools/build-runtime.mjs` 是历史脚本，保留作研究参考；其导出清单和发布逻辑早于本快照，不作为private101的构建入口。
+`tools/build-runtime.mjs` 是历史脚本，保留作研究参考；其导出清单和发布逻辑早于本快照，不作为private102的构建入口。
 
 ## 原作资源
 
@@ -35,7 +35,7 @@ python -X utf8 tools/prepare.py --original '你的原作安装目录' --thtk '�
 
 `tests/` 为保留的测试源码。部分测试依赖本地原版资源、未分发的私有黄金记录、编译器或运行时。缺失依赖导致的跳过不等于测试通过。
 
-原有六线和EX成功证据保持不变。新增测试针对新缺陷或尚未覆盖的范围；不为重复获得通过结论重跑成功路线。`tests/core101-abi-noowner.mjs`是615实际执行的源文件，显式参数为包含已验收`result.json`、`request.json`和`run/runtime/`的本地核心目录。运行产物及这些本地准入资料不随仓库分发；新测试应使用新目的和受控输出，禁止覆写614/615或重新构建已成功的101。
+原有六线和EX成功证据保持不变。新增测试针对新缺陷或尚未覆盖的范围；不为重复获得通过结论重跑成功路线。`tests/core101-abi-noowner.mjs`是615实际执行的源文件，显式参数为包含已验收`result.json`、`request.json`和`run/runtime/`的本地核心目录。运行产物及这些本地准入资料不随仓库分发；新测试应使用新目的和受控输出，禁止覆写历史成功目录或重新构建已成功的93至102。新增录像字段组件和零帧实际检查位于`tests/replay-graze/`，完整范围见`docs/native-replay-graze621-627.md`。
 
 新增回归源码：
 

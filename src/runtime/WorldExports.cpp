@@ -1472,7 +1472,7 @@ int th128_world_bind_debug_replay_record(unsigned epoch) {
         }else{
             debugFreshReplay=std::make_shared<th128::record::NativeFreshReplayRecord>(context);
             debugExtraReplay=std::make_shared<th128::record::NativeRunReplay>();
-            debugExtraReplay->begin(16,4,context.seed,context.shotGroup,0,context.score,context.pointValue,context.motivation,context.perfectCharge,context.frozenArea,playerRaw.horizontal,playerRaw.vertical);
+            debugExtraReplay->begin(16,4,context.seed,context.shotGroup,0,context.score,context.pointValue,context.motivation,context.perfectCharge,context.frozenArea,playerRaw.horizontal,playerRaw.vertical,grazeGlobals.grazeCount);
         }
         debugFreshReplayGeneration=worldGeneration;debugFreshReplayEpoch=epoch;
         debugRecordPrefix.replayMode=debugFreshReplay->mode();return 1;
@@ -3482,7 +3482,7 @@ int th128_world_replay_begin(unsigned seed,double seconds){
         const auto boundSeed=th128::record::replayStageSeed(seed,random.seed,random.calls,receivedCarry);
         if(!normalReplay){normalReplay=std::make_shared<th128::record::NativeRunReplay>();normalReplayOrigin=seconds;normalReplayClock=seconds;}
         if(normalReplay->configuredFor(stage))throw std::runtime_error("normal replay stage already bound");
-        normalReplay->begin(stage,unsigned(worldStartDifficulty),boundSeed,*group,unsigned(originalContinueCount),scoreRaw,pointValueRaw,motivationRaw,playerWindowControl.perfectCharge4b4d70,cumulativeFrozenArea,playerRaw.horizontal,playerRaw.vertical);
+        normalReplay->begin(stage,unsigned(worldStartDifficulty),boundSeed,*group,unsigned(originalContinueCount),scoreRaw,pointValueRaw,motivationRaw,playerWindowControl.perfectCharge4b4d70,cumulativeFrozenArea,playerRaw.horizontal,playerRaw.vertical,grazeGlobals.grazeCount);
         if(normalRecord)normalRecord->beginStage(stage,unsigned(worldStartDifficulty),seconds);
         bindOrdinaryTerminalAfterReplayBegin();
         normalReplayClockPending=false;return 1;
@@ -3565,17 +3565,20 @@ int th128_world_replay_playback_restore(const std::uint8_t* data,unsigned length
     const auto word=[&](unsigned offset){return th128::record::NativeReplaySlotPreview::word(bytes,offset);};
     const auto half=[&](unsigned offset){return unsigned(bytes[offset])|(unsigned(bytes[offset+1])<<8);};
     const int score=std::bit_cast<int>(word(12)),point=std::bit_cast<int>(word(20)),motivation=std::bit_cast<int>(word(128)),perfect=std::bit_cast<int>(word(132));
+    const int graze=std::bit_cast<int>(word(0x28));
     const float area=std::bit_cast<float>(word(136));
     const auto group=th128::playershot::selectShotGroup(area,rank);
     const auto random=world->gameRandomState();
     if(half(0)!=unsigned(stageIdForEcl(worldStartedName))||half(2)!=random.seed||!group||half(16)!=*group
         ||score<0||score>999999999||point<0||point>1000000000||motivation<0||motivation>100000||perfect<0||perfect>30000
+        ||graze<0||graze>1000000000
         ||word(32)>9||!std::isfinite(area)||area<0||area>1048576||cumulativeFrozenArea!=area
         ||std::bit_cast<int>(word(24))!=playerRaw.horizontal||std::bit_cast<int>(word(28))!=playerRaw.vertical){
         operationError="recorded stage header resources or original initialized owners differ";return 0;
     }
     if(!perfectHud->charge(perfect,operationError))return 0;
     scoreRaw=score;pointValueRaw=point;motivationRaw=motivation;motivationFlag=0;
+    grazeGlobals.grazeCount=graze;
     playerWindowControl.perfectCharge4b4d70=perfect;originalContinueCount=int(word(32));return 1;
 }
 
@@ -3592,7 +3595,7 @@ int th128_world_replay_playback_load(const void* data,unsigned length,int rank){
         const th128::record::ReplayPlaybackInitial actual{
             unsigned(stageIdForEcl(worldStartedName)),unsigned(worldStartDifficulty),random.seed,*group,
             unsigned(originalContinueCount),worldGeneration,unsigned(world->frame()),scoreRaw,pointValueRaw,
-            playerRaw.horizontal,playerRaw.vertical,motivationRaw,playerWindowControl.perfectCharge4b4d70,cumulativeFrozenArea};
+            playerRaw.horizontal,playerRaw.vertical,motivationRaw,playerWindowControl.perfectCharge4b4d70,cumulativeFrozenArea,grazeGlobals.grazeCount};
         replayPlayback.bind({static_cast<const std::uint8_t*>(data),length},actual);return 1;
     }catch(const std::exception& failure){operationError=failure.what();return 0;}
 }
