@@ -381,7 +381,7 @@ bool ApplicationState::result_screen_data(TitleResultScreenData& out) const {
         (title->state.return_reason == 3 ||
          title->state.screen == TitleScreen::ResultName ||
          title->state.screen == TitleScreen::ResultReplaySlot);
-    out.current.stage = result_record_stage(clear_result, progress.stage);
+    out.current.stage = result_record_stage(clear_result, extra_results_open(), progress.stage);
     out.current.continues = progress.continues;
     out.current.timestamp = i64(std::time(nullptr));
     out.current.available = true;
@@ -499,7 +499,11 @@ bool ApplicationState::record_result_entry(const std::string& name, i32 stage) {
 }
 
 bool ApplicationState::record_result_name(const std::string& name) {
-    return record_result_entry(name, progress.stage);
+    return record_result_entry(name, result_record_stage(false, extra_results_open(), progress.stage));
+}
+
+bool ApplicationState::extra_results_open() const {
+    return run && pause && pause->state.screen == PauseScreen::ExtraEnd;
 }
 
 bool ApplicationState::record_clear_result_name(const std::string& name) {
