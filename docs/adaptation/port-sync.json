@@ -1705,7 +1705,7 @@
             "portable/sdl/Scene.cpp",
             "portable/sdl/Scene.hpp"
           ],
-          "base": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+          "base": "353543ececfba792235d65f456eccb9736dffdaa",
           "history": [
             {
               "kind": "manual",
@@ -1717,6 +1717,17 @@
                 "ports/th12-mp/portable/sdl/Scene.hpp"
               ],
               "note": "单人与多人同步原版背景动画绘制顺序；录像落盘与槽位刷新属于多人版。"
+            },
+            {
+              "kind": "manual",
+              "base": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+              "source": "353543ececfba792235d65f456eccb9736dffdaa",
+              "targetHead": "b332cc701920ab55b8bf815be8e41c5a4aed01b4",
+              "paths": [
+                "ports/th12-mp/portable/sdl/Scene.cpp",
+                "ports/th12-mp/portable/sdl/Scene.hpp"
+              ],
+              "note": "单机与多人版同步恢复第 26 层船影的世界坐标绘制和雾距渐变。多人版保留其本地机体显示与 HUD 实现，双人浏览器一面开场已核对。此监控范围内先前的残像连续性修正已存在于两版。"
             }
           ]
         },
