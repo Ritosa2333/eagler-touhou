@@ -649,6 +649,8 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 的当前关。共享实现 record_result_entry(name, stage)。
     bool record_clear_result_name(const std::string&) override;
     bool record_result_entry(const std::string& name, i32 stage);
+    // RunPausePlatform/TitleScenePlatform 共用虚槽：score ST+0x0C 上次名。
+    std::string last_result_name() const override;
     // 0x43f720 结算B（Extra 通关）覆盖层打开中：插入行 stage 7 → 9。
     bool extra_results_open() const;
     bool result_needs_name() const override;

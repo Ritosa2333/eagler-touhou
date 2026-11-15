@@ -121,12 +121,14 @@ TEST(summary_v1_through_v4_migration_archives_original_full_file_and_marks_gap) 
         CHECK(files.record_run_start(0));
         CHECK(files.save());
         const auto v6 = read(path);
-        // v6 布局（FileStore.cpp:1-16）：版本 6、END1、迁移结局历史未知、v1-v4 无 v5 前置档。
-        CHECK_EQ(get32(v6.data()+8),6u);
+        // v7 布局（FileStore.cpp 头注）：版本 7、END1、迁移结局历史未知、v1-v4 无 v5 前置档、
+        // NAM1 上次名取原版默认 8 空格。
+        CHECK_EQ(get32(v6.data()+8),7u);
         CHECK(v6.size() == kSaveBytes);
         CHECK(std::memcmp(v6.data()+kV5SaveBytes,"END1",4) == 0);
         CHECK_EQ(get32(v6.data()+kV5SaveBytes+4),0u);
         CHECK_EQ(get32(v6.data()+kPreEndingSizeOffset),0u);
+        CHECK(std::memcmp(v6.data()+kV6SaveBytes,"NAM1        ",12) == 0);
         FileStore restored;
         CHECK(restored.initialize()); CHECK(restored.loaded);
         CHECK(restored.migrated_save_bytes() == bytes);

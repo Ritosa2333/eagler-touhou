@@ -99,7 +99,8 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
     case 0:  // 入场延迟后展开菜单
         if (age <= 9) break;
         if ((state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::GameOver) && state.result_needs_name) {
-            state.name_is_result=true; state.replay_name.clear(); state.name_cursor=90;
+            state.name_is_result=true;
+            seed_result_name(host.last_result_name(), state.replay_name, state.name_cursor);
             state.result_needs_name=false; phase(18); break;
         }
         phase(6);
@@ -216,7 +217,8 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
         if (state.replay_slot != previous_slot && !host.sound(10)) return false;
         if (pressed & 0x80001) {
             if (!host.sound(7)) return false;
-            state.replay_name.clear(); state.name_cursor=0; phase(18);
+            seed_result_name(host.last_result_name(), state.replay_name, state.name_cursor);
+            phase(18);
         }
         else if (pressed & 0x102) {
             if (!host.sound(9)) return false;

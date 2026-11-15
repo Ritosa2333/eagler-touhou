@@ -68,8 +68,11 @@ struct ResultHost final : TitleScenePlatform {
     bool save_replay_slot(i32 slot, const std::string& name) override {
         saved_slots.push_back(slot);
         saved_names.push_back(name);
+        if (save_ok) last_name = name;
         return save_ok;
     }
+    std::string last_name = "        ";
+    std::string last_result_name() const override { return last_name; }
     bool can_save_replay() const override { return true; }
     bool record_result_name(const std::string& name) override {
         recorded.push_back(name);
@@ -79,6 +82,7 @@ struct ResultHost final : TitleScenePlatform {
     // ApplicationState::record_clear_result_name 同构落同一记录面）。
     bool record_clear_result_name(const std::string& name) override {
         recorded.push_back(name);
+        if (record_ok) last_name = name;
         return record_ok;
     }
     bool result_replay_save_available() const override { return replay_available; }
@@ -130,15 +134,12 @@ struct ResultHarness {
         CHECK_EQ(scene->state.substate, 2);
     }
 
-    // 光标 90(END) → 右到行首(78) → 上 6 行到 0('A') → 输入 "AAA" →
-    // 下 6 行回 78 → 左回 END(90)。
+    // 空白上次名：光标初值 0('A') → 输入 "AAA" → 上移回绕到 78 → 左回 END(90)。
     void type_aaa_to_end() {
-        frame(0x80);
-        for (i32 i = 0; i < 6; ++i) frame(0x10);
         CHECK_EQ(scene->state.result_name_cursor, 0);
         for (i32 i = 0; i < 3; ++i) frame(1);
         CHECK_EQ(scene->state.result_name, std::string("AAA"));
-        for (i32 i = 0; i < 6; ++i) frame(0x20);
+        frame(0x10);
         frame(0x40);
         CHECK_EQ(scene->state.result_name_cursor, 90);
     }
@@ -162,7 +163,9 @@ TEST(result_return_reason_three_enters_name_entry_before_main) {
     CHECK_EQ(h.scene->state.flags & 2u, 2u);  // 直入菜单态，跳过 180 帧 intro
     h.advance(8);
     CHECK_EQ(h.scene->state.substate, 2);
-    CHECK_EQ(h.scene->state.result_name_cursor, 90);
+    // 0x454209 光标置 0；上次名为 8 空格（0x449a55 新档默认）→ 不回退。
+    CHECK_EQ(h.scene->state.result_name_cursor, 0);
+    CHECK(h.scene->state.result_name.empty());
     // 0x454050 case0 建面：背景 root89 + script107 + 角色条 143+c + 难度条 147+d。
     CHECK(h.scene->state.handles[89] != 0);
     CHECK(h.scene->state.handles[107] != 0);
@@ -366,6 +369,7 @@ TEST(result_original_ten_rows_keep_current_name_columns_blank) {
 TEST(result_slot_editor_waits_ten_frames_and_uses_original_slide) {
     ResultHarness h;
     h.host.replay_available = true;
+    h.host.last_name = "BBB     ";
     h.enter_name_editor();
     h.frame(1);  // END → 0x454050 case3
     h.advance(7);  // case3 age>5 → 0xf
@@ -394,4 +398,44 @@ TEST(result_slot_editor_waits_ten_frames_and_uses_original_slide) {
     CHECK(end_glyph);
 }
 
-int main() { return th13test::run_all("Title result flow"); }
+TEST(result_name_editor_starts_from_last_confirmed_name) {
+    // 0x454216..0x4542a0：缓冲 = score+0x1b260，长度去尾空格，非空白时
+    // 光标从 0 回退到 END；END（0x4544ee）把名字写回，回放槽 Z（0x454b83）
+    // 再以它作默认名。
+    ResultHarness h;
+    h.host.replay_available = true;
+    h.host.last_name = "REIMU   ";
+    h.enter_name_editor();
+    CHECK_EQ(h.scene->state.result_name, std::string("REIMU"));
+    CHECK_EQ(h.scene->state.result_name_cursor, 90);
+    h.host.texts.clear();
+    CHECK(h.scheduler.draw() >= 0);
+    bool name_drawn = false, underscore = false;
+    for (const auto& text : h.host.texts) {
+        if (text.text == "REIMU" && text.position.x == 84) name_drawn = true;
+        if (text.text == "_" && text.position.x == 84 + 9 * 5) underscore = true;
+    }
+    CHECK(name_drawn);
+    CHECK(underscore);
+    // DEL ends on the shared confirm tail: sound 7 (0x45449f → 0x45451c).
+    h.scene->state.result_name_cursor = 89;
+    h.host.sounds.clear();
+    h.frame(1);
+    CHECK_EQ(h.scene->state.result_name, std::string("REIM"));
+    CHECK_EQ(h.host.sounds.back(), 7);
+    h.scene->state.result_name_cursor = 90;
+    h.frame(1);
+    CHECK_EQ(h.host.recorded.size(), size_t(1));
+    if (!h.host.recorded.empty()) CHECK_EQ(h.host.recorded[0], std::string("REIM"));
+    h.advance(7);
+    h.enter_replay_slots();
+    h.frame(1);
+    CHECK_EQ(h.scene->state.result_name, std::string("REIM"));
+    CHECK_EQ(h.scene->state.result_name_cursor, 90);
+    h.scene->state.result_name_cursor = 89;
+    h.host.sounds.clear();
+    h.advance(10);
+    h.frame(1);
+    CHECK_EQ(h.scene->state.result_name, std::string("REI"));
+    CHECK_EQ(h.host.sounds.back(), 7);  // 0x454da8 → 0x454e58
+}
