@@ -10,6 +10,17 @@
 #include <sstream>
 
 namespace th128 {
+namespace {
+int spellStageDepthForEcl(const std::string& name) noexcept {
+    constexpr std::array<const char*,6> second{
+        "st_a1_2.ecl","st_a2_2.ecl","st_b1_2.ecl","st_b2_2.ecl","st_c1_2.ecl","st_c2_2.ecl"};
+    constexpr std::array<const char*,6> third{
+        "st_a1_3.ecl","st_a2_3.ecl","st_b1_3.ecl","st_b2_3.ecl","st_c1_3.ecl","st_c2_3.ecl"};
+    for(const auto* ecl:second)if(name==ecl)return 2;
+    for(const auto* ecl:third)if(name==ecl)return 3;
+    return 1;
+}
+}
 struct StageWorld::Entity : enemy::Motion327Owner {
     EnemySnapshot state;
     enemy::Bounds hitbox,hurtbox;
@@ -77,7 +88,7 @@ void StageWorld::reset() {
     }
     entities_.clear();animations_.clear();linked_=ecl::Program{};
     error_.clear();operationError_.clear();frame_=spawnCount_=animationSerial_=0;nextId_=1;birthDepth_=0;
-    started_=executing_=false;random_=Random{};extraStage16Rank4SpellDomain_=false;
+    started_=executing_=false;random_=Random{};spellStageDepth_=1;extraStage16Rank4SpellDomain_=false;
     entityRetirementAttempted_=entityRetirementCompleted_=bulletRetirementAttempted_=false;retiredEntityOwners_=0;
     instructionsThisTick_=0;managerVariables_={};originalIdentities_={};bosses_={};bossGauges_={};phaseCountdown_={0xffffffffu,0};phaseSpell_.reset();spellHost_={};spellTitle_.clear();phaseTransitions_.clear();screenShake_={};shakeStates_.clear();
     bullets_.reset();bulletType25Conversion_={};bulletProfiles_.clear();playerPosition_={};playerAimConfigured_=false;bulletsConfigured_=false;
@@ -691,6 +702,7 @@ bool StageWorld::start(const std::string& stage,int difficulty,std::uint16_t see
     reset();
     linked_=std::move(candidate);
     difficulty_=difficulty;random_.seed=seed;
+    spellStageDepth_=spellStageDepthForEcl(stage);
     extraStage16Rank4SpellDomain_=stage=="st_ex.ecl"&&difficulty==4;
     enemy::SpawnRequest root;
     root.subroutine="main";
@@ -1037,7 +1049,7 @@ bool StageWorld::host(Entity& entity,ecl::HostCall& call) {
         auto next=*phaseSpell_;
         if(extraStage16Rank4SpellDomain_){
             if((opcode!=422&&opcode!=428)||!spell::beginExtraStage16Rank4(next,identifier,limit))return false;
-        }else if(!spell::begin(next,identifier,limit,difficulty_))return false;
+        }else if(!spell::begin(next,identifier,limit,difficulty_,spellStageDepth_))return false;
         std::string reason;SpellEvent event;event.starting=true;event.state=next;event.title=title;event.position={entity.state.x,entity.state.y,entity.state.z};
         try{if(!spellHost_(event,reason)||!reason.empty())return fail(reason.empty()?"required spell constructor rejected":reason);}catch(...){return fail("spell constructor threw");}
         *phaseSpell_=next;spellTitle_=std::move(title);entity.state.lifeWords[5]|=1u;entity.state.lifeWords[3]=entity.state.lifeWords[0]*7u;entity.state.phaseTimer={-1,0,0,0x4b6f58,1};return true;

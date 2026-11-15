@@ -221,6 +221,7 @@ private:
     int stageTransitionOwnerId_=0,stageTransitionOwnerProgress_=0;
     bullet::Manager::Cancellation messageCancellation_;
     int difficulty_=1;
+    int spellStageDepth_=1;
     bool extraStage16Rank4SpellDomain_=false;
     bool started_=false,executing_=false;
     bool entityRetirementAttempted_=false,entityRetirementCompleted_=false,bulletRetirementAttempted_=false;

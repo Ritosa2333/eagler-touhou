@@ -3,10 +3,13 @@
 #include <bit>
 namespace th128::spell {
 struct Result {int card=-1,notice=9,bonus=0,rawScore=0;bool captured=false;};
-inline bool begin(enemy::PhaseSpell& state,int id,int limit,int difficulty) noexcept {
-    if(id<0||id>=256||limit<=300||limit>65535||difficulty<0||difficulty>3)return false;
+inline bool begin(enemy::PhaseSpell& state,int id,int limit,int difficulty,int stageDepth) noexcept {
+    if(id<0||id>=256||limit<=300||limit>65535||difficulty<0||difficulty>3||stageDepth<1||stageDepth>3)return false;
     state.flags=(state.flags&~0xf0u)|7u;if(state.playerMode)state.flags|=0x40u;
-    state.age=0;state.id=id;state.limit=limit;state.baseBonus=(difficulty+1)*100000;state.value80=std::uint32_t(state.baseBonus);return true;
+    state.age=0;state.id=id;state.limit=limit;state.baseBonus=(difficulty+stageDepth)*100000;state.value80=std::uint32_t(state.baseBonus);return true;
+}
+inline bool begin(enemy::PhaseSpell& state,int id,int limit,int difficulty) noexcept {
+    return begin(state,id,limit,difficulty,1);
 }
 inline bool beginExtraStage16Rank4(enemy::PhaseSpell& state,int id,int limit) noexcept {
     if(id<240||id>249||limit<=300||limit>65535)return false;
