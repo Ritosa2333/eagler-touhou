@@ -101,6 +101,18 @@ test('Meting returns one bounded search list with stable track IDs',async()=>{
   await provider.search('qq','DJ Sharpnel',signal);
   expect(request.mock.calls[1][0]).toBe('https://meting.example/music?server=tencent&type=search&id=DJ+Sharpnel&limit=60');
 });
+test('NetEase playlist uses full track metadata without changing the QQ provider', async () => {
+  const rows = Array.from({length: 57}, (_, index) => ({source:'netease', id: index+1}));
+  const request = vi.fn(async url => Response.json(url.includes('relay.example') ? rows : []));
+  const provider = createMetingProvider('https://meting.example/music', request,
+    () => 'https://relay.example/_eagler/netease-playlist');
+  const signal = new AbortController().signal;
+  const result = await provider.playlist('netease', '1234', signal);
+  expect(result.map(track => track.id)).toEqual(rows.map(({id}) => String(id)));
+  expect(request.mock.calls[0][0]).toBe('https://relay.example/_eagler/netease-playlist?id=1234');
+  await provider.playlist('qq', '1234', signal);
+  expect(request.mock.calls[1][0]).toBe('https://meting.example/music?server=tencent&type=playlist&id=1234');
+});
 test('Meting resolves the requested track and rejects previews and unrelated hosts',async()=>{
   const qq={platform:'qq',id:'000PRyI71e12gl'};
   const signal=new AbortController().signal;
