@@ -1,0 +1,100 @@
+{
+  "date": "2026-11-15",
+  "scope": "Invincibility-assisted six normal routes and EX CPU functional acceptance",
+  "scopeComplete": true,
+  "wholeProductComplete": false,
+  "browserDeviceAcceptance": false,
+  "normalRoutes": {
+    "A1": {
+      "case": 526,
+      "assisted": true,
+      "rank": 0,
+      "continues": 0,
+      "recordFrames": 52105,
+      "tickCalls": 52201,
+      "endingTicks": 208,
+      "menuSteps": 53,
+      "mainPage": 6,
+      "resultSHA256": "6b777a86f8b68678ba58e8905bef637726ac01bbc5e5369c0ebcfc25feb45c5a"
+    },
+    "B1": {
+      "case": 531,
+      "assisted": true,
+      "rank": 0,
+      "continues": 0,
+      "recordFrames": 55041,
+      "tickCalls": 55137,
+      "endingTicks": 218,
+      "menuSteps": 53,
+      "mainPage": 6,
+      "resultSHA256": "19e3c24023f4238d95653175a3c920e6e56f2668cd4b86080750872c06a5e457"
+    },
+    "A2": {
+      "case": 532,
+      "assisted": true,
+      "rank": 0,
+      "continues": 0,
+      "recordFrames": 53383,
+      "tickCalls": 53479,
+      "endingTicks": 210,
+      "menuSteps": 37,
+      "mainPage": 6,
+      "resultSHA256": "162ab35a7339d6904f2a004410404cc211fcac1725033fea24b0195e687abdfa"
+    },
+    "C1": {
+      "case": 535,
+      "assisted": true,
+      "rank": 0,
+      "continues": 0,
+      "recordFrames": 53435,
+      "tickCalls": 53531,
+      "endingTicks": 216,
+      "menuSteps": 37,
+      "mainPage": 6,
+      "resultSHA256": "c5452088e1d3a2a3cb86c3eb27d03ada0c804b12d6553960b3019f9ef1f7ec62"
+    },
+    "B2": {
+      "case": 539,
+      "assisted": true,
+      "rank": 0,
+      "continues": 0,
+      "recordFrames": 55232,
+      "tickCalls": 55328,
+      "endingTicks": 218,
+      "menuSteps": 37,
+      "mainPage": 6,
+      "resultSHA256": "354be0bb36f1879ffd674e17a40d2fb202f1719de69d610c659497bf4257d578"
+    },
+    "C2": {
+      "case": 540,
+      "assisted": true,
+      "rank": 0,
+      "continues": 0,
+      "recordFrames": 53145,
+      "tickCalls": 53241,
+      "endingTicks": 232,
+      "menuSteps": 37,
+      "mainPage": 6,
+      "resultSHA256": "8c7f0d3d34840b27ca6dbc1fe3004d8bc2c98a891da3f840dcb4625a13b98482"
+    }
+  },
+  "extra": {
+    "case": 560,
+    "frames": 71332,
+    "continues": 0,
+    "mainPage": 6,
+    "replaySHA256": "0fdbc71aaa68283584d5d9f67f3a576ed4367e3c26d25a5dbcd1f4dde956a774",
+    "profileSHA256": "52e005acee659448d6dd08d2100e4eae184ee9cab1d00e187fa0e1eeede73a8a",
+    "nativeRetiredOwners": 14,
+    "originalExtraHasNoOrdinaryEnding": true
+  },
+  "syntheticBoundaries": [
+    "IndexedDB",
+    "WebAudio device output",
+    "rendering",
+    "raster image loaders"
+  ],
+  "WindowsThpracInjected": false,
+  "knownLongSessionHitTimerFixed": false,
+  "runtimeReplayedForUpload": false
+}

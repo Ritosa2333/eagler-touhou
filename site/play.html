@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>妖精大战争 · 网页移植验证</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/play.css">
+  <script type="module" src="/play.mjs"></script>
+</head>
+<body>
+  <main>
+    <header><a href="/">TH128 / 移植工作台</a><span>C++20 → WebAssembly → WebGL · Keyboard UI</span></header>
+    <section id="debug-stage-jump" class="debug-stage-jump" aria-label="调试跳关">
+      <label for="debug-stage-select">调试选关 · Normal / EX</label>
+      <select id="debug-stage-select" aria-describedby="debug-stage-note" disabled>
+        <option value="A1-3">A1-3</option>
+        <option value="A2-3">A2-3</option>
+        <option value="B1-3">B1-3</option>
+        <option value="B2-3">B2-3</option>
+        <option value="C1-3">C1-3</option>
+        <option value="C2-3">C2-3</option>
+        <option value="EX">EX（调试中）</option>
+      </select>
+      <button id="debug-stage-start" type="button" aria-describedby="debug-stage-note" disabled>进入选定关卡</button>
+      <span id="debug-stage-status" role="status">正在加载…</span>
+      <p id="debug-stage-note" class="debug-stage-note">六路线第三面为 Normal；EX 使用原版 stage 16 / rank 4，从起点开始。当前局会被替换，调试跳关不计正常通关；EX 尚未通关，遇到未实现分支会停止。无限复活沿用开发选项。</p>
+    </section>
+    <section class="screen" aria-label="原版动画画面">
+      <canvas id="game" width="1280" height="960" tabindex="0" aria-label="妖精大战争 1280×960 渲染画面"></canvas>
+      <div id="game-frame-indicator" data-status="title" aria-label="原生游戏帧">未进入关卡 · 原生帧 —</div>
+      <div id="debug-respawn-indicator" hidden>调试：无限复活</div>
+      <div id="loading" class="cover"><strong>妖精大战争</strong><span id="loading-text">准备读取本地原版资源…</span></div>
+      <div id="runtime-overlay" class="runtime-overlay" role="status" hidden>
+        <strong id="runtime-overlay-title">已暂停</strong>
+        <p id="runtime-overlay-frame" class="runtime-frame"></p>
+        <p id="runtime-overlay-message"></p>
+        <div><button id="resume-session" tabindex="-1">继续游戏</button><button id="restart-stage" tabindex="-1">重新开始首关</button></div>
+      </div>
+
+      <div id="game-menu" aria-label="键盘游戏菜单" aria-hidden="true" hidden>
+        <div class="menu-shell">
+          <p class="menu-kicker">妖精大战争</p>
+          <h1 id="menu-heading">主菜单</h1>
+          <p id="menu-description">方向键选择，Z/Enter 确认，X/Esc 返回。菜单不使用鼠标。</p>
+          <div id="menu-screenreader" class="sr-only" aria-live="polite">键盘菜单。方向键选择，Z 或 Enter 确认，X 或 Escape 返回。</div>
+          <div class="menu-pages">
+            <section id="menu-main" class="menu-page" data-menu-page="main" aria-labelledby="menu-heading">
+              <ul id="menu-main-list" class="menu-list" role="listbox" aria-label="主菜单">
+                <li class="menu-row selected" role="option" aria-selected="true" data-menu-main="start"><span class="menu-row-index">01</span><span class="menu-row-label">START 开始</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-main="replay"><span class="menu-row-index">02</span><span class="menu-row-label">REPLAY 回放</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-main="result"><span class="menu-row-index">03</span><span class="menu-row-label">RESULT 结果</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-main="music"><span class="menu-row-index">04</span><span class="menu-row-label">MUSIC 音乐</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-main="options"><span class="menu-row-index">05</span><span class="menu-row-label">OPTION 选项</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-main="manual"><span class="menu-row-index">06</span><span class="menu-row-label">MANUAL 说明</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-main="quit"><span class="menu-row-index">07</span><span class="menu-row-label">QUIT 退出</span><span class="menu-row-mark">›</span></li>
+              </ul>
+            </section>
+
+            <section id="menu-difficulty" class="menu-page menu-page-with-art" data-menu-page="difficulty" aria-labelledby="menu-heading" hidden>
+              <ul id="menu-difficulty-list" class="menu-list" role="listbox" aria-label="难度选择">
+                <li class="menu-row selected" role="option" aria-selected="true" data-menu-difficulty="0"><span class="menu-row-index">00</span><span class="menu-row-label">RANK 0</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-difficulty="1"><span class="menu-row-index">01</span><span class="menu-row-label">RANK 1</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-difficulty="2"><span class="menu-row-index">02</span><span class="menu-row-label">RANK 2</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-difficulty="3"><span class="menu-row-index">03</span><span class="menu-row-label">RANK 3</span><span class="menu-row-mark">›</span></li>
+              </ul>
+              <div class="menu-art" data-menu-art="difficulty" role="img" aria-label="原版难度 rank 贴图占位"></div>
+            </section>
+
+            <section id="menu-route" class="menu-page menu-page-with-art" data-menu-page="route" aria-labelledby="menu-heading" hidden>
+              <ul id="menu-route-list" class="menu-list" role="listbox" aria-label="起点地图">
+                <li class="menu-row selected" role="option" aria-selected="true" data-menu-route="1"><span class="menu-row-index">A</span><span class="menu-row-label">A 路线</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-route="6"><span class="menu-row-index">B</span><span class="menu-row-label">B 路线</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-route="11"><span class="menu-row-index">C</span><span class="menu-row-label">C 路线</span><span class="menu-row-mark">›</span></li>
+              </ul>
+              <div class="menu-art" data-menu-art="route" role="img" aria-label="原版 A/B/C 起点地图贴图占位"></div>
+            </section>
+
+            <section id="menu-options" class="menu-page" data-menu-page="options" aria-labelledby="menu-heading" hidden>
+              <ul id="menu-option-list" class="menu-list" role="listbox" aria-label="选项"></ul>
+            </section>
+
+            <section id="menu-manual" class="menu-page" data-menu-page="manual" aria-labelledby="menu-heading" hidden>
+              <div id="menu-manual-body" class="menu-prose"></div>
+            </section>
+
+            <section id="menu-info" class="menu-page" data-menu-page="info" aria-labelledby="menu-heading" hidden>
+              <h2 id="menu-info-title" class="menu-subtitle"></h2>
+              <div id="menu-info-body" class="menu-prose"></div>
+              <ul id="menu-music-list" class="menu-list menu-list-compact" role="listbox" aria-label="音乐列表"></ul>
+            </section>
+
+            <section id="menu-pause" class="menu-page" data-menu-page="pause" aria-labelledby="menu-heading" hidden>
+              <ul id="menu-pause-list" class="menu-list" role="listbox" aria-label="暂停菜单">
+                <li class="menu-row selected" role="option" aria-selected="true" data-menu-pause="resume"><span class="menu-row-index">01</span><span class="menu-row-label">RESUME 继续</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-pause="restart"><span class="menu-row-index">02</span><span class="menu-row-label">RESTART 重新开始</span><span class="menu-row-mark">›</span></li>
+                <li class="menu-row" role="option" aria-selected="false" data-menu-pause="title"><span class="menu-row-index">03</span><span class="menu-row-label">TITLE 返回标题</span><span class="menu-row-mark">›</span></li>
+              </ul>
+            </section>
+
+            <section id="menu-launch" class="menu-page" data-menu-page="launch" aria-labelledby="menu-heading" hidden>
+              <div id="menu-launch-body" class="menu-prose"></div>
+            </section>
+          </div>
+          <p id="menu-footer" class="menu-footer">↑↓ 选择 · Z/ENTER 确认 · X/ESC 返回</p>
+        </div>
+      </div>
+      <div id="menu-keyhint" class="canvas-keyhint" aria-hidden="true" hidden>↑↓ 选择 · Z/ENTER 确认 · X/ESC 返回</div>
+    </section>
+
+    <div class="controls"><label title="关闭时最高60fps；开启时跟随显示器刷新率，游戏速度与画质不变。"><input id="high-framerate-mode" type="checkbox">高帧率模式（跟随屏幕）</label></div>
+    <div class="controls">
+      <button id="import-original-replay" type="button" hidden>导入原版录像（.rpy）</button>
+      <input id="import-original-replay-file" type="file" accept=".rpy" aria-label="选择原版录像文件" hidden>
+      <button id="export-owned-replay" type="button" hidden>导出选中录像（下载 .rpy）</button>
+    </div>
+<p id="status" role="status">资源加载中。不会启动或修改 Windows 原版。</p>
+    <pre id="error" role="alert" hidden></pre>
+
+    <details id="dev-workbench" class="dev-workbench">
+      <summary>开发控制／诊断工作台（默认折叠，不影响键盘游戏）</summary>
+    <section id="extra-menu-panel" class="extra-menu-panel" aria-labelledby="extra-menu-heading">
+      <h2 id="extra-menu-heading">EX 解锁资格诊断（不是原版选路菜单）</h2>
+      <p id="extra-progress" class="extra-progress" role="status">Normal Extra · Locked · 0/6</p>
+      <p id="extra-provider">系统未实现：缺 trusted normal clear provider；资格只读 0/6，不读取本地解锁标志。</p>
+      <p id="extra-eligibility">资格未满足：六条不同路线均须 Normal rank ≥1、真实全路线 clear、原 ending 完成且全程 no-taint。</p>
+      <ul id="extra-route-statuses" aria-label="六路线正常通关资格">
+        <li data-extra-route="A1">A1：未确认 · 缺可信 Normal 全路线 clear + 原 ending。</li>
+        <li data-extra-route="A2">A2：未确认 · 缺可信 Normal 全路线 clear + 原 ending。</li>
+        <li data-extra-route="B1">B1：未确认 · 缺可信 Normal 全路线 clear + 原 ending。</li>
+        <li data-extra-route="B2">B2：未确认 · 缺可信 Normal 全路线 clear + 原 ending。</li>
+        <li data-extra-route="C1">C1：未确认 · 缺可信 Normal 全路线 clear + 原 ending。</li>
+        <li data-extra-route="C2">C2：未确认 · 缺可信 Normal 全路线 clear + 原 ending。</li>
+      </ul>
+      <p id="extra-missing">缺少可信完整通关：A1、A2、B1、B2、C1、C2。未知不算已通关。</p>
+      <p id="extra-runtime">EX stage 16／rank 4 已验证启动，仍在移植调试；正常解锁资格不变。</p>
+      <div class="extra-menu-actions">
+        <button id="normal-extra-start" type="button" aria-describedby="extra-provider extra-eligibility extra-runtime" disabled>Normal Extra（锁定 0/6）</button>
+        <button id="extra-refresh" type="button">重新检查资格（只读）</button>
+      </div>
+      <div class="extra-debug-entry" aria-labelledby="debug-extra-heading">
+        <h3 id="debug-extra-heading">独立 Debug EX</h3>
+        <button id="debug-extra-start" type="button" aria-describedby="debug-extra-note" disabled>进入 EX（调试中）</button>
+        <p id="debug-extra-note">独立调试入口：原版 stage 16／rank 4，始终标记 tainted；已验证到 41697 原生帧，激光与终幕仍在修复，不增加正常 clear 或解锁资格。</p>
+      </div>
+      <p id="extra-status" role="status" aria-live="polite">当前仅提供只读锁状态；没有启动 EX 或修改任何通关存档。</p>
+    </section>
+      <div class="warning"><b>公版81：主菜单返回／EX 卡面与启动修复</b><span>先选录像再选已录制关卡播放；回放Esc显示继续/返回标题/再次播放。Music试听不解锁曲名；存档调试按钮执行前会确认。D键或独立按钮才导出；A/B背景、原暂停羽毛、P点层级和中文字体修复保持。当前仍是局部运行与调试入口，整菜单/整路线/浏览器音画设备尚未整体验收；EX2 和后续内容仍待完成。</span></div>
+      <div class="save-debug-controls"><button id="debug-clear-save" type="button">调试：清理本网页存档数据</button><button id="debug-unlock-save" type="button">调试：六线通关存档／解锁EX</button><p>仅操作本网页游戏存档；执行前确认。模拟通关不会计为真实通关，不改Windows原版存档。</p></div>
+      <details id="main-audio-diagnostics"><summary>主菜单音频诊断（只读）</summary><button id="main-audio-refresh" type="button">刷新音频诊断（只读）</button><pre id="main-audio-state">点击刷新以读取实际音频与请求状态；不启动音频、不确认回执、不修改存档。</pre></details>
+      <div class="controls">
+        <label>版本 <select id="variant" disabled><option>载入中…</option></select></label>
+        <span class="render-resolution">渲染分辨率：1280×960</span>
+        <button id="play-stage" disabled>试玩首关（开发中）</button>
+        <button id="start" disabled>进入动画验证</button>
+        <button id="pause" disabled>暂停动画</button>
+        <button id="reset" disabled>重置</button>
+        <button id="fullscreen">全屏</button>
+        <label class="volume">音量 <input id="volume" type="range" min="0" max="100" value="35"></label>
+        <label class="debug-infinite-respawn"><input id="debug-infinite-respawn" type="checkbox" disabled>开发调试：无限复活（非正常通关）</label>
+        <span id="debug-respawn-note" class="debug-respawn-note">等待新 core：无限复活 API 尚未可用；不会伪造启用。</span>
+      </div>
+      <div class="touch"><button id="previous">↑ 标题上一项</button><button id="next">↓ 标题下一项</button></div>
+      <p class="hint">方向键移动 · 点按 Z 射击／按住 Z 蓄力，达到 ≥30% 且蓄力 ≥45 帧后松开冻结 · C 连射 · Shift 低速＋原版判定点 · Esc 暂停 · 固定1280×960渲染，原始贴图不变</p>
+      <details><summary>ECL 控制层诊断（不是运行关卡）</summary><p>从原版读取 A 路线首关，执行到第一个尚未实现的游戏回调时明确停止，不静默跳过。</p><button id="ecl" disabled>检查真实首关 ECL</button><pre id="ecl-result">尚未检查</pre></details>
+      <details><summary>首关世界调度检查（不是可玩关卡）</summary><p>链接原版首关、默认函数和 Boss 文件，记录真实刷怪与第一个未实现点；不把未完成弹幕或冻结系统替换成演示。</p><button id="world" disabled>推进真实首关脚本</button><pre id="world-result">尚未检查</pre></details>
+      <details><summary>首发子弹实装检查（不是可玩关卡）</summary><p>接入已验证的敌人局部运动顺序，执行真实首发501、2000槽子弹池及原版 bullet.anm 的出生中断。下一次未实现的碰撞更新会明确停止；全局帧时序与完整游戏仍未验收。</p><button id="emission" disabled>创建真实首发子弹</button><pre id="emission-result">尚未检查</pre></details>
+      <details><summary>实时运行真实首段（开发中，不是完整玩法）</summary><p>原始ECL刷怪/发射与真实敌人、弹幕、擦弹和受击前段已接通；方向键可按原版普通速度移动琪露诺。初始位置(0,400)，上下文显式设置state1/flags0/保护120，不代表完整原版初始化。射击、低速、冻结与死亡提交仍在实装；缺失分支明确停止，不替换成演示弹幕。</p><button id="segment" disabled>逐帧运行真实首段</button><pre id="segment-result">尚未运行</pre></details>
+      <details><summary>Z 射击／冻结／复活实装检查</summary><p>使用原始 SHT、ANM、冻结位图、关卡原曲和动态 STD 场景。包含大圆弹冻结、延迟传播、碎冰伤害、掉落、面积奖励数值及火力升级特效；原版面积结算面板仍待完成。当前显式上下文不代表完整原版初始化；后续未知玩法分支明确停止。</p><button id="shots" disabled>启动战斗／冻结检查</button><button id="emit-shot" disabled>发射原版首组</button><pre id="shots-result">尚未运行</pre></details>
+      <details id="debug-checkpoints-panel" class="checkpoint-panel">
+        <summary>DEBUG CHECKPOINTS（tainted／non-normal-clear）</summary>
+        <p class="checkpoint-warning">输入回放：每个 native tick、原始阶段交接与 carry 均真实重放；目标边界使用 bundle 自身 target/bounds，不写死18521。requested checkbox 只读；title 可发起 restore，但不宣称 native taint；step 需要 ready+native-tainted。</p>
+        <div class="checkpoint-controls">
+          <label>检查点 <select id="checkpoint-select" disabled><option>Driver unavailable</option></select></label>
+          <button id="checkpoint-refresh" type="button">刷新列表</button>
+          <button id="checkpoint-restore" type="button" disabled>快速恢复（输入回放）</button>
+          <button id="checkpoint-cancel" type="button" disabled>取消</button>
+          <button id="checkpoint-step" type="button" disabled>单步 +1 native tick</button>
+        </div>
+        <div id="checkpoint-status" class="checkpoint-status" role="status">driver unavailable or not loaded</div>
+        <pre id="checkpoint-provenance" class="checkpoint-provenance">No checkpoint authority. No restore can be started.</pre>
+        <p class="checkpoint-note">仅消费 MAIN driver；requested-optin 与 native-tainted 分开显示，origin-native-proof 保留 driver 历史值。无 driver、无效版本/bundle、debug off、inflight 或非 ready 禁用操作；不开启无限复活/擦弹/无敌，不写 world frame/HP/RNG/ECL/phase。</p>
+      </details>
+      <details><summary>验证边界</summary><p>标题使用自有原版资源和 ANM 解释器，不是静态图片拼接。脚本加载和执行、调度与绘制各有独立测试；尚未通过原版 Windows 完整画面对照。未知指令或几何会诊断停止，不伪造继续。</p></details>
+    </details>
+  </main>
+</body>
+</html>
