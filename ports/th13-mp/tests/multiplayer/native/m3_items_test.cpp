@@ -7,7 +7,8 @@
 // 固定 case 映射（workflow-cases.json m3.*）：
 //   shared_pickup_once        → 一件道具只结算一次（最近席拾取、其余席
 //                                不重复结算）
-//   resource_all_types_caps   → P/命/Bomb/碎片广播各席（逐席上限独立）
+//   resource_all_types_caps   → 命/Bomb/碎片广播各席（逐席上限独立）
+//   personal_power_routing    → P 归接收者：最近未满 Power 席、满者改道、全满原版计分
 //   spirit_role_and_trance_grant → 神霊角色门按拾取者席位角色
 //   graze_owner_generation    → 擦弹按弹身份+席位（generation 不串席）
 //   boss_damage_remainders    → Boss 合作系数确定性余数
@@ -561,26 +562,109 @@ TEST(shared_pickup_once) {
         collector_at(-100.0f, 400.0f, 0, 0, hud0, dual.progress, dual.score),
         collector_at(100.0f, 400.0f, 1, 0, hud1, dual.progress, dual.score)};
     manager.update_seats(seats, 2);
-    // 恰一次物理结算，个人奖励各一份（R-I2/R-I3）。
+    // 恰一次物理结算；P 是个人资源，只记到拾取者（R-I2/R-I3）。
     CHECK_EQ(spawned->alive, false);
     CHECK_EQ(hud0.power, 101);
-    CHECK_EQ(hud1.power, 101);
+    CHECK_EQ(hud1.power, 100);
     // 结算事件恰一批（同一道具不重复）。
     size_t collected = 0;
     for (const auto& event : manager.events())
         if (event.kind == ItemEvent::Kind::Collected) ++collected;
     CHECK_EQ(collected, 1u);
     manager.clear_events();
-    // A single pickup can cross different option levels on both seats.
+    // Crossing a level rebuilds only the receiving seat's options.
     hud0.power=199; hud1.power=299;
     std::vector<i32> rebuilt;
     dual.battle.option_power_changed=[&](const StageBattle& battle) {
         rebuilt.push_back(battle.active_seat); return true;
     };
+    for (i32 seat = 0; seat < 2; ++seat)
+        dual.battle.seats[size_t(seat)].option_power =
+            dual.battle.seat_huds[size_t(seat)].power / dual.battle.seat_huds[size_t(seat)].power_step;
     manager.spawn_item(-95,400,0,ItemPower,0,0); manager.update_seats(seats,2);
-    CHECK_EQ(hud0.power,200); CHECK_EQ(hud1.power,300);
-    CHECK_EQ(dual.battle.seats[0].option_power,2); CHECK_EQ(dual.battle.seats[1].option_power,3);
-    CHECK(rebuilt==std::vector<i32>({0,1})); CHECK_EQ(dual.battle.active_seat,0);
+    CHECK_EQ(hud0.power,200); CHECK_EQ(hud1.power,299);
+    CHECK_EQ(dual.battle.seats[0].option_power,2); CHECK_EQ(dual.battle.seats[1].option_power,2);
+    CHECK(rebuilt==std::vector<i32>({0})); CHECK_EQ(dual.battle.active_seat,0);
+}
+
+// ---- personal_power_routing：红点自动分配（启动器规则书「红点自动分配」）----
+TEST(personal_power_routing) {
+    Fixture f; CHECK(f.init()); f.enable(3, {0, 0, 0});
+    auto& manager = f.battle.item_manager;
+    auto& a = f.battle.seat_huds[0]; auto& b = f.battle.seat_huds[1]; auto& c = f.battle.seat_huds[2];
+    const auto only_item = [&]() -> Item* {
+        Item* found = nullptr;
+        for (auto& item : manager.items()) if (item.alive) found = &item;
+        return found;
+    };
+    const auto clear_items = [&]() { for (auto& item : manager.items()) if (item.alive) item.alive = false; manager.reset_items(); };
+    // 1) Direct pickup by a seat below max Power: only that seat gains it.
+    {
+        ItemCollector seats[3] = {collector_at(0, 400, 0, 0, a, f.progress, f.score),
+            collector_at(150, 400, 1, 0, b, f.progress, f.score),
+            collector_at(-150, 400, 2, 0, c, f.progress, f.score)};
+        a.power = 150; b.power = 150; c.power = 150;
+        clear_items(); manager.spawn_item(0, 400, 0, ItemBigPower, 0, 0);
+        manager.update_seats(seats, 3);
+        CHECK_EQ(a.power, 250); CHECK_EQ(b.power, 150); CHECK_EQ(c.power, 150);
+        CHECK(only_item() == nullptr);
+    }
+    // 2) A seat at max Power touching a P item passes it to the nearest
+    //    teammate below max; the item then homes there and keeps that receiver.
+    {
+        ItemCollector seats[3] = {collector_at(0, 400, 0, 0, a, f.progress, f.score),
+            collector_at(150, 400, 1, 0, b, f.progress, f.score),
+            collector_at(-60, 300, 2, 0, c, f.progress, f.score)};
+        a.power = 400; b.power = 100; c.power = 200;
+        const i32 score_before = f.score.score;
+        clear_items(); manager.spawn_item(0, 400, 0, ItemPower, 0, 0);
+        manager.update_seats(seats, 3);
+        Item* item = only_item();
+        CHECK(item != nullptr);
+        if (item) {
+            CHECK_EQ(item->state, 3);
+            CHECK_EQ(item->tracking_seat, 2);
+        }
+        CHECK_EQ(a.power, 400); CHECK_EQ(f.score.score, score_before);
+        for (i32 frame = 0; frame < 120 && only_item(); ++frame) manager.update_seats(seats, 3);
+        CHECK(only_item() == nullptr);
+        CHECK_EQ(c.power, 201); CHECK_EQ(b.power, 100); CHECK_EQ(a.power, 400);
+    }
+    // 3) Auto-collection sends P items to the nearest seat below max Power,
+    //    not to the nearest seat. When that receiver fills up mid-flight the
+    //    item turns to the next nearest seat below max.
+    {
+        ItemCollector seats[3] = {collector_at(0, 100, 0, 0, a, f.progress, f.score),
+            collector_at(150, 300, 1, 0, b, f.progress, f.score),
+            collector_at(-150, 300, 2, 0, c, f.progress, f.score)};
+        a.power = 400; b.power = 300; c.power = 100;
+        clear_items(); manager.spawn_item(100, 250, 0, ItemPower, 0, 0);
+        manager.update_seats(seats, 3);
+        Item* item = only_item();
+        CHECK(item != nullptr);
+        if (item) { CHECK_EQ(item->state, 3); CHECK_EQ(item->tracking_seat, 1); }
+        b.power = 400;
+        manager.update_seats(seats, 3);
+        if (item && item->alive) CHECK_EQ(item->tracking_seat, 2);
+        for (i32 frame = 0; frame < 120 && only_item(); ++frame) manager.update_seats(seats, 3);
+        CHECK(only_item() == nullptr);
+        CHECK_EQ(c.power, 101); CHECK_EQ(b.power, 400);
+    }
+    // 4) Every operable seat at max Power: the original full-Power scoring
+    //    applies once, to the toucher. A ghost below max is not a receiver.
+    {
+        ItemCollector seats[3] = {collector_at(0, 400, 0, 0, a, f.progress, f.score),
+            collector_at(150, 400, 1, 0, b, f.progress, f.score),
+            collector_at(-150, 400, 2, 0, c, f.progress, f.score)};
+        seats[2].eligible = false;
+        a.power = 400; b.power = 400; c.power = 100;
+        const i32 score_before = f.score.score;
+        clear_items(); manager.spawn_item(0, 400, 0, ItemBigPower, 0, 0);
+        manager.update_seats(seats, 3);
+        CHECK(only_item() == nullptr);
+        CHECK_EQ(f.score.score, score_before + 2000);
+        CHECK_EQ(c.power, 100);
+    }
 }
 
 // ---- resource_all_types_caps：逐席资源与上限 ----
@@ -597,10 +681,9 @@ TEST(resource_all_types_caps) {
         size_t collected=0; for(const auto& e:manager.events()) if(e.kind==ItemEvent::Kind::Collected) ++collected;
         CHECK_EQ(collected,1u);
     };
-    a.power=400; b.power=100; c.power=200;
-    pickup(ItemBigPower); CHECK_EQ(a.power,400); CHECK_EQ(b.power,200); CHECK_EQ(c.power,300); CHECK_EQ(f.score.score,0);
-    pickup(ItemBigPowerAlt); CHECK_EQ(b.power,300); CHECK_EQ(c.power,400); CHECK_EQ(f.progress.max_point,0);
-    pickup(ItemBigPower); CHECK_EQ(b.power,400); CHECK_EQ(f.score.score,0);
+    // P items are personal; with every operable seat at max Power the toucher
+    // receives the original full-Power score once.
+    a.power=400; b.power=400; c.power=400;
     pickup(ItemBigPower); CHECK_EQ(f.score.score,2000);
     pickup(ItemPower); CHECK_EQ(f.score.score,3000);
     pickup(ItemBigPowerAlt); CHECK_EQ(f.progress.max_point,10000); CHECK_EQ(f.score.score,3000);
@@ -615,12 +698,13 @@ TEST(resource_all_types_caps) {
     pickup(ItemLifePiece); CHECK_EQ(a.extra_lives,8); CHECK_EQ(b.extra_lives,4);
     CHECK_EQ(a.life_piece_threshold_index,1); CHECK_EQ(b.life_piece_threshold_index,2); CHECK_EQ(c.life_piece_threshold_index,3);
     CHECK_EQ(a.life_pieces,0); CHECK_EQ(b.life_pieces,0); CHECK_EQ(c.life_pieces,1); CHECK_EQ(f.progress.life_piece_threshold_index,1);
-    // A ghost cannot physically collect. It still receives a live teammate's reward.
+    // A ghost cannot physically collect and is never a P receiver. Its
+    // teammates at max Power score the item as the original full-Power rule.
     f.battle.seats[0].ghost=true; seats[0].eligible=false; a.power=100;
     manager.clear_events(); manager.spawn_item(-10,400,0,ItemPower,0,0); manager.update_seats(seats,3);
     CHECK_EQ(a.power,100); CHECK(manager.events().empty());
     seats[1]=collector_at(0,400,1,1,b,f.progress,f.score);
-    manager.update_seats(seats,3); CHECK_EQ(a.power,101); CHECK(f.battle.seats[0].ghost);
+    manager.update_seats(seats,3); CHECK_EQ(a.power,100); CHECK(f.battle.seats[0].ghost);
     CHECK_EQ(f.score.score,4000); // Only operable seats participate in full-P conversion.
 
     // R-I5: each spirit's personal part is broadcast, its team gauge is once.

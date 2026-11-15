@@ -275,6 +275,23 @@ const ItemCollector& ItemManager::pick_collector(const ItemCollector* seats, i32
     return best ? *best : fallback;
 }
 
+i32 ItemManager::power_receiver(const ItemCollector* seats, i32 seat_count, float x, float y) {
+    i32 best = -1;
+    float best_d2 = 0;
+    for (i32 i = 0; i < seat_count; ++i) {
+        const ItemCollector& candidate = seats[i];
+        if (!candidate.eligible || !candidate.player ||
+            candidate.player->power >= candidate.player->max_power) continue;
+        const float dx = candidate.x - x, dy = candidate.y - y;
+        const float d2 = dx * dx + dy * dy;
+        if (best < 0 || d2 < best_d2) {
+            best = i;
+            best_d2 = d2;
+        }
+    }
+    return best;
+}
+
 // M3：多席道具步进（R-I7：每件道具的确定性接收者 = 最近合格玩家，平距
 // 平局取小席位；已追踪目标有效时保持；R-I8：幽灵/不合格席不参与选择）。单席调用 = 单元素数组，
 // 逐件选择恒返回唯一席——与旧单席路径逐位一致（零行为变化）。
@@ -304,17 +321,41 @@ void ItemManager::update_seats(const ItemCollector* seats, i32 seat_count) {
         // temporarily unable to collect. It never becomes a broadcast drop.
         if (item.target_seat >= 0 &&
             (item.target_seat >= seat_count || !seats[item.target_seat].eligible)) continue;
+        // A homing P item follows a receiver below max Power; once that
+        // receiver fills up, the nearest teammate still below max takes over.
+        const bool personal_power = seat_count >= 2 && item.target_seat < 0 &&
+            is_power_item(item.type);
+        if (personal_power && item.tracking_seat >= 0) {
+            const HudPlayerState* hud = seats[item.tracking_seat].player;
+            if (hud && hud->power >= hud->max_power) {
+                const i32 other = power_receiver(seats, seat_count, item.x, item.y);
+                if (other >= 0) item.tracking_seat = other;
+            }
+        }
         // Gifts retain their explicit transaction recipient. Ordinary drops
         // acquire the nearest receiver when homing starts and keep it while valid.
-        const ItemCollector& player = item.target_seat >= 0 ? seats[item.target_seat]
-            : item.tracking_seat >= 0 ? seats[item.tracking_seat]
-            : pick_collector(seats, seat_count, item.x, item.y, fallback);
+        const ItemCollector* chosen = item.target_seat >= 0 ? &seats[item.target_seat]
+            : item.tracking_seat >= 0 ? &seats[item.tracking_seat]
+            : &pick_collector(seats, seat_count, item.x, item.y, fallback);
+        const auto magnet_for = [&](const ItemCollector& collector) {
+            return !has_collector || (!team_autocollect &&
+                collector.eligible && !collector.dialog &&
+                (collector.state == 2 || collector.state == 4 || collector.y >= 128.0f));
+        };
+        bool magnet = magnet_for(*chosen);
+        // Auto-collection sends a P item to the nearest seat below max Power.
+        if (personal_power && item.tracking_seat < 0 && item.state == 1 && !magnet) {
+            const i32 receiver = power_receiver(seats, seat_count, item.x, item.y);
+            if (receiver >= 0) {
+                chosen = &seats[receiver];
+                magnet = magnet_for(*chosen);
+            }
+        }
+        const ItemCollector& player = *chosen;
         // R-I7 selects the physical collector; R-I3 broadcasts only personal
         // rewards. Shared score/gauge and item retirement still occur once.
         last_player_ = player;
-        const bool magnet = !has_collector || (!team_autocollect &&
-            player.eligible && !player.dialog && (player.state == 2 || player.state == 4 ||
-                               player.y >= 128.0f));
+        redirected_seat_ = -1;
         switch (item.state) {
         case 1: {
             if (magnet) {
@@ -369,9 +410,12 @@ void ItemManager::update_seats(const ItemCollector* seats, i32 seat_count) {
         default:
             break;
         }
-        item.tracking_seat = item.alive && item.target_seat < 0 && seat_count >= 2 &&
-            player.eligible && (item.state == 3 || item.state == 4)
-            ? i32(&player - seats) : -1;
+        if (redirected_seat_ >= 0 && item.alive)
+            item.tracking_seat = redirected_seat_;
+        else
+            item.tracking_seat = item.alive && item.target_seat < 0 && seat_count >= 2 &&
+                player.eligible && (item.state == 3 || item.state == 4)
+                ? i32(&player - seats) : -1;
         if (item.alive && item.state != 5) {
             item.anm_frame_prev = item.anm_frame;
             item.anm_time = float(item.anm_time + (rate > .99f && rate < 1.01f ? 1.f : rate));
@@ -421,6 +465,18 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
                      player.state, item.type, item.x, item.y, player.box[0],
                      player.box[1], player.box[2], player.box[3]);
     if (player.state == 2 || !player.eligible) return;
+    // A seat at max Power hands a P item on to the nearest teammate below max
+    // instead of collecting or attracting it.
+    const auto pass_power_on = [&]() {
+        if (seat_count < 2 || item.target_seat >= 0 || !is_power_item(item.type) ||
+            !player.player || player.player->power < player.player->max_power) return false;
+        const i32 receiver = power_receiver(seats, seat_count, item.x, item.y);
+        if (receiver < 0) return false;
+        item.state = 3;
+        item.homing_speed = seats[receiver].homing_speed;
+        redirected_seat_ = receiver;
+        return true;
+    };
     if (item.x < player.box[0] || item.y < player.box[1] ||
         item.x > player.box[2] || item.y > player.box[3]) {
         // 吸附盒（0x42e380:305-315）：state 3/4 已在追踪，不再触发。
@@ -430,10 +486,12 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
         if (item.x < auto_box[0] || item.y < auto_box[1] ||
             item.x > auto_box[2] || item.y > auto_box[3])
             return;
+        if (pass_power_on()) return;
         item.homing_speed = player.homing_speed / 3.0f;
         item.state = 4;
         return;
     }
+    if (pass_power_on()) return;
     SessionState& progress = *player.progress;
     HudPlayerState& hud = *player.player;
     HudScoreState& score_state = *player.score;
@@ -453,38 +511,19 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
         retire_item(item);
         return;
     }
-    if (seat_count >= 2 && item.target_seat < 0 &&
+    // P items are personal: they fall through to the single-player collectors
+    // below, which credit the receiving seat (last_player_) only.
+    if (seat_count >= 2 && item.target_seat < 0 && !is_power_item(item.type) &&
         item.type != ItemPoint && item.type != ItemSpiritDrop) {
         ResourceGrant grant;
         switch (item.type) {
-        case ItemPower: grant.power = 1; break;
-        case ItemBigPower: case ItemBigPowerAlt: grant.power_steps = 1; break;
         case ItemLifePiece: grant.life_pieces = 1; break;
         case ItemBombPiece: grant.bomb_pieces = 2; break;
         case ItemExtraLife: grant.lives = 1; break;
         case ItemBomb: grant.bombs = 1; break;
         default: break;
         }
-        const bool power_item = grant.power || grant.power_steps;
-        const bool full_before = power_item && all_players_full_power(seats, seat_count);
-        const bool level_up = grant_resources(grant, seats, seat_count);
-        if (full_before) {
-            if (item.type == ItemBigPowerAlt) add_max_point(100.f);
-            else score_state.score = std::min(999999999,
-                score_state.score + (item.type == ItemPower ? 1000 : 2000));
-            events_.push_back({ItemEvent::Kind::ScorePopup,
-                item.type == ItemPower ? 10000 : item.type == ItemBigPower ? 20000 : 100,
-                item.x, item.y, item.type == ItemPower ? 0xffffffffu :
-                item.type == ItemBigPower ? 0xff808080u : 0xff40ff40u});
-            if (item.type != ItemPower) push_level_up(item);
-        } else if (power_item && all_players_full_power(seats, seat_count)) {
-            events_.push_back({ItemEvent::Kind::FullPower, 0, item.x, item.y});
-        }
-        if (level_up) {
-            if (option_power_changed) option_power_changed();
-            push_level_up(item);
-            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y, 0xffffff40u});
-        }
+        grant_resources(grant, seats, seat_count);
         events_.push_back({ItemEvent::Kind::Collected, item.type, item.x, item.y});
         retire_item(item);
         return;
@@ -587,15 +626,11 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
 // R-I3/R-I4: this grant contains personal quantities only. Never call the
 // complete single-player collector once per seat: it also changes team score,
 // gauge and point counts. Ghosts receive bookkeeping without being revived.
-bool ItemManager::grant_resources(const ResourceGrant& grant,
+void ItemManager::grant_resources(const ResourceGrant& grant,
                                   const ItemCollector* seats, i32 seat_count) {
-    bool level_up = false, extended = false, bomb_gained = false;
+    bool extended = false, bomb_gained = false;
     for (i32 seat = 0; seat < seat_count; ++seat) {
         auto& hud = *seats[seat].player;
-        const i32 power_before = hud.power;
-        hud.power = std::min(hud.max_power,
-                            hud.power + grant.power + grant.power_steps * hud.power_step);
-        level_up |= power_before / hud.power_step != hud.power / hud.power_step;
         if (grant.life_pieces) {
             hud.life_pieces += grant.life_pieces;
             while (hud.life_pieces >= life_piece_threshold(hud.life_piece_threshold_index)) {
@@ -631,14 +666,6 @@ bool ItemManager::grant_resources(const ResourceGrant& grant,
     if ((grant.bombs || grant.bomb_pieces) && bombs_changed)
         for (i32 seat = 0; seat < seat_count; ++seat)
             bombs_changed(seat, seats[seat].player->bombs, seats[seat].player->bomb_pieces);
-    return level_up;
-}
-
-bool ItemManager::all_players_full_power(const ItemCollector* seats, i32 seat_count) {
-    for (i32 seat = 0; seat < seat_count; ++seat)
-        if (seats[seat].eligible && seats[seat].player->power < seats[seat].player->max_power)
-            return false;
-    return true;
 }
 
 void ItemManager::push_level_up(const Item& item) {

@@ -288,17 +288,23 @@ private:
     void collect_check(Item& item, const ItemCollector& player,
                        const ItemCollector* seats, i32 seat_count);
     struct ResourceGrant {
-        i32 power = 0, power_steps = 0, life_pieces = 0, bomb_pieces = 0;
+        i32 life_pieces = 0, bomb_pieces = 0;
         i32 lives = 0, bombs = 0;
     };
-    bool grant_resources(const ResourceGrant& grant, const ItemCollector* seats, i32 seat_count);
-    static bool all_players_full_power(const ItemCollector* seats, i32 seat_count);
+    void grant_resources(const ResourceGrant& grant, const ItemCollector* seats, i32 seat_count);
     // M3：最近合格席（平距平方最小，平局取小席位；全不合格回退 fallback
     // = seats[0]，与旧单席语义一致——死亡演出席仍接收，幽灵席由
     // eligible=false 排除）。
     static const ItemCollector& pick_collector(const ItemCollector* seats, i32 seat_count,
                                                float x, float y,
                                                const ItemCollector& fallback);
+    // P items (1/3/8) are personal. Their receiver is the nearest operable
+    // seat below max Power; -1 when every operable seat is at max Power.
+    static bool is_power_item(i32 type) {
+        return type == ItemPower || type == ItemBigPower || type == ItemBigPowerAlt;
+    }
+    static i32 power_receiver(const ItemCollector* seats, i32 seat_count, float x, float y);
+    i32 redirected_seat_ = -1;
     void push_level_up(const Item& item);
     float angle_to_player(const Spirit& s, const ItemCollector& player);
     void collect_spirit(Spirit& s, const ItemCollector& player,
