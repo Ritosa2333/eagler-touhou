@@ -1750,6 +1750,7 @@ bool ApplicationState::commit_pending_file_events() {
         case PendingFileEvent::Kind::ResultEntry:
             // 原 :483-484 表达式原样迁移（result 行已在捕获拍构建）。
             files.record_high_score(entry.character, entry.difficulty, entry.result);
+            files.remember_name(entry.result.name);
             if (!files.save_score()) return fail(files.error);
             break;
         case PendingFileEvent::Kind::MusicUnlocked:

@@ -79,6 +79,10 @@ public:
     // 00416130 reads/writes score+0x1b26a..0x1b276 in memory. Persist with
     // the score at subsequent save points, never infer these from Extra bits.
     std::array<u8, 13> ending_seen_bytes{};
+    // Score ST+0x0C (0x449a55): the last confirmed name, eight bytes padded
+    // with spaces. Every name entry seeds from it and every END writes it.
+    std::string last_name = "        ";
+    void remember_name(const std::string& name);
     bool ending_history_complete = true; // v1–v5 did not encode this history
     bool player_data_summary(i32 difficulty, i32 character, TitlePlayerDataSummary& out) const;
     bool record_run_start(i32 character);
