@@ -104,6 +104,11 @@ bool ReplayRecorder::save(const char* name,i32 score,i32 reached,i32 continues,f
         }
     }
 #endif
+#if PORT_TITLE == 14
+    const u32 rules_offset=u32(out.size());out.resize(rules_offset+20);
+    auto* rules=out.data()+rules_offset;dword(rules,0x52455355);dword(rules+4,20);
+    dword(rules+8,0x42343154);dword(rules+12,1);dword(rules+16,1);
+#endif
     return true;
 }
 }

@@ -367,9 +367,13 @@ bool GameSession::begin_replay(GameResources& source,const u8* data,u32 size,u32
     if(!playback.open(data,size))return fail(playback.error().c_str());
 #if PORT_TITLE == 14
     if(practice_enabled&&!demo&&purple_laser.mode>=2){
+        // Reopening the same replay (including backward seek) retains edits.
+        // A different input starts a fresh recovery workspace.
+        const bool same_source=purple_laser.source.size()==size&&
+            std::equal(purple_laser.source.begin(),purple_laser.source.end(),data);
         purple_laser.playback=playback.purple_laser_records;
         purple_laser.source.assign(data,data+size);
-        purple_laser.recovered.clear();
+        if(!same_source)purple_laser.recovered.clear();
     }
 #endif
     if(!stage)for(u32 n=1;n<=7;++n)if(playback.stage(n)){stage=n;break;}
@@ -392,7 +396,13 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
     reset_state(true);
     completed_run=false;
 #if PORT_TITLE == 14
-    practice_run=practice_enabled&&!demo?(replay?playback.practice:practice_request):PracticeTh14{};
+    // Recorded practice data is part of replay semantics, independent of
+    // whether the live practice UI is enabled for this viewer.
+    practice_run={};
+    if(!demo){
+        if(replay)practice_run=playback.practice;
+        else if(practice_enabled)practice_run=practice_request;
+    }
     if(!replay&&practice_enabled&&title&&title->th14_spell_phase_choice>0){
         practice_run={};practice_run.stage=i32(stage);practice_run.phase=title->th14_spell_phase_choice;
     }
@@ -400,7 +410,7 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
     purple_laser.stage=purple_laser.frame=purple_laser.ordinal=0;
     purple_retry_misses=0;
     if(!replay)purple_laser.recorded.clear();
-    animations.th14_native_stack.practice_laser=practice_enabled&&!demo?&purple_laser:nullptr;
+    animations.th14_native_stack.practice_laser=!demo&&(practice_enabled||replay)?&purple_laser:nullptr;
     if(practice_run&&u32(practice_run.stage)!=stage)practice_run={};
     if(practice_run&&!replay&&!(menu_selection.flags&32)){practice=true;menu_selection.flags=(menu_selection.flags&~48u)|16u;}
 #endif
@@ -421,6 +431,9 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
     state.difficulty=difficulty;
     state.demo=demo;
     state.replay=replay;
+#if PORT_TITLE == 14
+    animations.th14_native_stack.bounded_beam_fallback=!replay||playback.uses_bounded_th14_beams();
+#endif
     state.practice=practice;
 #if PORT_TITLE == 14
     if(replay){if(playback.decoded()[10]&2){u32 id;std::memcpy(&id,playback.decoded().data()+0x90,4);state.spell_practice_id=signed_bits(id);}}
@@ -666,6 +679,12 @@ bool GameSession::activate_stage(){
     battle->completion.mode.practice=state.practice&&!state.replay;battle->completion.mode.replay_practice=state.practice&&state.replay;
     if(state.practice){const auto* row=scores.characters[state.character*2+state.subtype].data()+ScoreFile::practice_score_offset+(i32(stage)+state.difficulty*ScoreFile::practice_stage_stride)*8;std::memcpy(&battle->practice_high,row,4);}
     const i32 score_selection=kPortTitle==16?state.character:state.character*2+state.subtype;
+#if PORT_TITLE == 14
+    // Retail435b6c..435b9c records the entered stage for practice selection.
+    // The separate stage-completed byte is written by StageCompletion only.
+    if(!state.replay&&!state.demo&&score_selection>=0&&score_selection<6&&state.difficulty>=0&&state.difficulty<5&&stage>=1&&stage<=7)
+        clear_records.stages[score_selection][state.difficulty*8+stage][1]=1;
+#endif
     battle->hud.score.high=scores.high_score(score_selection,state.difficulty);
     battle->hud.score.high_continues=scores.high_continues(score_selection,state.difficulty);
 #if PORT_TITLE == 14
@@ -1133,7 +1152,7 @@ bool GameSession::update(const GameSessionInput& input) {
             edges.pressed=game_input.pressed;edges.released=game_input.released;
 #endif
 #if PORT_TITLE == 14
-            if(practice_enabled&&!state.demo){
+            if(!state.demo){
                 const auto& events=playback.practice_events[state.stage];
                 if(playback.frame()<=1)practice_event=0,economy.th14_practice_tools=0;
                 while(practice_event<events.size()&&events[practice_event].frame<playback.frame())
@@ -1173,6 +1192,9 @@ bool GameSession::update(const GameSessionInput& input) {
         battle->enemy_environment.th14_practice_tools=economy.th14_practice_tools;
         edges.dialogue_skip_frames=game_input.held_frames[9];
         edges.dialogue_fire_frames=game_input.held_frames[0];
+#endif
+#if PORT_TITLE == 14
+        battle->practice_key_sample=practice_key_sample;
 #endif
         battle->set_input(edges);return true;
         }
@@ -1251,7 +1273,13 @@ bool GameSession::update(const GameSessionInput& input) {
             return open_result(false);
         }
 #if PORT_TITLE == 14
-        if(battle->th14_spell_result_requested){if(state.replay){if(interactive)return return_to_title();state.phase=GameSessionPhase::finished;return true;}return open_result(true);}
+        if(battle->th14_spell_result_requested){
+            if(state.replay){
+                if(interactive)return input.hold_replay_result?pause():return_to_title();
+                state.phase=GameSessionPhase::finished;return true;
+            }
+            return open_result(true);
+        }
 #endif
         if(battle->completion.state.exit==StageExit::Results)return open_result(true);
 #if PORT_TITLE != 14
@@ -1343,7 +1371,7 @@ bool GameSession::pause() {
 #endif
     paused_rate=animations.rate;
 #if PORT_TITLE == 14
-    const bool replay_end=state.replay&&battle&&(battle->game_over_requested||battle->completion.state.exit==StageExit::ReplayEnd);
+    const bool replay_end=state.replay&&battle&&(battle->game_over_requested||battle->th14_spell_result_requested||battle->completion.state.exit==StageExit::ReplayEnd);
     if(replay_end){
         if(!pause_menu->begin_replay_end())return fail(pause_menu->error.c_str());
         // This entry has no physical Pause edge to initialize menu input.
