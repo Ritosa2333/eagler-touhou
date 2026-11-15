@@ -163,7 +163,7 @@ bool PlayerFrame::start_stage(){
     if(!rebuild_options()){if(last_error<100)last_error=93;return false;}
     return true;
 }
-bool PlayerFrame::draw(AnmRenderer& renderer){
+bool PlayerFrame::draw(AnmRenderer& renderer,bool local_hitbox){
     if(state.life_state==2)return true;
 #if PORT_TITLE == 16
     // Retail443730 copies world coordinates and sets origin1 before468490.
@@ -178,6 +178,16 @@ bool PlayerFrame::draw(AnmRenderer& renderer){
     }else motion.body.position=screen(motion.state.position);
 #endif
     if(renderer.draw(motion.body)==-2){last_error=5;return false;}
+#if PORT_TITLE == 14
+    if(local_hitbox&&always_hitbox&&state.life_state==1&&!motion.focus_animation){
+        const auto& pos=motion.state.position;
+        const float x=pos.x+224.f,y=pos.y+16.f;
+        renderer.solid_rectangle(x-2,y-2,x+2,y+2,0xff320a0au);
+        renderer.solid_rectangle(x-1,y-1,x+1,y+1,0xffffeeeeu);
+    }
+#else
+    (void)local_hitbox;
+#endif
     // No shipped option constructor installs the optional native draw callback.
     if constexpr(kPortTitle!=16)for(const auto& option:motion.options)if(option.reservede0){last_error=6;return false;}
     return true;
@@ -232,7 +242,7 @@ bool PlayerFrame::die(){
     economy.point_value=std::max(wrapping_add(economy.point_value,-10000000),state.minimum_point_value);economy.communication=0;
 #endif
 #if PORT_TITLE == 14
-    if(!(economy.th14_practice_tools&PrLives)||((economy.th14_practice_tools&PrLivesNoContinue)&&economy.lives>0))
+    if(!world.th14_unlimited_lives()&&(!(economy.th14_practice_tools&PrLives)||((economy.th14_practice_tools&PrLivesNoContinue)&&economy.lives>0)))
 #endif
     economy.lives=wrapping_add(economy.lives,-1);
 #if PORT_TITLE == 14
