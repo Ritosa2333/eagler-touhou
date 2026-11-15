@@ -1014,4 +1014,107 @@ TEST(generation_respawn_pause_stage) {
     }
 }
 
+// ---- trance_exit_protection：退出灵界时全体可操作席位获得原版 70 帧保护 ----
+// 0x405b80 收尾 push 0x46 → 0x405440：player+0x14688 = 70。MP 里每个可操作
+// 席位各自拥有这份计时，不能只落在发动者（owner）一席。
+TEST(trance_exit_protection) {
+    constexpr i32 kExitFrames = 70;
+    const std::array<i32, 3> roles = {0, 1, 3};
+    const auto place = [](Fixture& f, i32 seat) {
+        auto& state = f.battle.seats[size_t(seat)];
+        state.x = -150.f + 150.f * float(seat);
+        state.fixed_x = i32(state.x * 128);
+        state.y = 400;
+        state.fixed_y = 51200;
+    };
+    const auto activate = [](Fixture& f, i32 owner) {
+        GameInput local;
+        if (owner == 0) local.update(kCKey);
+        else f.battle.seat_inputs[size_t(owner)].update(kCKey);
+        CHECK(f.battle.step(local));
+        CHECK(f.battle.team_trance_active());
+        CHECK_EQ(f.battle.trance_owner_seat, owner);
+        for (i32 seat = 0; seat < f.battle.seat_count; ++seat) {
+            f.battle.seat_inputs[size_t(seat)].update(0);
+            f.battle.seats[size_t(seat)].invulnerable = 0;
+        }
+    };
+    // ① 手动灵界耗尽：退出帧所有席位都拿到保护（同帧递减后 69），而不是只有 owner。
+    for (i32 count : {2, 3}) for (i32 owner = 0; owner < count; ++owner) {
+        Fixture f;
+        CHECK(f.init());
+        f.enable(count, roles);
+        f.arm_trance();
+        for (i32 seat = 0; seat < count; ++seat) place(f, seat);
+        activate(f, owner);
+        GameInput none;
+        i32 guard = 0;
+        while (f.battle.team_trance_active() && guard++ < 700) CHECK(f.battle.step(none));
+        CHECK(!f.battle.team_trance_active());
+        for (i32 seat = 0; seat < count; ++seat)
+            CHECK_EQ(f.battle.seats[size_t(seat)].invulnerable, kExitFrames - 1);
+        // 保护期内真实碰撞不致命，70 帧过后恢复致命。
+        for (i32 frame = 0; frame < kExitFrames - 2; ++frame) {
+            for (i32 seat = 0; seat < count; ++seat) {
+                auto hit = bullet_at(f.battle.seats[size_t(seat)].x, f.battle.seats[size_t(seat)].y);
+                f.battle.sim.bullet_player_collision(hit);
+                CHECK(f.battle.seats[size_t(seat)].phase == StagePlayerState::Phase::Active);
+            }
+            CHECK(f.battle.step(none));
+        }
+        for (i32 frame = 0; frame < 3; ++frame) CHECK(f.battle.step(none));
+        for (i32 seat = 0; seat < count; ++seat) {
+            CHECK_EQ(f.battle.seats[size_t(seat)].invulnerable, 0);
+            auto hit = bullet_at(f.battle.seats[size_t(seat)].x, f.battle.seats[size_t(seat)].y);
+            f.battle.sim.bullet_player_collision(hit);
+            CHECK(f.battle.seats[size_t(seat)].phase == StagePlayerState::Phase::Deathbomb);
+        }
+    }
+    // ② 直接 end_trance：只抬高短于 70 的席位，不缩短更长的个人保护，幽灵席不动。
+    {
+        Fixture f;
+        CHECK(f.init());
+        f.enable(3, roles);
+        f.arm_trance();
+        activate(f, 1);
+        f.battle.seats[0].invulnerable = 10;
+        f.battle.seats[1].invulnerable = 500;
+        f.battle.seats[2].ghost = true;
+        f.battle.seats[2].invulnerable = 0;
+        CHECK(f.battle.end_trance());
+        CHECK_EQ(f.battle.seats[0].invulnerable, kExitFrames);
+        CHECK_EQ(f.battle.seats[1].invulnerable, 500);
+        CHECK_EQ(f.battle.seats[2].invulnerable, 0);
+        GameInput none;
+        CHECK(f.battle.step(none));
+        CHECK_EQ(f.battle.seats[0].invulnerable, kExitFrames - 1);
+        CHECK_EQ(f.battle.seats[1].invulnerable, 499);
+    }
+    // ③ 保护灵界耗尽：owner 进入死亡演出，其余席位同样拿到 70 帧保护。
+    for (i32 count : {2, 3}) for (i32 owner = 0; owner < count; ++owner) {
+        Fixture f;
+        CHECK(f.init());
+        f.enable(count, roles);
+        GameInput none;
+        for (i32 frame = 0; frame < 32; ++frame) CHECK(f.battle.step(none));
+        separate_seats(f, owner);
+        for (i32 seat = 0; seat < count; ++seat) place(f, seat);
+        f.progress.ending_points = 200;
+        auto hit = bullet_at(f.battle.seats[size_t(owner)].x, f.battle.seats[size_t(owner)].y);
+        f.battle.sim.bullet_player_collision(hit);
+        for (i32 frame = 0; frame < 20 && !f.battle.team_trance_active(); ++frame)
+            CHECK(f.battle.step(none));
+        CHECK_EQ(f.battle.trance_mode, StageBattle::TranceMode::DeathProtection);
+        for (i32 seat = 0; seat < count; ++seat) f.battle.seats[size_t(seat)].invulnerable = 0;
+        i32 guard = 0;
+        while (f.battle.team_trance_active() && guard++ < 300) CHECK(f.battle.step(none));
+        CHECK(!f.battle.team_trance_active());
+        CHECK(f.battle.seats[size_t(owner)].phase == StagePlayerState::Phase::Dying);
+        for (i32 seat = 0; seat < count; ++seat) {
+            if (seat == owner) CHECK(f.battle.seats[size_t(seat)].invulnerable >= kExitFrames - 1);
+            else CHECK_EQ(f.battle.seats[size_t(seat)].invulnerable, kExitFrames - 1);
+        }
+    }
+}
+
 int main() { return th13test::run_all("m4.trance"); }

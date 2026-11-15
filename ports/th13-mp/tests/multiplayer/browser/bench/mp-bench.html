@@ -1,0 +1,164 @@
+<!doctype html>
+<!-- Production multiplayer session driver for performance runs. It follows the
+     production start sequence (th13_mp_configure -> connect -> start -> rAF loop)
+     and replaces only the human with a scripted pilot. Query: seat, players,
+     chars, room, relay, stage, slot, diff, protect, delay, gov (1 = frame-rate-drop
+     handling on, 0 = fixed two-step clock). -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>th13-mp bench</title>
+<style>
+  html, body { margin: 0; background: #101018; color: #ddd; font: 14px system-ui, sans-serif; }
+  canvas { display: block; margin: 0 auto; outline: none; }
+  #status { text-align: center; padding: 8px; }
+</style>
+</head>
+<body>
+<div id="status">starting</div>
+<canvas id="canvas" tabindex="0"></canvas>
+<script type="module">
+import {runtimeAssets} from '/runtime-assets.mjs';
+const status = text => { document.getElementById('status').textContent = text; };
+const params = new URLSearchParams(location.search);
+const seat = Number(params.get('seat') ?? '0');
+const players = Number(params.get('players') ?? '2');
+const chars = (params.get('chars') ?? '0,1,3').split(',').map(Number);
+const room = params.get('room') ?? 'bench';
+const relay = params.get('relay');
+const stage = Number(params.get('stage') ?? '0');
+const slot = Number(params.get('slot') ?? '-1');
+const diff = Number(params.get('diff') ?? '3');
+const protect = Number(params.get('protect') ?? '1');
+const delay = Number(params.get('delay') ?? '0');
+const slowdown = Number(params.get('gov') ?? '1');
+const fetchBytes = async path => {
+  const response = await fetch(path);
+  if (!response.ok) throw new Error('missing asset: ' + path);
+  return new Uint8Array(await response.arrayBuffer());
+};
+window.__bench = {samples: [], failure: null, started: false, begin: 0, raf: 0, timeouts: 0, rafGapMax: 0};
+try {
+  const Module = await import('/artifacts/sdl3/th13-sdl.mjs');
+  const mod = await Module.default({
+    canvas: document.getElementById('canvas'),
+    print: t => console.log('[th13]', t),
+    printErr: t => console.warn('[th13]', t),
+  });
+  window.mod = mod;
+  mod.FS.mkdirTree('/assets');
+  const shts = [...new Set(chars.slice(0, players))].map(c => `pl0${c}a.sht`);
+  for (const name of [...runtimeAssets, ...shts])
+    mod.FS.writeFile('/assets/' + name, await fetchBytes('/assets/' + name));
+  mod.FS.writeFile('/msgothic.ttc', await fetchBytes('/assets/msgothic.ttc'));
+  const audioAssets = [
+    'thbgm.fmt',
+    'se_plst00.wav', 'se_enep00.wav', 'se_pldead00.wav', 'se_power0.wav', 'se_power1.wav',
+    'se_tan00.wav', 'se_tan01.wav', 'se_tan02.wav', 'se_ok00.wav', 'se_cancel00.wav',
+    'se_select00.wav', 'se_gun00.wav', 'se_cat00.wav', 'se_lazer00.wav', 'se_lazer01.wav',
+    'se_enep01.wav', 'se_damage00.wav', 'se_item00.wav', 'se_kira00.wav', 'se_kira01.wav',
+    'se_kira02.wav', 'se_timeout.wav', 'se_graze.wav', 'se_powerup.wav', 'se_pause.wav',
+    'se_cardget.wav', 'se_damage01.wav', 'se_timeout2.wav', 'se_invalid.wav', 'se_slash.wav',
+    'se_ch00.wav', 'se_ch01.wav', 'se_extend.wav', 'se_nep00.wav', 'se_bonus.wav',
+    'se_bonus2.wav', 'se_enep02.wav', 'se_lazer02.wav', 'se_nodamage.wav', 'se_boon00.wav',
+    'se_don00.wav', 'se_boon01.wav', 'se_ch02.wav', 'se_ch03.wav', 'se_extend2.wav',
+    'se_pin00.wav', 'se_pin01.wav', 'se_lgods1.wav', 'se_lgods2.wav', 'se_lgods3.wav',
+    'se_lgods4.wav', 'se_lgodsget.wav', 'se_msl.wav', 'se_msl2.wav', 'se_pldead01.wav',
+    'se_heal.wav', 'se_astralup.wav', 'se_fault.wav', 'se_noise.wav',
+  ];
+  for (const name of audioAssets)
+    mod.FS.writeFile('/assets/' + name, await fetchBytes('/assets/' + name));
+  const music = mod.FS.open('/assets/thbgm.ogg', 'w');
+  try {
+    for (let n = 0; n < 30; ++n) {
+      const bytes = await fetchBytes('/assets/thbgm-' + String(n).padStart(2, '0') + '.part');
+      mod.FS.write(music, bytes, 0, bytes.length);
+    }
+  } finally { mod.FS.close(music); }
+
+  const runtimeError = () => mod.UTF8ToString(mod._th13_mp_error?.() || mod._th13_error());
+  if (!mod._th13_prepare_loading()) throw new Error(runtimeError());
+  mod._th13_draw_startup(90);
+  if (!mod._th13_initialize()) throw new Error(runtimeError());
+  mod._th13_debug_mp_bench_start(stage, slot, protect);
+  mod._th13_debug_mp_slowdown(slowdown);
+
+  const SEED = 47932;
+  const words = [2, players, seat, diff, SEED, 0x9e37, 0x79b9, delay,
+    chars[0] ?? 0, players > 1 ? chars[1] ?? 0 : 0, players > 2 ? chars[2] ?? 0 : 0, 0, 0, 0,
+    2, 0, 2, 1, 2, 3, 4, 0];
+  const withBytes = (bytes, call) => {
+    const p = mod._malloc(bytes.length);
+    mod.HEAPU8.set(bytes, p);
+    try { return call(p, bytes.length); } finally { mod._free(p); }
+  };
+  if (!withBytes(new Uint8Array(new Uint32Array(words).buffer),
+      (p, n) => mod._th13_mp_configure(p, words.length)))
+    throw new Error('configure failed: ' + runtimeError());
+  const url = `${relay}/?room=${room}&run=1`;
+  if (!withBytes(new TextEncoder().encode(url + '\0'), p => mod._th13_mp_connect(p)))
+    throw new Error('connect failed: ' + runtimeError());
+  const deadline = Date.now() + 90_000;
+  for (;;) {
+    if (mod._th13_mp_start()) break;
+    const message = runtimeError();
+    if (message) throw new Error(message);
+    if (Date.now() > deadline) throw new Error('start timeout');
+    await new Promise(done => setTimeout(done, 10));
+  }
+
+  // Scripted pilot: hold the shot key, walk a deterministic pattern, focus in bursts.
+  const KEY = {shot: 44, focus: 42, left: 203, right: 205, up: 200, down: 208};
+  const held = new Set();
+  const set = (code, down) => {
+    if (down === held.has(code)) return;
+    mod._th13_key(code, down ? 1 : 0);
+    if (down) held.add(code); else held.delete(code);
+  };
+  let tick = 0;
+  mod.onGameWorkFrame = row => {
+    window.__bench.samples.push({
+      s: row.sequence, b: row.begin, e: row.end, st: row.stage, ph: row.phase,
+      src: row.source, sim: row.simulated, rb: row.rollback, rs: row.restores,
+      pr: row.presentations, ok: row.ok,
+    });
+  };
+  mod.onGameFrame = () => {
+    ++tick;
+    const step = Math.floor(tick / 24 + seat * 5) % 8;
+    set(KEY.shot, true);
+    set(KEY.focus, Math.floor(tick / 150 + seat) % 3 === 0);
+    set(KEY.left, step === 0 || step === 1 || step === 7);
+    set(KEY.right, step === 3 || step === 4 || step === 5);
+    set(KEY.up, step === 1 || step === 2 || step === 3);
+    set(KEY.down, step === 5 || step === 6 || step === 7);
+  };
+  window.__bench.begin = performance.now();
+  window.__bench.started = true;
+  let previousRaf = performance.now();
+  const watchRaf = now => {
+    window.__bench.raf += 1;
+    window.__bench.rafGapMax = Math.max(window.__bench.rafGapMax, now - previousRaf);
+    previousRaf = now;
+    requestAnimationFrame(watchRaf);
+  };
+  requestAnimationFrame(watchRaf);
+  // A 100 ms timer alongside rAF. If this stays on time while rAF gaps stretch,
+  // the main thread is free and the compositor is holding the frame.
+  let timerLast = performance.now();
+  window.__bench.timerGapMax = 0;
+  setInterval(() => {
+    const now = performance.now();
+    window.__bench.timeouts += 1;
+    window.__bench.timerGapMax = Math.max(window.__bench.timerGapMax, now - timerLast);
+    timerLast = now;
+  }, 100);
+  mod._th13_loop_start();
+  status('running seat ' + seat);
+} catch (error) {
+  window.__bench.failure = String(error && (error.stack || error.message) || error);
+  status('failed: ' + window.__bench.failure);
+}
+</script>
+</body>
+</html>

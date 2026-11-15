@@ -512,6 +512,16 @@
       ]
     },
     {
+      "id": "m4.trance_exit_protection",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/m4_trance_test.cpp"
+      ],
+      "tests": [
+        "trance_exit_protection"
+      ]
+    },
+    {
       "id": "m4.peer_bomb_policy",
       "layer": "native",
       "files": [

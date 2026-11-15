@@ -92,7 +92,7 @@ private:
         return record_slots_[(record_head_ + logical) % kRecordSlots];
     }
     // 尾部压入（复用槽位的 vector 容量；audio 先清空保序）。
-    Record& record_push(Record&& source);
+    Record& record_push();
     void record_pop_front();
     void record_clear();
     // 确认后冲账队列（非 Voice：Stop/Pan/Music，只来自已确认退役的 Record）；

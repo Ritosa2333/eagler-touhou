@@ -312,22 +312,32 @@ bool StageBattle::load(EclResourceProvider& provider, const char* stage_file, i3
     };
     sim.enemy_body_collision = [this](StageEnemy& enemy) {
         if (seat_count < 2) collide_enemy_body(enemy);
-        else {
+        else if (enemy_body_collidable(enemy)) {
             const i32 saved_seat = active_seat;
+            bool switched = false;
             for (i32 seat = 0; seat < seat_count; ++seat) {
-                if (seats[size_t(seat)].ghost) continue;
-                player_state_ = seats[size_t(seat)];
+                const StagePlayerState& authority = seats[size_t(seat)];
+                if (authority.ghost) continue;
+                // The body test writes seat state only for a hit or a graze
+                // award; classify on the authoritative slot before copying.
+                const int query = enemy_body_contact(enemy, authority.x, authority.y,
+                                                     authority.hit_size);
+                if (query == 0 || (query == 2 && !enemy_body_graze_awards(enemy))) continue;
+                player_state_ = authority;
                 player_ = &seat_huds[size_t(seat)];
                 character_ = seat_characters[size_t(seat)];
                 active_seat = seat;
+                switched = true;
                 collide_enemy_body(enemy);
                 seats[size_t(seat)] = player_state_;
                 if (!error_.empty()) break;
             }
-            player_ = &seat_huds[size_t(saved_seat)];
-            character_ = seat_characters[size_t(saved_seat)];
-            active_seat = saved_seat;
-            player_state_ = seats[size_t(saved_seat)];
+            if (switched) {
+                player_ = &seat_huds[size_t(saved_seat)];
+                character_ = seat_characters[size_t(saved_seat)];
+                active_seat = saved_seat;
+                player_state_ = seats[size_t(saved_seat)];
+            }
         }
         if (!error_.empty()) sim.error_ = error_;
     };
@@ -339,14 +349,27 @@ bool StageBattle::load(EclResourceProvider& provider, const char* stage_file, i3
         sim.laser_collision_count = 0;
         i32 result = 0;
         if (seat_count < 2) result = collide_laser(laser);
-        else {
+        else if (!(progress_ && trance_active(*progress_))) {
             const i32 saved_seat = active_seat;
+            bool switched = false;
             for (i32 seat = 0; seat < seat_count; ++seat) {
-                if (seats[size_t(seat)].ghost) continue;
-                player_state_ = seats[size_t(seat)];
+                const StagePlayerState& authority = seats[size_t(seat)];
+                if (authority.ghost) continue;
+                // collide_laser writes state only for a hit or a graze award.
+                // Run the same pure contact query on the authoritative slot
+                // first; a seat without such an interaction needs no window
+                // copy (the window already mirrors seats[saved]).
+                const i32 query = laser_contact(authority, laser);
+                if (query == 0) continue;
+                if (query == 2 && !laser_graze_awards(laser)) {
+                    if (result == 0) result = query;
+                    continue;
+                }
+                player_state_ = authority;
                 player_ = &seat_huds[size_t(seat)];
                 character_ = seat_characters[size_t(seat)];
                 active_seat = seat;
+                switched = true;
                 const i32 contact = collide_laser(laser);
                 if (contact == 1) {
                     sim.laser_collision_centers[size_t(sim.laser_collision_count++)] =
@@ -356,10 +379,12 @@ bool StageBattle::load(EclResourceProvider& provider, const char* stage_file, i3
                 seats[size_t(seat)] = player_state_;
                 if (!error_.empty()) break;
             }
-            player_ = &seat_huds[size_t(saved_seat)];
-            character_ = seat_characters[size_t(saved_seat)];
-            active_seat = saved_seat;
-            player_state_ = seats[size_t(saved_seat)];
+            if (switched) {
+                player_ = &seat_huds[size_t(saved_seat)];
+                character_ = seat_characters[size_t(saved_seat)];
+                active_seat = saved_seat;
+                player_state_ = seats[size_t(saved_seat)];
+            }
         }
         if (!error_.empty()) sim.error_ = error_;
         return result;
@@ -1966,19 +1991,26 @@ void StageBattle::collide_player_bullet_seat(StageBullet& bullet, i32 seat) {
     }
 }
 
+i32 StageBattle::laser_contact(const StagePlayerState& state, const StageLaser& laser) const {
+    return laser.player_contact(state.x, state.y, state.hit_size * .5f, state.hit_size * .5f);
+}
+
+bool StageBattle::laser_graze_awards(const StageLaser& laser) {
+    return laser.kind == StageLaser::Kind::Line && laser.graze_timer % 3 == 0;
+}
+
 i32 StageBattle::collide_laser(const StageLaser& laser) {
     // 444260 bypasses the entire query in trance. Dialog/invulnerability
     // suppress a hit return, so those states do not split the laser.
     if (progress_ && trance_active(*progress_)) return 0;
-    const i32 contact = laser.player_contact(player_x, player_y,
-                                            player_hit_size_ * .5f, player_hit_size_ * .5f);
+    const i32 contact = laser_contact(player_state_, laser);
     if (contact == 1) {
         if (player_dead || player_phase == PlayerPhase::Dying ||
             player_phase == PlayerPhase::Deathbomb ||
             invulnerable > 0 || team_bomb_protected() ||
             (sim.dialog_host && sim.dialog_host->dialog_active())) return 0;
         kill_player();
-    } else if (contact == 2 && laser.kind == StageLaser::Kind::Line && laser.graze_timer % 3 == 0) {
+    } else if (contact == 2 && laser_graze_awards(laser)) {
         // 431957: line fragments alone award graze, every third graze query.
         if (progress_) {
             if (progress_->graze < 99999999) ++progress_->graze;
@@ -1995,16 +2027,20 @@ i32 StageBattle::collide_laser(const StageLaser& laser) {
     return contact;
 }
 
-void StageBattle::collide_enemy_body(StageEnemy& enemy) {
-    if (enemy.dead || (enemy.flags & (0x22u | 0x8000000u)) || enemy.body_invulnerable > 0 ||
-        (progress_ && trance_active(*progress_))) return;
-    const float p = player_hit_size_;
+bool StageBattle::enemy_body_collidable(const StageEnemy& enemy) const {
+    return !(enemy.dead || (enemy.flags & (0x22u | 0x8000000u)) || enemy.body_invulnerable > 0 ||
+             (progress_ && trance_active(*progress_)));
+}
+
+int StageBattle::enemy_body_contact(const StageEnemy& enemy, float px, float py,
+                                    float hit_size) const {
+    const float p = hit_size;
     const float half = p * 0.5f;
     int contact = 0;
     if ((enemy.flags & 0x8000u) == 0) {
         const float sx = enemy.hitbox[0] * 0.5f;
-        const double dx = double(player_x) - double(enemy.position[0]);
-        const double dy = double(player_y) - double(enemy.position[1]);
+        const double dx = double(px) - double(enemy.position[0]);
+        const double dy = double(py) - double(enemy.position[1]);
         const float distance2 = float(dx * dx + dy * dy);
         const double radius2 = double(sx) * sx;
         if (double(distance2) < double(p) * p + radius2) contact = 1;
@@ -2017,7 +2053,7 @@ void StageBattle::collide_enemy_body(StageEnemy& enemy) {
         const float half_h = enemy.hitbox[1] * 0.5f;
         const float base_x = enemy.position[0] - std::cos(angle) * half_h;
         const float base_y = enemy.position[1] - std::sin(angle) * half_h;
-        const float dx = player_x - base_x, dy = player_y - base_y;
+        const float dx = px - base_x, dy = py - base_y;
         const float ca = std::cos(-angle), sa = std::sin(-angle);
         const float longitudinal = ca * dx - sa * dy;
         const float lateral = sa * dx + ca * dy;
@@ -2031,11 +2067,21 @@ void StageBattle::collide_enemy_body(StageEnemy& enemy) {
             else contact = 2;
         }
     }
+    return contact;
+}
+
+bool StageBattle::enemy_body_graze_awards(const StageEnemy& enemy) {
+    return (enemy.flags & 0x200u) && i32(enemy.age) % 6 == 0;
+}
+
+void StageBattle::collide_enemy_body(StageEnemy& enemy) {
+    if (!enemy_body_collidable(enemy)) return;
+    const int contact = enemy_body_contact(enemy, player_x, player_y, player_hit_size_);
     if (contact == 1) {
         if (!player_dead && player_phase != PlayerPhase::Dying &&
             player_phase != PlayerPhase::Deathbomb && invulnerable <= 0 && !team_bomb_protected() &&
             !(sim.dialog_host && sim.dialog_host->dialog_active())) kill_player();
-    } else if (contact == 2 && (enemy.flags & 0x200u) && i32(enemy.age) % 6 == 0) {
+    } else if (contact == 2 && enemy_body_graze_awards(enemy)) {
         if (progress_) {
             if (progress_->graze < 99999999) ++progress_->graze;
             progress_->max_point = std::min(progress_->max_point_cap, progress_->max_point + 100);
@@ -2570,12 +2616,20 @@ bool StageBattle::end_trance() {
         }
         if (!commit_death_normal()) return false;
     }
-    // 405b80 always finishes with405440(0x46), including normal exit.
-    invulnerable = seat_count >= 2 ? std::max(invulnerable, 70) : 70;
+    // 405b80 always finishes with 405440(0x46) for the player, including
+    // normal exit: player+0x14688 = 70 frames of collision protection.
     trance_task_frame_ = 0;
+    if (!mp_redirect) invulnerable = kTranceExitInvulnerability;
     if (mp_redirect) {
         // owner 席的死亡终态写回权威槽位，窗口恢复调用方席位。
         seats[size_t(death_seat)] = player_state_;    // 拷回权威
+        // R-T2：全员共同退出灵界，每个可操作席位各自获得退出保护；
+        // 不缩短已有更长的个人保护（Bomb、死亡演出、重生）。
+        for (i32 seat = 0; seat < seat_count; ++seat) {
+            auto& state = seats[size_t(seat)];
+            if (state.ghost || state.dead || state.final_death) continue;
+            state.invulnerable = std::max(state.invulnerable, kTranceExitInvulnerability);
+        }
         player_ = &seat_huds[size_t(saved_seat)];
         character_ = seat_characters[size_t(saved_seat)];
         active_seat = saved_seat;
@@ -2900,6 +2954,9 @@ bool StageBattle::step_transition(const GameInput& input) {
     if (seat_count >= 2) {
         seat_inputs[size_t(mp_local_seat)] = input;
         advance_mp_protection_and_ghosts();
+    if (protect_all_seats)
+        for (i32 seat = 0; seat < seat_count; ++seat)
+            seats[size_t(seat)].invulnerable = std::max(seats[size_t(seat)].invulnerable, 3);
         std::array<bool, 3> deathbomb_prepared{};
         if (!prepare_expired_deathbombs(deathbomb_prepared)) return false;
         const i32 saved_seat = active_seat;

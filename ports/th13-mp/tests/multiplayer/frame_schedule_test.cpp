@@ -69,4 +69,69 @@ int main() {
     schedule.reset(); // Exit/reconfigure discards work owned by the old run.
     assert(!schedule.retry_pending());
     assert(schedule.advance(0) == 0);
+
+    // Frame-rate-drop handling: stretch follows the sustained prediction depth.
+    using th13::multiplayer::SlowdownGovernor;
+    assert(SlowdownGovernor::depth_of(10, 0xFFFFFFFFu) == 0);  // no remote input yet
+    assert(SlowdownGovernor::depth_of(10, 9) == 1);
+    assert(SlowdownGovernor::depth_of(10, 12) == 0);
+    SlowdownGovernor governor;
+    for (unsigned callback = 0; callback < 200; ++callback)
+        assert(governor.update(SlowdownGovernor::kOnset) == 1.);  // ordinary latency never slows
+    // A burst of depth that a single callback clears is not pressure.
+    for (unsigned callback = 0; callback < 40; ++callback)
+        assert(governor.update(callback % 3 == 0 ? SlowdownGovernor::kWindow : 2) == 1.);
+    // Sustained depth just short of the window slows the clock to the cap.
+    double previous = 1.;
+    for (unsigned callback = 0; callback < 200; ++callback) {
+        const double stretch = governor.update(SlowdownGovernor::kFull);
+        assert(stretch >= previous && stretch <= SlowdownGovernor::kMaxStretch);
+        previous = stretch;
+    }
+    assert(previous > SlowdownGovernor::kMaxStretch - .01);
+    // Depth pinned on the window while already fully slowed is both peers
+    // display-bound. The stretch releases instead of holding the cap.
+    unsigned released = 0;
+    for (unsigned callback = 0; callback < 40; ++callback)
+        if (governor.update(SlowdownGovernor::kWindow) < SlowdownGovernor::kMaxStretch - .4)
+            ++released;
+    assert(released > 0);
+    // Partial pressure converges to a proportional stretch, not the cap.
+    governor.reset();
+    const unsigned half = SlowdownGovernor::kOnset + 1;
+    const double expected = 1. + (SlowdownGovernor::kMaxStretch - 1.) /
+        double(SlowdownGovernor::kFull - SlowdownGovernor::kOnset);
+    for (unsigned callback = 0; callback < 300; ++callback) governor.update(half);
+    assert(governor.stretch() > expected - .01 && governor.stretch() < expected + .01);
+    assert(expected > 1.2 && expected < SlowdownGovernor::kMaxStretch - .2);
+    // Releasing pressure returns smoothly to the true clock.
+    previous = governor.stretch();
+    for (unsigned callback = 0; callback < 400; ++callback) {
+        const double stretch = governor.update(0);
+        assert(stretch <= previous);
+        previous = stretch;
+    }
+    assert(governor.stretch() == 1.);
+    // A stretched clock earns proportionally fewer frames and never freezes.
+    governor.reset();
+    for (unsigned callback = 0; callback < 300; ++callback) governor.update(SlowdownGovernor::kFull);
+    FrameSchedule slowed;
+    unsigned earned = 0;
+    for (unsigned callback = 0; callback < 600; ++callback) {
+        const unsigned owed = slowed.advance(tick / governor.stretch());
+        for (unsigned i = 0; i < owed; ++i) { slowed.complete(); ++earned; }
+    }
+    assert(earned > 600 / SlowdownGovernor::kMaxStretch - 3 && earned < 600 / SlowdownGovernor::kMaxStretch + 3);
+    // A long display gap is credited in full, and frames the callback does not
+    // run remain available. Time beyond two seconds becomes slowdown.
+    FrameSchedule gap;
+    assert(gap.advance_gap(0.5) == 30);
+    gap.network_wait();
+    assert(gap.owed() == 0);
+    assert(gap.advance_gap(0) == 30); // The unrun frames are still owed.
+    for (unsigned i = 0; i < 30; ++i) gap.complete();
+    assert(gap.advance_gap(0) == 0);
+    assert(gap.advance_gap(3.) == 120); // Two seconds of credit, not the whole hitch.
+    gap.reset();
+    assert(gap.advance_gap(0) == 0);
 }

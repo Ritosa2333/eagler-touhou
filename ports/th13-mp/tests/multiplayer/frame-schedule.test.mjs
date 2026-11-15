@@ -17,3 +17,16 @@ test('packet wake retains a due frame without advancing the input clock', () => 
   const run = spawnSync(binary, [], {encoding: 'utf8'});
   assert.equal(run.status, 0, run.stderr);
 });
+
+test('pacing model: display-limited and unequal peers keep game speed without stalls', () => {
+  const root = fileURLToPath(new URL('../..', import.meta.url));
+  const out = resolve(root, '../../../artifacts/th13-mp-frame-schedule');
+  mkdirSync(out, {recursive: true});
+  const binary = resolve(out, 'pacing-sim-test');
+  const build = spawnSync(process.env.CXX || 'g++', ['-std=c++17', '-O2',
+    '-I' + resolve(root, '../../common/include'),
+    resolve(root, 'tests/multiplayer/pacing_sim_test.cpp'), '-o', binary], {encoding: 'utf8'});
+  assert.equal(build.status, 0, build.stderr);
+  const run = spawnSync(binary, [], {encoding: 'utf8'});
+  assert.equal(run.status, 0, run.stderr || run.stdout);
+});

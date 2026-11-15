@@ -22,7 +22,7 @@ std::uint64_t Session::NowMicros() {
 }
 
 // ---- P4：records 环实现（16 槽固定；复用槽位的 vector 容量，稳态零分配）。
-Session::Record& Session::record_push(Record&& source) {
+Session::Record& Session::record_push() {
     // 环满 = 12 帧停等失效的防御断言（理论不可达）：覆盖最旧槽并如实记
     // 越界（debug 面）；不静默扩容（红线：容量问题停下报告，不放宽）。
     if (record_count_ == kRecordSlots) {
@@ -30,13 +30,14 @@ Session::Record& Session::record_push(Record&& source) {
         record_pop_front();
     }
     Record& slot = record_slots_[record_tail()];
-    // 槽复用：值域覆写；snapshot 的内部 vector 与 audio 保留容量（capture
-    // 侧 assign 复用；audio 先清空保序）。source 是临时值，只搬标量。
-    slot.frame = source.frame;
-    slot.has_snapshot = source.has_snapshot;
-    slot.inputs = source.inputs;
-    slot.local_input = source.local_input;
-    slot.frame_inputs = source.frame_inputs;
+    // 槽复用：标量域复位为 Record{} 默认值；snapshot 的内部 vector 与 audio
+    // 保留容量（capture 侧 assign 复用；audio 先清空保序）。不构造临时
+    // Record：其中的 WorldState 每帧构造/析构是纯开销。
+    slot.frame = 0;
+    slot.has_snapshot = false;
+    slot.inputs = {};
+    slot.local_input = {};
+    slot.frame_inputs = {};
     slot.audited = false;
     slot.domains[0] = 0;
     slot.wire_digest = 0;
@@ -311,7 +312,7 @@ bool Session::CanSimulate() {
     if (decision.predictedMask && battle_ && visual_rng_) {
         // P4：环槽复用——先取槽位（保留 snapshot 内 vector/audio 容量），
         // 逐域覆写；capture 写入既有 WorldState 对象（免分配路径）。
-        Record& record = record_push(Record{});
+        Record& record = record_push();
         record.frame = sim_frame_;
         record.has_snapshot = true;
         record.inputs = decision.inputs;
@@ -333,7 +334,7 @@ bool Session::CanSimulate() {
         }
         ++checkpoints_;
     } else {
-        Record& record = record_push(Record{});
+        Record& record = record_push();
         record.frame = sim_frame_;
         record.inputs = decision.inputs;
     }

@@ -469,6 +469,7 @@ public:
     static constexpr i32 kKillPower = 8;
     // 灵界（trance）：
     static constexpr i32 kTranceActivateFrame = 30;   // 0x4057f0：任务计时 ≥0x1e
+    static constexpr i32 kTranceExitInvulnerability = 70;  // 0x405b80:0x405d29 push 0x46 → 0x405440
     static constexpr float kTranceDrainPerFrame = 3.0f;  // 0x4aeca8=3.0【drain 点待 asm 复核】
 
     // sht_name：移速 + 弹型来源（回放对拍 = plXXa/b.sht；缺文件时失败）。
@@ -492,6 +493,9 @@ public:
     // 0x42e380/0x438730 的帧内相位因此与原生一致：激光擦弹（0x431a1f →
     // 0x445900）的 max_point+100 先于 kind3 收集（S5 f2725 首差根因）。
     bool defer_item_side = false;
+    // Diagnostic sessions keep every seat's collision window open so scripted
+    // pilots can traverse whole boss cards. Applied inside the logical step.
+    bool protect_all_seats = false;
     void update_items_phase();    // 0x42e380 道具更新 + 道具事件
     void update_spirits_phase();  // 0x438730 神霊更新 + 神霊事件
     // M3：多席收集面（R-I7：每件/每只按最近合格席；单席 = 单元素）。
@@ -683,9 +687,15 @@ private:
     void sync_damage_registrations();
     void retire_damage_registration(PlayerShot& shot);
     void collide_shots(StageEnemy& enemy);
+    bool enemy_body_collidable(const StageEnemy& enemy) const;
+    int enemy_body_contact(const StageEnemy& enemy, float px, float py,
+                           float hit_size) const;
+    static bool enemy_body_graze_awards(const StageEnemy& enemy);
     void collide_enemy_body(StageEnemy& enemy);
     void consume_player_shot_geometry();
     void collide_player_bullet(StageBullet& bullet);
+    i32 laser_contact(const StagePlayerState& state, const StageLaser&) const;
+    static bool laser_graze_awards(const StageLaser&);
     i32 collide_laser(const StageLaser&);
     void reward_kill(StageEnemy& enemy);
     void update_item_side();    // 0x42e380/0x438730 玩家只读面装配 + 步进
