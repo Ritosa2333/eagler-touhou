@@ -50,6 +50,9 @@ struct TitleScenePlatform : TitleFramePlatform, TitleReplayPlatform, TitleOption
     virtual bool record_clear_result_name(const std::string&) { return false; }
     // Score ST+0x0C last confirmed name; same slot as RunPausePlatform.
     virtual std::string last_result_name() const { return {}; }
+    // False when the run cannot enter the ordinary score table, in which
+    // case the result flow continues straight to its state-3 exit.
+    virtual bool result_ranking_available() const { return true; }
     // 0x454050 state3 的 DAT_004be7c8（续关数）==0 门：true → 流程 0xf =
     // 0x4549d0（回放槽保存）；false → 回主菜单。默认 false = 宿主未接查询。
     virtual bool result_replay_save_available() const { return false; }

@@ -301,6 +301,13 @@ bool TitleResultEntry::update(u32 pressed, u32 repeated) {
     case TitleScreen::ResultName:
         switch (state.substate) {
         case 0:
+            if (!host.result_ranking_available()) {
+                if (host.result_replay_save_available()) {
+                    state.change_screen(TitleScreen::ResultReplaySlot);
+                    return true;
+                }
+                return return_main();
+            }
             if (!open_name_screen()) return false;
             state.change_substate(1);
             break;
