@@ -16,6 +16,7 @@
 #include "../game/GameSession.hpp"
 #if defined(TH14_MULTIPLAYER)
 #include "../multiplayer/RoomTh14.hpp"
+#include <eagler/input/LocalPlayerCue.hpp>
 #endif
 #if PORT_TITLE == 14
 #include "../game/ReplayDescriptionTh14.hpp"
@@ -244,6 +245,7 @@ struct Application:StageResourceEffects
     bool boot_room(){
         const auto& setup=room->setup;
         session.coop_seats=setup.seats;session.coop_viewer=setup.local;session.coop_loadouts=setup.loadouts;
+        session.coop_challenge=setup.challenge;session.coop_observer=room->spectator||room->playback;
         session.practice_enabled=false;
         session.menu_selection={};session.practice_request={};
         room_clock=0;session.stage_load_clock=[this](){return room_clock;};
@@ -305,6 +307,11 @@ struct Application:StageResourceEffects
         if(!session.draw(renderer)){error=session.error;return false;}
         th14_consume_deferred_captures(session.animations.deferred_captures,session,graphics,renderer);
         graphics.present();
+        if(!room->spectator&&!room->playback&&session.battle&&session.state.phase==GameSessionPhase::stage){
+            const auto seat=room->setup.local;
+            const auto& pos=session.battle->pilot(seat).motion.state.position;
+            eagler::presentation::local_player_cue(seat,pos.x+224.f,pos.y+16.f);
+        }
         return true;
     }
     bool room_can_batch()const noexcept{
@@ -2873,7 +2880,7 @@ EMSCRIPTEN_KEEPALIVE int th14_room_return(){
 EMSCRIPTEN_KEEPALIVE int th14_room_open(const unsigned* w,unsigned n,const char* url,const char* viewer){
     using namespace th11;
     auto& app=sdl::app;
-    if(!w||n!=19||w[0]!=2||app.room)return 0;
+    if(!w||(n!=19&&n!=20)||w[0]!=2||app.room||(n==20&&w[19]>1))return 0;
     auto room=std::make_unique<RoomTh14>();auto& s=room->setup;
     s.seats=w[1];s.local=w[2];s.difficulty=w[3];s.seed=w[4];s.id=u64(w[5])|(u64(w[6])<<32);s.delay=w[7];
     for(u32 i=0;i<3;++i){
@@ -2881,7 +2888,7 @@ EMSCRIPTEN_KEEPALIVE int th14_room_open(const unsigned* w,unsigned n,const char*
         s.loadouts[i]={u8(w[8+i*2]),u8(w[9+i*2])};
     }
     std::copy_n(w+14,4,s.build.begin());
-    s.prediction=w[18];
+    s.prediction=w[18];s.challenge=n==20&&w[19]!=0;
     if(!room->begin(url,viewer,u64(SDL_GetTicks())))return 0;
     app.room_preview=false;
     app.session.room_title_preview=false;
@@ -3054,6 +3061,9 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_stop(){
 #endif
 }
 EMSCRIPTEN_KEEPALIVE void th11_audio_close(){th11::sdl::app.audio.close();}
+#if PORT_TITLE == 14
+EMSCRIPTEN_KEEPALIVE void th14_always_hitbox(unsigned enabled){th11::PlayerFrame::always_hitbox=enabled!=0;}
+#endif
 EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
     using namespace th11::sdl;if(running||!app.initialized)return;
     running=true;suspended=false;previous_frame=-1;cadence.reset();clear_inputs();app.audio.suspend(false);app.reset_frame_window();

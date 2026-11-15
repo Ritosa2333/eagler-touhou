@@ -693,7 +693,7 @@ bool GameSession::activate_stage(){
         return false;
     }
 #if PORT_TITLE == 14
-    if(coop_seats>1&&!battle->setup_coop(coop_loadouts,coop_seats,coop_viewer))return fail(battle->error.c_str());
+    if(coop_seats>1&&!battle->setup_coop(coop_loadouts,coop_seats,coop_viewer,coop_challenge,coop_observer))return fail(battle->error.c_str());
 #endif
 #if PORT_TITLE == 14
     constexpr i32 minimum[]={1000000,1000000,1000000,1000000,1000000};

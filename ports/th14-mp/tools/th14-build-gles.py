@@ -69,6 +69,7 @@ def main():
     common_files = [*sorted(imgui.glob('*.h')), *sorted(imgui.glob('*.inl')), *sorted(imgui.glob('*.cpp')),
                     *sorted((shared / 'eagler/thprac').glob('Practice*')),
                     shared / 'eagler/input/DialogueGesture.hpp',
+                    shared / 'eagler/input/LocalPlayerCue.hpp',
                     shared / 'eagler/gameplay/CooperativeRules.hpp']
     netplay = ('BrowserPeerTransport', 'InputReplay', 'NetplayCore', 'NetplayProtocol',
                'NetplaySession', 'SessionChannel', 'WebSocketTransport')

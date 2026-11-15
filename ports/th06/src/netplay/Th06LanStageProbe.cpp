@@ -247,6 +247,9 @@ bool RestoreSpectatorReplayStart(const SpectatorStageEvent& event) {
     if(event.game!='6'||event.schema!=SPECTATOR_REPLAY_SCHEMA||
        !SpectatorReplayStart::Prepare(event.state,event.stage,event.playerCount))return false;
     SideEffects::SetSpeculative(true);
+    // Spectator restore bypasses the title's normal transition and must retire
+    // its calc, draw and texture owners before the new stage claims their slots.
+    g_Chain.Cut(g_MainMenu.chainCalc);
     GameManager::CutChain();
     ReplayManager::SaveReplay(nullptr,nullptr);
     SpectatorReplayStart::prepared.setup.spectator=true;

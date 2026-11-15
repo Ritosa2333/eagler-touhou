@@ -9,17 +9,17 @@
 namespace th11 {
 namespace {
 constexpr u32 skip=0x200;
-constexpr u32 seat_colors[]={0xfffc9999,0xff9cdbff,0xffffdf92};
 }
 
-bool GameBattle::setup_coop(const std::array<Th14CoopLoadout,3>& loadouts,u32 seats,u32 viewer){
+bool GameBattle::setup_coop(const std::array<Th14CoopLoadout,3>& loadouts,u32 seats,u32 viewer,bool challenge,bool observer){
     if(seats<2||seats>3||viewer>=seats||!initialized||
        loadouts[0].character!=enemy_environment.character||loadouts[0].subtype!=enemy_environment.subtype)
         return unavailable("invalid TH14 co-op setup");
-    coop_seats=seats;coop_viewer=viewer;
-    if(!hud.layout_coop(seats))return unavailable("TH14 multiplayer HUD setup");
+    coop_seats=seats;coop_viewer=viewer;coop_challenge=challenge;coop_observer=observer;
+    if(!hud.layout_coop(seats,challenge))return unavailable("TH14 multiplayer HUD setup");
     player->shots.coop_draw_file=20;
-    economy.th14_initial_bombs=std::max(0,economy.th14_bombs-1);
+    if(challenge){economy.lives=0;economy.life_fragments=0;economy.th14_bomb_fragments=0;}
+    economy.th14_initial_bombs=challenge?0:std::max(0,economy.th14_bombs-1);
     economy.th14_bombs=economy.th14_initial_bombs;
     economy.th14_small_power=i32(seats);
     for(u32 seat=1;seat<seats;++seat){
@@ -57,7 +57,7 @@ bool GameBattle::setup_coop(const std::array<Th14CoopLoadout,3>& loadouts,u32 se
 }
 
 bool GameBattle::coop_bomb_available(u32 seat)const{
-    if(!pilot_live(seat)||!enemies.count||(dialogue&&dialogue->active))return false;
+    if(coop_challenge||!pilot_live(seat)||!enemies.count||(dialogue&&dialogue->active))return false;
     const auto* own=pilot_bomb(seat);
     if(!own)return false;
     if(own->selection==4)return !own->state.active;
@@ -245,6 +245,7 @@ void GameBattle::assign_coop_items(){
 
 bool GameBattle::coop_collect(ItemState& item,bool& convert){
     const u32 collector=items.th14_collector;
+    if(coop_challenge&&item.type>=4&&item.type<=7)return true;
     const i32 bomb_pieces=th14_coop_bomb_pieces(coop_seats);
     if(item.type==4||item.type==5||item.type==7){
         for(u32 seat=0;seat<coop_seats;++seat){
@@ -339,20 +340,13 @@ bool GameBattle::coop_damage(const EnemyState& e,Vec3 position,const Vec2* size,
 bool GameBattle::draw_coop_players(AnmRenderer& renderer){
     for(u32 seat=0;seat<coop_seats;++seat){
         auto& p=pilot(seat);
-        if(pilot_live(seat)){if(!p.draw(renderer))return false;}
+        if(pilot_live(seat)){if(!p.draw(renderer,coop_observer||seat==coop_viewer))return false;}
         else{
             const auto old=p.state.life_state;
             p.state.life_state=1;
-            const bool drawn=p.draw(renderer);
+            const bool drawn=p.draw(renderer,false);
             p.state.life_state=old;
             if(!drawn)return false;
-        }
-        const bool marker=(coop_held[coop_viewer]&skip)&&seat==coop_viewer;
-        if(marker){
-            AsciiStyle s;s.playfield=true;s.pass=2;s.horizontal=0;s.font=2;s.shadow=true;
-            s.color=seat_colors[seat];
-            const auto pos=p.motion.state.position;
-            if(!ascii.add("+",{pos.x+224,pos.y+10,0},s))return false;
         }
     }
     return true;
@@ -360,20 +354,23 @@ bool GameBattle::draw_coop_players(AnmRenderer& renderer){
 u8 GameBattle::coop_sprite_opacity(const void* context,const AnmVm& vm){
     const auto& battle=*static_cast<const GameBattle*>(context);
     auto* root=&vm;
-    while(root->parent)root=root->parent;
+    for(;;root=root->parent){
+        if(battle.coop_challenge&&root->reserved_3a0==Hud::coop_life_stock_tag)return 0;
+        if(!root->parent)break;
+    }
+    if(battle.coop_observer)return 255;
     const auto local=battle.pilot(battle.coop_viewer).motion.state.position;
-    for(u32 seat=0;seat<battle.coop_seats;++seat){
-        const auto& p=battle.pilot(seat);
-        if(root==&p.motion.body){
-            if(!battle.pilot_live(seat))return 90;
-            if(seat!=battle.coop_viewer&&th14_dist_sq(local,p.motion.state.position)<3600.f)return 112;
-            return 255;
-        }
-    }
-    if(vm.reserved_3a0>=20&&vm.reserved_3a0<20+battle.coop_seats){
-        const u32 seat=vm.reserved_3a0-20;
-        if(seat!=battle.coop_viewer&&th14_dist_sq(local,battle.pilot(seat).motion.state.position)<3600.f)return 98;
-    }
+    const auto opacity=[&](u32 seat)->u8 {
+        if(seat==battle.coop_viewer)return battle.pilot_live(seat)?255:112;
+        if(!battle.pilot_live(seat))return 88;
+        return th14_dist_sq(local,battle.pilot(seat).motion.state.position)<2304.f?72:160;
+    };
+    // The tags are set on the ANM roots, including effects retiring after Shift release.
+    const auto tag=root->reserved_3a0;
+    if(tag>=24&&tag<24+battle.coop_seats)return tag==24+battle.coop_viewer?255:0;
+    if(tag>=20&&tag<20+battle.coop_seats)return opacity(tag-20);
+    for(u32 seat=0;seat<battle.coop_seats;++seat)
+        if(root==&battle.pilot(seat).motion.body)return opacity(seat);
     return 255;
 }
 
@@ -395,11 +392,18 @@ bool GameBattle::queue_coop_hud(){
         const u32 opacity=icon?icon->color&0xff000000u:alpha;
         const float life=hud.life_row(seat),bomb=hud.bomb_row(seat),power=hud.power_row(seat);
         style.horizontal=1;style.font=1;style.scale={1,1};
+        style.color=opacity|0xffffffu;
+        if(coop_challenge&&!text(438,life+3,"MISS"))return false;
         style.color=opacity|(seat==coop_viewer?0xffff80u:0xffffffu);
         std::snprintf(number,sizeof(number),"%uP",seat+1);
         if(!text(491,life+3,number))return false;
         style.font=4;style.scale={.6f,.6f};style.color=opacity|0xffffffu;
-        if(!pilot_live(seat)){
+        if(coop_challenge){
+            style.horizontal=2;style.scale={1,1};
+            th14_grouped_number(number,e.th14_practice_misses);
+            if(!text(620,life+8,number))return false;
+            style.horizontal=1;style.scale={.6f,.6f};
+        }else if(!pilot_live(seat)){
             style.font=2;
             if(!text(580,life+22,"GHOST"))return false;
             style.font=4;
