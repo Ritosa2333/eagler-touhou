@@ -77,6 +77,7 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
     setError(''); try {await session.getRuntime()!.send('playback', {action, ...(value !== undefined ? {value} : {})});} catch (error) {report(error);}
   }
   const importFile = async (file: File) => {
+    setError('');
     if (!isReplayImportFileName(file.name, files.productId ?? undefined)) throw Error(t(fileOnly ? 'replay.hsobImport' : 'file.chooseReplay'));
     await session.importFile('replay', file, files.productId!);
   };
@@ -120,7 +121,7 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
     </section>
     </>, stage)}
     <aside className="replay-file-browser" data-file-only={fileOnly || undefined} aria-label={t('replay.ui.files')} onDragOver={event => {if (!busy && event.dataTransfer.types.includes('Files')) event.preventDefault();}} onDrop={event => {event.preventDefault(); if (busy || files.phase !== 'ready') return; const list = [...event.dataTransfer.files]; if (list.length !== 1) {report(Error('请每次导入一个文件')); return;} void importFile(list[0]).catch(report);}}>
-      <header><h2>{t('replay.ui.heading')}</h2><UiButton type="button" className="replay-button" disabled={busy || files.phase !== 'ready'} onClick={() => {setBusy(true); void session.chooseReplayFile(files.productId!).catch(report).finally(() => setBusy(false));}}>{icon('replay-upload-simple')}<span>{t('replay.ui.import')}</span></UiButton></header>
+      <header><h2>{t('replay.ui.heading')}</h2><UiButton type="button" className="replay-button" disabled={busy || files.phase !== 'ready'} onClick={() => {setBusy(true); setError(''); void session.chooseReplayFile(files.productId!).catch(report).finally(() => setBusy(false));}}>{icon('replay-upload-simple')}<span>{t('replay.ui.import')}</span></UiButton></header>
       <nav className="replay-breadcrumb" aria-label={t('replay.ui.location')}>{icon('replay-folder')}<UiButton variant="quiet" size="sm" type="button" onClick={() => {if (folder) setFolder(null); else setMoving(null);}}>{t('replay.ui.all')}</UiButton>{folder && <span title={folder.slice(7)}>/ {folder.slice(7)}</span>}</nav>
       {moving && <form className="replay-workspace-move" onSubmit={event => {event.preventDefault();setBusy(true); void model.move(moving, destination === 'new' ? `replay/${newFolder.trim()}` : destination).then(ok => {if (ok) setMoving(null);}).finally(() => setBusy(false));}}>
         <strong title={moving}>{t('replay.ui.moving',{name:moving.split('/').pop()})}</strong><MainSelect id="replayMoveSelect" className="option-select" aria-label={t('replay.ui.moveTo')} value={destination} onChange={event => setDestination(event.target.value)}><option value="replay">{t('replay.ui.all')}</option>{folders.map(item => <option key={item.key} value={item.key}>{item.name}</option>)}<option value="new">{t('replay.ui.newFolder')}</option></MainSelect>
@@ -136,6 +137,7 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
             metadata={!versus && files.descriptions[row.path] ? <ReplaySummary description={files.descriptions[row.path]!} game={game}/> : <small title={row.replayMatch?.startedAt ? t('replay.ui.matchStarted') : t('replay.ui.modified')}>{timestamp(row.replayMatch?.startedAt || row.modifiedAt)}</small>}
             actions={[
               {label: t('replay.ui.download'), run: () => {void model.download(row.path);}},
+              ...(files.productId === 'th14' ? [{label: t('replay.th14BeamCopy'), run: () => {setBusy(true); void model.downloadBeamCompatibilityCopy(row.path).finally(() => setBusy(false));}}] : []),
               ...(!fileOnly ? [
                 {label: t('replay.ui.move'), run: () => {setMoving(row.path); setDestination('replay'); setNewFolder('');}},
                 {label: t('replay.ui.rename'), run: () => {void model.rename(row.path);}},
