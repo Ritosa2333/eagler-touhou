@@ -199,6 +199,27 @@ test('room preload: binding a run reuses the epoch/DATA and retains the prepared
   await assert.rejects(f.service.configurePreparedRoom(before.epoch, {netplayMode: 'lan', netplayUrl: 'wss://relay.invalid'}));
 });
 
+test('TH12 multiplayer inspects an empty replay viewer before playback presents a frame', async () => {
+  const f = fixture(), plan = managedPlan('th12', {replayViewer: true});
+  plan.runtimeVariant = 'multiplayer';
+  await f.prepare(plan, {roomReturn: true});
+  const launching = f.service.launch({awaitFirstFrame: true});
+  const launch = f.ack('launch');
+  await flush();
+  f.timers.advance(125_000);
+  const snapshot = await launching;
+  assert.equal(snapshot.launched, true);
+  assert.equal(snapshot.firstFrame, false);
+  assert.equal(f.service.getSnapshot().firstFrameTimedOut, false);
+
+  const inspection = f.service.send('playback', {action: 'inspect', path: 'replay/th12_mp_01.rpy'});
+  const description = {mode: 'multiplayer', stages: [{id: 1, label: 'Stage 1', frames: 100}]};
+  assert.equal(f.ack('playback', {description}).action, 'inspect');
+  assert.deepEqual((await inspection).description, description);
+  f.event('first-frame', {launchSerial: launch.launchSerial});
+  assert.equal(f.service.getSnapshot().firstFrame, true);
+});
+
 test('room return keeps the same engine, synchronizes first and rejects first frames from an older launch', async () => {
   const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
   plan.configure.language='lang_zh-hans';

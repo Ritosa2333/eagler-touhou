@@ -1,8 +1,7 @@
 import {BookButton} from '../launcher/BookButton';
-import { Fragment, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import {Music2, UsersRound} from 'lucide-react';
 import {OverflowText} from '../../ui/overflow-text';
-import {formatTh09WinRate} from '../../../src/launcher/th09-room-stats.mjs';
 import {
   PRODUCT_GAMES,
   gameIdForProduct,
@@ -21,6 +20,8 @@ import {accountsEnabled} from '../../release-features';
 import { RoomElapsed } from '../room/RoomElapsed';
 import {ParticipantAvatar} from '../room/ParticipantAvatar';
 import {bookGameArtwork} from '../launcher/book-artwork';
+import {Th09RatingText} from '../room/Th09RatingText';
+import {Th09RatingCardsContext, type Th09Rating, type Th09RatingCards} from '../../services/th09-ratings';
 import './directory-room-list.css';
 
 export interface DirectoryRoomRowsProps {
@@ -31,6 +32,9 @@ export interface DirectoryRoomRowsProps {
   initialRows?: boolean;
   arrivals?: ReadonlySet<string>;
   exiting?: ReadonlySet<string>;
+  ratings?: Readonly<Record<string, Th09Rating>>;
+  myRating?: Th09Rating;
+  cards?: Th09RatingCards;
 }
 /** Original public/lobby.html165–177 row template + lobby.mts260–347 renderer. */
 export function DirectoryRoomRows({
@@ -40,20 +44,26 @@ export function DirectoryRoomRows({
   initialRows = false,
   arrivals,
   exiting,
+  ratings,
+  myRating,
+  cards,
 }: DirectoryRoomRowsProps) {
   return (
     <>
       {snapshot.visibleRooms.map((room) => (
-        <RoomRow
-          key={`${room.product}-${room.code}`}
-          room={room}
-          snapshot={snapshot}
-          service={service}
-          assetUrl={assetUrl}
-          initial={initialRows}
-          arriving={arrivals?.has(`${room.product}-${room.code}`) ?? false}
-          exiting={exiting?.has(`${room.product}-${room.code}`) ?? false}
-        />
+        <Th09RatingCardsContext.Provider key={`${room.product}-${room.code}`} value={room.product === 'th09mp' ? cards : undefined}>
+          <RoomRow
+            room={room}
+            snapshot={snapshot}
+            service={service}
+            ratings={ratings}
+            myRating={myRating}
+            assetUrl={assetUrl}
+            initial={initialRows}
+            arriving={arrivals?.has(`${room.product}-${room.code}`) ?? false}
+            exiting={exiting?.has(`${room.product}-${room.code}`) ?? false}
+          />
+        </Th09RatingCardsContext.Provider>
       ))}
     </>
   );
@@ -66,6 +76,8 @@ function RoomRow({
   initial,
   arriving,
   exiting,
+  ratings,
+  myRating,
 }: {
   room: DirectoryRoom;
   snapshot: DirectorySnapshot;
@@ -74,6 +86,8 @@ function RoomRow({
   initial: boolean;
   arriving: boolean;
   exiting: boolean;
+  ratings?: Readonly<Record<string, Th09Rating>>;
+  myRating?: Th09Rating;
 }) {
   const { t, locale } = useLocale(),
     initiallyHiddenMotion = useRef(initial).current;
@@ -100,18 +114,26 @@ function RoomRow({
     return compact.length <= 4 ? compact : value.toExponential(0).replace('e+', 'e');
   };
   const duelRecords = room.product === 'th09mp' && accountsEnabled ? room.seats.slice(0, 2).map((seat, side) => {
-    const record = seat?.profile?.th09;
-    const rate = record && formatTh09WinRate(record, locale);
-    const games = record && rate ? record.games : '?';
-    const label = t('th09.accountCard', {games, rate: rate ?? '?'});
-    const caption = typeof games === 'number' && games >= 1000000
-      ? t('th09.accountCard', {games: abbreviate(games), rate: rate ?? '?'}) : label;
-    return <span key={side === 0 ? "left" : "right"} className="book-room-duel-summary" data-side={side} title={label}><span>{caption}</span></span>;
+    if (!seat) return <span key={side === 0 ? 'left' : 'right'} className="book-room-duel-summary" data-side={side} aria-hidden="true"><span>&nbsp;</span></span>;
+    const profile = seat.profile;
+    return <span key={side === 0 ? 'left' : 'right'} className="book-room-duel-summary" data-side={side}>
+      <span><Th09RatingText player={profile && ratings?.[profile.username]} mine={myRating} games={profile?.th09?.games}/></span>
+    </span>;
   }) : [];
   const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
-  const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];
+  const difficulty = policy.inGameSelection && room.product !== 'th03mp' ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
-  const statusLabel = t(`lobby.${state}`);
+  const waitingSince = policy.gameplay === 'versus' && state === 'recruiting' ? room.createdAt : undefined;
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    if (waitingSince === undefined) return;
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [waitingSince]);
+  const waitingSeconds = waitingSince === undefined ? 0 : Math.max(0, Math.floor((now - waitingSince) / 1000));
+  const longWait = waitingSeconds >= 15 * 60;
+  const statusLabel = t(longWait ? 'lobby.longWait' : `lobby.${state}`);
   const spectating = directoryRoomSpectatorEntry(room);
   const count = t('lobby.count', { players: room.players, capacity: room.capacity });
   const disabled =
@@ -127,6 +149,7 @@ function RoomRow({
       aria-hidden={exiting || undefined}
       data-key={`${room.product}-${room.code}`}
       data-state={state}
+      data-long-wait={longWait || undefined}
       data-listening={room.listeningTrack ? '' : undefined}
     >
       <div className="lobby-room-identity">
@@ -156,7 +179,10 @@ function RoomRow({
             </span>
             {room.phase !== 'lobby' && (duel || !!room.startedAt) && <span className="lobby-room-duration">
               <span className="lobby-room-fact-divider" aria-hidden="true">|</span>
-              <RoomElapsed phase={room.phase} startedAt={duel ? undefined : room.startedAt} elapsedMinutes={duel ? minutes : undefined}/>
+              <RoomElapsed phase={room.phase} startedAt={room.startedAt} elapsedMinutes={duel && !room.startedAt ? minutes : undefined}/>
+            </span>}
+            {waitingSince !== undefined && <span className="lobby-room-duration"><span className="lobby-room-fact-divider" aria-hidden="true">|</span>
+              <span>{t('lobby.waitTime', {time:`${Math.floor(waitingSeconds / 60)}:${String(waitingSeconds % 60).padStart(2,'0')}`})}</span>
             </span>}
             {room.listeningTrack && <span className="lobby-room-music">
               <Music2 aria-hidden="true"/>
@@ -166,8 +192,8 @@ function RoomRow({
         </div>
       </div>
       <div className="lobby-room-rules">
-        {!room.disableCheatMovement && !room.challengeMode ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
-          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
+        {!room.disableCheatMovement && !room.challengeMode && !room.unrated ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
+          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : '', room.unrated ? t('room.unrated') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
       </div>
       <fieldset className="lobby-party" aria-label={count}>
         <div
@@ -240,6 +266,7 @@ function RoomRow({
       </fieldset>
       <BookButton variant="primary"
         className="lobby-button lobby-join"
+        data-entry={spectating ? 'spectate' : 'join'}
         type="button"
         disabled={disabled}
         aria-label={`${t(spectating ? 'multiplayer.joinSpectator' : 'lobby.joinRoom')} ${title} #${room.code}`}

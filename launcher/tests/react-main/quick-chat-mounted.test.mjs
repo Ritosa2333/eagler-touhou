@@ -246,6 +246,82 @@ test('chat uses and updates the matching participant profile avatar', async () =
   await act(()=>model.update(changed));
   assert.match(query('#mpRoomChat .chat-avatar img').getAttribute('src'), /abcdef1234567890$/);
 });
+test('settlement chat uses a plain bot until the published account is available', async () => {
+  const {model}=fixture();
+  const room='th09mp-1234';
+  model.update({...context(),room});
+  const original=owner; owner=ownerAccounts;
+  try {await mount(model,{room:true});} finally {owner=original;}
+  const settlement={id:1,author:'ritosa',settledAt:100,changes:[]};
+  await act(()=>model.receive({type:'th09-rating',room,settlement}));
+  const row=query('#mpRoomChat .room-chat-entry');
+  assert.equal(row.querySelector('.chat-sender').textContent,'bot');
+  assert.equal(row.querySelector('.chat-avatar, a'),null);
+
+  const authorProfile={name:'Ritosa',avatar:'1234567890abcdef'};
+  await act(()=>model.receive({type:'chat-history',room,throughId:0,entries:[],ratings:[{...settlement,authorProfile}]}));
+  assert.equal(env.document.querySelectorAll('#mpRoomChat .room-chat-entry').length,1);
+  for (const view of ['#mpRoomChat','.mp-quick-chat-log']) {
+    assert.equal(query(`${view} .chat-role`).textContent,'bot');
+    assert.equal(query(`${view} .chat-sender a`).textContent,'Ritosa');
+    assert.match(query(`${view} .chat-sender a`).getAttribute('href'), /^\/u\/ritosa(?:\?|$)/);
+    assert.match(query(`${view} a.chat-avatar`).getAttribute('href'), /^\/u\/ritosa(?:\?|$)/);
+    assert.equal(query(`${view} .chat-avatar img`).getAttribute('src'),'/api/v1/profiles/ritosa/avatar/1234567890abcdef');
+  }
+});
+test('account-enabled chat gives guests the same input with a sign-in hint', async () => {
+  const {model,calls}=fixture();
+  globalThis.__roomAccountRequest=async()=>null;
+  const original=owner; owner=ownerAccounts;
+  try {await mount(model,{room:true});} finally {owner=original;}
+  await vi.waitFor(()=>assert.equal(query('#mpRoomChat input[aria-label="Message"]').placeholder,'Sign in to chat'));
+  globalThis.__roomAccountRequest=undefined;
+  const views=['#mpRoomChat','.mp-quick-chat-picker'];
+  const inputs=views.map(view=>query(`${view} input[aria-label="Message"]`));
+  for (const input of inputs) {
+    assert.equal(input.placeholder,'Sign in to chat');
+    assert.equal(input.disabled,true);
+    const form=input.closest('form');
+    assert.equal(form.querySelector('button[aria-label="Send"]').disabled,true);
+    await act(()=>form.dispatchEvent(new env.window.Event('submit',{bubbles:true,cancelable:true})));
+  }
+  assert.deepEqual(calls,[]);
+  assert.equal(query('#mpRoomChat button[aria-label="Quick chat"]').disabled,false);
+  await act(()=>model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0}));
+  for (const [index,view] of views.entries()) {
+    assert.equal(query(`${view} input[aria-label="Message"]`),inputs[index]);
+    assert.equal(inputs[index].disabled,false);
+  }
+});
+test('free-chat failure appears above the composer and keeps the failed text', async () => {
+  const {model}=fixture(); model.update({...context(),inRoom:true});
+  await mount(model,{room:true});
+  await act(()=>{
+    model.receive({type:'chat-status',registered:true,authorId:'account-1',bannedUntil:0});
+    model.setDraft('failed message');
+    model.sendText();
+    model.receive({type:'chat-result',action:'free-chat',ok:false,code:'send-rate-limited'});
+  });
+  const notice = query('#mpRoomChat form .chat-send-notice');
+  assert.equal(notice.getAttribute('role'),'status');
+  assert.ok(notice.textContent.trim());
+  assert.match(query('#mpRoomChat .room-chat-entry').textContent,/failed message/);
+});
+
+test('Alt toggles the room quick chat without intercepting combinations or text input', async () => {
+  const {model}=fixture(); model.update({...context(),inRoom:true}); await mount(model,{room:true});
+  const key=(type,key,options={})=>env.window.dispatchEvent(new env.window.KeyboardEvent(type,{key,bubbles:true,cancelable:true,...options}));
+  await act(()=>{key('keydown','Alt',{altKey:true});key('keyup','Alt');});
+  assert.ok(query('.room-quick-chat-picker'));
+  await act(()=>{key('keydown','Alt',{altKey:true});key('keyup','Alt');});
+  await vi.waitFor(()=>assert.equal(env.document.querySelector('.room-quick-chat-picker'),null));
+  await act(()=>{key('keydown','Alt',{altKey:true});key('keydown','x',{altKey:true});key('keyup','Alt');});
+  assert.equal(env.document.querySelector('.room-quick-chat-picker'),null);
+  const input=env.document.createElement('input');env.document.body.append(input);input.focus();
+  await act(()=>{input.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'Alt',altKey:true,bubbles:true}));input.dispatchEvent(new env.window.KeyboardEvent('keyup',{key:'Alt',bubbles:true}));});
+  assert.equal(env.document.querySelector('.room-quick-chat-picker'),null);
+});
+
 test('room messages stay above the controls and sending closes the upward picker', async () => {
   const {model,clock,calls}=fixture();model.update({...context(),inRoom:true});
   await mount(model,{room:'split',strict:true});
@@ -303,6 +379,9 @@ test('guest room UI keeps quick chat and shared history; registered chat can sen
   await act(()=>input.dispatchEvent(new env.window.Event('input',{bubbles:true})));
   await act(()=>query('#mpRoomChat button[aria-label="Send"]').click());
   assert.deepEqual(calls.at(-1),['send',{type:'free-chat',text:'mounted message',serial:7}]);
+  assert.equal(input.value,'');
+  assert.ok(query('#mpRoomChat .chat-sending'));
+  await act(()=>model.receive(free(30,'account-1','a',0,'Local','mounted message')));
   await act(()=>model.receive({type:'chat-result',action:'free-chat',ok:true}));
   assert.equal(input.value,'');
 
@@ -559,6 +638,32 @@ function animations() {
     globalThis.matchMedia = media; env.window.matchMedia = windowMedia;
   }};
 }
+test('gameplay free text and bot fade after ten seconds and remain readable in the room', async () => {
+  const native=animations();
+  try {
+    const {model,clock}=fixture();
+    await mount(model,{room:true,strict:true});
+    await act(()=>model.receive({type:'free-chat',room:'th06mp-1234',serial:7,seat:1,clientId:'b',authorId:'account-2',messageId:10,name:'Marisa',text:'hello'}));
+    await act(()=>model.receive({type:'th09-rating',room:'th06mp-1234',settlement:{id:1,author:'ritosa',settledAt:100,changes:[]}}));
+    assert.equal([...query('.mp-quick-chat-log').children].filter(row=>!row.hidden).length,2);
+    await act(()=>clock.tick(9999));
+    assert.equal(native.records.filter(expiryAnimation).length,0);
+    await act(()=>clock.tick(1));
+    const fades=native.records.filter(expiryAnimation);
+    assert.equal(fades.length,2);
+    await act(()=>fades.forEach(animation=>animation.finish()));
+    assert.equal([...query('.mp-quick-chat-log').children].filter(row=>!row.hidden).length,0);
+    assert.equal(model.getSnapshot().entries.length,2);
+    await act(()=>model.update({...context(),inRoom:true}));
+    assert.equal([...query('#mpRoomChat .mp-room-chat-log').children].filter(row=>!row.hidden).length,2);
+    assert.match(query('#mpRoomChat .mp-room-chat-log').textContent,/hello/);
+    assert.match(query('#mpRoomChat .mp-room-chat-log').textContent,/The match has ended/);
+    await act(()=>model.receive({type:'free-chat',room:'th06mp-1234',serial:7,seat:1,clientId:'b',authorId:'account-2',messageId:11,name:'Marisa',text:'room message'}));
+    await act(()=>clock.tick(10000));
+    assert.equal([...query('#mpRoomChat .mp-room-chat-log').children].filter(row=>!row.hidden).length,3);
+  } finally {native.restore();}
+});
+
 test('StrictMode expiry waits fade completion; reset, unmount and dispose cancel owned animation/timer work', async () => {
   const native = animations();
   try {
@@ -852,7 +957,8 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
     await act(()=>query('#mpRoomChat button[aria-label="Send"]').click());
     assert.deepEqual(socket.sent.at(-1),{type:'free-chat',text:'room session message',serial:7});
     await act(()=>socket.message({type:'chat-result',action:'free-chat',ok:false,code:'send-rate-limited'}));
-    assert.deepEqual(notifications,['chat.sendRateLimited']);
+    assert.ok(query('#mpRoomChat .chat-send-notice').textContent.trim());
+    assert.deepEqual(notifications,[]);
 
     const free=(messageId,authorId,clientId,seat,name,text)=>({type:'free-chat',room:'th06mp-1234',serial:7,
       messageId,authorId,clientId,seat,spectator:seat===-1,name,text});
@@ -873,7 +979,7 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
       await vi.waitFor(()=>assert.deepEqual(socket.sent.at(-1),{type:'chat-report',messageId:51,reason:'test reason'}),{timeout:1000,interval:1});
     });
     await act(()=>socket.message({type:'chat-result',action:'chat-report',ok:false,code:'report-rate-limited'}));
-    assert.deepEqual(notifications,['chat.sendRateLimited','chat.reportRateLimited']);
+    assert.deepEqual(notifications,['chat.reportRateLimited']);
     await act(()=>socket.message({type:'chat-retract',authorId:'account-2',throughId:51,bannedUntil:0}));
     assert.deepEqual(session.quickChat.getSnapshot().entries.filter(entry=>entry.messageId).map(entry=>entry.messageId),[52]);
     await act(()=>socket.message(free(51,'account-2','remote123456',1,'B','delayed')));
@@ -889,7 +995,7 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
         }),
       ),
     );
-    assert.equal(session.quickChat.getSnapshot().entries.length, 3);
+    assert.equal(session.quickChat.getSnapshot().entries.length, 4);
     assert.deepEqual(session.quickChat.getSnapshot().entries.filter(entry=>entry.messageId).map(entry=>entry.messageId),[52]);
     replay = false;
     launched = false;

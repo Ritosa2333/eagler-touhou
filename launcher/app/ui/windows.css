@@ -619,6 +619,9 @@
     white-space: pre-line;
     overflow-wrap: anywhere;
   }
+  .decision-body > .decision-progress {
+    margin-top: 14px;
+  }
   .decision-mark {
     flex: none;
     margin: 0 0 12px;
@@ -720,7 +723,6 @@
     .mp-guide-content,
     .apple-refresh-content,
     .donation-content,
-    .lobby-form-note,
     .game-data-link-window,
     .game-data-import-window
   ) {
@@ -746,9 +748,6 @@
   .lobby-dialog .lobby-field {
     font: 500 13px / 1.5 var(--kit-font);
     color: var(--kit-foreground);
-  }
-  .lobby-dialog .lobby-form-note {
-    font: 400 12px / 1.65 var(--kit-font);
   }
   .lobby-dialog .lobby-form-error {
     color: var(--kit-destructive);
@@ -785,35 +784,16 @@
   }
   #roomForm .lobby-form-pair {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    align-items: end;
     gap: 12px;
   }
   #roomForm .lobby-form-pair:has(> :last-child[hidden]) {
     grid-template-columns: minmax(0, 1fr);
   }
-  .lobby-create-rules {
-    border-block: 1px solid var(--kit-border);
-  }
-  .lobby-create-rules > summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-height: 44px;
-    color: var(--kit-muted-foreground);
-    font: 500 13px / 1.5 var(--kit-font);
-    cursor: pointer;
-    list-style: none;
-  }
-  .lobby-create-rules > summary::-webkit-details-marker { display: none; }
-  .lobby-create-rules > summary:is(:hover, :focus-visible),
-  .lobby-create-rules[open] > summary { color: var(--kit-foreground); }
-  .lobby-create-rules[open] > summary > svg { transform: rotate(180deg); }
-  .lobby-create-rules > .lobby-form-pair { padding-block: 4px 14px; }
   #roomForm :is(.lobby-form-pair, .lobby-field, .lobby-form-error)[hidden] {
     display: none;
   }
-  #roomForm :is(.lobby-form-note, .lobby-form-error) {
+  #roomForm .lobby-form-error {
     margin: 0;
   }
   #roomForm #roomCodeInput {

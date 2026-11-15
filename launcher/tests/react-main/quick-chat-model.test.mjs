@@ -457,7 +457,7 @@ test('guest sees free chat beside quick chat but cannot send free text', (t) => 
   assert.equal(model.getSnapshot().registered,false);
   assert.deepEqual(sends,[]);
   assert.deepEqual(voices,['thanks']);
-  assert.equal(clock.jobs.size,1,'only quick chat uses the ten-second expiry');
+  assert.equal(clock.jobs.size,2,'live quick chat and free text share the ten-second expiry');
   model.sendPhrase('thanks');
   assert.deepEqual(sends,[{type:'quick-chat',phrase:'thanks',serial:7}]);
 });
@@ -476,7 +476,25 @@ test('guest mute is local and suppresses another member’s incoming voice', (t)
   assert.deepEqual(voices,['follow-me'],'unmuting restores incoming voice');
   assert.deepEqual(sends,[]);
 });
-test('free chat uses the shared entry list, accepts history once and never plays or expires', (t) => {
+test('live free text and bot expire in game while room history and profile updates survive', (t) => {
+  const {model,clock,voices}=fixture(t,context({inRoom:true}));
+  model.receive({type:'free-chat',room:'ROOM',serial:7,seat:1,clientId:'peer',authorId:'account-2',messageId:10,name:'Marisa',text:'hello'});
+  const settlement={id:2,author:'ritosa',settledAt:100,changes:[]};
+  model.receive({type:'th09-rating',room:'ROOM',settlement});
+  clock.advance(9000);
+  model.receive({type:'th09-rating',room:'ROOM',settlement:{...settlement,authorProfile:{name:'Ritosa'}}});
+  assert.ok(model.getSnapshot().entries.every(entry=>!entry.expiredInGame));
+  clock.advance(1000);
+  assert.equal(model.getSnapshot().entries.length,2);
+  assert.ok(model.getSnapshot().entries.every(entry=>entry.expiredInGame));
+  assert.equal(model.getSnapshot().entries[1].name,'Ritosa');
+  assert.deepEqual(clock.deadlines(),[]);
+  model.update(context({inRoom:false}));
+  assert.ok(model.getSnapshot().entries.every(entry=>entry.expiredInGame));
+  assert.deepEqual(voices,[]);
+});
+
+test('free chat uses the shared entry list, accepts history once and never plays or deletes history', (t) => {
   const {model,voices,clock}=fixture(t);
   const free=(messageId,text)=>({type:'free-chat',room:'ROOM',serial:7,seat:1,clientId:'peer',authorId:'account-2',messageId,name:'Marisa',text});
   model.receive(free(10,'first'));
@@ -489,6 +507,24 @@ test('free chat uses the shared entry list, accepts history once and never plays
   assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId),[10,11]);
   assert.deepEqual(clock.deadlines(),[]);
 });
+test('rating settlements survive run transitions and deduplicate replayed history', (t) => {
+  const {model,voices}=fixture(t);
+  const ranked={id:2,author:'ritosa',authorProfile:{name:'Ritosa',avatar:'0123456789abcdef'},settledAt:100,
+    changes:[{username:'alice',before:null,after:1370}]};
+  const unrated={id:3,author:'ritosa',settledAt:200,changes:[]};
+  const live=settlement=>model.receive({type:'th09-rating',room:'ROOM',settlement});
+  live(ranked);
+  live(ranked);
+  model.update(context({serial:8}));
+  model.receive({type:'chat-history',room:'ROOM',throughId:0,entries:[],ratings:[ranked,unrated]});
+  live(unrated);
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.rating),[ranked,unrated]);
+  assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.name),['Ritosa','bot']);
+  assert.deepEqual(voices,[]);
+  model.update(context({room:'NEXT',serial:8}));
+  live(ranked);
+  assert.deepEqual(model.getSnapshot().entries,[]);
+});
 test('free chat history merges in message order when a newer live message arrives first', (t) => {
   const {model}=fixture(t);
   const free=messageId=>({type:'free-chat',room:'ROOM',serial:7,seat:1,clientId:'peer',authorId:'account-2',messageId,name:'Marisa',text:`message ${messageId}`});
@@ -498,13 +534,13 @@ test('free chat history merges in message order when a newer live message arrive
   assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId),Array.from({length:50},(_,index)=>index+2));
   assert.equal(model.getSnapshot().entries.at(-1).phrase.en,'message 51');
 });
-test('free chat shares the existing fifty-entry cap without creating quick-chat timers', (t) => {
+test('free chat shares the fifty-entry cap and cancels evicted expiry timers', (t) => {
   const {model,voices,clock}=fixture(t);
   for(let messageId=1;messageId<=55;messageId++)model.receive({type:'free-chat',room:'ROOM',serial:7,seat:1,
     clientId:'peer',authorId:'account-2',messageId,name:'Marisa',text:`message ${messageId}`});
   assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId),Array.from({length:50},(_,index)=>index+6));
   assert.deepEqual(voices,[]);
-  assert.equal(clock.jobs.size,0);
+  assert.equal(clock.jobs.size,50);
 });
 test('free chat accepts a labeled spectator and rejects mismatched seat and spectator roles', (t) => {
   const {model,voices}=fixture(t,context({spectators:[{clientId:'viewer',name:'Observer'}]}));
@@ -549,20 +585,29 @@ test('verified member sends trimmed text and waits for server results before ena
   model.sendText();
   assert.deepEqual(sends,[{type:'free-chat',text:'hello everyone',serial:7}]);
   assert.equal(model.getSnapshot().sending,true);
+  assert.equal(model.getSnapshot().draft,'');
+  assert.equal(model.getSnapshot().entries.at(-1).delivery,'pending');
 
   model.setDraft('typed while sending');
   model.receive({type:'chat-result',action:'free-chat',ok:true});
+  assert.equal(model.getSnapshot().sending,true);
+  model.receive({type:'free-chat',room:'ROOM',serial:7,seat:0,clientId:'local',authorId:'account-1',messageId:42,name:'Local',text:'hello everyone'});
   assert.equal(model.getSnapshot().sending,false);
+  assert.equal(model.getSnapshot().entries.length,1);
+  assert.equal(model.getSnapshot().entries[0].messageId,42);
   assert.equal(model.getSnapshot().draft,'typed while sending');
   model.sendText();
   assert.deepEqual(sends.at(-1),{type:'free-chat',text:'typed while sending',serial:7});
   model.receive({type:'chat-result',action:'free-chat',ok:false,code:'send-rate-limited'});
   assert.equal(model.getSnapshot().sending,false);
-  assert.equal(model.getSnapshot().draft,'typed while sending');
-  assert.deepEqual(notifications,['send-rate-limited']);
+  assert.equal(model.getSnapshot().draft,'');
+  assert.equal(model.getSnapshot().entries.at(-1).delivery,'failed');
+  assert.equal(model.getSnapshot().entries.at(-1).phrase.zh,'typed while sending');
+  assert.equal(model.getSnapshot().sendError,'send-rate-limited');
+  assert.deepEqual(notifications,[]);
   model.receive({type:'chat-result',action:'free-chat',ok:false,code:'sign-in-required'});
   assert.equal(model.getSnapshot().registered,false);
-  assert.deepEqual(notifications,['send-rate-limited','sign-in-required']);
+  assert.deepEqual(notifications,[]);
 });
 test('send timeout releases pending state, then disconnect clears verification and its timer', (t) => {
   const {model,clock,sends,notifications}=fixture(t,context({localClientId:'local'}));
@@ -574,10 +619,13 @@ test('send timeout releases pending state, then disconnect clears verification a
   assert.equal(model.getSnapshot().sending,true);
   clock.advance(1);
   assert.equal(model.getSnapshot().sending,false);
-  assert.equal(model.getSnapshot().draft,'keep this text');
-  assert.deepEqual(notifications,['service-unavailable']);
+  assert.equal(model.getSnapshot().draft,'');
+  assert.equal(model.getSnapshot().entries.at(-1).delivery,'failed');
+  assert.equal(model.getSnapshot().sendError,'service-unavailable');
+  assert.deepEqual(notifications,[]);
 
-  model.sendText();
+  model.setDraft('keep this text'); model.sendText();
+  assert.equal(model.getSnapshot().sendError,undefined);
   assert.equal(clock.jobs.size,1);
   model.update(context({localClientId:'local',connected:false}));
   assert.equal(model.getSnapshot().registered,false);
@@ -634,7 +682,7 @@ test('retraction removes an author prefix, preserves quick chat and drops delaye
   assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId??entry.phrase.id),['thanks',6,7]);
   model.receive(free(8,'account-2'));
   assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId??entry.phrase.id),['thanks',6,7,8]);
-  assert.equal(clock.jobs.size,1,'retract does not cancel the retained quick-chat expiry');
+  assert.equal(clock.jobs.size,4,'retract cancels only the removed entry expiry');
 });
 test('muted messages are retained with timers, suppress only inbound voice and remain available when unmuted', (t) => {
   const { model, voices, clock } = fixture(t);

@@ -4,7 +4,7 @@
 
 ## 准备输入
 
-公开发布版默认使用游客模式。自行接入兼容的账号服务时，在构建前设置 `VITE_ACCOUNTS_ENABLED=true`，将本站 `/api/` 反向代理到自己的账号服务，并将 `/u/<用户名>` 路由到应用入口。本地开发可以用 `EAGLER_UI_API_ORIGIN` 指定 API 监听地址。匿名联机可以独立使用。
+生产构建默认启用账号。将本站 `/api/` 反向代理到兼容的账号服务，并将 `/u/<用户名>` 路由到应用入口。只提供游客访问的站点可以在构建前设置 `VITE_ACCOUNTS_ENABLED=false`。本地开发可用 `VITE_ACCOUNTS_ENABLED=true` 启用账号，再用 `EAGLER_UI_API_ORIGIN` 指定 API 监听地址。
 
 可选的账号 API 双线路通过 `VITE_ACCOUNT_EDGE_ORIGIN` 和 `VITE_ACCOUNT_DIRECT_ORIGIN` 启用，分别使用站点的 `api.` 和 `direct-api.` HTTPS 子域。两个入口共用账号服务和站点域的会话 Cookie，允许本站携带凭据跨域访问，并对账号响应设置 `Cache-Control: private, no-store`。`/api/ready` 以 `X-Eagler-Account-Route` 返回 `direct` 或 `edge`，跨域入口须暴露此响应头。国内使用同源 API，海外优先使用边缘入口，失败时改用直连子域。
 

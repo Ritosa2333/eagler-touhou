@@ -36,14 +36,20 @@ bool Hud::draw(const HudDrawContext& context,HudDrawServices& services,u32 viewe
         const auto& stock=*pilot.session;const auto tier=pilot.life_piece_tier;
         if(!check(tier>=0&&(score.difficulty!=4||tier<=9),"HUD life-piece tier outside TH17 range"))return false;
         if(seats>1){
-            style={};style.font=1;style.color=alpha(seat==viewer?0xffffff80:0xffffffff,icon->visual.color);
+            style={};style.font=1;style.color=alpha(0xffffffff,icon->visual.color);
+            if(stock.challenge&&!text(432,life_row(seat)+3,"MISS"))return false;
+            style.color=alpha(seat==viewer?0xffffff80:0xffffffff,icon->visual.color);
             if(!text(491,life_row(seat)+3,format("%uP",seat+1)))return false;
         }
         style={};style.font=4;style.color=alpha(0xffffffff,icon->visual.color);style.scale={.6f,.6f};
         const float life=life_row(seat)+24.f,bomb=bomb_row(seat)+24.f;
-        const bool life_capped=score.difficulty==4&&tier==9;
-        if(!life_capped){if(!text(576,life,format("%3d",stock.life_pieces))||!text(597,life,"/3"))return false;}
-        else if(!text(569,life,"---/---"))return false;
+        if(stock.challenge){
+            style.scale={1,1};style.alignment=2;
+            if(!text(620,life-8.f,grouped_number(u32(stock.deaths))))return false;
+            style.scale={.6f,.6f};style.alignment=1;
+        }else if(score.difficulty==4&&tier==9){
+            if(!text(569,life,"---/---"))return false;
+        }else if(!text(576,life,format("%3d",stock.life_pieces))||!text(597,life,"/3"))return false;
         if(!text(576,bomb,format("%3d",stock.bomb_pieces))||!text(597,bomb,"/3"))return false;
         if(!check(stock.power_step>0,"HUD power step must be positive"))return false;
         const float power=power_row(seat);

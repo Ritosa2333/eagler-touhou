@@ -14,10 +14,12 @@ import {
 } from 'react';
 import { isProductId, isMultiplayerProductId, type ProductId } from '../src/contracts/product-catalog.mts';
 import type { UiLocale } from '../src/launcher/i18n.mts';
+import { TH09_RATINGS_DOCUMENT } from '../lib/frontend-static-manifest.mjs';
 import { LocaleProvider, translate } from './i18n';
 import { PlayerSurface } from './components/player/PlayerSurface';
 import { LibrarySurface } from './components/launcher/LibrarySurface';
 import { LobbySurface, type LobbySurfaceProps } from './components/launcher/LobbySurface';
+import { ProfileLoading } from './components/launcher/ProfileLoading';
 import { OptionsPanel } from './components/launcher/OptionsPanel';
 import { OptionsBackdrop } from './components/launcher/OptionsBackdrop';
 import { LobbyOptionsHost } from './components/launcher/LobbyOptionsHost';
@@ -27,6 +29,7 @@ import type { LibraryProduct } from './components/launcher/products';
 import { SettingsBody } from './components/settings/SettingsBody';
 import type { SettingsActions, TouchEditorNativePorts } from './components/settings/types';
 import type { GameSettingsModel, SettingsContext } from './models/game-settings';
+import type { SitePreferencesModel } from './models/site-preferences';
 import type { DecisionStore } from './models/decisions';
 import type { TouchLayoutModel } from './models/touch-layout';
 import { SurfaceNavigationProvider, useSurfaceNavigation } from './navigation/surface-navigation';
@@ -41,7 +44,7 @@ const TouchLayoutEditor = lazy(() => import('./components/settings/TouchLayoutEd
 
 export type LobbyPresentation = Omit<
   LobbySurfaceProps,
-  'products' | 'selectedProduct' | 'openedProduct' | 'onSelect' | 'onActivate' | 'children' | 'roomUsersArtwork'
+  'products' | 'selectedProduct' | 'openedProduct' | 'onSelect' | 'onActivate' | 'children' | 'roomUsersArtwork' | 'rankingsHref'
 >;
 /** One document-lived domain host. Tests may explicitly inject fixture ports;
  * production must supply the actual storage, file, runtime and room owners. */
@@ -56,6 +59,7 @@ export interface LauncherHost {
   onProductSelected?(productId: ProductId, changed: boolean): void;
   onRouteSelection?(productId: ProductId, context?: 'library' | 'lobby'): void;
   settings: GameSettingsModel;
+  preferences?: SitePreferencesModel;
   touchLayout: TouchLayoutModel;
   settingsContext(productId: ProductId, locale: UiLocale): SettingsContext;
   settingsActions: SettingsActions;
@@ -244,6 +248,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
         actions={host.settingsActions}
         onOpenTouchLayout={openTouchLayout}
         multiplayerControls={host.multiplayerControls}
+        preferences={host.preferences}
       />
     </OptionsPanel>
   );
@@ -265,6 +270,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const lobbyProps: LobbySurfaceProps = {
     ...host.lobby,
     masthead: null,
+    rankingsHref: host.assetUrl(TH09_RATINGS_DOCUMENT.file),
     products: host.products.filter((product) => product.multiplayer),
     selectedProduct: navigation.filterProductId ?? undefined,
     viewingProduct: navigation.filterProductId ?? undefined,
@@ -295,7 +301,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
         {accountPage ? (
           <Suspense fallback={<main className="account-page" aria-busy="true"/>}><AccountPage /></Suspense>
         ) : profilePage ? (
-          <Suspense fallback={<main className="player-profile" aria-busy="true"/>}><ProfilePage readLocalSaves={host.readLocalSaves} cloudSync={host.cloudSync}/></Suspense>
+          <Suspense fallback={<ProfileLoading/>}><ProfilePage readLocalSaves={host.readLocalSaves} cloudSync={host.cloudSync}/></Suspense>
         ) : navigation.context === 'lobby' ? (
           host.renderLobby ? (
             host.renderLobby(lobbyProps)
@@ -314,6 +320,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
             optionsOpen={presence.open}
             roomOpen={roomOpen}
             roomDrawer={host.roomDrawer}
+            onDonation={() => navigation.openInfoDialog('donationDialog')}
           >
             {host.roomSurface}
           </LibrarySurface>

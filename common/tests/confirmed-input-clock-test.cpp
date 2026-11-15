@@ -30,6 +30,16 @@ static void ownership() {
     assert(clock.CanCapture(1,0,true,2'016'666));
     clock.Captured(2'000'000); // owed current slot can precede the phase deadline
     assert(clock.CanCapture(1,0,true,2'016'666));
+
+    clock.Reset();
+    clock.Captured(0);
+    assert(clock.CanCapture(1,0,true,34'000));
+    clock.Captured(34'000,3);
+    assert(clock.CanCapture(2,0,true,34'000)); // one missed refresh
+    clock.Captured(34'000,3);
+    assert(!clock.CanCapture(3,0,true,34'000));
+    clock.Captured(2'000'000,3);
+    assert(!clock.CanCapture(4,0,true,2'000'000)); // no catch-up after a suspension
 }
 struct Packet { unsigned from,to,frame; std::uint64_t due; Netplay::FrameInput input; };
 static unsigned run(unsigned seats,bool independent,unsigned variation) {

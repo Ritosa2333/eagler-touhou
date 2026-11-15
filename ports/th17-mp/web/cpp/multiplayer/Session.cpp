@@ -2,6 +2,10 @@
 #include <algorithm>
 
 namespace th17::multiplayer {
+namespace {
+constexpr unsigned touch_forecast_frames = 6;
+constexpr unsigned lagging_capture_lead = 3;
+}
 bool SessionSetup::valid() const {
     if (!room || seats < 2 || seats > Netplay::MAX_PLAYERS || local >= seats ||
         difficulty > 4 || delay > 9 || !(build[0] | build[1] | build[2] | build[3])) return false;
@@ -31,6 +35,7 @@ std::uint32_t SessionSetup::gameplay_abi() const {
         word(loadout.animal);
     }
     for (const auto value : build) word(value);
+    if (challenge) word(1);
     return hash ? hash : 1u;
 }
 
@@ -72,11 +77,9 @@ bool Session::begin(const SessionSetup& setup, std::uint64_t now_ms) {
     // Bomb and pause still require actual input.
     input.predictableButtons = 0x2f9;
     input.directionButtons = 0xf0;
-    // In a three-player room two held directions can both fall out of the
-    // prediction window while their samples are in flight. Keep them for
-    // four frames, then fall back to neutral if neither sample has arrived.
-    input.maxDirectionPredictionFrames = setup.seats == 3 ? 4 : 2;
+    input.prediction = Netplay::InputPrediction::ConfirmedHold;
     input.directTouchIsAbsolute = true;
+    input.absoluteTouchForecastFrames = touch_forecast_frames;
     Netplay::SessionChannelConfig channel;
     channel.inputResendMs = 16;
     return (gate_.Reset(identity) && core_.Reset(input) && channel_.BeginSession(identity, now_ms, channel))
@@ -97,6 +100,16 @@ bool Session::has_confirmed_forward_input() const {
     return confirmed != Netplay::INVALID_FRAME && confirmed >= prediction_head();
 }
 
+std::array<unsigned, 7> Session::input_frontiers() const {
+    std::array<unsigned, 7> value{};
+    value[0] = next_capture_;
+    for (unsigned peer=0; peer<setup_.seats; ++peer) {
+        value[1+peer] = core_.ConfirmedThrough(peer)+1;
+        value[4+peer] = peer == setup_.local ? prediction_head() : channel_.PeerFrame(peer);
+    }
+    return value;
+}
+
 bool Session::pump(std::uint64_t now_ms, bool capture_follows) {
     const bool defer = capture_follows && setup_.rollback && needs_input();
     return !error_ && channel_.Pump(gate_, core_, now_ms, next_capture_ != 0, defer);
@@ -106,7 +119,23 @@ bool Session::flush_inputs(std::uint64_t now_ms) {
     return channel_.FlushDeferredInputs(core_, now_ms);
 }
 
-void Session::capture_phase(bool confirmed, std::uint64_t now_us) {
+bool Session::behind_peer() const {
+    if (!setup_.rollback || setup_.seats != 3) return false;
+    const auto head = prediction_head();
+    for (unsigned peer=0; peer<setup_.seats; ++peer) {
+        if (peer == setup_.local) continue;
+        const auto sent_head = channel_.PeerFrame(peer);
+        if (sent_head != Netplay::INVALID_FRAME && sent_head > head)
+            return true;
+    }
+    return false;
+}
+
+bool Session::can_capture_early() const {
+    return next_capture_ == prediction_head() && behind_peer();
+}
+
+void Session::capture_phase(bool confirmed, std::uint64_t now_us, bool continuous_touch) {
     // Keep sending while a repair spans refreshes. One extra slot lets a
     // recovering peer cover another refresh before it starves its partners.
     const bool waiting = repair_pending() || next_frame() - next_commit_ >= rollback_frames;
@@ -115,6 +144,11 @@ void Session::capture_phase(bool confirmed, std::uint64_t now_us) {
     // Keep the sampling deadline established by the last physical input.
     // Entering an exact-input phase must not postpone an already due sample.
     capture_lead_ = lead;
+    // A peer's already-transmitted simulation head proves this lane is
+    // behind even before accounting for the transit time. Keep sampling
+    // while it recovers, with at most two future physical slots queued.
+    if (!confirmed && continuous_touch && capture_lead_ < lagging_capture_lead && behind_peer())
+        capture_lead_ = lagging_capture_lead;
     capture_now_us_ = now_us;
 }
 

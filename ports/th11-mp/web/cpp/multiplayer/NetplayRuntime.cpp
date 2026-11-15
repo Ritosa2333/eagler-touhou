@@ -46,7 +46,7 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,unsigned delay,bool rea
     core.maxRollbackFrames=SessionSetup::MaxRollbackFrames;
     // TH11 shot=1, focus=8, directions=0xf0. Held controls may lead to
     // rewindable rescue/transfer results; Bomb/C/menu/Pause/Restart are exact.
-    core.predictableButtons=0xf9;core.directionButtons=0xf0;core.maxDirectionPredictionFrames=3;
+    core.predictableButtons=0xf9;core.directionButtons=0xf0;core.prediction=Netplay::InputPrediction::ConfirmedHold;
     core.directTouchIsAbsolute=true;
     if(!gate_.Reset(gate)||!core_.Reset(core))return Fail("TH11 input core rejected setup");
     setup_=setup;configured_=true;retired_=world_ready_=local_results_=false;

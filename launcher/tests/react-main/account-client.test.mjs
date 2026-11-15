@@ -111,6 +111,34 @@ it('does not dispatch an account request when its readiness probe is cancelled',
   expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual(['/api/ready']);
 });
 
+it('shares readiness and public profile reads across independent callers', async () => {
+  let ready, respondProfile;
+  const fetcher = vi.fn((url, init) => {
+    if (url === '/api/ready') return new Promise(resolve => {ready=resolve;});
+    if (url === '/api/v1/profiles/reimu') return new Promise(resolve => {
+      expect(init.credentials).toBe('omit');
+      respondProfile=resolve;
+    });
+    if (url === '/api/auth/get-session') return Promise.resolve(Response.json(null));
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  const {accountRequest,cancelAccountRequests} = await loadAccountClient(fetcher);
+  const first = new AbortController();
+  const cancelled = accountRequest('v1/profiles/reimu',undefined,{signal:first.signal});
+  const profile = accountRequest('v1/profiles/reimu');
+  const session = accountRequest('auth/get-session');
+  expect(fetcher.mock.calls.map(([url])=>url)).toEqual(['/api/ready']);
+  first.abort();
+  await expect(cancelled).rejects.toMatchObject({name:'AbortError'});
+  ready(Response.json({ready:true}));
+  await expect(session).resolves.toBeNull();
+  cancelAccountRequests();
+  respondProfile(Response.json({username:'reimu'}));
+  await expect(profile).resolves.toEqual({username:'reimu'});
+  await expect(accountRequest('auth/get-session')).resolves.toBeNull();
+  expect(fetcher.mock.calls.map(([url])=>url)).toEqual(['/api/ready','/api/v1/profiles/reimu','/api/auth/get-session','/api/auth/get-session']);
+});
+
 it('cancels a write during readiness and allows a new account request afterward', async () => {
   let rejectFirstProbe, probes = 0;
   const fetcher = vi.fn((input, init = {}) => {
@@ -143,7 +171,7 @@ const direct = 'https://direct-api.touhouonline.com';
 const readyOn = route => Response.json({ready: true}, {headers: {'X-Eagler-Account-Route': route}});
 
 it.each([
-  ['direct', true, ''],
+  ['direct', true, direct],
   ['edge', true, edge],
   ['edge', false, direct],
 ])('routes account writes by region %s and edge availability %s', async (route, edgeAvailable, expected) => {
@@ -152,7 +180,7 @@ it.each([
   const writes = [];
   const {accountRequest} = await loadAccountClient(vi.fn(async (url, init) => {
     if (url === '/api/ready') return route === 'direct' ? readyOn(route) : new Response(null, {status: 404});
-    if (url === direct + '/api/ready') return readyOn('edge');
+    if (url === direct + '/api/ready') return readyOn(route);
     if (url === edge + '/api/ready') {
       if (edgeAvailable) return readyOn(route);
       throw new TypeError('network error');

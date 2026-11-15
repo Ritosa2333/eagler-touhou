@@ -68,6 +68,7 @@ export interface LauncherState {
 }
 
 export interface MultiplayerRoomState {
+  unrated?: boolean;
   th19Rules?: number[];
   initialSpares?: number;
   initialBombs?: number;
@@ -95,6 +96,7 @@ export interface MultiplayerRoomState {
   spectators?: NormalizedMultiplayerLobbySnapshot['spectators'];
   spectatorCount?: number;
   spectatorTimeline?: boolean;
+  swarmSelected?: boolean;
   synced?: boolean;
   [key: string]: unknown;
 }

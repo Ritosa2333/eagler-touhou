@@ -56,7 +56,7 @@ for(const playerCount of [2,3]){
   assert.equal(automatic.netplayPredictionLimit,0);assert.equal(automatic.netplayInputDelayAuto,true);
   assert.equal(automatic.netplayLoadouts.length,playerCount);
 }
-for (const [product, limit] of [['th075mp', 8], ['th12mp', 12], ['th15mp', 12]]) {
+for (const [product, limit] of [['th075mp', 8], ['th12mp', 12], ['th14mp', 12], ['th15mp', 12]]) {
   const input = {...base, difficulty: 1, inputDelay: 0, url: base.url.replace('th06mp', product)};
   const config = PRODUCT_GAMES[product.slice(0, -2)].multiplayer;
   const enabled = buildMultiplayerRuntimeOptions({...input, loadouts: config.loadouts.slice(0, 2)}, config);
@@ -66,6 +66,11 @@ for (const [product, limit] of [['th075mp', 8], ['th12mp', 12], ['th15mp', 12]])
   assert.equal(disabled.netplayAdonisMode, 1, `${product}: explicit pure delay`);
   assert.equal(disabled.netplayPredictionLimit, 0);
 }
+const th14=PRODUCT_GAMES.th14.multiplayer;
+const th14Room={...base,url:base.url.replace('th06mp','th14mp'),playerCount:3,inputDelay:3};
+assert.equal(buildMultiplayerRuntimeOptions(th14Room,th14).netplayInputDelay,0);
+assert.equal(buildMultiplayerRuntimeOptions({...th14Room,adonisMode:1},th14).netplayInputDelay,3);
+assert.throws(()=>buildMultiplayerRuntimeOptions({...th14Room,predictionLimit:8},th14),/12 帧/);
 const th17=PRODUCT_GAMES.th17.multiplayer;
 const th17Room={...base,url:base.url.replace('th06mp','th17mp'),playerCount:3,inputDelay:2,
   loadouts:[{character:0,shot:0},{character:1,shot:1},{character:2,shot:2}]};

@@ -103,56 +103,6 @@
   .settings-text-fields {
     min-width: 0;
   }
-  .settings-profile-preview {
-    overflow: hidden;
-    border: 1px solid var(--kit-border);
-    border-radius: 8px;
-    background: var(--kit-card);
-  }
-  .settings-preview-cover {
-    aspect-ratio: 2.9;
-    overflow: hidden;
-    background: var(--kit-secondary);
-  }
-  .settings-preview-cover img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .settings-preview-identity {
-    --account-avatar-size: 64px;
-    --account-avatar-radius: 15px;
-    padding: 0 16px 16px;
-  }
-  .settings-preview-identity > .account-avatar {
-    display: block;
-    position: relative;
-    width: 64px;
-    height: 64px;
-    margin-top: -22px;
-    border: 4px solid var(--kit-card);
-    border-radius: 15px;
-  }
-  .settings-preview-identity strong {
-    display: block;
-    margin-top: 6px;
-    font-size: 16px;
-    font-weight: 600;
-    overflow-wrap: anywhere;
-  }
-  .settings-preview-identity p {
-    display: -webkit-box;
-    margin: 4px 0 0;
-    overflow: hidden;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    font-size: 12px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    color: var(--kit-muted-foreground);
-  }
   .account-settings .settings-artwork-upload {
     padding: 12px 0;
     gap: 8px;
@@ -228,6 +178,14 @@
   }
   .settings-switch-row .ui-field-content {
     flex: none;
+  }
+  .account-settings .settings-section-controls {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+  }
+  .settings-section-controls > .ui-switch {
+    margin-inline-start: 6px;
   }
   .settings-form-actions {
     margin: 16px 0 0 136px;
@@ -363,3 +321,13 @@ html[data-custom-background] body:not(.mp-room-active) .account-settings :is(.ac
 @media (max-width: 700px), (orientation: portrait) and (max-width: 900px) {
   html[data-custom-background] body:not(.mp-room-active) .account-settings :is(.account-settings-nav,.account-settings-content) {padding:16px}
 }
+
+.settings-game-data{display:grid;min-inline-size:0;margin:0;gap:2px;padding:4px;border:1px solid var(--kit-border);border-radius:8px}
+.settings-game-data-row{display:grid;grid-template-columns:30px minmax(0,1fr) auto 32px;align-items:center;gap:5px;min-height:42px;padding:0 3px}
+.settings-game-data-icon{display:grid;place-items:center}
+.settings-game-data-icon svg,.settings-game-data-icon img{width:20px;height:20px;border-radius:4px}
+.settings-game-data-label{font-size:13px;font-weight:500}
+.settings-game-data-default.ui-kit-button{padding-inline:6px;gap:4px;font-size:11px}
+.settings-game-data-default[aria-pressed=true]{color:var(--kit-foreground)}
+.settings-game-data-default[aria-pressed=true] svg{fill:currentColor}
+.settings-game-data-row[data-hidden] .settings-game-data-label,.settings-game-data-row[data-hidden] .settings-game-data-icon{opacity:.5}

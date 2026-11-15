@@ -19,6 +19,7 @@ const originalDisplay = Object.freeze({
 });
 
 let env, work, React, createRoot, createMemoryRouter, RouterProvider, owner, mounted;
+const canvasDraws = new WeakMap();
 let createObjectUrlDescriptor, revokeObjectUrlDescriptor, imageDescriptor, imageLoadDescriptor, canvasGetContextDescriptor, canvasToBlobDescriptor, nextObjectUrl=0;
 beforeAll(async () => {
   env = installMountedDom();
@@ -43,7 +44,11 @@ beforeAll(async () => {
   Object.defineProperty(globalThis,'Image',{configurable:true,writable:true,value:TestImage});
   canvasGetContextDescriptor=Object.getOwnPropertyDescriptor(env.window.HTMLCanvasElement.prototype,'getContext');
   canvasToBlobDescriptor=Object.getOwnPropertyDescriptor(env.window.HTMLCanvasElement.prototype,'toBlob');
-  Object.defineProperty(env.window.HTMLCanvasElement.prototype,'getContext',{configurable:true,value:()=>({imageSmoothingQuality:'',drawImage(){}})});
+  Object.defineProperty(env.window.HTMLCanvasElement.prototype,'getContext',{configurable:true,value:function () {
+    const draws = canvasDraws.get(this) ?? [];
+    canvasDraws.set(this, draws);
+    return {canvas:this, clearRect(){draws.length=0;}, setTransform(){}, createLinearGradient(){return {addColorStop(){}};}, fillRect(){}, drawImage(source, ...rect){draws.push({source,rect});}};
+  }});
   Object.defineProperty(env.window.HTMLCanvasElement.prototype,'toBlob',{configurable:true,value(callback,type){callback(new env.window.Blob([Uint8Array.of(1)],{type:type||'image/png'}));}});
   env.window.scrollTo = () => {};
   React = await import('react');
@@ -56,7 +61,7 @@ beforeAll(async () => {
     export {SurfaceNavigationProvider} from './app/navigation/surface-navigation.tsx';
     export {LocaleProvider, translate} from './app/i18n.tsx';
     export {createDecisionStore} from './app/models/decisions.ts';
-    export {prepareProfileImage, PROFILE_IMAGE_MAX_BYTES, PROFILE_IMAGE_SOURCE_MAX_BYTES} from './app/services/profile-image.ts';
+    export {drawProfileCover, prepareProfileImage, PROFILE_IMAGE_MAX_BYTES, PROFILE_IMAGE_SOURCE_MAX_BYTES} from './app/services/profile-image.ts';
     export {useLocation} from 'react-router';
   `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', packages: 'external', loader: {'.webp': 'dataurl'}, outfile: file,
   plugins: [
@@ -67,6 +72,7 @@ beforeAll(async () => {
           constructor(code, status) { super(code); this.name = 'AccountRequestError'; this.code = code; this.status = status; }
         }
         export function cancelAccountRequests() {}
+        export function mailCaptchaError() {}
         export async function accountRequest(path, body) {
           const request = globalThis.__accountRequest;
           if (!request) throw new Error('account request fixture is not installed');
@@ -83,7 +89,10 @@ beforeAll(async () => {
           useEffect(()=>{const size=globalThis.__cropImageSizes.get(props.image);if(!size)return;
             props.setImageRef?.({current:{naturalWidth:size.naturalWidth,naturalHeight:size.naturalHeight}});
             props.onMediaLoaded(size);
-            const area={x:0,y:0,width:100,height:100};props.onCropAreaChange(area,area);
+            const aspect=size.naturalWidth/size.naturalHeight;
+            const width=Math.min(100,100*props.aspect/aspect),height=Math.min(100,100*aspect/props.aspect);
+            const area={x:(100-width)/2,y:(100-height)/2,width,height};
+            props.onCropAreaChange(area,area);
           },[props.image]);
           return React.createElement('div',{'data-test-cropper':''});
         }
@@ -235,6 +244,10 @@ async function chooseImage(selector, file) {
   }
   assert.ok(confirm&&!confirm.disabled,'the crop dialog is ready to confirm');
   if(selector==='#settings-avatar')assert.ok(env.document.querySelector('.profile-image-crop-preview img'),'the debounced room-avatar preview is ready before crop confirmation');
+  if(selector==='#settings-cover') {
+    const canvases = [...env.document.querySelectorAll('.profile-image-crop-cover-previews canvas')];
+    assert.deepEqual(canvases.map(canvas => canvas.width / canvas.height), [3, 6]);
+  }
   await click(confirm);
 }
 
@@ -242,6 +255,25 @@ async function waitForImageCalls(calls, count) {
   for (let attempt = 0; attempt < 30 && calls.length < count; attempt++) await settle();
   assert.equal(calls.length, count, `the selected image reached the compressor; errors=${env.errors.join('|')}; alerts=${[...env.document.querySelectorAll('[role="alert"]')].map(node=>node.textContent).join('|')}`);
 }
+
+test('cover rendering keeps the primary crop in the center and pads only outside the source', () => {
+  const canvas = env.document.createElement('canvas');
+  const cases = [
+    {width:2400, x:25, cropWidth:50, original:[0, 0, 2400, 400, 0, 0, 600, 100], padding:[]},
+    {width:2400, x:12.5, cropWidth:50, original:[0, 0, 2100, 400, 75, 0, 525, 100], padding:[[0, 0, 75, 100]]},
+    {width:2400, x:37.5, cropWidth:50, original:[300, 0, 2100, 400, 0, 0, 525, 100], padding:[[525, 0, 75, 100]]},
+    {width:1600, x:12.5, cropWidth:75, original:[0, 0, 1600, 400, 100, 0, 400, 100], padding:[[0, 0, 100, 100], [500, 0, 100, 100]]},
+  ];
+  for (const {width, x, cropWidth, original, padding} of cases) {
+    const image = {naturalWidth:width, naturalHeight:400};
+    owner.drawProfileCover(canvas, image, {x, y:0, width:cropWidth, height:100}, 100);
+    assert.deepEqual([canvas.width, canvas.height], [600, 100]);
+    const draws = canvasDraws.get(canvas);
+    assert.equal(draws.at(-1).source, image);
+    assert.deepEqual(draws.at(-1).rect, original);
+    assert.deepEqual(draws.slice(0, -1).map(draw => draw.rect), padding);
+  }
+});
 
 test('profile image normalization uses the local worker, per-kind dimensions, and a hard 150000-byte cap', async () => {
   const controller = new AbortController();
@@ -301,7 +333,8 @@ test('avatar and cover compression run independently and block save until both f
   await settle(() => pending.get(1).resolve(compressedFile('saved-avatar.webp')));
   assert.equal(save.disabled, false);
   assert.equal(env.document.querySelectorAll('button[aria-busy="true"]').length, 0);
-  assert.equal(input('.settings-preview-cover img').getAttribute('src'), 'data:image/webp;base64,saved-cover.webp');
+  assert.equal(input('.settings-artwork .player-profile-card .profile-cover').style.aspectRatio, '3 / 1');
+  assert.equal(input('.settings-artwork .player-profile-card .profile-cover img').getAttribute('src'), 'data:image/webp;base64,saved-cover.webp');
   await click(save);
   await settle();
   assert.deepEqual(requests.map(request => request.path), ['v1/me/profile']);

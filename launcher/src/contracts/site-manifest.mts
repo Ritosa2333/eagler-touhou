@@ -112,12 +112,12 @@ function isRecord(value: unknown): value is UnknownRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function validMusicFileName(value: unknown, extension: "mid" | "ogg"): value is string {
+function validMusicFileName(value: unknown, suffix: "mid" | "ogg" | "(?:ogg|flac)"): value is string {
   return typeof value === "string" &&
-    new RegExp(`^[A-Za-z0-9][A-Za-z0-9._-]*\\.${extension}$`, "i").test(value);
+    new RegExp(`^[A-Za-z0-9][A-Za-z0-9._-]*\\.${suffix}$`, "i").test(value);
 }
 
-function validMusicFiles(value: unknown, extension: "mid" | "ogg", allowEmpty: boolean): value is string[] {
+function validMusicFiles(value: unknown, extension: "mid" | "ogg" | "(?:ogg|flac)", allowEmpty: boolean): value is string[] {
   return Array.isArray(value) && (allowEmpty || value.length > 0) &&
     new Set(value).size === value.length && value.every(file => validMusicFileName(file, extension));
 }
@@ -133,14 +133,14 @@ function validMidiManifest(value: unknown): value is SiteMidiManifest {
     (value.supported == null || typeof value.supported === "boolean");
 }
 
-function validOggManifest(value: unknown): value is SiteOggManifest | null | undefined {
+function validOggManifest(value: unknown, gameId: GameId): value is SiteOggManifest | null | undefined {
   if (value == null) return true;
   if (!isRecord(value)) return false;
   const files = value.files;
   const sizes = value.sizes;
   const sha256 = value.sha256;
   return typeof value.version === "string" && SHA256_VERSION.test(value.version) &&
-    validMusicFiles(files, "ogg", false) && validMusicSizes(sizes, files.length) &&
+    validMusicFiles(files, gameId === "th14" ? "(?:ogg|flac)" : "ogg", false) && validMusicSizes(sizes, files.length) &&
     Array.isArray(sha256) && files.length === sha256.length &&
     sha256.every(hash => typeof hash === "string" && SHA256.test(hash));
 }
@@ -243,7 +243,7 @@ function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): 
     gameData.path === expectedDataPath &&
     Number.isSafeInteger(gameData.bytes) && Number(gameData.bytes) > 0 &&
     typeof gameData.sha256 === "string" && SHA256.test(gameData.sha256) &&
-    validExternalPackage && validHostRuntimeFeatures(value.features) && validOggManifest(music.ogg) &&
+    validExternalPackage && validHostRuntimeFeatures(value.features) && validOggManifest(music.ogg, gameId) &&
     validLanguageCatalogs(value) &&
     validOfflineCompatibility(value, resourceMode, gameId);
 }

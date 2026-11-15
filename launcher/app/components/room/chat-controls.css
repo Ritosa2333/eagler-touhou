@@ -1,4 +1,13 @@
 @layer components {
+  .chat-sending {display:inline-flex;align-items:center;gap:4px;min-height:1.4em}
+  .chat-sending i {width:5px;height:5px;border-radius:50%;background:currentColor;animation:chat-sending-bounce 1s ease-in-out infinite}
+  .chat-sending i:nth-child(2) {animation-delay:120ms}
+  .chat-sending i:nth-child(3) {animation-delay:240ms}
+  .chat-send-notice {margin:0 0 4px;color:var(--kit-destructive, #d44);font-size:12px}
+  .chat-send-failed {color:var(--kit-destructive, #d44);font-size:.85em}
+  @keyframes chat-sending-bounce {0%,60%,100% {transform:translateY(0);opacity:.45} 30% {transform:translateY(-4px);opacity:1}}
+  @media (prefers-reduced-motion:reduce) {.chat-sending i {animation:none}}
+  .less-motion .chat-sending i {animation:none}
   .room-chat-controls {
     display: flex;
     align-items: center;
@@ -32,6 +41,12 @@
   .chat-sender strong {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit}
   .chat-role {flex:none;font-size:10px;line-height:1.3;padding:1px 4px;border-radius:4px;background:var(--kit-muted);color:var(--kit-muted-foreground)}
   .chat-body {display:block;white-space:pre-wrap;overflow-wrap:anywhere}
+  .chat-rating-line {display:block}
+  .room-chat-entry[data-speaker="rating"] .room-chat-message a {color:inherit;text-decoration:underline;text-underline-offset:2px}
+  .chat-rating-line [data-rating-delta="gain"] {color:var(--kit-destructive)}
+  .chat-rating-line [data-rating-delta="loss"] {color:var(--rating-green)}
+  .mp-quick-chat-log .chat-rating-line [data-rating-delta="gain"] {color:#ffabb1}
+  .mp-quick-chat-log .chat-rating-line [data-rating-delta="loss"] {color:#a0f3b4}
   .room-chat-message {
     min-width: 0;
     flex: 1;
@@ -66,9 +81,6 @@
   }
   .mp-quick-chat-picker .room-chat-controls {
     flex: none;
-  }
-  .mp-quick-chat-picker .room-chat-controls[data-member="false"] {
-    justify-content: flex-end;
   }
   .chat-phrase-grid {
     display: grid;
@@ -116,7 +128,7 @@
   .mp-quick-chat-log .chat-sender {color:#fff;text-shadow:0 1px 3px #000,0 0 2px #000}
   .mp-quick-chat-log .chat-role {background:#202126d9;color:#fff;text-shadow:none}
   .mp-quick-chat-log .chat-body {color:#fff;text-shadow:0 1px 3px #000,0 0 2px #000}
-  .mp-quick-chat-log .room-chat-entry[data-speaker="player"] .chat-body {color:#efc08a;-webkit-text-stroke:.25px #fff8;paint-order:stroke fill;text-shadow:0 1px 3px #000,0 0 2px #000}
+  .mp-quick-chat-log .room-chat-entry:is([data-speaker="player"],[data-speaker="rating"]) .chat-body {color:#efc08a;-webkit-text-stroke:.25px #fff8;paint-order:stroke fill;text-shadow:0 1px 3px #000,0 0 2px #000}
   .chat-report-trigger:is(:hover, :focus-visible) {
     background: var(--kit-accent);
   }

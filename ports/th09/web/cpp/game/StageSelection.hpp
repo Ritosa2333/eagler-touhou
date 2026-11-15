@@ -13,7 +13,7 @@ struct StageSelectionActions {virtual ~StageSelectionActions()=default;virtual v
 class StageSelection {
 public:
     static std::vector<StageRoute> candidates(const StageSelectionState&);
-    static bool select(StageSelectionState&,Rng&,StageSelectionActions&);
+    static bool select(StageSelectionState&,Rng&,StageSelectionActions&,bool replay=false);
     static i32 story_policy(i32 difficulty,i32 stage,i32 retry_index)noexcept;
 };
 }

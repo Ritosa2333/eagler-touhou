@@ -85,6 +85,9 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  void remember_title()noexcept;bool fail(const std::string&);bool initialize(bool);~ApplicationState();bool step(u32,u32,u32,float,bool);const i32* projection();
  FrameScheduler& active_scheduler()noexcept{return scene()?scene()->frame_scheduler():scheduler;}
  StageGameplay* scene()const noexcept{return run?run->scene():nullptr;}StageAssets* assets()const noexcept{return run?run->scene_assets():nullptr;}
+ bool can_use_practice_tools()const noexcept{
+  return practice.enabled&&scene()&&!progress.practice_record&&progress.demo_slot<0;
+ }
  bool save_settings();bool preload_run();bool bind_display(StageGameplay* previous=nullptr);bool draw_global();bool screen_fade(i32,i32,i32,bool,bool,u32=0);void reset_graphics();
  bool advance_flow();bool step_loading();bool draw_loading();
  bool read(const std::string&,std::vector<u8>&)override;
@@ -102,6 +105,7 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  bool ending_active()const override;bool ending_complete()const override;bool retire_ending()override;bool preview_ending(i32)override;bool trophy_stage(i32,i32)override;
  bool audio(i32,float,PlayerShots::SoundAction,bool)override;bool popup(const Vec3&,i32,u32)override;bool trophy(i32)override;bool game_over()override;bool finish_practice()override;bool record_play_time()override;bool return_to_title()override;
  bool dialogue_text(AnmVm&,u32,u32,i32,i32,i32,const std::string&)override;bool spell_title(AnmVm&,const std::string&)override;bool music_control(i32,i32)override;bool music_fade(i32)override;bool unlock_music(i32)override;bool transition(const SceneTransition&)override;
+ i32 dialogue_width(AnmVm&,const std::string&,i32)override;
  i32 loading_state()const noexcept override;bool retire_loading()override;bool flush_audio()override;bool resume_environment(double)override;bool stage_input_ready(StageGameplay&)override;bool replay_finished()override;
  bool suspend_music()override;bool finish_audio_requests()override;bool capture_background(StageGameplay&,AnmManager&,u32&,bool)override;bool preserve_current_music(std::string&,double&)override;bool start_game_over_music()override;bool read_replay_slot(i32,std::shared_ptr<Replay>&)override;bool save_named_replay(i32,const std::array<char,9>&)override;bool prepare_replay_save(bool)override;
  bool open_options(float)override;bool options_finished()const override;bool close_options()override;i32 scene_destination()const override;bool resume_looping_sounds()override;bool resume_music()override;bool resume_saved_music(const std::string&,double)override;bool reset_audio_slots()override;bool destination(PauseDestination)override;bool background_fade(i32,i32,i32)override;

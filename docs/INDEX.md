@@ -1,6 +1,6 @@
 # 文档总表
 
-共 566 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 581 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -31,6 +31,7 @@
 | 适配指南 | [docs/adaptation/th12-dense-bomb-performance-20261023.md](adaptation/th12-dense-bomb-performance-20261023.md) | TH12 密集弹幕与 Bomb 展示管线 |
 | 适配指南 | [docs/adaptation/th12-mobile-collision-performance-20261023.md](adaptation/th12-mobile-collision-performance-20261023.md) | TH12 手机低速、判定点及无敌收符修复 |
 | 适配指南 | [docs/adaptation/th12-mobile-information-20261020.md](adaptation/th12-mobile-information-20261020.md) | 星莲船手机信息面板与通关排行 |
+| 适配指南 | [docs/adaptation/th14.md](adaptation/th14.md) | TH14 网站接入 |
 | 适配指南 | [docs/adaptation/th15-pointdevice-issue113-20261020.md](adaptation/th15-pointdevice-issue113-20261020.md) | TH15 无欠检查点与完整存档导出 |
 | 适配指南 | [docs/adaptation/validation.md](adaptation/validation.md) | 验证与交付 |
 | 作品入口 | [ports/README.md](../ports/README.md) | 选择游戏 |
@@ -50,6 +51,7 @@
 | 作品入口 | [ports/th12-mp/README.md](../ports/th12-mp/README.md) | 东方星莲船多人合作版 |
 | 作品入口 | [ports/th12/README.md](../ports/th12/README.md) | 东方星莲船网页版与行为还原 |
 | 作品入口 | [ports/th13/README.md](../ports/th13/README.md) | 东方神灵庙（th13）移植 |
+| 作品入口 | [ports/th14-mp/README.md](../ports/th14-mp/README.md) | TH14 多人版 |
 | 作品入口 | [ports/th15-mp/README.md](../ports/th15-mp/README.md) | 東方紺珠伝 TH15 多人版 |
 | 作品入口 | [ports/th15/README.md](../ports/th15/README.md) | 東方紺珠伝 TH15 |
 | 作品入口 | [ports/th17-mp/README.md](../ports/th17-mp/README.md) | TH17 MP · 东方鬼形兽联机版 |
@@ -180,6 +182,14 @@
 | 作品源码文档 | [ports/th13/docs/release-packaging.md](../ports/th13/docs/release-packaging.md) | th13 网页版发布打包排除清单（Pre-Release，2026-11-05） |
 | 作品源码文档 | [ports/th13/tools/replay-verifier/README.md](../ports/th13/tools/replay-verifier/README.md) | replay-verifier |
 | 作品源码文档 | [ports/th13/web/sdl-runtime/build-badge.txt](../ports/th13/web/sdl-runtime/build-badge.txt) | cea70e4f |
+| 作品源码文档 | [ports/th14-mp/docs/porting/TH14_ANM_VM_ORACLE.md](../ports/th14-mp/docs/porting/TH14_ANM_VM_ORACLE.md) | TH14 ANM VM 原版对照 |
+| 作品源码文档 | [ports/th14-mp/docs/porting/TH14_BROWSER_PERFORMANCE.md](../ports/th14-mp/docs/porting/TH14_BROWSER_PERFORMANCE.md) | TH14 browser frame pacing |
+| 作品源码文档 | [ports/th14-mp/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md](../ports/th14-mp/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md) | TH14 texture sizes |
+| 作品源码文档 | [ports/th14-mp/docs/porting/TH14_UI_ORACLE.md](../ports/th14-mp/docs/porting/TH14_UI_ORACLE.md) | TH14 界面 Oracle |
+| 作品源码文档 | [ports/th14/docs/porting/TH14_ANM_VM_ORACLE.md](../ports/th14/docs/porting/TH14_ANM_VM_ORACLE.md) | TH14 ANM VM 原版对照 |
+| 作品源码文档 | [ports/th14/docs/porting/TH14_BROWSER_PERFORMANCE.md](../ports/th14/docs/porting/TH14_BROWSER_PERFORMANCE.md) | TH14 browser frame pacing |
+| 作品源码文档 | [ports/th14/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md](../ports/th14/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md) | TH14 texture sizes |
+| 作品源码文档 | [ports/th14/docs/porting/TH14_UI_ORACLE.md](../ports/th14/docs/porting/TH14_UI_ORACLE.md) | TH14 界面 Oracle |
 | 作品源码文档 | [ports/th15-mp/docs/DEVELOPMENT.md](../ports/th15-mp/docs/DEVELOPMENT.md) | TH15 多人版开发指南 |
 | 作品源码文档 | [ports/th15/docs/DEVELOPMENT.md](../ports/th15/docs/DEVELOPMENT.md) | TH15 开发指南 |
 | 作品源码文档 | [ports/th15/web/docs/mobile-gpu-diagnostics.md](../ports/th15/web/docs/mobile-gpu-diagnostics.md) | TH15 移动端 GPU 诊断 |
@@ -264,6 +274,8 @@
 | 历史记录 | [archive/hk-mirror-relay-20261028/deployment.md](../archive/hk-mirror-relay-20261028/deployment.md) | 香港镜像与统一 Relay 入口 ｜ 2026-10-28 |
 | 历史记录 | [archive/main-refresh-20261028/README.md](../archive/main-refresh-20261028/README.md) | 主线发布与镜像一致性 |
 | 历史记录 | [archive/main-thprac-th08-test-th12-20261028/README.md](../archive/main-thprac-th08-test-th12-20261028/README.md) | 主站 THPrac／TH08 与测试站 TH12 多人发布 |
+| 历史记录 | [archive/motion-extrapolation-153-20261028/README.md](../archive/motion-extrapolation-153-20261028/README.md) | #153 高刷外推与 Presentation Lab |
+| 历史记录 | [archive/motion-extrapolation-integration-20261031/README.md](../archive/motion-extrapolation-integration-20261031/README.md) | 高刷当前帧外推 |
 | 历史记录 | [archive/multiplayer-replay-background-clock-20261030/README.md](../archive/multiplayer-replay-background-clock-20261030/README.md) | 多人章节回放背景时钟 |
 | 历史记录 | [archive/relay-entry-20261027/deployment.md](../archive/relay-entry-20261027/deployment.md) | Relay 入口自动切换发布 |
 | 历史记录 | [archive/relay-session-identity-20261028/README.md](../archive/relay-session-identity-20261028/README.md) | 多入口会话匹配 |
@@ -332,6 +344,7 @@
 | 历史记录 | [archive/th12-web-adaptation-20261020/README.md](../archive/th12-web-adaptation-20261020/README.md) | th12 旧网页前端接入记录 |
 | 历史记录 | [archive/th12mp-public-20261028/README.md](../archive/th12mp-public-20261028/README.md) | 星莲船正式发布 |
 | 历史记录 | [archive/th12mp-public-20261028/cn129.md](../archive/th12mp-public-20261028/cn129.md) | 原主站入口同步 |
+| 历史记录 | [archive/th14-rollback-20261114/README.md](../archive/th14-rollback-20261114/README.md) | TH14 多人延迟输入验证 |
 | 历史记录 | [archive/th15-bomb-snapshot-memory-20261028/README.md](../archive/th15-bomb-snapshot-memory-20261028/README.md) | TH15 多人放雷快照内存峰值 |
 | 历史记录 | [archive/th15-boss-transfer-20261027/README.md](../archive/th15-boss-transfer-20261027/README.md) | TH15 多人：共享碎片与 Boss 入场输入 |
 | 历史记录 | [archive/th15-input-latency-20261105/README.md](../archive/th15-input-latency-20261105/README.md) | th15 MP 输入时序 |
@@ -546,6 +559,8 @@
 | 许可证与声明 | [ports/th13/LICENSE](../ports/th13/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th13/NOTICE.md](../ports/th13/NOTICE.md) | Source and asset notices |
 | 许可证与声明 | [ports/th13/portable/sdl/third_party/miniaudio.LICENSE](../ports/th13/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
+| 许可证与声明 | [ports/th14-mp/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE](../ports/th14-mp/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
+| 许可证与声明 | [ports/th14/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE](../ports/th14/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th15-mp/LICENSE](../ports/th15-mp/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th15-mp/portable/browser/LICENSE.eagler-common](../ports/th15-mp/portable/browser/LICENSE.eagler-common) | LICENSE |
 | 许可证与声明 | [ports/th15-mp/portable/sdl/third_party/miniaudio.LICENSE](../ports/th15-mp/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |

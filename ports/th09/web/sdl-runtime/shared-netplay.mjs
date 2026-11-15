@@ -3,6 +3,7 @@ import {attachSpectatorTimeline} from './spectator-timeline.mjs';
 import {SpectatorTape} from './spectator-tape.mjs';
 const spectatorMagic = [0x54, 0x39, 0x53, 0x50, 1, 3, 2, 0]; // T9SP/1, 2 players
 const spectatorFrameBytes = 46;
+const spectatorNativeQueueLimit = 4096;
 const chargeSpectatorFrameBytes = 126;
 export class SharedNetplay {
   constructor(core, {onStatus, onClose, onResult, onTiming = () => {}, onMatch = () => {}}) {
@@ -416,7 +417,10 @@ export class SharedNetplay {
           }
           if(this.timelineExperiment){
             const queued=!!this.spectatorTape.peek();this.spectatorTape.append(bytes);
-            if(!queued){this.feedSpectatorFrame(bytes);this.spectatorTape.shift();}
+            if(!queued&&this.spectatorFrame-this.core._th09_spectator_frame()<spectatorNativeQueueLimit){
+              this.feedSpectatorFrame(bytes);
+              this.spectatorTape.shift();
+            }
           }else this.feedSpectatorFrame(bytes);
           this.spectatorReceiveAt=performance.now();
           return;
@@ -488,8 +492,12 @@ export class SharedNetplay {
       } else if(packet.length===28){
         const data=new DataView(packet.buffer,packet.byteOffset);
         this.timeline?.addRound(data.getUint32(8,true),data.getUint32(24,true));
-      } else if(packet.length===46||packet.length===chargeSpectatorFrameBytes)this.feedSpectatorFrame(packet);
-      else this.finishSpectatorMatch(new DataView(packet.buffer,packet.byteOffset).getUint32(8,true));
+      } else if(packet.length===46||packet.length===chargeSpectatorFrameBytes){
+        // A paused viewer or a replay burst can fill the native input deque.
+        // Keep the rest on the tape until simulation consumes its backlog.
+        if(this.spectatorFrame-this.core._th09_spectator_frame()>=spectatorNativeQueueLimit)break;
+        this.feedSpectatorFrame(packet);
+      } else this.finishSpectatorMatch(new DataView(packet.buffer,packet.byteOffset).getUint32(8,true));
       tape.shift();
     }
     this.timeline?.refresh(tape.begins);

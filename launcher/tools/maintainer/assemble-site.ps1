@@ -210,10 +210,6 @@ if ($resourceMode -eq 'import') {
             if (-not (Test-Path -LiteralPath (Join-Path $runtimeBuilds.th09 'runtime-files.json') -PathType Leaf)) {
                 throw "Prepared TH09 Runtime directory manifest not found: $(Join-Path $runtimeBuilds.th09 'runtime-files.json')"
             }
-            $runtimeBuilds.th09Multiplayer = Get-EaglerWorkspacePath $workspaceLayout 'th09' 'web\build-eagler-multiplayer'
-            if (-not (Test-Path -LiteralPath (Join-Path $runtimeBuilds.th09Multiplayer 'runtime-files.json') -PathType Leaf)) {
-                throw "Prepared TH09 multiplayer Runtime directory manifest not found: $(Join-Path $runtimeBuilds.th09Multiplayer 'runtime-files.json')"
-            }
         }
         if ($selectedHasTh10) {
             if (-not $Th10Build) { throw 'Import mode without -RuntimeRelease requires -Th10Build when th10 is selected' }
@@ -254,7 +250,6 @@ if ($resourceMode -eq 'import') {
     if (-not $runtimeReleasePath -and $selectedHasTh08) { $nodeArgs += "--th08-build=$($runtimeBuilds.th08)" }
     if (-not $runtimeReleasePath -and $selectedHasTh09) {
         $nodeArgs += "--th09-build=$($runtimeBuilds.th09)"
-        $nodeArgs += "--th09-multiplayer-build=$($runtimeBuilds.th09Multiplayer)"
     }
     if (-not $runtimeReleasePath -and $selectedHasTh10) { $nodeArgs += "--th10-build=$($runtimeBuilds.th10)" }
     & node @nodeArgs
@@ -287,9 +282,6 @@ $th10Build = if ($selectedHasTh10 -and -not $runtimeReleasePath) {
 } else { $null }
 $th09Build = if ($selectedHasTh09 -and -not $runtimeReleasePath) {
     Get-EaglerWorkspacePath $workspaceLayout 'th09' 'web\build-eagler'
-} else { $null }
-$th09MultiplayerBuild = if ($selectedHasTh09 -and -not $runtimeReleasePath) {
-    Get-EaglerWorkspacePath $workspaceLayout 'th09' 'web\build-eagler-multiplayer'
 } else { $null }
 $font = (Resolve-Path -LiteralPath $FontFile).Path
 $vanillaFont = (Resolve-Path -LiteralPath $VanillaFontFile).Path
@@ -330,9 +322,6 @@ if ($selectedHasTh10 -and -not $runtimeReleasePath -and -not (Test-Path -Literal
 }
 if ($selectedHasTh09 -and -not $runtimeReleasePath -and -not (Test-Path -LiteralPath (Join-Path $th09Build 'runtime-files.json') -PathType Leaf)) {
     throw "Prepared TH09 Runtime directory manifest not found: $(Join-Path $th09Build 'runtime-files.json')"
-}
-if ($selectedHasTh09 -and -not $runtimeReleasePath -and -not (Test-Path -LiteralPath (Join-Path $th09MultiplayerBuild 'runtime-files.json') -PathType Leaf)) {
-    throw "Prepared TH09 multiplayer Runtime directory manifest not found: $(Join-Path $th09MultiplayerBuild 'runtime-files.json')"
 }
 
 function Find-BuildTool([string] $Value, [string] $Name, [string] $VisualStudioPattern) {
@@ -560,7 +549,6 @@ if ($selectedHasTh08) {
 if ($selectedHasTh09) {
     if (-not $runtimeReleasePath) {
         $nodeArgs += "--th09-build=$th09Build"
-        $nodeArgs += "--th09-multiplayer-build=$th09MultiplayerBuild"
     }
     $nodeArgs += "--th09-data-assets=$th09DataAssets"
 }

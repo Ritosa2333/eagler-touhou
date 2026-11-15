@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
-import { writeRuntimeGeneration, publishRuntimeManifest, readRuntimeManifest, verifyRuntimePublication,
+import { freezeHostRuntimes, writeRuntimeGeneration, publishRuntimeManifest, readRuntimeManifest, verifyRuntimePublication,
   runtimeGenerationId, assertPortableRuntimeSources } from "../lib/runtime-generations.mjs";
 import { RUNTIME_MANIFEST_FILE, RUNTIME_PREPARE, canonicalRuntimePayload, parseRuntimeGenerationPath,
   validateRuntimeManifest, validateRuntimePrepareRequest } from "../lib/contracts/runtime-generations.mjs";
@@ -16,6 +16,33 @@ import { createPublicationHostSeed } from "../lib/publication-host-seed.mjs";
 import { writeSyntheticRuntimeRelease } from "./support/runtime-release-fixture.mjs";
 import { verifyRuntimeRelease, LEGACY_RUNTIME_RELEASE_SCHEMA } from "../lib/runtime-release.mjs";
 import { deployStaticSite } from "../lib/static-deployment.mjs";
+
+test("th09 normal and multiplayer publish the same Runtime generation", async () => {
+  const site = await mkdtemp(join(tmpdir(), "th09-runtime-publication-"));
+  try {
+    const root = resolve(site, "runtime/th09");
+    const html = "runtime/th09/th09.html";
+    const host = {shared: {}, games: {th09: {
+      runtime: html + "?hosted=1&v=old",
+      multiplayerRuntime: html + "?hosted=1&v=old",
+    }}};
+    const files = {};
+    for (const name of PRODUCT_GAMES.th09.runtimeAssets) {
+      const path = resolve(root, name);
+      const bytes = Buffer.from(name.endsWith(".html") ? "<!doctype html>" : name.endsWith(".mjs") ? "// fixture" : name);
+      await mkdir(dirname(path), {recursive: true});
+      await writeFile(path, bytes);
+      files[name] = {bytes: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex")};
+    }
+    await writeFile(resolve(root, "runtime-files.json"), JSON.stringify({files}));
+    const manifest = await freezeHostRuntimes(site, host);
+    assert.equal(host.games.th09.runtime, host.games.th09.multiplayerRuntime);
+    assert.deepEqual(manifest.groups.map(group => group.root), ["runtime/th09/"]);
+    assert.deepEqual(await verifyRuntimePublication(site, host), manifest);
+  } finally {
+    await rm(site, {recursive: true, force: true});
+  }
+});
 
 test("runtime generations", async () => {
 /** Reproducible publication/format tests. Synthetic programs/data only; this is
@@ -79,6 +106,7 @@ try {
   // Legacy Runtime Release reader is bounded compatibility, not a legacy writer.
   const legacy = resolve(temp,"legacy-release");
   const old = structuredClone(runtimeRelease); old.schema = LEGACY_RUNTIME_RELEASE_SCHEMA;
+  old.games.th09.multiplayerRuntime = structuredClone(old.games.th09.runtime);
   for(const [game,entry] of Object.entries(old.games)) for(const field of ["runtime","multiplayerRuntime"]) if(entry[field]) {
     const program=entry[field], target=`runtime/${game}/${field === "multiplayerRuntime" ? "multiplayer" : ""}`.replace(/\/$/,"");
     for(const name of Object.keys(program.files)) {await mkdir(dirname(resolve(legacy,target,name)),{recursive:true});await cp(resolve(release,program.root,name),resolve(legacy,target,name));}
@@ -100,14 +128,15 @@ try {
   await writeFile(resolve(temp,"seed.json"),JSON.stringify(seed));
   await writeFile(resolve(temp,"features.json"),JSON.stringify(features));
   await command("scripts/package-server.mjs",`--output=${output}`,`--runtime-release=${release}`,`--site-manifest=${resolve(temp,"seed.json")}`,
-    `--feature-config=${resolve(temp,"features.json")}`,"--profile=web-validation-generations","--games=th06,th07,th08,th10","--music=midi");
+    `--feature-config=${resolve(temp,"features.json")}`,"--profile=web-validation-generations","--games=th06,th07,th08,th09,th10","--music=midi");
   await command("scripts/verify-server-build.mjs",output);
   const host = await json(resolve(output,"site-manifest.json"));
   const catalog = await verifyRuntimePublication(output,host);
   assert.deepEqual(catalog.groups.map(group => group.root).sort(),
-    ["th06", "th07", "th08", "th10"].flatMap(game => [
-      `runtime/${game}/`, ...(PRODUCT_GAMES[game].multiplayerRuntime ? [`runtime/${game}/multiplayer/`] : []),
-    ]).sort(), "each selected game and declared multiplayer variant needs an independent Runtime generation");
+    ["th06", "th07", "th08", "th09", "th10"].flatMap(game => [
+      `runtime/${game}/`, ...(PRODUCT_GAMES[game].multiplayerRuntime && game !== "th09" ? [`runtime/${game}/multiplayer/`] : []),
+    ]).sort(), "th09 publishes one generation and separate builds publish their own");
+  assert.equal(host.games.th09.runtime, host.games.th09.multiplayerRuntime);
   for(const [game,entry] of Object.entries(host.games))for(const field of ["runtime","multiplayerRuntime"])if(entry[field]) {
     assert.equal(parseRuntimeGenerationPath(entry[field].split("?")[0]).generation,runtimeRelease.games[game][field].generation);
   }

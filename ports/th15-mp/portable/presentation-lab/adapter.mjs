@@ -5,7 +5,7 @@ const words=(core,name,n)=>Array.from(new Uint32Array(core.HEAPU8.buffer,core[na
 const missing=['all non-player visual owners','complete Replay/input and host-clock state','complete ANM pools and rollback state','audio device and queues'];
 export class Driver{
  constructor(runtime,identity){this.runtime=runtime;this.core=runtime.core;this.epoch=identity.runtimeEpoch;this.generation=0;this.token=null;for(const name of requiredExports)if(typeof this.core['_'+name]!=='function')throw Error('Missing diagnostic ABI '+name);}
- describe(){return {driverApiVersion:1,game:'th15',adapterVersion:'th15-presentation-lab/1',nativeAbi:'th15/player-submission/1',features:{freeze:true,resume:true,step:true,drawOnly:true,references:true,stateEvidence:true,timing:true,capture:true,replay:false}};}
+ describe(){return {driverApiVersion:1,game:'th15',adapterVersion:'th15-presentation-lab/1',nativeAbi:'th15/player-submission/1',features:{freeze:true,resume:true,step:true,drawOnly:true,extrapolation:true,references:true,stateEvidence:true,timing:true,capture:true,replay:false}};}
  freeze(){if(!this.token){if(!this.core._th15_lab_freeze())throw Error('Freeze failed');this.token=Object.freeze({sessionEpoch:this.epoch,generation:++this.generation});}return this.token;}
  resume(token){if(!this.token||token!==this.token)throw Error('Stale freeze token');if(!this.core._th15_lab_resume())throw Error('Resume failed');this.token=null;}
  advanceOneTick(){const status=['error','advanced','blocked-loading','finished'][this.core._th15_lab_tick()]||'error';return {status,advancedTicks:status==='advanced'?1:0};}

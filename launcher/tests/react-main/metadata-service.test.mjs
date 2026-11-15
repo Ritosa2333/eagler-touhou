@@ -153,11 +153,16 @@ test('metadata: latest per-game read wins and dispose prevents stale read/networ
 
 test('metadata: host publication, test-only product and multiplayer-runtime filters retain main policy', async () => {
   const published = host({th06: hostGame('th06'), th07: hostGame('th07', {multiplayerRuntime: 'runtime/th07/mp.html'}),
-    th075: hostGame('th075', {multiplayerRuntime: 'runtime/th075/mp.html'}), th20: hostGame('th20')});
-  const testProducts = ['th075', 'th075mp', 'th20'];
+    th075: hostGame('th075', {multiplayerRuntime: 'runtime/th075/mp.html'}),
+    th17: hostGame('th17', {
+      gameData: {...hostGame('th17').gameData, path: 'th17.dat'}, multiplayerRuntime: 'runtime/th17/mp.html',
+    }), th20: hostGame('th20')});
+  const testProducts = ['th20'];
   const normal = fixture(network(published));
   for (const product of testProducts) assert.equal(normal.getSnapshot().products.includes(product), false);
-  await normal.initialize(); assert.deepEqual(normal.getSnapshot().products, ['th06', 'th07', 'th07mp']); normal.dispose();
+  await normal.initialize();
+  assert.deepEqual(normal.getSnapshot().products, ['th06', 'th07', 'th075', 'th17', 'th07mp', 'th075mp', 'th17mp']);
+  normal.dispose();
   for (const extra of [{testBuild: true}, {baseUrl: 'https://launcher.invalid/deploy/?test'}]) {
     const service = fixture(network(published), extra); await service.initialize();
     for (const product of testProducts) assert.ok(service.getSnapshot().products.includes(product));
@@ -166,6 +171,18 @@ test('metadata: host publication, test-only product and multiplayer-runtime filt
   const hostTest = fixture(network({...published, shared: {...published.shared, testBuild: true}})); await hostTest.initialize();
   for (const product of testProducts) assert.ok(hostTest.getSnapshot().products.includes(product));
   hostTest.dispose();
+});
+
+test('published PC-98 multiplayer runtimes are available without enabling unrelated test products', async () => {
+  const games=Object.fromEntries(['th01','th02','th03','th04'].map(game=>[game,hostGame(game,{multiplayerRuntime:`runtime/${game}/mp.html`})]));
+  games.th04=hostGame('th04');
+  const service=fixture(network(host({...games,th20:hostGame('th20')})));
+  await service.initialize();
+  for(const game of ['th01','th02','th03']) assert.ok(service.getSnapshot().products.includes(`${game}mp`));
+  assert.equal(service.getSnapshot().products.includes('th04mp'),false);
+  assert.equal(service.getSnapshot().products.includes('th01'),false);
+  assert.equal(service.getSnapshot().products.includes('th20'),false);
+  service.dispose();
 });
 
 test('visibility mode shows test products while metadata and Runtime identities stay on the same publication', async () => {
@@ -183,7 +200,7 @@ test('visibility mode shows test products while metadata and Runtime identities 
     assert.equal(service.getSnapshot().releaseCatalog.games.th06.descriptor, 'th06.package.json');
     assert.equal(service.getSnapshot().siteManifest.games.th06.runtime, 'runtime/th06/th06.html');
     assert.equal(service.getSnapshot().products.includes('th20'), testBuild);
-    assert.equal(service.getSnapshot().products.includes('th075mp'), testBuild);
+    assert.ok(service.getSnapshot().products.includes('th075mp'));
     service.dispose();
   }
   assert.deepEqual(snapshots[0].siteManifest, snapshots[1].siteManifest);

@@ -29,10 +29,11 @@ import { BackgroundController } from './components/launcher/CustomBackground';
 import { UiScrollbars } from './ui/scrollbars';
 import { isLauncherHomePath } from './navigation/addresses';
 import UptimeRoute from './routes/uptime';
-import { helpDocumentAtPath, isStandalonePage } from './components/documents/catalog';
+import { helpDocumentAtPath, isStandalonePage, isTh09RatingPage } from './components/documents/catalog';
 import { isPreviewOnlyPage } from './release-features';
 import { SITE_BRAND_PREPAINT_SCRIPT } from '../lib/site-brand.mjs';
 const HelpRoute = lazy(() => import('./routes/help'));
+const Th09RatingsRoute = lazy(() => import('./routes/th09-ratings'));
 
 // Overlay history shares page scroll. Profile anchors have separate history entries.
 const pageScrollKey = (location: { pathname: string; key: string }) =>
@@ -96,11 +97,12 @@ export function Layout({ children }: { children: ReactNode }) {
 /** Framework's index.html SPA fallback renders this rather than App. */
 export function HydrateFallback() {
   const pathname = useLocation().pathname;
+  if (isTh09RatingPage(pathname) && !isPreviewOnlyPage(pathname)) return <Suspense><Th09RatingsRoute /></Suspense>;
   return helpDocumentAtPath(pathname) ? (
     <Suspense>
       <HelpRoute />
     </Suspense>
-  ) : isStandalonePage(pathname) ? (
+  ) : isStandalonePage(pathname) && !isPreviewOnlyPage(pathname) ? (
     <UptimeRoute />
   ) : (
     <InitialLauncher />

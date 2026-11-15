@@ -31,7 +31,7 @@ export function th09PlayerStats(room, clientId) {
 function confirmTh09Result(run, side, message, recordRound, active) {
   const duel = run.th09Duel;
   const players = duel.players;
-  if (!recordRound || !players?.some(Boolean) || players[0] === players[1]) return;
+  if (!recordRound || !players || (players[0] && players[0] === players[1])) return;
   const {serial, start, frames, winner, characters} = message;
   const confirmations = run.th09Finals ||= [{last:-1, results:new Map()}, {last:-1, results:new Map()}];
   const own = confirmations[side];

@@ -30,7 +30,7 @@ template<class Codec> bool visit(Codec& c,StageEntry& e,u32 schema){
     for(auto* input:{&e.menu,&e.input})
         if(!c.Values(input->held,input->previous,input->pressed,input->released,input->repeated,input->long_held)||
            !c.Array(input->duration)||!c.Array(input->repeat_age))return false;
-    return c.Array(e.piece_tiers)&&(schema==1||c.Value(e.ghost_mask));
+    return c.Array(e.piece_tiers)&&(schema==1||c.Value(e.ghost_mask))&&(schema<4||c.Value(s.challenge));
 }
 }
 bool decode_stage_entry(const std::vector<u8>& bytes,StageEntry& out){
@@ -79,7 +79,7 @@ bool restore_stage_entry(sdl::ApplicationState& app,const SessionSetup& setup,Ga
 namespace th17::sdl {
 bool ApplicationState::restore_room_stage(const multiplayer::StageEntry& entry){
     if(!initialized||!entry.setup.valid())return false;
-    room_seats=entry.setup.seats;
+    room_seats=entry.setup.seats;room_challenge=entry.setup.challenge;
     for(u32 n=0;n<room_seats;++n)room_loadouts[n]={entry.setup.loadouts[n].character,entry.setup.loadouts[n].animal};
     flow.pending=AppScene::Title;
     release_ending();release_game();release_title();
@@ -101,6 +101,7 @@ bool ApplicationState::restore_room_stage(const multiplayer::StageEntry& entry){
     for(u32 seat=0;seat<room_seats;++seat){
         auto& pilot=scene()->battle.pilot(seat);
         pilot.session=entry.pilots[seat];
+        if(room_challenge)pilot.session.enable_challenge();
         auto state=entry.stage;state.player=entry.positions[seat];state.focus=entry.focus[seat];
         state.restore_player(pilot.motion);
         if(!pilot.configure_options())return fail(pilot.options.error);

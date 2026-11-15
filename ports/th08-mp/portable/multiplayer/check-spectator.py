@@ -21,9 +21,12 @@ parser.add_argument('--timing',choices=['pure','hybrid'],default='pure')
 parser.add_argument('--stage-two-controls',action='store_true')
 parser.add_argument('--first-diff-only',action='store_true')
 parser.add_argument('--old-viewer-cross-stage',action='store_true')
+parser.add_argument('--stage-five',action='store_true')
 parser.add_argument('--lifecycle-reentry',action='store_true')
 parser.add_argument('--music',choices=['none','ogg'],default='none')
 args=parser.parse_args()
+if args.stage_five:
+    assert not (args.stage_two_controls or args.old_viewer_cross_stage or args.lifecycle_reentry)
 assert args.frames>=239
 if args.stage_two_controls:assert args.frames>=900,'Stage-two controls need at least 600 frames after the native Stage 2 checkpoint'
 if args.first_diff_only:assert args.stage_two_controls,'First-difference probe requires Stage 2 setup'
@@ -38,9 +41,11 @@ report={'passed':False,'scope':'Production TH08 admitted read-only spectator usi
         'mode':args.mode,'cases':[],'errors':[]}
 requested_case='lifecycle-reentry' if args.lifecycle_reentry else \
     'old-viewer-cross-stage' if args.old_viewer_cross_stage else \
+    'stage-five' if args.stage_five else \
     'stage-two-controls' if args.stage_two_controls else 'default'
 expected_phase='repeated-runtime-admission-and-idle-pause' if args.lifecycle_reentry else \
     'old-viewer-stage-one-admission' if args.old_viewer_cross_stage else \
+    'stage-five-matched' if args.stage_five else \
     'stage-two-late-admission' if args.stage_two_controls else 'delayed-admission'
 report['spectatorRequest']={'case':requested_case,'stageTwoControls':args.stage_two_controls,
     'oldViewerCrossStage':args.old_viewer_cross_stage,'firstDiffOnly':args.first_diff_only,
@@ -150,6 +155,11 @@ def decode_capture(capture):
     capture['groups']={str(group):base64.b64decode(value) for group,value in capture['groups'].items()}
     return capture
 
+def control_frames(capture):
+    # Canonical group 8 starts with active scene, target scene and stage,
+    # followed by GameplayControlState::frames.
+    return int.from_bytes(capture['groups']['8'][12:16],'little',signed=True)
+
 def decode_checkpoint_capture(capture):
     if not capture:return None
     return {**capture,'groups':{str(group):base64.b64decode(value)
@@ -242,25 +252,27 @@ with sync_playwright() as pw:
                         socket.on('close',lambda _:wire_probe['closed'].__setitem__(entry,True))
                     observer.on('websocket',observe_spectator_socket)
                 room='th08mp-audit-'+uuid.uuid4().hex[:16];observer_id='observer_1234'
-                started=call(players[0],'v=>host.lobby(...v)',[args.relay,room,count,observer_id,{'adonisMode':adonis_mode,'inputDelay':2,'inputDelayAuto':False,'predictionReserve':2}])
+                started=call(players[0],'v=>host.lobby(...v)',[args.relay,room,count,observer_id,{'adonisMode':adonis_mode,'inputDelay':2,'inputDelayAuto':False,'predictionReserve':2,'challengeMode':args.stage_five}])
                 assert started['room']['spectatorCount']==1,started
+                if args.stage_five:assert started['room']['challengeMode'] is True,started
                 url=args.relay+'/?room='+room+'&run='+str(started['serial'])
                 common={'runtimeVariant':'multiplayer','netplayMode':'lan','netplayUrl':url,
                         'netplayPlayerCount':count,'netplayDifficulty':1,'netplaySeed':1234,
                         'netplayLoadouts':[{'character':seat,'shot':0} for seat in range(count)],
                         'netplayAdonisMode':adonis_mode,'netplayInputDelay':2,'netplayInputDelayAuto':False,'netplayPredictionLimit':8,'netplayPredictionReserve':2,'netplaySpectatorCount':1,'netplayIceServers':[],
-                        'touchEnabled':True,'touchMovementMode':'touch','touchSensitivity':100,'thpracEnabled':True}
+                        'touchEnabled':True,'touchMovementMode':'touch','touchSensitivity':100,'thpracEnabled':True,
+                        'netplayChallengeMode':args.stage_five}
                 for seat,page in enumerate(players):
                     request(page,'configure',options={**common,'netplayPlayer':seat,'netplayUrl':url+'&member=fixture_host_contract_p'+str(seat+1)},music='none')
                     request(page,'launch')
                 def advance(target,watch=False):
-                    deadline=time.monotonic()+(360 if args.stage_two_controls else 120);iterations=0
+                    deadline=time.monotonic()+(360 if args.stage_two_controls or args.stage_five else 120);iterations=0
                     while True:
                         source_values=[]
                         for seat,page in enumerate(players):
                             s=snapshot(page,False);n=s['net']
-                            if n[3]<=target:
-                                if n[2]:call(page,'v=>host.buttons(v)',input_at(seat,n[3]))
+                            if n[3]<=target or args.stage_five:
+                                if n[2] and n[3]<=target:call(page,'v=>host.buttons(v)',input_at(seat,n[3]))
                                 source_values.append(call(page,'t=>host.tickTo(t,false)',target))
                             else:
                                 # The inclusive target is already captured. Do
@@ -464,7 +476,8 @@ with sync_playwright() as pw:
                 sentinel=[84,72,48,56,0,0,0,0]+[0]*120
                 request(observer,'write',path='score.dat',bytes=sentinel)
                 if args.stage_two_controls:call(observer,'v=>host.trackFrames(v)',tracked)
-                request(observer,'configure',options={**common,'netplayPlayer':-1,'netplaySpectator':True,'netplaySpectatorId':observer_id,'netplayUrl':url+'&member=fixture_'+observer_id},music=args.music)
+                observer_options={**common,'netplayPlayer':-1,'netplaySpectator':True,'netplaySpectatorId':observer_id,'netplayUrl':url+'&member=fixture_'+observer_id}
+                request(observer,'configure',options=observer_options,music=args.music)
                 if args.music=='ogg':call(observer,'()=>host.installOgg()')
                 request(observer,'launch')
                 writes=call(observer,'host.spectatorWriteProbe()')
@@ -474,6 +487,112 @@ with sync_playwright() as pw:
                     assert 'Cannot replace resources' in rejection,rejection
                 case['liveResourceReplacementRejected']=True
                 assert request(observer,'read',path='score.dat')['bytes']==sentinel
+                if args.stage_five:
+                    case['phase']='stage-five-follow';save()
+                    def watch_until(predicate):
+                        deadline=time.monotonic()+90
+                        while time.monotonic()<deadline:
+                            view=call(observer,'host.spectatorAdvanceOnce(false)')
+                            state=view.get('spectatorPlayback')
+                            if state and predicate(state):return state
+                            assert not view['error'],view
+                        raise AssertionError({'view':view,'diagnostics':call(observer,'host.spectatorDiagnostics()')})
+
+                    watch_until(lambda p:not p['seeking'] and p['nodes'] and p['nodes'][0]['stage']%256==0)
+                    source_frame=89
+                    for stage in (1,2,4,5):
+                        if stage==5:
+                            assert all(call(page,'host.stageFiveSetup()') for page in players)
+                        assert all(call(page,'host.stageClearSetup()') for page in players),stage
+                        # Confirm the native clear screen and wait for the next
+                        # stage checkpoint plus the observer's delay buffer.
+                        for frame in range(source_frame+1,source_frame+33):
+                            for seat in range(count):
+                                input_overrides[(seat,frame)]=1 if seat==0 and frame%2 else 0
+                        previous=source_frame
+                        source_frame+={1:151,2:157,4:163,5:12}[stage]
+                        for page in players:
+                            call(page,'frames=>host.trackFrames(frames)',list(range(previous+1,source_frame+2)))
+                        values,_=advance(source_frame)
+                        assert all(s['state'][6]==stage for s in values),{'expectedStage':stage,'sources':values}
+                        playback=watch_until(lambda p:any(n['kind']=='stage' and n['stage']%256==stage for n in p['nodes']))
+                        node=next(n for n in playback['nodes'] if n['kind']=='stage' and n['stage']%256==stage)
+                        case.setdefault('stageCheckpoints',[]).append(node);save()
+                    # Extend into live Stage 5 combat and compare each native
+                    # state at the same authored input cursor.
+                    future=source_frame+args.frames
+                    for page in players:
+                        call(page,'frames=>host.trackFrames(frames)',list(range(source_frame+2,future+1)))
+                    stage_frame=case['stageCheckpoints'][-1]['frame']
+                    compared=stage_frame
+                    seek_frame=source_frame+1
+                    expected_seek=None
+                    expected_rng=None
+                    expected_control_frames=None
+                    targets=list(range(source_frame+1,future,120))
+                    if future-targets[-1]>=90:targets.append(future)
+                    for target in targets:
+                        # Position F is the state before input F. The players
+                        # must therefore stop after input F-1, with NextFrame F.
+                        confirmed,_=advance(target-1)
+                        captures=[decode_capture(call(page,'host.captureCanonicalNow()')) for page in players]
+                        sources=[value['canonical'] for value in confirmed]
+                        assert sources[0] and all(value==sources[0] for value in sources),{
+                            'frame':target,'confirmedSources':confirmed}
+                        if target==seek_frame:
+                            expected_seek=sources[0]
+                            expected_rng=call(players[0],'host.spectatorRng()')
+                            expected_control_frames=control_frames(captures[0])
+                            assert all(control_frames(capture)==expected_control_frames for capture in captures)
+                        advance(target+89)
+                        watch_until(lambda p:p['position']>=target)
+                        trace={row[0]:row[1:] for row in call(observer,'host.spectatorCanonicalTrace()')}
+                        if trace.get(target)!=sources[0]:
+                            state=call(observer,'host.nativePlayback()')
+                            request(observer,'spectator-playback',run=state['run'],action='pause')
+                            request(observer,'spectator-playback',run=state['run'],action='seek',frame=target)
+                            watch_until(lambda p:p['paused'] and not p['seeking'] and p['position']==target)
+                            case['firstDifferenceBytes']=byte_difference_report(observer,players,target,
+                                ['players','supervisor-control'],state,captures);save()
+                            raise AssertionError({'frame':target,'stageFiveCheckpoint':stage_frame,
+                                'sources':sources,'observer':trace.get(target),'restored':snapshot(observer)['canonical']})
+                        compared=target
+                        case['matchedFrames']=compared-stage_frame
+                        case.setdefault('confirmedSamples',[]).append({'frame':target,'canonical':sources[0]})
+                        save()
+                    state=call(observer,'host.nativePlayback()')
+                    assert expected_rng and expected_rng[0]==1
+                    assert request(observer,'spectator-playback',run=state['run'],action='pause')
+                    assert request(observer,'spectator-playback',run=state['run'],action='seek',frame=seek_frame)
+                    watch_until(lambda p:p['paused'] and not p['seeking'] and p['position']==seek_frame)
+                    assert snapshot(observer)['canonical']==expected_seek
+                    restored_rng=call(observer,'host.spectatorRng()')
+                    case['seekRng']={'source':expected_rng,'observer':restored_rng};save()
+                    assert restored_rng==expected_rng,case['seekRng']
+                    restored_frames=control_frames(decode_capture(call(observer,'host.captureCanonicalNow()')))
+                    case['seekControlFrames']={'source':expected_control_frames,'observer':restored_frames};save()
+                    assert restored_frames==expected_control_frames,case['seekControlFrames']
+                    case['seekMatchedFrame']=seek_frame
+                    call(observer,'host.close()')
+                    call(observer,'host.open()')
+                    observer.wait_for_function('host.ready()',timeout=120000)
+                    request(observer,'configure',options=observer_options,music=args.music)
+                    request(observer,'launch')
+                    late=watch_until(lambda p:p['min']==stage_frame and p['position']>=stage_frame)
+                    assert request(observer,'spectator-playback',run=late['run'],action='pause')
+                    assert request(observer,'spectator-playback',run=late['run'],action='seek',frame=seek_frame)
+                    watch_until(lambda p:p['paused'] and not p['seeking'] and p['position']==seek_frame)
+                    assert snapshot(observer)['canonical']==expected_seek
+                    joined_rng=call(observer,'host.spectatorRng()')
+                    case['lateJoinRng']={'source':expected_rng,'observer':joined_rng};save()
+                    assert joined_rng==expected_rng,case['lateJoinRng']
+                    joined_frames=control_frames(decode_capture(call(observer,'host.captureCanonicalNow()')))
+                    case['lateJoinControlFrames']={'source':expected_control_frames,'observer':joined_frames};save()
+                    assert joined_frames==expected_control_frames,case['lateJoinControlFrames']
+                    case['lateJoinMatchedFrame']=seek_frame
+                    case.update(passed=True,phase='stage-five-matched')
+                    save()
+                    continue
                 if args.old_viewer_cross_stage:
                     case['phase']='old-viewer-stage-one-admission';save()
                     def old_playback_until(label,predicate,timeout=180):

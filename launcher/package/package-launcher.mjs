@@ -129,6 +129,13 @@ export function desiredFilesForPublishedPackage(descriptor, {
   return unique(ids);
 }
 
+export function publishedLanguageSelection(descriptor, preferredLanguage) {
+  const entries = descriptor.components?.language?.entries;
+  if (!Array.isArray(entries) || !preferredLanguage) return {};
+  if (preferredLanguage === "ja") return { language: [] };
+  return entries.some(entry => entry.id === preferredLanguage) ? { language: [preferredLanguage] } : {};
+}
+
 export async function installPublishedPackage(game, {
   gameVersion = "original",
   catalog,
@@ -136,6 +143,7 @@ export async function installPublishedPackage(game, {
   addComponents = [],
   addFileIds = [],
   selectedComponentEntries = {},
+  preferredLanguage,
   preserveLocalSource = true,
   expectedGenerationId = null,
   fetchImpl = globalThis.fetch,
@@ -163,7 +171,12 @@ export async function installPublishedPackage(game, {
           files: Object.fromEntries(Object.entries(current.files).filter(([id]) => !damaged.has(id)))};
       }
       return desiredFilesForPublishedPackage(published.descriptor, {
-        current, addComponents, addFileIds, selectedComponentEntries,
+        current, addComponents, addFileIds,
+        selectedComponentEntries: {
+          // A site may deliver translations separately in its language catalog.
+          ...publishedLanguageSelection(published.descriptor, preferredLanguage),
+          ...selectedComponentEntries,
+        },
       });
     },
     source: currentResult => preserveLocalSource && currentResult.installation?.source === "local" ? "local" : "remote",

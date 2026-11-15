@@ -1,5 +1,5 @@
 import {relayFailureDetail} from './network-failure';
-import {accountRequest} from './account-client';
+import {AccountRequestError, accountRequest} from './account-client';
 import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../src/launcher/th19-versus-rules.mts';
 import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
 import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../src/launcher/th05-initial-stock.mts';
@@ -33,6 +33,7 @@ import {
 } from '../../src/launcher/multiplayer-runtime-options.mts';
 import { recommendMultiplayerInputTiming } from '../../src/launcher/multiplayer-input-timing.mts';
 import {th09CharacterLoadout} from '../../src/launcher/th09-room-stats.mjs';
+import {th09RatingSettled} from './th09-ratings';
 import {
   parseMeasuredNetplayTiming,
   resolveAdonisPredictionReserve,
@@ -143,7 +144,7 @@ export interface MultiplayerRoomPorts {
     enter(input: { product: MultiplayerProductId; code: string; created: boolean }): void;
     settleInvite(): void;
     switchProduct?(input: {product: MultiplayerProductId; code: string; fromDirectory: boolean; spectator: boolean}): void;
-    leave(input: { product: MultiplayerProductId; fromDirectory: boolean; message?: string }): void;
+    leave(input: { product: MultiplayerProductId; fromDirectory: boolean; message?: string; removed?: boolean }): void;
   };
   network: {
     reset(reconnecting?: boolean): void;
@@ -164,6 +165,14 @@ const record = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+const roomIdentityRetryDelays = [350, 1100];
+
+function isTemporaryRoomIdentityFailure(error: unknown) {
+  return isAbortError(error) || (error instanceof AccountRequestError && (
+    error.code === 'ACCOUNT_API_UNAVAILABLE' ||
+    (error.code === 'ACCOUNT_REQUEST_FAILED' && error.status === undefined)
+  ));
+}
 
 /** Extracted business ownership from main app.mts440–780,974–1091,6796–6849,
  * 7552–7940. Native/Router ports retain their original owners; no DOM/history. */
@@ -253,6 +262,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         ...(product==='th05mp'?{initialSpares:room.initialSpares,initialBombs:room.initialBombs}:{}),
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
+        unrated: room.unrated,
         disableLocalChargePriority: room.disableLocalChargePriority,
         chapterThreshold: room.chapterThreshold,
         challengeMode: room.challengeMode,
@@ -479,6 +489,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       predictionReserve: normalized.predictionReserve ?? 2,
       timing: normalized.timing ?? null,
       runtimeGeneration: normalized.runtimeGeneration,
+      swarmSelected: normalized.swarmSelected,
       adonisMode: normalized.adonisMode ?? 0,
     });
     state.seat = normalized.localSeat;
@@ -520,6 +531,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         intent,
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
+        unrated: room.unrated,
         disableLocalChargePriority: room.disableLocalChargePriority,
         chapterThreshold: room.chapterThreshold,
         ...(product==='th19mp'?{th19Rules:room.th19Rules}:{}),
@@ -583,6 +595,24 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       publish();
     });
     let accountIdentityRequested = false;
+    const accountRequestController = new AbortController();
+    let accountRetryTimer: ReturnType<typeof setTimeout> | null = null;
+    const ownsAccountRequest = () => socket === next && next.readyState === 1 && current(ownedEpoch)
+      && !accountRequestController.signal.aborted;
+    function requestAccountIdentity(challenge: string, attempt = 0) {
+      if (!ownsAccountRequest()) return;
+      // This endpoint only signs the socket's challenge, so retries have no account side effects.
+      void accountRequest<{ticket?: string}>('v1/me/room-nickname', {challenge}, {signal:accountRequestController.signal}).then(result => {
+        if (result?.ticket && ownsAccountRequest()) next.send(JSON.stringify({type:'account-nickname',ticket:result.ticket}));
+      }).catch(error => {
+        const delay = roomIdentityRetryDelays[attempt];
+        if (delay === undefined || !ownsAccountRequest() || !isTemporaryRoomIdentityFailure(error)) return;
+        accountRetryTimer = later(() => {
+          accountRetryTimer = null;
+          requestAccountIdentity(challenge, attempt + 1);
+        }, delay);
+      });
+    }
     next.addEventListener('message', (event) => {
       if (socket !== next || !current(ownedEpoch)) return;
       let message: Record<string, unknown> | null;
@@ -627,8 +657,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         }
         return;
       }
-      if (['quick-chat','free-chat','chat-history','chat-retract','chat-status','chat-result'].includes(String(message.type))) {
+      if (['quick-chat','free-chat','chat-history','chat-retract','chat-status','chat-result','th09-rating'].includes(String(message.type))) {
         ports.quickChat?.receive(message);
+        if (message.type === 'th09-rating' && typeof window !== 'undefined') window.dispatchEvent(new Event(th09RatingSettled));
         return;
       }
       if (message.type === 'room-product' && ports.routes.switchProduct && room &&
@@ -647,10 +678,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       if (message.type === 'state') {
         if (!accountIdentityRequested && typeof message.accountChallenge === 'string') {
           accountIdentityRequested = true;
-          void accountRequest<{ticket?: string}>('v1/me/room-nickname', {challenge:message.accountChallenge}).then(result => {
-            if (result?.ticket && socket === next && next.readyState === 1)
-              next.send(JSON.stringify({type:'account-nickname',ticket:result.ticket}));
-          }).catch(() => { /* Guest nicknames are provided by the relay. */ });
+          requestAccountIdentity(message.accountChallenge);
         }
         if (message.listenTogether === 2) state.listenTogetherSupported = true;
         if (message.roomActions === 1) state.roomActionsSupported = true;
@@ -715,6 +743,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       }
     });
     next.addEventListener('close', (event) => {
+      accountRequestController.abort();
+      if (accountRetryTimer !== null) cancel(accountRetryTimer);
       if (socket !== next || !current(ownedEpoch)) return;
       const wasConnected = state.connected;
       ports.network.reset(true);
@@ -741,11 +771,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         // Main750–769: departure owns destination feedback; a live Runtime
         // retains the room and gets its explanation here instead.
         if (!ports.isLaunched()) {
-          leave(message);
+          leave(message, event.code === 4010);
           return;
         }
         publish();
-        ports.notify(message);
+        if (event.code === 4010) void ports.decisions.askDecision({title:message, confirmText:ports.translate('action.confirm'), tone:'danger', hideCancel:true});
+        else ports.notify(message);
         return;
       }
       if (room?.code === ownedRoom.code) {
@@ -835,6 +866,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       created: created || !!saved?.room.created,
       visibility: saved?.room.visibility ?? (invite.v === 'private' ? 'private' : 'public'),
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
+      ...(product === 'th09mp' && (saved?.room.unrated ?? invite.u) ? {unrated: true} : {}),
       ...(product === 'th09mp' ? {disableLocalChargePriority:saved?.room.disableLocalChargePriority ?? false} : {}),
       chapterThreshold: saved?.room.chapterThreshold,
       ...(product==='th19mp'?{th19Rules:[...(saved?.room.th19Rules??TH19_VERSUS_RULES)]}:{}),
@@ -883,12 +915,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     connect();
     void prepareResources();
   }
-  function leave(message?: string) {
+  function leave(message?: string, removed = false) {
     if (!room || !product) return;
     const destination = {
       product,
       fromDirectory: state.fromDirectory,
       ...(message ? { message } : {}),
+      ...(removed ? {removed:true} : {}),
     };
     resetRoom();
     publish();
@@ -1066,7 +1099,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     patch: Partial<
       Pick<
         MultiplayerRoomState,
-        | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'disableLocalChargePriority'
+        | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'disableLocalChargePriority' | 'unrated'
         | "chapterThreshold"
         | 'initialSpares' | 'initialBombs' | 'th19Rules'
       >
@@ -1080,10 +1113,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       (patch.visibility !== undefined ||
         patch.disableCheatMovement !== undefined ||
         patch.disableLocalChargePriority !== undefined ||
+        patch.unrated !== undefined ||
         patch.challengeMode !== undefined)
     )
       return;
     if(patch.disableLocalChargePriority !== undefined && product !== 'th09mp')return;
+    if (patch.unrated !== undefined && (product !== 'th09mp' || room.unrated === undefined)) return;
     if(patch.th19Rules!==undefined&&(product!=='th19mp'||room.phase!=='lobby'||!validTh19VersusRules(patch.th19Rules)))return;
     if((patch.initialSpares!==undefined||patch.initialBombs!==undefined)&&(product!=='th05mp'||room.phase!=='lobby'||!validTh05InitialSpares(patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares)||!validTh05InitialBombs(patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs)))return;
     if (
@@ -1129,6 +1164,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(product==='th05mp'?{initialSpares:patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       visibility: patch.visibility ?? room.visibility ?? 'public',
       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
+      ...(patch.unrated !== undefined ? {unrated: patch.unrated} : {}),
       ...(product === 'th09mp' ? {disableLocalChargePriority:patch.disableLocalChargePriority ?? !!room.disableLocalChargePriority} : {}),
       challengeMode: patch.challengeMode ?? !!room.challengeMode,
       prankMode: false,

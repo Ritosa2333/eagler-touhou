@@ -4,7 +4,7 @@
 
 namespace th17::multiplayer {
 namespace {
-constexpr std::uint32_t magic=0x4d373154,version=1;
+constexpr std::uint32_t magic=0x4d373154,legacy_version=1,challenge_version=2;
 template<class Codec> bool visit(Codec& codec,SessionSetup& s){
     if(!codec.Values(s.room,s.seed,s.seats,s.local,s.difficulty,s.delay,s.rollback))return false;
     for(auto& loadout:s.loadouts)if(!codec.Values(loadout.character,loadout.animal))return false;
@@ -16,9 +16,10 @@ std::vector<std::uint8_t> ReplayArchive::description(const char* name,std::uint3
     auto setup=setup_;
     std::array<std::uint8_t,8> label{};
     if(name)std::memcpy(label.data(),name,std::strlen(name));
-    writer.Values(magic,version,timestamp_,score,completed);
+    writer.Values(magic,setup.challenge?challenge_version:legacy_version,timestamp_,score,completed);
     writer.Array(label);
     visit(writer,setup);
+    if(setup.challenge)writer.Value(setup.challenge);
     return writer.Bytes();
 }
 bool ReplayArchive::begin(const SessionSetup& setup,std::uint64_t timestamp){
@@ -45,7 +46,8 @@ bool ReplayArchive::load(const std::uint8_t* data,std::size_t size){
     std::uint32_t signature=0,format=0;
     std::array<std::uint8_t,8> name{};
     if(!reader.Values(signature,format,next.timestamp_,next.score_,next.completed_)||
-       signature!=magic||format!=version||!reader.Array(name)||!visit(reader,next.setup_)||
+       signature!=magic||(format!=legacy_version&&format!=challenge_version)||!reader.Array(name)||!visit(reader,next.setup_)||
+       (format==challenge_version&&(!reader.Value(next.setup_.challenge)||!next.setup_.challenge))||
        !reader.Done()||!next.setup_.valid()||info.config.gameId!=17||
        info.config.gameplayAbi!=next.setup_.gameplay_abi()||
        info.config.playerCount!=next.setup_.seats||info.config.recordedPlayer!=next.setup_.local||

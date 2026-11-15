@@ -738,5 +738,27 @@ int main() {
         assert(!view.Control(playback, "old-run", "play") && playback.Paused());
         assert(!view.Control(playback, SpectatorStageView::Run(playback).c_str(), "seek", 601));
     }
+    {
+        SpectatorStagePlayback playback(SpectatorStagePlayback::RestoreMode::Run, true);
+        playback.Clear();
+        SpectatorStageEvent cp; cp.game = 'E'; cp.playerCount = 3;
+        cp.sessionId = cp.gameplayAbi = cp.schema = cp.serial = 1;
+        cp.frame = 0; cp.stage = 1; cp.state = {1};
+        assert(playback.Receive(cp));
+        SpectatorFramePacket input; input.sessionId = input.gameplayAbi = 1; input.playerCount = 3;
+        input.frame = 0;
+        for (; input.frame < 400; ++input.frame) assert(playback.Receive(input));
+        auto ready = cp; ready.kind = SpectatorEventKind::Bootstrap; ready.state.clear(); ready.frame = 400;
+        assert(playback.Receive(ready) && playback.FastForwarding());
+        const auto target = playback.Edge();
+        assert(target == 310 && playback.Target() == target);
+        for (; input.frame < 420; ++input.frame) assert(playback.Receive(input));
+        unsigned restored = 0, next = 0;
+        assert(playback.Step([&](const auto& event) {++restored; return event.frame == 0;},
+            [&](const auto& packet, bool seeking) {return seeking && packet.frame == next++;},
+            [] {return false;}, 400));
+        assert(restored == 1 && next == target && playback.Position() == target);
+        assert(playback.Following() && !playback.FastForwarding());
+    }
     std::puts("PASS spectator stage codec, playback, live-input watchdog eligibility and controls");
 }

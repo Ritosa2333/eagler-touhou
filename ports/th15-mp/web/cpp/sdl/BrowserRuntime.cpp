@@ -1,3 +1,4 @@
+#include <eagler/presentation/Extrapolation.hpp>
 #include "browser-gamepad-input.hpp"
 #include "ApplicationState.hpp"
 #if TH15_MULTIPLAYER
@@ -48,6 +49,7 @@ namespace {
 std::unique_ptr<ApplicationState> app;
 std::string last_error;
 void reset_presentation_clock();
+eagler::presentation::ExtrapolationClock extrapolation_clock;
 #if TH15_MULTIPLAYER
 void mp_cancel_work();
 multiplayer::NetplayRuntime network;multiplayer::ReplayArchive mp_replay;
@@ -67,7 +69,7 @@ u32 mp_corrections=0,mp_replayed_frames=0,mp_last_depth=0,mp_peak_depth=0;
 #if TH15_DEVELOPMENT_HARNESS
 double mp_profile_capture_ms=0,mp_profile_restore_ms=0;unsigned mp_profile_captures=0;bool mp_profile_dense_room=false;
 #endif
-void mp_clear_frames(){mp_cancel_work();reset_presentation_clock();multiplayer::FrameFence::tentative=multiplayer::FrameFence::blocked=false;for(auto& f:mp_frames){f.state.discard();f.effects.clear();f.publication={};f.valid=f.captured=false;f.frame=Netplay::INVALID_FRAME;}mp_commit_frame=mp_replay_until=0;mp_boundary.clear();}
+void mp_clear_frames(){mp_cancel_work();extrapolation_clock.reset();reset_presentation_clock();multiplayer::FrameFence::tentative=multiplayer::FrameFence::blocked=false;for(auto& f:mp_frames){f.state.discard();f.effects.clear();f.publication={};f.valid=f.captured=false;f.frame=Netplay::INVALID_FRAME;}mp_commit_frame=mp_replay_until=0;mp_boundary.clear();}
 bool mp_commit_frames(){
  while(mp_commit_frame<network.NextFrame()){
   std::array<Netplay::FrameInput,3> actual;if(!network.ConfirmedInputs(mp_commit_frame,actual))break;
@@ -596,7 +598,7 @@ EMSCRIPTEN_KEEPALIVE int th15_room_return(){
  return 0;
 #endif
 }
-EMSCRIPTEN_KEEPALIVE void th15_limit_presentation(unsigned enabled){using namespace th15::sdl;if(limit_presentation_60==(enabled!=0))return;limit_presentation_60=enabled!=0;presentation.reset();if(app){app->graphics.presentation.enabled=!limit_presentation_60;app->graphics.presentation.reset();}}
+EMSCRIPTEN_KEEPALIVE void th15_limit_presentation(unsigned enabled){using namespace th15::sdl;if(limit_presentation_60==(enabled!=0))return;limit_presentation_60=enabled!=0;presentation.reset();if(app){app->graphics.presentation.enabled=!limit_presentation_60;app->graphics.presentation.reset();extrapolation_clock.reset();}}
 EMSCRIPTEN_KEEPALIVE void th15_render_scale(unsigned scale){if(!th15::sdl::running)th15::sdl::render_scale=scale>=2?2:1;}
 EMSCRIPTEN_KEEPALIVE const char* th15_error(){using namespace th15::sdl;return app?app->failure.c_str():last_error.c_str();}
 EMSCRIPTEN_KEEPALIVE unsigned th15_phase(){using namespace th15::sdl;
@@ -617,12 +619,12 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_stop(){using namespace th15::sdl;running=fal
 #if TH15_MULTIPLAYER
  mp_cancel_work();
 #endif
- previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();if(app)app->audio_device.suspend(true);}
+ previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();extrapolation_clock.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();if(app)app->audio_device.suspend(true);}
 EMSCRIPTEN_KEEPALIVE void th15_loop_pause(unsigned enabled){using namespace th15::sdl;suspended=enabled!=0;
 #if TH15_MULTIPLAYER
  mp_cancel_work();
 #endif
- previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();if(app)app->audio_device.suspend(suspended);}
+ previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();extrapolation_clock.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();if(app)app->audio_device.suspend(suspended);}
 EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
  using namespace th15::sdl;if(running||!app||!app->initialized)return;
 #if TH15_MULTIPLAYER
@@ -631,7 +633,7 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
  // The shared shell already rendered its two-second startup animation while
  // initialization ran. Do not add another native loading hold after it.
  if(app->loading_frames>=120){app->loading_startup=false;app->loading_debt=0;}
- if(!ThpracUi::initialize(*app)){app->fail("THPrac shared font unavailable: /unifont.otf");th15_browser_frame(0,0,0);return;}app->graphics.release_startup_branding();running=true;suspended=false;loading_held=loading_preserve_keyboard=false;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
+ if(!ThpracUi::initialize(*app)){app->fail("THPrac shared font unavailable: /unifont.otf");th15_browser_frame(0,0,0);return;}app->graphics.release_startup_branding();running=true;suspended=false;loading_held=loading_preserve_keyboard=false;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();extrapolation_clock.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
  emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
   if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
   if(suspended
@@ -650,7 +652,7 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
 #if TH15_MULTIPLAYER
     mp_cancel_work();
 #endif
-   }loading_held=true;cadence.reset();presentation.reset();app->graphics.presentation.reset();
+   }loading_held=true;cadence.reset();presentation.reset();app->graphics.presentation.reset();extrapolation_clock.reset();
    if(!(app->loading_startup?app->advance_loading(delta):app->complete_loading())){running=false;th15_browser_frame(0,emscripten_get_now()-begin,0);return EM_FALSE;}
    app->audio_device.pump();return EM_TRUE;
   }
@@ -662,7 +664,7 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
 #endif
 
   bool fast=false,slow=false,debug=false;for(const auto& key:keyboard_map)if(key.hosted){fast|=key.vk==17||key.vk==162||key.vk==163;slow|=key.vk==16||key.vk==160||key.vk==161;debug|=key.vk==32;}
-  const double period=app->practice.enabled?app->practice.speed.interval(app->practice.replay,fast,slow,debug):1./60.;if(period!=cadence.period){cadence.period=period;cadence.reset();app->graphics.presentation.reset();}
+  const double period=app->practice.enabled?app->practice.speed.interval(app->practice.replay,fast,slow,debug):1./60.;if(period!=cadence.period){cadence.period=period;cadence.reset();app->graphics.presentation.reset();extrapolation_clock.reset();}
   const bool interpolate=std::abs(period-1./60.)<1e-12;
   if(!limit_presentation_60&&interpolate)presentation.advance(delta);else presentation.reset();
   bool interpolate_frame=presentation.high_refresh&&!limit_presentation_60&&interpolate;
@@ -708,10 +710,18 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
 #if TH15_MULTIPLAYER
   if(mp_live()&&mp_pause_active())interpolate_frame=false;
 #endif
-  if(ok&&interpolate_frame&&!app->pending_load&&!app->exiting){const bool frozen=app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive;const float alpha=float(std::clamp(cadence.debt/cadence.period,0.,1.));if(app->graphics.presentation.present(app->graphics.backend,alpha,frozen)){
-   app->graphics.frame_drawn=true;
-   ThpracUi::render(*app);
-  }}
+  if(ok&&interpolate_frame&&!app->pending_load&&!app->exiting){
+   const bool frozen=app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive;
+   const double phase=cadence.debt/cadence.period;
+   float weight=eagler::presentation::ExtrapolationWeight(phase);
+#if TH15_MULTIPLAYER
+   if(mp_started&&!mp_local_results)weight=extrapolation_clock.observe(delta,network.NextFrame(),(th15::u64(network.Generation())<<32)|mp_corrections,phase);
+#endif
+   if(app->graphics.presentation.present(app->graphics.backend,weight,frozen)){
+    app->graphics.frame_drawn=true;
+    ThpracUi::render(*app);
+   }
+  }
   commit_browser_frame(begin,time,completed,ok,interpolate_frame);
 #if TH15_MULTIPLAYER
   if(!cadence.retry_pending())mp_queue_work();
@@ -762,7 +772,7 @@ EMSCRIPTEN_KEEPALIVE int th15_lab_freeze(){using namespace th15::sdl;if(!app)ret
 EMSCRIPTEN_KEEPALIVE int th15_lab_resume(){using namespace th15::sdl;if(!app||!lab_frozen)return 0;lab_frozen=false;previous_frame=-1;cadence.reset();window_start=0;window_ticks=0;return 1;}
 // Receipts: 1 complete tick, 2 loading, 3 finished, 0 error. Never bare Calculation.
 EMSCRIPTEN_KEEPALIVE int th15_lab_tick(){using namespace th15::sdl;if(!app||!lab_frozen)return 0;if(app->exiting)return 3;if(app->loading_waiting()){if(!app->loading_startup&&app->pending_load&&!app->complete_loading())return 0;return 2;}app->graphics.presentation.enabled=true;const auto before=app->frames;if(!sample_and_tick())return 0;app->audio_device.pump();return app->frames==before+1?1:0;}
-EMSCRIPTEN_KEEPALIVE int th15_lab_draw(float alpha){using namespace th15::sdl;if(!app||!lab_frozen||!std::isfinite(alpha)||alpha<0||alpha>1)return 0;return app->graphics.presentation.present(app->graphics.backend,alpha,app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive);}
+EMSCRIPTEN_KEEPALIVE int th15_lab_draw(float alpha){using namespace th15::sdl;if(!app||!lab_frozen||!std::isfinite(alpha)||alpha<0||alpha>2)return 0;return app->graphics.presentation.present(app->graphics.backend,alpha,app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive);}
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_lab_reference_clock(){return th15::sdl::lab_reference_clock.data();}
 EMSCRIPTEN_KEEPALIVE int th15_lab_world_frozen(){using namespace th15::sdl;return app&&app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive;}
 #endif

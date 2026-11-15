@@ -4,7 +4,7 @@
 namespace th15 {
 bool BombReimu::animation(u32& handle,i32 script,const Vec3& p){handle=context.animations.create(context.player_resource,script,-1,0,p);if(!handle){error=context.animations.error;return false;}context.animations.registry.find(handle)->visual.inherited_color=0;return true;}
 bool BombReimu::interrupt(u32 handle,i32 label){if(context.animations.interrupt(handle,label))return true;error=context.animations.error;return false;}
-bool BombReimu::start(){position=context.motion.position;if(!context.world.sound(49,true)){error="Reimu bomb audio failed";return false;}invalidate_spell();context.enemies.uses=wrapping_add(context.enemies.uses,1);orbs={};orbs_available=true;return animation(aura,24,position);}
+bool BombReimu::start(){if(context.session.challenge)return false;position=context.motion.position;if(!context.world.sound(49,true)){error="Reimu bomb audio failed";return false;}invalidate_spell();context.enemies.uses=wrapping_add(context.enemies.uses,1);orbs={};orbs_available=true;return animation(aura,24,position);}
 bool BombReimu::initialize(ReimuOrb& o,i32 index){o.motion.velocity=context.motion.position;if(!animation(o.animation,16,o.motion.position))return false;o.active=1;o.age.set(0);o.index=index;o.damage_source=damage.circle(o.motion.position,56,0,9999,15);auto* s=damage.find(o.damage_source);if(!s){error=damage.error;return false;}s->flags|=4;s->interval=3;return true;}
 bool BombReimu::update_orb(ReimuOrb& o){
     auto& m=o.motion;if(o.age.current!=o.age.previous){const i32 release=wrapping_mul(wrapping_add(o.index,9),10);if(o.age.current<90){m.velocity=context.motion.position;m.radius=float(m.radius+1.5f);m.angle=normalize_angle(float(m.angle+0.10471975803375244f));}

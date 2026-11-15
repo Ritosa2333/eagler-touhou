@@ -84,6 +84,7 @@ const hostRuntimeRoots = [
   "scripts/package-offline-game.mjs",
   "scripts/package-server.mjs",
   "scripts/prepare-host-artwork.py",
+  "docs/assets/game-covers/thumbnails/th14.jpg",
   ...preparedContentScripts,
   ...Object.values(PRODUCT_CONTENT).map(content => content.hostPreparation?.preparedContent?.baseline).filter(Boolean),
   ...languagePreparationScripts,

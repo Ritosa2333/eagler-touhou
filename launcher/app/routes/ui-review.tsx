@@ -25,7 +25,8 @@ import {
   Users,
 } from 'lucide-react';
 import { Tabs, Tooltip } from 'radix-ui';
-import { type ReactNode, useEffect, useState } from 'react';
+import { lazy, Suspense, type ReactNode, useEffect, useState } from 'react';
+import { useLocation } from 'react-router';
 import { PRODUCT_GAMES } from '../../src/contracts/product-catalog.mts';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import { BookThemeToggle } from '../components/launcher/BookThemeToggle';
@@ -54,18 +55,29 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, Dia
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '../ui/field';
 import { InputGroup, InputGroupInput } from '../ui/input-group';
 import { PageInventory } from '../ui/page-inventory';
+import { RoomExample } from '../ui/room-example';
 import { Slider } from '../ui/slider';
 import { Skeleton } from '../ui/skeleton';
 import '../components/player/replay-workspace.css';
 import '../ui/review.css';
 import { sitePageTitle } from '../navigation/document-locale';
+import ratingStyles from '../ui/th09-ratings-preview.css?url';
 
 export function meta() {return [{title:sitePageTitle('UI 手册')}];}
+export const links = () => import.meta.env.DEV ? [{rel:'stylesheet', href:ratingStyles}] : [];
+
+const Th09RatingsPreview = import.meta.env.DEV ? lazy(() => import('../ui/th09-ratings-preview')) : null;
 
 export default function UiReview() {
+  const {search} = useLocation();
+  const preview = new URLSearchParams(search).get('preview');
   return (
     <LocaleProvider locale={catalogLocale}>
-      <Catalog />
+      {import.meta.env.DEV && preview === 'room-chat'
+        ? <div className="ui-review"><main className="catalog-main"><RoomExample chatDemo announce={() => {}}/></main></div>
+        : Th09RatingsPreview && preview === 'th09-ratings'
+        ? <Suspense fallback={null}><Th09RatingsPreview /></Suspense>
+        : <Catalog />}
     </LocaleProvider>
   );
 }
@@ -119,6 +131,10 @@ function Catalog() {
                 查看使用边界
                 <ArrowUpRight aria-hidden="true" />
               </a>
+              {Th09RatingsPreview && <a href="?preview=th09-ratings">
+                th09mp 评分原型
+                <ArrowUpRight aria-hidden="true" />
+              </a>}
             </div>
           </div>
           <Section id="foundations" description="用语义颜色区分表面、操作和状态。更换主题时，组件一起变化。">

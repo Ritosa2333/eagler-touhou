@@ -1,4 +1,16 @@
 {
+  "cloudSave.waitingTitle": {
+    "id": "cloudSave_waitingTitle",
+    "params": []
+  },
+  "cloudSave.waitingMessage": {
+    "id": "cloudSave_waitingMessage",
+    "params": []
+  },
+  "cloudSave.keepWaiting": {
+    "id": "cloudSave_keepWaiting",
+    "params": []
+  },
   "document.multiplayer.title": {
     "id": "document_multiplayer_title",
     "params": []
@@ -1277,6 +1289,30 @@
       "minutes"
     ]
   },
+  "room.unrated": {
+    "id": "room_unrated",
+    "params": []
+  },
+  "th09.ratingGames": {
+    "id": "th09_ratingGames",
+    "params": [
+      "games"
+    ]
+  },
+  "th09.matchEnded": {
+    "id": "th09_matchEnded",
+    "params": []
+  },
+  "th09.matchUnrated": {
+    "id": "th09_matchUnrated",
+    "params": []
+  },
+  "th09.firstRating": {
+    "id": "th09_firstRating",
+    "params": [
+      "rating"
+    ]
+  },
   "th09.matchInformation": {
     "id": "th09_matchInformation",
     "params": []
@@ -1776,6 +1812,16 @@
   "lobby.stale": {
     "id": "lobby_stale",
     "params": []
+  },
+  "lobby.longWait": {
+    "id": "lobby_longWait",
+    "params": []
+  },
+  "lobby.waitTime": {
+    "id": "lobby_waitTime",
+    "params": [
+      "time"
+    ]
   },
   "lobby.recruiting": {
     "id": "lobby_recruiting",
@@ -2468,6 +2514,10 @@
     "id": "multiplayer_loadout_th15_reisen",
     "params": []
   },
+  "game.title.th14mp": {
+    "id": "game_title_th14mp",
+    "params": []
+  },
   "game.title.th17mp": {
     "id": "game_title_th17mp",
     "params": []
@@ -2682,6 +2732,10 @@
   },
   "settings.bgmVolume": {
     "id": "settings_bgmVolume",
+    "params": []
+  },
+  "settings.quickChatVolume": {
+    "id": "settings_quickChatVolume",
     "params": []
   },
   "settings.sfxVolume": {
@@ -7684,6 +7738,10 @@
     "id": "profile_tab_friends",
     "params": []
   },
+  "profile.followers": {
+    "id": "profile_followers",
+    "params": []
+  },
   "profile.following": {
     "id": "profile_following",
     "params": []
@@ -8018,6 +8076,10 @@
   },
   "profile.friends.empty": {
     "id": "profile_friends_empty",
+    "params": []
+  },
+  "profile.followers.empty": {
+    "id": "profile_followers_empty",
     "params": []
   },
   "profile.following.empty": {
@@ -8775,6 +8837,18 @@
     "id": "account_username",
     "params": []
   },
+  "account.usernameHelp": {
+    "id": "account_usernameHelp",
+    "params": []
+  },
+  "account.nickname": {
+    "id": "account_nickname",
+    "params": []
+  },
+  "account.nicknameHelp": {
+    "id": "account_nicknameHelp",
+    "params": []
+  },
   "account.usernamePlaceholder": {
     "id": "account_usernamePlaceholder",
     "params": []
@@ -8793,6 +8867,18 @@
   },
   "account.requestCode": {
     "id": "account_requestCode",
+    "params": []
+  },
+  "account.resendCode": {
+    "id": "account_resendCode",
+    "params": []
+  },
+  "account.captchaInvalid": {
+    "id": "account_captchaInvalid",
+    "params": []
+  },
+  "account.captchaUnavailable": {
+    "id": "account_captchaUnavailable",
     "params": []
   },
   "account.identity": {
@@ -9071,6 +9157,20 @@
     "id": "chat_title",
     "params": []
   },
+  "chat.newMessages": {
+    "id": "chat_newMessages",
+    "params": [
+      "count"
+    ]
+  },
+  "chat.sending": {
+    "id": "chat_sending",
+    "params": []
+  },
+  "chat.sendFailed": {
+    "id": "chat_sendFailed",
+    "params": []
+  },
   "chat.historyScroll": {
     "id": "chat_historyScroll",
     "params": []
@@ -9089,6 +9189,14 @@
   },
   "chat.freeInputHint": {
     "id": "chat_freeInputHint",
+    "params": []
+  },
+  "chat.roomChatUnavailable": {
+    "id": "chat_roomChatUnavailable",
+    "params": []
+  },
+  "chat.signInToChat": {
+    "id": "chat_signInToChat",
     "params": []
   },
   "chat.send": {
@@ -9215,10 +9323,6 @@
   },
   "profile.image.useCrop": {
     "id": "profile_image_useCrop",
-    "params": []
-  },
-  "profile.image.coverSafeArea": {
-    "id": "profile_image_coverSafeArea",
     "params": []
   },
   "profile.careerVisibility": {
@@ -9893,6 +9997,10 @@
     "id": "music_invitePrompt",
     "params": []
   },
+  "profile.versusCareer": {
+    "id": "profile_versusCareer",
+    "params": []
+  },
   "th09.accountRecord": {
     "id": "th09_accountRecord",
     "params": []
@@ -9909,6 +10017,14 @@
     "id": "th09_characterRecord",
     "params": []
   },
+  "th09.characterRating": {
+    "id": "th09_characterRating",
+    "params": []
+  },
+  "th09.characterRatingHistory": {
+    "id": "th09_characterRatingHistory",
+    "params": []
+  },
   "th09.characterGames": {
     "id": "th09_characterGames",
     "params": [
@@ -9917,6 +10033,208 @@
   },
   "th09.totalWins": {
     "id": "th09_totalWins",
+    "params": []
+  },
+  "th09.rank": {
+    "id": "th09_rank",
+    "params": []
+  },
+  "th09.ratingBoard": {
+    "id": "th09_ratingBoard",
+    "params": []
+  },
+  "th09.boardActive": {
+    "id": "th09_boardActive",
+    "params": []
+  },
+  "th09.boardProvisional": {
+    "id": "th09_boardProvisional",
+    "params": []
+  },
+  "th09.boardInactive": {
+    "id": "th09_boardInactive",
+    "params": []
+  },
+  "th09.boardPlayer": {
+    "id": "th09_boardPlayer",
+    "params": []
+  },
+  "th09.boardRating": {
+    "id": "th09_boardRating",
+    "params": []
+  },
+  "th09.boardDeviation": {
+    "id": "th09_boardDeviation",
+    "params": []
+  },
+  "th09.boardCharacterDeviation": {
+    "id": "th09_boardCharacterDeviation",
+    "params": []
+  },
+  "th09.boardGames": {
+    "id": "th09_boardGames",
+    "params": []
+  },
+  "th09.boardGroup": {
+    "id": "th09_boardGroup",
+    "params": []
+  },
+  "th09.boardGroupNumber": {
+    "id": "th09_boardGroupNumber",
+    "params": [
+      "number"
+    ]
+  },
+  "th09.boardLastGame": {
+    "id": "th09_boardLastGame",
+    "params": []
+  },
+  "th09.boardStatus": {
+    "id": "th09_boardStatus",
+    "params": []
+  },
+  "th09.boardCharacterHelp": {
+    "id": "th09_boardCharacterHelp",
+    "params": []
+  },
+  "th09.boardCharacterHelpText": {
+    "id": "th09_boardCharacterHelpText",
+    "params": []
+  },
+  "th09.boardHelp": {
+    "id": "th09_boardHelp",
+    "params": []
+  },
+  "th09.boardHelpText": {
+    "id": "th09_boardHelpText",
+    "params": []
+  },
+  "th09.boardDistribution": {
+    "id": "th09_boardDistribution",
+    "params": []
+  },
+  "th09.boardTools": {
+    "id": "th09_boardTools",
+    "params": []
+  },
+  "th09.boardSelect": {
+    "id": "th09_boardSelect",
+    "params": []
+  },
+  "th09.boardOverall": {
+    "id": "th09_boardOverall",
+    "params": []
+  },
+  "th09.boardSearch": {
+    "id": "th09_boardSearch",
+    "params": []
+  },
+  "th09.boardLocate": {
+    "id": "th09_boardLocate",
+    "params": []
+  },
+  "th09.boardFilterOn": {
+    "id": "th09_boardFilterOn",
+    "params": []
+  },
+  "th09.boardFilter": {
+    "id": "th09_boardFilter",
+    "params": []
+  },
+  "th09.boardMinimum": {
+    "id": "th09_boardMinimum",
+    "params": []
+  },
+  "th09.boardCharacter": {
+    "id": "th09_boardCharacter",
+    "params": [
+      "name"
+    ]
+  },
+  "th09.boardSort": {
+    "id": "th09_boardSort",
+    "params": []
+  },
+  "th09.boardFailed": {
+    "id": "th09_boardFailed",
+    "params": []
+  },
+  "th09.boardLoading": {
+    "id": "th09_boardLoading",
+    "params": []
+  },
+  "th09.boardOpponentsCount": {
+    "id": "th09_boardOpponentsCount",
+    "params": [
+      "count"
+    ]
+  },
+  "th09.boardOpponents": {
+    "id": "th09_boardOpponents",
+    "params": []
+  },
+  "th09.boardCollapse": {
+    "id": "th09_boardCollapse",
+    "params": [
+      "name"
+    ]
+  },
+  "th09.boardExpand": {
+    "id": "th09_boardExpand",
+    "params": [
+      "name"
+    ]
+  },
+  "th09.boardNoMatches": {
+    "id": "th09_boardNoMatches",
+    "params": []
+  },
+  "th09.boardEmpty": {
+    "id": "th09_boardEmpty",
+    "params": []
+  },
+  "th09.boardClear": {
+    "id": "th09_boardClear",
+    "params": []
+  },
+  "th09.boardSkip": {
+    "id": "th09_boardSkip",
+    "params": []
+  },
+  "th09.boardUpdated": {
+    "id": "th09_boardUpdated",
+    "params": [
+      "time"
+    ]
+  },
+  "th09.boardPlayerCount": {
+    "id": "th09_boardPlayerCount",
+    "params": [
+      "count"
+    ]
+  },
+  "th09.boardBinSize": {
+    "id": "th09_boardBinSize",
+    "params": [
+      "points"
+    ]
+  },
+  "th09.boardHighlights": {
+    "id": "th09_boardHighlights",
+    "params": [
+      "count"
+    ]
+  },
+  "th09.rankHistory": {
+    "id": "th09_rankHistory",
+    "params": []
+  },
+  "th09.ratingHistory": {
+    "id": "th09_ratingHistory",
+    "params": []
+  },
+  "th09.winSummary": {
+    "id": "th09_winSummary",
     "params": []
   },
   "th09.winRate": {
@@ -9938,13 +10256,6 @@
   "th09.moreDuels": {
     "id": "th09_moreDuels",
     "params": []
-  },
-  "th09.accountCard": {
-    "id": "th09_accountCard",
-    "params": [
-      "games",
-      "rate"
-    ]
   },
   "cloudSave.browserVersion": {
     "id": "cloudSave_browserVersion",
@@ -10142,6 +10453,58 @@
   },
   "multiplayer.loadout.th02_slow": {
     "id": "multiplayer_loadout_th02_slow",
+    "params": []
+  },
+  "profile.gameData": {
+    "id": "profile_gameData",
+    "params": []
+  },
+  "profile.gameDataAll": {
+    "id": "profile_gameDataAll",
+    "params": []
+  },
+  "profile.gameDataDefault": {
+    "id": "profile_gameDataDefault",
+    "params": []
+  },
+  "profile.openHome": {
+    "id": "profile_openHome",
+    "params": []
+  },
+  "profile.gameDataEmpty": {
+    "id": "profile_gameDataEmpty",
+    "params": []
+  },
+  "profile.gameDataHide": {
+    "id": "profile_gameDataHide",
+    "params": []
+  },
+  "profile.gameDataShow": {
+    "id": "profile_gameDataShow",
+    "params": []
+  },
+  "profile.gameDataMakeDefault": {
+    "id": "profile_gameDataMakeDefault",
+    "params": []
+  },
+  "replay.th14BeamCopy": {
+    "id": "replay_th14BeamCopy",
+    "params": []
+  },
+  "replay.th14BeamCopyConfirm": {
+    "id": "replay_th14BeamCopyConfirm",
+    "params": []
+  },
+  "replay.th14BeamCopyDownload": {
+    "id": "replay_th14BeamCopyDownload",
+    "params": []
+  },
+  "replay.th14BeamAlreadyTagged": {
+    "id": "replay_th14BeamAlreadyTagged",
+    "params": []
+  },
+  "replay.th14BeamCopyInvalid": {
+    "id": "replay_th14BeamCopyInvalid",
     "params": []
   }
 }

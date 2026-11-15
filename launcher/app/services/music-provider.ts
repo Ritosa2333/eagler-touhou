@@ -43,26 +43,34 @@ export function musicPlaylistId(platform: MusicPlatform, input: string): string 
   throw Error('invalidPlaylist');
 }
 
-export function createMetingProvider(endpoint: string, request: typeof fetch = fetch): MusicProvider {
+export function createMetingProvider(
+  endpoint: string, request: typeof fetch = fetch, neteasePlaylist?: () => string | undefined,
+): MusicProvider {
   const resultLimit = 100;
   const server = (platform: MusicPlatform) => platform === 'qq' ? 'tencent' : 'netease';
 
-  async function get(platform: MusicPlatform, params: Record<string, string>, signal: AbortSignal) {
-    const url = new URL(endpoint);
-    url.search = new URLSearchParams({ server: server(platform), ...params }).toString();
+  async function getJson(url: URL, signal: AbortSignal, allowMissing = false) {
     const timeout = new AbortController();
     const lookup = linkAbortSignals(signal, timeout.signal);
     const timer = setTimeout(() => timeout.abort(), 8000);
     try {
       const response = await request(url.href, {
         signal: lookup.signal, credentials: 'omit', referrerPolicy: 'no-referrer',
+        // Playback URLs expire even if the metadata endpoint caches its response.
+        cache: url.searchParams.get('type') === 'url' ? 'no-store' : 'default',
       });
+      if (allowMissing && (response.status === 404 || response.status === 426)) return undefined;
       if (!response.ok) throw Error('unavailable');
       return await response.json();
     } finally {
       clearTimeout(timer);
       lookup.dispose();
     }
+  }
+  function get(platform: MusicPlatform, params: Record<string, string>, signal: AbortSignal) {
+    const url = new URL(endpoint);
+    url.search = new URLSearchParams({server: server(platform), ...params}).toString();
+    return getJson(url, signal);
   }
   function httpsUrl(raw: unknown) {
     if (typeof raw !== 'string') throw Error('unavailable');
@@ -115,6 +123,18 @@ export function createMetingProvider(endpoint: string, request: typeof fetch = f
       return list(platform, await get(platform, { type: 'search', id: query, limit: String(limit) }, signal));
     },
     async playlist(platform, id, signal) {
+      const fullEndpoint = platform === 'netease' && neteasePlaylist?.();
+      if (fullEndpoint) {
+        const url = new URL(fullEndpoint);
+        url.searchParams.set('id', id);
+        // Older self-hosted Relays answer 426 for non-WebSocket requests.
+        const data = await getJson(url, signal, true).catch(error => {
+          // An older proxy may omit CORS headers from its missing-route reply.
+          if (!signal.aborted && error instanceof TypeError) return undefined;
+          throw error;
+        });
+        if (data !== undefined) return list(platform, data);
+      }
       return list(platform, await get(platform, { type: 'playlist', id }, signal));
     },
     cover,
@@ -138,8 +158,15 @@ export function createMetingProvider(endpoint: string, request: typeof fetch = f
       const urls: [string, ...string[]] = [url.href];
       const neteaseCdn = ref.platform === 'netease' && /^(m\d+)(c?)\.music\.126\.net$/.exec(url.hostname);
       if (neteaseCdn) {
-        url.hostname = `${neteaseCdn[1]}${neteaseCdn[2] ? '' : 'c'}.music.126.net`;
-        urls.push(url.href);
+        const host = neteaseCdn[1];
+        // Some numbered hosts serve audio without CORS. The first host in
+        // the same m7xx/m8xx group serves the same media path with CORS.
+        if (/^m[78]\d{2}$/.test(host)) {
+          url.hostname = `${host.slice(0, 2)}01.music.126.net`;
+          if (!urls.includes(url.href)) urls.push(url.href);
+        }
+        url.hostname = `${host}${neteaseCdn[2] ? '' : 'c'}.music.126.net`;
+        if (!urls.includes(url.href)) urls.push(url.href);
       }
       return urls;
     },

@@ -8,8 +8,10 @@ namespace th17::sdl {struct ApplicationState;}
 namespace th17::multiplayer {
 // Captured at a newly constructed stage, before its first input or ECL tick.
 struct StageEntry {
-    // Version 3 retains the confirmed run from the first checkpoint.
-    static constexpr u32 schema=3;
+    // The relay uses schema 3 to retain the input tape across stages.
+    static constexpr u32 transport_schema=3;
+    // Payload version 4 adds the challenge rule. Older checkpoints use ordinary rules.
+    static constexpr u32 schema=4;
     static constexpr bool supports(u32 version){return version>=1&&version<=schema;}
     SessionSetup setup;
     ReplayStageState stage;

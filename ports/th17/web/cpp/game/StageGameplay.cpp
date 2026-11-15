@@ -27,6 +27,7 @@ struct StageGameplay::Services final:BattleWorldServices,DialogueServices,GameFr
     bool background_interrupt(i32 label)override{return g.background.interrupt(label)||g.fail(g.background.error);}
     bool clear_dialogue_field()override{return g.battle.bullet_scene->cancel_all(0)&&g.battle.laser_scene->cancel_all(0,false)&&g.battle.enemies->clear_field(false);}
     bool dialogue_text(AnmVm& vm,u32 color,u32 shadow,i32 style,i32 x,i32 y,const std::string& text)override{return g.platform.dialogue_text(vm,color,shadow,style,x,y,text);}
+    i32 dialogue_width(AnmVm& vm,const std::string& text,i32 style)override{return g.platform.dialogue_width(vm,text,style);}
     bool dialogue_sound(i32 id)override{return audio(id,0,PlayerShots::SoundAction::play,true);}
     // MSG opcode 19 creates its own title animation after changing the music.
     bool dialogue_boss_music()override{return g.music(true,false);}

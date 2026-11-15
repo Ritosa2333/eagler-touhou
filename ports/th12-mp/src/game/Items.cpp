@@ -342,6 +342,9 @@ void Manager::tick(const FrameView& frame, const EventSink& sink) {
         }
       }
     }
+    // UFO homing can move into a different pilot's pickup rectangle this tick.
+    if (e.state == State::Absorbing && frame.selectPlayer)
+      frame.selectPlayer(e, p);
     const float dx = std::abs(e.position.x - p.position.x),
                 dy = std::abs(e.position.y - p.position.y);
     if (p.state != 2 && dx <= p.pickupHalfWidth && dy <= p.pickupHalfHeight) {

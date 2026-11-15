@@ -16,14 +16,16 @@ export function resolveReleaseFeatures(environment: ReleaseFeatureEnvironment) {
     VITE_PREVIEW_FEATURES: previewSetting,
     NODE_ENV: (environment.DEV ?? true) ? 'development' : 'production',
   });
-  const accountsEnabled = environment.VITE_ACCOUNTS_ENABLED === 'true';
+  const accountsEnabled = environment.VITE_ACCOUNTS_ENABLED === undefined
+    ? environment.DEV === false
+    : environment.VITE_ACCOUNTS_ENABLED === 'true';
   return {
     uiReviewEnabled,
     accountsEnabled,
     listenTogetherEnabled: environment.VITE_LISTEN_TOGETHER_ENABLED !== 'false',
     isPreviewOnlyPage(pathname: string) {
       const previewPage = /\/ui-review\.html\/?$/.test(pathname);
-      const accountPage = /^(?:\/(?:login|profile)\.html|\/u\/[^/]+)\/?$/.test(pathname);
+      const accountPage = /^(?:\/(?:login|profile|ratings)\.html|\/u\/[^/]+)\/?$/.test(pathname);
       return (previewPage && !uiReviewEnabled) || (accountPage && !accountsEnabled);
     },
   };

@@ -1,3 +1,4 @@
+#include <eagler/presentation/Extrapolation.hpp>
 #include "GameWindow.hpp"
 #include "AnmManager.hpp"
 #include "EaglerOptions.hpp"
@@ -361,7 +362,7 @@ RenderResult GameWindow::Render()
     }
 #endif
 
-    g_RenderAlpha = std::clamp(static_cast<f32>(this->accumulator / targetDt), 0.0f, 1.0f);
+    g_RenderAlpha = eagler::presentation::ExtrapolationWeight(this->accumulator / targetDt);
     if (targetDt != baseTargetDt) g_RenderAlpha = 1.0f;
 #ifdef __EMSCRIPTEN__
     // When presentation itself is capped to the fixed 60 Hz simulation ticks,

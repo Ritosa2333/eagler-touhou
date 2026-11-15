@@ -1,3 +1,4 @@
+#include <eagler/presentation/Extrapolation.hpp>
 #include "../platform/Application.hpp"
 #include <SDL3/SDL.h>
 #include <emscripten.h>
@@ -103,7 +104,7 @@ EM_BOOL frame(double timestamp,void* epoch){
     for(unsigned tick=0;tick<ticks&&!result;++tick){sdl_native_input(application);result=application->step(true);}
     const bool high=presentation.high_refresh&&interpolation_ready();if(high&&fast&&!presentation_primed&&tick_due)presentation_primed=true;const bool interpolate=high&&fast&&presentation_primed;float frame_alpha=1.0f;
     sdl_defer(0);bool presented=false;
-    if(!result&&high){const bool frozen=application->world&&application->world->actors.session&&(application->world->actors.session->session_flags&0x74);frame_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;presented=application->presentation_draw(frame_alpha,interpolate,!frozen);}else presented=sdl_commit()!=0;
+    if(!result&&high){const bool frozen=application->world&&application->world->actors.session&&(application->world->actors.session->session_flags&0x74);frame_alpha=interpolate?eagler::presentation::ExtrapolationWeight(cadence.interpolation_alpha()):1.0f;presented=application->presentation_draw(frame_alpha,interpolate,!frozen);}else presented=sdl_commit()!=0;
     if(presented&&application)application->presentation_frame();
 #ifdef TH_PRESENTATION_AUDIT
     record_presentation_timing(timestamp,delta,frame_alpha,(ready>0?1u:0u)|(fast?2u:0u)|(high?4u:0u)|(tick_due?8u:0u)|(interpolate?16u:0u)|(presented?32u:0u));
@@ -148,7 +149,7 @@ __attribute__((export_name("presentation_lab_tick"))) int presentation_lab_tick(
     app->audio.advance(milliseconds);sdl_native_input(app);return app->step(true);
 }
 __attribute__((export_name("presentation_lab_draw"))) int presentation_lab_draw(th10::browser::Application* app,float alpha,th10::u32 world){
-    if(running||!app||application!=app||!interpolation_ready()||!std::isfinite(alpha)||alpha<0||alpha>1)return -1;
+    if(running||!app||application!=app||!interpolation_ready()||!std::isfinite(alpha)||alpha<0||alpha>2)return -1;
     return app->presentation_draw(presentation_lab_fault?1.0f:alpha,true,world!=0)?0:1;
 }
 __attribute__((export_name("presentation_lab_fault"))) void presentation_lab_set_fault(th10::u32 value){presentation_lab_fault=value!=0;}

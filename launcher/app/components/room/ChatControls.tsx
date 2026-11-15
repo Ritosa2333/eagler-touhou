@@ -1,4 +1,4 @@
-import { memo, useCallback, useState, useSyncExternalStore } from 'react';
+import { memo, useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, ChevronUp, Ellipsis, Flag, Send, Settings, VolumeX, Zap } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Button as UiButton } from '../../ui/controls';
@@ -13,8 +13,18 @@ import {
 import type { DecisionStore } from '../../models/decisions';
 import { useLocale } from '../../i18n';
 import { shallowEqual, useStoreSelector } from '../../shared/react-store';
+import { accountsEnabled } from '../../release-features';
+import { useAccountSession } from '../../services/account-session';
 import './chat-controls.css';
 import {ParticipantAvatar} from './ParticipantAvatar';
+import {withUiLanguage} from '../../../src/launcher/i18n.mts';
+
+const sendErrorMessages = new Map<string, 'chat.banned' | 'chat.sendRateLimited' | 'chat.signInRequired' | 'chat.reviewUnavailable'>([
+  ['chat-banned', 'chat.banned'],
+  ['send-rate-limited', 'chat.sendRateLimited'],
+  ['sign-in-required', 'chat.signInRequired'],
+  ['review-unavailable', 'chat.reviewUnavailable'],
+]);
 
 export function ChatComposer({ model, gameplay = false, openOnClick = false }: {
   model: MultiplayerQuickChatModel;
@@ -22,12 +32,17 @@ export function ChatComposer({ model, gameplay = false, openOnClick = false }: {
   openOnClick?: boolean;
 }) {
   const { t, locale } = useLocale();
+  const { state: account } = useAccountSession(accountsEnabled);
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot),
     context = state.context;
   const enabled = !!context?.connected && (context.localSeat != null || context.localSpectator === true);
   const banned = state.bannedUntil === -1 || state.bannedUntil > Date.now();
+  const showFreeChat = accountsEnabled || state.registered;
+  const canSend = state.registered && enabled && !banned;
   const placeholder =
-    state.bannedUntil === -1
+    !state.registered
+      ? t(account.status === 'guest' ? 'chat.signInToChat' : 'chat.roomChatUnavailable')
+      : state.bannedUntil === -1
       ? t('chat.permanentlyBanned')
       : banned
         ? t('chat.bannedUntil', {
@@ -39,23 +54,26 @@ export function ChatComposer({ model, gameplay = false, openOnClick = false }: {
             }).format(state.bannedUntil),
           })
         : t(gameplay ? 'chat.freeInputHint' : 'chat.message');
-  const quick = !gameplay && <RoomQuickPicker model={model} enabled={enabled} openOnClick={openOnClick} registered={state.registered} locale={locale} />;
+  const quick = !gameplay && <RoomQuickPicker model={model} enabled={enabled} openOnClick={openOnClick} compact={showFreeChat} locale={locale} />;
   return (
-    <div className="room-chat-controls" data-member={state.registered}>
-      {state.registered && (
+    <div className="room-chat-controls">
+      {showFreeChat && (
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            model.sendText();
+            if (canSend) model.sendText();
           }}
         >
+          {state.sendError && <p className="chat-send-notice" role="status">
+            {t(sendErrorMessages.get(state.sendError) ?? 'chat.failed')}
+          </p>}
           <InputGroup>
             <InputGroupInput
               aria-label={t('chat.message')}
               placeholder={placeholder}
               maxLength={500}
               value={state.draft}
-              disabled={!enabled || banned}
+              disabled={!canSend}
               onChange={(event) => model.setDraft(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault();
@@ -66,7 +84,7 @@ export function ChatComposer({ model, gameplay = false, openOnClick = false }: {
               variant="ghost"
               size="icon-sm"
               aria-label={t('chat.send')}
-              disabled={!enabled || banned || state.sending || !state.draft.trim()}
+              disabled={!canSend || state.sending || !state.draft.trim()}
             >
               <Send aria-hidden="true" />
             </Button>
@@ -79,12 +97,31 @@ export function ChatComposer({ model, gameplay = false, openOnClick = false }: {
   );
 }
 
-function RoomQuickPicker({model, enabled, openOnClick, registered, locale}: {
-  model: MultiplayerQuickChatModel; enabled: boolean; openOnClick: boolean; registered: boolean; locale: string;
+function RoomQuickPicker({model, enabled, openOnClick, compact, locale}: {
+  model: MultiplayerQuickChatModel; enabled: boolean; openOnClick: boolean; compact: boolean; locale: string;
 }) {
   const {t} = useLocale();
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const [view, setView] = useState<'favorites' | 'all' | 'slots' | 'choose'>('favorites');
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!enabled || !state.context?.inRoom) {setOpen(false);return;}
+    let alt = false;
+    const down = (event:KeyboardEvent) => {
+      if (event.key === 'Alt' && !event.repeat && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.isComposing) {
+        const target=event.target;
+        alt = !(target instanceof HTMLElement && (target.isContentEditable || !!target.closest('input,textarea,select,[role="dialog"],dialog')));
+      } else if (event.key !== 'Alt') alt=false;
+    };
+    const up = (event:KeyboardEvent) => {
+      if (event.key !== 'Alt') return;
+      if (alt && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.isComposing) {event.preventDefault();setOpen(value=>!value);}
+      alt=false;
+    };
+    const blur=()=>{alt=false;};
+    window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',blur);
+    return ()=>{window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',blur);};
+  },[enabled,state.context?.inRoom]);
   const [slot, setSlot] = useState(0);
   const zh = locale === 'zh-CN', ja = locale === 'ja';
   const copy = {
@@ -96,12 +133,12 @@ function RoomQuickPicker({model, enabled, openOnClick, registered, locale}: {
   const text = (phrase: typeof QUICK_CHAT_PHRASES[number]) => locale === 'en' ? phrase.en : phrase.zh;
   const ids = view === 'favorites' || view === 'slots' ? state.slots : QUICK_CHAT_PHRASES.map(phrase => phrase.id);
   const switchView = (next: typeof view) => {setView(next);};
-  return <ActionMenu label={t('room.quickChat')} openOnClick={openOnClick} side="top" align="start" minimumWidth={260}
+  return <ActionMenu label={t('room.quickChat')} openOnClick={openOnClick} open={open} onOpenChange={setOpen} side="top" align="start" minimumWidth={260}
     className="room-action-menu room-quick-chat-picker quick-picker-menu"
-    trigger={<Button variant={registered ? 'outline' : 'secondary'} size={registered ? 'default' : 'lg'}
-      className={registered ? undefined : 'room-quick-chat-trigger h-12 w-full justify-between gap-3 data-[state=open]:bg-accent'}
-      title={t('room.quickChat')} aria-label={t('room.quickChat')} disabled={!enabled}>
-      {registered ? <Zap aria-hidden="true"/> : <>{t('room.quickChat')}<ChevronUp className="room-quick-chat-chevron" aria-hidden="true"/></>}
+    trigger={<Button variant={compact ? 'outline' : 'secondary'} size={compact ? 'default' : 'lg'}
+      className={compact ? undefined : 'room-quick-chat-trigger h-12 w-full justify-between gap-3 data-[state=open]:bg-accent'}
+      title={t('room.quickChat')} aria-label={t('room.quickChat')} aria-keyshortcuts="Alt" disabled={!enabled}>
+      {compact ? <Zap aria-hidden="true"/> : <>{t('room.quickChat')}<ChevronUp className="room-quick-chat-chevron" aria-hidden="true"/></>}
     </Button>}>
     <div className="quick-picker-toolbar">
       {(view === 'slots' || view === 'choose') ? <Button type="button" size="icon-sm" variant="ghost" aria-label={copy.back} title={copy.back} onClick={() => switchView(view === 'choose' ? 'slots' : 'favorites')}><ArrowLeft/></Button> : <>
@@ -174,16 +211,37 @@ export function useChatReportConfirmation(model: MultiplayerQuickChatModel, deci
 }
 
 export function ChatMessageText({ entry, label }: {entry: QuickChatEntry; label: string}) {
-  const {t} = useLocale();
-  const badge = entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`;
-  return <><span className="chat-sender"><strong>{entry.name || badge}</strong><span className="chat-role">{badge}</span></span><span className="chat-body">{label}</span></>;
+  const {t, locale} = useLocale();
+  const rating = entry.rating;
+  const badge = rating ? 'bot' : entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`;
+  const profile = (username: string) => withUiLanguage('/u/' + encodeURIComponent(username), locale);
+  return <>
+    <span className="chat-sender">
+      {(!rating || rating.authorProfile) && <strong>{rating ? <a href={profile(rating.author)} target="_blank" rel="noopener">{entry.name}</a> : entry.name || badge}</strong>}
+      <span className="chat-role">{badge}</span>
+    </span>
+    <span className="chat-body">{entry.delivery === 'pending' ? <span className="chat-sending" role="status" aria-label={t('chat.sending')}><i/><i/><i/></span> : rating ? <>
+      {t('th09.matchEnded')}
+      {rating.changes.length === 0 && <span className="chat-rating-line">{t('th09.matchUnrated')}</span>}
+      {rating.changes.map(({username,before,after}) => {
+        const delta = before === null ? 0 : after - before;
+        return <span className="chat-rating-line" key={username}>
+          <a href={profile(username)} target="_blank" rel="noopener">@{username}</a>{' '}
+          {before === null ? t('th09.firstRating', {rating: after}) :
+            <span data-rating-delta={delta > 0 ? 'gain' : delta < 0 ? 'loss' : undefined}>{delta > 0 ? '+' : ''}{delta}</span>}
+        </span>;
+      })}
+    </> : <>{label}{entry.delivery === 'failed' && <span className="chat-send-failed"> {t('chat.sendFailed')}</span>}</>}</span>
+  </>;
 }
 
 export function ChatAvatar({entry, model}: {entry:QuickChatEntry; model:MultiplayerQuickChatModel}) {
   const context = useStoreSelector(model, state=>state.context);
+  if (entry.rating && !entry.rating.authorProfile) return null;
   const member = [...(context?.seats ?? []), ...(context?.spectators ?? [])].find(item=>item?.clientId===entry.clientId);
   const initial = Array.from(entry.name.trim())[0] || '?';
-  return <ParticipantAvatar className="chat-avatar" name={entry.name} profile={member?.profile}>{initial}</ParticipantAvatar>;
+  const profile = entry.rating ? {username: entry.rating.author, avatar: entry.rating.authorProfile?.avatar} : member?.profile;
+  return <ParticipantAvatar className="chat-avatar" name={entry.name} profile={profile}>{initial}</ParticipantAvatar>;
 }
 
 function localClientId(context: QuickChatContext | null) {
@@ -204,6 +262,7 @@ const ChatMuteMenu = memo(function ChatMuteMenu({ model, compact, openOnClick }:
     context = state.context,
     self = localClientId(context),
     members = new Map<string, string>();
+  const showFreeChat = accountsEnabled || state.registered;
   context?.seats.forEach((seat, index) => {
     if (seat && seat.clientId !== self) members.set(seat.clientId, `P${index + 1} ${seat.name}`);
   });
@@ -211,7 +270,7 @@ const ChatMuteMenu = memo(function ChatMuteMenu({ model, compact, openOnClick }:
     if (member.clientId !== self) members.set(member.clientId, `${t('chat.spectator')} ${member.name}`);
   for (const entry of state.entries)
     if (entry.clientId !== self && entry.authorId !== state.authorId && !members.has(entry.clientId))
-      members.set(entry.clientId, `${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`} ${entry.name}`);
+      members.set(entry.clientId, entry.rating ? entry.name : `${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`} ${entry.name}`);
   return (
     <ActionMenu
       label={t('chat.mute')}
@@ -223,8 +282,8 @@ const ChatMuteMenu = memo(function ChatMuteMenu({ model, compact, openOnClick }:
       trigger={
         <Button
           variant="outline"
-          size={state.registered ? 'default' : compact ? 'icon-sm' : 'icon'}
-          className={state.registered ? 'room-chat-mute-trigger px-3' : compact ? 'room-chat-mute-trigger' : 'room-chat-mute-trigger size-12'}
+          size={showFreeChat ? 'default' : compact ? 'icon-sm' : 'icon'}
+          className={showFreeChat ? 'room-chat-mute-trigger px-3' : compact ? 'room-chat-mute-trigger' : 'room-chat-mute-trigger size-12'}
           aria-label={t('chat.mute')}
           title={t('chat.mute')}
           disabled={!members.size}
@@ -268,9 +327,10 @@ export const ChatMessageContent = memo(function ChatMessageContent({
 }) {
   const { t } = useLocale(),
     state = useStoreSelector(model, chatIdentity, shallowEqual);
+  const content = <ChatMessageText entry={entry} label={label}/>;
+  if (entry.rating) return <span className="room-chat-message">{content}</span>;
   const own = entry.clientId === state.localClientId || (!!entry.authorId && entry.authorId === state.authorId),
     canReport = !!entry.messageId && !!entry.authorId && state.canReport && !own;
-  const content = <ChatMessageText entry={entry} label={label}/>;
   if (directReport && confirmReport) return canReport ? (
     <UiButton variant="unstyled" className="room-chat-message chat-report-trigger"
       aria-haspopup="dialog" title={t('chat.report')} onClick={() => confirmReport(entry)}>

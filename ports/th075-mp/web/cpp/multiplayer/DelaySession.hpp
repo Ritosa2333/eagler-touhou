@@ -40,7 +40,7 @@ class DelaySession final:private Netplay::PeerTransport {
         // state. Clearing attacks/directions manufactures releases and forces
         // corrections even while the remote player holds a constant input.
         // Escape/cancel/restart remain confirmed lifecycle commands.
-        c.allowPrediction=mode==0;c.predictableButtons=0xff;c.directionButtons=0x0f;c.maxDirectionPredictionFrames=std::uint8_t(predictionLimit);
+        c.allowPrediction=mode==0;c.predictableButtons=0xff;c.directionButtons=0x0f;c.prediction=Netplay::InputPrediction::ConfirmedHold;
         // The positive-wait Adonis adjustment belongs to delay mode. Applying
         // it to D0 rollback converts the intended prediction lead into delay.
         Netplay::SessionChannelConfig policy;policy.adonisPhase=mode==1;

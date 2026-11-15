@@ -9,7 +9,7 @@ u32 dword(const u8* p){u32 v;std::memcpy(&v,p,4);return v;}
 u16 word(const u8* p){u16 v;std::memcpy(&v,p,2);return v;}
 }
 bool Replay::open(const u8* source,u32 size){
-    bytes.clear();stages={};touches={};count=selected=cursor=touch_cursor=0;input={};historical_web=false;web_rules=0;practice_patch={};native_practice={};practice_changes.clear();practice_spirits.clear();practice_cursor=spirit_cursor=0;failure.clear();
+    bytes.clear();stages={};touches={};count=selected=cursor=touch_cursor=0;input={};historical_web=false;web_rules=0;practice_patch={};native_practice={};practice_changes={};practice_spirits.clear();practice_cursor=spirit_cursor=0;failure.clear();
     auto fail=[&](const char* reason){failure=reason;return false;};
     if(!source||size<36||dword(source)!=0x72373174||word(source+4)!=2)return fail("Not a TH17 version 2 replay");
     const u32 packed=dword(source+28),unpacked=dword(source+32);
@@ -39,7 +39,8 @@ bool Replay::open(const u8* source,u32 size){
     PracticeSettings native_settings;
     const i32 rank=signed_bits(dword(decoded.data()+0x90));
     const i32 spell=(decoded[10]&2)?signed_bits(dword(decoded.data()+0x9c)):-1;
-    std::vector<PracticeToolChange> imported_tools;
+    std::array<std::vector<PracticeToolChange>,8> imported_tools;
+    bool found_tools=false;
     std::vector<PracticeSpiritEvent> imported_spirits;
     bool found_touch=false;std::array<std::vector<ReplayTouch>,8> imported;
     for(u32 tail=0x24+packed;size-tail>=12;){
@@ -78,15 +79,23 @@ bool Replay::open(const u8* source,u32 size){
                (spell<0?!(decoded[10]&1):spell>=SpellCatalog::count))
                 return fail("Invalid TH17 practice replay selection");
         }else if(dword(source+tail+8)==0x1a){
-            if(!imported_practice||native_settings.patch||!imported_tools.empty()||length<28||(length-20)%8||
-               dword(source+tail+12)!=0x43373154||dword(source+tail+16)!=1)
+            if(found_tools||length<28||dword(source+tail+12)!=0x43373154)
                 return fail("Invalid TH17 practice tools stream");
-            for(u32 at=20;at<length;at+=8){
-                const u32 frame=dword(source+tail+at),tools=dword(source+tail+at+4);
-                if((tools&~practice_tool_mask)||practice_boss_range(tools)>practice_boss_range_steps||frame>=parsed[imported_practice.stage].frames||
-                   (!imported_tools.empty()&&frame<=imported_tools.back().frame))
+            found_tools=true;
+            const u32 version=dword(source+tail+16),stride=version==1?8:12;
+            if((version!=1&&version!=2)||(length-20)%stride||
+               (version==1&&(!imported_practice||native_settings.patch)))
+                return fail("Invalid TH17 practice tools stream");
+            for(u32 at=20;at<length;at+=stride){
+                const auto* p=source+tail+at;
+                const u32 stage=version==1?u32(imported_practice.stage):dword(p);
+                if(stage<1||stage>7||!parsed[stage].number)return fail("Invalid TH17 practice tools stage");
+                const u32 frame=dword(p+stride-8),tools=dword(p+stride-4);
+                auto& stream=imported_tools[stage];
+                if((tools&~practice_tool_mask)||practice_boss_range(tools)>practice_boss_range_steps||
+                   frame>=parsed[stage].frames||(!stream.empty()&&frame<=stream.back().frame))
                     return fail("Invalid TH17 practice tools entry");
-                imported_tools.push_back({frame,tools});
+                stream.push_back({frame,tools});
             }
         }else if(dword(source+tail+8)==0x1b){
             if(!imported_practice||native_settings.patch||!imported_spirits.empty()||length<44||(length-20)%24||
@@ -126,8 +135,9 @@ ReplayInput Replay::tick(bool active){
         const auto* p=bytes.data()+s->offset+0x158+cursor*6;
         if(word(p)==65535&&word(p+2)==65535&&word(p+4)==65535){input.end=true;selected=0;return input;}
         const auto& stream=touches[selected];if(touch_cursor<stream.size()&&stream[touch_cursor].frame==cursor)input.touch=stream[touch_cursor++].motion;
-        if(practice_cursor<practice_changes.size()&&practice_changes[practice_cursor].frame==cursor)
-            input.practice_tools=practice_changes[practice_cursor++].tools;
+        const auto& tools_at_stage=practice_changes[selected];
+        if(practice_cursor<tools_at_stage.size()&&tools_at_stage[practice_cursor].frame==cursor)
+            input.practice_tools=tools_at_stage[practice_cursor++].tools;
         if(spirit_cursor<practice_spirits.size()&&practice_spirits[spirit_cursor].frame==cursor)
             input.spirit=practice_spirits[spirit_cursor++].spawn;
         input.held=word(p);

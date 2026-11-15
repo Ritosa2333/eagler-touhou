@@ -14,6 +14,7 @@ export function uiReviewEnabled(environment = globalThis.process?.env ?? {}) {
 }
 
 export const UI_REVIEW_DOCUMENT = Object.freeze({path: '/ui-review.html', file: 'ui-review.html', source: 'app/routes/ui-review.tsx'});
+export const TH09_RATINGS_DOCUMENT = Object.freeze({path: '/ratings.html', file: 'ratings.html'});
 
 /** @param {Record<string, {src?: string, isEntry?: boolean}>} manifest */
 export function hasUiReviewEntry(manifest) {
@@ -25,6 +26,7 @@ export const REACT_DOCUMENTS = Object.freeze([
   {path: '/en.html', file: 'en.html'},
   {path: '/ja.html', file: 'ja.html'},
   {path: '/lobby.html', file: 'lobby.html'},
+  TH09_RATINGS_DOCUMENT,
   {path: '/profile.html', file: 'profile.html'},
   {path: '/login.html', file: 'login.html'},
   {path: '/u/account-profile-template', file: 'profile-entry.html'},
@@ -125,6 +127,24 @@ const entries = [
   ['assets/quick-chat/last.wav', true],
   ['assets/quick-chat/thanks.wav', true],
   ['assets/quick-chat/xxzj.wav', true],
+  ['assets/quick-chat/wait.wav', true],
+  ['assets/quick-chat/sorry.wav', true],
+  ['assets/quick-chat/continue.wav', true],
+  ['assets/quick-chat/lagging.wav', true],
+  ['assets/quick-chat/no-worries.wav', true],
+  ['assets/quick-chat/laugh.wav', true],
+  ['assets/quick-chat/retry.wav', true],
+  ['assets/quick-chat/no-no.wav', true],
+  ['assets/quick-chat/yes-yes.wav', true],
+  ['assets/quick-chat/ah.wav', true],
+  ['assets/quick-chat/move-right.wav', true],
+  ['assets/quick-chat/move-left.wav', true],
+  ['assets/quick-chat/busy.wav', true],
+  ['assets/quick-chat/you-first.wav', true],
+  ['assets/quick-chat/nice.wav', true],
+  ['assets/quick-chat/amazing.wav', true],
+  ['assets/quick-chat/great-opportunity.wav', true],
+  ['assets/quick-chat/feels-good.wav', true],
   ['assets/notice-bilibili.svg', true],
   ['assets/notice-github.svg', true],
   ['assets/fonts/touhou98.woff2', true],

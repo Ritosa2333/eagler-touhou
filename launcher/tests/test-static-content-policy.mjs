@@ -29,6 +29,12 @@ assert.equal(staticContentCompressible("assets/favicon.ico", 4096), false);
 assert.equal(staticContentCacheControl("packs/lang.0123456789abcdef01234567.zip"), "public, max-age=31536000, immutable");
 assert.equal(staticContentCacheControl("packs/lang_en.zip"), "public, max-age=0, must-revalidate");
 assert.equal(staticContentCacheControl("runtime/th07.wasm"), "public, max-age=0, must-revalidate");
+const generation = 'a'.repeat(64);
+for (const name of ['th14.html', 'shell.mjs', 'th14-sdl.wasm', 'fonts/cp932.bin']) {
+  assert.equal(staticContentCacheControl(`runtime/th14/${generation}/${name}`),
+    'public, max-age=31536000, immutable, no-transform',
+    'CDNs must preserve every byte of the hash-verified Runtime generation');
+}
 
 console.log("Static content policy: PASS");
 });
