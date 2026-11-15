@@ -1212,6 +1212,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   roomSession = createRoomSession({document, window, storage, identity, sessions, memberId,
     publicRelayUrl: () => metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? '',
     allowAccountIdentity: !lobbySource.relay,
+    allowWebsocketFallback: lobbySource.local,
     createSocket: createRelaySocket, relayUrl: () => resolveRelay(metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? ''),
     settingsModel: settings, sitePreferences: preferences, runtime: () => runtime, replayViewer: () => snapshot.replayViewer,
     titleOverlayOpen: () => snapshot.th09NetworkOverlayOpen,

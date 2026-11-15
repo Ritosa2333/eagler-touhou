@@ -32,6 +32,7 @@ export function createLobbySource(storage: Storage | null, launcherProtocol: str
   let member = '';
   return {
     relay, scopedStorage,
+    local: relay !== null && isLocalRelayHost(new URL(relay).hostname),
     memberId() {
       if (!member) {
         try { member = scopedStorage?.getItem('member') ?? ''; } catch {}

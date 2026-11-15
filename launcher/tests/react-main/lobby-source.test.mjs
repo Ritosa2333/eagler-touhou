@@ -27,8 +27,10 @@ test('switching lobby sources separates saved rooms and keeps the public setting
   };
   const initial = createLobbySource(storage,'https:');
   expect(initial.relay).toBeNull();
+  expect(initial.local).toBe(false);
   expect(initial.save('wss://relay.example.invalid')).toBe(true);
   const first = createLobbySource(storage,'https:');
+  expect(first.local).toBe(false);
   expect(first.scopedStorage.getItem('room')).toBeNull();
   first.scopedStorage.setItem('room','private');
   const session = first.memberId();
@@ -37,6 +39,8 @@ test('switching lobby sources separates saved rooms and keeps the public setting
   const second = createLobbySource(storage,'https:');
   expect(second.scopedStorage.getItem('room')).toBeNull();
   expect(second.memberId()).not.toBe(session);
+  expect(second.save('ws://192.168.1.4:8080')).toBe(true);
+  expect(createLobbySource(storage,'https:').local).toBe(true);
   expect(second.save('')).toBe(true);
   expect(createLobbySource(storage,'https:').scopedStorage.getItem('room')).toBe('public');
 });

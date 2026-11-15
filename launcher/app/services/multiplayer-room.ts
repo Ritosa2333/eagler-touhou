@@ -110,6 +110,7 @@ export interface MultiplayerRoomPorts {
   preferences: MultiplayerPreferenceStore;
   memberId(): string;
   allowAccountIdentity?: boolean;
+  allowWebsocketFallback?: boolean;
   createSocket(url: string): RoomSocket;
   relayUrl(product: MultiplayerProductId): string;
   settings(): RoomSettingsInput;
@@ -1336,6 +1337,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           : {}),
         iceServers: ports.settings().iceServers,
         preferTurn: state.preferTurn,
+        allowWebsocketFallback: ports.allowWebsocketFallback,
         loadouts,
       },
       config,

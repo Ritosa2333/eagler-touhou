@@ -746,6 +746,15 @@ test('legacy room wire minimizes names until the server advertises moderation an
   service.dispose();
 });
 
+test.each([true, false])('room passes the opt-in LAN WebSocket fallback to the runtime (%s)', async allowWebsocketFallback => {
+  const {service} = await joinedRoom({allowWebsocketFallback});
+  try {
+    assert.equal(service.runtimeOptions().netplayAllowWebsocketFallback, allowWebsocketFallback ? true : undefined);
+  } finally {
+    service.dispose();
+  }
+});
+
 test('room take-seat commits only relay snapshot, and stale movement confirmation cannot seat in successor', async () => {
   const fixture = roomFixture(),
     { service, sockets, identity, decisions, settings } = fixture;
