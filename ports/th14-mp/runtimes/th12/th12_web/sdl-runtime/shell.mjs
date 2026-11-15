@@ -54,7 +54,8 @@ async function openRoom(){
  const relay=new URL(o.netplayUrl),room=relay.searchParams.get('room'),run=relay.searchParams.get('run');
  if(!['ws:','wss:'].includes(relay.protocol)||relay.username||relay.password||relay.hash||
     !room?.startsWith('th14mp-')||!/^[1-9]\d*$/.test(run??'')||![2,3].includes(count)||
-    !Number.isInteger(seat)||seat<0||seat>=count||![0,1].includes(mode)||prediction!==(mode===0?12:0)||o.netplayInputDelayAuto||o.netplayChallengeMode||
+    !Number.isInteger(seat)||seat<0||seat>=count||![0,1].includes(mode)||prediction!==(mode===0?12:0)||o.netplayInputDelayAuto||
+    (o.netplayChallengeMode!==undefined&&typeof o.netplayChallengeMode!=='boolean')||
     !Number.isInteger(o.netplaySeed)||o.netplaySeed<0||o.netplaySeed>65535||
     !Number.isInteger(o.netplayDifficulty)||o.netplayDifficulty<0||o.netplayDifficulty>4||
     !Number.isInteger(delay)||delay<0||delay>(mode===0?8:9)||
@@ -65,7 +66,7 @@ async function openRoom(){
  const id=new DataView(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('th14mp:'+room+':'+run)));
  const words=[2,count,seat,o.netplayDifficulty,o.netplaySeed,id.getUint32(0,true),id.getUint32(4,true)||1,delay];
  for(let i=0;i<3;++i)words.push(o.netplayLoadouts[i]?.character??0,o.netplayLoadouts[i]?.shot??0);
- words.push(...roomBuild,prediction);
+ words.push(...roomBuild,prediction,+(o.netplayChallengeMode===true));
  Module.eaglerOptions=o;
  const url=new TextEncoder().encode(relay.href+'\0'),viewer=new TextEncoder().encode((watch?o.netplaySpectatorId:'')+'\0');
  const pointers=[core.malloc(words.length*4),core.malloc(url.length),core.malloc(viewer.length)];
@@ -157,7 +158,7 @@ async function installRuntimePack(pack){
   Module.FS.writeFile(file.path,file.bytes,{canOwn:true});runtimePackFiles.push(file.path);
  }
 }
-function apply(){applyTouchOptions(core,options);core.th11_music_enabled(+music);}
+function apply(){applyTouchOptions(core,options);core.th14_always_hitbox?.(+(options.alwaysHitbox===true));core.th11_music_enabled(+music);}
 async function resumeForegroundAudio(forcePause=false){
  if(replayViewer?.state&&(replayViewer.state.paused||replayViewer.state.seeking||replayViewer.state.ended)){await replayViewer.foreground();return false;}
  if(!Module||!core||!(launched||roomPreview)||document.hidden)return false;

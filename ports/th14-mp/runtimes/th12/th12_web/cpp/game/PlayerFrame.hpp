@@ -35,6 +35,7 @@ struct PlayerFrameWorld:ShotWorld {
 #endif
 #if PORT_TITLE == 14
     virtual u32 player_focus(){return 0;}
+    virtual bool th14_unlimited_lives()const{return false;}
     virtual bool bombs_changed(i32,i32){return false;}
 #endif
 #if PORT_TITLE == 16
@@ -80,7 +81,10 @@ public:
     bool set_th14_scale(float);
     bool rebuild_th14_options(){return rebuild_options();}
 #endif
-    bool initialize();bool update();bool hit();bool die();bool draw(AnmRenderer&);
+    bool initialize();bool update();bool hit();bool die();bool draw(AnmRenderer&,bool local_hitbox=true);
+#if PORT_TITLE == 14
+    static inline bool always_hitbox=false;
+#endif
     bool start_stage();
     bool restore_replay_position(const ReplayStageState&);
     PlayerCollision collision()const noexcept;
