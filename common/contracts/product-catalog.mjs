@@ -644,6 +644,7 @@ export const PRODUCT_GAMES = Object.freeze({
         package: Object.freeze({
             dataFileId: "game-data",
             dataTarget: "/th13.data",
+            rawDataImport: Object.freeze({fileNames: Object.freeze(["th13.data"])}),
             musicSourceDirectories: Object.freeze({ ogg: "bgm-ogg" }),
             musicMounts: Object.freeze({ ogg: "/assets" }),
         }),

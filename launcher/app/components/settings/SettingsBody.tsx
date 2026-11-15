@@ -10,7 +10,8 @@ import type { GameSettingsModel } from '../../models/game-settings';
 import { useLocale } from '../../i18n';
 import { OptionsGroup, OptionsGroupHeading } from './OptionsGroup';
 import { InputSettings } from './InputSettings';
-import { GameAudioFields } from './GameAudioControls';
+import { GameAudioFields, QuickChatVolumeField } from './GameAudioControls';
+import type { SitePreferencesModel } from '../../models/site-preferences';
 import { OptionRow } from './OptionRow';
 import { OptionSwitch } from './TouchSettingsFields';
 import { SettingsSelect } from './SettingsSelect';
@@ -23,11 +24,13 @@ export function SettingsBody({
   actions,
   onOpenTouchLayout,
   multiplayerControls,
+  preferences,
 }: {
   model: GameSettingsModel;
   actions: SettingsActions;
   onOpenTouchLayout(): void;
   multiplayerControls?: ReactNode;
+  preferences?: SitePreferencesModel;
 }) {
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const midi = useSyncExternalStore(
@@ -372,6 +375,7 @@ export function SettingsBody({
         bodyClassName="options-advanced-body"
       >
         <GameAudioFields model={model} />
+        {preferences && <QuickChatVolumeField preferences={preferences}/>}
       </OptionsGroup>
       <OptionsGroup
         id={id('advancedOptions')}

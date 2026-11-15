@@ -687,6 +687,7 @@
   "settings_music": "音楽",
   "options_volume": "音量設定",
   "settings_bgmVolume": "ゲーム音楽",
+  "settings_quickChatVolume": "定型チャットの音声",
   "settings_sfxVolume": "ゲーム効果音",
   "gameLanguage_ja": "日本語（原作）",
   "gameLanguage_zhHans": "简体中文",

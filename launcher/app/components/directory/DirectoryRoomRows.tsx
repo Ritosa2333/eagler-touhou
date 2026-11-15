@@ -179,7 +179,7 @@ function RoomRow({
             </span>
             {room.phase !== 'lobby' && (duel || !!room.startedAt) && <span className="lobby-room-duration">
               <span className="lobby-room-fact-divider" aria-hidden="true">|</span>
-              <RoomElapsed phase={room.phase} startedAt={duel ? undefined : room.startedAt} elapsedMinutes={duel ? minutes : undefined}/>
+              <RoomElapsed phase={room.phase} startedAt={room.startedAt} elapsedMinutes={duel && !room.startedAt ? minutes : undefined}/>
             </span>}
             {waitingSince !== undefined && <span className="lobby-room-duration"><span className="lobby-room-fact-divider" aria-hidden="true">|</span>
               <span>{t('lobby.waitTime', {time:`${Math.floor(waitingSeconds / 60)}:${String(waitingSeconds % 60).padStart(2,'0')}`})}</span>

@@ -682,10 +682,7 @@ for (const locale of ['zh-CN','en']) for (const product of ['th06mp','th09mp']) 
       const state=phase==='playing'?'playing':players===2?'full':'recruiting';
       assert.equal(n('.lobby-room-state').textContent,t(locale,'lobby.'+state));
       assert.equal(!!env.document.querySelector('.room-elapsed'),phase==='playing');
-      if(phase==='playing') {
-        if(product==='th09mp') assert.equal(n('.room-elapsed').textContent,t(locale,'room.elapsedTime',{time:'0:00'}));
-        else assert.match(n('.room-elapsed').textContent,/1:0\d/);
-      }
+      if(phase==='playing') assert.match(n('.room-elapsed').textContent,/1:0\d/);
       assert.equal(env.document.querySelector('.th09-room-duration'),null);
   }
 });
@@ -906,7 +903,7 @@ test('Flower View keeps Japanese identity, score, shared facts and one contextua
   assert.equal(env.document.querySelector('.lobby-room-subtitle'),null);
   assert.equal(n('.book-room-score-value').textContent,'3 : 5');
   assert.equal(n('.book-room-score').getAttribute('aria-label'),`${t('zh-CN','th09.score')} 3 : 5`);
-  assert.equal(n('.room-elapsed').textContent,t('zh-CN','room.elapsedTime',{time:'8:00'}));
+  assert.equal(n('.room-elapsed').textContent,t('zh-CN','room.elapsedTime',{time:'1:05'}));
   assert.equal(env.document.querySelector('.lobby-difficulty'),null);
   assert.equal(all('.lobby-room-row button').length,1);
   assert.equal(n('.lobby-join').textContent,t('zh-CN','multiplayer.joinSpectator'));
