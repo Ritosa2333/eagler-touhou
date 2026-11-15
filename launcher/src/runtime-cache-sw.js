@@ -301,8 +301,9 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
     // in older snapshots; derive executable types from the declared file path.
     const type = runtimeContentType(path);
     if (type) headers.set("Content-Type", type);
-    // TH14 imports verified files as buffers, without their origin headers.
-    // All Runtime documents and the imported TH14 worker scripts need isolation.
+    // Imported runtime files contain verified bytes but lose their origin headers.
+    // Every hosted runtime document must match the launcher isolation policy.
+    // Cover all worker requests and TH14's imported threaded Wasm scripts.
     if (destination === "worker" || destination === "sharedworker" || type === "text/html" || (root === "runtime/th14/" && type === "text/javascript")) {
       headers.set("Cross-Origin-Embedder-Policy", "require-corp");
       headers.set("Cross-Origin-Opener-Policy", "same-origin");
