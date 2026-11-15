@@ -148,6 +148,56 @@ void Scene::capture_background(){
     // polygon, plane output and projected vertices for every tile.
     auto& polygon=clip_polygon;auto& clipped=clip_output;auto& vs=clip_projected;
     polygon.reserve(6);clipped.reserve(6);vs.reserve(6);
+    static constexpr double corners[4][4]{{-.5,-.5,0,0},{.5,-.5,1,0},{.5,.5,1,1},{-.5,.5,0,1}};
+    const auto rotate_quad=[&](auto& out,double w,double h,double rx,double ry,double rz){
+        const double cx=std::cos(rx),sx=std::sin(rx),cy=std::cos(ry),sy=std::sin(ry),cz=std::cos(rz),sz=std::sin(rz);
+        for(size_t i=0;i<4;++i){
+            const double x=corners[i][0]*w,y=corners[i][1]*h;
+            const double rotated_x=x*cy+y*sx*sy,rotated_y=y*cx;
+            out[i]={rotated_x*cz-rotated_y*sz,rotated_x*sz+rotated_y*cz,-x*sy+y*sx*cy};
+        }
+    };
+    const auto clip_depth=[&](double limit,bool lower){
+        const auto inside=[&](const P& vertex){return lower?vertex.depth>=limit:vertex.depth<=limit;};
+        if(std::all_of(polygon.begin(),polygon.end(),inside))return;
+        clipped.clear();
+        for(size_t i=0;i<polygon.size();++i){
+            const P& p=polygon[i];const P& n=polygon[(i+1)%polygon.size()];const bool in=inside(p);
+            if(in)clipped.push_back(p);
+            if(in!=inside(n)){
+                const double t=(limit-p.depth)/(n.depth-p.depth);
+                clipped.push_back({p.cx+(n.cx-p.cx)*t,p.cy+(n.cy-p.cy)*t,limit,p.u+(n.u-p.u)*t,p.v+(n.v-p.v)*t});
+            }
+        }
+        polygon.swap(clipped);
+    };
+    const auto project=[&](i32 layer,i32 bank,const AnmSprite& sp,const AnmEntry& entry,
+                           const auto& points,const std::array<double,3>& center,
+                           float uv_x,float uv_y,float u,float v_offset,u32 argb,u32 flags,int blend,bool point,
+                           double near,double far){
+        const Texture tex=texture(bank,sp.entry);if(!tex.name)return;
+        polygon.clear();
+        for(size_t i=0;i<4;++i){
+            const auto& p=points[i];const auto& k=corners[i];
+            const std::array<double,3> d{center[0]+p[0]-position[0],center[1]+p[1]-position[1],center[2]+p[2]-position[2]};
+            polygon.push_back({dot(d,x),dot(d,y),dot(d,z),sp.x+k[2]*sp.w,sp.y+k[3]*sp.h});
+        }
+        // Clip each depth boundary in view space before projecting it.
+        clip_depth(near,true);clip_depth(far,false);
+        if(polygon.size()<3)return;
+        const Color color=rgba_of(argb);const bool no_fog=flags&0x1000;
+        vs.clear();bool left=true,right=true,above=true,below=true;
+        for(const auto& p:polygon){
+            Vertex v;v.x=float(center_x+p.cx/p.depth*focal);v.y=float(center_y-p.cy/p.depth*focal);
+            v.u=float((sp.x+(p.u-sp.x)*uv_x+double(u)*entry.width)/tex.w);v.v=float((sp.y+(p.v-sp.y)*uv_y+double(v_offset)*entry.height)/tex.h);
+            v.r=color.r;v.g=color.g;v.b=color.b;v.a=color.a;v.depth=float(p.depth);
+            // Original device setup selects linear vertex fog on view Z (0x451326..0x45134f).
+            v.fog=no_fog?0.f:float(std::clamp((p.depth-fog_start)/(fog_end-fog_start),0.,1.));
+            left&=v.x<32;right&=v.x>416;above&=v.y<16;below&=v.y>464;vs.push_back(v);
+        }
+        if(left||right||above||below)return;
+        for(size_t i=1;i+1<vs.size();++i){Triangle t{layer,bank,sp.entry,blend,point,{vs[0],vs[i],vs[i+1]},vs[0].depth+vs[i].depth+vs[i+1].depth};t.order=u32(triangles.size());triangles.push_back(t);}
+    };
     for(auto& q:background_quads)q.ready=false;
     for(const auto& instance:geometry.instances){
         const auto& object=geometry.objects[instance.object];
@@ -158,64 +208,47 @@ void Scene::capture_background(){
             const auto* node=animationScene.find(stagePrimitiveKey(q.slot));if(!node)continue;
             const auto& a=node->vm.state();
             const u32 argb=a.flags&0x10000?a.secondary:a.primary;
-            const bool visible=(a.flags&3)==3&&(a.primary>>24)!=0;const float alpha=float(argb>>24)/255.f;
             const AnmSprite* sp=stage_file->sprite(a.sprite);
-            if(!sp||!visible||alpha<=0)continue;
-            static constexpr double corners[4][4]{{-.5,-.5,0,0},{.5,-.5,1,0},{.5,.5,1,1},{-.5,.5,0,1}};
+            if(!sp||(a.flags&3)!=3||!(a.primary>>24)||!(argb>>24))continue;
             auto& rotated=background_quads[size_t(q.slot)];
             if(!rotated.ready){
-                // TH12's STD draw routine overwrites the ANM scale for every
-                // nonzero primitive dimension (0x4047f8..0x404839).
+                // 4047f8..404839 overrides the animation size for nonzero STD dimensions.
                 const double w=q.size[0]?double(q.size[0]):double(a.spriteWidth!=-1?a.spriteWidth:sp->w)*a.sx;
                 const double h=q.size[1]?double(q.size[1]):double(a.spriteHeight!=-1?a.spriteHeight:sp->h)*a.sy;
-                const double rcx=std::cos(double(a.rx)),rsx=std::sin(double(a.rx)),rcy=std::cos(double(a.ry)),rsy=std::sin(double(a.ry)),rcz=std::cos(double(a.rotation)),rsz=std::sin(double(a.rotation));
-                for(size_t i=0;i<4;++i){
-                    double px=corners[i][0]*w,py=corners[i][1]*h,pz=0,t;
-                    t=py*rcx-pz*rsx;pz=py*rsx+pz*rcx;py=t;
-                    t=px*rcy+pz*rsy;pz=-px*rsy+pz*rcy;px=t;
-                    t=px*rcz-py*rsz;py=px*rsz+py*rcz;px=t;
-                    rotated.corners[i]={px,py,pz};
-                }
+                rotate_quad(rotated.corners,w,h,a.rx,a.ry,a.rotation);
                 rotated.ready=true;
             }
-            const double px0=double(a.x)+a.engineX+a.offsetX,py0=double(a.y)+a.engineY+a.offsetY,pz0=double(a.z)+a.engineZ+a.offsetZ;
-            const double cxp=double(q.position[0])+instance.position[0]+px0,cyp=double(q.position[1])+instance.position[1]+py0,czp=double(q.position[2])+instance.position[2]+pz0;
-            polygon.clear();
-            for(size_t i=0;i<4;++i){
-                const auto& p=rotated.corners[i];const auto& k=corners[i];
-                const std::array<double,3> d{cxp+p[0]-position[0],cyp+p[1]-position[1],czp+p[2]-position[2]};
-                polygon.push_back({dot(d,x),dot(d,y),dot(d,z),sp->x+k[2]*sp->w,sp->y+k[3]*sp->h});
-            }
-            // Clip the near plane before projection; never discard a whole tile
-            // just because one corner is behind the camera.
-            for(int plane=0;plane<2;++plane){
-                const double limit=plane?exe.far_plane:exe.near_plane;
-                const auto keep=[&](double d){return plane?d<=0:d>=0;};
-                const auto inside=[&](const P& vertex){return keep(vertex.depth-limit);};
-                if(std::all_of(polygon.begin(),polygon.end(),inside))continue;
-                clipped.clear();
-                for(size_t i=0;i<polygon.size();++i){const P& p=polygon[i];const P& n=polygon[(i+1)%polygon.size()];const bool in=keep(p.depth-limit);
-                    if(in)clipped.push_back(p);
-                    if(in!=keep(n.depth-limit)){const double t=(limit-p.depth)/(n.depth-p.depth);
-                        clipped.push_back({p.cx+(n.cx-p.cx)*t,p.cy+(n.cy-p.cy)*t,p.depth+(n.depth-p.depth)*t,p.u+(n.u-p.u)*t,p.v+(n.v-p.v)*t});}}
-                polygon.swap(clipped);
-            }
-            if(polygon.size()<3)continue;
-            const auto& entry=stage_file->entries[size_t(std::clamp<i32>(sp->entry,0,i32(stage_file->entries.size())-1))];
-            const Texture tex=texture(BankStage,sp->entry);if(!tex.name)continue;
-            const Color color=rgba_of(argb);const bool no_fog=a.flags&0x1000;
-            vs.clear();bool left=true,right=true,above=true,below=true;
-            for(const auto& p:polygon){
-                Vertex v;v.x=float(center_x+p.cx/p.depth*focal);v.y=float(center_y-p.cy/p.depth*focal);
-                v.u=float((sp->x+(p.u-sp->x)*a.uvScaleX+double(a.u)*entry.width)/tex.w);v.v=float((sp->y+(p.v-sp->y)*a.uvScaleY+double(a.v)*entry.height)/tex.h);
-                v.r=color.r;v.g=color.g;v.b=color.b;v.a=color.a;v.depth=float(p.depth);
-                // Original device setup selects linear vertex fog on view Z (0x451326..0x45134f).
-                v.fog=no_fog?0.f:float(std::clamp((p.depth-fog_start)/(fog_end-fog_start),0.,1.));
-                left&=v.x<32;right&=v.x>416;above&=v.y<16;below&=v.y>464;vs.push_back(v);
-            }
-            if(left||right||above||below)continue;
-            for(size_t i=1;i+1<vs.size();++i){Triangle t{object.layer,sp->entry,a.blend,bool(a.flags2&2),{vs[0],vs[i],vs[i+1]},vs[0].depth+vs[i].depth+vs[i+1].depth};t.order=u32(triangles.size());triangles.push_back(t);}
+            const std::array<double,3> center{
+                double(q.position[0])+instance.position[0]+(double(a.x)+a.engineX+a.offsetX),
+                double(q.position[1])+instance.position[1]+(double(a.y)+a.engineY+a.offsetY),
+                double(q.position[2])+instance.position[2]+(double(a.z)+a.engineZ+a.offsetZ)};
+            project(object.layer*2,BankStage,*sp,stage_file->entries[size_t(sp->entry)],rotated.corners,center,
+                    a.uvScaleX,a.uvScaleY,a.u,a.v,argb,a.flags,a.blend,a.flags2&2,exe.near_plane,exe.far_plane);
         }
+    }
+    // Layer 26 mode 17 projects the shadow onto the ground before the
+    // translucent STD scenery, which supplies the mist over it.
+    for(const auto& a:animationDrawState){
+        if(a.layer!=26||a.mode!=17||(a.flags&3)!=3||!(a.primary>>24))continue;
+        const u32 argb=a.flags&0x10000?a.secondary:a.primary;
+        const auto file=banks.get(a.bank);
+        const auto* sp=file?file->sprite(a.sprite):nullptr;
+        if(!sp||!(argb>>24))continue;
+        std::array<std::array<double,3>,4> quad{};
+        float width=-1,height=-1;
+        if(a.reserved[2]==1){std::memcpy(&width,&a.reserved[0],4);std::memcpy(&height,&a.reserved[1],4);}
+        rotate_quad(quad,double(width!=-1?width:sp->w)*a.sx,double(height!=-1?height:sp->h)*a.sy,a.rx,a.ry,a.rotation);
+        const auto draw_depth_range=[&](double near,double far){
+            if(near<far)project(1,a.bank,*sp,file->entries[size_t(sp->entry)],quad,{a.x,a.y,a.z},
+                a.uvScaleX,a.uvScaleY,a.u,a.v,argb,a.flags,a.blend,a.flags2&2,near,far);
+        };
+        // A single shadow spans the clear, linear-fog, and fully fogged regions.
+        // Split at both limits so interpolating clamped corner fog preserves the gradient.
+        if(!(a.flags&0x1000u)&&fog_start<fog_end){
+            draw_depth_range(exe.near_plane,std::min<double>(fog_start,exe.far_plane));
+            draw_depth_range(std::max<double>(exe.near_plane,fog_start),std::min<double>(fog_end,exe.far_plane));
+            draw_depth_range(std::max<double>(exe.near_plane,fog_end),exe.far_plane);
+        }else draw_depth_range(exe.near_plane,exe.far_plane);
     }
     // STD tiles share a plane; sorting also makes their few z offsets stable.
     std::sort(triangles.begin(),triangles.end(),[](const Triangle& a,const Triangle& b){return a.layer!=b.layer?a.layer<b.layer:a.depth!=b.depth?a.depth>b.depth:a.order<b.order;});
@@ -233,9 +266,9 @@ void Scene::capture(const Options& o){
     const i32 frame=i32(hud[0]);if(frame<last_frame)reset_presentation();
     if(frame!=last_frame){previous_motion.swap(current_motion);current_motion.clear();if(frame!=last_frame+1)previous_motion.clear();}else current_motion.clear();
     last_frame=frame;sampler_.begin_frame();
-    capture_background();
     // Logical VM poses (128-byte ABI) and their draw schedule.
     const i32 count=th12_anm_draw();const auto* logical=static_cast<const AnimationPose*>(th12_anm_draw_ptr());
+    capture_background();
     const i32 meshes=th12_mesh_draw();
     owners.clear();owners.reserve(size_t(count+meshes));
     logical_poses.clear();logical_poses.reserve(size_t(count));
@@ -602,7 +635,7 @@ void Scene::render(float alpha,float live_fps){
         draw_state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,nullptr);
     }
     gpu.primitive(Renderer::Triangles);
-    for(const auto& t:triangles){const Texture tex=texture(BankStage,t.entry);if(!tex.name)continue;gpu.material(t.blend);gpu.bind(tex,t.point);for(const auto& v:t.v)gpu.push(v);}
+    for(const auto& t:triangles){const Texture tex=texture(t.bank,t.entry);if(!tex.name)continue;gpu.material(t.blend);gpu.bind(tex,t.point);for(const auto& v:t.v)gpu.push(v);}
     gpu.flush();
     i32 current_clip=1;bool copied=false,composited=false;const float rounded[2]{f32(shake[0]),f32(shake[1])};const bool shaking=rounded[0]||rounded[1];
     for(const u32 at:sorted){
