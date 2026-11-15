@@ -322,6 +322,13 @@ struct StageCarryRecord {
     bool acknowledged=false;
 };
 StageCarryRecord stageCarry;
+struct OrdinaryCarryContinueRecord {
+    unsigned generation=0,token=0,pauseSerial=0;
+    int baseCount=0,currentCount=0;
+    std::weak_ptr<th128::record::NativeNormalRecord> record;
+    std::weak_ptr<th128::record::NativeRunReplay> replay;
+};
+OrdinaryCarryContinueRecord ordinaryCarryContinue;
 unsigned stageCarryNextToken=1;
 unsigned stageTransitionSerialNext=1;
 void captureDebugCarry(StageCarryRecord& carry){
@@ -711,7 +718,7 @@ void resetStageTransition() {
     stageTransitionCurrentId=0;stageTransitionProgress=0;stageTransitionGate74=0;stageTransitionMessage78=0;
     stageSessionPresent=0;stageSessionField74=0;
     stageManager={};
-    debugTerminal={};normalTerminal={};normalPostrun={};normalMainAdoptedGeneration=0;
+    debugTerminal={};normalTerminal={};normalPostrun={};normalMainAdoptedGeneration=0;ordinaryCarryContinue={};
     debugTerminalSettlement=std::make_unique<th128::stage::StageSettlementHost>();
     stageTransitionError.clear();
 }
@@ -816,6 +823,14 @@ int stageIdForEcl(const std::string& name) {
     return 0;
 }
 
+bool ordinaryCarryContinueCountMatches(){
+    if(stageCarry.originalContinueCount==originalContinueCount)return true;
+    const auto& committed=ordinaryCarryContinue;
+    return originalContinueCount>stageCarry.originalContinueCount&&originalContinueCount<=5
+        &&committed.generation==worldGeneration&&committed.token==stageCarry.token&&committed.pauseSerial
+        &&committed.baseCount==stageCarry.originalContinueCount&&committed.currentCount==originalContinueCount
+        &&committed.record.lock()==normalRecord&&committed.replay.lock()==normalReplay;
+}
 bool ordinaryCarrySessionPresent(bool restored){
     static constexpr std::array<int,6> terminals{3,5,8,10,13,15},previous{2,4,7,9,12,14};
     if(!world||world->faulted()||!stageControl.initialized()||!stageControl.sessionConstructed()
@@ -835,7 +850,7 @@ bool ordinaryCarrySessionPresent(bool restored){
     // Original state12 reconstructs the actual session with sessionFlag=0; the archived carry proves presence.
     if(!restored)return !c.consumed&&!c.acknowledged&&world->frame()==0;
     return c.scalarRestored&&c.scalarRestoredGeneration==worldGeneration&&c.acknowledged&&c.consumed
-        &&c.nextProgress==currentStageProgress&&c.originalContinueCount==originalContinueCount
+        &&c.nextProgress==currentStageProgress&&ordinaryCarryContinueCountMatches()
         &&normalRecord==c.normalRecord&&normalReplay==c.normalReplay;
 }
 
@@ -3393,6 +3408,11 @@ int th128_world_pause_commit(int action){
     try{
         const bool savedExit=action==int(th128::pause::Action::Title)&&normalReplaySave&&normalReplaySave->finished()&&!normalReplaySave->gameOver();
         if(!savedExit&&int(originalPauseMenu->state().action)!=action)throw std::runtime_error("pause action serial/identity mismatch");
+        const unsigned pauseSerial=originalPauseMenu->state().serial;
+        const int previousContinues=originalContinueCount;
+        const bool carryContinue=action==int(th128::pause::Action::Continue)&&previousContinues>=0&&previousContinues<5
+            &&pauseSerial&&!debugRunTainted&&!debugInfiniteRespawnRun&&!replayPlayback.active()&&ordinaryCarrySessionPresent(true)
+            &&(previousContinues==stageCarry.originalContinueCount||pauseSerial>ordinaryCarryContinue.pauseSerial);
         if(action==int(th128::pause::Action::Continue)){
             if(originalPauseMenu->state().kind!=th128::pause::Kind::GameOver||motivationRaw>=0)
                 throw std::runtime_error("continue requires actual Game Over resources");
@@ -3401,6 +3421,9 @@ int th128_world_pause_commit(int action){
             playerWindowControl.perfectCharge4b4d70=resources.perfect;originalContinueCount=resources.continues;
         }
         originalPauseMenu->commit(savedExit?th128::pause::Action::ReplaySave:th128::pause::Action(action));
+        if(carryContinue&&originalContinueCount==previousContinues+1)
+            ordinaryCarryContinue={worldGeneration,stageCarry.token,pauseSerial,stageCarry.originalContinueCount,
+                originalContinueCount,normalRecord,normalReplay};
         if(savedExit){normalReplaySave.reset();normalReplayBytes.clear();}
         playerInput={};return 1;
     }catch(const std::exception& failure){operationError=failure.what();return 0;}
@@ -5106,7 +5129,7 @@ int th128_world_normal_postrun_main_commit(unsigned generation){
     const th128::postrun::NativeNormalMainRandom actual{generation,unsigned(world->frame()),normalPostrun.menu->normalFrames(),world->gameRandomState(),worldDisplayRandom};
     auto permit=normalPostrun.mainOwner.release(*normalPostrun.menu,*normalPostrun.media,normalPostrun.receipt,stageControl,normalPostrun.serial,normalPostrun.awaitingPresent,actual,operationError);
     if(!permit)return 0;if(!th128::postrun::adoptOrdinaryMain(permit,operationError)){normalPostrun.failed=true;return 0;}
-    const bool extra=normalPostrun.extra;normalPostrun={};normalTerminal={};stageCarry={};normalReplaySave.reset();normalReplayBytes.clear();normalReplayPreviewRows={};normalReplayOccupied={};
+    const bool extra=normalPostrun.extra;normalPostrun={};normalTerminal={};stageCarry={};ordinaryCarryContinue={};normalReplaySave.reset();normalReplayBytes.clear();normalReplayPreviewRows={};normalReplayOccupied={};
     if(extra){debugExtraReplay.reset();debugFreshReplay.reset();retainedPostrunReplay.reset();extraReturnOwner={};debugRecordPrefix={};debugRecordDriver={};debugPostrunRecord=std::make_shared<th128::record::NativePostrunRecord>();postrunAssets={};extraPostrunNameFont.clear();}
     normalMainAdoptedGeneration=generation;return 1;
 }

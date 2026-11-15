@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "date": "2026-11-15",
-  "generation": "27975d257ac10553c39475250b19c2864a458f9d1717297d20f4897f5483e43b",
+  "date": "2026-11-16",
+  "generation": "ea55af4aea7f1f979857d3c6e32ce80205019bc598b690013b52f29ae0020b2a",
   "sourceFiles": {
     "src/animation/AnmLogic.cpp": "8181699a119c123274e04883ffbb072ac3b4a0a1c0b18ccb2c6fa16850995b27",
     "src/animation/AnmLogic.hpp": "cb157319e0f57d007aae669d60a3840be7d31adfd1f384f02459146c56c8c88b",
@@ -228,7 +228,7 @@
     "src/runtime/Exports.cpp": "a53590d490e09517d9bdad2feec85799e136f9e1e44470a2981bbaa1767b5b3f",
     "src/runtime/Memory.hpp": "bc209020ad0f2a2bd9e649440f239f3517a97ec480e4d27d2c3395a1c5d3a1b0",
     "src/runtime/PlayerExports.cpp": "72c6abe64a18786d2c40f78addcfb4a22335e48d3ac4ccdf855233f0fb1e3a5f",
-    "src/runtime/WorldExports.cpp": "8b75b01f421ab13934803fe7075425890a68ec97a748f39ee00e90484752d73e"
+    "src/runtime/WorldExports.cpp": "c8dfd4085f71770b6a21a317568f9dec34e7ff8656c13fda5092d3322625c6e0"
   },
   "translationUnits": [
     "src/runtime/Exports.cpp",
@@ -528,15 +528,38 @@
       "sha256": "846c39a7ef04f958af7a8267e9afc1b25bca73e86b14e88f5b4a4462ce74f987"
     },
     "core.wasm": {
-      "bytes": 2168031,
-      "sha256": "32acdae1906362a50083f5146860736be54b9f2128397561d0892c1376754c77"
+      "bytes": 2169078,
+      "sha256": "b2c4db56f3f449f78618288e06e0be407dc53ae70d708304eb703e670217c9a7"
     }
   },
-  "acceptedAssistedScope": "six normal routes and EX; CPU functional chain",
+  "acceptedAssistedScope": "Historical six normal routes on private98 and EX on private99; not rerun on private101.",
   "browserAcceptance": false,
   "rebuiltForUpload": false,
-  "coreOrdinal": 100,
-  "browserEntryAccepted": true,
-  "browserAcceptanceEvidence": "completion-checkpoint-20261115.json",
-  "rebuildReason": "First core100 build after actual long-timer and item-notice failures;prior core99 unchanged"
+  "coreOrdinal": 101,
+  "browserEntryAccepted": false,
+  "browserAcceptanceEvidence": null,
+  "rebuildReason": "First private101 link614 after continued-carry commit-provenance fix612 and complete-TU syntax613; prior successful cores unchanged.",
+  "relativeHeaderEdges": 390,
+  "buildAcceptance": {
+    "case": 614,
+    "compilerCalls": 1,
+    "compilerExit": 0,
+    "compilerStdoutBytes": 0,
+    "compilerStderrBytes": 0
+  },
+  "runtimeAcceptance": {
+    "case": 615,
+    "Factories": 1,
+    "callableExports": 205,
+    "unownedActionsRejected": 5,
+    "WorldStarts": 0,
+    "browser": 0,
+    "scope": "actual instantiate/export/memory and no-owner rejection; continued-terminal positive path pending"
+  },
+  "historicalBrowserEvidence": {
+    "coreOrdinal": 100,
+    "evidence": "completion-checkpoint-20261115.json",
+    "entryAccepted": true,
+    "fullTerminalAccepted": false
+  }
 }
