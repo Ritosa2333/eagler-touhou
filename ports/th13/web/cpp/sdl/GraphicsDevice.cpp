@@ -213,6 +213,15 @@ void GraphicsDevice::unload(const AnmResource& file) {
     resources.erase(it);
 }
 
+void GraphicsDevice::rebind(const AnmResource& from, const AnmResource& to) {
+    if (&from == &to) return;
+    auto it = resources.find(&from);
+    if (it == resources.end()) return;
+    auto handles = std::move(it->second);
+    resources.erase(it);
+    resources[&to] = std::move(handles);
+}
+
 u32 GraphicsDevice::texture(const AnmResource& file, u32 index) {
     const auto it = resources.find(&file);
     if (it == resources.end() || index >= it->second.size()) {

@@ -97,6 +97,9 @@ public:
     // 完整文件（0x449e50 尾段孪生）：build_image → ReplayFile::deflate
     // （bit-exact 0x458c30）→ xor_encrypt(0xAC,0x35,0x10) → 0x18 头。
     bool build_file(std::vector<u8>& out);
+    // build_file 的尾段：已压缩镜像 → xor_encrypt(0xAC,0x35,0x10) → 0x18 头。
+    // 宿主分片压缩（LzssEncoder）完成后用它收尾，字节与 build_file 相同。
+    static void wrap_file(std::vector<u8> comp, size_t uncomp, std::vector<u8>& out);
 
     // ---- 字段视图（直接读写镜像块字节；未见证字节永不触碰）----
 
