@@ -91,9 +91,14 @@ private:
 class FrameSchedule {
     using Cadence = touhou::sdl::FrameCadence;
     Netplay::PendingFrameSchedule<Cadence> schedule_;
-    unsigned offered_ = 0;
+    unsigned offered_ = 0, completed_ = 0;
 public:
     void reset() { schedule_.reset(); offered_ = 0; gap_cap_ = 0; }
+    // Starting half a frame into the interval keeps callback jitter below
+    // half a frame from splitting a steady display into 0- and 2-frame turns.
+    void align_phase() { schedule_.debt = Cadence::interval / 2; }
+    double credit() const { return schedule_.debt; }
+    unsigned take_completed() { const unsigned done = completed_; completed_ = 0; return done; }
     unsigned owed() const { return offered_; }
     bool retry_pending() const { return schedule_.retry_pending(); }
     bool has_work() const {
@@ -118,7 +123,7 @@ public:
         schedule_.debt = std::max(0., schedule_.debt - offered_ * Cadence::interval);
         return offered_;
     }
-    void complete() { --offered_; schedule_.complete(); }
+    void complete() { --offered_; ++completed_; schedule_.complete(); }
     void network_wait() {
         if (!offered_) return;
         if (gap_cap_ > 0) {

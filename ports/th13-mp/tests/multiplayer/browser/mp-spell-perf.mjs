@@ -120,7 +120,8 @@ try {
       net: JSON.parse(m.UTF8ToString(m._th13_debug_mp_net_state())),
       rollback: JSON.parse(m.UTF8ToString(m._th13_debug_mp_net_rollback())),
       stageFrame: m._th13_debug_stage_frame(),
-      readoutFps: m._th13_debug_presentation_fps ? +m._th13_debug_presentation_fps().toFixed(1) : -1,
+      readoutFps: m._th13_debug_frame_rate ? +m._th13_debug_frame_rate().toFixed(1) : -1,
+      presentationFps: m._th13_debug_presentation_fps ? +m._th13_debug_presentation_fps().toFixed(1) : -1,
       now: performance.now(),
     };
   });

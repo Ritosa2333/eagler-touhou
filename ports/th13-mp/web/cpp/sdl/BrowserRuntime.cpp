@@ -18,6 +18,7 @@
 #include "../multiplayer/WorldState.hpp"
 #include "../multiplayer/HostState.hpp"
 #include "../../../portable/sdl/FrameCadence.hpp"
+#include "../../../portable/sdl/FrameRateMeter.hpp"
 #include "../../../portable/input/TouchController.hpp"
 #include <eagler/input/BrowserGamepad.hpp>
 #include <eagler/replay/Workspace.hpp>  // M9/P6：回放 inspect 描述面
@@ -193,6 +194,8 @@ touhou::input::TouchState touch_state() {
 }
 SDL_Joystick* controller = nullptr;
 touhou::sdl::FrameCadence cadence;
+touhou::sdl::FrameRateMeter frame_meter;
+bool frame_meter_live = false;
 bool running = false, suspended = false, lost_focus = false;
 u32 render_scale = 1, loop_epoch = 0;
 double previous_frame = -1;
@@ -211,6 +214,15 @@ void reset_presentation_window() {
     presentation_count = 0;
     presentation_fps = 60;
     last_display_callback_ms = -1;
+    frame_meter.reset();
+}
+
+// Starting half a frame into the interval keeps display jitter below half a
+// frame from splitting a steady refresh into 0- and 2-tick callbacks.
+void reset_cadence() {
+    cadence.reset();
+    cadence.debt = touhou::sdl::FrameCadence::interval / 2;
+    frame_meter.restart();
 }
 
 void sample_presentation_rate(double now_ms) {
@@ -798,11 +810,11 @@ bool drive_one_frame(double delta, unsigned source = 0) {
         return result;
     };
     if (suspended) {
-        cadence.reset();
+        reset_cadence();
         return finish(true, true);
     }
     if (app->loading_waiting()) {
-        cadence.reset();
+        reset_cadence();
         reset_presentation_window();
         if (!(app->loading_startup ? app->advance_loading(delta) : app->complete_loading())) {
             running = false;
@@ -814,6 +826,21 @@ bool drive_one_frame(double delta, unsigned source = 0) {
     }
     const bool live_mp = multiplayer::session.Active() && multiplayer::session.Simulating()
         && !multiplayer::session.Spectator() && !mp_playback_pending;
+    if (live_mp != frame_meter_live) {
+        frame_meter_live = live_mp;
+        mp_schedule.take_completed();
+        frame_meter.restart();
+    }
+    const bool display_callback = source == 1;
+    if (display_callback) last_display_callback_ms = begin;
+    const bool presents = display_callback ||
+        (source == 3 && (last_display_callback_ms < 0 ||
+                         begin - last_display_callback_ms > kDisplayStaleMs));
+    if (presents) {
+        sample_presentation_rate(begin);
+        frame_meter.sample(live_mp ? mp_schedule.credit() : cadence.debt);
+    }
+    frame_meter.elapse(delta);
     unsigned ticks;
     if (live_mp) {
         if (source == 1) {
@@ -839,20 +866,16 @@ bool drive_one_frame(double delta, unsigned source = 0) {
     } else {
         ticks = cadence.advance(delta);
     }
-    const bool display_callback = source == 1;
-    if (display_callback) last_display_callback_ms = begin;
-    const bool presents = display_callback ||
-        (source == 3 && (last_display_callback_ms < 0 ||
-                         begin - last_display_callback_ms > kDisplayStaleMs));
-    if (presents) sample_presentation_rate(begin);
     bool ok = true;
     const bool mp_active = multiplayer::session.Active();
     app->graphics.backend.defer = true;
-    for (unsigned i = 0; i < ticks && ok; i++) {
-        ok = mp_active ? mp_tick(presentation_fps, simulated, attempted, rollback)
-                       : sample_and_tick(presentation_fps, &attempted);
-        if (app->exiting || app->pending_load) break;
+    unsigned executed = 0;
+    for (; executed < ticks && ok; executed++) {
+        ok = mp_active ? mp_tick(frame_meter.fps, simulated, attempted, rollback)
+                       : sample_and_tick(frame_meter.fps, &attempted);
+        if (app->exiting || app->pending_load) { ++executed; break; }
     }
+    frame_meter.frame(live_mp ? mp_schedule.take_completed() : executed);
     // The readout counts fresh frames reaching the display: a repeated
     // presentation keeps the refresh cadence but is not a new frame.
     const bool fresh = app->graphics.backend.pending_presentation();
@@ -919,6 +942,9 @@ int mp_run_frame(double delta_ms) {
 // Configure/Stop 清零时间同步累积（Session::Configure 成功路径调用）。
 void reset_mp_accumulator() {
     mp_schedule.reset();
+    mp_schedule.align_phase();
+    mp_schedule.take_completed();
+    frame_meter.restart();
     mp_governor.reset();
     mp_step_cost_ms = 0;
     mp_display_interval_ms = 0;
@@ -1034,7 +1060,7 @@ EMSCRIPTEN_KEEPALIVE int th13_initialize() {
     app->graphics.release_startup_branding();
     for (auto& key : keyboard_map) key.native = SDL_GetScancodeFromName(key.sdl);
     previous_frame = -1;
-    cadence.reset();
+    reset_cadence();
     return 1;
     }();
     return work.finish(result, result != 0);
@@ -1097,10 +1123,15 @@ EMSCRIPTEN_KEEPALIVE int th13_room_return() {
     return work.finish(result, result != 0);
 }
 
-// 只读呈现率埋点（诊断面）：右下角 fps 文本的数据源（每秒到达显示的新帧
-// 数），供 vsync 探针核对读数；不参与任何生产判定。
+// 只读呈现率埋点（诊断面）：每秒到达显示的新帧数，供 vsync 探针核对；
+// 不参与任何生产判定。
 EMSCRIPTEN_KEEPALIVE float th13_debug_presentation_fps() {
     return th13::sdl::presentation_fps;
+}
+
+// 右下角 fps 文本的数据源：原作 0x424990 口径的逻辑帧率。
+EMSCRIPTEN_KEEPALIVE float th13_debug_frame_rate() {
+    return th13::sdl::frame_meter.fps;
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned th13_frame() { return th13::sdl::app ? th13::sdl::app->frames : 0; }
@@ -2702,7 +2733,7 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_stop() {
     running = false;
     ++loop_epoch;
     previous_frame = -1;
-    cadence.reset();
+    reset_cadence();
     reset_presentation_window();
     reset_mp_accumulator();
     clear_inputs();
@@ -2726,7 +2757,7 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_pause(unsigned enabled) {
     using namespace th13::sdl;
     suspended = enabled != 0;
     previous_frame = -1;
-    cadence.reset();
+    reset_cadence();
     reset_presentation_window();
     reset_mp_accumulator();
     if (app) app->audio_device.suspend(suspended);
@@ -2743,7 +2774,7 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_start() {
     running = true;
     suspended = false;
     previous_frame = -1;
-    cadence.reset();
+    reset_cadence();
     reset_presentation_window();
     mp_clock.reset();
     clear_inputs();
@@ -2852,7 +2883,7 @@ EMSCRIPTEN_KEEPALIVE unsigned th13_debug_replay(const char* name, unsigned stage
         return 0;
     }
     clear_inputs();
-    cadence.reset();
+    reset_cadence();
     return app->replay_cursor ? app->replay_cursor->stage()
                                   ? app->replay_cursor->stage()->frame_count
                                   : 0
@@ -2896,7 +2927,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_ending(int character, int difficulty) {
     app->pending_destination = th13::i32(Destination::Ending);
     if (!app->apply_destination()) { last_error = app->failure; return 0; }
     clear_inputs();
-    cadence.reset();
+    reset_cadence();
     return 1;
 }
 
@@ -2937,7 +2968,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_start_run(int stage, int character, int diff
         return 0;
     }
     clear_inputs();
-    cadence.reset();
+    reset_cadence();
     return 1;
 }
 
