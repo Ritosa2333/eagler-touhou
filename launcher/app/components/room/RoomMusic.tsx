@@ -40,22 +40,18 @@ export type MusicPanelTab = 'search' | 'queue';
 const tracksPerPage = 30;
 const paletteCache = new Map<string, string[]>();
 function MusicCover({ url, onColors }: { url?: string; onColors?(colors: string[]): void }) {
-  const [cors, setCors] = useState(!!onColors),
-    [failed, setFailed] = useState(false);
-  return url && !failed ? (
+  const [failedUrl, setFailedUrl] = useState<string>();
+  return url && failedUrl !== url ? (
     <img
       className="room-music-cover"
       src={url}
       alt=""
       loading={onColors ? 'eager' : 'lazy'}
-      crossOrigin={cors ? 'anonymous' : undefined}
+      crossOrigin="anonymous"
       referrerPolicy="no-referrer"
-      onError={() => {
-        if (cors) setCors(false);
-        else setFailed(true);
-      }}
+      onError={() => setFailedUrl(url)}
       onLoad={async (event) => {
-        if (!cors || !onColors) return;
+        if (!onColors) return;
         const img = event.currentTarget,
           cached = paletteCache.get(url);
         if (cached) {

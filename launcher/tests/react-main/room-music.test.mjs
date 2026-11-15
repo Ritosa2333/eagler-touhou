@@ -111,7 +111,7 @@ test('Meting resolves the requested track and rejects previews and unrelated hos
   expect(await provider.stream(qq,signal)).toEqual(['https://aqqmusic.tc.qq.com/track.mp3']);
   expect(request).toHaveBeenCalledWith(
     'https://meting.example/music?server=tencent&type=url&id=000PRyI71e12gl&br=320',
-    expect.objectContaining({signal:expect.any(AbortSignal),credentials:'omit'}),
+    expect.objectContaining({signal:expect.any(AbortSignal),credentials:'omit',cache:'no-store'}),
   );
   body={...body,freeTrialInfo:{start:0,end:30}};
   await expect(provider.stream(qq,signal)).rejects.toThrow('trial');
@@ -120,6 +120,7 @@ test('Meting resolves the requested track and rejects previews and unrelated hos
   body={url:'http://m704.music.126.net/track.mp3?token=value'};
   expect(await provider.stream(track,signal)).toEqual([
     'https://m704.music.126.net/track.mp3?token=value',
+    'https://m701.music.126.net/track.mp3?token=value',
     'https://m704c.music.126.net/track.mp3?token=value',
   ]);
 });
@@ -165,6 +166,7 @@ test('a failed media host can use a second host for the same track',async()=>{
   f.model.receive(session);
   await settle();
   expect(f.audio.src).toBe(alternate);
+  expect(f.audio.crossOrigin).toBe('anonymous');
   expect(f.model.getSnapshot().status).toBe('playing');
   f.model.dispose();
 });
