@@ -34,57 +34,51 @@ export function createNat4CandidateExchange(addresses, steps, send, observers = 
   const candidates = new Map();
   const observed = new Map();
   const descriptions = new Set();
-  const pending = [];
   const knownObservers = new Set(observers);
   const maximumBases = 8;
-  let closed = false, releasedPrediction = false;
-  let timer = setTimeout(() => {
+  let closed = false;
+  const timer = setTimeout(() => {
     // Some ICE agents deduplicate identical public mappings from different
-    // STUN servers. Offer the other seat's independently observed prediction
-    // before opening the normal candidate path.
-    if (!release(true)) flush();
+    // STUN servers. An independently observed prediction may still help.
+    release(true);
+    close();
   }, knownObservers.size && addresses.some(address => !steps.has(address)) ? 4500 : 3000);
   timer.unref();
 
-  function flush() {
+  function close() {
     closed = true;
     clearTimeout(timer);
     candidates.clear();
     observed.clear();
-    for (const [player, signal] of pending) send(player, signal);
-    pending.length = 0;
   }
 
   function release(partial = false) {
-    if (releasedPrediction || descriptions.size !== 2 || !candidates.size || (!partial && candidates.size !== 2)) return false;
-    releasedPrediction = true;
+    if (closed || descriptions.size !== 2 || !candidates.size || (!partial && candidates.size !== 2)) return;
     for (const [source, predicted] of candidates) {
       if (observed.has(source)) console.log(`NAT4 prediction seat=${source} source=stun port=${predicted.candidate.split(' ')[5]}`);
-      send(source, {description: null, candidate: predicted});
+      if (observed.has(source) || steps.get(addresses[source]) !== 0)
+        send(source, {description: null, candidate: predicted});
     }
-    candidates.clear();
-    observed.clear();
-    clearTimeout(timer);
-    timer = setTimeout(flush, 1200);
-    timer.unref();
-    return true;
+    close();
   }
 
   return {
     send(player, {description, candidate, observer}) {
-      if (closed) {
-        if (!observer) send(player, {description, candidate});
-        return;
+      // Keep ICE gathering and NAT4 observation independent. Leave trickle ICE
+      // open until the predictor has had a chance to send its candidate.
+      if (!observer) {
+        const outgoing = !closed && description
+          ? {...description, sdp:description.sdp.replace(/^a=end-of-candidates(?:\r?\n|$)/gm, '')}
+          : description;
+        send(player, {description:outgoing, candidate});
       }
+      if (closed) return;
       if (description) {
-        const sdp = description.sdp.replace(/^a=(?:candidate:[^\r\n]*|end-of-candidates)(?:\r?\n|$)/gm, '');
-        send(player, {description: {...description, sdp}, candidate: null});
         descriptions.add(player);
       }
       if (candidate) {
-        if (!observer && pending.length < 64) pending.push([player, {description: null, candidate}]);
         const address = addresses[player];
-        const mapping = !releasedPrediction && !candidates.has(player) && observedCandidate(candidate, address);
+        const mapping = !candidates.has(player) && observedCandidate(candidate, address);
         if (mapping) {
           let prediction;
           if (steps.has(address)) {
@@ -111,12 +105,6 @@ export function createNat4CandidateExchange(addresses, steps, send, observers = 
       }
       release();
     },
-    close() {
-      closed = true;
-      clearTimeout(timer);
-      candidates.clear();
-      observed.clear();
-      pending.length = 0;
-    },
+    close,
   };
 }

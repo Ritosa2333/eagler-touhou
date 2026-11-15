@@ -862,7 +862,10 @@ function failRoute(roomId, runId, run, reason) {
   run.routeTimer = null;
   run.spectatorGraceTimer = null;
   clearSpectatorHistory(run);
-  console.log(`ROUTE room=${roomId} run=${runId} mode=failed reason=${reason}`);
+  const swarm = run.swarmDirectPlayer != null
+    ? (run.swarmGrantIssued ? 'desktop-with-turn-backup' : 'turn-backup')
+    : run.swarm ? 'turn' : 'off';
+  console.log(`ROUTE room=${roomId} run=${runId} mode=failed reason=${reason} ready=${run.rtcReady.size}/${run.playerCount} swarm=${swarm}`);
   const message = JSON.stringify({type: 'route', mode: 'failed', reason});
   for (const socket of [...run.signalClients.values(), ...run.clients.values()]) {
     sendBounded(socket, message);
@@ -940,8 +943,7 @@ async function replaceRtcTransport(run) {
   broadcastSignal(run, {type:'rtc-replacing', generation});
   let grant;
   if (run.swarmDirectPlayer != null) {
-    run.swarmGrant = allocateSwarmPort(swarmControlUrl, swarmAccessToken, run.swarmWorkers[run.swarmDirectPlayer] ?? 0)
-      .catch(() => undefined);
+    run.swarmGrant = allocateDesktopSwarm(run);
     grant = await run.swarmGrant;
   }
   if (run.rtcReplacement !== replacement || run.ended) return;
@@ -968,6 +970,11 @@ function maybeReplaceRtcTransport(roomId, runId, run) {
   void replaceRtcTransport(run).catch(() => failRtcReplacement(run, 'setup'));
 }
 
+function allocateDesktopSwarm(run) {
+  return allocateSwarmPort(swarmControlUrl, swarmAccessToken, run.swarmWorkers[run.swarmDirectPlayer] ?? 0)
+    .catch(() => undefined);
+}
+
 async function handleSignalConnection(socket, roomId, runId, player, playerCount) {
   const room = getRoom(roomId, socket);
   if (!room) return;
@@ -985,17 +992,15 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
     return;
   }
   run.playerCount = playerCount;
-  const useDesktopSwarm = run.swarmDirectPlayer != null;
   let swarmGrant;
   if (player === run.swarmDirectPlayer) {
-    run.swarmGrant ??= allocateSwarmPort(swarmControlUrl, swarmAccessToken, run.swarmWorkers[player] ?? 0)
-      .catch(() => undefined);
     swarmGrant = await run.swarmGrant;
     if (socket.readyState !== WebSocket.OPEN || rooms.get(roomId) !== room || room.runs.get(runId) !== run ||
         run.ended || run.releasedPlayers?.has(player)) {
       socket.close(4008, 'membership released');
       return;
     }
+    run.swarmGrantIssued = Boolean(swarmGrant);
   }
   const previous = run.signalClients.get(player);
   if (previous && previous !== socket && previous.readyState === WebSocket.OPEN)
@@ -1024,7 +1029,9 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
     type: 'peers',
     peers: existingPeers,
     route: run.route,
-    iceServers: useDesktopSwarm ? (stun.length ? [{urls:stun}] : [])
+    // The other seat can gather Swarm TURN while the desktop's local Swarm
+    // helper starts. A missing grant also enables Swarm TURN on the desktop.
+    iceServers: swarmGrant ? (stun.length ? [{urls:stun}] : [])
       : iceServersFor(roomId, runId, player, run.swarm, run.swarmWorkers?.[player], stun),
     ...(run.swarm ? {turnMode:'swarm'} : {}),
     ...(swarmGrant ? {swarmGrant} : {}),
@@ -2270,7 +2277,10 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         run.swarmWorkers = preferred.map(worker => worker ?? defaultWorker);
         if (swarmAccessToken && activeSeats.length === 2) {
           const native = activeSeats.findIndex(seat => seat.nativeRuntime && seat.swarmDirect);
-          if (native !== -1) run.swarmDirectPlayer = native;
+          if (native !== -1) {
+            run.swarmDirectPlayer = native;
+            run.swarmGrant = allocateDesktopSwarm(run);
+          }
         }
       }
       run.admittedSpectators = new Set(
