@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-11-16",
-  "generation": "d0b240a8b4804f1af936d61d9db10b8d15a6f7a53ca82706d31c5896c03e0241",
+  "generation": "6e8c0735f0465857a2437d6e3593ddcdd2aba23dd9776e90393acbdb85f506d6",
   "sourceFiles": {
     "src/animation/AnmLogic.cpp": "8181699a119c123274e04883ffbb072ac3b4a0a1c0b18ccb2c6fa16850995b27",
     "src/animation/AnmLogic.hpp": "cb157319e0f57d007aae669d60a3840be7d31adfd1f384f02459146c56c8c88b",
@@ -219,7 +219,7 @@
     "src/game/StageSettlementHost.hpp": "70928b0010ad271819257fa85dcde28565a04894a6ce278f0c583ea9f1d12df2",
     "src/game/StageTransitionHost.cpp": "9790dbdecf01683239fe0eee672dc430fe1c60ecae6175f65a6c9a35ce3013d0",
     "src/game/StageTransitionHost.hpp": "4783bdf19a753a113633307825d4b2a9326e8444d1671bd725696f2363f83895",
-    "src/game/StageWorld.cpp": "021564a04f23c6274ef75f13c6403e3d5e75f63a3989e0d8bd3603757c92a650",
+    "src/game/StageWorld.cpp": "c6b07b4132f1f045844e24116f56630e3fb06b52ec4216bad1ea00093cfd2c5d",
     "src/game/StageWorld.hpp": "178b049d3368cc60e300d414cea81af1b4363f6983a6c0f82e92096d50953a44",
     "src/game/TransientEffects.cpp": "cc82c00c731d381bcad1cf70914af765f57e9344b012db1ffe1147ddaaf0b65f",
     "src/game/TransientEffects.hpp": "f47f9035c6ed75338935a74cadf6df32b526ad253f5a0e2962e8c817a19be03a",
@@ -528,26 +528,48 @@
       "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
     },
     "core.wasm": {
-      "bytes": 2169195,
-      "sha256": "c15bea7d29b6d5b1249c364a0cde495b44ca9440847ee39feda2fa07428fa143"
+      "bytes": 2169209,
+      "sha256": "026bae73c5854f92f5dd810926d8b53014e5fe2017874bca9d02415a363fb682"
     }
   },
-  "acceptedAssistedScope": "Historical six normal routes on private98 and EX on private99; not rerun on private101.",
+  "acceptedAssistedScope": "Historical six normal routes on private98 and EX on private99; not rerun on private103.",
   "browserAcceptance": false,
   "rebuiltForUpload": false,
-  "coreOrdinal": 102,
+  "coreOrdinal": 103,
   "browserEntryAccepted": false,
   "browserAcceptanceEvidence": null,
-  "rebuildReason": "First private102 link626 after actual621 lost replaygraze, producer/restore/bind623RED624GREEN and625completeaffectedTUs syntax; successful101 unchanged.",
+  "rebuildReason": "First private103 link632 after completeStageWorld/EclVm428dispatch630RED63136GREEN/UBSan; successful102 unchanged.",
   "relativeHeaderEdges": 390,
   "buildAcceptance": {
-    "case": 626,
+    "case": 632,
     "compilerCalls": 1,
     "compilerExit": 0,
     "compilerStdoutBytes": 0,
     "compilerStderrBytes": 0
   },
   "runtimeAcceptance": {
+    "case": 633,
+    "passed": true,
+    "coreOrdinal": 103,
+    "generation": "6e8c0735f0465857a2437d6e3593ddcdd2aba23dd9776e90393acbdb85f506d6",
+    "actualExports": 205,
+    "Factories": 1,
+    "WorldStarts": 0,
+    "unownedActionsRejected": 5,
+    "postrunOwnersMinted": 0,
+    "browser": 0,
+    "storageWrites": 0,
+    "sourceStarts": 0,
+    "scope": "actual produced103 instantiate/205callable/memory/5noownerrejections,0World;428 dispatch behavior tested by completeStageWorld component631"
+  },
+  "historicalBrowserEvidence": {
+    "coreOrdinal": 100,
+    "evidence": "completion-checkpoint-20261115.json",
+    "entryAccepted": true,
+    "fullTerminalAccepted": false
+  },
+  "historicalGrazeAcceptance": {
+    "coreOrdinal": 102,
     "case": 627,
     "Factories": 1,
     "WorldStarts": 1,
@@ -563,11 +585,5 @@
     "normalRecordBound": false,
     "browser": 0,
     "scope": "actual original header restore and strict playbackbind at0ticks; not full23707/continuedterminal/browser acceptance"
-  },
-  "historicalBrowserEvidence": {
-    "coreOrdinal": 100,
-    "evidence": "completion-checkpoint-20261115.json",
-    "entryAccepted": true,
-    "fullTerminalAccepted": false
   }
 }

@@ -752,7 +752,7 @@ bool StageWorld::install(Entity& entity) {
             if((id!=-9981&&id!=-9980)||value.type!=ecl::ValueType::Float||!std::isfinite(value.asFloat()))return false;
             entity.variables[std::size_t(4+id+9981)]=value.bits;return true;
         },error))return fail(error);
-    for(const auto opcode:{22,256,257,258,259,260,261,262,263,269,274,283,300,301,308,309,310,311,312,327,400,401,402,403,404,405,406,407,408,409,410,411,412,413,414,415,416,417,418,419,420,421,422,423,424,425,426,427,613,304,305,435,436,437,438,439,440,442,443,445,448,452,453,463,500,501,502,503,504,505,506,507,508,509,510,511,512,513,521,522,523,524,525,529,534,537,538,600,601,602,604,608,609,614,615})
+    for(const auto opcode:{22,256,257,258,259,260,261,262,263,269,274,283,300,301,308,309,310,311,312,327,400,401,402,403,404,405,406,407,408,409,410,411,412,413,414,415,416,417,418,419,420,421,422,423,424,425,426,427,428,613,304,305,435,436,437,438,439,440,442,443,445,448,452,453,463,500,501,502,503,504,505,506,507,508,509,510,511,512,513,521,522,523,524,525,529,534,537,538,600,601,602,604,608,609,614,615})
         if(!entity.vm->registerHostOpcode(std::uint16_t(opcode),[this,&entity](ecl::HostCall& call){return host(entity,call);},error))return fail(error);
     if(geometryHost_&&!entity.vm->registerHostOpcode(526,[this,&entity](ecl::HostCall& call){return host(entity,call);},error))return fail(error);
     return true;
@@ -1026,17 +1026,17 @@ bool StageWorld::host(Entity& entity,ecl::HostCall& call) {
         if(shakeStates_.size()>=4096)return fail("screen shake owner budget");
         shakeStates_.insert(shakeStates_.begin(),{duration,initial,final,0});return true;
     }
-    if(opcode==422||opcode==437||opcode==438||opcode==439){
+    if(opcode==422||opcode==428||opcode==437||opcode==438||opcode==439){
         int identifier=0,limit=0,unused=0;
         if(!phaseSpell_||!spellHost_||instruction.parameterCount!=4||instruction.rawWords.size()<5||!call.readInteger(0,identifier)||!call.readInteger(2,unused)||!call.readInteger(1,limit))return false;
         const auto length=std::size_t(instruction.rawWords[3]);if(length<4||length>64||length%4||instruction.rawWords.size()!=4+length/4)return false;
         std::vector<std::uint8_t> title;std::uint8_t key=0x77,step=7;bool ended=false;
         for(std::size_t index=0;index<length;++index){const auto value=std::uint8_t(instruction.rawWords[4+index/4]>>((index%4)*8))^key;key=std::uint8_t(key+step);step=std::uint8_t(step+16);if(value==0)ended=true;else if(!ended)title.push_back(std::uint8_t(value));}
         if(!ended||title.empty())return false;
-        if(opcode!=422)identifier+=difficulty_-(opcode==438?1:opcode==439?2:0);
+        if(opcode==437||opcode==438||opcode==439)identifier+=difficulty_-(opcode==438?1:opcode==439?2:0);
         auto next=*phaseSpell_;
         if(extraStage16Rank4SpellDomain_){
-            if(opcode!=422||!spell::beginExtraStage16Rank4(next,identifier,limit))return false;
+            if((opcode!=422&&opcode!=428)||!spell::beginExtraStage16Rank4(next,identifier,limit))return false;
         }else if(!spell::begin(next,identifier,limit,difficulty_))return false;
         std::string reason;SpellEvent event;event.starting=true;event.state=next;event.title=title;event.position={entity.state.x,entity.state.y,entity.state.z};
         try{if(!spellHost_(event,reason)||!reason.empty())return fail(reason.empty()?"required spell constructor rejected":reason);}catch(...){return fail("spell constructor threw");}
