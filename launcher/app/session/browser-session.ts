@@ -681,6 +681,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         const room = roomSession?.service.getSnapshot();
         const product = activeSettings?.context.productId ?? DEFAULT_PRODUCT_ID;
         return {product, runtimeVariant: control?.runtimeVariant ?? 'normal', roomCode: room?.room?.code ?? null,
+          swarmSelected: room?.room?.swarmSelected === true,
           player: config?.netplayPlayer ?? 0, playerCount: config?.netplayPlayerCount ?? 2,
           inputDelay: config?.netplayInputDelay ?? 0, adonisMode: config?.netplayAdonisMode ?? 0,
           adonisSupported: multiplayerConfigForProduct(product)?.inputTiming?.measuredStartup === true,

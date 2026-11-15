@@ -68,6 +68,7 @@ export interface RuntimeNetplaySnapshot {
 export interface RuntimePeerQuality extends RtcPathSummary {
   pc: RTCPeerConnection;
   pairId: string;
+  nat4: boolean;
   samples: number[];
   rttMs: number | null;
   variationMs: number | null;
