@@ -1716,7 +1716,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "1ce3e9544e4e82f4a032b890e7e643220ddba51d",
+      "base": "61b48d3882fab77fe660871da0d1d8ff04a8937b",
       "history": [
         {
           "kind": "manual",
@@ -1919,6 +1919,28 @@
             "ports/th17-mp/web/cpp/sdl/ThpracUi.cpp"
           ],
           "note": "练习计数接入多人端本地练习，联机房间保持既有面板和检查点格式；保留多人端现有作弊权限及录像规则。"
+        },
+        {
+          "kind": "manual",
+          "base": "1ce3e9544e4e82f4a032b890e7e643220ddba51d",
+          "source": "61b48d3882fab77fe660871da0d1d8ff04a8937b",
+          "targetHead": "2e41427791afcf5c89bb0cd87be87d2493a218c8",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/Dialogue.cpp",
+            "ports/th17-mp/web/cpp/game/Dialogue.hpp",
+            "ports/th17-mp/web/cpp/game/GameBattle.cpp",
+            "ports/th17-mp/web/cpp/game/StageGameplay.cpp",
+            "ports/th17-mp/web/cpp/game/StageGameplay.hpp",
+            "ports/th17-mp/web/cpp/game/TextLayout.hpp",
+            "ports/th17-mp/web/cpp/game/TitleScene.cpp",
+            "ports/th17-mp/web/cpp/sdl/ApplicationGame.cpp",
+            "ports/th17-mp/web/cpp/sdl/ApplicationState.hpp",
+            "ports/th17-mp/web/cpp/sdl/FontDevice.cpp",
+            "ports/th17-mp/web/cpp/sdl/FontDevice.hpp",
+            "ports/th17-mp/web/cpp/sdl/FontLocalization.cpp",
+            "ports/th17-mp/web/tests/sdl/application-browser.test.mjs"
+          ],
+          "note": "普通版与多人版共用对话气泡边界、字体居中和 Manual 重入修复。多人版保留回滚时符卡名的纹理写入流程，普通版浏览器测试继续覆盖 Manual 回归。已合并两侧投影，写回前后多人运行时源码一致。"
         }
       ]
     },
