@@ -378,41 +378,92 @@ export class OriginalPauseController{
   }
 }
 
+const menuAudioOwners=new WeakMap();
 export class MenuAudioGate{
   constructor(queue,{createContext=()=>new AudioContext()}={}){
     if(!queue||typeof queue.stopChannel!=='function'||typeof createContext!=='function')
       throw new Error('Original sound queue is required');
     this.queue=queue;this.createContext=createContext;this.menu=null;this.gain=null;this.game=null;this.gameGain=null;
+    this.entry=null;this.leaving=null;this.requestEpoch=0;
+  }
+  checkOwner(entry){
+    if(entry.retired||this.entry!==entry||menuAudioOwners.get(this.queue)!==entry||this.queue.disposed)
+      throw new DOMException('Menu audio owner retired','AbortError');
+  }
+  async completeEntry(entry){
+    try{await entry.pending;this.checkOwner(entry);}
+    catch(error){
+      const retired=entry.retired;
+      await this.retire(entry).catch(()=>{});
+      if(retired)throw new DOMException('Menu audio owner retired','AbortError');
+      throw error;
+    }finally{entry.entering=false;}
+  }
+  async resumeEntry(entry){
+    await Promise.race([entry.menu.resume(),entry.cancelled.then(()=>{throw new DOMException('Menu audio owner retired','AbortError');})]);
+    this.checkOwner(entry);
   }
   async enter(){
-    if(this.menu){await this.menu.resume();return;}
+    if(this.entry&&!this.entry.retired){
+      const entry=this.entry;
+      if(entry.entering){await entry.pending;this.checkOwner(entry);return;}
+      this.checkOwner(entry);entry.entering=true;
+      entry.pending=this.resumeEntry(entry);
+      return this.completeEntry(entry);
+    }
+    const epoch=this.requestEpoch,previous=menuAudioOwners.get(this.queue);
+    if(previous&&!previous.retired)throw new Error('Game audio already has a menu owner');
+    if(previous?.cleanup)await previous.cleanup;
+    if(this.requestEpoch!==epoch||menuAudioOwners.get(this.queue)!==previous)throw new DOMException('Menu audio owner changed','AbortError');
     const game=this.queue.context,gameGain=this.queue.gain;
-    if(!game||!gameGain||game.state==='closed')throw new Error('Game audio is unavailable');
+    if(!game||!gameGain||game.state==='closed'||this.queue.disposed)throw new Error('Game audio is unavailable');
     const menu=this.createContext(),gain=menu.createGain();
     gain.gain.value=gameGain.gain.value;gain.connect(menu.destination);
+    const entry={game,gameGain,menu,gain,retired:false,entering:true,pending:null,cleanup:null};
+    entry.cancelled=new Promise(resolve=>{entry.cancel=resolve;});
+    this.entry=entry;menuAudioOwners.set(this.queue,entry);
     this.game=game;this.gameGain=gameGain;this.menu=menu;this.gain=gain;
-    try{
-      await game.suspend();
+    entry.pending=(async()=>{
+      await game.suspend();this.checkOwner(entry);
+      if(this.queue.context!==game||this.queue.gain!==gameGain)throw new Error('Game audio output changed during suspension');
       this.queue.context=menu;this.queue.gain=gain;
-      await menu.resume();
-    }catch(error){
-      this.queue.context=game;this.queue.gain=gameGain;
-      this.menu=null;this.gain=null;await menu.close().catch(()=>{});
-      await game.resume().catch(()=>{});throw error;
-    }
+      await this.resumeEntry(entry);
+    })();
+    return this.completeEntry(entry);
   }
   async suspend(){if(this.menu&&this.menu.state==='running')await this.menu.suspend();}
+  retire(entry){
+    if(entry.cleanup)return entry.cleanup;
+    entry.retired=true;entry.cancel();
+    const owned=this.entry===entry;
+    if(owned){this.entry=null;this.menu=null;this.gain=null;this.game=null;this.gameGain=null;}
+    // Finish the old context operation before restoring game audio or admitting its successor.
+    entry.cleanup=(async()=>{
+      await entry.pending.catch(()=>{});
+      const {menu,gain,game,gameGain}=entry;
+      for(const channel of this.queue.channels.values())
+        if(channel.source?.context===menu||channel.gain?.context===menu)this.queue.stopChannel(channel);
+      for(const channel of this.queue.retiredChannels)
+        if(channel.source?.context===menu||channel.gain?.context===menu){this.queue.stopChannel(channel);this.queue.retiredChannels.delete(channel);}
+      if(menuAudioOwners.get(this.queue)===entry&&this.queue.context===menu){
+        this.queue.context=game;this.queue.gain=gameGain;
+      }
+      gain.disconnect();
+      try{await menu.close();}
+      finally{
+        if(menuAudioOwners.get(this.queue)===entry&&this.queue.context===game&&this.queue.gain===gameGain
+          &&!this.queue.disposed&&game.state!=='closed'){
+          try{await game.resume();}catch(error){if(game.state!=='closed')throw error;}
+        }
+      }
+    })();
+    if(owned)this.leaving=entry.cleanup;
+    return entry.cleanup;
+  }
   async leave(){
-    if(!this.menu)return;
-    const menu=this.menu;this.menu=null;
-    for(const channel of this.queue.channels.values())
-      if(channel.source?.context===menu||channel.gain?.context===menu)this.queue.stopChannel(channel);
-    for(const channel of this.queue.retiredChannels)
-      if(channel.source?.context===menu||channel.gain?.context===menu){this.queue.stopChannel(channel);this.queue.retiredChannels.delete(channel);}
-    this.queue.context=this.game;this.queue.gain=this.gameGain;
-    this.gain?.disconnect();this.gain=null;await menu.close();
-    if(this.game?.state!=='closed')await this.game.resume();
-    this.game=null;this.gameGain=null;
+    ++this.requestEpoch;
+    if(this.entry)return this.retire(this.entry);
+    await this.leaving;
   }
 }
 
