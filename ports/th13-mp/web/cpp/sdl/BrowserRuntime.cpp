@@ -641,14 +641,18 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
     // the old forward frontier, even when Pump just rewound the simulation.
     const auto capture_due_input = [&]() {
         if (!mp_schedule.owed()) return true;
-        const auto frontier = multiplayer::session.Correcting()
+        const bool correcting = multiplayer::session.Correcting();
+        const auto frontier = correcting
             ? multiplayer::session.Runtime().CorrectionEnd()
             : multiplayer::session.SimFrame();
         const auto capture = multiplayer::session.CaptureFrame();
-        // Save one fresh input before correction, never a tail of inputs
-        // waiting behind it. CPU work retains due clock credit; only an
-        // actual simulation gate below turns that credit into a network retry.
-        if (capture > frontier) return true;
+        // The transition still simulates confirmed inputs only. Send due inputs
+        // while earlier frames wait so consecutive frames can overlap in transit.
+        // After activation, the regular capture rule drains the queued inputs.
+        const bool transition = !correcting && (app->stage_transition_loading ||
+            app->stage_transition_active || app->pending_destination == i32(Destination::NextStage));
+        if (capture > frontier && (!transition ||
+            capture - frontier >= multiplayer::SessionSetup::MaxRollbackFrames)) return true;
         const auto sampled = sample_input();
         if (sampled.skip) return true;
         if (!multiplayer::session.CaptureLocal(sampled.held,
