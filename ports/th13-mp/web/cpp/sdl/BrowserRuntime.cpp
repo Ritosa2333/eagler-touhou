@@ -2430,7 +2430,7 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_spectator_save_replay() {
     const auto& segments = playback.History().Segments();
     if (segments.empty()) return 0;
     const auto& setup = th13::multiplayer::session.Setup();
-    if (!archive->Begin(setup, std::uint64_t(emscripten_get_now()))) return 0;
+    if (!archive->Begin(setup, std::uint64_t(emscripten_date_now()))) return 0;
     for (const auto& segment : segments) {
         const std::vector<std::uint8_t>* initializer = nullptr;
         if (!segment.checkpoint.state.empty()) initializer = &segment.checkpoint.state;
@@ -2492,10 +2492,18 @@ EMSCRIPTEN_KEEPALIVE const char* eagler_replay_inspect(const unsigned char* byte
     eagler::replay::Description description;
     description.encoded_name(archive.Name().c_str(),
                               unsigned(archive.Name().size()));
-    description.number("character", archive.Setup().selections[0]);
-    description.number("difficulty", archive.Setup().difficulty);
+    const auto& setup = archive.Setup();
+    description.number("character", setup.selections[0]);
+    if (setup.player_count >= 2 && setup.player_count <= 3) {
+        std::string characters = "[";
+        for (unsigned seat = 0; seat < setup.player_count; ++seat)
+            characters += (seat ? "," : "") + std::to_string(setup.selections[seat]);
+        description.field("characters", characters + "]");
+    }
+    description.number("difficulty", setup.difficulty);
     description.number("score", double(archive.Score()) * 10);
-    description.number("timestamp", double(archive.Timestamp()));
+    // The archive keeps Unix milliseconds; the description contract is seconds.
+    description.number("timestamp", std::floor(double(archive.Timestamp()) / 1000.));
     const auto& info = archive.Info();
     for (unsigned index = 0; index < info.chapterCount; ++index) {
         const auto stage = info.chapters[index].label;
