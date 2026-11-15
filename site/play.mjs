@@ -3847,7 +3847,9 @@ async function openOriginalNativePause(alreadyOpened=false){
   const controller=originalPauseConsumer();
   const pending=controller.open({alreadyOpened});
   state.nativePausePending=pending;
-  try{await pending;status(alreadyOpened?'满身疮痍 · 选择再挑战或返回标题。':'游戏暂停 · 方向键选择，Z/Enter 确认，X/Esc 返回。');}
+  const current=()=>module===state.module&&action===state.action&&selection===state.stageSelection&&controller===state.nativePause&&!controller.closed;
+  try{await pending;if(current())status(alreadyOpened?'满身疮痍 · 选择再挑战或返回标题。':'游戏暂停 · 方向键选择，Z/Enter 确认，X/Esc 返回。');}
+  catch(problem){if(current())throw problem;}
   finally{if(state.nativePausePending===pending)state.nativePausePending=null;}
 }
 function handlePauseKey(code){state.nativePause?.keyDown(code);return true;}

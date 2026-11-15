@@ -316,16 +316,17 @@ export class OriginalPauseController{
     try{
       this.releaseInput();this.held=0;this.pressed=0;
       await this.audio.enter();
+      if(this.closed)return;
       if(!alreadyOpened)this.checked(this.module._th128_world_pause_open(0));
       if(!this.snapshot().active)throw new Error('Original menu owner was not created');
-      await this.consumeSound();this.active=true;this.suspended=false;
-    }finally{this.busy=false;}
+      await this.consumeSound();if(this.closed)return;this.active=true;this.suspended=false;
+    }catch(problem){if(!this.closed)throw problem;}finally{this.busy=false;}
   }
   keyDown(code){
     if(!this.active||this.closed)return;
     const bit=keyBits.get(code);if(bit===undefined)return;
     if(!(this.held&bit))this.pressed|=bit;this.held|=bit;
-    if(this.suspended){this.suspended=false;this.wake=this.audio.enter().catch(error=>{this.failure=error;});}
+    if(this.suspended){this.suspended=false;this.wake=this.audio.enter().catch(error=>{if(!this.closed)this.failure=error;});}
   }
   keyUp(code){const bit=keyBits.get(code);if(bit!==undefined)this.held&=~bit;}
   async step(){
@@ -334,21 +335,21 @@ export class OriginalPauseController{
     if(this.busy)throw new Error('Original menu tick is not serial');
     this.busy=true;
     try{
-      if(this.wake){await this.wake;this.wake=null;if(this.failure)throw this.failure;}
+      if(this.wake){await this.wake;this.wake=null;if(this.closed)return;if(this.failure)throw this.failure;}
       const pressed=this.pressed;this.pressed=0;
       this.checked(this.module._th128_world_pause_tick(this.held,pressed));
-      await this.consumeSound();
-      const snapshot=this.snapshot();await this.onPresentation(snapshot);
+      await this.consumeSound();if(this.closed)return;
+      const snapshot=this.snapshot();await this.onPresentation(snapshot);if(this.closed)return;
       const action=snapshot.action;
       if(action===4){if(!snapshot.replayPhase)await this.onReplayOpen(snapshot);return;}
       if(!action)return;
       if(![1,2,3,6].includes(action))throw new Error('Original menu action has no complete consumer');
       this.checked(this.module._th128_world_pause_commit(action));
-      this.active=false;this.held=0;this.pressed=0;this.releaseInput();await this.audio.leave();
+      this.active=false;this.held=0;this.pressed=0;this.releaseInput();await this.audio.leave();if(this.closed)return;
       if(action===1||action===2)await this.onResume();
       else if(action===3)await this.onTitle();
       else await this.onRestart();
-    }finally{this.busy=false;}
+    }catch(problem){if(!this.closed)throw problem;}finally{this.busy=false;}
   }
   canStepPresentation(){
     if(!this.active||!this.suspended||this.closed||this.busy||this.failure)return false;
