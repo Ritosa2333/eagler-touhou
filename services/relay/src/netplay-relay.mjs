@@ -14,6 +14,8 @@ import {
 } from "../../../common/contracts/th15-chapter-reward.mjs";
 import { quickChatPhrase } from '../../../common/contracts/multiplayer-quick-chat.mjs';
 import { createHmac, randomUUID } from 'node:crypto';
+import {createServer} from 'node:http';
+import {createNetEasePlaylistHandler} from './netease-playlist.mjs';
 import { createTurnConfigReader } from './turn-config.mjs';
 import { createNat4CandidateExchange, readNat4PortSteps } from './nat4-candidates.mjs';
 import { allocateSwarmPort, createSwarmWorkers } from './swarm-workers.mjs';
@@ -2448,9 +2450,17 @@ function releaseMemberTransports(roomId, clientId) {
   }
 }
 
+const servePlaylist = listenTogether ? createNetEasePlaylistHandler() : null;
+const httpServer = createServer((request, response) => {
+  if (servePlaylist && request.url?.startsWith('/_eagler/netease-playlist?')) {
+    void servePlaylist(request, response);
+    return;
+  }
+  response.writeHead(426, {'content-type': 'text/plain'});
+  response.end('Upgrade Required');
+});
 const server = new WebSocketServer({
-  host,
-  port,
+  server: httpServer,
   perMessageDeflate: false,
   maxPayload: RELAY_LIMITS.messageBytes,
   verifyClient(info, done) {
@@ -2903,3 +2913,4 @@ server.on('error', (error) => {
   console.error((error && error.stack) || error);
   process.exitCode = 1;
 });
+httpServer.listen(port, host);
