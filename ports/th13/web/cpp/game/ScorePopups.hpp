@@ -20,7 +20,7 @@ public:
     bool draw(AnmRenderer& renderer, float player_x, float player_y);
     std::string error;
 
-private:
+public:
     struct Entry {
         std::array<i32, 8> digits{};
         i32 count = 0;
@@ -30,6 +30,17 @@ private:
         i32 age = 0;
         bool active = false;
     };
+    struct RollbackState {
+        AnmVm glyph;
+        std::array<Entry, 10> pool;
+        u32 cursor;
+        bool available;
+    };
+    RollbackState capture_rollback() const { return {glyph, pool, cursor, available_}; }
+    void restore_rollback(const RollbackState& state) {
+        glyph = state.glyph; pool = state.pool; cursor = state.cursor; available_ = state.available;
+    }
+private:
     AnmManager& animations;
     AnmEnvironment& environment;
     AnmVm glyph;

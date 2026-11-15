@@ -42,14 +42,22 @@ struct AnmScript {
     u32 sprite_base=0,script_base=0;
 };
 class AnmResource {
+    mutable u64 content_identity_ = 0;
 public:
     std::vector<AnmTexture> textures;
     std::vector<AnmSprite> sprites;
     std::vector<AnmScript> scripts;
+    // Loaded content is immutable while VMs reference it. These identities
+    // describe content and table positions, independently of bank/address.
+    u64 content_identity() const noexcept;
+    void refresh_identity() const noexcept;
+    i32 script_index(const std::vector<u8>* script) const noexcept;
+    i32 sprite_index(const AnmSprite* sprite) const noexcept;
     bool open(const u8* bytes,u32 size);
     // Pack another file while retaining its local sprite/child-script domain.
     // ECL file+script pairs are translated by StagePresentation; instructions
     // inside each ANM continue to use that file's original local indices.
     bool append(const u8* bytes,u32 size);
 };
+u64 anm_script_identity(const std::vector<u8>& bytes) noexcept;
 }

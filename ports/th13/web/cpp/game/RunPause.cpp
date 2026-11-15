@@ -1,6 +1,8 @@
 #include "RunPause.hpp"
 #include "GameHud.hpp"
+#include "TitleResultView.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <ctime>
 
@@ -104,14 +106,17 @@ bool RunPause::draw_overlay(HudDrawServices& sink) {
             if (state.replay_name.size() >= 8) underscore_x -= 9.f;
             if (!put(underscore_x, name_y, 0xffffff00u, "_")) return false;
         } else {
-            // 0x43de80 case 10/0x12/0x1b（回放保存名前录入）：名字行定格
-            // (102,224)（原版 age<10 自选中槽行 y=slot*15 滑入，属插值细节）。
-            if (!put(102, 224, 0xffffffffu, state.replay_name)) return false;
+            // 0043e06d: slide the selected slot from the list to the name row.
+            const float slot_y = 64.f + 15.f * (state.replay_slot - 1);
+            const float age = std::min(10.f, state.age.fractional);
+            const float y = 224.f + (slot_y - 224.f) * (10.f - age) / 10.f;
+            char slot[8];
+            std::snprintf(slot, sizeof slot, "No.%02d", state.replay_slot);
+            if (!put(48, y, 0xffffff00u, slot) ||
+                !put(102, y, 0xffffffffu, state.replay_name)) return false;
             float underscore_x = 102.f + 9.f * float(state.replay_name.size());
             if (state.replay_name.size() >= 8) underscore_x -= 9.f;
-            if (!put(underscore_x, 224, 0xffffff00u, "_")) return false;
-            // "No.%02d ..." 选中槽行（(48,224)）需要逐槽回放元数据，未接线，
-            // 保持省略（不占位伪造）。
+            if (!put(underscore_x, y, 0xffffff00u, "_")) return false;
         }
         // 91 字符网格 (112,320)，列步 18 行步 16；SPACE/DEL/END 槽画 font0
         // 专用字形（原版推字符 0x81/0x7f/0x80 → sprite 95/96/97）；
@@ -128,11 +133,13 @@ bool RunPause::draw_overlay(HudDrawServices& sink) {
         return true;
     }
     if (state.phase == 17) {
-        // 回放选槽：原版 = 25 行 "No.%02d ..." 榜单（0x43de80 case 9，
-        // (48,64+15i) 高亮黄）。逐槽回放元数据未接线，占位保持（font0）。
-        const std::string text =
-            "REPLAY SLOT  " + std::to_string(state.replay_slot) + " / 25";
-        return put(150, 180, 0xffffffffu, text);
+        for (i32 slot = 1; slot <= 25; ++slot) {
+            const u32 color = slot == state.replay_slot ? 0xffffff00u : 0xff808180u;
+            if (!put(48, 64.f + 15.f * (slot - 1), color,
+                     replay_save_slot_row(slot, platform.replay_entry(slot - 1), true)))
+                return false;
+        }
+        return true;
     }
     if (state.phase == 19) {
         const std::string text =

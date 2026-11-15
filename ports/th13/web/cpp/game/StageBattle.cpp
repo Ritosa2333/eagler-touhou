@@ -965,8 +965,8 @@ void StageBattle::step_shots() {
             shot.x = round001(float(shot.x + vx));
             shot.y = round001(float(shot.y + vy));
         }
-        // The center bounds belong only to the animation-free diagnostic path.
-        // 004464d0 clips real SHT shots by ANM geometry, with an age gate.
+        // script<0 没有 ANM 四角，出界只看中心盒。真实 SHT 弹先走
+        // consume_player_shot_geometry 的四角；四角缺失时同一中心盒兜底。
         if (shot.script < 0 &&
             (shot.y < -32.0f || shot.y > 480.0f || shot.x < -224.0f || shot.x > 224.0f))
             shot.alive = false;
@@ -1006,22 +1006,34 @@ void StageBattle::set_player_shot_geometry(i32 slot, i32 age, i32 script, u32 ge
 void StageBattle::consume_player_shot_geometry() {
     for (size_t slot = 0; slot < shots.size(); ++slot) {
         auto& shot = shots[slot];
-        if (!shot.alive || shot.type == 2 || slot >= shot_geometry_.size()) continue;
-        const auto& snapshot = shot_geometry_[slot];
-        if (!snapshot.valid || snapshot.slot != i32(slot) ||
-            snapshot.generation != shot.generation || snapshot.script != shot.script ||
-            snapshot.age != shot.age - 1 || snapshot.age <= 9) continue;
+        if (!shot.alive || shot.type == 2) continue;
         // 004464d0 culls at 00446531 before LAB_00446619 writes the current
         // node translation into its ANM VM. Therefore these are the
         // previous sync's screen-space corners; do not transform them through
         // the post-step battle position a second time.
-        bool outside = true;
-        for (const auto& vertex : snapshot.quad) {
-            const bool vertex_outside = vertex.x <= 128.0f || vertex.x >= 512.0f ||
-                                        vertex.y <= 16.0f || vertex.y >= 464.0f;
-            outside = outside && vertex_outside;
+        bool matched = false;
+        if (slot < shot_geometry_.size()) {
+            const auto& snapshot = shot_geometry_[slot];
+            if (snapshot.valid && snapshot.slot == i32(slot) &&
+                snapshot.generation == shot.generation && snapshot.script == shot.script &&
+                snapshot.age == shot.age - 1 && snapshot.age > 9) {
+                matched = true;
+                bool outside = true;
+                for (const auto& vertex : snapshot.quad) {
+                    const bool vertex_outside = vertex.x <= 128.0f || vertex.x >= 512.0f ||
+                                                vertex.y <= 16.0f || vertex.y >= 464.0f;
+                    outside = outside && vertex_outside;
+                }
+                if (outside) shot.alive = false;
+            }
         }
-        if (outside) shot.alive = false;
+        // 四角快照是表现层钩子落的盘；没有匹配快照的弹（钩子未接、
+        // 席位槽位未对齐）仍按 script<0 的中心盒出界，龄门与四角一致
+        // （步进后 age-1 > 9），未命中弹不会永驻向量。匹配到的四角优先：
+        // 中心已出盒但有一角在场内的弹保留。
+        if (!matched && shot.alive && shot.age > 10 &&
+            (shot.y < -32.0f || shot.y > 480.0f || shot.x < -224.0f || shot.x > 224.0f))
+            shot.alive = false;
     }
 }
 
@@ -1479,9 +1491,10 @@ void StageBattle::step_bomb() {
         return; // 40a860/40c2c0/40cb50 terminate before geometry/cancellation.
     }
     if (character_ == 0) {
-        // 40b590 creates all eight 40b1b0 registrations before the separate
-        // movement loop, preserving their original slot allocation order.
-        if (bomb_age == 0)
+        // 40b714..40b721 requires age != previous && age == 0 before
+        // 40b750 creates all eight 40b1b0 registrations. Fractional time may
+        // retain age zero for several updates; those updates reuse the orbs.
+        if (age_advanced && bomb_age == 0)
             for (int i = 0; i < 8; ++i) {
                 auto& orb = bomb_orbs[i];
                 if (reimu_bomb_orb_birth && !reimu_bomb_orb_birth(*this, i)) {
@@ -2041,12 +2054,18 @@ bool StageBattle::update_player(const GameInput& input) {
     }
     if(respawn_damage.active) {
         // Expose the same live registration for existing diagnostics.
-        const auto& registration = damage_registrations[size_t(respawn_damage.registration_slot)];
-        respawn_damage.center = {registration.center_x, registration.center_y,
-                                 registration.center_z};
-        respawn_damage.radius = registration.radius;
-        respawn_damage.remaining = registration.clock;
-        respawn_damage.active = registration.active;
+        // slot -1 becomes a huge size_t and traps in Wasm.
+        const i32 slot = respawn_damage.registration_slot;
+        if (slot < 0 || slot >= i32(damage_registrations.size())) {
+            respawn_damage.active = false;
+        } else {
+            const auto& registration = damage_registrations[size_t(slot)];
+            respawn_damage.center = {registration.center_x, registration.center_y,
+                                     registration.center_z};
+            respawn_damage.radius = registration.radius;
+            respawn_damage.remaining = registration.clock;
+            respawn_damage.active = registration.active;
+        }
     }
     if(invulnerable>0)--invulnerable;
     if (player_phase_clock_.current != player_phase_frame)

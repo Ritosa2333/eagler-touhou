@@ -515,4 +515,51 @@ TEST(dialogue_text_negative_controls) {
     CHECK(!error.empty());
 }
 
+
+TEST(dialogue_rollback_restores_cache_handles_and_pixels) {
+    GameRandom random;
+    AnmEnvironment environment;
+    AnmManager manager{random, environment};
+    const auto bytes = synthetic_text_anm();
+    CHECK(manager.load(0, bytes.data(), u32(bytes.size())));
+    FakeSink sink;
+    DialogueText text;
+    text.bind_bubble_bank(-1);
+    MsgLine line;
+    line.text_cp932 = "first";
+    line.block = 1;
+    std::string error;
+    CHECK(text.submit(manager, sink, 0, line, 100.f, 200.f, raster_block, error));
+    const auto saved = text.capture_rollback(manager, sink);
+    const auto again = text.capture_rollback(manager, sink);
+    CHECK(saved.pixels == again.pixels); // No texture copy on unchanged frames.
+    const auto expected = sink.image.pixels;
+    line.text_cp932 = "later";
+    line.block = 2;
+    const auto erase = [](TextureImage& image, i32, i32, bool, u32, const std::string&) {
+        std::fill(image.pixels.begin(), image.pixels.end(), 0);
+        return true;
+    };
+    CHECK(text.submit(manager, sink, 0, line, 120.f, 240.f, erase, error));
+    CHECK(sink.image.pixels != expected); // Negative control: speculative write.
+    const size_t spell_pixel = size_t(96) * sink.image.pitch;
+    sink.image.pixels[spell_pixel] = 0x5a;
+    auto expected_with_spell = expected;
+    expected_with_spell[spell_pixel] = 0x5a;
+    CHECK(text.restore_rollback(saved, manager, sink, error));
+    CHECK(sink.image.pixels == expected_with_spell);
+    CHECK(text.active());
+    const auto uploads = sink.uploads;
+    const auto count = manager.registry.count();
+    line.text_cp932 = "first";
+    line.block = 1;
+    CHECK(text.submit(manager, sink, 0, line, 100.f, 200.f, erase, error));
+    CHECK_EQ(sink.uploads, uploads); // Saved cache prevents duplicate submission.
+    CHECK_EQ(manager.registry.count(), count);
+    CHECK(sink.image.pixels == expected_with_spell);
+    auto broken = saved;
+    broken.pixels.reset();
+    CHECK(!text.restore_rollback(broken, manager, sink, error));
+}
+
 int main() { return th13test::run_all("text.anm 对话动态纹理"); }

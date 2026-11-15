@@ -209,6 +209,11 @@ bool ScoreDat::build_file(std::vector<u8>& out) {
     image.resize(uncomp);
     std::vector<u8> comp = ReplayFile::deflate(image.data(), uncomp);
     if (comp.empty()) return fail("deflate produced no output");
+    wrap_file(std::move(comp), uncomp, out);
+    return true;
+}
+
+void ScoreDat::wrap_file(std::vector<u8> comp, size_t uncomp, std::vector<u8>& out) {
     ReplayFile::xor_encrypt(comp.data(), comp.size(), kEncryptKey0, kEncryptStep, kEncryptBlock);
     // 头（保存路径就地更新的模板）：+0x14=游标（0x449fb5）、+0x10=comp（LZ 回填
     // 0x449fc6）、+4=comp+0x18（0x449fd5）；+0x0C 恒 0x100、版本 4、+0x0A=0。
@@ -221,7 +226,6 @@ bool ScoreDat::build_file(std::vector<u8>& out) {
     put_u32(out.data() + 0x10, u32(comp.size()));
     put_u32(out.data() + 0x14, u32(uncomp));
     std::memcpy(out.data() + kHeaderSize, comp.data(), comp.size());
-    return true;
 }
 
 ScoreDat::Entry ScoreDat::read_entry(const u8* block, int chara, int rank) {

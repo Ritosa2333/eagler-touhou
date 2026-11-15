@@ -233,6 +233,14 @@ TEST(spell_run_return_cascade_and_esc_chain_leave_no_stale_rows) {
     h.frame();  // TitleFrame::initialize → restore_spell_practice_selection
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::SpellPractice));
     CHECK_EQ(h.level(), i32(SpellPracticeLevel::Difficulty));
+    // 0x44c8d4-0x44c8e9（0x44c570 case0 dc670==5）：返回首帧即新建背景根 89
+    // 并立即发 label3（0x46fca0）。initial_tick 穿过 label2 启动 170f 渐入插值
+    //（0x401590），op403(255) 不停插值器（0x463a27），故首帧 alpha=4（与原版
+    // oracle f460 0x04444444 一致），配合 Supervisor Draw 0 整屏清黑（0x43c548）
+    // 自黑场平滑渐入至 255，防止上一局战场末帧残留与菜单滑动重影。
+    CHECK(same_scripts(drawn_scripts(h.manager, 89, 93), {92, 93}));
+    CHECK_EQ(drawn_alpha(h.manager, 92), 4u);
+    CHECK_EQ(drawn_alpha(h.manager, 93), 4u);
 
     // 稳态 A：级联落定的难度层。选中的关卡行/卡行先经 label(7+X) 选中分支
     // 启动淡入、再被 label6 锁定为表头（①：旧实现的 7+X 挂 pending 后被
@@ -240,6 +248,9 @@ TEST(spell_run_return_cascade_and_esc_chain_leave_no_stale_rows) {
     // 难度 5 行与对应 rank 在场。
     h.advance(50);
     CHECK_EQ(h.level(), i32(SpellPracticeLevel::Difficulty));
+    CHECK(same_scripts(drawn_scripts(h.manager, 89, 93), {92, 93}));
+    CHECK_EQ(drawn_alpha(h.manager, 92), 79u);
+    CHECK_EQ(drawn_alpha(h.manager, 93), 79u);
     CHECK(same_scripts(drawn_scripts(h.manager, 189, 202), {189}));
     CHECK(same_scripts(drawn_scripts(h.manager, 203, 228), {203}));
     CHECK_EQ(drawn_alpha(h.manager, 189), 255u);
@@ -255,6 +266,9 @@ TEST(spell_run_return_cascade_and_esc_chain_leave_no_stale_rows) {
     h.frame(0x100);
     h.advance(79);
     CHECK_EQ(h.level(), i32(SpellPracticeLevel::Spell));
+    CHECK(same_scripts(drawn_scripts(h.manager, 89, 93), {92, 93}));
+    CHECK_EQ(drawn_alpha(h.manager, 92), 199u);
+    CHECK_EQ(drawn_alpha(h.manager, 93), 199u);
     CHECK(same_scripts(drawn_scripts(h.manager, 203, 228), {203, 217, 218, 219}));
     CHECK(same_scripts(drawn_scripts(h.manager, 189, 202), {189}));
     CHECK(same_scripts(drawn_scripts(h.manager, 182, 186), {182, 183, 184, 185, 186}));
@@ -272,6 +286,9 @@ TEST(spell_run_return_cascade_and_esc_chain_leave_no_stale_rows) {
     // 稳态 C：关卡层。187 重建为完整七行（选中行 b 层 + 其余 a 层）；卡表、
     // 难度行、103 徽记经 label1 退场完毕。
     h.advance(settle);
+    CHECK(same_scripts(drawn_scripts(h.manager, 89, 93), {92, 93}));
+    CHECK_EQ(drawn_alpha(h.manager, 92), 255u);
+    CHECK_EQ(drawn_alpha(h.manager, 93), 255u);
     CHECK(same_scripts(drawn_scripts(h.manager, 189, 202),
                        {189, 197, 198, 199, 200, 201, 202}));
     CHECK(same_scripts(drawn_scripts(h.manager, 203, 228), {}));
@@ -281,7 +298,7 @@ TEST(spell_run_return_cascade_and_esc_chain_leave_no_stale_rows) {
     CHECK_EQ(drawn_alpha(h.manager, 103), 0u);
 
     // 稳态 D：ESC 回主菜单。符卡练习全族（徽记 103/109、182..242）零上屏，
-    // 主菜单行在场。
+    // 主菜单行在场，且复用的背景根 89 经 label2 恢复 90/91 森林底图（alpha=255）。
     h.frame(0x100);
     h.advance(129);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Main));
@@ -290,6 +307,8 @@ TEST(spell_run_return_cascade_and_esc_chain_leave_no_stale_rows) {
     CHECK_EQ(drawn_alpha(h.manager, 103), 0u);
     CHECK_EQ(drawn_alpha(h.manager, 109), 0u);
     CHECK(!drawn_scripts(h.manager, 89, 100).empty());
+    CHECK_EQ(drawn_alpha(h.manager, 90), 255u);
+    CHECK_EQ(drawn_alpha(h.manager, 91), 255u);
 }
 
 int main() { return th13test::run_all("Spell practice ESC flow"); }
