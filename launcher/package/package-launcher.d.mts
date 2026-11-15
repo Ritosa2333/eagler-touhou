@@ -18,6 +18,7 @@ export interface PublishedPackageFileSelection {
 
 export interface InstallPublishedPackageOptions extends Omit<PublishedPackageFileSelection, "current"> {
   gameVersion?: "original" | "beauty";
+  preferredLanguage?: string;
   catalog: unknown;
   catalogUrl: string;
   preserveLocalSource?: boolean;
@@ -45,6 +46,10 @@ export function fetchPublishedPackage(game: string, options: {
 }): Promise<{entry: unknown; descriptor: PackageDescriptor; descriptorUrl: string} | null>;
 
 export function installedComponentIds(generation: InstalledPackageGeneration | null): string[];
+export function publishedLanguageSelection(
+  descriptor: PackageDescriptor,
+  preferredLanguage?: string,
+): Readonly<Record<string, readonly string[]>>;
 
 export function installPublishedPackage(
   game: string,

@@ -11,7 +11,7 @@ import {readCurrentPackageGeneration, readPackageObject} from '../../package/pac
 import {adaptLegacyGamePackToPackage} from '../../compat/legacy-package-adapter.mjs';
 import {parseStoredGameDataPack} from '../../compat/legacy-game-pack.mjs';
 import {publishedPc98Multiplayer} from './published-multiplayer';
-import {HOST_PROTOCOL, PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, productEnabledForBuild, productFeatureAvailable,
+import {HOST_PROTOCOL, PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, productEnabledForBuild,
   productRequiresImport, type GameId, type ProductId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest, SiteGameData} from '../../src/contracts/site-manifest.mts';
 import {RELEASE_CATALOG_FILE, type ReleaseCatalog} from '../../src/contracts/release-catalog.mts';
@@ -131,8 +131,6 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
 
   const getPackageFetch = (game: GameId) => network?.packageFetch(game) ?? fetchImpl;
   const background = new Map<GameId, Promise<void>>();
-  const selectedLanguages = (game: GameId, language: string): Readonly<Record<string, readonly string[]>> => productFeatureAvailable(game, 'languages', metadata.getSnapshot().siteManifest?.games[game]?.features)
-    ? {language: language === 'ja' ? [] : [language]} : {};
   function progress(request: Pick<AcquisitionRequest, 'onProgress'>, key: Parameters<Translate>[0], values: Record<string, unknown> = {}) {
     request.onProgress?.({stage: 'package', message: t(key, values),
       ...(typeof values.completed === 'number' ? {completed: values.completed} : {}),
@@ -439,7 +437,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         try {
           const result = await deps.installPublished(game, {...publication, gameVersion: request.gameVersion ?? 'original', addComponents: [],
             expectedGenerationId: installed.generation.id, preserveLocalSource: true, signal: request.signal,
-            fetchImpl: getPackageFetch(game), selectedComponentEntries: selectedLanguages(game, request.language),
+            fetchImpl: getPackageFetch(game), preferredLanguage: request.language,
             onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
           checkPreparationAbort(request.signal); await installedChanged(game);
           return {kind: 'managed', generation: result.generation, deferredUpdate: null};
@@ -463,7 +461,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       if (current.generation?.id !== installed.generation!.id) return;
       const result = await deps.installPublished(game, {catalog, catalogUrl:publicationUrl, gameVersion:request.gameVersion ?? 'original', addComponents:[], preserveLocalSource:true,
         expectedGenerationId:installed.generation!.id,
-        fetchImpl:network?.backgroundFetch ?? fetchImpl, selectedComponentEntries:selectedLanguages(game, request.language)});
+        fetchImpl:network?.backgroundFetch ?? fetchImpl, preferredLanguage:request.language});
       if (result.generation.descriptor.revision !== published.revision) throw new Error('Downloaded Package does not match its publication');
       await installedChanged(game);
       request.onUpdateReady?.();

@@ -1223,7 +1223,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
             roomMusicConsentEpoch = epoch;
           }
           if (!context.isCurrent() || owner.getSnapshot().roomPreview) return;
-          await waitWithAbort(owner.prepareRoomPreview(epoch), context.signal);
+          // Runtime title previews are optional; a prepared iframe can still start a room.
+          if (owner.getSnapshot().roomPreviewSupported)
+            await waitWithAbort(owner.prepareRoomPreview(epoch), context.signal);
           if (!context.isCurrent()) return;
           const updateReady = await waitWithAbort(owner.checkPreparedCodeUpdate(epoch), context.signal);
           if (!context.isCurrent()) return;

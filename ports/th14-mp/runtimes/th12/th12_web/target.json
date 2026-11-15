@@ -1,0 +1,32 @@
+{
+  "game": "th12",
+  "version": "1.00b",
+  "language": "Japanese",
+  "executable": "H:/Games/th/12/th12.exe",
+  "sha256": "d8d644d2e64957a3031b1a1399d0502e1ddaa5252d2c4e492770ad6717827628",
+  "size": 737280,
+  "imageBase": "0x00400000",
+  "evidence": "Executable title string: 'Undefined Fantastic Object. ver 1.00b'.",
+  "dataArchives": {
+    "th12.dat": {
+      "path": "H:/Games/th/12/th12.dat",
+      "bytes": 31320247,
+      "pbgVersion": 12,
+      "entries": 180
+    },
+    "thbgm.dat": {
+      "path": "H:/Games/th/12/thbgm.dat",
+      "bytes": 408829544
+    }
+  },
+  "completeGame": false,
+  "localized": {
+    "executable": {
+      "file": "H:/Games/th/12/th12c.exe",
+      "sha256": "15aeca37d7d4ec8089c5227b0871caba0b0d908b1c1d23365e6713ea7f0bd403"
+    },
+    "dataArchive": {
+      "file": "H:/Games/th/12/th12c.dat"
+    }
+  }
+}
