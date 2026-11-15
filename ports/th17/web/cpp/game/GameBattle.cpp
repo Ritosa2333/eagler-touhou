@@ -184,6 +184,7 @@ struct GameBattle::Services {
         GameBattle& g;explicit Dialogues(GameBattle& value):g(value){}
         bool clear_dialogue_field()override{return g.bullet_scene->cancel_all(0)&&g.laser_scene->cancel_all(0,false)&&g.enemies->clear_field(false);}
         bool dialogue_text(AnmVm& vm,u32 color,u32 shadow,i32 style,i32 x,i32 y,const std::string& value)override{return g.dialogue_host&&g.dialogue_host->dialogue_text(vm,color,shadow,style,x,y,value);}
+        i32 dialogue_width(AnmVm& vm,const std::string& text,i32 style)override{return g.dialogue_host?g.dialogue_host->dialogue_width(vm,text,style):-1;}
         bool dialogue_sound(i32 id)override{return g.sound(id,0,PlayerShots::SoundAction::play,true);}
         bool dialogue_boss_music()override{return g.dialogue_host&&g.dialogue_host->dialogue_boss_music();}
         bool dialogue_music_fade(i32 seconds)override{return g.dialogue_host&&g.dialogue_host->dialogue_music_fade(seconds);}

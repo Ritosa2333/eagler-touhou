@@ -12,6 +12,7 @@ namespace th11 {
 std::array<u32,8> th14_room_status(const GameSession&,u32 next);
 struct RoomSetupTh14 {
     u64 id=0;
+    bool challenge=false;
     static constexpr u32 max_prediction=12;
     u32 difficulty=0,seed=0,seats=0,local=0,delay=0,prediction=0;
     std::array<Th14CoopLoadout,3> loadouts{};

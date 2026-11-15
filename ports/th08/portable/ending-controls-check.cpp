@@ -61,12 +61,19 @@ int main(){
     assert(ending.state.wait.current==599); // Releasing Z does not advance.
     ending.update(4097,4096);assert(ending.state.wait.current==0); // Z while Enter held.
     TitleContext title{};const auto before=title;
-    assert(title.IsExtraUnlocked()&&title.IsSpellPracticeUnlocked()&&title.IsExtraUnlockedWithAllTeams());
-    for(int character=0;character<12;++character)assert(title.IsExtraUnlockedForCharacter(character)&&title.IsSpellPracticeUnlockedForCharacter(character));
+    assert(!title.IsExtraUnlocked()&&title.IsSpellPracticeUnlocked()&&!title.IsExtraUnlockedWithAllTeams());
+    for(int character=0;character<12;++character)assert(!title.IsExtraUnlockedForCharacter(character)&&title.IsSpellPracticeUnlockedForCharacter(character));
     for(int card=0;card<222;++card)assert(title.IsSpellCardAvailable(card));
     assert(!title.IsSpellCardAvailable(-1)&&!title.IsSpellCardAvailable(222));
     assert(!title.IsExtraUnlockedForCharacter(-1)&&!title.IsExtraUnlockedForCharacter(12));
     assert(std::memcmp(&before,&title,sizeof(title))==0); // Availability writes no records.
+    title.clears[0].with_retries[1]=0x4000;
+    assert(!title.IsExtraUnlocked());
+    title.clears[0].without_retries[1]=0x4000;
+    assert(title.IsExtraUnlocked()&&title.IsExtraUnlockedForCharacter(0)&&!title.IsExtraUnlockedForCharacter(1));
+    assert(!title.IsExtraUnlockedForCharacter(4));
+    for(int team=1;team<4;++team)title.clears[team].without_retries[2]=0x4000;
+    assert(title.IsExtraUnlockedWithAllTeams()&&title.IsExtraUnlockedForCharacter(4));
     GuiState gui{};GuiImplState display{};DialogueContext context{};GameGlobals globals{};
     GameConfiguration config{};HighScore high{};GameValues values(globals,config,config,high,rng);
     DialogueOutput output;Dialogue dialogue(gui,display,context,globals,values,animations,text,renderer,output);

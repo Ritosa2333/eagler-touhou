@@ -13,6 +13,7 @@ class FontDevice {GraphicsDevice& graphics;TextRaster raster;
  bool has_japanese_fallback=false,english_music_details=false;
  bool localization_checked=false,ttf_initialized=false;
  bool load_localized_font();
+ bool fit_localized(const TextLayout&,const TextureText&,std::string&,bool& centered,i32& text_width);
  bool write_localized(TextureImage&,const TextLayout&,const TextureText&);
 public:
  std::string error;u32 writes=0;bool fallback=false;
@@ -21,6 +22,7 @@ public:
  bool translated_message(const std::string&)const;
  bool initialize();bool text(AnmVm&,const TextureText&);
  bool dialogue(AnmVm&,u32 color,u32 outline,i32 style,i32 x,i32 spacing,const std::string&);
+ i32 dialogue_width(AnmVm&,const std::string&,i32 style);
  bool spell_title(AnmVm&,const std::string&,bool utf8);
 };
 }

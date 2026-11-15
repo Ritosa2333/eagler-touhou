@@ -22,6 +22,13 @@ test('TH17 complete application traverses its real menus, run, pause, replay and
   },{paths:[...files.keys()],scale});
   const inspect=async kind=>{const value=await page.evaluate(()=>{const c=fixture,p=c._application_pixels(),s=c._application_graphics_stats()>>>2;return{state:state(),pause:pause(),music:decode(c._application_music()),pixels:Array.from(c.HEAPU8.subarray(p,p+640*480*4)),stats:Array.from(c.HEAPU32.subarray(s,s+17)),canvas:[document.querySelector('canvas').width,document.querySelector('canvas').height]};});const pixels=Buffer.from(value.pixels);delete value.pixels;let visible=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i]||pixels[i+1]||pixels[i+2])visible++;const entry={kind,scale,...value,visible,pixelSha256:sha(pixels)};observations.push(entry);await writeFile(resolve(root,'artifacts/browser/application-observed.json'),JSON.stringify({observations,errors},null,2)+'\n');await page.locator('canvas').screenshot({path:resolve(root,`artifacts/browser/application-${scale}x-${kind}.png`)});assert.deepEqual(value.canvas,[640*scale,480*scale]);assert.ok(visible>40000,kind+' visible content');assert.equal(value.stats[7],0);return entry;};
   await inspect('main');
+  await page.evaluate(()=>{
+   for(let entry=0;entry<16;entry++){
+    fixture._application_title_select(8);step(1);
+    waitFor(()=>state()[0]===0&&state()[8]===17);
+    settle(60);step(0x20);settle(30);step(0x102);ready(1);settle();
+   }
+  });await inspect('manual-reentry');
   await page.evaluate(()=>{choose(7,3);settle();});await inspect('options');await page.evaluate(()=>{choose(2,4);settle();fixture._application_title_select(5);step(0x102);ready(3);step(0x102);step(0x102);ready(1);settle();});
   await page.evaluate(()=>{choose(6,14);settle(100);step(1);settle(20);step(0x102);ready(1);settle(50);});await inspect('music-return');
   await page.evaluate(()=>{choose(0,5);choose(1,6);choose(0,7);fixture._application_title_select(0);step(1);waitFor(()=>state()[0]===1);settle(120);fixture._application_test_protection(60000);});const stage=await inspect('stage');assert.equal(stage.state[2],1);
