@@ -249,7 +249,7 @@ void Hud::display_bombs(i32 count,i32 fragments){
     const i32 numerator=signed_bits(u32(fragments)*6);signal(i++,i32(i16(numerator/8))+7);
     for(;i<8;++i)signal(i,3);
 }
-bool Hud::layout_coop(u32 seats){
+bool Hud::layout_coop(u32 seats,bool challenge){
     if(seats<2||seats>3)return false;
     if(coop_seats>1)return coop_seats==seats;
     auto* root=animations.find(frame_animation);
@@ -281,12 +281,14 @@ bool Hud::layout_coop(u32 seats){
                 root->child.next=&vm->child;vm->child.previous=&root->child;
             }
             move(*vm,row.to-row.from);
+            if(challenge&&(row.script==8||row.script==9))vm->reserved_3a0=coop_life_stock_tag;
         }
         for(u32 i=0;i<16;++i){
             auto* vm=seat?animations.create(front,i32(29+i),5,0,false,false,&origin,nullptr,nullptr,false,&rotation):icon_th14(i);
             if(!vm)return false;
             if(seat)coop_icon_handles[seat-1][i]=vm->id;
             move(*vm,i<8?life-100:bomb-138);
+            if(challenge&&i<8)vm->reserved_3a0=coop_life_stock_tag;
         }
     }
     const Row team[]={{13,240,point_row()},{14,262,graze_row()},{25,256,point_row()+14},

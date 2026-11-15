@@ -71,7 +71,8 @@ public:
     AnmVm* icon_th14(u32 index)const noexcept {return index<16?animations.find(icon_handles[index]):nullptr;}
     u32 coop_icon_handles[2][16]{};
     u32 coop_seats=1;
-    bool layout_coop(u32 seats);
+    static constexpr u32 coop_life_stock_tag=28;
+    bool layout_coop(u32 seats,bool challenge);
     float life_row(u32 seat)const noexcept{return 96.f+seat*(coop_seats==3?108.f:120.f);}
     float bomb_row(u32 seat)const noexcept{return life_row(seat)+38.f;}
     float power_row(u32 seat)const noexcept{return life_row(seat)+86.f;}
