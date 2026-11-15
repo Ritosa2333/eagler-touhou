@@ -82,6 +82,16 @@ export class OriginalExtraRunController{
     if(!receipt.committed||!receipt.fullReadback||receipt.durability!=='strict-indexeddb-transaction'||receipt.bytes!==payload.length||receipt.sha256!==digest
       ||receipt.domain!==metadata.domain||receipt.generation!==this.generation||receipt.index!==6||receipt.logicalTick!==this.frames)fail('EX complete strict statistics receipt differs');
     if(!bytesEqual(profile,m.HEAPU8.slice(p,p+n))||!bytesEqual(container,m.HEAPU8.slice(prepared.pointer,prepared.pointer+prepared.bytes)))fail('EX native statistics changed during persistence');
+    // Persistence can yield while native ownership changes; recheck before acknowledging.
+    const after=this.json('state'),afterDriver=this.json('debug_record_driver_state'),afterRecord=this.json('debug_record_state');
+    if(after.frame!==this.frames||afterDriver.completedFrames!==this.frames||afterDriver.phase!==4
+      ||afterDriver.lastClockSerial!==this.serial+2||afterDriver.epoch!==this.epoch
+      ||afterDriver.generation!==this.generation||after.stageControl?.current!==7
+      ||after.stageControl?.pending!==16||after.debugTerminal?.requested!==true
+      ||after.debugTerminal?.counter!==380||after.debugTerminal?.selector!==23
+      ||after.debugTerminal?.runtimeScene!==16||afterRecord.generation!==this.generation
+      ||afterRecord.clearRecordEvents!==1||afterRecord.failed!==false
+      ||afterRecord.sessionPresent!==true)fail('EX terminal owner changed during the strict statistics receipt');
     const ack=new Uint8Array(20),a=new DataView(ack.buffer);a.setBigUint64(0,this.capability,true);a.setUint32(8,1,true);a.setUint32(12,prepared.bytes,true);a.setUint32(16,prepared.digest32,true);
     if(!this.post(2,ack).acknowledged)fail('EX native statistics ACK rejected');
     this.accepted(m._th128_world_debug_postrun_retire(this.epoch));const returned=this.json('normal_postrun_state');
