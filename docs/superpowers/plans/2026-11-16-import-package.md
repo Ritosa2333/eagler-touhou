@@ -10,6 +10,8 @@
 
 **Spec:** [Import package requirements](../../IMPORT_PACKAGE.md).
 
+**Priority:** Deferred stage3 work. The user's subsequent clarification requires restoration and port closure first, followed by Web adaptation/import ZIP, then multiplayer. Preserve reference research and this plan; do not start further package implementation or device acceptance until the earlier stages are closed.
+
 ## Global constraints
 
 - MAIN inspected all 23 supplied TH12 payload files read-only; all sizes/hashes match. This is reference integrity, not TH128 import acceptance.
