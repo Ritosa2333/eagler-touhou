@@ -28,6 +28,8 @@ WebRTC 建立失败时，服务向两端发送 `{"type":"route","mode":"failed"}
 | `settings` | `playerCount`、`difficulty`、`visibility`、`disableCheatMovement`、`challengeMode`，th09 可带 `disableLocalChargePriority`，th15 可带 `chapterThreshold` |
 | `start` | `inputDelay`、`adonisMode`、`inputDelayAuto`、`predictionReserve`、可选 `predictionLimit` |
 | `quick-chat` | 当前 `serial` 与 `phrase` |
+| `resource-progress` | 资源准备进度和可选的 `nativeRuntime` 席位标记 |
+| `relay-preference` | `swarm` 布尔值，更新当前席位下一局的 Swarm 偏好 |
 | `state` 的 `room` | `playerCount`、`difficulty`、`visibility`、`disableCheatMovement`、`disableLocalChargePriority`（th09）、`chapterThreshold`（th15）、`challengeMode`、`prankMode`、`inputDelay`、`adonisMode`、`inputDelayAuto`、`predictionReserve`、`timing`、`predictionLimit`、`settingsVersion`、`phase`、`runtimeGeneration`（版本化 run）、`startSerial`、`spectators`、`spectatorCount`、`seats` |
 
 `disableLocalChargePriority` 是 th09mp 的布尔规则，默认 `false`，对应启用本地优先蓄力。创建房间时，查询参数使用 `disableLocalChargePriority=0` 或 `1`。修改权限属于等待室中的 P1，`settings` 消息使用布尔值，并携带有效的 `playerCount` 与 `difficulty`。修改会清除双方准备状态、更新 `settingsVersion`，并通过 `state.room` 同步当前值。开局后规则固定。参数映射、蓄力行为和录像格式见 [th09 开发指南](../../../ports/th09/docs/DEVELOPMENT.md#回滚蓄力与-replay)。
@@ -49,6 +51,18 @@ th075 使用独立的 `EPTM` 时序记录与 `EPNP` 全席位已确认输入，�
 合作旁观的完整录像由 P1 原生 Replay 编码器生成，通过 `0xe9` 二进制信封传输。20 字节头依次包含标记、版本 1、扩展录像标志、保留字节、64 位局次、32 位总长度和 32 位偏移，数值使用小端序。每片最多 32768 字节，文件最多 8 MiB。Relay 按当前 P1 连接和局次接收连续分片，完成后分发给观众，重连观众可取得同一份文件。文件缓存随换局更新，发送窗口为 15 秒。协议定义见 [spectator-replay.mjs](../../../common/contracts/spectator-replay.mjs)。
 
 ## 服务端处理
+
+已配置 Swarm TURN 的房间在快照中发布 `swarmAvailable`。有玩家选择 Swarm 时，开局快照发布 `swarmSelected`，信令下发常规 STUN 和 Swarm TURN 地址与短期凭据。`peers.turnMode = "swarm"` 指示 TURN 池代理原样转发候选。直连与 NAT4 预测仍可用，本局的 TURN 候选仅由 Swarm 提供。
+
+`relay-preference.worker` 可指定 Swarm 节点。手选节点在同一席位变更机体后继续生效，直到玩家改选或节点离线。`automatic: true` 上报本机测速结果，用于未手选可用节点的 Swarm 玩家。
+
+启用 NAT4 观测的双人原生房间通过 `peers.nat4Observers` 下发三个 STUN 端点。客户端用 `signal.observer` 标注同一 ICE socket 的映射观测。只有一席得到可用预测时，Relay 在观测窗口结束后把该候选发给对端，再放行常规候选。
+
+原生端准备时可用 `set-ready.swarmDirect` 声明本地 Swarm 支持。双人对局选择 Swarm 且 Relay 配置了 `SWARM_ACCESS_TOKEN` 时，Relay 只向一个已认证的原生席位下发本局 Swarm 分配。原生端通过本机 TURN 注册该端口，并按标准 ICE 信令向对端发布候选。玩家间直连与 NAT4 候选继续参与选路。
+
+双人原生房间双方通过 `rtc-ready.rtcReplace` 声明支持重建连接。发生持续断流时，任一玩家可发 `rtc-replace-request`，Relay 为同一局分配新一代信令。两端重建 WebRTC，交换带 `generation` 的 SDP 与 ICE 候选，并在两条数据通道打开后上报 `rtc-ready`。Relay 收到双方确认后广播 `rtc-replaced`，双方从当前输入历史继续对局。NAT4 重新交换候选，启用原生 Swarm 时重新分配端口。建连上限为 15 秒。
+
+协商过重建能力的对局中，双方信令同时异常断开时，Relay 按房间重连宽限期保留对局。已恢复信令的一方可以请求重建，Relay 等双方信令到齐后才开始交换新一代候选。单独重连信令时，已建立的游戏通道继续传输。
 
 th09 按当前局保存完整 Replay 前缀，原生开局头到达时释放上一局历史。包含两人本地蓄力样本的输入记录为 126 字节，20 分钟对局约占 9.1 MB；服务端为每场前缀提供 16 MiB 的内存预算。旁观发送分批推进。历史预算耗尽时保留已接入直播的旁观连接，暂停新加入，下一局自动重新开放。
 

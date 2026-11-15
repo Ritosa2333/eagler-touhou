@@ -33,8 +33,8 @@
   pointer-events:none;
   content:'';
 }
-.player-profile-card-identity>.account-avatar,.player-profile-card-name{position:relative;z-index:1}
-.player-profile-card-identity>.account-avatar{--account-avatar-size:44px;--account-avatar-radius:10px}
+.player-profile-card-avatar,.player-profile-card-name{position:relative;z-index:1}
+.player-profile-card-avatar{display:grid;--account-avatar-size:44px;--account-avatar-radius:10px}
 .player-profile-card-name{min-width:0}
 .player-profile-card-name :is(h3,span){overflow-wrap:anywhere}
 .player-profile-card-name h3{margin:0;font-size:16px;line-height:1.35}
@@ -65,3 +65,17 @@
 .player-profile-card-home:not(:hover) svg{filter:drop-shadow(0 0 2px rgb(0 0 0 / .85))}
 .settings-artwork>.player-profile-card{margin-bottom:10px}
 .player-card-avatar-button{display:inline-flex;flex:none;border:0;padding:0;border-radius:inherit;background:none;color:inherit;cursor:pointer}
+
+.player-profile-card-avatar-detail{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:var(--account-avatar-radius);
+  animation:player-profile-avatar-in 180ms ease-out both;
+}
+@keyframes player-profile-avatar-in{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){
+  .player-profile-card-avatar-detail{animation:none}
+}

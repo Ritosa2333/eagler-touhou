@@ -173,6 +173,18 @@ test('metadata: host publication, test-only product and multiplayer-runtime filt
   hostTest.dispose();
 });
 
+test('published PC-98 multiplayer runtimes are available without enabling unrelated test products', async () => {
+  const games=Object.fromEntries(['th01','th02','th03','th04'].map(game=>[game,hostGame(game,{multiplayerRuntime:`runtime/${game}/mp.html`})]));
+  games.th04=hostGame('th04');
+  const service=fixture(network(host({...games,th20:hostGame('th20')})));
+  await service.initialize();
+  for(const game of ['th01','th02','th03']) assert.ok(service.getSnapshot().products.includes(`${game}mp`));
+  assert.equal(service.getSnapshot().products.includes('th04mp'),false);
+  assert.equal(service.getSnapshot().products.includes('th01'),false);
+  assert.equal(service.getSnapshot().products.includes('th20'),false);
+  service.dispose();
+});
+
 test('visibility mode shows test products while metadata and Runtime identities stay on the same publication', async () => {
   const published = host({th06: hostGame('th06'), th075: hostGame('th075', {multiplayerRuntime: 'runtime/th075/mp.html'}),
     th20: hostGame('th20')});

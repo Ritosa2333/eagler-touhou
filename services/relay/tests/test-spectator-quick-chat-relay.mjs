@@ -80,8 +80,10 @@ try {
   {room, serial: 1, seat: -1, spectator: true, phrase: 'you-first'});
 
   send(host, {type: 'quick-chat', serial: 1, phrase: 'follow-me'});
-  await wait(() => viewer.json.some(message => message.type === 'quick-chat' &&
-    message.clientId === hostId && message.seat === 0 && message.spectator !== true), 'player message reaches spectator');
+  const receivedPlayerMessage = socket => socket.json.some(message => message.type === 'quick-chat' &&
+    message.clientId === hostId && message.seat === 0 && message.spectator !== true);
+  await wait(() => receivedPlayerMessage(viewer) && receivedPlayerMessage(host),
+    'player message reaches spectator and sender');
 
   const beforeRejected = host.json.filter(message => message.type === 'quick-chat').length;
   send(outsider, {type: 'quick-chat', serial: 1, phrase: 'thanks'});

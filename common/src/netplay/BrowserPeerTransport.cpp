@@ -13,7 +13,7 @@ namespace Netplay
 EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, int localPlayer, int playerCount, int stageSpectatorHistory), {
     const decode = ptr => {
         const end = HEAPU8.indexOf(0, ptr);
-        return new TextDecoder().decode(HEAPU8.subarray(ptr, end >= 0 ? end : HEAPU8.length));
+        return new TextDecoder().decode(HEAPU8.slice(ptr, end >= 0 ? end : HEAPU8.length));
     };
     const relayUrl = decode(relayUrlPtr);
     const tag = decode(tagPtr);
@@ -1065,7 +1065,7 @@ EM_JS(int, eagler_spectator_connect,
       (const char *relayUrlPtr, const char *spectatorIdPtr, const char *tagPtr, int playerCount, int stageSpectatorHistory), {
     const decode = ptr => {
         const end = HEAPU8.indexOf(0, ptr);
-        return new TextDecoder().decode(HEAPU8.subarray(ptr, end >= 0 ? end : HEAPU8.length));
+        return new TextDecoder().decode(HEAPU8.slice(ptr, end >= 0 ? end : HEAPU8.length));
     };
     const tag = decode(tagPtr);
     if (!/^[A-Za-z0-9_-]{1,32}$/.test(tag)) return 0;
@@ -1170,7 +1170,7 @@ EM_JS(int, eagler_spectator_connect,
                         if(file.session!==session||file.offset!==offset||file.bytes.length!==total||file.extended!==!!wire[2])return;
                         file.bytes.set(wire.subarray(20),offset);file.offset+=wire.length-20;
                         if(file.offset===total){
-                            const prefix=({th06:'th6',th07:'th7',th08:'th8',th10:'th10',th11:'th11',th15:'th15mp',th17:'th17mp'})[tag]||tag;
+                            const prefix=({th06:'th6',th07:'th7',th08:'th8',th10:'th10',th11:'th11',th14:'th14mp',th15:'th15mp',th17:'th17mp'})[tag]||tag;
                             const suffix=((parseInt(session.slice(0,8),16)^parseInt(session.slice(8),16))>>>0).toString(36).slice(-4).padStart(4,'0');
                             state.spectatorReplay={session,bytes:file.bytes,name:prefix+'_ud'+suffix+(file.extended?'.rpyx':'.rpy')};state.replayReceiving=null;
                         }

@@ -29,6 +29,7 @@ import type { LibraryProduct } from './components/launcher/products';
 import { SettingsBody } from './components/settings/SettingsBody';
 import type { SettingsActions, TouchEditorNativePorts } from './components/settings/types';
 import type { GameSettingsModel, SettingsContext } from './models/game-settings';
+import type { SitePreferencesModel } from './models/site-preferences';
 import type { DecisionStore } from './models/decisions';
 import type { TouchLayoutModel } from './models/touch-layout';
 import { SurfaceNavigationProvider, useSurfaceNavigation } from './navigation/surface-navigation';
@@ -58,6 +59,7 @@ export interface LauncherHost {
   onProductSelected?(productId: ProductId, changed: boolean): void;
   onRouteSelection?(productId: ProductId, context?: 'library' | 'lobby'): void;
   settings: GameSettingsModel;
+  preferences?: SitePreferencesModel;
   touchLayout: TouchLayoutModel;
   settingsContext(productId: ProductId, locale: UiLocale): SettingsContext;
   settingsActions: SettingsActions;
@@ -246,6 +248,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
         actions={host.settingsActions}
         onOpenTouchLayout={openTouchLayout}
         multiplayerControls={host.multiplayerControls}
+        preferences={host.preferences}
       />
     </OptionsPanel>
   );

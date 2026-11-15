@@ -16,7 +16,9 @@ export function resolveReleaseFeatures(environment: ReleaseFeatureEnvironment) {
     VITE_PREVIEW_FEATURES: previewSetting,
     NODE_ENV: (environment.DEV ?? true) ? 'development' : 'production',
   });
-  const accountsEnabled = environment.VITE_ACCOUNTS_ENABLED === 'true';
+  const accountsEnabled = environment.VITE_ACCOUNTS_ENABLED === undefined
+    ? environment.DEV === false
+    : environment.VITE_ACCOUNTS_ENABLED === 'true';
   return {
     uiReviewEnabled,
     accountsEnabled,

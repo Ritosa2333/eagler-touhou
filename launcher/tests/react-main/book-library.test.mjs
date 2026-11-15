@@ -69,7 +69,7 @@ async function mount(products, locale = 'en') {
 }
 
 test('anchored multiplayer menu preserves deep-link selection and shares multi-selection with the icon rail', async () => {
-  const products=api.createLibraryProducts(['th06mp','th075mp','th09mp','th10mp','th15mp'],p=>p,id=>'?game='+id);
+  const products=api.createLibraryProducts(['th01mp','th03mp','th06mp','th075mp','th09mp','th10mp','th15mp'],p=>p,id=>'?game='+id);
   function Fixture(){const[filters,setFilters]=React.useState([]),[viewing,setViewing]=React.useState('th09mp');return React.createElement(api.BookDirectoryGames,{products,productFilters:filters,viewingProduct:viewing,onProductFiltersChange:ids=>{setFilters(ids);setViewing('');},onSelect(){assert.fail('Checkboxes must not replace a multi-selection');}});}
   const container=env.document.createElement('div');env.document.body.append(container);root=createRoot(container);
   await React.act(async()=>root.render(React.createElement(api.LocaleProvider,{locale:'en'},React.createElement(Fixture))));
@@ -79,7 +79,7 @@ test('anchored multiplayer menu preserves deep-link selection and shares multi-s
   await click('.book-lobby-picker-trigger');
   assert.equal(node('.book-lobby-picker').getAttribute('role'),'menu');assert.equal(env.document.querySelector('[role="dialog"]'),null);
   const grouping=scope=>[...env.document.querySelectorAll(`${scope} [data-lobby-category]`)].map(group=>[group.dataset.lobbyCategory,[...group.querySelectorAll('[data-lobby-product]')].map(row=>row.dataset.lobbyProduct)]);
-  const expectedGroups=[['versus',['th09mp']],['original',['th06mp','th10mp','th15mp']],['fighting',['th075mp']]];
+  const expectedGroups=[['versus',['th09mp']],['original',['th06mp','th10mp','th15mp']],['fighting',['th075mp']],['pc98',['th01mp','th03mp']]];
   assert.deepEqual(grouping('.book-lobby-desktop'),expectedGroups);
   assert.deepEqual(grouping('.book-lobby-picker'),expectedGroups,'Both presentations consume the same catalog classification');
   assert.equal(node('.book-lobby-picker [data-lobby-product="th10mp"] strong').textContent,'東方風神録');
@@ -129,7 +129,7 @@ test('HSoB is listed with doujin games and not with official spin-offs', async (
 test('TH05 is discoverable through the PC98 category in the current library', async () => {
   const products = api.createLibraryProducts(['th05', 'th06'], p => p, id => '?game=' + id);
   await mount(products);
-  assert.deepEqual(ids(), ['th05', 'th06']);
+  assert.deepEqual(ids(), ['th06', 'th05']);
   await click('[data-book-category="pc98"]');
   assert.deepEqual(ids(), ['th05']);
   await click('[data-book-category="windows"]');
@@ -158,6 +158,14 @@ test('unavailable history IDs are ignored, search is case insensitive, numeric s
   assert.deepEqual(api.filterBookProducts(products, 'all', [], '', 'reverse').map(p => p.id), ['th10', 'th075', 'th07', 'th06']);
   env.window.localStorage.setItem('eagler.book.favorites', '{"bad":true}');
   assert.deepEqual(api.readBookPreference('favorites', [], api.stringArray), []);
+});
+
+test('all single-player works put favorites first and PC-98 last at equal priority', () => {
+  const products = api.createLibraryProducts(['th01', 'th06', 'th07'], p => p, id => '?game=' + id);
+  const order = favorites => api.filterBookProducts(products, 'all', favorites, '', 'number').map(p => p.id);
+  assert.deepEqual(order([]), ['th06', 'th07', 'th01']);
+  assert.deepEqual(order(['th01']), ['th01', 'th06', 'th07']);
+  assert.deepEqual(order(['th01', 'th07']), ['th07', 'th01', 'th06']);
 });
 
 test('number sorting places numeric works including decimals before lettered fan works', () => {

@@ -1230,8 +1230,8 @@ bool GameSession::update(const GameSessionInput& input) {
         if(!state.replay&&battle->stage_active){auto* counter=scores.characters[state.character*2+state.subtype].data()+ScoreFile::play_time_offset;i32 n;std::memcpy(&n,counter,4);if(n<215999999){++n;std::memcpy(counter,&n,4);}}
 #endif
 #if PORT_TITLE == 14
-        if(battle->th14_practice_misses!=purple_retry_misses){
-            purple_retry_misses=battle->th14_practice_misses;
+        if(economy.th14_practice_misses!=purple_retry_misses){
+            purple_retry_misses=economy.th14_practice_misses;
             if(practice_enabled&&purple_fast_retry&&practice_run&&!state.replay&&!state.demo&&
                state.phase==GameSessionPhase::stage)return restart_run(false);
         }

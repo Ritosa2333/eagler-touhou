@@ -36,6 +36,11 @@ npm run package -- /absolute/path/to/new-relay-package
 | `EAGLER_NETPLAY_TURN_URLS` | 空 | 可选 TURN 地址；需配置共享密钥或静态凭据 |
 | `EAGLER_NETPLAY_TURN_SHARED_SECRET` | 空 | 与 coturn 共用的短期凭据密钥 |
 | `EAGLER_NETPLAY_TURN_CONFIG_FILE` | 空 | 动态 TURN JSON 路径；统一更新房间测速、游戏信令与网络诊断 |
+| `EAGLER_NETPLAY_SWARM_TURN_URLS` | 空 | 标准 Swarm TURN 地址，配置后房间提供 Swarm 选项 |
+| `EAGLER_NETPLAY_SWARM_TURN_SHARED_SECRET` | 空 | 与 Swarm TURN 网关共用的短期凭据密钥 |
+| `SWARM_ACCESS_TOKEN` | 空 | 为支持本地 Swarm 的双人原生对局分配中继端口。凭据由 Relay 读取 |
+| `EAGLER_NETPLAY_NAT4_PORT_STEPS` | 空 | 已实测的 IPv4 端口步长，格式为逗号分隔的 `IPv4=步长`。`0` 表示同一 UDP socket 对不同目标使用同一公网端口 |
+| `EAGLER_NETPLAY_NAT4_OBSERVERS` | 空 | 双人原生对局专用的三个 STUN URL。支持上报 STUN 来源的客户端可用同一 ICE socket 推断固定或递增的公网端口。其他房间使用 `EAGLER_NETPLAY_STUN_URLS` |
 
 完整客户端入口见[协议参考](docs/protocol.md)，反向代理与运行配置见[部署说明](deploy/README.md)。测试源码位于 [`tests/`](tests/)，服务许可见 [`LICENSE`](LICENSE)。
 

@@ -96,9 +96,11 @@ function harness(groupRoot=root) {
     const response=await resource(sw,selected,"game.html");
     return {...selected,body:await response.text()};
   }
-  function resource(sw,selected,name){
+  function resource(sw,selected,name,destination){
     const path=runtimeGenerationBase(root,selected.generation)+name;
-    return sw.handle({request:new Request(new URL(path,scopeUrl))});
+    const request = new Request(new URL(path,scopeUrl));
+    if (destination) Object.defineProperty(request, 'destination', {value:destination});
+    return sw.handle({request});
   }
   return{stores,clients,requests,cacheModes,state,publish,worker,launch,resource,scopeUrl,caches,a};
 }
@@ -118,6 +120,10 @@ for(const [name,type]of [['game.html','text/html'],['shell.mjs','text/javascript
 const mimeRequests=mime.requests.length;mime.state.outage=true;
 const mimeOffline=await mime.launch(mime.worker(),'mime-offline',{localOnly:true});
 assert.equal((await mime.resource(mime.worker(),mimeOffline,'shell.mjs')).headers.get('Content-Type'),'text/javascript');
+for (const destination of ['worker', 'sharedworker']) {
+  const entry = await mime.resource(mime.worker(), mimeOffline, 'worker.mjs', destination);
+  assert.equal(entry.headers.get('Cross-Origin-Embedder-Policy'), 'require-corp');
+}
 assert.equal(mime.requests.length,mimeRequests,'old binary MIME headers are repaired offline without redownloading bytes');
 const uncachedMime=harness();uncachedMime.state.contentType='application/octet-stream';
 assert.equal((await uncachedMime.resource(uncachedMime.worker(),{generation:uncachedMime.a.generation},'shell.mjs')).headers.get('Content-Type'),'text/javascript',

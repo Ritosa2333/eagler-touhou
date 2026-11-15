@@ -3,7 +3,7 @@ import {isValidReplayName} from './replay-files.mjs';
 
 export function replayFilePolicy(product: ProductId) {
   const game = gameIdForProduct(product), mp = isMultiplayerProductId(product);
-  const prefix = product === 'th05mp' || product === 'th15mp' || product === 'th17mp' ? product : product === 'th12mp' ? 'th12_mp' : PRODUCT_GAMES[game].replay.prefix;
+  const prefix = product === 'th05mp' || product === 'th14mp' || product === 'th15mp' || product === 'th17mp' ? product : product === 'th12mp' ? 'th12_mp' : PRODUCT_GAMES[game].replay.prefix;
   return {prefix, sharedExtensionSlot: ['th09', 'th10'].includes(game) || !mp && game === 'th08',
     validName: (name: string) => product === 'th05mp' ? /^th05mp_(?:\d{2}|ud[0-9a-f]{4})\.rpy$/i.test(name)
       : product === 'th12mp' ? /^th12_mp_[a-z0-9_-]+\.rpy$/i.test(name)

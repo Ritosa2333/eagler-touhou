@@ -94,7 +94,7 @@ async function probeAccountOrigin(origin: string, signal: AbortSignal): Promise<
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, {once: true});
   if (signal?.aborted) controller.abort();
-  const timeout = setTimeout(abort, 3500);
+  const timeout = setTimeout(abort, import.meta.env?.DEV ? 15000 : 3500);
   try {
     const response = await fetch(`${origin}/api/ready`, {
       credentials: 'include', cache: 'no-store', signal: controller.signal,
@@ -130,27 +130,27 @@ async function selectAccountEndpoint(signal?: AbortSignal) {
   const {edge, direct} = origins;
   let siteReady: ReturnType<typeof accountReady> | undefined;
   if (accountRegion === 'direct') {
-    siteReady = accountReady('', signal);
+    siteReady = accountReady(direct, signal);
     const ready = await siteReady;
-    if (ready?.region === 'direct') return ready;
+    return ready ?? accountReady('', signal);
   }
   if (accountRegion === 'edge') {
     const ready = await accountReady(edge, signal);
     if (ready?.region === 'direct') {
       accountRegion = 'direct';
-      return accountReady('', signal);
+      return (await accountReady(direct, signal)) ?? accountReady('', signal);
     }
     if (ready) return ready;
     const fallback = await accountReady(direct, signal);
     if (fallback?.region === 'direct') {
       accountRegion = 'direct';
-      return accountReady('', signal);
+      return fallback;
     }
     return fallback;
   }
 
   // The overseas site itself may be served by Cloudflare and have no same-origin API.
-  siteReady ??= accountReady('', signal);
+  siteReady = accountReady(direct, signal);
   const edgeReady = accountReady(edge, signal);
   const first = await Promise.any([siteReady, edgeReady].map(async probe => {
     const ready = await probe;
@@ -158,8 +158,8 @@ async function selectAccountEndpoint(signal?: AbortSignal) {
     return ready;
   })).catch(() => null);
   accountRegion = first?.region;
-  if (accountRegion === 'direct') return siteReady;
-  return (await edgeReady) ?? accountReady(direct, signal);
+  if (accountRegion === 'direct') return (await siteReady) ?? accountReady('', signal);
+  return (await edgeReady) ?? (await siteReady) ?? accountReady('', signal);
 }
 
 export async function accountRequest<T = unknown>(path: string, body?: Record<string, unknown> | FormData, options: RequestOptions = {}): Promise<T> {
@@ -249,6 +249,17 @@ async function fetchAccount<T>(origin: string, path: string, body: Record<string
     if (transient && accountErrorCode(data) !== 'CAPTCHA_UNAVAILABLE')
       throw new AccountRequestError('ACCOUNT_API_UNAVAILABLE', response.status);
     if (!response.ok) throw new AccountRequestError(accountErrorCode(data), response.status);
+    if (origin && path.endsWith('?media=urls') && data && typeof data === 'object' && 'media' in data) {
+      const media = data.media;
+      if (media && typeof media === 'object') {
+        for (const kind of ['avatar', 'cover'] as const) {
+          const fields = media as Record<string, unknown>;
+          const value = fields[kind];
+          if (typeof value === 'string' && /^\/api\/v1\/profiles\/[\w.-]+\/media\/(avatar|cover)\/[a-f0-9]{32}$/.test(value))
+            fields[kind] = origin + value;
+        }
+      }
+    }
     return data as T;
   } catch (error) {
     if (options.signal?.aborted) throw new DOMException('Request cancelled', 'AbortError');

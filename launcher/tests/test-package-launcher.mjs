@@ -4,6 +4,7 @@ import {
   canUseExistingInstallationAfterRemoteFailure,
   desiredFilesForPublishedPackage,
   installedComponentIds,
+  publishedLanguageSelection,
 } from "../package/package-launcher.mjs";
 
 test("package launcher", async () => {
@@ -65,6 +66,14 @@ assert.throws(() => desiredFilesForPublishedPackage(descriptor, {
   selectedComponentEntries: { language: ["lang_missing"] },
 }), /unknown requested Package component entry/,
   "an unavailable selected entry must fail instead of silently widening the component download");
+
+const externalLanguages = { ...descriptor, components: { ogg: descriptor.components.ogg } };
+assert.deepEqual(desiredFilesForPublishedPackage(externalLanguages, {
+  current, selectedComponentEntries: publishedLanguageSelection(externalLanguages, "lang_zh-hans"),
+}), ["html", "js", "wasm", "data", "o1"], "a separate site translation must not block a base Package update");
+assert.deepEqual(publishedLanguageSelection(descriptor, "lang_zh-hans"), { language: ["lang_zh-hans"] });
+assert.deepEqual(publishedLanguageSelection(descriptor, "ja"), { language: [] });
+assert.deepEqual(publishedLanguageSelection(descriptor, "lang_missing"), {});
 
 const descriptorWithoutO2 = structuredClone(descriptor);
 descriptorWithoutO2.revision = "r3";

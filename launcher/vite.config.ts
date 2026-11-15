@@ -50,7 +50,7 @@ export default defineConfig({base: deployment.mountPath,
   optimizeDeps:{exclude:['fumadocs-core','@fumadocs/base-ui']},
   // Generated fixtures are not authored UI inputs. Watching them also holds
   // directory handles that block publication/refresh renames on Windows.
-  server: {proxy: {...serverProxy, ...(accountServer ? {'/api/': {target: accountServer}} : {})}, watch: {ignored: path => /^(?:\.cache|artifacts|src\/paraglide)(?:\/|$)/.test(relative(sourceRoot, path).replaceAll('\\', '/'))}},
+  server: {proxy: {...serverProxy, ...(accountServer ? {'/api/': {target: accountServer, changeOrigin: true}} : {})}, watch: {ignored: path => /^(?:\.cache|artifacts|src\/paraglide)(?:\/|$)/.test(relative(sourceRoot, path).replaceAll('\\', '/'))}},
   // The build's preview fetch and listener share one explicit loopback family.
   preview: {host: '127.0.0.1'},
   // Keep generated JavaScript within the browser floor admitted by bootstrap.

@@ -49,6 +49,7 @@ public:
     // draw. Returns false to quit.
     bool frame(const PadSample& pad,u32 ticks,double now_ms,float alpha=1,bool draw_frame=true);
     double logical_interval()const;
+    bool draw_on_game_tick()const;
     void present(i32 width,i32 height){gpu.present(width,height);}
     void presented(double ms); // present + swap time of the frame just shown (the log)
     void focus_lost();

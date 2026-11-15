@@ -15,8 +15,7 @@ import {Th09CharacterPortrait} from './Th09CharacterPortrait';
 import cover from './book-covers/th09.webp?url';
 import './player-profile-card.css';
 
-const dataImage = /^data:image\/(?:webp|png|jpeg);base64,/;
-const publicProfile = z.object({nickname:z.string(), details:z.object({
+const publicProfile = z.object({nickname:z.string(), media:z.object({avatar:z.string().optional(), cover:z.string().optional()}).optional(), details:z.object({
   avatar:z.string().optional(), cover:z.string().optional(), display:z.unknown(),
 }).nullish()});
 const characterGames = z.object({character:z.number().int().min(0).max(15),games:z.number().int().positive()});
@@ -55,8 +54,8 @@ function useRatingSummary(username: string | undefined, enabled: boolean) {
   return enabled && result?.username === username ? result?.summary : undefined;
 }
 
-export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=true,showTotal=true,boardRating,ratingCard}: {
-  username?: string; name: string; avatar?: string; cover?: string; showRating?: boolean;
+export function PlayerProfileCard({username,name,avatar,highResolutionAvatar,cover:banner,showRating=true,showTotal=true,boardRating,ratingCard}: {
+  username?: string; name: string; avatar?: string; highResolutionAvatar?: string; cover?: string; showRating?: boolean;
   showTotal?: boolean; boardRating?: BoardRating; ratingCard?: Th09RatingCard | null;
 }) {
   const {t,locale} = useLocale();
@@ -69,10 +68,25 @@ export function PlayerProfileCard({username,name,avatar,cover:banner,showRating=
     ?? details?.characters ?? favorites ?? [] : [];
   const total = showRating && showTotal ? ratingCard?.rating ?? (scores ? boardRating?.rating : details?.total) : undefined;
   const number = new Intl.NumberFormat(locale);
+  const [decodedAvatar, setDecodedAvatar] = useState<string>();
+  useEffect(() => {
+    if (!highResolutionAvatar || highResolutionAvatar === avatar) return;
+    let active = true;
+    const image = new Image();
+    image.src = highResolutionAvatar;
+    void image.decode().then(() => {
+      if (active) setDecodedAvatar(highResolutionAvatar);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [avatar, highResolutionAvatar]);
   return <article className="player-profile-card" aria-label={name}>
     <header className="player-profile-card-identity">
-      <ProfileCover className="player-profile-card-cover" src={banner && dataImage.test(banner) ? banner : undefined}/>
-      <AccountAvatar src={avatar}/>
+      <ProfileCover className="player-profile-card-cover" src={banner || undefined}/>
+      <div className="player-profile-card-avatar">
+        <AccountAvatar src={avatar}/>
+        {decodedAvatar && decodedAvatar === highResolutionAvatar &&
+          <img className="player-profile-card-avatar-detail" src={decodedAvatar} alt=""/>}
+      </div>
       <div className="player-profile-card-name"><h3>{name}</h3>{username && <span>@{username}</span>}</div>
       {username && <Button variant="ghost" size="sm" className="player-profile-card-home" asChild>
         <a href={withUiLanguage('/u/'+encodeURIComponent(username),locale)} target="_blank" rel="noopener">
@@ -104,13 +118,13 @@ function PlayerCardDetails({username,name,avatar,boardRating,ratingCard}: {
   const [profile, setProfile] = useState<z.infer<typeof publicProfile>>();
   useEffect(() => {
     const controller = new AbortController();
-    void accountRequest('v1/profiles/'+encodeURIComponent(username),undefined,{signal:controller.signal,anonymous:true})
+    void accountRequest('v1/profiles/'+encodeURIComponent(username),undefined,{query:new URLSearchParams({media:'urls'}),signal:controller.signal,anonymous:true})
       .then(value=>{if (!controller.signal.aborted) setProfile(publicProfile.parse(value));}).catch(()=>{});
     return () => controller.abort();
   }, [username]);
   const visibility = profile && normalizeProfileDisplay(profile.details?.display).visible;
-  return <PlayerProfileCard username={username} name={profile?.nickname || name} cover={profile?.details?.cover}
-    avatar={profile?.details?.avatar || avatar} boardRating={boardRating} ratingCard={ratingCard}
+  return <PlayerProfileCard username={username} name={profile?.nickname || name} cover={profile?.media?.cover ?? profile?.details?.cover}
+    avatar={avatar} highResolutionAvatar={profile?.media?.avatar ?? profile?.details?.avatar} boardRating={boardRating} ratingCard={ratingCard}
     showRating={visibility?.versus ?? true} showTotal={visibility?.records ?? !!(boardRating || ratingCard)}/>;
 }
 

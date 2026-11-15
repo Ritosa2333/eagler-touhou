@@ -79,7 +79,7 @@ async function installRuntimePack(pack){
   Module.FS.writeFile(file.path,file.bytes,{canOwn:true});runtimePackFiles.push(file.path);
  }
 }
-function apply(){applyTouchOptions(core,options);core.th11_music_enabled(+music);}
+function apply(){applyTouchOptions(core,options);core.th14_always_hitbox?.(+(options.alwaysHitbox===true));core.th11_music_enabled(+music);}
 async function resumeForegroundAudio(forcePause=false){
  if(replayViewer?.state&&(replayViewer.state.paused||replayViewer.state.seeking||replayViewer.state.ended)){await replayViewer.foreground();return false;}
  if(!Module||!core||!launched||document.hidden)return false;
@@ -99,6 +99,8 @@ function path(value){const name=String(value).replaceAll('\\','/').toLowerCase()
 async function launch(){
  if(launched)return;clearKeyboard();
  if(!await callCore('th11_initialize'))throw Error(coreError());
+ // The native archive owns its bytes for the lifetime of this Runtime.
+ if(game==='th14'&&Module.FS.analyzePath('/th14.dat').exists)Module.FS.unlink('/th14.dat');
  const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;
  if(runtime){core=runtime.bindCore(core);window.core=core;}
  if(core.th11_phase()===4&&!await callCore('th11_return_title'))throw Error(coreError());

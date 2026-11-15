@@ -49,13 +49,19 @@ const readTemplate = name => checked(template, name, templateManifest.files[name
 const manifest = JSON.parse(await readTemplate('manifest.json'));
 if (manifest.game !== 'th14' || manifest.protocol !== 'eagler-touhou/1' || manifest.execution?.backend !== 'gles')
   throw Error('Expected a TH14 GLES template');
+const multiplayer=build.flags.includes('-DTH14_MULTIPLAYER=1');
+const variant=multiplayer?'multiplayer':'normal';
 const version = '1.00b-thp-' + build.sha256.slice(0, 12);
 manifest.version = version;
-const thprac = build.flags.includes('-DTH14_ENABLE_THPRAC=1');
+const thprac = !multiplayer&&build.flags.includes('-DTH14_ENABLE_THPRAC=1');
 if (thprac && (!replacements.has('shell.mjs') || !build.commonBindings?.['third_party/imgui/imgui.cpp']))
   throw Error('Missing TH14 ImGui build identity or host shell');
 const languages = build.flags.includes('-DTH_ENABLE_THCRAP=1');
 manifest.features = {...manifest.features, thprac, languages};
+if(multiplayer){
+  manifest.product='th14mp';manifest.variant=variant;manifest.profile=variant;
+  manifest.features.multiplayer=true;
+}
 manifest.execution.sha256 = build.sha256;
 manifest.execution.loaderSha256 = build.loaderSha256;
 replacements.set('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2) + '\n'));
@@ -71,14 +77,23 @@ const shell = originalShell.replace(buildInfo, '/*TH14_BUILD_INFO*/' + JSON.stri
 const originalHtml = (await readTemplate('th14.html')).toString('utf8');
 const canvas = /<canvas\b[^>]*\bid="canvas"[^>]*>/g;
 if ([...originalHtml.matchAll(canvas)].length !== 1) throw Error('Missing TH14 canvas');
-const html = originalHtml.replace(canvas, tag =>
+const reporterName = 'runtime-crash-reporter.js';
+const crashCodeName = 'crash-code-identities.json';
+const reporterTag = '<script src="' + reporterName + '"></script>';
+const shellTag = '<script type="module" src="shell.mjs"></script>';
+if (!originalHtml.includes(shellTag)) throw Error('Missing TH14 module entry');
+const html = originalHtml.replace(reporterTag, '').replace(shellTag, reporterTag + shellTag).replace(canvas, tag =>
   tag.replace(/\s(?:width|height)="\d+"/g, '').replace(/>$/, ' width="1280" height="960">'));
-assertRuntimeDataShell(html, 'th14', 'normal');
+assertRuntimeDataShell(html, 'th14', variant);
 const host = replacements.get('eagler-host.mjs') ?? await readTemplate('eagler-host.mjs');
 assertRuntimeProtocolSources([shell, host.toString('utf8'),
-  (await readTemplate('runtime-epoch.mjs')).toString('utf8')], 'th14', 'normal');
+  (await readTemplate('runtime-epoch.mjs')).toString('utf8')], 'th14', variant);
 replacements.set('shell.mjs', Buffer.from(shell));
 replacements.set('th14.html', Buffer.from(html));
+replacements.set(reporterName, await readFile(new URL('../../common/browser/' + reporterName, import.meta.url)));
+replacements.set(crashCodeName, Buffer.from(JSON.stringify({
+  files: ['th14-sdl.wasm', 'th14-sdl.mjs', 'shell.mjs'].map(path => ({path, ...identity(replacements.get(path))})),
+}, null, 2) + '\n'));
 
 const changedFonts = new Map();
 const resources = JSON.parse(await readTemplate('resources.json'));
@@ -111,6 +126,8 @@ if (changedFonts.size || thprac || languages) replacements.set('resources.json',
 for (const name of names) await readTemplate(name);
 const obsoletePracticeFiles = new Set(['Th14PracticeUi.mjs', 'Th14PracticeCatalog.mjs']);
 const outputNames = names.filter(name => !obsoletePracticeFiles.has(name) && !(languages && baked.test(name))).map(name => changedFonts.get(name) ?? name);
+for (const name of [reporterName, crashCodeName])
+  if (!outputNames.includes(name)) outputNames.push(name);
 for (const font of ['fonts/unifont.otf', 'fonts/msgothic.ttc'])
   if (replacements.has(font) && !outputNames.includes(font)) outputNames.push(font);
 for (const name of outputNames) {

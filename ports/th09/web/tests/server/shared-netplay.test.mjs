@@ -364,6 +364,38 @@ for(const transportEnd of [-1,3]) test(`viewer drains buffered final packets acr
   }finally{viewer?.close();pair?.left.close();pair?.right.close();box.restore();}
 });
 
+test('a paused viewer retains overflow frames and the end packet until native playback catches up',async()=>{
+  const box=harness(true);let pair,viewer;
+  try{
+    pair=await connectPair(box);const core=box.core();
+    let played=0,received=0,finished=false;
+    core._th09_spectator_frame=()=>played;
+    core._th09_spectator_feed=frame=>{
+      if(frame!==received||received-played>=4096)return 0;
+      ++received;return 1;
+    };
+    core._th09_spectator_finish=frame=>{finished=frame===received;return +finished;};
+    viewer=new SharedNetplay(core,{onStatus(){},onClose(){},onResult(){}});
+    await viewer.connect({netplayUrl:'wss://example.test/netplay?room=th09mp-1234&run=1&spectator=c12345678',
+      netplayPlayerCount:2,netplaySpectator:true,netplaySpectatorId:'c12345678',netplaySeed:1234,
+      netplayDifficulty:2,netplayLoadouts:[{character:3},{character:10}]});viewer.pump();
+    for(let frame=0;frame<=5000;frame++){
+      const end=frame===5000,bytes=new Uint8Array(end?24:46);
+      bytes.set(end?[84,57,83,69,1,0,2,0]:[84,57,83,80,1,3,2,0]);
+      new DataView(bytes.buffer).setUint32(8,frame,true);bytes.fill(0xaa,12,24);viewer.receive(bytes);
+    }
+    viewer.drainSpectatorHistory();
+    assert.equal(viewer.connected,true);
+    assert.equal(received,4096);
+    assert.equal(finished,false);
+    played=1000;
+    for(let batch=0;batch<15;batch++)viewer.drainSpectatorHistory();
+    assert.equal(received,5000);
+    assert.equal(finished,true);
+    assert.equal(viewer.connected,true);
+  }finally{viewer?.close();pair?.left.close();pair?.right.close();box.restore();}
+});
+
 test('TH09 rollback preserves the room manual delay at the native boundary', async () => {
   const box = harness();
   try {
