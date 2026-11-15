@@ -438,6 +438,10 @@ bool ApplicationState::result_replay_save_available() const {
     return mp_seat_count < 2 && !replay_active && recorder.ready() && progress.continues == 0;
 }
 
+bool ApplicationState::result_ranking_available() const {
+    return mp_seat_count < 2;
+}
+
 bool ApplicationState::result_screen_data(TitleResultScreenData& out) const {
     if (progress.character < 0 || progress.character >= kSaveCharacters ||
         progress.difficulty < 0 || progress.difficulty >= kSaveDifficulties)
@@ -508,7 +512,12 @@ bool ApplicationState::save_replay_slot(i32 slot, const std::string& name) {
 bool ApplicationState::save_replay_slot(i32 slot, const std::string& name,
                                         const ReplaySaveMeta* pinned) {
     if (slot < 1 || slot > 25) return fail("Invalid replay slot");
-    if (multiplayer_replay_save) return multiplayer_replay_save(slot, name) || fail("Multiplayer replay save failed");
+    if (multiplayer_replay_save) {
+        if (!multiplayer_replay_save(slot, name)) return fail("Multiplayer replay save failed");
+        // R-X keeps the SP save untouched; the name seeds this session's next editor.
+        files.remember_name(name);
+        return true;
+    }
     if (mp_seat_count >= 2) return fail("Multiplayer replay save unavailable");
     std::vector<u8> bytes;
     if (pinned) {

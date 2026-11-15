@@ -938,6 +938,8 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 0x454050 state3：DAT_004be7c8（续关数）==0 → 流程 0xf（0x4549d0
     // 回放保存）；标题战后流程的门（TitleScenePlatform 同名虚槽）。
     bool result_replay_save_available() const override;
+    // R-X：多人局不进 SP 成绩表，战后流程越过 Score Ranking 直落 state3 出口。
+    bool result_ranking_available() const override;
     bool result_screen_data(TitleResultScreenData&) const override;
     // EndingPlatform（0x416570 场景宿主面；read_asset/request_destination/
     // queue_music 复用既有同型 override，这里只声明新增面）
