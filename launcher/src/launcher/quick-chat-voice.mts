@@ -12,13 +12,15 @@ export function quickChatVoiceUrl(phraseId: string): string {
   return `assets/quick-chat/${encodeURIComponent(phraseId)}.wav`;
 }
 
-export function playQuickChatVoice(phraseId: string): void {
+export function playQuickChatVoice(phraseId: string, volume = 1): void {
+  if (volume <= 0) return;
   let clip = clips.get(phraseId);
   if(!clip) {
     clip = new Audio(quickChatVoiceUrl(phraseId));
     clip.preload = "auto";
     clips.set(phraseId, clip);
   }
+  clip.volume = volume;
   try { clip.currentTime = 0; } catch {}
   void clip.play().catch(() => {});
 }

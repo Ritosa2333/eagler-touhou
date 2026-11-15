@@ -44,7 +44,7 @@ export function createRoomSession(options: RoomSessionOptions) {
     send: (message) => {
       service.sendControl(message);
     },
-    voice: playQuickChatVoice,
+    voice: phrase => playQuickChatVoice(phrase, options.sitePreferences.getSnapshot().quickChatVolume / 100),
     notify: code => options.notify(options.translate(({
       'reported':'chat.reported','report-rate-limited':'chat.reportRateLimited','report-in-progress':'chat.reportInProgress',
       'chat-banned':'chat.banned','send-rate-limited':'chat.sendRateLimited','sign-in-required':'chat.signInRequired',

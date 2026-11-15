@@ -2,7 +2,8 @@ import {PRODUCT_GAMES, HOST_PROTOCOL} from '../../../common/contracts/product-ca
 import {PRODUCT_CONTENT} from '../../lib/content-definition.mjs';
 import {PACKAGE_DESCRIPTOR_SCHEMA} from '../../package/package-descriptor.mjs';
 import {sha256Hex} from '../../package/package-integrity.mjs';
-import {parseBgmTracks, readRetailArchive, readRetailBgmIndex} from './retail-archive.mjs';
+import {parseBgmTracks, readRetailArchive, readRetailBgmIndex, readRetailThaEntry} from './retail-archive.mjs';
+import {TH13_DATA_LAYOUT, TH13_DATA_MAGIC, TH13_DATA_SCHEMA} from '../../lib/th13-content-layout.mjs';
 
 const MiB = 1024 * 1024;
 const flatSlots = {
@@ -12,7 +13,7 @@ const flatSlots = {
   ],
   th07: [['/th07.dat', 23829135]],
 };
-const supported = new Set(['th06', 'th07', 'th08', 'th09', 'th10', 'th11', 'th15', 'th17', 'th19', 'th20']);
+const supported = new Set(['th06', 'th07', 'th08', 'th09', 'th10', 'th11', 'th13', 'th14', 'th15', 'th17', 'th19', 'th20']);
 const encoder = new TextEncoder();
 
 export function supportsRetailImport(game) {
@@ -33,6 +34,7 @@ export function retailArchiveLimits(game) {
   } else {
     limits['thbgm.dat'] = 1024 * MiB;
   }
+  if (game === 'th13') limits['thbgmogg.dat'] = 128 * MiB;
   for (const name of PRODUCT_CONTENT[game].music.ogg.files) {
     limits[name] = 64 * MiB;
     if (game === 'th06') limits[name.replace(/\.ogg$/, '.wav')] = 64 * MiB;
@@ -92,6 +94,53 @@ async function flatGameData(game, archives, addFile, read) {
   return new Blob(chunks);
 }
 
+async function prepareTh13Data(archive, directory, read, encodeOgg, onTrack, signal) {
+  let music = await read('thbgmogg.dat', 128 * MiB) ??
+    await read('bgm-ogg/thbgm.ogg', 64 * MiB) ?? await read('assets/thbgm.ogg', 64 * MiB) ??
+    await read('thbgm.ogg', 64 * MiB);
+  if (!music) {
+    const pcm = await read('thbgm.dat', 1024 * MiB);
+    if (!pcm || await pcm.slice(0, 4).text() !== 'ZWAV' || pcm.size % 4)
+      throw Error('TH13 import needs thbgm.dat or the original Vorbis archive');
+    onTrack?.({name: 'thbgm.ogg', completed: 0, total: 1});
+    // The native TH13 reader addresses the entire original PCM archive,
+    // including its 16-byte header, by decoded sample position.
+    music = await encodeOgg(pcm, {pcm: true, signal});
+  }
+  if (await music.slice(0, 4).text() !== 'OggS') throw Error('Invalid TH13 Vorbis archive');
+  // TH13's retail table repeats some names. Match thdat extraction: the
+  // final entry at a name is the one that reaches the prepared directory.
+  const entries = new Map();
+  for (const entry of directory) {
+    if (entry.length > 0 && /^[a-z0-9_-]+\.(?:png|anm|ecl|std|sht|msg|wav|rpy|fmt|txt|ver)$/.test(entry.name)) {
+      entries.set(entry.name, entry);
+    }
+  }
+  if (['default.ecl', 'pl00.anm', 'title.anm', 'ascii.anm', 'thbgm.fmt'].some(name => !entries.has(name)))
+    throw Error('Invalid TH13 archive contents');
+  const files = [], payloads = [];
+  let offset = 0;
+  async function add(name, blob) {
+    const sha256 = await sha256Hex(blob);
+    signal?.throwIfAborted();
+    files.push({path: 'assets/' + name, offset, bytes: blob.size, sha256});
+    payloads.push(blob);
+    offset += blob.size;
+  }
+  for (const name of Array.from(entries.keys()).sort()) {
+    const entry = entries.get(name);
+    signal?.throwIfAborted();
+    if (offset + entry.length > 192 * MiB) throw Error('TH13 archive exceeds the supported size');
+    await add(entry.name, new Blob([await readRetailThaEntry(archive, 'th13', entry, 32 * MiB)]));
+  }
+  await add('thbgm.ogg', music);
+  const header = new Uint8Array(12);
+  header.set(encoder.encode(TH13_DATA_MAGIC));
+  const manifest = encoder.encode(JSON.stringify({schema: TH13_DATA_SCHEMA, game: 'th13', layout: TH13_DATA_LAYOUT, files}));
+  new DataView(header.buffer).setUint32(8, manifest.length, true);
+  return {data: new Blob([header, manifest, ...payloads]), music};
+}
+
 export async function createRetailPackage({game, expected, inputs, fontTargets = [], loadFont, encodeOgg, onTrack, signal}) {
   const required = retailRequiredFiles(game);
   if (!required.length) throw Error('Original file conversion is unavailable for this game');
@@ -141,7 +190,8 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
     ids.push(id);
   }
   const archive = archives.get(required[0]);
-  const data = flat ? await flatGameData(game, archives, addFile, read) : archive;
+  const th13 = game === 'th13' ? await prepareTh13Data(archive, directory, read, encodeOgg, onTrack, signal) : null;
+  const data = th13?.data ?? (flat ? await flatGameData(game, archives, addFile, read) : archive);
   await addFile(product.package.dataTarget, data, base, product.package.dataFileId);
   for (const target of fontTargets) {
     const name = target.slice(1);
@@ -153,7 +203,7 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
     await addFile(target, blob);
   }
 
-  const bgm = game === 'th06' ? null : await read('thbgm.dat', 1024 * MiB);
+  const bgm = game === 'th06' || th13 ? null : await read('thbgm.dat', 1024 * MiB);
   let packedTracks = [];
   if (bgm) {
     const header = await bgm.slice(0, 8).arrayBuffer();
@@ -166,7 +216,7 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
   for (const [index, track] of tracks.entries()) {
     signal?.throwIfAborted();
     const name = track.name;
-    const ogg = await read(`bgm-ogg/${name}`, 64 * MiB) ?? await read(`music/${name}`, 64 * MiB) ?? await read(`bgm/${name}`, 64 * MiB) ?? await read(name, 64 * MiB);
+    const ogg = th13?.music ?? await read(`bgm-ogg/${name}`, 64 * MiB) ?? await read(`music/${name}`, 64 * MiB) ?? await read(`bgm/${name}`, 64 * MiB) ?? await read(name, 64 * MiB);
     const wavName = name.replace(/\.ogg$/, '.wav');
     const wav = !ogg && game === 'th06' ? await read('bgm/' + wavName, 64 * MiB) ?? await read(wavName, 64 * MiB) : null;
     let converted = ogg;

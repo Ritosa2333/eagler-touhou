@@ -2730,6 +2730,10 @@
     "id": "settings_bgmVolume",
     "params": []
   },
+  "settings.quickChatVolume": {
+    "id": "settings_quickChatVolume",
+    "params": []
+  },
   "settings.sfxVolume": {
     "id": "settings_sfxVolume",
     "params": []

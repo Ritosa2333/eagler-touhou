@@ -1,14 +1,19 @@
 export const LESS_MOTION_STORAGE_KEY = 'eagler-touhou-less-motion-v1';
+const QUICK_CHAT_VOLUME_STORAGE_KEY = 'eagler-touhou-quick-chat-volume-v1';
+const normalizeVolume = (value: number) => Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value))) : 100;
+const readVolume = (value: string | null) => value === null ? 100 : normalizeVolume(Number(value));
 export type SitePreferenceStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export interface SitePreferencesSnapshot {
   readonly lessMotion: boolean;
+  readonly quickChatVolume: number;
 }
 export interface SitePreferencesModel {
   subscribe(listener: () => void): () => void;
   getSnapshot(): SitePreferencesSnapshot;
   setLessMotion(enabled: boolean): void;
   toggleMotion(): void;
+  setQuickChatVolume(value: number): void;
   syncStorageEvent(event: Pick<StorageEvent, 'key' | 'newValue'>): void;
 }
 
@@ -21,9 +26,10 @@ export function createSitePreferencesModel({storage}: {
 }): SitePreferencesModel {
   const listeners = new Set<() => void>();
   const read = (key: string) => {try {return storage?.getItem(key) ?? null;} catch {return null;}};
-  const write = (key: string, value: boolean) => {try {storage?.setItem(key, value ? '1' : '0');} catch {}};
+  const write = (key: string, value: string) => {try {storage?.setItem(key, value);} catch {}};
   let snapshot: SitePreferencesSnapshot = Object.freeze({
     lessMotion: read(LESS_MOTION_STORAGE_KEY) === '1',
+    quickChatVolume: readVolume(read(QUICK_CHAT_VOLUME_STORAGE_KEY)),
   });
   function publish(change: Partial<SitePreferencesSnapshot>) {
     const next = {...snapshot, ...change};
@@ -32,7 +38,7 @@ export function createSitePreferencesModel({storage}: {
     for (const listener of listeners) listener();
   }
   function setLessMotion(enabled: boolean) {
-    write(LESS_MOTION_STORAGE_KEY, enabled);
+    write(LESS_MOTION_STORAGE_KEY, enabled ? '1' : '0');
     publish({lessMotion: enabled});
   }
   return Object.freeze({
@@ -40,9 +46,16 @@ export function createSitePreferencesModel({storage}: {
     getSnapshot: () => snapshot,
     setLessMotion,
     toggleMotion: () => setLessMotion(!snapshot.lessMotion),
+    setQuickChatVolume(value: number) {
+      const quickChatVolume = normalizeVolume(value);
+      if (quickChatVolume === snapshot.quickChatVolume) return;
+      write(QUICK_CHAT_VOLUME_STORAGE_KEY, String(quickChatVolume));
+      publish({quickChatVolume});
+    },
     syncStorageEvent(event: Pick<StorageEvent, 'key' | 'newValue'>) {
       // Motion remains document-shared; RuntimeDiagnostics owns its own key.
       if (event.key === LESS_MOTION_STORAGE_KEY) publish({lessMotion: event.newValue === '1'});
+      if (event.key === QUICK_CHAT_VOLUME_STORAGE_KEY) publish({quickChatVolume: readVolume(event.newValue)});
     },
   });
 }

@@ -812,6 +812,9 @@ export declare const PRODUCT_GAMES: Readonly<{
         package: Readonly<{
             dataFileId: "game-data";
             dataTarget: "/th13.data";
+            rawDataImport: Readonly<{
+                fileNames: readonly string[];
+            }>;
             musicSourceDirectories: Readonly<{
                 ogg: "bgm-ogg";
             }>;
