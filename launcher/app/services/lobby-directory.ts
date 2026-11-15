@@ -103,6 +103,7 @@ export interface DirectorySocket {
 export interface LobbyDirectoryOptions {
   /** Separate original-directory 10s manifest request, not the 12s launcher bootstrap. */
   loadSiteManifest(signal: AbortSignal): Promise<unknown>;
+  resolveRelay?(base: string): string;
   createSocket(url: string): DirectorySocket;
   memberId(): string;
   identity: MultiplayerIdentityStore;
@@ -518,7 +519,8 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const selectedProduct = !snapshot.selectedProduct ? '' : products.includes(snapshot.selectedProduct as MultiplayerProductId)
         ? snapshot.selectedProduct
         : products[0] || '';
-      relay = manifest.shared.netplayRelay || '';
+      const defaultRelay = manifest.shared.netplayRelay || '';
+      relay = options.resolveRelay?.(defaultRelay) ?? defaultRelay;
       publish({
         products: Object.freeze(products),
         selectedProduct,
