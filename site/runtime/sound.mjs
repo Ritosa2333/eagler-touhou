@@ -297,62 +297,63 @@ export class GameSoundQueue {
 
 const keyBits=new Map([['ArrowUp',0x10],['ArrowDown',0x20],['ArrowLeft',0x40],['ArrowRight',0x80],['KeyZ',1],['Enter',0x200],['KeyX',2],['Escape',0x100]]);
 export class OriginalPauseController{
-  constructor({module,releaseInput,consumeSound,audio,onResume,onTitle,onRestart,onPresentation=async()=>{},onReplayOpen=async()=>{throw new Error("Original replay save consumer is unavailable");}}){
+  constructor({module,isCurrent=()=>true,releaseInput,consumeSound,audio,onResume,onTitle,onRestart,onPresentation=async()=>{},onReplayOpen=async()=>{throw new Error("Original replay save consumer is unavailable");}}){
     for(const name of ['_th128_world_pause_open','_th128_world_pause_tick','_th128_world_pause_commit','_th128_world_pause_state'])
       if(typeof module?.[name]!=='function')throw new Error('Original pause menu core is unavailable');
-    if([releaseInput,consumeSound,onResume,onTitle,onRestart].some(value=>typeof value!=='function')
+    if([isCurrent,releaseInput,consumeSound,onResume,onTitle,onRestart].some(value=>typeof value!=='function')
       ||['enter','leave','suspend'].some(name=>typeof audio?.[name]!=='function'))throw new Error('Original menu consumer is incomplete');
-    this.module=module;this.releaseInput=releaseInput;this.consumeSound=consumeSound;this.audio=audio;
+    this.module=module;this.isCurrent=isCurrent;this.releaseInput=releaseInput;this.consumeSound=consumeSound;this.audio=audio;
     this.onResume=onResume;this.onTitle=onTitle;this.onRestart=onRestart;this.onPresentation=onPresentation;this.onReplayOpen=onReplayOpen;this.wake=null;
     this.active=false;this.suspended=false;this.held=0;this.pressed=0;this.busy=false;this.closed=false;
   }
+  current(){return !this.closed&&this.isCurrent();}
   checked(result){
     if(result!==1)throw new Error(this.module.UTF8ToString(this.module._th128_world_error())||'Original menu operation rejected');
   }
   snapshot(){return JSON.parse(this.module.UTF8ToString(this.module._th128_world_pause_state()));}
   async open({alreadyOpened=false}={}){
-    if(this.active||this.busy||this.closed)throw new Error('Original menu is already owned');
+    if(this.active||this.busy||!this.current())throw new Error('Original menu is already owned');
     this.busy=true;
     try{
       this.releaseInput();this.held=0;this.pressed=0;
       await this.audio.enter();
-      if(this.closed)return;
+      if(!this.current())return;
       if(!alreadyOpened)this.checked(this.module._th128_world_pause_open(0));
       if(!this.snapshot().active)throw new Error('Original menu owner was not created');
-      await this.consumeSound();if(this.closed)return;this.active=true;this.suspended=false;
-    }catch(problem){if(!this.closed)throw problem;}finally{this.busy=false;}
+      await this.consumeSound();if(!this.current())return;this.active=true;this.suspended=false;
+    }catch(problem){if(this.current())throw problem;}finally{this.busy=false;}
   }
   keyDown(code){
-    if(!this.active||this.closed)return;
+    if(!this.active||!this.current())return;
     const bit=keyBits.get(code);if(bit===undefined)return;
     if(!(this.held&bit))this.pressed|=bit;this.held|=bit;
-    if(this.suspended){this.suspended=false;this.wake=this.audio.enter().catch(error=>{if(!this.closed)this.failure=error;});}
+    if(this.suspended){this.suspended=false;this.wake=this.audio.enter().catch(error=>{if(this.current())this.failure=error;});}
   }
   keyUp(code){const bit=keyBits.get(code);if(bit!==undefined)this.held&=~bit;}
   async step(){
-    if(!this.active||this.suspended||this.closed)return;
+    if(!this.active||this.suspended||!this.current())return;
     if(this.failure)throw this.failure;
     if(this.busy)throw new Error('Original menu tick is not serial');
     this.busy=true;
     try{
-      if(this.wake){await this.wake;this.wake=null;if(this.closed)return;if(this.failure)throw this.failure;}
+      if(this.wake){await this.wake;this.wake=null;if(!this.current())return;if(this.failure)throw this.failure;}
       const pressed=this.pressed;this.pressed=0;
       this.checked(this.module._th128_world_pause_tick(this.held,pressed));
-      await this.consumeSound();if(this.closed)return;
-      const snapshot=this.snapshot();await this.onPresentation(snapshot);if(this.closed)return;
+      await this.consumeSound();if(!this.current())return;
+      const snapshot=this.snapshot();await this.onPresentation(snapshot);if(!this.current())return;
       const action=snapshot.action;
       if(action===4){if(!snapshot.replayPhase)await this.onReplayOpen(snapshot);return;}
       if(!action)return;
       if(![1,2,3,6].includes(action))throw new Error('Original menu action has no complete consumer');
       this.checked(this.module._th128_world_pause_commit(action));
-      this.active=false;this.held=0;this.pressed=0;this.releaseInput();await this.audio.leave();if(this.closed)return;
+      this.active=false;this.held=0;this.pressed=0;this.releaseInput();await this.audio.leave();if(!this.current())return;
       if(action===1||action===2)await this.onResume();
       else if(action===3)await this.onTitle();
       else await this.onRestart();
-    }catch(problem){if(!this.closed)throw problem;}finally{this.busy=false;}
+    }catch(problem){if(this.current())throw problem;}finally{this.busy=false;}
   }
   canStepPresentation(){
-    if(!this.active||!this.suspended||this.closed||this.busy||this.failure)return false;
+    if(!this.active||!this.suspended||!this.current()||this.busy||this.failure)return false;
     const state=this.snapshot();
     return state.active&&state.ready&&!state.closing&&!state.confirm&&!state.manual&&!state.replayPhase&&!state.action;
   }
@@ -369,6 +370,7 @@ export class OriginalPauseController{
     }finally{this.busy=false;}
   }
   async suspend(){
+    if(!this.current())return;
     this.held=0;this.pressed=0;this.suspended=true;
     await this.audio.suspend();
   }

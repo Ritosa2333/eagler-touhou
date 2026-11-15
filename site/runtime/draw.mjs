@@ -188,7 +188,7 @@ export function decodeDrawBuffer(buffer, pointer, count, stride) {
   });
 }
 
-export async function loadOriginalHelpPage(renderer,record,{signal}={}){
+export async function loadOriginalHelpPage(renderer,record,{signal,isCurrent=()=>true}={}){
   const graphics=renderer?.gl;
   if(!graphics||!renderer.textures||!Number.isInteger(record?.page)||record.page<0||record.page>8
     ||typeof record.url!=='string'||record.width!==384||record.height!==448)
@@ -203,7 +203,7 @@ export async function loadOriginalHelpPage(renderer,record,{signal}={}){
   const bitmap=await createImageBitmap(new Blob([full]),0,0,384,448,{premultiplyAlpha:'none',colorSpaceConversion:'none'});
   let texture=null;
   try{
-    if(signal?.aborted||renderer.disposed)throw new DOMException('Aborted','AbortError');
+    if(signal?.aborted||renderer.disposed||!isCurrent())throw new DOMException('Aborted','AbortError');
     const key='46:1',previous=renderer.textures.get(key);
     if(previous?.helpPage===record.page)return;
     texture=graphics.createTexture();if(!texture)throw new Error('Cannot allocate original help page');

@@ -3769,69 +3769,88 @@ function bindOriginalNameProfile(record,serial=0){
 function originalPauseConsumer(){
   if(state.nativePause)return state.nativePause;
   if(!state.module||!state.gameSounds)throw new Error('原版暂停菜单尚未准备完成');
+  const module=state.module,sounds=state.gameSounds,action=state.action,selection=state.stageSelection;
+  const current=()=>!controller.closed&&state.nativePause===controller&&state.module===module
+    &&state.gameSounds===sounds&&state.action===action&&state.stageSelection===selection;
+  const owned=async work=>{
+    if(!current())return;
+    try{return await work();}catch(problem){if(current())throw problem;}
+  };
   const ledger=new OwnedMenuSoundLedger();state.menuSoundLedger=ledger;
   const controller=new OriginalPauseController({
-    module:state.module,releaseInput:releaseOriginalPauseInput,
-    consumeSound:async()=>{
+    module,isCurrent:current,releaseInput:releaseOriginalPauseInput,
+    consumeSound:()=>owned(async()=>{
       const owner=await ordinaryWorldAudioLane();
+      if(!current())return;
       if(owner)return owner.sound();
-      return consumeMenuSoundWindow(state.module,state.gameSounds,ledger,{present:!window.__TH128_FAST_REPLAY__});
-    },
-    audio:new MenuAudioGate(state.gameSounds),
-    onReplayOpen:async()=>{
-      state.replayStore??=new OwnedReplayStore();state.replaySlots=await state.replayStore.observe();
-      bindOriginalReplayPreviews();
-      if(!state.module._th128_world_replay_save_open())throw new Error(state.module.UTF8ToString(state.module._th128_world_error()));
-      state.nameFieldStore??=new OwnedLastNameFieldStore();state.nameFieldProfile=await state.nameFieldStore.observe();
-      bindOriginalNameProfile(state.nameFieldProfile);
-    },
+      return consumeMenuSoundWindow(module,sounds,ledger,{present:!window.__TH128_FAST_REPLAY__});
+    }),
+    audio:new MenuAudioGate(sounds),
+    onReplayOpen:()=>owned(async()=>{
+      const store=state.replayStore??=new OwnedReplayStore(),slots=await store.observe();
+      if(!current()||state.replayStore!==store)return;
+      state.replaySlots=slots;bindOriginalReplayPreviews();
+      if(!module._th128_world_replay_save_open())throw new Error(module.UTF8ToString(module._th128_world_error()));
+      const names=state.nameFieldStore??=new OwnedLastNameFieldStore(),profile=await names.observe();
+      if(!current()||state.nameFieldStore!==names||state.replayStore!==store)return;
+      state.nameFieldProfile=profile;bindOriginalNameProfile(profile);
+    }),
     onResume:()=>{
+      if(!current())return;
       menu.pauseOpen=false;menu.fault=false;menu.page='main';
       state.paused=false;clock.reset();resetHighFrameratePresentation();originalMenuClock.reset();state.pressed.clear();
       find('#runtime-overlay').hidden=true;find('#game-menu').hidden=true;
       worldMovementInput(0,763);find('#game').focus();status('游戏继续。');
     },
-    onTitle:()=>{menu.pauseOpen=false;if(state.replayPlayback)returnOwnedReplayToTitle();else returnToTitle();},
-    onRestart:async()=>{
+    onTitle:()=>{if(!current())return;menu.pauseOpen=false;if(state.replayPlayback)returnOwnedReplayToTitle();else returnToTitle();},
+    onRestart:()=>owned(async()=>{
       if(state.replayPlayback)return restartOwnedReplay();
       await recordOwnedMainSession();
-      const current=state.stageSelection;
-      if(!current)throw new Error('重新开始缺少当前路线');
-      const stageId=current.stage.id===16?16:current.stage.id<=5?1:current.stage.id<=10?6:11;
-      const selection=prepareStage(stageId,{difficulty:current.difficulty,seed:34772,progress:0,debugExtra:current.debugExtra===true});
-      menu.pauseOpen=false;return startLaunch(selection,'route');
-    },
-    onPresentation:async snapshot=>{
+      if(!current())return;
+      const selected=state.stageSelection;
+      if(!selected)throw new Error('重新开始缺少当前路线');
+      const stageId=selected.stage.id===16?16:selected.stage.id<=5?1:selected.stage.id<=10?6:11;
+      const next=prepareStage(stageId,{difficulty:selected.difficulty,seed:34772,progress:0,debugExtra:selected.debugExtra===true});
+      menu.pauseOpen=false;return startLaunch(next,'route');
+    }),
+    onPresentation:snapshot=>owned(async()=>{
       if(snapshot.replayPhase===2&&!snapshot.replayNameContextReady)bindOriginalReplayNameContext(snapshot);
       if(snapshot.replayPhase===3){
-        state.replayStore??=new OwnedReplayStore();
+        const store=state.replayStore??=new OwnedReplayStore(),slots=state.replaySlots;
+        const names=state.nameFieldStore,profile=state.nameFieldProfile;
+        const storageCurrent=()=>current()&&state.replayStore===store&&state.replaySlots===slots
+          &&state.nameFieldStore===names&&state.nameFieldProfile===profile;
         const timestamp=BigInt(Math.floor(Date.now()/1000));
-        const size=state.module._th128_world_replay_snapshot(Number(timestamp&0xffffffffn),Number(timestamp>>32n));
-        if(!Number.isSafeInteger(size)||size<292||size>16*1024*1024)throw new Error(state.module.UTF8ToString(state.module._th128_world_error())||'原生录像数据不完整');
-        const pointer=state.module._th128_world_replay_data();
-        if(!Number.isSafeInteger(pointer)||pointer<=0||pointer+size>state.module.HEAPU8.length)throw new Error('原生录像内存范围无效');
-        const native=state.module.HEAPU8.slice(pointer,pointer+size);
-        const checksum=state.module._th128_world_replay_checksum()>>>0;
+        const size=module._th128_world_replay_snapshot(Number(timestamp&0xffffffffn),Number(timestamp>>32n));
+        if(!Number.isSafeInteger(size)||size<292||size>16*1024*1024)throw new Error(module.UTF8ToString(module._th128_world_error())||'原生录像数据不完整');
+        const pointer=module._th128_world_replay_data();
+        if(!Number.isSafeInteger(pointer)||pointer<=0||pointer+size>module.HEAPU8.length)throw new Error('原生录像内存范围无效');
+        const native=module.HEAPU8.slice(pointer,pointer+size),checksum=module._th128_world_replay_checksum()>>>0;
         if(OwnedReplayStore.nativeChecksum(native)!==checksum)throw new Error('原生录像完整读回校验失败');
-        const saved=await state.replayStore.save(snapshot.replaySlot,native,{expectedDigest:state.replaySlots?.[snapshot.replaySlot]?.digest??null});
+        const saved=await store.save(snapshot.replaySlot,native,{expectedDigest:slots?.[snapshot.replaySlot]?.digest??null});
+        if(!storageCurrent())return;
         if(!saved.strictFullReadback)throw new Error('原生录像完整保存读回失败');
-        if(!state.nameFieldStore||!state.nameFieldProfile)throw new Error('原上次姓名字段的真实存储owner不可用');
-        const storedName=await state.nameFieldStore.save(new Uint8Array(snapshot.replayName),state.nameFieldProfile);
+        if(!names||!profile)throw new Error('原上次姓名字段的真实存储owner不可用');
+        const storedName=await names.save(new Uint8Array(snapshot.replayName),profile);
+        if(!storageCurrent())return;
         bindOriginalNameProfile(storedName,snapshot.replaySerial);
-        if(!state.module._th128_world_replay_saved(snapshot.replaySerial,snapshot.replaySlot,saved.rawBytes,saved.rawChecksum))
-          throw new Error(state.module.UTF8ToString(state.module._th128_world_error())||'原生录像保存确认失败');
+        if(!module._th128_world_replay_saved(snapshot.replaySerial,snapshot.replaySlot,saved.rawBytes,saved.rawChecksum))
+          throw new Error(module.UTF8ToString(module._th128_world_error())||'原生录像保存确认失败');
         state.nameFieldProfile=storedName;
-        state.replaySlots[snapshot.replaySlot]={digest:saved.digest,bytes:saved.bytes};
+        slots[snapshot.replaySlot]={digest:saved.digest,bytes:saved.bytes};
         bindOriginalReplayPreviews();
         status('录像已保存到 No.'+String(snapshot.replaySlot+1).padStart(2,'0'));
       }
       if(snapshot.manual&&snapshot.helpPage>=0&&snapshot.helpPage!==state.manualPageLoaded){
+        const renderer=state.renderer,host=state.controller,base=state.base;
         const reference=originalHelpPagePins[find('#variant').value]?.[snapshot.helpPage];
         if(!reference)throw new Error('原版操作说明页缺失');
-        await loadOriginalHelpPage(state.renderer,{...reference,url:safeAssetUrl(state.base,reference.file)},{signal:state.controller.signal});
+        const helpCurrent=()=>current()&&state.renderer===renderer&&state.controller===host&&state.base===base;
+        await loadOriginalHelpPage(renderer,{...reference,url:safeAssetUrl(base,reference.file)},{signal:host.signal,isCurrent:helpCurrent});
+        if(!helpCurrent())return;
         state.manualPageLoaded=snapshot.helpPage;
       }
-    }
+    })
   });
   state.nativePause=controller;return controller;
 }
