@@ -1809,6 +1809,16 @@
     "id": "lobby_stale",
     "params": []
   },
+  "lobby.longWait": {
+    "id": "lobby_longWait",
+    "params": []
+  },
+  "lobby.waitTime": {
+    "id": "lobby_waitTime",
+    "params": [
+      "time"
+    ]
+  },
   "lobby.recruiting": {
     "id": "lobby_recruiting",
     "params": []
@@ -2500,6 +2510,10 @@
     "id": "multiplayer_loadout_th15_reisen",
     "params": []
   },
+  "game.title.th14mp": {
+    "id": "game_title_th14mp",
+    "params": []
+  },
   "game.title.th17mp": {
     "id": "game_title_th17mp",
     "params": []
@@ -2714,6 +2728,10 @@
   },
   "settings.bgmVolume": {
     "id": "settings_bgmVolume",
+    "params": []
+  },
+  "settings.quickChatVolume": {
+    "id": "settings_quickChatVolume",
     "params": []
   },
   "settings.sfxVolume": {
@@ -9133,6 +9151,20 @@
   },
   "chat.title": {
     "id": "chat_title",
+    "params": []
+  },
+  "chat.newMessages": {
+    "id": "chat_newMessages",
+    "params": [
+      "count"
+    ]
+  },
+  "chat.sending": {
+    "id": "chat_sending",
+    "params": []
+  },
+  "chat.sendFailed": {
+    "id": "chat_sendFailed",
     "params": []
   },
   "chat.historyScroll": {

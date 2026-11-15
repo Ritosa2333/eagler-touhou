@@ -1,5 +1,5 @@
 import {BookButton} from '../launcher/BookButton';
-import { Fragment, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import {Music2, UsersRound} from 'lucide-react';
 import {OverflowText} from '../../ui/overflow-text';
 import {
@@ -123,7 +123,17 @@ function RoomRow({
   const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
   const difficulty = policy.inGameSelection && room.product !== 'th03mp' ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
-  const statusLabel = t(`lobby.${state}`);
+  const waitingSince = policy.gameplay === 'versus' && state === 'recruiting' ? room.createdAt : undefined;
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    if (waitingSince === undefined) return;
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [waitingSince]);
+  const waitingSeconds = waitingSince === undefined ? 0 : Math.max(0, Math.floor((now - waitingSince) / 1000));
+  const longWait = waitingSeconds >= 15 * 60;
+  const statusLabel = t(longWait ? 'lobby.longWait' : `lobby.${state}`);
   const spectating = directoryRoomSpectatorEntry(room);
   const count = t('lobby.count', { players: room.players, capacity: room.capacity });
   const disabled =
@@ -139,6 +149,7 @@ function RoomRow({
       aria-hidden={exiting || undefined}
       data-key={`${room.product}-${room.code}`}
       data-state={state}
+      data-long-wait={longWait || undefined}
       data-listening={room.listeningTrack ? '' : undefined}
     >
       <div className="lobby-room-identity">
@@ -168,7 +179,10 @@ function RoomRow({
             </span>
             {room.phase !== 'lobby' && (duel || !!room.startedAt) && <span className="lobby-room-duration">
               <span className="lobby-room-fact-divider" aria-hidden="true">|</span>
-              <RoomElapsed phase={room.phase} startedAt={duel ? undefined : room.startedAt} elapsedMinutes={duel ? minutes : undefined}/>
+              <RoomElapsed phase={room.phase} startedAt={room.startedAt} elapsedMinutes={duel && !room.startedAt ? minutes : undefined}/>
+            </span>}
+            {waitingSince !== undefined && <span className="lobby-room-duration"><span className="lobby-room-fact-divider" aria-hidden="true">|</span>
+              <span>{t('lobby.waitTime', {time:`${Math.floor(waitingSeconds / 60)}:${String(waitingSeconds % 60).padStart(2,'0')}`})}</span>
             </span>}
             {room.listeningTrack && <span className="lobby-room-music">
               <Music2 aria-hidden="true"/>

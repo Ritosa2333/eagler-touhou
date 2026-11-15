@@ -106,11 +106,9 @@ bool FontDevice::translated_message(const std::string& text)const{
     return !font_path.empty()&&!text.empty()&&valid_utf8(text);
 }
 
-bool FontDevice::write_localized(TextureImage& image,const TextLayout& layout,const TextureText& request){
+bool FontDevice::fit_localized(const TextLayout& layout,const TextureText& request,std::string& text,bool& centered,i32& text_width){
     if(font_path.empty()||request.bytes.size()>4096)return false;
     const auto& rect=layout.region;
-    auto style=layout.style;
-    style.fallback=false;
     auto& font=localized_fonts[request.font];
     auto& gothic=japanese_fallback[request.font];
     constexpr i32 sizes[]={32,32,15,15,40,40,15,15,26};
@@ -124,23 +122,23 @@ bool FontDevice::write_localized(TextureImage& image,const TextLayout& layout,co
         }
     }
 
-    auto& scratch=raster.scratch;
-    const i32 width=std::min(rect.right-rect.left,i32(scratch.width));
-    const i32 height=std::min(rect.bottom-rect.top,i32(scratch.height));
-    const u32 rows=u32(std::max(height,std::max(17,style.height)*2+12));
-    if(width<=4||height<=4||rows>scratch.height)return false;
-    std::fill(scratch.pixels.begin(),scratch.pixels.end(),0);
-    bool centered=request.centered;
-    const auto text=display_text(request.bytes,centered);
-    if(text.empty())return raster.copy(image,rect,style);
+    const i32 width=std::min(rect.right-rect.left,i32(raster.scratch.width));
+    const i32 height=std::min(rect.bottom-rect.top,i32(raster.scratch.height));
+    if(width<=4||height<=4)return false;
+    centered=request.centered;
+    text=display_text(request.bytes,centered);
+    text_width=0;
+    if(text.empty())return true;
 
-    const i32 offset=request.right_aligned||centered?0:std::max(0,style.offset);
-    const i32 max_width=width-offset-4,max_height=height-4;
-    if(max_width<=0)return raster.copy(image,rect,style);
+    const i32 offset=request.right_aligned||centered?0:std::max(0,layout.style.offset);
+    i32 max_width=width-offset-4;
+    if(request.width_limit>0)max_width=std::min(max_width,request.width_limit);
+    const i32 max_height=height-4;
+    if(max_width<=0){text.clear();return true;}
 
     // Fit long lines by changing the point size before rasterization. Scaling
     // a completed glyph bitmap independently in X and Y changes its shape.
-    i32 text_width=0,text_height=0;
+    i32 text_height=0;
     for(i32 size=preferred;;){
         if(TTF_GetFontSize(font)!=size&&(!TTF_SetFontSize(font,float(size))||
            (gothic&&!TTF_SetFontSize(gothic,float(size)))))return false;
@@ -150,7 +148,26 @@ bool FontDevice::write_localized(TextureImage& image,const TextLayout& layout,co
         const float scale=std::min(float(max_width)/std::max(1,text_width),float(max_height)/std::max(1,text_height));
         size=std::clamp(i32(size*scale),1,size-1);
     }
+    return true;
+}
 
+bool FontDevice::write_localized(TextureImage& image,const TextLayout& layout,const TextureText& request){
+    const auto& rect=layout.region;
+    auto style=layout.style;
+    style.fallback=false;
+    auto& scratch=raster.scratch;
+    const i32 width=std::min(rect.right-rect.left,i32(scratch.width));
+    const i32 height=std::min(rect.bottom-rect.top,i32(scratch.height));
+    const u32 rows=u32(std::max(height,std::max(17,style.height)*2+12));
+    if(rows>scratch.height)return false;
+    std::string text;
+    bool centered=false;
+    i32 text_width=0;
+    if(!fit_localized(layout,request,text,centered,text_width))return false;
+    std::fill(scratch.pixels.begin(),scratch.pixels.end(),0);
+    if(text.empty())return raster.copy(image,rect,style);
+    const i32 offset=request.right_aligned||centered?0:std::max(0,style.offset);
+    auto* font=localized_fonts[request.font];
     using Surface=std::unique_ptr<SDL_Surface,decltype(&SDL_DestroySurface)>;
     Surface glyphs(TTF_RenderText_Blended(font,text.c_str(),text.size(),{255,255,255,255}),SDL_DestroySurface);
     if(!glyphs)return false;

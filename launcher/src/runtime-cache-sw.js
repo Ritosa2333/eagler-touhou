@@ -101,7 +101,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
       const text = await response.text();
       if (text.length > 4 * 1024 * 1024) throw new Error("Runtime Manifest too large");
       return C.validateRuntimeManifest(JSON.parse(text));
-    }, {onProgress});
+    }, {cache: 'no-cache', onProgress});
   }
   async function snapshots(root) {
     const result = [];
@@ -294,7 +294,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
       html:'text/html',json:'application/json',css:'text/css',woff:'font/woff',woff2:'font/woff2'};
     return Object.hasOwn(types, extension) ? types[extension] : undefined;
   }
-  function deliver(response, path, root) {
+  function deliver(response, path, root, destination) {
     const headers = new Headers(response.headers);
     // These responses have already passed descriptor/hash verification. MIME
     // headers are not part of that byte identity and can survive an origin fix
@@ -302,8 +302,8 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
     const type = runtimeContentType(path);
     if (type) headers.set("Content-Type", type);
     // TH14 imports verified files as buffers, without their origin headers.
-    // Both the game document and its Wasm worker scripts need isolation.
-    if (root === "runtime/th14/" && (type === "text/html" || type === "text/javascript")) {
+    // All Runtime documents and the imported TH14 worker scripts need isolation.
+    if (destination === "worker" || destination === "sharedworker" || type === "text/html" || (root === "runtime/th14/" && type === "text/javascript")) {
       headers.set("Cross-Origin-Embedder-Policy", "require-corp");
       headers.set("Cross-Origin-Opener-Policy", "same-origin");
       headers.set("Cross-Origin-Resource-Policy", "same-origin");
@@ -312,7 +312,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
     headers.delete("Content-Encoding"); headers.delete("Content-Length");
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
   }
-  async function immutableResponse(path, parsed) {
+  async function immutableResponse(path, parsed, destination) {
     for (const snapshot of await snapshots(parsed.root).catch(() => [])) {
       if (snapshot.descriptor.generation !== parsed.generation) continue;
       const file = snapshot.descriptor.files.find(file => file.path === parsed.file);
@@ -323,12 +323,12 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
         try {
           const verified = await checked(cached, file);
           if (file.path === snapshot.descriptor.entry) console.info('[EAGLER|Runtime]', {source:'cache', root:parsed.root, generation:parsed.generation});
-          return deliver(verified, file.path, parsed.root);
+          return deliver(verified, file.path, parsed.root, destination);
         } catch { /* Repair this exact immutable address. */ }
       }
       const fetched = await runtimeFile(absolute(path), file);
       await cache.put(absolute(path), fetched.clone()).catch(() => {});
-      return deliver(fetched, file.path, parsed.root);
+      return deliver(fetched, file.path, parsed.root, destination);
     }
     // Explicit immutable requests never follow latest or change generation. In
     // a storage-restricted browser they remain ordinary same-origin HTTP loads.
@@ -346,7 +346,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
     if (parsed.file === C.RUNTIME_GENERATION_FILE) return deliver(json({ schema: C.RUNTIME_GENERATION_SCHEMA,
       protocol: C.RUNTIME_PROTOCOL, root: parsed.root, ...descriptor }), parsed.file, parsed.root);
     if (!file) return new Response("Unknown Runtime resource", { status: 404 });
-    return deliver(await runtimeFile(absolute(path), file), file.path, parsed.root);
+    return deliver(await runtimeFile(absolute(path), file), file.path, parsed.root, destination);
   }
   async function selectForLaunch(path, options) {
     const snapshot = await prepare(path, options);
@@ -365,7 +365,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
     const path = relative(event.request.url);
     if (!path?.startsWith("runtime/")) return null;
     const parsed = C.parseRuntimeGenerationPath(path);
-    if (parsed) return immutableResponse(path, parsed);
+    if (parsed) return immutableResponse(path, parsed, event.request.destination);
     if (event.request.mode !== "navigate" || !path.endsWith(".html")) return null;
     return (async () => {
       const snapshot = await selectForLaunch(path);

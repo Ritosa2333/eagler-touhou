@@ -131,7 +131,7 @@ export async function prepareRuntimeLaunch(runtime: string, {
     const text = await response.text();
     if (text.length > 4 * 1024 * 1024) throw new Error("Runtime Manifest exceeds size limit");
     return validateRuntimeManifest(JSON.parse(text));
-  }).catch(() => null);
+  }, 0, 'no-cache').catch(() => null);
   const workerTask = Promise.resolve(worker === undefined ? runtimeProgramWorker(base.href) : worker);
   const target = await bounded(workerTask, 5000, null);
   const requestedRoot = parseRuntimeGenerationPath(path)?.root || path.slice(0, path.lastIndexOf('/') + 1);

@@ -9,13 +9,16 @@ function fixture(game='th15',multiplayer=true) {
   const world={console:{warn(){},error(){}},location:url,navigator:{userAgent:'test-browser',language:'zh-CN',languages:['zh-CN'],onLine:true},
     document:{currentScript:{src:new URL('runtime-crash-reporter.js',url).href},readyState:'loading',addEventListener(){},visibilityState:'visible'},
     performance:{memory:{usedJSHeapSize:100,totalJSHeapSize:200,jsHeapSizeLimit:1000}},
-    innerWidth:400,innerHeight:800,devicePixelRatio:2,URL,TextDecoder,Uint8Array,Uint32Array,Int32Array,Float32Array,ArrayBuffer,Error,
+    innerWidth:400,innerHeight:800,devicePixelRatio:2,URL,URLSearchParams,TextDecoder,Uint8Array,Uint32Array,Int32Array,Float32Array,ArrayBuffer,Error,
     fetch:async()=>({ok:false}),setInterval:f=>timers.push(f),
     addEventListener:(event,callback)=>listeners.set(event,callback),
     __eaglerCrashReportHostV1:{show:value=>shown.push(value)}};
   world.window=world;world.parent=world;
-  vm.runInNewContext(source,world);
-  return {world,api:world.__eaglerCrashReporterV1,listeners,shown,timers};
+  const context=vm.createContext(world);
+  vm.runInContext(source,context);
+  return {world,api:world.__eaglerCrashReporterV1,listeners,shown,timers,dispatch:data=>
+    vm.runInContext('addEventFixture(window)',Object.assign(context,{addEventFixture:source=>
+      listeners.get('message')({origin:url.origin,source,data})}))};
 }
 test('abort preserves stderr, state, memory and stacks without calling crashed WASM',()=>{
   const {world,api,shown}=fixture();let calls=0;
@@ -82,4 +85,32 @@ test('TH12 reports its eight-word rollback ABI independently of TH15',()=>{
   assert.equal(state.committedFrames,120);assert.equal(state.frontier,130);
   assert.equal(state.requestedFrame,118);assert.equal(state.correcting,true);
   assert(!Object.hasOwn(state,'presentationFps'));
+});
+test('TH14 records Extra and rollback state before abort, and omits Relay configuration',()=>{
+  const {api,world,dispatch,timers}=fixture('th14',true),heap=new Uint8Array(256);
+  new Uint32Array(heap.buffer,16,6).set([15637,15636,523,2182,510,12]);
+  new Uint32Array(heap.buffer,48,5).set([1,133,429,640,212]);
+  let reads=0;
+  api.bindCore({HEAPU8:heap,_th11_stage:()=>{++reads;return 7;},_th11_frame:()=>7811,
+    _th11_phase:()=>1,_th11_dynamic_allocs:()=>128,_th14_checkpoint_bytes:()=>96,
+    _th14_room_rollback:()=>16,_th14_battle_diagnostics:()=>48},{autoSample:false,hookAbort:false});
+  timers[0]();
+  assert.equal(reads,1);
+  world.__eaglerNetplayLanActive=true;world.__eaglerNetplayLanFrame=15639;world.__eaglerNetplayLanConfirmed=15637;
+  dispatch({protocol:'eagler-touhou/1',command:'configure',
+    options:{netplayPlayerCount:3,netplayUrl:'wss://relay.example/?room=private',iceServers:[{urls:'turn:private'}],external:'private'}});
+  world.console.error('connection failed wss://relay.example/?room=private');
+  api.fatal(new Error('allocation failed'),{source:'wasm-abort'});
+  api.sample();
+  const report=api.report(),state=report.samples.at(-1);
+  assert.equal(reads,1);
+  assert.equal(report.game,'th14');
+  assert.equal(state.stage,7);
+  assert.equal(state.wasmAllocatedBytes,128);
+  assert.equal(state.checkpointArenaBytes,96);
+  assert.equal(state.rollback.confirmedFrame,15636);
+  assert.equal(state.battle.spellId,133);
+  assert.equal(report.lastFrame.frame,15639);
+  assert.equal(report.events[0].options.netplayPlayerCount,3);
+  assert(!JSON.stringify(report).includes('private'));
 });

@@ -1,4 +1,5 @@
 import {relayFailureDetail} from './network-failure';
+import {publishedPc98Multiplayer} from './published-multiplayer';
 import type {RelayAttempt} from '../../src/launcher/relay-entry-routing.mts';
 import {normalizePublicNickname} from '../../src/contracts/public-nickname.mts';
 import {
@@ -37,6 +38,7 @@ export interface DirectorySeat {
 }
 export interface DirectoryRoom {
   startedAt?: number;
+  createdAt?: number;
   listeningTrack?: { name: string; artist: string };
   product: MultiplayerProductId;
   code: string;
@@ -348,6 +350,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       joinable: row.joinable === true,
       spectatable: row.phase !== 'lobby' && row.spectatable === true,
       ...(typeof row.startedAt === 'number' && Number.isSafeInteger(row.startedAt) && row.startedAt > 0 ? {startedAt: row.startedAt} : {}),
+      ...(typeof row.createdAt === 'number' && Number.isSafeInteger(row.createdAt) && row.createdAt > 0 ? {createdAt: row.createdAt} : {}),
     });
   }
   function connect() {
@@ -509,8 +512,8 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const products = PRODUCT_IDS.filter(
         (product): product is MultiplayerProductId =>
           isMultiplayerProductId(product) &&
-          productEnabledForBuild(product, options.testBuild === true || manifest.shared.testBuild === true) &&
-          !!manifest.games[gameIdForProduct(product)],
+          (productEnabledForBuild(product, options.testBuild === true || manifest.shared.testBuild === true) || publishedPc98Multiplayer(product, manifest)) &&
+          !!manifest.games[gameIdForProduct(product)]?.multiplayerRuntime,
       );
       const selectedProduct = !snapshot.selectedProduct ? '' : products.includes(snapshot.selectedProduct as MultiplayerProductId)
         ? snapshot.selectedProduct

@@ -21,11 +21,11 @@ public:
             capture - simulation >= MaxLead || !armed_) return false;
         return nowUs >= due_ || due_ - nowUs <= ClockToleranceUs;
     }
-    void Captured(std::uint64_t nowUs) noexcept {
+    void Captured(std::uint64_t nowUs, unsigned burst = 1) noexcept {
         // Preserve fractional cadence across normal rAF jitter. A suspended
         // callback does not manufacture missed samples or duplicate edges.
         if (!armed_ || (nowUs < due_ && due_ - nowUs > ClockToleranceUs) ||
-            (nowUs > due_ && nowUs - due_ >= IntervalUs)) due_ = nowUs;
+            (nowUs > due_ && nowUs - due_ >= burst * IntervalUs)) due_ = nowUs;
         due_ += IntervalUs;
         armed_ = true;
     }

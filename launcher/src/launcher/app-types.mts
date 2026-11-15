@@ -96,6 +96,7 @@ export interface MultiplayerRoomState {
   spectators?: NormalizedMultiplayerLobbySnapshot['spectators'];
   spectatorCount?: number;
   spectatorTimeline?: boolean;
+  swarmSelected?: boolean;
   synced?: boolean;
   [key: string]: unknown;
 }

@@ -70,6 +70,27 @@ test('quality ignores a late report after the runtime document is replaced',asyn
 });
 test('disposal rejects pending wait and retires both original250ms/1000ms intervals',async()=>{const f=fixture();assert.deepEqual([...f.intervals.values()].map(x=>x.ms),[250,1000]);const wait=f.model.waitForGameplayPath({isCurrent:()=>true});f.model.dispose();await assert.rejects(wait,{name:'AbortError',message:'EAGLER_RUNTIME_SESSION_SUPERSEDED'});assert.equal(f.timeouts.size,0);assert.equal(f.intervals.size,0);});
 
+test('labels follow the selected NAT4 and Swarm routes', async () => {
+ const f=fixture();
+ let stats=rtcStats(), remote={type:'srflx',protocol:'udp',foundation:'48352next'};
+ f.peer.pc.getStats=async()=>stats;
+ f.peer.pc.sctp={transport:{iceTransport:{
+  getRemoteCandidates:()=>[{type:'srflx',protocol:'udp',foundation:'48352next'}],
+  getSelectedCandidatePair:()=>({remote}),
+ }}};
+ const label=async()=>{await f.model.sampleQuality();f.model.refresh();return f.model.getSnapshot().playerStatus[0].routeLabel;};
+ assert.equal(await label(),'NAT4');
+ remote={...remote,foundation:'48352'};
+ assert.equal(await label(),undefined,'a prediction that lost ICE stays unlabeled');
+ stats=rtcStats({remoteType:'relay'});remote={type:'relay',protocol:'udp',foundation:'3901'};
+ assert.equal(await label(),undefined,'ordinary TURN stays TURN');
+ f.context.swarmSelected=true;
+ assert.equal(await label(),'Swarm');
+ stats=rtcStats();remote={type:'srflx',protocol:'udp',foundation:'48352'};
+ assert.equal(await label(),undefined,'a Swarm room can still connect directly');
+ f.model.dispose();
+});
+
 test('native peer/path records preserve original array rejection and entry limits',()=>{const f=fixture();f.target.__eaglerNetplayRtcPaths=[[],{peer:1,path:'direct'},{peer:2,path:'turn'},{peer:3,path:'other'}];f.target.__eaglerNetplayLanPeers=[[],{player:0},{player:1},{player:2},{player:3}];const net=f.model.readNativeSnapshot();assert.deepEqual(net.rtcPaths.map(x=>x.peer),[1,2]);assert.deepEqual(net.lanPeers.map(x=>x.player),[0,1,2]);f.model.dispose();});
 
 test('input recovery counters are shown independently of stable RTT and omitted when unsupported',()=>{

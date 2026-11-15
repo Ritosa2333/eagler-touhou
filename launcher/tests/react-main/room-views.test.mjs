@@ -892,6 +892,19 @@ test('public nickname drafts stay editable during review and only submission wai
 });
 
 
+test('music toggle moves the tonearm only while playing', async () => {
+  let status='paused'; const listeners=new Set(); let toggled=0;
+  const model={getSnapshot:()=>({status}),getPendingInvitation:()=>null,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn);}};
+  await mount(owners.RoomMusicToggle,{model,open:false,onToggle:()=>{toggled++;}});
+  assert.equal(n('.room-workspace-music-toggle').dataset.playing,'false');
+  assert.ok(n('.room-music-record .room-music-tonearm'));
+  await act(()=>{status='playing';listeners.forEach(fn=>fn());});
+  assert.equal(n('.room-workspace-music-toggle').dataset.playing,'true');
+  await act(()=>n('.room-workspace-music-toggle').click()); assert.equal(toggled,1);
+  await act(()=>{status='ended';listeners.forEach(fn=>fn());});
+  assert.equal(n('.room-workspace-music-toggle').dataset.playing,'false');
+});
+
 test('Music seek stays at the released target through old ticks, then follows the room acknowledgement', async () => {
   let state = {enabled:true,inRoom:true,seated:true,connected:true,joined:true,syncState:'shared',volume:1,position:90,seekTarget:null,duration:120,status:'playing',error:null,
     current:{platform:'netease',id:'123',name:'Song',artist:'Artist'},session:{session:'listen',playback:1,revision:2,startedAt:0,pausedAt:null}};

@@ -30,7 +30,8 @@ export function multiplayerGroup(product: Pick<LibraryProduct, 'gameId'>): Multi
   const game = PRODUCT_GAMES[product.gameId];
   if (isPc98Product(game)) return 'pc98';
   if ('inputProfile' in game && game.inputProfile === 'fighting') return 'fighting';
-  return 'multiplayer' in game && game.multiplayer.gameplay === 'versus' ? 'versus' : 'original';
+  if ('multiplayer' in game && game.multiplayer.gameplay === 'versus') return 'versus';
+  return 'original';
 }
 
 /** Same catalog fields as lib/frontend-assets.mjs; no copied product list. */
