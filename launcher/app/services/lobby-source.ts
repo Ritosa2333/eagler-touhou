@@ -1,12 +1,20 @@
 export const lobbySourceKey = 'eagler-touhou-lobby-source-v1';
 
+function isLocalRelayHost(hostname: string): boolean {
+  const host = hostname.replace(/\.$/, '');
+  if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') || host === '[::1]') return true;
+  // URL normalizes IPv4 literals before the address-space check.
+  return /^(?:169\.254|172\.(?:1[6-9]|2[0-9]|3[01])|192\.168)\.\d+\.\d+$/.test(host)
+    || /^(?:10|127)\.\d+\.\d+\.\d+$/.test(host)
+    || /^\[(?:f[cd][0-9a-f]{2}|fe[89ab][0-9a-f]):/.test(host);
+}
+
 export function normalizeLobbySource(value: string, launcherProtocol: string): string | null {
   if (!value.trim() || value.length > 500) return null;
   try {
     const url = new URL(value.trim());
     if (url.username || url.password || url.search || url.hash) return null;
-    const isLoopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-    if (url.protocol !== 'wss:' && !(url.protocol === 'ws:' && (launcherProtocol === 'http:' || isLoopback))) return null;
+    if (url.protocol !== 'wss:' && !(url.protocol === 'ws:' && (launcherProtocol === 'http:' || isLocalRelayHost(url.hostname)))) return null;
     return url.href;
   } catch { return null; }
 }
