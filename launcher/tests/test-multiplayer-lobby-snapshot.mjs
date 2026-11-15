@@ -39,6 +39,8 @@ assert.equal(th06Snapshot.inputDelay, 0);
 assert.equal(th06Snapshot.predictionLimit, 8);
 
 const adonisContext={localClientId,playerCounts:th06.playerCounts,difficulties:th06.difficulties,loadouts:th06.loadouts};
+assert.equal(normalizeMultiplayerLobbySnapshot({playerCount:2,phase:'starting',swarmSelected:true},adonisContext)?.swarmSelected,true);
+assert.equal(normalizeMultiplayerLobbySnapshot({playerCount:2,swarmSelected:false},adonisContext)?.swarmSelected,undefined);
 const adonisSnapshot=normalizeMultiplayerLobbySnapshot({playerCount:2,adonisMode:1,inputDelay:9},adonisContext);
 assert.equal(adonisSnapshot.adonisMode,1);assert.equal(adonisSnapshot.inputDelay,9);
 assert.equal(normalizeMultiplayerLobbySnapshot({playerCount:2,adonisMode:3,inputDelay:3},adonisContext),null);

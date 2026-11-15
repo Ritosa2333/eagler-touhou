@@ -489,6 +489,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       predictionReserve: normalized.predictionReserve ?? 2,
       timing: normalized.timing ?? null,
       runtimeGeneration: normalized.runtimeGeneration,
+      swarmSelected: normalized.swarmSelected,
       adonisMode: normalized.adonisMode ?? 0,
     });
     state.seat = normalized.localSeat;
