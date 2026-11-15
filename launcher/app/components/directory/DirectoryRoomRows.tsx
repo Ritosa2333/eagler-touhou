@@ -266,6 +266,7 @@ function RoomRow({
       </fieldset>
       <BookButton variant="primary"
         className="lobby-button lobby-join"
+        data-entry={spectating ? 'spectate' : 'join'}
         type="button"
         disabled={disabled}
         aria-label={`${t(spectating ? 'multiplayer.joinSpectator' : 'lobby.joinRoom')} ${title} #${room.code}`}

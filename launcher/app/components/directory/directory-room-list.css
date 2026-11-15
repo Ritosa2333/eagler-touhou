@@ -1,3 +1,14 @@
+.book-directory .lobby-room-row > .lobby-join[data-entry='join'] {--lobby-entry-fill:#f5d15a}
+.book-directory .lobby-room-row > .lobby-join[data-entry='spectate'] {--lobby-entry-fill:#fff}
+.book-directory .lobby-room-row > .lobby-join[data-entry]:not(:disabled) {
+  background:var(--lobby-entry-fill);
+  border-color:var(--kit-control-border);
+  color:#232428;
+}
+.book-directory .lobby-room-row > .lobby-join[data-entry]:hover:not(:disabled) {
+  background:color-mix(in srgb,var(--lobby-entry-fill) 88%,currentColor);
+}
+
 @layer components {
   .book-directory .directory-room-grid {
     display:grid;
