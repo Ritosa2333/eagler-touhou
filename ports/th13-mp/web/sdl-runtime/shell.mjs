@@ -240,24 +240,71 @@ const replaySingleMax = runtimeBuild.multiplayer ? 16 * 1024 * 1024 : 1024 * 102
 const replayTotalMax = 5 * 1024 * 1024;
 // All-seat recordings exceed localStorage's quota during a normal full run.
 // Keep synchronous native reads in memory; sync/close await durable IDB writes.
+// The durable copy is the Emscripten IDBFS v21 layout the launcher Replay
+// manager reads (replayStorageLocation('th13mp')): /savesth13mp/replay/<name>.
 const multiplayerReplays = new Map();
+const multiplayerReplayRoot = '/savesth13mp', multiplayerReplayDir = multiplayerReplayRoot + '/replay/';
+const idbfsDirectoryMode = 0o40777, idbfsFileMode = 0o100666;
 let multiplayerReplayDatabase, multiplayerReplayWrites = Promise.resolve();
 let multiplayerReplayWriteError;
+function idbRequest(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+function idbTransaction(transaction) {
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = resolve;
+    // Explicit abort() leaves IDBTransaction.error null.
+    transaction.onabort = () => reject(transaction.error || new DOMException('Replay transaction aborted', 'AbortError'));
+  });
+}
+// Earlier builds kept records {name, bytes, size, ts} in a private database.
+async function takeLegacyMultiplayerReplays() {
+  let missing = false;
+  const request = indexedDB.open('th13mp.replays.v1');
+  request.onupgradeneeded = event => { missing = event.oldVersion === 0; request.transaction.abort(); };
+  const legacy = await idbRequest(request).catch(error => { if (missing) return null; throw error; });
+  if (!legacy) return [];
+  try {
+    if (!legacy.objectStoreNames.contains('files')) return [];
+    return await idbRequest(legacy.transaction('files').objectStore('files').getAll());
+  } finally {
+    legacy.close();
+  }
+}
 async function initializeMultiplayerReplays() {
   if (!runtimeBuild.multiplayer) return;
-  multiplayerReplayDatabase = await new Promise((resolve, reject) => {
-    const request = indexedDB.open('th13mp.replays.v1', 1);
-    request.onupgradeneeded = () => request.result.createObjectStore('files', {keyPath: 'name'});
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+  const open = indexedDB.open(multiplayerReplayRoot, 21);
+  open.onupgradeneeded = () => {
+    if (!open.result.objectStoreNames.contains('FILE_DATA'))
+      open.result.createObjectStore('FILE_DATA').createIndex('timestamp', 'timestamp', {unique: false});
+  };
+  multiplayerReplayDatabase = await idbRequest(open);
+  multiplayerReplayDatabase.onversionchange = () => multiplayerReplayDatabase.close();
+  const legacy = await takeLegacyMultiplayerReplays();
+  const transaction = multiplayerReplayDatabase.transaction('FILE_DATA', 'readwrite');
+  const store = transaction.objectStore('FILE_DATA'), done = idbTransaction(transaction);
+  const now = new Date();
+  for (const path of [multiplayerReplayRoot, multiplayerReplayDir.slice(0, -1)])
+    store.put({timestamp: now, mode: idbfsDirectoryMode}, path);
+  const range = IDBKeyRange.bound(multiplayerReplayDir, multiplayerReplayDir.slice(0, -1) + '0', false, true);
+  const stored = await idbRequest(store.getAll(range)), keys = await idbRequest(store.getAllKeys(range));
+  keys.forEach((key, index) => {
+    const name = key.slice(multiplayerReplayDir.length), entry = stored[index];
+    if (!replayNamePattern.test(name) || (entry.mode & 0xf000) !== 0x8000 || !(entry.contents instanceof Uint8Array)) return;
+    multiplayerReplays.set(name, {name, bytes: entry.contents, size: entry.contents.length, ts: Number(entry.timestamp) || 0});
   });
-  const files = await new Promise((resolve, reject) => {
-    const request = multiplayerReplayDatabase.transaction('files').objectStore('files').getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+  for (const file of legacy) {
+    if (!file || !replayNamePattern.test(file.name) || !(file.bytes instanceof Uint8Array) || multiplayerReplays.has(file.name)) continue;
+    const record = {name: file.name, bytes: file.bytes, size: file.bytes.length, ts: Number(file.ts) || now.getTime()};
+    multiplayerReplays.set(record.name, record);
+    store.put({timestamp: new Date(record.ts), mode: idbfsFileMode, contents: record.bytes}, multiplayerReplayDir + record.name);
+  }
+  await done;
+  if (legacy.length) await idbRequest(indexedDB.deleteDatabase('th13mp.replays.v1')).catch(() => {});
   core.FS.mkdirTree('/save/replay');
-  for (const file of files) multiplayerReplays.set(file.name, file);
   // Native slot selection must see the same files after a new iframe starts.
   for (const entry of replayIndex()) {
     const bytes = readReplayFile(entry.name);
@@ -265,14 +312,13 @@ async function initializeMultiplayerReplays() {
   }
 }
 function writeMultiplayerReplay(record, remove = false) {
-  multiplayerReplayWrites = multiplayerReplayWrites.then(() => new Promise((resolve, reject) => {
-    const transaction = multiplayerReplayDatabase.transaction('files', 'readwrite');
-    const store = transaction.objectStore('files');
-    if (remove) store.delete(record.name); else store.put(record);
-    transaction.oncomplete = resolve;
-    // Explicit abort() leaves IDBTransaction.error null.
-    transaction.onabort = () => reject(transaction.error || new DOMException('Replay transaction aborted', 'AbortError'));
-  })).catch(error => { multiplayerReplayWriteError = error; });
+  multiplayerReplayWrites = multiplayerReplayWrites.then(() => {
+    const transaction = multiplayerReplayDatabase.transaction('FILE_DATA', 'readwrite');
+    const store = transaction.objectStore('FILE_DATA'), key = multiplayerReplayDir + record.name;
+    if (remove) store.delete(key);
+    else store.put({timestamp: new Date(record.ts), mode: idbfsFileMode, contents: record.bytes}, key);
+    return idbTransaction(transaction);
+  }).catch(error => { multiplayerReplayWriteError = error; });
 }
 async function flushMultiplayerReplays() {
   await multiplayerReplayWrites;

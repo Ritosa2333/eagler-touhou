@@ -205,8 +205,8 @@ export function createMultiplayerBridge({core, getOptions, manifest, emit, onErr
     retire();
     core._th13_mp_close();
   }
-  // 录像回放入口：th15 从 FS 读档；TH13 的 Replay 由宿主 localStorage 持有，
-  // 因此第三参可直传字节。stage 仅在 C++ 提供可选 select_stage 导出时转发
+  // 录像回放入口：th15 从 FS 读档；TH13 的 Replay 由宿主（IDBFS 布局的
+  // /savesth13mp 库 + 内存索引）持有，因此第三参可直传字节。stage 仅在 C++ 提供可选 select_stage 导出时转发
   //（正式导出表未列入，缺省时由录像自身的首关开始）。
   function openReplay(path, stage, replayBytes) {
     close();

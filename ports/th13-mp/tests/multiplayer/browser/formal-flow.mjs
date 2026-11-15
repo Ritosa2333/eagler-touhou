@@ -951,22 +951,23 @@ try {
       });
       if (!ack.ok) throw Error("Replay sync failed: " + ack.error);
       const db = await new Promise((resolve, reject) => {
-        const r = w.indexedDB.open("th13mp.replays.v1", 1);
+        const r = w.indexedDB.open("/savesth13mp", 21);
         r.onsuccess = () => resolve(r.result);
         r.onerror = () => reject(r.error);
       });
       const records = [];
       for (const name of names) {
         const record = await new Promise((resolve, reject) => {
-          const r = db.transaction("files").objectStore("files").get(name);
+          const r = db.transaction("FILE_DATA").objectStore("FILE_DATA").get("/savesth13mp/replay/" + name);
           r.onsuccess = () => resolve(r.result);
           r.onerror = () => reject(r.error);
         });
         const bytes = m.FS.readFile("/save/replay/" + name);
         if (
           !record ||
-          record.bytes.length !== bytes.length ||
-          record.bytes.some((b, i) => b !== bytes[i])
+          record.mode !== 0o100666 ||
+          record.contents.length !== bytes.length ||
+          record.contents.some((b, i) => b !== bytes[i])
         )
           throw Error("Durable replay differs: " + name);
         records.push({ name, bytes: Array.from(bytes) });
