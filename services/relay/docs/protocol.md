@@ -56,9 +56,9 @@ th075 使用独立的 `EPTM` 时序记录与 `EPNP` 全席位已确认输入，�
 
 `relay-preference.worker` 可指定 Swarm 节点。手选节点在同一席位变更机体后继续生效，直到玩家改选或节点离线。`automatic: true` 上报本机测速结果，用于未手选可用节点的 Swarm 玩家。
 
-启用 NAT4 观测的双人原生房间通过 `peers.nat4Observers` 下发三个 STUN 端点。客户端用 `signal.observer` 标注同一 ICE socket 的映射观测。只有一席得到可用预测时，Relay 在观测窗口结束后把该候选发给对端，再放行常规候选。
+启用 NAT4 观测的双人原生房间通过 `peers.nat4Observers` 下发三个 STUN 端点。客户端用 `signal.observer` 标注同一 ICE socket 的映射观测。Relay 即时转发常规候选。双方的预测齐备时立即交换，只有一席得到预测时在观测窗口结束后发给对端。
 
-原生端准备时可用 `set-ready.swarmDirect` 声明本地 Swarm 支持。双人对局选择 Swarm 且 Relay 配置了 `SWARM_ACCESS_TOKEN` 时，Relay 只向一个已认证的原生席位下发本局 Swarm 分配。原生端通过本机 TURN 注册该端口，并按标准 ICE 信令向对端发布候选。玩家间直连与 NAT4 候选继续参与选路。
+原生端准备时可用 `set-ready.swarmDirect` 声明本地 Swarm 支持。双人对局选择 Swarm 且 Relay 配置了 `SWARM_ACCESS_TOKEN` 时，Relay 在广播开局前为一个已认证的原生席位请求 Swarm 端口。原生端通过本机 TURN 注册该端口，并按标准 ICE 信令向对端发布候选。另一席同时收集 Swarm TURN 候选。原生席未取得端口时也会收集 Swarm TURN 候选。
 
 双人原生房间双方通过 `rtc-ready.rtcReplace` 声明支持重建连接。发生持续断流时，任一玩家可发 `rtc-replace-request`，Relay 为同一局分配新一代信令。两端重建 WebRTC，交换带 `generation` 的 SDP 与 ICE 候选，并在两条数据通道打开后上报 `rtc-ready`。Relay 收到双方确认后广播 `rtc-replaced`，双方从当前输入历史继续对局。NAT4 重新交换候选，启用原生 Swarm 时重新分配端口。建连上限为 15 秒。
 

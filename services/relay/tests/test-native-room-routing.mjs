@@ -23,9 +23,10 @@ try {
     asymmetric.send(seat, {candidate:observedCandidate(address)});
   }
   const delivered = coordinated.filter(signal => signal.candidate);
-  assert.equal(delivered.length, 2);
+  assert.equal(delivered.length, 3);
   assert.deepEqual(delivered[0].candidate, observedCandidate(addresses[0]));
-  assert.match(delivered[1].candidate.candidate, /^candidate:42next 1 UDP 1 198\.51\.100\.2 34001 typ srflx$/);
+  assert.deepEqual(delivered[1].candidate, observedCandidate(addresses[1]));
+  assert.match(delivered[2].candidate.candidate, /^candidate:42next 1 UDP 1 198\.51\.100\.2 34001 typ srflx$/);
 } finally {
   asymmetric.close();
 }
@@ -36,6 +37,10 @@ const partialExchange = createNat4CandidateExchange(addresses, new Map(),
 partialExchange.send(0, {description:{type:'offer',sdp:'v=0\r\n'}});
 partialExchange.send(1, {description:{type:'answer',sdp:'v=0\r\n'}});
 partialExchange.send(0, {candidate:observedCandidate(addresses[0])});
+const ordinaryRelay = {sdpMid:'0',candidate:'candidate:99 1 UDP 1 192.0.2.9 35000 typ relay'};
+partialExchange.send(0, {candidate:ordinaryRelay});
+assert.deepEqual(partialSignals.filter(signal => signal.candidate).map(signal => signal.candidate),
+  [observedCandidate(addresses[0]), ordinaryRelay], 'direct and TURN candidates are forwarded while observations are pending');
 for (const [index, observer] of observers.entries()) {
   const candidate = observedCandidate(addresses[1]);
   partialExchange.send(1, {observer, candidate:{...candidate,
@@ -43,7 +48,7 @@ for (const [index, observer] of observers.entries()) {
 }
 const partialResult = delay(4600).then(() => {
   try {
-    const firstCandidate = partialSignals.find(signal => signal.candidate);
+    const firstCandidate = partialSignals.find(signal => signal.candidate?.candidate.includes('42next'));
     assert.equal(firstCandidate?.seat, 1);
     assert.match(firstCandidate?.candidate.candidate, / 34003 typ srflx$/);
   } finally {
@@ -84,7 +89,8 @@ try {
     irregularExchange.send(1, {candidate: {...candidate, candidate: candidate.candidate.replace('34000', String(port))},
       observer: observers[index]});
   }
-  assert.equal(irregular.filter(signal => signal.candidate).length, 0);
+  assert.deepEqual(irregular.filter(signal => signal.candidate).map(signal => signal.candidate),
+    [observedCandidate(addresses[0])], 'irregular observations produce no predicted candidate');
 } finally {
   irregularExchange.close();
 }
@@ -92,13 +98,16 @@ const stunUrl = 'stun:stun.example.test:3478';
 const ordinaryTurnUrl = 'turn:ordinary.example.test:3478';
 const swarmUrl = 'turn:swarm.example.test:3478?transport=udp';
 const control = new WebSocketServer({host:'127.0.0.1', port:0});
+let refuseSwarmGrant = false;
+let swarmAllocations = 0;
 await new Promise(resolve => control.once('listening', resolve));
 control.on('connection', ws => ws.once('message', raw => {
   const {data} = JSON.parse(raw);
   if (data.n === 'new_naive_udp_relay') {
+    ++swarmAllocations;
     assert.equal(data.p.worker_id, 12);
     assert.equal(data.p.access_token, 'integration-swarm-access-token');
-    ws.send(JSON.stringify({event:'result', data:{i:data.i, r:{relay_addr:'198.51.100.2:35000', relay_code:0}}}));
+    ws.send(JSON.stringify({event:'result', data:{i:data.i, r:refuseSwarmGrant ? null : {relay_addr:'198.51.100.2:35000', relay_code:0}}}));
     return;
   }
   assert.equal(data.n, 'list_workers');
@@ -200,9 +209,10 @@ try {
   browser.send({type: 'signal', to: 1, candidate: candidate(addresses[0])});
   native.send({type: 'signal', to: 0, candidate: candidate('203.0.113.3')});
   native.send({type: 'signal', to: 0, candidate: candidate(addresses[1])});
-  assert.equal((await until(() => native.received.find(message => message.description))).description.sdp, 'v=0\r\n');
+  assert.equal((await until(() => native.received.find(message => message.description))).description.sdp,
+    offer.replace('a=end-of-candidates\r\n',''));
   for (const [client, address] of [[browser, addresses[1]], [native, addresses[0]]]) {
-    const predicted = await until(() => client.received.find(message => message.candidate));
+    const predicted = await until(() => client.received.find(message => message.candidate?.candidate.includes('42next')));
     assert.match(predicted.candidate.candidate, new RegExp(`candidate:42next 1 UDP 1 ${address.replaceAll('.', '\\.')} 34001 typ srflx`));
     await until(() => client.received.some(message => message.candidate?.candidate === candidate(address).candidate));
   }
@@ -226,13 +236,15 @@ try {
   await until(() => desktop.state()?.seats.slice(0, 2).every(seat => seat?.ready));
   desktop.send({type:'start'});
   await until(() => web.state()?.swarmSelected);
+  await until(() => swarmAllocations === 1);
   const mixedSignal = mixed + '&run=1&players=2&signal=1&runtimeGeneration=' + generation;
   const webSignal = await connect(1, mixedSignal + '&player=1&member=private_web');
   const desktopSignal = await connect(0, mixedSignal + '&player=0&member=private_desktop');
   const desktopPeers = await until(() => desktopSignal.received.find(message => message.type === 'peers'));
   const webPeers = await until(() => webSignal.received.find(message => message.type === 'peers'));
+  assert.equal(swarmAllocations, 1, 'signaling reuses the port requested at room start');
   assert.deepEqual(desktopPeers.iceServers, [{urls:[stunUrl]}]);
-  assert.deepEqual(webPeers.iceServers, [{urls:[stunUrl]}]);
+  assert.deepEqual(webPeers.iceServers.map(server => server.urls), [[stunUrl], [swarmUrl]]);
   assert.equal(desktopPeers.turnMode, 'swarm');
   assert.equal(webPeers.turnMode, 'swarm');
   assert.equal(desktopPeers.nat4Observers, undefined, 'the configured mapping does not use STUN observers');
@@ -240,6 +252,11 @@ try {
   assert.equal(desktopPeers.swarmGrant.code, 0);
   assert.ok(desktopPeers.swarmGrant.credential);
   assert.equal(webPeers.swarmGrant, undefined);
+  desktopSignal.send({type:'signal',to:1,description:{type:'offer',sdp:'v=0\r\n'}});
+  webSignal.send({type:'signal',to:0,description:{type:'answer',sdp:'v=0\r\n'}});
+  desktopSignal.send({type:'signal',to:1,candidate:candidate(addresses[0])});
+  webSignal.send({type:'signal',to:0,candidate:candidate(addresses[1])});
+  await until(() => webSignal.received.some(message => message.candidate?.candidate.includes('42next')));
   desktopSignal.send({type:'rtc-ready',rtcReplace:true,swarmDirect:true});
   webSignal.send({type:'rtc-ready',rtcReplace:true});
   await until(() => webSignal.received.some(message => message.type === 'route' && message.mode === 'rtc'));
@@ -290,6 +307,24 @@ try {
   webReconnected.ws.terminate();
   await until(() => desktop.state()?.phase === 'lobby');
   assert.equal(web.state().seats[1].ready, false);
+
+  refuseSwarmGrant = true;
+  desktop.send({type:'set-ready',ready:true,nativeRuntime:true,swarmDirect:true,runtimeGeneration:generation});
+  web.send({type:'set-ready',ready:true,runtimeGeneration:generation});
+  await until(() => desktop.state()?.seats.slice(0, 2).every(seat => seat?.ready));
+  desktop.send({type:'start'});
+  await until(() => web.received.some(message => message.type === 'start' && message.serial === 2));
+  const retrySignal = mixed + '&run=2&players=2&signal=1&runtimeGeneration=' + generation;
+  const retryDesktop = await connect(0, retrySignal + '&player=0&member=private_desktop');
+  const retryWeb = await connect(1, retrySignal + '&player=1&member=private_web');
+  for (const peer of [retryDesktop, retryWeb]) {
+    const retryPeers = await until(() => peer.received.find(message => message.type === 'peers'));
+    assert.equal(retryPeers.swarmGrant, undefined);
+    assert.equal(retryPeers.turnMode, 'swarm');
+    assert.deepEqual(retryPeers.iceServers.map(server => server.urls), [[stunUrl], [swarmUrl]]);
+    peer.send({type:'rtc-ready'});
+  }
+  await until(() => retryWeb.received.some(message => message.type === 'route' && message.mode === 'rtc'));
 
   const abandoned = 'room=th09mp-abandoned';
   const abandonedHost = await connect(0, abandoned + '&lobby=abandoned_host&member=abandoned_host_key');
