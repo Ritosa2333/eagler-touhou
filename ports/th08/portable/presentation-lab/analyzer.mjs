@@ -8,7 +8,7 @@ export {OWNERS,STATE_GROUPS} from './owners.mjs';
 // It reports measured evidence; it does not decide that every visual must lerp.
 export const SCHEMA = 'th08/presentation-audit/1';
 export const STATUS = {
-  'interpolated': '端点与中间值吻合', 'responsive': '有中间变化，曲线待核对',
+  'extrapolated': '从当前帧向前预测吻合', 'interpolated': '端点与中间值吻合', 'responsive': '有中间变化，曲线待核对',
   'missing-interpolation': '连续属性没有中间值', 'held-review': '保持当前值，需核对离散语义',
   'endpoint-mismatch': '显示端点不等于原始绘制', 'non-idempotent': '相同 α 重画结果不同',
   'downstream-held': '属性已变化，但对应提交数据不变',
@@ -63,7 +63,7 @@ const fields = [
 function continuity(f,r) {
   return !!(f.bit && (r.meta[11] & (1<<f.bit))) || (['position','screen-position'].includes(f.id)&&motionOwners.has(r.meta[0]));
 }
-function classifyField(f,previous,current,samples) {
+function classifyField(f,previous,current,samples,mode) {
   const p=f.read(previous),c=f.read(current),observed=samples.map(s=>({alpha:s.alpha,value:f.read(s.record)}));
   const tolerance=f.epsilon,period=f.period||0,motion=distance(p,c,period);
   const evidence={previous:p,current:c,samples:observed,motion,tolerance,authoredContinuous:continuity(f,previous)||continuity(f,current)};
@@ -73,6 +73,7 @@ function classifyField(f,previous,current,samples) {
   }
   const endpoint=observed.find(s=>s.alpha===1);
   if(endpoint&&distance(endpoint.value,c,period)>tolerance*2)return {...evidence,status:'endpoint-mismatch'};
+  if(mode==='current')return {...evidence,status:observed.every(s=>distance(s.value,c,period)<=tolerance*2)?'snap-current':'snap-mismatch'};
   const variation=Math.max(0,...observed.map(s=>distance(s.value,observed[0].value,period)));
   if(motion<=tolerance*2)return {...evidence,status:variation>tolerance*2?'responsive':'static',variation};
   // epsilon sets meaningful endpoint motion, not proof of zero response.
@@ -82,17 +83,17 @@ function classifyField(f,previous,current,samples) {
   if(variation<=noise){return {...evidence,variation,status:evidence.authoredContinuous?'missing-interpolation':'held-review'};}
   const d=delta(p,c,period);
   const residual=Math.max(...observed.map(s=>distance(s.value,p.map((x,i)=>x+d[i]*s.alpha),period)));
-  return {...evidence,variation,residual,status:residual<=Math.max(tolerance*2,motion*.02)?'interpolated':'responsive'};
+  return {...evidence,variation,residual,status:residual<=Math.max(tolerance*2,motion*.02)?(observed.some(sample=>sample.alpha>1)?'extrapolated':'interpolated'):'responsive'};
 }
 export const severity = defaultSeverity;
-export function analyzeWindow({previous,current,samples,stateBefore=null,statesAfter=[],worldFrozen=false,gate=true,build={},label='',negativeControl=false}) {
+export function analyzeWindow({previous,current,samples,stateBefore=null,statesAfter=[],worldFrozen=false,gate=true,build={},label='',negativeControl=false,mode='interpolation'}) {
   if(!previous||!current||!Array.isArray(samples)||samples.length<3)throw Error('Need two authoritative draws and at least three alpha samples');
-  if(samples.some(s=>!Number.isFinite(s.alpha)||s.alpha<0||s.alpha>1))throw Error('Invalid alpha');
+  if(samples.some(s=>!Number.isFinite(s.alpha)||s.alpha<(mode==='extrapolation'?1:0)||s.alpha>(mode==='extrapolation'?2:1)))throw Error('Invalid alpha');
   const before=indexed(previous.records),now=indexed(current.records),sampleMaps=samples.map(s=>({...s,...indexed(s.records)}));
   const consecutive=previous.tick+1===current.tick;
   const state=compareStateEvidence(stateBefore,statesAfter);
   const report={schema:SCHEMA,build,label,negativeControl,tick:current.tick,previousTick:previous.tick,consecutive,
-    gate:!!gate,worldFrozen,alphas:samples.map(s=>s.alpha),purityStatus:state.status,stateChanges:state.changes,objects:[],counts:{},coverage:{},
+    mode,gate:!!gate,worldFrozen,alphas:samples.map(s=>s.alpha),purityStatus:state.status,stateChanges:state.changes,objects:[],counts:{},coverage:{},
     sampledGeometry:true,dropped:(previous.dropped||0)+(current.dropped||0)+samples.reduce((n,s)=>n+(s.dropped||0),0),
     limitations:['screen geometry is not an occlusion/pixel visibility proof','unmarked owners and unvisited scenes are not counted as passed','state hashes cover named fields, not the complete simulation','geometry over 16 vertices is sampled; no interpolated GPU command replay','CPU-projected 3D UV/fog/color shader output is unobserved']};
   for(const [key,c] of now.map){
@@ -117,7 +118,7 @@ export function analyzeWindow({previous,current,samples,stateBefore=null,statesA
         if(jump&&['position','offset','screen-position'].includes(f.id))value={status:'lifecycle'};
         else if(spriteChanged&&(f.id.startsWith('screen-')||f.id.startsWith('submitted-')))value={status:'sprite-change'};
         else if(row.projected&&f.id.startsWith('submitted-'))value={status:'unobserved'};
-        else value=classifyField(c.meta[4]===5&&f.id==='offset'?{...f,read:r=>r.values.slice(3,4)}:f,p,c,selected);
+        else value=classifyField(c.meta[4]===5&&f.id==='offset'?{...f,read:r=>r.values.slice(3,4)}:f,p,c,selected,mode);
         // Some gameplay owners intentionally snap their spatial transform at
         // a lifecycle boundary while retaining the same render object.  The
         // owner marks that interval explicitly; do not infer it from output.
@@ -158,7 +159,7 @@ export function analyzeWindow({previous,current,samples,stateBefore=null,statesA
         if(a?.variation>Math.max(a.tolerance*2,.0001)&&['held-review','missing-interpolation'].includes(b?.status))b.status='downstream-held';
       }
       row.status=row.fields.reduce((status,f)=>severity(f.status)>severity(status)?f.status:status,'static');
-      if(row.status==='static'&&row.fields.some(f=>f.status==='interpolated'))row.status='interpolated';
+      if(row.status==='static'&&row.fields.some(f=>['interpolated','extrapolated'].includes(f.status)))row.status=mode==='extrapolation'?'extrapolated':'interpolated';
     }
     row.severity=severity(row.status);report.objects.push(row);
     report.counts[row.status]=(report.counts[row.status]||0)+1;
@@ -170,7 +171,7 @@ export function analyzeWindow({previous,current,samples,stateBefore=null,statesA
   report.disappeared=[...before.map].filter(([key])=>!now.map.has(key)).map(([key,r])=>({key,ownerId:r.meta[0],script:r.meta[6]|0,status:'lifecycle'}));
   report.objects.sort((a,b)=>b.severity-a.severity||a.ownerId-b.ownerId||a.key.localeCompare(b.key));
   report.purity=report.purityStatus==='pass';
-  report.valid=consecutive&&report.dropped===0&&samples.every(s=>s.tick===undefined||s.tick===current.tick)&&samples.some(s=>s.alpha===0)&&samples.some(s=>s.alpha===1)&&samples.filter(s=>s.alpha===.5).length>=2;
+  report.valid=consecutive&&report.dropped===0&&samples.every(s=>s.tick===undefined||s.tick===current.tick)&&(mode==='current'?samples.every(s=>s.alpha===1):samples.some(s=>s.alpha===(mode==='extrapolation'?1:0))&&samples.some(s=>s.alpha===(mode==='extrapolation'?2:1))&&samples.filter(s=>s.alpha===(mode==='extrapolation'?1.5:.5)).length>=2);
   report.issueGroups=groupFindings([report]);
   return report;
 }

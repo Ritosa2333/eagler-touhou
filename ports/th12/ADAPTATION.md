@@ -73,9 +73,9 @@
 
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
-| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 检查失败 | normal：[normal-presentation](../../docs/adaptation/status.json) |
-| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 检查失败 | normal：[normal-presentation](../../docs/adaptation/status.json) |
-| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 检查失败 | normal：[normal-presentation](../../docs/adaptation/status.json) |
+| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
+| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
+| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
 | DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
@@ -205,3 +205,5 @@ SDL 入口已接上重开与常显判定点、触控位移录制及确认按下�
 RUNTIME-04、INPUT-06、TOUCH-16 与 AUDIO-05 的页面隐藏清理、损坏音乐提示和替换恢复见[SDL 输入与音乐错误验证](../../archive/th12-sdl-invariants-20261030/README.md)。
 
 TOUCH-09、AUDIO-07 的组件与接线结果见[全作核对记录](../../archive/shared-input-audio-20261030/README.md)。按作品、模式读取检查范围及实际 Runtime 结果。
+
+旧浏览器呈现路径的高刷使用当前帧外推，最多向前一个逻辑帧；原始逻辑与回放沿用 60 Hz 更新。构建、原生检查和 Presentation Lab 的验证范围见[外推记录](../../archive/motion-extrapolation-153-20261028/README.md)。

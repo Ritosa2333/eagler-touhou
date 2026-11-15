@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "ScreenEffect.hpp"
 
 #include "AnmManager.hpp"
@@ -144,7 +145,7 @@ u32 ScreenEffect::OnDrawFullScreenColor(ScreenEffect *arg)
     g_Supervisor.viewport.height = GAME_WINDOW_HEIGHT;
     g_Supervisor.gfxDevice->SetViewport(g_Supervisor.viewport);
 
-    u32 drawAlpha = utils::Lerp(arg->prevAlpha, arg->alpha, g_RenderAlpha);
+    u32 drawAlpha = std::clamp(utils::Lerp(arg->prevAlpha, arg->alpha, g_RenderAlpha), 0.f, 255.f);
     ScreenEffect::DrawSquare(&rect, drawAlpha << 24 | arg->args[0]);
     return 1;
 }
@@ -178,7 +179,7 @@ u32 ScreenEffect::OnDrawPlayAreaColor(ScreenEffect *arg)
     rect.right = 416.0f;
     rect.bottom = 464.0f;
 
-    u32 drawAlpha = utils::Lerp(arg->prevAlpha, arg->alpha, g_RenderAlpha);
+    u32 drawAlpha = std::clamp(utils::Lerp(arg->prevAlpha, arg->alpha, g_RenderAlpha), 0.f, 255.f);
     ScreenEffect::DrawSquare(&rect, drawAlpha << 24 | arg->args[0]);
     return 1;
 }
@@ -221,7 +222,7 @@ u32 ScreenEffect::OnDrawPlayAreaPulseColor(ScreenEffect *arg)
     rect.top = 16.0f;
     rect.right = 416.0f;
     rect.bottom = 464.0f;
-    u32 drawAlpha = utils::Lerp(arg->prevAlpha, arg->alpha, g_RenderAlpha);
+    u32 drawAlpha = std::clamp(utils::Lerp(arg->prevAlpha, arg->alpha, g_RenderAlpha), 0.f, 255.f);
     ScreenEffect::DrawSquare(&rect, drawAlpha << 24 | (arg->args[1] & 0xffffff));
     return 1;
 }

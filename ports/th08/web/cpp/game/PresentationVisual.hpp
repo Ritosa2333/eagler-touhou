@@ -45,13 +45,13 @@ struct VisualSample {
     }
     static float mix(float a,float b,float t){return a+(b-a)*t;}
     static float cyclic(float a,float b,float t,float period){
-        if(t>=1)return b;if(t<=0)return a;
+        if(t==1)return b;if(t<=0)return a;
         return a+std::remainder(b-a,period)*t;
     }
     static Vec3 vector(const Vec3& a,const Vec3& b,float t){return {mix(a.x,b.x,t),mix(a.y,b.y,t),mix(a.z,b.z,t)};}
     static bool near(const Vec3& a,const Vec3& b){const float x=b.x-a.x,y=b.y-a.y,z=b.z-a.z;return x*x+y*y+z*z<16384.f;}
     void apply(const AnmVm& current,AnmVm& draw,float t,u32 fields=Attributes,u32 owner_continuous=0)const{
-        if(!render_only||!active||t>=1||!matches(current))return;
+        if(!render_only||!active||t==1||!matches(current))return;
 #if defined(TH_PRESENTATION_AUDIT)
         if(audit_hold_interpolation)return;
 #endif
@@ -72,7 +72,7 @@ struct VisualSample {
     // with flag17 (for example enemy hit/youkai tint).  Keep the tint switch
     // discrete, but preserve an authored alpha fade across the active channel.
     void apply_active_opacity(const AnmVm& current,AnmVm& draw,float t,u32 evidence=Opacity,u32 previous_submitted_factor=128,u32 current_submitted_factor=128)const{
-        if(!render_only||!active||t>=1||!matches(current)||!((continuous|continuous_fields(current))&evidence))return;
+        if(!render_only||!active||t==1||!matches(current)||!((continuous|continuous_fields(current))&evidence))return;
 #if defined(TH_PRESENTATION_AUDIT)
         if(audit_hold_interpolation)return;
 #endif

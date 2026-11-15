@@ -474,7 +474,7 @@
     "th08": {
       "normal": "ports/th08",
       "multiplayer": "ports/th08-mp",
-      "base": "4907be17b806e3b76d25e86b50ba6976e138de95",
+      "base": "80005e42a71a78b3eb1dafc1de7703798434b2af",
       "history": [
         {
           "kind": "manual",
@@ -559,6 +559,33 @@
             "ports/th08-mp/web/cpp/platform/BrowserRuntime.hpp"
           ],
           "note": "同步原版方形摇杆死区到多人端的浏览器手柄路径。"
+        },
+        {
+          "kind": "manual",
+          "base": "4907be17b806e3b76d25e86b50ba6976e138de95",
+          "source": "80005e42a71a78b3eb1dafc1de7703798434b2af",
+          "targetHead": "80005e42a71a78b3eb1dafc1de7703798434b2af",
+          "paths": [
+            "ports/th08-mp/ADAPTATION.md",
+            "ports/th08-mp/portable/ending-controls-check.cpp",
+            "ports/th08-mp/portable/presentation-lab/adapter.mjs",
+            "ports/th08-mp/portable/presentation-lab/analyzer.mjs",
+            "ports/th08-mp/portable/presentation-lab/app.mjs",
+            "ports/th08-mp/portable/presentation-lab/index.html",
+            "ports/th08-mp/web/cpp/game/BackgroundView.cpp",
+            "ports/th08-mp/web/cpp/game/BulletDrawing.cpp",
+            "ports/th08-mp/web/cpp/game/EffectSystem.cpp",
+            "ports/th08-mp/web/cpp/game/EnemyDrawing.cpp",
+            "ports/th08-mp/web/cpp/game/PlayerBombPatterns.cpp",
+            "ports/th08-mp/web/cpp/game/PlayerShotDraw.cpp",
+            "ports/th08-mp/web/cpp/game/Presentation.hpp",
+            "ports/th08-mp/web/cpp/game/PresentationVisual.hpp",
+            "ports/th08-mp/web/cpp/game/SpellDrawing.cpp",
+            "ports/th08-mp/web/cpp/game/TitleFlow.cpp",
+            "ports/th08-mp/web/cpp/game/TitleSupport.cpp",
+            "ports/th08-mp/web/cpp/sdl/GameHost.cpp"
+          ],
+          "note": "接收高刷当前帧外推，保持 60 Hz 游戏逻辑。多人版保留各作品当前的联机输入、回滚与观战路径。"
         }
       ],
       "origin": {

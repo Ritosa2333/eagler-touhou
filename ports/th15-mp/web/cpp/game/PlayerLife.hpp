@@ -5,7 +5,7 @@
 #include "PracticeConfig.hpp"
 #include <functional>
 namespace th15 {
-struct PlayerLifeSession {i32 extra_lives=2,life_pieces=0,deaths=0,enemy_deaths=0,enemy_chain=0,bomb_state=0;u32 mode_flags=0;i32 power=100,power_step=100,bombs=3,bomb_pieces=0,replay_state=0;};
+struct PlayerLifeSession {i32 extra_lives=2,life_pieces=0,deaths=0,enemy_deaths=0,enemy_chain=0,bomb_state=0;u32 mode_flags=0;i32 power=100,power_step=100,bombs=3,bomb_pieces=0,replay_state=0;u32 challenge_misses=0;bool challenge=false;};
 struct PlayerLifeServices {
     virtual ~PlayerLifeServices()=default;
     virtual bool allow_bomb()=0;virtual bool begin_bomb()=0;

@@ -1,3 +1,4 @@
+#include <eagler/presentation/Extrapolation.hpp>
 #include "browser-gamepad-input.hpp"
 #include "GraphicsDevice.hpp"
 #include "AudioDevice.hpp"
@@ -692,7 +693,7 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
         const bool interpolate=presentation_gate.advance(high,ticks!=0);
         for(unsigned n=0;n<ticks&&ok;++n)ok=sample_and_tick();
         // Extra draw-only frames never consume input, RNG, audio or Replay.
-        if(ok&&high){++presentation_draws;ok=app.presentation_draw(cadence.interpolation_alpha(),interpolate,true);}
+        if(ok&&high){++presentation_draws;ok=app.presentation_draw(eagler::presentation::ExtrapolationWeight(cadence.interpolation_alpha()),interpolate,true);}
         app.graphics.backend.commit();app.graphics.backend.defer=false;
         app.audio.pump();
         if(ticks)th11_browser_frame(ok?1:0,emscripten_get_now()-begin,ticks);

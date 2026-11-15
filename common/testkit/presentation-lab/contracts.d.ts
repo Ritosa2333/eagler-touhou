@@ -7,6 +7,7 @@ export interface Capabilities {
   features: Record<string, boolean> & {
     freeze: true; resume: true; step: true; drawOnly: true;
     references: true; stateEvidence: true; timing: true; capture: true;
+    extrapolation?: boolean;
   };
 }
 export interface FreezeToken { sessionEpoch: number | string; generation: number; }
@@ -55,6 +56,7 @@ export interface RuntimeDriverV1 {
   freeze(): FreezeToken;
   resume(token: FreezeToken): void;
   advanceOneTick(input?: unknown): TickReceipt;
+  /** alpha 0..1 samples previous/current; extrapolation capability extends to 1..2. */
   drawOnly(request: {alpha: number; world: boolean}): {status: 'drawn'};
   setInput(input: {code: string; down: boolean}): void;
   clearInput(): void;

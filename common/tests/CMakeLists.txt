@@ -333,3 +333,7 @@ target_link_libraries(eagler_common_cooperative_menu_input_test PRIVATE eagler::
 add_test(NAME eagler-common.cooperative-menu-input COMMAND eagler_common_cooperative_menu_input_test)
 target_link_libraries(eagler_common_cooperative_rules_test PRIVATE eagler::netplay_headers)
 add_test(NAME eagler-common.cooperative-rules COMMAND eagler_common_cooperative_rules_test)
+
+add_executable(eagler_common_extrapolation_test ../testkit/extrapolation-check.cpp)
+target_link_libraries(eagler_common_extrapolation_test PRIVATE eagler::netplay_headers)
+add_test(NAME eagler-common.extrapolation COMMAND eagler_common_extrapolation_test)

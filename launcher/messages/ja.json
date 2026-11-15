@@ -711,7 +711,7 @@
   "settings_externalMidiConnected": "{count}台のMIDI出力機器に接続しました。下から選択してください。",
   "settings_externalMidiDenied": "MIDIの利用が許可されませんでした。内蔵音源を引き続き使用します。",
   "settings_externalMidiFailed": "外部MIDI機器を有効にできませんでした：{reason}",
-  "settings_frameLimitHint": "描画を補間し、ゲームロジックは60 Hzを維持します。入力遅延が約16.67 ms増えます。",
+  "settings_frameLimitHint": "高リフレッシュレート時に描画を最大1フレーム先まで外挿します。ゲームロジックは60 Hzで動作します。",
   "settings_renderResolution": "描画解像度",
   "settings_renderResolutionHint": "ゲームの読み込み時に適用されます。640×480にすると描画負荷が軽くなります。",
   "settings_appleNotice": "（Apple製品をご利用の方へ）",
