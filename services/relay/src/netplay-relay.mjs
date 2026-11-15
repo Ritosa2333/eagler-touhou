@@ -1024,6 +1024,7 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
     route: run.route,
     iceServers: useDesktopSwarm ? (stun.length ? [{urls:stun}] : [])
       : iceServersFor(roomId, runId, player, run.swarm, run.swarmWorkers?.[player], stun),
+    ...(run.swarm ? {turnMode:'swarm'} : {}),
     ...(swarmGrant ? {swarmGrant} : {}),
     ...(observeStun ? {nat4Observers} : {}),
     ...(run.rtcReplacementClients.size === 2 ? {rtcReplace:true} : {}),

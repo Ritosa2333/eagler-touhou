@@ -52,7 +52,7 @@ th075 使用独立的 `EPTM` 时序记录与 `EPNP` 全席位已确认输入，�
 
 ## 服务端处理
 
-已配置 Swarm TURN 的房间在快照中发布 `swarmAvailable`。有玩家选择 Swarm 时，开局快照发布 `swarmSelected`，信令下发常规 STUN 和 Swarm TURN 地址与短期凭据。直连与 NAT4 预测仍可用，本局的 TURN 候选仅由 Swarm 提供。
+已配置 Swarm TURN 的房间在快照中发布 `swarmAvailable`。有玩家选择 Swarm 时，开局快照发布 `swarmSelected`，信令下发常规 STUN 和 Swarm TURN 地址与短期凭据。`peers.turnMode = "swarm"` 指示 TURN 池代理原样转发候选。直连与 NAT4 预测仍可用，本局的 TURN 候选仅由 Swarm 提供。
 
 `relay-preference.worker` 可指定 Swarm 节点。手选节点在同一席位变更机体后继续生效，直到玩家改选或节点离线。`automatic: true` 上报本机测速结果，用于未手选可用节点的 Swarm 玩家。
 

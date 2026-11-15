@@ -188,6 +188,7 @@ try {
   for (const client of [browser, native]) {
     const peers = await until(() => client.received.find(message => message.type === 'peers'));
     assert.deepEqual(peers.iceServers.map(server => server.urls), [[stunUrl], [swarmUrl]]);
+    assert.equal(peers.turnMode, 'swarm');
     assert.ok(peers.iceServers[1].credential);
     assert.match(peers.iceServers[1].username, /^\d+:swarm-12\//);
   }
@@ -208,6 +209,7 @@ try {
   const automatic = await connect(0, 'room=th09mp-native-automatic&run=0&players=2&signal=1&player=0');
   const peers = await until(() => automatic.received.find(message => message.type === 'peers'));
   assert.deepEqual(peers.iceServers.map(server => server.urls), [[stunUrl], [ordinaryTurnUrl]]);
+  assert.equal(peers.turnMode, undefined);
 
   const mixed = 'room=th09mp-swarm-direct';
   const desktop = await connect(0, mixed + '&lobby=client_desktop&member=private_desktop');
@@ -231,6 +233,8 @@ try {
   const webPeers = await until(() => webSignal.received.find(message => message.type === 'peers'));
   assert.deepEqual(desktopPeers.iceServers, [{urls:[stunUrl]}]);
   assert.deepEqual(webPeers.iceServers, [{urls:[stunUrl]}]);
+  assert.equal(desktopPeers.turnMode, 'swarm');
+  assert.equal(webPeers.turnMode, 'swarm');
   assert.equal(desktopPeers.nat4Observers, undefined, 'the configured mapping does not use STUN observers');
   assert.equal(desktopPeers.swarmGrant.address, '198.51.100.2:35000');
   assert.equal(desktopPeers.swarmGrant.code, 0);
