@@ -206,7 +206,7 @@ TEST(gauge_once_thresholds) {
             std::printf("# gauge199 death drops small=%d big=%d power=%d\n",
                 small, big, boundary.battle.seat_huds[1].power);
             CHECK_EQ(small, 7);
-            CHECK_EQ(big, 1);
+            CHECK_EQ(big, 0);
             CHECK_EQ(boundary.battle.seat_huds[1].power, 300);
             for (i32 frame = 0; frame < 110; ++frame) CHECK(boundary.battle.step(idle));
             CHECK_EQ(boundary.battle.seats[1].phase, StagePlayerState::Phase::Active);

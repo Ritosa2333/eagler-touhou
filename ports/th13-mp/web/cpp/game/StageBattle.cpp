@@ -2199,14 +2199,13 @@ bool StageBattle::update_player(const GameInput& input, bool deathbomb_prepared)
             // 按新 power 重建 option 树（根/子体的初始 tick 抽视觉 RNG）。
             // 表现层在本次 step 之后的 sync 消费（option_count 已更新）。
             death_option_rebuild = true;
-            //44343e: seven small power items aimed toward(0,player_y-224).
+            // 0044343e..004434cf: the kind table at esp+0x30..0x48 is seven
+            // 1s (small P) consumed by seven 0x42f020 calls; no large P.
             const float base=float(std::atan2(-224.0,double(-player_x)));
             for(i32 i=0;i<7;++i) {
                 const float angle=float(double(i)*double(3.1415927f)/28.0+base-double(.3926991f));
                 item_manager.spawn_item(player_x,player_y,0,1,angle,3.f);
             }
-            if (seat_count >= 2)  // R-T6: one large P in addition to seven small P.
-                item_manager.spawn_item(player_x, player_y, 0, ItemBigPower, base, 3.f);
         }
         item_manager.spawn_value_item(3,player_x,player_y,0,2.f,false);
         if (player_phase_frame >= 30) {
