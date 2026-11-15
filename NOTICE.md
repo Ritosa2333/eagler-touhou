@@ -12,7 +12,7 @@
 ## 外部研究工具
 
 - Touhou Toolkit：参考 `thpatch/thtk`；原研究环境使用 Windows release 12。工具二进制没有随本仓库分发。格式研究参考提交 `917a3d3858850f01276b7fb5b9327e2c24d27d5b`，不将它与 release 12 声称为同一版本。
-- THPrac：早期线索参考 `touhouworldcup/thprac` 提交 `33c78d989cca8891af07b513b468d88323c4fc1e`。本轮六线与 EX 验收使用 WASM 核心原有的辅助接口，没有启动或注入 Windows thprac。
+- THPrac：早期研究参考 `touhouworldcup/thprac` 提交 `33c78d989cca8891af07b513b468d88323c4fc1e`。文档中的“THPrac 式练习辅助”用于描述测试模式；本轮六线及 EX 验收通过 WASM 核心原生接口提供持续免伤等辅助能力，未运行 Windows THPrac 或实施进程注入。
 
 原作资源转换工具仅用于用户自己的本地资源。源码中用于解释行为的常量、地址和结构记录，不代表原版素材已获再分发许可。
 

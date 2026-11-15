@@ -1,6 +1,12 @@
 {
   "date": "2026-11-15",
-  "scope": "Invincibility-assisted six normal routes and EX CPU functional acceptance",
+  "scope": "CPU functional acceptance of six normal routes and EX using THPrac-style practice assistance",
+  "assistanceMode": {
+    "label": "THPrac-style practice assistance",
+    "implementation": "WASM-native test interfaces",
+    "continuousDamageSuppression": true,
+    "WindowsThpracExecuted": false
+  },
   "scopeComplete": true,
   "wholeProductComplete": false,
   "browserDeviceAcceptance": false,
