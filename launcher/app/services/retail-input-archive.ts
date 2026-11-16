@@ -72,7 +72,7 @@ async function extractInWorker(kind: 'rar' | 'zip' | '7z', input: RetailInput, l
         else if (data.passwordRequired) reject(new RetailArchivePasswordError(data.error));
         else reject(Error(data.error || 'Unable to read the game archive'));
       };
-      worker.onerror = () => {cleanup(); reject(Error('Local archive extractor stopped'));};
+      worker.onerror = event => {cleanup(); reject(Error(event.message || 'Unable to start the local archive extractor'));};
       worker.postMessage({input, kind, limits, password, wasmUrl});
     });
   } finally {worker.terminate();}

@@ -39,7 +39,7 @@ class BulletManager;
 struct BulletState;
 struct BulletEnvironment;
 void enemy_th14_closest_bullet(EnemyState&,const BulletState*)noexcept;
-void enemy_th14_freeze_bullets(const EnemyState&,BulletState*,Vec3,BulletEnvironment&)noexcept;
+void enemy_th14_freeze_bullets(const EnemyState&,BulletState*,BulletEnvironment&)noexcept;
 void enemy_th14_random_acceleration(BulletState*,Rng&)noexcept;
 struct AnmVm;
 void enemy_th14_visual_interrupt(const EnemyState&,AnmVm&)noexcept;

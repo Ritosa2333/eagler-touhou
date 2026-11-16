@@ -322,7 +322,7 @@ struct Application:StageResourceEffects
         while(room->inputs.ConfirmedInputs(room->confirmed,&keys)){
             const auto number=room->confirmed;
             auto& output=room->state_at(number);
-            if(output.number!=number||!room->record(number,keys,output.stage,output.restart,now)){
+            if(output.number!=number||!room->record(number,keys,output)){
                 error="TH14 confirmed input output missing";return false;
             }
             room->confirmed_status[(number+1)%room->confirmed_status.size()]=output.status;
@@ -408,6 +408,11 @@ struct Application:StageResourceEffects
             battle->bullets.room_slots=&output.bullets;battle->items.room_slots=&output.items;
             battle->room_speculative=true;battle->room_boundary=false;
         }
+        output.active_stage=battle&&battle->stage_active&&!battle->pending_stage?session.state.stage:0;
+        constexpr auto boss_slots=8u;
+        std::array<i32,boss_slots> bosses_before{};
+        if(battle)for(u32 slot=0;slot<boss_slots;++slot)
+            if(const auto* boss=battle->enemy_commands.bosses[slot])bosses_before[slot]=boss->instance_id;
         room_clock=u64(number-r.stage_start_frame+1)*16666667;
         if(battle)battle->th14_current_music=audio.current_music();
         const auto before=session.state.phase;
@@ -425,6 +430,11 @@ struct Application:StageResourceEffects
             }
         }
         if(!updated){error=session.error;return RoomTick::Failed;}
+        output.boss_slots=0;
+        if(session.battle&&session.battle->stage_active&&!session.battle->pending_stage)
+            for(u32 slot=0;slot<boss_slots;++slot)
+                if(const auto* boss=session.battle->enemy_commands.bosses[slot];
+                   boss&&boss->instance_id!=bosses_before[slot])output.boss_slots|=u8(1u<<slot);
         room_pause_audio(before);
         if(r.blocked==number)r.blocked=Netplay::INVALID_FRAME;
         output.stage=session.state.stage?session.state.stage:u32(session.menu_selection.stage);
@@ -460,7 +470,11 @@ struct Application:StageResourceEffects
                 if(error.empty())error="TH14 spectator stream interrupted";
                 return false;
             }
-            const auto restore=[this](const Netplay::SpectatorStageEvent&){return boot_room();};
+            const auto restore=[this](const Netplay::SpectatorStageEvent& checkpoint){
+                waiting_text.clear();
+                room->stage_start_frame=checkpoint.frame;
+                return restart_room(checkpoint.frame);
+            };
             const bool fast=room->viewer.FastForwarding();
             const auto step=[this,fast](const Netplay::SpectatorFramePacket& p,bool){
                 if(fast&&room_draw_pending){
@@ -468,7 +482,9 @@ struct Application:StageResourceEffects
                         if(!render_room())return false;
                     }else if(!draw_room_logical())return false;
                 }
-                return step_room(p.inputs,p.frame);
+                if(!step_room(p.inputs,p.frame))return false;
+                audio.update();
+                return true;
             };
             // The restore may load a stage. Start the budget after that work.
             double deadline=0;
@@ -3051,6 +3067,9 @@ EMSCRIPTEN_KEEPALIVE void th11_key(unsigned scan,unsigned down){for(auto& k:th11
 EMSCRIPTEN_KEEPALIVE void th11_key(unsigned scan,unsigned down){for(auto& k:th11::sdl::keyboard_map)if(k.scan==scan)k.hosted=down!=0;}
 #endif
 EMSCRIPTEN_KEEPALIVE void th11_keys_clear(){th11::sdl::clear_inputs();}
+#if defined(TH14_MULTIPLAYER)
+EMSCRIPTEN_KEEPALIVE void th14_audio_levels(float music,float effects){th11::sdl::app.audio.set_launcher_levels(music,effects);}
+#endif
 EMSCRIPTEN_KEEPALIVE void th11_music_enabled(unsigned on){using namespace th11::sdl;app.audio.music_enabled=on!=0;app.audio.refresh_volume();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th11_audio_statistics(){return th11::sdl::app.audio.statistics();}
 EMSCRIPTEN_KEEPALIVE void th11_loop_pause(unsigned on){using namespace th11::sdl;suspended=on!=0;app.audio.suspend(suspended);previous_frame=-1;cadence.reset();clear_inputs();app.reset_frame_window();}
@@ -3136,7 +3155,7 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
 #endif
         app.graphics.backend.commit();app.graphics.backend.defer=false;
 #if defined(TH14_MULTIPLAYER)
-        if(app.room&&app.room->started)app.audio.update();
+        if(app.room&&app.room->started&&!app.room->spectator)app.audio.update();
 #endif
         app.audio.pump();
         if(ticks)th11_browser_frame(ok?1:0,emscripten_get_now()-begin,ticks);

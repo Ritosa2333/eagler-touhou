@@ -8,8 +8,8 @@ import { assertRuntimeProtocolSources } from '../lib/runtime-protocol-shell.mjs'
 
 const args = Object.create(null);
 for (const argument of process.argv.slice(2)) {
-  const match = /^--(template|core-build|output|max-file-bytes|practice-font|vanilla-font)=(.+)$/.exec(argument);
-  if (!match || args[match[1]]) throw Error('Use --template=DIR --core-build=DIR --output=NEW_DIRECTORY [--practice-font=FILE] [--vanilla-font=FILE] [--max-file-bytes=N]');
+  const match = /^--(template|core-build|fallback-core|output|max-file-bytes|practice-font|vanilla-font)=(.+)$/.exec(argument);
+  if (!match || args[match[1]]) throw Error('Use --template=DIR --core-build=DIR --output=NEW_DIRECTORY [--fallback-core=DIR] [--practice-font=FILE] [--vanilla-font=FILE] [--max-file-bytes=N]');
   args[match[1]] = match[1] === 'max-file-bytes' ? match[2] : resolve(match[2]);
 }
 const template = args.template, core = args['core-build'], output = args.output;
@@ -64,6 +64,27 @@ if(multiplayer){
 }
 manifest.execution.sha256 = build.sha256;
 manifest.execution.loaderSha256 = build.loaderSha256;
+const fallback = args['fallback-core'];
+const fallbackNames = [];
+let singleThreaded;
+if (fallback) {
+  const fallbackBuild = JSON.parse(await readFile(resolve(fallback, 'build.json'), 'utf8'));
+  if (multiplayer || !build.flags.includes('-pthread') ||
+      !fallbackBuild.flags?.includes('-DPORT_TITLE=14') || fallbackBuild.flags.includes('-pthread') ||
+      fallbackBuild.flags.includes('-DTH14_MULTIPLAYER=1') ||
+      ['-DTH14_ENABLE_THPRAC=1', '-DTH_ENABLE_THCRAP=1'].some(flag => fallbackBuild.flags.includes(flag) !== build.flags.includes(flag)))
+    throw Error('Expected compatible threaded and single-threaded TH14 solo builds');
+  for (const ext of ['wasm', 'mjs']) {
+    const original = 'th14-sdl.' + ext;
+    const output = 'th14-sdl-single.' + ext;
+    replacements.set(output, await checked(fallback, original, fallbackBuild.runtimeFiles[original]));
+    fallbackNames.push(output);
+  }
+  replacements.set('shell.mjs', await checked(fallback, 'shell.mjs', fallbackBuild.runtimeFiles['shell.mjs']));
+  singleThreaded = {sha256: identity(replacements.get(fallbackNames[0])).sha256,
+    loaderSha256: identity(replacements.get(fallbackNames[1])).sha256};
+  manifest.execution.singleThreaded = singleThreaded;
+}
 replacements.set('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2) + '\n'));
 
 // Current core builds carry their source-derived host shell. Legacy core
@@ -73,6 +94,7 @@ const buildInfo = /\/\*TH14_BUILD_INFO\*\/\{[^\n]+?\}(?=;)/g;
 if ([...originalShell.matchAll(buildInfo)].length !== 1) throw Error('Missing TH14 shell build identity');
 const shell = originalShell.replace(buildInfo, '/*TH14_BUILD_INFO*/' + JSON.stringify({
   version, completeGame: manifest.completeGame === true, nativeEquivalent: manifest.nativeEquivalent === true, sha256: build.sha256,
+  singleThreaded,
 }));
 const originalHtml = (await readTemplate('th14.html')).toString('utf8');
 const canvas = /<canvas\b[^>]*\bid="canvas"[^>]*>/g;
@@ -92,7 +114,7 @@ replacements.set('shell.mjs', Buffer.from(shell));
 replacements.set('th14.html', Buffer.from(html));
 replacements.set(reporterName, await readFile(new URL('../../common/browser/' + reporterName, import.meta.url)));
 replacements.set(crashCodeName, Buffer.from(JSON.stringify({
-  files: ['th14-sdl.wasm', 'th14-sdl.mjs', 'shell.mjs'].map(path => ({path, ...identity(replacements.get(path))})),
+  files: ['th14-sdl.wasm', 'th14-sdl.mjs', 'shell.mjs', ...fallbackNames].map(path => ({path, ...identity(replacements.get(path))})),
 }, null, 2) + '\n'));
 
 const changedFonts = new Map();
@@ -126,7 +148,7 @@ if (changedFonts.size || thprac || languages) replacements.set('resources.json',
 for (const name of names) await readTemplate(name);
 const obsoletePracticeFiles = new Set(['Th14PracticeUi.mjs', 'Th14PracticeCatalog.mjs']);
 const outputNames = names.filter(name => !obsoletePracticeFiles.has(name) && !(languages && baked.test(name))).map(name => changedFonts.get(name) ?? name);
-for (const name of [reporterName, crashCodeName])
+for (const name of [reporterName, crashCodeName, ...fallbackNames])
   if (!outputNames.includes(name)) outputNames.push(name);
 for (const font of ['fonts/unifont.otf', 'fonts/msgothic.ttc'])
   if (replacements.has(font) && !outputNames.includes(font)) outputNames.push(font);

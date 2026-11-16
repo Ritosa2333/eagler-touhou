@@ -128,6 +128,7 @@ public:
     u32 coop_seats=1,coop_viewer=0,coop_actor=0,coop_skip=0,coop_grazer=0;
     bool coop_observer=false,coop_challenge=false;
     Timer coop_bomb_invincibility;
+    bool coop_bomb_sakuya_b=false;
     std::array<Timer,3> coop_marisa_b_cooldown{};
     i32 coop_knife_owner=-1;
     struct CoopActor {
@@ -139,12 +140,13 @@ public:
     bool setup_coop(const std::array<Th14CoopLoadout,3>&,u32 seats,u32 viewer,bool challenge,bool observer);
     bool update_coop();
     bool start_coop_stage();
+    bool reset_coop_player_scales();
     bool draw_coop_players(AnmRenderer&);
     static u8 coop_sprite_opacity(const void*,const AnmVm&);
     bool queue_coop_hud();
     bool coop_game_over(bool);
-    bool coop_revive(u32);
-    bool coop_transfers();
+    bool coop_revive(u32 seat,i32 invulnerability);
+    bool coop_transfers(const std::array<u32,3>& pressed_buttons);
     bool coop_bomb_available(u32)const;
     bool coop_collect(ItemState&,bool&);
     bool coop_damage(const EnemyState&,Vec3,const Vec2*,float,float,i32&,bool=false,bool* =nullptr);
@@ -268,7 +270,11 @@ public:
     void spell_title_interrupt(i16 label)override{for(auto id:spell_titles)enemy_animations.interrupt(id,label);}
     void spell_circle_position(Vec3 p)override{if constexpr(kPortTitle==14||kPortTitle==16){if(auto* vm=animations.find(spell_circle))vm->position=p;}else enemy_animations.position(spell_circle,p,true);}
     void spell_circle_end()override{enemy_animations.erase(spell_circle);spell_circle=0;cancellation={spell_flags,spell_id};}
-    bool spell_result(bool captured,i32 bonus)override{events.push_back({BattleEventKind::SpellResult,captured?0:1,bonus});return hud.notice(captured?0:1,bonus);}
+    bool spell_result(bool captured,i32 bonus)override{
+#if PORT_TITLE == 14
+        if(coop_seats>1&&!reset_coop_player_scales())return false;
+#endif
+        events.push_back({BattleEventKind::SpellResult,captured?0:1,bonus});return hud.notice(captured?0:1,bonus);}
     bool spell_sound(i32 id)override{return sound(id,0,false);}
     bool spell_timer_interrupt(i16)override;
     void spell_background_end()override;
@@ -372,6 +378,8 @@ public:
     bool th14_spawn_enemy(const char* name,const EnemySpawn& value)override{return enemies.spawn(name,value)!=nullptr;}
     bool callback_th14_player_scale(float value)override{
         if(!player)return false;
+        if(coop_seats>1&&value<=1.f)return reset_coop_player_scales();
+        value=th14_mallet_scale(value,coop_seats);
         for(u32 seat=0;seat<coop_seats;++seat)if(pilot_live(seat)&&!pilot(seat).set_th14_scale(value))return false;
         return true;
     }

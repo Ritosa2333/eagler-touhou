@@ -25,7 +25,8 @@ struct RoomSetupTh14 {
 class RoomTh14 {
 public:
     struct Frame {
-        u32 number=Netplay::INVALID_FRAME,stage=0;
+        u32 number=Netplay::INVALID_FRAME,stage=0,active_stage=0;
+        u8 boss_slots=0;
         bool terminal=false,ending=false,results=false,cleared=false,restart=false;
         FrameImageTh14 image;
         BulletManager::RoomSlots bullets;
@@ -61,6 +62,11 @@ public:
     u32 memory_wait_frames=0;
     u32 replay_stage_offset=0;
     u32 stage_start_frame=0;
+    struct SpectatorMark {u32 frame,stage;u8 boss_slots;bool checkpoint;};
+    std::vector<SpectatorMark> spectator_marks;
+    std::size_t published_marks=0;
+    u32 recorded_stage=0,published_stage=0;
+    bool bookmark_restart=false;
     bool cleared=false;
     u64 publication_deadline=0;
     std::array<Frame,RoomSetupTh14::max_prediction+1> history;
@@ -72,7 +78,7 @@ public:
     bool begin(const char*,const char*,u64);
     bool poll(u64);
     bool capture(u64 now_us,unsigned lead,const Netplay::FrameInput&);
-    bool record(u32 number,const Netplay::InputReplay::Frame&,u32 stage,bool restart,u64);
+    bool record(u32 number,const Netplay::InputReplay::Frame&,const Frame&);
     void publish_confirmed();
     bool finish_publication(u64 now);
     bool receive();

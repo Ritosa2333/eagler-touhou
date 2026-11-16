@@ -388,6 +388,7 @@ const initialized=(async()=>{
  Module=await createModule({canvas,noInitialRun:true,resetBrowserKeyboard:()=>keyboard.clear(),...(audioContext?{SDL3:{audioContext}}:{}),print:console.log,printErr:console.error,
   onAbort:reason=>crashReporter?.fatal(new Error(String(reason)),{source:'wasm-abort'}),
   instantiateWasm(imports,ready){return WebAssembly.instantiateStreaming(fetch('./th11-sdl.wasm'),imports).then(({instance,module})=>{core=instance.exports;ready(instance,module);return core;});}});
+ if(core.th14_audio_levels)Module.eaglerSetAudioLevels=(music,effects)=>core.th14_audio_levels(music,effects);
  window.Module=Module;window.FS=Module.FS;window.core=core;
  crashReporter?.bindCore(Module,{build:runtimeBuild,autoSample:false,hookAbort:false});
  Module.onWebGpuError=error;

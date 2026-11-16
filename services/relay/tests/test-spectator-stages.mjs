@@ -132,8 +132,8 @@ test('TH13 run retention respects explicit frame and byte limits without droppin
     assert.equal(stream.bytes, bytes); assert.equal(stream.next, next);
   }
 });
-test('TH17 continuous spectators keep earlier confirmed inputs through stage changes', () => {
-  const marker = COOPERATIVE_SPECTATOR_MARKERS.th17mp;
+for (const game of ['th14mp', 'th17mp']) test(`${game} continuous spectators keep earlier confirmed inputs through stage changes`, () => {
+  const marker = COOPERATIVE_SPECTATOR_MARKERS[game];
   const stream = new SpectatorStageRelay(marker, 3, {historyBytes: 512, historyFrames: 2});
   stream.accept(event(marker, 3, {schema: 3, stage: 1}));
   const tape = stream.history;

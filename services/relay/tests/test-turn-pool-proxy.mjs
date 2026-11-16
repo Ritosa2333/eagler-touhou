@@ -25,6 +25,17 @@ test('TURN pool augments ordinary WebRTC and leaves Swarm ICE policy intact', as
   const upstream = new WebSocketServer({host:'127.0.0.1',port:0});
   upstream.on('connection', (peer, request) => {
     const mode = new URL(request.url,'http://127.0.0.1').searchParams.get('mode');
+    const standby = {'swarm-standby':['swarm-10',swarm],'direct-standby':['direct',stun],'turn-standby':['turn',ordinary]}[mode];
+    if (standby) {
+      const [route, iceServer] = standby;
+      peer.send(JSON.stringify({type:'rtc-standby', phase:'measure', route,
+        iceServers:[iceServer]}));
+      return;
+    }
+    if (mode === 'first-party') {
+      peer.send(JSON.stringify({type:'peers',turnMode:'first-party',iceServers:[stun,ordinary]}));
+      return;
+    }
     const iceServers = mode === 'native' ? [stun] : [stun, mode === 'swarm' ? swarm : ordinary];
     peer.send(JSON.stringify({type:'peers',iceServers,...(mode !== 'ordinary' ? {turnMode:'swarm'} : {})}));
   });
@@ -35,9 +46,9 @@ test('TURN pool augments ordinary WebRTC and leaves Swarm ICE policy intact', as
     upstreamPort:upstream.address().port, brokerPort:broker.address().port, brokerToken:'fixture',
     poolFile, maxPayload:65536, maxBuffered:65536,
   });
-  async function peers(mode) {
+  async function peers(mode, region = '0') {
     const ws = new WebSocket(`ws://127.0.0.1:${proxy.address().port}/eagler-netplay/?mode=${mode}`, {
-      headers:{'X-Real-IP':'198.51.100.1','X-Eagler-CN':'0'},
+      headers:{'X-Real-IP':'198.51.100.1','X-Eagler-CN':region},
     });
     try {
       const [message] = await once(ws,'message',{signal:AbortSignal.timeout(5000)});
@@ -52,10 +63,25 @@ test('TURN pool augments ordinary WebRTC and leaves Swarm ICE policy intact', as
     await once(proxy,'listening');
     assert.deepEqual(await peers('swarm'), [stun,swarm]);
     assert.deepEqual(await peers('native'), [stun]);
+    assert.deepEqual(await peers('swarm-standby'), [swarm]);
+    assert.deepEqual(await peers('direct-standby'), [stun]);
+    assert.deepEqual(await peers('turn-standby'), [ordinary]);
+    assert.deepEqual(await peers('first-party'), [stun,ordinary]);
     assert.equal(brokerCalls,0);
     assert.deepEqual((await peers('ordinary')).flatMap(server => server.urls),
       [...cloudflare.urls,...stun.urls,...ordinary.urls,backup]);
     assert.equal(brokerCalls,1);
+
+    await writeFile(poolFile, JSON.stringify({urls:[backup], sharedSecret:'fixture'}));
+    assert.deepEqual((await peers('ordinary', '1')).flatMap(server => server.urls),
+      [...stun.urls,...ordinary.urls,backup]);
+    assert.equal(brokerCalls,1);
+
+    await rm(poolFile);
+    assert.deepEqual(await peers('ordinary'), [cloudflare,stun,ordinary]);
+    await writeFile(poolFile, '{');
+    assert.deepEqual(await peers('ordinary'), [cloudflare,stun,ordinary]);
+    assert.equal(brokerCalls,3);
   } finally {
     await Promise.all([proxy,upstream,broker].map(server => new Promise(resolve => server.close(resolve))));
     await rm(directory,{recursive:true,force:true});

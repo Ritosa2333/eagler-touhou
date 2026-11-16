@@ -42,10 +42,10 @@ bool BombController::body(i32 script){
 #endif
     return bound&&player.motion.body.update(animations)>=0;
 }
-void BombController::invincible(i32 frames){
+void BombController::invincible(i32 frames,bool share){
     player.state.invincibility.set(frames,&animations.rate);
 #if PORT_TITLE == 14
-    world.th14_bomb_invincibility(frames);
+    if(share)world.th14_bomb_invincibility(frames);
 #endif
 }
 bool BombController::fail_spell(){auto& spell=player.spell;if(spell.flags&1){if(spell.elapsed>=60){spell.bonus=0;spell.flags&=~0x22u;}else if(state.active&&(kPortTitle==14||selection!=5))spell.flags|=0x20;}return true;}
@@ -92,9 +92,10 @@ i32 BombController::start(){
         player.th14_scale.flags|=4;return 0;
     }
     if(selection==4){
-        fail_spell();auto& count=world.bomb_count();count=wrapping_add(count,1);world.bomb_used();invincible(120);
+        state.th14_mode=0;
+        fail_spell();auto& count=world.bomb_count();count=wrapping_add(count,1);world.bomb_used();invincible(120,false);
         if(!create(state.animation,16,true)||!create(state.auxiliary,19,true)||!sound(50))return fail(-4);
-        player.th14_scale.flags|=8;state.th14_mode=0;return 0;
+        player.th14_scale.flags|=8;return 0;
     }
     if(selection==3){
         if(!sound(49)||!create(state.animation,28,true))return fail(-4);
@@ -248,7 +249,7 @@ i32 BombController::tick(){
             if(player.state.life_state==4){
                 if(!create(state.auxiliary,19,true))return -2;interrupt(state.animation,2);
                 player.state.state_timer.set(60,&animations.rate);player.state.life_state=1;
-                state.active=1;state.th14_mode=1;state.elapsed.set(0,&animations.rate);invincible(120);player.th14_scale.flags&=~8u;
+                state.active=1;state.th14_mode=1;state.elapsed.set(0,&animations.rate);invincible(120,false);player.th14_scale.flags&=~8u;
                 if(!sound(66,true))return -2;
             }else{
                 const i32 t=state.elapsed.current;if(t<60)player.motion.state.th14_movement_factor=0;else if(t==120)state.active=2;

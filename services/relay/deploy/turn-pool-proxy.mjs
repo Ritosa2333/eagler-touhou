@@ -12,6 +12,27 @@ export function mergeIce(message, cloudflare) {
   return message;
 }
 
+function appendTurnPool(entries, poolFile) {
+  const active = entries.find(entry => entry.username && entry.credential);
+  if (!active || !poolFile) return;
+
+  let pool;
+  try {
+    pool = JSON.parse(readFileSync(poolFile, 'utf8'));
+  } catch {
+    return;
+  }
+
+  const backups = Array.isArray(pool?.backups) ? pool.backups : [];
+  for (const node of [pool, ...backups]) {
+    if (!Array.isArray(node?.urls) || typeof node.sharedSecret !== 'string' || !node.sharedSecret) continue;
+    const urls = node.urls.filter(url => typeof url === 'string' && url.startsWith('turn:'));
+    if (!urls.length || entries.some(entry => [].concat(entry.urls).includes(urls[0]))) continue;
+    entries.push({urls, username:active.username,
+      credential:createHmac('sha1',node.sharedSecret).update(active.username).digest('base64')});
+  }
+}
+
 export function startProxy(config) {
   const require = createRequire(pathToFileURL(config.wsPackage));
   const {WebSocket, WebSocketServer} = require('ws');
@@ -63,17 +84,12 @@ export function startProxy(config) {
         if (!isBinary && data.length < 65536) {
           try {
             const value = JSON.parse(data.toString());
-            if (value?.turnMode !== 'swarm' &&
+            const fixedRoute = value?.turnMode === 'swarm' || value?.turnMode === 'first-party' ||
+              (value?.type === 'rtc-standby' && /^(direct|turn|swarm-[0-9]+)$/.test(value.route));
+            if (!fixedRoute &&
                 (Array.isArray(value?.iceServers) || Array.isArray(value?.roomProbe?.iceServers))) {
               const entries = value.iceServers || value.roomProbe?.iceServers;
-              const active = entries.find(e => e.username && e.credential);
-              if (active) {
-                const pool = JSON.parse(readFileSync(config.poolFile, 'utf8'));
-                for (const node of [pool, ...pool.backups]) {
-                  if (entries.some(e => [].concat(e.urls).includes(node.urls[0]))) continue;
-                  entries.push({urls:node.urls.filter(url=>!url.startsWith('turns:')), username:active.username, credential:createHmac('sha1',node.sharedSecret).update(active.username).digest('base64')});
-                }
-              }
+              appendTurnPool(entries, config.poolFile);
               const cf = overseas ? await credentials() : [];
               payload = JSON.stringify(mergeIce(value,cf));
             }

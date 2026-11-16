@@ -52,12 +52,13 @@ export class SpectatorStageRelay {
           if (timing.getBigUint64(12, true) !== event.session || timing.getUint32(20, true) !== event.abi)
             throw Error('spectator stage timing mismatch');
         }
-        // TH13 and TH17 carry live animation and combat owners across stages.
-        // Keep the same tape so both new and downloading viewers can replay it.
+        // These formats restore shared state by replaying the entire run.
         const th13Run = this.marker === COOPERATIVE_SPECTATOR_MARKERS.th13mp &&
           event.version === 2 && event.schema === 2;
-        const retainsRun = th13Run || this.marker === COOPERATIVE_SPECTATOR_MARKERS.th17mp &&
+        const th14OrTh17Run = (this.marker === COOPERATIVE_SPECTATOR_MARKERS.th14mp ||
+          this.marker === COOPERATIVE_SPECTATOR_MARKERS.th17mp) &&
           event.version === 2 && event.schema === 3;
+        const retainsRun = th13Run || th14OrTh17Run;
         if (!this.session && th13Run && (event.frame !== 0 || ![1, 7].includes(event.stage)))
           throw Error('TH13 spectator run root missing');
         if (this.session && retainsRun !== this.retainsRun) throw Error('spectator stage restore mode changed');
