@@ -1,10 +1,12 @@
 #include "NativeAdaptiveRoute.hpp"
+#include <eagler/netplay/NativeRoomTransport.hpp>
 
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <deque>
@@ -23,7 +25,8 @@ using Bytes = std::vector<std::uint8_t>;
 constexpr std::string_view Prefix = "etr1:";
 constexpr std::size_t MaxControls = 256, MaxBytes = 1024 * 1024;
 constexpr Millis Window = 6000, ProbeTimeout = 1000, Cooldown = 60000;
-constexpr Millis RttFreshness = 2000, StallTimeout = 3000;
+constexpr Millis RttFreshness = 2000, StallTimeout = 3000, WarmStandbyStall = 1250;
+constexpr Millis PrimaryStandbyConnectMs = 12000;
 constexpr std::size_t StartupSamples = 6;
 
 Millis now()
@@ -141,13 +144,15 @@ struct NativeAdaptiveRoute::State
     std::string tag;
     std::uint8_t local, remote;
     rtc::Configuration config;
-    bool swarm, allowSwitching, peerSwitching = true;
+    bool swarm, allowSwitching, manualConfirmation, peerSwitching = true;
     bool running = false, hello = false, supported = false, directRetry = false, pairedQuality = false;
     bool startup = false;
+    bool manualSwitch = false;
     bool disabled = false, ackPending = false, qualityReported = false;
     bool firstComparison = true, force = false;
     Millis lastPump = 0, quietUntil = 0, backupStarted = 0, retryAt = 0;
     Millis activeSince = 0;
+    Millis startupPrimaryUntil = 0;
     Millis previousUntil = 0, verification = 0, nextCheck = 0, verifyAfter = 0, switched = 0;
     Millis recovery = 0, lastNeed = 0;
     std::uint32_t generation = 0, epoch = 0, outgoing = 0, incoming = 0, resendFrom = 0, recoveryProbe = 0;
@@ -156,21 +161,27 @@ struct NativeAdaptiveRoute::State
     std::optional<Comparison> remoteQuality;
     struct Proposal { Path *path; std::uint32_t epoch; Millis at; Millis lastCommit = 0; };
     std::optional<Proposal> proposal;
+    struct Offer { Path *path; std::uint32_t ticket; Millis at; int fromMs, toMs; bool confirmed = false; };
+    std::optional<Offer> offered;
     std::map<std::uint32_t, Bytes> pending, reorder;
     std::size_t pendingBytes = 0, reorderBytes = 0, inboxBytes = 0;
     std::deque<Bytes> inbox;
 
-    State(NativePeerTransport &peer, std::string name, std::uint8_t localPlayer, rtc::Configuration cfg, bool usingSwarm, bool switching)
+    State(NativePeerTransport &peer, std::string name, std::uint8_t localPlayer, rtc::Configuration cfg,
+          bool usingSwarm, bool switching, bool confirmation)
         : primary{&peer}, tag(std::move(name)), local(localPlayer), remote(1 - localPlayer),
-          config(std::move(cfg)), swarm(usingSwarm), allowSwitching(switching) {}
+          config(std::move(cfg)), swarm(usingSwarm), allowSwitching(switching), manualConfirmation(confirmation) {}
 
     bool Controller() const { return local == 0; }
     bool Switching() const { return allowSwitching && peerSwitching; }
     bool Eligible(Millis time) const { return running && time >= quietUntil; }
     Millis ProbeWaitSince() const { return (std::max)({activeSince, quietUntil, active->lastRttAt}); }
     bool Stalled(Millis time) const {
-        return supported && running &&
-            time - (std::max)(ProbeWaitSince(), active->lastTrafficAt) >= StallTimeout;
+        if (!supported || !running) return false;
+        // Only shorten the watchdog when a measured spare is still answering.
+        const bool warmStandby = OfferReady(time) && time - offered->path->lastRttAt <= ProbeTimeout;
+        return time - (std::max)(ProbeWaitSince(), active->lastTrafficAt) >=
+            (warmStandby ? WarmStandbyStall : StallTimeout);
     }
     std::array<Path *, 4> Paths() { return {&primary, &standby, planned.get(), retained.get()}; }
     Path *Other()
@@ -205,6 +216,7 @@ struct NativeAdaptiveRoute::State
 
     void Suspend(Millis time)
     {
+        offered.reset();
         if (proposal && Controller() && !proposal->lastCommit) proposal.reset();
         else if (proposal) proposal->at = time;
         for (auto *path : Paths()) {
@@ -228,6 +240,7 @@ struct NativeAdaptiveRoute::State
         standby = {};
         backup.reset();
         if (verificationTarget == &standby) ClearVerification();
+        if (offered && offered->path == &standby) offered.reset();
         retryAt = time + Cooldown;
     }
 
@@ -236,6 +249,7 @@ struct NativeAdaptiveRoute::State
         if (!path) return;
         if (previous == path.get()) previous = nullptr;
         if (verificationTarget == path.get()) ClearVerification();
+        if (offered && offered->path == path.get()) offered.reset();
         if (retirePeer && path->owned) retirePeer(std::move(path->owned));
         path.reset();
     }
@@ -337,10 +351,40 @@ struct NativeAdaptiveRoute::State
         }
     }
 
+    bool OfferReady(Millis time) const
+    {
+        return offered && Eligible(time) && offered->path != active && Ready(*offered->path) &&
+            time - offered->at <= 10000 && time - offered->path->lastRttAt <= 3000;
+    }
+
+    const char *RouteLabel(Path &path) const
+    {
+        if (path.surveySerial) return path.direct ? "直连" : path.route == "turn" ? "TURN" : "Swarm";
+        if (path.direct || (&path == &primary && !path.peer->UsesRelay())) return "直连";
+        return swarm ? "Swarm" : "TURN";
+    }
+
+    bool BeginHandoff(Path &path, Millis time, std::uint32_t offerTicket = 0)
+    {
+        if (proposal || &path == active || !Ready(path)) return false;
+        const auto id = epoch + 1;
+        Json message{{"kind", "switch"}, {"path", Name(path)}, {"epoch", id}, {"generation", WireGeneration(path)}};
+        if (offerTicket) message["offerTicket"] = offerTicket;
+        if (!Send(path, message)) return false;
+        proposal = Proposal{&path, id, time};
+        offered.reset();
+        return true;
+    }
+
     void Verify(Millis time, bool recover, bool announce = true, Path *target = nullptr)
     {
+        if (!Switching() || !Eligible(time)) return;
+        if (OfferReady(time)) {
+            if (recover && Controller()) BeginHandoff(*offered->path, time);
+            return;
+        }
         if (!target) target = Other();
-        if (!Switching() || !Eligible(time) || !target || !Ready(*target) || (!recover && time < verifyAfter)) return;
+        if (!target || !Ready(*target) || (!recover && time < verifyAfter)) return;
         if (!verification) {
             verification = time;
             verificationTarget = target;
@@ -376,6 +420,7 @@ struct NativeAdaptiveRoute::State
             else std::fputs("RTC switched to primary\n", stderr);
         }
         epoch = id;
+        offered.reset();
         recovery = 0;
         resendFrom = pending.empty() ? 0 : pending.begin()->first;
     }
@@ -391,7 +436,10 @@ struct NativeAdaptiveRoute::State
             const auto label = m.value("path", std::string{});
             if (label == Name(path)) {
                 if (!Ready(path) || (proposal && proposal->path != &path)) return false;
+                if (m.contains("offerTicket") && (!OfferReady(time) || offered->path != &path ||
+                    number(m, "offerTicket") != offered->ticket)) return false;
                 proposal = Proposal{&path, id, time};
+                offered.reset();
                 return send("accept");
             }
         }
@@ -433,6 +481,7 @@ struct NativeAdaptiveRoute::State
             peerSwitching = !m.contains("switching") || m["switching"] != false;
             directRetry = supported && m.contains("directRetry") && m["directRetry"] == true;
             pairedQuality = supported && m.contains("pairedQuality") && m["pairedQuality"] == true;
+            manualSwitch = pairedQuality && manualConfirmation && m.contains("manualSwitch") && m["manualSwitch"] == true;
             return;
         }
         if (!supported || disabled) return;
@@ -461,6 +510,20 @@ struct NativeAdaptiveRoute::State
         }
         if (path.measuring) return;
         if (kind == "pause") Suspend(time);
+        else if (kind == "route-offer" && manualSwitch && !Controller() && &path != active && Ready(path) &&
+                 number(m, "ticket") == verificationTicket && verificationTicket &&
+                 number(m, "epoch") == epoch && number(m, "generation") == WireGeneration(path)) {
+            const auto from = m.value("fromMs", Json(nullptr)), to = m.value("toMs", Json(nullptr));
+            if (to.is_number_unsigned() && to.get<std::uint64_t>() <= 10000 &&
+                (from.is_null() || (from.is_number_unsigned() && from.get<std::uint64_t>() <= 10000))) {
+                const auto ticket = verificationTicket;
+                offered = Offer{&path, ticket, time, from.is_null() ? -1 : from.get<int>(), to.get<int>()};
+                ClearVerification();
+            }
+        }
+        else if (kind == "route-confirm" && manualSwitch && Controller() && OfferReady(time) && &path == offered->path &&
+                 number(m, "ticket") == offered->ticket && number(m, "epoch") == epoch &&
+                 number(m, "generation") == WireGeneration(path)) BeginHandoff(path, time, offered->ticket);
         else if (kind == "need" && Controller()) Verify(time, true, pairedQuality);
         else if (kind == "verify") {
             if (!pairedQuality) Verify(time, false, false);
@@ -576,7 +639,9 @@ struct NativeAdaptiveRoute::State
     {
         if (!Ready(path) || (path.measuring && path.reported)) return;
         while (!path.samples.empty() && time - path.samples.front().sent > Window) path.samples.pop_front();
-        const auto interval = path.measuring || verification ? 50 : (&path == active ? 250 : 10000);
+        const bool startupStandby = &path == &primary && startupPrimaryUntil && !epoch;
+        const auto interval = path.measuring || verification ? 50 :
+            (&path == active || startupStandby || (offered && offered->path == &path) ? 250 : 10000);
         if (time - path.lastProbe < interval) return;
         // A probe refused by a full input channel is also a failed sample.
         Send(path, {{"kind", "ping"}, {"id", ++path.probes}}, false);
@@ -594,7 +659,7 @@ struct NativeAdaptiveRoute::State
             const auto current = active->Measure(time, outage ? ProbeWaitSince() : time - Window, 40);
             const auto route = active->surveySerial ? active->route :
                 active->peer->UsesRelay() ? initialRelayRoute : "direct";
-            if (outage ? current.count >= 5 : current.count >= 12 &&
+            if (outage ? current.count >= 5 : !offered && current.count >= 12 &&
                 (current.p95 > 150 || current.loss > .05 || (initialSurvey && route != "direct"))) {
                 if (surveySignal({{"type", "rtc-route-slow"}, {"route", route}, {"quality", surveyReport(current)}})) {
                     nextSlowCheck = time + 5000;
@@ -658,8 +723,16 @@ struct NativeAdaptiveRoute::State
     {
         if (time < nextCheck) return;
         nextCheck = time + 50;
+        if (offered) {
+            const auto current = active->Measure(time, time - Window);
+            if (!OfferReady(time) || (!offered->confirmed && current.count >= 12 && current.score() <= offered->toMs * 1.1 + 5))
+                offered.reset();
+        }
         if (recovery && time > recovery) { disabled = true; return; }
-        if ((!planned || !planned->measuring) && !verification && (!switched || time - switched >= Cooldown) && Other()) {
+        const auto alternate = Other();
+        const bool startupStandby = startupPrimaryUntil && !epoch && alternate == &primary;
+        if ((!planned || !planned->measuring) && !verification && alternate &&
+            (startupStandby || !switched || time - switched >= Cooldown)) {
             const auto current = active->Measure(time, time - Window);
             if (current.count >= 12 && (firstComparison || current.p95 >= 60 || current.loss >= .1)) {
                 Verify(time, false);
@@ -682,13 +755,20 @@ struct NativeAdaptiveRoute::State
                     }
                     if (candidate.received >= 12 && candidate.loss <= .05 &&
                         ((force && !Ready(*active)) || candidate.score() * 1.1 + 5 < current.score())) {
-                        const auto id = epoch + 1;
-                        if (Send(next, {{"kind", "switch"}, {"path", Name(next)},
-                                        {"epoch", id}, {"generation", WireGeneration(next)}})) proposal = Proposal{&next, id, time};
+                        if (!manualSwitch || force) BeginHandoff(next, time);
+                        else {
+                            const auto from = std::isfinite(current.p95) ? static_cast<int>(current.p95) : -1;
+                            const auto to = static_cast<int>(candidate.p95);
+                            if (Send(next, {{"kind", "route-offer"}, {"ticket", currentTicket}, {"epoch", epoch},
+                                    {"generation", WireGeneration(next)}, {"fromMs", from < 0 ? Json(nullptr) : Json(from)}, {"toMs", to}})) {
+                                offered = Offer{&next, currentTicket, time, from, to};
+                                ClearVerification();
+                            }
+                        }
                     }
                 }
             }
-            if (time - verification > 4000) { ClearVerification(); verifyAfter = time + 10000; }
+            if (verification && time - verification > 4000) { ClearVerification(); verifyAfter = time + 10000; }
         }
         if (Controller() && proposal) {
             if (proposal->lastCommit) {
@@ -713,8 +793,8 @@ struct NativeAdaptiveRoute::State
 };
 
 NativeAdaptiveRoute::NativeAdaptiveRoute(NativePeerTransport &primary, std::string tag, std::uint8_t local,
-                                         rtc::Configuration standbyConfig, bool swarm, bool allowSwitching)
-    : state_(std::make_unique<State>(primary, std::move(tag), local, std::move(standbyConfig), swarm, allowSwitching)) {}
+                                         rtc::Configuration standbyConfig, bool swarm, bool allowSwitching, bool manualConfirmation)
+    : state_(std::make_unique<State>(primary, std::move(tag), local, std::move(standbyConfig), swarm, allowSwitching, manualConfirmation)) {}
 NativeAdaptiveRoute::~NativeAdaptiveRoute() = default;
 
 void NativeAdaptiveRoute::Pump(bool running)
@@ -729,7 +809,7 @@ void NativeAdaptiveRoute::Pump(bool running)
     }
     s.lastPump = time;
     if (!s.hello) s.hello = s.Send(*s.active, {{"kind", "hello"}, {"enabled", true}, {"switching", s.allowSwitching},
-        {"directRetry", true}, {"pairedQuality", true}});
+        {"directRetry", true}, {"pairedQuality", true}, {"manualSwitch", s.manualConfirmation}});
     s.Drain(s.primary, time);
     s.Drain(s.standby, time);
     if (s.planned) s.Drain(*s.planned, time);
@@ -738,6 +818,10 @@ void NativeAdaptiveRoute::Pump(bool running)
         s.ProbeStartup(s.primary, time);
         if (s.PollPlannedSignals(time)) s.ProbeStartup(*s.planned, time);
         return;
+    }
+    if (s.startupPrimaryUntil && s.active != &s.primary && !s.Ready(s.primary) && time >= s.startupPrimaryUntil) {
+        s.primary.peer->Close();
+        s.startupPrimaryUntil = 0;
     }
     if (!s.supported || s.disabled) return;
     if (s.Switching() && s.Controller() && !s.backup && !s.planned && s.primary.peer->IsOpen() && time >= s.retryAt) {
@@ -804,6 +888,26 @@ bool NativeAdaptiveRoute::ActiveUsesSwarm() const
     return path.surveySerial ? path.route.rfind("swarm-", 0) == 0 : state_->swarm;
 }
 std::uint32_t NativeAdaptiveRoute::ActivePathEpoch() const { return state_->epoch; }
+RouteSwitchStatus NativeAdaptiveRoute::SwitchStatus() const
+{
+    auto &s = *state_;
+    if (!s.manualSwitch) return {};
+    if (s.proposal || (s.offered && s.offered->confirmed && s.OfferReady(now()))) return {nullptr, nullptr, -1, -1, true};
+    if (!s.OfferReady(now())) return {};
+    return {s.RouteLabel(*s.active), s.RouteLabel(*s.offered->path), s.offered->fromMs, s.offered->toMs, false};
+}
+
+bool NativeAdaptiveRoute::ConfirmOffer()
+{
+    auto &s = *state_;
+    const auto time = now();
+    if (!s.OfferReady(time) || s.proposal || s.offered->confirmed) return false;
+    if (s.Controller()) return s.BeginHandoff(*s.offered->path, time, s.offered->ticket);
+    auto &offer = *s.offered;
+    offer.confirmed = s.Send(*offer.path, {{"kind", "route-confirm"}, {"ticket", offer.ticket},
+        {"epoch", s.epoch}, {"generation", s.WireGeneration(*offer.path)}});
+    return offer.confirmed;
+}
 void NativeAdaptiveRoute::ConfigureSurvey(std::string initialRoute, bool initialSurvey, SurveySignal send, RetirePeer retire)
 {
     state_->initialRelayRoute = std::move(initialRoute);
@@ -812,7 +916,7 @@ void NativeAdaptiveRoute::ConfigureSurvey(std::string initialRoute, bool initial
     state_->retirePeer = std::move(retire);
 }
 void NativeAdaptiveRoute::BeginStartup() { state_->startup = true; }
-bool NativeAdaptiveRoute::SelectStartup(std::uint32_t serial)
+bool NativeAdaptiveRoute::SelectStartup(std::uint32_t serial, bool keepPrimary)
 {
     auto &s = *state_;
     auto *path = serial ? s.planned.get() : &s.primary;
@@ -822,8 +926,8 @@ bool NativeAdaptiveRoute::SelectStartup(std::uint32_t serial)
     if (serial) {
         path->measuring = false;
         s.initialSurvey = false;
-        s.initialRelayRoute = "turn";
         s.hello = false;
+        if (keepPrimary) s.startupPrimaryUntil = now() + PrimaryStandbyConnectMs;
     } else s.Retire(s.planned);
     path->samples.clear();
     return true;

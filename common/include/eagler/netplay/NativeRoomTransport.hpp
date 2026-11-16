@@ -5,12 +5,21 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace rtc { class WebSocket; }
 
 namespace Netplay
 {
 std::unique_ptr<rtc::WebSocket> OpenRoomWebSocket(const std::string &url);
+
+struct RouteSwitchStatus {
+    const char *from = nullptr;
+    const char *to = nullptr;
+    int fromMs = -1;
+    int toMs = -1;
+    bool switching = false;
+};
 
 class NativeRoomTransport final : public PeerTransport
 {
@@ -22,6 +31,8 @@ public:
     // signaling and teardown. Pump adopts the ready route on the game thread.
     void Connect(const std::string &signalUrl, std::string tag, std::uint8_t localPlayer,
                  std::uint8_t playerCount, bool preferTurn = false);
+    void Connect(const std::string &signalUrl, std::string tag, std::uint8_t localPlayer,
+                 std::uint8_t playerCount, bool preferTurn, std::string_view initialRoute);
     void Close();
     void Pump();
     void SetAdaptiveRouteActive(bool active);
@@ -34,6 +45,8 @@ public:
         bool probesUnanswered = false;
     };
     Link LinkStatus() const;
+    RouteSwitchStatus SwitchStatus() const;
+    bool ConfirmRouteSwitch();
     bool ReportMatch(std::uint32_t start, std::uint32_t frames, unsigned winner, unsigned first, unsigned second);
     const std::string &LastError() const;
 

@@ -1,6 +1,6 @@
 const TurnDelayMs = 500;
 const ComparisonGraceMs = 350;
-const DegradedRouteMs = 3000;
+const TurnGraceBeforeSwarmMs = 1500;
 const CommitTimeoutMs = 2000;
 const FastDirectRttMs = 85;
 
@@ -18,9 +18,9 @@ function quality(reports) {
 
 // The original WebRTC connection can carry either direct/NAT4 or Swarm.
 // The second connection measures first-party TURN independently before frame zero.
-export function createRtcStartup({timeout, openTurn, select, complete, fail, now = () => performance.now(), wait = setTimeout, cancel = clearTimeout}) {
+export function createRtcStartup({timeout, primaryMayUseSwarm, openTurn, select, complete, fail, now = () => performance.now(), wait = setTimeout, cancel = clearTimeout}) {
   const started = now(), lanes = [new Map(), new Map()], acknowledgements = new Set();
-  let chosen, timer, turnOpen = false, firstSuitable, closed = false;
+  let chosen, timer, turnOpenedAt, firstSuitable, closed = false;
   function stop() {
     closed = true;
     cancel(timer);
@@ -41,39 +41,42 @@ export function createRtcStartup({timeout, openTurn, select, complete, fail, now
     if (primary?.direct && primary.suitable && primary.rtt <= FastDirectRttMs &&
         (!turn?.suitable || turn.score + 15 >= primary.score))
       return choose(0);
+    const swarmSuitable = primaryMayUseSwarm && primary?.suitable && !primary.direct;
     if (primary?.suitable && turn?.suitable)
-      return choose(turn.score + 15 < primary.score ? 1 : 0);
+      return choose(swarmSuitable || turn.score + 15 < primary.score ? 1 : 0);
     if ((primary?.suitable || turn?.suitable) && firstSuitable === undefined) firstSuitable = elapsed;
     const firstFailed = [...lanes[0].values()].includes(null);
-    if (!turnOpen && (elapsed >= TurnDelayMs || firstFailed)) {
-      turnOpen = true;
+    if (turnOpenedAt === undefined && (elapsed >= TurnDelayMs || firstFailed)) {
+      turnOpenedAt = elapsed;
       openTurn();
     }
     const bothReported = lanes.every(lane => lane.size === 2 || [...lane.values()].includes(null));
-    if (firstSuitable !== undefined && (bothReported || elapsed >= firstSuitable + ComparisonGraceMs))
+    // A healthy Swarm path waits briefly for TURN to finish its end-to-end probes.
+    const comparisonDeadline = firstSuitable === undefined ? Infinity : swarmSuitable
+      ? (turnOpenedAt ?? TurnDelayMs) + TurnGraceBeforeSwarmMs
+      : firstSuitable + ComparisonGraceMs;
+    if (firstSuitable !== undefined && (bothReported || elapsed >= Math.min(comparisonDeadline, timeout)))
       return choose(primary?.suitable ? 0 : 1);
-    if ((primary || turn) && (bothReported || elapsed >= DegradedRouteMs))
+    if ((primary || turn) && (bothReported || elapsed >= timeout))
       return choose(!primary || turn && turn.score < primary.score ? 1 : 0);
     if (elapsed >= timeout || bothReported) {
       stop();
       fail();
       return;
     }
-    const next = Math.min(timeout, !turnOpen ? TurnDelayMs : Infinity,
-      firstSuitable !== undefined ? firstSuitable + ComparisonGraceMs : Infinity,
-      elapsed < DegradedRouteMs && (primary || turn) ? DegradedRouteMs : Infinity);
+    const next = Math.min(timeout, turnOpenedAt === undefined ? TurnDelayMs : Infinity, comparisonDeadline);
     timer = wait(check, Math.max(1, next - elapsed));
     timer?.unref?.();
   }
   return {
     start: check,
     report(player, serial, report) {
-      if (closed || chosen !== undefined || (serial !== 0 && (serial !== 1 || !turnOpen)) ||
+      if (closed || chosen !== undefined || (serial !== 0 && (serial !== 1 || turnOpenedAt === undefined)) ||
           lanes[serial].has(player)) return;
       lanes[serial].set(player, report);
       check();
     },
-    acceptsTurnSignal: () => turnOpen && !closed,
+    acceptsTurnSignal: () => turnOpenedAt !== undefined && !closed,
     acknowledge(player, serial) {
       if (closed || serial !== chosen || chosen === undefined) return;
       acknowledgements.add(player);

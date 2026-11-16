@@ -98,6 +98,7 @@ export interface MultiplayerRoomState {
   spectatorCount?: number;
   spectatorTimeline?: boolean;
   swarmSelected?: boolean;
+  startupRoutes?: NormalizedMultiplayerLobbySnapshot['startupRoutes'];
   synced?: boolean;
   [key: string]: unknown;
 }

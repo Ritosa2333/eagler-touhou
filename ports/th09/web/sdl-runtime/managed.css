@@ -5,3 +5,10 @@
 #spectatorWaiting p{margin:0 0 20px;color:#d4d4d8}
 #spectatorWaiting>div{display:flex;justify-content:flex-end;gap:10px}
 #spectatorWaiting button{min-height:44px;padding:8px 14px;border:1px solid #ffffff26;border-radius:8px;background:#ffffff12;color:inherit;font:inherit;touch-action:manipulation}
+#routeSwitch{position:fixed;right:calc(max(0px,(100vw - 133.333333vh)/2,env(safe-area-inset-right)) + 12px);bottom:calc(max(0px,(100vh - 75vw)/2,env(safe-area-inset-bottom)) + 30px);display:flex;align-items:center;gap:7px;color:#f2f5f0eb;font:12px/1.3 system-ui;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px #000;white-space:nowrap;pointer-events:none}
+#routeSwitch[hidden]{display:none}
+#routeSwitchButton{pointer-events:auto;touch-action:manipulation;margin:0;padding:2px 6px;background:#171514dd;color:inherit;font:inherit}
+#startupRoutes{position:fixed;right:calc(max(0px,(100vw - 133.333333vh)/2,env(safe-area-inset-right)) + 12px);bottom:calc(max(0px,(100vh - 75vw)/2,env(safe-area-inset-bottom)) + 12px);font:12px/1.3 system-ui;background:#171514df;padding:4px 7px;border:1px solid #65544e;border-radius:6px}
+#startupRoutes caption{caption-side:top;text-align:left;color:#f2f5f0;text-shadow:0 1px 2px #000}
+#startupRoutes button{min-width:96px;margin:2px 0;padding:2px 6px;text-align:left}
+#startupRoutes button[aria-pressed=true]{background:#4a5749}

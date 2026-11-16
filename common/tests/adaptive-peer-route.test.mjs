@@ -7,7 +7,7 @@ function fixture(config = {}) {
     let time = 1, id = 0, nextPc = 0;
     const tasks = new Map(), pcs = new Map(), deliveries = [[], []], selected = [[], []], errors = [];
     const reports = [[], []];
-    let blockNetwork = false;
+    let blockNetwork = false, dropTurn = false;
     let dropPrimary = false, dropStandbyPongs = false, holdControl = false, visible = [true, true], running = true;
     let dropCommit = false, droppedCommit = 0;
     const held = [];
@@ -18,7 +18,7 @@ function fixture(config = {}) {
         constructor(label, path, seat) { this.label = label; this.path = path; this.seat = seat; }
         send(data) {
             if (this.readyState !== 'open') throw Error('closed');
-            if (blockNetwork) return;
+            if (blockNetwork || dropTurn && this.path === 'turn') return;
             const payload = typeof data === 'string' ? data : data.slice().buffer;
             if (dropCommit && typeof data === 'string' && data.startsWith('etr1:') &&
                 JSON.parse(data.slice(5)).kind === 'commit' && droppedCommit++ === 0) return;
@@ -27,7 +27,7 @@ function fixture(config = {}) {
                 typeof data === 'string' && JSON.parse(data.slice(5)).kind === 'pong') return;
             const deliver = () => { if (this.other.readyState === 'open') this.other.onmessage?.({data: payload}); };
             if (this.path === 'primary' && holdControl && typeof data !== 'string' && this.label === 'control') held.push(deliver);
-            else later(deliver, this.path === 'primary' ? (config.primaryDelay ?? 20) : 20);
+            else later(deliver, this.path === 'primary' ? (config.primaryDelay ?? 20) : (config.turnDelay ?? 20));
         }
         close() { this.readyState = 'closed'; this.onclose?.(); }
     }
@@ -72,6 +72,7 @@ function fixture(config = {}) {
     const routes = paths.map((primary, seat) => createAdaptivePeerRoute({
         primary, localPlayer: seat, peerId: 1 - seat, tag: 'test', enabled: config.enabled?.[seat] ?? true,
         directRetry: config.directRetry?.[seat],
+        manualSwitch: config.manualSwitch === true,
         surveyEnabled: () => config.survey === true,
         surveyPending: () => config.surveyPending === true,
         initialRelayRoute: () => 'swarm-0',
@@ -92,13 +93,17 @@ function fixture(config = {}) {
         for (const kind of ['input', 'control']) {
             const dc = path[kind + 'Dc'];
             dc.onmessage = event => routes[seat].receivePrimary(kind, event.data);
-            dc.readyState = 'open';
+            if (!config.startup) dc.readyState = 'open';
         }
-        routes[seat].opened('control'); routes[seat].start();
+        if (config.startup) routes[seat].beginStartup();
+        else {routes[seat].opened('control'); routes[seat].start();}
     });
     const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
     return {
         routes, paths, deliveries, selected, errors, tasks, pcs, later, reports,
+        openPrimary() {
+            for (const path of paths) path.controlDc.readyState = path.inputDc.readyState = 'open';
+        },
         block(value = true) { blockNetwork = value; },
         drop(value = true) { dropPrimary = value; },
         dropStandbyPongs(value = true) { dropStandbyPongs = value; },
@@ -118,8 +123,74 @@ function fixture(config = {}) {
             time = end; await flush();
         },
         jump(ms) { time += ms; },
+        dropTurn(value) { dropTurn = value; },
         close() { for (const route of routes) route.close(); },
     };
+}
+
+for (const choice of ['confirm','outage','expire']) {
+    const f = fixture({startup:true, manualSwitch:true, primaryDelay:8, turnDelay:50});
+    await Promise.all(f.routes.map(route=>route.relayStandby({type:'rtc-standby',serial:1,phase:'measure',route:'turn',
+        iceServers:[{urls:'turn:fixture:3478'}]})));
+    await f.advance(1000);
+    assert(f.routes.every(route=>route.selectStartup(1,true)));
+    assert(f.paths.every(path=>!path.closed));
+    if (choice==='expire') {
+        await f.advance(12300);
+        assert(f.paths.every(path=>path.closed));
+        assert.deepEqual(f.selected,[['turn'],['turn']]);
+    } else {
+        await f.advance(2800);
+        f.openPrimary();
+        await f.advance(4900);
+        const expected={from:'TURN',to:'直连',fromMs:100,toMs:16,switching:false};
+        assert.deepEqual(f.routes.map(route=>route.routeSwitchStatus()),[expected,expected]);
+        assert.deepEqual(f.selected,[['turn'],['turn']]);
+        assert(f.routes[0].send(new Uint8Array([40]),true));
+        await f.advance(200);
+        assert.deepEqual(f.deliveries[1],[[40]]);
+        if (choice==='confirm') {
+            assert(f.routes[1].confirmOffer());
+        } else {
+            f.dropTurn(true);
+            await f.advance(650);
+            assert.deepEqual(f.selected,[['turn'],['turn']]);
+            f.dropTurn(false);
+            await f.advance(500);
+            assert.deepEqual(f.selected,[['turn'],['turn']]);
+            f.dropTurn(true);
+            await f.advance(1450);
+        }
+        await f.advance(200);
+        assert.deepEqual(f.selected,[['turn','primary'],['turn','primary']]);
+        assert(f.routes[0].send(new Uint8Array([41]),true));
+        await f.advance(200);
+        assert.deepEqual(f.deliveries[1],[[40],[41]]);
+    }
+    assert.deepEqual(f.errors,[]);
+    f.close();
+}
+
+for (const choice of [0, 1, 'outage']) {
+    const f = fixture({primaryPath:'turn',primaryDelay:105,directRetry:[false,false],survey:true,manualSwitch:true});
+    await f.advance(2700);
+    await Promise.all(f.routes.map(route=>route.relayStandby({type:'rtc-standby',serial:3,phase:'select',route:'turn',
+        iceServers:[{urls:'turn:fixture:3478'}]})));
+    await f.advance(4200);
+    const expected={from:'Swarm',to:'TURN',fromMs:210,toMs:40,switching:false};
+    assert.deepEqual(f.routes.map(route=>route.routeSwitchStatus()),[expected,expected]);
+    assert.deepEqual(f.selected,[[],[]], 'quality alone leaves both players on the existing connection');
+    assert(f.routes[0].send(new Uint8Array([88]),true));
+    await f.advance(500);
+    assert.deepEqual(f.deliveries[1],[[88]], 'the match advances while the decision is pending');
+    if (choice==='outage') {
+        f.drop();
+        assert(f.routes[1].recover());
+    } else assert(f.routes[choice].confirmOffer());
+    await f.advance(200);
+    assert.deepEqual(f.selected,[['turn'],['turn']], 'a confirmed or emergency switch uses the already prepared path');
+    assert.deepEqual(f.routes.map(route=>route.routeSwitchStatus()),[null,null]);
+    f.close();
 }
 
 {

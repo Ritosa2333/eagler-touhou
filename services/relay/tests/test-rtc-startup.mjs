@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {createRtcStartup} from '../src/rtc-startup.mjs';
 
-function fixture() {
+function fixture(primaryMayUseSwarm = true) {
   let time = 0;
   const timers = new Map(), events = [];
   const startup = createRtcStartup({
-    timeout:7500, now:() => time,
+    timeout:7500, primaryMayUseSwarm, now:() => time,
     wait(handler, ms) {const id = Symbol(); timers.set(id, {at:time + ms, handler}); return id;},
     cancel:id => timers.delete(id),
     openTurn:() => events.push(['turn',time]),
@@ -68,27 +68,62 @@ test('first-party TURN wins when either endpoint reports a high Swarm RTT', () =
   assert.deepEqual(f.events.at(-1),['select',1,960]);
 });
 
-test('a healthy Swarm can start promptly while TURN is still gathering', () => {
+test('first-party TURN has priority over healthy Swarm when both qualify', () => {
   const f=fixture();
   f.at(750);
   f.reportBoth(0,45);
-  f.at(1099);
+  f.at(1350);
   assert.deepEqual(f.events,[['turn',500]]);
+  f.reportBoth(1,70);
+  assert.deepEqual(f.events.at(-1),['select',1,1350]);
+});
+
+test('Swarm starts if TURN remains unconfirmed after its probe window', () => {
+  const f=fixture();
+  f.at(750);
+  f.reportBoth(0,45);
+  f.at(1999);
+  assert.deepEqual(f.events,[['turn',500]]);
+  f.at(2000);
+  assert.deepEqual(f.events.at(-1),['select',0,2000]);
+});
+
+test('healthy Swarm starts immediately when TURN probes show high latency', () => {
+  const f=fixture();
+  f.at(750);
+  f.reportBoth(0,45);
+  f.at(960);
+  f.reportBoth(1,300);
+  assert.deepEqual(f.events.at(-1),['select',0,960]);
+});
+
+test('ordinary primary TURN does not wait through the Swarm fallback window', () => {
+  const f=fixture(false);
+  f.at(750);
+  f.reportBoth(0,45);
   f.at(1100);
   assert.deepEqual(f.events.at(-1),['select',0,1100]);
 });
 
-test('degraded paths cannot win prematurely and an unacknowledged route cannot release input', () => {
+test('a degraded Swarm keeps waiting for first-party TURN after three seconds', () => {
   const f=fixture();
   f.at(1250);
-  f.reportBoth(0,265);
-  f.at(2999);
+  f.reportBoth(0,300);
+  f.at(3750);
   assert.deepEqual(f.events,[['turn',500]]);
-  f.at(3000);
-  assert.deepEqual(f.events.at(-1),['select',0,3000]);
+  f.reportBoth(1,62);
+  assert.deepEqual(f.events.at(-1),['select',1,3750]);
+});
+
+test('use the only proven route at the deadline and require both acknowledgements', () => {
+  const f=fixture();
+  f.at(1250);
+  f.reportBoth(0,300);
+  f.at(7500);
+  assert.deepEqual(f.events.at(-1),['select',0,7500]);
   f.startup.acknowledge(0,0);
-  f.at(5000);
-  assert.deepEqual(f.events.at(-1),['failed',5000]);
+  f.at(9500);
+  assert.deepEqual(f.events.at(-1),['failed',9500]);
 });
 
 test('all dead paths time out and zero-return paths are never selected', () => {

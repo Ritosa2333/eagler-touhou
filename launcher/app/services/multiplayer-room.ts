@@ -17,6 +17,7 @@ import {multiplayerDisplayInitial, type MultiplayerIdentityStore} from '../../sr
 import {
   normalizeMultiplayerLobbySnapshot,
   type MultiplayerResourceProgress,
+  type StartupRoute,
 } from '../../src/launcher/multiplayer-lobby-snapshot.mts';
 import {
   normalizePreferredLoadout,
@@ -509,6 +510,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       timing: normalized.timing ?? null,
       runtimeGeneration: normalized.runtimeGeneration,
       swarmSelected: normalized.swarmSelected,
+      startupRoutes: normalized.startupRoutes,
       adonisMode: normalized.adonisMode ?? 0,
     });
     state.seat = normalized.localSeat;
@@ -1357,7 +1359,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           ? { challengeMode: room.challengeMode === true }
           : {}),
         iceServers: ports.settings().iceServers,
-        preferTurn: state.preferTurn,
+        preferTurn: !room.startupRoutes?.length && state.preferTurn,
         loadouts,
         // Relay-decided runs may only fall back to the WebSocket gameplay
         // relay when this deployment advertised the capability in its lobby
@@ -1711,6 +1713,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         send({type: 'switch-product', product: nextProduct});
     },
     setRoomSettings,
+    setStartupRoute(route: StartupRoute) {
+      if (!room?.synced || !state.connected || room.phase !== 'lobby' || state.seat == null ||
+          state.spectatorRequested || state.launchBusy || state.checkBusy || !room.startupRoutes?.includes(route)) return;
+      send({type:'startup-route', route});
+    },
     setPreferTurn(enabled: boolean) {
       if (!room?.synced || !state.connected || room.phase !== 'lobby' || state.seat == null ||
           state.spectatorRequested || state.launchBusy || state.checkBusy) return;

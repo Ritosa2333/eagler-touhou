@@ -26,9 +26,15 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
         relay.searchParams.set('players', String(playerCount));
         const signalUrl = new URL(relay.href);
         signalUrl.searchParams.set('signal', '1');
+        const requestedRoute = Module.eaglerOptions?.netplayRouteChoice;
+        const choosesRoute = playerCount === 2 && ['auto','direct','swarm','turn'].includes(requestedRoute);
+        if (choosesRoute) signalUrl.searchParams.set('rtcRoute',requestedRoute);
+        const preferTurn = !choosesRoute && Module.eaglerOptions?.netplayPreferTurn === true;
         if (playerCount === 2 && typeof RTCPeerConnection === 'function' &&
-            Module.eaglerOptions?.netplayPreferTurn !== true && Module.eaglerOptions?.netplayAdaptiveTurn !== false)
+            !preferTurn && Module.eaglerOptions?.netplayAdaptiveTurn !== false) {
             signalUrl.searchParams.set('rtcStartup', '1');
+            signalUrl.searchParams.set('rtcKeepPrimary', '1');
+        }
 
         // BEGIN generated adaptive-peer-route
         // Shared game transport policy. Embedded into BrowserPeerTransport by
@@ -52,8 +58,10 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             let epoch = 0, proposal = null, verification = null, switchedAt = -Infinity;
             let recoveryUntil = 0, recoveryProbe = 0, lastNeed = -Infinity, verifyAfter = 0;
             let ackPending = false;
-            let startup = false;
+            let manualSwitch = false, offered = null;
+            let startup = false, startupPrimaryUntil = 0;
             const StartupSamples = 6, StartupInterval = 50, StartupTimeout = 1000;
+            const PrimaryStandbyConnectMs = 12000, WarmStandbyStallMs = 1250;
             const policy = Object.freeze({
                 windowMs: 6000, probeTimeoutMs: 1000, primaryIntervalMs: 250,
                 standbyIntervalMs: 10000, verificationIntervalMs: 50,
@@ -67,6 +75,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 path.lastProbe = -Infinity;
                 path.lastSuccessfulProbe = 0;
                 path.lastRoundTripAt = -Infinity;
+                path.lastTrafficAt = -Infinity;
                 path.baseline = Infinity;
                 return path;
             };
@@ -85,6 +94,14 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             const surveyEnabled = () => options.surveyEnabled?.() === true && options.enabled && switching();
             const activeRoute = () => active.surveySerial ? active.path :
                 active.path === 'direct' ? 'direct' : options.initialRelayRoute?.() || 'turn';
+            const offerRoute = path => {
+                const route = path === active ? activeRoute() : path === primary ?
+                    (path.path === 'direct' ? 'direct' : options.initialRelayRoute?.() || 'turn') :
+                    path === backup && path.path === 'turn' ? options.initialRelayRoute?.() || 'turn' : path.path;
+                return route?.startsWith('swarm') ? 'Swarm' : route === 'direct' ? '直连' : 'TURN';
+            };
+            const offerReady = () => !!offered && offered.path !== active && ready(offered.path) && eligible() &&
+                now() - offered.at <= 10000 && now() - offered.path.lastRoundTripAt <= 3000;
             const diagnostic = reason => options.changed?.({
                 selected: pathName(active), generation, epoch, reason,
                 verifying: !!verification, standbyReady: ready(backup),
@@ -156,6 +173,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 try { path.pc.close(); } catch {}
                 if (previous === path) previous = null;
                 if (verification?.target === path) verification = null;
+                if (offered?.path === path) offered = null;
             }
             function backupServers(route) {
                 const protocol = route === 'direct' ? /^stuns?:/i : /^turns?:/i;
@@ -331,16 +349,38 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     options.selected(path);
                 }
                 epoch = id;
+                offered = null;
                 recoveryUntil = 0;
                 replayQueue = [...pendingControl.keys()];
                 replay(path);
                 diagnostic('selected');
                 return true;
             }
+            function beginHandoff(path, offerTicket) {
+                if (proposal || path === active || !ready(path)) return false;
+                const id = epoch + 1;
+                if (!sendMessage(path, {kind:'switch', path:pathName(path), epoch:id, generation:wireGeneration(path),
+                    ...(offerTicket && {offerTicket})})) return false;
+                proposal = {id, path, at:now()};
+                offered = null;
+                return true;
+            }
+            function confirmOffer() {
+                if (!offerReady() || proposal || offered.confirmed) return false;
+                if (controller) return beginHandoff(offered.path, offered.ticket);
+                if (!sendMessage(offered.path, {kind:'route-confirm', ticket:offered.ticket, epoch, generation:wireGeneration(offered.path)})) return false;
+                offered.confirmed = true;
+                return true;
+            }
             function verify(force = false, target = otherPath()) {
                 if (!supported || !switching() || !eligible()) return;
+                if (offerReady()) {
+                    if (force && controller) beginHandoff(offered.path);
+                    return;
+                }
                 if (!ready(target)) return;
-                if (!force && (now() < verifyAfter || (!target.surveySerial && now() - switchedAt < policy.cooldownMs))) return;
+                const startupStandby = target === primary && startupPrimaryUntil && !epoch;
+                if (!force && (now() < verifyAfter || (!startupStandby && !target.surveySerial && now() - switchedAt < policy.cooldownMs))) return;
                 if (!verification) {
                     const ticket = pairedQuality && controller ? ++verificationTicket : 0;
                     verification = {since: now(), force, ticket, target};
@@ -396,6 +436,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                         peerSwitching = m.switching !== false;
                         directRetry = supported && m.directRetry === true && options.directRetry !== false;
                         pairedQuality = supported && m.pairedQuality === true && options.pairedQuality !== false;
+                        manualSwitch = pairedQuality && options.manualSwitch === true && m.manualSwitch === true;
                         if (!helloSent) hello();
                         ensureBackup().catch(() => {});
                     } else if (supported && switching() && ['description', 'candidate'].includes(m.kind) && path === primary && kind === 'control') {
@@ -432,6 +473,14 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                             const present = readQuality(m.present), candidate = readQuality(m.candidate);
                             if (present && candidate?.count >= policy.minimumSamples) verification.remote = {present, candidate};
                         }
+                        else if (m.kind === 'route-offer' && manualSwitch && !controller && path !== active && ready(path) &&
+                            m.ticket === verificationTicket && m.epoch === epoch && m.generation === wireGeneration(path) &&
+                            Number.isInteger(m.toMs) && m.toMs >= 0 && m.toMs <= 10000 &&
+                            (m.fromMs === null || Number.isInteger(m.fromMs) && m.fromMs >= 0 && m.fromMs <= 10000)) {
+                            offered = {path, ticket:m.ticket, fromMs:m.fromMs, toMs:m.toMs, at:now()};
+                            verification = null;
+                        } else if (m.kind === 'route-confirm' && manualSwitch && controller && offerReady() && path === offered.path &&
+                            m.ticket === offered.ticket && m.epoch === epoch && m.generation === wireGeneration(path)) beginHandoff(path, offered.ticket);
                         else if (m.kind === 'need' && controller) verify(true);
                         else if (m.kind === 'ack' && Number.isSafeInteger(m.sequence) && m.sequence >= 0 && m.sequence <= sequence) {
                             for (const [id, packet] of pendingControl) {
@@ -441,7 +490,9 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                         } else if (m.kind === 'switch' && switching() && !controller && Number.isSafeInteger(m.epoch) && m.epoch === epoch + 1 &&
                             m.generation === wireGeneration(path) && m.path === pathName(path)) {
                             if (!ready(path) || !eligible() || (proposal && proposal.path !== path)) return true;
+                            if (m.offerTicket !== undefined && (!offerReady() || offered.path !== path || m.offerTicket !== offered.ticket)) return true;
                             proposal = {id: m.epoch, path, at: now()};
+                            offered = null;
                             sendMessage(path, {kind: 'accept', epoch: m.epoch, generation: wireGeneration(path)});
                         } else if (m.kind === 'accept' && controller && proposal && m.epoch === proposal.id &&
                             m.generation === wireGeneration(path) && path === proposal.path && ready(path)) {
@@ -466,6 +517,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     return true;
                 }
                 if (path.measuring) return true;
+                if (data?.byteLength) path.lastTrafficAt = now();
                 if (kind === 'control' && supported) {
                     const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) :
                         ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
@@ -492,6 +544,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 return true;
             }
             function suspend() {
+                offered = null;
                 quietUntil = now() + 2000;
                 if (recoveryUntil) {
                     // Hidden pages and scheduler gaps cannot spend the active recovery
@@ -510,7 +563,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             function hello() {
                 if (!open(active.controlDc) || helloSent) return;
                 helloSent = sendMessage(active, {kind: 'hello', enabled: !!options.enabled, switching: options.allowSwitching !== false,
-                    directRetry: options.directRetry !== false, pairedQuality: options.pairedQuality !== false});
+                    directRetry: options.directRetry !== false, pairedQuality: options.pairedQuality !== false,
+                    ...(options.manualSwitch && {manualSwitch:true})});
             }
             function probeStartup(path, time) {
                 if (!ready(path) || path.reported) return;
@@ -542,7 +596,18 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     suspend();
                 }
                 lastTick = time;
+                if (startupPrimaryUntil && active !== primary && !ready(primary) && time >= startupPrimaryUntil) {
+                    closePath(primary);
+                    startupPrimaryUntil = 0;
+                }
+                if (startupPrimaryUntil && ready(primary) && !primary.pathChecking && !primary.path) {
+                    primary.pathChecking = true;
+                    Promise.resolve(options.detectDirect?.(primary.pc)).then(direct => {
+                        primary.path = direct ? 'direct' : 'turn';
+                    }).catch(() => {}).finally(() => {primary.pathChecking = false;});
+                }
                 if (supported && time >= quietUntil && eligible()) {
+                    if (offered && !offerReady()) offered = null;
                     if (ackPending) ackPending = !sendMessage(active, {kind: 'ack', sequence: receivedSequence});
                     replay(active);
                     ensureBackup().catch(() => {});
@@ -553,7 +618,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     for (const path of paths()) {
                         if (!ready(path) || path.measuring && path.reported) continue;
                         const interval = path.measuring || verification ? policy.verificationIntervalMs :
-                            path === active ? policy.primaryIntervalMs : policy.standbyIntervalMs;
+                            path === active || path === offered?.path || (path === primary && startupPrimaryUntil && !epoch)
+                                ? policy.primaryIntervalMs : policy.standbyIntervalMs;
                         path.samples = path.samples.filter(s => time - s.at <= policy.windowMs).slice(-128);
                         if (time - path.lastProbe < interval) continue;
                         const id = ++path.probeSequence;
@@ -564,10 +630,16 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                         path.lastProbe = time;
                     }
                     const current = stats(active, time);
+                    if (offered && !offered.confirmed && current.count >= policy.minimumSamples &&
+                        current.score <= offered.toMs * 1.1 + 5) offered = null;
+                    // A recently tested spare can cover silence before the ICE watchdog runs.
+                    if (!proposal && offerReady() && time - offered.path.lastRoundTripAt <= policy.probeTimeoutMs &&
+                        time - Math.max(switchedAt, quietUntil, active.lastRoundTripAt, active.lastTrafficAt) >= WarmStandbyStallMs)
+                        recover();
                     const route = activeRoute();
                     const initialSurvey = standbySerial === 0 && options.initialSwarmSurvey?.() === true && route !== 'direct';
                     if (surveyEnabled() && pairedQuality && current.count >= policy.minimumSamples &&
-                        (current.p95 > 150 || current.loss > .05 || initialSurvey) && time - lastSlowReport >= 5000) {
+                        (!offered || recoveryUntil) && (current.p95 > 150 || current.loss > .05 || initialSurvey) && time - lastSlowReport >= 5000) {
                         options.surveySignal?.({type: 'rtc-route-slow', route, quality: surveyQuality(stats(active, time, time - policy.windowMs, 40))});
                         lastSlowReport = time;
                     }
@@ -578,6 +650,9 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     }
                     const selectPlanned = controller && planned && !planned.measuring && planned !== active && ready(planned);
                     if (selectPlanned && !verification && !proposal) verify(false, planned);
+                    if (controller && startupPrimaryUntil && !epoch && !primary.compared && !verification && !proposal &&
+                        current.count >= policy.minimumSamples && ready(primary))
+                        verify(false, primary);
                     if (controller && !planned?.measuring && !verification && !proposal && current.count >= policy.minimumSamples &&
                         ((active === primary && backup?.path === 'direct' && !backup.compared && ready(backup)) ||
                          (current.lost >= 3 && current.loss >= .1) ||
@@ -599,12 +674,19 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                                 const current = pairedQuality ? pairedScore(present, verification.remote.present) : present;
                                 if (candidate.received >= policy.minimumSamples && candidate.loss <= .05 &&
                                     (verification.force && !ready(active) || candidate.score * 1.1 + 5 < current.score)) {
-                                    proposal = {id: epoch + 1, path: next, at: time};
-                                    sendMessage(next, {kind: 'switch', path: pathName(next), epoch: proposal.id, generation: wireGeneration(next)});
+                                    if (!manualSwitch || verification.force) beginHandoff(next);
+                                    else {
+                                        const fromMs = Number.isFinite(current.p95) ? Math.ceil(current.p95) : null;
+                                        const toMs = Math.ceil(candidate.p95), ticket = verification.ticket;
+                                        if (sendMessage(next, {kind:'route-offer', ticket, epoch, generation:wireGeneration(next), fromMs, toMs})) {
+                                            offered = {path:next, ticket, fromMs, toMs, at:time};
+                                            verification = null;
+                                        }
+                                    }
                                 }
                             }
                         }
-                        if (time - verification.since > policy.verificationMs) { verification = null; verifyAfter = time + 10000; }
+                        if (verification && time - verification.since > policy.verificationMs) { verification = null; verifyAfter = time + 10000; }
                     }
                     if (proposal?.committed) {
                         if (time - proposal.at > 7000) options.failed('RTC route commit confirmation exhausted');
@@ -615,6 +697,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     } else if (controller && proposal && time - proposal.at > 3000) { proposal = null; verification = null; verifyAfter = time + 10000; }
                     if (recoveryUntil && time > recoveryUntil) { recoveryUntil = 0; options.failed('RTC route recovery exhausted'); }
                 }
+                options.onRouteStatus?.();
                 timer = later(tick, verification || measuring() ? policy.verificationIntervalMs : policy.primaryIntervalMs);
             }
             return {
@@ -626,7 +709,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                         timer = later(tick, 0);
                     }
                 },
-                selectStartup(serial) {
+                selectStartup(serial, keepPrimary = false) {
                     if (!startup) return false;
                     const path = serial === 0 ? primary : planned?.surveySerial === serial && planned;
                     if (!path || !select(path, 0)) return false;
@@ -638,7 +721,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     } else if (path !== primary) {
                         path.measuring = false;
                         helloSent = false;
-                        closePath(primary);
+                        if (keepPrimary) startupPrimaryUntil = now() + PrimaryStandbyConnectMs;
+                        else closePath(primary);
                     }
                     hello();
                     return true;
@@ -652,6 +736,13 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 opened(kind) { if (kind === 'control') hello(); },
                 receivePrimary(kind, data) { return receive(primary, kind, data); },
                 relayStandby,
+                routeSwitchStatus() {
+                    if (!manualSwitch) return null;
+                    if (proposal || offered?.confirmed && offerReady()) return {switching:true};
+                    return offerReady() ? {from:offerRoute(active), to:offerRoute(offered.path),
+                        fromMs:offered.fromMs, toMs:offered.toMs, switching:false} : null;
+                },
+                confirmOffer,
                 activeRelayMode() {
                     const route = activeRoute();
                     return route === 'direct' ? null : route === 'turn' ? 'turn' : 'swarm';
@@ -673,7 +764,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                             // browser temporarily refuses the send. Retry it before
                             // admitting another control; a standby may not exist yet.
                             replayQueue.push(id);
-                            recover();
+                            if (!manualSwitch) recover();
                         }
                         return true;
                     }
@@ -697,6 +788,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             };
         }
         // END generated adaptive-peer-route
+        const hudCanvas = tag !== 'th09' && playerCount === 2 && globalThis.document?.body
+            ? Module.canvas ?? document.querySelector('canvas') : null;
         const state = {
             relay: null, signal: null, peers: new Map(), received: [], receivedHead: 0, pendingSignals: [],
             receivedBytes: 0, pendingReceivedBytes: 0, pendingReceivedPackets: 0,
@@ -723,7 +816,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             nat4Observers: [],
             iceServers: Array.isArray(Module.eaglerOptions?.netplayIceServers)
                 ? Module.eaglerOptions.netplayIceServers : [],
-            iceTransportPolicy: Module.eaglerOptions?.netplayPreferTurn === true ? 'relay' : 'all',
+            iceTransportPolicy: preferTurn ? 'relay' : 'all',
             allowWebsocketFallback: Module.eaglerOptions?.netplayAllowWebsocketFallback === true,
             sendSignal(payload) {
                 if (this.rtcGeneration && ['signal', 'rtc-ready'].includes(payload.type))
@@ -745,6 +838,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 // Closed SCTP channels cannot be reopened by an ICE restart.
                 // Keep the world intact and report a connection-ended state.
                 this.disconnected = true;
+                this.routeSwitchHud?.remove();
                 clearTimeout(this.rtcReplaceTimer);
                 this.closePreparedRtc();
                 this.error = String(message || 'peer transport failed');
@@ -891,8 +985,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 const peer = this.peers.get(peerId);
                 if (!peer || (kind !== 'control' && kind !== 'input')) return;
                 const primary = peer.primary;
-                if (kind === 'control') peer.controlDc = dc;
-                else peer.inputDc = dc;
+                if (!primary || peer.pc === primary.pc) peer[kind + 'Dc'] = dc;
                 if (primary) primary[kind + 'Dc'] = dc;
                 dc.binaryType = 'arraybuffer';
                 // Events queued by a retired channel/peer cannot update its
@@ -953,6 +1046,52 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             canSurveySwarm() {
                 return this.adaptiveSwarm && this.playerCount === 2 && this.iceTransportPolicy !== 'relay' &&
                     Module.eaglerOptions?.netplayAdaptiveTurn !== false;
+            },
+            routeSwitchStatus() {
+                return this.route === 'rtc' && !this.failed && !this.disconnected &&
+                    this.peers.get(1 - this.localPlayer)?.adaptive?.routeSwitchStatus() || null;
+            },
+            refreshRouteSwitch() {
+                if (!hudCanvas) return;
+                const status = this.routeSwitchStatus();
+                if (!status || !hudCanvas.isConnected || document.hidden) {
+                    this.routeSwitchHud?.remove();
+                    this.routeSwitchHud = null;
+                    return;
+                }
+                const language = document.documentElement.lang;
+                const words = /^ja/i.test(language) ? ['切替','切替中…'] :
+                    /^en/i.test(language) ? ['Switch','Switching…'] : ['切换','正在切换…'];
+                if (!this.routeSwitchHud) {
+                    const row = document.createElement('div');
+                    const button = document.createElement('button');
+                    const label = document.createElement('span');
+                    row.style.cssText = 'position:fixed;z-index:10;display:flex;align-items:center;gap:7px;color:#f2f5f0;font:12px/1.3 system-ui;text-shadow:0 1px 2px #000;white-space:nowrap;pointer-events:none';
+                    button.type = 'button';
+                    button.style.cssText = 'pointer-events:auto;padding:2px 6px;background:#171514;color:inherit;font:inherit';
+                    button.textContent = words[0];
+                    button.addEventListener('mousedown', event => event.preventDefault());
+                    button.addEventListener('click', () => {
+                        this.confirmRouteSwitch();
+                        this.refreshRouteSwitch();
+                    });
+                    label.setAttribute('role','status');
+                    row.append(button,label);
+                    document.body.append(row);
+                    this.routeSwitchHud = row;
+                }
+                const bounds = hudCanvas.getBoundingClientRect();
+                const row = this.routeSwitchHud;
+                row.style.right = Math.max(12, innerWidth - bounds.right + 12) + 'px';
+                row.style.bottom = Math.max(30, innerHeight - bounds.bottom + 30) + 'px';
+                row.firstElementChild.hidden = status.switching;
+                const label = status.switching ? words[1] :
+                    status.from + ' ' + (status.fromMs ?? '--') + ' ms \u2192 ' + status.to + ' ' + status.toMs + ' ms';
+                if (row.lastElementChild.textContent !== label) row.lastElementChild.textContent = label;
+            },
+            confirmRouteSwitch() {
+                return this.route === 'rtc' && !this.failed && !this.disconnected &&
+                    this.peers.get(1 - this.localPlayer)?.adaptive?.confirmOffer() === true;
             },
             sendSurveySignal(payload) {
                 if ((this.route !== 'rtc' && !this.rtcStartupActive) || this.rtcReplacing || this.signal?.readyState !== WebSocket.OPEN) return false;
@@ -1159,14 +1298,16 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 if (this.preparedRtc || this.peers.size || this.playerCount !== 2 ||
                     typeof RTCPeerConnection !== 'function') return;
                 try {
-                    const pc = new RTCPeerConnection({iceServers: this.iceServers, iceTransportPolicy: this.iceTransportPolicy});
+                    const pc = new RTCPeerConnection({iceServers: this.iceServers,
+                        iceTransportPolicy: this.initialIceRelayOnly ? 'relay' : this.iceTransportPolicy});
                     this.preparedRtc = {pc, iceServers: this.iceServers};
                 } catch {}
             },
             async ensurePeer(peerId) {
                 if (peerId === this.localPlayer || this.peers.has(peerId) || typeof RTCPeerConnection !== 'function') return;
                 if (this.preparedRtc && this.preparedRtc.iceServers !== this.iceServers) this.closePreparedRtc();
-                const pc = this.preparedRtc?.pc ?? new RTCPeerConnection({iceServers: this.iceServers, iceTransportPolicy: this.iceTransportPolicy});
+                const pc = this.preparedRtc?.pc ?? new RTCPeerConnection({iceServers: this.iceServers,
+                    iceTransportPolicy: this.initialIceRelayOnly ? 'relay' : this.iceTransportPolicy});
                 this.preparedRtc = null;
                 const peer = {
                     pc,
@@ -1181,7 +1322,9 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     primary: peer.primary, localPlayer: this.localPlayer, peerId, tag: this.tag,
                     enabled: Module.eaglerOptions?.netplayAdaptiveTurn !== false,
                     allowSwitching: this.iceTransportPolicy !== 'relay',
-                    iceServers: () => this.iceServers,
+                    manualSwitch: tag === 'th09' || !!hudCanvas,
+                    onRouteStatus: hudCanvas ? () => this.refreshRouteSwitch() : undefined,
+                    iceServers: () => this.fallbackIceServers ?? this.iceServers,
                     surveyEnabled: () => this.canSurveySwarm(),
                     surveyPending: () => Date.now() < this.rtcSurveyUntil,
                     initialSwarmSurvey: () => this.initialSwarmSurvey,
@@ -1262,18 +1405,23 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 const peer = this.peers.get(peerId);
                 if (!peer) return;
                 const path = peer.primary || peer;
-                if (message.description) {
-                    await path.pc.setRemoteDescription(message.description);
-                    while (peer.pendingCandidates.length) await path.pc.addIceCandidate(peer.pendingCandidates.shift());
-                    if (message.description.type === 'offer') {
-                        const answer = await path.pc.createAnswer();
-                        await path.pc.setLocalDescription(answer);
-                        this.sendSignal({ type: 'signal', to: peerId, description: path.pc.localDescription });
+                if (path.pc !== peer.pc && path.pc.signalingState === 'closed') return;
+                try {
+                    if (message.description) {
+                        await path.pc.setRemoteDescription(message.description);
+                        while (peer.pendingCandidates.length) await path.pc.addIceCandidate(peer.pendingCandidates.shift());
+                        if (message.description.type === 'offer') {
+                            const answer = await path.pc.createAnswer();
+                            await path.pc.setLocalDescription(answer);
+                            this.sendSignal({ type: 'signal', to: peerId, description: path.pc.localDescription });
+                        }
                     }
-                }
-                if (message.candidate) {
-                    if (path.pc.remoteDescription) await path.pc.addIceCandidate(message.candidate);
-                    else peer.pendingCandidates.push(message.candidate);
+                    if (message.candidate) {
+                        if (path.pc.remoteDescription) await path.pc.addIceCandidate(message.candidate);
+                        else peer.pendingCandidates.push(message.candidate);
+                    }
+                } catch (error) {
+                    if (peer.pc === path.pc) throw error;
                 }
             },
             scheduleSignalReconnect() {
@@ -1319,6 +1467,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                         this.initialRelayRoute = message.turnMode !== 'swarm' ? 'turn' :
                             Number.isSafeInteger(message.initialSwarmWorker) ? 'swarm-' + message.initialSwarmWorker : 'swarm';
                         if (Array.isArray(message.iceServers)) this.iceServers = message.iceServers;
+                        this.initialIceRelayOnly = message.initialIceRelayOnly === true;
+                        this.fallbackIceServers = Array.isArray(message.fallbackIceServers) ? message.fallbackIceServers : null;
                         if (Array.isArray(message.nat4Observers)) this.nat4Observers = message.nat4Observers;
                         // The first seat may spend several seconds constructing its
                         // first peer connection. Warm it while the other seat is joining.
@@ -1339,11 +1489,11 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     } else if (message.type === 'rtc-startup-select') {
                         this.signalTasks = this.signalTasks.then(() => {
                             const peer = this.peers.get(1 - this.localPlayer);
-                            if (!this.rtcStartupActive || this.closed || !peer?.adaptive?.selectStartup(message.serial)) return;
+                            if (!this.rtcStartupActive || this.closed ||
+                                !peer?.adaptive?.selectStartup(message.serial, message.keepPrimary === true)) return;
                             this.rtcStartupActive = false;
                             this.rtcReadySent = true;
                             if (message.serial === 1) {
-                                this.initialRelayRoute = 'turn';
                                 this.initialSwarmSurvey = false;
                                 this.iceServers = [
                                     ...this.iceServers.filter(server => [].concat(server.urls).every(url => /^stuns?:/i.test(url))),
@@ -1448,6 +1598,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             },
             close() {
                 this.closed = true;
+                this.routeSwitchHud?.remove();
                 this.closePreparedRtc();
                 clearTimeout(this.rtcReplaceTimer);
                 if (this.signalReconnectTimer) clearTimeout(this.signalReconnectTimer);

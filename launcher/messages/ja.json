@@ -538,6 +538,8 @@
   "room_packetLossHint": "直接接続とTURNを個別に測定 | 約6秒",
   "room_preferTurn": "TURNを優先",
   "room_preferTurnHint": "この端末 | 次のゲームでTURNを使用",
+  "room_startupRoutes": "開始時の経路",
+  "room_startupAuto": "自動",
   "room_packetLossTest": "パケット損失を測定",
   "room_packetLossRunning": "測定中…",
   "room_packetLossOutgoing": "自分 → 相手",

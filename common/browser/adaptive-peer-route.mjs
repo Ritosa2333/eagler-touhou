@@ -19,8 +19,10 @@ export function createAdaptivePeerRoute(options) {
     let epoch = 0, proposal = null, verification = null, switchedAt = -Infinity;
     let recoveryUntil = 0, recoveryProbe = 0, lastNeed = -Infinity, verifyAfter = 0;
     let ackPending = false;
-    let startup = false;
+    let manualSwitch = false, offered = null;
+    let startup = false, startupPrimaryUntil = 0;
     const StartupSamples = 6, StartupInterval = 50, StartupTimeout = 1000;
+    const PrimaryStandbyConnectMs = 12000, WarmStandbyStallMs = 1250;
     const policy = Object.freeze({
         windowMs: 6000, probeTimeoutMs: 1000, primaryIntervalMs: 250,
         standbyIntervalMs: 10000, verificationIntervalMs: 50,
@@ -34,6 +36,7 @@ export function createAdaptivePeerRoute(options) {
         path.lastProbe = -Infinity;
         path.lastSuccessfulProbe = 0;
         path.lastRoundTripAt = -Infinity;
+        path.lastTrafficAt = -Infinity;
         path.baseline = Infinity;
         return path;
     };
@@ -52,6 +55,14 @@ export function createAdaptivePeerRoute(options) {
     const surveyEnabled = () => options.surveyEnabled?.() === true && options.enabled && switching();
     const activeRoute = () => active.surveySerial ? active.path :
         active.path === 'direct' ? 'direct' : options.initialRelayRoute?.() || 'turn';
+    const offerRoute = path => {
+        const route = path === active ? activeRoute() : path === primary ?
+            (path.path === 'direct' ? 'direct' : options.initialRelayRoute?.() || 'turn') :
+            path === backup && path.path === 'turn' ? options.initialRelayRoute?.() || 'turn' : path.path;
+        return route?.startsWith('swarm') ? 'Swarm' : route === 'direct' ? '直连' : 'TURN';
+    };
+    const offerReady = () => !!offered && offered.path !== active && ready(offered.path) && eligible() &&
+        now() - offered.at <= 10000 && now() - offered.path.lastRoundTripAt <= 3000;
     const diagnostic = reason => options.changed?.({
         selected: pathName(active), generation, epoch, reason,
         verifying: !!verification, standbyReady: ready(backup),
@@ -123,6 +134,7 @@ export function createAdaptivePeerRoute(options) {
         try { path.pc.close(); } catch {}
         if (previous === path) previous = null;
         if (verification?.target === path) verification = null;
+        if (offered?.path === path) offered = null;
     }
     function backupServers(route) {
         const protocol = route === 'direct' ? /^stuns?:/i : /^turns?:/i;
@@ -298,16 +310,38 @@ export function createAdaptivePeerRoute(options) {
             options.selected(path);
         }
         epoch = id;
+        offered = null;
         recoveryUntil = 0;
         replayQueue = [...pendingControl.keys()];
         replay(path);
         diagnostic('selected');
         return true;
     }
+    function beginHandoff(path, offerTicket) {
+        if (proposal || path === active || !ready(path)) return false;
+        const id = epoch + 1;
+        if (!sendMessage(path, {kind:'switch', path:pathName(path), epoch:id, generation:wireGeneration(path),
+            ...(offerTicket && {offerTicket})})) return false;
+        proposal = {id, path, at:now()};
+        offered = null;
+        return true;
+    }
+    function confirmOffer() {
+        if (!offerReady() || proposal || offered.confirmed) return false;
+        if (controller) return beginHandoff(offered.path, offered.ticket);
+        if (!sendMessage(offered.path, {kind:'route-confirm', ticket:offered.ticket, epoch, generation:wireGeneration(offered.path)})) return false;
+        offered.confirmed = true;
+        return true;
+    }
     function verify(force = false, target = otherPath()) {
         if (!supported || !switching() || !eligible()) return;
+        if (offerReady()) {
+            if (force && controller) beginHandoff(offered.path);
+            return;
+        }
         if (!ready(target)) return;
-        if (!force && (now() < verifyAfter || (!target.surveySerial && now() - switchedAt < policy.cooldownMs))) return;
+        const startupStandby = target === primary && startupPrimaryUntil && !epoch;
+        if (!force && (now() < verifyAfter || (!startupStandby && !target.surveySerial && now() - switchedAt < policy.cooldownMs))) return;
         if (!verification) {
             const ticket = pairedQuality && controller ? ++verificationTicket : 0;
             verification = {since: now(), force, ticket, target};
@@ -363,6 +397,7 @@ export function createAdaptivePeerRoute(options) {
                 peerSwitching = m.switching !== false;
                 directRetry = supported && m.directRetry === true && options.directRetry !== false;
                 pairedQuality = supported && m.pairedQuality === true && options.pairedQuality !== false;
+                manualSwitch = pairedQuality && options.manualSwitch === true && m.manualSwitch === true;
                 if (!helloSent) hello();
                 ensureBackup().catch(() => {});
             } else if (supported && switching() && ['description', 'candidate'].includes(m.kind) && path === primary && kind === 'control') {
@@ -399,6 +434,14 @@ export function createAdaptivePeerRoute(options) {
                     const present = readQuality(m.present), candidate = readQuality(m.candidate);
                     if (present && candidate?.count >= policy.minimumSamples) verification.remote = {present, candidate};
                 }
+                else if (m.kind === 'route-offer' && manualSwitch && !controller && path !== active && ready(path) &&
+                    m.ticket === verificationTicket && m.epoch === epoch && m.generation === wireGeneration(path) &&
+                    Number.isInteger(m.toMs) && m.toMs >= 0 && m.toMs <= 10000 &&
+                    (m.fromMs === null || Number.isInteger(m.fromMs) && m.fromMs >= 0 && m.fromMs <= 10000)) {
+                    offered = {path, ticket:m.ticket, fromMs:m.fromMs, toMs:m.toMs, at:now()};
+                    verification = null;
+                } else if (m.kind === 'route-confirm' && manualSwitch && controller && offerReady() && path === offered.path &&
+                    m.ticket === offered.ticket && m.epoch === epoch && m.generation === wireGeneration(path)) beginHandoff(path, offered.ticket);
                 else if (m.kind === 'need' && controller) verify(true);
                 else if (m.kind === 'ack' && Number.isSafeInteger(m.sequence) && m.sequence >= 0 && m.sequence <= sequence) {
                     for (const [id, packet] of pendingControl) {
@@ -408,7 +451,9 @@ export function createAdaptivePeerRoute(options) {
                 } else if (m.kind === 'switch' && switching() && !controller && Number.isSafeInteger(m.epoch) && m.epoch === epoch + 1 &&
                     m.generation === wireGeneration(path) && m.path === pathName(path)) {
                     if (!ready(path) || !eligible() || (proposal && proposal.path !== path)) return true;
+                    if (m.offerTicket !== undefined && (!offerReady() || offered.path !== path || m.offerTicket !== offered.ticket)) return true;
                     proposal = {id: m.epoch, path, at: now()};
+                    offered = null;
                     sendMessage(path, {kind: 'accept', epoch: m.epoch, generation: wireGeneration(path)});
                 } else if (m.kind === 'accept' && controller && proposal && m.epoch === proposal.id &&
                     m.generation === wireGeneration(path) && path === proposal.path && ready(path)) {
@@ -433,6 +478,7 @@ export function createAdaptivePeerRoute(options) {
             return true;
         }
         if (path.measuring) return true;
+        if (data?.byteLength) path.lastTrafficAt = now();
         if (kind === 'control' && supported) {
             const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) :
                 ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
@@ -459,6 +505,7 @@ export function createAdaptivePeerRoute(options) {
         return true;
     }
     function suspend() {
+        offered = null;
         quietUntil = now() + 2000;
         if (recoveryUntil) {
             // Hidden pages and scheduler gaps cannot spend the active recovery
@@ -477,7 +524,8 @@ export function createAdaptivePeerRoute(options) {
     function hello() {
         if (!open(active.controlDc) || helloSent) return;
         helloSent = sendMessage(active, {kind: 'hello', enabled: !!options.enabled, switching: options.allowSwitching !== false,
-            directRetry: options.directRetry !== false, pairedQuality: options.pairedQuality !== false});
+            directRetry: options.directRetry !== false, pairedQuality: options.pairedQuality !== false,
+            ...(options.manualSwitch && {manualSwitch:true})});
     }
     function probeStartup(path, time) {
         if (!ready(path) || path.reported) return;
@@ -509,7 +557,18 @@ export function createAdaptivePeerRoute(options) {
             suspend();
         }
         lastTick = time;
+        if (startupPrimaryUntil && active !== primary && !ready(primary) && time >= startupPrimaryUntil) {
+            closePath(primary);
+            startupPrimaryUntil = 0;
+        }
+        if (startupPrimaryUntil && ready(primary) && !primary.pathChecking && !primary.path) {
+            primary.pathChecking = true;
+            Promise.resolve(options.detectDirect?.(primary.pc)).then(direct => {
+                primary.path = direct ? 'direct' : 'turn';
+            }).catch(() => {}).finally(() => {primary.pathChecking = false;});
+        }
         if (supported && time >= quietUntil && eligible()) {
+            if (offered && !offerReady()) offered = null;
             if (ackPending) ackPending = !sendMessage(active, {kind: 'ack', sequence: receivedSequence});
             replay(active);
             ensureBackup().catch(() => {});
@@ -520,7 +579,8 @@ export function createAdaptivePeerRoute(options) {
             for (const path of paths()) {
                 if (!ready(path) || path.measuring && path.reported) continue;
                 const interval = path.measuring || verification ? policy.verificationIntervalMs :
-                    path === active ? policy.primaryIntervalMs : policy.standbyIntervalMs;
+                    path === active || path === offered?.path || (path === primary && startupPrimaryUntil && !epoch)
+                        ? policy.primaryIntervalMs : policy.standbyIntervalMs;
                 path.samples = path.samples.filter(s => time - s.at <= policy.windowMs).slice(-128);
                 if (time - path.lastProbe < interval) continue;
                 const id = ++path.probeSequence;
@@ -531,10 +591,16 @@ export function createAdaptivePeerRoute(options) {
                 path.lastProbe = time;
             }
             const current = stats(active, time);
+            if (offered && !offered.confirmed && current.count >= policy.minimumSamples &&
+                current.score <= offered.toMs * 1.1 + 5) offered = null;
+            // A recently tested spare can cover silence before the ICE watchdog runs.
+            if (!proposal && offerReady() && time - offered.path.lastRoundTripAt <= policy.probeTimeoutMs &&
+                time - Math.max(switchedAt, quietUntil, active.lastRoundTripAt, active.lastTrafficAt) >= WarmStandbyStallMs)
+                recover();
             const route = activeRoute();
             const initialSurvey = standbySerial === 0 && options.initialSwarmSurvey?.() === true && route !== 'direct';
             if (surveyEnabled() && pairedQuality && current.count >= policy.minimumSamples &&
-                (current.p95 > 150 || current.loss > .05 || initialSurvey) && time - lastSlowReport >= 5000) {
+                (!offered || recoveryUntil) && (current.p95 > 150 || current.loss > .05 || initialSurvey) && time - lastSlowReport >= 5000) {
                 options.surveySignal?.({type: 'rtc-route-slow', route, quality: surveyQuality(stats(active, time, time - policy.windowMs, 40))});
                 lastSlowReport = time;
             }
@@ -545,6 +611,9 @@ export function createAdaptivePeerRoute(options) {
             }
             const selectPlanned = controller && planned && !planned.measuring && planned !== active && ready(planned);
             if (selectPlanned && !verification && !proposal) verify(false, planned);
+            if (controller && startupPrimaryUntil && !epoch && !primary.compared && !verification && !proposal &&
+                current.count >= policy.minimumSamples && ready(primary))
+                verify(false, primary);
             if (controller && !planned?.measuring && !verification && !proposal && current.count >= policy.minimumSamples &&
                 ((active === primary && backup?.path === 'direct' && !backup.compared && ready(backup)) ||
                  (current.lost >= 3 && current.loss >= .1) ||
@@ -566,12 +635,19 @@ export function createAdaptivePeerRoute(options) {
                         const current = pairedQuality ? pairedScore(present, verification.remote.present) : present;
                         if (candidate.received >= policy.minimumSamples && candidate.loss <= .05 &&
                             (verification.force && !ready(active) || candidate.score * 1.1 + 5 < current.score)) {
-                            proposal = {id: epoch + 1, path: next, at: time};
-                            sendMessage(next, {kind: 'switch', path: pathName(next), epoch: proposal.id, generation: wireGeneration(next)});
+                            if (!manualSwitch || verification.force) beginHandoff(next);
+                            else {
+                                const fromMs = Number.isFinite(current.p95) ? Math.ceil(current.p95) : null;
+                                const toMs = Math.ceil(candidate.p95), ticket = verification.ticket;
+                                if (sendMessage(next, {kind:'route-offer', ticket, epoch, generation:wireGeneration(next), fromMs, toMs})) {
+                                    offered = {path:next, ticket, fromMs, toMs, at:time};
+                                    verification = null;
+                                }
+                            }
                         }
                     }
                 }
-                if (time - verification.since > policy.verificationMs) { verification = null; verifyAfter = time + 10000; }
+                if (verification && time - verification.since > policy.verificationMs) { verification = null; verifyAfter = time + 10000; }
             }
             if (proposal?.committed) {
                 if (time - proposal.at > 7000) options.failed('RTC route commit confirmation exhausted');
@@ -582,6 +658,7 @@ export function createAdaptivePeerRoute(options) {
             } else if (controller && proposal && time - proposal.at > 3000) { proposal = null; verification = null; verifyAfter = time + 10000; }
             if (recoveryUntil && time > recoveryUntil) { recoveryUntil = 0; options.failed('RTC route recovery exhausted'); }
         }
+        options.onRouteStatus?.();
         timer = later(tick, verification || measuring() ? policy.verificationIntervalMs : policy.primaryIntervalMs);
     }
     return {
@@ -593,7 +670,7 @@ export function createAdaptivePeerRoute(options) {
                 timer = later(tick, 0);
             }
         },
-        selectStartup(serial) {
+        selectStartup(serial, keepPrimary = false) {
             if (!startup) return false;
             const path = serial === 0 ? primary : planned?.surveySerial === serial && planned;
             if (!path || !select(path, 0)) return false;
@@ -605,7 +682,8 @@ export function createAdaptivePeerRoute(options) {
             } else if (path !== primary) {
                 path.measuring = false;
                 helloSent = false;
-                closePath(primary);
+                if (keepPrimary) startupPrimaryUntil = now() + PrimaryStandbyConnectMs;
+                else closePath(primary);
             }
             hello();
             return true;
@@ -619,6 +697,13 @@ export function createAdaptivePeerRoute(options) {
         opened(kind) { if (kind === 'control') hello(); },
         receivePrimary(kind, data) { return receive(primary, kind, data); },
         relayStandby,
+        routeSwitchStatus() {
+            if (!manualSwitch) return null;
+            if (proposal || offered?.confirmed && offerReady()) return {switching:true};
+            return offerReady() ? {from:offerRoute(active), to:offerRoute(offered.path),
+                fromMs:offered.fromMs, toMs:offered.toMs, switching:false} : null;
+        },
+        confirmOffer,
         activeRelayMode() {
             const route = activeRoute();
             return route === 'direct' ? null : route === 'turn' ? 'turn' : 'swarm';
@@ -640,7 +725,7 @@ export function createAdaptivePeerRoute(options) {
                     // browser temporarily refuses the send. Retry it before
                     // admitting another control; a standby may not exist yet.
                     replayQueue.push(id);
-                    recover();
+                    if (!manualSwitch) recover();
                 }
                 return true;
             }
