@@ -113,7 +113,7 @@ private:
     std::uint32_t effectHandle_ = 0;
     std::optional<Activation> activation_;
     std::string failure_, lastDenied_;
-    bool configured_ = false, active_ = false, executing_ = false, xLatched_ = false;
+    bool configured_ = false, active_ = false, executing_ = false;
     bool fail(std::string reason, std::string& error);
     bool deny(std::string reason, std::string& error);
     void removeEffect();

@@ -3890,7 +3890,7 @@ int th128_world_tick(){
             context.perfectCharge=playerWindowControl.perfectCharge4b4d70;
             const auto position=world->playerAimPosition();
             context.x=position.x;context.y=position.y;context.radius=playerProfileRadius;
-            context.keys=playerInput.holding|playerInput.pressed;
+            context.keys=playerInput.holding;
             context.xPressed=(playerInput.pressed&th128::perfect::XKeyBit)!=0;
             context.systemPresent=playerWindowControl.present;
             context.systemMode3c=playerWindowControl.mode3c;
@@ -3900,13 +3900,7 @@ int th128_world_tick(){
             context.lasers=lasers;context.laserCount=laserCount;
             return context;
         };
-        if(!perfectStatus.active&&!(playerInput.holding&th128::perfect::XKeyBit)){
-            std::string ignored;
-            const auto liveLasers=world->laserObjectCount();
-            if(liveLasers&&*liveLasers==0)perfectHost->activate(makePerfectContext(th128::perfect::LaserContext::Empty,0),ignored);
-            else perfectHost->reject("Perfect requires the actual laser owner; populated/unknown is not Empty",ignored);
-        }
-        if(!perfectStatus.active&&(playerInput.pressed&th128::perfect::XKeyBit)){
+        if(!perfectStatus.active&&(playerInput.holding&th128::perfect::XKeyBit)){
             std::string denied;
             const auto laserCount=world->laserObjectCount();
             if(!laserCount){

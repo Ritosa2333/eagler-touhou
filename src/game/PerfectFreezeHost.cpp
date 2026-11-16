@@ -110,8 +110,6 @@ bool Host::activate(const Context& input,std::string& error){
     error.clear();
     if(!failure_.empty())return fail(failure_,error);
     if(!configured_||executing_||active_)return deny("perfect freeze host is not ready for a fresh activation",error);
-    if(!input.xPressed){xLatched_=false;error="perfect freeze requires a fresh X press";return false;}
-    if(xLatched_)return deny("perfect freeze X press was already consumed",error);
     if(input.mode==Mode::DeathbombWindow)return deny("deathbomb window remains owned by PlayerHitHost",error);
     if(input.mode!=Mode::Normal)return deny("unsupported perfect freeze activation mode",error);
     if(!validCharge(input.perfectCharge)||input.perfectCharge!=charge_){
@@ -151,7 +149,7 @@ bool Host::activate(const Context& input,std::string& error){
     }catch(...){return fail("perfect freeze required service threw",error);}
     charge_=*remaining;
     context_=input;context_.perfectCharge=charge_;context_.xPressed=false;
-    protection_=ProtectionTicks;active_=true;xLatched_=true;phase_=0;freezeDone_=false;
+    protection_=ProtectionTicks;active_=true;phase_=0;freezeDone_=false;
     lastDenied_.clear();
     activation_=Activation{input.perfectCharge,charge_,ProtectionTicks,bullets,lasers,true};
     return true;
