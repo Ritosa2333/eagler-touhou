@@ -236,8 +236,11 @@ void StageEntry::PrepareStageClear(HudPlayerState& first_player, const StageBatt
         if (seats[seat].extra_lives < 0 || previous.seats[seat].final_death)
             seats[seat].ghost = true;
         // Seat 0 uses the persistent single-player object. Other seats are
-        // reconstructed when the new battle is enabled.
-        if (seat > 0 && !seats[seat].ghost) {
+        // reconstructed when the new battle is enabled. Only an Active seat
+        // carries its end-of-stage position: a seat interrupted mid-death or
+        // mid-respawn re-enters at the spawn point like a revived seat.
+        if (seat > 0 && !seats[seat].ghost &&
+            previous.seats[seat].phase == StagePlayerState::Phase::Active) {
             const auto& player = previous.seats[seat];
             stage_clear_positions_[seat] = std::array<i32, 2>{player.fixed_x, player.fixed_y};
         }
