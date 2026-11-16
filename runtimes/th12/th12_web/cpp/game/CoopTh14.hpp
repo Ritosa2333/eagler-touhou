@@ -24,10 +24,13 @@ struct Th14Ghost {
 constexpr float th14_dist_sq(Vec3 a,Vec3 b) noexcept {
     const float x=a.x-b.x,y=a.y-b.y;return x*x+y*y;
 }
-constexpr i32 th14_boss_damage(i32 amount,u32 active,u32& remainder) noexcept {
-    if(amount<=0||active<=1)return amount;
-    const auto scaled=u64(u32(amount))*(active>=3?8:9)+remainder;
-    remainder=u32(scaled%12);return i32(scaled/12);
+constexpr i32 th14_boss_damage(i32 amount,u32 live,u32& remainder) noexcept {
+    if(amount<=0||live<=1)return amount;
+    const auto scaled=u64(u32(amount))*(live>=3?9:12)+remainder;
+    remainder=u32(scaled%20);return i32(scaled/20);
+}
+constexpr float th14_mallet_scale(float factor,u32 seats) noexcept {
+    return factor*(seats>=3?.5f:seats==2?.67f:1.f);
 }
 constexpr i32 th14_coop_life_pieces=3;
 constexpr i32 th14_coop_bomb_pieces(u32 seats) noexcept {return seats>=3?3:4;}

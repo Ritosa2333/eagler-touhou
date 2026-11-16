@@ -78,6 +78,7 @@ public:
 #endif
 #if PORT_TITLE == 14
     PlayerTh14Scale th14_scale;
+    void reset_th14_scale();
     bool set_th14_scale(float);
     bool rebuild_th14_options(){return rebuild_options();}
 #endif
