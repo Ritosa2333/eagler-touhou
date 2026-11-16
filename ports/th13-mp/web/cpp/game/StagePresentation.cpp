@@ -29,6 +29,15 @@ namespace {
 // 是 f61 敌机行走位差 96px 的根因，2026-10-23 实测修正），此处外部平移
 // 增量置 0，杜绝双重叠加。
 constexpr float kGameToScreenX = 0.0f, kGameToScreenY = 0.0f;
+// Direct-touch movement updates position without setting direction keys.
+i32 ship_tilt(u32 held, float player_x, bool touch_active, const AnmVm* ship) {
+    const i32 keyboard_tilt = ((held & 0x80u) != 0) - ((held & 0x40u) != 0);
+    if ((held & 0xf0u) || !touch_active || !ship || !ship->resource)
+        return keyboard_tilt;
+    const float x = player_x + kGameToScreenX;
+    const float previous_x = ship->visual.translation.x;
+    return (x > previous_x) - (x < previous_x);
+}
 // 弹体贴图基准角：贴图朝右时旋转 = 弹角（对屏检验后校准）。
 constexpr float kBulletSpriteForward = 0.0f;
 
@@ -2372,7 +2381,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
     // ---- 自机：00442960，0直立、1左倾、2左倾回正、3右倾、4右倾回正 ----
     const bool first_ghost = battle.seat_count >= 2 && battle.seats[0].ghost;
     if (battle.player_visible() || first_ghost) {
-        const i32 tilt = first_ghost ? 0 : ((held & 0x80) ? 1 : 0) - ((held & 0x40) ? 1 : 0);
+        const i32 tilt = first_ghost ? 0 : ship_tilt(held, battle.player_x, battle.touch.mode != 0, player_.get());
         if (!player_) player_ = std::make_unique<AnmVm>();
         bool rebound = false;
         if (!player_->resource || tilt != player_tilt_) {
@@ -2428,7 +2437,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             continue;
         }
         const auto buttons = battle.seat_inputs[seat].held;
-        const i32 tilt = state.ghost ? 0 : ((buttons & 0x80) ? 1 : 0) - ((buttons & 0x40) ? 1 : 0);
+        const i32 tilt = state.ghost ? 0 : ship_tilt(buttons, state.x, state.touch.mode != 0, vm.get());
         if (!vm) vm = std::make_unique<AnmVm>();
         const bool rebound = !vm->resource || tilt != old_tilt;
         if (rebound) {
@@ -2609,6 +2618,24 @@ bool StagePresentation::draw(u32 pass) {
                 return a->generation > b->generation;
             });
         for (auto* slot : draw_bullet_order_) one(*slot->vm);
+        if (renderer.always_hitbox && battle_) {
+            const auto& local = battle_->seat_count >= 2
+                ? battle_->seats[size_t(battle_->mp_local_seat)] : battle_->player_state();
+            if (!local.dead && !local.ghost && local.phase == StagePlayerState::Phase::Active && !local.focus) {
+                // Draw the native focus sprite without putting an animation
+                // in the registry or changing gameplay focus.
+                const auto* source = animations.script_template(banks.effect, 22);
+                if (!source) return fail("Focus marker template unavailable");
+                AnmVm marker = *source;
+                if (!marker.select_sprite(23)) return fail("Focus marker sprite unavailable");
+                marker.visible = true;
+                marker.visual.set_layer(12);
+                marker.visual.scale = {1.f, 1.f};
+                marker.visual.color = 0xffffffffu;
+                marker.visual.translation = {local.x + kGameToScreenX, local.y + kGameToScreenY, 0.f};
+                if (!one(marker)) return false;
+            }
+        }
         break;
     }
     default:

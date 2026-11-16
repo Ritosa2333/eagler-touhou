@@ -40,6 +40,7 @@ bool ReplayArchive::Begin(const SessionSetup& setup, std::uint64_t timestamp) {
     config.recordedPlayer = std::uint8_t(setup.local_player);
     if (!replay_.Begin(config)) return false;
     setup_ = setup;
+    version_ = Version;
     timestamp_ = timestamp;
     score_ = 0;
     completed_ = false;
@@ -119,7 +120,8 @@ bool ReplayArchive::DecodeHeader(const std::uint8_t* bytes, std::size_t size,
                                  std::uint32_t& score, bool& completed,
                                  std::string& name, std::size_t& headerBytes) {
     if (size < kFixedHeader) return false;
-    if (Read32(bytes + 4) != Version) return false;
+    const auto version = Read32(bytes + 4);
+    if (version != Version && version != LegacyVersion) return false;
     const std::uint32_t declared = Read32(bytes + 8);
     if (declared < kFixedHeader - 12 || std::size_t(declared) + 12 > size)
         return false;
@@ -204,6 +206,7 @@ bool ReplayArchive::Load(const std::uint8_t* bytes, std::size_t size) {
     }
     replay_ = std::move(replay);
     setup_ = setup;
+    version_ = Read32(bytes + 4);
     timestamp_ = timestamp;
     score_ = score;
     completed_ = completed;
@@ -228,6 +231,7 @@ const std::vector<std::uint8_t>* ReplayArchive::StageEntryAt(
 void ReplayArchive::Clear() {
     replay_.Clear();
     setup_ = {};
+    version_ = Version;
     timestamp_ = 0;
     score_ = 0;
     completed_ = false;

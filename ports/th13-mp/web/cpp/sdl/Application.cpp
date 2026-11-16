@@ -1017,6 +1017,7 @@ bool ApplicationState::begin_run() {
     if (carry_multiplayer) {
         auto& battle = run->battle;
         carry.RestoreBattleCarry(battle);
+        if (!mp_legacy_stage_positions) carry.RestoreStageClearPositions(battle);
         battle.death_trance_generation = carry_death_generation;
         battle.revive_all_on_stage_clear();
         selection_player = battle.seat_huds[0];
