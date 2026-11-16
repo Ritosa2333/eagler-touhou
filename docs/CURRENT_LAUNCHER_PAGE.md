@@ -12,4 +12,13 @@ play在initialize中绑定实际runtime方法；输入通过独立Symbol来源�
 
 795缺context/接线10RED→796当前入口/context10GREEN。797缺play hooks6RED；798首次抽取fixture漏新增getPageLaunchContext依赖6FAIL，原raw保；799只补该依赖后6GREEN。800完整回归144PASS/1产品UI失败：启动import失败后错误显示无效重试按钮；801 guard修复后146GREEN且完整模块syntax通过。802新增失败启动重试假ACK、抛错退出/关页清理3RED/10controls；803最小修复13GREEN；804补完整origin并严格核真实catalog URL后最终149GREEN/40pins。源/原生输入/loader/DOM/parent/renderer均按各测试明确接缝，0实际浏览器、0World/Factory/编译/GPU。失败原始源/输入/输出与成功记录都保留。
 
-本地v7、资源v2、旧772静态目录未改。新网页源码需后续单独部署整合，暂无公开URL。实际隔离iframe消息/资源验收、上游DATA/可变文件桥、其他必需选项及第三阶段剩余项继续推进，多人尚未实施。
+本地v7、资源v2、旧772静态目录未改。新网页源码需后续单独部署整合，暂无公开URL。上游DATA/可变文件桥、其他必需选项及第三阶段剩余项继续推进，多人尚未实施。
+
+## 真实 iframe 通信805
+
+当前完整入口、context与session模块未改，放入真实父页面和不同端口的iframe中验证，25项检查全部通过。父来源与epoch隔离、请求字符串关联、配置、等待真实运行hook就绪后的launch ACK、键盘及清理、重复请求回执、退出和加载中取消均实际经过postMessage。未实现的音乐、外部资源和文件能力仍明确拒绝。运行20.861秒；一个临时标签和两个临时服务器在同一工作流清理，ROOT释放，控制台错误0。
+
+资源/provider/store、play/native输入和呈现是明确接缝；没有创建游戏World、WASM工厂或画布。此处first-frame仅验证显式呈现接缝的通知，不证明游戏可见像素、帧率、资源/IDB或存档持久化。上游DATA回调要求同源，与这里的跨源消息测试是两项不同能力。当前仍是partialAdapter，尚未完成第三阶段。
+
+详细检查及原始证据指纹见[805记录](launcher-iframe805.json)。下一步保留原DAT解密消费者，接上游真实DATA、资源及严格可变文件收据。
+
