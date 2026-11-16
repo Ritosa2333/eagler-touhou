@@ -95,6 +95,21 @@ export async function start(config) {
         if (previous && previous.sha256 !== file.sha256) throw new Error(`Conflicting resource: ${path}`);
         inventory.set(path, file);
       }
+      if (state.pool.languageGames?.length) {
+        const manifest = JSON.parse(await readFile(`${state.pool.root}/site-manifest.json`, 'utf8'));
+        for (const game of state.pool.languageGames) {
+          for (const { pack } of manifest.games[game]?.languages ?? []) {
+            if (!pack) continue;
+            const path = '/' + pack.url.replace(/^\/+/, '');
+            if (!safePath(path)) throw new Error(`Unsafe language pack source: ${path}`);
+            const previous = inventory.get(path);
+            if (previous && (previous.sha256 !== pack.sha256 || previous.bytes !== pack.bytes)) {
+              throw new Error(`Conflicting resource: ${path}`);
+            }
+            inventory.set(path, pack);
+          }
+        }
+      }
       const deployment = JSON.parse(await readFile(`${state.pool.root}/deployment.json`, 'utf8'));
       const fonts = deployment.files.filter(file => file.path.startsWith('runtime/') && file.path.includes('/fonts/') && safePath('/' + file.path));
       for (const file of fonts) inventory.set('/' + file.path, file);
