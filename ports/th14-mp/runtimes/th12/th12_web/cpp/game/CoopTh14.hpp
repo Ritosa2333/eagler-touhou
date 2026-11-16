@@ -31,10 +31,11 @@ constexpr i32 th14_boss_damage(i32 amount,u32 live,u32& remainder) noexcept {
 }
 struct Th14CoopDamageRatios { float shot,bomb; };
 constexpr Th14CoopDamageRatios th14_coop_damage_ratios(u32 seats,bool team_bomb,bool sakuya_b,
-                                                     bool boss_spell,u32 stage,i32 spell) noexcept {
-    if(!team_bomb)return {1.f,1.f};
+                                                     bool boss,bool spell_active,u32 stage,i32 spell,i32 boss_slot) noexcept {
+    // Stage 2 registers Sekibanki's detached heads in secondary boss slots.
+    if(!boss||!team_bomb||(stage==2&&boss_slot>0))return {1.f,1.f};
     // Extra IDs 108-109 are the midboss; Raiko's ten cards start at 110.
-    if(boss_spell&&((stage==6&&spell>=100&&spell<=107)||(stage==7&&spell>=110&&spell<=119)))
+    if(spell_active&&((stage==6&&spell>=100&&spell<=107)||(stage==7&&spell>=110&&spell<=119)))
         return {0.f,0.f};
     if(sakuya_b)return seats==2?Th14CoopDamageRatios{.7f,.825f}:Th14CoopDamageRatios{.6f,.625f};
     return seats==2?Th14CoopDamageRatios{.4f,.65f}:Th14CoopDamageRatios{.2f,.25f};
