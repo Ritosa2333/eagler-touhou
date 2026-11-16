@@ -201,6 +201,20 @@ export function normalizeRelaySignal(message) {
   return description || candidate ? { description, candidate } : null;
 }
 
+export function restrictInitialIce(signal, route) {
+  const relayOnly = route !== 'direct';
+  const keep = candidate => {
+    const type = /^candidate:\S+(?: +\S+){5} +typ +(host|srflx|prflx|relay)(?: +|$)/i.exec(candidate)?.[1]?.toLowerCase();
+    return candidate === '' || Boolean(type && (type === 'relay') === relayOnly);
+  };
+  const {description, candidate} = signal;
+  return {
+    description: description && {...description, sdp: description.sdp.replace(/^a=candidate:[^\r\n]*(?:\r?\n|$)/gm,
+      line => keep(line.slice(2).trimEnd()) ? line : '')},
+    candidate: candidate && keep(candidate.candidate) ? candidate : null,
+  };
+}
+
 export function clearSpectatorHistory(run) {
   // Experimental TH09 viewers may join later; their prefix must remain exact.
   if (run.spectatorTimeline && !run.spectatorStopped) return;

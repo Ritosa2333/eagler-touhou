@@ -2124,6 +2124,14 @@
     "id": "room_preferTurnHint",
     "params": []
   },
+  "room.startupRoutes": {
+    "id": "room_startupRoutes",
+    "params": []
+  },
+  "room.startupAuto": {
+    "id": "room_startupAuto",
+    "params": []
+  },
   "room.packetLossTest": {
     "id": "room_packetLossTest",
     "params": []

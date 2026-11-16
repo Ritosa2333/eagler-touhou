@@ -264,6 +264,7 @@ export function RoomExample({
       announce('游戏检查从实际联机房间进入。');
     },
     setPreferTurn: (preferTurn: boolean) => setState((previous) => ({ ...previous, preferTurn })),
+    setStartupRoute: () => {},
   };
   const network: Pick<
     RoomNetworkPresentation,

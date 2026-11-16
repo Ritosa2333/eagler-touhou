@@ -538,6 +538,8 @@
   "room_packetLossHint": "直连与 TURN 分别测量 | 约 6 秒",
   "room_preferTurn": "优先使用 TURN",
   "room_preferTurnHint": "本机设置 | 下次开局通过 TURN 中转",
+  "room_startupRoutes": "开局线路",
+  "room_startupAuto": "自动",
   "room_packetLossTest": "测试丢包率",
   "room_packetLossRunning": "测试中…",
   "room_packetLossOutgoing": "你 → 对方",

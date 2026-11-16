@@ -512,6 +512,33 @@ try {
     await until(() => desktop.state()?.phase === 'lobby');
   }
 
+  const shared = 'room=th07mp-route-choice';
+  const sharedSeats = await Promise.all([0, 1].map(seat =>
+    connect(seat, shared + '&lobby=route_seat_' + seat + '&member=route_member_' + seat)));
+  await until(() => sharedSeats[0].state()?.startupRoutes?.includes('turn'));
+  for (const [seat, connection] of sharedSeats.entries()) connection.send({type:'take-seat', seat, loadout:0});
+  await until(() => sharedSeats[0].state()?.seats.slice(0, 2).every(Boolean));
+  sharedSeats[1].send({type:'startup-route', route:'turn'});
+  await until(() => sharedSeats[0].state()?.seats[1]?.startupRoute === 'turn');
+  for (const connection of sharedSeats) connection.send({type:'set-ready', ready:true, runtimeGeneration:generation});
+  await until(() => sharedSeats[0].state()?.seats.slice(0, 2).every(seat => seat?.ready));
+  sharedSeats[0].send({type:'start'});
+  await until(() => sharedSeats[1].received.some(message => message.type === 'start'));
+  const sharedSignals = await Promise.all([0, 1].map(seat => connect(seat,
+    shared + '&run=1&players=2&signal=1&player=' + seat + '&member=route_member_' + seat + '&runtimeGeneration=' + generation)));
+  for (const connection of sharedSignals) {
+    const peers = await until(() => connection.received.find(message => message.type === 'peers'));
+    assert.equal(peers.turnMode, 'first-party');
+    assert.deepEqual(peers.iceServers.map(ice => ice.urls), [[ordinaryTurnUrl]]);
+  }
+  const hostCandidate = 'candidate:host 1 UDP 2122252543 192.0.2.1 34000 typ host';
+  const turnCandidate = 'candidate:turn 1 UDP 1677734911 192.0.2.1 34001 typ relay raddr 0.0.0.0 rport 0';
+  sharedSignals[0].send({type:'signal', to:1, description:{type:'offer', sdp:'v=0\r\na=' + hostCandidate + '\r\na=' + turnCandidate + '\r\n'}});
+  for (const candidate of [hostCandidate, turnCandidate]) sharedSignals[0].send({type:'signal', to:1, candidate:{candidate, sdpMid:'0'}});
+  await until(() => sharedSignals[1].received.some(message => message.candidate?.candidate === turnCandidate));
+  assert.equal(sharedSignals[1].received.find(message => message.description)?.description.sdp, 'v=0\r\na=' + turnCandidate + '\r\n');
+  assert.ok(!sharedSignals[1].received.some(message => message.candidate?.candidate === hostCandidate));
+
   const abandoned = 'room=th09mp-abandoned';
   const abandonedHost = await connect(0, abandoned + '&lobby=abandoned_host&member=abandoned_host_key');
   const abandonedGuest = await connect(1, abandoned + '&lobby=abandoned_guest&member=abandoned_guest_key');
