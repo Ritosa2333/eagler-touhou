@@ -72,6 +72,7 @@ function fixture(config = {}) {
     const routes = paths.map((primary, seat) => createAdaptivePeerRoute({
         primary, localPlayer: seat, peerId: 1 - seat, tag: 'test', enabled: config.enabled?.[seat] ?? true,
         directRetry: config.directRetry?.[seat],
+        manualSwitch: config.manualSwitch === true,
         surveyEnabled: () => config.survey === true,
         surveyPending: () => config.surveyPending === true,
         initialRelayRoute: () => 'swarm-0',
@@ -120,6 +121,28 @@ function fixture(config = {}) {
         jump(ms) { time += ms; },
         close() { for (const route of routes) route.close(); },
     };
+}
+
+for (const choice of [0, 1, 'outage']) {
+    const f = fixture({primaryPath:'turn',primaryDelay:105,directRetry:[false,false],survey:true,manualSwitch:true});
+    await f.advance(2700);
+    await Promise.all(f.routes.map(route=>route.relayStandby({type:'rtc-standby',serial:3,phase:'select',route:'turn',
+        iceServers:[{urls:'turn:fixture:3478'}]})));
+    await f.advance(4200);
+    const expected={from:'Swarm',to:'TURN',fromMs:210,toMs:40,switching:false};
+    assert.deepEqual(f.routes.map(route=>route.routeSwitchStatus()),[expected,expected]);
+    assert.deepEqual(f.selected,[[],[]], 'quality alone leaves both players on the existing connection');
+    assert(f.routes[0].send(new Uint8Array([88]),true));
+    await f.advance(500);
+    assert.deepEqual(f.deliveries[1],[[88]], 'the match advances while the decision is pending');
+    if (choice==='outage') {
+        f.drop();
+        assert(f.routes[1].recover());
+    } else assert(f.routes[choice].confirmOffer());
+    await f.advance(200);
+    assert.deepEqual(f.selected,[['turn'],['turn']], 'a confirmed or emergency switch uses the already prepared path');
+    assert.deepEqual(f.routes.map(route=>route.routeSwitchStatus()),[null,null]);
+    f.close();
 }
 
 {

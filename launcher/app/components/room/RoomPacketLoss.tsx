@@ -16,10 +16,10 @@ export function RoomPacketLoss({state, network, service}: {state: RoomOwnerSnaps
     <header><div><h3 id="mpPacketLossTitle">{t('room.packetLoss')}</h3><p>{t('room.packetLossHint')}</p></div>
       <UiButton id="mpPacketLossTest" type="button" disabled={!ready || running || state.launchBusy} onClick={() => network.testLoss()}>{t(running ? 'room.packetLossRunning' : 'room.packetLossTest')}</UiButton>
     </header>
-    <div className="room-turn-preference">
+    {state.product !== 'th09mp' && <div className="room-turn-preference">
       <div><label htmlFor="mpPreferTurn">{t('room.preferTurn')}</label><p id="mpPreferTurnHint">{t('room.preferTurnHint')}</p></div>
       <OptionSwitch id="mpPreferTurn" label={t('room.preferTurn')} describedBy="mpPreferTurnHint" checked={state.preferTurn} disabled={!state.connected || state.launchBusy || state.checkBusy} onChange={() => service.setPreferTurn(!state.preferTurn)}/>
-    </div>
+    </div>}
     <div role="status" aria-live="polite">{!peers.length ? <p>{t('room.waitPeer')}</p> : peers.map(({seat, index}) => <div className="room-packet-loss-peer" key={seat.clientId}>
       <strong><OverflowText>{state.nickname ? seat.name || `P${index + 1}` : `P${index + 1}`}</OverflowText></strong>
       {lanes.map(lane => {

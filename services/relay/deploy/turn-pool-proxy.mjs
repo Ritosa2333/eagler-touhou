@@ -84,7 +84,7 @@ export function startProxy(config) {
         if (!isBinary && data.length < 65536) {
           try {
             const value = JSON.parse(data.toString());
-            const fixedRoute = value?.turnMode === 'swarm' || value?.turnMode === 'first-party' ||
+            const fixedRoute = value?.turnMode === 'swarm' || value?.turnMode === 'first-party' || value?.turnMode === 'direct' ||
               (value?.type === 'rtc-standby' && /^(direct|turn|swarm-[0-9]+)$/.test(value.route));
             if (!fixedRoute &&
                 (Array.isArray(value?.iceServers) || Array.isArray(value?.roomProbe?.iceServers))) {

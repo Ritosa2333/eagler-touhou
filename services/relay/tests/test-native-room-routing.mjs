@@ -427,7 +427,7 @@ try {
   await until(() => desktopReconnected.received.some(message => message.type === 'rtc-replaced' && message.generation === 2));
   desktopReconnected.ws.terminate();
   webReconnected.ws.terminate();
-  await until(() => desktop.state()?.phase === 'lobby');
+  await until(() => desktop.state()?.phase === 'lobby' && web.state()?.phase === 'lobby');
   assert.equal(web.state().seats[1].ready, false);
 
   refuseSwarmGrant = true;
@@ -479,6 +479,38 @@ try {
     assert.deepEqual(firstPartyPeers.iceServers.map(server => server.urls), [[stunUrl], [ordinaryTurnUrl]]);
   }
   assert.equal(swarmAllocations, priorSwarmAllocations);
+  fallbackDesktop.ws.terminate();
+  fallbackWeb.ws.terminate();
+  await until(() => desktop.state()?.phase === 'lobby');
+  for (const [mode0,mode1,turnMode,turn,relayOnly] of [
+    ['auto','turn','first-party',ordinaryTurnUrl,true],
+    ['direct','turn','direct',undefined,false],
+    ['auto','swarm','swarm',swarmUrl,true],
+  ]) {
+    const serial = desktop.state().startSerial + 1;
+    desktop.send({type:'set-ready',ready:true,nativeRuntime:true,runtimeGeneration:generation});
+    web.send({type:'set-ready',ready:true,runtimeGeneration:generation});
+    await until(() => desktop.state()?.seats.slice(0,2).every(seat => seat?.ready));
+    desktop.send({type:'start'});
+    await until(() => web.received.some(message => message.type === 'start' && message.serial === serial));
+    const join = mixed + '&run=' + serial + '&players=2&signal=1&rtcStartup=1&runtimeGeneration=' + generation;
+    const chosen = await Promise.all([
+      connect(0, join + '&player=0&member=private_desktop&rtcRoute=' + mode0),
+      connect(1, join + '&player=1&member=private_web&rtcRoute=' + mode1),
+    ]);
+    for (const peer of chosen) {
+      const peers = await until(() => peer.received.find(message => message.type === 'peers'));
+      assert.equal(peers.turnMode, turnMode);
+      assert.equal(peers.initialIceRelayOnly === true, relayOnly);
+      assert.deepEqual(peers.iceServers.map(server => server.urls), turn ? [[turn]] : [[stunUrl]]);
+      assert.ok(peers.fallbackIceServers.flatMap(server => server.urls).includes(ordinaryTurnUrl));
+      assert.equal(peer.received.some(message => message.type === 'rtc-startup'), false);
+      peer.send({type:'rtc-ready'});
+    }
+    await until(() => chosen[1].received.some(message => message.type === 'route' && message.mode === 'rtc'));
+    for (const peer of chosen) peer.ws.terminate();
+    await until(() => desktop.state()?.phase === 'lobby');
+  }
 
   const abandoned = 'room=th09mp-abandoned';
   const abandonedHost = await connect(0, abandoned + '&lobby=abandoned_host&member=abandoned_host_key');

@@ -921,7 +921,7 @@ function maybeResolveRoute(roomId, runId, room, run) {
 }
 
 function startRtcRouteSelection(roomId, runId, room, run) {
-  if (run.route || run.rtcStartup || !run.swarm || run.signalClients.size !== 2 ||
+  if (run.route || run.rtcStartup || run.initialIceRoute || !run.swarm || run.signalClients.size !== 2 ||
       run.playerCount !== 2 || [...run.signalClients.values()].some(peer => !peer.rtcStartup)) return;
   const turnServers = [0,1].map(player => iceServersFor(roomId, runId + '-startup', player, false, undefined, []));
   if (!turnServers.every(servers => servers.length)) return;
@@ -959,6 +959,21 @@ function startRtcRouteSelection(roomId, runId, room, run) {
   run.startupSurveySerial = 1;
   broadcastSignal(run, {type:'rtc-startup'});
   run.rtcStartup.start();
+}
+
+function applyInitialIceChoice(run) {
+  if (run.route || run.signalClients.size !== 2 ||
+      [...run.signalClients.values()].some(peer => !peer.hasInitialIceChoice || peer.peersAnnounced)) return;
+  const choice = [0,1].map(seat => run.signalClients.get(seat).initialIceChoice).find(route => route !== 'auto');
+  if (!choice) return;
+  run.initialIceRoute = choice;
+  run.swarm = choice === 'swarm' && swarmAvailable;
+  run.turnMode = choice === 'turn' ? 'first-party' : choice;
+  const workers = swarmWorkers.current();
+  if (run.swarm) run.swarmWorkers ??= [workers[0]?.id, workers[0]?.id];
+  if (!run.swarm) run.swarmDirectPlayer = undefined;
+  if (swarmAvailable && workers.length) run.adaptiveSwarmWorkers ??= workers.map(node => node.id);
+  run.surveyInitialSwarm = false;
 }
 
 function acceptTh09PlayerReport(room, run, runId, player, message) {
@@ -1091,12 +1106,11 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
   const previous = run.signalClients.get(player);
   if (previous && previous !== socket && previous.readyState === WebSocket.OPEN)
     previous.close(1000, 'signaling reconnected');
-  const existingPeers = [...run.signalClients.keys()].filter((peer) => peer !== player);
   run.signalClients.set(player, socket);
+  socket.initialSwarmGrant = swarmGrant;
+  if (playerCount === 2 && roomId.startsWith('th09mp-')) applyInitialIceChoice(run);
   clearTimeout(run.signalReconnectTimer);
   run.signalReconnectTimer = null;
-  const observeStun = run.rtcReplacementAllowed && nat4Observers.length > 0 && !nat4PortSteps.has(socket.relayAddress);
-  const stun = observeStun ? nat4Observers : stunUrls;
   function forwardSignal(from, signal) {
     const target = run.signalClients.get(1 - from);
     if (target) sendSignal(target, {type: 'signal', from, ...signal});
@@ -1111,24 +1125,41 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
       }
     }
   }
-  sendSignal(socket, {
-    type: 'peers',
-    peers: existingPeers,
-    route: run.route,
-    // The other seat can gather Swarm TURN while the desktop's local Swarm
-    // helper starts. A missing grant also enables Swarm TURN on the desktop.
-    iceServers: swarmGrant ? (stun.length ? [{urls:stun}] : [])
-      : iceServersFor(roomId, runId, player, run.swarm, run.swarmWorkers?.[player], stun),
-    ...(run.turnMode ? {turnMode:run.turnMode} : {}),
-    ...(run.adaptiveSwarmWorkers?.length ? {adaptiveSwarm:true, initialSwarmWorker:run.swarmWorkers?.[player],
-      ...(run.surveyInitialSwarm && {surveyInitialSwarm:true})} : {}),
-    ...(swarmGrant ? {swarmGrant} : {}),
-    ...(observeStun ? {nat4Observers} : {}),
-    ...(run.rtcReplacementClients.size === 2 ? {rtcReplace:true} : {}),
-    ...(roomId.startsWith('th09mp-') && run.memberIds ? {th09MatchReport:true} : {}),
-  });
-  for (const [peer, target] of run.signalClients) {
-    if (peer !== player) sendSignal(target, { type: 'peer-join', player });
+  const waitForOtherChoice = roomId.startsWith('th09mp-') && !run.route && playerCount === 2 &&
+      run.signalClients.size === 1 && socket.hasInitialIceChoice;
+  if (!waitForOtherChoice) {
+    const announced = [];
+    for (const [seat, target] of run.signalClients) {
+      if (target.peersAnnounced) {
+        if (seat !== player) announced.push(target);
+        continue;
+      }
+      const relayOnly = run.initialIceRoute === 'swarm' || run.initialIceRoute === 'turn';
+      const observeStun = !relayOnly && run.rtcReplacementAllowed && nat4Observers.length > 0 && !nat4PortSteps.has(target.relayAddress);
+      const stun = relayOnly ? [] : observeStun ? nat4Observers : stunUrls;
+      const grant = run.swarm ? target.initialSwarmGrant : undefined;
+      const unavailableSwarm = run.initialIceRoute === 'swarm' && !swarmAvailable;
+      const iceServers = grant || run.initialIceRoute === 'direct' || unavailableSwarm
+        ? (stun.length ? [{urls:stun}] : [])
+        : iceServersFor(roomId, runId, seat, run.swarm, run.swarmWorkers?.[seat], stun);
+      target.peersAnnounced = true;
+      sendSignal(target, {
+        type: 'peers',
+        peers: [...run.signalClients.keys()].filter(peer => peer !== seat),
+        route: run.route,
+        iceServers,
+        ...(run.turnMode ? {turnMode:run.turnMode} : {}),
+        ...(relayOnly ? {initialIceRelayOnly:true} : {}),
+        ...(run.initialIceRoute ? {fallbackIceServers:iceServersFor(roomId, runId + '-backup', seat)} : {}),
+        ...(run.adaptiveSwarmWorkers?.length ? {adaptiveSwarm:true, initialSwarmWorker:run.swarmWorkers?.[seat],
+          ...(run.surveyInitialSwarm && {surveyInitialSwarm:true})} : {}),
+        ...(grant ? {swarmGrant:grant} : {}),
+        ...(observeStun ? {nat4Observers} : {}),
+        ...(run.rtcReplacementClients.size === 2 ? {rtcReplace:true} : {}),
+        ...(roomId.startsWith('th09mp-') && run.memberIds ? {th09MatchReport:true} : {}),
+      });
+    }
+    for (const target of announced) sendSignal(target, {type:'peer-join', player});
   }
   console.log(
     `SIGNAL JOIN room=${roomId} run=${runId} player=${player} peers=${run.signalClients.size}`,
@@ -2829,6 +2860,9 @@ server.on('connection', (socket, request) => {
 
   if (signaling) {
     socket.rtcStartup = url.searchParams.get('rtcStartup') === '1';
+    const iceChoice = url.searchParams.get('rtcRoute');
+    socket.hasInitialIceChoice = ['auto','direct','swarm','turn'].includes(iceChoice);
+    socket.initialIceChoice = socket.hasInitialIceChoice ? iceChoice : 'auto';
     void handleSignalConnection(socket, roomId, runId, player, playerCount).catch(() => socket.close(1011, 'signaling unavailable'));
     return;
   }

@@ -6,6 +6,7 @@
 
 namespace Netplay
 {
+struct RouteSwitchStatus;
 // Implements the browser transport's etr1 control protocol for a native peer.
 // The primary socket stays alive while the standby is negotiated and measured.
 class NativeAdaptiveRoute
@@ -31,6 +32,8 @@ public:
     void ConfigureSurvey(std::string initialRoute, bool initialSurvey, SurveySignal send, RetirePeer retire);
     void BeginStartup();
     bool SelectStartup(std::uint32_t serial);
+    RouteSwitchStatus SwitchStatus() const;
+    bool ConfirmOffer();
     void RelayStandby(const nlohmann::json &message, rtc::Configuration ice = {});
     bool SendControl(const std::uint8_t *data, std::size_t size);
     bool Poll(std::vector<std::uint8_t> *packet);

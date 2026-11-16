@@ -15,6 +15,34 @@ const epoch=Number(query.get('runtimeEpoch')),validEpoch=Number.isSafeInteger(ep
 const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
 let core,launched=false,first=false,options={},music=true,chain=Promise.resolve(),queue=Promise.resolve(),revision=0,netplay,stopping=false,networkOverlayPending=false;
 let initializedReady=false,launchSettled=false,lifetime=0,stopPending=false,retired=false,configApplying=null,appliedTouchPolicy=0,autoReplay,replayPlayer;
+const routeSwitch=$('#routeSwitch'),routeSwitchButton=$('#routeSwitchButton'),routeSwitchText=$('#routeSwitchText');
+const startupRoutes=$('#startupRoutes');
+let startupRoute='auto';
+function showStartupRoutes(show){
+ if(startupRoutes)startupRoutes.hidden=!show||options.netplaySpectator===true;
+}
+startupRoutes?.addEventListener('click',event=>{
+ const button=event.target.closest('[data-route]');
+ if(!button||startupRoutes.hidden)return;
+ startupRoute=button.dataset.route;
+ for(const option of startupRoutes.querySelectorAll('[data-route]'))
+  option.setAttribute('aria-pressed',String(option===button));
+});
+function showRouteSwitch(){
+ if(!routeSwitch)return;
+ const transport=globalThis.__eaglerPeerTransport;
+ const state=netplay?.active&&!netplay.spectator&&!stopPending ? transport?.routeSwitchStatus?.() : null;
+ routeSwitch.hidden=!state;
+ if(!state)return;
+ routeSwitchButton.hidden=state.switching;
+ const message=state.switching?'正在切换…':`${state.from} ${state.fromMs??'--'} ms → ${state.to} ${state.toMs} ms`;
+ if(routeSwitchText.textContent!==message) routeSwitchText.textContent=message;
+}
+routeSwitchButton?.addEventListener('mousedown',event=>event.preventDefault());
+routeSwitchButton?.addEventListener('click',()=>{
+ globalThis.__eaglerPeerTransport?.confirmRouteSwitch?.();
+ showRouteSwitch();
+});
 // Native serials survive game open/reset/pause. These four markers belong to
 // this core, not to a game frame or a gesture. Ineligible input is never replayed.
 let sourceBomb=0,sourceEscape=0,mappedBomb=0,mappedEscape=0,lastTouchFire=false;
@@ -31,6 +59,8 @@ function neutralTouch(enabled=!!options.touchEnabled&&!configApplying&&!stopPend
  core._th09_touch_controls(+enabled,+lastTouchFire,0,mappedBomb,mappedEscape);
 }
 function revokeLifetime(terminal=false){
+ if(routeSwitch)routeSwitch.hidden=true;
+ showStartupRoutes(false);
  if(!stopPending){stopPending=true;++lifetime;launchSettled=false;neutralTouch(false);}
  launchSettled=false;if(terminal)retired=true;
 }
@@ -146,7 +176,8 @@ case 'configure':{
  assertLifetime(receivedLifetime,owner);
  if(configApplying&&configApplying!==ticket)throw new SupersededRuntimeCommand('Runtime configuration was superseded');
  if(core.FS.analyzePath('/msgothic.ttc').exists){try{core.FS.unlink('/fonts/msgothic.ttc');}catch{}core.FS.symlink('/msgothic.ttc','/fonts/msgothic.ttc');}
- apply();assertLifetime(receivedLifetime,owner);if(configApplying===ticket)configApplying=null;return {};
+ apply();assertLifetime(receivedLifetime,owner);if(configApplying===ticket)configApplying=null;
+ showStartupRoutes(roomPreview&&!launched);return {};
 }
 case 'resources':{
  const owner=core;assertLifetime(receivedLifetime,owner);
@@ -171,7 +202,7 @@ case 'prepare-room':{roomOwned=true;
  if(runtimeVariant!=='multiplayer'||launched)throw Error('Invalid room preview owner');
  await initializeTitle(receivedLifetime);
  if(!core._th09_room_preview(1))throw Error(err());
- roomPreview=true;core._th09_loop_start();$('#loading').textContent='';await new Promise(requestAnimationFrame);return {presented:true};
+ roomPreview=true;showStartupRoutes(true);core._th09_loop_start();$('#loading').textContent='';await new Promise(requestAnimationFrame);return {presented:true};
 }
 case 'launch':{
  launchSerial=Number(m.launchSerial)||0;
@@ -182,6 +213,8 @@ case 'launch':{
  const startupImageAt=performance.now()-(roomPreview?2000:0);performance.mark('eagler-startup-image');
  if(roomPreview){core._th09_loop_stop();if(!core._th09_room_preview(0))throw Error(err());}
  await initializeTitle(receivedLifetime);roomPreview=false;
+ showStartupRoutes(false);
+ if(options.netplayMode==='lan'&&!options.netplaySpectator)options={...options,netplayRouteChoice:startupRoute};
  // The native driver applies this policy only during active rollback battles.
  // Room navigation and URL parameters do not control reconciliation timing.
  const recoveryAfterPresent=options.netplayMode==='lan'&&!options.netplaySpectator&&!options.replayViewer;
@@ -231,6 +264,7 @@ case 'network-open':openNetwork();return {};
 case 'return-room':roomOwned=true;
  if(runtimeVariant!=='multiplayer'||!core._th09_room_return)throw Error('Room menu return is unavailable');
  roomPreview=true;clearKeyboard();neutralTouch();core._th09_loop_stop();netplay?.close(false);netplay=null;
+ showStartupRoutes(true);
  if(!core._th09_room_return())throw Error(err());
  launched=false;launchSettled=false;first=false;if(!retired)stopPending=false;core._th09_loop_start();await new Promise(requestAnimationFrame);return {presented:true};
 case 'network-cancel':networkOverlayPending=false;clearKeyboard();neutralTouch();core._th09_loop_pause(+document.hidden);canvas.focus();return {};
@@ -270,7 +304,7 @@ for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();clearKeyboard();fatal(Error('图形环境失效，请退出后重新开始。'));});window.addEventListener('pagehide',()=>{revokeLifetime(true);replayPlayer?.close();clearKeyboard();if(launched){netplay?.close();core._th09_loop_pause(1);void save();}});
 const initialized=(async()=>{
  const initializingLifetime=lifetime;let last=performance.now(),lastFrames=0;
-  core=await createModule({canvas,resetBrowserKeyboard:()=>keyboard.clear(),printErr:console.error,onNetworkRequest:openNetwork,onNetworkReplayBoundary:replayBoundary,onNetworkMatchDecided:(...args)=>netplay?.finishMatchReport(...args),onNetworkResult:()=>netplay?.result(),onNetworkInput:(...args)=>netplay?.input(...args),onNetworkSpectatorBegin:(...args)=>netplay?.beginMatch(...args),onNetworkSpectatorEnd:frame=>netplay?.endMatch(frame),onNetworkSpectatorRound:(frame,round,replayFrame)=>{autoReplay?.roundStart(replayFrame);netplay?.roundStart(frame,round);},onNetworkSpectatorFrame:(...args)=>netplay?.publish(...args),onGameFrame(ok,ms){if(!ok){fatal(Error(err()));return;}netplay?.frame();if(!first){first=true;emit('first-frame');}const current=core._th09_storage_revision();if(current!==revision){revision=current;void sync().catch(fatal);}const now=performance.now(),frames=status().title[0];if(now-last>=1000){emit('frame-health',{fps:(frames-lastFrames)*1000/(now-last),maxGapMs:ms});emit('audio-health',{backend:'script',robust:core.SDL3?.audioContext?.state==='running'});last=now;lastFrames=frames;}const title=status().title;if(title[7]===0||(netplay?.finished&&title[1]&&title[2]===1)||(netplay?.spectator&&!netplay.timelineExperiment&&title[1]&&(title[2]===14||title[2]===1)))void stop().catch(fatal);}});
+  core=await createModule({canvas,resetBrowserKeyboard:()=>keyboard.clear(),printErr:console.error,onNetworkRequest:openNetwork,onNetworkReplayBoundary:replayBoundary,onNetworkMatchDecided:(...args)=>netplay?.finishMatchReport(...args),onNetworkResult:()=>netplay?.result(),onNetworkInput:(...args)=>netplay?.input(...args),onNetworkSpectatorBegin:(...args)=>netplay?.beginMatch(...args),onNetworkSpectatorEnd:frame=>netplay?.endMatch(frame),onNetworkSpectatorRound:(frame,round,replayFrame)=>{autoReplay?.roundStart(replayFrame);netplay?.roundStart(frame,round);},onNetworkSpectatorFrame:(...args)=>netplay?.publish(...args),onGameFrame(ok,ms){if(!ok){fatal(Error(err()));return;}netplay?.frame();showRouteSwitch();if(!first){first=true;emit('first-frame');}const current=core._th09_storage_revision();if(current!==revision){revision=current;void sync().catch(fatal);}const now=performance.now(),frames=status().title[0];if(now-last>=1000){emit('frame-health',{fps:(frames-lastFrames)*1000/(now-last),maxGapMs:ms});emit('audio-health',{backend:'script',robust:core.SDL3?.audioContext?.state==='running'});last=now;lastFrames=frames;}const title=status().title;if(title[7]===0||(netplay?.finished&&title[1]&&title[2]===1)||(netplay?.spectator&&!netplay.timelineExperiment&&title[1]&&(title[2]===14||title[2]===1)))void stop().catch(fatal);}});
  assertLifetime(initializingLifetime,core);
  window.Module=core;window.FS=core.FS;core.SDL3=core.SDL3||{};if(parent!==window&&parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;
  core.FS.mkdirTree(saveRoot);core.FS.mount(core.IDBFS,{},saveRoot);await sync(true);assertLifetime(initializingLifetime,core);core.FS.mkdirTree(saveRoot+'/replay');core.FS.symlink(saveRoot,'/save');
