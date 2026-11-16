@@ -143,7 +143,7 @@ struct NativeAdaptiveRoute::State
     std::string tag;
     std::uint8_t local, remote;
     rtc::Configuration config;
-    bool swarm, allowSwitching, peerSwitching = true;
+    bool swarm, allowSwitching, manualConfirmation, peerSwitching = true;
     bool running = false, hello = false, supported = false, directRetry = false, pairedQuality = false;
     bool startup = false;
     bool manualSwitch = false;
@@ -165,9 +165,10 @@ struct NativeAdaptiveRoute::State
     std::size_t pendingBytes = 0, reorderBytes = 0, inboxBytes = 0;
     std::deque<Bytes> inbox;
 
-    State(NativePeerTransport &peer, std::string name, std::uint8_t localPlayer, rtc::Configuration cfg, bool usingSwarm, bool switching)
+    State(NativePeerTransport &peer, std::string name, std::uint8_t localPlayer, rtc::Configuration cfg,
+          bool usingSwarm, bool switching, bool confirmation)
         : primary{&peer}, tag(std::move(name)), local(localPlayer), remote(1 - localPlayer),
-          config(std::move(cfg)), swarm(usingSwarm), allowSwitching(switching) {}
+          config(std::move(cfg)), swarm(usingSwarm), allowSwitching(switching), manualConfirmation(confirmation) {}
 
     bool Controller() const { return local == 0; }
     bool Switching() const { return allowSwitching && peerSwitching; }
@@ -475,7 +476,7 @@ struct NativeAdaptiveRoute::State
             peerSwitching = !m.contains("switching") || m["switching"] != false;
             directRetry = supported && m.contains("directRetry") && m["directRetry"] == true;
             pairedQuality = supported && m.contains("pairedQuality") && m["pairedQuality"] == true;
-            manualSwitch = pairedQuality && tag == "th09" && m.contains("manualSwitch") && m["manualSwitch"] == true;
+            manualSwitch = pairedQuality && manualConfirmation && m.contains("manualSwitch") && m["manualSwitch"] == true;
             return;
         }
         if (!supported || disabled) return;
@@ -783,8 +784,8 @@ struct NativeAdaptiveRoute::State
 };
 
 NativeAdaptiveRoute::NativeAdaptiveRoute(NativePeerTransport &primary, std::string tag, std::uint8_t local,
-                                         rtc::Configuration standbyConfig, bool swarm, bool allowSwitching)
-    : state_(std::make_unique<State>(primary, std::move(tag), local, std::move(standbyConfig), swarm, allowSwitching)) {}
+                                         rtc::Configuration standbyConfig, bool swarm, bool allowSwitching, bool manualConfirmation)
+    : state_(std::make_unique<State>(primary, std::move(tag), local, std::move(standbyConfig), swarm, allowSwitching, manualConfirmation)) {}
 NativeAdaptiveRoute::~NativeAdaptiveRoute() = default;
 
 void NativeAdaptiveRoute::Pump(bool running)
@@ -799,7 +800,7 @@ void NativeAdaptiveRoute::Pump(bool running)
     }
     s.lastPump = time;
     if (!s.hello) s.hello = s.Send(*s.active, {{"kind", "hello"}, {"enabled", true}, {"switching", s.allowSwitching},
-        {"directRetry", true}, {"pairedQuality", true}, {"manualSwitch", s.tag == "th09"}});
+        {"directRetry", true}, {"pairedQuality", true}, {"manualSwitch", s.manualConfirmation}});
     s.Drain(s.primary, time);
     s.Drain(s.standby, time);
     if (s.planned) s.Drain(*s.planned, time);

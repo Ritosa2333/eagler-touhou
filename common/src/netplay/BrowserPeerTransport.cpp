@@ -27,7 +27,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
         const signalUrl = new URL(relay.href);
         signalUrl.searchParams.set('signal', '1');
         const requestedRoute = Module.eaglerOptions?.netplayRouteChoice;
-        const choosesRoute = tag === 'th09' && playerCount === 2 && ['auto','direct','swarm','turn'].includes(requestedRoute);
+        const choosesRoute = playerCount === 2 && ['auto','direct','swarm','turn'].includes(requestedRoute);
         if (choosesRoute) signalUrl.searchParams.set('rtcRoute',requestedRoute);
         const preferTurn = !choosesRoute && Module.eaglerOptions?.netplayPreferTurn === true;
         if (playerCount === 2 && typeof RTCPeerConnection === 'function' &&
@@ -673,6 +673,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     } else if (controller && proposal && time - proposal.at > 3000) { proposal = null; verification = null; verifyAfter = time + 10000; }
                     if (recoveryUntil && time > recoveryUntil) { recoveryUntil = 0; options.failed('RTC route recovery exhausted'); }
                 }
+                options.onRouteStatus?.();
                 timer = later(tick, verification || measuring() ? policy.verificationIntervalMs : policy.primaryIntervalMs);
             }
             return {
@@ -762,6 +763,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             };
         }
         // END generated adaptive-peer-route
+        const hudCanvas = tag !== 'th09' && playerCount === 2 && globalThis.document?.body
+            ? Module.canvas ?? document.querySelector('canvas') : null;
         const state = {
             relay: null, signal: null, peers: new Map(), received: [], receivedHead: 0, pendingSignals: [],
             receivedBytes: 0, pendingReceivedBytes: 0, pendingReceivedPackets: 0,
@@ -810,6 +813,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 // Closed SCTP channels cannot be reopened by an ICE restart.
                 // Keep the world intact and report a connection-ended state.
                 this.disconnected = true;
+                this.routeSwitchHud?.remove();
                 clearTimeout(this.rtcReplaceTimer);
                 this.closePreparedRtc();
                 this.error = String(message || 'peer transport failed');
@@ -1022,6 +1026,44 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             routeSwitchStatus() {
                 return this.route === 'rtc' && !this.failed && !this.disconnected &&
                     this.peers.get(1 - this.localPlayer)?.adaptive?.routeSwitchStatus() || null;
+            },
+            refreshRouteSwitch() {
+                if (!hudCanvas) return;
+                const status = this.routeSwitchStatus();
+                if (!status || !hudCanvas.isConnected || document.hidden) {
+                    this.routeSwitchHud?.remove();
+                    this.routeSwitchHud = null;
+                    return;
+                }
+                const language = document.documentElement.lang;
+                const words = /^ja/i.test(language) ? ['切替','切替中…'] :
+                    /^en/i.test(language) ? ['Switch','Switching…'] : ['切换','正在切换…'];
+                if (!this.routeSwitchHud) {
+                    const row = document.createElement('div');
+                    const button = document.createElement('button');
+                    const label = document.createElement('span');
+                    row.style.cssText = 'position:fixed;z-index:10;display:flex;align-items:center;gap:7px;color:#f2f5f0;font:12px/1.3 system-ui;text-shadow:0 1px 2px #000;white-space:nowrap;pointer-events:none';
+                    button.type = 'button';
+                    button.style.cssText = 'pointer-events:auto;padding:2px 6px;background:#171514;color:inherit;font:inherit';
+                    button.textContent = words[0];
+                    button.addEventListener('mousedown', event => event.preventDefault());
+                    button.addEventListener('click', () => {
+                        this.confirmRouteSwitch();
+                        this.refreshRouteSwitch();
+                    });
+                    label.setAttribute('role','status');
+                    row.append(button,label);
+                    document.body.append(row);
+                    this.routeSwitchHud = row;
+                }
+                const bounds = hudCanvas.getBoundingClientRect();
+                const row = this.routeSwitchHud;
+                row.style.right = Math.max(12, innerWidth - bounds.right + 12) + 'px';
+                row.style.bottom = Math.max(30, innerHeight - bounds.bottom + 30) + 'px';
+                row.firstElementChild.hidden = status.switching;
+                const label = status.switching ? words[1] :
+                    status.from + ' ' + (status.fromMs ?? '--') + ' ms \u2192 ' + status.to + ' ' + status.toMs + ' ms';
+                if (row.lastElementChild.textContent !== label) row.lastElementChild.textContent = label;
             },
             confirmRouteSwitch() {
                 return this.route === 'rtc' && !this.failed && !this.disconnected &&
@@ -1256,7 +1298,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     primary: peer.primary, localPlayer: this.localPlayer, peerId, tag: this.tag,
                     enabled: Module.eaglerOptions?.netplayAdaptiveTurn !== false,
                     allowSwitching: this.iceTransportPolicy !== 'relay',
-                    manualSwitch: tag === 'th09',
+                    manualSwitch: tag === 'th09' || !!hudCanvas,
+                    onRouteStatus: hudCanvas ? () => this.refreshRouteSwitch() : undefined,
                     iceServers: () => this.fallbackIceServers ?? this.iceServers,
                     surveyEnabled: () => this.canSurveySwarm(),
                     surveyPending: () => Date.now() < this.rtcSurveyUntil,
@@ -1526,6 +1569,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             },
             close() {
                 this.closed = true;
+                this.routeSwitchHud?.remove();
                 this.closePreparedRtc();
                 clearTimeout(this.rtcReplaceTimer);
                 if (this.signalReconnectTimer) clearTimeout(this.signalReconnectTimer);

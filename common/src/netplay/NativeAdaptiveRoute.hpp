@@ -13,7 +13,7 @@ class NativeAdaptiveRoute
 {
 public:
     NativeAdaptiveRoute(NativePeerTransport &primary, std::string tag, std::uint8_t localPlayer,
-                        rtc::Configuration standbyConfig, bool swarm, bool allowSwitching = true);
+                        rtc::Configuration standbyConfig, bool swarm, bool allowSwitching = true, bool manualConfirmation = false);
     ~NativeAdaptiveRoute();
 
     void Pump(bool running);

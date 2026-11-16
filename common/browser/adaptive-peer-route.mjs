@@ -636,6 +636,7 @@ export function createAdaptivePeerRoute(options) {
             } else if (controller && proposal && time - proposal.at > 3000) { proposal = null; verification = null; verifyAfter = time + 10000; }
             if (recoveryUntil && time > recoveryUntil) { recoveryUntil = 0; options.failed('RTC route recovery exhausted'); }
         }
+        options.onRouteStatus?.();
         timer = later(tick, verification || measuring() ? policy.verificationIntervalMs : policy.primaryIntervalMs);
     }
     return {
