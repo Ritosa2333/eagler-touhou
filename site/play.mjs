@@ -1,5 +1,6 @@
 import {fetchResource,isImportedResourceMode} from './resource-fetch.mjs';
 import {readWorldDrawRecords} from './runtime/world-presentation.mjs';
+import {mountWebInput} from './runtime/web-input.mjs';
 import {QualificationOwner,evaluateOwnedQualification,EX_QUALIFICATION_SCHEMA} from './runtime/ex-qualification.mjs';
 import {loadOriginalType33ForWorld,originalType33Profile} from './runtime/original-bullet-type33.mjs';
 const {assertStageStartAllowed,mountExtraMenu,setDebugExtraSaveEligibility,setOwnedExtraSaveEligibility,readCurrentExtraAccess,requestNormalExtraStart}=(()=>{
@@ -4129,6 +4130,7 @@ window.addEventListener('keydown',event=>{
   const menuKeys=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','Enter','Escape'];
   if(menuKeys.includes(event.code))event.preventDefault();
   if(event.code==='KeyZ'||event.code==='Enter')event.preventDefault();
+  if(state.webInput&&!state.webInput.acceptKeyDown(event))return;
   if(state.pressed.has(event.code)||suppressedKeys.has(event.code))return;
   state.pressed.add(event.code);
   if(state.normalPostrun){
@@ -4175,6 +4177,7 @@ window.addEventListener('keydown',event=>{
   }
 });
 window.addEventListener('keyup',event=>{
+  if(state.webInput&&!state.webInput.acceptKeyUp(event))return;
   if(state.normalPostrun){state.pressed.delete(event.code);suppressedKeys.delete(event.code);state.normalPostrun.input.up(event.code);return;}
   if(!state.worldMode)state.mainController?.keyUp(event.code);
   if(menu.pauseOpen&&state.nativePause){state.pressed.delete(event.code);suppressedKeys.delete(event.code);state.nativePause.keyUp(event.code);return;}
@@ -4209,10 +4212,26 @@ function loseFocus(){
 }
 window.addEventListener('blur',loseFocus);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)loseFocus();});
-window.addEventListener('pagehide',()=>{cancelOriginalEnding();state.controller?.abort();state.renderer?.dispose();stopAudio();});
+window.addEventListener('pagehide',()=>{state.webInput?.dispose();cancelOriginalEnding();state.controller?.abort();state.renderer?.dispose();stopAudio();});
+
+function installWebInput(){
+  if(state.webInput)return state.webInput;
+  const canvas=find('#game');let previous=[],owner=0;
+  state.webInput=mountWebInput({canvas,container:canvas.closest('.screen'),
+    getContext:()=>{
+      const next=[state.module,state.action,state.stageSelection,state.worldMode,state.normalPostrun,state.endingHost,state.endingLoading,
+        state.handoff,state.nativePause,state.replayPlayback,state.paused,menu.launchId,menu.page,menu.pauseOpen,menu.fault];
+      if(next.some((value,index)=>value!==previous[index])){previous=next;owner++;}
+      return owner;
+    },
+    isEnabled:()=>Boolean(state.active||menu.launching||state.normalPostrun||state.endingHost||menu.fault)});
+  return state.webInput;
+}
+installWebInput();
 
 async function present(timestamp){
   try{
+    state.webInput?.syncContext();
     let interpolation=1,presentationSteps=0;
     const nativeMenu=state.active&&state.worldMode&&menu.pauseOpen&&!menu.fault?state.nativePause:null;
     if(nativeMenu){

@@ -100,3 +100,12 @@ main{max-width:1328px}.screen{max-width:1280px}
 #resource-loader [role="status"]{line-height:1.7;overflow-wrap:anywhere}
 #resource-loader progress{display:block;width:100%;height:14px;accent-color:#82cddb;margin:18px 0}
 [data-development-only]{display:none!important}
+
+/* Coarse pointer controls share the same keyboard owners as the desktop input. */
+.web-input{position:absolute;inset:0;z-index:5;pointer-events:none;display:none;user-select:none;-webkit-user-select:none;touch-action:none}
+.web-input-pad{position:absolute;left:max(8px,env(safe-area-inset-left));bottom:max(8px,env(safe-area-inset-bottom));width:min(30%,210px);aspect-ratio:1;border:1px solid #bceaff66;border-radius:50%;background:#102a3b66;pointer-events:auto;touch-action:none;display:grid;place-items:center;color:#d8f6ff99;font-size:12px}
+.web-input-actions{position:absolute;right:max(8px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(2,minmax(44px,1fr));gap:6px;max-width:43%}
+.web-input-button{min-height:44px;padding:8px 10px;white-space:normal;pointer-events:auto;touch-action:none;background:#122c3bd9;border-color:#bceaff66;font-size:12px}
+.web-input-button:active{background:#315f73e8}
+@media(any-pointer:coarse){.web-input{display:block}}
+@media(max-width:500px){.web-input-actions{gap:4px}.web-input-button{font-size:10px;padding:5px;min-height:38px}}

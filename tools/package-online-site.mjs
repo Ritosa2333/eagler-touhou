@@ -73,6 +73,7 @@ export const SITE_FILES = Object.freeze([
   'runtime/title-records.mjs',
   'runtime/zip-reader.mjs',
   'runtime/world-presentation.mjs',
+  'runtime/web-input.mjs',
 ]);
 
 // REQUIRED online module: the automatic download/cache entry MAIN is implementing. A deployment

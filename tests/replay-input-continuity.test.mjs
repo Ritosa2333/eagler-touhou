@@ -11,7 +11,10 @@ const end=source.indexOf('  advanceWorld:',start);
 assert.ok(start>=0&&end>start,'replayWorldInputs must remain a top-level debug method');
 const snippet=source.slice(start,end).trim();
 assert.ok(snippet.startsWith('replayWorldInputs:'));
-const makeReplay=new Function('state','clock','drainWorld','gameplayInputMask',`return ({${snippet}}).replayWorldInputs;`);
+const guardStart=source.indexOf('function assertSynchronousWorldDrainAllowed('),guardEnd=source.indexOf('\n}',guardStart)+2;
+assert(guardStart>=0&&guardEnd>guardStart);
+const guard=source.slice(guardStart,guardEnd);
+const makeReplay=new Function('state','clock','drainWorld','gameplayInputMask','resetHighFrameratePresentation','syncDebugRespawnUI',`${guard}\nreturn ({${snippet}}).replayWorldInputs;`);
 
 function runtime(gameplayInputMask=()=>761){
   const calls=[],ticks=[],drains=[];
@@ -31,7 +34,7 @@ function runtime(gameplayInputMask=()=>761){
   return {
     state,clock,calls,ticks,drains,
     get backgroundTicks(){return backgroundTicks;},
-    replay:makeReplay(state,clock,()=>{drains.push(drains.length);},gameplayInputMask),
+    replay:makeReplay(state,clock,()=>{drains.push(drains.length);},gameplayInputMask,()=>{},()=>{}),
   };
 }
 

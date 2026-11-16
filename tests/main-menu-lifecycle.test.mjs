@@ -24,7 +24,7 @@ function environment(functions,extra={}){
     status:message=>messages.push(message),error:problem=>errors.push(problem),
     nativeMenuSnapshot:()=>({available:true,page:0,ready:1,transitioning:0}),
     nativePageNames:['main','difficulty','route'],clock:{reset(){}},setDebugExtraSaveEligibility(){},
-    suppressHeldConfirmKeys(){},window:{confirm:()=>true},
+    suppressHeldConfirmKeys(){},syncOriginalReplayImportControls(){},async refreshOriginalReplayImportRows(){},resetHighFrameratePresentation(){},window:{confirm:()=>true},
     updateOwnedMainSettings:async change=>{const changes=change(state.mainSavedSettings);writes.push(structuredClone(changes));return {...state.mainSavedSettings,...changes,revision:state.mainSavedSettings.revision+1};},
     originalMainController:()=>state.mainController,
     ...extra};
@@ -117,7 +117,7 @@ test('debug unlock blocks menu navigation until durable write and native EX sync
 });
 test('confirmed debug save pauses title ticks including gamepad polling',async()=>{
   let steps=0,syncs=0;
-  const env=environment(['advance'],{syncNativeMenuState(){syncs++;}});
+  const env=environment(['advance','advanceSerial'],{syncNativeMenuState(){syncs++;}});
   env.state.mainController={step:async()=>{steps++;}};
   env.state.mainSaveDebugBusy=true;
   await env.context.advance();
