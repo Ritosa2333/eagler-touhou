@@ -1,0 +1,108 @@
+// Eagler single-player session transport. Page hooks, resources and actual presentation
+// remain explicit; this module never loads a game or claims an absent capability.
+const PROTOCOL='eagler-touhou/1',GAME='th128';
+const KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','Enter','Escape','ShiftLeft','ShiftRight']);
+const own=(value,key)=>Object.hasOwn(value,key),record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)
+ &&(Object.getPrototypeOf(value)===Object.prototype||Object.getPrototypeOf(value)===null);
+const invalid=message=>Object.assign(new Error(message),{errno:'invalid-field'});
+export function mountLauncherSession({window=globalThis.window,document=window?.document,location=window?.location,hooks={}}={}){
+ if(!window||!location||!window.parent||window.parent===window)return null;
+ const values=new URLSearchParams(location.search??'').getAll('runtimeEpoch');
+ if(values.length!==1||!(/^[1-9][0-9]*$/).test(values[0]))return null;
+ const epoch=Number(values[0]);if(!Number.isSafeInteger(epoch))return null;
+ let parentOrigin;
+ try{const referrer=new URL(document?.referrer);if(!['https:','http:'].includes(referrer.protocol)||referrer.origin==='null')return null;parentOrigin=referrer.origin;}catch{return null;}
+ const parent=window.parent,controller=new AbortController(),requests=new Map();
+ let phase='booting',config=null,launchSerial=null,presented=false,closed=false,busy=false;
+ const base={protocol:PROTOCOL,game:GAME,epoch};
+ const post=body=>parent.postMessage({...body,...base},parentOrigin);
+ const reply=(request,ok,body={})=>{
+  if(request===undefined)return;const response={...body,request,ok};
+  requests.set(request,response);
+  const completed=[...requests].filter(([,value])=>value!==null);
+  for(let i=0;i<completed.length-256;i++)requests.delete(completed[i][0]);
+  post(response);
+ };
+ const fail=(request,errno,message)=>reply(request,false,{errno,error:String(message)});
+ const hook=async(name,value)=>{if(typeof hooks[name]!=='function')throw Object.assign(new Error('Runtime '+name+' bridge is unavailable'),{errno:'unavailable'});return hooks[name](value);};
+ function detach(){window.removeEventListener('message',receive);window.removeEventListener('pagehide',pagehide);}
+ async function stop(request,clean){
+  if(closed)return;closed=true;phase='exited';controller.abort();detach();
+  try{await hook('exit',{signal:controller.signal,clean});}catch(error){if(clean)fail(request,error.errno??'internal-error',error?.message??error);return;}
+  if(clean){reply(request,true);post({event:'exit',code:0});}
+ }
+ const pagehide=()=>{void stop(undefined,false);};
+ function configureValue(data){
+  if(!['ogg','none','midi'].includes(data.music))throw invalid('configure.music is invalid');
+  const value={music:data.music};
+  if(own(data,'language')){if(typeof data.language!=='string'||!data.language||data.language.length>64)throw invalid('configure.language is invalid');value.language=data.language;}
+  for(const key of ['resources','runtimeResources','sharedResources']){
+   if(!own(data,key))continue;if(!Array.isArray(data[key])||data[key].length>4096)throw invalid('configure.'+key+' must be a bounded array');value[key]=data[key];
+  }
+  if(own(data,'runtimePack'))value.runtimePack=data.runtimePack;
+  if(own(data,'options')){if(!record(data.options))throw invalid('configure.options must be an object');value.options=data.options;}
+  return value;
+ }
+ async function execute(data){
+  const {command,request}=data;
+  if(command==='exit'){await stop(request,true);return;}
+  if(closed)return;
+  const supported=['configure','resources','launch','keyboard','keyboard-clear'];
+  if(!supported.includes(command)){fail(request,'unsupported-command','Runtime does not implement '+command);return;}
+  if(phase==='booting'||busy){fail(request,'invalid-state','Runtime is not ready for '+command);return;}
+  if(command==='keyboard'||command==='keyboard-clear'){
+   if(phase!=='running'){fail(request,'invalid-state','Runtime input is not running');return;}
+   try{
+    if(command==='keyboard'){
+     if(typeof data.down!=='boolean'||!KEYS.has(data.code)||own(data,'repeat')&&typeof data.repeat!=='boolean'
+      ||own(data,'inputSource')&&!['physical','virtual'].includes(data.inputSource))throw invalid('keyboard input is invalid');
+     await hook('keyboard',{down:data.down,code:data.code,repeat:data.repeat??false,inputSource:data.inputSource??'physical'});
+    }else await hook('keyboardClear');
+    if(!closed)reply(request,true);
+   }catch(error){if(!closed)fail(request,error.errno??'internal-error',error.message);}
+   return;
+  }
+  if(command==='launch'&&phase!=='configured'||command!=='launch'&&phase!=='ready'&&phase!=='configured'){
+   fail(request,'invalid-state','Invalid runtime phase for '+command);return;
+  }
+  const before=phase;busy=true;
+  try{
+   if(command==='configure'){const next=configureValue(data);await hook('configure',next);if(closed)return;config=next;phase='configured';}
+   else if(command==='resources'){
+    if(!Array.isArray(data.resources)||data.resources.length>4096)throw invalid('resources must be a bounded array');
+    await hook('resources',data.resources);if(closed)return;
+   }else{
+    if(own(data,'launchSerial')&&(!Number.isSafeInteger(data.launchSerial)||data.launchSerial<1))throw invalid('launchSerial is invalid');
+    phase='loading';launchSerial=data.launchSerial??null;
+    await hooks.keyboardClear?.();if(closed)return;
+    await hook('launch',{config,launchSerial,signal:controller.signal});if(closed)return;phase='running';
+   }
+   reply(request,true,command==='launch'?{launchSerial}:{});
+  }catch(error){if(!closed){phase=before;fail(request,error.errno??'internal-error',error.message??error);}}
+  finally{busy=false;}
+ }
+ function receive(event){
+  if(closed||event.source!==parent||event.origin!==parentOrigin)return;
+  const value=event.data;
+  if(!record(value)||value.protocol!==PROTOCOL||value.game!==GAME||value.epoch!==epoch||typeof value.command!=='string')return;
+  if(own(value,'request')&&(typeof value.request!=='string'||value.request.length<1||value.request.length>128))return;
+  if(own(value,'request')){
+   if(requests.has(value.request)){const response=requests.get(value.request);if(response)post(response);return;}
+   if(value.command!=='exit'&&[...requests.values()].filter(row=>row===null).length>=64){post({request:value.request,ok:false,errno:'unavailable',error:'Runtime has too many pending requests'});return;}
+   requests.set(value.request,null);
+  }
+  let data;
+  try{data=structuredClone(value);}catch{fail(value.request,'invalid-field','Runtime command cannot be detached');return;}
+  void execute(data);
+ }
+ window.addEventListener('message',receive);window.addEventListener('pagehide',pagehide);
+ return {
+  get epoch(){return epoch;},get phase(){return phase;},get signal(){return controller.signal;},
+  markReady(){if(closed||phase!=='booting')return false;phase='ready';post({event:'ready'});return true;},
+  notePresented(actual){if(actual!==true||closed||phase!=='running'||presented)return false;presented=true;post({event:'first-frame',...(launchSerial===null?{}:{launchSerial})});return true;},
+  runtimeInfo(value){if(!closed)post({...value,event:'runtime-info'});},
+  health(frame,audio){if(closed||!presented)return;post({...frame,event:'frame-health'});if(audio)post({...audio,event:'audio-health'});},
+  reportError(error){if(!closed)post({event:'error',message:String(error?.message??error)});},
+  dispose(){return stop(undefined,false);}
+ };
+}

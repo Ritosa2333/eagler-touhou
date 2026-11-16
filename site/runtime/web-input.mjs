@@ -1,4 +1,5 @@
 // Touch inputs enter the existing keyboard route; no native input or frame calls live here.
+const INPUT_KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','Enter','Escape','ShiftLeft','ShiftRight']);
 export function mountWebInput({canvas,container=canvas?.parentElement,document=canvas?.ownerDocument??globalThis.document,
  window=document?.defaultView??globalThis.window,getContext=()=>null,isEnabled=()=>true}={}){
  if(!canvas||!container||!document||!window)throw new Error('Web input needs a canvas container');
@@ -11,7 +12,7 @@ export function mountWebInput({canvas,container=canvas?.parentElement,document=c
  for(const [action,label,code]of specs){const node=document.createElement('button');node.type='button';node.textContent=label;node.className='web-input-button';
   node.setAttribute('data-web-action',action);node.setAttribute('aria-label',label);node.setAttribute('data-web-code',code);actions.appendChild(node);targets.push(node);}
  layer.appendChild(pad);layer.appendChild(actions);container.appendChild(layer);
- const listeners=[],pointers=new Map(),counts=new Map(),physical=new Set(),activeCodes=new Map(),synthetic=new WeakSet();let context=getContext(),disposed=false,muted=false;
+ const listeners=[],pointers=new Map(),sources=new Map(),counts=new Map(),physical=new Set(),activeCodes=new Map(),synthetic=new WeakSet();let context=getContext(),disposed=false,muted=false;
  const listen=(node,type,fn)=>{node.addEventListener(type,fn,{passive:false});listeners.push([node,type,fn]);};
  const send=(type,code)=>{const event=new window.KeyboardEvent(type,{code,bubbles:true,cancelable:true});synthetic.add(event);window.dispatchEvent(event);};
  const group=code=>code==='ShiftRight'?'ShiftLeft':code;
@@ -24,8 +25,8 @@ export function mountWebInput({canvas,container=canvas?.parentElement,document=c
  }else counts.set(key,n-1);}
  function keys(pointer,next){for(const code of pointer.keys)if(!next.has(code))remove(code);for(const code of next)if(!pointer.keys.has(code))add(code);pointer.keys=next;}
  function end(id){const p=pointers.get(id);if(!p)return;pointers.delete(id);keys(p,new Set());try{if(p.node.hasPointerCapture?.(id))p.node.releasePointerCapture(id);}catch{}}
- function release(notify=true){const previous=muted;muted=!notify;try{for(const id of [...pointers.keys()])end(id);}finally{muted=previous;}}
- function syncContext(){if(!pointers.size)return;const next=getContext();if(next!==context||!isEnabled()){context=next;release();}}
+ function release(notify=true){const previous=muted;muted=!notify;try{for(const id of [...pointers.keys()])end(id);for(const source of sources.values())keys(source,new Set());sources.clear();}finally{muted=previous;}}
+ function syncContext(){if(!pointers.size&&!sources.size)return;const next=getContext();if(next!==context||!isEnabled()){context=next;release();}}
  function content(){const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/1280,r.height/960);return scale>0?
   {left:r.left+(r.width-1280*scale)/2,top:r.top+(r.height-960*scale)/2,scale}:null;}
  function down(event){
@@ -50,6 +51,14 @@ export function mountWebInput({canvas,container=canvas?.parentElement,document=c
  const forget=()=>{release(false);physical.clear();activeCodes.clear();};
  listen(window,'blur',forget);listen(window,'pagehide',forget);listen(document,'visibilitychange',()=>{if(document.hidden)forget();});
  return {layer,syncContext,releaseAll:release,
+  setKeySource(owner,codes){
+   if(typeof owner!=='symbol')throw new TypeError('Input source owner must be a symbol');
+   if(!Array.isArray(codes)||codes.length>16||codes.some(code=>!INPUT_KEYS.has(code)))throw new TypeError('Invalid input source keys');
+   if(disposed)return false;syncContext();if(!isEnabled()||document.hidden)return false;context=getContext();
+   const source=sources.get(owner)??{keys:new Set()};sources.set(owner,source);keys(source,new Set(codes));if(!source.keys.size)sources.delete(owner);return true;
+  },
+  clearKeySource(owner){const source=sources.get(owner);if(!source)return;keys(source,new Set());sources.delete(owner);},
+  readKeySource(owner){return [...(sources.get(owner)?.keys??[])];},
   acceptKeyDown(event){if(synthetic.has(event))return true;physical.add(event.code);const key=group(event.code);return !counts.has(key)&&(!activeCodes.has(key)||activeCodes.get(key)===event.code);},
   acceptKeyUp(event){if(synthetic.has(event))return true;physical.delete(event.code);const key=group(event.code);if(counts.has(key))return false;
    if(activeCodes.has(key)){if(heldPhysical(key))return false;const actual=activeCodes.get(key);activeCodes.delete(key);if(actual!==event.code){send('keyup',actual);return false;}}

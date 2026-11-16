@@ -106,3 +106,35 @@ test('an idle touch adapter does not resample game context on every presentation
  const env=environment();let reads=0;const input=product.mountWebInput({...env,getContext:()=>{reads++;return 1;}});
  const initial=reads;for(let i=0;i<100;i++)input.syncContext();assert.equal(reads,initial);input.dispose();
 });
+
+test('launcher key lease releases only its own holds while the keyboard remains down',()=>{
+ const e=boot(),owner=Symbol('launcher');assert.equal(typeof e.input.setKeySource,'function','External input lease is missing');
+ e.key('keydown','KeyZ');e.input.setKeySource(owner,['KeyZ']);e.input.clearKeySource(owner);assert.deepEqual(e.edges,[['down','KeyZ']]);
+ e.key('keyup','KeyZ');assert.deepEqual(e.edges,[['down','KeyZ'],['up','KeyZ']]);e.input.dispose();
+});
+test('keyboard release cannot cancel a key held by the launcher source',()=>{
+ const e=boot(),owner=Symbol('launcher');assert.equal(typeof e.input.setKeySource,'function','External input lease is missing');
+ e.input.setKeySource(owner,['KeyZ']);e.key('keydown','KeyZ');e.key('keyup','KeyZ');assert(e.held.has('KeyZ'));
+ e.input.clearKeySource(owner);assert.equal(e.held.size,0);assert.deepEqual(e.edges,[['down','KeyZ'],['up','KeyZ']]);e.input.dispose();
+});
+test('launcher clear does not release another touch pointer or another launcher lease',()=>{
+ const e=boot(),one=Symbol('one'),two=Symbol('two');assert.equal(typeof e.input.setKeySource,'function','External input lease is missing');
+ e.input.setKeySource(one,['KeyX']);e.input.setKeySource(two,['KeyX']);e.emit(e.button('freeze'),'pointerdown',1);
+ e.input.clearKeySource(one);e.input.clearKeySource(two);assert(e.held.has('KeyX'));e.emit(e.button('freeze'),'pointerup',1);
+ assert.deepEqual(e.edges,[['down','KeyX'],['up','KeyX']]);e.input.dispose();
+});
+test('repeated identical launcher key sets never emit extra edges',()=>{
+ const e=boot(),owner=Symbol('launcher');assert.equal(typeof e.input.setKeySource,'function','External input lease is missing');
+ e.input.setKeySource(owner,['ArrowLeft','KeyZ']);e.input.setKeySource(owner,['ArrowLeft','KeyZ']);e.input.setKeySource(owner,['KeyZ']);
+ assert.deepEqual(e.edges,[['down','ArrowLeft'],['down','KeyZ'],['up','ArrowLeft']]);e.input.clearKeySource(owner);assert.equal(e.held.size,0);e.input.dispose();
+});
+test('scene changes forget external sources and dispose releases them exactly once',()=>{
+ const e=boot(),owner=Symbol('launcher');assert.equal(typeof e.input.setKeySource,'function','External input lease is missing');
+ e.input.setKeySource(owner,['KeyZ']);e.setContext('ending');e.input.syncContext();assert.equal(e.held.size,0);
+ e.input.setKeySource(owner,['KeyZ']);e.input.dispose();e.input.dispose();assert.equal(e.edges.filter(row=>row[0]==='up').length,2);
+});
+test('invalid source identities and non game keys are rejected before changing held state',()=>{
+ const e=boot();assert.equal(typeof e.input.setKeySource,'function','External input lease is missing');
+ for(const source of [null,'launcher',1])assert.throws(()=>e.input.setKeySource(source,['KeyZ']),/source|owner/i);
+ assert.throws(()=>e.input.setKeySource(Symbol('launcher'),['F12']),/key/i);assert.deepEqual(e.edges,[]);e.input.dispose();
+});
