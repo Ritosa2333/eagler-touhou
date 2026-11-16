@@ -527,6 +527,7 @@ function sanitizePath(value) {
 function apply() {
   core.eaglerOptions = options;
   core._th13_music_enabled(+music);
+  core._th13_always_hitbox(+(options.alwaysHitbox === true));
   core._th13_touch_options(+!!options.touchEnabled,
     Math.max(0, ['touch', 'touch-unlimited', 'joystick', 'joystick-free'].indexOf(options.touchMovementMode)),
     Math.max(100,Math.min(300,Number(options.touchSensitivity) || 100)) / 100,
