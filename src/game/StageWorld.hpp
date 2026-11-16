@@ -108,6 +108,7 @@ public:
     bool setEclDropHost(EclDropHost host,std::string& error);
     bool setEclRadiusCancellation(bullet::Manager::Cancellation host,std::uint32_t liveLaserObjects,std::string& error);
     bool setPhaseSpellContext(enemy::PhaseSpell context,std::string& error);
+    void setPhaseSpellPlayerMode(int mode) noexcept {if(phaseSpell_)phaseSpell_->playerMode=mode;}
     std::optional<enemy::PhaseSpell> phaseSpellContext() const;
     using SpellHost=std::function<bool(const SpellEvent&,std::string&)>;
     bool setSpellHost(SpellHost host,std::string& error);

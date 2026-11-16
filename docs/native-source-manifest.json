@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-11-16",
-  "generation": "64c7db1a1496bc54a2bff08a70a3c89baddbc3095e107562a03fabe6298f523f",
+  "generation": "ca54de1bd68ec0b71cc9946bf0a107d89f2b74488886235dd7568633988f5886",
   "sourceFiles": {
     "src/animation/AnmLogic.cpp": "8181699a119c123274e04883ffbb072ac3b4a0a1c0b18ccb2c6fa16850995b27",
     "src/animation/AnmLogic.hpp": "cb157319e0f57d007aae669d60a3840be7d31adfd1f384f02459146c56c8c88b",
@@ -220,7 +220,7 @@
     "src/game/StageTransitionHost.cpp": "9790dbdecf01683239fe0eee672dc430fe1c60ecae6175f65a6c9a35ce3013d0",
     "src/game/StageTransitionHost.hpp": "4783bdf19a753a113633307825d4b2a9326e8444d1671bd725696f2363f83895",
     "src/game/StageWorld.cpp": "72ee2ddda8d7e67a63c8628742de023d5f42ab39cb0d1a1cf3afa2e242a7e08f",
-    "src/game/StageWorld.hpp": "a8f27b1de993120f73095c130028dc2266974b7239ad954a291db21a0ba44aac",
+    "src/game/StageWorld.hpp": "94cf2e005eac918c0c3aa644675c05439a62493d4e134fb619f0cf199c7ab21e",
     "src/game/TransientEffects.cpp": "cc82c00c731d381bcad1cf70914af765f57e9344b012db1ffe1147ddaaf0b65f",
     "src/game/TransientEffects.hpp": "f47f9035c6ed75338935a74cadf6df32b526ad253f5a0e2962e8c817a19be03a",
     "src/runtime/DrawJsonWriter.hpp": "aa550914bcb5a0c24b0307bdb89ba0d9e90b16803b042ff00244aedcd62bc838",
@@ -228,7 +228,7 @@
     "src/runtime/Exports.cpp": "a53590d490e09517d9bdad2feec85799e136f9e1e44470a2981bbaa1767b5b3f",
     "src/runtime/Memory.hpp": "bc209020ad0f2a2bd9e649440f239f3517a97ec480e4d27d2c3395a1c5d3a1b0",
     "src/runtime/PlayerExports.cpp": "72c6abe64a18786d2c40f78addcfb4a22335e48d3ac4ccdf855233f0fb1e3a5f",
-    "src/runtime/WorldExports.cpp": "60702a47486f6fae2e2ea6e7e85e3ef43a3483752c0fa57ae82e12cb150312eb"
+    "src/runtime/WorldExports.cpp": "57f87dc46badc89ce0836b612f26384bf00c20c4602bb82cbc72ad19d52f0292"
   },
   "translationUnits": [
     "src/runtime/Exports.cpp",
@@ -528,39 +528,68 @@
       "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
     },
     "core.wasm": {
-      "bytes": 2169703,
-      "sha256": "3916c97f0b3561ecb25cc203d4d471343d50b223a9565c5fa255faeaac6f3247"
+      "bytes": 2169773,
+      "sha256": "101f84c53431cb7d639882aac2181499332a7dde14495a936eec00b9142124eb"
     }
   },
-  "acceptedAssistedScope": "Historical six normal routes on private98 and EX on private99; not rerun on private104.",
+  "acceptedAssistedScope": "Historical six normal routes on private98 and EX on private99; not rerun on private105.",
   "browserAcceptance": false,
   "rebuiltForUpload": false,
-  "coreOrdinal": 104,
+  "coreOrdinal": 105,
   "browserEntryAccepted": false,
   "browserAcceptanceEvidence": null,
-  "rebuildReason": "First private104 link638 after real completeStageWorld stagebonus635RED63666GREEN and637compatibility54+flags8202 on changedsource; successful103 unchanged.",
+  "rebuildReason": "First private105 link644 after actual642 Perfect X mode RED and643 component42 GREEN/fullWorldExports syntax; successful104 unchanged.",
   "relativeHeaderEdges": 390,
   "buildAcceptance": {
-    "case": 638,
+    "case": 644,
     "compilerCalls": 1,
     "compilerExit": 0,
     "compilerStdoutBytes": 0,
     "compilerStderrBytes": 0
   },
   "runtimeAcceptance": {
-    "case": 639,
+    "case": 645,
     "passed": true,
-    "coreOrdinal": 104,
-    "generation": "64c7db1a1496bc54a2bff08a70a3c89baddbc3095e107562a03fabe6298f523f",
-    "actualExports": 205,
+    "coreOrdinal": 105,
+    "generation": "ca54de1bd68ec0b71cc9946bf0a107d89f2b74488886235dd7568633988f5886",
+    "callableExports": 205,
     "Factories": 1,
-    "WorldStarts": 0,
-    "unownedActionsRejected": 5,
-    "postrunOwnersMinted": 0,
+    "WorldStarts": 2,
+    "ticks": 183,
+    "actualPerfectXActivation": true,
+    "phase180ModeCleared": true,
+    "rows": [
+      {
+        "useX": false,
+        "passed": true,
+        "frame": 2,
+        "mode": 0,
+        "flags": 7
+      },
+      {
+        "useX": true,
+        "passed": true,
+        "frame": 2,
+        "mode": 1,
+        "flags": 71
+      },
+      {
+        "phase180": true,
+        "passed": true,
+        "frame": 181,
+        "mode": 0,
+        "flags": 7
+      }
+    ],
+    "gameRandom": {
+      "seed": 34772,
+      "calls": 0
+    },
+    "normalRecord": false,
+    "syntheticECL": true,
+    "syntheticAudioReceipt": true,
     "browser": 0,
-    "storageWrites": 0,
-    "sourceStarts": 0,
-    "scope": "produced104 instantiate/205functions/memory/5noownerrejections;0World. Stagebonus behavior accepted within636syntheticECLcomponent, notoriginalfullgameplay."
+    "scope": "Actual WASM World/PerfectFreeze/spellhost with original assets and explicit synthetic180B ECL; neutral and actualX thenphase119/120/179/180. Not original fullgameplay/replay/device acceptance."
   },
   "historicalBrowserEvidence": {
     "coreOrdinal": 100,
@@ -600,5 +629,20 @@
     "storageWrites": 0,
     "sourceStarts": 0,
     "scope": "actual produced103 instantiate/205callable/memory/5noownerrejections,0World;428 dispatch behavior tested by completeStageWorld component631"
+  },
+  "historicalABI104": {
+    "case": 639,
+    "passed": true,
+    "coreOrdinal": 104,
+    "generation": "64c7db1a1496bc54a2bff08a70a3c89baddbc3095e107562a03fabe6298f523f",
+    "actualExports": 205,
+    "Factories": 1,
+    "WorldStarts": 0,
+    "unownedActionsRejected": 5,
+    "postrunOwnersMinted": 0,
+    "browser": 0,
+    "storageWrites": 0,
+    "sourceStarts": 0,
+    "scope": "produced104 instantiate/205functions/memory/5noownerrejections;0World. Stagebonus behavior accepted within636syntheticECLcomponent, notoriginalfullgameplay."
   }
 }

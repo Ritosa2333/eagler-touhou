@@ -2398,7 +2398,7 @@ int th128_world_enable_shot_hits(int motivation,int flag,int managerBusy,int dam
         operationError="shot hit callbacks cannot be installed";return 0;
     }
     motivationRaw=motivation;motivationFlag=flag;shotHitBusy=managerBusy;shotDamageBypass=damageBypass;shotSpellFlags=spellFlags;
-    if(!world->setPhaseSpellContext({spellFlags,0,0,0},operationError))return 0;
+    if(!world->setPhaseSpellContext({spellFlags,0,0,playerWindowControl.mode3c},operationError))return 0;
     const auto emitDrops=[](const th128::EnemySnapshot& enemy,std::string& error){
         if(enemy.drop&&!itemHost->spawn(enemy.drop,{enemy.x,enemy.y,enemy.z},-1.5707963705062866f,2.200000047683716f,error))return false;
         th128::enemy::AdditionalDropOperation drops(enemy.drops,{enemy.x,enemy.y,enemy.z});
@@ -3920,6 +3920,7 @@ int th128_world_tick(){
                     const auto activated=perfectHost->status();
                     playerWindowControl.perfectCharge4b4d70=activated.charge;
                     playerWindowControl.mode3c=1;perfectModeOwned=true;
+                    world->setPhaseSpellPlayerMode(playerWindowControl.mode3c);
                     if(!perfectHud->charge(activated.charge,operationError)){
                         world->reportRuntimeFault(operationError);return 0;
                     }
@@ -4039,6 +4040,7 @@ int th128_world_tick(){
     if(perfectConfigured&&!perfectActivatedThisTick&&!perfectHost->tick(false,operationError)){world->reportRuntimeFault(operationError);return 0;}
     if(perfectModeOwned&&perfectHost->status().phase>=180){
         playerWindowControl.mode3c=0;perfectModeOwned=false;
+        world->setPhaseSpellPlayerMode(playerWindowControl.mode3c);
     }
     if(playerFireConfigured&&!iceHost->tick(world->bullets().snapshots(),operationError)){world->reportRuntimeFault(operationError);return 0;}
     if(playerFireConfigured&&!freezeRewardPanel.tick(world->playerAimPosition().y)){
