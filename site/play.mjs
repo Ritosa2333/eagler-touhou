@@ -2543,7 +2543,18 @@ async function observeOriginalExtraQualification(module,signal){
   check();const record=await new OwnedNativeTitleRecordStore().observe();check();
   if(!record)return {record:null,qualification:null,token};
   const names=new OwnedLastNameFieldStore();let name;try{name=await names.observe();}finally{names.close();}check();
-  const qualification=await evaluateOwnedQualification({record,name,owner,token});check();
+  let qualification;
+  try{qualification=await evaluateOwnedQualification({record,name,owner,token});}
+  catch(problem){
+    check();
+    // A failed run can save scores before any replay name was ever saved.
+    // That leaves optional EX proof unavailable, while the Main score record
+    // remains valid. Never manufacture or persist the missing name receipt.
+    if(problem.code!=='name-absent'||name.strictRead!==true||name.absent!==true||name.revision!==0||name.digest!==null)throw problem;
+    originalNameProfilePacket(name);
+    return {record,name,qualification:null,token};
+  }
+  check();
   return {record,name,qualification,token};
 }
 async function prepareOriginalMain(){
