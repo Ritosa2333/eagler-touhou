@@ -128,6 +128,7 @@ public:
     u32 coop_seats=1,coop_viewer=0,coop_actor=0,coop_skip=0,coop_grazer=0;
     bool coop_observer=false,coop_challenge=false;
     Timer coop_bomb_invincibility;
+    bool coop_bomb_sakuya_b=false;
     std::array<Timer,3> coop_marisa_b_cooldown{};
     i32 coop_knife_owner=-1;
     struct CoopActor {
