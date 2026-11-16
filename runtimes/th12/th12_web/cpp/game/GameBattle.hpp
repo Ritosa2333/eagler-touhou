@@ -145,7 +145,7 @@ public:
     bool queue_coop_hud();
     bool coop_game_over(bool);
     bool coop_revive(u32);
-    bool coop_transfers();
+    bool coop_transfers(const std::array<u32,3>& pressed_buttons);
     bool coop_bomb_available(u32)const;
     bool coop_collect(ItemState&,bool&);
     bool coop_damage(const EnemyState&,Vec3,const Vec2*,float,float,i32&,bool=false,bool* =nullptr);
