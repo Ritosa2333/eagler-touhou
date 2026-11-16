@@ -3,9 +3,12 @@
 ## 来源
 
 - 派生方式：**仓内目录派生**（同 th075 先例，目录级提交历史；无外部源仓库）。
-  2026-11-11 起补建标准子树连接：split `39662d3751fa8b094fc580e69d58692fe8faed53`
-  → join `fe06dc19c0000fc7ec24ce5b6a2aca823e3728e4`，机器可读登记见
+  2026-11-11 起补建标准子树连接：split `8a45a9f33972c89217368c9ca1c7e71209ea07fb`
+  → join `24c6c26c53b7d2ad090e872de00ab0ebc01df669`，机器可读登记见
   [th13mp-eagler-20261108.json](th13mp-eagler-20261108.json)，目录内容零变化。
+  来源校验以已验证的最新 split `156002536dc6a851e941a7fa189e77cd16045020` 为锚，
+  用 `git subtree split --prefix=ports/th13-mp --ignore-joins --onto=156002536dc6a851e941a7fa189e77cd16045020` 导出。
+  这样能保留原有普通版与多人版父链，同时跳过旧提交正文里失效的 split 引用。
 - 来源目录：`ports/th13` @ monorepo 提交 `e1111b4daeb21296a5d0da526e2d512efc449aa2`
   （分支 `pr159-update` 尖端，2026-11-08）。
 - 派生内容：SP tracked 树全量（web/portable/tests/docs/tools/container 与 meta

@@ -3,19 +3,20 @@
   "game": "th13mp",
   "sourceKind": "monorepo-directory-fork",
   "destination": "ports/th13-mp",
-  "commit": "39662d3751fa8b094fc580e69d58692fe8faed53",
+  "commit": "8a45a9f33972c89217368c9ca1c7e71209ea07fb",
   "currentMode": "git-subtree",
+  "exportMode": "rebuild-from-source",
   "derivedFrom": {
     "directory": "ports/th13",
     "registration": "docs/migration/th13-eagler-20261028.json",
     "split": "26f905458d91213fa778140227c981d850717ab5",
-    "directoryCopy": "f4ea0fd13f888b421afec5b8dcc905637338420a"
+    "directoryCopy": "d2d2aadd1135d48a1a39fee8a933cd73a4ef3df7"
   },
   "subtree": {
-    "upstreamCommit": "39662d3751fa8b094fc580e69d58692fe8faed53",
-    "initialJoin": "fe06dc19c0000fc7ec24ce5b6a2aca823e3728e4",
-    "initialSplit": "39662d3751fa8b094fc580e69d58692fe8faed53",
-    "latestJoin": "fe06dc19c0000fc7ec24ce5b6a2aca823e3728e4",
-    "currentSplit": "39662d3751fa8b094fc580e69d58692fe8faed53"
+    "upstreamCommit": "8a45a9f33972c89217368c9ca1c7e71209ea07fb",
+    "initialJoin": "24c6c26c53b7d2ad090e872de00ab0ebc01df669",
+    "initialSplit": "8a45a9f33972c89217368c9ca1c7e71209ea07fb",
+    "latestJoin": "34f6de711b826e01163a1264712b8d9053b3787c",
+    "currentSplit": "156002536dc6a851e941a7fa189e77cd16045020"
   }
 }
