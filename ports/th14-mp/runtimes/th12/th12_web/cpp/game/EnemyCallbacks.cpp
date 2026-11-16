@@ -32,7 +32,7 @@ bool EnemyCallbacks::invoke_th14(EnemyState& e,i32 index,i32& out){
     if(index==1){if(!commands.bullets)return false;enemy_th14_closest_bullet(e,commands.bullets->first_th14());return true;}
     if(index==2){auto* vm=world.callback_th14_visual();if(!vm)return false;enemy_th14_visual_interrupt(e,*vm);return true;}
     if(index==3||index==4)return world.callback_th14_player_scale(index==3?e.floats[0]:1.f);
-    if(index==5){if(!commands.bullets)return false;enemy_th14_freeze_bullets(e,commands.bullets->first_th14(),environment.player_position,*commands.bullets);return true;}
+    if(index==5){if(!commands.bullets)return false;enemy_th14_freeze_bullets(e,commands.bullets->first_th14(),*commands.bullets);return true;}
     if(index==6){if(!commands.bullets)return false;enemy_th14_random_acceleration(commands.bullets->first_th14(),environment.shared_random?*environment.shared_random:environment.random);return true;}
     return false;
 }

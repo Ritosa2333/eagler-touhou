@@ -12,6 +12,7 @@ class AudioDevice final:public SoundOutput {
     struct Impl;std::unique_ptr<Impl> impl;
 #if PORT_TITLE == 14
     friend struct AudioDeviceProbeTh14;
+    float launcher_music_gain=1.f,launcher_effect_gain=1.f;
 #endif
 public:
     std::string error;SoundEffects effects{*this};i32 music_volume=100;bool music_enabled=true;
@@ -34,6 +35,7 @@ public:
     bool save_music();bool restore_music();void discard_saved_music();
 #if PORT_TITLE == 14
     void pause_sounds(bool);void discard_paused_sounds();
+    void set_launcher_levels(float music,float effects);
 #endif
     void refresh_volume();void update();void pump();void suspend(bool);
     bool mix(float*,u32 frames);

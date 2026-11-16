@@ -73,6 +73,7 @@ public:
     bool update_warp(const PlayerMotionInput&);
     bool update_option(PlayerOption&);
     bool rebuild_options(const ShtHeader&,const GameEconomy&,i32 combination);
+    u8 th14_coop_draw_tag=0;
     bool reset_body(){return change_body(0);}
     void clear_options(){for(auto& o:options){o.state=0;interrupt(o.animation,1);interrupt(o.auxiliary,1);}state.option_count=0;}
     void recall_options(bool recall){state.flags=recall?state.flags|8:state.flags&~8u;for(auto& o:options){interrupt(o.animation,recall?3:2);interrupt(o.auxiliary,recall?3:2);}state.recall_timer=0;}

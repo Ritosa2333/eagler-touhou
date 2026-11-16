@@ -1499,6 +1499,9 @@ bool GameBattle::cancel_bullets(const Vec3* center,float radius,bool skip_delaye
 #endif
 }
 bool GameBattle::spell_begin_visuals(i32 id,i32 timeout,const char* name){
+#if PORT_TITLE == 14
+    if(coop_seats>1&&!reset_coop_player_scales())return false;
+#endif
     cancellation={spell_flags,spell_id};
 #if PORT_TITLE == 16
     spells.run_flags=enemy_commands.th16_run_flags;

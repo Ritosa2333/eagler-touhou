@@ -18,7 +18,7 @@ Vec3 screen(Vec3 p){return{float(double(p.x)+224),float(double(p.y)+16),p.z};}
 #if defined(PORT_TITLE) && PORT_TITLE == 14
 bool PlayerTh14Scale::request(float value,const float* rate)noexcept{
     factor=1;recall=0;
-    if(value<=1.f){flags&=~0x12u;return false;}
+    if(value<=1.f){flags&=~0x12u;interpolation.duration=0;return false;}
     flags|=0x12;auxiliary=0;interpolation.start[0]=1;interpolation.end[0]=value;
     interpolation.initial_tangent[0]=interpolation.final_tangent[0]=0;
     interpolation.duration=120;interpolation.mode=InterpolationMode::Linear;
@@ -36,9 +36,23 @@ float PlayerTh14Scale::update(i32 frame,const float* rate)noexcept{
     }
     return v.duration&&frame%3==0?1.f:factor;
 }
+void PlayerFrame::reset_th14_scale(){
+    th14_scale.request(1.f,&animations.rate);
+    motion.body.scale={1.f,1.f};
+    motion.state.th14_scale_factor=1.f;
+    motion.state.th14_scale_flags=th14_scale.flags;
+    if(auto* vm=animations.find(motion.focus_animation))vm->extra_scale={1.f,1.f};
+    update_bounds();
+}
 bool PlayerFrame::set_th14_scale(float value){
-    const bool enabled=th14_scale.request(value,&animations.rate);motion.recall_options(enabled);
-    return enabled||rebuild_options();
+    if(value<=1.f){
+        reset_th14_scale();
+        motion.recall_options(false);
+        return rebuild_options();
+    }
+    th14_scale.request(value,&animations.rate);
+    motion.recall_options(true);
+    return true;
 }
 void player_th14_scale_bounds(PlayerFrameState& state,Vec3 p,float factor)noexcept{
     const auto scaled=[&](Vec3 half,bool divide){if(divide){half.x*=.5f;half.y*=.5f;half.z*=.5f;}half.x*=factor;half.y*=factor;half.z*=factor;
@@ -151,7 +165,9 @@ bool PlayerFrame::start_stage(){
     // 44cc10 also resets +6b4 and all 33 movement-history entries.
     state.th14_shooting_age.set(0,&animations.rate);
     for(auto& p:motion.state.th14_history)p={motion.state.x,motion.state.y};
-    th14_scale.flags&=~0xfu;th14_scale.interpolation.duration=0;th14_scale.factor=1;th14_scale.recall=0;
+    th14_scale.flags&=~0xfu;
+    if(motion.th14_coop_draw_tag)reset_th14_scale();
+    else{th14_scale.interpolation.duration=0;th14_scale.factor=1;th14_scale.recall=0;}
     motion.state.th14_movement_factor=1;
     auto& p=shots.player;p.th14_cached_power=p.th14_attached_count=0;
     p.th14_focused_hits=p.th14_plain_hits=p.th14_hits_184bc=0;

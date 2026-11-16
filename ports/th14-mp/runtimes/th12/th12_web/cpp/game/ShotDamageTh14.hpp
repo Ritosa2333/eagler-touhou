@@ -25,6 +25,6 @@ bool th14_damage_rectangle(std::array<Th14DamageArea,256>&,u32& cursor,Vec3,Vec2
 void th14_damage_tick(Th14DamageArea&)noexcept;
 bool th14_damage_collect(std::array<Th14DamageArea,256>&,Th14DamageWorld&,Vec3,const Vec2*,float radius,float angle,
     bool frame_advanced,bool probe,u32 argument,u32 stamp,i32 cap,GameEconomy&,i32& damage,bool& bomb,Vec3* last_hit,
-    NativeStackTh14* stack=nullptr,float bomb_ratio=1.f)noexcept;
+    NativeStackTh14* stack=nullptr,float bomb_ratio=1.f,float shot_ratio=1.f)noexcept;
 #endif
 }

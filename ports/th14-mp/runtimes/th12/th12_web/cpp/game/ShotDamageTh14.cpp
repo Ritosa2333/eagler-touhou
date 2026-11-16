@@ -81,8 +81,9 @@ bool th14_damage_circle_rectangle(Vec3 rectangle,Vec2 size,const Th14RectangleRo
 }
 bool th14_damage_collect(std::array<Th14DamageArea,256>& areas,Th14DamageWorld& world,Vec3 p,const Vec2* size,float radius,float angle,
     bool frame_advanced,bool probe,u32 argument,u32 stamp,i32 cap,GameEconomy& economy,i32& damage,bool& bomb,Vec3* last_hit,
-    NativeStackTh14* stack,float bomb_ratio)noexcept{
+    NativeStackTh14* stack,float bomb_ratio,float shot_ratio)noexcept{
     damage=0;if(!frame_advanced)return true;bomb=false;
+    i32 shots=0,bombs=0;
     for(u32 j=0;j<areas.size();++j){auto& a=areas[j];if(!(a.flags&1))continue;
         if(a.timer.current==a.timer.previous)continue;
         if(!a.period)return false;if(a.timer.current%a.period)continue;
@@ -97,11 +98,13 @@ bool th14_damage_collect(std::array<Th14DamageArea,256>& areas,Th14DamageWorld& 
         if(bomb_hit&&bomb_ratio>0)bomb=true;
         i32 hit=a.damage;
         if(!probe){if(a.callback){a.argument=argument;if(!world.hit(j,a,p,size,radius,angle,hit))return false;}a.total=wrapping_add(a.total,a.damage);}
-        if(bomb_hit&&bomb_ratio<1.f)hit=truncate_int(float(hit)*bomb_ratio);
-        damage=wrapping_add(damage,hit);if(last_hit)*last_hit=a.position;
+        auto& subtotal=bomb_hit?bombs:shots;
+        subtotal=wrapping_add(subtotal,hit);
+        if(last_hit)*last_hit=a.position;
         if(a.maximum<9999999&&a.total>=a.maximum){a.flags&=~1u;a.damage=0;}
     }
-    if(damage>cap)damage=cap;
+    const auto scaled=[](i32 value,float ratio){return ratio==1.f?value:truncate_int(float(value)*ratio);};
+    damage=std::min(cap,wrapping_add(scaled(shots,shot_ratio),scaled(bombs,bomb_ratio)));
     if(!probe&&damage){
         // Native score is in ten-point units and applies two signed divisions.
         th14_damage_score_words(damage,[&](){return th14_hud_load(economy.score_units);},

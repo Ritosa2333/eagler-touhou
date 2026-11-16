@@ -234,7 +234,7 @@ bool PlayerMotion::rebuild_options(const ShtHeader& sht,const GameEconomy& econo
         if(count<0||count>8){last_error=10;return false;}
         auto create=[&](i32 script,bool prepend){
             auto* a=animations.create(player_resource,script,player_file,14,false,prepend,nullptr,nullptr,nullptr,true);
-            if(a)a->position.y=-32;
+            if(a){a->position.y=-32;a->reserved_3a0=th14_coop_draw_tag;}
             return a;
         };
 #if PORT_TITLE==14
