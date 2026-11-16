@@ -29,6 +29,7 @@ const duel = z.object({
   wins: count,
   losses: count,
   durationFrames: duration,
+  replayCount: count.optional(),
   playedAt: z.number().int().min(0).max(8.64e15),
   opponent: z.object({
     username: z.string().regex(/^[a-z0-9_.-]{1,32}$/).refine(value => value !== '.' && value !== '..'),
@@ -46,8 +47,10 @@ const page = z.object({summary: z.custom<Th09AccountSummary>(value => !!parseTh0
   characterRatingPreview:z.object({rating:z.number().int()}).optional(),
   ratingHistory: z.array(th09RatingPoint).optional(), rankHistory: z.array(rankPoint).optional(), duels: z.array(duel).max(30), nextCursor: z.string().max(256).nullable().optional()});
 
-export function ProfileTh09Duels({username, owner, icons}: {
-  username: string; owner: boolean; icons: ReactNode;
+export type WatchTh09Replay = (duelId: string, roundId: string, action: 'play' | 'download') => Promise<void>;
+
+export function ProfileTh09Duels({username, owner, icons, watchTh09Replay}: {
+  username: string; owner: boolean; icons: ReactNode; watchTh09Replay?: WatchTh09Replay;
 }) {
   const {t, locale} = useLocale();
   const location = useLocation();
@@ -170,7 +173,7 @@ export function ProfileTh09Duels({username, owner, icons}: {
         <RecordHeading title={t('th09.duelHistory')} controls="profile-th09-duel-list"
           expanded={canExpandDuels ? duelsExpanded : undefined}
           onToggle={() => setDuelsExpanded(expanded => !expanded)} />
-        {duels.length ? <DuelHistory groups={duelsExpanded ? duelGroups : previewGroups} /> : <p className="profile-muted">{t('th09.noDuels')}</p>}
+        {duels.length ? <DuelHistory groups={duelsExpanded ? duelGroups : previewGroups} watchTh09Replay={watchTh09Replay}/> : <p className="profile-muted">{t('th09.noDuels')}</p>}
         {!failed && data.nextCursor && (!canExpandDuels || duelsExpanded) && <div className="profile-th09-actions">
           <Button variant="outline" size="sm" disabled={pending} onClick={() => {
             setDuelsExpanded(true);
@@ -232,7 +235,7 @@ function previewDuelGroups(groups: DuelGroup[], columns: number): DuelGroup[] {
   return preview;
 }
 
-function DuelHistory({groups}: {groups: DuelGroup[]}) {
+function DuelHistory({groups, watchTh09Replay}: {groups: DuelGroup[]; watchTh09Replay?: WatchTh09Replay}) {
   const {t, locale} = useLocale();
   const numbers = new Intl.NumberFormat(locale);
   const dates = new Intl.DateTimeFormat(locale, {dateStyle:'medium'});
@@ -272,11 +275,56 @@ function DuelHistory({groups}: {groups: DuelGroup[]}) {
               <small>{t('cloudSave.duration')}</small>
               <span>{formatDuelDuration(item.durationFrames, locale)}</span>
             </span>}
+            {!!item.replayCount && <DuelReplayGroup duelId={item.duelId} count={item.replayCount} watch={watchTh09Replay}/>}
           </li>;
         })}
       </ul>
     </div>)}
   </div>;
+}
+
+const duelReplayFiles = z.object({files: z.array(z.object({
+  roundId: z.string().regex(/^\d{1,16}:\d{1,16}$/),
+  frames: duration,
+  characters: z.tuple([characterRecord.shape.character, characterRecord.shape.character]),
+}))});
+
+function DuelReplayGroup({duelId, count, watch}: {duelId: string; count: number; watch?: WatchTh09Replay}) {
+  const {t, locale} = useLocale();
+  const [open, setOpen] = useState(false);
+  const [files, setFiles] = useState<z.infer<typeof duelReplayFiles>['files']>();
+  const [failed, setFailed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState(false);
+  const endpoint = `v1/th09/duels/${duelId}/replays`;
+  useEffect(() => {
+    if (!open || files) return;
+    const controller = new AbortController();
+    setFailed(false);
+    void accountRequest(endpoint, undefined, {signal: controller.signal}).then(data => {
+      if (!controller.signal.aborted) setFiles(duelReplayFiles.parse(data).files);
+    }).catch(() => {if (!controller.signal.aborted) setFailed(true);});
+    return () => controller.abort();
+  }, [open, files, endpoint]);
+  function access(roundId: string, action: 'play' | 'download') {
+    if (!watch || busy) return;
+    setBusy(true);setActionError(false);
+    void watch(duelId, roundId, action).catch(() => setActionError(true)).finally(() => setBusy(false));
+  }
+  return <details className="profile-th09-replays" onToggle={event => setOpen(event.currentTarget.open)}>
+    <summary>{t('replay.ui.heading')} | {t('replay.fileCount', {count})}</summary>
+    {failed || actionError ? <p role="alert">{t('account.requestFailed')}</p> : null}
+    {open && !failed && !files ? <span role="status">{t('replay.ui.loading')}</span> : null}
+    {files && <ol>
+      {files.map(file => <li key={file.roundId}>
+        <span>{file.characters.map(character => th09CharacterName(character, t)).join(' vs ')}
+          {file.frames != null && ' | ' + formatDuelDuration(file.frames, locale)}</span>
+        {watch && <Button type="button" variant="ghost" disabled={busy} onClick={() => access(file.roundId, 'play')}>{t('replay.ui.play')}</Button>}
+        {watch ? <Button type="button" variant="ghost" disabled={busy} onClick={() => access(file.roundId, 'download')}>{t('action.download')}</Button>
+          : <a href={`/api/${endpoint}/${file.roundId.replace(':', '-')}`} download>{t('action.download')}</a>}
+      </li>)}
+    </ol>}
+  </details>;
 }
 
 function DuelScore({score, outcome, label}: {score:string; outcome:string; label:string}) {

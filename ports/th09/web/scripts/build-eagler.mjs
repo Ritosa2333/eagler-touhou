@@ -18,6 +18,8 @@ const inputs = [
   ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'spectator-timeline.mjs', 'spectator-timeline-view.mjs', 'spectator-tape.mjs', 'motion-replay.mjs', 'auto-replay.mjs', 'startup-branding.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
   ['replay-player.mjs', resolve(common, 'browser/versus-replay-th09.mjs')],
   ['playback-clock.mjs', resolve(common, 'browser/playback-clock.mjs')],
+  ['th09-match-archive.mjs', resolve(common, 'contracts/th09-match-archive.mjs')],
+  ['match-archive-player.mjs', resolve(root, 'sdl-runtime/match-archive-player.mjs')],
   ['th09.mjs', resolve(compiled, 'th09.mjs')],
   ['th09.wasm', resolve(compiled, 'th09.wasm')],
   ['fonts/cp932.bin', resolve(native, 'cp932.bin')],

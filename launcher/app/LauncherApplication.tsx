@@ -51,6 +51,7 @@ export type LobbyPresentation = Omit<
 export interface LauncherHost {
   readLocalSaves?:LocalSaveReader;
   cloudSync?:CloudSaveSync|null;
+  watchTh09Replay?(duelId: string, roundId: string, action: 'play' | 'download'): Promise<void>;
   locale: UiLocale;
   lessMotion?: boolean;
   products: readonly LibraryProduct[];
@@ -301,7 +302,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
         {accountPage ? (
           <Suspense fallback={<main className="account-page" aria-busy="true"/>}><AccountPage /></Suspense>
         ) : profilePage ? (
-          <Suspense fallback={<ProfileLoading/>}><ProfilePage readLocalSaves={host.readLocalSaves} cloudSync={host.cloudSync}/></Suspense>
+          <Suspense fallback={<ProfileLoading/>}><ProfilePage readLocalSaves={host.readLocalSaves} cloudSync={host.cloudSync} watchTh09Replay={host.watchTh09Replay}/></Suspense>
         ) : navigation.context === 'lobby' ? (
           host.renderLobby ? (
             host.renderLobby(lobbyProps)

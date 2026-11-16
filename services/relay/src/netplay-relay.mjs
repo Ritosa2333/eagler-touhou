@@ -5,6 +5,7 @@ import {createNicknameService} from './nickname-service.mjs';
 import {roomAccount} from '../../../common/contracts/account-nickname-ticket.mjs';
 import {createAccountChatSource} from './account-chat-source.mjs';
 import {createTh09RoundOutbox} from './th09-round-outbox.mjs';
+import {createTh09MatchArchiveQueue} from './th09-match-archive.mjs';
 import {createNicknameRequestGuard,nicknameAddressScope} from './nickname-request-guard.mjs';
 import {normalizePublicNickname} from '../../../common/contracts/public-nickname.mjs';
 import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../../common/contracts/th05-initial-stock.mjs';
@@ -345,7 +346,7 @@ accountChat?.start();
 const th09OutboxPath = process.env.EAGLER_NETPLAY_TH09_OUTBOX;
 const th09Rounds = th09OutboxPath && accountChat ? createTh09RoundOutbox({
   file: th09OutboxPath,
-  send: accountChat.recordTh09Round,
+  send: round => round.replay ? accountChat.recordTh09Replay(round) : accountChat.recordTh09Round(round),
   onStored({players, room: scope}, summaries, settlement) {
     if (!Array.isArray(summaries)) return;
     for (const room of rooms.values()) {
@@ -368,9 +369,13 @@ const th09Rounds = th09OutboxPath && accountChat ? createTh09RoundOutbox({
     }
   },
 }) : null;
+const archiveTh09Match = createTh09MatchArchiveQueue(th09Rounds);
 function th09RoundRecorder(room, run) {
-  return th09Rounds && (round => th09Rounds.enqueue({...round, finishedAt: Date.now(),
-    room: room.chatScope, rated: run.th09Rated !== false}));
+  return th09Rounds && (round => {
+    const report = {...round, finishedAt: Date.now(), room: room.chatScope, rated: run.th09Rated !== false};
+    th09Rounds.enqueue(report);
+    archiveTh09Match(run, report);
+  });
 }
 process.once('exit', () => {
   th09Rounds?.close();
@@ -2998,7 +3003,7 @@ server.on('connection', (socket, request) => {
         return;
       }
       if (run.spectatorStopped) return;
-      if (player !== 0) return;
+      if (player !== 0 || run.clients.get(player) !== socket) return;
       const payload = incoming.subarray(1);
       if(pc98Lane&&payload.length>=4&&payload[0]===0x50&&payload[1]===0x39&&payload[2]===0x38&&payload[3]===0x53){
         try{
@@ -3114,6 +3119,7 @@ server.on('connection', (socket, request) => {
       ) {
         if (run.spectatorStopped) return;
       }
+      if (th09Stream) archiveTh09Match(run);
       for (const [spectatorId, target] of run.spectatorClients)
         if (!target.spectatorReplaying)
           sendSpectatorPayload(target, payload, roomId, runId, spectatorId);

@@ -15,6 +15,7 @@ const epoch=Number(query.get('runtimeEpoch')),validEpoch=Number.isSafeInteger(ep
 const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
 let core,launched=false,first=false,options={},music=true,chain=Promise.resolve(),queue=Promise.resolve(),revision=0,netplay,stopping=false,networkOverlayPending=false;
 let initializedReady=false,launchSettled=false,lifetime=0,stopPending=false,retired=false,configApplying=null,appliedTouchPolicy=0,autoReplay,replayPlayer;
+let archivePlayback=false;
 const routeSwitch=$('#routeSwitch'),routeSwitchButton=$('#routeSwitchButton'),routeSwitchText=$('#routeSwitchText');
 const startupRoutes=$('#startupRoutes');
 let startupRoute='auto';
@@ -167,6 +168,12 @@ async function initializeTitle(receivedLifetime){
  if(!core._th09_game_open(runtimeVariant==='multiplayer'?0:Date.now()&65535))throw Error(err());titleInitialized=true;
  window.__th09Runtime={core,status,save,command};
 }
+async function resetReplayTitle(receivedLifetime){
+ replayPlayer?.close();replayPlayer=null;titleInitialized=false;
+ core._th09_game_close();
+ await initializeTitle(receivedLifetime);
+ apply();
+}
 async function command(m,receivedLifetime=receiveLifetime()){switch(m.command){
 case 'configure':{
  const owner=core;assertLifetime(receivedLifetime,owner);if(!initializedReady)throw Error('Runtime initialization is incomplete');
@@ -249,9 +256,21 @@ case 'playback':{
  assertLifetime(receivedLifetime);
  if(!launched||!launchSettled||!options.replayViewer||options.netplayMode==='lan')throw Error('当前游戏不支持录像控制');
  if(m.action==='open'){
+  const onState=playback=>{if(ownsDocument()&&!retired&&!stopPending)emit('runtime-info',{playback});};
+  if(m.bytes instanceof Uint8Array&&/^[^/\\]{1,180}\.th09r$/i.test(m.path)){
+   if(runtimeVariant!=='multiplayer')throw Error('对战录像需要花映塚多人版');
+   const {readMatchArchive,createMatchArchivePlayer}=await import('./match-archive-player.mjs');
+   const archive=await readMatchArchive(new Response(m.bytes));assertLifetime(receivedLifetime);
+   if(replayPlayer?.active)await resetReplayTitle(receivedLifetime);
+   clearKeyboard();archivePlayback=true;
+   replayPlayer=createMatchArchivePlayer({core,archive,path:m.path,onState,onError:fatal});
+   return {playback:replayPlayer.state()};
+  }
   const selected=path(m.path);if(!selected.startsWith('replay/'))throw Error('录像路径无效');
   const bytes=core.FS.readFile(saveRoot+'/'+selected.replace(/\.rpyx$/,'.rpy'));importReplayName(selected,bytes,9);
-  replayPlayer??=createReplayPlayer({core,onState:playback=>{if(ownsDocument()&&!retired&&!stopPending)emit('runtime-info',{playback});},onError:fatal});
+  if(archivePlayback)await resetReplayTitle(receivedLifetime);
+  archivePlayback=false;
+  replayPlayer??=createReplayPlayer({core,onState,onError:fatal});
   clearKeyboard();return {playback:replayPlayer.play(selected,bytes,autoReplay.readMatch(saveRoot+'/'+selected))};
  }
  if(!replayPlayer)throw Error('请先选择录像');return {playback:replayPlayer.control(m.action,m.value)};

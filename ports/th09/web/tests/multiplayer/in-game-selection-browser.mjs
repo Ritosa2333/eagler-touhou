@@ -7,6 +7,7 @@ import {existsSync,mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {launchBrowser} from '../../../../../tools/browser/launch.mjs';
 import {presentationServer} from '../../scripts/presentation-server.mjs';
+import {issueRoomNickname} from '../../../../../common/contracts/account-nickname-ticket.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
 const label=process.env.RUN_LABEL;if(!/^[\w-]+$/.test(label||''))throw Error('Unique RUN_LABEL required');
@@ -14,6 +15,8 @@ const buildDir=resolve(process.env.PC_BUILD||resolve(root,'artifacts/in-game-sel
 const out=resolve(root,'artifacts/multiplayer-tests',label);if(existsSync(out))throw Error('Retained run already exists');mkdirSync(out,{recursive:true});
 const fallback=process.argv.includes('--relay'),mode=Number(process.env.ADONIS_MODE||0),selectionOnly=process.argv.includes('--selection-only'),packetDelay=Number(process.env.MENU_PACKET_DELAY_MS||0);
 const exitAfterDecision=process.argv.includes('--exit-after-decision');
+const archiveApi=process.env.TH09_ARCHIVE_API;
+const archivePoints=process.env.TH09_ARCHIVE_POINTS==='2'?2:1;
 const report={passed:false,scope:process.argv.includes('--reentry-only')?'Five room return/start cycles with real Release worlds and local Relay. Each restart compares a common confirmed frame hash.':selectionOnly?'Local Chromium selection cadence, independent character inputs and shared difficulty/stage controls under delayed packets. Not full-match/public-network/device acceptance.':'Local Chromium, real Release worlds and shared transport. Natural match completion. Not public-network/device acceptance.',build:JSON.parse(readFileSync(resolve(buildDir,'build.json'))).sha256,fallback,mode,stages:[],errors:[]};
 const stage=(name,details={})=>{const row={name,at:new Date().toISOString(),...details};report.stages.push(row);console.log(JSON.stringify(row));};
 const relayPort=await new Promise(r=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});
@@ -35,7 +38,7 @@ if(fallback)window.RTCPeerConnection=undefined;
     addEventListener('keyup',e=>{if(scanCodes[e.code]){e.preventDefault();core._th09_key(scanCodes[e.code],0);}});
     window.notices=[];window.closeEvents=[];window.begins=[];window.ends=[];window.finals=[];window.hashes={};
     window.lobby=new WebSocket(`ws://127.0.0.1:${relayPort}/?room=th09mp-0777&lobby=selectionpeer${index}&member=selectionmember${index}`);
-    lobby.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='error')throw Error(m.error);window.room=m.room||window.room;window.roomMessage=m;};
+    lobby.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='error')throw Error(m.error);window.room=m.room||window.room;window.roomMessage=m;window.accountChallenge=m.accountChallenge||window.accountChallenge;};
     window.observeFinal=(match,via)=>finals.push({match,via,phase:core.HEAP32[core._th09_session_status()/4]});
     const send=WebSocket.prototype.send;
     WebSocket.prototype.send=function(data){
@@ -46,7 +49,16 @@ if(fallback)window.RTCPeerConnection=undefined;
       return send.call(this,data);
     };
   },{index,relayPort,fallback,packetDelay});
-  await page.waitForFunction(()=>window.room);return page;
+  await page.waitForFunction(()=>window.room);
+  if(archiveApi && index<2){
+    await page.waitForFunction(()=>window.accountChallenge);
+    const challenge=await page.evaluate(()=>window.accountChallenge);
+    const username=['archivealice','archivebob'][index];
+    const ticket=issueRoomNickname(process.env.ACCOUNT_RELAY_SECRET,challenge,username,{userId:username,sessionId:username,profile:{username}});
+    await page.evaluate(ticket=>lobby.send(JSON.stringify({type:'account-nickname',ticket})),ticket);
+    await page.waitForFunction(()=>roomMessage.type==='nickname-status'||roomMessage.type==='chat-status'||roomMessage.room?.seats?.some(seat=>seat?.name?.startsWith('archive')));
+  }
+  return page;
 }
 async function state(page){return page.evaluate(()=>{
   const words=(fn,n)=>{const at=fn()/4;return Array.from(core.HEAP32.subarray(at,at+n));};
@@ -76,6 +88,52 @@ async function connect(index){await pages[index].evaluate(async({index,relayPort
   core._th09_room_preview(0);core._th09_loop_start();core._th09_loop_pause(1);await play.connect(options);
 },{index,relayPort,mode,fallback});}
 async function menu(screen){for(const page of pages.slice(0,2))await waitFor(page,s=>s.selection[1]===1&&s.title[2]===screen&&s.title[3]===1&&s.title[5]>=10,'menu '+screen);}
+async function verifyArchive(match, point) {
+  const deadline=Date.now()+15000;
+  let duel;
+  while(Date.now()<deadline){
+    const data=await (await fetch(new URL('/api/v1/profiles/archivealice/th09-duels',archiveApi))).json();
+    duel=data.duels?.find(row=>row.replayCount===point);
+    if(duel)break;
+    await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  assert.ok(duel,'decisive match was archived before the result menu');
+  const path='/api/v1/th09/duels/'+duel.duelId+'/replays';
+  const {files}=await (await fetch(new URL(path,archiveApi))).json();
+  assert.equal(files.length,point);
+  const file=files.find(row=>row.roundId.endsWith(':'+match.start));
+  assert.ok(file,'confirmed point has its own recording');
+  assert.equal(file.frames,match.frames);
+  assert.equal(file.winner,match.winner);
+  assert.deepEqual(file.characters,match.characters);
+  const response=await fetch(new URL(path+'/'+encodeURIComponent(file.roundId),archiveApi));
+  assert.equal(response.status,200);
+  const bytes=Buffer.from(await response.arrayBuffer());
+  assert.equal(bytes.length,file.size);
+  const viewer=await browser.newPage({viewport:{width:900,height:700}});
+  viewer.on('pageerror',error=>report.errors.push({error:error.stack}));
+  await viewer.goto(host.url);await viewer.waitForFunction(()=>typeof window.openProbe==='function');
+  await viewer.evaluate(async source=>{
+    await openProbe(0,1,2,3,true);
+    const {readMatchArchive,createMatchArchivePlayer}=await import('/app/match-archive-player.mjs');
+    const archive=await readMatchArchive(new Response(Uint8Array.from(atob(source),character=>character.charCodeAt(0))));
+    window.archiveViewer=createMatchArchivePlayer({core,archive,path:'match.th09r',onState:()=>{},onError:error=>{window.archiveError=error.message;}});
+    archiveViewer.control('pause');
+    archiveViewer.control('seek',archiveViewer.state().total);
+  },bytes.toString('base64'));
+  await viewer.waitForFunction(()=>archiveViewer.state().ended||window.archiveError,undefined,{timeout:120000});
+  assert.equal(await viewer.evaluate(()=>window.archiveError),undefined);
+  const expected=await pages[0].evaluate(frame=>hashes[frame],match.start+match.frames);
+  assert.ok(Number.isInteger(expected),'P1 confirmed result hash');
+  const played=await viewer.evaluate(()=>({frame:archiveViewer.state().frame,hash:core._th09_network_hash()>>>0}));
+  assert.deepEqual(played,{frame:match.frames,hash:expected});
+  await viewer.evaluate(()=>archiveViewer.control('seek',60));
+  await viewer.waitForFunction(()=>archiveViewer.state().frame===60||window.archiveError,undefined,{timeout:15000});
+  const replayed=await viewer.evaluate(()=>core._th09_network_hash()>>>0);
+  assert.equal(replayed,await pages[0].evaluate(frame=>hashes[frame],match.start+60));
+  stage('stored-file-playback',{duelId:duel.duelId,roundId:file.roundId,compressedBytes:bytes.length,frames:match.frames,endHash:played.hash,rewindHash:replayed});
+  await viewer.close();
+}
 try{selectionRun:{
   await actor(0);await actor(1);await actor(2);
   for(let i=0;i<2;i++)await pages[i].evaluate(i=>lobby.send(JSON.stringify({type:'take-seat',seat:i,loadout:i})),i);
@@ -90,7 +148,8 @@ try{selectionRun:{
   const startFrames=(await state(pages[0])).title[0],startAt=Date.now();await pages[0].waitForTimeout(selectionOnly?3000:16000);
   if(selectionOnly){const rate=((await state(pages[0])).title[0]-startFrames)*1000/(Date.now()-startAt);assert.ok(rate>48,'menu rate '+rate);stage('menu-cadence',{fps:rate,packetDelay});}
   assert.equal((await state(pages[2])).closed.length,0);
-  await press(1,'ArrowDown');assert.equal((await state(pages[0])).title[4],2,'P2 can move shared difficulty cursor');await press(1,'ArrowUp');
+  await press(1,'ArrowDown');await waitFor(pages[0],s=>s.title[4]===2,'P2 can move shared difficulty cursor',7000);await press(1,'ArrowUp');
+  await waitFor(pages[0],s=>s.title[4]===1,'P2 restores difficulty cursor',7000);
   await press(0,'ArrowDown');await press(0,'KeyZ');await menu(8);
   const before=await state(pages[0]);await press(0,'ArrowRight');const left=await state(pages[0]);
   assert.notEqual(left.selection[3],before.selection[3]);assert.equal(left.selection[4],before.selection[4]);
@@ -157,6 +216,7 @@ try{selectionRun:{
   assert.deepEqual(match.characters,[1,2]);
   assert.ok(match.frames>0);
   stage('both-confirm-decision',{match,phase});
+  if(archiveApi){await verifyArchive(match,1);if(archivePoints===1)break selectionRun;}
   if(exitAfterDecision){
     await pages[1].close();
     await pages[0].waitForFunction(winner=>room.seats[winner]?.stats?.wins===1,match.winner);
@@ -191,6 +251,13 @@ try{selectionRun:{
   assert.deepEqual(late.selection.slice(8,10),[2,3]);
   await pages[2].screenshot({path:resolve(out,'spectator-second-match.png')});
   stage('spectator-continuity-and-late-join',{oldTail:{frame:end,hash:expected},newMatch:{frame:target,hash:expected2},late:late.viewer});
+  if(archiveApi){
+    for(const page of pages.slice(0,2)){await page.keyboard.down('KeyZ');await page.keyboard.down('ControlLeft');}
+    const [left,right]=await Promise.all(pages.slice(0,2).map(page=>waitFor(page,s=>s.finals.length===2,'second deciding frame',240000)));
+    assert.deepEqual(left.finals[1],right.finals[1]);
+    await verifyArchive(left.finals[1].match,2);
+    break selectionRun;
+  }
   if(process.argv.includes('--retry-late')){
     for(const page of pages.slice(0,2)){await page.keyboard.down('KeyZ');await page.keyboard.down('ControlLeft');}
     await waitFor(pages[0],s=>s.session[0]===3&&s.ends.length===2,'second natural completion',240000);

@@ -62,6 +62,7 @@ import {createAppShellService, type AppShellOptions} from '../services/app-shell
 import {createBrowserPorts} from '../services/browser-ports';
 import {createFileActions, type ImportFileKind} from '../services/files';
 import {createReplayStorageReader} from '../services/replay-storage';
+import {accountRequest} from '../services/account-client';
 import {errorText} from '../services/error-text';
 import {launcherBaseUrl} from '../navigation/addresses';
 import {testFeaturesEnabled} from '../../src/launcher/test-features.mts';
@@ -1011,6 +1012,31 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       }
     })();
   }
+  function watchTh09Archive(path: string, bytes?: Uint8Array): Promise<void> {
+    return activity(async () => {
+      await openReplayViewer('th09mp');
+      await prepareReplayWorkspace('th09mp');
+      await requiredRuntime().send('playback', {action:'open', path, ...(bytes ? {bytes} : {})});
+    });
+  }
+  async function accessTh09MatchReplay(duelId: string, roundId: string, action: 'play' | 'download') {
+    const key = roundId.replace(':', '-');
+    const name = `th09-${duelId}-${key}.th09r`;
+    const blob = await accountRequest<Blob>(`v1/th09/duels/${duelId}/replays/${key}`, undefined, {responseType:'blob'});
+    if (!blob.size || blob.size > 1024 * 1024) throw Error(t('file.importStoredTooLarge'));
+    const bytes = await blob.arrayBuffer();
+    if (action === 'download') ports.download(name, bytes, 'application/octet-stream');
+    else await watchTh09Archive(name, new Uint8Array(bytes));
+  }
+  async function importReplayFile(file: File, product: ProductId) {
+    if (product === 'th09mp' && /\.th09r$/i.test(file.name)) {
+      if (file.size > 1024 * 1024) throw Error(t('file.importStoredTooLarge'));
+      await watchTh09Archive(file.name, new Uint8Array(await file.arrayBuffer()));
+      return;
+    }
+    if (!files) throw new Error('File service is not attached');
+    await activity(() => files!.importFile('replay', file, product));
+  }
   async function switchReplayProduct(product: ProductId): Promise<void> {
     const model = replays, previous = model?.getSnapshot().productId;
     if (!model || !previous || previous === product || !metadata.getSnapshot().products.includes(product)) return;
@@ -1526,7 +1552,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       } catch (error) {feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}
     },
     getRuntime: () => runtime, getReplays: () => replays, getDiagnostics: () => diagnostics, getGameplayNetwork: () => gameplayNetwork,
-    async chooseReplayFile(product: ProductId) {const file = await ports.pickFile(replayImportAcceptFor(product)); if (file) {if (!files) throw new Error('File service is not attached'); await activity(() => files!.importFile('replay', file, product));}},
+    async chooseReplayFile(product: ProductId) {const file = await ports.pickFile(replayImportAcceptFor(product)); if (file) await importReplayFile(file, product);},
+    accessTh09MatchReplay,
     async warnDiscouragedBrowser(isCurrent: () => boolean = () => true): Promise<boolean> {
       let dismissed = false; try {dismissed = storage?.getItem('browser-warning-dismissed') === '1';} catch {}
       if (dismissed || !discouragedBrowserId(window.navigator.userAgent)) return !disposed && isCurrent();
@@ -1537,7 +1564,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (choice === 'secondary') {window.location.href = new URL('faq.html', baseUrl).href; return false;}
       return true;
     },
-    importFile: (kind: ImportFileKind, file: File, product: ProductId) => activity(async () => {if (!files) throw new Error('File service is not attached'); await files.importFile(kind, file, product);}),
+    importFile: (kind: ImportFileKind, file: File, product: ProductId) => kind === 'replay' ? importReplayFile(file, product) :
+      activity(async () => {if (!files) throw new Error('File service is not attached'); await files.importFile(kind, file, product);}),
     setLocale(locale: UiLocale) {try {storage?.setItem(UI_LOCALE_STORAGE_KEY, locale);} catch {} requiredNavigation().setLocaleAddress(locale); if (!runtime?.getSnapshot().launched) settings.restoreLocalePreferences(settingsContext(settings.getSnapshot()!.context.productId, locale)); publish({locale}); feedback.refreshLocale(); externalMidi.refreshLocale(t); document.documentElement.lang = locale; document.documentElement.dataset.uiLocale = locale; window.dispatchEvent(new CustomEvent('eagler-ui-locale-change', {detail: {locale}})); appShellOwner.refreshLocale(); diagnostics?.refresh(); gameplayNetwork?.refresh(); const canonical = document.querySelector<HTMLLinkElement>('link[rel=canonical]'); if (canonical) canonical.href = new URL(locale === 'en' ? 'en.html' : './', canonical.href).href;},
     reportError,
     async dispose() {
