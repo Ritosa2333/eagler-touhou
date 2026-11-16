@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-11-16",
-  "generation": "a22738709f4ec2b33cb094db0482f85efc3acb06df543428b602c8efa7d8c074",
+  "generation": "6f291289cf9d5fc384d9ff224bcb510aaf954bc9a2660612b0d7c58205100d21",
   "sourceFiles": {
     "src/animation/AnmLogic.cpp": "8181699a119c123274e04883ffbb072ac3b4a0a1c0b18ccb2c6fa16850995b27",
     "src/animation/AnmLogic.hpp": "cb157319e0f57d007aae669d60a3840be7d31adfd1f384f02459146c56c8c88b",
@@ -129,7 +129,7 @@
     "src/game/NativeNormalMainOwner.hpp": "6740719dda39fe1c220e3f5a5e6c0f250abb075460fe1bfefd54f981c13338e2",
     "src/game/NativeNormalMainPermit.hpp": "a97a8a2365384f465851f8bba9e757bd950fa68b76ab90817263490b7b8dc265",
     "src/game/NativeNormalMenuReceipt.hpp": "dba448f42de912c0fa195714513c142e5acaff152e54e5ffcd8756903034a938",
-    "src/game/NativeNormalRecord.hpp": "028b5961764d12db317bbd590a5a6327cdeb643ccea9e4a35bd15532558ddf0e",
+    "src/game/NativeNormalRecord.hpp": "b13d6c8dfb539f0838d5f30f0a6496489ca24c39d7eef7b766ad47a3c04ba599",
     "src/game/NativeOrdinaryReplaySave.hpp": "b1204ba2dc3c95651855e3fe31c789c8b75d402a4924f961e121d1974baa0948",
     "src/game/NativeOrdinaryReturn.hpp": "9c9b3db6ede2f6010d146db069deafc981d18d3f6a6cdbb2149089b1bcefabc8",
     "src/game/NativeOrdinaryTerminalOwner.hpp": "d217805319e113b1854078ebc84c4e43b3b82600ed046efa659945aca30ace27",
@@ -148,7 +148,7 @@
     "src/game/NativeReplayStageBinding.hpp": "314976fee180cfd2529e5cb126a9ad086bb011d20f5f5c197da453bcd0febcfc",
     "src/game/NativeRunReplay.hpp": "2892ae81e27c3e21f203e93b88d93ce5ab4a54899353e13cf1ee87d2976e0a7d",
     "src/game/NativeScoreContainer.hpp": "861e87fb87d53cea53c984d31997685d7de2878d7c623bf73703f4a4e30395c7",
-    "src/game/NativeScoreProfile.hpp": "e35257ed0ad8da60ffeec9a4473be16505d05197f453d3cfa6f30fa199538bb5",
+    "src/game/NativeScoreProfile.hpp": "fa3848628d07157066539caad45c9901356addefa988a7a4265667b1dde9c32a",
     "src/game/OrdinaryTerminalDrain.hpp": "5ec32699cefe4381659b528b614f3dec2e1864b5724e03871f89ac02fa0be691",
     "src/game/OrdinaryTransition.hpp": "53c7f7ce3476c16aaadd430326172e406307b48f99e20d83c5f099bbe9f7f6bd",
     "src/game/OriginalHelpHost.hpp": "c15dcfd9de71074f47033631e316ec05b4d63681c450a2198e47765ccbf303c1",
@@ -205,8 +205,8 @@
     "src/game/ShotEnemyCollisionRules.cpp": "132669606ef0444ddfe24f92a6c3d050678cd64d4a077f469c120ab2dd6364c4",
     "src/game/ShotEnemyCollisionRules.hpp": "f43224f9c623e9d5e18ff58772cfee60bf1705432826ea47db19aaf9bda8c6da",
     "src/game/SpellRules.hpp": "dbcb236973aa261b8cc9cd648fbb034da164a0e7c6f9f4ef000177f3ef3f50b9",
-    "src/game/SpellVisuals.cpp": "92bd176a13dd71d36f6d43ca0ec0f42b68725ab6e0d59cbb5197dc5519b72624",
-    "src/game/SpellVisuals.hpp": "98ddb7c7d53445866cfa9f38cbfb127ca0df8d9da0317150ec6e3a4f80578266",
+    "src/game/SpellVisuals.cpp": "15ba9f3346d07110aed5d24e21d705624c77d9c1db2895ba8623a66b4bfc40e3",
+    "src/game/SpellVisuals.hpp": "93df29a64f9affaede8273065f8059836cd267a4fb64041d6e44a2e10ac17540",
     "src/game/StageControl.cpp": "64908cf6b49ec4795dbe3f03bc03fab5a276f061652107f8e303b44d21883e39",
     "src/game/StageControl.hpp": "1cc1896a326eca46d14eed0b103222f3e746768accf47cddb58deb031dcb39ca",
     "src/game/StageIntroLogos.cpp": "a13d0d801c34753d2e9d2cc878e0248b388c40d9a685b065ef3097fed5d447e8",
@@ -228,7 +228,7 @@
     "src/runtime/Exports.cpp": "a53590d490e09517d9bdad2feec85799e136f9e1e44470a2981bbaa1767b5b3f",
     "src/runtime/Memory.hpp": "bc209020ad0f2a2bd9e649440f239f3517a97ec480e4d27d2c3395a1c5d3a1b0",
     "src/runtime/PlayerExports.cpp": "72c6abe64a18786d2c40f78addcfb4a22335e48d3ac4ccdf855233f0fb1e3a5f",
-    "src/runtime/WorldExports.cpp": "d7f037ac3bbaf3d80cb10c6e38be3593a7cd366c4ef5a80a8c49d4ae2b3bcd09"
+    "src/runtime/WorldExports.cpp": "fb3194f4cf7a559a3576b874adf6f33e396f3d77c5691b917ecd7dcd7e64309e"
   },
   "translationUnits": [
     "src/runtime/Exports.cpp",
@@ -525,58 +525,64 @@
   "referenceArtifacts": {
     "core.mjs": {
       "bytes": 134120,
-      "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
+      "sha256": "4bb334a5b7662fe270159174f334489c6ead1262bbef50d6de97edb7b556739f"
     },
     "core.wasm": {
-      "bytes": 2281513,
-      "sha256": "12914d240c9653bbf7ee042db06b960ac5be63a06f4c6b27af0372d4408d2766"
+      "bytes": 2285760,
+      "sha256": "ff4fa064981f01e944f48cb4f3b19038cb2cb39cbe93f50ea07d88b23493c425"
     }
   },
-  "acceptedAssistedScope": "Historical six normal routes on private98 and EX on private99; not rerun on private108.",
+  "acceptedAssistedScope": "Six normal routes on private98 and EX on private99 are functionally accepted. Not rerun on private110.",
   "browserAcceptance": {
-    "currentCore109GameAccepted": false,
-    "historical": false,
+    "currentCore110GameAccepted": false,
     "resourceImport687Accepted": true,
-    "note": "Existing earlier browser evidence remains historical; new109 actualdeviceFPS/background/physicalaudio pending."
+    "historical": "Earlier browser resource/entry evidence remains scoped to its original core and fixture.",
+    "note": "732 is CPU actual8World/1200ticks draw records, not device pixel or browser gameplay acceptance."
   },
   "rebuiltForUpload": false,
-  "coreOrdinal": 109,
+  "coreOrdinal": 110,
   "browserEntryAccepted": false,
   "browserAcceptanceEvidence": null,
-  "rebuildReason": "First109 for userdense/freezeperformance andmissingETEX64reflectedposition; not rebuilding successful108.",
+  "rebuildReason": "First110 for user-reported original Spell Bonus/Medal presentation; successful109 was not rebuilt.",
   "relativeHeaderEdges": 390,
   "buildAcceptance": {
-    "case": 710,
-    "compilerCalls": 1,
+    "case": 731,
     "passed": true,
+    "compilerCalls": 1,
     "compilerExit": 0,
     "sourceCount": 226,
     "translationUnits": 83,
     "exports": 205,
     "relativeHeaderEdges": 390,
     "changedSources": [
-      "src/game/BulletUpdateHost.cpp",
-      "src/game/CancellationEffects.cpp",
-      "src/game/CancellationEffects.hpp",
+      "src/game/NativeNormalRecord.hpp",
+      "src/game/NativeScoreProfile.hpp",
+      "src/game/SpellVisuals.cpp",
+      "src/game/SpellVisuals.hpp",
       "src/runtime/WorldExports.cpp"
     ],
-    "generation": "a22738709f4ec2b33cb094db0482f85efc3acb06df543428b602c8efa7d8c074"
+    "generation": "6f291289cf9d5fc384d9ff224bcb510aaf954bc9a2660612b0d7c58205100d21"
   },
   "runtimeAcceptance": {
-    "case": 712,
+    "case": 732,
     "passed": true,
     "Factories": 1,
-    "WorldStarts": 2,
-    "ticks": 420,
-    "wholeWorldAndRawDrawSnapshotsEqualTo108": 6,
-    "comparisonArchiveJSONNormalizesSignedZero": true,
+    "WorldStarts": 8,
+    "ticks": 1200,
+    "medalMasks": 8,
+    "recordFramesEach": 150,
+    "gameRandomEach": {
+      "seed": 34772,
+      "calls": 0
+    },
+    "syntheticECL": true,
+    "syntheticProfiles": true,
+    "syntheticAudioReceipt": true,
+    "externalStorageWrites": 0,
     "browser": 0,
     "GPU": false,
     "physicalAudio": false,
-    "syntheticECL": true,
-    "syntheticGL": true,
-    "originalWholeStage": false,
-    "phaseProofNotFullRoute": true
+    "originalWholeStage": false
   },
   "historicalBrowserEvidence": {
     "coreOrdinal": 100,
@@ -759,14 +765,14 @@
   "artifacts": {
     "core.mjs": {
       "bytes": 134120,
-      "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
+      "sha256": "4bb334a5b7662fe270159174f334489c6ead1262bbef50d6de97edb7b556739f"
     },
     "core.wasm": {
-      "bytes": 2281513,
-      "sha256": "12914d240c9653bbf7ee042db06b960ac5be63a06f4c6b27af0372d4408d2766"
+      "bytes": 2285760,
+      "sha256": "ff4fa064981f01e944f48cb4f3b19038cb2cb39cbe93f50ea07d88b23493c425"
     }
   },
-  "privateCore": 109,
+  "privateCore": 110,
   "previous108": {
     "generation": "b7f885be544802659eda1848a86bd9ee964a985f13b73d9a4705df2d9b25e744",
     "artifacts": {
@@ -884,5 +890,76 @@
       "fullStageParity": false
     },
     "runtimeDeliveryCase": 714
+  },
+  "previous109": {
+    "coreOrdinal": 109,
+    "immutable": true,
+    "generation": "a22738709f4ec2b33cb094db0482f85efc3acb06df543428b602c8efa7d8c074",
+    "artifacts": {
+      "core.mjs": {
+        "bytes": 134120,
+        "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
+      },
+      "core.wasm": {
+        "bytes": 2281513,
+        "sha256": "12914d240c9653bbf7ee042db06b960ac5be63a06f4c6b27af0372d4408d2766"
+      }
+    },
+    "buildAcceptance": {
+      "case": 710,
+      "compilerCalls": 1,
+      "passed": true,
+      "compilerExit": 0,
+      "sourceCount": 226,
+      "translationUnits": 83,
+      "exports": 205,
+      "relativeHeaderEdges": 390,
+      "changedSources": [
+        "src/game/BulletUpdateHost.cpp",
+        "src/game/CancellationEffects.cpp",
+        "src/game/CancellationEffects.hpp",
+        "src/runtime/WorldExports.cpp"
+      ],
+      "generation": "a22738709f4ec2b33cb094db0482f85efc3acb06df543428b602c8efa7d8c074"
+    },
+    "runtimeAcceptance": {
+      "case": 712,
+      "passed": true,
+      "Factories": 1,
+      "WorldStarts": 2,
+      "ticks": 420,
+      "wholeWorldAndRawDrawSnapshotsEqualTo108": 6,
+      "comparisonArchiveJSONNormalizesSignedZero": true,
+      "browser": 0,
+      "GPU": false,
+      "physicalAudio": false,
+      "syntheticECL": true,
+      "syntheticGL": true,
+      "originalWholeStage": false,
+      "phaseProofNotFullRoute": true
+    }
+  },
+  "spellHUD110": {
+    "redCases": [
+      725,
+      726,
+      729
+    ],
+    "componentGreenCases": [
+      727,
+      730
+    ],
+    "finalComponentChecks": 35,
+    "frontendChecks": 90,
+    "syntaxCase": 730,
+    "firstCoreCase": 731,
+    "actualCase": 732,
+    "runtimeAssemblyFirstFailure": 733,
+    "runtimeDeliveryCase": 734,
+    "runtimeBytes": 3269106,
+    "runtimeSHA256": "58dfc51cd36f3d741c8fe3fa484129836ff0807765ee20380aa57d8e823e3287",
+    "resourcePackageChanged": false,
+    "pairedFrontendRequired": true,
+    "onlineDeploymentPausedByUser": true
   }
 }

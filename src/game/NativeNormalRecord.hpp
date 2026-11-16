@@ -130,6 +130,7 @@ public:
     const NativeFrameStatisticsState& statistics()const noexcept{return timing_.state();}
     unsigned highScoreRaw()const{const auto v=read32(profile_,std::size_t(route_)*1644+16+rank_*320);if(v>999999999)throw std::runtime_error("ordinary highscore raw value rejected");return v;}
     unsigned highScoreContinue()const{return profile_[std::size_t(route_)*1644+16+rank_*320+5];}
+    std::array<bool,3> spellMedals(int id)const{return NativeScoreProfile::spellMedals(profile_,id);}
     bool started()const{return started_;}bool prepared()const{return prepared_;}bool acknowledged()const{return acknowledged_;}
     unsigned route()const{return route_;}unsigned rank()const{return rank_;}unsigned frames()const{return frames_;}unsigned digest()const{return digest_;}
     unsigned stage()const{return stage_;}

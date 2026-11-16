@@ -3313,7 +3313,13 @@ int th128_world_enable_spells(const void* bullet,unsigned bulletSize,const void*
     if(!world->setSpellHost([](const th128::SpellEvent& event,std::string& error){
         if(event.retireFollowEffect)return spellVisuals->retireFollowEffect(error);
         if(event.starting){
-            spellResultFrames=0;if(!spellVisuals->start(event.position,error))return false;
+            std::array<bool,3> medals{};
+            try{
+                if(normalRecord)medals=normalRecord->spellMedals(event.state.id);
+                else if(debugRecordPrefix.worldBound&&debugRecordPrefix.generation==worldGeneration)
+                    medals=th128::record::NativeScoreProfile::spellMedals(debugRecordPrefix.profile,event.state.id);
+            }catch(const std::exception& failure){error=failure.what();return false;}
+            spellResultFrames=0;if(!spellVisuals->start(event.position,error,medals))return false;
             if(normalRecord&&normalRecord->started()&&!debugRunTainted&&!replayPlayback.active()){
                 try{normalRecord->beginSpell(event.state.id,event.title);}
                 catch(const std::exception& failure){error=failure.what();return false;}
@@ -4639,6 +4645,15 @@ const char* th128_world_bullet_draws() {
         if(state.mode==9){ring=th128::geometry::ring(state,*item.sprite,item.x,item.y,item.z);if(!ring){presentationError="original spell ring geometry rejected";bulletDraws="[]";return bulletDraws.c_str();}}
         if(state.mode==16||state.mode==17){const float radius=float(state.geometryRadius*state.sx);fan=state.mode==16?th128::geometry::circleFan(item.x,item.y,radius,state.rotation,state.geometryCount,state.primary,state.secondary):th128::geometry::circleLine(item.x,item.y,radius,state.rotation,state.geometryCount,state.primary);if(!fan){presentationError="original level-up diffuse geometry rejected";bulletDraws="[]";return bulletDraws.c_str();}}
         if(!writeVisualRecord(text,comma,30000000u+item.id,state.spriteBank,state,*item.sprite,item.x,item.y,item.z,false,nullptr,nullptr,fan?&*fan:nullptr,nullptr,ring?&*ring:nullptr)){bulletDraws="[]";return bulletDraws.c_str();}
+    }
+    if(spellsConfigured){
+        const auto spell=world->phaseSpellContext();
+        if(spell)for(const auto& item:spellVisuals->bonusGlyphs(spell->flags,spell->value80)){
+            if(!item.sprite||!writeVisualRecord(text,comma,30050000u+item.id,11,item.state,*item.sprite,
+                item.x,item.y,0,false,nullptr,nullptr,nullptr,"original-spell-bonus")){
+                presentationError="original spell bonus glyph unavailable";bulletDraws="[]";return bulletDraws.c_str();
+            }
+        }
     }
     if(headPowerConfigured){
         const auto player=world->playerAimPosition();

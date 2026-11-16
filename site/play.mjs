@@ -4342,7 +4342,6 @@ window.th128Debug={
         const pose=spell.pose,title=new TextDecoder(find('#variant').value==='ja'?'shift_jis':'gbk',{fatal:true}).decode(Uint8Array.from(spell.title));
         if(find('#variant').value==='zh'){drawOriginalStageText(context,state.stageTextRasters,{kind:'spell',rawHex:spell.title.map(value=>value.toString(16).padStart(2,'0')).join(''),x:pose.x,y:pose.y,sx:pose.sx,sy:pose.sy,alpha:(pose.color>>>24)/255,outlineAlpha:(pose.color>>>24)/255,align:'right'});}else{context.save();context.translate(pose.x,pose.y);context.scale(pose.sx,pose.sy);context.globalAlpha=(pose.color>>>24)/255;context.font='18px "Microsoft YaHei","Yu Gothic",sans-serif';context.textAlign='right';context.lineWidth=3;context.strokeStyle='#101018';context.fillStyle='#fff';context.strokeText(title,0,0);context.fillText(title,0,0);context.restore();}
       }
-      if(spell?.active){context.font='14px Consolas,monospace';context.textAlign='left';context.fillStyle='#fff';context.fillText((spell.flags&2)?String(spell.bonus):'Failed',(spell.flags&2)?365:387,61);}
       if(spell?.resultFrames){context.font=find('#variant').value==='zh'?`400 20px ${originalStageTextFamily('zh')}`:'20px "Microsoft YaHei",sans-serif';context.textAlign='center';context.fillStyle=spell.captured?'#fff5a0':'#d9e5ee';context.fillText(spell.captured?`Spell Card Bonus ${spell.resultBonus}`:'Spell Card Failed',320,140);}
       context.resetTransform();
     }

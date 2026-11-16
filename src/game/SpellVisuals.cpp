@@ -1,5 +1,8 @@
 #include "SpellVisuals.hpp"
+#include <algorithm>
+#include <bit>
 #include <limits>
+#include <string>
 namespace th128::spell {
 namespace {struct Guard {bool& active;explicit Guard(bool& value):active(value){active=true;}~Guard(){active=false;}};}
 bool Visuals::load(int bank,std::span<const std::uint8_t> bytes,std::string& error){
@@ -15,13 +18,25 @@ bool Visuals::checked(std::string& error){
   const auto& state=node->vm.state();if(state.ended||state.deleteRequested)node->alive=false;
  }scene_.collect();return true;
 }
-bool Visuals::start(std::array<float,3> position,std::string& error){
+bool Visuals::start(std::array<float,3> position,std::string& error,std::array<bool,3> medals){
  error.clear();if(executing_||!failure_.empty()){error="unavailable spell visual start";return false;}Guard guard(executing_);
  for(int key=1;key<=7;++key)scene_.remove(key);scene_.collect();position_=position;
  for(const auto request:std::array<std::array<int,3>,7>{{{1,12,0},{2,11,1},{3,6,74},{4,11,2},{5,0,158},{6,0,168},{7,3,11}}}){
   const bool follow=request[0]==5;
   if(!scene_.bind(request[0],request[0],request[1],request[2],anm::Membership::Primary,follow?320+position[0]:0,follow?16+position[1]:0,{},false,nullptr,0,0,23,false,follow?position[2]:0)){error="original spell animation constructor rejected";return false;}
- }return checked(error);
+ }
+ // Original 40deaa..40dfcd: CD+132/128/136 select the three stored medals.
+ const auto* root=scene_.find(4);
+ if(!root){error="original medal root is unavailable";return false;}
+ std::array<unsigned,3> slots{};
+ for(const auto* child:scene_.children(root->id)){
+  const int script=child->vm.state().script;
+  if(script<4||script>6)continue;
+  const auto index=std::size_t(script-4);++slots[index];
+  scene_.nodes().at(child->id)->vm.control().sprite=medals[index]?309+int(index):308;
+ }
+ if(slots!=std::array<unsigned,3>{1,1,1}){error="original medal children are incomplete or ambiguous";return false;}
+ return checked(error);
 }
 bool Visuals::retireFollowEffect(std::string& error){
  error.clear();if(executing_||!failure_.empty()){error="unavailable original443 follow-effect retirement";return false;}Guard guard(executing_);
@@ -53,4 +68,26 @@ bool Visuals::pose(const anm::Node& node,Visual& output,unsigned depth) const {
 }
 std::vector<Visual> Visuals::snapshots() const {std::vector<Visual> result;for(const auto* node:scene_.chain(anm::Membership::Primary)){Visual output;if(pose(*node,output))result.push_back(output);}return result;}
 std::optional<Visual> Visuals::titlePose() const {for(const auto& node:snapshots())if(node.state.bank==6&&node.state.script==74)return node;return std::nullopt;}
+std::vector<Visual> Visuals::bonusGlyphs(std::uint32_t flags,std::uint32_t value) const {
+ std::vector<Visual> result;if(!(flags&1u))return result;
+ const auto bank=scene_.registry.bank(11);if(!bank||bank->sprites.size()<=307)return result;
+ const auto nodes=snapshots();
+ const auto label=std::find_if(nodes.begin(),nodes.end(),[](const auto& node){return node.state.bank==11&&node.state.script==3;});
+ if(label==nodes.end()||!label->state.visible)return result;
+ const auto alpha=label->state.primary&0xff000000u;if(!alpha)return result;
+ const auto color=alpha|((flags&2u)&&(flags&0x100u)?0x00ff0000u:0x00ffffffu);
+ const auto append=[&](int sprite,float x){
+  Visual glyph;glyph.id=unsigned(result.size());glyph.state.bank=glyph.state.spriteBank=11;
+  glyph.state.sprite=sprite;glyph.state.script=-1;glyph.state.layer=0;glyph.state.mode=0;
+  glyph.state.anchorX=glyph.state.anchorY=1;glyph.state.primary=color;glyph.state.blend=0;glyph.state.flags2|=4u;
+  glyph.sprite=bank->sprites[std::size_t(sprite)];glyph.x=x;glyph.y=61;result.push_back(glyph);
+ };
+ // Original 40dbf0 uses style2 and %8d at (365,61); '$' is sprite307.
+ if(!(flags&2u)){append(307,387);return result;}
+ auto text=std::to_string(std::bit_cast<std::int32_t>(value));
+ if(text.size()<8)text.insert(0,8-text.size(),' ');
+ float x=365;
+ for(const unsigned char character:text){if(character!=' ')append(character=='-'?239:int(character)+179,x);x+=7;}
+ return result;
+}
 }

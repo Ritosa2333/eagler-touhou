@@ -4,7 +4,7 @@
 
 ## 原生核心
 
-private108使用Emscripten 4.0.22，case658首次完整链接通过；case659实际加载产物，1个Factory、1个World、181次tick验证普通Perfect的6个有序声音请求，7项检查通过，另检查205个导出均为函数。657另通过13项完整生产调用块与真实Host组件检查及完整WorldExports语法检查。`build/private108.rsp`来自首次成功参数的相对路径转换，输出为`build/local/core.mjs`。private100/101/102/103/104/105/106/107配方保留为历史资料；相同参数不代表相同源码或产物。
+private110使用Emscripten 4.0.22，case731首次完整链接通过。case732实际加载同一产物，1个Factory、8个World、1200次tick验证原版符卡Bonus数字和八种金银铜奖牌记录组合；每个World完成150帧实际录制。730通过35项原资源组件检查及完整WorldExports语法检查，728通过90项前端回归。`build/private110.rsp`是首次成功参数的相对路径转换，输出为`build/local/core.mjs`。旧private100至109配方保留为历史资料；成功核心不重编。
 
 它保留 83 个翻译单元、205 个导出符号、1 MiB 栈、64 MiB 初始内存、C++20、异常与浮点选项。源文件摘要记录在 `docs/native-source-manifest.json`。
 
@@ -12,12 +12,12 @@ private108使用Emscripten 4.0.22，case658首次完整链接通过；case659实
 
 ```powershell
 New-Item -ItemType Directory -Force build/local
-emcc '@build/private108.rsp'
+emcc '@build/private110.rsp'
 ```
 
-本源码检出目录中的相对路径配方完成了文件与参数核对；private108的实际构建在隔离验收目录完成。此前private100的浏览器检查作为历史证据保留，不能视为108已完成浏览器验收。构建输出不会自动发布到浏览器，也不承诺跨机器生成完全相同的二进制摘要。
+本源码检出目录中的相对路径配方完成了文件与参数核对；private110的实际构建在隔离验收目录完成。此前private100的浏览器检查作为历史证据保留，不能视为110已完成浏览器验收。构建输出不会自动发布到浏览器，也不承诺跨机器生成完全相同的二进制摘要。
 
-`tools/build-runtime.mjs` 是历史脚本，保留作研究参考；其导出清单和发布逻辑早于本快照，不作为private108的构建入口。
+`tools/build-runtime.mjs` 是历史脚本，保留作研究参考；其导出清单和发布逻辑早于本快照，不作为private110的构建入口。
 
 ## 原作资源
 
@@ -54,3 +54,5 @@ python -X utf8 tools/prepare.py --original '你的原作安装目录' --thtk '�
 普通Perfect held门槛测试位于`tests/perfect-held-gate/`：`fixture.cpp`为653执行的44项组件源码；`actual-held-matrix.cjs`为655执行的真实核心输入矩阵源码。它们依赖未随仓库分发的本地准入记录、资源和产物，不应覆写历史成功目录。旧`tests/native/perfect-freeze-host.cpp`保留早期fresh-press/服务契约，未声称原样通过107；本轮当前门槛回归使用新目录。详情见`docs/native-perfect-held652-655.md`。
 
 普通Perfect激活声音修复的当前测试位于`tests/perfect-activation-sound/`：fixture与实际生产块提取文件为657执行源码，actual-phase-requests.cjs为656/659相同测试源码。组件使用真实Host与明确模拟的World/Hit/Ice/HUD/请求容器，实际WASM使用原资源及合成ECL/输出/收据边界。完整本地准入记录不随仓库分发；历史成功目录不得覆写或重跑，详见`docs/native-perfect-sound656-659.md`。
+
+符卡显示当前测试在`tests/spell-hud/`：`fixture.cpp`为729/730相同35项源码，`actual-hud-matrix.cjs`为732实际8World源码，`draw.test.mjs`为可移植绘制优先级检查。无个人存档读取或修改。Runtime必须配套新`play.mjs`/`runtime/draw.mjs`；旧核心与新页面不可混配。资源DAT+OGGv2字节不变。见[符卡HUD修复](spell-hud-v6.md)。

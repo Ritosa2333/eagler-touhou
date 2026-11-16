@@ -47,7 +47,7 @@ export function nativeDrawPriority(layer) {
 export function nativeRecordPriority(record){
   if(record.drawPass===undefined)return nativeDrawPriority(record.layer);
   if(record.drawPass==='playerShotGroup')return nativeDrawPriority(record.layer);
-  const priorities={'hostile-bullets':32,'hostile-lasers':30,player:25,items:28,'frozen-bullets':24,'original-percent-hud':55,'original-freeze-reward-panel':47,'original-fps':67,'original-menu-font0':74,'original-pause-shade':52,'original-pause-backdrop':70,'original-pause-front':68};
+  const priorities={'hostile-bullets':32,'hostile-lasers':30,player:25,items:28,'frozen-bullets':24,'original-percent-hud':55,'original-freeze-reward-panel':47,'original-spell-bonus':47,'original-fps':67,'original-menu-font0':74,'original-pause-shade':52,'original-pause-backdrop':70,'original-pause-front':68};
   if(!Object.hasOwn(priorities,record.drawPass))throw new Error(`Unimplemented native draw callback ${record.drawPass}`);
   return priorities[record.drawPass];
 }

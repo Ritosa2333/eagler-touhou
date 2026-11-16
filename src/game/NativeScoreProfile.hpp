@@ -71,6 +71,14 @@ private:
     }
 
 public:
+    static std::array<bool,3> spellMedals(std::span<const std::uint8_t> memory,int id) {
+        validate(memory);
+        if(id<0||id>=250)throw std::runtime_error("spell medal card id is outside the native CD table");
+        const auto row=ClearOffset+12+std::size_t(id)*152;
+        return {std::bit_cast<std::int32_t>(read32(memory,row+132))>0,
+                std::bit_cast<std::int32_t>(read32(memory,row+128))>0,
+                std::bit_cast<std::int32_t>(read32(memory,row+136))>0};
+    }
     static std::vector<std::uint8_t> assemble(std::span<const std::uint8_t> memory) {
         validate(memory);
         std::vector<std::uint8_t> prepared(memory.begin(), memory.end());
