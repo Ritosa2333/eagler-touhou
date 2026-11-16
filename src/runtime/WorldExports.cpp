@@ -3911,6 +3911,10 @@ int th128_world_tick(){
                 perfectHost->reject("ordinary ice batch or live Perfect objects are nonempty",denied);
             }else{
                 if(perfectHost->activate(makePerfectContext(th128::perfect::LaserContext::Empty,0),denied)){
+                    if(grazeSounds.size()>65534){world->reportRuntimeFault("perfect activation sound journal budget");return 0;}
+                    const float perfectSoundX=world->playerAimPosition().x;
+                    grazeSounds.push_back({46,perfectSoundX,0});
+                    grazeSounds.push_back({51,perfectSoundX,0});
                     const auto activated=perfectHost->status();
                     playerWindowControl.perfectCharge4b4d70=activated.charge;
                     playerWindowControl.mode3c=1;perfectModeOwned=true;

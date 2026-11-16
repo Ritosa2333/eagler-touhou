@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-11-16",
-  "generation": "aee898468bc4c286c2c989729e5b3220e289c1e0e10b5214f298ad4599c12019",
+  "generation": "b7f885be544802659eda1848a86bd9ee964a985f13b73d9a4705df2d9b25e744",
   "sourceFiles": {
     "src/animation/AnmLogic.cpp": "8181699a119c123274e04883ffbb072ac3b4a0a1c0b18ccb2c6fa16850995b27",
     "src/animation/AnmLogic.hpp": "cb157319e0f57d007aae669d60a3840be7d31adfd1f384f02459146c56c8c88b",
@@ -228,7 +228,7 @@
     "src/runtime/Exports.cpp": "a53590d490e09517d9bdad2feec85799e136f9e1e44470a2981bbaa1767b5b3f",
     "src/runtime/Memory.hpp": "bc209020ad0f2a2bd9e649440f239f3517a97ec480e4d27d2c3395a1c5d3a1b0",
     "src/runtime/PlayerExports.cpp": "72c6abe64a18786d2c40f78addcfb4a22335e48d3ac4ccdf855233f0fb1e3a5f",
-    "src/runtime/WorldExports.cpp": "a5bceb43de343c70f70cb109582cbfc0b131d0d74da1ed1d3db94b04c24d23cd"
+    "src/runtime/WorldExports.cpp": "66cebb19911f9f519eb798df5d310f9f65601c915d4ee53a7c7e98e04bb89a69"
   },
   "translationUnits": [
     "src/runtime/Exports.cpp",
@@ -528,77 +528,74 @@
       "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
     },
     "core.wasm": {
-      "bytes": 2169308,
-      "sha256": "8d71a43c2c818c8c8de19235e2792c901bd178f148252781cd67d42aa28eefcf"
+      "bytes": 2169783,
+      "sha256": "03b4c0f0c0465a393b38a3ef2430936b55d45e56f9dc276add9c4d2f28650c21"
     }
   },
-  "acceptedAssistedScope": "Historical six normal routes on private98 and EX on private99; not rerun on private107.",
+  "acceptedAssistedScope": "Historical six normal routes on private98 and EX on private99; not rerun on private108.",
   "browserAcceptance": false,
   "rebuiltForUpload": false,
-  "coreOrdinal": 107,
+  "coreOrdinal": 108,
   "browserEntryAccepted": false,
   "browserAcceptanceEvidence": null,
-  "rebuildReason": "First private107 link654 after actual106 held2pressed0 productRED652 and44check componentGREEN653/fullWorldExports syntax. OnlyPerfectFreezeHost.cpp/.hpp andWorldExports.cpp changed; successful106 unchanged.",
+  "rebuildReason": "First108link658 afteractual107RED656 missingstart46/51,65713wholecaller/HostguardGREENandsyntax. OnlyWorldExports.cpp fourlines;existingphase120/71unchanged;successful107held.",
   "relativeHeaderEdges": 390,
   "buildAcceptance": {
-    "case": 654,
+    "case": 658,
     "compilerCalls": 1,
     "compilerExit": 0,
     "compilerStdoutBytes": 0,
     "compilerStderrBytes": 0
   },
   "runtimeAcceptance": {
-    "case": 655,
-    "coreOrdinal": 107,
-    "generation": "aee898468bc4c286c2c989729e5b3220e289c1e0e10b5214f298ad4599c12019",
+    "case": 659,
+    "coreOrdinal": 108,
+    "generation": "b7f885be544802659eda1848a86bd9ee964a985f13b73d9a4705df2d9b25e744",
     "passed": true,
     "Factories": 1,
-    "WorldStarts": 4,
-    "ticks": 11,
+    "WorldStarts": 1,
+    "ticks": 181,
+    "checks": 7,
+    "failed": 0,
     "callableExports": 205,
-    "rows": [
+    "requests": [
       {
-        "label": "neutral",
-        "passed": true,
-        "holding": 0,
-        "pressed": 0,
-        "frame": 2,
-        "mode": 0,
-        "flags": 7,
-        "charge": 10000
+        "phase": 0,
+        "id": 46,
+        "pan": 100,
+        "operation": 0
       },
       {
-        "label": "pressedOnly",
-        "passed": true,
-        "holding": 0,
-        "pressed": 2,
-        "frame": 2,
-        "mode": 0,
-        "flags": 7,
-        "charge": 10000
+        "phase": 0,
+        "id": 51,
+        "pan": 100,
+        "operation": 0
       },
       {
-        "label": "heldOnly",
-        "passed": true,
-        "holding": 2,
-        "pressed": 0,
-        "frame": 2,
-        "mode": 1,
-        "flags": 71,
-        "charge": 0
+        "phase": 120,
+        "id": 47,
+        "pan": 100,
+        "operation": 0
       },
       {
-        "label": "heldPressed",
-        "passed": true,
-        "holding": 2,
-        "pressed": 2,
-        "frame": 2,
-        "mode": 1,
-        "flags": 71,
-        "charge": 0
+        "phase": 120,
+        "id": 69,
+        "pan": 0,
+        "operation": 0
+      },
+      {
+        "phase": 120,
+        "id": 51,
+        "pan": 0,
+        "operation": 1
+      },
+      {
+        "phase": 180,
+        "id": 71,
+        "pan": 0,
+        "operation": 0
       }
     ],
-    "continuedHeldTicks": 3,
     "gameRandom": {
       "seed": 34772,
       "calls": 0
@@ -606,11 +603,11 @@
     "normalRecord": false,
     "taint": false,
     "infiniteRespawn": false,
-    "browser": 0,
     "syntheticECL": true,
     "syntheticAudioOutput": true,
     "syntheticReceiptStore": true,
-    "scope": "Actual produced107 normalheld gate matrix with realWorld/assets/hosts;205typeof only;not fullphase/originalgameplay/replay/device."
+    "browser": 0,
+    "scope": "Actualproduced108 normalPerfectexact6requests atphase0/120/180;realWorld/assets/hosts,synthetic180BECL/output/receipts;notfulloriginalphase/physicalaudio/replay."
   },
   "historicalBrowserEvidence": {
     "coreOrdinal": 100,
@@ -724,5 +721,70 @@
     "storageWrites": 0,
     "sourceStarts": 0,
     "scope": "Actual produced106 instantiate/205typeof/memory/5noownerrejects/0World;held-stopbehavior accepted in648productionHostcomponent and649fulllegacy main onchangedsource,syntheticoutputs;notphysicalaudio/originalgameplay."
+  },
+  "historicalPerfectHeld107": {
+    "case": 655,
+    "coreOrdinal": 107,
+    "generation": "aee898468bc4c286c2c989729e5b3220e289c1e0e10b5214f298ad4599c12019",
+    "passed": true,
+    "Factories": 1,
+    "WorldStarts": 4,
+    "ticks": 11,
+    "callableExports": 205,
+    "rows": [
+      {
+        "label": "neutral",
+        "passed": true,
+        "holding": 0,
+        "pressed": 0,
+        "frame": 2,
+        "mode": 0,
+        "flags": 7,
+        "charge": 10000
+      },
+      {
+        "label": "pressedOnly",
+        "passed": true,
+        "holding": 0,
+        "pressed": 2,
+        "frame": 2,
+        "mode": 0,
+        "flags": 7,
+        "charge": 10000
+      },
+      {
+        "label": "heldOnly",
+        "passed": true,
+        "holding": 2,
+        "pressed": 0,
+        "frame": 2,
+        "mode": 1,
+        "flags": 71,
+        "charge": 0
+      },
+      {
+        "label": "heldPressed",
+        "passed": true,
+        "holding": 2,
+        "pressed": 2,
+        "frame": 2,
+        "mode": 1,
+        "flags": 71,
+        "charge": 0
+      }
+    ],
+    "continuedHeldTicks": 3,
+    "gameRandom": {
+      "seed": 34772,
+      "calls": 0
+    },
+    "normalRecord": false,
+    "taint": false,
+    "infiniteRespawn": false,
+    "browser": 0,
+    "syntheticECL": true,
+    "syntheticAudioOutput": true,
+    "syntheticReceiptStore": true,
+    "scope": "Actual produced107 normalheld gate matrix with realWorld/assets/hosts;205typeof only;not fullphase/originalgameplay/replay/device."
   }
 }

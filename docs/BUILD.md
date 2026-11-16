@@ -4,7 +4,7 @@
 
 ## 原生核心
 
-private107使用Emscripten 4.0.22，case654首次完整链接通过；case655实际加载产物，1个Factory、4个World、11次tick验证普通Perfect的holding输入门槛及继续按住时的活动对象保护，另检查205个导出均为函数。653另通过44项Host组件检查及完整WorldExports语法检查。`build/private107.rsp`来自首次成功参数的相对路径转换，输出为`build/local/core.mjs`。private100/101/102/103/104/105/106配方保留为历史资料；相同参数不代表相同源码或产物。
+private108使用Emscripten 4.0.22，case658首次完整链接通过；case659实际加载产物，1个Factory、1个World、181次tick验证普通Perfect的6个有序声音请求，7项检查通过，另检查205个导出均为函数。657另通过13项完整生产调用块与真实Host组件检查及完整WorldExports语法检查。`build/private108.rsp`来自首次成功参数的相对路径转换，输出为`build/local/core.mjs`。private100/101/102/103/104/105/106/107配方保留为历史资料；相同参数不代表相同源码或产物。
 
 它保留 83 个翻译单元、205 个导出符号、1 MiB 栈、64 MiB 初始内存、C++20、异常与浮点选项。源文件摘要记录在 `docs/native-source-manifest.json`。
 
@@ -12,12 +12,12 @@ private107使用Emscripten 4.0.22，case654首次完整链接通过；case655实
 
 ```powershell
 New-Item -ItemType Directory -Force build/local
-emcc '@build/private107.rsp'
+emcc '@build/private108.rsp'
 ```
 
-本源码检出目录中的相对路径配方完成了文件与参数核对；private107的实际构建在隔离验收目录完成。此前private100的浏览器检查作为历史证据保留，不能视为107已完成浏览器验收。构建输出不会自动发布到浏览器，也不承诺跨机器生成完全相同的二进制摘要。
+本源码检出目录中的相对路径配方完成了文件与参数核对；private108的实际构建在隔离验收目录完成。此前private100的浏览器检查作为历史证据保留，不能视为108已完成浏览器验收。构建输出不会自动发布到浏览器，也不承诺跨机器生成完全相同的二进制摘要。
 
-`tools/build-runtime.mjs` 是历史脚本，保留作研究参考；其导出清单和发布逻辑早于本快照，不作为private107的构建入口。
+`tools/build-runtime.mjs` 是历史脚本，保留作研究参考；其导出清单和发布逻辑早于本快照，不作为private108的构建入口。
 
 ## 原作资源
 
@@ -35,7 +35,7 @@ python -X utf8 tools/prepare.py --original '你的原作安装目录' --thtk '�
 
 `tests/` 为保留的测试源码。部分测试依赖本地原版资源、未分发的私有黄金记录、编译器或运行时。缺失依赖导致的跳过不等于测试通过。
 
-原有六线和EX成功证据保持不变。新增测试针对新缺陷或尚未覆盖的范围；不为重复获得通过结论重跑成功路线。`tests/core101-abi-noowner.mjs`是615实际执行的源文件，显式参数为包含已验收`result.json`、`request.json`和`run/runtime/`的本地核心目录。运行产物及这些本地准入资料不随仓库分发；新测试应使用新目的和受控输出，禁止覆写历史成功目录或重新构建已成功的93至107。新增录像字段组件和零帧实际检查位于`tests/replay-graze/`，完整范围见`docs/native-replay-graze621-627.md`。
+原有六线和EX成功证据保持不变。新增测试针对新缺陷或尚未覆盖的范围；不为重复获得通过结论重跑成功路线。`tests/core101-abi-noowner.mjs`是615实际执行的源文件，显式参数为包含已验收`result.json`、`request.json`和`run/runtime/`的本地核心目录。运行产物及这些本地准入资料不随仓库分发；新测试应使用新目的和受控输出，禁止覆写历史成功目录或重新构建已成功的93至108。新增录像字段组件和零帧实际检查位于`tests/replay-graze/`，完整范围见`docs/native-replay-graze621-627.md`。
 
 新增回归源码：
 
@@ -52,3 +52,5 @@ python -X utf8 tools/prepare.py --original '你的原作安装目录' --thtk '�
 受击蓄力声音停止请求的当前测试在`tests/held-window-sound/`：`fixture.cpp`为647/648实际执行源码；`player-hit-host-regression.cpp`为649在新生产源码上执行的完整Host回归；`tests/core106-abi-noowner.mjs`为651实际产物检查。旧`tests/native/player-hit-host.cpp`是105单停止请求契约的历史源码和649的固定输入，保留原字节；验证106应使用上述31/70新契约版本，不能据此声称旧测试源码已原样通过106。详见`docs/native-held-sound646-651.md`。
 
 普通Perfect held门槛测试位于`tests/perfect-held-gate/`：`fixture.cpp`为653执行的44项组件源码；`actual-held-matrix.cjs`为655执行的真实核心输入矩阵源码。它们依赖未随仓库分发的本地准入记录、资源和产物，不应覆写历史成功目录。旧`tests/native/perfect-freeze-host.cpp`保留早期fresh-press/服务契约，未声称原样通过107；本轮当前门槛回归使用新目录。详情见`docs/native-perfect-held652-655.md`。
+
+普通Perfect激活声音修复的当前测试位于`tests/perfect-activation-sound/`：fixture与实际生产块提取文件为657执行源码，actual-phase-requests.cjs为656/659相同测试源码。组件使用真实Host与明确模拟的World/Hit/Ice/HUD/请求容器，实际WASM使用原资源及合成ECL/输出/收据边界。完整本地准入记录不随仓库分发；历史成功目录不得覆写或重跑，详见`docs/native-perfect-sound656-659.md`。
