@@ -21,4 +21,3 @@ play在initialize中绑定实际runtime方法；输入通过独立Symbol来源�
 资源/provider/store、play/native输入和呈现是明确接缝；没有创建游戏World、WASM工厂或画布。此处first-frame仅验证显式呈现接缝的通知，不证明游戏可见像素、帧率、资源/IDB或存档持久化。上游DATA回调要求同源，与这里的跨源消息测试是两项不同能力。当前仍是partialAdapter，尚未完成第三阶段。
 
 详细检查及原始证据指纹见[805记录](launcher-iframe805.json)。下一步保留原DAT解密消费者，接上游真实DATA、资源及严格可变文件收据。
-
