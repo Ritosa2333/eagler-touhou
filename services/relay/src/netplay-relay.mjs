@@ -941,7 +941,17 @@ function startRtcRouteSelection(roomId, runId, room, run) {
           iceServers:turnServers[player]});
     },
     select(serial) {
-      broadcastSignal(run, {type:'rtc-startup-select', serial});
+      const keepPrimary = serial === 1 &&
+        [...run.signalClients.values()].every(peer => peer.rtcKeepPrimary);
+      if (serial === 1) {
+        run.startupPrimaryRetired = !keepPrimary;
+        run.keepStartupPrimary = keepPrimary;
+        if (!keepPrimary) {
+          run.nat4?.close();
+          run.nat4 = null;
+        }
+      }
+      broadcastSignal(run, {type:'rtc-startup-select', serial, ...(keepPrimary && {keepPrimary})});
     },
     complete(serial) {
       run.rtcStartup = null;
@@ -1262,8 +1272,8 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
         const exchange = run.rtcReplacement?.nat4;
         if (exchange) exchange.send(player, observation);
         else if (message.observer == null) sendSignal(target, {type:'signal', from:player, generation:run.rtcGeneration, ...signal});
-      } else if (message.generation != null) return;
-      else if (run.nat4 && !run.route) run.nat4.send(player, observation);
+      } else if (message.generation != null || run.startupPrimaryRetired) return;
+      else if (run.nat4 && (!run.route || run.keepStartupPrimary)) run.nat4.send(player, observation);
       else if (message.observer == null) sendSignal(target, {
         type: 'signal',
         from: player,
@@ -2900,6 +2910,7 @@ server.on('connection', (socket, request) => {
 
   if (signaling) {
     socket.rtcStartup = url.searchParams.get('rtcStartup') === '1';
+    socket.rtcKeepPrimary = socket.rtcStartup && url.searchParams.get('rtcKeepPrimary') === '1';
     const iceChoice = url.searchParams.get('rtcRoute');
     socket.hasInitialIceChoice = ['auto','direct','swarm','turn'].includes(iceChoice);
     socket.initialIceChoice = socket.hasInitialIceChoice ? iceChoice : 'auto';

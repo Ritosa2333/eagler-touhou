@@ -25,7 +25,8 @@ using Bytes = std::vector<std::uint8_t>;
 constexpr std::string_view Prefix = "etr1:";
 constexpr std::size_t MaxControls = 256, MaxBytes = 1024 * 1024;
 constexpr Millis Window = 6000, ProbeTimeout = 1000, Cooldown = 60000;
-constexpr Millis RttFreshness = 2000, StallTimeout = 3000;
+constexpr Millis RttFreshness = 2000, StallTimeout = 3000, WarmStandbyStall = 1250;
+constexpr Millis PrimaryStandbyConnectMs = 12000;
 constexpr std::size_t StartupSamples = 6;
 
 Millis now()
@@ -151,6 +152,7 @@ struct NativeAdaptiveRoute::State
     bool firstComparison = true, force = false;
     Millis lastPump = 0, quietUntil = 0, backupStarted = 0, retryAt = 0;
     Millis activeSince = 0;
+    Millis startupPrimaryUntil = 0;
     Millis previousUntil = 0, verification = 0, nextCheck = 0, verifyAfter = 0, switched = 0;
     Millis recovery = 0, lastNeed = 0;
     std::uint32_t generation = 0, epoch = 0, outgoing = 0, incoming = 0, resendFrom = 0, recoveryProbe = 0;
@@ -175,8 +177,11 @@ struct NativeAdaptiveRoute::State
     bool Eligible(Millis time) const { return running && time >= quietUntil; }
     Millis ProbeWaitSince() const { return (std::max)({activeSince, quietUntil, active->lastRttAt}); }
     bool Stalled(Millis time) const {
-        return supported && running &&
-            time - (std::max)(ProbeWaitSince(), active->lastTrafficAt) >= StallTimeout;
+        if (!supported || !running) return false;
+        // Only shorten the watchdog when a measured spare is still answering.
+        const bool warmStandby = OfferReady(time) && time - offered->path->lastRttAt <= ProbeTimeout;
+        return time - (std::max)(ProbeWaitSince(), active->lastTrafficAt) >=
+            (warmStandby ? WarmStandbyStall : StallTimeout);
     }
     std::array<Path *, 4> Paths() { return {&primary, &standby, planned.get(), retained.get()}; }
     Path *Other()
@@ -634,8 +639,9 @@ struct NativeAdaptiveRoute::State
     {
         if (!Ready(path) || (path.measuring && path.reported)) return;
         while (!path.samples.empty() && time - path.samples.front().sent > Window) path.samples.pop_front();
+        const bool startupStandby = &path == &primary && startupPrimaryUntil && !epoch;
         const auto interval = path.measuring || verification ? 50 :
-            (&path == active || (offered && offered->path == &path) ? 250 : 10000);
+            (&path == active || startupStandby || (offered && offered->path == &path) ? 250 : 10000);
         if (time - path.lastProbe < interval) return;
         // A probe refused by a full input channel is also a failed sample.
         Send(path, {{"kind", "ping"}, {"id", ++path.probes}}, false);
@@ -723,7 +729,10 @@ struct NativeAdaptiveRoute::State
                 offered.reset();
         }
         if (recovery && time > recovery) { disabled = true; return; }
-        if ((!planned || !planned->measuring) && !verification && (!switched || time - switched >= Cooldown) && Other()) {
+        const auto alternate = Other();
+        const bool startupStandby = startupPrimaryUntil && !epoch && alternate == &primary;
+        if ((!planned || !planned->measuring) && !verification && alternate &&
+            (startupStandby || !switched || time - switched >= Cooldown)) {
             const auto current = active->Measure(time, time - Window);
             if (current.count >= 12 && (firstComparison || current.p95 >= 60 || current.loss >= .1)) {
                 Verify(time, false);
@@ -809,6 +818,10 @@ void NativeAdaptiveRoute::Pump(bool running)
         s.ProbeStartup(s.primary, time);
         if (s.PollPlannedSignals(time)) s.ProbeStartup(*s.planned, time);
         return;
+    }
+    if (s.startupPrimaryUntil && s.active != &s.primary && !s.Ready(s.primary) && time >= s.startupPrimaryUntil) {
+        s.primary.peer->Close();
+        s.startupPrimaryUntil = 0;
     }
     if (!s.supported || s.disabled) return;
     if (s.Switching() && s.Controller() && !s.backup && !s.planned && s.primary.peer->IsOpen() && time >= s.retryAt) {
@@ -903,7 +916,7 @@ void NativeAdaptiveRoute::ConfigureSurvey(std::string initialRoute, bool initial
     state_->retirePeer = std::move(retire);
 }
 void NativeAdaptiveRoute::BeginStartup() { state_->startup = true; }
-bool NativeAdaptiveRoute::SelectStartup(std::uint32_t serial)
+bool NativeAdaptiveRoute::SelectStartup(std::uint32_t serial, bool keepPrimary)
 {
     auto &s = *state_;
     auto *path = serial ? s.planned.get() : &s.primary;
@@ -913,8 +926,8 @@ bool NativeAdaptiveRoute::SelectStartup(std::uint32_t serial)
     if (serial) {
         path->measuring = false;
         s.initialSurvey = false;
-        s.initialRelayRoute = "turn";
         s.hello = false;
+        if (keepPrimary) s.startupPrimaryUntil = now() + PrimaryStandbyConnectMs;
     } else s.Retire(s.planned);
     path->samples.clear();
     return true;

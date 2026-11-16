@@ -300,7 +300,7 @@ struct NativeRoomTransport::Impl
             adaptive->BeginStartup();
         } else if (type == "rtc-startup-select" && startupActive && adaptive) {
             const auto serial = message.value("serial", 2u);
-            if (!adaptive->SelectStartup(serial)) return;
+            if (!adaptive->SelectStartup(serial, message.value("keepPrimary", false))) return;
             startupActive = false;
             ready = true;
             if (serial == 1) {
@@ -531,7 +531,8 @@ void NativeRoomTransport::Connect(const std::string &signalUrl, std::string tag,
     auto next = std::make_unique<Impl>();
     next->signalUrl = signalUrl;
     if (playerCount == 2 && !preferTurn)
-        next->signalUrl += signalUrl.find('?') == std::string::npos ? "?rtcStartup=1" : "&rtcStartup=1";
+        next->signalUrl += signalUrl.find('?') == std::string::npos
+            ? "?rtcStartup=1&rtcKeepPrimary=1" : "&rtcStartup=1&rtcKeepPrimary=1";
     if (playerCount == 2 && !preferTurn &&
         (initialRoute == "auto" || initialRoute == "direct" || initialRoute == "swarm" || initialRoute == "turn")) {
         next->manualRouteConfirmation = true;

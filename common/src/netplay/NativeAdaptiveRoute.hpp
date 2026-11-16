@@ -31,7 +31,7 @@ public:
     using RetirePeer = std::function<void(std::unique_ptr<NativePeerTransport>)>;
     void ConfigureSurvey(std::string initialRoute, bool initialSurvey, SurveySignal send, RetirePeer retire);
     void BeginStartup();
-    bool SelectStartup(std::uint32_t serial);
+    bool SelectStartup(std::uint32_t serial, bool keepPrimary = false);
     RouteSwitchStatus SwitchStatus() const;
     bool ConfirmOffer();
     void RelayStandby(const nlohmann::json &message, rtc::Configuration ice = {});

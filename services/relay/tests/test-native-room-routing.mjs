@@ -548,43 +548,65 @@ try {
   assert.ok(!sharedSignals[1].received.some(message => message.candidate?.candidate === hostCandidate));
   for (const {ws} of [...sharedSignals, ...sharedSeats]) ws.terminate();
 
-  const automaticRoom = 'room=th09mp-turn-retry';
-  const retryAddresses = ['192.0.2.19', '198.51.100.20'];
-  const autoSeats = await Promise.all([0, 1].map(seat =>
-    connect(seat, automaticRoom + '&lobby=auto_seat_' + seat + '&member=auto_member_' + seat, retryAddresses[seat])));
-  for (const [seat, peer] of autoSeats.entries()) peer.send({type:'take-seat', seat, loadout:seat});
-  await until(() => autoSeats[0].state()?.seats.slice(0, 2).every(Boolean));
-  autoSeats[0].send({type:'relay-preference', swarm:false});
-  autoSeats[0].send({type:'set-ready', ready:true, nativeRuntime:true, runtimeGeneration:generation});
-  autoSeats[1].send({type:'set-ready', ready:true, runtimeGeneration:generation});
-  await until(() => autoSeats[0].state()?.seats.slice(0, 2).every(seat => seat?.ready));
-  autoSeats[0].send({type:'start'});
-  const automaticStart = await until(() => autoSeats[1].received.find(message => message.type === 'start'));
-  assert.equal(automaticStart.room.swarmSelected, undefined);
-  const autoRun = seat => automaticRoom + '&run=1&players=2&player=' + seat +
-    '&member=auto_member_' + seat + '&runtimeGeneration=' + generation;
-  const signalAuto = seat => connect(seat, autoRun(seat) + '&signal=1&rtcStartup=1&rtcRoute=auto', retryAddresses[seat]);
-  const autoGames = await Promise.all([0, 1].map(seat => connect(seat, autoRun(seat), retryAddresses[seat])));
-  const earlySignal = await signalAuto(0);
-  // A late signaling socket must get a fresh ICE budget even when both gameplay sockets opened earlier.
-  await delay(4700);
-  assert.equal(earlySignal.ws.readyState, WebSocket.OPEN);
-  const autoSignals = [earlySignal, await signalAuto(1)];
-  for (const peer of autoSignals) await until(() => peer.received.some(message => message.type === 'rtc-startup'));
-  // Primary signaling reached both players, but the original game channels never opened.
-  for (const peer of autoSignals) {
-    const backup = await until(() => peer.received.find(message => message.type === 'rtc-standby'));
-    assert.equal(backup.route, 'turn');
-    assert.deepEqual(backup.iceServers.map(server => server.urls), [[ordinaryTurnUrl]]);
-    peer.send({type:'rtc-startup-quality', serial:1, quality:{sent:6, received:6, p95:52}});
+  for (const keepPrimary of [false, true]) {
+    const automaticRoom = 'room=th09mp-turn-retry' + (keepPrimary ? '-keep' : '');
+    const retryAddresses = ['192.0.2.19', '198.51.100.20'];
+    const autoSeats = await Promise.all([0, 1].map(seat =>
+      connect(seat, automaticRoom + '&lobby=auto_seat_' + seat + '&member=auto_member_' + seat, retryAddresses[seat])));
+    for (const [seat, peer] of autoSeats.entries()) peer.send({type:'take-seat', seat, loadout:seat});
+    await until(() => autoSeats[0].state()?.seats.slice(0, 2).every(Boolean));
+    autoSeats[0].send({type:'relay-preference', swarm:false});
+    autoSeats[0].send({type:'set-ready', ready:true, nativeRuntime:true, runtimeGeneration:generation});
+    autoSeats[1].send({type:'set-ready', ready:true, runtimeGeneration:generation});
+    await until(() => autoSeats[0].state()?.seats.slice(0, 2).every(seat => seat?.ready));
+    autoSeats[0].send({type:'start'});
+    const automaticStart = await until(() => autoSeats[1].received.find(message => message.type === 'start'));
+    assert.equal(automaticStart.room.swarmSelected, undefined);
+    const autoRun = seat => automaticRoom + '&run=1&players=2&player=' + seat +
+      '&member=auto_member_' + seat + '&runtimeGeneration=' + generation;
+    const signalAuto = seat => connect(seat, autoRun(seat) + '&signal=1&rtcStartup=1&rtcRoute=auto' + (keepPrimary || seat === 0 ? '&rtcKeepPrimary=1' : ''), retryAddresses[seat]);
+    const autoGames = await Promise.all([0, 1].map(seat => connect(seat, autoRun(seat), retryAddresses[seat])));
+    const earlySignal = await signalAuto(0);
+    // A late signaling socket must get a fresh ICE budget even when both gameplay sockets opened earlier.
+    if (!keepPrimary) await delay(4700);
+    assert.equal(earlySignal.ws.readyState, WebSocket.OPEN);
+    const autoSignals = [earlySignal, await signalAuto(1)];
+    for (const peer of autoSignals) await until(() => peer.received.some(message => message.type === 'rtc-startup'));
+    // Primary signaling reached both players, but the original game channels never opened.
+    for (const peer of autoSignals) {
+      const backup = await until(() => peer.received.find(message => message.type === 'rtc-standby'));
+      assert.equal(backup.route, 'turn');
+      assert.deepEqual(backup.iceServers.map(server => server.urls), [[ordinaryTurnUrl]]);
+      peer.send({type:'rtc-startup-quality', serial:1, quality:{sent:6, received:6, p95:52}});
+    }
+    for (const peer of autoSignals) {
+      const selected = await until(() => peer.received.find(message => message.type === 'rtc-startup-select'));
+      assert.equal(selected.serial, 1);
+      assert.equal(selected.keepPrimary === true, keepPrimary);
+      peer.send({type:'rtc-startup-selected', serial:1});
+    }
+    await until(() => autoSignals.every(peer => peer.received.some(message => message.type === 'route' && message.mode === 'rtc')));
+    const trickle = 'candidate:kept 1 UDP 1 192.0.2.19 34003 typ srflx';
+    autoSignals[0].send({type:'signal', to:1, candidate:{candidate:trickle, sdpMid:'0'}});
+    if (!keepPrimary) {
+      await delay(150);
+      assert.ok(!autoSignals[1].received.some(message => message.candidate?.candidate === trickle));
+    } else {
+      await until(() => autoSignals[1].received.some(message => message.candidate?.candidate === trickle));
+      for (const [seat, peer] of autoSignals.entries()) {
+        peer.send({type:'signal', to:1-seat, description:{type:seat ? 'answer' : 'offer', sdp:'v=0\r\n'}});
+        for (const [index, observer] of observers.entries()) {
+          const candidate = 'candidate:kept 1 UDP 1 ' + retryAddresses[seat] + ' ' + (34000 + index) + ' typ srflx';
+          peer.send({type:'signal', to:1-seat, observer, candidate:{candidate, sdpMid:'0'}});
+        }
+      }
+      for (const peer of autoSignals) {
+        const prediction = await until(() => peer.received.find(message => message.candidate?.candidate.startsWith('candidate:keptnext ')));
+        assert.match(prediction.candidate.candidate, / 34003 typ srflx$/);
+      }
+    }
+    for (const {ws} of [...autoSignals, ...autoGames, ...autoSeats]) ws.terminate();
   }
-  for (const peer of autoSignals) {
-    const selected = await until(() => peer.received.find(message => message.type === 'rtc-startup-select'));
-    assert.equal(selected.serial, 1);
-    peer.send({type:'rtc-startup-selected', serial:1});
-  }
-  await until(() => autoSignals.every(peer => peer.received.some(message => message.type === 'route' && message.mode === 'rtc')));
-  for (const {ws} of [...autoSignals, ...autoGames, ...autoSeats]) ws.terminate();
 
   const abandoned = 'room=th09mp-abandoned';
   const abandonedHost = await connect(0, abandoned + '&lobby=abandoned_host&member=abandoned_host_key');

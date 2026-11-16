@@ -20,8 +20,9 @@ export function createAdaptivePeerRoute(options) {
     let recoveryUntil = 0, recoveryProbe = 0, lastNeed = -Infinity, verifyAfter = 0;
     let ackPending = false;
     let manualSwitch = false, offered = null;
-    let startup = false;
+    let startup = false, startupPrimaryUntil = 0;
     const StartupSamples = 6, StartupInterval = 50, StartupTimeout = 1000;
+    const PrimaryStandbyConnectMs = 12000, WarmStandbyStallMs = 1250;
     const policy = Object.freeze({
         windowMs: 6000, probeTimeoutMs: 1000, primaryIntervalMs: 250,
         standbyIntervalMs: 10000, verificationIntervalMs: 50,
@@ -35,6 +36,7 @@ export function createAdaptivePeerRoute(options) {
         path.lastProbe = -Infinity;
         path.lastSuccessfulProbe = 0;
         path.lastRoundTripAt = -Infinity;
+        path.lastTrafficAt = -Infinity;
         path.baseline = Infinity;
         return path;
     };
@@ -338,7 +340,8 @@ export function createAdaptivePeerRoute(options) {
             return;
         }
         if (!ready(target)) return;
-        if (!force && (now() < verifyAfter || (!target.surveySerial && now() - switchedAt < policy.cooldownMs))) return;
+        const startupStandby = target === primary && startupPrimaryUntil && !epoch;
+        if (!force && (now() < verifyAfter || (!startupStandby && !target.surveySerial && now() - switchedAt < policy.cooldownMs))) return;
         if (!verification) {
             const ticket = pairedQuality && controller ? ++verificationTicket : 0;
             verification = {since: now(), force, ticket, target};
@@ -475,6 +478,7 @@ export function createAdaptivePeerRoute(options) {
             return true;
         }
         if (path.measuring) return true;
+        if (data?.byteLength) path.lastTrafficAt = now();
         if (kind === 'control' && supported) {
             const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) :
                 ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
@@ -553,6 +557,16 @@ export function createAdaptivePeerRoute(options) {
             suspend();
         }
         lastTick = time;
+        if (startupPrimaryUntil && active !== primary && !ready(primary) && time >= startupPrimaryUntil) {
+            closePath(primary);
+            startupPrimaryUntil = 0;
+        }
+        if (startupPrimaryUntil && ready(primary) && !primary.pathChecking && !primary.path) {
+            primary.pathChecking = true;
+            Promise.resolve(options.detectDirect?.(primary.pc)).then(direct => {
+                primary.path = direct ? 'direct' : 'turn';
+            }).catch(() => {}).finally(() => {primary.pathChecking = false;});
+        }
         if (supported && time >= quietUntil && eligible()) {
             if (offered && !offerReady()) offered = null;
             if (ackPending) ackPending = !sendMessage(active, {kind: 'ack', sequence: receivedSequence});
@@ -565,7 +579,8 @@ export function createAdaptivePeerRoute(options) {
             for (const path of paths()) {
                 if (!ready(path) || path.measuring && path.reported) continue;
                 const interval = path.measuring || verification ? policy.verificationIntervalMs :
-                    path === active || path === offered?.path ? policy.primaryIntervalMs : policy.standbyIntervalMs;
+                    path === active || path === offered?.path || (path === primary && startupPrimaryUntil && !epoch)
+                        ? policy.primaryIntervalMs : policy.standbyIntervalMs;
                 path.samples = path.samples.filter(s => time - s.at <= policy.windowMs).slice(-128);
                 if (time - path.lastProbe < interval) continue;
                 const id = ++path.probeSequence;
@@ -578,6 +593,10 @@ export function createAdaptivePeerRoute(options) {
             const current = stats(active, time);
             if (offered && !offered.confirmed && current.count >= policy.minimumSamples &&
                 current.score <= offered.toMs * 1.1 + 5) offered = null;
+            // A recently tested spare can cover silence before the ICE watchdog runs.
+            if (!proposal && offerReady() && time - offered.path.lastRoundTripAt <= policy.probeTimeoutMs &&
+                time - Math.max(switchedAt, quietUntil, active.lastRoundTripAt, active.lastTrafficAt) >= WarmStandbyStallMs)
+                recover();
             const route = activeRoute();
             const initialSurvey = standbySerial === 0 && options.initialSwarmSurvey?.() === true && route !== 'direct';
             if (surveyEnabled() && pairedQuality && current.count >= policy.minimumSamples &&
@@ -592,6 +611,9 @@ export function createAdaptivePeerRoute(options) {
             }
             const selectPlanned = controller && planned && !planned.measuring && planned !== active && ready(planned);
             if (selectPlanned && !verification && !proposal) verify(false, planned);
+            if (controller && startupPrimaryUntil && !epoch && !primary.compared && !verification && !proposal &&
+                current.count >= policy.minimumSamples && ready(primary))
+                verify(false, primary);
             if (controller && !planned?.measuring && !verification && !proposal && current.count >= policy.minimumSamples &&
                 ((active === primary && backup?.path === 'direct' && !backup.compared && ready(backup)) ||
                  (current.lost >= 3 && current.loss >= .1) ||
@@ -648,7 +670,7 @@ export function createAdaptivePeerRoute(options) {
                 timer = later(tick, 0);
             }
         },
-        selectStartup(serial) {
+        selectStartup(serial, keepPrimary = false) {
             if (!startup) return false;
             const path = serial === 0 ? primary : planned?.surveySerial === serial && planned;
             if (!path || !select(path, 0)) return false;
@@ -660,7 +682,8 @@ export function createAdaptivePeerRoute(options) {
             } else if (path !== primary) {
                 path.measuring = false;
                 helloSent = false;
-                closePath(primary);
+                if (keepPrimary) startupPrimaryUntil = now() + PrimaryStandbyConnectMs;
+                else closePath(primary);
             }
             hello();
             return true;

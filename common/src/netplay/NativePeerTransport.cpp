@@ -73,6 +73,7 @@ struct NativePeerTransport::Impl
     std::vector<std::shared_ptr<Peer>> peers;
     std::shared_ptr<Signals> signals = std::make_shared<Signals>();
     bool opened = false;
+    bool closed = false;
     std::size_t nextChannel = 0;
 };
 
@@ -91,8 +92,12 @@ NativePeerTransport::NativePeerTransport(std::string tag, std::uint8_t localPlay
     impl_->peers.resize(playerCount);
 }
 
-NativePeerTransport::~NativePeerTransport()
+NativePeerTransport::~NativePeerTransport() { Close(); }
+
+void NativePeerTransport::Close()
 {
+    if (impl_->closed) return;
+    impl_->closed = true;
     for (const auto &peer : impl_->peers) {
         if (!peer) continue;
         peer->connection->resetCallbacks();
@@ -105,7 +110,7 @@ void NativePeerTransport::AddPeer(std::uint8_t player)
     auto &state = *impl_;
     if (player >= state.peers.size() || player == state.localPlayer)
         throw std::invalid_argument("Invalid peer index");
-    if (state.peers[player]) return;
+    if (state.closed || state.peers[player]) return;
     auto peer = std::make_shared<Impl::Peer>(state.config);
     const auto &connection = peer->connection;
     connection->onLocalDescription([signals = state.signals, player](rtc::Description description) {
@@ -135,6 +140,7 @@ void NativePeerTransport::AddPeer(std::uint8_t player)
 
 void NativePeerTransport::SetRemoteDescription(std::uint8_t player, rtc::Description description)
 {
+    if (impl_->closed) return;
     const auto started = std::chrono::steady_clock::now();
     AddPeer(player);
     auto &peer = *impl_->peers[player];
@@ -183,6 +189,7 @@ void NativePeerTransport::AddRemoteCandidate(std::uint8_t player, rtc::Candidate
 
 bool NativePeerTransport::PollSignal(std::uint8_t &player, Signal &signal)
 {
+    if (impl_->closed) return false;
     auto &signals = *impl_->signals;
     std::lock_guard lock(signals.mutex);
     if (signals.pending.empty()) return false;

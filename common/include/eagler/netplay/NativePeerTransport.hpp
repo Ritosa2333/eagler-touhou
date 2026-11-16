@@ -20,6 +20,7 @@ public:
     ~NativePeerTransport() override;
 
     void AddPeer(std::uint8_t player);
+    void Close();
     void SetRemoteDescription(std::uint8_t player, rtc::Description description);
     void AddRemoteCandidate(std::uint8_t player, rtc::Candidate candidate);
     bool PollSignal(std::uint8_t &player, rtc::variant<rtc::Description, rtc::Candidate> &signal);
