@@ -40,6 +40,7 @@ import {
   createBoundedRelaySender,
   relayGameplayPayload,
   normalizeRelaySignal,
+  restrictInitialIce,
   clearSpectatorHistory,
   stopSpectatorStream,
   hasPendingSpectators,
@@ -902,7 +903,7 @@ function maybeStartRouteTimer(roomId, runId, room, run) {
 function maybeResolveRoute(roomId, runId, room, run) {
   if (run.route || run.rtcStartup || run.playerCount < 2) return;
   if (run.rtcFailed) {
-    if (!allowGameplayRelayFallback && !roomId.startsWith('th05mp-')) {
+    if (run.initialIceRoute || !allowGameplayRelayFallback && !roomId.startsWith('th05mp-')) {
       failRoute(roomId, runId, run, 'WebRTC connection unavailable');
       return;
     }
@@ -961,19 +962,26 @@ function startRtcRouteSelection(roomId, runId, room, run) {
   run.rtcStartup.start();
 }
 
-function applyInitialIceChoice(run) {
-  if (run.route || run.signalClients.size !== 2 ||
-      [...run.signalClients.values()].some(peer => !peer.hasInitialIceChoice || peer.peersAnnounced)) return;
-  const choice = [0,1].map(seat => run.signalClients.get(seat).initialIceChoice).find(route => route !== 'auto');
-  if (!choice) return;
+function configureInitialIceChoice(run, choice) {
   run.initialIceRoute = choice;
   run.swarm = choice === 'swarm' && swarmAvailable;
   run.turnMode = choice === 'turn' ? 'first-party' : choice;
   const workers = swarmWorkers.current();
-  if (run.swarm) run.swarmWorkers ??= [workers[0]?.id, workers[0]?.id];
+  if (run.swarm) run.swarmWorkers ??= Array(run.playerCount).fill(workers[0]?.id);
   if (!run.swarm) run.swarmDirectPlayer = undefined;
   if (swarmAvailable && workers.length) run.adaptiveSwarmWorkers ??= workers.map(node => node.id);
   run.surveyInitialSwarm = false;
+}
+
+function applyInitialIceChoice(run) {
+  if (run.initialIceRoute || run.route || run.signalClients.size !== run.playerCount ||
+      [...run.signalClients.values()].some(peer => !peer.hasInitialIceChoice || peer.peersAnnounced)) return;
+  for (let seat = 0; seat < run.playerCount; seat++) {
+    const choice = run.signalClients.get(seat).initialIceChoice;
+    if (choice === 'auto') continue;
+    configureInitialIceChoice(run, choice);
+    break;
+  }
 }
 
 function acceptTh09PlayerReport(room, run, runId, player, message) {
@@ -1108,14 +1116,15 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
     previous.close(1000, 'signaling reconnected');
   run.signalClients.set(player, socket);
   socket.initialSwarmGrant = swarmGrant;
-  if (playerCount === 2 && roomId.startsWith('th09mp-')) applyInitialIceChoice(run);
+  if (run.lobbyClientIds) applyInitialIceChoice(run);
   clearTimeout(run.signalReconnectTimer);
   run.signalReconnectTimer = null;
   function forwardSignal(from, signal) {
     const target = run.signalClients.get(1 - from);
     if (target) sendSignal(target, {type: 'signal', from, ...signal});
   }
-  if (!run.nat4 && !run.route && playerCount === 2 && run.signalClients.size === 2) {
+  const nat4Allowed = !run.initialIceRoute || run.initialIceRoute === 'direct';
+  if (nat4Allowed && !run.nat4 && !run.route && playerCount === 2 && run.signalClients.size === 2) {
     const addresses = [0, 1].map(seat => run.signalClients.get(seat).relayAddress);
     run.nat4 = nat4ExchangeFor(run, addresses, forwardSignal);
     if (run.nat4) {
@@ -1125,8 +1134,9 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
       }
     }
   }
-  const waitForOtherChoice = roomId.startsWith('th09mp-') && !run.route && playerCount === 2 &&
-      run.signalClients.size === 1 && socket.hasInitialIceChoice;
+  const waitForOtherChoice = run.lobbyClientIds && !run.initialIceRoute && !run.route &&
+      run.signalClients.size < playerCount &&
+      [...run.signalClients.values()].every(peer => peer.hasInitialIceChoice && !peer.peersAnnounced);
   if (!waitForOtherChoice) {
     const announced = [];
     for (const [seat, target] of run.signalClients) {
@@ -1231,10 +1241,14 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
       if (!Number.isInteger(to) || to < 0 || to >= playerCount || to === player) return;
       const target = run.signalClients.get(to);
       if (!target || run.signalClients.get(player) !== socket) return;
-      const signal = normalizeRelaySignal(message);
+      let signal = normalizeRelaySignal(message);
       if (!signal) {
         socket.close(1008, 'invalid signaling payload');
         return;
+      }
+      if (run.initialIceRoute && !run.route) {
+        signal = restrictInitialIce(signal, run.initialIceRoute);
+        if (!signal.description && !signal.candidate) return;
       }
       const observation = {...signal, observer: message.observer};
       if (message.observer != null && (!signal.candidate || signal.description || !nat4Observers.includes(message.observer)))
@@ -1364,6 +1378,13 @@ function publicRoomProfile(room, clientId) {
   return room.lobbyClients.get(clientId)?.accountIdentity?.profile;
 }
 
+function startupRoutes() {
+  const turn = readTurnConfig();
+  const ordinaryTurn = [turn, ...(turn.backups ?? [])].some(node =>
+    node.urls.length && (node.sharedSecret || turnUsername && turnCredential));
+  return ['auto', 'direct', ...(swarmAvailable ? ['swarm'] : []), ...(ordinaryTurn ? ['turn'] : [])];
+}
+
 function lobbySnapshot(room) {
   const spectators = [...room.lobby.spectators.entries()]
     .filter(([clientId]) => room.lobbyClients.has(clientId))
@@ -1395,6 +1416,7 @@ function lobbySnapshot(room) {
     // gameplay relay fallback. Clients mirror it so the launcher can opt the run in.
     gameplayRelayFallback: allowGameplayRelayFallback,
     phase: room.lobby.phase,
+    startupRoutes: startupRoutes(),
     ...(swarmAvailable ? {swarmAvailable: true} : {}),
     ...(swarmAvailable ? {swarmWorkers: swarmWorkers.current()} : {}),
     ...(room.lobby.phase !== 'lobby' && room.runs.get(String(room.lobby.startSerial))?.swarm
@@ -1424,6 +1446,7 @@ function lobbySnapshot(room) {
             mobileDevice: seat.mobileDevice === true,
             ...(seat.nativeRuntime ? {nativeRuntime: true} : {}),
             ...(swarmAvailable && prefersSwarm(seat, index) ? {preferSwarm: true} : {}),
+            ...(seat.startupRoute ? {startupRoute: seat.startupRoute} : {}),
             resource: seat.resource || null,
             ready: !!seat.ready && seat.readyVersion === room.lobby.settingsVersion,
             ...(seat.runtimeGeneration ? {runtimeGeneration: seat.runtimeGeneration} : {}),
@@ -2037,6 +2060,14 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       return;
     }
     const occupant = room.lobby.seats[seat];
+    if (message.type === 'startup-route') {
+      if (room.lobby.phase !== 'lobby' || !startupRoutes().includes(message.route)) return;
+      if (occupant.startupRoute !== message.route) {
+        occupant.startupRoute = message.route;
+        broadcastLobby(room);
+      }
+      return;
+    }
     if (message.type === 'relay-preference') {
       if (!swarmAvailable || room.lobby.phase !== 'lobby' || typeof message.swarm !== 'boolean') return;
       const automatic = message.automatic === true;
@@ -2483,6 +2514,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       run.playerCount = room.lobby.playerCount;
       run.rtcReplacementAllowed = activeSeats.length === 2 && activeSeats.some(seat => seat.nativeRuntime);
       run.runtimeGeneration = runtimeGeneration;
+      const routes = startupRoutes();
+      const fixedRoute = activeSeats.map(entry => entry.startupRoute).find(route => route !== 'auto' && routes.includes(route));
       run.swarm = swarmAvailable && activeSeats.some(prefersSwarm);
       const available = run.swarm ? swarmProbeWorkers() : [];
       let preferredPath, estimatedWorker;
@@ -2508,7 +2541,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         const defaultWorker = preferredPath?.worker ?? estimatedWorker ?? preferred.find(worker => worker != null) ?? available[0]?.id;
         run.swarmWorkers = run.adaptiveSwarmWorkers?.length ? activeSeats.map(() => defaultWorker)
           : preferred.map(worker => worker ?? defaultWorker);
-        if (swarmAccessToken && activeSeats.length === 2) {
+        if ((!fixedRoute || fixedRoute === 'swarm') && swarmAccessToken && activeSeats.length === 2) {
           const native = activeSeats.findIndex(seat => seat.nativeRuntime && seat.swarmDirect);
           if (native !== -1) {
             run.swarmDirectPlayer = native;
@@ -2516,6 +2549,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
           }
         }
       }
+      if (fixedRoute) configureInitialIceChoice(run, fixedRoute);
       run.admittedSpectators = new Set(
         [...room.lobby.spectators.keys()].filter(
           (id) => room.lobbyClients.has(id) && !seatedClients.has(id),

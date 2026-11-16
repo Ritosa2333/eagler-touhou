@@ -1,5 +1,6 @@
 const MaximumAgeMs = 240_000;
 const MaximumStableRtt = 150;
+const DegradedEstimatedRtt = 200;
 
 export function readRouteProbeQuality(value, now) {
   if (!value || !Number.isInteger(value.sent) || !Number.isInteger(value.received) ||
@@ -44,7 +45,8 @@ export function rankSwarmCandidates(workers, left, right, now, endpointReports =
 export function selectSwarmRoute(candidates, ordinaryTurnAvailable) {
   const best = candidates[0];
   if (best?.quality?.suitable) return {mode:'swarm', worker:best.worker};
-  if (ordinaryTurnAvailable && candidates.length && candidates.every(candidate => candidate.quality))
+  if (ordinaryTurnAvailable && candidates.length && candidates.every(candidate =>
+    candidate.quality || candidate.measuredEndpoints === 2 && candidate.estimatedRtt > DegradedEstimatedRtt))
     return {mode:'turn'};
   return null;
 }

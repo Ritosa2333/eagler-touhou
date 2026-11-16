@@ -12,6 +12,9 @@ import {createSwarmStandbyPlanner, rankSwarmCandidates, selectSwarmRoute} from '
   const pings = times => ({at:100, samples:new Map(workers.map(({id,ip}, i) => [id, {ip, rtt:times[i]}]))});
   const ranked = rankSwarmCandidates(workers, null, null, 101, [pings([10, 44, 31]), pings([95, 20, 42])]);
   assert.deepEqual(ranked.map(({worker, estimatedRtt}) => [worker, estimatedRtt]), [[12,64], [9,73], [0,105]]);
+  const distant = rankSwarmCandidates(workers, null, null, 101, [pings([140, 130, 160]), pings([160, 165, 145])]);
+  assert.deepEqual(selectSwarmRoute(distant, true), {mode:'turn'});
+  assert.equal(selectSwarmRoute(distant, false), null);
   assert.deepEqual(rankSwarmCandidates(workers, null, null, 101, [pings([10, 44, 31])]).map(({worker}) => worker), [0,9,12]);
   assert.equal(rankSwarmCandidates(workers, null, null, 300_000, [pings([10, 44, 31])])[0].measuredEndpoints, 0);
 
@@ -270,9 +273,9 @@ async function until(find) {
   throw new Error('room exchange timed out\n' + log);
 }
 
-async function connect(seat, query) {
+async function connect(seat, query, address = addresses[seat]) {
   const ws = new WebSocket(`ws://127.0.0.1:${port}/?${query}`, {
-    headers: {'x-real-ip': addresses[seat]},
+    headers: {'x-real-ip': address},
   });
   sockets.push(ws);
   const received = [];
@@ -511,6 +514,36 @@ try {
     for (const peer of chosen) peer.ws.terminate();
     await until(() => desktop.state()?.phase === 'lobby');
   }
+
+  const shared = 'room=th07mp-route-choice';
+  const sharedAddresses = ['192.0.2.17','198.51.100.18'];
+  const sharedSeats = await Promise.all([0, 1].map(seat =>
+    connect(seat, shared + '&lobby=route_seat_' + seat + '&member=route_member_' + seat, sharedAddresses[seat])));
+  await until(() => sharedSeats[0].state()?.startupRoutes?.includes('turn'));
+  for (const [seat, connection] of sharedSeats.entries()) connection.send({type:'take-seat', seat, loadout:0});
+  await until(() => sharedSeats[0].state()?.seats.slice(0, 2).every(Boolean));
+  sharedSeats[1].send({type:'startup-route', route:'turn'});
+  await until(() => sharedSeats[0].state()?.seats[1]?.startupRoute === 'turn');
+  for (const connection of sharedSeats) connection.send({type:'set-ready', ready:true, runtimeGeneration:generation});
+  await until(() => sharedSeats[0].state()?.seats.slice(0, 2).every(seat => seat?.ready));
+  sharedSeats[0].send({type:'start'});
+  await until(() => sharedSeats[1].received.some(message => message.type === 'start'));
+  const sharedSignals = await Promise.all([0, 1].map(seat => connect(seat,
+    shared + '&run=1&players=2&signal=1&player=' + seat + '&member=route_member_' + seat + '&runtimeGeneration=' + generation,
+    sharedAddresses[seat])));
+  for (const connection of sharedSignals) {
+    const peers = await until(() => connection.received.find(message => message.type === 'peers'));
+    assert.equal(peers.turnMode, 'first-party');
+    assert.deepEqual(peers.iceServers.map(ice => ice.urls), [[ordinaryTurnUrl]]);
+  }
+  const hostCandidate = 'candidate:host 1 UDP 2122252543 192.0.2.1 34000 typ host';
+  const turnCandidate = 'candidate:turn 1 UDP 1677734911 192.0.2.1 34001 typ relay raddr 0.0.0.0 rport 0';
+  sharedSignals[0].send({type:'signal', to:1, description:{type:'offer', sdp:'v=0\r\na=' + hostCandidate + '\r\na=' + turnCandidate + '\r\n'}});
+  for (const candidate of [hostCandidate, turnCandidate]) sharedSignals[0].send({type:'signal', to:1, candidate:{candidate, sdpMid:'0'}});
+  await until(() => sharedSignals[1].received.some(message => message.candidate?.candidate === turnCandidate));
+  assert.equal(sharedSignals[1].received.find(message => message.description)?.description.sdp, 'v=0\r\na=' + turnCandidate + '\r\n');
+  assert.ok(!sharedSignals[1].received.some(message => message.candidate?.candidate === hostCandidate));
+  for (const {ws} of [...sharedSignals, ...sharedSeats]) ws.terminate();
 
   const abandoned = 'room=th09mp-abandoned';
   const abandonedHost = await connect(0, abandoned + '&lobby=abandoned_host&member=abandoned_host_key');

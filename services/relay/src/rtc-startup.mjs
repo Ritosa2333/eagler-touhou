@@ -1,6 +1,5 @@
 const TurnDelayMs = 500;
 const ComparisonGraceMs = 350;
-const DegradedRouteMs = 3000;
 const CommitTimeoutMs = 2000;
 const FastDirectRttMs = 85;
 
@@ -52,7 +51,7 @@ export function createRtcStartup({timeout, openTurn, select, complete, fail, now
     const bothReported = lanes.every(lane => lane.size === 2 || [...lane.values()].includes(null));
     if (firstSuitable !== undefined && (bothReported || elapsed >= firstSuitable + ComparisonGraceMs))
       return choose(primary?.suitable ? 0 : 1);
-    if ((primary || turn) && (bothReported || elapsed >= DegradedRouteMs))
+    if ((primary || turn) && (bothReported || elapsed >= timeout))
       return choose(!primary || turn && turn.score < primary.score ? 1 : 0);
     if (elapsed >= timeout || bothReported) {
       stop();
@@ -60,8 +59,7 @@ export function createRtcStartup({timeout, openTurn, select, complete, fail, now
       return;
     }
     const next = Math.min(timeout, !turnOpen ? TurnDelayMs : Infinity,
-      firstSuitable !== undefined ? firstSuitable + ComparisonGraceMs : Infinity,
-      elapsed < DegradedRouteMs && (primary || turn) ? DegradedRouteMs : Infinity);
+      firstSuitable !== undefined ? firstSuitable + ComparisonGraceMs : Infinity);
     timer = wait(check, Math.max(1, next - elapsed));
     timer?.unref?.();
   }

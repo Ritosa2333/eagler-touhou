@@ -18,6 +18,12 @@ import {
 import { parseTh09PlayerStats, type Th09PlayerStats } from './th09-room-stats.mjs';
 import {parseRoomAccountProfile, type RoomAccountProfile} from './room-account-profile.mjs';
 
+export type StartupRoute = 'auto' | 'direct' | 'swarm' | 'turn';
+
+function isStartupRoute(value: unknown): value is StartupRoute {
+  return value === 'auto' || value === 'direct' || value === 'swarm' || value === 'turn';
+}
+
 export interface MultiplayerLobbySeat {
   clientId: string;
   name: string;
@@ -25,6 +31,7 @@ export interface MultiplayerLobbySeat {
   stats?: Th09PlayerStats;
   loadout: number;
   ready: boolean;
+  startupRoute?: StartupRoute;
   runtimeGeneration?: string;
   offline: boolean;
   controlMode: ReturnType<typeof multiplayerControlMode>;
@@ -76,6 +83,7 @@ export interface NormalizedMultiplayerLobbySnapshot {
   spectatorCount: number;
   spectatorTimeline?: boolean;
   swarmSelected?: boolean;
+  startupRoutes?: StartupRoute[];
   seats: Array<MultiplayerLobbySeat | null>;
   localSeat: number | null;
   localSpectator: boolean;
@@ -207,6 +215,7 @@ export function normalizeMultiplayerLobbySnapshot(
       stats: parseTh09PlayerStats(seat.stats),
       loadout,
       ready: !!seat.ready,
+      ...(isStartupRoute(seat.startupRoute) ? {startupRoute:seat.startupRoute} : {}),
       ...(typeof seat.runtimeGeneration === 'string' && /^[a-f0-9]{64}$/.test(seat.runtimeGeneration)
         ? {runtimeGeneration: seat.runtimeGeneration} : {}),
       offline: !!seat.offline,
@@ -259,6 +268,7 @@ export function normalizeMultiplayerLobbySnapshot(
     spectatorCount,
     ...(source.spectatorTimeline === true ? { spectatorTimeline: true } : {}),
     ...(source.swarmSelected === true ? { swarmSelected: true } : {}),
+    ...(Array.isArray(source.startupRoutes) ? {startupRoutes:[...new Set(source.startupRoutes.filter(isStartupRoute))]} : {}),
     seats,
     localSeat,
     localSpectator,

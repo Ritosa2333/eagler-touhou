@@ -78,17 +78,25 @@ test('a healthy Swarm can start promptly while TURN is still gathering', () => {
   assert.deepEqual(f.events.at(-1),['select',0,1100]);
 });
 
-test('degraded paths cannot win prematurely and an unacknowledged route cannot release input', () => {
+test('a degraded Swarm keeps waiting for first-party TURN after three seconds', () => {
   const f=fixture();
   f.at(1250);
-  f.reportBoth(0,265);
-  f.at(2999);
+  f.reportBoth(0,300);
+  f.at(3750);
   assert.deepEqual(f.events,[['turn',500]]);
-  f.at(3000);
-  assert.deepEqual(f.events.at(-1),['select',0,3000]);
+  f.reportBoth(1,62);
+  assert.deepEqual(f.events.at(-1),['select',1,3750]);
+});
+
+test('use the only proven route at the deadline and require both acknowledgements', () => {
+  const f=fixture();
+  f.at(1250);
+  f.reportBoth(0,300);
+  f.at(7500);
+  assert.deepEqual(f.events.at(-1),['select',0,7500]);
   f.startup.acknowledge(0,0);
-  f.at(5000);
-  assert.deepEqual(f.events.at(-1),['failed',5000]);
+  f.at(9500);
+  assert.deepEqual(f.events.at(-1),['failed',9500]);
 });
 
 test('all dead paths time out and zero-return paths are never selected', () => {

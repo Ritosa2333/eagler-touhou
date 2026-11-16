@@ -10,7 +10,7 @@ import {roomPresentation} from './presentation';
 import {RoomPacketLoss} from './RoomPacketLoss';
 import {RoomLoadoutFields} from './RoomLoadoutFields';
 import type {RoomNetworkPresentation} from './types';
-export function RoomPersonal({state, service, network, assetUrl, th09NetworkOverlayOpen, hidden}: {state: RoomOwnerSnapshot; service: Pick<MultiplayerRoomService, 'setDisplayName' | 'changeLoadout' | 'standUp' | 'checkGame' | 'setPreferTurn'>; network: Pick<RoomNetworkPresentation, 'loss' | 'lossReady' | 'testLoss'>; assetUrl(path: string): string; th09NetworkOverlayOpen: boolean; hidden: boolean}) {
+export function RoomPersonal({state, service, network, assetUrl, th09NetworkOverlayOpen, hidden}: {state: RoomOwnerSnapshot; service: Pick<MultiplayerRoomService, 'setDisplayName' | 'changeLoadout' | 'standUp' | 'checkGame' | 'setStartupRoute' | 'setPreferTurn'>; network: Pick<RoomNetworkPresentation, 'loss' | 'lossReady' | 'testLoss'>; assetUrl(path: string): string; th09NetworkOverlayOpen: boolean; hidden: boolean}) {
   const {locale,t} = useLocale(), {room, loadout, label, config} = roomPresentation(state, t)!;
   const {state:account} = useAccountSession(accountsEnabled);
   const member = account.status === 'member' ? account.user : null;

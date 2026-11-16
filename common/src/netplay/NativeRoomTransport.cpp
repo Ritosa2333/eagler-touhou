@@ -120,6 +120,7 @@ struct NativeRoomTransport::Impl
     std::uint8_t player = 0;
     std::uint8_t count = 0;
     bool preferTurn = false;
+    bool manualRouteConfirmation = false;
     bool initialIceRelayOnly = false;
     Json fallbackIceServers = nullptr;
     bool ready = false;
@@ -225,7 +226,8 @@ struct NativeRoomTransport::Impl
             if (std::any_of(standby.iceServers.begin(), standby.iceServers.end(),
                             [](const auto &server) { return server.type == rtc::IceServer::Type::Turn; }))
                 standby.iceTransportPolicy = rtc::TransportPolicy::Relay;
-            adaptive = std::make_unique<NativeAdaptiveRoute>(*transport, tag, player, std::move(standby), swarmRoom, !preferTurn);
+            adaptive = std::make_unique<NativeAdaptiveRoute>(*transport, tag, player, std::move(standby), swarmRoom,
+                !preferTurn, manualRouteConfirmation);
             if (!preferTurn)
                 adaptive->ConfigureSurvey(initialRelayRoute, message.value("surveyInitialSwarm", false),
                     [this](const Json &message) { return sendSurvey(message); }, retirePeer);
@@ -530,11 +532,13 @@ void NativeRoomTransport::Connect(const std::string &signalUrl, std::string tag,
     next->signalUrl = signalUrl;
     if (playerCount == 2 && !preferTurn)
         next->signalUrl += signalUrl.find('?') == std::string::npos ? "?rtcStartup=1" : "&rtcStartup=1";
-    if (tag == "th09" && playerCount == 2 && !preferTurn &&
+    if (playerCount == 2 && !preferTurn &&
         (initialRoute == "auto" || initialRoute == "direct" || initialRoute == "swarm" || initialRoute == "turn")) {
+        next->manualRouteConfirmation = true;
         next->signalUrl += "&rtcRoute=";
         next->signalUrl += initialRoute;
     }
+    next->manualRouteConfirmation |= tag == "th09";
     next->tag = std::move(tag);
     next->player = localPlayer;
     next->count = playerCount;

@@ -5,21 +5,30 @@ import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/mul
 import {OptionSwitch} from '../settings/TouchSettingsFields';
 import type {RoomNetworkPresentation} from './types';
 
-export function RoomPacketLoss({state, network, service}: {state: RoomOwnerSnapshot; network: Pick<RoomNetworkPresentation, 'loss' | 'lossReady' | 'testLoss'>; service: Pick<MultiplayerRoomService, 'setPreferTurn'>}) {
+export function RoomPacketLoss({state, network, service}: {state: RoomOwnerSnapshot; network: Pick<RoomNetworkPresentation, 'loss' | 'lossReady' | 'testLoss'>; service: Pick<MultiplayerRoomService, 'setStartupRoute' | 'setPreferTurn'>}) {
   const {t} = useLocale(), room = state.room;
   if (!room?.synced || room.phase !== 'lobby' || state.seat == null || state.spectatorRequested) return null;
   const peers = (room.seats || []).slice(0, room.playerCount).flatMap((seat, index) => seat && !seat.offline && index !== state.seat ? [{seat, index}] : []);
   const lanes = ['direct', 'turn'] as const;
   const running = peers.some(({seat}) => lanes.some(lane => network.loss(seat.clientId, lane).state === 'running'));
   const ready = state.connected && peers.some(({seat}) => lanes.some(lane => network.lossReady(seat.clientId, lane)));
+  const localRoute = room.seats?.[state.seat]?.startupRoute ?? 'auto';
+  const locked = !state.connected || state.launchBusy || state.checkBusy;
+  const labels = {auto:t('room.startupAuto'), direct:t('room.direct'), swarm:'Swarm', turn:'TURN'};
   return <section className="room-packet-loss" aria-labelledby="mpPacketLossTitle">
     <header><div><h3 id="mpPacketLossTitle">{t('room.packetLoss')}</h3><p>{t('room.packetLossHint')}</p></div>
       <UiButton id="mpPacketLossTest" type="button" disabled={!ready || running || state.launchBusy} onClick={() => network.testLoss()}>{t(running ? 'room.packetLossRunning' : 'room.packetLossTest')}</UiButton>
     </header>
-    {state.product !== 'th09mp' && <div className="room-turn-preference">
+    {state.product !== 'th09mp' && (room.startupRoutes?.length ? <table className="room-startup-routes">
+      <caption>{t('room.startupRoutes')}</caption>
+      <tbody>{room.startupRoutes.map(route => <tr key={route}><td>
+        <UiButton type="button" variant={localRoute === route ? 'primary' : 'quiet'} size="sm" disabled={locked}
+          aria-pressed={localRoute === route} onClick={() => service.setStartupRoute(route)}>{labels[route]}</UiButton>
+      </td></tr>)}</tbody>
+    </table> : <div className="room-turn-preference">
       <div><label htmlFor="mpPreferTurn">{t('room.preferTurn')}</label><p id="mpPreferTurnHint">{t('room.preferTurnHint')}</p></div>
       <OptionSwitch id="mpPreferTurn" label={t('room.preferTurn')} describedBy="mpPreferTurnHint" checked={state.preferTurn} disabled={!state.connected || state.launchBusy || state.checkBusy} onChange={() => service.setPreferTurn(!state.preferTurn)}/>
-    </div>}
+    </div>)}
     <div role="status" aria-live="polite">{!peers.length ? <p>{t('room.waitPeer')}</p> : peers.map(({seat, index}) => <div className="room-packet-loss-peer" key={seat.clientId}>
       <strong><OverflowText>{state.nickname ? seat.name || `P${index + 1}` : `P${index + 1}`}</OverflowText></strong>
       {lanes.map(lane => {

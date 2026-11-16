@@ -538,6 +538,8 @@
   "room_packetLossHint": "Direct and TURN measured separately | about 6 seconds",
   "room_preferTurn": "Prefer TURN",
   "room_preferTurnHint": "This device | Use TURN for the next game",
+  "room_startupRoutes": "Starting route",
+  "room_startupAuto": "Automatic",
   "room_packetLossTest": "Test packet loss",
   "room_packetLossRunning": "Testing…",
   "room_packetLossOutgoing": "You → peer",
