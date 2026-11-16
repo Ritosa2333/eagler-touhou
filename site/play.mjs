@@ -1,6 +1,7 @@
 import {fetchResource,isImportedResourceMode} from './resource-fetch.mjs';
 import {readWorldDrawRecords} from './runtime/world-presentation.mjs';
 import {mountWebInput} from './runtime/web-input.mjs';
+import {getPageLaunchContext} from './runtime/page-launch-context.mjs';
 import {QualificationOwner,evaluateOwnedQualification,EX_QUALIFICATION_SCHEMA} from './runtime/ex-qualification.mjs';
 import {loadOriginalType33ForWorld,originalType33Profile} from './runtime/original-bullet-type33.mjs';
 const {assertStageStartAllowed,mountExtraMenu,setDebugExtraSaveEligibility,setOwnedExtraSaveEligibility,readCurrentExtraAccess,requestNormalExtraStart}=(()=>{
@@ -920,9 +921,11 @@ function resolveStage(catalog,stageId){
 }
 
 async function initialize(){
+const launcherContext=getPageLaunchContext();launcherContext?.signal.throwIfAborted();
 const [renderer,draws,timing,inspector,sound]=await loadingDeadline(Promise.all([
   import('./runtime/renderer-owned-ending-v2.mjs'),import('./runtime/draw.mjs'),import('./runtime/timing.mjs'),
   import('./inspector.mjs'),import('./runtime/sound.mjs')]),'运行页依赖');
+launcherContext?.signal.throwIfAborted();
 const {OwnedNativeTitleRecordStore,nativeRouteScorePacket,originalResultModel,originalResultPacket,persistOwnedNativeScoreCapture}=sound;
 const {WebGlRenderer}=renderer,{OriginalPresentationFPS,originalFPSDraws,originalFPSText,decodeDrawBuffer,orderDrawLayers,messageTextLayout,loadOriginalStageTextBank,drawOriginalStageText,loadOriginalHelpPage,splitOriginalMenuDraws,originalHelpPagePins,loadOriginalMainMusicRasters,disposeOriginalMainMusicRasters,uploadOriginalMainMusicRequest,decodeOriginalMainMusicPNG,loadOriginalResultFont,uploadOriginalResultTextRequest}=draws,{FrameStepper,WorldPresentationInterpolator,renderInterpolationPhase}=timing,
   {safeAssetUrl}=inspector,{GameSoundQueue,StageMusic,OriginalPauseController,MenuAudioGate,OwnedMenuSoundLedger,consumeMenuSoundWindow,OwnedReplayStore,originalReplayPreviewPacket,originalReplayNameContextPacket,OwnedLastNameFieldStore,originalNameProfilePacket,OriginalMainMenuController,OriginalMainSettingsStore,OriginalTitleAudio,TitleSoundWindowConsumer,OwnedReplayPlayback,clearOwnedWebSaveData}=sound,{parseStd,StageBackground}=renderer;
@@ -1663,6 +1666,7 @@ function draw(interpolation=1){
   if(coreError())throw new Error(coreError());
   const records=decodeDrawBuffer(state.module.HEAPU8.buffer,state.module._th128_draw_ptr(),count,state.module._th128_draw_stride());
   state.renderer.render(records,{nativeMenu:true});
+  if(records.length>0)state.presentationSerial=(state.presentationSerial??0)+1;
   syncOriginalFPSPresentation(null,[]);
   const snapshot=nativeMenuSnapshot();
   find('#game').dataset.nativeMenuPresentation=JSON.stringify({
@@ -2106,6 +2110,7 @@ async function loadVariant(variant){
     state.stageSelection={stage:firstStage,difficulty:menu.difficulty,seed:34772,progress:0};
     const createRuntime=await runtimeFactory(signal);
     const module=await createRuntime({print:()=>{},printErr:message=>console.warn(message)});
+    if(ticket!==state.loading||signal.aborted||state.launcherExited)return;
     const renderer=new WebGlRenderer(find('#game'));
     renderer.setResolution(1280,960);
     if(ticket!==state.loading){renderer.dispose();return;}
@@ -4126,6 +4131,7 @@ find('#high-framerate-mode').addEventListener('change',event=>{
   setHighFramerateMode(event.target.checked);find('#game').focus();
 });
 window.addEventListener('keydown',event=>{
+  if(state.launcherExited)return;
   if(event.target instanceof HTMLSelectElement||event.target instanceof HTMLInputElement)return;
   const menuKeys=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','Enter','Escape'];
   if(menuKeys.includes(event.code))event.preventDefault();
@@ -4177,6 +4183,7 @@ window.addEventListener('keydown',event=>{
   }
 });
 window.addEventListener('keyup',event=>{
+  if(state.launcherExited)return;
   if(state.webInput&&!state.webInput.acceptKeyUp(event))return;
   if(state.normalPostrun){state.pressed.delete(event.code);suppressedKeys.delete(event.code);state.normalPostrun.input.up(event.code);return;}
   if(!state.worldMode)state.mainController?.keyUp(event.code);
@@ -4228,8 +4235,46 @@ function installWebInput(){
   return state.webInput;
 }
 installWebInput();
+function installLauncherRuntime(){
+  const context=getPageLaunchContext();if(!context)return;
+  state.launcherManaged=true;const owner=Symbol('launcher-keyboard');
+  context.bindRuntime({
+    keyboard(value){
+      if(context.signal.aborted||state.launcherExited)throw new Error('Runtime page exited');
+      const input=state.webInput,keys=new Set(input.readKeySource(owner));
+      if(value.down)keys.add(value.code);else keys.delete(value.code);
+      if(!input.setKeySource(owner,[...keys]))throw new Error('Runtime input owner is inactive');
+    },
+    clearInput(){state.webInput?.clearKeySource(owner);},
+    exit(){
+      if(state.launcherExited)return;
+      state.launcherExited=true;state.active=false;state.paused=true;state.loading=(state.loading??0)+1;++menu.launchId;
+      state.controller?.abort();
+      try{cancelOriginalEnding();}finally{
+        try{state.webInput?.dispose();releaseGameInput();}finally{
+          try{state.renderer?.dispose();}finally{state.renderer=null;stopAudio();clock.reset();resetHighFrameratePresentation();}
+        }
+      }
+    }
+  });
+  const options=context.config.options??{};
+  if(options.limitPresentationTo60!==undefined)setHighFramerateMode(!options.limitPresentationTo60);
+  if(options.touchEnabled!==undefined)state.webInput.layer.hidden=!options.touchEnabled;
+}
+function finishLauncherStartup(){
+  const context=getPageLaunchContext();if(!context)return;
+  if(context.signal.aborted||state.launcherExited||!state.module||!state.renderer||!state.active){
+    context.fail(new Error('Runtime startup did not reach a ready title'));return;
+  }
+  context.finish();
+}
+function noteLauncherPresentation(before){
+  if((state.presentationSerial??0)>before)getPageLaunchContext()?.notePresented(true);
+}
+installLauncherRuntime();
 
 async function present(timestamp){
+  if(state.launcherExited)return;
   try{
     state.webInput?.syncContext();
     let interpolation=1,presentationSteps=0;
@@ -4258,7 +4303,9 @@ async function present(timestamp){
     }
     const fixedWorld=state.worldMode&&state.shotMode&&!state.normalPostrun&&!state.endingHost&&!state.endingLoading;
     const shouldPresent=highFramerateEnabled||!fixedWorld||presentationSteps>0;
+    const beforePresentation=state.presentationSerial??0;
     const presented=state.active&&shouldPresent?draw(interpolation):false;
+    if(state.launcherManaged)noteLauncherPresentation(beforePresentation);
     if(presented&&state.worldMode&&state.shotMode&&!document.hidden)originalPresentationFPS.observe(performance.now());
     else if(!state.active||!state.worldMode||!state.shotMode||document.hidden||state.endingHost||state.endingLoading)originalPresentationFPS.reset();
     if(state.autoFlow&&state.worldMode&&!state.paused&&!state.normalPostrun&&!state.endingHost&&!state.endingLoading)maybeAutoHandoff();
@@ -4447,18 +4494,21 @@ window.th128Debug.checkpoints=installCheckpointAdapter({
 });
 
 try{
-  state.catalog=await readJson('/assets/catalog.json');
+  state.catalog=await readJson('/assets/catalog.json',launcherContext?.signal);launcherContext?.signal.throwIfAborted();
   const selector=find('#variant');selector.replaceChildren(...Object.entries(state.catalog.variants).map(([key,record])=>{
     const option=document.createElement('option');option.value=key;option.textContent=record.title;return option;
   }));
   selector.disabled=false;
   const preferredVariant=preferenceText('variant','');
   selector.value=state.catalog.variants[preferredVariant]?preferredVariant:(state.catalog.variants.zh?'zh':Object.keys(state.catalog.variants)[0]);
-  await loadVariant(selector.value);
-}catch(problem){error(problem);}
+  if(launcherContext?.config.language){
+    const variant=launcherContext.config.language;if(!state.catalog.variants[variant])throw new Error('Requested runtime language is unavailable');selector.value=variant;
+  }
+  await loadVariant(selector.value);finishLauncherStartup();
+}catch(problem){launcherContext?.fail(problem);error(problem);}
 }
 
-initialize().catch(startupFailure);
+initialize().catch(problem=>{getPageLaunchContext()?.fail(problem);startupFailure(problem);});
 
 (() => {
   'use strict';

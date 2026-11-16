@@ -1,0 +1,15 @@
+# 当前页面的启动器接线（有限适配）
+
+当前import-entry与play已经实际使用launcher-session及page-launch-context。仅当存在合法runtimeEpoch和iframe parent/referrer时启用；独立打开保持本地导入或单网址自动下载流程。入口先准备并验证已有DAT＋OGG包，等待父窗口configure/launch后才导入游戏模块；资源就绪不会当作游戏首帧。
+
+当前支持已安装资源模式、OGG、资源目录已有的语言、limitPresentationTo60和touchEnabled布尔选项。外部DATA映射/非空resources/sharedResources/runtimePack、可变文件命令、MIDI、无音乐和其他选项仍明确拒绝。runtime-info声明partialAdapter:true、fileBridge:false；此ready仅代表这个有限启动页可处理所列命令，不能声称完整上游文件/DATA桥已兼容。上游托管DATA/存档桥另待实施。
+
+play在initialize中绑定实际runtime方法；输入通过独立Symbol来源，清理不释放物理键盘/触摸来源。loadVariant后检查实际module/renderer/active才完成启动等待，模块import成功本身不返回成功launch ACK。首次呈现仅从真实标题renderer.render非空记录后的serial变化通知，保原draw返回false的FPS语义；测试渲染出口为接缝，不冒实际GPU或完整设备画面。
+
+退出会取消加载ticket/controller、结局、输入、renderer及音频，阻止后续rAF和键盘再进旧runtime。入口finally清理provider/store；即使runtime清理抛错仍清其余owner，退出回执失败。已失败模块加载不能重用页面并假回成功，要求重新打开，避免重复owner。
+
+## 本轮验证
+
+795缺context/接线10RED→796当前入口/context10GREEN。797缺play hooks6RED；798首次抽取fixture漏新增getPageLaunchContext依赖6FAIL，原raw保；799只补该依赖后6GREEN。800完整回归144PASS/1产品UI失败：启动import失败后错误显示无效重试按钮；801 guard修复后146GREEN且完整模块syntax通过。802新增失败启动重试假ACK、抛错退出/关页清理3RED/10controls；803最小修复13GREEN；804补完整origin并严格核真实catalog URL后最终149GREEN/40pins。源/原生输入/loader/DOM/parent/renderer均按各测试明确接缝，0实际浏览器、0World/Factory/编译/GPU。失败原始源/输入/输出与成功记录都保留。
+
+本地v7、资源v2、旧772静态目录未改。新网页源码需后续单独部署整合，暂无公开URL。实际隔离iframe消息/资源验收、上游DATA/可变文件桥、其他必需选项及第三阶段剩余项继续推进，多人尚未实施。

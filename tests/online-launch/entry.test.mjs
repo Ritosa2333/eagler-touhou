@@ -1,4 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {fileURLToPath} from 'node:url';
+import {mountLauncherSession} from '../../site/runtime/launcher-session.mjs';
+import {createPageLaunchContext,installPageLaunchContext} from '../../site/runtime/page-launch-context.mjs';
 const source=fs.readFileSync(fileURLToPath(new URL('../../site/import-entry.mjs',import.meta.url)),'utf8');
 function element(){return{hidden:false,disabled:false,files:null,events:{},textContent:'',addEventListener(t,fn){this.events[t]=fn;},remove(){this.removed=true;}};}
 function harness({online=false,saved=null,loadError=null,loadFirstError=null,startError=null,storeAvailable=true,waitOnline=null,discoverFirstError=null,waitDiscover=null}={}){
@@ -9,13 +11,13 @@ function harness({online=false,saved=null,loadError=null,loadFirstError=null,sta
  class Store{constructor(){calls.store++;}close(){calls.close++;}}
  const provider={dispose(){calls.dispose++;}},manifest=online?{schema:'th128-online-deployment/1',game:'th128',resource:{url:'/games/th128/file.zip',bytes:6,sha256:'f'.repeat(64),revision:'r1'}}:null;
  const body=source.replace(/^import .*;\r?\n/gm,'').replace("await import('./play.mjs')","await importPlay()");
- const fn=new Function('document','globalThis','location','addEventListener','DatPackageArchiveStore','installDatPackage','reopenDatPackage','installResourceFetchProvider','readOnlineDeployment','loadOnlineResources','importPlay','return(async()=>{'+body+'})();');
+ const fn=new Function('document','globalThis','location','addEventListener','DatPackageArchiveStore','installDatPackage','reopenDatPackage','installResourceFetchProvider','readOnlineDeployment','loadOnlineResources','mountLauncherSession','createPageLaunchContext','installPageLaunchContext','importPlay','return(async()=>{'+body+'})();');
  const ready=fn(document,{indexedDB:storeAvailable?{open(){}}:null},{href:'https://game.example/',origin:'https://game.example'},(t,fn)=>handlers[t]=fn,Store,
  async()=>{calls.localInstall++;return provider;},async()=>saved,
  p=>{assert.equal(p,provider);calls.provider++;},
  async()=>{calls.discover++;if(waitDiscover)await waitDiscover();if(discoverFirstError&&calls.discover===1)throw discoverFirstError;return manifest;},
  async(_manifest,opts)=>{calls.online++;if(waitOnline)await waitOnline();if(loadFirstError&&calls.online===1)throw loadFirstError;if(loadError)throw loadError;opts.onProgress({phase:'download',loaded:3,total:6});return {provider,source:'download',cached:storeAvailable};},
- async()=>{calls.imports++;if(startError)throw startError;});
+ mountLauncherSession,createPageLaunchContext,installPageLaunchContext,async()=>{calls.imports++;if(startError)throw startError;});
  return{ready,main,loader,file,start,status,retry,note,meter,calls,handlers,provider};
 }
 test('public mode automatically downloads and imports the game without selecting a ZIP',async()=>{
