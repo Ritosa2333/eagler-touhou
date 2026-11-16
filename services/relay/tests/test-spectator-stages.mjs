@@ -72,8 +72,8 @@ test('history limits fail before evicting a still-needed input prefix', () => {
   assert.throws(() => stream.accept(input(55, 2, 601)), /frame limit/);
   assert.equal(stream.history.length, 2); assert.equal(stream.next, 601);
 });
-test('TH17 continuous spectators keep earlier confirmed inputs through stage changes', () => {
-  const marker = COOPERATIVE_SPECTATOR_MARKERS.th17mp;
+for (const game of ['th14mp', 'th17mp']) test(`${game} continuous spectators keep earlier confirmed inputs through stage changes`, () => {
+  const marker = COOPERATIVE_SPECTATOR_MARKERS[game];
   const stream = new SpectatorStageRelay(marker, 3, {historyBytes: 512, historyFrames: 2});
   stream.accept(event(marker, 3, {schema: 3, stage: 1}));
   const tape = stream.history;

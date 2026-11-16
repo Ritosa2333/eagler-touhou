@@ -4,6 +4,7 @@ namespace th11 {
 namespace wire=Netplay::SpectatorStageWire;
 namespace {
 constexpr u32 schema=1,game=14;
+constexpr u32 spectator_run_schema=3;
 constexpr u8 marker='E';
 }
 bool RoomSetupTh14::valid()const{
@@ -128,13 +129,24 @@ std::array<u32,8> th14_room_status(const GameSession& session,u32 next){
     out[3]=pilots;out[4]=world;out[5]=b->bullets.active_count;out[6]=b->lasers.active_count;
     out[7]=b->enemies.count;return out;
 }
-bool RoomTh14::record(u32 number,const Netplay::InputReplay::Frame& keys,u32 stage,bool restart,u64){
+bool RoomTh14::record(u32 number,const Netplay::InputReplay::Frame& keys,const Frame& output){
     // Keep the network timeline and the menu inputs that caused each restart.
     // Replay chapters must have unique labels, even across repeated stages.
     const auto& info=replay.Info();
-    const auto chapter=info.chapterCount==info.chapters.size()?info.chapters.back().label:replay_stage_offset+stage;
+    const auto chapter=info.chapterCount==info.chapters.size()?info.chapters.back().label:replay_stage_offset+output.stage;
     if(!replay.Append(number,chapter,keys.data(),setup.seats))return false;
-    if(restart)replay_stage_offset+=7;
+    if(output.restart)replay_stage_offset+=7;
+    if(!setup.local&&publish){
+        const auto stage=output.active_stage;
+        const bool checkpoint=!number||(stage&&(stage!=recorded_stage||bookmark_restart));
+        if(checkpoint){
+            recorded_stage=stage?stage:(setup.difficulty==4?7:1);
+            bookmark_restart=false;
+        }
+        if(checkpoint||output.boss_slots)
+            spectator_marks.push_back({number,recorded_stage,output.boss_slots,checkpoint});
+        bookmark_restart|=output.restart;
+    }
     publish_confirmed();
     return true;
 }
@@ -146,8 +158,13 @@ void RoomTh14::publish_confirmed(){
         if(transport.SpectatorState()!=1)return;
         for(u32 sent=0;sent<16&&publisher.Published()<replay.Info().frameCount;++sent){
             Netplay::SpectatorStagePublisher::Frame record;
-            record.frame=publisher.Published();record.stage=setup.difficulty==4?7:1;
-            if(!record.frame){record.schema=schema;record.initializer=setup.describe();}
+            record.frame=publisher.Published();record.stage=published_stage;
+            const bool marked=published_marks<spectator_marks.size()&&spectator_marks[published_marks].frame==record.frame;
+            if(marked){
+                const auto& mark=spectator_marks[published_marks];
+                record.stage=mark.stage;record.bossSlots=mark.boss_slots;
+                if(mark.checkpoint){record.schema=spectator_run_schema;record.initializer=setup.describe();}
+            }
             const auto* recorded=replay.FrameAt(record.frame);
             if(!recorded){publish=false;break;}
             record.inputs=*recorded;record.hasInputs=true;
@@ -157,6 +174,7 @@ void RoomTh14::publish_confirmed(){
             if(!publisher.Publish(frame,frame,[](u32,auto&){return false;},send,&failure)){
                 publish=publisher.Retryable(failure);break;
             }
+            if(marked){published_stage=spectator_marks[published_marks].stage;++published_marks;}
         }
         if(!publish)transport.StopSpectators();
     }
@@ -189,7 +207,10 @@ bool RoomTh14::receive(){
             Netplay::SpectatorStageEvent event;
             if(!Netplay::DecodeSpectatorStageEvent(bytes.data(),bytes.size(),&event)||event.game!=marker||
                event.playerCount!=setup.seats||event.sessionId!=setup.id||event.gameplayAbi!=setup.abi()||
-               (event.kind==Netplay::SpectatorEventKind::Checkpoint&&(event.schema!=schema||event.state!=setup.describe()))||
+               (event.kind==Netplay::SpectatorEventKind::Checkpoint&&
+                ((event.schema!=spectator_run_schema&&(event.schema!=schema||event.frame!=0))||
+                 event.stage<1||event.stage>7||event.state!=setup.describe()||
+                 (viewer.History().Segments().empty()&&event.frame!=0)))||
                !viewer.Receive(event))return false;
         }else{
             Netplay::SpectatorFramePacket packet;

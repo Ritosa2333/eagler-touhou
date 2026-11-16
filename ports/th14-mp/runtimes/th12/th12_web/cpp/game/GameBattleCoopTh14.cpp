@@ -104,10 +104,12 @@ bool GameBattle::update_coop(){
     for(auto& timer:coop_marisa_b_cooldown)if(timer.current>0)timer.advance(-1);
     const bool talking=dialogue&&dialogue->active;
     bool skip_held=false;
+    std::array<u32,3> pressed_buttons{};
     for(u32 seat=0;seat<coop_seats;++seat){
         auto& p=pilot(seat);
         const auto& input=coop_input.seats[seat];
         const u32 held=input.held,pressed=held&~coop_held[seat];
+        pressed_buttons[seat]=pressed;
         coop_held[seat]=held;skip_held|=(held&skip)!=0;
         if(!pilot_live(seat)){
             auto& motion=p.motion.state;
@@ -143,7 +145,7 @@ bool GameBattle::update_coop(){
         auto& timer=pilot(seat).state.invincibility;
         if(timer.current<coop_bomb_invincibility.current)timer=coop_bomb_invincibility;
     }
-    if(!coop_transfers())return false;
+    if(!coop_transfers(pressed_buttons))return false;
     coop_knife_owner=-1;
     for(u32 seat=0;seat<coop_seats;++seat)
         if(pilot_live(seat)&&pilot(seat).input.movement.character==2&&
@@ -193,7 +195,7 @@ bool GameBattle::coop_revive(u32 seat){
     return bombs_changed(e.th14_bombs,e.th14_bomb_fragments);
 }
 
-bool GameBattle::coop_transfers(){
+bool GameBattle::coop_transfers(const std::array<u32,3>& pressed_buttons){
     namespace rules=eagler::cooperative;
     if(!stage_active||transitioning||(dialogue&&dialogue->active)||(completion.state.hud_flags&0x10)){
         life_taps={};power_taps={};return true;
@@ -201,15 +203,18 @@ bool GameBattle::coop_transfers(){
     for(u32 seat=0;seat<coop_seats;++seat){
         if(!pilot_live(seat)||pilot(seat).state.life_state!=1){life_taps[seat]=power_taps[seat]=0;continue;}
         auto& e=pilot_economy(seat);
-        const auto& keys=pilot(seat).input.movement;
-        const auto near=[&](u32 other){return seat!=other&&th14_dist_sq(pilot(seat).motion.state.position,pilot(other).motion.state.position)<=400.f;};
+        const u32 pressed=pressed_buttons[seat];
+        const auto distance=[&](u32 other){
+            return th14_dist_sq(pilot(seat).motion.state.position,pilot(other).motion.state.position);
+        };
+        const auto near=[&](u32 other){return seat!=other&&distance(other)<=400.f;};
         i32 life=-1;
-        if(e.lives>0&&!(keys.held&1))for(u32 other=0;other<coop_seats;++other){
+        if(e.lives>0&&!(coop_held[seat]&1))for(u32 other=0;other<coop_seats;++other){
             if(!near(other)||(pilot_live(other)&&(pilot(other).state.life_state!=1||pilot_economy(other).lives>=8)))continue;
             if(life<0||(!pilot_live(other)&&pilot_live(u32(life)))||
-               (pilot_live(other)==pilot_live(u32(life))&&pilot_economy(other).lives<pilot_economy(u32(life)).lives))life=i32(other);
+               (pilot_live(other)==pilot_live(u32(life))&&distance(other)<distance(u32(life))))life=i32(other);
         }
-        if(rules::AdvanceLifeTransfer(life_taps[seat],bool(keys.pressed&8),life>=0)){
+        if(rules::AdvanceLifeTransfer(life_taps[seat],bool(pressed&8),life>=0)){
             const auto other=u32(life);
             if(!pilot_live(other)){if(!coop_revive(other))return false;}
             else{
@@ -221,11 +226,14 @@ bool GameBattle::coop_transfers(){
             if(!sound(17,0,false))return false;
         }
         const i32 step=e.power_step;
-        if(keys.pressed&8)power_taps[seat]=0;
-        const i32 power=step>0&&e.power>=2*step?rules::LowestPower(coop_seats,
-            [&](u32 other){return near(other)&&pilot_live(other)&&pilot(other).state.life_state==1&&pilot_economy(other).power<pilot_economy(other).max_power;},
-            [&](u32 other){return pilot_economy(other).power;},[&](u32 other){return pilot_economy(other).power_step;}):-1;
-        if(rules::AdvanceLifeTransfer(power_taps[seat],bool(keys.pressed&1),power>=0)){
+        if(pressed&8)power_taps[seat]=0;
+        i32 power=-1;
+        if(step>0&&e.power>=2*step)for(u32 other=0;other<coop_seats;++other){
+            if(!near(other)||!pilot_live(other)||pilot(other).state.life_state!=1||
+               pilot_economy(other).power>=pilot_economy(other).max_power)continue;
+            if(power<0||distance(other)<distance(u32(power)))power=i32(other);
+        }
+        if(rules::AdvanceLifeTransfer(power_taps[seat],bool(pressed&1),power>=0)){
             const u32 other=u32(power);auto& target=pilot_economy(other);
             const i32 amount=std::min(step,target.max_power-target.power);
             e.power-=amount;target.power+=amount;
@@ -394,6 +402,17 @@ bool GameBattle::queue_coop_hud(){
     const u32 alpha=first?first->color&0xff000000u:0;
     const auto text=[&](float x,float y,const char* value){return ascii.add(value,{x,y,0},style);};
     char number[64];
+    AsciiStyle transfer;transfer.font=1;transfer.shadow=true;transfer.horizontal=0;
+    for(u32 seat=0;seat<coop_seats;++seat){
+        const auto lives=eagler::cooperative::TapCount(life_taps[seat]);
+        const auto power=eagler::cooperative::TapCount(power_taps[seat]);
+        if(lives<3&&power<3)continue;
+        const auto pos=pilot(seat).motion.state.position;
+        transfer.color=lives>=3?0xffffa0c0u:0xffffa070u;
+        std::snprintf(number,sizeof(number),"%c %u/%u",lives>=3?'L':'P',
+            lives>=3?lives:power,eagler::cooperative::TransferTaps);
+        if(!ascii.add(number,{pos.x+224.f,pos.y-8.f,0},transfer))return false;
+    }
     style.horizontal=2;style.color=alpha|0x808080;
     th14_score_number(number,u32(hud.score.high_value()),hud.score.high_continues);
     if(!text(620,44,number))return false;

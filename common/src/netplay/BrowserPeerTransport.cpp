@@ -13,7 +13,7 @@ namespace Netplay
 EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, int localPlayer, int playerCount, int stageSpectatorHistory), {
     const decode = ptr => {
         const end = HEAPU8.indexOf(0, ptr);
-        return new TextDecoder().decode(HEAPU8.subarray(ptr, end >= 0 ? end : HEAPU8.length));
+        return new TextDecoder().decode(HEAPU8.slice(ptr, end >= 0 ? end : HEAPU8.length));
     };
     const relayUrl = decode(relayUrlPtr);
     const tag = decode(tagPtr);
@@ -1385,7 +1385,7 @@ EM_JS(int, eagler_spectator_connect,
       (const char *relayUrlPtr, const char *spectatorIdPtr, const char *tagPtr, int playerCount, int stageSpectatorHistory), {
     const decode = ptr => {
         const end = HEAPU8.indexOf(0, ptr);
-        return new TextDecoder().decode(HEAPU8.subarray(ptr, end >= 0 ? end : HEAPU8.length));
+        return new TextDecoder().decode(HEAPU8.slice(ptr, end >= 0 ? end : HEAPU8.length));
     };
     const tag = decode(tagPtr);
     if (!/^[A-Za-z0-9_-]{1,32}$/.test(tag)) return 0;

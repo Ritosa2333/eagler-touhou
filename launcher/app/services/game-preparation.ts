@@ -177,7 +177,13 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   }
   guard();
   const musicPolicy=PRODUCT_GAMES[input.settings.gameId].musicRuntime;
-  const completeOgg = input.multiplayer?.kind === 'room-preload' || ('requiresCompleteOgg' in musicPolicy && musicPolicy.requiresCompleteOgg) || input.settings.gameId === 'th09' && (input.multiplayer?.kind === 'room' || input.replayPath !== undefined || input.replayWorkspace === true);
+  // A late TH14 spectator may reach any stage before background installation
+  // can deliver its music. Use the same full soundtrack as the room preview.
+  const th14Spectator = input.settings.gameId === 'th14' &&
+    input.multiplayer?.kind === 'room' && input.multiplayer.options.netplaySpectator === true;
+  const completeOgg = input.multiplayer?.kind === 'room-preload' || th14Spectator ||
+    ('requiresCompleteOgg' in musicPolicy && musicPolicy.requiresCompleteOgg) ||
+    input.settings.gameId === 'th09' && (input.multiplayer?.kind === 'room' || input.replayPath !== undefined || input.replayWorkspace === true);
   ({generation, music} = await ensureOggStartup({generation, music, acquisition, signal: input.signal,
     completeSet: completeOgg,
     downloadSignal: input.musicDownloadSignal, onMusicDownloadActivity: input.onMusicDownloadActivity,
