@@ -73,6 +73,7 @@ function fixture(config = {}) {
         primary, localPlayer: seat, peerId: 1 - seat, tag: 'test', enabled: config.enabled?.[seat] ?? true,
         directRetry: config.directRetry?.[seat],
         surveyEnabled: () => config.survey === true,
+        surveyPending: () => config.surveyPending === true,
         initialRelayRoute: () => 'swarm-0',
         surveySignal: message => {
             if (message.type === 'rtc-standby-signal') later(() => routes[1-seat].relayStandby(message), 15);
@@ -140,6 +141,24 @@ function fixture(config = {}) {
     await f.advance(200);
     assert.deepEqual(f.deliveries[1],[[70],[71]]);
     assert.equal(f.errors.length,0);
+    f.close();
+}
+
+{
+    const config = {primaryPath:'turn',directRetry:[false,false],survey:true,surveyPending:true};
+    const f = fixture(config);
+    await f.advance(300);
+    f.drop();
+    assert(!f.routes[1].snapshot().standbyReady);
+    assert(f.routes[1].recover(), 'a Relay offer already received still counts while standby signaling is queued');
+    await f.advance(3000);
+    config.surveyPending = false;
+    await Promise.all(f.routes.map(route => route.relayStandby({
+        type:'rtc-standby',serial:1,phase:'select',route:'turn',iceServers:[{urls:'turn:fixture:3478'}],
+    })));
+    await f.advance(5000);
+    assert.deepEqual(f.selected,[['turn'],['turn']]);
+    assert.deepEqual(f.errors,[]);
     f.close();
 }
 

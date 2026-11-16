@@ -311,7 +311,7 @@ export function createAdaptivePeerRoute(options) {
     }
     function recover() {
         if (!started || !supported || !switching() || !eligible()) return false;
-        const surveying = surveyEnabled() && planned && planned !== active;
+        const surveying = surveyEnabled() && ((planned && planned !== active) || options.surveyPending?.());
         if (!ready(otherPath()) && !surveying) return false;
         if (!recoveryUntil) {
             recoveryUntil = now() + (surveying ? 16000 : 7000);

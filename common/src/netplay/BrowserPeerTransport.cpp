@@ -341,7 +341,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             }
             function recover() {
                 if (!started || !supported || !switching() || !eligible()) return false;
-                const surveying = surveyEnabled() && planned && planned !== active;
+                const surveying = surveyEnabled() && ((planned && planned !== active) || options.surveyPending?.());
                 if (!ready(otherPath()) && !surveying) return false;
                 if (!recoveryUntil) {
                     recoveryUntil = now() + (surveying ? 16000 : 7000);
@@ -651,7 +651,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             preparedRtc: null,
             rtcReplaceCapable: false, rtcGeneration: 0, rtcReplacing: false, rtcReplaceTimer: null,
             rtcReplaceRequested: false, signalTasks: Promise.resolve(),
-            adaptiveSwarm: false, initialRelayRoute: 'turn',
+            adaptiveSwarm: false, initialRelayRoute: 'turn', rtcSurveyUntil: 0,
             nat4Observers: [],
             iceServers: Array.isArray(Module.eaglerOptions?.netplayIceServers)
                 ? Module.eaglerOptions.netplayIceServers : [],
@@ -710,6 +710,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     this.rtcReplaceRequested = false;
                     this.rtcReplacing = true;
                     this.rtcGeneration = generation;
+                    this.rtcSurveyUntil = 0;
                     this.rtcReadySent = false;
                     const retired = [...this.peers.values()];
                     this.peers.clear();
@@ -1114,6 +1115,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     allowSwitching: this.iceTransportPolicy !== 'relay',
                     iceServers: () => this.iceServers,
                     surveyEnabled: () => this.canSurveySwarm(),
+                    surveyPending: () => Date.now() < this.rtcSurveyUntil,
                     initialSwarmSurvey: () => this.initialSwarmSurvey,
                     surveySignal: message => this.sendSurveySignal(message),
                     initialRelayRoute: () => this.initialRelayRoute,
@@ -1263,6 +1265,11 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                             else this.fail(`RTC signaling error: ${error}`);
                         });
                     } else if (message.type === 'rtc-standby' || message.type === 'rtc-standby-signal') {
+                        if (message.type === 'rtc-standby' && message.generation === this.rtcGeneration &&
+                            Number.isSafeInteger(message.serial) && this.canSurveySwarm()) {
+                            this.rtcSurveyUntil = message.phase === 'idle' ? 0 :
+                                Date.now() + (message.phase === 'measure' ? 8000 : 5000);
+                        }
                         this.signalTasks = this.signalTasks.then(() => {
                             if (this.closed || this.rtcReplacing || message.generation !== this.rtcGeneration) return;
                             return this.peers.get(1 - this.localPlayer)?.adaptive?.relayStandby(message);
