@@ -86,6 +86,10 @@ function closeEntry(){
  try{replayFiles?.dispose();}finally{try{managedOwner?.dispose();}finally{try{pageLaunch?.abort();}finally{try{provider?.dispose();}finally{store?.close();status.textContent='游戏已退出。';}}}}
 }
 addEventListener('pagehide',()=>{try{closeEntry();}finally{launcher?.dispose();}},{once:true});
+let reloadAfterRestore=false;
+addEventListener('pageshow',event=>{
+ if(event.persisted===true&&pageGone&&!reloadAfterRestore){reloadAfterRestore=true;location.reload();}
+});
 async function discover(){
  if(launched||launchAttempted||!isCurrent())return;
  busy=true;file.disabled=true;start.disabled=true;retry.hidden=true;retry.disabled=true;

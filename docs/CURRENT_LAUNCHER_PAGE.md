@@ -49,3 +49,7 @@ play在initialize中绑定实际runtime方法；输入通过独立Symbol来源�
 ## 自动入口真实缓存838–841
 
 当前入口与真实DAT/在线owner/IndexedDB在840首次联合通过20项浏览器检查，自动下载、新文档缓存重开、坏SHA与错误revision更新保旧、引导中退出取消以及none到真实context均已验证；play运行/呈现/音频接缝明确，无游戏首帧。839修复revision必须在缓存提交前校验，841受影响106项通过。见[当前自动入口缓存](AUTOMATIC_ENTRY_CACHE.md)。
+
+## 历史返回842–845
+
+已退出的缓存文档在persisted pageshow时仅请求一次fresh document，保资源IDB、不复活旧owner。843的12项及845受影响110项通过；844真实导航返回12项通过，但实际persisted=false，只有重新加载回退设备证据，缓存命中分支仅CPU事件验证。有限Web范围仍剩可见练习入口，见[历史返回](CACHED_RETURN.md)与[范围表](WEB_FUNCTIONAL_SCOPE.md)。

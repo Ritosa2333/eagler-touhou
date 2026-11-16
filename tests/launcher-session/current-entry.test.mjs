@@ -8,7 +8,8 @@ const source=fs.readFileSync(new URL('../../site/import-entry.mjs',import.meta.u
 function element(){return{hidden:false,disabled:true,textContent:'',events:{},files:null,addEventListener(type,fn){this.events[type]=fn;},remove(){this.removed=true;}};}
 async function setup({heldRuntime=false,importError=null,stopError=null}={}){
  assert.equal(typeof contextModule.createPageLaunchContext,'function','Hosted current entry lifecycle missing');
- const env=fakeWindow(),main=element(),loader=element(),file=element(),start=element(),status=element(),retry=element(),hint=element(),progress=element(),localHandlers={},calls={imports:0,provider:0,dispose:0,stops:0,close:0,keys:[],ready:0};
+ const env=fakeWindow(),main=element(),loader=element(),file=element(),start=element(),status=element(),retry=element(),hint=element(),progress=element(),localHandlers={},calls={imports:0,provider:0,dispose:0,stops:0,close:0,keys:[],ready:0,reloads:0};
+ env.win.location.reload=()=>{calls.reloads++;};
  retry.hidden=true;loader.querySelector=s=>s==='input'?file:s==='button'?start:s==='[data-retry]'?retry:s==='[data-hint]'?hint:s==='progress'?progress:status;
  const document={...env.win.document,querySelector:()=>main,createElement:()=>loader,body:{prepend(){}}};
  let activeContext=null;const make=options=>{activeContext=contextModule.createPageLaunchContext(options);return activeContext;};
@@ -65,4 +66,28 @@ test('current entry accepts no BGM mode and passes it to the real launch context
   e.send(envelope('launch','silent-launch'));await flush();assert.equal(e.context.config.music,'none');assert.equal(e.messages.some(x=>x.data.request==='silent-launch'),false);
   e.context.bindRuntime(e.runtime);e.context.finish();await flush();assert.equal(e.messages.find(x=>x.data.request==='silent-launch')?.data.ok,true);assert.equal(e.messages.some(x=>x.data.event==='first-frame'),false);
  }finally{e.localHandlers.pagehide();}
+});
+test('cached restoration after launched page cleanup requests one fresh document and never revives the retired runtime',async()=>{
+ const e=await setup();e.send(envelope('configure','cfg',{music:'none'}));await flush();e.send(envelope('launch','launch'));await flush();
+ e.localHandlers.pagehide({persisted:true});assert.equal(e.context.signal.aborted,true);assert.equal(e.calls.stops,1);
+ e.localHandlers.pageshow?.({persisted:true});e.localHandlers.pageshow?.({persisted:true});
+ assert.equal(e.calls.reloads,1,'persisted return must request a fresh document exactly once');
+ assert.equal(e.calls.imports,1);assert.equal(e.context.runtime,null);await assert.rejects(e.context.waitRuntime(),e=>e.name==='AbortError');
+});
+test('cached restoration of a closed resource-ready page also requests fresh discovery',async()=>{
+ const e=await setup();e.localHandlers.pagehide({persisted:true});e.localHandlers.pageshow?.({persisted:true});
+ assert.equal(e.calls.reloads,1,'closed ready page cannot leave a disposed loader after cached return');assert.equal(e.calls.imports,0);
+});
+test('initial pageshow and non-cached return never create a reload loop',async()=>{
+ const e=await setup();
+ try{
+  e.localHandlers.pageshow?.({persisted:false});e.localHandlers.pageshow?.({persisted:true});
+  assert.equal(e.calls.reloads,0);e.localHandlers.pagehide({persisted:false});e.localHandlers.pageshow?.({persisted:false});assert.equal(e.calls.reloads,0);
+ }finally{e.localHandlers.pagehide();}
+});
+test('cached return still requests a fresh document when old runtime cleanup throws',async()=>{
+ const e=await setup({stopError:Error('old owner cleanup failed')});e.send(envelope('configure','cfg',{music:'ogg'}));await flush();e.send(envelope('launch','launch'));await flush();
+ try{e.localHandlers.pagehide({persisted:true});}catch{}
+ e.localHandlers.pageshow?.({persisted:true});assert.equal(e.calls.reloads,1,'cleanup failure cannot disable cached-return recovery');
+ assert(e.calls.dispose>=1);assert(e.calls.close>=1);
 });
