@@ -25,3 +25,5 @@
 v4.1启动修复继续保留：合法“已有成绩、没有保存录像姓名”的状态可进Main，EX资格仍须原证明，不清档/默认解锁。最终714代码/88兼容回归+5实际冻结CPU与精确顶点对照+新Runtime/HTTP共94项通过，0skip。所有首失败与成功产物保留。`tests/performance/frozen-display.test.mjs`需通过TH128_FROZEN_BENCH_CONFIG指定已封冻结快照与旧源码路径；CPU组件使用原bullet.anm，不随Git分发资源。
 
 交付`th128-runtime109-dat-ogg-v5.zip`3265038B，SHA256 d58ae34bd6c2b9fa0c5bc0f83051d210dc673d237f093080fed7fa01218f8973。原93317333B `resource-package-dat-ogg-v2` ZIP与已安装数据不变。停旧服务Ctrl+C，解压运行新目录Start.ps1，在同8138地址刷新即可。
+
+后续718使用原始Boss父对象设置前缀、移动、boss02/enemy_bf/MSG与完整依赖链实际运行600tick，记录35次火球反射事件、靠边移动样本无停住；引导跳过前序小彗星，仍不代表完整关卡/视频同帧或设备FPS。详见[父对象上下文复核](postcomet-parent718.md)。Runtime与资源ZIP未变。
