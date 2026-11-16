@@ -50,8 +50,16 @@ function mime(target){
  if(target.endsWith('.txt'))return'text/plain; charset=utf-8';
  return'application/octet-stream';
 }
-export async function createDatOggProvider(input,{origin=globalThis.location?.origin,signal,isCurrent=()=>true,onProgress=()=>{}}={}){
+export async function createDatOggProvider(input,options={}){
  need(input instanceof Uint8Array&&input.length>=22&&input.length<=MAX_PACKAGE,'ZIP package size budget exceeded');
+ return createProvider({zip:input},options);
+}
+export async function createDatOggProviderFromFiles(descriptorBytes,filesById,options={}){
+ need(descriptorBytes instanceof Uint8Array&&descriptorBytes.length>0&&descriptorBytes.length<=1024*1024,'invalid descriptor bytes');
+ need(filesById instanceof Map,'file payloads must be a Map');
+ return createProvider({descriptorBytes,filesById},options);
+}
+async function createProvider(source,{origin=globalThis.location?.origin,signal,isCurrent=()=>true,onProgress=()=>{}}={}){
  const page=new URL(origin);need(page.protocol==='http:'||page.protocol==='https:','unsupported page origin');
  const baseOrigin=page.origin;
  let closed=false,archive=null,index=null;
@@ -59,7 +67,7 @@ export async function createDatOggProvider(input,{origin=globalThis.location?.or
  function current(localSignal){
   if(closed||signal?.aborted||localSignal?.aborted||!isCurrent())throw new DOMException('DAT package owner was cancelled or disposed','AbortError');
  }
- current();const owned=new Uint8Array(input);
+ current();
  async function inflate(compressed,{entry,signal:localSignal}){
   current(localSignal);need(typeof DecompressionStream==='function','DEFLATE decoder is unavailable');
   const reader=new Blob([compressed]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader();
@@ -73,15 +81,39 @@ export async function createDatOggProvider(input,{origin=globalThis.location?.or
   current(localSignal);need(entry&&entry.uncompressedSize<=MAX_ENTRY,'missing or excessive ZIP entry');
   try{const body=await readEntryData(entry,{inflate,signal:localSignal});current(localSignal);return body;}catch(error){current(localSignal);throw error;}
  }
- const outer=readZipDirectory(owned).entries,entries=new Map();
- for(const entry of outer){need(safeName(entry.name),'unsafe ZIP entry path');entries.set(entry.name,entry);}
- need(entries.has('package.json'),'package descriptor is missing');
- const d=descriptor(await read(entries.get('package.json')));
- need(entries.size===Object.keys(d.files).length+1,'ZIP contains undeclared files');
+ const entries=new Map();
+ let d,readPayload;
+ if(source.zip){
+  const owned=new Uint8Array(source.zip);
+  for(const entry of readZipDirectory(owned).entries){need(safeName(entry.name),'unsafe ZIP entry path');entries.set(entry.name,entry);}
+  need(entries.has('package.json'),'package descriptor is missing');
+  d=descriptor(await read(entries.get('package.json')));
+  need(entries.size===Object.keys(d.files).length+1,'ZIP contains undeclared files');
+  readPayload=async(row)=>{
+   const entry=entries.get(row.source);need(entry&&entry.uncompressedSize===row.bytes,'declared package file is missing or has wrong size');
+   return read(entry);
+  };
+ }else{
+  d=descriptor(new Uint8Array(source.descriptorBytes));
+  const ids=Object.keys(d.files);
+  need(source.filesById.size===ids.length,'file payload table differs from descriptor');
+  let total=source.descriptorBytes.length;
+  // Detach the complete table synchronously. Caller-owned buffers may be
+  // transferred or mutated as soon as the first digest yields.
+  for(const[id,input]of source.filesById){
+   need(Object.hasOwn(d.files,id),'undeclared file payload');
+   const row=d.files[id];
+   need(input instanceof Uint8Array&&input.length===row.bytes,'file payload size/type differs from descriptor');
+   need(total<=MAX_PACKAGE-input.length,'file payload package size budget exceeded');total+=input.length;
+   payloads.set(id,new Uint8Array(input));
+  }
+  need(payloads.size===ids.length&&ids.every(id=>payloads.has(id)),'declared file payload is missing');
+  readPayload=async(_row,id)=>payloads.get(id);
+ }
  let count=0;
  for(const[id,row]of Object.entries(d.files)){
-  const entry=entries.get(row.source);need(entry&&entry.uncompressedSize===row.bytes,'declared package file is missing or has wrong size');
-  const body=await read(entry);need(await hash(body)===row.sha256,'package SHA-256 mismatch: '+row.source);current();
+  const body=await readPayload(row,id);current();
+  need(body.length===row.bytes&&await hash(body)===row.sha256,'package SHA-256 mismatch: '+row.source);current();
   payloads.set(id,body);onProgress({completed:++count,total:Object.keys(d.files).length});current();
  }
  archive=openTh128Dat(payloads.get('game-data'));
