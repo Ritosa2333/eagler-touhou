@@ -15,6 +15,8 @@
 
 ## Web 能力
 
+最新v4性能交付见[performance-v4.md](docs/performance-v4.md)：实际原生密集弹幕快照CPU读取成本与79项回归/组装HTTP已验证；设备FPS及真实背景画面仍待验证，资源导入687已通过且保持。
+
 | 能力 | 当前状态 | 下一项交付 |
 |---|---|---|
 | 协议 | 已有独立网页宿主；上游启动器协议尚待接入 | ready/configure/launch/first-frame、会话身份、命令响应和退出清理 |

@@ -5,7 +5,7 @@
 | 交付文件 | 字节 | SHA-256 |
 |---|---:|---|
 | th128-dat-ogg-5e3bcbd5ebb8b171.zip | 93317333 | f8eec6698f3ecdc94f6d64ce3413800a7558201d365e468e9c27ac61fc2504a5 |
-| th128-runtime108-dat-ogg-v3.zip | 3147230 | 9521e17ad57d217cb2cc9fa9a7caef9b82babbea5a41f75906304290fca5bad8 |
+| th128-runtime108-dat-ogg-v4.zip | 3149096 | 0415ffa1ad84f04ceff5e29561f8783283b68ec3fc01ece7dcc9d4ab2620cb9e |
 
 资源 ZIP 根目录有 package.json，共12个资源文件：
 
@@ -42,6 +42,8 @@ games/th128/language/lang_zh-hans.zip
 开发用checkpoint面板依赖的旧代次索引不在本资源包内，普通游戏路径不依赖它。安装过程会完整解码并校验资源后提交。687已在隔离浏览器中完成单个93317333字节Blob的实际IndexedDB写入、完整SHA读回和关页重开；其他浏览器、配额不足和崩溃恢复仍未验证。切换资源包或启动失败后需要重新打开页面。
 
 ## v3：关卡启动修复与正式界面
+
+当前推荐使用[v4性能修复版](performance-v4.md)：减少普通战斗重复的完整状态读取、补帧中间快照及背景上传，并修复相邻背景地块的插值相位错位。79项针对性回归与HTTP通过；实际1024弹幕快照CPU读取成本约36→12ms，非设备FPS承诺。资源包保持原样，下面v3说明保留作为ECL与正式界面修复记录。
 
 v2缺少全部ECL包含元数据，普通选路后会报missing resource target。原先738项映射测试只核旧清单，没有覆盖游戏启动实际请求，这是交付检查遗漏。v3直接从已校验的原DAT/中文差异ECL字节解析33份SCPT包含目录，保持原ANM银行与ECLI顺序，不改原生脚本或核心。93.3MB资源包完全不变，也不需要清浏览器存档。
 

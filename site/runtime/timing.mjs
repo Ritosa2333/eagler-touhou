@@ -160,15 +160,16 @@ function uniqueBackground(meshes){
 }
 function blendDisplayBackground(previous,current,alpha){
   const before=uniqueBackground(previous),now=uniqueBackground(current);
+  // A background is one camera view. Never mix a snapped tile with interpolated
+  // neighbours. Clip coordinates can cross the near plane; WebGL clips them
+  // after interpolation, keeping shared edges at exactly the same phase.
+  if(before.size!==previous.length||now.size!==current.length||before.size!==now.size)return;
   for(const mesh of current){
-    const key=backgroundKey(mesh),old=before.get(key);if(!old||!now.get(key))continue;
-    if(old.fog.some((value,index)=>index<4&&value!==mesh.fog[index]))continue;
-    let matches=true;
-    for(let base=0;base<66&&matches;base+=11){
-      if(old.vertices[base+3]<30||mesh.vertices[base+3]<30){matches=false;break;}
-      // UV/tint animation must not split the camera phase of coplanar meshes.
-    }
-    if(!matches)continue;
+    const old=before.get(backgroundKey(mesh));
+    if(!old||old.fog.some((value,index)=>index<4&&value!==mesh.fog[index]))return;
+  }
+  for(const mesh of current){
+    const old=before.get(backgroundKey(mesh));
     for(let base=0;base<66;base+=11)for(let component=0;component<4;++component){
       const index=base+component;mesh.vertices[index]=old.vertices[index]+(mesh.vertices[index]-old.vertices[index])*alpha;
     }

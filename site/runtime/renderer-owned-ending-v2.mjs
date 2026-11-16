@@ -499,12 +499,23 @@ export class WebGlRenderer {
     graphics.useProgram(this.stageProgram);graphics.bindVertexArray(this.stageArray);graphics.bindBuffer(graphics.ARRAY_BUFFER,this.stageBuffer);
     const viewport=this.stageViewport();graphics.viewport(218,0,844,960);graphics.enable(graphics.SCISSOR_TEST);graphics.scissor(...viewport);
     graphics.clearDepth(1);graphics.clear(graphics.DEPTH_BUFFER_BIT);graphics.enable(graphics.DEPTH_TEST);graphics.depthFunc(graphics.LEQUAL);
-    for(const mesh of meshes){
+    const needed=meshes.length*66;
+    if(!this.stageVertices||this.stageVertices.length<needed)this.stageVertices=new Float32Array(needed);
+    const groups=[];
+    for(let index=0;index<meshes.length;++index){
+      const mesh=meshes[index];
       const texture=this.textures.get(`${mesh.bank}:${mesh.entry}`);if(!texture)throw new Error('Original background texture unavailable');
-      this.material(mesh.blend);graphics.depthMask(mesh.blend===0);
-      graphics.uniform3fv(this.stageFog,[mesh.fog[2]/255,mesh.fog[1]/255,mesh.fog[0]/255]);
-      graphics.bindTexture(graphics.TEXTURE_2D,texture.texture);graphics.bufferData(graphics.ARRAY_BUFFER,new Float32Array(mesh.vertices),graphics.STREAM_DRAW);
-      graphics.drawArrays(graphics.TRIANGLES,0,6);
+      this.stageVertices.set(mesh.vertices,index*66);
+      const fog=[mesh.fog[2]/255,mesh.fog[1]/255,mesh.fog[0]/255],last=groups.at(-1);
+      if(last&&last.texture===texture&&last.blend===mesh.blend&&last.fog.every((value,i)=>value===fog[i]))last.count+=6;
+      else groups.push({texture,blend:mesh.blend,fog,start:index*6,count:6});
+    }
+    if(needed)graphics.bufferData(graphics.ARRAY_BUFFER,this.stageVertices.subarray(0,needed),graphics.STREAM_DRAW);
+    for(const group of groups){
+      this.material(group.blend);graphics.depthMask(group.blend===0);
+      graphics.uniform3fv(this.stageFog,group.fog);
+      graphics.bindTexture(graphics.TEXTURE_2D,group.texture.texture);
+      graphics.drawArrays(graphics.TRIANGLES,group.start,group.count);
     }
     graphics.depthMask(true);graphics.disable(graphics.DEPTH_TEST);graphics.disable(graphics.SCISSOR_TEST);
     graphics.useProgram(this.program);graphics.bindVertexArray(this.array);graphics.bindBuffer(graphics.ARRAY_BUFFER,this.buffer);

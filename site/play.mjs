@@ -941,12 +941,12 @@ const state={module:null,renderer:null,manifest:null,base:'',catalog:null,stageC
 // BEGIN HIGH_FRAMERATE_PRESENTATION
 const highFramerateHistory=new WorldPresentationInterpolator();
 let highFramerateEnabled=false,highFramerateOwner=null,highFramerateGeneration=0;
-let highFramerateRaw=null;
+let highFramerateRaw=null,highFramerateCatchup=false;
 function resetHighFrameratePresentation(){
   highFramerateHistory.reset();highFramerateOwner=null;highFramerateRaw=null;
 }
 function highFramerateEligible(){
-  return highFramerateEnabled&&state.worldMode&&state.shotMode&&state.active&&!state.paused&&!state.handoff
+  return highFramerateEnabled&&!highFramerateCatchup&&state.worldMode&&state.shotMode&&state.active&&!state.paused&&!state.handoff
     &&!state.endingHost&&!state.endingLoading&&!menu.pauseOpen&&!menu.fault&&!document.hidden;
 }
 function highFramerateOwnerMatches(){
@@ -1740,6 +1740,12 @@ function discardPendingCarry(){
 }
 function ordinaryWorldAudioState(){
   if(!state.worldMode||!state.module||state.replayPlayback)return null;
+  // NativeOrdinaryTerminalOwner can only begin at MSG entry 1. Before that,
+  // the small live probe avoids serializing every enemy/bullet for audio polls.
+  if(!state.ordinaryWorldAudio&&!state.ordinaryWorldAudioLoading&&typeof state.module._th128_world_message_state==='function'){
+    const message=JSON.parse(state.module.UTF8ToString(state.module._th128_world_message_state()));
+    if(!message.configured||message.entry!==1)return null;
+  }
   const snapshot=JSON.parse(state.module.UTF8ToString(state.module._th128_world_state()));
   if(!snapshot.normalTerminal?.configured||!snapshot.normalTerminal.begun)return null;
   if(typeof state.endingResources?.readAudioIdentity!=='function'||typeof state.endingResources?.createAudio!=='function')
@@ -4210,10 +4216,12 @@ async function present(timestamp){
     }else{
       originalMenuClock.advance(timestamp,false);
       const timing=clock.advance(timestamp,state.active&&!state.paused&&!state.endingLoading);presentationSteps=timing.steps;
+      highFramerateCatchup=timing.steps>1;
+      if(highFramerateCatchup)resetHighFrameratePresentation();
       if(timing.stalled&&state.active&&!state.paused){pause();status('浏览器帧调度停顿，已暂停而不是跳过游戏逻辑帧。');}
       for(let count=0;count<timing.steps&&state.active&&!state.paused;count++){
         if(state.normalPostrun)await advanceNormalPostrun();else if(state.endingHost)await advanceOriginalEnding();else await advance();
-        captureHighFramerateWorld();
+        if(!highFramerateCatchup)captureHighFramerateWorld();
         if(state.endingPromise)await state.endingPromise;
       }
       interpolation=renderInterpolationPhase(clock);

@@ -1,0 +1,91 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-16",
+  "core": 108,
+  "coreRecompiled": false,
+  "resourceZIPChanged": false,
+  "baselineSixRoutesAndEXAccepted": true,
+  "userSymptom": {
+    "FPS": [
+      20.5,
+      14
+    ],
+    "background": "horizontal seam"
+  },
+  "changes": [
+    "Before terminal MSGentry1, ordinary sound/music polls use live small message state instead of full entity/bullet state; actual strict terminal identities/ACKs remain full and current.",
+    "Multi-step catch-up keeps every input/logic step and only displays the final native frame, then rebuilds interpolation history.",
+    "Background clip xyzw interpolate at one camera phase; incomplete/duplicate/fog-changed history uses the entire current background.",
+    "One background vertex upload; only adjacent same texture/blend/fog triangles share a draw."
+  ],
+  "evidence": {
+    "red688": {
+      "checks": 12,
+      "failed": 4
+    },
+    "green689": {
+      "checks": 12,
+      "failed": 0
+    },
+    "profile690": {
+      "Factories": 1,
+      "Worlds": 1,
+      "ticks": 123,
+      "realBulletObjects": 1024,
+      "realIceObjects": 1024,
+      "syntheticECL": true,
+      "readOnlyMeasuredSnapshots": true,
+      "denseCPUmsPerDisplay": {
+        "oneTick": {
+          "baseline": 36.2928375,
+          "fixed": 11.98555
+        },
+        "fourTicks": {
+          "baseline": 108.88185,
+          "fixed": 12.46265
+        }
+      },
+      "fullWorldCalls": {
+        "oneTick": [
+          3,
+          1
+        ],
+        "fourTicks": [
+          9,
+          1
+        ]
+      },
+      "deviceFPS": false
+    },
+    "background691": {
+      "checks": 10,
+      "failed": 8
+    },
+    "background692": {
+      "checks": 10,
+      "failed": 0
+    },
+    "delivery693": {
+      "checks": 79,
+      "failed": 0,
+      "skipped": 0,
+      "HTTP": true,
+      "tempServerClosed": true
+    }
+  },
+  "runtime": {
+    "directory": "runtime108-dat-ogg-v4",
+    "zip": "th128-runtime108-dat-ogg-v4.zip",
+    "bytes": 3149096,
+    "sha256": "0415ffa1ad84f04ceff5e29561f8783283b68ec3fc01ece7dcc9d4ab2620cb9e"
+  },
+  "resource": {
+    "zip": "th128-dat-ogg-5e3bcbd5ebb8b171.zip",
+    "bytes": 93317333,
+    "sha256": "f8eec6698f3ecdc94f6d64ce3413800a7558201d365e468e9c27ac61fc2504a5"
+  },
+  "boundary": "New real native CPU profile and production-function/GL-seam regression; no new browser gameplay, canvas, GPU or physical audio run. These timings exclude native logic/draw JSON/GPU/whole rAF and are not FPS. All 1024 bullet/ice objects retained.",
+  "reviewRuling": "Entry1 gate is specific to immutable108 NativeOrdinaryTerminalOwner claim and MessageHost retaining entry after opcode0. Existing/loading owner still fully validated; future new terminal paths must re-review this invariant. No speculative latch weakening ownership. Minor retained menu flag has no eligibility effect; existing ES2022 browser baseline remains.",
+  "upgrade": "Stop old server with Ctrl+C; run v4 Start.ps1 at same8138 and refresh. Reuse installed resourceZIP and saves; no database clearing.",
+  "tests": "node --test tests/performance/*.test.mjs tests/draw.test.mjs tests/dat-ogg/{stage-music,ending-media,ecl-includes}.test.mjs plus runtime assembly/HTTP. Historical native/whole-route suites not repeated."
+}

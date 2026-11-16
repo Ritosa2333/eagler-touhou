@@ -1,5 +1,9 @@
 # 妖精大战争 · DAT + OGG 网页版
 
+当前为 v4 性能修复版：减少弹幕场景下重复的完整状态读取，补帧时省去中间显示快照，并合并背景上传；高帧率背景地块使用一致插值。逻辑仍为60Hz，原资源包继续使用。
+
+从旧版升级：先在旧服务窗口按 Ctrl+C，再在本目录运行 Start.ps1，浏览器使用原来相同地址后刷新。保留该地址的已安装资源与存档，不需要清浏览器数据。命令行可使用 `powershell -NoProfile -ExecutionPolicy Bypass -File .\Start.ps1`。
+
 1. 解压 Runtime ZIP，运行 Start.ps1；需要本机 Python 3。
 2. 打开窗口显示的本地地址，默认 http://127.0.0.1:8138/play.html。
 3. 在页面选择 th128-dat-ogg-5e3bcbd5ebb8b171.zip，等待资源校验后点击“开始游戏”。
