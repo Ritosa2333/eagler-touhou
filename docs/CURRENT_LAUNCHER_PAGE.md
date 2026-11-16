@@ -45,3 +45,7 @@ play在initialize中绑定实际runtime方法；输入通过独立Symbol来源�
 当前页面已接受ogg/none；none通过实际BGM专用输出静音，SFX与保存音量保持，原source/fade/stop和native收据顺序不改。完整DAT＋OGG包仍是依赖，MIDI拒绝，partialAdapter/fileBridge:false保持。上文OGG-only是旧阶段范围。
 
 832的10项失败经833修复后17项通过；835发现反复完整克隆配置，836缓存后1000次热读取额外克隆1000→0，837最终194项通过。AudioContext/页面为明确接缝，没有新设备、World或公开部署。详见[BGM关闭模式](MUSIC_OUTPUT.md)。
+
+## 自动入口真实缓存838–841
+
+当前入口与真实DAT/在线owner/IndexedDB在840首次联合通过20项浏览器检查，自动下载、新文档缓存重开、坏SHA与错误revision更新保旧、引导中退出取消以及none到真实context均已验证；play运行/呈现/音频接缝明确，无游戏首帧。839修复revision必须在缓存提交前校验，841受影响106项通过。见[当前自动入口缓存](AUTOMATIC_ENTRY_CACHE.md)。

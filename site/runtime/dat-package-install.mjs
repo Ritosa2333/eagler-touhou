@@ -40,11 +40,12 @@ export class DatPackageArchiveStore{
  async commit(value){record(value);await this.transaction('readwrite',value);}
  close(){this.db?.close();this.db=null;}
 }
-export async function installDatPackage(input,{store,origin,signal,isCurrent=()=>true,onProgress=()=>{}}={}){
+export async function installDatPackage(input,{store,origin,signal,isCurrent=()=>true,onProgress=()=>{},expectedRevision}={}){
  if(!store||typeof store.commit!=='function'||typeof store.readCurrent!=='function')throw new Error('Resource archive store is unavailable');
  current(signal,isCurrent);let provider=null;
  try{
   provider=await createDatOggProvider(input,{origin,signal,isCurrent,onProgress});
+  if(expectedRevision!==undefined&&provider.revision!==expectedRevision)throw new Error('Downloaded online resource revision mismatch before cache commit');
   for(let index=0;index<provider.targets.length;index++){
    current(signal,isCurrent);
    await provider.fetch(new URL(provider.targets[index],origin),{method:'HEAD',signal});

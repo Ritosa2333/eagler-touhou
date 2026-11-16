@@ -110,7 +110,7 @@ function bestEffortStore(store,{signal,isCurrent}){
 export async function loadOnlineResources(deployment,{pageURL=globalThis.location?.href,store,signal,isCurrent=()=>true,onProgress=()=>{},
  fetchImpl=globalThis.fetch,install=installDatPackage,reopen=reopenDatPackage}={}){
  const expected=verifiedDeployment(deployment,pageURL),origin=new URL(pageURL).origin,cache=bestEffortStore(store,{signal,isCurrent});
- const options={store:cache,origin,signal,isCurrent,onProgress},saved=await cache.readCurrent();current(signal,isCurrent);
+ const options={store:cache,origin,signal,isCurrent,onProgress,expectedRevision:expected.resource.revision},saved=await cache.readCurrent();current(signal,isCurrent);
  if(saved&&saved.bytes===expected.resource.bytes&&saved.sha256===expected.resource.sha256&&saved.revision===expected.resource.revision){
   let provider=null;
   try{
