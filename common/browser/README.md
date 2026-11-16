@@ -22,7 +22,7 @@ node --test tests/browser-keyboard-owners.test.mjs tests/keyboard-input-bridge.t
 | 目录 Runtime 键盘 | `browser/directory-keyboard.mjs` | `node tools/sync-directory-keyboard.mjs TARGET.mjs ...` | 同命令加 `--check` |
 | 旁观时间轴 | `browser/spectator-timeline-view.mjs` | `node tools/sync-spectator-timeline-view.mjs --target TARGET.mjs` | 同命令加 `--check`；运行 `node --test browser/spectator-timeline-view.test.mjs` |
 | TH06–TH09 启动画面 | `browser/startup-branding.mjs`、`browser/startup-wordmark.svg` | `node tools/sync-startup-branding.mjs TARGET ...` | 同命令加 `--check` |
-| TH10、TH11、TH15、TH20 开发者署名 | `browser/startup-developers.mjs`、`browser/startup-developers.svg`、`browser/StartupBranding.hpp` | `node tools/sync-startup-developers.mjs TITLE_REPOSITORY ...` | 同命令加 `--check` |
+| TH10–TH13、TH15、TH20 启动构建日期 | `browser/startup-developers.mjs`、`browser/StartupBranding.hpp` | `node tools/sync-startup-developers.mjs TITLE_REPOSITORY ...` | 同命令加 `--check` |
 
 将 `TARGET` 替换为相应 Runtime 文件或 Shell 的路径。同步后把消费者改动与 common 源码一起检查；`--check` 用于确认生成副本没有漂移。
 
