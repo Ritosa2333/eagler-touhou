@@ -98,3 +98,4 @@ main{max-width:1328px}.screen{max-width:1280px}
 #resource-loader input{max-width:100%}
 #resource-loader button{padding:8px 18px}
 #resource-loader [role="status"]{line-height:1.7;overflow-wrap:anywhere}
+[data-development-only]{display:none!important}

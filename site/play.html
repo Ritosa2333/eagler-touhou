@@ -11,7 +11,7 @@
 <body>
   <main>
     <header><a href="/play.html">妖精大战争</a><span>方向键移动 · Z 射击 · X 完美冻结 · Esc 暂停</span></header>
-    <section id="debug-stage-jump" class="debug-stage-jump" aria-label="调试跳关" hidden>
+    <section id="debug-stage-jump" class="debug-stage-jump" aria-label="调试跳关" data-development-only hidden inert aria-hidden="true">
       <label for="debug-stage-select">调试选关 · Normal / EX</label>
       <select id="debug-stage-select" aria-describedby="debug-stage-note" disabled>
         <option value="A1-3">A1-3</option>
@@ -28,8 +28,8 @@
     </section>
     <section class="screen" aria-label="原版动画画面">
       <canvas id="game" width="1280" height="960" tabindex="0" aria-label="妖精大战争 1280×960 渲染画面"></canvas>
-      <div id="game-frame-indicator" data-status="title" aria-label="原生游戏帧">未进入关卡 · 原生帧 —</div>
-      <div id="debug-respawn-indicator" hidden>调试：无限复活</div>
+      <div id="game-frame-indicator" data-status="title" aria-label="原生游戏帧" data-development-only hidden aria-hidden="true">未进入关卡 · 原生帧 —</div>
+      <div id="debug-respawn-indicator" data-development-only hidden aria-hidden="true">调试：无限复活</div>
       <div id="loading" class="cover"><strong>妖精大战争</strong><span id="loading-text">准备读取本地原版资源…</span></div>
       <div id="runtime-overlay" class="runtime-overlay" role="status" hidden>
         <strong id="runtime-overlay-title">已暂停</strong>
@@ -108,7 +108,7 @@
       <div id="menu-keyhint" class="canvas-keyhint" aria-hidden="true" hidden>↑↓ 选择 · Z/ENTER 确认 · X/ESC 返回</div>
     </section>
 
-    <div class="controls"><label title="关闭时最高60fps；开启时跟随显示器刷新率，游戏速度与画质不变。"><input id="high-framerate-mode" type="checkbox">高帧率模式（跟随屏幕）</label></div>
+    <div class="controls"><label title="关闭时最高60fps；开启时跟随显示器刷新率，游戏速度与画质不变。"><input id="high-framerate-mode" type="checkbox">高帧率模式（跟随屏幕）</label><button id="fullscreen">全屏</button><label class="volume">音量 <input id="volume" type="range" min="0" max="100" value="35"></label></div>
     <div class="controls">
       <button id="import-original-replay" type="button" hidden>导入原版录像（.rpy）</button>
       <input id="import-original-replay-file" type="file" accept=".rpy" aria-label="选择原版录像文件" hidden>
@@ -117,7 +117,7 @@
 <p id="status" role="status">资源加载中。不会启动或修改 Windows 原版。</p>
     <pre id="error" role="alert" hidden></pre>
 
-    <details id="dev-workbench" class="dev-workbench">
+    <details id="dev-workbench" class="dev-workbench" data-development-only hidden inert aria-hidden="true">
       <summary>开发诊断（默认折叠，不影响已完成的单人流程）</summary>
     <section id="extra-menu-panel" class="extra-menu-panel" aria-labelledby="extra-menu-heading">
       <h2 id="extra-menu-heading">EX 解锁资格诊断（不是原版选路菜单）</h2>
@@ -155,8 +155,8 @@
         <button id="start" disabled>进入动画验证</button>
         <button id="pause" disabled>暂停动画</button>
         <button id="reset" disabled>重置</button>
-        <button id="fullscreen">全屏</button>
-        <label class="volume">音量 <input id="volume" type="range" min="0" max="100" value="35"></label>
+
+
         <label class="debug-infinite-respawn"><input id="debug-infinite-respawn" type="checkbox" disabled>开发调试：无限复活（非正常通关）</label>
         <span id="debug-respawn-note" class="debug-respawn-note">等待新 core：无限复活 API 尚未可用；不会伪造启用。</span>
       </div>

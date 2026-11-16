@@ -1,3 +1,4 @@
+import {parseEclIncludes} from './ecl-includes.mjs';
 import {readZipDirectory,readEntryData} from './zip-reader.mjs';
 import {openTh128Dat} from './th128-dat.mjs';
 const LAYOUT='sha256-58cd45fe7cac9af281d9de993a527ccfbbe6f27b89bcd0ca98a7031333fce200';
@@ -104,6 +105,14 @@ export async function createDatOggProvider(input,{origin=globalThis.location?.or
    const wanted=d.files[row.fileId];need(wanted&&d.components.ogg.files.includes(row.fileId)&&wanted.bytes===row.bytes&&wanted.sha256===row.sha256,'music resource receipt mismatch');
   }else need(false,'unsupported resource binding');
  }
+ const eclTargets=new Map();
+ for(const[target,row]of Object.entries(index.resources)){
+  if(row.kind!=='raw'||!row.name.endsWith('.ecl'))continue;
+  const suffix='/runtime/'+row.name;
+  if(!target.endsWith(suffix))continue;
+  const prefix=target.slice(0,-suffix.length);
+  eclTargets.set(prefix+'/ecl/'+row.name.slice(0,-4)+'.json',row.name);
+ }
  async function checked(body,row,localSignal){need(body.length===row.bytes&&await hash(body)===row.sha256,'runtime asset SHA-256 mismatch');current(localSignal);return body;}
  async function raw(name,localSignal){
   if(!rawCache.has(name)){
@@ -113,6 +122,17 @@ export async function createDatOggProvider(input,{origin=globalThis.location?.or
   const body=await rawCache.get(name);current(localSignal);return body;
  }
  async function load(target,localSignal){
+  if(eclTargets.has(target)&&!index.resources[target]){
+   if(!resourceCache.has(target)){
+    const name=eclTargets.get(target),pending=(async()=>{
+     const bytes=await raw(name,localSignal),metadata=parseEclIncludes(bytes);
+     metadata.provenance={name,bytes:bytes.length,sha256:index.raw[name].sha256};
+     current(localSignal);return new TextEncoder().encode(JSON.stringify(metadata)+'\n');
+    })();
+    resourceCache.set(target,pending);pending.catch(()=>resourceCache.delete(target));
+   }
+   const result=await resourceCache.get(target);current(localSignal);return result;
+  }
   const row=index.resources[target];need(row,'missing resource target: '+target);
   if(!resourceCache.has(target)){
    const pending=(async()=>{
@@ -123,7 +143,7 @@ export async function createDatOggProvider(input,{origin=globalThis.location?.or
   }
   const body=await resourceCache.get(target);current(localSignal);return body;
  }
- const targets=Object.freeze(Object.keys(index.resources).sort());
+ const targets=Object.freeze([...new Set([...Object.keys(index.resources),...eclTargets.keys()])].sort());
  return Object.freeze({
   revision:d.revision,descriptor:structuredClone(d),targets,
   dispose(){closed=true;archive=null;index=null;payloads.clear();resourceCache.clear();rawCache.clear();inner.clear();entries.clear();},
