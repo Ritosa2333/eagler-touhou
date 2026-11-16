@@ -75,3 +75,5 @@
 Web适配新增805：当前完整入口/context/session在真实父窗口和跨源iframe中通过25项通信、配置、输入消息、取消与退出检查，20.861秒内完成并关闭临时标签和两个服务器。资源存储、play/native输入及呈现为明确接缝，未运行游戏World/GPU，不宣称实际游戏首帧或持久存档。上游原DATA、资源/文件桥及其余必需配置仍待接入；第三阶段未完成，多人第四阶段尚未实施。见[当前启动器页面](docs/CURRENT_LAUNCHER_PAGE.md)及[805证据](docs/launcher-iframe805.json)。
 
 Web适配新增806–809：共享原DAT消费者支持按描述符文件ID接收独立字节，原ZIP接口保留。806的20项缺失失败经807修复后21项通过；808首次从原DAT、10OGG及中文ZIP直接读取全部771个目标（含33ECL includes）并核完整收据；809现有导入/重开调用链4项通过，存储为内存接缝。尚未接外部managed回调和严格可变文件桥，第三阶段未完成。见[分文件DAT消费者](docs/MANAGED_DAT_FILES.md)。
+
+Web适配新增810–816：当前页面接同源父DATA回调，原DAT按可信包收据校验后进入真实解码器，ready等待其完成；已挂载同字节resources支持配置前及运行期校验，键盘与退出保持独立。811的17项、813源依赖13项、814原DAT/113raw/10OGG真实HTTP、815受影响97项和816真实iframe自编素材17项分别通过。完整包仍是依赖，存储/游戏呈现接缝和完整adapter边界明确；严格文件桥及第三阶段仍未完成。见[managed DATA接线](docs/MANAGED_LAUNCHER_DATA.md)。

@@ -178,6 +178,23 @@ async function createProvider(source,{origin=globalThis.location?.origin,signal,
  const targets=Object.freeze([...new Set([...Object.keys(index.resources),...eclTargets.keys()])].sort());
  return Object.freeze({
   revision:d.revision,descriptor:structuredClone(d),targets,
+  async adoptManagedData(input){
+   current();const row=d.files['game-data'];
+   need(input instanceof Uint8Array&&input.length===row.bytes,'managed DATA size/type mismatch');
+   const owned=new Uint8Array(input);
+   need(await hash(owned)===row.sha256,'managed DATA SHA-256 mismatch');current();
+   const next=openTh128Dat(owned);current();
+   archive=next;payloads.set('game-data',owned);rawCache.clear();resourceCache.clear();
+   return Object.freeze({fileId:'game-data',bytes:row.bytes,sha256:row.sha256});
+  },
+  async verifyMountedFile(target,input,localSignal){
+   current(localSignal);
+   const match=Object.entries(d.files).find(([,row])=>row.target===target);
+   need(match&&input instanceof Uint8Array&&input.length===match[1].bytes,'mounted file receipt size/path mismatch');
+   const[id,row]=match,owned=new Uint8Array(input);
+   need(payloads.has(id)&&await hash(owned)===row.sha256,'mounted file SHA-256 mismatch');current(localSignal);
+   return Object.freeze({fileId:id,path:target,bytes:row.bytes,sha256:row.sha256,reused:true});
+  },
   dispose(){closed=true;archive=null;index=null;payloads.clear();resourceCache.clear();rawCache.clear();inner.clear();entries.clear();},
   async fetch(input,init={}){
    const localSignal=init.signal??(input instanceof Request?input.signal:undefined);current(localSignal);

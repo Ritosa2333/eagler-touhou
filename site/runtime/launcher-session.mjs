@@ -13,7 +13,7 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
  let parentOrigin;
  try{const referrer=new URL(document?.referrer);if(!['https:','http:'].includes(referrer.protocol)||referrer.origin==='null')return null;parentOrigin=referrer.origin;}catch{return null;}
  const parent=window.parent,controller=new AbortController(),requests=new Map();
- let phase='booting',config=null,launchSerial=null,presented=false,closed=false,busy=false;
+ let phase='booting',config=null,launchSerial=null,presented=false,closed=false,busy=false,resourcesBusy=false;
  const base={protocol:PROTOCOL,game:GAME,epoch};
  const post=body=>parent.postMessage({...body,...base},parentOrigin);
  const reply=(request,ok,body={})=>{
@@ -49,6 +49,16 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
   if(closed)return;
   const supported=['configure','resources','launch','keyboard','keyboard-clear'];
   if(!supported.includes(command)){fail(request,'unsupported-command','Runtime does not implement '+command);return;}
+  if(command==='resources'&&phase==='running'&&hooks.acceptLiveResources?.()===true){
+   if(resourcesBusy){fail(request,'invalid-state','A resource receipt is already pending');return;}
+   resourcesBusy=true;
+   try{
+    if(!Array.isArray(data.resources)||data.resources.length>4096)throw invalid('resources must be a bounded array');
+    await hook('resources',data.resources);if(!closed)reply(request,true);
+   }catch(error){if(!closed)fail(request,error.errno??'internal-error',error.message??error);}
+   finally{resourcesBusy=false;}
+   return;
+  }
   if(phase==='booting'||busy){fail(request,'invalid-state','Runtime is not ready for '+command);return;}
   if(command==='keyboard'||command==='keyboard-clear'){
    if(phase!=='running'){fail(request,'invalid-state','Runtime input is not running');return;}
