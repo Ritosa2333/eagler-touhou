@@ -27,3 +27,9 @@ play在initialize中绑定实际runtime方法；输入通过独立Symbol来源�
 当前入口已接同源父窗口原DATA回调，依赖仍由已完整校验包提供，父DATA须匹配该包的私有收据并真正进入原解码器。非空resources现在可以验证已挂载文件的相同字节，运行中验证不阻断键盘，退出取消迟到回执；新挂载、变更内容和未知runtimePack仍拒绝。这取代上文旧795–804阶段“所有非空外部资源都拒绝”的当前结论。partialAdapter及fileBridge:false保留，严格可变文件和其余必需模式继续推进。
 
 811当前入口17项、813网站源依赖13项、814原32MB DAT/113raw/10OGG临时HTTP及815受影响回归97项通过。816另在真实同源iframe用自编小素材完成17项DATA/Blob/退出检查，存储、游戏运行和呈现仍是接缝。不是完整原游戏浏览器验收，未公开发布。见[当前managed接线](MANAGED_LAUNCHER_DATA.md)。
+
+## Replay文件817–825的当前范围
+
+当前页面新增实际25槽Replay的list/read/write/remove/sync，路径为adapter-owned相对名replay/th128_00.rpy..24.rpy；完整文件摘要、原codec、目标槽CAS、strict事务和完整回读接游戏原存储。写删仅启动前，运行中sync只核已提交Replay记录，明确storeOnly与非运行游戏flush。完整fileBridge:false保持；上文“文件命令尚未接”的描述仅代表810–816历史阶段。
+
+821受影响115项及825范围修正后的20项通过，822真实隔离浏览器IDB14项和跨文档重开通过；823原354KB已生成RPY在新桥中逐字节保持并接回游戏Replay读取者，无新World或录像执行。完整分数和原配置桥继续推进，见[Replay文件桥](REPLAY_FILE_BRIDGE.md)。

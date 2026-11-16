@@ -77,3 +77,5 @@ Web适配新增805：当前完整入口/context/session在真实父窗口和跨�
 Web适配新增806–809：共享原DAT消费者支持按描述符文件ID接收独立字节，原ZIP接口保留。806的20项缺失失败经807修复后21项通过；808首次从原DAT、10OGG及中文ZIP直接读取全部771个目标（含33ECL includes）并核完整收据；809现有导入/重开调用链4项通过，存储为内存接缝。尚未接外部managed回调和严格可变文件桥，第三阶段未完成。见[分文件DAT消费者](docs/MANAGED_DAT_FILES.md)。
 
 Web适配新增810–816：当前页面接同源父DATA回调，原DAT按可信包收据校验后进入真实解码器，ready等待其完成；已挂载同字节resources支持配置前及运行期校验，键盘与退出保持独立。811的17项、813源依赖13项、814原DAT/113raw/10OGG真实HTTP、815受影响97项和816真实iframe自编素材17项分别通过。完整包仍是依赖，存储/游戏呈现接缝和完整adapter边界明确；严格文件桥及第三阶段仍未完成。见[managed DATA接线](docs/MANAGED_LAUNCHER_DATA.md)。
+
+Web适配新增817–825：当前启动器按实际25槽连接Replay的list/read/write/remove/sync，目标槽CAS/strict事务/全文件回读，写删限定启动前。821相关115项、825范围修正20项通过；822真实隔离IDB14项验证新文档重开，823已生成354KB原RPY经桥保持完整字节并接回游戏读取者，未运行录像或World。sync明确只检查已提交Replay，完整fileBridge及第三阶段仍未完成。见[Replay文件接口](docs/REPLAY_FILE_BRIDGE.md)。

@@ -13,7 +13,7 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
  let parentOrigin;
  try{const referrer=new URL(document?.referrer);if(!['https:','http:'].includes(referrer.protocol)||referrer.origin==='null')return null;parentOrigin=referrer.origin;}catch{return null;}
  const parent=window.parent,controller=new AbortController(),requests=new Map();
- let phase='booting',config=null,launchSerial=null,presented=false,closed=false,busy=false,resourcesBusy=false;
+ let phase='booting',config=null,launchSerial=null,presented=false,closed=false,busy=false,resourcesBusy=false,fileBusy=false;
  const base={protocol:PROTOCOL,game:GAME,epoch};
  const post=body=>parent.postMessage({...body,...base},parentOrigin);
  const reply=(request,ok,body={})=>{
@@ -47,6 +47,17 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
   const {command,request}=data;
   if(command==='exit'){await stop(request,true);return;}
   if(closed)return;
+  if(['list','read','write','remove','sync'].includes(command)){
+   if(fileBusy||busy||!['ready','configured','running'].includes(phase)||(phase==='running'&&['write','remove'].includes(command))){
+    fail(request,'invalid-state','Replay file command is unavailable in this phase');return;
+   }
+   fileBusy=true;
+   try{
+    const result=await hook('files',{command,data,phase,signal:controller.signal});if(!closed)reply(request,true,result);
+   }catch(error){if(!closed)fail(request,error.errno??'internal-error',error.message??error);}
+   finally{fileBusy=false;}
+   return;
+  }
   const supported=['configure','resources','launch','keyboard','keyboard-clear'];
   if(!supported.includes(command)){fail(request,'unsupported-command','Runtime does not implement '+command);return;}
   if(command==='resources'&&phase==='running'&&hooks.acceptLiveResources?.()===true){
@@ -59,7 +70,7 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
    finally{resourcesBusy=false;}
    return;
   }
-  if(phase==='booting'||busy){fail(request,'invalid-state','Runtime is not ready for '+command);return;}
+  if(phase==='booting'||busy||fileBusy&&!['keyboard','keyboard-clear'].includes(command)){fail(request,'invalid-state','Runtime is not ready for '+command);return;}
   if(command==='keyboard'||command==='keyboard-clear'){
    if(phase!=='running'){fail(request,'invalid-state','Runtime input is not running');return;}
    try{

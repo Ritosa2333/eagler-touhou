@@ -3,6 +3,7 @@ import {installResourceFetchProvider} from './resource-fetch.mjs';
 import {readOnlineDeployment,loadOnlineResources} from './runtime/online-resources.mjs';
 import {mountLauncherSession} from './runtime/launcher-session.mjs';
 import {bindManagedDatProvider} from './runtime/managed-dat-owner.mjs';
+import {createReplayFileBridge} from './runtime/replay-file-bridge.mjs';
 import {createPageLaunchContext,installPageLaunchContext} from './runtime/page-launch-context.mjs';
 const main=document.querySelector('main');
 if(main)main.hidden=true;
@@ -16,7 +17,7 @@ let store=null,storeError=null;
 if(typeof globalThis.indexedDB?.open==='function'){
  try{store=new DatPackageArchiveStore();}catch(error){storeError=error;}
 }
-let busy=true,launched=false,launchAttempted=false,pageGone=false,provider=null,deployment=null,launcher=null,pageLaunch=null,managedOwner=null;
+let busy=true,launched=false,launchAttempted=false,pageGone=false,provider=null,deployment=null,launcher=null,pageLaunch=null,managedOwner=null,replayFiles=null;
 const controller=new AbortController(),isCurrent=()=>!pageGone&&!controller.signal.aborted;
 function requireCurrent(){if(!isCurrent())throw new DOMException('Game launch page was closed','AbortError');}
 function progress(value){
@@ -82,7 +83,7 @@ start.addEventListener('click',()=>{if(!busy)return launch().catch(()=>{});});
 retry.addEventListener('click',()=>{if(!busy)return deployment?runOnline():discover();});
 function closeEntry(){
  pageGone=true;controller.abort();
- try{managedOwner?.dispose();}finally{try{pageLaunch?.abort();}finally{try{provider?.dispose();}finally{store?.close();status.textContent='游戏已退出。';}}}
+ try{replayFiles?.dispose();}finally{try{managedOwner?.dispose();}finally{try{pageLaunch?.abort();}finally{try{provider?.dispose();}finally{store?.close();status.textContent='游戏已退出。';}}}}
 }
 addEventListener('pagehide',()=>{try{closeEntry();}finally{launcher?.dispose();}},{once:true});
 async function discover(){
@@ -109,7 +110,7 @@ async function discover(){
 function hostedReady(){
  if(!provider)return;
  file.hidden=true;start.hidden=true;hint.textContent='资源已准备好，等待启动器开始游戏。';
- launcher.runtimeInfo({version:'th128-hosted-bootstrap/1',partialAdapter:true,dataMode:managedOwner?'managed-original-DAT-with-verified-package':'validated-installed-DAT-OGG',fileBridge:false,managedResources:!!managedOwner});
+ launcher.runtimeInfo({version:'th128-hosted-bootstrap/1',partialAdapter:true,dataMode:managedOwner?'managed-original-DAT-with-verified-package':'validated-installed-DAT-OGG',fileBridge:false,managedResources:!!managedOwner,replayFiles:{root:'replay/',slots:25,commands:['list','read','write','remove','sync'],mutableBeforeLaunchOnly:true}});
  launcher.markReady();
 }
 const parentWindow=typeof window==='undefined'?globalThis.window:window;
@@ -139,6 +140,13 @@ launcher=mountLauncherSession({window:parentWindow,document,location,hooks:{
   if(!runtime)throw new Error('Runtime page is not ready');runtime.keyboard(value);
  },
  keyboardClear(){pageLaunch?.runtime?.clearInput();},
+ async files({command,data,phase,signal}){
+  requireCurrent();
+  if(signal.aborted||!provider)throw new DOMException('Replay file owner unavailable','AbortError');
+  if(['write','remove'].includes(command)&&(phase==='running'||launchAttempted))throw Object.assign(new Error('Replay file mutations require the prelaunch owner'),{errno:'invalid-state'});
+  replayFiles??=createReplayFileBridge({signal:controller.signal,isCurrent});
+  return replayFiles.execute(command,data);
+ },
  exit(){closeEntry();}
 }});
 await discover();

@@ -570,20 +570,30 @@ function replayTransaction(transaction){
 export class OwnedReplayStore{
   constructor(indexedDB=globalThis.indexedDB,crypto=globalThis.crypto){
     if(!indexedDB||!crypto?.subtle)throw new Error('Replay storage is unavailable');
-    this.indexedDB=indexedDB;this.crypto=crypto;this.database=null;
+    this.indexedDB=indexedDB;this.crypto=crypto;this.database=null;this.opening=null;this.openEpoch=0;
   }
   static nativeChecksum(bytes){let value=2166136261;for(const byte of bytes)value=Math.imul(value^byte,16777619)>>>0;return value;}
   async hash(bytes){return Array.from(new Uint8Array(await this.crypto.subtle.digest('SHA-256',bytes)),value=>value.toString(16).padStart(2,'0')).join('');}
   async open(){
     if(this.database)return this.database;
-    this.database=await new Promise((resolve,reject)=>{
-      const request=this.indexedDB.open('th128-owned-replays-v1',1);
-      request.onupgradeneeded=()=>request.result.createObjectStore('slots');
-      request.onsuccess=()=>resolve(request.result);
-      request.onerror=()=>reject(request.error||new Error('Cannot open replay store'));
-      request.onblocked=()=>reject(new Error('Replay store is blocked'));
+    if(this.opening)return this.opening;
+    const epoch=this.openEpoch;
+    const pending=new Promise((resolve,reject)=>{
+      const request=this.indexedDB.open('th128-owned-replays-v1',1);let failed=false;
+      const failure=message=>{failed=true;reject(request.error||new Error(message));};
+      request.onupgradeneeded=()=>{
+        if(epoch!==this.openEpoch){request.transaction?.abort();return;}
+        request.result.createObjectStore('slots');
+      };
+      request.onsuccess=()=>{
+        if(failed||epoch!==this.openEpoch){request.result.close();reject(new DOMException('Replay store open owner closed','AbortError'));return;}
+        this.database=request.result;resolve(this.database);
+      };
+      request.onerror=()=>failure('Cannot open replay store');
+      request.onblocked=()=>failure('Replay store is blocked');
     });
-    return this.database;
+    this.opening=pending;
+    try{return await pending;}finally{if(this.opening===pending)this.opening=null;}
   }
   async observe(){
     const database=await this.open(),transaction=database.transaction('slots','readonly'),done=replayTransaction(transaction);
@@ -673,11 +683,69 @@ export class OwnedReplayStore{
     current();return{slot,bytes:observed.bytes.slice(),digest,strictFullReadback:true,
       alreadyPresent:false,externalSource:true,scoreProfileImported:false};
   }
+  async importAtSlot(slot,input,{expectedDigest=null,fileName='original.rpy',isCurrent=()=>true,signal}={}){
+    if(!Number.isInteger(slot)||slot<0||slot>=25)throw new Error('Replay target slot outside25entries');
+    if(!(input instanceof Uint8Array)||input.length<36||input.length>16*1024*1024
+      ||typeof fileName!=='string'||fileName.length>180||/[\x00-\x1f\\/]/.test(fileName)||!fileName.toLowerCase().endsWith('.rpy'))
+      throw new Error('Original Replay file identity or size rejected');
+    const current=()=>{if(signal?.aborted||!isCurrent())throw new DOMException('Replay file owner cancelled','AbortError');};
+    current();const file=input.slice(),decoded=decodeReplay(file);new OwnedReplayPlayback(file,slot);
+    const digest=await this.hash(file);current();
+    const record={bytes:file,digest,name:Array.from(decoded.metadata.nameRaw),timestamp:String(decoded.metadata.timestamp),
+      stageCount:decoded.stages.length,score:decoded.metadata.scoreRaw,source:'original-rpy-import',originalFileName:fileName};
+    const result=await this.replaceFileSlot(slot,expectedDigest,record,{isCurrent,signal});
+    return{slot,bytes:result.record.bytes.slice(),digest,alreadyPresent:result.alreadyPresent,externalSource:true,
+      scoreProfileImported:false,strictFullReadback:true,strictDurability:true};
+  }
+  async removeSlot(slot,{expectedDigest,isCurrent=()=>true,signal}={}){
+    if(!Number.isInteger(slot)||slot<0||slot>=25)throw new Error('Replay target slot outside25entries');
+    if(typeof expectedDigest!=='string'||!/^[0-9a-f]{64}$/.test(expectedDigest))throw new Error('Replay removal requires the observed digest');
+    await this.replaceFileSlot(slot,expectedDigest,null,{isCurrent,signal});
+    return{slot,removed:true,strictFullReadback:true,strictDurability:true};
+  }
+  async replaceFileSlot(slot,expectedDigest,next,{isCurrent,signal}){
+    if(expectedDigest!==null&&(typeof expectedDigest!=='string'||!/^[0-9a-f]{64}$/.test(expectedDigest)))
+      throw new Error('Replay expected digest rejected');
+    const current=()=>{if(signal?.aborted||!isCurrent())throw new DOMException('Replay file owner cancelled','AbortError');};
+    current();const before=(await this.observe())[slot];current();
+    if((before?.digest??null)!==expectedDigest)throw new Error('Replay slot digest conflict');
+    const sameBytes=(a,b)=>a instanceof Uint8Array&&b instanceof Uint8Array&&a.length===b.length&&a.every((v,i)=>v===b[i]);
+    const alreadyPresent=next!==null&&before?.digest===next.digest;
+    const database=await this.open();current();
+    const write=database.transaction('slots','readwrite',{durability:'strict'}),written=replayTransaction(write);
+    let issue=null;
+    const cancel=()=>{try{write.abort();}catch{}};
+    signal?.addEventListener('abort',cancel,{once:true});
+    try{
+      if(write.durability!=='strict'){issue=new Error('Replay file strict durability was not granted');write.abort();}
+      else{
+        const request=write.objectStore('slots').get(slot);
+        request.onerror=()=>{issue=request.error;write.abort();};
+        request.onsuccess=()=>{
+          try{
+            current();const actual=request.result??null;
+            if((actual?.digest??null)!==expectedDigest||(before===null?actual!==null:!sameBytes(actual?.bytes,before.bytes)))
+              throw new Error('Replay slot changed before compare-and-swap');
+            if(next===null)write.objectStore('slots').delete(slot);
+            else if(!alreadyPresent)write.objectStore('slots').put(next,slot);
+          }catch(error){issue=error;write.abort();}
+        };
+      }
+      try{await written;}catch(error){throw issue??error;}
+    }finally{signal?.removeEventListener('abort',cancel);}
+    current();const actual=(await this.observe())[slot];current();
+    if(next===null){if(actual!==null)throw new Error('Replay removal full absent readback differs');return{record:null,alreadyPresent:false};}
+    const expected=alreadyPresent?before:next;
+    if(!actual||!sameBytes(actual.bytes,expected.bytes)||actual.digest!==expected.digest
+      ||JSON.stringify({...actual,bytes:null})!==JSON.stringify({...expected,bytes:null}))
+      throw new Error('Replay file full metadata/readback differs');
+    return{record:actual,alreadyPresent};
+  }
   async export(slot){
     const record=(await this.observe())[slot];if(!record)throw new Error('Replay slot is empty');
     return record.bytes.slice();
   }
-  close(){this.database?.close();this.database=null;}
+  close(){this.openEpoch++;this.database?.close();this.database=null;this.opening=null;}
 }
 
 export function originalReplayPreviewPacket(rows){
