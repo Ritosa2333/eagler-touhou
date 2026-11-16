@@ -110,14 +110,14 @@ async function discover(){
 function hostedReady(){
  if(!provider)return;
  file.hidden=true;start.hidden=true;hint.textContent='资源已准备好，等待启动器开始游戏。';
- launcher.runtimeInfo({version:'th128-hosted-bootstrap/1',partialAdapter:true,dataMode:managedOwner?'managed-original-DAT-with-verified-package':'validated-installed-DAT-OGG',fileBridge:false,managedResources:!!managedOwner,replayFiles:{root:'replay/',slots:25,commands:['list','read','write','remove','sync'],mutableBeforeLaunchOnly:true},nativeScoreExport:{path:'scoreth128.dat',readOnly:true}});
+ launcher.runtimeInfo({version:'th128-hosted-bootstrap/1',partialAdapter:true,musicOutput:{modes:['ogg','none'],requiresCompletePackage:true,midi:false},dataMode:managedOwner?'managed-original-DAT-with-verified-package':'validated-installed-DAT-OGG',fileBridge:false,managedResources:!!managedOwner,replayFiles:{root:'replay/',slots:25,commands:['list','read','write','remove','sync'],mutableBeforeLaunchOnly:true},nativeScoreExport:{path:'scoreth128.dat',readOnly:true}});
  launcher.markReady();
 }
 const parentWindow=typeof window==='undefined'?globalThis.window:window;
 launcher=mountLauncherSession({window:parentWindow,document,location,hooks:{
  async configure(config){
   requireCurrent();if(!provider)throw new Error('Installed game resources are not ready');
-  if(config.music!=='ogg')throw Object.assign(new Error('This page currently supports OGG music only'),{errno:'unsupported-command'});
+  if(config.music!=='ogg'&&config.music!=='none')throw Object.assign(new Error('This page currently supports OGG or no BGM'),{errno:'unsupported-command'});
   if(config.runtimePack!==undefined||!managedOwner&&[config.resources,config.runtimeResources,config.sharedResources].some(rows=>rows?.length))
    throw Object.assign(new Error('External resource maps are not installed by this page'),{errno:'unavailable'});
   const options=config.options??{},supported=new Set(['limitPresentationTo60','touchEnabled']);

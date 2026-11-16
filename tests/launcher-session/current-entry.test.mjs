@@ -58,3 +58,11 @@ test('pagehide cleanup preserves provider and store cleanup even if the runtime 
  const closedBefore=e.calls.close;try{e.localHandlers.pagehide();}catch{}
  await flush();assert(e.calls.dispose>=1);assert(e.calls.close>closedBefore);
 });
+test('current entry accepts no BGM mode and passes it to the real launch context without early ready ACK',async()=>{
+ const e=await setup({heldRuntime:true});
+ try{
+  e.send(envelope('configure','silent',{music:'none',language:'zh'}));await flush();assert.equal(e.messages.find(x=>x.data.request==='silent')?.data.ok,true,'music:none was rejected by current caller');
+  e.send(envelope('launch','silent-launch'));await flush();assert.equal(e.context.config.music,'none');assert.equal(e.messages.some(x=>x.data.request==='silent-launch'),false);
+  e.context.bindRuntime(e.runtime);e.context.finish();await flush();assert.equal(e.messages.find(x=>x.data.request==='silent-launch')?.data.ok,true);assert.equal(e.messages.some(x=>x.data.event==='first-frame'),false);
+ }finally{e.localHandlers.pagehide();}
+});

@@ -1,0 +1,274 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-17",
+  "baseCommit": "5cd3aa19cf989526fe4814ac0ebfc5c9d9fcd263",
+  "core": 112,
+  "scope": "Current launcher music:none silences real BGM output graph while SFX/native source timing and receipts remain",
+  "cases": {
+    "832": {
+      "pass": 7,
+      "fail": 10,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 17,
+      "passed": false,
+      "inputs": 18,
+      "runtime": 1,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case832-music-none-current-caller-output-red\\result.json",
+        "bytes": 294,
+        "sha256": "a3a71658eb554df139a538b871e552be670cff19f7286de0380f1fb091a5db9d"
+      }
+    },
+    "833": {
+      "pass": 17,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 17,
+      "passed": true,
+      "inputs": 21,
+      "runtime": 0,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case833-music-none-current-caller-output-green\\result.json",
+        "bytes": 293,
+        "sha256": "120789c34f53032416db3738c6fc2de603df7b37ec8369582bce9b1f094284ee"
+      }
+    },
+    "834": {
+      "pass": 193,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 193,
+      "passed": true,
+      "inputs": 51,
+      "runtime": 0,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case834-music-none-affected-regressions\\result.json",
+        "bytes": 295,
+        "sha256": "920681afef0923a654166c7126b6946ab6c4264f612c43d0c90b40d6b1cbc979"
+      }
+    },
+    "835": {
+      "pass": 17,
+      "fail": 1,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 18,
+      "passed": false,
+      "inputs": 23,
+      "runtime": 1,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case835-music-policy-config-clone-red\\result.json",
+        "bytes": 294,
+        "sha256": "8ba0fb579aa15972dc070bfbb49f58d1a6a82f9e4f56e51a76e672556153b248"
+      }
+    },
+    "836": {
+      "pass": 18,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 18,
+      "passed": true,
+      "inputs": 24,
+      "runtime": 0,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case836-music-policy-config-clone-green\\result.json",
+        "bytes": 293,
+        "sha256": "9334fa2592536317d3e9ec9cbe151383b5a4e17aef06bf2b40d6c5a2ad0b422c"
+      }
+    },
+    "837": {
+      "pass": 194,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 194,
+      "passed": true,
+      "inputs": 53,
+      "runtime": 0,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case837-music-none-final-affected-regressions\\result.json",
+        "bytes": 295,
+        "sha256": "93593078f66c099160c1022f550b576d6a95a06c487778a54abbe626d050518c"
+      }
+    }
+  },
+  "implementation": {
+    "supportedModes": [
+      "ogg",
+      "none"
+    ],
+    "midi": false,
+    "requiresCompleteValidatedDatOggPackage": true,
+    "noneMeans": "Session BGM output zero gain",
+    "stageMusic": true,
+    "originalTitleAudio": true,
+    "ordinaryMusic7Adoption": true,
+    "legacyTitle": true,
+    "legacyMusicRoom": true,
+    "numericEndingPCM": true,
+    "untouchedSFXMaster": true,
+    "savedVolumeChanged": false,
+    "WebHeardWritesSuppressedInNone": true,
+    "nativeLogicalHeardMarkersUnchanged": true,
+    "nativeReceiptsOrACKChanged": false,
+    "fullFileBridge": false,
+    "partialAdapter": true
+  },
+  "performance": {
+    "caseRED": 835,
+    "caseGREEN": 836,
+    "repeatedChecks": 1000,
+    "extraFullConfigurationClonesBefore": 1000,
+    "extraFullConfigurationClonesAfter": 0,
+    "modeCachedByImmutableOwnerWeakMap": true,
+    "destinationGatesWeakMap": true,
+    "OGGExtraNodes": 0,
+    "measurement": "actual config getter reads in authored graph fixture",
+    "bulletCPUOrFPSMeasured": false
+  },
+  "verificationBoundaries": {
+    "AudioContext": "authored routing graph/no device",
+    "DOMParentPlay": "explicit seams",
+    "PCMEnding": "production output-allocation block plus existing media-format/cleanup regressions",
+    "storage": "synthetic receipts/no personal data",
+    "Worlds": 0,
+    "Factories": 0,
+    "browser": 0,
+    "nativeCompiles": 0,
+    "GPU": false,
+    "physicalAudio": false,
+    "retailGamePlayback": false
+  },
+  "history": {
+    "range": "770..837",
+    "total": 1422,
+    "liveExact": 1181,
+    "archivedExact": 241,
+    "unresolved": 0,
+    "rawRequestsGrantsUnchanged": true
+  },
+  "rulings": [
+    {
+      "topic": "none semantics",
+      "decision": "Use private BGM-only zero output and keep real source/fade/stop consumers. Complete compatible OGG package remains required.",
+      "costIfWrong": "This adapter cannot run a package lacking OGG or claim no BGM decode/network work."
+    },
+    {
+      "topic": "settings and heard markers",
+      "decision": "Session mute does not overwrite saved volume or native logical records; Web heard helper skips writes while output is disabled.",
+      "costIfWrong": "Music room listened markers do not advance through that helper in none; no claim that a track was physically heard."
+    }
+  ],
+  "sourceReview": {
+    "worker": "th128-c1-verification",
+    "seq": 8608,
+    "turnStatus": "failed after written source report; no retry",
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/dsh-web-completion-20261115/localization/music-none833-review-20261117/REVIEW.md",
+    "bytes": 6999,
+    "sha256": "87b54ee769bd36db329a8978e463466a39ebb748e2a4409a893e837024d665fe",
+    "snapshot": "8331077Bhelper,prior6800Btest;836helper1238/837accepted separately by MAIN",
+    "noScopedBlockerInReport": true,
+    "sourceOnly": true,
+    "MAINDecisions": [
+      {
+        "id": "F1",
+        "decision": "Confirmed independently via835RED→836GREEN and837affected194. Cache uses WeakMap for immutableowner."
+      },
+      {
+        "id": "F2",
+        "decision": "Keep complete compatible package dependency and decode/source lifetime; no asset/bandwidth/CPU savings claim."
+      },
+      {
+        "id": "F3",
+        "decision": "No Web listened marker advance in mutedmode; no native logical marker or savedvolume rewrite."
+      },
+      {
+        "id": "F5",
+        "decision": "Existing static walker reaches shared helper throughsound; endinghost has fullsyntax/media tests and its ownsame helper listed. Do not claim dynamicplay/ending wholegraph integration from this walker."
+      }
+    ],
+    "deferredMinors": [
+      {
+        "id": "F4",
+        "item": "Dedicated positive OGG Web-heard callback and runtimeInfo assertion."
+      }
+    ],
+    "scopeCorrections": [
+      "Graph proves output connections,not physicaldeviceaudio or browserGC;endingallocation fixture not whole lifecycle.",
+      "Report initial snapshots were edited down before final6999B hash; only finalreport fingerprint is recorded. No source or old raw changed."
+    ]
+  },
+  "sourcePins": [
+    {
+      "path": "site/import-entry.mjs",
+      "bytes": 10637,
+      "sha256": "7a1ecb6160291769d4d78156b86d9458fb14dc4ae1f8ce4f6b5f733e89ad5659"
+    },
+    {
+      "path": "site/play.mjs",
+      "bytes": 314474,
+      "sha256": "286dfd4a5a4078a54855584b4b8a008e5ef3b43cad89d0d9ca4dd5b756b216f8"
+    },
+    {
+      "path": "site/runtime/music-output.mjs",
+      "bytes": 1238,
+      "sha256": "bb2a350e337b24c79ca0076d5988cb0502d853524ae58d9d4207c2220c13ee0b"
+    },
+    {
+      "path": "site/runtime/sound.mjs",
+      "bytes": 89451,
+      "sha256": "6297e6103abdd950f41d51b8c0df9971e41f43c15a69863ed530334e4aa65dfc"
+    },
+    {
+      "path": "site/runtime/native-ending-browser-host-v4.mjs",
+      "bytes": 35527,
+      "sha256": "d380c4ee78fea0d290cdef1f9a83b5424423b30d3ea6d7a581892782ab0da8e0"
+    },
+    {
+      "path": "tools/package-online-site.mjs",
+      "bytes": 23048,
+      "sha256": "d97645119f2206c03aaa25a25e8c8658d0b1ddc2931896e2bef0a4aa10f51e04"
+    },
+    {
+      "path": "tests/launcher-session/current-entry.test.mjs",
+      "bytes": 7549,
+      "sha256": "06e73a1386108891c11e4127aa12d3567286fedf0f9432ee471467063d730f7b"
+    },
+    {
+      "path": "tests/launcher-session/replay-closure.test.mjs",
+      "bytes": 1558,
+      "sha256": "5443bf443713e511c925c4c38effbc027be8709fcb63c984439b81b3dd377290"
+    },
+    {
+      "path": "tests/music-output/graph-fixture.mjs",
+      "bytes": 1510,
+      "sha256": "b4ead50f5e8216a214f89e46cd660aa24589e10f1fda6cb75cd2c9aaac49c560"
+    },
+    {
+      "path": "tests/music-output/music-none.test.mjs",
+      "bytes": 7408,
+      "sha256": "1f5a07164f40d0d7e4678ed77f1dee8db2030f7cf796d36be2c357c54364ac0c"
+    }
+  ],
+  "upstreamSourcePins": [
+    {
+      "path": "C:/Users/wang/Documents/Codex/2026-10-28/e-gee/work/eagler-source/eagler-touhou-654717ac6d7b0f9e28239e230d5c965025493434/launcher/app/services/runtime.ts",
+      "bytes": 91850,
+      "sha256": "37068ee3c7abb9f4c19afa0e865aa46e6b26a21e9efdc922d95c6e1b88f03aea"
+    },
+    {
+      "path": "C:/Users/wang/Documents/Codex/2026-10-28/e-gee/work/eagler-source/eagler-touhou-654717ac6d7b0f9e28239e230d5c965025493434/launcher/app/services/game-resources.ts",
+      "bytes": 11611,
+      "sha256": "c464154ebe0c36c23ff08860c8efa54d77e92e7c989a1f0c047b2b9b17725ebe"
+    },
+    {
+      "path": "C:/Users/wang/Documents/Codex/2026-10-28/e-gee/work/eagler-source/eagler-touhou-654717ac6d7b0f9e28239e230d5c965025493434/launcher/app/services/midi-bridge.ts",
+      "bytes": 5793,
+      "sha256": "278e64366895e0b5899f6a5e2bd8a9190e8ab7bc8c47709d6e26c4aac2003da4"
+    }
+  ]
+}

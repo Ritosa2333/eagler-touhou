@@ -39,3 +39,9 @@ play在initialize中绑定实际runtime方法；输入通过独立Symbol来源�
 当前文件接口已新增adapter-owned `scoreth128.dat` 的list/read，从真实OwnedNativeTitleRecordStore验证通过的既有档案生成T821容器及完整SHA；缺失返回errno44，不创建默认档案。该名字不是已证明的原版文件名，score写入/删除和原binary配置仍拒绝，fileBridge:false保持。
 
 827格式15项、829当前codec/导出24项、830生产C++双向差分及831受影响144项通过。830只编译一个组件、未重编core112；当前入口存储/页面为明确模拟，没有新浏览器或游戏运行。详见[分数导出说明](NATIVE_SCORE_FILE.md)。
+
+## BGM关闭832–837的当前范围
+
+当前页面已接受ogg/none；none通过实际BGM专用输出静音，SFX与保存音量保持，原source/fade/stop和native收据顺序不改。完整DAT＋OGG包仍是依赖，MIDI拒绝，partialAdapter/fileBridge:false保持。上文OGG-only是旧阶段范围。
+
+832的10项失败经833修复后17项通过；835发现反复完整克隆配置，836缓存后1000次热读取额外克隆1000→0，837最终194项通过。AudioContext/页面为明确接缝，没有新设备、World或公开部署。详见[BGM关闭模式](MUSIC_OUTPUT.md)。

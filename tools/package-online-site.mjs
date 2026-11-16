@@ -76,6 +76,7 @@ export const SITE_FILES = Object.freeze([
   'runtime/web-input.mjs',
   'runtime/launcher-session.mjs',
   'runtime/page-launch-context.mjs',
+  'runtime/music-output.mjs',
   'runtime/managed-dat-owner.mjs',
   'runtime/replay-file-bridge.mjs',
   'runtime/native-score-file.mjs',

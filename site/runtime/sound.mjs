@@ -1,6 +1,7 @@
 import {fetchResource} from '../resource-fetch.mjs';
+import {musicOutput} from './music-output.mjs';
 export class StageMusic {
-  constructor(context,gain){this.context=context;this.gain=gain;this.output=context.createGain();this.output.gain.value=1;this.output.connect(gain);this.track=null;this.buffer=null;this.source=null;this.fade=null;this.disposed=false;this.preloaded=new Map();}
+  constructor(context,gain){this.context=context;this.gain=gain;this.output=context.createGain();this.output.gain.value=1;this.output.connect(musicOutput(context,gain));this.track=null;this.buffer=null;this.source=null;this.fade=null;this.disposed=false;this.preloaded=new Map();}
   async load(tracks,base,resolveUrl,{signal,tracks:names=['th128_00.wav']}={}){
     if(this.disposed||signal?.aborted)throw new DOMException('Aborted music load','AbortError');
     this.cancelFade();
@@ -953,7 +954,7 @@ export class OriginalTitleAudio{
     if(!context||!gain||!Array.isArray(tracks)||[resolveUrl,onStopTitle,onStartTitle,onPreview].some(callback=>typeof callback!=='function')
       ||typeof bgmLedger?.commit!=='function')throw new Error('Original Title audio consumers unavailable');
     Object.assign(this,{context,gain,base,tracks,resolveUrl,signal,onStopTitle,onStartTitle,onPreview,bgmLedger});
-    this.sounds=new OriginalTitleSoundQueue(context,gain);this.bgmGain=context.createGain();this.bgmGain.connect(gain);
+    this.sounds=new OriginalTitleSoundQueue(context,gain);this.bgmGain=context.createGain();this.bgmGain.connect(musicOutput(context,gain));
     this.music=new StageMusic(context,this.bgmGain);this.disposed=false;this.pendingBgm=null;
   }
   checked(){if(this.disposed||this.signal?.aborted||this.context.state==='closed')throw new DOMException('Original Title audio cancelled','AbortError');}

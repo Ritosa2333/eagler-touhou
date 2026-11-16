@@ -1,3 +1,4 @@
+import {musicOutput} from './music-output.mjs';
 import {OriginalEndingBridge,originalEndingRequest} from './native-ending-bridge-v6.mjs';
 export {originalEndingRequest};
 async function sha256(bytes){
@@ -339,7 +340,7 @@ export async function createEndingBrowserHost({module,renderer,resources,readAss
         if(!isCurrent())throw new Error('Original ending browser generation changed while opening the strict ending receipt store');
         output=audio.createGain();
         if(!isCurrent())throw new Error('Original ending browser generation changed while creating the ending output');
-        output.gain.value=1;output.connect(gain);
+        output.gain.value=1;output.connect(musicOutput(audio,gain));
     }catch(error){
         if(output&&typeof output.disconnect==='function'){try{output.disconnect();}catch{}}
         if(receipts&&typeof receipts.close==='function'){try{receipts.close();}catch{}}

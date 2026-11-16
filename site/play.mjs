@@ -2,6 +2,7 @@ import {fetchResource,isImportedResourceMode} from './resource-fetch.mjs';
 import {readWorldDrawRecords} from './runtime/world-presentation.mjs';
 import {mountWebInput} from './runtime/web-input.mjs';
 import {getPageLaunchContext} from './runtime/page-launch-context.mjs';
+import {musicOutput,musicOutputEnabled} from './runtime/music-output.mjs';
 import {QualificationOwner,evaluateOwnedQualification,EX_QUALIFICATION_SCHEMA} from './runtime/ex-qualification.mjs';
 import {loadOriginalType33ForWorld,originalType33Profile} from './runtime/original-bullet-type33.mjs';
 const {assertStageStartAllowed,mountExtraMenu,setDebugExtraSaveEligibility,setOwnedExtraSaveEligibility,readCurrentExtraAccess,requestNormalExtraStart}=(()=>{
@@ -1708,7 +1709,7 @@ function startTitleSource(){
   }
   const source=state.audio.createBufferSource();source.buffer=state.buffer;source.loop=true;
   source.loopStart=state.track.loopStart;source.loopEnd=state.track.loopEnd;
-  source.connect(state.titleAudio?.bgmGain??state.gain);source.start();state.source=source;
+  source.connect(state.titleAudio?.bgmGain??musicOutput(state.audio,state.gain));source.start();state.source=source;
   recordOwnedHeardTrack(state.track.name).catch(error);
 }
 function stopMenuMusic(){
@@ -1996,10 +1997,10 @@ async function playMenuTrack(track){
     if(request!==menu.musicRequestId)return;
     stopTitleSource();stopMenuMusic();
     const source=state.audio.createBufferSource();source.buffer=buffer;source.loop=true;
-    source.connect(state.gain);source.start();
+    source.connect(musicOutput(state.audio,state.gain));source.start();
     menuMusic.source=source;menuMusic.track=track;
     await state.audio.resume();
-    menu.infoDescription=`实际 manifest 曲目 · 正在播放 ${track.name??track.file} · Z 停止 · X 返回`;
+    menu.infoDescription=musicOutputEnabled()?`实际 manifest 曲目 · 正在播放 ${track.name??track.file} · Z 停止 · X 返回`:'本次启动已关闭 BGM · 音效保持开启 · X 返回';
     updateMenuCopy();populateMusicRows();updateMenuSelection();
   }catch(problem){
     if(request===menu.musicRequestId){
@@ -2475,7 +2476,7 @@ function updateOwnedMainSettings(change){
 }
 function recordOwnedHeardTrack(name){
   const row=['07','00','02','01','05','06','10','11','09','08'].findIndex(value=>name==='th128_'+value+'.wav');
-  if(state.replayPlayback||row<0||state.audio?.state!=='running')return Promise.resolve();
+  if(!musicOutputEnabled()||state.replayPlayback||row<0||state.audio?.state!=='running')return Promise.resolve();
   return updateOwnedMainSettings(observed=>(observed.seenMask&(1<<row))?null:{seenMask:observed.seenMask|(1<<row)}).then(saved=>{
     if(!state.worldMode){const snapshot=nativeMenuSnapshot();if(snapshot.page===0&&snapshot.ready&&!snapshot.transitioning)state.module._th128_title_music_prepare(saved.seenMask);}
     return saved;
