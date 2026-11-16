@@ -32,6 +32,7 @@ struct RunPausePlatform {
     virtual bool change_pause_option(i32, i32) { return false; }
     virtual i32 pause_option_value(i32) const { return 0; }
     virtual bool record_result_name(const std::string&) { return false; }
+    virtual std::string last_result_name() const { return {}; }
     virtual bool result_needs_name() const { return false; }
     // 0x43f8f0 排名门（mode0）：合格 = FUN_0043d6b0 把新分当场插入榜块并经
     // 0x415030(rank) 把 0 基入榜行写进覆盖层 +0x38；不合格 -1。返回行号并把

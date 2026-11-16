@@ -10,6 +10,16 @@ namespace th13 {
 inline constexpr char kResultNameCharacters[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-=.,!?@:;[]()_/{}|~^#$%&*   ";
 
+// 0x43f9cc/0x454209/0x43ee56/0x454b48: every name entry sets the cursor to 0,
+// copies the last confirmed name (score ST+0x0C) into its buffer and, unless
+// that name is eight spaces, steps the cursor back to END (90). The length is
+// the name without trailing spaces.
+inline void seed_result_name(const std::string& last, std::string& name, i32& cursor) {
+    name = last.substr(0, 8);
+    while (!name.empty() && name.back() == ' ') name.pop_back();
+    cursor = name.empty() ? 0 : 90;
+}
+
 // BGameOver = 0x43f570 mode≠0 入口（0x440960 态 0x18）：与 ExtraEnd 同用
 // 147 屏根/三项菜单，但默认光标落在重试（0x440960 态 0x18 的 0x15030(2)）。
 enum class PauseScreen : i32 {

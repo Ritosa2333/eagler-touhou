@@ -95,11 +95,10 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
                 if (handle && !animations_.retire(handle))
                     return fail("Spell bonus digit retire failed: " + animations_.error);
             if ((bonus_million_ && !animations_.retire(bonus_million_)) ||
-                (bonus_thousand_ && !animations_.retire(bonus_thousand_)) ||
-                (bonus_capture_effect_ && !animations_.retire(bonus_capture_effect_)))
+                (bonus_thousand_ && !animations_.retire(bonus_thousand_)))
                 return fail("Spell bonus extra retire failed: " + animations_.error);
             for (u32& handle : bonus_digits_) handle = 0;
-            bonus_million_ = bonus_thousand_ = bonus_capture_effect_ = 0;
+            bonus_million_ = bonus_thousand_ = 0;
             i32 divisor = 10000000, value = snapshot_.current_bonus;
             bool leading = true;
             for (i32 i = 0; i < 8; ++i) {
@@ -130,6 +129,11 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
                 } else
                     return fail("Spell bonus separator animation unavailable");
             }
+        }
+        // 0x42a7d6/0x42a92d：case0 与 case1 都置 stage+0x120=1 并建 front
+        // script95（0x42a804/0x42a95b）→ stage+0x118，收取失败与超时同样显示
+        // 击破时间。两支都直接覆盖 +0x118，不回收上一张卡的 95（其脚本自行终止）。
+        if (animations_.resource(banks_.front)) {
             bonus_capture_effect_ = animations_.create(banks_.front, 95, -1, 0);
             if (!bonus_capture_effect_)
                 return fail("Spell capture effect animation unavailable: " +
