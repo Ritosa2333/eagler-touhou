@@ -10,6 +10,7 @@ export interface RuntimeAudioWindow {
     SDL3?: { audioContext?: AudioContext; audio_playback?: { scriptProcessorNode?: AudioNode } };
     eaglerSfxOutput?: { context: AudioContext; voices: Map<unknown, { merge: AudioNode }> };
     eaglerAudio?: { action(command: number, value: number): void };
+    eaglerSetAudioLevels?: (music: number, effects: number) => void;
   };
 }
 
@@ -23,13 +24,14 @@ export function createRuntimeAudioMix() {
 
   function bind(runtime: RuntimeAudioWindow, game: string) {
     const th05 = game === 'th05';
-    const combinedGain = () => game === 'th14' && levels.music === 0 && levels.effects === 0 ? 0 : 1;
+    const combinedGain = () => game === 'th14' && !runtime.Module?.eaglerSetAudioLevels && levels.music === 0 && levels.effects === 0 ? 0 : 1;
     const outputs = new Map<AudioContext, AudioOutputs>();
     const routed = new WeakSet<AudioNode>();
     const cleanup: (() => void)[] = [];
     let active = true;
     let sfxPool: NonNullable<RuntimeAudioWindow['Module']>['eaglerSfxOutput'];
     let setTh05Music: ((volume: number) => void) | undefined;
+    let appliedNativeLevels: AudioLevels | null = null;
 
     function route(node: AudioNode, output: GainNode, alreadyConnected = false) {
       if (routed.has(node)) return;
@@ -125,6 +127,11 @@ export function createRuntimeAudioMix() {
         return;
       }
       const module = runtime.Module;
+      if (module?.eaglerSetAudioLevels && appliedNativeLevels !== levels) {
+        module.eaglerSetAudioLevels(levels.music, levels.effects);
+        appliedNativeLevels = levels;
+        for (const gains of outputs.values()) gains.music.gain.value = 1;
+      }
       const sdl = module?.SDL3;
       const context = sdl?.audioContext;
       if (!context || context.state === 'closed') return;
@@ -153,6 +160,7 @@ export function createRuntimeAudioMix() {
           if (previous.effects !== levels.effects) gains.effects.gain.value = levels.effects;
         }
         if (previous.music !== levels.music) setTh05Music?.(levels.music);
+        if (runtime.Module?.eaglerSetAudioLevels) refresh();
       },
       dispose() {
         active = false;

@@ -539,7 +539,11 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       return context.isCurrent();
     } catch(error) {reportError(error);return false;}
   }
-  const gameData = createGameDataImportModel({acquisition: testBuild ? acquisition : {importPackage: acquisition.importPackage}, translate: t,
+  const gameData = createGameDataImportModel({acquisition: testBuild ? acquisition : {
+    importPackage: acquisition.importPackage,
+    importFiles: acquisition.importFiles,
+    originalFileNames: game => game === 'th13' || game === 'th14' ? acquisition.originalFileNames(game) : [],
+  }, translate: t,
     getContext: () => ({product: settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID,
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,
       runtimeEpoch: runtime?.getSnapshot().epoch ?? null,

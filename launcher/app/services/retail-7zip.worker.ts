@@ -41,6 +41,8 @@ async function hasEncrypted7zHeader(blob: Blob) {
 
 const isPasswordError = (message: string) => /wrong password|password is incorrect|password required/i.test(message);
 
+self.onmessageerror = () => self.postMessage({error: 'Unable to read the local archive request'});
+
 self.onmessage = async ({data}: MessageEvent<{
   input: Blob; kind: 'zip' | '7z'; limits: Record<string, number>; password: string; wasmUrl: string;
 }>) => {
