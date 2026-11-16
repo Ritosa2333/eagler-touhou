@@ -112,12 +112,37 @@ function host(extra = {}) {
       version: `sha256-${hash}`, layout: `sha256-${'b'.repeat(64)}`}, music: {midi: {files: []}}, ...extra}}});
 }
 function catalog(revision = 'package-r1') {return {schema: 'eagler-touhou/release-catalog/1', games: {th06: {revision, descriptor: 'games/th06/package.json'}}};}
+test('cached DATA with an incompatible layout upgrades before it is pinned for launch', async () => {
+ const old=generation(),next=generation({id:'compatible',revision:'new'}),required=host().games.th06.gameData.layout;
+ old.descriptor.runtimeRequirement.dataLayout='sha256-'+'c'.repeat(64);
+ next.descriptor.runtimeRequirement.dataLayout=required;
+ const activity=[];let installs=0;
+ const f=acquisitionFixture({current:old,hostValue:host(),catalogValue:catalog('new'),dependencies:{installPublished:async(game,options)=>{
+  installs++;assert.equal(game,'th06');assert.equal(options.expectedGenerationId,old.id);assert.equal(options.preserveLocalSource,true);
+  assert.deepEqual(options.addComponents,[]);return {generation:next};
+ }}});
+ const result=await f.acquisition.acquire({productId:'th06',music:'none',language:'ja',onAcquisitionActivity:v=>activity.push(v),decideUpdate:async()=>{throw Error('incompatible DATA is not an optional update');}});
+ assert.equal(result.generation,next);assert.equal(installs,1);assert.deepEqual(activity,[true,false]);assert.ok(f.calls.includes('refresh:th06'));
+});
+for(const failure of ['network','still-incompatible'])test(`incompatible DATA cannot launch after a failed migration: ${failure}`,async()=>{
+ const old=generation();old.descriptor.runtimeRequirement.dataLayout='sha256-'+'c'.repeat(64);
+ const f=acquisitionFixture({current:old,hostValue:host(),catalogValue:catalog('new'),dependencies:{installPublished:async()=>{
+  if(failure==='network')throw Error('unavailable');return {generation:old};
+ }}});
+ await assert.rejects(()=>f.acquisition.acquire({productId:'th06',music:'none',language:'ja'}),error=>error.gameDataAcquisition===true);
+});
+test('an older revision with the same layout still launches from cache without a foreground update',async()=>{
+ const old=generation();old.descriptor.runtimeRequirement.dataLayout=host().games.th06.gameData.layout;
+ const f=acquisitionFixture({current:old,hostValue:host(),catalogValue:catalog('new')});
+ const result=await f.acquisition.acquire({productId:'th06',music:'none',language:'ja'});
+ assert.equal(result.generation,old);assert.ok(result.deferredUpdate);assert.deepEqual(f.calls,['current:th06']);
+});
 function acquisitionFixture({current = generation(), hostValue = null, catalogValue = null, dependencies = {}, fetchImpl, network,
-  initialize = async () => {}} = {}) {
+  initialize = async () => {}, testBuild = false} = {}) {
   const calls = [], metadata = {siteManifest: hostValue, releaseCatalog: catalogValue};
   const installation = () => ({generation: current, installation: current ? {game: 'th06', currentGeneration: current.id,
     pendingGeneration: null, source: 'local'} : null});
-  const acquisition = api.createPackageAcquisition({baseUrl, translate: t, indexedDBAvailable: () => true,
+  const acquisition = api.createPackageAcquisition({baseUrl, translate: t, indexedDBAvailable: () => true, testBuild,
     network,
     fetchImpl: fetchImpl ?? (async () => {throw new Error('Unexpected real network path');}),
     metadata: {getSnapshot: () => metadata, initialize: async () => {calls.push('metadata'); await initialize();},
@@ -476,7 +501,7 @@ test('TH14 late spectator mounts later-stage BGM before native launch', async ()
   published.games.th14 = published.games.th06;
   delete published.games.th06;
   const downloads = [];
-  const f = acquisitionFixture({current: initial, catalogValue: published, dependencies: {
+  const f = acquisitionFixture({current: initial, catalogValue: published, testBuild: true, dependencies: {
     installPublished: async (game, {addFileIds}) => {
       assert.equal(game, 'th14');
       downloads.push(addFileIds);

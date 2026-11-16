@@ -208,6 +208,28 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     let installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"}); checkPreparationAbort(request.signal);
     if (installed.generation) {
       installed = await repair(installed, request);
+      const requiredLayout = metadata.getSnapshot().siteManifest?.games[game]?.gameData.layout;
+      const installedLayout = installed.generation!.descriptor.runtimeRequirement?.dataLayout;
+      if (requiredLayout && installedLayout && requiredLayout !== installedLayout) {
+        request.onAcquisitionActivity?.(true);
+        try {
+          progress(request, 'package.installingResources');
+          const publication = await getPublication(gameVersion, request.signal);
+          if (!publication.catalog?.games[game]) throw new Error('游戏资源与当前版本不兼容，请更新游戏资源');
+          const result = await deps.installPublished(game, {...publication, gameVersion,
+            expectedGenerationId: installed.generation!.id, preserveLocalSource: true,
+            addComponents: [], signal: request.signal, fetchImpl: getPackageFetch(game),
+            onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
+          checkPreparationAbort(request.signal);
+          if (result.generation.descriptor.runtimeRequirement?.dataLayout !== requiredLayout)
+            throw new Error('游戏资源与当前版本不兼容，请更新游戏资源');
+          installed = {...installed, generation: result.generation};
+          await installedChanged(game);
+        } catch (error) {
+          checkPreparationAbort(request.signal);
+          throw new GameDataAcquisitionError(downloadFailureDetail(error, t) || preparationErrorText(error), {cause: error});
+        } finally {request.onAcquisitionActivity?.(false);}
+      }
       if (request.updateBeforePrepare) return installedResult(installed, request);
       const published = metadataSnapshot.releaseCatalog?.games[game];
       return {kind:'managed', generation:installed.generation!,
