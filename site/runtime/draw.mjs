@@ -1,3 +1,4 @@
+import {fetchResource} from '../resource-fetch.mjs';
 export const DRAW_STRIDE = 160;
 export function circleLineVertices(record){
   const vertices=record?.geometry?.vertices;
@@ -193,7 +194,7 @@ export async function loadOriginalHelpPage(renderer,record,{signal,isCurrent=()=
   if(!graphics||!renderer.textures||!Number.isInteger(record?.page)||record.page<0||record.page>8
     ||typeof record.url!=='string'||record.width!==384||record.height!==448)
     throw new Error('Original help texture page is unavailable');
-  const response=await fetch(record.url,{signal});
+  const response=await fetchResource(record.url,{signal});
   if(!response.ok)throw new Error('Original help page could not be loaded');
   const full=await response.arrayBuffer();
   if(record.sha256){

@@ -1,3 +1,4 @@
+import {fetchResource,isImportedResourceMode} from './resource-fetch.mjs';
 import {QualificationOwner,evaluateOwnedQualification,EX_QUALIFICATION_SCHEMA} from './runtime/ex-qualification.mjs';
 import {loadOriginalType33ForWorld,originalType33Profile} from './runtime/original-bullet-type33.mjs';
 const {assertStageStartAllowed,mountExtraMenu,setDebugExtraSaveEligibility,setOwnedExtraSaveEligibility,readCurrentExtraAccess,requestNormalExtraStart}=(()=>{
@@ -762,6 +763,7 @@ function createCheckpointDriver(options = {}) {
   };
 }
 async function checkpointFetch(input, init, settings = {}) {
+  if(typeof isImportedResourceMode==='function'&&isImportedResourceMode())return await fetchResource(input,init);
   const fetchImpl = settings.fetchImpl ?? globalThis.fetch;
   const origin = settings.origin ?? globalThis.location?.origin;
   const fastForward = settings.fastForward ?? (globalThis.__TH128_FAST_REPLAY__ === true);

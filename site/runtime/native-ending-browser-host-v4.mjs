@@ -197,7 +197,7 @@ export async function createOrdinaryWorldAudioConsumer(options){
     catch(error){receipts.close();throw error;}
 }
 
-function wave(input,metadata){
+function endingWavPCM(input,metadata){
     const view=new DataView(input.buffer,input.byteOffset,input.byteLength);
     const text=offset=>String.fromCharCode(...input.subarray(offset,offset+4));
     if(input.length<44||text(0)!=='RIFF'||text(8)!=='WAVE')throw new Error('Original ending WAV identity rejected');
@@ -212,7 +212,8 @@ function wave(input,metadata){
     if(!format||format.encoding!==1||format.channels!==2||format.sampleRate!==44100||format.align!==4||format.bits!==16
         ||offset<0||count!==metadata.pcmBytes||count%4||metadata.loopStartBytes%4||metadata.loopStartBytes>=count)
         throw new Error('Original ending PCM or loop metadata rejected');
-    return{view,offset,frames:count/4,loopStart:metadata.loopStartBytes/4};
+    const bytes=input.subarray(offset,offset+count);
+    return{view:new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),offset:0,frames:count/4,loopStart:metadata.loopStartBytes/4,bytes,audioFormat:'pcm-s16le'};
 }
 export class OrdinaryEndingStopConsumer{
     constructor({module,receipts,readPCM,isCurrent}){
@@ -238,32 +239,81 @@ export class OrdinaryEndingStopConsumer{
                 throw new Error('Ordinary stopped PCM native descriptor fields rejected');
             const observedPCM=this.readPCM();
             const pcm={...observedPCM,bytes:observedPCM.bytes instanceof Uint8Array?observedPCM.bytes.slice():observedPCM.bytes},samples=pcm.bytes;
+            const legacy=pcm.audioFormat===undefined,format=legacy?'pcm-s16le':pcm.audioFormat;
+            const assetSHA256=legacy?pcm.sourceWAVSHA256:pcm.sourceAssetSHA256;
             if(pcm.presentAudio!==true||pcm.stopped!==true||pcm.deviceStopIssued!==true||pcm.closed||pcm.ticks!==packet.logicalTick
                 ||pcm.fadeRemaining!==0||pcm.fadeDuration!==180||!(samples instanceof Uint8Array)||samples.length!==735*4||samples.some(value=>value!==0)
-                ||!Number.isSafeInteger(pcm.cursor)||pcm.cursor<0||!/^[a-f0-9]{64}$/.test(pcm.sourceWAVSHA256))
+                ||!Number.isSafeInteger(pcm.cursor)||pcm.cursor<0||(format!=='pcm-s16le'&&format!=='vorbis-ogg')
+                ||!/^[a-f0-9]{64}$/.test(assetSHA256)
+                ||(!legacy&&!/^[a-f0-9]{64}$/.test(pcm.sourcePCMInt16SHA256))
+                ||(legacy&&pcm.sourcePCMInt16SHA256!==undefined)
+                ||(legacy&&pcm.sourceAssetSHA256!==undefined&&pcm.sourceAssetSHA256!==assetSHA256)
+                ||(format==='pcm-s16le'&&!legacy&&pcm.sourceWAVSHA256!==assetSHA256)
+                ||(format==='vorbis-ogg'&&pcm.sourceWAVSHA256!==undefined))
                 throw new Error('Ordinary return requires actual source.stop and exact complete final silent PCM');
             const metadata={domain:'ordinary-ending-stop',generation:packet.generation,index:packet.index,logicalTick:packet.logicalTick,
                 descriptor:[...current],deviceStopIssued:pcm.deviceStopIssued,stopped:pcm.stopped,presentAudio:pcm.presentAudio,
                 actualPCMFrameCursor:pcm.cursor,fadeRemaining:pcm.fadeRemaining,fadeDuration:pcm.fadeDuration,
-                sourceWAVSHA256:pcm.sourceWAVSHA256,pcmFrames:735,channels:2,sampleRate:44100};
+                audioFormat:format,sourceAssetSHA256:assetSHA256,
+                ...(legacy?{}:{sourcePCMInt16SHA256:pcm.sourcePCMInt16SHA256}),
+                sourceWAVSHA256:format==='pcm-s16le'?assetSHA256:undefined,
+                encodedSourceSHA256:format==='vorbis-ogg'?assetSHA256:undefined,
+                pcmFrames:735,channels:2,sampleRate:44100};
             const payload=new Uint8Array(current.length+samples.length);payload.set(current);payload.set(samples,current.length);
             metadata.identitySHA256=await sha256(encoded(metadata));const payloadSHA256=await sha256(payload);
             const receipt=await this.receipts.commit('ordinary/return-stop/'+packet.generation+'/'+packet.logicalTick,metadata,payload);
             if(!this.isCurrent())throw new DOMException('Ordinary ending stop owner was cancelled','AbortError');
-            const after=this.readPCM();
+            const after=this.readPCM(),afterFormat=after.audioFormat===undefined?'pcm-s16le':after.audioFormat;
             if(!this.nativePacket().every((v,i)=>v===current[i])||after.closed||!after.stopped||!after.deviceStopIssued||after.presentAudio!==true
                 ||after.ticks!==pcm.ticks||after.cursor!==pcm.cursor||after.fadeRemaining!==0||after.fadeDuration!==180
+                ||(after.audioFormat===undefined)!==legacy||afterFormat!==format||after.sourceAssetSHA256!==(legacy?undefined:pcm.sourceAssetSHA256)
+                ||(legacy?after.sourcePCMInt16SHA256!==undefined:after.sourcePCMInt16SHA256!==pcm.sourcePCMInt16SHA256)
                 ||after.sourceWAVSHA256!==pcm.sourceWAVSHA256||!(after.bytes instanceof Uint8Array)||after.bytes.length!==samples.length
                 ||!after.bytes.every((v,i)=>v===samples[i])||receipt?.committed!==true||receipt.fullReadback!==true
                 ||receipt.durability!=='strict-indexeddb-transaction'||receipt.domain!==metadata.domain||receipt.identitySHA256!==metadata.identitySHA256
                 ||receipt.bytes!==payload.length||receipt.sha256!==payloadSHA256)
                 throw new Error('Ordinary ending stopped PCM complete durable receipt rejected');
-            this.committed=true;return{...receipt,descriptor:current,logicalTick:pcm.ticks,generation:packet.generation,index:packet.index,deviceStopIssued:true};
+            this.committed=true;return{...receipt,descriptor:current,logicalTick:pcm.ticks,generation:packet.generation,index:packet.index,
+                deviceStopIssued:true,audioFormat:format,sourceAssetSHA256:assetSHA256,
+                ...(legacy?{}:{sourcePCMInt16SHA256:pcm.sourcePCMInt16SHA256})};
         }catch(error){if(!this.isCurrent())throw new DOMException('Ordinary ending stop owner was cancelled','AbortError');throw error;}
         finally{this.busy=false;}
     }
 }
-export async function createEndingBrowserHost({module,renderer,resources,readAsset,audio,gain,soundQueue,legacyMusic,isCurrent,presentAudio=true,prepareOrdinary=null}){
+async function endingOggPCM(input,metadata,decode){
+    if(metadata?.audioFormat!=='vorbis-ogg'&&metadata?.codec!=='vorbis')throw new Error('Original ending OGG source format rejected');
+    if(typeof decode!=='function')throw new Error('Original ending OGG decode seam is unavailable');
+    if(!(input instanceof Uint8Array)||input.length<12||String.fromCharCode(input[0],input[1],input[2],input[3])!=='OggS')
+        throw new Error('Original ending OGG encoded source bytes rejected');
+    const decoded=await decode(input);
+    if(!decoded||decoded.sampleRate!==44100||decoded.numberOfChannels!==2||!Number.isSafeInteger(decoded.length)||decoded.length<1
+        ||typeof decoded.getChannelData!=='function')throw new Error('Original ending OGG decoded audio metadata rejected');
+    const frames=decoded.length;
+    if(frames>44100*600)throw new Error('Original ending OGG decoded frame count exceeds the owned bound');
+    const expected=Number.isSafeInteger(metadata.decodedFrames)?metadata.decodedFrames
+        :(Number.isSafeInteger(metadata.pcmBytes)&&metadata.pcmBytes%4===0?metadata.pcmBytes/4:NaN);
+    if(!Number.isSafeInteger(expected)||expected<1)throw new Error('Original ending OGG decoded frame count is unverifiable');
+    if(frames!==expected)throw new Error('Original ending OGG decoded frame count mismatch');
+    const loopStart=Number.isSafeInteger(metadata.loopStartSamples)?metadata.loopStartSamples
+        :(Number.isSafeInteger(metadata.loopStartBytes)&&metadata.loopStartBytes%4===0?metadata.loopStartBytes/4:NaN);
+    if(!Number.isSafeInteger(loopStart)||loopStart<0||loopStart>=frames)throw new Error('Original ending OGG loop metadata rejected');
+    const channels=[decoded.getChannelData(0),decoded.getChannelData(1)];
+    for(const channel of channels){
+        if(!channel||channel.length!==frames||typeof channel.every!=='function'||!channel.every(value=>Number.isFinite(value)))
+            throw new Error('Original ending OGG decoded PCM samples rejected');
+    }
+    const bytes=new Uint8Array(frames*4),view=new DataView(bytes.buffer);
+    for(let frame=0;frame<frames;frame++){
+        view.setInt16(frame*4,Math.max(-32768,Math.min(32767,Math.round(channels[0][frame]*32768))),true);
+        view.setInt16(frame*4+2,Math.max(-32768,Math.min(32767,Math.round(channels[1][frame]*32768))),true);
+    }
+    return{view,offset:0,frames,loopStart,bytes,audioFormat:'vorbis-ogg'};
+}
+async function endingMusicPCM(input,metadata,decode){
+    if(input.length>=12&&String.fromCharCode(...input.subarray(0,4))==='RIFF')return endingWavPCM(input,metadata);
+    return endingOggPCM(input,metadata,decode);
+}
+export async function createEndingBrowserHost({module,renderer,resources,readAsset,audio,gain,soundQueue,legacyMusic,isCurrent,presentAudio=true,prepareOrdinary=null,decodeMusic=null}){
     if(typeof renderer?.renderEndingPixels!=='function'||typeof renderer?.releaseEndingPixels!=='function'||typeof renderer?.renderOriginalTerminalFade!=='function'||typeof readAsset!=='function'
         ||!audio||!gain||typeof soundQueue?.consumeNativeRequest!=='function'||typeof soundQueue?.flush!=='function'
         ||typeof soundQueue?.assertIdentityHost!=='function'||typeof legacyMusic?.stopSource!=='function')
@@ -273,10 +323,32 @@ export async function createEndingBrowserHost({module,renderer,resources,readAss
     if(!(body instanceof Uint8Array)||body.length!==resources.music.asset.bytes||await sha256(body)!==resources.music.asset.sha256)
         throw new Error('Original ending music asset bytes rejected');
     if(!isCurrent())throw new Error('Original ending browser generation changed during music preload');
-    const pcm=wave(body,resources.music.metadata),receipts=await OwnedEndingReceipts.open(),output=audio.createGain();
-    output.gain.value=1;output.connect(gain);
+    const assetSHA256=resources.music.asset.sha256;
+    const decode=decodeMusic??(async bytes=>{
+        const decoder=typeof globalThis.OfflineAudioContext==='function'?new OfflineAudioContext(2,1,44100):audio;
+        if(!decoder||typeof decoder.decodeAudioData!=='function')throw new Error('Original ending OGG decode seam is unavailable');
+        return decoder.decodeAudioData(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength));
+    });
+    const pcm=await endingMusicPCM(body,resources.music.metadata,decode);
+    if(!isCurrent())throw new Error('Original ending browser generation changed during music decode');
+    const pcmSHA256=await sha256(pcm.bytes);
+    if(!isCurrent())throw new Error('Original ending browser generation changed during decoded PCM identity');
+    let receipts=null,output=null;
+    try{
+        receipts=await OwnedEndingReceipts.open();
+        if(!isCurrent())throw new Error('Original ending browser generation changed while opening the strict ending receipt store');
+        output=audio.createGain();
+        if(!isCurrent())throw new Error('Original ending browser generation changed while creating the ending output');
+        output.gain.value=1;output.connect(gain);
+    }catch(error){
+        if(output&&typeof output.disconnect==='function'){try{output.disconnect();}catch{}}
+        if(receipts&&typeof receipts.close==='function'){try{receipts.close();}catch{}}
+        throw error;
+    }
+    const sourceIdentity={audioFormat:pcm.audioFormat,sourceAssetSHA256:assetSHA256,sourcePCMInt16SHA256:pcmSHA256,
+        ...(pcm.audioFormat==='pcm-s16le'?{sourceWAVSHA256:assetSHA256}:{})};
     let source=null,cursor=0,fadeRemaining=0,fadeDuration=0,stopped=false,ticks=0,closed=false,lastPixels=null,deviceStopIssued=false,lastPCM=null;
-    const stoppedPCM=new OrdinaryEndingStopConsumer({module,receipts,isCurrent,readPCM:()=>({bytes:lastPCM,cursor,fadeRemaining,fadeDuration,stopped,ticks,closed,deviceStopIssued,presentAudio,sourceWAVSHA256:resources.music.asset.sha256})});
+    const stoppedPCM=new OrdinaryEndingStopConsumer({module,receipts,isCurrent,readPCM:()=>({bytes:lastPCM,cursor,fadeRemaining,fadeDuration,stopped,ticks,closed,deviceStopIssued,presentAudio,audioFormat:pcm.audioFormat,sourceAssetSHA256:assetSHA256,sourcePCMInt16SHA256:pcmSHA256,sourceWAVSHA256:pcm.audioFormat==='pcm-s16le'?assetSHA256:undefined})});
     const media={
         async stopAndCommit(packet){return stoppedPCM.consume(packet);},
         async consumeAndCommit(packet){
@@ -294,14 +366,14 @@ export async function createEndingBrowserHost({module,renderer,resources,readAss
                 source.loopStart=pcm.loopStart/44100;source.loopEnd=pcm.frames/44100;source.connect(output);
                 if(presentAudio)source.start();
                 return receipts.commit('media/'+packet.serial,{...packet,actualLegacyOwner:previous,
-                    sourceWAVSHA256:resources.music.asset.sha256,actualBufferFrames:buffer.length,sampleRate:buffer.sampleRate,
+                    ...sourceIdentity,actualBufferFrames:buffer.length,sampleRate:buffer.sampleRate,
                     loopStartFrame:pcm.loopStart,loopEndFrame:pcm.frames,actualSourceStarted:presentAudio,
                     actualAudibleDeviceOutputProved:false,nativeWin32IAT:false});
             }
             if(packet.operation!==5||packet.durationFrames!==180||!source||stopped)throw new Error('Original ending fade owner rejected');
             fadeRemaining=fadeDuration=packet.durationFrames;
             return receipts.commit('media/'+packet.serial,{...packet,actualPCMFrameCursor:cursor,fadeRemaining,fadeDuration,
-                sourceWAVSHA256:resources.music.asset.sha256,actualAudibleDeviceOutputProved:false});
+                ...sourceIdentity,actualAudibleDeviceOutputProved:false});
         },
         async tickAndCommit(state){
             if(closed||!source||!isCurrent())throw new Error('Original ending PCM tick owner is unavailable');
@@ -323,7 +395,7 @@ export async function createEndingBrowserHost({module,renderer,resources,readAss
             if(stopped&&presentAudio&&!deviceStopIssued){source.stop();deviceStopIssued=true;}
             return receipts.commit('pcm/'+(++ticks),{domain:'original-ending-pcm',generation:state.generation,index:state.index,
                 logicalTick:ticks,actualPCMFrameCursor:cursor,fadeRemaining,fadeDuration,stopped,originalFrames:735,
-                sourceWAVSHA256:resources.music.asset.sha256,audibleDeviceCursorProved:false},bytes);
+                ...sourceIdentity,audibleDeviceCursorProved:false},bytes);
         }
     };
     const sound={
@@ -339,14 +411,15 @@ export async function createEndingBrowserHost({module,renderer,resources,readAss
                 actualUnchangedIdentityQueueConsumedAndFlushed:true,audibleDeviceOutputProved:false});
         }
     };
-    const owner=new OriginalEndingBridge({module,resources,isCurrent,services:{readAsset,media,sound,prepareOrdinary,
+    let owner;
+    try{owner=new OriginalEndingBridge({module,resources,isCurrent,services:{readAsset,media,sound,prepareOrdinary,
         async present(pixels,state){
             if(!isCurrent())throw new Error('Original ending renderer generation changed');
             renderer.renderEndingPixels(pixels,receipts.database.name);lastPixels=Uint8Array.from(pixels);
             const world=JSON.parse(module.UTF8ToString(module._th128_world_state()));
             if(world.normalTerminal?.endingStarted===true)renderer.renderOriginalTerminalFade(world);
             return{actualRenderCallIssued:true,generation:state.generation,visiblePixelsProved:false};
-        }}});
+        }}});}catch(error){output.disconnect();receipts.close();throw error;}
     return{owner,
         redraw(){if(lastPixels){
             renderer.renderEndingPixels(lastPixels,receipts.database.name);
@@ -367,3 +440,5 @@ export async function createEndingBrowserHost({module,renderer,resources,readAss
             strictIndexedDBUsed:true,audibleDeviceOutputProved:false,visiblePixelsProved:false};}
     };
 }
+
+export { endingWavPCM, endingOggPCM, endingMusicPCM };

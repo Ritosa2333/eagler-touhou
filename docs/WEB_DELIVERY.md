@@ -1,36 +1,42 @@
-# TH128 网页交付 · 第一版
+# TH128 网页交付 · DAT + OGG
 
-六条普通路线和 EX 完整单人功能流程已完成。此版直接复用成功的 private108 核心，不重新编译或重跑通关。
+六条普通路线＋EX 的单人功能基线已完成。当前包使用原 th128.dat 和10首 OGG 音乐，替代此前738个展开文件的 WAV 包，资源 ZIP 从344939528字节降到93317333字节，减少72.95%。
 
-| 文件 | 大小 | SHA-256 |
+| 交付文件 | 字节 | SHA-256 |
 |---|---:|---|
-| th128-runtime108-v1.zip | 3095006 | 408baef78d529990f49a5d172793928c13980a91ea967f2fba08458459aa23fd |
-| th128-import-5eb938644815ee24.zip | 344939528 | 9d23ac6878cb7c5296c6e17a5d154db7115da22a6562091192113ac9f3722cf0 |
+| th128-dat-ogg-5e3bcbd5ebb8b171.zip | 93317333 | f8eec6698f3ecdc94f6d64ce3413800a7558201d365e468e9c27ac61fc2504a5 |
+| th128-runtime108-dat-ogg-v2.zip | 3144120 | 45b73abdc7a64ef757ee02be2415ffcbd0a1f65af4a5877b4db162d2a68e6fed |
 
-资源包包含738个文件、344418593字节payload，规范为 `eagler-touhou/package/1`、game/target为th128；配套解压目录根有package.json。首版提供中文与原WAV/PCM，不广告尚未交付的JA/English/OGG/MIDI。
+资源 ZIP 根目录有 package.json，共12个资源文件：
 
-布局标识：`sha256-bd7ec34789cf733f6a04d0abe34364aca179f663e2b6956db615af4e917b7eed`。
-Runtime核心代次：`b7f885be544802659eda1848a86bd9ee964a985f13b73d9a4705df2d9b25e744`。
+```text
+package.json
+games/th128/th128.dat
+games/th128/music/ogg/th128_XX.ogg
+games/th128/language/lang_zh-hans.zip
+```
+
+主 DAT 是原始 TH128 归档，32336111字节，内容SHA-256为38be25a5f1b0bf5e88dd7f66e34e295338d6bb968794a1ff587337f46b3db045。Runtime实际解读THA1目录、解密并解压资源；没有把旧ZIP改名为DAT。音乐共19805929字节，保留原曲循环样本位置，采用Vorbis q5有损编码。中文补充ZIP为42729225字节，包含翻译差异及当前浏览器所需的派生纹理/字形/元数据。音效从DAT读取，包内不重复放展开WAV背景音乐。
+
+格式为eagler-touhou/package/1，作品和Runtime目标均为th128。dataLayout为独立的挂载规范身份：sha256-58cd45fe7cac9af281d9de993a527ccfbbe6f27b89bcd0ca98a7031333fce200，不能与DAT内容摘要混用。共享字体仅在本作实际需要时添加；此包使用已准备的字形资源。
 
 ## 启动
 
-解压 Runtime，运行其中的Start.ps1，资源路径默认使用相邻的resource-package-v1/extracted。路径不同时：
-```powershell
-powershell -ExecutionPolicy Bypass -File .\Start.ps1 -Package "资源包解压目录"
-```
-随后打开终端显示的地址，默认 `http://127.0.0.1:8138/play.html`。需要Python3.11+和支持WebAssembly/WebGL的浏览器。启动先校验资源文件，不修改旧8128页面、Windows原版或其它来源的存档。
+解压 Runtime ZIP，运行 Start.ps1，打开窗口显示的本地地址（默认 http://127.0.0.1:8138/play.html）。在页面选择资源ZIP，等待校验后点击“开始游戏”。同一地址下的已安装资源会在以后启动时重新读取。资源ZIP也另附逐文件完全相同的解压目录。
 
-## 已验证
+需要本机Python3和支持WebAssembly、OGG、浏览器本地存储的环境。端口被占用可运行 Start.ps1 -Port 8148；不同端口使用各自的浏览器存储。此版本不连接外网下载游戏资源。
 
-- 661：生成器11项组件测试通过。660首失败仅为测试将追加文件造成的size-mismatch误期望为hash-mismatch；新号修正并另加同大小篡改检查，产品模块未变。
-- 662：生成真实738文件资源ZIP与完全匹配解压目录；独立Python zipfile逐文件CRC、SHA及大小全部通过。
-- 664：生成Runtime108目录与ZIP；实际临时HTTP服务核对核心字节、中文catalog、原标题ANM、结局资源和WAV206分段响应。服务器在finally关闭，0Factory/0World/0浏览器；663在准入前因路径分隔符不一致失败，未执行组装。
-- 首版启动页移除已过时的“EX未完成”等描述，开发工具默认折叠。
+## 实际验证
 
-## 接续
+- 671：原日文、中文DAT各199个资源的大小和SHA全部匹配既有独立提取清单；损坏输入、预算及读取对象隔离通过。
+- 674：生成12文件资源ZIP和匹配解压目录；独立Python逐项CRC、SHA、DAT身份、OGG压缩方式及中文ZIP内部映射验证通过。
+- 676：新消费者实际从此包提供全部738个既有网页资源绑定，逐字节核对；GET/HEAD/Range、来源、取消和关闭保护通过。
+- 679：完整资源校验后保存单个ZIP Blob、全读回、重新打开、失败更新保留同一数据库旧版通过。IndexedDB边界为明确模拟，尚不代表真实浏览器持久化验收。
+- 681：实际Git模块37项检查通过；结局音乐从本包OGG经真实FFmpeg CPU解码，再进入生产结局PCM消费者，3086272帧与原循环位置保持；普通音乐及结局的模拟音频/严格收据检查通过。
+- 682：可移植源码测试47项及Runtime组装/HTTP检查共48项通过。HTTP核对导入页、核心完整SHA和WASM206响应；临时服务已关闭。0Factory、0World、0浏览器运行，核心108没有重编。
 
-浏览器内ZIP导入、独立资源IndexedDB安装、失败更新保旧版、安装后重开与离线启动正在接入。当前可使用已校验的解压资源直接启动；上述HTTP验证不冒浏览器已打开或整局验收。
+浏览器完整导入/重新打开、完整终局及物理音频仍单列验收，不把CPU或HTTP检查写成实机结果。六线＋EX功能完成结论保持。
 
-固定上游启动器的产品catalog尚无th128项；本包使用TH128配套Runtime扩展目标，不能声称上游原版启动器已经识别安装。后续提供相应注册/接入，不通过改名TH12数据来伪造支持。
+固定上游启动器catalog尚未注册th128；本交付提供配套TH128 Runtime扩展目标和同规范资源包，不宣称未修改的上游启动器已完成导入。源码Git与原作资源/JS-WASM产物分开交付。旧WAV版本仅保留历史记录。
 
-源码仓库不附带原作资源和WASM二进制；上述两个ZIP与资源解压目录单独交付。额外原版录像、字体、设备等问题继续独立改进，不回退已完成的六线＋EX功能结论。
+开发用checkpoint面板依赖的旧代次索引不在本资源包内，普通游戏路径不依赖它。安装过程会完整解码并校验资源后提交，峰值内存和单个93MB Blob在真实浏览器中的存储表现仍待下一环境验收。切换资源包或启动失败后需要重新打开页面。

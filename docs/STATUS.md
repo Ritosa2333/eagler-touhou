@@ -76,3 +76,9 @@
 还原/移植新增653/private107：原版正常X门读取holding字而非pressed；652真实106在holding2/pressed0时未激活，653移除额外fresh-press/latch并改真实caller使用holding，44项组件和完整WorldExports语法检查通过。654首次链接107，655实际1Factory/4World/11tick：neutral与pressedOnly不激活，heldOnly与heldPressed激活，flags7/7/71/71、charge10000/10000/0/0，继续held三帧未重复消费，RNG34772/0保持。ECL、音频输出/收据存储为明确模拟，未运行原作整局或完整phase；死炸、mode180再次触发与617兼容仍独立待验。见[652–655记录](native-perfect-held652-655.md)。
 
 还原/移植新增657/private108：656实际107完整181tick复现激活46play和51play缺失，phase120的47/69/51stop及phase180的71均已存在且各一次通过。657仅WorldExports.cpp增加4行容量保护与有序46→51播放请求，13项真实Host/完整提取调用块组件通过；658首次链接，659实际同7项全部通过，6个请求顺序和坐标精确，RNG34772/0、record/taint/infinitefalse。输出/收据存储模拟；容量拒绝为Host提交后的fail-stop，非回滚，未验证allocation异常原子性。完整phase、mode180再次触发、死炸和617兼容仍待验。见[656–659记录](native-perfect-sound656-659.md)。
+
+## 2026-11-16 DAT＋OGG交付更新
+
+按用户指定TH15布局，新的12资源文件ZIP为93317333字节，配套Runtime108 ZIP为3144120字节，并附匹配解压目录。主数据为原th128.dat，10首背景音乐为OGG；旧344939528字节的展开WAV包被替代。源码包含真实DAT解读、738网页资源映射、ZIP完整检查、单Blob安装/重开及OGG普通/结局消费者；验收详情见[网页交付](WEB_DELIVERY.md)。
+
+六条普通路线＋EX功能基线保持完成。671/674/676/679/681/682新目的测试通过，最后一轮为47源码测试＋1组装/HTTP检查；无新核心编译、World或浏览器执行。真实浏览器持久化/完整终局和物理音频保持独立待验。

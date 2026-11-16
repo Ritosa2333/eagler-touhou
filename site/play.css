@@ -91,3 +91,10 @@ main{max-width:1328px}.screen{max-width:1280px}
 
 /* Keep the1280x960 canvas content box at native size; outline does not resample it. */
 .screen{border:0;outline:1px solid #233444}
+
+#resource-loader{max-width:760px;margin:40px auto;padding:24px;background:#101b2d;border:1px solid #344b6e;border-radius:12px;color:#edf3ff}
+#resource-loader h1{margin-top:0;font-size:24px}
+#resource-loader .resource-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:20px 0}
+#resource-loader input{max-width:100%}
+#resource-loader button{padding:8px 18px}
+#resource-loader [role="status"]{line-height:1.7;overflow-wrap:anywhere}

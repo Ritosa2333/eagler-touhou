@@ -1,3 +1,4 @@
+import {fetchResource} from '../resource-fetch.mjs';
 import {argbColor, quadVertices, nativeRecordPriority,applyWorldShake,triangleStripVertices,circleFanVertices,circleLineVertices,ringStripVertices,decodeDrawBuffer,nativeQuadColors,selector3QuadVertices} from './draw.mjs';
 import {safeAssetUrl} from '../inspector.mjs';
 const scalar=Math.fround;
@@ -341,7 +342,7 @@ export class WebGlRenderer {
       if(previous)this.releaseTexture(key);
       if((this.textureBytes??0)+logicalBytes>256*1024*1024)throw new Error('Texture memory budget exceeded');
       if (this.disposed || signal?.aborted) throw new DOMException('Aborted','AbortError');
-      const response = await fetch(sourceUrl,{signal});
+      const response = await fetchResource(sourceUrl,{signal});
       if (!response.ok) throw new Error(`纹理读取失败：${entry.name}`);
       const bitmap = await createImageBitmap(await response.blob(), {premultiplyAlpha:'none',colorSpaceConversion:'none'});
       let texture=null;

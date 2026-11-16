@@ -1,3 +1,4 @@
+import {fetchResource} from '../resource-fetch.mjs';
 export class StageMusic {
   constructor(context,gain){this.context=context;this.gain=gain;this.output=context.createGain();this.output.gain.value=1;this.output.connect(gain);this.track=null;this.buffer=null;this.source=null;this.fade=null;this.disposed=false;this.preloaded=new Map();}
   async load(tracks,base,resolveUrl,{signal,tracks:names=['th128_00.wav']}={}){
@@ -9,10 +10,14 @@ export class StageMusic {
     const selected=tracks.filter(track=>track.name===name);
     if(selected.length!==1||!/^th128_\d\d\.wav$/.test(name))throw new Error('Original stage music metadata is unavailable');
     const track=selected[0];
-    if(track.file!==`music/${name}`||!Number.isFinite(track.loopStart)||!Number.isFinite(track.loopEnd)
+    const oggFile=`music/ogg/${name.slice(0,-4)}.ogg`;
+    const isOgg=track.file===oggFile;
+    if(!(track.file===`music/${name}`||isOgg)||!Number.isFinite(track.loopStart)||!Number.isFinite(track.loopEnd)
       ||track.loopStart<0||track.loopEnd<=track.loopStart||track.loopEnd>600||track.sampleRate!==44100||track.channels!==2)
       throw new Error('Invalid original music loop metadata');
-    const response=await fetch(resolveUrl(base,track.file),{signal});
+    if(isOgg&&(track.codec!=='vorbis'||!Number.isSafeInteger(track.bytes)||track.bytes<1||!/^[0-9a-f]{64}$/.test(track.sha256)))
+      throw new Error('Invalid original OGG music file receipt');
+    const response=await fetchResource(resolveUrl(base,track.file),{signal});
     if(!response.ok)throw new Error('Original stage music asset unavailable');
     const buffer=await this.context.decodeAudioData(await response.arrayBuffer());
     if(this.disposed||signal?.aborted)throw new DOMException('Aborted music decoding','AbortError');
@@ -139,7 +144,7 @@ export class GameSoundQueue {
   async load(bindings,base,resolveUrl,{signal}={}){
     for(const [identifier,sound] of Object.entries(bindings.sounds??{})){
       if(!/^[0-9]+$/.test(identifier)||!/^se_[A-Za-z0-9_-]+\.wav$/.test(sound.name)||!Number.isInteger(sound.volumeRaw))throw new Error('Invalid prepared native sound binding');
-      const response=await fetch(resolveUrl(base,`sounds/${sound.name}`),{signal});
+      const response=await fetchResource(resolveUrl(base,`sounds/${sound.name}`),{signal});
       if(!response.ok)throw new Error(`Original sound asset unavailable: ${sound.name}`);
       const buffer=await this.context.decodeAudioData(await response.arrayBuffer());
       if(this.disposed||signal?.aborted)return;
