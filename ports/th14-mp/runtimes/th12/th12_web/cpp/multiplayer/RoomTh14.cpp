@@ -122,7 +122,9 @@ std::array<u32,8> th14_room_status(const GameSession& session,u32 next){
     }
     add(world,b->spell_flags);add(world,u32(b->spell_id));add(world,u32(b->spell_bonus));add(world,u32(b->spell_elapsed));
     add(world,u32(b->economy.th14_point_items));
-    add(world,u32(b->coop_bomb_invincibility.current));add(world,u32(b->coop_knife_owner));add(world,u32(b->items.th14_poc_owner));
+    add(world,u32(b->coop_bomb_invincibility.current));
+    add(world,u32(b->coop_bomb_invincibility.current>0&&b->coop_bomb_sakuya_b));
+    add(world,u32(b->coop_knife_owner));add(world,u32(b->items.th14_poc_owner));
     add(world,u32(b->control_frame()));add(world,float_bits(session.animations.rate));
     const auto rng=[&](const Rng& r){add(world,r.seed_value());add(world,r.call_count());};
     rng(session.animations.visual_rng);rng(session.animations.script_rng);

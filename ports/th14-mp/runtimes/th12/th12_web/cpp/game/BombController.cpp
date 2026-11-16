@@ -249,7 +249,7 @@ i32 BombController::tick(){
             if(player.state.life_state==4){
                 if(!create(state.auxiliary,19,true))return -2;interrupt(state.animation,2);
                 player.state.state_timer.set(60,&animations.rate);player.state.life_state=1;
-                state.active=1;state.th14_mode=1;state.elapsed.set(0,&animations.rate);invincible(120);player.th14_scale.flags&=~8u;
+                state.active=1;state.th14_mode=1;state.elapsed.set(0,&animations.rate);invincible(120,false);player.th14_scale.flags&=~8u;
                 if(!sound(66,true))return -2;
             }else{
                 const i32 t=state.elapsed.current;if(t<60)player.motion.state.th14_movement_factor=0;else if(t==120)state.active=2;

@@ -74,8 +74,10 @@ bool GameBattle::coop_bomb_available(u32 seat)const{
 
 void GameBattle::th14_bomb_invincibility(i32 frames){
     if(coop_seats==1)return;
-    if(coop_bomb_invincibility.current<frames)
+    if(coop_bomb_invincibility.current<frames){
         coop_bomb_invincibility.set(frames,&animations.rate);
+        coop_bomb_sakuya_b=pilot_bomb(coop_actor)->selection==5;
+    }
 }
 
 bool GameBattle::th14_knife_slowdown(Enemy& enemy,float delta){
@@ -322,15 +324,8 @@ i32 GameBattle::th14_collision_all(Vec3 origin,const std::function<PlayerCollisi
 
 bool GameBattle::coop_damage(const EnemyState& e,Vec3 position,const Vec2* size,float radius,float angle,i32& out,bool probe,bool* contact){
     const bool boss=(e.flags&0x40800000u)!=0;
-    const bool team_bomb=coop_bomb_invincibility.current>0;
-    // Stage 6's two closing cards and Raiko's Extra boss phase resist Bombs.
-    const bool immune=boss&&((resources.stage_number==6&&(spell_flags&1)&&spell_id>=0x64&&spell_id<=0x6b)||
-                             resources.stage_number==7);
-    float shot_ratio=1.f,bomb_ratio=1.f;
-    if(team_bomb){
-        shot_ratio=immune?0.f:(coop_seats==2?.4f:.2f);
-        bomb_ratio=immune?0.f:(coop_seats==2?.65f:.25f);
-    }
+    const auto ratios=th14_coop_damage_ratios(coop_seats,coop_bomb_invincibility.current>0,coop_bomb_sakuya_b,
+        boss&&(spell_flags&1),resources.stage_number,spell_id);
     i32 total=0;u32 live=0;if(contact)*contact=false;
     for(u32 seat=0;seat<coop_seats;++seat)if(pilot_live(seat)){
         ++live;CoopActor actor(*this,seat);
@@ -338,7 +333,7 @@ bool GameBattle::coop_damage(const EnemyState& e,Vec3 position,const Vec2* size,
         i32 damage=0;bool bomb_hit=false;
         if(!p.shots.damage_th14(position,size,radius,angle,timer.previous!=timer.current,pilot_economy(seat),damage,
             u32(e.instance_id),u32(e.instance_id),e.script_owner,probe,
-            contact?&bomb_hit:nullptr,bomb_ratio,shot_ratio))return false;
+            contact?&bomb_hit:nullptr,ratios.bomb,ratios.shot))return false;
         if(p.state.life_state==0||p.state.life_state==2)damage/=5;
         total=wrapping_add(total,damage);if(contact)*contact|=bomb_hit&&damage>0;
     }
