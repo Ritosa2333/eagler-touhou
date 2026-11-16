@@ -1,4 +1,5 @@
 import {fetchResource,isImportedResourceMode} from './resource-fetch.mjs';
+import {readWorldDrawRecords} from './runtime/world-presentation.mjs';
 import {QualificationOwner,evaluateOwnedQualification,EX_QUALIFICATION_SCHEMA} from './runtime/ex-qualification.mjs';
 import {loadOriginalType33ForWorld,originalType33Profile} from './runtime/original-bullet-type33.mjs';
 const {assertStageStartAllowed,mountExtraMenu,setDebugExtraSaveEligibility,setOwnedExtraSaveEligibility,readCurrentExtraAccess,requestNormalExtraStart}=(()=>{
@@ -960,12 +961,13 @@ function captureHighFramerateWorld(){
     highFramerateOwner={module:state.module,selection:state.stageSelection,background:state.background};
   }
   const raw=readNativeWorldPresentation();
-  const captured=highFramerateHistory.capture({generation:highFramerateGeneration,stage:state.stageSelection?.stage.id,frame:raw.world.frame,
+  const capture=typeof highFramerateHistory.captureOwned==='function'?highFramerateHistory.captureOwned.bind(highFramerateHistory):highFramerateHistory.capture.bind(highFramerateHistory);
+  const captured=capture({generation:highFramerateGeneration,stage:state.stageSelection?.stage.id,frame:raw.world.frame,
     records:raw.records,background:state.background?.geometry()??[]});
   highFramerateRaw=raw;return captured;
 }
 function readNativeWorldPresentation(){
-  const module=state.module,records=state.extraPresentation?.draws??JSON.parse(module.UTF8ToString(module._th128_world_bullet_draws()));
+  const module=state.module,records=state.extraPresentation?.draws??(typeof readWorldDrawRecords==='function'?readWorldDrawRecords(module,{fastNumbers:true}):JSON.parse(module.UTF8ToString(module._th128_world_bullet_draws())));
   const drawError=module.UTF8ToString(module._th128_world_bullet_draw_error());if(drawError)throw new Error(drawError);
   const stageError=stageIntroDrawFailure(module);if(stageError)throw new Error(stageError);
   const world=JSON.parse(module.UTF8ToString(module._th128_world_state()));
@@ -981,7 +983,7 @@ function highFramerateWorldView(world,records,alpha=1){
   const current={records,background:state.background,interpolated:false};
   if(!highFramerateEligible()){resetHighFrameratePresentation();return current;}
   if(!highFramerateOwnerMatches()){resetHighFrameratePresentation();return current;}
-  const sample=highFramerateHistory.sample(alpha);
+  const sample=typeof highFramerateHistory.sampleForDraw==='function'?highFramerateHistory.sampleForDraw(alpha):highFramerateHistory.sample(alpha);
   if(!sample||sample.frame!==world.frame)return current;
   return {records:sample.records,background:state.background?{geometry:()=>sample.background}:null,interpolated:alpha<1};
 }
@@ -3706,10 +3708,8 @@ function maybeAutoHandoff(){
   state.pendingCarryToken=token;selection.carryToken=token;
   state.active=false;state.paused=true;clock.reset();resetHighFrameratePresentation();state.pressed.clear();worldMovementInput(0,state.shotMode?761:240);
   if(state.audio?.state==='running')state.audio.suspend().catch(()=>{});
-  find('#runtime-overlay-title').textContent='正在进入下一关';
-  find('#runtime-overlay-message').textContent=`已捕获跨关状态，正在预加载 stage ${selection.stage.id}…`;
-  find('#resume-session').hidden=true;find('#runtime-overlay').hidden=false;
-  status(`已捕获跨关 token，正在预加载 stage ${selection.stage.id}…`);
+  find('#runtime-overlay').hidden=true;
+  status('正在进入下一关…');
   (async()=>{
     await checkWorld(true,true,true,selection);
     if(generation!==state.handoffGeneration)return;
@@ -4342,7 +4342,6 @@ window.th128Debug={
         const pose=spell.pose,title=new TextDecoder(find('#variant').value==='ja'?'shift_jis':'gbk',{fatal:true}).decode(Uint8Array.from(spell.title));
         if(find('#variant').value==='zh'){drawOriginalStageText(context,state.stageTextRasters,{kind:'spell',rawHex:spell.title.map(value=>value.toString(16).padStart(2,'0')).join(''),x:pose.x,y:pose.y,sx:pose.sx,sy:pose.sy,alpha:(pose.color>>>24)/255,outlineAlpha:(pose.color>>>24)/255,align:'right'});}else{context.save();context.translate(pose.x,pose.y);context.scale(pose.sx,pose.sy);context.globalAlpha=(pose.color>>>24)/255;context.font='18px "Microsoft YaHei","Yu Gothic",sans-serif';context.textAlign='right';context.lineWidth=3;context.strokeStyle='#101018';context.fillStyle='#fff';context.strokeText(title,0,0);context.fillText(title,0,0);context.restore();}
       }
-      if(spell?.resultFrames){context.font=find('#variant').value==='zh'?`400 20px ${originalStageTextFamily('zh')}`:'20px "Microsoft YaHei",sans-serif';context.textAlign='center';context.fillStyle=spell.captured?'#fff5a0':'#d9e5ee';context.fillText(spell.captured?`Spell Card Bonus ${spell.resultBonus}`:'Spell Card Failed',320,140);}
       context.resetTransform();
     }
     syncGameplayMusicState(message);

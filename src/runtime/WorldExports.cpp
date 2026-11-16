@@ -442,6 +442,7 @@ unsigned postrunPresented=0,postrunMediaACKs=0;
 auto& spellVisuals=ownedBattle.spellVisuals;bool spellsConfigured=false;
 th128::spell::Result spellResult;
 int spellResultFrames=0;
+std::optional<double> spellStartSeconds;
 
 bool syncPerfectCharge(std::string& error) {
     if(!perfectConfigured||!perfectHost)return true;
@@ -1072,6 +1073,27 @@ bool tickOrdinaryTerminal(std::string& error){
     return true;
 }
 
+bool worldPacketCapturing=false;
+std::vector<std::array<double,39>> worldPacketRows;
+std::array<double,8> worldPacketHeader{};
+std::optional<unsigned> appendWorldPacket(std::uint32_t identifier,int bank,const th128::anm::State& state,
+ const th128::anm::SpriteInfo& sprite,float x,float y,float z,bool unified,const char* surface,const char* pass,bool primary=false){
+ if(!worldPacketCapturing)return std::nullopt;
+ static constexpr std::array<const char*,15> passes{nullptr,"hostile-bullets","hostile-lasers","player","items","frozen-bullets","original-percent-hud","original-freeze-reward-panel","original-fps","original-menu-font0","original-pause-shade","original-pause-backdrop","original-pause-front","playerShotGroup","original-spell-bonus"};
+ int passCode=0,surfaceCode=0;
+ if(pass){for(int i=1;i<int(passes.size());++i)if(std::strcmp(pass,passes[std::size_t(i)])==0){passCode=i;break;}if(!passCode)return std::nullopt;}
+ if(surface){surfaceCode=std::strcmp(surface,"stage")==0?1:std::strcmp(surface,"main")==0?2:0;if(!surfaceCode)return std::nullopt;}
+ if(worldPacketRows.size()>=65536)throw std::runtime_error("World sprite packet row budget exceeded");
+ const auto width=state.spriteWidth<0?sprite.width:state.spriteWidth,height=state.spriteHeight<0?sprite.height:state.spriteHeight;
+ const unsigned index=unsigned(worldPacketRows.size());
+ worldPacketRows.push_back({double(identifier),0,double(bank),double(state.sprite),double(sprite.textureEntry),double(state.layer),double(state.mode),
+  double(state.anchorX),double(state.anchorY),double(state.blend),double(state.flags),double(state.flags2),double(state.primary),double(state.secondary),
+  double(state.script),double(state.clock),double(state.ticks),double(width),double(height),double(x),double(y),double(z),double(state.rotation),double(state.sx),double(state.sy),
+  double(state.u),double(state.v),double(state.uvScaleX),double(state.uvScaleY),double(sprite.u0),double(sprite.v0),double(sprite.u1),double(sprite.v1),double(state.rx),double(state.ry),
+  unified?1.:0.,double(surfaceCode),double(passCode),primary?1.:0.});
+ return index;
+}
+
 template<class Writer>
 bool writeVisualRecord(Writer& text,bool& comma,std::uint32_t identifier,int bank,
                        const th128::anm::State& state,const th128::anm::SpriteInfo& sprite,float pixelX,float pixelY,float pixelZ,
@@ -1093,6 +1115,9 @@ bool writeVisualRecord(Writer& text,bool& comma,std::uint32_t identifier,int ban
                 presentationError="Non-finite original526 vertex";return false;
             }
         }
+    }
+    if(!mesh&&!fan&&!ring)if(const auto packed=appendWorldPacket(identifier,bank,state,sprite,pixelX,pixelY,pixelZ,unifiedEffect,surface,drawPass)){
+        if(comma)text<<',';comma=true;text<<*packed;return true;
     }
     if(comma)text<<',';comma=true;
     text<<"{\"id\":"<<identifier<<",\"parent\":0,\"bank\":"<<bank<<",\"sprite\":"<<state.sprite
@@ -1282,7 +1307,7 @@ void th128_world_reset() {
     if(ownedBattle.attempted()){operationError="retired battle manager cannot be reset through the old gameplay API";return;}
     battleEndingRuntime15=std::make_unique<th128::ending::Runtime15>();ordinaryDetachedEnding.reset();endingRuntimeSnapshot.clear();
     beginNewWorldGeneration();
-    spellVisuals=std::make_unique<th128::spell::Visuals>();spellsConfigured=false;spellResult={};spellResultFrames=0;
+    spellVisuals=std::make_unique<th128::spell::Visuals>();spellsConfigured=false;spellResult={};spellResultFrames=0;spellStartSeconds.reset();
     messages=std::make_unique<th128::message::Host>();messageVisuals=std::make_unique<th128::message::Visuals>();messagesConfigured=false;messageFrontConfigured=false;messageMusicSerial=0;resetRouteChoice();resetStageTransition();resetMusicControl();
     world=std::make_unique<th128::StageWorld>();laserLines=std::make_unique<th128::laser::LineHost>();operationError.clear();snapshot.clear();
     bulletAnimations.clear();bulletVisuals=std::make_unique<th128::bullet::BulletVisuals>();bulletDraws.clear();
@@ -1924,7 +1949,7 @@ int th128_world_start(const char* name,std::uint32_t nameLength,int difficulty,u
             operationError="original fresh session7 actual construction or owner commit failed";return 0;
         }
     }else if(!world->start(identifier,difficulty,std::uint16_t(seed)))return 0;
-    spellVisuals=std::make_unique<th128::spell::Visuals>();spellsConfigured=false;spellResult={};spellResultFrames=0;
+    spellVisuals=std::make_unique<th128::spell::Visuals>();spellsConfigured=false;spellResult={};spellResultFrames=0;spellStartSeconds.reset();
     laserLines=std::make_unique<th128::laser::LineHost>();
     beginNewWorldGeneration();
     worldStartedName=identifier;worldStartDifficulty=difficulty;currentStageProgress=0;
@@ -2313,6 +2338,7 @@ int th128_world_load_score_font(const void* bytes,unsigned size){
     if(world->faulted()||world->frame()!=0||!th128::runtime::inputRange(bytes,size)||size>8u*1024u*1024u){operationError="score font requires fresh original ascii bank";return 0;}
     if(!enemyVisuals->load(11,bytes,size,operationError))return 0;
     if(!scoreFont.loadBank(11,static_cast<const std::uint8_t*>(bytes),size,operationError))return 0;
+    if(perfectHudConfigured&&!perfectHud->loadScoreFont({static_cast<const std::uint8_t*>(bytes),size},operationError))return 0;
     scoreFontLoaded=true;return 1;
 }
 int th128_world_enable_player_death(int awardSelector){
@@ -3319,6 +3345,7 @@ int th128_world_enable_spells(const void* bullet,unsigned bulletSize,const void*
                 else if(debugRecordPrefix.worldBound&&debugRecordPrefix.generation==worldGeneration)
                     medals=th128::record::NativeScoreProfile::spellMedals(debugRecordPrefix.profile,event.state.id);
             }catch(const std::exception& failure){error=failure.what();return false;}
+            spellStartSeconds=normalReplay?std::optional<double>(normalReplayClock):std::nullopt;
             spellResultFrames=0;if(!spellVisuals->start(event.position,error,medals))return false;
             if(normalRecord&&normalRecord->started()&&!debugRunTainted&&!replayPlayback.active()){
                 try{normalRecord->beginSpell(event.state.id,event.title);}
@@ -3331,6 +3358,9 @@ int th128_world_enable_spells(const void* bullet,unsigned bulletSize,const void*
             try{normalRecord->endSpell(event.state.id,event.state.flags);}
             catch(const std::exception& failure){error=failure.what();return false;}
         }
+        if(!perfectHudConfigured||!perfectHud->spellResult(event.result.notice,event.result.bonus,error))return false;
+        const auto elapsed=normalReplay&&spellStartSeconds?std::optional<double>(normalReplayClock-*spellStartSeconds):std::nullopt;
+        if(!perfectHud->spellTimes(unsigned(std::max(event.state.age,0))+1,elapsed,error))return false;
         spellResult=event.result;spellResultFrames=120;
         scoreRaw=int(std::min<std::int64_t>(999999999,std::int64_t(scoreRaw)+event.result.rawScore));
         if(event.result.captured)grazeSounds.push_back({48,0});return true;
@@ -4407,6 +4437,12 @@ const char* th128_world_bullet_draws() {
         if(!std::all_of(scalars.begin(),scalars.end(),[](float value){return std::isfinite(value);})) {
             presentationError="Non-finite bullet presentation value";bulletDraws="[]";return bulletDraws.c_str();
         }
+        if(worldPacketCapturing){
+            auto packedState=*state;packedState.rotation=*rotation;
+            if(const auto packed=appendWorldPacket(bullet.id,th128::bullet::BulletVisuals::BankId,packedState,*sprite,pixelX,pixelY,pixelZ,false,nullptr,"hostile-bullets",true)){
+                if(comma)text<<',';comma=true;text<<*packed;continue;
+            }
+        }
         if(comma)text<<',';comma=true;
         text<<"{\"id\":"<<bullet.id<<",\"drawPass\":\"hostile-bullets\",\"parent\":0,\"bank\":"<<th128::bullet::BulletVisuals::BankId
             <<",\"sprite\":"<<state->sprite<<",\"entry\":"<<sprite->textureEntry<<",\"layer\":"<<state->layer
@@ -4471,7 +4507,7 @@ const char* th128_world_bullet_draws() {
     if(perfectHudConfigured)for(const auto& node:perfectHud->snapshots()){
         const auto& state=node.state;
         if(!state.visible||!(state.flags&2u)||state.deleteRequested||!node.sprite)continue;
-        if(!writeVisualRecord(text,comma,7000000u+node.id,5,state,*node.sprite,node.x,node.y,node.z)){
+        if(!writeVisualRecord(text,comma,7000000u+node.id,state.spriteBank,state,*node.sprite,node.x,node.y,node.z)){
             bulletDraws="[]";return bulletDraws.c_str();
         }
     }
@@ -4794,6 +4830,19 @@ const char* th128_world_debug_record_presentation(unsigned epoch) {
     return debugRecordPresentationSnapshot.c_str();
 }
 
+const void* th128_world_draw_packet(){
+    if(worldPacketCapturing){presentationError="World draw packet reentered";return nullptr;}
+    struct Guard{Guard(){worldPacketCapturing=true;}~Guard(){worldPacketCapturing=false;}} guard;
+    worldPacketRows.clear();worldPacketHeader.fill(0);
+    try{
+        th128_world_bullet_draws();
+        if(!presentationError.empty())return nullptr;
+        worldPacketHeader={double(0x54483131u),1,double(worldPacketRows.size()),39,
+            double(reinterpret_cast<std::uintptr_t>(worldPacketRows.data())),
+            double(reinterpret_cast<std::uintptr_t>(bulletDraws.data())),double(bulletDraws.size()),0};
+        return worldPacketHeader.data();
+    }catch(const std::exception& failure){presentationError=failure.what();return nullptr;}
+}
 const char* th128_world_bullet_draw_error(){return presentationError.c_str();}
 unsigned th128_world_sound_epoch(){return soundJournalSealed?0:soundJournalEpoch;}
 unsigned th128_world_sound_base_low(){return unsigned(soundJournalBase&0xffffffffu);}

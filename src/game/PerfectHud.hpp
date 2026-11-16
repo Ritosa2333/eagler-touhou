@@ -14,6 +14,9 @@ class PerfectHud {
 public:
     bool load(std::span<const std::uint8_t> bytes,std::string& error);
     bool boot(int charge,std::string& error);
+    bool loadScoreFont(std::span<const std::uint8_t> bytes,std::string& error);
+    bool spellResult(int notice,int bonus,std::string& error);
+    bool spellTimes(unsigned frames,std::optional<double> seconds,std::string& error);
     bool charge(int value,std::string& error);
     bool rank(int value,std::string& error);
     void score(int value){score_.update(value);}
@@ -28,6 +31,9 @@ private:
     std::string failure_;
     int rank_=-1;
     OriginalScoreDisplay score_;
+    unsigned resultTicks_=0;
+    std::optional<double> resultSeconds_;
+    bool resultTimes_=false;
     bool fail(std::string reason,std::string& error);
     bool checked(std::string& error);
     void runtime();

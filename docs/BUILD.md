@@ -4,7 +4,7 @@
 
 ## 原生核心
 
-private110使用Emscripten 4.0.22，case731首次完整链接通过。case732实际加载同一产物，1个Factory、8个World、1200次tick验证原版符卡Bonus数字和八种金银铜奖牌记录组合；每个World完成150帧实际录制。730通过35项原资源组件检查及完整WorldExports语法检查，728通过90项前端回归。`build/private110.rsp`是首次成功参数的相对路径转换，输出为`build/local/core.mjs`。旧private100至109配方保留为历史资料；成功核心不重编。
+private112使用Emscripten4.0.22，766首次完整链接，767实际符卡结束显示通过。Typed World绘制通道在111的761实测逐字段与最终Float32上传一致，CPU数据传递开销减少约66–71%；112只修时间字形visible位。226源文件、83翻译单元、206导出，新增可选_th128_world_draw_packet。`build/private112.rsp`为最后成功参数的相对路径配方，旧核心不重编。
 
 它保留 83 个翻译单元、205 个导出符号、1 MiB 栈、64 MiB 初始内存、C++20、异常与浮点选项。源文件摘要记录在 `docs/native-source-manifest.json`。
 
@@ -12,12 +12,12 @@ private110使用Emscripten 4.0.22，case731首次完整链接通过。case732实
 
 ```powershell
 New-Item -ItemType Directory -Force build/local
-emcc '@build/private110.rsp'
+emcc '@build/private112.rsp'
 ```
 
-本源码检出目录中的相对路径配方完成了文件与参数核对；private110的实际构建在隔离验收目录完成。此前private100的浏览器检查作为历史证据保留，不能视为110已完成浏览器验收。构建输出不会自动发布到浏览器，也不承诺跨机器生成完全相同的二进制摘要。
+本源码检出目录中的相对路径配方完成了文件与参数核对；private112的实际构建在隔离验收目录完成。此前private100的浏览器检查作为历史证据保留，不能视为112已完成浏览器验收。构建输出不会自动发布到浏览器，也不承诺跨机器生成完全相同的二进制摘要。
 
-`tools/build-runtime.mjs` 是历史脚本，保留作研究参考；其导出清单和发布逻辑早于本快照，不作为private110的构建入口。
+`tools/build-runtime.mjs` 是历史脚本，保留作研究参考；其导出清单和发布逻辑早于本快照，不作为private112的构建入口。
 
 ## 原作资源
 
@@ -56,3 +56,5 @@ python -X utf8 tools/prepare.py --original '你的原作安装目录' --thtk '�
 普通Perfect激活声音修复的当前测试位于`tests/perfect-activation-sound/`：fixture与实际生产块提取文件为657执行源码，actual-phase-requests.cjs为656/659相同测试源码。组件使用真实Host与明确模拟的World/Hit/Ice/HUD/请求容器，实际WASM使用原资源及合成ECL/输出/收据边界。完整本地准入记录不随仓库分发；历史成功目录不得覆写或重跑，详见`docs/native-perfect-sound656-659.md`。
 
 符卡显示当前测试在`tests/spell-hud/`：`fixture.cpp`为729/730相同35项源码，`actual-hud-matrix.cjs`为732实际8World源码，`draw.test.mjs`为可移植绘制优先级检查。无个人存档读取或修改。Runtime必须配套新`play.mjs`/`runtime/draw.mjs`；旧核心与新页面不可混配。资源DAT+OGGv2字节不变。见[符卡HUD修复](spell-hud-v6.md)。
+
+V7源码：`tests/performance/world-presentation.test.mjs`覆盖类型化数据、general9/中点舍入及自然跨关UI；`owned-presentation.test.mjs`覆盖内部快照借用与公共分离副本。`tests/native/stage-warning-victory.cpp`为765实际原资源组件源码，`tests/core112-victory.cjs`为767实际World源码。运行资料需各自原准入request。见[完整范围](package-v7.md)。

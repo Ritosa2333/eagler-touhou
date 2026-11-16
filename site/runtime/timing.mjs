@@ -72,11 +72,11 @@ function samePresentationIdentity(first,last){
   for(const key of presentationIdentityFields)if(first[key]!==last[key])return presentationKey(first)===presentationKey(last);
   return first.geometry?.kind===last.geometry?.kind&&first.geometry?.owner===last.geometry?.owner&&first.geometry?.column===last.geometry?.column;
 }
-function detachedPresentation(snapshot){
+function detachedPresentation(snapshot,owned=false){
   if(!snapshot||!Number.isSafeInteger(snapshot.generation)||snapshot.generation<1||!Number.isInteger(snapshot.stage)||snapshot.stage<1||snapshot.stage>16
     ||!Number.isSafeInteger(snapshot.frame)||snapshot.frame<0||!Array.isArray(snapshot.records)||snapshot.records.length>65536)
     throw new Error('Invalid display presentation snapshot');
-  const records=snapshot.records.map(cloneDisplayRecord);let vertices=0;
+  const records=owned?snapshot.records:snapshot.records.map(cloneDisplayRecord);let vertices=0;
   for(const record of records){
     if(!record||typeof record!=='object'||Array.isArray(record))
       throw new Error('Invalid display presentation record');
@@ -92,7 +92,7 @@ function detachedPresentation(snapshot){
     }
   }
   const detached={generation:snapshot.generation,stage:snapshot.stage,frame:snapshot.frame,records};
-  if(Object.hasOwn(snapshot,'background'))detached.background=detachedBackground(snapshot.background);
+  if(Object.hasOwn(snapshot,'background'))detached.background=owned?snapshot.background:detachedBackground(snapshot.background);
   return detached;
 }
 function jumpedPosition(first,last){
@@ -129,8 +129,10 @@ export class WorldPresentationInterpolator {
   #pairs=null;
   #deep=null;
   reset(){this.#previous=null;this.#current=null;this.#index=null;this.#pairs=null;this.#deep=null;}
-  capture(snapshot){
-    const next=detachedPresentation(snapshot),current=this.#current;
+  capture(snapshot){return this.#capture(snapshot,false);}
+  captureOwned(snapshot){return this.#capture(snapshot,true);}
+  #capture(snapshot,owned){
+    const next=detachedPresentation(snapshot,owned),current=this.#current;
     if(current&&current.generation===next.generation&&current.stage===next.stage&&current.frame===next.frame)return false;
     const consecutive=current&&current.generation===next.generation&&current.stage===next.stage&&next.frame===current.frame+1;
     const index=displayRecordIndex(next.records);
@@ -144,6 +146,10 @@ export class WorldPresentationInterpolator {
     const deep=next.records.map(record=>{for(const key in record)if(record[key]!==null&&typeof record[key]==='object')return true;return false;});
     this.#previous=consecutive?current:null;this.#pairs=pairs;this.#deep=deep;this.#index=index;
     this.#current=next;return true;
+  }
+  sampleForDraw(alpha){
+    if(alpha===1)return this.#current;
+    return this.sample(alpha);
   }
   sample(alpha){
     if(!Number.isFinite(alpha)||alpha<0||alpha>1)throw new Error('Invalid display interpolation phase');

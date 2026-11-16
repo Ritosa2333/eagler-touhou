@@ -299,7 +299,6 @@ void Host::capture() {
     int order = 0;
     for (const auto* node : ordered) {
         const auto& state = node->vm.state();
-        if (!firstStage_ && state.script == 2) continue;
         if (!node->alive || !state.visible || !(state.flags & 2u) || state.deleteRequested) continue;
         if (state.sprite < 0) {
             if (state.spriteBank < 0 && state.geometryCount == 0) continue;
