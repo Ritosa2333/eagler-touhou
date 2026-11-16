@@ -289,6 +289,7 @@ bool updateBulletWithKnownMisses(Birth& bullet,BulletVisuals& visuals,BulletVisu
                     catch(...){return failExtension("extension64 sound callback threw");}
                 }
                 bullet.extension64=step->next;bullet.speed=step->speed;bullet.angle=step->angle;bullet.state.velocity=step->velocity;
+                bullet.state.position=step->position;pending->next.position=step->position;
                 if(step->finished){bullet.state.activeExtensions&=~0x40u;finished=true;}
             }
             if(bullet.state.activeExtensions&0x100u){

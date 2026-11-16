@@ -1,4 +1,5 @@
 #include "CancellationEffects.hpp"
+#include <unordered_set>
 
 namespace th128::effects {
 namespace {
@@ -231,6 +232,7 @@ bool CancellationEffects::fail(std::string& error) {
     scene_.reset();
     roots_.clear();
     reservedNodes_ = 0;
+    unvalidatedMutation_ = false;
     return false;
 }
 
@@ -273,6 +275,85 @@ bool CancellationEffects::worldPose(const anm::Node& node, Pose& pose, size_t de
            std::isfinite(pose.sx) && std::isfinite(pose.sy) && std::isfinite(pose.rotation);
 }
 
+bool CancellationEffects::reconcileSpawned(Handle handle, size_t beforeNodes, bool& accepted) {
+    // Accepts only when this bind created exactly the root plus its physical
+    // childNext successors, all still owned and valid, and the reservation still
+    // covers them. Anything unproven returns accepted=false so the caller runs
+    // the unmodified full reconcile (same diagnostics, same failure text).
+    accepted = false;
+    const auto owned = roots_.find(handle);
+    const auto* root = scene_.find(handle);
+    if (owned == roots_.end() || !root || !root->alive || root->parent != 0)
+        return true;
+    const size_t afterNodes = scene_.nodes().size();
+    if (afterNodes < beforeNodes || afterNodes > reservedNodes_)
+        return true;
+    const size_t delta = afterNodes - beforeNodes;
+    if (delta == 0)
+        return true;
+    std::unordered_set<uint32_t> nodes;
+    nodes.insert(root->id);
+    for (const auto* child : scene_.children(root->id))
+        if (child) nodes.insert(child->id);
+    if (nodes.size() != delta)
+        return true;
+    for (const auto id : nodes) {
+        const auto at = scene_.nodes().find(id);
+        if (at == scene_.nodes().end())
+            return true;
+        const auto& node = *at->second;
+        if (!node.alive || node.owner != handle || node.detached || node.customGeometry ||
+            node.spriteRemap || node.beforeTick || node.onInterrupt)
+            return true;
+        const auto& state = node.vm.state();
+        if (node.vm.faulted() || !validState(state))
+            return true;
+        if ((state.visible && state.sprite < 0) ||
+            (state.sprite >= 0 && (state.spriteBank != BankId || !spriteInfo(state.sprite))))
+            return true;
+        if (state.ended || state.deleteRequested)
+            return true;
+        if (node.parent != 0) {
+            if (!nodes.contains(node.parent))
+                return true;
+            const auto parent = scene_.nodes().find(node.parent);
+            if (parent == scene_.nodes().end() || !parent->second->alive ||
+                parent->second->owner != handle)
+                return true;
+        }
+        Pose pose;
+        if (!worldPose(node, pose))
+            return true;
+    }
+    const size_t newNodes = nodes.size();
+    if (root->vm.state().script == 355) {
+        const auto bank = scene_.registry.bank(BankId);
+        if (!bank)
+            return true;
+        const auto diagnostic = root->vm.diagnostics();
+        if (diagnostic.pc > bank->scripts[355].commands.size() || diagnostic.pendingInterrupt ||
+            diagnostic.hasSavedTimer)
+            return true;
+        size_t required = newNodes;
+        for (size_t command = diagnostic.pc; command < bank->scripts[355].commands.size(); ++command) {
+            const auto& entry = bank->scripts[355].commands[command];
+            if (entry.op != 88) continue;
+            if (entry.mask != 0 || entry.words.size() != 1 || entry.words[0] != 354u)
+                return true;
+            ++required;
+        }
+        if (!required || required > owned->second.reservation)
+            return true;
+        reservedNodes_ -= owned->second.reservation - required;
+        owned->second.reservation = required;
+    } else if (newNodes > owned->second.reservation) {
+        return true;
+    }
+    unvalidatedMutation_ = false;
+    accepted = true;
+    return true;
+}
+
 bool CancellationEffects::reconcile(std::string& error) {
     if (!failure_.empty())
         return fail(error);
@@ -280,6 +361,7 @@ bool CancellationEffects::reconcile(std::string& error) {
         failure_ = "cancellation Scene node/reservation budget exceeded";
         return fail(error);
     }
+    unvalidatedMutation_ = false;
     for (const auto& [id, node] : scene_.nodes()) {
         if (node->vm.faulted() || node->detached || node->customGeometry || node->spriteRemap ||
             node->beforeTick || node->onInterrupt || !roots_.contains(node->owner) || !validState(node->vm.state())) {
@@ -394,10 +476,17 @@ std::optional<CancellationEffects::Handle> CancellationEffects::spawn(int script
     reservedNodes_ += reservation->second;
     configureRuntime();
     ExecutionGuard guard(executing_);
+    const size_t beforeNodes = scene_.nodes().size();
     const auto* node = scene_.bind(handle, handle, BankId, script, anm::Membership::Primary,
                                    x, y, {}, head, nullptr, 0, 0, layer, false, z);
     if (!node && failure_.empty())
         failure_ = "cancellation Scene root binding failed";
+    if (failure_.empty() && !unvalidatedMutation_) {
+        bool accepted = false;
+        reconcileSpawned(handle, beforeNodes, accepted);
+        if (accepted)
+            return handle;
+    }
     if (!reconcile(error))
         return std::nullopt;
     return handle;
@@ -430,6 +519,7 @@ bool CancellationEffects::setRootPositionInterpolation(Handle handle, float x, f
         return false;
     }
     node->vm.interpolatePosition(x, y, z, duration, mode);
+    unvalidatedMutation_ = true;
     return true;
 }
 
@@ -462,6 +552,7 @@ bool CancellationEffects::initializeNativeDrift(Handle handle, const std::array<
         }
     }
     node->vm.interpolatePosition(target[0], target[1], target[2], 30, 6);
+    unvalidatedMutation_ = true;
     return true;
 }
 
@@ -490,6 +581,7 @@ bool CancellationEffects::clear() {
     roots_.clear();
     reservedNodes_ = 0;
     failure_.clear();
+    unvalidatedMutation_ = false;
     return true;
 }
 

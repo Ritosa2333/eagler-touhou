@@ -61,12 +61,14 @@ private:
     size_t reservedNodes_ = 0;
     std::unordered_map<int, size_t> nodesPerScript_;
     bool executing_ = false;
+    bool unvalidatedMutation_ = false;
 
     void configureRuntime();
     uint32_t random32();
     bool ready(std::string& error) const;
     bool fail(std::string& error);
     bool reconcile(std::string& error);
+    bool reconcileSpawned(Handle handle, size_t beforeNodes, bool& accepted);
     bool phase(std::string& error);
     bool worldPose(const anm::Node& node, Pose& pose, size_t depth = 0) const;
     static bool validatePrograms(const anm::Registry& registry, std::unordered_map<int, size_t>& reservations,

@@ -5,7 +5,7 @@
 | 交付文件 | 字节 | SHA-256 |
 |---|---:|---|
 | th128-dat-ogg-5e3bcbd5ebb8b171.zip | 93317333 | f8eec6698f3ecdc94f6d64ce3413800a7558201d365e468e9c27ac61fc2504a5 |
-| th128-runtime108-dat-ogg-v4-1.zip | 3149669 | 6c3a14df179dd7f2668a09a9b7df499dafa4304cf63c68097b6ef0e3695f4b14 |
+| th128-runtime109-dat-ogg-v5.zip | 3265038 | d58ae34bd6c2b9fa0c5bc0f83051d210dc673d237f093080fed7fa01218f8973 |
 
 资源 ZIP 根目录有 package.json，共12个资源文件：
 
@@ -42,6 +42,8 @@ games/th128/language/lang_zh-hans.zip
 开发用checkpoint面板依赖的旧代次索引不在本资源包内，普通游戏路径不依赖它。安装过程会完整解码并校验资源后提交。687已在隔离浏览器中完成单个93317333字节Blob的实际IndexedDB写入、完整SHA读回和关页重开；其他浏览器、配额不足和崩溃恢复仍未验证。切换资源包或启动失败后需要重新打开页面。
 
 ## v3：关卡启动修复与正式界面
+
+当前v5配套core109，进一步优化密集弹幕/碎冰峰值、完整状态格式化与前端顶点/插值，补齐ETEX64反弹坐标提交。实际新核心2World420ticks对照保留全部状态/RNG/绘制记录，最终94项针对性检查与新Runtime/HTTP通过；物理设备FPS/完整非符同帧对照未冒称通过。原资源ZIP继续沿用。详见[v5记录](performance-v5.md)。
 
 当前v4.1另修复“已有成绩、未保存录像姓名”导致再次加载Main被Independent9B拦住的问题。695实际函数复现，696十项检查，697最终89项检查与Runtime/HTTP通过；不清存档或默认解锁。详见[启动修复记录](startup-name695-697.md)。用户大范围冰冻、密集弹幕卡顿和小彗星后火球仍在处理，不能把v4的CPU收益称为全部问题解决。
 

@@ -487,7 +487,8 @@ const char* routeChoicePhaseName(th128::routechoice::Phase phase) {
     return "unknown";
 }
 
-void writeRouteChoiceContextState(std::ostringstream& text) {
+template<class Writer>
+void writeRouteChoiceContextState(Writer& text) {
     const auto& status=routeChoice->status();
     text<<"{\"configured\":"<<(routeChoiceConfigured?"true":"false")
         <<",\"started\":"<<(routeChoiceStarted?"true":"false")
@@ -501,7 +502,8 @@ void writeRouteChoiceContextState(std::ostringstream& text) {
         <<",\"currentMessage80\":"<<status.message80<<'}';
 }
 
-void writeRouteChoiceState(std::ostringstream& text) {
+template<class Writer>
+void writeRouteChoiceState(Writer& text) {
     const auto& status=routeChoice->status();
     text<<"{\"configured\":"<<(routeChoiceConfigured?"true":"false")<<",\"started\":"<<(routeChoiceStarted?"true":"false")
         <<",\"stage\":"<<routeChoiceStage<<",\"phase\":\""<<routeChoicePhaseName(status.phase)<<"\""
@@ -514,7 +516,8 @@ void writeRouteChoiceState(std::ostringstream& text) {
     text<<'}';
 }
 
-void writeJsonString(std::ostringstream& text,const std::string& value) {
+template<class Writer>
+void writeJsonString(Writer& text,const std::string& value) {
     text<<'"';
     for(const auto character:value) {
         if(character=='"'||character=='\\')text<<'\\';
@@ -523,7 +526,8 @@ void writeJsonString(std::ostringstream& text,const std::string& value) {
     text<<'"';
 }
 
-void writeMusicControlState(std::ostringstream& text) {
+template<class Writer>
+void writeMusicControlState(Writer& text) {
     text<<"{\"serial\":"<<musicControl.serial<<",\"operation\":5"
         <<",\"durationFrames\":"<<musicControl.durationFrames
         <<",\"durationSeconds\":"<<musicControl.durationSeconds
@@ -532,9 +536,11 @@ void writeMusicControlState(std::ostringstream& text) {
 }
 
 int stageIdForEcl(const std::string& name);
-void writeRandomEvidence(std::ostringstream& text,const th128::Random& random) {    text<<"{\"seed\":"<<random.seed<<",\"calls\":"<<random.calls<<'}';
+template<class Writer>
+void writeRandomEvidence(Writer& text,const th128::Random& random) {    text<<"{\"seed\":"<<random.seed<<",\"calls\":"<<random.calls<<'}';
 }
-void writeFlowEvidence(std::ostringstream& text) {
+template<class Writer>
+void writeFlowEvidence(Writer& text) {
     const auto game=world->gameRandomState();
     const auto current=stageIdForEcl(worldStartedName);
     const auto role=th128::stage::roleForStage(current);
@@ -584,7 +590,8 @@ void writeFlowEvidence(std::ostringstream& text) {
         <<",\"ACKed\":"<<(stageCarry.acknowledged?"true":"false")<<"}}";
 }
 
-void writeStageControlState(std::ostringstream& text) {
+template<class Writer>
+void writeStageControlState(Writer& text) {
     const auto status=stageTransition->state();
     text<<"{\"initialized\":"<<(stageControl.initialized()?"true":"false")
         <<",\"flags\":"<<stageControl.flags()<<",\"gate\":"<<(stageControl.gateSet()?"true":"false")
@@ -600,7 +607,8 @@ void writeStageControlState(std::ostringstream& text) {
         <<",\"sessionArgument\":"<<status.controlSessionArgument<<'}';
 }
 
-void writeStageTransitionState(std::ostringstream& text) {
+template<class Writer>
+void writeStageTransitionState(Writer& text) {
     const auto status=stageTransition->state();
     text<<"{\"configured\":"<<(stageTransitionConfigured?"true":"false")
         <<",\"currentId\":"<<stageTransitionCurrentId<<",\"progress\":"<<stageTransitionProgress
@@ -613,7 +621,8 @@ void writeStageTransitionState(std::ostringstream& text) {
     text<<'}';
 }
 
-void writeDebugTerminalState(std::ostringstream& text){
+template<class Writer>
+void writeDebugTerminalState(Writer& text){
     const auto settlement=debugTerminalSettlement->state();
     text<<"{\"configured\":"<<(debugTerminal.configured?"true":"false")
         <<",\"begun\":"<<(debugTerminal.begun?"true":"false")
@@ -628,7 +637,8 @@ void writeDebugTerminalState(std::ostringstream& text){
         <<",\"settlementNodes\":"<<debugTerminalSettlement->snapshots().size()
         <<",\"normalClear\":false,\"debugTainted\":"<<(debugRunTainted?"true":"false")<<'}';
 }
-void writeNormalRecordState(std::ostringstream& text){
+template<class Writer>
+void writeNormalRecordState(Writer& text){
     text<<"{\"bound\":"<<(normalRecord?"true":"false")<<",\"started\":"<<((normalRecord&&normalRecord->started())?"true":"false")
         <<",\"prepared\":"<<((normalRecord&&normalRecord->prepared())?"true":"false")<<",\"acknowledged\":"<<((normalRecord&&normalRecord->acknowledged())?"true":"false")
         <<",\"generation\":"<<worldGeneration<<",\"route\":"<<(normalRecord?normalRecord->route():0)<<",\"rank\":"<<(normalRecord?normalRecord->rank():0)
@@ -638,7 +648,8 @@ void writeNormalRecordState(std::ostringstream& text){
         <<",\"terminalScore\":"<<(normalRecord?normalRecord->terminalScore():0)<<",\"terminalContinues\":"<<(normalRecord?normalRecord->terminalContinues():0)
         <<",\"tainted\":"<<(debugRunTainted?"true":"false")<<",\"normalClear\":false,\"provenance\":\"ordinary-native-postrun\"}";
 }
-void writeNormalTerminalState(std::ostringstream& text){
+template<class Writer>
+void writeNormalTerminalState(Writer& text){
     const bool bound=normalTerminal.owner&&normalTerminal.owner->bound();
     const bool matches=bound&&normalTerminal.generation==worldGeneration&&!debugRunTainted&&!replayPlayback.active()
         &&normalTerminal.owner->matchesContinuation(worldGeneration,unsigned(originalContinueCount),normalRecord,normalReplay);
@@ -671,7 +682,8 @@ std::string retiredOrdinaryLifecycle(){
     return text.str();
 }
 
-void writeMessageState(std::ostringstream& text){
+template<class Writer>
+void writeMessageState(Writer& text){
     const auto& state=messages->state();
     text<<"{\"configured\":"<<(messagesConfigured?"true":"false")<<",\"active\":"<<(state.active?"true":"false")
         <<",\"eclReleased\":"<<(state.eclReleased?"true":"false")<<",\"waiting\":"<<(state.waiting?"true":"false")
@@ -4143,11 +4155,10 @@ const char* th128_world_state() {
         if(normalTerminal.resourcesConfigured){snapshot=retiredOrdinaryLifecycle();return snapshot.c_str();}
         return retiredWorldSnapshot.c_str();
     }
-    std::ostringstream text;
+    th128::runtime::DrawJsonWriter text;
     const auto damageFlags=damageFields->flags();
     const auto perfectStatus=perfectHost?perfectHost->status():th128::perfect::Status{};
     const auto iceStatistics=iceHost->statistics();
-    text<<std::setprecision(std::numeric_limits<float>::max_digits10);
     text<<"{\"frame\":"<<world->frame()<<",\"spawns\":"<<world->spawnCount()<<",\"rngCalls\":"<<world->randomCalls()
         <<",\"lastCreatedOriginalId\":"<<world->lastCreatedOriginalId()
         <<",\"linkedSources\":"<<world->linkedSources()<<",\"positionIntegrated\":"<<(world->positionIntegrated()?"true":"false")

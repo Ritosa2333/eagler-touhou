@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-11-16",
-  "generation": "b7f885be544802659eda1848a86bd9ee964a985f13b73d9a4705df2d9b25e744",
+  "generation": "a22738709f4ec2b33cb094db0482f85efc3acb06df543428b602c8efa7d8c074",
   "sourceFiles": {
     "src/animation/AnmLogic.cpp": "8181699a119c123274e04883ffbb072ac3b4a0a1c0b18ccb2c6fa16850995b27",
     "src/animation/AnmLogic.hpp": "cb157319e0f57d007aae669d60a3840be7d31adfd1f384f02459146c56c8c88b",
@@ -43,12 +43,12 @@
     "src/game/BulletRules.hpp": "9015bde55ad9e45fecc92d132f107cd37c92932a39f6ce2a0a04aacdb8934b33",
     "src/game/BulletTickRules.cpp": "954b85ecc597665ef1bfea91509ed8423c4419c3c0269c57eabfe81cc93eea70",
     "src/game/BulletTickRules.hpp": "137a4e3a9a592c9122bacf5b8293f217c004e6675f021d36f1a8f341cda06bf0",
-    "src/game/BulletUpdateHost.cpp": "c85cce121157e86391a8fbf1b962ac77de43004544c40775f5195150b825c593",
+    "src/game/BulletUpdateHost.cpp": "319176030a7dced7bdd18df55d92a272f23e9ff555ef225abde0dda8facc32e1",
     "src/game/BulletUpdateHost.hpp": "523ad37346775c92a9d74c6793b2066d7522a1a144753f41dd431e9f35c16f0b",
     "src/game/BulletVisuals.cpp": "2084ec0425e14d2e2a11cbe2a672b0b98752034e2d0971d2a4bc08f4789fb458",
     "src/game/BulletVisuals.hpp": "d87652a63a070dd2cb99adb16229c168c3eb855346ab9438f1754a5469189ee8",
-    "src/game/CancellationEffects.cpp": "b9aa6128845055f91d897ff3553155e7465abece02a48242ff7cb15bb3771026",
-    "src/game/CancellationEffects.hpp": "07c0d313cf61a869a735b2dfd40041e790ebe29f39e8e2f6918480374e64a304",
+    "src/game/CancellationEffects.cpp": "f4e7f5c74f39c69e57d5c02a42ac499ed5e46826b2fd4d821ca6843964df36e2",
+    "src/game/CancellationEffects.hpp": "8246ef26c5237da1a85649cd02e4be23097306ffb11b57a4eef8f3cd26f2daf6",
     "src/game/CircleFan.cpp": "824398e5d8017703b1092ca9416b6b1ef66e28bbab267dd84ab870867bb7e773",
     "src/game/CircleFan.hpp": "5b3827a26bf4261552c54b85b3e3d1b41c6fe18dec0f77ea092c996878e9dfe9",
     "src/game/DamageFieldPool.cpp": "fe41597f6c0f34cf42c567ee9ab268363daa62ca8de944335231a2e3b8a6db3b",
@@ -228,7 +228,7 @@
     "src/runtime/Exports.cpp": "a53590d490e09517d9bdad2feec85799e136f9e1e44470a2981bbaa1767b5b3f",
     "src/runtime/Memory.hpp": "bc209020ad0f2a2bd9e649440f239f3517a97ec480e4d27d2c3395a1c5d3a1b0",
     "src/runtime/PlayerExports.cpp": "72c6abe64a18786d2c40f78addcfb4a22335e48d3ac4ccdf855233f0fb1e3a5f",
-    "src/runtime/WorldExports.cpp": "66cebb19911f9f519eb798df5d310f9f65601c915d4ee53a7c7e98e04bb89a69"
+    "src/runtime/WorldExports.cpp": "d7f037ac3bbaf3d80cb10c6e38be3593a7cd366c4ef5a80a8c49d4ae2b3bcd09"
   },
   "translationUnits": [
     "src/runtime/Exports.cpp",
@@ -528,86 +528,55 @@
       "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
     },
     "core.wasm": {
-      "bytes": 2169783,
-      "sha256": "03b4c0f0c0465a393b38a3ef2430936b55d45e56f9dc276add9c4d2f28650c21"
+      "bytes": 2281513,
+      "sha256": "12914d240c9653bbf7ee042db06b960ac5be63a06f4c6b27af0372d4408d2766"
     }
   },
   "acceptedAssistedScope": "Historical six normal routes on private98 and EX on private99; not rerun on private108.",
-  "browserAcceptance": false,
+  "browserAcceptance": {
+    "currentCore109GameAccepted": false,
+    "historical": false,
+    "resourceImport687Accepted": true,
+    "note": "Existing earlier browser evidence remains historical; new109 actualdeviceFPS/background/physicalaudio pending."
+  },
   "rebuiltForUpload": false,
-  "coreOrdinal": 108,
+  "coreOrdinal": 109,
   "browserEntryAccepted": false,
   "browserAcceptanceEvidence": null,
-  "rebuildReason": "First108link658 afteractual107RED656 missingstart46/51,65713wholecaller/HostguardGREENandsyntax. OnlyWorldExports.cpp fourlines;existingphase120/71unchanged;successful107held.",
+  "rebuildReason": "First109 for userdense/freezeperformance andmissingETEX64reflectedposition; not rebuilding successful108.",
   "relativeHeaderEdges": 390,
   "buildAcceptance": {
-    "case": 658,
+    "case": 710,
     "compilerCalls": 1,
+    "passed": true,
     "compilerExit": 0,
-    "compilerStdoutBytes": 0,
-    "compilerStderrBytes": 0
+    "sourceCount": 226,
+    "translationUnits": 83,
+    "exports": 205,
+    "relativeHeaderEdges": 390,
+    "changedSources": [
+      "src/game/BulletUpdateHost.cpp",
+      "src/game/CancellationEffects.cpp",
+      "src/game/CancellationEffects.hpp",
+      "src/runtime/WorldExports.cpp"
+    ],
+    "generation": "a22738709f4ec2b33cb094db0482f85efc3acb06df543428b602c8efa7d8c074"
   },
   "runtimeAcceptance": {
-    "case": 659,
-    "coreOrdinal": 108,
-    "generation": "b7f885be544802659eda1848a86bd9ee964a985f13b73d9a4705df2d9b25e744",
+    "case": 712,
     "passed": true,
     "Factories": 1,
-    "WorldStarts": 1,
-    "ticks": 181,
-    "checks": 7,
-    "failed": 0,
-    "callableExports": 205,
-    "requests": [
-      {
-        "phase": 0,
-        "id": 46,
-        "pan": 100,
-        "operation": 0
-      },
-      {
-        "phase": 0,
-        "id": 51,
-        "pan": 100,
-        "operation": 0
-      },
-      {
-        "phase": 120,
-        "id": 47,
-        "pan": 100,
-        "operation": 0
-      },
-      {
-        "phase": 120,
-        "id": 69,
-        "pan": 0,
-        "operation": 0
-      },
-      {
-        "phase": 120,
-        "id": 51,
-        "pan": 0,
-        "operation": 1
-      },
-      {
-        "phase": 180,
-        "id": 71,
-        "pan": 0,
-        "operation": 0
-      }
-    ],
-    "gameRandom": {
-      "seed": 34772,
-      "calls": 0
-    },
-    "normalRecord": false,
-    "taint": false,
-    "infiniteRespawn": false,
-    "syntheticECL": true,
-    "syntheticAudioOutput": true,
-    "syntheticReceiptStore": true,
+    "WorldStarts": 2,
+    "ticks": 420,
+    "wholeWorldAndRawDrawSnapshotsEqualTo108": 6,
+    "comparisonArchiveJSONNormalizesSignedZero": true,
     "browser": 0,
-    "scope": "Actualproduced108 normalPerfectexact6requests atphase0/120/180;realWorld/assets/hosts,synthetic180BECL/output/receipts;notfulloriginalphase/physicalaudio/replay."
+    "GPU": false,
+    "physicalAudio": false,
+    "syntheticECL": true,
+    "syntheticGL": true,
+    "originalWholeStage": false,
+    "phaseProofNotFullRoute": true
   },
   "historicalBrowserEvidence": {
     "coreOrdinal": 100,
@@ -786,5 +755,134 @@
     "syntheticAudioOutput": true,
     "syntheticReceiptStore": true,
     "scope": "Actual produced107 normalheld gate matrix with realWorld/assets/hosts;205typeof only;not fullphase/originalgameplay/replay/device."
+  },
+  "artifacts": {
+    "core.mjs": {
+      "bytes": 134120,
+      "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
+    },
+    "core.wasm": {
+      "bytes": 2281513,
+      "sha256": "12914d240c9653bbf7ee042db06b960ac5be63a06f4c6b27af0372d4408d2766"
+    }
+  },
+  "privateCore": 109,
+  "previous108": {
+    "generation": "b7f885be544802659eda1848a86bd9ee964a985f13b73d9a4705df2d9b25e744",
+    "artifacts": {
+      "core.mjs": {
+        "bytes": 134120,
+        "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
+      },
+      "core.wasm": {
+        "bytes": 2169783,
+        "sha256": "03b4c0f0c0465a393b38a3ef2430936b55d45e56f9dc276add9c4d2f28650c21"
+      }
+    },
+    "buildAcceptance": {
+      "case": 658,
+      "compilerCalls": 1,
+      "compilerExit": 0,
+      "compilerStdoutBytes": 0,
+      "compilerStderrBytes": 0
+    },
+    "runtimeAcceptance": {
+      "case": 659,
+      "coreOrdinal": 108,
+      "generation": "b7f885be544802659eda1848a86bd9ee964a985f13b73d9a4705df2d9b25e744",
+      "passed": true,
+      "Factories": 1,
+      "WorldStarts": 1,
+      "ticks": 181,
+      "checks": 7,
+      "failed": 0,
+      "callableExports": 205,
+      "requests": [
+        {
+          "phase": 0,
+          "id": 46,
+          "pan": 100,
+          "operation": 0
+        },
+        {
+          "phase": 0,
+          "id": 51,
+          "pan": 100,
+          "operation": 0
+        },
+        {
+          "phase": 120,
+          "id": 47,
+          "pan": 100,
+          "operation": 0
+        },
+        {
+          "phase": 120,
+          "id": 69,
+          "pan": 0,
+          "operation": 0
+        },
+        {
+          "phase": 120,
+          "id": 51,
+          "pan": 0,
+          "operation": 1
+        },
+        {
+          "phase": 180,
+          "id": 71,
+          "pan": 0,
+          "operation": 0
+        }
+      ],
+      "gameRandom": {
+        "seed": 34772,
+        "calls": 0
+      },
+      "normalRecord": false,
+      "taint": false,
+      "infiniteRespawn": false,
+      "syntheticECL": true,
+      "syntheticAudioOutput": true,
+      "syntheticReceiptStore": true,
+      "browser": 0,
+      "scope": "Actualproduced108 normalPerfectexact6requests atphase0/120/180;realWorld/assets/hosts,synthetic180BECL/output/receipts;notfulloriginalphase/physicalaudio/replay."
+    },
+    "coreOrdinal": 108,
+    "immutable": true
+  },
+  "performance109": {
+    "firstLinkCase": 710,
+    "compileCalls": 1,
+    "changedSources": [
+      "src/game/BulletUpdateHost.cpp",
+      "src/game/CancellationEffects.cpp",
+      "src/game/CancellationEffects.hpp",
+      "src/runtime/WorldExports.cpp"
+    ],
+    "exports": 205,
+    "sourceCount": 226,
+    "translationUnits": 83,
+    "sourceReview": "W/dsh-web-completion-20261115/protocol-build/freeze-peak-audit-v1/REVIEW109.md",
+    "actualProfile": {
+      "case": 712,
+      "Factories": 1,
+      "Worlds": 2,
+      "ticks": 420,
+      "fullWorldAndDrawCheckpoints": 6,
+      "JSONArchivedSignedZeroNormalized": true,
+      "normalRecord": false,
+      "browser": 0,
+      "GPU": false
+    },
+    "actualAttackSub": {
+      "case": 713,
+      "sub": "st_a1_2b/Boss2At1",
+      "difficulty": 1,
+      "ticks": 300,
+      "syntheticEntry": true,
+      "fullStageParity": false
+    },
+    "runtimeDeliveryCase": 714
   }
 }

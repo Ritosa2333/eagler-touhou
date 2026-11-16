@@ -60,14 +60,27 @@ function uniquePresentationRecords(records){
   for(const record of records){const key=presentationKey(record);if(key!==null)index.set(key,index.has(key)?null:record);}
   return index;
 }
+function displayRecordIndex(records){
+  const ids=new Map();let ambiguous=false;
+  for(const record of records){
+    if(!Number.isSafeInteger(record.id)||record.id<0||record.id>0xffffffff)continue;
+    if(ids.has(record.id)){ambiguous=true;ids.set(record.id,null);}else ids.set(record.id,record);
+  }
+  return {ids,keys:ambiguous?uniquePresentationRecords(records):null};
+}
+function samePresentationIdentity(first,last){
+  for(const key of presentationIdentityFields)if(first[key]!==last[key])return presentationKey(first)===presentationKey(last);
+  return first.geometry?.kind===last.geometry?.kind&&first.geometry?.owner===last.geometry?.owner&&first.geometry?.column===last.geometry?.column;
+}
 function detachedPresentation(snapshot){
   if(!snapshot||!Number.isSafeInteger(snapshot.generation)||snapshot.generation<1||!Number.isInteger(snapshot.stage)||snapshot.stage<1||snapshot.stage>16
     ||!Number.isSafeInteger(snapshot.frame)||snapshot.frame<0||!Array.isArray(snapshot.records)||snapshot.records.length>65536)
     throw new Error('Invalid display presentation snapshot');
   const records=snapshot.records.map(cloneDisplayRecord);let vertices=0;
   for(const record of records){
-    if(!record||typeof record!=='object'||Array.isArray(record)||presentationNumberFields.some(key=>Object.hasOwn(record,key)&&!Number.isFinite(record[key])))
+    if(!record||typeof record!=='object'||Array.isArray(record))
       throw new Error('Invalid display presentation record');
+    for(const key of presentationNumberFields)if(Object.hasOwn(record,key)&&!Number.isFinite(record[key]))throw new Error('Invalid display presentation record');
     if(record.geometry!==undefined){
       const geometry=record.geometry;
       if(!geometry||!Array.isArray(geometry.vertices)||geometry.vertices.length>65536||(vertices+=geometry.vertices.length)>65536)
@@ -120,10 +133,15 @@ export class WorldPresentationInterpolator {
     const next=detachedPresentation(snapshot),current=this.#current;
     if(current&&current.generation===next.generation&&current.stage===next.stage&&current.frame===next.frame)return false;
     const consecutive=current&&current.generation===next.generation&&current.stage===next.stage&&next.frame===current.frame+1;
-    const keys=next.records.map(presentationKey),index=new Map();
-    for(let i=0;i<keys.length;++i){const key=keys[i];if(key!==null)index.set(key,index.has(key)?null:next.records[i]);}
-    const pairs=consecutive?keys.map(key=>key!==null&&index.get(key)?this.#index.get(key)??null:null):null;
-    const deep=next.records.map(record=>Object.values(record).some(value=>value!==null&&typeof value==='object'));
+    const index=displayRecordIndex(next.records);
+    let pairs=null;
+    if(consecutive){
+      if(index.keys||this.#index.keys){
+        const now=index.keys??uniquePresentationRecords(next.records),before=this.#index.keys??uniquePresentationRecords(current.records);
+        pairs=next.records.map(record=>{const key=presentationKey(record);return key!==null&&now.get(key)?before.get(key)??null:null;});
+      }else pairs=next.records.map(record=>{const before=this.#index.ids.get(record.id);return before&&samePresentationIdentity(before,record)?before:null;});
+    }
+    const deep=next.records.map(record=>{for(const key in record)if(record[key]!==null&&typeof record[key]==='object')return true;return false;});
     this.#previous=consecutive?current:null;this.#pairs=pairs;this.#deep=deep;this.#index=index;
     this.#current=next;return true;
   }
@@ -142,7 +160,7 @@ export class WorldPresentationInterpolator {
 function cloneDisplayRecord(record){
   if(!record||typeof record!=='object'||Array.isArray(record))return record;
   const copy={...record};
-  for(const key of Object.keys(copy))if(copy[key]!==null&&typeof copy[key]==='object')copy[key]=structuredClone(copy[key]);
+  for(const key in copy)if(copy[key]!==null&&typeof copy[key]==='object')copy[key]=structuredClone(copy[key]);
   return copy;
 }
 

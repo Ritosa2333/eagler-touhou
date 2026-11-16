@@ -3,6 +3,50 @@ import {argbColor, quadVertices, nativeRecordPriority,applyWorldShake,triangleSt
 import {safeAssetUrl} from '../inspector.mjs';
 const scalar=Math.fround;
 const finite=value=>Number.isFinite(value)&&Math.abs(value)<=1048576;
+function appendQuad(renderer,record,texture,colors){
+  const positions=renderer.quadPositions??=new Float64Array(8),mode=record.mode;
+  if(mode!==0&&mode!==1){
+    const points=quadVertices(record);for(let i=0;i<4;i++){positions[i*2]=points[i][0];positions[i*2+1]=points[i][1];}
+  }else{
+    const rotation=record.rotation??0;
+    if(!Number.isFinite(rotation))throw new Error('Non-finite draw rotation');
+    const x=Math.fround(record.x),y=Math.fround(record.y),width=Math.fround(record.width*record.sx),height=Math.fround(record.height*record.sy);
+    if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(width)||!Number.isFinite(height))throw new Error('Non-finite draw geometry');
+    if(mode===0){
+      const interpolated=record.presentationInterpolated===true;
+      let left=record.anchorX===1?x:record.anchorX===2?Math.fround(x-width):Math.fround(x-width/2);
+      let top=record.anchorY===1?y:record.anchorY===2?Math.fround(y-height):Math.fround(y-height/2);
+      if(!interpolated){if(record.anchorX!==1&&record.anchorX!==2)left=Math.floor(left);if(record.anchorY!==1&&record.anchorY!==2)top=Math.floor(top);}
+      let right=record.anchorX===2?x:Math.fround(left+width),bottom=record.anchorY===2?y:Math.fround(top+height);
+      if(!interpolated){
+        const round=value=>{const lower=Math.floor(value);return value-lower===.5?lower+(Math.abs(lower%2)===1?1:0):Math.round(value);};
+        left=round(left);top=round(top);right=round(right);bottom=round(bottom);
+      }
+      positions[0]=left;positions[1]=top;positions[2]=right;positions[3]=top;
+      positions[4]=right;positions[5]=bottom;positions[6]=left;positions[7]=bottom;
+    }else{
+      const left=record.anchorX===1?0:record.anchorX===2?-width:Math.fround(-width/2);
+      const top=record.anchorY===1?0:record.anchorY===2?-height:Math.fround(-height/2);
+      const right=Math.fround(left+width),bottom=Math.fround(top+height),cosine=Math.fround(Math.cos(rotation)),sine=Math.fround(Math.sin(rotation));
+      for(let i=0;i<4;i++){
+        const horizontal=i===0||i===3?left:right,vertical=i<2?top:bottom;
+        const px=Math.fround(x+horizontal*cosine-vertical*sine),py=Math.fround(y+horizontal*sine+vertical*cosine);
+        if(!Number.isFinite(px)||!Number.isFinite(py))throw new Error('Non-finite projected draw coordinates');
+        positions[i*2]=px;positions[i*2+1]=py;
+      }
+    }
+  }
+  const left=record.u0+record.u,right=record.u0+(record.u1-record.u0)*record.uvScaleX+record.u;
+  const top=record.v0+record.v,bottom=record.v0+(record.v1-record.v0)*record.uvScaleY+record.v;
+  const vertices=renderer.vertices;let at=vertices.length;vertices.length=at+48;
+  for(let n=0;n<6;n++){
+    const i=n<3?n:n===3?0:n===4?2:3,color=colors[i];
+    vertices[at++]=positions[i*2];vertices[at++]=positions[i*2+1];
+    vertices[at++]=i===0||i===3?left:right;
+    const v=i<2?top:bottom;vertices[at++]=texture.flipY?1-v:v;
+    vertices[at++]=color[0];vertices[at++]=color[1];vertices[at++]=color[2];vertices[at++]=color[3];
+  }
+}
 export function parseStd(input){
   if(!(input instanceof Uint8Array)||input.length<156||input.length>8*1024*1024)throw new Error('Invalid STD byte range');
   const view=new DataView(input.buffer,input.byteOffset,input.byteLength);
@@ -836,12 +880,7 @@ export class WebGlRenderer {
         graphics.texParameteri(graphics.TEXTURE_2D,graphics.TEXTURE_MAG_FILTER,point?graphics.NEAREST:graphics.LINEAR);
       }
       if(meshes.has(record)){this.vertices.push(...meshes.get(record));continue;}
-      const positions = quadVertices(record);
-      const left = record.u0 + record.u, right = record.u0+(record.u1-record.u0)*record.uvScaleX+record.u;
-      const top = record.v0 + record.v, bottom = record.v0+(record.v1-record.v0)*record.uvScaleY+record.v;
-      const coordinates = [[left,texture.flipY?1-top:top],[right,texture.flipY?1-top:top],
-        [right,texture.flipY?1-bottom:bottom],[left,texture.flipY?1-bottom:bottom]];
-      for (const index of [0,1,2,0,2,3]) this.vertices.push(...positions[index],...coordinates[index],...colors[index]);
+      appendQuad(this,record,texture,colors);
     }
     this.flush();
     if(nativeMenu){
