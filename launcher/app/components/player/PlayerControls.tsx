@@ -91,6 +91,37 @@ export function PlayerControls({
     state.runtime.game !== 'th09' &&
     !state.replayViewer;
   const informationColumn = th09Information || cooperativeSpectator;
+  useLayoutEffect(() => {
+    const player = document.getElementById('player');
+    if (!player) return;
+    const enabled = state.playerOpen && state.runtime?.game === 'th13' && !state.replayViewer &&
+      !roomWorkspace && !replayWorkspace && navigation.surface !== 'touch' &&
+      !session.mobile && navigator.maxTouchPoints === 0 && !settings?.options.touchEnabled;
+    player.classList.toggle('th13-desktop-tool-rail', enabled);
+    if (!enabled) return () => player.classList.remove('th13-desktop-tool-rail');
+    // The zoom owner writes the saved touch profile's translation even when
+    // touch zoom is unavailable. Reserve its displacement without overriding
+    // that owner's transform or clipping either edge of the game viewport.
+    const updateOffset = () => {
+      const width = window.visualViewport?.width || document.documentElement.clientWidth || player.clientWidth;
+      const height = window.visualViewport?.height || document.documentElement.clientHeight || player.clientHeight;
+      const orientation = width >= height ? 'landscape' : 'portrait';
+      const x = session.touchLayout.getSnapshot().saved?.profiles[orientation]?.viewport.x ?? 0;
+      player.style.setProperty('--th13-rail-offset', `${x * player.clientWidth}px`);
+    };
+    const unsubscribe = session.touchLayout.subscribe(updateOffset);
+    window.addEventListener('resize', updateOffset);
+    window.visualViewport?.addEventListener('resize', updateOffset);
+    updateOffset();
+    return () => {
+      unsubscribe();
+      window.removeEventListener('resize', updateOffset);
+      window.visualViewport?.removeEventListener('resize', updateOffset);
+      player.classList.remove('th13-desktop-tool-rail');
+      player.style.removeProperty('--th13-rail-offset');
+    };
+  }, [state.playerOpen, state.runtime?.game, state.replayViewer, roomWorkspace, replayWorkspace,
+      navigation.surface, session, settings?.options.touchEnabled]);
   const wins = [room.room?.seats?.[0]?.stats?.wins ?? 0, room.room?.seats?.[1]?.stats?.wins ?? 0] as const;
   return (
     <>

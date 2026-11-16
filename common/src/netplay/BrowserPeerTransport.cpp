@@ -715,6 +715,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             },
             rtcReadySent: false, signalReconnectTimer: null, signalConnectTimer: null, signalReconnectDelayMs: 500,
             rtcHealthTimer: null,
+            relayReleased: false,
             preparedRtc: null,
             rtcReplaceCapable: false, rtcGeneration: 0, rtcReplacing: false, rtcReplaceTimer: null,
             rtcReplaceRequested: false, signalTasks: Promise.resolve(),
@@ -732,7 +733,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     this.signal.send(message);
                     return;
                 }
-                if (this.route === 'rtc' && !this.closed) {
+                if (this.route === 'rtc' && !this.closed && !this.relayReleased) {
                     this.pendingSignals.push(message);
                     if (this.pendingSignals.length > 64) this.pendingSignals.shift();
                     this.openSignal();
@@ -1276,7 +1277,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 }
             },
             scheduleSignalReconnect() {
-                if (this.closed || this.disconnected || this.route !== 'rtc' || this.signalReconnectTimer) return;
+                if (this.closed || this.disconnected || this.relayReleased || this.route !== 'rtc' || this.signalReconnectTimer) return;
                 const delay = this.signalReconnectDelayMs;
                 this.signalReconnectDelayMs = Math.min(this.rtcReplaceCapable ? 1500 : 5000, delay * 2);
                 this.signalReconnectTimer = setTimeout(() => {
@@ -1285,7 +1286,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 }, delay);
             },
             openSignal() {
-                if (this.closed || this.disconnected || this.route === 'relay' || this.signal?.readyState === WebSocket.OPEN || this.signal?.readyState === WebSocket.CONNECTING) return;
+                if (this.closed || this.disconnected || this.relayReleased || this.route === 'relay' || this.signal?.readyState === WebSocket.OPEN || this.signal?.readyState === WebSocket.CONNECTING) return;
                 const socket = new WebSocket(signalUrl.href);
                 this.signal = socket;
                 if (this.route === 'rtc' && this.rtcReplaceCapable) {
@@ -1402,7 +1403,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 };
             },
             openRelay() {
-                if(this.closed || this.disconnected)return;
+                if(this.closed || this.disconnected || this.relayReleased)return;
                 const socket=new WebSocket(relay.href);
                 this.relay=socket;socket.binaryType='arraybuffer';
                 socket.onopen=()=>{
@@ -1428,6 +1429,22 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     // that run would invent missing history; offer room return.
                     this.fail(event.reason||'WebSocket relay session ended');
                 };
+            },
+            // The run is complete for this seat: leave the relay's run while
+            // the peer data channels keep answering the final input/ACK
+            // exchange. Only the RTC route owns sockets the game no longer
+            // needs; relay-routed gameplay keeps its lane until close().
+            releaseRelayPresence() {
+                if (this.closed || this.relayReleased || this.route !== 'rtc') return;
+                this.relayReleased = true;
+                if (this.signalReconnectTimer) { clearTimeout(this.signalReconnectTimer); this.signalReconnectTimer = null; }
+                if (this.rtcHealthTimer) { clearInterval(this.rtcHealthTimer); this.rtcHealthTimer = null; }
+                this.pendingSignals.length = 0;
+                const signal = this.signal, relay = this.relay;
+                this.signal = null;
+                this.relay = null;
+                try { signal?.close(1000, 'run complete'); } catch {}
+                try { relay?.close(1000, 'run complete'); } catch {}
             },
             close() {
                 this.closed = true;
@@ -1630,6 +1647,10 @@ EM_JS(int, eagler_spectator_connect,
         globalThis[legacyGlobal] = failed;
         return 0;
     }
+});
+
+EM_JS(void, eagler_peer_release_relay, (), {
+    try { globalThis.__eaglerPeerTransport?.releaseRelayPresence?.(); } catch {}
 });
 
 EM_JS(void, eagler_peer_close, (), {
@@ -1920,6 +1941,13 @@ void BrowserPeerTransport::Close()
 {
 #ifdef __EMSCRIPTEN__
     eagler_peer_close();
+#endif
+}
+
+void BrowserPeerTransport::ReleaseRelayPresence()
+{
+#ifdef __EMSCRIPTEN__
+    eagler_peer_release_relay();
 #endif
 }
 

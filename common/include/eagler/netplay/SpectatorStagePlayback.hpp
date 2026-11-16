@@ -12,7 +12,12 @@ public:
     enum class Action { Pause, Play, Seek, Live };
     enum class RestoreMode { Stage, Run };
     SpectatorStagePlayback() = default;
-    explicit SpectatorStagePlayback(RestoreMode mode, bool joinLive = false) : mode_(mode), join_live_(joinLive) {}
+    // 帧限历史构造（th13-mp 全程录像）：限定历史容量，不入 live。
+    explicit SpectatorStagePlayback(RestoreMode mode, std::size_t frame_limit)
+        : SpectatorStagePlayback(mode, frame_limit, false) {}
+    // joinLive 构造（旁观入场）：默认容量，Bootstrap 后直取前沿。
+    explicit SpectatorStagePlayback(RestoreMode mode, bool joinLive = false)
+        : SpectatorStagePlayback(mode, SpectatorStageHistory::MaxFrames, joinLive) {}
     bool Receive(const SpectatorStageEvent& event) {
         if (event.kind == SpectatorEventKind::Bootstrap) {
             if (bootstrapped_ || !history_.BootstrapMatches(event)) return false;
@@ -135,8 +140,10 @@ public:
     }
     bool Failed() const {return failed_;}
     const SpectatorStageHistory& History() const {return history_;}
-    void Clear() {*this = SpectatorStagePlayback(mode_, join_live_);}
+    void Clear() {*this = SpectatorStagePlayback(mode_, history_.FrameLimit(), join_live_);}
 private:
+    explicit SpectatorStagePlayback(RestoreMode mode, std::size_t frame_limit, bool joinLive)
+        : history_(frame_limit), mode_(mode), join_live_(joinLive) {}
     const SpectatorStageHistory::Segment* RestoreSegment(std::uint32_t frame) const {
         return mode_ == RestoreMode::Run ? &history_.Segments().front() : history_.Locate(frame);
     }
