@@ -35,6 +35,7 @@ class AnmRenderer {
     bool material(AnmVm&,bool textured=true);int quad(AnmVm&,bool pixel);int pack_quad(AnmVm&,Vec3 (&)[4],bool pixel,const u32* colors=nullptr);int projected_quad(AnmVm&,bool fog);int world_quad(AnmVm&);int mesh(AnmVm&);int shape(AnmVm&);int trail(AnmVm&);int circle(AnmVm&);
     u32 tint_color(u32)const noexcept;int overlay(AnmVm&);
 public:
+    bool always_hitbox = false;
     u32 presentation_instance=0;
     void submit(AnmVm&,touhou::graphics::Topology,u32,const void*,u32);
     Vec2 offset{};GraphicsViewport viewport;AnmCamera camera;bool tint_enabled=false;u32 tint=0x80808080;

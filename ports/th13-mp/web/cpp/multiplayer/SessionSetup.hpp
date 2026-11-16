@@ -19,7 +19,7 @@ struct SessionSetup {
     // 线格式版本：v1 = 纯延迟（M7 首发口径），v2 = 预测/回滚（M8 起）。
     // Legacy 兼容读：旧纯延迟会话与回放。
     static constexpr std::uint32_t Version = 2, LegacyVersion = 1, Words = 22,
-                                  GameplayVersion = 1, MaxRollbackFrames = 12,
+                                  GameplayVersion = 2, MaxRollbackFrames = 12,
                                   RulesVersion = 3;
     // TH13 面：难度 0..5（Easy..Lunatic/Overdrive+Extra 由 stage 表达）、
     // 角色 0..3（灵梦/魔理沙/早苗/妖梦，允许重复）、2..3 席。

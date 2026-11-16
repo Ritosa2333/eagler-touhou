@@ -168,6 +168,13 @@ TEST(replay_roundtrip_seek) {
     CHECK(ReplayArchive::HasSignature(wire.data(), wire.size()));
     ReplayArchive player;
     CHECK(player.Load(wire.data(), wire.size()));
+    CHECK(!player.UsesLegacyStagePositions());
+    auto legacy = wire;
+    legacy[4] = ReplayArchive::LegacyVersion;
+    ReplayArchive old_player;
+    CHECK(old_player.Load(legacy.data(), legacy.size()));
+    CHECK(old_player.UsesLegacyStagePositions());
+    CHECK_EQ(old_player.FrameCount(), player.FrameCount());
     // 身份/元数据 roundtrip。
     CHECK(player.Setup().session_id == setup.session_id);
     CHECK(player.Setup().seed == setup.seed);

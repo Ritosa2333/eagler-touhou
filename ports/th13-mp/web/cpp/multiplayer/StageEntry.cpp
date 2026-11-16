@@ -227,6 +227,7 @@ void StageEntry::Restore(StageBattle& battle, SessionState& progress,
 }
 
 void StageEntry::PrepareStageClear(HudPlayerState& first_player, const StageBattle& previous) {
+    stage_clear_positions_.fill(std::nullopt);
     for (std::uint32_t seat = 0; seat < seat_count && seat < MaxSeats; ++seat) {
         // The last life is deducted at death commit, before the 30-frame
         // animation marks the seat as a ghost. Clear revives both phases.
@@ -234,12 +235,31 @@ void StageEntry::PrepareStageClear(HudPlayerState& first_player, const StageBatt
         // Its committed death remains final until explicit rescue or clear.
         if (seats[seat].extra_lives < 0 || previous.seats[seat].final_death)
             seats[seat].ghost = true;
+        // Seat 0 uses the persistent single-player object. Other seats are
+        // reconstructed when the new battle is enabled.
+        if (seat > 0 && !seats[seat].ghost) {
+            const auto& player = previous.seats[seat];
+            stage_clear_positions_[seat] = std::array<i32, 2>{player.fixed_x, player.fixed_y};
+        }
     }
     if (seats[0].ghost) {
         first_player.extra_lives = std::max(0, first_player.extra_lives);
         first_player.bombs = 2;
         first_player.bomb_pieces = 0;
         first_player.power = first_player.max_power / 2;
+    }
+}
+
+void StageEntry::RestoreStageClearPositions(StageBattle& battle) const {
+    for (std::uint32_t seat = 1; seat < seat_count && seat < MaxSeats; ++seat) {
+        if (!stage_clear_positions_[seat]) continue;
+        const auto& position = *stage_clear_positions_[seat];
+        auto& player = battle.seats[seat];
+        player.fixed_x = position[0];
+        player.fixed_y = position[1];
+        player.x = float(player.fixed_x) / 128.f;
+        player.y = float(player.fixed_y) / 128.f;
+        player.movement_history.fill(position);
     }
 }
 

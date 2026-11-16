@@ -66,7 +66,9 @@ const sources = [
   ...readdirSync(resolve(root, 'cpp/multiplayer')).filter(n => n.endsWith('.cpp')).map(n => 'cpp/multiplayer/' + n),
   // 共用网络栈（M7）：直接链接 common/src/netplay——共用不 fork
   //（RollbackCore/传输/relay/旁观，docs/MP-DEVELOPMENT.md §M7 前冻结）。
-  ...readdirSync(resolve(workspace, '../../common/src/netplay')).filter(n => n.endsWith('.cpp')).map(n => '../../../common/src/netplay/' + n),
+  ...readdirSync(resolve(workspace, '../../common/src/netplay'))
+    .filter(n => n.endsWith('.cpp') && !n.startsWith('Native'))
+    .map(n => '../../../common/src/netplay/' + n),
   ...readdirSync(resolve(root, 'cpp/sdl')).filter(n => n.endsWith('.cpp')).map(n => 'cpp/sdl/' + n),
   '../portable/sdl/Renderer.cpp',  // 语义 GLES 渲染后端（与 sdl/ 设备层同链）
 ];
