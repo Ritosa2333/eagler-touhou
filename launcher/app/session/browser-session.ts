@@ -8,7 +8,6 @@ import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manife
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
 import {isAbortError, linkAbortSignals, waitWithAbort} from '../services/abort-signals';
 import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, productRequiresImport, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
-import {isPc98MultiplayerCandidate} from '../services/published-multiplayer';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {detectUiLocale, isUiLocale, isUiMessageKey, localeHome, UI_LOCALE_STORAGE_KEY, type UiLocale} from '../../src/launcher/i18n.mts';
 import {replayImportAcceptFor} from '../../src/launcher/replay-files.mts';
@@ -288,7 +287,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   function settingsContext(product: ProductId, locale: string) {const room = roomSession?.service.getSnapshot(); return {...metadata.settingsContext(product, locale), mobile: preferTouchSettings(), forbidUnlimitedMovement: !!room?.room?.disableCheatMovement && room.seat != null};}
   const directoryEntry = /\/lobby(?:\.html)?\/?$/.test(entryUrl.pathname);
   const rawInitialProduct = directoryEntry ? null : routedProductFromUrl(entryUrl, new Set(PRODUCT_IDS));
-  const initialProduct = rawInitialProduct && (productEnabledForBuild(rawInitialProduct, testBuild) || isPc98MultiplayerCandidate(rawInitialProduct)) ? rawInitialProduct : DEFAULT_PRODUCT_ID;
+  const initialProduct = rawInitialProduct && productEnabledForBuild(rawInitialProduct, testBuild) ? rawInitialProduct : DEFAULT_PRODUCT_ID;
   settings.hydrate(settingsContext(DEFAULT_PRODUCT_ID, snapshot.locale));
   if (initialProduct !== DEFAULT_PRODUCT_ID) settings.hydrate(settingsContext(initialProduct, snapshot.locale));
   touchLayout.setGame(settings.getSnapshot()?.gameId ?? DEFAULT_PRODUCT_ID);
@@ -323,7 +322,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (firstHost && !runtime?.getSnapshot().launched) settings.restoreHostPreferences(settingsContext(product, snapshot.locale));
       appliedHost = host;
       localPackageMaintenance.schedule();
-    const hadSelection = pendingHostSelection?.hasSelection ?? navigation?.hasSelection ?? (!!rawInitialProduct && (productEnabledForBuild(rawInitialProduct, testBuild) || isPc98MultiplayerCandidate(rawInitialProduct)));
+    const hadSelection = pendingHostSelection?.hasSelection ?? navigation?.hasSelection ?? (!!rawInitialProduct && productEnabledForBuild(rawInitialProduct, testBuild));
       pendingHostSelection = {productId: product, hasSelection: hadSelection && current.products.includes(product)};
       if (navigation) {navigation.applyHostSelection(pendingHostSelection); pendingHostSelection = null;}
       if (roomSession?.service.getSnapshot().room && host.shared.netplayRelay) roomSession.service.reconnect();

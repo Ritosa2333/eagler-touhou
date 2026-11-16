@@ -161,6 +161,7 @@ const manifest = () => ({
   games: {
     th06: {
       runtime: 'runtime/th06/game.html',
+      multiplayerRuntime: 'runtime/th06/mp.html',
       gameData: { version: `sha256-${hash}`, layout: `sha256-${hash}`, path: 'th06.data', bytes: 1, sha256: hash },
       music: { midi: { files: [] } },
     },
@@ -242,27 +243,27 @@ test('directory preserves main host-existence product subset and 3s retry withou
 for (const mode of ['normal', 'manifest-test', 'query-test'])
   test(`directory applies test-product visibility to filters and creation: ${mode}`, async () => {
     const published = manifest();
-    published.games.th075 = {
+    published.games.th13 = {
       ...published.games.th06,
-      runtime: 'runtime/th075/game.html',
-      multiplayerRuntime: 'runtime/th075/mp.html',
-      gameData: { ...published.games.th06.gameData, path: 'th075.data' },
+      runtime: 'runtime/th13/game.html',
+      multiplayerRuntime: 'runtime/th13/mp.html',
+      gameData: { ...published.games.th06.gameData, path: 'th13.data' },
     };
     if (mode === 'manifest-test') published.shared.testBuild = true;
     const { service, sockets } = directory({
       loadSiteManifest: async () => published,
       testBuild: mode === 'query-test',
-      selectedProduct: 'th075mp',
+      selectedProduct: 'th13mp',
     });
     try {
       await service.initialize();
       sockets[0].open();
       sockets[0].message(directoryState({ product: service.getSnapshot().selectedProduct }));
-      assert.deepEqual(service.getSnapshot().products, mode === 'normal' ? ['th06mp'] : ['th06mp', 'th075mp']);
-      assert.equal(service.getSnapshot().selectedProduct, mode === 'normal' ? 'th06mp' : 'th075mp');
+      assert.deepEqual(service.getSnapshot().products, mode === 'normal' ? ['th06mp'] : ['th06mp', 'th13mp']);
+      assert.equal(service.getSnapshot().selectedProduct, mode === 'normal' ? 'th06mp' : 'th13mp');
       assert.equal(service.prepareForm('create'), true);
-      service.updateForm({ product: 'th075mp' });
-      assert.equal(service.getSnapshot().form.product, mode === 'normal' ? 'th06mp' : 'th075mp');
+      service.updateForm({ product: 'th13mp' });
+      assert.equal(service.getSnapshot().form.product, mode === 'normal' ? 'th06mp' : 'th13mp');
     } finally {
       service.dispose();
     }

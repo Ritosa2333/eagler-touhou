@@ -606,7 +606,7 @@ export const PRODUCT_GAMES = Object.freeze({
         features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),
     }),
     th13: Object.freeze({
-        testOnly: false,
+        testOnly: true,
         buildOptIn: true,
         number: "13",
         title: "東方神霊廟",
@@ -661,7 +661,7 @@ export const PRODUCT_GAMES = Object.freeze({
         features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
     }),
     th14: Object.freeze({
-        testOnly: false,
+        testOnly: true,
         buildOptIn: true,
         number: "14",
         title: "東方輝針城",

@@ -1,5 +1,4 @@
 import {relayFailureDetail} from './network-failure';
-import {publishedPc98Multiplayer} from './published-multiplayer';
 import type {RelayAttempt} from '../../src/launcher/relay-entry-routing.mts';
 import {normalizePublicNickname} from '../../src/contracts/public-nickname.mts';
 import {
@@ -512,7 +511,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const products = PRODUCT_IDS.filter(
         (product): product is MultiplayerProductId =>
           isMultiplayerProductId(product) &&
-          (productEnabledForBuild(product, options.testBuild === true || manifest.shared.testBuild === true) || publishedPc98Multiplayer(product, manifest)) &&
+          productEnabledForBuild(product, options.testBuild === true || manifest.shared.testBuild === true) &&
           !!manifest.games[gameIdForProduct(product)]?.multiplayerRuntime,
       );
       const selectedProduct = !snapshot.selectedProduct ? '' : products.includes(snapshot.selectedProduct as MultiplayerProductId)
