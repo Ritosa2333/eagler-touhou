@@ -53,11 +53,12 @@ for (const healthy of [true, false]) {
   try {
     assert.ok(survey.consider('swarm-5',quality(250)));
     measure('direct',null,null);
-    measure('swarm-12',71,healthy ? 125 : 190);
-    measure('swarm-0',94,healthy ? 102 : 210);
-    if (!healthy) measure('turn',73,113);
-    assert.deepEqual([dispatched.at(-1).phase,dispatched.at(-1).route],['select',healthy ? 'swarm-0' : 'turn']);
-    assert.equal(dispatched.some(update=>update.route==='turn'), !healthy);
+    measure('turn',73,healthy ? 113 : 190);
+    if (!healthy) {
+      measure('swarm-12',71,125);
+      measure('swarm-0',94,102);
+    }
+    assert.deepEqual([dispatched.at(-1).phase,dispatched.at(-1).route],['select',healthy ? 'turn' : 'swarm-0']);
   } finally {
     survey.close();
   }
@@ -73,17 +74,17 @@ for (const healthy of [true, false]) {
     assert.ok(planner.consider('swarm-0',{sent:8,received:0,p95:null}));
     const standby = updates.at(-1);
     assert.equal(standby.retired,direct.serial);
-    assert.equal(standby.route,'swarm-12');
+    assert.equal(standby.route,'turn');
     assert.equal(planner.acceptsSignal(direct.serial),false);
     planner.report(0,standby.serial,{sent:12,received:12,p95:40});
     planner.report(1,standby.serial,{sent:12,received:12,p95:healthy ? 80 : 225});
     if (!healthy) {
-      const turn = updates.at(-1);
-      assert.deepEqual([turn.phase,turn.route],['measure','turn']);
-      planner.report(0,turn.serial,{sent:12,received:12,p95:90});
-      planner.report(1,turn.serial,{sent:12,received:12,p95:100});
+      const swarm = updates.at(-1);
+      assert.deepEqual([swarm.phase,swarm.route],['measure','swarm-12']);
+      planner.report(0,swarm.serial,{sent:12,received:12,p95:90});
+      planner.report(1,swarm.serial,{sent:12,received:12,p95:100});
     }
-    assert.deepEqual([updates.at(-1).phase,updates.at(-1).route],['select',healthy ? 'swarm-12' : 'turn']);
+    assert.deepEqual([updates.at(-1).phase,updates.at(-1).route],['select',healthy ? 'turn' : 'swarm-12']);
     assert.equal(planner.consider('swarm-0',{sent:8,received:0,p95:null}),false);
   } finally {
     planner.close();
@@ -102,8 +103,8 @@ for (const healthy of [true, false]) {
   try {
     assert.ok(planner.consider('swarm-0',{sent:12,received:12,p95:400}));
     report('direct',null);
-    report('swarm-12',190);
     report('turn',280);
+    report('swarm-12',190);
     assert.deepEqual([updates.at(-1).phase,updates.at(-1).route],['select','swarm-12']);
     assert.equal(planner.consider('swarm-0',{sent:8,received:0,p95:null}),false);
   } finally {
@@ -119,12 +120,12 @@ for (const healthy of [true, false]) {
     const direct = updates.at(-1);
     planner.report(0,direct.serial,null);
     const standby = updates.at(-1);
-    assert.equal(standby.route,'swarm-12');
+    assert.equal(standby.route,'turn');
     assert.ok(planner.consider('swarm-0',{sent:8,received:0,p95:null}));
     assert.equal(updates.at(-1),standby);
     assert.ok(planner.acceptsSignal(standby.serial));
     planner.report(0,standby.serial,null);
-    assert.deepEqual([updates.at(-1).phase,updates.at(-1).route],['measure','turn']);
+    assert.deepEqual([updates.at(-1).phase,updates.at(-1).route],['measure','swarm-12']);
   } finally {
     planner.close();
   }
@@ -246,6 +247,7 @@ const relay = spawn(process.execPath, ['src/netplay-relay.mjs'], {
     ...process.env,
     EAGLER_NETPLAY_RELAY_HOST: '127.0.0.1',
     EAGLER_NETPLAY_RELAY_PORT: String(port),
+    EAGLER_NETPLAY_RTC_TIMEOUT_MS: '4500',
     EAGLER_NETPLAY_MAX_ROOMS_PER_IP: '4',
     EAGLER_NETPLAY_LOBBY_RECONNECT_GRACE_MS: '1000',
     EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE: '1',
@@ -520,6 +522,7 @@ try {
   const sharedSeats = await Promise.all([0, 1].map(seat =>
     connect(seat, shared + '&lobby=route_seat_' + seat + '&member=route_member_' + seat, sharedAddresses[seat])));
   await until(() => sharedSeats[0].state()?.startupRoutes?.includes('turn'));
+  assert.deepEqual(sharedSeats[0].state().startupRoutes, ['auto', 'direct', 'turn', 'swarm']);
   for (const [seat, connection] of sharedSeats.entries()) connection.send({type:'take-seat', seat, loadout:0});
   await until(() => sharedSeats[0].state()?.seats.slice(0, 2).every(Boolean));
   sharedSeats[1].send({type:'startup-route', route:'turn'});
@@ -544,6 +547,44 @@ try {
   assert.equal(sharedSignals[1].received.find(message => message.description)?.description.sdp, 'v=0\r\na=' + turnCandidate + '\r\n');
   assert.ok(!sharedSignals[1].received.some(message => message.candidate?.candidate === hostCandidate));
   for (const {ws} of [...sharedSignals, ...sharedSeats]) ws.terminate();
+
+  const automaticRoom = 'room=th09mp-turn-retry';
+  const retryAddresses = ['192.0.2.19', '198.51.100.20'];
+  const autoSeats = await Promise.all([0, 1].map(seat =>
+    connect(seat, automaticRoom + '&lobby=auto_seat_' + seat + '&member=auto_member_' + seat, retryAddresses[seat])));
+  for (const [seat, peer] of autoSeats.entries()) peer.send({type:'take-seat', seat, loadout:seat});
+  await until(() => autoSeats[0].state()?.seats.slice(0, 2).every(Boolean));
+  autoSeats[0].send({type:'relay-preference', swarm:false});
+  autoSeats[0].send({type:'set-ready', ready:true, nativeRuntime:true, runtimeGeneration:generation});
+  autoSeats[1].send({type:'set-ready', ready:true, runtimeGeneration:generation});
+  await until(() => autoSeats[0].state()?.seats.slice(0, 2).every(seat => seat?.ready));
+  autoSeats[0].send({type:'start'});
+  const automaticStart = await until(() => autoSeats[1].received.find(message => message.type === 'start'));
+  assert.equal(automaticStart.room.swarmSelected, undefined);
+  const autoRun = seat => automaticRoom + '&run=1&players=2&player=' + seat +
+    '&member=auto_member_' + seat + '&runtimeGeneration=' + generation;
+  const signalAuto = seat => connect(seat, autoRun(seat) + '&signal=1&rtcStartup=1&rtcRoute=auto', retryAddresses[seat]);
+  const autoGames = await Promise.all([0, 1].map(seat => connect(seat, autoRun(seat), retryAddresses[seat])));
+  const earlySignal = await signalAuto(0);
+  // A late signaling socket must get a fresh ICE budget even when both gameplay sockets opened earlier.
+  await delay(4700);
+  assert.equal(earlySignal.ws.readyState, WebSocket.OPEN);
+  const autoSignals = [earlySignal, await signalAuto(1)];
+  for (const peer of autoSignals) await until(() => peer.received.some(message => message.type === 'rtc-startup'));
+  // Primary signaling reached both players, but the original game channels never opened.
+  for (const peer of autoSignals) {
+    const backup = await until(() => peer.received.find(message => message.type === 'rtc-standby'));
+    assert.equal(backup.route, 'turn');
+    assert.deepEqual(backup.iceServers.map(server => server.urls), [[ordinaryTurnUrl]]);
+    peer.send({type:'rtc-startup-quality', serial:1, quality:{sent:6, received:6, p95:52}});
+  }
+  for (const peer of autoSignals) {
+    const selected = await until(() => peer.received.find(message => message.type === 'rtc-startup-select'));
+    assert.equal(selected.serial, 1);
+    peer.send({type:'rtc-startup-selected', serial:1});
+  }
+  await until(() => autoSignals.every(peer => peer.received.some(message => message.type === 'route' && message.mode === 'rtc')));
+  for (const {ws} of [...autoSignals, ...autoGames, ...autoSeats]) ws.terminate();
 
   const abandoned = 'room=th09mp-abandoned';
   const abandonedHost = await connect(0, abandoned + '&lobby=abandoned_host&member=abandoned_host_key');

@@ -81,10 +81,6 @@ export function createSwarmStandbyPlanner({workers, ordinaryTurn, dispatch, init
       finish(survey.best?.route);
       return;
     }
-    if (route === 'turn' && survey.best?.suitable) {
-      finish(survey.best.route);
-      return;
-    }
     survey.route = route;
     survey.serial = ++serial;
     survey.reports = new Map();
@@ -100,20 +96,21 @@ export function createSwarmStandbyPlanner({workers, ordinaryTurn, dispatch, init
       if (survey?.outage || (!outage && (survey || clock() < nextSurvey))) return false;
       if (outage && selected?.active === active && clock() < selected.expires - 10_000) return false;
       const current = pathQuality([measurement]);
-      if (current.suitable && (!initial || active === 'direct')) return false;
+      if (current.suitable && (!initial || active === 'direct' || active === 'turn')) return false;
       if (outage && survey?.active === active && survey.route !== 'direct') {
         survey.outage = true;
         survey.currentScore = current.score;
-        if (ordinaryTurn && active !== 'turn' && survey.route !== 'turn' && !survey.queue.includes('turn'))
-          survey.queue.push('turn');
         waitForReports(3500);
         return true;
       }
       const candidates = swarm.filter(route => route !== active);
       const offset = nextWorker % Math.max(1, candidates.length);
       const shortlist = [...candidates.slice(offset), ...candidates.slice(0, offset)].slice(0, 2);
-      const queue = [...(active === 'direct' || outage ? [] : ['direct']), ...shortlist];
-      if (ordinaryTurn && active !== 'turn' && !current.suitable) queue.push('turn');
+      const queue = [
+        ...(active === 'direct' || outage ? [] : ['direct']),
+        ...(ordinaryTurn && active !== 'turn' ? ['turn'] : []),
+        ...shortlist,
+      ];
       if (!queue.length) return false;
       if (timer !== undefined) cancel(timer);
       nextWorker = offset + shortlist.length;
@@ -135,7 +132,7 @@ export function createSwarmStandbyPlanner({workers, ordinaryTurn, dispatch, init
       timer = undefined;
       const score = pathQuality([...survey.reports.values()]);
       if (score.score * 1.1 + 5 < survey.currentScore) {
-        if (score.suitable && (survey.route === 'direct' || survey.outage)) {
+        if (score.suitable && (survey.route === 'direct' || survey.route === 'turn' || survey.outage)) {
           finish(survey.route);
           return;
         }

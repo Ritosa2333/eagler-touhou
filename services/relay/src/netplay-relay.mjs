@@ -872,7 +872,7 @@ function failRoute(roomId, runId, run, reason) {
   const swarm = run.swarmDirectPlayer != null
     ? (run.swarmGrantIssued ? 'desktop-with-turn-backup' : 'turn-backup')
     : run.swarm ? 'turn' : 'off';
-  console.log(`ROUTE room=${roomId} run=${runId} mode=failed reason=${reason} ready=${run.rtcReady.size}/${run.playerCount} swarm=${swarm}`);
+  console.log(`ROUTE room=${roomId} run=${runId} mode=failed reason=${reason} ready=${run.rtcReady.size}/${run.playerCount} signaling=${run.signalClients.size}/${run.playerCount} swarm=${swarm}`);
   const message = JSON.stringify({type: 'route', mode: 'failed', reason});
   for (const socket of [...run.signalClients.values(), ...run.clients.values()]) {
     sendBounded(socket, message);
@@ -886,25 +886,27 @@ function failRoute(roomId, runId, run, reason) {
 function maybeStartRouteTimer(roomId, runId, room, run) {
   const allSignalsPresent = run.signalClients.size >= run.playerCount;
   const allRelaysPresent = run.clients.size >= run.playerCount;
-  if (
-    run.route ||
-    run.routeTimer ||
-    run.playerCount < 2 ||
-    (!allSignalsPresent && !allRelaysPresent)
-  )
-    return;
+  const waitingForSignaling = Boolean(run.lobbyClientIds && !allSignalsPresent);
+  if (run.route || run.playerCount < 2 || (!allSignalsPresent && !allRelaysPresent && !waitingForSignaling)) return;
+  if (run.routeTimer && run.routeTimerWaitingForSignaling === waitingForSignaling) return;
+  clearTimeout(run.routeTimer);
+  run.routeTimerWaitingForSignaling = waitingForSignaling;
+  const timeout = waitingForSignaling ? Math.max(15000, rtcTimeoutMs) :
+    run.swarmDirectPlayer != null ? Math.max(12000, rtcTimeoutMs) :
+    run.nat4 ? Math.max(7500, rtcTimeoutMs) : rtcTimeoutMs;
   run.routeTimer = setTimeout(() => {
     run.routeTimer = null;
     run.rtcFailed = true;
+    run.rtcFailureReason = waitingForSignaling ? 'A player did not join WebRTC signaling' : 'WebRTC connection timed out';
     maybeResolveRoute(roomId, runId, room, run);
-  }, run.swarmDirectPlayer != null ? Math.max(12000, rtcTimeoutMs) : run.nat4 ? Math.max(7500, rtcTimeoutMs) : rtcTimeoutMs);
+  }, timeout);
 }
 
 function maybeResolveRoute(roomId, runId, room, run) {
   if (run.route || run.rtcStartup || run.playerCount < 2) return;
   if (run.rtcFailed) {
     if (run.initialIceRoute || !allowGameplayRelayFallback && !roomId.startsWith('th05mp-')) {
-      failRoute(roomId, runId, run, 'WebRTC connection unavailable');
+      failRoute(roomId, runId, run, run.rtcFailureReason ?? 'WebRTC connection unavailable');
       return;
     }
     // Relay release is a barrier too: do not let the first endpoint begin
@@ -922,7 +924,7 @@ function maybeResolveRoute(roomId, runId, room, run) {
 }
 
 function startRtcRouteSelection(roomId, runId, room, run) {
-  if (run.route || run.rtcStartup || run.initialIceRoute || !run.swarm || run.signalClients.size !== 2 ||
+  if (run.route || run.rtcStartup || run.initialIceRoute || (!run.swarm && !run.rtcReplacementAllowed) || run.signalClients.size !== 2 ||
       run.playerCount !== 2 || [...run.signalClients.values()].some(peer => !peer.rtcStartup)) return;
   const turnServers = [0,1].map(player => iceServersFor(roomId, runId + '-startup', player, false, undefined, []));
   if (!turnServers.every(servers => servers.length)) return;
@@ -932,6 +934,7 @@ function startRtcRouteSelection(roomId, runId, room, run) {
     : Math.max(run.nat4 ? 7500 : 6000, rtcTimeoutMs);
   run.rtcStartup = createRtcStartup({
     timeout,
+    primaryMayUseSwarm:run.swarm,
     openTurn() {
       for (const [player, peer] of run.signalClients)
         sendSignal(peer, {type:'rtc-standby', serial:1, phase:'measure', route:'turn', generation:0,
@@ -954,6 +957,7 @@ function startRtcRouteSelection(roomId, runId, room, run) {
     fail() {
       run.rtcStartup = null;
       run.rtcFailed = true;
+      run.rtcFailureReason = 'Automatic WebRTC paths did not become ready';
       maybeResolveRoute(roomId, runId, room, run);
     },
   });
@@ -1335,6 +1339,7 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
         return;
       }
       run.rtcFailed = true;
+      run.rtcFailureReason = 'A player reported a WebRTC connection failure';
       maybeResolveRoute(roomId, runId, room, run);
       return;
     }
@@ -1361,6 +1366,7 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
         run.rtcStartup?.close();
         run.rtcStartup = null;
         run.rtcFailed = true;
+        run.rtcFailureReason = 'A player left WebRTC signaling';
         maybeResolveRoute(roomId, runId, room, run);
       }
     }
@@ -1382,7 +1388,7 @@ function startupRoutes() {
   const turn = readTurnConfig();
   const ordinaryTurn = [turn, ...(turn.backups ?? [])].some(node =>
     node.urls.length && (node.sharedSecret || turnUsername && turnCredential));
-  return ['auto', 'direct', ...(swarmAvailable ? ['swarm'] : []), ...(ordinaryTurn ? ['turn'] : [])];
+  return ['auto', 'direct', ...(ordinaryTurn ? ['turn'] : []), ...(swarmAvailable ? ['swarm'] : [])];
 }
 
 function lobbySnapshot(room) {

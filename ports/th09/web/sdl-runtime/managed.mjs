@@ -148,7 +148,11 @@ async function installRuntimePack(pack){
 async function save(){if(launched&&!netplay?.spectator&&!core._th09_save_snapshot())throw Error('保存失败');await sync();}
 async function stop(){if(stopping)return;if(roomOwned&&!options.replayViewer){stopping=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{stopping=false;}return;}revokeLifetime();stopping=true;clearKeyboard();try{networkOverlayPending=false;replayPlayer?.close();replayPlayer=null;core._th09_loop_stop();await netplay?.finishSpectatorOutput();netplay?.close();await save();core._th09_game_close();launched=false;delete window.__th09Runtime;if(!retired)stopPending=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function openNetwork(){if(!launched||options.netplayMode==='lan'||!status().title[1]||networkOverlayPending)return;networkOverlayPending=true;neutralTouch();core._th09_loop_pause(1);emit('network-request');}
-let titleInitialized=false,roomPreview=false;
+let titleInitialized=false,roomPreview=false,roomPeerWarmed=false;
+function warmRoomPeerConnection(){
+ if(roomPeerWarmed||options.netplaySpectator||typeof RTCPeerConnection!=='function')return;
+ try{new RTCPeerConnection().close();roomPeerWarmed=true;}catch{}
+}
 async function initializeTitle(receivedLifetime){
  if(titleInitialized)return;
  const owner=core;assertLifetime(receivedLifetime,owner);
@@ -202,7 +206,9 @@ case 'prepare-room':{roomOwned=true;
  if(runtimeVariant!=='multiplayer'||launched)throw Error('Invalid room preview owner');
  await initializeTitle(receivedLifetime);
  if(!core._th09_room_preview(1))throw Error(err());
- roomPreview=true;showStartupRoutes(true);core._th09_loop_start();$('#loading').textContent='';await new Promise(requestAnimationFrame);return {presented:true};
+ roomPreview=true;showStartupRoutes(true);core._th09_loop_start();$('#loading').textContent='';
+ await new Promise(requestAnimationFrame);assertLifetime(receivedLifetime,core);
+ warmRoomPeerConnection();return {presented:true};
 }
 case 'launch':{
  launchSerial=Number(m.launchSerial)||0;
