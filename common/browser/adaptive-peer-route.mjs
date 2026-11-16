@@ -212,7 +212,7 @@ export function createAdaptivePeerRoute(options) {
             return;
         }
         if (serial <= standbySerial || !['idle', 'measure', 'select'].includes(phase)) return;
-        if (phase !== 'idle' && (!/^(direct|turn|swarm-\d+)$/.test(route) || !Array.isArray(iceServers))) return;
+        if (phase !== 'idle' && (!/^(direct|turn|swarm-[0-9]+)$/.test(route) || !Array.isArray(iceServers))) return;
         if (planned && proposal?.path === planned) return;
         standbySerial = serial;
         if (planned === active) {

@@ -99,6 +99,25 @@ for (const healthy of [true, false]) {
   }
 }
 
+{
+  const updates = [];
+  const planner = createSwarmStandbyPlanner({workers:[0,12], ordinaryTurn:true, dispatch:update=>updates.push(update)});
+  try {
+    assert.ok(planner.consider('swarm-0',{sent:12,received:12,p95:40},true));
+    const direct = updates.at(-1);
+    planner.report(0,direct.serial,null);
+    const standby = updates.at(-1);
+    assert.equal(standby.route,'swarm-12');
+    assert.ok(planner.consider('swarm-0',{sent:8,received:0,p95:null}));
+    assert.equal(updates.at(-1),standby);
+    assert.ok(planner.acceptsSignal(standby.serial));
+    planner.report(0,standby.serial,null);
+    assert.deepEqual([updates.at(-1).phase,updates.at(-1).route],['measure','turn']);
+  } finally {
+    planner.close();
+  }
+}
+
 const port = await new Promise(resolve => {
   const listener = net.createServer().listen(0, '127.0.0.1', () => {
     const {port} = listener.address();

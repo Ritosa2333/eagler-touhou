@@ -64,6 +64,15 @@ export function createSwarmStandbyPlanner({workers, ordinaryTurn, dispatch, cloc
     dispatch({serial, phase: route ? 'select' : 'idle', retired:finishing.serial, ...(route && {route})});
   }
 
+  function waitForReports(milliseconds) {
+    if (timer !== undefined) cancel(timer);
+    timer = wait(() => {
+      timer = undefined;
+      advance();
+    }, milliseconds);
+    timer?.unref?.();
+  }
+
   function advance() {
     const retired = survey.serial;
     const route = survey.queue.shift();
@@ -79,11 +88,7 @@ export function createSwarmStandbyPlanner({workers, ordinaryTurn, dispatch, cloc
     survey.serial = ++serial;
     survey.reports = new Map();
     dispatch({serial, phase:'measure', retired, route});
-    timer = wait(() => {
-      timer = undefined;
-      advance();
-    }, survey.outage ? 3500 : route === 'direct' ? 4000 : 8000);
-    timer?.unref?.();
+    waitForReports(survey.outage ? 3500 : route === 'direct' ? 4000 : 8000);
   }
 
   return {
@@ -95,6 +100,14 @@ export function createSwarmStandbyPlanner({workers, ordinaryTurn, dispatch, cloc
       if (outage && selected?.active === active && clock() < selected.expires - 10_000) return false;
       const current = pathQuality([measurement]);
       if (current.suitable && (!initial || active === 'direct')) return false;
+      if (outage && survey?.active === active && survey.route !== 'direct') {
+        survey.outage = true;
+        survey.currentScore = current.score;
+        if (ordinaryTurn && active !== 'turn' && survey.route !== 'turn' && !survey.queue.includes('turn'))
+          survey.queue.push('turn');
+        waitForReports(3500);
+        return true;
+      }
       const candidates = swarm.filter(route => route !== active);
       const offset = nextWorker % Math.max(1, candidates.length);
       const shortlist = [...candidates.slice(offset), ...candidates.slice(0, offset)].slice(0, 2);
