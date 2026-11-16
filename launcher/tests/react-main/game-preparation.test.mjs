@@ -468,6 +468,35 @@ test('in-game room resource warming does not navigate or configure the running n
   await assert.rejects(api.prepareRoomResourcePlan(gameInput(f, state)), /room-entry intent/);
 });
 
+test('TH14 late spectator mounts later-stage BGM before native launch', async () => {
+  const initial = generation({ogg: ['track-1', 'track-2']});
+  initial.game = initial.descriptor.game = initial.descriptor.runtimeRequirement.target = 'th14';
+  initial.descriptor.files['game-data'].target = '/th14.dat';
+  const published = catalog();
+  published.games.th14 = published.games.th06;
+  delete published.games.th06;
+  const downloads = [];
+  const f = acquisitionFixture({current: initial, catalogValue: published, dependencies: {
+    installPublished: async (game, {addFileIds}) => {
+      assert.equal(game, 'th14');
+      downloads.push(addFileIds);
+      return {generation: added(initial, addFileIds)};
+    },
+  }});
+  const r = runtimeFixture();
+  const prepared = await api.prepareGame(gameInput(f, settingsFixture({productId: 'th14mp', music: 'ogg-stream'}), {
+    productId: 'th14mp', runtime: r.service,
+    multiplayer: {kind: 'room', options: {netplayMode: 'lan', netplayUrl: 'wss://relay.invalid/?room=th14mp-1234',
+      netplayPlayer: 0, netplayPlayerCount: 3, netplaySeed: 1, netplayDifficulty: 1,
+      netplaySpectator: true, netplaySpectatorId: 'spectator-test'}},
+  }));
+  assert.deepEqual(downloads, [['track-1', 'track-2', 'track-3', 'track-4']]);
+  assert.equal(prepared.music, 'ogg-stream');
+  const configure = r.outbound.find(message => message.command === 'configure');
+  assert.equal(configure.music, 'ogg');
+  assert.equal(configure.options.netplaySpectator, true);
+});
+
 test('room preparation carries the selected language independently of its one-time pack payload', async () => {
   const manifest = {schema:'eagler-touhou/thcrap-static-pack/1',game:'th06',language:'lang_zh-hans',runtimeVersion:'fixture',
     files:[{path:'/thcrap/th06/msg.bin',bytes:bytes.length}]};

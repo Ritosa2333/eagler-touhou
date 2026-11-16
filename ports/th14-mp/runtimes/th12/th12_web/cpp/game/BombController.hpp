@@ -74,7 +74,7 @@ private:
 #endif
     void clear_mesh(){if(mesh)mesh->detach();mesh.reset();}
     bool fail_spell();bool sound(i32,bool=false);bool create(u32&,i32,bool);
-    bool body(i32);void invincible(i32);void interrupt(u32,i16);
+    bool body(i32);void invincible(i32,bool share=true);void interrupt(u32,i16);
     AnmVm* child(i32);Vec3 game_position(const AnmVm&)const;
     Vec3 th14_raw_position(const AnmVm&)const;
     static int ring_noise(AnmVm&);

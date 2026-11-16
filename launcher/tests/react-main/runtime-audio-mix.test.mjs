@@ -96,3 +96,28 @@ test('th05 preserves the authored BGM gain and scales its independent sound outp
   mix.detach();
   expect(runtime.Module.eaglerAudio.action).toBe(action);
 });
+
+test('TH14 native mixer gets independent gains without attenuating SDL PCM again', () => {
+  const context = new Context();
+  const processor = context.createScriptProcessor();
+  processor.connect(context.destination);
+  const levels = vi.fn();
+  const runtime = { AudioContext: Context, Module: { SDL3: {
+    audioContext: context, audio_playback: { scriptProcessorNode: processor },
+  } } };
+  const mix = createRuntimeAudioMix();
+  mix.set(0, 0);
+  mix.attach(runtime, 'th14');
+  const [output] = processor.outputs;
+  expect(output.gain.value).toBe(0);
+
+  runtime.Module.eaglerSetAudioLevels = levels;
+  mix.refresh();
+  expect(levels).toHaveBeenLastCalledWith(0, 0);
+  expect(output.gain.value).toBe(1);
+  mix.set(0.25, 0.75);
+  mix.refresh();
+  expect(levels.mock.calls).toEqual([[0, 0], [0.25, 0.75]]);
+  expect(output.gain.value).toBe(1);
+  mix.detach();
+});

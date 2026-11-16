@@ -645,9 +645,10 @@ bool GameBattle::enter_stage_transition(u32 number){
 }
 bool GameBattle::activate_stage(){
     bullets.reset();animations.retire_resource(resources.core.bullet);
-    if(!player->start_stage())return false;
 #if PORT_TITLE == 14
-    if(coop_seats>1&&!start_coop_stage())return false;
+    if(!(coop_seats>1?start_coop_stage():player->start_stage()))return false;
+#else
+    if(!player->start_stage())return false;
 #endif
     if(replaying&&!player->restore_replay_position(replay_entry))return false;
     items.reset();
@@ -1499,6 +1500,9 @@ bool GameBattle::cancel_bullets(const Vec3* center,float radius,bool skip_delaye
 #endif
 }
 bool GameBattle::spell_begin_visuals(i32 id,i32 timeout,const char* name){
+#if PORT_TITLE == 14
+    if(coop_seats>1&&!reset_coop_player_scales())return false;
+#endif
     cancellation={spell_flags,spell_id};
 #if PORT_TITLE == 16
     spells.run_flags=enemy_commands.th16_run_flags;

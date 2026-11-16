@@ -153,7 +153,7 @@ void GameBattle::capture_room_frame(FrameImageTh14& image,BulletManager::RoomSlo
         popups,spell_timing,enemy_animations.resources,enemy_animations.stage_logo_resource,
         player_input,cancellation,communication,shakes,spell_backgrounds,callback_shared_visual,
         spell_titles,spell_circle,ghosts,life_taps,power_taps,coop_held,coop_input,coop_actor,
-        coop_skip,coop_grazer,coop_bomb_invincibility,coop_marisa_b_cooldown,coop_knife_owner,
+        coop_skip,coop_grazer,coop_bomb_invincibility,coop_bomb_sakuya_b,coop_marisa_b_cooldown,coop_knife_owner,
         th14_dialogue_skip_frames,th14_dialogue_fire_frames,
         th14_spell_background,
         th14_spell_result_requested,th14_current_music,frame,th14_control_clock,th14_control_counted,

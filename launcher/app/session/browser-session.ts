@@ -539,7 +539,11 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       return context.isCurrent();
     } catch(error) {reportError(error);return false;}
   }
-  const gameData = createGameDataImportModel({acquisition: testBuild ? acquisition : {importPackage: acquisition.importPackage}, translate: t,
+  const gameData = createGameDataImportModel({acquisition: testBuild ? acquisition : {
+    importPackage: acquisition.importPackage,
+    importFiles: acquisition.importFiles,
+    originalFileNames: game => game === 'th13' || game === 'th14' ? acquisition.originalFileNames(game) : [],
+  }, translate: t,
     getContext: () => ({product: settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID,
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,
       runtimeEpoch: runtime?.getSnapshot().epoch ?? null,
@@ -1216,6 +1220,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     settings: () => ({touchEnabled: settings.getSnapshot()?.options.touchEnabled === true, touchMovementMode: settings.getSnapshot()?.options.touchMovementMode ?? DEFAULT_GAME_OPTIONS.touchMovementMode, ...(settings.getSnapshot()?.context.productId === 'th09mp' ? {replayAutoSave: settings.getSnapshot()?.replayAutoSave} : {}), mobileDevice: mobile, iceServers: [{urls: ['stun:stun.cloudflare.com:3478']}]}),
     setMovementMode: mode => settings.setOption('touchMovementMode', mode), decisions, translate: t, notify: feedback.toast,
     prepareResources(context, report) {
+      cloudSync?.prepareLocalLaunch();
       const task = roomPreloadTask.catch(() => {}).then(async () => {
         async function presentPreview(epoch: number) {
           const owner = requiredRuntime();
@@ -1383,7 +1388,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   const cloudSyncReady=accountsEnabled&&storage ? import('../services/cloud-save-sync').then(({createCloudSaveSync})=>{
     if(disposed)return;
-    cloudSync=createCloudSaveSync({storage:storage!,read:readLocalSaves,isRunning:()=>!!runtime?.getSnapshot().launched||!!launchPending,isPlaying:()=>!!runtime?.getSnapshot().launched,notify:key=>feedback.toast(t(key)),
+    cloudSync=createCloudSaveSync({storage:storage!,read:readLocalSaves,isRunning:()=>!!runtime?.getSnapshot().launched||!!launchPending||!!roomSession?.service.getSnapshot().room,isPlaying:()=>!!runtime?.getSnapshot().launched,notify:key=>feedback.toast(t(key)),
       readForLaunch:(product,names)=>readLocalSaveFiles(product,names,capturedSettings(product).language,window.indexedDB),
       async decideStart(kind, signal) {
         const remote = kind === 'other-device';

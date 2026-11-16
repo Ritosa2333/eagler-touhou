@@ -18,6 +18,11 @@ bool GameBattle::setup_coop(const std::array<Th14CoopLoadout,3>& loadouts,u32 se
     coop_seats=seats;coop_viewer=viewer;coop_challenge=challenge;coop_observer=observer;
     if(!hud.layout_coop(seats,challenge))return unavailable("TH14 multiplayer HUD setup");
     player->shots.coop_draw_file=20;
+    player->motion.th14_coop_draw_tag=20;
+    // The local seat already has options when cooperative setup takes over.
+    for(const auto& option:player->motion.options)
+        for(const auto id:{option.animation,option.auxiliary})
+            if(auto* vm=animations.find(id))vm->reserved_3a0=20;
     if(challenge){economy.lives=0;economy.life_fragments=0;economy.th14_bomb_fragments=0;}
     economy.th14_initial_bombs=challenge?0:std::max(0,economy.th14_bombs-1);
     economy.th14_bombs=economy.th14_initial_bombs;
@@ -36,6 +41,7 @@ bool GameBattle::setup_coop(const std::array<Th14CoopLoadout,3>& loadouts,u32 se
         mate->player=std::make_unique<PlayerFrame>(mate->shot,mate->animation,resources.core.bullet,animations,stock,*this,9,6);
         auto& p=*mate->player;
         p.shots.coop_draw_file=u16(20+seat);
+        p.motion.th14_coop_draw_tag=u8(20+seat);
         p.input=player_input;p.input.movement.character=character;p.input.movement.subtype=subtype;
         mate->bomb=std::make_unique<BombController>(animations,mate->animation,p,*this,9,&resources.core.text);
         mate->bomb->selection=character*2+subtype;
@@ -68,10 +74,10 @@ bool GameBattle::coop_bomb_available(u32 seat)const{
 
 void GameBattle::th14_bomb_invincibility(i32 frames){
     if(coop_seats==1)return;
-    const auto* active=pilot_bomb(coop_actor);
-    if(!active||active->selection==4)return;
-    if(coop_bomb_invincibility.current<frames)
+    if(coop_bomb_invincibility.current<frames){
         coop_bomb_invincibility.set(frames,&animations.rate);
+        coop_bomb_sakuya_b=pilot_bomb(coop_actor)->selection==5;
+    }
 }
 
 bool GameBattle::th14_knife_slowdown(Enemy& enemy,float delta){
@@ -100,10 +106,12 @@ bool GameBattle::update_coop(){
     for(auto& timer:coop_marisa_b_cooldown)if(timer.current>0)timer.advance(-1);
     const bool talking=dialogue&&dialogue->active;
     bool skip_held=false;
+    std::array<u32,3> pressed_buttons{};
     for(u32 seat=0;seat<coop_seats;++seat){
         auto& p=pilot(seat);
         const auto& input=coop_input.seats[seat];
         const u32 held=input.held,pressed=held&~coop_held[seat];
+        pressed_buttons[seat]=pressed;
         coop_held[seat]=held;skip_held|=(held&skip)!=0;
         if(!pilot_live(seat)){
             auto& motion=p.motion.state;
@@ -135,11 +143,11 @@ bool GameBattle::update_coop(){
         spell_flags=p.spell.flags;spell_bonus=p.spell.bonus;
     }
     for(u32 seat=0;seat<coop_seats;++seat){
-        if(!pilot_live(seat)||pilot_bomb(seat)->selection==4)continue;
+        if(!pilot_live(seat))continue;
         auto& timer=pilot(seat).state.invincibility;
         if(timer.current<coop_bomb_invincibility.current)timer=coop_bomb_invincibility;
     }
-    if(!coop_transfers())return false;
+    if(!coop_transfers(pressed_buttons))return false;
     coop_knife_owner=-1;
     for(u32 seat=0;seat<coop_seats;++seat)
         if(pilot_live(seat)&&pilot(seat).input.movement.character==2&&
@@ -149,12 +157,16 @@ bool GameBattle::update_coop(){
 }
 
 bool GameBattle::start_coop_stage(){
-    life_taps={};power_taps={};
-    for(u32 seat=1;seat<coop_seats;++seat){
+    power_taps={};
+    for(u32 seat=0;seat<coop_seats;++seat){
         CoopActor actor(*this,seat);
-        pilot_bomb(seat)->clear_coop();
-        pilot(seat).shots.clear_coop_th14();
-        if(pilot_live(seat)&&!pilot(seat).start_stage())return false;
+        if(seat){
+            pilot_bomb(seat)->clear_coop();
+            pilot(seat).shots.clear_coop_th14();
+        }
+        if(!pilot_live(seat)){
+            if(!coop_revive(seat,120))return false;
+        }else if(!pilot(seat).start_stage())return false;
     }
     return true;
 }
@@ -179,35 +191,37 @@ bool GameBattle::coop_game_over(bool){
     return !on_game_over||on_game_over(replaying);
 }
 
-bool GameBattle::coop_revive(u32 seat){
+bool GameBattle::coop_revive(u32 seat,i32 invulnerability){
     CoopActor actor(*this,seat);
     auto& p=pilot(seat);auto& e=pilot_economy(seat);
     e.lives=std::max(0,e.lives);e.power=e.max_power/2;e.th14_bombs=e.th14_initial_bombs;
     if(!p.motion.reset_body()||!p.start_stage())return false;
-    p.state.invincibility.set(280,&animations.rate);
+    p.state.invincibility.set(invulnerability,&animations.rate);
     ghosts[seat]={};life_taps[seat]=power_taps[seat]=0;
     return bombs_changed(e.th14_bombs,e.th14_bomb_fragments);
 }
 
-bool GameBattle::coop_transfers(){
+bool GameBattle::coop_transfers(const std::array<u32,3>& pressed_buttons){
     namespace rules=eagler::cooperative;
-    if(!stage_active||transitioning||(dialogue&&dialogue->active)||(completion.state.hud_flags&0x10)){
-        life_taps={};power_taps={};return true;
-    }
+    const bool allow_power=stage_active&&!transitioning&&!(dialogue&&dialogue->active)&&!(completion.state.hud_flags&0x10);
+    if(!allow_power)power_taps={};
     for(u32 seat=0;seat<coop_seats;++seat){
         if(!pilot_live(seat)||pilot(seat).state.life_state!=1){life_taps[seat]=power_taps[seat]=0;continue;}
         auto& e=pilot_economy(seat);
-        const auto& keys=pilot(seat).input.movement;
-        const auto near=[&](u32 other){return seat!=other&&th14_dist_sq(pilot(seat).motion.state.position,pilot(other).motion.state.position)<=400.f;};
+        const u32 pressed=pressed_buttons[seat];
+        const auto distance=[&](u32 other){
+            return th14_dist_sq(pilot(seat).motion.state.position,pilot(other).motion.state.position);
+        };
+        const auto near=[&](u32 other){return seat!=other&&distance(other)<=400.f;};
         i32 life=-1;
-        if(e.lives>0&&!(keys.held&1))for(u32 other=0;other<coop_seats;++other){
+        if(e.lives>0&&!(coop_held[seat]&1))for(u32 other=0;other<coop_seats;++other){
             if(!near(other)||(pilot_live(other)&&(pilot(other).state.life_state!=1||pilot_economy(other).lives>=8)))continue;
             if(life<0||(!pilot_live(other)&&pilot_live(u32(life)))||
-               (pilot_live(other)==pilot_live(u32(life))&&pilot_economy(other).lives<pilot_economy(u32(life)).lives))life=i32(other);
+               (pilot_live(other)==pilot_live(u32(life))&&distance(other)<distance(u32(life))))life=i32(other);
         }
-        if(rules::AdvanceLifeTransfer(life_taps[seat],bool(keys.pressed&8),life>=0)){
+        if(rules::AdvanceLifeTransfer(life_taps[seat],bool(pressed&8),life>=0)){
             const auto other=u32(life);
-            if(!pilot_live(other)){if(!coop_revive(other))return false;}
+            if(!pilot_live(other)){if(!coop_revive(other,280))return false;}
             else{
                 auto& target=pilot_economy(other);++target.lives;
                 hud.display_coop_stock(other,target.lives,target.life_fragments,false);
@@ -216,12 +230,16 @@ bool GameBattle::coop_transfers(){
             hud.display_coop_stock(seat,e.lives,e.life_fragments,false);
             if(!sound(17,0,false))return false;
         }
+        if(!allow_power)continue;
         const i32 step=e.power_step;
-        if(keys.pressed&8)power_taps[seat]=0;
-        const i32 power=step>0&&e.power>=2*step?rules::LowestPower(coop_seats,
-            [&](u32 other){return near(other)&&pilot_live(other)&&pilot(other).state.life_state==1&&pilot_economy(other).power<pilot_economy(other).max_power;},
-            [&](u32 other){return pilot_economy(other).power;},[&](u32 other){return pilot_economy(other).power_step;}):-1;
-        if(rules::AdvanceLifeTransfer(power_taps[seat],bool(keys.pressed&1),power>=0)){
+        if(pressed&8)power_taps[seat]=0;
+        i32 power=-1;
+        if(step>0&&e.power>=2*step)for(u32 other=0;other<coop_seats;++other){
+            if(!near(other)||!pilot_live(other)||pilot(other).state.life_state!=1||
+               pilot_economy(other).power>=pilot_economy(other).max_power)continue;
+            if(power<0||distance(other)<distance(u32(power)))power=i32(other);
+        }
+        if(rules::AdvanceLifeTransfer(power_taps[seat],bool(pressed&1),power>=0)){
             const u32 other=u32(power);auto& target=pilot_economy(other);
             const i32 amount=std::min(step,target.max_power-target.power);
             e.power-=amount;target.power+=amount;
@@ -310,30 +328,33 @@ i32 GameBattle::th14_collision_all(Vec3 origin,const std::function<PlayerCollisi
 
 bool GameBattle::coop_damage(const EnemyState& e,Vec3 position,const Vec2* size,float radius,float angle,i32& out,bool probe,bool* contact){
     const bool boss=(e.flags&0x40800000u)!=0;
-    // During a team's active Bomb, every seat uses the enemy's ECL ratio.
-    // synchronize_player excludes the defensive phase of Sakuya A's shield.
-    const float bomb_ratio=spells.bomb_active?e.th14_bomb_damage_ratio:1.f;
-    // Bomb hitboxes can outlive their controller and keep the scripted resistance.
-    const float lingering_bomb_ratio=spells.bomb_active?1.f:e.th14_bomb_damage_ratio;
+    const auto ratios=th14_coop_damage_ratios(coop_seats,coop_bomb_invincibility.current>0,coop_bomb_sakuya_b,
+        boss,spell_flags&1,resources.stage_number,spell_id,e.boss_slot);
     i32 total=0;u32 live=0;if(contact)*contact=false;
     for(u32 seat=0;seat<coop_seats;++seat)if(pilot_live(seat)){
         ++live;CoopActor actor(*this,seat);
         auto& p=pilot(seat);const auto& timer=p.state.state_timer;
-        const auto* bomb=pilot_bomb(seat);
         i32 damage=0;bool bomb_hit=false;
         if(!p.shots.damage_th14(position,size,radius,angle,timer.previous!=timer.current,pilot_economy(seat),damage,
             u32(e.instance_id),u32(e.instance_id),e.script_owner,probe,
-            contact?&bomb_hit:nullptr,lingering_bomb_ratio))return false;
+            contact?&bomb_hit:nullptr,ratios.bomb,ratios.shot))return false;
         if(p.state.life_state==0||p.state.life_state==2)damage/=5;
-        if((spell_flags&1)&&spell_id>=0x9e&&spell_id<=0xa1&&
-           ((bomb&&bomb->state.active)||p.state.invincibility.current>0||(p.motion.state.flags&2))&&
-           !(p.motion.state.flags&4))damage/=5;
-        if(bomb_ratio<1.f)damage=truncate_int(float(damage)*bomb_ratio);
         total=wrapping_add(total,damage);if(contact)*contact|=bomb_hit&&damage>0;
     }
     u32 remainder=e.th14_coop_damage_remainder;
     out=boss?th14_boss_damage(total,live,remainder):total;
     if(!probe)e.th14_coop_damage_remainder=remainder;
+    return true;
+}
+
+bool GameBattle::reset_coop_player_scales(){
+    for(u32 seat=0;seat<coop_seats;++seat){
+        auto& p=pilot(seat);
+        if(!(p.th14_scale.flags&0x10))continue;
+        CoopActor actor(*this,seat);
+        if(pilot_live(seat)){if(!p.set_th14_scale(1.f))return false;}
+        else p.reset_th14_scale();
+    }
     return true;
 }
 
@@ -380,6 +401,17 @@ bool GameBattle::queue_coop_hud(){
     const u32 alpha=first?first->color&0xff000000u:0;
     const auto text=[&](float x,float y,const char* value){return ascii.add(value,{x,y,0},style);};
     char number[64];
+    AsciiStyle transfer;transfer.font=1;transfer.shadow=true;transfer.horizontal=0;
+    for(u32 seat=0;seat<coop_seats;++seat){
+        const auto lives=eagler::cooperative::TapCount(life_taps[seat]);
+        const auto power=eagler::cooperative::TapCount(power_taps[seat]);
+        if(lives<3&&power<3)continue;
+        const auto pos=pilot(seat).motion.state.position;
+        transfer.color=lives>=3?0xffffa0c0u:0xffffa070u;
+        std::snprintf(number,sizeof(number),"%c %u/%u",lives>=3?'L':'P',
+            lives>=3?lives:power,eagler::cooperative::TransferTaps);
+        if(!ascii.add(number,{pos.x+224.f,pos.y-8.f,0},transfer))return false;
+    }
     style.horizontal=2;style.color=alpha|0x808080;
     th14_score_number(number,u32(hud.score.high_value()),hud.score.high_continues);
     if(!text(620,44,number))return false;

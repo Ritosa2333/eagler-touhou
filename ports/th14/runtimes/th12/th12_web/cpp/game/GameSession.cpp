@@ -1232,7 +1232,11 @@ bool GameSession::update(const GameSessionInput& input) {
             // than once; a faster rate may skip it. Preserve exact equality.
             const u32 raw=(input.held&~256u)|((input.held&256)?0x80000u:0u)|(input.pause?256u:0u);
             const i32 clock=battle->control_frame();
-            if((raw&0x80103u)||(animations.th14_control.callback_flags()&0x70u)||clock==3900)
+            if((raw&0x80103u)||clock==3900
+#if defined(TH14_CPP_STAGE_DECODE)
+               ||(animations.th14_control.callback_flags()&0x70u)
+#endif
+            )
                 demo_title_pending=true;
             if(clock==3840)battle->fades.start(5,60,0,48,&animations.rate);
         }

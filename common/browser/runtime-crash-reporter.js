@@ -158,7 +158,7 @@
         const when=new Date();
         report={schema:'eagler-touhou/crash-report/1',reporterVersion:1,id:when.toISOString().replace(/[^0-9TZ]/g,'')+'-'+Math.random().toString(16).slice(2,8),createdAt:when.toISOString(),game,multiplayer,generation,
           runtime:{url:location.origin+location.pathname,build:plain(build)},
-          environment:{userAgent:navigator.userAgent,language:navigator.language,languages:navigator.languages,platform:navigator.platform,hardwareConcurrency:navigator.hardwareConcurrency,deviceMemoryGiB:navigator.deviceMemory,online:navigator.onLine,visibility:document.visibilityState,viewport:{width:innerWidth,height:innerHeight,pixelRatio:devicePixelRatio},timezone:Intl.DateTimeFormat().resolvedOptions().timeZone},
+          environment:{userAgent:navigator.userAgent,language:navigator.language,languages:navigator.languages,platform:navigator.platform,hardwareConcurrency:navigator.hardwareConcurrency,deviceMemoryGiB:navigator.deviceMemory,online:navigator.onLine,crossOriginIsolated:globalThis.crossOriginIsolated,sharedArrayBuffer:typeof SharedArrayBuffer==='function',visibility:document.visibilityState,viewport:{width:innerWidth,height:innerHeight,pixelRatio:devicePixelRatio},timezone:Intl.DateTimeFormat().resolvedOptions().timeZone},
           errors:[],logs:[],events:[],samples:[]};
       }
       const entry={time:new Date().toISOString(),source:fields.source||'runtime-fatal',error:errorValue(error)};
@@ -188,7 +188,7 @@
     }
     sample();
   }
-  globalThis.__eaglerCrashReporterV1={fatal,bindCore,sample,report:()=>report};
+  globalThis.__eaglerCrashReporterV1={fatal,bindCore,sample,identify:details=>{build={...build,...details};if(report)report.runtime.build=plain(build);},report:()=>report};
   addEventListener('error',event=>{
     if(event.error||event.message)fatal(event.error||new Error(event.message),{source:'uncaught-error'});
     else if(event.target?.tagName==='SCRIPT')fatal(new Error('游戏脚本加载失败：'+(event.target.src||'')),{source:'script-load'});
@@ -224,6 +224,6 @@
   setInterval(()=>{if(!stopped&&!core&&globalThis.Module)bindCore(globalThis.Module);else if(autoSample)sample();},1000);
   fetch(new URL('./manifest.json',scriptUrl)).then(r=>r.ok?r.json():null).then(value=>{if(value){build={...value,...build};if(report)report.runtime.build=plain(build);}}).catch(()=>{});
   fetch(new URL('./crash-code-identities.json',scriptUrl)).then(r=>r.ok?r.json():null).then(value=>{
-    if(Array.isArray(value?.files)){build={...build,codeIdentities:value.files.filter(f=>/\.wasm$|^(?:core|th14-sdl|th15|shell)\.mjs$/.test(f.path))};if(report)report.runtime.build=plain(build);}
+    if(Array.isArray(value?.files)){build={...build,codeIdentities:value.files.filter(f=>/\.wasm$|^(?:core|th14-sdl(?:-single)?|th15|shell)\.mjs$/.test(f.path))};if(report)report.runtime.build=plain(build);}
   }).catch(()=>{});
 })();

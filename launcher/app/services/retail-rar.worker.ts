@@ -1,6 +1,8 @@
 import {createExtractorFromData, UnrarError} from 'node-unrar-js/esm/index.esm.js';
 import {selectRetailArchiveEntries} from './retail-archive-entries';
 
+self.onmessageerror = () => self.postMessage({error: 'Unable to read the local archive request'});
+
 self.onmessage = async ({data}: MessageEvent<{input: Blob; limits: Record<string, number>; password: string; wasmUrl: string}>) => {
   try {
     const response = await fetch(data.wasmUrl);

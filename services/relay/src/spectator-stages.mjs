@@ -50,9 +50,10 @@ export class SpectatorStageRelay {
           if (timing.getBigUint64(12, true) !== event.session || timing.getUint32(20, true) !== event.abi)
             throw Error('spectator stage timing mismatch');
         }
-        // TH17 carries live animation and combat owners across stages.
+        // TH14 and TH17 carry live animation and combat owners across stages.
         // Keep the same tape so both new and downloading viewers can replay it.
-        const retainsRun = this.marker === COOPERATIVE_SPECTATOR_MARKERS.th17mp &&
+        const retainsRun = (this.marker === COOPERATIVE_SPECTATOR_MARKERS.th17mp ||
+          this.marker === COOPERATIVE_SPECTATOR_MARKERS.th14mp) &&
           event.version === 2 && event.schema === 3;
         if (this.session && retainsRun !== this.retainsRun) throw Error('spectator stage restore mode changed');
         if (this.retainsRun) {

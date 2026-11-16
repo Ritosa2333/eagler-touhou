@@ -22,11 +22,12 @@ void enemy_th14_closest_bullet(EnemyState& e,const BulletState* first)noexcept{
     e.integers[0]=closest?1:0;
     if(closest){e.floats[0]=closest->position.x;e.floats[1]=closest->position.y;}
 }
-void enemy_th14_freeze_bullets(const EnemyState& e,BulletState* first,Vec3 player,BulletEnvironment& environment)noexcept{
+void enemy_th14_freeze_bullets(const EnemyState& e,BulletState* first,BulletEnvironment& environment)noexcept{
     // 42cb00 uses two squared radii and traverses the active list, saving next.
     const float inner=e.floats[0]*e.floats[0],outer=e.floats[1]*e.floats[1];
     for(auto* b=first;b;){auto* next=b->th14_active_next;
         if(b->th14_script_state==1||b->th14_script_state==2){
+            const auto player=environment.th14_target(b->position);
             const float dx=b->position.x-player.x,dy=b->position.y-player.y;
             const float distance=dx*dx+dy*dy;
             if(b->th14_script_state==1){

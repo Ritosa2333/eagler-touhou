@@ -58,14 +58,17 @@ struct AudioDevice::Impl {
     struct Balance {
         ma_node_base base{};
         float left=1,right=1;
+        const float* output_gain=nullptr;
         bool initialized=false;
         static void process(ma_node* node,const float** input,ma_uint32* in_count,
                             float** output,ma_uint32* out_count){
             auto& self=*static_cast<Balance*>(node);
             const ma_uint32 count=std::min(*in_count,*out_count);
+            const float gain=self.output_gain?*self.output_gain:1.f;
+            const float left=self.left*gain,right=self.right*gain;
             for(ma_uint32 i=0;i<count;++i){
-                output[0][i*2]=float(input[0][i*2]*self.left);
-                output[0][i*2+1]=float(input[0][i*2+1]*self.right);
+                output[0][i*2]=input[0][i*2]*left;
+                output[0][i*2+1]=input[0][i*2+1]*right;
             }
             *in_count=*out_count=count;
         }
@@ -165,6 +168,9 @@ bool AudioDevice::initialize(GameResources& resources){
 #endif
         effects.buffers[n]=n+1;a.sounds[n]=std::move(voice);
     }
+#if PORT_TITLE == 14
+    for(auto& voice:a.sounds)if(voice)voice->balance.output_gain=&launcher_effect_gain;
+#endif
     if(!resources.read("thbgm.fmt",a.formats)){error="Missing TH11 music layout";return false;}SDL_ResumeAudioStreamDevice(a.stream);a.ready=true;error.clear();return true;
 }
 #if PORT_TITLE == 14
@@ -213,6 +219,7 @@ bool AudioDevice::adopt_prepared(AudioDevice& prepared){
     auto& next=*prepared.impl;next.stream=impl->stream;impl->stream=nullptr;
     next.suspended=impl->suspended;next.suspend_started=impl->suspend_started;next.suspended_time=impl->suspended_time;
     impl.swap(prepared.impl);
+    for(auto& voice:impl->sounds)if(voice)voice->balance.output_gain=&launcher_effect_gain;
     std::copy(std::begin(prepared.effects.buffers),std::end(prepared.effects.buffers),std::begin(effects.buffers));
     if(!impl->suspended)SDL_ResumeAudioStreamDevice(impl->stream);
     impl->ready=true;error.clear();return true;
@@ -297,7 +304,7 @@ bool AudioDevice::music(i32 track){
 #if PORT_TITLE == 14
         a.music->time.started=a.clock();a.music->time.paused=0;a.music->time.pause_started=0;
 #endif
-        ma_sound_set_volume(&a.music->sound,music_enabled?volume(SoundEffects::adjusted_volume(0,music_volume,true)):0.f);ma_sound_start(&a.music->sound);return true;}
+        refresh_volume();ma_sound_start(&a.music->sound);return true;}
     auto next=std::make_unique<Impl::Voice>();
     auto path=std::string("/music/")+stem+".ogg";
     const u32 rate=word(format+36),align=short_word(format+44),channels=short_word(format+34),total=word(format+28),intro=word(format+24);
@@ -319,8 +326,8 @@ bool AudioDevice::music(i32 track){
     next->time.rate=rate;next->time.total=total;next->time.intro=intro;
     next->time.channels=channels;next->time.bits=short_word(format+46);
 #endif
-    if(!a.attach(*next)){error="Unable to attach music voice";return false;}ma_sound_set_looping(&next->sound,MA_TRUE);ma_sound_set_volume(&next->sound,music_enabled?volume(SoundEffects::adjusted_volume(0,music_volume,true)):0.f);
-    a.music=std::move(next);a.track=track;a.fade=0;a.music_paused=false;
+    if(!a.attach(*next)){error="Unable to attach music voice";return false;}ma_sound_set_looping(&next->sound,MA_TRUE);
+    a.music=std::move(next);refresh_volume();a.track=track;a.fade=0;a.music_paused=false;
 #if PORT_TITLE == 14
     a.music_fade={};
 #endif
@@ -417,8 +424,20 @@ void AudioDevice::refresh_volume(){auto& a=*impl;
 #else
     const i32 base=a.fade?a.fade*5000/a.fade_total-5000:0;
 #endif
-    if(a.music)ma_sound_set_volume(&a.music->sound,music_enabled?volume(SoundEffects::adjusted_volume(base,music_volume,true)):0.f);
+    const float gain=music_enabled?volume(SoundEffects::adjusted_volume(base,music_volume,true)):0.f;
+#if PORT_TITLE == 14
+    if(a.music)ma_sound_set_volume(&a.music->sound,gain*launcher_music_gain);
+#else
+    if(a.music)ma_sound_set_volume(&a.music->sound,gain);
+#endif
 }
+#if PORT_TITLE == 14
+void AudioDevice::set_launcher_levels(float music,float effects){
+    launcher_music_gain=std::clamp(music,0.f,1.f);
+    launcher_effect_gain=std::clamp(effects,0.f,1.f);
+    refresh_volume();
+}
+#endif
 void AudioDevice::update(){auto& a=*impl;effects.process();
 #if PORT_TITLE == 14
     if(a.music&&!a.music_paused){const u32 action=a.music_fade.tick();if(action==2)ma_sound_stop(&a.music->sound);else if(action==1)refresh_volume();}

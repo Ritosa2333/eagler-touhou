@@ -235,7 +235,7 @@ bool ShotManager::hit(u32 j,Th14DamageArea& area,const Vec3& p,const Vec2* size,
     area.flags&=~1u;s.th14_area_flags&=~1u;s.th14_area_slot=256;out=s.damage;return true;
 }
 bool ShotManager::damage_th14(Vec3 p,const Vec2* size,float radius,float angle,bool advanced,GameEconomy& economy,i32& out,
-    u32 argument,u32 stamp,Enemy* hit_target,bool probe,bool* bomb_contact,float bomb_ratio){
+    u32 argument,u32 stamp,Enemy* hit_target,bool probe,bool* bomb_contact,float bomb_ratio,float shot_ratio){
     struct TargetScope {Enemy*& slot;Enemy* previous;~TargetScope(){slot=previous;}} scope{th14_damage_target,th14_damage_target};
     th14_damage_target=hit_target;
     out=0;if(!advanced)return true;
@@ -250,7 +250,7 @@ bool ShotManager::damage_th14(Vec3 p,const Vec2* size,float radius,float angle,b
     // Retail 423a54 passes enemy+280 to451430. The collector's last hit
     // position supplies the direction used by the later424af0 death effect.
     Vec3 last_hit=hit_target?Vec3{hit_target->state.death_reference.x,hit_target->state.death_reference.y,0}:Vec3{};
-    bool bomb=false;if(!th14_damage_collect(th14_areas,*this,p,size,radius,angle,advanced,probe,argument,stamp,signed_bits(resource.header.native_extra[0]),economy,out,bomb,hit_target?&last_hit:nullptr,&animations.th14_native_stack,bomb_ratio)){if(!last_error)last_error=12;return false;}
+    bool bomb=false;if(!th14_damage_collect(th14_areas,*this,p,size,radius,angle,advanced,probe,argument,stamp,signed_bits(resource.header.native_extra[0]),economy,out,bomb,hit_target?&last_hit:nullptr,&animations.th14_native_stack,bomb_ratio,shot_ratio)){if(!last_error)last_error=12;return false;}
     if(bomb_contact)*bomb_contact=bomb;
     if(hit_target)hit_target->state.death_reference={last_hit.x,last_hit.y};
     return true;
