@@ -33,3 +33,9 @@ play在initialize中绑定实际runtime方法；输入通过独立Symbol来源�
 当前页面新增实际25槽Replay的list/read/write/remove/sync，路径为adapter-owned相对名replay/th128_00.rpy..24.rpy；完整文件摘要、原codec、目标槽CAS、strict事务和完整回读接游戏原存储。写删仅启动前，运行中sync只核已提交Replay记录，明确storeOnly与非运行游戏flush。完整fileBridge:false保持；上文“文件命令尚未接”的描述仅代表810–816历史阶段。
 
 821受影响115项及825范围修正后的20项通过，822真实隔离浏览器IDB14项和跨文档重开通过；823原354KB已生成RPY在新桥中逐字节保持并接回游戏Replay读取者，无新World或录像执行。完整分数和原配置桥继续推进，见[Replay文件桥](REPLAY_FILE_BRIDGE.md)。
+
+## 原生分数只读导出826–831
+
+当前文件接口已新增adapter-owned `scoreth128.dat` 的list/read，从真实OwnedNativeTitleRecordStore验证通过的既有档案生成T821容器及完整SHA；缺失返回errno44，不创建默认档案。该名字不是已证明的原版文件名，score写入/删除和原binary配置仍拒绝，fileBridge:false保持。
+
+827格式15项、829当前codec/导出24项、830生产C++双向差分及831受影响144项通过。830只编译一个组件、未重编core112；当前入口存储/页面为明确模拟，没有新浏览器或游戏运行。详见[分数导出说明](NATIVE_SCORE_FILE.md)。

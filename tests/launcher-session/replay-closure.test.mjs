@@ -18,7 +18,7 @@ test('current Replay bridge and all static relative dependencies are in the sour
  visit('runtime/replay-file-bridge.mjs');
 });
 test('complete changed file/store/session/entry modules parse without graphics or runtime evaluation',()=>{
- for(const name of ['site/import-entry.mjs','site/runtime/replay-file-bridge.mjs','site/runtime/sound.mjs','site/runtime/launcher-session.mjs']){
+ for(const name of ['site/import-entry.mjs','site/runtime/replay-file-bridge.mjs','site/runtime/native-score-file.mjs','site/runtime/sound.mjs','site/runtime/launcher-session.mjs']){
   const result=spawnSync(process.execPath,['--check',fileURLToPath(new URL('../../'+name,import.meta.url))],{encoding:'utf8',windowsHide:true});
   assert.equal(result.status,0,result.stderr);assert.equal(result.stderr,'');
  }

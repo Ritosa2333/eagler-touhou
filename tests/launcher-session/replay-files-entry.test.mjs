@@ -72,3 +72,36 @@ test('exit during delayed file validation has no late ACK or write into the reti
  e.send(envelope('exit','exit'));await flush();await flush();
  assert.equal(response(e,'exit').ok,true);assert.equal(e.messages.some(row=>row.data.request==='write'&&row.data.ok),false);assert.equal(e.idb.counts.writes,0);e.handlers.pagehide();
 });
+
+async function nativeRecordFixture(){
+ const {profileFixture}=await import('../native-score/score-fixture.mjs'),profile=profileFixture();
+ return{schema:'th128-owned-native-title-record/1',revision:3,provenance:'ordinary-native-postrun',tainted:false,
+ profile,sha256:Buffer.from(await crypto.subtle.digest('SHA-256',profile)).toString('hex'),native:{route:0,rank:0},runId:'explicit-synthetic-score-export-owner'};
+}
+test('current file list/read exports a real T821 score from the actual validated native store without writing it',async()=>{
+ const idb=createReplayIDB(),record=await nativeRecordFixture();idb.seedNativeRecord(record);
+ const e=await setup({idb});try{
+  const list=await command(e,'scorelist','list'),row=list.files.find(row=>row.path==='scoreth128.dat');
+  assert(row,'Native score export path missing from current caller');assert(row.size>24);
+  const file=await command(e,'score','read',{path:'scoreth128.dat'});assert.equal(file.ok,true);assert.deepEqual(file.bytes.slice(0,4),[84,56,50,49]);
+  const {decodeNativeScoreFile}=await import('../../site/runtime/native-score-file.mjs'),profile=decodeNativeScoreFile(Uint8Array.from(file.bytes));
+  assert.equal(profile.length,52232);
+  for(const offset of [20,1664,13152+100,14220+200])assert.equal(profile[offset],record.profile[offset]);
+  assert.deepEqual(idb._dbs.get('th128-owned-native-title-records-v1').stores.get('records').get('native-profile'),record);
+  assert.equal(idb.counts.writes,0);assert.equal(e.calls.imports,0);
+ }finally{e.handlers.pagehide();}
+});
+test('absent native score is errno44 and does not create a default native profile or name DB',async()=>{
+ const e=await setup();try{
+  const row=await command(e,'missing','read',{path:'scoreth128.dat'});assert.equal(row.ok,false);assert.equal(row.errno,44);
+  assert.equal(e.idb._dbs.size,0);assert.equal(e.idb.counts.opens,0);
+ }finally{e.handlers.pagehide();}
+});
+test('external native score writes/removals and fabricated provenance remain refused',async()=>{
+ const e=await setup();try{
+  assert.equal((await command(e,'wscore','write',{path:'scoreth128.dat',bytes:[84,56,50,49]})).ok,false);
+  assert.equal((await command(e,'dscore','remove',{path:'scoreth128.dat'})).ok,false);assert.equal(e.idb.counts.writes,0);
+ }finally{e.handlers.pagehide();}
+ const idb=createReplayIDB(),bad=await nativeRecordFixture();bad.provenance='file-imported-as-world';idb.seedNativeRecord(bad);
+ const x=await setup({idb});try{assert.equal((await command(x,'badscore','read',{path:'scoreth128.dat'})).ok,false);assert.equal(idb.counts.writes,0);}finally{x.handlers.pagehide();}
+});

@@ -78,6 +78,7 @@ export const SITE_FILES = Object.freeze([
   'runtime/page-launch-context.mjs',
   'runtime/managed-dat-owner.mjs',
   'runtime/replay-file-bridge.mjs',
+  'runtime/native-score-file.mjs',
 ]);
 
 // REQUIRED online module: the automatic download/cache entry MAIN is implementing. A deployment

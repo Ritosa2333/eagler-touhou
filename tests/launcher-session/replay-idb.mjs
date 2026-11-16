@@ -63,6 +63,7 @@ export function createReplayIDB({strict=true,failWrite=()=>false,alterRead=null,
    counts.opens++;const request={result:null,error:null,onsuccess:null,onerror:null,onupgradeneeded:null};
    later(()=>{let db=dbs.get(name);const fresh=!db;if(!db){db=new DB(name);dbs.set(name,db);}request.result=db;if(fresh)request.onupgradeneeded?.();request.onsuccess?.();});return request;
   },
+  seedNativeRecord(record){const name='th128-owned-native-title-records-v1';let db=dbs.get(name);if(!db){db=new DB(name);db.createObjectStore('records');dbs.set(name,db);}db.stores.get('records').set('native-profile',structuredClone(record));},
   seed(slot,record){let db=dbs.get('th128-owned-replays-v1');if(!db){db=new DB('th128-owned-replays-v1');db.createObjectStore('slots');dbs.set(db.name,db);}db.stores.get('slots').set(slot,structuredClone(record));},
   peek(slot){return structuredClone(dbs.get('th128-owned-replays-v1')?.stores.get('slots').get(slot));}
  };

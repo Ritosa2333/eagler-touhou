@@ -110,7 +110,7 @@ async function discover(){
 function hostedReady(){
  if(!provider)return;
  file.hidden=true;start.hidden=true;hint.textContent='资源已准备好，等待启动器开始游戏。';
- launcher.runtimeInfo({version:'th128-hosted-bootstrap/1',partialAdapter:true,dataMode:managedOwner?'managed-original-DAT-with-verified-package':'validated-installed-DAT-OGG',fileBridge:false,managedResources:!!managedOwner,replayFiles:{root:'replay/',slots:25,commands:['list','read','write','remove','sync'],mutableBeforeLaunchOnly:true}});
+ launcher.runtimeInfo({version:'th128-hosted-bootstrap/1',partialAdapter:true,dataMode:managedOwner?'managed-original-DAT-with-verified-package':'validated-installed-DAT-OGG',fileBridge:false,managedResources:!!managedOwner,replayFiles:{root:'replay/',slots:25,commands:['list','read','write','remove','sync'],mutableBeforeLaunchOnly:true},nativeScoreExport:{path:'scoreth128.dat',readOnly:true}});
  launcher.markReady();
 }
 const parentWindow=typeof window==='undefined'?globalThis.window:window;
