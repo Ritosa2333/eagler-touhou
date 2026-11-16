@@ -1497,6 +1497,26 @@
     "id": "help_autoRotateStep",
     "params": []
   },
+  "lobby.source": {
+    "id": "lobby_source",
+    "params": []
+  },
+  "lobby.sourceAddress": {
+    "id": "lobby_sourceAddress",
+    "params": []
+  },
+  "lobby.sourceHint": {
+    "id": "lobby_sourceHint",
+    "params": []
+  },
+  "lobby.sourceInvalid": {
+    "id": "lobby_sourceInvalid",
+    "params": []
+  },
+  "lobby.sourceApply": {
+    "id": "lobby_sourceApply",
+    "params": []
+  },
   "lobby.title": {
     "id": "lobby_title",
     "params": []

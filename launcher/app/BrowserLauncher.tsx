@@ -208,7 +208,7 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
       window.removeEventListener('online', session.directory.online); window.removeEventListener('offline', session.directory.offline); document.removeEventListener('visibilitychange', visible); connection?.removeEventListener('change', session.directory.networkChanged);};
   }, [session]);
   useEffect(() => {session.directory.selectProduct(productFilters.length === 1 ? productFilters[0] : viewingProduct);}, [session, productFilters, viewingProduct]);
-  return <LobbyDirectoryView {...props} initialRows={document.documentElement.hasAttribute('data-lobby-boot')} service={session.directory} products={createLibraryProducts(directory.products, path => new URL(path, session.baseUrl).href, id => `?game=${id}`)}
+  return <LobbyDirectoryView {...props} initialRows={document.documentElement.hasAttribute('data-lobby-boot')} service={session.directory} source={session.lobbySource} products={createLibraryProducts(directory.products, path => new URL(path, session.baseUrl).href, id => `?game=${id}`)}
     viewingProduct={viewingProduct} onSelect={id => {
       const next = new URL(window.location.href); next.searchParams.delete('games');
       next.searchParams.delete('game'); if (id) next.searchParams.set('game', id);

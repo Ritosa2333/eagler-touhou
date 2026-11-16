@@ -19,6 +19,7 @@ export interface LobbySurfaceProps extends Omit<
   membership?: ReactNode;
   notice?: string;
   roomTools: ReactNode;
+  sourceControl?: ReactNode;
   roomFilters?: ReactNode;
   roomList: ReactNode;
   hasRooms: boolean;
@@ -46,6 +47,7 @@ export function LobbySurface({
   membership,
   notice,
   roomTools,
+  sourceControl,
   roomFilters,
   roomList,
   hasRooms,
@@ -104,6 +106,7 @@ export function LobbySurface({
           {roomFilters}
           <div className="lobby-actions">{roomTools}</div>
         </header>
+        {sourceControl}
         <section
           className="lobby-list-surface"
           aria-label={t('lobby.rooms')}

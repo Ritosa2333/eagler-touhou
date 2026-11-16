@@ -210,6 +210,19 @@ async function liveDirectory(extra) {
   return fixture;
 }
 
+test('directory sends room listings only to the chosen lobby source', async () => {
+  const {service, sockets} = await liveDirectory({
+    resolveRelay(defaultRelay) {
+      assert.equal(defaultRelay, 'wss://relay.invalid/socket');
+      return 'wss://private.example.invalid/lan';
+    },
+  });
+  assert.equal(sockets.length, 1);
+  assert.equal(new URL(sockets[0].url).origin, 'wss://private.example.invalid');
+  assert.equal(new URL(sockets[0].url).searchParams.get('directory'), '1');
+  service.dispose();
+});
+
 test('directory preserves main host-existence product subset and 3s retry without declaring socket offline', async () => {
   const fixture = await liveDirectory();
   const { service, sockets, clock } = fixture,
@@ -731,6 +744,15 @@ test('legacy room wire minimizes names until the server advertises moderation an
   assert.equal(Object.hasOwn(runtime, 'netplayPredictionReserve'), false);
   assert.equal(new URL(runtime.netplayUrl).searchParams.get('member'), 'member123456');
   service.dispose();
+});
+
+test.each([true, false])('room passes the opt-in LAN WebSocket fallback to the runtime (%s)', async allowWebsocketFallback => {
+  const {service} = await joinedRoom({allowWebsocketFallback});
+  try {
+    assert.equal(service.runtimeOptions().netplayAllowWebsocketFallback, allowWebsocketFallback ? true : undefined);
+  } finally {
+    service.dispose();
+  }
 });
 
 test('room take-seat commits only relay snapshot, and stale movement confirmation cannot seat in successor', async () => {

@@ -109,6 +109,8 @@ export interface MultiplayerRoomPorts {
   sessions: MultiplayerRoomSessionStore;
   preferences: MultiplayerPreferenceStore;
   memberId(): string;
+  allowAccountIdentity?: boolean;
+  allowWebsocketFallback?: boolean;
   createSocket(url: string): RoomSocket;
   relayUrl(product: MultiplayerProductId): string;
   settings(): RoomSettingsInput;
@@ -676,7 +678,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         return;
       }
       if (message.type === 'state') {
-        if (!accountIdentityRequested && typeof message.accountChallenge === 'string') {
+        if (ports.allowAccountIdentity !== false && !accountIdentityRequested && typeof message.accountChallenge === 'string') {
           accountIdentityRequested = true;
           requestAccountIdentity(message.accountChallenge);
         }
@@ -1335,6 +1337,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           : {}),
         iceServers: ports.settings().iceServers,
         preferTurn: state.preferTurn,
+        allowWebsocketFallback: ports.allowWebsocketFallback,
         loadouts,
       },
       config,

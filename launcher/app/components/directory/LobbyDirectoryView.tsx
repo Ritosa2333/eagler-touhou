@@ -13,17 +13,20 @@ import {useTh09Ratings} from '../../services/th09-ratings';
 import {ListFilter} from 'lucide-react';
 import {ActionMenu,ActionMenuRadioGroup,ActionMenuRadioItem} from '../../ui/action-menu';
 import type {DirectoryFormMode, DirectoryRoom, LobbyDirectoryService} from '../../services/lobby-directory';
+import type {createLobbySource} from '../../services/lobby-source';
+import {Input} from '../../ui/input';
 
-type Derived = 'roomFilters' | 'selectedProduct' | 'connectionWarning' | 'membership' | 'notice' | 'roomTools' | 'roomList' | 'hasRooms' | 'loading' | 'emptyState' | 'roomCount' | 'roomUsersArtwork';
+type Derived = 'roomFilters' | 'selectedProduct' | 'connectionWarning' | 'membership' | 'notice' | 'roomTools' | 'sourceControl' | 'roomList' | 'hasRooms' | 'loading' | 'emptyState' | 'roomCount' | 'roomUsersArtwork';
 export interface LobbyDirectoryViewProps extends Omit<LobbySurfaceProps, Derived> {
   service: LobbyDirectoryService;
   assetUrl(path: string): string;
   /** The owner prepares the model then opens the original same-URL form entry. */
   onOpenForm(mode: DirectoryFormMode): void;
   initialRows?: boolean;
+  source?: ReturnType<typeof createLobbySource>;
 }
 /** Original lobby.mts349–385 render conditions, composed once in LobbySurface. */
-export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows = false, ...surface}: LobbyDirectoryViewProps) {
+export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows = false, source, ...surface}: LobbyDirectoryViewProps) {
   const {t} = useLocale(), snapshot = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
   const [roomFilter, setRoomFilter] = useState<DirectoryRoomFilter>('all');
   const seenRooms = useRef<Set<string> | null>(null);
@@ -110,10 +113,33 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
     hint: state.connection === 'live' && filtering ? (t('directory.filterHint')) : t(state.connection === 'live' ? 'lobby.emptyHint' : state.connection === 'loading' ? 'lobby.loadingHint' : state.connection === 'unsupported' ? 'lobby.unsupportedHint' : state.connection === 'missing' ? 'lobby.noService' : 'lobby.offlineHint'),
     action: state.connection === 'loading' || (state.connection === 'live' && !!state.mine) ? undefined : {label: state.connection === 'live' && filtering ? (t('directory.clearFilters')) : t(state.connection === 'live' ? 'lobby.create' : 'lobby.retry'), onClick: () => {if (state.connection !== 'live') service.retry(); else if (filtering) {beginFilterReorder(); setRoomFilter('all'); if (surface.onProductFiltersChange) surface.onProductFiltersChange([]); else surface.onSelect('');} else onOpenForm('create');}},
   };
-  return <LobbySurface {...surface} selectedProduct={surface.viewingProduct || state.selectedProduct} connectionWarning={warning} membership={membership} notice={state.notice} roomTools={roomTools} roomFilters={roomFilters}
+  return <LobbySurface {...surface} selectedProduct={surface.viewingProduct || state.selectedProduct} connectionWarning={warning} membership={membership} notice={state.notice} roomTools={roomTools} roomFilters={roomFilters} sourceControl={source && <LobbySourceForm source={source}/>}
     roomList={<DirectoryRoomRows snapshot={rows} service={service} assetUrl={assetUrl} ratings={players} myRating={mine} cards={cards} initialRows={initialRows} arrivals={arrivals} exiting={exitingKeys}/>}
     hasRooms={!!rows.visibleRooms.length} loading={state.loading} emptyState={rows.visibleRooms.length ? null : empty} roomCount={state.loading && !state.visibleRooms.length ? '' : t('lobby.roomCount', {count: state.visibleRooms.length})}
     viewingProduct={surface.viewingProduct} roomUsersArtwork={assetUrl('assets/room-users.svg')}/>;
+}
+
+function LobbySourceForm({source}: {source: ReturnType<typeof createLobbySource>}) {
+  const {t} = useLocale();
+  const [value, setValue] = useState(source.relay ?? '');
+  const [invalid, setInvalid] = useState(false);
+  return <details className="text-sm">
+    <summary className="cursor-pointer">{t('lobby.source')}{source.relay && ` · ${new URL(source.relay).host}`}</summary>
+    <form className="mt-2 flex max-w-md flex-col gap-2" onSubmit={event => {
+      event.preventDefault();
+      if (source.save(value)) window.location.reload();
+      else setInvalid(true);
+    }}>
+      <label htmlFor="lobbyRelayAddress">{t('lobby.sourceAddress')}</label>
+      <Input id="lobbyRelayAddress" type="url" value={value} aria-invalid={invalid} onChange={event => {
+        setValue(event.currentTarget.value);
+        setInvalid(false);
+      }}/>
+      <span className="text-xs">{t('lobby.sourceHint')}</span>
+      {invalid && <span role="alert">{t('lobby.sourceInvalid')}</span>}
+      <BookButton variant="action" type="submit">{t('lobby.sourceApply')}</BookButton>
+    </form>
+  </details>;
 }
 
 export function DirectoryRoomFilters({rooms,value,onChange}:{rooms:readonly DirectoryRoom[];value:DirectoryRoomFilter;onChange(value:DirectoryRoomFilter):void}) {

@@ -18,6 +18,7 @@ import {createMultiplayerRoomSessionStore} from '../../src/launcher/multiplayer-
 import {buildMultiplayerDiagnosticRelayUrl} from '../../src/launcher/multiplayer-relay-url.mts';
 import {createNetworkDiagnosticsModel} from '../components/directory/network-diagnostics-model';
 import {createLobbyDirectory} from '../services/lobby-directory';
+import {createLobbySource} from '../services/lobby-source';
 import {translate, type Translate} from '../i18n';
 import {createGameSettingsModel, settingsChangeResetsRuntime, type SettingsSnapshot} from '../models/game-settings';
 import {createGamepadMappingModel} from '../../src/launcher/gamepad-mapping.mts';
@@ -344,12 +345,16 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     testBuild,
     requestPersistence: async () => {try {await window.navigator.storage?.persist?.();} catch {}}});
   let sessionStorage: Storage | null = null; try {sessionStorage = window.sessionStorage;} catch {}
-  const identity = createMultiplayerIdentityStore({persistentStorage: storage, sessionStorage});
-  const sessions = createMultiplayerRoomSessionStore({storage: sessionStorage});
+  const lobbySource = createLobbySource(sessionStorage, window.location.protocol);
+  const identity = createMultiplayerIdentityStore({persistentStorage: storage, sessionStorage:lobbySource.scopedStorage});
+  const sessions = createMultiplayerRoomSessionStore({storage:lobbySource.scopedStorage});
+  const memberId = lobbySource.relay ? lobbySource.memberId : multiplayerMemberId;
   const relayRouting = createRelayEntryRouting({
     shared: () => directoryEntry ? directory.getSnapshot().siteManifest?.shared : metadata.getSnapshot().siteManifest?.shared,
     createSocket: url => new WebSocket(url),
   });
+  const resolveRelay = (base: string) => lobbySource.relay ?? relayRouting.resolve(base);
+  const createRelaySocket = (url: string) => lobbySource.relay ? new WebSocket(url) : relayRouting.createSocket(url);
   const directory = createLobbyDirectory({
     clientSideFiltering: true,
     testBuild,
@@ -358,7 +363,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), {status: response.status});
       return response.json();
     }),
-    createSocket: url => relayRouting.createSocket(url), memberId: multiplayerMemberId,
+    resolveRelay, createSocket: createRelaySocket, memberId,
     identity, sessions, sessionStorage, translate: t,
     launcherUrl: () => new URL(localeHome(snapshot.locale), baseUrl).href,
     navigateToRoom: url => requiredNavigation().navigateToRoom(url),
@@ -366,8 +371,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     onSelectedProductNormalized: product => requiredNavigation().selectLobbyProduct(product),
   });
   const networkDiagnostics = createNetworkDiagnosticsModel({ translate: stringTranslate,
-    createRelaySocket: url => relayRouting.createSocket(url),
-    getRelayUrl: () => {const host = /\/lobby(?:\.html)?\/?$/.test(window.location.pathname) ? directory.getSnapshot().siteManifest : metadata.getSnapshot().siteManifest; const relay = host?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relayRouting.resolve(relay)) : '';},
+    createRelaySocket,
+    getRelayUrl: () => {const host = /\/lobby(?:\.html)?\/?$/.test(window.location.pathname) ? directory.getSnapshot().siteManifest : metadata.getSnapshot().siteManifest; const relay = resolveRelay(host?.shared.netplayRelay ?? ''); return relay ? buildMultiplayerDiagnosticRelayUrl(relay) : '';},
     getFallbackIceServers: () => [{urls: ['stun:stun.cloudflare.com:3478']}]});
   const nativeTouch = createTouchNativePorts({document, screen: window.screen, mobile, translate: t});
   const playerGestureTypes = ['contextmenu', 'selectstart', 'dragstart', 'gesturestart', 'gesturechange', 'gestureend'];
@@ -591,7 +596,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   });
   const titleNetwork = createTitleNetwork({context: () => ({game: runtime?.getSnapshot().game ?? activeSettings?.gameId ?? 'th06',
     product: roomSession?.service.getSnapshot().product ?? activeSettings?.context.productId ?? DEFAULT_PRODUCT_ID,
-    launched: runtime?.getSnapshot().launched === true, relayUrl: relayRouting.resolve(metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? '')}),
+    launched: runtime?.getSnapshot().launched === true, relayUrl: resolveRelay(metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? '')}),
     translate: stringTranslate, toast: feedback.toast, randomValues: value => {const bytes = new Uint32Array(value.length); window.crypto.getRandomValues(bytes); value.set(bytes); return value;},
     sendNetworkCancel: () => requiredRuntime().cancelTitleNetwork(),
     enterRoom(product, code, created) {if (isMultiplayerProductId(product)) roomSession!.service.enterRoom(product, code, created);},
@@ -1208,9 +1213,11 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   });
   const roomPreparation = createRoomPreparation({acquisition, metadataReady: metadata.initialize, baseUrl, translate: t,
     activeWorker: () => appShellOwner.activeWorker(), network});
-  roomSession = createRoomSession({document, window, storage, identity, sessions, memberId: multiplayerMemberId,
+  roomSession = createRoomSession({document, window, storage, identity, sessions, memberId,
     publicRelayUrl: () => metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? '',
-    createSocket: url => relayRouting.createSocket(url), relayUrl: () => relayRouting.resolve(metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? ''),
+    allowAccountIdentity: !lobbySource.relay,
+    allowWebsocketFallback: lobbySource.local,
+    createSocket: createRelaySocket, relayUrl: () => resolveRelay(metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? ''),
     settingsModel: settings, sitePreferences: preferences, runtime: () => runtime, replayViewer: () => snapshot.replayViewer,
     titleOverlayOpen: () => snapshot.th09NetworkOverlayOpen,
     onMusicAudibleChange(audible) {
@@ -1453,7 +1460,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (command) await owner.send('spectator-playback', command);
     },
     room, titleNetwork, calibration, networkDiagnostics, appShell: appShellOwner, baseUrl, storage, mobile, metadata, settingsContext, acquisition, directory, gameData, transfer, startupError, startup, settings, gamepad, keyboardPreferences, th19Keyboard, th19Gamepad, th09LocalInput, touchLayout, preferences, feedback, decisions, nativeTouch, settingsActions,
-    readLocalSaves,get cloudSync(){return cloudSync;},
+    lobbySource, readLocalSaves,get cloudSync(){return cloudSync;},
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};}, getSnapshot: () => snapshot,
     initialize, attachFrame, requestRuntimeClose, requestReplayManagerClose, launch, openReplayViewer, switchReplayProduct, exitRoomPlayerFullscreen,
     restoreRoomFromUrl,
