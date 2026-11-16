@@ -25,6 +25,12 @@ test('TURN pool augments ordinary WebRTC and leaves Swarm ICE policy intact', as
   const upstream = new WebSocketServer({host:'127.0.0.1',port:0});
   upstream.on('connection', (peer, request) => {
     const mode = new URL(request.url,'http://127.0.0.1').searchParams.get('mode');
+    if (mode === 'swarm-standby' || mode === 'direct-standby') {
+      const route = mode === 'swarm-standby' ? 'swarm-10' : 'direct';
+      peer.send(JSON.stringify({type:'rtc-standby', phase:'measure', route,
+        iceServers:route === 'direct' ? [stun] : [swarm]}));
+      return;
+    }
     const iceServers = mode === 'native' ? [stun] : [stun, mode === 'swarm' ? swarm : ordinary];
     peer.send(JSON.stringify({type:'peers',iceServers,...(mode !== 'ordinary' ? {turnMode:'swarm'} : {})}));
   });
@@ -52,6 +58,8 @@ test('TURN pool augments ordinary WebRTC and leaves Swarm ICE policy intact', as
     await once(proxy,'listening');
     assert.deepEqual(await peers('swarm'), [stun,swarm]);
     assert.deepEqual(await peers('native'), [stun]);
+    assert.deepEqual(await peers('swarm-standby'), [swarm]);
+    assert.deepEqual(await peers('direct-standby'), [stun]);
     assert.equal(brokerCalls,0);
     assert.deepEqual((await peers('ordinary')).flatMap(server => server.urls),
       [...cloudflare.urls,...stun.urls,...ordinary.urls,backup]);

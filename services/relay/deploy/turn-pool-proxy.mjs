@@ -84,7 +84,9 @@ export function startProxy(config) {
         if (!isBinary && data.length < 65536) {
           try {
             const value = JSON.parse(data.toString());
-            if (value?.turnMode !== 'swarm' &&
+            const fixedRoute = value?.type === 'rtc-standby' &&
+              (value.route === 'direct' || /^swarm-[0-9]+$/.test(value.route));
+            if (!fixedRoute && value?.turnMode !== 'swarm' &&
                 (Array.isArray(value?.iceServers) || Array.isArray(value?.roomProbe?.iceServers))) {
               const entries = value.iceServers || value.roomProbe?.iceServers;
               appendTurnPool(entries, config.poolFile);
