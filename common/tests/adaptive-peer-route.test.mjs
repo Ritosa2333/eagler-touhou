@@ -6,15 +6,16 @@ import {createAdaptivePeerRoute} from '../browser/adaptive-peer-route.mjs';
 function fixture(config = {}) {
     let time = 1, id = 0, nextPc = 0;
     const tasks = new Map(), pcs = new Map(), deliveries = [[], []], selected = [[], []], errors = [];
+    const reports = [[], []];
     let blockNetwork = false;
-    let dropPrimary = false, holdControl = false, visible = [true, true], running = true;
+    let dropPrimary = false, dropStandbyPongs = false, holdControl = false, visible = [true, true], running = true;
     let dropCommit = false, droppedCommit = 0;
     const held = [];
     const later = (fn, ms) => { tasks.set(++id, {fn, at: time + ms}); return id; };
     const cancel = id => tasks.delete(id);
     class Channel {
         readyState = 'connecting'; bufferedAmount = 0;
-        constructor(label, path) { this.label = label; this.path = path; }
+        constructor(label, path, seat) { this.label = label; this.path = path; this.seat = seat; }
         send(data) {
             if (this.readyState !== 'open') throw Error('closed');
             if (blockNetwork) return;
@@ -22,21 +23,27 @@ function fixture(config = {}) {
             if (dropCommit && typeof data === 'string' && data.startsWith('etr1:') &&
                 JSON.parse(data.slice(5)).kind === 'commit' && droppedCommit++ === 0) return;
             if (this.path === 'primary' && dropPrimary && this.label === 'input') return;
+            if (this.path === 'turn' && dropStandbyPongs && this.seat === 0 &&
+                typeof data === 'string' && JSON.parse(data.slice(5)).kind === 'pong') return;
             const deliver = () => { if (this.other.readyState === 'open') this.other.onmessage?.({data: payload}); };
             if (this.path === 'primary' && holdControl && typeof data !== 'string' && this.label === 'control') held.push(deliver);
-            else later(deliver, 20);
+            else later(deliver, this.path === 'primary' ? (config.primaryDelay ?? 20) : 20);
         }
         close() { this.readyState = 'closed'; this.onclose?.(); }
     }
     function channels(label, path) {
-        const a = new Channel(label, path), b = new Channel(label, path);
+        const a = new Channel(label, path, 0), b = new Channel(label, path, 1);
         a.other = b; b.other = a;
         return [a, b];
     }
     class Peer {
         channels = []; connectionState = 'new';
         constructor(config) { this.config = config; this.id = ++nextPc; pcs.set(this.id, this); }
-        createDataChannel(label) { const dc = new Channel(label, 'turn'); this.channels.push(dc); return dc; }
+        createDataChannel(label) {
+            const dc = new Channel(label, this.config.iceTransportPolicy === 'relay' ? 'turn' : 'direct', 0);
+            this.channels.push(dc);
+            return dc;
+        }
         async createOffer() { return {type: 'offer', sdp: String(this.id)}; }
         async createAnswer() { return {type: 'answer', sdp: String(this.id)}; }
         async setLocalDescription(description) { this.localDescription = description; }
@@ -45,7 +52,7 @@ function fixture(config = {}) {
             if (description.type !== 'offer') return;
             const other = pcs.get(Number(description.sdp));
             for (const a of other.channels) {
-                const b = new Channel(a.label, 'turn'); a.other = b; b.other = a;
+                const b = new Channel(a.label, a.path, 1); a.other = b; b.other = a;
                 this.channels.push(b); this.ondatachannel({channel: b});
                 later(() => {
                     a.readyState = b.readyState = 'open';
@@ -64,11 +71,19 @@ function fixture(config = {}) {
     ];
     const routes = paths.map((primary, seat) => createAdaptivePeerRoute({
         primary, localPlayer: seat, peerId: 1 - seat, tag: 'test', enabled: config.enabled?.[seat] ?? true,
-        iceServers: () => [{urls: 'turn:fixture:3478', username: 'test', credential: 'test'}],
+        directRetry: config.directRetry?.[seat],
+        surveyEnabled: () => config.survey === true,
+        initialRelayRoute: () => 'swarm-0',
+        surveySignal: message => {
+            if (message.type === 'rtc-standby-signal') later(() => routes[1-seat].relayStandby(message), 15);
+            else reports[seat].push(message);
+            return true;
+        },
+        iceServers: () => [{urls: 'stun:fixture:3478'}, {urls: 'turn:fixture:3478', username: 'test', credential: 'test'}],
         alive: () => true, running: () => running, visible: () => visible[seat],
         now: () => time, later, cancel, PeerConnection: Peer,
         receive: bytes => deliveries[seat].push(Array.from(new Uint8Array(bytes.buffer || bytes, bytes.byteOffset || 0, bytes.byteLength))),
-        selected: path => selected[seat].push(path === primary ? 'primary' : 'turn'),
+        selected: path => selected[seat].push(path === primary ? 'primary' : path.path),
         failed: message => errors.push(message),
     }));
     paths.forEach((path, seat) => {
@@ -82,9 +97,10 @@ function fixture(config = {}) {
     });
     const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
     return {
-        routes, paths, deliveries, selected, errors, tasks, pcs, later,
+        routes, paths, deliveries, selected, errors, tasks, pcs, later, reports,
         block(value = true) { blockNetwork = value; },
         drop(value = true) { dropPrimary = value; },
+        dropStandbyPongs(value = true) { dropStandbyPongs = value; },
         dropFirstCommit() { dropCommit = true; },
         hold(value = true) { holdControl = value; },
         release() { for (const fn of held.splice(0)) fn(); },
@@ -106,6 +122,28 @@ function fixture(config = {}) {
 }
 
 {
+    const f = fixture({primaryPath:'turn',primaryDelay:100,directRetry:[false,false],survey:true});
+    const iceServers = [{urls:'turn:fixture:3478'}];
+    const standby = (serial,phase,route) => Promise.all(f.routes.map(r=>r.relayStandby({type:'rtc-standby',serial,phase,route,iceServers})));
+    await f.advance(4500);
+    assert(f.reports.every(reports=>reports.some(event=>event.type==='rtc-route-slow'&&event.route==='swarm-0')));
+    await standby(1,'measure','swarm-12');
+    assert(f.routes[0].send(new Uint8Array([70]),true));
+    await f.advance(2800);
+    assert(f.reports.every(reports=>reports.some(event=>event.type==='rtc-route-report'&&event.serial===1&&event.quality.p95===40)));
+    assert.deepEqual(f.deliveries[1],[[70]]);
+    assert.deepEqual(f.selected,[[],[]]);
+    await standby(2,'select','swarm-12');
+    await f.advance(6500);
+    assert.deepEqual(f.selected,[['swarm-12'],['swarm-12']]);
+    assert(f.routes[0].send(new Uint8Array([71]),true));
+    await f.advance(200);
+    assert.deepEqual(f.deliveries[1],[[70],[71]]);
+    assert.equal(f.errors.length,0);
+    f.close();
+}
+
+{
     const f = fixture(); await f.advance(50);
     assert(f.routes[0].snapshot().supported);
     assert(!f.routes[0].snapshot().standbyReady, 'a negotiated peer need not have a ready standby');
@@ -124,6 +162,15 @@ function fixture(config = {}) {
     assert.deepEqual(f.deliveries[1], [[41], [42]], 'the receiver has no permanent reliable-sequence gap');
     assert.equal(f.routes[0].snapshot().pendingControl, 0);
     assert.equal(f.routes[0].snapshot().selected, 'primary');
+    assert.equal(f.errors.length, 0);
+    f.close();
+}
+{
+    const f = fixture(); await f.advance(6000);
+    f.dropStandbyPongs(); f.drop(); await f.advance(10000);
+    assert.deepEqual(f.selected, [[], []], 'one healthy measurement cannot hide the other peer’s standby loss');
+    f.dropStandbyPongs(false); await f.advance(20000);
+    assert.deepEqual(f.selected, [['turn'], ['turn']], 'both peers approve the same standby after the loss clears');
     assert.equal(f.errors.length, 0);
     f.close();
 }
@@ -191,8 +238,27 @@ function fixture(config = {}) {
     f.close();
 }
 {
-    const f = fixture({primaryPath: 'turn'}); await f.advance(6000);
-    assert.equal(f.pcs.size, 0, 'an initial TURN route does not allocate another TURN connection');
+    const f = fixture({primaryPath: 'turn', directRetry: [true, false]}); await f.advance(6000);
+    assert.equal(f.pcs.size, 0, 'an older peer can continue to use the original TURN route');
+    f.close();
+}
+{
+    const f = fixture({primaryPath: 'turn', primaryDelay: 110});
+    f.routes[0].send(new Uint8Array([8]), true);
+    await f.advance(350);
+    assert.deepEqual(f.deliveries[1], [[8]], 'the first relay carries gameplay while direct gathers');
+    assert(f.routes.every(route => route.snapshot().selected === 'primary'));
+    await f.advance(10000);
+    assert.equal(f.pcs.size, 2);
+    for (const pc of f.pcs.values()) {
+        assert.equal(pc.config.iceTransportPolicy, 'all');
+        assert.deepEqual(pc.config.iceServers, [{urls: ['stun:fixture:3478']}]);
+    }
+    assert.deepEqual(f.selected, [['direct'], ['direct']], 'both peers switch to verified direct');
+    f.routes[0].send(new Uint8Array([9]), true);
+    await f.advance(1000);
+    assert.deepEqual(f.deliveries[1], [[8], [9]], 'reliable controls span the handoff');
+    assert.equal(f.errors.length, 0);
     f.close();
 }
 {

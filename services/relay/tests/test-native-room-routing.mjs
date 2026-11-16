@@ -5,6 +5,100 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {WebSocket, WebSocketServer} from 'ws';
 import {createNat4CandidateExchange, readNat4PortSteps} from '../src/nat4-candidates.mjs';
 
+import {createSwarmStandbyPlanner, rankSwarmCandidates} from '../src/swarm-route-quality.mjs';
+
+{
+  const workers = [0, 12, 9].map(id => ({id, ip:`192.0.2.${id + 1}`}));
+  const pings = times => ({at:100, samples:new Map(workers.map(({id,ip}, i) => [id, {ip, rtt:times[i]}]))});
+  const ranked = rankSwarmCandidates(workers, null, null, 101, [pings([10, 44, 31]), pings([95, 20, 42])]);
+  assert.deepEqual(ranked.map(({worker, estimatedRtt}) => [worker, estimatedRtt]), [[12,64], [9,73], [0,105]]);
+  assert.deepEqual(rankSwarmCandidates(workers, null, null, 101, [pings([10, 44, 31])]).map(({worker}) => worker), [0,9,12]);
+  assert.equal(rankSwarmCandidates(workers, null, null, 300_000, [pings([10, 44, 31])])[0].measuredEndpoints, 0);
+
+  const updates = [];
+  const survey = createSwarmStandbyPlanner({workers:[12, 9, 0],ordinaryTurn:true,dispatch:update=>updates.push(update)});
+  const current = {sent:16, received:16, p95:80};
+  try {
+    assert.equal(survey.consider('direct', current, true), false);
+    assert.equal(survey.consider('swarm-0', current), false);
+    assert.equal(survey.consider('swarm-0', current, true), true);
+    assert.equal(updates[0].route, 'direct');
+  } finally {
+    survey.close();
+  }
+}
+
+for (const healthy of [true, false]) {
+  const dispatched = [];
+  const survey = createSwarmStandbyPlanner({workers:[5, 12, 0, 2, 3],ordinaryTurn:true,dispatch:update=>dispatched.push(update)});
+  const quality = p95=>({sent:16, received:16, p95});
+  const measure = (name, left, right) => {
+    const trial = dispatched.at(-1);
+    assert.deepEqual([trial.phase,trial.route],['measure',name]);
+    survey.report(0,trial.serial,left == null ? null : quality(left));
+    survey.report(1,trial.serial,right == null ? null : quality(right));
+  };
+  try {
+    assert.ok(survey.consider('swarm-5',quality(250)));
+    measure('direct',null,null);
+    measure('swarm-12',71,healthy ? 125 : 190);
+    measure('swarm-0',94,healthy ? 102 : 210);
+    if (!healthy) measure('turn',73,113);
+    assert.deepEqual([dispatched.at(-1).phase,dispatched.at(-1).route],['select',healthy ? 'swarm-0' : 'turn']);
+    assert.equal(dispatched.some(update=>update.route==='turn'), !healthy);
+  } finally {
+    survey.close();
+  }
+}
+
+for (const healthy of [true, false]) {
+  const updates = [];
+  const planner = createSwarmStandbyPlanner({workers:[0,12], ordinaryTurn:true, dispatch:update=>updates.push(update)});
+  try {
+    assert.ok(planner.consider('swarm-0',{sent:12,received:12,p95:220}));
+    const direct = updates.at(-1);
+    assert.equal(direct.route,'direct');
+    assert.ok(planner.consider('swarm-0',{sent:8,received:0,p95:null}));
+    const standby = updates.at(-1);
+    assert.equal(standby.retired,direct.serial);
+    assert.equal(standby.route,'swarm-12');
+    assert.equal(planner.acceptsSignal(direct.serial),false);
+    planner.report(0,standby.serial,{sent:12,received:12,p95:40});
+    planner.report(1,standby.serial,{sent:12,received:12,p95:healthy ? 80 : 225});
+    if (!healthy) {
+      const turn = updates.at(-1);
+      assert.deepEqual([turn.phase,turn.route],['measure','turn']);
+      planner.report(0,turn.serial,{sent:12,received:12,p95:90});
+      planner.report(1,turn.serial,{sent:12,received:12,p95:100});
+    }
+    assert.deepEqual([updates.at(-1).phase,updates.at(-1).route],['select',healthy ? 'swarm-12' : 'turn']);
+    assert.equal(planner.consider('swarm-0',{sent:8,received:0,p95:null}),false);
+  } finally {
+    planner.close();
+  }
+}
+
+{
+  const updates = [];
+  const planner = createSwarmStandbyPlanner({workers:[0,12], ordinaryTurn:true, dispatch:update=>updates.push(update)});
+  const report = (route, p95) => {
+    const trial = updates.at(-1);
+    assert.equal(trial.route, route);
+    for (const player of [0,1])
+      planner.report(player,trial.serial,p95 == null ? null : {sent:12,received:12,p95});
+  };
+  try {
+    assert.ok(planner.consider('swarm-0',{sent:12,received:12,p95:400}));
+    report('direct',null);
+    report('swarm-12',190);
+    report('turn',280);
+    assert.deepEqual([updates.at(-1).phase,updates.at(-1).route],['select','swarm-12']);
+    assert.equal(planner.consider('swarm-0',{sent:8,received:0,p95:null}),false);
+  } finally {
+    planner.close();
+  }
+}
+
 const port = await new Promise(resolve => {
   const listener = net.createServer().listen(0, '127.0.0.1', () => {
     const {port} = listener.address();
