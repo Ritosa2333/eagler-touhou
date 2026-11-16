@@ -179,7 +179,7 @@ TEST(bomb_tail_spell_damage_uses_teammate_protection) {
     std::printf("# spell probe: dead=%d flags=%x hp=%g spellhp=%d phase=%d clock=%d/%d reg=%d regclock=%d/%d\n",
         enemy.dead,enemy.flags,double(enemy.life),enemy.spell_life,int(player.phase),
         player.phase_clock.current,player.phase_clock.previous,reg.active,reg.clock.current,reg.clock.previous);
-    CHECK_EQ(7000-enemy.spell_life,2); // owner protection: floor(20/5), Boss absorbs 50% (3 seats)
+    CHECK_EQ(7000-enemy.spell_life,1); // owner protection: floor(20/5), Boss absorbs 60% (3 seats)
     CHECK(saved.restore(f.battle,f.visual));
     f.battle.seats[0].invulnerable=0; // negative control for this consumer
     StageEnemy* restored_target=nullptr;
@@ -187,7 +187,7 @@ TEST(bomb_tail_spell_damage_uses_teammate_protection) {
         if(candidate && candidate->serial==target_serial)restored_target=candidate.get();
     CHECK(restored_target!=nullptr);if(!restored_target)return;
     f.battle.sim.enemy_hit(*restored_target);
-    CHECK_EQ(7000-restored_target->spell_life,10); // Boss absorbs 50% of 20 with 3 operable seats
+    CHECK_EQ(7000-restored_target->spell_life,8); // Boss absorbs 60% of 20 with 3 operable seats
 }
 TEST(bomb_start_frame_real_world_collisions) {
     for(int kind=0;kind<3;++kind) for(bool bombing : {false,true}) {

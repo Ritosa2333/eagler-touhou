@@ -2246,6 +2246,7 @@ bool mp_start_playback() {
     }
     if (!mp_restore_history_root(setup, stage, bytes ? &entry : nullptr)) return false;
     app->mp_legacy_stage_positions = archive->UsesLegacyStagePositions();
+    app->mp_legacy_boss_mitigation = archive->UsesLegacyBossMitigation();
     mp_playback_frame = 0;
     if (mp_playback_chapter == 0) mp_playback_chapter = stage;
     mp_recording = false;  // 回放不录制（旧档保护）

@@ -26,8 +26,9 @@ namespace th13::multiplayer {
 class ReplayArchive {
 public:
     static constexpr std::uint32_t Magic = 0x4d333154u;  // 'T13M' LE
-    // V2 keeps the layout and records the new stage-position behavior.
-    static constexpr std::uint32_t Version = 2, LegacyVersion = 1;
+    // V2/V3 keep the layout: V2 marks the stage-position carry, V3 the
+    // fifth-based boss mitigation (2 seats 40%, 3 seats 60%).
+    static constexpr std::uint32_t Version = 3, LegacyVersion = 1;
     static constexpr std::uint32_t MaxFrames = Netplay::InputReplay::MaxFrames;
     static constexpr std::uint32_t MaxChapters = 64;
 
@@ -59,6 +60,7 @@ public:
     bool Recording() const { return replay_.Recording(); }
     bool Loaded() const { return replay_.Loaded(); }
     bool UsesLegacyStagePositions() const { return version_ == LegacyVersion; }
+    bool UsesLegacyBossMitigation() const { return version_ <= 2; }
 
     // 帧输入（回放驱动面）：frame 的全席确认输入。
     const Netplay::InputReplay::Frame* FrameAt(std::uint32_t frame) const;

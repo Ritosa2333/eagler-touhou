@@ -886,26 +886,26 @@ TEST(spirit_role_and_trance_grant) {
 //（4 份伤害合计 3——不丢不减）；3 人（2/4）同理 0,1,0,1…。
 TEST(boss_damage_remainders) {
     // 减伤实现面：StageSim::absorb（Boss 侧唯一入口，collide_shots 落血前调用）。
-    // 2 人：3/4——累计 4 点伤害应产生 3 点有效伤害。
+    // 2 人：3/5——累计 5 点伤害应产生 3 点有效伤害。
     {
         i32 numerator = 0, applied = 0;
-        for (int hit = 0; hit < 4; ++hit) {
+        for (int hit = 0; hit < 5; ++hit) {
             numerator += 3;
-            const i32 whole = numerator / 4;
+            const i32 whole = numerator / 5;
             applied += whole;
-            numerator -= whole * 4;
+            numerator -= whole * 5;
         }
         CHECK_EQ(applied, 3);
         CHECK_EQ(numerator, 0);  // 余数归零（确定性）
     }
-    // 3 人：2/4——累计 4 点伤害应产生 2 点。
+    // 3 人：2/5——累计 5 点伤害应产生 2 点。
     {
         i32 numerator = 0, applied = 0;
-        for (int hit = 0; hit < 4; ++hit) {
+        for (int hit = 0; hit < 5; ++hit) {
             numerator += 2;
-            const i32 whole = numerator / 4;
+            const i32 whole = numerator / 5;
             applied += whole;
-            numerator -= whole * 4;
+            numerator -= whole * 5;
         }
         CHECK_EQ(applied, 2);
         CHECK_EQ(numerator, 0);
