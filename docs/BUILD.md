@@ -4,7 +4,7 @@
 
 ## 原生核心
 
-private105使用Emscripten 4.0.22，case644首次完整链接通过；case645实际加载产物检查205个导出函数存在，并运行2个World共183次tick验证X激活及phase180的符卡mode同步。643另通过42项完整StageWorld组件及WorldExports语法检查。`build/private105.rsp`来自首次成功参数的相对路径转换，输出为`build/local/core.mjs`。private100/101/102/103/104配方保留为历史资料；相同参数不代表相同源码或产物。
+private106使用Emscripten 4.0.22，case650首次完整链接通过；case651实际加载产物检查205个导出函数存在、内存读写与5项无会话拒绝，未启动游戏World。648另通过39项完整PlayerHitHost组件检查，649通过针对新源码的完整现有Host测试主程序。`build/private106.rsp`来自首次成功参数的相对路径转换，输出为`build/local/core.mjs`。private100/101/102/103/104/105配方保留为历史资料；相同参数不代表相同源码或产物。
 
 它保留 83 个翻译单元、205 个导出符号、1 MiB 栈、64 MiB 初始内存、C++20、异常与浮点选项。源文件摘要记录在 `docs/native-source-manifest.json`。
 
@@ -12,12 +12,12 @@ private105使用Emscripten 4.0.22，case644首次完整链接通过；case645实
 
 ```powershell
 New-Item -ItemType Directory -Force build/local
-emcc '@build/private105.rsp'
+emcc '@build/private106.rsp'
 ```
 
-本源码检出目录中的相对路径配方完成了文件与参数核对；private105的实际构建在隔离验收目录完成。此前private100的浏览器检查作为历史证据保留，不能视为105已完成浏览器验收。构建输出不会自动发布到浏览器，也不承诺跨机器生成完全相同的二进制摘要。
+本源码检出目录中的相对路径配方完成了文件与参数核对；private106的实际构建在隔离验收目录完成。此前private100的浏览器检查作为历史证据保留，不能视为106已完成浏览器验收。构建输出不会自动发布到浏览器，也不承诺跨机器生成完全相同的二进制摘要。
 
-`tools/build-runtime.mjs` 是历史脚本，保留作研究参考；其导出清单和发布逻辑早于本快照，不作为private105的构建入口。
+`tools/build-runtime.mjs` 是历史脚本，保留作研究参考；其导出清单和发布逻辑早于本快照，不作为private106的构建入口。
 
 ## 原作资源
 
@@ -35,7 +35,7 @@ python -X utf8 tools/prepare.py --original '你的原作安装目录' --thtk '�
 
 `tests/` 为保留的测试源码。部分测试依赖本地原版资源、未分发的私有黄金记录、编译器或运行时。缺失依赖导致的跳过不等于测试通过。
 
-原有六线和EX成功证据保持不变。新增测试针对新缺陷或尚未覆盖的范围；不为重复获得通过结论重跑成功路线。`tests/core101-abi-noowner.mjs`是615实际执行的源文件，显式参数为包含已验收`result.json`、`request.json`和`run/runtime/`的本地核心目录。运行产物及这些本地准入资料不随仓库分发；新测试应使用新目的和受控输出，禁止覆写历史成功目录或重新构建已成功的93至105。新增录像字段组件和零帧实际检查位于`tests/replay-graze/`，完整范围见`docs/native-replay-graze621-627.md`。
+原有六线和EX成功证据保持不变。新增测试针对新缺陷或尚未覆盖的范围；不为重复获得通过结论重跑成功路线。`tests/core101-abi-noowner.mjs`是615实际执行的源文件，显式参数为包含已验收`result.json`、`request.json`和`run/runtime/`的本地核心目录。运行产物及这些本地准入资料不随仓库分发；新测试应使用新目的和受控输出，禁止覆写历史成功目录或重新构建已成功的93至106。新增录像字段组件和零帧实际检查位于`tests/replay-graze/`，完整范围见`docs/native-replay-graze621-627.md`。
 
 新增回归源码：
 
@@ -48,3 +48,5 @@ python -X utf8 tools/prepare.py --original '你的原作安装目录' --thtk '�
 阶段奖励及兼容性源码在`tests/spell-stage-bonus/`，使用合成ECL和效果回调，完整生产StageWorld/EclVm真实执行。实际639源码在`tests/core104-abi-noowner.mjs`，范围见`docs/native-spell-stage635-639.md`；不得用接口烟测替代原作整局或设备验收。
 
 符卡mode组件及真实WASM测试源码位于`tests/spell-live-mode/`。642为实际core104首RED，643为组件GREEN，645为实际core105正向及phase180边界；完整本地准入request/资源不随仓库分发。测试使用合成ECL并明确模拟输出/收据，不代表原作整局、完整录像或设备验收；详见`docs/native-spell-mode640-645.md`。
+
+受击蓄力声音停止请求的当前测试在`tests/held-window-sound/`：`fixture.cpp`为647/648实际执行源码；`player-hit-host-regression.cpp`为649在新生产源码上执行的完整Host回归；`tests/core106-abi-noowner.mjs`为651实际产物检查。旧`tests/native/player-hit-host.cpp`是105单停止请求契约的历史源码和649的固定输入，保留原字节；验证106应使用上述31/70新契约版本，不能据此声称旧测试源码已原样通过106。详见`docs/native-held-sound646-651.md`。

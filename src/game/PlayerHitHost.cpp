@@ -223,7 +223,8 @@ bool PlayerHitHost::advanceWindowUnit(hit::WindowControl control,std::string& er
         if(window->outcome==hit::WindowOutcome::DeathbombSystemRequired)return fail("unimplemented deathbomb system lifecycle at 0x407810",error);
         if(!soundOperation_)return fail("unimplemented held-freeze window sound operation at 0x458590",error);
         try{
-            if(!soundOperation_(1,31,error)||!error.empty()||!error_.empty())return fail(error.empty()?"required hit charge sound stop rejected":error,error);
+            for(const int identifier:{31,70})
+                if(!soundOperation_(1,identifier,error)||!error.empty()||!error_.empty())return fail(error.empty()?"required hit charge sound stop rejected":error,error);
         }catch(...){return fail("required hit charge sound stop threw",error);}
     }
     auto& timer=state_.stateTimer;

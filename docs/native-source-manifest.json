@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-11-16",
-  "generation": "ca54de1bd68ec0b71cc9946bf0a107d89f2b74488886235dd7568633988f5886",
+  "generation": "ff89526ed15293870bc33785b2522422443435c8beaa7215f3c44f60f51c5f90",
   "sourceFiles": {
     "src/animation/AnmLogic.cpp": "8181699a119c123274e04883ffbb072ac3b4a0a1c0b18ccb2c6fa16850995b27",
     "src/animation/AnmLogic.hpp": "cb157319e0f57d007aae669d60a3840be7d31adfd1f384f02459146c56c8c88b",
@@ -174,7 +174,7 @@
     "src/game/PlayerFireHost.hpp": "d77936a4b76f314f6ead9c3a28559ea88147ab0cfac2a5e5ad23e4cf18424479",
     "src/game/PlayerFireRules.cpp": "f501b12a58e5f018fd122384be5d04a2c7e0490fb0dd370a3f31dafe8b4bddec",
     "src/game/PlayerFireRules.hpp": "5cb68131cd70dec1222e391bcaba4563b2c4be4e2bb9f60d8a989335f3fa7695",
-    "src/game/PlayerHitHost.cpp": "0fe474d8c92d6a063fa1bb01ea46ef187c4da7e56b964633baa1989e85dd5e5d",
+    "src/game/PlayerHitHost.cpp": "5043d352fbc77dc593e896ca10c4837c566cc19df816dff9475d404fe22c4f8b",
     "src/game/PlayerHitHost.hpp": "7e897487b3e0a2a82e17814e1fde410498825b020397775e8e800c534ef38915",
     "src/game/PlayerHitRules.cpp": "d466d1b4c820c1a1000f93777aea878f0e7dc37297ba2cbc0d366c9621e0310c",
     "src/game/PlayerHitRules.hpp": "313943900b0287023ea55d19999a92f9815c622857e26cca6dba6e6c77df1930",
@@ -528,68 +528,39 @@
       "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
     },
     "core.wasm": {
-      "bytes": 2169773,
-      "sha256": "101f84c53431cb7d639882aac2181499332a7dde14495a936eec00b9142124eb"
+      "bytes": 2169994,
+      "sha256": "8c708e6a2daad3a04b7c2095e10f93a897b18f67b567cd79d27d225eef63c9f0"
     }
   },
-  "acceptedAssistedScope": "Historical six normal routes on private98 and EX on private99; not rerun on private105.",
+  "acceptedAssistedScope": "Historical six normal routes on private98 and EX on private99; not rerun on private106.",
   "browserAcceptance": false,
   "rebuiltForUpload": false,
-  "coreOrdinal": 105,
+  "coreOrdinal": 106,
   "browserEntryAccepted": false,
   "browserAcceptanceEvidence": null,
-  "rebuildReason": "First private105 link644 after actual642 Perfect X mode RED and643 component42 GREEN/fullWorldExports syntax; successful104 unchanged.",
+  "rebuildReason": "First private106 link650 after647 held-stop17RED64839GREEN and649 fullPlayerHitHost legacy main onchangedsource. Successful105 unchanged.",
   "relativeHeaderEdges": 390,
   "buildAcceptance": {
-    "case": 644,
+    "case": 650,
     "compilerCalls": 1,
     "compilerExit": 0,
     "compilerStdoutBytes": 0,
     "compilerStderrBytes": 0
   },
   "runtimeAcceptance": {
-    "case": 645,
+    "case": 651,
     "passed": true,
-    "coreOrdinal": 105,
-    "generation": "ca54de1bd68ec0b71cc9946bf0a107d89f2b74488886235dd7568633988f5886",
-    "callableExports": 205,
+    "coreOrdinal": 106,
+    "generation": "ff89526ed15293870bc33785b2522422443435c8beaa7215f3c44f60f51c5f90",
+    "actualExports": 205,
     "Factories": 1,
-    "WorldStarts": 2,
-    "ticks": 183,
-    "actualPerfectXActivation": true,
-    "phase180ModeCleared": true,
-    "rows": [
-      {
-        "useX": false,
-        "passed": true,
-        "frame": 2,
-        "mode": 0,
-        "flags": 7
-      },
-      {
-        "useX": true,
-        "passed": true,
-        "frame": 2,
-        "mode": 1,
-        "flags": 71
-      },
-      {
-        "phase180": true,
-        "passed": true,
-        "frame": 181,
-        "mode": 0,
-        "flags": 7
-      }
-    ],
-    "gameRandom": {
-      "seed": 34772,
-      "calls": 0
-    },
-    "normalRecord": false,
-    "syntheticECL": true,
-    "syntheticAudioReceipt": true,
+    "WorldStarts": 0,
+    "unownedActionsRejected": 5,
+    "postrunOwnersMinted": 0,
     "browser": 0,
-    "scope": "Actual WASM World/PerfectFreeze/spellhost with original assets and explicit synthetic180B ECL; neutral and actualX thenphase119/120/179/180. Not original fullgameplay/replay/device acceptance."
+    "storageWrites": 0,
+    "sourceStarts": 0,
+    "scope": "Actual produced106 instantiate/205typeof/memory/5noownerrejects/0World;held-stopbehavior accepted in648productionHostcomponent and649fulllegacy main onchangedsource,syntheticoutputs;notphysicalaudio/originalgameplay."
   },
   "historicalBrowserEvidence": {
     "coreOrdinal": 100,
@@ -644,5 +615,49 @@
     "storageWrites": 0,
     "sourceStarts": 0,
     "scope": "produced104 instantiate/205functions/memory/5noownerrejections;0World. Stagebonus behavior accepted within636syntheticECLcomponent, notoriginalfullgameplay."
+  },
+  "historicalPerfectMode105": {
+    "case": 645,
+    "passed": true,
+    "coreOrdinal": 105,
+    "generation": "ca54de1bd68ec0b71cc9946bf0a107d89f2b74488886235dd7568633988f5886",
+    "callableExports": 205,
+    "Factories": 1,
+    "WorldStarts": 2,
+    "ticks": 183,
+    "actualPerfectXActivation": true,
+    "phase180ModeCleared": true,
+    "rows": [
+      {
+        "useX": false,
+        "passed": true,
+        "frame": 2,
+        "mode": 0,
+        "flags": 7
+      },
+      {
+        "useX": true,
+        "passed": true,
+        "frame": 2,
+        "mode": 1,
+        "flags": 71
+      },
+      {
+        "phase180": true,
+        "passed": true,
+        "frame": 181,
+        "mode": 0,
+        "flags": 7
+      }
+    ],
+    "gameRandom": {
+      "seed": 34772,
+      "calls": 0
+    },
+    "normalRecord": false,
+    "syntheticECL": true,
+    "syntheticAudioReceipt": true,
+    "browser": 0,
+    "scope": "Actual WASM World/PerfectFreeze/spellhost with original assets and explicit synthetic180B ECL; neutral and actualX thenphase119/120/179/180. Not original fullgameplay/replay/device acceptance."
   }
 }
