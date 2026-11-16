@@ -645,9 +645,10 @@ bool GameBattle::enter_stage_transition(u32 number){
 }
 bool GameBattle::activate_stage(){
     bullets.reset();animations.retire_resource(resources.core.bullet);
-    if(!player->start_stage())return false;
 #if PORT_TITLE == 14
-    if(coop_seats>1&&!start_coop_stage())return false;
+    if(!(coop_seats>1?start_coop_stage():player->start_stage()))return false;
+#else
+    if(!player->start_stage())return false;
 #endif
     if(replaying&&!player->restore_replay_position(replay_entry))return false;
     items.reset();

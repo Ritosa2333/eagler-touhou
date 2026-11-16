@@ -145,7 +145,7 @@ public:
     static u8 coop_sprite_opacity(const void*,const AnmVm&);
     bool queue_coop_hud();
     bool coop_game_over(bool);
-    bool coop_revive(u32);
+    bool coop_revive(u32 seat,i32 invulnerability);
     bool coop_transfers(const std::array<u32,3>& pressed_buttons);
     bool coop_bomb_available(u32)const;
     bool coop_collect(ItemState&,bool&);
