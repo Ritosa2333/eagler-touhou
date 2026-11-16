@@ -2,12 +2,12 @@
 // Game construction, input, timing, rendering, text and sound belong to C++.
 // Mirrors th10/th20 shell.mjs and imports the shared eagler-host transport.
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
-import createModule from './th11-sdl.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {validateMotionReplay} from './motion-replay.mjs';
 import {runtimeEpochContract} from './runtime-epoch.mjs';
 import {bindOutsideTouches,normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError,createReplayViewerHostTh14} from './eagler-host.mjs';
 const runtimeBuild=/*TH11_BUILD_INFO*/{version:'development-incomplete',completeGame:false};
+const crashReporter=globalThis.__eaglerCrashReporterV1;
 const protocol='eagler-touhou/1',game='th11',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');
 const navigation=runtimeEpochContract(game,query.get('runtimeEpoch'));
 const emit=(event,fields={})=>parent.postMessage({protocol,game,...navigation.fields,event,...fields},location.origin);
@@ -206,9 +206,17 @@ for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
 setInterval(()=>{if(launched&&!document.hidden&&core)try{queue=queue.then(()=>save()).catch(error);}catch(e){error(e);}},30000);
 const initialized=(async()=>{
  let audioContext;try{audioContext=parent.__touhouAudioContext;}catch{}
+ const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const useSingleThread=!!runtimeBuild.singleThreaded&&(ios||!globalThis.crossOriginIsolated||typeof SharedArrayBuffer!=='function');
+ const entry=useSingleThread?'./th14-sdl-single.':'./th11-sdl.';
+ const details={...runtimeBuild,threading:useSingleThread?'single':'workers'};
+ crashReporter?.identify?.(details);
+ const {default:createModule}=await import(entry+'mjs');
  Module=await createModule({canvas,noInitialRun:true,resetBrowserKeyboard:()=>keyboard.clear(),...(audioContext?{SDL3:{audioContext}}:{}),print:console.log,printErr:console.error,
-  instantiateWasm(imports,ready){return WebAssembly.instantiateStreaming(fetch('./th11-sdl.wasm'),imports).then(({instance,module})=>{core=instance.exports;ready(instance,module);return core;});}});
+  onAbort:reason=>crashReporter?.fatal(new Error(String(reason)),{source:'wasm-abort'}),
+  instantiateWasm(imports,ready){return WebAssembly.instantiateStreaming(fetch(entry+'wasm'),imports).then(({instance,module})=>{core=instance.exports;ready(instance,module);return core;});}});
  window.Module=Module;window.FS=Module.FS;window.core=core;
+ crashReporter?.bindCore(Module,{build:details,hookAbort:false});
  Module.onWebGpuError=error;
  Module.onAsyncError=error;
  if(typeof Module._th14_async_frame==='function'){
