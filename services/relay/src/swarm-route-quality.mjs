@@ -41,18 +41,17 @@ export function rankSwarmCandidates(workers, left, right, now, endpointReports =
   });
 }
 
-export function selectSwarmRoute(candidates, left, right, now) {
+export function selectSwarmRoute(candidates, ordinaryTurnAvailable) {
   const best = candidates[0];
   if (best?.quality?.suitable) return {mode:'swarm', worker:best.worker};
-  const ordinary = pairedQuality('turn',left,right,now);
-  if (candidates.length && candidates.every(candidate => candidate.quality) &&
-      ordinary?.suitable) return {mode:'turn'};
+  if (ordinaryTurnAvailable && candidates.length && candidates.every(candidate => candidate.quality))
+    return {mode:'turn'};
   return null;
 }
 
-export function createSwarmStandbyPlanner({workers, ordinaryTurn, dispatch, clock = Date.now, wait = setTimeout, cancel = clearTimeout}) {
+export function createSwarmStandbyPlanner({workers, ordinaryTurn, dispatch, initialSerial = 0, clock = Date.now, wait = setTimeout, cancel = clearTimeout}) {
   const swarm = workers.map(worker => 'swarm-' + worker);
-  let survey, timer, selected, serial = 0, nextSurvey = 0;
+  let survey, timer, selected, serial = initialSerial, nextSurvey = 0;
   let nextWorker = 0;
 
   function finish(route) {

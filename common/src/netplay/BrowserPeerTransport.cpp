@@ -26,6 +26,9 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
         relay.searchParams.set('players', String(playerCount));
         const signalUrl = new URL(relay.href);
         signalUrl.searchParams.set('signal', '1');
+        if (playerCount === 2 && typeof RTCPeerConnection === 'function' &&
+            Module.eaglerOptions?.netplayPreferTurn !== true && Module.eaglerOptions?.netplayAdaptiveTurn !== false)
+            signalUrl.searchParams.set('rtcStartup', '1');
 
         // BEGIN generated adaptive-peer-route
         // Shared game transport policy. Embedded into BrowserPeerTransport by
@@ -49,6 +52,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             let epoch = 0, proposal = null, verification = null, switchedAt = -Infinity;
             let recoveryUntil = 0, recoveryProbe = 0, lastNeed = -Infinity, verifyAfter = 0;
             let ackPending = false;
+            let startup = false;
+            const StartupSamples = 6, StartupInterval = 50, StartupTimeout = 1000;
             const policy = Object.freeze({
                 windowMs: 6000, probeTimeoutMs: 1000, primaryIntervalMs: 250,
                 standbyIntervalMs: 10000, verificationIntervalMs: 50,
@@ -161,7 +166,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 return route === 'direct' ? servers : servers.slice(0, 1);
             }
             async function ensureBackup() {
-                if (!controller || !started || !supported || !switching() || !alive() || backup || planned || now() < retryAt) return;
+                if (startup || !controller || !started || !supported || !switching() || !alive() || backup || planned || now() < retryAt) return;
                 const route = primary.path === 'direct' ? 'turn' : primary.path === 'turn' && directRetry ? 'direct' : null;
                 if (!route) return;
                 const servers = backupServers(route);
@@ -225,6 +230,11 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 return path;
             }
             function pathUnavailable(path) {
+                if (startup && path === planned) {
+                    if (!path.reported)
+                        path.reported = options.surveySignal?.({type:'rtc-startup-quality', serial:path.surveySerial, quality:null});
+                    return;
+                }
                 if (active === path) {
                     if (!recover()) options.failed('RTC active standby connection unavailable');
                 } else if (path === backup) discardBackup();
@@ -234,7 +244,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 }
             }
             async function relayStandby(message) {
-                if (!started || !surveyEnabled() || !alive()) return;
+                if (!started || (!startup && !surveyEnabled()) || !alive()) return;
                 const {serial, phase, route, iceServers} = message;
                 if (!Number.isSafeInteger(serial) || serial <= 0 || serial > 0xffffffff) return;
                 if (message.type === 'rtc-standby-signal') {
@@ -259,7 +269,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     }
                 } catch {
                     if (phase === 'measure')
-                        options.surveySignal?.({type: 'rtc-route-report', serial, quality: null});
+                        options.surveySignal?.({type: startup ? 'rtc-startup-quality' : 'rtc-route-report', serial, quality: null});
                 }
             }
             async function applyStandbySignal(path, message) {
@@ -370,7 +380,18 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     if (!data.startsWith(prefix) || data.length > 24576) return true;
                     let m; try { m = JSON.parse(data.slice(prefix.length)); } catch { return true; }
                     if (!m || typeof m !== 'object' || Array.isArray(m)) return true;
-                    if (m.kind === 'hello' && path === primary && kind === 'control') {
+                    if (startup && kind === 'input' && Number.isSafeInteger(m.id) && m.id > 0) {
+                        if (m.kind === 'startup-ping') {
+                            try { path.inputDc.send(prefix + JSON.stringify({kind:'startup-pong', id:m.id})); } catch {}
+                            return true;
+                        }
+                        if (m.kind === 'startup-pong') {
+                            const sample = path.startupSamples?.[m.id - 1], elapsed = sample && now() - sample.at;
+                            if (sample && sample.rtt == null && elapsed <= StartupTimeout) sample.rtt = elapsed;
+                            return true;
+                        }
+                    }
+                    if (m.kind === 'hello' && (path === primary || path === active || startup && path === planned) && kind === 'control') {
                         supported = m.enabled === true && options.enabled;
                         peerSwitching = m.switching !== false;
                         directRetry = supported && m.directRetry === true && options.directRetry !== false;
@@ -487,14 +508,35 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 for (const path of paths()) path.samples.length = 0;
             }
             function hello() {
-                if (!open(primary.controlDc) || helloSent) return;
-                helloSent = sendMessage(primary, {kind: 'hello', enabled: !!options.enabled, switching: options.allowSwitching !== false,
+                if (!open(active.controlDc) || helloSent) return;
+                helloSent = sendMessage(active, {kind: 'hello', enabled: !!options.enabled, switching: options.allowSwitching !== false,
                     directRetry: options.directRetry !== false, pairedQuality: options.pairedQuality !== false});
+            }
+            function probeStartup(path, time) {
+                if (!ready(path) || path.reported) return;
+                const samples = path.startupSamples ||= [];
+                if (samples.length < StartupSamples && (!samples.length || time - samples.at(-1).at >= StartupInterval)) {
+                    samples.push({at:time});
+                    try { path.inputDc.send(prefix + JSON.stringify({kind:'startup-ping', id:samples.length})); } catch {}
+                }
+                if (samples.length !== StartupSamples || samples.some(sample => sample.rtt == null && time - sample.at < StartupTimeout)) return;
+                const rtts = samples.flatMap(sample => sample.rtt == null ? [] : [sample.rtt]);
+                const quality = {sent:StartupSamples, received:rtts.length, p95:rtts.length ? Math.ceil(Math.max(...rtts)) : null};
+                path.reported = true;
+                Promise.resolve(path === primary ? options.detectDirect?.(path.pc) : false).then(direct => {
+                    if (startup && alive() && !path.closed)
+                        options.surveySignal?.({type:'rtc-startup-quality', serial:path.surveySerial ?? 0, direct:direct === true, quality});
+                });
             }
             function tick() {
                 timer = null;
                 if (!alive() || !started) return;
                 const time = now();
+                if (startup) {
+                    for (const path of paths()) probeStartup(path, time);
+                    timer = later(tick, StartupInterval);
+                    return;
+                }
                 if (time - lastTick > 750 || !eligible()) {
                     if (verification || time - lastTick > 750) sendEverywhere({kind: 'pause'});
                     suspend();
@@ -576,6 +618,31 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 timer = later(tick, verification || measuring() ? policy.verificationIntervalMs : policy.primaryIntervalMs);
             }
             return {
+                beginStartup() {
+                    startup = true;
+                    if (!started) {
+                        started = true;
+                        lastTick = now();
+                        timer = later(tick, 0);
+                    }
+                },
+                selectStartup(serial) {
+                    if (!startup) return false;
+                    const path = serial === 0 ? primary : planned?.surveySerial === serial && planned;
+                    if (!path || !select(path, 0)) return false;
+                    startup = false;
+                    lastTick = now();
+                    if (path === primary && planned) {
+                        closePath(planned);
+                        planned = null;
+                    } else if (path !== primary) {
+                        path.measuring = false;
+                        helloSent = false;
+                        closePath(primary);
+                    }
+                    hello();
+                    return true;
+                },
                 start() {
                     if (started || closed) return;
                     started = true; lastTick = now(); hello();
@@ -887,7 +954,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     Module.eaglerOptions?.netplayAdaptiveTurn !== false;
             },
             sendSurveySignal(payload) {
-                if (this.route !== 'rtc' || this.rtcReplacing || this.signal?.readyState !== WebSocket.OPEN) return false;
+                if ((this.route !== 'rtc' && !this.rtcStartupActive) || this.rtcReplacing || this.signal?.readyState !== WebSocket.OPEN) return false;
                 try { this.signal.send(JSON.stringify({...payload, generation: this.rtcGeneration})); return true; }
                 catch { return false; }
             },
@@ -1119,6 +1186,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     initialSwarmSurvey: () => this.initialSwarmSurvey,
                     surveySignal: message => this.sendSurveySignal(message),
                     initialRelayRoute: () => this.initialRelayRoute,
+                    detectDirect: pc => this.selectedCandidateSummary(pc).then(summary => summary?.path === 'direct').catch(() => false),
                     alive: () => !this.closed && !this.failed && !this.disconnected && this.route !== 'relay',
                     running: () => this.route === 'rtc' && !this.rtcReplacing && globalThis.__eaglerNetplayLanActive === true,
                     visible: () => !globalThis.document?.hidden && !globalThis.__eaglerNetplayCalibrationSuspended,
@@ -1264,7 +1332,30 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                             if (!this.route) this.sendSignal({ type: 'rtc-failed', error: String(error) });
                             else this.fail(`RTC signaling error: ${error}`);
                         });
+                    } else if (message.type === 'rtc-startup') {
+                        this.rtcStartupActive = true;
+                        this.peers.get(1 - this.localPlayer)?.adaptive?.beginStartup();
+                    } else if (message.type === 'rtc-startup-select') {
+                        this.signalTasks = this.signalTasks.then(() => {
+                            const peer = this.peers.get(1 - this.localPlayer);
+                            if (!this.rtcStartupActive || this.closed || !peer?.adaptive?.selectStartup(message.serial)) return;
+                            this.rtcStartupActive = false;
+                            this.rtcReadySent = true;
+                            if (message.serial === 1) {
+                                this.initialRelayRoute = 'turn';
+                                this.initialSwarmSurvey = false;
+                                this.iceServers = [
+                                    ...this.iceServers.filter(server => [].concat(server.urls).every(url => /^stuns?:/i.test(url))),
+                                    ...this.rtcStartupTurnIce,
+                                ];
+                            }
+                            this.rtcStartupTurnIce = null;
+                            this.sendSignal({type:'rtc-startup-selected', serial:message.serial, rtcReplace:true,
+                                rtcRouteSurvey:this.canSurveySwarm()});
+                        });
                     } else if (message.type === 'rtc-standby' || message.type === 'rtc-standby-signal') {
+                        if (this.rtcStartupActive && message.type === 'rtc-standby' && message.serial === 1)
+                            this.rtcStartupTurnIce = message.iceServers;
                         if (message.type === 'rtc-standby' && message.generation === this.rtcGeneration &&
                             Number.isSafeInteger(message.serial) && this.canSurveySwarm()) {
                             this.rtcSurveyUntil = message.phase === 'idle' ? 0 :
@@ -1274,7 +1365,9 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                             if (this.closed || this.rtcReplacing || message.generation !== this.rtcGeneration) return;
                             return this.peers.get(1 - this.localPlayer)?.adaptive?.relayStandby(message);
                         }).catch(() => {
-                            if (message.phase === 'measure') this.sendSurveySignal({type: 'rtc-route-report', serial: message.serial, quality: null});
+                            if (message.phase === 'measure') this.sendSurveySignal({
+                                type:this.rtcStartupActive ? 'rtc-startup-quality' : 'rtc-route-report',
+                                serial:message.serial, quality:null});
                         });
                     } else if (message.type === 'rtc-replace-capable') {
                         this.rtcReplaceCapable = true;

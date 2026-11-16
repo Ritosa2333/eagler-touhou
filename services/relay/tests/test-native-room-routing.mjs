@@ -5,7 +5,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {WebSocket, WebSocketServer} from 'ws';
 import {createNat4CandidateExchange, readNat4PortSteps} from '../src/nat4-candidates.mjs';
 
-import {createSwarmStandbyPlanner, rankSwarmCandidates} from '../src/swarm-route-quality.mjs';
+import {createSwarmStandbyPlanner, rankSwarmCandidates, selectSwarmRoute} from '../src/swarm-route-quality.mjs';
 
 {
   const workers = [0, 12, 9].map(id => ({id, ip:`192.0.2.${id + 1}`}));
@@ -14,6 +14,15 @@ import {createSwarmStandbyPlanner, rankSwarmCandidates} from '../src/swarm-route
   assert.deepEqual(ranked.map(({worker, estimatedRtt}) => [worker, estimatedRtt]), [[12,64], [9,73], [0,105]]);
   assert.deepEqual(rankSwarmCandidates(workers, null, null, 101, [pings([10, 44, 31])]).map(({worker}) => worker), [0,9,12]);
   assert.equal(rankSwarmCandidates(workers, null, null, 300_000, [pings([10, 44, 31])])[0].measuredEndpoints, 0);
+
+  const probes = new Map(workers.map(({id})=>['swarm-'+id,{sent:16,received:16,p95:205,at:100}]));
+  const unsuitable = rankSwarmCandidates(workers, probes, probes, 101);
+  assert.deepEqual(selectSwarmRoute(unsuitable, true), {mode:'turn'});
+  assert.equal(selectSwarmRoute(unsuitable, false), null);
+  probes.delete('swarm-0');
+  assert.equal(selectSwarmRoute(rankSwarmCandidates(workers, probes, probes, 101), true), null);
+  probes.set('swarm-0',{sent:16,received:16,p95:60,at:100});
+  assert.deepEqual(selectSwarmRoute(rankSwarmCandidates(workers, probes, probes, 101), true), {mode:'swarm',worker:0});
 
   const updates = [];
   const survey = createSwarmStandbyPlanner({workers:[12, 9, 0],ordinaryTurn:true,dispatch:update=>updates.push(update)});
@@ -438,6 +447,38 @@ try {
     peer.send({type:'rtc-ready'});
   }
   await until(() => retryWeb.received.some(message => message.type === 'route' && message.mode === 'rtc'));
+  const priorSwarmAllocations = swarmAllocations;
+
+  retryDesktop.ws.terminate();
+  retryWeb.ws.terminate();
+  await until(() => desktop.state()?.phase === 'lobby');
+  desktop.send({type:'relay-preference',swarm:true});
+  desktop.send({type:'set-ready',ready:true,nativeRuntime:true,swarmDirect:true,runtimeGeneration:generation});
+  web.send({type:'set-ready',ready:true,runtimeGeneration:generation});
+  await until(() => desktop.state()?.seats.slice(0,2).every(seat => seat?.ready));
+  for (const [lane, quality] of [
+    ['swarm-0',{sent:12,received:0,p95:null}],
+    ['swarm-12',{sent:12,received:12,p95:205}],
+  ]) {
+    const token = 'fallback-'+lane;
+    desktop.send({type:'room-probe-report',to:'client_web',lane,token,quality});
+    web.send({type:'room-probe-report',to:'client_desktop',lane,token,quality});
+    for (const peer of [desktop,web])
+      await until(() => peer.received.some(message => message.type === 'room-probe-report' && message.token === token));
+  }
+  desktop.send({type:'start'});
+  const fallback = await until(() => web.received.find(message => message.type === 'start' && message.serial === 3));
+  assert.equal(fallback.room.swarmSelected, undefined);
+  const fallbackSignal = mixed + '&run=3&players=2&signal=1&runtimeGeneration=' + generation;
+  const fallbackDesktop = await connect(0, fallbackSignal + '&player=0&member=private_desktop');
+  const fallbackWeb = await connect(1, fallbackSignal + '&player=1&member=private_web');
+  for (const peer of [fallbackDesktop,fallbackWeb]) {
+    const firstPartyPeers = await until(() => peer.received.find(message => message.type === 'peers'));
+    assert.equal(firstPartyPeers.turnMode, 'first-party');
+    assert.equal(firstPartyPeers.swarmGrant, undefined);
+    assert.deepEqual(firstPartyPeers.iceServers.map(server => server.urls), [[stunUrl], [ordinaryTurnUrl]]);
+  }
+  assert.equal(swarmAllocations, priorSwarmAllocations);
 
   const abandoned = 'room=th09mp-abandoned';
   const abandonedHost = await connect(0, abandoned + '&lobby=abandoned_host&member=abandoned_host_key');

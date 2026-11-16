@@ -19,6 +19,8 @@ export function createAdaptivePeerRoute(options) {
     let epoch = 0, proposal = null, verification = null, switchedAt = -Infinity;
     let recoveryUntil = 0, recoveryProbe = 0, lastNeed = -Infinity, verifyAfter = 0;
     let ackPending = false;
+    let startup = false;
+    const StartupSamples = 6, StartupInterval = 50, StartupTimeout = 1000;
     const policy = Object.freeze({
         windowMs: 6000, probeTimeoutMs: 1000, primaryIntervalMs: 250,
         standbyIntervalMs: 10000, verificationIntervalMs: 50,
@@ -131,7 +133,7 @@ export function createAdaptivePeerRoute(options) {
         return route === 'direct' ? servers : servers.slice(0, 1);
     }
     async function ensureBackup() {
-        if (!controller || !started || !supported || !switching() || !alive() || backup || planned || now() < retryAt) return;
+        if (startup || !controller || !started || !supported || !switching() || !alive() || backup || planned || now() < retryAt) return;
         const route = primary.path === 'direct' ? 'turn' : primary.path === 'turn' && directRetry ? 'direct' : null;
         if (!route) return;
         const servers = backupServers(route);
@@ -195,6 +197,11 @@ export function createAdaptivePeerRoute(options) {
         return path;
     }
     function pathUnavailable(path) {
+        if (startup && path === planned) {
+            if (!path.reported)
+                path.reported = options.surveySignal?.({type:'rtc-startup-quality', serial:path.surveySerial, quality:null});
+            return;
+        }
         if (active === path) {
             if (!recover()) options.failed('RTC active standby connection unavailable');
         } else if (path === backup) discardBackup();
@@ -204,7 +211,7 @@ export function createAdaptivePeerRoute(options) {
         }
     }
     async function relayStandby(message) {
-        if (!started || !surveyEnabled() || !alive()) return;
+        if (!started || (!startup && !surveyEnabled()) || !alive()) return;
         const {serial, phase, route, iceServers} = message;
         if (!Number.isSafeInteger(serial) || serial <= 0 || serial > 0xffffffff) return;
         if (message.type === 'rtc-standby-signal') {
@@ -229,7 +236,7 @@ export function createAdaptivePeerRoute(options) {
             }
         } catch {
             if (phase === 'measure')
-                options.surveySignal?.({type: 'rtc-route-report', serial, quality: null});
+                options.surveySignal?.({type: startup ? 'rtc-startup-quality' : 'rtc-route-report', serial, quality: null});
         }
     }
     async function applyStandbySignal(path, message) {
@@ -340,7 +347,18 @@ export function createAdaptivePeerRoute(options) {
             if (!data.startsWith(prefix) || data.length > 24576) return true;
             let m; try { m = JSON.parse(data.slice(prefix.length)); } catch { return true; }
             if (!m || typeof m !== 'object' || Array.isArray(m)) return true;
-            if (m.kind === 'hello' && path === primary && kind === 'control') {
+            if (startup && kind === 'input' && Number.isSafeInteger(m.id) && m.id > 0) {
+                if (m.kind === 'startup-ping') {
+                    try { path.inputDc.send(prefix + JSON.stringify({kind:'startup-pong', id:m.id})); } catch {}
+                    return true;
+                }
+                if (m.kind === 'startup-pong') {
+                    const sample = path.startupSamples?.[m.id - 1], elapsed = sample && now() - sample.at;
+                    if (sample && sample.rtt == null && elapsed <= StartupTimeout) sample.rtt = elapsed;
+                    return true;
+                }
+            }
+            if (m.kind === 'hello' && (path === primary || path === active || startup && path === planned) && kind === 'control') {
                 supported = m.enabled === true && options.enabled;
                 peerSwitching = m.switching !== false;
                 directRetry = supported && m.directRetry === true && options.directRetry !== false;
@@ -457,14 +475,35 @@ export function createAdaptivePeerRoute(options) {
         for (const path of paths()) path.samples.length = 0;
     }
     function hello() {
-        if (!open(primary.controlDc) || helloSent) return;
-        helloSent = sendMessage(primary, {kind: 'hello', enabled: !!options.enabled, switching: options.allowSwitching !== false,
+        if (!open(active.controlDc) || helloSent) return;
+        helloSent = sendMessage(active, {kind: 'hello', enabled: !!options.enabled, switching: options.allowSwitching !== false,
             directRetry: options.directRetry !== false, pairedQuality: options.pairedQuality !== false});
+    }
+    function probeStartup(path, time) {
+        if (!ready(path) || path.reported) return;
+        const samples = path.startupSamples ||= [];
+        if (samples.length < StartupSamples && (!samples.length || time - samples.at(-1).at >= StartupInterval)) {
+            samples.push({at:time});
+            try { path.inputDc.send(prefix + JSON.stringify({kind:'startup-ping', id:samples.length})); } catch {}
+        }
+        if (samples.length !== StartupSamples || samples.some(sample => sample.rtt == null && time - sample.at < StartupTimeout)) return;
+        const rtts = samples.flatMap(sample => sample.rtt == null ? [] : [sample.rtt]);
+        const quality = {sent:StartupSamples, received:rtts.length, p95:rtts.length ? Math.ceil(Math.max(...rtts)) : null};
+        path.reported = true;
+        Promise.resolve(path === primary ? options.detectDirect?.(path.pc) : false).then(direct => {
+            if (startup && alive() && !path.closed)
+                options.surveySignal?.({type:'rtc-startup-quality', serial:path.surveySerial ?? 0, direct:direct === true, quality});
+        });
     }
     function tick() {
         timer = null;
         if (!alive() || !started) return;
         const time = now();
+        if (startup) {
+            for (const path of paths()) probeStartup(path, time);
+            timer = later(tick, StartupInterval);
+            return;
+        }
         if (time - lastTick > 750 || !eligible()) {
             if (verification || time - lastTick > 750) sendEverywhere({kind: 'pause'});
             suspend();
@@ -546,6 +585,31 @@ export function createAdaptivePeerRoute(options) {
         timer = later(tick, verification || measuring() ? policy.verificationIntervalMs : policy.primaryIntervalMs);
     }
     return {
+        beginStartup() {
+            startup = true;
+            if (!started) {
+                started = true;
+                lastTick = now();
+                timer = later(tick, 0);
+            }
+        },
+        selectStartup(serial) {
+            if (!startup) return false;
+            const path = serial === 0 ? primary : planned?.surveySerial === serial && planned;
+            if (!path || !select(path, 0)) return false;
+            startup = false;
+            lastTick = now();
+            if (path === primary && planned) {
+                closePath(planned);
+                planned = null;
+            } else if (path !== primary) {
+                path.measuring = false;
+                helloSent = false;
+                closePath(primary);
+            }
+            hello();
+            return true;
+        },
         start() {
             if (started || closed) return;
             started = true; lastTick = now(); hello();

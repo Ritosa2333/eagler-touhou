@@ -22,6 +22,7 @@ import { allocateSwarmPort, createSwarmWorkers } from './swarm-workers.mjs';
 import { WebSocket, WebSocketServer } from 'ws';
 import { roomProbeEnvelope } from './room-probe-policy.mjs';
 import { createSwarmStandbyPlanner, rankSwarmCandidates, readRouteProbeQuality, selectSwarmRoute } from './swarm-route-quality.mjs';
+import { createRtcStartup } from './rtc-startup.mjs';
 import { createRoomDirectory, publicControlMode } from './room-directory.mjs';
 import { createRoomBroadcaster } from './room-broadcast.mjs';
 import { startRoomStatus } from './public-status.mjs';
@@ -859,6 +860,8 @@ function failRoute(roomId, runId, run, reason) {
   if (run.route || run.ended) return;
   run.route = 'failed';
   run.ended = true;
+  run.rtcStartup?.close();
+  run.rtcStartup = null;
   if (run.routeTimer) clearTimeout(run.routeTimer);
   if (run.spectatorGraceTimer) clearTimeout(run.spectatorGraceTimer);
   run.routeTimer = null;
@@ -896,7 +899,7 @@ function maybeStartRouteTimer(roomId, runId, room, run) {
 }
 
 function maybeResolveRoute(roomId, runId, room, run) {
-  if (run.route || run.playerCount < 2) return;
+  if (run.route || run.rtcStartup || run.playerCount < 2) return;
   if (run.rtcFailed) {
     if (!allowGameplayRelayFallback && !roomId.startsWith('th05mp-')) {
       failRoute(roomId, runId, run, 'WebRTC connection unavailable');
@@ -914,6 +917,47 @@ function maybeResolveRoute(roomId, runId, room, run) {
     return;
   }
   maybeStartRouteTimer(roomId, runId, room, run);
+}
+
+function startRtcRouteSelection(roomId, runId, room, run) {
+  if (run.route || run.rtcStartup || !run.swarm || run.signalClients.size !== 2 ||
+      run.playerCount !== 2 || [...run.signalClients.values()].some(peer => !peer.rtcStartup)) return;
+  const turnServers = [0,1].map(player => iceServersFor(roomId, runId + '-startup', player, false, undefined, []));
+  if (!turnServers.every(servers => servers.length)) return;
+  clearTimeout(run.routeTimer);
+  run.routeTimer = null;
+  const timeout = run.swarmDirectPlayer != null ? Math.max(12000, rtcTimeoutMs)
+    : Math.max(run.nat4 ? 7500 : 6000, rtcTimeoutMs);
+  run.rtcStartup = createRtcStartup({
+    timeout,
+    openTurn() {
+      for (const [player, peer] of run.signalClients)
+        sendSignal(peer, {type:'rtc-standby', serial:1, phase:'measure', route:'turn', generation:0,
+          iceServers:turnServers[player]});
+    },
+    select(serial) {
+      broadcastSignal(run, {type:'rtc-startup-select', serial});
+    },
+    complete(serial) {
+      run.rtcStartup = null;
+      if (serial === 1) {
+        run.swarm = false;
+        run.turnMode = 'first-party';
+        run.swarmDirectPlayer = undefined;
+        run.surveyInitialSwarm = false;
+      }
+      console.log(`RTC STARTUP room=${roomId} run=${runId} choice=${serial ? 'first-party-turn' : 'primary'}`);
+      chooseRoute(roomId, runId, room, run, 'rtc');
+    },
+    fail() {
+      run.rtcStartup = null;
+      run.rtcFailed = true;
+      maybeResolveRoute(roomId, runId, room, run);
+    },
+  });
+  run.startupSurveySerial = 1;
+  broadcastSignal(run, {type:'rtc-startup'});
+  run.rtcStartup.start();
 }
 
 function acceptTh09PlayerReport(room, run, runId, player, message) {
@@ -1001,6 +1045,7 @@ function handleSwarmSurvey(roomId, runId, run, player, socket, message) {
   run.swarmSurvey ??= createSwarmStandbyPlanner({
     workers:run.adaptiveSwarmWorkers,
     ordinaryTurn:iceServersFor(roomId, runId + '-standby', player, false, undefined, []).length > 0,
+    initialSerial:run.startupSurveySerial,
     dispatch(update) {
       const worker = update.route?.startsWith('swarm-') ? Number(update.route.slice(6)) : undefined;
       const tag = runId + '-standby-' + update.serial;
@@ -1073,7 +1118,7 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
     // helper starts. A missing grant also enables Swarm TURN on the desktop.
     iceServers: swarmGrant ? (stun.length ? [{urls:stun}] : [])
       : iceServersFor(roomId, runId, player, run.swarm, run.swarmWorkers?.[player], stun),
-    ...(run.swarm ? {turnMode:'swarm'} : {}),
+    ...(run.turnMode ? {turnMode:run.turnMode} : {}),
     ...(run.adaptiveSwarmWorkers?.length ? {adaptiveSwarm:true, initialSwarmWorker:run.swarmWorkers?.[player],
       ...(run.surveyInitialSwarm && {surveyInitialSwarm:true})} : {}),
     ...(swarmGrant ? {swarmGrant} : {}),
@@ -1087,6 +1132,7 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
   console.log(
     `SIGNAL JOIN room=${roomId} run=${runId} player=${player} peers=${run.signalClients.size}`,
   );
+  startRtcRouteSelection(roomId, runId, room, run);
   maybeResolveRoute(roomId, runId, room, run);
   maybeReplaceRtcTransport(roomId, runId, run);
 
@@ -1111,6 +1157,31 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
     if (!validRelayControlMessage(message)) {
       socket.close(1008, 'invalid signaling message');
       return;
+    }
+    if (run.rtcStartup && run.signalClients.get(player) === socket) {
+      if (message.type === 'rtc-startup-quality') {
+        const quality = readRouteProbeQuality(message.quality, Date.now());
+        if (message.quality === null || quality)
+          run.rtcStartup.report(player, message.serial, quality && {...quality, direct: message.serial === 0 && message.direct === true});
+        return;
+      }
+      if (message.type === 'rtc-startup-selected') {
+        if (message.rtcReplace === true && run.rtcReplacementAllowed) run.rtcReplacementClients.add(player);
+        if (message.rtcRouteSurvey === true && run.adaptiveSwarmWorkers?.length) {
+          run.rtcSurveyClients ??= new Set();
+          run.rtcSurveyClients.add(player);
+        }
+        run.rtcStartup.acknowledge(player, message.serial);
+        if (run.route === 'rtc' && run.rtcReplacementClients.size === 2)
+          broadcastSignal(run, {type:'rtc-replace-capable'});
+        return;
+      }
+      if (message.type === 'rtc-standby-signal') {
+        const signal = message.serial === 1 && run.rtcStartup.acceptsTurnSignal() && normalizeRelaySignal(message);
+        if (signal && (!signal.description || signal.description.type === (player === 0 ? 'offer' : 'answer')))
+          sendSignal(run.signalClients.get(1 - player), {type:'rtc-standby-signal', serial:1, generation:0, ...signal});
+        return;
+      }
     }
     if (roomId.startsWith('th09mp-') && message.type === 'th09-match') {
       if (run.signalClients.get(player) === socket) acceptTh09PlayerReport(room, run, runId, player, message);
@@ -1212,6 +1283,11 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
       return;
     }
     if (message.type === 'rtc-failed') {
+      if (run.signalClients.get(player) !== socket) return;
+      if (run.rtcStartup) {
+        run.rtcStartup.report(player, 0, null);
+        return;
+      }
       run.rtcFailed = true;
       maybeResolveRoute(roomId, runId, room, run);
       return;
@@ -1236,6 +1312,8 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
         run.signalReconnectTimer.unref();
       }
       if (!run.route) {
+        run.rtcStartup?.close();
+        run.rtcStartup = null;
         run.rtcFailed = true;
         maybeResolveRoute(roomId, runId, room, run);
       }
@@ -2368,11 +2446,13 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         const now = Date.now();
         const ranked = rankSwarmCandidates(available, leftReports, rightReports, now, [left?.swarmPings, right?.swarmPings]);
         run.adaptiveSwarmWorkers = ranked.map(candidate => candidate.worker);
-        preferredPath = selectSwarmRoute(ranked, leftReports, rightReports, now);
+        const ordinaryTurnAvailable = iceServersFor(roomId, String(room.lobby.startSerial), 0, false, undefined, []).length > 0;
+        preferredPath = selectSwarmRoute(ranked, ordinaryTurnAvailable);
         run.surveyInitialSwarm = preferredPath == null;
         if (ranked[0]?.measuredEndpoints) estimatedWorker = ranked[0].worker;
         if (preferredPath?.mode === 'turn') run.swarm = false;
       }
+      run.turnMode = run.swarm ? 'swarm' : preferredPath?.mode === 'turn' ? 'first-party' : undefined;
       if (run.swarm) {
         const workerFor = (entry, seat) => prefersSwarm(entry, seat) && available.some(node => node.id === entry.swarmWorker)
           ? entry.swarmWorker : undefined;
@@ -2731,6 +2811,7 @@ server.on('connection', (socket, request) => {
   }
 
   if (signaling) {
+    socket.rtcStartup = url.searchParams.get('rtcStartup') === '1';
     void handleSignalConnection(socket, roomId, runId, player, playerCount).catch(() => socket.close(1011, 'signaling unavailable'));
     return;
   }
