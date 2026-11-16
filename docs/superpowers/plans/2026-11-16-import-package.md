@@ -10,7 +10,7 @@
 
 **Spec:** [Import package requirements](../../IMPORT_PACKAGE.md).
 
-**Priority:** Deferred stage3 work. The user's subsequent clarification requires restoration and port closure first, followed by Web adaptation/import ZIP, then multiplayer. Preserve reference research and this plan; do not start further package implementation or device acceptance until the earlier stages are closed.
+**Priority:** Active stage3 delivery. The user has confirmed the accepted six-normal-route and EX full functional flows as the restoration/port completion baseline. Additional compatibility and device work stays in a separate backlog; it must not delay Runtime/ZIP/extracted-folder delivery.
 
 ## Global constraints
 

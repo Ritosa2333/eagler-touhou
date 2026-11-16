@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>妖精大战争 · 网页移植验证</title>
+  <title>妖精大战争</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/play.css">
   <script type="module" src="/play.mjs"></script>
 </head>
 <body>
   <main>
-    <header><a href="/">TH128 / 移植工作台</a><span>C++20 → WebAssembly → WebGL · Keyboard UI</span></header>
-    <section id="debug-stage-jump" class="debug-stage-jump" aria-label="调试跳关">
+    <header><a href="/play.html">妖精大战争</a><span>方向键移动 · Z 射击 · X 完美冻结 · Esc 暂停</span></header>
+    <section id="debug-stage-jump" class="debug-stage-jump" aria-label="调试跳关" hidden>
       <label for="debug-stage-select">调试选关 · Normal / EX</label>
       <select id="debug-stage-select" aria-describedby="debug-stage-note" disabled>
         <option value="A1-3">A1-3</option>
@@ -24,7 +24,7 @@
       </select>
       <button id="debug-stage-start" type="button" aria-describedby="debug-stage-note" disabled>进入选定关卡</button>
       <span id="debug-stage-status" role="status">正在加载…</span>
-      <p id="debug-stage-note" class="debug-stage-note">六路线第三面为 Normal；EX 使用原版 stage 16 / rank 4，从起点开始。当前局会被替换，调试跳关不计正常通关；EX 尚未通关，遇到未实现分支会停止。无限复活沿用开发选项。</p>
+      <p id="debug-stage-note" class="debug-stage-note">六路线第三面为 Normal；EX 使用原版 stage 16 / rank 4，从起点开始。当前局会被替换；练习跳关与无限复活不计正常通关或解锁记录。</p>
     </section>
     <section class="screen" aria-label="原版动画画面">
       <canvas id="game" width="1280" height="960" tabindex="0" aria-label="妖精大战争 1280×960 渲染画面"></canvas>
@@ -118,7 +118,7 @@
     <pre id="error" role="alert" hidden></pre>
 
     <details id="dev-workbench" class="dev-workbench">
-      <summary>开发控制／诊断工作台（默认折叠，不影响键盘游戏）</summary>
+      <summary>开发诊断（默认折叠，不影响已完成的单人流程）</summary>
     <section id="extra-menu-panel" class="extra-menu-panel" aria-labelledby="extra-menu-heading">
       <h2 id="extra-menu-heading">EX 解锁资格诊断（不是原版选路菜单）</h2>
       <p id="extra-progress" class="extra-progress" role="status">Normal Extra · Locked · 0/6</p>
@@ -141,11 +141,11 @@
       <div class="extra-debug-entry" aria-labelledby="debug-extra-heading">
         <h3 id="debug-extra-heading">独立 Debug EX</h3>
         <button id="debug-extra-start" type="button" aria-describedby="debug-extra-note" disabled>进入 EX（调试中）</button>
-        <p id="debug-extra-note">独立调试入口：原版 stage 16／rank 4，始终标记 tainted；已验证到 41697 原生帧，激光与终幕仍在修复，不增加正常 clear 或解锁资格。</p>
+        <p id="debug-extra-note">练习入口：原版 stage 16／rank 4，不增加正常通关或解锁资格。</p>
       </div>
       <p id="extra-status" role="status" aria-live="polite">当前仅提供只读锁状态；没有启动 EX 或修改任何通关存档。</p>
     </section>
-      <div class="warning"><b>公版81：主菜单返回／EX 卡面与启动修复</b><span>先选录像再选已录制关卡播放；回放Esc显示继续/返回标题/再次播放。Music试听不解锁曲名；存档调试按钮执行前会确认。D键或独立按钮才导出；A/B背景、原暂停羽毛、P点层级和中文字体修复保持。当前仍是局部运行与调试入口，整菜单/整路线/浏览器音画设备尚未整体验收；EX2 和后续内容仍待完成。</span></div>
+      <div class="warning"><b>单人完整流程：六条普通路线与 EX 已完成</b><span>按原版规则进入游戏、保存成绩和录像。练习选项不计正常通关与解锁记录；额外兼容性问题单独维护。</span></div>
       <div class="save-debug-controls"><button id="debug-clear-save" type="button">调试：清理本网页存档数据</button><button id="debug-unlock-save" type="button">调试：六线通关存档／解锁EX</button><p>仅操作本网页游戏存档；执行前确认。模拟通关不会计为真实通关，不改Windows原版存档。</p></div>
       <details id="main-audio-diagnostics"><summary>主菜单音频诊断（只读）</summary><button id="main-audio-refresh" type="button">刷新音频诊断（只读）</button><pre id="main-audio-state">点击刷新以读取实际音频与请求状态；不启动音频、不确认回执、不修改存档。</pre></details>
       <div class="controls">
