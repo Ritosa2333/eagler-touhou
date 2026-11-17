@@ -203,7 +203,9 @@ for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
 // Persist during play as well, with writes serialized by the sync chain.
 setInterval(()=>{if(launched&&!document.hidden&&core)try{queue=queue.then(()=>save()).catch(error);}catch(e){error(e);}},30000);
 const startupAbort=new AbortController();
-window.addEventListener('pagehide',event=>{if(!event.persisted)startupAbort.abort();},{once:true});
+// A persisted pagehide can return from bfcache; retain cancellation for the
+// eventual non-persisted departure in this same document lifetime.
+window.addEventListener('pagehide',event=>{if(!event.persisted)startupAbort.abort();});
 const initialized=(async()=>{
  let audioContext;try{audioContext=parent.__touhouAudioContext;}catch{}
  Module=await createModule({canvas,noInitialRun:true,resetBrowserKeyboard:()=>keyboard.clear(),...(audioContext?{SDL3:{audioContext}}:{}),print:console.log,printErr:console.error,

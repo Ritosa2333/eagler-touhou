@@ -1,6 +1,6 @@
 # 文档总表
 
-共 612 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 613 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -616,5 +616,6 @@
 | 项目文档 | [docs/porting/TH14_PRACTICE_ENTRY_UNLOCK_NOV15.md](porting/TH14_PRACTICE_ENTRY_UNLOCK_NOV15.md) | TH14 普通进入关卡后的练习解锁修复 · 2026-11-15 |
 | 项目文档 | [docs/porting/TH14_REPLAY_END_PRESENTATION_NOV15.md](porting/TH14_REPLAY_END_PRESENTATION_NOV15.md) | TH14 网页录像结束后的完整分数动画 · 2026-11-15 |
 | 项目文档 | [docs/porting/TH14_REPLAY_END_RELEASE_NOV15.md](porting/TH14_REPLAY_END_RELEASE_NOV15.md) | TH14 录像终点分数显示修复交付 · 2026-11-15 |
+| 项目文档 | [docs/porting/TH14_STARTUP_ABORT_NOV17.md](porting/TH14_STARTUP_ABORT_NOV17.md) | TH14 缓存恢复后的加载取消 · 2026-11-17 |
 | 项目文档 | [docs/porting/TH14_STARTUP_RENDER_NOV17.md](porting/TH14_STARTUP_RENDER_NOV17.md) | TH14 上游首帧渲染接续 · 2026-11-17 |
 | 项目文档 | [docs/th075-thcrap.md](th075-thcrap.md) | th075 语言资源准备 |
