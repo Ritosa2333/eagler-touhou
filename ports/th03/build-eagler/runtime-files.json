@@ -110,8 +110,8 @@
       "sha256": "b8d75f6aac5e493a09b69de0c5aef57aa4b2e91f5a46e91709aab29395afcfb3"
     },
     "managed-data.mjs": {
-      "bytes": 5401,
-      "sha256": "cc7d7ee81af2dff93a3fdf2974afe80cdc4dbaa9ce7b34d6abf4646f1e27913f"
+      "bytes": 5456,
+      "sha256": "ad0bc47504d85d5e299e7bc710312698c8a25ce030f6e95ff6c9e3d6f06cfeb0"
     },
     "managed-input.mjs": {
       "bytes": 6211,
@@ -243,7 +243,7 @@
     },
     "manifest.json": {
       "bytes": 8600,
-      "sha256": "dfd5e6ff6f4162fe97727ac834cfc7526c0bb26a9621b7cb64330fbe96f1b900"
+      "sha256": "9095d56ac07709a3412a0853ba205cff5a093cb899b875b7fbaf7e318630914d"
     }
   }
 }

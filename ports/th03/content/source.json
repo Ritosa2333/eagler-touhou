@@ -1,6 +1,6 @@
 {
   "schema": "eagler-touhou/pc98-import/1",
   "upstream": "https://github.com/christianazinn/th98port",
-  "dataLayout": "sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579",
+  "dataLayout": "sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e",
   "adaptation": "native-th03"
 }
