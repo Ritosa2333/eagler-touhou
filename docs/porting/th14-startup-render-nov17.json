@@ -1,0 +1,111 @@
+{
+  "schema": "th14/upstream-startup-render/1",
+  "upstream": {
+    "upstreamCommits": [
+      "209b7898afe4905dce14ceb8695343172c87cb22",
+      "139be05e3bde88901db6846670bd5d6875296d9a"
+    ],
+    "upstreamParent": "81474fce73c41ae2bbef7b7adf34962fe103cd86",
+    "sourceBase": "c4a145ffab0684cc52ed94aede90fad4a550ec4f",
+    "changes": {
+      "runtimes/th12/portable/sdl/Renderer.cpp": {
+        "before": "bf4e8e888413fb68ceb49eaf7d1f198e2a0b6a7ade055f2135a1edec4a26c825",
+        "after": "e7db76324bb3f07f5a287e2a90009c4e6b7d0aeba69b176a0e2304e08036b91f"
+      },
+      "runtimes/th12/portable/sdl/Renderer.hpp": {
+        "before": "28e88c9df53cd02ade9e34f0409741a6be8d1c5f698d4b6ad6c0c8e02a6fb3d0",
+        "after": "2a94cb34df038536d4897102983f59b0c971ce70b0f11ae1ed5ed486b4d1dd5a"
+      },
+      "tools/th14-gles-profile.json": {
+        "before": "332bfbb875277c6d7dbc83613beb8e6a5877d2593a2f93da86a23a2842f18996",
+        "after": "bf15409e698ca332052fe14c60aebeaeb35f3b7d533a96c5d14f14d9416230f0"
+      }
+    },
+    "newDefine": "TH14_ASYNC_GLES_STARTUP=1",
+    "assetCopies": 0,
+    "productionChanged": false,
+    "browserAccepted": false,
+    "completeGame": false
+  },
+  "build": {
+    "built": true,
+    "recompiled": [
+      "core\\runtimes\\th12\\portable\\sdl\\Renderer.cpp",
+      "core\\runtimes\\th12\\th12_web\\cpp\\sdl\\FontDevice.cpp",
+      "core\\runtimes\\th12\\th12_web\\cpp\\sdl\\GraphicsDevice.cpp",
+      "core\\runtimes\\th12\\th12_web\\cpp\\sdl\\PracticeUiTh14.cpp",
+      "core\\runtimes\\th12\\th12_web\\cpp\\sdl\\Application.cpp"
+    ],
+    "objectsVerifiedReused": 148,
+    "wasm": "3f0e4a95eaf3562efb9b90b4b66fda6c8258cc7d4c7b8953f332d81f9da73e97",
+    "sourceBindings": 387,
+    "commonBindings": 25,
+    "hardwareAudioOpened": false,
+    "browserAccepted": false,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "http": {
+    "passed": true,
+    "generation": "fd1a1ca7a73dfd0dce1252b76c2bb9b4f3ce771d18f98943904697f77d897b29",
+    "runtimeFiles": 32,
+    "frontend": [
+      {
+        "path": "index.html",
+        "bytes": 84727,
+        "sha256": "114a36103041b614731968bfe95c7e8cbf3b15c564caa54f7c16128ba8d700f6"
+      },
+      {
+        "path": "assets/root-BO8Y8Wk0.js",
+        "bytes": 654754,
+        "sha256": "922b478529f495ac3563171ba44cf8404ef64f07bf8c1d8f4404cddcbe01ce12"
+      },
+      {
+        "path": "assets/replays-BtyfSDvq.js",
+        "bytes": 135543,
+        "sha256": "12a7af920b17e37250ec25010152f7221874d1d11c1452b5c0a849a0b2f8b1ba"
+      }
+    ],
+    "isolationHeadersAccepted": true,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "browser": {
+    "qualified": true,
+    "generation": "fd1a1ca7a73dfd0dce1252b76c2bb9b4f3ce771d18f98943904697f77d897b29",
+    "actualOrdinaryReimuANormalStartAccepted": true,
+    "initialLives": 2,
+    "initialBombs": 3,
+    "initialPower": 100,
+    "initialHudScore": 50,
+    "resumedMovedLeftAndPausedAgain": true,
+    "subsequentHudScore": 80,
+    "nativeReturnTitleAndQuitAccepted": true,
+    "naturalViewerEndFrames": 1737,
+    "viewerHudScore": 3179620,
+    "viewerGraze": 39,
+    "viewerPower": 400,
+    "viewerRate": 1,
+    "viewerSeekCount": 0,
+    "endObservationSource": "CUA returned AX progress=1737 and ended text; HUD read from screenshot; later saved AX is a no-change diff, not a full tree",
+    "viewerScreenshotSha256": "111e74f462d5347f6f9a2d6c6c4343de6bb6ec0c220faa59d02569bca864f6e8",
+    "wholeEncodedWatcherScoreEqual": true,
+    "watcherScoreBytes": 21642,
+    "watcherScoreSha256": "91bab7d615744f37603ae32488e4f393dfa3b093683bde8da61da9c0b35fbc81",
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "musicMode": "none",
+    "firstObservationTimedOut": true,
+    "screenshotShowedCachedRuntimeAndUpdatePrompt": true,
+    "candidateVerifiedOnlyAfterRestart": true,
+    "quantitativeColdStartupLatencyAccepted": false,
+    "allShaderStatesAccepted": false,
+    "hardwareAudioOpened": false,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "managedArchiveTransferImported": false,
+  "frontendChanged": false,
+  "productionChanged": false,
+  "completeGame": false
+}
