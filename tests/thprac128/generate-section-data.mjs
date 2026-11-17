@@ -9,7 +9,12 @@ function parse(b){const count=b.readUInt32LE(16),table=36+b.readUInt16LE(6);let 
  for(const s of subs){s.end=starts.find(x=>x>s.start)??b.length;for(let p=s.start;p<s.end;){const n=b.readUInt16LE(p+6);assert(n>=16&&n%4===0&&p+n<=s.end,'base layout');s.items.push(decode(b,p));p+=n;}}
  return{subs};
 }
-function decode(b,p){let size=b.readUInt16LE(p+6);if(b.readUInt16LE(p+4)===11&&b[p+11]===1){const stringBytes=b.readUInt32LE(p+16);if(stringBytes<=256&&stringBytes%4===0)size=Math.max(size,20+stringBytes);}assert(size>=16&&size%4===0&&p+size<=b.length,'decode');return{abs:p,time:b.readInt32LE(p),op:b.readUInt16LE(p+4),size,mask:b.readUInt16LE(p+8),rank:b[p+10],count:b[p+11],stack:b.readUInt32LE(p+12),words:Array.from({length:(size-16)/4},(_,i)=>b.readUInt32LE(p+16+i*4))};}
+function decode(b,p,virtual=false){let size=b.readUInt16LE(p+6);const op=b.readUInt16LE(p+4),count=b[p+11];if(op===11&&count===1){const stringBytes=b.readUInt32LE(p+16);if(stringBytes<=256&&stringBytes%4===0)size=Math.max(size,20+stringBytes);}assert(size>=16&&size%4===0&&p+size<=b.length,'decode');const words=Array.from({length:(size-16)/4},(_,i)=>b.readUInt32LE(p+16+i*4));
+ // THPrac writes only through the string terminator into an existing ECL command.
+ // Its original trailing bytes are not arguments. Materialize zero padding only
+ // in this owned virtual instruction; preserve the serialized source and VM rules.
+ if(virtual&&op===11&&count===1){const n=words[0];assert(n>0&&n%4===0&&20+n<=size,'virtual call extent');const bytes=Buffer.alloc(n);for(let i=0;i<n/4;i++)bytes.writeUInt32LE(words[i+1],i*4);const zero=bytes.indexOf(0);assert(zero>0,'virtual call terminator');assert(bytes.subarray(0,zero).every(c=>c>=32&&c<=126),'virtual call ASCII');bytes.fill(0,zero);for(let i=0;i<n/4;i++)words[i+1]=bytes.readUInt32LE(i*4);}
+ return{abs:p,time:b.readInt32LE(p),op,size,mask:b.readUInt16LE(p+8),rank:b[p+10],count,stack:b.readUInt32LE(p+12),words};}
 function locate(a,off){for(let s=0;s<a.subs.length;s++){const sub=a.subs[s];if(off<sub.start||off>=sub.end)continue;const i=sub.items.findIndex(x=>off>=x.abs&&off<x.abs+x.size);if(i>=0)return{s,i,delta:off-sub.items[i].abs};}throw Error('coordinate '+off.toString(16));}
 function map(a,b,off){if(a.bytes.equals(b.bytes))return off;for(let n=0;n<a.subs.length;n++)if(off===a.subs[n].end)return b.subs.find(x=>x.name===a.subs[n].name).end;
  const at=locate(a,off),old=a.subs[at.s],sub=b.subs.find(x=>x.name===old.name);assert(sub&&sub.items.length===old.items.length,'canonical topology '+old.name);const i=sub.items[at.i];assert(at.delta<i.size,'translated field displacement');return i.abs+at.delta;}
@@ -18,12 +23,12 @@ function build(name,writes,variant,label){const a=asset('ja',name),b=asset(varia
  streams.sort((x,y)=>x.start-y.start);const merged=[];for(const s of streams){const last=merged.at(-1);if(last&&s.start<=last.end)last.end=Math.max(last.end,s.end);else merged.push({...s});}
  const regions=[];
  for(const q of merged){const l=locate(a,q.start);assert(l.delta===0,'stream original instruction boundary');const sub=a.subs[l.s],items=[];let p=q.start;
-  while(p<q.end){const i=(()=>{try{return decode(shadow,p);}catch(e){throw Error('decode stream '+label+' '+name+' start='+q.start.toString(16)+' p='+p.toString(16)+' end='+q.end.toString(16)+' length='+shadow.readUInt16LE(p+6));}})();assert(p+i.size<=shadow.length,'virtual stream leaves resource');items.push(i);p+=i.size;}
+  while(p<q.end){const i=(()=>{try{return decode(shadow,p,true);}catch(e){throw Error('decode stream '+label+' '+name+' start='+q.start.toString(16)+' p='+p.toString(16)+' end='+q.end.toString(16)+' length='+shadow.readUInt16LE(p+6));}})();assert(p+i.size<=shadow.length,'virtual stream leaves resource');items.push(i);p+=i.size;}
   const end=sub.items.find(x=>x.abs>=p)?.abs??sub.end;
   regions.push({start:q.start,end,sub:sub.name,items});}
  for(const w of writes.filter(x=>!x.stream)){for(let p=w.offset;p<w.offset+w.bytes.length;){const l=locate(a,p),sub=a.subs[l.s],ins=sub.items[l.i];
    const region=regions.find(x=>ins.abs>=x.start&&ins.abs<x.end);
-   if(!region){let current=regions.find(x=>x.start===ins.abs);if(!current)regions.push({start:ins.abs,end:ins.abs+ins.size,sub:sub.name,items:[decode(shadow,ins.abs)]});}
+   if(!region){let current=regions.find(x=>x.start===ins.abs);if(!current)regions.push({start:ins.abs,end:ins.abs+ins.size,sub:sub.name,items:[decode(shadow,ins.abs,true)]});}
    p=Math.min(w.offset+w.bytes.length,ins.abs+ins.size);
   }}
  regions.sort((x,y)=>x.start-y.start);for(let n=1;n<regions.length;n++)assert(regions[n-1].end<=regions[n].start,'region overlap');

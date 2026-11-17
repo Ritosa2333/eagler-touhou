@@ -958,9 +958,10 @@ const thpracDraft={mask:0,speed:validateThprac128Speed()};
 const thpracDraftOwner=state.thpracDraftOwner=Object.freeze({pending:true,playback:false,snapshot:()=>({mask:thpracDraft.mask,frame:0}),speedFor:()=>thpracDraft.speed,setMask(mask){if(!Number.isInteger(mask)||mask<0||mask>127)throw new Error('Invalid practice mask');thpracDraft.mask=mask;},setSpeed(value){thpracDraft.speed=validateThprac128Speed(value);}});
 let thpracRouteShown=false;
 function syncThpracRouteMenu(snapshot){
- if(snapshot.page!==2){thpracRouteShown=false;return;}
+ if(snapshot.page!==2){thpracRouteShown=false;state.thpracRouteTarget=null;return;}
  if(!snapshot.ready||snapshot.transitioning||state.launcherExited||!state.stageCatalog||!thprac128RuntimeSupported(state.module)||find('#variant')?.disabled===true)return;
- if(!thpracRouteShown&&thpracSettings.enabled&&practiceMenu&&!menu.launching&&!state.handoff&&!state.pendingCarryToken&&!state.nativePausePending&&!state.replayPlayback){thpracRouteShown=true;void practiceMenu.open();}
+ if(!thpracRouteShown&&thpracSettings.enabled&&practiceMenu&&!menu.launching&&!state.handoff&&!state.pendingCarryToken&&!state.nativePausePending&&!state.replayPlayback){thpracRouteShown=true;void practiceMenu.open({route:true});}
+ if(practiceMenu?.isOpen){if(Number.isInteger(state.thpracRouteTarget)&&state.thpracRouteTarget!==snapshot.selection){const code=(state.thpracRouteTarget-snapshot.selection+4)%4===1?'ArrowRight':'ArrowLeft';handleNativeTitleKey(code);state.mainController?.keyUp(code);}else{state.thpracRouteTarget=null;practiceMenu.syncRoute(snapshot.selection,menu.difficulty);}}
 }
 function scaleThpracViewport(){
  const screen=find('#game')?.parentElement,layer=find('#thprac-layer');if(!screen||!layer)return;
@@ -1428,7 +1429,10 @@ function installPracticeMenu(){
    inRun:state.worldMode&&state.active,
    practiceSession:state.worldMode?state.stageSelection?.thprac??null:null
   }),
-  onOpen:async()=>{loseFocus();await state.nativePausePending;await refreshThpracReplaySlots();},
+  onOpen:async({route=false}={})=>{if(!route){loseFocus();await state.nativePausePending;}await refreshThpracReplaySlots();},
+  onRouteKey:code=>{handleNativeTitleKey(code);state.mainController?.keyUp(code);},
+  onRouteChange:selection=>{if(selection>=0&&selection<4)state.thpracRouteTarget=selection;},
+  onCancel:()=>{if(!state.worldMode&&menu.page==='route'){thpracRouteShown=true;state.paused=false;clock.reset();resetHighFrameratePresentation();backNativePage();}},
   onFocusGame:()=>find('#game')?.focus(),launch:startThprac128Session
  });
  window.addEventListener('pagehide',()=>practiceMenu?.dispose(),{once:true});
@@ -2500,6 +2504,10 @@ async function advanceOriginalEnding(){
       if(ticket!==state.endingTicket||host!==state.endingHost)return;
       if(snapshot.phase==='return-requested'){
         if(snapshot.ownerKind==='ordinary')await finishOrdinaryEndingReturn(host,snapshot);
+        else if(snapshot.ownerKind==='practice'){
+          if(!state.stageSelection?.thprac||typeof state.module._th128_world_finish_thprac_ending!=='function'||state.module._th128_world_finish_thprac_ending(snapshot.generation)!==1)throw new Error(state.module.UTF8ToString(state.module._th128_world_error())||'Practice Ending16 return rejected');
+          host.owner.input.release();if(!returnToTitle())throw new Error('Practice original Title return failed');
+        }
         else{state.active=false;state.paused=true;clock.reset();resetHighFrameratePresentation();host.owner.input.release();
           status('原结局已请求 scene16；此诊断路线没有普通返回凭据。');}
       }
@@ -3255,7 +3263,7 @@ function enemyAnimationBankLimit(selection,names){
   return 3;
 }
 function bindDirectTerminalOwner(module,selection,pointer,size,progress,context){
-  const restoreFinite=!!(selection?.debugJump||selection?.thprac)&&state.debugInfiniteRespawnRequested!==true;
+  const restoreFinite=!!selection?.debugJump&&!selection?.thprac&&state.debugInfiniteRespawnRequested!==true;
   if(restoreFinite&&module._th128_world_set_debug_infinite_respawn(1)!==1)
     throw new Error(module.UTF8ToString(module._th128_world_error())||'direct terminal debug configuration failed');
   try{
@@ -3290,7 +3298,8 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
   const rawCarryToken=selection?.carryToken??0;
   if(rawCarryToken!==0&&(!Number.isInteger(rawCarryToken)||rawCarryToken<1))throw new Error('Invalid stage carry token');
   const carryToken=rawCarryToken,thprac=selection?.thprac??null;
-  if(thprac&&carryToken)throw new Error('TH128 practice requires a fresh owner without stage carry');
+  if(thprac&&carryToken&&!selection.practiceContinuation)throw new Error('TH128 practice carry requires its owned continuation');
+  if(selection?.practiceContinuation&&(!thprac||!carryToken))throw new Error('Practice continuation requires its real opaque native carry');
   const presentation=thprac?thprac128Presentation(thprac):{skipIntro:false,bossMusic:false};
   let transitionEnabled=false,routeChoiceEnabled=false;
   const action=emission?++state.action:state.action;
@@ -3577,10 +3586,12 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
       module._free(namePointer);module._free(dataPointer);
       if(!loaded)throw new Error(module.UTF8ToString(module._th128_world_error()));
     }
-    if(thprac)prepareThprac128Native(module,thprac);
+    if(thprac&&carryToken){if(typeof module._th128_world_prepare_thprac_carry!=='function'||module._th128_world_prepare_thprac_carry(carryToken)!==1)throw new Error(module.UTF8ToString(module._th128_world_error())||'Practice continuation native owner unavailable');}
+    else if(thprac)prepareThprac128Native(module,thprac);
     const encoded=new TextEncoder().encode(stage.ecl),pointer=memory(encoded);
     const started=module._th128_world_start(pointer,encoded.length,selection.difficulty,selection.seed);module._free(pointer);
     if(!started)throw new Error(module.UTF8ToString(module._th128_world_error()));
+    state.replayPlayback?.prepareNativeStage?.(module,{naturalCarry:!!carryToken});
     if(state.replayPlayback){if(module._th128_world_set_debug_infinite_respawn(0)!==1)throw new Error('Replay requires original finite gameplay mode');}
     else if(extraRun){if(module._th128_world_set_debug_infinite_respawn(1)!==1)throw new Error(module.UTF8ToString(module._th128_world_error()));}
     else applyDebugInfiniteRespawn(module,selection);
@@ -3790,7 +3801,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         if(thprac){const ownedSelection=selection;state.thpracTools=createThprac128Tools(module,thprac,{isCurrent:()=>state.module===module&&state.stageSelection===ownedSelection&&!state.launcherExited,playback:!!state.replayPlayback,history:state.replayPlayback?.tools,initial:selection.thpracRestartTools??thpracDraft});syncThpracToolMusic();}
         if(!state.replayPlayback&&thprac){
           const clockSeconds=performance.now()/1000,ownedSelection=selection;
-          state.thpracRecorder=createThprac128Recorder(module,thprac,selection.thpracIdentity,{seconds:clockSeconds,isCurrent:()=>state.module===module&&state.stageSelection===ownedSelection&&!state.launcherExited,tools:frames=>state.thpracTools.history(frames)});
+          state.thpracRecorder=createThprac128Recorder(module,thprac,selection.thpracIdentity,{seconds:clockSeconds,isCurrent:()=>state.module===module&&state.stageSelection===ownedSelection&&!state.launcherExited,tools:frames=>state.thpracTools.history(frames),continuation:selection.thpracRecordingContinuation??null});
           state.replayClockLast=clockSeconds;
         }
         else if(!state.extraRun&&!selection.debugJump&&!selection.thprac&&!find('#debug-infinite-respawn').checked){
@@ -3877,6 +3888,13 @@ function handoffFailure(message){
   find('#resume-session').hidden=true;find('#runtime-overlay').hidden=false;
   status(message);
 }
+function prepareThprac128Continuation(selection,prior){
+ const previous=prior?.thprac;if(!previous||previous.params.mode!==1||selection.difficulty!==previous.difficulty||selection.stage.id===16)throw new Error('Practice next-stage owner differs');
+ const thprac=createThprac128Session({...previous.params,stage:selection.stage.id-1,section:0,phase:0,dlg:false},previous.difficulty);
+ const tools=state.thpracTools,snapshot=tools?.snapshot();selection.thprac=thprac;selection.practiceContinuation=true;
+ if(snapshot)selection.thpracRestartTools={mask:snapshot.mask,speed:tools.speedFor(snapshot.frame)};
+ if(!state.replayPlayback&&state.thpracRecorder)selection.thpracRecordingContinuation=state.thpracRecorder.continuation();return selection;
+}
 function transitionSelection(transition){
   if(!state.stageSelection)throw new Error('当前 stage context 不可用');
   if(transition.configured!==true||transition.currentId!==state.stageSelection.stage.id
@@ -3886,7 +3904,9 @@ function transitionSelection(transition){
     throw new Error('stage transition did not publish a legal non-extra nextId');
   if(!Number.isInteger(transition.nextProgress))throw new Error('stage transition did not publish a legal nextProgress');
   const recorded=state.replayPlayback?.prepareNaturalHandoff(transition);
-  return prepareStage(transition.nextId,{difficulty:state.stageSelection.difficulty,seed:recorded?.seed??state.stageSelection.seed,progress:transition.nextProgress});
+  const selected=prepareStage(transition.nextId,{difficulty:state.stageSelection.difficulty,seed:recorded?.seed??state.stageSelection.seed,progress:transition.nextProgress});
+  if(recorded?.thprac){selected.thprac=recorded.thprac;selected.thpracReplayIdentity=recorded.thpracReplayIdentity;selected.practiceContinuation=true;return selected;}
+  return state.stageSelection.thprac?prepareThprac128Continuation(selected,state.stageSelection):selected;
 }
 function maybeAutoHandoff(){
   if(!state.autoFlow)return;
@@ -4134,7 +4154,7 @@ function startLaunch(selection,returnPage='route'){
   menu.launchPreviousAutoFlow=state.autoFlow;const id=++menu.launchId;
   find('#error').hidden=true;
   suppressHeldConfirmKeys();
-  state.autoFlow=!selection.thprac;state.pressed.clear();
+  state.autoFlow=true;state.pressed.clear();
   menu.launchMessage=`正在预加载 stage ${selection.stage.id} · rank ${selection.difficulty}…`;
   find('#menu-launch-body').textContent=menu.launchMessage;showMenuPage('launch');
   return (async()=>{
@@ -4326,10 +4346,10 @@ find('#high-framerate-mode').addEventListener('change',event=>{
   setHighFramerateMode(event.target.checked);find('#game').focus();
 });
 window.addEventListener('keydown',event=>{
+  if(practiceMenu?.isOpen&&practiceMenu.keyDown(event))return;
   if(thpracToolsPanel?.isOpen)return;
   if(event.target instanceof HTMLSelectElement||event.target instanceof HTMLInputElement)return;
   if(handleThpracToolKey(event))return;
-  if(practiceMenu?.isOpen)return;
   if(state.launcherExited)return;
   if(event.target instanceof HTMLSelectElement||event.target instanceof HTMLInputElement)return;
   const menuKeys=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','Enter','Escape'];
@@ -4382,7 +4402,7 @@ window.addEventListener('keydown',event=>{
   }
 });
 window.addEventListener('keyup',event=>{
-  if(practiceMenu?.isOpen)return;
+  if(practiceMenu?.isOpen&&state.worldMode)return;
   if(state.launcherExited)return;
   if(state.webInput&&!state.webInput.acceptKeyUp(event))return;
   if(state.normalPostrun){state.pressed.delete(event.code);suppressedKeys.delete(event.code);state.normalPostrun.input.up(event.code);return;}
@@ -4491,7 +4511,7 @@ async function present(timestamp){
       }
     }else{
       originalMenuClock.advance(timestamp,false);
-      const active=state.active&&!state.paused&&!state.endingLoading&&!document.hidden&&!state.thpracReplaySaving&&!practiceMenu?.isOpen&&!thpracToolsPanel?.isOpen;
+      const active=state.active&&!state.paused&&!state.endingLoading&&!document.hidden&&!state.thpracReplaySaving&&(!state.worldMode||!practiceMenu?.isOpen)&&!thpracToolsPanel?.isOpen;
        const timing=state.thpracTools?thpracLogicClock.advance(timestamp,active,practiceLogicRate()):clock.advance(timestamp,active);presentationSteps=timing.steps;
       highFramerateCatchup=timing.steps>1;
       if(highFramerateCatchup)resetHighFrameratePresentation();

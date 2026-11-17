@@ -85,6 +85,7 @@ public:
     bool start(const std::string& stage,int difficulty,std::uint16_t seed);
     bool tick();
     bool setThpracTimeLock(bool enabled,std::string& error);
+    bool bindThpracTerminalDrain(std::function<bool(std::string&)> validator,std::string& error);
     bool bindStageTransitionOwner(const stage::StageTransitionHost& owner,int currentId,int progress,std::string& error);
     bool bindOrdinaryTerminalDrain(const record::NativeOrdinaryTerminalOwner& owner,int stage,int progress,
             th128::stage::OrdinaryTerminalDrain::Validator validator,std::string& error);
@@ -242,6 +243,7 @@ private:
     MessageGate messageGate_;
     const stage::StageTransitionHost* stageTransitionOwner_=nullptr;
     stage::OrdinaryTerminalDrain ordinaryTerminalDrain_;
+    std::function<bool(std::string&)> thpracTerminalDrain_;
     int stageTransitionOwnerId_=0,stageTransitionOwnerProgress_=0;
     bullet::Manager::Cancellation messageCancellation_;
     int difficulty_=1;

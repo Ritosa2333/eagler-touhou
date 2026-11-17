@@ -46,7 +46,7 @@ export function originalEndingRequest(world,{requireStats=false}={}){
     if(debug.runtimeScene!==15||debug.counter!==380||debug.messageDone!==true||debug.normalClear!==false
         ||world.debug?.runTainted!==true||!positive(generation)||!integer(debug.index,0,5)||terminalStages[debug.index]!==debug.stage)
         throw new Error('Actual diagnostic runtime15 request is required before ending start');
-    return{kind:'diagnostic',index:debug.index,stage:debug.stage,generation,frame:world.frame};
+    return{kind:debug.practice===true?'practice':'diagnostic',index:debug.index,stage:debug.stage,generation,frame:world.frame};
 }
 function sameEndingRequest(first,second,{statistics=true}={}){
     if(!first||!second)return false;

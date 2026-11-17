@@ -658,7 +658,7 @@ export class OwnedReplayStore{
     const bytes=input.slice(),{readThprac128Replay}=await import('./thprac128-replay.mjs');
     const practice=readThprac128Replay(bytes);if(!practice)throw new Error('Practice PRAC metadata missing');
     const decoded=decodeReplay(bytes),digest=await this.hash(bytes);current();
-    const record={bytes,digest,name:Array.from(decoded.metadata.nameRaw),timestamp:String(decoded.metadata.timestamp),stageCount:1,score:decoded.metadata.scoreRaw,source:'thprac-rpy'};
+    const record={bytes,digest,name:Array.from(decoded.metadata.nameRaw),timestamp:String(decoded.metadata.timestamp),stageCount:decoded.stages.length,score:decoded.metadata.scoreRaw,source:'thprac-rpy'};
     const result=await this.replaceFileSlot(slot,expectedDigest,record,{isCurrent,signal});current();
     const readback=readThprac128Replay(result.record.bytes,practice.identity);if(JSON.stringify(readback.session.params)!==JSON.stringify(practice.session.params))throw new Error('Practice Replay metadata durable readback differs');
     return{slot,bytes:result.record.bytes.slice(),digest,alreadyPresent:result.alreadyPresent,strictFullReadback:true,strictDurability:true,scoreProfileImported:false,practice:true};

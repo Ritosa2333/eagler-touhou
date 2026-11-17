@@ -37,6 +37,7 @@ public:
     bool empty()const{return stages_.empty();}
     unsigned frames()const{unsigned count=0;for(const auto& stage:stages_)count+=unsigned(stage.input.frame());return count;}
     unsigned stages()const{return unsigned(stages_.size());}
+    unsigned stageFrames()const{return stages_.empty()?0:unsigned(stages_.back().input.frame());}
     unsigned stage()const{return lastStage_;}
     unsigned route()const{return route_;}
     unsigned rank()const{return rank_;}

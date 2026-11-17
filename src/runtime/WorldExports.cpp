@@ -67,6 +67,7 @@
 #include "Memory.hpp"
 #include "DrawJsonWriter.hpp"
 #include "practice/Thprac128Web.hpp"
+#include "practice/Thprac128Continuation.hpp"
 #include "game/ending/EndingRuntime.hpp"
 #include <algorithm>
 #include <bit>
@@ -264,6 +265,7 @@ int stageSessionPresent=0,stageSessionField74=0;
 th128::stage::StageSettlementManager stageManager{};
 struct DebugTerminalRecord {
     bool configured=false,begun=false,messageDone=false,requested=false;
+    bool practice=false,endingStarted=false,practiceReturned=false;
     int stage=0,index=-1,selector=0,runtimeScene=0,counter=0,bonus=0;
     int fadeElapsed=-1,fadeAlpha=0;
     unsigned generation=0;
@@ -290,6 +292,10 @@ struct MusicControlRecord {
 MusicControlRecord musicControl;
 unsigned musicControlSerial=0;
 struct StageCarryRecord {
+    std::optional<th128::StageWorld::ThpracChapter> practice;
+    std::shared_ptr<th128::record::NativeRunReplay> practiceReplay;
+    double practiceReplayOrigin=0,practiceReplayClock=0;
+    bool practicePlayback=false;
     std::shared_ptr<th128::record::NativeRunReplay> normalReplay;
     std::shared_ptr<th128::record::NativeNormalRecord> normalRecord;
     int originalContinueCount=0;
@@ -352,15 +358,19 @@ int worldStartDifficulty=0;
 int currentStageProgress=0;
 unsigned worldGeneration=0;
 struct ThpracReplayOwner {
-    std::unique_ptr<th128::record::NativeRunReplay> record;
+    std::shared_ptr<th128::record::NativeRunReplay> record;
     th128::StageWorld::ThpracChapter practice{};
     std::vector<std::uint8_t> bytes;
     unsigned generation=0,seed=0,clockFrame=0;
     double origin=0,clock=0;
     float fps=60;
     bool clockPending=false,playback=false;
+    std::vector<std::array<unsigned,4>> auxiliary;
+    unsigned auxiliaryCursor=0,playbackWorldFrames=0;
 };
 ThpracReplayOwner thpracReplay;
+struct ThpracReplayInitial {std::array<std::uint8_t,160> bytes{};unsigned generation=0;bool prepared=false,applied=false;};
+ThpracReplayInitial practiceReplayInitial;
 struct ThpracToolOwner {unsigned generation=0,mask=0,cursor=0;bool playback=false;std::vector<std::array<unsigned,2>> events;};
 ThpracToolOwner thpracTools;
 
@@ -653,6 +663,7 @@ void writeDebugTerminalState(Writer& text){
         <<",\"baseScore\":"<<stageManager.baseScore5a38<<",\"frontHandle\":"<<stageManager.handle58cc
         <<",\"ownerSlotsVisited\":"<<settlement.ownerSlotsVisited<<",\"retiredEntities\":"<<settlement.retiredEntities
         <<",\"settlementNodes\":"<<debugTerminalSettlement->snapshots().size()
+        <<",\"practice\":"<<(debugTerminal.practice?"true":"false")<<",\"endingStarted\":"<<(debugTerminal.endingStarted?"true":"false")
         <<",\"normalClear\":false,\"debugTainted\":"<<(debugRunTainted?"true":"false")<<'}';
 }
 template<class Writer>
@@ -789,7 +800,7 @@ void beginNewWorldGeneration() {
     if(worldGeneration==0)++worldGeneration;
     stageIntro=std::make_unique<th128::stageintro::Host>();
     stageIntroDrawError.clear();
-    worldStartedName.clear();worldStartedSeed=0;thpracReplay={};thpracTools={};
+    worldStartedName.clear();worldStartedSeed=0;thpracReplay={};thpracTools={};practiceReplayInitial={};
     worldStartDifficulty=0;
     currentStageProgress=0;
     if(stageCarry.valid&&!stageCarry.consumed){
@@ -1947,11 +1958,31 @@ int th128_world_prepare_thprac128(const void* data,unsigned bytes){
     }
     return world->prepareThpracSection(stage,section,unsigned(p[3]),p[4]!=0,p[5],initial,operationError)?1:0;
 }
+int th128_world_prepare_thprac_carry(unsigned token){
+    operationError.clear();
+    const auto& c=stageCarry;
+    if(!c.valid||c.consumed||!token||token!=c.token||!c.practice||!c.debugRunTainted||c.normalRecord||c.normalReplay
+        ||c.sourceGeneration>=worldGeneration||!c.sourceGeneration||c.targetBound||c.gameRandomRestored
+        ||!c.sourceTransitionSerial||!c.sourceControlActionRecreate||c.sourceControlCurrent!=7||c.sourceControlPending!=7
+        ||c.sourceCurrentId!=int(c.practice->stageId)||c.sourceDifficulty!=c.practice->difficulty
+        ||c.nextId<1||c.nextId>15||c.difficulty<0||c.difficulty>3||c.difficulty!=c.practice->difficulty
+        ||!worldStartedName.empty()||world->faulted()||worldTickExecuting||world->frame()!=0
+        ||normalRecord||normalReplay||replayPlayback.active()||debugRecordPrefix.prepared||ordinaryRecordOwner.configured){
+        operationError="practice continuation requires an exact fresh native carry owner";return 0;
+    }
+    if(!validStageCarryValues(c,operationError))return 0;
+    return world->prepareThpracChapter(unsigned(c.nextId),1,c.difficulty,c.practice->initial,operationError)?1:0;
+}
 const char* th128_world_thprac128_state(){
     static std::string state;std::ostringstream out;out<<std::boolalpha;
     const auto owner=world->thpracChapter();
+    const bool carried=owner&&stageCarry.practice&&stageCarry.valid&&stageCarry.consumed&&stageCarry.acknowledged
+        &&stageCarry.scalarRestored&&stageCarry.scalarRestoredGeneration==worldGeneration
+        &&stageCarry.nextId==int(owner->stageId)&&stageCarry.targetWorldName==worldStartedName;
+    const bool restored=practiceReplayInitial.applied&&practiceReplayInitial.generation==worldGeneration;
+    const bool continued=carried||restored;
     out<<"{\"schema\":\"th128-thprac-native-state/1\",\"active\":"<<owner.has_value()
-        <<",\"generation\":"<<worldGeneration<<",\"frame\":"<<world->frame();
+        <<",\"generation\":"<<worldGeneration<<",\"frame\":"<<world->frame()<<",\"continued\":"<<continued;
     if(owner){
         const auto& p=owner->initial;
         out<<",\"stage\":"<<owner->stageId-1<<",\"chapter\":"<<owner->chapter<<",\"section\":"<<owner->section
@@ -1963,6 +1994,13 @@ const char* th128_world_thprac128_state(){
             <<",\"actual\":{\"score\":"<<std::int64_t(scoreRaw)*10<<",\"motivation\":"<<motivationRaw
             <<",\"perfect_freeze\":"<<playerWindowControl.perfectCharge4b4d70<<",\"ice_power\":"<<grazeGlobals.powerRaw
             <<",\"ice_area\":"<<cumulativeFrozenArea<<'}';
+        if(continued){
+            const auto bytes=std::span<const std::uint8_t>(practiceReplayInitial.bytes);
+            const auto word=[&](unsigned offset){return th128::record::NativeReplaySlotPreview::word(bytes,offset);};
+            const th128::Random game=restored?th128::Random{std::uint16_t(worldStartedSeed),word(148)}:stageCarry.preInitGameRandom;
+            const th128::Random display=restored?th128::Random{std::uint16_t(word(152)),word(156)}:stageCarry.preInitDisplayRandom;
+            out<<",\"entryRandom\":{\"game\":";writeRandomEvidence(out,game);out<<",\"display\":";writeRandomEvidence(out,display);out<<'}';
+        }
     }
     out<<'}';state=out.str();return state.c_str();
 }
@@ -3127,6 +3165,10 @@ int th128_world_enable_stage_transition(const void* front,unsigned size,int curr
     operationError.clear();
     const std::array<int,7> terminalStages{3,5,8,10,13,15,16};
     const bool extraTerminal=currentId==16;
+    const auto practiceOwner=world->thpracChapter();
+    const bool practiceTerminal=practiceOwner&&practiceOwner->nonNormal&&debugRunTainted&&!normalRecord&&!normalReplay
+        &&!replayPlayback.active()&&!thpracReplay.playback&&!debugRecordPrefix.worldBound&&!ordinaryRecordOwner.configured
+        &&practiceOwner->stageId==unsigned(currentId)&&practiceOwner->difficulty==worldStartDifficulty;
     const auto terminalIndex=std::find(terminalStages.begin(),terminalStages.end(),currentId);
     if(terminalIndex!=terminalStages.end()){
         const bool incomingTerminalCarry=stageCarry.valid&&!stageCarry.consumed&&stageCarry.targetBound
@@ -3152,17 +3194,26 @@ int th128_world_enable_stage_transition(const void* front,unsigned size,int curr
         }
         if(world->faulted()||world->frame()!=0||debugTerminal.configured||stageTransitionConfigured
             ||!messagesConfigured||!playerConfigured||!playerShotGroupsConfigured
-            ||!debugInfiniteRespawnRun||!debugRunTainted||!stageControl.initialized()
+            ||(!debugInfiniteRespawnRun&&!practiceTerminal)||!debugRunTainted||!stageControl.initialized()
             ||stageIdForEcl(worldStartedName)!=currentId
             ||(extraTerminal?(worldStartedName!="st_ex.ecl"||worldStartDifficulty!=4||shotDifficulty!=4
                 ||progress!=0||incomingTerminalCarry):(worldStartDifficulty<0||worldStartDifficulty>3))
-            ||(progress!=0&&!incomingTerminalCarry)||gate74!=0||message78!=0||sessionPresent!=1||sessionField74!=0
+            ||(progress!=0&&!incomingTerminalCarry&&!practiceTerminal)||gate74!=0||message78!=0||sessionPresent!=1||sessionField74!=0
             ||!th128::runtime::inputRange(front,size)||size>8u*1024u*1024u){
             operationError="debug terminal requires exact fresh actual route/rank/player/front/session owners";return 0;
         }
         auto terminal=std::make_unique<th128::stage::StageSettlementHost>();
         if(!terminal->load({static_cast<const std::uint8_t*>(front),size},operationError))return 0;
-        debugTerminalSettlement=std::move(terminal);debugTerminal.configured=true;
+        if(practiceTerminal&&!world->bindThpracTerminalDrain([generation=worldGeneration,currentId](std::string& error){
+            const auto owner=world->thpracChapter();
+            const bool ready=owner&&owner->stageId==unsigned(currentId)&&owner->nonNormal&&debugRunTainted
+                &&debugTerminal.practice&&debugTerminal.configured&&debugTerminal.begun&&debugTerminal.messageDone
+                &&debugTerminal.generation==generation&&worldGeneration==generation&&debugTerminal.stage==currentId
+                &&!normalRecord&&!normalReplay&&!replayPlayback.active()&&!thpracReplay.playback
+                &&debugTerminal.counter<=380;
+            if(!ready)error="practice terminal drain requires its completed original MSG and same native owner";return ready;
+        },operationError))return 0;
+        debugTerminalSettlement=std::move(terminal);debugTerminal.configured=true;debugTerminal.practice=practiceTerminal;
         debugTerminal.stage=currentId;debugTerminal.index=extraTerminal?-1:int(terminalIndex-terminalStages.begin());
         debugTerminal.generation=worldGeneration;return 1;
     }
@@ -3222,6 +3273,16 @@ unsigned th128_world_capture_stage_carry() {
     candidate.sourceWorldName=worldStartedName;
     candidate.sourceDifficulty=worldStartDifficulty;
     candidate.difficulty=worldStartDifficulty;
+    candidate.practice=world->thpracChapter();
+    if(candidate.practice){
+        const bool playbackComplete=thpracReplay.playback&&replayPlayback.active()&&replayPlayback.generation()==worldGeneration
+            &&replayPlayback.consumed()==replayPlayback.frames()&&thpracReplay.auxiliaryCursor==thpracReplay.auxiliary.size()
+            &&unsigned(world->frame())==thpracReplay.playbackWorldFrames;
+        if(!debugRunTainted||normalRecord||normalReplay||thpracReplay.clockPending
+            ||((thpracReplay.playback||replayPlayback.active())&&!playbackComplete)){operationError="practice carry requires its completed non-normal native history owner";return 0;}
+        if(thpracReplay.record&&(thpracReplay.generation!=worldGeneration||!thpracReplay.record->configuredFor(candidate.practice->stageId))){operationError="practice carry recorder generation/stage changed";return 0;}
+        candidate.practiceReplay=thpracReplay.record;candidate.practiceReplayOrigin=thpracReplay.origin;candidate.practiceReplayClock=thpracReplay.clock;candidate.practicePlayback=playbackComplete;
+    }
     candidate.normalReplay=normalReplay;candidate.normalRecord=normalRecord;candidate.originalContinueCount=originalContinueCount;candidate.normalReplayOrigin=normalReplayOrigin;candidate.normalReplayClock=normalReplayClock;
     candidate.scoreRaw=scoreRaw;
     candidate.pointValueRaw=pointValueRaw;
@@ -3299,6 +3360,7 @@ int th128_world_restore_stage_carry_random(unsigned token,int nextId,int nextPro
         operationError=restoreError.empty()?"StageWorld game random restore failed":restoreError;return 0;
     }
     worldDisplayRandom=stageCarry.displayRandom;
+    if(stageCarry.practice)worldStartedSeed=stageCarry.gameRandom.seed;
     stageCarry.preInitGameRandom=stageCarry.gameRandom;
     stageCarry.preInitDisplayRandom=stageCarry.displayRandom;
     stageCarry.preInitBound=true;
@@ -3338,6 +3400,13 @@ int th128_world_restore_stage_carry(unsigned token) {
     }
     if(!validateCarryIdentity(stageCarry,targetId,targetProgress,operationError))return 0;
     if(!validStageCarryValues(stageCarry,operationError))return 0;
+    if(stageCarry.practice){
+        const auto owner=world->thpracChapter();
+        if(!owner||!owner->nonNormal||!debugRunTainted||owner->stageId!=unsigned(targetId)||owner->difficulty!=stageCarry.difficulty
+            ||normalRecord||normalReplay||stageCarry.normalRecord||stageCarry.normalReplay){
+            operationError="practice carry target lost its actual non-normal native identity";return 0;
+        }
+    }else if(world->thpracChapter()){operationError="ordinary carry cannot install into a practice owner";return 0;}
     const auto playerPose=world->playerAimPosition();
     if(!perfectHud->charge(stageCarry.perfectCharge,operationError)){
         world->reportRuntimeFault(operationError);return 0;
@@ -3623,6 +3692,53 @@ int th128_world_records_ack(unsigned serial,unsigned bytes,unsigned digest){
     operationError.clear();if(!normalRecord||debugRunTainted){operationError="ordinary durable record owner absent";return 0;}
     try{normalRecord->acknowledge(serial,bytes,digest);return 1;}catch(const std::exception& failure){operationError=failure.what();return 0;}
 }
+int th128_world_prepare_thprac_replay_initial(const void* data,unsigned length){
+    operationError.clear();const auto owner=world->thpracChapter();
+    if(length!=160||!th128::runtime::inputRange(data,length)||!owner||!owner->nonNormal||!debugRunTainted
+        ||worldTickExecuting||world->faulted()||world->frame()!=0||!world->configurationOpen()||world->spawnCount()!=0
+        ||normalRecord||normalReplay||replayPlayback.active()||thpracReplay.record||thpracReplay.playback
+        ||practiceReplayInitial.prepared||playerConfigured||grazeConfigured||debugRecordPrefix.worldBound){
+        operationError="practice Replay initial requires a fresh unconfigured non-normal owner and exact packet";return 0;
+    }
+    const auto bytes=std::span<const std::uint8_t>(static_cast<const std::uint8_t*>(data),length);
+    const auto word=[&](unsigned at){return th128::record::NativeReplaySlotPreview::word(bytes,at);};
+    const auto half=[&](unsigned at){return unsigned(bytes[at])|(unsigned(bytes[at+1])<<8);};
+    const int score=std::bit_cast<int>(word(12)),point=std::bit_cast<int>(word(20)),motivation=std::bit_cast<int>(word(128)),charge=std::bit_cast<int>(word(132)),graze=std::bit_cast<int>(word(40));
+    const int x=std::bit_cast<int>(word(24)),y=std::bit_cast<int>(word(28));const float area=std::bit_cast<float>(word(136));
+    const auto group=th128::playershot::selectShotGroup(area,owner->difficulty);
+    if(half(0)!=owner->stageId||half(2)!=worldStartedSeed||word(32)!=0||!group||half(16)!=*group
+        ||score<0||score>999999999||point<0||point>1000000000||motivation<0||motivation>100000||charge<0||charge>30000
+        ||graze<0||graze>1000000000||!std::isfinite(area)||area<0||area>1000000000
+        ||x<th128::player::MinimumHorizontalRaw||x>th128::player::MaximumHorizontalRaw
+        ||y<th128::player::MinimumVerticalRaw||y>th128::player::MaximumVerticalRaw||word(144)>10000||word(152)>65535){
+        operationError="practice Replay carried initial values do not match actual stage seed rank or bounds";return 0;
+    }
+    const th128::Random random{std::uint16_t(worldStartedSeed),word(148)};
+    if(!world->restoreGameRandomState(random,operationError))return 0;
+    worldDisplayRandom={std::uint16_t(word(152)),word(156)};
+    ThpracReplayInitial candidate;std::memcpy(candidate.bytes.data(),data,length);candidate.generation=worldGeneration;candidate.prepared=true;
+    practiceReplayInitial=candidate;return 1;
+}
+int th128_world_restore_thprac_replay_initial(){
+    operationError.clear();const auto owner=world->thpracChapter();
+    if(!owner||!owner->nonNormal||!debugRunTainted||!practiceReplayInitial.prepared||practiceReplayInitial.applied
+        ||practiceReplayInitial.generation!=worldGeneration||worldTickExecuting||world->faulted()||world->frame()!=0
+        ||normalRecord||normalReplay||replayPlayback.active()||thpracReplay.record||thpracReplay.playback
+        ||!playerMotion||!playerConfigured||!grazeConfigured||!playerShotsConfigured||!shotHitsConfigured||!perfectHudConfigured){
+        operationError="practice Replay carried initial restore requires its complete fresh actual resource owners";return 0;
+    }
+    const auto bytes=std::span<const std::uint8_t>(practiceReplayInitial.bytes);
+    const auto word=[&](unsigned at){return th128::record::NativeReplaySlotPreview::word(bytes,at);};
+    const auto x=std::bit_cast<int>(word(24)),y=std::bit_cast<int>(word(28));const auto area=std::bit_cast<float>(word(136));
+    const auto pixels=th128::player::toPixels({x,y});
+    if(!perfectHud->charge(std::bit_cast<int>(word(132)),operationError)
+        ||!playerShotGroups->updateSelection(area,owner->difficulty,0,{pixels.horizontal,pixels.vertical,0},operationError)
+        ||!world->setPlayerAimPosition({pixels.horizontal,pixels.vertical,0},operationError))return 0;
+    playerRaw={x,y};scoreRaw=std::bit_cast<int>(word(12));pointValueRaw=std::bit_cast<int>(word(20));
+    motivationRaw=std::bit_cast<int>(word(128));motivationFlag=0;grazeGlobals.grazeCount=std::bit_cast<int>(word(40));grazeGlobals.powerRaw=int(word(144));
+    playerWindowControl.perfectCharge4b4d70=std::bit_cast<int>(word(132));cumulativeFrozenArea=area;
+    practiceReplayInitial.applied=true;return 1;
+}
 int th128_world_thprac_replay_begin(double seconds){
     operationError.clear();const auto owner=world->thpracChapter();
     if(!owner||!debugRunTainted||world->faulted()||world->frame()!=0||worldTickExecuting||!playerMotion
@@ -3633,10 +3749,18 @@ int th128_world_thprac_replay_begin(double seconds){
     try{
         const auto group=th128::playershot::selectShotGroup(cumulativeFrozenArea,shotDifficulty);
         if(!group)throw std::runtime_error("practice replay initial shot group unavailable");
-        auto record=std::make_unique<th128::record::NativeRunReplay>(th128::record::NativeRunReplay::practice());
+        const bool continued=stageCarry.valid&&stageCarry.practice&&stageCarry.consumed&&stageCarry.acknowledged
+            &&stageCarry.scalarRestoredGeneration==worldGeneration&&stageCarry.nextId==int(owner->stageId);
+        if(continued&&stageCarry.practicePlayback)throw std::runtime_error("practice playback carry cannot become a recorder");
+        if(continued&&stageCarry.practiceReplay&&(stageCarry.practiceReplay->stage()!=unsigned(stageCarry.sourceCurrentId)
+            ||stageCarry.practiceReplay->rank()!=unsigned(owner->difficulty)||seconds<stageCarry.practiceReplayClock))
+            throw std::runtime_error("practice record carry history/clock identity differs");
+        auto record=continued&&stageCarry.practiceReplay?std::make_shared<th128::record::NativeRunReplay>(*stageCarry.practiceReplay)
+            :std::make_shared<th128::record::NativeRunReplay>(th128::record::NativeRunReplay::practice());
         record->begin(owner->stageId,unsigned(owner->difficulty),worldStartedSeed,*group,0,scoreRaw,pointValueRaw,motivationRaw,
             playerWindowControl.perfectCharge4b4d70,cumulativeFrozenArea,playerRaw.horizontal,playerRaw.vertical,grazeGlobals.grazeCount);
-        thpracReplay={std::move(record),*owner,{},worldGeneration,worldStartedSeed,0,seconds,seconds,60,false,false};return 1;
+        const auto origin=continued&&stageCarry.practiceReplay?stageCarry.practiceReplayOrigin:seconds;
+        thpracReplay={std::move(record),*owner,{},worldGeneration,worldStartedSeed,0,origin,seconds,60,false,false};return 1;
     }catch(const std::exception& e){operationError=e.what();return 0;}
 }
 int th128_world_thprac_replay_clock(double seconds,float fps){
@@ -3663,8 +3787,11 @@ const char* th128_world_thprac_replay_state(){
     out<<"{\"active\":"<<(thpracReplay.record?"true":"false")<<",\"playLock\":"<<(thpracReplay.playback?"true":"false")
         <<",\"generation\":"<<thpracReplay.generation<<",\"stage\":"<<thpracReplay.practice.stageId
         <<",\"rank\":"<<thpracReplay.practice.difficulty<<",\"seed\":"<<thpracReplay.seed
-        <<",\"frames\":"<<(thpracReplay.record?thpracReplay.record->frames():0)<<",\"worldFrame\":"<<world->frame()
-        <<",\"clockPending\":"<<(thpracReplay.clockPending?"true":"false")<<'}';text=out.str();return text.c_str();
+        <<",\"frames\":"<<(thpracReplay.record?thpracReplay.record->stageFrames():0)<<",\"worldFrame\":"<<world->frame()
+        <<",\"totalFrames\":"<<(thpracReplay.record?thpracReplay.record->frames():0)<<",\"stages\":"<<(thpracReplay.record?thpracReplay.record->stages():0)
+        <<",\"clockPending\":"<<(thpracReplay.clockPending?"true":"false")<<",\"auxiliary\":[";
+    for(std::size_t i=0;i<thpracReplay.auxiliary.size();++i){if(i)out<<',';const auto& r=thpracReplay.auxiliary[i];out<<'['<<r[0]<<','<<r[1]<<','<<r[2]<<','<<r[3]<<']';}
+    out<<"]}";text=out.str();return text.c_str();
 }
 int th128_world_thprac_replay_playback_load(const void* data,unsigned bytes){
     operationError.clear();const auto owner=world->thpracChapter();
@@ -3679,7 +3806,20 @@ int th128_world_thprac_replay_playback_load(const void* data,unsigned bytes){
         const th128::record::ReplayPlaybackInitial actual{owner->stageId,unsigned(owner->difficulty),worldStartedSeed,*group,0,
             worldGeneration,0,scoreRaw,pointValueRaw,playerRaw.horizontal,playerRaw.vertical,motivationRaw,
             playerWindowControl.perfectCharge4b4d70,cumulativeFrozenArea,grazeGlobals.grazeCount};
-        replayPlayback.bind({static_cast<const std::uint8_t*>(data),bytes},actual);
+        const auto packet=std::span<const std::uint8_t>(static_cast<const std::uint8_t*>(data),bytes);
+        if(bytes<144)throw std::runtime_error("practice playback stage header missing");
+        const auto word=[&](unsigned at){return th128::record::NativeReplaySlotPreview::word(packet,at);};
+        const auto frames=word(4);if(!frames||frames>1000000||bytes<144u+frames*6u)throw std::runtime_error("practice playback original input extent rejected");
+        const unsigned ordinaryBytes=144+frames*6;std::vector<std::array<unsigned,4>> auxiliary;unsigned worldFrames=frames;
+        if(bytes!=ordinaryBytes){
+            if(bytes<ordinaryBytes+16||word(ordinaryBytes)!=0x58554150u||word(ordinaryBytes+12)!=0)throw std::runtime_error("practice auxiliary trailer identity rejected");
+            worldFrames=word(ordinaryBytes+4);const auto count=word(ordinaryBytes+8);
+            if(count>12000||worldFrames>1000000||worldFrames!=frames+count||bytes!=ordinaryBytes+16+count*16)throw std::runtime_error("practice auxiliary trailer frame extent rejected");
+            for(unsigned i=0;i<count;++i){const unsigned at=ordinaryBytes+16+i*16;std::array<unsigned,4> event{word(at),word(at+4),word(at+8),word(at+12)};
+                if(event[0]>=worldFrames||(i&&event[0]<=auxiliary.back()[0])||event[1]>65535||event[2]>65535||event[3]>65535)throw std::runtime_error("practice auxiliary input clock/order rejected");auxiliary.push_back(event);}
+        }
+        replayPlayback.bind(packet.first(ordinaryBytes),actual);
+        thpracReplay.auxiliary=std::move(auxiliary);thpracReplay.auxiliaryCursor=0;thpracReplay.playbackWorldFrames=worldFrames;
         thpracReplay.playback=true;thpracReplay.generation=worldGeneration;thpracReplay.practice=*owner;thpracReplay.seed=worldStartedSeed;return 1;
     }catch(const std::exception& e){operationError=e.what();return 0;}
 }
@@ -3829,6 +3969,7 @@ const char* th128_world_replay_playback_state(){
         <<",\"complete\":"<<(replayPlayback.active()&&replayPlayback.consumed()==replayPlayback.frames()?"true":"false")
         <<",\"auxiliaryKnown\":"<<(auxiliary.has_value()?"true":"false")<<",\"auxiliaryLive\":";
     if(auxiliary)output<<(*auxiliary?"true":"false");else output<<"null";
+    if(thpracReplay.playback)output<<",\"worldFrames\":"<<thpracReplay.playbackWorldFrames<<",\"worldConsumed\":"<<world->frame()<<",\"auxiliaryConsumed\":"<<thpracReplay.auxiliaryCursor<<",\"auxiliaryFrames\":"<<thpracReplay.auxiliary.size();
     output<<"}";replayPlaybackStateText=output.str();return replayPlaybackStateText.c_str();
 }
 int th128_world_replay_playback_cancel(){
@@ -3884,6 +4025,13 @@ int th128_world_tick(){
         }
         try{
             std::array<std::uint16_t,3> packet{};
+            if(thpracReplay.playback){
+                const bool planned=thpracReplay.auxiliaryCursor<thpracReplay.auxiliary.size()
+                    &&thpracReplay.auxiliary[thpracReplay.auxiliaryCursor][0]==unsigned(world->frame());
+                if(!auxiliary||planned!=*auxiliary||unsigned(world->frame())>=thpracReplay.playbackWorldFrames)
+                    throw std::runtime_error("practice playback actual auxiliary/world clock differs from recorded history");
+                if(planned){const auto& r=thpracReplay.auxiliary[thpracReplay.auxiliaryCursor];playerInput={std::uint16_t(r[1]),std::uint16_t(r[2]),std::uint16_t(r[3])};}
+            }
             if(replayPlayback.prepare(worldGeneration,auxiliary.has_value(),auxiliary.value_or(false),packet))
                 playerInput={packet[0],packet[1],packet[2]};
         }catch(const std::exception& failure){operationError=failure.what();return 0;}
@@ -4269,7 +4417,7 @@ int th128_world_tick(){
             }
             if(stageControl.gateSet()){world->reportRuntimeFault("debug ending scene transition gate remains set");return 0;}
             const auto runtimeScene=debugTerminal.stage==16?16:15;
-            if(debugRecordDriver.bound){
+            if(debugRecordDriver.bound||debugTerminal.practice){
                 const auto requested=stageControl.request(runtimeScene);
                 if(requested.status!=th128::stage::RequestStatus::Written||requested.pending!=runtimeScene){
                     world->reportRuntimeFault("record terminal manager request was not accepted by the actual controller");return 0;
@@ -4382,7 +4530,8 @@ int th128_world_tick(){
         }
     }
     if(replayPlayback.active()){
-        try{replayPlayback.commit(worldGeneration,success);}
+        try{replayPlayback.commit(worldGeneration,success);if(success&&thpracReplay.playback&&thpracReplay.auxiliaryCursor<thpracReplay.auxiliary.size()
+            &&thpracReplay.auxiliary[thpracReplay.auxiliaryCursor][0]+1==unsigned(world->frame()))++thpracReplay.auxiliaryCursor;}
         catch(const std::exception& failure){operationError=failure.what();return 0;}
     }
     if(success&&normalReplay){
@@ -4393,6 +4542,8 @@ int th128_world_tick(){
     }
     if(success&&thpracReplay.record){
         try{thpracReplay.record->append(normalReplayInput,normalReplayAuxiliary,thpracReplay.fps,thpracReplay.clock-thpracReplay.origin);
+            if(normalReplayAuxiliary){if(thpracReplay.auxiliary.size()>=12000)throw std::runtime_error("practice auxiliary input budget exceeded");
+                thpracReplay.auxiliary.push_back({thpracReplay.clockFrame,normalReplayInput[0],normalReplayInput[1],normalReplayInput[2]});}
             thpracReplay.clockPending=false;}
         catch(const std::exception& e){world->reportRuntimeFault(e.what());return 0;}
     }
@@ -5201,6 +5352,17 @@ int th128_world_start_ending(const void* message,unsigned messageBytes,const voi
         return activeEndingRuntime()->start(gate,bytes(message,messageBytes),bytes(art,artBytes),
             bytes(base,baseBytes),bytes(text,textBytes),sound,controls,operationError)==true;
     };
+    if(debugTerminal.practice){
+        const auto owner=world->thpracChapter();
+        if(!owner||!owner->nonNormal||owner->stageId!=unsigned(debugTerminal.stage)||owner->difficulty!=worldStartDifficulty
+            ||debugTerminal.endingStarted||normalRecord||normalReplay||replayPlayback.active()||thpracReplay.playback
+            ||stageControl.current()!=7||stageControl.pending()!=15||stageControl.gateSet()){
+            operationError="practice ending requires its actual requested same-owner native scene15";return 0;
+        }
+        const auto committed=stageControl.constructEnding15(construct);
+        if(committed.status!=th128::stage::CommitStatus::Applied){if(operationError.empty())operationError="practice native Ending15 construction rejected";return 0;}
+        debugTerminal.endingStarted=true;return 1;
+    }
     if(!ordinaryRecordOwner.configured)return construct()?1:0;
     if(ordinaryRecordOwner.endingStarted||ordinaryRecordOwner.returned
         ||ordinaryRecordOwner.generation!=worldGeneration||!debugRecordDriver.bound
@@ -5266,6 +5428,18 @@ int th128_world_ending_set_pause(unsigned paused){
         projectOrdinaryGlobalFade();
     }
     return 1;
+}
+int th128_world_finish_thprac_ending(unsigned generation){
+    operationError.clear();const auto owner=world->thpracChapter();const auto* ending=activeEndingRuntime();
+    if(generation!=worldGeneration||generation!=debugTerminal.generation||!owner||!owner->nonNormal||!debugRunTainted
+        ||!debugTerminal.practice||!debugTerminal.endingStarted||debugTerminal.practiceReturned||!ending
+        ||!ending->returned()||ending->returnScene()!=16||!ending->cleaned()||ending->loaded()||ending->visualFadeActive()
+        ||worldTickExecuting||normalRecord||normalReplay||replayPlayback.active()||!grazeSounds.empty()||soundJournalWindowSerial
+        ||stageControl.current()!=15||stageControl.pending()!=15||stageControl.gateSet()){
+        operationError="practice return requires its real cleaned Ending16 and drained media owner";return 0;
+    }
+    const auto requested=stageControl.request(16);if(requested.status!=th128::stage::RequestStatus::Written||requested.pending!=16){operationError="practice Ending16 request rejected";return 0;}
+    debugTerminal.practiceReturned=true;return 1;
 }
 int th128_world_ending_return_prepare(){
     operationError.clear();
