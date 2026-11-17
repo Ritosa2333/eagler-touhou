@@ -1,516 +1,760 @@
 {
-  "schema": "th14/managed-archive/1",
-  "standard": "observable behavior alignment",
+  "schema": "th14/managed-archive-release/1",
   "passedWithinDeclaredScope": true,
-  "source": {
-    "applied": true,
-    "sourceParent": "ff076619eb2bfd245609e23abe80a71bec3a722d",
-    "changes": [
-      {
-        "path": "ports/th14/runtimes/th12/th12_web/cpp/sdl/Application.cpp",
-        "beforeBlob": "337e41b953b3c2205bf7e6049a14ab27578b6be4",
-        "afterBlob": "df3640497d3fc19c15b67e066090d0fa4bc4380d",
-        "afterSha256": "f07049ac31c8c62e92ed8cab3632adfb05c330ef3ccf698a4d9f0d673dcd533b",
-        "exactUpstream": false
-      },
-      {
-        "path": "ports/th14/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs",
-        "beforeBlob": "2acdfaebded512dc553a2d3de30556074f5ad4a7",
-        "afterBlob": "2d2dd8205b2562efff4abd20e9b8b8b291608f5d",
-        "afterSha256": "e6b62290c3926e9405fc0aeb1fc03ce733c644763733cb31416a67d63079bf93",
-        "exactUpstream": true
-      },
-      {
-        "path": "ports/th14/runtimes/th12/th12_web/sdl-runtime/shell.mjs",
-        "beforeBlob": "2c3099072a9d995f2b2146509c5b059bcaef98e6",
-        "afterBlob": "1b1d5c84d82d8dcfce36ceae0732b15c10bd7515",
-        "afterSha256": "39dfca222a444658244fb38f8f2d20271b459d10f5f399c80aedc12665ad242c",
-        "exactUpstream": false
-      },
-      {
-        "path": "ports/th14/tools/th14-build-gles.py",
-        "beforeBlob": "08a02380532d07ce4576c5ef36b31274c3ca4f62",
-        "afterBlob": "a557d4173e166132eedce431d6921b008cf3fd31",
-        "afterSha256": "9d62c9d5058b922c837aa1ee73a43ec7dd402f8cc3c54701769912508a306c32",
-        "exactUpstream": false
-      },
-      {
-        "path": "launcher/app/services/runtime.ts",
-        "beforeBlob": "d95e62c197b3a806203231f2e67f93ba86f15cb3",
-        "afterBlob": "f5d61f2ce8a74785b1d50f723a88e934e8b45ba9",
-        "afterSha256": "0c321200b7fdd5e373330ce5f67af33ca7ebe63f80efca3de3881d4056c091a4",
-        "exactUpstream": false
-      },
-      {
-        "path": "launcher/package/package-store.mjs",
-        "beforeBlob": "c4e4f9255cee143df2b223c52265b3b0c9ae0531",
-        "afterBlob": "ac20d97878574a39506782d276370c67b63cde22",
-        "afterSha256": "c6dad4a6ea52a9a4ce40c2c8fac48a269b400c7b66914c5a650dd3f0b443e1c4",
-        "exactUpstream": true
-      },
-      {
-        "path": "launcher/src/launcher/runtime-preparation.mts",
-        "beforeBlob": "52ddb1aa9fafcc691d26a27c224801276c7b6f47",
-        "afterBlob": "0bf38e38df23e7f34211cb9177c03ee7a23a5996",
-        "afterSha256": "ddc5ca461046652ea86c3e9dae57aee9a9c08f6d7200bf3487ed5c4676f0d2a5",
-        "exactUpstream": true
-      },
-      {
-        "path": "launcher/tests/react-main/runtime-service.test.mjs",
-        "beforeBlob": "0f6d2cd1c296328a0a91eb3d39dbeb016e9dec36",
-        "afterBlob": "d11e189777cbf8403d6e6f85d10540561b0f0eec",
-        "afterSha256": "743ae96fb88d602780111c781fc2e5f3b739c2a946899db3d0e0a574b156b05d",
-        "exactUpstream": false
-      }
-    ],
+  "candidate": {
+    "schema": "th14/managed-archive/1",
+    "standard": "observable behavior alignment",
+    "passedWithinDeclaredScope": true,
+    "source": {
+      "applied": true,
+      "sourceParent": "ff076619eb2bfd245609e23abe80a71bec3a722d",
+      "changes": [
+        {
+          "path": "ports/th14/runtimes/th12/th12_web/cpp/sdl/Application.cpp",
+          "beforeBlob": "337e41b953b3c2205bf7e6049a14ab27578b6be4",
+          "afterBlob": "df3640497d3fc19c15b67e066090d0fa4bc4380d",
+          "afterSha256": "f07049ac31c8c62e92ed8cab3632adfb05c330ef3ccf698a4d9f0d673dcd533b",
+          "exactUpstream": false
+        },
+        {
+          "path": "ports/th14/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs",
+          "beforeBlob": "2acdfaebded512dc553a2d3de30556074f5ad4a7",
+          "afterBlob": "2d2dd8205b2562efff4abd20e9b8b8b291608f5d",
+          "afterSha256": "e6b62290c3926e9405fc0aeb1fc03ce733c644763733cb31416a67d63079bf93",
+          "exactUpstream": true
+        },
+        {
+          "path": "ports/th14/runtimes/th12/th12_web/sdl-runtime/shell.mjs",
+          "beforeBlob": "2c3099072a9d995f2b2146509c5b059bcaef98e6",
+          "afterBlob": "1b1d5c84d82d8dcfce36ceae0732b15c10bd7515",
+          "afterSha256": "39dfca222a444658244fb38f8f2d20271b459d10f5f399c80aedc12665ad242c",
+          "exactUpstream": false
+        },
+        {
+          "path": "ports/th14/tools/th14-build-gles.py",
+          "beforeBlob": "08a02380532d07ce4576c5ef36b31274c3ca4f62",
+          "afterBlob": "a557d4173e166132eedce431d6921b008cf3fd31",
+          "afterSha256": "9d62c9d5058b922c837aa1ee73a43ec7dd402f8cc3c54701769912508a306c32",
+          "exactUpstream": false
+        },
+        {
+          "path": "launcher/app/services/runtime.ts",
+          "beforeBlob": "d95e62c197b3a806203231f2e67f93ba86f15cb3",
+          "afterBlob": "f5d61f2ce8a74785b1d50f723a88e934e8b45ba9",
+          "afterSha256": "0c321200b7fdd5e373330ce5f67af33ca7ebe63f80efca3de3881d4056c091a4",
+          "exactUpstream": false
+        },
+        {
+          "path": "launcher/package/package-store.mjs",
+          "beforeBlob": "c4e4f9255cee143df2b223c52265b3b0c9ae0531",
+          "afterBlob": "ac20d97878574a39506782d276370c67b63cde22",
+          "afterSha256": "c6dad4a6ea52a9a4ce40c2c8fac48a269b400c7b66914c5a650dd3f0b443e1c4",
+          "exactUpstream": true
+        },
+        {
+          "path": "launcher/src/launcher/runtime-preparation.mts",
+          "beforeBlob": "52ddb1aa9fafcc691d26a27c224801276c7b6f47",
+          "afterBlob": "0bf38e38df23e7f34211cb9177c03ee7a23a5996",
+          "afterSha256": "ddc5ca461046652ea86c3e9dae57aee9a9c08f6d7200bf3487ed5c4676f0d2a5",
+          "exactUpstream": true
+        },
+        {
+          "path": "launcher/tests/react-main/runtime-service.test.mjs",
+          "beforeBlob": "0f6d2cd1c296328a0a91eb3d39dbeb016e9dec36",
+          "afterBlob": "d11e189777cbf8403d6e6f85d10540561b0f0eec",
+          "afterSha256": "743ae96fb88d602780111c781fc2e5f3b739c2a946899db3d0e0a574b156b05d",
+          "exactUpstream": false
+        }
+      ],
+      "productionChanged": false,
+      "completeGame": false
+    },
+    "build": {
+      "built": true,
+      "unitsRecompiled": 1,
+      "objectsVerifiedReused": 152,
+      "sourceBindings": 387,
+      "commonBindings": 25,
+      "wasm": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb",
+      "loader": "1bfd63dff6c944a98f94e104da61db31774be6c3ebb1e6c712f9921591e009df",
+      "shellIdentityMatchesWasm": true,
+      "productionChanged": false,
+      "browserAccepted": false,
+      "completeGame": false
+    },
+    "hostContract": {
+      "schema": "th14/managed-archive-host-contract/1",
+      "passed": true,
+      "cases": 32,
+      "rows": [
+        {
+          "name": "valid-buffer-16",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 0,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "valid-blob-16",
+          "passed": true,
+          "size": 16,
+          "kind": "blob",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 0,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "valid-buffer-1048575",
+          "passed": true,
+          "size": 1048575,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 0,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "valid-blob-1048575",
+          "passed": true,
+          "size": 1048575,
+          "kind": "blob",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 0,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "valid-buffer-1048576",
+          "passed": true,
+          "size": 1048576,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 0,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "valid-blob-1048576",
+          "passed": true,
+          "size": 1048576,
+          "kind": "blob",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 0,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "valid-buffer-1048577",
+          "passed": true,
+          "size": 1048577,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 1,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "valid-blob-1048577",
+          "passed": true,
+          "size": 1048577,
+          "kind": "blob",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 1,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "valid-buffer-2097169",
+          "passed": true,
+          "size": 2097169,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 2,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "valid-blob-2097169",
+          "passed": true,
+          "size": 2097169,
+          "kind": "blob",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 2,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "cross-realm-arraybuffer",
+          "passed": true,
+          "size": 19,
+          "kind": "foreign",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 0,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "memory-view-replaced-between-chunks",
+          "passed": true,
+          "size": 2097169,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 2,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "legacy-th14-buffer",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 0,
+          "freed": 0,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "other-title-keeps-legacy-buffer",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 0,
+          "freed": 0,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": false,
+          "error": null
+        },
+        {
+          "name": "invalid-size-0",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 0,
+          "freed": 0,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: Invalid game DATA size"
+        },
+        {
+          "name": "invalid-size-15",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 0,
+          "freed": 0,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: Invalid game DATA size"
+        },
+        {
+          "name": "invalid-size-268435457",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 0,
+          "freed": 0,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: Invalid game DATA size"
+        },
+        {
+          "name": "invalid-size-NaN",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 0,
+          "freed": 0,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: Invalid game DATA size"
+        },
+        {
+          "name": "invalid-size-Infinity",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 0,
+          "freed": 0,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: Invalid game DATA size"
+        },
+        {
+          "name": "invalid-size-1.5",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 0,
+          "freed": 0,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: Invalid game DATA size"
+        },
+        {
+          "name": "beforeAllocation",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 0,
+          "freed": 0,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "AbortError: This operation was aborted"
+        },
+        {
+          "name": "afterFirstChunk",
+          "passed": true,
+          "size": 1048577,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 1,
+          "adopted": 0,
+          "yields": 1,
+          "expectedFailure": true,
+          "error": "AbortError: This operation was aborted"
+        },
+        {
+          "name": "readFailure",
+          "passed": true,
+          "size": 16,
+          "kind": "blob",
+          "allocated": 1,
+          "freed": 1,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: read failed"
+        },
+        {
+          "name": "allocationFailure",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: TH14 \u8d44\u6e90\u5185\u5b58\u4e0d\u8db3"
+        },
+        {
+          "name": "writeFailure",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 1,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "RangeError: offset is out of bounds"
+        },
+        {
+          "name": "adoptionRejected",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 1,
+          "adopted": 1,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: TH14 \u8d44\u6e90\u6302\u8f7d\u5931\u8d25"
+        },
+        {
+          "name": "adoptionThrows",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 1,
+          "adopted": 1,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: adopt failed"
+        },
+        {
+          "name": "yieldFailure",
+          "passed": true,
+          "size": 1048577,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 1,
+          "adopted": 0,
+          "yields": 1,
+          "expectedFailure": true,
+          "error": "Error: yield failed"
+        },
+        {
+          "name": "parentFailure",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 0,
+          "freed": 0,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: parent failed"
+        },
+        {
+          "name": "manifestFetchAfterAdoption",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: fetch failed"
+        },
+        {
+          "name": "manifestInvalidAfterAdoption",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 1,
+          "freed": 0,
+          "adopted": 1,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: Invalid Runtime resource manifest"
+        },
+        {
+          "name": "staleEpoch",
+          "passed": true,
+          "size": 16,
+          "kind": "buffer",
+          "allocated": 0,
+          "freed": 0,
+          "adopted": 0,
+          "yields": 0,
+          "expectedFailure": true,
+          "error": "Error: Runtime navigation epoch unavailable"
+        }
+      ],
+      "moduleSha256": "e6b62290c3926e9405fc0aeb1fc03ce733c644763733cb31416a67d63079bf93",
+      "actualUpstreamJsModule": true,
+      "syntheticBytesOnly": true,
+      "nativeAllocatorAndAdoptionMocked": true,
+      "nativeCppAccepted": false,
+      "browserAccepted": false,
+      "sourceApplied": false,
+      "productionChanged": false,
+      "newAssetsCopied": false,
+      "completeGame": false
+    },
+    "nativeOwner": {
+      "passed": true,
+      "cases": 9,
+      "acceptedPointerFreedOnce": true,
+      "rejectedPointerRemainsCallerOwned": true,
+      "sourceSha256": "f07049ac31c8c62e92ed8cab3632adfb05c330ef3ccf698a4d9f0d673dcd533b",
+      "extractedBlockSha256": "1d2b5fb524f7093820139b09ef38f869c0cb5d6b9b3f7141aa3e313cd86213f7",
+      "actualUnchangedCppOwnershipMethods": true,
+      "standardCppUniquePtrAndFreeExecuted": true,
+      "gameArchiveParsingAccepted": false,
+      "browserAccepted": false,
+      "productionChanged": false,
+      "completeGame": false
+    },
+    "frontend": {
+      "runtimeServiceTests": 50,
+      "packageStoreStructuralTests": 1,
+      "bothTypechecksPassed": true,
+      "productionFrontendBuilt": true,
+      "realIndexedDbCrashDurabilityAccepted": false
+    },
+    "http": {
+      "passed": true,
+      "generation": "72b6c30c01b4ac1b4dfe6c95f111a92c32c984add6123daf31e64aa8b12e5e0d",
+      "runtimeFiles": 32,
+      "frontend": [
+        {
+          "path": "index.html",
+          "bytes": 84727,
+          "sha256": "aa0debd352a8132cb5d0db0287d68af1998a07bf00e62da77826cb7e1bd3929b"
+        },
+        {
+          "path": "assets/root-BpO6IxR9.js",
+          "bytes": 654754,
+          "sha256": "e69a29607ff6c245f06ba9be08981b95a8ff27517e05e0a6940e2838daf275cf"
+        },
+        {
+          "path": "assets/replays-DxgiFE26.js",
+          "bytes": 135992,
+          "sha256": "d8c0e922bd206e1d40cf01b1ef039210da961fb1fdd9ffa4195bcdb002c5470b"
+        }
+      ],
+      "isolationHeadersAccepted": true,
+      "productionChanged": false,
+      "completeGame": false
+    },
+    "browser": {
+      "qualified": true,
+      "generation": "72b6c30c01b4ac1b4dfe6c95f111a92c32c984add6123daf31e64aa8b12e5e0d",
+      "actualOrdinaryReimuANormalStartAccepted": true,
+      "initialLives": 2,
+      "initialBombs": 3,
+      "initialPower": 100,
+      "initialHudScore": 50,
+      "nativeReturnTitleAndQuitAccepted": true,
+      "newIndependentViewerSessionAccepted": true,
+      "naturalViewerEndFrames": 1737,
+      "viewerHudScore": 3179620,
+      "viewerGraze": 39,
+      "viewerPower": 400,
+      "viewerRate": 1,
+      "viewerSeekCount": 0,
+      "wholeEncodedWatcherScoreEqual": true,
+      "watcherScoreBytes": 21642,
+      "watcherScoreSha256": "95439f26e15659df0bc4ac561ff30748814ad3d3e3e8fa8d44db2907067a687b",
+      "musicVolume": 0,
+      "sfxVolume": 0,
+      "musicMode": "none",
+      "actualBrowserMidCopyCancelAccepted": false,
+      "actualBrowserPeakMemoryMeasured": false,
+      "actualStoredBlobVersusBufferKindInspected": false,
+      "productionChanged": false,
+      "completeGame": false
+    },
     "productionChanged": false,
     "completeGame": false
   },
-  "build": {
-    "built": true,
-    "unitsRecompiled": 1,
-    "objectsVerifiedReused": 152,
-    "sourceBindings": 387,
-    "commonBindings": 25,
+  "deployment": {
+    "productionDeployed": true,
+    "source": "dacc94687cbef7f062651c8627790de8eca02797",
+    "runtimeCodeSource": "dacc94687cbef7f062651c8627790de8eca02797",
     "wasm": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb",
-    "loader": "1bfd63dff6c944a98f94e104da61db31774be6c3ebb1e6c712f9921591e009df",
-    "shellIdentityMatchesWasm": true,
-    "productionChanged": false,
-    "browserAccepted": false,
+    "generation": "72b6c30c01b4ac1b4dfe6c95f111a92c32c984add6123daf31e64aa8b12e5e0d",
+    "runtimeFilesIdenticalToPrivate": 32,
+    "previousGenerationFilesRetained": 32,
+    "runtimeFilesOriginVerified": 32,
+    "frontendFilesOriginVerified": {
+      "index.html": "aa0debd352a8132cb5d0db0287d68af1998a07bf00e62da77826cb7e1bd3929b",
+      "assets/root-BpO6IxR9.js": "e69a29607ff6c245f06ba9be08981b95a8ff27517e05e0a6940e2838daf275cf",
+      "assets/replays-DxgiFE26.js": "d8c0e922bd206e1d40cf01b1ef039210da961fb1fdd9ffa4195bcdb002c5470b"
+    },
+    "formalSilentOrdinaryBrowserSampleAccepted": true,
+    "shortViewerEndAccepted": true,
+    "wholeWatcherScoreBytesPreserved": 21642,
+    "wholePageReloadScorePreserved": false,
+    "frontendCodeSource": "dacc94687cbef7f062651c8627790de8eca02797",
+    "formalThpracAvailable": false,
+    "rollback": "/home/i/Code/th14-release/hosted-before-managed-archive-nov17",
+    "serviceConfigurationUnchanged": true,
+    "servicePidPreserved": true,
+    "productionBrowserAfterActivationAccepted": false,
+    "publicHttpAccepted": false,
     "completeGame": false
   },
-  "hostContract": {
-    "schema": "th14/managed-archive-host-contract/1",
+  "publicHttp": {
     "passed": true,
-    "cases": 32,
-    "rows": [
+    "scope": "runtime files and frontend modules exact; transformed entry HTML application byte regions checked separately",
+    "source": "dacc94687cbef7f062651c8627790de8eca02797",
+    "generation": "72b6c30c01b4ac1b4dfe6c95f111a92c32c984add6123daf31e64aa8b12e5e0d",
+    "runtimeFiles": [
       {
-        "name": "valid-buffer-16",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 0,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14ArchiveDecodeClient.mjs",
+        "bytes": 3920,
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450"
       },
       {
-        "name": "valid-blob-16",
-        "passed": true,
-        "size": 16,
-        "kind": "blob",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 0,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14ArchiveDecodeEndpoint.mjs",
+        "bytes": 5322,
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f"
       },
       {
-        "name": "valid-buffer-1048575",
-        "passed": true,
-        "size": 1048575,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 0,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14ArchiveDecodeWorker.mjs",
+        "bytes": 302,
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239"
       },
       {
-        "name": "valid-blob-1048575",
-        "passed": true,
-        "size": 1048575,
-        "kind": "blob",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 0,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14ArchiveReadAhead.mjs",
+        "bytes": 3637,
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee"
       },
       {
-        "name": "valid-buffer-1048576",
-        "passed": true,
-        "size": 1048576,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 0,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14AsyncRuntime.mjs",
+        "bytes": 3326,
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7"
       },
       {
-        "name": "valid-blob-1048576",
-        "passed": true,
-        "size": 1048576,
-        "kind": "blob",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 0,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14SharedSceneCopy.mjs",
+        "bytes": 4985,
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0"
       },
       {
-        "name": "valid-buffer-1048577",
-        "passed": true,
-        "size": 1048577,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 1,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14SharedSceneWorker.mjs",
+        "bytes": 369,
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444"
       },
       {
-        "name": "valid-blob-1048577",
-        "passed": true,
-        "size": 1048577,
-        "kind": "blob",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 1,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14StageMemoryClient.mjs",
+        "bytes": 10352,
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698"
       },
       {
-        "name": "valid-buffer-2097169",
-        "passed": true,
-        "size": 2097169,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 2,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14StageMemoryWorker.mjs",
+        "bytes": 689,
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde"
       },
       {
-        "name": "valid-blob-2097169",
-        "passed": true,
-        "size": 2097169,
-        "kind": "blob",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 2,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14StageMemoryWorker.wasm",
+        "bytes": 1027,
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1"
       },
       {
-        "name": "cross-realm-arraybuffer",
-        "passed": true,
-        "size": 19,
-        "kind": "foreign",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 0,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14StageRestoreDelivery.mjs",
+        "bytes": 2997,
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697"
       },
       {
-        "name": "memory-view-replaced-between-chunks",
-        "passed": true,
-        "size": 2097169,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 2,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14StageRestoreProtocol.mjs",
+        "bytes": 1701,
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870"
       },
       {
-        "name": "legacy-th14-buffer",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 0,
-        "freed": 0,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14StageRestoreWorker.mjs",
+        "bytes": 257,
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909"
       },
       {
-        "name": "other-title-keeps-legacy-buffer",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 0,
-        "freed": 0,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": false,
-        "error": null
+        "path": "Th14WebGpuCore.mjs",
+        "bytes": 1004,
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745"
       },
       {
-        "name": "invalid-size-0",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 0,
-        "freed": 0,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: Invalid game DATA size"
+        "path": "Th14WebGpuHost.mjs",
+        "bytes": 19989,
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7"
       },
       {
-        "name": "invalid-size-15",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 0,
-        "freed": 0,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: Invalid game DATA size"
+        "path": "archive-decoder.mjs",
+        "bytes": 11199,
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e"
       },
       {
-        "name": "invalid-size-268435457",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 0,
-        "freed": 0,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: Invalid game DATA size"
+        "path": "archive-decoder.wasm",
+        "bytes": 96991,
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28"
       },
       {
-        "name": "invalid-size-NaN",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 0,
-        "freed": 0,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: Invalid game DATA size"
+        "path": "directory-keyboard.mjs",
+        "bytes": 6345,
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243"
       },
       {
-        "name": "invalid-size-Infinity",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 0,
-        "freed": 0,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: Invalid game DATA size"
+        "path": "eagler-host.mjs",
+        "bytes": 17554,
+        "sha256": "e6b62290c3926e9405fc0aeb1fc03ce733c644763733cb31416a67d63079bf93"
       },
       {
-        "name": "invalid-size-1.5",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 0,
-        "freed": 0,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: Invalid game DATA size"
+        "path": "fonts/cp932.bin",
+        "bytes": 131072,
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
       },
       {
-        "name": "beforeAllocation",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 0,
-        "freed": 0,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "AbortError: This operation was aborted"
+        "path": "fonts/msgothic.ttc",
+        "bytes": 8990160,
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
       },
       {
-        "name": "afterFirstChunk",
-        "passed": true,
-        "size": 1048577,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 1,
-        "adopted": 0,
-        "yields": 1,
-        "expectedFailure": true,
-        "error": "AbortError: This operation was aborted"
+        "path": "fonts/unifont.otf",
+        "bytes": 5105508,
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
       },
       {
-        "name": "readFailure",
-        "passed": true,
-        "size": 16,
-        "kind": "blob",
-        "allocated": 1,
-        "freed": 1,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: read failed"
+        "path": "keyboard.mjs",
+        "bytes": 1297,
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334"
       },
       {
-        "name": "allocationFailure",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: TH14 \u8d44\u6e90\u5185\u5b58\u4e0d\u8db3"
+        "path": "managed.css",
+        "bytes": 733,
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
       },
       {
-        "name": "writeFailure",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 1,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "RangeError: offset is out of bounds"
+        "path": "manifest.json",
+        "bytes": 636,
+        "sha256": "67b1b2e6b360eee679debf45c65013b46ba238ff081d5f3aef3c92c98b234927"
       },
       {
-        "name": "adoptionRejected",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 1,
-        "adopted": 1,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: TH14 \u8d44\u6e90\u6302\u8f7d\u5931\u8d25"
+        "path": "motion-replay.mjs",
+        "bytes": 815,
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d"
       },
       {
-        "name": "adoptionThrows",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 1,
-        "adopted": 1,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: adopt failed"
+        "path": "resources.json",
+        "bytes": 641,
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd"
       },
       {
-        "name": "yieldFailure",
-        "passed": true,
-        "size": 1048577,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 1,
-        "adopted": 0,
-        "yields": 1,
-        "expectedFailure": true,
-        "error": "Error: yield failed"
+        "path": "runtime-epoch.mjs",
+        "bytes": 340,
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f"
       },
       {
-        "name": "parentFailure",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 0,
-        "freed": 0,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: parent failed"
+        "path": "shell.mjs",
+        "bytes": 18713,
+        "sha256": "8943d757971aeb143e141421d78031bdb62e8c4e898e74f3793feb925c79e9f0"
       },
       {
-        "name": "manifestFetchAfterAdoption",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: fetch failed"
+        "path": "th14-sdl.mjs",
+        "bytes": 339998,
+        "sha256": "1bfd63dff6c944a98f94e104da61db31774be6c3ebb1e6c712f9921591e009df"
       },
       {
-        "name": "manifestInvalidAfterAdoption",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 1,
-        "freed": 0,
-        "adopted": 1,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: Invalid Runtime resource manifest"
+        "path": "th14-sdl.wasm",
+        "bytes": 5464022,
+        "sha256": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb"
       },
       {
-        "name": "staleEpoch",
-        "passed": true,
-        "size": 16,
-        "kind": "buffer",
-        "allocated": 0,
-        "freed": 0,
-        "adopted": 0,
-        "yields": 0,
-        "expectedFailure": true,
-        "error": "Error: Runtime navigation epoch unavailable"
+        "path": "th14.html",
+        "bytes": 507,
+        "sha256": "68c187a4359d43f874e5062d483cab4925b68cdfc69680fe4533ea49ed019053"
       }
     ],
-    "moduleSha256": "e6b62290c3926e9405fc0aeb1fc03ce733c644763733cb31416a67d63079bf93",
-    "actualUpstreamJsModule": true,
-    "syntheticBytesOnly": true,
-    "nativeAllocatorAndAdoptionMocked": true,
-    "nativeCppAccepted": false,
-    "browserAccepted": false,
-    "sourceApplied": false,
-    "productionChanged": false,
-    "newAssetsCopied": false,
-    "completeGame": false
-  },
-  "nativeOwner": {
-    "passed": true,
-    "cases": 9,
-    "acceptedPointerFreedOnce": true,
-    "rejectedPointerRemainsCallerOwned": true,
-    "sourceSha256": "f07049ac31c8c62e92ed8cab3632adfb05c330ef3ccf698a4d9f0d673dcd533b",
-    "extractedBlockSha256": "1d2b5fb524f7093820139b09ef38f869c0cb5d6b9b3f7141aa3e313cd86213f7",
-    "actualUnchangedCppOwnershipMethods": true,
-    "standardCppUniquePtrAndFreeExecuted": true,
-    "gameArchiveParsingAccepted": false,
-    "browserAccepted": false,
-    "productionChanged": false,
-    "completeGame": false
-  },
-  "frontend": {
-    "runtimeServiceTests": 50,
-    "packageStoreStructuralTests": 1,
-    "bothTypechecksPassed": true,
-    "productionFrontendBuilt": true,
-    "realIndexedDbCrashDurabilityAccepted": false
-  },
-  "http": {
-    "passed": true,
-    "generation": "72b6c30c01b4ac1b4dfe6c95f111a92c32c984add6123daf31e64aa8b12e5e0d",
-    "runtimeFiles": 32,
-    "frontend": [
-      {
-        "path": "index.html",
-        "bytes": 84727,
-        "sha256": "aa0debd352a8132cb5d0db0287d68af1998a07bf00e62da77826cb7e1bd3929b"
-      },
+    "frontendModules": [
       {
         "path": "assets/root-BpO6IxR9.js",
         "bytes": 654754,
@@ -522,38 +766,30 @@
         "sha256": "d8c0e922bd206e1d40cf01b1ef039210da961fb1fdd9ffa4195bcdb002c5470b"
       }
     ],
-    "isolationHeadersAccepted": true,
-    "productionChanged": false,
+    "entryHtml": {
+      "originSha256": "aa0debd352a8132cb5d0db0287d68af1998a07bf00e62da77826cb7e1bd3929b",
+      "publicSha256": "0e85529b29c8a1646b54a0b32228864d764081d60b2615cc70289d9c469e8680",
+      "wholeFileHashAccepted": false,
+      "applicationByteRegionsPreserved": true,
+      "applicationReferenceSetPreserved": true,
+      "additionalScripts": [
+        "WebMCP bridge",
+        "Cloudflare JSD"
+      ],
+      "insertionsSha256": [
+        "e2cb14b5fa9e0c60dda83a94781294bd2f17a9eb48a314e93061bcc5b7c7cca2",
+        "5241fddb05b0d3322a4f648de65d3c924234afe7d1d0615ed30bdb363c1a2952"
+      ],
+      "browserOrResponseContentModified": false
+    },
+    "runtimeWholeFileHashesAndIsolationHeadersAccepted": true,
+    "frontendModuleWholeFileHashesAccepted": true,
+    "entryHtmlWholeFileHashAccepted": false,
+    "productionChanged": true,
+    "productionBrowserAfterActivationAccepted": false,
     "completeGame": false
   },
-  "browser": {
-    "qualified": true,
-    "generation": "72b6c30c01b4ac1b4dfe6c95f111a92c32c984add6123daf31e64aa8b12e5e0d",
-    "actualOrdinaryReimuANormalStartAccepted": true,
-    "initialLives": 2,
-    "initialBombs": 3,
-    "initialPower": 100,
-    "initialHudScore": 50,
-    "nativeReturnTitleAndQuitAccepted": true,
-    "newIndependentViewerSessionAccepted": true,
-    "naturalViewerEndFrames": 1737,
-    "viewerHudScore": 3179620,
-    "viewerGraze": 39,
-    "viewerPower": 400,
-    "viewerRate": 1,
-    "viewerSeekCount": 0,
-    "wholeEncodedWatcherScoreEqual": true,
-    "watcherScoreBytes": 21642,
-    "watcherScoreSha256": "95439f26e15659df0bc4ac561ff30748814ad3d3e3e8fa8d44db2907067a687b",
-    "musicVolume": 0,
-    "sfxVolume": 0,
-    "musicMode": "none",
-    "actualBrowserMidCopyCancelAccepted": false,
-    "actualBrowserPeakMemoryMeasured": false,
-    "actualStoredBlobVersusBufferKindInspected": false,
-    "productionChanged": false,
-    "completeGame": false
-  },
-  "productionChanged": false,
+  "productionBrowserAfterActivationAccepted": false,
+  "newPublicTabsCreatedThisTurn": 0,
   "completeGame": false
 }
