@@ -13,6 +13,9 @@
 #include "WebGpuRenderer.hpp"
 #endif
 #include <emscripten.h>
+#ifdef TH14_ASYNC_GLES_STARTUP
+#include <emscripten/html5_webgl.h>
+#endif
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -35,7 +38,33 @@ constexpr std::array<float,16> identity{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
 float bits(u32 n){float f;std::memcpy(&f,&n,4);return f;}
 std::array<float,4> color(u32 n){return {float(n>>16&255)/255,float(n>>8&255)/255,float(n&255)/255,float(n>>24)/255};}
 void replace(std::string& s,const std::string& a,const std::string& b){size_t p=0;while((p=s.find(a,p))!=std::string::npos){s.replace(p,a.size(),b);p+=b.size();}}
-GLuint shader(GLenum type,const std::string& source){GLuint s=glCreateShader(type);const char* p=source.c_str();glShaderSource(s,1,&p,nullptr);glCompileShader(s);GLint ok=0;glGetShaderiv(s,GL_COMPILE_STATUS,&ok);if(!ok){char log[2048];glGetShaderInfoLog(s,sizeof(log),nullptr,log);std::fprintf(stderr,"SDL shader: %s\n",log);std::abort();}return s;}
+GLuint shader(GLenum type,const std::string& source,bool check=true){
+ GLuint s=glCreateShader(type);const char* p=source.c_str();glShaderSource(s,1,&p,nullptr);glCompileShader(s);
+ if(check){GLint ok=0;glGetShaderiv(s,GL_COMPILE_STATUS,&ok);if(!ok){char log[2048]{};glGetShaderInfoLog(s,sizeof(log),nullptr,log);std::fprintf(stderr,"SDL shader: %s\n",log);std::abort();}}
+ return s;
+}
+
+bool startup_program_linked(GLuint program,bool parallel){
+#ifdef TH14_ASYNC_GLES_STARTUP
+ // Link-status and uniform queries can block until the driver has finished.
+ // Keep the loading UI responsive even when parallel compilation is unavailable.
+ emscripten_sleep(0);
+ if(parallel){
+  constexpr GLenum completion_status=0x91B1; // COMPLETION_STATUS_KHR
+  const auto context=emscripten_webgl_get_current_context();
+  const double deadline=emscripten_get_now()+15000;
+  GLint complete=0;
+  while(!complete){
+   if(emscripten_is_webgl_context_lost(context)||emscripten_get_now()>=deadline)return false;
+   glGetProgramiv(program,completion_status,&complete);
+   if(!complete)emscripten_sleep(4);
+  }
+ }
+#else
+ (void)parallel;
+#endif
+ GLint linked=0;glGetProgramiv(program,GL_LINK_STATUS,&linked);return linked!=0;
+}
 
 bool equal(const State& a,const State& b,bool world=false){
  if(a.layout!=b.layout||a.stride!=b.stride||a.texture!=b.texture||a.target!=b.target||a.depth!=b.depth||std::memcmp(&a.viewport,&b.viewport,sizeof(Viewport)))return false;
@@ -82,14 +111,17 @@ bool Renderer::initialize(){
    "vec2 screen=roundEven((position.xy-viewport.xy)*256.0)*(1.0/256.0);vec2 xy=(screen+vec2(.5))/viewport.zw;");
 #endif
  if(version==10&&touhou_clip_control()){replace(source,"position.z*2.0-1.0","position.z");replace(source,"gl_Position.z=gl_Position.z*2.0-gl_Position.w;","");}
- vertex=shader(GL_VERTEX_SHADER,source);glGenBuffers(1,&vertices.id);glGenBuffers(1,&indices.id);glGenBuffers(1,&instances.id);
- glActiveTexture(GL_TEXTURE0);buildingGeneric=true;select(State{});generic=*program;programs.clear();buildingGeneric=false;
- State warm;for(int i=0;i<4;i++){warm.texture=i!=2;auto& p=warm.pipeline;p.alphaTest=true;p.fog=i==3;p.alphaCompare=Compare::GreaterEqual;p.color.operation=p.alpha.operation=(i==0||i==3)?ColorOperation::Multiply:ColorOperation::First;p.color.first=p.alpha.first={(i==0||i==3)?ArgumentSource::Texture:ArgumentSource::Diffuse};p.color.second=p.alpha.second={i==3?ArgumentSource::Factor:ArgumentSource::Diffuse};select(warm);}
+#ifdef TH14_ASYNC_GLES_STARTUP
+ parallelStartupCompile=emscripten_webgl_enable_extension(emscripten_webgl_get_current_context(),"KHR_parallel_shader_compile");
+#endif
+ vertex=shader(GL_VERTEX_SHADER,source,!parallelStartupCompile);glGenBuffers(1,&vertices.id);glGenBuffers(1,&indices.id);glGenBuffers(1,&instances.id);
+ glActiveTexture(GL_TEXTURE0);buildingGeneric=true;select(State{});if(!failure.empty())return false;generic=*program;programs.clear();buildingGeneric=false;
+ State warm;for(int i=0;i<4;i++){warm.texture=i!=2;auto& p=warm.pipeline;p.alphaTest=true;p.fog=i==3;p.alphaCompare=Compare::GreaterEqual;p.color.operation=p.alpha.operation=(i==0||i==3)?ColorOperation::Multiply:ColorOperation::First;p.color.first=p.alpha.first={(i==0||i==3)?ArgumentSource::Texture:ArgumentSource::Diffuse};p.color.second=p.alpha.second={i==3?ArgumentSource::Factor:ArgumentSource::Diffuse};select(warm);if(!failure.empty())return false;}
  // Compile the game combiner families before the first frame. Rare asset
  // combinations use a prelinked uniform program instead of compiling in draw.
  for(bool texture:{false,true})for(bool alpha:{false,true})for(bool fog:{false,true})for(auto op:{ColorOperation::First,ColorOperation::Multiply})for(auto second:{ArgumentSource::Diffuse,ArgumentSource::Factor}){
    warm.texture=texture;auto& p=warm.pipeline;p.alphaTest=alpha;p.fog=fog;p.alphaCompare=Compare::GreaterEqual;
-   p.color.operation=p.alpha.operation=op;p.color.first=p.alpha.first={op==ColorOperation::First?ArgumentSource::Diffuse:ArgumentSource::Texture};p.color.second=p.alpha.second={second};select(warm);
+   p.color.operation=p.alpha.operation=op;p.color.first=p.alpha.first={op==ColorOperation::First?ArgumentSource::Diffuse:ArgumentSource::Texture};p.color.second=p.alpha.second={second};select(warm);if(!failure.empty())return false;
  }
 #if defined(PORT_TITLE) && PORT_TITLE == 14
  // The fogged world and ordinary textured sprites use the depth variants.
@@ -98,12 +130,12 @@ bool Renderer::initialize(){
  for(bool fog:{false,true})for(bool alpha:{false,true})for(auto second:{ArgumentSource::Diffuse,ArgumentSource::Factor}){
    auto& p=warm.pipeline;p.fog=fog;p.alphaTest=alpha;
    p.color.operation=p.alpha.operation=ColorOperation::Multiply;p.color.first=p.alpha.first={ArgumentSource::Texture};
-   p.color.second=p.alpha.second={second};select(warm);
+   p.color.second=p.alpha.second={second};select(warm);if(!failure.empty())return false;
  }
 #endif
- resampleProgram=glCreateProgram();const auto rv=shader(GL_VERTEX_SHADER,resampleVertex),rf=shader(GL_FRAGMENT_SHADER,resampleFragment);
+ resampleProgram=glCreateProgram();const auto rv=shader(GL_VERTEX_SHADER,resampleVertex,!parallelStartupCompile),rf=shader(GL_FRAGMENT_SHADER,resampleFragment,!parallelStartupCompile);
  glAttachShader(resampleProgram,rv);glAttachShader(resampleProgram,rf);glLinkProgram(resampleProgram);glDeleteShader(rv);glDeleteShader(rf);
- GLint linked=0;glGetProgramiv(resampleProgram,GL_LINK_STATUS,&linked);if(!linked){failure="Resample program link failed";return false;}
+ if(!startup_program_linked(resampleProgram,parallelStartupCompile)){failure="Resample program link failed";return false;}
  glGenVertexArrays(1,&resampleVao);glGenTextures(1,&weightTexture);
  warming=false;set_current(this);return true;
 }
@@ -179,7 +211,10 @@ void Renderer::select(const State& s){
 #if defined(PORT_TITLE) && PORT_TITLE == 14
   if(version==10)replace(source,"c.rgb=mix(fogColor.rgb,c.rgb,clamp(vFog,0.0,1.0));","{float f=clamp(vFog,0.0,1.0);vec3 rest=fogColor.rgb-fogColor.rgb*f;c.rgb=c.rgb*f+rest;}");
 #endif
-  Program p;p.id=glCreateProgram();GLuint fs=shader(GL_FRAGMENT_SHADER,source);glAttachShader(p.id,vertex);glAttachShader(p.id,fs);glLinkProgram(p.id);glDeleteShader(fs);GLint linked=0;glGetProgramiv(p.id,GL_LINK_STATUS,&linked);if(!linked){char log[2048];glGetProgramInfoLog(p.id,sizeof(log),nullptr,log);std::fprintf(stderr,"SDL program: %s\n",log);std::abort();}
+  Program p;p.id=glCreateProgram();GLuint fs=shader(GL_FRAGMENT_SHADER,source,!parallelStartupCompile);glAttachShader(p.id,vertex);glAttachShader(p.id,fs);glLinkProgram(p.id);glDeleteShader(fs);
+  if(!startup_program_linked(p.id,parallelStartupCompile)){
+   glDeleteProgram(p.id);failure="SDL shader program did not link";return;
+  }
 #if !defined(PORT_TITLE) || PORT_TITLE != 14
   if(version==10){glUseProgram(p.id);glUniform4fv(glGetUniformLocation(p.id,"alphaBoundary[0]"),64,alphaBoundaries.data());glUseProgram(currentProgram);}
 #endif

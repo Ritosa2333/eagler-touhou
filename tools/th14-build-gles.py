@@ -26,7 +26,7 @@ def prepare_host_shell(source, identity):
     source = source[:start] + json.dumps(identity, ensure_ascii=False) + source[end:]
     anchor = ' await mountData();'
     assert source.count(anchor) == 1
-    source = source.replace(anchor, anchor + "\n Module.FS.symlink('/th14.dat','/th11.dat');", 1)
+    source = source.replace(anchor, anchor + "\n if(!Module._th14_adopt_managed_archive)Module.FS.symlink('/th14.dat','/th11.dat');", 1)
     assert "game='th14'" in source and "core?.th11_key(" in source
     return source
 
