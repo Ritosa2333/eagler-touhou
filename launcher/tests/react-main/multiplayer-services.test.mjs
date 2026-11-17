@@ -415,6 +415,31 @@ function roomFixture(extra = {}) {
   const service = owner.createMultiplayerRoom(ports);
   return { service, ports, clock, sockets, events, decisions, settings, ...storage };
 }
+test('directory TH09 creation keeps original charging when the saved room is restored', async () => {
+  const published = manifest();
+  published.games.th09 = {
+    ...published.games.th06,
+    runtime: 'runtime/th09/th09.html',
+    multiplayerRuntime: 'runtime/th09/th09.html',
+    gameData: {...published.games.th06.gameData, path: 'th09.data'},
+  };
+  const directory = await liveDirectory({selectedProduct: 'th09mp', loadSiteManifest: async () => published});
+  const room = roomFixture({sessions: directory.sessions, identity: directory.identity});
+  try {
+    assert.equal(directory.service.prepareForm('create'), true);
+    assert.equal(directory.service.getSnapshot().form.product, 'th09mp');
+    assert.equal(directory.service.submitForm(), 'close');
+    directory.service.formDidClose();
+    assert.equal(room.service.restoreInvite(directory.navigation[0]), true);
+    const socket = room.sockets[0];
+    assert.equal(new URL(socket.url).searchParams.get('disableLocalChargePriority'), '1');
+    socket.open();
+    assert.equal(socket.sent.find(message => message.type === 'settings').disableLocalChargePriority, true);
+  } finally {
+    room.service.dispose();
+    directory.service.dispose();
+  }
+});
 test('rollback products default to D0 for both room creation and restored invites',async()=>{
   for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp']){
     const f=roomFixture();f.service.enterRoom(product,'1234',true);await flush();

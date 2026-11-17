@@ -649,6 +649,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
           created: true,
           visibility,
           disableCheatMovement,
+          ...(product === 'th09mp' ? {disableLocalChargePriority: true} : {}),
           ...(product === 'th09mp' && unrated ? {unrated: true} : {}),
         },
         seat: 0,
