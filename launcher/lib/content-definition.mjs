@@ -41,7 +41,7 @@ function pc98PreparedContent(game, tracks, script, layout = PC98_DATA_LAYOUT) {
 export const PRODUCT_CONTENT = Object.freeze({
   th01: pc98PreparedContent("th01", 14, "scripts/prepare-th01-content.mjs", "sha256-3b51bdd9400868145f321cd9e62eedf2846d5a164e023f61c987a4cfa4ea169e"),
   th02: pc98PreparedContent("th02", 15, "scripts/prepare-th02-content.mjs"),
-  th03: pc98PreparedContent("th03", 21),
+  th03: pc98PreparedContent("th03", 21, "scripts/prepare-th03-content.mjs", "sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e"),
   th04: pc98PreparedContent("th04", 22, "scripts/prepare-th04-content.mjs"),
   th05: Object.freeze({
     original: Object.freeze({files: Object.freeze(["kaiki1.dat", "kaiki2.dat", "zun.com"]), preparedAlternative: TH05_PREPARED_CONTENT}),

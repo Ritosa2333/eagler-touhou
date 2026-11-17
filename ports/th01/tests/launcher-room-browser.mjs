@@ -87,8 +87,16 @@ try{
     const x=box.x+box.width*.7,y=box.y+box.height*.6,direction=before>280?-1:1;
     await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});
     for(let i=1;i<=8;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+direction*box.width*.015*i,y,id:1}]});await new Promise(r=>setTimeout(r,80));}
-    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
     await wait(async()=>direction*((await frames[0].evaluate(()=>window.th01Net.session.game.state().players[0].left))-before)>0,'room touch moves native player',15000);
+    for(const pointerType of ['pen','mouse']){
+      const prior=await frames[0].evaluate(()=>window.th01Net.session.game.state().players[0].left),dir=prior>280?-1:1;
+      await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x,y,pointerType});await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',buttons:1,clickCount:1,pointerType});
+      for(let i=1;i<=8;i++){await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:x+dir*box.width*.015*i,y,button:'left',buttons:1,pointerType});await new Promise(r=>setTimeout(r,80));}
+      await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:x+dir*box.width*.12,y,button:'left',buttons:0,clickCount:1,pointerType});
+      await wait(async()=>dir*((await frames[0].evaluate(()=>window.th01Net.session.game.state().players[0].left))-prior)>0,`room ${pointerType} moves native player`,15000);
+    }
+    await cdp.detach();console.log('PASS room pen and mouse movement');
     await host.click('.room-workspace-fullscreen');await host.waitForFunction(()=>!!document.fullscreenElement&&!document.querySelector('#player').classList.contains('room-workspace'));
     assert(await host.$eval('#touchDirectSurface',element=>getComputedStyle(element).display!=='none'),'touch overlay returns on fullscreen reentry');
     console.log('PASS touch fullscreen exit and reentry');break;

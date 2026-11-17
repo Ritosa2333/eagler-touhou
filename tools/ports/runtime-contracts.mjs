@@ -11,7 +11,7 @@ const require = createRequire(new URL('../../launcher/package.json', import.meta
 const {parse} = require('acorn');
 
 export function runtimeSourceFiles(game, product) {
-  if (['th01', 'th02', 'th04'].includes(game)) return ['web/managed-shell.mjs', 'web/managed-input.mjs'];
+  if (['th01', 'th02', 'th03', 'th04'].includes(game)) return ['web/managed-shell.mjs', 'web/managed-input.mjs'];
   if (game === 'th05') return ['web/managed.mjs','web/shell.mjs','web/input.mjs'];
   if (game === 'th12') return ['src/managed-shell.mjs', 'src/managed-input.mjs', 'site/game-sdl.mjs'];
   if (product.runtimeFileLayout !== 'directory') return ['resources/shell.html'];
@@ -50,6 +50,11 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
       execFileSync(process.execPath,['--test','--test-name-pattern='+pattern,resolve(root,directory,testFile)],
         {cwd:resolve(root,directory),encoding:'utf8',windowsHide:true});
     }));
+  }
+  if (game === 'th03') {
+    return [result('native-runtime-tests',['RUNTIME-01','RUNTIME-02','RUNTIME-03'],[...files,'tests/native-lockstep.test.mjs','tests/native-rollback.test.mjs'],()=>{
+      execFileSync(process.execPath,['--test',resolve(root,directory,'tests/native-lockstep.test.mjs'),resolve(root,directory,'tests/native-rollback.test.mjs')],{cwd:resolve(root,directory),encoding:'utf8',windowsHide:true});
+    })];
   }
   if (game === 'th05') {
     const testFile='tests/managed-adapter.test.mjs';

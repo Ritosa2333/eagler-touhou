@@ -1,0 +1,7 @@
+const {readdir,readFile}=require('node:fs/promises');const {resolve,join}=require('node:path');const assert=require('node:assert/strict');const create=require(resolve(process.argv[2]));
+async function copy(m,dir,dst){for(const e of await readdir(dir,{withFileTypes:true})){const p=dst+'/'+e.name;if(e.isDirectory()){m.FS.mkdir(p);await copy(m,join(dir,e.name),p);}else if(e.isFile())m.FS.writeFile(p,await readFile(join(dir,e.name)));}}
+(async()=>{const modules=await Promise.all([create(),create()]);for(const m of modules){m.FS.mkdir('/content');m.FS.mkdir('/user');m.FS.mkdir('/user/REPLAY');await copy(m,process.argv[3],'/content');m.FS.mkdir('/content/PODDUI');await copy(m,process.argv[4],'/content/PODDUI');assert.equal(m._th03_classic_create(),1);}
+ let started=false;for(let i=0;i<5000;i++){const input=i>300&&i%100<8?32:0;for(const m of modules)assert.equal(m._th03_classic_step(input,input,0),0);if(modules.every(m=>m._th03_classic_point_x()>=0)){started=true;break;}}assert(started,'story player appears');
+ const starts=modules.map(m=>m._th03_classic_point_x());for(let i=0;i<20;i++)for(const [seat,m] of modules.entries()){m._th03_classic_assist(seat===1);assert.equal(m._th03_classic_step(8,8,0),0);}
+ const delta=modules.map((m,i)=>m._th03_classic_point_x()-starts[i]);assert(delta[0]>0&&delta[1]>0);assert(Math.abs(delta[0]-2*delta[1])<=2,`focus speed ${delta}`);console.log('Native story movement: normal and focused',delta);
+})().catch(e=>{console.error(e);process.exitCode=1;});
