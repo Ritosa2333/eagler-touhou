@@ -18,10 +18,11 @@ class NativeRunReplay {
         unsigned worldFrames=0;
         th128::player::TouchMotion touch{};
         std::vector<std::array<std::int32_t,4>> touchEvents;
+        std::vector<std::array<unsigned,4>> auxiliary;
     };
     std::vector<Stage> stages_;
     unsigned route_=0,rank_=0,lastStage_=0;
-    bool practice_=false;
+    bool practice_=false,assistedMovement_=false;
     double seconds_=0,activeSeconds_=0;
     static void store16(std::span<std::uint8_t> bytes,std::size_t offset,std::uint16_t value){bytes[offset]=std::uint8_t(value);bytes[offset+1]=std::uint8_t(value>>8);}
     static void store32(std::span<std::uint8_t> bytes,std::size_t offset,std::uint32_t value){for(unsigned index=0;index<4;++index)bytes[offset+index]=std::uint8_t(value>>(index*8));}
@@ -38,6 +39,8 @@ class NativeRunReplay {
     }
 public:
     static NativeRunReplay practice(){NativeRunReplay result;result.practice_=true;return result;}
+    void markAssistedMovement(){if(stages_.empty())throw std::runtime_error("assisted movement lacks actual native run history");assistedMovement_=true;}
+    bool assistedMovement()const noexcept{return assistedMovement_;}
     bool empty()const{return stages_.empty();}
     unsigned frames()const{unsigned count=0;for(const auto& stage:stages_)count+=unsigned(stage.input.frame());return count;}
     unsigned stages()const{return unsigned(stages_.size());}
@@ -76,6 +79,10 @@ public:
         auto& stage=stages_.back();
         if(stage.worldFrames>=1000000||stage.touchEvents.size()>=100000)throw std::runtime_error("replay touch history budget");
         if(touch!=stage.touch){stage.touchEvents.push_back({std::int32_t(stage.worldFrames),std::int32_t(touch.mode),touch.x,touch.y});stage.touch=touch;}
+        if(messageAuxiliary){
+            if(stage.auxiliary.size()>=12000)throw std::runtime_error("replay auxiliary input budget");
+            stage.auxiliary.push_back({stage.worldFrames,input[0],input[1],input[2]});
+        }
         ++stage.worldFrames;
         const auto delta=actualSeconds-seconds_;seconds_=actualSeconds;
         if(stages_.back().input.append({true,true,messageAuxiliary,actualFPS,input})){activeSeconds_+=delta;return true;}
@@ -89,14 +96,14 @@ public:
             throw std::runtime_error("ordinary completed replay lacks its three-stage native history/statistics");
         auto result=snapshot(timestamp,score,route_+17,0,name);
         const auto ratio=static_cast<float>(numerator/denominator);
-        const auto slowdown=static_cast<float>(100.-100.*static_cast<double>(ratio));
+        const auto slowdown=assistedMovement_?100.f:static_cast<float>(100.-100.*static_cast<double>(ratio));
         if(!std::isfinite(slowdown))throw std::runtime_error("ordinary completed replay slowdown is not finite");
         store32(result,36+84,std::bit_cast<std::uint32_t>(slowdown));return result;
     }
     std::vector<std::uint8_t> finishExtra(std::uint64_t timestamp,std::int32_t score,const std::array<std::uint8_t,8>& name,double numerator,double denominator)const{
         if(route_!=6||rank_!=4||stages_.size()!=1||lastStage_!=16||!frames()||!std::isfinite(numerator)||numerator<0||!std::isfinite(denominator)||denominator<=0)
             throw std::runtime_error("completed EX replay lacks its actual one-stage history/statistics");
-        auto result=snapshot(timestamp,score,23,0,name);const auto ratio=static_cast<float>(numerator/denominator),slowdown=static_cast<float>(100.-100.*double(ratio));
+        auto result=snapshot(timestamp,score,23,0,name);const auto ratio=static_cast<float>(numerator/denominator),slowdown=assistedMovement_?100.f:static_cast<float>(100.-100.*double(ratio));
         if(!std::isfinite(slowdown))throw std::runtime_error("EX replay slowdown is not finite");store32(result,36+84,std::bit_cast<std::uint32_t>(slowdown));return result;
     }
     std::vector<std::uint8_t> snapshot(std::uint64_t timestamp,std::int32_t score,unsigned currentStage,unsigned continues,
@@ -108,7 +115,7 @@ public:
         for(unsigned index=0;index<8;++index)result[36+12+index]=std::uint8_t(timestamp>>(index*8));
         store32(result,36+20,std::uint32_t(score));const auto config=configuration();std::copy(config.begin(),config.end(),result.begin()+36+24);
         const float ratio=seconds_>0?float(activeSeconds_/seconds_):1.f;
-        const float slowdown=float(100.-100.*double(ratio));store32(result,36+84,std::bit_cast<std::uint32_t>(slowdown));
+        const float slowdown=assistedMovement_?100.f:float(100.-100.*double(ratio));store32(result,36+84,std::bit_cast<std::uint32_t>(slowdown));
         store32(result,36+88,unsigned(stages_.size()));store32(result,36+92,route_);store32(result,36+100,rank_);store32(result,36+104,currentStage);
         for(const auto& stage:stages_){
             auto header=stage.header;std::vector<std::uint8_t> inputs,fps;
@@ -119,11 +126,14 @@ public:
             store32(header,4,unsigned(stage.input.frame()));store32(header,8,unsigned(inputs.size()+fps.size()));
             result.insert(result.end(),header.begin(),header.end());result.insert(result.end(),inputs.begin(),inputs.end());result.insert(result.end(),fps.begin(),fps.end());
         }
-        if(std::any_of(stages_.begin(),stages_.end(),[](const Stage& stage){return !stage.touchEvents.empty();})){
+        const bool auxiliary=std::any_of(stages_.begin(),stages_.end(),[](const Stage& stage){return !stage.auxiliary.empty();});
+        if(auxiliary||std::any_of(stages_.begin(),stages_.end(),[](const Stage& stage){return !stage.touchEvents.empty();})){
             const auto appendWord=[&](unsigned value){const auto at=result.size();result.resize(at+4);store32(result,at,value);};
-            appendWord(0x31484354u);appendWord(1);appendWord(unsigned(stages_.size()));
+            appendWord(0x31484354u);appendWord(auxiliary?2:1);appendWord(unsigned(stages_.size()));
             for(const auto& stage:stages_){appendWord(stage.input.stage());appendWord(stage.worldFrames);appendWord(unsigned(stage.touchEvents.size()));
-                for(const auto& event:stage.touchEvents)for(const auto value:event)appendWord(std::bit_cast<unsigned>(value));}
+                if(auxiliary)appendWord(unsigned(stage.auxiliary.size()));
+                for(const auto& event:stage.touchEvents)for(const auto value:event)appendWord(std::bit_cast<unsigned>(value));
+                if(auxiliary)for(const auto& event:stage.auxiliary)for(const auto value:event)appendWord(value);}
         }
         return result;
     }

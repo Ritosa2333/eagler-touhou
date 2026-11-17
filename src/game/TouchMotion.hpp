@@ -15,6 +15,10 @@ inline bool validTouch(TouchMotion command) noexcept {
         &&command.y>=MinimumVerticalRaw&&command.y<=MaximumVerticalRaw;
     return command.mode==3&&command.x>=-32767&&command.x<=32767&&command.y>=-32767&&command.y<=32767;
 }
+inline bool usedUnlimitedTouchMovement(RawPosition before,const Movement& movement,TouchMotion command,Input input) noexcept {
+    return command.mode==2&&!(input.holding&(UpKey|DownKey|LeftKey|RightKey))
+        &&(movement.position.horizontal!=before.horizontal||movement.position.vertical!=before.vertical);
+}
 inline Movement moveTouch(Movement base,RawPosition position,TouchMotion command) noexcept {
     if(!command.mode||!validTouch(command))return base;
     double dx=command.mode==3?command.x:command.x-position.horizontal;

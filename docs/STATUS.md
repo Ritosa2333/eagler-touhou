@@ -126,3 +126,7 @@
 ## 2026-11-18 上游触控页面批次
 
 正式页面已接完整上游TouchInput、原布局/缩放模型和启动器direct/control/cancel协议；1087真实DOM＋原资源WASM组件＋真实IDB＋触控RPY回放11项通过，1Factory2World20tick，各10帧15原生投影同，F12点击关闭与清理通过。1091完整46套件284PASS0skip。普通无限移动资格与流程仍待，当前原生mode2拒非练习；浮动窗口/竖屏/iOS/pinch与全production/R/Title、魔理沙EX/117/本地包仍待。第三步false，无新编译或包/部署。详见[本批范围](USER_FEEDBACK_FULL_TOUCH.md)。
+
+## 2026-11-18 普通触控与选路辅助录像（1101）
+
+普通mode2已接真实PlayerHitHost；按固定上游实际消耗的非零无限位移标记辅助，保持正常方向键优先/播放锁/世代和新开局隔离。辅助运行保真实自然运行身份及录像，原profile字节恢复，普通成绩/符卡/解锁写入和postrun排行插入独立阻止，录像slowdown100；实际自然跨关/终局仍待。1099原11809World/11806主帧/3选路辅助帧缺失真RED，现成功tick记录v2TCH1并由匹配native World帧PAUX消费，原6B载荷不变。1100组件2Factory5World23711tick、录播15投影逐帧同；1101受影响16suite75PASS0skip。World组件/strict合成IDB，0本轮browser/Title/GPU/音频ACK/Ending；完整第三步false，117/包未准备。见[本批范围](USER_FEEDBACK_ORDINARY_TOUCH.md)。

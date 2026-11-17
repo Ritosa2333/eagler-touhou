@@ -131,7 +131,7 @@ class Menu {
         bind(24,97);interrupt(24,97,3);
         const record::NativeScoreRowContext row{context_.route,context_.rank,context_.score,
             context_.stage,context_.continues,timestamp,context_.numerator,context_.denominator,DefaultName};
-        position_=record::NativeScoreProfile::insert(context_.profile,row);
+        position_=context_.normalRecord&&!context_.normalRecord->scoreEligible()?-1:record::NativeScoreProfile::insert(context_.profile,row);
         if(context_.normalRecord)context_.stage=0;
         name_.fill(0);std::copy_n(context_.profile.begin()+record::NativeScoreProfile::StatsOffset+12,9,name_.begin());
         if(name_.back()!=0)throw std::runtime_error("native last-name field has no terminator");

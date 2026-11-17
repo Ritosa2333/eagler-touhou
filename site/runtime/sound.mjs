@@ -649,7 +649,7 @@ export class OwnedReplayStore{
       ||observed.bytes.some((value,index)=>value!==file[index])||await this.hash(observed.bytes)!==digest)
       throw new Error('Replay full durable readback differs');
     current();const returned=decodeReplay(observed.bytes);
-    if(returned.rawPayload.length!==native.length-36||returned.rawPayload.some((value,index)=>value!==native[index+36]))
+    if(returned.rawPayload.length!==decoded.rawPayload.length||returned.rawPayload.some((value,index)=>value!==native[index+36]))
       throw new Error('Saved replay native payload differs');
     return{slot,bytes:observed.bytes,digest,rawBytes:native.length,rawChecksum:OwnedReplayStore.nativeChecksum(native),strictFullReadback:true,strictDurability:true};
   }
@@ -1099,8 +1099,12 @@ export class OwnedReplayPlayback{
   }
   stagePacket(index=this.#pendingIndex){
     if(this.#closed||index<0||index>=this.#stages.length)throw new Error('Owned replay stage packet unavailable');
-    const stage=this.#stages[index],packet=new Uint8Array(144+stage.inputRaw.length);
-    packet.set(stage.rawHeader);packet.set(stage.inputRaw,144);return packet;
+    const stage=this.#stages[index],plan=this.#touch?.[index],auxiliary=plan?.auxiliary??[],base=144+stage.inputRaw.length;
+    const packet=new Uint8Array(base+(auxiliary.length?16+auxiliary.length*16:0));
+    packet.set(stage.rawHeader);packet.set(stage.inputRaw,144);
+    if(auxiliary.length){const v=new DataView(packet.buffer);[0x58554150,plan.worldFrames,auxiliary.length,0].forEach((n,i)=>v.setUint32(base+i*4,n,true));
+      auxiliary.forEach((r,i)=>r.forEach((n,k)=>v.setUint32(base+16+i*16+k*4,n,true)));}
+    return packet;
   }
   bindNativeStage(module){
     if(this.#closed)throw new Error('Owned replay playback is closed');

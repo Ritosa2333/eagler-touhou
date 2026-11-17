@@ -17,16 +17,28 @@ function plans(value,stages){
     ||!validTouchMotion(...event.slice(1)))throw Error('Touch Replay event order/raw command differs');
    prior=event[0];return Object.freeze(event.slice());
   });
-  return Object.freeze({stage:row.stage,worldFrames:row.worldFrames,events:Object.freeze(events)});
+  let auxiliary;
+  if(Object.hasOwn(row,'auxiliary')){
+   if(!Array.isArray(row.auxiliary)||row.auxiliary.length>12000||row.worldFrames!==frames+row.auxiliary.length)throw Error('Auxiliary Replay World/main frame extent differs');
+   let prior=-1;auxiliary=Object.freeze(row.auxiliary.map(event=>{
+    if(!Array.isArray(event)||event.length!==4||!event.every(Number.isSafeInteger)||event[0]<=prior||event[0]>=row.worldFrames||event.slice(1).some(n=>n<0||n>65535))throw Error('Auxiliary Replay input frame/order/domain differs');
+    prior=event[0];return Object.freeze(event.slice());
+   }));
+  }
+  return Object.freeze({stage:row.stage,worldFrames:row.worldFrames,events:Object.freeze(events),...(auxiliary?{auxiliary}:{})});
  }));
 }
 export function nativeTouchReplayBlock(bytes,stages){
  if(!bytes.length)return null;
  const v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);let at=0;
  const word=()=>{if(at+4>bytes.length)throw Error('Native touch Replay trailer truncated');const n=v.getUint32(at,true);at+=4;return n;};
- if(word()!==KIND||word()!==1||word()!==stages.length)throw Error('Native touch Replay trailer identity differs');
- const rows=stages.map(()=>{const stage=word(),worldFrames=word(),count=word();if(count>100000||at+count*16>bytes.length)throw Error('Native touch Replay event extent');
-  const events=Array.from({length:count},()=>[word(),word(),word()<<0,word()<<0]);return{stage,worldFrames,events};});
+ if(word()!==KIND)throw Error('Native touch Replay trailer identity differs');
+ const version=word();if(![1,2].includes(version)||word()!==stages.length)throw Error('Native touch Replay version/stage extent differs');
+ const rows=stages.map(()=>{const stage=word(),worldFrames=word(),count=word(),auxCount=version===2?word():0;
+  if(count>100000||auxCount>12000||at+(count+auxCount)*16>bytes.length)throw Error('Native touch Replay event extent');
+  const events=Array.from({length:count},()=>[word(),word(),word()<<0,word()<<0]);
+  const auxiliary=version===2?Array.from({length:auxCount},()=>[word(),word(),word(),word()]):null;
+  return{stage,worldFrames,events,...(auxiliary?{auxiliary}:{})};});
  if(at!==bytes.length)throw Error('Native touch Replay unexpected tail');
  const owned=plans({schema:SCHEMA,stages:rows},stages),data=new TextEncoder().encode(JSON.stringify({schema:SCHEMA,stages:owned}));
  if(data.length>8*1024*1024)throw Error('Touch Replay USER budget');const size=(12+data.length+1+3)&~3,raw=new Uint8Array(size),out=new DataView(raw.buffer);

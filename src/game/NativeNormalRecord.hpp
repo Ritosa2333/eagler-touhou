@@ -13,7 +13,8 @@ namespace th128::record {
 
 // Ordinary scores own a separate profile; diagnostic postrun owners remain tainted.
 class NativeNormalRecord {
-    std::vector<std::uint8_t> profile_, pending_;
+    std::vector<std::uint8_t> profile_, pending_,originalProfile_;
+    bool assistedMovement_=false;
     NativeRecordTiming timing_;
     unsigned route_=0,rank_=0,stage_=0,frames_=0,presented_=0,digest_=0;
     bool terminalStatsPrepared_=false;
@@ -45,7 +46,7 @@ class NativeNormalRecord {
     void commitOrdinaryClear(unsigned stage,unsigned route,unsigned rank){
         if(!started_||prepared_||acknowledged_||terminalClearRecorded_||stage_!=stage||route_!=route||rank_!=rank)
             throw std::runtime_error("ordinary clear record lacks its uncommitted terminal owner");
-        NativeRecordAccounting::recordClear(profile_,route_,rank_,0);
+        if(!assistedMovement_)NativeRecordAccounting::recordClear(profile_,route_,rank_,0);
         terminalClearRecorded_=true;
     }
 public:
@@ -59,7 +60,14 @@ public:
         }else{
             NativeScoreProfile::assemble(profile);profile_.assign(profile.begin(),profile.end());
         }
+        originalProfile_=profile_;
     }
+    void markAssistedMovement(){
+        if(!started_||prepared_)throw std::runtime_error("assisted movement lacks an active native record session");
+        if(!assistedMovement_){profile_=originalProfile_;assistedMovement_=true;}
+    }
+    bool assistedMovement()const noexcept{return assistedMovement_;}
+    bool scoreEligible()const noexcept{return started_&&!assistedMovement_;}
     void beginStage(unsigned stage,unsigned rank,double seconds){
         if(prepared_||!std::isfinite(seconds)||seconds<lastSeconds_||rank>=4)throw std::runtime_error("ordinary record stage clock rejected");
         if(!started_){
@@ -74,7 +82,7 @@ public:
     }
     void activeFrame(std::uint32_t flags,bool held){
         if(!started_||prepared_)throw std::runtime_error("ordinary record active frame lacks its run owner");
-        NativeRecordAccounting::recordActiveFrame(profile_,route_,0,flags,held);++frames_;
+        if(!assistedMovement_)NativeRecordAccounting::recordActiveFrame(profile_,route_,0,flags,held);++frames_;
     }
     void present(double seconds,unsigned replayFrames,bool paused){
         if(!started_||prepared_||!std::isfinite(seconds)||seconds<lastSeconds_||replayFrames!=frames_)throw std::runtime_error("ordinary record presentation clock rejected");
@@ -87,12 +95,14 @@ public:
         const auto row=spellRow(id);
         if(name.empty()||name.size()>=128||std::find(name.begin(),name.end(),std::uint8_t{0})!=name.end())
             throw std::runtime_error("ordinary spell name is outside the original NUL-terminated field");
+        if(assistedMovement_)return;
         std::copy(name.begin(),name.end(),profile_.begin()+row);profile_[row+name.size()]=0;
         incrementCD(row+140);
     }
     void endSpell(int id,std::uint32_t flags){
         if(!(flags&1u))return;
         const auto row=spellRow(id);
+        if(assistedMovement_)return;
         incrementCD(row+136);
         if(flags&2u){incrementCD(row+128);if(flags&4u)incrementCD(row+132);}
     }
@@ -101,13 +111,13 @@ private:
         if(!started_||prepared_||!frames_||replayFrames!=frames_||score<0||score>999999999||continues>9
             ||timestamp>0x793406fffull||!std::isfinite(seconds)||seconds<lastSeconds_)throw std::runtime_error("ordinary record final native identity rejected");
         pending_=profile_;const auto first=std::size_t(route_)*1644+16+rank_*320;
-        if(insertScore&&score>=std::int32_t(read32(profile_,first+9*32))){
+        if(!assistedMovement_&&insertScore&&score>=std::int32_t(read32(profile_,first+9*32))){
             const auto& counters=timing_.state();
             if(counters.denominator<=0)throw std::runtime_error("ordinary score slowdown has no completed real clock window");
             std::array<std::uint8_t,9> name{};std::copy_n(profile_.begin()+NativeScoreProfile::StatsOffset+12,9,name.begin());
             NativeScoreProfile::insert(pending_,{route_,rank_,score,stage_,continues,timestamp,counters.numerator,counters.denominator,name});
         }
-        NativeRecordAccounting::addPlaytime(pending_,seconds-startedSeconds_,0,16);
+        if(!assistedMovement_)NativeRecordAccounting::addPlaytime(pending_,seconds-startedSeconds_,0,16);
         digest_=2166136261u;for(auto byte:pending_){digest_^=byte;digest_*=16777619u;}
         prepared_=true;lastSeconds_=seconds;
     }

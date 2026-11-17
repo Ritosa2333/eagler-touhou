@@ -1,0 +1,949 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-18",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "baseCommit": "e3872667a419b7d02f5c487b4ab640a1b72911de",
+  "purpose": "Complete actual ordinary limited/free/unlimited movement qualification and original MSG auxiliary Replay history consumers as one functional batch; natural fullcarry/terminal/mobile/render/final117 still pending.",
+  "stage3": {
+    "functionalComplete": false,
+    "percent": null,
+    "previous100Retracted": true,
+    "v8FullFidelityRetracted": true
+  },
+  "latestNative1100": {
+    "compilerExit": 0,
+    "translationUnits": 80,
+    "WorldAPI": 165,
+    "readonlyAdapters": 3,
+    "mallocFree": 2,
+    "Factories": 2,
+    "Worlds": 5,
+    "ticks": 23711,
+    "movement": {
+      "passed": true,
+      "Factories": 1,
+      "Worlds": 3,
+      "ticks": 93,
+      "projectionWords": 15,
+      "ordinaryRunAssisted": true,
+      "normalQualificationPreserved": true,
+      "profileUnchangedOnAssisted": true,
+      "RPYBytes": 676,
+      "RPYSHA256": "275de3322b401dd2c279db9ae10a003aaa39515dd567e294ef6745aeecdabb65",
+      "strictSyntheticIDB": true,
+      "wholeProduction": false
+    },
+    "auxiliary": {
+      "passed": true,
+      "Factories": 1,
+      "Worlds": 2,
+      "ticks": 23618,
+      "recordedWorldFrames": 11809,
+      "auxiliaryFrames": 3,
+      "mainFrames": 11806
+    },
+    "component": {
+      "mjs": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1100-ordinary-touch-policy-auxiliary-native\\run\\world.mjs",
+        "bytes": 92227,
+        "sha256": "bbf5d650bfe1989749d75783ab37e07e4c08609312309c550cd03fe065026b12"
+      },
+      "wasm": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1100-ordinary-touch-policy-auxiliary-native\\run\\world.wasm",
+        "bytes": 2837723,
+        "sha256": "67ade7d9e4d6a9895c5186fc431e8aebfbc51845d164ca0d7bf3d7b714319282"
+      }
+    },
+    "RPY": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1100-ordinary-touch-policy-auxiliary-native\\run\\ordinary-touch.rpy",
+      "bytes": 676,
+      "sha256": "275de3322b401dd2c279db9ae10a003aaa39515dd567e294ef6745aeecdabb65"
+    },
+    "auxiliaryRPY": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1100-ordinary-touch-policy-auxiliary-native\\run\\ordinary-aux.rpy",
+      "bytes": 90198,
+      "sha256": "0246e97c00b4540b03790df949ab0d4142d52a436d4e5dea782103ab041a0cf5"
+    },
+    "scope": {
+      "fullProductionPlay": false,
+      "TitleAdoption": false,
+      "browser": false,
+      "GPU": false,
+      "physicalTouch": false,
+      "WebAudio": false,
+      "musicACK": false,
+      "Ending": false,
+      "completeNaturalCarry": false,
+      "strictSyntheticIDB": true,
+      "originalECLANMSHTMSGAllTypedProfiles": true,
+      "readonlyPublicWorldDriver": true,
+      "original6BInputsUnchanged": true
+    }
+  },
+  "Web1101": {
+    "suites": 16,
+    "PASS": 75,
+    "FAIL": 0,
+    "SKIP": 0,
+    "Worlds": 0,
+    "Factories": 0,
+    "compiler": 0,
+    "browser": 0,
+    "result": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1101-ordinary-touch-auxiliary-affected-Web\\result.json",
+      "bytes": 295,
+      "sha256": "44492032bb73349568741b8f070f47b4d40c7f6d7f3bceff392c202abc54d9ae"
+    }
+  },
+  "nativeCompilersThisBatch": {
+    "WorldComponents": 2,
+    "translationUnitCalls": 160,
+    "fullCores": 0,
+    "no117": true,
+    "noSuccessful93to116Rebuilt": true
+  },
+  "decisions": [
+    {
+      "finding": "Actual ordinary mode2 was rejected",
+      "proof": 1092,
+      "change": "Allow valid currentgeneration native live/playback touch in natural ordinary session; retain physical-arrow priority and native playLock/reset guards."
+    },
+    {
+      "finding": "Initial implementation wrongly marked only excessive displacement",
+      "proof": 1097,
+      "change": "Match fixed Touch.cpp1009-1024: any actually consumed nonzero unlimited displacement marks assistance; stationary command/keyboard takeover do not."
+    },
+    {
+      "finding": "Ordinary native input trailer was counted as original raw payload during durable Replay readback",
+      "proof": 1093,
+      "change": "Compare original payload with codec-validated raw extent; preserve full-file bytes, metadata, SHA and strictreadback."
+    },
+    {
+      "finding": "Actual original MSG skipped input words missing from ordinary history",
+      "proof": 1099,
+      "actualAuxiliary": [
+        [
+          11806,
+          513,
+          1,
+          0
+        ],
+        [
+          11807,
+          512,
+          0,
+          1
+        ],
+        [
+          11808,
+          544,
+          32,
+          0
+        ]
+      ],
+      "change": "Successful ticks collect auxiliary rows; backward-compatible v2 TCH1 native suffix becomes one owned USER, PAUX binds actualgeneration/worldframe and rejects differing native auxiliary boundaries. PRAC duplicate owners must agree."
+    }
+  ],
+  "qualification": {
+    "normalRunOwnerNotFakePractice": true,
+    "actualConsumedUnlimitedMarksAssisted": true,
+    "originalProfileRestoredOnAssistance": true,
+    "normalScoreSpellUnlockAndPlaytimeWritesSuppressed": true,
+    "postrunScoreInsertionGuarded": true,
+    "ReplaySlowdown100": true,
+    "normalStageCarryTerminalIdentityChecksUnchanged": true,
+    "limitedFreeEligible": true,
+    "freshRunIsolation": true,
+    "postrunEndingStillUnverified": true
+  },
+  "failures": {
+    "1092": "Actualordinary mode2 publicconsumer RED afterlimited/free native movement.",
+    "1093": "80TU compiler0; actualqualification andbaselineprofile equality pass, then real OwnedReplayStore.save rejects originalpayload extent including TCH1.",
+    "1094": "Ordinary fullsave/reopen/nativeplayLock12frames passed; final eligible fixture prepared score after5frames before unchanged original1second timing window. Fixture fixed to65 actualticks.",
+    "1097": "True exactupstreampolicy RED:128raw consumed unlimited movement remained eligible in first implementation.",
+    "1098": "Legitimate originalGameOver2 before firstauxiliary under stationary C/Z/Down input; fixture progress failure, not missinghistory RED, no HP/protection guard relaxed.",
+    "1099": "Actual11809World/11806main/3aux trace; actualAuxiliary is undefined in RPY USER, true history RED. NofakeACK or MSGstate mutation."
+  },
+  "runs": [
+    {
+      "ordinal": 1092,
+      "home": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1092-ordinary-touch-actual-native-RED",
+      "passed": false,
+      "scope": "Actual ordinary native limited/free/unlimited successful motion, native assistance qualification, original RPY TCH1 and strictsyntheticIDB reopen then same native playLock all projections; fresh eligible limited run isolation. Reuse1067 component first to reproduce actual mode2 rejection; 1Factory3World200tick upper, no compilation/fullcore/browser/GPU/audio.",
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1092-ordinary-touch-actual-native-RED\\request.json",
+          "bytes": 42524,
+          "sha256": "ad4f24e48341cbdb252865db92cb4cc8c0976c5fab52b294e2786a59bd2cf412"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1092-ordinary-touch-actual-native-RED\\actual-manifest.json",
+          "bytes": 45503,
+          "sha256": "6fd6f4df526eb3f774d9b427a5a34d29c2d7d976c02f18a4a30344d917536d24"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1092-ordinary-touch-actual-native-RED\\sourcecheck.json",
+          "bytes": 71,
+          "sha256": "c69ff15b77a9fc4e02fcb5920163036c9809f0bc48d2e0f025abe5fd4ce3d775"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1092-ordinary-touch-actual-native-RED\\MAIN-APPROVAL.json",
+          "bytes": 577,
+          "sha256": "272db652b300eafc8b22f23a5c393ca5880e8f2ef364ccae6b5c1502da5340f5"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1092-ordinary-touch-actual-native-RED\\result.json",
+          "bytes": 2935,
+          "sha256": "5f28ccc06b66c55af6818c562d05c762198e546f32951578ea7d33ef45e83559"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1092-ordinary-touch-actual-native-RED\\ROOT-released.json",
+          "bytes": 193,
+          "sha256": "ee31df42c1278c094c148bcb96086fda1326de3c8c2c0796ec38120af7b6ac4b"
+        }
+      ],
+      "boundaries": {
+        "WorldStarts": 3,
+        "Factories": 1,
+        "maxTicks": 200,
+        "componentCompilerCalls": 0,
+        "translationUnits": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0
+      },
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 1092,
+        "passed": false,
+        "scope": "Actual ordinary native limited/free/unlimited successful motion, native assistance qualification, original RPY TCH1 and strictsyntheticIDB reopen then same native playLock all projections; fresh eligible limited run isolation. Reuse1067 component first to reproduce actual mode2 rejection; 1Factory3World200tick upper, no compilation/fullcore/browser/GPU/audio.",
+        "firstFailure": {
+          "message": "runtime failed: node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: touch movement requires current live native owner, valid raw command and unlocked input\r\n\r\n0 !== 1\r\n\r\n    at ok (file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-touch-native.mjs:18:50)\r\n    at file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-touch-native.mjs:45:2 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: 0,\r\n  expected: 1,\r\n  operator: 'strictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.20.0\r\n\n\n1 !== 0\n",
+          "stack": "AssertionError [ERR_ASSERTION]: runtime failed: node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: touch movement requires current live native owner, valid raw command and unlocked input\r\n\r\n0 !== 1\r\n\r\n    at ok (file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-touch-native.mjs:18:50)\r\n    at file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-touch-native.mjs:45:2 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: 0,\r\n  expected: 1,\r\n  operator: 'strictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.20.0\r\n\n\n1 !== 0\n\n    at execute (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1092-ordinary-touch-actual-native-RED\\runtime-runner.cjs:36:11)\n    at Object.<anonymous> (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1092-ordinary-touch-actual-native-RED\\runtime-runner.cjs:50:28)\n    at Module._compile (node:internal/modules/cjs/loader:1929:14)\n    at Object..js (node:internal/modules/cjs/loader:2060:10)\n    at Module.load (node:internal/modules/cjs/loader:1651:32)\n    at Module._load (node:internal/modules/cjs/loader:1443:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47",
+          "steps": [
+            {
+              "name": "runtime",
+              "status": 1,
+              "signal": null,
+              "error": null
+            }
+          ]
+        },
+        "WorldStartsUpperBound": 3,
+        "FactoriesUpperBound": 1,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T21:23:42.525Z"
+      }
+    },
+    {
+      "ordinal": 1093,
+      "home": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1093-ordinary-touch-native-component",
+      "passed": false,
+      "scope": "Ordinary native limited/free/unlimited movement and actual excessive displacement assistance; preserve normal profile/score/unlock eligibility, real TCH1 originalRPY/strictsyntheticIDBreopen/nativeplayLock15projections and newrun reset. One80TU World-only compiler plus1Factory3World200ticksUpper; readonly actual NativeRunReplay capture adapter, no fake gameplay writes. No core117/browser/GPU/audio/natural terminal acceptance claimed.",
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1093-ordinary-touch-native-component\\request.json",
+          "bytes": 121471,
+          "sha256": "958ebcbdc753cb43c155e5a225ed47ad8582264e3e043bf2727e738248e1c784"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1093-ordinary-touch-native-component\\actual-manifest.json",
+          "bytes": 226418,
+          "sha256": "c4848376a92a3fbb475a8aa7920215fe53fcedf780850f15b3fb93245e991d13"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1093-ordinary-touch-native-component\\sourcecheck.json",
+          "bytes": 71,
+          "sha256": "9da39703d94dc247e478288ca8c0f2789f03b5c03ca8840c00ce20e9d57aad78"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1093-ordinary-touch-native-component\\MAIN-APPROVAL.json",
+          "bytes": 782,
+          "sha256": "bfb471e1177c342cf8a6fa7c1423d881ea334a7d9160ae66f68af601b4394696"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1093-ordinary-touch-native-component\\result.json",
+          "bytes": 2865,
+          "sha256": "bc8e27465054fbf1971a6471c131a00cc9cfb6bed8d756dbaa07b869ba249085"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1093-ordinary-touch-native-component\\ROOT-released.json",
+          "bytes": 193,
+          "sha256": "97c713768bfaf88321634b011bdfb7cfbdf60d2a4d7b2d9b149a1ceb7a466efc"
+        }
+      ],
+      "boundaries": {
+        "WorldStarts": 3,
+        "Factories": 1,
+        "maxTicks": 200,
+        "componentCompilerCalls": 1,
+        "translationUnits": 80,
+        "fullCoreCompilations": 0,
+        "browser": 0
+      },
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 1093,
+        "passed": false,
+        "scope": "Ordinary native limited/free/unlimited movement and actual excessive displacement assistance; preserve normal profile/score/unlock eligibility, real TCH1 originalRPY/strictsyntheticIDBreopen/nativeplayLock15projections and newrun reset. One80TU World-only compiler plus1Factory3World200ticksUpper; readonly actual NativeRunReplay capture adapter, no fake gameplay writes. No core117/browser/GPU/audio/natural terminal acceptance claimed.",
+        "firstFailure": {
+          "message": "runtime failed: file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/site/runtime/sound.mjs:653\r\n      throw new Error('Saved replay native payload differs');\r\n            ^\r\n\r\nError: Saved replay native payload differs\r\n    at OwnedReplayStore.save (file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/site/runtime/sound.mjs:653:13)\r\n    at async file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-touch-native.mjs:61:59\r\n\r\nNode.js v24.20.0\r\n\n\n1 !== 0\n",
+          "stack": "AssertionError [ERR_ASSERTION]: runtime failed: file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/site/runtime/sound.mjs:653\r\n      throw new Error('Saved replay native payload differs');\r\n            ^\r\n\r\nError: Saved replay native payload differs\r\n    at OwnedReplayStore.save (file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/site/runtime/sound.mjs:653:13)\r\n    at async file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-touch-native.mjs:61:59\r\n\r\nNode.js v24.20.0\r\n\n\n1 !== 0\n\n    at execute (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1093-ordinary-touch-native-component\\component-compile-runner.cjs:36:11)\n    at Object.<anonymous> (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1093-ordinary-touch-native-component\\component-compile-runner.cjs:50:28)\n    at Module._compile (node:internal/modules/cjs/loader:1929:14)\n    at Object..js (node:internal/modules/cjs/loader:2060:10)\n    at Module.load (node:internal/modules/cjs/loader:1651:32)\n    at Module._load (node:internal/modules/cjs/loader:1443:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47",
+          "steps": [
+            {
+              "name": "compiler",
+              "status": 0,
+              "signal": null,
+              "error": null
+            },
+            {
+              "name": "runtime",
+              "status": 1,
+              "signal": null,
+              "error": null
+            }
+          ]
+        },
+        "WorldStartsUpperBound": 3,
+        "FactoriesUpperBound": 1,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T21:28:41.693Z"
+      }
+    },
+    {
+      "ordinal": 1094,
+      "home": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1094-ordinary-touch-native-readback-playback",
+      "passed": false,
+      "scope": "Actual ordinary native limited/free/unlimited successful motion, native assistance qualification, original RPY TCH1 and strictsyntheticIDB reopen then same native playLock all projections; fresh eligible limited run isolation. Reuse1093 successfully compiled80TU component with actual native assistance; 1Factory3World200tick upper, no compilation/fullcore/browser/GPU/audio.",
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1094-ordinary-touch-native-readback-playback\\request.json",
+          "bytes": 42555,
+          "sha256": "ed8312dd051a6d3905bc9432095058fc9c9901e1029ae8b5078e8a8ae3e763a8"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1094-ordinary-touch-native-readback-playback\\actual-manifest.json",
+          "bytes": 45563,
+          "sha256": "76c1328fcad8291d6085659019d622cfeaaee35d756593c091510ac38fd317e6"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1094-ordinary-touch-native-readback-playback\\sourcecheck.json",
+          "bytes": 71,
+          "sha256": "de5e9c168d61a28c3b48574321e16841911bcfca61a0a1233a30d7be86ca932f"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1094-ordinary-touch-native-readback-playback\\MAIN-APPROVAL.json",
+          "bytes": 765,
+          "sha256": "dd8c325e49f6f1ce86570f675670004296f89cc94d422b7a5591c63ffb9744f6"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1094-ordinary-touch-native-readback-playback\\result.json",
+          "bytes": 2617,
+          "sha256": "3d2767744bbd8f5ac89f11dd5e3b2788a33b4f85a26067d4302794abd53205ee"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1094-ordinary-touch-native-readback-playback\\ROOT-released.json",
+          "bytes": 193,
+          "sha256": "72de3ac24adcb42a3edc2203fd04e9623a61137bffc126c2e25728ce558514cd"
+        }
+      ],
+      "boundaries": {
+        "WorldStarts": 3,
+        "Factories": 1,
+        "maxTicks": 200,
+        "componentCompilerCalls": 0,
+        "translationUnits": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0
+      },
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 1094,
+        "passed": false,
+        "scope": "Actual ordinary native limited/free/unlimited successful motion, native assistance qualification, original RPY TCH1 and strictsyntheticIDB reopen then same native playLock all projections; fresh eligible limited run isolation. Reuse1093 successfully compiled80TU component with actual native assistance; 1Factory3World200tick upper, no compilation/fullcore/browser/GPU/audio.",
+        "firstFailure": {
+          "message": "runtime failed: node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\r\n\r\n0 !== 52232\r\n\r\n    at file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-touch-native.mjs:73:8 {\r\n  generatedMessage: true,\r\n  code: 'ERR_ASSERTION',\r\n  actual: 0,\r\n  expected: 52232,\r\n  operator: 'strictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.20.0\r\n\n\n1 !== 0\n",
+          "stack": "AssertionError [ERR_ASSERTION]: runtime failed: node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\r\n\r\n0 !== 52232\r\n\r\n    at file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-touch-native.mjs:73:8 {\r\n  generatedMessage: true,\r\n  code: 'ERR_ASSERTION',\r\n  actual: 0,\r\n  expected: 52232,\r\n  operator: 'strictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.20.0\r\n\n\n1 !== 0\n\n    at execute (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1094-ordinary-touch-native-readback-playback\\runtime-runner.cjs:36:11)\n    at Object.<anonymous> (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1094-ordinary-touch-native-readback-playback\\runtime-runner.cjs:50:28)\n    at Module._compile (node:internal/modules/cjs/loader:1929:14)\n    at Object..js (node:internal/modules/cjs/loader:2060:10)\n    at Module.load (node:internal/modules/cjs/loader:1651:32)\n    at Module._load (node:internal/modules/cjs/loader:1443:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47",
+          "steps": [
+            {
+              "name": "runtime",
+              "status": 1,
+              "signal": null,
+              "error": null
+            }
+          ]
+        },
+        "WorldStartsUpperBound": 3,
+        "FactoriesUpperBound": 1,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T21:30:09.987Z"
+      }
+    },
+    {
+      "ordinal": 1095,
+      "home": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1095-ordinary-touch-native-complete",
+      "passed": true,
+      "scope": "Actual ordinary native limited/free/unlimited successful motion, native assistance qualification, original RPY TCH1 and strictsyntheticIDB reopen then same native playLock all projections; fresh eligible limited run isolation after original real one-second timing window. Reuse1093 successfully compiled80TU component with actual native assistance; 1Factory3World200tick upper, no compilation/fullcore/browser/GPU/audio.",
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1095-ordinary-touch-native-complete\\request.json",
+          "bytes": 42555,
+          "sha256": "478376eceff6d9033feb1ef7310166c39948970f4ece1a97cbb91f790ef4e901"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1095-ordinary-touch-native-complete\\actual-manifest.json",
+          "bytes": 45518,
+          "sha256": "85631d93c811b25bc33266d00d025c46e74adedc9d78b8be887645ff3da2c81c"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1095-ordinary-touch-native-complete\\sourcecheck.json",
+          "bytes": 71,
+          "sha256": "03c2a9ec0dc5fd364efdcddf547830ebdfa0e811952177dc0452d3fec34f1125"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1095-ordinary-touch-native-complete\\MAIN-APPROVAL.json",
+          "bytes": 742,
+          "sha256": "c67841d6cc8af58c7696190a940a91d3bc4fe74430736e10bb601a9412eca348"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1095-ordinary-touch-native-complete\\result.json",
+          "bytes": 753,
+          "sha256": "c4a0e2da64df53bbb95d4722625b6b883767fed1460c16f7a3b0433d09cf3379"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1095-ordinary-touch-native-complete\\ROOT-released.json",
+          "bytes": 193,
+          "sha256": "ea915af32a12b5977a7f0d91c46a66fec1952cad2b9803f2dee3104b279a2c6f"
+        }
+      ],
+      "boundaries": {
+        "WorldStarts": 3,
+        "Factories": 1,
+        "maxTicks": 200,
+        "componentCompilerCalls": 0,
+        "translationUnits": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0
+      },
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 1095,
+        "passed": true,
+        "scope": "Actual ordinary native limited/free/unlimited successful motion, native assistance qualification, original RPY TCH1 and strictsyntheticIDB reopen then same native playLock all projections; fresh eligible limited run isolation after original real one-second timing window. Reuse1093 successfully compiled80TU component with actual native assistance; 1Factory3World200tick upper, no compilation/fullcore/browser/GPU/audio.",
+        "steps": [
+          {
+            "name": "runtime",
+            "status": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "WorldStartsUpperBound": 3,
+        "FactoriesUpperBound": 1,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T21:30:46.659Z"
+      }
+    },
+    {
+      "ordinal": 1096,
+      "home": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1096-ordinary-touch-affected-Web",
+      "passed": true,
+      "scope": "Affected actual sound/ordinaryReplay store correction plusoriginalRPYcodec USERpair touch/PRAC,strictsyntheticIDB boundaries/continuity/aggregate history andPython differential. Native ordinary gameplay separate1095; this runner0WorldFactorycompilebrowser, no old1091 UI rerun.",
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1096-ordinary-touch-affected-Web\\request.json",
+          "bytes": 28081,
+          "sha256": "eb042379046dfe6343f177eed02e3c08b48bd7a5e1fe2ef961c89e15e61b03d7"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1096-ordinary-touch-affected-Web\\actual-manifest.json",
+          "bytes": 31660,
+          "sha256": "8ca6d67d2dd6045b731751a6452df750cb808846896a36db740e5e26a3ac0caf"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1096-ordinary-touch-affected-Web\\sourcecheck.json",
+          "bytes": 88,
+          "sha256": "17f54e3b2481c00f1d7b27b638b783cca11e8f79808dc51283cebc9138511f56"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1096-ordinary-touch-affected-Web\\MAIN-APPROVAL.json",
+          "bytes": 644,
+          "sha256": "4d92b3d7e1c05c936ff2d9b85e86c68ea8bfd81c0bc618a04bf8b8a3adcf4fbd"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1096-ordinary-touch-affected-Web\\result.json",
+          "bytes": 295,
+          "sha256": "94b420263baf8506944762f311c4a4dcbac8eb14f4e744744ec32553351cb3a4"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1096-ordinary-touch-affected-Web\\ROOT-released.json",
+          "bytes": 235,
+          "sha256": "407328d939db426780fe2eef487154f66a608e9e4f4ed853e304e159e838d546"
+        }
+      ],
+      "boundaries": {
+        "WorldStarts": 0,
+        "Factories": 0,
+        "maxTicks": 0,
+        "componentCompilerCalls": 0,
+        "translationUnits": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0
+      },
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 1096,
+        "passed": true,
+        "summary": {
+          "pass": 71,
+          "fail": 0,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 71
+        },
+        "runtime": 0,
+        "productWorlds": 0,
+        "nativeCompiles": 0,
+        "browser": 0,
+        "inputs": 107,
+        "at": "2026-11-17T21:33:04.515Z"
+      }
+    },
+    {
+      "ordinal": 1097,
+      "home": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1097-upstream-unlimited-policy-actual-RED",
+      "passed": false,
+      "scope": "Fixed upstream Touch.cpp1009-1024 marks any consumed nonzero unlimited motion, not only above normal speed. Keyboard priority and stationary command must remain eligible. Actual ordinary native limited/free/unlimited successful motion, native assistance qualification, original RPY TCH1 and strictsyntheticIDB reopen then same native playLock all projections; fresh eligible limited run isolation after original real one-second timing window. Reuse1093 successfully compiled80TU component with actual native assistance; 1Factory3World200tick upper, no compilation/fullcore/browser/GPU/audio.",
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1097-upstream-unlimited-policy-actual-RED\\request.json",
+          "bytes": 42757,
+          "sha256": "88ab43b67ed30d99f710e777d896f0c97314043f7c522bfe61b8780a3dc385f4"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1097-upstream-unlimited-policy-actual-RED\\actual-manifest.json",
+          "bytes": 45750,
+          "sha256": "6ab258531248e92dcc07cbf64cceebe26c0f226ef02f7138d3a595b261ff586e"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1097-upstream-unlimited-policy-actual-RED\\sourcecheck.json",
+          "bytes": 71,
+          "sha256": "fc590bcc74083ea8946a094662cc4aaf96369910e72860f6dcc33affe4c23691"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1097-upstream-unlimited-policy-actual-RED\\MAIN-APPROVAL.json",
+          "bytes": 727,
+          "sha256": "812ac68aa7f3a35edc7541f8c5d17703dbd6e2766ff9f1c6275ed0ddec8b452c"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1097-upstream-unlimited-policy-actual-RED\\result.json",
+          "bytes": 2881,
+          "sha256": "6e5cf35b023872326026d13e1357f81ec66f735d6dfdf658f5022cb411ff007a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1097-upstream-unlimited-policy-actual-RED\\ROOT-released.json",
+          "bytes": 193,
+          "sha256": "16101a4bf74c3a8f6332538c30148c599dc3395786ae476365673c8c86bdd8c7"
+        }
+      ],
+      "boundaries": {
+        "WorldStarts": 3,
+        "Factories": 1,
+        "maxTicks": 200,
+        "componentCompilerCalls": 0,
+        "translationUnits": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0
+      },
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 1097,
+        "passed": false,
+        "scope": "Fixed upstream Touch.cpp1009-1024 marks any consumed nonzero unlimited motion, not only above normal speed. Keyboard priority and stationary command must remain eligible. Actual ordinary native limited/free/unlimited successful motion, native assistance qualification, original RPY TCH1 and strictsyntheticIDB reopen then same native playLock all projections; fresh eligible limited run isolation after original real one-second timing window. Reuse1093 successfully compiled80TU component with actual native assistance; 1Factory3World200tick upper, no compilation/fullcore/browser/GPU/audio.",
+        "firstFailure": {
+          "message": "runtime failed: node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: fixed upstream marks ANY consumed unlimited displacement\r\n\r\nfalse !== true\r\n\r\n    at file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-touch-native.mjs:51:19 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: false,\r\n  expected: true,\r\n  operator: 'strictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.20.0\r\n\n\n1 !== 0\n",
+          "stack": "AssertionError [ERR_ASSERTION]: runtime failed: node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: fixed upstream marks ANY consumed unlimited displacement\r\n\r\nfalse !== true\r\n\r\n    at file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-touch-native.mjs:51:19 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: false,\r\n  expected: true,\r\n  operator: 'strictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.20.0\r\n\n\n1 !== 0\n\n    at execute (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1097-upstream-unlimited-policy-actual-RED\\runtime-runner.cjs:36:11)\n    at Object.<anonymous> (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1097-upstream-unlimited-policy-actual-RED\\runtime-runner.cjs:50:28)\n    at Module._compile (node:internal/modules/cjs/loader:1929:14)\n    at Object..js (node:internal/modules/cjs/loader:2060:10)\n    at Module.load (node:internal/modules/cjs/loader:1651:32)\n    at Module._load (node:internal/modules/cjs/loader:1443:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47",
+          "steps": [
+            {
+              "name": "runtime",
+              "status": 1,
+              "signal": null,
+              "error": null
+            }
+          ]
+        },
+        "WorldStartsUpperBound": 3,
+        "FactoriesUpperBound": 1,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T21:34:06.769Z"
+      }
+    },
+    {
+      "ordinal": 1098,
+      "home": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1098-ordinary-original-MSG-auxiliary-RED",
+      "passed": false,
+      "scope": "Actual ordinary original ECL/MSG and Player consumers: legal C/Z/Down input until first3actual MSG6c auxiliary frames, readonly actualNativeRunReplay capture, originalRPY+TCH1USER mustretain skipped inputs, then actualsame native playback15projection comparison. Reuse1093 World component1Factory2World40000ticksUpper/180s. No compilation/browser/GPU/physicalaudio/ACK/ending/natural terminal claim; native music pending not falsely acknowledged.",
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1098-ordinary-original-MSG-auxiliary-RED\\request.json",
+          "bytes": 42617,
+          "sha256": "36ba1a276208c22e2d9086cf433b4738b0c7a3d1d27825a6b0b45f8706a0248a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1098-ordinary-original-MSG-auxiliary-RED\\actual-manifest.json",
+          "bytes": 45609,
+          "sha256": "f60dabe63f327fdb3d667a22c57a9e3b5c69a1037a4c901c94acd995c080b112"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1098-ordinary-original-MSG-auxiliary-RED\\sourcecheck.json",
+          "bytes": 71,
+          "sha256": "4b29100ab92acc1b1f9dd51de32e15eecee63b421b812b6243f29dd92b344751"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1098-ordinary-original-MSG-auxiliary-RED\\MAIN-APPROVAL.json",
+          "bytes": 673,
+          "sha256": "b93def23edcfd18fe48518f1c259a67ace43a0f2ebfed5fcd822bf224ce1b42c"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1098-ordinary-original-MSG-auxiliary-RED\\result.json",
+          "bytes": 2942,
+          "sha256": "1ffd89c292e155d95f612204ca7193963aa6a3c706e57fd94e9bc38b8a153ab9"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1098-ordinary-original-MSG-auxiliary-RED\\ROOT-released.json",
+          "bytes": 192,
+          "sha256": "85a9894c4e6aad240b6692e8a678ad1d2bad65ee6a7dad985ad92db52a1883b6"
+        }
+      ],
+      "boundaries": {
+        "WorldStarts": 2,
+        "Factories": 1,
+        "maxTicks": 40000,
+        "componentCompilerCalls": 0,
+        "translationUnits": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0
+      },
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 1098,
+        "passed": false,
+        "scope": "Actual ordinary original ECL/MSG and Player consumers: legal C/Z/Down input until first3actual MSG6c auxiliary frames, readonly actualNativeRunReplay capture, originalRPY+TCH1USER mustretain skipped inputs, then actualsame native playback15projection comparison. Reuse1093 World component1Factory2World40000ticksUpper/180s. No compilation/browser/GPU/physicalaudio/ACK/ending/natural terminal claim; native music pending not falsely acknowledged.",
+        "firstFailure": {
+          "message": "runtime failed: node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\r\n\r\n2 !== 1\r\n\r\n    at ok (file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-auxiliary-native.mjs:19:50)\r\n    at file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-auxiliary-native.mjs:41:10 {\r\n  generatedMessage: true,\r\n  code: 'ERR_ASSERTION',\r\n  actual: 2,\r\n  expected: 1,\r\n  operator: 'strictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.20.0\r\n\n\n1 !== 0\n",
+          "stack": "AssertionError [ERR_ASSERTION]: runtime failed: node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\r\n\r\n2 !== 1\r\n\r\n    at ok (file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-auxiliary-native.mjs:19:50)\r\n    at file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-auxiliary-native.mjs:41:10 {\r\n  generatedMessage: true,\r\n  code: 'ERR_ASSERTION',\r\n  actual: 2,\r\n  expected: 1,\r\n  operator: 'strictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.20.0\r\n\n\n1 !== 0\n\n    at execute (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1098-ordinary-original-MSG-auxiliary-RED\\runtime-runner.cjs:36:11)\n    at Object.<anonymous> (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1098-ordinary-original-MSG-auxiliary-RED\\runtime-runner.cjs:50:28)\n    at Module._compile (node:internal/modules/cjs/loader:1929:14)\n    at Object..js (node:internal/modules/cjs/loader:2060:10)\n    at Module.load (node:internal/modules/cjs/loader:1651:32)\n    at Module._load (node:internal/modules/cjs/loader:1443:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47",
+          "steps": [
+            {
+              "name": "runtime",
+              "status": 1,
+              "signal": null,
+              "error": null
+            }
+          ]
+        },
+        "WorldStartsUpperBound": 2,
+        "FactoriesUpperBound": 1,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T21:35:35.281Z"
+      }
+    },
+    {
+      "ordinal": 1099,
+      "home": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1099-ordinary-original-MSG-legal-touch-RED",
+      "passed": false,
+      "scope": "Actual ordinary original ECL/MSG and Player consumers: legal C/Z/Down plusactual unlimited touch targets selected fromreadonly public enemy/bullet positions until first3actual MSG6c auxiliary frames, readonly actualNativeRunReplay capture, originalRPY+TCH1USER mustretain skipped inputs, then actualsame native playback15projection comparison. Reuse1093 World component1Factory2World40000ticksUpper/180s. No compilation/browser/GPU/physicalaudio/ACK/ending/natural terminal claim; native music pending not falsely acknowledged.",
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1099-ordinary-original-MSG-legal-touch-RED\\request.json",
+          "bytes": 42708,
+          "sha256": "3e54f749e4cf90e88cbc19e4f60dfe924ed8306e91955373bd5279b818ad81f8"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1099-ordinary-original-MSG-legal-touch-RED\\actual-manifest.json",
+          "bytes": 45710,
+          "sha256": "3bf5b39800fbbe5a757101fb7cbbd50da8f8acedd827208ade9c5deac4572606"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1099-ordinary-original-MSG-legal-touch-RED\\sourcecheck.json",
+          "bytes": 71,
+          "sha256": "558508347e9c4e2b84cde13e6176e315b7b70f12e055f3173cd2133b0c9c9672"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1099-ordinary-original-MSG-legal-touch-RED\\MAIN-APPROVAL.json",
+          "bytes": 710,
+          "sha256": "ae979913482198917c4d59c5c34db3282732d2b78f8c0f708d5f8382ea6585f0"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1099-ordinary-original-MSG-legal-touch-RED\\result.json",
+          "bytes": 3529,
+          "sha256": "e4b650e6254843d2375b517eb1eb99b1d2192afe8d1457d1b6c9a84c906ad8dd"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1099-ordinary-original-MSG-legal-touch-RED\\ROOT-released.json",
+          "bytes": 193,
+          "sha256": "35fab90188cb16f0490003e06956373852cecd3330c779b6c7144e51f1b017fc"
+        }
+      ],
+      "boundaries": {
+        "WorldStarts": 2,
+        "Factories": 1,
+        "maxTicks": 40000,
+        "componentCompilerCalls": 0,
+        "translationUnits": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0
+      },
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 1099,
+        "passed": false,
+        "scope": "Actual ordinary original ECL/MSG and Player consumers: legal C/Z/Down plusactual unlimited touch targets selected fromreadonly public enemy/bullet positions until first3actual MSG6c auxiliary frames, readonly actualNativeRunReplay capture, originalRPY+TCH1USER mustretain skipped inputs, then actualsame native playback15projection comparison. Reuse1093 World component1Factory2World40000ticksUpper/180s. No compilation/browser/GPU/physicalaudio/ACK/ending/natural terminal claim; native music pending not falsely acknowledged.",
+        "firstFailure": {
+          "message": "runtime failed: node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: original ordinary MSG/route-choice skipped input history must survive native RPY USER\r\n+ actual - expected\r\n\r\n+ undefined\r\n- [\r\n-   [\r\n-     11806,\r\n-     513,\r\n-     1,\r\n-     0\r\n-   ],\r\n-   [\r\n-     11807,\r\n-     512,\r\n-     0,\r\n-     1\r\n-   ],\r\n-   [\r\n-     11808,\r\n-     544,\r\n-     32,\r\n-     0\r\n-   ]\r\n- ]\r\n\r\n    at file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-auxiliary-native.mjs:52:8 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: undefined,\r\n  expected: [ [ 11806, 513, 1, 0 ], [ 11807, 512, 0, 1 ], [ 11808, 544, 32, 0 ] ],\r\n  operator: 'deepStrictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.20.0\r\n\n\n1 !== 0\n",
+          "stack": "AssertionError [ERR_ASSERTION]: runtime failed: node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: original ordinary MSG/route-choice skipped input history must survive native RPY USER\r\n+ actual - expected\r\n\r\n+ undefined\r\n- [\r\n-   [\r\n-     11806,\r\n-     513,\r\n-     1,\r\n-     0\r\n-   ],\r\n-   [\r\n-     11807,\r\n-     512,\r\n-     0,\r\n-     1\r\n-   ],\r\n-   [\r\n-     11808,\r\n-     544,\r\n-     32,\r\n-     0\r\n-   ]\r\n- ]\r\n\r\n    at file:///D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/ordinary-auxiliary-native.mjs:52:8 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: undefined,\r\n  expected: [ [ 11806, 513, 1, 0 ], [ 11807, 512, 0, 1 ], [ 11808, 544, 32, 0 ] ],\r\n  operator: 'deepStrictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v24.20.0\r\n\n\n1 !== 0\n\n    at execute (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1099-ordinary-original-MSG-legal-touch-RED\\runtime-runner.cjs:36:11)\n    at Object.<anonymous> (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1099-ordinary-original-MSG-legal-touch-RED\\runtime-runner.cjs:50:28)\n    at Module._compile (node:internal/modules/cjs/loader:1929:14)\n    at Object..js (node:internal/modules/cjs/loader:2060:10)\n    at Module.load (node:internal/modules/cjs/loader:1651:32)\n    at Module._load (node:internal/modules/cjs/loader:1443:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47",
+          "steps": [
+            {
+              "name": "runtime",
+              "status": 1,
+              "signal": null,
+              "error": null
+            }
+          ]
+        },
+        "WorldStartsUpperBound": 2,
+        "FactoriesUpperBound": 1,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T21:37:29.407Z"
+      }
+    },
+    {
+      "ordinal": 1100,
+      "home": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1100-ordinary-touch-policy-auxiliary-native",
+      "passed": true,
+      "scope": "Combined actual ordinary native movement/ANY-consumed unlimited assistance per fixed upstream/keyboard priority/score-unlock isolation plus whole originalECL MSG auxiliary history trace→originalRPYv2TCH1 USER/strictsyntheticIDB and actualplayLock15projection. Actual1097policyRED and1099MSGhistoryRED precede fixes. One80TU World component compiler360s, movement45s+auxiliary180s=585sUpper; 2Factories5World40200ticksUpper, no core117/browser/GPU/audio/ACK/ending/complete-naturalcarry claim.",
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1100-ordinary-touch-policy-auxiliary-native\\request.json",
+          "bytes": 122758,
+          "sha256": "d5f8624112a62ca3a87d3c2d07fd51bd27f7457aee2e05c7e8dbd9321fce7406"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1100-ordinary-touch-policy-auxiliary-native\\actual-manifest.json",
+          "bytes": 228555,
+          "sha256": "815e94ce68eb5d548c596d29124973dce55ba549daf99c27c4aa1a16709bee1e"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1100-ordinary-touch-policy-auxiliary-native\\sourcecheck.json",
+          "bytes": 71,
+          "sha256": "14fdece042001e25fc71ebb1d8f4a15001c7099c6b90a4cd893de79dcad2b22e"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1100-ordinary-touch-policy-auxiliary-native\\MAIN-APPROVAL.json",
+          "bytes": 885,
+          "sha256": "6a89b6a9167e6ceaf9d357d61c66625bd36cd650bbeda5be7bf84c6590dad1c9"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1100-ordinary-touch-policy-auxiliary-native\\result.json",
+          "bytes": 1029,
+          "sha256": "76d834560bad06fba738cf28a2df10af7942115251db8b90c6be886aef6bd8df"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1100-ordinary-touch-policy-auxiliary-native\\ROOT-released.json",
+          "bytes": 193,
+          "sha256": "cebc1738fd3a6eba7943d02e28165e3f347fd952823850f2a9e3860d89fb6586"
+        }
+      ],
+      "boundaries": {
+        "WorldStarts": 5,
+        "Factories": 2,
+        "maxTicks": 40200,
+        "componentCompilerCalls": 1,
+        "translationUnits": 80,
+        "fullCoreCompilations": 0,
+        "browser": 0
+      },
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 1100,
+        "passed": true,
+        "scope": "Combined actual ordinary native movement/ANY-consumed unlimited assistance per fixed upstream/keyboard priority/score-unlock isolation plus whole originalECL MSG auxiliary history trace→originalRPYv2TCH1 USER/strictsyntheticIDB and actualplayLock15projection. Actual1097policyRED and1099MSGhistoryRED precede fixes. One80TU World component compiler360s, movement45s+auxiliary180s=585sUpper; 2Factories5World40200ticksUpper, no core117/browser/GPU/audio/ACK/ending/complete-naturalcarry claim.",
+        "steps": [
+          {
+            "name": "compiler",
+            "status": 0,
+            "signal": null,
+            "error": null
+          },
+          {
+            "name": "movement",
+            "status": 0,
+            "signal": null,
+            "error": null
+          },
+          {
+            "name": "auxiliary",
+            "status": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "WorldStartsUpperBound": 5,
+        "FactoriesUpperBound": 2,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T21:44:22.177Z"
+      }
+    },
+    {
+      "ordinal": 1101,
+      "home": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1101-ordinary-touch-auxiliary-affected-Web",
+      "passed": true,
+      "scope": "Affected ordinary NativeReplay→v2 TCH1 auxiliary USER→strictIDB→nativePAUX stagepacket andduplicate PRAC/TCH1 ownerchecks; real1099 raw history fixture11809World/11806main/3aux, original6Bpayload unchanged and malformed inputs rejected. Plus15affected sound/codec/Python/storage regression; native actual consumers separately1100, this0WorldFactorycompilebrowser.",
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1101-ordinary-touch-auxiliary-affected-Web\\request.json",
+          "bytes": 28844,
+          "sha256": "fa98f9aa37858bdfc2ba064749a676748bc15ff4b69e2d32fdb96fad78380bc0"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1101-ordinary-touch-auxiliary-affected-Web\\actual-manifest.json",
+          "bytes": 32585,
+          "sha256": "faa1b3cbfbe1e5cf347b72687d67d676572b2edbbf901238c2fd99f34e545f24"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1101-ordinary-touch-auxiliary-affected-Web\\sourcecheck.json",
+          "bytes": 88,
+          "sha256": "42cb7d993a3072cd5708fbb335272a8a5888076628ffcd5207cce7e96d89b938"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1101-ordinary-touch-auxiliary-affected-Web\\MAIN-APPROVAL.json",
+          "bytes": 709,
+          "sha256": "80e0cd290ecf945eeda5d965d17786e31442217832ececbff75c55c30bc325f4"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1101-ordinary-touch-auxiliary-affected-Web\\result.json",
+          "bytes": 295,
+          "sha256": "44492032bb73349568741b8f070f47b4d40c7f6d7f3bceff392c202abc54d9ae"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1101-ordinary-touch-auxiliary-affected-Web\\ROOT-released.json",
+          "bytes": 236,
+          "sha256": "f7d4bee60bb433142d49456ecfd7ddbac6444c6dddb4dc7ca2056ba1e5f437c6"
+        }
+      ],
+      "boundaries": {
+        "WorldStarts": 0,
+        "Factories": 0,
+        "maxTicks": 0,
+        "componentCompilerCalls": 0,
+        "translationUnits": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0
+      },
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 1101,
+        "passed": true,
+        "summary": {
+          "pass": 75,
+          "fail": 0,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 75
+        },
+        "runtime": 0,
+        "productWorlds": 0,
+        "nativeCompiles": 0,
+        "browser": 0,
+        "inputs": 109,
+        "at": "2026-11-17T21:45:10.167Z"
+      }
+    }
+  ],
+  "sources": [
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\TouchMotion.hpp",
+      "bytes": 1896,
+      "sha256": "da842237cbaa5f4e176aa265f7a83b057a845c069c564c1b2c5dc31cd235b0e6"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\NativeNormalRecord.hpp",
+      "bytes": 9078,
+      "sha256": "82f634386f23d0229e0abf9eb342704254fd3bb0fccd03d4d70703d360755e46"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\NativePostrunMenu.hpp",
+      "bytes": 31325,
+      "sha256": "60316edb17d0e754b7715f68972cbefdbeaed0e540efcd5e45306a152edb2e62"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\NativeRunReplay.hpp",
+      "bytes": 11177,
+      "sha256": "dee851492137ae95327ddf0b31d209b76f4a65bcf916cb67f24276c6072aac16"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\runtime\\WorldExports.cpp",
+      "bytes": 406127,
+      "sha256": "26098038a1ff7b8c4004e9ee321eb7016fcc7585c14fc6cbdc8db0b878452b86"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\sound.mjs",
+      "bytes": 92239,
+      "sha256": "b93e536fd68d7c79d75ee4548a2e0f02b1260620425944de164f6057d5e7452a"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\touch-replay.mjs",
+      "bytes": 5833,
+      "sha256": "ba315a514d5657d51168727946da8eff7d8d17c123bc366e6b60ef1652d6d0d3"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\thprac128-replay.mjs",
+      "bytes": 16156,
+      "sha256": "cb9080a8c8372038fb93b54642195c7fa6160053a776e99cb14f5d7a00c48a98"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\ordinary-touch-native.mjs",
+      "bytes": 10271,
+      "sha256": "12a782b0426d547ff86234d6b5fe74757982cf4cf808764e11fb62eaf07a1b1e"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\ordinary-auxiliary-native.mjs",
+      "bytes": 8516,
+      "sha256": "5455c6682bca5cbb3ad5fe855e03a8c8d6c4ca5d1b2dd55937c641806296a255"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\ordinary-auxiliary-replay.test.mjs",
+      "bytes": 4769,
+      "sha256": "ab764560546131e07983110a02bb734c6902ea24f1aa65da7b0f810f6f5805af"
+    }
+  ],
+  "sourceHistory": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\ordinary-touch-source-history-20261118",
+  "old772ExternalPythonUnresolved": 1,
+  "wholeOldHistoryScanned": false,
+  "independentWorker": false,
+  "authorSelfReview": true,
+  "newRuntimePackage": false,
+  "newDeployment": false,
+  "personalPagesDataSettingsServicesUntouched": true,
+  "historicalScope": {
+    "onlyNew1092to1101RRefs": {
+      "unique": 331,
+      "live": 320,
+      "exactArchives": 11,
+      "newUnresolved": 0
+    },
+    "report": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\ordinary-touch-source-history-20261118\\new1092-1101-source-refs.json",
+      "bytes": 76053,
+      "sha256": "64f036fabd2263490e91014c44052583bea67a46aeeae5da3ca01d7b9c7558db"
+    },
+    "old772ExternalPythonUnresolved": 1,
+    "wholeOldHistoryScanned": false
+  }
+}
