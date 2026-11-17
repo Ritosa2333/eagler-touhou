@@ -702,12 +702,8 @@ bool StageWorld::prepareThpracChapter(unsigned stageId,unsigned chapter,int diff
     if(difficulty<0||difficulty>(stageId==16?4:3)||(stageId==16&&difficulty!=4)) {
         error="TH128 thprac stage/rank mismatch";return false;
     }
-    const auto found=sources_.find(plan.sourceName);
-    if(found==sources_.end()) {error="TH128 thprac original stage resource is missing";return false;}
-    if(!practice::originalChapterSource(stageId,found->second,error))return false;
     ecl::Program candidate;
-    if(!practice::prepareChapter(found->second,plan.sourceName,found->second.resource().bytes,
-        stageId,chapter,candidate,error))return false;
+    if(!practice::prepareOwnedChapter(sources_,stageId,chapter,candidate,error))return false;
     thpracPreparedRoot_=std::move(candidate);
     pendingThpracChapter_=ThpracChapter{stageId,chapter,difficulty,true};
     return true;

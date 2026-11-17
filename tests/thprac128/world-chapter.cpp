@@ -65,8 +65,8 @@ template<class W>void feature(const std::string& home){
   W extra;loadAll(extra,home);check(extra.prepareThpracChapter(16,2,4,error),error);check(start(extra,"st_ex.ecl",4),extra.error());playerContext(extra,home);
   for(unsigned tick=0;tick<160;++tick){check(extra.tick(),extra.error());check(extra.spawnCount()==0,"EX chapter2 retains MainSub01 wait70 after branch90");}
   check(extra.tick(),extra.error());check(extra.frame()==161&&extra.spawnCount()==2&&extra.entities().at(1).entry=="GirlD1"&&extra.entities().at(2).entry=="GirlD1","EX original pair births through actual World/Vm");
-  W incomplete;check(incomplete.load("st_a1_1.ecl",original.data(),original.size(),error),error);check(incomplete.prepareThpracChapter(1,2,1,error),error);
-  check(!start(incomplete,"st_a1_1.ecl",1)&&incomplete.entities().empty()&&!incomplete.thpracChapter(),"missing include start fails before World commit");
+  W incomplete;check(incomplete.load("st_a1_1.ecl",original.data(),original.size(),error),error);check(!incomplete.prepareThpracChapter(1,2,1,error),"missing include preparation fails before pending owner commit");
+  check(incomplete.entities().empty()&&!incomplete.thpracChapter()&&incomplete.frame()==0,"missing include validation keeps the World fresh");
   incomplete.reset();loadAll(incomplete,home);check(start(incomplete,"st_a1_1.ecl",1)&&!incomplete.thpracChapter(),"reset after failed prepared start permits ordinary fresh owner");
   W retired;loadAll(retired,home);check(retired.prepareThpracChapter(1,2,1,error)&&start(retired,"st_a1_1.ecl",1),error);
   check(retired.retireEntitiesForSession(error),error);check(!retired.thpracChapter()&&!retired.prepareThpracChapter(1,2,1,error),"retirement drops practice and rejects old owner reconfiguration");

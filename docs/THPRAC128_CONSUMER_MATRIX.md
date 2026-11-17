@@ -31,3 +31,7 @@
 874–880实际World消费者已接通，详见THPRAC128_WORLD_CHAPTER.md。879以真实C++ StageWorld/Vm、原ECL前导代码与原profile，验证A1 chapter2的GirlB1在frame91、reset后普通GirlA1b在101、A1第二面双跳GirlD2在91、EX chapter2两名GirlD1在161；没有入口跳板或预算伪停止。1108断言、12次start调用（含4次拒绝），并通过失效/重复/异源/同大小错误SHA/reset/退休/重入控制。880完整StageWorld/WorldExports生产TU syntax通过。
 
 这次只有C++章节拥有者和固定原root SHA校验。Web/导出入口尚未绑定该练习身份与正常成绩资格，完整ECLI提供者来源绑定、参数组与section/phase/菜单/Replay/工具仍未完成；不能据此再宣称完整thprac或第三阶段完成。没有新全核心、browser/设备或公开部署。
+
+881–883补上实际可达ECLI的资源身份绑定：prepare前校验root/default/boss闭包，仅支持已验证原33文件与现有中文包的22个变体。881真实caller出现10个失败（异变依赖被接受、缺依赖仍可prepare、六个中文第三面root被拒）；882同夹具48断言全部通过，883受影响1108断言通过。中文六个第三面固定偏移4/8由原/中文子程序名称和指令序号逐项比对143操作的286端点，绑定完整资源SHA后使用；不是通用翻译兼容或任意字节补丁。
+
+现有中文版16个stage的chapter2都能完成preparation；实际中文A1第三面chapter2通过World原prelude到frame91首出生。完整126chapter/phase游戏执行尚未全部验收。下一转入原五字段的fresh参数组与实际消费者；本次没有新增参数效果、菜单、Web入口、WASM API或全核心。第三阶段完成结论仍撤回。详见THPRAC128_INCLUDE_OWNER.md。
