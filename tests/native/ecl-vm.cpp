@@ -329,12 +329,39 @@ void edgeTests() {
     Limits aggregate;
     aggregate.maxInstructionsPerTick = 4;
     const auto spawnWorker = instruction(15, stringWords("worker"), 0, 0, 255, 1);
-    Vm aggregateBudget(load({{"main", join({spawnWorker, instruction(83, {1}), instruction(0), instruction(10)})},
-                             {"worker", join({instruction(0), instruction(0), instruction(10)})}}), aggregate);
-    require(aggregateBudget.start("main") && aggregateBudget.runTick().status == VmStatus::Running &&
-            aggregateBudget.runTick().status == VmStatus::Faulted &&
-            aggregateBudget.error().code == ErrorCode::InstructionBudget,
+    const auto aggregateProgram = load({
+        {"main", join({spawnWorker, instruction(83, {1}), instruction(0), instruction(0),
+                       instruction(10, {}, 1)})},
+        {"worker", join({instruction(0), instruction(0), instruction(10)})}});
+    Vm aggregateBudget(aggregateProgram, aggregate);
+    require(aggregateBudget.start("main"), "aggregate budget start");
+    const auto spawned = aggregateBudget.runTick();
+    require(spawned.status == VmStatus::Running && spawned.instructions == 2 &&
+            aggregateBudget.threads().size() == 2 && aggregateBudget.threads()[1].time == 0,
+            "aggregate fixture spawns worker without running it in its first tick");
+    const auto exhausted = aggregateBudget.runTick();
+    require(exhausted.status == VmStatus::Faulted && exhausted.instructions == 4 &&
+            aggregateBudget.error().code == ErrorCode::InstructionBudget &&
+            aggregateBudget.error().threadId == 1 && aggregateBudget.error().opcode == 10 &&
+            aggregateBudget.error().offset == 32,
             "instruction allowance is shared across main and asynchronous contexts");
+    Limits enough = aggregate;
+    enough.maxInstructionsPerTick = 5;
+    Vm aggregateControl(aggregateProgram, enough);
+    require(aggregateControl.start("main") && aggregateControl.runTick().status == VmStatus::Running,
+            "aggregate matching control starts");
+    const auto completedWorker = aggregateControl.runTick();
+    require(completedWorker.status == VmStatus::Running && completedWorker.instructions == 5 &&
+            aggregateControl.threads()[0].active && !aggregateControl.threads()[1].active &&
+            aggregateControl.runTick().status == VmStatus::Finished,
+            "one larger allowance executes both streams before the future primary return");
+    Vm primaryRetires(load({
+        {"main", join({spawnWorker, instruction(83, {1}), instruction(0), instruction(10)})},
+        {"worker", join({instruction(42, {123}), instruction(10)})}}), aggregate);
+    require(primaryRetires.start("main") && primaryRetires.runTick().status == VmStatus::Running &&
+            primaryRetires.runTick().status == VmStatus::Finished &&
+            !primaryRetires.threads()[1].active && primaryRetires.threads()[1].stack.empty(),
+            "primary return retires the pending worker before it can consume instructions");
     Vm registryMutation(single(instruction(65000)));
     require(registryMutation.registerHostOpcode(65000, [&](HostCall&) {
         registryMutation.registerHostOpcode(65001, [](HostCall&) { return true; }, error);

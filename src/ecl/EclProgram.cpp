@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <utility>
 #include <functional>
+#include <limits>
 
 namespace th128::ecl {
 namespace {
@@ -77,6 +78,7 @@ struct Program::Data {
     std::unordered_map<std::string, std::size_t> names;
     std::vector<std::shared_ptr<const Data>> dependencies;
     std::size_t totalBytes = 0;
+    bool practiceBranches = false;
 };
 
 const Instruction* Subroutine::instructionAt(std::uint32_t offset) const {
@@ -196,6 +198,61 @@ bool Program::load(const void* input, std::size_t size, std::string& error) {
     return true;
 }
 
+bool Program::withPracticeBranches(const std::vector<std::uint8_t>& expectedSource,
+        const std::vector<PracticeBranch>& branches, Program& output, std::string& error) const {
+    if (!data_ || !data_->dependencies.empty() || data_->practiceBranches)
+        return fail(error, "practice branches require an original unlinked Program");
+    if (expectedSource.empty() || expectedSource != data_->resource.bytes)
+        return fail(error, "practice branch source bytes differ from the owned Program");
+    if (branches.size() > 128)
+        return fail(error, "practice branch budget exceeded");
+    struct Site { std::size_t subroutine, instruction; };
+    std::vector<Site> sites;
+    std::unordered_set<std::uint32_t> seen;
+    for (const auto& branch : branches) {
+        if (branch.eclTime < 0 || branch.targetTime < 0 || !seen.insert(branch.sourceOffset).second)
+            return fail(error, "negative practice clock or duplicate branch site", branch.sourceOffset);
+        bool found = false;
+        for (std::size_t index = 0; index < data_->subroutines.size(); ++index) {
+            const auto& sub = data_->subroutines[index];
+            const std::uint64_t begin = std::uint64_t(sub.fileOffset) + 16;
+            if (branch.sourceOffset < begin || branch.sourceOffset >= begin + sub.codeSize)
+                continue;
+            const auto* instruction = sub.instructionAt(std::uint32_t(branch.sourceOffset - begin));
+            if (!instruction || branch.targetOffset < begin || branch.targetOffset >= begin + sub.codeSize
+                || !sub.instructionAt(std::uint32_t(branch.targetOffset - begin)))
+                return fail(error, "practice branch must use instruction boundaries in the same subroutine", branch.sourceOffset);
+            const auto delta = std::int64_t(branch.targetOffset) - branch.sourceOffset;
+            if (delta < std::numeric_limits<std::int32_t>::min() || delta > std::numeric_limits<std::int32_t>::max())
+                return fail(error, "practice relative branch exceeds signed range", branch.sourceOffset);
+            sites.push_back({index, std::size_t(instruction - sub.instructions.data())});
+            found = true;
+            break;
+        }
+        if (!found)
+            return fail(error, "practice branch source is not an owned instruction", branch.sourceOffset);
+    }
+    auto candidate = std::make_shared<Data>(*data_);
+    for (std::size_t index = 0; index < branches.size(); ++index) {
+        const auto& branch = branches[index];
+        auto& instruction = candidate->subroutines[sites[index].subroutine].instructions[sites[index].instruction];
+        // Virtual executed shape: original serialized offsets and bytes stay intact.
+        instruction.time = branch.eclTime;
+        instruction.opcode = 12;
+        instruction.size = 24;
+        instruction.parameterMask = 0;
+        instruction.rankMask = 255;
+        instruction.parameterCount = 2;
+        instruction.stackOffset = 0;
+        instruction.rawWords = {std::uint32_t(std::int64_t(branch.targetOffset) - branch.sourceOffset),
+            std::uint32_t(branch.targetTime)};
+    }
+    candidate->practiceBranches = true;
+    output.data_ = std::move(candidate);
+    error.clear();
+    return true;
+}
+
 bool Program::loaded() const { return bool(data_); }
 
 const Resource& Program::resource() const {
@@ -244,6 +301,7 @@ bool Program::linkIncludes(const std::vector<std::pair<std::string,Program>>& pr
             return fail(error,"linked ECL subroutine budget");
         active.insert(source.get());
         candidate->totalBytes+=source->resource.bytes.size();
+        candidate->practiceBranches=candidate->practiceBranches||source->practiceBranches;
         for(const auto& sub:source->subroutines) {
             if(sub.instructions.size()>maxInstructions-instructions)return fail(error,"linked ECL instruction budget");
             instructions+=sub.instructions.size();

@@ -44,6 +44,15 @@ public:
     static constexpr std::size_t maxInstructions = 200000;
     static constexpr std::size_t maxIncludes = 4096;
 
+    // Absolute instruction offsets in one unlinked original SCPT resource.
+    struct PracticeBranch {
+        std::uint32_t sourceOffset = 0;
+        std::uint32_t targetOffset = 0;
+        std::int32_t eclTime = 0;
+        std::int32_t targetTime = 0;
+    };
+    bool withPracticeBranches(const std::vector<std::uint8_t>& expectedSource,
+        const std::vector<PracticeBranch>& branches, Program& output, std::string& error) const;
     bool load(const void* bytes, std::size_t size, std::string& error);
     bool loaded() const;
     const Resource& resource() const;
