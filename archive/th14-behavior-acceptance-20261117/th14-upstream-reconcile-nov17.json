@@ -1272,9 +1272,99 @@
     }
   },
   "productionGenerationUnchanged": "12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8",
-  "actualMergedBrowserAccepted": false,
+  "actualMergedBrowserAccepted": true,
   "actualMultiplayerMatchAccepted": false,
   "audibleOutput": false,
   "originalAssetsCopied": false,
-  "completeGame": false
+  "completeGame": false,
+  "mergedBrowserScope": {
+    "accepted": true,
+    "scope": "Reimu A Normal ordinary start, pause, resume with movement, return title, native Quit back to launcher",
+    "generation": "addc82b33fba5fccf1b15e0289128f40a3ad8c9f31f231ab31162e38c5481013",
+    "wasmSha256": "13dedcb8c4f2fcbe7051a22865f13c9d68b560ed282499ca6177b3bd7b64c5b3",
+    "initialScore": 50,
+    "initialLives": 2,
+    "initialBombs": 3,
+    "initialPower": 100,
+    "afterResumeScore": 90,
+    "nativeMovementObserved": true,
+    "musicVolume": 0,
+    "effectsVolume": 0,
+    "voiceVolume": 0,
+    "errorLogEntries": 0,
+    "firstConfirmationBeforeCanvasFocusNotCounted": true,
+    "actualHiddenAccepted": false,
+    "actualMidInstallCancellationAccepted": false,
+    "multiplayerMatchAccepted": false,
+    "scoreByteProtectionNotMeasuredThisRun": true,
+    "files": {
+      "ordinary-paused-ax.txt": {
+        "bytes": 1137,
+        "sha256": "d65cd54691242f18707278d578ac53d8a15344e51df5c710b0e9fc6db853b8a5"
+      },
+      "ordinary-paused.png": {
+        "bytes": 246430,
+        "sha256": "e769fb97fe6ca54698f5ab5ee833405bce50daedb79f90b575a16e308ffaa9aa"
+      },
+      "quit-ax.txt": {
+        "bytes": 3931,
+        "sha256": "015f4a6eca5c33e4244a6c8dae18b6f08f74edffb414eda93e0e365ed83dfa93"
+      },
+      "quit.png": {
+        "bytes": 52530,
+        "sha256": "50f4edff41275f8b75a726078c50bc21cdeb3300d180a463471ce90eb296c0e6"
+      },
+      "resumed-moved-paused.png": {
+        "bytes": 244511,
+        "sha256": "f583e44ed616913ca688d78d6e100501081e14d8e38b4621a4a4e98fa88348e3"
+      },
+      "title-ax.txt": {
+        "bytes": 1376,
+        "sha256": "b6700a8879b43a4afb0fd922fb97e46f43b2ddd636c4bfd080a58beae76f4c84"
+      },
+      "title.png": {
+        "bytes": 278502,
+        "sha256": "ec1ca7bf3ae58e4d33f212f355adb80b85824a7dbbd1c030abad298734e7ba00"
+      }
+    }
+  },
+  "preview": {
+    "ready": {
+      "prepared": true,
+      "source": "b847130d1de9e75cfefa9150eccf1d0a2828a429",
+      "groups": [
+        {
+          "root": "runtime/th14/",
+          "generation": "addc82b33fba5fccf1b15e0289128f40a3ad8c9f31f231ab31162e38c5481013",
+          "files": 34
+        },
+        {
+          "root": "runtime/th14/multiplayer/",
+          "generation": "4d8145ed92474218694ebbad176251564f212cdd38ea7cd748c6735508c8f3e8",
+          "files": 34
+        }
+      ],
+      "productionChanged": false,
+      "actualBrowserAccepted": false,
+      "completeGame": false
+    },
+    "http": {
+      "passed": true,
+      "runtimeFiles": 68,
+      "frontendFiles": 3,
+      "groups": [
+        {
+          "root": "runtime/th14/",
+          "generation": "addc82b33fba5fccf1b15e0289128f40a3ad8c9f31f231ab31162e38c5481013"
+        },
+        {
+          "root": "runtime/th14/multiplayer/",
+          "generation": "4d8145ed92474218694ebbad176251564f212cdd38ea7cd748c6735508c8f3e8"
+        }
+      ],
+      "productionChanged": false,
+      "completeGame": false
+    }
+  },
+  "productionDeployed": false
 }
