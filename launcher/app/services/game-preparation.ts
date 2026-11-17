@@ -82,6 +82,7 @@ function requestFor(input: FilePreparationInput, withUpdate: boolean): Acquisiti
   if (input.settings.context.productId !== input.productId || input.settings.gameId !== gameIdForProduct(input.productId)) throw new Error('Settings product changed before preparation');
   const game = input as GamePreparationInput;
   return {productId: input.productId, gameVersion: input.settings.gameVersion, music: input.settings.music, language: input.settings.language,
+    replay: game.replayWorkspace === true || game.replayPath !== undefined,
     updateBeforePrepare: game.multiplayer?.kind === 'room-preload',
     signal: input.signal, onProgress: input.onProgress, onAcquisitionActivity: input.onAcquisitionActivity,
     ...(withUpdate ? {updateSignal: game.updateSignal, onUpdateActivity: game.onUpdateActivity, decideUpdate: game.decideUpdate, onWarning: game.onWarning} : {})};

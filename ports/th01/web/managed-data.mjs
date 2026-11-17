@@ -1,6 +1,6 @@
 export const DATA_SCHEMA = 'eagler-touhou/pc98-content/1';
 export const DATA_MAGIC = 'EPC98PK1';
-export const DATA_LAYOUT_SPEC = Object.freeze({schema: DATA_SCHEMA, magic: DATA_MAGIC, header: 'magic8+manifestBytesLE32+utf8JSON', files: 'relative-path+offset+bytes+sha256'});
+export const DATA_LAYOUT_SPEC = Object.freeze({schema: DATA_SCHEMA, magic: DATA_MAGIC, header: 'magic8+manifestBytesLE32+utf8JSON', files: 'relative-path+offset+bytes+sha256', content: 'native-th01-assets', engine: 'th01-native/1'});
 const text = new TextDecoder('utf-8', {fatal: true});
 const digest = async blob => [...new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()))].map(n => n.toString(16).padStart(2, '0')).join('');
 export function contentPath(path) {

@@ -20,7 +20,7 @@ const TH05_PREPARED_CONTENT = Object.freeze({directory: "assets-eagler", markerF
 export const PRODUCT_CONTENT = Object.freeze({
   th01: Object.freeze({
     original:Object.freeze({files:Object.freeze(['th01.data']),preparedAlternative:Object.freeze({directory:'content',markerFiles:Object.freeze(['th01.data'])})}),
-    dataLayout:'sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579',
+    dataLayout:'sha256-3b51bdd9400868145f321cd9e62eedf2846d5a164e023f61c987a4cfa4ea169e',
     music:Object.freeze({ogg:Object.freeze({mount:'/bgm/akyu',files:Object.freeze(Array.from({length:14},(_,i)=>String(i+1).padStart(2,'0')+'.ogg'))})}),
     hostPreparation:Object.freeze({ogg:Object.freeze({kind:'prepared-content'}),artwork:Object.freeze({kind:'prepared-artwork'}),preparedContent:Object.freeze({directory:'content',markerFiles:Object.freeze(['th01.data']),script:'scripts/prepare-th01-content.mjs'}),dataAssets:Object.freeze({kind:'prepared-content'})}),
   }),
