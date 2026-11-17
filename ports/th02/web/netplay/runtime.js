@@ -27,7 +27,7 @@ const states=new Map(),effects=new Map();
 let soundPolicy,bgm,musicTask,musicError='',musicVolume=.7,musicSequence=-1,musicName='',playedName='',pendingMusic=[];
 let pendingNative=[0,0,0],consumedNative=[0,0,0];
 let sfx,sfxSequence=0;
-let guestMemoryBase=-1,residentAddress=-1,gameplaySeen=false,challenge=null;
+let guestMemoryBase=-1,residentAddress=-1,gameplaySeen=false,challenge=null,restartPhase=0;
 let endingSignatures=[],endingMatches=[];
 const residentSignature=new TextEncoder().encode('MIKOConfig\0');
 function refreshMailbox(scan=false){
@@ -276,7 +276,9 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
   // shared quit byte. Do not treat MAIN -> MAINE ending ownership as an exit.
   const quitAt=previousMailbox-patch.entries.mailbox+(patch.dataSegment-patch.codeSegment)*16+0x2b97;
   const exit=pausedBefore&&!nativePaused(m.HEAPU8,mailbox,patch)&&m.HEAPU8[quitAt]===1&&m.HEAPU8[previousMailbox-patch.entries.mailbox+patch.pauseRestartResult]!==2;
-  if(challenge&&pausedBefore&&!nativePaused(m.HEAPU8,mailbox,patch)&&m.HEAPU8[previousMailbox-patch.entries.mailbox+patch.pauseRestartResult]===2)challenge.reset();
+  if(pausedBefore&&!nativePaused(m.HEAPU8,mailbox,patch)&&m.HEAPU8[previousMailbox-patch.entries.mailbox+patch.pauseRestartResult]===2){restartPhase=1;challenge?.reset();}
+  if(restartPhase===1&&mailbox<0)restartPhase=2;
+  else if(restartPhase===2&&state())restartPhase=0;
   let music=mailbox>=0?readMusic():null;
   if(mailbox>=0)endingMatches=[];
   else if(gameplaySeen&&guestMemoryBase>=0&&ticks%30===0){const found=scanEndingMusic(m.HEAPU8,guestMemoryBase,endingSignatures,endingMatches);endingMatches=found.found;if(found.name)music={name:found.name,ax:0};}
@@ -287,7 +289,7 @@ function capture(frame,restored=false){
  if(states.has(frame))throw Error('TH02 重复检查点');
  const previous=states.get(frame-1),nativeFrame=previous?.nativeFrame===frame-1?frame-1:frame;
  if(nativeFrame===frame)emulator.module.netCapture(frame,restored);
- states.set(frame,{nativeFrame,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs:previousInputs.slice(),pendingNative:pendingNative.slice(),consumedNative:consumedNative.slice(),endingMatches:endingMatches.slice(),challenge:challenge?.snapshot(),musicSequence,musicName,sfxSequence});
+ states.set(frame,{nativeFrame,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,restartPhase,previousInputs:previousInputs.slice(),pendingNative:pendingNative.slice(),consumedNative:consumedNative.slice(),endingMatches:endingMatches.slice(),challenge:challenge?.snapshot(),musicSequence,musicName,sfxSequence});
 }
 function restore(frame){
  pending=false;const saved=states.get(frame);
@@ -295,7 +297,7 @@ function restore(frame){
  const from=saved.nativeFrame,checkpoint=states.get(from);
  if(!checkpoint||(from!==frame&&!checkpoint.execution))throw Error('TH02 检查点历史缺失');
  emulator.module.netRestore(from);
- ({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen}=checkpoint);previousInputs=checkpoint.previousInputs.slice();
+ ({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,restartPhase}=checkpoint);previousInputs=checkpoint.previousInputs.slice();
  pendingNative=checkpoint.pendingNative.slice();consumedNative=checkpoint.consumedNative.slice();endingMatches=checkpoint.endingMatches.slice();if(challenge)challenge.restore(checkpoint.challenge);({musicSequence,musicName,sfxSequence}=checkpoint);
  for(const at of states.keys())if(at>=from)states.delete(at);
  for(const at of effects.keys())if(at>=from)effects.delete(at);
@@ -346,7 +348,7 @@ function portableBoundary(){
 async function replaySave(identity){
  portableBoundary();const {createPortableCheckpoint,encodeCheckpoint}=await import('../replay/portable.js');
  portableReplay??=createPortableCheckpoint(emulator.module,emulator.ci);
- const host={identity,frame:ticks,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,endingMatches,challenge:challenge?.snapshot(),musicSequence,musicName,sfxSequence,playedName,pendingMusic,musicError,emulator:{tick:emulator.tick,keys:[...emulator.keys],state:emulator.state},audio:workerHost.captureAudioState?.(),proof:sync.replayProof(),check:checksum()};
+ const host={identity,frame:ticks,ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,restartPhase,previousInputs,pendingNative,consumedNative,endingMatches,challenge:challenge?.snapshot(),musicSequence,musicName,sfxSequence,playedName,pendingMusic,musicError,emulator:{tick:emulator.tick,keys:[...emulator.keys],state:emulator.state},audio:workerHost.captureAudioState?.(),proof:sync.replayProof(),check:checksum()};
  const state=portableReplay.capture(host),bytes=await encodeCheckpoint(state,ticks?portableBase:null);
  if(!ticks)portableBase=state;
  return {frame:ticks,bytes,proof:host.proof,check:host.check};
@@ -356,7 +358,7 @@ async function replayLoad(bytes,baseBytes,identity){
  portableReplay??=createPortableCheckpoint(emulator.module,emulator.ci);
  const base=baseBytes?await decodeCheckpoint(baseBytes):null,state=await decodeCheckpoint(bytes,base),h=state.host;
  if(h?.identity!==identity||!Number.isSafeInteger(h.frame)||h.frame<0||h.frame>216000||h.frame!==h.ticks)throw Error('完整检查点身份或帧号无效');
- portableReplay.restore(state);({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,musicSequence,musicName,sfxSequence,playedName,pendingMusic,musicError}=h);endingMatches=h.endingMatches??[];
+ portableReplay.restore(state);({ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,restartPhase,previousInputs,pendingNative,consumedNative,musicSequence,musicName,sfxSequence,playedName,pendingMusic,musicError}=h);restartPhase??=0;endingMatches=h.endingMatches??[];
  if(challenge)challenge.restore(h.challenge);emulator.tick=h.emulator.tick;emulator.keys=new Set(h.emulator.keys);emulator.state=h.emulator.state;emulator.outputs.clear();
   confirmedPrefix=ticks;states.clear();effects.clear();pending=true;
  if(sync.replayProof()!==h.proof||JSON.stringify(checksum())!==JSON.stringify(h.check))throw Error('完整检查点恢复校验不一致');
@@ -377,7 +379,7 @@ const sync={
  replayProof:()=>JSON.stringify([ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,musicSequence,musicName,sfxSequence,state(),...(challenge?[challenge.snapshot()]:[])]),
  replayScene(){const s=state();return s?{kind:'stage',stage:s.stage}:null;},
  replaySave,replayLoad,
- snapshot:state,checksum,step,present,capture,restore,confirm,
+ restarting:()=>restartPhase!==0, snapshot:state,checksum,step,present,capture,restore,confirm,
  readyForRollback:()=>gameplaySeen&&!!emulator?.module.netCapture,
  canPredict:()=>!predictionBlockReason(),predictionBlockReason,
  rollbackInfo:()=>({...emulator?.module.netSnapshotInfo(),checkpointFrames:2,checkpointReplays}),

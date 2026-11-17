@@ -180,6 +180,28 @@ try{
     assert(log.includes('mode='+route),'must exercise the requested '+route+' route: '+log);
     assert.equal((await page.evaluate(()=>events.filter(e=>e.event==='first-frame'))).length,count);results.push({players:count,states});console.log('MP confirmed gameplay',JSON.stringify(states));
     const native=frames()[0];
+    if(process.env.PC98_TEST_RESTART==='1')for(let attempt=0;attempt<2;attempt++){
+      await wait(async()=>(await health()).every(s=>s.gameFrame>=450),'gameplay before restart',30000);
+      const old=(await health())[0].gameFrame;let sawReset=false;
+      const proof=()=>native.evaluate(async()=>JSON.parse((await import('./netplay/room.js')).managedAPI.replayProof()));
+      await page.evaluate(()=>rpc(0,'keyboard',{code:'Escape',down:true}));
+      await wait(async()=>(await proof())[9]===true,'restart pause',10000);
+      await page.evaluate(()=>rpc(0,'keyboard-clear'));
+      await new Promise(r=>setTimeout(r,150));
+      await page.evaluate(()=>rpc(0,'keyboard',{code:'ArrowUp',down:true}));
+      await wait(async()=>(await proof())[10]===2,'restart selection',10000);
+      await page.evaluate(()=>rpc(0,'keyboard-clear'));
+      await new Promise(r=>setTimeout(r,150));
+      const start=(await health())[0].confirmed;
+      await page.evaluate(()=>rpc(0,'keyboard',{code:'Enter',down:true}));
+      await new Promise(r=>setTimeout(r,200));
+      await page.evaluate(()=>rpc(0,'keyboard-clear'));
+      try {await wait(async()=>{const states=await health();if(states.some(s=>s.gameFrame<old-50))sawReset=true;return sawReset&&states.every(s=>s.running&&!s.stopped&&s.confirmed>=start+240&&s.gameFrame>=120);},'restart continues gameplay',45000);}
+      catch(error){console.log('Restart diagnostic',JSON.stringify(await health()),JSON.stringify(await Promise.all(frames().map(f=>f.evaluate(async()=>({proof:(await import('./netplay/room.js')).managedAPI.replayProof(),game:await (await import('./netplay/room.js')).managedAPI.sampleGame()}))))));throw error;}
+      const resumed=(await health())[0].gameFrame;await new Promise(r=>setTimeout(r,2000));
+      const advance=(await health())[0].gameFrame-resumed;assert(advance>20&&advance<200,'gameplay must resume at normal speed: '+advance);
+      console.log('PASS restart',attempt,JSON.stringify(await health()));
+    }
     await page.evaluate(()=>rpc(0,'keyboard',{code:'Escape',down:true}));
     await wait(()=>native.evaluate(async()=>JSON.parse((await import('./netplay/room.js')).managedAPI.replayProof())[9]===true),'native synchronized pause',5000);
     await page.evaluate(()=>rpc(0,'keyboard-clear'));

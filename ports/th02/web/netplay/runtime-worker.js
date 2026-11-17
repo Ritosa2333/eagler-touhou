@@ -18,7 +18,7 @@ globalThis.th02WorkerHost={canvas:new OffscreenCanvas(640,400),audioContext,
  sfx:{load:async()=>{},play:id=>send({type:'sfx',id}),stop(){},dispose(){},info:()=>({ready:true,mode:'confirmed-worker-events'})}
 };
 function status(force=false){const at=performance.now(),r=th02WorkerHost.runtime;
- const value={proof:r.replayProof(),ready:r.readyForRollback(),reason:r.predictionBlockReason(),touch:r.touchContext()};
+ const value={proof:r.replayProof(),ready:r.readyForRollback(),restarting:r.restarting(),reason:r.predictionBlockReason(),touch:r.touchContext()};
  if(th02WorkerHost.replayOnly)value.scene=r.replayScene();
  if(force||metrics.steps-lastGameStep>=6||at-lastGameAt>=1000){value.game=r.snapshot();lastGameStep=metrics.steps;lastGameAt=at;}
  // Expensive display percentile sorting and fault detail are observational;

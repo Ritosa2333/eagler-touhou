@@ -105,7 +105,7 @@ const sync={
  setPointPreferences(value){points={...value};const next=JSON.stringify(value);if(next!==lastPoints){lastPoints=next;fire('setPointPreferences',[value]);}},
  setRawPresentation(value){raw=!!value;fire('setRawPresentation',[raw]);},
  async unlockAudio(){await sfx?.resume();if(context?.state!=='running')await context?.resume();return context?.state==='running';},
- touchContext:()=>cache.touch??{key:'boot',play:false},readyForRollback:()=>!!cache.ready,canPredict:()=>cache.reason==='',predictionBlockReason:()=>cache.reason??'原版菜单或关卡加载',
+ touchContext:()=>cache.touch??{key:'boot',play:false},readyForRollback:()=>!!cache.ready,restarting:()=>!!cache.restarting,canPredict:()=>cache.reason==='',predictionBlockReason:()=>cache.reason??'原版菜单或关卡加载',
  rollbackInfo:()=>cache.rollback??{},renderInfo:()=>({...cache.render,worker:true}),
  performanceInfo:()=>({worker:{...cache.performance},page:{...rpcMetrics},slowSteps:cache.slowSteps?.slice()??[],scope:'cumulative wall-clock observations; nested native/step/restore costs overlap; RPC round trip includes queue/transport/page scheduling; not physical input latency'}),
  diagnosticText:()=>`${(cache.diagnostics||'TH02 启动中').split('\n').slice(0,2).join('\n')}\nWorker 独立模拟 · 核心固定 30000 cycles\n浏览器 BGM：${musicError||bgm?.status||'等待确认关卡'} · 本地完整音效 ${sfx?.info().played??0} 次`,

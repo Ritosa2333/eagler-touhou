@@ -1031,14 +1031,14 @@ async function pump(now){
       if(waiting&&!waitingSince)waitingSince=performance.now();
       updateMetrics(performance.now(),waiting);wake(waiting?16:0);return;
     }
-    while(accumulator>=TICK_MS&&count<4&&(count===0||performance.now()-budgetStart<6)){
+    while((accumulator>=TICK_MS||runtime.restarting())&&count<4&&(count===0||performance.now()-budgetStart<6)){
       captureLocalInput();
       const pair=nextInputs();if(!pair){queue.retryFrame=queue.frame;accumulator=Math.min(accumulator,TICK_MS);waiting=true;break;}
       endInputWait();
       await simulate(pair,false);if(stopped||ownedEpoch!==runEpoch)return;
       const after=performance.now();
       const at=captureTimes.get(queue.frame-1);if(pair[queue.slot]!==lastApplied&&at)inputAge=after-at;
-      lastApplied=pair[queue.slot];captureTimes.delete(queue.frame-1);accumulator-=TICK_MS;count++;
+      lastApplied=pair[queue.slot];captureTimes.delete(queue.frame-1);accumulator=Math.max(0,accumulator-TICK_MS);count++;
       queue.retryFrame=null;
       if(queue.dirty!==null||membership)break;
       await confirmFrames();if(stopped||ownedEpoch!==runEpoch)return;
@@ -1052,7 +1052,7 @@ async function pump(now){
     updateMetrics(after,waiting);
     // Native execution time counts toward this tick's budget. The old timer
     // waited another full interval after a 15 ms step, reducing throughput.
-    wake(waiting?16:Math.max(0,TICK_MS-accumulator-(after-lastNow)));
+    wake(waiting?16:runtime.restarting()?0:Math.max(0,TICK_MS-accumulator-(after-lastNow)));
   }catch(error){if(ownedEpoch===runEpoch)fail(error);}finally{if(ownedEpoch===runEpoch){nativeBusy=false;pumping=false;}}
 }
 const focusSettings=mountFocusSettings($('control-settings'),{alwaysPointControl:player.alwaysPointControl});

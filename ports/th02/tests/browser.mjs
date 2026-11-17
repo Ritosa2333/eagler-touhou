@@ -176,6 +176,22 @@ try{
       }
     }
     if(process.env.PC98_TEST_LAG==='1'){const counts=await Promise.all(frames().map(f=>f.evaluate(()=>({rollbacks:globalThis.__eaglerNetplayLanRollback,replayed:globalThis.__eaglerNetplayLanResimulated}))));assert(counts.some(v=>v.rollbacks>0&&v.replayed>0),'late input must trigger native rollback');console.log('PASS delayed input rollback',counts);}
+    if(process.env.PC98_TEST_RESTART==='1')for(let attempt=0;attempt<2;attempt++){
+      const sample=()=>frames()[0].evaluate(async()=>(await import('./netplay/room.js')).managedAPI.sampleGame());
+      await wait(async()=>(await sample())?.gameFrame>=450,'gameplay before restart',30000);
+      const old=await sample(),start=(await health())[0].confirmed;
+      for(const code of ['Escape','ArrowUp','Enter']){
+        await page.evaluate(code=>rpc(0,'keyboard',{code,down:true}),code);
+        await new Promise(r=>setTimeout(r,400));
+        await page.evaluate(()=>rpc(0,'keyboard-clear'));
+        await new Promise(r=>setTimeout(r,400));
+      }
+      try {await wait(async()=>{const states=await health(),game=await sample();return states.every(s=>s.running&&!s.stopped&&s.confirmed>=start+240)&&game&&game.gameFrame<old.gameFrame&&game.gameFrame>=120;},'restart continues gameplay',45000);}
+      catch(error){console.log('Restart diagnostic',JSON.stringify(await health()),JSON.stringify(await sample()));throw error;}
+      const resumed=(await sample()).gameFrame;await new Promise(r=>setTimeout(r,2000));
+      const advance=(await sample()).gameFrame-resumed;assert(advance>20&&advance<200,'gameplay must resume at normal speed: '+advance);
+      console.log('PASS restart',attempt,JSON.stringify(await sample()));
+    }
     const states=await health();await page.screenshot({path:resolve(out,'multiplayer.png')});
     const route=process.env.PC98_TEST_RELAY==='1'?'relay':'rtc';
     assert(log.includes('mode='+route),'must exercise the requested '+route+' route: '+log);

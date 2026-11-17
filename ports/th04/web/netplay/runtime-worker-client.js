@@ -133,7 +133,7 @@ const sync={
  setPointPreferences(value){points={...value};const next=JSON.stringify(value);if(next!==lastPoints){lastPoints=next;fire('setPointPreferences',[value]);}},
  setRawPresentation(value){raw=!!value;fire('setRawPresentation',[raw]);},
  async unlockAudio(){await se?.resume();if(context?.state!=='running')await context?.resume();return context?.state==='running';},
- touchContext:()=>cache.touch??{key:'boot',play:false},readyForRollback:()=>!!cache.ready,
+ touchContext:()=>cache.touch??{key:'boot',play:false},readyForRollback:()=>!!cache.ready,restarting:()=>!!cache.restarting,
  canPredict:()=>cache.reason==='',predictionBlockReason:()=>cache.reason??'游戏尚未就绪',
  rollbackInfo:()=>cache.rollback??{},
  renderInfo:()=>({...cache.render,worker:true,pageDrawn:drawn,replaced,pending:!!queuedFrame,lastExecutionMs:executionMs,pageIntervals:intervals.slice(),pageRpc:{...rpcMetrics}}),
