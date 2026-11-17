@@ -9,3 +9,5 @@
 后续顺序：有界逐帧输入账本（来源player/epoch/frame、重复/乱序/迟到修正）→协议重开需双方同意并换epoch→Replay日志与旁观只读消费→实际页面/传输与native consumer。当前core112没有已证明完整World save/restore接口；不能把th128_world_state诊断JSON、opaque跨关carry或Score/Replay恢复冒称为全World rollback。可先实现纯调度/账本并用显式合成模拟器验证，再定位真实确定性重建/回滚策略；不重编成功core。
 
 855缺规则模块10RED＋1条过宽拒绝断言PASS，856先收紧该断言再11GREEN；Node纯规则/crypto，不创建World/浏览器/服务器/GPU/持久数据。模块为site/runtime/multiplayer-rules.mjs，当前只有规则组件，尚无页面调用或包内接线。transport、实际两玩家游戏、回滚native状态、重开同步和旁观尚未实施。hosting/本地打包保持暂停。
+
+857–860已加入实际规则消费的有界逐帧输入账本，支持held边沿、预测/乱序/重复/迟到纠正计划和只读确认chunk；859的18项与860配对owner的4项通过。规则组件已被该账本调用，页面和资源包接线仍未增加。此为纯协议组件，不代表真实网络对局、native World回滚或完整Replay/旁观完成，详见[MULTIPLAYER_INPUT.md](MULTIPLAYER_INPUT.md)。
