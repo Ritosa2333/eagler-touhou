@@ -2166,8 +2166,46 @@
     "th14": {
       "normal": "ports/th14",
       "multiplayer": "ports/th14-mp",
-      "base": "c4faf858a047bfe2b26d6274ab946a5166ec576e",
-      "history": []
+      "base": "f13cf3f49947a730a2220c290956809b10db33c0",
+      "history": [
+        {
+          "kind": "manual",
+          "base": "c4faf858a047bfe2b26d6274ab946a5166ec576e",
+          "source": "f13cf3f49947a730a2220c290956809b10db33c0",
+          "targetHead": "54e8b38ae5660439194236faf1246e573557856d",
+          "paths": [
+            "ports/th14-mp/runtimes/th12/portable/sdl/Renderer.cpp",
+            "ports/th14-mp/runtimes/th12/portable/sdl/Renderer.hpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/game/GameBattle.cpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/game/GameBattle.hpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/game/GameSession.cpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/game/GameSession.hpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/game/NativeStackTh14.hpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/game/PlayerFrame.hpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/game/Replay.cpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/game/Replay.hpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/game/ReplayRecorder.cpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/game/ShotCallbacksTh14.cpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/sdl/Application.cpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/sdl/AudioDevice.cpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.cpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/sdl/GraphicsDevice.hpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/sdl/PracticeAdvancedPurpleTh14.inc",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.cpp",
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/sdl/PracticeUiTh14.hpp",
+            "ports/th14-mp/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs",
+            "ports/th14-mp/runtimes/th12/th12_web/sdl-runtime/shell.mjs",
+            "ports/th14-mp/tools/th14-build-gles.py",
+            "ports/th14-mp/tools/th14-gles-profile.json",
+            "ports/th14-mp/tools/th14-practice-unlock-native-nov15.py",
+            "ports/th14-mp/tools/th14-resource-abort-nov17.mjs",
+            "ports/th14-mp/tools/th14-startup-abort-lifecycle-nov17.mjs",
+            "ports/th14-mp/tools/th14-track-volume-current-upstream-nov17.mjs"
+          ],
+          "note": "通过普通版与多人版目录投影三方合并接收公共录像、练习、音频及资源取消修复；保留房间生命周期、回滚输入、联机存档及 256 MiB 初始内存。构建与行为验证范围见 archive/th14-behavior-acceptance-20261117。"
+        }
+      ]
     }
   }
 }
