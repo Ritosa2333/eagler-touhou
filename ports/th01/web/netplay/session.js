@@ -1,4 +1,4 @@
-import {loadRollbackCore} from '../../../../common/pc98/rollback-client.mjs';
+import {loadRollbackCore,restoreRollback} from '../../../../common/pc98/rollback-client.mjs';
 import {PROTOCOL,FrameQueue} from './queue.js';
 import {createInputChannel,acceptInputChannel} from './input-transport.js';
 import {createRecorder} from '../replay/recorder.js';
@@ -285,9 +285,9 @@ export class NetSession{
       };
       if(this.queue.rollback)this.queue.refreshCorrection();
       if(this.queue.dirty!==null){
-        const from=this.queue.dirty;this.rollbackCount++;this.replayUntil=Math.max(this.replayUntil??0,this.queue.frame);
-        await this.game.restore(from);if(this.closed)return;
-        this.recorder.rewind(from);this.queue.rewind(from);
+        this.rollbackCount++;this.replayUntil=Math.max(this.replayUntil??0,this.queue.frame);
+        const from=await restoreRollback(this.queue,frame=>this.game.restore(frame),()=>!this.closed);if(from===null)return;
+        this.recorder.rewind(from);
         for(const frame of this.pendingHashes.keys())if(frame>from)this.pendingHashes.delete(frame);
         this.queue.refreshCorrection();
       }

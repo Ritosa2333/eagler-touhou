@@ -1,4 +1,4 @@
-import {loadRollbackCore} from '../../../../common/pc98/rollback-client.mjs';
+import {loadRollbackCore,restoreRollback} from '../../../../common/pc98/rollback-client.mjs';
 import {publishNetworkStatus,mountNetworkStatus} from '../network-status.js';
 import {startFrameLoop} from '../frame-limit.js';
 import {createInputChannel,acceptInputChannel} from './input-transport.js';
@@ -1042,10 +1042,10 @@ async function pump(now){
       if(queue.frame>=replayUntil&&accumulator>=TICK_MS&&captureLocalInput())earlyInputs++;
       // Keep touch/menu generation at the live boundary throughout repair.
       if(queue.frame>=replayUntil)replayTouchContext=runtime.touchContext();
-      const from=queue.dirty;replayUntil=Math.max(replayUntil,queue.frame);
-      maxRewind=Math.max(maxRewind,replayUntil-from);rollbackCount++;
+      replayUntil=Math.max(replayUntil,queue.frame);rollbackCount++;
       const restoreAt=performance.now();
-      nativeBusy=true;await runtime.restore(from);if(stopped||ownedEpoch!==runEpoch)return;replayRecorder.rewind(from);queue.rewind(from);
+      nativeBusy=true;const from=await restoreRollback(queue,frame=>runtime.restore(frame),()=>!stopped&&ownedEpoch===runEpoch);if(from===null)return;replayRecorder.rewind(from);
+      maxRewind=Math.max(maxRewind,replayUntil-from);
       // A still earlier input can arrive during restore, before rewind clears
       // the old correction marker. Reconcile the retained completed history.
       if(runtime.asyncExecution&&queue.active)queue.refreshCorrection(true);

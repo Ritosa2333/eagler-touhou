@@ -7,6 +7,16 @@ export async function loadRollbackCore() {
   });
   return modulePromise;
 }
+export async function restoreRollback(queue,restore,active=()=>true){
+  let frame=queue.dirty;
+  for(;;){
+    await restore(frame);
+    if(!active())return null;
+    if(queue.dirty!==null&&queue.dirty<frame){frame=queue.dirty;continue;}
+    queue.rewind(frame);
+    return frame;
+  }
+}
 export class Pc98RollbackCore {
   constructor(module,{players,slot,limit,held,directions,directionFrames}) {
     const wasi={clock_time_get:()=>0,fd_close:()=>0,fd_seek:()=>0,fd_write:()=>0};
