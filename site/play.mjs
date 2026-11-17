@@ -1362,8 +1362,9 @@ async function startThprac128Session(input,{signal,isCurrent}){
   const pending=startLaunch(selection,'route');launchId=menu.launchId;
   signal.addEventListener('abort',abort,{once:true});if(!current())abort();
   await pending;
-  if(!current()||menu.launchId!==launchId||state.stageSelection!==selection)throw new DOMException('Practice launch owner changed','AbortError');
+  if(!current()||menu.launchId!==launchId)throw new DOMException('Practice launch owner changed','AbortError');
   if(lastCheckWorldError||!state.worldMode)throw new Error(lastCheckWorldError||'TH128 practice did not enter its selected World');
+  if(state.stageSelection!==selection)throw new DOMException('Practice launch owner changed','AbortError');
   const native=session.params.mode===1?readThprac128Native(state.module,session):null;
   return {session,stageId:selection.stage.id,difficulty:session.difficulty,generation:native?.generation??null,
    nativeTainted:session.params.mode===1,normalModeClear:false};
@@ -1414,6 +1415,8 @@ async function watchThpracReplayFromMenu(slotOverride=null){
  catch(error){if(state.replayPlayback===owner){try{owner.cancel();}catch{}state.replayPlayback=null;state.active=false;state.paused=true;}throw error;}
 }
 function installThpracReplayControls(){
+ const controls=find('#thprac-web-controls');
+ controls?.addEventListener('toggle',()=>{if(controls.open)refreshThpracReplaySlots().catch(error=>{find('#thprac-replay-status').textContent=String(error.message??error);});});
  for(const [id,run]of [['#thprac-replay-save',saveThpracReplayFromMenu],['#thprac-replay-watch',watchThpracReplayFromMenu]])find(id)?.addEventListener('click',()=>{run().catch(error=>{find('#thprac-replay-status').textContent=String(error.message??error);});});
 }
 function installPracticeMenu(){

@@ -1,5 +1,7 @@
 # TH128 current caller integration
 
+Latest combined browser/native acceptance is documented in[THPRAC128_BROWSER_CLOSURE.md](THPRAC128_BROWSER_CLOSURE.md):978 passed realDOM/core116/provider/currentcaller/cancelerror, affected980265PASS. Earlier CPU-only statements below retain their original scope. Internal fixture controlstrip never ships in productionentry. Fullthprac/phase3 remains false pending the actualgame visual/audio experience; about90% is a rough functional estimate.
+
 2026-11-17: complete current play startup, restart and native practice Replay now execute against owned core116 and the actual verified DAT/OGG provider. This closes the gap between the earlier isolated native and UI tests. Full thprac/phase3 remains incomplete pending the final combined browser/native caller acceptance; no Runtime package or public deployment was produced.
 
 The full current checkWorld/startLaunch/startThprac/prepareFreshWorldModule/advanceSerial, audio cleanup and resource-identity functions are copied exactly for CPU execution. Native Player/World/ANM/SHT/MSG/STD and background ANM are actual. GPU upload, font/text rasterization and ending preparation are explicit seams. StageMusic and GameSoundQueue are actual; WebAudio devices/decoding are authored seams that inspect actual WAV headers or Ogg sample granules.

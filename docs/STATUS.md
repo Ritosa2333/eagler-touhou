@@ -1,3 +1,5 @@
+2026-11-17最新：真实浏览器DOM＋实际WASM/core116＋完整当前caller组合978通过，含启动/重开/F7自然音乐ACK/F12关闭/真实练习录像存储回放/原生暂停/错误清理与迟到取消。受影响980通过265项。真人要求的内部测试说明与按钮不在正式网页入口，测试夹具独立保留。完整thprac仍粗估约90%（非测得百分比）；原游戏画面/字体纹理/物理音频组合体验未冒100%，第三阶段完成仍撤回。见[THPRAC128_BROWSER_CLOSURE.md](THPRAC128_BROWSER_CLOSURE.md)。
+
 2026-11-17最新：完整当前原生消费者的启动、重开/F7音乐保留/原MSG22严格ACK、速度调度与练习Replay/普通资格隔离已接续通过，详见[THPRAC128_CURRENT_CALLER.md](THPRAC128_CURRENT_CALLER.md)。最终浏览器native组合收口仍待；完整thprac/第三阶段未完成。
 
 当前工作（2026-11-17）：优先真正TH128 thprac，第三阶段此前完成结论已撤回。已完成主菜单/章节与Boss段落/五字段/练习Replay/原生辅助工具和按真人原版截图调整的Backspace、F12及练习面板；当前完整caller的组合验收继续，完整thprac仍未完成。六普通路线526/532/531/539/535/540与EX560前两阶段基线保留；多人进一步开发、Runtime打包和公开发布暂停。见[THPRAC128_TOOLS_UI.md](THPRAC128_TOOLS_UI.md)。
