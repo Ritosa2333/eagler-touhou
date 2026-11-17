@@ -304,7 +304,8 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
     // Imported runtime files contain verified bytes but lose their origin headers.
     // Every hosted runtime document must match the launcher isolation policy.
     // Cover all worker requests and TH14's imported threaded Wasm scripts.
-    if (destination === "worker" || destination === "sharedworker" || type === "text/html" || (root === "runtime/th14/" && type === "text/javascript")) {
+    if (destination === "worker" || destination === "sharedworker" || type === "text/html" ||
+        ((root === "runtime/th14/" || root === "runtime/th14/multiplayer/") && type === "text/javascript")) {
       headers.set("Cross-Origin-Embedder-Policy", "require-corp");
       headers.set("Cross-Origin-Opener-Policy", "same-origin");
       headers.set("Cross-Origin-Resource-Policy", "same-origin");
