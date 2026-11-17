@@ -204,6 +204,8 @@ for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
 // A mobile browser may terminate a hidden page before pagehide's IDB callback.
 // Persist during play as well, with writes serialized by the sync chain.
 setInterval(()=>{if(launched&&!document.hidden&&core)try{queue=queue.then(()=>save()).catch(error);}catch(e){error(e);}},30000);
+const startupAbort=new AbortController();
+window.addEventListener('pagehide',event=>{if(!event.persisted)startupAbort.abort();},{once:true});
 const initialized=(async()=>{
  let audioContext;try{audioContext=parent.__touhouAudioContext;}catch{}
  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
@@ -237,5 +239,5 @@ async function mountData(){
  // eagler-touhou managed package: the retail archive arrives through the parent
  // (written to /th11.dat, which the C++ archive layer opens) and the baked font
  // tables through the sibling resources.json.
- await mountManagedData(Module,{game,parentWindow:parent,query,emit});
+ await mountManagedData(Module,{game,parentWindow:parent,query,emit,signal:startupAbort.signal});
 }

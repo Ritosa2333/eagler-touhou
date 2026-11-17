@@ -81,7 +81,7 @@ private:
     GLuint imguiProgram=0,imguiVao=0,imguiVbo=0,imguiEbo=0,imguiFontTexture=0;
     GLint imguiProjMtx=-1,imguiTexture=-1;
 #endif
-    Program generic{};bool warming=true,buildingGeneric=false;Program* program=nullptr;
+    Program generic{};bool warming=true,buildingGeneric=false,parallelStartupCompile=false;Program* program=nullptr;
     std::array<float,256> alphaBoundaries{};
     Stream vertices{},indices{},instances{};State batchState{};
     std::vector<u8> batchBytes,quad,worlds,pixels;bool batching=false,instancing=false;

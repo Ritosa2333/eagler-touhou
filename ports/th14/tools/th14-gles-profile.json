@@ -1,5 +1,6 @@
 {
   "flags": [
+    "-DTH14_ASYNC_GLES_STARTUP=1",
     "-DTH14_CPP_BOOT_WORKER=1",
     "-O2",
     "-g0",
