@@ -3,7 +3,8 @@ import {readWorldDrawRecords} from './runtime/world-presentation.mjs';
 import {mountWebInput} from './runtime/web-input.mjs';
 import {getPageLaunchContext} from './runtime/page-launch-context.mjs';
 import {musicOutput,musicOutputEnabled} from './runtime/music-output.mjs';
-import {mountPracticeMenu} from './runtime/practice-menu.mjs';
+import {mountThprac128Menu} from './runtime/thprac128-menu.mjs';
+import {createThprac128Session,prepareThprac128Native,readThprac128Native,thprac128RuntimeSupported,thprac128Presentation} from './runtime/thprac128.mjs';
 import {QualificationOwner,evaluateOwnedQualification,EX_QUALIFICATION_SCHEMA} from './runtime/ex-qualification.mjs';
 import {loadOriginalType33ForWorld,originalType33Profile} from './runtime/original-bullet-type33.mjs';
 const {assertStageStartAllowed,mountExtraMenu,setDebugExtraSaveEligibility,setOwnedExtraSaveEligibility,readCurrentExtraAccess,requestNormalExtraStart}=(()=>{
@@ -1287,17 +1288,47 @@ async function startPracticeStage(route,{signal,isCurrent}){
   return receipt;
  }finally{signal.removeEventListener('abort',abort);if(practiceLaunchOwner===owner)practiceLaunchOwner=null;}
 }
+function thpracStageSelection(input){
+ if(input?.schema!=='eagler-touhou/thprac-session/1'||input.game!=='th128')throw new Error('TH128 thprac session schema mismatch');
+ const session=createThprac128Session(input.params,input.difficulty),p=session.params;
+ const selection=prepareStage(p.stage+1,{difficulty:session.difficulty,seed:34772,progress:0,debugExtra:p.mode===1&&p.stage===15});
+ if(p.mode===1){delete selection.debugJump;selection.thprac=session;}
+ return {selection,session};
+}
+async function startThprac128Session(input,{signal,isCurrent}){
+ const current=()=>!signal.aborted&&isCurrent();
+ if(!current())throw new DOMException('Practice owner exited','AbortError');
+ if(practiceLaunchOwner||menu.launching||state.handoff||state.pendingCarryToken||state.nativePausePending)
+  throw new Error('当前正在加载或已有 pending practice launch');
+ if(state.launcherExited||!state.stageCatalog||find('#variant')?.disabled===true||!thprac128RuntimeSupported(state.module))
+  throw new Error('TH128 thprac runtime 尚未就绪');
+ const {selection,session}=thpracStageSelection(input),owner={};practiceLaunchOwner=owner;let launchId=null;
+ const abort=()=>{if(practiceLaunchOwner===owner&&menu.launching&&menu.launchId===launchId&&menu.launchSelection===selection)cancelLaunch();};
+ try{
+  const pending=startLaunch(selection,'route');launchId=menu.launchId;
+  signal.addEventListener('abort',abort,{once:true});if(!current())abort();
+  await pending;
+  if(!current()||menu.launchId!==launchId||state.stageSelection!==selection)throw new DOMException('Practice launch owner changed','AbortError');
+  if(lastCheckWorldError||!state.worldMode)throw new Error(lastCheckWorldError||'TH128 practice did not enter its selected World');
+  const native=session.params.mode===1?readThprac128Native(state.module,session):null;
+  return {session,stageId:selection.stage.id,difficulty:session.difficulty,generation:native?.generation??null,
+   nativeTainted:session.params.mode===1,normalModeClear:false};
+ }catch(error){
+  if(state.stageSelection===selection){state.active=false;state.paused=true;clock.reset();resetHighFrameratePresentation();}
+  throw error;
+ }finally{signal.removeEventListener('abort',abort);if(practiceLaunchOwner===owner)practiceLaunchOwner=null;syncDebugStageJumpControls();}
+}
 function installPracticeMenu(){
  if(practiceMenu)return practiceMenu;
- practiceMenu=mountPracticeMenu({root:find('#practice-menu'),opener:find('#practice-open'),
+ practiceMenu=mountThprac128Menu({root:find('#practice-menu'),opener:find('#practice-open'),
   getAvailability:()=>({
-   ready:!state.launcherExited&&debugRespawnSupported()&&!!state.stageCatalog&&find('#variant')?.disabled!==true,
+   ready:!state.launcherExited&&thprac128RuntimeSupported(state.module)&&!!state.stageCatalog&&find('#variant')?.disabled!==true,
    busy:menu.launching||state.handoff||!!state.pendingCarryToken||!!state.nativePausePending||!!state.normalPostrun||!!state.endingHost||state.endingLoading||!!state.replayPlayback,
    inRun:state.worldMode&&state.active,
-   practiceRoute:state.worldMode&&state.stageSelection?.debugJump?state.stageSelection.debugJump.route:null
+   practiceSession:state.worldMode?state.stageSelection?.thprac??null:null
   }),
   onOpen:async()=>{loseFocus();await state.nativePausePending;},
-  onFocusGame:()=>find('#game')?.focus(),launch:startPracticeStage
+  onFocusGame:()=>find('#game')?.focus(),launch:startThprac128Session
  });
  window.addEventListener('pagehide',()=>practiceMenu?.dispose(),{once:true});
  return practiceMenu;
@@ -3113,7 +3144,7 @@ function enemyAnimationBankLimit(selection,names){
   return 3;
 }
 function bindDirectTerminalOwner(module,selection,pointer,size,progress,context){
-  const restoreFinite=!!selection?.debugJump&&state.debugInfiniteRespawnRequested!==true;
+  const restoreFinite=!!(selection?.debugJump||selection?.thprac)&&state.debugInfiniteRespawnRequested!==true;
   if(restoreFinite&&module._th128_world_set_debug_infinite_respawn(1)!==1)
     throw new Error(module.UTF8ToString(module._th128_world_error())||'direct terminal debug configuration failed');
   try{
@@ -3147,7 +3178,9 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
   const progress=Number.isInteger(selection?.progress)?selection.progress:0;
   const rawCarryToken=selection?.carryToken??0;
   if(rawCarryToken!==0&&(!Number.isInteger(rawCarryToken)||rawCarryToken<1))throw new Error('Invalid stage carry token');
-  const carryToken=rawCarryToken;
+  const carryToken=rawCarryToken,thprac=selection?.thprac??null;
+  if(thprac&&carryToken)throw new Error('TH128 practice requires a fresh owner without stage carry');
+  const presentation=thprac?thprac128Presentation(thprac):{skipIntro:false,bossMusic:false};
   let transitionEnabled=false,routeChoiceEnabled=false;
   const action=emission?++state.action:state.action;
   const stale=()=>ticket!==state.loading||(emission&&action!==state.action);
@@ -3196,7 +3229,10 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
       state.handoffFailed=false;state.handoff=false;++state.handoffGeneration;
     }
     if(shots){await ensureOriginalStageTextFont(find('#variant').value);preparedTextRasters=await prepareOriginalStageTextRasters(base,find('#variant').value,signal);}
-    if(shots)pendingAudio=await prepareGameSounds(base,signal,stage.music);
+    if(shots){
+      const tracks=presentation.bossMusic?[stage.music[1],...stage.music.filter(name=>name!==stage.music[1])]:stage.music;
+      pendingAudio=await prepareGameSounds(base,signal,tracks);
+    }
     if(shots)preparedEnding=await prepareOriginalEndingResources(stage,base,signal);
     const parsedEcl=await jsonAt(`ecl/${stage.ecl.slice(0,-4)}.json`);
     const includes=parsedEcl?.includes;
@@ -3430,6 +3466,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
       module._free(namePointer);module._free(dataPointer);
       if(!loaded)throw new Error(module.UTF8ToString(module._th128_world_error()));
     }
+    if(thprac)prepareThprac128Native(module,thprac);
     const encoded=new TextEncoder().encode(stage.ecl),pointer=memory(encoded);
     const started=module._th128_world_start(pointer,encoded.length,selection.difficulty,selection.seed);module._free(pointer);
     if(!started)throw new Error(module.UTF8ToString(module._th128_world_error()));
@@ -3444,7 +3481,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
       if(!module._th128_world_restore_stage_carry_random(carryToken,stage.id,progress,selection.difficulty))
         throw new Error(module.UTF8ToString(module._th128_world_error())||'stage carry random restore failed; the token was retained');
     }
-    if(supportsStageIntro()){
+    if(supportsStageIntro()&&!presentation.skipIntro){
       const record=await installStageIntro(stage,module,renderer,jsonAt,bytesAt,memory,base,signal);
       if(stale())return;
       state.stageIntroLoaded=true;state.stageIntroStage=record.id;state.stageIntroCaptionKey='';
@@ -3476,9 +3513,9 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         const shotPointer=memory(shotBytes);
         const updateReady=module._th128_world_enable_bullet_updates(shotPointer,shotBytes.length);module._free(shotPointer);
         if(!updateReady)throw new Error(module.UTF8ToString(module._th128_world_error()));
-        if(!module._th128_world_enable_graze(0,10000,0x1234))throw new Error(module.UTF8ToString(module._th128_world_error()));
+        if(!module._th128_world_enable_graze(0,thprac?.params.ice_power??10000,0x1234))throw new Error(module.UTF8ToString(module._th128_world_error()));
         const playerPointer=memory(playerBytes);
-        const playerReady=module._th128_world_enable_player_context(playerPointer,playerBytes.length,1,extraRun?2:0,extraRun?65535:120,0,0,0,0,0,0);
+        const playerReady=module._th128_world_enable_player_context(playerPointer,playerBytes.length,1,extraRun?2:0,extraRun?65535:120,0,0,0,0,0,thprac?.params.perfect_freeze??0);
         module._free(playerPointer);
         if(!playerReady)throw new Error(module.UTF8ToString(module._th128_world_error()));
         if(!module._th128_world_enable_player_motion(state.replayPlayback?.stageInitial().horizontal??0,state.replayPlayback?.stageInitial().vertical??51200))throw new Error(module.UTF8ToString(module._th128_world_error()));
@@ -3560,10 +3597,10 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
             if(!ready)throw new Error(module.UTF8ToString(module._th128_world_error()));
           }
           const shotData=memory(shotBytes),playerData=memory(playerBytes),damageFlags=memory(new Uint8Array(8000));
-          const configured=module._th128_world_enable_player_shots(shotData,shotBytes.length,playerData,playerBytes.length,damageFlags,2000,state.replayPlayback?.stageInitial().frozenArea??0,selection.difficulty,0,0,0,0);
+          const configured=module._th128_world_enable_player_shots(shotData,shotBytes.length,playerData,playerBytes.length,damageFlags,2000,thprac?.params.ice_area??state.replayPlayback?.stageInitial().frozenArea??0,selection.difficulty,0,0,0,0);
           module._free(shotData);module._free(playerData);module._free(damageFlags);
           if(!configured)throw new Error(module.UTF8ToString(module._th128_world_error()));
-          if(!module._th128_world_enable_shot_hits(state.replayPlayback?.stageInitial().motivation??20000,0,0,0,0)||!module._th128_world_enable_rapid_shot(-1))
+          if(!module._th128_world_enable_shot_hits(thprac?.params.motivation??state.replayPlayback?.stageInitial().motivation??20000,0,0,0,0)||!module._th128_world_enable_rapid_shot(-1))
             throw new Error(module.UTF8ToString(module._th128_world_error()));
           if(!module._th128_world_enable_player_death(-1))throw new Error(module.UTF8ToString(module._th128_world_error()));
           const frontPointer=memory(frontBytes),frontLoaded=module._th128_world_enable_perfect_hud(frontPointer,frontBytes.length);module._free(frontPointer);
@@ -3624,7 +3661,8 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
           for(const [bank,name]of [[0,'front'],[24,'title'],[25,'title_v'],[11,'ascii']])assets.push({bank,bytes:await bytesAt('runtime/'+name+'.anm')});
           if(stale())return;extraRun.bind(assets);
         }
-        verifyFreshExtraOwner(JSON.parse(module.UTF8ToString(module._th128_world_state())),selection);
+        if(thprac)readThprac128Native(module,thprac);
+        else verifyFreshExtraOwner(JSON.parse(module.UTF8ToString(module._th128_world_state())),selection);
         state.shotMode=shots;find('#emit-shot').disabled=!shots;
         state.worldMode=true;state.active=true;state.paused=window.__TH128_DIAGNOSTIC_PAUSED__===true;clock.reset();resetHighFrameratePresentation();stopAudio();
         find('#game-menu').hidden=true;
@@ -3634,7 +3672,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         if(extraRun){state.extraRun=extraRun;extraRun=null;}
         disposeOriginalStageTextRasters(state.stageTextRasters);state.stageTextRasters=preparedTextRasters;preparedTextRasters=null;
         if(state.replayPlayback){state.replayNativeBound=false;state.replayPlayback.bindNativeStage(module);}
-        else if(!state.extraRun&&!selection.debugJump&&!find('#debug-infinite-respawn').checked){
+        else if(!state.extraRun&&!selection.debugJump&&!selection.thprac&&!find('#debug-infinite-respawn').checked){
           if(typeof module._th128_world_replay_begin!=='function')throw new Error('正常录像录制内核未载入');
           if(!carryToken){
             const store=state.nativeScoreStore??=new OwnedNativeTitleRecordStore(),observed=await store.observe();
@@ -3868,6 +3906,7 @@ function originalPauseConsumer(){
       if(!current())return;
       const selected=state.stageSelection;
       if(!selected)throw new Error('重新开始缺少当前路线');
+      if(selected.thprac){menu.pauseOpen=false;return startLaunch(thpracStageSelection(selected.thprac).selection,'route');}
       const stageId=selected.stage.id===16?16:selected.stage.id<=5?1:selected.stage.id<=10?6:11;
       const next=prepareStage(stageId,{difficulty:selected.difficulty,seed:34772,progress:0,debugExtra:selected.debugExtra===true});
       menu.pauseOpen=false;return startLaunch(next,'route');
@@ -3973,7 +4012,7 @@ function startLaunch(selection,returnPage='route'){
   menu.launchPreviousAutoFlow=state.autoFlow;const id=++menu.launchId;
   find('#error').hidden=true;
   suppressHeldConfirmKeys();
-  state.autoFlow=true;state.pressed.clear();
+  state.autoFlow=!selection.thprac;state.pressed.clear();
   menu.launchMessage=`正在预加载 stage ${selection.stage.id} · rank ${selection.difficulty}…`;
   find('#menu-launch-body').textContent=menu.launchMessage;showMenuPage('launch');
   return (async()=>{

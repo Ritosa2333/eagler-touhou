@@ -65,6 +65,7 @@
 #include "game/StageIntroLogos.hpp"
 #include "Memory.hpp"
 #include "DrawJsonWriter.hpp"
+#include "practice/Thprac128Web.hpp"
 #include "game/ending/EndingRuntime.hpp"
 #include <algorithm>
 #include <bit>
@@ -1903,6 +1904,51 @@ const char* th128_world_debug_postrun_state(){
         <<",\"nativeX86Execution\":false,\"nativeSTDContainerInstantiatedByHeadlessCore\":false";
     if(actualPostrunMenu)output<<",\"menu\":"<<actualPostrunMenu->snapshot();
     output<<'}';postrunStateText=output.str();return postrunStateText.c_str();
+}
+
+int th128_world_prepare_thprac128(const void* data,unsigned bytes){
+    operationError.clear();
+    if(bytes!=44||!th128::runtime::inputRange(data,bytes)||worldTickExecuting||!worldStartedName.empty()
+        ||replayPlayback.active()||debugRecordPrefix.prepared||ordinaryRecordOwner.configured){
+        operationError="TH128 thprac requires an exact fresh 11-word Web payload";return 0;
+    }
+    std::array<std::int32_t,11> p{};std::memcpy(p.data(),data,44);
+    if(p[0]!=1||p[1]<0||p[1]>15||p[2]<0||p[2]>=20000||p[3]<0||p[3]>3||p[4]<0||p[4]>1
+        ||p[5]<0||p[5]>4||(p[1]==15?p[5]!=4:p[5]==4)||p[6]<0||p[6]>999999999
+        ||p[7]<0||p[7]>100000||p[8]<0||p[8]>30000||p[9]<0||p[9]>10000||p[10]<0||p[10]>3000){
+        operationError="TH128 thprac Web version, initial bounds or rank mismatch";return 0;
+    }
+    const unsigned stage=unsigned(p[1]+1),section=unsigned(p[2]);
+    const th128::StageWorld::ThpracInitial initial{std::int64_t(p[6])*10,p[7],p[8],p[9],p[10]};
+    if(section==0||section>=10000){
+        const unsigned encodedStage=section==0?stage:(section-10000)/100,chapter=section==0?1:section%100;
+        if(encodedStage!=stage||p[3]||p[4]){operationError="TH128 Web chapter/stage/phase/dialogue mismatch";return 0;}
+        return world->prepareThpracChapter(stage,chapter,p[5],initial,operationError)?1:0;
+    }
+    constexpr std::array<unsigned,16> dialogueSections{4,11,18,30,37,49,56,63,75,82,94,101,108,120,127,139};
+    if(section>156||(p[3]&&section!=156)||(p[4]&&std::find(dialogueSections.begin(),dialogueSections.end(),section)==dialogueSections.end())){
+        operationError="TH128 Web section/phase/dialogue mismatch";return 0;
+    }
+    return world->prepareThpracSection(stage,section,unsigned(p[3]),p[4]!=0,p[5],initial,operationError)?1:0;
+}
+const char* th128_world_thprac128_state(){
+    static std::string state;std::ostringstream out;out<<std::boolalpha;
+    const auto owner=world->thpracChapter();
+    out<<"{\"schema\":\"th128-thprac-native-state/1\",\"active\":"<<owner.has_value()
+        <<",\"generation\":"<<worldGeneration<<",\"frame\":"<<world->frame();
+    if(owner){
+        const auto& p=owner->initial;
+        out<<",\"stage\":"<<owner->stageId-1<<",\"chapter\":"<<owner->chapter<<",\"section\":"<<owner->section
+            <<",\"phase\":"<<owner->phase<<",\"dlg\":"<<owner->dialogue<<",\"difficulty\":"<<owner->difficulty
+            <<",\"nonNormal\":"<<(owner->nonNormal&&debugRunTainted)
+            <<",\"contexts\":"<<((grazeConfigured?1:0)|(playerConfigured?2:0)|(playerShotsConfigured?4:0)|(shotHitsConfigured?8:0))
+            <<",\"initial\":{\"score\":"<<p.score<<",\"motivation\":"<<p.motivation<<",\"perfect_freeze\":"<<p.perfect_freeze
+            <<",\"ice_power\":"<<p.ice_power<<",\"ice_area\":"<<p.ice_area<<'}'
+            <<",\"actual\":{\"score\":"<<std::int64_t(scoreRaw)*10<<",\"motivation\":"<<motivationRaw
+            <<",\"perfect_freeze\":"<<playerWindowControl.perfectCharge4b4d70<<",\"ice_power\":"<<grazeGlobals.powerRaw
+            <<",\"ice_area\":"<<cumulativeFrozenArea<<'}';
+    }
+    out<<'}';state=out.str();return state.c_str();
 }
 
 int th128_world_start(const char* name,std::uint32_t nameLength,int difficulty,unsigned seed) {

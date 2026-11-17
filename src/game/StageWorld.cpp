@@ -645,7 +645,11 @@ bool StageWorld::enableLocalEnemyPasses(std::string& error) {
     if(executing_||!started_||frame_!=0||spawnCount_!=0||entities_.size()!=1||!error_.empty()||localEnemyPasses_) {
         error="local enemy passes must be enabled once before the first world tick";return false;
     }
-    localEnemyPasses_=true;instructionsThisTick_=0;executing_=true;
+    localEnemyPasses_=true;instructionsThisTick_=0;
+    // Section overlays can spawn at time0. Install the real resource/player hosts before
+    // their first ECL pass; the first actual tick owns that pass and its RNG side effects.
+    if(activeThpracChapter_&&activeThpracChapter_->section){appendLocal(*entities_.front());return true;}
+    executing_=true;
     const bool success=updateLocal(*entities_.front());
     if(success)appendLocal(*entities_.front());
     executing_=false;

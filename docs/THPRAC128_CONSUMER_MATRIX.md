@@ -43,3 +43,7 @@
 889–898完整选段已作为一批接原生消费者，详见THPRAC128_SECTIONS.md。318固定上游写入记录生成156section/对话/EX四阶段计划，按55原/现中文身份与子程序/指令坐标映射；Program不可变虚拟指令区，StageWorld同时采用root/provider。892与897分别完成整表preparation和实际对话/HP1200/Normal spell1/三Boss代表验证，EX为原prelude真实Vm在HP处hold的资源host接缝；不是全156段游戏或EX完整World。898受影响reader/mutations/VM/heldhost编译运行全0。
 
 当前仍无真实thprac Web参数/菜单/Replay工具链或新WASM API；第三阶段未完成。下一直接完整菜单/native bridge/actual play参数消费者，停止旧选关/include长审计。历史新增一项外部Python二进制变更：case772旧工具无owned精确档案，保1未解而不伪0；当前Emsdk固定工具与8不可变核心/资源指纹不受影响。
+
+899–914真实Web主菜单与原生桥已接：TH128专用schema保原10字段，126章节/156选段/EX四phase/对话及中英日label；实际页面load后/start前prepare，五字段进真实配置并核nativeframe0/五值/taint，取消/重开与正常资格隔离。新private113首次构建通过，908实际3Factory/3World/427checks/每个首tick；914真实HTML/CSS/组件和9wholecaller16检查通过。两者范围独立，不能冒完整原资源browser游戏。
+
+实际native section初始化顺序901RED→903修复，真实空select默认910/911RED→912/914修复；所有首FAIL保留。完整thprac/第三阶段仍未完成：练习Replay metadata/recording/playLock、F1..F7/Backspace overlay、F12speed、持久launcher开关还需实际消费者。菜单内enable/locale已经生效，未改个人设置。旧112/v7/public产物不动，新113只owned编译产物，打包/公开发布暂停。详见THPRAC128_WEB_MENU.md及thprac128-Web-menu899-914.json。

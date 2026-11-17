@@ -116,3 +116,10 @@ main{max-width:1328px}.screen{max-width:1280px}
 .practice-menu label{display:flex;flex-wrap:wrap;gap:10px;font-size:14px;margin:14px 0}
 .practice-menu select{min-height:44px;flex:1}.practice-replace input{width:18px;height:18px}.practice-actions{display:flex;gap:10px;flex-wrap:wrap}.practice-actions button{min-height:44px}
 #practice-open{min-height:40px;font-size:13px;flex-shrink:0}
+.practice-menu{width:min(92vw,680px);max-height:88vh;overflow:auto}
+.practice-menu .thprac-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px}
+.practice-menu .thprac-grid label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;min-width:0}
+.practice-menu .thprac-grid select,.practice-menu .thprac-grid input[type=number]{min-width:0;max-width:64%;width:180px}
+.practice-menu .thprac-grid .thprac-wide{grid-column:1/-1}
+.practice-menu .thprac-grid .thprac-wide select{width:75%;max-width:75%}
+@media(max-width:520px){.practice-menu .thprac-grid{grid-template-columns:1fr}.practice-menu .thprac-grid .thprac-wide{grid-column:auto}}
