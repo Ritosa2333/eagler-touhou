@@ -828,10 +828,12 @@ bool GameBattle::update(const std::function<bool()>& sample_input
     // Native436be7 reads this live word after stage activation. Bit2 sets
     // bit7 and returns1: later Main callbacks still run, while Control's
     // attract/score/compositor/clock tail does not. Keep its separate load/store.
+#if defined(TH14_CPP_STAGE_DECODE)
     if(control_running)if(auto* control=animations.th14_control.get()){
         const u32 flags=control->flags;
         if(flags&4u){control->flags=flags|0x80u;control_running=false;}
     }
+#endif
 #else
     const bool control_running=control_enabled&&(!transitioning||transition_started);
 #endif
@@ -844,7 +846,7 @@ bool GameBattle::update(const std::function<bool()>& sample_input
     // callback plays at activation and has no clock300 music-resume branch.
     if(kPortTitle!=14&&control_running&&!demo&&resources.stage_number==6&&frame==300)events.push_back({BattleEventKind::MusicResume});
     if(control_running)hud.score.update(economy.score_units);
-#if PORT_TITLE == 14
+#if PORT_TITLE == 14 && defined(TH14_CPP_STAGE_DECODE)
     // 436c80..436c98 returns3 for bits4/5/6 after the score callback.
     // Main401280 then stops this pass before Replay12 and all later callbacks.
     if(control_running&&(animations.th14_control.callback_flags()&0x70u))return true;
@@ -911,6 +913,9 @@ bool GameBattle::update(const std::function<bool()>& sample_input
     if(player_live&&player){
         player->spell={spell_flags,spell_elapsed,spell_bonus};
         if(before_player_update)before_player_update(*this);
+#if PORT_TITLE == 14
+        if(practice_key_sample)practice_key_sample(player_input.movement.held);
+#endif
         if(!player->update()){if(!last_error)last_error=-601;const std::string inner="player update failed: "+std::to_string(player->last_error)+" motion="+std::to_string(player->motion.last_error)+" shots="+std::to_string(player->shots.last_error)+" state="+std::to_string(player->state.life_state)+" timer="+std::to_string(player->state.state_timer.current);error=error.empty()?inner:inner+" ("+error+")";return false;}
         spell_flags=player->spell.flags;spell_bonus=player->spell.bonus;
     }

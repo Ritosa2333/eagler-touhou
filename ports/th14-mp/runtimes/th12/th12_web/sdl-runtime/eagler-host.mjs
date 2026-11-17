@@ -64,8 +64,14 @@ export function touchControls(core,options,message) {
  core.sdl_touch_controls(!!c.fireEnabled,!!c.focusEnabled,c.bombSerial>>>0,c.escapeSerial>>>0,axis(c.joystickX),axis(c.joystickY));
 }
 const detachedRuntimeAudioNodes=new WeakSet();
+// A delayed AudioContext.resume must not retire a newer pause/stop request.
+const runtimeAudioRevisions=new WeakMap();
+function nextRuntimeAudioRevision(core){
+ const revision=(runtimeAudioRevisions.get(core)??0)+1;runtimeAudioRevisions.set(core,revision);return revision;
+}
 export function suspendRuntimeAudio(Module,core) {
  if(!core)return false;
+ nextRuntimeAudioRevision(core);
  const node=Module?.SDL3?.audio_playback?.scriptProcessorNode;
  if(node&&!detachedRuntimeAudioNodes.has(node)){
   try{node.disconnect();detachedRuntimeAudioNodes.add(node);}catch{}
@@ -75,11 +81,13 @@ export function suspendRuntimeAudio(Module,core) {
 }
 export async function resumeRuntimeAudio(Module,core,isForeground=()=>true) {
  if(!core||!isForeground())return false;
+ const revision=nextRuntimeAudioRevision(core);
+ const current=()=>runtimeAudioRevisions.get(core)===revision&&isForeground();
  const context=Module?.SDL3?.audioContext;
  if(context&&context.state!=='running'){
   try{await context.resume();}catch{}
  }
- if(!isForeground()||(context&&context.state!=='running'))return false;
+ if(!current()||(context&&context.state!=='running'))return false;
  const node=Module?.SDL3?.audio_playback?.scriptProcessorNode;
  if(node&&detachedRuntimeAudioNodes.has(node)){
   if(!context)return false;
@@ -111,12 +119,14 @@ export function ensureSharedFontAlias(Module,language){
  Module.FS.symlink(source,target);
  return {source,target};
 }
-export async function installResources(Module,resources=[],{game,emit=()=>{},base=globalThis.location?.href,fetcher=globalThis.fetch}={}) {
+export async function installResources(Module,resources=[],{game,emit=()=>{},base=globalThis.location?.href,fetcher=globalThis.fetch,signal}={}) {
+ signal?.throwIfAborted();
  if(!Array.isArray(resources)||resources.length>128)throw Error('Invalid resource list');
  for(const resource of resources){
+  signal?.throwIfAborted();
   if(!resourcePath(resource.path,game))throw Error('Invalid runtime resource path');
   const url=new URL(resource.url,base);if(url.origin!==new URL(base).origin||!['http:','https:','blob:'].includes(url.protocol))throw Error('Resource must be same-origin');
-  const response=await fetcher(url);if(!response.ok)throw Error('Resource download failed: '+resource.path);
+  const response=await fetcher(url,{signal});signal?.throwIfAborted();if(!response.ok)throw Error('Resource download failed: '+resource.path);
   const expected=resource.bytes??resource.size;
   const compressed=resource.encoding==='gzip';
   if(compressed&&(game!=='th14'||!/^\/fonts\/font[0-7]\.bin$/.test(resource.path)||
@@ -130,6 +140,8 @@ export async function installResources(Module,resources=[],{game,emit=()=>{},bas
    const hash=new Uint8Array(await crypto.subtle.digest('SHA-256',bytes));
    if(Array.from(hash,n=>n.toString(16).padStart(2,'0')).join('')!==resource.sha256)throw Error('Resource hash mismatch: '+resource.path);
   }
+  // Cancellation may arrive while a body or compressed-font hash is pending.
+  signal?.throwIfAborted();
   Module.FS.mkdirTree(resource.path.slice(0,resource.path.lastIndexOf('/')));
   Module.FS.writeFile(resource.path,bytes,{canOwn:true});
   // Native FLAC assets are part of Runtime preparation. Only the optional
@@ -180,8 +192,10 @@ async function mountTh14Archive(Module,result,signal){
 export async function mountManagedData(Module,{game,parentWindow,query,fetcher=globalThis.fetch,base=globalThis.location?.href,emit,signal}){
  if(query.get('managedData')!=='1'||typeof parentWindow?.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('请从 eagler-touhou 启动此运行时');
  const epoch=Number(query.get('runtimeEpoch'));if(!Number.isSafeInteger(epoch)||epoch<=0)throw Error('Runtime navigation epoch unavailable');
+ signal?.throwIfAborted();
  const direct=game==='th14'&&typeof Module._th14_adopt_managed_archive==='function';
  const result=await parentWindow.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch,...(direct?{preferBlob:true}:{})});
+ signal?.throwIfAborted();
  if(direct)await mountTh14Archive(Module,result,signal);
  else{
   // Cross-frame ArrayBuffers need not pass this realm's instanceof check.
@@ -189,9 +203,10 @@ export async function mountManagedData(Module,{game,parentWindow,query,fetcher=g
   if(bytes.byteLength<16||bytes.byteLength>512*1024*1024)throw Error('Invalid game DATA size');
   Module.FS.writeFile('/'+game+'.dat',bytes,{canOwn:true});
  }
+ signal?.throwIfAborted();
  const response=await fetcher(new URL('./resources.json',base),{signal});if(!response.ok)throw Error('Runtime resource manifest unavailable');
- const manifest=await response.json();if(manifest.game!==game||manifest.schema!=='eagler-sdl-resources/1')throw Error('Invalid Runtime resource manifest');
- await installResources(Module,manifest.resources,{game,emit,base,fetcher});
+ const manifest=await response.json();signal?.throwIfAborted();if(manifest.game!==game||manifest.schema!=='eagler-sdl-resources/1')throw Error('Invalid Runtime resource manifest');
+ await installResources(Module,manifest.resources,{game,emit,base,fetcher,signal});
 }
 
 // Host ownership and transport only. C++ validates files, creates the real
@@ -218,7 +233,7 @@ export function createReplayViewerHostTh14({read,describe,open,status,step,rate,
   const entry=owner.timeline.find(s=>s.id===native.stage);
   if(!entry||!native.active)return;
   owner.state.stage=native.stage;owner.state.frame=entry.start+Math.min(native.frame,entry.frames);owner.state.ended=!!native.ended;
-  if(native.ended){owner.state.frame=entry.start+entry.frames;owner.state.paused=true;await pause(true);}
+  if(native.ended){owner.state.paused=true;await pause(true);}
   if(owner===active)publish();
  }
  function poll(){
