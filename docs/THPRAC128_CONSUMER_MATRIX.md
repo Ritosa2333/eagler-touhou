@@ -12,13 +12,13 @@
 | ice_power默认10000、范围0..10000（91、386、2246） | world_enable_graze(count,power,...)的grazeGlobals.powerRaw为已有消费者 | 资源/贴图和真实HUD/玩法字段一致，非同名JSON |
 | ice_area默认3000、范围0..3000（89、387、2247） | world_enable_player_shots(...cumulativeArea,difficulty)及playerShotGroup选择可复用，EX另有初始area0原生guard | 需明确thprac与自然EX守卫区分；不得绕正常资格/修改既有成功路径 |
 | section按chapter/mid/end/nonspell/spell选择（260–351）；chapter126项（397–403） | 已实现Program覆盖、TH128 chapter组件及实际StageWorld启动；尚未接Web/导出taint | 867/870组件证据保；879原A1章节/双跳/EX实际World首出生与reset普通对照，仍须Web/参数全链 |
-| Boss/多Boss/EX符卡与phase（657–735、1227–2051）；EX_END_S10四phase | 多文件SetFile(0/2)与分支/HP/位移原文存在；现缺thprac section adapter，其他一般ECL逻辑已实现 | 逐实section与phase覆盖，包含对话/音乐/intro规则；不能仅跳到Boss名称 |
+| Boss/多Boss/EX符卡与phase（657–735、1227–2051）；EX_END_S10四phase | 多文件SetFile(0/2)与分支/HP/位移原文存在；已同批移植156section/318参数组，事务式root+provider覆盖与实际StageWorld消费者；Web尚未接入 | 892/897全部原/中文表可prepare；A1对话/首卡HP/三Boss真实World，EX四phase为真实Vm资源接缝，Web音乐/intro规则仍需接 |
 | THBGMTest/disableLogo（2067–2079、2253–2264） | 有StageMusic/native sourcefade/stop严格ACK；thprac section BGM/intro行为未接 | 按section/dialogue实际分流、重开保持/退出释放，不改volume95 |
 | THGuiRep/ReplaySaveParam/锁（406–450、2080、2266–2310） | 原RPYcodec/25槽已验，但没有THPracParam辅助元数据或playLock/thHardLock策略 | 练习RPY+原参数绑定、正确起点/重播隔离/存储完整回读；不JSON改名RPY |
 | F1..F7overlay（454–517）、F12/高级速度（520–645） | 当前无限复活setter不是原无敌/无限资源/时停/自动Bomb的完整等价实现 | TH128各toggle实际效果+禁用恢复；共有speed/key/nav模块适配；Windows vpatch不执行 |
 | Eagler共用input/navigation/statistics/mobile/locale | common/docs/thprac.md声明共享工具与作品特定生命周期分离；当前JS宿主没有C++ thprac GUI | 实际菜单/键盘/鼠标owner/locale与核心效果；手机额外兼容单列但基础入口不得假ACK |
 
-完整上游模块2375行已按段读完。TH128模式/label/section枚举与多语言表仍需从上游games定义固定版本取得；TH128专用文件已证明存在，不再猜测“不支持TH128”。上游eagler thprac helper当前未列th128，是要新增实际适配，不是照抄其他游戏默认schema。
+完整上游模块2375行已按段读完。TH128模式/label/156section枚举与多语言表已从同版games定义/loc_json取得；TH128专用文件已证明存在，不再猜测“不支持TH128”。上游eagler thprac helper当前未列th128，是要新增实际适配，不是照抄其他游戏默认schema。
 
 864只读新目的：真实32336111B DAT→16个原始stage ECL，按固定上游THStageWarp解析126个chapter选择/143条ECLJumpEx写入。所有源写入起点和目标均为原始指令边界。16个chapter1不写补丁，其余110个raw-copy补丁在本工程整段SCPT/ECLH解析边界检查中失败。例：A1-1源offset0x81d8原opcode22/size40；上游24B跳转覆盖后offset0x81f0留下原参数尾部，严格parser误读length29551。其他起点原指令为20/32/40字节；不能简单保原size，因为Vm::shape要求opcode12恰2个rawWords+2params。
 
@@ -39,3 +39,7 @@
 884–888原五字段已接实际原生消费者：StageWorld拥有64位score与其余四字段，验证／向下10舍入／复制；完整WorldExports启动初始化真实scoreRaw、干劲、charge、power、area并设置非正常taint，四个配置函数拒绝字段或练习rank不一致。888六个独立组件进程跑完整WorldExports与真实PlayerHitHost/PlayerShotGroups，默认／0／上限EX／中间值、10项越界拒绝、重置隔离和自然EX守卫通过；原SHT/ANM组0/6/15实际读回。不是纯codec或提取函数测试，也不是浏览器交付。
 
 真人指出推进过慢：下一批复用现成TH128菜单和完整section/phase规则，按完整功能批次接实际Web调用，减少碎片审计。当前仍缺完整Boss/section/phase、菜单工具、练习Replay和Web入口；第三阶段完成结论不恢复。详见THPRAC128_INITIAL_RESOURCES.md。
+
+889–898完整选段已作为一批接原生消费者，详见THPRAC128_SECTIONS.md。318固定上游写入记录生成156section/对话/EX四阶段计划，按55原/现中文身份与子程序/指令坐标映射；Program不可变虚拟指令区，StageWorld同时采用root/provider。892与897分别完成整表preparation和实际对话/HP1200/Normal spell1/三Boss代表验证，EX为原prelude真实Vm在HP处hold的资源host接缝；不是全156段游戏或EX完整World。898受影响reader/mutations/VM/heldhost编译运行全0。
+
+当前仍无真实thprac Web参数/菜单/Replay工具链或新WASM API；第三阶段未完成。下一直接完整菜单/native bridge/actual play参数消费者，停止旧选关/include长审计。历史新增一项外部Python二进制变更：case772旧工具无owned精确档案，保1未解而不伪0；当前Emsdk固定工具与8不可变核心/资源指纹不受影响。

@@ -253,6 +253,60 @@ bool Program::withPracticeBranches(const std::vector<std::uint8_t>& expectedSour
     return true;
 }
 
+bool Program::withPracticeRegions(const std::vector<std::uint8_t>& expectedSource,
+        const std::vector<PracticeRegion>& regions,Program& output,std::string& error) const {
+    if(!data_||!data_->dependencies.empty()||data_->practiceBranches)
+        return fail(error,"practice regions require original unlinked sources");
+    if(expectedSource.empty()||expectedSource!=data_->resource.bytes||regions.empty()||regions.size()>512)
+        return fail(error,"practice region source or count mismatch");
+    struct Site {std::size_t sub,first,last;};
+    std::vector<Site> sites;std::uint32_t previousEnd=0;
+    for(const auto& region:regions){
+        if(region.sourceOffset<previousEnd||region.sourceOffset>=region.endOffset||region.instructions.empty()
+            ||region.instructions.size()>maxInstructions)return fail(error,"overlapping or empty practice region");
+        previousEnd=region.endOffset;bool found=false;
+        for(std::size_t si=0;si<data_->subroutines.size();++si){
+            const auto& sub=data_->subroutines[si];const auto begin=std::uint64_t(sub.fileOffset)+16;
+            if(region.sourceOffset<begin||region.sourceOffset>=begin+sub.codeSize)continue;
+            const auto* first=sub.instructionAt(std::uint32_t(region.sourceOffset-begin));
+            const auto* last=region.endOffset==begin+sub.codeSize?nullptr:sub.instructionAt(std::uint32_t(region.endOffset-begin));
+            if(!first||region.endOffset>begin+sub.codeSize||(!last&&region.endOffset!=begin+sub.codeSize))
+                return fail(error,"practice erase range is not one original subroutine");
+            std::uint64_t prior=0;bool initial=true;
+            for(const auto& ins:region.instructions){
+                if((!initial&&ins.offset<=prior)||ins.offset<region.sourceOffset-begin||ins.size<16
+                    ||ins.size%4||ins.rawWords.size()!=(ins.size-16)/4||ins.rawWords.size()>16379
+                    ||ins.parameterCount>ins.rawWords.size()||std::uint64_t(ins.offset)+ins.size>maxBytes
+                    ||(region.endOffset!=begin+sub.codeSize&&std::uint64_t(ins.offset)+ins.size>region.endOffset-begin))
+                    return fail(error,"invalid virtual practice instruction shape or boundary");
+                initial=false;prior=ins.offset;
+            }
+            sites.push_back({si,std::size_t(first-sub.instructions.data()),last?std::size_t(last-sub.instructions.data()):sub.instructions.size()});
+            found=true;break;
+        }
+        if(!found)return fail(error,"practice region has no owned original instruction");
+    }
+    auto candidate=std::make_shared<Data>(*data_);
+    for(std::size_t n=regions.size();n>0;--n){
+        const auto& region=regions[n-1];const auto site=sites[n-1];auto& sub=candidate->subroutines[site.sub];
+        sub.instructions.erase(sub.instructions.begin()+site.first,sub.instructions.begin()+site.last);
+        sub.instructions.insert(sub.instructions.begin()+site.first,region.instructions.begin(),region.instructions.end());
+        const auto& tail=sub.instructions.back();
+        sub.codeSize=std::uint32_t(std::max<std::uint64_t>(sub.codeSize,std::uint64_t(tail.offset)+tail.size));
+        if(sub.instructions.size()>maxInstructions)return fail(error,"virtual practice instruction budget");
+    }
+    for(std::size_t n=0;n<regions.size();++n){
+        const auto& sub=candidate->subroutines[sites[n].sub];
+        for(const auto& ins:regions[n].instructions)if(ins.opcode>=12&&ins.opcode<=14){
+            if(ins.rawWords.size()!=2)return fail(error,"practice jump payload");
+            const auto target=std::int64_t(ins.offset)+std::int32_t(ins.rawWords[0]);
+            if(target<0||target>=sub.codeSize||!sub.instructionAt(std::uint32_t(target)))
+                return fail(error,"virtual practice jump does not target an instruction");
+        }
+    }
+    candidate->practiceBranches=true;output.data_=std::move(candidate);error.clear();return true;
+}
+
 bool Program::loaded() const { return bool(data_); }
 
 const Resource& Program::resource() const {

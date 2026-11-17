@@ -53,6 +53,12 @@ public:
     };
     bool withPracticeBranches(const std::vector<std::uint8_t>& expectedSource,
         const std::vector<PracticeBranch>& branches, Program& output, std::string& error) const;
+    struct PracticeRegion {
+        std::uint32_t sourceOffset=0,endOffset=0;
+        std::vector<Instruction> instructions;
+    };
+    bool withPracticeRegions(const std::vector<std::uint8_t>& expectedSource,
+        const std::vector<PracticeRegion>& regions,Program& output,std::string& error) const;
     bool load(const void* bytes, std::size_t size, std::string& error);
     bool loaded() const;
     const Resource& resource() const;

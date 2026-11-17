@@ -73,9 +73,13 @@ public:
         int difficulty=0;
         bool nonNormal=true;
         ThpracInitial initial{};
+        unsigned section=0,phase=0;
+        bool dialogue=false;
     };
     bool prepareThpracChapter(unsigned stageId,unsigned chapter,int difficulty,std::string& error);
     bool prepareThpracChapter(unsigned stageId,unsigned chapter,int difficulty,
+        const ThpracInitial& initial,std::string& error);
+    bool prepareThpracSection(unsigned stageId,unsigned section,unsigned phase,bool dialogue,int difficulty,
         const ThpracInitial& initial,std::string& error);
     std::optional<ThpracChapter> thpracChapter() const {return activeThpracChapter_;}
     bool start(const std::string& stage,int difficulty,std::uint16_t seed);
@@ -200,6 +204,7 @@ private:
     std::unordered_map<std::string,ecl::Program> sources_;
     ecl::Program linked_;
     ecl::Program thpracPreparedRoot_;
+    std::unordered_map<std::string,ecl::Program> thpracPreparedSources_;
     std::optional<ThpracChapter> pendingThpracChapter_,activeThpracChapter_;
     Random random_;
     bullet::Manager bullets_;
