@@ -228,7 +228,9 @@ async function launch(){
  }else if(roomRuntime&&!previewCheck&&!options.replayViewer&&!options.multiplayerPreflight)throw Error('请先加入 TH14 房间');
  roomPreview=false;launched=true;apply();first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  const loading=$('#loading');if(loading)loading.textContent='';
- canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();core.th11_loop_start();
+ // Starting the native loop clears its suspended flag. Apply the startup
+ // pause afterwards so hidden launches and pending audio remain stopped.
+ canvas.focus({preventScroll:true});core.th11_loop_start();core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();
  emit('runtime-info',{renderer:Module.th14WebGpuRuntime?'SDL3 / WebGPU / C++':'SDL3 / WebGL2 / C++',architecture:protocol,version:runtimeBuild.version});
 }
 function replayPlayback(){
