@@ -3904,7 +3904,11 @@ int th128_world_tick(){
         if(thpracReplay.generation!=worldGeneration||!thpracReplay.clockPending||thpracReplay.clockFrame!=world->frame()){
             operationError="practice recording pre-tick clock or generation missing";return 0;
         }
-        const auto auxiliary=messagesConfigured?messages->recordAuxiliaryLive():std::optional<bool>{false};
+        auto auxiliary=messagesConfigured?messages->recordAuxiliaryLive():std::optional<bool>{false};
+        if(!auxiliary&&routeChoiceConfigured){
+            const auto& choice=routeChoice->status();
+            if(choice.phase!=th128::routechoice::Phase::Failed)auxiliary=choice.handle!=0;
+        }
         if(!auxiliary){operationError="practice replay MSG auxiliary ownership unknown";return 0;}
         normalReplayAuxiliary=*auxiliary;
     }

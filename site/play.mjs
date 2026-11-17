@@ -959,7 +959,8 @@ const thpracDraftOwner=state.thpracDraftOwner=Object.freeze({pending:true,playba
 let thpracRouteShown=false;
 function syncThpracRouteMenu(snapshot){
  if(snapshot.page!==2){thpracRouteShown=false;return;}
- if(!thpracRouteShown&&thpracSettings.enabled&&practiceMenu&&!menu.launching){thpracRouteShown=true;void practiceMenu.open();}
+ if(!snapshot.ready||snapshot.transitioning||state.launcherExited||!state.stageCatalog||!thprac128RuntimeSupported(state.module)||find('#variant')?.disabled===true)return;
+ if(!thpracRouteShown&&thpracSettings.enabled&&practiceMenu&&!menu.launching&&!state.handoff&&!state.pendingCarryToken&&!state.nativePausePending&&!state.replayPlayback){thpracRouteShown=true;void practiceMenu.open();}
 }
 function scaleThpracViewport(){
  const screen=find('#game')?.parentElement,layer=find('#thprac-layer');if(!screen||!layer)return;
@@ -1375,7 +1376,7 @@ async function thpracReplayResourceIdentity(module,byteCache){
  const coreSHA256=checkpointModuleBuilds.get(module)?.artifacts?.['core.wasm']?.sha256;
  if(!/^[a-f0-9]{64}$/.test(coreSHA256??''))throw new Error('Practice Replay requires the actual compiled core SHA');
  const rows=[];
- for(const [name,pending]of [...byteCache].sort((a,b)=>a[0].localeCompare(b[0]))){const bytes=await pending;if(!(bytes instanceof Uint8Array)||!bytes.length)throw new Error('Practice resource identity bytes unavailable');rows.push([name,[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('')]);}
+ for(const [name,pending]of [...byteCache].sort((a,b)=>a[0].localeCompare(b[0]))){if(name==='runtime/title.anm'||name==='runtime/title_v.anm')continue;const bytes=await pending;if(!(bytes instanceof Uint8Array)||!bytes.length)throw new Error('Practice resource identity bytes unavailable');rows.push([name,[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('')]);}
  const resourceSHA256=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(rows))))].map(v=>v.toString(16).padStart(2,'0')).join('');
  return Object.freeze({coreSHA256,resourceSHA256});
 }
