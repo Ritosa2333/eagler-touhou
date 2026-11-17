@@ -69,7 +69,7 @@ export interface RuntimeFrame {
   addEventListener(type: 'load', listener: EventListener): void;
   removeEventListener(type: 'load', listener: EventListener): void;
 }
-export interface ManagedDataRequest { game: string; generation: string; epoch: number }
+export interface ManagedDataRequest { game: string; generation: string; epoch: number; preferBlob?: boolean }
 export interface RuntimeHost {
   location: { href: string; origin: string };
   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
@@ -540,7 +540,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     const generation = generations.resolve(request);
     const before = runtimeIdentity(token);
     try {
-      const result = await deps.readData(generation);
+      const result = await deps.readData(generation, {preferBlob: token.game === 'th14' && request.preferBlob === true});
       const after = runtimeIdentity(token);
       if (after.runtime !== before.runtime || after.document !== before.document) throw new RuntimeSessionSupersededError();
       return result;

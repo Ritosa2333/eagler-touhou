@@ -1,0 +1,314 @@
+diff --git a/ports/th14/runtimes/th12/th12_web/cpp/sdl/Application.cpp b/ports/th14/runtimes/th12/th12_web/cpp/sdl/Application.cpp
+--- a/ports/th14/runtimes/th12/th12_web/cpp/sdl/Application.cpp
++++ b/ports/th14/runtimes/th12/th12_web/cpp/sdl/Application.cpp
+@@ -48,6 +48,8 @@
+ #include "../../../portable/input/TouchController.hpp"
+ #include <algorithm>
+ #include <array>
++#include <cstdlib>
++#include <memory>
+ #if defined(TH12_DELETE_GUARD)
+ // Diagnostic build only. The allocator reports a negative live-byte total just before the fault, with a free
+ // total of exactly the same magnitude, which is the signature of releasing more than was ever handed out. The
+@@ -238,6 +240,29 @@ struct Application:StageResourceEffects
+     AsciiText frame_text{session.resources.core.ascii};
+     AnmRenderer renderer;
+     std::vector<u8> archive;
++#if PORT_TITLE == 14
++    std::unique_ptr<u8, decltype(&std::free)> managed_archive{nullptr, std::free};
++    u32 managed_archive_size=0;
++
++    bool adopt_managed_archive(u8* bytes,u32 size){
++        if(initialized||managed_archive||!bytes||size<16||size>256*1024*1024)return false;
++        managed_archive.reset(bytes);
++        managed_archive_size=size;
++        return true;
++    }
++#endif
++    const u8* archive_bytes()const{
++#if PORT_TITLE == 14
++        if(managed_archive)return managed_archive.get();
++#endif
++        return archive.data();
++    }
++    u32 archive_length()const{
++#if PORT_TITLE == 14
++        if(managed_archive)return managed_archive_size;
++#endif
++        return u32(archive.size());
++    }
+     std::vector<u8> saved_score_state,saved_config_state;
+     bool initialized=false;
+ #if PORT_TITLE == 14
+@@ -931,7 +956,7 @@ struct Application:StageResourceEffects
+         title_cpp_resources=std::make_unique<TitleCppResourcesTh14>(std::array<AnmResource*,2>{&core.title,&core.title_variant},&session.stage_load_host_flags,&boot_signature_draws);
+ #endif
+         publish_cpp_title_loading();
+-        if(!title_cpp_resources->begin(archive.data(),u32(archive.size()))){error="Unable to start TH14 C++ title worker";return false;}
++        if(!title_cpp_resources->begin(archive_bytes(),archive_length())){error="Unable to start TH14 C++ title worker";return false;}
+         std::printf("[loading14] real C++ title worker started\n");return true;
+     }
+ #endif
+@@ -1516,6 +1541,9 @@ struct Application:StageResourceEffects
+     bool read_replay(const std::string& path,std::vector<u8>& bytes)override{return read_file(path.c_str(),bytes,64*1024*1024);}
+ 
+     bool read_archive() {
++#if PORT_TITLE == 14
++        if(managed_archive)return resources.open_archive(archive_bytes(),archive_length());
++#endif
+         SDL_IOStream* io=SDL_IOFromFile("/th11.dat","rb");
+         if(!io){error="Unable to open /th11.dat";return false;}
+         const Sint64 size=SDL_GetIOSize(io);
+@@ -1524,7 +1552,7 @@ struct Application:StageResourceEffects
+         const size_t got=SDL_ReadIO(io,archive.data(),archive.size());
+         SDL_CloseIO(io);
+         if(got!=archive.size()){error="Unable to read /th11.dat";return false;}
+-        return resources.open_archive(archive.data(),u32(archive.size()));
++        return resources.open_archive(archive_bytes(),archive_length());
+     }
+ 
+     bool initialize() {
+@@ -1579,13 +1607,13 @@ struct Application:StageResourceEffects
+         Localization::Initialize();
+         if(!read_archive()){if(error.empty())error=resources.error();return false;}
+ #if PORT_TITLE == 14 && defined(TH14_WEBGPU_BACKEND) && defined(TH14_ARCHIVE_WORKER)
+-        if(!th14_webgpu_archive_open(archive.data(),u32(archive.size()))){error="Unable to start TH14 background archive decoder";return false;}
++        if(!th14_webgpu_archive_open(archive_bytes(),archive_length())){error="Unable to start TH14 background archive decoder";return false;}
+ #endif
+ #if PORT_TITLE == 14 && defined(TH14_CPP_BOOT_WORKER)
+         cancel_boot_worker();
+         if(!audio.initialize_device()){error=audio.error;return false;}
+         audio_cpp_boot=std::make_unique<AudioCppBootTh14>();
+-        if(!audio_cpp_boot->begin(archive.data(),u32(archive.size()))){error="Unable to start TH14 audio sample worker";cancel_boot_worker();return false;}
++        if(!audio_cpp_boot->begin(archive_bytes(),archive_length())){error="Unable to start TH14 audio sample worker";cancel_boot_worker();return false;}
+ #else
+         if(!audio.initialize(resources)){error=audio.error;return false;}
+ #endif
+@@ -1645,7 +1673,7 @@ struct Application:StageResourceEffects
+         boot_cpp_resources=std::make_unique<BootCppResourcesTh14>(session,std::array<AnmResource*,6>{
+             &boot_signature,&core.ascii,&core.text,&core.front,&core.bullet,&core.effect},
+             [this](GameResources& source,std::string& failure){return audio_cpp_boot->finish_after_text(source,failure);});
+-        if(!boot_cpp_resources->begin(archive.data(),u32(archive.size()))){error="Unable to start TH14 C++ bootstrap";cancel_boot_worker();return false;}
++        if(!boot_cpp_resources->begin(archive_bytes(),archive_length())){error="Unable to start TH14 C++ bootstrap";cancel_boot_worker();return false;}
+         std::printf("[loading14] real C++ bootstrap worker started\n");
+ #else
+         dispatch_boot_work(BootWork::Decode,0,0);
+@@ -2437,6 +2465,11 @@ EMSCRIPTEN_KEEPALIVE int th14_practice_wheel(float delta){return th11::sdl::Prac
+ EMSCRIPTEN_KEEPALIVE int th14_practice_key(unsigned key,unsigned down){return th11::sdl::PracticeUiTh14::key(key,down!=0);}
+ #endif
+ EMSCRIPTEN_KEEPALIVE int th11_save_replay(unsigned slot,const char* name){return th11::sdl::app.save_replay(slot,name);}
++#if PORT_TITLE == 14
++EMSCRIPTEN_KEEPALIVE int th14_adopt_managed_archive(th11::u8* bytes,unsigned size){
++    return th11::sdl::app.adopt_managed_archive(bytes,size);
++}
++#endif
+ EMSCRIPTEN_KEEPALIVE int th11_initialize(){if(!th11::sdl::app.initialize())return 0;for(auto& k:th11::sdl::keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);th11::sdl::initialize_controller();return 1;}
+ // Readable while a load is in flight, which is the point: it is the only way to see where a load that never
+ // returns had got to. The browser harness polls it and shows it while the welcome panel is up.
+diff --git a/ports/th14/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs b/ports/th14/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
+--- a/ports/th14/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
++++ b/ports/th14/runtimes/th12/th12_web/sdl-runtime/eagler-host.mjs
+@@ -157,16 +157,47 @@ export function observeMusicWrites(Module,core,game) {
+ export function isSupersededRuntimeError(error){
+  return error?.name==='AbortError'&&error?.message==='EAGLER_RUNTIME_SESSION_SUPERSEDED';
+ }
+-export async function mountManagedData(Module,{game,parentWindow,query,fetcher=globalThis.fetch,base=globalThis.location?.href,emit}){
++async function mountTh14Archive(Module,result,signal){
++ const source=result.blob??new Uint8Array(result.buffer);
++ const size=source.byteLength??source.size;
++ if(!Number.isSafeInteger(size)||size<16||size>256*1024*1024)throw Error('Invalid game DATA size');
++ signal?.throwIfAborted();
++ const pointer=Module._malloc(size);
++ if(!pointer)throw Error('TH14 资源内存不足');
++ let adopted=false;
++ try{
++  const chunk=1024*1024;
++  for(let offset=0;offset<size;offset+=chunk){
++   const end=Math.min(size,offset+chunk);
++   const bytes=source.subarray?source.subarray(offset,end):new Uint8Array(await source.slice(offset,end).arrayBuffer());
++   signal?.throwIfAborted();
++   Module.HEAPU8.set(bytes,pointer+offset);
++   if(end<size){
++    if(globalThis.scheduler?.yield)await globalThis.scheduler.yield();
++    else await new Promise(resolve=>setTimeout(resolve,0));
++    signal?.throwIfAborted();
++   }
++  }
++  adopted=Module._th14_adopt_managed_archive(pointer,size)===1;
++  if(!adopted)throw Error('TH14 资源挂载失败');
++ }finally{
++  if(!adopted)Module._free(pointer);
++ }
++}
++
++export async function mountManagedData(Module,{game,parentWindow,query,fetcher=globalThis.fetch,base=globalThis.location?.href,emit,signal}){
+  if(query.get('managedData')!=='1'||typeof parentWindow?.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('请从 eagler-touhou 启动此运行时');
+  const epoch=Number(query.get('runtimeEpoch'));if(!Number.isSafeInteger(epoch)||epoch<=0)throw Error('Runtime navigation epoch unavailable');
+- const result=await parentWindow.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch});
+- // Cross-frame ArrayBuffers need not pass this realm's instanceof check.
+- const bytes=new Uint8Array(result.buffer);
+- if(bytes.byteLength<16||bytes.byteLength>512*1024*1024)throw Error('Invalid game DATA size');
+- // The TH11 C++ archive layer opens /th11.dat directly.
+- Module.FS.writeFile('/'+game+'.dat',bytes,{canOwn:true});
+- const response=await fetcher(new URL('./resources.json',base));if(!response.ok)throw Error('Runtime resource manifest unavailable');
++ const direct=game==='th14'&&typeof Module._th14_adopt_managed_archive==='function';
++ const result=await parentWindow.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch,...(direct?{preferBlob:true}:{})});
++ if(direct)await mountTh14Archive(Module,result,signal);
++ else{
++  // Cross-frame ArrayBuffers need not pass this realm's instanceof check.
++  const bytes=new Uint8Array(result.buffer);
++  if(bytes.byteLength<16||bytes.byteLength>512*1024*1024)throw Error('Invalid game DATA size');
++  Module.FS.writeFile('/'+game+'.dat',bytes,{canOwn:true});
++ }
++ const response=await fetcher(new URL('./resources.json',base),{signal});if(!response.ok)throw Error('Runtime resource manifest unavailable');
+  const manifest=await response.json();if(manifest.game!==game||manifest.schema!=='eagler-sdl-resources/1')throw Error('Invalid Runtime resource manifest');
+  await installResources(Module,manifest.resources,{game,emit,base,fetcher});
+ }
+diff --git a/ports/th14/runtimes/th12/th12_web/sdl-runtime/shell.mjs b/ports/th14/runtimes/th12/th12_web/sdl-runtime/shell.mjs
+--- a/ports/th14/runtimes/th12/th12_web/sdl-runtime/shell.mjs
++++ b/ports/th14/runtimes/th12/th12_web/sdl-runtime/shell.mjs
+@@ -204,5 +204,7 @@ for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
+ // A mobile browser may terminate a hidden page before pagehide's IDB callback.
+ // Persist during play as well, with writes serialized by the sync chain.
+ setInterval(()=>{if(launched&&!document.hidden&&core)try{queue=queue.then(()=>save()).catch(error);}catch(e){error(e);}},30000);
++const startupAbort=new AbortController();
++window.addEventListener('pagehide',event=>{if(!event.persisted)startupAbort.abort();},{once:true});
+ const initialized=(async()=>{
+  let audioContext;try{audioContext=parent.__touhouAudioContext;}catch{}
+@@ -237,5 +239,5 @@ async function mountData(){
+  // eagler-touhou managed package: the retail archive arrives through the parent
+  // (written to /th11.dat, which the C++ archive layer opens) and the baked font
+  // tables through the sibling resources.json.
+- await mountManagedData(Module,{game,parentWindow:parent,query,emit});
++ await mountManagedData(Module,{game,parentWindow:parent,query,emit,signal:startupAbort.signal});
+ }
+diff --git a/ports/th14/tools/th14-build-gles.py b/ports/th14/tools/th14-build-gles.py
+--- a/ports/th14/tools/th14-build-gles.py
++++ b/ports/th14/tools/th14-build-gles.py
+@@ -26,7 +26,7 @@ def prepare_host_shell(source, identity):
+     source = source[:start] + json.dumps(identity, ensure_ascii=False) + source[end:]
+     anchor = ' await mountData();'
+     assert source.count(anchor) == 1
+-    source = source.replace(anchor, anchor + "\n Module.FS.symlink('/th14.dat','/th11.dat');", 1)
++    source = source.replace(anchor, anchor + "\n if(!Module._th14_adopt_managed_archive)Module.FS.symlink('/th14.dat','/th11.dat');", 1)
+     assert "game='th14'" in source and "core?.th11_key(" in source
+     return source
+ 
+diff --git a/launcher/app/services/runtime.ts b/launcher/app/services/runtime.ts
+--- a/launcher/app/services/runtime.ts
++++ b/launcher/app/services/runtime.ts
+@@ -70,7 +70,7 @@ export interface RuntimeFrame {
+   addEventListener(type: 'load', listener: EventListener): void;
+   removeEventListener(type: 'load', listener: EventListener): void;
+ }
+-export interface ManagedDataRequest { game: string; generation: string; epoch: number }
++export interface ManagedDataRequest { game: string; generation: string; epoch: number; preferBlob?: boolean }
+ export interface RuntimeHost {
+   location: { href: string; origin: string };
+   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
+@@ -551,7 +551,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
+     const generation = generations.resolve(request);
+     const before = runtimeIdentity(token);
+     try {
+-      const result = await deps.readData(generation);
++      const result = await deps.readData(generation, {preferBlob: token.game === 'th14' && request.preferBlob === true});
+       const after = runtimeIdentity(token);
+       if (after.runtime !== before.runtime || after.document !== before.document) throw new RuntimeSessionSupersededError();
+       return result;
+diff --git a/launcher/package/package-store.mjs b/launcher/package/package-store.mjs
+--- a/launcher/package/package-store.mjs
++++ b/launcher/package/package-store.mjs
+@@ -48,9 +48,10 @@ function normalizeStoredPackageObject(value) {
+   if (!value || typeof value !== "object") return null;
+   if (value.blob instanceof Blob) return value;
+   if (!(value.data instanceof ArrayBuffer)) return null;
++  let blob;
+   return {
+     ...value,
+-    blob: new Blob([value.data], { type: String(value.type || "application/octet-stream") }),
++    get blob() { return blob ??= new Blob([value.data], { type: String(value.type || "application/octet-stream") }); },
+   };
+ }
+ 
+@@ -252,7 +253,7 @@ export async function readVerifiedPackageObjectBySha256(sha256, bytes, { indexed
+ }
+ 
+ export async function packageObjectMatches(object, bytes, sha256) {
+-  if (!object || (bytes != null && object.blob.size !== Number(bytes))) return false;
++  if (!object || (bytes != null && (object.data?.byteLength ?? object.blob.size) !== Number(bytes))) return false;
+   if (!sha256) return true;
+   try {
+     return await sha256Hex(object.data || object.blob) === sha256.toLowerCase();
+diff --git a/launcher/src/launcher/runtime-preparation.mts b/launcher/src/launcher/runtime-preparation.mts
+--- a/launcher/src/launcher/runtime-preparation.mts
++++ b/launcher/src/launcher/runtime-preparation.mts
+@@ -40,11 +40,11 @@ async function storedObjectBuffer(stored: StoredPackageObject | null) {
+   return null;
+ }
+ 
+-async function readObjectBuffer(objectId: string, readObject: ReadObject, timeoutMs: number) {
++async function readObjectBeforeTimeout<T>(read: () => Promise<T>, timeoutMs: number) {
+   let timer: ReturnType<typeof setTimeout> | undefined;
+   try {
+     return await Promise.race([
+-      readObject(objectId).then(storedObjectBuffer),
++      read(),
+       new Promise<never>((_resolve, reject) => {
+         timer = setTimeout(() => reject(new Error("本地存储读取超时，请重试")), timeoutMs);
+       }),
+@@ -54,15 +54,30 @@ async function readObjectBuffer(objectId: string, readObject: ReadObject, timeou
+   }
+ }
+ 
++function readObjectBuffer(objectId: string, readObject: ReadObject, timeoutMs: number) {
++  return readObjectBeforeTimeout(() => readObject(objectId).then(storedObjectBuffer), timeoutMs);
++}
++
+ export async function readManagedRuntimeData(
+   generation: InstalledPackageGeneration,
+-  { readObject = readPackageObject, timeoutMs = 30_000 }: ReadOptions = {},
++  { readObject = readPackageObject, timeoutMs = 30_000, preferBlob = false }: ReadOptions & {preferBlob?: boolean} = {},
+ ) {
+   const fileId = packageDataFileId(generation);
+   const declaration = generation.descriptor.files[fileId];
+   const fileRef = generation.files[fileId];
+   if (!declaration || !fileRef?.objectId) throw new InstalledGameDataError("Installed game DATA is missing");
+   const objectId = fileRef.objectId;
++  if (preferBlob) {
++    const stored = await readObjectBeforeTimeout(() => readObject(objectId), timeoutMs);
++    // TH14 reads chunks without transferring or mutating the IndexedDB result.
++    const data = stored?.data;
++    const blob = data instanceof ArrayBuffer ? undefined : stored?.blob;
++    const bytes = data?.byteLength ?? blob?.size;
++    if (bytes === undefined) throw new InstalledGameDataError("Installed game DATA cannot be read");
++    if (declaration.bytes != null && bytes !== Number(declaration.bytes))
++      throw new InstalledGameDataError(`Installed game DATA size mismatch: ${bytes}/${declaration.bytes}`);
++    return blob ? {blob, bytes, fileId} : {buffer: data, bytes, fileId};
++  }
+   const buffer = await readObjectBuffer(objectId, readObject, timeoutMs);
+   if (!(buffer instanceof ArrayBuffer)) throw new InstalledGameDataError("Installed game DATA cannot be read");
+   if (declaration.bytes != null && buffer.byteLength !== Number(declaration.bytes)) {
+diff --git a/launcher/tests/react-main/runtime-service.test.mjs b/launcher/tests/react-main/runtime-service.test.mjs
+--- a/launcher/tests/react-main/runtime-service.test.mjs
++++ b/launcher/tests/react-main/runtime-service.test.mjs
+@@ -556,6 +556,20 @@ test('runtime: managed code and DATA stay separately leased and bound to exact g
+   assert.equal(f.released.length, 1); await assert.rejects(provide({game: plan.game, generation: plan.generation.id, epoch}), {name: 'AbortError'});
+ });
+ 
++test('runtime: TH14 can request chunk-readable DATA while legacy shells still receive a buffer', async () => {
++  const original = new Blob([new Uint8Array([1, 2, 3])]);
++  const f = fixture({readData: (generation, options) => owners.readManagedRuntimeData(generation, {
++    ...options, readObject: async () => ({blob: original}),
++  })});
++  const plan = managedPlan('th14');
++  await f.prepare(plan);
++  const provide = f.host.__eaglerPrepareManagedRuntimeDataV1;
++  const request = {game: plan.game, generation: plan.generation.id, epoch: f.service.getSnapshot().epoch};
++  const chunked = await provide({...request, preferBlob: true});
++  assert.equal(chunked.blob, original);
++  assert.deepEqual([...new Uint8Array((await provide(request)).buffer)], [1, 2, 3]);
++});
++
+ test('runtime: stale epoch, foreign source and foreign origin cannot settle current commands', async () => {
+   const f = fixture(); await f.prepare(directPlan()); const oldEpoch = f.service.getSnapshot().epoch;
+   await f.service.close({discardUnsaved: true}); await f.prepare(directPlan()); assert.notEqual(f.service.getSnapshot().epoch, oldEpoch);
