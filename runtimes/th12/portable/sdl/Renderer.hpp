@@ -70,10 +70,11 @@ private:
     };
     struct Depth {GLuint buffer=0;bool stencil=false;};
     struct Uniform {GLint location=-1;std::array<float,16> value{};int count=-1;};
+    using ProgramKey = std::array<u32,10>;
     struct Program {GLuint id=0;std::array<Uniform,28> uniforms{};};
     struct Stream {GLuint id=0;u32 size=0,used=0,frame=~0u;};
     SDL_Window* window=nullptr;SDL_GLContext context=nullptr;
-    std::map<u32,GPU> surfaces;std::map<u32,Depth> depths;std::map<std::array<u32,10>,Program> programs;
+    std::map<u32,GPU> surfaces;std::map<u32,Depth> depths;std::map<ProgramKey,Program> programs;
     GLuint vertex=0,currentProgram=0,boundTexture=~0u,readFramebuffer=~0u,drawFramebuffer=~0u;
     std::map<std::array<u32,6>,GLuint> layouts;GLuint currentLayout=0;
     GLuint resampleProgram=0,resampleVao=0,weightTexture=0;
@@ -82,6 +83,13 @@ private:
     GLint imguiProjMtx=-1,imguiTexture=-1;
 #endif
     Program generic{};bool warming=true,buildingGeneric=false,parallelStartupCompile=false;Program* program=nullptr;
+#ifdef TH14_ASYNC_GLES_STARTUP
+    Program genericDepth{};
+    ProgramKey linkingKey{};
+    GLuint linkingProgram=0;
+    bool linkQueued=false,synchronousLinkSlow=false;
+    void finish_linking_program();
+#endif
     std::array<float,256> alphaBoundaries{};
     Stream vertices{},indices{},instances{};State batchState{};
     std::vector<u8> batchBytes,quad,worlds,pixels;bool batching=false,instancing=false;
@@ -101,6 +109,8 @@ private:
 #endif
     void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32,bool clippedGeometry=false);
     void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);
+    GLuint link_program(const ProgramKey&);
+    Program program_uniforms(GLuint);
     void select(const State&);void uniform(int,int,const float*);void integer(int,int);
     u32 upload(Stream&,GLenum,const void*,u32,u32);
 };
