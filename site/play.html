@@ -73,17 +73,17 @@
           <label><input type="checkbox" tabindex="-1" data-tool-bit="6"><span>F7: 永续BGM</span></label>
         </aside>
         <section id="thprac-advanced" class="thprac-advanced" data-tools-advanced role="dialog" aria-label="高级选项" hidden>
-          <h2>高级选项</h2>
-          <details open><summary>游戏速度</summary>
+          <h2 data-tools-label="TH_ADV_OPT">高级选项</h2>
+          <details open><summary data-tools-label="TH_GAME_SPEED">游戏速度</summary>
             <div class="thprac-advanced-content">
-              <div class="thprac-speed-row"><span class="thprac-slider"><input aria-label="FPS调整" data-tool-speed="fps" type="range" min="60" max="180" step="15" value="60"><output data-tool-speed-text="fps">x1.0 (60fps)</output></span><span>FPS调整</span><label class="thprac-inline"><input data-tool-speed="free" type="checkbox">自由调整</label></div>
-              <label class="thprac-speed-row"><span class="thprac-slider"><input data-tool-speed="slow" type="range" min="1" max="60" value="15"><output data-tool-speed-text="slow">15</output></span><span>Replay slow FPS</span></label>
-              <label class="thprac-speed-row"><span class="thprac-slider"><input data-tool-speed="fast" type="range" min="1" max="21" value="1"><output data-tool-speed-text="fast">x1.0 (60fps)</output></span><span>Replay fast FPS</span></label>
-              <button data-tools-apply type="button">应用</button>
+              <div class="thprac-speed-row"><span class="thprac-slider"><input aria-label="FPS调整" data-tool-speed="fps" type="range" min="60" max="180" step="15" value="60"><output data-tool-speed-text="fps">x1.0 (60fps)</output></span><span data-tools-label="TH_FPS_ADJ">FPS调整</span><label class="thprac-inline"><input data-tool-speed="free" type="checkbox"><span data-tools-label="TH_FPS_FREE_ADJ">自由调整</span></label></div>
+              <label class="thprac-speed-row"><span class="thprac-slider"><input data-tool-speed="slow" type="range" min="1" max="60" value="15"><output data-tool-speed-text="slow">15</output></span><span data-tools-label="TH_FPS_RPY_SLOW">Replay慢速FPS</span></label>
+              <label class="thprac-speed-row"><span class="thprac-slider"><input data-tool-speed="fast" type="range" min="1" max="21" value="1"><output data-tool-speed-text="fast">x1.0 (60fps)</output></span><span data-tools-label="TH_FPS_RPY_FAST">Replay快速FPS</span></label>
+              <button data-tools-apply type="button" hidden>应用</button>
             </div>
           </details>
-          <details open><summary>关于thprac</summary><div class="thprac-advanced-content thprac-about"><p>thprac 版本 2.3.1.1</p><p>网站: <a href="https://github.com/touhouworldcup/thprac" target="_blank" rel="noopener">https://github.com/touhouworldcup/thprac</a></p><p>特别感谢:<br>You!</p><details><summary>显示许可信息</summary><pre>MIT License
-MIT License
+          <details open><summary data-tools-label="TH_ABOUT_THPRAC">关于thprac</summary><div class="thprac-advanced-content thprac-about"><p data-tools-version>thprac 版本 2.3.1.1</p><p><a data-tools-label="TH_ABOUT_WEBSITE" href="https://github.com/touhouworldcup/thprac" target="_blank" rel="noopener">网站：https://github.com/touhouworldcup/thprac</a></p><p data-tools-label="TH_ABOUT_THANKS">特别感谢：
+You!</p><details data-tools-licence><summary data-tools-licence-label>显示许可信息</summary><pre>MIT License
 
 Copyright (c) 2022 Ack
 
