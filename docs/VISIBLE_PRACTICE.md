@@ -1,6 +1,6 @@
-# 可见练习入口
+# 临时简易选关入口（不是 thprac）
 
-游戏页顶部“练习”按钮在资源及现有原生接口就绪后可用；主动打开后选择六路线第三面Normal或EX起点。正在准备时禁止重复启动；替换当前局需勾选确认。重新开始以当前实际练习局的路线为准。关闭/Escape取消界面，启动中关闭只取消匹配的launchId/selection，迟到完成不能冒新局成功；启动器退出会释放界面和待处理工作。
+游戏页顶部“简易选关”按钮在资源及现有原生接口就绪后可用；主动打开后选择六路线第三面Normal或EX起点。正在准备时禁止重复启动；替换当前局需勾选确认。重新开始以当前实际练习局的路线为准。关闭/Escape取消界面，启动中关闭只取消匹配的launchId/selection，迟到完成不能冒新局成功；启动器退出会释放界面和待处理工作。
 
 每次seed34772/progress0/fresh，练习局不计正常通关与解锁，不使用前关carry。不提供清库/模拟通关/解锁按钮，不自动弹出开发面板；原开发工具仍hidden/inert。练习重用现有startDebugThirdStage/prepareStage及真实native taint校验，没有改核心/RNG/HP/碰撞/历史。
 
@@ -12,4 +12,4 @@
 
 独立源码review5393B/SHA593100414836bbfd75acd9898c3a817238fa4af982adc17e8dfb62226a83e1a6，读的是847快照。MAIN将“hosted exit残留”提升为实际缺陷并850→851修复；mounted页面缺口由854补证。焦点陷阱/对话框外Escape、取消完成临界文案、重复文案为小改进待办；晚到guard拒绝误cancel外国owner仅理论防御线索，实际UI同步ready/busy guard使该入口不可达，保当前identity校验。未循环重审或扩大原生兼容门槛。
 
-有限Web功能基线据[WEB_FUNCTIONAL_SCOPE.md](WEB_FUNCTIONAL_SCOPE.md)完成；公网发布和本地Runtime打包仍暂停。第四阶段已实际进入规则握手855–856，尚无可玩多人对局。
+2026-11-17 用户纠正：这里仅是简易选关，不是要求的TH128 thprac适配。此前据此宣布第三阶段完成的结论撤回，已保留的846–854证据仍只证明该局部组件。实际thprac工作优先，见[纠正记录](THPRAC_CORRECTION.md)。

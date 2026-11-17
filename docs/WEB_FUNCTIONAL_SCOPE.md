@@ -11,10 +11,10 @@
 | 语言 | 真实catalog提供zh/ja、已选语言初始化、缺失选择回退；父配置只接受已安装catalog语言 | 中文资源真实使用；原生日文字形/额外语言/缺font设备兼容保待办，不冒已全验 |
 | 存储/录像 | 25槽Replay exact-CAS/strict事务/完整回读822、823原RPY与游戏读取者；原生捕获分数及T821只读导出；JSON设置与独立9B姓名保持 | 不伪造scoreimport/原binarycfg或默认/解锁；原版完整录像617为单列兼容 |
 | 生命周期 | 840启动失败/版本不符保旧/退出取消；843持久缓存返回请求fresh document，845受影响110；844真实历史返回＋IDB保持 | 844实际pageshow.persisted=false；cached true分支仅CPU事件边界验证，设备BFCache单列 |
-| 用户练习入口 | 独立可见“练习”入口：六路线第三面Normal＋EX起点；主动打开/关闭、替换确认、归属/取消/重开、native taint严格核对；846→847与850→851 RED/GREEN，851受影响304项；854真实HTML/CSS/当前调用者浏览器15项 | engine/resource/pause明确接缝；不冒完整thprac、原作浏览器画面/FPS；隐藏开发工具仍隐藏 |
+| thprac 练习适配 | 当前仅有临时七项简易选关；846–854证明其局部行为，没有证明thprac接入 | **必需缺口**：按eagler-touhou与上游thprac_th128.cpp对接TH128专用参数/菜单、真实游戏效果、开关/语言、生命周期与练习录像元数据。不能用简易选关替代 |
 
-MAIN决定：上述有限Web功能基线在846–854可见练习交付后完成。第三阶段的功能完成与公网部署、设备兼容、完整原资源浏览器端实测分别记录；没有公开URL，也没有完整原作设备60FPS或整体100%的声明。第四阶段已从855–856的实际规则握手模块开始，尚未接通实际多人游戏。
+2026-11-17 用户明确纠正：要求的是 TH128 对应的 thprac。此前把七项简易选关计为练习适配完成并宣布第三阶段完成，属于范围判断错误；该完成结论撤回。已验证的其他Web能力和原单人基线保持，当前先补实际thprac适配，多人原型保存、后续推进置后。公网与设备兼容仍分别记录。
 
 练习仅支持已有六路线第三面Normal与EX起点，固定seed34772/progress0/fresh，不带已验证的前关carry。练习局保持非正常成绩/解锁资格，不清库、不改设置/音量。854使用实际HTML/CSS/组件及逐字节源提取的当前startLaunch/cancel/taint/exit；native模块、资源加载、暂停和渲染明确为边界替身，0World/Factory/GPU/物理音频。完整游戏引擎沿用已接受基线，不重跑六线/EX。
 
-后续多人规则见[MULTIPLAYER_RULES.md](MULTIPLAYER_RULES.md)，可见练习说明及验收见[VISIBLE_PRACTICE.md](VISIBLE_PRACTICE.md)。
+thprac实际来源与后续工作见[THPRAC_CORRECTION.md](THPRAC_CORRECTION.md)。保留的多人规则见[MULTIPLAYER_RULES.md](MULTIPLAYER_RULES.md)，可见练习说明及验收见[VISIBLE_PRACTICE.md](VISIBLE_PRACTICE.md)。
