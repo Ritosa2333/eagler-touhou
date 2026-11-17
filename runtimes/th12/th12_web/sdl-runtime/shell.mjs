@@ -383,6 +383,8 @@ for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
 // Persist during play as well, with writes serialized by the sync chain.
 setInterval(()=>{if((launched||roomPreview)&&!document.hidden&&core)try{queue=queue.then(()=>save()).catch(error);}catch(e){error(e);}},30000);
 setInterval(()=>{void pollSpectator().catch(error);},300);
+const startupAbort=new AbortController();
+window.addEventListener('pagehide',event=>{if(!event.persisted)startupAbort.abort();},{once:true});
 const initialized=(async()=>{
  let audioContext;try{audioContext=parent.__touhouAudioContext;}catch{}
  Module=await createModule({canvas,noInitialRun:true,resetBrowserKeyboard:()=>keyboard.clear(),...(audioContext?{SDL3:{audioContext}}:{}),print:console.log,printErr:console.error,
@@ -435,5 +437,5 @@ async function mountData(){
  // eagler-touhou managed package: the retail archive arrives through the parent
  // (written to /th11.dat, which the C++ archive layer opens) and the baked font
  // tables through the sibling resources.json.
- await mountManagedData(Module,{game,parentWindow:parent,query,emit});
+ await mountManagedData(Module,{game,parentWindow:parent,query,emit,signal:startupAbort.signal});
 }

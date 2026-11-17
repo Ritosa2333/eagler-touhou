@@ -149,16 +149,47 @@ export function observeMusicWrites(Module,core,game) {
 export function isSupersededRuntimeError(error){
  return error?.name==='AbortError'&&error?.message==='EAGLER_RUNTIME_SESSION_SUPERSEDED';
 }
-export async function mountManagedData(Module,{game,parentWindow,query,fetcher=globalThis.fetch,base=globalThis.location?.href,emit}){
+async function mountTh14Archive(Module,result,signal){
+ const source=result.blob??new Uint8Array(result.buffer);
+ const size=source.byteLength??source.size;
+ if(!Number.isSafeInteger(size)||size<16||size>256*1024*1024)throw Error('Invalid game DATA size');
+ signal?.throwIfAborted();
+ const pointer=Module._malloc(size);
+ if(!pointer)throw Error('TH14 资源内存不足');
+ let adopted=false;
+ try{
+  const chunk=1024*1024;
+  for(let offset=0;offset<size;offset+=chunk){
+   const end=Math.min(size,offset+chunk);
+   const bytes=source.subarray?source.subarray(offset,end):new Uint8Array(await source.slice(offset,end).arrayBuffer());
+   signal?.throwIfAborted();
+   Module.HEAPU8.set(bytes,pointer+offset);
+   if(end<size){
+    if(globalThis.scheduler?.yield)await globalThis.scheduler.yield();
+    else await new Promise(resolve=>setTimeout(resolve,0));
+    signal?.throwIfAborted();
+   }
+  }
+  adopted=Module._th14_adopt_managed_archive(pointer,size)===1;
+  if(!adopted)throw Error('TH14 资源挂载失败');
+ }finally{
+  if(!adopted)Module._free(pointer);
+ }
+}
+
+export async function mountManagedData(Module,{game,parentWindow,query,fetcher=globalThis.fetch,base=globalThis.location?.href,emit,signal}){
  if(query.get('managedData')!=='1'||typeof parentWindow?.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('请从 eagler-touhou 启动此运行时');
  const epoch=Number(query.get('runtimeEpoch'));if(!Number.isSafeInteger(epoch)||epoch<=0)throw Error('Runtime navigation epoch unavailable');
- const result=await parentWindow.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch});
- // Cross-frame ArrayBuffers need not pass this realm's instanceof check.
- const bytes=new Uint8Array(result.buffer);
- if(bytes.byteLength<16||bytes.byteLength>512*1024*1024)throw Error('Invalid game DATA size');
- // The TH11 C++ archive layer opens /th11.dat directly.
- Module.FS.writeFile('/'+game+'.dat',bytes,{canOwn:true});
- const response=await fetcher(new URL('./resources.json',base));if(!response.ok)throw Error('Runtime resource manifest unavailable');
+ const direct=game==='th14'&&typeof Module._th14_adopt_managed_archive==='function';
+ const result=await parentWindow.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch,...(direct?{preferBlob:true}:{})});
+ if(direct)await mountTh14Archive(Module,result,signal);
+ else{
+  // Cross-frame ArrayBuffers need not pass this realm's instanceof check.
+  const bytes=new Uint8Array(result.buffer);
+  if(bytes.byteLength<16||bytes.byteLength>512*1024*1024)throw Error('Invalid game DATA size');
+  Module.FS.writeFile('/'+game+'.dat',bytes,{canOwn:true});
+ }
+ const response=await fetcher(new URL('./resources.json',base),{signal});if(!response.ok)throw Error('Runtime resource manifest unavailable');
  const manifest=await response.json();if(manifest.game!==game||manifest.schema!=='eagler-sdl-resources/1')throw Error('Invalid Runtime resource manifest');
  await installResources(Module,manifest.resources,{game,emit,base,fetcher});
 }
