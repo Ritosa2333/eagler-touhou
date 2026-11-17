@@ -15,11 +15,13 @@ const arg=(name,fallback)=>process.argv.find(v=>v.startsWith(`--${name}=`))?.sli
 assert.ok(arg('output'),'Required: --manifest=private-runtime-inputs.json --output=results');
 const root=resolve(import.meta.dirname,'../..'),output=resolve(arg('output'));
 const result=await runWithReport({output,schema:'eagler-touhou/mp-browser/1'},async(report,save)=>{
-assertCliArguments(process.argv.slice(2),{values:['manifest','output','game','players','route','challenge','frames','restart'],flags:['wait-end','stop-stream','recover','lifecycle']});
+assertCliArguments(process.argv.slice(2),{values:['manifest','output','game','players','route','challenge','frames','restart','timeout-ms'],flags:['wait-end','stop-stream','recover','lifecycle']});
 assert.ok(arg('manifest'),'Required: --manifest=private-runtime-inputs.json');
 const config=JSON.parse(await readFile(resolve(arg('manifest')),'utf8'));
 const players=Number(arg('players','2')),route=arg('route','rtc'),mode=arg('challenge','both');
 const duration=Number(arg('frames','1200'));
+const timeoutMs=Number(arg('timeout-ms','120000'));
+assert.ok(Number.isSafeInteger(timeoutMs)&&timeoutMs>=1000&&timeoutMs<=600000,'--timeout-ms must be between 1000 and 600000');
 const waitEnd=process.argv.includes('--wait-end');
 const stopStream=process.argv.includes('--stop-stream');
 const recover=process.argv.includes('--recover');
@@ -40,7 +42,7 @@ const caseId=(target,challenge)=>`${target.game}-${players}p-${challenge?'challe
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 await mkdir(output,{recursive:true});
 Object.assign(report,{players,route,frames:duration,
- waitEnd,stopStream,recover,restart,lifecycle,
+ waitEnd,stopStream,recover,restart,lifecycle,timeoutMs,
  scope:'Actual native MP games and independent spectators through a real local relay and the production Runtime protocol',
  commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),harnessSha256:sha(await readFile(new URL(import.meta.url))),cases:[]});
 report.relayConfig={freshPerCase:true,rtcTimeoutMs:30000,stunUrls:[],gameplayRelayFallback:route==='relay'};
@@ -102,7 +104,7 @@ async function relayFault(operation,fields={}){
   const receive=message=>{if(message.id!==id)return;clearTimeout(timer);relay.off('message',receive);yes(message);};
   relay.on('message',receive);relay.send({operation,...fields,id});});
 }
-async function until(operation,label,timeout=120000){const deadline=Date.now()+timeout;while(true){const result=await operation();if(result)return result;if(Date.now()>deadline)throw Error('Timeout: '+label);await new Promise(r=>setTimeout(r,100));}}
+async function until(operation,label,timeout=timeoutMs){const deadline=Date.now()+timeout;while(true){const result=await operation();if(result)return result;if(Date.now()>deadline)throw Error('Timeout: '+label);await new Promise(r=>setTimeout(r,100));}}
 async function lobby(room,client,member,create=false){
  const socket=new WebSocket(`ws://127.0.0.1:${relayPort}/?`+new URLSearchParams({room,lobby:client,member,intent:create?'create':'join',players:String(players),visibility:'private',difficulty:'1'}));
  socket.messages=[];socket.on('message',b=>{try{socket.messages.push(JSON.parse(String(b)));}catch{}});

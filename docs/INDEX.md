@@ -1,6 +1,6 @@
 # 文档总表
 
-共 704 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 705 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -420,6 +420,7 @@
 | 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_TRACK_VOLUME_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_TRACK_VOLUME_NOV17.md) | TH14 切曲音量与 OGG 静音流程 · 2026-11-17 |
 | 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_UPSTREAM_RECONCILE_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_UPSTREAM_RECONCILE_NOV17.md) | TH14 上游接续与公共修复同步 · 2026-11-17 |
 | 历史记录 | [archive/th14-cold-room-handshake-20261118/TH14_COLD_ROOM_HANDSHAKE_NOV18.md](../archive/th14-cold-room-handshake-20261118/TH14_COLD_ROOM_HANDSHAKE_NOV18.md) | TH14 冷启动房间握手 |
+| 历史记录 | [archive/th14-cold-room-handshake-20261118/TH14_NATIVE_GPU_MULTIPLAYER_NOV18.md](../archive/th14-cold-room-handshake-20261118/TH14_NATIVE_GPU_MULTIPLAYER_NOV18.md) | TH14 硬件图形路径的联机与录像验收 |
 | 历史记录 | [archive/th14-rollback-20261114/README.md](../archive/th14-rollback-20261114/README.md) | TH14 多人延迟输入验证 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/README.md](../archive/th14-subtree-runtime-restoration-20261114/README.md) | TH14 子树运行时修复接续 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_FULL_BROWSER_REPLAY_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_FULL_BROWSER_REPLAY_NOV14.md) | TH14 当前版本完整录像浏览器验收 |

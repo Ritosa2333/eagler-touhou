@@ -52,7 +52,7 @@ const server=createServer(async(req,res)=>{
 });
 await new Promise((done,fail)=>server.listen(0,'127.0.0.1',done).once('error',fail));
 const base='http://127.0.0.1:'+server.address().port+'/';
-const browser=await launchBrowser();
+const browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--mute-audio']});
 const sockets=[];
 function next(socket,match,send){
  return new Promise((resolve,reject)=>{
@@ -118,7 +118,13 @@ async function makeClient(seat){
  await page.goto(base);
  await page.waitForFunction(()=>events.some(e=>e.event==='ready'),null,{timeout:45000});
  const frame=page.frames()[1];
- return {page,frame,cmd:(c,f={})=>page.evaluate(([c,f])=>command(c,f),[c,f])};
+ return {page,frame,cmd:async(c,f={})=>{
+  const result=await page.evaluate(([c,f])=>command(c,f),[c,f]);
+  // Standalone fixtures do not borrow the launcher's unlocked AudioContext.
+  // Use a real pointer gesture so the foreground audio gate can resume.
+  if(c==='launch')await page.mouse.click(100,100);
+  return result;
+ }};
 }
 const runId='th14mp-local-'+randomBytes(5).toString('hex');
 try{
