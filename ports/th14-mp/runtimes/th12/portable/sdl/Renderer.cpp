@@ -44,20 +44,24 @@ GLuint shader(GLenum type,const std::string& source,bool check=true){
  return s;
 }
 
+#ifdef TH14_ASYNC_GLES_STARTUP
+bool program_link_complete(GLuint program){
+ constexpr GLenum completion_status=0x91B1; // COMPLETION_STATUS_KHR
+ GLint complete=0;glGetProgramiv(program,completion_status,&complete);return complete!=0;
+}
+#endif
+
 bool startup_program_linked(GLuint program,bool parallel){
 #ifdef TH14_ASYNC_GLES_STARTUP
  // Link-status and uniform queries can block until the driver has finished.
  // Keep the loading UI responsive even when parallel compilation is unavailable.
  emscripten_sleep(0);
  if(parallel){
-  constexpr GLenum completion_status=0x91B1; // COMPLETION_STATUS_KHR
   const auto context=emscripten_webgl_get_current_context();
   const double deadline=emscripten_get_now()+15000;
-  GLint complete=0;
-  while(!complete){
+  while(!program_link_complete(program)){
    if(emscripten_is_webgl_context_lost(context)||emscripten_get_now()>=deadline)return false;
-   glGetProgramiv(program,completion_status,&complete);
-   if(!complete)emscripten_sleep(4);
+   emscripten_sleep(4);
   }
  }
 #else
@@ -115,7 +119,18 @@ bool Renderer::initialize(){
  parallelStartupCompile=emscripten_webgl_enable_extension(emscripten_webgl_get_current_context(),"KHR_parallel_shader_compile");
 #endif
  vertex=shader(GL_VERTEX_SHADER,source,!parallelStartupCompile);glGenBuffers(1,&vertices.id);glGenBuffers(1,&indices.id);glGenBuffers(1,&instances.id);
- glActiveTexture(GL_TEXTURE0);buildingGeneric=true;select(State{});if(!failure.empty())return false;generic=*program;programs.clear();buildingGeneric=false;
+ glActiveTexture(GL_TEXTURE0);buildingGeneric=true;
+ select(State{});if(!failure.empty())return false;generic=*program;programs.clear();
+#ifdef TH14_ASYNC_GLES_STARTUP
+ if(version==10){
+  // Colour-only draws can use early depth tests, including while the
+  // renderer is waiting for a specialized program.
+  State depth;depth.depth=1;
+  select(depth);if(!failure.empty())return false;genericDepth=*program;programs.clear();
+ }
+#endif
+ buildingGeneric=false;
+#ifndef TH14_ASYNC_GLES_STARTUP
  State warm;for(int i=0;i<4;i++){warm.texture=i!=2;auto& p=warm.pipeline;p.alphaTest=true;p.fog=i==3;p.alphaCompare=Compare::GreaterEqual;p.color.operation=p.alpha.operation=(i==0||i==3)?ColorOperation::Multiply:ColorOperation::First;p.color.first=p.alpha.first={(i==0||i==3)?ArgumentSource::Texture:ArgumentSource::Diffuse};p.color.second=p.alpha.second={i==3?ArgumentSource::Factor:ArgumentSource::Diffuse};select(warm);if(!failure.empty())return false;}
  // Compile the game combiner families before the first frame. Rare asset
  // combinations use a prelinked uniform program instead of compiling in draw.
@@ -133,6 +148,7 @@ bool Renderer::initialize(){
    p.color.second=p.alpha.second={second};select(warm);if(!failure.empty())return false;
  }
 #endif
+#endif
  resampleProgram=glCreateProgram();const auto rv=shader(GL_VERTEX_SHADER,resampleVertex,!parallelStartupCompile),rf=shader(GL_FRAGMENT_SHADER,resampleFragment,!parallelStartupCompile);
  glAttachShader(resampleProgram,rv);glAttachShader(resampleProgram,rf);glLinkProgram(resampleProgram);glDeleteShader(rv);glDeleteShader(rf);
  if(!startup_program_linked(resampleProgram,parallelStartupCompile)){failure="Resample program link failed";return false;}
@@ -140,6 +156,10 @@ bool Renderer::initialize(){
  warming=false;set_current(this);return true;
 }
 Renderer::~Renderer(){discard();
+#ifdef TH14_ASYNC_GLES_STARTUP
+ if(linkingProgram)glDeleteProgram(linkingProgram);
+ if(genericDepth.id)glDeleteProgram(genericDepth.id);
+#endif
 #if defined(PORT_TITLE) && PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
  if(imguiProgram)glDeleteProgram(imguiProgram);
  if(imguiFontTexture)glDeleteTextures(1,&imguiFontTexture);
@@ -178,10 +198,36 @@ void Renderer::select(const State& s){
    p.depthTest&&s.depth&&(p.depthWrite||p.depthCompare!=Compare::Always)&&resolve(owner,s.depth).format==PixelFormat::Depth16);
  textureAndDepth|=u32(depthOutput)<<1;
 #endif
- std::array<u32,10> key{textureAndDepth,u32(p.alphaTest),u32(p.fog),u32(p.color.operation),u32(p.alpha.operation),arg(p.color.first),arg(p.color.second),arg(p.alpha.first),arg(p.alpha.second),u32(p.alphaCompare)};auto it=programs.find(key);
- if(it==programs.end()&&!warming){program=&generic;++stats.genericBatches;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}return;}
- if(it==programs.end()){
-  ++stats.programCompiles;
+ const ProgramKey key{textureAndDepth,u32(p.alphaTest),u32(p.fog),u32(p.color.operation),u32(p.alpha.operation),arg(p.color.first),arg(p.color.second),arg(p.alpha.first),arg(p.alpha.second),u32(p.alphaCompare)};
+ auto it=programs.find(key);
+ if(it==programs.end()&&warming){
+  const GLuint id=link_program(key);
+  if(!id||!startup_program_linked(id,parallelStartupCompile)){
+   if(id)glDeleteProgram(id);
+   failure="SDL shader program did not link";return;
+  }
+  it=programs.emplace(key,program_uniforms(id)).first;
+ }
+ if(it==programs.end()||!it->second.id){
+#ifdef TH14_ASYNC_GLES_STARTUP
+  // Draw the first frame with the general shader. After that, specialize only
+  // states the game draws, with a bounded cache and one link in flight.
+  const u32 maxSpecializations=parallelStartupCompile?48:12;
+  if(it==programs.end()&&stats.presentations&&!synchronousLinkSlow&&
+     !linkQueued&&!linkingProgram&&programs.size()<maxSpecializations){
+   linkingKey=key;linkQueued=true;
+  }
+  program=(key[0]&2u)?&genericDepth:&generic;
+#else
+  program=&generic;
+#endif
+  ++stats.genericBatches;
+ }else program=&it->second;
+ if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}
+}
+
+GLuint Renderer::link_program(const ProgramKey& key){
+ ++stats.programCompiles;
   static const char* constants[]{"hasTexture","alphaTest","fogEnabled","colorOp","alphaOp","colorArg1","colorArg2","alphaArg1","alphaArg2","alphaFunc"};
   std::string source=fragmentSource,defs;if(!buildingGeneric){replace(source,"uniform bool hasTexture,alphaTest,fogEnabled;","");replace(source,"uniform int colorOp,alphaOp,colorArg1,colorArg2,alphaArg1,alphaArg2,alphaFunc;","");
   for(int i=0;i<10;i++)defs+="const "+std::string(i<3?"bool ":"int ")+constants[i]+"="+(i<3?((i==0?(key[i]&1u):key[i])?"true":"false"):std::to_string(key[i]))+";\n";
@@ -202,7 +248,11 @@ void Renderer::select(const State& s){
   if(version==8)replace(source,"float a=c.a*255.0","float a=floor(c.a*255.0+.5)");
   if(version==8)replace(source,"gl_FragDepth=depth16?(floor(scaled)+floor(fract(scaled)-gl_FragCoord.z+0.5))/65535.0:gl_FragCoord.z;","");
 #if defined(PORT_TITLE) && PORT_TITLE == 14
-  if(version==10&&!buildingGeneric&&!depthOutput)
+  if(version==10&&!(key[0]&2u)
+#ifndef TH14_ASYNC_GLES_STARTUP
+     &&!buildingGeneric
+#endif
+  )
     replace(source,"gl_FragDepth=depth16?(floor(scaled)+floor(fract(scaled)-gl_FragCoord.z+0.5))/65535.0:gl_FragCoord.z;","");
   // Installed D3D9 D16 conversion: truncate to twenty fractional bits,
   // then round the sixteen-bit result to nearest with ties downward.
@@ -211,24 +261,51 @@ void Renderer::select(const State& s){
 #if defined(PORT_TITLE) && PORT_TITLE == 14
   if(version==10)replace(source,"c.rgb=mix(fogColor.rgb,c.rgb,clamp(vFog,0.0,1.0));","{float f=clamp(vFog,0.0,1.0);vec3 rest=fogColor.rgb-fogColor.rgb*f;c.rgb=c.rgb*f+rest;}");
 #endif
-  Program p;p.id=glCreateProgram();GLuint fs=shader(GL_FRAGMENT_SHADER,source,!parallelStartupCompile);glAttachShader(p.id,vertex);glAttachShader(p.id,fs);glLinkProgram(p.id);glDeleteShader(fs);
-  if(!startup_program_linked(p.id,parallelStartupCompile)){
-   glDeleteProgram(p.id);failure="SDL shader program did not link";return;
-  }
+ const GLuint id=glCreateProgram();
+ if(!id)return 0;
+ const GLuint fs=shader(GL_FRAGMENT_SHADER,source,warming&&!parallelStartupCompile);
+ glAttachShader(id,vertex);glAttachShader(id,fs);glLinkProgram(id);glDeleteShader(fs);
+ return id;
+}
+
+Renderer::Program Renderer::program_uniforms(GLuint id){
+ Program p;p.id=id;
 #if !defined(PORT_TITLE) || PORT_TITLE != 14
   if(version==10){glUseProgram(p.id);glUniform4fv(glGetUniformLocation(p.id,"alphaBoundary[0]"),64,alphaBoundaries.data());glUseProgram(currentProgram);}
 #endif
 #if defined(PORT_TITLE) && PORT_TITLE == 14
   const char* names[]{"viewport","transformed","textureTransform","instanced","world","view","projection","textureMatrix","fogEnabled","rangeFog","fogMode","fogParams","fogColor","hasTexture","factor","colorOp","colorArg1","colorArg2","alphaOp","alphaArg1","alphaArg2","alphaTest","alphaRef","alphaFunc","depth16","tex","clipMatrix","fogLinear"};
   if(version==10)names[22]="alphaRange";
-  for(int i=0;i<28;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);it=programs.emplace(key,p).first;
+  for(int i=0;i<28;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);
 #else
   const char* names[]{"viewport","transformed","textureTransform","instanced","world","view","projection","textureMatrix","fogEnabled","rangeFog","fogMode","fogParams","fogColor","hasTexture","factor","colorOp","colorArg1","colorArg2","alphaOp","alphaArg1","alphaArg2","alphaTest","alphaRef","alphaFunc","depth16","tex"};
-  for(int i=0;i<26;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);it=programs.emplace(key,p).first;
+  for(int i=0;i<26;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);
 #endif
- }
- program=&it->second;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}
+ return p;
 }
+
+#ifdef TH14_ASYNC_GLES_STARTUP
+void Renderer::finish_linking_program(){
+ if(!linkQueued&&!linkingProgram)return;
+ const double start=emscripten_get_now();
+ if(linkQueued){
+  linkQueued=false;
+  linkingProgram=link_program(linkingKey);
+  if(!linkingProgram){programs.emplace(linkingKey,Program{});return;}
+ }
+ if(!linkingProgram||(parallelStartupCompile&&!program_link_complete(linkingProgram)))return;
+ GLint linked=0;glGetProgramiv(linkingProgram,GL_LINK_STATUS,&linked);
+ if(linked)programs.emplace(linkingKey,program_uniforms(linkingProgram));
+ else{
+  glDeleteProgram(linkingProgram);
+  programs.emplace(linkingKey,Program{}); // Keep using the general shader for this state.
+ }
+ linkingProgram=0;
+ // A driver without completion polling can link one program after presenting
+ // a frame. If it blocks, keep the general shaders for the remaining states.
+ if(!parallelStartupCompile&&emscripten_get_now()-start>50)synchronousLinkSlow=true;
+}
+#endif
 void Renderer::uniform(int i,int n,const float* p){auto& u=program->uniforms[i];if(u.location<0)return;if(u.count==n&&!std::memcmp(u.value.data(),p,n*4))return;std::memcpy(u.value.data(),p,n*4);u.count=n;if(n==16)glUniformMatrix4fv(u.location,1,false,p);else if(n==4)glUniform4fv(u.location,1,p);else if(n==3)glUniform3fv(u.location,1,p);else if(n==2)glUniform2fv(u.location,1,p);else glUniform1f(u.location,*p);}
 void Renderer::integer(int i,int n){auto& u=program->uniforms[i];if(u.location<0)return;float f=float(n);if(u.count==1&&u.value[0]==f)return;u.count=1;u.value[0]=f;glUniform1i(u.location,n);}
 u32 Renderer::upload(Stream& s,GLenum target,const void* bytes,u32 count,u32 minimum){
@@ -667,6 +744,9 @@ glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEARES
 #endif
 #if defined(__EMSCRIPTEN__) && defined(PORT_TITLE) && PORT_TITLE == 14
 fence_browser_frame();
+#ifdef TH14_ASYNC_GLES_STARTUP
+finish_linking_program();
+#endif
 #else
 SDL_GL_SwapWindow(window);
 #endif
