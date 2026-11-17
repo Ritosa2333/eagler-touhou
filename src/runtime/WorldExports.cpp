@@ -2462,7 +2462,7 @@ int th128_world_enable_z_fire(const void* animation,unsigned animationSize,const
         perfectServices.freezeBullets=[icePointer](const th128::perfect::BulletRequest&,
             th128::perfect::BulletResult& result,std::string& error){
             const auto liveLasers=world->laserObjectCount();
-            if(!liveLasers||*liveLasers!=0){error="Perfect phase120 requires actual laser freeze owner, not static Empty";return false;}
+            if(!liveLasers){error="Perfect phase120 requires its actual live laser manager";return false;}
             th128::ice::PerfectFreezeResult frozen;
             if(grazeSounds.size()>65533){error="perfect phase120 sound journal budget";return false;}
             if(!icePointer->freezePerfect(world->bullets().snapshots(),frozen,error))return false;

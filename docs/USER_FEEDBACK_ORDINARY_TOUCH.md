@@ -15,3 +15,7 @@
 下一完成普通触控的真实自然跨关、终局与成绩隔离，再绑定原浮动设置/编辑器窗口、竖屏与双指视口/iOS输入退路，修魔理沙EX透明粉紫扭曲与白条差异，最后一次117及完整生产页/Title/清晰原游戏画面验收。全部反馈完成后才生成新本地替换Runtime。公开发布、Hosting和多人后续保持暂停；现有资源包、旧包、个人页与设置服务未改。
 
 两个组件编译共160个TU调用，没有完整游戏核心编译。成功core93–116均未重编。首FAIL/request/grant保原，本批331个R源码版本引用为320live+11精确档案、0新未解；旧772外部Python1未解仍保留，未扫描旧历史。MAIN作者单独自审，没有独立worker通过声明。详细证据见user-feedback-ordinary-touch1092-1101.json。
+
+## 2026-11-18 普通触控自然结局与回放终局（1115）
+
+1107原三面Perfect120对后出生激光错误要求Empty真RED；1108仅改为实际manager可用校验，80TU组件通过。1110实际普通[1,2,3]两自然carry/89799游戏步/89715主帧+84选路辅助，真实IDB原RPY和成绩ACK、原Ending15进入，整轮时限失败保留。1114同实际记录输入经LIVE NativeRecord重建（非playLock），14项99.600s/1Factory3World89799游戏+206Ending、真实音频/strictIDB/source.stop/cleaned16→sealed普通结算current4mode3、profile不变/allcontexts关闭通过。1115真实nativeplayLock前两段40360World步通过，第三Worldframe0被普通NormalRecord terminal资源门拒绝，专属Replay终局待修。0新117/包/部署，完整第三步false。见[本批范围](USER_FEEDBACK_NATURAL_ENDING.md)。
