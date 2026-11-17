@@ -10,4 +10,4 @@ Eagler参考固定commit bfc70b275b49a28a3a77140c9ef373b61348b16c，common/docs/
 
 临时按钮已改名“简易选关（不是thprac）”，这是避免误导，不算完成thprac。旧846–854测试与原raw保持原范围；本轮纠正文档/标签不重跑成功case。旧并行独立场景多人规则是MAIN原型选择，不是用户已接受最终多人设计。
 
-来源：Ritosa2333/eagler-touhou的common/docs/thprac.md、docs/adaptation/practice.md、launcher/integrations/thprac.mjs；touhouworldcup/thprac的thprac/src/thprac_th128.cpp。原始固定版本及MIT许可只读保存在W/thprac-reference-20261117，完整sha与原准备期LICENSE→LICENCE路径纠正记录保留，不把失败时重复的stale响应当有效许可。
+来源：Ritosa2333/eagler-touhou的common/docs/thprac.md、launcher/integrations/thprac.mjs；touhouworldcup/thprac的thprac/src/thprac_th128.cpp。原始固定版本及MIT许可只读保存在W/thprac-reference-20261117，完整sha与原准备期LICENSE→LICENCE路径纠正记录保留，不把失败时重复的stale响应当有效许可。

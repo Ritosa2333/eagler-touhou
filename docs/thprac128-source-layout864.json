@@ -1,0 +1,179 @@
+{
+  "authority": "MAIN",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "purpose": "Read-onlyactualsource/layoutcharacterization,notpracticefeatureacceptance",
+  "evidence": {
+    "inventory": {
+      "authority": "MAIN",
+      "ordinal": 864,
+      "passed": true,
+      "summary": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 1
+      },
+      "runtime": 0,
+      "productWorlds": 0,
+      "nativeCompiles": 0,
+      "browser": 0,
+      "inputs": 11,
+      "at": "2026-11-17T02:40:34.074Z"
+    },
+    "result": {
+      "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case864-thprac128-original-ecl-layout/result.json",
+      "bytes": 291,
+      "sha256": "c91fe7683aae2b907223a12b87d6d0d4cbc111d1bb92b31e300ead8080d78ef2"
+    },
+    "fullLayout": {
+      "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case864-thprac128-original-ecl-layout/original-thprac-chapter-layout.json",
+      "bytes": 114679,
+      "sha256": "e8192ab0ec8aaac8873552d004b0d653f8d4076457a1d676cc0250651e38ca8b"
+    },
+    "stages": [
+      {
+        "stage": 1,
+        "name": "st_a1_1.ecl",
+        "bytes": 34116,
+        "sha256": "181aa57ef1581ef19340b283550dd140982ea0b1c12290a5f8957eec2a3f7b35",
+        "chapters": 7,
+        "rawUnparseable": 6
+      },
+      {
+        "stage": 2,
+        "name": "st_a1_2.ecl",
+        "bytes": 35148,
+        "sha256": "30beaf3d3494aa36a5d93941f12bc90bc54f908b15b95026e0b4f063678de339",
+        "chapters": 9,
+        "rawUnparseable": 8
+      },
+      {
+        "stage": 3,
+        "name": "st_a1_3.ecl",
+        "bytes": 34640,
+        "sha256": "cc8d94a3f4be66e537d26e511ecf11e25861708696f6d9b6540b7cfa73cce69b",
+        "chapters": 7,
+        "rawUnparseable": 6
+      },
+      {
+        "stage": 4,
+        "name": "st_a2_2.ecl",
+        "bytes": 38688,
+        "sha256": "af2e963cb2cf85eb40160fec2a2f05cc38837ac286681594f1c6b66b52f26e83",
+        "chapters": 7,
+        "rawUnparseable": 6
+      },
+      {
+        "stage": 5,
+        "name": "st_a2_3.ecl",
+        "bytes": 32760,
+        "sha256": "f628914a9bc8a1bf4d5ed2ec0feaadde83cbc462f820e1cce414ff377ddc9c1d",
+        "chapters": 9,
+        "rawUnparseable": 8
+      },
+      {
+        "stage": 6,
+        "name": "st_b1_1.ecl",
+        "bytes": 32700,
+        "sha256": "9fe6fcdd4426c900ccf186e7a3c767f7fb0a48a14284775721100352b53f45ce",
+        "chapters": 7,
+        "rawUnparseable": 6
+      },
+      {
+        "stage": 7,
+        "name": "st_b1_2.ecl",
+        "bytes": 40380,
+        "sha256": "3904696cf5e53a33720cfc541badda3bf81d6c679276b97cec716626381bcfbd",
+        "chapters": 8,
+        "rawUnparseable": 7
+      },
+      {
+        "stage": 8,
+        "name": "st_b1_3.ecl",
+        "bytes": 32748,
+        "sha256": "feca2a17f81b637bf4bef0f6215df171dbef7441e3804377f95198c94e565189",
+        "chapters": 7,
+        "rawUnparseable": 6
+      },
+      {
+        "stage": 9,
+        "name": "st_b2_2.ecl",
+        "bytes": 38688,
+        "sha256": "2f93d419bcb0db7a38d760a9432dcaa26164d17673936b2a2e2883cfbf3c6c00",
+        "chapters": 7,
+        "rawUnparseable": 6
+      },
+      {
+        "stage": 10,
+        "name": "st_b2_3.ecl",
+        "bytes": 32228,
+        "sha256": "17117422a719cfc52307e128d31a8afec529fc09e33330c1a9749f039dfcaeac",
+        "chapters": 8,
+        "rawUnparseable": 7
+      },
+      {
+        "stage": 11,
+        "name": "st_c1_1.ecl",
+        "bytes": 38632,
+        "sha256": "0850280c0a38e5c97dab13eddae695257c60ac6ce840322e88e05bdc38dfa060",
+        "chapters": 6,
+        "rawUnparseable": 5
+      },
+      {
+        "stage": 12,
+        "name": "st_c1_2.ecl",
+        "bytes": 40380,
+        "sha256": "aa68ce64ac2dc439c135c5fb19c49e8075a23aef6429c891c4516b0cfb173de5",
+        "chapters": 8,
+        "rawUnparseable": 7
+      },
+      {
+        "stage": 13,
+        "name": "st_c1_3.ecl",
+        "bytes": 34588,
+        "sha256": "b2dfead6b2875f3cb371b03d2268abfb785a323dade9406c99112a4cae902a24",
+        "chapters": 9,
+        "rawUnparseable": 8
+      },
+      {
+        "stage": 14,
+        "name": "st_c2_2.ecl",
+        "bytes": 35148,
+        "sha256": "336b4a6685f076649ddf8fa0ca2f09c90cc6e04389078c8de055b95b384cac21",
+        "chapters": 9,
+        "rawUnparseable": 8
+      },
+      {
+        "stage": 15,
+        "name": "st_c2_3.ecl",
+        "bytes": 32512,
+        "sha256": "0441e48aef575698ad9af67c47766653421d792670e9b8d25ff836f6da9340f8",
+        "chapters": 8,
+        "rawUnparseable": 7
+      },
+      {
+        "stage": 16,
+        "name": "st_ex.ecl",
+        "bytes": 55916,
+        "sha256": "5c65757c0ce6ee28f5f93b99462d087b5cd25c257c541af7bd7b307bdfa08ba5",
+        "chapters": 10,
+        "rawUnparseable": 9
+      }
+    ],
+    "totalChapterChoices": 126,
+    "totalRawUnparseable": 110
+  },
+  "scope": {
+    "originalDAT": true,
+    "fixedTH128THPracSource": true,
+    "actualNativeProgramOrVm": false,
+    "Worlds": 0,
+    "nativeCompiles": 0,
+    "browser": 0,
+    "GPU": false
+  },
+  "stage3Complete": false,
+  "thpracImplemented": false,
+  "nextOrdinal": 865
+}
