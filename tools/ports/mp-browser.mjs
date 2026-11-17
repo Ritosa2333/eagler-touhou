@@ -74,6 +74,10 @@ return {child,port};
 const shared=[];
 for(const [name,file] of Object.entries(config.shared??{}))shared.push({path:'/'+name,url:'/shared/'+name,bytes:(await stat(file)).size});
 const server=createServer(async(req,res)=>{try{
+ // Threaded Runtime workers require the same isolation headers as production.
+ res.setHeader('Cross-Origin-Opener-Policy','same-origin');
+ res.setHeader('Cross-Origin-Embedder-Policy','require-corp');
+ res.setHeader('Cross-Origin-Resource-Policy','same-origin');
  const url=new URL(req.url,'http://localhost'),t=targets.find(t=>url.pathname===`/host/${t.id}`);
  if(t){res.setHeader('Content-Type','text/html');res.end(`<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#222}iframe{width:960px;height:720px;border:0}</style><script>
  window.events=[];window.__eaglerPrepareManagedRuntimeDataV1=async()=>{const buffer=await(await fetch('/data/${t.id}')).arrayBuffer();return {buffer,bytes:buffer.byteLength}};
@@ -151,13 +155,13 @@ try{
     try{files=JSON.parse(await readFile(inventoryFile)).files;}catch(error){if(error.code!=='ENOENT')throw error;files=Object.fromEntries([t.entry,...t.files].map(name=>[name,null]));}
     for(const [name,expected]of Object.entries(files)){const bytes=await readFile(resolve(t.runtime,name));row.runtime[name]={bytes:bytes.length,sha256:sha(bytes)};if(expected){assert.equal(sha(bytes),expected.sha256,name);assert.equal(bytes.length,expected.bytes,name);}}
    });
-   browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});report.browser=browser.version();
+   browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--mute-audio','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});report.browser=browser.version();
    const room=t.game+'mp-'+randomInt(1000,9999),members=[];
    for(let seat=0;seat<players;seat++){const member=randomUUID().replaceAll('-',''),client='mp_'+member;members.push({member,client,seat});
     const socket=await lobby(room,client,member,seat===0);sockets.push(socket);await send(socket,{type:'take-seat',seat,loadout:seat%PRODUCT_GAMES[t.game].multiplayer.loadouts.length},m=>m.room?.seats?.[seat]?.clientId===client);}
    await send(sockets[0],{type:'settings',playerCount:players,difficulty:1,visibility:'private',challengeMode:challenge},m=>m.room?.challengeMode===challenge);
    for(let seat=0;seat<players;seat++)await send(sockets[seat],{type:'set-ready',ready:true},m=>m.room?.seats?.[seat]?.ready);
-   await until(()=>sockets[0].messages.at(-1)?.room?.seats.slice(0,players).every(s=>s?.ready),'all ready');
+   await until(()=>sockets[0].messages.findLast(m=>m.type==='state')?.room?.seats.slice(0,players).every(s=>s?.ready),'all ready');
    const timing=PRODUCT_GAMES[t.game].multiplayer.inputTiming?.measuredStartup
      ? {adonisMode:t.game==='th15'?1:0,inputDelay:t.game==='th15'?2:0,inputDelayAuto:false,predictionReserve:2} : {};
    const started=await send(sockets[0],{type:'start',...timing},m=>m.type==='start');row.room={room,run:started.serial};

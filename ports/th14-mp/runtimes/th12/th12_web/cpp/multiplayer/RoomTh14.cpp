@@ -38,7 +38,7 @@ bool RoomSetupTh14::read(const Netplay::InputReplayInfo& info,const std::array<u
     for(u32 i=0;i<4;++i)build[i]=u32(wire::Get(b.data(),16+i*4));
     return valid()&&build==expected&&abi()==config.gameplayAbi;
 }
-bool RoomTh14::begin(const char* url,const char* spectator_id,u64 now){
+bool RoomTh14::begin(const char* url,const char* spectator_id,u64){
     if(!setup.valid()||!url||!*url)return false;
     spectator=spectator_id&&*spectator_id;
     if(spectator)return transport.ConnectSpectator(url,spectator_id,u8(setup.seats),true);
@@ -55,7 +55,7 @@ bool RoomTh14::begin(const char* url,const char* spectator_id,u64 now){
     // Match TH17: extrapolate only unlimited drags, from contiguous
     // confirmed coordinates. Bomb edges are still never predicted.
     config.absoluteTouchForecastFrames=6;
-    if(!gate.Reset(identity)||!inputs.Reset(config)||!channel.BeginSession(identity,now)||
+    if(!gate.Reset(identity)||!inputs.Reset(config)||
        !replay.Begin({game,setup.abi(),u8(setup.seats),u8(setup.local),setup.describe()}))return false;
     if(!setup.local){
         if(!publisher.Reset(marker,u8(setup.seats),setup.id,setup.abi()))return false;
@@ -65,6 +65,13 @@ bool RoomTh14::begin(const char* url,const char* spectator_id,u64 now){
 }
 bool RoomTh14::poll(u64 now){
     if(finished&&channel.Retiring())return channel.PumpRetirement(now);
+    // The browser can open the transport while the native title is loading.
+    // Arm the game handshake when its pump first runs, after that loading;
+    // resource upload time must not consume the session's connection window.
+    if(!channel.Active()&&!channel.Retiring()){
+        const Netplay::SessionConfig identity{setup.id,setup.seed,setup.abi(),game,u8(setup.seats),u8(setup.local)};
+        if(!channel.BeginSession(identity,now))return false;
+    }
     return channel.Pump(gate,inputs,now,captured!=0&&!finished);
 }
 bool RoomTh14::capture(u64 now_us,unsigned lead,const Netplay::FrameInput& local){
