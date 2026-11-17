@@ -209,7 +209,9 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     if (metadataSnapshot.siteManifest?.profile === 'web-development') await installDevelopment(game, metadataSnapshot.siteManifest, request);
     let installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"}); checkPreparationAbort(request.signal);
     if (installed.generation) {
-      installed = await repair(installed, request);
+      const nativeTh03Layout = 'sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e';
+      const legacyTh03 = game === 'th03' && (installed.generation.descriptor.runtimeRequirement?.dataLayout !== nativeTh03Layout || !!installed.generation.descriptor.components?.['pc98-manifest']);
+      if (!legacyTh03) installed = await repair(installed, request);
       if (['th01', 'th02', 'th04'].includes(game)) {
         const generation = installed.generation!;
         const diskFiles = generation.descriptor.components?.['pc98-manifest']
@@ -244,9 +246,17 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
           } finally {request.onAcquisitionActivity?.(false);}
         }
       } else {
+      // A cached legacy TH03 disk bundle has the old PC-98 layout. Fetch the
+      // current publication before choosing it, even when metadata is cold.
+      if (legacyTh03) {
+        await metadata.initialize(); checkPreparationAbort(request.signal);
+        metadataSnapshot = metadata.getSnapshot();
+        if (metadataSnapshot.siteManifest?.games.th03?.gameData.layout !== nativeTh03Layout)
+          throw new GameDataAcquisitionError('梦时空旧资源需要更新，但暂时无法获取新版资源信息');
+      }
       const requiredLayout = metadata.getSnapshot().siteManifest?.games[game]?.gameData.layout;
       const installedLayout = installed.generation!.descriptor.runtimeRequirement?.dataLayout;
-      if (requiredLayout && installedLayout && requiredLayout !== installedLayout) {
+      if (requiredLayout && ((installedLayout && requiredLayout !== installedLayout) || legacyTh03)) {
         request.onAcquisitionActivity?.(true);
         try {
           progress(request, 'package.installingResources');
@@ -257,7 +267,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
             addComponents: [], signal: request.signal, fetchImpl: getPackageFetch(game),
             onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
           checkPreparationAbort(request.signal);
-          if (result.generation.descriptor.runtimeRequirement?.dataLayout !== requiredLayout)
+          if (result.generation.descriptor.runtimeRequirement?.dataLayout !== requiredLayout || (game === 'th03' && result.generation.descriptor.components?.['pc98-manifest']))
             throw new Error('游戏资源与当前版本不兼容，请更新游戏资源');
           installed = {...installed, generation: result.generation};
           await installedChanged(game);
