@@ -22,14 +22,12 @@ export function normalizeTh05MultiplayerDisplay(value: unknown): Readonly<Th05Mu
 export interface GameOptions {
   th05MultiplayerDisplay: Readonly<Th05MultiplayerDisplay>;
   th02RapidFire: boolean;
-  th03RapidFire: boolean;
   renderScale: 1 | 2 | null;
   th075NativeResolution: boolean;
   thpracEnabled: boolean;
   thpracTouchControlsEnabled: boolean;
   magnifierEnabled: boolean;
   focusHitboxEnabled: boolean;
-  th03FocusEnabled: boolean;
   faithBarEnabled: boolean;
   frameLimit60Enabled: boolean;
   pixelPerfectEnabled: boolean;
@@ -54,14 +52,12 @@ export interface GameOptions {
 export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   th05MultiplayerDisplay: DEFAULT_TH05_MULTIPLAYER_DISPLAY,
   th02RapidFire: true,
-  th03RapidFire: true,
   renderScale: null,
   th075NativeResolution: false,
   thpracEnabled: false,
   thpracTouchControlsEnabled: false,
   magnifierEnabled: false,
   focusHitboxEnabled: false,
-  th03FocusEnabled: true,
   faithBarEnabled: false,
   frameLimit60Enabled: true,
   pixelPerfectEnabled: false,
@@ -275,13 +271,11 @@ export function normalizeStoredGamePreferences(
   const options: GameOptions = {
     th05MultiplayerDisplay: normalizeTh05MultiplayerDisplay(rawOptions?.th05MultiplayerDisplay),
     th02RapidFire: booleanOption(rawOptions, "th02RapidFire", DEFAULT_GAME_OPTIONS.th02RapidFire),
-    th03RapidFire: booleanOption(rawOptions, "th03RapidFire", DEFAULT_GAME_OPTIONS.th03RapidFire),
     renderScale: rawOptions?.renderScale === 1 || rawOptions?.renderScale === 2 ? rawOptions.renderScale : null,
     thpracEnabled: context.thpracAvailable && booleanOption(rawOptions, "thpracEnabled", /^zh(?:-|$)/i.test(context.uiLocale || "") || DEFAULT_GAME_OPTIONS.thpracEnabled),
     thpracTouchControlsEnabled: booleanOption(rawOptions, "thpracTouchControlsEnabled", DEFAULT_GAME_OPTIONS.thpracTouchControlsEnabled),
     magnifierEnabled: booleanOption(rawOptions, "magnifierEnabled", DEFAULT_GAME_OPTIONS.magnifierEnabled),
     focusHitboxEnabled: booleanOption(rawOptions, "focusHitboxEnabled", DEFAULT_GAME_OPTIONS.focusHitboxEnabled),
-    th03FocusEnabled: booleanOption(rawOptions, "th03FocusEnabled", DEFAULT_GAME_OPTIONS.th03FocusEnabled),
     faithBarEnabled: booleanOption(rawOptions, "faithBarEnabled", DEFAULT_GAME_OPTIONS.faithBarEnabled),
     frameLimit60Enabled: booleanOption(rawOptions, "frameLimit60Enabled", DEFAULT_GAME_OPTIONS.frameLimit60Enabled),
     th075NativeResolution: booleanOption(rawOptions, "th075NativeResolution", DEFAULT_GAME_OPTIONS.th075NativeResolution),

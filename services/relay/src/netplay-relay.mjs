@@ -1436,7 +1436,7 @@ function lobbySnapshot(room) {
     ...(room.id.startsWith('th03mp-') ? {disableFocus:room.lobby.disableFocus} : {}),
     ...(room.id.startsWith('th09mp-') ? {unrated: room.lobby.unrated} : {}),
     ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
-    ...((room.id.startsWith('th02mp-') || room.id.startsWith('th03mp-')) ? {disableFocus:room.lobby.disableFocus} : {}),
+    ...(room.id.startsWith('th02mp-') ? {disableFocus:room.lobby.disableFocus} : {}),
     ...(room.id.startsWith('th01mp-') ? {ballCount:room.lobby.ballCount} : {}),
     ...(pc98StockRoom(room.id)?{initialSpares:room.lobby.initialSpares,initialBombs:room.lobby.initialBombs}:{}),
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
@@ -1692,7 +1692,6 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     if(room.id.startsWith('th19mp-'))room.lobby.th19Rules=[...(initialPolicy?.th19Rules??TH19_VERSUS_RULES)];
     room.lobby.visibility = initialPolicy?.visibility === 'private' ? 'private' : 'public';
     room.lobby.disableCheatMovement = initialPolicy?.disableCheatMovement === true;
-    if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus!==false;
     room.lobby.unrated = room.id.startsWith('th09mp-') && initialPolicy?.unrated === true;
     if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=initialPolicy?.disableLocalChargePriority===true;
     if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus!==false;
@@ -2417,7 +2416,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=disableFocus;
         room.lobby.unrated = unrated;
         if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
-        if(room.id.startsWith('th02mp-')||room.id.startsWith('th03mp-'))room.lobby.disableFocus=disableFocus;
+        if(room.id.startsWith('th02mp-'))room.lobby.disableFocus=disableFocus;
         if(room.id.startsWith('th01mp-'))room.lobby.ballCount=ballCount;
         if(pc98StockRoom(room.id)){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
         room.lobby.challengeMode = challengeMode;

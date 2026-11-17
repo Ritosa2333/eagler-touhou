@@ -918,15 +918,6 @@ test('TH01 directory marks ball counts other than two as special',async()=>{
   assert.equal(n('.lobby-room-rules').textContent,'6 球');
 });
 
-test('TH03 versus rooms use the duel layout and mark enabled focus as a special rule',async()=>{
-  const f=await fixture({selectedProduct:'th03mp',locale:'zh-CN',host:{games:['th03']}}).live([room({product:'th03mp',capacity:2,disableFocus:false,seats:[{initial:'A',online:true,stats:{wins:2,losses:1,minutes:0}},{initial:'B',online:true,stats:{wins:1,losses:2,minutes:0}}]})]);
-  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
-  assert.equal(n('.lobby-seats').dataset.duel,'true');
-  assert.equal(n('.book-room-score-value').textContent,'2 : 1');
-  assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','room.th03SpecialFocus'));
-  await f.receive([room({product:'th03mp',capacity:2,disableFocus:true})]);await m.update({snapshot:f.service.getSnapshot()});
-  assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','directory.regularRules'));
-});
 
 test('TH02 rooms mark disabled focus as a special rule',async()=>{
   const f=await fixture({selectedProduct:'th02mp',locale:'zh-CN',host:{games:['th02']}}).live([room({product:'th02mp',disableFocus:true})]);
@@ -936,16 +927,6 @@ test('TH02 rooms mark disabled focus as a special rule',async()=>{
   assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','directory.regularRules'));
 });
 
-test('TH03 creation exposes difficulty and defaults to Lunatic',async()=>{
-  const f=await fixture({selectedProduct:'th03mp',locale:'zh-CN',host:{games:['th03']}}).live();
-  const {m}=await mountDialog(f,'create',{}, {locale:'zh-CN'});
-  assert.equal(n('#gameSelect').value,'th03mp');
-  assert.equal(n('#difficultySelect').value,'3');
-  assert.equal(n('#difficultySelect').disabled,false);
-  assert.equal(n('#difficultySelect').closest('label').hidden,false);
-  await change('#difficultySelect','1');assert.equal(f.service.getSnapshot().form.difficulty,1);
-  await m.unmount();
-});
 
 test('Directory gameplay flags use their own column and regular rooms name their rules', async () => {
   const f=await fixture({locale:'zh-CN'}).live([room({disableCheatMovement:true,challengeMode:true})]);

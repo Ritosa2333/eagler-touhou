@@ -87,7 +87,7 @@ export function createRoomDirectory({
       disableCheatMovement: room.lobby.disableCheatMovement === true,
       ...(match[1] === 'th09mp' && room.lobby.unrated ? {unrated: true} : {}),
       challengeMode: room.lobby.challengeMode === true,
-      ...((match[1]==='th02mp'||match[1]==='th03mp')?{disableFocus:room.lobby.disableFocus===true}:{}),
+      ...(match[1]==='th02mp'?{disableFocus:room.lobby.disableFocus===true}:{}),
       ...(match[1]==='th01mp'?{ballCount:room.lobby.ballCount??2}:{}),
       prankMode: room.lobby.prankMode === true,
       spectators,
@@ -99,7 +99,7 @@ export function createRoomDirectory({
               loadout: seat.loadout,
               ...(publicNames ? {name:seat.name || ''} : {}),
               profile: publicProfile?.(room, seat.clientId),
-              ...(['th03mp','th09mp', 'th19mp'].includes(match[1])
+              ...(['th09mp', 'th19mp'].includes(match[1])
                 ? {
                     ...(!publicNames && typeof seat.machineSign === 'string' && seat.machineSign.trim()
                       ? {

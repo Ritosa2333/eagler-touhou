@@ -140,8 +140,6 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
   if (!isMultiplayer && multiplayer) throw new Error('A single-player Runtime cannot use multiplayer launch options');
   return {limitPresentationTo60: !product.support.highRefreshRate || options.frameLimit60Enabled,
     ...(game === 'th02' ? {th02RapidFire: options.th02RapidFire} : {}),
-    ...(game === 'th03' ? {th03RapidFire: options.th03RapidFire} : {}),
-    ...(game === 'th03' && !isMultiplayer ? {th03FocusEnabled: options.th03FocusEnabled} : {}),
     touchEnabled: options.touchEnabled, touchMovementMode: options.touchMovementMode, touchSensitivity: options.touchSensitivity,
     touchFocusMode: options.touchFocusMode, doubleTapBombEnabled: options.doubleTapBombEnabled, alwaysHitbox: options.alwaysHitbox,
     oggDecodeMode: music === 'ogg-full' ? 'full' : 'stream',
@@ -189,7 +187,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   // can deliver its music. Use the same full soundtrack as the room preview.
   const th14Spectator = input.settings.gameId === 'th14' &&
     input.multiplayer?.kind === 'room' && input.multiplayer.options.netplaySpectator === true;
-  const completeOgg = (music === 'ogg-akyu' && ['th01','th02','th03','th04'].includes(input.settings.gameId)) || input.multiplayer?.kind === 'room-preload' || th14Spectator ||
+  const completeOgg = (music === 'ogg-akyu' && ['th01','th02','th04'].includes(input.settings.gameId)) || input.multiplayer?.kind === 'room-preload' || th14Spectator ||
     ('requiresCompleteOgg' in musicPolicy && musicPolicy.requiresCompleteOgg) ||
     input.settings.gameId === 'th09' && (input.multiplayer?.kind === 'room' || input.replayPath !== undefined || input.replayWorkspace === true);
   ({generation, music} = await ensureOggStartup({generation, music, acquisition, signal: input.signal,

@@ -83,7 +83,6 @@ export function RoomComposition({
       workspaceHost={workspace?.host}
       workspaceStage={workspace?.stage}
       playbackControls={playback}
-      th03Replays={state.th03RoomReplays?.filter(item=>item.roomEpoch===room.epoch)}
       playerSettings={state.runtime?.ready && (
         <GameSettingsPopover model={session.settings} preferences={session.preferences}
           exit={state.playerOpen && state.runtime.launched

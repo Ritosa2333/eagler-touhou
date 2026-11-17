@@ -96,7 +96,7 @@ function RoomRow({
   const artwork = bookGameArtwork(gameIdForProduct(room.product)) ?? ('cardArtwork' in meta && meta.cardArtwork ? assetUrl(`assets/${meta.cardArtwork}`) : undefined);
   const title = meta.title;
   const policy = multiplayerConfigForProduct(room.product)!;
-  const duel = room.product === 'th09mp' || room.product === 'th19mp' || room.product === 'th03mp';
+  const duel = room.product === 'th09mp' || room.product === 'th19mp';
   const firstWins = room.seats[0]?.stats?.wins ?? 0;
   const secondWins = room.seats[1]?.stats?.wins ?? 0;
   const hasDuelPair = duel && !!room.seats[0] && !!room.seats[1];
@@ -192,8 +192,8 @@ function RoomRow({
         </div>
       </div>
       <div className="lobby-room-rules">
-        {!room.disableCheatMovement && !room.challengeMode && !room.unrated && !(room.product === 'th01mp' && (room.ballCount ?? 2) !== 2) && !(room.product === 'th02mp' && room.disableFocus === true) && !(room.product === 'th03mp' && room.disableFocus === false) ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
-          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : '', room.unrated ? t('room.unrated') : '', room.product === 'th01mp' && (room.ballCount ?? 2) !== 2 ? t('room.th01SpecialBalls',{count:room.ballCount ?? 2}) : '', room.product === 'th02mp' && room.disableFocus === true ? t('room.th02SpecialFocus') : '', room.product === 'th03mp' && room.disableFocus === false ? t('room.th03SpecialFocus') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
+        {!room.disableCheatMovement && !room.challengeMode && !room.unrated && !(room.product === 'th01mp' && (room.ballCount ?? 2) !== 2) && !(room.product === 'th02mp' && room.disableFocus === true) ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
+          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : '', room.unrated ? t('room.unrated') : '', room.product === 'th01mp' && (room.ballCount ?? 2) !== 2 ? t('room.th01SpecialBalls',{count:room.ballCount ?? 2}) : '', room.product === 'th02mp' && room.disableFocus === true ? t('room.th02SpecialFocus') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
       </div>
       <fieldset className="lobby-party" aria-label={count}>
         <div

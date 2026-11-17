@@ -178,18 +178,6 @@ test('TH01 ball count is host controlled and reaches runtime options',async()=>{
   await f.receive({ballCount:6,phase:'running',adonisMode:1});assert.equal(n('#mpTh01BallCount').disabled,true);
   const count=f.socket.sent.length;await act(()=>f.service.setRoomSettings({ballCount:1}));assert.equal(f.socket.sent.length,count);
 });
-test('TH03 focus rule belongs to the host and reaches runtime options',async()=>{
-  const f=await fixture({product:'th03mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
-  const toggle=n('#mpTh03DisableFocus');assert.equal(toggle.getAttribute('aria-checked'),'false');
-  assert.equal(f.service.runtimeOptions().netplayDisableFocus,true);
-  assert.equal(toggle.getAttribute('aria-label'),'启用低速');
-  await click('#mpTh03DisableFocus');assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableFocus,false);
-  await f.receive({disableFocus:false});assert.equal(toggle.getAttribute('aria-checked'),'true');
-  assert.equal(f.service.runtimeOptions().netplayDisableFocus,false);
-  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'启用低速');
-  await f.receive({disableFocus:false,phase:'running'});assert.equal(toggle.disabled,true);
-  const count=f.socket.sent.length;await act(()=>f.service.setRoomSettings({disableFocus:true}));assert.equal(f.socket.sent.length,count);
-});
 test('TH02 disabling focus is a host-controlled special rule',async()=>{
   const f=await fixture({product:'th02mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
   const toggle=n('#mpTh02DisableFocus');assert.equal(toggle.getAttribute('aria-checked'),'false');
@@ -199,15 +187,6 @@ test('TH02 disabling focus is a host-controlled special rule',async()=>{
   assert.equal(f.service.runtimeOptions().netplayDisableFocus,true);
   assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'禁用低速');
   await f.receive({disableFocus:true,phase:'running'});assert.equal(toggle.disabled,true);
-});
-test('TH03 room defaults to Lunatic and host can choose difficulty',async()=>{
-  const f=await fixture({product:'th03mp',locale:'zh-CN'}).enter();
-  assert.equal(f.service.getSnapshot().room.difficulty,3);
-  await act(()=>f.socket.open());await f.receive({difficulty:3,disableFocus:true});
-  await mountRoom(f,{panel:{kind:'game'}});
-  assert.equal(n('#mpRoomDifficultyBadge').textContent,'Lunatic');
-  await click('[data-mp-difficulty="2"]');assert.equal(f.socket.sent.findLast(m=>m.type==='settings').difficulty,2);
-  await f.receive({difficulty:2,disableFocus:true});assert.equal(f.service.runtimeOptions().netplayDifficulty,2);
 });
 test('TH09 auto-save preference reaches only player Runtime options and survives leaving', async () => {
   const f = await fixture({product:'th09mp'}).live();
