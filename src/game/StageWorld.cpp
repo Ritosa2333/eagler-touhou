@@ -692,11 +692,24 @@ bool StageWorld::load(const std::string& name,const void* bytes,std::size_t size
 }
 
 bool StageWorld::prepareThpracChapter(unsigned stageId,unsigned chapter,int difficulty,std::string& error) {
+    return prepareThpracChapter(stageId,chapter,difficulty,ThpracInitial{},error);
+}
+bool StageWorld::prepareThpracChapter(unsigned stageId,unsigned chapter,int difficulty,
+        const ThpracInitial& initial,std::string& error) {
     error.clear();
     if(started_||executing_||entityRetirementAttempted_||bulletRetirementAttempted_
         ||faulted()||pendingThpracChapter_||activeThpracChapter_) {
         error="TH128 thprac chapter requires a fresh healthy unconfigured World";return false;
     }
+    if(initial.score<0||initial.score>9999999990LL
+        ||initial.motivation<0||initial.motivation>100000
+        ||initial.perfect_freeze<0||initial.perfect_freeze>30000
+        ||initial.ice_power<0||initial.ice_power>10000
+        ||initial.ice_area<0||initial.ice_area>3000) {
+        error="TH128 thprac initial resources are outside original bounds";return false;
+    }
+    auto canonical=initial;
+    canonical.score=canonical.score/10*10;
     practice::ChapterPlan plan;
     if(!practice::chapterPlan(stageId,chapter,plan,error))return false;
     if(difficulty<0||difficulty>(stageId==16?4:3)||(stageId==16&&difficulty!=4)) {
@@ -705,7 +718,7 @@ bool StageWorld::prepareThpracChapter(unsigned stageId,unsigned chapter,int diff
     ecl::Program candidate;
     if(!practice::prepareOwnedChapter(sources_,stageId,chapter,candidate,error))return false;
     thpracPreparedRoot_=std::move(candidate);
-    pendingThpracChapter_=ThpracChapter{stageId,chapter,difficulty,true};
+    pendingThpracChapter_=ThpracChapter{stageId,chapter,difficulty,true,canonical};
     return true;
 }
 

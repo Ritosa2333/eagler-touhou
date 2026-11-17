@@ -64,12 +64,19 @@ public:
     StageWorld();
     ~StageWorld();
     bool load(const std::string& name,const void* bytes,std::size_t size,std::string& error);
+    struct ThpracInitial {
+        std::int64_t score=0;
+        int motivation=100000,perfect_freeze=30000,ice_power=10000,ice_area=3000;
+    };
     struct ThpracChapter {
         unsigned stageId=0,chapter=0;
         int difficulty=0;
         bool nonNormal=true;
+        ThpracInitial initial{};
     };
     bool prepareThpracChapter(unsigned stageId,unsigned chapter,int difficulty,std::string& error);
+    bool prepareThpracChapter(unsigned stageId,unsigned chapter,int difficulty,
+        const ThpracInitial& initial,std::string& error);
     std::optional<ThpracChapter> thpracChapter() const {return activeThpracChapter_;}
     bool start(const std::string& stage,int difficulty,std::uint16_t seed);
     bool tick();

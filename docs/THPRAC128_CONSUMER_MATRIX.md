@@ -35,3 +35,7 @@
 881–883补上实际可达ECLI的资源身份绑定：prepare前校验root/default/boss闭包，仅支持已验证原33文件与现有中文包的22个变体。881真实caller出现10个失败（异变依赖被接受、缺依赖仍可prepare、六个中文第三面root被拒）；882同夹具48断言全部通过，883受影响1108断言通过。中文六个第三面固定偏移4/8由原/中文子程序名称和指令序号逐项比对143操作的286端点，绑定完整资源SHA后使用；不是通用翻译兼容或任意字节补丁。
 
 现有中文版16个stage的chapter2都能完成preparation；实际中文A1第三面chapter2通过World原prelude到frame91首出生。完整126chapter/phase游戏执行尚未全部验收。下一转入原五字段的fresh参数组与实际消费者；本次没有新增参数效果、菜单、Web入口、WASM API或全核心。第三阶段完成结论仍撤回。详见THPRAC128_INCLUDE_OWNER.md。
+
+884–888原五字段已接实际原生消费者：StageWorld拥有64位score与其余四字段，验证／向下10舍入／复制；完整WorldExports启动初始化真实scoreRaw、干劲、charge、power、area并设置非正常taint，四个配置函数拒绝字段或练习rank不一致。888六个独立组件进程跑完整WorldExports与真实PlayerHitHost/PlayerShotGroups，默认／0／上限EX／中间值、10项越界拒绝、重置隔离和自然EX守卫通过；原SHT/ANM组0/6/15实际读回。不是纯codec或提取函数测试，也不是浏览器交付。
+
+真人指出推进过慢：下一批复用现成TH128菜单和完整section/phase规则，按完整功能批次接实际Web调用，减少碎片审计。当前仍缺完整Boss/section/phase、菜单工具、练习Replay和Web入口；第三阶段完成结论不恢复。详见THPRAC128_INITIAL_RESOURCES.md。

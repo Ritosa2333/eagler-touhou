@@ -1953,6 +1953,7 @@ int th128_world_start(const char* name,std::uint32_t nameLength,int difficulty,u
     laserLines=std::make_unique<th128::laser::LineHost>();
     beginNewWorldGeneration();
     worldStartedName=identifier;worldStartDifficulty=difficulty;currentStageProgress=0;
+    const auto practice=world->thpracChapter();
     if(debugRecordPrefix.prepared){
         debugRecordPrefix.worldBound=true;debugRecordPrefix.generation=worldGeneration;
         debugRecordPrefix.sessionGeneration=worldGeneration;
@@ -1966,7 +1967,7 @@ int th128_world_start(const char* name,std::uint32_t nameLength,int difficulty,u
     presentationError.clear();
     playerProfileRadius=0;
     playerAttractionSpeed=0;
-    grazeConfigured=false;grazeSounds.clear();grazeGlobals={0,0};advanceSoundJournalReset();
+    grazeConfigured=false;grazeSounds.clear();grazeGlobals={0,practice?practice->initial.ice_power:0};advanceSoundJournalReset();
     enemyVisuals=std::make_unique<th128::enemy::EnemyVisuals>(
         identifier=="st_ex.ecl"&&difficulty==4?th128::enemy::EnemyVisuals::BankDomain::ExtraStage16Rank4
             :th128::enemy::EnemyVisuals::BankDomain::Ordinary);
@@ -1975,13 +1976,15 @@ int th128_world_start(const char* name,std::uint32_t nameLength,int difficulty,u
     playerShots=std::make_unique<th128::playershot::PlayerShotHost>();
     playerShotGroups.reset();playerShotGroupsConfigured=false;
     itemHost=std::make_unique<th128::item::ItemHost>();enemiesDefeated=0;
-    scoreRaw=0;pointValueRaw=100000;itemScalar=0;scorePopups.clear();
-    playerShotsConfigured=false;cumulativeFrozenArea=0;shotDifficulty=identifier=="st_ex.ecl"&&difficulty==4?4:1;playerDamageSourceFlags.fill(0);
+    scoreRaw=practice?int(practice->initial.score/10):0;pointValueRaw=100000;itemScalar=0;scorePopups.clear();
+    playerShotsConfigured=false;cumulativeFrozenArea=practice?float(practice->initial.ice_area):0;shotDifficulty=identifier=="st_ex.ecl"&&difficulty==4?4:1;playerDamageSourceFlags.fill(0);
     damageFields=std::make_unique<th128::damagefield::DamageFieldPool>();
     perfectHud=std::make_unique<th128::hud::PerfectHud>();perfectHudConfigured=false;bossHud=std::make_unique<th128::hud::BossHud>();standaloneEffectOwner=1000000;standaloneEffectOwners.clear();
     geometryEffects=std::make_unique<th128::geometry526::Host>();geometryConfigured=false;
     playerRespawnConfigured=false;respawnsCommitted=0;respawnControl={};respawnSavedPosition={0,0,0};emptyLaserCancelCenter={};
-    shotHitsConfigured=false;motivationRaw=motivationFlag=shotHitBusy=shotDamageBypass=0;shotSpellFlags=0;
+    shotHitsConfigured=false;motivationRaw=practice?practice->initial.motivation:0;
+    motivationFlag=shotHitBusy=shotDamageBypass=0;shotSpellFlags=0;
+    if(practice)playerWindowControl.perfectCharge4b4d70=practice->initial.perfect_freeze;
     rapidShotConfigured=false;rapidShotCount=-1;
     playerFire=std::make_unique<th128::player::fire::Host>();iceHost=std::make_unique<th128::ice::Host>();
     perfectHost=std::make_unique<th128::perfect::Host>();perfectConfigured=false;perfectConfigError.clear();
@@ -1989,7 +1992,7 @@ int th128_world_start(const char* name,std::uint32_t nameLength,int difficulty,u
     normalReplay.reset();normalReplaySave.reset();normalReplayNameContext={};normalReplayBytes.clear();normalReplayClockPending=false;normalReplayOrigin=normalReplayClock=0;normalRecord.reset();
     perfectBatchOwned=false;perfectZDenied.clear();
     perfectModeOwned=false;
-    debugInfiniteRespawnRun=false;debugRunTainted=false;debugReviveRefills=0;debugLastRefillBefore=0;debugLastRefillAfter=0;
+    debugInfiniteRespawnRun=false;debugRunTainted=practice.has_value();debugReviveRefills=0;debugLastRefillBefore=0;debugLastRefillAfter=0;
     playerFireConfigured=false;worldDisplayRandom={};lastFrozenArea=0;freezeBonus=0;freezeRewardPanel={};
     playerDeathConfigured=false;deathsCommitted=0;deathOperation.reset();
     playerMotion=false;playerRaw={0,51200};playerInput={};
@@ -2111,7 +2114,8 @@ int th128_world_enable_bullet_updates(const void* shot,std::uint32_t size) {
 int th128_world_enable_graze(int count,int power,unsigned displaySeed){
     operationError.clear();
     if(world->faulted()||world->frame()!=0||!world->positionIntegrated()||grazeConfigured||displaySeed>65535
-        ||count<0||count>99999999||power<0||power>10000){
+        ||count<0||count>99999999||power<0||power>10000
+        ||(world->thpracChapter()&&power!=world->thpracChapter()->initial.ice_power)){
         operationError="Graze runtime requires explicit bounded initial globals before the first pass";return 0;
     }
     grazeGlobals={count,power};grazeConfigured=true;return 1;
@@ -2121,7 +2125,8 @@ int th128_world_enable_player_context(const void* animation,std::uint32_t size,i
     operationError.clear();
     if(world->faulted()||world->frame()!=0||!world->positionIntegrated()||!grazeConfigured||playerConfigured
         ||!th128::runtime::inputRange(animation,size)||size>8u*1024u*1024u||state<0||state>4||counter<0||counter>65535
-        ||systemCounter<0||systemCounter>65535||perfectCharge<0||perfectCharge>30000){
+        ||systemCounter<0||systemCounter>65535||perfectCharge<0||perfectCharge>30000
+        ||(world->thpracChapter()&&perfectCharge!=world->thpracChapter()->initial.perfect_freeze)){
         operationError="Player-contact diagnostics require a fresh world and explicit bounded context";return 0;
     }
     if(debugRecordPrefix.worldBound&&(!debugRecordPrefix.sessionPresent
@@ -2358,6 +2363,8 @@ int th128_world_enable_player_shots(const void* shot,std::uint32_t shotSize,cons
         ||flagCount!=playerDamageSourceFlags.size()||!th128::runtime::inputRange(damageFlags,flagCount*4u)
         ||!std::isfinite(cumulativeArea)||cumulativeArea<0||cumulativeArea>1048576||difficulty<0||difficulty>4
         ||(difficulty==4&&!extra)||(extra&&(difficulty!=worldStartDifficulty||cumulativeArea!=cumulativeFrozenArea))
+        ||(world->thpracChapter()&&(cumulativeArea!=float(world->thpracChapter()->initial.ice_area)
+            ||difficulty!=world->thpracChapter()->difficulty))
         ||birthCallback||tickCallback||unknownCallback||collisionCallback){
         operationError="Player-shot diagnostic requires an explicit fresh context and supported live callback bindings";return 0;
     }
@@ -2401,7 +2408,8 @@ int th128_world_enable_player_shots(const void* shot,std::uint32_t shotSize,cons
 }
 int th128_world_enable_shot_hits(int motivation,int flag,int managerBusy,int damageBypass,unsigned spellFlags){
     operationError.clear();
-    if(world->faulted()||world->frame()!=0||!playerShotsConfigured||shotHitsConfigured||motivation<0||motivation>100000){
+    if(world->faulted()||world->frame()!=0||!playerShotsConfigured||shotHitsConfigured||motivation<0||motivation>100000
+        ||(world->thpracChapter()&&motivation!=world->thpracChapter()->initial.motivation)){
         operationError="shot hit context requires fresh real shots and explicit bounded motivation/system fields";return 0;
     }
     const std::vector<th128::damagefield::Image> emptyFields(th128::damagefield::Capacity);
