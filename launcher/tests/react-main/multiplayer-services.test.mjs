@@ -2183,3 +2183,48 @@ test('existing local nickname migrates only after the moderation handshake witho
   assert.equal(f.service.getSnapshot().nickname.status, 'reviewing');
   f.service.dispose();
 });
+
+
+test('TH14 admitted spectator resumes after explicitly committing a settings reload', async()=>{
+ let blocked=true;
+ const f=roomFixture({testBuild:()=>true,prepareResources:async context=>{
+  if(!blocked)return;
+  await new Promise((resolve,reject)=>context.signal.addEventListener('abort',()=>reject(new DOMException('settings changed','AbortError')),{once:true}));
+ }});
+ try{
+  f.service.enterRoom('th14mp','1234',false);await flush();const socket=f.sockets[0];socket.open();
+  const room=roomState('host',{phase:'running',spectatorTimeline:true,startSerial:4,predictionLimit:12,adonisMode:0,
+   seats:[{clientId:'host',name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}]});
+  socket.message({type:'state',room});await f.service.spectate();socket.message({type:'spectator-start',serial:4,room});await flush();
+  assert.equal(f.service.getSnapshot().launchBusy,true,'an actual admitted launch is waiting for resources');
+  f.service.suspendForSettingsReload();await flush();
+  assert.equal(f.service.getSnapshot().preparation.status,'cancelled');
+  assert.equal(f.events.filter(e=>e[0]==='launch').length,0);
+  blocked=false;f.service.resumeAfterSettingsReload();await flush();
+  assert.equal(f.service.getSnapshot().preparation.status,'ready');
+  const launches=f.events.filter(e=>e[0]==='launch');assert.equal(launches.length,1,'committed reload must resume the pending admitted run');
+  assert.equal(launches[0][1].runtimeOptions.netplaySpectator,true);
+  f.service.resourcesChanged();await flush();
+  assert.equal(f.events.filter(e=>e[0]==='launch').length,1,'completed admission is not relaunched on later preparation');
+ }finally{f.service.dispose();}
+});
+
+
+for(const mode of ['not-admitted','left-role','left-room','new-run'])
+test(`TH14 settings reload never starts an unauthorized spectator: ${mode}`,async()=>{
+ let installed=false;
+ const f=roomFixture({testBuild:()=>true,prepareResources:async()=>{if(!installed)throw Error('DATA missing');}});
+ try{
+  f.service.enterRoom('th14mp','1234',false);await flush();const socket=f.sockets[0];socket.open();
+  const room=roomState('host',{phase:'running',spectatorTimeline:true,startSerial:4,predictionLimit:12,adonisMode:0,
+   seats:[{clientId:'host',name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}]});
+  socket.message({type:'state',room});await f.service.spectate();
+  if(mode!=='not-admitted'){socket.message({type:'spectator-start',serial:4,room});await flush();}
+  f.service.suspendForSettingsReload();await flush();
+  if(mode==='left-role')await f.service.leaveSpectator();
+  if(mode==='left-room')f.service.leave();
+  if(mode==='new-run')socket.message({type:'state',room:{...room,startSerial:5}});
+  installed=true;f.service.resumeAfterSettingsReload();await flush();
+  assert.equal(f.events.filter(e=>e[0]==='launch').length,0,'reload does not authorize a new or abandoned run');
+ }finally{f.service.dispose();}
+});
