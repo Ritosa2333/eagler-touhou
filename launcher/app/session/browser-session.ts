@@ -63,6 +63,7 @@ import {createBrowserPorts} from '../services/browser-ports';
 import {createFileActions, type ImportFileKind} from '../services/files';
 import {createReplayStorageReader} from '../services/replay-storage';
 import {accountRequest} from '../services/account-client';
+import type {Th09ReplayEntry, WatchTh09Replay} from '../models/th09-replay-archive';
 import {errorText} from '../services/error-text';
 import {launcherBaseUrl} from '../navigation/addresses';
 import {testFeaturesEnabled} from '../../src/launcher/test-features.mts';
@@ -110,6 +111,7 @@ export interface BrowserSessionSnapshot {
   roomLaunchStage: 'runtime' | 'path' | null;
   roomReloadPending?: boolean;
   replayViewer: boolean;
+  th09Replay?: Th09ReplayEntry;
   spectatorViewer?: boolean;
   th09NetworkOverlayOpen: boolean;
   bootTouchPreview: 'touch' | 'touch-hud' | null;
@@ -721,7 +723,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       prompt: (message, initial, validation) => decisions.askText({title: t('action.rename'), confirmText: t('action.rename'), confirmOnEnter: true,
         input: {label: message, defaultValue: initial, ...validation}}), confirm: decisions.askConfirmation,
       download: ports.download, toast: feedback.toast, afterPaint: ports.afterPaint,
-      closeViewer: () => {if (snapshot.replayViewer) void requestRuntimeClose().catch(reportError);},
+      closeViewer: () => {
+        if (snapshot.th09Replay) publish({th09Replay: undefined});
+        if (snapshot.replayViewer) void requestRuntimeClose().catch(reportError);
+      },
       afterClose: () => {
         if (replayRoomEpoch !== null && !runtime?.getSnapshot().launched) {
           if (roomSession?.service.getSnapshot().epoch === replayRoomEpoch) roomSession.service.resourcesChanged();
@@ -1002,8 +1007,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     }).finally(() => {replayPreparation = null;});
     return replayPreparation;
   }
-  function openReplayViewer(product: ProductId, path?: string): Promise<void> {
+  function openReplayViewer(product: ProductId, path?: string, archive?: Th09ReplayEntry): Promise<void> {
     return (async () => {
+      if (!archive && snapshot.th09Replay) publish({th09Replay: undefined});
       if (roomSession?.service.suspendPreparation()) replayRoomEpoch = roomSession.service.getSnapshot().epoch;
       if (!replays?.getSnapshot().open || replays.getSnapshot().productId !== product) {requiredNavigation().openInfoDialog('replayDialog', {replace: true}); await replays!.open(product);}
       if (path) {
@@ -1012,23 +1018,31 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       }
     })();
   }
-  function watchTh09Archive(path: string, bytes?: Uint8Array): Promise<void> {
+  function watchTh09Archive(path: string, bytes: Uint8Array, archive?: Th09ReplayEntry): Promise<void> {
     return activity(async () => {
-      await openReplayViewer('th09mp');
+      await openReplayViewer('th09mp', undefined, archive);
       await prepareReplayWorkspace('th09mp');
-      await requiredRuntime().send('playback', {action:'open', path, ...(bytes ? {bytes} : {})});
+      const owner = requiredRuntime(), epoch = owner.getSnapshot().epoch;
+      await owner.send('playback', {action:'open', path, bytes});
+      if (archive && replays?.getSnapshot().open && owner.getSnapshot().epoch === epoch) publish({th09Replay: archive});
     });
   }
-  async function accessTh09MatchReplay(duelId: string, roundId: string, action: 'play' | 'download') {
-    const key = roundId.replace(':', '-');
+  const accessTh09MatchReplay: WatchTh09Replay = async (entry, action) => {
+    const {duelId, name} = entry;
+    const archive = navigation?.infoDialogOpen('replayDialog') ? snapshot.th09Replay : undefined;
+    const key = entry.roundId.replace(':', '-');
     const blob = await accountRequest<Blob>(`v1/th09/duels/${duelId}/replays/${key}`, undefined, {responseType:'blob'});
     if (!blob.size || blob.size > 1024 * 1024) throw Error(t('file.importStoredTooLarge'));
     const extension = blob.type === 'application/x-th09-rpyx' ? 'rpyx' : blob.type === 'application/x-th09-rpy' ? 'rpy' : 'th09r';
-    const name = `th09-${duelId}-${key}.${extension}`;
+    const path = `th09-${duelId}-${key}.${extension}`;
     const bytes = await blob.arrayBuffer();
-    if (action === 'download') ports.download(name, bytes, 'application/octet-stream');
-    else await watchTh09Archive(name, new Uint8Array(bytes));
-  }
+    if (action === 'download') {
+      ports.download(name ? `${name}.${extension}` : path, bytes, 'application/octet-stream');
+      return;
+    }
+    if (archive && (snapshot.th09Replay !== archive || !navigation?.infoDialogOpen('replayDialog'))) return;
+    await watchTh09Archive(path, new Uint8Array(bytes), entry);
+  };
   async function importReplayFile(file: File, product: ProductId) {
     if (product === 'th09mp' && /\.th09r$/i.test(file.name)) {
       if (file.size > 1024 * 1024) throw Error(t('file.importStoredTooLarge'));
