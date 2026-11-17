@@ -1,60 +1,311 @@
 {
-  "schema": "th14/upstream-startup-render/1",
-  "upstream": {
-    "upstreamCommits": [
-      "209b7898afe4905dce14ceb8695343172c87cb22",
-      "139be05e3bde88901db6846670bd5d6875296d9a"
-    ],
-    "upstreamParent": "81474fce73c41ae2bbef7b7adf34962fe103cd86",
-    "sourceBase": "c4a145ffab0684cc52ed94aede90fad4a550ec4f",
-    "changes": {
-      "runtimes/th12/portable/sdl/Renderer.cpp": {
-        "before": "bf4e8e888413fb68ceb49eaf7d1f198e2a0b6a7ade055f2135a1edec4a26c825",
-        "after": "e7db76324bb3f07f5a287e2a90009c4e6b7d0aeba69b176a0e2304e08036b91f"
+  "schema": "th14/startup-render-release/1",
+  "passedWithinDeclaredScope": true,
+  "candidate": {
+    "schema": "th14/upstream-startup-render/1",
+    "upstream": {
+      "upstreamCommits": [
+        "209b7898afe4905dce14ceb8695343172c87cb22",
+        "139be05e3bde88901db6846670bd5d6875296d9a"
+      ],
+      "upstreamParent": "81474fce73c41ae2bbef7b7adf34962fe103cd86",
+      "sourceBase": "c4a145ffab0684cc52ed94aede90fad4a550ec4f",
+      "changes": {
+        "runtimes/th12/portable/sdl/Renderer.cpp": {
+          "before": "bf4e8e888413fb68ceb49eaf7d1f198e2a0b6a7ade055f2135a1edec4a26c825",
+          "after": "e7db76324bb3f07f5a287e2a90009c4e6b7d0aeba69b176a0e2304e08036b91f"
+        },
+        "runtimes/th12/portable/sdl/Renderer.hpp": {
+          "before": "28e88c9df53cd02ade9e34f0409741a6be8d1c5f698d4b6ad6c0c8e02a6fb3d0",
+          "after": "2a94cb34df038536d4897102983f59b0c971ce70b0f11ae1ed5ed486b4d1dd5a"
+        },
+        "tools/th14-gles-profile.json": {
+          "before": "332bfbb875277c6d7dbc83613beb8e6a5877d2593a2f93da86a23a2842f18996",
+          "after": "bf15409e698ca332052fe14c60aebeaeb35f3b7d533a96c5d14f14d9416230f0"
+        }
       },
-      "runtimes/th12/portable/sdl/Renderer.hpp": {
-        "before": "28e88c9df53cd02ade9e34f0409741a6be8d1c5f698d4b6ad6c0c8e02a6fb3d0",
-        "after": "2a94cb34df038536d4897102983f59b0c971ce70b0f11ae1ed5ed486b4d1dd5a"
-      },
-      "tools/th14-gles-profile.json": {
-        "before": "332bfbb875277c6d7dbc83613beb8e6a5877d2593a2f93da86a23a2842f18996",
-        "after": "bf15409e698ca332052fe14c60aebeaeb35f3b7d533a96c5d14f14d9416230f0"
-      }
+      "newDefine": "TH14_ASYNC_GLES_STARTUP=1",
+      "assetCopies": 0,
+      "productionChanged": false,
+      "browserAccepted": false,
+      "completeGame": false
     },
-    "newDefine": "TH14_ASYNC_GLES_STARTUP=1",
-    "assetCopies": 0,
+    "build": {
+      "built": true,
+      "recompiled": [
+        "core\\runtimes\\th12\\portable\\sdl\\Renderer.cpp",
+        "core\\runtimes\\th12\\th12_web\\cpp\\sdl\\FontDevice.cpp",
+        "core\\runtimes\\th12\\th12_web\\cpp\\sdl\\GraphicsDevice.cpp",
+        "core\\runtimes\\th12\\th12_web\\cpp\\sdl\\PracticeUiTh14.cpp",
+        "core\\runtimes\\th12\\th12_web\\cpp\\sdl\\Application.cpp"
+      ],
+      "objectsVerifiedReused": 148,
+      "wasm": "3f0e4a95eaf3562efb9b90b4b66fda6c8258cc7d4c7b8953f332d81f9da73e97",
+      "sourceBindings": 387,
+      "commonBindings": 25,
+      "hardwareAudioOpened": false,
+      "browserAccepted": false,
+      "productionChanged": false,
+      "completeGame": false
+    },
+    "http": {
+      "passed": true,
+      "generation": "fd1a1ca7a73dfd0dce1252b76c2bb9b4f3ce771d18f98943904697f77d897b29",
+      "runtimeFiles": 32,
+      "frontend": [
+        {
+          "path": "index.html",
+          "bytes": 84727,
+          "sha256": "114a36103041b614731968bfe95c7e8cbf3b15c564caa54f7c16128ba8d700f6"
+        },
+        {
+          "path": "assets/root-BO8Y8Wk0.js",
+          "bytes": 654754,
+          "sha256": "922b478529f495ac3563171ba44cf8404ef64f07bf8c1d8f4404cddcbe01ce12"
+        },
+        {
+          "path": "assets/replays-BtyfSDvq.js",
+          "bytes": 135543,
+          "sha256": "12a7af920b17e37250ec25010152f7221874d1d11c1452b5c0a849a0b2f8b1ba"
+        }
+      ],
+      "isolationHeadersAccepted": true,
+      "productionChanged": false,
+      "completeGame": false
+    },
+    "browser": {
+      "qualified": true,
+      "generation": "fd1a1ca7a73dfd0dce1252b76c2bb9b4f3ce771d18f98943904697f77d897b29",
+      "actualOrdinaryReimuANormalStartAccepted": true,
+      "initialLives": 2,
+      "initialBombs": 3,
+      "initialPower": 100,
+      "initialHudScore": 50,
+      "resumedMovedLeftAndPausedAgain": true,
+      "subsequentHudScore": 80,
+      "nativeReturnTitleAndQuitAccepted": true,
+      "naturalViewerEndFrames": 1737,
+      "viewerHudScore": 3179620,
+      "viewerGraze": 39,
+      "viewerPower": 400,
+      "viewerRate": 1,
+      "viewerSeekCount": 0,
+      "endObservationSource": "CUA returned AX progress=1737 and ended text; HUD read from screenshot; later saved AX is a no-change diff, not a full tree",
+      "viewerScreenshotSha256": "111e74f462d5347f6f9a2d6c6c4343de6bb6ec0c220faa59d02569bca864f6e8",
+      "wholeEncodedWatcherScoreEqual": true,
+      "watcherScoreBytes": 21642,
+      "watcherScoreSha256": "91bab7d615744f37603ae32488e4f393dfa3b093683bde8da61da9c0b35fbc81",
+      "musicVolume": 0,
+      "sfxVolume": 0,
+      "musicMode": "none",
+      "firstObservationTimedOut": true,
+      "screenshotShowedCachedRuntimeAndUpdatePrompt": true,
+      "candidateVerifiedOnlyAfterRestart": true,
+      "quantitativeColdStartupLatencyAccepted": false,
+      "allShaderStatesAccepted": false,
+      "productionChanged": false,
+      "completeGame": false
+    },
+    "managedArchiveTransferImported": false,
+    "frontendChanged": false,
     "productionChanged": false,
-    "browserAccepted": false,
     "completeGame": false
   },
-  "build": {
-    "built": true,
-    "recompiled": [
-      "core\\runtimes\\th12\\portable\\sdl\\Renderer.cpp",
-      "core\\runtimes\\th12\\th12_web\\cpp\\sdl\\FontDevice.cpp",
-      "core\\runtimes\\th12\\th12_web\\cpp\\sdl\\GraphicsDevice.cpp",
-      "core\\runtimes\\th12\\th12_web\\cpp\\sdl\\PracticeUiTh14.cpp",
-      "core\\runtimes\\th12\\th12_web\\cpp\\sdl\\Application.cpp"
-    ],
-    "objectsVerifiedReused": 148,
+  "deployment": {
+    "productionDeployed": true,
+    "source": "755b45d57c72df9e287811de9e0136b78a040bc3",
+    "runtimeCodeSource": "755b45d57c72df9e287811de9e0136b78a040bc3",
     "wasm": "3f0e4a95eaf3562efb9b90b4b66fda6c8258cc7d4c7b8953f332d81f9da73e97",
-    "sourceBindings": 387,
-    "commonBindings": 25,
-    "hardwareAudioOpened": false,
-    "browserAccepted": false,
-    "productionChanged": false,
+    "generation": "fd1a1ca7a73dfd0dce1252b76c2bb9b4f3ce771d18f98943904697f77d897b29",
+    "runtimeFilesIdenticalToPrivate": 32,
+    "previousGenerationFilesRetained": 32,
+    "runtimeFilesOriginVerified": 32,
+    "frontendFilesOriginVerified": {
+      "index.html": "114a36103041b614731968bfe95c7e8cbf3b15c564caa54f7c16128ba8d700f6",
+      "assets/root-BO8Y8Wk0.js": "922b478529f495ac3563171ba44cf8404ef64f07bf8c1d8f4404cddcbe01ce12",
+      "assets/replays-BtyfSDvq.js": "12a7af920b17e37250ec25010152f7221874d1d11c1452b5c0a849a0b2f8b1ba"
+    },
+    "formalSilentOrdinaryBrowserSampleAccepted": true,
+    "shortViewerEndAccepted": true,
+    "wholeWatcherScoreBytesPreserved": 21642,
+    "wholePageReloadScorePreserved": false,
+    "frontendCodeSource": "6cf284bf3fd2201e52361494b69fbda467392f12",
+    "formalThpracAvailable": false,
+    "rollback": "/home/i/Code/th14-release/hosted-before-startup-render-nov17",
+    "serviceConfigurationUnchanged": true,
+    "servicePidPreserved": true,
+    "productionBrowserAfterActivationAccepted": false,
+    "publicHttpAccepted": false,
     "completeGame": false
   },
-  "http": {
+  "publicHttp": {
     "passed": true,
+    "scope": "runtime files and frontend modules exact; transformed entry HTML application byte regions checked separately",
+    "source": "755b45d57c72df9e287811de9e0136b78a040bc3",
     "generation": "fd1a1ca7a73dfd0dce1252b76c2bb9b4f3ce771d18f98943904697f77d897b29",
-    "runtimeFiles": 32,
-    "frontend": [
+    "runtimeFiles": [
       {
-        "path": "index.html",
-        "bytes": 84727,
-        "sha256": "114a36103041b614731968bfe95c7e8cbf3b15c564caa54f7c16128ba8d700f6"
+        "path": "Th14ArchiveDecodeClient.mjs",
+        "bytes": 3920,
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450"
       },
+      {
+        "path": "Th14ArchiveDecodeEndpoint.mjs",
+        "bytes": 5322,
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f"
+      },
+      {
+        "path": "Th14ArchiveDecodeWorker.mjs",
+        "bytes": 302,
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239"
+      },
+      {
+        "path": "Th14ArchiveReadAhead.mjs",
+        "bytes": 3637,
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee"
+      },
+      {
+        "path": "Th14AsyncRuntime.mjs",
+        "bytes": 3326,
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7"
+      },
+      {
+        "path": "Th14SharedSceneCopy.mjs",
+        "bytes": 4985,
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0"
+      },
+      {
+        "path": "Th14SharedSceneWorker.mjs",
+        "bytes": 369,
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444"
+      },
+      {
+        "path": "Th14StageMemoryClient.mjs",
+        "bytes": 10352,
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698"
+      },
+      {
+        "path": "Th14StageMemoryWorker.mjs",
+        "bytes": 689,
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde"
+      },
+      {
+        "path": "Th14StageMemoryWorker.wasm",
+        "bytes": 1027,
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1"
+      },
+      {
+        "path": "Th14StageRestoreDelivery.mjs",
+        "bytes": 2997,
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697"
+      },
+      {
+        "path": "Th14StageRestoreProtocol.mjs",
+        "bytes": 1701,
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870"
+      },
+      {
+        "path": "Th14StageRestoreWorker.mjs",
+        "bytes": 257,
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909"
+      },
+      {
+        "path": "Th14WebGpuCore.mjs",
+        "bytes": 1004,
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745"
+      },
+      {
+        "path": "Th14WebGpuHost.mjs",
+        "bytes": 19989,
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7"
+      },
+      {
+        "path": "archive-decoder.mjs",
+        "bytes": 11199,
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e"
+      },
+      {
+        "path": "archive-decoder.wasm",
+        "bytes": 96991,
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28"
+      },
+      {
+        "path": "directory-keyboard.mjs",
+        "bytes": 6345,
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243"
+      },
+      {
+        "path": "eagler-host.mjs",
+        "bytes": 16339,
+        "sha256": "5020a976b152551fdd1073f5f77516a71c9efc50bbbbc048db164eb6db5e64ba"
+      },
+      {
+        "path": "fonts/cp932.bin",
+        "bytes": 131072,
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+      },
+      {
+        "path": "fonts/msgothic.ttc",
+        "bytes": 8990160,
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
+      },
+      {
+        "path": "fonts/unifont.otf",
+        "bytes": 5105508,
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
+      },
+      {
+        "path": "keyboard.mjs",
+        "bytes": 1297,
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334"
+      },
+      {
+        "path": "managed.css",
+        "bytes": 733,
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+      },
+      {
+        "path": "manifest.json",
+        "bytes": 636,
+        "sha256": "c3287eaa7cef1a154fb3ce60575e9023119e98028122895a1bdd599a884a263e"
+      },
+      {
+        "path": "motion-replay.mjs",
+        "bytes": 815,
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d"
+      },
+      {
+        "path": "resources.json",
+        "bytes": 641,
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd"
+      },
+      {
+        "path": "runtime-epoch.mjs",
+        "bytes": 340,
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f"
+      },
+      {
+        "path": "shell.mjs",
+        "bytes": 18505,
+        "sha256": "ff2a0b7af64e9e331e7608f18e428f9f53253a7f22e018813d7e3dc016ef27f0"
+      },
+      {
+        "path": "th14-sdl.mjs",
+        "bytes": 339594,
+        "sha256": "d2631dbf913d0c6da1e34c68e3e769d2001ccfae377bbaa746b94000a9a8a3e1"
+      },
+      {
+        "path": "th14-sdl.wasm",
+        "bytes": 5463529,
+        "sha256": "3f0e4a95eaf3562efb9b90b4b66fda6c8258cc7d4c7b8953f332d81f9da73e97"
+      },
+      {
+        "path": "th14.html",
+        "bytes": 507,
+        "sha256": "68c187a4359d43f874e5062d483cab4925b68cdfc69680fe4533ea49ed019053"
+      }
+    ],
+    "frontendModules": [
       {
         "path": "assets/root-BO8Y8Wk0.js",
         "bytes": 654754,
@@ -66,46 +317,37 @@
         "sha256": "12a7af920b17e37250ec25010152f7221874d1d11c1452b5c0a849a0b2f8b1ba"
       }
     ],
-    "isolationHeadersAccepted": true,
-    "productionChanged": false,
+    "entryHtml": {
+      "originSha256": "114a36103041b614731968bfe95c7e8cbf3b15c564caa54f7c16128ba8d700f6",
+      "publicSha256": "cf9d18a5553e2d77c908093af43d9a226fbff7800902d8a8c813f5587c072d89",
+      "wholeFileHashAccepted": false,
+      "applicationByteRegionsPreserved": true,
+      "applicationReferenceSetPreserved": true,
+      "additionalScripts": [
+        "WebMCP bridge",
+        "Cloudflare JSD"
+      ],
+      "insertionsSha256": [
+        "e2cb14b5fa9e0c60dda83a94781294bd2f17a9eb48a314e93061bcc5b7c7cca2",
+        "ebd205ecc42fd15036a531bdc8652e88d350db5ca9ad30bae4389094423ac675"
+      ],
+      "browserOrResponseContentModified": false
+    },
+    "runtimeWholeFileHashesAndIsolationHeadersAccepted": true,
+    "frontendModuleWholeFileHashesAccepted": true,
+    "entryHtmlWholeFileHashAccepted": false,
+    "productionChanged": true,
+    "productionBrowserAfterActivationAccepted": false,
     "completeGame": false
   },
-  "browser": {
-    "qualified": true,
-    "generation": "fd1a1ca7a73dfd0dce1252b76c2bb9b4f3ce771d18f98943904697f77d897b29",
-    "actualOrdinaryReimuANormalStartAccepted": true,
-    "initialLives": 2,
-    "initialBombs": 3,
-    "initialPower": 100,
-    "initialHudScore": 50,
-    "resumedMovedLeftAndPausedAgain": true,
-    "subsequentHudScore": 80,
-    "nativeReturnTitleAndQuitAccepted": true,
-    "naturalViewerEndFrames": 1737,
-    "viewerHudScore": 3179620,
-    "viewerGraze": 39,
-    "viewerPower": 400,
-    "viewerRate": 1,
-    "viewerSeekCount": 0,
-    "endObservationSource": "CUA returned AX progress=1737 and ended text; HUD read from screenshot; later saved AX is a no-change diff, not a full tree",
-    "viewerScreenshotSha256": "111e74f462d5347f6f9a2d6c6c4343de6bb6ec0c220faa59d02569bca864f6e8",
-    "wholeEncodedWatcherScoreEqual": true,
-    "watcherScoreBytes": 21642,
-    "watcherScoreSha256": "91bab7d615744f37603ae32488e4f393dfa3b093683bde8da61da9c0b35fbc81",
-    "musicVolume": 0,
-    "sfxVolume": 0,
-    "musicMode": "none",
-    "firstObservationTimedOut": true,
-    "screenshotShowedCachedRuntimeAndUpdatePrompt": true,
-    "candidateVerifiedOnlyAfterRestart": true,
-    "quantitativeColdStartupLatencyAccepted": false,
-    "allShaderStatesAccepted": false,
-    "hardwareAudioOpened": false,
-    "productionChanged": false,
-    "completeGame": false
+  "publicBrowser": {
+    "accepted": false,
+    "createdTabObservationTimedOut": true,
+    "inventoryConfirmedExistingPage": true,
+    "existingTabObservationTimedOut": true,
+    "extraTabsCreatedForRecovery": 0,
+    "serviceFailureInferred": false,
+    "manualRecoveryRequested": false
   },
-  "managedArchiveTransferImported": false,
-  "frontendChanged": false,
-  "productionChanged": false,
   "completeGame": false
 }
