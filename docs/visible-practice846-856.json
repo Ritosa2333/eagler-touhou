@@ -245,12 +245,12 @@
     "MAINRuling": "Foreign pending launch after synchronous preguard rejection is unreachable through current UI ready/busy synchronous entry; source-only defensive lead,not reproduced blocker."
   },
   "history": {
-    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113/visible-practice846-856-historical-pin-final-20261117.json",
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113/visible-practice846-856-historical-pin-final-v2-20261117.json",
     "total": 1967,
-    "liveExact": 1626,
-    "archivedExact": 341,
+    "liveExact": 1625,
+    "archivedExact": 342,
     "unresolved": 0,
-    "sha256": "012451c7cf188d9040d2a4460d3d4771d07a09206fcc39bfc3dd271726a1546c"
+    "sha256": "63dfce3cfa60eb3c7d22483a0727337b2d0a961f5c622008af45e1b6428ca7d6"
   },
   "sourcePins": [
     {
@@ -310,8 +310,8 @@
     },
     {
       "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/multiplayer/rules.test.mjs",
-      "bytes": 3586,
-      "sha256": "c7ce35433d468e52b93a6790a745c5a87bdb2e3ebc63e181afec1b8aeea9f71b"
+      "bytes": 3585,
+      "sha256": "fa51d9df83dd2d9c22babd23192b8402fc3ab902f0fa70c011ebcabd1910be7d"
     },
     {
       "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/web-input/play-harness.mjs",

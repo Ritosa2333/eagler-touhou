@@ -30,4 +30,3 @@ test('accessors and forged derived values cannot bypass wire validation',async()
  assert.throws(()=>create(wire),/data|字段|property|plain/i);
  const local=create(base());await assert.rejects(product.multiplayerRulesFingerprint({...local,stageId:16}),/rules|规则|derived|canonical/i);
 });
-
