@@ -1,5 +1,7 @@
 # TH128 thprac：源码与实际消费者矩阵
 
+2026-11-17设备补充：996实际WebAudio原WAV/OGG解码与输出节点、同练习重开保音源、原生MSG严格ACK、真实ended及退出清理10项通过；最终F12用整页截图按文档坐标离线裁图，已核不含内部测试栏。仍无实际游戏GPU/字体纹理合并验收，不冒完整thprac/第三阶段100%。见[THPRAC128_REAL_AUDIO.md](THPRAC128_REAL_AUDIO.md)。
+
 2026-11-17补充：F12按固定原版补齐待应用草稿/Apply显隐/自由整数调整/原预设格式与中英日13项原词条，真实989验证参数→原生150FPS→RPY/真实IDB→Replay锁定，受影响990273通过；仍不计完整thprac或第三阶段完成。989裁图像素未覆盖目标区域，未作为画面证明，详见[THPRAC128_F12_PARITY.md](THPRAC128_F12_PARITY.md)。
 
 2026-11-17 当前覆盖以[浏览器原生组合](THPRAC128_BROWSER_CLOSURE.md)为准：菜单16stage/126chapter/156section/EXphase/五资源、练习RPY与playLock、F1–F7和F12速度已经接入；978真实browser/native完整caller和取消/失败清理通过，980受影响265通过。以下早期矩阵保留为迁移过程记录，不再代表这些已接功能仍缺失。图形/文字纹理/物理音频在978仍为明确接缝，完整thprac/phase3仍未标完成，约90%仅粗略功能估计。内部测试控制栏未进入正式site入口。
