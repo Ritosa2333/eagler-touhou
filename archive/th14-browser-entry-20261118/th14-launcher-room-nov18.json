@@ -105,5 +105,103 @@
   },
   "fullLauncherSpectatorUiAccepted": false,
   "productionChanged": false,
-  "completeGame": false
+  "completeGame": false,
+  "launcherSpectatorControls": {
+    "passed": true,
+    "reportSha256": "e7cf83420c71200ec043989f38cb80004d29e33a731eba889c3848a53442cd7d",
+    "harnessSha256": "eb20081ad1bb0557f29f76448e970933cb0b986f66c283a2065d03155e37c960",
+    "preparedBeforeGameStart": true,
+    "roleLabelBefore": "离开旁观",
+    "steps": [
+      "joined-room-via-code",
+      "confirmed-resource-reload",
+      "already-admitted-by-full-room-join",
+      "join-running-room-via-ui",
+      "actual-pause-held",
+      "actual-seek-home",
+      "actual-resume",
+      "actual-return-live"
+    ],
+    "timeline": {
+      "initial": {
+        "revision": 13,
+        "min": 0,
+        "position": 126,
+        "received": 219,
+        "edge": 129,
+        "target": 0,
+        "paused": false,
+        "seeking": false,
+        "following": true,
+        "ended": false
+      },
+      "paused": {
+        "revision": 15,
+        "min": 0,
+        "position": 147,
+        "received": 240,
+        "edge": 150,
+        "target": 0,
+        "paused": true,
+        "seeking": false,
+        "following": true,
+        "ended": false
+      },
+      "held": {
+        "revision": 18,
+        "min": 0,
+        "position": 147,
+        "received": 291,
+        "edge": 201,
+        "target": 0,
+        "paused": true,
+        "seeking": false,
+        "following": true,
+        "ended": false
+      },
+      "seek": {
+        "revision": 20,
+        "min": 0,
+        "position": 0,
+        "received": 305,
+        "edge": 215,
+        "target": 0,
+        "paused": true,
+        "seeking": false,
+        "following": false,
+        "ended": false
+      },
+      "resumed": {
+        "revision": 22,
+        "min": 0,
+        "position": 13,
+        "received": 327,
+        "edge": 237,
+        "target": 0,
+        "paused": false,
+        "seeking": false,
+        "following": false,
+        "ended": false
+      },
+      "live": {
+        "revision": 24,
+        "min": 0,
+        "position": 247,
+        "received": 345,
+        "edge": 255,
+        "target": 239,
+        "paused": false,
+        "seeking": false,
+        "following": true,
+        "ended": false
+      }
+    },
+    "pageErrors": [],
+    "uiError": "",
+    "rawHarnessPassed": false,
+    "rawHarnessFailure": "Required static-preview /api/ready returned 404; native/UI checks completed before the failing assertion",
+    "coldLateJoinUiAccepted": false,
+    "completeEndDrainUiAccepted": false
+  },
+  "launcherSpectatorControlsAccepted": true
 }
