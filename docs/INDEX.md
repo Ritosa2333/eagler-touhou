@@ -1,6 +1,6 @@
 # 文档总表
 
-共 664 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 665 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -380,6 +380,7 @@
 | 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_CURRENT_AUDIO_EXTRA_NOV09.md](../archive/th14-behavior-acceptance-20261117/TH14_CURRENT_AUDIO_EXTRA_NOV09.md) | TH14 当前提供者的六机体完整 Extra 回归 · 2026-11-09 |
 | 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_CURRENT_EXTRA_BROWSER_NOV15.md](../archive/th14-behavior-acceptance-20261117/TH14_CURRENT_EXTRA_BROWSER_NOV15.md) | TH14 当前构建 Extra 浏览器自然结束与成绩保护 · 2026-11-15 |
 | 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_IMPORT_RECOVERY_NOV15.md](../archive/th14-behavior-acceptance-20261117/TH14_IMPORT_RECOVERY_NOV15.md) | TH14 录像导入错误恢复 · 2026-11-15 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_LAUNCH_SUSPENSION_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_LAUNCH_SUSPENSION_NOV17.md) | TH14 启动暂停顺序 · 2026-11-17 |
 | 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_MANAGED_ARCHIVE_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_MANAGED_ARCHIVE_NOV17.md) | TH14 资源分块加载与原生所有权 · 2026-11-17 |
 | 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_NATIVE_MANUAL_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_NATIVE_MANUAL_NOV17.md) | TH14 原生操作说明流程 · 2026-11-17 |
 | 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_NATIVE_MUSIC_ROOM_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_NATIVE_MUSIC_ROOM_NOV17.md) | TH14 当前原生 Music Room · 2026-11-17 |

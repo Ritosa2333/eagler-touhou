@@ -2166,7 +2166,7 @@
     "th14": {
       "normal": "ports/th14",
       "multiplayer": "ports/th14-mp",
-      "base": "f13cf3f49947a730a2220c290956809b10db33c0",
+      "base": "98d035405caaab36131bfb8837aa51f61b5eb73f",
       "history": [
         {
           "kind": "manual",
@@ -2204,6 +2204,16 @@
             "ports/th14-mp/tools/th14-track-volume-current-upstream-nov17.mjs"
           ],
           "note": "通过普通版与多人版目录投影三方合并接收公共录像、练习、音频及资源取消修复；保留房间生命周期、回滚输入、联机存档及 256 MiB 初始内存。构建与行为验证范围见 archive/th14-behavior-acceptance-20261117。"
+        },
+        {
+          "kind": "manual",
+          "base": "f13cf3f49947a730a2220c290956809b10db33c0",
+          "source": "98d035405caaab36131bfb8837aa51f61b5eb73f",
+          "targetHead": "c019e2714251ac62fee93fe8a18cc9b56adcb380",
+          "paths": [
+            "ports/th14-mp/runtimes/th12/th12_web/sdl-runtime/shell.mjs"
+          ],
+          "note": "普通与多人启动原生循环后再暂停，防止隐藏启动或音频恢复等待期间循环运行；两侧各16项含Asyncify队列通过，旧版各14项失败。保留MP房间与普通模式差异，真实隐藏浏览器验收另记。"
         }
       ]
     }
