@@ -99,7 +99,7 @@ const TH03_TOUCH_FIRE = Object.freeze({
 });
 export const PRODUCT_GAMES = Object.freeze({
     th01: Object.freeze({
-        testOnly: true, buildOptIn: true, number: '01', title: '東方靈異伝', subtitle: 'Highly Responsive to Prayers', cardArtwork: 'th01-card.webp',
+        testOnly: true, number: '01', title: '東方靈異伝', subtitle: 'Highly Responsive to Prayers', cardArtwork: 'th01-card.webp',
         storage: Object.freeze({saveRoot:'/savesth01',scoreFile:'scores.dat',configFiles:Object.freeze([])}),
         runtime:'./runtime/th01/th01.html', runtimeFileLayout:'directory', runtimeFileTree:true,
         runtimeAssets:Object.freeze(['th01.html','manifest.json','managed-shell.mjs','managed-data.mjs','managed-worker.mjs']), requiredShared:Object.freeze([]),
@@ -116,7 +116,7 @@ export const PRODUCT_GAMES = Object.freeze({
     }),
     th02: Object.freeze({
         practiceUI: 'browser',
-        testOnly: true, buildOptIn: true, number: '02', title: '東方封魔録', subtitle: 'the Story of Eastern Wonderland', cardArtwork: 'th02-card.webp',
+        testOnly: true, number: '02', title: '東方封魔録', subtitle: 'the Story of Eastern Wonderland', cardArtwork: 'th02-card.webp',
         storage: Object.freeze({saveRoot:'/savesth02',scoreFile:'HUUHI.DAT',configFiles:Object.freeze(["HUUMA.CFG"])}),
         runtime:'./runtime/th02/th02.html', runtimeFileLayout:'directory', runtimeFileTree:true,
         runtimeAssets:Object.freeze(['th02.html','manifest.json','managed-shell.mjs','managed-data.mjs','managed-worker.mjs']), requiredShared:Object.freeze([]),
@@ -152,7 +152,7 @@ export const PRODUCT_GAMES = Object.freeze({
     // the required presentation-cadence acceptance gate.
     th04: Object.freeze({
         practiceUI: 'browser',
-        testOnly: true, buildOptIn: true, number: '04', title: '東方幻想郷', subtitle: 'Lotus Land Story', cardArtwork: 'th04-card.webp',
+        testOnly: true, number: '04', title: '東方幻想郷', subtitle: 'Lotus Land Story', cardArtwork: 'th04-card.webp',
         storage: Object.freeze({saveRoot:'/savesth04',scoreFile:'GENSOU.SCR',configFiles:Object.freeze(['MIKO.CFG'])}),
         runtime:'./runtime/th04/th04.html', runtimeFileLayout:'directory', runtimeFileTree:true,
         runtimeAssets:Object.freeze(['th04.html','manifest.json','managed-shell.mjs','managed-data.mjs','managed-worker.mjs']), requiredShared:Object.freeze([]),

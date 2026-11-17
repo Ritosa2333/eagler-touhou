@@ -877,7 +877,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     const player = document.querySelector<HTMLElement>('#player');
     if (!player) throw new Error('Launcher Player is not mounted');
     player.classList.add('open'); player.setAttribute('aria-hidden', 'false'); document.body.classList.add('player-active');
-      if (fullscreen) {navigation?.openRoomFullscreen?.(); publish({roomPlayerExpanded: true}); try {await nativeTouch.enterFullscreen(player);} catch (error) {feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error, t)}));}}
+      if (fullscreen) {navigation?.openRoomFullscreen?.(); publish({roomPlayerExpanded: true}); try {await nativeTouch.enterFullscreen(player);} catch (error) {navigation?.closeRoomFullscreen?.(); publish({roomPlayerExpanded: false}); feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error, t)}));}}
     if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
   }
   async function launchRoom(context: RoomLaunchContext) {
@@ -1564,7 +1564,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       try {
         const target = document.querySelector<HTMLElement>('#player.replay-workspace #gameViewport') ?? document.querySelector<HTMLElement>('#player');
         if (target) await nativeTouch.enterFullscreen(target);
-      } catch (error) {feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}
+      } catch (error) {if (roomPlayer) {navigation?.closeRoomFullscreen?.(); publish({roomPlayerExpanded: false});} feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}
     },
     getRuntime: () => runtime, getReplays: () => replays, getDiagnostics: () => diagnostics, getGameplayNetwork: () => gameplayNetwork,
     async chooseReplayFile(product: ProductId) {const file = await ports.pickFile(replayImportAcceptFor(product)); if (file) await importReplayFile(file, product);},

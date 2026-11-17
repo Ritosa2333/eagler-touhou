@@ -147,6 +147,60 @@ bool RollbackCore::FrameIsTooOld(std::uint32_t frame) const
            lastSimulatedFrame_ - frame >= INPUT_HISTORY_SIZE;
 }
 
+bool RollbackCore::RetireRemoteFrom(std::uint8_t player, std::uint32_t frame)
+{
+    if (!configured_ || player >= config_.playerCount || player == config_.localPlayer ||
+        frame == INVALID_FRAME || FrameIsTooOld(frame)) return false;
+    for (auto &slot : inputs_[player])
+        if (slot.present && slot.frame >= frame) slot = InputSlot{};
+    if (confirmedThrough_[player] != INVALID_FRAME && confirmedThrough_[player] >= frame)
+        confirmedThrough_[player] = frame == 0 ? INVALID_FRAME : frame - 1;
+    return true;
+}
+
+void RollbackCore::RefreshPredictions()
+{
+    rollbackFrame_ = INVALID_FRAME;
+    for (const auto &decision : used_)
+    {
+        if (decision.frame == INVALID_FRAME) continue;
+        for (std::uint8_t player = 0; player < config_.playerCount; ++player)
+        {
+            if (!(decision.predictedMask & (1u << player))) continue;
+            const auto *actual = FindInputSlot(player, decision.frame);
+            const auto expected = actual ? actual->input : PredictInput(player, decision.frame);
+            if (decision.inputs[player] != expected &&
+                (rollbackFrame_ == INVALID_FRAME || decision.frame < rollbackFrame_))
+                rollbackFrame_ = decision.frame;
+        }
+    }
+}
+
+void RollbackCore::DiscardSimulatedBefore(std::uint32_t frame)
+{
+    for (auto &decision : used_)
+        if (decision.frame != INVALID_FRAME && decision.frame < frame) decision = UsedSlot{};
+}
+
+bool RollbackCore::RecheckPredictions(std::uint8_t player, std::uint32_t from)
+{
+    if (!config_.recheckPredictionFrontier || lastSimulatedFrame_ == INVALID_FRAME || from > lastSimulatedFrame_) return false;
+    const std::uint8_t mask = static_cast<std::uint8_t>(1u << player);
+    for (std::uint32_t at = from; at <= lastSimulatedFrame_; ++at)
+    {
+        const UsedSlot *decision = FindUsedSlot(at);
+        if (!decision || !(decision->predictedMask & mask)) continue;
+        const InputSlot *actual = FindInputSlot(player, at);
+        const FrameInput expected = actual ? actual->input : PredictInput(player, at);
+        if (decision->inputs[player] != expected)
+        {
+            if (rollbackFrame_ == INVALID_FRAME || at < rollbackFrame_) rollbackFrame_ = at;
+            return true;
+        }
+    }
+    return false;
+}
+
 RemoteInputResult RollbackCore::SubmitRemoteInput(std::uint8_t player, std::uint32_t frame,
                                                 const FrameInput &input)
 {
@@ -155,6 +209,9 @@ RemoteInputResult RollbackCore::SubmitRemoteInput(std::uint8_t player, std::uint
     const auto previous = confirmedThrough_[player];
     const auto release = directions_[player].ReleaseFrame(previous);
     const auto result = StoreRemoteInput(player, frame, input);
+    if (result != RemoteInputResult::InvalidPlayer && result != RemoteInputResult::TooOld &&
+        result != RemoteInputResult::ConflictingConfirmedInput && RecheckPredictions(player, frame))
+        return RemoteInputResult::RollbackRequired;
     return NoteForecastChange(player, previous, release) &&
         result != RemoteInputResult::RollbackRequired && ForecastRollbackFrame(player) != INVALID_FRAME
         ? RemoteInputResult::RollbackRequired : result;
@@ -182,20 +239,15 @@ RemoteInputResult RollbackCore::StoreRemoteInput(std::uint8_t player, std::uint3
     NoteActualInput(player, frame);
 
     const UsedSlot *used = FindUsedSlot(frame);
+    if (lastSimulatedFrame_ == INVALID_FRAME || frame > lastSimulatedFrame_)
+        return RemoteInputResult::Accepted;
+
     const std::uint8_t mask = static_cast<std::uint8_t>(1u << player);
-    auto result = RemoteInputResult::Accepted;
-    if (used && lastSimulatedFrame_ != INVALID_FRAME && frame <= lastSimulatedFrame_)
-    {
-        if (!(used->predictedMask & mask)) result = RemoteInputResult::Duplicate;
-        else if (used->inputs[player] == input) result = RemoteInputResult::PredictionCorrect;
-        else
-        {
-            if (rollbackFrame_ == INVALID_FRAME || frame < rollbackFrame_)
-                rollbackFrame_ = frame;
-            return RemoteInputResult::RollbackRequired;
-        }
-    }
-    return result;
+    if (!used) return RemoteInputResult::Accepted;
+    if (!(used->predictedMask & mask)) return RemoteInputResult::Duplicate;
+    if (used->inputs[player] == input) return RemoteInputResult::PredictionCorrect;
+    if (rollbackFrame_ == INVALID_FRAME || frame < rollbackFrame_) rollbackFrame_ = frame;
+    return RemoteInputResult::RollbackRequired;
 }
 
 EquivalentRemoteInputResult RollbackCore::SubmitEquivalentRemoteInput(std::uint8_t player,
@@ -444,6 +496,13 @@ FrameInput RollbackCore::PredictInput(std::uint8_t player, std::uint32_t frame) 
             if (distance > config_.maxDirectionPredictionFrames)
                 predicted.buttons &= static_cast<std::uint16_t>(~config_.directionButtons);
             predicted.touchBomb = false;
+            if (!config_.predictAnalog)
+            {
+                predicted.analogMode = AnalogMode::None;
+                predicted.x = predicted.y = 0.0f;
+                predicted.unlimited = predicted.touchUsed = predicted.touchBomb = false;
+                return predicted;
+            }
             // Fresh delta streams already keep unapplied movement inside the
             // rewindable simulation. Predict no NEW displacement by default;
             // never repeat a gesture reset or add one device event twice.
@@ -754,6 +813,8 @@ bool RollbackCore::ApplyInputPacket(const InputPacket &packet, RemoteInputResult
             return false;
         }
     }
+    if (packet.inputCount && RecheckPredictions(packet.senderPlayer, packet.firstInputFrame))
+        worst = RemoteInputResult::RollbackRequired;
     // Leave forecast-only corrections cancellable across the receive burst.
     if (NoteForecastChange(packet.senderPlayer, previous, release) && worstResult &&
         ResultRank(worst) < ResultRank(RemoteInputResult::RollbackRequired) &&

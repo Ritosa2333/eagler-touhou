@@ -1,0 +1,5 @@
+{
+  "reason": "TH02 read-only browser Boss HUD; guest code, disk and input handling unchanged",
+  "previous": "e24f1f7de2628a24622de43033d7d82312bf414b641b59e34add47a9087851c8",
+  "current": "7d67a5cf043c5ee65a5fa8a862dab9b737fa9fbb2c009a27cd49ec662c648b8d"
+}

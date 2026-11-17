@@ -125,6 +125,12 @@ jobs:
 
           tools/build
 
+          ports/th02/web
+
+          ports/th04/web
+
+          services/relay/src
+
           ports/th08/web/cpp/sdl
 
           ports/th08-mp/web/cpp/sdl

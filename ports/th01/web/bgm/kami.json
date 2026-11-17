@@ -1,0 +1,11 @@
+{
+  "url": "kami.opus",
+  "loopStart": 11.312426303854876,
+  "loopEnd": 74.28544217687075,
+  "sha256": "c370dba160a4d7d95f616abc2121dbbaf89c568720bf7f4b3b1dced41a155778",
+  "audioSha256": "32b6a35b6c60ad6c6ef9c2a73e2150df555bcadbb61ddc6346a4ff078ff53782",
+  "codec": "opus",
+  "bytes": 604004,
+  "preset": "mdrv2-fmgen-opus64-48k-single-loop-headroom-v2",
+  "fadeSeconds": 1.7584615384615385
+}

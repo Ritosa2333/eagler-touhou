@@ -1,0 +1,11 @@
+{
+  "dispatch": "static-table-cache-v1",
+  "presentation_hz": 60,
+  "native_clock": "unchanged",
+  "wasm": "np21-mobile.wasm",
+  "address_translation": "tlb-hot-cold-v1",
+  "mobile_wasm_sha256": "134d88e51088e388a820b3d3a070f86f981c5135be3acee14f09072c6d72caed",
+  "source_sha256": "c7b832ff4c21b6a5b42db1e205aeef6b3e20f8d9514029d4360399a95effbfda",
+  "adapter_sha256": "e9fac3e6147289e8c30a787782a7854d975da6cf8dd02d664fabe4bac88811b4",
+  "frame_limit_sha256": "1890fc4ed78e33a09cef166c05d5a9f9734745da7150574011b688ee7eaae6dc"
+}

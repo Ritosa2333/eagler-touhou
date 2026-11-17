@@ -912,6 +912,22 @@ test('Flower View keeps Japanese identity, score, shared facts and one contextua
   await m.unmount();
 });
 
+test('TH01 directory marks ball counts other than two as special',async()=>{
+  const f=await fixture({selectedProduct:'th01mp',locale:'zh-CN',host:{games:['th01']}}).live([room({product:'th01mp',ballCount:6})]);
+  await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
+  assert.equal(n('.lobby-room-rules').textContent,'6 球');
+});
+
+
+test('TH02 rooms mark disabled focus as a special rule',async()=>{
+  const f=await fixture({selectedProduct:'th02mp',locale:'zh-CN',host:{games:['th02']}}).live([room({product:'th02mp',disableFocus:true})]);
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
+  assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','room.th02SpecialFocus'));
+  await f.receive([room({product:'th02mp',disableFocus:false})]);await m.update({snapshot:f.service.getSnapshot()});
+  assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','directory.regularRules'));
+});
+
+
 test('Directory gameplay flags use their own column and regular rooms name their rules', async () => {
   const f=await fixture({locale:'zh-CN'}).live([room({disableCheatMovement:true,challengeMode:true})]);
   const {m}=await mountLobby(f,{}, {locale:'zh-CN'});

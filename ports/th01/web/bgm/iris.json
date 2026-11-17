@@ -1,0 +1,11 @@
+{
+  "url": "iris.opus",
+  "loopStart": 0.013832199546485261,
+  "loopEnd": 14.857074829931973,
+  "sha256": "c0f4b32efc498161b25a4d35b4a35e8f81c4f0805dca9abeea27965704eb2bb3",
+  "audioSha256": "013c55f5d477dea237cc98c0f2efd526fac135d67c654598dacfd2267542d320",
+  "codec": "opus",
+  "bytes": 121158,
+  "preset": "mdrv2-fmgen-opus64-48k-single-loop-headroom-v2",
+  "fadeSeconds": 2.4545192307692307
+}

@@ -3,6 +3,7 @@
   "gates": [
     {
       "id": "held-touch-continuity",
+      "excludeGames": ["th01", "th02", "th04"],
       "level": "module",
       "complete": false,
       "checks": ["TOUCH-09"],
@@ -10,6 +11,7 @@
     },
     {
       "id": "immediate-sfx-routing",
+      "excludeGames": ["th01", "th02", "th04"],
       "level": "source-contract",
       "complete": false,
       "checks": ["AUDIO-07"],
@@ -41,7 +43,7 @@
     },
     {
       "id": "normal-presentation",
-      "excludeGames": ["th05"],
+      "excludeGames": ["th01", "th02", "th04", "th05"],
       "level": "source-contract",
       "runner": "vitest",
       "project": "workspace",

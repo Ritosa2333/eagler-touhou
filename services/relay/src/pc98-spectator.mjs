@@ -2,7 +2,8 @@
 // Compression and the game-specific row validation remain in the browser.
 import {createHash} from 'node:crypto';
 const MAX_FRAMES=216000,MAX_BYTES=128*1024*1024,MAX_PACKET=16384,MAX_POINT=16*1024*1024;
-export function isPc98SpectatorRoom(room){return room.startsWith('th03mp-');}
+const products=new Set(['th01mp','th02mp','th03mp','th04mp']);
+export function isPc98SpectatorRoom(room){return products.has(room.split('-')[0]);}
 export class Pc98SpectatorRelay{
   constructor(players,{matchInitializers=false}={}){this.players=players;this.matchInitializers=matchInitializers;this.history=[];this.bytes=0;this.next=0;this.started=false;this.ended=false;this.point=null;this.lastPoint=-1;this.pendingMatch=0;}
   accept(payload){

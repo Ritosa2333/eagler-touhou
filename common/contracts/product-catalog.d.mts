@@ -30,7 +30,7 @@ export declare function isHostRuntimeFeatureId(value: string): value is HostRunt
 export declare function languagePriority(id: string): number;
 export declare const PRODUCT_GAMES: Readonly<{
     th01: Readonly<{
-        testOnly:true; buildOptIn:true; number:'01';title:'東方靈異伝';subtitle:'Highly Responsive to Prayers';cardArtwork:'th01-card.webp';
+        testOnly:true; number:'01';title:'東方靈異伝';subtitle:'Highly Responsive to Prayers';cardArtwork:'th01-card.webp';
         storage:Readonly<{saveRoot:'/savesth01';scoreFile:'scores.dat';configFiles:readonly string[]}>;
         runtime:'./runtime/th01/th01.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
@@ -44,7 +44,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th02: Readonly<{
-        testOnly:true; buildOptIn:true; practiceUI:'browser'; number:'02';title:'東方封魔録';subtitle:'the Story of Eastern Wonderland';cardArtwork:'th02-card.webp';
+        testOnly:true; practiceUI:'browser'; number:'02';title:'東方封魔録';subtitle:'the Story of Eastern Wonderland';cardArtwork:'th02-card.webp';
         storage:Readonly<{saveRoot:'/savesth02';scoreFile:'HUUHI.DAT';configFiles:readonly string[]}>;
         runtime:'./runtime/th02/th02.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
@@ -72,7 +72,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th04: Readonly<{
-        testOnly:true; buildOptIn:true; practiceUI:'browser'; number:'04';title:'東方幻想郷';subtitle:'Lotus Land Story';cardArtwork:'th04-card.webp';
+        testOnly:true; practiceUI:'browser'; number:'04';title:'東方幻想郷';subtitle:'Lotus Land Story';cardArtwork:'th04-card.webp';
         storage:Readonly<{saveRoot:'/savesth04';scoreFile:'GENSOU.SCR';configFiles:readonly string[]}>;
         runtime:'./runtime/th04/th04.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
@@ -1099,6 +1099,7 @@ export interface MultiplayerLoadoutConfig {
     selection?: readonly Readonly<{value: number; labelKey: string}>[];
 }
 export interface MultiplayerInputTimingConfig {
+    runtimeTiming?: boolean;
     rollbackDefault?: boolean;
     /** Zero permits confirmed input only: no prediction, rollback or hybrid mode. */
     rollbackLimit: number;
@@ -1107,6 +1108,7 @@ export interface MultiplayerInputTimingConfig {
     manualDelayLimit?: number;
 }
 export interface MultiplayerProductConfig {
+    challengeMode?: boolean;
     relaySourceEnvelope?: boolean;
     spectator?: boolean;
     titleRoomEntry?: boolean;

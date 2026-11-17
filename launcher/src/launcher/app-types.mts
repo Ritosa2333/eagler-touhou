@@ -76,6 +76,8 @@ export interface MultiplayerRoomState {
   visibility?: 'public' | 'private';
   disableCheatMovement?: boolean;
   disableLocalChargePriority?: boolean;
+  disableFocus?: boolean;
+  ballCount?: number;
   challengeMode?: boolean;
   chapterThreshold?: number;
   prankMode?: boolean;

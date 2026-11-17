@@ -1,0 +1,11 @@
+{
+  "url": "positive.opus",
+  "loopStart": 0.013832199546485261,
+  "loopEnd": 54.67907029478458,
+  "sha256": "28c34063dee5ca2add99416080fb11674c6355de2b2df1ef0bddcdab162a41fe",
+  "audioSha256": "c5d59d421c707239b6d3e1826637085f09cf80ce09fb61b3726e59920952cec1",
+  "codec": "opus",
+  "bytes": 444728,
+  "preset": "mdrv2-fmgen-opus64-48k-single-loop-headroom-v2",
+  "fadeSeconds": 1.721826923076923
+}

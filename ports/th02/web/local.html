@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>东方封魔录 · 本机合作</title>
+<link rel="stylesheet" href="site.css"><link rel="stylesheet" href="local.css"><body class="shell">
+<header class="masthead"><a class="brand" href="index.html">TOUHOU / 02</a><small>東方封魔録 · STORY OF EASTERN WONDERLAND</small></header><nav class="mode-nav" aria-label="游戏模式"><a data-mode="solo" href="solo.html">单人游戏</a><a data-mode="local" aria-current="page" href="local.html">本机合作</a><a data-mode="lan" href="lan.html?network=lan">局域网联机</a><a data-mode="public" href="lan.html?network=public">公网联机</a></nav>
+<p class="muted">多人默认启用满火力支援：已满火力者拾取大小 Power 时，将火力收益给予火力最低的存活队友；同火力优先离道具最近者，再按席位顺序。分数计入全队。</p><main>
+  <header class="intro"><span class="eyebrow">ONE DEVICE / COOPERATIVE PLAY</span><h1>本机合作</h1><p>两人或三人共用一台设备，各自控制灵梦，共同面对封魔录的异变。</p></header>
+<section class="panel local-music-settings" aria-label="本机音乐">
+<label class="bgm-version">本机音乐 <select data-bgm-version-control aria-label="本机音乐版本"><option value="old">游戏原版</option><option value="new">幺乐团专辑版</option></select><small data-bgm-restart-note></small></label>
+<p class="muted">仅影响本机播放的音乐，不改变其他玩家的选择；自动保存，游戏中切换会从头播放当前曲目。</p>
+</section>
+
+  <section id="launch" class="panel">
+    <h2>本局设置</h2><p class="hint">选好各自机体与本局规则，启动后直接进入关卡。</p>
+    <div class="settings-grid launch-settings">
+    <label>游戏语言<select id="language"><option value="cn">中文</option><option value="jp">日文</option></select></label>
+    <label>玩家人数<select id="player-count"><option value="3">三人</option><option value="2">双人</option></select></label>
+    <label>起始关卡<select id="stage"><option value="0">第 1 关</option><option value="1">第 2 关</option><option value="2">第 3 关</option><option value="3">第 4 关</option><option value="4">第 5 关</option><option value="5">Extra</option></select></label>
+    <label>难度<select id="difficulty"><option value="0">Easy</option><option value="1" selected>Normal</option><option value="2">Hard</option><option value="3">Lunatic</option></select></label>
+    <label>每人备用残机<select id="lives"><option value="0">0</option><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+    <label>每人起始 Bomb<select id="bombs"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></label>
+    </div>
+    <div class="aircraft-grid">
+    <div class="shot-picker" id="p1-picker"><span>P1 · 红色灵梦</span><select id="p1-shot" class="sr-only" aria-label="P1 僚机"><option value="0">高速僚机</option><option value="1">平衡僚机</option><option value="2">低速僚机</option></select><div class="shot-choices" role="group" aria-label="P1 僚机选择"><button type="button" data-shot="0" aria-pressed="true"><img src="assets/option-0.png" alt="">高速</button><button type="button" data-shot="1" aria-pressed="false"><img src="assets/option-1.png" alt="">平衡</button><button type="button" data-shot="2" aria-pressed="false"><img src="assets/option-2.png" alt="">低速</button></div></div>
+    <div class="shot-picker" id="p2-picker"><span>P2 · 蓝色灵梦</span><select id="p2-shot" class="sr-only" aria-label="P2 僚机"><option value="0">高速僚机</option><option value="1" selected>平衡僚机</option><option value="2">低速僚机</option></select><div class="shot-choices" role="group" aria-label="P2 僚机选择"><button type="button" data-shot="0" aria-pressed="false"><img src="assets/option-0.png" alt="">高速</button><button type="button" data-shot="1" aria-pressed="true"><img src="assets/option-1.png" alt="">平衡</button><button type="button" data-shot="2" aria-pressed="false"><img src="assets/option-2.png" alt="">低速</button></div></div>
+    <div class="shot-picker p3-seat" id="p3-picker"><span>P3 · 绿色灵梦</span><select id="p3-shot" class="sr-only" aria-label="P3 僚机"><option value="0">高速僚机</option><option value="1">平衡僚机</option><option value="2" selected>低速僚机</option></select><div class="shot-choices" role="group" aria-label="P3 僚机选择"><button type="button" data-shot="0" aria-pressed="false"><img src="assets/option-0.png" alt="">高速</button><button type="button" data-shot="1" aria-pressed="false"><img src="assets/option-1.png" alt="">平衡</button><button type="button" data-shot="2" aria-pressed="true"><img src="assets/option-2.png" alt="">低速</button></div></div>
+    </div>
+    <div id="launch-assists"></div>
+    <p id="launch-summary" class="hint" role="status"></p>
+    <button id="start" class="primary">启动三人游戏</button>
+    <p class="hint">低速固定为当前机体正常移速的 50%，可分别开关。跳过开场、难度与选机菜单。Extra 固定使用原生 Extra 难度。各自拥有生命、火力和 Bomb 库存；P 点归拾取者，Bomb 道具补给所有存活队友，1UP 与分数 Extend 均为全队加命并复活幽灵，离线队员除外。分数全队共享，得分倍率保持原版。Bomb 演出使用释放者机体对应的原版效果。</p>
+  </section>
+  <section class="game">
+    <div class="hud"><span>右栏用僚机区分机体 · 1UP 旁为备用残机，0 仍有当前一命</span><div id="team-score">团队分数 0</div><div id="p1-state" class="sr-only">P1 · 等待开局</div><div id="p2-state" class="sr-only">P2 · 等待开局</div><div id="p3-state" class="sr-only">P3 · 等待开局</div></div>
+    <div id="screen"><canvas id="canvas" width="640" height="400" tabindex="0" aria-label="东方封魔录合作游戏画面"></canvas></div>
+    <div class="toolbar"><button id="pause" disabled>暂停</button><button id="menu" disabled>Esc／菜单</button><button id="confirm" disabled>确认</button><button id="invincible" aria-pressed="false" title="保护所有存活玩家；不增加库存或自动复活">测试无敌：关</button><button id="touchmode" aria-pressed="false">触屏操作</button><button id="fullscreen">全屏</button><button id="restart" disabled>重新启动</button><button id="diagnostics" disabled>下载故障信息</button></div>
+    <p id="status" role="status">准备就绪。需要支持 WebAssembly JSPI 的新版 Edge／Chrome。</p>
+  </section>
+  <section class="controls panel">
+    <div><h2>P1</h2><p>方向键移动 · Z 射击 · X Bomb · Shift 低速</p><label>手柄<select id="pad1"><option value="none">不使用</option><option value="0">第 1 个手柄</option><option value="1">第 2 个手柄</option></select></label>
+      <fieldset class="assist-settings"><legend>低速与判定点</legend><label class="check"><input type="checkbox" id="focus-enabled-1" checked>启用 Shift 低速</label><label>判定点<select id="point-mode-1"><option value="focus">按住低速键时显示</option><option value="always">始终显示</option><option value="off">关闭</option></select></label></fieldset>
+    </div>
+    <div><h2>P2</h2><p>WASD 移动 · J 射击 · L Bomb · K 低速</p><label>手柄<select id="pad2"><option value="none">不使用</option><option value="0">第 1 个手柄</option><option value="1">第 2 个手柄</option></select></label>
+      <fieldset class="assist-settings"><legend>低速与判定点</legend><label class="check"><input type="checkbox" id="focus-enabled-2" checked>启用 K 低速</label><label>判定点<select id="point-mode-2"><option value="focus">按住低速键时显示</option><option value="always">始终显示</option><option value="off">关闭</option></select></label></fieldset>
+    </div>
+    <div class="p3-seat"><h2>P3</h2><p>小键盘 8／2／4／6 移动 · 0 射击 · 小数点 Bomb · 小键盘 Enter 低速</p><label>手柄<select id="pad3"><option value="none">不使用</option><option value="0">第 1 个手柄</option><option value="1">第 2 个手柄</option><option value="2">第 3 个手柄</option></select></label>
+      <fieldset class="assist-settings"><legend>低速与判定点</legend><label class="check"><input type="checkbox" id="focus-enabled-3" checked>启用小键盘 Enter 低速</label><label>判定点<select id="point-mode-3"><option value="focus">按住低速键时显示</option><option value="always">始终显示</option><option value="off">关闭</option></select></label></fieldset>
+    </div>
+    <p class="hint">低速固定为当前机体正常移动速度的 50%；可分别启用或关闭，设置会自动保存。关闭低速移动后，Shift／K／小键盘 Enter 仍可用于救援。判定点为白色中心和黑色边框，只作显示辅助，不改变判定大小。</p>
+    <label class="team-targeting check"><input type="checkbox" id="team-targeting" checked>敌人瞄准所有存活队友（关闭时仅瞄准 P1）</label>
+    <p class="hint rescue-help">救援／借命：有备用残机时，停火、不放 Bomb，靠近队友后低速键连按 5 次，每两次最多间隔 24 个游戏帧。P1 按 Shift，P2 按 K，P3 按小键盘 Enter；每次都要按下再松开。自动选择范围内最近的可救援队友；离开范围或更换目标会清空进度。顶部显示按键进度。救活幽灵仍扣自己一命、将自己的 Bomb 减半，队友以 1 个 Bomb 和短暂无敌复活。过关免费复活。</p>
+    <p class="hint">Esc／P 打开游戏暂停菜单，Enter 确认。手柄：左摇杆／十字键移动，A 射击，B Bomb，X 低速，Start 菜单。离开页面或切换窗口时自动释放按键。</p>
+  </section>
+</main><footer class="footer"><a href="index.html">← 返回启动器</a><span>TH02 · STORY OF EASTERN WONDERLAND</span></footer>
+<script type="module" src="local.js"></script>
+<script type="module" src="navigation.js"></script><script type="module" src="bgm-version.js"></script></body></html>
