@@ -327,13 +327,14 @@ bool AudioDevice::music(i32 track){
     next->time.channels=channels;next->time.bits=short_word(format+46);
 #endif
     if(!a.attach(*next)){error="Unable to attach music voice";return false;}ma_sound_set_looping(&next->sound,MA_TRUE);
-    a.music=std::move(next);refresh_volume();a.track=track;a.fade=0;a.music_paused=false;
+    a.music=std::move(next);a.track=track;a.fade=0;a.music_paused=false;
 #if PORT_TITLE == 14
     a.music_fade={};
 #endif
 #if PORT_TITLE == 14
     a.music->time.started=a.clock();
 #endif
+    refresh_volume();
     ma_sound_start(&a.music->sound);return true;
 }
 i32 AudioDevice::current_music()const noexcept{return impl->track;}
