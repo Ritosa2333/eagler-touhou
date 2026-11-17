@@ -155,7 +155,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         presentation.renderer.flush();session->finish();presentation.world=nullptr;world=nullptr;
         title=std::make_unique<TitleMenus>(resources,*this,state.random,settings);
         if(!title->initialize()){error=title->error;return false;}
-        if(!title->open_network_selection()){error=title->error;return false;}in_title=true;launch_pending=false;
+        if(!title->open_network_selection(true)){error=title->error;return false;}in_title=true;launch_pending=false;
         paused=over=complete=false;pending_action=requested_transition=-1;
         settings.versus=4;settings.game_flags=0;settings.versus_unlocked.fill(1);
         pause_audio(false);music(0);return true;
@@ -351,7 +351,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
                     else {th09_network_replay_boundary(network.frame()-1,-1);if(network.side==0)th09_network_spectator_begin(network.frame()-1,&begin,spectator_begin_bytes);}}
                 presentation.renderer.flush();if(!session->retry()){error=session->error;return false;}world=session->world.get();presentation.world=world;paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};pause_audio(false);}
             else if(action==InGameAction::continue_match){pause_audio(true);if(!session->continue_game()){error="Unable to continue";return false;}paused=over=complete=false;pause_audio(false);}
-            else if(action==InGameAction::title&&network_selection&&complete)return reselect_network_match();
+            else if(action==InGameAction::title&&network_selection)return reselect_network_match();
             else {session->finish();return return_title(action==InGameAction::save_score);}
         }
         }
@@ -537,7 +537,7 @@ TH09_EXPORT("th09_rollback_enable") u32 th09_rollback_enable(u32 seed,u32 side,u
 TH09_EXPORT("th09_network_selection_begin") u32 th09_network_selection_begin(u32 seed,u32 side,u32 idLow,u32 idHigh,u32 abi,u32 requestedDelay,u32 reserve){
     if(rollback_active||side>1||reserve<1||reserve>2||
        (requestedDelay!=Netplay::AdonisStartup::Automatic&&requestedDelay>9)||
-       !th09_network_begin(seed,i32(side),0xffff,1,0))return 0;
+       !th09_network_begin(seed,i32(side),0xffff,3,0))return 0;
     network_selection=true;
     if(!probe->title->open_network_selection()){probe->error=probe->title->error;return 0;}
     // Warm the shared selection resources before timing probes. Future world
@@ -714,7 +714,7 @@ bool publish_rollback_outputs(){
         // Both players archive only reconciled full-match boundaries.
         if(record.hasBegin)th09_network_replay_boundary(record.beginFrame,-1);
         if(record.decidedWinner>=0)th09_network_match_decided(rollback_published+1,record.decidedWinner,record.decidedCharacters[0],record.decidedCharacters[1]);
-        if(record.hasEnd)th09_network_replay_boundary(rollback_published+1,record.winner);
+        if(record.hasEnd&&record.winner>=0)th09_network_replay_boundary(rollback_published+1,record.winner);
         if(network.side==0){std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> in;if(!rollback.ConfirmedInputs(rollback_published,&in))return false;const auto mode=[](const Netplay::FrameInput& i){return i.analogMode==Netplay::AnalogMode::None?0:i.analogMode==Netplay::AnalogMode::Joystick?1:i.unlimited?3:2;};
             if(record.hasBegin)th09_network_spectator_begin(record.beginFrame,&record.begin,spectator_begin_bytes);
             std::array<u8,80> charges{};
@@ -723,7 +723,7 @@ bool publish_rollback_outputs(){
             }
             if(!network_selection||record.gameplay)th09_network_spectator_frame(rollback_published,in[0].buttons,in[1].buttons,mode(in[0]),in[0].x,in[0].y,mode(in[1]),in[1].x,in[1].y,charges.data(),rollback.LocalChargePriority()?80:0);}
         if(record.round>0)th09_network_spectator_round(rollback_published+1,u32(record.round),record.replayRoundFrame);
-        if(network.side==0&&record.hasEnd)th09_network_spectator_end(rollback_published+1,record.winner);
+        if(network.side==0&&record.hasEnd)th09_network_spectator_end(rollback_published+record.gameplay,record.winner);
         if(network.active&&(rollback_published+1)%120==0&&!rollback.Verify(rollback_published+1,record.hash)){probe->error=rollback.Error();return false;}
         ++rollback_published;
         TH09_PERF_COUNT(PublishedFrames,1);
@@ -885,8 +885,11 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
             if(record.decidedWinner>=0)
                 for(i32 side=0;side<2;++side)record.decidedCharacters[side]=world.configuration.selection.characters[side];
         }
-        record.hasEnd=!wasComplete&&probe->complete;
-        if(record.hasEnd)record.winner=probe->world->scene->winner;
+        // Do not send the menu action that retires the viewer's world.
+        const bool reselect=network_selection&&record.gameplay&&probe->in_title;
+        if(reselect)record.gameplay=false;
+        record.hasEnd=!wasComplete&&(probe->complete||reselect);
+        if(record.hasEnd)record.winner=probe->complete?probe->world->scene->winner:-1;
         recording_frame=nullptr;probe->graphics.checkpoint=nullptr;
         if(record.captured){if(!record.state->Seal()){probe->error="Rollback checkpoint seal failed";return 0;}TH09_PERF_COUNT(SealedCheckpoints,1);}
         if(!ok)return 0;

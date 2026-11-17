@@ -215,8 +215,8 @@ export class SharedNetplay {
           const [left, right] = this.options.netplayLoadouts.map(item => item.character);
           const difficulty = Number(this.options.netplayDifficulty);
           const inputDelay = this.inputDelay;
-          // Keep the selection-mode bit outside the legacy loadout bit ranges.
-          const abi = (words[2] ^ (this.inGameSelection ? 0x09020001 : (left << 16) ^ (right << 20) ^ (difficulty << 24) ^ 0x09010000)) >>> 0;
+          // Version the shared menu transitions independently of legacy loadouts.
+          const abi = (words[2] ^ (this.inGameSelection ? 0x09020002 : (left << 16) ^ (right << 20) ^ (difficulty << 24) ^ 0x09010000)) >>> 0;
           if (!this.core._th09_adonis_configure(this.adonisMode)) throw Error('TH09 联机时序模式无效');
           const begin = this.adonisMode ? this.core._th09_measured_begin : this.core._th09_rollback_begin;
           if (typeof begin !== 'function') throw Error('TH09 Runtime 不支持实际链路标定，请更新实验 Runtime');

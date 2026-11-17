@@ -152,13 +152,14 @@ try{selectionRun:{
   await pages[0].evaluate(mode=>lobby.send(JSON.stringify({type:'start',adonisMode:mode,inputDelay:mode?2:0,inputDelayAuto:false})),mode);
   await pages[0].waitForFunction(()=>roomMessage.type==='start');
   await connect(2);await connect(0);await connect(1);await menu(7);stage('connected-selection');
+  for(const page of pages.slice(0,2))assert.equal((await state(page)).title[4],3,'initial difficulty is Lunatic');
   // Waiting for people is valid; it must not trigger the gameplay-stream timeout.
   const startFrames=(await state(pages[0])).title[0],startAt=Date.now();await pages[0].waitForTimeout(selectionOnly?3000:16000);
   if(selectionOnly){const rate=((await state(pages[0])).title[0]-startFrames)*1000/(Date.now()-startAt);assert.ok(rate>48,'menu rate '+rate);stage('menu-cadence',{fps:rate,packetDelay});}
   assert.equal((await state(pages[2])).closed.length,0);
-  await press(1,'ArrowDown');await waitFor(pages[0],s=>s.title[4]===2,'P2 can move shared difficulty cursor',7000);await press(1,'ArrowUp');
-  await waitFor(pages[0],s=>s.title[4]===1,'P2 restores difficulty cursor',7000);
-  await press(0,'ArrowDown');await press(0,'KeyZ');await menu(8);
+  await press(1,'ArrowUp');await waitFor(pages[0],s=>s.title[4]===2,'P2 can move shared difficulty cursor',7000);await press(1,'ArrowDown');
+  await waitFor(pages[0],s=>s.title[4]===3,'P2 restores difficulty cursor',7000);
+  await press(0,'ArrowUp');await press(0,'KeyZ');await menu(8);
   const before=await state(pages[0]);await press(0,'ArrowRight');const left=await state(pages[0]);
   assert.notEqual(left.selection[3],before.selection[3]);assert.equal(left.selection[4],before.selection[4]);
   await press(1,'ArrowRight');const right=await state(pages[0]);assert.equal(right.selection[3],left.selection[3]);assert.notEqual(right.selection[4],left.selection[4]);
@@ -211,7 +212,28 @@ try{selectionRun:{
     }
     break selectionRun;
   }
-  if(selectionOnly){stage('both-stage-selection-and-launch');break selectionRun;}
+  if(selectionOnly){
+    await press(1,'Escape');await press(1,'ArrowDown');await press(1,'KeyZ');
+    await press(1,'ArrowUp');await press(1,'KeyZ');await menu(8);
+    for(const page of pages.slice(0,2)){
+      const reselect=await state(page);
+      assert.equal(reselect.selection[7],first.selection[7],'reselection keeps the difficulty');
+      assert.equal(reselect.finals.length,0,'the abandoned point has no result');
+      assert.ok(await page.evaluate(()=>play.active&&room.phase==='running'&&!Object.keys(gameSavedReplays).length));
+    }
+    const abandoned=await waitFor(pages[0],s=>s.ends.length===1,'abandoned point spectator end');
+    assert.equal(abandoned.ends[0].winner,-1);
+    await press(0,'Escape');await menu(7);
+    assert.equal((await state(pages[0])).title[4],first.selection[7],'difficulty is still editable');
+    await press(0,'KeyZ');await menu(8);
+    await press(0,'ArrowRight');await press(0,'KeyZ');await press(1,'KeyZ');
+    await menu(16);await press(0,'KeyZ');
+    const next=await waitFor(pages[0],s=>s.begins.length===2&&!s.selection[1]&&s.session[1]>120,'match after pause reselect');
+    assert.notEqual(next.selection[8],first.selection[8]);
+    await waitFor(pages[2],s=>s.viewer[8]===next.begins[1].frame&&s.viewer[1]>next.begins[1].frame+30,'viewer follows pause reselect');
+    stage('pause-reselect-and-spectate',{end:abandoned.ends[0].frame,next:next.begins[1].frame});
+    break selectionRun;
+  }
   await pages[2].locator('#spectatorToggle').click();await pages[2].locator('#spectatorPause').click();const held=await state(pages[2]);
   for(const page of pages.slice(0,2)){await page.keyboard.down('KeyZ');await page.keyboard.down('ControlLeft');}
   stage('both-selected-and-playing',{characters:first.selection.slice(8,10),health:first.selection.slice(10,12),route:first.route,pausedViewer:held.viewer});
@@ -234,13 +256,13 @@ try{selectionRun:{
   if(archiveApi){await verifyArchive(match,1);if(archivePoints===1)break selectionRun;}
   for(const page of pages.slice(0,2)){await page.keyboard.up('KeyZ');await page.keyboard.up('ControlLeft');}
   stage('natural-match-complete',{end:completed.ends[0],frame:completed.rollback[0]});await pages[0].screenshot({path:resolve(out,'first-result.png')});
-  await pages[0].waitForTimeout(500);await press(0,'ArrowDown');await press(0,'KeyZ');await menu(7);
+  await pages[0].waitForTimeout(500);await press(0,'ArrowDown');await press(0,'KeyZ');await menu(8);
   assert.equal((await state(pages[2])).viewer[1],held.viewer[1]);
-  await press(0,'ArrowDown');await press(0,'KeyZ');await menu(8);await press(0,'ArrowRight');await press(1,'ArrowRight');
+  await press(0,'ArrowRight');await press(1,'ArrowRight');
   await press(0,'Shift+KeyZ');await press(1,'KeyZ');await menu(16);await press(0,'ArrowDown');await press(0,'KeyZ');
   const second=await waitFor(pages[0],s=>s.begins.length===2&&!s.selection[1]&&s.session[1]>120,'second match');
   assert.deepEqual(second.selection.slice(8,10),[2,3]);assert.equal((await state(pages[2])).viewer[1],held.viewer[1]);
-  assert.equal(second.selection[7],3);assert.deepEqual(second.selection.slice(12,14),[1,0]);assert.equal(second.selection[14],-2);
+  assert.equal(second.selection[7],first.selection[7]);assert.deepEqual(second.selection.slice(12,14),[1,0]);assert.equal(second.selection[14],-2);
   if(mode===1)assert.deepEqual(second.rollback.slice(2,4),[0,0]);
   await pages[2].waitForFunction(()=>play.spectatorTape.begins===1);
   stage('reselected-without-leaving',{characters:second.selection.slice(8,10),starts:second.begins,viewer:await state(pages[2])});

@@ -1,7 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {SharedNetplay} from '../../sdl-runtime/shared-netplay.mjs';
+import {registerHooks} from 'node:module';
 import {SpectatorTape} from '../../sdl-runtime/spectator-tape.mjs';
+
+// The runtime package places the shared uploader next to shared-netplay.mjs.
+const runtime = new URL('../../sdl-runtime/shared-netplay.mjs', import.meta.url);
+const uploader = new URL('../../../../../common/browser/th09-replay-upload.mjs', import.meta.url);
+const runtimeImports = registerHooks({resolve(specifier, context, nextResolve) {
+  return nextResolve(context.parentURL === runtime.href && specifier === './th09-replay-upload.mjs'
+    ? uploader.href : specifier, context);
+}});
+const {SharedNetplay} = await import(runtime.href);
+runtimeImports.deregister();
 
 // The two entries (Launcher card and the in-game title dialog) share one room
 // and one gameplay transport; these tests cover the transport contract itself.
@@ -149,7 +159,7 @@ test('game selection starts a neutral native menu and leaves room presets outsid
   try{
     pair=await connectPair(box,0,0,false,true);
     assert.equal(pair.leftCore.calls.begin.length,0);
-    assert.deepEqual(pair.leftCore.calls.selection,[1234,0,0xaaaaaaab,0xaaaaaaaa,(0xaaaaaaaa^0x09020001)>>>0,0,2]);
+    assert.deepEqual(pair.leftCore.calls.selection,[1234,0,0xaaaaaaab,0xaaaaaaaa,(0xaaaaaaaa^0x09020002)>>>0,0,2]);
     assert.notEqual(pair.leftCore.calls.selection[4],(0xaaaaaaaa^0x09010000^(3<<16))>>>0,'Easy Sakuya/Reimu fixed-loadout entry cannot share the menu ABI');
     assert.equal(pair.left.betweenMatches,true);
   }finally{pair?.left.close();pair?.right.close();box.restore();}
