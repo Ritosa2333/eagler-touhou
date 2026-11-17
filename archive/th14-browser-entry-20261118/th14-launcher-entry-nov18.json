@@ -1,0 +1,662 @@
+{
+  "schema": "th14/launcher-entry/1",
+  "date": "2026-11-18",
+  "preview": {
+    "reportSha256": "0fe0c9723bf292158214a3d5ae72f2eded845d706c24d27840d624bbe69c23c6",
+    "passed": true,
+    "browser": "157.0.8103.79",
+    "steps": [
+      {
+        "name": "fresh-launcher-and-zero-volume",
+        "passed": true,
+        "elapsedMs": 1758,
+        "observation": {
+          "volumes": [
+            {
+              "label": "游戏音乐",
+              "value": "0"
+            },
+            {
+              "label": "游戏音效",
+              "value": "0"
+            },
+            {
+              "label": "快捷发言语音",
+              "value": "0"
+            }
+          ],
+          "isolated": true
+        }
+      },
+      {
+        "name": "ui-launch-streaming-ogg",
+        "passed": true,
+        "elapsedMs": 14661,
+        "observation": {
+          "phase": 0,
+          "title": [
+            1,
+            2,
+            0,
+            0,
+            10
+          ],
+          "audio": "running"
+        }
+      },
+      {
+        "name": "ui-normal-game-entry",
+        "passed": true,
+        "elapsedMs": 4188,
+        "observation": {
+          "navigation": [
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 206,
+              "title": [
+                1,
+                2,
+                0,
+                0,
+                10
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 248,
+              "title": [
+                5,
+                2,
+                1,
+                0,
+                4
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 289,
+              "title": [
+                6,
+                2,
+                0,
+                0,
+                3
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 330,
+              "title": [
+                7,
+                2,
+                0,
+                0,
+                2
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 371,
+              "title": [
+                2,
+                0,
+                0,
+                1,
+                2
+              ],
+              "error": ""
+            },
+            {
+              "phase": 6,
+              "stage": 1,
+              "frame": 0,
+              "title": [
+                -1,
+                -1,
+                -1,
+                -1,
+                -1
+              ],
+              "error": ""
+            }
+          ],
+          "state": {
+            "phase": 1,
+            "stage": 1,
+            "frame": 34,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          }
+        }
+      },
+      {
+        "name": "pause-freeze-resume",
+        "passed": true,
+        "elapsedMs": 2858,
+        "observation": {
+          "before": {
+            "phase": 2,
+            "stage": 1,
+            "frame": 43,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          },
+          "held": {
+            "phase": 2,
+            "stage": 1,
+            "frame": 43,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          },
+          "resumed": {
+            "phase": 1,
+            "stage": 1,
+            "frame": 88,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          }
+        }
+      },
+      {
+        "name": "native-return-title-and-quit",
+        "passed": true,
+        "elapsedMs": 4871,
+        "observation": {
+          "returned": {
+            "phase": 0,
+            "stage": 0,
+            "frame": 12,
+            "title": [
+              1,
+              2,
+              0,
+              0,
+              10
+            ],
+            "error": ""
+          },
+          "playerClosed": true,
+          "launchVisible": true
+        }
+      }
+    ],
+    "pageErrors": [],
+    "httpStatusWarnings": [
+      {
+        "path": "/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "path": "/api/ready",
+        "status": 404
+      },
+      {
+        "path": "/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "path": "/_eagler/resource-routes",
+        "status": 404
+      },
+      {
+        "path": "/api/ready",
+        "status": 404
+      }
+    ],
+    "consoleErrorCount": 5,
+    "runtimeDelivery": [
+      {
+        "path": "/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14.html",
+        "bytes": 556,
+        "sha256": "9371bc15319b10bf348fc250bb6a32f949f8693deba58b0b6a9aecae49503f39"
+      },
+      {
+        "path": "/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/shell.mjs",
+        "bytes": 19897,
+        "sha256": "d054623fbf7ff54afff716efe040f9b9edf50ae098eccc8732e84477e598ca7d"
+      },
+      {
+        "path": "/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14-sdl.mjs",
+        "bytes": 340194,
+        "sha256": "61b0b9749a01cb3e0a41c4f43bc01d6e3a9ab2ac8a2908eec8c11abf52d4212b"
+      },
+      {
+        "path": "/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14-sdl.mjs",
+        "bytes": 340194,
+        "sha256": "61b0b9749a01cb3e0a41c4f43bc01d6e3a9ab2ac8a2908eec8c11abf52d4212b"
+      },
+      {
+        "path": "/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14-sdl.mjs",
+        "bytes": 340194,
+        "sha256": "61b0b9749a01cb3e0a41c4f43bc01d6e3a9ab2ac8a2908eec8c11abf52d4212b"
+      },
+      {
+        "path": "/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14-sdl.wasm",
+        "bytes": 5464333,
+        "sha256": "13dedcb8c4f2fcbe7051a22865f13c9d68b560ed282499ca6177b3bd7b64c5b3"
+      }
+    ],
+    "deliveryComplete": true
+  },
+  "public": {
+    "reportSha256": "270476ac361e4fc99234e236c51c7a573271be888dc79cd447254832b77f9c25",
+    "passed": true,
+    "browser": "157.0.8103.79",
+    "steps": [
+      {
+        "name": "fresh-launcher-and-zero-volume",
+        "passed": true,
+        "elapsedMs": 5134,
+        "observation": {
+          "volumes": [
+            {
+              "label": "游戏音乐",
+              "value": "0"
+            },
+            {
+              "label": "游戏音效",
+              "value": "0"
+            }
+          ],
+          "isolated": true
+        }
+      },
+      {
+        "name": "ui-launch-streaming-ogg",
+        "passed": true,
+        "elapsedMs": 120499,
+        "observation": {
+          "phase": 0,
+          "title": [
+            1,
+            2,
+            0,
+            0,
+            10
+          ],
+          "audio": "running"
+        }
+      },
+      {
+        "name": "ui-normal-game-entry",
+        "passed": true,
+        "elapsedMs": 4120,
+        "observation": {
+          "navigation": [
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 206,
+              "title": [
+                1,
+                2,
+                0,
+                0,
+                10
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 239,
+              "title": [
+                5,
+                2,
+                1,
+                0,
+                4
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 280,
+              "title": [
+                6,
+                2,
+                0,
+                0,
+                3
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 321,
+              "title": [
+                7,
+                2,
+                0,
+                0,
+                2
+              ],
+              "error": ""
+            },
+            {
+              "phase": 6,
+              "stage": 1,
+              "frame": 0,
+              "title": [
+                -1,
+                -1,
+                -1,
+                -1,
+                -1
+              ],
+              "error": ""
+            },
+            {
+              "phase": 6,
+              "stage": 1,
+              "frame": 0,
+              "title": [
+                -1,
+                -1,
+                -1,
+                -1,
+                -1
+              ],
+              "error": ""
+            }
+          ],
+          "state": {
+            "phase": 1,
+            "stage": 1,
+            "frame": 26,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          }
+        }
+      },
+      {
+        "name": "pause-freeze-resume",
+        "passed": true,
+        "elapsedMs": 2826,
+        "observation": {
+          "before": {
+            "phase": 2,
+            "stage": 1,
+            "frame": 34,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          },
+          "held": {
+            "phase": 2,
+            "stage": 1,
+            "frame": 34,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          },
+          "resumed": {
+            "phase": 1,
+            "stage": 1,
+            "frame": 78,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          }
+        }
+      },
+      {
+        "name": "native-return-title-and-quit",
+        "passed": true,
+        "elapsedMs": 4952,
+        "observation": {
+          "returned": {
+            "phase": 0,
+            "stage": 0,
+            "frame": 12,
+            "title": [
+              1,
+              2,
+              0,
+              0,
+              10
+            ],
+            "error": ""
+          },
+          "playerClosed": true,
+          "launchVisible": true
+        }
+      }
+    ],
+    "pageErrors": [],
+    "httpStatusWarnings": [
+      {
+        "path": "/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "path": "/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "path": "/_eagler/resource-routes",
+        "status": 404
+      }
+    ],
+    "consoleErrorCount": 3,
+    "runtimeDelivery": [
+      {
+        "path": "/runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/shell.mjs",
+        "bytes": 18873,
+        "sha256": "26fa8c317163c2230ef53f311b05d1d5ba1c7ca7d79967b81aa472030b3a70e6"
+      },
+      {
+        "path": "/runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/th14-sdl.mjs",
+        "bytes": 339998,
+        "sha256": "1bfd63dff6c944a98f94e104da61db31774be6c3ebb1e6c712f9921591e009df"
+      },
+      {
+        "path": "/runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/th14-sdl.wasm",
+        "bytes": 5464022,
+        "sha256": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb"
+      },
+      {
+        "path": "/runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/th14.html",
+        "bytes": 507,
+        "sha256": "68c187a4359d43f874e5062d483cab4925b68cdfc69680fe4533ea49ed019053"
+      },
+      {
+        "path": "/runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/th14.html",
+        "bytes": 507,
+        "sha256": "68c187a4359d43f874e5062d483cab4925b68cdfc69680fe4533ea49ed019053"
+      },
+      {
+        "path": "/runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/shell.mjs",
+        "bytes": 18873,
+        "sha256": "26fa8c317163c2230ef53f311b05d1d5ba1c7ca7d79967b81aa472030b3a70e6"
+      },
+      {
+        "path": "/runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/th14-sdl.mjs",
+        "bytes": 339998,
+        "sha256": "1bfd63dff6c944a98f94e104da61db31774be6c3ebb1e6c712f9921591e009df"
+      },
+      {
+        "path": "/runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/th14-sdl.mjs",
+        "bytes": 339998,
+        "sha256": "1bfd63dff6c944a98f94e104da61db31774be6c3ebb1e6c712f9921591e009df"
+      },
+      {
+        "path": "/runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/th14-sdl.mjs",
+        "bytes": 339998,
+        "sha256": "1bfd63dff6c944a98f94e104da61db31774be6c3ebb1e6c712f9921591e009df"
+      },
+      {
+        "path": "/runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/th14-sdl.wasm",
+        "bytes": 5464022,
+        "sha256": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb"
+      }
+    ],
+    "deliveryComplete": true
+  },
+  "previewDeliveryMatchedQualifiedPackage": true,
+  "input": "Actual visible UI and keyboard; native exports read only",
+  "silence": {
+    "browserMuteAudio": true,
+    "allPresentVolumeControls": 0,
+    "previewQuickChatVolume": 0
+  },
+  "sourceHistory": {
+    "head": "6e8dc5be9418f3a8ecfe550734d379de002dce7a",
+    "projection": {
+      "sourceHead": "6e8dc5be9418f3a8ecfe550734d379de002dce7a",
+      "game": "th14",
+      "results": {
+        "th14": {
+          "head": "a39af09728a0d0c69f3c185509d91f06e10d22ac",
+          "ref": "refs/heads/port-history/th14",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        },
+        "th14mp": {
+          "head": "f200bed3abb8dc4fe3d477342df4101f7b63a575",
+          "ref": "refs/heads/port-history/th14mp",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        }
+      },
+      "mergeBases": [
+        "a39af09728a0d0c69f3c185509d91f06e10d22ac"
+      ],
+      "aheadBehind": "0\t15"
+    },
+    "standardChangedSubtreeCheck": {
+      "head": "6e8dc5be9418f3a8ecfe550734d379de002dce7a",
+      "exitCode": 0,
+      "elapsedSeconds": 178.71565685793757
+    },
+    "standardMpExport": "2f3bf87dad55ef8f938fab4c8c50e6c6f37b2fcb"
+  },
+  "productionChanged": false,
+  "fullMultiplayerLauncherUiAccepted": false,
+  "completeGame": false,
+  "realDataDownloadCancellation": {
+    "reportSha256": "0a95152a9c04934807eb721f5397f3e66e31404ed2b9e9ffab006e9fd4ac7181",
+    "schema": "th14/real-launch-cancel/1",
+    "harnessSha256": "d5f9cb43089c250fca7fc47104cfc10e575a21c2eac4829402f8a7766b1285e4",
+    "steps": [
+      {
+        "name": "real-data-request-pending",
+        "passed": true
+      },
+      {
+        "name": "actual-cancel-returned-idle",
+        "passed": true
+      },
+      {
+        "name": "retry-entered-native-title",
+        "passed": true
+      },
+      {
+        "name": "native-quit-after-retry",
+        "passed": true
+      }
+    ],
+    "errors": [],
+    "requestsFailed": [
+      {
+        "path": "/_eagler/resource-routes",
+        "error": "net::ERR_ABORTED"
+      },
+      {
+        "path": "/games/th14/th14.dat",
+        "error": "net::ERR_ABORTED"
+      }
+    ],
+    "passed": true,
+    "volumes": [
+      {
+        "label": "游戏音乐",
+        "value": "0"
+      },
+      {
+        "label": "游戏音效",
+        "value": "0"
+      },
+      {
+        "label": "快捷发言语音",
+        "value": "0"
+      }
+    ],
+    "cancelled": {
+      "launchEnabled": true,
+      "status": "正在安装游戏资源…",
+      "playerOpen": false,
+      "transferHidden": true
+    },
+    "releaseError": "Error: route.continue: Route is already handled!",
+    "retry": {
+      "src": "/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14.html",
+      "phase": 0,
+      "title": [
+        1,
+        2,
+        0
+      ],
+      "error": ""
+    },
+    "scope": "Hold actual DATA network request, click visible Cancel, restore network, retry native title and Quit; no font/music installation claim"
+  }
+}
