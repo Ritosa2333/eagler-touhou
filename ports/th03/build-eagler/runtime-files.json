@@ -118,8 +118,8 @@
       "sha256": "b30a388f4187446ddb37819dd540a4d0195289feaa0c56baa13c5b08721f2ae0"
     },
     "managed-native-room.mjs": {
-      "bytes": 16742,
-      "sha256": "acf98251f5c8cab1f259e2db58c5457207bb8f74bf7415bbb12ab4ae7a32f482"
+      "bytes": 16949,
+      "sha256": "fec34db7e0b824e0859aca53b68c195efb7127418e6c997f9c8b8cee0c6fd897"
     },
     "managed-native-solo.mjs": {
       "bytes": 9446,
@@ -243,7 +243,7 @@
     },
     "manifest.json": {
       "bytes": 8600,
-      "sha256": "9ca23c866d748e669a3657c0bb3190ca508aab3bc4a174b3a0be3cd94ae18159"
+      "sha256": "dfd5e6ff6f4162fe97727ac834cfc7526c0bb26a9621b7cb64330fbe96f1b900"
     }
   }
 }

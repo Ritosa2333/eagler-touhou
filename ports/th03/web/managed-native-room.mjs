@@ -50,7 +50,8 @@ async function moduleFactory(){
  if(!globalThis.createTh03Classic) await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./native-classic.js';script.onload=resolve;script.onerror=()=>reject(Error('原生运行时加载失败'));document.head.append(script);});
  return globalThis.createTh03Classic({locateFile:name=>name.endsWith('.wasm')?'./native-classic.wasm':name});
 }
-function bootToSelection(){
+export function bootToSelection(engine,bgm){
+ bgm?.commands(engine.HEAPU8.slice(engine._th03_classic_audio_commands(),engine._th03_classic_audio_commands()+engine._th03_classic_audio_command_count()*4));
  const result=engine._th03_classic_step_pair(0,0,0,0);
  bgm?.commands(engine.HEAPU8.slice(engine._th03_classic_audio_commands(),engine._th03_classic_audio_commands()+engine._th03_classic_audio_command_count()*4));
  if(result!==0||engine._th03_classic_scene()!==3)throw Error('原生选人界面启动失败：'+result);
@@ -67,7 +68,7 @@ async function startSpectator(options,music){bgm=createNativeMusic({onError:erro
   validateRow(row){if(!row||!Array.isArray(row.inputs)||row.inputs.length!==2||row.inputs.some(v=>!Number.isSafeInteger(v)||v<0||v>MAX_INPUT)||row.charge!==undefined&&(!Array.isArray(row.charge)||row.charge.length!==2||row.charge.some(sample=>!validChargeSample(sample)))||![0,1,2].includes(row.scene)||!Number.isInteger(row.round)||row.round< -1||row.round>255||row.scene!==1&&row.round!==-1)throw Error('观战输入无效');},
   channelFactory:()=>{const channel=createPc98SpectatorChannel(options,report);globalThis.__th03PeerTransport={peers:new Map(),get relay(){return channel.relay;}};return channel;},
   async createReplica(header,{onFrame}){roomHitboxes=header.showHitboxes===true;
-   engine=await moduleFactory();await loadContent();engine._th03_classic_external_music(1);if(engine._th03_classic_create_versus()!==1)throw Error('原生游戏启动失败');bootToSelection();
+   engine=await moduleFactory();await loadContent();engine._th03_classic_external_music(1);if(engine._th03_classic_create_versus()!==1)throw Error('原生游戏启动失败');bootToSelection(engine,bgm);
    const driver=createConfirmedDriver(engine,{focus:header.focus});
    return {get frame(){return driver.frame;},get executed(){return driver.frame;},driver,advance(row){driver.step(row.inputs,row.charge);if(viewer?.following&&!viewer?.catching){bgm?.commands(engine.HEAPU8.slice(engine._th03_classic_audio_commands(),engine._th03_classic_audio_commands()+engine._th03_classic_audio_command_count()*4));play();}},present(){onFrame();},stop(){engine?._th03_classic_destroy();engine=undefined;}};
   },onError:report});
@@ -81,7 +82,7 @@ export const managedAPI={
   stopped=false;frames=0;roomHitboxes=options.netplayShowHitboxes===true;language=requestedLanguage;if(options.netplaySpectator){await startSpectator(options,music);return;}engine=await moduleFactory();await loadContent();
   bgm=createNativeMusic({onError:error=>__eaglerPC98Emit({event:'music-error',message:error.message}),source:options.musicSource,muted:music==='none',readTrack:readMusicTrack});engine._th03_classic_external_music(1);
   const result=engine._th03_classic_create_versus();if(result!==1)throw Error('原生游戏启动失败：'+result);
-  bootToSelection();
+  bootToSelection(engine,bgm);
   const roles=['host','guest'],seat=options.netplayPlayer;localSeat=seat;localPoint=false;lastPlaying=false;menuChoice=0;language=requestedLanguage;
   transport=createManagedTransport(options,roles,report);
   const channel=transport.channelFor(roles[1-seat]);
@@ -108,7 +109,7 @@ export const managedAPI={
   if(message.action==='inspect')return {description:{name:path.split('/').pop(),character:-1,difficulty:-1,stages:[{id:0,score:null,frames:replay.rows.length}]}};
   if(message.action!=='open'||message.stage!==undefined&&message.stage!==0)throw Error('录像命令无效');
   replayPlayer?.stop();clearInterval(timer);cancelAnimationFrame(animation);let driver;
-  replayPlayer=createNativeReplayPlayer({replay,path,async boot(){engine?._th03_classic_destroy();engine=await moduleFactory();await loadContent();const opts=__eaglerPC98Options();bgm?.stop();bgm=createNativeMusic({onError:error=>__eaglerPC98Emit({event:'music-error',message:error.message}),source:opts.musicSource,muted:musicMode==='none',readTrack:readMusicTrack});engine._th03_classic_external_music(1);if(engine._th03_classic_create_versus()!==1)throw Error('原生游戏启动失败');bootToSelection();bgm.unlock(audio);driver=createConfirmedDriver(engine,{focus:replay.focus});},step(row,_frame,audible){driver.step(row.slice(0,2),row.length===4?row.slice(2):undefined);localSeat=0;localPoint=showHitPoint({playing:engine._th03_classic_point_x()>=0,focus:driver.focus[0],focusPoint:__eaglerPC98Options().focusHitboxEnabled,always:__eaglerPC98Options().alwaysHitbox});if(audible){bgm?.commands(engine.HEAPU8.slice(engine._th03_classic_audio_commands(),engine._th03_classic_audio_commands()+engine._th03_classic_audio_command_count()*4));play();}},onState:state=>globalThis.__eaglerPC98Emit({event:'runtime-info',playback:state}),onFrame(){},onError:report});
+  replayPlayer=createNativeReplayPlayer({replay,path,async boot(){engine?._th03_classic_destroy();engine=await moduleFactory();await loadContent();const opts=__eaglerPC98Options();bgm?.stop();bgm=createNativeMusic({onError:error=>__eaglerPC98Emit({event:'music-error',message:error.message}),source:opts.musicSource,muted:musicMode==='none',readTrack:readMusicTrack});engine._th03_classic_external_music(1);if(engine._th03_classic_create_versus()!==1)throw Error('原生游戏启动失败');bootToSelection(engine,bgm);bgm.unlock(audio);driver=createConfirmedDriver(engine,{focus:replay.focus});},step(row,_frame,audible){driver.step(row.slice(0,2),row.length===4?row.slice(2):undefined);localSeat=0;localPoint=showHitPoint({playing:engine._th03_classic_point_x()>=0,focus:driver.focus[0],focusPoint:__eaglerPC98Options().focusHitboxEnabled,always:__eaglerPC98Options().alwaysHitbox});if(audible){bgm?.commands(engine.HEAPU8.slice(engine._th03_classic_audio_commands(),engine._th03_classic_audio_commands()+engine._th03_classic_audio_command_count()*4));play();}},onState:state=>globalThis.__eaglerPC98Emit({event:'runtime-info',playback:state}),onFrame(){},onError:report});
   match={get pause(){return driver?.pause;},stop(){},get frame(){return replayPlayer?.state().frame??0;}};canvas().addEventListener('pointerdown',unlock);addEventListener('keydown',unlock,{once:true});animation=requestAnimationFrame(draw);return {playback:await replayPlayer.start()};
  }if(!viewer||message.run!==run)throw Error('观战对局已改变');if(message.action==='pause')viewer.pause(true);else if(message.action==='play')viewer.pause(false);else if(message.action==='live')viewer.live();else if(message.action==='seek')viewer.seek(message.frame);else throw Error('观战命令无效');spectatorReport();return {};},
  stop,

@@ -124,8 +124,8 @@
       "sha256": "b30a388f4187446ddb37819dd540a4d0195289feaa0c56baa13c5b08721f2ae0"
     },
     "managed-native-room.mjs": {
-      "bytes": 16742,
-      "sha256": "acf98251f5c8cab1f259e2db58c5457207bb8f74bf7415bbb12ab4ae7a32f482"
+      "bytes": 16949,
+      "sha256": "fec34db7e0b824e0859aca53b68c195efb7127418e6c997f9c8b8cee0c6fd897"
     },
     "managed-native-solo.mjs": {
       "bytes": 9446,

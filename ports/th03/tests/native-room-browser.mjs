@@ -92,6 +92,11 @@ try{
   if(round==='match-2')for(const frame of frames){const state=await frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health());assert.equal(state.showHitboxes,false);assert.deepEqual(state.visibleHitPoints,[]);}
   for(const frame of frames)assert(await frame.evaluate(()=>!!document.querySelector('#canvas')&&!document.querySelector('.masthead,.mode-nav')),'managed room uses its own game surface');
   await wait(async()=>{const states=await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const m=await import('./managed-native-room.mjs');return m.managedAPI.health();})));return states.every(s=>s.confirmed>=120&&s.frames>0);},'main room confirmed gameplay');
+  if(process.env.TH03_MUSIC_QA==='1'){
+    for(const frame of frames)await frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.unlock());
+    await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const audio=(await import('./managed-native-room.mjs')).managedAPI.health().audio;return audio.music==='select'&&audio.musicPlaying;})))).every(Boolean),'both players hear character selection music',15000);
+    assert.deepEqual(events.flat().filter(e=>e.event==='music-error'),[]);
+  }
   const selectionStart=await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const s=(await import('./managed-native-room.mjs')).managedAPI.health();return {frame:s.gameFrame,at:performance.now()};})));
   await new Promise(resolve=>setTimeout(resolve,3000));
   const selectionFps=await Promise.all(frames.map((frame,i)=>frame.evaluate(async start=>{const s=(await import('./managed-native-room.mjs')).managedAPI.health();return 1000*(s.gameFrame-start.frame)/(performance.now()-start.at);},selectionStart[i])));
