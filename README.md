@@ -2,11 +2,11 @@
 
 《妖精大戦争 ～ 東方三月精》独立行为还原工程，使用 C++/WebAssembly 核心与 JavaScript 浏览器宿主。
 
-本仓库保存截至 **2026-11-17** 的开发源码。本轮源码已通过新的 **private114** 构建；现有交付包仍为112/v7；六条普通路线＋EX已接受为还原与移植功能基线，第三阶段已有多项 Web 能力通过验证，但 **TH128 thprac 适配尚未完成**；此前把简易选关当作练习适配完成的判断已撤回，当前优先补齐此项。多人协议原型保留，后续推进置后。公网发布和本地 Runtime 打包暂停，仓库没有可直接打开的完整游戏运行产物。
+本仓库保存截至 **2026-11-17** 的开发源码。第三步的协议、高刷新率、触控、多语言、thprac、Replay六项已按约定功能范围完成；最新本地交付为 **v8 / core116**，含真实TH128 thprac与原版界面。六条普通路线＋EX保持已接受的单人功能基线。多人原型保留、后续开发与公开发布仍暂停。见[最新本地交付](docs/RUNTIME116_V8.md)。
 
 ## 当前进度
 
-已验证的 Web 范围与剩余 thprac 缺口见[WEB_FUNCTIONAL_SCOPE](docs/WEB_FUNCTIONAL_SCOPE.md)：资源自动下载/校验/缓存、有限启动器 DATA/资源/文件接口、键盘与触控、语言、60Hz 逻辑与显示分离、存储和临时简易选关。旧七项简易选关仍保留其历史证据。现已新增真正TH128菜单、126章节/156选段/EX四阶段、原五字段和实际原生桥，见[当前thprac菜单](docs/THPRAC128_WEB_MENU.md)；真实113 CPU首tick与真实浏览器菜单分别验收，未合称完整原资源浏览器游戏。练习Replay原生录制/PRAC元数据/存储与同参数播放锁已接，见[练习录像](docs/THPRAC128_REPLAY.md)；overlay与高级速度仍需完成。
+已完成范围与兼容性边界见[WEB_FUNCTIONAL_SCOPE](docs/WEB_FUNCTIONAL_SCOPE.md)。真实TH128菜单、126章节/156选段/EX阶段、五资源、Backspace/F1–F7、F12、练习录像参数/存储/playLock、取消重开和实际正式页原资源游戏已验收，见[最终验收](docs/THPRAC128_ACCEPTANCE.md)。旧七项简易选关只保留历史证据。
 
 用户已明确要求按 eagler-touhou 和上游 TH128 专用 thprac 实现对接，见[纠正与计划](docs/THPRAC_CORRECTION.md)。
 

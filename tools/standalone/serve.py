@@ -82,11 +82,12 @@ def handler(root):
 
 def main():
     parser = argparse.ArgumentParser(description='TH128 DAT + OGG Web Runtime')
-    parser.add_argument('--port', type=int, default=8138)
+    parser.add_argument('--port', type=int, default=8140)
     args = parser.parse_args()
     server = ThreadingHTTPServer(('127.0.0.1', args.port), handler(ROOT))
     server.daemon_threads = True
-    print(json.dumps({'ready': True, 'url': f'http://127.0.0.1:{server.server_port}/play.html', 'core': 108, 'resourceImport': 'DAT + OGG ZIP'}, ensure_ascii=False), flush=True)
+    build = json.loads((ROOT / 'runtime' / 'build.json').read_text(encoding='utf-8'))
+    print(json.dumps({'ready': True, 'url': f'http://127.0.0.1:{server.server_port}/play.html', 'core': build['privateCore'], 'generation': build['generation'], 'resourceImport': 'DAT + OGG ZIP'}, ensure_ascii=False), flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

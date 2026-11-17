@@ -1,3 +1,5 @@
+2026-11-17本地交付：第三步协议、高刷新率、触控、多语言、thprac、Replay六项已按[约定范围](WEB_FUNCTIONAL_SCOPE.md)完成。最新[v8/core116运行包](RUNTIME116_V8.md)已生成并通过完整ZIP/HTTP检查与正式入口真实资源导入→原生标题/路线练习→游戏/Backspace/F12实测（6项/24.198秒/console0）。旧v7和资源ZIP保持，公开发布仍暂停。
+
 2026-11-17最终验收：本次TH128网页版thprac功能范围已完成，计100%；完整正式页/原资源/116/真实WebGL及文字纹理、原生标题路线、游戏内Backspace与F12、同练习重开实际11项通过，1008最终只读复核5项通过。内部测试栏未进入正式页面。旧“未完成”段落为迁移过程历史；本结论不包含多人、打包、公开发布或所有硬件逐像素一致。详见[THPRAC128_ACCEPTANCE.md](THPRAC128_ACCEPTANCE.md)。
 
 2026-11-17设备补充：996实际WebAudio原WAV/OGG解码与输出节点、同练习重开保音源、原生MSG严格ACK、真实ended及退出清理10项通过；最终F12用整页截图按文档坐标离线裁图，已核不含内部测试栏。仍无实际游戏GPU/字体纹理合并验收，不冒完整thprac/第三阶段100%。见[THPRAC128_REAL_AUDIO.md](THPRAC128_REAL_AUDIO.md)。
