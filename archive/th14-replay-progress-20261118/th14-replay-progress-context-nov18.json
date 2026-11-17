@@ -1,0 +1,400 @@
+{
+  "schema": "th14/replay-progress-context/1",
+  "status": "active",
+  "behaviorLevelGoal": true,
+  "codeSource": "24fc965f1828a63e04738e8ece561712a03a4c24",
+  "builds": {
+    "normal": {
+      "wasmSha256": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43",
+      "units": 153,
+      "compiledUnits": 1,
+      "reusedUnits": 152
+    },
+    "multiplayer": {
+      "wasmSha256": "d4548f7c67b34fdfd191e9def53f78274c1ddd4c2813fe3a81a492a0e30d8dea",
+      "units": 163,
+      "compiledUnits": 1,
+      "reusedUnits": 162
+    }
+  },
+  "runtimeGroups": [
+    {
+      "root": "runtime/th14/",
+      "generation": "08759279802b926a67c8099c0f59777030924f8c7c8629268ae604df9fefa14c",
+      "files": 34
+    },
+    {
+      "root": "runtime/th14/multiplayer/",
+      "generation": "f040f56bc3b848dfccf8f72a073c0d5314896c14bfac5f6088360417e9f152a4",
+      "files": 34
+    }
+  ],
+  "regression": {
+    "passed": true,
+    "actualMethodCompiled": true,
+    "controlledSessionBoundaries": true,
+    "rows": [
+      {
+        "source": "normal/runtimes/th12/th12_web/cpp/sdl/Application.cpp",
+        "methodSha256": "d7f388023433ab8869f587e5f09bb368d5cc153cec9cd307178441458365b987",
+        "cases": 6,
+        "current": {
+          "exitCode": 0,
+          "results": [
+            "same-stage-live 80 80 PASS",
+            "next-stage-loading-old-cursor 0 0 PASS",
+            "next-stage-activated-old-cursor 0 0 PASS",
+            "next-stage-selected 4 4 PASS",
+            "natural-end-retains-declared-tail 200 200 PASS",
+            "early-game-over-keeps-real-cursor 4 4 PASS"
+          ]
+        },
+        "obsolete": {
+          "exitCode": 1,
+          "results": [
+            "same-stage-live 80 80 PASS",
+            "next-stage-loading-old-cursor 80 0 FAIL",
+            "next-stage-activated-old-cursor 80 0 FAIL",
+            "next-stage-selected 4 4 PASS",
+            "natural-end-retains-declared-tail 200 200 PASS",
+            "early-game-over-keeps-real-cursor 4 4 PASS"
+          ]
+        }
+      },
+      {
+        "source": "multiplayer/runtimes/th12/th12_web/cpp/sdl/Application.cpp",
+        "methodSha256": "d7f388023433ab8869f587e5f09bb368d5cc153cec9cd307178441458365b987",
+        "cases": 6,
+        "current": {
+          "exitCode": 0,
+          "results": [
+            "same-stage-live 80 80 PASS",
+            "next-stage-loading-old-cursor 0 0 PASS",
+            "next-stage-activated-old-cursor 0 0 PASS",
+            "next-stage-selected 4 4 PASS",
+            "natural-end-retains-declared-tail 200 200 PASS",
+            "early-game-over-keeps-real-cursor 4 4 PASS"
+          ]
+        },
+        "obsolete": {
+          "exitCode": 1,
+          "results": [
+            "same-stage-live 80 80 PASS",
+            "next-stage-loading-old-cursor 80 0 FAIL",
+            "next-stage-activated-old-cursor 80 0 FAIL",
+            "next-stage-selected 4 4 PASS",
+            "natural-end-retains-declared-tail 200 200 PASS",
+            "early-game-over-keeps-real-cursor 4 4 PASS"
+          ]
+        }
+      }
+    ]
+  },
+  "fullReplay": {
+    "inputSha256": "bc84805037acd036f478231353a006e3da4669dd7aec6f4840c44604fb1728b3",
+    "inputBytes": 110207,
+    "rule": "bounded, explicit T14B metadata",
+    "character": "Marisa B",
+    "difficulty": "Lunatic",
+    "stageIds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "frames": 120193,
+    "total": 120193,
+    "score": 1508072320,
+    "graze": 45631,
+    "timeline": {
+      "samples": 312,
+      "last": 120193,
+      "backwards": []
+    },
+    "seekUsed": false,
+    "stageSkipUsed": false,
+    "practiceTools": 0,
+    "browserCodeResponsesVerified": 78,
+    "seconds": 80.961,
+    "harnessSha256": "a9cd1629daba2ecbd9b52668a6bd9a0ecb75f145e478d4b85630ca41837cb48c"
+  },
+  "scoreValidation": {
+    "actualRetailDecryptAndLzss": true,
+    "originalInstructionBytesPatched": 0,
+    "controlledCrtBoundaries": [
+      "malloc",
+      "memcpy",
+      "free"
+    ],
+    "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+    "decodedBytes": 149076,
+    "characterRecordsUnchanged": true,
+    "characterRecords": 7,
+    "settingsDifferences": [
+      {
+        "offset": 4,
+        "before": 187,
+        "after": 199
+      },
+      {
+        "offset": 39,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 40,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 41,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 42,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 43,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 44,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 45,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 46,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 47,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 48,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 49,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 50,
+        "before": 0,
+        "after": 1
+      }
+    ],
+    "semanticSettingsDifferences": [
+      {
+        "offset": 39,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 40,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 41,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 42,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 43,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 44,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 45,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 46,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 47,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 48,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 49,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 50,
+        "before": 0,
+        "after": 1
+      }
+    ],
+    "onlyMusicHeardFlagsChanged": true,
+    "nativeMusicRequestReferenceSha256": "01277073a339c1af2c1fda716999640431c2a130c174c504533481cf4efe31e3",
+    "nativeMusicRequestRelevantCases": [
+      {
+        "stage": 1,
+        "id": -3,
+        "replay": 0,
+        "stop": 1,
+        "match": 0,
+        "events": [
+          [
+            "audio",
+            4,
+            0
+          ],
+          [
+            "audio",
+            2,
+            0
+          ],
+          [
+            "front",
+            1
+          ]
+        ],
+        "dialogueAfter": 1879343104,
+        "unlocks": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "stage": 1,
+        "id": -3,
+        "replay": 1,
+        "stop": 1,
+        "match": 0,
+        "events": [
+          [
+            "audio",
+            4,
+            0
+          ],
+          [
+            "audio",
+            2,
+            0
+          ],
+          [
+            "front",
+            1
+          ]
+        ],
+        "dialogueAfter": 1879343104,
+        "unlocks": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "beforeDecodedSha256": "ef43b0df7204126eddb33372e3b1c906f22c58a88fd0675ff42ab76a8bb924a6",
+    "afterDecodedSha256": "26a8ff0a87c5fa44ebc763ac9f23758d6dbac67a8896b52d3d0904efdf35e07b",
+    "completeGame": false
+  },
+  "scope": {
+    "pageErrors": [],
+    "nativeErrors": [],
+    "wholeSiteHttpErrors": [
+      {
+        "path": "/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "path": "/api/ready",
+        "status": 404
+      },
+      {
+        "path": "/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "path": "/_eagler/resource-routes",
+        "status": 404
+      },
+      {
+        "path": "/api/ready",
+        "status": 404
+      },
+      {
+        "path": "/api/ready",
+        "status": 404
+      },
+      {
+        "path": "/api/ready",
+        "status": 404
+      }
+    ],
+    "wholeSiteAllGreen": false,
+    "multiplayerActualFullPlaybackRepeated": false,
+    "allCharactersAndDifficultiesCurrentBuildClaimed": false,
+    "developmentDeploymentChanged": false,
+    "muted": true,
+    "completeGame": false
+  }
+}
