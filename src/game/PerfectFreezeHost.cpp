@@ -106,17 +106,18 @@ bool Host::callEffect(const EffectRequest& request,std::string& error){
     return true;
 }
 
-bool Host::activate(const Context& input,std::string& error){
+bool Host::activate(const Context& input,std::string& error,bool keepCharge){return activateOwned(input,error,keepCharge,false);}
+bool Host::activatePracticeDeathbomb(const Context& input,std::string& error,bool keepCharge){return activateOwned(input,error,keepCharge,true);}
+bool Host::activateOwned(const Context& input,std::string& error,bool keepCharge,bool deathbomb){
     error.clear();
     if(!failure_.empty())return fail(failure_,error);
     if(!configured_||executing_||active_)return deny("perfect freeze host is not ready for a fresh activation",error);
-    if(input.mode==Mode::DeathbombWindow)return deny("deathbomb window remains owned by PlayerHitHost",error);
-    if(input.mode!=Mode::Normal)return deny("unsupported perfect freeze activation mode",error);
+    if(input.mode!=(deathbomb?Mode::DeathbombWindow:Mode::Normal))return deny("unsupported owned perfect freeze activation mode",error);
     if(!validCharge(input.perfectCharge)||input.perfectCharge!=charge_){
         return deny("perfect freeze charge context is stale",error);
     }
     if(!(input.keys&XKeyBit))return deny("perfect freeze requires the X key",error);
-    if(!input.systemPresent||input.systemMode3c!=0||input.busy!=0||input.playerState!=1
+    if(!input.systemPresent||input.systemMode3c!=0||input.busy!=0||input.playerState!=(deathbomb?4:1)
         ||!validPose(input)||!validLaser(input)){
         return deny("perfect freeze input gate is not satisfied",error);
     }
@@ -129,7 +130,7 @@ bool Host::activate(const Context& input,std::string& error){
     int lasers=0;
     bulletRequest_={input.x,input.y,input.radius,ProtectionTicks,true,false};
     try{
-        if(!services_.protect(ProtectionTicks,error)||!error.empty()){
+        if(!services_.protect(deathbomb?DeathbombProtectionTicks:ProtectionTicks,error)||!error.empty()){
             return fail(error.empty()?"required perfect freeze protection rejected":error,error);
         }
         const EffectRequest effectRequest{input.x,input.y,
@@ -147,7 +148,7 @@ bool Host::activate(const Context& input,std::string& error){
             if(!failure_.empty())return fail(failure_,error);
         }else if(!callEffect(effectRequest,error))return false;
     }catch(...){return fail("perfect freeze required service threw",error);}
-    charge_=*remaining;
+    charge_=keepCharge?input.perfectCharge:*remaining;
     context_=input;context_.perfectCharge=charge_;context_.xPressed=false;
     protection_=ProtectionTicks;active_=true;phase_=0;freezeDone_=false;
     lastDenied_.clear();

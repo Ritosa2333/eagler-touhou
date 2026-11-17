@@ -4,7 +4,7 @@ import * as audio from '../site/runtime/sound.mjs';
 const track={name:'th128_00.wav',file:'music/th128_00.wav',channels:2,sampleRate:44100,loopStart:13.070294784580499,loopEnd:84.62331065759638};
 function fixture(){
  const nodes=[];
- const context={decodeAudioData:async()=>({duration:track.loopEnd}),createBufferSource:()=>{
+ const context={currentTime:0,createGain:()=>({gain:{value:1,cancelScheduledValues(){},setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}}),decodeAudioData:async()=>({duration:track.loopEnd}),createBufferSource:()=>{
   const node={connect:()=>{},disconnect:()=>{node.disconnected=true;},start:()=>{node.started=true;},stop:()=>{node.stopped=true;}};
   nodes.push(node);return node;
  }};return {context,nodes};

@@ -13,7 +13,7 @@ public:
     using FreezePreflight=std::function<FreezePreflightDecision(int,std::string&)>;
     bool configure(int shot,hit::Timer held,std::string& error);
     bool tick(int playerState,Input input,int busy,int mode,int& power,const Emit& emit,const Sound& sound,const Freeze& freeze,std::string& error,
-              FreezePreflight preflight={});
+              FreezePreflight preflight={},bool keepPower=false);
     bool heldTimer(hit::Timer timer,std::string& error);
     bool suspend(const Sound& sound,std::string& error);
     const State& state() const{return state_;}

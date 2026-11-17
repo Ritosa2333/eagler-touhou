@@ -1,3 +1,4 @@
+#define TH128_THPRAC_TOOLS_ABI 1
 #include "game/StageWorld.hpp"
 #include "game/BulletVisuals.hpp"
 #include "game/AppearanceBounds.hpp"
@@ -360,6 +361,9 @@ struct ThpracReplayOwner {
     bool clockPending=false,playback=false;
 };
 ThpracReplayOwner thpracReplay;
+struct ThpracToolOwner {unsigned generation=0,mask=0,cursor=0;bool playback=false;std::vector<std::array<unsigned,2>> events;};
+ThpracToolOwner thpracTools;
+
 unsigned worldStartedSeed=0;
 
 
@@ -785,7 +789,7 @@ void beginNewWorldGeneration() {
     if(worldGeneration==0)++worldGeneration;
     stageIntro=std::make_unique<th128::stageintro::Host>();
     stageIntroDrawError.clear();
-    worldStartedName.clear();worldStartedSeed=0;thpracReplay={};
+    worldStartedName.clear();worldStartedSeed=0;thpracReplay={};thpracTools={};
     worldStartDifficulty=0;
     currentStageProgress=0;
     if(stageCarry.valid&&!stageCarry.consumed){
@@ -2012,6 +2016,7 @@ int th128_world_start(const char* name,std::uint32_t nameLength,int difficulty,u
     beginNewWorldGeneration();
     worldStartedName=identifier;worldStartDifficulty=difficulty;worldStartedSeed=seed;thpracReplay={};currentStageProgress=0;
     const auto practice=world->thpracChapter();
+    thpracTools={};if(practice)thpracTools.generation=worldGeneration;
     if(debugRecordPrefix.prepared){
         debugRecordPrefix.worldBound=true;debugRecordPrefix.generation=worldGeneration;
         debugRecordPrefix.sessionGeneration=worldGeneration;
@@ -2230,6 +2235,42 @@ int th128_world_input(unsigned holding,unsigned pressed,unsigned released){
     const auto unsupported=(holding|pressed|released)&~(16U|32U|64U|128U|(rapidShotConfigured?512U|8U:0U)|(playerFireConfigured?1U:0U)|perfectInput);
     if(unsupported){operationError="Shooting, focus and freeze input lifecycles are not yet integrated";return 0;}
     playerInput.holding=std::uint16_t(holding);playerInput.pressed|=std::uint16_t(pressed);playerInput.released|=std::uint16_t(released);return 1;
+}
+bool practiceTool(unsigned bit){return world->thpracChapter().has_value()&&thpracTools.generation==worldGeneration&&(thpracTools.mask&bit)!=0;}
+bool applyPracticeTools(unsigned mask,std::string& error){
+    if(!world->setThpracTimeLock((mask&16u)!=0,error))return false;
+    playerHit->setPracticeInvulnerable((mask&1u)!=0);thpracTools.mask=mask;return true;
+}
+int th128_world_thprac_tools_set(unsigned mask,unsigned generation){
+    operationError.clear();
+    if(mask>127||generation!=worldGeneration||generation!=thpracTools.generation||!world->thpracChapter()||!debugRunTainted
+        ||world->faulted()||ownedBattle.attempted()||worldTickExecuting||debugSetterExecuting||thpracReplay.playback||replayPlayback.active()||thpracReplay.clockPending
+        ||!playerConfigured||!grazeConfigured||!shotHitsConfigured||!playerShotGroupsConfigured
+        ||((mask&2u)&&!playerDeathConfigured)||((mask&(4u|32u))&&!perfectConfigured)){operationError="practice tools require the actual idle unlocked owner and matching configured native hosts";return 0;}
+    if(mask==thpracTools.mask)return 1;
+    const auto frame=world->frame();const bool replace=!thpracTools.events.empty()&&thpracTools.events.back()[0]==frame;
+    if(!replace&&thpracTools.events.size()>=4096){operationError="practice tools history budget";return 0;}
+    if(!applyPracticeTools(mask,operationError))return 0;
+    if(replace)thpracTools.events.back()[1]=mask;else thpracTools.events.push_back({frame,mask});
+    return 1;
+}
+const char* th128_world_thprac_tools_state(){
+    static std::string text;std::ostringstream out;out<<"{\"schema\":\"th128-thprac-tools/1\",\"generation\":"<<thpracTools.generation
+        <<",\"frame\":"<<world->frame()<<",\"mask\":"<<thpracTools.mask<<",\"playLock\":"<<(thpracReplay.playback?"true":"false")<<",\"events\":[";
+    for(std::size_t i=0;i<thpracTools.events.size();++i){if(i)out<<',';out<<'['<<thpracTools.events[i][0]<<','<<thpracTools.events[i][1]<<']';}
+    out<<"]}";text=out.str();return text.c_str();
+}
+int th128_world_thprac_tools_playback(const void* data,unsigned bytes,unsigned generation){
+    operationError.clear();
+    if(generation!=worldGeneration||generation!=thpracTools.generation||!world->thpracChapter()||!debugRunTainted
+        ||world->frame()!=0||world->faulted()||worldTickExecuting||ownedBattle.attempted()||replayPlayback.active()
+        ||thpracReplay.record||thpracTools.playback||!thpracTools.events.empty()||!playerConfigured||bytes%8||bytes>4096*8
+        ||(bytes&&!th128::runtime::inputRange(data,bytes))){operationError="practice replay tools require a fresh matching native owner and bounded schedule";return 0;}
+    std::vector<std::array<unsigned,2>> candidate;const auto* p=static_cast<const std::uint8_t*>(data);
+    for(unsigned i=0;i<bytes;i+=8){const auto word=[&](unsigned n){return unsigned(p[n])|unsigned(p[n+1])<<8|unsigned(p[n+2])<<16|unsigned(p[n+3])<<24;};
+        const unsigned frame=word(i),mask=word(i+4);
+        if(frame>36000000||mask>127||(!candidate.empty()&&frame<=candidate.back()[0])||((mask&2u)&&!playerDeathConfigured)||((mask&(4u|32u))&&!perfectConfigured)){operationError="invalid practice tool schedule frame/mask/context";return 0;}candidate.push_back({frame,mask});}
+    thpracTools.events=std::move(candidate);thpracTools.playback=true;return 1;
 }
 int th128_world_set_debug_infinite_respawn(int enabled){
     operationError.clear();
@@ -2618,6 +2659,7 @@ int th128_world_enable_bullets(const void* profile,std::uint32_t profileSize,con
             if(!playerHit->laserColumnContactRequired(columns))return true;
             if(grazeSounds.size()>=65536){error="selector3 sound75 journal budget";return false;}
             grazeSounds.push_back({75,world->playerAimPosition().x});
+            if(practiceTool(1u))return true;
             return playerHit->applyLaserColumnContact(columns,motivationRaw,motivationFlag,error)&&world->applyLaserSpellPenalty(columns,error);
         },
         [](std::string& error){if(!playerConfigured)return true;const auto player=world->playerAimPosition();return playerHit->endLaserContactPhase({player.x,player.y,player.z},error);},
@@ -3792,9 +3834,29 @@ const char* th128_world_replay_playback_state(){
 int th128_world_replay_playback_cancel(){
     operationError.clear();
     if(worldTickExecuting){operationError="cannot release replay input during actual World tick";return 0;}
-    replayPlayback.cancel();thpracReplay.playback=false;return 1;
+    replayPlayback.cancel();thpracReplay.playback=false;thpracTools.playback=false;return 1;
 }
 
+bool tryPracticeDeathbomb(std::string& error){
+    if(!world->thpracChapter()||!perfectConfigured||!playerConfigured)return true;
+    const auto hit=playerHit->snapshot();
+    if(hit.gate.stateF78!=4||hit.stateTimer.current>=8||hit.heldTimer.current>0
+        ||(!practiceTool(32u)&&!(playerInput.holding&2u))||playerWindowControl.perfectCharge4b4d70<10000
+        ||playerWindowControl.mode3c!=0||perfectHost->status().active)return true;
+    const auto count=world->laserObjectCount();
+    if(!count||*count||iceHost->statistics().busy||iceHost->statistics().objects)return true;
+    th128::perfect::Context context;context.perfectCharge=playerWindowControl.perfectCharge4b4d70;
+    const auto position=world->playerAimPosition();context.x=position.x;context.y=position.y;context.radius=playerProfileRadius;
+    context.keys=2u;context.systemPresent=playerWindowControl.present;context.systemMode3c=playerWindowControl.mode3c;
+    context.playerState=4;context.mode=th128::perfect::Mode::DeathbombWindow;context.lasers=th128::perfect::LaserContext::Empty;
+    if(!perfectHost->activatePracticeDeathbomb(context,error,practiceTool(4u)))return !perfectHost->status().failed;
+    if(!playerHit->commitPracticeDeathbomb(error))return false;
+    playerWindowControl.perfectCharge4b4d70=perfectHost->status().charge;playerWindowControl.mode3c=1;perfectModeOwned=true;
+    world->setPhaseSpellPlayerMode(1);
+    if(grazeSounds.size()>65534){error="practice deathbomb sound journal budget";return false;}
+    grazeSounds.push_back({46,position.x,0});grazeSounds.push_back({51,position.x,0});
+    return !perfectHudConfigured||perfectHud->charge(playerWindowControl.perfectCharge4b4d70,error);
+}
 int th128_world_tick(){
     operationError.clear();
     if(normalTerminal.requested){operationError="pending ordinary ending requires audio-first controller consumption before another World update";return 0;}
@@ -3807,6 +3869,12 @@ int th128_world_tick(){
     if(debugRecordDriver.bound&&(debugRecordDriver.phase!=1
         ||debugRecordDriver.generation!=worldGeneration||debugRecordDriver.epoch!=debugRecordPrefix.epoch)){
         operationError="actual record driver pre-update boundary must precede World tick";return 0;
+    }
+    if(thpracTools.playback){
+        while(thpracTools.cursor<thpracTools.events.size()&&thpracTools.events[thpracTools.cursor][0]<=world->frame()){
+            if(!applyPracticeTools(thpracTools.events[thpracTools.cursor][1],operationError))return 0;
+            ++thpracTools.cursor;
+        }
     }
     if(replayPlayback.active()){
         auto auxiliary=messagesConfigured?messages->recordAuxiliaryLive():std::optional<bool>{false};
@@ -3890,6 +3958,7 @@ int th128_world_tick(){
     if(perfectConfigured&&!syncPerfectCharge(operationError)){
         world->reportRuntimeFault(operationError);return 0;
     }
+    if(!tryPracticeDeathbomb(operationError)){world->reportRuntimeFault(operationError);return 0;}
     if(playerConfigured){
         if(playerHit->snapshot().gate.stateF78==4){
             const auto snapshot=playerHit->snapshot();
@@ -3913,7 +3982,7 @@ int th128_world_tick(){
                         grazeSounds.push_back({int(call.operands[0]),0});return true;
                     }
                     error="unimplemented required player death control/UI continuation";return false;
-                },operationError);
+                },operationError,practiceTool(2u));
                 const auto& progress=deathOperation->progress();motivationRaw=progress.context.motivation.value4b4d64;
                 motivationFlag=progress.context.motivation.flag4b4d68;playerWindowControl.perfectCharge4b4d70=progress.context.perfectCharge;
                 if(progress.powerRaw)grazeGlobals.powerRaw=*progress.powerRaw;
@@ -4093,7 +4162,7 @@ int th128_world_tick(){
             }else if(iceHost->statistics().busy!=0||iceHost->statistics().objects!=0){
                 perfectHost->reject("ordinary ice batch or live Perfect objects are nonempty",denied);
             }else{
-                if(perfectHost->activate(makePerfectContext(th128::perfect::LaserContext::Empty,0),denied)){
+                if(perfectHost->activate(makePerfectContext(th128::perfect::LaserContext::Empty,0),denied,practiceTool(4u))){
                     if(grazeSounds.size()>65534){world->reportRuntimeFault("perfect activation sound journal budget");return 0;}
                     const float perfectSoundX=world->playerAimPosition().x;
                     grazeSounds.push_back({46,perfectSoundX,0});
@@ -4144,7 +4213,7 @@ int th128_world_tick(){
                             return th128::player::fire::FreezePreflightDecision::Deny;
                         }
                         return th128::player::fire::FreezePreflightDecision::Allow;
-                    })
+                    },practiceTool(8u))
                 ||!playerHit->setHeldTimer(playerFire->state().held,operationError)){world->reportRuntimeFault(operationError);return 0;}
             }
             rapidShotCount=playerFire->state().shot;

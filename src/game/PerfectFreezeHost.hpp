@@ -92,7 +92,8 @@ public:
     bool configure(const Context& context, Services services, std::string& error);
     bool loadNativeEffect(std::span<const std::uint8_t> animation, std::string& error);
     bool setCharge(int charge, std::string& error);
-    bool activate(const Context& input, std::string& error);
+    bool activate(const Context& input,std::string& error,bool keepCharge=false);
+    bool activatePracticeDeathbomb(const Context& input,std::string& error,bool keepCharge=false);
     bool reject(std::string reason, std::string& error);
     bool tick(bool paused, std::string& error);
     bool shutdown(std::string& error);
@@ -100,6 +101,7 @@ public:
     const std::optional<Activation>& activation() const;
     std::vector<EffectSnapshot> effectSnapshots() const;
 private:
+    bool activateOwned(const Context& input,std::string& error,bool keepCharge,bool deathbomb);
     Context context_{};
     Services services_;
     anm::Scene scene_;

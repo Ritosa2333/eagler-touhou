@@ -79,6 +79,10 @@ bool StageWorld::fail(std::string message) {
     return false;
 }
 
+bool StageWorld::setThpracTimeLock(bool enabled,std::string& error){
+    error.clear();if(!activeThpracChapter_||!started_||executing_||!error_.empty()||entityRetirementAttempted_){error="time lock requires an idle active practice World";return false;}
+    thpracTimeLock_=enabled;return true;
+}
 void StageWorld::reset() {
     if(executing_){fail("world reset is not reentrant");return;}
     if(geometryRemover_)for(auto& entity:entities_)if(entity->geometryActive){
@@ -87,7 +91,7 @@ void StageWorld::reset() {
         catch(...){fail("geometry reset retirement host threw");return;}
         entity->geometryActive=false;
     }
-    entities_.clear();animations_.clear();linked_=ecl::Program{};
+    entities_.clear();animations_.clear();linked_=ecl::Program{};thpracTimeLock_=false;
     thpracPreparedRoot_=ecl::Program{};thpracPreparedSources_.clear();pendingThpracChapter_.reset();activeThpracChapter_.reset();
     error_.clear();operationError_.clear();frame_=spawnCount_=animationSerial_=0;nextId_=1;birthDepth_=0;
     started_=executing_=false;random_=Random{};spellStageDepth_=1;extraStage16Rank4SpellDomain_=false;
@@ -629,9 +633,11 @@ bool StageWorld::updateLocal(Entity& entity) {
             catch(...){return fail("original hit sound request owner threw");}
         }
     }
-    if(entity.state.phaseTimer.current==std::numeric_limits<std::int32_t>::max())return fail("native phase timer exceeded bounded integer clock");
-    entity.state.phaseTimer.previous=entity.state.phaseTimer.current;
-    ++entity.state.phaseTimer.current;entity.state.phaseTimer.fraction=float(double(entity.state.phaseTimer.fraction)+1.0);
+    if(!thpracTimeLock_){
+        if(entity.state.phaseTimer.current==std::numeric_limits<std::int32_t>::max())return fail("native phase timer exceeded bounded integer clock");
+        entity.state.phaseTimer.previous=entity.state.phaseTimer.current;
+        ++entity.state.phaseTimer.current;entity.state.phaseTimer.fraction=float(double(entity.state.phaseTimer.fraction)+1.0);
+    }
     if(entity.state.protection>0)--entity.state.protection;
     if(!entity.state.active) {
         if(entity.linked)retireLocal(entity);

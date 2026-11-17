@@ -48,6 +48,7 @@ std::optional<int> PlayerHitHost::confirmedOverlap(hit::Position player,hit::Hit
     }
     const auto decision=hit::gateDecision(state_.gate,control);
     if(decision.helperReturn)return *decision.helperReturn;
+    if(practiceInvulnerable_)return 1;
     const auto entry=hit::entryPrefix(state_.gate.stateF78,player);
     if(!entry){fail("unsupported player hit position domain",error);return std::nullopt;}
     ExecutionGuard guard(executing_);
@@ -80,6 +81,12 @@ std::optional<int> PlayerHitHost::confirmedOverlap(hit::Position player,hit::Hit
     } catch(...){fail("player hit host callback threw",error);return std::nullopt;}
     return 1;
 }
+bool PlayerHitHost::commitPracticeDeathbomb(std::string& error){
+    error.clear();
+    if(!configured_||executing_||!error_.empty()||state_.gate.stateF78!=4||state_.stateTimer.current>=8||state_.heldTimer.current>0){error="practice deathbomb requires the actual unexpired hit window";return false;}
+    state_.gate.stateF78=1;state_.stateTimer={59,60,60,0x4b6f58,1};
+    return true;
+}
 bool PlayerHitHost::assignPerfectProtection200(std::string& error){
     error.clear();
     if(!configured_||executing_||!error_.empty()||state_.gate.stateF78!=1)
@@ -91,8 +98,8 @@ bool PlayerHitHost::assignPerfectProtection200(std::string& error){
 }
 bool PlayerHitHost::assignPerfectProtection10(std::string& error){
     error.clear();
-    if(!configured_||executing_||!error_.empty()||state_.gate.stateF78!=1)
-        return fail(error_.empty()?"perfect protection requires configured normal live player":error_,error);
+    if(!configured_||executing_||!error_.empty()||(state_.gate.stateF78!=1&&state_.gate.stateF78!=4))
+        return fail(error_.empty()?"perfect protection requires configured live player or hit window":error_,error);
     auto timer=state_.protection;
     timer.previous=9;timer.current=10;timer.fractional=10.f;
     timer.clockSource=0x4b6f58;timer.flags|=1U;

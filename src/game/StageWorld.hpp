@@ -84,6 +84,7 @@ public:
     std::optional<ThpracChapter> thpracChapter() const {return activeThpracChapter_;}
     bool start(const std::string& stage,int difficulty,std::uint16_t seed);
     bool tick();
+    bool setThpracTimeLock(bool enabled,std::string& error);
     bool bindStageTransitionOwner(const stage::StageTransitionHost& owner,int currentId,int progress,std::string& error);
     bool bindOrdinaryTerminalDrain(const record::NativeOrdinaryTerminalOwner& owner,int stage,int progress,
             th128::stage::OrdinaryTerminalDrain::Validator validator,std::string& error);
@@ -223,6 +224,7 @@ private:
     enemy::OriginalIdentityState originalIdentities_;
     enemy::BossSlots bosses_;
     enemy::BossGaugeState bossGauges_;
+    bool thpracTimeLock_=false;
     std::array<std::uint32_t,2> phaseCountdown_{0xffffffffu,0};
     enemy::PhaseTimer enemySweepTimer_{-1,0,0,0x4b6f58,1};
     std::optional<enemy::PhaseSpell> phaseSpell_;

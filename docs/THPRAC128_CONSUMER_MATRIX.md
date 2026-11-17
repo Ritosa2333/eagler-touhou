@@ -49,3 +49,5 @@
 实际native section初始化顺序901RED→903修复，真实空select默认910/911RED→912/914修复；所有首FAIL保留。完整thprac/第三阶段仍未完成：练习Replay metadata/recording/playLock、F1..F7/Backspace overlay、F12speed、持久launcher开关还需实际消费者。菜单内enable/locale已经生效，未改个人设置。旧112/v7/public产物不动，新113只owned编译产物，打包/公开发布暂停。详见THPRAC128_WEB_MENU.md及thprac128-Web-menu899-914.json。
 
 2026-11-17更新：915–934练习Replay批次已接实际native输入录制、原RPY＋上游USER/PRAC元数据、严格25槽CAS保存/回读、同参数播放与playLock。921实际录制/回放3帧，930新114真实2Factory/2World/6tick/294检查投影一致；933真实浏览器IDB与当前save/watch页面10项通过。114仅owned编译产物，旧112/v7/public不动；不重新打包。剩余Backspace/F1..F7/F12速度/持久launcher gate仍须完成，完整thprac/第三阶段仍未完成。具体范围见THPRAC128_REPLAY.md。
+
+2026-11-17最新：935–954已接实际F1..F6原生效果、F7 source owner、固定60Hz高级调度、工具/速度Replay元数据与owned enable/locale。按真人原版截图改三种游戏内面板：Backspace左上七行，F12全画面高级选项，正常模式仅起点/模式、练习模式按原顺序展开与百分比显示，字体优先级取固定上游。937真实World组件677检查，115首次构建/949实际核心301检查，951受影响259项、954真实浏览器14项/37.598s通过。浏览器游戏/原生/背景是明确接缝，完整thprac与第三阶段仍false；下一955一次当前完整caller、F7重开/真实音乐ACK、速度/Replay组合集成验收。详见THPRAC128_TOOLS_UI.md。成功93..115不重编，打包与公开发布继续暂停。

@@ -26,7 +26,7 @@ bool Host::suspend(const Sound& sound,std::string& error){
     return true;
 }
 bool Host::tick(int playerState,Input input,int busy,int mode,int& power,const Emit& emit,const Sound& sound,const Freeze& freeze,std::string& error,
-                 FreezePreflight preflight){
+                 FreezePreflight preflight,bool keepPower){
     error.clear();
     if(!configured_||executing_||!failure_.empty()||playerState<0||playerState>4||power<0||power>10000||!valid(state_.held)
         ||!emit||!sound||!freeze)return fail(failure_.empty()?"invalid owning fire host context":failure_,error);
@@ -74,7 +74,7 @@ bool Host::tick(int playerState,Input input,int busy,int mode,int& power,const E
                 }
                 const int saved=power;set(timer,-40);
                 if(!freeze(saved,error)||!error.empty()||!failure_.empty())return fail(error.empty()?"required freeze activation rejected":error,error);
-                power=0;
+                if(!keepPower)power=0;
             }else{set(timer,0);if(!callSound(1,31))return false;}
             state_.savedPower=0;return true;
         }

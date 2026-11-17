@@ -124,7 +124,7 @@ launcher=mountLauncherSession({window:parentWindow,document,location,hooks:{
   if(config.music!=='ogg'&&config.music!=='none')throw Object.assign(new Error('This page currently supports OGG or no BGM'),{errno:'unsupported-command'});
   if(config.runtimePack!==undefined||!managedOwner&&[config.resources,config.runtimeResources,config.sharedResources].some(rows=>rows?.length))
    throw Object.assign(new Error('External resource maps are not installed by this page'),{errno:'unavailable'});
-  const options=config.options??{},supported=new Set(['limitPresentationTo60','touchEnabled']);
+  const options=config.options??{},supported=new Set(['limitPresentationTo60','touchEnabled','thpracEnabled']);
   if(Object.entries(options).some(([key,value])=>!supported.has(key)||typeof value!=='boolean'))
    throw Object.assign(new Error('A requested page option is not implemented'),{errno:'unsupported-command'});
   if(config.language){

@@ -48,6 +48,8 @@ public:
     std::optional<RawPosition> entryUnit(EntryHost entry,std::string& error);
     bool advanceEntryTimersUnit(std::string& error);
     std::optional<Movement> moveUnit(RawPosition position,Input input,FocusContext focus,std::string& error);
+    void setPracticeInvulnerable(bool value) noexcept {practiceInvulnerable_=value;}
+    bool commitPracticeDeathbomb(std::string& error);
     HitHostSnapshot snapshot() const;
     const anm::State* animationState() const;
     const anm::SpriteInfo* spriteInfo() const;
@@ -73,7 +75,7 @@ private:
     SoundHost sound_;
     SoundOperationHost soundOperation_;
     std::string error_;
-    bool configured_=false,executing_=false;
+    bool configured_=false,executing_=false,practiceInvulnerable_=false;
     std::int32_t previousHorizontal_=0;
     std::int32_t focusCounter_=0;
     std::array<std::uint32_t,8> entryDirty_{};

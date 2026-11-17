@@ -27,7 +27,7 @@ bool DeathOperation::call(const death::CallRequest& request,const DeathCallHost&
     } catch(...){return fail("required death call host threw",error);}
     progress_.pending.reset();return true;
 }
-bool DeathOperation::run(const DeathCallHost& host,std::string& error){
+bool DeathOperation::run(const DeathCallHost& host,std::string& error,bool keepMotivation){
     error.clear();
     if(executing_)return fail("death operation is not reentrant",error);
     if(started_||!failure_.empty())return fail(failure_.empty()?"death operation cannot be retried":failure_,error);
@@ -35,7 +35,7 @@ bool DeathOperation::run(const DeathCallHost& host,std::string& error){
     if(!host||progress_.state!=4)return fail("required death call host or explicit state4 is missing",error);
     ExecutionGuard guard(executing_);
     auto& context=progress_.context;
-    const auto motivation=death::motivationAfterDeath(context.motivation);
+    const auto motivation=keepMotivation?std::optional{context.motivation}:death::motivationAfterDeath(context.motivation);
     if(!motivation)return fail("unsupported explicit death motivation domain",error);
     context.motivation=*motivation;
     const auto charge=death::chargeAwardPrefix(context.perfectCharge);

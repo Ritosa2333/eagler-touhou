@@ -27,7 +27,7 @@ using DeathCallHost=std::function<bool(const death::CallRequest&,std::string&)>;
 class DeathOperation {
 public:
     DeathOperation(DeathContext context,int playerState,hit::Timer stateTimer,hit::Timer protection);
-    bool run(const DeathCallHost& host,std::string& error);
+    bool run(const DeathCallHost& host,std::string& error,bool keepMotivation=false);
     const DeathCommitResult& progress() const;
 private:
     DeathCommitResult progress_;

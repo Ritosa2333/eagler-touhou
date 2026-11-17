@@ -23,7 +23,7 @@ export function bootPlay({worldMode=true,capability=true,practiceMenu=null}={}){
  const movementKeys=new Map([['ArrowUp',16],['ArrowDown',32],['ArrowLeft',64],['ArrowRight',128],['KeyZ',1],['ShiftLeft',8],['ShiftRight',8]]);
  const find=s=>s==='#game'?env.canvas:{hidden:true};
  const openPauseMenu=()=>{pause.push('pause');menu.pauseOpen=true;state.paused=true;state.nativePause={held:0,pressed:0,keyUp:code=>pause.push(['up',code]),suspend:async()=>{}};};
- const context={...env,state,menu,practiceMenu,suppressedKeys,movementKeys,perfectFreezeXBit:2,mountWebInput,find,HTMLSelectElement:class {},HTMLInputElement:class {},
+ const context={...env,state,menu,practiceMenu,thpracToolsPanel:null,suppressedKeys,movementKeys,perfectFreezeXBit:2,mountWebInput,find,HTMLSelectElement:class {},HTMLInputElement:class {},
   getPageLaunchContext:()=>null,flowCapabilities:()=>({perfectFreezeNormalEmptyLasers:capability}),status(){},clock:{reset(){}},resetHighFrameratePresentation(){},openPauseMenu,
   error(){},handleFaultKey:code=>menus.push(['fault',code]),handlePauseKey:code=>menus.push(['pause',code]),handleMenuKey:code=>menus.push(['menu',code]),
   unlockMenuAudio(){},nativePageNames:['main','difficulty','route','replay','options'],handleNativeTitleKey:code=>menus.push(['native',code]),
@@ -31,7 +31,7 @@ export function bootPlay({worldMode=true,capability=true,practiceMenu=null}={}){
   stopOwnedReplayToList(){},cancelOriginalEnding(){},stopAudio(){},document:env.document,window:env.window};
  const start=source.indexOf("window.addEventListener('keydown',event=>{"),end=source.indexOf('\nasync function present(',start);
  assert(start>=0&&end>start);
- const functions=['worldMovementInput','supportsPerfectFreezeX','gameplayXHeld','gameplayXPress','gameplayXRelease','gameplayInputMask','installWebInput'];
+ const functions=['worldMovementInput','supportsPerfectFreezeX','gameplayXHeld','gameplayXPress','gameplayXRelease','gameplayInputMask','installWebInput','handleThpracToolKey'];
  const code=functions.map(functionSource).join('\n')+'\n'+source.slice(start,end);
  const names=Object.keys(context),make=new Function(...names,code+'\nreturn {installWebInput,loseFocus};');
  const api=make(...names.map(n=>context[n]));api.installWebInput();

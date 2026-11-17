@@ -2,6 +2,15 @@ import {fetchResource} from '../resource-fetch.mjs';
 import {musicOutput} from './music-output.mjs';
 export class StageMusic {
   constructor(context,gain){this.context=context;this.gain=gain;this.output=context.createGain();this.output.gain.value=1;this.output.connect(musicOutput(context,gain));this.track=null;this.buffer=null;this.source=null;this.fade=null;this.disposed=false;this.preloaded=new Map();}
+  setPracticeOwner(owner,{enabled,section,replay}){
+    if(this.disposed||!owner||typeof enabled!=='boolean'||!Number.isSafeInteger(section)||section<0||typeof replay!=='boolean')throw new Error('Invalid practice BGM owner');
+    this.practice={owner,enabled,section,replay};
+  }
+  retainPracticeOwner(owner,next,name){
+    const p=this.practice;
+    if(this.disposed||!p||p.owner!==owner||!next||!p.enabled||p.section===0||p.replay||!this.source||this.fade||this.track?.name!==name)return false;
+    this.practice={...p,owner:next};return true;
+  }
   async load(tracks,base,resolveUrl,{signal,tracks:names=['th128_00.wav']}={}){
     if(this.disposed||signal?.aborted)throw new DOMException('Aborted music load','AbortError');
     this.cancelFade();
@@ -54,6 +63,7 @@ export class StageMusic {
     if(this.disposed)throw new Error('Stage music is disposed');
     if(!this.source)throw new Error('Stage music is not playing');
     if(!Number.isFinite(seconds)||seconds<0)throw new Error('Invalid original BGM fade duration');
+    if(this.practice?.enabled&&this.practice.section>0&&!this.practice.replay)return {seconds,retained:true,source:this.source,owner:this.practice.owner};
     if(seconds===0){this.stopSource();this.cancelFade();return {seconds:0,immediate:true};}
     const now=this.context.currentTime;
     if(!Number.isFinite(now))throw new Error('Invalid audio clock');
@@ -84,7 +94,7 @@ export class StageMusic {
     if(this.disposed)return;this.disposed=true;
     this.cancelFade();this.stopSource();
     this.output.disconnect();this.output=null;this.fade=null;
-    this.buffer=null;this.preloaded.clear();
+    this.buffer=null;this.preloaded.clear();this.practice=null;
   }
 }
 
