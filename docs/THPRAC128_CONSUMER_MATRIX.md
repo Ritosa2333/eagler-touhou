@@ -11,7 +11,7 @@
 | perfect_freeze默认30000、范围0..30000（87、385、2245） | world_enable_player_context(...perfectCharge)消费原charge，有fresh guard | 0/上限/中间值及X实际生命周期、taint/重开不串旧owner |
 | ice_power默认10000、范围0..10000（91、386、2246） | world_enable_graze(count,power,...)的grazeGlobals.powerRaw为已有消费者 | 资源/贴图和真实HUD/玩法字段一致，非同名JSON |
 | ice_area默认3000、范围0..3000（89、387、2247） | world_enable_player_shots(...cumulativeArea,difficulty)及playerShotGroup选择可复用，EX另有初始area0原生guard | 需明确thprac与自然EX守卫区分；不得绕正常资格/修改既有成功路径 |
-| section按chapter/mid/end/nonspell/spell选择（260–351）；chapter126项（397–403） | 已实现Program不可变指令覆盖与TH128 chapter组件，真实Vm执行；尚未接StageWorld/Web启动 | 867组件141断言；870原16文件/126计划/143操作，110首跳转到精确PC/时钟；仍须真实World调用 |
+| section按chapter/mid/end/nonspell/spell选择（260–351）；chapter126项（397–403） | 已实现Program覆盖、TH128 chapter组件及实际StageWorld启动；尚未接Web/导出taint | 867/870组件证据保；879原A1章节/双跳/EX实际World首出生与reset普通对照，仍须Web/参数全链 |
 | Boss/多Boss/EX符卡与phase（657–735、1227–2051）；EX_END_S10四phase | 多文件SetFile(0/2)与分支/HP/位移原文存在；现缺thprac section adapter，其他一般ECL逻辑已实现 | 逐实section与phase覆盖，包含对话/音乐/intro规则；不能仅跳到Boss名称 |
 | THBGMTest/disableLogo（2067–2079、2253–2264） | 有StageMusic/native sourcefade/stop严格ACK；thprac section BGM/intro行为未接 | 按section/dialogue实际分流、重开保持/退出释放，不改volume95 |
 | THGuiRep/ReplaySaveParam/锁（406–450、2080、2266–2310） | 原RPYcodec/25槽已验，但没有THPracParam辅助元数据或playLock/thHardLock策略 | 练习RPY+原参数绑定、正确起点/重播隔离/存储完整回读；不JSON改名RPY |
@@ -27,3 +27,7 @@
 865–873已把上述指令覆盖方案落实为原生组件，详见THPRAC128_BRANCH_OVERLAY.md。Program保持原资产、原offset与其他指令；TH128专用表按固定上游源映射16stage/126chapter/143跳转。870用原ECL与真实Vm验证110个非平凡首跳转，但测试显式使用入口跳板绕过原初始化，并在目标执行前以预算停止；这不是World/游戏起点验收，也不证明所有第二跳已在游戏执行。873完整reader/VM/held-host受影响检查通过。
 
 下一必须接实际StageWorld加载→练习拥有者→start/reset与Web消费者，之后完成fresh参数组、Boss/section/phase、多ECLI、菜单、Replay与共用工具；仍未交付完整thprac。core112与已接受路线保持原证据范围，不为组件重编核心。
+
+874–880实际World消费者已接通，详见THPRAC128_WORLD_CHAPTER.md。879以真实C++ StageWorld/Vm、原ECL前导代码与原profile，验证A1 chapter2的GirlB1在frame91、reset后普通GirlA1b在101、A1第二面双跳GirlD2在91、EX chapter2两名GirlD1在161；没有入口跳板或预算伪停止。1108断言、12次start调用（含4次拒绝），并通过失效/重复/异源/同大小错误SHA/reset/退休/重入控制。880完整StageWorld/WorldExports生产TU syntax通过。
+
+这次只有C++章节拥有者和固定原root SHA校验。Web/导出入口尚未绑定该练习身份与正常成绩资格，完整ECLI提供者来源绑定、参数组与section/phase/菜单/Replay/工具仍未完成；不能据此再宣称完整thprac或第三阶段完成。没有新全核心、browser/设备或公开部署。

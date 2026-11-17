@@ -2,6 +2,7 @@
 #include "EnemyBulletCallbackRules.hpp"
 #include "EnemyRandomMovement.hpp"
 #include "EnemyMotion327.hpp"
+#include "practice/Thprac128Source.hpp"
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -87,6 +88,7 @@ void StageWorld::reset() {
         entity->geometryActive=false;
     }
     entities_.clear();animations_.clear();linked_=ecl::Program{};
+    thpracPreparedRoot_=ecl::Program{};pendingThpracChapter_.reset();activeThpracChapter_.reset();
     error_.clear();operationError_.clear();frame_=spawnCount_=animationSerial_=0;nextId_=1;birthDepth_=0;
     started_=executing_=false;random_=Random{};spellStageDepth_=1;extraStage16Rank4SpellDomain_=false;
     entityRetirementAttempted_=entityRetirementCompleted_=bulletRetirementAttempted_=false;retiredEntityOwners_=0;
@@ -415,6 +417,7 @@ bool StageWorld::retireEntitiesForSession(std::string& error) {
         fail("entity retirement retained an intrusive list owner");executing_=false;error=error_;return false;
     }
     entities_.clear();animations_.clear();linked_=ecl::Program{};sources_.clear();bytes_=0;
+    thpracPreparedRoot_=ecl::Program{};pendingThpracChapter_.reset();activeThpracChapter_.reset();
     appearanceBounds_={};primaryAppearanceBounds_={};animationHost_={};animationRemover_={};
     geometryHost_={};geometryUpdater_={};geometryRemover_={};
     enemyContactHost_={};enemyDamageHost_={};enemyHitFeedbackHost_={};
@@ -674,7 +677,7 @@ bool StageWorld::addBulletProfile(int type,const void* bytes,std::size_t size,st
 }
 
 bool StageWorld::load(const std::string& name,const void* bytes,std::size_t size,std::string& error) {
-    if(started_||executing_||entityRetirementAttempted_||name.size()>200||name.empty()||name.find_first_of("/\\:")!=std::string::npos||name.find("..")!=std::string::npos) {
+    if(started_||executing_||entityRetirementAttempted_||pendingThpracChapter_||name.size()>200||name.empty()||name.find_first_of("/\\:")!=std::string::npos||name.find("..")!=std::string::npos) {
         error="world resource loading requires reset and a flat resource name";
         return false;
     }
@@ -688,12 +691,43 @@ bool StageWorld::load(const std::string& name,const void* bytes,std::size_t size
     return true;
 }
 
+bool StageWorld::prepareThpracChapter(unsigned stageId,unsigned chapter,int difficulty,std::string& error) {
+    error.clear();
+    if(started_||executing_||entityRetirementAttempted_||bulletRetirementAttempted_
+        ||faulted()||pendingThpracChapter_||activeThpracChapter_) {
+        error="TH128 thprac chapter requires a fresh healthy unconfigured World";return false;
+    }
+    practice::ChapterPlan plan;
+    if(!practice::chapterPlan(stageId,chapter,plan,error))return false;
+    if(difficulty<0||difficulty>(stageId==16?4:3)||(stageId==16&&difficulty!=4)) {
+        error="TH128 thprac stage/rank mismatch";return false;
+    }
+    const auto found=sources_.find(plan.sourceName);
+    if(found==sources_.end()) {error="TH128 thprac original stage resource is missing";return false;}
+    if(!practice::originalChapterSource(stageId,found->second,error))return false;
+    ecl::Program candidate;
+    if(!practice::prepareChapter(found->second,plan.sourceName,found->second.resource().bytes,
+        stageId,chapter,candidate,error))return false;
+    thpracPreparedRoot_=std::move(candidate);
+    pendingThpracChapter_=ThpracChapter{stageId,chapter,difficulty,true};
+    return true;
+}
+
 bool StageWorld::start(const std::string& stage,int difficulty,std::uint16_t seed) {
     if(entityRetirementAttempted_){operationError_="retired entity manager cannot restart";return false;}
     if(executing_)return fail("world start is not reentrant");
+    if(activeThpracChapter_) {operationError_="active TH128 thprac World requires explicit reset";return false;}
+    if(pendingThpracChapter_) {
+        practice::ChapterPlan plan;std::string reason;
+        if(!practice::chapterPlan(pendingThpracChapter_->stageId,pendingThpracChapter_->chapter,plan,reason)
+            ||stage!=plan.sourceName||difficulty!=pendingThpracChapter_->difficulty) {
+            operationError_="TH128 thprac start does not match its pending owner";return false;
+        }
+    }
     const auto source=sources_.find(stage);
     if(source==sources_.end()||difficulty<0||difficulty>4){operationError_="missing stage or invalid difficulty";return false;}
-    auto candidate=source->second;
+    auto candidate=pendingThpracChapter_?thpracPreparedRoot_:source->second;
+    const auto practiceOwner=pendingThpracChapter_;
     std::vector<std::pair<std::string,ecl::Program>> providers(sources_.begin(),sources_.end());
     std::string error;
     if(!candidate.linkIncludes(providers,error)){operationError_=error;return false;}
@@ -707,7 +741,9 @@ bool StageWorld::start(const std::string& stage,int difficulty,std::uint16_t see
     enemy::SpawnRequest root;
     root.subroutine="main";
     started_=true;
-    return create(root,true)!=nullptr&&error_.empty();
+    if(!create(root,true)||!error_.empty())return false;
+    activeThpracChapter_=practiceOwner;
+    return true;
 }
 
 StageWorld::Entity* StageWorld::create(const enemy::SpawnRequest& request,bool root) {

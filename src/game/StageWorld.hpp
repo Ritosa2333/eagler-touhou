@@ -64,6 +64,13 @@ public:
     StageWorld();
     ~StageWorld();
     bool load(const std::string& name,const void* bytes,std::size_t size,std::string& error);
+    struct ThpracChapter {
+        unsigned stageId=0,chapter=0;
+        int difficulty=0;
+        bool nonNormal=true;
+    };
+    bool prepareThpracChapter(unsigned stageId,unsigned chapter,int difficulty,std::string& error);
+    std::optional<ThpracChapter> thpracChapter() const {return activeThpracChapter_;}
     bool start(const std::string& stage,int difficulty,std::uint16_t seed);
     bool tick();
     bool bindStageTransitionOwner(const stage::StageTransitionHost& owner,int currentId,int progress,std::string& error);
@@ -185,6 +192,8 @@ private:
     std::vector<std::unique_ptr<Entity>> entities_;
     std::unordered_map<std::string,ecl::Program> sources_;
     ecl::Program linked_;
+    ecl::Program thpracPreparedRoot_;
+    std::optional<ThpracChapter> pendingThpracChapter_,activeThpracChapter_;
     Random random_;
     bullet::Manager bullets_;
     bullet::Manager::Constructor bulletType25Conversion_;
