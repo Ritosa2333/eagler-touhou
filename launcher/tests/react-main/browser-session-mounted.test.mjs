@@ -65,7 +65,7 @@ before(async () => {
     export {getAcquisitionOptions} from 'captured-acquisition';
     export {setPackageReadGate} from 'gated-package-read';
     export {setCloudRunProbe, setCloudBeforeStartProbe, getCloudSaveStartedProducts, getCloudSaveEvents} from 'captured-cloud-save-sync';
-    export {setAccountSessionResult} from 'captured-account-client';
+    export {setAccountSessionResult, setReplayAccountRequest} from 'captured-account-client';
     export {accountSession as testAccountSession} from './app/services/account-session.ts';
     export {validateSiteManifest} from './src/contracts/site-manifest.mts';
     export {PRODUCT_GAMES, multiplayerConfigForProduct} from './src/contracts/product-catalog.mts';
@@ -87,7 +87,7 @@ before(async () => {
       // delegate to the authored owners; no preparation/queue policy is replaced.
       ctx.onResolve({filter: /^(captured-browser-session|gated-package-read|captured-acquisition|captured-cloud-save-sync|captured-account-client|cloud-sync-release-features)$/}, args => ({path: args.path, namespace: 'session-edge'}));
       ctx.onResolve({filter: /release-features$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/session/browser-session.ts') ? {path:'cloud-sync-release-features',namespace:'session-edge'} : undefined);
-      ctx.onResolve({filter: /account-client$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/services/account-session.ts') ? {path:'captured-account-client',namespace:'session-edge'} : undefined);
+      ctx.onResolve({filter: /account-client$/}, args => /\/(account-session\.ts|browser-session\.ts|Th09ReplayArchive\.tsx|DuelReplayGroup\.tsx)$/.test(args.importer.replaceAll('\\', '/')) ? {path:'captured-account-client',namespace:'session-edge'} : undefined);
       ctx.onResolve({filter: /services\/cloud-save-sync$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/session/browser-session.ts') ? {path:'captured-cloud-save-sync',namespace:'session-edge'} : undefined);
       ctx.onResolve({filter: /session\/browser-session$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/BrowserLauncher.tsx') ? {path: 'captured-browser-session', namespace: 'session-edge'} : undefined);
       ctx.onResolve({filter: /package-store\.mjs$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/services/package-acquisition.ts') ? {path: 'gated-package-read', namespace: 'session-edge'} : undefined);
@@ -98,8 +98,17 @@ before(async () => {
         export function createBrowserSession(options) {return session = create(options);}
       ` : args.path === 'captured-account-client' ? `
         let sessionResult=new Error('account service offline');
+        let replayRequest;
         export function setAccountSessionResult(value){sessionResult=value;}
-        export async function accountRequest(path){if(path!=='auth/get-session')throw Error('Unexpected account request '+path);if(sessionResult instanceof Error)throw sessionResult;return sessionResult;}
+        export function setReplayAccountRequest(value){replayRequest=value;}
+        export async function accountRequest(path, body, options){
+          if(path!=='auth/get-session'){
+            if(replayRequest) return replayRequest(path, options);
+            throw Error('Unexpected account request '+path);
+          }
+          if(sessionResult instanceof Error)throw sessionResult;
+          return sessionResult;
+        }
         export function cancelAccountRequests(){}
         export class AccountRequestError extends Error {constructor(code,status){super(code);this.name='AccountRequestError';this.status=status;}}
       ` : args.path === 'captured-acquisition' ? `
@@ -2511,6 +2520,56 @@ test('offline lobby masthead Replay opens the selected multiplayer workspace and
   assert.equal(session.directory.getSnapshot().selectedProduct, 'th06mp');
   assert.equal(session.room.service.getSnapshot().room, null);
   assert.equal(f.sockets.some(socket => new URL(socket.url).searchParams.has('lobby')), false);
+});
+
+test('th09 profile replay sidebar loads sets on demand and switches within the same player', async () => {
+  const first = '72aeaea1-dd24-43cb-ad47-68ced29d8881';
+  const second = '72aeaea1-dd24-43cb-ad47-68ced29d8882';
+  const endpoint = 'v1/profiles/alice/th09-replays';
+  const name = '2026-11-17 13-26-34 UTC+08 - Alice (Youmu) vs Bob (Reisen)';
+  const cursor = '1794884400000:' + first;
+  const group = (duelId, wins, losses) => ({duelId, playedAt:1794884400000, wins, losses, replayCount:1,
+    opponent:{username:'bob',displayName:'Bob'}});
+  const calls = [];
+  api.setReplayAccountRequest(async (path, options) => {
+    calls.push(path);
+    if (path === endpoint) return options.query
+      ? {duels:[group(second,0,1)],nextCursor:null} : {duels:[group(first,1,0)],nextCursor:cursor};
+    if (path === `v1/th09/duels/${second}/replays`)
+      return {files:[{roundId:'1:50',name,frames:60,characters:[3,4]}]};
+    if (path.endsWith('/replays/1-50') || path.endsWith('/replays/1-100'))
+      return new Blob([new Uint8Array([1,2,3])], {type:'application/x-th09-rpyx'});
+    throw Error('Unexpected replay API request ' + path);
+  });
+  try {
+    const f = await mountBrowser({host:subsetHost(['th09']), seedPackages:['th09']});
+    const session = api.getTestSession(), frame = node('#gameFrame');
+    let initialPlayback;
+    await React.act(async () => {
+      initialPlayback = session.accessTh09MatchReplay({username:'alice',duelId:first,roundId:'1:100'}, 'play');
+      void initialPlayback.catch(session.reportError);
+    });
+    await until(() => !!env.document.querySelector('.replay-archive-set summary'), 'archive opens for the profile being watched');
+    await initialPlayback;
+    assert.deepEqual(calls, [`v1/th09/duels/${first}/replays/1-100`, endpoint]);
+    assert.match(node('.replay-file-browser h2').textContent, /@alice/);
+    const epoch = session.getRuntime().getSnapshot().epoch;
+    await click('.replay-workspace-files > button');
+    await until(() => env.document.querySelectorAll('.replay-archive-set').length === 2, 'older sets are paginated');
+    assert.equal(calls.length, 3);
+    const set = env.document.querySelectorAll('.replay-archive-set')[1];
+    await React.act(async () => {set.open = true;set.dispatchEvent(new env.window.Event('toggle'));});
+    await until(() => !!set.querySelector('li button'), 'only the expanded set loads its files');
+    assert.equal(calls.at(-1), `v1/th09/duels/${second}/replays`);
+    await React.act(async () => {set.querySelector('li button').click();});
+    await until(() => session.getSnapshot().th09Replay?.duelId === second, 'choosing the second set starts playback');
+    assert.equal(node('#gameFrame'), frame);
+    assert.equal(session.getRuntime().getSnapshot().epoch, epoch);
+    assert.equal(f.outbound.findLast(message => message.command === 'playback').path, `th09-${second}-1-50.rpyx`);
+    assert.ok(set.querySelector('button[aria-current="true"]'));
+    await React.act(async () => {set.querySelector('li button:last-child').click();});
+    await until(() => f.downloads.at(-1)?.name === name + '.rpyx', 'download uses the readable filename and the actual extension');
+  } finally {api.setReplayAccountRequest(undefined);}
 });
 
 test('Replay root Back uses real BrowserHistory and folder, move, then manager layers unwind one at a time', async () => {

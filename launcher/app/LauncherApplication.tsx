@@ -29,6 +29,7 @@ import type { LibraryProduct } from './components/launcher/products';
 import { SettingsBody } from './components/settings/SettingsBody';
 import type { SettingsActions, TouchEditorNativePorts } from './components/settings/types';
 import type { GameSettingsModel, SettingsContext } from './models/game-settings';
+import type { WatchTh09Replay } from './models/th09-replay-archive';
 import type { SitePreferencesModel } from './models/site-preferences';
 import type { DecisionStore } from './models/decisions';
 import type { TouchLayoutModel } from './models/touch-layout';
@@ -51,7 +52,7 @@ export type LobbyPresentation = Omit<
 export interface LauncherHost {
   readLocalSaves?:LocalSaveReader;
   cloudSync?:CloudSaveSync|null;
-  watchTh09Replay?(duelId: string, roundId: string, action: 'play' | 'download'): Promise<void>;
+  watchTh09Replay?: WatchTh09Replay;
   locale: UiLocale;
   lessMotion?: boolean;
   products: readonly LibraryProduct[];
