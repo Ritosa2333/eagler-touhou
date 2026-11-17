@@ -139,6 +139,12 @@ try{
       assert(result.duration>1&&result.windows.length>=9&&result.windows.filter(value=>value>0.00001).length>=result.windows.length-1,'battle music continues through a blocked game thread: '+JSON.stringify(result));
       console.log('PASS battle music remains audible during main-thread stall',result);
     }
+    if(process.env.TH03_BATTLE_FPS_QA==='1'){
+      const start=await Promise.all(frames.map(frame=>frame.evaluate(async()=>({frame:(await import('./managed-native-room.mjs')).managedAPI.health().gameFrame,at:performance.now()}))));
+      await new Promise(resolve=>setTimeout(resolve,5000));
+      const fps=await Promise.all(frames.map((frame,i)=>frame.evaluate(async before=>1000*((await import('./managed-native-room.mjs')).managedAPI.health().gameFrame-before.frame)/(performance.now()-before.at),start[i])));
+      console.log('battle simulation fps',fps);assert(fps.every(value=>value>=54),'both players must keep near the native game speed');
+    }
     for(let i=0;i<20;i++){
       await new Promise(resolve=>setTimeout(resolve,50));
       for(const frame of frames){const state=await frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health());

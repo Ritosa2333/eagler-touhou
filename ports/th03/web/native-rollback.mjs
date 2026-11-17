@@ -8,7 +8,7 @@ export class NativeRollback {
     this.frame=0;this.confirmed=0;this.nextLocal=0;this.local=new Map();this.remote=new Map();this.used=new Map();this.snapshots=new Map();this.closed=false;this.rollbacks=0;this.blocked=false;
   }
   enqueue(input) {
-    if(this.closed||this.nextLocal-this.confirmed>=12)return false;
+    if(this.closed||this.nextLocal-this.confirmed>=24)return false;
     this.validate(input);const frame=this.nextLocal++;
     this.local.set(frame,input);this.send(JSON.stringify({type:'native-rollback-input',frame,input}));return true;
   }
@@ -48,7 +48,7 @@ export class NativeRollback {
     if(this.closed)return;
     try{
       const msg=JSON.parse(text);
-      if(msg.type!=='native-rollback-input'||!Number.isSafeInteger(msg.frame)||msg.frame<0||msg.frame>this.frame+12)throw Error('Invalid rollback input');
+      if(msg.type!=='native-rollback-input'||!Number.isSafeInteger(msg.frame)||msg.frame<0||msg.frame>this.frame+24)throw Error('Invalid rollback input');
       this.validate(msg.input);
       if(msg.frame<this.confirmed)return;
       if(this.remote.has(msg.frame)&&this.remote.get(msg.frame)!==msg.input)throw Error('Conflicting rollback input');

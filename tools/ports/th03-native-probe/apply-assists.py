@@ -316,11 +316,11 @@ replace('src/app/classic/op/classic_op_session_backend.cpp',
 	bool has_replay = false;
 	MainProcess *owner = nullptr;
 };
-static std::array<Th03SemanticSnapshot, 8> th03_semantic_slots;
+static std::array<Th03SemanticSnapshot, 16> th03_semantic_slots;
 static std::unique_ptr<MainProcessRollbackSnapshot> th03_semantic_scratch;
 extern "C" int th03_semantic_capture(int slot) {
 	auto *backend = th03_active_vs_backend;
-	if(slot < 0 || slot >= 8 || !backend || !backend->vs_process || !backend->vs_driver ||
+	if(slot < 0 || slot >= 16 || !backend || !backend->vs_process || !backend->vs_driver ||
 		backend->vs_pause_menu || backend->vs_terminal ||
 		backend->vs_driver->input_context() != InputContext::gameplay ||
 		backend->vs_driver->status() != MainProcessDriverStatus::running ||
@@ -337,7 +337,7 @@ extern "C" int th03_semantic_capture(int slot) {
 }
 extern "C" int th03_semantic_restore(int slot) {
 	auto *backend = th03_active_vs_backend;
-	if(slot < 0 || slot >= 8 || !backend || !backend->vs_process || !backend->vs_driver) return 0;
+	if(slot < 0 || slot >= 16 || !backend || !backend->vs_process || !backend->vs_driver) return 0;
 	auto &saved = th03_semantic_slots[static_cast<std::size_t>(slot)];
 	if(!saved.process || !saved.driver || saved.owner != backend->vs_process.get()) return 0;
 	if(saved.has_replay && (!backend->replay_recorder || !backend->replay_recorder->th03_can_restore(saved.replay))) return 0;

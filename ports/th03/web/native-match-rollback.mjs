@@ -8,8 +8,8 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
   const fire=[new FireControl(),new FireControl()], pause=createVersusPause(), outputs=new Map(),proofs=new Map(),remoteProofs=new Map();let running=true,lastProgress=now(),confirmedInput=[0,0];
   const metadata=()=>({scene:engine._th03_classic_scene(),round:engine._th03_semantic_round?.()??-1,serial:engine._th03_classic_match_serial?.()??0,winner:engine._th03_classic_match_winner?.()??-1});
   const compare=frame=>{if(!proofs.has(frame)||!remoteProofs.has(frame))return;if(proofs.get(frame)!==remoteProofs.get(frame))throw Error(`双方游戏状态不同步（第 ${frame} 帧）`);proofs.delete(frame);remoteProofs.delete(frame);};
-  const freeSlots=[7,6,5,4,3,2,1,0];let captures=0,restores=0;
-  const remoteCharge=new NativeChargeHistory(),localCharge=new Map(),chargeBoundaries=new Set();
+  const freeSlots=Array.from({length:16},(_,i)=>15-i);let captures=0,restores=0;
+  const remoteCharge=new NativeChargeHistory(24),localCharge=new Map(),chargeBoundaries=new Set();
   let localShadow;
   const supportsCharge=typeof engine._th03_classic_charge_enable==='function';
   const activeCharge=()=>supportsCharge&&engine._th03_classic_scene()===9&&!!engine._th03_classic_surrender_allowed()&&pause.state.owner===null&&!engine._th03_classic_paused();
@@ -24,7 +24,7 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
   const snapshot=()=>{const slot=freeSlots.pop();if(slot===undefined)throw Error('原生回滚历史已满');if(!engine._th03_classic_capture(slot)){freeSlots.push(slot);return null;}captures++;return {slot,fire:fire.map(item=>({...item.state})),pause:pause.capture()};};
   const release=s=>{freeSlots.push(s.slot);};
   const restore=s=>{if(!engine._th03_classic_restore(s.slot))throw Error('原生回滚状态恢复失败');restores++;fire.forEach((item,i)=>item.state={...s.fire[i]});pause.restore(s.pause);};
-  const sync=new NativeRollback({seat,send:text=>channel.send(text),capture:snapshot,restore,release,onError,canConfirm:frame=>!needsCharge(frame)||(localCharge.has(frame)&&!!remoteCharge.get(frame)),onCaptureUnavailable(frame){if(!supportsCharge||!needsCharge(frame))return false;chargeBoundaries.add(frame);channel.send(JSON.stringify({type:'native-charge-boundary',frame}));return true;},step(inputs,frame,speculative){
+  const sync=new NativeRollback({seat,send:text=>channel.send(text),capture:snapshot,restore,release,onError,maxPrediction:12,canConfirm:frame=>!needsCharge(frame)||(localCharge.has(frame)&&!!remoteCharge.get(frame)),onCaptureUnavailable(frame){if(!supportsCharge||!needsCharge(frame))return false;chargeBoundaries.add(frame);channel.send(JSON.stringify({type:'native-charge-boundary',frame}));return true;},step(inputs,frame,speculative){
     const recordedInputs=[...inputs];
     const chargeFrame=needsCharge(frame);
     if(speculative&&(pause.state.owner!==null||(engine._th03_classic_scene()===9&&((inputs[0]|inputs[1])&128))))return false;
@@ -67,10 +67,10 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
   const originalRestore=sync.restore;
   sync.restore=(s,at)=>{originalRestore(s);remoteCharge.rewind(at);for(const frame of outputs.keys())if(frame>=at)outputs.delete(frame);};
   channel.onmessage=event=>{try{const msg=JSON.parse(event.data);if(msg.type==='native-rollback-proof'){
-    if(!Number.isSafeInteger(msg.frame)||msg.frame<0||(msg.frame+1)%120!==0||msg.frame>sync.frame+120||!Number.isInteger(msg.proof)||msg.proof<0||msg.proof>0xffffffff||remoteProofs.has(msg.frame))throw Error('回滚校验消息无效');
+    if(!Number.isSafeInteger(msg.frame)||msg.frame<0||(msg.frame+1)%120!==0||msg.frame>sync.frame+240||!Number.isInteger(msg.proof)||msg.proof<0||msg.proof>0xffffffff||remoteProofs.has(msg.frame))throw Error('回滚校验消息无效');
     remoteProofs.set(msg.frame,msg.proof);compare(msg.frame);
   }else if(msg.type==='native-charge-boundary'){
-    if(!supportsCharge||!Number.isSafeInteger(msg.frame)||msg.frame<0||msg.frame>sync.frame+12)throw Error('蓄力边界数据无效');
+    if(!supportsCharge||!Number.isSafeInteger(msg.frame)||msg.frame<0||msg.frame>sync.frame+24)throw Error('蓄力边界数据无效');
     if(msg.frame>=sync.confirmed){chargeBoundaries.add(msg.frame);if(msg.frame<sync.frame&&outputs.get(msg.frame)?.needsCharge)sync.rewind(msg.frame);sync.flush();}
     while(!sync.closed&&sync.local.has(sync.frame)&&sync.remote.has(sync.frame)&&sync.advance(false)){}
   }else if(msg.type==='native-charge'){
@@ -89,7 +89,7 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
   channel.onclose=()=>{if(running){running=false;onError(Error('另一位玩家已断开'));}};
   return {tick(){if(!running)return;if(now()-lastProgress>10000){running=false;sync.close();onError(Error('另一位玩家连接超时'));return;}
     const scene=engine._th03_classic_scene(),canPredict=scene===9&&!!engine._th03_classic_surrender_allowed()&&pause.state.owner===null&&!engine._th03_classic_paused();
-    if(sync.nextLocal-sync.confirmed<12)sync.enqueue(sample()+(options.rapid===false?1024:0));
+    if(sync.nextLocal-sync.confirmed<24)sync.enqueue(sample()+(options.rapid===false?1024:0));
     if(sync.frame-sync.confirmed<sync.maxPrediction)sync.advance(canPredict);
   },stop(){running=false;sync.close();remoteCharge.clear();localCharge.clear();chargeBoundaries.clear();outputs.clear();proofs.clear();remoteProofs.clear();},get snapshotStats(){return {captures,restores};},get pause(){return pause;},get frame(){return sync.frame;},get confirmed(){return sync.confirmed;},get confirmedInput(){return confirmedInput;},get rollbacks(){return sync.rollbacks;},get running(){return running;}};
 }

@@ -12,7 +12,7 @@ async function copy(m,dir,dst){for(const e of await readdir(dir,{withFileTypes:t
  for(const m of modules){m.FS.mkdir('/content');m.FS.mkdir('/user');m.FS.mkdir('/user/REPLAY');await copy(m,root,'/content');m.FS.mkdir('/content/PODDUI');await copy(m,ui,'/content/PODDUI');m._th03_classic_external_music(process.env.TH03_TEST_EXTERNAL_MUSIC==='1'?1:0);assert.equal(m._th03_classic_create_versus(),1);assert.equal(m._th03_classic_step_pair(0,0,0,0),0);assert.equal(m._th03_classic_scene(),3);}
  const spectator=createConfirmedDriver(modules[2]);let compared=0;
  const queues=[[],[]], channels=[{},{}], errors=[],played=[[],[]],confirmedInputs=[[],[]];let hostTick=0,audibleBattleFrames=0,battleEffectCommands=0;
- channels.forEach((ch,i)=>ch.send=message=>{const type=JSON.parse(message).type,extra=process.env.TH03_REORDER_CHARGE==='1'&&type==='native-charge'?(hostTick%3===0?3:0):0;queues[1-i].push({message,due:hostTick+(hostTick>700&&i===1?3:0)+extra});});
+ channels.forEach((ch,i)=>ch.send=message=>{const type=JSON.parse(message).type,extra=process.env.TH03_REORDER_CHARGE==='1'&&type==='native-charge'?(hostTick%3===0?3:0):0;queues[1-i].push({message,due:hostTick+(hostTick>700?(process.env.TH03_BOTH_DELAY?Number(process.env.TH03_BOTH_DELAY):(i===1?3:0)):0)+extra});});
  const matches=channels.map((channel,seat)=>createRollbackMatch({seat,channel,engine:modules[seat],sample:()=>{const bits=hostTick<500?0:hostTick<650?(hostTick%60<5?512:0):((hostTick%600<180)?32:512);const active=hostTick>=800&&hostTick<900;return packTouch(bits,{active,begin:hostTick===800,x:active?(seat?-16:16):0,y:active?8:0});},onConfirmedInput:(frame,inputs,metadata)=>confirmedInputs[seat].push([frame,...inputs,metadata.replaySamples,metadata.charge]),onFrame:(frame,pcm,commands)=>{if(frame>1500&&pcm.some(v=>v!==0))audibleBattleFrames++;if(frame>1500&&commands)for(let i=0;i<commands.length;i+=4)if(commands[i]===8||commands[i]===9)battleEffectCommands++;let hash=2166136261;for(const value of pcm)hash=Math.imul(hash^value,16777619);played[seat].push([frame,pcm.length,hash>>>0]);},onError:e=>errors.push(e),now:()=>hostTick*5}));
  for(hostTick=0;hostTick<Number(process.env.TH03_TEST_TICKS||18000);hostTick++){
   matches.forEach(m=>m.tick());
@@ -27,7 +27,8 @@ async function copy(m,dir,dst){for(const e of await readdir(dir,{withFileTypes:t
   }
  }
  if(process.env.TH03_TEST_EXTERNAL_MUSIC==='1')assert.ok(audibleBattleFrames>0&&battleEffectCommands>0,'battle effect commands and audio continue with native music muted');
- assert.ok(compared>0,'confirmed spectator re-simulation matched native player');
+ if(!process.env.TH03_BOTH_DELAY)assert.ok(compared>0,'confirmed spectator re-simulation matched native player');
+ if(process.env.TH03_BOTH_DELAY)assert.ok(matches.every(m=>m.frame>=hostTick-30),'both games must keep up with the game clock after startup');
  assert.ok(matches[0].rollbacks>0,'late input caused real rollback');
  assert.ok(matches.every(m=>m.snapshotStats.captures>0&&m.snapshotStats.restores>0),'native semantic snapshots were captured and restored');
  const common=Math.min(played[0].length,played[1].length);

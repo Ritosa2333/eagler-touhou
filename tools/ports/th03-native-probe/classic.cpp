@@ -39,7 +39,7 @@ struct HostSnapshot {
 	int focus[2],x[2],y[2],touch_active[2],touch_unlimited[2],touch_x[2],touch_y[2];
 	int surrender_request,surrender_allowed;unsigned seen,age;
 };
-std::array<HostSnapshot,8> hosts{};
+std::array<HostSnapshot,16> hosts{};
 int drain() {
 	while(auto command = runner->take_audio_command()) {
 		if(frame_command_count == frame_commands.size()) return -30;
@@ -146,14 +146,14 @@ int th03_classic_audio_commit(int count) {
 void th03_classic_assist(int focus) { th03_assist_focus = focus != 0; }
 void th03_classic_assist_pair(int p1, int p2) { th03_assist_focus = p1 != 0; th03_assist_focus_p2 = p2 != 0; }
 int th03_classic_capture(int slot) {
-	if(slot<0||slot>=8||!th03_semantic_capture(slot))return 0;
+	if(slot<0||slot>=16||!th03_semantic_capture(slot))return 0;
 	auto &s=hosts[static_cast<std::size_t>(slot)];
 	s.focus[0]=th03_assist_focus;s.focus[1]=th03_assist_focus_p2;s.x[0]=th03_assist_x;s.y[0]=th03_assist_y;s.x[1]=th03_assist_x2;s.y[1]=th03_assist_y2;
 	for(int i=0;i<2;i++){s.touch_active[i]=th03_touch_active[i];s.touch_unlimited[i]=th03_touch_unlimited[i];s.touch_x[i]=th03_touch_x[i];s.touch_y[i]=th03_touch_y[i];}
 	s.surrender_request=th03_surrender_request;s.surrender_allowed=th03_surrender_allowed;s.seen=th03_assist_seen;s.age=point_age;return 1;
 }
 int th03_classic_restore(int slot) {
-	if(slot<0||slot>=8||!th03_semantic_restore(slot))return 0;
+	if(slot<0||slot>=16||!th03_semantic_restore(slot))return 0;
 	const auto &s=hosts[static_cast<std::size_t>(slot)];
 	th03_assist_focus=s.focus[0];th03_assist_focus_p2=s.focus[1];th03_assist_x=s.x[0];th03_assist_y=s.y[0];th03_assist_x2=s.x[1];th03_assist_y2=s.y[1];
 	for(int i=0;i<2;i++){th03_touch_active[i]=s.touch_active[i];th03_touch_unlimited[i]=s.touch_unlimited[i];th03_touch_x[i]=s.touch_x[i];th03_touch_y[i]=s.touch_y[i];}

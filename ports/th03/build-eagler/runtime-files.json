@@ -150,8 +150,8 @@
       "sha256": "e0084c25248bde0bb81f4485fb550d48c28606048b244ae2c7be577448981841"
     },
     "native-classic.wasm": {
-      "bytes": 2279718,
-      "sha256": "9c0239bda70d798bc752edfa75f1c31adac38860a384441d334555bfcd34d630"
+      "bytes": 2279783,
+      "sha256": "61fa220f71a7a3cb84544633579e27d361fcc9a70f3b34e5d635d15f09186b21"
     },
     "native-confirmed-driver.mjs": {
       "bytes": 2226,
@@ -166,8 +166,8 @@
       "sha256": "95a9fef9279332af29adc7b76fc93f8a8ce7522736aafcd9e7e759fb5785891d"
     },
     "native-match-rollback.mjs": {
-      "bytes": 10064,
-      "sha256": "7c6432cbd8e2b174b3bb4a3651cbe5b1f9d003ef509fb10712558a25b729176b"
+      "bytes": 10101,
+      "sha256": "d11e3df40d7637db17fc293f52099832f631fd0d175f0d0a74ba9d37bced7fb2"
     },
     "native-match.mjs": {
       "bytes": 3414,
@@ -187,7 +187,7 @@
     },
     "native-rollback.mjs": {
       "bytes": 5156,
-      "sha256": "5e83f69749a282662c67535b63e769dd7e0004d92cc16ef5e5cfaa38f7d55329"
+      "sha256": "e079fd55045d17d2a2d07eb9977e6c25e7fe1803bf06e2358e0e13be87f9a472"
     },
     "native-versus-pause.mjs": {
       "bytes": 7889,
@@ -243,7 +243,7 @@
     },
     "manifest.json": {
       "bytes": 8600,
-      "sha256": "9095d56ac07709a3412a0853ba205cff5a093cb899b875b7fbaf7e318630914d"
+      "sha256": "c58932cb492c44e0b8624bd8d072751f68eb9ac2223da88fd69383ec105e78c0"
     }
   }
 }
