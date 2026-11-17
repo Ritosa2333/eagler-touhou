@@ -12,7 +12,7 @@ class Session {
     std::optional<WorldState> before;
     std::array<Netplay::FrameInput,3> inputs;
     std::vector<uint8_t> initializer;
-    std::vector<sound_system::Event> sounds;
+    sound_system::Events sounds;
   };
   std::deque<Record> records_;
   ReplayArchive replay_;

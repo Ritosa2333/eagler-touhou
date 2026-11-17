@@ -21,6 +21,7 @@ class GameFrame {
 public:
     Timer age;std::array<i32,3> counters{};i32 shutdown_frames=0,global_phase=0,reset_age=0,reset_duration=0;std::string error;
     GameFrame(GameRun& r,Hud& h,ItemScoreState& s,EnemyWorldState& e,GameFrameHost& services):run(r),hud(h),score(s),enemies(e),host(services){age.set(0);}
+    bool waiting_for_stage_clear()const noexcept{return (hud.flags&0x100)&&hud.notice_age.current<120&&!(run.scene_flags&0x10);}
     i32 update(const GameFrameContext&);
 };
 }

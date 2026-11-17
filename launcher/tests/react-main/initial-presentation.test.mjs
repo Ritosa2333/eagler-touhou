@@ -15,7 +15,7 @@ const project = fileURLToPath(new URL('../../', import.meta.url));
 const pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const pinned = path => readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf755090', path);
 let work, env, api, React, renderToStaticMarkup, createRoot, MemoryRouter, root;
-let originalLibrary, originalLobby, expectedCards;
+let originalLobby, expectedCards;
 const el = (type, props, ...children) => React.createElement(type, props, ...children);
 const parse = html => new env.window.DOMParser().parseFromString(html, 'text/html');
 const normal = text => text.replace(/\s+/g, ' ').trim();
@@ -51,7 +51,7 @@ before(async () => {
     export {translate} from './app/i18n.tsx';
   `}, outfile, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', packages: 'external', loader: {'.css': 'empty'}, logLevel: 'silent', plugins: [authoredSourcesPlugin(project)]});
   api = await import(pathToFileURL(outfile).href);
-  originalLibrary = parse(pinned('public/index.html')); originalLobby = parse(pinned('public/lobby.html'));
+  originalLobby = parse(pinned('public/lobby.html'));
   // Execute the pinned compiler's pure card generator, not a copied template
   // or a warm legacy UI build. The original HTML marker has no authored cards.
   const compiler = pinned('lib/launcher-optimization.mjs');
@@ -76,13 +76,7 @@ for (const path of ['/', '/index.html', '/en.html', '/ja.html', '/nested/', '/ne
     assert.equal(document.querySelector('[data-book-category=doujin] small').textContent, '0');
     assert.equal(document.querySelectorAll('.book-recent-link').length, 0);
     assert.equal(document.querySelector('#uiLanguageSelect').value, locale);
-    const footer = [...document.querySelectorAll('.site-footer p')].map(node => normal(node.textContent));
-    if (locale === 'zh-CN') assert.deepEqual(footer, [...originalLibrary.querySelectorAll('.site-footer p')].slice(1).map(node => normal(node.textContent)));
-    else {
-      assert.notEqual(footer[0], normal(originalLibrary.querySelectorAll('.site-footer p')[1].textContent));
-      assert.equal(footer[1], '赣ICP备2025074288号-1');
-      assert.equal(document.querySelector('#donationOpen').textContent, locale === 'en' ? 'Support the server' : 'サーバーを支援する');
-    }
+    assert.equal(document.querySelector('.site-footer'), null);
     assert.equal(document.querySelector('.book-lobby-link').getAttribute('href'), `lobby.html?lang=${locale}`);
     assert.equal(document.querySelector('#originMigrationOpen').hidden, true);
     assert.equal(document.querySelector('iframe'), null);
@@ -161,10 +155,11 @@ test('actual root/nested builds publish shared initial cards and route-specific 
   for (const [name, mountPath] of [['root', '/'], ['nested', '/preview/']]) {
     const output = resolve(work, name);
     execFileSync(process.execPath, ['node_modules/@react-router/dev/bin.cjs', 'build'], {cwd: project,
-      env: {...process.env, EAGLER_REACT_BUILD_DIRECTORY: output, EAGLER_REACT_MOUNT_PATH: mountPath, EAGLER_REACT_APP_SHELL: 'disabled', EAGLER_REACT_APP_SHELL_ORIGIN: ''},
+      env: {...process.env, VITE_ACCOUNTS_ENABLED: 'true', EAGLER_REACT_BUILD_DIRECTORY: output, EAGLER_REACT_MOUNT_PATH: mountPath, EAGLER_REACT_APP_SHELL: 'disabled', EAGLER_REACT_APP_SHELL_ORIGIN: ''},
       stdio: 'pipe', timeout: 120000});
     for (const entry of ['index.html', 'en.html', 'lobby.html', 'profile.html']) {
       const document = parse(await readFile(resolve(output, 'client', entry), 'utf8')), lobby = entry === 'lobby.html';
+      assert.equal(document.querySelector('.site-footer'), null);
       assert.equal(document.documentElement.dataset.bookTheme, 'dark');
       assert.equal(document.documentElement.lang, entry === 'en.html' ? 'en' : 'zh-CN');
       assert.equal(document.body.classList.contains('lobby-page'), lobby);

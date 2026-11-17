@@ -1,0 +1,89 @@
+{
+  "passed": true,
+  "staged": false,
+  "profile": "android",
+  "perf": {
+    "time": 9862.5,
+    "ticks": 1282,
+    "fps": 60.00774293526457,
+    "draws": 9,
+    "font": {
+      "simplifiedGlyphs": 1829
+    },
+    "tickRate": 60.039443792550884
+  },
+  "audio": {
+    "backend": "uth05-browser-audio",
+    "robust": true,
+    "mode": "none",
+    "decodeMode": "stream",
+    "musicSource": "original",
+    "track": "",
+    "path": null,
+    "playing": false,
+    "loopStart": 0,
+    "loopEnd": 0,
+    "queuedMs": 0,
+    "underruns": 0,
+    "sfx": {
+      "backend": "uth05win-original-se",
+      "played": 45,
+      "restarted": 37,
+      "active": [
+        1
+      ]
+    }
+  },
+  "before": {
+    "x": 224,
+    "y": 376
+  },
+  "after": {
+    "x": 284,
+    "y": 346
+  },
+  "tools": [
+    {
+      "index": 0,
+      "before": 0,
+      "after": 1
+    },
+    {
+      "index": 1,
+      "before": 0,
+      "after": 1
+    },
+    {
+      "index": 2,
+      "before": 0,
+      "after": 1
+    },
+    {
+      "index": 3,
+      "before": 0,
+      "after": 1
+    },
+    {
+      "index": 4,
+      "before": 0,
+      "after": 1
+    },
+    {
+      "index": 5,
+      "before": 0,
+      "after": 1
+    },
+    {
+      "index": 6,
+      "before": 0,
+      "after": 1
+    },
+    {
+      "index": 7,
+      "before": 0,
+      "after": 1
+    }
+  ],
+  "runtimeErrors": [],
+  "errors": []
+}

@@ -1056,9 +1056,12 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
           Module.eaglerControls.thpracKeyboardBits = 0;
         }
       };
-      function runtimeInputActive(){return (launched||Module.eaglerRoomPreview&&Module.eaglerOptions?.netplayMode!=='lan')&&!document.hidden;}
+      function runtimeInputActive(){
+        return (launched||Module.eaglerRoomPreview&&Module.eaglerOptions?.netplayMode!=='lan')&&!document.hidden&&
+          (!Module.eaglerOptions?.netplaySpectator||globalThis.__eaglerSpectatorMenu===true);
+      }
       keyboardInput = createKeyboardInputBridge({protocol,game,epoch,origin:location.origin,
-        ready:()=>runtimeInputActive()&&(!Module.eaglerOptions?.netplaySpectator||globalThis.__eaglerSpectatorMenu===true),
+        ready:runtimeInputActive,
         dispatch:(event,down)=>applyBrowserKeyboardEvent(event,down),reset:clearBrowserKeyboard});
       window.addEventListener("keydown", event => {
         if (!runtimeInputActive()) return;
@@ -1080,7 +1083,9 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
           switch (message.command) {
           case "configure":
             await installShared(message);
-            await installRuntime(message);
+            // The native room preview already owns the local language pack.
+            // Start and return only refresh options on that same instance.
+            if (!Module.eaglerRoomPreview) await installRuntime(message);
             await installMusic(message);
             reply(message.request, true);
             break;
@@ -1089,6 +1094,7 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
             reply(message.request, true);
             break;
           case "keyboard":
+            if (!runtimeInputActive()) break;
             if (typeof message.down !== "boolean" || typeof message.code !== "string" || typeof message.key !== "string" ||
                 !Number.isInteger(message.keyCode) || !Number.isInteger(message.location))
               throw new Error("invalid keyboard bridge event");
@@ -1097,6 +1103,7 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
           case "keyboard-clear": clearBrowserKeyboard(); break;
           case "touch-cancel": cancelAllTouches(); reply(message.request, true); break;
           case "direct-touch": {
+            if (Module.eaglerOptions?.netplaySpectator && globalThis.__eaglerSpectatorMenu!==true) { reply(message.request, true); break; }
             if (!["down", "move", "up"].includes(message.type) || !Number.isInteger(message.id) ||
                 !Number.isFinite(message.x) || !Number.isFinite(message.y))
               throw new Error("invalid direct touch bridge event");
@@ -1159,6 +1166,10 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
             reply(message.request, true);
             break;
           case "touch-controls":
+            if (Module.eaglerOptions?.netplaySpectator && globalThis.__eaglerSpectatorMenu!==true) {
+              if (message.request) reply(message.request, true);
+              break;
+            }
             if (typeof message.fireEnabled !== "boolean" || typeof message.focusEnabled !== "boolean" || !Number.isInteger(message.bombSerial) || !Number.isInteger(message.escapeSerial) ||
                 !Number.isInteger(message.joystickX) || !Number.isInteger(message.joystickY) || message.joystickX < -32768 || message.joystickX > 32767 || message.joystickY < -32768 || message.joystickY > 32767 ||
                 !Number.isFinite(message.touchSensitivity) || message.touchSensitivity < 100 || message.touchSensitivity > 300)

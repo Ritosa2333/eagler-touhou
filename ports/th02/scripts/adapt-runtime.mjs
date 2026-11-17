@@ -54,7 +54,9 @@ await patch('replay/external-loader.js',text=>text.replace("new URL('dosbox-jspi
   client=client.slice(0,listeners)+"canvas.addEventListener('contextlost',()=>fatal('游戏画面上下文已丢失'));\nreturn sync;\n}\n";
   await writeFile(resolve(output,'netplay/managed-runtime.js'),client);runtime.push('netplay/managed-runtime.js');
 }
+await patch('netplay/rollback-queue.js',text=>replaceOnce(text,"../../../../common/pc98/rollback-client.mjs","../pc98-rollback-client.mjs",'shared rollback client'));
 await patch('netplay/room.js',text=>{
+  text=replaceOnce(text,"../../../../common/pc98/rollback-client.mjs","../pc98-rollback-client.mjs",'shared rollback client');
   const begin=text.indexOf("  iframe=document.createElement('iframe');iframe.title='本机游戏模拟器'");
   const end=text.indexOf("  runtime.setMusicVolume(",begin);
   if(begin<0||end<0)throw Error('TH02 managed runtime entry changed');
@@ -94,6 +96,10 @@ for(const name of await files(resolve(port,'web'))) if(/^managed-[^/]+\.(?:mjs|j
   for(const name of ['managed-rescue-sound.mjs','managed-rapid-fire.mjs','managed-bomb-background.mjs','managed-gameover.mjs','netplay/ending-music.js','pmd-archives.mjs'])manifest.assets[name]=createHash('sha256').update(await readFile(resolve(output,name))).digest('hex');
   await writeFile(path,JSON.stringify(manifest,null,2)+'\n');
 }
+for(const [source,target] of [['rollback-client.mjs','pc98-rollback-client.mjs'],['rollback-core.wasm','rollback-core.wasm']]){await copyFile(resolve(repo,'common/pc98',source),resolve(output,target));runtime.push(target);}
+await patch('replay/profile.js',text=>replaceOnce(text,"'../netplay/runtime.json'","'../netplay/runtime.json','../pc98-rollback-client.mjs','../rollback-core.wasm'",'shared rollback replay identity'));
+{const path=resolve(output,'netplay/runtime.json'),version=JSON.parse(await readFile(path,'utf8'));version.rollback_queue_sha256=createHash('sha256').update(Buffer.concat(await Promise.all(['netplay/rollback-queue.js','pc98-rollback-client.mjs','rollback-core.wasm'].map(name=>readFile(resolve(output,name)))))).digest('hex');for(const name of ['pc98-rollback-client.mjs','rollback-core.wasm'])version.assets[name]=createHash('sha256').update(await readFile(resolve(output,name))).digest('hex');version.build=version.build+'-shared-rollback-'+version.rollback_queue_sha256;await writeFile(path,JSON.stringify(version,null,2)+'\n');}
+
 for(const name of ['pc98-spectator-audio.mjs','pc98-spectator-channel.mjs','pc98-spectator-publisher.mjs','pc98-local-spectator.mjs','pc98-match-index.mjs','pc98-managed-spectator.mjs','directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs','pc98-game-fps.mjs','pc98-practice.mjs','pc98-practice-theme.css','pc98-pause-menu.mjs','pc98-net-pause.mjs','pc98-empty-scores.mjs','pc98-challenge-counters.mjs','pc98-challenge-stocks.mjs','pc98-challenge-layouts.mjs','pc98-challenge-hud-install.mjs']) {await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
 for(const name of ['assets/option-0.png','assets/option-1.png','assets/option-2.png']) {await mkdir(resolve(output,'assets'),{recursive:true});await writeFile(resolve(output,name),await readInput(name));runtime.push(name);}
 const html=`<!doctype html><html><head><meta charset="utf-8"><meta name="eagler-data-provider" content="retail-memory"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body,#game,.player-stage{width:100%;height:100%;margin:0;background:#000;overflow:hidden}.player-stage{display:flex;align-items:center;justify-content:center}.solo-screen{position:relative;width:min(100vw,160vh);height:min(62.5vw,100vh);aspect-ratio:8/5;flex:none}.player-toolbar{display:none}#canvas{outline:0;width:100%;height:100%;image-rendering:pixelated}</style><script type="module" src="managed-shell.mjs"></script></head><body class="shell"><div id="game" class="th02-player"><div class="player-toolbar"></div><div class="player-stage"><div class="solo-screen"><canvas id="canvas" width="640" height="400" tabindex="0"></canvas></div></div></div></body></html>`;

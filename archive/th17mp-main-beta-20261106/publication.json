@@ -1,0 +1,16 @@
+{
+  "site": "https://touhouonline.com/",
+  "releaseId": "sha256-1576a933aab2c6edf0113eb55acf9d5db925bed10399f4fa81134a89104e0abc",
+  "publishedAt": "2026-11-06T14:33:40.509637+08:00",
+  "launcherRevision": "4f01da64d",
+  "runtimeRevision": "9e904db4b",
+  "runtimeGeneration": "94a338ef1909a9d497979b811913458d037302687af40cfa42d9e9a7dec1f60e",
+  "runtimeFilesVerified": 11,
+  "previousRelease": "sha256-1880eab7cb78aa7c0b65ddb35f7eb2d9c2b2ac80c41e84fb3c9be16849e58426",
+  "relay": {
+    "activatedAt": "2026-11-06T14:31:19.272114+08:00",
+    "th17VerifiedLoadout": 8,
+    "th17VerifiedDifficulty": "Extra",
+    "capacity": 3
+  }
+}

@@ -22,6 +22,7 @@ const forbiddenExtensions = new Set([".dat", ".data", ".wav", ".ogg", ".mid", ".
 const quickChatVoiceClipAssets = new Set([
   "1", "request-life", "request-power", "share-resources", "follow-me", "spread-out",
   "stop-fire", "bomb-me", "bomb-you", "leaving", "last-game", "last", "thanks", "xxzj",
+  "wait", "sorry", "continue", "lagging", "no-worries", "laugh", "retry", "no-no", "yes-yes", "ah", "move-right", "move-left", "busy", "you-first", "nice", "amazing", "great-opportunity", "feels-good",
 ].map(id => `assets/quick-chat/${id}.wav`));
 const publicAssets = new Set([
   'assets/site-brand.mjs', 'assets/brand/LICENSE.txt', 'assets/brand/portrait.png',
@@ -32,8 +33,7 @@ const publicAssets = new Set([
   "assets/donation.webp",
   "assets/touch-rotate-landscape.webp",
   "assets/notice-bilibili.svg",
-  "assets/notice-touhou-cloud.png",
-  "assets/notice-github.svg", "assets/notice-qq.svg",
+  "assets/notice-github.svg",
   // Repository-owned Phosphor room controls; the MIT notice ships with them.
   "assets/room-caret-left.svg", "assets/room-caret-right.svg",
   "assets/room-chart-bar.svg", "assets/room-copy.svg",

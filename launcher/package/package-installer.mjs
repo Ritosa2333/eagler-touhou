@@ -307,7 +307,7 @@ export async function installPackageFromRemote(descriptor, {
         return response.arrayBuffer();
       } catch (error) {
         if (signal?.aborted || error?.name === "AbortError") throw abortedDownloadError();
-        throw new Error(`${url.pathname}: ${error?.message || error}`);
+        throw new Error(`${url.pathname}: ${error?.message || error}`, {cause: error});
       }
     },
     onProgress,

@@ -1,22 +1,26 @@
+import {downloadFailureDetail} from './network-failure';
 import {normalizeGameVersion} from "../../package/game-version.mjs";
 import {validateReleaseCatalog} from "../../release-catalog.mjs";
 import type {GameVersion} from "../../src/contracts/package-read-models.mts";
 import {PACKAGE_DESCRIPTOR_SCHEMA} from '../../package/package-descriptor.mjs';
 import {componentFileIds} from '../../package/package-generation.mjs';
-import {installPublishedPackage, repairInstalledPackage} from '../../package/package-launcher.mjs';
+import {pc98RequiredBlockFiles} from '../../package/pc98-block-selection.mjs';
+import {fetchPublishedPackage, installPublishedPackage, repairInstalledPackage} from '../../package/package-launcher.mjs';
 import {installPackageFromAcquisition, installParsedPackageZip} from '../../package/package-installer.mjs';
 import {parsePackageZip} from '../../package/package-zip.mjs';
-import {readCurrentPackageGeneration} from '../../package/package-store.mjs';
+import {readCurrentPackageGeneration, readPackageObject} from '../../package/package-store.mjs';
 import {adaptLegacyGamePackToPackage} from '../../compat/legacy-package-adapter.mjs';
 import {parseStoredGameDataPack} from '../../compat/legacy-game-pack.mjs';
-import {HOST_PROTOCOL, PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, productEnabledForBuild, productFeatureAvailable,
-  type GameId, type ProductId} from '../../src/contracts/product-catalog.mts';
+import {HOST_PROTOCOL, PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, productEnabledForBuild,
+  productRequiresImport, type GameId, type ProductId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest, SiteGameData} from '../../src/contracts/site-manifest.mts';
 import {RELEASE_CATALOG_FILE, type ReleaseCatalog} from '../../src/contracts/release-catalog.mts';
 import type {CurrentPackageGeneration, InstalledPackageGeneration, PackageDescriptor, InstalledPackageResult} from '../../src/contracts/package-read-models.mts';
 import type {MusicMode} from '../../src/launcher/game-preferences.mts';
 import type {TransferPresentation} from '../../src/launcher/app-types.mts';
 import {createRawDataImportPackageDescriptor, rawDataImportHashMatches, rawDataImportMatchesFileName, rawDataImportSizeMatches} from '../../src/launcher/raw-data-import.mts';
+import {retailRequiredFiles} from '../../src/launcher/retail-package.mjs';
+import type {RetailInput} from './retail-package';
 import {sha256Hex} from '../../src/launcher/sha256.mts';
 import type {Translate} from '../i18n';
 import {GameDataAcquisitionError} from './game-data-acquisition';
@@ -52,6 +56,7 @@ export interface AcquisitionRequest {
   gameVersion?: GameVersion;
   music: MusicMode;
   language: string;
+  replay?: boolean;
   signal?: AbortSignal;
   /** A cancelled optional update returns to current; a cancelled launch does
    * not. Hosts must not conflate these two original cancellation intents. */
@@ -127,8 +132,6 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
 
   const getPackageFetch = (game: GameId) => network?.packageFetch(game) ?? fetchImpl;
   const background = new Map<GameId, Promise<void>>();
-  const selectedLanguages = (game: GameId, language: string): Readonly<Record<string, readonly string[]>> => productFeatureAvailable(game, 'languages', metadata.getSnapshot().siteManifest?.games[game]?.features)
-    ? {language: language === 'ja' ? [] : [language]} : {};
   function progress(request: Pick<AcquisitionRequest, 'onProgress'>, key: Parameters<Translate>[0], values: Record<string, unknown> = {}) {
     request.onProgress?.({stage: 'package', message: t(key, values),
       ...(typeof values.completed === 'number' ? {completed: values.completed} : {}),
@@ -198,7 +201,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         return {kind: 'managed', generation: result.generation, deferredUpdate: null};
       } catch (error) {
         checkPreparationAbort(request.signal);
-        throw new GameDataAcquisitionError(preparationErrorText(error), {cause: error});
+        throw new GameDataAcquisitionError(downloadFailureDetail(error, t) || preparationErrorText(error), {cause: error});
       } finally {request.onAcquisitionActivity?.(false);}
     }
     // Development materializes the currently selected OGG before reusing current,
@@ -207,6 +210,63 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     let installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"}); checkPreparationAbort(request.signal);
     if (installed.generation) {
       installed = await repair(installed, request);
+      if (['th01', 'th02', 'th04'].includes(game)) {
+        const generation = installed.generation!;
+        const diskFiles = generation.descriptor.components?.['pc98-manifest']
+          ? pc98RequiredBlockFiles(generation.descriptor, {game, language: request.language, multiplayer: isMultiplayerProductId(request.productId), replay: request.replay}) : [];
+        const missingDisk = diskFiles.some(id => !generation.files[id]?.objectId);
+        const legacyTh01 = game === 'th01' && generation.descriptor.runtimeRequirement?.dataLayout === 'sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579';
+        if ((missingDisk && !metadataSnapshot.releaseCatalog) || (legacyTh01 && !metadataSnapshot.siteManifest)) {
+          try {await metadata.initialize();} catch {checkPreparationAbort(request.signal);}
+          metadataSnapshot = metadata.getSnapshot();
+        }
+        const hostedLayout = metadataSnapshot.siteManifest?.games[game]?.gameData?.layout;
+        const installedLayout = generation.descriptor.runtimeRequirement?.dataLayout;
+        const incompatible = !!hostedLayout && !!installedLayout && hostedLayout !== installedLayout;
+        const published = metadataSnapshot.releaseCatalog?.games[game];
+        if (incompatible || (missingDisk && published && published.revision !== generation.descriptor.revision)) {
+          if (!published) throw new GameDataAcquisitionError('游戏资源版本不兼容，无法获取更新');
+          request.onAcquisitionActivity?.(true);
+          try {
+            progress(request, 'package.installingResources');
+            if (incompatible) {
+              const candidate = await fetchPublishedPackage(game, {catalog: metadataSnapshot.releaseCatalog!, catalogUrl,
+                fetchImpl: getPackageFetch(game), signal: request.signal});
+              if (candidate?.descriptor.runtimeRequirement?.dataLayout !== hostedLayout)
+                throw new GameDataAcquisitionError('游戏资源与运行版本不匹配');
+            }
+            const result = await deps.installPublished(game, {catalog: metadataSnapshot.releaseCatalog!, catalogUrl,
+              gameVersion, expectedGenerationId: generation.id, preserveLocalSource: true, signal: request.signal,
+              fetchImpl: getPackageFetch(game), onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
+            checkPreparationAbort(request.signal);
+            await installedChanged(game);
+            return {kind: 'managed', generation: result.generation, deferredUpdate: null};
+          } finally {request.onAcquisitionActivity?.(false);}
+        }
+      } else {
+      const requiredLayout = metadata.getSnapshot().siteManifest?.games[game]?.gameData.layout;
+      const installedLayout = installed.generation!.descriptor.runtimeRequirement?.dataLayout;
+      if (requiredLayout && installedLayout && requiredLayout !== installedLayout) {
+        request.onAcquisitionActivity?.(true);
+        try {
+          progress(request, 'package.installingResources');
+          const publication = await getPublication(gameVersion, request.signal);
+          if (!publication.catalog?.games[game]) throw new Error('游戏资源与当前版本不兼容，请更新游戏资源');
+          const result = await deps.installPublished(game, {...publication, gameVersion,
+            expectedGenerationId: installed.generation!.id, preserveLocalSource: true,
+            addComponents: [], signal: request.signal, fetchImpl: getPackageFetch(game),
+            onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
+          checkPreparationAbort(request.signal);
+          if (result.generation.descriptor.runtimeRequirement?.dataLayout !== requiredLayout)
+            throw new Error('游戏资源与当前版本不兼容，请更新游戏资源');
+          installed = {...installed, generation: result.generation};
+          await installedChanged(game);
+        } catch (error) {
+          checkPreparationAbort(request.signal);
+          throw new GameDataAcquisitionError(downloadFailureDetail(error, t) || preparationErrorText(error), {cause: error});
+        } finally {request.onAcquisitionActivity?.(false);}
+      }
+      }
       if (request.updateBeforePrepare) return installedResult(installed, request);
       const published = metadataSnapshot.releaseCatalog?.games[game];
       return {kind:'managed', generation:installed.generation!,
@@ -225,19 +285,19 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       } catch (error) {
         checkPreparationAbort(request.signal);
         if (error instanceof Error && error.name === 'AbortError') throw error;
-        throw new GameDataAcquisitionError(preparationErrorText(error), {cause: error});
+        throw new GameDataAcquisitionError(downloadFailureDetail(error, t) || preparationErrorText(error), {cause: error});
       } finally {request.onAcquisitionActivity?.(false);}
     }
     if (!host) throw new GameDataAcquisitionError(metadataSnapshot.releaseCatalogError
       ? t('package.remoteUnavailableNoLocal', {game: game, reason: preparationErrorText(metadataSnapshot.releaseCatalogError)})
       : t('package.releaseNotReadyNoLocal', {game: game}));
-    if (host.shared.resourceMode === 'import') throw new GameDataAcquisitionError(t('package.importServerNoFiles'));
+    if (productRequiresImport(game) || host.shared.resourceMode === 'import') throw new GameDataAcquisitionError(t('package.importServerNoFiles'));
     if (host.shared.resourceMode === 'external') throw new GameDataAcquisitionError('外部游戏资源当前不可用，请检查网络 / CDN，或导入本地游戏包');
     if (PRODUCT_GAMES[game].dataProvider === 'retail-memory') {
       try {
         const result = await installDevelopment(game, host, request);
         if (result) return {kind: 'managed', generation: result.generation, deferredUpdate: null};
-      } catch (error) {checkPreparationAbort(request.signal); throw new GameDataAcquisitionError(preparationErrorText(error), {cause: error});}
+      } catch (error) {checkPreparationAbort(request.signal); throw new GameDataAcquisitionError(downloadFailureDetail(error, t) || preparationErrorText(error), {cause: error});}
       throw new GameDataAcquisitionError(t('package.importServerNoFiles'));
     }
     const hosted = host.games[game];
@@ -276,8 +336,74 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         } catch (updateError) {failure = updateError;}
       }
       checkPreparationAbort(request.signal);
-      throw new GameDataAcquisitionError(preparationErrorText(failure), {cause: failure});
+      throw new GameDataAcquisitionError(downloadFailureDetail(failure, t) || preparationErrorText(failure), {cause: failure});
     } finally {if (active) request.onAcquisitionActivity?.(false);}
+  }
+  function originalFileNames(game: GameId): readonly string[] {
+    return getGameVersion(game) === 'original' ? retailRequiredFiles(game) : [];
+  }
+  async function convertOriginal(game: GameId, inputs: readonly RetailInput[], archivePassword: string | undefined, signal?: AbortSignal, onProgress?: AcquisitionRequest['onProgress']) {
+    if (!originalFileNames(game).length) throw Error(t('package.originalUnavailable'));
+    const host = metadata.getSnapshot().siteManifest;
+    const expected = host?.games[game]?.gameData;
+    const fontTargets = [...new Set([...requiredShared(game), '/msgothic.ttc', '/unifont.otf'])];
+    async function loadFont(target: string) {
+      checkPreparationAbort(signal);
+      const shared = metadata.getSnapshot().siteManifest?.shared;
+      const path = target === '/msgothic.ttc' ? shared?.vanillaFont : shared?.unicodeFont;
+      try {
+        const response = await fetchImpl(new URL(path ?? 'shared' + target, baseUrl), {signal, cache: 'force-cache'});
+        if (response.ok) {
+          const font = await response.blob();
+          if (font.size <= 64 * 1024 * 1024) {
+            const header = await font.slice(0, 4).text();
+            if (['ttcf', 'OTTO', '\0\x01\0\0', 'true'].includes(header)) return font;
+          }
+        }
+      } catch {checkPreparationAbort(signal);}
+      // Keep existing installations usable if the font server is offline.
+      if (indexedDBAvailable()) {
+        const candidates = Object.keys(PRODUCT_GAMES).filter(id => id !== game) as GameId[];
+        for (const candidate of [game, ...candidates]) {
+          checkPreparationAbort(signal);
+          const current = await deps.readCurrent(candidate).catch(() => null);
+          const generation = current?.generation;
+          const id = generation?.descriptor.base.files.find(id => generation.descriptor.files[id]?.target === target);
+          const reference = id ? generation?.files[id]?.objectId : undefined;
+          if (!reference) continue;
+          const stored = await readPackageObject(reference).catch(() => null);
+          if (stored?.blob?.size) return stored.blob;
+          if (stored?.data?.byteLength) return new Blob([stored.data]);
+        }
+      }
+      return null;
+    }
+    checkPreparationAbort(signal);
+    const {convertRetailPackage} = await import('./retail-package');
+    return convertRetailPackage({game, expected, inputs, archivePassword, fontTargets, loadFont, signal,
+      onTrack: ({name, completed, total}) => progress({onProgress}, 'package.originalEncoding', {name, completed: completed + 1, total})});
+  }
+  async function importOriginal(game: GameId, inputs: readonly RetailInput[], {signal, onProgress, archivePassword}: Pick<AcquisitionRequest, 'signal' | 'onProgress'> & {archivePassword?: string} = {}) {
+    if (!indexedDBAvailable()) throw Error(t('package.indexedDbUnavailable'));
+    const {descriptor, payloads} = await convertOriginal(game, inputs, archivePassword, signal, onProgress);
+    const result = await deps.installAcquired({descriptor, desiredFileIds: [...payloads.keys()], source: 'local', reuseCurrent: false, signal,
+      acquire: async id => payloads.get(id) ?? null,
+      onProgress: value => progress({onProgress}, 'package.importingProgress', {...value})});
+    await installedChanged(game);
+    try {void requestPersistence?.().catch(() => {});} catch {}
+    return result.generation;
+  }
+  async function importFiles(game: GameId, files: readonly (Blob & {name?: string})[],
+    options: Pick<AcquisitionRequest, 'signal' | 'onProgress'> & {archivePassword?: string} = {}) {
+    if (originalFileNames(game).length) {
+      const {isOriginalGameSelection} = await import('./retail-input-archive');
+      if (await isOriginalGameSelection(files)) {
+        if (!files.every(file => typeof file.name === 'string')) throw Error(t('package.originalUnavailable'));
+        return importOriginal(game, files as readonly RetailInput[], options);
+      }
+    }
+    if (files.length !== 1) throw Error(t('package.importOnePackage'));
+    return importPackage({game, file: files[0], ...options});
   }
   async function importPackage({game, file, signal, onProgress, gameVersion}: {
     gameVersion?: GameVersion; game: GameId; file: Blob & {name?: string}; signal?: AbortSignal; onProgress?: AcquisitionRequest['onProgress'];
@@ -324,7 +450,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     const data = expectedData(), legacy = await deps.parseLegacy(file); checkPreparationAbort(signal);
     if (legacy.manifest.game !== game) throw new Error(t('package.legacyWrongGame', {actual: legacy.manifest.game, expected: game}));
     if (legacy.manifest.data.path !== data.path) throw new Error(t('package.dataPathMismatch'));
-    if (host?.shared.resourceMode === 'import' && !legacy.offline) throw new Error(t('package.serverNoContent'));
+    if ((productRequiresImport(game) || host?.shared.resourceMode === 'import') && !legacy.offline) throw new Error(t('package.serverNoContent'));
     if (legacy.offline) {
       const missing = requiredShared(game).find(target => !legacy.offline!.shared.some(item => item.target === target));
       if (missing) throw new Error(t('package.missingRequiredResource', {resource: missing.slice(1)}));
@@ -369,7 +495,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         try {
           const result = await deps.installPublished(game, {...publication, gameVersion: request.gameVersion ?? 'original', addComponents: [],
             expectedGenerationId: installed.generation.id, preserveLocalSource: true, signal: request.signal,
-            fetchImpl: getPackageFetch(game), selectedComponentEntries: selectedLanguages(game, request.language),
+            fetchImpl: getPackageFetch(game), preferredLanguage: request.language,
             onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
           checkPreparationAbort(request.signal); await installedChanged(game);
           return {kind: 'managed', generation: result.generation, deferredUpdate: null};
@@ -393,7 +519,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       if (current.generation?.id !== installed.generation!.id) return;
       const result = await deps.installPublished(game, {catalog, catalogUrl:publicationUrl, gameVersion:request.gameVersion ?? 'original', addComponents:[], preserveLocalSource:true,
         expectedGenerationId:installed.generation!.id,
-        fetchImpl:network?.backgroundFetch ?? fetchImpl, selectedComponentEntries:selectedLanguages(game, request.language)});
+        fetchImpl:network?.backgroundFetch ?? fetchImpl, preferredLanguage:request.language});
       if (result.generation.descriptor.revision !== published.revision) throw new Error('Downloaded Package does not match its publication');
       await installedChanged(game);
       request.onUpdateReady?.();
@@ -401,7 +527,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       .finally(() => {if (background.get(game) === task) background.delete(game);});
     background.set(game, task); return task;
   }
-  return Object.freeze({acquire, importPackage, startBackgroundUpdate, catalogUrl, fetchImpl, getPackageFetch, languageNetwork: network, installPublished,
+  return Object.freeze({acquire, importPackage, importFiles, originalFileNames, startBackgroundUpdate, catalogUrl, fetchImpl, getPackageFetch, languageNetwork: network, installPublished,
     readCurrent, getGameVersion, getPublication, getCatalogUrl, getMetadata: () => metadata.getSnapshot(), refreshInstalled: installedChanged});
 }
 export type PackageAcquisition = ReturnType<typeof createPackageAcquisition>;

@@ -1,4 +1,5 @@
 #include "ItemManager.hpp"
+#include <algorithm>
 #include <cmath>
 namespace th15 {
 namespace {
@@ -11,7 +12,10 @@ bool ItemManager::update(ItemFrameContext& default_context){
     auto& c=default_context;
     if(c.character<0||c.character>3){error="Invalid item frame character";return false;}animations.rate=c.rate;cancel_density=0;active_count=0;
     const auto auto_collect=[](const ItemFrameContext& c){return c.directed_item||(c.player_state!=2&&c.player_state!=4&&c.player.position.y<float(c.character==1?148:128))||(c.bomb_state==1&&c.bomb_frame<60)||c.hud_collect;};
-    for(u32 index=0;index<pool_size;index++){
+    for(u32 page=0;page<snapshot_pages;++page){
+      if(!(snapshot_active[page]|snapshot_exposed[page]))continue;
+      const u32 begin=page*snapshot_page_size,end=std::min(begin+snapshot_page_size,pool_size);
+      for(u32 index=begin;index<end;index++){
         auto& slot=slots[index];auto& s=slot.state;if(!s.state)continue;
         auto* selected=multiplayer_context?multiplayer_context(index,s):nullptr;
         auto passive=default_context;const bool unowned=multiplayer_context&&!selected;
@@ -35,6 +39,7 @@ bool ItemManager::update(ItemFrameContext& default_context){
         }
         for(AnmVm* vm:{slot.body.get(),slot.arrow.get()})if(vm&&vm->visual.visible()&&animations.tick_instance(*vm)<0){error=animations.error;return false;}
         s.age.tick(&c.rate);active_count=wrapping_add(active_count,1);
+    }
     }
     if(motion_scale<1.f)motion_scale=float(motion_scale+.1f);return true;
 }

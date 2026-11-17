@@ -5,7 +5,19 @@ export class NativeSimulation{
   reset(){
     const s=this.settings,e=this.core;this.resultFrames=0;
     e.th_init(s.players,s.count,0x12345678,s.lifeCompensation?1:0);
-    e.th_set_netplay_rules(1);e.th_set_difficulty(s.rank);applyStage(e,s.startStage);
+    e.th_set_netplay_rules(1);
+    if(s.initialSpares!==undefined){
+      // Native TH01 keeps the active player's stocks and each cooperative
+      // player bank separately; all must start with the same room settings.
+      const memory=new DataView(e.memory.buffer);
+      memory.setInt32(2537012,s.initialSpares,true);memory.setInt32(2537000,s.initialBombs,true);
+      memory.setInt32(2577512,s.initialSpares,true);
+      for(let slot=0;slot<s.players;slot++){
+        memory.setInt32(2545592+slot*52,s.initialSpares,true);
+        memory.setInt16(2545586+slot*52,s.initialBombs,true);
+      }
+    }
+    e.th_set_difficulty(s.rank);applyStage(e,s.startStage);
   }
   start(){this.stopped=false;}
   state(){

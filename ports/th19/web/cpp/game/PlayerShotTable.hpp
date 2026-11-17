@@ -34,6 +34,8 @@ inline void advanceChargeTalisman(int age,float& speed){
 // 0x54aae0 sets motion flag 0x20 at the bite transition. 0x4d4dc0
 // and 0x4d4a00 then skip velocity integration; only the callback's
 // explicit four-unit movement on the next ten ticks remains.
+// 0x54aae0: the bite clears only on [transition+10, transition+20).
+inline bool enokoChargeCancels(int age,int transition){return age>=transition+10&&age<transition+20;}
 inline bool enokoChargeFrozen(int age,int transition){return age>=transition;}
 inline float enokoChargeStep(int age,int transition){return age>transition&&age<=transition+10?4.f:0.f;}
 // Native update callbacks 0x54c7a0 (3) / 0x54a960 (14).
@@ -55,6 +57,7 @@ inline float initializeSpecialShot(int callback,float angle,float unit){
 struct PlayerShotTable {
  std::vector<std::vector<ShotDefinition>> groups;
  int option_script=-1,option_power_script=-1;
+ int damage_cap=0;
  struct Position {float x=0,y=0;};
  Position option_positions[2][10]{};
  Position option_position(int power,int index,bool focused)const {
@@ -88,6 +91,7 @@ struct PlayerShotTable {
     parsed[g].push_back(d);
    }
   }
+  damage_cap=std::max(0,i32at(0x28));
   option_script=i32at(0x3c);option_power_script=i32at(0x40);
   for(int mode=0;mode<2;++mode)for(int i=0;i<10;++i){
    auto&p=option_positions[mode][i];p={f(0x50+mode*0x50+i*8),f(0x54+mode*0x50+i*8)};

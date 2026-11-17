@@ -19,7 +19,6 @@ html[data-book-theme='light']{--career-paper:#fff}
 
 .career-viewer{position:fixed;inset:0;box-sizing:border-box;width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;padding:0;border:0;background:var(--book-bg,#f6f2eb);color:var(--book-ink,#302c28);font-family:inherit;overflow:clip}
 .career-viewer[open]{display:flex;flex-direction:column}
-.career-viewer::backdrop{background:#211c18b3}
 .career-viewer *{box-sizing:border-box}
 .career-viewer [hidden]{display:none!important}
 .career-viewer-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex:none;padding:18px 24px;border-bottom:1px solid var(--book-border,#ddd5ca);background:var(--book-surface,#fffdf8)}
@@ -81,9 +80,8 @@ html[data-book-theme='light']{--career-paper:#fff}
 .career-record-tags>span{padding:4px 7px;border:1px solid var(--book-border,#ddd5ca);border-radius:4px;color:var(--book-muted,#8b8075);font-size:10px}
 .career-viewer-status{position:absolute;inset:auto 24px 12px;z-index:1;pointer-events:none;max-height:5.1em;overflow:hidden;border-radius:6px;padding:9px 16px;border-top:1px solid var(--book-border,#ddd5ca);background:var(--book-surface,#fffdf8);color:var(--book-muted,#8b8075);font-size:10px;line-height:1.7}
 
-.career-help-dialog{position:fixed;inset:0;box-sizing:border-box;width:min(680px,calc(100vw - 48px));max-height:min(800px,calc(100dvh - 64px));margin:auto;padding:0;border:1px solid var(--book-border,#ddd5ca);border-radius:14px;background:var(--book-surface,#fffdf8);color:var(--book-ink,#302c28);box-shadow:0 28px 90px #0005;font-family:inherit;overflow:hidden}
+.career-help-dialog{position:fixed;inset:0;box-sizing:border-box;width:min(680px,calc(100vw - 48px));max-height:min(800px,calc(100dvh - 64px));margin:auto;padding:0;border:1px solid var(--book-border,#ddd5ca);border-radius:14px;background:var(--book-surface,#fffdf8);color:var(--book-ink,#302c28);box-shadow:var(--ui-window-shadow);font-family:inherit;overflow:hidden}
 .career-help-dialog[open]{display:flex;flex-direction:column}
-.career-help-dialog::backdrop{background:#1119;backdrop-filter:blur(5px)}
 .career-help-dialog>header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex:none;padding:22px 28px;border-bottom:1px solid var(--book-border,#ddd5ca)}
 .career-help-dialog h2{margin:0;font-size:17px;font-weight:700}
 .career-help-dialog>header button{width:30px;height:30px;min-height:0;padding:0;border:0;background:transparent;font-size:22px}

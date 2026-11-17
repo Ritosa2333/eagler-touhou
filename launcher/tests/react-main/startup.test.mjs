@@ -19,7 +19,7 @@ before(async () => {
       if (path.startsWith(resolve(root, 'src') + '/') && existsSync(authored)) return {path: authored};
     });}}]}); ({createStartupController} = await import(pathToFileURL(outfile).href));
 });
-afterEach(() => {for (const x of active) x.owner.dispose(); active = []; env.document.body.replaceChildren(); env.document.documentElement.removeAttribute('data-lobby-boot'); env.document.documentElement.removeAttribute('data-original-entry'); assert.deepEqual(env.errors, []);});
+afterEach(() => {for (const x of active) x.owner.dispose(); active = []; env.document.body.replaceChildren(); env.document.documentElement.removeAttribute('data-ui-app'); env.document.documentElement.removeAttribute('data-lobby-boot'); env.document.documentElement.removeAttribute('data-original-entry'); assert.deepEqual(env.errors, []);});
 after(async () => {env?.close(); if (work) await rm(work, {recursive: true, force: true});});
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function deferred() {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};}
@@ -34,7 +34,7 @@ function fixture({path = '/', shown = false, continueVisit = true, warning = nul
     boot: {ready() {events.push('ready');}}, async waitDirectoryRendered() {events.push('directory'); if (directory) await directory.promise;},
     async warnDiscouragedBrowser(isCurrent) {events.push('warning'); if (warning) await warning.promise; events.push(`warning-current:${isCurrent()}`); return continueVisit;},
     async showFirstUseAutomatically() {events.push('first-use'); if (firstUse) await firstUse.promise; return shown;},
-    async loadSiteNotice() {events.push('site');}, onError(error) {events.push(error);}};
+    onError(error) {events.push(error);}};
   const f = {owner, ports, events, fonts, decoded, timers, frames,
     raf() {const callbacks = [...frames.values()]; frames.clear(); for (const fn of callbacks) fn();},
     timeout(delay) {clock += delay; for (const [id, entry] of [...timers]) if (entry.delay === delay) {timers.delete(id); entry.fn();}},
@@ -51,9 +51,9 @@ test('original boot script/CSS/preload are exact substrings, retaining diagnosti
   assert.match(sources.library.script, /12000/); assert.match(sources.library.script, /EAGLER-BOOT\/1/);
   assert.match(sources.lobby.script, /25000/); assert.match(sources.lobby.preload, /大厅暂时未能加载。/);
 });
-test('StrictMode attach-cleanup-attach starts one actual ready and warning→first-use→site sequence', async () => {
+test('StrictMode attach-cleanup-attach starts one actual ready and warning→first-use sequence', async () => {
   const f = fixture(); f.owner.attach(f.ports)(); f.owner.attach(f.ports); await tick();
-  assert.deepEqual(f.events, ['ready', 'warning', 'warning-current:true', 'first-use', 'site']);
+  assert.deepEqual(f.events, ['ready', 'warning', 'warning-current:true', 'first-use']);
 });
 test('direct lobby entry returns to library without calling an absent library boot owner', async () => {
   const f = fixture({path: '/lobby.html'});
@@ -62,7 +62,7 @@ test('direct lobby entry returns to library without calling an absent library bo
   const leaveLobby = f.owner.attach(f.ports); await tick(); f.raf(); f.raf();
   leaveLobby();
   const leaveLibrary = f.owner.attach({...f.ports, context: 'library', url: 'https://launcher.invalid/'}); await tick();
-  assert.deepEqual(f.events, ['directory', 'warning', 'warning-current:true', 'first-use', 'site']);
+  assert.deepEqual(f.events, ['directory', 'warning', 'warning-current:true', 'first-use']);
   assert.equal(env.document.documentElement.getAttribute('data-original-entry'), 'lobby');
   leaveLibrary(); f.owner.attach(f.ports); await tick();
   assert.equal(f.events.filter(event => event === 'directory').length, 1, 'warm lobby entry reuses the visible directory without a boot gate');
@@ -105,7 +105,7 @@ test('standalone profile route skips automatic launcher notices', async () => {
   const f = fixture({path: '/profile.html'}); f.owner.attach(f.ports); await tick();
   assert.deepEqual(f.events, ['ready']);
 });
-test('first-use shown suppresses site notice; no duplicate initialization after completed binding', async () => {
+test('first-use is shown once; no duplicate initialization after completed binding', async () => {
   const f = fixture({shown: true}); const detach = f.owner.attach(f.ports); await tick(); detach(); f.owner.attach(f.ports); await tick();
   assert.deepEqual(f.events, ['ready', 'warning', 'warning-current:true', 'first-use']);
 });
@@ -113,25 +113,21 @@ test('FAQ choice ends entry notice sequence', async () => {
   const f = fixture({continueVisit: false}); f.owner.attach(f.ports); await tick();
   assert.deepEqual(f.events, ['ready', 'warning', 'warning-current:true']);
 });
-test('room entry still gets browser warning but neither first-use nor site notice', async () => {
+test('room entry still gets browser warning and skips first-use', async () => {
   const f = fixture({path: `/?j=${encodeRoomInvite({g: 'th06mp', r: '1234'})}`}); f.owner.attach(f.ports); await tick();
   assert.deepEqual(f.events, ['ready', 'warning', 'warning-current:true']);
 });
-test('actual debug and any nonempty preview skip warning/first-use and load site notice', async () => {
+test('actual debug and any nonempty preview skip warning and first-use', async () => {
   for (const path of ['/?debug=1', '/?preview=unrelated']) {
-    const f = fixture({path}); f.owner.attach(f.ports); await tick(); assert.deepEqual(f.events, ['ready', 'site']);
+    const f = fixture({path}); f.owner.attach(f.ports); await tick(); assert.deepEqual(f.events, ['ready']);
   }
 });
 test('lobby embedded-options entry suppresses all automatic notices', async () => {
   const f = fixture(); f.ports.lobbyOptionsEmbed = true; f.owner.attach(f.ports); await tick(); assert.deepEqual(f.events, ['ready']);
 });
-test('retired warning continuation cannot open first-use or site notice', async () => {
+test('retired warning continuation cannot open first-use', async () => {
   const warning = deferred(), f = fixture({warning}); const detach = f.owner.attach(f.ports); await tick(); detach(); warning.resolve(); await tick();
   assert.deepEqual(f.events, ['ready', 'warning', 'warning-current:false']);
-});
-test('retired first-use load cannot revive site notice', async () => {
-  const firstUse = deferred(), f = fixture({firstUse}); const detach = f.owner.attach(f.ports); await tick(); detach(); firstUse.resolve(); await tick();
-  assert.equal(f.events.includes('site'), false);
 });
 test('lobby waits for original render boundary, uses exact fonts, double RAF and200ms retirement', async () => {
   const directory = deferred(), f = fixture({path: '/lobby.html', directory});
@@ -139,7 +135,7 @@ test('lobby waits for original render boundary, uses exact fonts, double RAF and
   env.document.documentElement.dataset.lobbyBoot = 'loading'; env.document.body.innerHTML = '<main class="lobby-main" inert><img src="https://launcher.invalid/cover.webp"></main><div id="lobbyPreload"></div>';
   const main = env.document.querySelector('main'); main.inert = true;
   f.owner.attach(f.ports); await tick(); assert.equal(f.decoded.length, 1); assert.equal(f.frames.size, 0);
-  assert.equal(f.events.includes('warning'), false); assert.equal(f.events.includes('first-use'), false); assert.equal(f.events.includes('site'), false);
+  assert.equal(f.events.includes('warning'), false); assert.equal(f.events.includes('first-use'), false);
   directory.resolve(); await tick(); assert.equal(f.fonts.length, 4); assert.match(f.fonts[0][0], /ET Yatra/); assert.equal(f.decoded.length, 2);
   f.raf(); assert.equal(main.inert, true); f.raf(); assert.equal(main.inert, false); assert.equal(env.document.documentElement.hasAttribute('data-lobby-boot'), false);
   assert.equal(env.document.getElementById('lobbyPreload').getAttribute('aria-hidden'), 'true'); f.timeout(200); assert.equal(env.document.getElementById('lobbyPreload'), null);
@@ -163,6 +159,16 @@ test('library deferred fonts load only on first interaction and never duplicate'
   assert.equal(env.document.querySelectorAll('link[data-deferred-ui-fonts]').length, 1);
   assert.equal(env.document.querySelector('link[data-deferred-ui-fonts]').href, 'https://launcher.invalid/mount/ui-fonts-deferred.css');
 });
+test('modern library omits hidden background decode while account/profile routes retain it', async () => {
+  env.document.documentElement.setAttribute('data-ui-app', '');
+  const home = fixture(); home.owner.attach(home.ports); await tick();
+  home.owner.attach(home.ports); await tick();
+  assert.equal(home.decoded.some(source => source.endsWith('/assets/launcher-background.webp')), false);
+  assert.equal(home.fonts.length, 4, 'the library still waits for its critical fonts');
+
+  home.owner.attach({...home.ports, url: 'https://launcher.invalid/u/performance-check'}); await tick();
+  assert.ok(home.decoded.includes('https://launcher.invalid/mount/assets/launcher-background.webp'));
+});
 
 test('lobby notice completion cannot consume interrupted library first-use on return', async () => {
   const firstUse = deferred(), f = fixture({firstUse, shown: true});
@@ -170,12 +176,10 @@ test('lobby notice completion cannot consume interrupted library first-use on re
   assert.equal(f.events.filter(event => event === 'first-use').length, 1);
   leaveLibrary();
   const leaveLobby = f.owner.attach({...f.ports, context: 'lobby', url: 'https://launcher.invalid/lobby.html'}); await tick();
-  assert.equal(f.events.filter(event => event === 'site').length, 0);
   firstUse.resolve(); await tick();
   leaveLobby();
   const leaveReturnedLibrary = f.owner.attach(f.ports); await tick();
   assert.equal(f.events.filter(event => event === 'first-use').length, 2, 'unfinished library notice sequence resumes after a different context completes');
-  assert.equal(f.events.filter(event => event === 'site').length, 0, 'returned first-use presentation still suppresses the library site notice');
   leaveReturnedLibrary(); f.owner.attach(f.ports); await tick();
   assert.equal(f.events.filter(event => event === 'first-use').length, 2, 'successfully completed library sequence remains once-only');
 });

@@ -10,7 +10,7 @@ struct GameRun {
     i32 initial_stage=1,replay_reserved_40=0,replay_reserved_60=0;float rate=1;
     // Only for identified recordings made by the early web release. This is
     // application state, never part of the original serialized run layout.
-    bool historical_web_replay=false;
+    bool historical_web_replay=false,enhanced_practice=false;
 };
 struct GameRecords {
     TitleRecords title;

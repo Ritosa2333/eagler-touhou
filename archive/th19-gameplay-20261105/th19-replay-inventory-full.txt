@@ -1,0 +1,58 @@
+0054fd10 FUN_0054fd10
+  005a99a8
+0054ff60 FUN_0054ff60
+  00550e24
+  00551047
+00550030 FUN_00550030
+  00550e06
+  00551029
+00550120 FUN_00550120
+  0055100e
+00550130 FUN_00550130
+  00550de5
+00550250 FUN_00550250
+  00550ea6
+  00551093
+  005510c6
+005505b0 FUN_005505b0
+00550670 FUN_00550670
+00550750 FUN_00550750
+  00550127
+00550a60 FUN_00550a60
+  00430236
+00550dd0 FUN_00550dd0
+  00518700
+005510b0 FUN_005510b0
+  005386f9
+  005389d4
+00551130 FUN_00551130
+  005389cb
+00551aa0 FUN_00551aa0
+  00538c38
+00551b70 FUN_00551b70
+  005389b0
+00551c00 FUN_00551c00
+  00552124
+  00552257
+  00551e20
+00551de0 FUN_00551de0
+00551e60 FUN_00551e60
+00593ce8 replay
+  004b6905
+00593cf0 replay
+  004b6916
+0059d27c th19_%.2d.rpy
+  005386e1
+0059d28c th19_%.2d.rpy
+  00538992
+005a04b4 D:\cygwin\home\zun\prog\th19\src\game\replay.cpp:155 ReplayInf
+005a04f4 D:\cygwin\home\zun\prog\th19\src\game\replay.cpp:173 ReplayInf
+005a0538 replay/%s
+  005512bc
+005a0544 D:\cygwin\home\zun\prog\th19\src\game\replay.cpp:638 void
+005a0580 D:\cygwin\home\zun\prog\th19\src\game\replay.cpp:688 char
+005a06d0 replay/%s
+  0055029c
+005a06e0 D:\cygwin\home\zun\prog\th19\src\game\replay.cpp:804 ReplayFrameDataInf
+005a0728 D:\cygwin\home\zun\prog\th19\src\game\replay.cpp:957 ReplayStageDataHeaderInf
+005cfb10 .?AVReplayInf@@

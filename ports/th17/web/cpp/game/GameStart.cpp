@@ -4,7 +4,7 @@ bool GameStart::check(bool ok,const char* message){if(!ok&&error.empty())error=m
 bool GameStart::begin(bool fresh){
     if(u32(run.character)>=3||u32(run.animal)>=3||u32(run.difficulty)>=5||run.stage<1||run.stage>7)return check(false,"Invalid run selection");
     const u32 loadout=u32(run.character*3+run.animal);
-    if(!run.practice_record)records.title.stage_available[loadout][run.difficulty][run.stage-1]=1;
+    if(!run.practice_record&&!run.enhanced_practice)records.title.stage_available[loadout][run.difficulty][run.stage-1]=1;
     if(!fresh){if(u32(score.score)>u32(run.scoring.high_score))run.scoring.high_score=score.score;return true;}
     if(run.stage==7&&run.difficulty<4)run.difficulty=4;score.difficulty=run.difficulty;
     const u32 mode=run.scoring.mode_flags>>4&3;
@@ -16,6 +16,8 @@ bool GameStart::begin(bool fresh){
     player.bombs=run.animal==1?4:3;player.power_step=1;player.initial_bombs=player.bombs;
     if(!check(host.previous_bomb_display(player.bombs,player.bomb_pieces),"Previous bomb display unavailable"))return false;
     player.bomb_pieces=player.life_pieces=score.life_piece_tier=player.deaths=0;
+    player.practice_bombs=player.practice_roars=player.practice_roar_breaks=player.practice_special_spirits=0;
+    for(auto& count:player.practice_roar_animals)count=0;
     roaring.count=0;roaring.reward_age.set(0);roaring.countdown.set(0);roaring.duration=roaring.kind=roaring.extension=0;
     run.initial_point_value=1000000;score.max_point_value=50000000;
     score.point_value=truncate_int(float(float(run.initial_point_value)/100.f)*100.f);
@@ -30,7 +32,7 @@ bool GameStart::begin(bool fresh){
     else player.power=full<=score.max_power?std::max(full,player.power_step):score.max_power;
     if(!check(host.configure_player(),"Initial player options failed"))return false;
     run.scoring.mode_flags&=~4u;
-    if(!run.practice_record&&run.demo_slot<0&&records.starts[loadout]<9999999)records.starts[loadout]=wrapping_add(records.starts[loadout],1);
+    if(!run.practice_record&&!run.enhanced_practice&&run.demo_slot<0&&records.starts[loadout]<9999999)records.starts[loadout]=wrapping_add(records.starts[loadout],1);
     return true;
 }
 }

@@ -1,0 +1,86 @@
+{
+  "count": 2,
+  "route": "rtc",
+  "mode": 0,
+  "jitter": false,
+  "running": [
+    {
+      "frame": 251,
+      "route": "rtc",
+      "inputDelay": 0,
+      "saveRoot": "/savesth05mp"
+    },
+    {
+      "frame": 251,
+      "route": "rtc",
+      "inputDelay": 0,
+      "saveRoot": "/savesth05mp"
+    }
+  ],
+  "spectator": {
+    "receiveSocketOpen": true,
+    "receiveOnly": true,
+    "frame": 361,
+    "hostFrame": 364,
+    "checkedFrame": 240,
+    "hostHash": -25496982,
+    "viewerHash": -25496982,
+    "stock": [
+      3,
+      3
+    ]
+  },
+  "timeline": {
+    "paused": 361,
+    "receivedWhilePaused": 375,
+    "seek": 240,
+    "restart": 0,
+    "live": {
+      "version": 1,
+      "run": "sd73401beed8807ee_0",
+      "revision": 20,
+      "min": 0,
+      "position": 409,
+      "received": 412,
+      "edge": 412,
+      "target": 412,
+      "paused": false,
+      "seeking": false,
+      "following": true,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "readOnly": true
+  },
+  "boundaries": [
+    {
+      "stage": 1,
+      "transitionTicks": 1,
+      "bytes": 360,
+      "checksum": -1898612793
+    },
+    {
+      "stage": 2,
+      "transitionTicks": 1,
+      "bytes": 360,
+      "checksum": -661945418
+    },
+    {
+      "stage": 3,
+      "transitionTicks": 1,
+      "bytes": 360,
+      "checksum": 1564630615
+    }
+  ],
+  "errors": [],
+  "runtimeErrors": [],
+  "passed": true
+}

@@ -1,0 +1,47 @@
+diff --git a/ports/th09/web/cpp/sdl/Application.cpp b/ports/th09/web/cpp/sdl/Application.cpp
+--- a/ports/th09/web/cpp/sdl/Application.cpp
++++ b/ports/th09/web/cpp/sdl/Application.cpp
+@@ -93,9 +93,16 @@
+ static void th09_network_result() {}
+ #if TH09_NATIVE_ROOM
+-static std::optional<std::uint32_t> native_match_start;
++static std::optional<std::uint32_t> native_match_start, native_replay_start;
++namespace th09::sdl { namespace { void th09_publish_match_replay(std::uint32_t start); } }
+ #endif
+ static void th09_network_replay_boundary(std::uint32_t frame, int winner) {
+ #if TH09_NATIVE_ROOM
+-    if (winner < 0) native_match_start = frame;
++    if (winner < 0) {
++        native_replay_start = native_match_start = frame;
++    } else if (native_replay_start) {
++        const auto start = *native_replay_start;
++        native_replay_start.reset();
++        th09::sdl::th09_publish_match_replay(start);
++    }
+ #endif
+ }
+@@ -532,4 +539,18 @@
+ };
+ std::unique_ptr<Application> probe;std::string failure;
++#if TH09_NATIVE_ROOM && !defined(__EMSCRIPTEN__)
++void th09_publish_match_replay(std::uint32_t start) {
++    auto& room = th09_native_room_transport();
++    const auto* site = SDL_getenv("EAGLER_DESKTOP_OVERLAY_SITE");
++    if (!room.MatchReplayEnabled() || !probe || !probe->complete || !probe->session || !site || !*site) return;
++    auto& session = *probe->session;
++    const auto random = probe->state.random;
++    const auto error = session.error;
++    auto bytes = session.save_replay("AUTO").encode();
++    probe->state.random = random;
++    session.error = error;
++    room.PublishMatchReplay(start, std::move(bytes), site);
++}
++#endif
+ bool running=false,suspended=false,room_preview=false;u32 loop_epoch=0;double previous_frame=-1;multiplayer::FrameSchedule cadence;
+ multiplayer::RecoverySchedule recovery_schedule;
+@@ -1781,4 +1802,5 @@
+             start = nlohmann::json::parse(options);
+             native_match_start.reset();
++            native_replay_start.reset();
+             publishedTiming = false;
+             namespace stream = th09::desktop;

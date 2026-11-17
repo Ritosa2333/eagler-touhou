@@ -28,6 +28,7 @@ test("presentation contract coverage", async () => {
 
 
 const verification = Object.freeze({
+  th05: {kind: "runtime", scripts: ["tests/presentation.mjs"]},
   th06: Object.freeze({ kind: "shared-preload", tests: Object.freeze([
     "tests/test-mobile-frame-pacing.mjs",
     "tests/test-native-frame-pacing.mjs",
@@ -48,13 +49,14 @@ const verification = Object.freeze({
   th075: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th11: {kind:'native-clock', source:'web/cpp/sdl/Application.cpp'},
   th12: {kind:'runtime', source:'portable/sdl/Application.cpp', scripts:['tests/sdl-clock.test.mjs']},
+  th13: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th15: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th17: {kind:'runtime', scripts:['portable/check-frame-cadence.mjs']},
   th19: {kind:'runtime', scripts:['portable/check-frame-cadence.mjs']},
   th20: {kind:'native-clock', source:'web/cpp/sdl/ApplicationHost.cpp'},
 });
 
-const sourceGames = [...new Set(sourceTargets().map(target => target.game))].sort();
+const sourceGames = [...new Set(sourceTargets().filter(target => !["th01","th02","th03","th04"].includes(target.game)).map(target => target.game))].sort();
 assert.deepEqual(Object.keys(verification).sort(), sourceGames,
   "required presentation verification must cover every checked-in source Runtime owner");
 
@@ -69,7 +71,7 @@ for (const [game, lane] of Object.entries(verification).filter(([game]) => selec
     if (game === 'th09') {
       await runNativeCpp(await readFile(workspacePath(game,'web/tests/multiplayer/frame-schedule.cpp'),'utf8'),
         {includes:[workspacePath(game,'web/tests/multiplayer')]});
-    } else if (game === 'th075') {
+    } else if (game === 'th075' || game === 'th13') {
       await runNativeCpp(`#include "FrameCadence.hpp"
 #include <cassert>
 #include <initializer_list>

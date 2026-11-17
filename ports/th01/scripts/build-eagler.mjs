@@ -58,6 +58,7 @@ await patch('bgm/akyu/manifest.json',text=>text.replace(/\.opus/g,'.ogg'));
 // Adapted sources have their own verified identity; keep upstream asset checks active.
 for(const manifestPath of ['netplay/runtime.json','lockstep-runtime.json']) {
   let manifest;try{manifest=JSON.parse(await readFile(resolve(output,manifestPath),'utf8'));}catch(error){if(error.code==='ENOENT')continue;throw error;}
+  if(manifestPath==='netplay/runtime.json' && manifest.files)for(const name of ['pc98-rollback-client.mjs','rollback-core.wasm'])manifest.files[name]=sha(await readFile(resolve(output,name)));
   for(const table of [manifest.files,manifest.assets])if(table)for(const name of Object.keys(table)) {
     if(name===manifestPath)throw Error('Self-referencing runtime hash');
     try{const bytes=await readFile(resolve(output,name));if(typeof table[name]==='string')table[name]=sha(bytes);}catch(error){if(error.code!=='ENOENT')throw error;if(!names.includes(name))delete table[name];}

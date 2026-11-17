@@ -195,6 +195,11 @@ def project(git, head, game, write_refs=False, track_normal=False):
         if owned & boundaries:
             raise RuntimeError("Imported history is shallow for " + title + "; complete original repository history before projection")
         mapping = {identity: identity for identity in owned}
+        source_snapshots = {}
+        if subtree_source:
+            for row in git.run("log", "--format=%H %T", initial["head"]).splitlines():
+                commit, tree = row.split()
+                source_snapshots.setdefault(tree, commit)
         trees = {}
         created = []
         namespace = set()
@@ -233,8 +238,12 @@ def project(git, head, game, write_refs=False, track_normal=False):
                 # first authoritative export is the validated source split;
                 # only that pre-join interval may lack projected ancestry.
                 if subtree_source and git.ancestor(identity, initial["importCommit"]):
-                    mapping[identity] = None
-                    namespace.discard(identity)
+                    # A side branch can fork before the join and reach main
+                    # independently. Anchor exact snapshots to the exported
+                    # source history so the side branch retains its ancestry.
+                    mapping[identity] = source_snapshots.get(subtree)
+                    if mapping[identity] is None:
+                        namespace.discard(identity)
                     continue
                 raise RuntimeError("Unanchored directory history: " + identity + " " + prefix)
             projected_parents = [parent for parent in projected_parents if not any(

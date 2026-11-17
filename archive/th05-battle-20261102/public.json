@@ -1,0 +1,101 @@
+{
+  "siteUrl": "https://touhouonline.com/",
+  "passed": true,
+  "players": 3,
+  "language": "lang_zh-hans",
+  "rollback": true,
+  "native": [
+    {
+      "frame": 365,
+      "confirmed": 364,
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "route": "rtc"
+    },
+    {
+      "frame": 365,
+      "confirmed": 363,
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "route": "rtc"
+    },
+    {
+      "frame": 365,
+      "confirmed": 363,
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "route": "rtc"
+    }
+  ],
+  "spectator": {
+    "errors": [],
+    "paused": {
+      "version": 1,
+      "run": "sb896aa26fdd2985d_0",
+      "revision": 4,
+      "min": 0,
+      "position": 1829,
+      "received": 1830,
+      "edge": 1830,
+      "target": 1829,
+      "paused": true,
+      "seeking": false,
+      "following": false,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "receivedWhilePaused": 1841,
+    "live": {
+      "version": 1,
+      "run": "sb896aa26fdd2985d_0",
+      "revision": 10,
+      "min": 0,
+      "position": 1856,
+      "received": 1868,
+      "edge": 1868,
+      "target": 1868,
+      "paused": false,
+      "seeking": false,
+      "following": true,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "exitPreservesPlayers": true
+  },
+  "errors": [],
+  "httpErrors": [],
+  "mirrors": {
+    "primary": "th05-battle-20261102",
+    "jp": "hk-th05-battle-20261102-87779b5c3a47",
+    "cn": "hk-th05-battle-20261102-87779b5c3a47-mirror-8c3d859ab612"
+  },
+  "sourceCommit": "4360221118859a675951e443a5c31a6c75e0822f"
+}

@@ -21,13 +21,14 @@ if(hash(wasm)!==build.sha256)throw Error('Wasm build identity mismatch');
 for(const {name} of WebAssembly.Module.exports(new WebAssembly.Module(wasm)))
  if(/^(?:application_|th15_probe|th15_spectator_lab_|audit_|presentation_lab_)/.test(name))throw Error('Diagnostic export in production: '+name);
 const fontNames=['cp932.bin'];
-const names=['crash-code-identities.json','runtime-crash-reporter.js','th15.html','manifest.json','startup-branding.mjs','shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','th15.mjs','th15.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
+const names=['crash-code-identities.json','runtime-crash-reporter.js','th15.html','manifest.json','startup-branding.mjs','shell.mjs','save-sync.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','th15.mjs','th15.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
 if(multiplayer)names.push('multiplayer.mjs','adonis-calibration.mjs');
 const allowed=new Set([...names,'runtime-files.json']);
 function walk(dir){return existsSync(dir)?readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]):[];}
 for(const file of walk(out))if(!allowed.has(relative(out,file).replaceAll('\\','/')))throw Error('Unexpected Runtime file: '+file);
 function put(name,bytes){const file=resolve(out,name);mkdirSync(dirname(file),{recursive:true});writeFileSync(file,bytes);}
 const shellRoot=resolve(root,'web/sdl-runtime');
+put('save-sync.mjs',readFileSync(resolve(process.env.EAGLER_COMMON_ROOT||resolve(root,'../../common'),'browser/save-sync.mjs')));
 put('runtime-crash-reporter.js',readFileSync(resolve(process.env.EAGLER_COMMON_ROOT||resolve(root,'../../common'),'browser/runtime-crash-reporter.js')));
 put('th15.html',readFileSync(resolve(shellRoot,'managed.html'),'utf8').replace('<head>','<head><script src="runtime-crash-reporter.js"></script><meta name="eagler-data-provider" content="retail-memory">').replace('src="managed.mjs"','src="shell.mjs"'));
 const version='1.0.3-eagler-'+build.sha256.slice(0,12);

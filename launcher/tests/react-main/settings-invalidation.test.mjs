@@ -37,6 +37,27 @@ function fixture(productId = 'th06') {
   return {model, context, changes, reset: () => api.settingsChangeResetsRuntime(changes.at(-1))};
 }
 
+test('game volume previews are live and committed levels belong to the game', () => {
+  const values = new Map(), changes = [];
+  const storage = {getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value)};
+  const model = api.createGameSettingsModel({storage, onChange: change => changes.push(change)});
+  const {context} = fixture('th06mp');
+  model.hydrate(context);
+  const before = new Map(values);
+  model.previewVolume('bgmVolume', 35);
+  model.previewVolume('sfxVolume', 65);
+  assert.deepEqual(values, before);
+  assert.equal(api.settingsChangeResetsRuntime(changes.at(-1)), false);
+  model.commitPreferences();
+  model.hydrate({...context, productId: 'th07'});
+  assert.equal(model.getSnapshot().options.bgmVolume, 100);
+  model.hydrate({...context, productId: 'th06'});
+  assert.equal(model.getSnapshot().options.bgmVolume, 35);
+  assert.equal(model.getSnapshot().options.sfxVolume, 65);
+  model.setOption('bgmVolume', 20);
+  assert.equal(api.settingsChangeResetsRuntime(changes.at(-1)), false);
+});
+
 for (const productId of ['th11', 'th11mp']) test(`${productId} starts high refresh disabled when opening legacy settings and remembers a later opt-in`, () => {
   for (const shared of [true, false]) {
     const saved = new Map([

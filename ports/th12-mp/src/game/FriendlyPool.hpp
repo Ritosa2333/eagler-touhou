@@ -7,5 +7,4 @@ extern std::array<Projectile*, FriendlyCapacity> friendlySlots;
 void resetFriendlyPool();
 int reserveFriendlySlot();
 void attachFriendlySlot(Projectile&);
-void refreshFriendlyPointers();
 } // namespace th12

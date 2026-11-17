@@ -21,7 +21,7 @@ export const managedAPI={
     if(!Array.isArray(loadouts)||loadouts.length!==count||loadouts.some(l=>![0,1].includes(l.character)||![0,1].includes(l.shot)))throw Error('机体选择无效');
     const difficulty=options.netplayDifficulty;
     if(!Number.isInteger(difficulty)||difficulty<0||difficulty>4)throw Error('难度无效');
-    const spares=options.netplayInitialSpares??3,bombs=options.netplayInitialBombs??2;
+    const spares=options.netplayInitialSpares??2,bombs=options.netplayInitialBombs??2;
     if(!Number.isInteger(spares)||spares<0||spares>5||!Number.isInteger(bombs)||bombs<0||bombs>2)throw Error('初始残机或 Bomb 无效');
     const challengeMode=options.netplayChallengeMode===true;
     const settings={players:count,difficulty,lives:challengeMode?2:spares+1,bombs:challengeMode?0:bombs,...(challengeMode?{challengeMode:true}:{}),language:language==='ja'?'jp':'cn',rollback:options.netplayAdonisMode===0,

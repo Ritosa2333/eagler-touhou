@@ -1,3 +1,4 @@
+#include "ComboAttack.hpp"
 #include "ScreenShake.hpp"
 #include "CurveLaserPath.hpp"
 #include "BossPhase.hpp"
@@ -144,10 +145,16 @@ struct Enemy {
     float sx=1,sy=1;
     float bound_x=0,bound_y=0,bound_w=0,bound_h=0;
     int native_update_callback=0;
-    void apply_suika_steering(unsigned controls){
+    // Set by the retail 0x509030 aura-disable dispatch.  This is kept
+    // separately because pure spirits use several different kind bits.
+    bool spirit_aura_exit=false;
+    void apply_suika_steering(unsigned controls,float target_x,float target_y){
         if(native_update_callback!=3)return;
         const float pi=3.141592741f;
-        float target=pi*.5f+((controls&64)?pi*.25f:(controls&128)?-pi*.25f:0.f);
+        float target=std::atan2(target_y-y,target_x-x);
+        // The native callback adds the side movement quarter-turn only when
+        // the corresponding opponent-direction flag is present.
+        target+=((controls&64)?pi*.25f:(controls&128)?-pi*.25f:0.f);
         float heading=std::atan2(vy,vx);
         angle=std::remainder(heading+(target-heading)*.05f,2*pi);
     }
@@ -183,12 +190,15 @@ struct Enemy {
     std::unordered_map<int,LaserShooter> laser_shooters;
     std::array<int,16> change_append{}; // native +4e2c, NOT copied by ECL614
     i32 death_script=0,death_file=1;bool death_initialized=false;
+    std::string death_callback; // ECL550, outer Enemy+0x6818 (one-shot).
+    bool death_pending=false;
     BossPhaseTriggers phases;std::string pending_phase;
     int boss_slot=0; // EnemyInf +0x5180; valid while status_flags bit 0x80 is set.
     i32 age=0;
     float invulnerability_time=0; // ECL515 native timer +0x5128; integer value truncates float clock.
     int cpu_target_cooldown=0;
     int card_damage_frame=-1,card_damage_sum=0;
+    int damage_budget_frame=-1,damage_budget_used=0;
     int hit_cooldown=0,hit_sound=-1;bool hit_pending=false;
     u32 feedback_color=0; // zero: use original ANM color, otherwise native secondary color
     int phase_health()const{for(const auto&t:phases.entries)if(t.hp>=0)return life-t.hp;return life;}
@@ -220,6 +230,7 @@ struct Bullet {
     float x=0,y=0,vx=0,vy=0;
     i32 sprite=0,kind=0;
     int color=0;bool reflected=false,scripted=false;
+    int age=0;u32 last_tsukasa_id=0; // Bullet+104c / +1070; preserved across morphs.
     BulletChanges changes;int change_sound=-1;
     BulletGraze graze;float graze_x=0,graze_y=0;u32 graze_tint=0;
     AnmVm animation,attached_effect;float visual_heading=0;int native_timer=0;
@@ -251,6 +262,9 @@ public:
     // 0x50d8a0/0x50d800: receiving world, sender program set, life200.
     bool receive_charge_attack(int tier,float x,float y,const std::vector<const EclProgram*>& source);
     bool fire_bullets(const LaserShooter& shooter,float origin_x,float origin_y);
+    // Retail 1.10c BulletInf clamps its pool to 0x7d0 (0x4edfd3 / 0x4ee194).
+    static constexpr size_t bullet_capacity=2000;
+    u32 dropped_bullets=0;
     Bullet& spawn_bullet();
     void tick_bullet_graze(float px,float py,float player_radius=3);
     struct ExtraFlight {
@@ -296,6 +310,7 @@ public:
     int defeated=0,collected=0,combo=0,combo_timer=0,combo_peak=0,pickup_rate=100,pickup_fraction=0,graze_fraction=0;
     float pickup_speed=5,pickup_range=70;
     int combo_display=0,combo_display_timer=0;
+    ComboAttack combo_attack;
     int incoming_extra_level=0,incoming_boss_level=0;
     // Native manager +0x54..+0x90: enemy IDs, not a count or phase variable.
     std::array<u32,16> boss_slots{};
@@ -309,10 +324,14 @@ public:
     struct Spell {u32 host_id=0;bool active=false;int number=0,timeout=0,flags=0;u32 generation=0;std::string name_bytes,animation_file;} spell;
     i64 earned_score=0;
     bool card_near_damage=false;
+    int player_damage_cap=0; // SHT+0x28; zero for worlds without a player SHT.
     bool damage_enemy(Enemy& enemy,int damage,bool forced=false);
+    void finish_enemy_deaths();
     void finish_hit_feedback(u32 native_mode_flags=0);
     int cancel_bullets_circle(float x,float y,float radius,int limit=99999,bool respect_lock=true);
-    int cancel_lasers_region(const std::function<bool(float,float)>& inside,bool respect_lock=true);
+    int cancel_lasers_region(const std::function<bool(float,float)>& inside,bool respect_lock=true,
+        const std::function<bool(float,float,float)>& rectangleSample={});
+    void cancel_enoko_trap(float x,float y,float angle);
     int cancel_bullets_shape(const std::function<bool(float,float,float)>& contact);
     int cancel_bullets_polygon(float x,float y,float radius,float angle,int sides);
     int cancel_bullets_rect(float x,float y,float width,float height,float angle=0);
@@ -346,6 +365,7 @@ public:
     std::vector<ScreenShakeRequest> screen_shake_events;
     std::vector<i32> sound_events;
     ChargeRegion charge_region;
+    void strengthen_tsukasa_bullets(const Enemy& e);
     void apply_bullet_changes(Bullet& bullet);
     void tick_wave();  // advance enemy VMs + their children
 

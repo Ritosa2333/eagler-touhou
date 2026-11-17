@@ -1,0 +1,3709 @@
+{
+  "roundTripInjection": "128 ms nominal with jitter on both RTC receive paths",
+  "scene": "TH15 multiplayer stage 1 Lunatic, two peers, repeat horizontal and focus inputs",
+  "windowSeconds": 8,
+  "mainComparison": [
+    {
+      "label": "anm-formal-runtime-battle-128-b656b8",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "5c72edaaa2f5acd4ef3e16b16d5570b0bf14c9d93e2463509b84c43866ba3075",
+      "driver": "eb8ebfd8493c86b62c9239008484982638d660d3b3369a83014a53ecd4f46fc0",
+      "browser": "Chrome/153.0.8010.12",
+      "cases": [
+        {
+          "rtt": 128,
+          "mode": 0,
+          "delay": 0,
+          "pause": false,
+          "cpu": 3,
+          "resumed": null,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 7.33010000000149,
+              "frames": 356,
+              "simulationFps": 48.56686811911538,
+              "corrections": 38,
+              "replayed": 344,
+              "work": {
+                "count": 373,
+                "p50": 5.5,
+                "p95": 26.299999997019768,
+                "p99": 38.5,
+                "max": 57
+              },
+              "forwardWork": {
+                "count": 356,
+                "p50": 5.600000001490116,
+                "p95": 27,
+                "p99": 38.5,
+                "max": 57
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 373,
+                "p50": 9,
+                "p95": 11,
+                "p99": 12,
+                "max": 12
+              },
+              "visibleFps": {
+                "count": 373,
+                "p50": 51.48,
+                "p95": 57.35,
+                "p99": 57.35,
+                "max": 57.35
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 576,
+                "confirmed": 567,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 43,
+                  "resimulated": 383,
+                  "peakDepth": 12,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1296,
+                "received": 1287,
+                "repairs": 5,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.0315,
+              "frames": 358,
+              "simulationFps": 44.57448795368238,
+              "corrections": 48,
+              "replayed": 332,
+              "work": {
+                "count": 374,
+                "p50": 5.200000002980232,
+                "p95": 23.700000002980232,
+                "p99": 29.69999999552965,
+                "max": 34.5
+              },
+              "forwardWork": {
+                "count": 358,
+                "p50": 5.200000002980232,
+                "p95": 23.799999997019768,
+                "p99": 29.69999999552965,
+                "max": 34.5
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 374,
+                "p50": 7,
+                "p95": 10,
+                "p99": 11,
+                "max": 12
+              },
+              "visibleFps": {
+                "count": 374,
+                "p50": 42.52,
+                "p95": 60.95,
+                "p99": 60.95,
+                "max": 60.95
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 578,
+                "confirmed": 570,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 56,
+                  "resimulated": 387,
+                  "peakDepth": 11,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1310,
+                "received": 1283,
+                "repairs": 4,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "rtt-fixed-runtime-battle-128-e5040b",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "993fcd9ad480b186f30ff83d183e0a4c8d829e2e2d7059116ac3cc5551fa5fcf",
+      "driver": "eb8ebfd8493c86b62c9239008484982638d660d3b3369a83014a53ecd4f46fc0",
+      "browser": "Chrome/153.0.8010.12",
+      "cases": [
+        {
+          "rtt": 128,
+          "mode": 0,
+          "delay": 0,
+          "pause": false,
+          "cpu": 3,
+          "resumed": null,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.09789999999851,
+              "frames": 375,
+              "simulationFps": 46.3083021524184,
+              "corrections": 41,
+              "replayed": 319,
+              "work": {
+                "count": 392,
+                "p50": 5.700000002980232,
+                "p95": 24,
+                "p99": 34.899999998509884,
+                "max": 38.099999994039536
+              },
+              "forwardWork": {
+                "count": 375,
+                "p50": 5.799999997019768,
+                "p95": 24,
+                "p99": 34.899999998509884,
+                "max": 38.099999994039536
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 392,
+                "p50": 8,
+                "p95": 11,
+                "p99": 12,
+                "max": 12
+              },
+              "visibleFps": {
+                "count": 392,
+                "p50": 53.57,
+                "p95": 129.37,
+                "p99": 129.37,
+                "max": 129.37
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 578,
+                "confirmed": 567,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 44,
+                  "resimulated": 340,
+                  "peakDepth": 12,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1314,
+                "received": 1273,
+                "repairs": 7,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.13810000000149,
+              "frames": 376,
+              "simulationFps": 46.20243054274722,
+              "corrections": 51,
+              "replayed": 380,
+              "work": {
+                "count": 395,
+                "p50": 5.5999999940395355,
+                "p95": 25.299999997019768,
+                "p99": 36.29999999701977,
+                "max": 42.29999999701977
+              },
+              "forwardWork": {
+                "count": 374,
+                "p50": 5.600000001490116,
+                "p95": 24.799999997019768,
+                "p99": 36.29999999701977,
+                "max": 42.29999999701977
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 395,
+                "p50": 7,
+                "p95": 11,
+                "p99": 12,
+                "max": 12
+              },
+              "visibleFps": {
+                "count": 395,
+                "p50": 51.03,
+                "p95": 130.08,
+                "p99": 130.08,
+                "max": 130.08
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 580,
+                "confirmed": 576,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 56,
+                  "resimulated": 403,
+                  "peakDepth": 12,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1303,
+                "received": 1310,
+                "repairs": 6,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "rtt-fixed-runtime-battle-128-95b5d5",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "993fcd9ad480b186f30ff83d183e0a4c8d829e2e2d7059116ac3cc5551fa5fcf",
+      "driver": "eb8ebfd8493c86b62c9239008484982638d660d3b3369a83014a53ecd4f46fc0",
+      "browser": "Chrome/153.0.8010.12",
+      "cases": [
+        {
+          "rtt": 128,
+          "mode": 0,
+          "delay": 0,
+          "pause": false,
+          "cpu": 3,
+          "resumed": null,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.03389999999851,
+              "frames": 420,
+              "simulationFps": 52.27846998345484,
+              "corrections": 47,
+              "replayed": 422,
+              "work": {
+                "count": 424,
+                "p50": 5.899999998509884,
+                "p95": 27.600000001490116,
+                "p99": 40.600000001490116,
+                "max": 54.5
+              },
+              "forwardWork": {
+                "count": 420,
+                "p50": 5.899999998509884,
+                "p95": 27.100000001490116,
+                "p99": 40.600000001490116,
+                "max": 54.5
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 424,
+                "p50": 8,
+                "p95": 12,
+                "p99": 12,
+                "max": 12
+              },
+              "visibleFps": {
+                "count": 424,
+                "p50": 52.57,
+                "p95": 62.74,
+                "p99": 83.95,
+                "max": 83.95
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 638,
+                "confirmed": 630,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 52,
+                  "resimulated": 464,
+                  "peakDepth": 12,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1423,
+                "received": 1421,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.04070000000298,
+              "frames": 422,
+              "simulationFps": 52.482992774241495,
+              "corrections": 59,
+              "replayed": 413,
+              "work": {
+                "count": 428,
+                "p50": 5.5,
+                "p95": 23.099999994039536,
+                "p99": 27.400000005960464,
+                "max": 33.5
+              },
+              "forwardWork": {
+                "count": 422,
+                "p50": 5.5,
+                "p95": 23.099999994039536,
+                "p99": 27.400000005960464,
+                "max": 33.5
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 428,
+                "p50": 7,
+                "p95": 10,
+                "p99": 11,
+                "max": 12
+              },
+              "visibleFps": {
+                "count": 428,
+                "p50": 56.69,
+                "p95": 62.44,
+                "p99": 84.66,
+                "max": 84.66
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 639,
+                "confirmed": 634,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 66,
+                  "resimulated": 450,
+                  "peakDepth": 11,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1441,
+                "received": 1416,
+                "repairs": 3,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "anm-formal-runtime-battle-128-d1e675",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "5c72edaaa2f5acd4ef3e16b16d5570b0bf14c9d93e2463509b84c43866ba3075",
+      "driver": "eb8ebfd8493c86b62c9239008484982638d660d3b3369a83014a53ecd4f46fc0",
+      "browser": "Chrome/153.0.8010.12",
+      "cases": [
+        {
+          "rtt": 128,
+          "mode": 0,
+          "delay": 0,
+          "pause": false,
+          "cpu": 3,
+          "resumed": null,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.066099999994039,
+              "frames": 455,
+              "simulationFps": 56.40892128790075,
+              "corrections": 47,
+              "replayed": 394,
+              "work": {
+                "count": 525,
+                "p50": 5.399999998509884,
+                "p95": 21.399999998509884,
+                "p99": 29.19999999552965,
+                "max": 43.20000000298023
+              },
+              "forwardWork": {
+                "count": 455,
+                "p50": 5.600000001490116,
+                "p95": 21.80000000447035,
+                "p99": 30.19999999552965,
+                "max": 43.20000000298023
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 525,
+                "p50": 8,
+                "p95": 10,
+                "p99": 11,
+                "max": 12
+              },
+              "visibleFps": {
+                "count": 525,
+                "p50": 60.31,
+                "p95": 81.41,
+                "p99": 149.76,
+                "max": 149.76
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 670,
+                "confirmed": 660,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 52,
+                  "resimulated": 424,
+                  "peakDepth": 11,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1454,
+                "received": 1450,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.04520000000298,
+              "frames": 453,
+              "simulationFps": 56.306866205915604,
+              "corrections": 59,
+              "replayed": 427,
+              "work": {
+                "count": 525,
+                "p50": 5.199999995529652,
+                "p95": 20.30000000447035,
+                "p99": 28.600000001490116,
+                "max": 40.600000001490116
+              },
+              "forwardWork": {
+                "count": 453,
+                "p50": 5.399999998509884,
+                "p95": 20.600000001490116,
+                "p99": 28.700000002980232,
+                "max": 40.600000001490116
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 525,
+                "p50": 7,
+                "p95": 9,
+                "p99": 11,
+                "max": 12
+              },
+              "visibleFps": {
+                "count": 525,
+                "p50": 60.69,
+                "p95": 82.62,
+                "p99": 152,
+                "max": 152
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 670,
+                "confirmed": 665,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 66,
+                  "resimulated": 464,
+                  "peakDepth": 12,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1472,
+                "received": 1445,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "anm-formal-runtime-pause-128-634f54",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "5c72edaaa2f5acd4ef3e16b16d5570b0bf14c9d93e2463509b84c43866ba3075",
+      "driver": "eb8ebfd8493c86b62c9239008484982638d660d3b3369a83014a53ecd4f46fc0",
+      "browser": "Chrome/153.0.8010.12",
+      "cases": [
+        {
+          "rtt": 128,
+          "mode": 0,
+          "delay": 0,
+          "pause": true,
+          "cpu": 3,
+          "resumed": [
+            641,
+            645
+          ],
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.01929999999702,
+              "frames": 402,
+              "simulationFps": 50.12906363400164,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 649,
+                "p50": 4.899999998509884,
+                "p95": 8.199999995529652,
+                "p99": 11.800000004470348,
+                "max": 17.299999997019768
+              },
+              "forwardWork": {
+                "count": 390,
+                "p50": 5.899999998509884,
+                "p95": 8.900000005960464,
+                "p99": 12.899999998509884,
+                "max": 17.299999997019768
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 649,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 649,
+                "p50": 59.02,
+                "p95": 81.33,
+                "p99": 81.33,
+                "max": 81.33
+              },
+              "phase": 2,
+              "diagnostics": {
+                "frame": 623,
+                "confirmed": 622,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 5,
+                  "resimulated": 41,
+                  "peakDepth": 9,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1420,
+                "received": 1408,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.06560000000149,
+              "frames": 404,
+              "simulationFps": 50.08926800237123,
+              "corrections": 0,
+              "replayed": 7,
+              "work": {
+                "count": 663,
+                "p50": 4.799999997019768,
+                "p95": 7.799999997019768,
+                "p99": 11.399999998509884,
+                "max": 27.5
+              },
+              "forwardWork": {
+                "count": 396,
+                "p50": 5.799999997019768,
+                "p95": 8.700000002980232,
+                "p99": 14,
+                "max": 27.5
+              },
+              "pendingRows": 36,
+              "headroom": {
+                "count": 663,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 663,
+                "p50": 60.5,
+                "p95": 66.98,
+                "p99": 66.98,
+                "max": 67.72
+              },
+              "phase": 2,
+              "diagnostics": {
+                "frame": 621,
+                "confirmed": 620,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 9,
+                  "resimulated": 61,
+                  "peakDepth": 10,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1421,
+                "received": 1411,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "rtt-fixed-runtime-pause-128-c36813",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "993fcd9ad480b186f30ff83d183e0a4c8d829e2e2d7059116ac3cc5551fa5fcf",
+      "driver": "eb8ebfd8493c86b62c9239008484982638d660d3b3369a83014a53ecd4f46fc0",
+      "browser": "Chrome/153.0.8010.12",
+      "cases": [
+        {
+          "rtt": 128,
+          "mode": 0,
+          "delay": 0,
+          "pause": true,
+          "cpu": 3,
+          "resumed": [
+            692,
+            699
+          ],
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.00179999999702,
+              "frames": 446,
+              "simulationFps": 55.73745907172962,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 451,
+                "p50": 3.5,
+                "p95": 6.399999998509884,
+                "p99": 7.600000001490116,
+                "max": 8.200000002980232
+              },
+              "forwardWork": {
+                "count": 445,
+                "p50": 3.5,
+                "p95": 6.399999998509884,
+                "p99": 7.600000001490116,
+                "max": 8.200000002980232
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 451,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 451,
+                "p50": 57,
+                "p95": 58.83,
+                "p99": 58.83,
+                "max": 58.83
+              },
+              "phase": 2,
+              "diagnostics": {
+                "frame": 670,
+                "confirmed": 669,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 5,
+                  "resimulated": 35,
+                  "peakDepth": 9,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1589,
+                "received": 1533,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 7.867099999994039,
+              "frames": 445,
+              "simulationFps": 56.56468075915358,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 452,
+                "p50": 3.5,
+                "p95": 6.200000002980232,
+                "p99": 7.700000002980232,
+                "max": 27.100000001490116
+              },
+              "forwardWork": {
+                "count": 443,
+                "p50": 3.5,
+                "p95": 6.200000002980232,
+                "p99": 7.5,
+                "max": 12.899999998509884
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 452,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 452,
+                "p50": 55,
+                "p95": 59.78,
+                "p99": 59.78,
+                "max": 59.78
+              },
+              "phase": 2,
+              "diagnostics": {
+                "frame": 673,
+                "confirmed": 672,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 11,
+                  "resimulated": 73,
+                  "peakDepth": 11,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1547,
+                "received": 1581,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "rtt-fixed-runtime-pause-128-99b904",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "993fcd9ad480b186f30ff83d183e0a4c8d829e2e2d7059116ac3cc5551fa5fcf",
+      "driver": "eb8ebfd8493c86b62c9239008484982638d660d3b3369a83014a53ecd4f46fc0",
+      "browser": "Chrome/153.0.8010.12",
+      "cases": [
+        {
+          "rtt": 128,
+          "mode": 0,
+          "delay": 0,
+          "pause": true,
+          "cpu": 3,
+          "resumed": [
+            706,
+            707
+          ],
+          "peers": [
+            {
+              "seat": 0,
+              "span": 7.992,
+              "frames": 467,
+              "simulationFps": 58.433433433433436,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 475,
+                "p50": 3.5,
+                "p95": 5.100000001490116,
+                "p99": 6.5,
+                "max": 8.700000002980232
+              },
+              "forwardWork": {
+                "count": 467,
+                "p50": 3.5,
+                "p95": 5.100000001490116,
+                "p99": 6.5,
+                "max": 8.700000002980232
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 475,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 475,
+                "p50": 59.76,
+                "p95": 60,
+                "p99": 60,
+                "max": 60
+              },
+              "phase": 2,
+              "diagnostics": {
+                "frame": 689,
+                "confirmed": 688,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 6,
+                  "resimulated": 37,
+                  "peakDepth": 8,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1529,
+                "received": 1535,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 7.92080000000447,
+              "frames": 465,
+              "simulationFps": 58.706191293775575,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 474,
+                "p50": 3.3000000044703484,
+                "p95": 4.899999998509884,
+                "p99": 6.200000002980232,
+                "max": 29.400000005960464
+              },
+              "forwardWork": {
+                "count": 465,
+                "p50": 3.3000000044703484,
+                "p95": 4.899999998509884,
+                "p99": 5.899999998509884,
+                "max": 8
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 474,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 474,
+                "p50": 58.65,
+                "p95": 59.86,
+                "p99": 59.86,
+                "max": 59.86
+              },
+              "phase": 2,
+              "diagnostics": {
+                "frame": 687,
+                "confirmed": 686,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 9,
+                  "resimulated": 67,
+                  "peakDepth": 10,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1545,
+                "received": 1518,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "anm-formal-runtime-pause-128-81ae47",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "5c72edaaa2f5acd4ef3e16b16d5570b0bf14c9d93e2463509b84c43866ba3075",
+      "driver": "eb8ebfd8493c86b62c9239008484982638d660d3b3369a83014a53ecd4f46fc0",
+      "browser": "Chrome/153.0.8010.12",
+      "cases": [
+        {
+          "rtt": 128,
+          "mode": 0,
+          "delay": 0,
+          "pause": true,
+          "cpu": 3,
+          "resumed": [
+            642,
+            646
+          ],
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.01389999999851,
+              "frames": 406,
+              "simulationFps": 50.66197481876184,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 693,
+                "p50": 4.399999998509884,
+                "p95": 7.600000001490116,
+                "p99": 11.5,
+                "max": 14.899999998509884
+              },
+              "forwardWork": {
+                "count": 398,
+                "p50": 5.4000000059604645,
+                "p95": 8.5,
+                "p99": 12.299999997019768,
+                "max": 14.899999998509884
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 693,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 693,
+                "p50": 68.44,
+                "p95": 86.64,
+                "p99": 86.64,
+                "max": 86.64
+              },
+              "phase": 2,
+              "diagnostics": {
+                "frame": 620,
+                "confirmed": 619,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 6,
+                  "resimulated": 42,
+                  "peakDepth": 9,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1432,
+                "received": 1425,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.08020000000298,
+              "frames": 417,
+              "simulationFps": 51.60763347439992,
+              "corrections": 0,
+              "replayed": 10,
+              "work": {
+                "count": 704,
+                "p50": 4.200000002980232,
+                "p95": 7.5,
+                "p99": 10.399999998509884,
+                "max": 25.5
+              },
+              "forwardWork": {
+                "count": 407,
+                "p50": 5.299999997019768,
+                "p95": 8.300000004470348,
+                "p99": 12.599999994039536,
+                "max": 25.5
+              },
+              "pendingRows": 28,
+              "headroom": {
+                "count": 704,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 704,
+                "p50": 64.46,
+                "p95": 91.62,
+                "p99": 91.62,
+                "max": 91.62
+              },
+              "phase": 2,
+              "diagnostics": {
+                "frame": 625,
+                "confirmed": 625,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 8,
+                  "resimulated": 58,
+                  "peakDepth": 11,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1439,
+                "received": 1430,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "formal-lockstep-128",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "5c72edaaa2f5acd4ef3e16b16d5570b0bf14c9d93e2463509b84c43866ba3075",
+      "driver": "eb8ebfd8493c86b62c9239008484982638d660d3b3369a83014a53ecd4f46fc0",
+      "browser": "Chrome/153.0.8010.12",
+      "cases": [
+        {
+          "rtt": 128,
+          "mode": 1,
+          "delay": 5,
+          "pause": false,
+          "cpu": 3,
+          "resumed": null,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.01890000000596,
+              "frames": 407,
+              "simulationFps": 50.75509109724494,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 1069,
+                "p50": 1.3999999985098839,
+                "p95": 7.5,
+                "p99": 12.200000002980232,
+                "max": 18.600000001490116
+              },
+              "forwardWork": {
+                "count": 398,
+                "p50": 4.799999997019768,
+                "p95": 10,
+                "p99": 17.100000001490116,
+                "max": 18.600000001490116
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1069,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 1069,
+                "p50": 138,
+                "p95": 165.32,
+                "p99": 165.32,
+                "max": 165.32
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 617,
+                "confirmed": 617,
+                "inputDelay": 5,
+                "prediction": 0,
+                "generation": 0,
+                "rollback": {
+                  "restores": 0,
+                  "resimulated": 0,
+                  "peakDepth": 0,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1459,
+                "received": 1422,
+                "repairs": 0,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.04260000000149,
+              "frames": 406,
+              "simulationFps": 50.48118767561793,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 1073,
+                "p50": 1.2000000029802322,
+                "p95": 7.5,
+                "p99": 11.699999995529652,
+                "max": 20.399999998509884
+              },
+              "forwardWork": {
+                "count": 400,
+                "p50": 4.699999995529652,
+                "p95": 9.799999997019768,
+                "p99": 14.700000002980232,
+                "max": 20.399999998509884
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1073,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 1073,
+                "p50": 135,
+                "p95": 162.5,
+                "p99": 162.5,
+                "max": 162.5
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 617,
+                "confirmed": 617,
+                "inputDelay": 5,
+                "prediction": 0,
+                "generation": 0,
+                "rollback": {
+                  "restores": 0,
+                  "resimulated": 0,
+                  "peakDepth": 0,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1434,
+                "received": 1451,
+                "repairs": 0,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "previousAndCurrentUnthrottled": [
+    {
+      "label": "rtt-old-runtime",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "409d5fccc8cc65ab0fc7d56b81f657a82b5df545a0cc83ae5efa1b4efc395444",
+      "driver": "754b0677b92b6aba0928a80a6a91f14c349f0a5b220f1b8f2619755fa5512071",
+      "browser": "Chrome/153.0.8010.12",
+      "cases": [
+        {
+          "rtt": 0,
+          "mode": 0,
+          "delay": 0,
+          "pause": false,
+          "cpu": 1,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 7.9946000000014905,
+              "frames": 479,
+              "simulationFps": 59.91544292396251,
+              "corrections": 44,
+              "replayed": 44,
+              "work": {
+                "count": 1931,
+                "p50": 0.10000000149011612,
+                "p95": 2.5999999940395355,
+                "p99": 3.5,
+                "max": 12.400000005960464
+              },
+              "forwardWork": {
+                "count": 479,
+                "p50": 1.8000000044703484,
+                "p95": 3.3000000044703484,
+                "p99": 4.5999999940395355,
+                "max": 12.400000005960464
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1931,
+                "p50": 0,
+                "p95": 1,
+                "p99": 1,
+                "max": 1
+              },
+              "visibleFps": {
+                "count": 1931,
+                "p50": 60,
+                "p95": 60.75,
+                "p99": 60.75,
+                "max": 60.75
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 694,
+                "confirmed": 693,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 50,
+                  "resimulated": 50,
+                  "peakDepth": 1,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1433,
+                "received": 1603,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.02610000000149,
+              "frames": 481,
+              "simulationFps": 59.929480071256364,
+              "corrections": 50,
+              "replayed": 50,
+              "work": {
+                "count": 1936,
+                "p50": 0.10000000149011612,
+                "p95": 2,
+                "p99": 3.2000000029802322,
+                "max": 10.399999998509884
+              },
+              "forwardWork": {
+                "count": 481,
+                "p50": 1.2999999970197678,
+                "p95": 3,
+                "p99": 5.200000002980232,
+                "max": 10.399999998509884
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1936,
+                "p50": 0,
+                "p95": 1,
+                "p99": 1,
+                "max": 1
+              },
+              "visibleFps": {
+                "count": 1936,
+                "p50": 59.99,
+                "p95": 60.74,
+                "p99": 60.74,
+                "max": 60.74
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 695,
+                "confirmed": 693,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 56,
+                  "resimulated": 56,
+                  "peakDepth": 1,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1605,
+                "received": 1433,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        },
+        {
+          "rtt": 128,
+          "mode": 0,
+          "delay": 0,
+          "pause": false,
+          "cpu": 1,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.00229999999702,
+              "frames": 480,
+              "simulationFps": 59.982754957971935,
+              "corrections": 47,
+              "replayed": 207,
+              "work": {
+                "count": 1965,
+                "p50": 0.10000000149011612,
+                "p95": 1.8999999985098839,
+                "p99": 3,
+                "max": 8.700000002980232
+              },
+              "forwardWork": {
+                "count": 480,
+                "p50": 1.3000000044703484,
+                "p95": 2.2000000029802322,
+                "p99": 3,
+                "max": 5.899999998509884
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1965,
+                "p50": 4,
+                "p95": 5,
+                "p99": 5,
+                "max": 5
+              },
+              "visibleFps": {
+                "count": 1965,
+                "p50": 59.99,
+                "p95": 60.77,
+                "p99": 60.77,
+                "max": 60.77
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 695,
+                "confirmed": 690,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 52,
+                  "resimulated": 228,
+                  "peakDepth": 5,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1525,
+                "received": 1508,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.03260000000149,
+              "frames": 481,
+              "simulationFps": 59.8809849861702,
+              "corrections": 58,
+              "replayed": 311,
+              "work": {
+                "count": 1974,
+                "p50": 0.09999999403953552,
+                "p95": 1.8000000044703484,
+                "p99": 3.600000001490116,
+                "max": 8
+              },
+              "forwardWork": {
+                "count": 481,
+                "p50": 1.2999999970197678,
+                "p95": 2,
+                "p99": 3.399999998509884,
+                "max": 4.899999998509884
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1974,
+                "p50": 5,
+                "p95": 6,
+                "p99": 6,
+                "max": 6
+              },
+              "visibleFps": {
+                "count": 1974,
+                "p50": 60,
+                "p95": 60.74,
+                "p99": 60.74,
+                "max": 60.74
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 696,
+                "confirmed": 690,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 65,
+                  "resimulated": 347,
+                  "peakDepth": 6,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1519,
+                "received": 1515,
+                "repairs": 0,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        },
+        {
+          "rtt": 128,
+          "mode": 2,
+          "delay": 3,
+          "pause": false,
+          "cpu": 1,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.00459999999404,
+              "frames": 478,
+              "simulationFps": 59.7156634935357,
+              "corrections": 46,
+              "replayed": 82,
+              "work": {
+                "count": 1958,
+                "p50": 0.10000000149011612,
+                "p95": 1.5999999940395355,
+                "p99": 2,
+                "max": 12.5
+              },
+              "forwardWork": {
+                "count": 478,
+                "p50": 1.2999999970197678,
+                "p95": 1.8999999985098839,
+                "p99": 2.600000001490116,
+                "max": 12.5
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1958,
+                "p50": 1,
+                "p95": 2,
+                "p99": 3,
+                "max": 4
+              },
+              "visibleFps": {
+                "count": 1958,
+                "p50": 59.76,
+                "p95": 60,
+                "p99": 60,
+                "max": 60
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 692,
+                "confirmed": 689,
+                "inputDelay": 3,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 51,
+                  "resimulated": 91,
+                  "peakDepth": 3,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1589,
+                "received": 1675,
+                "repairs": 0,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.02739999999851,
+              "frames": 479,
+              "simulationFps": 59.670628098772816,
+              "corrections": 58,
+              "replayed": 105,
+              "work": {
+                "count": 1971,
+                "p50": 0,
+                "p95": 1.4000000059604645,
+                "p99": 1.8999999985098839,
+                "max": 33.29999999701977
+              },
+              "forwardWork": {
+                "count": 479,
+                "p50": 1.1000000014901161,
+                "p95": 1.8999999985098839,
+                "p99": 2.399999998509884,
+                "max": 33.29999999701977
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1971,
+                "p50": 1,
+                "p95": 2,
+                "p99": 3,
+                "max": 4
+              },
+              "visibleFps": {
+                "count": 1971,
+                "p50": 59.76,
+                "p95": 60.74,
+                "p99": 60.74,
+                "max": 60.74
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 693,
+                "confirmed": 691,
+                "inputDelay": 3,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 65,
+                  "resimulated": 120,
+                  "peakDepth": 3,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1693,
+                "received": 1582,
+                "repairs": 0,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        },
+        {
+          "rtt": 128,
+          "mode": 1,
+          "delay": 5,
+          "pause": false,
+          "cpu": 1,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.00860000000149,
+              "frames": 480,
+              "simulationFps": 59.93556926303108,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 1923,
+                "p50": 0.10000000149011612,
+                "p95": 0.8999999985098839,
+                "p99": 1.1000000014901161,
+                "max": 16.799999997019768
+              },
+              "forwardWork": {
+                "count": 480,
+                "p50": 0.7000000029802322,
+                "p95": 1.1000000014901161,
+                "p99": 1.5999999940395355,
+                "max": 16.799999997019768
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1923,
+                "p50": -1,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 1923,
+                "p50": 59.76,
+                "p95": 60.75,
+                "p99": 60.75,
+                "max": 60.75
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 694,
+                "confirmed": 694,
+                "inputDelay": 5,
+                "prediction": 0,
+                "generation": 0,
+                "rollback": {
+                  "restores": 0,
+                  "resimulated": 0,
+                  "peakDepth": 0,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1565,
+                "received": 1653,
+                "repairs": 0,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.03709999999404,
+              "frames": 481,
+              "simulationFps": 59.84745741627661,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 1942,
+                "p50": 0,
+                "p95": 0.7000000029802322,
+                "p99": 1,
+                "max": 2.3000000044703484
+              },
+              "forwardWork": {
+                "count": 480,
+                "p50": 0.6000000014901161,
+                "p95": 0.9000000059604645,
+                "p99": 1.1999999955296516,
+                "max": 2.3000000044703484
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1942,
+                "p50": -1,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 1942,
+                "p50": 60,
+                "p95": 60,
+                "p99": 60,
+                "max": 60
+              },
+              "phase": 1,
+              "diagnostics": {
+                "frame": 695,
+                "confirmed": 695,
+                "inputDelay": 5,
+                "prediction": 0,
+                "generation": 0,
+                "rollback": {
+                  "restores": 0,
+                  "resimulated": 0,
+                  "peakDepth": 0,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1665,
+                "received": 1558,
+                "repairs": 0,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "anm-formal-runtime",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "5c72edaaa2f5acd4ef3e16b16d5570b0bf14c9d93e2463509b84c43866ba3075",
+      "driver": "adb25396d2e26602d4fa505080dbe4ab15bd9c632efdb170b706364aeb332e3b",
+      "browser": "Chrome/153.0.8010.12",
+      "cases": [
+        {
+          "rtt": 0,
+          "mode": 0,
+          "delay": 0,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.00789999999851,
+              "frames": 480,
+              "simulationFps": 59.94080845166514,
+              "corrections": 46,
+              "replayed": 46,
+              "work": {
+                "count": 1969,
+                "p50": 0.10000000149011612,
+                "p95": 1.8999999985098839,
+                "p99": 2.5,
+                "max": 4.199999995529652
+              },
+              "forwardWork": {
+                "count": 480,
+                "p50": 1.5,
+                "p95": 2.4000000059604645,
+                "p99": 2.899999998509884,
+                "max": 4.199999995529652
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1969,
+                "p50": 0,
+                "p95": 1,
+                "p99": 1,
+                "max": 1
+              },
+              "visibleFps": {
+                "count": 1969,
+                "p50": 60,
+                "p95": 60.76,
+                "p99": 60.76,
+                "max": 60.76
+              },
+              "diagnostics": {
+                "frame": 695,
+                "confirmed": 694,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 52,
+                  "resimulated": 52,
+                  "peakDepth": 1,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1427,
+                "received": 1451,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.03369999999553,
+              "frames": 480,
+              "simulationFps": 59.74831024313418,
+              "corrections": 1,
+              "replayed": 1,
+              "work": {
+                "count": 1924,
+                "p50": 0.09999999403953552,
+                "p95": 1,
+                "p99": 1.3000000044703484,
+                "max": 2.100000001490116
+              },
+              "forwardWork": {
+                "count": 480,
+                "p50": 0.7999999970197678,
+                "p95": 1.2999999970197678,
+                "p99": 1.6000000014901161,
+                "max": 2.100000001490116
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1924,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 1
+              },
+              "visibleFps": {
+                "count": 1924,
+                "p50": 60,
+                "p95": 60.75,
+                "p99": 60.75,
+                "max": 60.75
+              },
+              "diagnostics": {
+                "frame": 695,
+                "confirmed": 694,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 1,
+                  "resimulated": 1,
+                  "peakDepth": 1,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1452,
+                "received": 1427,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        },
+        {
+          "rtt": 128,
+          "mode": 0,
+          "delay": 0,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.005200000002981,
+              "frames": 480,
+              "simulationFps": 59.961025333510875,
+              "corrections": 47,
+              "replayed": 227,
+              "work": {
+                "count": 1957,
+                "p50": 0.10000000149011612,
+                "p95": 2.2999999970197678,
+                "p99": 4.199999995529652,
+                "max": 8.100000001490116
+              },
+              "forwardWork": {
+                "count": 480,
+                "p50": 1.6000000014901161,
+                "p95": 2.600000001490116,
+                "p99": 3.6999999955296516,
+                "max": 5.100000001490116
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1957,
+                "p50": 4,
+                "p95": 5,
+                "p99": 5,
+                "max": 6
+              },
+              "visibleFps": {
+                "count": 1957,
+                "p50": 60,
+                "p95": 60.99,
+                "p99": 60.99,
+                "max": 60.99
+              },
+              "diagnostics": {
+                "frame": 695,
+                "confirmed": 689,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 52,
+                  "resimulated": 252,
+                  "peakDepth": 5,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1485,
+                "received": 1606,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.03470000000298,
+              "frames": 482,
+              "simulationFps": 59.98979426734306,
+              "corrections": 58,
+              "replayed": 288,
+              "work": {
+                "count": 1974,
+                "p50": 0.09999999403953552,
+                "p95": 2.100000001490116,
+                "p99": 4.299999997019768,
+                "max": 8
+              },
+              "forwardWork": {
+                "count": 482,
+                "p50": 1.3999999985098839,
+                "p95": 2.399999998509884,
+                "p99": 3.399999998509884,
+                "max": 8
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1974,
+                "p50": 5,
+                "p95": 5,
+                "p99": 6,
+                "max": 6
+              },
+              "visibleFps": {
+                "count": 1974,
+                "p50": 59.98,
+                "p95": 60.75,
+                "p99": 60.75,
+                "max": 60.75
+              },
+              "diagnostics": {
+                "frame": 697,
+                "confirmed": 692,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 65,
+                  "resimulated": 322,
+                  "peakDepth": 6,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1623,
+                "received": 1482,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        },
+        {
+          "rtt": 128,
+          "mode": 2,
+          "delay": 3,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 7.998300000004471,
+              "frames": 477,
+              "simulationFps": 59.63767300548034,
+              "corrections": 47,
+              "replayed": 80,
+              "work": {
+                "count": 1963,
+                "p50": 0.10000000149011612,
+                "p95": 1.5,
+                "p99": 1.7999999970197678,
+                "max": 2.5
+              },
+              "forwardWork": {
+                "count": 477,
+                "p50": 1.2000000029802322,
+                "p95": 1.6999999955296516,
+                "p99": 1.8999999985098839,
+                "max": 2.100000001490116
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1963,
+                "p50": 1,
+                "p95": 2,
+                "p99": 3,
+                "max": 3
+              },
+              "visibleFps": {
+                "count": 1963,
+                "p50": 59.76,
+                "p95": 60,
+                "p99": 60.74,
+                "max": 60.74
+              },
+              "diagnostics": {
+                "frame": 694,
+                "confirmed": 692,
+                "inputDelay": 3,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 50,
+                  "resimulated": 83,
+                  "peakDepth": 3,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1573,
+                "received": 1586,
+                "repairs": 0,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.02089999999851,
+              "frames": 477,
+              "simulationFps": 59.469635577065986,
+              "corrections": 58,
+              "replayed": 109,
+              "work": {
+                "count": 1975,
+                "p50": 0,
+                "p95": 1.4000000059604645,
+                "p99": 1.8000000044703484,
+                "max": 25.200000002980232
+              },
+              "forwardWork": {
+                "count": 477,
+                "p50": 1.2000000029802322,
+                "p95": 1.6999999955296516,
+                "p99": 2.2999999970197678,
+                "max": 25.200000002980232
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1975,
+                "p50": 1,
+                "p95": 2,
+                "p99": 3,
+                "max": 3
+              },
+              "visibleFps": {
+                "count": 1975,
+                "p50": 59.76,
+                "p95": 60,
+                "p99": 60,
+                "max": 60
+              },
+              "diagnostics": {
+                "frame": 694,
+                "confirmed": 691,
+                "inputDelay": 3,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 64,
+                  "resimulated": 129,
+                  "peakDepth": 4,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1594,
+                "received": 1562,
+                "repairs": 0,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        },
+        {
+          "rtt": 128,
+          "mode": 1,
+          "delay": 5,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.00010000000149,
+              "frames": 479,
+              "simulationFps": 59.8742515718442,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 1928,
+                "p50": 0.10000000149011612,
+                "p95": 1.5,
+                "p99": 2.2999999970197678,
+                "max": 3.899999998509884
+              },
+              "forwardWork": {
+                "count": 478,
+                "p50": 1.0999999940395355,
+                "p95": 2.1999999955296516,
+                "p99": 2.8000000044703484,
+                "max": 3.899999998509884
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1928,
+                "p50": -1,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 1928,
+                "p50": 59.76,
+                "p95": 60,
+                "p99": 60,
+                "max": 60
+              },
+              "diagnostics": {
+                "frame": 694,
+                "confirmed": 693,
+                "inputDelay": 5,
+                "prediction": 0,
+                "generation": 0,
+                "rollback": {
+                  "restores": 0,
+                  "resimulated": 0,
+                  "peakDepth": 0,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1561,
+                "received": 1630,
+                "repairs": 0,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.038600000001491,
+              "frames": 479,
+              "simulationFps": 59.587490359006686,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 1937,
+                "p50": 0.10000000149011612,
+                "p95": 1.2000000029802322,
+                "p99": 1.8999999985098839,
+                "max": 3.7999999970197678
+              },
+              "forwardWork": {
+                "count": 478,
+                "p50": 0.8000000044703484,
+                "p95": 1.8000000044703484,
+                "p99": 2.2999999970197678,
+                "max": 3.7999999970197678
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1937,
+                "p50": -1,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 1937,
+                "p50": 60,
+                "p95": 60,
+                "p99": 60,
+                "max": 60
+              },
+              "diagnostics": {
+                "frame": 694,
+                "confirmed": 694,
+                "inputDelay": 5,
+                "prediction": 0,
+                "generation": 0,
+                "rollback": {
+                  "restores": 0,
+                  "resimulated": 0,
+                  "peakDepth": 0,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1642,
+                "received": 1553,
+                "repairs": 0,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "paused",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "5c72edaaa2f5acd4ef3e16b16d5570b0bf14c9d93e2463509b84c43866ba3075",
+      "driver": "754b0677b92b6aba0928a80a6a91f14c349f0a5b220f1b8f2619755fa5512071",
+      "browser": "Chrome/153.0.8010.12",
+      "cases": [
+        {
+          "rtt": 0,
+          "mode": 0,
+          "delay": 0,
+          "pause": true,
+          "cpu": 1,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.00470000000298,
+              "frames": 477,
+              "simulationFps": 59.589990880335606,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 2346,
+                "p50": 0.10000000149011612,
+                "p95": 0.6000000014901161,
+                "p99": 0.8999999985098839,
+                "max": 9
+              },
+              "forwardWork": {
+                "count": 477,
+                "p50": 0.5,
+                "p95": 0.8999999985098839,
+                "p99": 1.4000000059604645,
+                "max": 2
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 2346,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 2346,
+                "p50": 59.76,
+                "p95": 60,
+                "p99": 60,
+                "max": 60
+              },
+              "phase": 2,
+              "diagnostics": {
+                "frame": 705,
+                "confirmed": 704,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 6,
+                  "resimulated": 6,
+                  "peakDepth": 1,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1784,
+                "received": 1875,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.03520000000298,
+              "frames": 477,
+              "simulationFps": 59.3637992831321,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 2337,
+                "p50": 0.09999999403953552,
+                "p95": 0.6000000014901161,
+                "p99": 0.8999999985098839,
+                "max": 26.600000001490116
+              },
+              "forwardWork": {
+                "count": 477,
+                "p50": 0.5,
+                "p95": 0.8999999985098839,
+                "p99": 1.1000000014901161,
+                "max": 26.600000001490116
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 2337,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 2337,
+                "p50": 59.87,
+                "p95": 60,
+                "p99": 60.76,
+                "max": 60.76
+              },
+              "phase": 2,
+              "diagnostics": {
+                "frame": 705,
+                "confirmed": 704,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 5,
+                  "resimulated": 5,
+                  "peakDepth": 1,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1877,
+                "received": 1784,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        },
+        {
+          "rtt": 128,
+          "mode": 0,
+          "delay": 0,
+          "pause": true,
+          "cpu": 1,
+          "peers": [
+            {
+              "seat": 0,
+              "span": 8.00789999999851,
+              "frames": 461,
+              "simulationFps": 57.56815145045339,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 1996,
+                "p50": 0.10000000149011612,
+                "p95": 1,
+                "p99": 1.3999999985098839,
+                "max": 2.7999999970197678
+              },
+              "forwardWork": {
+                "count": 461,
+                "p50": 0.7000000029802322,
+                "p95": 1.3000000044703484,
+                "p99": 1.8999999985098839,
+                "max": 2.7999999970197678
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 1996,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 1996,
+                "p50": 58.76,
+                "p95": 60,
+                "p99": 60,
+                "max": 60
+              },
+              "phase": 2,
+              "diagnostics": {
+                "frame": 685,
+                "confirmed": 684,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 6,
+                  "resimulated": 24,
+                  "peakDepth": 7,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1549,
+                "received": 1543,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            },
+            {
+              "seat": 1,
+              "span": 8.045599999994039,
+              "frames": 467,
+              "simulationFps": 58.04414835442304,
+              "corrections": 0,
+              "replayed": 0,
+              "work": {
+                "count": 2020,
+                "p50": 0.10000000149011612,
+                "p95": 0.8999999985098839,
+                "p99": 1.2999999970197678,
+                "max": 2.399999998509884
+              },
+              "forwardWork": {
+                "count": 466,
+                "p50": 0.6999999955296516,
+                "p95": 1.2000000029802322,
+                "p99": 1.7999999970197678,
+                "max": 2.399999998509884
+              },
+              "pendingRows": 0,
+              "headroom": {
+                "count": 2020,
+                "p50": 0,
+                "p95": 0,
+                "p99": 0,
+                "max": 0
+              },
+              "visibleFps": {
+                "count": 2020,
+                "p50": 59.76,
+                "p95": 60,
+                "p99": 60,
+                "max": 60
+              },
+              "phase": 2,
+              "diagnostics": {
+                "frame": 688,
+                "confirmed": 687,
+                "inputDelay": 0,
+                "prediction": 12,
+                "generation": 0,
+                "rollback": {
+                  "restores": 8,
+                  "resimulated": 46,
+                  "peakDepth": 7,
+                  "pending": 0,
+                  "barrier": 4294967295
+                },
+                "sent": 1555,
+                "received": 1546,
+                "repairs": 1,
+                "spectatorPublisherFailed": false
+              },
+              "error": "",
+              "route": "rtc"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "restore": [
+    "recovery {\"players\":2,\"observations\":[{\"before\":[247,247,246,0],\"after\":[247,247,246,0],\"fingerprint\":[3917595216,208411957],\"inputs\":\"35663f89e4a4597c6a071e6edf49b0f234a25d1f7896ba6bd3df5f560ca8d3bb\"},{\"before\":[247,247,239,0],\"after\":[247,247,246,247],\"fingerprint\":[3917595216,208411957],\"inputs\":\"35663f89e4a4597c6a071e6edf49b0f234a25d1f7896ba6bd3df5f560ca8d3bb\"}]}",
+    "recovery {\"players\":3,\"observations\":[{\"before\":[247,247,246,0],\"after\":[247,247,246,0],\"fingerprint\":[2527074676,2227396074],\"inputs\":\"c2d7c9321ae66433d0e7844ea48a96570d27ef764c993b96222d65eb74cd7fc8\"},{\"before\":[247,247,239,0],\"after\":[247,247,246,247],\"fingerprint\":[2527074676,2227396074],\"inputs\":\"c2d7c9321ae66433d0e7844ea48a96570d27ef764c993b96222d65eb74cd7fc8\"}]}",
+    "partialRecovery {\"before\":[247,247,239,0],\"partial\":[240,247,239,247],\"pending\":[240,247,239,247],\"after\":[248,248,247,247],\"first\":240}"
+  ],
+  "animation": [
+    "exact animation graph: 33 instances, 89276 retained bytes",
+    "repeated 512-VM restore allocations: 24 across 8 restores",
+    "2048 -> 2049 roots: largest allocation 65536; retained payload 3162222",
+    "13 frames / 512 unchanged roots: 488064 additional allocated bytes; VM bytes 1504",
+    "TH15 animation rollback ownership checks passed"
+  ],
+  "battle": [
+    "PASS: 432 exact retail battle resimulations; mean capture 0.501 ms, restore 0.259 ms"
+  ],
+  "bufferedRollback": [
+    {
+      "label": "buffer-128",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "993fcd9ad480b186f30ff83d183e0a4c8d829e2e2d7059116ac3cc5551fa5fcf",
+      "driver": "f0e5a064ce8073297dc95596ffaa466afe0a86dcbbaf7a7b722caeee44720e40",
+      "browser": "Chrome/153.0.8010.12",
+      "challengeMode": false,
+      "renderScale": 2,
+      "presentationCap": 60,
+      "cpuThrottle": 3,
+      "roundTripMsNominal": 128,
+      "inputDelayFrames": 4,
+      "inGamePause": false,
+      "resumeFrames": null,
+      "peers": [
+        {
+          "seat": 0,
+          "seconds": 25.003,
+          "forwardFrames": 1497,
+          "simulationFps": 59.87,
+          "presentationFpsMedian": 59.76,
+          "minimumFullSecondForwardFrames": 54,
+          "forwardProgressGapP99Ms": 32.6,
+          "maximumForwardProgressGapMs": 70.8,
+          "callbackWorkP95Ms": 6.1,
+          "callbackWorkP99Ms": 11.1,
+          "replayedFrames": 51,
+          "finalPhase": 1
+        },
+        {
+          "seat": 1,
+          "seconds": 25.091,
+          "forwardFrames": 1499,
+          "simulationFps": 59.74,
+          "presentationFpsMedian": 59.97,
+          "minimumFullSecondForwardFrames": 56,
+          "forwardProgressGapP99Ms": 33.6,
+          "maximumForwardProgressGapMs": 77.9,
+          "callbackWorkP95Ms": 7.7,
+          "callbackWorkP99Ms": 13,
+          "replayedFrames": 483,
+          "finalPhase": 1
+        }
+      ]
+    },
+    {
+      "label": "buffer-pause-128",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "993fcd9ad480b186f30ff83d183e0a4c8d829e2e2d7059116ac3cc5551fa5fcf",
+      "driver": "f0e5a064ce8073297dc95596ffaa466afe0a86dcbbaf7a7b722caeee44720e40",
+      "browser": "Chrome/153.0.8010.12",
+      "challengeMode": false,
+      "renderScale": 2,
+      "presentationCap": 60,
+      "cpuThrottle": 3,
+      "roundTripMsNominal": 128,
+      "inputDelayFrames": 4,
+      "inGamePause": true,
+      "resumeFrames": [
+        1739,
+        1740
+      ],
+      "peers": [
+        {
+          "seat": 0,
+          "seconds": 25.004,
+          "forwardFrames": 1486,
+          "simulationFps": 59.43,
+          "presentationFpsMedian": 59.78,
+          "minimumFullSecondForwardFrames": 57,
+          "forwardProgressGapP99Ms": 33.9,
+          "maximumForwardProgressGapMs": 100.2,
+          "callbackWorkP95Ms": 3.5,
+          "callbackWorkP99Ms": 4.5,
+          "replayedFrames": 0,
+          "finalPhase": 2
+        },
+        {
+          "seat": 1,
+          "seconds": 25.074,
+          "forwardFrames": 1488,
+          "simulationFps": 59.35,
+          "presentationFpsMedian": 59.76,
+          "minimumFullSecondForwardFrames": 57,
+          "forwardProgressGapP99Ms": 34.6,
+          "maximumForwardProgressGapMs": 98.5,
+          "callbackWorkP95Ms": 3.7,
+          "callbackWorkP99Ms": 4.9,
+          "replayedFrames": 0,
+          "finalPhase": 2
+        }
+      ]
+    },
+    {
+      "label": "phase-pause-128",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "993fcd9ad480b186f30ff83d183e0a4c8d829e2e2d7059116ac3cc5551fa5fcf",
+      "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+      "browser": "Chrome/153.0.8010.12",
+      "challengeMode": true,
+      "renderScale": 2,
+      "presentationCap": 60,
+      "cpuThrottle": 3,
+      "roundTripMsNominal": 128,
+      "inputDelayFrames": 4,
+      "inGamePause": true,
+      "resumeFrames": [
+        2161,
+        2166
+      ],
+      "peers": [
+        {
+          "seat": 0,
+          "seconds": 35.009,
+          "forwardFrames": 1920,
+          "simulationFps": 54.84,
+          "presentationFpsMedian": 54,
+          "minimumFullSecondForwardFrames": 46,
+          "forwardProgressGapP99Ms": 43.2,
+          "maximumForwardProgressGapMs": 109.9,
+          "callbackWorkP95Ms": 8.3,
+          "callbackWorkP99Ms": 12.8,
+          "replayedFrames": 0,
+          "finalPhase": 2,
+          "observedPauseScreens": [
+            1
+          ]
+        },
+        {
+          "seat": 1,
+          "seconds": 35.0,
+          "forwardFrames": 1920,
+          "simulationFps": 54.86,
+          "presentationFpsMedian": 53.12,
+          "minimumFullSecondForwardFrames": 44,
+          "forwardProgressGapP99Ms": 44.9,
+          "maximumForwardProgressGapMs": 136.3,
+          "callbackWorkP95Ms": 8.2,
+          "callbackWorkP99Ms": 11.7,
+          "replayedFrames": 0,
+          "finalPhase": 2,
+          "observedPauseScreens": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "label": "phase-pause-1x-128",
+      "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+      "wasm": "993fcd9ad480b186f30ff83d183e0a4c8d829e2e2d7059116ac3cc5551fa5fcf",
+      "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+      "browser": "Chrome/153.0.8010.12",
+      "challengeMode": true,
+      "renderScale": 1,
+      "presentationCap": 60,
+      "cpuThrottle": 3,
+      "roundTripMsNominal": 128,
+      "inputDelayFrames": 4,
+      "inGamePause": true,
+      "resumeFrames": [
+        1739,
+        1740
+      ],
+      "peers": [
+        {
+          "seat": 0,
+          "seconds": 24.99,
+          "forwardFrames": 1490,
+          "simulationFps": 59.62,
+          "presentationFpsMedian": 59.86,
+          "minimumFullSecondForwardFrames": 57,
+          "forwardProgressGapP99Ms": 31.7,
+          "maximumForwardProgressGapMs": 66.5,
+          "callbackWorkP95Ms": 3.5,
+          "callbackWorkP99Ms": 4.7,
+          "replayedFrames": 0,
+          "finalPhase": 2,
+          "observedPauseScreens": [
+            1
+          ]
+        },
+        {
+          "seat": 1,
+          "seconds": 24.989,
+          "forwardFrames": 1491,
+          "simulationFps": 59.67,
+          "presentationFpsMedian": 59.92,
+          "minimumFullSecondForwardFrames": 57,
+          "forwardProgressGapP99Ms": 30.6,
+          "maximumForwardProgressGapMs": 79.7,
+          "callbackWorkP95Ms": 3.5,
+          "callbackWorkP99Ms": 5.1,
+          "replayedFrames": 0,
+          "finalPhase": 2,
+          "observedPauseScreens": [
+            1
+          ]
+        }
+      ]
+    }
+  ],
+  "zeroDelayFollowup": {
+    "forcedEightFrameReplay": [
+      {
+        "version": "baseline",
+        "renderScale": 2,
+        "rollbackDepth": 8,
+        "wasm": "c4d41add393c6f8a7d5c9b1c62532291734fe7f4df588bf4fd92d7505af8b47e",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "4c472157c186c2ce813ed91b371113f667a096057e44975922f576474659a63d",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "players": 2,
+            "stage": 1,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 5.4,
+              "p95": 7.9,
+              "p99": 9.9
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              210974406,
+              831813639
+            ],
+            "screenshotSha256": "e4525d235fbf56d779fc106cc01410aacf5120b865159f919a35ba1a72b990bf"
+          },
+          {
+            "players": 3,
+            "stage": 4,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 7.6,
+              "p95": 10.8,
+              "p99": 14.6
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              1465558283,
+              1927656942
+            ],
+            "screenshotSha256": "f002a3ba83c580fb720e9db0d5264f86e51e6d0818d0d6d63b13724d4ad98dcf"
+          },
+          {
+            "players": 2,
+            "stage": 6,
+            "dense": true,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 15.1,
+              "p95": 22.6,
+              "p99": 29.9
+            },
+            "overFrameBudget": 167,
+            "finalFingerprint": [
+              4001681481,
+              2986018508
+            ],
+            "screenshotSha256": "eb079634ffc56dbcd2b88e58bc2b479b78d172981b81717be3a8fd8caa0a5d87"
+          }
+        ]
+      },
+      {
+        "version": "candidate",
+        "renderScale": 2,
+        "rollbackDepth": 8,
+        "wasm": "f0bf5d44b67971ab12de066395cd6e40da8c4af4dbc4c6b7bbb8558ac709a5b8",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "4c472157c186c2ce813ed91b371113f667a096057e44975922f576474659a63d",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "players": 2,
+            "stage": 1,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 4.1,
+              "p95": 5.8,
+              "p99": 7.2
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              210974406,
+              831813639
+            ],
+            "screenshotSha256": "e4525d235fbf56d779fc106cc01410aacf5120b865159f919a35ba1a72b990bf"
+          },
+          {
+            "players": 3,
+            "stage": 4,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 5.6,
+              "p95": 7.9,
+              "p99": 10.8
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              1465558283,
+              1927656942
+            ],
+            "screenshotSha256": "f002a3ba83c580fb720e9db0d5264f86e51e6d0818d0d6d63b13724d4ad98dcf"
+          },
+          {
+            "players": 2,
+            "stage": 6,
+            "dense": true,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 13.6,
+              "p95": 21.7,
+              "p99": 39.9
+            },
+            "overFrameBudget": 102,
+            "finalFingerprint": [
+              4001681481,
+              2986018508
+            ],
+            "screenshotSha256": "eb079634ffc56dbcd2b88e58bc2b479b78d172981b81717be3a8fd8caa0a5d87"
+          }
+        ]
+      },
+      {
+        "version": "candidate",
+        "renderScale": 2,
+        "rollbackDepth": 8,
+        "wasm": "f0bf5d44b67971ab12de066395cd6e40da8c4af4dbc4c6b7bbb8558ac709a5b8",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "4c472157c186c2ce813ed91b371113f667a096057e44975922f576474659a63d",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "players": 2,
+            "stage": 1,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 4.5,
+              "p95": 6.2,
+              "p99": 9
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              210974406,
+              831813639
+            ],
+            "screenshotSha256": "e4525d235fbf56d779fc106cc01410aacf5120b865159f919a35ba1a72b990bf"
+          },
+          {
+            "players": 3,
+            "stage": 4,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 6.6,
+              "p95": 9.6,
+              "p99": 13.5
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              1465558283,
+              1927656942
+            ],
+            "screenshotSha256": "f002a3ba83c580fb720e9db0d5264f86e51e6d0818d0d6d63b13724d4ad98dcf"
+          },
+          {
+            "players": 2,
+            "stage": 6,
+            "dense": true,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 14.8,
+              "p95": 27.9,
+              "p99": 36.4
+            },
+            "overFrameBudget": 154,
+            "finalFingerprint": [
+              4001681481,
+              2986018508
+            ],
+            "screenshotSha256": "eb079634ffc56dbcd2b88e58bc2b479b78d172981b81717be3a8fd8caa0a5d87"
+          }
+        ]
+      },
+      {
+        "version": "baseline",
+        "renderScale": 2,
+        "rollbackDepth": 8,
+        "wasm": "c4d41add393c6f8a7d5c9b1c62532291734fe7f4df588bf4fd92d7505af8b47e",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "4c472157c186c2ce813ed91b371113f667a096057e44975922f576474659a63d",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "players": 2,
+            "stage": 1,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 5.5,
+              "p95": 8.6,
+              "p99": 10.5
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              210974406,
+              831813639
+            ],
+            "screenshotSha256": "e4525d235fbf56d779fc106cc01410aacf5120b865159f919a35ba1a72b990bf"
+          },
+          {
+            "players": 3,
+            "stage": 4,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 5.9,
+              "p95": 8.3,
+              "p99": 10.1
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              1465558283,
+              1927656942
+            ],
+            "screenshotSha256": "f002a3ba83c580fb720e9db0d5264f86e51e6d0818d0d6d63b13724d4ad98dcf"
+          },
+          {
+            "players": 2,
+            "stage": 6,
+            "dense": true,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 13.3,
+              "p95": 19.5,
+              "p99": 23.8
+            },
+            "overFrameBudget": 69,
+            "finalFingerprint": [
+              4001681481,
+              2986018508
+            ],
+            "screenshotSha256": "eb079634ffc56dbcd2b88e58bc2b479b78d172981b81717be3a8fd8caa0a5d87"
+          }
+        ]
+      }
+    ],
+    "rtc": [
+      {
+        "label": "zero-final-battle",
+        "wasm": "d5ec118f4bbb7717c129598d6aad16a5d1a441a3a0eea1f94af4af486f1ddb40",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "renderScale": 2,
+        "cpuThrottle": 3,
+        "presentationCap": 60,
+        "pause": false,
+        "resumeFrames": null,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 18.013,
+            "simulationFps": 58.24,
+            "presentationFpsMedian": 59.58,
+            "callbackWorkP95Ms": 16.3,
+            "replayedFrames": 719,
+            "minimumFullSecondForwardFrames": 50,
+            "forwardProgressGapP99Ms": 44.1,
+            "maximumForwardProgressGapMs": 83.4,
+            "observedPhaseAndScreens": [
+              [
+                1,
+                0
+              ]
+            ]
+          },
+          {
+            "seat": 1,
+            "seconds": 17.992,
+            "simulationFps": 58.25,
+            "presentationFpsMedian": 59.58,
+            "callbackWorkP95Ms": 18.4,
+            "replayedFrames": 936,
+            "minimumFullSecondForwardFrames": 52,
+            "forwardProgressGapP99Ms": 53.1,
+            "maximumForwardProgressGapMs": 67.0,
+            "observedPhaseAndScreens": [
+              [
+                1,
+                0
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "label": "zero-final-pause",
+        "wasm": "d5ec118f4bbb7717c129598d6aad16a5d1a441a3a0eea1f94af4af486f1ddb40",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "renderScale": 2,
+        "cpuThrottle": 3,
+        "presentationCap": 60,
+        "pause": true,
+        "resumeFrames": [
+          1405,
+          1408
+        ],
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 19.985,
+            "simulationFps": 57.94,
+            "presentationFpsMedian": 58,
+            "callbackWorkP95Ms": 3.5,
+            "replayedFrames": 0,
+            "minimumFullSecondForwardFrames": 53,
+            "forwardProgressGapP99Ms": 39.3,
+            "maximumForwardProgressGapMs": 79.1,
+            "observedPhaseAndScreens": [
+              [
+                2,
+                1
+              ]
+            ]
+          },
+          {
+            "seat": 1,
+            "seconds": 19.978,
+            "simulationFps": 58.16,
+            "presentationFpsMedian": 58.57,
+            "callbackWorkP95Ms": 3.4,
+            "replayedFrames": 0,
+            "minimumFullSecondForwardFrames": 54,
+            "forwardProgressGapP99Ms": 36.5,
+            "maximumForwardProgressGapMs": 80.7,
+            "observedPhaseAndScreens": [
+              [
+                2,
+                1
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "label": "zero-base-pause",
+        "wasm": "993fcd9ad480b186f30ff83d183e0a4c8d829e2e2d7059116ac3cc5551fa5fcf",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "renderScale": 2,
+        "cpuThrottle": 3,
+        "presentationCap": 60,
+        "pause": true,
+        "resumeFrames": [
+          1366,
+          1371
+        ],
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 19.993,
+            "simulationFps": 56.52,
+            "presentationFpsMedian": 56.72,
+            "callbackWorkP95Ms": 3.9,
+            "replayedFrames": 0,
+            "minimumFullSecondForwardFrames": 52,
+            "forwardProgressGapP99Ms": 43.2,
+            "maximumForwardProgressGapMs": 79.2,
+            "observedPhaseAndScreens": [
+              [
+                2,
+                1
+              ]
+            ]
+          },
+          {
+            "seat": 1,
+            "seconds": 19.942,
+            "simulationFps": 56.86,
+            "presentationFpsMedian": 56.62,
+            "callbackWorkP95Ms": 3.7,
+            "replayedFrames": 0,
+            "minimumFullSecondForwardFrames": 54,
+            "forwardProgressGapP99Ms": 42.5,
+            "maximumForwardProgressGapMs": 70.7,
+            "observedPhaseAndScreens": [
+              [
+                2,
+                1
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "wasm32Visibility": {
+      "checked": 32768,
+      "visible": 9032,
+      "mismatches": 0
+    }
+  },
+  "animationPoolCompaction": {
+    "retainedGraphBytes": {
+      "baseline": 89276,
+      "candidate": 55616,
+      "instances": 33
+    },
+    "unchangedRootWindowAllocatedBytes": {
+      "baseline": 488064,
+      "candidate": 82608,
+      "roots": 512,
+      "frames": 13
+    },
+    "exactBattleResimulations": 432,
+    "forcedRollback": [
+      {
+        "variant": "baseline",
+        "wasm": "f0bf5d44b67971ab12de066395cd6e40da8c4af4dbc4c6b7bbb8558ac709a5b8",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "0aba73893275f20a32d1850996e592392f7cf46690ca32a5bf448e3908ee28bf",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "stage": 1,
+            "players": 2,
+            "frames": 360,
+            "dense": false,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 13,
+              "p95": 17.5,
+              "p99": 21.2
+            },
+            "captureMs": {
+              "total": {
+                "p50": 6.6,
+                "p95": 9.0
+              },
+              "animationAndRootCollection": {
+                "p50": 3.9,
+                "p95": 5.3
+              },
+              "bullets": {
+                "p50": 1.0,
+                "p95": 1.9
+              }
+            },
+            "fingerprint": [
+              2183279469,
+              1768337462
+            ],
+            "screenshotSha256": "a1131ba2c8b6ee5cd6f66b5db89fe59a0bd427411681632e93a7be175a0d721f"
+          },
+          {
+            "stage": 6,
+            "players": 2,
+            "frames": 360,
+            "dense": true,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 40.5,
+              "p95": 57.9,
+              "p99": 65.1
+            },
+            "captureMs": {
+              "total": {
+                "p50": 17.1,
+                "p95": 25.0
+              },
+              "animationAndRootCollection": {
+                "p50": 10.8,
+                "p95": 17.2
+              },
+              "bullets": {
+                "p50": 4.1,
+                "p95": 5.4
+              }
+            },
+            "fingerprint": [
+              1575169126,
+              3812513934
+            ],
+            "screenshotSha256": "3313123743d9e8d51e3f4d88c52903f063702204a4a5e47567be591a53d6bbb8"
+          }
+        ]
+      },
+      {
+        "variant": "candidate",
+        "wasm": "fe7e10708804f92fc099446e10e5dbbe4d5ee1bc96f0d75550cc76a9f7a28fb8",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "0aba73893275f20a32d1850996e592392f7cf46690ca32a5bf448e3908ee28bf",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "stage": 1,
+            "players": 2,
+            "frames": 360,
+            "dense": false,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 12.9,
+              "p95": 17.8,
+              "p99": 21.4
+            },
+            "captureMs": {
+              "total": {
+                "p50": 6.4,
+                "p95": 9.5
+              },
+              "animationAndRootCollection": {
+                "p50": 3.6,
+                "p95": 5.3
+              },
+              "bullets": {
+                "p50": 1.1,
+                "p95": 3.2
+              }
+            },
+            "fingerprint": [
+              2183279469,
+              1768337462
+            ],
+            "screenshotSha256": "a1131ba2c8b6ee5cd6f66b5db89fe59a0bd427411681632e93a7be175a0d721f"
+          },
+          {
+            "stage": 6,
+            "players": 2,
+            "frames": 360,
+            "dense": true,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 39.3,
+              "p95": 52.4,
+              "p99": 71.2
+            },
+            "captureMs": {
+              "total": {
+                "p50": 16.8,
+                "p95": 22.8
+              },
+              "animationAndRootCollection": {
+                "p50": 10.2,
+                "p95": 15.2
+              },
+              "bullets": {
+                "p50": 4.1,
+                "p95": 5.4
+              }
+            },
+            "fingerprint": [
+              1575169126,
+              3812513934
+            ],
+            "screenshotSha256": "3313123743d9e8d51e3f4d88c52903f063702204a4a5e47567be591a53d6bbb8"
+          }
+        ]
+      },
+      {
+        "variant": "candidate",
+        "wasm": "fe7e10708804f92fc099446e10e5dbbe4d5ee1bc96f0d75550cc76a9f7a28fb8",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "0aba73893275f20a32d1850996e592392f7cf46690ca32a5bf448e3908ee28bf",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "stage": 1,
+            "players": 2,
+            "frames": 360,
+            "dense": false,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 7.1,
+              "p95": 9.7,
+              "p99": 12.3
+            },
+            "captureMs": {
+              "total": {
+                "p50": 3.6,
+                "p95": 5.0
+              },
+              "animationAndRootCollection": {
+                "p50": 1.7,
+                "p95": 2.4
+              },
+              "bullets": {
+                "p50": 0.7,
+                "p95": 1.3
+              }
+            },
+            "fingerprint": [
+              2183279469,
+              1768337462
+            ],
+            "screenshotSha256": "a1131ba2c8b6ee5cd6f66b5db89fe59a0bd427411681632e93a7be175a0d721f"
+          },
+          {
+            "stage": 6,
+            "players": 2,
+            "frames": 360,
+            "dense": true,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 26.2,
+              "p95": 76.6,
+              "p99": 107.4
+            },
+            "captureMs": {
+              "total": {
+                "p50": 11.9,
+                "p95": 29.6
+              },
+              "animationAndRootCollection": {
+                "p50": 7.0,
+                "p95": 17.3
+              },
+              "bullets": {
+                "p50": 3.2,
+                "p95": 7.9
+              }
+            },
+            "fingerprint": [
+              1575169126,
+              3812513934
+            ],
+            "screenshotSha256": "3313123743d9e8d51e3f4d88c52903f063702204a4a5e47567be591a53d6bbb8"
+          }
+        ]
+      },
+      {
+        "variant": "baseline",
+        "wasm": "f0bf5d44b67971ab12de066395cd6e40da8c4af4dbc4c6b7bbb8558ac709a5b8",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "0aba73893275f20a32d1850996e592392f7cf46690ca32a5bf448e3908ee28bf",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "stage": 1,
+            "players": 2,
+            "frames": 360,
+            "dense": false,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 7.8,
+              "p95": 13.7,
+              "p99": 21.1
+            },
+            "captureMs": {
+              "total": {
+                "p50": 4.1,
+                "p95": 7.4
+              },
+              "animationAndRootCollection": {
+                "p50": 2.2,
+                "p95": 4
+              },
+              "bullets": {
+                "p50": 0.8,
+                "p95": 1.5
+              }
+            },
+            "fingerprint": [
+              2183279469,
+              1768337462
+            ],
+            "screenshotSha256": "a1131ba2c8b6ee5cd6f66b5db89fe59a0bd427411681632e93a7be175a0d721f"
+          },
+          {
+            "stage": 6,
+            "players": 2,
+            "frames": 360,
+            "dense": true,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 22.8,
+              "p95": 67.6,
+              "p99": 81.9
+            },
+            "captureMs": {
+              "total": {
+                "p50": 10.8,
+                "p95": 26.7
+              },
+              "animationAndRootCollection": {
+                "p50": 6.5,
+                "p95": 16.5
+              },
+              "bullets": {
+                "p50": 2.8,
+                "p95": 6.6
+              }
+            },
+            "fingerprint": [
+              1575169126,
+              3812513934
+            ],
+            "screenshotSha256": "3313123743d9e8d51e3f4d88c52903f063702204a4a5e47567be591a53d6bbb8"
+          }
+        ]
+      }
+    ],
+    "rtc": [
+      {
+        "label": "anim-frontier-rtc-0",
+        "variant": "baseline",
+        "sampleCompleted": true,
+        "wasm": "d5ec118f4bbb7717c129598d6aad16a5d1a441a3a0eea1f94af4af486f1ddb40",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 3,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.083,
+            "simulationFps": 20.03,
+            "presentationFpsMedian": 17.75,
+            "minimumFullSecondForwardFrames": 13,
+            "progressGapP99Ms": 144,
+            "callbackWorkP95Ms": 55.7,
+            "replayedFrames": 391
+          },
+          {
+            "seat": 1,
+            "seconds": 12.139,
+            "simulationFps": 19.94,
+            "presentationFpsMedian": 17.61,
+            "minimumFullSecondForwardFrames": 13,
+            "progressGapP99Ms": 173.0,
+            "callbackWorkP95Ms": 47.5,
+            "replayedFrames": 350
+          }
+        ]
+      },
+      {
+        "label": "anim-frontier-rtc-1",
+        "variant": "candidate",
+        "sampleCompleted": true,
+        "wasm": "3e534e17c7297f4233d5b237a6bfe3094246053ef83c1f9f3b7412e1230082d7",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 3,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.128,
+            "simulationFps": 15.42,
+            "presentationFpsMedian": 14.2,
+            "minimumFullSecondForwardFrames": 9,
+            "progressGapP99Ms": 233.7,
+            "callbackWorkP95Ms": 71.4,
+            "replayedFrames": 320
+          },
+          {
+            "seat": 1,
+            "seconds": 12.099,
+            "simulationFps": 15.46,
+            "presentationFpsMedian": 14.23,
+            "minimumFullSecondForwardFrames": 10,
+            "progressGapP99Ms": 220.3,
+            "callbackWorkP95Ms": 68,
+            "replayedFrames": 283
+          }
+        ]
+      },
+      {
+        "label": "anim-frontier-rtc-2",
+        "variant": "candidate",
+        "sampleCompleted": true,
+        "wasm": "3e534e17c7297f4233d5b237a6bfe3094246053ef83c1f9f3b7412e1230082d7",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 3,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.165,
+            "simulationFps": 16.44,
+            "presentationFpsMedian": 15.69,
+            "minimumFullSecondForwardFrames": 12,
+            "progressGapP99Ms": 178.0,
+            "callbackWorkP95Ms": 76.1,
+            "replayedFrames": 423
+          },
+          {
+            "seat": 1,
+            "seconds": 12.181,
+            "simulationFps": 16.5,
+            "presentationFpsMedian": 15.77,
+            "minimumFullSecondForwardFrames": 12,
+            "progressGapP99Ms": 161.1,
+            "callbackWorkP95Ms": 40.8,
+            "replayedFrames": 176
+          }
+        ]
+      },
+      {
+        "label": "anim-frontier-rtc-3",
+        "variant": "baseline",
+        "sampleCompleted": false
+      },
+      {
+        "label": "anim-frontier-normal-0",
+        "variant": "baseline",
+        "sampleCompleted": true,
+        "wasm": "d5ec118f4bbb7717c129598d6aad16a5d1a441a3a0eea1f94af4af486f1ddb40",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 1,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.007,
+            "simulationFps": 59.05,
+            "presentationFpsMedian": 59.58,
+            "minimumFullSecondForwardFrames": 52,
+            "progressGapP99Ms": 31.4,
+            "callbackWorkP95Ms": 7.8,
+            "replayedFrames": 393
+          },
+          {
+            "seat": 1,
+            "seconds": 12.149,
+            "simulationFps": 58.93,
+            "presentationFpsMedian": 60,
+            "minimumFullSecondForwardFrames": 52,
+            "progressGapP99Ms": 31.3,
+            "callbackWorkP95Ms": 6.9,
+            "replayedFrames": 400
+          }
+        ]
+      },
+      {
+        "label": "anim-frontier-normal-1",
+        "variant": "candidate",
+        "sampleCompleted": true,
+        "wasm": "3e534e17c7297f4233d5b237a6bfe3094246053ef83c1f9f3b7412e1230082d7",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 1,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.0,
+            "simulationFps": 60.0,
+            "presentationFpsMedian": 59.99,
+            "minimumFullSecondForwardFrames": 58,
+            "progressGapP99Ms": 37.6,
+            "callbackWorkP95Ms": 6.4,
+            "replayedFrames": 219
+          },
+          {
+            "seat": 1,
+            "seconds": 12.065,
+            "simulationFps": 59.93,
+            "presentationFpsMedian": 59.99,
+            "minimumFullSecondForwardFrames": 58,
+            "progressGapP99Ms": 39.0,
+            "callbackWorkP95Ms": 11.3,
+            "replayedFrames": 662
+          }
+        ]
+      },
+      {
+        "label": "anim-frontier-normal-2",
+        "variant": "candidate",
+        "sampleCompleted": true,
+        "wasm": "3e534e17c7297f4233d5b237a6bfe3094246053ef83c1f9f3b7412e1230082d7",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 1,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.032,
+            "simulationFps": 60.17,
+            "presentationFpsMedian": 59.96,
+            "minimumFullSecondForwardFrames": 59,
+            "progressGapP99Ms": 37.9,
+            "callbackWorkP95Ms": 11.5,
+            "replayedFrames": 501
+          },
+          {
+            "seat": 1,
+            "seconds": 12.054,
+            "simulationFps": 60.06,
+            "presentationFpsMedian": 59.97,
+            "minimumFullSecondForwardFrames": 59,
+            "progressGapP99Ms": 47.2,
+            "callbackWorkP95Ms": 9.6,
+            "replayedFrames": 369
+          }
+        ]
+      },
+      {
+        "label": "anim-frontier-normal-3",
+        "variant": "baseline",
+        "sampleCompleted": true,
+        "wasm": "d5ec118f4bbb7717c129598d6aad16a5d1a441a3a0eea1f94af4af486f1ddb40",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 1,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.094,
+            "simulationFps": 54.99,
+            "presentationFpsMedian": 59.57,
+            "minimumFullSecondForwardFrames": 35,
+            "progressGapP99Ms": 63.3,
+            "callbackWorkP95Ms": 14.7,
+            "replayedFrames": 432
+          },
+          {
+            "seat": 1,
+            "seconds": 12.44,
+            "simulationFps": 54.1,
+            "presentationFpsMedian": 59.59,
+            "minimumFullSecondForwardFrames": 35,
+            "progressGapP99Ms": 71.0,
+            "callbackWorkP95Ms": 15,
+            "replayedFrames": 513
+          }
+        ]
+      }
+    ]
+  }
+}

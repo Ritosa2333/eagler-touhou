@@ -275,3 +275,6 @@ th04-network-fault.json
 /web/th04-solo-jp.hdi.gz
 /web/th04-solo.hdi.gz
 /web/vendor/np2/font.bmp
+/web/assets/player-body-dim.bin
+/web/assets/projectiles-original-dim.bin
+/web/assets/projectiles-rgb-dim.bin

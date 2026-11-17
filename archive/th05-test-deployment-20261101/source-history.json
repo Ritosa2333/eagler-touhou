@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "prospectiveCommit": "b7cb63fcaf07d3f8d8c0f0d124d2582e80836253",
+  "sourceTree": "30587d13dd543ca06e9f898dd221ccfe32e3612e",
+  "sourceCommit": "0c31261ea528db9747962e73b36c5105d2d41b78",
+  "subtreeSplit": "45b5c4dd89b958061cbb53709c8863b9e612d1f7",
+  "preservesLatestTest": true,
+  "preservesSourceAnchor": true,
+  "verificationHost": "Arch Linux WSL / Git subtree, native filesystem"
+}

@@ -31,7 +31,7 @@ node ports/th04/tests/launcher-room-browser.mjs
 
 普通版文件位于 `/savesth04`，多人版位于 `/savesth04mp`，使用主项目可直接读取的 IDBFS v21 `FILE_DATA` 格式。文件导入、导出与 `.th04r` 录像列表共用主项目入口。`build-eagler/NOTICE.html` 保留 DOSBox-X、NP2 和 Phosphor Icons 的来源及许可证全文。构建在暂存目录完成后替换导出目录，失败的适配不会覆盖上次成功结果。
 
-当前是 `testOnly` 接入预览。[TH01](../th01/README.md)、[TH02](../th02/README.md)、[TH03](../th03/README.md) 和 [TH05](../th05/README.md) 也有独立适配入口。主项目录像播放工作台与观战按作品能力分别登记；此预览标题使用隔离的原生实例，离开后由主项目重建 Runtime 并重新预载。
+当前是 `testOnly` 接入预览。[TH01](../th01/README.md)、[TH02](../th02/README.md) 和 [TH05](../th05/README.md) 也有独立适配入口。主项目录像播放工作台与观战按作品能力分别登记；此预览标题使用隔离的原生实例，离开后由主项目重建 Runtime 并重新预载。
 
 单人游戏保留原有浏览器练习器。点击画面右上角“练习 / 辅助”，或按 F12 选择机体、难度、关卡、Boss 与攻击阶段；Backspace 展开辅助菜单，F1–F5、U 切换辅助，Tab 显示信息，Shift+F 从已确认的目标重新练习。
 

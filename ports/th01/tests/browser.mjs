@@ -41,6 +41,11 @@ try{
   page.on('request',r=>requests.push(r.url()));page.on('requestfailed',r=>failures.push({url:r.url(),error:r.failure()?.errorText}));
   page.on('response',r=>{if(r.status()>=400)failures.push({url:r.url(),status:r.status()});});
   if(process.env.PC98_TEST_RELAY==='1')await page.evaluateOnNewDocument(()=>{delete window.RTCPeerConnection;});
+  if(process.env.PC98_TEST_AUDIO_GATE==='1')await page.evaluateOnNewDocument(()=>{
+    const resume=AudioContext.prototype.resume;
+    window.__audioResumeAttempts=0;window.__allowAudioResume=false;
+    AudioContext.prototype.resume=function(){window.__audioResumeAttempts++;return window.__allowAudioResume?resume.call(this):Promise.reject(new DOMException('User gesture required','NotAllowedError'));};
+  });
   page.on('console',m=>{if(m.type()==='error')console.error('CONSOLE',m.text());});
   const load=async(count,mp)=>{
     await page.goto('http://127.0.0.1:'+server.address().port);
@@ -88,22 +93,46 @@ try{
       const client=connection('ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,lobby:'pc98-public-'+seat,member:'pc98-private-'+seat,intent:seat?'join':'create',players:String(count),difficulty:'1'}));lobbies.push(client);
       await client.wait(m=>m.type==='state'||m.type==='error');await client.send({type:'take-seat',seat,loadout:0},m=>!!m.room?.seats[seat]||m.type==='error');
     }
-    await lobbies[0].send({type:'settings',playerCount:count,difficulty:1,ballCount:6},m=>m.room?.ballCount===6);
+    const ballCount=Number(process.env.PC98_TEST_BALL_COUNT || (process.env.PC98_TEST_TOUCH==='1'?2:6));await lobbies[0].send({type:'settings',playerCount:count,difficulty:1,ballCount},m=>m.room?.ballCount===ballCount);
     await load(count,true);console.log('MP ready');
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'configure',{music:'none',options:{multiplayerPreflight:true}});},count);
     const preview=await page.evaluate(()=>rpc(0,'prepare-room'));assert.equal(preview.presented,true);console.log('MP title presented');await page.screenshot({path:resolve(out,'room.png')});
     for(let seat=0;seat<count;seat++)await lobbies[seat].send({type:'set-ready',ready:true,runtimeGeneration:generation},m=>m.room?.seats[seat]?.ready||m.type==='error');
     const start=await lobbies[0].send({type:'start',adonisMode:process.env.PC98_TEST_ROLLBACK==='1'?0:1},m=>m.type==='start'||m.type==='error');
-    await page.evaluate(async({count,room,relayPort,serial,generation,rollback})=>Promise.all(Array.from({length:count},async(_,s)=>{
-      await rpc(s,'configure',{music:'ogg',options:{netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(serial),member:'pc98-private-'+s,runtimeGeneration:generation}),netplayPlayer:s,musicSource:s===0?'akyu':'original',netplayPlayerCount:count,netplayBallCount:6,netplayDifficulty:1,netplaySeed:1234,netplayAdonisMode:rollback?0:1,netplayLoadouts:Array.from({length:count},(_,i)=>({character:0,shot:0}))}});
+    await page.evaluate(async({count,room,relayPort,serial,generation,rollback,ballCount})=>Promise.all(Array.from({length:count},async(_,s)=>{
+      await rpc(s,'configure',{music:'ogg',options:{netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(serial),member:'pc98-private-'+s,runtimeGeneration:generation}),netplayPlayer:s,musicSource:s===0?'akyu':'original',netplayPlayerCount:count,netplayBallCount:ballCount,netplayDifficulty:1,netplaySeed:1234,netplayAdonisMode:rollback?0:1,netplayLoadouts:Array.from({length:count},(_,i)=>({character:0,shot:0}))}});
       if(s===0)for(let i=1;i<=14;i++){const name=String(i).padStart(2,'0')+'.ogg',response=await fetch('/music/'+name),blob=await response.blob(),bytes=await blob.arrayBuffer(),sha256=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join(''),url=URL.createObjectURL(blob);try{await rpc(s,'resources',{resources:[{url,path:'/bgm/akyu/'+name,bytes:bytes.byteLength,sha256}]});}finally{URL.revokeObjectURL(url);}}
       await rpc(s,'launch');
-    })),{count,room,relayPort,serial:start.serial,generation,rollback:process.env.PC98_TEST_ROLLBACK==='1'});console.log('MP launch acknowledged');
-    const frames=()=>page.frames().filter(f=>/th01.html\?runtimeEpoch=/.test(f.url()));
+    })),{count,room,relayPort,serial:start.serial,generation,rollback:process.env.PC98_TEST_ROLLBACK==='1',ballCount});console.log('MP launch acknowledged');
+    const frames=()=>page.frames().filter(f=>/th01.html\?runtimeEpoch=/.test(f.url())).sort((a,b)=>Number(new URL(a.url()).searchParams.get('runtimeEpoch'))-Number(new URL(b.url()).searchParams.get('runtimeEpoch')));
     const health=()=>Promise.all(frames().map(f=>f.evaluate(async()=>{const {managedAPI}=await import('./netplay/app.js');return managedAPI.health();})));
     await wait(async()=>{const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'));if(errors.length)throw Error(JSON.stringify(errors));const states=await health();return states.length===count&&states.every(s=>s.running&&s.confirmed>=120&&s.frames>0);},'MP confirmed gameplay',120000);
-    if(process.env.PC98_TEST_TOUCH==='1')await verifyTouch();
-    for(const frame of frames()) assert.equal(await frame.evaluate(()=>window.th01Net.room.settings.count),6,'each peer receives the six-ball rule');
+    if(process.env.PC98_TEST_AUDIO==='1'){
+      await wait(async()=>(await Promise.all(frames().map(f=>f.evaluate(()=>{const audio=window.th01Net.session.game.audio;return audio.context?.state==='running'&&!!audio.source;})))).every(Boolean),'music starts without an extra game-screen gesture',30000);
+      console.log('PASS TH01 multiplayer music starts automatically');
+    }
+    if(process.env.PC98_TEST_AUDIO_GATE==='1'){
+      for(const [seat,frame] of frames().entries()){
+        const attempts=await frame.evaluate(()=>window.__audioResumeAttempts);assert(attempts>0,'launch must attempt audio');
+        await frame.evaluate(seat=>{window.__allowAudioResume=true;const bridge=window.__eaglerDirectInputBridge,base={protocol:'eagler-touhou/1',game:'th01',epoch:seat+1,command:'direct-touch',id:77,x:.5,y:.5};if(!bridge.submit({...base,type:'down'})||!bridge.submit({...base,type:'up'}))throw Error('hosted touch rejected');},seat);
+        await wait(()=>frame.evaluate(previous=>window.__audioResumeAttempts>previous&&window.th01Net.session.game.audio.context?.state==='running',attempts),'hosted touch resumes blocked audio',10000);
+      }
+      console.log('PASS TH01 hosted touch unlocks blocked multiplayer audio');
+    }
+    if(process.env.PC98_TEST_TOUCH==='1'){
+      await verifyTouch();
+      await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',down:true}));
+      await new Promise(r=>setTimeout(r,200));await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',down:false}));
+      await wait(async()=>{const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'));if(errors.length)throw Error(JSON.stringify(errors));return frames()[0].evaluate(()=>{const s=window.th01Net.session.game.state();return s&&!s.menu;});},'native gameplay',30000);
+      for(let seat=0;seat<count;seat++){
+        const position=()=>frames()[seat].evaluate(seat=>window.th01Net.session.game.state().players[seat].left,seat);
+        const before=await position(),direction=before>280?-1:1;
+        await frames()[seat].evaluate(({seat,direction})=>{const bridge=globalThis.__eaglerDirectInputBridge,base={protocol:'eagler-touhou/1',game:'th01',epoch:seat+1,command:'direct-touch',id:87,y:.5};for(const [type,x] of [['down',.5],['move',.5+direction*.12],['up',.5+direction*.12]])if(!bridge.submit({...base,type,x}))throw Error('touch rejected');},{seat,direction});
+        await wait(async()=>direction*((await position())-before)>0,'quick touch moves native P'+(seat+1),10000);
+      }
+      console.log('PASS TH01 multiplayer quick touch moves each player');
+    }
+    for(const frame of frames()) assert.equal(await frame.evaluate(()=>window.th01Net.room.settings.count),ballCount,'each peer receives the ball rule');
     for(const state of await health())assert.equal(state.rollbackEnabled,process.env.PC98_TEST_ROLLBACK==='1'&&process.env.PC98_TEST_NO_WORKER!=='1','room rollback setting must reach the simulation');
     for(const [index,frame] of frames().entries()){
       const audio=await frame.evaluate(async()=>{
@@ -121,6 +150,14 @@ try{
       await frames()[1].evaluate(()=>{const peer=window.th01Net.session.peers.get('host'),send=peer.channel.send.bind(peer.channel),end=performance.now()+4000;
         peer.channel.send=text=>{const data=JSON.parse(text);if(data.type==='input'&&performance.now()<end)setTimeout(()=>send(text),70);else send(text);};});
     }
+    if(process.env.PC98_TEST_SLIDE==='1'){
+      await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',down:true}));
+      await new Promise(resolve=>setTimeout(resolve,250));await page.evaluate(()=>rpc(0,'keyboard-clear'));
+      await page.evaluate(()=>rpc(0,'keyboard',{code:'ArrowRight',down:true}));
+      await new Promise(resolve=>setTimeout(resolve,120));await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyX',down:true}));
+      await new Promise(resolve=>setTimeout(resolve,100));await page.evaluate(async()=>{await rpc(0,'keyboard-clear');await rpc(0,'keyboard',{code:'ArrowLeft',down:true});});
+      await new Promise(resolve=>setTimeout(resolve,350));await page.evaluate(()=>rpc(0,'keyboard-clear'));
+    }
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'keyboard',{code:s%2?'ArrowLeft':'ArrowRight',down:true});},count);
     if(process.env.PC98_TEST_LAG==='1')for(let i=0;i<8;i++){
       await new Promise(resolve=>setTimeout(resolve,130));
@@ -136,13 +173,18 @@ try{
         const tape=window.th01Net.session.recorder.snapshot(),{NativeSimulation}=await import('./netplay/runtime-core.js');
         const core=(await WebAssembly.instantiateStreaming(fetch('./game.wasm'),{})).instance.exports;core.th_score_data();
         const simulation=new NativeSimulation(core,tape.header.settings,tape.header.hostSlot);simulation.reset();
+        let slideFrames=0;
         for(const [frame,row] of tape.rows.entries()){
+          const mode=core.th_get(36,0),sprite=core.th_get(39,0),x=core.th_get(30,0),input=row.inputs[0];
           simulation.step(row.inputs);
+          if(mode===2&&sprite<2&&(input&2)||mode===2&&sprite>=2&&sprite<4&&(input&1)){
+            if(core.th_get(36,0)===2){if(sprite<2&&core.th_get(30,0)>x||sprite>=2&&core.th_get(30,0)<x)throw Error('slide reversed at '+frame);slideFrames++;}
+          }
           if(JSON.stringify(simulation.checksum())!==row.proof)throw Error('confirmed replay mismatch at '+frame);
         }
-        return tape.rows.length;
+        return {rows:tape.rows.length,slideFrames};
       });
-      assert(checked>120,'replay verification covers confirmed gameplay');
+      assert(checked.rows>120,'replay verification covers confirmed gameplay');if(process.env.PC98_TEST_SLIDE==='1')assert(checked.slideFrames>0,'replay must include reversing during a slide');
       console.log('MP confirmed replay verified',checked);
     }
 

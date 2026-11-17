@@ -1,13 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {installNetPause} from '../browser/pc98-net-pause.mjs';
 import {installChallengeHud} from '../browser/pc98-challenge-hud-install.mjs';
 const root=new URL('../../',import.meta.url);
-for(const game of ['02','04'])for(const language of ['cn','jp'])test(`TH${game} ${language} installs native challenge HUD without changing the original`,async()=>{
+for(const game of ['02','04'])for(const language of ['cn','jp'])test(`TH${game} ${language} installs native challenge HUD without changing the original`,async(t)=>{
   const port=new URL(`ports/th${game}/web/`,root),{Fat12}=await import(new URL('solo-fat12.js',port));
   const disk=game==='02'?`th02-local-${language}.hdi.gz`:`th04-coop${language==='jp'?'-jp':''}.hdi.gz`;
+  if(!existsSync(new URL(disk,port))){t.skip('private game disk is not available');return;}
   const fat=new Fat12(new Uint8Array(gunzipSync(await readFile(new URL(disk,port)))));
   const exe=fat.read(fat.find(game==='02'?'HUMAROKU/MAIN.EXE':'GENSO/MAIN.EXE'));
   const patch=JSON.parse(await readFile(new URL(game==='02'?'local-patch.json':language==='jp'?'patch-jp.json':'patch.json',port),'utf8'));

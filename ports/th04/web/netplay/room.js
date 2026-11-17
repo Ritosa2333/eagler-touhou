@@ -1,3 +1,4 @@
+import {loadRollbackCore,restoreRollback} from '../../../../common/pc98/rollback-client.mjs';
 import {publishNetworkStatus,mountNetworkStatus} from '../network-status.js';
 import {InputLatch} from './input-latch.js';
 import {createRecorder} from '../replay/recorder.js';
@@ -732,7 +733,7 @@ async function beginGame(){
   const rtcConfiguration=useRelay?null:await loadRtcConfiguration(session);
   if(stopped||ownedEpoch!==runEpoch)return;
   connectionConfigSummary=useRelay?'强制 WebSocket 中继（不需要 STUN/TURN 账号）':describeRtcConfiguration(rtcConfiguration);
-  queue=new RollbackQueue(state.slots[session.role],state.settings.players,inputPolicy);
+  queue=new RollbackQueue(state.slots[session.role],state.settings.players,{...inputPolicy,coreModule:await loadRollbackCore()});
   if(useRelay){
     relay=createRelay({...session,runId:state.runId},state.generation,roles,fail);
     for(const role of activeRoles())if(role!==session.role)makeRelayPeer(role);
@@ -980,10 +981,10 @@ async function pump(now){
       if(queue.frame>=replayUntil&&accumulator>=TICK_MS&&captureLocalInput())earlyInputs++;
       // Keep touch/menu generation at the live boundary throughout repair.
       if(queue.frame>=replayUntil)replayTouchContext=runtime.touchContext();
-      const from=queue.dirty;replayUntil=Math.max(replayUntil,queue.frame);
-      maxRewind=Math.max(maxRewind,replayUntil-from);rollbackCount++;
+      replayUntil=Math.max(replayUntil,queue.frame);rollbackCount++;
       const restoreAt=performance.now();
-      nativeBusy=true;await runtime.restore(from);if(stopped||ownedEpoch!==runEpoch)return;replayRecorder.rewind(from);queue.rewind(from);
+      nativeBusy=true;const from=await restoreRollback(queue,frame=>runtime.restore(frame),()=>!stopped&&ownedEpoch===runEpoch);if(from===null)return;replayRecorder.rewind(from);
+      maxRewind=Math.max(maxRewind,replayUntil-from);
       // A still earlier input can arrive during restore, before rewind clears
       // the old correction marker. Reconcile the retained completed history.
       if(runtime.asyncExecution&&queue.active)queue.refreshCorrection(true);
@@ -1030,14 +1031,14 @@ async function pump(now){
       if(waiting&&!waitingSince)waitingSince=performance.now();
       updateMetrics(performance.now(),waiting);wake(waiting?16:0);return;
     }
-    while(accumulator>=TICK_MS&&count<4&&(count===0||performance.now()-budgetStart<6)){
+    while((accumulator>=TICK_MS||runtime.restarting())&&count<4&&(count===0||performance.now()-budgetStart<6)){
       captureLocalInput();
       const pair=nextInputs();if(!pair){queue.retryFrame=queue.frame;accumulator=Math.min(accumulator,TICK_MS);waiting=true;break;}
       endInputWait();
       await simulate(pair,false);if(stopped||ownedEpoch!==runEpoch)return;
       const after=performance.now();
       const at=captureTimes.get(queue.frame-1);if(pair[queue.slot]!==lastApplied&&at)inputAge=after-at;
-      lastApplied=pair[queue.slot];captureTimes.delete(queue.frame-1);accumulator-=TICK_MS;count++;
+      lastApplied=pair[queue.slot];captureTimes.delete(queue.frame-1);accumulator=Math.max(0,accumulator-TICK_MS);count++;
       queue.retryFrame=null;
       if(queue.dirty!==null||membership)break;
       await confirmFrames();if(stopped||ownedEpoch!==runEpoch)return;
@@ -1051,7 +1052,7 @@ async function pump(now){
     updateMetrics(after,waiting);
     // Native execution time counts toward this tick's budget. The old timer
     // waited another full interval after a 15 ms step, reducing throughput.
-    wake(waiting?16:Math.max(0,TICK_MS-accumulator-(after-lastNow)));
+    wake(waiting?16:runtime.restarting()?0:Math.max(0,TICK_MS-accumulator-(after-lastNow)));
   }catch(error){if(ownedEpoch===runEpoch)fail(error);}finally{if(ownedEpoch===runEpoch){nativeBusy=false;pumping=false;}}
 }
 const focusSettings=mountFocusSettings($('control-settings'),{alwaysPointControl:player.alwaysPointControl});

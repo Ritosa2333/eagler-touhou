@@ -1,6 +1,8 @@
 #include "AnmVm.hpp"
 #include "Interpolation.hpp"
+#include "NativeRandom.hpp"
 #include <cmath>
+#include <algorithm>
 namespace th19 {
 u32 AnmVm::next_u16(){if(ip+2>stream_len)return 0;u32 v=u16(stream[ip])|(u16(stream[ip+1])<<8);ip+=2;return v;}
 i32 AnmVm::next_i16(){return i32(i16(next_u16()));}
@@ -19,14 +21,15 @@ void AnmVm::jump_to(i32 offset,i32 new_time){
 //   10010 -> signed angle, 10011 -> unsigned scalar, 10012 -> signed scalar
 //   10013,10014,10015 -> x / y / z
 // A param whose mask bit is set is a variable reference; otherwise immediate.
-namespace { u32 random_state=0x12345678; }
-u32 AnmVm::random_checkpoint(){return random_state;}
-void AnmVm::restore_random(u32 state){random_state=state;}
-void AnmVm::seed_random(u32 seed){random_state=seed;}
+namespace { NativeRandom animation_random{0x12345678}, primary_animation_random{0x12345678}; }
+u32 AnmVm::random_checkpoint(bool primary){return (primary?primary_animation_random:animation_random).state;}
+void AnmVm::restore_random(u32 state,bool primary){(primary?primary_animation_random:animation_random).state=state;}
+// The web match still supplies one seed; native replay import must provide both
+// original object states separately and align other gameplay consumers.
+void AnmVm::seed_random(u32 seed){animation_random.state=primary_animation_random.state=seed;}
+u32 AnmVm::rand_integer(){return animation_random.next();}
 float AnmVm::rand_unit(){
-    // Preserve the existing stream; online matches reset it at the shared start.
-    random_state = random_state * 1664525u + 1013904223u;
-    return float(random_state) / 4294967296.0f;
+    return animation_random.unit();
 }
 float AnmVm::read_var_f(i32 id) const{
     switch(id){
@@ -42,12 +45,19 @@ float AnmVm::read_var_f(i32 id) const{
         case 10006: return fvar[6];
         case 10007: return fvar[7];
         // 0x4c1760 -> 0x404bd0 (signed) / 0x404c90 (unsigned).
-        case 10010: case 10030: return (rand_unit()*2-1)*random_angle_scale;
-        case 10011: case 10031: return rand_unit()*random_scale;
-        case 10012: case 10032: return (rand_unit()*2-1)*random_scale;
+        case 10010: return animation_random.signedUnit(random_angle_scale);
+        case 10011: return animation_random.unit(random_scale);
+        case 10012: return animation_random.signedUnit(random_scale);
+        // Native jump table 0x4c1930: these use object 0x5c6620,
+        // whereas 10010..10012 use object 0x5c6638.
+        case 10030: return primary_animation_random.signedUnit(random_angle_scale);
+        case 10031: return primary_animation_random.unit(random_scale);
+        case 10032: return primary_animation_random.signedUnit(random_scale);
+        case 10022: return float(animation_random.next());
         case 10027: return random_scale;
         case 10028: return random_angle_scale;
-        case 10038: return rand_unit();
+        // Outside native variable range 10000..10035: preserve literal.
+        case 10038: return 10038.f;
         case 10013: return x;
         case 10014: return y;
         case 10015: return z;
@@ -81,12 +91,15 @@ i32 AnmVm::read_var_i(i32 id) const{
         case 10008: return extra_ivar[0];
         case 10009: return extra_ivar[1];
         case 10029: return extra_ivar[2];
-        case 10022: return extra_ivar[2]?i32(u32(rand_unit()*4294967296.0)%u32(extra_ivar[2])):0; // 0x4c16d5 -> 0x402630
+        case 10022: return i32(animation_random.bounded(u32(extra_ivar[2]))); // 0x4c16d5 -> 0x402630
         case 10004: return i32(fvar[4]);
         case 10005: return i32(fvar[5]);
         case 10006: return i32(fvar[6]);
         case 10007: return i32(fvar[7]);
-        case 10010: case 10011: case 10012: case 10038: return i32(rand_unit()*1000.0f);
+        // 0x4c1738 integer dispatch routes these to literal passthrough.
+        // Float-only random variables must not advance RNG in integer reads.
+        case 10010: case 10011: case 10012:
+        case 10030: case 10031: case 10032: case 10038: return id;
         case 10013: return i32(x);
         case 10014: return i32(y);
         case 10015: return i32(z);
@@ -162,6 +175,7 @@ void AnmVm::advance_interp(){
 
 void AnmVm::tick(const AnmVm* parent){
     execution_parent_=parent;
+    if(!deleted){
     ++time;
     advance_interp();                       // interp advances even while halted
     rot_x += angle_vel_x;                    // opcode 415 angle velocity (per frame)
@@ -175,7 +189,7 @@ void AnmVm::tick(const AnmVm* parent){
             const u16 type=u16(h[0])|(u16(h[1])<<8);
             const u16 length=u16(h[2])|(u16(h[3])<<8);
             const i16 itime=i16(u16(h[4])|(u16(h[5])<<8));
-            if(type==0xffff){if(itime<=time){visible=false;halted=true;}break;}
+            if(type==0xffff){if(itime<=time){visible=false;halted=true;deleted=true;}break;}
             if(length<8){halted=true;break;}
             if(itime>time)break;
             cur_mask=u16(h[6])|(u16(h[7])<<8);   // param variable-reference mask
@@ -187,7 +201,11 @@ void AnmVm::tick(const AnmVm* parent){
             if(halted)break;
         }
     }
+    }
+    // Child animations have independent native lifetimes (including children
+    // of an emitter that has already executed delete).
     for(auto& c:children)c.tick(this);
+    children.erase(std::remove_if(children.begin(),children.end(),[](const AnmVm& c){return c.deleted&&c.children.empty();}),children.end());
     creation_registers_=false;
     execution_parent_=nullptr;
 }
@@ -207,7 +225,7 @@ void AnmVm::run_instruction(u16 op,u32 instr_start){
     };
     switch(op){
         case 0: break;
-        case 1: visible=false;halted=true;break;        // delete
+        case 1: visible=false;halted=true;deleted=true;break; // delete
         case 3: case 4: halted=true;break;              // stop / stop2
         case 5: {u32 l=next_u32();(void)l;break;}       // case label
         case 6: {i32 w=read_i(0);time-=w;break;}  // wait
@@ -448,6 +466,7 @@ void AnmVm::run_instruction(u16 op,u32 instr_start){
 }
 
 void AnmVm::interrupt(i32 case_id){
+    if(deleted)return;
     u32 q=0;
     while(q+8<=stream_len){
         const u8* h=stream+q;

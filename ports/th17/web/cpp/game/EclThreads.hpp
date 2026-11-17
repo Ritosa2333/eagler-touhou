@@ -16,7 +16,7 @@ public:
     bool spawn(EclContext& source,i32 id,u32 skipped_arguments)override;
     EclContext* find(i32 id)override;
     void terminate_children()override;
-    int step(float elapsed,float interpolation_rate=1);
+    int step(float elapsed,float interpolation_rate=1,bool lock_stage_clock=false);
     u32 count()const noexcept{return u32(children.size())+1;}
     EclContext* at(u32 index)noexcept;
     EclThreadsSnapshot snapshot()const;bool restore(const EclThreadsSnapshot&);

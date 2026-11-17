@@ -1,0 +1,16 @@
+{
+  "normal": {
+    "wasmSha256": "9733041515b317e29ab3d689c4311ccd0e07f835c95fbb760eb6d4596c2a266f",
+    "sourceDirectory": "ports/th05",
+    "cooperativeCore": false
+  },
+  "multiplayer": {
+    "wasmSha256": "5f3cc4f57f6a625bddf7d0426fa7adcd70de13e2e9654f3de19927b274d9f9db",
+    "sourceDirectory": "ports/th05-mp",
+    "cooperativeCore": true,
+    "thprac": false,
+    "sourceFilesSha256": "2439d250d9b82dcb8466945c67eeaaf6f89b5fd21fa844b4b34c2ab52a2ee56e"
+  },
+  "sourceHead": "ad4898df32d757de232d30d86afa19b42b025c9a",
+  "multiplayerTree": "bf334314494538952f9177722c0e637dc6f55d91"
+}

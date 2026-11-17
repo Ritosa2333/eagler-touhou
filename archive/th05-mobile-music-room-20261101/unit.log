@@ -1,0 +1,20 @@
+✔ managed protocol: authenticate source, origin and navigation epoch; ordered ACKs (4.8022ms)
+✔ managed protocol: atomic content identity and file traversal boundaries (15.2289ms)
+✔ managed practice: one binary forwards disabled/enabled and independent interface language (0.3903ms)
+✔ managed touch: sensitivity, independent key owners, serial edges and cancellation (0.7997ms)
+✔ managed touch: menu tap/swipe/back and free-direction movement (0.3341ms)
+✔ managed protocol: malformed input and launch ordering return failures (0.3389ms)
+✔ managed Replay: validate the native frame stream and touch journal (5.2356ms)
+✔ dialogue long press skips with Ctrl and releases without a menu back action (1.3795ms)
+✔ hosted touch fractions map through portrait and landscape letterboxing (1.2872ms)
+✔ native panels own touches; passive panel swipes replay their original down (0.2232ms)
+✔ original SE preserves stereo PCM and rejects malformed WAV (1.4085ms)
+✔ original SE restarts the same sound immediately without interrupting other effects (1.4764ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 157.6534

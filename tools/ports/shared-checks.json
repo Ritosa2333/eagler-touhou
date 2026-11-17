@@ -3,6 +3,7 @@
   "gates": [
     {
       "id": "held-touch-continuity",
+      "excludeGames": ["th01", "th02", "th03", "th04"],
       "level": "module",
       "complete": false,
       "checks": ["TOUCH-09"],
@@ -10,6 +11,7 @@
     },
     {
       "id": "immediate-sfx-routing",
+      "excludeGames": ["th01", "th02", "th03", "th04"],
       "level": "source-contract",
       "complete": false,
       "checks": ["AUDIO-07"],
@@ -41,11 +43,11 @@
     },
     {
       "id": "normal-presentation",
+      "excludeGames": ["th01", "th02", "th03", "th04", "th05"],
       "level": "source-contract",
       "runner": "vitest",
       "project": "workspace",
       "variants": ["normal"],
-      "excludedGames": ["th01", "th02", "th03", "th04"],
       "checks": ["DISPLAY-01", "DISPLAY-02", "DISPLAY-03"],
       "files": ["launcher/tests/test-native-frame-pacing.mjs", "launcher/tests/test-mobile-frame-pacing.mjs", "launcher/tests/test-presentation-contract-coverage.mjs"]
     },
@@ -57,6 +59,14 @@
       "games": ["th06", "th07"],
       "checks": ["REPLAY-04", "REPLAY-05", "SAVE-01", "SAVE-02", "SAVE-03", "SAVE-06"],
       "files": ["launcher/tests/test-replay-extension-contract.mjs", "launcher/tests/test-runtime-storage-contract.mjs"]
+    },
+    {
+      "id": "th05-normal-presentation",
+      "level": "module",
+      "games": ["th05"],
+      "variants": ["normal"],
+      "checks": ["DISPLAY-01", "DISPLAY-02", "DISPLAY-03"],
+      "files": ["ports/th05/tests/presentation.mjs"]
     }
   ]
 }

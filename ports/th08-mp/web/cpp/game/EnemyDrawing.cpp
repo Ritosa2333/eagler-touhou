@@ -124,7 +124,7 @@ void EnemyDrawing::visual(EclVm& enemy,u32 index,AnmVm& draw){
     before.visual[index].apply_active_opacity(enemy.animation[index],draw,presentation::world_alpha);
 }
 void EnemyDrawing::trail(EclVm& enemy,EnemyTrail& draw){
-    if(!presentation::active||presentation::world_alpha>=1)return;const auto found=previous.find(&enemy);if(found==previous.end()||!found->second.active)return;
+    if(!presentation::active||presentation::world_alpha==1)return;const auto found=previous.find(&enemy);if(found==previous.end()||!found->second.active)return;
     const auto& before=found->second;const auto& current=enemy.trail;
     if(enemy.lifetime.current<before.age||enemy.main_context.subroutine!=before.subroutine||before.trail_flags!=current.flags||before.trail_step!=current.step||before.trail_length!=u32(current.length))return;
     for(u32 i=0;i<before.trail_length;++i){const auto& a=before.trail[i];const auto& b=current.points[i];if(a.position.x<-990||b.position.x<-990||!presentation::VisualSample::near(a.position,b.position))continue;
@@ -142,7 +142,7 @@ Vec3 EnemyDrawing::position(EclVm& enemy){
     return {presentation::lerp_world(before.position.x,enemy.resolved_position.x),presentation::lerp_world(before.position.y,enemy.resolved_position.y),presentation::lerp_world(before.position.z,enemy.resolved_position.z)};
 }
 float EnemyDrawing::direction(EclVm& enemy){
-    if(presentation::world_alpha>=1)return enemy.direction.z;
+    if(presentation::world_alpha==1)return enemy.direction.z;
     if(!presentation::active)return enemy.direction.z;const auto found=previous.find(&enemy);if(found==previous.end()||!found->second.active||enemy.lifetime.current<found->second.age||enemy.main_context.subroutine!=found->second.subroutine)return enemy.direction.z;
     constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=enemy.direction.z-found->second.direction;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(found->second.direction+delta*presentation::world_alpha,0);
 }

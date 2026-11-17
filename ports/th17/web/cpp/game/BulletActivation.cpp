@@ -11,6 +11,9 @@ bool BulletState::activate(const Vec3& player,Rng& random,BulletSoundHost* sound
     auto resolve_angle=[&](float value,float offset,float aiming_threshold=999990.f){if(value<=-999990.f)return motion.angle;if(value>=aiming_threshold)value=float(bullet_aim(motion.position,player)+offset);return normalize_angle(value);};
     for(u32 budget=0;budget<1024;budget++){
         if(transform_index>=18)return true;if(transform_index<0){error="Negative bullet transform index";return false;}
+        // An enemy spawned by a transform can redirect bullets during its
+        // initial ECL tick, so look up the program again after host callbacks.
+        const auto& transforms=this->transforms();
         const auto& t=transforms[transform_index];const auto& f=t.floats;const auto& i=t.integers;const u32 type=t.type;
         if(!type||(!t.active&&(transform_flags&0xfffffeffu))||(type&transform_flags))return true;
         switch(type){
@@ -68,7 +71,7 @@ bool BulletState::activate(const Vec3& player,Rng& random,BulletSoundHost* sound
                 if(transform_index+1>=18){error="Truncated bullet laser transform";return false;}
                 const auto& next=transforms[transform_index+1];bool cancelled=false;
                 if(i[0]==0){MovingLaserRequest request;request.position=motion.position;request.angle=resolve_angle(f[0],0);request.speed=f[1]<=-999990.f?motion.speed:f[1];request.initial_length=f[2];request.maximum_length=f[3];request.type=i[1];request.color=i[2];request.end_distance=next.floats[0];request.width=next.floats[1];request.start_offset=next.floats[2];request.sound=next.integers[0];request.reflection_sound=next.integers[1];request.transform_index=next.integers[2];request.transform_parameter=1;request.transforms=transforms;
-                    transform_index=wrapping_add(transform_index,1);if(!animations||!animations->create_laser(request)){error="Bullet moving laser creation failed";return false;}cancelled=i[3]!=0;
+                    cancelled=i[3]!=0;transform_index=wrapping_add(transform_index,1);if(!animations||!animations->create_laser(request)){error="Bullet moving laser creation failed";return false;}
                 }else if(i[0]==1){StationaryLaserRequest request;request.position=motion.position;request.angle=resolve_angle(f[0],0);request.speed=f[1]<=-999990.f?motion.speed:f[1];request.initial_length=f[2];request.maximum_length=f[3];request.type=i[1];request.color=i[2];const u32 packed=u32(i[3]);request.flags=(packed&0xfdu)|2u;request.transform_index=(packed>>8)&255;request.width=next.floats[0];request.start_offset=next.floats[1];request.delay=next.integers[0];request.warmup=next.integers[1];request.active=next.integers[2];request.fade=next.integers[3];request.sound=18;request.transform_sound=-1;request.transforms=transforms;
                     transform_index=wrapping_add(transform_index,1);if(!animations||!animations->create_laser(request)){error="Bullet stationary laser creation failed";return false;}cancelled=(packed>>16)&1;
                 }else{error="Invalid bullet laser kind";return false;}

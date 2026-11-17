@@ -15,9 +15,10 @@ export interface MultiplayerRoomSessionSnapshot {
   room: {
     visibility?: "public" | "private";
     disableCheatMovement?: boolean;
+    unrated?: boolean;
     disableLocalChargePriority?: boolean;
     disableFocus?: boolean;
-  showHitboxes?: boolean;
+    showHitboxes?: boolean;
   ballCount?: number;
     challengeMode?:boolean;
   chapterThreshold?: number;
@@ -72,6 +73,7 @@ export function createMultiplayerRoomSessionStore({
           code: snapshot.room.code,
           visibility: snapshot.room.visibility,
           disableCheatMovement: snapshot.room.disableCheatMovement,
+          unrated: snapshot.room.unrated,
           disableLocalChargePriority: snapshot.room.disableLocalChargePriority,
           disableFocus: snapshot.room.disableFocus,
           showHitboxes: snapshot.room.showHitboxes,
@@ -123,8 +125,9 @@ export function createMultiplayerRoomSessionStore({
         code: roomCode,
         visibility: room.visibility === "private" ? "private" : "public",
         disableCheatMovement: room.disableCheatMovement === true,
+        ...(product === 'th09mp' && typeof room.unrated === 'boolean' ? {unrated: room.unrated} : {}),
         ...(product === 'th09mp' ? {disableLocalChargePriority: room.disableLocalChargePriority === true} : {}),
-        ...(product === 'th01mp' ? {ballCount:[1,2,3,4,6,8].includes(room.ballCount as number) ? room.ballCount as number : 2} : {}),
+        ...(product === 'th01mp' ? {ballCount:[1,2,3,4,6,8,9].includes(room.ballCount as number) ? room.ballCount as number : 2} : {}),
         ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false,showHitboxes:room.showHitboxes===true} : product === 'th02mp' ? {disableFocus:room.disableFocus===true} : {}),
         ...(validTh15ChapterThreshold(room.chapterThreshold)?{chapterThreshold:room.chapterThreshold}:{}),
         ...(product==='th19mp'&&validTh19VersusRules(room.th19Rules)?{th19Rules:[...room.th19Rules]}:{}),

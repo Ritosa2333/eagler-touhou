@@ -19,8 +19,18 @@ bool anm_quad_positions(AnmVm& vm,Vec3 (&out)[4])noexcept{
     // Each quad has only two local X and two local Y coordinates. Compute
     // each once, retaining the original float operations and their order.
     float local_x[2],local_y[2];for(u32 i=0;i<2;i++){float x=float(float(xs[ax][i]*v.sprite_size.x)-v.size.x),y=float(float(ys[ay][i*2]*v.sprite_size.y)-v.size.y);if(resolution==1||resolution==2){x=float(x*factor);y=float(y*factor);}local_x[i]=float(x*scale_x);local_y[i]=float(y*scale_y);}
-    const float z=float(float(v.translation.z+p.z)+v.child_anchor.z);for(u32 i=0;i<4;i++){const float x=local_x[i&1],y=local_y[i>>1];
-        if(mode==1)out[i]={float(float(float(x*cosine)-float(y*sine))+center.x),float(float(float(x*sine)+float(y*cosine))+center.y),z};else out[i]={float(x+center.x),float(y+center.y),z};
-    }return true;
+    const float z=float(float(v.translation.z+p.z)+v.child_anchor.z);
+    if(mode!=1){
+        const float x0=float(local_x[0]+center.x),x1=float(local_x[1]+center.x);
+        const float y0=float(local_y[0]+center.y),y1=float(local_y[1]+center.y);
+        out[0]={x0,y0,z};out[1]={x1,y0,z};out[2]={x0,y1,z};out[3]={x1,y1,z};
+        return true;
+    }
+    const float x_cos[]={float(local_x[0]*cosine),float(local_x[1]*cosine)};
+    const float x_sin[]={float(local_x[0]*sine),float(local_x[1]*sine)};
+    const float y_cos[]={float(local_y[0]*cosine),float(local_y[1]*cosine)};
+    const float y_sin[]={float(local_y[0]*sine),float(local_y[1]*sine)};
+    for(u32 i=0;i<4;i++)out[i]={float(float(x_cos[i&1]-y_sin[i>>1])+center.x),float(float(x_sin[i&1]+y_cos[i>>1])+center.y),z};
+    return true;
 }
 }

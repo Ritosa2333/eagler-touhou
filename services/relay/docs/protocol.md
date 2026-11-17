@@ -28,11 +28,15 @@ WebRTC 建立失败时，服务向两端发送 `{"type":"route","mode":"failed"}
 | `settings` | `playerCount`、`difficulty`、`visibility`、`disableCheatMovement`、`challengeMode`，th09 可带 `disableLocalChargePriority`，th15 可带 `chapterThreshold` |
 | `start` | `inputDelay`、`adonisMode`、`inputDelayAuto`、`predictionReserve`、可选 `predictionLimit` |
 | `quick-chat` | 当前 `serial` 与 `phrase` |
+| `resource-progress` | 资源准备进度和可选的 `nativeRuntime` 席位标记 |
+| `relay-preference` | `swarm` 布尔值，更新当前席位下一局的 Swarm 偏好 |
 | `state` 的 `room` | `playerCount`、`difficulty`、`visibility`、`disableCheatMovement`、`disableLocalChargePriority`（th09）、`chapterThreshold`（th15）、`challengeMode`、`prankMode`、`inputDelay`、`adonisMode`、`inputDelayAuto`、`predictionReserve`、`timing`、`predictionLimit`、`settingsVersion`、`phase`、`runtimeGeneration`（版本化 run）、`startSerial`、`spectators`、`spectatorCount`、`seats` |
 
 `disableLocalChargePriority` 是 th09mp 的布尔规则，默认 `false`，对应启用本地优先蓄力。创建房间时，查询参数使用 `disableLocalChargePriority=0` 或 `1`。修改权限属于等待室中的 P1，`settings` 消息使用布尔值，并携带有效的 `playerCount` 与 `difficulty`。修改会清除双方准备状态、更新 `settingsVersion`，并通过 `state.room` 同步当前值。开局后规则固定。参数映射、蓄力行为和录像格式见 [th09 开发指南](../../../ports/th09/docs/DEVELOPMENT.md#回滚蓄力与-replay)。
 
 版本化 `runtimeGeneration` 为 64 个小写十六进制字符；同一局准备的玩家必须匹配。消息有效性、成员权限、房间状态和数值范围以 Relay 实现与 [`tests/`](../tests/) 为准。
+
+大厅和等待室的席位用 `controlMode` 表示移动方式。`normal` 对应八向移动（关闭触控或使用八向摇杆），`touch` 对应不限向移动（拖动或自由摇杆），`cheat` 对应作弊移动（不限速）。
 
 ## 萃梦想旁观
 
@@ -48,6 +52,18 @@ th075 使用独立的 `EPTM` 时序记录与 `EPNP` 全席位已确认输入，�
 
 ## 服务端处理
 
+已配置 Swarm TURN 的房间在快照中发布 `swarmAvailable`。有玩家选择 Swarm 时，开局快照发布 `swarmSelected`，信令下发常规 STUN 和 Swarm TURN 地址与短期凭据。`peers.turnMode = "swarm"` 指示 TURN 池代理原样转发候选。直连与 NAT4 预测仍可用，本局的 TURN 候选仅由 Swarm 提供。
+
+`relay-preference.worker` 可指定 Swarm 节点。手选节点在同一席位变更机体后继续生效，直到玩家改选或节点离线。`automatic: true` 上报本机测速结果，用于未手选可用节点的 Swarm 玩家。
+
+启用 NAT4 观测的双人原生房间通过 `peers.nat4Observers` 下发三个 STUN 端点。客户端用 `signal.observer` 标注同一 ICE socket 的映射观测。Relay 即时转发常规候选。双方的预测齐备时立即交换，只有一席得到预测时在观测窗口结束后发给对端。
+
+原生端准备时可用 `set-ready.swarmDirect` 声明本地 Swarm 支持。双人对局选择 Swarm 且 Relay 配置了 `SWARM_ACCESS_TOKEN` 时，Relay 在广播开局前为一个已认证的原生席位请求 Swarm 端口。原生端通过本机 TURN 注册该端口，并按标准 ICE 信令向对端发布候选。另一席同时收集 Swarm TURN 候选。原生席未取得端口时也会收集 Swarm TURN 候选。
+
+双人原生房间双方通过 `rtc-ready.rtcReplace` 声明支持重建连接。发生持续断流时，任一玩家可发 `rtc-replace-request`，Relay 为同一局分配新一代信令。两端重建 WebRTC，交换带 `generation` 的 SDP 与 ICE 候选，并在两条数据通道打开后上报 `rtc-ready`。Relay 收到双方确认后广播 `rtc-replaced`，双方从当前输入历史继续对局。NAT4 重新交换候选，启用原生 Swarm 时重新分配端口。建连上限为 15 秒。
+
+协商过重建能力的对局中，双方信令同时异常断开时，Relay 按房间重连宽限期保留对局。已恢复信令的一方可以请求重建，Relay 等双方信令到齐后才开始交换新一代候选。单独重连信令时，已建立的游戏通道继续传输。
+
 th09 按当前局保存完整 Replay 前缀，原生开局头到达时释放上一局历史。包含两人本地蓄力样本的输入记录为 126 字节，20 分钟对局约占 9.1 MB；服务端为每场前缀提供 16 MiB 的内存预算。旁观发送分批推进。历史预算耗尽时保留已接入直播的旁观连接，暂停新加入，下一局自动重新开放。
 
 - `common/contracts/` 是静态产品和协议规则的唯一来源；Relay 不依赖 Launcher UI。
@@ -59,3 +75,37 @@ th09 按当前局保存完整 Replay 前缀，原生开局头到达时释放上�
 ## 已发布客户端的观战协议
 
 Relay 同时接收 `E?SV/1` 与 `E?SV/2`，每场对局在首份关卡记录中固定版本，后续关卡与旁观初始化沿用该版本。v1 保留 60 KiB 的状态上限，v2 使用 4 KiB 的原生 Replay 关卡头；同一对局的版本切换会被拒绝。各作品可以独立更新 Runtime，并保持现有旁观连接可用。
+
+## 一起听
+
+设置 `EAGLER_NETPLAY_LISTEN_TOGETHER=1` 后，首次等待室 `state` 带有 `listenTogether: 2`。功能默认关闭。一起听复用等待室连接，按玩家席校验权限。
+
+客户端发送 `type: "listen-together"`：
+
+| `action` | 字段 | 行为 |
+| --- | --- | --- |
+| `invite` | `track: {platform, id}`、可选 `queue`、`positionMs`、`paused`、`repeat`、`shuffle` | 有另一位在线入座玩家时发起邀请，记录发起者当时的队列和播放状态 |
+| `join` | `session` | 同意邀请或加入正在播放的会话 |
+| `select` | `session`、`revision`、`track`、可选 `queue` | 已加入的玩家切换曲目，提供队列时替换当前列表 |
+| `pause` / `resume` | `session`、`revision` | 已加入的玩家同步暂停或继续 |
+| `seek` | `session`、`revision`、`positionMs` | 跳转进度，沿用当前暂停状态 |
+| `previous` / `next` | `session`、`revision` | 切换曲目，播放超过三秒时上一首先回到开头 |
+| `mode` | `session`、`revision`、`repeat`、`shuffle` | 循环模式为 `off`、`all` 或 `one`，随机顺序由 Relay 生成 |
+| `enqueue` / `remove` | `session`、`revision`、`track` 或 `index` | 已加入的玩家增删队列，当前曲目不能移除 |
+| `ended` | `session`、`playback`、`durationMs` | 已加入的玩家报告播放结束，按模式自动续播 |
+| `leave` | `session` | 退出播放，少于两人时结束会话 |
+| `sync` | | 读取当前状态并校对时间 |
+
+服务端发送同类型的快照，包含 `session`、`revision`、`track`、`participants`（等待室客户端 ID）、`startedAt` 和 `serverTime`。`session` 为随机会话标识，`revision` 随状态变化递增。换歌携带当前版本，版本冲突返回最新快照，客户端重新确认操作。时间以 Unix 毫秒表示。发起时 `startedAt` 为 `null`，另一位玩家同意时，从邀请记录的进度和暂停状态建立共享时间线。参与者的播放与队列权限相同。客户端仅在自己属于 `participants` 且有播放起点时切入共享播放。`session: null` 表示空闲或已退出。席位清除时结束该玩家的参与资格，现有席位重连宽限期内可恢复状态。
+
+曲目用原站 `netease` 或 `qq` 与最多 64 字符的 ID 表示。播放端通过音乐服务按需解析地址。音乐状态独立于对局设置和房间目录。状态按操作发布，每连接每秒最多处理十条音乐消息，限流时返回 `error: "rate-limited"`，退出操作独立处理。入座玩家重连会收到当前会话或空闲快照，客户端也可用 `sync` 请求快照。发送共用 Relay 的有界队列，拥塞超限后断开连接，客户端重连恢复最新状态。
+
+队列最多 100 首并按平台与 ID 去重，每首可附带最多 64 字符的 `name` 与 `artist`。快照增加 `queue`、`queueIndex`、`repeat`、`shuffle`、`hasPrevious`、`hasNext`、`ended` 和 `playback`。切歌、跳转与重播递增 `playback`，同一播放轮次只接受一次结束报告，避免多个客户端连续跳歌。顺序播放到末尾暂停，列表循环回到首曲，单曲循环仅作用于自动续播。Relay 无音乐计时器，客户端在结束事件中推动续播。
+
+播放端根据服务器时间估算进度，在媒体就绪、播放启动及重连后校准。解析返回试听、鉴权错误或无可用地址时显示失败并允许退出。异步解析完成后须核对当前会话、版本和参与资格，避免退出或换歌后恢复旧音频。
+
+暂停快照携带 `pausedAt`，进度固定为 `(pausedAt - startedAt) / 1000`；继续时服务端将暂停时长补入 `startedAt` 并清空 `pausedAt`。暂停与继续共用曲目资源，暂停时停止进度定时器。
+
+手动启用“测试功能”后，可在“房间 / 难度设置”右侧展开或收起观战席上方的小播放器。播放器默认使用个人队列，点击同步按钮才发出或接受邀请。退出同步后可继续之前的个人队列。播放器提供播放、暂停、进度拖动、切歌、随机与循环控制，音量和退出收在菜单中。展开共用房间面板搜索、读取公开歌单或管理队列，歌单可将已加载的最多 100 首加入播放。封面采色只在图片加载时运行，缓存最多 32 组颜色，跨域采色失败时使用默认背景。播放控制同步给已加入的玩家，音量由各浏览器独立调整。各浏览器保存自己上次选择的曲目。关闭测试功能时不创建音乐模型、播放器或音乐定时器。
+
+音乐适配器默认使用 Motues 的 Meting 接口。构建变量 `VITE_METING_API_URL` 可指定兼容的完整接口地址，跨域服务需允许站点来源。浏览器从原站 CDN 加载音频并读取时长。Relay 同步曲目信息、队列和播放状态。替换音乐服务时实现 `MusicProvider` 的四个读取方法即可。

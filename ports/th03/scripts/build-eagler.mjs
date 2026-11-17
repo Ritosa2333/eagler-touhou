@@ -3,10 +3,14 @@ import {createHash} from 'node:crypto';
 import {readFile,writeFile,mkdir,readdir,copyFile,mkdtemp,rename,rm} from 'node:fs/promises';
 import {resolve,dirname,relative,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {printRuntimeInputs} from '../../../tools/build/runtime-inputs.mjs';
+import {execFileSync} from 'node:child_process';
 import {DATA_SCHEMA,DATA_MAGIC,DATA_LAYOUT_SPEC} from '../web/managed-data.mjs';
 const port=resolve(fileURLToPath(new URL('..',import.meta.url))),repo=resolve(port,'../..');
 const args=Object.fromEntries(process.argv.slice(2).map(arg=>{const at=arg.indexOf('=');return [arg.slice(2,at<0?undefined:at),at<0?true:arg.slice(at+1)];}));
-if(!args['native-content']||!args['native-ui']||!args['native-build'])throw Error('需要指定 --native-content、--native-ui 和 --native-build');
+if(args['print-inputs']){const files=execFileSync('git',['ls-files','--cached','--','ports/th03/web','ports/th03/scripts','ports/th03/patches','tools/ports/th03-native-probe'],{cwd:repo,encoding:'utf8'}).trim().split('\n').filter(Boolean).map(name=>resolve(repo,name));await printRuntimeInputs({workspace:port,root:port,sources:[],headers:[...files,resolve(port,'source-import.json')],flags:['game=th03','assembly=managed-import','native-core=external-precompiled']});}
+args['native-content'] ||= process.env.TH03_NATIVE_CONTENT;args['native-ui'] ||= process.env.TH03_NATIVE_UI;args['native-build'] ||= process.env.TH03_NATIVE_BUILD;
+if(!args['native-content']||!args['native-ui']||!args['native-build'])throw Error('需要指定 --native-content、--native-ui 和 --native-build 或对应 TH03_NATIVE_* 环境变量');
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 async function files(dir,prefix=''){const result=[];for(const e of await readdir(dir,{withFileTypes:true})){if(e.isSymbolicLink())throw Error('不支持符号链接');const path=prefix+e.name;if(e.isDirectory())result.push(...await files(join(dir,e.name),path+'/'));else if(e.isFile())result.push(path);}return result.sort();}
 const cache=resolve(port,'.cache');await mkdir(cache,{recursive:true});const stage=await mkdtemp(resolve(cache,'native-build-')),output=resolve(stage,'build-eagler'),content=resolve(stage,'content');

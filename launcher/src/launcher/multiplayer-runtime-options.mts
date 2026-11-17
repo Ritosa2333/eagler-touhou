@@ -116,8 +116,9 @@ export function buildMultiplayerRuntimeOptions(
     throw new Error('挑战模式参数无效');
   if(input.disableLocalChargePriority !== undefined && (roomProduct !== 'th09mp' || typeof input.disableLocalChargePriority !== 'boolean'))
     throw new Error('蓄力进度参数无效');
-  if(input.ballCount!==undefined && (roomProduct!=='th01mp'||![1,2,3,4,6,8].includes(input.ballCount)))throw new Error('TH01 ball count is invalid');
+  if(input.ballCount!==undefined && (roomProduct!=='th01mp'||![1,2,3,4,6,8,9].includes(input.ballCount)))throw new Error('TH01 ball count is invalid');
   if(input.disableFocus!==undefined&&((roomProduct!=='th02mp'&&roomProduct!=='th03mp')||typeof input.disableFocus!=='boolean'))throw new Error('低速规则参数无效');
+  if(input.showHitboxes!==undefined&&(roomProduct!=='th03mp'||typeof input.showHitboxes!=='boolean'))throw new Error('判定点规则参数无效');
   if (
     input.chapterThreshold !== undefined &&
     (roomProduct !== "th15mp" ||
@@ -167,10 +168,10 @@ export function buildMultiplayerRuntimeOptions(
   });
   if (loadouts.length !== playerCount) throw new Error('LAN 机体配置数量不足');
 
-  const fixedRollbackTitle = product === multiplayerConfigForProduct('th11mp') || product === multiplayerConfigForProduct('th12mp');
+  const fixedRollbackTitle = product === multiplayerConfigForProduct('th11mp') || product === multiplayerConfigForProduct('th12mp') || roomProduct === 'th14mp' || roomProduct === 'th17mp';
   const th075 = roomProduct === 'th075mp';
   const th15 = roomProduct === 'th15mp';
-  const requestedMode = input.adonisMode ?? (roomProduct === 'th11mp' || th075 || product.inputTiming?.rollbackDefault === false ? 1 : 0);
+  const requestedMode = input.adonisMode ?? (roomProduct === 'th11mp' || product.inputTiming?.rollbackDefault === false ? 1 : 0);
   const timingPolicy = multiplayerInputTimingPolicy(product);
   const rollback = timingPolicy.rollback && [0, 2].includes(requestedMode);
   const adonisMode = rollback ? 0 : requestedMode;
@@ -269,7 +270,7 @@ export function buildMultiplayerRuntimeOptions(
     netplaySpectatorId: spectator ? input.spectatorId : '',
     netplaySpectatorCount: Math.max(0, Number(input.spectatorCount) || 0),
     ...(input.spectatorTimeline === true ? { netplaySpectatorTimeline: true } : {}),
-    ...(roomProduct === 'th09mp' && !spectator ? {
+    ...(['th09mp','th19mp'].includes(roomProduct) && !spectator ? {
       netplayReplayAutoSave: input.replayAutoSave !== false,
       netplayReplayNames: [0, 1].map(side => String(input.replayNames?.[side] || `P${side + 1}`).slice(0, 64)),
     } : {}),

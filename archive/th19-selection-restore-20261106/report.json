@@ -1,0 +1,86 @@
+{
+  "passed": true,
+  "locked": {
+    "hover": {
+      "screen": 9,
+      "transition": 0,
+      "confirm": -1,
+      "left": 2,
+      "right": 1
+    },
+    "confirmed": {
+      "screen": 9,
+      "transition": 0,
+      "confirm": -1,
+      "left": 2,
+      "right": 1
+    }
+  },
+  "vsLocked": {
+    "hover": {
+      "screen": 9,
+      "transition": 0,
+      "confirm": -1,
+      "left": 11,
+      "right": 1
+    },
+    "confirmed": {
+      "screen": 9,
+      "transition": 0,
+      "confirm": -1,
+      "left": 11,
+      "right": 1
+    }
+  },
+  "random": {
+    "screen": 9,
+    "transition": 0,
+    "confirm": -1,
+    "left": 19,
+    "right": 1
+  },
+  "first": {
+    "screen": 9,
+    "transition": 0,
+    "confirm": -1,
+    "left": 19,
+    "right": 1
+  },
+  "both": {
+    "screen": 9,
+    "transition": 0,
+    "confirm": -1,
+    "left": 19,
+    "right": 19
+  },
+  "resolved": {
+    "begin": {
+      "screen": 9,
+      "transition": 0,
+      "confirm": 1,
+      "left": 8,
+      "right": 0
+    },
+    "hold": {
+      "screen": 9,
+      "transition": 0,
+      "confirm": 60,
+      "left": 8,
+      "right": 0
+    },
+    "transition": {
+      "screen": 9,
+      "transition": 1,
+      "confirm": -1,
+      "left": 8,
+      "right": 0
+    },
+    "game": {
+      "screen": 11,
+      "transition": 0,
+      "confirm": -1,
+      "left": 8,
+      "right": 0
+    }
+  }
+}

@@ -1,0 +1,28 @@
+[
+  {
+    "siteUrl": "https://touhouonline.com/",
+    "passed": true,
+    "variants": [
+      {
+        "variant": "multiplayer",
+        "url": "https://touhouonline.com/runtime/th05/multiplayer/02b81ca8fea3cff969cf2e64c2e3a9c2936f2b38fc4740712f572d2fa78179f0/th05.wasm",
+        "bytes": 1185302,
+        "sha256": "64167ffbbc052142c488702c08b42bc5c556c49486a73a573185b68b675952fd",
+        "generation": "02b81ca8fea3cff969cf2e64c2e3a9c2936f2b38fc4740712f572d2fa78179f0"
+      }
+    ]
+  },
+  {
+    "siteUrl": "https://ritosa.cyou/",
+    "passed": true,
+    "variants": [
+      {
+        "variant": "multiplayer",
+        "url": "https://ritosa.cyou/runtime/th05/multiplayer/02b81ca8fea3cff969cf2e64c2e3a9c2936f2b38fc4740712f572d2fa78179f0/th05.wasm",
+        "bytes": 1185302,
+        "sha256": "64167ffbbc052142c488702c08b42bc5c556c49486a73a573185b68b675952fd",
+        "generation": "02b81ca8fea3cff969cf2e64c2e3a9c2936f2b38fc4740712f572d2fa78179f0"
+      }
+    ]
+  }
+]

@@ -1,0 +1,10 @@
+import {spawnSync} from 'node:child_process';
+import {readFileSync,mkdirSync} from 'node:fs';
+import {fileURLToPath} from 'node:url';
+import {resolve} from 'node:path';
+import {WASI} from 'node:wasi';
+const root=fileURLToPath(new URL('../../',import.meta.url)),out=resolve(root,'artifacts/motion');mkdirSync(out,{recursive:true});
+const result=spawnSync(resolve(root,'th10_web/tools/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe'),['--target=wasm32-wasip1','-O2','-ffp-contract=off','-std=c++17','-fno-exceptions','-fno-rtti','-mexec-model=reactor','-Wl,--no-entry','-Wl,--export-memory',resolve(root,'portable/input/verify.cpp'),'-o',resolve(out,'verify.wasm')],{encoding:'utf8',windowsHide:true});
+if(result.status||result.error)throw result.error??Error(result.stdout+result.stderr);
+const wasi=new WASI({version:'preview1',args:[],env:{}}),{instance}=await WebAssembly.instantiate(readFileSync(resolve(out,'verify.wasm')),{wasi_snapshot_preview1:wasi.wasiImport});wasi.initialize(instance);
+const failure=instance.exports.verify();console.log(JSON.stringify({passed:!failure,failure}));if(failure)process.exitCode=1;

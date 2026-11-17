@@ -25,7 +25,7 @@ const bundle = await build({absWorkingDir: project, stdin: {resolveDir: project,
       path=>new URL(path,base).href,id=>new URL('index.html?game='+id,base).href);
     return <><LauncherMasthead variant="library" assetUrl={path=>new URL(path,base).href}
       launcherHref={base} faqHref="faq.html" aboutHref="about.html" menuOpen={open} onMenuOpenChange={setOpen}
-      lessMotion={false} onToggleMotion={()=>{}} noticeEnabled={true} onToggleNotice={()=>{}}
+      lessMotion={false} onToggleMotion={()=>{}}
       diagnosticsEnabled={false} onToggleDiagnostics={()=>{}} onDonation={()=>{}} onFirstUse={()=>{}}
       languageControl={<select value="zh-CN" readOnly><option value="zh-CN">中文</option></select>}/>
       <main><BookLibrary products={products} onSelect={()=>{}} onActivate={()=>{}}/></main></>;

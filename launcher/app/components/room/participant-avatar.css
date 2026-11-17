@@ -1,0 +1,36 @@
+.participant-avatar {
+  position: relative;
+  color: inherit;
+  text-decoration: none;
+}
+
+.participant-avatar-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.participant-avatar:focus-visible {
+  outline: 2px solid var(--kit-ring);
+  outline-offset: 2px;
+}
+
+#player.room-workspace .room-workspace-roster .mp-seat-face[data-profile-link="true"] {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.mp-seat-face[data-profile-link="true"] .participant-avatar {
+  pointer-events: auto;
+}
+
+.room-personal-account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}

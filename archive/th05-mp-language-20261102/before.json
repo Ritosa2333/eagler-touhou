@@ -1,0 +1,33 @@
+{
+  "schema": "eagler-touhou/th05-language-regression/1",
+  "url": "https://test.touhou.vip/",
+  "route": "rtc",
+  "players": 2,
+  "selectedLanguage": "lang_zh-hans",
+  "preview": [
+    {
+      "codepage": 936,
+      "config": "MOD_FILE = chs.dat\n",
+      "practiceLabel": "无敌"
+    },
+    {
+      "codepage": 936,
+      "config": "MOD_FILE = chs.dat\n",
+      "practiceLabel": "无敌"
+    }
+  ],
+  "run": [
+    {
+      "codepage": 932,
+      "config": "",
+      "practiceLabel": "無敵"
+    },
+    {
+      "codepage": 932,
+      "config": "",
+      "practiceLabel": "無敵"
+    }
+  ],
+  "reproduced": true,
+  "harnessSha256": "b6caae3514ca5618aac2233a22d10a281f957d45d0f25e1753fcc22bcb00a6d1"
+}

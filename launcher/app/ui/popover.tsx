@@ -1,4 +1,4 @@
-import {createContext, useContext, useRef, useState, type ComponentPropsWithoutRef, type RefObject} from 'react';
+import {createContext, useContext, useEffect, useRef, useState, type ComponentPropsWithoutRef, type RefObject} from 'react';
 import {Popover as Primitive} from 'radix-ui';
 import {uiPortalHost} from './portal';
 import {cn} from './utils';
@@ -7,6 +7,7 @@ const Context = createContext<{trigger: RefObject<HTMLButtonElement | null>; hos
 export const PopoverClose = Primitive.Close;
 export function Popover({onOpenChange, ...props}: ComponentPropsWithoutRef<typeof Primitive.Root>) {
   const trigger = useRef<HTMLButtonElement>(null), [host, setHost] = useState<HTMLElement>();
+  useEffect(()=>{if (props.open) setHost(uiPortalHost(trigger.current));},[props.open]);
   return <Context value={{trigger, host}}><Primitive.Root {...props} onOpenChange={open => {if (open) setHost(uiPortalHost(trigger.current)); onOpenChange?.(open);}}/></Context>;
 }
 export function PopoverTrigger(props: ComponentPropsWithoutRef<typeof Primitive.Trigger>) {

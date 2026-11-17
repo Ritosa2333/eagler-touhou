@@ -1,0 +1,9 @@
+{
+  "game": "th17",
+  "version": "1.00b",
+  "language": "Japanese",
+  "executable": "../../../games/th17/original/th17.exe",
+  "sha256": "85cb011e2e43b316c8fa42a3c402565ecdf2f4379f3bab66d86bcb7beef8255f",
+  "imageBase": 4194304,
+  "completeGame": true
+}

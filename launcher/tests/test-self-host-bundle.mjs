@@ -85,6 +85,7 @@ for (const required of [
   "scripts/verify-deployed-site.mjs",
   "scripts/verify-server-build.mjs",
   "scripts/prepare-th06-language-pack.mjs",
+  "docs/assets/game-covers/thumbnails/th14.jpg",
   "SELF-HOSTING.md",
   "SELF-HOSTING-REFERENCE.md",
   "EXTERNAL_RESOURCE_MODE.md",
@@ -105,9 +106,12 @@ assert.ok([...targets.keys()].every(target => !target.toLowerCase().endsWith(".p
 assert.ok([...targets.keys()].every(target => !target.startsWith("tools/maintainer/")),
   "self-host bundle must not ship maintainer tooling");
 
+const publicDocumentTargets = new Set(["profile-entry.html"]);
+assert.ok(targets.has("profile-entry.html"), "self-host bundle must publish the documented public profile entry");
 for (const target of targets.keys()) {
   const segments = target.toLowerCase().split("/");
-  const maintainerOnly = segments.some(segment =>
+  // This public profile document shares a filename prefix with maintainer tools.
+  const maintainerOnly = !publicDocumentTargets.has(target) && segments.some(segment =>
     ["test-", "test_", "test.", "run-", "audit-", "profile-", "playwright", "webkit"]
       .some(prefix => segment.startsWith(prefix)));
   assert.equal(maintainerOnly, false, `maintainer/test file leaked into self-host bundle: ${target}`);

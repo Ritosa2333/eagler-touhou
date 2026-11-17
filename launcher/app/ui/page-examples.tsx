@@ -5,7 +5,6 @@ import {BookDirectoryGames} from '../components/launcher/BookDirectoryGames';
 import {BookWorkNumber} from '../components/launcher/BookWorkNumber';
 import {DirectoryRoomFilters} from '../components/directory/LobbyDirectoryView';
 import type {DirectoryRoomFilter} from '../components/directory/directory-room-filter';
-import { CareerShowcase } from '../components/launcher/CareerShowcase';
 import { LaunchActions } from '../components/launcher/LaunchActions';
 import { createLibraryProducts } from '../components/launcher/products';
 import { SiteBrand } from '../components/launcher/SiteBrand';
@@ -80,15 +79,7 @@ export function PageExample({ page, region, announce }: Props) {
     case 'spectating/connection':
       return <ResourceExample page={page} region={region} />;
     case 'profile/career':
-      return (
-        <div className="catalog-recipe">
-          <p className="catalog-muted">访客视角样例 | 编辑与导入从个人页检查</p>
-          <CareerShowcase records={{}} onSave={() => {}} readOnly />
-          <a href="./profile.html" target="_blank" rel="noreferrer">
-            打开个人页
-          </a>
-        </div>
-      );
+      return <WorkspaceEntry page={page} region={region} />;
     case 'resources/import':
       return <ImportExample />;
     case 'resources/transfer':

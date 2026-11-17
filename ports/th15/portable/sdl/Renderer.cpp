@@ -19,6 +19,10 @@ EM_JS(int, touhou_clip_control, (), {
 namespace touhou::sdl {
 namespace {
 Renderer* active=nullptr;
+#if TH15_DEVELOPMENT_HARNESS
+bool testCaptureCopies=false;
+unsigned testGpuFlags=0;
+#endif
 // One SDL GL context is active per Wasm module. Cache only states owned here;
 // clear() also updates the write masks so a later draw restores them correctly.
 struct DrawStateCache {
@@ -175,7 +179,51 @@ void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,con
 }
 void Renderer::flush(){if(!batching)return;batching=false;if(instancing)issue(batchState,Topology::Strip,2,quad.data(),quad.size(),nullptr,IndexType::UInt16,worlds.size()>instanceStride?worlds.data():nullptr,worlds.size()>instanceStride?worlds.size():0);else issue(batchState,batchTopology,batchCount,batchBytes.data(),batchBytes.size(),nullptr,IndexType::UInt16,nullptr,0);batchBytes.clear();worlds.clear();batchCount=0;instancing=false;}
 void Renderer::discard(){batching=instancing=false;batchBytes.clear();worlds.clear();batchCount=0;}
+#if TH15_DEVELOPMENT_HARNESS
+bool Renderer::copy_capture(const State& d,Topology primitive,u32 count,const void* data,u32 size){
+#if TH15_DEVELOPMENT_HARNESS
+ if(!testCaptureCopies)return false;
+#endif
+ // Only an exact, unmodulated ONE/ZERO screen copy can bypass rasterization.
+ // Keep authored feedback, fades, masks, transformed/scaled captures and depth
+ // comparisons on the normal path. PresentationFrame records the original draw,
+ // so repeated presentations use this same transfer rather than omit a copy.
+ const auto& p=d.pipeline;
+ if(primitive!=Topology::Triangles||count!=2||size!=6*28||d.stride!=28||d.layout!=attributes(VertexLayout::ScreenColorUv)||!d.texture||d.texture==d.target||p.blend||p.alphaTest||p.fog||p.depthWrite||(p.depthTest&&p.depthCompare!=Compare::Always)||p.cull!=Cull::None||p.colorMask!=15||p.textureTransform||p.separateAlphaBlend)return false;
+ const Combiner multiply{ColorOperation::Multiply,{ArgumentSource::Texture},{ArgumentSource::Diffuse}};
+ if(!(p.color==multiply)||!(p.alpha==multiply))return false;
+ struct Vertex{float x,y,z,w;u32 color;float u,v;};
+ Vertex v[6];std::memcpy(v,data,sizeof v);
+ constexpr unsigned corners[]{0,1,2,1,2,5};
+ for(unsigned i=0;i<6;++i){const auto& a=v[i];const auto& b=v[corners[i]];
+  if(a.z!=0||a.w!=1||a.color!=0xffffffff||a.x!=b.x||a.y!=b.y||a.u!=b.u||a.v!=b.v)return false;
+ }
+ if(v[0].x!=v[2].x||v[1].x!=v[5].x||v[0].y!=v[1].y||v[2].y!=v[5].y||v[0].u!=v[2].u||v[1].u!=v[5].u||v[0].v!=v[1].v||v[2].v!=v[5].v)return false;
+ const auto source=resolve(owner,d.texture),destination=resolve(owner,d.target);
+ if(source.renderScale!=destination.renderScale||source.format!=destination.format)return false;
+ const float coordinates[]{v[0].x+.5f,v[0].y+.5f,v[5].x+.5f,v[5].y+.5f,v[0].u*source.width,v[0].v*source.height,v[5].u*source.width,v[5].v*source.height};
+ i32 box[8];for(unsigned i=0;i<8;++i){if(!std::isfinite(coordinates[i])||coordinates[i]<0||coordinates[i]>16384||coordinates[i]!=std::floor(coordinates[i]))return false;box[i]=i32(coordinates[i]);}
+ if(box[2]<=box[0]||box[3]<=box[1]||box[2]-box[0]!=box[6]-box[4]||box[3]-box[1]!=box[7]-box[5])return false;
+ if(box[2]>i32(destination.width)||box[3]>i32(destination.height)||box[6]>i32(source.width)||box[7]>i32(source.height))return false;
+ // glBlitFramebuffer ignores viewport; retain the original rasterizer clipping.
+ if(box[0]<i32(d.viewport.x)||box[1]<i32(d.viewport.y)||box[2]>i32(d.viewport.x+d.viewport.width)||box[3]>i32(d.viewport.y+d.viewport.height))return false;
+ auto& a=surface(d.texture);auto& b=target(d.target,d.depth);
+ bind_framebuffer(GL_READ_FRAMEBUFFER,a.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,b.framebuffer);glDisable(GL_SCISSOR_TEST);
+ const i32 scale=i32(source.renderScale);
+ glBlitFramebuffer(box[4]*scale,box[5]*scale,box[6]*scale,box[7]*scale,box[0]*scale,box[1]*scale,box[2]*scale,box[3]*scale,GL_COLOR_BUFFER_BIT,GL_NEAREST);
+ // This is a GPU-only write, not a CPU texture revision (unlike copy_surface).
+ b.rendered=true;++stats.captureCopies;
+#if TH15_DEVELOPMENT_HARNESS
+ if(testGpuFlags&1)glFlush();
+#endif
+ return true;
+}
+#endif
 void Renderer::issue(const State& d,Topology primitive,u32 count,const void* data,u32 size,const void* index,IndexType indexFormat,const void* instance,u32 instanceSize){
+#if TH15_DEVELOPMENT_HARNESS
+ if(testGpuFlags&2)drawState=DrawStateCache{};
+ if(!index&&!instance&&copy_capture(d,primitive,count,data,size))return;
+#endif
  stats.batches++;const auto& p=d.pipeline;auto& cached=drawState.pipeline;const bool all=!drawState.valid;
  if(all||cached.dither!=p.dither)p.dither?glEnable(GL_DITHER):glDisable(GL_DITHER);
  GPU* texture=d.texture?&surface(d.texture):nullptr;auto& g=target(d.target,d.depth);const auto& v=d.viewport;
@@ -271,6 +319,10 @@ void Renderer::release_imgui_texture(u32 value){flush();GLuint texture=value;if(
 #endif
 }
 extern "C" {
+#if TH15_DEVELOPMENT_HARNESS
+EMSCRIPTEN_KEEPALIVE void sdl_test_capture_copies(int enabled){touhou::sdl::testCaptureCopies=enabled!=0;}
+EMSCRIPTEN_KEEPALIVE void sdl_test_gpu_flags(unsigned flags){if(auto* r=touhou::sdl::current())r->flush();touhou::sdl::testGpuFlags=flags&3;}
+#endif
 const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}
 void sdl_defer(int enabled){if(auto* r=touhou::sdl::current())r->defer=enabled;}
 int sdl_commit(){return touhou::sdl::current()&&touhou::sdl::current()->commit();}

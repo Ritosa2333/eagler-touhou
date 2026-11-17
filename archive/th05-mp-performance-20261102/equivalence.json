@@ -1,0 +1,174 @@
+{
+  "cases": [
+    {
+      "count": 2,
+      "stage": 1,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 1,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 2,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 2,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 3,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 3,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 4,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 4,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 5,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 5,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 6,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 6,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 7,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 2,
+      "stage": 7,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 1,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 1,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 2,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 2,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 3,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 3,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 4,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 4,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 5,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 5,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 6,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 6,
+      "warp": 2,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 7,
+      "warp": 0,
+      "checks": 12
+    },
+    {
+      "count": 3,
+      "stage": 7,
+      "warp": 2,
+      "checks": 12
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

@@ -1,0 +1,546 @@
+{
+  "scope": "RGB pixel comparison; exclude only native live FPS readout at x564..639 y460..479",
+  "pairs": [
+    {
+      "image": "2p-stage1-warp0-0.png",
+      "differentBounds": null,
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage1-warp0-effect-0.png",
+      "differentBounds": [
+        605,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage1-warp2-0.png",
+      "differentBounds": [
+        605,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage1-warp2-effect-0.png",
+      "differentBounds": [
+        605,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage2-warp0-0.png",
+      "differentBounds": [
+        605,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage2-warp0-effect-0.png",
+      "differentBounds": [
+        605,
+        463,
+        628,
+        473
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage2-warp2-0.png",
+      "differentBounds": [
+        605,
+        463,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage2-warp2-effect-0.png",
+      "differentBounds": [
+        605,
+        463,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage3-warp0-0.png",
+      "differentBounds": [
+        605,
+        463,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage3-warp0-effect-0.png",
+      "differentBounds": [
+        605,
+        463,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage3-warp2-0.png",
+      "differentBounds": [
+        605,
+        463,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage3-warp2-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage4-warp0-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage4-warp0-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage4-warp2-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage4-warp2-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage5-warp0-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage5-warp0-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage5-warp2-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage5-warp2-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage6-warp0-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage6-warp0-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage6-warp2-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage6-warp2-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        470
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage7-warp0-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        470
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage7-warp0-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        470
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage7-warp2-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        470
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "2p-stage7-warp2-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        470
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage1-warp0-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        470
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage1-warp0-effect-0.png",
+      "differentBounds": [
+        621,
+        467,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage1-warp2-0.png",
+      "differentBounds": [
+        621,
+        467,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage1-warp2-effect-0.png",
+      "differentBounds": [
+        621,
+        467,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage2-warp0-0.png",
+      "differentBounds": [
+        621,
+        467,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage2-warp0-effect-0.png",
+      "differentBounds": [
+        621,
+        467,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage2-warp2-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage2-warp2-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage3-warp0-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage3-warp0-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage3-warp2-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage3-warp2-effect-0.png",
+      "differentBounds": [
+        621,
+        466,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage4-warp0-0.png",
+      "differentBounds": [
+        621,
+        466,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage4-warp0-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage4-warp2-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage4-warp2-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage5-warp0-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage5-warp0-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage5-warp2-0.png",
+      "differentBounds": null,
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage5-warp2-effect-0.png",
+      "differentBounds": null,
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage6-warp0-0.png",
+      "differentBounds": null,
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage6-warp0-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage6-warp2-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage6-warp2-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage7-warp0-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage7-warp0-effect-0.png",
+      "differentBounds": [
+        605,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage7-warp2-0.png",
+      "differentBounds": [
+        605,
+        463,
+        628,
+        474
+      ],
+      "gamePixelsEqual": true
+    },
+    {
+      "image": "3p-stage7-warp2-effect-0.png",
+      "differentBounds": [
+        621,
+        463,
+        628,
+        471
+      ],
+      "gamePixelsEqual": true
+    }
+  ],
+  "passed": true
+}

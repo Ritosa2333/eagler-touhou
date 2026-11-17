@@ -9,7 +9,7 @@ export function createManagedTransport(options, roles, fail, environment = globa
   if (!['ws:','wss:'].includes(base.protocol) || !base.searchParams.get('member') || !base.searchParams.get('run')) throw Error('缺少主项目房间会话');
   base.searchParams.set('player', String(local)); base.searchParams.set('players', String(count));
   let data, signal, route = null, closed = false, rtcFailed = false, rtcReported = false;
-  let earlyBytes = 0, timeout;
+  let earlyBytes = 0, timeout, signalRetry;
   let endTask,endResolve,endReject,endTimer,endGrace,localEnded=false;
   const endSeen=new Set(),endAck=new Set();
   const peers = new Map(), early = [], encoder = new TextEncoder(), decoder = new TextDecoder('utf-8', {fatal:true});
@@ -20,7 +20,7 @@ export function createManagedTransport(options, roles, fail, environment = globa
   const guard = fn => (...args) => { if (!closed) try { const result = fn(...args); result?.catch?.(fatal); } catch (error) { fatal(error); } };
   const control = message => { if (!closed && signal?.readyState === 1) signal.send(JSON.stringify(message)); };
   function close() {
-    if (closed) return; closed = true;status.disconnected=true;clearTimeout(timeout);
+    if (closed) return; closed = true;status.disconnected=true;clearTimeout(timeout);clearTimeout(signalRetry);
     clearTimeout(endTimer);clearTimeout(endGrace);endReject?.(Error('本局网络在结束确认前关闭'));endReject=null;
     for (const peer of peers.values()) {
       peer.channel.readyState = 'closed'; peer.channel.onclose?.();
@@ -132,13 +132,43 @@ export function createManagedTransport(options, roles, fail, environment = globa
     peers.set(id,peer);
   }
   const status=environment.__th02PeerTransport={peers,disconnected:false,failed:false,error:'',get relay(){return data;},get rtcReadySent(){return rtcReported;}};
+  function connectSignal(){
+    if(closed)return;
+    const signalUrl=new URL(base);signalUrl.searchParams.set('signal','1');
+    const socket=signal=new environment.WebSocket(signalUrl);
+    socket.onmessage=guard(event=>{
+      if(socket!==signal)return;
+      const message=JSON.parse(event.data);
+      if(message.type==='peers'){
+        // After a signaling reconnect, keep the existing RTC channels intact.
+        if(route)return;
+        return setupRtc(message).catch(fallback);
+      }
+      if(message.type==='peer-join'){const peer=peers.get(message.player);if(peer&&local<peer.id)offer(peer);return;}
+      if(message.type==='route')return selected(message.mode);
+      if(message.type==='error')throw Error(message.error);
+      if(message.type==='signal'){
+        const peer=peers.get(message.from);if(!peer||!peer.pc||route==='relay')return;
+        peer.chain=peer.chain.then(async()=>{
+          if(closed||route==='relay')return;
+          if(message.description)await description(peer,message.description);
+          if(message.candidate){if(peer.pc.remoteDescription)await peer.pc.addIceCandidate(message.candidate);else peer.candidates.push(message.candidate);}
+        }).catch(fallback);
+      }
+    });
+    socket.onerror=()=>{if(!route)fallback();};
+    socket.onclose=()=>{
+      if(closed||socket!==signal)return;
+      if(route){signalRetry=setTimeout(connectSignal,1000);return;}
+      fatal(Error('本局网络连接已关闭'));
+    };
+  }
   return {
     channelFor(role) { const peer=peers.get(roles.indexOf(role)); if (!peer) throw Error('未知玩家'); return peer.channel; },
     connect() {
       if (data || closed) throw Error('重复连接');
       data = new environment.WebSocket(base); data.binaryType = 'arraybuffer';
-      const signalUrl = new URL(base); signalUrl.searchParams.set('signal','1');
-      signal = new environment.WebSocket(signalUrl);
+      connectSignal();
       data.onmessage = guard(event => {
         if (typeof event.data === 'string') { const message=JSON.parse(event.data); if (message.type==='route') selected(message.mode); else if(message.type==='error') throw Error(message.error); return; }
         if (route === 'rtc') return;
@@ -147,22 +177,8 @@ export function createManagedTransport(options, roles, fail, environment = globa
         if (packet.length<3 || packet[0]!==0xe6 || !peer) throw Error('同步消息来源无效');
         deliver(peer,decoder.decode(packet.subarray(2)));
       });
-      signal.onmessage = guard(event => {
-        const message = JSON.parse(event.data);
-        if (message.type === 'peers') return setupRtc(message).catch(fallback);
-        if (message.type === 'peer-join') { const peer=peers.get(message.player); if (peer && local<peer.id) offer(peer); return; }
-        if (message.type === 'route') return selected(message.mode);
-        if (message.type === 'error') throw Error(message.error);
-        if (message.type === 'signal') {
-          const peer = peers.get(message.from); if (!peer || !peer.pc || route === 'relay') return;
-          peer.chain = peer.chain.then(async () => {
-            if (closed || route === 'relay') return;
-            if (message.description) await description(peer,message.description);
-            if (message.candidate) { if (peer.pc.remoteDescription) await peer.pc.addIceCandidate(message.candidate); else peer.candidates.push(message.candidate); }
-          }).catch(fallback);
-        }
-      });
-      for (const socket of [data,signal]) { socket.onerror=() => { if (!route) fallback(); }; socket.onclose=() => { if (!closed && (route !== 'rtc' || socket === signal)) fatal(Error('本局网络连接已关闭')); }; }
+      data.onerror=() => { if (!route) fallback(); };
+      data.onclose=() => { if (!closed && route !== 'rtc') fatal(Error('本局网络连接已关闭')); };
       timeout=setTimeout(() => fatal(Error('等待主项目网络路由超时')),45000);
     }, close, finish,
   };

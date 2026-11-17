@@ -10,38 +10,64 @@ bool integer_math(i32 a,i32 b,u32 operation,i32& out){
 }
 float float_math(float a,float b,u32 operation){switch(operation){case 0:return b;case 1:return float(a+b);case 2:return float(a-b);case 3:return float(a*b);case 4:return float(a/b);default:return float(std::fmod(double(a),double(b)));}}
 }
-bool AnmVm::bind(AnmScript& data){presentation_generation=++presentation_counter;presentation_motion=false;const i32 layer=visual.layer;const Vec3 translation=visual.translation;script=&data.bytes;resource=nullptr;source_script=-1;sprite=nullptr;sprite_resource=nullptr;sprite_source=nullptr;rotation_parent=nullptr;creation_parent=nullptr;slowdown=0;variables={};visual={};visual.layer=layer;visual.translation=translation;visual.sprite_matrix.identity();interpolators={};timer={};timer.set(0);age={};age.set(0);saved_timer={0,0,0,0,0};saved_offset=0;geometry.clear();instruction_offset=0;visible=false;pending_interrupt=0;error.clear();return script->size()>=8;}
+bool AnmVm::bind(AnmScript& data){presentation_generation=++presentation_counter;presentation_motion=false;const i32 layer=visual.layer;const Vec3 translation=visual.translation;script=&data.bytes;resource=nullptr;source_script=-1;sprite=nullptr;sprite_resource=nullptr;sprite_source=nullptr;rotation_parent=nullptr;creation_parent=nullptr;slowdown=0;variables={};visual={};visual.layer=layer;visual.translation=translation;visual.sprite_matrix.identity();interpolators={};interpolation_idle=false;changed_program();timer={};timer.set(0);age={};age.set(0);saved_timer={0,0,0,0,0};saved_offset=0;geometry.clear();instruction_offset=0;visible=false;pending_interrupt=0;error.clear();return script->size()>=8;}
 bool AnmVm::bind(AnmResource& data,u32 index){if(index>=data.scripts.size()||!bind(data.scripts[index]))return false;resource=&data;source_script=i32(index);return true;}
 bool AnmVm::select_sprite(i32 index)noexcept{
     AnmResource* source=resource;if(index<0){source=environment?environment->fallback_sprite_resource:nullptr;index=258;}
     if(!source||u32(index)>=source->sprites.size())return false;
-    sprite_resource=source;sprite=&source->sprites[index];visual.sprite=index;visual.sprite_size={sprite->width,sprite->height};
+    changed_program();sprite_resource=source;sprite=&source->sprites[index];visual.sprite=index;visual.sprite_size={sprite->width,sprite->height};
     visual.uv[0]={sprite->u0,sprite->v0};visual.uv[1]={sprite->u1,sprite->v0};visual.uv[2]={sprite->u0,sprite->v1};visual.uv[3]={sprite->u1,sprite->v1};
     visual.sprite_matrix.identity();visual.uv_matrix.identity();visual.sprite_matrix.m[0]=float(visual.sprite_size.x*.00390625f);visual.sprite_matrix.m[5]=float(visual.sprite_size.y*.00390625f);visual.transform_matrix=visual.sprite_matrix;
     const auto& texture=source->textures[sprite->texture];visual.uv_matrix.m[0]=float(visual.sprite_size.x/float(texture.width));visual.uv_matrix.m[5]=float(visual.sprite_size.y/float(texture.height));return true;
 }
 Vec3 AnmVm::total_rotation(u32 depth)noexcept{Vec3 result=variables.rotation;if(rotation_parent&&!(visual.render_flags&0x10000)&&depth<64){const Vec3 parent=rotation_parent->total_rotation(depth+1);result={float(parent.x+result.x),float(parent.y+result.y),float(parent.z+result.z)};variables.rotation={normalize_angle(variables.rotation.x),normalize_angle(variables.rotation.y),normalize_angle(variables.rotation.z)};}return result;}
 float AnmVm::effective_slowdown()const noexcept{const AnmVm* source=this;for(u32 depth=0;source->rotation_parent&&!(source->visual.render_flags&0x10000)&&depth<64;depth++)source=source->rotation_parent;return source->slowdown;}
-int AnmVm::tick(Rng& rng,float rate){
+int AnmVm::tick(Rng& rng,float rate){return execute(rng,rate,false);}
+int AnmVm::tick_tracked(Rng& rng,float rate){
+    // Private plain bullets spend most ticks on a stopped command. Keep this
+    // path outside the full interpreter's stack frame and operand machinery.
+    if(interpolation_idle&&!rotation_parent&&!creation_parent&&geometry.empty()&&script&&instruction_offset>=0&&!pending_interrupt&&!(visual.flags&0x100000)&&visual.draw_mode()<=3&&!(visual.render_flags&0x2000)&&!(environment&&((visual.flags&0x8000)||environment->paused))&&
+       (!(visual.render_flags&0x1000000)||(visual.angular_velocity.x==0&&visual.angular_velocity.y==0&&visual.angular_velocity.z==0&&visual.scale_velocity.x==0&&visual.scale_velocity.y==0&&visual.uv_velocity.x==0&&visual.uv_velocity.y==0))&&span(u32(instruction_offset),8,script->size())){
+        const auto* p=script->data()+instruction_offset;const i16 opcode=read<i16>(p);const u16 length=read<u16>(p+2);
+        if((opcode==3||opcode==4)&&read<i16>(p+4)<=timer.current&&length>=8&&length%4==0&&span(u32(instruction_offset),length,script->size())){
+            const float original_rate=rate;if(visual.render_flags&0x200)rate=1;
+            if(slowdown>0){rate=float(original_rate-float(slowdown*original_rate));if(rate<0)rate=0;}
+            age.tick(&rate);if(opcode==4)visual.flags&=~1u;visual.flags|=0x4000;
+            timer.decrement(&rate);timer.tick(&rate);visible=visual.visible();return 0;
+        }
+    }
+    return execute(rng,rate,true);
+}
+int AnmVm::execute(Rng& rng,float rate,bool tracked_interpolators){
     const float original_rate=rate,amount=effective_slowdown();
     if(visual.render_flags&0x200)rate=1;
     if(amount>0){rate=float(original_rate-float(amount*original_rate));if(rate<0)rate=0;}
     if(geometry.gather||geometry.overlay){if(!object_host){error="Animation effect update host not bound";return -1;}const i32 result=object_host->update_effect(*this,rate);if(result){if(result<0&&error.empty())error="Animation effect update failed";return result;}}
     if(geometry.trail){const i32 result=geometry.trail->update(rng,rate);if(result){if(result<0)error="Particle trail timer outside verified range";return result;}}
     if(geometry.distortion)geometry.distortion->update(variables.position,visual.translation,visual.color);
+    tracked_interpolators=tracked_interpolators&&!rotation_parent&&!creation_parent&&geometry.empty();
     if(!script||instruction_offset<0||(visual.flags&0x100000))return 0;
     age.tick(&rate);
     if(!pending_interrupt&&environment&&environment->paused&&(visual.render_flags&0xc000)==0x4000)return 0;
     auto fail=[&](const char* reason){error=reason;return -1;};
     auto jump=[&](u32 offset,i32 time){if(!span(offset,8,script->size()))return false;instruction_offset=i32(offset);timer.set(time);return true;};
     auto interrupt=[&](){u32 fallback=UINT32_MAX,found=UINT32_MAX;for(u32 off=0;span(off,8,script->size());){const auto* p=script->data()+off;const i16 op=read<i16>(p);const u16 length=read<u16>(p+2);if(op==-1)break;if(length<8||!span(off,length,script->size()))break;if(op==5&&length>=12){const i32 id=read<i32>(p+8);if(id==pending_interrupt){found=off;break;}if(id==-1)fallback=off;}off+=length;}pending_interrupt=0;visual.flags&=~0x4000u;if(found==UINT32_MAX)found=fallback;if(found==UINT32_MAX)return false;saved_timer.set(timer.current);saved_offset=instruction_offset;visible=true;visual.flags|=1;const auto* p=script->data()+found;timer.set(read<i16>(p+4));instruction_offset=i32(found+read<u16>(p+2));return true;};
-    if(pending_interrupt&&!interrupt()){timer.decrement(&rate);if(!advance(rate))return -1;timer.tick(&rate);visible=visual.visible();return 0;}
+    if(pending_interrupt)changed_program();
+    if(pending_interrupt&&!interrupt()){timer.decrement(&rate);if(!advance(rate,tracked_interpolators))return -1;timer.tick(&rate);visible=visual.visible();return 0;}
     for(u32 steps=0;steps<100000;steps++){
         if(!span(u32(instruction_offset),8,script->size()))return fail("Animation instruction outside script");
         auto* p=script->data()+instruction_offset;const i16 opcode=read<i16>(p),time=read<i16>(p+4);const u16 length=read<u16>(p+2),mask=read<u16>(p+6);
-        if(time>timer.current){if(!advance(rate))return -1;timer.tick(&rate);visible=visual.visible();return 0;}
+        if(time>timer.current){if(!advance(rate,tracked_interpolators))return -1;timer.tick(&rate);visible=visual.visible();return 0;}
         if(opcode==-1||opcode==1){visible=false;visual.flags&=~1u;instruction_offset=-1;return 1;}if(opcode==2){instruction_offset=-1;return 0;}
         if(length<8||length%4||!span(u32(instruction_offset),length,script->size()))return fail("Invalid animation instruction length");
+        // Stopped bullet scripts revisit this instruction every tick. They have
+        // no operands; advance their live motion before decoding other commands.
+        if(opcode==3||opcode==4){
+            if(opcode==4){visible=false;visual.flags&=~1u;}
+            if(pending_interrupt){if(interrupt())continue;}
+            else{visual.flags|=0x4000;timer.decrement(&rate);if(!advance(rate,tracked_interpolators))return -1;timer.tick(&rate);visible=visual.visible();return 0;}
+            instruction_offset+=length;continue;
+        }
         u32 needed=0;if(opcode>=100&&opcode<=111)needed=2;else if(opcode>=112&&opcode<=121)needed=3;else if(opcode==122||opcode==123)needed=2;else if(opcode==200)needed=2;else if(opcode==201)needed=3;else if(opcode>=202&&opcode<=213)needed=4;else if(opcode==5||opcode==6)needed=1;
         else if(opcode>=302&&opcode<=317)needed=(opcode==308||opcode==309||opcode==316||opcode==317)?0:opcode==312?2:1;
         else if(opcode==400||opcode==401||opcode==404||opcode==406||opcode==415)needed=3;
@@ -60,6 +86,8 @@ int AnmVm::tick(Rng& rng,float rate){
         else if(opcode>=500&&opcode<=508)needed=opcode==505||opcode==506?3:1;
         else if(opcode>=600&&opcode<=611)needed=opcode==611?3:opcode>=603&&opcode<=608?2:1;
         if(8+needed*4>length)return fail("Truncated animation arguments");
+        changed_program();
+        if((opcode>=407&&opcode<=414)||opcode==417||opcode==420||opcode==427||opcode==428||opcode==430||opcode==433||opcode==435||(opcode>=500&&opcode<=509))interpolation_idle=false;
         auto arg=[&](u32 n){return p+8+n*4;};
         auto integer=[&](u32 n){const i32 value=read<i32>(arg(n));return mask&(1u<<n)?variables.integer(value,rng):value;};
         bool unresolved=false;auto floating=[&](u32 n){const float value=read<float>(arg(n));if(!(mask&(1u<<n)))return value;const i32 id=truncate_int(value);
@@ -85,7 +113,6 @@ int AnmVm::tick(Rng& rng,float rate){
             if(take){if(unresolved)return fail("Animation external variable not bound");if(!jump(read<u32>(arg(2)),read<i32>(arg(3))))return fail("Invalid animation jump");continue;}
         }else switch(opcode){
             case 0:case 5:break;
-            case 3:case 4:if(opcode==4){visible=false;visual.flags&=~1u;}if(pending_interrupt){if(interrupt())continue;}else{visual.flags|=0x4000;timer.decrement(&rate);if(!advance(rate))return -1;timer.tick(&rate);visible=visual.visible();return 0;}break;
             case 6:{const float frames=float(integer(0));timer.previous=timer.current;timer.fractional=float(timer.fractional-frames);timer.current=truncate_int(timer.fractional);break;}
             case 7:timer.set(saved_timer.current);instruction_offset=i32(saved_offset);continue;
             case 122:{const u32 bound=u32(integer(1));const i32 value=bound?signed_bits(rng.next32()%bound):0;*int_dest(0)=value;break;}

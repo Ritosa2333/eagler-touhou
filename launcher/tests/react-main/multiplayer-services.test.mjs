@@ -26,6 +26,7 @@ before(async () => {
       contents: `
     export {createLobbyDirectory,directoryRoomCanEnter} from './app/services/lobby-directory.ts';
     export {createMultiplayerRoom} from './app/services/multiplayer-room.ts';
+    export {AccountRequestError} from './app/services/account-client.ts';
     export {createRoomPreparation} from './app/services/room-preparation.ts';
     export {createPackageAcquisition} from './app/services/package-acquisition.ts';
     export {createNetworkActivityTracker} from './src/launcher/network-activity.mts';
@@ -42,7 +43,18 @@ before(async () => {
     format: 'esm',
     packages: 'external',
     logLevel: 'silent',
-    plugins: [authoredSourcesPlugin(project)],
+    plugins: [{name:'account-request-fixture',setup(context){
+      context.onResolve({filter:/account-client/},()=>({path:'account-client-fixture',namespace:'fixture'}));
+      context.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`
+        export class AccountRequestError extends Error {constructor(code,status){super(code);this.name='AccountRequestError';this.code=code;this.status=status;}}
+        export function cancelAccountRequests() {}
+        export async function accountRequest(path,body,options){
+          const request=globalThis.__multiplayerAccountRequest;
+          if(!request)throw Error('room account API fixture is missing');
+          return request(path,body,options);
+        }
+      `}));
+    }},authoredSourcesPlugin(project)],
   });
   owner = await import(pathToFileURL(file).href);
 });
@@ -149,6 +161,7 @@ const manifest = () => ({
   games: {
     th06: {
       runtime: 'runtime/th06/game.html',
+      multiplayerRuntime: 'runtime/th06/mp.html',
       gameData: { version: `sha256-${hash}`, layout: `sha256-${hash}`, path: 'th06.data', bytes: 1, sha256: hash },
       music: { midi: { files: [] } },
     },
@@ -230,27 +243,27 @@ test('directory preserves main host-existence product subset and 3s retry withou
 for (const mode of ['normal', 'manifest-test', 'query-test'])
   test(`directory applies test-product visibility to filters and creation: ${mode}`, async () => {
     const published = manifest();
-    published.games.th075 = {
+    published.games.th13 = {
       ...published.games.th06,
-      runtime: 'runtime/th075/game.html',
-      multiplayerRuntime: 'runtime/th075/mp.html',
-      gameData: { ...published.games.th06.gameData, path: 'th075.data' },
+      runtime: 'runtime/th13/game.html',
+      multiplayerRuntime: 'runtime/th13/mp.html',
+      gameData: { ...published.games.th06.gameData, path: 'th13.data' },
     };
     if (mode === 'manifest-test') published.shared.testBuild = true;
     const { service, sockets } = directory({
       loadSiteManifest: async () => published,
       testBuild: mode === 'query-test',
-      selectedProduct: 'th075mp',
+      selectedProduct: 'th13mp',
     });
     try {
       await service.initialize();
       sockets[0].open();
       sockets[0].message(directoryState({ product: service.getSnapshot().selectedProduct }));
-      assert.deepEqual(service.getSnapshot().products, mode === 'normal' ? ['th06mp'] : ['th06mp', 'th075mp']);
-      assert.equal(service.getSnapshot().selectedProduct, mode === 'normal' ? 'th06mp' : 'th075mp');
+      assert.deepEqual(service.getSnapshot().products, mode === 'normal' ? ['th06mp'] : ['th06mp', 'th13mp']);
+      assert.equal(service.getSnapshot().selectedProduct, mode === 'normal' ? 'th06mp' : 'th13mp');
       assert.equal(service.prepareForm('create'), true);
-      service.updateForm({ product: 'th075mp' });
-      assert.equal(service.getSnapshot().form.product, mode === 'normal' ? 'th06mp' : 'th075mp');
+      service.updateForm({ product: 'th13mp' });
+      assert.equal(service.getSnapshot().form.product, mode === 'normal' ? 'th06mp' : 'th13mp');
     } finally {
       service.dispose();
     }
@@ -402,6 +415,31 @@ function roomFixture(extra = {}) {
   const service = owner.createMultiplayerRoom(ports);
   return { service, ports, clock, sockets, events, decisions, settings, ...storage };
 }
+test('directory TH09 creation keeps original charging when the saved room is restored', async () => {
+  const published = manifest();
+  published.games.th09 = {
+    ...published.games.th06,
+    runtime: 'runtime/th09/th09.html',
+    multiplayerRuntime: 'runtime/th09/th09.html',
+    gameData: {...published.games.th06.gameData, path: 'th09.data'},
+  };
+  const directory = await liveDirectory({selectedProduct: 'th09mp', loadSiteManifest: async () => published});
+  const room = roomFixture({sessions: directory.sessions, identity: directory.identity});
+  try {
+    assert.equal(directory.service.prepareForm('create'), true);
+    assert.equal(directory.service.getSnapshot().form.product, 'th09mp');
+    assert.equal(directory.service.submitForm(), 'close');
+    directory.service.formDidClose();
+    assert.equal(room.service.restoreInvite(directory.navigation[0]), true);
+    const socket = room.sockets[0];
+    assert.equal(new URL(socket.url).searchParams.get('disableLocalChargePriority'), '1');
+    socket.open();
+    assert.equal(socket.sent.find(message => message.type === 'settings').disableLocalChargePriority, true);
+  } finally {
+    room.service.dispose();
+    directory.service.dispose();
+  }
+});
 test('rollback products default to D0 for both room creation and restored invites',async()=>{
   for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp']){
     const f=roomFixture();f.service.enterRoom(product,'1234',true);await flush();
@@ -448,6 +486,141 @@ async function joinedRoom(extra = {}) {
   });
   return fixture;
 }
+
+test('room return is pinned to the launched run and original seat; reconnect retries only on the current lobby socket',async()=>{
+  const listeners=new Set(),runtime={getSnapshot:()=>({epoch:41}),subscribeRoomReturns(listener){listeners.add(listener);return()=>listeners.delete(listener);}};
+  const f=await joinedRoom({runtime:()=>runtime}),id=f.identity.lobbyClientId('th06mp'),socket=f.sockets[0];
+  const started=serial=>roomState(id,{startSerial:serial,phase:'starting',seats:[{clientId:id,loadout:0,ready:true},{clientId:'other-player',loadout:1,ready:true}]});
+  socket.message({type:'state',roomDirectory:{runReturn:true},room:roomState(id)});
+  socket.message({type:'start',serial:7,room:started(7)});await flush();
+  const launched=f.events.findLast(([kind])=>kind==='launch')[1],callback=[...listeners][0];assert.ok(callback);
+  const returned={epoch:41,launchSerial:1,netplayUrl:launched.runtimeOptions.netplayUrl,player:0,spectator:false};
+  for(const override of [{epoch:40},{netplayUrl:returned.netplayUrl.replace('run=7','run=6')},{player:1},{spectator:true}])callback({...returned,...override});
+  assert.equal(socket.sent.some(m=>m.type==='run-returned'),false,'another Runtime, run, seat or observer cannot return this run');
+  callback(returned);callback(returned);
+  assert.deepEqual(socket.sent.filter(m=>m.type==='run-returned'),[{type:'run-returned',serial:7}]);
+  socket.close(1006);f.clock.tick(650);const next=f.sockets[1];next.open();
+  assert.equal(next.sent.some(m=>m.type==='run-returned'),false,'reconnect waits for capability and run identity');
+  next.message({type:'state',roomDirectory:{runReturn:true},room:{...started(7),phase:'running'}});
+  assert.deepEqual(next.sent.filter(m=>m.type==='run-returned'),[{type:'run-returned',serial:7}]);
+  next.message({type:'state',room:{...started(7),phase:'lobby'}});
+  next.message({type:'start',serial:8,room:started(8)});await flush();
+  callback(returned);assert.equal(next.sent.filter(m=>m.type==='run-returned').length,1,'old callback cannot return the next run');
+  const current=[...listeners][0],nextLaunch=f.events.findLast(([kind])=>kind==='launch')[1];
+  assert.notEqual(current,callback);assert.equal(listeners.size,1);
+  current({...returned,launchSerial:2,netplayUrl:nextLaunch.runtimeOptions.netplayUrl});
+  assert.deepEqual(next.sent.filter(m=>m.type==='run-returned').at(-1),{type:'run-returned',serial:8});
+  f.service.leave();assert.equal(listeners.size,0);const sends=next.sent.length;
+  current({...returned,netplayUrl:nextLaunch.runtimeOptions.netplayUrl});assert.equal(next.sent.length,sends);
+  f.service.dispose();
+});
+
+test('room return waits for a supported connection and keeps a disconnected success until reconnect',async()=>{
+  let returned;
+  const runtime={getSnapshot:()=>({epoch:9}),subscribeRoomReturns(listener){returned=listener;return()=>{};}};
+  const f=await joinedRoom({runtime:()=>runtime}),id=f.identity.lobbyClientId('th06mp'),socket=f.sockets[0];
+  const room=roomState(id,{startSerial:2,phase:'starting'});
+  socket.message({type:'start',serial:2,room});await flush();
+  const launch=f.events.findLast(([kind])=>kind==='launch')[1];
+  returned({epoch:9,launchSerial:1,netplayUrl:launch.runtimeOptions.netplayUrl,player:0,spectator:false});
+  assert.equal(socket.sent.some(m=>m.type==='run-returned'),false,'old Relay does not receive a new protocol action');
+  socket.close(1006);f.clock.tick(650);const next=f.sockets[1];next.open();
+  next.message({type:'state',roomDirectory:{runReturn:true},room:{...room,phase:'running'}});
+  assert.deepEqual(next.sent.filter(m=>m.type==='run-returned'),[{type:'run-returned',serial:2}]);
+  f.service.dispose();
+});
+
+test('account refresh replaces only the lobby socket and fences late nickname tickets',async()=>{
+  let resolveOldTicket;
+  const oldTicket=new Promise(resolve=>{resolveOldTicket=resolve;});
+  let nicknameCalls=0;
+  let oldSignal;
+  globalThis.__multiplayerAccountRequest=(path, _body, {signal})=>{
+    assert.equal(path,'v1/me/room-nickname');
+    nicknameCalls++;
+    if (nicknameCalls===1) oldSignal=signal;
+    return nicknameCalls===1?oldTicket:Promise.resolve({ticket:'current-ticket'});
+  };
+  const f=await joinedRoom({isLaunched:()=>true}), oldSocket=f.sockets[0], id=f.identity.lobbyClientId('th06mp');
+  try{
+    oldSocket.message({type:'state',accountChallenge:'old-challenge',room:roomState(id,{phase:'running',startSerial:11,
+      seats:[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest123456',name:'B',loadout:1,ready:true}]})});
+    assert.equal(nicknameCalls,1);
+    f.service.refreshAccount();
+    assert.equal(f.sockets.length,2);
+    assert.equal(oldSocket.readyState,3);
+    assert.equal(oldSignal.aborted,true);
+    assert.equal(f.service.getSnapshot().room.code,'1234');
+    assert.equal(f.service.getSnapshot().room.phase,'running');
+    assert.equal(f.service.getSnapshot().seat,0);
+    assert.equal(f.service.getSnapshot().ready,true);
+    assert.equal(f.events.some(event=>event[0]==='launch'||event[0]==='check'),false,
+      'changing lobby identity does not recreate or check the active Runtime');
+    const nextSocket=f.sockets[1];
+    nextSocket.open();
+    nextSocket.message({type:'state',accountChallenge:'new-challenge',room:roomState(id,{phase:'running',startSerial:11,
+      seats:[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest123456',name:'B',loadout:1,ready:true}]})});
+    await flush();
+    assert.equal(nicknameCalls,2);
+    assert.ok(nextSocket.sent.some(message=>message.type==='account-nickname'&&message.ticket==='current-ticket'));
+    resolveOldTicket({ticket:'late-old-ticket'});
+    await flush();
+    assert.equal(nextSocket.sent.some(message=>message.type==='account-nickname'&&message.ticket==='late-old-ticket'),false);
+    assert.equal(oldSocket.sent.some(message=>message.type==='account-nickname'&&message.ticket==='late-old-ticket'),false);
+    assert.equal(f.service.getSnapshot().room.code,'1234');
+  }finally{
+    globalThis.__multiplayerAccountRequest=undefined;
+    f.service.dispose();
+  }
+});
+
+test('room identity recovers from a temporary account API failure on the same connection', async () => {
+  const challenges = [];
+  globalThis.__multiplayerAccountRequest = (path, {challenge}) => {
+    assert.equal(path, 'v1/me/room-nickname');
+    challenges.push(challenge);
+    if (challenges.length === 1) throw new owner.AccountRequestError('ACCOUNT_API_UNAVAILABLE', 503);
+    return {ticket:'room-ticket'};
+  };
+  const f = await joinedRoom();
+  const socket = f.sockets[0];
+  const state = {type:'state', accountChallenge:'room-challenge', room:roomState(f.identity.lobbyClientId('th06mp'))};
+  try {
+    socket.message(state);
+    await flush();
+    socket.message(state);
+    assert.deepEqual(challenges, ['room-challenge']);
+    f.clock.tick(1000);
+    await flush();
+    assert.deepEqual(challenges, ['room-challenge', 'room-challenge']);
+    assert.deepEqual(socket.sent.filter(message => message.type === 'account-nickname'), [{type:'account-nickname', ticket:'room-ticket'}]);
+    assert.equal(f.sockets.length, 1);
+    assert.equal(f.service.getSnapshot().seat, 0);
+  } finally {
+    delete globalThis.__multiplayerAccountRequest;
+    f.service.dispose();
+  }
+});
+
+test.each([401, 503])('room identity stops retrying after denial or disconnect (%s)', async status => {
+  let requests = 0;
+  globalThis.__multiplayerAccountRequest = () => {
+    requests++;
+    throw new owner.AccountRequestError(status === 401 ? 'SIGN_IN_REQUIRED' : 'ACCOUNT_API_UNAVAILABLE', status);
+  };
+  const f = await joinedRoom();
+  try {
+    f.sockets[0].message({type:'state', accountChallenge:'room-challenge', room:roomState(f.identity.lobbyClientId('th06mp'))});
+    await flush();
+    if (status === 503) f.service.pageHide();
+    f.clock.tick(2000);
+    await flush();
+    assert.equal(requests, 1);
+  } finally {
+    delete globalThis.__multiplayerAccountRequest;
+    f.service.dispose();
+  }
+});
 
 test('room program versions refresh before readiness and pin the agreed generation into transport', async () => {
   let preparations = 0;

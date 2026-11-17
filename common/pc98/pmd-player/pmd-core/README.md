@@ -31,7 +31,7 @@ fn play(main_file: &[u8]) -> Result<(), pmd_core::Error> {
 The crate exposes PMD metadata, channel snapshots, voice peaks, and playback
 status for frontends.
 
-See the [repository README](../README.md) for build and run instructions.
+See the [repository README](https://github.com/vbxq/pmdmini-rs/blob/2175a52c44fdc5ac42beb19c8f99c4365342fa77/README.md) for build and run instructions.
 
 ## License
 

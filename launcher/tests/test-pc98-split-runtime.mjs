@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {cp, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
+import {cp, mkdir, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -30,7 +30,10 @@ test('selected published blocks restore a disk through the managed fetch layer',
     files.data = {source:'games/th03/th03.data',target:'/th03.data',revision:'1'};
     const descriptor = {schema:'eagler-touhou/package/1',game:'th03',revision:'1',files,components,
       runtimeRequirement:{protocol:'eagler-touhou/1',target:'th03',dataFile:'data'},base:{files:['data']}};
-    await cp(new URL('../../ports/th03/web/managed-data.mjs',import.meta.url),join(root,'managed-data.mjs'));
+    await cp(new URL('../../ports/th02/web/managed-data.mjs',import.meta.url),join(root,'managed-data.mjs'));
+    await cp(new URL('../../ports/th02/web/preload-cache.js',import.meta.url),join(root,'preload-cache.js'));
+    await mkdir(join(root,'netplay'));
+    await cp(new URL('../../ports/th02/web/netplay/sha256.js',import.meta.url),join(root,'netplay/sha256.js'));
     await cp(new URL('../lib/pc98-disk-blocks.mjs',import.meta.url),join(root,'pc98-disk-blocks.mjs'));
     const {ManagedContent} = await import(pathToFileURL(join(root,'managed-data.mjs')).href);
     const content = await ManagedContent.open(await readFile(join(staging,'games/th03/th03.data')),'th03');

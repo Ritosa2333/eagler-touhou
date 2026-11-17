@@ -13,10 +13,12 @@ extern "C" const uint32_t* approach_sound_case(int prefix, int sound, int durati
   state.phase = Phase::Alive;
   state.speed = state.vx = 1;
   state.y = 120;
-  state.program.transformSound = sound;
+  Program program;
+  program.transformSound = sound;
   if (prefix)
-    set(state.program, 0, false, 0x80000000, 0, 0, 0, 0);
-  set(state.program, prefix, false, 0x20000000, duration, 0, .06f, -999999);
+    set(program, 0, false, 0x80000000, 0, 0, 0, 0);
+  set(program, prefix, false, 0x20000000, duration, 0, .06f, -999999);
+  state.programStorage = std::make_shared<const Program>(program);
   start(state, world);
   result[0] = state.active;
   result[1] = state.cursor;

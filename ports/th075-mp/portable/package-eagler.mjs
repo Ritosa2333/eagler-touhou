@@ -11,7 +11,7 @@ if(!build.completeGame||!build.eagler||!Number.isFinite(Date.parse(build.builtAt
 for(const [path,h] of Object.entries({...build.sources,...build.headers}))if(hash(readFileSync(resolve(root,path)))!==h)throw Error('Stale Runtime source: '+path);
 const wasm=readFileSync(resolve(built,'th075.wasm'));if(hash(wasm)!==build.sha256)throw Error('Wasm hash mismatch');
 for(const {name} of WebAssembly.Module.exports(new WebAssembly.Module(wasm)))if(/th075_probe/.test(name))throw Error('Diagnostic Wasm cannot be published');
-const names=['th075.html','manifest.json','shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','display.mjs','content-bundle.mjs','save-sync.mjs',...(multiplayer?['multiplayer.mjs','adonis-calibration.mjs']:[]),'th075.mjs','th075.wasm'];
+const names=['th075.html','manifest.json','shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','display.mjs','content-bundle.mjs','split-content.mjs','save-sync.mjs',...(multiplayer?['multiplayer.mjs','adonis-calibration.mjs']:[]),'th075.mjs','th075.wasm'];
 if(existsSync(out))for(const name of readdirSync(out))if(![...names,'runtime-files.json'].includes(name))throw Error('Unexpected Runtime file: '+name);
 mkdirSync(out,{recursive:true});const put=(name,bytes)=>writeFileSync(resolve(out,name),bytes);
 const version=(multiplayer?'1.0.4-eagler-mp-':'1.0.4-eagler-')+build.sha256.slice(0,12);
@@ -19,6 +19,7 @@ put('th075.html',readFileSync(resolve(runtime,'managed.html'),'utf8').replace('<
 put('shell.mjs',readFileSync(resolve(runtime,'shell.mjs'),'utf8').replace("/*TH075_EAGLER_BUILD*/{version:'development',completeGame:false}",JSON.stringify({version,completeGame:true,multiplayer,builtAt:build.builtAt})));
 for(const name of ['managed.css','keyboard.mjs','directory-keyboard.mjs','display.mjs','save-sync.mjs'])put(name,readFileSync(resolve(runtime,name)));
 put('content-bundle.mjs',readFileSync(resolve(root,'portable/content-bundle.mjs')));
+put('split-content.mjs',readFileSync(resolve(root,'portable/split-content.mjs')));
 if(multiplayer){put('multiplayer.mjs',readFileSync(resolve(runtime,'multiplayer.mjs')));put('adonis-calibration.mjs',readFileSync(resolve(common,'browser/adonis-calibration.mjs')));}
 put('th075.mjs',readFileSync(resolve(built,'th075.mjs')));put('th075.wasm',wasm);
 put('manifest.json',JSON.stringify({game:'th075',protocol:'eagler-touhou/1',adapter:'sdl3-eagler',profile:'production',multiplayer,version,builtAt:build.builtAt,features:{thprac:false,languages:true,focusHitbox:false},music:['ogg','none'],execution:{kind:build.kind,sha256:build.sha256}},null,2)+'\n');

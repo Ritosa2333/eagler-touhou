@@ -2,6 +2,7 @@ import {installStartupBranding,finishStartupAnimation} from './startup-branding.
 import createModule from './th15.mjs';
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import {scanCodes} from './keyboard.mjs';
+import {createSaveSync} from './save-sync.mjs';
 // BEGIN GENERATED SPECTATOR PLAYBACK
 // Generated from eagler-common/browser/spectator-playback.mjs.
 // Native playback owns every cursor and restore. The shell only transports
@@ -232,7 +233,7 @@ const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const saveRoot=runtimeBuild.multiplayer?'/savesth15mp':'/savesth15';
 let multiplayerBridge=null;
-let core,launched=false,first=false,stopping=false,options={},music=true,chain=Promise.resolve(),queue=Promise.resolve();
+let core,launched=false,first=false,stopping=false,options={},music=true,queue=Promise.resolve();
 let roomPreview=false;
 let launchSerial=0,roomOwned=false;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...((event==='first-frame'||event==='room-menu')?{launchSerial}:{}),...fields},location.origin);
@@ -247,7 +248,7 @@ const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:lo
 function clearKeyboard(){keyboard.clear();core?._th15_keys_clear();}
 const err=()=>{let p=runtimeBuild.multiplayer?core._th15_mp_error():core._th15_error();if(runtimeBuild.multiplayer&&!core.HEAPU8[p])p=core._th15_error();const end=core.HEAPU8.indexOf(0,p);return new TextDecoder().decode(core.HEAPU8.subarray(p,end<0?p+256:end));};
 const fatal=e=>{const message=e?.message||String(e);globalThis.__eaglerCrashReporterV1?.fatal(e);$('#error').textContent=message;core?._th15_loop_pause(1);emit('error',{error:message});};
-const sync=(populate=false)=>{const current=chain.then(()=>new Promise((r,j)=>core.FS.syncfs(populate,e=>e?j(e):r())));chain=current.catch(()=>{});return current;};
+const sync=createSaveSync(()=>core);
 const save=()=>{multiplayerBridge?.save();if(launched&&!core._th15_save_scores())throw Error(err());return sync();};
 function closeAudio(){
  // The launcher owns the shared context. SDL owns and must disconnect its

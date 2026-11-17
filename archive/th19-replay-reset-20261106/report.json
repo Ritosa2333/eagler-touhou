@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "build": "fdb8b1cb4d74cecb8ebb477fcbda630a65d99f5690abb788c5cff769fe43a014",
+  "rollbacks": 142,
+  "results": [
+    {
+      "priorWinner": 1,
+      "frames": 1200,
+      "hash": 1764901306
+    },
+    {
+      "priorWinner": 0,
+      "frames": 1200,
+      "hash": 1764901306
+    },
+    {
+      "priorWinner": 1,
+      "frames": 1200,
+      "hash": 1764901306
+    }
+  ]
+}

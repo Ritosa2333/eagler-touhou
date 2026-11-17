@@ -1,4 +1,5 @@
 #include "SpellCard.hpp"
+#include "Practice.hpp"
 namespace th17 {
 bool SpellCard::check(bool ok,const char* message){if(!ok&&error.empty())error=message;return ok;}
 bool SpellCard::banners(i32 label){for(u32 i=1;i<=3;i++)if(!check(host.interrupt(handles[i],label),"Spell banner interrupt failed"))return false;return true;}
@@ -21,7 +22,7 @@ bool SpellCard::begin(const SpellStartRequest& request,const SpellStartContext& 
 bool SpellCard::update(const SpellFrameContext& c){
     if(!(status.flags&1))return true;active_frames=wrapping_add(active_frames,1);
     if(age.current>=60&&!(status.flags&0x200)&&!check(host.background_visible(false),"Spell background visibility failed"))return false;
-    if(age.current>=300&&!(status.flags&8)){const i32 divisor=wrapping_sub(duration,300);if(!divisor){error="Invalid TH17 spell bonus divisor";return false;}const i32 amount=wrapping_sub(maximum_bonus,maximum_bonus/3);const i64 quotient=i64(amount)/divisor;if(quotient<INT32_MIN||quotient>INT32_MAX){error="TH17 spell bonus division overflow";return false;}status.bonus=wrapping_mul(wrapping_sub(status.bonus,i32(quotient))/10,10);}
+    if(!c.timer_locked&&age.current>=300&&!(status.flags&8)){const i32 divisor=wrapping_sub(duration,300);if(!divisor){error="Invalid TH17 spell bonus divisor";return false;}const i32 amount=wrapping_sub(maximum_bonus,maximum_bonus/3);const i64 quotient=i64(amount)/divisor;if(quotient<INT32_MIN||quotient>INT32_MAX){error="TH17 spell bonus division overflow";return false;}status.bonus=wrapping_mul(wrapping_sub(status.bonus,i32(quotient))/10,10);}
     age.tick(&c.rate);status.frame=age.current;
     if(age.current>=120){const bool lower=status.flags&0x100;if(!(status.flags&4)){if(lower?c.player_y>352:c.player_y<96){if(!banners(3))return false;status.flags|=4;}}else if(lower?c.player_y<320:c.player_y>128){if(!banners(2))return false;status.flags&=~4u;}}
     Vec3 boss;if(!check(host.boss_position(boss),"Spell boss tracking unavailable"))return false;anchor={float(anchor.x+float(float(boss.x-anchor.x)*.05f)),float(anchor.y+float(float(boss.y-anchor.y)*.05f)),float(anchor.z+float(float(boss.z-anchor.z)*.05f))};if(!check(host.position(handles[4],anchor),"Spell boss ring update failed"))return false;
@@ -29,7 +30,7 @@ bool SpellCard::update(const SpellFrameContext& c){
 }
 bool SpellCard::finish(){
     if(!(status.flags&1))return true;if(!check(host.background_visible(true),"Spell background restoration failed")||!banners(1))return false;status.flags&=~1u;if(!check(host.retire(handles[0]),"Spell background retirement failed"))return false;status.flags&=~32u;if(!check(host.prepare_hud(false),"Spell HUD finish failed")||!check(host.retire(handles[4]),"Spell boss ring retirement failed"))return false;
-    if(status.flags&2){score=wrapping_add(score,status.bonus/10);if(u32(score)>999999999u)score=999999999;if(!check(host.result(status.bonus,false),"Spell capture result failed"))return false;if(!replay){bool all=false;if(!check(records.capture(status.id,loadout,practice,all),"Spell capture history failed"))return false;if(all&&!check(host.trophy(32),"Spell trophy unavailable"))return false;}if(!check(host.sound(46,true),"Spell capture sound failed"))return false;}else if(!check(host.result(0,true),"Spell failure result failed"))return false;
+    if(status.flags&2){score=add_practice_score(score,status.bonus/10,uncap_score);if(!check(host.result(status.bonus,false),"Spell capture result failed"))return false;if(!replay){bool all=false;if(!check(records.capture(status.id,loadout,practice,all),"Spell capture history failed"))return false;if(all&&!check(host.trophy(32),"Spell trophy unavailable"))return false;}if(!check(host.sound(46,true),"Spell capture sound failed"))return false;}else if(!check(host.result(0,true),"Spell failure result failed"))return false;
     return !(status.flags&128)||check(host.sound(69,true),"Spell auxiliary sound failed");
 }
 }

@@ -1,6 +1,5 @@
+import type {CloudSaveSync} from './services/cloud-save-sync';
 import { useLocation } from 'react-router';
-import { AccountPage } from './components/launcher/AccountPage';
-import { ProfilePage } from './components/launcher/ProfilePreview';
 import { bookArtwork } from './components/launcher/book-artwork';
 import {
   useEffect,
@@ -8,15 +7,19 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  lazy,
+  Suspense,
   type ReactNode,
   type RefCallback,
 } from 'react';
 import { isProductId, isMultiplayerProductId, type ProductId } from '../src/contracts/product-catalog.mts';
 import type { UiLocale } from '../src/launcher/i18n.mts';
+import { TH09_RATINGS_DOCUMENT } from '../lib/frontend-static-manifest.mjs';
 import { LocaleProvider, translate } from './i18n';
 import { PlayerSurface } from './components/player/PlayerSurface';
 import { LibrarySurface } from './components/launcher/LibrarySurface';
 import { LobbySurface, type LobbySurfaceProps } from './components/launcher/LobbySurface';
+import { ProfileLoading } from './components/launcher/ProfileLoading';
 import { OptionsPanel } from './components/launcher/OptionsPanel';
 import { OptionsBackdrop } from './components/launcher/OptionsBackdrop';
 import { LobbyOptionsHost } from './components/launcher/LobbyOptionsHost';
@@ -24,21 +27,32 @@ import { OptionsOwnership } from './components/launcher/options-ownership';
 import { useLibraryOptionsPresence } from './components/launcher/use-library-options-presence';
 import type { LibraryProduct } from './components/launcher/products';
 import { SettingsBody } from './components/settings/SettingsBody';
-import { TouchLayoutEditor } from './components/settings/TouchLayoutEditor';
 import type { SettingsActions, TouchEditorNativePorts } from './components/settings/types';
 import type { GameSettingsModel, SettingsContext } from './models/game-settings';
+import type { WatchTh09Replay } from './models/th09-replay-archive';
+import type { SitePreferencesModel } from './models/site-preferences';
 import type { DecisionStore } from './models/decisions';
 import type { TouchLayoutModel } from './models/touch-layout';
 import { SurfaceNavigationProvider, useSurfaceNavigation } from './navigation/surface-navigation';
+import { useNavigationPageMotion } from './navigation/navigation-motion';
 import { useStoreSelector, shallowEqual } from './shared/react-store';
+import { accountsEnabled } from './release-features';
+import type {LocalSaveReader} from './services/local-save-storage';
+
+const AccountPage = lazy(() => import('./components/launcher/AccountPage').then(module => ({default:module.AccountPage})));
+const ProfilePage = lazy(() => import('./components/launcher/ProfilePreview').then(module => ({default:module.ProfilePage})));
+const TouchLayoutEditor = lazy(() => import('./components/settings/TouchLayoutEditor').then(module => ({default:module.TouchLayoutEditor})));
 
 export type LobbyPresentation = Omit<
   LobbySurfaceProps,
-  'products' | 'selectedProduct' | 'openedProduct' | 'onSelect' | 'onActivate' | 'children' | 'roomUsersArtwork'
+  'products' | 'selectedProduct' | 'openedProduct' | 'onSelect' | 'onActivate' | 'children' | 'roomUsersArtwork' | 'rankingsHref'
 >;
 /** One document-lived domain host. Tests may explicitly inject fixture ports;
  * production must supply the actual storage, file, runtime and room owners. */
 export interface LauncherHost {
+  readLocalSaves?:LocalSaveReader;
+  cloudSync?:CloudSaveSync|null;
+  watchTh09Replay?: WatchTh09Replay;
   locale: UiLocale;
   lessMotion?: boolean;
   products: readonly LibraryProduct[];
@@ -47,6 +61,7 @@ export interface LauncherHost {
   onProductSelected?(productId: ProductId, changed: boolean): void;
   onRouteSelection?(productId: ProductId, context?: 'library' | 'lobby'): void;
   settings: GameSettingsModel;
+  preferences?: SitePreferencesModel;
   touchLayout: TouchLayoutModel;
   settingsContext(productId: ProductId, locale: UiLocale): SettingsContext;
   settingsActions: SettingsActions;
@@ -55,7 +70,6 @@ export interface LauncherHost {
   assetUrl(path: string): string;
   lobbyHref: string;
   masthead: ReactNode;
-  footer: ReactNode;
   serverStatusNote?: ReactNode;
   lobby: LobbyPresentation;
   renderLobby?(props: LobbySurfaceProps): ReactNode;
@@ -119,8 +133,10 @@ export function LauncherApplication({ host }: { host: LauncherHost }) {
 
 function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const navigation = useSurfaceNavigation();
-  const accountPage = /\/login\.html\/?$/.test(useLocation().pathname);
-  const profilePage = /\/profile\.html\/?$/.test(useLocation().pathname);
+  const pathname = useLocation().pathname;
+  const pageSurface = useNavigationPageMotion(pathname, host.lessMotion === true);
+  const accountPage = accountsEnabled && /\/login\.html\/?$/.test(pathname);
+  const profilePage = accountsEnabled && /^(?:\/profile\.html|\/u\/[^/]+)\/?$/.test(pathname);
   const settings = useSyncExternalStore(host.settings.subscribe, host.settings.getSnapshot, host.settings.getSnapshot);
   const isEditing = useStoreSelector(host.touchLayout, (value) => value.isEditing);
   const [preview, setPreview] = useState<string | undefined>(navigation.productId ?? host.products[0]?.id);
@@ -234,11 +250,12 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
         actions={host.settingsActions}
         onOpenTouchLayout={openTouchLayout}
         multiplayerControls={host.multiplayerControls}
+        preferences={host.preferences}
       />
     </OptionsPanel>
   );
   const editor = playerElement && navigation.surface === 'touch' && settings && (
-    <TouchLayoutEditor
+    <Suspense><TouchLayoutEditor
       playerElement={playerElement}
       model={host.touchLayout}
       settings={host.settings}
@@ -250,11 +267,12 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       previewImage={
         host.previewImage ?? (selectedProduct?.artwork ? `url(${JSON.stringify(selectedProduct.artwork)})` : 'none')
       }
-    />
+    /></Suspense>
   );
   const lobbyProps: LobbySurfaceProps = {
     ...host.lobby,
     masthead: null,
+    rankingsHref: host.assetUrl(TH09_RATINGS_DOCUMENT.file),
     products: host.products.filter((product) => product.multiplayer),
     selectedProduct: navigation.filterProductId ?? undefined,
     viewingProduct: navigation.filterProductId ?? undefined,
@@ -278,13 +296,14 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
     <OptionsOwnership value={presence.targets}>
       {host.masthead}
       <div
+        ref={pageSurface}
         className="launcher-page-surface"
         data-page={accountPage ? 'account' : profilePage ? 'profile' : navigation.context}
       >
         {accountPage ? (
-          <AccountPage />
+          <Suspense fallback={<main className="account-page" aria-busy="true"/>}><AccountPage /></Suspense>
         ) : profilePage ? (
-          <ProfilePage />
+          <Suspense fallback={<ProfileLoading/>}><ProfilePage readLocalSaves={host.readLocalSaves} cloudSync={host.cloudSync} watchTh09Replay={host.watchTh09Replay}/></Suspense>
         ) : navigation.context === 'lobby' ? (
           host.renderLobby ? (
             host.renderLobby(lobbyProps)
@@ -299,11 +318,11 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
             onSelect={setPreview}
             onActivate={activate}
             masthead={null}
-            footer={host.footer}
             serverStatusNote={host.serverStatusNote}
             optionsOpen={presence.open}
             roomOpen={roomOpen}
             roomDrawer={host.roomDrawer}
+            onDonation={() => navigation.openInfoDialog('donationDialog')}
           >
             {host.roomSurface}
           </LibrarySurface>

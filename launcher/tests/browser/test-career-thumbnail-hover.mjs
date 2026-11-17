@@ -6,7 +6,6 @@ try {
   const page = await browser.newPage();
   await page.setViewport({width: 1440, height: 1000});
   await page.goto(new URL('profile.html', process.argv[2] || 'http://127.0.0.1:5173/'), {waitUntil: 'networkidle2'});
-  await page.addStyleTag({content: '.site-notice{display:none!important}'});
   const settle = () => page.evaluate(() => new Promise(resolve => setTimeout(resolve, 450)));
   const style = () => page.$eval('.career-thumbnail', el => {
     const s = getComputedStyle(el);

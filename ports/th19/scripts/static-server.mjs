@@ -7,7 +7,7 @@ import {networkInterfaces} from 'node:os';
 
 const mime={'.html':'text/html; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.wasm':'application/wasm','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml','.ico':'image/x-icon','.ogg':'audio/ogg','.ttf':'font/ttf','.woff2':'font/woff2','.webmanifest':'application/manifest+json'};
 
-export function startServer({routes,port=Number(process.argv[2]||8130)}){
+export function startServer({routes,port=Number(process.argv[2]||8130),host='0.0.0.0'}){
  if(!Number.isInteger(port)||port<1||port>65535)throw Error('Invalid port');
  const mounts=routes.map(r=>({...r,directory:resolve(r.directory)}));
  const server=http.createServer(async(req,res)=>{
@@ -28,10 +28,10 @@ export function startServer({routes,port=Number(process.argv[2]||8130)}){
    if(req.method==='HEAD')return res.end();createReadStream(path,{start:first,end:last}).on('error',e=>res.destroy(e)).pipe(res);
   }catch{if(!res.headersSent)res.writeHead(404);res.end('Not found');}
  });
- server.listen(port,'0.0.0.0',()=>{
+ server.listen(port,host,()=>{
   const url=`http://127.0.0.1:${port}/`;console.log(`TH19: ${url}`);
-  console.log(`Listening on all IPv4 interfaces: 0.0.0.0:${port}`);
-  for(const list of Object.values(networkInterfaces()))for(const address of list||[])if(address.family==='IPv4'&&!address.internal)console.log(`LAN: http://${address.address}:${port}/`);
+  console.log(`Listening on ${host}:${port}`);
+  if(host==='0.0.0.0')for(const list of Object.values(networkInterfaces()))for(const address of list||[])if(address.family==='IPv4'&&!address.internal)console.log(`LAN: http://${address.address}:${port}/`);
   if(process.argv.includes('--open')&&process.platform==='win32'){const child=spawn('rundll32.exe',['url.dll,FileProtocolHandler',url],{windowsHide:true,detached:true,stdio:'ignore'});child.on('error',e=>console.error(e.message));child.unref();}
  }).on('error',e=>{console.error(e.message);process.exitCode=1;});
  return server;

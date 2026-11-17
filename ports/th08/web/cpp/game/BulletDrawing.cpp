@@ -7,7 +7,7 @@ namespace th08 {
 namespace {
 Vec3 presentation_lerp(const Vec3& previous,const Vec3& current){return {presentation::lerp_world(previous.x,current.x),presentation::lerp_world(previous.y,current.y),presentation::lerp_world(previous.z,current.z)};}
 float presentation_angle(float previous,float current){
-    if(presentation::world_alpha>=1)return current;if(presentation::world_alpha<=0)return previous;
+    if(presentation::world_alpha==1)return current;if(presentation::world_alpha<=0)return previous;
     constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=current-previous;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(previous+delta*presentation::world_alpha,0);
 }
 bool close_enough(const Vec3& a,const Vec3& b){const float dx=a.x-b.x,dy=a.y-b.y;return dx*dx+dy*dy<16384.0f;}

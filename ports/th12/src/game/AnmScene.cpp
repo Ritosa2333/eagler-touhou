@@ -25,7 +25,7 @@ Runtime Scene::runtimeFor(Node& node) {
     nodes_[child->id] = child;
     auto childRuntime = runtimeFor(*child);
     if (!child->vm.bind(registry, request.bank, request.script, childRuntime)) {
-      child->alive = false;
+      retire(*child);
       return;
     }
     if (request.detached && request.parent) {
@@ -67,7 +67,7 @@ void Scene::tickNode(Node& node) {
   if (!node.alive)
     return;
   if (node.beforeTick && node.beforeTick()) {
-    node.alive = false;
+    retire(node);
     return;
   }
   auto local = runtimeFor(node);
@@ -76,7 +76,7 @@ void Scene::tickNode(Node& node) {
   if (node.owner && presentationRevision != node.vm.presentationRevision())
     presentation::discontinuity(node.owner);
   if (node.vm.state().deleteRequested || (ended && node.membership != Membership::Embedded))
-    node.alive = false;
+    retire(node);
 }
 
 void Scene::traverse(std::list<std::shared_ptr<Node>>& list) {
@@ -96,6 +96,7 @@ void Scene::reset() {
   roots_.clear();
   nodes_.clear();
   nextId_ = 1;
+  retired_.clear();
 }
 
 Node* Scene::find(uint64_t key) {
@@ -171,7 +172,7 @@ Node* Scene::bind(uint64_t key, uint32_t owner, int bank, int script, Membership
     return nullptr;
   if (owner) presentation::discontinuity(owner);
   if (auto old = roots_.find(key); old != roots_.end())
-    old->second->alive = false;
+    retire(*old->second);
   auto node = std::make_shared<Node>();
   node->id = nextId_++;
   node->key = key;
@@ -190,7 +191,7 @@ Node* Scene::bind(uint64_t key, uint32_t owner, int bank, int script, Membership
   const bool bound = withoutReset ? node->vm.rebindWithoutReset(registry, bank, script, local)
                                   : node->vm.bind(registry, bank, script, local, scriptPosition);
   if (!bound) {
-    node->alive = false;
+    retire(*node);
     return nullptr;
   }
   auto& list = membership == Membership::Primary     ? primary_
@@ -305,16 +306,26 @@ void Scene::tickSecondary() {
 
 void Scene::remove(uint64_t key) {
   if (auto* node = find(key))
-    node->alive = false;
+    retire(*node);
 }
 
 void Scene::removeOwner(uint32_t owner) {
   for (auto& [id, node] : nodes_)
     if (node->owner == owner && !node->detached)
-      node->alive = false;
+      retire(*node);
+}
+
+void Scene::retire(Node& node) {
+  if (!node.alive)
+    return;
+  node.alive = false;
+  retired_.push_back(node.id);
 }
 
 void Scene::collect() {
+  // No parent/link or list maintenance is needed on ticks without deaths.
+  if (retired_.empty())
+    return;
   // Parent retirement also retires attached descendants before the next pass.
   // Detached children have no parent and retain independent ownership.
   bool changed = true;
@@ -324,7 +335,7 @@ void Scene::collect() {
       if (node->alive && node->parent) {
         auto parent = nodes_.find(node->parent);
         if (parent == nodes_.end() || !parent->second->alive) {
-          node->alive = false;
+          retire(*node);
           changed = true;
         }
       }
@@ -348,15 +359,14 @@ void Scene::collect() {
   primary_.remove_if(inactive);
   secondary_.remove_if(inactive);
   embedded_.remove_if(inactive);
-  for (auto at = roots_.begin(); at != roots_.end();)
-    if (!at->second->alive)
-      at = roots_.erase(at);
-    else
-      ++at;
-  for (auto at = nodes_.begin(); at != nodes_.end();)
-    if (!at->second->alive)
-      at = nodes_.erase(at);
-    else
-      ++at;
+  for (const auto id : retired_) {
+    const auto at = nodes_.find(id);
+    const auto root = roots_.find(at->second->key);
+    // Rebinding a root can retire its old node under the same key.
+    if (root != roots_.end() && root->second == at->second)
+      roots_.erase(root);
+    nodes_.erase(at);
+  }
+  retired_.clear();
 }
 } // namespace th12::anm_logic

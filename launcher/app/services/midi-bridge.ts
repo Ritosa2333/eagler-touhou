@@ -5,7 +5,7 @@ import type {RuntimeService, RuntimeMidiEventContext} from './runtime';
 
 export interface MidiBridgeOptions {
   runtime: Pick<RuntimeService, 'getMidiEventContext' | 'getSnapshot' | 'subscribe'>;
-  external: Pick<ExternalMidiController, 'prepare' | 'deliver' | 'panic'>;
+  external: Pick<ExternalMidiController, 'prepare' | 'deliver' | 'panic' | 'setMusicGain'>;
   loadSynth(): Promise<MidiSynthConstructor | undefined>;
   webAudioAvailable: boolean;
   translate(key: string): string;
@@ -26,6 +26,7 @@ export function createMidiBridge(options: MidiBridgeOptions) {
   let bound: RuntimeMidiEventContext | null = null;
   let removeBound: (() => void) | null = null;
   let disposed = false;
+  let musicGain = 1;
   const resetSynth = () => {synth?.reset();};
   function reset() {resetSynth(); options.external.panic();}
   function authenticated(context: RuntimeMidiEventContext) {
@@ -67,6 +68,7 @@ export function createMidiBridge(options: MidiBridgeOptions) {
         if (disposed) return null;
         if (!Constructor) throw new Error(options.translate('music.synthMissing'));
         synth ??= new Constructor({quality: 1, useReverb: 1, voices: 64});
+        synth.setMasterVol?.(0.5 * musicGain);
         return synth;
       }).finally(() => {loading = null;});
       await loading;
@@ -99,6 +101,12 @@ export function createMidiBridge(options: MidiBridgeOptions) {
   rebind();
   return {
     prepare, resetSynth, reset, rebind, suspend, resume,
+    setMusicGain(gain: number) {
+      if (gain === musicGain) return;
+      musicGain = gain;
+      synth?.setMasterVol?.(0.5 * gain);
+      options.external.setMusicGain?.(gain);
+    },
     dispose() {
       if (disposed) return;
       disposed = true; unsubscribe(); removeBound?.(); removeBound = null; bound = null;

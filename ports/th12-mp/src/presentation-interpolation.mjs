@@ -158,20 +158,21 @@ export function interpolatePresentation(previous,current,alpha=1){
   return samplePresentation(previous,current,clampAlpha(alpha));
 }
 
-export function extrapolatePresentation(previous,current,phase=0){
+export function extrapolatePresentation(previous,current,phase=0,localSeat=null){
   const weight=Number.isFinite(phase)?1+Math.max(0,Math.min(1,phase)):1;
-  return samplePresentation(previous,current,weight);
+  return samplePresentation(previous,current,weight,localSeat);
 }
 
-function samplePresentation(previous,current,alpha){
+function samplePresentation(previous,current,alpha,localSeat=null){
   if(!current)throw Error('缺少当前展示端点');
   if(alpha===1||!previous||previous===current||
     previous.epoch!==current.epoch||previous.stage!==current.stage||
     current.frame!==previous.frame+1)return current;
-  if(previous.nativeMotion&&current.nativeMotion)return interpolateNative(previous,current,alpha);
+  if(previous.nativeMotion&&current.nativeMotion)return interpolateNative(previous,current,alpha,localSeat);
   if(!previous.motion||!current.motion)return current;
   const offsets=new Map();
   for(const group of current.motion.groups.keys()){
+    if(localSeat!==null&&localSeat!==0&&(group==='player'||group==='focus'))continue;
     const offset=groupOffset(previous,current,group,alpha);
     if(offset)offsets.set(group,offset);
   }
@@ -286,13 +287,16 @@ function nativePlan(previous,current){
   if(!next){next=new WeakMap();nativePlans.set(previous,next);}
   next.set(current,plan);return plan;
 }
-function interpolateNative(previous,current,alpha){
+function interpolateNative(previous,current,alpha,localSeat){
   const before=previous.nativeMotion,after=current.nativeMotion;
   if(before.epoch!==after.epoch||before.frame!==previous.frame||after.frame!==current.frame)return current;
   const {matches,continuousOwners,continuousLasers,background}=nativePlan(previous,current);
   const poses=current.poses.map((p,index)=>{
     const match=matches[index];if(!match)return p;
     const {old,node,owner,source,oldNode,localMotion}=match;
+    // The network already supplies a predicted endpoint. Do not advance
+    // remote player bodies, options or hitboxes a second time at high refresh.
+    if(localSeat!==null&&source?.kind==='player'&&owner!==PLAYER+localSeat*256)return p;
     // Laser mesh corners/cross-sections have explicit source-owned roles.
     // A history cut, external set, extension transition or phase change
     // invalidates the complete role correspondence, even at equal lengths.

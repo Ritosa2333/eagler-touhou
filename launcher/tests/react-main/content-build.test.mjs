@@ -14,7 +14,7 @@ const build = (...args) => execute(process.execPath, ['scripts/build-content-pag
 beforeAll(async () => {
   work = await mkdtemp(resolve(project, '.cache/content-build-')); source = resolve(work, 'source');
   for (const path of ['scripts/build-content-pages.mjs', 'lib/atomic-file.mjs', 'lib/build-lock.mjs', 'lib/build-lock-host.mjs', 'lib/node-runtime.mjs', 'lib/localized-compatibility.mjs', 'lib/site-brand.mjs',
-    'messages/compatibility.json', 'messages/keys.json', 'messages/zh-CN.json', 'messages/en.json', 'messages/ja.json', 'content/FIRST_USE_NOTICE.md', 'content/MULTIPLAYER.md', 'docs/FAQ.md',
+    'messages/compatibility.json', 'messages/keys.json', 'messages/zh-CN.json', 'messages/en.json', 'messages/ja.json', 'content/FIRST_USE_NOTICE.md', 'content/MULTIPLAYER.md', 'content/PRIVACY_POLICY.md', 'docs/FAQ.md',
     'public/compatibility.html', 'content/ABOUT.html', 'public/migrate.html', 'public/assets/brand/face-F02B.svg', 'app/ui/tokens.css', 'app/ui/document-controls.css']) {
     await mkdir(dirname(resolve(source, path)), {recursive: true}); await cp(resolve(project, path), resolve(source, path));
   }

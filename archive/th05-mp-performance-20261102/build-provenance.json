@@ -1,0 +1,41 @@
+{
+  "baselineCommit": "508bfd9218b25eb0ec8de3e50e08d9228b1dfd96",
+  "builds": {
+    "baseline": {
+      "sha256": "2ee05711e7acf17930be450f8e14a16c6a7c00344fcb9ba196e95e6e05f88925",
+      "builtAt": "2026-11-01T17:05:07.245Z",
+      "diagnostic": true,
+      "variant": "multiplayer",
+      "sourceFilesSha256": "342f16e0a7681ffa5f74b18937d9f256147a362578703c3254a1028c2e697090"
+    },
+    "production": {
+      "sha256": "f017bb3bbe20c57e72cd9350cccb08eb55bc54adb34c37bb2187bfa994a9476a",
+      "builtAt": "2026-11-02T01:13:48.175Z",
+      "diagnostic": false,
+      "variant": "multiplayer",
+      "sourceFilesSha256": "9ab0c30bd75795789496a9ffa2926386caac950ddb9f11f5ad3e6cd4af4899aa"
+    },
+    "diagnostic": {
+      "sha256": "d10a7c19081d9e081e617b946de2156a369bee4b3fbdd002ddd442c7e9b434c1",
+      "builtAt": "2026-11-02T01:13:57.174Z",
+      "diagnostic": true,
+      "variant": "multiplayer",
+      "sourceFilesSha256": "41c017a4ec4c08de41ae8af685aec22a0a0af96cb551f460447cef86c72e9c8b"
+    }
+  },
+  "testHarnessSha256": {
+    "performance-comparison.mjs": "a4b82f5e856aa8ae7e3ee1d59080b119ee8e21849ab08cb4cda49e3078e93d27",
+    "performance-equivalence.mjs": "dbfa271191fc52b1bfef886658b47c9c1022c034ad01a23ac3a82c6572468523",
+    "performance-profile.mjs": "c912f0b208af60afe72d035cb82fbc5317df16406951ff0fff2c919a0013606f"
+  },
+  "networkHarnessSha256": "9201086af339848f428fd6a0507c5f48f14804eda9b76ca6dc38e53dfd92ae8e",
+  "checks": {
+    "nativeUnitTests": 21,
+    "portContracts": "10/10",
+    "presentationClocks": true,
+    "worldAudioOracles": 40,
+    "framesPerOracle": 1200,
+    "lifecycleBoundaries": 8,
+    "goldenPixelFrames": 56
+  }
+}

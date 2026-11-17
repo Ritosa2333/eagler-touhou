@@ -1,0 +1,12 @@
+{
+  "siteUrl": "https://test.touhou.vip/",
+  "previous": "/var/www/eagler-touhou-test/releases/th05-frame-pacing-20261101-190dd5050d3b",
+  "candidate": "/var/www/eagler-touhou-test/releases/th05-boss-demo-20261101-664919c3f233",
+  "releaseId": "sha256-5e4385ea52b3a5aed83d453d90d21b4f7779bc0174b67a7b3a275d6e00a648bb",
+  "buildId": "66cb63f0f296c1efae79",
+  "generation": "64d4b5b98858ea126ff3c687bc8014e56ada438263e58ef9a9025f916148ccc7",
+  "packageRevision": "c2bdca7b5b842835",
+  "files": 7700,
+  "preserved": 7427,
+  "sourceExceptions": []
+}

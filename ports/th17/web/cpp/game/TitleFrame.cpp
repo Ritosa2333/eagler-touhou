@@ -32,7 +32,8 @@ bool TitleFrame::initialize(const TitleFrameInput& input){
 bool TitleFrame::update(const TitleFrameInput& input){
  if(!error.empty())return false;
  if(host.ending_active()){if(!host.ending_complete())return true;return check(host.retire_ending(),"Ending retirement failed")&&restore_music(false);}
- if(state.screen==TitleScreen::Main&&!demo(input))return false;
+ if(state.room_preview)demo_idle=0;
+ else if(state.screen==TitleScreen::Main&&!demo(input))return false;
  if(state.flags&1){music_age=wrapping_add(music_age,1);if(state.return_reason||music_age>=60){if(!restore_music(true))return false;state.flags&=~1u;music_age=0;}}
  switch(i32(state.screen)){
  case 0:if(!initialize(input))return false;break;

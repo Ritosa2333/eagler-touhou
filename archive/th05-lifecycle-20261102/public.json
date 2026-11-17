@@ -1,0 +1,104 @@
+{
+  "siteUrl": "https://touhouonline.com/",
+  "passed": true,
+  "players": 2,
+  "language": "lang_zh-hans",
+  "rollback": true,
+  "repeatRoom": true,
+  "native": [
+    {
+      "frame": 244,
+      "confirmed": 242,
+      "route": "rtc",
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      }
+    },
+    {
+      "frame": 244,
+      "confirmed": 242,
+      "route": "rtc",
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      }
+    }
+  ],
+  "secondNative": [
+    {
+      "frame": 181,
+      "confirmed": 178,
+      "route": "rtc"
+    },
+    {
+      "frame": 180,
+      "confirmed": 179,
+      "route": "rtc"
+    }
+  ],
+  "spectator": {
+    "errors": [],
+    "paused": {
+      "version": 1,
+      "run": "s0c1d9f0176f1c227_0",
+      "revision": 5,
+      "min": 0,
+      "position": 2102,
+      "received": 2105,
+      "edge": 2105,
+      "target": 2102,
+      "paused": true,
+      "seeking": false,
+      "following": false,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "receivedWhilePaused": 2116,
+    "live": {
+      "version": 1,
+      "run": "s0c1d9f0176f1c227_0",
+      "revision": 11,
+      "min": 0,
+      "position": 2132,
+      "received": 2146,
+      "edge": 2146,
+      "target": 2146,
+      "paused": false,
+      "seeking": false,
+      "following": true,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "exitPreservesPlayers": true
+  },
+  "errors": [],
+  "httpErrors": [],
+  "sourceCommit": "494cac535b14d6bf38131abfa2a0d4b420ce7ae6",
+  "ghostHashTestCommit": "5236ba886",
+  "mirrors": {
+    "primary": "th05-lifecycle-20261102",
+    "jp": "hk-th05-lifecycle-20261102-a42a17580290",
+    "cn": "hk-th05-lifecycle-20261102-a42a17580290-mirror-22debd7e633e"
+  }
+}

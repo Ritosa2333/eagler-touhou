@@ -22,6 +22,7 @@ before(async () => {
   work = await mkdtemp(resolve(project, '.cache/room-views-'));
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export * from './app/components/room/index.ts';
+    export * from './app/components/room/RoomMusic.tsx';
     export * from './app/components/room/RoomPanel.tsx';
     export * from './app/components/room/presentation.ts';
     export * from './app/components/launcher/OptionsPanel.tsx';
@@ -39,6 +40,8 @@ before(async () => {
   `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: resolve(work, 'actual.mjs'), logLevel: 'silent',
   plugins: [{name: 'installed-deps-authored-mts', setup(ctx) {
     ctx.onResolve({filter: /^[^./]/}, args => ({path: args.path, external: true}));
+    ctx.onResolve({filter: /\.webp\?url$/}, args => ({path: args.path, namespace: 'artwork'}));
+    ctx.onLoad({filter: /.*/, namespace: 'artwork'}, args => ({contents: `export default ${JSON.stringify(args.path)}`}));
     ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {const path = resolve(dirname(args.importer), args.path).replace(/\.mjs$/, '.mts'); if (existsSync(path)) return {path};});
   }}]}); owners = await import(pathToFileURL(resolve(work, 'actual.mjs')));
 });
@@ -55,7 +58,7 @@ after(async () => {env?.close(); if (work) await rm(work, {recursive: true, forc
 class Storage {values = new Map(); getItem(key) {return this.values.get(key) ?? null;} setItem(key, value) {this.values.set(key, String(value));} removeItem(key) {this.values.delete(key);}}
 test('Room connection distinguishes initial connect, synchronization and actual reconnect', async () => {
   const f = await fixture({product: 'th11mp', locale: 'zh-CN'}).enter();
-  const message = () => owners.roomConnectionMessage(f.service.getSnapshot(), key => t('zh-CN', key));
+  const message = () => owners.roomConnectionMessage(f.service.getSnapshot(), (key, params) => t('zh-CN', key, params));
   assert.equal(message(), t('zh-CN', 'multiplayer.connectingRoom'));
   await act(() => f.socket.open());
   assert.equal(message(), t('zh-CN', 'multiplayer.syncingMembers'));
@@ -65,9 +68,10 @@ test('Room connection distinguishes initial connect, synchronization and actual 
   await f.receive();
   assert.equal(f.service.getSnapshot().room.synced, true);
   await act(() => f.socket.close(1006));
-  assert.equal(message(), t('zh-CN', 'multiplayer.reconnecting'));
+  assert.equal(message(), `${t('zh-CN', 'multiplayer.reconnecting')} | ${t('zh-CN', 'network.relayClosed', {code: 1006})}`);
 });
 class Socket {
+  constructor(url) {this.url = new URL(url);}
   readyState = 0; sent = []; listeners = new Map(); closes = [];
   addEventListener(type, fn) {this.listeners.set(type, [...(this.listeners.get(type) || []), fn]);}
   emit(type, value = {}) {for (const fn of this.listeners.get(type) || []) fn(value);}
@@ -94,7 +98,7 @@ function fixture({product = 'th06mp', locale = 'en', created = true, checkGame =
   const runtimeState = {launched:false};
   const settings = {touchMovementMode: 'joystick', touchEnabled: false, mobileDevice: false, iceServers: []}, network = syntheticNetwork();
   const service = owners.createMultiplayerRoom({identity, sessions: owners.createMultiplayerRoomSessionStore({storage: session}), preferences: owners.createMultiplayerPreferenceStore({storage: persistent}), decisions,
-    memberId: () => 'synthetic-member', createSocket: () => {const socket = new Socket(); sockets.push(socket); return socket;}, relayUrl: () => 'wss://relay.invalid/socket',
+    memberId: () => 'synthetic-member', createSocket: url => {const socket = new Socket(url); sockets.push(socket); return socket;}, relayUrl: () => 'wss://relay.invalid/socket',
     settings: () => settings, setMovementMode: value => {settings.touchMovementMode = value;}, translate: (key, params) => t(locale, key, params), notify: message => events.push(['notify', message]),
     prepareResources: (context, report) => {const task = deferred(); preparations.push({context, report, ...task}); return task.promise;},
     preparationFailed: error => events.push(['prepare-error', error]), beginManualImport: context => events.push(['import', context]),
@@ -122,7 +126,7 @@ async function mount(Component, initial, {locale = 'en', strict = false} = {}) {
 async function mountRoom(f, extra = {}, options = {}) {
   const host=env.document.createElement('section'),stage=env.document.createElement('div'),viewport=env.document.createElement('div');viewport.className='game-viewport';stage.append(viewport);host.append(stage);env.document.body.append(host);
   const intents = []; const m = await mount(owners.RoomView, {service: f.service, network: f.network, context: defaultContext, workspaceHost:host, workspaceStage:stage, assetUrl: path => path,
-    onLeave: () => {intents.push(['leave']); f.service.leave();}, onCopyRoomCode: code => intents.push(['copy', code]), onGuide: () => intents.push(['guide']),
+    onLeave: () => {intents.push(['leave']); f.service.leave();}, onCopyRoomCode: code => intents.push(['copy', code]), guideHref: '/docs/multiplayer/th07',
     onOpenSettings: () => intents.push(['settings']), settingsOpen: false, panel: null, onOpenPanel: (...args) => intents.push(['panel', ...args]), onClosePanel: () => intents.push(['close']), ...extra}, {locale: f.locale, ...options}); return {m, intents};
 }
 const click = (selector, scope) => act(() => {
@@ -131,23 +135,28 @@ const click = (selector, scope) => act(() => {
     node.dispatchEvent(new env.window.KeyboardEvent('keydown', {key: node.getAttribute('role') === 'tab' ? 'Enter' : 'ArrowDown', bubbles:true}));
   } else node.click();
 });
-test('TH09 local charge rule defaults on, restores native Replay by room agreement, and locks during play', async () => {
-  const f=await fixture({product:'th09mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
-  const toggle=n('#mpDisableLocalChargePriority');
+test('TH09 new rooms use original charging, let the host enable local priority, and lock it during play', async () => {
+  const directory=fixture({product:'th09mp'});
+  await act(() => assert.equal(directory.service.restoreInvite('https://launcher.invalid/?game=th09mp&mpRoom=1234&lobbyAction=create'), true));
+  assert.equal(directory.socket.url.searchParams.get('disableLocalChargePriority'),'1');
+  const f=await fixture({product:'th09mp',locale:'zh-CN'}).live({disableLocalChargePriority:true});
+  assert.equal(f.socket.url.searchParams.get('disableLocalChargePriority'),'1');
+  assert.equal(f.socket.sent.find(m=>m.type==='settings').disableLocalChargePriority,true);
+  await mountRoom(f,{panel:{kind:'game'}});
+  const toggle=n('#mpLocalChargePriority');
   assert.equal(toggle.getAttribute('aria-checked'),'false');
-  assert.equal(toggle.getAttribute('aria-label'),'关闭本地优先的蓄力条进度');
-  assert.equal(n('#mpLocalChargeReplayHint').textContent,'默认启用本地优先蓄力。勾选该选项后，使用原版蓄力逻辑和即时显示。');
-  assert.equal(f.service.runtimeOptions().netplayDisableLocalChargePriority,false);
-  await click('#mpDisableLocalChargePriority');
-  assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableLocalChargePriority,true);
-  await f.receive({disableLocalChargePriority:true});
-  assert.equal(toggle.getAttribute('aria-checked'),'true');
+  assert.equal(toggle.getAttribute('aria-label'),'回滚不吞蓄力条');
+  assert.equal(n('#mpLocalChargeReplayHint').textContent,'默认使用原版蓄力逻辑。开启后优先采用本机蓄力进度，录像会额外保存蓄力数据。');
   assert.equal(f.service.runtimeOptions().netplayDisableLocalChargePriority,true);
-  await f.receive({disableLocalChargePriority:true,phase:'running'});
+  await click('#mpLocalChargePriority');
+  assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableLocalChargePriority,false);
+  await f.receive({disableLocalChargePriority:false,phase:'running'});
+  assert.equal(toggle.getAttribute('aria-checked'),'true');
+  assert.equal(f.service.runtimeOptions().netplayDisableLocalChargePriority,false);
   assert.equal(toggle.disabled,true);
-  const sent=f.socket.sent.length;await act(()=>f.service.setRoomSettings({disableLocalChargePriority:false}));assert.equal(f.socket.sent.length,sent);
+  const sent=f.socket.sent.length;await act(()=>f.service.setRoomSettings({disableLocalChargePriority:true}));assert.equal(f.socket.sent.length,sent);
   const other=await fixture({product:'th07mp'}).live();const {m}=await mountRoom(other,{panel:{kind:'game'}});
-  assert.equal(all('#mpDisableLocalChargePriority',m.container).length,0);
+  assert.equal(all('#mpLocalChargePriority',m.container).length,0);
   assert.equal('netplayDisableLocalChargePriority' in other.service.runtimeOptions(),false);
 });
 test('TH01 rollback is enabled by default and the host can disable it',async()=>{
@@ -168,6 +177,16 @@ test('TH01 ball count is host controlled and reaches runtime options',async()=>{
   assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'6 球');
   await f.receive({ballCount:6,phase:'running',adonisMode:1});assert.equal(n('#mpTh01BallCount').disabled,true);
   const count=f.socket.sent.length;await act(()=>f.service.setRoomSettings({ballCount:1}));assert.equal(f.socket.sent.length,count);
+});
+test('TH02 disabling focus is a host-controlled special rule',async()=>{
+  const f=await fixture({product:'th02mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
+  const toggle=n('#mpTh02DisableFocus');assert.equal(toggle.getAttribute('aria-checked'),'false');
+  assert.equal(f.service.runtimeOptions().netplayDisableFocus,false);
+  await click('#mpTh02DisableFocus');assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableFocus,true);
+  await f.receive({disableFocus:true});assert.equal(toggle.getAttribute('aria-checked'),'true');
+  assert.equal(f.service.runtimeOptions().netplayDisableFocus,true);
+  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'禁用低速');
+  await f.receive({disableFocus:true,phase:'running'});assert.equal(toggle.disabled,true);
 });
 test('TH03 focus rule belongs to the host and reaches runtime options',async()=>{
   const f=await fixture({product:'th03mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
@@ -258,7 +277,7 @@ for (const locale of ['zh-CN', 'en', 'ja']) test(`Member card artwork follows pr
     assert.equal(all('[role="progressbar"]',card).length,stopped ? 0 : 1);
     if (stopped) {
       assert.equal(n('.room-seat-ring',card).classList.contains('indeterminate'),false);
-      assert.equal(n('.mp-seat-loadout',card).hidden,true);
+      assert.equal(n('.mp-seat-loadout',card).textContent,t(locale,key));
     }
   }
 });
@@ -313,10 +332,20 @@ for (const locale of ['zh-CN', 'en']) test(`All catalog multiplayer products pre
     const config = owners.multiplayerConfigForProduct(product);
     for (const loadout of [0, config.loadouts.length - 1]) {await f.receive({difficulty: config.difficulties.length - 1, seats: [{clientId: f.id, name: 'A', loadout, ready: false}, {clientId: 'peer12345', name: 'B', loadout: -1, ready: false, controlMode: 'cheat'}]}); if (config.inGameSelection) {
       assert.equal(n('#mpRoomDifficultyBadge').textContent, config.difficulties[f.service.getSnapshot().room.difficulty]);
-      assert.equal(all('[data-mp-difficulty]').length,product==='th03mp'?config.difficulties.length:0);
       assert.equal(all('#mpLoadoutPrevSeat, #mpLoadoutNextSeat, #mpLoadoutPrev, #mpLoadoutNext').length,0);
       assert.equal(f.service.runtimeOptions().netplayInGameSelection,true);
-      if(product!=='th03mp')assert.match(n('#mpRoomSettings').textContent,locale==='zh-CN'?/双方/:/Both players/);
+      if (product === 'th03mp') {
+        assert.equal(all('[data-mp-difficulty]').length,config.difficulties.length);
+        await click('[data-mp-difficulty="2"]');
+        assert.equal(f.socket.sent.at(-1).type,'settings');
+        assert.equal(f.socket.sent.at(-1).difficulty,2);
+        await f.receive({difficulty:2});
+        assert.equal(n('#mpRoomDifficultyBadge').textContent,'Hard');
+        assert.equal(f.service.runtimeOptions().netplayDifficulty,2);
+      } else {
+        assert.equal(all('[data-mp-difficulty]').length,0);
+        assert.match(n('#mpRoomSettings').textContent,locale==='zh-CN'?/双方/:/Both players/);
+      }
     } else compare(f, {panel: {kind: 'game'}});}
     await m.unmount();
   }
@@ -353,9 +382,11 @@ for (const locale of ['zh-CN', 'en']) test(`Original ${locale} preparation rende
 test('Room header and panel triggers reach required host edges with original code and peer identity', async () => {
   const f = await fixture().live({seats: null}); await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'peer12345', name: 'B', loadout: 2}]});
   const {m, intents} = await mountRoom(f);
-  await click('#mpCopyRoomCode'); await click('#mpRoomGuideOpen'); await click('#mpSettingsRoomDrawerToggle'); await click('#roomWorkspaceTab-game'); await click('.room-spectator-preview-trigger');
+  await click('#mpCopyRoomCode'); await click('#mpSettingsRoomDrawerToggle'); await click('#roomWorkspaceTab-game'); await click('.room-spectator-preview-trigger');
+  assert.equal(n('#mpRoomGuideOpen').getAttribute('href'), '/docs/multiplayer/th07');
+  assert.equal(n('#mpRoomGuideOpen').target, '_blank');
   await click('[data-mp-seat="0"] .mp-seat-edit'); await click('[data-mp-seat="1"] .mp-seat-latency');
-  assert.deepEqual(intents, [['copy', '1234'], ['guide'], ['settings'], ['panel', 'spectators', undefined], ['panel', 'personal', undefined], ['panel', 'network', 'peer12345']]);
+  assert.deepEqual(intents, [['copy', '1234'], ['settings'], ['panel', 'spectators', undefined], ['panel', 'personal', undefined], ['panel', 'network', 'peer12345']]);
   await m.update({settingsOpen: true}); assert.equal(n('#mpRoomView').hasAttribute('inert'), true); assert.equal(n('#mpSettingsRoomDrawerToggle').hidden, false);
   await m.update({settingsOpen: false, settingsClosing: true}); assert.equal(n('#mpRoomView').hasAttribute('inert'), false); assert.equal(n('#mpSettingsRoomDrawerToggle').hidden, false);
   await m.update({settingsClosing: false}); assert.equal(n('#mpSettingsRoomDrawerToggle').hidden, false);
@@ -376,6 +407,35 @@ test('Real join, stand, spectator, loadout and become-host button ports retain r
   await m.update({panel: {kind: 'game'}}); await click('#mpTakeHostSeat'); assert.equal(f.socket.sent.at(-1).seat, 0); assert.equal(f.socket.sent.at(-1).type, 'take-seat');
   await m.update({panel: {kind: 'personal'}}); await click('#mpLoadoutNext'); assert.equal(f.service.getSnapshot().preferredLoadout, 1);
   await click('#mpLoadoutPrev'); assert.equal(f.service.getSnapshot().preferredLoadout, 0);
+});
+
+test('TH17 and TH075 use separate loadout fields with relay indices', async () => {
+  for (const product of ['th17mp', 'th075mp']) {
+    const f = await fixture({product, locale: 'zh-CN'}).live(), {m} = await mountRoom(f, {panel: {kind: 'personal'}});
+    const config = owners.multiplayerConfigForProduct(product);
+    const change = (index, value) => act(() => {
+      const select = n('#mpLoadoutField'+index);
+      select.value = String(value);
+      select.dispatchEvent(new env.window.Event('change', {bubbles:true}));
+    });
+    assert.equal(all('.mp-loadout-fields select').length, product === 'th17mp' ? 2 : 3);
+    assert.equal(all('#mpLoadoutPrevSeat, #mpLoadoutNextSeat').length, 0);
+    const acknowledge = async loadout => {
+      assert.deepEqual(f.socket.sent.at(-1), {type: 'set-loadout', loadout});
+      assert.equal(n('#mpLoadoutField0').disabled, true);
+      await f.receive({seats: [{clientId: f.id, name: 'A', loadout}, null]});
+      assert.equal(n('#mpLoadoutField0').disabled, false);
+    };
+    await change(1, 2);
+    await acknowledge(2);
+    await change(0, 2);
+    const next = product === 'th17mp' ? 8 : 20;
+    await acknowledge(next);
+    assert.equal(n('#mpLoadoutField1').value, '2');
+    const label = config.loadouts[next].selection[1].labelKey;
+    assert.equal(n('#mpLoadoutField1 option:checked').textContent, t('zh-CN', label));
+    await m.unmount();
+  }
 });
 
 test('Room settings remain synchronized while owner and phase change', async () => {
@@ -522,11 +582,11 @@ for (const locale of ['zh-CN', 'en']) test(`Synthetic network metrics match exec
   for (const context of [{...defaultContext, launched: true}, {...defaultContext, launched: true, th09NetworkOverlayOpen: true}]) {await m.update({context}); compare(f, {panel, context});}
   await m.update({context: defaultContext}); await f.receive({seats: [null, seats[1]]}); compare(f, {panel}); assert.equal(n('#mpRoomNetworkRetry').disabled, true);
   await f.receive(); compare(f, {panel}); assert.equal(n('.mp-network-empty').textContent, t(locale, 'room.waitPeer'));
-  await act(() => f.socket.close(1006)); compare(f, {panel}); assert.equal(n('.mp-network-empty').textContent, t(locale, 'multiplayer.reconnecting'));
+  await act(() => f.socket.close(1006)); compare(f, {panel}); assert.equal(n('.mp-network-empty').textContent, `${t(locale, 'multiplayer.reconnecting')} | ${t(locale, 'network.relayClosed', {code: 1006})}`);
 });
 
 test('Measured rollback button routes through real room owner without overwriting selected delay; applied running value wins', async () => {
-  const product = owners.PRODUCT_IDS.find(id => owners.isMultiplayerProductId(id) && owners.multiplayerConfigForProduct(id).inputTiming?.measuredStartup);
+  const product = owners.PRODUCT_IDS.find(id => owners.isMultiplayerProductId(id) && owners.multiplayerConfigForProduct(id).inputTiming?.measuredStartup && owners.multiplayerConfigForProduct(id).inputTiming?.rollbackDefault !== false);
   assert.ok(product, 'Measured product must exist'); const f = await fixture({product}).live(); await mountRoom(f);
   assert.equal(f.service.getSnapshot().rollbackEnabled,true);await click('#mpRollbackToggle');
   await act(() => f.service.setTimingChoice(7)); await click('#mpRollbackToggle'); assert.equal(f.service.getSnapshot().rollbackEnabled, true); assert.equal(f.service.getSnapshot().timingChoice, 7);
@@ -651,6 +711,22 @@ async function panelFixture({strict = false} = {}) {
   const m = await mount(owners.RoomPanel, {open: true, kind: 'personal', onCloseRequest: () => requests++, onClosed: () => closures++, trigger: {current: trigger}, children: React.createElement('button', {id: 'child-action'}, 'Child')}, {strict});
   return {m, trigger, get requests() {return requests;}, get closures() {return closures;}, node: n('#mpRoomPanel')};
 }
+test('Music and spectator panels share the close control and opening music by keyboard focuses search', async () => {
+  const trigger = env.document.createElement('button');
+  env.document.body.append(trigger);
+  const m = await mount(owners.RoomPanel, {
+    open: true, kind: 'music', trigger: {current: trigger}, onCloseRequest() {},
+    initialFocus: '#roomMusicQuery', children: React.createElement('input', {id: 'roomMusicQuery'}),
+  });
+  assert.equal(env.document.activeElement, n('#roomMusicQuery'));
+  const close = n('#mpRoomPanelClose');
+  assert.equal(close.textContent, t('en', 'room.done'));
+  await m.update({open: false});
+  assert.equal(env.document.activeElement, trigger);
+  await m.update({open: true, kind: 'spectators', initialFocus: undefined});
+  assert.equal(n('#mpRoomPanelClose'), close);
+});
+
 test('Native modal Escape/backdrop request close; shared completion restores the exact original trigger', async () => {
   animationFixture();const h=await panelFixture();assert.equal(h.node.open,true);
   const cancel=new env.window.Event('cancel',{cancelable:true});await act(()=>h.node.dispatchEvent(cancel));assert.equal(cancel.defaultPrevented,true);assert.equal(h.requests,1);
@@ -659,8 +735,9 @@ test('Native modal Escape/backdrop request close; shared completion restores the
     await act(()=>h.node.dispatchEvent(new env.window.MouseEvent('click',{bubbles:true,clientX,clientY})));assert.equal(h.requests,expected);
   }
   await h.m.update({open:false});assert.equal(h.node.open,true);assert.equal(h.closures,0);
-  const effects=nativeEffects(h.node);assert.equal(effects.length,2);assert.ok(effects.every(effect=>effect.options.duration===180));
+  const effects=nativeEffects(h.node);assert.equal(effects.length,3);assert.ok(effects.every(effect=>effect.options.duration===150));
   assert.deepEqual(effects.find(effect=>effect.keyframes.opacity).keyframes.opacity,['1','0']);
+  assert.deepEqual(effects.find(effect=>effect.keyframes.scale).keyframes.scale,['1','.965']);
   assert.ok(effects.every(effect=>!effect.keyframes.transform));
   await finishNative(h.node);assert.equal(h.node.open,false);assert.equal(h.closures,1);assert.equal(env.document.activeElement,h.trigger);
 });
@@ -718,9 +795,10 @@ for (const locale of ['zh-CN', 'en']) test(`compact room delay stepper retains h
     assert.equal(n('#mpRoomSettings').contains(n('#mpRollbackToggle')),true);
     assert.equal(all('#mpInputDelayHint').length,0);
     assert.equal(n('#mpRollbackToggle').hidden,!supportsRollback,product);
-    assert.equal(n('#mpInputDelaySetting').hidden,supportsRollback,product);
+    assert.equal(n('#mpInputDelaySetting').hidden, (supportsRollback && config.inputTiming?.rollbackDefault !== false) || !!config.inputTiming?.runtimeTiming,product);
     assert.ok(n('#mpRollbackToggle').compareDocumentPosition(n('#mpInputDelaySetting')) & env.window.Node.DOCUMENT_POSITION_FOLLOWING);
-    if(config.inputTiming){
+    if(config.inputTiming?.runtimeTiming){assert.equal(n('#mpInputDelaySetting').hidden,true,product);}
+    if(config.inputTiming && !config.inputTiming.runtimeTiming){
       if(policy.rollback){await act(()=>f.service.setRollbackEnabled(false));assert.equal(n('#mpInputDelaySetting').hidden,false);assert.equal(all('#mpInputDelayHint').length,0);}
       await act(()=>f.service.setTimingChoice(0));assert.equal(value.textContent,'0f');assert.equal(n('#mpInputDelayMinus').disabled,true);
       await click('#mpInputDelayPlus');assert.equal(f.service.getSnapshot().timingChoice,1);assert.equal(value.textContent,'1f');
@@ -747,7 +825,7 @@ for (const locale of ['zh-CN', 'en']) test(`compact room delay stepper retains h
       }
       if(policy.rollback){await f.receive({phase:'running',adonisMode:0});assert.equal(n('#mpInputDelaySetting').hidden,true,product);}
       await act(()=>f.socket.close(1006));assert.equal(value.disabled,true);
-    }else{
+    }else if(!config.inputTiming){
       assert.equal(n('#mpRollbackToggle').hidden,true);assert.equal(n('#mpInputDelaySetting').hidden,false);
       assert.equal(value.textContent,'0f');assert.equal(value.disabled,true);
     }
@@ -774,7 +852,7 @@ async function sharedDrawer(f, {strict = false, roomOpen = true, open = true} = 
   function Fixture({product = f.product, roomOpen, open, foregroundActive = false}) {
     const [closing, setClosing] = React.useState(false), requestClose = () => events.push(['close']);
     return React.createElement(MemoryRouter, null,
-      React.createElement(owners.RoomView, {service: f.service, network: f.network, context: defaultContext, workspaceHost:host, workspaceStage:stage, assetUrl: path => path, onLeave: () => {}, onCopyRoomCode: () => {}, onGuide: () => {}, onOpenSettings: () => {}, settingsOpen: open && !foregroundActive, settingsClosing: closing, panel: null, onOpenPanel: () => {}, onClosePanel: () => {}}),
+      React.createElement(owners.RoomView, {service: f.service, network: f.network, context: defaultContext, workspaceHost:host, workspaceStage:stage, assetUrl: path => path, onLeave: () => {}, onCopyRoomCode: () => {}, guideHref: '/docs/multiplayer/th07', onOpenSettings: () => {}, settingsOpen: open && !foregroundActive, settingsClosing: closing, panel: null, onOpenPanel: () => {}, onClosePanel: () => {}}),
       React.createElement(owners.RoomSettingsDrawer, {roomOpen, open, foregroundActive, onCloseRequest: requestClose, onClosingChange: setClosing}),
       React.createElement(owners.OptionsPanel, {product: owners.createLibraryProducts([product], path => path, id => `/?game=${id}`)[0], open: !roomOpen, roomDrawer: roomOpen, onBack: requestClose, assetUrl: path => path, lobbyHref: '/lobby.html',
         multiplayerDiagnostics: React.createElement('section', {id: 'mpNetworkDiagnostics'}, 'Synthetic diagnostics slot'), actions: React.createElement('div', {className: 'launch-wrap launch-actions', id: 'ordinary-launch-actions'}, 'Synthetic ordinary launch slot')},
@@ -790,11 +868,11 @@ function fakeTimers() {
 function sharedNodes() {return Object.fromEntries(['#mpSettingsFold', '.tools-head', '.mp-settings-body', '#mpReplayViewer', '#mpGamePackageImport', '#mpTouchLayoutEdit'].map(selector => [selector, n(selector)]));}
 function assertSharedNodes(nodes) {for (const [selector, node] of Object.entries(nodes)) {assert.ok(n(selector) === node, `Preserve original node: ${selector}`); assert.equal(all(selector).length, 1);} const ids = all('[id]').map(node => node.id); assert.equal(new Set(ids).size, ids.length);}
 
-test('Real shared SettingsBody moves one header/fold into drawer and back across StrictMode, rerender, product/context switches', async () => {
-  const f = await fixture().live(); const h = await sharedDrawer(f, {strict: true, roomOpen: false, open: false}), nodes = sharedNodes();
-  assert.equal(nodes['#mpSettingsFold'].parentElement.id, 'mpShell'); assert.equal(nodes['.tools-head'].parentElement.classList.contains('tools'), true);
-  await h.m.update({roomOpen: true, open: true}); assertSharedNodes(nodes);
-  const drawer = n('#mpSettingsRoomDrawer'); assert.ok(nodes['.tools-head'].parentElement === drawer); assert.equal(nodes['#mpSettingsFold'].parentElement.id, 'mpSettingsRoomDrawerContent'); assert.equal(nodes['#mpSettingsFold'].classList.contains('mp-room-drawer-mounted'), true);
+test('Real shared SettingsBody has one header/fold in the active surface across StrictMode and context switches', async () => {
+  const f = await fixture().live(); const h = await sharedDrawer(f, {strict: true, roomOpen: false, open: false}), initial = sharedNodes();
+  assert.equal(initial['#mpSettingsFold'].parentElement.id, 'mpShell'); assert.equal(initial['.tools-head'].parentElement.classList.contains('tools'), true);
+  await h.m.update({roomOpen: true, open: true}); const nodes = sharedNodes(); assertSharedNodes(nodes);
+  const drawer = n('#mpSettingsRoomDrawer'); assert.equal(nodes['.tools-head'].parentElement.id, 'mpSettingsRoomDrawerHeader'); assert.equal(nodes['#mpSettingsFold'].parentElement.id, 'mpSettingsRoomDrawerContent'); assert.equal(nodes['#mpSettingsFold'].classList.contains('mp-room-drawer-mounted'), true);
   assert.ok(env.document.activeElement === n('#libraryBack'), 'Drawer opening focuses original libraryBack'); assert.equal(n('#libraryBack').getAttribute('aria-label'), t('en', 'settings.drawerClose'));
   assert.equal(drawer.querySelector('#mpInputDelaySetting'), null, 'room-wide timing stays out of the local options drawer');
   const actions = n('#mpReplayViewer').closest('.launch-actions');
@@ -804,7 +882,7 @@ test('Real shared SettingsBody moves one header/fold into drawer and back across
   assert.equal(env.document.querySelector('#mpShareSettingsToggle'), null); assert.equal(h.model.getSnapshot().shareSingleplayerSettings, true); assertSharedNodes(nodes);
   await act(() => h.model.refreshContext(settingsContext(f.product, {mobile: true}))); assertSharedNodes(nodes);
   await act(() => h.model.hydrate(settingsContext('th07mp'))); await h.m.update({product: 'th07mp'}); assertSharedNodes(nodes); assert.equal(n('#gameId').dataset.game, 'th07');
-  await h.m.update({roomOpen: false, open: false}); assertSharedNodes(nodes); assert.equal(nodes['#mpSettingsFold'].parentElement.id, 'mpShell'); assert.equal(nodes['#mpSettingsFold'].classList.contains('mp-room-drawer-mounted'), false);
+  await h.m.update({roomOpen: false, open: false}); const returned = sharedNodes(); assertSharedNodes(returned); assert.equal(returned['#mpSettingsFold'].parentElement.id, 'mpShell'); assert.equal(returned['#mpSettingsFold'].classList.contains('mp-room-drawer-mounted'), false);
   await h.m.unmount(); assert.equal(all('.mizuki-select-menu').length, 0); assert.equal(all('.mizuki-select').length, 0);
 });
 
@@ -861,36 +939,70 @@ test('TH11 ready host can choose rollback and pure delay', async()=>{
  await m.unmount();
 });
 
-test('public nickname editor waits for review and locks changes until the server deadline',async()=>{
+test('public nickname drafts stay editable during review and only submission waits for the server deadline',async()=>{
  const f=await fixture({product:'th09mp'}).live(),{m}=await mountRoom(f);
  const status=value=>f.socket.emit('message',{data:JSON.stringify({type:'nickname-status',nextChangeAt:0,retryAt:0,...value})});
  await act(()=>status({name:'Alice',status:'approved'}));
  assert.equal(n('#mpNicknameSave').disabled,false);
  assert.match(n('#mpNicknameStatus').textContent,/once more now/);
-  await act(()=>status({name:'Alice',status:'rejected',attemptsLeft:1}));
-  assert.equal(n('#mpNicknameSave').disabled,false);assert.match(n('#mpNicknameStatus').textContent,/One retry remaining/);
-  await act(()=>status({name:'Alice',status:'unavailable',attemptsLeft:1}));
+  await act(()=>status({name:'Alice',status:'rejected'}));
+  assert.equal(n('#mpNicknameSave').disabled,false);assert.match(n('#mpNicknameStatus').textContent,/Declined/);
+  await act(()=>status({name:'Alice',status:'unavailable'}));
   assert.equal(n('#mpNicknameSave').disabled,false);assert.match(n('#mpNicknameStatus').textContent,/Unable to submit/);
-  assert.match(n('#mpNicknameStatus').textContent,/One retry remaining/);assert.doesNotMatch(n('#mpNicknameStatus').textContent,/24-hour cooldown/);
+  assert.doesNotMatch(n('#mpNicknameStatus').textContent,/24-hour cooldown/);
   await act(()=>status({name:'',status:'unavailable'}));
   assert.equal(n('#mpNicknameSave').disabled,false);assert.match(n('#mpNicknameStatus').textContent,/Unable to submit/);
   assert.doesNotMatch(n('#mpNicknameStatus').textContent,/unchanged|24-hour cooldown/);
   await act(()=>status({name:'',status:'reviewing'}));
-  assert.equal(n('#mpDisplayName').disabled,true);assert.equal(n('#mpNicknameSave').disabled,true);
+  assert.equal(n('#mpDisplayName').disabled,false);assert.equal(n('#mpNicknameSave').disabled,true);
   await act(()=>status({name:'Alice',status:'queued',pendingName:'待审昵称'}));
   assert.equal(n('#mpDisplayName').value,'待审昵称');assert.equal(n('#mpNicknameSave').disabled,true);
   assert.match(n('#mpNicknameStatus').textContent,/Pending review.*Saved.*close this window/);
   assert.equal(f.service.getSnapshot().displayName,'Alice');
  await act(()=>status({name:'Alice',status:'approved',nextChangeAt:Date.now()+86400000}));
- assert.equal(n('#mpDisplayName').value,'Alice');assert.equal(n('#mpDisplayName').disabled,true);
+ assert.equal(n('#mpDisplayName').value,'Alice');assert.equal(n('#mpDisplayName').disabled,false);
  assert.match(n('#mpNicknameStatus').textContent,/Next change|下次可修改/);
  await f.receive({seats:[{clientId:f.id,name:'Alice',loadout:0,ready:false},{clientId:'peer123456',name:'完整公开昵称',loadout:1,ready:false}],spectators:[{clientId:'watch123456',name:'完整观众昵称'}]});
  assert.equal(n('[data-mp-seat-name="1"]').textContent,'完整公开昵称');
  assert.equal(n('[data-mp-seat="1"] .mp-seat-loadout').textContent,'','TH09 native selection keeps room loadout labels empty');
- assert.equal(n('[data-mp-seat="0"] .mp-seat-control').textContent,'Keys / stick');
+ assert.equal(n('[data-mp-seat="0"] .mp-seat-loadout').textContent,`(${t('en','multiplayer.control.normal')})`);
  await m.update({panel:{kind:'spectators'}});
  assert.match(n('#mpSpectatorList').textContent,/完整观众昵称/);
- await act(()=>status({name:'Alice',status:'cooldown',attemptsLeft:0,nextChangeAt:Date.now()+86400000}));
- assert.equal(n('#mpNicknameSave').disabled,true);assert.match(n('#mpNicknameStatus').textContent,/No retries remaining/);
+ await act(()=>status({name:'Alice',status:'cooldown',nextChangeAt:Date.now()+86400000}));
+ assert.equal(n('#mpNicknameSave').disabled,true);assert.match(n('#mpNicknameStatus').textContent,/Changes unavailable/);
  await m.unmount();
+});
+
+
+test('music toggle moves the tonearm only while playing', async () => {
+  let status='paused'; const listeners=new Set(); let toggled=0;
+  const model={getSnapshot:()=>({status}),getPendingInvitation:()=>null,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn);}};
+  await mount(owners.RoomMusicToggle,{model,open:false,onToggle:()=>{toggled++;}});
+  assert.equal(n('.room-workspace-music-toggle').dataset.playing,'false');
+  assert.ok(n('.room-music-record .room-music-tonearm'));
+  await act(()=>{status='playing';listeners.forEach(fn=>fn());});
+  assert.equal(n('.room-workspace-music-toggle').dataset.playing,'true');
+  await act(()=>n('.room-workspace-music-toggle').click()); assert.equal(toggled,1);
+  await act(()=>{status='ended';listeners.forEach(fn=>fn());});
+  assert.equal(n('.room-workspace-music-toggle').dataset.playing,'false');
+});
+
+test('Music seek stays at the released target through old ticks, then follows the room acknowledgement', async () => {
+  let state = {enabled:true,inRoom:true,seated:true,connected:true,joined:true,syncState:'shared',volume:1,position:90,seekTarget:null,duration:120,status:'playing',error:null,
+    current:{platform:'netease',id:'123',name:'Song',artist:'Artist'},session:{session:'listen',playback:1,revision:2,startedAt:0,pausedAt:null}};
+  const listeners=new Set(), seeks=[];
+  let accepted=true;
+  const model={getSnapshot:()=>state,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn);},seek:seconds=>{seeks.push(seconds);if(accepted){state={...state,seekTarget:seconds};for(const listener of listeners)listener();}return accepted;}};
+  const publish=patch=>act(()=>{state={...state,...patch};for(const listener of listeners)listener();});
+  await mount(owners.RoomMusicStrip,{model,open:false,onOpen() {}});
+  const thumb=()=>n('.room-music-progress [role="slider"]');
+  const key=value=>act(()=>thumb().dispatchEvent(new env.window.KeyboardEvent('keydown',{key:value,bubbles:true,cancelable:true})));
+  await key('Home');
+  assert.deepEqual(seeks,[0]);assert.equal(thumb().getAttribute('aria-valuenow'),'0');
+  await publish({position:91});assert.equal(thumb().getAttribute('aria-valuenow'),'0','An old ticker update must not snap the released thumb backwards');
+  await publish({position:0,seekTarget:null,session:{...state.session,revision:3,playback:2}});
+  await publish({position:1});assert.equal(thumb().getAttribute('aria-valuenow'),'1');
+  accepted=false;await key('End');assert.equal(thumb().getAttribute('aria-valuenow'),'1','Rejected commands release their preview');
+  accepted=true;await key('End');await publish({error:'unavailable',seekTarget:null});
+  assert.equal(thumb().getAttribute('aria-valuenow'),'1','Failures release pending targets');
 });

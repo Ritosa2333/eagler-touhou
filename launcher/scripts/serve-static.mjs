@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import {th03BrotliSidecar,acceptsBrotli} from '../lib/th03-brotli.mjs';
 import { createReadStream } from "node:fs";
 import { createHash } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
@@ -68,18 +67,16 @@ const server = createServer(async (request, response) => {
     const compress = staticContentCompressible(file, info.size);
     const candidate=compress&&acceptsGzip(accepted)?pc98CompressedPath(root,pathname):null;
     let packed=null;if(candidate){try{const p=await stat(candidate);if(p.isFile())packed=p;}catch(error){if(error.code!=='ENOENT')throw error;}}
-    const packedBr=compress?await th03BrotliSidecar(file,pathname,accepted):null;
-    const encoding = packedBr ? 'br' : packed ? 'gzip' : compress && acceptsBrotli(accepted) ? "br"
+    const encoding = packed ? 'gzip' : compress && /\bbr\b/.test(accepted) ? "br"
       : compress && acceptsGzip(accepted) ? "gzip" : "";
     const headers = { ...commonHeaders };
     if (encoding) headers["Content-Encoding"] = encoding;
     else headers["Content-Length"] = info.size;
-    if(packedBr)headers['Content-Length']=packedBr.size;else if(packed)headers['Content-Length']=packed.size;
+    if(packed)headers['Content-Length']=packed.size;
     response.writeHead(200, headers);
     if (request.method === "HEAD") { response.end(); return; }
-    const source = createReadStream(packedBr?file+".br":packed?candidate:file);
-    if(packedBr){await pipeline(source,response);
-    } else if(packed){await pipeline(source,response);
+    const source = createReadStream(packed?candidate:file);
+    if(packed){await pipeline(source,response);
     } else if (encoding === "br") {
       await pipeline(source, createBrotliCompress({ params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 5 } }), response);
     } else if (encoding === "gzip") {

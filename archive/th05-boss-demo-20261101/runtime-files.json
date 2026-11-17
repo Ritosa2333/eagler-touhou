@@ -1,0 +1,89 @@
+{
+  "schema": "eagler-touhou/runtime-directory/1",
+  "files": {
+    "audio-layout.mjs": {
+      "bytes": 54633,
+      "sha256": "27b992142a91990fb6aa7a9b50639a17ab75f3583fe50642910d5a5bf70478e3"
+    },
+    "audio.mjs": {
+      "bytes": 7432,
+      "sha256": "6f40e22a1a667b1182a4cdff402aabbb05f4cb8766f3c329576ff2ce36623202"
+    },
+    "clock.mjs": {
+      "bytes": 1096,
+      "sha256": "ab6d7e9c30cbd89b14711547c36cd613a3e5091d06d3145f078578c5dc8d6791"
+    },
+    "data.mjs": {
+      "bytes": 3024,
+      "sha256": "c8e24133cca5d0c8a0c2dbae5f6ecf19174694c2d6921c99751610a93372d936"
+    },
+    "input.mjs": {
+      "bytes": 3816,
+      "sha256": "8887f08c8595284102b6cdaf62a89a1a0df87ee95e204b49c30e3bf7dd2cbe23"
+    },
+    "managed.mjs": {
+      "bytes": 6604,
+      "sha256": "e1514689330bae7cef5f9ad5a8a9bfecd85532fe8fea1aaa9bafcd11f9d832d1"
+    },
+    "music-notes.mjs": {
+      "bytes": 1124,
+      "sha256": "110bf3b10dc6058ba0806783af7db6ef27167e02b314a7c2615404f1e33f0935"
+    },
+    "playback.mjs": {
+      "bytes": 3358,
+      "sha256": "a17a117df30c1e20ddd26f932747a5db48b66be7a3bfc5bb5a6e5b707266ffc7"
+    },
+    "pointer.mjs": {
+      "bytes": 1107,
+      "sha256": "495eb7915270f9ded966c91da04e97f620ea2a76b57972460eab78b72f562bc6"
+    },
+    "replay.mjs": {
+      "bytes": 2719,
+      "sha256": "4df79f70cd7977a6bf35f242a27bbe6211f00780ffd27bcb3f8df2c717b2e272"
+    },
+    "sfx.mjs": {
+      "bytes": 2299,
+      "sha256": "3a966c786d0bcfdc9ddcaddca55210c704391ca029c6789dda2a83c44d461c35"
+    },
+    "shell.mjs": {
+      "bytes": 14148,
+      "sha256": "6e0fda03abf59b85c0da7e8fa52aebbc91a43a83885efdb11159fdaf73d257ce"
+    },
+    "storage.mjs": {
+      "bytes": 2484,
+      "sha256": "bc6af4a5127d08815575dbd4297ea5e57c1004a3c123f5919db3e23c07a2ea2c"
+    },
+    "th05.html": {
+      "bytes": 671,
+      "sha256": "d33601507eb1341fbcd710a6f23da4ee7be254cde404a49b3de3ddc4220229ad"
+    },
+    "th05.mjs": {
+      "bytes": 147424,
+      "sha256": "d72d3d22d2daaa082ea8bf41ebc6db56871f46dd7424a031e750157245f4e64d"
+    },
+    "th05.wasm": {
+      "bytes": 1040972,
+      "sha256": "c83645b89ec0e61576a01775159f4c347774a45de82598e3eaef6539b3020367"
+    },
+    "directory-keyboard.mjs": {
+      "bytes": 5180,
+      "sha256": "9c9d8d99b46a802650821dd96ddc96509aef5c0f7bc50220b8ebc26fc086642d"
+    },
+    "keyboard-owners.mjs": {
+      "bytes": 1670,
+      "sha256": "b8d75f6aac5e493a09b69de0c5aef57aa4b2e91f5a46e91709aab29395afcfb3"
+    },
+    "keyboard-input-bridge.mjs": {
+      "bytes": 4775,
+      "sha256": "2955402127f0ce1a90f50b01a6147272d423338596591fba0b502bc8a1ec0cd2"
+    },
+    "direct-input-bridge.mjs": {
+      "bytes": 1318,
+      "sha256": "28a01c9b3f4fb181e8278995c602ae3f2bc0351856102755513266c47abb6062"
+    },
+    "manifest.json": {
+      "bytes": 205,
+      "sha256": "003c0dffc5ec7e4ee14e3270592cc550b95a28059978335030ccb320b34534d6"
+    }
+  }
+}

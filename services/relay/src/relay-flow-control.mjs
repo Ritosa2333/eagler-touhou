@@ -63,14 +63,11 @@ export function acceptRelayMessage(socket, data, gate) {
   return false;
 }
 
-// PC-98 adapters reuse a per-peer JSON channel. Derive that channel's source
-// from the authenticated gameplay socket; a client payload cannot select it.
-export function relayGameplayPayload(policy, player, payload) {
-  if (policy?.relaySourceEnvelope !== true) return payload;
-  const result = Buffer.allocUnsafe(payload.byteLength + 2);
-  result[0] = 0xe6; result[1] = player;
-  result.set(payload, 2);
-  return result;
+// Per-peer adapters receive the source selected by the authenticated socket.
+// Payload bytes cannot impersonate another seat.
+export function relayGameplayPayload(policy,player,payload){
+ if(policy?.relaySourceEnvelope!==true)return payload;
+ const result=Buffer.allocUnsafe(payload.byteLength+2);result[0]=0xe6;result[1]=player;result.set(payload,2);return result;
 }
 
 // JSON objects must not reach Number/String coercion through attacker-supplied
@@ -202,6 +199,20 @@ export function normalizeRelaySignal(message) {
     if (ice.usernameFragment != null) candidate.usernameFragment = ice.usernameFragment;
   }
   return description || candidate ? { description, candidate } : null;
+}
+
+export function restrictInitialIce(signal, route) {
+  const relayOnly = route !== 'direct';
+  const keep = candidate => {
+    const type = /^candidate:\S+(?: +\S+){5} +typ +(host|srflx|prflx|relay)(?: +|$)/i.exec(candidate)?.[1]?.toLowerCase();
+    return candidate === '' || Boolean(type && (type === 'relay') === relayOnly);
+  };
+  const {description, candidate} = signal;
+  return {
+    description: description && {...description, sdp: description.sdp.replace(/^a=candidate:[^\r\n]*(?:\r?\n|$)/gm,
+      line => keep(line.slice(2).trimEnd()) ? line : '')},
+    candidate: candidate && keep(candidate.candidate) ? candidate : null,
+  };
 }
 
 export function clearSpectatorHistory(run) {

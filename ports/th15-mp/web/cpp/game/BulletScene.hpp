@@ -4,12 +4,16 @@
 #include "AnmManager.hpp"
 #include <memory>
 namespace th15 {
+struct BulletContactCandidates {u32 active=0;bool possible=true;u8 last=3;};
 struct BulletSceneHost:PlayerDamageHost {
     virtual unsigned player_count()const noexcept{return 1;}
     virtual unsigned local_player()const noexcept{return 0;}
     virtual void select_player(unsigned){}
     virtual bool player_active(unsigned)const noexcept{return true;}
     virtual const PlayerCollision& player_collision()const noexcept=0;
+    virtual const PlayerCollision* contact_player(unsigned seat)noexcept{if(!player_active(seat))return nullptr;select_player(seat);return &player_collision();}
+    virtual BulletContactCandidates contact_candidates(const BulletState&)const noexcept{return {};}
+    virtual void contact_frame(unsigned){} // Zero closes the update's geometry window.
     virtual void sound(i32 id)=0;
     virtual void cancellation_effect(i32 script,const Vec3& position,const Vec3& velocity)=0;
     virtual void graze_spark(const Vec3& position)=0;
@@ -24,10 +28,13 @@ struct BulletSceneHost:PlayerDamageHost {
 // collision processing and game services. Slots and VM addresses stay stable.
 class BulletScene final:public BulletManagerHost {
     friend class multiplayer::BulletFrameState;
+    friend class BulletCheckpoint;
     struct Slot;
     BulletSceneHost& host;Rng& game_random;Rng& visual_random;
     AnmManager* cancellation_owner=nullptr;i32 cancellation_bank=-1;
     std::vector<std::unique_ptr<Slot>> slots;
+    unsigned contact_players=0;
+    BulletVisual* owned_visual(u32 slot)noexcept;
     BulletFrameHost& bullet(u32 slot)override;
     void prepare(u32 slot,BulletFrameContext& context)override;
     void play(i32 id)override;
@@ -47,6 +54,7 @@ public:
     bool cancel_all(i32 reward);
     bool cancel_slot(u32 slot,i32 reward);
     BulletVisual* visual(u32 slot)noexcept;
+    const BulletVisual* visual(u32 slot)const noexcept;
     const MultiplayerGrazeVisual* viewpoint_graze(u32 slot)const noexcept;
 };
 }

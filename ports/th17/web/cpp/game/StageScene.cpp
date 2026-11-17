@@ -8,7 +8,12 @@ bool StageScene::initialize(const StageCamera& initial_camera){
     if(initialized)return fail("Background scene already initialized");if(!file.error.empty())return fail(file.error);if(!animations.resource(bank))return fail("Background animation bank unavailable");
     script.state.camera=initial_camera;view_direction=initial_camera.direction;script.state.camera.position={0,0,-600};script.state.camera.direction={0,300,600};script.state.camera.up={0,1,0};script.state.camera.eye_offset={};script.state.camera.target_offset={};script.state.timer.set(0);script.state.culling_distance_squared=9999999.f;
     for(u32 i=0;i<file.objects.size();++i){object_flags[i]=1;for(const auto& p:file.objects[i].primitives){if(p.animation>=primitives.size())return fail("Background primitive index outside pool");if(!bind(primitives[p.animation],p.script))return false;}}
-    for(u32 i=0;i<file.instances.size();++i)instance_flags[i]=file.instances[i].flags;initialized=true;return true;
+    for(u32 i=0;i<file.instances.size();++i){
+        const auto& instance=file.instances[i];
+        instance_flags[i]=instance.flags;
+        layer_instances[file.objects[u32(instance.object)].layer].push_back(i);
+    }
+    initialized=true;return true;
 }
 bool StageScene::clear_color(u32 value){color=value;return true;}
 bool StageScene::animation(u32 index,i32 value,i32){if(index>=embedded.size())return fail("Background embedded slot outside pool");auto& vm=embedded[index];if(value==-2||value==-1){vm.visual.flags&=~1u;vm.visible=false;if(value==-1)vm.instruction_offset=-1;}else if(value>=0&&!bind(vm,value))return false;return true;}
@@ -29,11 +34,23 @@ bool StageScene::update(const StageSceneFrame& f){
     if(deforming&&!services.update_deformation(script.state,rate))return fail("Background deformation update unavailable");frames++;return true;
 }
 bool StageScene::draw(AnmRenderer& renderer,ZunGraphics& graphics,i32 layer,const GraphicsViewport& viewport,Vec2 origin){
+    return draw_layers(renderer,graphics,layer,layer,viewport,origin);
+}
+bool StageScene::draw_layers(AnmRenderer& renderer,ZunGraphics& graphics,i32 first,i32 last,const GraphicsViewport& viewport,Vec2 origin){
     if(!error.empty())return false;if(!initialized)return fail("Background scene not initialized");auto camera_state=script.state.camera;camera_state.direction=view_direction;const auto camera=stage_camera(camera_state,viewport);renderer.set_viewport(viewport);renderer.set_camera(camera);
+    const StageVisibility visibility(camera,viewport,origin,script.state.culling_distance_squared);
+    for(i32 layer=first;layer<=last;++layer){
+        if(!draw_layer(renderer,graphics,layer,camera,visibility))return false;
+        if(layer==last)break;
+    }
+    return true;
+}
+bool StageScene::draw_layer(AnmRenderer& renderer,ZunGraphics& graphics,i32 layer,const AnmCamera& camera,const StageVisibility& visibility){
     for(u32 i=0;i<embedded.size();++i)if(script.state.animation_layers[i]==layer){renderer.flush();graphics.set_fog(false);graphics.set_depth_mask(false);if(renderer.draw(embedded[i])==-2)return fail(renderer.error);}
     renderer.flush();if(!draw_objects){graphics.set_depth_mask(false);return true;}graphics.set_fog(true);
-    for(u32 i=0;i<file.instances.size();++i){const auto& instance=file.instances[i];const auto& object=file.objects[u32(instance.object)];if(i32(i8(object.layer))!=layer)continue;
-        if(!stage_visible(object,instance.position,camera,viewport,origin,script.state.culling_distance_squared)){culled_instances++;instance_flags[i]&=~1;continue;}object_flags[u32(instance.object)]|=2;
+    if(layer<i32(INT8_MIN)||layer>i32(INT8_MAX))return true;
+    for(u32 i:layer_instances[u8(layer)]){const auto& instance=file.instances[i];const auto& object=file.objects[u32(instance.object)];
+        if(!visibility.visible(object,instance.position)){culled_instances++;instance_flags[i]&=~1;continue;}object_flags[u32(instance.object)]|=2;
         for(const auto& p:object.primitives){if(p.type!=0)continue;auto& vm=primitives[p.animation];auto& v=vm.visual;const u32 mode=v.draw_mode();if(mode>=4){v.translation={float(p.position.x+instance.position.x),float(p.position.y+instance.position.y),float(p.position.z+instance.position.z)};// The original looks up the selected bank/index only for a nonzero
             // STD size. A delayed sprite instruction can leave vm.sprite null.
             if(p.size.x!=0||p.size.y!=0){auto* source=vm.sprite_resource?vm.sprite_resource:vm.resource;if(!source||v.sprite<0||u32(v.sprite)>=source->sprites.size())return fail("Background primitive sprite unavailable");const auto& sprite=source->sprites[u32(v.sprite)];if(p.size.x!=0){v.scale.x=float(p.size.x/sprite.width);v.flags|=8;}if(p.size.y!=0){v.scale.y=float(p.size.y/sprite.height);v.flags|=8;}}}

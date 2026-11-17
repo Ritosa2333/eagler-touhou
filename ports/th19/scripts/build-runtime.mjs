@@ -4,7 +4,7 @@ import {dirname,relative,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawn} from 'node:child_process';
 const root=fileURLToPath(new URL('../',import.meta.url));
-const args=process.argv.slice(2),allowed=new Set(['--print-inputs','--multiplayer','--release','--package-only']);
+const args=process.argv.slice(2),allowed=new Set(['--print-inputs','--multiplayer','--release','--package-only','--debug']);
 for(const arg of args)if(!allowed.has(arg))throw Error(`Unknown build argument: ${arg}`);
 const multiplayer=args.includes('--multiplayer'),variant=multiplayer?'multiplayer':'normal';
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -17,7 +17,7 @@ sources.push(resolve(root,'portable/sdl/Renderer.cpp'));
 const headers=['web/cpp','portable/sdl','portable/input'].flatMap(directory=>walk(resolve(root,directory))).filter(name=>/\.(?:h|hpp|inc)$/.test(name));
 if(commonAvailable)headers.push(resolve(common,'include/eagler/input/BrowserGamepad.hpp'),resolve(common,'browser/browser-gamepad-input.hpp'),resolve(common,'include/eagler/input/DialogueGesture.hpp'),resolve(common,'include/eagler/audio/WebSfx.hpp'));
 else headers.push(...walk(resolve(root,'portable/compat')).filter(name=>/\.(?:h|hpp|inc)$/.test(name)));
-const flags=['-O2','-g0','-std=c++17','-fno-exceptions','-fno-rtti','-ffp-contract=off',
+const flags=['-O2',args.includes('--debug')?'-g2':'-g0','-std=c++17','-fno-exceptions','-fno-rtti','-ffp-contract=off',
  '-I'+resolve(root,'portable/input'),'-I'+resolve(root,'web/cpp/game'),'-I'+resolve(root,'web/cpp/sdl'),'-I'+resolve(root,'portable/sdl'),
  '-I'+(commonAvailable?resolve(common,'include'):resolve(root,'portable/compat')),
  '-DTH_NATIVE_PLATFORM=1','--use-port=sdl3','--no-entry','-sDEFAULT_TO_CXX=1',
@@ -48,7 +48,7 @@ if(args.includes('--print-inputs')){
  }else if(!existsSync(loader))loader=resolve(root,'runtime/th19.mjs');
  mkdirSync(output,{recursive:true});
  const shellDirectory=resolve(root,'web/sdl-runtime');
- const names=['resource-integrity.mjs','shell.mjs','managed.css','keyboard.mjs','netplay.mjs','peer-socket.mjs','rollback-session.mjs','native-adapter.mjs','directory-keyboard.mjs','keyboard-owners.mjs','keyboard-input-bridge.mjs'];
+ const names=['resource-integrity.mjs','shell.mjs','managed.css','keyboard.mjs','netplay.mjs','peer-socket.mjs','rollback-session.mjs','native-adapter.mjs','th19-recording.mjs','replay-session.mjs','directory-keyboard.mjs','keyboard-owners.mjs','keyboard-input-bridge.mjs'];
  for(const name of names)copyFileSync(resolve(shellDirectory,name),resolve(output,name));
  let html=readFileSync(resolve(shellDirectory,'managed.html'),'utf8').replace('content="normal"',`content="${variant}"`);
  writeFileSync(resolve(output,'th19.html'),html);
@@ -62,4 +62,3 @@ if(args.includes('--print-inputs')){
  writeFileSync(resolve(output,'runtime-files.json'),JSON.stringify({schema:'eagler-touhou/runtime-directory/1',game:'th19',variant,files},null,2)+'\n');
  console.log(JSON.stringify({output,variant,files:Object.keys(files),wasm:files['th19.wasm'].sha256}));
 }
-

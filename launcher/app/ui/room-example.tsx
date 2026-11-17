@@ -92,6 +92,7 @@ function initial(): DemoState {
 /** Chinese maintainer examples use production views with document-local state. */
 export function RoomExample({
   announce,
+  chatDemo = false,
   renderRegion = (id, children) => (
     <section id={`page-room-${id}`} key={id}>
       {children}
@@ -99,36 +100,52 @@ export function RoomExample({
   ),
 }: {
   announce(message: string): void;
+  chatDemo?: boolean;
   renderRegion?(id: string, children: ReactNode): ReactNode;
 }) {
   const [state, setState] = useState(initial);
   const [chatSerial, setChatSerial] = useState(0);
+  const [chatMember,setChatMember]=useState(chatDemo);
   const [networkState, setNetworkState] = useState<'connected' | 'checking' | 'unavailable'>('connected');
   const [networkPeer, setNetworkPeer] = useState<string | undefined>();
   const [personalOpen, setPersonalOpen] = useState(false),
     [chat, setChat] = useState<MultiplayerQuickChatModel | null>(null);
   const trigger = useRef<HTMLElement | null>(null);
   useEffect(() => {
+    let messageId=1;
+    const pending = new Set<number>();
     const model = createMultiplayerQuickChatModel({
       send: (message) => {
         const current = model.getSnapshot().context;
-        model.receive({
+        if(message.type==='chat-report'){
+          const entry=model.getSnapshot().entries.find(item=>item.messageId===message.messageId);
+          if(entry)model.receive({type:'chat-retract',authorId:entry.authorId,throughId:entry.messageId,bannedUntil:Date.now()+60000});
+          model.receive({type:'chat-result',action:'chat-report',ok:true});
+          return;
+        }
+        const deliver = () => model.receive({
           ...message,
+          ...(message.type==='free-chat'?{messageId:messageId++,authorId:'handbook-member',name:'演示房主'}:{}),
           room: current?.room,
           seat: current?.localSeat ?? -1,
           spectator: current?.localSpectator,
           clientId: current?.localClientId ?? 'handbook-host',
         });
+        if(message.type==='free-chat') {
+          const timer=window.setTimeout(()=>{pending.delete(timer);deliver();model.receive({type:'chat-result',action:'free-chat',ok:true});}, 1500);
+          pending.add(timer);
+        } else deliver();
       },
       voice() {},
+      notify:code=>announce(code==='reported'?'示例发言已撤回':'操作未完成'),
       timers: {
         setTimeout: (callback, delay) => window.setTimeout(callback, delay),
         clearTimeout: (timer) => window.clearTimeout(timer),
       },
     });
     setChat(model);
-    return () => model.dispose();
-  }, []);
+    return () => {pending.forEach(timer=>{window.clearTimeout(timer);});model.dispose();};
+  }, [announce]);
   useEffect(() => {
     chat?.update({
       visible: true,
@@ -144,6 +161,11 @@ export function RoomExample({
       inRoom: true,
     });
   }, [chat, state, chatSerial]);
+  useEffect(()=>{
+    if(!chat)return;
+    chat.receive({type:'chat-status',registered:chatMember,authorId:'handbook-member',bannedUntil:0});
+    if(chatMember)chat.receive({type:'free-chat',messageId:100,authorId:'handbook-other',clientId:'handbook-player',name:'演示玩家',room:'1024',serial:chatSerial,seat:1,spectator:false,text:'这局打完一起试试下一作？'});
+  },[chat,chatMember,chatSerial]);
   function updateRoom(patch: Partial<Room>) {
     setState((previous) => ({
       ...previous,
@@ -242,6 +264,7 @@ export function RoomExample({
       announce('游戏检查从实际联机房间进入。');
     },
     setPreferTurn: (preferTurn: boolean) => setState((previous) => ({ ...previous, preferTurn })),
+    setStartupRoute: () => {},
   };
   const network: Pick<
     RoomNetworkPresentation,
@@ -510,7 +533,9 @@ export function RoomExample({
               <span className="catalog-muted">{owner ? '房主可管理其他玩家' : '当前身份不能管理其他玩家'}</span>
             </div>,
           )}
-          {renderRegion('chat', chat && <RoomQuickChat model={chat} />)}
+          {renderRegion('chat', chat && <><ChoiceGroup type="single" value={chatMember?'member':'guest'} onValueChange={value=>setChatMember(value==='member')} aria-label="聊天身份示例">
+            <ChoiceItem value="guest">游客</ChoiceItem><ChoiceItem value="member">注册用户</ChoiceItem>
+          </ChoiceGroup>{chatDemo ? <div className="room-workspace-chat" style={{height:300}}><RoomQuickChat model={chat} part="log"/><RoomQuickChat model={chat} part="actions"/></div> : <RoomQuickChat model={chat}/>}</>)}
           {renderRegion('spectators', <RoomSpectators state={state} service={actions} hidden={false} />)}
           {renderRegion('settings', <RoomGameSettings state={state} service={actions} hidden={false} />)}
           {renderRegion(

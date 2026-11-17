@@ -264,6 +264,8 @@ void TitlePresentation::tick(MenuState& state,const TitleScenes& scenes){
         else if(e.type==MenuEvent::Cancel&&state.scene==MenuScene::Difficulty){if(auto* vm=get("pane")){vm->interrupt(1);vm->retiring=true;}}
         else if(e.type==MenuEvent::Resume){if(auto* p=get("popup"))p->interrupt(1);if(auto* b=get("popup-backdrop"))b->interrupt(1);}
         else if(e.type==MenuEvent::RetryShortcut){if(auto* p=get("popup"))p->interrupt(6,true,false,93);}
+        else if(e.type==MenuEvent::QuitShortcut){if(auto* p=get("popup"))p->interrupt(6,true,false,91);}
+        else if(e.type==MenuEvent::ConfirmYes){if(auto* p=get("popup"))p->interrupt(6,true,false,100);}
         else if(e.type==MenuEvent::ConfirmNo){if(auto* p=get("popup"))p->interrupt(6,true,false,101);}
     }
     state.events.clear();

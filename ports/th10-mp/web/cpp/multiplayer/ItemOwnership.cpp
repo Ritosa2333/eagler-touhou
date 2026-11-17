@@ -6,16 +6,17 @@ namespace th10::multiplayer {
 int select_item_collector(ItemOwnership& claim,Item& item,const ItemCandidate* pilots,u32 count,float rate) noexcept {
     if(count<2||count>3)return -1;
     const bool power=item.kind==1||item.kind==4||item.kind==10||item.kind==11;
-    const auto nearest_power=[&](bool only_needy){
+    const auto nearest_power=[&](bool only_needy,bool recovering=false){
         return eagler::cooperative::NearestPowerRecipient(count,
-            [&](unsigned s){return pilots[s].eligible&&(!only_needy||pilots[s].power<100);},
+            [&](unsigned s){return (recovering?pilots[s].recovering:pilots[s].eligible)&&(!only_needy||pilots[s].power<100);},
             [&](unsigned s){return pilots[s].power<100;},
             [&](unsigned s){const auto& p=pilots[s].position;
                 const double dx=double(p.x)-item.position.x,dy=double(p.y)-item.position.y;return dx*dx+dy*dy;});
     };
     const auto overflow=[&](int seat){
         if(seat<0||pilots[seat].power<100||!power)return seat;
-        const int target=nearest_power(true);
+        int target=nearest_power(true);
+        if(target<0&&claim.death_drop)target=nearest_power(true,true);
         if(target>=0){claim.recipient=-1;claim.homing=std::int8_t(target);item.state=3;item.attraction_speed=8;return target;}
         return seat;
     };
@@ -26,6 +27,11 @@ int select_item_collector(ItemOwnership& claim,Item& item,const ItemCandidate* p
     if(claim.homing>=0){
         const auto seat=u32(claim.homing);
         if(seat<count&&pilots[seat].eligible)return overflow(int(seat));
+        if(seat<count&&claim.death_drop&&pilots[seat].recovering&&pilots[seat].power<100){
+            const int target=nearest_power(true);
+            if(target<0)return int(seat);
+            claim.homing=std::int8_t(target);return target;
+        }
         claim.homing=-1;
     }
     int selected=-1,selected_priority=-1;
@@ -50,7 +56,7 @@ int select_item_collector(ItemOwnership& claim,Item& item,const ItemCandidate* p
     if(power&&selected_priority==2){
         selected=nearest_power(false);
         if(selected>=0){claim.homing=std::int8_t(selected);item.state=3;item.attraction_speed=8;}
-        return selected;
+        return overflow(selected);
     }
     return selected_priority>0?overflow(selected):selected;
 }

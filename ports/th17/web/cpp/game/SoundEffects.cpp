@@ -14,7 +14,11 @@ bool SoundEffects::stop(i32 id){
  for(u32 n=0;n<state.indices.size();n++){if(state.indices[n]<0||state.indices[n]==id){state.indices[n]=id;state.counts[n]=-1;break;}}return true;
 }
 i32 SoundEffects::adjusted_volume(i32 base,i32 master)noexcept{if(!master)return -10000;const float inverse=float(1.f-float(float(master)/100.f)),square=float(inverse*inverse),cube=float(square*inverse),gain=float(1.f-cube);return wrapping_sub(truncate_int(float(gain*float(wrapping_add(base,5000)))),5000);}
-void SoundEffects::start_voice(u32 id,i32 pan){if(!output.sound_available(id))return;auto& voice=voices[id];output.sound_stop(id);output.sound_position(id,0);output.sound_pan(id,pan);voice.pan=pan;output.sound_volume(id,adjusted_volume(voice.definition->volume,master_volume));output.sound_play(id,voice.definition->flags);}
+void SoundEffects::start_voice(u32 id,i32 pan){
+ if(!output.sound_available(id))return;
+ auto& voice=voices[id];voice.pan=pan;
+ output.sound_restart(id,pan,adjusted_volume(voice.definition->volume,master_volume),voice.definition->flags);
+}
 void SoundEffects::process(){
  if(!enabled)return;for(u32 n=0;n<state.indices.size();n++){const i32 id=state.indices[n];if(id<0)break;state.indices[n]=-1;const i32 count=state.counts[n];state.counts[n]=0;if(count<0)stop_voice(u32(id));else {i32 sum=0;for(i32 p=0;p<count;p++)sum=wrapping_add(sum,state.pans[n][p]);start_voice(u32(id),count>0?sum/count:0);}}
 }

@@ -78,7 +78,11 @@ public:
     std::array<i8,16> stages{};bool ready=false,leaving=false;std::string error;
     TitleMenus(GameResources& r,TitleServices& s,Rng& rng,TitleSettings& cfg):resources(r),output(s),random(rng),settings(cfg){}
     bool initialize();
-    bool open_network_selection(){if(!create_animations())return false;state={};leaving=false;change(TitleScreen::versus_difficulty);return true;}
+    bool open_network_selection(bool reselect=false){
+        if(!create_animations())return false;
+        state={};leaving=false;state.return_to_versus=reselect;
+        change(TitleScreen::versus_difficulty);return true;
+    }
     // The hosted lobby has already confirmed both characters and difficulty.
     // Use the same versus launch path as the title's stage confirmation.
     void launch_network_match(){state.health[0]=settings.health[0];state.health[1]=settings.health[1];launch(true,-1);}

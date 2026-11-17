@@ -128,8 +128,10 @@ void captureAnimationDraw() {
         transform.rotation =
             anm_logic::normalized(float(double(hostile->bullet->enemy.angle) + 1.5707963705062866));
     }
-    animationDrawState.push_back({transform.x + node.viewportX,
-                                  transform.y + node.viewportY,
+    // Layer 26 mode 17 uses world-space geometry with the stage camera.
+    const bool stageGeometry = s.layer == 26 && s.mode == 17;
+    animationDrawState.push_back({transform.x + (stageGeometry ? 0 : node.viewportX),
+                                  transform.y + (stageGeometry ? 0 : node.viewportY),
                                   transform.z,
                                   s.rx,
                                   s.ry,

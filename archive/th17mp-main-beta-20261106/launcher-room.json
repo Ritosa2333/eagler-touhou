@@ -1,0 +1,70 @@
+{
+  "betaGate": true,
+  "title": "東方鬼形獣",
+  "role": "妖梦 · 鹰灵",
+  "report": [
+    {
+      "seat": 0,
+      "phase": 1,
+      "confirmed": 201,
+      "difficulty": 4,
+      "loadouts": [
+        {
+          "character": 2,
+          "shot": 2
+        },
+        {
+          "character": 0,
+          "shot": 0
+        },
+        {
+          "character": 0,
+          "shot": 0
+        }
+      ],
+      "runtime": "/runtime/mp/th17.html"
+    },
+    {
+      "seat": 1,
+      "phase": 1,
+      "confirmed": 200,
+      "difficulty": 4,
+      "loadouts": [
+        {
+          "character": 2,
+          "shot": 2
+        },
+        {
+          "character": 0,
+          "shot": 0
+        },
+        {
+          "character": 0,
+          "shot": 0
+        }
+      ],
+      "runtime": "/runtime/mp/th17.html"
+    },
+    {
+      "seat": 2,
+      "phase": 1,
+      "confirmed": 201,
+      "difficulty": 4,
+      "loadouts": [
+        {
+          "character": 2,
+          "shot": 2
+        },
+        {
+          "character": 0,
+          "shot": 0
+        },
+        {
+          "character": 0,
+          "shot": 0
+        }
+      ],
+      "runtime": "/runtime/mp/th17.html"
+    }
+  ]
+}

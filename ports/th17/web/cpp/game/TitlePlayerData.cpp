@@ -11,17 +11,18 @@ std::string full_space(){return {char(0x81),char(0x40)};}
 }
 bool TitlePlayerData::check(bool ok,const char* why){if(!ok&&error.empty())error=why;return ok;}
 bool TitlePlayerData::visual(bool ok){return check(ok,visuals.error.c_str());}
-bool TitlePlayerData::bitmap(i32 row,const std::string& bytes,u32 color){auto* vm=animations.registry.find(state.handles[291+row]);if(!vm){state.handles[291+row]=0;return check(false,"Player Data text animation unavailable");}TextureText request;request.bytes=bytes;request.color=color;request.centered=true;return check(host.text(*vm,request),"Player Data bitmap text failed");}
+bool TitlePlayerData::bitmap(i32 row,const std::string& bytes,u32 color,bool utf8){auto* vm=animations.registry.find(state.handles[291+row]);if(!vm){state.handles[291+row]=0;return check(false,"Player Data text animation unavailable");}TextureText request;request.bytes=bytes;request.color=color;request.utf8=utf8;request.centered=true;return check(host.text(*vm,request),"Player Data bitmap text failed");}
 bool TitlePlayerData::paint(){
  if(ranks.selected<0||ranks.selected>=5||state.menu.selected<0||state.menu.selected>=9||pages.selected<0)return check(false,"Player Data spell page outside original range");
  i32 skipped=0,index=0,first=pages.selected*10;while(skipped<first&&index<101){if(SpellCatalog::rank(index)==ranks.selected)skipped++;index++;}displayed_spells=0;
  while(index<101&&displayed_spells<10){if(SpellCatalog::rank(index)!=ranks.selected){index++;continue;}
   const auto& aggregate=records.spells.aggregate[index];const auto& personal=records.spells.loadouts[state.menu.selected][index];const i32 number=index+1;
   const std::string digits=(number>=100?full_digit(number/100):full_space())+(number>=10?full_digit(number/10%10):full_space())+full_digit(number%10);
+  const auto* translated=aggregate.attempts[0]?host.localized_spell(index):nullptr;
   std::string label;u32 color;
   if(!aggregate.attempts[0]){for(i32 n=0;n<21;n++){label+=char(0x81);label+=char(0x48);}color=0x808080;}
-  else {label=aggregate.name;while(label.size()<42)label+=full_space();color=personal.captures[0]?0xffff80:0xefefef;}
-  char tail[64];std::snprintf(tail,sizeof tail," %4d/%4d",personal.captures[0],personal.attempts[0]);if(!bitmap(displayed_spells,"No."+digits+" "+label+tail,color))return false;displayed_spells++;index++;
+  else {label=translated?*translated:aggregate.name;if(!translated)while(label.size()<42)label+=full_space();color=personal.captures[0]?0xffff80:0xefefef;}
+  char tail[64];std::snprintf(tail,sizeof tail," %4d/%4d",personal.captures[0],personal.attempts[0]);if(!bitmap(displayed_spells,"No."+(translated?std::to_string(number):digits)+" "+label+tail,color,translated!=nullptr))return false;displayed_spells++;index++;
  }
  for(i32 row=displayed_spells;row<10;row++)if(!bitmap(row," ",0xffffffff))return false;return true;
 }

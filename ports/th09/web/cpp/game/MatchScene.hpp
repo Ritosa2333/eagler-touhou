@@ -45,6 +45,7 @@ public:
     void initialize();
     void reset_round();
     void end_round(i32 winning_side);
+    i32 decided_winner()const;
     void show_results();
     void boss_position(i32 side,const Vec3&);
     void update();

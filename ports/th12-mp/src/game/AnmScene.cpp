@@ -13,6 +13,7 @@ Scene::Snapshot Scene::snapshot() const {
 }
 void Scene::snapshot(Snapshot& saved) const {
   saved.registry = registry; saved.runtime = runtime; saved.nextId = nextId_;
+  saved.collectionPending = collectionPending_;
   saved.nodes.resize(nodes_.size());
   size_t index = 0;
   for (const auto& [id, node] : nodes_) saved.nodes[index++] = *node;
@@ -28,6 +29,7 @@ void Scene::snapshot(Snapshot& saved) const {
 }
 void Scene::restore(const Snapshot& saved) {
   registry = saved.registry; runtime = saved.runtime; nextId_ = saved.nextId; executing_ = nullptr;
+  collectionPending_ = saved.collectionPending;
   // Most IDs survive a short rewind. Retain their VM/vector storage instead
   // of destroying the whole graph, while restoring every semantic value.
   for (const auto& node : saved.nodes) {
@@ -66,6 +68,7 @@ Scene& Scene::operator=(const Scene& other) {
   if (this == &other) return *this;
   primary_.clear(); secondary_.clear(); embedded_.clear(); roots_.clear(); nodes_.clear();
   registry = other.registry; runtime = other.runtime; nextId_ = other.nextId_; executing_ = nullptr;
+  collectionPending_ = other.collectionPending_;
   for (const auto& [id, node] : other.nodes_) nodes_[id] = std::make_shared<Node>(*node);
   for (const auto& [key, node] : other.roots_) roots_[key] = nodes_.at(node->id);
   for (const auto& node : other.primary_) primary_.push_back(nodes_.at(node->id));
@@ -96,7 +99,7 @@ Runtime Scene::runtimeFor(Node& node) {
     nodes_[child->id] = child;
     auto childRuntime = runtimeFor(*child);
     if (!child->vm.bind(registry, request.bank, request.script, childRuntime)) {
-      child->alive = false;
+      retire(*child);
       return;
     }
     if (request.detached && request.parent) {
@@ -139,7 +142,7 @@ void Scene::tickNode(Node& node) {
   if (!node.alive)
     return;
   if (node.beforeTick && node.beforeTick()) {
-    node.alive = false;
+    retire(node);
     return;
   }
   auto local = runtimeFor(node);
@@ -148,7 +151,7 @@ void Scene::tickNode(Node& node) {
   if (node.owner && presentationRevision != node.vm.presentationRevision())
     presentation::discontinuity(node.owner);
   if (node.vm.state().deleteRequested || (ended && node.membership != Membership::Embedded))
-    node.alive = false;
+    retire(node);
 }
 
 void Scene::traverse(std::list<std::shared_ptr<Node>>& list) {
@@ -168,6 +171,7 @@ void Scene::reset() {
   roots_.clear();
   nodes_.clear();
   nextId_ = 1;
+  collectionPending_ = false;
 }
 
 Node* Scene::find(uint64_t key) {
@@ -243,7 +247,7 @@ Node* Scene::bind(uint64_t key, uint32_t owner, int bank, int script, Membership
     return nullptr;
   if (owner) presentation::discontinuity(owner);
   if (auto old = roots_.find(key); old != roots_.end())
-    old->second->alive = false;
+    retire(*old->second);
   auto node = std::make_shared<Node>();
   node->id = nextId_++;
   node->key = key;
@@ -263,7 +267,7 @@ Node* Scene::bind(uint64_t key, uint32_t owner, int bank, int script, Membership
   const bool bound = withoutReset ? node->vm.rebindWithoutReset(registry, bank, script, local)
                                   : node->vm.bind(registry, bank, script, local, scriptPosition);
   if (!bound) {
-    node->alive = false;
+    retire(*node);
     return nullptr;
   }
   auto& list = membership == Membership::Primary     ? primary_
@@ -376,18 +380,27 @@ void Scene::tickSecondary() {
   traverse(secondary_);
 }
 
+void Scene::retire(Node& node) noexcept {
+  node.alive = false;
+  collectionPending_ = true;
+}
+
 void Scene::remove(uint64_t key) {
   if (auto* node = find(key))
-    node->alive = false;
+    retire(*node);
 }
 
 void Scene::removeOwner(uint32_t owner) {
   for (auto& [id, node] : nodes_)
     if (node->owner == owner && !node->detached)
-      node->alive = false;
+      retire(*node);
 }
 
 void Scene::collect() {
+  // New nodes are linked to live owners. Only retirement can leave dead
+  // entries or links that need to be repaired at the collection boundary.
+  if (!collectionPending_) return;
+  collectionPending_ = false;
   // Parent retirement also retires attached descendants before the next pass.
   // Detached children have no parent and retain independent ownership.
   bool changed = true;

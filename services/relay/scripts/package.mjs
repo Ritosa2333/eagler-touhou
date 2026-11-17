@@ -9,7 +9,7 @@ export async function writeRelayPackage(target) {
   const ws=lock.packages?.['node_modules/ws'];
   if(!ws?.version||!ws.integrity||!ws.resolved)throw Error('Relay lock must pin ws');
   const packageJson={name:source.name,version:source.version,private:true,type:'module',license:source.license,
-    engines:source.engines,scripts:{start:'node server/netplay-relay.mjs'},dependencies:{ws:source.dependencies.ws}};
+    engines:source.engines,scripts:{start:'node server/netplay-relay.mjs','start:anonymous-api':'node server/anonymous-api.mjs'},dependencies:{ws:source.dependencies.ws}};
   const {scripts,...entry}=packageJson;
   await mkdir(target,{recursive:true});
   await writeFile(resolve(target,'package.json'),JSON.stringify(packageJson,null,2)+'\n');

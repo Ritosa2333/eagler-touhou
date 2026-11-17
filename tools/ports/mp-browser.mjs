@@ -125,7 +125,7 @@ try{
     frame:r?.__eaglerNetplayLanFrame??native?.[3]??null,
     failed:!!r?.__eaglerNetplayFailed||native?.[23]===1||peer?.failed===true,
     error:r?.__eaglerNetplayError||(native?.[23]===1||peer?.failed===true?String(peer?.error||'native multiplayer failure'):''),native,
-    state:runtime?.status?.()??null,world:runtime?.state?.()??null,menuState:runtime?.menu?.()??null,transport:peer?{route:peer.route,failed:peer.failed,error:peer.error,closed:peer.closed,peers:peer.peers?.size}:null,
+    state:runtime?.status?.()??null,world:runtime?.state?.()??null,menuState:runtime?.menu?.()??null,transport:peer?{route:peer.route??r?.__eaglerNetplayTransport,failed:peer.failed,error:peer.error,closed:peer.closed,peers:peer.peers?.size}:null,
     replayFile:peer?{uploaded:peer.sharedReplaySession,receiving:peer.replayReceiving?.offset,bytes:peer.spectatorReplay?.bytes?.length}:null,
     spectatorSession:peer?.spectatorSession??null,receiveEpoch:peer?.receiveEpoch??0,reconnectAttempt:peer?.reconnectAttempt??0,
     body:r?.document.body.innerText??'',options:module?.eaglerOptions??null,terminal:events.filter(e=>e.event==='error'||e.event==='exit')};
@@ -154,7 +154,7 @@ try{
    browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});report.browser=browser.version();
    const room=t.game+'mp-'+randomInt(1000,9999),members=[];
    for(let seat=0;seat<players;seat++){const member=randomUUID().replaceAll('-',''),client='mp_'+member;members.push({member,client,seat});
-    const socket=await lobby(room,client,member,seat===0);sockets.push(socket);await send(socket,{type:'take-seat',seat,loadout:seat},m=>m.room?.seats?.[seat]?.clientId===client);}
+    const socket=await lobby(room,client,member,seat===0);sockets.push(socket);await send(socket,{type:'take-seat',seat,loadout:seat%PRODUCT_GAMES[t.game].multiplayer.loadouts.length},m=>m.room?.seats?.[seat]?.clientId===client);}
    await send(sockets[0],{type:'settings',playerCount:players,difficulty:1,visibility:'private',challengeMode:challenge},m=>m.room?.challengeMode===challenge);
    for(let seat=0;seat<players;seat++)await send(sockets[seat],{type:'set-ready',ready:true},m=>m.room?.seats?.[seat]?.ready);
    await until(()=>sockets[0].messages.at(-1)?.room?.seats.slice(0,players).every(s=>s?.ready),'all ready');
@@ -162,7 +162,7 @@ try{
      ? {adonisMode:t.game==='th15'?1:0,inputDelay:t.game==='th15'?2:0,inputDelayAuto:false,predictionReserve:2} : {};
    const started=await send(sockets[0],{type:'start',...timing},m=>m.type==='start');row.room={room,run:started.serial};
    const options={playerCount:players,difficulty:1,seed:417,
-    loadouts:PRODUCT_GAMES[t.game].multiplayer.loadouts.slice(0,players).map(l=>({character:l.character,shot:l.shot})),
+    loadouts:Array.from({length:players},(_,i)=>{const l=PRODUCT_GAMES[t.game].multiplayer.loadouts[i%PRODUCT_GAMES[t.game].multiplayer.loadouts.length];return {character:l.character,shot:l.shot};}),
     ...timing,spectatorCount:1,spectatorTimeline:true,challengeMode:challenge,iceServers:[]};
    const add=async(member,spectator=false,launchNow=true)=>{
     const context=await browser.newContext({viewport:{width:1000,height:760}});contexts.push(context);
@@ -252,7 +252,7 @@ try{
    if(recover)assert.ok(row.initial.reconnectAttempt>=1,'recover an actual receiver loss before its first session descriptor');
    const control=async(action,frame)=>{const state=await inspect(viewer);assert.ok(state.playback);await viewer.page.evaluate(({run,action,frame})=>rpc('spectator-playback',{run,action,...(frame===undefined?{}:{frame})}),{run:state.playback.run,action,frame});};
    await step('pause-seek-resume',async()=>{
-    await control('pause');const paused=await progress(viewer,s=>s.playback.paused,'pause');const before=await Promise.all(sources.map(inspect));
+    await control('pause');const paused=await progress(viewer,s=>s.playback.paused&&!s.playback.seeking,'pause');const before=await Promise.all(sources.map(inspect));
     await viewer.page.waitForTimeout(700);const held=await inspect(viewer);healthy(held);assert.equal(held.playback.position,paused.playback.position);
     const after=await Promise.all(sources.map(inspect));assert.ok(after.every((s,i)=>s.frame>before[i].frame),'viewer pause must not pause players');
     const target=paused.playback.min+20;await control('seek',target);await progress(viewer,s=>!s.playback.seeking&&s.playback.position===target&&s.playback.paused,'backward replay seek');

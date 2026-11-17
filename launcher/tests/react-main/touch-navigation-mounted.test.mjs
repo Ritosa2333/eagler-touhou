@@ -115,8 +115,8 @@ async function mountEntry(initialEntries = ['/?keep=1#retained'], {seedLayout = 
     roomSurface: roomDrawer ? React.createElement(FixtureRoomDrawerToggle) : undefined,
     requestRoomLeave: () => unexpected('room departure'),
     // Explicit host-only fixture slots. Settings/editor/navigation are real.
-    masthead: React.createElement('header', {'data-fixture-host': true}), footer: null,
-    lobby: {masthead: null, onGuide: null, onNetwork: null,
+    masthead: React.createElement('header', {'data-fixture-host': true}),
+    lobby: {masthead: null, guideHref: null, onNetwork: null,
       roomTools: React.createElement(FixtureRoomSettingsAction, {product: roomOptionsProduct || new URLSearchParams(initialEntries.at(-1)?.search || '').get('game') || 'th06mp'}), roomList: null,
       hasRooms: false, loading: false, emptyState: null, roomCount: ''},
   };

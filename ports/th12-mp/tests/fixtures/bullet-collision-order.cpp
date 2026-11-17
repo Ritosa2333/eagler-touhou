@@ -29,7 +29,11 @@ void collision_run(int phase, float x, float vx, int age, int ready, int word4, 
   world = {}; world.ready = ready; state = {};
   state.phase = Phase(phase); state.x = x; state.y = 120; state.vx = vx; state.age = age;
   state.type = 0; state.cancelEffect = -1; state.collisionDelay = word4; state.offscreenGrace = 10;
-  if (extension200) set(state.program, 0, false, 0x200, 5, -999999, -999999, -999999);
+  if (extension200) {
+    Program program;
+    set(program, 0, false, 0x200, 5, -999999, -999999, -999999);
+    state.programStorage = std::make_shared<const Program>(program);
+  }
   tick(state, world);
   output[0] = int(state.phase); output[1] = state.x; output[2] = state.y;
   output[3] = state.collisionDelay; output[4] = state.interrupt;

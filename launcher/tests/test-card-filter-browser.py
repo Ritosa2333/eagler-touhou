@@ -13,7 +13,7 @@ def main():
         browser = p.chromium.launch()
         context = browser.new_context(viewport={'width': 1280, 'height': 800}, service_workers='block')
         # Retired preferences must never hide an entire shelf after upgrade.
-        context.add_init_script("localStorage.setItem('eagler-touhou-card-filter-v1','multiplayer');localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1');localStorage.setItem('eagler-touhou-site-notice-enabled-v1','0')")
+        context.add_init_script("localStorage.setItem('eagler-touhou-card-filter-v1','multiplayer');localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1')")
         page = context.new_page()
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))

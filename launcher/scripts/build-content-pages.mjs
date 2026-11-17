@@ -45,6 +45,12 @@ export async function buildContentPages({project = defaultProject, check = false
   }
 
   const renderer = new Renderer();
+  renderer.heading = function heading(token) {
+    const content = this.parser.parseInline(token.tokens);
+    const anchor = / \{#([a-z][a-z0-9-]*)\}$/.exec(content);
+    const title = anchor ? content.slice(0, anchor.index) : content;
+    return `<h${token.depth}${anchor ? ` id="${anchor[1]}"` : ''}>${title}</h${token.depth}>\n`;
+  };
   renderer.link = function link(token) {
     const href = safeContentHref(token.href);
     if (!href) return this.parser.parseInline(token.tokens);
@@ -100,7 +106,7 @@ export async function buildContentPages({project = defaultProject, check = false
     return `<div class="first-use-notice-list">\n${sections}\n</div>\n`;
   }
 
-  function renderMultiplayerFragment(source) {
+  function renderDocumentFragment(source) {
     if (!normalizeMarkdown(source)) return "";
     const content = renderTokens(withoutLeadingTitle(lexMarkdown(source)));
     return content ? `${content}\n` : "";
@@ -129,7 +135,8 @@ export async function buildContentPages({project = defaultProject, check = false
 
 
   const firstUseNoticeHtml = renderFirstUseNoticeFragment(await readFile(firstUseNoticeSourcePath, "utf8"));
-  const multiplayerHtml = renderMultiplayerFragment(await readFile(multiplayerSourcePath, "utf8"));
+  const multiplayerHtml = renderDocumentFragment(await readFile(multiplayerSourcePath, "utf8"));
+  const privacyHtml = renderDocumentFragment(await readFile(resolve(project, "content", "PRIVACY_POLICY.md"), "utf8"));
 
   async function emit(path, body, staleMessage) {
     if (path.endsWith('.html') && /<head\b/i.test(body) && !/<meta\s+name=["']darkreader-lock["']/i.test(body)) {
@@ -151,7 +158,7 @@ export async function buildContentPages({project = defaultProject, check = false
   const catalog = JSON.parse(await readFile(catalogPath, 'utf8'));
   const keys = JSON.parse(await readFile(resolve(project, 'messages/keys.json'), 'utf8'));
   const aboutBody = parseFragment(await readFile(resolve(project, 'content/ABOUT.html'), 'utf8'));
-  for (const [key, html] of Object.entries({'content.faq': content, 'content.firstUse': firstUseNoticeHtml, 'content.multiplayer': multiplayerHtml, 'content.about': serialize(aboutBody)})) catalog[keys[key].id] = html.trim();
+  for (const [key, html] of Object.entries({'content.faq': content, 'content.firstUse': firstUseNoticeHtml, 'content.multiplayer': multiplayerHtml, 'content.about': serialize(aboutBody), 'content.privacy': privacyHtml})) catalog[keys[key].id] = html.trim();
   await emit(catalogPath, JSON.stringify(catalog, null, 2) + '\n', 'Chinese document messages are stale; run bun run build:content');
   const migrationTokens=await readFile(resolve(project,'app/ui/tokens.css'),'utf8');
   const compatibilityPath = resolve(project, 'public/compatibility.html');

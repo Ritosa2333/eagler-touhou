@@ -31,6 +31,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-th075-english-static.mjs",
   "tests/test-th075-thcrap.mjs",
   "tests/test-library-index-scrub.mjs",
+  "tests/test-th14-thcrap.mjs",
   "tests/test-th15-thcrap.mjs",
   "tests/test-thcrap-patch-precedence.mjs",
   "tests/test-browser-support.mjs",
@@ -115,7 +116,6 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-sha256.mjs",
   "tests/test-route-state.mjs",
   "tests/test-netplay-telemetry.mjs",
-  "tests/test-site-notice.mjs",
   "tests/test-touch-layout-editor-state.mjs",
   "tests/test-touch-layout-model.mjs",
   "tests/test-touch-function-key.mjs",
@@ -137,6 +137,8 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-package-generation.mjs",
   "tests/test-package-launcher.mjs",
   "tests/test-raw-data-import-policy.mjs",
+  "tests/test-retail-package.mjs",
+  "tests/test-retail-vorbis.mjs",
   "tests/test-package-mutation-queue.mjs",
   "tests/test-package-store-contract.mjs",
   "tests/test-package-zip.mjs",
@@ -161,6 +163,7 @@ export const REPOSITORY_PYTHON_TESTS = Object.freeze([
 export const WORKSPACE_PRECHECKS = Object.freeze([]);
 
 export const WORKSPACE_NODE_TESTS = Object.freeze([
+  "tests/test-th05-initial-stock.mjs",
   "tests/test-multiplayer-session-identity.mjs",
   "tests/test-th075-language-configure.mjs",
   "tests/test-shared-font-selection-workspace.mjs",

@@ -181,4 +181,6 @@
 - `normal` / `multiplayer`：独立 X 蓄力按钮通过 Android 触屏模拟，覆盖按住、释放与 C Bomb；单机蓄力达到 500，释放一级攻击，Bomb 库存由 3 减至 2。见[触屏输入验收](../../archive/th19-touch-charge-20261105/README.md)。
 - `multiplayer`：四档难度、双方统一生命、关闭计时和手动屏障规则完成原生与双端启动器验收。见[对局规则验收](../../archive/th19-match-policy-20261105/README.md)与[配置及能力卡验收](../../archive/th19-versus-settings-20261105/README.md)。
 
-这些记录覆盖桌面 Edge、软件图形、Android 触屏模拟和本机 Relay 验收。触屏实机、跨公网 TURN、长流程全角色通关与多人 Replay 由相应专项验收记录管理。
+- `normal` / `multiplayer`：Quit 返回启动器、扩展录像录制与文件校验、播放及两次回退重播通过。只读旁观覆盖 RTC / Relay、晚加入与连续确认输入；三个完整启动器实例验证玩家对战和观众暂停／返回实时。双方各 2000 弹、12060 tick 与 8 个回滚快照的浏览器压力测试保持内存稳定。见[旁观与录像验收](../../archive/th19-recording-20261105/README.md)。
+
+这些记录覆盖桌面 Edge、软件图形、Android 触屏模拟和本机 Relay 验收。触屏实机、跨公网 TURN 与长流程全角色通关由相应专项验收记录管理。

@@ -1,4 +1,3 @@
-import {th03BrotliSidecar,acceptsBrotli} from '../lib/th03-brotli.mjs';
 import {LEGACY_HOST_MANIFEST_FILE, legacyHostManifestResponse} from '../compat/site-manifest.mjs';
 import { createReadStream, existsSync, watch } from "node:fs";
 import { createHash } from "node:crypto";
@@ -19,6 +18,7 @@ import {
 import { buildAppShell } from "../lib/app-shell-build.mjs";
 import { APP_SHELL_RETIREMENT_WORKER } from "../lib/app-shell-retirement.mjs";
 import { createDevelopmentSiteManifest } from "../lib/development-site-manifest.mjs";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { developmentResourceRoutes } from "../lib/development-resource-routes.mjs";
 import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
@@ -67,7 +67,9 @@ if (process.env.EAGLER_TOUHOU_ARTWORK_DIR && !existsSync(configuredArtworkDirect
   throw new Error(`EAGLER_TOUHOU_ARTWORK_DIR does not exist: ${configuredArtworkDirectory}`);
 }
 const configuredNetplayRelay = process.env.EAGLER_TOUHOU_NETPLAY_RELAY?.trim() || undefined;
-const hostArtwork = new Set(hostArtworkFiles(Object.keys(DEVELOPMENT_CONTENT.games)));
+// Library cards include registered import-only and opt-in products even when
+// their Runtime is absent from this development assembly.
+const hostArtwork = new Set(hostArtworkFiles(Object.keys(PRODUCT_GAMES)));
 const selectedDevelopmentGames = process.env.EAGLER_DEVELOPMENT_GAMES?.split(",").map(value => value.trim()).filter(Boolean);
 // Optional operator-owned local manifest lets UI previews reuse packaged
 // Runtimes without requiring every source repository to have build outputs.
@@ -315,20 +317,16 @@ createServer(async (request, response) => {
 
     const accepted = request.headers["accept-encoding"] || "";
     const shouldCompress = staticContentCompressible(file, info.size);
-    const packedBr=shouldCompress?await th03BrotliSidecar(file,url.pathname,accepted):null;
-    const encoding = packedBr || shouldCompress && acceptsBrotli(accepted) ? "br"
+    const encoding = shouldCompress && /\bbr\b/.test(accepted) ? "br"
       : shouldCompress && /\bgzip\b/.test(accepted) ? "gzip" : "";
     const headers = { ...commonHeaders };
     if (encoding) headers["Content-Encoding"] = encoding;
-    if (packedBr) headers["Content-Length"] = packedBr.size;
-    else if (!encoding) headers["Content-Length"] = info.size;
+    else headers["Content-Length"] = info.size;
     response.writeHead(200, headers);
     if (request.method === "HEAD") { response.end(); return; }
 
-    const source = createReadStream(packedBr ? file+".br" : file);
-    if (packedBr) {
-      await pipeline(source,response);
-    } else if (encoding === "br") {
+    const source = createReadStream(file);
+    if (encoding === "br") {
       await pipeline(source, createBrotliCompress({ params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 5 } }), response);
     } else if (encoding === "gzip") {
       await pipeline(source, createGzip({ level: 6 }), response);

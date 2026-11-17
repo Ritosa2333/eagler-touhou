@@ -6,7 +6,6 @@ try {
   const page = await browser.newPage();
   await page.setViewport({width: 1440, height: 1000});
   await page.goto(new URL('lobby.html', process.argv[2] || 'http://127.0.0.1:5173/'), {waitUntil: 'networkidle2'});
-  await page.addStyleTag({content: '.site-notice{display:none!important}'});
   // Local style fixture: no live room or relay action is invoked.
   await page.$eval('.book-directory', el => {
     const fixture = document.createElement('section');

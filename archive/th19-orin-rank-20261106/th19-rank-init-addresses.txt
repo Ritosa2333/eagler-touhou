@@ -1,0 +1,63 @@
+00517c20: loopne   0x517c31
+00517c22: dec      esi
+00517c23: rol      dword ptr [ebp - 0x17b2722e], 0x8b
+00517c2a: add      byte ptr [ebx + 0x62bb1c], ah
+00517c30: mov      eax, 0x62bb20
+00517c35: cmovns   ecx, eax
+00517c38: mov      dword ptr [0x62bb20], edx
+00517c3e: cmp      edx, 0x57030
+00517c44: mov      dword ptr [ebp - 0x20], 0x57030
+00517c4b: lea      eax, [ebp - 0x20]
+00517c4e: mov      dword ptr [ebp - 0x18], 0
+00517c55: cmovle   eax, ecx
+00517c58: shr      esi, 4
+00517c5b: and      esi, 3
+00517c5e: inc      esi
+00517c5f: mov      eax, dword ptr [eax]
+00517c61: mov      dword ptr [0x62bb20], eax
+00517c66: mov      eax, dword ptr [0x5d1c0c]
+00517c6b: mov      dword ptr [0x62bb24], esi
+00517c71: xor      esi, esi
+00517c73: mov      dword ptr [ebp - 0x2c], eax
+00517c76: mov      eax, dword ptr [0x5d1a50]
+00517c7b: mov      dword ptr [ebp - 0x28], esi
+00517c7e: mov      dword ptr [ebp - 0x30], eax
+00517c81: imul     edi, esi, 0xc8
+00517c87: lea      edx, [ebp - 0x40]
+00517c8a: lea      eax, [edi + 0x62b134]
+00517c90: mov      dword ptr [ebp - 0x44], 7
+00517c97: mov      dword ptr [ebp - 0x40], 0
+00517c9e: mov      dword ptr [edi + 0x62b134], 7
+00517ca8: mov      dword ptr [edi + 0x62b128], 3
+00517cb2: mov      ecx, dword ptr [eax]
+00517cb4: test     ecx, ecx
+00517cb6: cmovns   edx, eax
+00517cb9: cmp      ecx, 7
+00517cbc: lea      eax, [ebp - 0x44]
+00517cbf: cmovle   eax, edx
+00517cc2: mov      ecx, dword ptr [eax]
+00517cc4: mov      dword ptr [edi + 0x62b134], ecx
+00517cca: cmp      ecx, 3
+00517ccd: jge      0x517cf9
+00517ccf: test     ecx, ecx
+00517cd1: mov      dword ptr [ebp - 0x20], 7
+00517cd8: lea      eax, [ebp - 0x18]
+00517cdb: mov      dword ptr [ebp - 0x18], 0
+00517ce2: lea      ecx, [edi + 0x62b134]
+00517ce8: cmovns   eax, ecx
+00517ceb: mov      eax, dword ptr [eax]
+00517ced: mov      dword ptr [edi + 0x62b134], eax
+00517cf3: mov      dword ptr [edi + 0x62b128], eax
+00517cf9: mov      ecx, dword ptr [ebp - 0x30]
+00517cfc: test     ecx, ecx
+00517cfe: je       0x517d28
+00517d00: imul     eax, dword ptr [edi + 0x62b180], 0x6c
+00517d07: add      ecx, 0x10
+00517d0a: add      ecx, eax
+00517d0c: call     0x515200
+00517d11: mov      eax, dword ptr [0x5d1c0c]
+00517d16: movaps   xmm0, xmmword ptr [ebp - 0xd0]
+00517d1d: mov      dword ptr [ebp - 0x2c], eax
+00517d20: mov      eax, dword ptr [0x5d1a50]
+00517d25: mov      dword ptr [ebp - 0x30], eax
+00517d28: mov      edx, dword ptr [esi*4 + 0x62bb14]

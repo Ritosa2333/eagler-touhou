@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve, sep } from "node:path";
-import { STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES } from "./frontend-static-manifest.mjs";
+import { STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES, UI_REVIEW_DOCUMENT, hasUiReviewEntry, isOnDemandFrontendAsset } from "./frontend-static-manifest.mjs";
 import { REACT_APP_SHELL_META, normalizeReactMountPath, validateReactAppShellDeployment } from "./react-app-shell-deployment.mjs";
 
 export const REACT_ARTIFACT_METADATA_FILES = Object.freeze([".vite/manifest.json", ".vite/react-app-shell-graph.json"]);
@@ -12,6 +12,19 @@ export function reactDocumentAssetUrl(url, tag) {
 }
 const compatibilityEntries = STATIC_FRONTEND_PACKAGE_FILES.filter(path => path.startsWith("legacy/"));
 const retiredEntryStyles = new Set(["lobby.css", "touch-guide.css"]);
+
+// Compare against the selected browser build's catalog, not the publisher's
+// source catalog. Frontend-only refreshes can reuse a different site's manifest.
+export function assertReactFrontendGameCoverage(artifact, gameIds) {
+  const builtIds = artifact.metadata.graph.gameIds;
+  if (!Array.isArray(builtIds) || !builtIds.length || new Set(builtIds).size !== builtIds.length ||
+      builtIds.some(id => typeof id !== "string" || !/^[a-z][a-z0-9-]*$/.test(id))) {
+    throw new Error("React frontend artifact has no valid game catalog; rebuild with npm run build:ui-rewrite");
+  }
+  const built = new Set(builtIds);
+  const missing = [...gameIds].filter(id => !built.has(id)).sort();
+  if (missing.length) throw new Error(`React frontend catalog is missing Site Manifest games: ${missing.join(", ")}`);
+}
 
 // Match main's source/prebuilt boundary: a packaged operator distribution has
 // no maintainer .mts sources, although it retains classic worker build inputs.
@@ -96,7 +109,9 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
     if (new Set(graph.shellFiles).size !== graph.shellFiles.length) throw new Error("Duplicate previous React shell path");
     for (const path of graph.shellFiles) {
       artifactPath(path);
-      if (!publication.has(path) || path.includes('/') && !/^(?:assets|vendor|uptime)\//.test(path) && !/^content\/[A-Za-z0-9_-]+\.html$/.test(path)) throw new Error(`Previous React shell file is outside its frontend publication: ${path}`);
+      const frontendPath = !path.includes('/') || /^(?:assets|vendor|uptime)\//.test(path)
+        || /^content\/[A-Za-z0-9_-]+\.html$/.test(path) || /^docs\/(?:[A-Za-z0-9_-]+\/)+index\.html$/.test(path);
+      if (!publication.has(path) || !frontendPath) throw new Error(`Previous React shell file is outside its frontend publication: ${path}`);
     }
     for (const path of ['index.html', 'en.html', 'lobby.html']) if (!graph.shellFiles.includes(path)) throw new Error(`Previous React shell is missing its entry: ${path}`);
   }
@@ -121,8 +136,9 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
   if (!entrypoints.size) throw new Error("React artifact has no Vite browser entrypoints");
   // Earlier complete artifacts have two languages. Every declared Japanese
   // document receives the same graph and metadata validation as other entries.
+  const previewFiles = hasUiReviewEntry(manifest) ? [UI_REVIEW_DOCUMENT.file] : [];
   const documents = publication ? graph.shellFiles.filter(path => path.endsWith('.html'))
-    : ["index.html", "en.html", "lobby.html", "profile.html", ...graph.shellFiles.includes('ja.html') ? ['ja.html'] : []];
+    : ["index.html", "en.html", "lobby.html", "profile.html", ...graph.shellFiles.includes('ja.html') ? ['ja.html'] : [], ...previewFiles];
   const staticFiles = publication ?? new Set(STATIC_FRONTEND_PACKAGE_FILES);
   for (const path of documents) {
     const tags = documentTags(await readFile(resolveFile(path), "utf8"), parse);
@@ -146,16 +162,17 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
     if (!referencedEntry) throw new Error(`React document has no browser entrypoint: ${path}`);
   }
   const shellFiles = publication ? [...graph.shellFiles].sort()
-    : [...new Set([...STATIC_APP_SHELL_FILES.filter(path => !retiredEntryStyles.has(path)), ...generated])].sort();
+    : [...new Set([...STATIC_APP_SHELL_FILES.filter(path => !retiredEntryStyles.has(path)), ...previewFiles, ...[...generated].filter(path => !isOnDemandFrontendAsset(path))])].sort();
   if (graph.shellFiles.length !== shellFiles.length || [...graph.shellFiles].sort().some((path, index) => path !== shellFiles[index])) throw new Error("React App Shell graph differs from its canonical static/Vite publication ownership");
-  if (publication) for (const path of generated) if (!publication.has(path) || !shellFiles.includes(path)) throw new Error(`Previous Vite output is absent from its publication graph: ${path}`);
+  if (publication) for (const path of generated) if (!publication.has(path) || (!isOnDemandFrontendAsset(path) && !shellFiles.includes(path))) throw new Error(`Previous Vite output is absent from its publication graph: ${path}`);
   // Vite owns dynamic-expression imports used by React Router; every concrete
   // emitted module import must still stay inside that declared output graph.
   const generatedModules = await browserModuleClosure({root, entries: [...generated].filter(path => /\.m?js$/.test(path)), resolveFile, allowDynamicImports: true});
   if (generatedModules.some(path => !generated.has(path))) throw new Error("React browser module import is absent from the Vite publication graph");
   const compatibility = publication ? [] : await browserModuleClosure({root, entries: compatibilityEntries, resolveFile});
   if (compatibility.some(path => !path.startsWith("legacy/"))) throw new Error("React compatibility module escapes its bounded legacy publication");
-  const packageFiles = publication ? shellFiles : [...new Set([...STATIC_FRONTEND_PACKAGE_FILES, ...generated, ...compatibility])].sort();
+  const packageFiles = publication ? [...new Set([...shellFiles, ...[...generated].filter(isOnDemandFrontendAsset)])].sort()
+    : [...new Set([...STATIC_FRONTEND_PACKAGE_FILES, ...previewFiles, ...generated, ...compatibility])].sort();
   for (const path of packageFiles) resolveFile(artifactPath(path));
   const browserModules = [...new Set([...generatedModules, ...compatibility])].sort();
   const owned = new Set(packageFiles);

@@ -1,0 +1,563 @@
+{
+  "cases": [
+    {
+      "count": 2,
+      "difficulty": 1,
+      "spares": 0,
+      "bombs": 0,
+      "initial": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "restarted": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "count": 2,
+      "difficulty": 1,
+      "spares": 2,
+      "bombs": 3,
+      "initial": [
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          3
+        ]
+      ],
+      "restarted": [
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "count": 2,
+      "difficulty": 1,
+      "spares": 5,
+      "bombs": 3,
+      "initial": [
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "restarted": [
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ]
+    },
+    {
+      "count": 2,
+      "difficulty": 1,
+      "spares": 5,
+      "bombs": 0,
+      "initial": [
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          0
+        ]
+      ],
+      "restarted": [
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          0
+        ]
+      ]
+    },
+    {
+      "count": 2,
+      "difficulty": 4,
+      "spares": 0,
+      "bombs": 0,
+      "initial": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "restarted": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "count": 2,
+      "difficulty": 4,
+      "spares": 2,
+      "bombs": 3,
+      "initial": [
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          3
+        ]
+      ],
+      "restarted": [
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "count": 2,
+      "difficulty": 4,
+      "spares": 5,
+      "bombs": 3,
+      "initial": [
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "restarted": [
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ]
+    },
+    {
+      "count": 2,
+      "difficulty": 4,
+      "spares": 5,
+      "bombs": 0,
+      "initial": [
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          0
+        ]
+      ],
+      "restarted": [
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          0
+        ]
+      ]
+    },
+    {
+      "count": 3,
+      "difficulty": 1,
+      "spares": 0,
+      "bombs": 0,
+      "initial": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "restarted": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "count": 3,
+      "difficulty": 1,
+      "spares": 2,
+      "bombs": 3,
+      "initial": [
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          3
+        ]
+      ],
+      "restarted": [
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "count": 3,
+      "difficulty": 1,
+      "spares": 5,
+      "bombs": 3,
+      "initial": [
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "restarted": [
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ]
+    },
+    {
+      "count": 3,
+      "difficulty": 1,
+      "spares": 5,
+      "bombs": 0,
+      "initial": [
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          0
+        ]
+      ],
+      "restarted": [
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          0
+        ]
+      ]
+    },
+    {
+      "count": 3,
+      "difficulty": 4,
+      "spares": 0,
+      "bombs": 0,
+      "initial": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "restarted": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "count": 3,
+      "difficulty": 4,
+      "spares": 2,
+      "bombs": 3,
+      "initial": [
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          3
+        ]
+      ],
+      "restarted": [
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "count": 3,
+      "difficulty": 4,
+      "spares": 5,
+      "bombs": 3,
+      "initial": [
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "restarted": [
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ]
+    },
+    {
+      "count": 3,
+      "difficulty": 4,
+      "spares": 5,
+      "bombs": 0,
+      "initial": [
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          0
+        ]
+      ],
+      "restarted": [
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          0
+        ]
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "name": "numeric-0-1-1.png",
+      "characters": [
+        0,
+        1,
+        1
+      ],
+      "before": -1555266351,
+      "after": -1555266351,
+      "variants": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "name": "numeric-0-0-0.png",
+      "characters": [
+        0,
+        0,
+        0
+      ],
+      "before": -1555266351,
+      "after": -1555266351,
+      "variants": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "name": "numeric-1-1-1.png",
+      "characters": [
+        1,
+        1,
+        1
+      ],
+      "before": -1555266351,
+      "after": -1555266351,
+      "variants": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "name": "numeric-2-2-2.png",
+      "characters": [
+        2,
+        2,
+        2
+      ],
+      "before": -1555266351,
+      "after": -1555266351,
+      "variants": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "name": "numeric-3-3-3.png",
+      "characters": [
+        3,
+        3,
+        3
+      ],
+      "before": -1555266351,
+      "after": -1555266351,
+      "variants": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "passed": true,
+  "errors": []
+}

@@ -10,9 +10,9 @@
   "currentMode": "git-subtree",
   "subtree": {
     "upstreamCommit": "0fdb5febf1236af61754ea41566a913d14a4b39a",
-    "initialJoin": "c9e615876c62a0755704fff9d78545eccb7d3e6c",
+    "initialJoin": "1d57be08848aa0d036f06107aabf57cf065b112b",
     "initialSplit": "c9501d90358664ca333753c3dac51f4b693324f4",
-    "latestJoin": "dcb71ade092bc48b3f22d54d96e9b520321378c7",
+    "latestJoin": "bb61e9e7560343b30adc1cd7a815db9aa9ecb8de",
     "currentSplit": "9bbf0d16e7521c624f32f0b147dde6896054564b"
   },
   "builder": "ports/th01/scripts/build-eagler.mjs",

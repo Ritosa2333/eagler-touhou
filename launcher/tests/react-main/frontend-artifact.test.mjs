@@ -3,13 +3,26 @@ import {assertReactFrontendEnvironment} from '../../compat/frontend-environment.
 import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile} from 'node:fs/promises';
+import {cp, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {dirname, resolve} from 'node:path';
-import {pathToFileURL} from 'node:url';
+import {fileURLToPath, pathToFileURL} from 'node:url';
 import {STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {readReactFrontendArtifact, reactFrontendArtifactDirectory} from '../../lib/react-frontend-artifact.mjs';
 import {SITE_BRAND_DEFAULT, SITE_BRAND_FACES} from '../../lib/site-brand.mjs';
+import {QUICK_CHAT_PHRASES} from '../../../common/contracts/multiplayer-quick-chat.mjs';
+
+test('every quick-chat phrase has a published and precached voice clip', async () => {
+  const expected = QUICK_CHAT_PHRASES.map(({id}) => `assets/quick-chat/${id}.wav`).sort();
+  const voiceClips = files => files.filter(path => path.startsWith('assets/quick-chat/')).sort();
+  assert.deepEqual(voiceClips(STATIC_FRONTEND_PACKAGE_FILES), expected);
+  assert.deepEqual(voiceClips(STATIC_APP_SHELL_FILES), expected);
+  await Promise.all(expected.map(async path => {
+    const clip = await readFile(new URL(`../../public/${path}`, import.meta.url));
+    assert.equal(clip.toString('ascii', 0, 4), 'RIFF', path);
+    assert.equal(clip.toString('ascii', 8, 12), 'WAVE', path);
+  }));
+});
 
 async function fixture(run, {appShell = null, mountPath = '/review/'} = {}) {
   const work = await mkdtemp(resolve(tmpdir(), 'react-publication-'));
@@ -62,6 +75,40 @@ async function previousFixture(run, {mountPath = '/review/'} = {}) {
     await run({work, directory, metadata: previousMetadata, publicationFiles, put, html, shellFiles});
   }, {mountPath});
 }
+
+test('launcher refresh blocks a candidate without the published PC-98 catalog', async () => {
+  await fixture(async ({work, directory, metadata, put}) => {
+    const site = resolve(work, 'site');
+    await cp(directory, site, {recursive: true});
+    const ids = ['th01', 'th02', 'th03', 'th04'];
+    const digest = 'a'.repeat(64);
+    const siteManifest = JSON.stringify({
+      schema: 'eagler-touhou/site-manifest/1',
+      protocol: 'eagler-touhou/1',
+      profile: 'web-validation-catalog',
+      shared: {resourceMode: 'hosted', vanillaFont: 'shared/msgothic.ttc', unicodeFont: 'shared/unifont.otf'},
+      games: Object.fromEntries(ids.map(id => [id, {
+        runtime: `runtime/${id}/${id}.html`,
+        gameData: {path: `${id}.data`, bytes: 1, sha256: digest, version: 'sha256-' + digest, layout: 'sha256-' + digest},
+        music: {midi: {files: []}},
+      }])),
+    });
+    const deployment = JSON.stringify({
+      format: 'eagler-touhou-deployment/1', appShell: null,
+      frontend: {kind: 'react', mountPath: metadata.graph.mountPath, validationMetadata: metadata},
+      files: metadata.graph.shellFiles.map(path => ({path})),
+    });
+    await writeFile(resolve(site, 'site-manifest.json'), siteManifest);
+    await writeFile(resolve(site, 'deployment.json'), deployment);
+    const script = fileURLToPath(new URL('../../scripts/refresh-deployment-app-shell.mjs', import.meta.url));
+    await put('.vite/react-app-shell-graph.json', JSON.stringify({...metadata.graph, gameIds: ['th06']}));
+    assert.throws(() => execFileSync(process.execPath, [script, site, '--frontend'], {
+      env: {...process.env, EAGLER_REACT_BUILD_DIRECTORY: work}, stdio: 'pipe',
+    }), /React frontend catalog is missing Site Manifest games: th01, th02, th03, th04/);
+    assert.equal(await readFile(resolve(site, 'site-manifest.json'), 'utf8'), siteManifest);
+    assert.equal(await readFile(resolve(site, 'deployment.json'), 'utf8'), deployment);
+  });
+});
 
 test('frontend selection is explicit and never coerces invalid values to main', () => {
   assert.doesNotThrow(()=>assertReactFrontendEnvironment({}));
@@ -270,14 +317,36 @@ test('artifact and document share the unchanged isolated origin/mount policy', a
   }, {appShell});
 });
 
+test('on-demand encoder is published without App Shell precaching', async () => {
+  await fixture(async ({directory, metadata, put}) => {
+    const wasm = 'assets/ogg-aBc12_fG.wasm';
+    metadata.manifest.encoder = {file: wasm, src: 'ogg.wasm'};
+    await put(wasm, 'wasm fixture');
+    await put('.vite/manifest.json', JSON.stringify(metadata.manifest));
+    const artifact = await readReactFrontendArtifact({directory});
+    assert.ok(artifact.packageFiles.includes(wasm));
+    assert.ok(!artifact.shellFiles.includes(wasm));
+    const publication = [...artifact.shellFiles, wasm];
+    const published = await readReactFrontendArtifact({directory, metadata, publicationFiles: publication});
+    assert.ok(published.packageFiles.includes(wasm));
+    await assert.rejects(readReactFrontendArtifact({directory, metadata, publicationFiles: artifact.shellFiles}),
+      /Previous Vite output is absent from its publication graph/);
+  });
+});
+
 test('packaged artifact reader uses operator parsers without compiler or React dependencies', async () => {
   await fixture(async ({work, directory}) => {
     const operator = resolve(work, 'operator');
-    for (const file of ['react-frontend-artifact.mjs', 'browser-module-graph.mjs', 'frontend-static-manifest.mjs', 'site-brand.mjs', 'react-app-shell-deployment.mjs']) {
+    for (const file of ['react-frontend-artifact.mjs', 'browser-module-graph.mjs', 'frontend-static-manifest.mjs', 'multiplayer-guide.mjs', 'site-brand.mjs', 'react-app-shell-deployment.mjs']) {
       await mkdir(resolve(operator, 'lib'), {recursive: true}); await cp(resolve('lib', file), resolve(operator, 'lib', file));
     }
     await mkdir(resolve(operator, 'node_modules'), {recursive: true});
-    for (const dependency of ['acorn', 'parse5', 'entities']) await cp(resolve('node_modules', dependency), resolve(operator, 'node_modules', dependency), {recursive: true});
+    // Worktree dependencies may be junctions into the shared install. Copy the
+    // resolved package directory so the temporary operator bundle stays portable.
+    for (const dependency of ['acorn', 'parse5', 'entities']) {
+      const source = await realpath(resolve('node_modules', dependency));
+      await cp(source, resolve(operator, 'node_modules', dependency), {recursive: true});
+    }
     const script = `import {readReactFrontendArtifact} from ${JSON.stringify(pathToFileURL(resolve(operator, 'lib/react-frontend-artifact.mjs')).href)}; const artifact = await readReactFrontendArtifact({directory:${JSON.stringify(directory)}}); if (artifact.packageFiles.includes('app.js')) throw new Error('legacy fallback'); console.log(artifact.kind);`;
     assert.equal(execFileSync(process.execPath, ['--input-type=module', '-e', script], {cwd: operator, encoding: 'utf8'}).trim(), 'react');
   });
@@ -286,7 +355,7 @@ test('packaged artifact reader uses operator parsers without compiler or React d
 test('operator selector loads before any npm dependencies are installed', async () => {
   await fixture(async ({work}) => {
     const operator = resolve(work, 'before-install'); await mkdir(resolve(operator, 'lib'), {recursive: true});
-    for (const file of ['react-frontend-artifact.mjs', 'frontend-static-manifest.mjs', 'site-brand.mjs', 'react-app-shell-deployment.mjs']) await cp(resolve('lib', file), resolve(operator, 'lib', file));
+    for (const file of ['react-frontend-artifact.mjs', 'frontend-static-manifest.mjs', 'multiplayer-guide.mjs', 'site-brand.mjs', 'react-app-shell-deployment.mjs']) await cp(resolve('lib', file), resolve(operator, 'lib', file));
     const script = `import {reactFrontendArtifactDirectory} from './lib/react-frontend-artifact.mjs'; console.log(JSON.stringify({selection:"react", root:reactFrontendArtifactDirectory({project:process.cwd(),environment:{}})}));`;
     const result = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], {cwd: operator, encoding: 'utf8'}));
     assert.deepEqual(result, {selection: 'react', root: operator});

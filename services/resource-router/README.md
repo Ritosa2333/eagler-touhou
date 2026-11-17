@@ -42,7 +42,7 @@ Launcher 首次下载时并行比较两个节点，各请求最多 64 KiB 的 Ra
 
 有限并发和延后备用参考 [gRPC request hedging](https://grpc.io/docs/guides/request-hedging/)，续传遵循 [HTTP Range](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Range) 的 206 与完整 200 响应语义。
 
-节点 origin 使用 HTTPS，可含端口。资源节点保留文件路径与查询参数，支持 GET、HEAD、Range 及跨域读取，暴露 Content-Length、Content-Range、Accept-Ranges、ETag。Package 语言资源支持 `language/` 和 `language-updates/` 路径。Runtime 字体仍由 Runtime 发布源直接提供。
+节点 origin 使用 HTTPS，可含端口。资源节点保留文件路径与查询参数，支持 GET、HEAD、Range 及跨域读取，暴露 Content-Length、Content-Range、Accept-Ranges、ETag。Package 语言资源沿用 `games/<作品>/language/` 或 `language/` 路径。TH075 语言包由站点原路径直接提供，其路由发现接口返回 404，Launcher 使用清单原地址下载。Runtime 字体由 Runtime 发布源直接提供。
 
 ## 发布库存与验证
 

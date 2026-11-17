@@ -343,7 +343,7 @@ test('career locale changes preserve the selected draft and nested discard decis
     assert.equal(node('.career-cell-form .career-check button').getAttribute('aria-checked'),'true');
     await act(()=>node('#careerDecisionCancel').click());assert.equal(env.document.querySelector('#careerDecisionDialog'),null);
     await pressText('.career-viewer-actions button','×');await act(()=>node('#careerDecisionConfirm').click());
-    assert.equal(env.document.querySelector('.career-viewer'),null);assert.deepEqual(saves,[]);
+    assert.equal(env.document.querySelector('.career-viewer[open]'),null);assert.deepEqual(saves,[]);
     assert.equal(env.document.body.style.overflow,'');
   } finally {
     if(root){await act(()=>root.unmount());root=null;}

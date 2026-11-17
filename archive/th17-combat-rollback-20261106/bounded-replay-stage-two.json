@@ -1,0 +1,123 @@
+{
+  "rollback": true,
+  "extended": true,
+  "difficulty": 0,
+  "version": "1.0.14-eagler-380218a92daf",
+  "wasm": "380218a92dafa472ba186101b4707d4304d9d1bc363e3751cedba34a1467e352",
+  "throughStageTwo": true,
+  "injectedDelayMs": 110,
+  "jitterMs": 0,
+  "cpuThrottle": 1,
+  "reports": [
+    {
+      "room": "th17mp-room-test-2",
+      "seats": 2,
+      "comparedFrames": 9141,
+      "maxEnemyBullets": 105,
+      "maxLasers": 0,
+      "activeSpellFrames": 1092,
+      "dialogueFrames": 256,
+      "bossNonspellFrames": 1480,
+      "stageTwoFrames": 243,
+      "diagnostics": [
+        {
+          "corrections": 175,
+          "resimulated": 895,
+          "maxPrediction": 12,
+          "combatCorrections": 122,
+          "spellCorrections": 8,
+          "lastConfirmed": 9425,
+          "phase": 1,
+          "stageTwoFrames": 407,
+          "captures": 9413,
+          "captureUs": 12241052,
+          "replaySlices": 152,
+          "logicalDraws": 765,
+          "stageCorrections": 151,
+          "bossCorrections": 16,
+          "updates": {
+            "count": 6386,
+            "p50": 3.010000005364418,
+            "p95": 8.744999997317791,
+            "max": 50.34499999880791
+          },
+          "repairs": {
+            "count": 282,
+            "p50": 5.365000002086163,
+            "p95": 12.395000003278255,
+            "max": 18.25499999523163
+          }
+        },
+        {
+          "corrections": 846,
+          "resimulated": 1392,
+          "maxPrediction": 12,
+          "combatCorrections": 430,
+          "spellCorrections": 62,
+          "lastConfirmed": 9434,
+          "phase": 1,
+          "stageTwoFrames": 416,
+          "captures": 2699,
+          "captureUs": 3971483,
+          "replaySlices": 49,
+          "logicalDraws": 581,
+          "stageCorrections": 558,
+          "bossCorrections": 226,
+          "updates": {
+            "count": 6022,
+            "p50": 1.6899999976158142,
+            "p95": 10.169999994337559,
+            "max": 49.810000002384186
+          },
+          "repairs": {
+            "count": 860,
+            "p50": 3.274999998509884,
+            "p95": 10.429999999701977,
+            "max": 24.640000000596046
+          }
+        }
+      ],
+      "last": [
+        9261,
+        2,
+        0,
+        2,
+        92,
+        2,
+        0,
+        11804,
+        4,
+        3,
+        0,
+        335489,
+        0,
+        51200,
+        4294967295,
+        3,
+        0,
+        51200,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        236,
+        286,
+        0,
+        0,
+        0,
+        0,
+        0,
+        216508,
+        947595111,
+        0,
+        1024,
+        0,
+        1065353216,
+        36686,
+        0
+      ]
+    }
+  ]
+}

@@ -7,6 +7,8 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <memory>
+#include <utility>
 namespace th12::eb {
 constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;
 struct Record {float a=0,b=0;int32_t c=0,d=0;uint32_t kind=0;bool concurrent=false;};
@@ -39,10 +41,17 @@ struct State {
   int type=0,color=0,age=0,collisionAge=0,visualAge=0,animation=35,interrupt=2;
   Phase phase=Phase::Inactive;bool grazed=false,rotateToMotion=false,pendingRetire=false;
   int spawnDuration=0,cancelAge=0,collisionDelay=0,offscreenGrace=10,cancelEffect=0;
-  uint32_t active=0;int cursor=0;Program program{};float ageTime=0;
+  uint32_t active=0;int cursor=0;float ageTime=0;
   Motion fast{},acceleration{},speedApproach{},polar{},turn{},bounce{},wait{},protect{},translation{};
   int32_t tag=0;TargetMotion target{};
   BulletGate gate{};
+  // One emission owns an immutable program shared by its bullets and all
+  // rollback copies. A projectile's cursor and motion remain independent.
+  std::shared_ptr<const Program> programStorage;
+  const Program& program() const {
+    static constexpr Program empty{};
+    return programStorage ? *programStorage : empty;
+  }
 };
 struct Emission {
   float x=0,y=0,angle=0,spacing=0,speed=0,slow=0;
@@ -121,7 +130,7 @@ inline void finishAnimation(State& s,World& w,AnimationEvent event=AnimationEven
 }
 inline void start(State& s,World& w){
   for(int budget=0;s.cursor>=0&&s.cursor<18&&budget<4096;++budget){
-    const auto t=s.program.records[s.cursor];const auto kind=t.kind;
+    const auto t=s.program().records[s.cursor];const auto kind=t.kind;
     if(!kind||(!t.concurrent&&s.active)||(kind&s.active))return;
     if(kind==0x80000000){++s.cursor;continue;}
     switch(kind){
@@ -148,9 +157,9 @@ inline void start(State& s,World& w){
     case 0x4000:w.sound(t.c,s.x);break;
     case 0x80000:{
       if(s.cursor>=17){w.unsupported(kind);s.cursor=18;return;}
-      const auto next=s.program.records[s.cursor+1];const uint32_t packed=uint32_t(t.c);
+      const auto next=s.program().records[s.cursor+1];const uint32_t packed=uint32_t(t.c);
       Emission e;e.x=s.x;e.y=s.y;e.speed=t.a;e.slow=t.b;e.type=(packed>>16)&255;e.color=int8_t((packed>>8)&255);e.mode=(packed>>24)&127;
-      e.count=int16_t(t.d);e.layers=int16_t(next.c);e.angle=next.a;e.spacing=next.b;e.program=s.program;e.program.flags=uint32_t(next.d);e.program.first=packed&255;e.program.transformSound=-1;
+      e.count=int16_t(t.d);e.layers=int16_t(next.c);e.angle=next.a;e.spacing=next.b;e.program=s.program();e.program.flags=uint32_t(next.d);e.program.first=packed&255;e.program.transformSound=-1;
       s.cursor+=2;w.emit(e);if(packed&0x80000000){cancel(s,w);++s.cursor;}continue;
     }
     case 0x100000:break; // Paired payload consumed by 80000, harmless if reached alone.
@@ -164,13 +173,17 @@ inline void start(State& s,World& w){
     case 0x8000000:beginTranslation(s,t);break;
     default:w.unsupported(kind);break;
     }
-    if(s.cursor&&s.program.transformSound>=0&&(kind==4||kind==8||kind==0x20000000))w.sound(s.program.transformSound,s.x);
+    if(s.cursor&&s.program().transformSound>=0&&(kind==4||kind==8||kind==0x20000000))w.sound(s.program().transformSound,s.x);
     ++s.cursor;
   }
 }
-inline void initialize(State& s,uint32_t id,const Program& p,int type,int color,float x,float y,float angle,float speed,World& w){
+inline void initializeWithProgram(State& s,uint32_t id,std::shared_ptr<const Program> program,
+                                  int type,int color,float x,float y,float angle,float speed,World& w){
   const int retainedCancelEffect=s.cancelEffect;
-  s={};s.cancelEffect=retainedCancelEffect;s.id=id;s.x=x;s.y=y;s.angle=normalize(angle);s.speed=speed;s.program=p;s.cursor=std::clamp(p.first,0,18);s.phase=Phase::Alive;
+  s={};s.cancelEffect=retainedCancelEffect;s.id=id;s.x=x;s.y=y;s.angle=normalize(angle);s.speed=speed;
+  s.programStorage=std::move(program);
+  const auto& p=s.program();
+  s.cursor=std::clamp(p.first,0,18);s.phase=Phase::Alive;
   // 40d640 evaluates the original emitter angle. The stored heading is
   // normalized separately; float32 Tau is not an exact trigonometric period.
   appearance(s,type,color,true);s.vx=float(std::cos(double(angle))*speed);s.vy=float(std::sin(double(angle))*speed);
@@ -184,6 +197,9 @@ inline void initialize(State& s,uint32_t id,const Program& p,int type,int color,
   w.stateAnimation(s,AnimationEvent::Interrupt,s.interrupt);
   start(s,w);
   finishAnimation(s,w,AnimationEvent::BirthTick);
+}
+inline void initialize(State& s,uint32_t id,const Program& program,int type,int color,float x,float y,float angle,float speed,World& w){
+  initializeWithProgram(s,id,std::make_shared<const Program>(program),type,color,x,y,angle,speed,w);
 }
 inline bool outside(const State& s,const std::array<float,2>& dimensions){
   const double halfWidth=double(dimensions[0])*.5,halfHeight=double(dimensions[1])*.5;
@@ -231,7 +247,7 @@ inline void tick(State& s,World& w,bool deferAnimation=false){
   if(s.active&8){auto& m=s.polar;if(m.timer<m.duration){s.angle=normalize(float(double(s.angle)+float(double(m.b)*rate)));s.speed=float(double(s.speed)+double(m.a)*rate);velocity(s,s.speed);advanceMotion(m,rate);}else{s.active&=~8u;++completed;}}
   for(uint32_t kind:{0x10u,0x40u,0x20u})if(s.active&kind){auto& m=s.turn;float speed;
     if(m.timer<m.duration)speed=float(double(s.speed)-double(m.elapsed)*s.speed/m.duration);
-    else{++m.count;if(m.count>=m.limit)s.active&=~kind;s.angle=kind==0x10?float(double(m.b)+s.angle):kind==0x40?m.b:normalize(float(double(aim(s,w))+m.b));speed=s.speed=m.a;m.timer=0;m.elapsed=0;w.sound(s.program.transformSound,s.x);}
+    else{++m.count;if(m.count>=m.limit)s.active&=~kind;s.angle=kind==0x10?float(double(m.b)+s.angle):kind==0x40?m.b:normalize(float(double(aim(s,w))+m.b));speed=s.speed=m.a;m.timer=0;m.elapsed=0;w.sound(s.program().transformSound,s.x);}
     velocity(s,speed);advanceMotion(m,rate);if(!(s.active&kind))++completed;
   }
   if(s.active&0x100){auto& m=s.bounce;if(!(s.x>-192&&s.x<192&&s.y>0&&s.y<448)){
@@ -240,7 +256,7 @@ inline void tick(State& s,World& w,bool deferAnimation=false){
     if((m.count&2)&&s.y>=448){if(!detectOnly){s.y=float((448-double(s.y))+448);s.angle=-s.angle;}reflected=true;}
     if((m.count&8)&&s.x>=192){if(!detectOnly){s.x=float(384-double(s.x));s.angle=normalize(float(-double(s.angle)-pi));}reflected=true;}
     if((m.count&4)&&s.x<-192){if(!detectOnly){s.x=float(-384-double(s.x));s.angle=normalize(float(-double(s.angle)-pi));}reflected=true;}
-    if(m.a>-990)s.speed=m.a;velocity(s,s.speed);if(reflected){++m.duration;w.sound(s.program.transformSound,s.x);}if(m.duration>=m.limit){s.active&=~0x100u;++completed;}
+    if(m.a>-990)s.speed=m.a;velocity(s,s.speed);if(reflected){++m.duration;w.sound(s.program().transformSound,s.x);}if(m.duration>=m.limit){s.active&=~0x100u;++completed;}
   }}
   if((s.active&0x2000000)&&tickTargetMotion(s.target,s,rate)){s.active&=~0x2000000u;++completed;}
   // Native409d78: translation precedes protection and ordinary integration.

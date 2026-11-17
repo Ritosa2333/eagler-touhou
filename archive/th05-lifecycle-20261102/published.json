@@ -1,0 +1,19 @@
+{
+  "publishedAt": "2026-11-02T05:57:36Z",
+  "siteUrl": "https://touhouonline.com/",
+  "previous": "/var/www/eagler-touhou/releases/th05-battle-20261102",
+  "current": "/var/www/eagler-touhou/releases/th05-lifecycle-20261102",
+  "releaseId": "sha256-bc8e6143978f21aa9cc8ea892a4149093c14953e0ffeaa82b8f4ca8b43287ff1",
+  "preservedFiles": 8097,
+  "updates": [
+    {
+      "game": "th05",
+      "variant": "multiplayer",
+      "root": "runtime/th05/multiplayer/",
+      "previousGeneration": "9df5d4f97a30ea47b3118bd548424e74dcad8e9a5e45d94f8f25d603969f93e8",
+      "generation": "ec43edab2048d2650ddf474f186c88cdfbb960aaf2add4dd044d370b1df67937",
+      "files": 26
+    }
+  ],
+  "mode": "th05-lifecycle"
+}

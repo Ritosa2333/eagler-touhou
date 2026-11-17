@@ -1,38 +1,41 @@
 @layer foundation {
+@keyframes workspace-panel-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.workspace-product-heading{display:flex;align-items:center;justify-content:center;min-width:0}
+.workspace-product-heading .workspace-product-trigger{display:grid;place-items:center;flex:none;width:28px;height:32px;margin-inline:2px 0;padding:0;border:0;background:transparent;color:var(--kit-muted-foreground)}
+.workspace-product-trigger:not(:disabled):is(:hover,[aria-expanded='true']){color:var(--kit-foreground)}
+.workspace-product-trigger svg{width:15px;height:15px}
+@media(max-width:780px),(pointer:coarse){
+ .workspace-product-heading .workspace-product-trigger{width:44px;height:44px;min-height:44px;margin-inline:-6px -9px}
+}
 /* Desktop uses the available width/height; stacked layouts follow image height. */
-#player:is(.room-workspace,.replay-workspace) #gameViewport:not(:fullscreen,:-webkit-full-screen){
+#player:is(.room-workspace,.replay-workspace) #gameViewport:not(:is(:fullscreen,:-webkit-full-screen)){
   flex:1;box-sizing:border-box;min-height:0;min-width:0;width:100%!important;
   height:auto!important;max-height:var(--workspace-game-height,none);aspect-ratio:auto;
 }
-#player:is(.room-workspace,.replay-workspace) #gameViewport[data-workspace-stacked]:not(:fullscreen,:-webkit-full-screen){
+#player:is(.room-workspace,.replay-workspace) #gameViewport[data-workspace-stacked]:not(:is(:fullscreen,:-webkit-full-screen)){
   flex:none;
   height:var(--workspace-game-height,auto)!important;
   aspect-ratio:4/3;
 }
 /* Workspace controls own these surfaces; gameplay hit areas stay inactive. */
-#player:is(.room-workspace,.replay-workspace):not(.touch-layout-edit,.th03-room-touch-active) :is(.touch-hud,.touch-escape,.touch-restart,.touch-joystick,.touch-direct-surface,.touch-layout-safe-zone,.touch-layout-reserved-zone,.touch-thprac-input,.touch-thprac-tab,.touch-thprac-menu,.touch-utility-row,.touch-help-open){display:none!important}
-/* During a TH03 match the room stays visible; restrict dragging to the game. */
-#player.room-workspace.th03-room-touch-active .touch-hud{display:flex}
-#player.room-workspace.th03-room-touch-active .touch-escape{display:block}
-#player.room-workspace.th03-room-touch-active:not(.touch-layout-custom) .touch-hud{
-  position:fixed!important;inset:auto!important;left:var(--th03-touch-left)!important;top:var(--th03-touch-top)!important;
-  width:var(--th03-touch-width)!important;height:var(--th03-touch-height)!important;z-index:31!important;
+#player:is(.room-workspace,.replay-workspace):not(.touch-layout-edit,.pc98-room-touch-active) :is(.touch-hud,.touch-escape,.touch-restart,.touch-joystick,.touch-direct-surface,.touch-layout-safe-zone,.touch-layout-reserved-zone,.touch-thprac-input,.touch-thprac-tab,.touch-thprac-menu,.touch-utility-row,.touch-help-open){display:none!important}
+#player.room-workspace.pc98-room-touch-active .touch-hud{display:flex}
+#player.room-workspace.pc98-room-touch-active .touch-escape{display:block}
+#player.room-workspace.pc98-room-touch-active:not(.touch-layout-custom) .touch-hud{
+  position:fixed!important;inset:auto!important;left:var(--pc98-touch-left)!important;top:var(--pc98-touch-top)!important;
+  width:var(--pc98-touch-width)!important;height:var(--pc98-touch-height)!important;z-index:31!important;
 }
-#player.room-workspace.th03-room-touch-active:not(.touch-layout-custom) .touch-escape{
-  position:fixed!important;left:calc(var(--th03-touch-left) + 8px)!important;top:calc(var(--th03-touch-top) + 8px)!important;
+#player.room-workspace.pc98-room-touch-active:not(.touch-layout-custom) .touch-escape{
+  position:fixed!important;left:calc(var(--pc98-touch-left) + 8px)!important;top:calc(var(--pc98-touch-top) + 8px)!important;
 }
-#player.room-workspace.th03-room-touch-active .touch-direct-surface:not([hidden]){
-  position:fixed;inset:auto;left:var(--th03-touch-left);top:var(--th03-touch-top);
-  width:var(--th03-touch-width);height:var(--th03-touch-height);
+#player.room-workspace.pc98-room-touch-active:not(.touch-layout-custom) .touch-joystick:not([hidden]){
+  position:fixed;left:calc(var(--pc98-touch-left) + 10px);top:calc(var(--pc98-touch-top) + var(--pc98-touch-height) - 122px);bottom:auto;
 }
-/* Apply the shared saved layout to the game surface, rather than the wider
-   room workspace. The editor's normalized positions and scales stay intact. */
-#player.room-workspace.th03-room-touch-active .touch-layout-safe-zone{
-  position:fixed;inset:auto;
-  left:var(--th03-touch-left);top:var(--th03-touch-top);
-  width:var(--th03-touch-width);height:var(--th03-touch-height);
+#player.room-workspace.pc98-room-touch-active :is(.touch-direct-surface:not([hidden]),.touch-layout-safe-zone){
+  position:fixed;inset:auto;left:var(--pc98-touch-left);top:var(--pc98-touch-top);
+  width:var(--pc98-touch-width);height:var(--pc98-touch-height);
 }
-#player.room-workspace.th03-room-touch-active.touch-layout-custom .touch-hud{display:block}
-#player.room-workspace.th03-room-touch-active .th03-room-fullscreen{position:fixed;z-index:40;right:auto;bottom:auto;left:calc(var(--th03-touch-left) + var(--th03-touch-width) - 56px);top:calc(var(--th03-touch-top) + var(--th03-touch-height) - 56px)}
+#player.room-workspace.pc98-room-touch-active.touch-layout-custom .touch-hud{display:block}
+#player.room-workspace.pc98-room-touch-active .pc98-room-fullscreen{position:fixed;z-index:40;right:auto;bottom:auto;left:calc(var(--pc98-touch-left) + var(--pc98-touch-width) - 56px);top:calc(var(--pc98-touch-top) + var(--pc98-touch-height) - 56px)}
 
 }

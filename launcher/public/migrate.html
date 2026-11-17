@@ -5,7 +5,7 @@
   <meta name="darkreader-lock">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d0d0c">
-  <title>EAGLER TOUHOU 存档恢复</title>
+  <title>存档恢复 - TouhouOnline</title>
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
   <script>try{var theme=JSON.parse(localStorage.getItem('eagler.book.theme'));document.documentElement.setAttribute('data-book-theme',theme==='light'?'light':'dark')}catch(e){document.documentElement.setAttribute('data-book-theme','dark')}</script>
@@ -16,6 +16,7 @@
   --kit-primary:#e5e5e9;--kit-primary-foreground:#232428;--kit-secondary:#303137;
   --kit-muted:#26272c;--kit-muted-foreground:#b0b0b9;--kit-accent:#303138;
   --kit-destructive:#f09a9d;--kit-destructive-foreground:#232428;--kit-border:#37383f;--kit-input:#47484f;--kit-ring:#a8a9b4;
+  --rating-green:#9be7ae;
   --kit-success:#8ed3aa;--kit-warning:#e5bd7f;
   --kit-control-border:#555660;
   --kit-brand:#e4868e;--kit-font:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;
@@ -31,6 +32,7 @@ html[data-book-theme='light'] {
   --kit-primary:#34353d;--kit-primary-foreground:#ffffff;--kit-secondary:#eeeeF1;
   --kit-muted:#f2f2f4;--kit-muted-foreground:#66666f;--kit-accent:#eaeaf0;
   --kit-destructive:#ae2939;--kit-destructive-foreground:#ffffff;--kit-border:#e1e1e6;--kit-input:#d3d3db;--kit-ring:#8b8b9c;
+  --rating-green:#137347;
   --kit-success:#247044;--kit-warning:#855914;
   --kit-control-border:#b7b7c1;
   --kit-brand:#a93648;
@@ -109,7 +111,7 @@ html[data-book-theme='light'] {
   "use strict";
   const PROTOCOL = "eagler-touhou/origin-migration/1";
   const AUTH_KEY = "eagler-touhou-origin-migration-authorized-v1";
-  const DATABASES = new Set(["/savesth05", "/savesth05mp", "/savesth06", "/savesth07", "/savesth075", "/savesth08", "/savesth09", "/savesth10", "/savesth11", "/savesth12", "/savesth13", "/savesth15", "/savesth17", "/savesth19", "/savesth19mp", "/savesth20", "/savesth06-multiplayer", "/savesth07-multiplayer", "/savesth075mp", "/savesth08-multiplayer", "/savesth09mp", "/savesth10-multiplayer", "/savesth11mp", "/savesth12mp", "/savesth15mp", "eagler-touhou-package-store-v1", "EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"]);
+  const DATABASES = new Set(["/savesth05", "/savesth05mp", "/savesth06", "/savesth07", "/savesth075", "/savesth08", "/savesth09", "/savesth10", "/savesth11", "/savesth12", "/savesth13", "/savesth15", "/savesth17", "/savesth19", "/savesth19mp", "/savesth20", "/savesth06-multiplayer", "/savesth07-multiplayer", "/savesth075mp", "/savesth08-multiplayer", "/savesth09mp", "/savesth10-multiplayer", "/savesth11mp", "/savesth12mp", "/savesth15mp", "/savesth17mp", "eagler-touhou-package-store-v1", "EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"]);
   const DATABASE_LABELS = new Map([
     ["/savesth05", "th05 存档 / Replay"],
     ["/savesth05mp", "th05 多人存档 / Replay"],
@@ -136,6 +138,7 @@ html[data-book-theme='light'] {
     ["/savesth10-multiplayer", "th10 多人存档 / Replay"],
     ["/savesth11mp", "th11 多人存档 / Replay"],
     ["/savesth15mp", "th15 多人存档 / Replay"],
+    ["/savesth17mp", "th17 多人存档 / Replay"],
     ["eagler-touhou-package-store-v1", "已安装游戏资源"],
     ["EM_PRELOAD_CACHE", "旧版 Emscripten 资源"],
     ["eagler-touhou-local-assets-v1", "旧版本地资源"],
@@ -188,7 +191,7 @@ html[data-book-theme='light'] {
     pageTitle.textContent = heading;
     sideHint.textContent = hint;
     sideHint.hidden = !hint;
-    document.title = `${heading} ~ EAGLER TOUHOU`;
+    document.title = `${heading} - TouhouOnline`;
   }
 
   function normalizeMigrationPage(raw, protocol) {

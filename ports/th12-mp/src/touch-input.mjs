@@ -55,7 +55,7 @@ export class TouchInput {
         if(!this.menu)this.menu={ids:new Set(),peak:0,start:now,x,y,lastX:x,lastY:y,consumed:false};
         this.menu.ids.add(id);this.menu.peak=Math.max(this.menu.peak,this.menu.ids.size);return;
       }
-      if(state.kind==='replay')return;
+      if(state.kind==='replay'||state.kind==='ending')return;
       if(state.kind==='game'&&this.options.doubleTapBombEnabled&&this.tap&&now-this.tap.time<=320&&distance(point,this.tap)<=38.4){this.pending|=2;this.tap=null;point.bombTap=true;return;}
       this.tap=null;
       if(!this.primary&&!this.options.touchMovementMode.startsWith('joystick'))this.primary={id,previousX:x,previousY:y,targetX:state.x,targetY:state.y,instance:state.instance,blocked:!state.ready};
@@ -86,7 +86,7 @@ export class TouchInput {
       drag.previousX=x;drag.previousY=y;
     }
     if(type==='up'){
-      if(state.kind==='dialogue'&&!point.moved&&now-point.start<500)this.pending|=1;
+      if((state.kind==='dialogue'||state.kind==='ending')&&!point.moved&&now-point.start<500)this.pending|=1;
       else if(state.kind==='game'&&!point.bombTap&&!point.moved&&now-point.start<=220)this.tap={x,y,time:now};
       this.release(id);
     }
@@ -109,6 +109,8 @@ export class TouchInput {
     let held=pulses,motion=null;const mode=this.options.touchMovementMode;
     if(state.kind==='menu'){
       const [x,y]=this.axes;held|=(x<-.25?64:x>.25?128:0)|(y<-.25?16:y>.25?32:0);
+    }else if(state.kind==='ending'){
+      if([...this.points.values()].some(p=>!p.moved&&now-p.start>=500))held|=512;
     }else if(state.kind!=='replay'){
       if(state.kind==='game'&&this.fire)held|=1;
       if(this.focused())held|=8;

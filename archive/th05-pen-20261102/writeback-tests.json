@@ -1,0 +1,14 @@
+{
+  "sourceHead": "625c8de0b57c6b71becb7c6297721c74e0284d71",
+  "game": "th05",
+  "target": "ports/th05-mp",
+  "merged": "3c9edc2d529043b742de46330a38a7436b0e9034",
+  "tree": "79d8f811a8af289284afdf8be2ca621ba6f88f36",
+  "parents": [
+    "625c8de0b57c6b71becb7c6297721c74e0284d71",
+    "3c9edc2d529043b742de46330a38a7436b0e9034"
+  ],
+  "message": "sync(th05-mp): record normal stylus test coverage\n\ngit-subtree-dir: ports/th05-mp\ngit-subtree-mainline: 625c8de0b57c6b71becb7c6297721c74e0284d71\ngit-subtree-split: 3c9edc2d529043b742de46330a38a7436b0e9034\nPort-History-Writeback: 1\n",
+  "changed": [],
+  "candidateCommit": "0d01535ee8965b8f9c070b2c751061c4870cd481"
+}

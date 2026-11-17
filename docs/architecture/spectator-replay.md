@@ -9,8 +9,11 @@
 | th10 | 多人 Replay 录像器的 ReplayCheckpoint | 原生 Replay bootstrap、玩家入场初始化与 activation |
 | th11 | 原生 ReplayStageState 与多人共享资源 | GameSession 构造、原生 Replay 输入采样边界 |
 | th15 | 每席位的原生 t15r ReplayStageSnapshot | SessionReplay 与 SessionActivation |
+| th17 | 原生 ReplayStageState、各席位资源与位置、共享动物灵和输入边沿 | 新关卡构造完成后的首个网络输入边界 |
 
 玩家子弹、Bomb、ANM、ECL 和场景资源由游戏正常创建。各作按自己的 Replay 生命周期采集和应用入口数据，激活帧与该帧输入一起进入连续历史。th09 的对战旁观沿用其比赛回放入口。
+
+th09 的战报关联游戏保存的 `.rpy` 或 `.rpyx` 文件。两席确认得分并写入战报后，API 为该分签发短时上传凭据，由 Relay 通知参赛者。客户端通过 `POST /api/v1/th09/replays` 上传原始录像，API 每分归档一份。站内录像界面按战报分组，逐份播放或下载。已归档的 `.th09r` 继续使用确认输入播放器。
 
 th06、th07 同时取出 Replay 录像器在网络起点之前已记录的初始化输入。旁观从原生关头构造场景，再重放这段输入，与网络帧零衔接；切关也使用同一入口。th07 记录玩家实际消费的按键，包含原生构造阶段清空输入后的首帧。录像事件统一经过可选记录器入口。
 

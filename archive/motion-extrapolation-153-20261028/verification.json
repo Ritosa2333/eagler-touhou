@@ -1,0 +1,434 @@
+{
+  "base": "5aa34a56f",
+  "issue": "https://github.com/Ritosa2333/eagler-touhou/issues/153",
+  "reference": "https://github.com/rmzmcx/OpenInputLagPatch-MotionSmoothing",
+  "branch": "feature/motion-extrapolation-153",
+  "scope": {
+    "highRefresh": [
+      "th06",
+      "th07",
+      "th08",
+      "th10",
+      "th11",
+      "th12",
+      "th15"
+    ],
+    "excludedByUser": [
+      "th075",
+      "th09",
+      "th20"
+    ],
+    "th12Multiplayer": {
+      "branch": "feature/th12-mp-motion-extrapolation-153",
+      "base": "f5847433324d7f3298ef736cf6928b10cc975c4e",
+      "commit": "b3dcec09f",
+      "testsPassed": 28,
+      "buildPinCommit": "ca7566d6f"
+    }
+  },
+  "wasm": {
+    "th06/normal": {
+      "sha256": "90de4c6bb7b4e0fc04d45658d4cc5cf214eed8b048834bc5f26c524ab5ffc168",
+      "bytes": 2598783,
+      "buildLog": "build-th06.log"
+    },
+    "th06/multiplayer": {
+      "sha256": "8d73a56c9a9084bad23ac55c7b71f8b4b3b267ea6d5a9ee88f1ec8afbce1ce00",
+      "bytes": 2803353,
+      "buildLog": "build-th06-mp.log"
+    },
+    "th07/normal": {
+      "sha256": "27a2d32394ed2ae30c848dcf30ec119da93b1bcf45936b89c815eab34fa30ca5",
+      "bytes": 2857111,
+      "buildLog": "build-th07.log"
+    },
+    "th07/multiplayer": {
+      "sha256": "ad655d3ab5cc7016705e9b87c4a74dc9ebf5a9675c287b28bc60ba3906835b87",
+      "bytes": 3127578,
+      "buildLog": "build-th07-mp.log"
+    },
+    "th08/normal": {
+      "sha256": "876efac021ed9522e7c1021e31849bbc78363f8b7e2783e65f3f4ff47d2f3483",
+      "bytes": 3465773,
+      "buildLog": "build-th08.log"
+    },
+    "th08/multiplayer": {
+      "sha256": "0cc1aff95372704ea33659f0d58c33bd1006212b5d4f47c3d97d192c844b9cce",
+      "bytes": 3779415,
+      "buildLog": "build-th08-mp.log"
+    },
+    "th10/normal": {
+      "sha256": "138c86c912be187b801de5aed3e0c0200f691cddde59a1e1326c668188576db5",
+      "bytes": 3357307,
+      "buildLog": "build-th10.log"
+    },
+    "th10/multiplayer": {
+      "sha256": "1e3b0fb98137a53e258f002d17ef2ea1f62949bc28e086db909c79d480c4b445",
+      "bytes": 3335686,
+      "buildLog": "build-th10-mp.log"
+    },
+    "th11/normal": {
+      "sha256": "fd8059e373e4cfb9801b5e3010919aae4ac403e80a7864dfaa23ad6606e1f40c",
+      "bytes": 3081848,
+      "buildLog": "build-th11.log"
+    },
+    "th11/multiplayer": {
+      "sha256": "81f007536ba571341acc7a93af2b9b8d6407553bf1072ba280fe314652cdf3e6",
+      "bytes": 3000574,
+      "buildLog": "build-th11-mp.log"
+    },
+    "th15/normal": {
+      "sha256": "2ed41bc8e919a832ad8580b756baae5b33eef177f3333ea9a4dbf51d2ddef780",
+      "bytes": 3620174,
+      "buildLog": "build-th15.log"
+    },
+    "th15/multiplayer": {
+      "sha256": "bb7778865575354e7fb7c0450a58d0321d7d912be23823cf143238dd924a5f83",
+      "bytes": 3591510,
+      "buildLog": "build-th15-mp.log"
+    }
+  },
+  "checks": {
+    "extrapolation.log": [
+      "extrapolation: PASS (60-240 Hz, no retained-frame lag, bounded waits, correction reset)"
+    ],
+    "extrapolation-owners.log": [
+      "extrapolation: PASS (60-240 Hz, no retained-frame lag, bounded waits, correction reset)",
+      "TH08 owner extrapolation: PASS (motion, lifecycle, teleport, frozen world, UV wrap, opacity clamp, state purity)",
+      "TH08 owner extrapolation: PASS (motion, lifecycle, teleport, frozen world, UV wrap, opacity clamp, state purity)",
+      "native owner weight: PASS (forward motion, frozen world, disabled smoothing)",
+      "native owner weight: PASS (forward motion, frozen world, disabled smoothing)",
+      "native owner weight: PASS (forward motion, frozen world, disabled smoothing)",
+      "native owner weight: PASS (forward motion, frozen world, disabled smoothing)"
+    ],
+    "th11-presentation.log": [
+      "TH11 ANM presentation CPU contract PASS",
+      "TH11 display cadence CPU contract PASS",
+      "TH11 camera discontinuity contract PASS",
+      "TH11 authored rebase audit CPU contract PASS"
+    ],
+    "th11-mp-presentation.log": [
+      "TH11 ANM presentation CPU contract PASS",
+      "TH11 display cadence CPU contract PASS",
+      "TH11 camera discontinuity contract PASS",
+      "TH11 authored rebase audit CPU contract PASS",
+      "TH11 MP interpolation, owner isolation and display schedule contract PASS",
+      "PASS TH11 frame schedule: 10 groups, 26288 checks"
+    ],
+    "native-presentation-contract.log": [
+      "{\"presentationContractCoverage\":\"PASS\",\"scope\":\"source wiring and actual native clock components; no rendered-browser or physical-display claim\",\"games\":[\"th06\",\"th07\",\"th08\",\"th10\",\"th09\",\"th075\",\"th11\",\"th12\",\"th15\",\"th20\"],\"lanes\":{\"th06\":\"shared-preload\",\"th07\":\"shared-preload\",\"th08\":\"runtime\",\"th10\":\"runtime\",\"th09\":\"native-clock\",\"th075\":\"native-clock\",\"th11\":\"native-clock\",\"th12\":\"managed-web\",\"th15\":\"native-clock\",\"th20\":\"native-clock\"}}"
+    ],
+    "th12-all.log": [
+      "ℹ tests 27",
+      "ℹ pass 27",
+      "ℹ fail 0"
+    ],
+    "lab-common-final.log": [
+      "tests 12",
+      "pass 12",
+      "fail 0"
+    ]
+  },
+  "lab": {
+    "url": "http://127.0.0.1:8145/",
+    "wasm": "af450c782ea22d903b7c89cca4a1c499b0ed507caf555e5a58b617df734b3d16",
+    "passed": true,
+    "setup": {
+      "phase": 1,
+      "reference": [
+        309,
+        313.5,
+        0,
+        19174,
+        1
+      ]
+    },
+    "modes": [
+      {
+        "mode": "interpolation",
+        "valid": true,
+        "purityStatus": "unknown",
+        "stateChanges": [],
+        "objects": [
+          {
+            "status": "interpolated",
+            "fields": [
+              {
+                "id": "vertex.x",
+                "label": "vertex.x",
+                "previous": [
+                  309
+                ],
+                "current": [
+                  313.5
+                ],
+                "samples": [
+                  {
+                    "alpha": 0,
+                    "value": [
+                      309
+                    ]
+                  },
+                  {
+                    "alpha": 0.25,
+                    "value": [
+                      310.125
+                    ]
+                  },
+                  {
+                    "alpha": 0.5,
+                    "value": [
+                      311.25
+                    ]
+                  },
+                  {
+                    "alpha": 0.75,
+                    "value": [
+                      312.375
+                    ]
+                  },
+                  {
+                    "alpha": 1,
+                    "value": [
+                      313.5
+                    ]
+                  },
+                  {
+                    "alpha": 0.5,
+                    "value": [
+                      311.25
+                    ]
+                  },
+                  {
+                    "alpha": 0.5,
+                    "value": [
+                      311.25
+                    ]
+                  },
+                  {
+                    "alpha": 1,
+                    "value": [
+                      313.5
+                    ]
+                  }
+                ],
+                "motion": 4.5,
+                "tolerance": 0.001,
+                "interpolationPolicy": "continuous",
+                "evidence": "Original Draw packet first vertex; generation from ANM identity, only X observed",
+                "variation": 4.5,
+                "residual": 0,
+                "status": "interpolated"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "mode": "extrapolation",
+        "valid": true,
+        "purityStatus": "unknown",
+        "stateChanges": [],
+        "objects": [
+          {
+            "status": "extrapolated",
+            "fields": [
+              {
+                "id": "vertex.x",
+                "label": "vertex.x",
+                "previous": [
+                  309
+                ],
+                "current": [
+                  313.5
+                ],
+                "samples": [
+                  {
+                    "alpha": 1,
+                    "value": [
+                      313.5
+                    ]
+                  },
+                  {
+                    "alpha": 1.25,
+                    "value": [
+                      314.625
+                    ]
+                  },
+                  {
+                    "alpha": 1.5,
+                    "value": [
+                      315.75
+                    ]
+                  },
+                  {
+                    "alpha": 1.75,
+                    "value": [
+                      316.875
+                    ]
+                  },
+                  {
+                    "alpha": 2,
+                    "value": [
+                      318
+                    ]
+                  },
+                  {
+                    "alpha": 1.5,
+                    "value": [
+                      315.75
+                    ]
+                  },
+                  {
+                    "alpha": 1.5,
+                    "value": [
+                      315.75
+                    ]
+                  },
+                  {
+                    "alpha": 2,
+                    "value": [
+                      318
+                    ]
+                  }
+                ],
+                "motion": 4.5,
+                "tolerance": 0.001,
+                "interpolationPolicy": "continuous",
+                "evidence": "Original Draw packet first vertex; generation from ANM identity, only X observed",
+                "variation": 4.5,
+                "residual": 0,
+                "status": "extrapolated"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "mode": "current",
+        "valid": true,
+        "purityStatus": "unknown",
+        "stateChanges": [],
+        "objects": [
+          {
+            "status": "static",
+            "fields": [
+              {
+                "id": "vertex.x",
+                "label": "vertex.x",
+                "previous": [
+                  309
+                ],
+                "current": [
+                  313.5
+                ],
+                "samples": [
+                  {
+                    "alpha": 1,
+                    "value": [
+                      313.5
+                    ]
+                  },
+                  {
+                    "alpha": 1,
+                    "value": [
+                      313.5
+                    ]
+                  },
+                  {
+                    "alpha": 1,
+                    "value": [
+                      313.5
+                    ]
+                  },
+                  {
+                    "alpha": 1,
+                    "value": [
+                      313.5
+                    ]
+                  },
+                  {
+                    "alpha": 1,
+                    "value": [
+                      313.5
+                    ]
+                  },
+                  {
+                    "alpha": 1,
+                    "value": [
+                      313.5
+                    ]
+                  },
+                  {
+                    "alpha": 1,
+                    "value": [
+                      313.5
+                    ]
+                  },
+                  {
+                    "alpha": 1,
+                    "value": [
+                      313.5
+                    ]
+                  }
+                ],
+                "motion": 4.5,
+                "tolerance": 0.001,
+                "interpolationPolicy": "snap-current",
+                "evidence": "Original Draw packet first vertex; generation from ANM identity, only X observed",
+                "variation": 0,
+                "status": "snap-current"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "ui": {
+      "mode": "extrapolation",
+      "weight": "0.50 · 权重 1.50"
+    },
+    "errors": [],
+    "observerScope": "TH15 Player root first submitted vertex; covered checkpoint/world groups unchanged; complete purity remains unknown."
+  },
+  "additionalFixtures": {
+    "th12ExpandedSuite": {
+      "pass": 27,
+      "unavailable": 4,
+      "reason": "Private replay/atlas fixtures are not populated in this clean worktree."
+    },
+    "th12MpReplayFpsFixture": "One additional existing replay test requires site/replays/demo2.rpy; the new forward-FPS check runs without private data."
+  },
+  "implementationCommits": [
+    "dee95e41f",
+    "784be8a5d",
+    "f876e64cc"
+  ],
+  "sourceStatus": {
+    "targets": 18,
+    "passed": true,
+    "command": "npm run ports:status -- --all",
+    "log": "status-refresh-final.log"
+  },
+  "ciBaselineVerification": {
+    "head": "4f1d46ae88f8ab92e4ee64d83441154c2c0607ff",
+    "run": "https://github.com/Ritosa2333/eagler-touhou/actions/runs/40636147315",
+    "sourceHistory": "passed",
+    "sourceAnchors": 13,
+    "subtrees": {
+      "ports/th12": "dbb81cc9c01d7fa9ea3eff32285f6a167f55ed68",
+      "ports/th15-mp": "fde3a4126576cda8e02f92f7a60cf9112c02391d"
+    },
+    "adaptationWindows": "passed",
+    "adaptationUbuntu": "passed",
+    "requiredChecks": "passed"
+  },
+  "ciBuildRepairs": {
+    "commonNative": "Sparse checkout includes the eight SDL adapter directories actually compiled by thprac-passive-adapters.test.mjs.",
+    "th12Pin": "Existing PracticeMobilePanels.hpp and PracticePointer.hpp pins match merged 5aa34a56f common sources.",
+    "nativeChecks": {
+      "extrapolation": "passed",
+      "thpracPassiveAdapters": "passed"
+    }
+  }
+}

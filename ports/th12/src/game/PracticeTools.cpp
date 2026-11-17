@@ -2,9 +2,16 @@
 #include "Practice.hpp"
 #include "GameState.hpp"
 #include <algorithm>
+#include <bit>
 namespace th12::practice {
 namespace { ToolSettings settings;int last_filtered=0; }
 ToolSettings& toolSettings(){return settings;}
+ReplayToolState replayToolState(){
+  const int flags=enabled()?int(tools()):0;
+  const int options=enabled()?(int(settings.map_inf_life_to_no_continue)|
+    (int(settings.force_boss_move_down)<<1)|(int(settings.chromatic_ufo)<<2)):0;
+  return {flags,options,std::bit_cast<int32_t>(std::clamp(settings.boss_move_down_range,0.f,1.f))};
+}
 void resetToolInput(){
   last_filtered=0;
 #if defined(TH12_ENABLE_THPRAC) && TH12_ENABLE_THPRAC
@@ -39,7 +46,7 @@ void recordToolTick(int held){
 }
 void resetLockTimer(){settings.lock_frames=0;settings.lock_frame_pending=false;}
 void bossMoveRange(float& center,float& range){
-  if(!enabled()||replay()||!settings.force_boss_move_down)return;
+  if(!enabled()||(replay()&&!replayToolsActive())||!settings.force_boss_move_down)return;
   const float maximum=center+range*.5f;
   const float minimum=maximum-range*(1.f-std::clamp(settings.boss_move_down_range,0.f,1.f));
   center=(maximum+minimum)*.5f;range=maximum-minimum;markAssisted();

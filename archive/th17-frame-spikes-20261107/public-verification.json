@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "url": "https://touhouonline.com/",
+  "releaseId": "sha256-7676e6a80f6fa1bd28ddb6c04b1f3dbcd75dd2c7fc48b80045e07efa81e99413",
+  "files": 30,
+  "normal": "1.0.14-eagler-0e4435ae1eb6",
+  "multiplayer": "1.0.14-eagler-0bd1062cb7fa",
+  "normalEntry": "runtime/th17/1887d11f681ea985630e70b653f8c2af299549cb572268531e9a43ff9229df67/th17.html?hosted=1",
+  "multiplayerEntry": "runtime/th17/multiplayer/7b62ad26c09ec41106b268813e343a3fb490853deb402c419380882f8941ab04/th17.html?hosted=1"
+}

@@ -1,0 +1,216 @@
+{
+  "normal": "9bb1af1b5a784fde987abedbff259fcf8277e3e5",
+  "mp": "d1b32ccf4eb8bece85b2f97af18b9f6cbcc800db",
+  "merged": "154f31df4c1f5552de7a2abbab07b736465d72fd",
+  "mergedTree": "9635e1be98ead9f85ff7ff7dd3f535a2cc3d8f8b",
+  "automaticMergeExit": 1,
+  "resolution": "manual verified MP tree; git merge -s ours after automatic merge-tree conflict analysis",
+  "sourceCommit": "dc9a747eee712649f8b06b5d31120cd4da300ec0",
+  "files": [
+    {
+      "sourcePath": "ports/th13/tests/ui/dialogue_text_test.cpp",
+      "targetPath": "ports/th13-mp/tests/ui/dialogue_text_test.cpp",
+      "normalBlob": "bac30803d5117fdf2a35b247dac862a991c96dd2",
+      "mpBlob": "637a9c07560bc3f94016303e0324d0ca5a7f1329",
+      "exactBlob": false,
+      "decision": "接收缓存/像素/句柄恢复与缺像素负控；保留MP既有测试扩展。"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/AnmRegistry.cpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/AnmRegistry.cpp",
+      "normalBlob": "77b143f9c5172a3e2145cdc5e309d26609813786",
+      "mpBlob": "1e8503bc715df52da566cda97134fd13c36716ce",
+      "exactBlob": false,
+      "decision": "接收退役池槽解除脚本、精灵和几何绑定；保留MP注册顺序、快照及池身份。"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/AnmResource.cpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/AnmResource.cpp",
+      "normalBlob": "1210bf18618c9e13ad7bac5304618a527ddcc159",
+      "mpBlob": "1210bf18618c9e13ad7bac5304618a527ddcc159",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/AnmResource.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/AnmResource.hpp",
+      "normalBlob": "b49740841971021845a324f6e60aab33b71398f0",
+      "mpBlob": "b49740841971021845a324f6e60aab33b71398f0",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/AnmVm.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/AnmVm.hpp",
+      "normalBlob": "afb26a74f04488e41f9cf0233fa1df4844a998a4",
+      "mpBlob": "7782c688b275f2ad6f265b79b8771220f2577861",
+      "exactBlob": false,
+      "decision": "接收AnmRegistry友元以清除私有脚本绑定；保留MP回滚访问接口。"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/BossPresentation.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/BossPresentation.hpp",
+      "normalBlob": "d65703f3ebc7f54fce87201f47dd56676c6ae704",
+      "mpBlob": "d65703f3ebc7f54fce87201f47dd56676c6ae704",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/DialogueText.cpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/DialogueText.cpp",
+      "normalBlob": "d8f548a9fe3c6e61a348a784d8ea84cfaba7aca9",
+      "mpBlob": "d8f548a9fe3c6e61a348a784d8ea84cfaba7aca9",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/DialogueText.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/DialogueText.hpp",
+      "normalBlob": "c5e464e74eeac7b78c8387a55e072968d258460d",
+      "mpBlob": "c5e464e74eeac7b78c8387a55e072968d258460d",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/GameHud.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/GameHud.hpp",
+      "normalBlob": "c6b4cc2cb6d7a084ba01259491eaa0e28f3a8e60",
+      "mpBlob": "c6b4cc2cb6d7a084ba01259491eaa0e28f3a8e60",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/LaserPresentation.cpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/LaserPresentation.cpp",
+      "normalBlob": "8a0e090a694cf8e16bc361275b792f1167104763",
+      "mpBlob": "8a0e090a694cf8e16bc361275b792f1167104763",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/LaserPresentation.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/LaserPresentation.hpp",
+      "normalBlob": "c1e8e19b2b6bc0c77b04250d69e4645240b3f98f",
+      "mpBlob": "c1e8e19b2b6bc0c77b04250d69e4645240b3f98f",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/MsgPresentation.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/MsgPresentation.hpp",
+      "normalBlob": "258f3b34900d64597af83acc25af92e45c82a48e",
+      "mpBlob": "258f3b34900d64597af83acc25af92e45c82a48e",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/PauseFrame.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/PauseFrame.hpp",
+      "normalBlob": "8584d2f289b0f39f90ce3cee3d20e0cca2e304c1",
+      "mpBlob": "8584d2f289b0f39f90ce3cee3d20e0cca2e304c1",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/PostGameFlow.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/PostGameFlow.hpp",
+      "normalBlob": "80b993f3f100c4f97e9fd78de8981a5e41201b9c",
+      "mpBlob": "80b993f3f100c4f97e9fd78de8981a5e41201b9c",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/RunScene.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/RunScene.hpp",
+      "normalBlob": "b56c4b729578a63b66fb1759f2700792f6a6c06c",
+      "mpBlob": "9a54904db08d2557f5b407445603e4eddb28b7e4",
+      "exactBlob": false,
+      "decision": "接收世界呈现和双RNG恢复接口；保留全席位、团队清场、ANM绑定及多对象恢复。"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/ScorePopups.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/ScorePopups.hpp",
+      "normalBlob": "61e89ad55b2a00213d989d950f5a50ff73a45c28",
+      "mpBlob": "61e89ad55b2a00213d989d950f5a50ff73a45c28",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/SpellPresentation.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/SpellPresentation.hpp",
+      "normalBlob": "008b958af52d8cda344a40498d30abf9f2609142",
+      "mpBlob": "008b958af52d8cda344a40498d30abf9f2609142",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/StageBattle.cpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/StageBattle.cpp",
+      "normalBlob": "2534b59210feb51c761bfec9f100d8de5b35881f",
+      "mpBlob": "910a7848e35b8801d74b878776b6eba52df3b01a",
+      "exactBlob": false,
+      "decision": "接收灵梦Bomb零龄只在age前进时出生；保留各席位Bomb、碰撞与owner合作规则。"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/StageLaser.cpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/StageLaser.cpp",
+      "normalBlob": "603c3b8d8297ba0c141856a61387a39fb1959f49",
+      "mpBlob": "603c3b8d8297ba0c141856a61387a39fb1959f49",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/StageSim.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/StageSim.hpp",
+      "normalBlob": "2fe469ebe9c46fa8c047238490baa7c3968d0e50",
+      "mpBlob": "bb3812dad3e67c512fbd2dd5ba227040d4941683",
+      "exactBlob": false,
+      "decision": "接收激光多接触点查询接口；保留MP目标选择、owner和确定性状态字段。"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/game/YoumuBomb.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/game/YoumuBomb.hpp",
+      "normalBlob": "18418ca91d68e941dea5dfe23087c80b14d0c3b9",
+      "mpBlob": "18418ca91d68e941dea5dfe23087c80b14d0c3b9",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/sdl/BrowserRuntime.cpp",
+      "targetPath": "ports/th13-mp/web/cpp/sdl/BrowserRuntime.cpp",
+      "normalBlob": "831e638666d822d495f318f23c6eb9ae5ce4de70",
+      "mpBlob": "005d0c7eec1a6bc14a5c9c47d5f204f9a5e7e524",
+      "exactBlob": false,
+      "decision": "接收boss_main_serial只读诊断；保留生产MP世界/宿主恢复、唤醒、录像/旁观及保存桥。"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/sdl/SceneDisplay.cpp",
+      "targetPath": "ports/th13-mp/web/cpp/sdl/SceneDisplay.cpp",
+      "normalBlob": "b5573572acd9ff6a30cd69035e5f84f1b45257ed",
+      "mpBlob": "b5573572acd9ff6a30cd69035e5f84f1b45257ed",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/cpp/sdl/SceneDisplay.hpp",
+      "targetPath": "ports/th13-mp/web/cpp/sdl/SceneDisplay.hpp",
+      "normalBlob": "9504f42dd0c429ae54e755d96c1db5ffd9fa1111",
+      "mpBlob": "9504f42dd0c429ae54e755d96c1db5ffd9fa1111",
+      "exactBlob": true,
+      "decision": "通用实现与测试精确接收"
+    },
+    {
+      "sourcePath": "ports/th13/web/sdl-runtime/shell.mjs",
+      "targetPath": "ports/th13-mp/web/sdl-runtime/shell.mjs",
+      "normalBlob": "1a614d2686f1c13947a44a9a57036c851387a983",
+      "mpBlob": "f1d9abd9d25b817a48fa6a44b393f65def6593c3",
+      "exactBlob": false,
+      "decision": "接收onReplaySaved持久化返回结果；保留MP T13M、收包唤醒、生命周期及输入诊断桥。"
+    }
+  ],
+  "writeback": "724446c00d19addc90cc00d3e660beee6ea400b6",
+  "normalCommitsBehind": 0,
+  "mpCommitsAhead": 10,
+  "wholeMonorepoTreeUnchangedByWriteback": true,
+  "reviewedSource": "3da0ed775c0a00177f61677f578474aff2e1ae37"
+}

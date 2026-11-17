@@ -1,0 +1,70 @@
+{
+  "cases": [
+    {
+      "music": "ogg-akyu",
+      "language": "lang_zh-hans",
+      "enabled": true,
+      "native": {
+        "enabled": 1,
+        "codepage": 936,
+        "ticks": 253,
+        "audio": {
+          "backend": "uth05-browser-audio",
+          "robust": true,
+          "mode": "ogg",
+          "decodeMode": "stream",
+          "musicSource": "akyu",
+          "track": "OP.M2",
+          "path": "/music/akyu-01.ogg",
+          "playing": true,
+          "loopStart": 0,
+          "loopEnd": 180.9265,
+          "queuedMs": 0,
+          "underruns": 0,
+          "sfx": {
+            "backend": "pr143-fm-pcm",
+            "played": 12,
+            "superseded": 0,
+            "active": null
+          }
+        }
+      }
+    },
+    {
+      "music": "ogg-full",
+      "language": "ja",
+      "enabled": false,
+      "native": {
+        "enabled": 0,
+        "codepage": 932,
+        "ticks": 260,
+        "audio": {
+          "backend": "uth05-browser-audio",
+          "robust": true,
+          "mode": "ogg",
+          "decodeMode": "full",
+          "musicSource": "original",
+          "track": "OP.M2",
+          "path": "/music/op-m86-opus64-single-loop-v2.ogg",
+          "playing": true,
+          "loopStart": 0.018,
+          "loopEnd": 82.099,
+          "queuedMs": 0,
+          "underruns": 0,
+          "sfx": {
+            "backend": "pr143-fm-pcm",
+            "played": 12,
+            "superseded": 0,
+            "active": null
+          }
+        }
+      }
+    }
+  ],
+  "runtime": {
+    "wasmSha256": "7f48d24b9874385536b6abc79176eaf7c5a58db42f0d56a2a9f3bbd829c5ff83",
+    "builtAt": "2026-11-01T04:26:33.922Z",
+    "diagnostic": false
+  },
+  "errors": []
+}

@@ -27,6 +27,9 @@ const th11ContentRoot = process.env.EAGLER_TH11_CONTENT_DIR?.trim()
 const th12ContentRoot = process.env.EAGLER_TH12_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH12_CONTENT_DIR.trim())
   : null;
+const th13ContentRoot = process.env.EAGLER_TH13_CONTENT_DIR?.trim()
+  ? resolve(process.env.EAGLER_TH13_CONTENT_DIR.trim())
+  : null;
 const th09ContentRoot = process.env.EAGLER_TH09_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH09_CONTENT_DIR.trim())
   : null;
@@ -152,7 +155,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
     }),
     th09: Object.freeze({
       runtime: `${ws("th09", "web", "build-eagler", "th09.html")}?hosted=1`,
-      multiplayerRuntime: `${ws("th09", "web", "build-eagler-multiplayer", "th09.html")}?hosted=1`,
+      multiplayerRuntime: `${ws("th09", "web", "build-eagler", "th09.html")}?hosted=1`,
       data: Object.freeze({
         source: th09ContentRoot
           ? projectRelativePath(resolve(th09ContentRoot, "th09.data"))
@@ -224,6 +227,22 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
         }),
       } : {}),
     }),
+    th13: Object.freeze({
+      runtime: `${ws("th13", "build-eagler", "th13.html")}?hosted=1`,
+      multiplayerRuntime: `${ws("th13mp", "build-eagler-multiplayer", "th13.html")}?hosted=1`,
+      data: Object.freeze({
+        source: th13ContentRoot
+          ? projectRelativePath(resolve(th13ContentRoot, "th13.data"))
+          : ws("th13", "artifacts", "eagler-content", "th13.data"),
+        layout: PRODUCT_CONTENT.th13.dataLayout,
+      }),
+      music: Object.freeze(th13ContentRoot ? {
+        ogg: Object.freeze({
+          base: `${projectRelativePath(resolve(th13ContentRoot, "bgm-ogg"))}/`,
+          ...PRODUCT_CONTENT.th13.music.ogg,
+        }),
+      } : {}),
+    }),
     th15: Object.freeze({
       runtime: `${ws("th15", "build-eagler", "th15.html")}?hosted=1`,
       multiplayerRuntime: `${ws("th15mp", "build-eagler-multiplayer", "th15.html")}?hosted=1`,
@@ -248,6 +267,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
     }),
     th17: Object.freeze({
       runtime: `${ws("th17", "build-eagler", "th17.html")}?hosted=1`,
+      multiplayerRuntime: `${ws("th17mp", "build-eagler-multiplayer", "th17.html")}?hosted=1`,
       data: Object.freeze(th17ContentRoot ? {
         source: projectRelativePath(resolve(th17ContentRoot, "th17.data")),
         layout: PRODUCT_CONTENT.th17.dataLayout,

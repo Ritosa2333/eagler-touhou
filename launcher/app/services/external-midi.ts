@@ -10,6 +10,7 @@ export interface ExternalMidiController extends ExternalMidiPort {
   /** Caller already owns/authenticates the Runtime event and its epoch. Returns
    * true if this device owns this event; false leaves it to the existing synth. */
   deliver(bytes: readonly number[]): boolean;
+  setMusicGain(gain: number): void;
   panic(): void;
   refreshLocale(translate?: Translate): void;
   dispose(): void;
@@ -28,6 +29,7 @@ export function createExternalMidiPort({settings, navigator: navigatorLike, tran
 }): ExternalMidiController {
   const listeners = new Set<() => void>();
   let enabled = false, busy = false, disposed = false, intent = 0, wasActive = false;
+  let musicGain = 1, masterVolume = 0x3fff;
   let snapshot: ExternalMidiSnapshot;
   const device = new ExternalMidiDevice({requestAccess: navigatorMidiAccessRequest(navigatorLike), onChange() {
     // Canonical device access may settle after this wrapper has been retired.
@@ -64,12 +66,26 @@ export function createExternalMidiPort({settings, navigator: navigatorLike, tran
     const state = settings.getSnapshot();
     const key = `${state?.context.productId ?? ''}\u0000${state?.music ?? ''}`;
     if (key !== contextKey) {contextKey = key; intent++; busy = false;}
-    device.setSelectedId(state?.options.externalMidiDeviceId ?? '');
-    if (!offered() && enabled) {enabled = false; device.panic(); wasActive = false;}
+    const outputId = state?.options.externalMidiDeviceId ?? '';
+    if (outputId !== device.selectedId()) {
+      if (wasActive) panic();
+      device.setSelectedId(outputId);
+    }
+    if (!offered() && enabled) {enabled = false; panic();}
     publish();
   }
   const unsubscribe = settings.subscribe(syncSettings);
-  const pagehide = () => {device.panic(); wasActive = false;};
+  function sendMasterVolume(deviceId = 0x7f, gain = musicGain) {
+    const value = Math.round(masterVolume * gain);
+    device.send([0xf0, 0x7f, deviceId, 0x04, 0x01, value & 0x7f, value >> 7, 0xf7]);
+  }
+  function panic() {
+    if (wasActive && musicGain !== 1) sendMasterVolume(0x7f, 1);
+    device.panic();
+    wasActive = false;
+    masterVolume = 0x3fff;
+  }
+  const pagehide = panic;
   pageLifecycle?.addEventListener('pagehide', pagehide);
   syncSettings();
   return Object.freeze({
@@ -79,7 +95,7 @@ export function createExternalMidiPort({settings, navigator: navigatorLike, tran
       if (disposed) return;
       if (!value) {
         intent++; busy = false;
-        if (enabled) {enabled = false; device.panic(); wasActive = false; onConfigurationChange();}
+        if (enabled) {enabled = false; panic(); onConfigurationChange();}
         publish(); return;
       }
       if (!offered() || !device.supported || enabled || busy) return;
@@ -115,17 +131,33 @@ export function createExternalMidiPort({settings, navigator: navigatorLike, tran
     },
     deliver(bytes: readonly number[]) {
       const active = !disposed && offered() && enabled && device.granted && device.sysexEnabled && device.outputCount() > 0;
-      if (active && !wasActive) beforeExternalTakeover();
+      if (active && !wasActive) {
+        beforeExternalTakeover();
+        if (musicGain !== 1) sendMasterVolume();
+      }
       wasActive = active;
-      if (active) device.send(bytes);
+      if (active) {
+        if (bytes.length === 8 && bytes[0] === 0xf0 && bytes[1] === 0x7f && bytes[3] === 0x04 && bytes[4] === 0x01 && bytes[7] === 0xf7) {
+          masterVolume = ((bytes[6] & 0x7f) << 7) | (bytes[5] & 0x7f);
+          sendMasterVolume(bytes[2]);
+        } else {
+          device.send(bytes);
+          if (musicGain !== 1 && bytes[0] === 0xf0) sendMasterVolume();
+        }
+      }
       return active;
     },
-    panic: pagehide,
+    setMusicGain(gain: number) {
+      if (musicGain === gain) return;
+      musicGain = gain;
+      if (wasActive) sendMasterVolume();
+    },
+    panic,
     refreshLocale(next?: Translate) {if (next) translate = next; publish();},
     dispose() {
       if (disposed) return;
       disposed = true; intent++; enabled = false; busy = false; unsubscribe();
-      pageLifecycle?.removeEventListener('pagehide', pagehide); device.panic(); device.release(); listeners.clear();
+      pageLifecycle?.removeEventListener('pagehide', pagehide); panic(); device.release(); listeners.clear();
     },
   });
 }

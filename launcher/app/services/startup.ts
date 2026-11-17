@@ -1,4 +1,5 @@
 import {roomCodeFromUrl} from '../../src/launcher/route-state.mts';
+import {isLauncherHomePath} from '../navigation/addresses';
 
 export interface StartupBootPort {
   ready(): void;
@@ -17,7 +18,6 @@ export interface StartupPorts {
   warnDiscouragedBrowser(isCurrent: () => boolean): Promise<boolean>;
   /** The shared content owner must recheck this before opening/marking seen. */
   showFirstUseAutomatically(isCurrent: () => boolean): Promise<boolean>;
-  loadSiteNotice(): Promise<unknown>;
   onError(error: unknown): void;
 }
 export interface StartupOptions {
@@ -93,13 +93,14 @@ export function createStartupController(options: StartupOptions) {
     win.clearTimeout(deadline); timeouts.delete(deadline);
     return current(id);
   }
-  async function revealLibrary(id: number) {
+  async function revealLibrary(id: number, ports: StartupPorts) {
     const covers = Array.from(doc.querySelectorAll<HTMLImageElement>('.game-library img')).filter(image => {
       const rect = image.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0 && rect.top < win.innerHeight + 80 && rect.bottom > 0 && rect.left < win.innerWidth + 80 && rect.right > 0;
     });
-    const visuals = Promise.allSettled([decodeImage(new URL('assets/launcher-background.webp', options.baseUrl).href),
-      ...fonts(), ...covers.map(image => decodeImage(image.currentSrc || image.src))]);
+    const modernHome = doc.documentElement.hasAttribute('data-ui-app') && isLauncherHomePath(new URL(ports.url).pathname);
+    const background = modernHome ? [] : [decodeImage(new URL('assets/launcher-background.webp', options.baseUrl).href)];
+    const visuals = Promise.allSettled([...background, ...fonts(), ...covers.map(image => decodeImage(image.currentSrc || image.src))]);
     if (await waitForVisuals(id, visuals)) finishReveal(id, 'library', () => {});
   }
   async function revealLobby(id: number, ports: StartupPorts) {
@@ -128,9 +129,7 @@ export function createStartupController(options: StartupOptions) {
       if (!current(id) || !continueVisit) return;
     }
     if (!current(id) || roomCodeFromUrl(ports.url)) return;
-    if (debug || preview) {await ports.loadSiteNotice(); return;}
-    const shown = await ports.showFirstUseAutomatically(() => current(id));
-    if (current(id) && !shown) await ports.loadSiteNotice();
+    if (!debug && !preview) await ports.showFirstUseAutomatically(() => current(id));
   }
   function attach(ports: StartupPorts): () => void {
     if (disposed) return () => {};
@@ -156,7 +155,7 @@ export function createStartupController(options: StartupOptions) {
         // to the library does not install or restart the library watchdog.
         if (doc.documentElement.getAttribute('data-original-entry') !== 'lobby') ports.boot.ready();
       }
-      if (ports.context === 'library' && hotEntry) void revealLibrary(id).catch(error => {if (current(id)) ports.onError(error);});
+      if (ports.context === 'library' && hotEntry) void revealLibrary(id, ports).catch(error => {if (current(id)) ports.onError(error);});
       else if (ports.context === 'lobby' && !hotEntry) void revealLobby(id, ports).catch(error => {if (current(id)) ports.onError(error);});
       const accountDocument = /\/(?:profile|login)\.html\/?$/.test(new URL(ports.url).pathname);
       if (!accountDocument && !noticesCompleted.has(ports.context)) void notices(id, ports).then(() => {if (current(id)) noticesCompleted.add(ports.context);}).catch(error => {if (current(id)) ports.onError(error);});

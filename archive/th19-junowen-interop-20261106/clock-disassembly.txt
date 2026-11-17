@@ -1,0 +1,71 @@
+TH19 SHA256 8918fb39d511c9906ef769c6dd2761e7cb44ded5b7c4c1cd99c8992d12c078e9
+
+Address 0x516c9a
+00516c9a mov eax, dword ptr [0x5d19b4]
+00516c9f test eax, eax
+00516ca1 je 0x516ca9
+00516ca3 dec eax
+00516ca4 mov dword ptr [0x5d19b4], eax
+00516ca9 push ecx
+00516caa lea ecx, [edi + 0x10]
+00516cad call 0x4026c0
+00516cb2 mov eax, 1
+00516cb7 mov ecx, dword ptr [ebp - 0xc]
+00516cba mov dword ptr fs:[0], ecx
+00516cc1 pop ecx
+
+Address 0x515d16
+00515d16 add dword ptr [eax], eax
+00515d18 add byte ptr [eax], al
+00515d1a add byte ptr [eax], al
+00515d1c mov edx, dword ptr [ebx + 0x20]
+00515d1f test dl, 1
+00515d22 jne 0x515d3f
+00515d24 or edx, 1
+00515d27 mov dword ptr [ebx + 0x14], 0
+00515d2e mov dword ptr [ebx + 0x18], 0
+00515d35 mov dword ptr [ebx + 0x1c], 0
+00515d3c mov dword ptr [ebx + 0x20], edx
+00515d3f mov dword ptr [ebx + 0x14], 0
+00515d46 mov dword ptr [ebx + 0x18], 0
+00515d4d mov dword ptr [ebx + 0x10], 0xffffffff
+00515d54 pop edi
+00515d55 pop esi
+
+Address 0x4026c0
+004026c0 mov eax, dword ptr [ecx + 0xc]
+004026c3 cmp eax, 1
+004026c6 jb 0x4026d1
+004026c8 mov dword ptr [ecx + 0xc], 0
+004026cf xor eax, eax
+004026d1 mov eax, dword ptr [eax*4 + 0x596da0]
+004026d8 mov edx, dword ptr [ecx + 4]
+004026db mov dword ptr [ecx], edx
+004026dd test eax, eax
+004026df je 0x402737
+004026e1 movss xmm0, dword ptr [eax]
+004026e5 comiss xmm0, dword ptr [0x5aa22c]
+004026ec jbe 0x402714
+004026ee movss xmm0, dword ptr [0x5aa234]
+004026f6 comiss xmm0, dword ptr [eax]
+004026f9 jbe 0x402714
+004026fb movss xmm0, dword ptr [ecx + 8]
+00402700 inc edx
+00402701 addss xmm0, dword ptr [0x5aa230]
+00402709 movss dword ptr [ecx + 8], xmm0
+0040270e mov dword ptr [ecx + 4], edx
+00402711 ret 4
+00402714 movss xmm2, dword ptr [eax]
+00402718 movss xmm1, dword ptr [ecx + 8]
+0040271d movaps xmm0, xmm2
+00402720 addss xmm2, xmm1
+00402724 addss xmm0, xmm1
+00402728 cvttss2si edx, xmm2
+0040272c movss dword ptr [ecx + 8], xmm0
+00402731 mov dword ptr [ecx + 4], edx
+00402734 ret 4
+00402737 movss xmm0, dword ptr [ecx + 8]
+0040273c lea eax, [edx + 1]
+0040273f addss xmm0, dword ptr [0x5aa230]
+00402747 mov dword ptr [ecx + 4], eax
+0040274a movss dword ptr [ecx + 8], xmm0

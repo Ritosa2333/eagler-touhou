@@ -17,6 +17,6 @@
   },
   "builder": "ports/th03/scripts/build-eagler.mjs",
   "inputIdentityRecord": "ports/th03/content/source.json",
-  "normalAndMultiplayer": "DOSBox-X adapter with native versus selection and main-room transport",
+  "normalAndMultiplayer": "Native WebAssembly adapter with versus selection, spectator playback and main-room transport",
   "record": "docs/migration/th03-eagler-20261025.md"
 }

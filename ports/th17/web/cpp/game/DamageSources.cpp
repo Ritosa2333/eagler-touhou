@@ -1,17 +1,32 @@
 #include "DamageSources.hpp"
+#include "Practice.hpp"
 #include "AnmVisualState.hpp"
 #include <cmath>
 namespace th17 {
 namespace {
 Vec2 rotate(Vec2 p,float angle){const float sine=float(std::sin(double(angle))),cosine=float(std::cos(double(angle)));return {float(float(p.x*cosine)-float(p.y*sine)),float(float(p.y*cosine)+float(p.x*sine))};}
+struct ShotRotation {
+    struct Entry {u32 key=0;float sine=0,cosine=1;};
+    std::array<Entry,8> entries{};
+    Vec2 apply(Vec2 p,float angle){
+        const u32 bits=float_to_bits(angle);
+        auto& entry=entries[(bits^(bits>>7)^(bits>>15))&(entries.size()-1)];
+        if(bits!=entry.key)entry={bits,float(std::sin(double(angle))),float(std::cos(double(angle)))};
+        const float sine=entry.sine,cosine=entry.cosine;
+        return {float(float(p.x*cosine)-float(p.y*sine)),float(float(p.y*cosine)+float(p.x*sine))};
+    }
+};
 std::array<Vec2,4> corners(Vec2 center,Vec2 size,float angle){std::array<Vec2,4> p={Vec2{float(size.x*-.5f),float(size.y*-.5f)},Vec2{float(size.x*-.5f),float(size.y*.5f)},Vec2{float(size.x*.5f),float(size.y*.5f)},Vec2{float(size.x*.5f),float(size.y*-.5f)}};for(auto& v:p){if(angle!=0)v=rotate(v,angle);v.x=float(v.x+center.x);v.y=float(v.y+center.y);}return p;}
 bool contains_corner(const std::array<Vec2,4>& p,Vec2 center,Vec2 size,float angle){for(auto v:p){v.x=float(v.x-center.x);v.y=float(v.y-center.y);if(angle!=0)v=rotate(v,-angle);if(std::abs(v.x)<=float(size.x*.5f)&&std::abs(v.y)<=float(size.y*.5f))return true;}return false;}
-}
-bool rectangle_circle(const Vec2& center,const Vec2& size,float angle,const Vec2& other,float radius){
-    const Vec2 local=rotate({float(other.x-center.x),float(other.y-center.y)},-angle);const float hx=float(size.x*.5f),hy=float(size.y*.5f);
+bool rectangle_circle_local(const Vec2& local,const Vec2& size,float radius){
+    const float hx=float(size.x*.5f),hy=float(size.y*.5f);
     if(!((float(hx+radius)<std::abs(local.x)||hy<std::abs(local.y))&&(hx<std::abs(local.x)||float(hy+radius)<std::abs(local.y))))return true;
     const float x0=float(local.x-hx),x1=float(hx+local.x),y0=float(local.y-hy),y1=float(hy+local.y),r2=float(radius*radius);
     return float(float(x0*x0)+float(y0*y0))<r2||float(float(x1*x1)+float(y0*y0))<r2||float(float(x0*x0)+float(y1*y1))<r2||float(float(x1*x1)+float(y1*y1))<r2;
+}
+}
+bool rectangle_circle(const Vec2& center,const Vec2& size,float angle,const Vec2& other,float radius){
+    return rectangle_circle_local(rotate({float(other.x-center.x),float(other.y-center.y)},-angle),size,radius);
 }
 bool rectangle_rectangle(const Vec2& center,const Vec2& size,float angle,const Vec2& other,const Vec2& other_size,float other_angle){
     const float dx=float(center.x-other.x),dy=float(center.y-other.y),a=float(size.x*.5f),b=float(size.y*.5f),c=float(other_size.x*.5f),d=float(other_size.y*.5f);
@@ -38,13 +53,20 @@ void DamageSources::tick(float rate){for(auto& s:sources)if(s.flags&1){s.motion.
 DamageResult DamageSources::query(const DamageQuery& q,bool frame_changed,i32 bomb_damage){
     DamageResult out;if(!frame_changed)return out;out.amount=bomb_damage;out.direct=bomb_damage>0;
     std::array<i32,4> group_damage{},group_priority{};std::array<bool,4> group_seen{};
+    // A spread reuses a handful of angles across many shots. Reuse rotations
+    // within this query while preserving slot order and hit side effects.
+    ShotRotation rotation;
+    const auto rotated_hit=[&](const Vec2& center,const Vec2& size,float angle,const Vec2& other,float radius){
+        const Vec2 local=rotation.apply({float(other.x-center.x),float(other.y-center.y)},-angle);
+        return rectangle_circle_local(local,size,radius);
+    };
     for(auto& s:sources){if(!(s.flags&1)||s.lifetime.current==s.lifetime.previous||s.interval==0||s.lifetime.current%s.interval!=0||s.cooldown>0)continue;const Vec2 p={s.motion.position.x,s.motion.position.y},target={q.position.x,q.position.y};bool hit;
-        if(!(s.flags&2))hit=q.rectangle?rectangle_rectangle(p,s.size,s.angle,target,q.size,q.angle):rectangle_circle(p,s.size,s.angle,target,q.radius);
-        else if(q.rectangle)hit=rectangle_circle(target,q.size,q.angle,p,s.radius);
+        if(!(s.flags&2))hit=q.rectangle?rectangle_rectangle(p,s.size,s.angle,target,q.size,q.angle):rotated_hit(p,s.size,s.angle,target,q.radius);
+        else if(q.rectangle)hit=rotated_hit(target,q.size,q.angle,p,s.radius);
         else{const float r=float(s.radius+q.radius),x=float(p.x-target.x),y=float(p.y-target.y);hit=!(float(r*r)<float(float(y*y)+float(x*x)));}
         if(!hit)continue;const u32 group=u32(s.overlap_group)-1;if(group<4){if(group_seen[group]&&s.damage<group_priority[group])continue;out.amount=wrapping_sub(out.amount,group_damage[group]);group_seen[group]=true;group_priority[group]=s.damage;}if(q.target!=0&&s.last_target==q.target)continue;if(q.target!=0)s.last_target=q.target;if(s.flags&4)out.direct=true;
         i32 amount=s.damage;if(!q.preview){if(s.callback_kind!=0){if(!hit_callback){error="Damage-source hit callback unavailable";out.amount=-1;return out;}s.callback_target=q.target;const i32 callback_amount=hit_callback(s,q);if(callback_amount>=0)amount=callback_amount;if(!error.empty()){out.amount=-1;return out;}}s.accumulated=wrapping_add(s.accumulated,s.damage);}
         if(group<4)group_damage[group]=amount;out.amount=wrapping_add(out.amount,amount);out.position=s.motion.position;out.position_written=true;if(s.damage_limit<9999999&&s.damage_limit<=s.accumulated){s.flags&=~1u;s.damage=0;}
-    }if(maximum_damage<out.amount)out.amount=maximum_damage;if(!q.preview&&out.amount!=0){auto& total=shared_score?*shared_score:score;total=wrapping_add(total,(out.amount/10+10)/10);if(total>999999999)total=999999999;score=total;}return out;
+    }if(maximum_damage<out.amount)out.amount=maximum_damage;if(!q.preview&&out.amount!=0){auto& total=shared_score?*shared_score:score;total=add_practice_score(total,(out.amount/10+10)/10,uncap_score);score=total;}return out;
 }
 }

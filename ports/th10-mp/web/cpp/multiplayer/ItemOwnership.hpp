@@ -6,9 +6,11 @@ namespace th10::multiplayer {
 struct ItemOwnership {
     std::int8_t homing=-1;
     std::int8_t recipient=-1;
+    bool death_drop=false;
 };
 struct ItemCandidate {
     bool eligible=false,auto_collect=false,focused=false;
+    bool recovering=false;
     i32 power=0;
     Vec3 position{};
     ItemRegion pickup{},slow{},fast{};

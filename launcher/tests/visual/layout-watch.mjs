@@ -17,7 +17,7 @@ function label(node){
   if(element.matches('input,textarea,select'))return element.labels?.[0]?.textContent.trim()||element.id||'输入控件';
   if(element.matches('button,a,[role=tab],[role=switch]'))return element.textContent.trim().replace(/\s+/g,' ').slice(0,60)||element.id||'图标按钮';
   const heading=element.querySelector(':scope>header h2,:scope>header h3,:scope>h2,:scope>h3');
-  const names={'book-masthead':'页面顶栏','book-library':'游戏书库','book-card':'作品封面','input-binding-table':'按键列表','input-config-hint':'键位说明','input-layout-toolbar':'布局选择栏','input-config-footer':'底部操作','input-device-tabs':'设备标签栏','options-scroll':'选项内容','site-footer':'页脚','tools-head':'作品封面与标题'};
+  const names={'book-masthead':'页面顶栏','book-library':'游戏书库','book-card':'作品封面','input-binding-table':'按键列表','input-config-hint':'键位说明','input-layout-toolbar':'布局选择栏','input-config-footer':'底部操作','input-device-tabs':'设备标签栏','options-scroll':'选项内容','tools-head':'作品封面与标题'};
   return heading?.textContent.trim()||Object.entries(names).find(([name])=>element.classList.contains(name))?.[1]||element.id||element.classList[0]||element.tagName.toLowerCase();
 }
 function describe(delta){

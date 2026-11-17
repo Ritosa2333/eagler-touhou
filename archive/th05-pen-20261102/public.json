@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "siteUrl": "https://touhouonline.com/",
+  "language": "lang_zh-hans",
+  "route": "rtc",
+  "native": [
+    {
+      "frame": 182,
+      "confirmed": 181,
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "route": "rtc",
+      "errors": ""
+    },
+    {
+      "frame": 184,
+      "confirmed": 180,
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "route": "rtc",
+      "errors": ""
+    }
+  ],
+  "runtimeErrors": []
+}

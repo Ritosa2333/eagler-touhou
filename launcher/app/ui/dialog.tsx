@@ -14,12 +14,12 @@ export const DialogDescription = Primitive.Description;
 
 /** Ordinary dialogs share Radix focus behavior and a stable fullscreen portal. */
 export const DialogContent = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<typeof Primitive.Content> & {
-  closeLabel?: string; showClose?: boolean; portalAnchor?: HTMLElement | null;
+  closeLabel?: string; showClose?: boolean; portalAnchor?: HTMLElement | null; overlayClassName?: string;
 }>(function DialogContent(
-  {children, className, closeLabel, showClose = true, portalAnchor, ...props}, ref,
+  {children, className, closeLabel, showClose = true, portalAnchor, overlayClassName, ...props}, ref,
 ) {
   const {t} = useLocale();
-  return <FullscreenTransient anchor={portalAnchor}><Primitive.Overlay className="ui-kit-dialog-overlay"/><Primitive.Content {...props} ref={ref} data-slot="dialog-content" className={cn('ui-kit-dialog', className)}>
+  return <FullscreenTransient anchor={portalAnchor}><Primitive.Overlay className={cn('ui-kit-dialog-overlay', overlayClassName)}/><Primitive.Content {...props} ref={ref} data-slot="dialog-content" className={cn('ui-kit-dialog', className)}>
     {children}{showClose && <Primitive.Close asChild><Button variant="ghost" size="icon" className="ui-kit-dialog-close" aria-label={closeLabel ?? t('action.close')}><X aria-hidden="true"/></Button></Primitive.Close>}
   </Primitive.Content></FullscreenTransient>;
 });

@@ -18,6 +18,7 @@ public:
     static constexpr u32 screen=1,depth=2;
     std::string error;u32 render_scale=1;
     PresentationFrame presentation;bool logical_drawing=false;
+    bool logical_frame()const noexcept override{return logical_drawing;}
     bool frame_drawn=false;
     bool fps_backdrop(bool capture);
     void presentation_offset(Vec2 value)override{if(!logical_drawing)presentation.offset=value;}

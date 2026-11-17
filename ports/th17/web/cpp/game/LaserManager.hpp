@@ -20,7 +20,8 @@ public:
     virtual i32 query_circle(const Vec3&,float radius)=0;
 };
 class LaserManager {
-    std::list<std::unique_ptr<LaserObject>> objects;
+    friend class LaserScene;
+    std::list<std::shared_ptr<LaserObject>> objects;
 public:
     static constexpr u32 capacity=512;u32 generation=0;Vec3 query_position{},query_size{};i32 query_count=0;std::string error;
     u32 insert(std::unique_ptr<LaserObject>);
