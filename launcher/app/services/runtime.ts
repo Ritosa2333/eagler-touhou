@@ -37,6 +37,7 @@ import { deliverRuntimeInput, type HostedKeySpec, type TouchRuntimeContext, type
 import type {TouchLayout} from '../../src/launcher/touch-layout-model.mts';
 import { retainPackageGeneration, releasePackageGeneration } from '../../package/package-store.mjs';
 import { createRuntimeAudioMix, type RuntimeAudioWindow } from './runtime-audio-mix';
+import {uploadTh09Replay} from '../../../common/browser/th09-replay-upload.mjs';
 
 export interface RuntimeFilesystem {
   mkdirTree(path: string): void;
@@ -75,6 +76,7 @@ export interface RuntimeHost {
   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
   removeEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
   __eaglerPrepareManagedRuntimeDataV1?: (request: ManagedDataRequest) => ReturnType<typeof readManagedRuntimeData>;
+  __eaglerUploadTh09ReplayV1?: typeof uploadTh09Replay;
 }
 export interface RuntimeLauncherControls {
   readonly restartButtonEnabled: boolean;
@@ -1502,6 +1504,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     audioMix.detach();
     host.removeEventListener('message', onMessage); frame.removeEventListener('load', onLoad);
     if (host.__eaglerPrepareManagedRuntimeDataV1 === provideData) delete host.__eaglerPrepareManagedRuntimeDataV1;
+    if (host.__eaglerUploadTh09ReplayV1 === uploadTh09Replay) delete host.__eaglerUploadTh09ReplayV1;
     listeners.clear();
     eventListeners.clear();
     roomReturnListeners.clear();
@@ -1535,6 +1538,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (hadSession) warn(failure);
   }
   host.__eaglerPrepareManagedRuntimeDataV1 = provideData;
+  host.__eaglerUploadTh09ReplayV1 = uploadTh09Replay;
   host.addEventListener('message', onMessage); frame.addEventListener('load', onLoad);
   return Object.freeze({ prepare, prepareWithReady, checkPreparedCodeUpdate, prepareRoomPreview, configurePreparedRoom, returnToRoom, launch, checkMultiplayer, sync, close, cancel, dispose, disposeDetachedFrame, withFileSession, send: request, cancelTitleNetwork, postInput, spectatorRoomState, getInputContext, getMidiEventContext, getLauncherControlContext, extendOggResources,
     setAudioLevels: audioMix.set,

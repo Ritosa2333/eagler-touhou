@@ -22,7 +22,7 @@ const stage=(name,details={})=>{const row={name,at:new Date().toISOString(),...d
 const relayPort=await new Promise(r=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});
 const relay=spawn(process.execPath,[resolve(process.env.TH09_SELECTION_RELAY||resolve(root,'../../eagler-touhou/services/netplay/netplay-relay.mjs'))],{windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1',EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:fallback?'1':'0'},stdio:['ignore','pipe','pipe']});
 let relayLog='';relay.stderr.on('data',b=>relayLog+=b);await new Promise((ok,fail)=>{relay.stdout.on('data',b=>{relayLog+=b;if(relayLog.includes('netplay relay listening'))ok();});relay.on('error',fail);relay.on('exit',code=>fail(Error('relay '+code+' '+relayLog)));});
-const host=await presentationServer(0,{release:true,artifactDirectory:buildDir});
+const host=await presentationServer(0,{release:true,artifactDirectory:buildDir,archiveApi});
 const browser=await launchBrowser({headless:true,args:['--enable-gpu','--use-gl=angle','--use-angle=d3d11','--autoplay-policy=no-user-gesture-required']});
 const pages=[];
 async function actor(index){
@@ -74,12 +74,21 @@ async function connect(index){await pages[index].evaluate(async({index,relayPort
     if(match.winner!==undefined)observeFinal(match,'lobby');
     lobby.send(JSON.stringify({type:'th09-match',serial:room.startSerial,...match}));
   }});
+  const {createAutoReplay}=await import('/app/auto-replay.mjs');
+  window.gameSavedReplays={};
+  const autoReplay=createAutoReplay({core,saveRoot:'/save',options:()=>options,enabled:()=>!spectator,
+    sync:async()=>{},notice:()=>{},publish:(start,bytes)=>{
+      gameSavedReplays[start]=Array.from(bytes);
+      play.captureReplay(start,bytes);
+    }});
   const readHash=frame=>{const at=core._th09_confirmed_frame_hash(frame)/4;if(core.HEAPU32[at]===frame)hashes[frame+1]=core.HEAPU32[at+1];};
-  core.onNetworkReplayBoundary=(frame,winner)=>{if(winner<0)play.startMatchReport(frame);};
+  core.onNetworkReplayBoundary=(frame,winner)=>{
+    if(winner<0){play.startMatchReport(frame);autoReplay.begin(frame);}else autoReplay.end(frame,winner);
+  };
   core.onNetworkMatchDecided=(...args)=>play.finishMatchReport(...args);
   core.onNetworkSpectatorBegin=(frame,bytes)=>{begins.push({frame,bytes:bytes.length});play.beginMatch(frame,bytes);};
   core.onNetworkSpectatorEnd=(frame,winner)=>{ends.push({frame,winner});play.endMatch(frame,winner);};
-  core.onNetworkSpectatorRound=(...args)=>play.roundStart(...args);
+  core.onNetworkSpectatorRound=(frame,round,replayFrame)=>{autoReplay.roundStart(replayFrame);play.roundStart(frame,round);};
   core.onNetworkSpectatorFrame=(frame,...args)=>{readHash(frame);play.publish(frame,...args);};
   core.onNetworkResult=()=>play.result();
   core.onGameFrame=()=>{if(!spectator){const at=core._th09_rollback_info()/4;const confirmed=core.HEAPU32[at+1];for(let f=Math.max(0,confirmed-9);f<confirmed;f++)readHash(f);}
@@ -97,7 +106,7 @@ async function verifyArchive(match, point) {
     if(duel)break;
     await new Promise(resolve=>setTimeout(resolve,100));
   }
-  assert.ok(duel,'decisive match was archived before the result menu');
+  assert.ok(duel,'the completed match saved a game Replay');
   const path='/api/v1/th09/duels/'+duel.duelId+'/replays';
   const {files}=await (await fetch(new URL(path,archiveApi))).json();
   assert.equal(files.length,point);
@@ -110,28 +119,27 @@ async function verifyArchive(match, point) {
   assert.equal(response.status,200);
   const bytes=Buffer.from(await response.arrayBuffer());
   assert.equal(bytes.length,file.size);
+  const local=await Promise.all(pages.slice(0,2).map(page=>page.evaluate(start=>gameSavedReplays[start],match.start)));
+  assert.ok(local.some(file=>file&&bytes.equals(Buffer.from(file))),'server returned the original game file byte for byte');
   const viewer=await browser.newPage({viewport:{width:900,height:700}});
   viewer.on('pageerror',error=>report.errors.push({error:error.stack}));
   await viewer.goto(host.url);await viewer.waitForFunction(()=>typeof window.openProbe==='function');
   await viewer.evaluate(async source=>{
     await openProbe(0,1,2,3,true);
-    const {readMatchArchive,createMatchArchivePlayer}=await import('/app/match-archive-player.mjs');
-    const archive=await readMatchArchive(new Response(Uint8Array.from(atob(source),character=>character.charCodeAt(0))));
-    window.archiveViewer=createMatchArchivePlayer({core,archive,path:'match.th09r',onState:()=>{},onError:error=>{window.archiveError=error.message;}});
+    const {createReplayPlayer}=await import('/app/replay-player.mjs');
+    window.archiveViewer=createReplayPlayer({core,onError:error=>{window.archiveError=error.message;}});
+    archiveViewer.play('match.rpy',Uint8Array.from(atob(source),character=>character.charCodeAt(0)));
     archiveViewer.control('pause');
     archiveViewer.control('seek',archiveViewer.state().total);
   },bytes.toString('base64'));
   await viewer.waitForFunction(()=>archiveViewer.state().ended||window.archiveError,undefined,{timeout:120000});
   assert.equal(await viewer.evaluate(()=>window.archiveError),undefined);
-  const expected=await pages[0].evaluate(frame=>hashes[frame],match.start+match.frames);
-  assert.ok(Number.isInteger(expected),'P1 confirmed result hash');
-  const played=await viewer.evaluate(()=>({frame:archiveViewer.state().frame,hash:core._th09_network_hash()>>>0}));
-  assert.deepEqual(played,{frame:match.frames,hash:expected});
+  const played=await viewer.evaluate(()=>archiveViewer.state());
+  assert.equal(played.frame,played.total);
+  assert.deepEqual([played.left,played.right],match.characters);
   await viewer.evaluate(()=>archiveViewer.control('seek',60));
   await viewer.waitForFunction(()=>archiveViewer.state().frame===60||window.archiveError,undefined,{timeout:15000});
-  const replayed=await viewer.evaluate(()=>core._th09_network_hash()>>>0);
-  assert.equal(replayed,await pages[0].evaluate(frame=>hashes[frame],match.start+60));
-  stage('stored-file-playback',{duelId:duel.duelId,roundId:file.roundId,compressedBytes:bytes.length,frames:match.frames,endHash:played.hash,rewindHash:replayed});
+  stage('stored-file-playback',{duelId:duel.duelId,roundId:file.roundId,bytes:bytes.length,frames:played.total});
   await viewer.close();
 }
 try{selectionRun:{
@@ -216,7 +224,6 @@ try{selectionRun:{
   assert.deepEqual(match.characters,[1,2]);
   assert.ok(match.frames>0);
   stage('both-confirm-decision',{match,phase});
-  if(archiveApi){await verifyArchive(match,1);if(archivePoints===1)break selectionRun;}
   if(exitAfterDecision){
     await pages[1].close();
     await pages[0].waitForFunction(winner=>room.seats[winner]?.stats?.wins===1,match.winner);
@@ -224,6 +231,7 @@ try{selectionRun:{
     break selectionRun;
   }
   const completed=await waitFor(pages[0],s=>s.session[0]===3&&s.ends.length===1,'natural match completion',240000);
+  if(archiveApi){await verifyArchive(match,1);if(archivePoints===1)break selectionRun;}
   for(const page of pages.slice(0,2)){await page.keyboard.up('KeyZ');await page.keyboard.up('ControlLeft');}
   stage('natural-match-complete',{end:completed.ends[0],frame:completed.rollback[0]});await pages[0].screenshot({path:resolve(out,'first-result.png')});
   await pages[0].waitForTimeout(500);await press(0,'ArrowDown');await press(0,'KeyZ');await menu(7);
@@ -255,6 +263,7 @@ try{selectionRun:{
     for(const page of pages.slice(0,2)){await page.keyboard.down('KeyZ');await page.keyboard.down('ControlLeft');}
     const [left,right]=await Promise.all(pages.slice(0,2).map(page=>waitFor(page,s=>s.finals.length===2,'second deciding frame',240000)));
     assert.deepEqual(left.finals[1],right.finals[1]);
+    await waitFor(pages[0],s=>s.session[0]===3&&s.ends.length===2,'second natural match completion',240000);
     await verifyArchive(left.finals[1].match,2);
     break selectionRun;
   }

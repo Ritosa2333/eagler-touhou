@@ -1,8 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { gunzipSync } from 'node:zlib';
 import { decodeTh09MatchArchive, encodeTh09MatchArchive } from '../../../common/contracts/th09-match-archive.mjs';
-import { createTh09MatchArchiveQueue } from '../src/th09-match-archive.mjs';
 
 function packet(name, version, size, frame) {
   const value = Buffer.alloc(size);
@@ -40,24 +38,4 @@ test('compacts repeated headers and restores the exact spectated inputs for eith
   assert.throws(() => decodeTh09MatchArchive(encoded.subarray(0, -1)), /Invalid th09/);
   right.writeFloatLE(Number.NaN, 46);
   assert.throws(() => decodeTh09MatchArchive(encodeTh09MatchArchive(history, match)), /Invalid th09/);
-});
-
-test('archives a confirmed result once after a late input tail arrives', async () => {
-  const {begin, left, right, boundary, ...match} = fixture();
-  const run = {spectatorTimeline:true, spectatorNextFrame:match.start+1, spectatorHistory:[begin, left, boundary]};
-  const report = {...match, duelId:'duel', roundId:'1:'+match.start, players:['left','right']};
-  const saved = [];
-  const archive = createTh09MatchArchiveQueue({enqueue: value => saved.push(value)});
-  archive(run, report);
-  assert.equal(saved.length, 0);
-  run.spectatorHistory.push(right);
-  ++run.spectatorNextFrame;
-  archive(run);
-  archive(run);
-  const end = Date.now() + 3000;
-  while (!saved.length && Date.now() < end) await new Promise(resolve => setTimeout(resolve, 20));
-  assert.equal(saved.length, 1);
-  assert.equal(saved[0].roundId, report.roundId);
-  const replay = decodeTh09MatchArchive(gunzipSync(Buffer.from(saved[0].replay, 'base64')));
-  assert.deepEqual([...replay.packets()].map(Buffer.from), [left, boundary, right]);
 });

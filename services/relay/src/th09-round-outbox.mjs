@@ -53,7 +53,7 @@ export function createTh09RoundOutbox({ file, send, onStored, retryMs = 1000 }) 
         if (closed) return;
         remove.run(next.id);
         delay = retryMs;
-        if (result) onStored?.(round, result.players, result.settlement);
+        if (result) onStored?.(round, result);
       }
     } catch (error) {
       console.error('th09 round outbox failed:', error?.code || error?.name);

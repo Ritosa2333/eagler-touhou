@@ -1021,9 +1021,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   async function accessTh09MatchReplay(duelId: string, roundId: string, action: 'play' | 'download') {
     const key = roundId.replace(':', '-');
-    const name = `th09-${duelId}-${key}.th09r`;
     const blob = await accountRequest<Blob>(`v1/th09/duels/${duelId}/replays/${key}`, undefined, {responseType:'blob'});
     if (!blob.size || blob.size > 1024 * 1024) throw Error(t('file.importStoredTooLarge'));
+    const extension = blob.type === 'application/x-th09-rpyx' ? 'rpyx' : blob.type === 'application/x-th09-rpy' ? 'rpy' : 'th09r';
+    const name = `th09-${duelId}-${key}.${extension}`;
     const bytes = await blob.arrayBuffer();
     if (action === 'download') ports.download(name, bytes, 'application/octet-stream');
     else await watchTh09Archive(name, new Uint8Array(bytes));

@@ -266,12 +266,13 @@ case 'playback':{
    replayPlayer=createMatchArchivePlayer({core,archive,path:m.path,onState,onError:fatal});
    return {playback:replayPlayer.state()};
   }
-  const selected=path(m.path);if(!selected.startsWith('replay/'))throw Error('录像路径无效');
-  const bytes=core.FS.readFile(saveRoot+'/'+selected.replace(/\.rpyx$/,'.rpy'));importReplayName(selected,bytes,9);
+  const online=m.bytes instanceof Uint8Array&&/^[^/\\]{1,180}\.rpyx?$/i.test(m.path);
+  const selected=online?m.path:path(m.path);if(!online&&!selected.startsWith('replay/'))throw Error('录像路径无效');
+  const bytes=online?m.bytes:core.FS.readFile(saveRoot+'/'+selected.replace(/\.rpyx$/,'.rpy'));importReplayName(selected,bytes,9);
   if(archivePlayback)await resetReplayTitle(receivedLifetime);
   archivePlayback=false;
   replayPlayer??=createReplayPlayer({core,onState,onError:fatal});
-  clearKeyboard();return {playback:replayPlayer.play(selected,bytes,autoReplay.readMatch(saveRoot+'/'+selected))};
+  clearKeyboard();return {playback:replayPlayer.play(selected,bytes,online?null:autoReplay.readMatch(saveRoot+'/'+selected))};
  }
  if(!replayPlayer)throw Error('请先选择录像');return {playback:replayPlayer.control(m.action,m.value)};
 }
@@ -333,7 +334,7 @@ const initialized=(async()=>{
  assertLifetime(initializingLifetime,core);
  window.Module=core;window.FS=core.FS;core.SDL3=core.SDL3||{};if(parent!==window&&parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;
  core.FS.mkdirTree(saveRoot);core.FS.mount(core.IDBFS,{},saveRoot);await sync(true);assertLifetime(initializingLifetime,core);core.FS.mkdirTree(saveRoot+'/replay');core.FS.symlink(saveRoot,'/save');
- autoReplay=createAutoReplay({core,saveRoot,options:()=>options,enabled:()=>runtimeVariant==='multiplayer'&&options.netplayMode==='lan',sync:()=>{revision=core._th09_storage_revision();return sync();},notice:message=>emit('notice',{message})});
+ autoReplay=createAutoReplay({core,saveRoot,options:()=>options,enabled:()=>runtimeVariant==='multiplayer'&&options.netplayMode==='lan',sync:()=>{revision=core._th09_storage_revision();return sync();},notice:message=>emit('notice',{message}),publish:(start,bytes)=>netplay?.captureReplay(start,bytes)});
  if(query.get('managedData')!=='1'||parent===window||typeof parent.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('请从 eagler-touhou 启动花映塚');
  const buffer=(await parent.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch})).buffer;assertLifetime(initializingLifetime,core);
  if(Object.prototype.toString.call(buffer)!=='[object ArrayBuffer]'||buffer.byteLength<1000000)throw Error('花映塚资源无效');core.FS.writeFile('/th09.dat',new Uint8Array(buffer));

@@ -5,7 +5,6 @@ import {createNicknameService} from './nickname-service.mjs';
 import {roomAccount} from '../../../common/contracts/account-nickname-ticket.mjs';
 import {createAccountChatSource} from './account-chat-source.mjs';
 import {createTh09RoundOutbox} from './th09-round-outbox.mjs';
-import {createTh09MatchArchiveQueue} from './th09-match-archive.mjs';
 import {createNicknameRequestGuard,nicknameAddressScope} from './nickname-request-guard.mjs';
 import {normalizePublicNickname} from '../../../common/contracts/public-nickname.mjs';
 import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../../common/contracts/th05-initial-stock.mjs';
@@ -56,7 +55,7 @@ import {
 import { isSpectatorFrameForRoom } from './spectator-frame.mjs';
 import { COOPERATIVE_SPECTATOR_MARKERS, SpectatorStageRelay } from './spectator-stages.mjs';
 import {isPc98SpectatorRoom,Pc98SpectatorRelay} from './pc98-spectator.mjs';
-import {SpectatorReplayTransfer} from './spectator-replay.mjs';
+import {SPECTATOR_REPLAY_LIMITS, SpectatorReplayTransfer} from './spectator-replay.mjs';
 import { th09PlayerStats, acceptTh09MatchStats, bindTh09Duel, reconcileTh09Duel } from './th09-room-stats.mjs';
 import { acceptTh19MatchStats } from './th19-room-stats.mjs';
 import {
@@ -346,13 +345,24 @@ accountChat?.start();
 const th09OutboxPath = process.env.EAGLER_NETPLAY_TH09_OUTBOX;
 const th09Rounds = th09OutboxPath && accountChat ? createTh09RoundOutbox({
   file: th09OutboxPath,
-  send: round => round.replay ? accountChat.recordTh09Replay(round) : accountChat.recordTh09Round(round),
-  onStored({players, room: scope}, summaries, settlement) {
+  send: round => round.replay ? accountChat.recordTh09Replay(round) :
+    accountChat.recordTh09Round({...round, requestReplayUpload: !!round.characters && round.players.some(Boolean)}),
+  onStored({players, room: scope, duelId, roundId}, {players: summaries, settlement, replayUpload}) {
     if (!Array.isArray(summaries)) return;
     for (const room of rooms.values()) {
       if (!room.id.startsWith('th09mp-')) continue;
-      if (settlement && room.chatScope === scope)
-        broadcastLobby(room, {type: 'th09-rating', room: room.id, settlement});
+      if (room.chatScope === scope) {
+        if (settlement) broadcastLobby(room, {type: 'th09-rating', room: room.id, settlement});
+        if (replayUpload) {
+          const [serial, start] = roundId.split(':');
+          const run = room.runs.get(serial);
+          if (run?.th09Duel?.id === duelId) {
+            const message = JSON.stringify({type:'th09-replay-upload', start:Number(start), ...replayUpload});
+            for (const socket of [...run.signalClients.values(), ...run.clients.values()])
+              if (socket.readyState === WebSocket.OPEN) sendBounded(socket, message);
+          }
+        }
+      }
       let changed = false;
       for (const socket of room.lobbyClients.values()) {
         const account = socket.accountIdentity;
@@ -369,12 +379,15 @@ const th09Rounds = th09OutboxPath && accountChat ? createTh09RoundOutbox({
     }
   },
 }) : null;
-const archiveTh09Match = createTh09MatchArchiveQueue(th09Rounds);
+const replayFileAdmission = {
+  maxBytes: SPECTATOR_REPLAY_LIMITS.header + SPECTATOR_REPLAY_LIMITS.chunk,
+  messagesPerSecond: 120,
+  bytesPerSecond: 4 * 1024 * 1024,
+};
 function th09RoundRecorder(room, run) {
   return th09Rounds && (round => {
     const report = {...round, finishedAt: Date.now(), room: room.chatScope, rated: run.th09Rated !== false};
     th09Rounds.enqueue(report);
-    archiveTh09Match(run, report);
   });
 }
 process.once('exit', () => {
@@ -1185,7 +1198,7 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
         ...(grant ? {swarmGrant:grant} : {}),
         ...(observeStun ? {nat4Observers} : {}),
         ...(run.rtcReplacementClients.size === 2 ? {rtcReplace:true} : {}),
-        ...(roomId.startsWith('th09mp-') && run.memberIds ? {th09MatchReport:true} : {}),
+        ...(roomId.startsWith('th09mp-') && run.memberIds ? {th09MatchReport:true, th09ReplayUpload:!!th09Rounds} : {}),
       });
     }
     for (const target of announced) sendSignal(target, {type:'peer-join', player});
@@ -2962,7 +2975,7 @@ server.on('connection', (socket, request) => {
     messagesPerSecond: 10,
     bytesPerSecond: 256 * 1024,
   });
-  const acceptReplayFile=createRelayMessageGate({maxBytes:32788,messagesPerSecond:120,bytesPerSecond:4*1024*1024});
+  const acceptReplayFile=createRelayMessageGate(replayFileAdmission);
   const acceptPc98Spectator=createRelayMessageGate({maxBytes:RELAY_LIMITS.gameplayBytes,messagesPerSecond:120,bytesPerSecond:512*1024});
   socket.on('message', (data, isBinary) => {
     if(isBinary&&data[0]===0xe9){
@@ -3119,7 +3132,6 @@ server.on('connection', (socket, request) => {
       ) {
         if (run.spectatorStopped) return;
       }
-      if (th09Stream) archiveTh09Match(run);
       for (const [spectatorId, target] of run.spectatorClients)
         if (!target.spectatorReplaying)
           sendSpectatorPayload(target, payload, roomId, runId, spectatorId);

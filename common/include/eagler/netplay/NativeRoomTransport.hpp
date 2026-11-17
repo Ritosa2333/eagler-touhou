@@ -48,6 +48,8 @@ public:
     RouteSwitchStatus SwitchStatus() const;
     bool ConfirmRouteSwitch();
     bool ReportMatch(std::uint32_t start, std::uint32_t frames, unsigned winner, unsigned first, unsigned second);
+    bool MatchReplayEnabled() const;
+    void PublishMatchReplay(std::uint32_t start, std::vector<std::uint8_t> file, std::string origin);
     const std::string &LastError() const;
 
     bool IsOpen() const override;
