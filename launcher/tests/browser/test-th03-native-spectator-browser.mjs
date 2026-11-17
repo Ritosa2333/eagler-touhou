@@ -136,6 +136,52 @@ try{
   }
   if(game==='th02'||game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
   await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
+  // Exercise local input after a network delay has had time to fill the queue.
+  if(game==='th03' && process.env.TH03_TEST_INPUT_LATENCY==='1'){
+    await wait(async()=>(await Promise.all(frames().slice(0,2).map(f=>f.evaluate(()=>globalThis.th03SyncState?.phase===1)))).every(Boolean),'battle',30000);
+    const delay=Number(process.env.TH03_TEST_NETWORK_DELAY_MS||45);
+    for(const frame of frames().slice(0,2))await frame.evaluate(ms=>{
+      const channel=[...globalThis.__th03PeerTransport.peers.values()][0].channel;
+      const send=channel.send.bind(channel);
+      channel.send=message=>setTimeout(()=>{if(channel.readyState==='open')send(message);},ms);
+    },delay);
+    await new Promise(resolve=>setTimeout(resolve,1500));
+    const samples=[];
+    for(let repeat=0;repeat<5;repeat++)for(let seat=0;seat<2;seat++){
+      const sample=await frames()[seat].evaluate(async ({seat,repeat})=>{
+        const api=(await import('./managed-native-room.mjs')).managedAPI;
+        const before=api.health(), x=before.players.find(player=>player.seat===seat)?.x;
+        const key=repeat%2?'ArrowLeft':'ArrowRight', keyCode=repeat%2?37:39;
+        const start=performance.now();
+        window.__eaglerPC98Input.key({code:key,key,keyCode,down:true});
+        return await new Promise(resolve=>{
+          function check(){
+            const current=api.health(), player=current.players.find(item=>item.seat===seat);
+            if((player && player.x!==x) || performance.now()-start>2000){
+              window.__eaglerPC98Input.key({code:key,key,keyCode,down:false});
+              resolve({seat,ms:performance.now()-start,frames:current.gameFrame-before.gameFrame,moved:!!player && player.x!==x});
+            }else requestAnimationFrame(check);
+          }
+          requestAnimationFrame(check);
+        });
+      },{seat,repeat});
+      samples.push(sample);
+      await new Promise(resolve=>setTimeout(resolve,150));
+    }
+    const start=await Promise.all(frames().slice(0,2).map(frame=>frame.evaluate(async()=>{
+      const health=(await import('./managed-native-room.mjs')).managedAPI.health();
+      return {frame:health.gameFrame,draw:health.frames,at:performance.now()};
+    })));
+    await new Promise(resolve=>setTimeout(resolve,8000));
+    const rates=await Promise.all(frames().slice(0,2).map((frame,index)=>frame.evaluate(async before=>{
+      const health=(await import('./managed-native-room.mjs')).managedAPI.health();
+      const seconds=(performance.now()-before.at)/1000;
+      return {simulationFps:(health.gameFrame-before.frame)/seconds,drawFps:(health.frames-before.draw)/seconds};
+    },start[index])));
+    console.log('TH03_INPUT_LATENCY',JSON.stringify({oneWayDelayMs:delay,samples,rates}));
+    assert(samples.every(sample=>sample.moved),'local input did not move the player');
+    assert(samples.every(sample=>sample.frames<=3),'local input was queued for more than three game frames');
+  }
   if(process.env.PC98_TEST_ENDING==='1'){
     await page.evaluate(()=>{let down=false;window.qaEndingKeys=setInterval(()=>{down=!down;void rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down});},250);});
     await wait(()=>page.evaluate(()=>[1,2].every(epoch=>events.some(e=>e.epoch===epoch&&e.event==='qa-ending-open'))),'both players load native ending',120000);
