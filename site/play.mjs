@@ -978,7 +978,7 @@ function inheritThpracTools(selection){
 function handleThpracToolKey(event){
  if(!['Backspace','F1','F2','F3','F4','F5','F6','F7','F12'].includes(event.code)||!state.active||state.launcherExited||state.thpracUIEnabled===false)return false;
  event.preventDefault();if(event.repeat)return true;
- if(event.code==='Backspace'||event.code==='F12'){void thpracToolsPanel?.open(event.code==='F12');return true;}
+ if(event.code==='Backspace'||event.code==='F12'){state.webInput?.cancelTouch?.();void thpracToolsPanel?.open(event.code==='F12');return true;}
  if(state.replayPlayback)return true;
  const tools=state.thpracTools??state.thpracDraftOwner;if(!tools)return true;
  try{const bit=1<<(Number(event.code.slice(1))-1);tools.setMask(tools.snapshot().mask^bit);syncThpracToolMusic();thpracToolsPanel?.refresh();}
@@ -995,8 +995,8 @@ function practiceLogicRate(){
 }
 function installThpracToolPanel(){
  if(thpracToolsPanel)return;thpracToolsPanel=mountThprac128ToolsPanel({root:find('#thprac-tool-ui'),getOwner:()=>state.thpracTools??thpracDraftOwner,getLocale:()=>thpracSettings.locale,
-  onOpen:advanced=>{if(!advanced)return;state.thpracToolsPaused=state.paused;state.paused=true;state.pressed.clear();worldMovementInput(0,763);clock.reset();thpracLogicClock.reset();},
-  onClose:advanced=>{if(!advanced)return;if(state.active&&!menu.pauseOpen&&!document.hidden){state.paused=state.thpracToolsPaused===true;}clock.reset();thpracLogicClock.reset();find('#game')?.focus();},
+  onOpen:advanced=>{state.webInput?.setOverlayActive?.(advanced);if(!advanced)return;state.thpracToolsPaused=state.paused;state.paused=true;state.pressed.clear();worldMovementInput(0,763);clock.reset();thpracLogicClock.reset();},
+  onClose:advanced=>{state.webInput?.setOverlayActive?.(false);if(!advanced)return;if(state.active&&!menu.pauseOpen&&!document.hidden){state.paused=state.thpracToolsPaused===true;}clock.reset();thpracLogicClock.reset();find('#game')?.focus();},
   onChange:()=>{syncThpracToolMusic();clock.reset();thpracLogicClock.reset();}
  });
 }
@@ -2558,6 +2558,8 @@ async function advance(){
 
 async function advanceSerial(){
   if(state.endingHost||state.endingLoading)throw new Error('Original ending must use its serial asynchronous scene owner');
+  state.webInput?.sampleTouch?.();
+  if(state.worldMode&&(!state.active||state.paused||state.handoff))return;
   if(state.worldMode){
     if(state.extraRun)return advanceExtraRun();
     const endingRequest=pendingOriginalEndingRequest();
@@ -4347,7 +4349,7 @@ find('#high-framerate-mode').addEventListener('change',event=>{
 });
 window.addEventListener('keydown',event=>{
   if(practiceMenu?.isOpen&&practiceMenu.keyDown(event))return;
-  if(thpracToolsPanel?.isOpen)return;
+  if(thpracToolsPanel?.isOpen){if(['Escape','F12','Backspace'].includes(event.code)){event.preventDefault();thpracToolsPanel.close();}return;}
   if(event.target instanceof HTMLSelectElement||event.target instanceof HTMLInputElement)return;
   if(handleThpracToolKey(event))return;
   if(state.launcherExited)return;
@@ -4358,6 +4360,9 @@ window.addEventListener('keydown',event=>{
   if(state.webInput&&!state.webInput.acceptKeyDown(event))return;
   if(state.pressed.has(event.code)||suppressedKeys.has(event.code))return;
   state.pressed.add(event.code);
+  if(event.code==='KeyR'&&state.active&&state.worldMode&&!state.endingHost&&!state.endingLoading&&!state.normalPostrun){
+    event.preventDefault();void restartTouchRun().catch(error);return;
+  }
   if(state.normalPostrun){
     if(state.paused){if(['Escape','Enter','KeyZ','KeyX'].includes(event.code))resumeNormalPostrun();return;}
     if(event.code==='Escape')pauseNormalPostrun();else state.normalPostrun.input.down(event.code);return;
@@ -4417,6 +4422,7 @@ window.addEventListener('keyup',event=>{
   else if(wasGameplayX)gameplayXRelease();
 });
 function releaseGameInput(){
+  state.webInput?.cancelTouch?.();
   state.mainController?.release();
   if(state.normalPostrun){state.normalPostrun.input.release();state.pressed.clear();return;}
   if(state.replayPlayback){state.pressed.clear();return;}
@@ -4441,9 +4447,22 @@ window.addEventListener('blur',loseFocus);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)loseFocus();});
 window.addEventListener('pagehide',()=>{state.webInput?.dispose();cancelOriginalEnding();state.controller?.abort();state.renderer?.dispose();stopAudio();});
 
+async function restartTouchRun(){
+  const selected=state.stageSelection;if(!selected||state.handoff)return;
+  state.webInput?.cancelTouch?.();
+  if(state.replayPlayback)return restartOwnedReplay();
+  await recordOwnedMainSession();
+  if(selected!==state.stageSelection||!state.active)return;
+  menu.pauseOpen=false;
+  if(selected.thprac)return startLaunch(inheritThpracTools(thpracStageSelection(selected.thprac).selection),'route');
+  const stageId=selected.stage.id===16?16:selected.stage.id<=5?1:selected.stage.id<=10?6:11;
+  return startLaunch(prepareStage(stageId,{difficulty:selected.difficulty,seed:34772,progress:0,debugExtra:selected.debugExtra===true}),'route');
+}
 function installWebInput(){
   if(state.webInput)return state.webInput;
   const canvas=find('#game');let previous=[],owner=0;
+  let touchStorage=null;try{touchStorage=window.localStorage;}catch{}
+  const launchOptions=getPageLaunchContext()?.config.options??{};
   state.webInput=mountWebInput({canvas,container:canvas.closest('.screen'),
     getContext:()=>{
       const next=[state.module,state.action,state.stageSelection,state.worldMode,state.normalPostrun,state.endingHost,state.endingLoading,
@@ -4451,7 +4470,26 @@ function installWebInput(){
       if(next.some((value,index)=>value!==previous[index])){previous=next;owner++;}
       return owner;
     },
-    isEnabled:()=>Boolean(state.active||menu.launching||state.normalPostrun||state.endingHost||menu.fault)});
+    isEnabled:()=>Boolean(state.active||menu.launching||state.normalPostrun||state.endingHost||menu.fault),
+    storage:touchStorage,options:launchOptions,viewport:find('#gameViewport'),
+    getGameContext:()=>{
+      const s=state.worldMode&&state.module?._th128_world_state?JSON.parse(state.module.UTF8ToString(state.module._th128_world_state())):null;
+      const blocked=state.paused||menu.pauseOpen||state.handoff||state.endingLoading||state.endingHost||state.normalPostrun||thpracToolsPanel?.isOpen;
+      const kind=state.replayPlayback?'replay':state.worldMode&&!blocked?(s?.message?.active?'dialogue':'game'):'menu';
+      return{key:[state.action,menu.launchId,menu.page,s?.flow?.worldGeneration??0,s?.playerState??0,kind].join(':'),kind,
+        instance:[state.action,s?.flow?.worldGeneration??0,s?.playerState??0].join(':'),gestureScope:state.action,
+        ready:kind==='game'&&s?.playerState===1,paused:!!blocked,generation:s?.flow?.worldGeneration??0,
+        x:Math.trunc((s?.playerX??0)*128),y:Math.trunc((s?.playerY??400)*128),fast:576,slow:256,trackerAvailable:false};
+    },
+    onTouchMotion:motion=>{
+      if(!state.worldMode||state.paused||state.replayPlayback)return;
+      if(typeof state.module?._th128_world_touch_motion!=='function'){
+        if(motion.mode!==0)throw new Error('当前核心缺少真实原生触控接口，需要配套 Runtime。');
+        return;
+      }
+      if(state.module._th128_world_touch_motion(motion.mode,motion.x,motion.y,motion.generation)!==1)
+        throw new Error(state.module.UTF8ToString(state.module._th128_world_error())||'Touch movement owner rejected');
+    }});
   return state.webInput;
 }
 installWebInput();
@@ -4466,6 +4504,9 @@ function installLauncherRuntime(){
       if(!input.setKeySource(owner,[...keys]))throw new Error('Runtime input owner is inactive');
     },
     clearInput(){state.webInput?.clearKeySource(owner);},
+    directTouch(value){state.webInput.directTouch(value);},
+    touchControls(value){state.webInput.touchControls(value);},
+    touchCancel(){state.webInput.cancelTouch();},
     exit(){
       if(state.launcherExited)return;
       state.launcherExited=true;state.active=false;state.paused=true;state.loading=(state.loading??0)+1;++menu.launchId;
@@ -4480,7 +4521,7 @@ function installLauncherRuntime(){
   });
   const options=context.config.options??{};
   if(options.limitPresentationTo60!==undefined)setHighFramerateMode(!options.limitPresentationTo60);
-  if(options.touchEnabled!==undefined)state.webInput.layer.hidden=!options.touchEnabled;
+  if(options.touchEnabled!==undefined)state.webInput.configureTouch(options);
 }
 function finishLauncherStartup(){
   const context=getPageLaunchContext();if(!context)return;
@@ -4507,6 +4548,7 @@ async function present(timestamp){
       const timing=originalMenuClock.advance(timestamp,ready);presentationSteps=timing.steps;
       if(timing.stalled&&ready&&!nativeMenu.suspended){await nativeMenu.suspend();status('菜单帧调度停顿，已暂停菜单输入与音频；按键后恢复。');}
       for(let count=0;count<timing.steps&&state.nativePause===nativeMenu&&nativeMenu.active&&menu.pauseOpen;++count){
+        state.webInput?.sampleTouch?.();
         if(nativeMenu.suspended)await nativeMenu.stepPresentation();else await nativeMenu.step();
       }
     }else{

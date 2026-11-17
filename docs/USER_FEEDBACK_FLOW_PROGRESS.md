@@ -17,3 +17,7 @@
 ## 终局录像已补齐；触控原生批次进展
 
 1064已补齐上文终局Replay缺口：实际3668录制/3668回放/真实隔离IDB/音乐strictACK至结算380，未重新播放Ending/Title。1069原生触控录11/播11和方向ANM/低速/每帧15投影通过，页面接入与完整触控设置布局仍待。1071整29Websuite142PASS0skip；参见USER_FEEDBACK_TERMINAL_TOUCH.md。无新117、包或部署。
+
+## 触控页面、布局和启动器协议（1091）
+
+当前正式页面已消费完整上游控制器和原布局/缩放模型，source内接原生固定步触控、启动器direct/control/cancel与移动Backspace/F12/R。1087真实浏览器组件入口11项/2World20tick/真实IDB与原RPY触控播放10步每15投影同，原F12close恢复及清理通过；1091整46suite284PASS0skip。普通无限移动仍拒非练习，浮动原窗口/竖屏/iOS/pinch、实际R及父协议→fullproduction/Title、魔理沙EX/新117/替换包未完成。见USER_FEEDBACK_FULL_TOUCH.md；完整第三步仍false。

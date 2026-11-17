@@ -124,8 +124,8 @@ launcher=mountLauncherSession({window:parentWindow,document,location,hooks:{
   if(config.music!=='ogg'&&config.music!=='none')throw Object.assign(new Error('This page currently supports OGG or no BGM'),{errno:'unsupported-command'});
   if(config.runtimePack!==undefined||!managedOwner&&[config.resources,config.runtimeResources,config.sharedResources].some(rows=>rows?.length))
    throw Object.assign(new Error('External resource maps are not installed by this page'),{errno:'unavailable'});
-  const options=config.options??{},supported=new Set(['limitPresentationTo60','touchEnabled','thpracEnabled']);
-  if(Object.entries(options).some(([key,value])=>!supported.has(key)||typeof value!=='boolean'))
+  const options=config.options??{},booleanOptions=new Set(['limitPresentationTo60','touchEnabled','thpracEnabled','doubleTapBombEnabled','restartButtonEnabled','thpracTouchControlsEnabled']);
+  if(Object.entries(options).some(([key,value])=>booleanOptions.has(key)?typeof value!=='boolean':!['touchMovementMode','touchFocusMode','touchSensitivity','touchControlOpacity'].includes(key)))
    throw Object.assign(new Error('A requested page option is not implemented'),{errno:'unsupported-command'});
   if(config.language){
    const response=await provider.fetch(location.origin+'/assets/catalog.json',{signal:controller.signal}),catalog=await response.json();requireCurrent();
@@ -144,6 +144,9 @@ launcher=mountLauncherSession({window:parentWindow,document,location,hooks:{
   if(!runtime)throw new Error('Runtime page is not ready');runtime.keyboard(value);
  },
  keyboardClear(){pageLaunch?.runtime?.clearInput();},
+ directTouch(value){requireCurrent();const runtime=pageLaunch?.runtime;if(typeof runtime?.directTouch!=='function')throw new Error('Runtime direct touch is not ready');return runtime.directTouch(value);},
+ touchControls(value){requireCurrent();const runtime=pageLaunch?.runtime;if(typeof runtime?.touchControls!=='function')throw new Error('Runtime touch controls are not ready');return runtime.touchControls(value);},
+ touchCancel(){pageLaunch?.runtime?.touchCancel?.();},
  async files({command,data,phase,signal}){
   requireCurrent();
   if(signal.aborted||!provider)throw new DOMException('Replay file owner unavailable','AbortError');

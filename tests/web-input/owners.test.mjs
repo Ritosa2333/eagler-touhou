@@ -136,5 +136,10 @@ test('scene changes forget external sources and dispose releases them exactly on
 test('invalid source identities and non game keys are rejected before changing held state',()=>{
  const e=boot();assert.equal(typeof e.input.setKeySource,'function','External input lease is missing');
  for(const source of [null,'launcher',1])assert.throws(()=>e.input.setKeySource(source,['KeyZ']),/source|owner/i);
- assert.throws(()=>e.input.setKeySource(Symbol('launcher'),['F12']),/key/i);assert.deepEqual(e.edges,[]);e.input.dispose();
+ assert.throws(()=>e.input.setKeySource(Symbol('launcher'),['F8']),/key/i);assert.deepEqual(e.edges,[]);e.input.dispose();
+});
+test('opening a panel can synchronously cancel its key source during keydown without leaving later keys held',()=>{
+ const e=boot(),owner=Symbol('panel');e.window.addEventListener('keydown',event=>{if(event.code==='F12')e.input.clearKeySource(owner);});
+ e.input.setKeySource(owner,['F12','KeyZ']);assert.equal(e.held.size,0,'panel cancellation must release F12 and must not press later KeyZ');assert.deepEqual(e.edges,[['down','F12'],['up','F12']]);assert.deepEqual(e.input.readKeySource(owner),[]);
+ e.input.setKeySource(owner,['KeyZ']);e.input.clearKeySource(owner);assert.deepEqual(e.edges.slice(-2),[['down','KeyZ'],['up','KeyZ']]);e.input.dispose();
 });

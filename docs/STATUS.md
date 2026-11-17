@@ -122,3 +122,7 @@
 ## 2026-11-18 终局录像与原生触控
 
 1064末符录制/真实IDB/原生回放至结算380已7项通过，1Factory2World7336步/真实音频ACK；1069原生触控固定步、方向ANM、11帧录播每帧15投影和strict合成IDB通过。1071整29受影响Web套件142PASS0skip。触控尚未接正式页面、布局/移动面板/协议与普通无限移动仍待，魔理沙EX、新117/生产页Title接管及本地替换包仍未完成；第三步false。详见[本批范围](USER_FEEDBACK_TERMINAL_TOUCH.md)。
+
+## 2026-11-18 上游触控页面批次
+
+正式页面已接完整上游TouchInput、原布局/缩放模型和启动器direct/control/cancel协议；1087真实DOM＋原资源WASM组件＋真实IDB＋触控RPY回放11项通过，1Factory2World20tick，各10帧15原生投影同，F12点击关闭与清理通过。1091完整46套件284PASS0skip。普通无限移动资格与流程仍待，当前原生mode2拒非练习；浮动窗口/竖屏/iOS/pinch与全production/R/Title、魔理沙EX/117/本地包仍待。第三步false，无新编译或包/部署。详见[本批范围](USER_FEEDBACK_FULL_TOUCH.md)。

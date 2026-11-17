@@ -65,3 +65,7 @@
 ## 2026-11-18 真人反馈接续至1071
 
 练习终局Replay1062真RED→最小sameowner修复→1064真实browser7PASS/7336tick/realIDB与音频ACK，未播放本次Ending或采用Title。原生触控1065缺消费者真RED→1069真实PlayerHitHost/ANM固定步录播2World22tick逐帧15投影同，原RPY触控USER扩展保原载荷；1071整29Websuite142PASS0skip。页面仍旧方向盘，完整触控UI/布局/移动窗口/协议、普通无限流程、魔理沙EX与117生产页整合待，完整thprac/第三步false。详见USER_FEEDBACK_TERMINAL_TOUCH.md。
+
+## 2026-11-18 触控当前caller/布局接入至1091
+
+完整上游TouchInput及launcher布局/model/joystick/gameZoom源已接正式页面，C512/固定步/物理来源所有权与direct/control/cancel真实桥接；新高级窗口释放透明touch命中层，移动ESC真实关闭。1087实际browser11PASS31.955s/1Factory2World20tick/真实隔离IDB1393B RPYTCH1PRAC回放10步每15投影同，F12close实际恢复。1091整46suite284PASS0skip。设备入口仍是显式World组件driver，非完整productionplay/Title/GPU/physicaltouch；普通无限模式与完整原移动浮窗/设备、EX画面/117及包待，完整thprac/第三步false。详见USER_FEEDBACK_FULL_TOUCH.md。

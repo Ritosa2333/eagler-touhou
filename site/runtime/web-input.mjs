@@ -1,7 +1,9 @@
-// Touch inputs enter the existing keyboard route; no native input or frame calls live here.
-const INPUT_KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','Enter','Escape','ShiftLeft','ShiftRight']);
+// All virtual keys share source ownership with physical keyboard input.
+import{mountFullTouch}from'./full-touch.mjs';
+const INPUT_KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','KeyR','Enter','Escape','ShiftLeft','ShiftRight','Tab','Backspace','F1','F2','F3','F4','F5','F6','F7','F12']);
 export function mountWebInput({canvas,container=canvas?.parentElement,document=canvas?.ownerDocument??globalThis.document,
- window=document?.defaultView??globalThis.window,getContext=()=>null,isEnabled=()=>true}={}){
+ window=document?.defaultView??globalThis.window,getContext=()=>null,isEnabled=()=>true,
+ getGameContext=null,onTouchMotion=null,storage=null,options={},onSettingsOpen,viewport}={}){
  if(!canvas||!container||!document||!window)throw new Error('Web input needs a canvas container');
  const layer=document.createElement('div');layer.className='web-input';layer.setAttribute('aria-label','触控游戏操作');
  const pad=document.createElement('div');pad.className='web-input-pad';pad.setAttribute('data-web-drag','1');pad.setAttribute('aria-label','拖动方向');
@@ -23,7 +25,11 @@ export function mountWebInput({canvas,container=canvas?.parentElement,document=c
  function remove(code){const key=group(code),n=counts.get(key)??0;if(n<=1){counts.delete(key);
   if(n&&!heldPhysical(key)){const actual=activeCodes.get(key)??code;activeCodes.delete(key);if(!muted)send('keyup',actual);}
  }else counts.set(key,n-1);}
- function keys(pointer,next){for(const code of pointer.keys)if(!next.has(code))remove(code);for(const code of next)if(!pointer.keys.has(code))add(code);pointer.keys=next;}
+ function keys(pointer,next){
+  const previous=pointer.keys,revision=(pointer.revision??0)+1;pointer.revision=revision;pointer.keys=next;
+  for(const code of previous){if(pointer.revision!==revision)return;if(!next.has(code))remove(code);}
+  for(const code of next){if(pointer.revision!==revision)return;if(!previous.has(code))add(code);}
+ }
  function end(id){const p=pointers.get(id);if(!p)return;pointers.delete(id);keys(p,new Set());try{if(p.node.hasPointerCapture?.(id))p.node.releasePointerCapture(id);}catch{}}
  function release(notify=true){const previous=muted;muted=!notify;try{for(const id of [...pointers.keys()])end(id);for(const source of sources.values())keys(source,new Set());sources.clear();}finally{muted=previous;}}
  function syncContext(){if(!pointers.size&&!sources.size)return;const next=getContext();if(next!==context||!isEnabled()){context=next;release();}}
@@ -50,7 +56,8 @@ export function mountWebInput({canvas,container=canvas?.parentElement,document=c
  for(const node of targets){listen(node,'pointerdown',down);listen(node,'pointermove',move);listen(node,'pointerup',finish);listen(node,'pointercancel',finish);listen(node,'lostpointercapture',finish);}
  const forget=()=>{release(false);physical.clear();activeCodes.clear();};
  listen(window,'blur',forget);listen(window,'pagehide',forget);listen(document,'visibilitychange',()=>{if(document.hidden)forget();});
- return {layer,syncContext,releaseAll:release,
+ let fullTouch=null;
+ const input={layer,syncContext(){syncContext();fullTouch?.syncTouchContext();},releaseAll(notify=true){fullTouch?.cancelTouch();release(notify);},physicalKeyDown:code=>code==='ShiftLeft'||code==='ShiftRight'?!!heldPhysical('ShiftLeft'):physical.has(code),
   setKeySource(owner,codes){
    if(typeof owner!=='symbol')throw new TypeError('Input source owner must be a symbol');
    if(!Array.isArray(codes)||codes.length>16||codes.some(code=>!INPUT_KEYS.has(code)))throw new TypeError('Invalid input source keys');
@@ -64,6 +71,12 @@ export function mountWebInput({canvas,container=canvas?.parentElement,document=c
    if(activeCodes.has(key)){if(heldPhysical(key))return false;const actual=activeCodes.get(key);activeCodes.delete(key);if(actual!==event.code){send('keyup',actual);return false;}}
    return true;
   },
-  dispose(){if(disposed)return;release();disposed=true;physical.clear();activeCodes.clear();for(const [node,type,fn]of listeners)node.removeEventListener(type,fn);layer.remove();}
+  dispose(){if(disposed)return;fullTouch?.dispose();release();disposed=true;physical.clear();activeCodes.clear();for(const [node,type,fn]of listeners)node.removeEventListener(type,fn);layer.remove();}
  };
+ if(typeof getGameContext==='function'){
+  pad.remove();actions.remove();
+  fullTouch=mountFullTouch({canvas,container,layer,document,window,input,getGameContext,onTouchMotion,storage,options,onSettingsOpen,viewport});
+  for(const[name,value]of Object.entries(fullTouch))if(name!=='dispose')input[name]=value;
+ }
+ return input;
 }

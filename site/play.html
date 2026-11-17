@@ -6,6 +6,7 @@
   <title>妖精大战争</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/play.css">
+  <link rel="stylesheet" href="/runtime/full-touch.css">
   <script type="module" src="/import-entry.mjs"></script>
 </head>
 <body>
@@ -43,6 +44,7 @@
       <p id="debug-stage-note" class="debug-stage-note">六路线第三面为 Normal；EX 使用原版 stage 16 / rank 4，从起点开始。当前局会被替换；练习跳关与无限复活不计正常通关或解锁记录。</p>
     </section>
     <section class="screen" aria-label="原版动画画面">
+      <div id="gameViewport" class="game-viewport">
       <div id="thprac-layer" class="thprac-layer">
       <section id="practice-menu" class="thprac-window" data-mode="practice" lang="zh-CN" role="dialog" aria-labelledby="practice-title" hidden>
         <h2 id="practice-title" data-thprac-title>练习选项</h2>
@@ -189,6 +191,7 @@ SOFTWARE.
         </div>
       </div>
       <div id="menu-keyhint" class="canvas-keyhint" aria-hidden="true" hidden>↑↓ 选择 · Z/ENTER 确认 · X/ESC 返回</div>
+      </div>
     </section>
 
     <div class="controls"><label title="关闭时最高60fps；开启时跟随显示器刷新率，游戏速度与画质不变。"><input id="high-framerate-mode" type="checkbox">高帧率模式（跟随屏幕）</label><button id="fullscreen">全屏</button><label class="volume">音量 <input id="volume" type="range" min="0" max="100" value="35"></label></div>

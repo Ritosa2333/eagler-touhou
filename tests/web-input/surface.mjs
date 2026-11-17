@@ -1,5 +1,5 @@
 export class Surface {
- constructor(name='div'){this.nodeName=name.toUpperCase();this.children=[];this.listeners=new Map();this.attributes=new Map();this.dataset={};this.style={};this.parentElement=null;this.hidden=false;this.capture=new Set();}
+ constructor(name='div'){this.nodeName=name.toUpperCase();this.children=[];this.listeners=new Map();this.attributes=new Map();this.dataset={};this.style={setProperty(name,value){this[name]=value;},removeProperty(name){delete this[name];}};this.classList={values:new Set(),add(...names){names.forEach(n=>this.values.add(n));},remove(...names){names.forEach(n=>this.values.delete(n));},toggle(name,force){const add=force??!this.values.has(name);if(add)this.values.add(name);else this.values.delete(name);return add;},contains(name){return this.values.has(name);}};this.parentElement=null;this.hidden=false;this.capture=new Set();}
  appendChild(node){node.parentElement=this;this.children.push(node);return node;}
  append(...nodes){for(const node of nodes)this.appendChild(node);}
  setAttribute(name,value){this.attributes.set(name,String(value));}

@@ -26,7 +26,7 @@ test('actual page cleanup cancels loading and input and disposes renderer and au
 });
 test('configuration reaches the real presentation cadence and touch visibility hooks',()=>{
  const e=bootPlay(),b=bind(e,{options:{limitPresentationTo60:true,touchEnabled:false}});
- assert.deepEqual(b.counts.high,[false]);assert.equal(e.input.layer.hidden,true);e.input.dispose();
+ assert.deepEqual(b.counts.high,[false]);assert.equal(e.input.touchSnapshot().options.touchEnabled,false);assert.equal(e.input.layer.style.display,'none');e.input.dispose();
 });
 test('first-frame follows a changed actual render serial, never startup completion alone',()=>{
  const e=bootPlay(),b=bind(e);b.api.finishLauncherStartup();assert.deepEqual(b.notices,[]);

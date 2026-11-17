@@ -16,8 +16,8 @@ test('production touch release leaves a keyboard owned direction active',()=>{
  e.key('keyup','ArrowRight');assert.deepEqual(e.receipts.at(-1),[0,0,128]);e.input.dispose();
 });
 test('title touch navigation follows actual title menu dispatch and never calls World',()=>{
- const e=bootPlay({worldMode:false});e.emit(e.pad,'pointerdown',1,100,800);e.emit(e.pad,'pointermove',1,100,830);
- e.emit(e.pad,'pointerup',1,100,830);e.emit(e.button('shot'),'pointerdown',2);e.emit(e.button('shot'),'pointerup',2);
+ const e=bootPlay({worldMode:false});e.emit(e.pad,'pointerdown',1,100,800);e.emit(e.pad,'pointermove',1,100,860);e.input.sampleTouch();
+ e.emit(e.pad,'pointerup',1,100,860);e.input.sampleTouch();e.emit(e.button('shot'),'pointerdown',2);e.emit(e.button('shot'),'pointerup',2);
  assert.deepEqual(e.menus,[['native','ArrowDown'],['native','KeyZ']]);assert.deepEqual(e.receipts,[]);assert.equal(e.state.pressed.size,0);e.input.dispose();
 });
 test('postrun touch confirmation is owned by the actual normal postrun input route',()=>{
@@ -28,7 +28,7 @@ test('postrun touch confirmation is owned by the actual normal postrun input rou
 test('pause context cancels a held touch shot through the existing pause keyup owner',()=>{
  const e=bootPlay();e.emit(e.button('shot'),'pointerdown',1);e.emit(e.button('pause'),'pointerdown',2);e.input.syncContext();
  assert.equal(e.menu.pauseOpen,true);assert(!e.state.pressed.has('KeyZ'));assert(!e.state.pressed.has('Escape'));assert.equal(e.pause[0],'pause');
- assert.deepEqual(e.receipts,[[1,1,0]]);e.input.dispose();
+ assert.deepEqual(e.receipts,[[1,1,0],[0,0,1]]);e.input.dispose();
 });
 test('actual X caller capability still gates touch Perfect freeze',()=>{
  for(const capability of [true,false]){

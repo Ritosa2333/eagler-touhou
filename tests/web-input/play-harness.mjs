@@ -21,7 +21,7 @@ export function bootPlay({worldMode=true,capability=true,practiceMenu=null}={}){
   module:{_th128_world_input(held,pressed,released){receipts.push([held,pressed,released]);return 1;},UTF8ToString:x=>x},audio:null};
  const menu={page:'main',launchId:1,pauseOpen:false,fault:false,launching:false,audioUnlocked:true},suppressedKeys=new Set();
  const movementKeys=new Map([['ArrowUp',16],['ArrowDown',32],['ArrowLeft',64],['ArrowRight',128],['KeyZ',1],['ShiftLeft',8],['ShiftRight',8]]);
- const find=s=>s==='#game'?env.canvas:{hidden:true};
+ const find=s=>s==='#game'||s==='#gameViewport'?env.canvas:{hidden:true,style:{}};
  const openPauseMenu=()=>{pause.push('pause');menu.pauseOpen=true;state.paused=true;state.nativePause={held:0,pressed:0,keyUp:code=>pause.push(['up',code]),suspend:async()=>{}};};
  const context={...env,state,menu,practiceMenu,thpracToolsPanel:null,suppressedKeys,movementKeys,perfectFreezeXBit:2,mountWebInput,find,HTMLSelectElement:class {},HTMLInputElement:class {},
   getPageLaunchContext:()=>null,flowCapabilities:()=>({perfectFreezeNormalEmptyLasers:capability}),status(){},clock:{reset(){}},resetHighFrameratePresentation(){},openPauseMenu,
@@ -36,6 +36,8 @@ export function bootPlay({worldMode=true,capability=true,practiceMenu=null}={}){
  const names=Object.keys(context),make=new Function(...names,code+'\nreturn {installWebInput,loseFocus};');
  const api=make(...names.map(n=>context[n]));api.installWebInput();
  const input=state.webInput;assert(input,'production install must own the touch layer');
- const button=action=>env.find(input.layer,'data-web-action',action),pad=env.find(input.layer,'data-web-drag','1');
+ input.configureTouch({touchEnabled:true,touchFocusMode:'hold-button'});input.touchControls({fireEnabled:false});
+ const ids={shot:'touchFunction',freeze:'touchBomb',focus:'touchFocus',pause:'touchEscape',back:'touchBomb'};
+ const button=action=>env.find(input.layer,'id',ids[action]),pad=env.find(input.layer,'id','touchDirectSurface');
  return {...env,state,menu,receipts,menus,postrun,pause,input,button,pad,loseFocus:api.loseFocus,suppressedKeys};
 }

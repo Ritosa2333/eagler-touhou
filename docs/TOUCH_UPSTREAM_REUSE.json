@@ -1,0 +1,323 @@
+{
+  "repository": "Ritosa2333/eagler-touhou",
+  "commit": "886952931e30e672253ea3abc8464d74ad662531",
+  "portableTouch": {
+    "source": {
+      "path": "ports/th12/src/touch-input.mjs",
+      "bytes": 7897,
+      "sha256": "d6d8a59e008e5ac015d1d71a82396b6a775854647bb7d7fe4612d093f95aaf7d",
+      "gitBlob": "953386bed62993df7224155a4ceb416bb4a6f48a"
+    },
+    "adapted": {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\upstream-touch-input.mjs",
+      "bytes": 7897,
+      "sha256": "d6d8a59e008e5ac015d1d71a82396b6a775854647bb7d7fe4612d093f95aaf7d"
+    },
+    "byteExact": true,
+    "license": "MIT ports/th12/LICENSE"
+  },
+  "launcherModels": [
+    {
+      "source": {
+        "path": "launcher/src/launcher/touch-layout-model.mts",
+        "bytes": 8932,
+        "sha256": "cbce234fcfe1be2e31ee98d7648d553e943ed48c3b06ddf8b659a4e7de8df43a",
+        "gitBlob": "b85bf0bddfd8adf9c5d5504bc22f1ef5f891fd4f"
+      },
+      "adapted": {
+        "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\touch-layout-model.mjs",
+        "bytes": 8035,
+        "sha256": "04bb7a99d8957b73a2028a680ca70bcdec23425ba9be0dc8ad648aa44b9f59b0"
+      },
+      "conversion": "Node stripTypeScriptTypes strip mode; whitespace normalization; relative import paths rebased; joystick touchMovementUsesJoystick predicate uses exactly its two upstream enum values.",
+      "license": "GPL-3.0 launcher/LICENSE"
+    },
+    {
+      "source": {
+        "path": "launcher/src/launcher/touch-layout-editor-state.mts",
+        "gitBlob": "f2bceefcfdc6708a3db1d5933d196d501ad3a9a7",
+        "bytes": 4299,
+        "sha256": "ded315a76eb7b126147cf2c9537f93f4f497b827ce6ac77139b861ff9a41b341"
+      },
+      "adapted": {
+        "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\touch-layout-editor-state.mjs",
+        "bytes": 3735,
+        "sha256": "78d17f13a2c70e589fbe9d2554d45dd8c7f8bce623aff90d5064c94972067ee9"
+      },
+      "conversion": "Node stripTypeScriptTypes strip mode; whitespace normalization; relative import paths rebased; joystick touchMovementUsesJoystick predicate uses exactly its two upstream enum values.",
+      "license": "GPL-3.0 launcher/LICENSE"
+    },
+    {
+      "source": {
+        "path": "launcher/app/models/touch-layout.ts",
+        "bytes": 8527,
+        "sha256": "78717610e4227ce3f6c320b00c554b2fbd7afcc3b1da44a5a471d358e2707972",
+        "gitBlob": "54c01c0bf8da94db7faf67fcf27cd2ba733c1644"
+      },
+      "adapted": {
+        "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\touch-layout.mjs",
+        "bytes": 7125,
+        "sha256": "8aa3d1eebf3cc69f2793f909074f19c823e75904a32f62b7f7362666a3a423d4"
+      },
+      "conversion": "Node stripTypeScriptTypes strip mode; whitespace normalization; relative import paths rebased; joystick touchMovementUsesJoystick predicate uses exactly its two upstream enum values.",
+      "license": "GPL-3.0 launcher/LICENSE"
+    },
+    {
+      "source": {
+        "path": "launcher/app/services/player-joystick.ts",
+        "bytes": 2475,
+        "sha256": "e9d2c7380f1e3c5b6a72b5a3744c051073503289a0f059c1ffd4191b5732b9af",
+        "gitBlob": "90bde37b06cf15c7b965454e3513667d0663feff"
+      },
+      "adapted": {
+        "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\touch-joystick.mjs",
+        "bytes": 2299,
+        "sha256": "8512d25a1115c366a6ff761d1efd7b05ea12d3072388d016bab679dad5590ce0"
+      },
+      "conversion": "Node stripTypeScriptTypes strip mode; whitespace normalization; relative import paths rebased; joystick touchMovementUsesJoystick predicate uses exactly its two upstream enum values.",
+      "license": "GPL-3.0 launcher/LICENSE"
+    },
+    {
+      "source": {
+        "path": "launcher/src/launcher/game-zoom.mts",
+        "gitBlob": "0d004494ff7972bce1c373f80f5eb5f4a80b586d",
+        "bytes": 7568,
+        "sha256": "7582a22954f8039cc07a8fa6071f63aa71bac29aa8822cac4b3414499e0ccec3",
+        "parts": [
+          {
+            "exact": {
+              "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\launcher\\src\\launcher\\game-zoom.mts.part001",
+              "bytes": 7568,
+              "sha256": "7582a22954f8039cc07a8fa6071f63aa71bac29aa8822cac4b3414499e0ccec3"
+            }
+          }
+        ],
+        "reconstructedWholeExact": true
+      },
+      "adapted": {
+        "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\game-zoom.mjs",
+        "bytes": 6574,
+        "sha256": "2134a25e15bfcabc98cd203ee9d196607ec07e3fa000122d12866f5f1dbe9b18"
+      },
+      "conversion": "Node stripTypeScriptTypes strip mode; whitespace normalization; relative import paths rebased; joystick touchMovementUsesJoystick predicate uses exactly its two upstream enum values.",
+      "license": "GPL-3.0 launcher/LICENSE"
+    }
+  ],
+  "css": {
+    "source": {
+      "path": "launcher/public/styles.css",
+      "gitBlob": "ee65a22e43be99b67744057745023a885831a2ff",
+      "bytes": 180878,
+      "sha256": "c13f4835a4a0fdb8353ac720fbf9f33f4d7b375a0b994e8d779541892a5f2001",
+      "parts": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\launcher\\public\\styles.css.part001",
+          "bytes": 163153,
+          "sha256": "b622f529b0abc4808c5a334947ae6db44cf0d3e5f325c9827c87ef6110f28dbe"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\launcher\\public\\styles.css.part002",
+          "bytes": 17725,
+          "sha256": "b2afc5c5f9b3f1f9617dd68158bd1f4f0452c6440f7db83a5f1409499939f5b0"
+        }
+      ]
+    },
+    "adapted": {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\full-touch.css",
+      "bytes": 60678,
+      "sha256": "015af80643804a2801b2e07f074cea033e5a1743143fee9085b1c64397c4b354"
+    },
+    "conversion": "Retain complete touch-related rules recursively through media/support blocks, rebase .player scope to .web-input-full, appendTH128 viewport/host styles.",
+    "license": "GPL-3.0 launcher/LICENSE"
+  },
+  "additionalFixedConsumers": [
+    {
+      "path": "ports/th06/src/GameManager.cpp",
+      "gitBlob": "1cf1f7d4603cd680716df066478dbfa44d4cac88",
+      "bytes": 29176,
+      "sha256": "b77d013c4bde678e1951962a093736e16a1acbcb76edfa8b5e2ec5560710e9d8",
+      "parts": [
+        {
+          "exact": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\GameManager.cpp.part001",
+            "bytes": 29176,
+            "sha256": "b77d013c4bde678e1951962a093736e16a1acbcb76edfa8b5e2ec5560710e9d8"
+          }
+        }
+      ],
+      "reconstructedWholeExact": true
+    },
+    {
+      "path": "ports/th06/src/Player.cpp",
+      "gitBlob": "c7b2c4c7adcf39d4d7e4f612614a5a12de74f3c5",
+      "bytes": 111626,
+      "sha256": "9f23b31eb054f1751a8fd9ece6b88513db675070bbfbebac67655b5e74d11fa4",
+      "parts": [
+        {
+          "exact": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\Player.cpp.part001",
+            "bytes": 35062,
+            "sha256": "ee34ad7595fc05d6cf4e4d20216b280e5d13ade252853be205f27bcc072de27e"
+          }
+        },
+        {
+          "exact": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\Player.cpp.part002",
+            "bytes": 38418,
+            "sha256": "8118eb02ab7a7ac75037ea6b49f41091c9ecbfe5e87c8a96f7f48e108b818204"
+          }
+        },
+        {
+          "exact": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\Player.cpp.part003",
+            "bytes": 35190,
+            "sha256": "b0927aa860d811112cc6d8a1cef027275b627e4b982fa4428813a43ce57f9005"
+          }
+        },
+        {
+          "exact": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\Player.cpp.part004",
+            "bytes": 2956,
+            "sha256": "280196981c5c7facea93aa208b908a6db821374307583c86303ef5eb6ff8288b"
+          }
+        }
+      ],
+      "reconstructedWholeExact": true
+    },
+    {
+      "path": "ports/th06/src/ReplayManager.cpp",
+      "gitBlob": "27b27174a91ad83ffaf64a31331c29bbc86265a2",
+      "bytes": 41136,
+      "sha256": "4fbc04b6f276fb0ca1da8e39d40c2d9ed432b32c84c384096e20dfdb8436b08e",
+      "parts": [
+        {
+          "plain": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\ReplayManager.cpp.part001",
+            "bytes": 41135,
+            "sha256": "b97cab638b57a3af7132aea9e1664f3712d39bf8d79fd6cc24226ae04d85429b"
+          },
+          "exactTextEnvelope": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\ReplayManager.cpp.part001.exact.json",
+            "bytes": 42201,
+            "sha256": "4e520f8e4a8be32ce1d7eadcf481480782d17787592a809ae22acdddc02eecae"
+          },
+          "plainCRLFNormalized": true
+        }
+      ],
+      "reconstructedWholeExact": true
+    },
+    {
+      "path": "ports/th06/src/ReplayExtension.cpp",
+      "gitBlob": "95bf6df946c8a91b7c1592808dd1c1aa82d433e7",
+      "bytes": 70067,
+      "sha256": "687efe703a9f0d40ca1eb105458a715ba82bb0e4bc028923c3033749b1ce329c",
+      "parts": [
+        {
+          "exact": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\ReplayExtension.cpp.part001",
+            "bytes": 39821,
+            "sha256": "fb7e7e504983e0f6b483c512832a9aaa63b42990e4f011d36627a9eb868dde92"
+          }
+        },
+        {
+          "exact": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\ReplayExtension.cpp.part002",
+            "bytes": 30246,
+            "sha256": "660432b07c9b4f23a735bd68cfa00f61d4700d42e69d844ed2a12ed4df4d3c8e"
+          }
+        }
+      ],
+      "reconstructedWholeExact": true
+    },
+    {
+      "path": "ports/th06/src/ResultScreen.cpp",
+      "gitBlob": "66200fb43c67c2f35a8f67beafa4fa4f58a19162",
+      "bytes": 90977,
+      "sha256": "010c75478bcb6218be993345d66feb8d039c97724c4701bc07f888bc0d01accf",
+      "parts": [
+        {
+          "exact": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\ResultScreen.cpp.part001",
+            "bytes": 31024,
+            "sha256": "e64cc7c357a7eecb11aa2cdc3261c405b90d7f0ec31e348f9538a555c26a4dc1"
+          }
+        },
+        {
+          "plain": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\ResultScreen.cpp.part002",
+            "bytes": 34828,
+            "sha256": "903d5169fb6aa371fb80db51ab444f07f38464b1cd97aceb03fcc79b5ec2986b"
+          },
+          "exactTextEnvelope": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\ResultScreen.cpp.part002.exact.json",
+            "bytes": 35889,
+            "sha256": "2cc70911903a4554cb5b851833dbb9ff306aac834e8f1dc55aa08a95b220dca1"
+          },
+          "plainCRLFNormalized": true
+        },
+        {
+          "exact": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\ports\\th06\\src\\ResultScreen.cpp.part003",
+            "bytes": 25124,
+            "sha256": "590a6970cf4af62a8ef5386ab7bc58893bf46b354e0b788fac0a96d0114ae1f0"
+          }
+        }
+      ],
+      "reconstructedWholeExact": true
+    },
+    {
+      "path": "launcher/src/launcher/game-zoom.mts",
+      "gitBlob": "0d004494ff7972bce1c373f80f5eb5f4a80b586d",
+      "bytes": 7568,
+      "sha256": "7582a22954f8039cc07a8fa6071f63aa71bac29aa8822cac4b3414499e0ccec3",
+      "parts": [
+        {
+          "exact": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\launcher\\src\\launcher\\game-zoom.mts.part001",
+            "bytes": 7568,
+            "sha256": "7582a22954f8039cc07a8fa6071f63aa71bac29aa8822cac4b3414499e0ccec3"
+          }
+        }
+      ],
+      "reconstructedWholeExact": true
+    },
+    {
+      "path": "launcher/src/launcher/touch-runtime-protocol.mts",
+      "gitBlob": "6ec6f887b3c13847182a54e3654eff21ca699150",
+      "bytes": 6104,
+      "sha256": "506013c3636eeccfdab32faf6f85b434349f7a67dcd3c1b7d408c37d7dc49238",
+      "parts": [
+        {
+          "exact": {
+            "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\launcher\\src\\launcher\\touch-runtime-protocol.mts.part001",
+            "bytes": 6104,
+            "sha256": "506013c3636eeccfdab32faf6f85b434349f7a67dcd3c1b7d408c37d7dc49238"
+          }
+        }
+      ],
+      "reconstructedWholeExact": true
+    }
+  ],
+  "licenses": [
+    {
+      "path": "launcher/LICENSE",
+      "gitBlob": "f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+      "bytes": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "ports/th12/LICENSE",
+      "gitBlob": "c6785317c79c3b638b7d0631b3a2d3934fccb2c9",
+      "bytes": 1067,
+      "sha256": "bbb03aab0b0998c7fb644ef3992c623cdcdd3709d74f03c731bd27d3acd64a4b"
+    }
+  ],
+  "fullTh128Adapter": {
+    "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\full-touch.mjs",
+    "bytes": 18894,
+    "sha256": "d20833b88f4ba0e7c1280f0f211ea945c21e052fa389e95a171273ec7df9fef4"
+  },
+  "sourceAndLicenseIncludedInRepository": true,
+  "RuntimePackageCreated": false,
+  "publicDeployment": false
+}

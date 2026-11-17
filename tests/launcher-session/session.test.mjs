@@ -90,12 +90,13 @@ test('a failed launch never reports first-frame or successful launch and may ret
 });
 test('keyboard is not buffered before launch and only declared runtime keys reach the hook',async()=>{
  const e=setup();e.session.markReady();e.send(envelope('keyboard','early',{down:true,code:'KeyZ'}));await flush();assert.equal(e.calls.keys.length,0);
- await running(e);e.send(envelope('keyboard','key',{down:true,code:'KeyZ'}));e.send(envelope('keyboard','bad',{down:true,code:'F12'}));await flush();
+ await running(e);e.send(envelope('keyboard','key',{down:true,code:'KeyZ'}));e.send(envelope('keyboard','bad',{down:true,code:'F8'}));await flush();
  assert.deepEqual(e.calls.keys,[{down:true,code:'KeyZ',repeat:false,inputSource:'physical'}]);assert.equal(e.reply('bad').ok,false);
 });
-test('keyboard clear only calls the injected input lease and never claims absent touch modes',async()=>{
+test('keyboard clear only calls the injected input lease and never claims absent network or playback modes',async()=>{
  const e=setup();await running(e);const before=e.calls.clear;e.send(envelope('keyboard-clear','clear'));await flush();assert.equal(e.calls.clear,before+1);
- for(const command of ['direct-touch','touch-controls','prepare-room','playback']){e.send(envelope(command,command));await flush();assert.equal(e.reply(command).errno,'unsupported-command');}
+ for(const command of ['prepare-room','playback']){e.send(envelope(command,command));await flush();assert.equal(e.reply(command).errno,'unsupported-command');}
+ e.send(envelope('direct-touch','unbound',{type:'down',id:1,x:.5,y:.5}));await flush();assert.equal(e.reply('unbound').errno,'unavailable');
 });
 test('exit aborts an in-flight load and suppresses its late response and first frame',async()=>{
  let resolve,signal;const e=setup({hooks:{launch:args=>{signal=args.signal;return new Promise(yes=>resolve=yes);}}});e.session.markReady();e.send(envelope('configure','cfg',{music:'ogg'}));await flush();

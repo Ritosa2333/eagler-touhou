@@ -1,7 +1,8 @@
 // Eagler single-player session transport. Page hooks, resources and actual presentation
 // remain explicit; this module never loads a game or claims an absent capability.
+import{touchOptions}from'./touch-options.mjs';
 const PROTOCOL='eagler-touhou/1',GAME='th128';
-const KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','Enter','Escape','ShiftLeft','ShiftRight']);
+const KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','KeyR','Enter','Escape','ShiftLeft','ShiftRight','Tab','Backspace','F1','F2','F3','F4','F5','F6','F7','F12']);
 const own=(value,key)=>Object.hasOwn(value,key),record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)
  &&(Object.getPrototypeOf(value)===Object.prototype||Object.getPrototypeOf(value)===null);
 const invalid=message=>Object.assign(new Error(message),{errno:'invalid-field'});
@@ -40,7 +41,7 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
    if(!own(data,key))continue;if(!Array.isArray(data[key])||data[key].length>4096)throw invalid('configure.'+key+' must be a bounded array');value[key]=data[key];
   }
   if(own(data,'runtimePack'))value.runtimePack=data.runtimePack;
-  if(own(data,'options')){if(!record(data.options))throw invalid('configure.options must be an object');value.options=data.options;}
+  if(own(data,'options')){if(!record(data.options))throw invalid('configure.options must be an object');try{touchOptions(data.options);}catch(error){throw invalid(error.message);}value.options=data.options;}
   return value;
  }
  async function execute(data){
@@ -58,7 +59,8 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
    finally{fileBusy=false;}
    return;
   }
-  const supported=['configure','resources','launch','keyboard','keyboard-clear'];
+  const touchCommands=['direct-touch','touch-controls','touch-cancel'];
+  const supported=['configure','resources','launch','keyboard','keyboard-clear',...touchCommands];
   if(!supported.includes(command)){fail(request,'unsupported-command','Runtime does not implement '+command);return;}
   if(command==='resources'&&phase==='running'&&hooks.acceptLiveResources?.()===true){
    if(resourcesBusy){fail(request,'invalid-state','A resource receipt is already pending');return;}
@@ -70,7 +72,26 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
    finally{resourcesBusy=false;}
    return;
   }
-  if(phase==='booting'||busy||fileBusy&&!['keyboard','keyboard-clear'].includes(command)){fail(request,'invalid-state','Runtime is not ready for '+command);return;}
+  if(phase==='booting'||busy||fileBusy&&!['keyboard','keyboard-clear',...touchCommands].includes(command)){fail(request,'invalid-state','Runtime is not ready for '+command);return;}
+  if(touchCommands.includes(command)){
+   if(phase!=='running'){fail(request,'invalid-state','Runtime input is not running');return;}
+   try{
+    if(command==='direct-touch'){
+     if(!['down','move','up','cancel'].includes(data.type)||!Number.isSafeInteger(data.id)||Math.abs(data.id)>2147483647
+      ||![data.x,data.y].every(v=>typeof v==='number'&&Number.isFinite(v)&&Math.abs(v)<=16))throw invalid('direct-touch input is invalid');
+     await hook('directTouch',{type:data.type,id:data.id,x:data.x,y:data.y});
+    }else if(command==='touch-controls'){
+     const value={};for(const key of ['fireEnabled','focusEnabled']){if(typeof data[key]!=='boolean')throw invalid('touch-controls '+key);value[key]=data[key];}
+     for(const key of ['bombSerial','escapeSerial']){if(!Number.isSafeInteger(data[key])||data[key]<0||data[key]>2147483647)throw invalid('touch-controls '+key);value[key]=data[key];}
+     for(const key of ['joystickX','joystickY']){if(!Number.isSafeInteger(data[key])||Math.abs(data[key])>32767)throw invalid('touch-controls '+key);value[key]=data[key];}
+     if(own(data,'touchSensitivity')){if(!Number.isInteger(data.touchSensitivity)||data.touchSensitivity<100||data.touchSensitivity>300)throw invalid('touch-controls sensitivity');value.touchSensitivity=data.touchSensitivity;}
+     for(const key of ['thpracMobilePanelsEnabled','thpracMobilePanelsVisible'])if(own(data,key)){if(typeof data[key]!=='boolean')throw invalid('touch-controls '+key);value[key]=data[key];}
+     await hook('touchControls',value);
+    }else await hook('touchCancel');
+    if(!closed)reply(request,true);
+   }catch(error){if(!closed)fail(request,error.errno??'internal-error',error.message??error);}
+   return;
+  }
   if(command==='keyboard'||command==='keyboard-clear'){
    if(phase!=='running'){fail(request,'invalid-state','Runtime input is not running');return;}
    try{
