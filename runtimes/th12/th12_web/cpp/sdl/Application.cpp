@@ -2552,6 +2552,9 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_stop(){
 #endif
 }
 EMSCRIPTEN_KEEPALIVE void th11_audio_close(){th11::sdl::app.audio.close();}
+#if PORT_TITLE == 14
+EMSCRIPTEN_KEEPALIVE void th14_always_hitbox(unsigned enabled){th11::PlayerFrame::always_hitbox=enabled!=0;}
+#endif
 EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
     using namespace th11::sdl;if(running||!app.initialized)return;
     running=true;suspended=false;previous_frame=-1;cadence.reset();clear_inputs();app.audio.suspend(false);app.reset_frame_window();
