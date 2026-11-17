@@ -171,6 +171,13 @@ th128::player::hit::WindowControl playerWindowControl{false,0,0,0};
 bool playerMotion=false;
 th128::player::RawPosition playerRaw{0,51200};
 th128::player::Input playerInput;
+struct NativeTouchOwner {
+    th128::player::TouchMotion command{};
+    unsigned generation=0,cursor=0,worldFrames=0;
+    bool playback=false;
+    std::vector<std::array<std::int32_t,4>> events;
+};
+NativeTouchOwner nativeTouch;
 bool playerShotsConfigured=false;
 bool shotHitsConfigured=false;
 bool rapidShotConfigured=false;
@@ -1367,7 +1374,7 @@ void th128_world_reset() {
     debugInfiniteRespawnRun=false;debugRunTainted=false;debugReviveRefills=0;debugLastRefillBefore=0;debugLastRefillAfter=0;
     playerFireConfigured=false;worldDisplayRandom={};lastFrozenArea=0;freezeBonus=0;freezeRewardPanel={};
     playerDeathConfigured=false;deathsCommitted=0;deathOperation.reset();
-    playerMotion=false;playerRaw={0,51200};playerInput={};
+    playerMotion=false;playerRaw={0,51200};playerInput={};nativeTouch={};
     headPowerConfigured=false;
     focusIndicator=std::make_unique<th128::player::FocusIndicator>();focusIndicatorConfigured=false;playerFocused=false;
 }
@@ -1751,6 +1758,7 @@ const char* th128_world_debug_postrun_record(unsigned operation,unsigned epoch,
 }
 
 const char* th128_world_state();
+int th128_world_pause_active();
 
 int th128_world_bind_debug_postrun_asset(unsigned epoch,int bank,const void* data,unsigned size){
     operationError.clear();
@@ -2096,7 +2104,7 @@ int th128_world_start(const char* name,std::uint32_t nameLength,int difficulty,u
     debugInfiniteRespawnRun=false;debugRunTainted=practice.has_value();debugReviveRefills=0;debugLastRefillBefore=0;debugLastRefillAfter=0;
     playerFireConfigured=false;worldDisplayRandom={};lastFrozenArea=0;freezeBonus=0;freezeRewardPanel={};
     playerDeathConfigured=false;deathsCommitted=0;deathOperation.reset();
-    playerMotion=false;playerRaw={0,51200};playerInput={};
+    playerMotion=false;playerRaw={0,51200};playerInput={};nativeTouch={};
     headPowerConfigured=false;
     focusIndicator=std::make_unique<th128::player::FocusIndicator>();focusIndicatorConfigured=false;playerFocused=false;
     if(debugRecordPrefix.worldBound){
@@ -2273,6 +2281,39 @@ int th128_world_input(unsigned holding,unsigned pressed,unsigned released){
     const auto unsupported=(holding|pressed|released)&~(16U|32U|64U|128U|(rapidShotConfigured?512U|8U:0U)|(playerFireConfigured?1U:0U)|perfectInput);
     if(unsupported){operationError="Shooting, focus and freeze input lifecycles are not yet integrated";return 0;}
     playerInput.holding=std::uint16_t(holding);playerInput.pressed|=std::uint16_t(pressed);playerInput.released|=std::uint16_t(released);return 1;
+}
+int th128_world_touch_motion(unsigned mode,int x,int y,unsigned generation){
+    operationError.clear();const th128::player::TouchMotion command{mode,x,y};
+    if(generation!=worldGeneration||worldTickExecuting||world->faulted()||!playerConfigured||!playerMotion
+        ||ownedBattle.attempted()||th128_world_pause_active()||replayPlayback.active()||thpracReplay.playback
+        ||!th128::player::validTouch(command)||(mode==2&&!world->thpracChapter())){
+        operationError="touch movement requires current live native owner, valid raw command and unlocked input";return 0;
+    }
+    nativeTouch.generation=generation;nativeTouch.command=command;return 1;
+}
+int th128_world_touch_playback(const void* data,unsigned size,unsigned generation){
+    operationError.clear();
+    if(generation!=worldGeneration||worldTickExecuting||world->faulted()||world->frame()!=0
+        ||!replayPlayback.active()||replayPlayback.generation()!=generation||nativeTouch.playback
+        ||!th128::runtime::inputRange(data,size)||size<16||size>1600016){
+        operationError="touch Replay requires its fresh matching actual native playback owner";return 0;
+    }
+    const auto bytes=std::span<const std::uint8_t>(static_cast<const std::uint8_t*>(data),size);
+    const auto word=[&](unsigned at){return th128::record::NativeReplaySlotPreview::word(bytes,at);};
+    const auto frames=word(4),count=word(8);
+    if(word(0)!=0x31484354u||word(12)!=replayPlayback.stage()||!frames||frames>1000000
+        ||count>100000||size!=16+count*16){operationError="touch Replay header/stage/frame extent differs";return 0;}
+    NativeTouchOwner candidate;candidate.generation=generation;candidate.worldFrames=frames;candidate.playback=true;
+    for(unsigned i=0;i<count;++i){const auto at=16+i*16;std::array<std::int32_t,4> row;
+        for(unsigned k=0;k<4;++k)row[k]=std::bit_cast<std::int32_t>(word(at+k*4));
+        const th128::player::TouchMotion command{unsigned(row[1]),row[2],row[3]};
+        if(row[0]<0||unsigned(row[0])>=frames||(i&&row[0]<=candidate.events.back()[0])
+            ||!th128::player::validTouch(command)||(command.mode==2&&!world->thpracChapter())){
+            operationError="touch Replay event order/raw domain rejected";return 0;
+        }
+        candidate.events.push_back(row);
+    }
+    nativeTouch=std::move(candidate);return 1;
 }
 bool practiceTool(unsigned bit){return world->thpracChapter().has_value()&&thpracTools.generation==worldGeneration&&(thpracTools.mask&bit)!=0;}
 bool applyPracticeTools(unsigned mask,std::string& error){
@@ -3206,10 +3247,18 @@ int th128_world_enable_stage_transition(const void* front,unsigned size,int curr
         if(!terminal->load({static_cast<const std::uint8_t*>(front),size},operationError))return 0;
         if(practiceTerminal&&!world->bindThpracTerminalDrain([generation=worldGeneration,currentId](std::string& error){
             const auto owner=world->thpracChapter();
+            const bool matchingPlayback=replayPlayback.active()&&thpracReplay.playback
+                &&thpracReplay.generation==generation&&thpracReplay.seed==worldStartedSeed
+                &&thpracReplay.practice.nonNormal&&thpracReplay.practice.stageId==unsigned(currentId)
+                &&thpracReplay.practice.difficulty==worldStartDifficulty
+                &&replayPlayback.generation()==generation&&replayPlayback.stage()==unsigned(currentId)
+                &&replayPlayback.rank()==unsigned(worldStartDifficulty);
             const bool ready=owner&&owner->stageId==unsigned(currentId)&&owner->nonNormal&&debugRunTainted
+                &&owner->difficulty==worldStartDifficulty
                 &&debugTerminal.practice&&debugTerminal.configured&&debugTerminal.begun&&debugTerminal.messageDone
                 &&debugTerminal.generation==generation&&worldGeneration==generation&&debugTerminal.stage==currentId
-                &&!normalRecord&&!normalReplay&&!replayPlayback.active()&&!thpracReplay.playback
+                &&!normalRecord&&!normalReplay
+                &&((!replayPlayback.active()&&!thpracReplay.playback)||matchingPlayback)
                 &&debugTerminal.counter<=380;
             if(!ready)error="practice terminal drain requires its completed original MSG and same native owner";return ready;
         },operationError))return 0;
@@ -3970,12 +4019,14 @@ const char* th128_world_replay_playback_state(){
         <<",\"auxiliaryKnown\":"<<(auxiliary.has_value()?"true":"false")<<",\"auxiliaryLive\":";
     if(auxiliary)output<<(*auxiliary?"true":"false");else output<<"null";
     if(thpracReplay.playback)output<<",\"worldFrames\":"<<thpracReplay.playbackWorldFrames<<",\"worldConsumed\":"<<world->frame()<<",\"auxiliaryConsumed\":"<<thpracReplay.auxiliaryCursor<<",\"auxiliaryFrames\":"<<thpracReplay.auxiliary.size();
+    if(nativeTouch.playback)output<<",\"touchEvents\":"<<nativeTouch.events.size()<<",\"touchConsumed\":"<<nativeTouch.cursor
+        <<",\"touchWorldFrames\":"<<nativeTouch.worldFrames<<",\"touchWorldConsumed\":"<<world->frame();
     output<<"}";replayPlaybackStateText=output.str();return replayPlaybackStateText.c_str();
 }
 int th128_world_replay_playback_cancel(){
     operationError.clear();
     if(worldTickExecuting){operationError="cannot release replay input during actual World tick";return 0;}
-    replayPlayback.cancel();thpracReplay.playback=false;thpracTools.playback=false;return 1;
+    replayPlayback.cancel();thpracReplay.playback=false;thpracTools.playback=false;nativeTouch={};return 1;
 }
 
 bool tryPracticeDeathbomb(std::string& error){
@@ -4010,6 +4061,15 @@ int th128_world_tick(){
     if(debugRecordDriver.bound&&(debugRecordDriver.phase!=1
         ||debugRecordDriver.generation!=worldGeneration||debugRecordDriver.epoch!=debugRecordPrefix.epoch)){
         operationError="actual record driver pre-update boundary must precede World tick";return 0;
+    }
+    if(nativeTouch.playback){
+        if(nativeTouch.generation!=worldGeneration||!replayPlayback.active()
+            ||replayPlayback.generation()!=worldGeneration||unsigned(world->frame())>=nativeTouch.worldFrames){
+            operationError="touch Replay native generation/world clock changed";return 0;
+        }
+        if(nativeTouch.cursor<nativeTouch.events.size()&&unsigned(nativeTouch.events[nativeTouch.cursor][0])==unsigned(world->frame())){
+            const auto& row=nativeTouch.events[nativeTouch.cursor++];nativeTouch.command={unsigned(row[1]),row[2],row[3]};
+        }
     }
     if(thpracTools.playback){
         while(thpracTools.cursor<thpracTools.events.size()&&thpracTools.events[thpracTools.cursor][0]<=world->frame()){
@@ -4262,7 +4322,7 @@ int th128_world_tick(){
             if(!world->setPlayerAimPosition({pixels.horizontal,pixels.vertical,respawnSavedPosition.depth},operationError)
                 ||!playerHit->stepProtection(1,operationError)){world->reportRuntimeFault(operationError);return 0;}
             if(playerHit->snapshot().gate.stateF78==1&&playerMotion){
-                const auto movement=playerHit->moveUnit(playerRaw,playerInput,{rapidShotConfigured,rapidShotConfigured,playerHit->focusCounter(),playerFireConfigured?playerHit->snapshot().heldTimer.current:0},operationError);
+                const auto movement=playerHit->moveUnit(playerRaw,playerInput,{rapidShotConfigured,rapidShotConfigured,playerHit->focusCounter(),playerFireConfigured?playerHit->snapshot().heldTimer.current:0},operationError,nativeTouch.command);
                 if(!movement){world->reportRuntimeFault(operationError);return 0;}
                 playerFocused=movement->focused;playerRaw=movement->position;const auto moved=th128::player::toPixels(playerRaw);
                 if(!world->setPlayerAimPosition({moved.horizontal,moved.vertical,respawnSavedPosition.depth},operationError)){world->reportRuntimeFault(operationError);return 0;}
@@ -4272,7 +4332,7 @@ int th128_world_tick(){
             if(!playerHit->stepProtection(1,operationError)){world->reportRuntimeFault(operationError);return 0;}
             if(playerMotion){
                 const auto movement=playerHit->moveUnit(playerRaw,playerInput,
-                    {rapidShotConfigured,rapidShotConfigured,playerHit->focusCounter(),playerFireConfigured?playerHit->snapshot().heldTimer.current:0},operationError);
+                    {rapidShotConfigured,rapidShotConfigured,playerHit->focusCounter(),playerFireConfigured?playerHit->snapshot().heldTimer.current:0},operationError,nativeTouch.command);
                 if(!movement){world->reportRuntimeFault(operationError);return 0;}
                 playerFocused=movement->focused;playerRaw=movement->position;
                 const auto pixel=th128::player::toPixels(playerRaw);
@@ -4535,13 +4595,13 @@ int th128_world_tick(){
         catch(const std::exception& failure){operationError=failure.what();return 0;}
     }
     if(success&&normalReplay){
-        try{const bool recorded=normalReplay->append(normalReplayInput,normalReplayAuxiliary,normalReplayFPS,normalReplayClock-normalReplayOrigin);
+        try{const bool recorded=normalReplay->append(normalReplayInput,normalReplayAuxiliary,normalReplayFPS,normalReplayClock-normalReplayOrigin,nativeTouch.command);
             if(recorded&&normalRecord)normalRecord->activeFrame(playerHit->snapshot().soundControl.flags60,th128::record::NativeRecordSessionPolicy::stageClearHeld(stageManager.flags5a04,stageManager.field5a0c));
             normalReplayClockPending=false;}
         catch(const std::exception& failure){world->reportRuntimeFault(failure.what());return 0;}
     }
     if(success&&thpracReplay.record){
-        try{thpracReplay.record->append(normalReplayInput,normalReplayAuxiliary,thpracReplay.fps,thpracReplay.clock-thpracReplay.origin);
+        try{thpracReplay.record->append(normalReplayInput,normalReplayAuxiliary,thpracReplay.fps,thpracReplay.clock-thpracReplay.origin,nativeTouch.command);
             if(normalReplayAuxiliary){if(thpracReplay.auxiliary.size()>=12000)throw std::runtime_error("practice auxiliary input budget exceeded");
                 thpracReplay.auxiliary.push_back({thpracReplay.clockFrame,normalReplayInput[0],normalReplayInput[1],normalReplayInput[2]});}
             thpracReplay.clockPending=false;}

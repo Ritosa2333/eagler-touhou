@@ -13,3 +13,7 @@
 仍须完成：三面终局回放消费者（当前专属terminal drain还拒播放owner）、新核心完整生产页与Title接管、上游完整原生触控/布局和移动thprac面板、魔理沙EX背景与透明扭曲差异、六项Web能力最后对照。上述工作和实际生产页复验全部完成后才生成新的本地替换Runtime；公开发布和多人后续开发继续暂停。成功core93–116不重编，117尚未准备。旧包、DATOGGv2资源、个人页与存档设置服务未改。
 
 详细证据见同目录user-feedback-Replay1048-1059.json。记录中的组件结果不是全游戏GPU/FPS、真实浏览器多关录像持久化或实际听见证明；原始首FAIL、request与grant均保留，作者自审不冒独立reviewer。
+
+## 终局录像已补齐；触控原生批次进展
+
+1064已补齐上文终局Replay缺口：实际3668录制/3668回放/真实隔离IDB/音乐strictACK至结算380，未重新播放Ending/Title。1069原生触控录11/播11和方向ANM/低速/每帧15投影通过，页面接入与完整触控设置布局仍待。1071整29Websuite142PASS0skip；参见USER_FEEDBACK_TERMINAL_TOUCH.md。无新117、包或部署。

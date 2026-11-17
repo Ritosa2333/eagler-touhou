@@ -1,6 +1,7 @@
 #pragma once
 #include "PlayerHitRules.hpp"
 #include "PlayerRules.hpp"
+#include "TouchMotion.hpp"
 #include "PlayerDeathRules.hpp"
 #include "animation/AnmLogic.hpp"
 #include "animation/AnmScene.hpp"
@@ -47,7 +48,7 @@ public:
     std::optional<death::RespawnPositionPrefix> beginRespawn(death::Position position,int motivation,int mode04,RespawnCallHost calls,std::string& error);
     std::optional<RawPosition> entryUnit(EntryHost entry,std::string& error);
     bool advanceEntryTimersUnit(std::string& error);
-    std::optional<Movement> moveUnit(RawPosition position,Input input,FocusContext focus,std::string& error);
+    std::optional<Movement> moveUnit(RawPosition position,Input input,FocusContext focus,std::string& error,TouchMotion touch={});
     void setPracticeInvulnerable(bool value) noexcept {practiceInvulnerable_=value;}
     bool commitPracticeDeathbomb(std::string& error);
     HitHostSnapshot snapshot() const;

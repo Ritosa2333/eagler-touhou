@@ -74,6 +74,8 @@ export const SITE_FILES = Object.freeze([
   'runtime/zip-reader.mjs',
   'runtime/world-presentation.mjs',
   'runtime/web-input.mjs',
+  'runtime/upstream-touch-input.mjs',
+  'runtime/touch-replay.mjs',
   'runtime/launcher-session.mjs',
   'runtime/page-launch-context.mjs',
   'runtime/music-output.mjs',

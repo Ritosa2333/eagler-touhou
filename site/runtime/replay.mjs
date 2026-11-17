@@ -298,6 +298,14 @@ function validateIdentity(header) {
   require(headerView.getUint32(4, true) === 2, 'unsupported TH128 replay version');
 }
 
+function userSequence(blocks){
+  if(!Array.isArray(blocks)||blocks.length>4)return false;
+  const kind=block=>block?.kind??(block?.headerRaw?.length===12?dataView(block.headerRaw).getUint32(8,true):-1);
+  let count=blocks.length;
+  if(count&&kind(blocks[count-1])===0x43415250)--count;
+  if(count&&kind(blocks[count-1])===0x31484354)--count;
+  return [0,2].includes(count)&&blocks.slice(0,count).every(b=>![0x43415250,0x31484354].includes(kind(b)));
+}
 export function decodeReplay(input) {
   const data = bytes(input, 'replay file').slice();
   const raw = span(data, 0, 36, 'replay header').slice();
@@ -315,12 +323,14 @@ export function decodeReplay(input) {
   let dataGapRaw = EMPTY.slice();
   let fileTailRaw;
   if (userDataOffset !== 0) {
-    require(userDataOffset >= end && userDataOffset <= data.length - 24, 'invalid or overlapping USER offset');
+    require(userDataOffset >= end && userDataOffset <= data.length - 12, 'invalid or overlapping USER offset');
     dataGapRaw = data.slice(end, userDataOffset);
     let cursor = userDataOffset;
     let userSize = 0;
-    for (let index = 0; index < 3; index += 1) {
-      if(index===2&&(cursor+12>data.length||dataView(data).getUint32(cursor,true)!==0x52455355||dataView(data).getUint32(cursor+8,true)!==0x43415250))break;
+    for (let index = 0; index < 4; index += 1) {
+      const suffix=index>=2||userBlocks[0]?.kind===0x31484354;
+      if(suffix&&(cursor+12>data.length||dataView(data).getUint32(cursor,true)!==0x52455355
+        ||![0x43415250,0x31484354].includes(dataView(data).getUint32(cursor+8,true))))break;
       const headerRaw = span(data, cursor, 12, 'USER header').slice();
       const userView = dataView(headerRaw);
       require(userView.getUint32(0, true) === 0x52455355, 'invalid USER block magic');
@@ -328,11 +338,11 @@ export function decodeReplay(input) {
       require(size >= 12 && size <= MAX_USER_DATA_SIZE - userSize, 'invalid USER block size');
       const block = span(data, cursor, size, 'USER block').slice();
       const content = block.slice(12);
-      if(kind===0x43415250)require(index===0||index===2,'invalid or duplicate PRAC USER position');
       userBlocks.push({ headerRaw, kind, data: content, raw: block, text: text(content) });
       cursor += size;userSize += size;
       if(kind===0x43415250)break;
     }
+    require(userSequence(userBlocks),'invalid ordinary USER pair or owned touch/PRAC suffix order');
     fileTailRaw = data.slice(cursor);
   } else {
     fileTailRaw = data.slice(end);
@@ -397,9 +407,7 @@ export function encodeReplay(decoded, options = {}) {
     0x800, 0x5e, 0xe7, true);
   const gap = bytes(decoded.dataGapRaw, 'container gap');
   const tail = bytes(decoded.fileTailRaw, 'file tail');
-  require(Array.isArray(decoded.userBlocks) && ([0,2].includes(decoded.userBlocks.length)
-    ||[1,3].includes(decoded.userBlocks.length)&&decoded.userBlocks.at(-1)?.kind===0x43415250),
-    'expected ordinary USER pair with optional trailing PRAC USER block');
+  require(userSequence(decoded.userBlocks),'expected ordinary USER pair with optional owned touch then PRAC USER suffix');
   require(decoded.userBlocks.length > 0 || gap.length === 0, 'container gap needs a USER section');
   const userParts = [];
   let userSize = 0;

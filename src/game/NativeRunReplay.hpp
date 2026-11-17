@@ -1,5 +1,6 @@
 #pragma once
 #include "game/NativeReplayInput.hpp"
+#include "game/TouchMotion.hpp"
 #include <algorithm>
 #include <array>
 #include <bit>
@@ -14,6 +15,9 @@ class NativeRunReplay {
     struct Stage {
         std::array<std::uint8_t,144> header{};
         NativeReplayInput input;
+        unsigned worldFrames=0;
+        th128::player::TouchMotion touch{};
+        std::vector<std::array<std::int32_t,4>> touchEvents;
     };
     std::vector<Stage> stages_;
     unsigned route_=0,rank_=0,lastStage_=0;
@@ -64,9 +68,15 @@ public:
         else if(stage==4||stage==9||stage==14)++route_;
         stages_.push_back(std::move(candidate));lastStage_=stage;rank_=rank;
     }
-    bool append(std::array<std::uint16_t,3> input,bool messageAuxiliary,float actualFPS,double actualSeconds){
+    bool append(std::array<std::uint16_t,3> input,bool messageAuxiliary,float actualFPS,double actualSeconds,
+                th128::player::TouchMotion touch={}){
         if(stages_.empty()||!std::isfinite(actualSeconds)||actualSeconds<seconds_||!std::isfinite(actualFPS)||actualFPS<0||frames()>=1000000)
             throw std::runtime_error("normal native replay input/clock boundary rejected");
+        if(!th128::player::validTouch(touch))throw std::runtime_error("replay touch command rejected");
+        auto& stage=stages_.back();
+        if(stage.worldFrames>=1000000||stage.touchEvents.size()>=100000)throw std::runtime_error("replay touch history budget");
+        if(touch!=stage.touch){stage.touchEvents.push_back({std::int32_t(stage.worldFrames),std::int32_t(touch.mode),touch.x,touch.y});stage.touch=touch;}
+        ++stage.worldFrames;
         const auto delta=actualSeconds-seconds_;seconds_=actualSeconds;
         if(stages_.back().input.append({true,true,messageAuxiliary,actualFPS,input})){activeSeconds_+=delta;return true;}
         return false;
@@ -108,6 +118,12 @@ public:
             }
             store32(header,4,unsigned(stage.input.frame()));store32(header,8,unsigned(inputs.size()+fps.size()));
             result.insert(result.end(),header.begin(),header.end());result.insert(result.end(),inputs.begin(),inputs.end());result.insert(result.end(),fps.begin(),fps.end());
+        }
+        if(std::any_of(stages_.begin(),stages_.end(),[](const Stage& stage){return !stage.touchEvents.empty();})){
+            const auto appendWord=[&](unsigned value){const auto at=result.size();result.resize(at+4);store32(result,at,value);};
+            appendWord(0x31484354u);appendWord(1);appendWord(unsigned(stages_.size()));
+            for(const auto& stage:stages_){appendWord(stage.input.stage());appendWord(stage.worldFrames);appendWord(unsigned(stage.touchEvents.size()));
+                for(const auto& event:stage.touchEvents)for(const auto value:event)appendWord(std::bit_cast<unsigned>(value));}
         }
         return result;
     }

@@ -550,6 +550,7 @@ export async function consumeMenuSoundWindow(module,queue,ledger,{present=true}=
 }
 
 import {decodeReplay,encodeReplay} from './replay.mjs';
+import {nativeTouchReplayBlock,readTouchReplay,installTouchReplay,touchReplaySnapshot} from './touch-replay.mjs';
 export function nativeReplayToFile(native){
   if(!(native instanceof Uint8Array)||native.length<292)throw new Error('Complete native replay bytes required');
   const view=new DataView(native.buffer,native.byteOffset,native.byteLength),count=view.getUint32(36+88,true);
@@ -563,11 +564,11 @@ export function nativeReplayToFile(native){
     stages.push({rawHeader:header,inputRaw:native.slice(offset+144,offset+144+frames*6),fpsRaw:native.slice(offset+144+frames*6,offset+144+size)});
     offset+=144+size;
   }
-  if(offset!==native.length)throw new Error('Native replay has unexpected tail bytes');
+  const touchBlock=nativeTouchReplayBlock(native.subarray(offset),stages);
   const file=encodeReplay({header:{raw:native.slice(0,36)},metadata:{raw:native.slice(36,148)},stages,
-    payloadTailRaw:new Uint8Array(),dataGapRaw:new Uint8Array(),fileTailRaw:new Uint8Array(),userBlocks:[]},{recompress:true});
+    payloadTailRaw:new Uint8Array(),dataGapRaw:new Uint8Array(),fileTailRaw:new Uint8Array(),userBlocks:touchBlock?[touchBlock]:[]},{recompress:true});
   const readback=decodeReplay(file);
-  if(readback.rawPayload.length!==native.length-36||readback.rawPayload.some((value,index)=>value!==native[index+36]))
+  if(readback.rawPayload.length!==offset-36||readback.rawPayload.some((value,index)=>value!==native[index+36]))
     throw new Error('Original replay codec changed native input bytes');
   return file;
 }
@@ -1031,6 +1032,7 @@ export class OriginalTitleAudio{
 
 export class OwnedReplayPlayback{
   #stages;
+  #touch;
   #rank;
   #file;
   #route;
@@ -1042,7 +1044,7 @@ export class OwnedReplayPlayback{
   constructor(bytes,slot){
     if(!(bytes instanceof Uint8Array)||!Number.isInteger(slot)||slot<0||slot>24)throw new Error('Owned replay file and slot identity rejected');
     this.#file=bytes.slice();
-    const decoded=decodeReplay(this.#file);
+    const decoded=decodeReplay(this.#file);this.#touch=readTouchReplay(decoded);
     this.#route=decoded.metadata.route;this.#metadata={scoreRaw:decoded.metadata.scoreRaw,slowdown:decoded.metadata.slowdown};
     if(!Number.isInteger(decoded.metadata.rank)||decoded.metadata.rank<0||decoded.metadata.rank>3)
       throw new Error('当前回放仅接受已保存的普通关卡录像；没有伪造其它回放分支。');
@@ -1112,6 +1114,7 @@ export class OwnedReplayPlayback{
       if(module._th128_world_replay_playback_load(pointer,packet.length,this.#rank)!==1)
         throw new Error(module.UTF8ToString(module._th128_world_error())||'Actual recorded replay header rejected by native World');
     }finally{module._free(pointer);}
+    installTouchReplay(module,this.#touch?.[this.#pendingIndex]);
     this.#module=module;this.#index=this.#pendingIndex;return this.snapshot();
   }
   snapshot(){
@@ -1121,8 +1124,8 @@ export class OwnedReplayPlayback{
       ||!Number.isInteger(value.consumed)||value.consumed<0||value.consumed>value.frames||value.complete!==(value.consumed===value.frames)
       ||typeof value.auxiliaryKnown!=='boolean'||!Number.isInteger(value.generation)||value.generation<1)
       throw new Error('Owned replay native stage/read cursor identity differs');
-    return{...value,slot:this.slot,stageIndex:this.#index,totalStages:this.#stages.length,
-      totalFrames:this.totalFrames,consumedTotal:this.#stages.slice(0,this.#index).reduce((sum,row)=>sum+row.numFrames,0)+value.consumed};
+    return touchReplaySnapshot({...value,slot:this.slot,stageIndex:this.#index,totalStages:this.#stages.length,
+      totalFrames:this.totalFrames,consumedTotal:this.#stages.slice(0,this.#index).reduce((sum,row)=>sum+row.numFrames,0)+value.consumed},this.#touch?.[this.#index]);
   }
   hasNext(){return this.#index+1<this.#stages.length;}
   prepareNaturalHandoff(transition){

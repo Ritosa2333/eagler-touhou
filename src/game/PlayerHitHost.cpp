@@ -273,7 +273,7 @@ bool PlayerHitHost::advancePostDeathUnit(std::string& error){
     ++state_.stateTimer.current;state_.stateTimer.fractional=float(double(state_.stateTimer.fractional)+1.0);
     return true;
 }
-std::optional<Movement> PlayerHitHost::moveUnit(RawPosition position,Input input,FocusContext focus,std::string& error){
+std::optional<Movement> PlayerHitHost::moveUnit(RawPosition position,Input input,FocusContext focus,std::string& error,TouchMotion touch){
     error.clear();
     if(!configured_||executing_||!error_.empty()||state_.gate.stateF78!=1){
         fail(error_.empty()?"player movement requires explicit normal-state context":error_,error);return std::nullopt;
@@ -282,7 +282,9 @@ std::optional<Movement> PlayerHitHost::moveUnit(RawPosition position,Input input
         ||position.vertical<MinimumVerticalRaw||position.vertical>MaximumVerticalRaw){
         fail("player movement raw position is outside the normal-state domain",error);return std::nullopt;
     }
-    const auto movement=moveOneTick(position,input,focus);
+    if(!validTouch(touch)){fail("player touch movement command is outside its raw domain",error);return std::nullopt;}
+    const auto base=moveOneTick(position,input,focus);
+    const auto movement=(input.holding&240)?base:moveTouch(base,position,touch);
     const auto horizontal=movement.delta.horizontal;
     int script=-1;
     if(horizontal<0&&previousHorizontal_>=0)script=1;
