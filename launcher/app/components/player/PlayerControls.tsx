@@ -215,6 +215,21 @@ function GameplayControls({ session, roomWorkspace }: { session: BrowserSession;
     enabled = settings.options.touchEnabled && playerUsesGameInput(session.getPlayerMode());
   const wheel = touchMovementUsesJoystick(settings.options.touchMovementMode);
   const product = PRODUCT_GAMES[settings.gameId];
+  useLayoutEffect(() => {
+    const player = document.getElementById('player'), frame = document.getElementById('gameFrame');
+    const active = !!player && roomWorkspace && ['th01','th02','th04'].includes(settings.gameId) && enabled && state.runtime?.launched === true;
+    player?.classList.toggle('pc98-room-touch-active', active);
+    if (!active || !player || !frame) return () => player?.classList.remove('pc98-room-touch-active');
+    const update = () => {
+      const rect = frame.getBoundingClientRect();
+      for (const [name, value] of Object.entries({left:rect.left, top:rect.top, width:rect.width, height:rect.height})) player.style.setProperty(`--pc98-touch-${name}`, `${value}px`);
+      window.dispatchEvent(new Event('pc98-touch-surface-change'));
+    };
+    const observer = new ResizeObserver(update); observer.observe(frame);
+    window.addEventListener('resize', update); window.addEventListener('scroll', update, true); update();
+    return () => {observer.disconnect(); window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true);
+      player.classList.remove('pc98-room-touch-active'); for (const name of ['left','top','width','height']) player.style.removeProperty(`--pc98-touch-${name}`);};
+  }, [roomWorkspace, settings.gameId, enabled, state.runtime?.launched]);
   useLayoutEffect(() => {if (roomWorkspace) input?.cancelPointers(); else input?.syncControls();}, [input, roomWorkspace]);
   const browserPractice = !settings.multiplayer && 'practiceUI' in product && product.practiceUI === 'browser';
   const hostDirect = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches ||

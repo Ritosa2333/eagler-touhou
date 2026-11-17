@@ -95,7 +95,8 @@ export function RoomWorkspace(props: RoomViewProps) {
         <div><UiButton variant="primary" type="button" className="room-resource-reload-confirm" onClick={props.onReloadResources}>{t('room.reloadResources')}</UiButton><UiButton type="button" onClick={props.onRestoreSettings}>{t('room.restoreSettings')}</UiButton></div>
       </section>}
       <div className="room-workspace-preparation" role="status" data-preview-ready={context.previewReady || context.launched || undefined} hidden={props.reloadPending || !context.launchStage && (context.previewReady || context.launched)}><div className="room-preparation-caption">{loading && <i className="room-preparation-spinner" aria-hidden="true"/>}<strong>{loadingText}</strong><span id="mpRoomConnection">{!ready && roomConnectionMessage(state,t)}</span><RoomProgress state={state} service={service} transfer={context.transfer} showLabel={preparation?.status !== 'failed' && preparation?.status !== 'cancelled'}/>{preparation?.error && preparation.error !== loadingText && <p>{preparation.error}</p>}</div></div>
-      <UiButton variant="icon" className="room-workspace-fullscreen" type="button" aria-label={t('player.enterFullscreen')} onClick={props.onFullscreen}><FullscreenIcons/></UiButton>
+      {!(context.launched && context.touchEnabled && ['th01mp','th02mp','th04mp'].includes(state.product ?? '')) && <UiButton variant="icon" className="room-workspace-fullscreen" type="button" aria-label={t('player.enterFullscreen')} onClick={props.onFullscreen}><FullscreenIcons/></UiButton>}
     </>,viewport)}
+    {viewport && context.launched && context.touchEnabled && ['th01mp','th02mp','th04mp'].includes(state.product ?? '') && createPortal(<UiButton variant="icon" className="room-workspace-fullscreen pc98-room-fullscreen" type="button" aria-label={t('player.enterFullscreen')} onClick={props.onFullscreen}><FullscreenIcons/></UiButton>,viewport.closest('#player')!)}
   </>;
 }

@@ -80,7 +80,15 @@ try{
     await wait(()=>host.evaluate(()=>document.querySelector('#player')?.classList.contains('room-workspace')&&!!document.querySelector('#mpRoomView')),'room layout after fullscreen exit',10000);
     await wait(()=>frames[0].evaluate(()=>window.cancelledTouches>0),'touch state cancelled after fullscreen exit',5000);
     const info=await host.evaluate(()=>{const player=document.querySelector('#player'),frame=document.querySelector('#gameFrame'),hud=document.querySelector('#touchDirectSurface'),r=frame.getBoundingClientRect();return {room:player.classList.contains('room-workspace'),hudVisible:hud&&getComputedStyle(hud).display!=='none',width:r.width,height:r.height};});
-    assert(info.room&&!info.hudVisible&&info.width>0&&info.height>0,'room presentation restores without gameplay touch overlay');
+    assert(info.room&&info.hudVisible&&info.width>0&&info.height>0,'room gameplay touch remains available after fullscreen exit');
+    await wait(()=>frames[0].evaluate(()=>{const state=window.th01Net.session.game.state();return state&&!state.menu;}),'native gameplay',30000);
+    const before=await frames[0].evaluate(()=>window.th01Net.session.game.state().players[0].left);
+    const box=await (await host.$('#touchDirectSurface')).boundingBox(),cdp=await host.createCDPSession();
+    const x=box.x+box.width*.7,y=box.y+box.height*.6,direction=before>280?-1:1;
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});
+    for(let i=1;i<=8;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+direction*box.width*.015*i,y,id:1}]});await new Promise(r=>setTimeout(r,80));}
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();
+    await wait(async()=>direction*((await frames[0].evaluate(()=>window.th01Net.session.game.state().players[0].left))-before)>0,'room touch moves native player',15000);
     await host.click('.room-workspace-fullscreen');await host.waitForFunction(()=>!!document.fullscreenElement&&!document.querySelector('#player').classList.contains('room-workspace'));
     assert(await host.$eval('#touchDirectSurface',element=>getComputedStyle(element).display!=='none'),'touch overlay returns on fullscreen reentry');
     console.log('PASS touch fullscreen exit and reentry');break;

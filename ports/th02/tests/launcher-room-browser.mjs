@@ -75,6 +75,16 @@ try{
       const before=await position(),surface=await page.$('#touchDirectSurface');
       assert(surface && await surface.isVisible(),'room touch surface must remain visible when fullscreen is rejected');
       const box=await surface.boundingBox(),cdp=await page.createCDPSession(),y=box.y+box.height*.5,start=box.x+box.width*.6;
+      const rect=await page.$eval('#gameFrame',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};});
+      assert(Math.abs(box.x-rect.x)<2&&Math.abs(box.y-rect.y)<2&&Math.abs(box.width-rect.width)<2&&Math.abs(box.height-rect.height)<2,'touch surface follows game frame');
+      assert.equal(await page.evaluate(({x,y})=>document.elementFromPoint(x,y)?.id,{x:start,y}),'touchDirectSurface','touch reaches game surface');
+      const full=await (await page.$('.room-workspace-fullscreen')).boundingBox();
+      assert(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.room-workspace-fullscreen'),{x:full.x+full.width/2,y:full.y+full.height/2}),'fullscreen control remains clickable');
+      const fire=await page.$('#touchFire'),fireBox=await fire.boundingBox(),firePoint={x:fireBox.x+fireBox.width/2,y:fireBox.y+fireBox.height/2};
+      const initialFire=await fire.evaluate(el=>el.getAttribute('aria-pressed'));
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...firePoint,id:9}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+      await wait(async()=>await fire.evaluate(el=>el.getAttribute('aria-pressed'))!==initialFire,'room touch fire button',5000);
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...firePoint,id:9}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
       const send=(type,x)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y,id:1}]});
       await send('touchStart',start);for(let i=1;i<=8;i++){await send('touchMove',start-box.width*.015*i);await new Promise(r=>setTimeout(r,100));}await send('touchEnd',start-box.width*.12);await cdp.detach();
       await wait(async()=>(await position())<before,'launcher touch moves P'+(seat+1),15000);
