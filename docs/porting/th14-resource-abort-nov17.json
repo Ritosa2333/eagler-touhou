@@ -1,0 +1,1577 @@
+{
+  "old": {
+    "passed": false,
+    "cases": 14,
+    "failedCases": 10,
+    "rows": [
+      {
+        "name": "install-already-aborted",
+        "passed": false,
+        "failures": [
+          {
+            "field": "aborted",
+            "expected": true,
+            "actual": false
+          },
+          {
+            "field": "fetch",
+            "expected": 0,
+            "actual": 2
+          },
+          {
+            "field": "writes",
+            "expected": 0,
+            "actual": 2
+          }
+        ],
+        "calls": {
+          "fetch": 2,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/test0.bin",
+            "/fonts/test1.bin"
+          ],
+          "signals": [
+            false,
+            false
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "install-abort-after-fetch",
+        "passed": false,
+        "failures": [
+          {
+            "field": "aborted",
+            "expected": true,
+            "actual": false
+          },
+          {
+            "field": "fetch",
+            "expected": 1,
+            "actual": 2
+          },
+          {
+            "field": "writes",
+            "expected": 0,
+            "actual": 2
+          },
+          {
+            "field": "signals",
+            "expected": true,
+            "actual": false
+          }
+        ],
+        "calls": {
+          "fetch": 2,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/test0.bin",
+            "/fonts/test1.bin"
+          ],
+          "signals": [
+            false,
+            false
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "install-abort-after-body",
+        "passed": false,
+        "failures": [
+          {
+            "field": "aborted",
+            "expected": true,
+            "actual": false
+          },
+          {
+            "field": "fetch",
+            "expected": 1,
+            "actual": 2
+          },
+          {
+            "field": "writes",
+            "expected": 0,
+            "actual": 2
+          },
+          {
+            "field": "signals",
+            "expected": true,
+            "actual": false
+          }
+        ],
+        "calls": {
+          "fetch": 2,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/test0.bin",
+            "/fonts/test1.bin"
+          ],
+          "signals": [
+            false,
+            false
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "install-abort-between-resources",
+        "passed": false,
+        "failures": [
+          {
+            "field": "aborted",
+            "expected": true,
+            "actual": false
+          },
+          {
+            "field": "fetch",
+            "expected": 1,
+            "actual": 2
+          },
+          {
+            "field": "writes",
+            "expected": 1,
+            "actual": 2
+          },
+          {
+            "field": "signals",
+            "expected": true,
+            "actual": false
+          }
+        ],
+        "calls": {
+          "fetch": 2,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/test0.bin",
+            "/fonts/test1.bin"
+          ],
+          "signals": [
+            false,
+            false
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "compressed-abort-during-body",
+        "passed": false,
+        "failures": [
+          {
+            "field": "aborted",
+            "expected": true,
+            "actual": false
+          },
+          {
+            "field": "writes",
+            "expected": 0,
+            "actual": 1
+          },
+          {
+            "field": "signals",
+            "expected": true,
+            "actual": false
+          }
+        ],
+        "calls": {
+          "fetch": 1,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/font0.bin"
+          ],
+          "signals": [
+            false
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "install-completes",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 2,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/test0.bin",
+            "/fonts/test1.bin"
+          ],
+          "signals": [
+            false,
+            false
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "compressed-completes",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/font0.bin"
+          ],
+          "signals": [
+            false
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "mount-aborted-before-parent",
+        "passed": false,
+        "failures": [
+          {
+            "field": "parents",
+            "expected": 0,
+            "actual": 1
+          }
+        ],
+        "calls": {
+          "fetch": 0,
+          "parents": 1,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": []
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "mount-abort-after-parent",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 0,
+          "parents": 1,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": []
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "legacy-abort-after-parent",
+        "passed": false,
+        "failures": [
+          {
+            "field": "aborted",
+            "expected": true,
+            "actual": false
+          },
+          {
+            "field": "fetch",
+            "expected": 0,
+            "actual": 2
+          },
+          {
+            "field": "writes",
+            "expected": 0,
+            "actual": 2
+          }
+        ],
+        "calls": {
+          "fetch": 2,
+          "parents": 1,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/th14.dat",
+            "/fonts/test0.bin"
+          ],
+          "signals": [
+            true,
+            false
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "mount-abort-after-adoption",
+        "passed": false,
+        "failures": [
+          {
+            "field": "aborted",
+            "expected": true,
+            "actual": false
+          },
+          {
+            "field": "fetch",
+            "expected": 0,
+            "actual": 2
+          },
+          {
+            "field": "writes",
+            "expected": 0,
+            "actual": 1
+          }
+        ],
+        "calls": {
+          "fetch": 2,
+          "parents": 1,
+          "malloc": 1,
+          "free": 0,
+          "adopt": 1,
+          "writes": [
+            "/fonts/test0.bin"
+          ],
+          "signals": [
+            true,
+            false
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "mount-abort-during-manifest-body",
+        "passed": false,
+        "failures": [
+          {
+            "field": "aborted",
+            "expected": true,
+            "actual": false
+          },
+          {
+            "field": "fetch",
+            "expected": 1,
+            "actual": 2
+          },
+          {
+            "field": "writes",
+            "expected": 0,
+            "actual": 1
+          }
+        ],
+        "calls": {
+          "fetch": 2,
+          "parents": 1,
+          "malloc": 1,
+          "free": 0,
+          "adopt": 1,
+          "writes": [
+            "/fonts/test0.bin"
+          ],
+          "signals": [
+            true,
+            false
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "mount-abort-during-font-fetch",
+        "passed": false,
+        "failures": [
+          {
+            "field": "aborted",
+            "expected": true,
+            "actual": false
+          },
+          {
+            "field": "writes",
+            "expected": 0,
+            "actual": 1
+          },
+          {
+            "field": "signals",
+            "expected": true,
+            "actual": false
+          }
+        ],
+        "calls": {
+          "fetch": 2,
+          "parents": 1,
+          "malloc": 1,
+          "free": 0,
+          "adopt": 1,
+          "writes": [
+            "/fonts/test0.bin"
+          ],
+          "signals": [
+            true,
+            false
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "mount-completes",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 2,
+          "parents": 1,
+          "malloc": 1,
+          "free": 0,
+          "adopt": 1,
+          "writes": [
+            "/fonts/test0.bin"
+          ],
+          "signals": [
+            true,
+            false
+          ]
+        },
+        "error": null
+      }
+    ],
+    "sourceSha256": "e6b62290c3926e9405fc0aeb1fc03ce733c644763733cb31416a67d63079bf93",
+    "actualHostModule": true,
+    "syntheticAssets": true,
+    "fetchFilesystemAndNativeOwnershipBoundariesControlled": true,
+    "actualBrowserCancelAccepted": false,
+    "completeGame": false
+  },
+  "candidate": {
+    "passed": true,
+    "cases": 14,
+    "failedCases": 0,
+    "rows": [
+      {
+        "name": "install-already-aborted",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 0,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": []
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "install-abort-after-fetch",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": [
+            true
+          ]
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "install-abort-after-body",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": [
+            true
+          ]
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "install-abort-between-resources",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/test0.bin"
+          ],
+          "signals": [
+            true
+          ]
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "compressed-abort-during-body",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": [
+            true
+          ]
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "install-completes",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 2,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/test0.bin",
+            "/fonts/test1.bin"
+          ],
+          "signals": [
+            true,
+            true
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "compressed-completes",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/font0.bin"
+          ],
+          "signals": [
+            true
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "mount-aborted-before-parent",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 0,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": []
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "mount-abort-after-parent",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 0,
+          "parents": 1,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": []
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "legacy-abort-after-parent",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 0,
+          "parents": 1,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": []
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "mount-abort-after-adoption",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 0,
+          "parents": 1,
+          "malloc": 1,
+          "free": 0,
+          "adopt": 1,
+          "writes": [],
+          "signals": []
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "mount-abort-during-manifest-body",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 1,
+          "malloc": 1,
+          "free": 0,
+          "adopt": 1,
+          "writes": [],
+          "signals": [
+            true
+          ]
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "mount-abort-during-font-fetch",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 2,
+          "parents": 1,
+          "malloc": 1,
+          "free": 0,
+          "adopt": 1,
+          "writes": [],
+          "signals": [
+            true,
+            true
+          ]
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "mount-completes",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 2,
+          "parents": 1,
+          "malloc": 1,
+          "free": 0,
+          "adopt": 1,
+          "writes": [
+            "/fonts/test0.bin"
+          ],
+          "signals": [
+            true,
+            true
+          ]
+        },
+        "error": null
+      }
+    ],
+    "sourceSha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+    "actualHostModule": true,
+    "syntheticAssets": true,
+    "fetchFilesystemAndNativeOwnershipBoundariesControlled": true,
+    "actualBrowserCancelAccepted": false,
+    "completeGame": false
+  },
+  "packaged": {
+    "passed": true,
+    "cases": 14,
+    "failedCases": 0,
+    "rows": [
+      {
+        "name": "install-already-aborted",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 0,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": []
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "install-abort-after-fetch",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": [
+            true
+          ]
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "install-abort-after-body",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": [
+            true
+          ]
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "install-abort-between-resources",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/test0.bin"
+          ],
+          "signals": [
+            true
+          ]
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "compressed-abort-during-body",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": [
+            true
+          ]
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "install-completes",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 2,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/test0.bin",
+            "/fonts/test1.bin"
+          ],
+          "signals": [
+            true,
+            true
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "compressed-completes",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [
+            "/fonts/font0.bin"
+          ],
+          "signals": [
+            true
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "mount-aborted-before-parent",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 0,
+          "parents": 0,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": []
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "mount-abort-after-parent",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 0,
+          "parents": 1,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": []
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "legacy-abort-after-parent",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 0,
+          "parents": 1,
+          "malloc": 0,
+          "free": 0,
+          "adopt": 0,
+          "writes": [],
+          "signals": []
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "mount-abort-after-adoption",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 0,
+          "parents": 1,
+          "malloc": 1,
+          "free": 0,
+          "adopt": 1,
+          "writes": [],
+          "signals": []
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "mount-abort-during-manifest-body",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 1,
+          "parents": 1,
+          "malloc": 1,
+          "free": 0,
+          "adopt": 1,
+          "writes": [],
+          "signals": [
+            true
+          ]
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "mount-abort-during-font-fetch",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 2,
+          "parents": 1,
+          "malloc": 1,
+          "free": 0,
+          "adopt": 1,
+          "writes": [],
+          "signals": [
+            true,
+            true
+          ]
+        },
+        "error": {
+          "name": "AbortError",
+          "message": "This operation was aborted"
+        }
+      },
+      {
+        "name": "mount-completes",
+        "passed": true,
+        "failures": [],
+        "calls": {
+          "fetch": 2,
+          "parents": 1,
+          "malloc": 1,
+          "free": 0,
+          "adopt": 1,
+          "writes": [
+            "/fonts/test0.bin"
+          ],
+          "signals": [
+            true,
+            true
+          ]
+        },
+        "error": null
+      }
+    ],
+    "sourceSha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+    "actualHostModule": true,
+    "syntheticAssets": true,
+    "fetchFilesystemAndNativeOwnershipBoundariesControlled": true,
+    "actualBrowserCancelAccepted": false,
+    "completeGame": false
+  },
+  "lifecycle": {
+    "passed": true,
+    "rows": [
+      {
+        "name": "ordinary-departure",
+        "observations": [
+          true
+        ],
+        "expected": [
+          true
+        ],
+        "passed": true
+      },
+      {
+        "name": "cache-entry",
+        "observations": [
+          false
+        ],
+        "expected": [
+          false
+        ],
+        "passed": true
+      },
+      {
+        "name": "cache-return-and-departure",
+        "observations": [
+          false,
+          false,
+          true
+        ],
+        "expected": [
+          false,
+          false,
+          true
+        ],
+        "passed": true
+      },
+      {
+        "name": "two-cache-returns-and-departure",
+        "observations": [
+          false,
+          false,
+          false,
+          false,
+          true
+        ],
+        "expected": [
+          false,
+          false,
+          false,
+          false,
+          true
+        ],
+        "passed": true
+      },
+      {
+        "name": "ordinary-departure-is-terminal",
+        "observations": [
+          true,
+          true
+        ],
+        "expected": [
+          true,
+          true
+        ],
+        "passed": true
+      },
+      {
+        "name": "unspecified-persisted",
+        "observations": [
+          true
+        ],
+        "expected": [
+          true
+        ],
+        "passed": true
+      }
+    ],
+    "sourceSha256": "0c99c4b2a8d184d34f6da29a29a2c2ee8e68f2b93edf37da87ba4fb0645e142d",
+    "actualCompleteShellEvaluated": true,
+    "moduleFactoryIntentionallyPending": true,
+    "eventTargetFixture": true,
+    "actualBrowserHiddenAccepted": false,
+    "actualBrowserBfcacheAccepted": false,
+    "completeGame": false
+  },
+  "host-contract": {
+    "schema": "th14/managed-archive-host-contract/1",
+    "passed": true,
+    "cases": 32,
+    "rows": [
+      {
+        "name": "valid-buffer-16",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 0,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "valid-blob-16",
+        "passed": true,
+        "size": 16,
+        "kind": "blob",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 0,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "valid-buffer-1048575",
+        "passed": true,
+        "size": 1048575,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 0,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "valid-blob-1048575",
+        "passed": true,
+        "size": 1048575,
+        "kind": "blob",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 0,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "valid-buffer-1048576",
+        "passed": true,
+        "size": 1048576,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 0,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "valid-blob-1048576",
+        "passed": true,
+        "size": 1048576,
+        "kind": "blob",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 0,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "valid-buffer-1048577",
+        "passed": true,
+        "size": 1048577,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 1,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "valid-blob-1048577",
+        "passed": true,
+        "size": 1048577,
+        "kind": "blob",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 1,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "valid-buffer-2097169",
+        "passed": true,
+        "size": 2097169,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 2,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "valid-blob-2097169",
+        "passed": true,
+        "size": 2097169,
+        "kind": "blob",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 2,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "cross-realm-arraybuffer",
+        "passed": true,
+        "size": 19,
+        "kind": "foreign",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 0,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "memory-view-replaced-between-chunks",
+        "passed": true,
+        "size": 2097169,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 2,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "legacy-th14-buffer",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 0,
+        "freed": 0,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "other-title-keeps-legacy-buffer",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 0,
+        "freed": 0,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": false,
+        "error": null
+      },
+      {
+        "name": "invalid-size-0",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 0,
+        "freed": 0,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: Invalid game DATA size"
+      },
+      {
+        "name": "invalid-size-15",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 0,
+        "freed": 0,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: Invalid game DATA size"
+      },
+      {
+        "name": "invalid-size-268435457",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 0,
+        "freed": 0,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: Invalid game DATA size"
+      },
+      {
+        "name": "invalid-size-NaN",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 0,
+        "freed": 0,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: Invalid game DATA size"
+      },
+      {
+        "name": "invalid-size-Infinity",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 0,
+        "freed": 0,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: Invalid game DATA size"
+      },
+      {
+        "name": "invalid-size-1.5",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 0,
+        "freed": 0,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: Invalid game DATA size"
+      },
+      {
+        "name": "beforeAllocation",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 0,
+        "freed": 0,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "AbortError: This operation was aborted"
+      },
+      {
+        "name": "afterFirstChunk",
+        "passed": true,
+        "size": 1048577,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 1,
+        "adopted": 0,
+        "yields": 1,
+        "expectedFailure": true,
+        "error": "AbortError: This operation was aborted"
+      },
+      {
+        "name": "readFailure",
+        "passed": true,
+        "size": 16,
+        "kind": "blob",
+        "allocated": 1,
+        "freed": 1,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: read failed"
+      },
+      {
+        "name": "allocationFailure",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: TH14 \u8d44\u6e90\u5185\u5b58\u4e0d\u8db3"
+      },
+      {
+        "name": "writeFailure",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 1,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "RangeError: offset is out of bounds"
+      },
+      {
+        "name": "adoptionRejected",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 1,
+        "adopted": 1,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: TH14 \u8d44\u6e90\u6302\u8f7d\u5931\u8d25"
+      },
+      {
+        "name": "adoptionThrows",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 1,
+        "adopted": 1,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: adopt failed"
+      },
+      {
+        "name": "yieldFailure",
+        "passed": true,
+        "size": 1048577,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 1,
+        "adopted": 0,
+        "yields": 1,
+        "expectedFailure": true,
+        "error": "Error: yield failed"
+      },
+      {
+        "name": "parentFailure",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 0,
+        "freed": 0,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: parent failed"
+      },
+      {
+        "name": "manifestFetchAfterAdoption",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: fetch failed"
+      },
+      {
+        "name": "manifestInvalidAfterAdoption",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 1,
+        "freed": 0,
+        "adopted": 1,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: Invalid Runtime resource manifest"
+      },
+      {
+        "name": "staleEpoch",
+        "passed": true,
+        "size": 16,
+        "kind": "buffer",
+        "allocated": 0,
+        "freed": 0,
+        "adopted": 0,
+        "yields": 0,
+        "expectedFailure": true,
+        "error": "Error: Runtime navigation epoch unavailable"
+      }
+    ],
+    "moduleSha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+    "actualCandidateHostModule": true,
+    "syntheticBytesOnly": true,
+    "nativeAllocatorAndAdoptionMocked": true,
+    "nativeCppAccepted": false,
+    "browserAccepted": false,
+    "sourceApplied": false,
+    "productionChanged": false,
+    "newAssetsCopied": false,
+    "completeGame": false
+  },
+  "ready": {
+    "prepared": true,
+    "wasm": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb",
+    "generation": "12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8",
+    "runtimeFiles": 32,
+    "sourceBindings": 387,
+    "unitsRecompiled": 0,
+    "objectsVerifiedReused": 153,
+    "formalThpracAvailable": false,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "http-qualified": {
+    "passed": true,
+    "generation": "12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8",
+    "runtimeFiles": 32,
+    "frontend": [
+      {
+        "path": "index.html",
+        "bytes": 84727,
+        "sha256": "aa0debd352a8132cb5d0db0287d68af1998a07bf00e62da77826cb7e1bd3929b"
+      },
+      {
+        "path": "assets/root-BpO6IxR9.js",
+        "bytes": 654754,
+        "sha256": "e69a29607ff6c245f06ba9be08981b95a8ff27517e05e0a6940e2838daf275cf"
+      },
+      {
+        "path": "assets/replays-DxgiFE26.js",
+        "bytes": 135992,
+        "sha256": "d8c0e922bd206e1d40cf01b1ef039210da961fb1fdd9ffa4195bcdb002c5470b"
+      }
+    ],
+    "isolationHeadersAccepted": true,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "browser-qualified": {
+    "qualified": true,
+    "generation": "12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8",
+    "actualOrdinaryReimuANormalStartAccepted": true,
+    "initialLives": 2,
+    "initialBombs": 3,
+    "initialPower": 100,
+    "initialHudScore": 50,
+    "nativeReturnTitleAndQuitAccepted": true,
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "musicMode": "ogg-streaming",
+    "viewerRerun": false,
+    "actualBrowserCancelAccepted": false,
+    "actualHiddenAccepted": false,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "productionDeployed": false,
+  "completeGame": false,
+  "wasmAnd153CppObjectsUnchanged": true
+}

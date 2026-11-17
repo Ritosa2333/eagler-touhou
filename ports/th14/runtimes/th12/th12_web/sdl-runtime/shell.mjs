@@ -44,7 +44,7 @@ function practiceTouchControls(message){
  const c=message.controls??message;
  core.th14_practice_state?.(5,(c.thpracMobilePanelsEnabled?1:0)|(c.thpracMobilePanelsVisible?2:0));
 }
-async function installResources(resources=[]){return installHostResources(Module,resources,{game,emit});}
+async function installResources(resources=[]){return installHostResources(Module,resources,{game,emit,signal:startupAbort.signal});}
 // The Launcher has already verified the ZIP identity. Match TH10's Runtime
 // manifest/path/size checks before exposing any file to the native game.
 let runtimePackFiles=[];
