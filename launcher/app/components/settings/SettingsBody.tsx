@@ -10,6 +10,8 @@ import type { GameSettingsModel } from '../../models/game-settings';
 import { useLocale } from '../../i18n';
 import { OptionsGroup, OptionsGroupHeading } from './OptionsGroup';
 import { InputSettings } from './InputSettings';
+import { GameAudioFields, QuickChatVolumeField } from './GameAudioControls';
+import type { SitePreferencesModel } from '../../models/site-preferences';
 import { OptionRow } from './OptionRow';
 import { OptionSwitch } from './TouchSettingsFields';
 import { SettingsSelect } from './SettingsSelect';
@@ -22,11 +24,13 @@ export function SettingsBody({
   actions,
   onOpenTouchLayout,
   multiplayerControls,
+  preferences,
 }: {
   model: GameSettingsModel;
   actions: SettingsActions;
   onOpenTouchLayout(): void;
   multiplayerControls?: ReactNode;
+  preferences?: SitePreferencesModel;
 }) {
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const midi = useSyncExternalStore(
@@ -60,6 +64,7 @@ export function SettingsBody({
         | 'faithBarEnabled'
         | 'thpracEnabled'
         | 'multiplayerLocalPlayerVisibility'
+        | 'th075NativeResolution'
         | 'pixelPerfectEnabled',
     ) =>
     () =>
@@ -250,6 +255,36 @@ export function SettingsBody({
             />
           }
         />
+        {'renderScales' in product && (
+          <SettingsSelect
+            id={id('renderResolution')}
+            label={t('settings.renderResolution')}
+            description={t('settings.renderResolutionHint')}
+            value={String(options.renderScale ?? product.renderScales[0])}
+            onChange={(event) => model.setOption('renderScale', event.target.value === '1' ? 1 : 2)}
+          >
+            {product.renderScales.map(scale => (
+              <option key={scale} value={scale}>{640 * scale}×{480 * scale}</option>
+            ))}
+          </SettingsSelect>
+        )}
+        {context.productId === 'th075mp' && (
+          <OptionRow
+            className={item('option-frame-limit')}
+            label={t('settings.th075NativeResolution')}
+            hint={t('settings.th075NativeResolutionHint')}
+            hintId={id('nativeResolutionHint')}
+            control={
+              <OptionSwitch
+                id={id('nativeResolutionToggle')}
+                describedBy={id('nativeResolutionHint')}
+                label={t('settings.th075NativeResolution')}
+                checked={options.th075NativeResolution}
+                onChange={switchOption('th075NativeResolution')}
+              />
+            }
+          />
+        )}
         <div id={id('languageOption')} hidden={!multiplayer && context.languages.length <= 1}>
           <SettingsSelect
             id={id('languageSelect')}
@@ -347,6 +382,16 @@ export function SettingsBody({
           th09Local={state.gameId === 'th09' && !multiplayer ? actions.th09Local : undefined}
         />
       )}
+      <OptionsGroup
+        id={id('audioOptions')}
+        title={t('options.volume')}
+        open={state.disclosure.audio}
+        onOpenChange={(open) => model.setDisclosure('audio', open)}
+        bodyClassName="options-advanced-body"
+      >
+        <GameAudioFields model={model} />
+        {preferences && <QuickChatVolumeField preferences={preferences}/>}
+      </OptionsGroup>
       <OptionsGroup
         id={id('advancedOptions')}
         title={t('options.advanced')}

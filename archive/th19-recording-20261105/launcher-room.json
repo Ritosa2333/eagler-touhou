@@ -1,0 +1,184 @@
+{
+  "passed": true,
+  "stage": "complete",
+  "results": [
+    {
+      "check": "Third Launcher joins live room, reconstructs history, shows timeline and operates Pause/Live",
+      "passed": true
+    },
+    {
+      "check": "Launcher create/join/seat/ready/start and native RTC state agreement",
+      "passed": true,
+      "hashes": [
+        [
+          120,
+          1841157577
+        ],
+        [
+          240,
+          2588648033
+        ],
+        [
+          360,
+          888012262
+        ]
+      ]
+    }
+  ],
+  "errors": [],
+  "room": "2456",
+  "rules": [
+    0,
+    2,
+    3,
+    3,
+    3,
+    1,
+    1,
+    9,
+    9
+  ],
+  "states": [
+    {
+      "active": true,
+      "frame": 361,
+      "route": "rtc",
+      "hashes": [
+        [
+          120,
+          1841157577
+        ],
+        [
+          240,
+          2588648033
+        ],
+        [
+          360,
+          888012262
+        ]
+      ],
+      "options": {
+        "side": 0,
+        "count": 2,
+        "difficulty": 3,
+        "rules": [
+          0,
+          2,
+          3,
+          3,
+          3,
+          1,
+          1,
+          9,
+          9
+        ]
+      },
+      "native": [
+        1,
+        361,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        3,
+        3,
+        3,
+        3,
+        0,
+        2,
+        3,
+        3,
+        3,
+        1,
+        1,
+        0,
+        3,
+        4,
+        4,
+        9,
+        9,
+        60000,
+        60000,
+        0,
+        0,
+        125,
+        125
+      ]
+    },
+    {
+      "active": true,
+      "frame": 363,
+      "route": "rtc",
+      "hashes": [
+        [
+          120,
+          1841157577
+        ],
+        [
+          240,
+          2588648033
+        ],
+        [
+          360,
+          888012262
+        ]
+      ],
+      "options": {
+        "side": 1,
+        "count": 2,
+        "difficulty": 3,
+        "rules": [
+          0,
+          2,
+          3,
+          3,
+          3,
+          1,
+          1,
+          9,
+          9
+        ]
+      },
+      "native": [
+        1,
+        363,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        3,
+        3,
+        3,
+        3,
+        0,
+        2,
+        3,
+        3,
+        3,
+        1,
+        1,
+        0,
+        3,
+        4,
+        4,
+        9,
+        9,
+        60000,
+        60000,
+        0,
+        0,
+        125,
+        125
+      ]
+    }
+  ],
+  "spectator": {
+    "frame": 441,
+    "received": 941,
+    "following": true
+  }
+}

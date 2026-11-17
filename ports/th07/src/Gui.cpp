@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "Gui.hpp"
 
 #if defined(TH_DEV_TOOLS) && defined(__EMSCRIPTEN__)
@@ -2196,6 +2197,16 @@ void Gui::DrawStageElements()
     {
         g_AnmManager->DrawInterp(&this->impl->stageTextVm[i]);
     }
+    if (this->impl->bombSpellcardPortrait.visible
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        && !MultiplayerGameplay::IsMultiplayer()
+#endif
+    )
+    {
+        g_AnmManager->DrawInterpNoRotation(&this->impl->bombSpellcardPortrait);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->bombSpellcardDecorLeft);
+        g_AnmManager->DrawInterp(&this->impl->bombSpellcardDecorRight);
+    }
     if (this->impl->enemySpellcardPortrait.visible
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         && !MultiplayerGameplay::IsMultiplayer()
@@ -2309,7 +2320,7 @@ void Gui::DrawStageElements()
     }
 
     u32 interpBossHealthBarAlpha =
-        (u32)utils::Lerp(this->prevBossHealthBarAlpha, this->bossHealthBarAlpha, g_RenderAlpha);
+        (u32)std::clamp(utils::Lerp(this->prevBossHealthBarAlpha, this->bossHealthBarAlpha, g_RenderAlpha), 0.f, 255.f);
     f32 interpBossHealthBarEased =
         utils::Lerp(this->prevBossHealthBarEased, this->bossHealthBarEased, g_RenderAlpha);
     if (this->impl->msg.currentMsgIdx < 0 && this->bossPresent + this->impl->bossHealthBarState > 0)

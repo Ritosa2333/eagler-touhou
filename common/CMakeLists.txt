@@ -60,6 +60,30 @@ target_link_libraries(eagler_common_browser_peer_transport INTERFACE
     eagler::netplay_headers
 )
 
+option(EAGLER_COMMON_NATIVE_WEBRTC "Build the native WebRTC peer transport" OFF)
+if(EAGLER_COMMON_NATIVE_WEBRTC)
+    if(NOT TARGET LibDataChannel::LibDataChannel)
+        find_package(LibDataChannel CONFIG REQUIRED)
+    endif()
+    add_library(eagler_common_native_peer_transport STATIC src/netplay/NativePeerTransport.cpp)
+    add_library(eagler::native_peer_transport ALIAS eagler_common_native_peer_transport)
+    target_link_libraries(eagler_common_native_peer_transport
+        PUBLIC eagler::netplay_headers LibDataChannel::LibDataChannel)
+    option(EAGLER_COMMON_NATIVE_ROOM "Build native signaling for the shared room service" OFF)
+    if(EAGLER_COMMON_NATIVE_ROOM)
+        if(NOT TARGET nlohmann_json::nlohmann_json)
+            find_package(nlohmann_json CONFIG REQUIRED)
+        endif()
+        target_sources(eagler_common_native_peer_transport PRIVATE
+            src/netplay/NativeRoomTransport.cpp src/netplay/NativeAdaptiveRoute.cpp)
+        target_link_libraries(eagler_common_native_peer_transport PRIVATE nlohmann_json::nlohmann_json)
+        if(WIN32)
+            target_sources(eagler_common_native_peer_transport PRIVATE src/netplay/DesktopSwarmTurn.cpp)
+            target_link_libraries(eagler_common_native_peer_transport PRIVATE crypt32 winhttp)
+        endif()
+    endif()
+endif()
+
 # Logical input capture/replay is independent of transport and Protocol/Core.
 # Keep it as its own component so title multiplayer gameplay can consume the
 # validated input ownership layer without pulling the full netplay runtime.

@@ -6,11 +6,14 @@ import {FullscreenTransient} from '../components/FullscreenTransient';
 import {ConfirmationDialog} from '../components/ConfirmationDialog';
 import {useLocale} from '../i18n';
 import type {DecisionStore} from '../models/decisions';
-import {resolveRoomInvite, normalizeRoomCode, roomRouteHistoryOperation, launcherHomeHistoryOperation, returnToRoomHistoryOperation, roomPanelHistoryOperation, roomSettingsHistoryOperation, MP_PANEL_HISTORY_KEY, MP_SETTINGS_HISTORY_KEY, MP_ROOM_HISTORY_KEY, PLAYER_HISTORY_KEY, type HistoryOperation} from '../../src/launcher/route-state.mts';
+import type {RoomPanelKind} from '../components/room/types';
+import {resolveRoomInvite, normalizeRoomCode, clearRoomUrlParams, roomRouteHistoryOperation, launcherHomeHistoryOperation, returnToRoomHistoryOperation, roomPanelHistoryOperation, roomSettingsHistoryOperation, MP_PANEL_HISTORY_KEY, MP_SETTINGS_HISTORY_KEY, MP_ROOM_HISTORY_KEY, PLAYER_HISTORY_KEY, type HistoryOperation} from '../../src/launcher/route-state.mts';
 import {encodeRoomInvite, ROOM_INVITE_KEY} from '../../src/launcher/room-invite.mts';
 import {localeHome, uiLocaleSearch, type UiLocale} from '../../src/launcher/i18n.mts';
 import {updateSearchParameters} from '../../src/launcher/url-query.mts';
-import {SurfaceLayersContext, type LayerEntry, type LayerValue} from './surface-layer';
+import {navigateSurfaceLayer, SurfaceLayersContext, type LayerEntry, type LayerValue} from './surface-layer';
+import {UnsavedChangesContext, type UnsavedChangesGuard} from './unsaved-changes';
+import {isCompactNavigation} from './navigation-motion';
 const noDecisionSubscription = () => () => {};
 const noDecisionSnapshot = () => null;
 let dialogSessionSequence = 0;
@@ -19,7 +22,6 @@ const newDialogSession = () => `${Date.now().toString(36)}-${++dialogSessionSequ
 
 export type Surface = 'library' | 'options' | 'touch' | 'room';
 export type SurfaceContext = 'library' | 'lobby';
-export type RoomPanelKind = 'personal' | 'network' | 'spectators' | 'game';
 export type DirectoryFormMode = 'create' | 'join';
 export const INFORMATION_DIALOG_IDS = ['mpGuideDialog', 'firstUseNoticeDialog', 'donationDialog', 'appleRefreshDialog', 'replayDialog', 'lobbyNetworkDialog'] as const;
 export type InformationDialogId = typeof INFORMATION_DIALOG_IDS[number];
@@ -103,6 +105,7 @@ interface SurfaceNavigation extends SurfaceAddress {
   setLocaleAddress(locale: UiLocale): void;
   restoreRoomRoute(input: {product: ProductId; code: string; fromDirectory: boolean}): void;
   enterRoomRoute(input: {product: ProductId; code: string}): void;
+  switchRoomProduct(input: {product: ProductId; code: string; fromDirectory: boolean; spectator: boolean}): void;
   settleRoomInvite(): void;
   leaveTitleRoomRoute(baseProduct: ProductId): void;
   leaveRoomRoute(input: {product: ProductId; fromDirectory: boolean; message?: string}): 'options' | 'directory';
@@ -128,6 +131,7 @@ interface SurfaceNavigation extends SurfaceAddress {
   infoDialogOpen(id: InformationDialogId): boolean;
   openInfoDialog(id: InformationDialogId, options?: {replace?: boolean}): void;
   closeInfoDialog(id?: InformationDialogId): void;
+  closeReplayFileLayers(): void;
 }
 const NavigationContext = createContext<SurfaceNavigation | null>(null);
 export function useSurfaceNavigation(): SurfaceNavigation {
@@ -153,6 +157,21 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   children: ReactNode;
 }) {
   const {t, locale} = useLocale();
+  const [unsavedGuard, setUnsavedGuard] = useState<UnsavedChangesGuard | null>(null);
+  const registerUnsavedGuard = useCallback((guard: UnsavedChangesGuard) => {
+    setUnsavedGuard(guard);
+    return () => setUnsavedGuard(current => current === guard ? null : current);
+  }, []);
+  const confirmDiscard = async () => {
+    if (!unsavedGuard) return true;
+    const confirmed = await decisions?.askConfirmation({
+      title: t('profile.unsaved.title'), message: t('profile.unsaved.message'),
+      confirmText: t('touch.discardChanges'), cancelText: t('career.continue'), tone: 'danger',
+    });
+    if (!confirmed) return false;
+    unsavedGuard.discard();
+    return true;
+  };
   const applicationDecision = useSyncExternalStore(decisions?.subscribe ?? noDecisionSubscription,
     decisions?.getSnapshot ?? noDecisionSnapshot, decisions?.getSnapshot ?? noDecisionSnapshot);
   const location = useLocation();
@@ -245,7 +264,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   const selectedRoomVisible = selectedRoomProduct !== null && isMultiplayerProductId(selectedRoomProduct);
   const validPanel = urlAddress.surface === 'room' && panelLifetime !== null && panelEntry.lifetime === panelLifetime &&
     panelEntry.session === dialogSession && panelEntry.href === href(location) &&
-    ['personal', 'network', 'spectators', 'game'].includes(String(panelEntry.kind));
+    ['personal', 'network', 'spectators', 'game', 'music'].includes(String(panelEntry.kind));
   const validSettings = urlAddress.surface === 'room' && settingsLifetime !== null && settingsEntry.lifetime === settingsLifetime &&
     settingsEntry.session === dialogSession && settingsEntry.href === href(location);
   const roomPanel = validPanel && selectedRoomVisible ? panelEntry.kind as RoomPanelKind : null;
@@ -325,7 +344,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
         return state;
       })()});
   }, [staleTouch, staleHidden, staleInfo, retiredLobbyOptions, retiredForm, stalePanel, staleSettings, retiredGameEntry, staleLocalLayers, location, navigate]);
-  const pendingBlockKind = useRef<'touch' | 'runtime' | 'room' | 'page' | 'room-fullscreen' | 'replay' | null>(null);
+  const pendingBlockKind = useRef<'touch' | 'unsaved' | 'runtime' | 'room' | 'page' | 'room-fullscreen' | 'replay' | null>(null);
   const roomPolicyNavigation = useRef(false);
   // Browser POP arrives later than cleanup, unlike a synchronous MemoryRouter.
   // Authorize only the exact cleanup destination until that event arrives.
@@ -430,6 +449,10 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     if (roomPolicyNavigation.current || currentLocation.key === nextLocation.key) return false;
     // Child-window Back never tears down its enclosing editor, Runtime or room.
     if (localLayerTransition(currentLocation, nextLocation)) return false;
+    if (unsavedGuard?.shouldBlock({currentLocation, nextLocation, historyAction})) {
+      pendingBlockKind.current = 'unsaved';
+      return true;
+    }
     if (selectionHidden && historyAction === 'POP' && (validInfo || plainState(plainState(nextLocation.state)[infoEntryKey]).session === dialogSession)) {
       pendingHiddenSelection.current = {destination: nextLocation.key, productId: address.productId};
     }
@@ -509,6 +532,9 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   });
   const latestBlocker = useRef(blocker);
   latestBlocker.current = blocker;
+  useEffect(() => {
+    if (blocker.state === 'blocked' && pendingBlockKind.current === 'unsaved' && !unsavedGuard) blocker.proceed();
+  }, [blocker, unsavedGuard]);
   const replayCloseTask = useRef<Promise<void> | null>(null);
   useEffect(() => {
     if (blocker.state !== 'blocked' || pendingBlockKind.current !== 'replay' || replayCloseTask.current) return;
@@ -641,10 +667,12 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   const surfaceOpenIssuedKey = useRef<string | null>(null);
   const roomRestoreIssuedKey = useRef<string | null>(null);
   const completedRuntimeCloseKey = useRef<string | null>(null);
+  const layerWrite = useRef<{key: string; id: string; value: LayerValue} | null>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: Each new Router entry starts a fresh set of navigation intents.
   useEffect(() => {
     closeIssuedKey.current = null; infoOpenIssuedKey.current = null; surfaceOpenIssuedKey.current = null;
     pendingLocaleAddress.current = null;
+    layerWrite.current = null;
   }, [location.key]);
   useEffect(() => {
     if (blocker.state !== 'blocked') { pendingKey.current = null; return; }
@@ -661,12 +689,13 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   useEffect(() => {
     // A decision already on screen wins. Main rejects a new confirmation while
     // its decisionResolver/native dialog is occupied, rather than replacing it.
-    if (applicationDecision && blocker.state === 'blocked' && pendingBlockKind.current === 'touch') {
+    const draftDecision = blocker.state === 'blocked' && (pendingBlockKind.current === 'touch' || pendingBlockKind.current === 'unsaved');
+    if (applicationDecision && draftDecision) {
       closeIssuedKey.current = null;
       surfaceOpenIssuedKey.current = null;
       blocker.reset();
     }
-    decisions?.setNavigationDecisionOpen(!applicationDecision && blocker.state === 'blocked' && pendingBlockKind.current === 'touch');
+    decisions?.setNavigationDecisionOpen(!applicationDecision && draftDecision);
     return () => { decisions?.setNavigationDecisionOpen(false); };
   }, [applicationDecision, blocker, decisions]);
 
@@ -674,28 +703,22 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     const search = params.toString();
     return {pathname: location.pathname, search: search ? `?${search}` : '', hash: location.hash};
   }
-  const layerWrite = useRef<{key: string; id: string; value: LayerValue} | null>(null);
   function setSurfaceLayer(id: string, value: LayerValue) {
     if (blocker.state !== 'unblocked') return;
     const prior = localValues[id];
     if ((prior?.value ?? null) === value) return;
     if (layerWrite.current?.key === location.key && layerWrite.current.id === id && layerWrite.current.value === value) return;
     layerWrite.current = {key: location.key, id, value};
-    if (value === null && prior && pageHistory && prior.parentPosition < pageHistory.position) {
-      void navigate(prior.parentPosition - pageHistory.position);
-      return;
-    }
-    const values = {...localValues};
-    if (value === null) delete values[id];
-    else values[id] = {value, parentPosition: prior?.parentPosition ?? pageHistory?.position ?? 0};
-    const state = plainState(location.state);
-    if (Object.keys(values).length) state[LOCAL_LAYERS_KEY] = {session: dialogSession, href: href(location), values};
-    else delete state[LOCAL_LAYERS_KEY];
-    void navigate({pathname: location.pathname, search: location.search, hash: location.hash},
-      {replace: !!prior, preventScrollReset: true, state});
+    navigateSurfaceLayer(location, navigate, dialogSession, localValues, id, value);
   }
   function infoDialogOpen(id: InformationDialogId) {
     return validInfo && infoVisible[id] === true;
+  }
+  function closeReplayFileLayers() {
+    if (!infoDialogOpen('replayDialog')) return;
+    const first = Object.entries(localValues).filter(([id]) => id.startsWith('replay-'))
+      .sort((a, b) => a[1].parentPosition - b[1].parentPosition)[0];
+    if (first) setSurfaceLayer(first[0], null);
   }
   function openInfoDialog(id: InformationDialogId, options?: {replace?: boolean}) {
     if (!INFORMATION_DIALOG_IDS.includes(id) || infoDialogOpen(id) || blocker.state !== 'unblocked' ||
@@ -800,7 +823,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     const destination = new URL('lobby.html', new URL(href(location), 'https://launcher.invalid'));
     destination.searchParams.set('game', productId);
     void navigate({pathname: destination.pathname, search: destination.search, hash: destination.hash},
-      {state: {}, preventScrollReset: false, viewTransition: true});
+      {state: {}, preventScrollReset: false, viewTransition: !isCompactNavigation()});
   }
   function openPlayer(productId: ProductId, options?: {dismissInfo?: boolean}) {
     if (playerOpen || typeof gameEntry.position === 'number' && gameEntry.position === pageHistory?.position) return;
@@ -851,6 +874,14 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     const roomUrl = new URL(source); roomUrl.pathname = new URL(localeHome(locale), source).pathname;
     applyRoomOperations([preserveSameRoomDirectoryOrigin(roomRouteHistoryOperation({currentUrl: roomUrl, currentState: withoutEntry(location.state),
       product: input.product, roomCode: normalizeRoomCode(input.code), push: true}), source)]);
+  }
+  function switchRoomProduct(input: {product: ProductId; code: string; fromDirectory: boolean; spectator: boolean}) {
+    if (!isMultiplayerProductId(input.product) || address.roomCode !== input.code) return;
+    const url = currentUrl();
+    url.searchParams.delete('game');
+    clearRoomUrlParams(url);
+    url.searchParams.set(ROOM_INVITE_KEY, encodeRoomInvite({g: input.product, r: input.code, f: input.fromDirectory, a: 'join', s: input.spectator}));
+    applyRoomOperations([{kind: 'replace', url: url.href, state: {...withoutEntry(location.state), [MP_ROOM_HISTORY_KEY]: input.code, [PLAYER_HISTORY_KEY]: false}}]);
   }
   function settleRoomInvite() {
     const url = currentUrl(), invite = resolveRoomInvite(url);
@@ -1060,19 +1091,21 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     }
     void navigate(target(params), {replace: true, preventScrollReset: true, state: withoutEntry(location.state)});
   }
-  return <NavigationContext.Provider value={{...address, navigateAddress: address => {void navigate(address);}, hasSelection, routedProductId: baseAddress.productId, applyHostSelection, syncSelectionFromRoute, filterProductId: urlAddress.context === 'lobby' ? urlAddress.productId : null, openOptions, selectLobbyProduct, openDirectory, setLocaleAddress, restoreRoomRoute, enterRoomRoute, settleRoomInvite, leaveTitleRoomRoute, leaveRoomRoute, roomPanel, roomNetworkPeer: validPanel && typeof panelEntry.peer === 'string' ? panelEntry.peer : undefined, openRoomPanel, closeRoomPanel, roomSettingsOpen, openRoomSettings, closeRoomSettings, directoryFormMode, directoryFormParentKey: validForm && typeof formEntry.parentKey === 'string' && formEntry.parentKey !== location.key ? formEntry.parentKey : null, openDirectoryForm, closeDirectoryForm, openTouchLayout, playerOpen, openPlayer, openRoomFullscreen, closeRoomFullscreen, closeSurface, completeRuntimeClose, infoDialogOpen, openInfoDialog, closeInfoDialog}}>
-    <SurfaceLayersContext.Provider value={{values: localValues, set: setSurfaceLayer}}>{children}</SurfaceLayersContext.Provider>
+  return <NavigationContext.Provider value={{...address, navigateAddress: address => {void navigate(address);}, hasSelection, routedProductId: baseAddress.productId, applyHostSelection, syncSelectionFromRoute, filterProductId: urlAddress.context === 'lobby' ? urlAddress.productId : null, openOptions, selectLobbyProduct, openDirectory, setLocaleAddress, restoreRoomRoute, enterRoomRoute, switchRoomProduct, settleRoomInvite, leaveTitleRoomRoute, leaveRoomRoute, roomPanel, roomNetworkPeer: validPanel && typeof panelEntry.peer === 'string' ? panelEntry.peer : undefined, openRoomPanel, closeRoomPanel, roomSettingsOpen, openRoomSettings, closeRoomSettings, directoryFormMode, directoryFormParentKey: validForm && typeof formEntry.parentKey === 'string' && formEntry.parentKey !== location.key ? formEntry.parentKey : null, openDirectoryForm, closeDirectoryForm, openTouchLayout, playerOpen, openPlayer, openRoomFullscreen, closeRoomFullscreen, closeSurface, completeRuntimeClose, infoDialogOpen, openInfoDialog, closeInfoDialog, closeReplayFileLayers}}>
+    <UnsavedChangesContext.Provider value={{register: registerUnsavedGuard, confirmDiscard}}><SurfaceLayersContext.Provider value={{values: localValues, set: setSurfaceLayer}}>{children}</SurfaceLayersContext.Provider></UnsavedChangesContext.Provider>
     <FullscreenTransient><ConfirmationDialog key={applicationDecision ? `application:${applicationDecision.requestId}` : 'navigation'}
-      open={applicationDecision !== null || (blocker.state === 'blocked' && pendingBlockKind.current === 'touch')}
-      title={applicationDecision?.title || t('dialog.confirmTitle')}
-      message={applicationDecision ? applicationDecision.message || '' : t('touch.layoutDiscardConfirm')}
+      open={applicationDecision !== null || (blocker.state === 'blocked' && (pendingBlockKind.current === 'touch' || pendingBlockKind.current === 'unsaved'))}
+      title={applicationDecision?.title || t(pendingBlockKind.current === 'unsaved' ? 'profile.unsaved.title' : 'dialog.confirmTitle')}
+      message={applicationDecision ? applicationDecision.message || '' : t(pendingBlockKind.current === 'unsaved' ? 'profile.unsaved.message' : 'touch.layoutDiscardConfirm')}
       confirmText={applicationDecision ? applicationDecision.confirmText || t('action.confirm') : t('touch.discardChanges')}
-      cancelText={applicationDecision?.cancelText || t('action.cancel')}
+      cancelText={applicationDecision?.cancelText || t(pendingBlockKind.current === 'unsaved' ? 'career.continue' : 'action.cancel')}
       secondaryText={applicationDecision?.secondaryText || ''}
       tone={applicationDecision ? applicationDecision.tone || 'normal' : 'danger'}
       variant={applicationDecision?.variant || ''} hideCancel={applicationDecision?.hideCancel || false}
       confirmOnEnter={applicationDecision?.confirmOnEnter || false}
       input={applicationDecision?.input}
+      comparison={applicationDecision?.comparison}
+      progress={applicationDecision?.progress}
       onSecondary={() => {if (applicationDecision) decisions?.resolve('secondary');}}
       onCancel={() => {
         if (applicationDecision) decisions?.resolve('cancel');
@@ -1083,6 +1116,10 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
       onConfirm={value => {
         if (applicationDecision) {decisions?.resolve('confirm', value); return;}
         if (blocker.state !== 'blocked' || pendingKey.current !== blocker.location.key) return;
+        if (pendingBlockKind.current === 'unsaved') {
+          unsavedGuard?.discard();
+          return;
+        }
         onDiscard();
         blocker.proceed();
       }}/></FullscreenTransient>

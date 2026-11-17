@@ -19,8 +19,21 @@ struct ChargeGauge {
         if((integer(0)&65535)!=6)return false;
         for(int i=0;i<4;++i){int n=integer(0x2c+i*4);if(n<0||n>250)return false;}
         for(int i=0;i<4;++i)thresholds[i]=integer(0x2c+i*4)*10;
+        energy=std::clamp(thresholds[0],0,2500);
         std::memcpy(&move_speed,bytes.data()+0x10,4);std::memcpy(&slow_speed,bytes.data()+0x14,4);
         std::memcpy(&diagonal_speed,bytes.data()+0x18,4);std::memcpy(&slow_diagonal_speed,bytes.data()+0x1c,4);return true;
+    }
+    // EXE 0x517f86..0x518062, table 0x5aa5a0. Stored ranks are zero-based.
+    void initialize_versus_rank(int difficulty) {
+        constexpr int initialRanks[] = {0, 0, 2, 4};
+        ex_level = boss_level = initialRanks[std::clamp(difficulty, 0, 3)];
+    }
+    // EXE 0x517a45..0x517a73 selects stage*0x80+difficulty*0x20
+    // at 0x5c5f90. 0x517f0a..0x517f59 uses +0x18/+0x1c only
+    // for the story opponent; all six stage rows have these same ranks.
+    void initialize_story_rank(int difficulty, int side) {
+        constexpr int opponentRanks[] = {0, 0, 4, 4};
+        ex_level = boss_level = side == 1 ? opponentRanks[std::clamp(difficulty, 0, 3)] : 0;
     }
     int level() const {int n=0;for(int v:thresholds)if(charge>=v)++n;return n;}
     void tick(bool down,bool attack_busy=false){

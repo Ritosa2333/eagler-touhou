@@ -1,0 +1,25 @@
+{
+  "siteUrl": "https://test.touhou.vip/",
+  "previous": "/var/www/eagler-touhou-test/releases/th05-native-20261101-922cb60d4048",
+  "candidate": "/var/www/eagler-touhou-test/releases/th05-mobile-music-room-20261101-62b3d441ba86",
+  "releaseId": "sha256-0b1f4002c66d3f8eb09948ba9bdfb4148d99d292f4f8ee3d757055c98ef7c7d6",
+  "buildId": "e51ca3a2291c13cd4f07",
+  "generation": "4a145e0ee939bf8b2ff25a4a19fde88cdb677fd8409012dd8530a983fe783966",
+  "packageRevision": "9addb79494c191c6",
+  "files": 7628,
+  "preserved": 7356,
+  "sourceExceptions": [],
+  "publishedAt": "2026-11-01T08:03:03Z",
+  "nginxBefore": "b810d4148505b4f6203c00208c397c5184de2ca2338bfba3cc61e8bffc220689",
+  "nginxAfter": "b810d4148505b4f6203c00208c397c5184de2ca2338bfba3cc61e8bffc220689",
+  "protected": {
+    "eagler-touhou": {
+      "target": "/var/www/eagler-touhou/releases/mandatory-migration-20261031-01",
+      "deployment": "bb9cdb5261e517b3e604ec798967991ebe575ac5041d13cee90a3a08fff46764"
+    },
+    "eagler-touhou-beta": {
+      "target": "/var/www/eagler-touhou-beta/releases/relay-session-d48252551-20261028",
+      "deployment": "34c5ab9d5ca4b8e9c3921087fae0941af50909334029e60a9ad6b3c45e6e0d46"
+    }
+  }
+}

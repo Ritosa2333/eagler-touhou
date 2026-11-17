@@ -55,32 +55,50 @@ bool TitleAnimalMenu::update(u32 pressed,u32 repeated,const TitleRecords& record
 bool TitleStageMenu::check(bool ok,const char* message){if(!ok&&error.empty())error=message;return ok;}
 bool TitleStageMenu::visual(bool ok){return check(ok,visuals.error.c_str());}
 bool TitleStageMenu::update(u32 pressed,u32 repeated,const TitleRecords& records){
+    const auto begin=[&](){
+        state.change_substate(3);
+        if(!check(host.sound(7),"Practice confirmation sound unavailable")||!check(host.sound(50),"Game start sound unavailable"))return false;
+        settings.practice_stage=state.menu.selected;selection.practice_checkpoint=host.checkpoint_key();
+        return check(host.fade_menu_music(),"Practice music service unavailable");
+    };
+    const auto available=[&](){
+        return records.stage_available[selection.character*3+selection.animal][selection.difficulty][state.menu.selected]!=0;
+    };
     switch(state.substate){
-    case 0:
-        state.menu.count=6;state.menu.select(settings.practice_stage);if(!visual(visuals.create(102)))return false;state.change_substate(1);if(state.return_reason==4)state.return_reason=1;[[fallthrough]];
+    case 0:{
+        state.menu.count=6;state.menu.select(settings.practice_stage);
+        if(state.return_reason==4)state.return_reason=1;
+        if(u32(selection.character)>=3||u32(selection.animal)>=3||u32(selection.difficulty)>=5||u32(state.menu.selected)>=6)
+            return check(false,"Practice selection outside records");
+        custom=host.configure_practice(state.menu.selected+1,-1,available())==PracticeMenuResult::Configure;
+        if(custom){state.change_substate(5);return true;}
+        if(!visual(visuals.create(102)))return false;
+        state.change_substate(1);
+    }[[fallthrough]];
     case 1:if(state.age.current>10)state.change_substate(2);break;
     case 2:
         state.menu.reserved=state.menu.selected;if((pressed|repeated)&16)state.menu.step(-1);if((pressed|repeated)&32)state.menu.step(1);
         if(state.menu.reserved!=state.menu.selected&&!check(host.sound(10),"Practice selection sound unavailable"))return false;
         if(pressed&0x102){state.change_substate(4);settings.practice_stage=state.menu.selected;return check(host.sound(9),"Practice cancellation sound unavailable");}
-        if(pressed&0x80001){
-            const i32 c=selection.character,a=selection.animal,d=selection.difficulty,s=state.menu.selected;
-            if(c<0||c>=3||a<0||a>=3||d<0||d>=5||s<0||s>=8)return check(false,"Practice selection outside records");
-            if(!records.stage_available[c*3+a][d][s])return check(host.sound(16),"Practice unavailable sound service missing");
-            state.change_substate(3);if(!check(host.sound(7),"Practice confirmation sound unavailable")||!check(host.sound(50),"Game start sound unavailable"))return false;
-            settings.practice_stage=state.menu.selected;selection.practice_checkpoint=host.checkpoint_key();return check(host.fade_menu_music(),"Practice music service unavailable");
-        }break;
+        if(pressed&0x80001)return available()?begin():check(host.sound(16),"Practice unavailable sound service missing");
+        break;
     case 3:
         if(state.age.current==10&&(!check(host.show_loading_indicator(),"Practice loading indicator unavailable")||!check(host.begin_transition(transition),"Practice transition service unavailable")||!visual(animations.interrupt(transition,7))))return false;
         if(state.age.current>39){state.menu.push();state.change_screen(TitleScreen::Quit);selection.stage=state.menu.selected+1;state.return_reason=4;settings.practice_stage=state.menu.selected;return check(host.start_game(selection.stage),"Practice game start service unavailable");}break;
     case 4:
-        if(state.age.current>5){if(!visual(visuals.retire(102)))return false;state.change_screen(TitleScreen::Animal);state.menu.pop();}break;
+        if(state.age.current>5){if(!custom&&!visual(visuals.retire(102)))return false;state.change_screen(TitleScreen::Animal);state.menu.pop();}break;
+    case 5:{
+        const auto result=host.configure_practice(state.menu.selected+1,-1,available());
+        if(result==PracticeMenuResult::Confirm)return begin();
+        if(result==PracticeMenuResult::Cancel){state.change_substate(4);return check(host.sound(9),"Practice cancellation sound unavailable");}
+        break;
+    }
     }
     return true;
 }
 bool TitleStageMenu::draw(const GameRecords& records,HudDrawServices& sink){
     if(!error.empty())return false;
-    if(state.substate<2||state.substate>3||(state.age.current<10&&state.substate!=3))return true;
+    if(custom||state.substate<2||state.substate>3||(state.age.current<10&&state.substate!=3))return true;
     const i32 character=selection.character,animal=selection.animal,difficulty=selection.difficulty;
     if(u32(character)>=3||u32(animal)>=3||u32(difficulty)>=5)return check(false,"Practice drawing selection outside records");
     const i32 loadout=character*3+animal;HudTextDraw text;text.style.shadow=true;char line[64];

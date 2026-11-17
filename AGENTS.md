@@ -16,7 +16,7 @@ monorepo 的 `main` 集成普通版与多人版，改动按各自源码目录归
 
 原生 ahead／behind 和 fork 合并以 `tools/ports/project-history.py` 的目录投影分支为准，保留原仓库祖先。先在临时克隆核对内容树和合并往返，写回使用经验证的完整 MP 子树及两个父提交；目录监控的处理记录与 Git 合并祖先分别维护。
 
-日常修改在 monorepo 开发分支提交，目录历史分支用于查看和同步。普通版到 MP 的同步从该作品 MP 投影分支开始，合并普通版投影分支，再通过 `--prepare-writeback` 写回。人工迁入或同时修改两侧后，同样完成历史合并与写回；`sync.mjs record` 保存处理决定，Git 合并保存祖先关系。包含这类同步节点的 PR 使用合并提交，保留两个父链，禁止 squash 或 rebase 合入。人类维护者入口见 `CONTRIBUTING.md`，操作顺序见 `docs/adaptation/port-sync.md` 的“下一次提交与同步”。
+有写入权限的协作者处理小改动时，推荐在 `Checks` 通过后直接推送 `main`，需要别人审核时开 PR。目录历史分支用于查看和同步。普通版到 MP 的同步从该作品 MP 投影分支开始，合并普通版投影分支，再通过 `--prepare-writeback` 写回。人工迁入或同时修改两侧后，同样完成历史合并与写回；`sync.mjs record` 保存处理决定，Git 合并保存祖先关系。包含这类同步节点的 PR 使用合并提交，保留两个父链，禁止 squash 或 rebase 合入。人类维护者入口见 `CONTRIBUTING.md`，操作顺序见 `docs/adaptation/port-sync.md` 的“下一次提交与同步”。
 
 # 作品来源历史
 

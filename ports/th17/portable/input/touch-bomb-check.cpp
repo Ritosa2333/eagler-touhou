@@ -22,10 +22,19 @@ extern "C" __attribute__((export_name("verify"))) int verify(){
   for(int n=0;n<10;n++)if(t.sample(blocked,n,false,false).keys[88])return 5;
   if(t.sample(live,11,false,false).keys[88])return 6;
  }
- // Cancellation releases the gesture; normal movement still works afterward.
+ // The same drag continues into dialogue. A hit suspends its target until
+ // recovery; releasing the finger still ends the gesture.
  TouchController drag;drag.pointer(0,1,.5f,.5f,0,live,false);drag.pointer(1,1,.6f,.5f,10,live,false);
  if(!drag.sample(live,11,false,false).motion)return 7;
- if(drag.sample(hit,12,false,false).motion||drag.active())return 8;
+ TouchState dialogue=live;dialogue.context=2;
+ drag.pointer(1,1,.65f,.5f,11,dialogue,false);
+ if(!drag.sample(dialogue,11,false,false).motion)return 10;
+ if(drag.sample(hit,12,false,false).motion)return 8;
+ drag.pointer(2,1,.65f,.5f,12,hit,false);
+ if(drag.active())return 12;
  drag.reset();if(drag.sample(live,13,false,false).keys[88])return 9;
+ TouchController talk;
+ talk.pointer(0,2,.5f,.5f,20,dialogue,false);talk.pointer(2,2,.5f,.5f,55,dialogue,false);
+ if(!talk.sample(dialogue,55,false,false).keys[90])return 11;
  return 0;
 }

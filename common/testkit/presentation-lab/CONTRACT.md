@@ -13,6 +13,8 @@ TypeScript 接口见 [`contracts.d.ts`](contracts.d.ts)，运行时校验见 [`c
 - `advanceOneTick()` 在完整游戏固定步事务结束后返回成功回执；加载中或场景结束时返回对应状态。
 - `drawOnly()` 走实际绘制路径，不读取输入或推进 Replay、随机数、音频队列及模拟计数器。
 
+`features.extrapolation=true` 的适配器允许 `drawOnly` 接收 `alpha=1..2`：`1` 为当前权威帧，`2` 为以已知速度向前一帧。工作台以独立 `mode` 保存对照方式，重复权重与状态纯度检查同时适用于外推。外推能力是可选的加法扩展，已有 `0..1` 诊断调用保持原义。
+
 ## 观察要求
 
 - 基准状态来自原始权威绘制，并记录实际模拟 tick 和 draw serial。

@@ -1,0 +1,57 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "repository": "https://github.com/Goan114/uth05win-vibe.git",
+  "branch": "thprac",
+  "commit": "0c31261ea528db9747962e73b36c5105d2d41b78",
+  "destination": "ports/th05",
+  "sourceManifest": "../../ports/th05/source-import.json",
+  "currentMode": "git-subtree",
+  "subtree": {
+    "upstreamCommit": "0c31261ea528db9747962e73b36c5105d2d41b78",
+    "initialJoin": "de4be28d85752d82dc3a89c54e09c60703a2b119",
+    "initialSplit": "339d39a8549e9cbe83e4161af4b94888731ea22c",
+    "latestJoin": "f7dbf4b3deab15d5d01d85c0c941d91c3141c310",
+    "currentSplit": "31fb704b82e664a78cef48b3ac684304cd1b69ff"
+  },
+  "reference": "https://github.com/Ritosa2333/eagler-touhou/pull/143",
+  "audio": {
+    "repository": "https://github.com/IxinorTyan/th05-coop-lab",
+    "commit": "6eb46ed1d4f581f109ffa494ea0d21d54c8b38df",
+    "manifests": [
+      "../../ports/th05/resources/audio/original.json",
+      "../../ports/th05/resources/audio/akyu.json",
+      "../../ports/th05/resources/audio/sfx.json"
+    ],
+    "soundEffects": {
+      "source": "uth05win/SE",
+      "manifest": "../../ports/th05/resources/audio/sfx-original.json",
+      "playback": "Original per-effect Stop/Reset/Play; PR FM PCM replacement reverted"
+    },
+    "musicRoom": {
+      "source": "Original TH05 MUSIC.DAT / TH01-04 Arrange and Special MIX",
+      "tracks": 84,
+      "manifest": "../../ports/th05/resources/audio/music-room.json",
+      "preparation": "Offline PMDWin to Ogg; browser plays audio without PC-98 compatibility layer"
+    },
+    "musicNotes": {
+      "source": "Original MUSIC.DAT / offline PMDWin piano and measure timeline",
+      "tracks": 107,
+      "manifest": "../../ports/th05/resources/audio/music-notes.json",
+      "preparation": "Offline timeline metadata in DATA; native Music Room follows selected original Ogg playback time"
+    }
+  },
+  "multiplayer": {
+    "architecture": "uth05win-native-cpp-shared-world",
+    "sourceDirectory": "ports/th05-mp",
+    "workspaceRepository": "th05mp",
+    "sourceRecord": "th05mp-eagler-20261101.json",
+    "referenceCommit": "659e65658d4cd1bcfee1670f4c5cc63d79d2819f",
+    "reference": "https://github.com/Ritosa2333/eagler-touhou/pull/143",
+    "transportFiles": [
+      "../../ports/th05-mp/web/managed-transport.mjs",
+      "../../ports/th05-mp/web/input-transport.mjs"
+    ],
+    "documentation": "../../ports/th05-mp/docs/MULTIPLAYER.md",
+    "history": "Independent normal and multiplayer source directories with native subtree ancestry and port-sync history."
+  }
+}

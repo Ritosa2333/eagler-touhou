@@ -4,6 +4,8 @@ namespace th11::high_refresh {
 // Presentation-only state for one Draw transaction. Simulation code must never
 // read these values; owners publish prev/current endpoints at the fixed tick
 // boundary and Draw derives temporary visual values from them.
+// Weight 1 is current; live high-refresh draws use 1 + display phase.
+// Values below 1 remain available to explicit interpolation diagnostics.
 inline float alpha=1.0f;
 inline float world_alpha=1.0f;
 inline bool active=false;
@@ -16,7 +18,7 @@ inline bool smooth_submission=false;
 // owners lower it so authored world rebases snap instead of blending.
 inline float position_limit=64.f;
 inline void begin(float value,bool enabled,bool only,bool world_enabled=true) noexcept {
-    alpha=enabled?std::clamp(value,0.0f,1.0f):1.0f;
+    alpha=enabled?std::clamp(value,0.0f,2.0f):1.0f;
     world_alpha=enabled&&world_enabled?alpha:1.0f;
     active=enabled;
     render_only=only;

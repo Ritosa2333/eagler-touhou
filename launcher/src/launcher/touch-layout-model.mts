@@ -5,7 +5,7 @@ export const touchLayoutControlMeta = Object.freeze({
   focus: Object.freeze({ id: "touchFocus", title: "低速", titleKey: "touch.focus", priority: 0 }),
   fire: Object.freeze({ id: "touchFire", title: "开火", titleKey: "touch.fire", priority: 1 }),
   bomb: Object.freeze({ id: "touchBomb", title: "Bomb", priority: 2 }),
-  joystick: Object.freeze({ id: "touchJoystick", title: "轮盘", titleKey: "touch.movement.joystick", priority: 3 }),
+  joystick: Object.freeze({ id: "touchJoystick", title: "摇杆", titleKey: "touch.movement.joystick", priority: 3 }),
   escape: Object.freeze({ id: "touchEscape", title: "ESC", priority: 4 }),
   restart: Object.freeze({ id: "touchRestart", title: "R", priority: 5 }),
   function: Object.freeze({ id: "touchFunction", title: "特殊功能", titleKey: "touch.specialFunction", priority: 5.5 }),

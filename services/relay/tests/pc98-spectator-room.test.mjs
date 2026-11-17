@@ -18,7 +18,7 @@ for (const route of ['rtc','relay']) test(`PC98 room admits a late viewer over $
   try{
     await wait(()=>log.includes('listening'),'server');
     for(const game of ['01','02','03','04']){
-      const id=`th${game}mp-1234`,base=`room=${id}&run=1&players=2`;
+      const id=`th${game}mp-12${game}`,base=`room=${id}&run=1&players=2`;
       const a=await open(`room=${id}&lobby=host_client_${game}&member=member_host${game}`),b=await open(`room=${id}&lobby=guest_client_${game}&member=member_guest${game}`);
       send(a,{type:'take-seat',seat:0,loadout:0});send(b,{type:'take-seat',seat:1,loadout:0});await wait(()=>room(a)?.seats?.[0]&&room(a)?.seats?.[1],'seats');
       for(const c of [a,b])send(c,{type:'resource-progress',status:'ready',stage:'runtime',percent:100});

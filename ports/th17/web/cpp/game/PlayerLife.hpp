@@ -2,6 +2,7 @@
 #include "PlayerAnmHost.hpp"
 #include "EffectManager.hpp"
 #include "SpellStatus.hpp"
+#include "Practice.hpp"
 #include <functional>
 namespace th17 {
 struct PlayerLifeSession {
@@ -9,6 +10,12 @@ struct PlayerLifeSession {
     i32 power=100,power_step=100,bombs=3,bomb_pieces=0,initial_bombs=3,animal=0,replay_state=0;
     u32 roaring_flags=0;Timer roaring_countdown;bool bomb_available=true;
     i32 roaring_breaks=0;
+    u32 practice_tools=0;
+    // thprac in-game info counters (thprac_th17.cpp TH17InGameInfo): whole run,
+    // reset at game start. roaring_breaks above is the ECL-visible counter the
+    // stage resets, and it also counts Bombs.
+    u32 practice_bombs=0,practice_roars=0,practice_roar_breaks=0,practice_special_spirits=0;
+    u32 practice_roar_animals[3]{}; // wolf, otter, eagle
 };
 struct PlayerLifeServices {
     virtual ~PlayerLifeServices()=default;

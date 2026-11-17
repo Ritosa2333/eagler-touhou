@@ -7,7 +7,7 @@ import {createFrameRateMeter,fpsTextDescriptors} from '../src/fps-presentation.m
 import {rollbackDiagnostics} from '../src/multiplayer.mjs';
 import {SpellWallClock} from '../src/spell-wall-clock.mjs';
 import {spellResultDescriptors,decodeSpellRealTime} from '../src/spell-presentation.mjs';
-import {interpolatePresentation} from '../src/presentation-interpolation.mjs';
+import {interpolatePresentation,extrapolatePresentation} from '../src/presentation-interpolation.mjs';
 import {managedCommandHandler} from '../src/managed-shell.mjs';
 
 test('room binding preserves the local high refresh choice and accepts an explicit 60 Hz limit',async()=>{
@@ -54,6 +54,8 @@ test('multiplayer high refresh interpolates all seats and stops at pause/cap bou
       nativeMotion:{epoch:1,frame,owners,nodes:[],lasers:[],ownerMap:new Map(owners.map(o=>[o.id,o])),nodeMap:new Map(),laserMap:new Map()}};};
     const a=point(10,220),b=point(11,224);
     assert.deepEqual(interpolatePresentation(a,b,.5).poses[0].presentationOffset,[-2,0]);
+    assert.equal(extrapolatePresentation(a,b,.5,(seat+1)%3).poses[0],b.poses[0]);
+    assert.equal(extrapolatePresentation(a,b,.5,seat).poses[0].presentationOffset[0],2);
   }
 });
 

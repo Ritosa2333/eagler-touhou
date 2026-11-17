@@ -61,8 +61,14 @@ public:
     const u8* read_pixels(); // 640*scale x 480*scale RGBA, top row first
     u32 draws=0,vertices=0; // this frame's draw calls and vertices
 private:
-    u32 scale_=2,program=0,vbo=0,vao=0,target=0,target_texture=0,pause_target=0;i32 fog_uniform=-1;
-    size_t stream_capacity=0,stream_used=0; // bytes: one orphaned vertex buffer per frame, appended to by each draw
+    u32 scale_=2,program=0,target=0,target_texture=0,pause_target=0;i32 fog_uniform=-1;
+    struct VertexStream {u32 vbo=0,vao=0;size_t capacity=0;};
+#ifdef __EMSCRIPTEN__
+    std::array<VertexStream,3> streams;
+#else
+    std::array<VertexStream,1> streams;
+#endif
+    size_t stream_index=0,stream_used=0;
     Texture solid_,surface_,pause_;std::vector<Vertex> batch;std::vector<u8> pixels;
     i32 blend_=-2;u32 current=0;bool point_=false;bool wrap_u=true,wrap_v=true;Primitive primitive_=Triangles;bool surface_ready=false;
     void texture_parameters(u32 name,bool point,bool wu,bool wv);

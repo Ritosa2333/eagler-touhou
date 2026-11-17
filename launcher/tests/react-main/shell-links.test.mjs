@@ -16,7 +16,6 @@ before(async()=>{
  await require('esbuild').build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:`
  export * from './app/components/launcher/OptionsPanel.tsx';
  export * from './app/components/launcher/LauncherMasthead.tsx';
- export * from './app/components/launcher/SiteFooter.tsx';
  export * from './app/components/launcher/MainSelect.tsx';
  export * from './app/components/launcher/products.ts';
  export * from './app/components/room/MultiplayerDiagnostics.tsx';
@@ -25,8 +24,8 @@ before(async()=>{
  export * from './app/ui/scrollbars.tsx';
  export * from './app/navigation/document-locale.ts';
  export {MemoryRouter,useLocation} from 'react-router';
- export {previewFeaturesEnabled,isPreviewOnlyPage} from './app/release-features.ts';
- `},bundle:true,platform:'node',format:'esm',jsx:'automatic',loader:{'.webp':'dataurl'},outfile:resolve(buildDirectory,'bundle.mjs'),logLevel:'silent',plugins:[authoredSourcesPlugin(project),{name:'dependencies',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:args.path,external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
+ export {accountsEnabled,isPreviewOnlyPage,resolveReleaseFeatures} from './app/release-features.ts';
+ `},bundle:true,platform:'node',format:'esm',jsx:'automatic',loader:{'.webp':'dataurl'},define:{'import.meta.env':JSON.stringify({DEV:false,VITE_PREVIEW_FEATURES:'false',VITE_UI_REVIEW_ENABLED:'true',VITE_ACCOUNTS_ENABLED:'true'})},outfile:resolve(buildDirectory,'bundle.mjs'),logLevel:'silent',plugins:[authoredSourcesPlugin(project),{name:'dependencies',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:args.path,external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
  owners=await import(pathToFileURL(resolve(buildDirectory,'bundle.mjs')));
 });
 afterEach(async()=>{if(root)await React.act(async()=>root.unmount());root=null;env.document.body.replaceChildren();assert.deepEqual(env.errors.splice(0),[]);});
@@ -52,15 +51,15 @@ for(const href of ['lobby.html','lobby.html?game=th06mp&test=1#rooms'])test(`Opt
  await click('#optionsLobbyLink');assert.equal(n('#address').textContent,href.includes('test=1')?'/lobby.html?game=th07mp&test=1#rooms':'/lobby.html?game=th07mp');
 });
 test('Original preselection MP diagnostics subtree exists hidden and retains one owner across SP/MP changes',async()=>{
- const products=owners.createLibraryProducts(['th06','th07mp'],x=>x,id=>'?game='+id);let select,guides=0;
+ const products=owners.createLibraryProducts(['th06','th07mp'],x=>x,id=>'?game='+id);let select;
  function Surface(){const[index,setIndex]=React.useState(0);select=setIndex;return el(owners.OptionsPanel,{product:products[index],open:false,onBack(){},assetUrl:x=>x,
-  multiplayerDiagnostics:el(owners.MultiplayerDiagnostics,{getRelayUrl:()=>'',onGuide(){guides++;}})},el('section',{id:'active-settings-body'},'Synthetic active settings slot'));}
+  multiplayerDiagnostics:el(owners.MultiplayerDiagnostics,{getRelayUrl:()=>'',guideHref:'/docs/multiplayer/th07'})},el('section',{id:'active-settings-body'},'Synthetic active settings slot'));}
  await mount(el(Surface));const shell=n('#mpShell'),fold=n('#mpSettingsFold'),diagnostics=n('#mpNetworkDiagnostics'),check=n('#mpNetworkCheck'),results=n('#mpNetworkResults');
  assert.equal(shell.hidden,true);assert.equal(fold.children.length,0);assert.equal(n('#active-settings-body').parentElement.className,'options-scroll');
  // Exact original th07mp-ui48–50 order assertion, before MP selection.
  assert.ok(check.compareDocumentPosition(results)&env.window.Node.DOCUMENT_POSITION_FOLLOWING);
  for(const index of [1,0,1]){await React.act(async()=>select(index));assert.equal(n('#mpShell'),shell);assert.equal(n('#mpSettingsFold'),fold);assert.equal(n('#mpNetworkDiagnostics'),diagnostics);assert.equal(n('#mpNetworkCheck'),check);assert.equal(n('#mpNetworkResults'),results);assert.equal(shell.hidden,index===0);assert.equal(env.document.querySelectorAll('#active-settings-body').length,1);assert.equal(env.document.querySelectorAll('#mpNetworkResults').length,1);}
- await click('#mpGuideOpen');assert.equal(guides,1);assert.equal(results.hidden,true,'Mounting retained probe presentation does not start a probe');
+ assert.equal(n('#mpGuideOpen').getAttribute('href'),'/docs/multiplayer/th07');assert.equal(results.hidden,true,'Mounting retained probe presentation does not start a probe');
 });
 test('Original hidden legacy online fold preserves readiness, retained normalized input and required action ports',async()=>{
  let update,creates=0,invalid=0;const joins=[];
@@ -74,7 +73,7 @@ test('Original hidden legacy online fold preserves readiness, retained normalize
  await click('#mpJoinRoom');assert.deepEqual(joins,['12345678']);await click('[data-mp-fold=online]');assert.equal(head.getAttribute('aria-expanded'),'false');assert.equal(n('[data-mp-fold-body=online]').hasAttribute('inert'),true);
  await React.act(async()=>update('missing'));await React.act(async()=>update('ready'));assert.equal(head.getAttribute('aria-expanded'),'true');assert.equal(input.value,'12345678');assert.equal(fold.hidden,true);
 });
-function Masthead({variant='lobby',assetUrl=x=>x,launcherHref='/en.html',faqHref='faq.html',aboutHref='about.html',...props}){const[open,setOpen]=React.useState(false);return el(owners.LauncherMasthead,{...props,variant,assetUrl,launcherHref,faqHref,aboutHref,menuOpen:open,onMenuOpenChange:setOpen,lessMotion:false,onToggleMotion(){},noticeEnabled:true,onToggleNotice(){},diagnosticsEnabled:false,onToggleDiagnostics(){},onDonation(){},onFirstUse(){},languageControl:el(owners.MainSelect,{id:'uiLanguageSelect',className:'option-select ui-language-select','data-trigger-i18n':'ui.language.menu',value:'en',onChange(){}},el('option',{value:'zh-CN'},'简体中文'),el('option',{value:'en'},'English'),el('option',{value:'ja'},'日本語'))});}
+function Masthead({variant='lobby',assetUrl=x=>x,launcherHref='/en.html',faqHref='faq.html',aboutHref='about.html',...props}){const[open,setOpen]=React.useState(false);return el(owners.LauncherMasthead,{...props,variant,assetUrl,launcherHref,faqHref,aboutHref,menuOpen:open,onMenuOpenChange:setOpen,lessMotion:false,onToggleMotion(){},diagnosticsEnabled:false,onToggleDiagnostics(){},onDonation(){},onFirstUse(){},languageControl:el(owners.MainSelect,{id:'uiLanguageSelect',className:'option-select ui-language-select','data-trigger-i18n':'ui.language.menu',value:'en',onChange(){}},el('option',{value:'zh-CN'},'简体中文'),el('option',{value:'en'},'English'),el('option',{value:'ja'},'日本語'))});}
 test('Lobby launcher back keeps original anchor and uses Router, standalone docs remain native',async()=>{await mount(el(Masthead));assert.equal(n('#launcherLink').getAttribute('href'),'/en.html');assert.equal(n('a[href="faq.html"]').getAttribute('data-discover'),null);await click('#launcherLink');assert.equal(n('#address').textContent,'/en.html');});
 async function openMasthead() {await React.act(async()=>{const trigger=n('#mastheadMenuToggle');trigger.focus();trigger.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));});await vi.waitFor(async()=>{await React.act(async()=>{await new Promise(resolve=>env.window.requestAnimationFrame(resolve));});assert.ok(env.document.querySelector('#mastheadMenuPanel'));});}
 test('Radix masthead menu opens by keyboard and Escape restores its trigger',async()=>{
@@ -105,9 +104,10 @@ test('language list returns to its entry before Escape closes the menu',async()=
  await React.act(async()=>n('.masthead-language-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true})));
  assert.equal(n('#mastheadMenuToggle').getAttribute('aria-expanded'),'false');
 });
-test('developer options follows GitHub and donation at the bottom of the menu',async()=>{
- await mount(el(Masthead));await openMasthead();const items=[...n('#mastheadMenuPanel').querySelectorAll('.ui-menu-item')];
- assert.equal(items.at(-3).textContent,'GitHub');assert.ok(items.at(-2).classList.contains('book-menu-donation'));
+test('developer options follows language within settings',async()=>{
+ await mount(el(Masthead));await openMasthead();
+ const items=[...n('#mastheadMenuPanel [aria-label="Settings"]').querySelectorAll('.ui-menu-item')];
+ assert.equal(items.at(-2),n('.masthead-language-trigger'));
  assert.equal(items.at(-1).textContent,owners.translate('en','developer.options'));
 });
 
@@ -122,39 +122,63 @@ test('developer options contains diagnostics and beta mode and returns with Esca
  assert.equal(n('#mastheadMenuToggle').getAttribute('aria-expanded'),'true');
 });
 
-test('avatar navigates to the profile address and selects only the profile destination', async () => {
-  await mount(el(Masthead)); await click('.book-profile-trigger');
-  assert.equal(n('#address').textContent, '/profile.html?lang=en');
-  assert.equal(n('.book-profile-trigger').getAttribute('aria-current'), 'page');
-  assert.equal(env.document.querySelectorAll('.book-main-nav [aria-current]').length, 0);
+test('pre-session masthead reserves the account slot without guessing a login destination', async () => {
+  await mount(el(Masthead, {interactive:false}));
+  assert.equal(n('.account-loading').getAttribute('aria-busy'), 'true');
+  assert.equal(env.document.querySelector('.book-profile-trigger'), null);
+  assert.equal(env.document.querySelector('.masthead-account-entry[href]'), null);
 });
 
 test('mounted Router links remove the deployment mount before navigation', async () => {
-  const masthead = el(Masthead, {variant:'help', launcherHref:'/review/en.html', assetUrl:path=>'/review/'+path});
+  const masthead = el(Masthead, {interactive:false,variant:'help', launcherHref:'/review/en.html', assetUrl:path=>'/review/'+path});
   await mount(masthead, {basename:'/review/', initialEntries:['/review/about.html?lang=zh-CN']});
-  assert.equal(n('.book-profile-trigger').getAttribute('href'), '/review/profile.html?lang=en');
+  assert.equal(n('.account-loading').getAttribute('aria-busy'), 'true');
   assert.equal(n('.book-lobby-link').getAttribute('href'), '/review/lobby.html?lang=en');
 });
 
-test('source-only review keeps preview features visible by default', async () => {
-  assert.equal(owners.previewFeaturesEnabled, true);
-  for (const path of ['/ui-review.html', '/login.html', '/profile.html']) assert.equal(owners.isPreviewOnlyPage(path), true);
-  await mount(el(owners.SiteFooter, {onDonation(){}}));
-  assert.ok(n('footer.site-footer'));
+test('source-only preview keeps account routes gated unless accounts are explicitly enabled', () => {
+  const sourceOnly = owners.resolveReleaseFeatures({DEV: true});
+  assert.equal(sourceOnly.accountsEnabled, false);
+  assert.equal(sourceOnly.isPreviewOnlyPage('/ui-review.html'), false);
+  for (const path of ['/login.html', '/profile.html', '/u/reimu.1_test']) assert.equal(sourceOnly.isPreviewOnlyPage(path), true);
+  assert.equal(owners.resolveReleaseFeatures({DEV: true, VITE_ACCOUNTS_ENABLED: 'true'}).accountsEnabled, true);
+  assert.equal(owners.accountsEnabled, true, 'the synthetic component harness opts into account navigation');
+});
+
+test('production enables accounts by default and supports an explicit opt-out', () => {
+  const accountPaths = ['/login.html', '/profile.html', '/ratings.html', '/u/reimu.1_test'];
+  const production = owners.resolveReleaseFeatures({DEV: false});
+  assert.equal(production.accountsEnabled, true);
+  for (const path of accountPaths) assert.equal(production.isPreviewOnlyPage(path), false, path);
+  assert.equal(production.isPreviewOnlyPage('/ui-review.html'), true);
+
+  const previewOptIn = owners.resolveReleaseFeatures({DEV: false, VITE_PREVIEW_FEATURES: 'true', VITE_ACCOUNTS_ENABLED: 'false'});
+  assert.equal(previewOptIn.accountsEnabled, false);
+  assert.equal(previewOptIn.isPreviewOnlyPage('/ui-review.html'), false);
+  for (const path of accountPaths) assert.equal(previewOptIn.isPreviewOnlyPage(path), true, path);
 });
 
 
-test('account, settings and help groups expose the handbook in its help group',async()=>{
+test('the masthead groups help, site actions, settings and information',async()=>{
  await mount(el(Masthead));await openMasthead();
- for(const key of ['nav.account','nav.settings','nav.help'])assert.ok(n('#mastheadMenuPanel').querySelector('[role="group"][aria-label="'+owners.translate('en',key)+'"]'));
+ assert.equal(n('#mastheadMenuPanel').querySelector('[role="group"][aria-label="'+owners.translate('en','nav.account')+'"]'),null);
+ for(const key of ['nav.help','nav.site','nav.settings','nav.aboutSite'])assert.ok(n('#mastheadMenuPanel').querySelector('[role="group"][aria-label="'+owners.translate('en',key)+'"]'));
  const link=n('#mastheadMenuPanel a[href="ui-review.html?lang=en"]');
  assert.equal(link.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.help'));
  assert.equal(link.getAttribute('target'),'_blank');assert.equal(link.getAttribute('rel'),'noopener noreferrer');
+ const privacy=n('#mastheadMenuPanel a[href="privacy.html?lang=en"]');
+ assert.equal(privacy.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.aboutSite'));
+ assert.equal(privacy.textContent.trim(),owners.translate('en','nav.privacyPolicy'));
  const status=n('#mastheadMenuPanel a[href="uptime/?lang=en"]');
  assert.equal(status.textContent,owners.translate('en','nav.serviceStatus'));
- assert.equal(status.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.help'));
+ assert.equal(status.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.site'));
+ assert.equal(n('.book-menu-donation').closest('[role="group"]'),status.closest('[role="group"]'));
  assert.equal(n('.masthead-language-trigger').closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.settings'));
- assert.deepEqual([...n('#mastheadMenuPanel').querySelectorAll('.masthead-menu-heading')].map(x=>x.textContent),['Settings','Site information']);
+ assert.equal(n('.masthead-developer-trigger').closest('[role="group"]'),n('.masthead-language-trigger').closest('[role="group"]'));
+ assert.deepEqual([...n('#mastheadMenuPanel').querySelectorAll('.masthead-menu-heading')].map(x=>x.textContent),['Help','Site','Settings','About this site']);
+ const icons=[...link.closest('[role="group"]').querySelectorAll('svg')];
+ assert.equal(icons.length,4);
+ assert.equal(new Set(icons.map(icon=>icon.innerHTML)).size,icons.length);
 });
 
 test('scroll visibility handles nested panes independently and releases its timers on unmount',async()=>{
@@ -176,16 +200,25 @@ test('scroll visibility handles nested panes independently and releases its time
  }finally{vi.useRealTimers();}
 });
 
-test('allowed migration appears in Help when narrow layouts hide the top link',async()=>{
+test('allowed migration appears in About this site when narrow layouts hide the top link',async()=>{
  await mount(el(Masthead,{migrationHref:'migrate.html?from=old',migrationPolicyKnown:true}));
  await openMasthead();
  const link=n('#mastheadMenuPanel a[href="migrate.html?from=old"]');
- assert.equal(link.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.help'));
+ assert.equal(link.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.aboutSite'));
  assert.equal(link.getAttribute('data-policy'),'host-manifest-origin-migration-policy/1');
 });
 
-test('Help does not advertise migration when the host provides no allowed address',async()=>{
+test('the masthead menu omits migration when the host provides no allowed address',async()=>{
  await mount(el(Masthead));await openMasthead();
  assert.equal(n('#originMigrationOpen').hidden,true);
  assert.equal(env.document.querySelector('#mastheadMenuPanel a[href^="migrate.html"]'),null);
+});
+
+test('the UI review route can be published independently of beta features', () => {
+  const hidden = owners.resolveReleaseFeatures({DEV: false, VITE_PREVIEW_FEATURES: 'true', VITE_UI_REVIEW_ENABLED: 'false'});
+  assert.equal(hidden.uiReviewEnabled, false);
+  assert.equal(hidden.isPreviewOnlyPage('/ui-review.html'), true);
+  const shown = owners.resolveReleaseFeatures({DEV: false, VITE_PREVIEW_FEATURES: 'false', VITE_UI_REVIEW_ENABLED: 'true'});
+  assert.equal(shown.uiReviewEnabled, true);
+  assert.equal(shown.isPreviewOnlyPage('/ui-review.html'), false);
 });

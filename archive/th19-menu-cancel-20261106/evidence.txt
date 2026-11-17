@@ -1,0 +1,5 @@
+EXE SHA256 8918fb39d511c9906ef769c6dd2761e7cb44ded5b7c4c1cd99c8992d12c078e9
+556340 case2: input state3 entered after age>30.
+556340 case5: age>5 issues interrupt1 to portraits and cursors; same instances retain world positions.
+title.anm root78 creates script159; root79 creates script138. Both show sprite82 name98 via interrupt26; left x270/right x1010, y640.
+Before fix: X at character entrance age3 caused screen9 -> screen0.

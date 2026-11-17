@@ -55,6 +55,47 @@ void homingItems(unsigned count) {
   mp::pilots[1].playerState=1;tickItems(false);
   check(item->recipient==1,"waiting reward reacquires a real recipient after respawn");
 }
+void absorbingItems(unsigned count) {
+  for (int type : {1, 2}) {
+    begin(count);
+    itemManager.reset();
+    for (unsigned s = 0; s < count; ++s) {
+      auto& p = mp::pilots[s];
+      p.px = (s == 1 ? 0 : 160) * 128;
+      p.py = 300 * 128;
+      p.playerState = 1;
+      p.resources.power = s == 1 ? 400 : 100;
+    }
+    auto* item = itemManager.spawn(type, {0, 318});
+    check(item != nullptr, "spawn UFO-bound pickup");
+    item->state = item_system::State::Absorbing;
+    item->recipient = 0;
+    item->attractionSpeed = 6;
+    item->velocity = {0, 6}; // Previous velocity points away from the touching pilot.
+    item_system::FrameView frame;
+    frame.ufo = {true, 1, 120, {0, 100}};
+    frame.selectPlayer = mp::itemPlayer;
+    const auto calls = th12::random.calls;
+    bool collected = false;
+    itemManager.tick(frame, [&](const item_system::Event& event) {
+      if (event.kind != item_system::EventKind::CollectOrdinary) return;
+      check(event.entity.collector == 1, "touching pilot can intercept a UFO-bound item reserved for another pilot");
+      check(event.entity.state == item_system::State::Absorbing,
+            "contact preserves UFO motion until pickup instead of redirecting power");
+      collected = true;
+    });
+    check(collected && !item->active(), "UFO-bound item is collectible after homing into the pickup rectangle");
+    check(th12::random.calls == calls, "interception preserves gameplay RNG");
+
+    item = itemManager.spawn(type, {0, 400});
+    item->state = item_system::State::Absorbing;
+    item->recipient = 0;
+    item->attractionSpeed = 6;
+    itemManager.tick(frame);
+    check(item->state == item_system::State::Absorbing && item->recipient == -1 &&
+          item->position.y < 400, "untouched UFO-bound item keeps moving to the UFO without a pilot reservation");
+  }
+}
 void sharedStock(unsigned count) {
   begin(count);
   for(unsigned s=0;s<count;++s) {
@@ -296,6 +337,7 @@ int main(){
     check(run(false)==run(true),"full-window correction preserves the on-time world without dropping its fresh tick");
   }
   powerItems(2);powerItems(3);sharedStock(2);sharedStock(3);homingItems(2);homingItems(3);
+  absorbingItems(2);absorbingItems(3);
   for(unsigned count:{2u,3u}) {
     begin(count);
     Enemy ufo;ufo.id=102;ufo.isUfo=true;

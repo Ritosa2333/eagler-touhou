@@ -1,5 +1,6 @@
 #include "HostilePool.hpp"
 #include "GameState.hpp"
+#include "FriendlyPool.hpp"
 namespace th12 {
 bullet_pool::Slots hostilePool;
 std::array<Projectile*, bullet_pool::Slots::capacity> hostileSlots{};
@@ -31,7 +32,7 @@ void releaseHostileBullet(u32 id) {
   hostileSlots[slot] = nullptr;
   slotsById.erase(found);
 }
-void refreshHostilePointers() {
+void refreshProjectilePointers() {
   // deque compaction moves values. Rebuild pointers after it, preserving the
   // physical pool identity/cursor; synchronous pushes preserve references.
   hostileSlots = {};
@@ -39,11 +40,15 @@ void refreshHostilePointers() {
   // the new epoch and retire only missing IDs, preserving hash-node storage.
   indexEpoch = !indexEpoch;
   hostilePool.phases = {};
-  for (auto& b : bullets)
-    if (!b.friendly && b.active && b.enemy.phase != eb::Phase::Inactive && b.physicalSlot >= 0) {
+  resetFriendlyPool();
+  for (auto& b : bullets) {
+    if (!b.active || b.physicalSlot < 0) continue;
+    if (b.friendly) attachFriendlySlot(b);
+    else if (size_t(b.physicalSlot) < hostileSlots.size() && b.enemy.phase != eb::Phase::Inactive) {
       attachHostileSlot(b);
       hostilePool.phases[b.physicalSlot] = 1;
     }
+  }
   std::erase_if(slotsById, [](const auto& entry) { return entry.second.epoch != indexEpoch; });
 }
 } // namespace th12

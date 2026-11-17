@@ -8,8 +8,9 @@ import { basename, dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import { parse } from "acorn";
+import { parse as parseHtml } from "parse5";
 import { canonicalPackagePayload, validatePackageDescriptor } from "../package/package-descriptor.mjs";
-import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { PRODUCT_GAMES, productRequiresImport } from "../lib/contracts/product-catalog.mjs";
 import { runtimeFileNames } from "../lib/runtime-release.mjs";
 import { RELEASE_CATALOG_FILE, releaseCatalogEntryUrl, validateReleaseCatalog } from "../lib/contracts/release-catalog.mjs";
 import { SITE_MANIFEST_FILE, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
@@ -26,7 +27,7 @@ import { BUILD_AUTHORITY_PUBLICATION, classifyBuildProfile } from "../lib/build-
 import { hostArtworkFiles } from "../lib/host-artwork.mjs";
 import { assertAppShellContract } from "../lib/app-shell-validation.mjs";
 import { APP_SHELL_RETIREMENT_WORKER } from "../lib/app-shell-retirement.mjs";
-import { readReactFrontendArtifact } from "../lib/react-frontend-artifact.mjs";
+import { assertReactFrontendGameCoverage, readReactFrontendArtifact } from "../lib/react-frontend-artifact.mjs";
 import { STATIC_APP_SHELL_FILES } from "../lib/frontend-static-manifest.mjs";
 import { browserModuleClosure } from "../lib/browser-module-graph.mjs";
 import { normalizeSiteUrl } from "../lib/site-metadata.mjs";
@@ -74,6 +75,7 @@ if (!resourceMode) throw new Error("invalid deployment resourceMode");
 const games = validateSiteManifest(JSON.parse(await readFile(resolve(root, SITE_MANIFEST_FILE), "utf8")));
 await verifyLegacySiteManifestAlias(root, games);
 const gameIds = Object.keys(games.games);
+assertReactFrontendGameCoverage(reactFrontend, gameIds);
 if (!gameIds.length || gameIds.some(game => !Object.hasOwn(PRODUCT_GAMES, game))) {
   throw new Error("Site Manifest contains no products or an unregistered product");
 }
@@ -179,18 +181,17 @@ if (/<script\b[^>]+src=/i.test(migrationHtml) || /<link\b[^>]+stylesheet/i.test(
 
 async function verifyHtmlReferences(relativeHtmlPath) {
   const htmlPath = resolve(root, relativeHtmlPath);
-  // Inline script/style bodies routinely contain `<` and `>` (comparisons, arrow
-  // functions), which the tag scanner below would otherwise read as markup and
-  // then mistake e.g. `image.src = source;` for a tag attribute. Strip comment
-  // and script/style bodies while keeping their opening tags so real `src`/`href`
-  // attributes on those elements are still verified.
-  const html = (await readFile(htmlPath, "utf8"))
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<script\b([^>]*)>[\s\S]*?<\/script>/gi, "<script$1></script>")
-    .replace(/<style\b([^>]*)>[\s\S]*?<\/style>/gi, "<style$1></style>");
-  for (const tagMatch of html.matchAll(/<[^>]+>/g)) {
-    for (const match of tagMatch[0].matchAll(/\b(?:src|href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
-      const value = match[1] ?? match[2] ?? match[3];
+  const document = parseHtml(await readFile(htmlPath, "utf8"));
+  function* references(node) {
+    for (const attribute of node.attrs || []) {
+      if (attribute.name === "src" || attribute.name === "href") yield attribute.value;
+    }
+    for (const child of node.childNodes || []) yield* references(child);
+    if (node.content) yield* references(node.content);
+  }
+  // Parse real attributes: React hydration payloads can contain escaped markup
+  // and inline code containing src/href, neither of which loads a resource.
+  for (const value of references(document)) {
       if (!value || /^(?:data:|https?:|mailto:|#)/i.test(value)) continue;
       const pathname = value.split(/[?#]/, 1)[0];
       if (!pathname) continue;
@@ -207,7 +208,6 @@ async function verifyHtmlReferences(relativeHtmlPath) {
         throw new Error(`missing HTML resource: ${relativeHtmlPath} -> ${value}`);
       }
       if (!info.isFile() && !info.isDirectory()) throw new Error(`invalid HTML resource: ${relativeHtmlPath} -> ${value}`);
-    }
   }
 }
 const htmlPaths = ["index.html", "migrate.html", "about.html", "faq.html", "en.html"];
@@ -297,7 +297,7 @@ if (resourceMode === RESOURCE_MODE_HOSTED) {
     }
   }
   if (publishedPayloads.some(path => !siteLanguagePacks.has(path))) throw new Error("external deployment must not bundle game/shared payloads");
-  if (Object.keys(releaseCatalog.games).sort().join(",") !== [...gameIds].sort().join(",")) {
+  if (Object.keys(releaseCatalog.games).sort().join(",") !== gameIds.filter(game => !productRequiresImport(game)).sort().join(",")) {
     throw new Error("external deployment must publish every selected Package Descriptor");
   }
 }
@@ -503,7 +503,7 @@ for (const game of preloadGames) {
 }
 
 if (resourceMode === RESOURCE_MODE_EXTERNAL) {
-  for (const game of gameIds) {
+  for (const game of gameIds.filter(game => !productRequiresImport(game))) {
     const entry = games.games[game];
     const published = releaseCatalog.games[game];
     if (!published || !entry.package || entry.package.revision !== published.revision ||

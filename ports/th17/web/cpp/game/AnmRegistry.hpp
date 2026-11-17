@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 namespace th17 {
+namespace multiplayer { class FrameImage; }
 // A typed instance pool. Handles retain the original generation/slot scheme
 // so stale owners cannot accidentally address a reused animation.
 class AnmRegistry {
@@ -37,22 +38,26 @@ private:
     };
     struct Node {
         AnmVm vm;AnmVm* borrowed=nullptr;u32 slot=slot_mask,handle=0;bool active=false,registered=false,alternate=false;
+        std::weak_ptr<const AnmInterpolators> rollback_curves;
         bool frozen_root=false;
         Node* parent=nullptr;NodeList children;
         Link group_link{this},child_link{this};
         NodeList::iterator position,child_position;
     };
-    // Allocate the native-sized pool once, before gameplay, with adjacent VMs
-    // in one slab. Bursts must not allocate thousands of individual pool nodes.
-    std::unique_ptr<Node[]> pool;
+    // Pages keep VM addresses stable while committing memory as slots are used.
+    static constexpr u32 page_size=128;
+    std::array<std::unique_ptr<Node[]>,(slot_mask+page_size-1)/page_size> pages;
+    u32 next_slot=0,page_count=0;
+    std::vector<Node*> address_pages;
+    mutable Node* recent_page=nullptr;
     std::unordered_map<AnmVm*,Node*> nodes;
     std::unordered_map<Node*,std::unique_ptr<Node>> overflow;
     std::vector<Node*> free_overflow;
     // Overflow handles share slot 0x3fff. Index their generation instead of
     // scanning every animation when a cancellation burst exceeds the pool.
     std::unordered_multimap<u32,Node*> overflow_handles;
-    std::unordered_map<AnmVm*,std::unique_ptr<Node>> external;
-    std::vector<u32> free_slots;
+    std::unordered_map<AnmVm*,std::shared_ptr<Node>> external;
+    std::vector<u16> free_slots;
     std::array<NodeList,2> groups;
     // The original alternate-group mapping also accepts layer 31 -> 43;
     // ordinary scene drawing consumes layers 0..42. Keep that mapping intact.
@@ -60,9 +65,9 @@ private:
     std::vector<Node*> pending_deletion;
     u32 generation=0;u32 active_count=0;
     void collect(Node&);void retire(Node&);void erase(Node&);Node* node(AnmVm&)const noexcept;
+    Node* pooled(u32 slot)const noexcept;
 public:
     std::string error;
-    AnmRegistry();
     AnmVm* allocate();u32 submit(AnmVm&,u32 ordering=0);
     AnmVm* find(u32 handle)const noexcept;
     AnmVm* find_child_script(AnmVm&,i32 script,i32 occurrence)const noexcept;
@@ -78,10 +83,12 @@ public:
     bool interrupt(AnmVm&,i32 label,Rng&,float rate,bool immediate);
     const std::vector<AnmVm*>& layer(u32 index)const noexcept{return layers[index];}
     u32 count()const noexcept{return active_count;}
+    bool borrowed_root(const AnmVm& vm)const noexcept{return external.count(const_cast<AnmVm*>(&vm))!=0;}
     u32 handle(const AnmVm&)const noexcept;
     u32 slot(const AnmVm&)const noexcept;
     u32 ordered_handle(bool alternate,u32 index)const noexcept;
     u32 ordered_count(bool alternate)const noexcept{return groups[alternate].size();}
     u32& generation_counter()noexcept{return generation;}
+    bool save_rollback(multiplayer::FrameImage&);
 };
 }

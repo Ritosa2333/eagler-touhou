@@ -13,15 +13,15 @@ window.addEventListener('message',async e=>{
  if(m.event==='ready')try{
   window.__TH19_HARNESS.ready=true;
   const options={touchEnabled:true,touchSensitivity:100,touchMovementMode:'touch',touchFocusMode:'hold-button'};
-  if(query.has('side')){
-   const side=Number(query.get('side')),url=new URL(query.get('relay')||'ws://127.0.0.1:18142/');url.searchParams.set('room',query.get('room')||'th19mp-1901');url.searchParams.set('run','1');url.searchParams.set('player',String(side));url.searchParams.set('players','2');
-   Object.assign(options,{netplayMode:'lan',netplayUrl:url.href,netplayPlayer:side,netplayPlayerCount:2,netplaySeed:190001,netplayDifficulty:1,netplayInputDelay:0,netplayAdonisMode:Number(query.get('mode')||0),netplayLoadouts:[{character:0,shot:0},{character:1,shot:0}],netplayIceServers:[]});
+  if(query.has('side')||query.has('spectator')){
+   const side=Number(query.get('side')),url=new URL(query.get('relay')||'ws://127.0.0.1:18142/');url.searchParams.set('room',query.get('room')||'th19mp-1901');url.searchParams.set('run','1');if(query.has('spectator')){url.searchParams.set('spectator',query.get('spectator'));if(query.has('member'))url.searchParams.set('member',query.get('member'));}else url.searchParams.set('player',String(side));url.searchParams.set('players','2');
+   Object.assign(options,{netplayMode:'lan',netplaySpectator:query.has('spectator'),netplaySpectatorId:query.get('spectator')||'',netplayUrl:url.href,netplayPlayer:side,netplayPlayerCount:2,netplaySeed:190001,netplayDifficulty:Number(query.get('difficulty')||1),netplayInputDelay:0,netplayAdonisMode:Number(query.get('mode')||0),netplayLoadouts:[{character:0,shot:0},{character:1,shot:0}],netplayIceServers:[]});
   }
   await command('configure',{music:'none',options,sharedResources:[{path:'/msgothic.ttc',url:new URL('../content/msgothic.ttf',location.href).href}]});
   window.__TH19_HARNESS.configured=true;
-  if(query.has('side')){const preview=await command('prepare-room');if(preview.presented!==true)throw Error('Native room title did not present');window.__TH19_HARNESS.preview=true;}
+  if(query.has('side')||query.has('spectator')){const preview=await command('prepare-room');if(preview.presented!==true)throw Error('Native room title did not present');window.__TH19_HARNESS.preview=true;}
   if(query.get('autolaunch')!=='0')await command('launch',{launchSerial:1});
  }catch(error){errors.push(error.message);}
 });
-const url=new URL(query.has('side')?'../runtime/th19-multiplayer.html':'../runtime/th19.html',location.href);url.searchParams.set('managedData','1');url.searchParams.set('gameGeneration','test-fixture');url.searchParams.set('runtimeEpoch',String(epoch));frame.src=url.href;document.body.append(frame);
+const url=new URL((query.has('side')||query.has('spectator'))?'../runtime/th19-multiplayer.html':'../runtime/th19.html',location.href);url.searchParams.set('managedData','1');url.searchParams.set('gameGeneration','test-fixture');url.searchParams.set('runtimeEpoch',String(epoch));frame.src=url.href;document.body.append(frame);
 </script></body></html>

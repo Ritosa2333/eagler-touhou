@@ -1,0 +1,8 @@
+{
+  "before": "afc801d5aea55fdf785399b4c5a313331d65cfaa53849ae19b5fc7200e4a1626",
+  "after": "560ba8aa561cb44f83010a2208e55e4fe1f64b840567a8c2d2d0313db873ca44",
+  "changes": [
+    "TH05 spectator capability",
+    "E5 cooperative stage marker"
+  ]
+}

@@ -2614,6 +2614,7 @@ ZunResult MainMenu::DeletedCallback(MainMenu *menu)
     }
     g_Chain.Cut(menu->chainDraw);
     menu->chainDraw = NULL;
+    menu->chainCalc = NULL;
 
     replay = menu->currentReplay;
     if (replay != NULL)

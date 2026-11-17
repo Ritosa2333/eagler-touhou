@@ -1273,7 +1273,7 @@ API(scene_camera_look_at) void scene_camera_look_at(const Vec3* eye,const Vec3* 
 API(scene_camera_perspective) void scene_camera_perspective(float fov,float aspect,float near_plane,float far_plane,Matrix4* out){*out=scene_perspective(fov,aspect,near_plane,far_plane);}
 API(stage_camera_snapshot) void stage_camera_snapshot(const u8* data,const GraphicsViewport* vp,u8* out){StageCamera s;std::memcpy(&s.position,data,12);std::memcpy(&s.direction,data+0x24,12);std::memcpy(&s.up,data+0x18,12);std::memcpy(&s.eye_offset,data+0x3c,12);std::memcpy(&s.fov,data+0x54,4);const auto c=stage_camera(s,*vp);std::memcpy(out,&c.view,64);std::memcpy(out+64,&c.projection,64);std::memcpy(out+128,&c.reference,12);}
 
-API(stage_visibility) u32 stage_visibility(const u8* object,const Vec3* instance,AnmCamera* camera,const GraphicsViewport* viewport,float x,float y,float radius,Vec3* out){StageObject o;std::memcpy(&o.position,object+4,12);std::memcpy(&o.size,object+16,12);std::array<Vec3,16> p{};const bool visible=stage_visible(o,*instance,*camera,*viewport,{x,y},radius,&p);std::memcpy(out,p.data(),192);return visible;}
+API(stage_visibility) u32 stage_visibility(const u8* object,const Vec3* instance,AnmCamera* camera,const GraphicsViewport* viewport,float x,float y,float radius,Vec3* out){StageObject o;std::memcpy(&o.position,object+4,12);std::memcpy(&o.size,object+16,12);std::array<Vec3,16> p{};const bool visible=stage_visible(o,*instance,*camera,*viewport,{x,y},radius,out?&p:nullptr);if(out)std::memcpy(out,p.data(),192);return visible;}
 
 struct StageSceneFixture final:StageSceneServices {
     StageScene scene;bool available=false;StageSceneFixture(StageResource& f,AnmManagerFixture& a,i32 bank):scene(f,a.manager,a.environment,*this,bank){}

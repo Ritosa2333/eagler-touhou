@@ -55,6 +55,28 @@ void start(unsigned seats) {
   require(mp::begin(options), "start world");
   for (int id = 0; id < 12; ++id) load(animationScene.registry, id, float(16 + id));
 }
+void verifyPendingAnimationRetirement() {
+  anm_logic::Scene scene;
+  load(scene.registry, 0, 16);
+  scene.registry.bank(0)->scripts.resize(1);
+  const auto bind = [&] {
+    auto* node = scene.bind(1, 0, 0, 0, anm_logic::Membership::Embedded);
+    require(node != nullptr, "bind synthetic animation");
+    return node->id;
+  };
+  const auto retired = bind();
+  const auto replacement = bind();
+  const auto pending = scene.snapshot();
+  require(scene.nodes().size() == 2, "retirement is pending at capture");
+  scene.collect();
+  require(!scene.nodes().count(retired) && scene.find(1)->id == replacement,
+          "collection keeps the root replacing a retired node");
+  scene.restore(pending);
+  require(scene.nodes().size() == 2, "snapshot restores the uncollected node");
+  scene.collect();
+  require(!scene.nodes().count(retired) && scene.find(1)->id == replacement,
+          "rollback restores pending animation collection");
+}
 void verifyWorld(unsigned seats, bool reference) {
   start(seats); fill(64);
   mp::WorldState full; const auto expected = mp::canonicalHash(); hash(expected);
@@ -93,6 +115,55 @@ void verifyWorld(unsigned seats, bool reference) {
   mp::WorldState::clearPool(); shared.restore();
   require(mp::canonicalHash() == expected, "live checkpoint survives pool clear");
 }
+void verifyItemPages() {
+  start(3);
+  auto& slots = itemManager.entities;
+  slots[255].hintGeneration = 19;
+  slots[256].state = item_system::State::Falling;
+  slots.back().recipient = 2;
+  const auto first = slots;
+  mp::WorldState a;
+  mp::WorldState same;
+  slots[255].hintGeneration = 29;
+  slots[256].state = item_system::State::Inactive;
+  slots.back().recipient = 1;
+  itemManager.smallPointCursor = 11;
+  const auto second = slots;
+  mp::WorldState b;
+  for (int n = 0; n < 20; ++n) {
+    a.restore();
+    require(!std::memcmp(slots.data(), first.data(), sizeof(slots)), "all item pages restore including inactive slots");
+    { mp::WorldState reused; }
+    b.restore();
+    require(!std::memcmp(slots.data(), second.data(), sizeof(slots)) && itemManager.smallPointCursor == 11,
+            "overlapping snapshots retain item pages and allocator metadata");
+  }
+  mp::WorldState::clearPool();
+  same.restore();
+  require(!std::memcmp(slots.data(), first.data(), sizeof(slots)), "shared item pages survive pool clear");
+}
+void verifySoundEvents() {
+  sound_system::Queue queue;
+  queue.play(4,-192);queue.play(4,96);
+  queue.stop(5);queue.stop(6);queue.play(6,192);
+  for(int id=7;id<17;++id)queue.play(id);
+  const auto saved=queue.captureEvents();
+  require(saved.count==12&&saved.values[0].id==4&&saved.values[0].pan==-250&&saved.values[0].requests==2,
+          "inline sound events retain slot order and pan mean");
+  require(saved.values[1].id==5&&saved.values[1].requests==-1&&saved.values[1].stop==1&&
+          saved.values[2].id==6&&saved.values[2].requests==0&&saved.values[2].pan==0&&saved.values[2].stop==0&&
+          saved.values[11].id==15,"inline sound events preserve stop/play semantics and distinct sound limit");
+  allocations=0;counting=true;
+  for(int n=0;n<1000;++n) {
+    const auto events=queue.captureEvents();
+    require(events.count==saved.count&&!std::memcmp(events.values.data(),saved.values.data(),sizeof(saved.values)),
+            "sound capture leaves the queue intact for rollback");
+  }
+  counting=false;require(!allocations,"rollback audio capture has no transient allocations");
+  queue.reset();for(int n=0;n<130;++n)queue.play(1,96);
+  const auto full=queue.captureEvents();
+  require(full.count==1&&full.values[0].requests==128&&full.values[0].pan==500,"sound capture retains request cap");
+}
 }
 void* operator new(size_t size) {
   if (counting) ++allocations;
@@ -106,6 +177,9 @@ void operator delete(void* value, size_t) noexcept { std::free(value); }
 void operator delete[](void* value, size_t) noexcept { std::free(value); }
 int main(int argc, char** argv) {
   const bool reference = argc > 1 && !std::strcmp(argv[1], "--reference");
+  verifyPendingAnimationRetirement();
+  verifyItemPages();
+  verifySoundEvents();
   verifyWorld(2, reference); verifyWorld(3, reference);
   anm_logic::Registry original; for (int i = 0; i < 12; ++i) load(original, i, float(i + 10));
   auto retained = original; original.unloadBank(3); load(original, 4, 77);

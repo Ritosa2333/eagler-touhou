@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { RELAY_LIMITS, TH09_SPECTATOR_HISTORY_LIMITS, closeTh09HistoryAdmission, createRelayMessageGate, acceptRelayMessage, createBoundedRelaySender,
   normalizeRelaySignal, appendSpectatorHistory, clearSpectatorHistory, hasPendingSpectators,
-  validRelayControlMessage } from '../src/relay-flow-control.mjs';
+  validRelayControlMessage,relayGameplayPayload } from '../src/relay-flow-control.mjs';
 
 class Socket extends EventEmitter {
   readyState = 1; bufferedAmount = 0; sent = []; closed = null;
@@ -112,3 +112,7 @@ assert.equal(live.spectatorClients.get('viewer').readyState,1,'live spectator su
 assert.equal(catchingUp.readyState,3,'an incomplete replay prefix cannot silently become live');
 assert.equal(live.clients.get(0).readyState,1);assert.equal(live.signalClients.get(0).readyState,1);
 console.log('PASS payload/rate budgets, bounded live/delayed sends, signaling schema and complete-history overflow isolation');
+
+const nativePayload=Buffer.from([0xe6,0,7,8]);
+assert.deepEqual(relayGameplayPayload({relaySourceEnvelope:true},2,nativePayload),Buffer.from([0xe6,2,0xe6,0,7,8]));
+assert.equal(relayGameplayPayload({},2,nativePayload),nativePayload,'other products retain their relay wire format');

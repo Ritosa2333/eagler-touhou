@@ -4,7 +4,7 @@ import {mkdtempSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join, resolve, sep} from 'node:path';
 import {createPublicNicknames} from '../src/public-nicknames.mjs';
-import {createDeepSeekNicknameReviewer} from '../src/nickname-review.mjs';
+import {createCompletionReviewer, createDeepSeekNicknameReviewer} from '../src/nickname-review.mjs';
 import {DatabaseSync} from 'node:sqlite';
 import {PUBLIC_NICKNAME_POLICY} from '../src/nickname-policy.mjs';
 import {createNicknameRequestGuard, nicknameAddressScope} from '../src/nickname-request-guard.mjs';
@@ -165,6 +165,20 @@ test('provider request disables thinking, sends only nickname, caps output and a
     const invalid=createDeepSeekNicknameReviewer({apiKey:'test-only',fetch:async()=>new Response(JSON.stringify(payload))});
     await assert.rejects(invalid('普通昵称'));
   }
+});
+
+test('completion reviewer sends the caller prompt and content unchanged',async()=>{
+  let body;
+  const reviewer=createCompletionReviewer({apiKey:'test-only',fetch:async(url,request)=>{
+    assert.equal(url,'https://api.deepseek.com/chat/completions');body=JSON.parse(request.body);
+    return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'1'}}]}));
+  }});
+  assert.equal(await reviewer('custom moderation policy','free-form content'),true);
+  assert.deepEqual(body.messages,[
+    {role:'system',content:'custom moderation policy'},
+    {role:'user',content:'free-form content'},
+  ]);
+  assert.equal(body.max_tokens,2);assert.deepEqual(body.thinking,{type:'disabled'});
 });
 
 test('reserved political names cannot be approved by a permissive reviewer or a forged cache',async()=>{

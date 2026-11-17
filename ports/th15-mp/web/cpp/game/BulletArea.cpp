@@ -1,6 +1,17 @@
 #include "BulletArea.hpp"
 #include <cmath>
 namespace th15 {
+bool BulletContactBounds::refine_circle(const Vec3& p,float radius,float graze)const noexcept{
+    for(unsigned seat=0;seat<regions.size();++seat)if(active&(1u<<seat)){const auto& region=regions[seat];
+        const float extent=float(float(region.radius+radius)+graze),dx=float(region.position.x-p.x),dy=float(region.position.y-p.y);
+        if(!std::isfinite(float(float(dx+dy)+extent))||(std::abs(dx)<=extent&&std::abs(dy)<=extent))return true;
+    }return false;
+}
+bool BulletContactBounds::refine_rectangle(const Vec3& p,float x,float y)const noexcept{
+    for(unsigned seat=0;seat<regions.size();++seat)if(active&(1u<<seat)){const auto& region=regions[seat];
+        if(!(p.x<float(region.minimum.x-x)||p.x>float(region.maximum.x+x)||p.y<float(region.minimum.y-y)||p.y>float(region.maximum.y+y)))return true;
+    }return false;
+}
 namespace {
 bool rounded_rectangle(float x,float y,float hx,float hy,float radius)noexcept{
     if(float(hx+radius)>=std::fabs(x)&&hy>=std::fabs(y))return true;

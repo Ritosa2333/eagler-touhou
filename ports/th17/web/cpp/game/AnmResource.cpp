@@ -67,22 +67,46 @@ bool AnmResource::open(const u8* data,u32 size){
     }while(true);
     next.alpha_bounds.assign(next.sprites.size(),{0,0,1,1});
     for(u32 t=0;t<next.textures.size();t++){
-        const auto& texture=next.textures[t];std::vector<u8> rgba;
-        if(texture.format==0||texture.format==3||texture.format==4||texture.low_resolution_scale||texture.source_x||texture.source_y||texture.pixel_width!=texture.width||texture.pixel_height!=texture.height||!texture.rgba(rgba))continue;
+        const auto& texture=next.textures[t];
+        if(texture.format==0||texture.format==3||texture.format==4||texture.low_resolution_scale||texture.source_x||texture.source_y||texture.pixel_width!=texture.width||texture.pixel_height!=texture.height||texture.kind!=AnmTexture::Kind::Embedded)continue;
+        const u32 bpp=pixel_size(texture.pixel_format);
+        // Test the native alpha bits directly. RGB-only images cover their
+        // entire sprite, and the other formats have a byte-aligned alpha mask.
+        if(texture.pixel_format==3||texture.pixel_format==4)continue;
+        const u8 alpha_mask=texture.pixel_format==2?0x80:texture.pixel_format==5?0xf0:0xff;
+        const i32 tw=texture.width,th=texture.height;
         for(u32 i=0;i<next.sprites.size();i++){
             const auto& s=next.sprites[i];if(s.texture!=t||s.width<32||s.height<32||s.x<0||s.y<0||s.x+s.width>texture.width||s.y+s.height>texture.height||std::floor(s.x)!=s.x||std::floor(s.y)!=s.y||std::floor(s.width)!=s.width||std::floor(s.height)!=s.height)continue;
             const i32 w=i32(s.width),h=i32(s.height),ox=i32(s.x),oy=i32(s.y);i32 left=w,top=h,right=-1,bottom=-1;
             // Include neighbouring texels at atlas/texture edges as well. This
             // handles repeat/clamp sampling; two texels of margin retain the
             // full bilinear footprint and subpixel rasterization boundaries.
-            for(i32 y=-1;y<=h;y++)for(i32 x=-1;x<=w;x++){
-                const i32 tx=(ox+x+texture.width)%texture.width,ty=(oy+y+texture.height)%texture.height;
-                if(!rgba[(size_t(ty)*texture.width+tx)*4+3])continue;
-                left=std::min(left,x);right=std::max(right,x);top=std::min(top,y);bottom=std::max(bottom,y);
+            const u64 area_limit=u64(w)*h*3;
+            bool trim=true;
+            // Start with the bottom neighbour, then scan from the top. Only
+            // the outermost nonzero alpha on each row affects the rectangle.
+            for(i32 scan=-1;scan<=h;++scan){
+                const i32 y=scan==-1?h:scan-1;
+                const i32 ty=oy+y;
+                const auto* row=texture.pixels.data()+size_t(ty<0?th-1:ty==th?0:ty)*tw*bpp+bpp-1;
+                const auto opaque=[&](i32 x){
+                    const i32 tx=ox+x;
+                    return row[size_t(tx<0?tw-1:tx==tw?0:tx)*bpp]&alpha_mask;
+                };
+                i32 first=-1;
+                while(first<=w&&!opaque(first))++first;
+                if(first>w)continue;
+                i32 last=w;
+                while(last>first&&!opaque(last))--last;
+                left=std::min(left,first);right=std::max(right,last);
+                top=std::min(top,y);bottom=std::max(bottom,y);
+                const i32 cropped_width=std::min(w,right+3)-std::max(0,left-2);
+                const i32 cropped_height=std::min(h,bottom+3)-std::max(0,top-2);
+                // More rows can only enlarge this rectangle.
+                if(u64(cropped_width)*cropped_height*4>area_limit){trim=false;break;}
             }
-            if(right<left)continue;
+            if(!trim||right<left)continue;
             left=std::max(0,left-2);top=std::max(0,top-2);right=std::min(w,right+3);bottom=std::min(h,bottom+3);
-            if((right-left)*(bottom-top)*4>w*h*3)continue;
             next.alpha_bounds[i]={float(left)/w,float(top)/h,float(right)/w,float(bottom)/h};
         }
     }

@@ -1,6 +1,11 @@
 import {PRODUCT_GAMES} from "../contracts/product-catalog.mjs";
-const replayExtensions = new Set(['rpy', 'rpyx', ...Object.values(PRODUCT_GAMES).flatMap(game => 'extensions' in game.replay ? [...game.replay.extensions] : [])]);
+const replayExtensions = new Set(['rpy', 'rpyx', ...Object.values(PRODUCT_GAMES).flatMap(game => 'extensions' in game.replay && !('importOnly' in game && game.importOnly) ? [...game.replay.extensions] : [])]);
 export const replayImportAccept = ['zip', ...replayExtensions].map(extension => '.' + extension).join(',');
+const hsobReplayName = /^Main_replay(\d{2}|ud[0-9a-z]{4})\.dat$/i;
+const hsobReplayPrefix = "Main_replay";
+export function replayImportAcceptFor(product: string): string {return product === 'hsob' ? '.zip,.dat' : replayImportAccept;}
+export function isHsobReplayPath(path: string): boolean {return path.startsWith('replay/') && hsobReplayName.test(path.slice(7));}
+
 
 export interface ReplayMutationQueue {
   run<T>(operation: () => Promise<T>): Promise<T>;
@@ -27,10 +32,12 @@ export function createReplayArchiveExtractionGuard({
   maxFileBytes,
   maxExpandedBytes,
   matchMetadata = false,
+  prefix,
 }: {
   maxFileBytes: number;
   maxExpandedBytes: number;
   matchMetadata?: boolean;
+  prefix?: string;
 }) {
   const paths: string[] = [];
   const pathSet = new Set<string>();
@@ -46,7 +53,7 @@ export function createReplayArchiveExtractionGuard({
       pathSet.add(lowerPath);
       paths.push(path);
       const metadata = matchMetadata && /\/th9_(?:\d{2}|ud[a-z0-9]{4})\.json$/i.test('/' + path);
-      if (replayExtension(basename(path)) === null && !metadata) return false;
+      if (!matchesArchiveReplay(basename(path), prefix) && !metadata) return false;
       const size = Number(info?.originalSize);
       if (!Number.isSafeInteger(size) || size < 0 || size > (metadata ? 16384 : maxFileBytes)) {
         throw new ReplayArchiveScanError("file-too-large");
@@ -81,8 +88,14 @@ export type ReplayArchiveImportPlan =
   | { ok: false; reason: "unsafe-path" | "duplicate-path" | "slots-exhausted" };
 
 function replayExtension(name: string): string | null {
+  if (hsobReplayName.test(name)) return '.dat';
   const extension = name.slice(name.lastIndexOf('.') + 1).toLowerCase();
   return replayExtensions.has(extension) ? '.' + extension : null;
+}
+
+function matchesArchiveReplay(name: string, prefix?: string): boolean {
+  const extension = replayExtension(name);
+  return prefix === hsobReplayPrefix ? hsobReplayName.test(name) : extension !== null && extension !== ".dat";
 }
 
 function basename(path: string): string {
@@ -109,7 +122,7 @@ export function isSafeReplayArchivePath(value: unknown): value is string {
 }
 
 export function isReplayFilePath(path: unknown): path is string {
-  return typeof path === "string" && isSafeReplayArchivePath(path) && /^replay\/(?:[^/]+\/)?[^/]+$/i.test(path) && replayExtension(basename(path)) !== null;
+  return typeof path === "string" && isSafeReplayArchivePath(path) && (isHsobReplayPath(path) || /^replay\/(?:[^/]+\/)?[^/]+$/i.test(path) && replayExtension(basename(path)) !== null && !hsobReplayName.test(basename(path))); 
 }
 
 export function selectReplayExportPaths(paths: Iterable<string>): string[] {
@@ -118,6 +131,7 @@ export function selectReplayExportPaths(paths: Iterable<string>): string[] {
 
 export function isValidReplayName(prefix: string, name: unknown): name is string {
   if (typeof name !== "string" || !prefix) return false;
+  if (prefix === hsobReplayPrefix) return hsobReplayName.test(name);
   const product=Object.values(PRODUCT_GAMES).find(game=>game.replay.prefix===prefix);
   if (product && 'slotPrefix' in product.replay) return new RegExp(`^${escapeRegExp(product.replay.slotPrefix)}[0-9]{2}\\.rpy$`, 'i').test(name);
   if(product && 'naming' in product.replay && product.replay.naming==='filename') {
@@ -152,8 +166,11 @@ export function allocateReplayName(
   if(!extensions.includes(extension.slice(1)))return null;
   const sanitized = sanitizeReplayImportName(sourceName);
   if (isValidReplayName(prefix, sanitized)) {
-    const target = `${directory}/${sanitized}`;
-    if (isReplayTargetAvailable(existingPaths, target, sharedExtensionSlot)) return sanitized;
+    const name = prefix === hsobReplayPrefix
+      ? `${prefix}${hsobReplayName.exec(sanitized)![1].toLowerCase()}.dat`
+      : sanitized;
+    const target = `${directory}/${name}`;
+    if (isReplayTargetAvailable(existingPaths, target, sharedExtensionSlot)) return name;
   }
 
   const occupied = normalizedPathSet(existingPaths, sharedExtensionSlot);
@@ -165,15 +182,16 @@ export function allocateReplayName(
     return null;
   }
   for (let index = 0; index <= 0xffff; index++) {
-    const name = `${prefix}_ud${index.toString(16).padStart(4, "0")}${extension}`;
+    const separator = prefix === hsobReplayPrefix ? "" : "_";
+    const name = `${prefix}${separator}ud${index.toString(16).padStart(4, "0")}${extension}`;
     const target = `${directory}/${name}`;
     if (!occupied.has(replayStoragePathKey(target, sharedExtensionSlot))) return name;
   }
   return null;
 }
 
-export function isReplayImportFileName(name: unknown): name is string {
-  return typeof name === "string" && (name.toLowerCase().endsWith('.zip') || replayExtension(name) !== null);
+export function isReplayImportFileName(name: unknown, product?: string): name is string {
+  return typeof name === "string" && (name.toLowerCase().endsWith('.zip') || (product === "hsob" ? hsobReplayName.test(name) : replayExtension(name) !== null && !hsobReplayName.test(name)));
 }
 
 export function planReplayArchiveImport(
@@ -196,7 +214,7 @@ export function planReplayArchiveImport(
   const occupied = [...existingPaths].map(String);
   const entries: ReplayArchiveImportEntry[] = [];
   const replaySources = filePaths
-    .filter(path => replayExtension(basename(path)) !== null)
+    .filter(path => matchesArchiveReplay(basename(path), prefix))
     .sort((a, b) => a.localeCompare(b));
 
   for (const sourcePath of replaySources) {

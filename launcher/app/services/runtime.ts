@@ -3,10 +3,10 @@
 // below. No candidate UI, core replacement or test oracle is imported.
 import type {Translate} from '../i18n';
 import {directPreloadRuntimeUrl} from './direct-preload-runtime';
-import {liveRuntimeEntryAuthorized} from './runtime-entry-authority';
+import {liveRuntimeEntryAuthorized, th075SplitAssetUrl} from './runtime-entry-authority';
 import {errorText} from './error-text';
 import {GameDataAcquisitionError} from './game-data-acquisition';
-import {isReplayFilePath, isSafeReplayArchivePath} from '../../src/launcher/replay-files.mts';
+import {isHsobReplayPath, isReplayFilePath} from '../../src/launcher/replay-files.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 /**
  * Bounded current-main Runtime orchestration seam, independent of React/DOM UI.
@@ -36,18 +36,20 @@ import { confirmRuntimeClose, type RuntimeCloseDecision } from '../../src/launch
 import { deliverRuntimeInput, type HostedKeySpec, type TouchRuntimeContext, type RuntimeMessageTarget } from '../../src/launcher/touch-runtime-protocol.mts';
 import type {TouchLayout} from '../../src/launcher/touch-layout-model.mts';
 import { retainPackageGeneration, releasePackageGeneration } from '../../package/package-store.mjs';
+import { createRuntimeAudioMix, type RuntimeAudioWindow } from './runtime-audio-mix';
+import {uploadTh09Replay} from '../../../common/browser/th09-replay-upload.mjs';
 
 export interface RuntimeFilesystem {
   mkdirTree(path: string): void;
   writeFile(path: string, bytes: Uint8Array, options: { canOwn: boolean }): void;
 }
-export interface RuntimeWindow extends RuntimeMessageTarget {
+export interface RuntimeWindow extends RuntimeMessageTarget, RuntimeAudioWindow {
   readonly document: object;
   readonly location: { href: string; replace(url: string): void };
   addEventListener?(type: string, listener: EventListener): void;
   removeEventListener?(type: string, listener: EventListener): void;
   FS?: RuntimeFilesystem;
-  Module?: { FS?: RuntimeFilesystem; touhouMusicMode?: 'ogg' | 'midi' | 'none' };
+  Module?: RuntimeAudioWindow['Module'] & { FS?: RuntimeFilesystem; touhouMusicMode?: 'ogg' | 'midi' | 'none' };
 }
 /** Read-only native event surface; no filesystem or lifecycle mutation port. */
 export interface RuntimeMidiEventTarget {
@@ -68,12 +70,13 @@ export interface RuntimeFrame {
   addEventListener(type: 'load', listener: EventListener): void;
   removeEventListener(type: 'load', listener: EventListener): void;
 }
-export interface ManagedDataRequest { game: string; generation: string; epoch: number }
+export interface ManagedDataRequest { game: string; generation: string; epoch: number; preferBlob?: boolean }
 export interface RuntimeHost {
   location: { href: string; origin: string };
   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
   removeEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
   __eaglerPrepareManagedRuntimeDataV1?: (request: ManagedDataRequest) => ReturnType<typeof readManagedRuntimeData>;
+  __eaglerUploadTh09ReplayV1?: typeof uploadTh09Replay;
 }
 export interface RuntimeLauncherControls {
   readonly restartButtonEnabled: boolean;
@@ -99,6 +102,7 @@ export interface RuntimePlan {
   generation: InstalledPackageGeneration | null;
   /** Exact original hosted emscripten-preload fallback, with no Package DATA. */
   directPreloadHost?: SiteManifest;
+  th075SplitAssets?: true;
   /** Optional resources acquired after native ready; never replaces loaded DATA. */
   resourceGeneration?: InstalledPackageGeneration;
   entry: string;
@@ -121,6 +125,13 @@ export interface RuntimePlan {
   launcherControls?: RuntimeLauncherControls;
 }
 export type RuntimeReadyContinuation = (epoch: number) => Promise<RuntimePlan>;
+export interface RuntimeRoomReturnContext {
+  readonly epoch: number;
+  readonly launchSerial: number;
+  readonly netplayUrl: string;
+  readonly player: number;
+  readonly spectator: boolean;
+}
 export type RuntimePhase = 'idle' | 'loading' | 'configuring' | 'prepared' | 'launching' | 'running' | 'saving' | 'exited' | 'error';
 export type RuntimeRequestCommand = 'playback' | 'spectator-playback' | 'list' | 'read' | 'write' | 'remove' | 'resources' | 'retry-music';
 export type RuntimeFileCommand = 'list' | 'read' | 'write' | 'remove';
@@ -288,9 +299,11 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (current) network.update(id, {phase: progress.phase, loaded: progress.loaded, total: progress.total});
   }
   const sessions = createRuntimeSessionOwner();
+  const audioMix = createRuntimeAudioMix();
   const generations = createManagedRuntimeGenerationLease();
   const listeners = new Set<() => void>();
   const eventListeners = new Set<(message: RuntimeEventMessage) => void>();
+  const roomReturnListeners = new Set<(context: RuntimeRoomReturnContext) => void>();
   const pending = new Map<string, PendingRequest>();
   const waiters = new Set<Waiter>();
   let snapshot = initialSnapshot();
@@ -305,6 +318,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   let roomMenuConfigure: RuntimePlan['configure'] | null = null;
   let roomReturnPending: {epoch: number; promise: Promise<void>} | null = null;
   let roomLaunchSerial = 0;
+  let roomReturnContext: RuntimeRoomReturnContext | null = null;
   let codeUpdate: {epoch:number; check:NonNullable<Awaited<ReturnType<typeof prepareRuntimeLaunch>>['checkForUpdate']>} | null = null;
   const updateNotices = new Set<string>();
   let oggExtensionTail: Promise<void> = Promise.resolve();
@@ -446,7 +460,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     operation++;
     finishProgramTransfers(); sessions.clear(); generations.clear(); releaseLease();
     rejectPending(new RuntimeSessionSupersededError());
-    runtimeDocument = null; preparedPlan = null; roomMenuConfigure = null; roomReturnPending = null; roomLaunchSerial = 0; launchRequested = false;codeUpdate = null;
+    audioMix.detach();
+    runtimeDocument = null; preparedPlan = null; roomMenuConfigure = null; roomReturnPending = null; roomReturnContext = null; roomLaunchSerial = 0; launchRequested = false;codeUpdate = null;
     if (!hasTerminalSaveLoss) preflightEpoch = null;
     takeTelemetry(); // A display tick from an old epoch cannot repopulate reset state.
     if (!hasTerminalSaveLoss) terminalLossEpoch = null;
@@ -536,7 +551,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     const generation = generations.resolve(request);
     const before = runtimeIdentity(token);
     try {
-      const result = await deps.readData(generation);
+      const result = await deps.readData(generation, {preferBlob: token.game === 'th14' && request.preferBlob === true});
       const after = runtimeIdentity(token);
       if (after.runtime !== before.runtime || after.document !== before.document) throw new RuntimeSessionSupersededError();
       return result;
@@ -575,8 +590,17 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (message.event === 'first-frame' && snapshot.roomReturnSupported && message.launchSerial !== roomLaunchSerial) return;
     const eventContext = Object.freeze({epoch: token.id, fileOnly: snapshot.fileOnly});
     if (message.event === 'ready' && !snapshot.ready) {
-      try { runtimeDocument = runtimeIdentity(token).document; }
+      let runtime: RuntimeWindow;
+      try {
+        const identity = runtimeIdentity(token);
+        runtime = identity.runtime;
+        runtimeDocument = identity.document;
+      }
       catch (error) { fail(error); return; }
+      if (!snapshot.fileOnly) {
+        try { audioMix.attach(runtime, token.game); }
+        catch (error) { audioMix.detach(); warn(error); }
+      }
       update({ ready: true, roomPreviewSupported: message.roomPreview === true, roomReturnSupported: message.roomReturn === true }); settle('ready');
     } else if (message.event === 'first-frame' && launchRequested &&
         (!snapshot.roomReturnSupported || message.launchSerial === roomLaunchSerial)) {
@@ -596,7 +620,10 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       for (const item of pending.values()) item.progress?.(String(message.mode ?? ''), Number(message.loaded));
       update({ progress: Object.freeze({ ...message }) });
     } else if (message.event === 'frame-health') queueHealth({ frameHealth: Object.freeze({ ...message }) });
-    else if (message.event === 'audio-health') queueHealth({ audioHealth: Object.freeze({ ...message }) });
+    else if (message.event === 'audio-health') {
+      audioMix.refresh();
+      queueHealth({ audioHealth: Object.freeze({ ...message }) });
+    }
     else if (message.event === 'error') {
       // Main emits a diagnostic plus runtime-error for readiness/frame waiters.
       // It is not an engine-exit event: retain the live writer and unrelated
@@ -844,9 +871,12 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (sessions.current() || closing || (fileClosing && fileOwner !== fileSession) || (fileSession && fileOwner !== fileSession)) throw new Error('Close the current Runtime before preparing another');
     if (!isGameId(input.game)) throw new Error('Invalid Runtime game');
     if (input.generation && (!input.generation.id || input.generation.game !== input.game || input.generation.descriptor.game !== input.game)) throw new Error('Invalid Runtime package generation');
+    const splitAssets = input.th075SplitAssets ? th075SplitAssetUrl(input, baseUrl) : null;
+    if (splitAssets && (input.generation || input.fileOnly || input.directPreloadHost))
+      throw new Error('TH075 split assets require a multiplayer room Runtime');
     if (!input.generation) {
-      directPreloadRuntimeUrl(input, baseUrl);
-      if (input.resourceGeneration || input.resourceFileIds?.length || input.localOgg) throw new Error('Direct preload cannot claim managed Package resources');
+      if (!splitAssets) directPreloadRuntimeUrl(input, baseUrl);
+      if (input.resourceGeneration || input.resourceFileIds?.length || input.localOgg) throw new Error('Unmanaged preload cannot claim managed Package resources');
     }
     if (input.runtimeVariant !== 'normal' && input.runtimeVariant !== 'multiplayer') throw new Error('Invalid Runtime variant');
     const source = new URL(input.entry, baseUrl);
@@ -887,7 +917,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
           // cannot satisfy this owner's exact document/epoch binding.
           const offlineWorker = plan.localCatalogRuntime ? await options.worker : null;
           assertOperation(); assertCurrent(token);
-          if (plan.generation && (plan.publishedRuntime || plan.localCatalogRuntime || offlineWorker)) {
+          if ((plan.generation || splitAssets) && (plan.publishedRuntime || plan.localCatalogRuntime || offlineWorker)) {
             // Keep current main's complete-generation verification + idle-based
             // download helper. No replacement timeout or latest-file fallback.
             const progressToken = token;
@@ -908,8 +938,15 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
             entry = prepared.url; codeGeneration = prepared.generation;
             codeUpdate = prepared.checkForUpdate ? {epoch:token.id,check:prepared.checkForUpdate} : null;
           }
-          const url = plan.generation ? new URL(managedRuntimeUrl(entry, plan.generation, plan.runtimeVariant, baseUrl)) : directPreloadRuntimeUrl(plan, baseUrl);
+          const url = splitAssets ? new URL(entry) : plan.generation
+            ? new URL(managedRuntimeUrl(entry, plan.generation, plan.runtimeVariant, baseUrl)) : directPreloadRuntimeUrl(plan, baseUrl);
+          if (splitAssets) {
+            url.searchParams.set('runtimeVariant', 'multiplayer');
+            url.searchParams.set('th075Assets', splitAssets.url.href);
+            url.searchParams.set('th075AssetsHash', splitAssets.sha256);
+          }
           if (url.origin !== origin) throw new Error('Runtime must share the Launcher origin');
+          if (plan.game === 'hsob' && plan.fileOnly) url.searchParams.set('fileOnly', '1');
           url.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(token.id));
           update({ source: url.href, codeGeneration });
           const ready = waitFor('ready', token, options.timeouts?.ready ?? 120_000);
@@ -939,12 +976,13 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
         const final = structuredClone(await onReady(token.id));
         assertOperation(); assertCurrent(token);
         if (final.game !== plan.game || final.runtimeVariant !== plan.runtimeVariant || final.entry !== plan.entry ||
-            final.publishedRuntime !== plan.publishedRuntime ||
+            final.publishedRuntime !== plan.publishedRuntime || final.th075SplitAssets !== plan.th075SplitAssets ||
             JSON.stringify(final.multiplayerProgram) !== JSON.stringify(plan.multiplayerProgram)) throw new Error('Ready continuation changed the Runtime identity');
         if (final.configure.options?.multiplayerPreflight && !checkOwner) throw new Error('Multiplayer preflight requires the game-check owner');
         const loaded = plan.generation;
         if (!loaded && final.generation) throw new Error('Ready continuation changed preload DATA ownership');
-        plan = {...final, generation: loaded, resourceGeneration: final.resourceGeneration ?? final.generation ?? undefined};
+        plan = {...final, generation: loaded, resourceGeneration: final.resourceGeneration ?? final.generation ?? undefined,
+          ...(splitAssets ? {runtimeHost: plan.runtimeHost} : {})};
       }
       if (plan.resourceGeneration) {
         const resources = plan.resourceGeneration, loaded = plan.generation;
@@ -1071,7 +1109,14 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   }
   function completeRoomReturn(token: RuntimeSessionToken): Promise<void> {
     if (roomReturnPending?.epoch === token.id) return roomReturnPending.promise;
-    const promise = restoreRoomMenu(token), pending = {epoch: token.id, promise};
+    if (!launchRequested && snapshot.roomPreview) return Promise.resolve();
+    const returned = roomReturnContext;
+    const promise = restoreRoomMenu(token).then(() => {
+      assertCurrent(token);
+      if (!returned || roomReturnContext !== returned || returned.launchSerial !== roomLaunchSerial) return;
+      roomReturnContext = null;
+      for (const listener of roomReturnListeners) listener(returned);
+    }), pending = {epoch: token.id, promise};
     roomReturnPending = pending;
     void promise.then(() => {if (roomReturnPending === pending) roomReturnPending = null;},
       () => {if (roomReturnPending === pending) roomReturnPending = null;});
@@ -1118,21 +1163,29 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     const product = PRODUCT_GAMES[plan.game];
     const directory = 'runtimeFileLayout' in product && product.runtimeFileLayout === 'directory';
     const networked = plan.configure.options?.netplayMode === 'lan';
+    // TH12 multiplayer acknowledges an empty replay viewer before it has a
+    // replay to present. Inspect must be able to run before playback opens.
+    const waitingForReplay = plan.game === 'th12' && plan.runtimeVariant === 'multiplayer' &&
+      plan.configure.options?.replayViewer === true && !plan.configure.options?.replayPath;
     launchRequested = true;
     if (snapshot.roomReturnSupported) roomLaunchSerial++;
     const serial = roomLaunchSerial;
+    const roomOptions = plan.configure.options;
+    roomReturnContext = snapshot.roomReturnSupported && networked && roomOptions?.netplayUrl
+      ? Object.freeze({epoch: token.id, launchSerial: serial, netplayUrl: roomOptions.netplayUrl,
+        player: Number(roomOptions.netplayPlayer), spectator: roomOptions.netplaySpectator === true}) : null;
     update({ phase: 'launching' });
-    const presented = awaitFirstFrame ? waitFor('first-frame', token, options.timeouts?.firstFrame ?? (directory || networked ? 122_000 : 14_000)) : null;
+    const presented = awaitFirstFrame && !waitingForReplay ? waitFor('first-frame', token, options.timeouts?.firstFrame ?? (directory || networked ? 122_000 : 14_000)) : null;
     if (presented) void presented.catch(() => {});
     // Main app.mts4241–4289: networked launch has no local watchdog; ordinary
     // launch does not require a first-frame event to acknowledge running.
-    if (networked) clearFirstFrameWatchdog();
+    if (networked || waitingForReplay) clearFirstFrameWatchdog();
     else armFirstFrameWatchdog(token, directory ? 122_000 : 12_000);
     try {
       await send('launch', snapshot.roomReturnSupported ? {launchSerial:roomLaunchSerial} : {}, options.timeouts?.launch ?? (directory ? 120_000 : 15_000));
       assertCurrent(token);
       if (snapshot.roomReturnSupported && (serial !== roomLaunchSerial || !launchRequested)) throw new RuntimeSessionSupersededError();
-      if (directory && !networked && !snapshot.firstFrame) armFirstFrameWatchdog(token, 12_000);
+      if (directory && !networked && !waitingForReplay && !snapshot.firstFrame) armFirstFrameWatchdog(token, 12_000);
       update({ launched: true, roomPreview: false, phase: 'running' });
       const pendingUpdate = codeUpdate;
       if (!snapshot.multiplayerPreflight && pendingUpdate?.epoch === token.id) {
@@ -1274,7 +1327,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
           if (readOnly && !['list', 'read'].includes(command)) throw new Error('Read-only Runtime file sessions cannot mutate files');
           if (replayMutation && ['write', 'remove'].includes(command)) {
             const path = (payload as {path?: unknown}).path;
-            if (!isReplayFilePath(path) || !isSafeReplayArchivePath(path)) throw new Error('A Replay mutation cannot change save, config or Hint files');
+            if (!isReplayFilePath(path) || isHsobReplayPath(path) !== (game === 'hsob')) throw new Error('A Replay mutation cannot change save, config or Hint files');
           }
           const response = await send(command, payload); assertAccess(); return response;
         },
@@ -1448,10 +1501,13 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   }
   function finishDisposal() {
     disposed = true;
+    audioMix.detach();
     host.removeEventListener('message', onMessage); frame.removeEventListener('load', onLoad);
     if (host.__eaglerPrepareManagedRuntimeDataV1 === provideData) delete host.__eaglerPrepareManagedRuntimeDataV1;
+    if (host.__eaglerUploadTh09ReplayV1 === uploadTh09Replay) delete host.__eaglerUploadTh09ReplayV1;
     listeners.clear();
     eventListeners.clear();
+    roomReturnListeners.clear();
   }
   /**
    * Last-resort cleanup AFTER a DOM owner has already removed this iframe.
@@ -1482,11 +1538,14 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (hadSession) warn(failure);
   }
   host.__eaglerPrepareManagedRuntimeDataV1 = provideData;
+  host.__eaglerUploadTh09ReplayV1 = uploadTh09Replay;
   host.addEventListener('message', onMessage); frame.addEventListener('load', onLoad);
   return Object.freeze({ prepare, prepareWithReady, checkPreparedCodeUpdate, prepareRoomPreview, configurePreparedRoom, returnToRoom, launch, checkMultiplayer, sync, close, cancel, dispose, disposeDetachedFrame, withFileSession, send: request, cancelTitleNetwork, postInput, spectatorRoomState, getInputContext, getMidiEventContext, getLauncherControlContext, extendOggResources,
+    setAudioLevels: audioMix.set,
     getSnapshot: () => snapshot, getNetworkSnapshot: () => network.snapshot(),
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     subscribeEvents: (listener: (message: RuntimeEventMessage) => void) => {eventListeners.add(listener); return () => {eventListeners.delete(listener);};},
+    subscribeRoomReturns: (listener: (context: RuntimeRoomReturnContext) => void) => {roomReturnListeners.add(listener); return () => {roomReturnListeners.delete(listener);};},
   });
 }
 type RuntimeServiceImplementation = ReturnType<typeof createRuntimeService>;

@@ -1,0 +1,129 @@
+{
+  "siteUrl": "https://touhouonline.com/",
+  "passed": true,
+  "players": 2,
+  "language": "lang_zh-hans",
+  "rollback": true,
+  "sourceCommit": "ed87e8f69a7afb2ddaca74bdab5c6b827dfa7a13",
+  "errors": [],
+  "httpErrors": [
+    {
+      "seat": 1,
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+      "status": 503
+    },
+    {
+      "seat": 0,
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+      "status": 503
+    },
+    {
+      "seat": 0,
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Flanguage%2Flang_zh-hans.zip%3Fv%3Df05a1c93332bab2a01ef261ad7d4a1e426d2a1b0e6e8daadfb9460812ed44cc5",
+      "status": 503
+    },
+    {
+      "seat": 1,
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+      "status": 503
+    },
+    {
+      "seat": 1,
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Flanguage%2Flang_zh-hans.zip%3Fv%3Df05a1c93332bab2a01ef261ad7d4a1e426d2a1b0e6e8daadfb9460812ed44cc5",
+      "status": 503
+    },
+    {
+      "seat": "spectator",
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+      "status": 503
+    },
+    {
+      "seat": "spectator",
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Flanguage%2Flang_zh-hans.zip%3Fv%3Df05a1c93332bab2a01ef261ad7d4a1e426d2a1b0e6e8daadfb9460812ed44cc5",
+      "status": 503
+    }
+  ],
+  "runtime": [
+    {
+      "frame": 183,
+      "confirmed": 181,
+      "route": "rtc",
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "failed": false,
+      "error": ""
+    },
+    {
+      "frame": 183,
+      "confirmed": 181,
+      "route": "rtc",
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "failed": false,
+      "error": ""
+    }
+  ],
+  "spectator": {
+    "errors": [],
+    "paused": {
+      "version": 1,
+      "run": "s2893cebbea44af64_0",
+      "revision": 4,
+      "min": 0,
+      "position": 1764,
+      "received": 1765,
+      "edge": 1765,
+      "target": 1764,
+      "paused": true,
+      "seeking": false,
+      "following": false,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "receivedWhilePaused": 1776,
+    "live": {
+      "version": 1,
+      "run": "s2893cebbea44af64_0",
+      "revision": 10,
+      "min": 0,
+      "position": 1790,
+      "received": 1801,
+      "edge": 1801,
+      "target": 1801,
+      "paused": false,
+      "seeking": false,
+      "following": true,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "exitPreservesPlayers": true
+  },
+  "mirrors": {
+    "overseas": "/var/www/eagler-touhou/releases/hk-th05-pixels-20261102-edf9ce8cb086",
+    "domestic": "/var/www/eagler-touhou-online/releases/hk-th05-pixels-20261102-edf9ce8cb086-mirror-c2e08872f750"
+  }
+}

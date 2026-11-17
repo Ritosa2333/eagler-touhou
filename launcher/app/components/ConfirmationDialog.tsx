@@ -1,10 +1,10 @@
 import { Button as UiButton } from '../ui/controls';
 import { InputGroup, InputGroupInput } from '../ui/input-group';
+import { Progress } from '../ui/progress';
 import { TriangleAlert } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useLocale } from '../i18n';
 import { closeMainSelectMenus } from './launcher/MainSelect';
-import type { DecisionInput } from '../models/decisions';
+import type { DecisionInput, DecisionComparison } from '../models/decisions';
 import { animateSurface, type SurfaceAnimation } from '../ui/surface-motion';
 
 const decisionActionClass = 'h-auto min-h-9 whitespace-normal px-3 py-1.5 pointer-coarse:min-h-11 max-[780px]:min-h-11';
@@ -22,6 +22,8 @@ export function ConfirmationDialog({
   hideCancel = false,
   confirmOnEnter = false,
   input,
+  comparison,
+  progress,
   onConfirm,
   onCancel,
   onSecondary,
@@ -38,12 +40,13 @@ export function ConfirmationDialog({
   hideCancel?: boolean;
   confirmOnEnter?: boolean;
   input?: DecisionInput;
+  comparison?: DecisionComparison;
+  progress?: boolean;
   onConfirm(value?: string): void;
   onCancel(): void;
   onSecondary?(): void;
   idPrefix?: string;
 }) {
-  const { t } = useLocale();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
@@ -77,6 +80,7 @@ export function ConfirmationDialog({
     };
     dialog.addEventListener('close', closed);
     dialog.returnValue = 'cancel';
+    dialog.setAttribute('data-window-managed', '');
     dialog.showModal();
     animation.current = animateSurface(dialog, 'enter', { kind: 'dialog' });
     (inputRef.current ?? (hideCancel ? confirmRef.current : cancelRef.current))?.focus({ preventScroll: true });
@@ -166,9 +170,9 @@ export function ConfirmationDialog({
           <header>
             <strong id={`${idPrefix}Title`}>{title}</strong>
           </header>
-          <p className="decision-message" id={`${idPrefix}Message`}>
-            {message}
-          </p>
+          {(message || input) && <p className="decision-message" id={`${idPrefix}Message`}>{message}</p>}
+          {progress && <Progress className="decision-progress" value={null} aria-labelledby={`${idPrefix}Title`}/>}
+          {comparison && <SaveComparisonCards value={comparison}/>}
           {input && (
             <div className="decision-input">
               <label htmlFor={`${idPrefix}Input`}>{input.label}</label>
@@ -198,26 +202,24 @@ export function ConfirmationDialog({
           )}
         </div>
         <footer>
-          <UiButton
+          {!hideCancel && <UiButton
             type="submit"
             ref={cancelRef}
             className={`decision-cancel ${decisionActionClass}`}
             id={`${idPrefix}Cancel`}
             value="cancel"
-            hidden={hideCancel}
           >
             {cancelText}
-          </UiButton>
-          <UiButton
+          </UiButton>}
+          {secondaryText && <UiButton
             variant={variant === 'browser-warning' ? 'primary' : 'action'}
             type="submit"
             className={`decision-secondary ${decisionActionClass}`}
             id={`${idPrefix}Secondary`}
             value="secondary"
-            hidden={!secondaryText}
           >
-            {secondaryText || t('action.backgroundDownload')}
-          </UiButton>
+            {secondaryText}
+          </UiButton>}
           <UiButton
             variant={variant === 'browser-warning' ? 'action' : tone === 'danger' ? 'danger' : 'primary'}
             type="submit"
@@ -232,4 +234,25 @@ export function ConfirmationDialog({
       </form>
     </dialog>
   );
+}
+
+export function SaveComparisonCards({value}: {value: DecisionComparison}) {
+  return <div className="decision-comparison">
+    <div className="decision-versions">
+      {value.versions.map(version => <section className="decision-version" data-mark={version.mark?.tone} key={version.title}>
+        <header>
+          <h3>{version.title}</h3>
+          {version.mark && <span className="decision-version-mark">{version.mark.label}</span>}
+        </header>
+        {version.empty ? <p className="decision-version-empty">{version.empty}</p> : <>
+          <p className="decision-version-date"><span>{version.timestamp?.label}</span>{version.timestamp?.value}</p>
+          <dl>{version.rows.map(row => <div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>)}</dl>
+        </>}
+        {!!version.files.length && <details>
+          <summary>{value.filesLabel} <span>{version.files.length}</span></summary>
+          <ul>{version.files.map(file => <li key={file.name}><span>{file.name}</span><small>{file.size}</small></li>)}</ul>
+        </details>}
+      </section>)}
+    </div>
+  </div>;
 }

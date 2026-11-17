@@ -13,10 +13,11 @@ struct FrameCadence {
     const double tolerance;
     explicit FrameCadence(double roundingTolerance=0):tolerance(std::clamp(roundingTolerance,0.,interval/2.)){}
     void reset(){debt=0;}
-    unsigned advance(double seconds){
+    unsigned advance(double seconds,double period=interval){
+        const double rounding=std::min(tolerance,period/2.);
         debt=std::min(.1,debt+std::clamp(seconds,0.,.1));
-        const auto ticks=std::min(4u,unsigned(std::max(0.,std::floor((debt+tolerance+1.e-9)/interval))));
-        debt=std::max(-tolerance,debt-ticks*interval);return ticks;
+        const auto ticks=std::min(4u,unsigned(std::max(0.,std::floor((debt+rounding+1.e-9)/period))));
+        debt=std::max(-rounding,debt-ticks*period);return ticks;
     }
 };
 }

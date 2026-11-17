@@ -1,24 +1,89 @@
 #include "Hud.hpp"
 #include "AnmVisualState.hpp"
 namespace th17 {
+namespace {
+void move_row(AnmVm& vm,float delta){
+    // Front ANM sprites use a mix of logical and double-resolution coordinates.
+    const u32 mode=vm.visual.render_flags>>20&7;
+    const float resolution=vm.environment->resolution_scale;
+    vm.visual.translation.y+=delta*(mode==2||mode==4?2.f:mode==1||mode==3?1.f:resolution);
+}
+}
 bool Hud::check(bool ok,const char* message){if(!ok&&error.empty())error=message;return ok;}
 AnmVm* Hud::find(u32& handle){auto* vm=animations.registry.find(handle);if(!vm)handle=0;return vm;}
 bool Hud::root_interrupt(u32 handle,i32 label,bool immediate){auto* vm=animations.registry.find(handle);if(!vm)return true;if(!animations.interrupt_effect(*vm,label,animations.rate))return check(false,"HUD animation callback failed");vm->pending_interrupt=label;return !immediate||check(animations.tick_instance(*vm)>=0,"HUD animation update failed");}
 bool Hud::visible(u32 handle,bool value){if(auto* vm=animations.registry.find(handle))return check(animations.registry.pause_tree(*vm,!value),"HUD animation visibility failed");return true;}
-bool Hud::stock(std::array<u32,8>& handles,i32 count,i32 pieces,bool bomb){
+std::array<u32,8>& Hud::stock_handles(u32 seat,bool bomb) noexcept{
+    if(!seat)return bomb?bomb_handles:life_handles;
+    auto& stock=partner_stock[seat-1];return bomb?stock.bomb:stock.life;
+}
+float Hud::life_row(u32 seat)const noexcept{return 96.f+seat*(seats==3?108.f:120.f);}
+float Hud::bomb_row(u32 seat)const noexcept{return life_row(seat)+38.f;}
+float Hud::power_row(u32 seat)const noexcept{return life_row(seat)+86.f;}
+float Hud::point_row()const noexcept{return seats==1?204.f:seats==2?342.f:426.f;}
+bool Hud::layout_stock(AnmVm& root,u32 seat){
+    struct Row {i32 script;float original,target;};
+    const float life=life_row(seat),bomb=bomb_row(seat),power=power_row(seat);
+    const Row rows[]={{8,96,life},{9,112,life+16},{10,134,bomb},{11,150,bomb+16},{12,182,power},
+        {20,128,bomb-6},{21,128,bomb-6},{22,166,power-16},{23,166,power-16},{24,198,power+16},{25,198,power+16}};
+    for(const auto& row:rows){
+        auto* vm=seat?animations.spawn_child(root,row.script,4):animations.registry.find_child_script(root,row.script,0);
+        if(!check(vm!=nullptr,"HUD stock label unavailable"))return false;
+        move_row(*vm,row.target-row.original);
+    }
+    return true;
+}
+bool Hud::layout_team(AnmVm& root){
+    for(i32 script:{13,14,26,27,28,29}){
+        auto* vm=animations.registry.find_child_script(root,script,0);
+        if(!check(vm!=nullptr,"HUD team label unavailable"))return false;
+        move_row(*vm,script==13||script==26||script==27?point_row()-204.f:graze_row()-226.f);
+    }
+    return true;
+}
+bool Hud::stock(u32 seat,i32 count,i32 pieces,bool bomb){
+    auto& handles=stock_handles(seat,bomb);
     if(!handles[0])return true;if(count<0)count=0;if(count>(bomb?8:9))return check(false,"HUD stock outside TH17 range");
     static constexpr i32 life_labels[]={0,2,3},bomb_labels[]={0,2,4};if(count<8&&(pieces<0||pieces>=3))return check(false,"HUD piece count outside TH17 range");
     // Native practice allows nine lives. Its ninth life pointer aliases the
     // first bomb icon, whose interrupt is replaced by the following bomb HUD call.
-    for(i32 i=0;i<count;i++)if(!root_interrupt(i<8?handles[i]:bomb_handles[0],2))return false;if(count>=8)return true;
+    for(i32 i=0;i<count;i++)if(!root_interrupt(i<8?handles[i]:stock_handles(seat,true)[0],2))return false;if(count>=8)return true;
     if(!root_interrupt(handles[count],7+(bomb?bomb_labels[pieces]:life_labels[pieces])))return false;
     for(i32 i=count+1;i<8;i++)if(!root_interrupt(handles[i],3))return false;return true;
 }
-bool Hud::initialize(const HudStartContext& context){
-    if(!base){base=animations.create_overlay(resources.front,0);if(!check(base!=0,"HUD frame creation failed"))return false;}
+bool Hud::create_stock(u32 seat){
+    for(bool bomb:{false,true}){
+        auto& handles=stock_handles(seat,bomb);
+        const float delta=bomb?bomb_row(seat)-134.f:life_row(seat)-96.f;
+        for(i32 i=0;i<8;++i){
+            handles[i]=animations.create_overlay(resources.front,(bomb?38:30)+i,seats==1?1:0);
+            auto* vm=animations.registry.find(handles[i]);
+            if(!check(vm!=nullptr,"HUD stock icon creation failed"))return false;
+            if(seats>1)move_row(*vm,delta);
+        }
+    }
+    return true;
+}
+bool Hud::initialize_partner(u32 seat,i32 character,const PlayerLifeSession& pilot){
+    const auto label=animations.create(resources.front,113+character*3+pilot.animal,-1,0,{},0,u8(seat+1));
+    return check(label!=0,"HUD partner loadout creation failed")&&(stock_handles(seat,false)[0]||create_stock(seat))&&
+        lives(pilot.extra_lives,pilot.life_pieces,seat)&&bombs(pilot.bombs,pilot.bomb_pieces,seat);
+}
+bool Hud::initialize(const HudStartContext& context,u32 seat_count){
+    if(!check(seat_count>=1&&seat_count<=partner_stock.size()+1,"HUD seat count outside TH17 range"))return false;
+    if(!check(!base||seats==seat_count,"HUD seat count changed during the run"))return false;
+    seats=seat_count;
+    if(!base){
+        base=animations.create_overlay(resources.front,0);
+        auto* frame=animations.registry.find(base);
+        if(!check(frame!=nullptr,"HUD frame creation failed"))return false;
+        if(seats>1){
+            if(!layout_team(*frame))return false;
+            for(u32 seat=0;seat<seats;++seat)if(!layout_stock(*frame,seat))return false;
+        }
+    }
     if(!life_handles[0]){
-        for(i32 i=0;i<8;i++){life_handles[i]=animations.create_overlay(resources.front,30+i);if(!check(life_handles[i]!=0,"HUD life icon creation failed"))return false;}
-        for(i32 i=0;i<8;i++){bomb_handles[i]=animations.create_overlay(resources.front,38+i);if(!check(bomb_handles[i]!=0,"HUD bomb icon creation failed"))return false;}
+        if(!create_stock(0))return false;
         for(i32 i=0;i<2;i++){clock_handles[i]=animations.create(resources.ascii,2+i,-1,0);auto* vm=find(clock_handles[i]);if(!check(vm!=nullptr,"HUD clock creation failed")||!visible(clock_handles[i],false))return false;vm->visual.render_flags&=~0xc0000u;}
     }
     if(!lives(session.extra_lives,session.life_pieces)||!bombs(session.bombs,session.bomb_pieces))return false;
@@ -27,7 +92,7 @@ bool Hud::initialize(const HudStartContext& context){
     if(!indicator){indicator=animations.create(resources.front,112,-1,0);if(!check(indicator!=0,"Boss position indicator creation failed"))return false;}
     if(context.stage==1&&!context.practice_record&&!context.continues){const u32 h=animations.create(resources.front,69,-1,0);auto* vm=animations.registry.find(h);if(!check(vm!=nullptr,"Player introduction creation failed"))return false;vm->visual.translation={0,context.character==1?148.f:128.f,0};}
     if(context.game_active){difficulty_banner=animations.create(resources.front,81+context.difficulty,-1,0);if(!check(difficulty_banner!=0,"Difficulty banner creation failed")||!animations.interrupt(difficulty_banner,3))return false;}
-    difficulty_label=animations.create(resources.front,87+context.difficulty,-1,0);loadout_label=animations.create(resources.front,113+context.character*3+context.animal,-1,0);
+    difficulty_label=animations.create(resources.front,87+context.difficulty,-1,0);loadout_label=animations.create(resources.front,113+context.character*3+context.animal,-1,0,{},0,1);
     if(!check(difficulty_label&&loadout_label,"HUD loadout creation failed"))return false;for(auto& gauge:gauges)gauge.active=0;phase_count=0;
     if(notice_handle){if(!animations.interrupt(notice_handle,1))return false;notice_handle=0;}return true;
 }

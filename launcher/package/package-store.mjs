@@ -48,9 +48,10 @@ function normalizeStoredPackageObject(value) {
   if (!value || typeof value !== "object") return null;
   if (value.blob instanceof Blob) return value;
   if (!(value.data instanceof ArrayBuffer)) return null;
+  let blob;
   return {
     ...value,
-    blob: new Blob([value.data], { type: String(value.type || "application/octet-stream") }),
+    get blob() { return blob ??= new Blob([value.data], { type: String(value.type || "application/octet-stream") }); },
   };
 }
 
@@ -252,7 +253,7 @@ export async function readVerifiedPackageObjectBySha256(sha256, bytes, { indexed
 }
 
 export async function packageObjectMatches(object, bytes, sha256) {
-  if (!object || (bytes != null && object.blob.size !== Number(bytes))) return false;
+  if (!object || (bytes != null && (object.data?.byteLength ?? object.blob.size) !== Number(bytes))) return false;
   if (!sha256) return true;
   try {
     return await sha256Hex(object.data || object.blob) === sha256.toLowerCase();
@@ -645,6 +646,7 @@ export function packageMimeType(source, fallback = "application/octet-stream") {
   if (lower.endsWith(".wasm")) return "application/wasm";
   if (lower.endsWith(".json")) return "application/json; charset=utf-8";
   if (lower.endsWith(".ogg")) return "audio/ogg";
+  if (lower.endsWith(".flac")) return "audio/flac";
   if (lower.endsWith(".ttc")) return "font/ttf";
   if (lower.endsWith(".ttf")) return "font/ttf";
   if (lower.endsWith(".otf")) return "font/otf";

@@ -16,6 +16,10 @@
 .room-turn-preference>div{min-width:0}
 .room-turn-preference label{font-weight:600;cursor:pointer}
 .room-packet-loss .room-turn-preference button{padding:0}
+.room-startup-routes{width:100%;margin:16px 0 0;border-spacing:0 4px;font-size:13px}
+.room-startup-routes caption{text-align:left;font-weight:600}
+.room-packet-loss .room-startup-routes button{width:100%;padding:4px 9px;text-align:left}
+.room-packet-loss .room-startup-routes button[aria-pressed=true]{background:var(--line)}
 .room-resource-reload{position:absolute;top:12px;right:12px;z-index:8;width:380px;max-width:calc(100% - 24px);box-sizing:border-box;padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--panel,#191a17);color:var(--paper);box-shadow:0 8px 24px #0004;pointer-events:auto;touch-action:pan-y}
 .room-resource-reload p{margin:0 0 14px;font:500 14px/1.65 var(--ui-font);overflow-wrap:anywhere}
 .room-resource-reload>div{display:flex;gap:10px}
@@ -25,6 +29,8 @@
 #player.room-workspace #mpRoomView.room-workspace-view{display:contents!important}
 body:has(#player.room-workspace) .mp-settings-room-drawer{z-index:230}
 body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
+body:has(#player.room-workspace) :is(.ui-kit-select-content,.ui-menu)[data-ui-surface="room-settings"]{--ui-layer-popup:231}
+.mp-settings-room-header{display:contents}
 #player.room-workspace [hidden][hidden]{display:none!important}
 #player.room-workspace .player-stage{grid-column:1;grid-row:2/5;display:flex;flex-direction:column;min-width:0;min-height:0;gap:12px;padding:0;border:0;background:none}
 #player.room-workspace #gameViewport{position:relative!important;inset:auto!important;margin:0!important;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#090a09;transform:none!important}
@@ -44,17 +50,23 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 .room-workspace-top-actions{margin-left:auto;gap:12px}
 #mpRoomView.room-workspace-view .room-workspace-top-actions #mpSettingsRoomDrawerToggle{width:auto!important;flex-basis:auto!important;padding:0 12px!important}
 .room-workspace-column{grid-column:2;grid-row:2/4;display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.room-workspace-column:has(.room-workspace-playback[data-visible=true]){overflow:auto}
 .room-workspace-column>.room-workspace-spectators{order:2;flex:none}
 .room-workspace-playback-host{display:contents}
 .room-workspace-sidebar{grid-column:2;grid-row:2;display:flex;flex:1;flex-direction:column;min-height:0;border:1px solid var(--line);border-radius:10px;background:var(--kit-card);overflow:hidden}
+/* Very short sidebars scroll as a column, with space reserved for the tab and composer. */
+.room-workspace-sidebar:has(.room-workspace-chat:not([hidden])){min-height:144px}
 .room-workspace-panels{padding:18px;overflow:auto;min-height:0;flex:1}
 .room-workspace-panels fieldset{padding:0;margin:0;border:0;min-width:0}
 .room-workspace-panels #mpRoomGuideOpen{padding:8px 0;border:0;background:none;color:var(--muted);font:600 14px var(--ui-font);cursor:pointer}
-.room-workspace-chat{height:100%;display:flex;flex-direction:column;min-height:200px}
-#mpRoomView.room-workspace-view .mp-room-chat-log{position:static!important;display:flex!important;flex-direction:column;justify-content:flex-end;flex:1;min-height:0;overflow:auto;max-height:none!important;margin:0 0 12px;padding:0;background:none!important;font-size:15px;line-height:1.65}
-#mpRoomView.room-workspace-view .mp-room-chat-log p{margin:6px 0;overflow-wrap:anywhere}
+.room-workspace-chat{height:100%;display:flex;flex-direction:column;min-height:0}
+#mpRoomView.room-workspace-view .mp-room-chat-log{position:static!important;display:flex!important;flex-direction:column;justify-content:flex-start;flex:1;min-height:0;overflow:auto;overflow-anchor:none;overscroll-behavior:contain;max-height:none!important;margin:0 0 12px;padding:0;background:none!important;font-size:15px;line-height:1.65}
+#mpRoomView.room-workspace-view .mp-room-chat-log p{flex:none;margin:6px 0;overflow-wrap:anywhere}
+@media (min-width:761px) and (orientation:landscape){#mpRoomView.room-workspace-view .mp-room-chat-log p:first-child{margin-top:auto}}
+.room-workspace-chat>.room-chat-desktop-history{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 24px;gap:4px;flex:1;min-height:0;margin:0 0 12px}
+#mpRoomView.room-workspace-view .room-chat-desktop-history>.mp-room-chat-log{min-width:0;margin:0;scrollbar-width:none}
 #mpRoomView.room-workspace-view .mp-room-quick-chat{display:block!important;position:relative;min-width:0}
-#mpRoomView.room-workspace-view #mpRoomChat{padding:0;margin:0;background:none;border:0}
+#mpRoomView.room-workspace-view #mpRoomChat{flex:none;padding:0;margin:0;background:none;border:0}
 .room-quick-chat-chevron{transition:transform var(--ui-feedback-duration) var(--ui-feedback-easing)}
 .room-quick-chat-trigger[aria-expanded=true] .room-quick-chat-chevron{transform:rotate(180deg)}
 .room-workspace-spectators{grid-column:2;grid-row:3;display:flex;align-items:center;gap:12px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--kit-card);min-width:0;min-height:40px}
@@ -82,8 +94,9 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 .room-workspace-preparation .mp-resource-tracks,.room-workspace-preparation #mpRoomResourceAmount{display:none}
 .room-workspace-preparation .mp-room-resource-progress{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;background:none;padding:0;border:0;font:14px/1.6 var(--ui-font);color:var(--paper)}
 .room-workspace-preparation .mp-room-resource-progress button{padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--paper);font:14px var(--ui-font)}
-.room-workspace-fullscreen{position:absolute;right:12px;bottom:12px;z-index:2;display:grid;place-items:center;width:44px;height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--kit-card);color:var(--paper)}
-.room-workspace-fullscreen svg{width:22px;height:22px}
+.room-workspace-viewport-tools{position:absolute;right:12px;bottom:12px;z-index:2;display:flex;gap:8px}
+.room-workspace-viewport-tools>button{display:grid;place-items:center;width:44px;height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--kit-card);color:var(--paper)}
+.room-workspace-viewport-tools>button svg{width:22px;height:22px}
 /* Grouped form reuses MainSelect, RoomTiming, RoomChoiceGroup and OptionSwitch. */
 #mpRoomView.room-workspace-view .room-grouped-settings{display:block!important;position:static!important;padding:0!important;background:none!important;border:0!important}
 #mpRoomView.room-workspace-view .mizuki-select{width:100%}
@@ -99,7 +112,8 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #mpRoomView.room-workspace-view .mp-room-delay{gap:8px;flex-wrap:nowrap}
 #mpRoomView.room-workspace-view .mp-room-delay>span{font-size:13px;white-space:nowrap}
 .mp-delay-auto{display:inline-flex!important;align-items:center;gap:6px;white-space:nowrap;font-size:12px!important;line-height:1.4;margin:0}
-.room-rule-field{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:22px;font-size:14px}
+.room-rule-field{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;padding-block:8px;color:var(--kit-foreground);font-size:14px;font-weight:600}
+.mp-room-settings .room-rule-field label{display:block;color:inherit;font:inherit}
 .room-rule-field>div{flex:1;min-width:0}
 /* Member cards keep a fixed footprint; status artwork has its own clipped layer. */
 #player.room-workspace .room-workspace-roster{flex:0 0 auto;min-width:0;min-height:0;touch-action:pan-y}
@@ -127,7 +141,6 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace .room-workspace-roster .mp-seat[data-manageable]{--seat-name-inset:44px}
 #player.room-workspace .room-workspace-roster .mp-seat-details{display:flex!important;gap:5px;max-width:100%;font-size:12px!important;align-items:center}
 #player.room-workspace .room-workspace-roster .mp-seat-loadout{font:500 12px/1.4 var(--kit-font)!important;opacity:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#player.room-workspace .room-workspace-roster .mp-seat-control{display:none!important}
 #player.room-workspace .room-workspace-roster .mp-seat-latency{display:flex;align-items:center;gap:12px;position:relative!important;min-height:20px!important;margin:4px 0 0!important;padding:0!important;background:none!important;border:0!important;color:var(--paper)!important;font:500 11px/1.4 var(--kit-font)!important;pointer-events:auto;flex-wrap:wrap;text-align:left}
 .room-seat-network-pair{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
 .room-seat-network-label{color:var(--muted)}
@@ -136,6 +149,8 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace .room-workspace-roster .mp-seat-state,#player.room-workspace .room-workspace-roster .mp-seat-me{display:none!important}
 #player.room-workspace .room-workspace-roster .mp-seat-edit{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;padding:0!important;z-index:1!important;background:transparent!important;border:0!important;border-radius:10px!important;cursor:pointer}
 #player.room-workspace .room-workspace-roster .mp-seat-owner-mark{position:absolute;bottom:-2px;right:-2px;width:15px;height:15px;z-index:2}
+#player.room-workspace .room-workspace-roster .room-seat-member-mark{position:absolute;bottom:-2px;right:-2px;z-index:2;display:grid;place-items:center;width:15px;height:15px;background:transparent;color:var(--paper)}
+#player.room-workspace .room-workspace-roster .room-seat-member-mark svg{width:12px;height:12px;stroke-width:2}
 #player.room-workspace .room-workspace-roster .mp-seat-owner-mark>svg{display:block;width:100%;height:100%}
 #player.room-workspace .room-workspace-roster .mp-seat-loadout{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #player.room-workspace .room-workspace-roster .mp-seat-moderation{position:absolute;top:4px;right:4px;z-index:4;font-size:12px}
@@ -151,14 +166,13 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace .room-workspace-roster .mp-seat{animation:room-card-enter var(--ui-surface-duration) var(--ui-surface-easing) both}
 #player.room-workspace .room-workspace-roster .mp-seat:nth-child(2){animation-delay:60ms}
 #player.room-workspace .room-workspace-roster .mp-seat:nth-child(3){animation-delay:120ms}
-.room-workspace-panels>[role=tabpanel]:not([hidden]){animation:room-panel-enter var(--ui-surface-duration) var(--ui-surface-easing) both}
-#mpRoomView.room-workspace-view .mp-room-chat-log p{animation:room-panel-enter var(--ui-surface-duration) var(--ui-surface-easing) both}
-#player.room-workspace .mp-seat-moderation[open] .mp-seat-moderation-actions{animation:room-panel-enter var(--ui-surface-duration) var(--ui-surface-easing) both}
+.room-workspace-panels>[role=tabpanel]:not([hidden]){animation:workspace-panel-enter var(--ui-surface-duration) var(--ui-surface-easing) both}
+#mpRoomView.room-workspace-view .mp-room-chat-log p{animation:workspace-panel-enter var(--ui-surface-duration) var(--ui-surface-easing) both}
+#player.room-workspace .mp-seat-moderation[open] .mp-seat-moderation-actions{animation:workspace-panel-enter var(--ui-surface-duration) var(--ui-surface-easing) both}
 
 
 @keyframes room-card-enter{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes room-panel-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:760px){
+@media (max-width: 760px), (max-width: 1000px) and (pointer: coarse) {
  #player.room-workspace{display:flex!important;flex-direction:column;height:100dvh!important;min-height:0;gap:12px;padding:12px 12px calc(100px + env(safe-area-inset-bottom))!important;overflow-y:auto!important;overflow-x:hidden!important;touch-action:pan-y!important;overscroll-behavior-y:contain}
  #player.room-workspace:has(.room-workspace-actions[hidden]){padding-bottom:calc(12px + env(safe-area-inset-bottom))!important}
  #player.room-workspace :is(.room-workspace-header,.room-workspace-roster,.room-workspace-roster button,.room-workspace-sidebar,.room-workspace-spectators){touch-action:pan-y!important}
@@ -189,12 +203,13 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
  #player.room-workspace .room-workspace-roster .mp-seat-owner-mark{display:none}
  .room-workspace-spectators{order:2;gap:10px;padding:6px 10px;flex:none;min-height:36px}
  .room-workspace-column{display:contents}
- .room-workspace-sidebar{order:3;flex:none;min-height:max(216px,calc(360px - var(--room-playback-height,0px)));overflow:visible}
+ .room-workspace-sidebar{order:3;flex:none;overflow:visible}
+ #player.room-workspace .room-workspace-playback{order:4}
  .room-workspace-panels{overflow:visible;padding:16px}
- .room-workspace-chat{height:clamp(156px,calc(300px - var(--room-playback-height,0px)),300px);min-height:0}
+ .room-workspace-chat{height:auto;min-height:0}
  .room-seat-player-tag{font-size:10px}
  /* Keep the original card contents beside an avatar-only spectator rail. */
- #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]){display:grid;grid-template-columns:minmax(0,3fr) minmax(64px,1fr);gap:8px}
+ #player.room-workspace .room-workspace-roster[data-side-lounge="true"]:is([data-player-count="2"],[data-player-count="3"]){display:grid;grid-template-columns:minmax(0,3fr) minmax(64px,1fr);gap:8px}
  #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-workspace-lounge-host{position:relative;align-self:stretch}
  #player.room-workspace .room-workspace-roster .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]){grid-template-columns:minmax(0,1fr)!important}
  #player.room-workspace .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]) .mp-seat{min-height:84px!important;padding:8px 10px!important}
@@ -208,12 +223,14 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
  #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-spectator-preview-join{width:100%;min-height:32px;margin:auto 0 0;padding:6px 4px;font-size:11px}
  .room-workspace-actions{position:fixed;z-index:220;bottom:0;left:0;right:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--kit-background) 94%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(16px)}
 }
-@media(max-width:399px){
- .room-workspace-heading{flex-direction:column;gap:1px}
- .room-workspace-meta>span{padding-left:0}
+@media(max-width:540px){
+ .room-workspace-heading{flex-direction:column;align-items:flex-start;gap:2px}
+ .room-workspace-heading .workspace-product-heading{justify-content:flex-start;max-width:100%}
+ .room-workspace-heading h2{text-align:left}
+ .room-workspace-heading .workspace-product-trigger{margin-block:-11px}
 }
 @media(orientation:portrait){
- #player.room-workspace .room-workspace-chat>.mp-room-quick-chat{order:-1;flex:none;margin:0 0 12px}
+ #player.room-workspace .room-workspace-chat:has(>.mp-room-chat-log)>.mp-room-quick-chat{order:-1;flex:none;margin:0 0 12px}
  #mpRoomView.room-workspace-view .room-workspace-chat>.mp-room-chat-log{justify-content:flex-start;margin:0!important}
 }
 @media(prefers-reduced-motion:reduce){.room-preparation-spinner,.room-seat-ring.indeterminate{animation:none}}
@@ -233,9 +250,29 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #mpRoomView .room-workspace-heading h2{font-size:24px;line-height:1.3;font-weight:600;white-space:nowrap;margin:0;overflow:hidden;text-overflow:ellipsis;color:var(--kit-foreground)}
 #mpRoomView .mp-room-code-label{display:none}
 #mpRoomView .mp-room-code strong{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
-#mpRoomView .mp-room-panel{position:fixed;inset:0;box-sizing:border-box;width:min(520px,calc(100vw - 32px));max-width:none;max-height:calc(100dvh - 32px);margin:auto;padding:20px;border:1px solid var(--kit-border);border-radius:10px;background:var(--kit-card);color:var(--kit-foreground);box-shadow:0 16px 48px #0003;overflow:auto;font:400 13px/1.5 var(--kit-font)}
+#mpRoomView .mp-room-panel{position:fixed;inset:0;box-sizing:border-box;width:min(520px,calc(100vw - 32px));max-width:none;max-height:calc(100dvh - 32px);margin:auto;padding:20px;border:1px solid var(--kit-border);border-radius:10px;background:var(--kit-card);color:var(--kit-foreground);box-shadow:var(--ui-window-shadow);overflow:auto;font:400 13px/1.5 var(--kit-font)}
 #mpRoomView .mp-room-panel:not([open]){display:none}
-#mpRoomView .mp-room-panel::backdrop{background:#0008}
+/* The history viewport and slider share the same scroll position. */
+.room-chat-history{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:4px;height:152px;margin-bottom:12px}
+.room-chat-unread.ui-kit-button {position:absolute;right:32px;bottom:8px;z-index:1;gap:3px;width:auto;height:auto;min-height:0;max-width:calc(100% - 48px);padding:3px 6px;border-radius:999px;box-shadow:0 2px 8px #0003;font-size:12px;line-height:1.25}
+.room-chat-unread svg {width:14px;height:14px;flex:none}
+.room-chat-history-viewport{min-height:0;overflow:hidden;overflow-anchor:none;font-size:14px;line-height:1.65}
+.room-chat-history-rows{display:grid;align-content:end;gap:6px;min-height:100%}
+.room-chat-history-rows>p{margin:0;overflow-wrap:anywhere}
+.room-chat-history .chat-report-trigger{padding:0}
+.room-chat-history-empty{color:var(--kit-muted-foreground)}
+.room-workspace-chat:has(>.room-chat-history) .ui-kit-input{font-size:16px}
+.room-chat-history-slider.ui-kit-slider{justify-content:center;width:100%;height:100%;padding-block:5px;cursor:ns-resize}
+.room-chat-desktop-history .room-chat-history-slider.ui-kit-slider{min-height:0;box-sizing:border-box}
+.room-chat-history-slider[data-disabled]{visibility:hidden}
+.room-chat-history-slider .ui-kit-slider-track{flex:none;width:4px;height:100%}
+.room-chat-history-slider .ui-kit-slider-range{width:100%;height:auto}
+.room-chat-history-slider .ui-kit-slider-thumb::before{inset:-8px -9px}
+.room-chat-desktop-history .room-chat-history-slider .ui-kit-slider-range {transition:top 220ms cubic-bezier(.22,.7,.2,1)}
+.room-chat-desktop-history .room-chat-history-slider>span:has(>.ui-kit-slider-thumb) {transition:bottom 220ms cubic-bezier(.22,.7,.2,1)}
+.room-chat-desktop-history .room-chat-history-slider[data-dragging] :is(.ui-kit-slider-range,span:has(>.ui-kit-slider-thumb)) {transition:none}
+@media(prefers-reduced-motion:reduce) {.room-chat-desktop-history .room-chat-history-slider :is(.ui-kit-slider-range,span:has(>.ui-kit-slider-thumb)) {transition:none}}
+.less-motion .room-chat-desktop-history .room-chat-history-slider :is(.ui-kit-slider-range,span:has(>.ui-kit-slider-thumb)) {transition:none}
 #mpRoomView .mp-panel-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 16px}
 #mpRoomView .mp-panel-head h3{margin:0;color:var(--kit-foreground);font:600 16px/1.4 var(--kit-font)}
 #mpRoomView .mp-name-editor{display:grid;gap:6px;margin:0 0 16px;font-size:12px;color:var(--kit-muted-foreground)}
@@ -244,6 +281,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #mpRoomView .mp-local-player{display:flex;flex-direction:column-reverse;gap:12px;margin:0;padding:0;border:0;background:none}
 #mpRoomView :is(.mp-seated-loadout,.mp-local-actions){display:flex;align-items:center;justify-content:space-between;gap:12px;height:auto}
 #mpRoomView .mp-seated-loadout span{font:500 13px/1.5 var(--kit-font)}
+#mpRoomView .mp-loadout-fields{display:grid;gap:12px}
 #mpRoomView :is(#mpStandUp,#mpCheckGame,#mpSpectatorJoin){display:flex;width:100%;margin-top:12px}
 #mpRoomView .mp-room-network header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
 #mpRoomView .mp-room-network header h3{display:none}
@@ -266,20 +304,27 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #mpRoomView .mp-spectator-copy strong{overflow:hidden;font-size:13px;text-overflow:ellipsis;white-space:nowrap}
 #mpRoomView :is(.mp-spectator-copy small,.mp-spectator-marker,.mp-spectator-empty){color:var(--kit-muted-foreground);font-size:12px}
 #mpRoomView .mp-room-setting-title{height:auto;margin:12px 0 8px;color:var(--kit-muted-foreground);font-size:12px}
-#mpRoomView .room-workspace-tabs{flex:none;gap:16px;padding:0 16px}
+#mpRoomView .room-workspace-tab-bar{display:flex;align-items:center;flex:none}
+#mpRoomView .room-workspace-tabs{flex:1;min-width:0;gap:clamp(4px,2vw,16px);padding:0 12px}
+#mpRoomView .room-workspace-music-toggle{flex:none;margin-inline-end:8px;white-space:nowrap}
 #mpRoomView .room-workspace-tabs button{flex:1;min-width:0}
 #mpRoomView .room-workspace-actions button{flex:1;min-height:44px;height:44px;font-size:14px}
 .room-settings-group{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--kit-border)}
-.room-settings-group h3{margin:0 0 12px;font-size:13px;font-weight:600}
-.room-basic-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-width:0;margin:0 0 16px;padding:0;border:0}
+.room-settings-group:last-of-type{margin-bottom:0;padding-bottom:0;border-bottom:0}
+.room-settings-group h3{margin:0 0 10px;font-size:13px;font-weight:600}
+.room-basic-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:12px;min-width:0;margin:0 0 12px;padding:0;border:0}
 #mpRoomView .room-basic-fields label{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;color:var(--kit-muted-foreground);font-size:12px}
 #mpRoomView :is(.room-setting-description,.mp-room-delay-hint){margin:6px 0 0;color:var(--kit-muted-foreground);font-size:12px;line-height:1.65}
 #mpRoomView .mp-delay-stepper{flex:none}
 #mpRoomView .mp-room-delay{flex-wrap:wrap}
-.room-rule-field{margin-top:12px;font-size:13px}
 @media(max-width:760px){
- #mpRoomView .mp-room-panel{inset:auto 0 0;width:100%;max-height:85dvh;margin:0;padding:20px 20px max(20px,env(safe-area-inset-bottom));border-bottom:0;border-radius:12px 12px 0 0}
+ #mpRoomView .mp-room-panel{inset:auto 0 0;width:100vw;max-height:85dvh;margin:0;padding:20px 20px max(20px,env(safe-area-inset-bottom));border-bottom:0;border-radius:12px 12px 0 0}
  #mpRoomView .mp-name-editor input{min-height:44px;font-size:16px}
  #mpRoomView .room-workspace-actions button{min-height:48px;height:48px;font-size:14px}
 }
 }
+/* The global scrollbar theme must not add a second bar beside the chat slider. */
+.room-chat-desktop-history>.mp-room-chat-log {scrollbar-width:none}
+.room-chat-desktop-history>.mp-room-chat-log::-webkit-scrollbar {display:none}
+.room-chat-history-viewport {scrollbar-width:none}
+.room-chat-history-viewport::-webkit-scrollbar {display:none}

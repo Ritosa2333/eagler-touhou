@@ -34,7 +34,7 @@
     border-radius: 12px;
     background: var(--kit-card);
     color: var(--kit-foreground);
-    box-shadow: 0 16px 48px #0003;
+    box-shadow: var(--ui-window-shadow);
     font: 400 13px / 1.5 var(--kit-font);
     isolation: isolate;
   }
@@ -132,15 +132,6 @@
     left: auto;
     z-index: 2;
     box-shadow: none;
-  }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer) .options-subtitle {
-    width: 100%;
-    margin: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    color: var(--kit-muted-foreground);
-    font: 400 11px / 1.4 var(--kit-font);
   }
   :is(.tools[data-options-panel], .mp-settings-room-drawer) .options-scroll {
     flex: 1;
@@ -354,7 +345,7 @@
       right: max(10px, env(safe-area-inset-right));
     }
     :is(.tools[data-options-panel], .mp-settings-room-drawer) .tools-head {
-      flex-basis: min(clamp(204px, 64vw, 280px), 36dvh);
+      flex-basis: min(clamp(144px, 47vw, 200px), 30dvh);
     }
     :is(.tools[data-options-panel], .mp-settings-room-drawer) .options-scroll,
     .mp-settings-room-drawer .mp-settings-room-content {

@@ -44,7 +44,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th02: Readonly<{
-        testOnly:true; number:'02';title:'東方封魔録';subtitle:'the Story of Eastern Wonderland';cardArtwork:'th02-card.webp';
+        testOnly:true; practiceUI:'browser'; number:'02';title:'東方封魔録';subtitle:'the Story of Eastern Wonderland';cardArtwork:'th02-card.webp';
         storage:Readonly<{saveRoot:'/savesth02';scoreFile:'HUUHI.DAT';configFiles:readonly string[]}>;
         runtime:'./runtime/th02/th02.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
@@ -54,11 +54,11 @@ export declare const PRODUCT_GAMES: Readonly<{
         support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
         replay:Readonly<{prefix:'th02';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th02/multiplayer/th02.html';
-        multiplayer:Readonly<{titleKey:'game.title.th02mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th02PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:true;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:false;runtimeTiming:true}>}>;
+        multiplayer:Readonly<{titleKey:'game.title.th02mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th02PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:true;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:true;runtimeTiming:true}>}>;
         features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th03: Readonly<{
-        buildOptIn:true; testOnly:true; number:'03';title:'東方夢時空';subtitle:'Phantasmagoria of Dim.Dream';cardArtwork:'th03-card.webp';
+        testOnly:true; buildOptIn:true; number:'03';title:'東方夢時空';subtitle:'Phantasmagoria of Dim.Dream';cardArtwork:'th03-card.webp';
         storage:Readonly<{saveRoot:'/savesth03';scoreFile:'YUME.NEM';configFiles:readonly string[]}>;
         runtime:'./runtime/th03/th03.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
@@ -68,21 +68,21 @@ export declare const PRODUCT_GAMES: Readonly<{
         support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
         replay:Readonly<{prefix:'th03';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th03/multiplayer/th03.html';
-        multiplayer:Readonly<{titleKey:'game.title.th03mp';gameplay:'versus';inGameSelection:true;playerCounts:readonly [2];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th03PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:false;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:false;runtimeTiming:true}>}>;
+        multiplayer:Readonly<{titleKey:'game.title.th03mp';gameplay:'versus';inGameSelection:true;playerCounts:readonly [2];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th03PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:false;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:true;runtimeTiming:true}>}>;
         features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th04: Readonly<{
-        testOnly:true; number:'04';title:'東方幻想郷';subtitle:'Lotus Land Story';cardArtwork:'th04-card.webp';
+        testOnly:true; practiceUI:'browser'; number:'04';title:'東方幻想郷';subtitle:'Lotus Land Story';cardArtwork:'th04-card.webp';
         storage:Readonly<{saveRoot:'/savesth04';scoreFile:'GENSOU.SCR';configFiles:readonly string[]}>;
         runtime:'./runtime/th04/th04.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
-        package:Readonly<{dataFileId:'game-data';dataTarget:'/th04.data';musicSourceDirectories:Readonly<{ogg:'bgm'}>;musicMounts:Readonly<{ogg:'/bgm'}>}>;
-        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true}>;
+        package:Readonly<{dataFileId:'game-data';dataTarget:'/th04.data';musicSourceDirectories:Readonly<{ogg:'music'}>;musicMounts:Readonly<{ogg:'/bgm/akyu'}>}>;
+        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true;sources:readonly ['original','akyu']}>;
         touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
         support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
         replay:Readonly<{prefix:'th04';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th04/multiplayer/th04.html';
-        multiplayer:Readonly<{titleKey:'game.title.th04mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th04PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:true;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:false;runtimeTiming:true}>}>;
+        multiplayer:Readonly<{titleKey:'game.title.th04mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th04PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:true;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:true;runtimeTiming:true}>}>;
         features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th05: Readonly<{
@@ -99,6 +99,18 @@ export declare const PRODUCT_GAMES: Readonly<{
         package: Readonly<{dataFileId: "game-data"; dataTarget: "/th05.data"; rawDataImport: Readonly<{fileNames: readonly string[]}>;
             musicSourceDirectories: Readonly<{ogg: "music"}>; musicMounts: Readonly<{ogg: "/music"}>}>;
         replay: Readonly<{prefix: "th05"; slotPrefix: "replay"; slots: 100; extensions: readonly ["rpy"]}>; features: Readonly<{thprac: true; languages: true; focusHitbox: true}>;
+    }>;
+    hsob: Readonly<{
+        testOnly: true; importOnly: true; number: "HSOB"; title: "東方真珠島"; subtitle: "Hollow Song of Birds"; cardArtwork: "hsob-card.webp";
+        storage: Readonly<{saveRoot: "/savehsob"; scoreFile: "Package_common_SaveData.dat"; configFiles: readonly string[]}>;
+        runtime: "./runtime/hsob/hsob.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
+        requiredShared: readonly string[]; runtimeAssets: readonly string[];
+        musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"}>;
+        touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
+        support: Readonly<{highRefreshRate: false; sourceRepository: "https://github.com/Ritosa2333/ph3-modern"; adaptationNotice: "early-test"}>;
+        package: Readonly<{dataFileId: "game-data"; dataTarget: "/hsob.data"; musicSourceDirectories: Readonly<{ogg: "music"}>; musicMounts: Readonly<{ogg: "/game/script/th_hsob/music"}>}>;
+        replay: Readonly<{prefix: "Main_replay"; extensions: readonly ["dat"]}>;
+        features: Readonly<{thprac: false; languages: false; focusHitbox: false}>;
     }>;
     th06: Readonly<{
         cardArtwork: "th06-card.webp";
@@ -476,7 +488,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         replay: Readonly<{
             prefix: "th9";
         }>;
-        multiplayerRuntime: "./runtime/th09/multiplayer/th09.html";
+        multiplayerRuntime: "./runtime/th09/th09.html";
         multiplayer: Readonly<{
             titleKey: "game.title.th09mp";
             gameplay: "versus";
@@ -800,6 +812,9 @@ export declare const PRODUCT_GAMES: Readonly<{
         package: Readonly<{
             dataFileId: "game-data";
             dataTarget: "/th13.data";
+            rawDataImport: Readonly<{
+                fileNames: readonly string[];
+            }>;
             musicSourceDirectories: Readonly<{
                 ogg: "bgm-ogg";
             }>;
@@ -810,11 +825,57 @@ export declare const PRODUCT_GAMES: Readonly<{
         replay: Readonly<{
             prefix: "th13";
         }>;
+        multiplayerRuntime: "./runtime/th13/multiplayer/th13.html";
+        multiplayer: Readonly<{
+            titleKey: "game.title.th13mp";
+            gameplay: "cooperative";
+            inputTiming: Readonly<{
+                rollbackLimit: 12;
+                sendPredictionLimit: 12;
+                measuredStartup: true;
+                manualDelayLimit: 9;
+            }>;
+            playerCounts: readonly [2, 3];
+            difficulties: readonly ["Easy", "Normal", "Hard", "Lunatic", "Extra"];
+            loadouts: readonly {
+                labelKey: string;
+                glyph: string;
+                character: number;
+                shot: number;
+            }[];
+            peerTransportGlobal: "__th13PeerTransport";
+            spectator: true;
+            titleRoomEntry: false;
+        }>;
         features: Readonly<{
             thprac: false;
             languages: false;
             focusHitbox: false;
         }>;
+    }>;
+    th14: Readonly<{
+        number: "14"; title: "東方輝針城"; subtitle: "Double Dealing Character"; cardArtwork: "th14-card.jpg";
+        testOnly: true;
+        buildOptIn: true;
+        runtime: "./runtime/th14/th14.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory";
+        storage: Readonly<{saveRoot: "/savesth14"; scoreFile: "scoreth14.dat"; configFiles: readonly string[]}>;
+        runtimeAssets: readonly string[]; requiredShared: readonly string[];
+        musicCapabilities: Readonly<{midi: false}>;
+        musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"}>;
+        touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
+        support: Readonly<{highRefreshRate: false; sourceRepository: string; adaptationNotice: "early-test"}>;
+        package: Readonly<{dataFileId:"game-data";dataTarget:"/th14.dat";rawDataImport:Readonly<{fileNames:readonly string[]}>;
+            musicSourceDirectories:Readonly<{ogg:"music"}>;musicMounts:Readonly<{ogg:"/music"}>}>;
+        replay: Readonly<{prefix: "th14"}>;
+        multiplayerRuntime: "./runtime/th14/multiplayer/th14.html";
+        multiplayer: Readonly<{titleKey:"game.title.th14mp";gameplay:"cooperative";
+            playerCounts:readonly [2,3];difficulties:readonly ["Easy","Normal","Hard","Lunatic","Extra"];
+            loadouts:ReadonlyArray<Readonly<{labelKey:string;glyph:string;character:number;shot:number}>>;
+            peerTransportGlobal:"__th14PeerTransport";spectator:true;titleRoomEntry:false;
+            inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:12;manualDelayLimit:9}>}>;
+        thpracRuntime: Readonly<{session: "native"}>;
+        thpracExtraFunctionKeys: readonly ["U"];
+        features: Readonly<{thprac:true;languages:true;focusHitbox:false}>;
     }>;
     th15: Readonly<{
         number: "15";
@@ -893,11 +954,12 @@ export declare const PRODUCT_GAMES: Readonly<{
         }>;
     }>;
     th17: Readonly<{
-        testOnly: true;
         number: "17";
         title: "東方鬼形獣";
         subtitle: "Wily Beast and Weakest Creature";
         cardArtwork: "th17-card.webp";
+        renderScales: readonly [2, 1];
+        thpracRuntime: Readonly<{session: "native"}>;
         storage: Readonly<{
             saveRoot: "/savesth17";
             scoreFile: "scoreth17.dat";
@@ -920,7 +982,7 @@ export declare const PRODUCT_GAMES: Readonly<{
             adaptationNotice: "early-test";
         }>;
         runtimeFileLayout: "directory";
-        requiredShared: readonly never[];
+        requiredShared: readonly ["/msgothic.ttc", "/unifont.otf"];
         runtimeAssets: readonly string[];
         dataProvider: "retail-memory";
         package: Readonly<{
@@ -939,9 +1001,12 @@ export declare const PRODUCT_GAMES: Readonly<{
         replay: Readonly<{
             prefix: "th17";
         }>;
+        multiplayerRuntime: "./runtime/th17/multiplayer/th17.html";
+        multiplayer: Readonly<MultiplayerProductConfig>;
+        thpracExtraFunctionKeys: readonly ["U"];
         features: Readonly<{
-            thprac: false;
-            languages: false;
+            thprac: true;
+            languages: true;
             focusHitbox: false;
         }>;
     }>;
@@ -1031,6 +1096,7 @@ export interface MultiplayerLoadoutConfig {
     glyph: string;
     character: number;
     shot: number;
+    selection?: readonly Readonly<{value: number; labelKey: string}>[];
 }
 export interface MultiplayerInputTimingConfig {
     runtimeTiming?: boolean;
@@ -1050,6 +1116,7 @@ export interface MultiplayerProductConfig {
     titleKey: string;
     gameplay: "cooperative" | "versus";
     inGameSelection?: boolean;
+    inGameCharacterSelection?: boolean;
     inputTiming?: Readonly<MultiplayerInputTimingConfig>;
     playerCounts: readonly (2 | 3)[];
     difficulties: readonly string[];
@@ -1067,6 +1134,7 @@ export declare const PRODUCT_IDS: readonly ProductId[];
 export declare const DEFAULT_PRODUCT_ID: ProductId;
 export declare const DEFAULT_MULTIPLAYER_PRODUCT_ID: MultiplayerProductId;
 export declare function isGameId(value: string): value is GameId;
+export declare function productRequiresImport(gameId: GameId): boolean;
 export declare function productEnabledForBuild(productId: string, testBuild?: boolean): boolean;
 export declare function isProductId(value: string): value is ProductId;
 export declare function isMultiplayerProductId(productId: string): productId is MultiplayerProductId;
@@ -1475,7 +1543,7 @@ export declare function createLocalProductManifest(): {
             replay: Readonly<{
                 prefix: "th9";
             }>;
-            multiplayerRuntime: "./runtime/th09/multiplayer/th09.html";
+            multiplayerRuntime: "./runtime/th09/th09.html";
             multiplayer: Readonly<{
                 titleKey: "game.title.th09mp";
                 gameplay: "versus";
@@ -1899,6 +1967,9 @@ export declare function createLocalProductManifest(): {
                 pack: null;
             }[];
         } | (typeof PRODUCT_GAMES.th19 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th05 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th12 & {
+            music: {midi: {files: never[]; supported: boolean}};
+            languageOptions: {id: string; title: string; pack: null}[];
+        }) | (typeof PRODUCT_GAMES.th13 & {
             music: {midi: {files: never[]; supported: boolean}};
             languageOptions: {id: string; title: string; pack: null}[];
         });

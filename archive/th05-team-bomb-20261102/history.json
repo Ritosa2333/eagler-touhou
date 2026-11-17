@@ -1,0 +1,128 @@
+{
+  "sourceHead": "1f2d4de6f08689f6fd39e63d993c2e1bc134d7d1",
+  "game": "th05",
+  "results": {
+    "th05": {
+      "head": "31fb704b82e664a78cef48b3ac684304cd1b69ff",
+      "ref": "refs/heads/port-history/th05",
+      "initialAncestor": true,
+      "latestAncestor": true,
+      "treeMatches": true,
+      "mapping": [
+        {
+          "source": "df09f8d2d597a4df34eb692bc3bc00de5ae73a6c",
+          "projected": "86782494f4780792bfe26ae7a6abd0c50ab1513a"
+        },
+        {
+          "source": "a7a4d6745bf664f0655ee50a1bb47ef6af303f92",
+          "projected": "828985e09953f7096dcf861cac887b9daeb42c03"
+        },
+        {
+          "source": "b07401fbb828a1fbc07bb3ff6849fb4a213532b7",
+          "projected": "2d72f95f74bf6c1871afc1aacd5cb71c58e9116f"
+        },
+        {
+          "source": "f94b7e25ea844920535957ae75a515289e67bbc3",
+          "projected": "501dd4160fc5f9aa0b0e78d4894285f2bb69e0c2"
+        },
+        {
+          "source": "91ae7e677969909bfc1e79100d19b316e6f8f177",
+          "projected": "4d6008aa4e2f06c78479848f1f85b0cf8f72887f"
+        },
+        {
+          "source": "d786d123daefa4cbfab7c4de98a7ff79f773f51d",
+          "projected": "315e7a92dc06dc6bed6bfd59b21258578429d043"
+        },
+        {
+          "source": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+          "projected": "42da16fe9b7066ee62d44173b07d968ca9bfb3af"
+        },
+        {
+          "source": "625c8de0b57c6b71becb7c6297721c74e0284d71",
+          "projected": "cf4369324990a4d61623be42f8ce40242035b06a"
+        },
+        {
+          "source": "194f57e4a93025b3a215fb10407297acb9738ae7",
+          "projected": "31fb704b82e664a78cef48b3ac684304cd1b69ff"
+        }
+      ]
+    },
+    "th05mp": {
+      "head": "b3990cb71d2eae35295e4ffa96480346001d0784",
+      "ref": "refs/heads/port-history/th05mp",
+      "initialAncestor": true,
+      "latestAncestor": true,
+      "treeMatches": true,
+      "mapping": [
+        {
+          "source": "d786d123daefa4cbfab7c4de98a7ff79f773f51d",
+          "projected": "8ab1b1d08dd28252a93cf304896cf950b7e47d63"
+        },
+        {
+          "source": "69aac738aa2e61d191adfcaa4d35093d70096234",
+          "projected": "6ca9277553f7de9852ed41edc396a09230f0d004"
+        },
+        {
+          "source": "4fd3ae0d992c4015d1a9ec8712f1f062a91f48fd",
+          "projected": "b92bbdc432257aaab6324088e1d7976abde34fcf"
+        },
+        {
+          "source": "377d30027e82119b76b848b06fa596a70f05a785",
+          "projected": "6c37f2b4a5823713c27a8438130b6bc142b7247e"
+        },
+        {
+          "source": "baf4e02a7ba3ca749db8b9d0de40720ab2e348e4",
+          "projected": "bcd645c032f68bedc9f292e8fb6b1393a7945448"
+        },
+        {
+          "source": "a05e4a9a7869faf2055b5c4ebe361dda28271720",
+          "projected": "a2249b46a0afdfca1457d5d2d367eec8834e5d51"
+        },
+        {
+          "source": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+          "projected": "0791f1a5669a5a7106dd9a6f2ca74c26c47e5760"
+        },
+        {
+          "source": "732940099a721fd97a955a02975fa758ad2e2870",
+          "projected": "e652de8e68836a40c0cfb3e4fb8bbc717d56937c"
+        },
+        {
+          "source": "d4c4554d41151d14bbfdff2ba28f062b4690738a",
+          "projected": "41556778cbae00291da3be3596e7968233254c8e"
+        },
+        {
+          "source": "0f0f21ea12341a43dba24e924f4d6bbea47f9c0b",
+          "projected": "b62c9ba882a0ffd0e179f734bbfb6818ae5ae0bc"
+        },
+        {
+          "source": "c38e13d774dfd43e7ac39f9bd150728e30cead6b",
+          "projected": "53388a43f01db739b033901d0473055f510ab6a9"
+        },
+        {
+          "source": "4360221118859a675951e443a5c31a6c75e0822f",
+          "projected": "c532bc9e7e914c226acb5f4e8cb71c8f3d4096b6"
+        },
+        {
+          "source": "494cac535b14d6bf38131abfa2a0d4b420ce7ae6",
+          "projected": "0388bb107d12463c1f9e0929856fa304766c8064"
+        },
+        {
+          "source": "5236ba8862525d4f675acb210adb10a202232c84",
+          "projected": "91236ff6c3a0819850b77dde6b8eab794d57012b"
+        },
+        {
+          "source": "ed87e8f69a7afb2ddaca74bdab5c6b827dfa7a13",
+          "projected": "ba12b51f08d408cd532c4d0068550c95a46baccd"
+        },
+        {
+          "source": "1f2d4de6f08689f6fd39e63d993c2e1bc134d7d1",
+          "projected": "b3990cb71d2eae35295e4ffa96480346001d0784"
+        }
+      ]
+    }
+  },
+  "mergeBases": [
+    "31fb704b82e664a78cef48b3ac684304cd1b69ff"
+  ],
+  "aheadBehind": "0\t20"
+}

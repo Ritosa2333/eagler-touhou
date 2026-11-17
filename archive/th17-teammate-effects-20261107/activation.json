@@ -1,0 +1,174 @@
+{
+  "previous": "/var/www/eagler-touhou/releases/formal-th17-touch-183e0303",
+  "candidate": "/var/www/eagler-touhou/releases/formal-th17-effects-515313bc",
+  "baselineDeployment": "d4ee26446306ec18c3452ded08a5ba5529951c55343b4f451ae234d930b25ce7",
+  "previousRelease": "sha256-6cb1bfdf0d185b64d46b9a02b9eee0547b0cce6b43f773054a30f123080f980b",
+  "releaseId": "sha256-b384d4c2c912487470975e3ac38031e5248a53a76bc2d66863ec5aed7e3db253",
+  "generation": "ce5927ff094ea41319603f9ee8a2ae805dbc873eefa679c95975cc3bee47a5bb",
+  "normalGeneration": "cc436064d2056ff79bcb1838835ab1bbd0f64abe3f98b8716f244102a8084691",
+  "normalPrefix": "runtime/th17/cc436064d2056ff79bcb1838835ab1bbd0f64abe3f98b8716f244102a8084691/",
+  "normalFiles": [
+    {
+      "path": "direct-input-bridge.mjs",
+      "bytes": 1318,
+      "sha256": "28a01c9b3f4fb181e8278995c602ae3f2bc0351856102755513266c47abb6062"
+    },
+    {
+      "path": "directory-keyboard.mjs",
+      "bytes": 11783,
+      "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+    },
+    {
+      "path": "fonts/cp932.bin",
+      "bytes": 131072,
+      "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+    },
+    {
+      "path": "gpu-timing.mjs",
+      "bytes": 1330,
+      "sha256": "f2d12adfb57f5f07671dbdc7abe03ceadb616fceeb97c304971e413c70e8f24e"
+    },
+    {
+      "path": "keyboard.mjs",
+      "bytes": 1298,
+      "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
+    },
+    {
+      "path": "local-replay-native.mjs",
+      "bytes": 5766,
+      "sha256": "387b4f165a40ca923067281431e7c7c2b92e677644e0beac7a96d55623b703ff"
+    },
+    {
+      "path": "local-replay.mjs",
+      "bytes": 5926,
+      "sha256": "839f21660b3bbe680d13c107d70cf2e2d120a042b87982dbfe20456431d3bd82"
+    },
+    {
+      "path": "managed.css",
+      "bytes": 733,
+      "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 1093,
+      "sha256": "0f5feafda3e111014e9f360d8ff81331b4ec730c800e208170341d87fc05b7f1"
+    },
+    {
+      "path": "resources.json",
+      "bytes": 183,
+      "sha256": "1659082e36fb0a6375bb4932fe6d0add3b699675050c9c100037b6d275feda25"
+    },
+    {
+      "path": "shell.mjs",
+      "bytes": 26881,
+      "sha256": "1e40f38f87485ab69111842cdb47081a8b34d258581039700556c5d7909cf877"
+    },
+    {
+      "path": "spectator-playback.mjs",
+      "bytes": 4479,
+      "sha256": "3b537c70b32bb8b3e19eabd6dba346461a5615e59257049fefc44b208cb4497e"
+    },
+    {
+      "path": "th17.html",
+      "bytes": 507,
+      "sha256": "790db546967e5aadb9df4f17ba322b3e20858651721554baec0dfacffd3c0c62"
+    },
+    {
+      "path": "th17.mjs",
+      "bytes": 228285,
+      "sha256": "da112cf1f939cf507e201633889056b00395eb9cdf87a27cad096527fcf2bd3d"
+    },
+    {
+      "path": "th17.wasm",
+      "bytes": 3834572,
+      "sha256": "c3bd09f2033c0a97af3576fadf7abafc518e9e4d8e98bd7e89da17f0667453ac"
+    }
+  ],
+  "buildId": "190e000c6ffbf8dbba7f",
+  "prefix": "runtime/th17/multiplayer/ce5927ff094ea41319603f9ee8a2ae805dbc873eefa679c95975cc3bee47a5bb/",
+  "wasm": "315c4fdf23449ea845d45ced96f9d442fd19802f41d24c8bbe077f516c32e79d",
+  "version": "1.0.14-eagler-315c4fdf2344",
+  "preserved": 9369,
+  "files": [
+    {
+      "path": "direct-input-bridge.mjs",
+      "bytes": 1318,
+      "sha256": "28a01c9b3f4fb181e8278995c602ae3f2bc0351856102755513266c47abb6062"
+    },
+    {
+      "path": "directory-keyboard.mjs",
+      "bytes": 11600,
+      "sha256": "72e0b099698f8e0696a9b271a62262f141990e6b2ad7666e36be825ac848e56d"
+    },
+    {
+      "path": "fonts/cp932.bin",
+      "bytes": 131072,
+      "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+    },
+    {
+      "path": "gpu-timing.mjs",
+      "bytes": 1306,
+      "sha256": "edd8807591eb932ae1d2b5271ae7e6c0ef80e4e000513bd4ba51d2f54e65360c"
+    },
+    {
+      "path": "keyboard.mjs",
+      "bytes": 1297,
+      "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334"
+    },
+    {
+      "path": "local-replay-native.mjs",
+      "bytes": 5766,
+      "sha256": "387b4f165a40ca923067281431e7c7c2b92e677644e0beac7a96d55623b703ff"
+    },
+    {
+      "path": "local-replay.mjs",
+      "bytes": 5926,
+      "sha256": "839f21660b3bbe680d13c107d70cf2e2d120a042b87982dbfe20456431d3bd82"
+    },
+    {
+      "path": "managed.css",
+      "bytes": 733,
+      "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 1171,
+      "sha256": "bb94752645adb6730614be2e349638d8434c6662ff82a0f605fd865dd48a3d15"
+    },
+    {
+      "path": "resources.json",
+      "bytes": 183,
+      "sha256": "1659082e36fb0a6375bb4932fe6d0add3b699675050c9c100037b6d275feda25"
+    },
+    {
+      "path": "shell.mjs",
+      "bytes": 26881,
+      "sha256": "3dd447769c54bce7a6197cda50c57ae0262e3d0ada399ac59a9f55695fd7d8d8"
+    },
+    {
+      "path": "spectator-playback.mjs",
+      "bytes": 4479,
+      "sha256": "3b537c70b32bb8b3e19eabd6dba346461a5615e59257049fefc44b208cb4497e"
+    },
+    {
+      "path": "th17.html",
+      "bytes": 506,
+      "sha256": "f9bb19d507407b2765b3256be6050b07b820742714461b6f00fafca39da89256"
+    },
+    {
+      "path": "th17.mjs",
+      "bytes": 284003,
+      "sha256": "e300510a87280dda8f999c9a20aa935862be1fb1a13cbb0d915e2e0e57bd373c"
+    },
+    {
+      "path": "th17.wasm",
+      "bytes": 3786921,
+      "sha256": "315c4fdf23449ea845d45ced96f9d442fd19802f41d24c8bbe077f516c32e79d"
+    }
+  ],
+  "publishedAt": "2026-11-07T03:25:34.603616+00:00",
+  "entry": "https://touhouonline.com/",
+  "normalSource": "ports/th17",
+  "multiplayerSource": "ports/th17-mp",
+  "confirmation": "release identity and both published Runtime entries"
+}

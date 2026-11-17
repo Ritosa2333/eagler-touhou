@@ -6,7 +6,8 @@ import {tmpdir} from 'node:os';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 import {targets,root} from './inputs.mjs';
-const directories=[...new Set(targets().map(target=>target.directory))];
+const selected=process.env.EAGLER_PORT_CHECK_GAMES?JSON.parse(process.env.EAGLER_PORT_CHECK_GAMES):null;
+const directories=[...new Set(targets().filter(target=>!selected||selected.includes(target.game)).map(target=>target.directory))];
 function native(directory, fixture, includes, sources=[], prepare=()=>{}) {
  const temp=mkdtempSync(join(tmpdir(),'eagler-held-touch-'));
  try{
@@ -34,9 +35,21 @@ for(const directory of directories){
  const module=resolve(root,directory,'src/touch-input.mjs');
  const legacy=resolve(root,directory,'src/Touch.cpp');
  const fighter=resolve(root,directory,'web/cpp/game/FighterControls.cpp');
- const families=[header,module,legacy,fighter].filter(existsSync);
+ const native05=resolve(root,directory,'web/input.mjs');
+ const families=[header,module,legacy,fighter,native05].filter(existsSync);
  assert.equal(families.length,1,`${directory}: register exactly one production input architecture`);
  const variants=targets().filter(target=>target.directory===directory).map(target=>target.variant).join('|');
+ if(existsSync(native05))test(directory+' held pointer resumes after native player relocation',async()=>{
+  const {createTouchInput}=await import(pathToFileURL(native05));
+  for(const mode of ['touch','touch-unlimited']){
+   let player={x:200,y:300};const motions=[];
+   const input=createTouchInput({send(){},position:()=>({...player}),options:()=>({touchEnabled:true,touchMovementMode:mode,touchSensitivity:100}),move:(...motion)=>motions.push(motion)});
+   input.pointer({type:'down',id:7,x:100,y:100});input.pointer({type:'move',id:7,x:120,y:100});input.tick();
+   player={x:210,y:380};input.tick();input.pointer({type:'move',id:7,x:140,y:100});input.tick();
+   assert(motions.at(-1)[0]>0,'held pointer must resume movement after a native transition');
+   input.cancel();const count=motions.length;input.pointer({type:'move',id:7,x:150,y:100});input.tick();assert.equal(motions.length,count);
+  }
+ });
  if(existsSync(header))test(`${directory} (${variants}) held drag and joystick survive temporary movement blocks`,()=>{
   native(directory,'held-touch.cpp',[resolve(header,'..')]);
  });

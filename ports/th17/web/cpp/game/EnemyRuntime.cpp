@@ -1,7 +1,24 @@
 #include "EnemyRuntime.hpp"
+#include "Practice.hpp"
 #include <cmath>
 namespace th17 {
-EnemyRuntime::EnemyRuntime(EclProgram& program,EnemyWorldState& world,Rng& random,Rng& visual_random,EnemyRuntimeHost& host):world(world),host(host),variables(state,world,random),commands(state,world),scripts(program,&variables,&random){scripts.main.commands=&commands;commands.visuals.host=host.animations();}
+EnemyRuntime::EnemyRuntime(EclProgram& program,EnemyWorldState& world,Rng& random,Rng& visual_random,EnemyRuntimeHost& host):world(world),host(host),variables(state,world,random),commands(state,world),scripts(program,&variables,&random){
+    scripts.main.commands=&commands;commands.visuals.host=host.animations();
+    if(world.stage_number==6){
+        scripts.main.observer_owner=this;
+        scripts.main.observe_instruction=[](void* owner,const EclContext& ctx){
+            auto& e=*static_cast<EnemyRuntime*>(owner);
+            const auto* spell=e.world.spell_status;
+            if(!spell||!(spell->flags&1)||spell->id<84||spell->id>87||ctx.instruction->opcode!=15)return;
+            const auto* file=ctx.program->definitions[ctx.routine].file;
+            // The four phase attack calls in st06bs.ecl, including thprac warps.
+            constexpr u32 phase_calls[]{0xf03c,0xf284,0xf4bc,0xf6cc};
+            const auto offset=reinterpret_cast<const u8*>(ctx.instruction)-file->bytes.data();
+            for(u32 i=0;i<4;++i)if(offset==phase_calls[i]&&e.world.keiki_phase_frames[i]<0)
+                e.world.keiki_phase_frames[i]=e.state.lifetime_timer.current;
+        };
+    }
+}
 bool EnemyRuntime::initialize(const EnemySpawnRequest& request,u32 identifier){error.clear();state.initialize(request,identifier,world.current_chapter);if(!host.configure(*this)){error="Enemy command services unavailable";return false;}if(!scripts.restart(request.routine.c_str(),u8(1u<<(u32(world.difficulty)&31)))){error=scripts.error;return false;}return true;}
 bool EnemyRuntime::switch_routine(const std::string& name){if(!scripts.restart(name.c_str(),scripts.main.difficulty)){error=scripts.error;return false;}return true;}
 int EnemyRuntime::step(float rate,const Vec3& background_delta){
@@ -20,7 +37,8 @@ int EnemyRuntime::update(float rate,const Vec3& background_delta){
     const auto movement=state.update_movement(rate,background_delta,host.animations());
     if(movement==EnemyMovementResult::outside)return -1;
     if(movement==EnemyMovementResult::animation_unavailable){error="Enemy movement animation unavailable";return -2;}
-    if(const int result=scripts.step(rate,rate)){if(result==-2){error=scripts.error;return -2;}return -1;}
+    const bool lock_stage_clock=(world.practice_tools&PracticeTimeLock)&&world.boss&&world.stage_number>=2&&world.stage_number<=6;
+    if(const int result=scripts.step(rate,rate,lock_stage_clock)){if(result==-2){error=scripts.error;return -2;}return -1;}
     if(const int result=host.after_script(*this,world.current_rate(rate))){if(result==-2&&error.empty())error="Enemy callback unavailable";return result==-2?-2:-1;}
     if(const int result=host.collide_and_damage(*this,world.current_rate(rate))){if(result==-2&&error.empty())error="Enemy damage integration failed";return result==-2?-2:-1;}
     if(!host.update_distortion(state,world.current_rate(rate))){error="Enemy distortion integration failed";return -2;}
@@ -36,6 +54,7 @@ int EnemyRuntime::update(float rate,const Vec3& background_delta){
     }
     rate=world.current_rate(rate);if(state.collision_timer.current>0)state.collision_timer.decrement(&rate);
     if(state.invulnerability_timer.current>0)state.invulnerability_timer.decrement(&rate);
-    state.lifetime_timer.tick(&rate);state.age_timer.tick(&rate);return 0;
+    state.lifetime_timer.tick(&rate);
+    if(!(world.practice_tools&PracticeTimeLock)||!(state.flags&0x800000))state.age_timer.tick(&rate);return 0;
 }
 }

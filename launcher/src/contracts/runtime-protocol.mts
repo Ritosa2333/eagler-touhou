@@ -94,6 +94,7 @@ export interface RuntimeConfigureOptions {
   th02RapidFire?: boolean;
   th03RapidFire?: boolean;
   th03FocusEnabled?: boolean;
+  renderScale?: 1 | 2;
   thpracEnabled?: boolean;
   limitPresentationTo60?: boolean;
   touchEnabled?: boolean;
@@ -157,6 +158,7 @@ export interface RuntimeConfigureOptions {
  */
 export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   th05MultiplayerDisplay: Object.freeze({requirement: "optional", capability: "multiplayer", when: "TH05 multiplayer local presentation"}),
+  renderScale: Object.freeze({requirement: "optional", capability: "render-resolution", productDeclaration: "renderScales", when: "product declares renderScales or TH075 multiplayer selects native resolution"}),
   netplayAllowWebsocketFallback: Object.freeze({requirement: "optional", capability: "multiplayer", when: "server explicitly enables legacy WebSocket gameplay fallback"}),
   th02RapidFire: Object.freeze({ requirement: "optional", capability: "rapid-fire", when: "TH02" }),
   th03RapidFire: Object.freeze({ requirement: "optional", capability: "rapid-fire", when: "TH03" }),
@@ -184,7 +186,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplayPlayer: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
   netplayPlayerCount: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplaySeed: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
-  netplayChallengeMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH06/TH07/TH08/TH10 multiplayer; fixed before start" }),
+  netplayChallengeMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "Cooperative multiplayer; fixed before start" }),
   netplayDisableLocalChargePriority: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH09 multiplayer; true restores native charge progression and Replay; fixed before HELLO"}),
   netplayBallCount: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH01 multiplayer ball count"}),
   netplayDisableFocus: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH02 and TH03 multiplayer room rule; fixed before HELLO"}),
@@ -346,7 +348,7 @@ export interface RuntimeCommandPayloads {
   write: { path: string; bytes: number[]; replayMatch?: unknown };
   remove: { path: string };
   sync: Record<string, never>;
-  playback: {action: "inspect" | "open" | "pause" | "play" | "seek" | "rate" | "relocate"; path?: string; target?: string; stage?: number; value?: number};
+  playback: {action: "inspect" | "open" | "pause" | "play" | "seek" | "rate" | "relocate"; path?: string; target?: string; stage?: number; value?: number; bytes?: Uint8Array};
   "retry-music": Record<string, never>;
   "thprac-mouse": { type: "move" | "down" | "up"; x: number; y: number };
   "network-cancel": Record<string, never>;

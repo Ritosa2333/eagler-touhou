@@ -1,0 +1,13 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {core,oracle,memory,report} from './helpers.mjs';
+test('TH17 gameplay input edges, 32 hold clocks and delayed repeat bits match the original',async()=>{
+ const c=await core(),m=await oracle(),input=c.game_input_create();let cases=0,checks=0,random=7717;const next=()=>{random^=random<<13;random^=random>>>17;random^=random<<5;return random>>>0;};
+ const compare=label=>{const values=Array.from(new Uint32Array(c.memory.buffer,input,70));for(const[i,a]of[[0,0x4b3448],[1,0x4b344c],[2,0x4b3450],[3,0x4b3454],[4,0x4b3458],[5,0x4b3460]])assert.equal(values[i],m.u32(a),label+' input '+i);for(let i=0;i<32;i++){assert.equal(values[6+i],m.u32(0x4b32c4+i*4),label+' repeat '+i);assert.equal(values[38+i],m.u32(0x4b33c4+i*4),label+' duration '+i);}checks+=70;cases++;};
+ try{for(let scenario=0;scenario<16;scenario++){
+  const raw=Buffer.alloc(280);raw.writeUInt32LE(next(),0);raw.writeUInt32LE(next(),4);for(let i=0;i<32;i++){const age=scenario===0?0:[0,6,7,24,25,26,0xfffffffe,0xffffffff][i%8];raw.writeUInt32LE(age,24+i*4);raw.writeUInt32LE(next(),152+i*4);}memory(c,input,raw.length).set(raw);m.write(0x4b3448,raw.subarray(0,24));for(let i=0;i<32;i++){m.u32(0x4b32c4+i*4,raw.readUInt32LE(24+i*4));m.u32(0x4b33c4+i*4,raw.readUInt32LE(152+i*4));}
+  m.call(0x41b550);c.game_input_calculate(input);compare(scenario+'/initial');for(let frame=0;frame<256;frame++){const held=frame<96?0x80000209:frame<192?0x10:next();m.u32(0x4b344c,m.u32(0x4b3448));m.u32(0x4b3448,held);m.call(0x41b550);c.game_input_update(input,held);compare(scenario+'/'+frame);}
+ }
+ const recorder=m.allocate(0x220),world=m.allocate(16);m.view(recorder,0x220).fill(0);m.u32(0x4b76b0,world);m.i32(recorder+0x210,-1);
+ for(let automatic=0;automatic<2;automatic++){memory(c,input,280).fill(0);m.view(0x4b32c4,128).fill(0);m.view(0x4b33c4,128).fill(0);m.view(0x4b3448,28).fill(0);m.u32(0x4b5cdc,automatic?0x200:0);for(let frame=0;frame<512;frame++){const held=frame<100?1:frame<200?9:frame<300?0:next();m.u32(0x4b3230,held);assert.equal(m.call(0x44f1a0,{ecx:recorder}),1);c.game_input_recording(input,held,automatic);compare('recording '+automatic+'/'+frame);}}
+ report('game-input',{passed:true,cases,checks,originalFunctions:['0x41b550','0x44f1a0'],scope:'All 32 original held/pressed/released bits, eight-frame long hold, 26-frame initial repeat/eight-frame subsequent repeat, accumulated duration, release reset and unsigned counter wrap. Recording additionally verifies low-word input and automatic focus injected after edge calculation at ten shoot frames, including its original repeated release-edge behavior. Physical keyboard/touch polling is separate.'});
+ }finally{c.game_input_delete(input);m.close();}
+});

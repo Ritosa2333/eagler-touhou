@@ -70,7 +70,7 @@ bool MultiplayerPilot::attract_items(){force_attract=true;return true;}
 bool MultiplayerPilot::cancel_bullets(const Vec3* p,float r,bool skip){return world.cancel_bullets(p,r,skip);}
 bool MultiplayerPilot::cancel_lasers(const Vec3* p,float r,bool reward,bool skip){return world.cancel_lasers(p,r,reward,skip);}
 bool MultiplayerPilot::start_bomb(){if(world.mp_options.challenge||!bomb||ghost)return false;EffectOwner effect(world,seat);return bomb->start()!=-2;}
-bool MultiplayerPilot::spawn_item(i32 type,Vec3 p,u32 color,float angle,float speed){return world.items.spawn(type,p,color,angle,speed)==0;}
+bool MultiplayerPilot::spawn_death_power(i32 type,Vec3 p,u32 color,float angle,float speed){return world.items.spawn(type,p,color,angle,speed,true)==0;}
 bool MultiplayerPilot::display_lives(i32 lives,i32 fragments){if(!seat)return world.display_lives(lives,fragments);return true;}
 bool MultiplayerPilot::record_death(){if(world.mp_options.challenge&&challenge_misses!=0xffffffffu)++challenge_misses;world.events.push_back({BattleEventKind::Death,i32(seat)});return true;}
 bool MultiplayerPilot::enemy_death(){return world.enemy_death();}
@@ -139,19 +139,22 @@ bool GameBattle::mp_all_power_full()const noexcept{bool found=false;for(unsigned
 bool GameBattle::multiplayer_item_player(ItemState& item,ItemPlayer& out){
     const auto index=items.index_of(item);auto& directed=items.multiplayer_targets[index];
     const bool power=item.type==1||item.type==4||item.type==6||item.type==10||item.type==11;
+    const bool death_drop=power&&index<ItemManager::ordinary_capacity&&items.multiplayer_death_drops[index];
     // A Power gift whose recipient becomes a ghost returns to the ordinary
     // field pool. The successful emission already consumed the donor's Power.
     if(directed>=0&&power&&pilots[unsigned(directed)]->ghost){directed=-1;item.state=1;item.velocity={};}
     items.multiplayer_current_target=-1;
     auto snapshot=[&](unsigned seat,ItemPlayer& candidate){const auto& p=*pilots[seat];p.player->copy_item_state(candidate);candidate.force_attract=p.force_attract||(dialogue&&dialogue->active);};
-    auto nearest_power=[&](bool only_needy){return eagler::cooperative::NearestPowerRecipient(mp_options.seat_count,
-        [&](unsigned s){const auto& p=*pilots[s];return p.alive()&&p.player->state.life_state!=4&&
+    auto recovering=[&](unsigned seat){const auto& p=*pilots[seat];return !p.ghost&&p.player->state.life_state==2&&(p.economy.lives>=0||mp_options.challenge);};
+    auto nearest_power=[&](bool only_needy,bool allow_recovery=false){return eagler::cooperative::NearestPowerRecipient(mp_options.seat_count,
+        [&](unsigned s){const auto& p=*pilots[s];return (allow_recovery?recovering(s):p.alive())&&
             (!only_needy||p.economy.power<p.economy.max_power);},
         [&](unsigned s){return pilots[s]->economy.power<pilots[s]->economy.max_power;},
         [&](unsigned s){return distance2(item.position,pilots[s]->player->motion.state.position);});};
     auto redirect=[&](int seat){
         if(!power||pilots[unsigned(seat)]->economy.power<pilots[unsigned(seat)]->economy.max_power)return seat;
-        const int target=nearest_power(true);
+        int target=nearest_power(true);
+        if(target<0&&death_drop)target=nearest_power(true,true);
         if(target>=0){directed=-2-target;item.state=3;item.attraction_speed=8;return target;}
         return seat;
     };
@@ -164,6 +167,11 @@ bool GameBattle::multiplayer_item_player(ItemState& item,ItemPlayer& out){
         const int owner=-2-directed;
         if(pilots[unsigned(owner)]->alive()&&pilots[unsigned(owner)]->player->state.life_state!=4){
             const int seat=redirect(owner);snapshot(unsigned(seat),out);items.multiplayer_current_target=seat;return true;
+        }
+        if(death_drop&&recovering(unsigned(owner))&&pilots[unsigned(owner)]->economy.power<pilots[unsigned(owner)]->economy.max_power){
+            const int target=nearest_power(true);
+            const int seat=target<0?owner:target;
+            directed=-2-seat;snapshot(unsigned(seat),out);items.multiplayer_current_target=seat;return true;
         }
         directed=-1;item.state=1;item.velocity={};
     }
@@ -191,7 +199,7 @@ bool GameBattle::multiplayer_item_player(ItemState& item,ItemPlayer& out){
     if(selected>=0&&power&&item.state==1&&(out.force_attract||out.position.y<128||
         (item.lifetime.current>=40&&out.communication>=10000))){
         selected=nearest_power(false);
-        if(selected>=0){directed=-2-selected;item.state=3;item.attraction_speed=8;}
+        if(selected>=0){directed=-2-selected;item.state=3;item.attraction_speed=8;selected=redirect(selected);}
     }else if(selected>=0)selected=redirect(selected);
     if(selected>=0)snapshot(unsigned(selected),out);
     items.multiplayer_current_target=selected;return selected>=0;
@@ -295,7 +303,7 @@ u32 GameBattle::mp_hash()const noexcept{
         const auto& script=n->value->script;for(auto* thread=&script.threads;thread;thread=thread->next){const auto& c=*thread->value;word(c.thread_id);flt(c.time);pc(script,c.instruction);word(c.state);word(c.flags);word(c.stack.top);word(c.stack.frame_base);}word(~0u);
     }
     for(u32 i=0;i<BulletManager::capacity;++i){const auto& b=bullets.at(i);if(!b.state)continue;word(i);word(b.state);word(b.flags);flt(b.position.x);flt(b.position.y);flt(b.speed);flt(b.angle);word(b.lifetime.current);word(bullets.multiplayer_grazed[i]);}
-    for(u32 i=0;i<ItemManager::capacity;++i){const auto& item=items.at(i);if(!item.state)continue;word(i);word(item.state);word(item.type);flt(item.position.x);flt(item.position.y);word(item.lifetime.current);word(items.multiplayer_targets[i]);flt(item.velocity.x);flt(item.velocity.y);if(i<ItemManager::ordinary_capacity)word(items.multiplayer_fan[i]);}
+    for(u32 i=0;i<ItemManager::capacity;++i){const auto& item=items.at(i);if(!item.state)continue;word(i);word(item.state);word(item.type);flt(item.position.x);flt(item.position.y);word(item.lifetime.current);word(items.multiplayer_targets[i]);flt(item.velocity.x);flt(item.velocity.y);if(i<ItemManager::ordinary_capacity){word(items.multiplayer_fan[i]);word(items.multiplayer_death_drops[i]);}}
     for(auto* l=lasers.first();l;l=l->next){word(l->id);word(l->state);word(l->type);flt(l->position.x);flt(l->position.y);flt(l->velocity.x);flt(l->velocity.y);flt(l->angle);flt(l->length);flt(l->width);flt(l->speed);flt(l->offset);timer(l->lifetime);timer(l->graze_timer);timer(l->offscreen_timer);word(l->active_transforms);word(l->transform_index);
         for(const auto& motion:l->motion){timer(motion.timer);flt(motion.a);flt(motion.b);flt(motion.vector.x);flt(motion.vector.y);word(motion.duration);word(motion.limit);word(motion.count);}
         if(l->type==0){const auto& p=reinterpret_cast<const LaserLine*>(l)->parameters;flt(p.growth_limit);flt(p.initial_length);flt(p.end_distance);word(p.flags);}else{const auto& p=reinterpret_cast<const LaserInfinite*>(l)->parameters;flt(p.angular_velocity);flt(p.max_length);word(p.warning_frames);word(p.expand_frames);word(p.active_frames);word(p.shrink_frames);word(p.flags);}

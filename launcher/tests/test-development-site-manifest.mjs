@@ -40,6 +40,10 @@ assert.equal(manifest.profile, "web-development");
 assert.equal(manifest.shared.testBuild, true);
 assert.equal(manifest.shared.resourceMode, "hosted");
 assert.deepEqual(Object.keys(manifest.games), DEFAULT_BUILD_GAMES);
+const th13Only = await createManifest({ games: ["th13"] });
+assert.deepEqual(Object.keys(th13Only.games), ["th13"]);
+assert.doesNotThrow(() => validateSiteManifest(th13Only));
+assert.equal(th13Only.games.th13.runtime, DEVELOPMENT_CONTENT.games.th13.runtime);
 assert.doesNotThrow(() => validateSiteManifest(manifest));
 assert.equal(manifest.shared.netplayRelay, undefined);
 const th09Only = await createManifest({ games: ["th09"] });
@@ -69,11 +73,12 @@ const multiplayerRuntimeOwners = {
   th07: "../ports/th07/build/web/multiplayer/th07.html",
   th075: "../ports/th075-mp/build-eagler-multiplayer/th075.html",
   th08: "../ports/th08-mp/build-eagler-multiplayer/th08.html",
-  th09: "../ports/th09/web/build-eagler-multiplayer/th09.html",
+  th09: "../ports/th09/web/build-eagler/th09.html",
   th10: "../ports/th10-mp/build-eagler-multiplayer/th10.html",
   th11: "../ports/th11-mp/build-eagler-multiplayer/th11.html",
   th12: "../ports/th12-mp/build-eagler-multiplayer/th12.html",
   th15: "../ports/th15-mp/build-eagler-multiplayer/th15.html",
+  th17: "../ports/th17-mp/build-eagler-multiplayer/th17.html",
   th19: "../ports/th19/build-eagler-multiplayer/th19.html",
 };
 const multiplayerGames = Object.keys(PRODUCT_GAMES).filter(game => PRODUCT_GAMES[game].multiplayerRuntime);

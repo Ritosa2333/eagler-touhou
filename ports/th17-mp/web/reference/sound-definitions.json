@@ -1,0 +1,717 @@
+{
+  "target": "85cb011e2e43b316c8fa42a3c402565ecdf2f4379f3bab66d86bcb7beef8255f",
+  "source": "Original TH17 table 0x4b2bf0, sample names 0x4a1060",
+  "voices": [
+    {
+      "id": 0,
+      "sample": 0,
+      "volume": -1900,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 0
+    },
+    {
+      "id": 1,
+      "sample": 0,
+      "volume": -200,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 0
+    },
+    {
+      "id": 3,
+      "sample": 1,
+      "volume": -1200,
+      "renew": 5,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 4,
+      "sample": 1,
+      "volume": -1500,
+      "renew": 5,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 2,
+      "sample": 2,
+      "volume": -1100,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 28,
+      "sample": 3,
+      "volume": -700,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 29,
+      "sample": 4,
+      "volume": -700,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 21,
+      "sample": 5,
+      "volume": -1900,
+      "renew": 50,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 22,
+      "sample": 6,
+      "volume": -2200,
+      "renew": 50,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 23,
+      "sample": 7,
+      "volume": -2400,
+      "renew": 50,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 7,
+      "sample": 8,
+      "volume": -500,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 0
+    },
+    {
+      "id": 9,
+      "sample": 9,
+      "volume": -400,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 0
+    },
+    {
+      "id": 10,
+      "sample": 10,
+      "volume": -800,
+      "renew": 10,
+      "flags": 0,
+      "reserved": 0
+    },
+    {
+      "id": 32,
+      "sample": 11,
+      "volume": -1500,
+      "renew": 10,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 33,
+      "sample": 12,
+      "volume": -300,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 27,
+      "sample": 5,
+      "volume": -1100,
+      "renew": 50,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 18,
+      "sample": 13,
+      "volume": -1300,
+      "renew": 50,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 19,
+      "sample": 14,
+      "volume": -1400,
+      "renew": 50,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 5,
+      "sample": 15,
+      "volume": -900,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 34,
+      "sample": 16,
+      "volume": -880,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 36,
+      "sample": 39,
+      "volume": -880,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 37,
+      "sample": 17,
+      "volume": -1500,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 24,
+      "sample": 5,
+      "volume": -300,
+      "renew": 20,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 25,
+      "sample": 6,
+      "volume": -1800,
+      "renew": 20,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 26,
+      "sample": 7,
+      "volume": -1800,
+      "renew": 20,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 38,
+      "sample": 18,
+      "volume": -1100,
+      "renew": 50,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 39,
+      "sample": 19,
+      "volume": -1300,
+      "renew": 50,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 40,
+      "sample": 20,
+      "volume": -1500,
+      "renew": 50,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 11,
+      "sample": 21,
+      "volume": -500,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 42,
+      "sample": 22,
+      "volume": -600,
+      "renew": 20,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 43,
+      "sample": 22,
+      "volume": -700,
+      "renew": 20,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 76,
+      "sample": 65,
+      "volume": 0,
+      "renew": 20,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 13,
+      "sample": 23,
+      "volume": -100,
+      "renew": 90,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 41,
+      "sample": 18,
+      "volume": -500,
+      "renew": 50,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 14,
+      "sample": 24,
+      "volume": -800,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 15,
+      "sample": 25,
+      "volume": -800,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 35,
+      "sample": 26,
+      "volume": -500,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 12,
+      "sample": 27,
+      "volume": -300,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 16,
+      "sample": 28,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 44,
+      "sample": 29,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 45,
+      "sample": 29,
+      "volume": -600,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 8,
+      "sample": 8,
+      "volume": -300,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 0
+    },
+    {
+      "id": 30,
+      "sample": 30,
+      "volume": -300,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 31,
+      "sample": 31,
+      "volume": -300,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 17,
+      "sample": 32,
+      "volume": -100,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 46,
+      "sample": 33,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 49,
+      "sample": 34,
+      "volume": -200,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 47,
+      "sample": 35,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 48,
+      "sample": 36,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 6,
+      "sample": 37,
+      "volume": -500,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 20,
+      "sample": 38,
+      "volume": -3000,
+      "renew": 0,
+      "flags": 1,
+      "reserved": 1
+    },
+    {
+      "id": 50,
+      "sample": 40,
+      "volume": -500,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 51,
+      "sample": 41,
+      "volume": 0,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 52,
+      "sample": 42,
+      "volume": 0,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 53,
+      "sample": 42,
+      "volume": -300,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 54,
+      "sample": 43,
+      "volume": -300,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 55,
+      "sample": 44,
+      "volume": -1500,
+      "renew": 0,
+      "flags": 1,
+      "reserved": 1
+    },
+    {
+      "id": 56,
+      "sample": 45,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 57,
+      "sample": 46,
+      "volume": -200,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 58,
+      "sample": 47,
+      "volume": -200,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 59,
+      "sample": 48,
+      "volume": -500,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 60,
+      "sample": 49,
+      "volume": -500,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 61,
+      "sample": 50,
+      "volume": -500,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 62,
+      "sample": 51,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 63,
+      "sample": 52,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 64,
+      "sample": 53,
+      "volume": -900,
+      "renew": 5,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 65,
+      "sample": 54,
+      "volume": -900,
+      "renew": 5,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 66,
+      "sample": 55,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 67,
+      "sample": 56,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 68,
+      "sample": 57,
+      "volume": -2500,
+      "renew": 5,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 69,
+      "sample": 58,
+      "volume": -500,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 70,
+      "sample": 59,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 71,
+      "sample": 60,
+      "volume": -400,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 72,
+      "sample": 61,
+      "volume": -500,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 73,
+      "sample": 62,
+      "volume": -500,
+      "renew": 0,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 74,
+      "sample": 63,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 75,
+      "sample": 64,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 77,
+      "sample": 66,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 78,
+      "sample": 67,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    },
+    {
+      "id": 79,
+      "sample": 68,
+      "volume": 0,
+      "renew": 100,
+      "flags": 0,
+      "reserved": 1
+    }
+  ],
+  "samples": [
+    "se_plst00.wav",
+    "se_enep00.wav",
+    "se_pldead00.wav",
+    "se_power0.wav",
+    "se_power1.wav",
+    "se_tan00.wav",
+    "se_tan01.wav",
+    "se_tan02.wav",
+    "se_ok00.wav",
+    "se_cancel00.wav",
+    "se_select00.wav",
+    "se_gun00.wav",
+    "se_cat00.wav",
+    "se_lazer00.wav",
+    "se_lazer01.wav",
+    "se_enep01.wav",
+    "se_damage00.wav",
+    "se_item00.wav",
+    "se_kira00.wav",
+    "se_kira01.wav",
+    "se_kira02.wav",
+    "se_timeout.wav",
+    "se_graze.wav",
+    "se_powerup.wav",
+    "se_pause.wav",
+    "se_cardget.wav",
+    "se_damage01.wav",
+    "se_timeout2.wav",
+    "se_invalid.wav",
+    "se_slash.wav",
+    "se_ch00.wav",
+    "se_ch01.wav",
+    "se_extend.wav",
+    "se_cardget.wav",
+    "se_nep00.wav",
+    "se_bonus.wav",
+    "se_bonus2.wav",
+    "se_enep02.wav",
+    "se_lazer02.wav",
+    "se_nodamage.wav",
+    "se_boon00.wav",
+    "se_don00.wav",
+    "se_boon01.wav",
+    "se_ch02.wav",
+    "se_ch03.wav",
+    "se_extend2.wav",
+    "se_pin00.wav",
+    "se_pin01.wav",
+    "se_lgods1.wav",
+    "se_lgods2.wav",
+    "se_lgods3.wav",
+    "se_lgods4.wav",
+    "se_lgodsget.wav",
+    "se_msl.wav",
+    "se_msl2.wav",
+    "se_pldead01.wav",
+    "se_heal.wav",
+    "se_msl3.wav",
+    "se_fault.wav",
+    "se_noise.wav",
+    "se_etbreak.wav",
+    "se_tan03.wav",
+    "se_wolf.wav",
+    "se_bonus4.wav",
+    "se_big.wav",
+    "se_item01.wav",
+    "se_release.wav",
+    "se_changeitem.wav",
+    "se_trophy.wav"
+  ]
+}

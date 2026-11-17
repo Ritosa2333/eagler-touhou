@@ -14,7 +14,7 @@ const libcxxInclude=resolve(sysroot,'include/wasm32-wasip1/noeh/c++/v1'),libcxxL
 const out=resolve(root,'artifacts/cpp');mkdirSync(out,{recursive:true});
 const sources=readdirSync(resolve(root,'cpp/game')).filter(n=>n.endsWith('.cpp')).sort().map(n=>'cpp/game/'+n);
 sources.push('tests/cpp/core-exports.cpp');
-const headers=[...readdirSync(resolve(root,'cpp/game')).filter(n=>/\.(hpp|inc)$/.test(n)).map(n=>'cpp/game/'+n),...readdirSync(resolve(root,'tests/cpp')).filter(n=>n.endsWith('.hpp')).map(n=>'tests/cpp/'+n)].sort();
+const headers=[...readdirSync(resolve(root,'cpp/game')).filter(n=>/\.(hpp|inc)$/.test(n)).map(n=>'cpp/game/'+n),...readdirSync(resolve(root,'tests/cpp')).filter(n=>n.endsWith('.hpp')).map(n=>'tests/cpp/'+n),'cpp/third_party/miniz/miniz.c','cpp/third_party/miniz/miniz.h'].sort();
 const wasm=resolve(out,'game-core-test.wasm');
 const flags=['-DTH09_REPLAY_DIAGNOSTICS=1','--target=wasm32-wasip1','-std=c++17','-O2','-g0','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-isystem',libcxxInclude,'-L'+libcxxLib,'-mexec-model=reactor','-Wl,--no-entry','-Wl,-z,stack-size=1048576','-Wl,--export-memory','-Wl,--strip-all'];
 const objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});

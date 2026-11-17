@@ -21,8 +21,8 @@ requireContract(restartHelper.includes('g_ResetReplayOnReinit = true;'),
     'thprac restart helper does not mark the next REINIT as a fresh Replay attempt');
 
 const reinitAssignments = [...practice.matchAll(/g_Supervisor\.curState = SUPERVISOR_STATE_GAMEMANAGER_REINIT;/g)];
-requireContract(reinitAssignments.length === 3,
-    `expected exactly three thprac REINIT restart paths, found ${reinitAssignments.length}`);
+requireContract(reinitAssignments.length === 2,
+    `expected exactly two advanced-practice REINIT restart paths, found ${reinitAssignments.length}`);
 for (const match of reinitAssignments) {
     const preceding = practice.slice(Math.max(0, match.index - 900), match.index);
     requireContract(preceding.includes('ResetTouchReplayForPracticeRestart();'),
@@ -39,7 +39,7 @@ const discardReplay = reinit.indexOf('ReplayManager::SaveReplay(NULL, NULL);');
 const registerGame = reinit.indexOf('GameManager::RegisterChain()');
 requireContract(cutGame >= 0 && consume > cutGame && discardReplay > consume && registerGame > discardReplay,
     'fresh-attempt Replay teardown must occur after old GameManager teardown and before re-registration');
-requireContract(/if \(PracticeRuntime::ConsumeReplayResetOnReinit\(\)\)\s*\n\s*ReplayManager::SaveReplay\(NULL, NULL\);/.test(reinit),
+requireContract(/if \(PracticeRuntime::ConsumeReplayResetOnReinit\(\)\)\s*\{\s*ReplayManager::SaveReplay\(NULL, NULL\);/.test(reinit),
     'ordinary stage REINIT must not unconditionally discard the multi-stage Replay recording');
 
 const registerStart = replay.indexOf('ZunResult ReplayManager::RegisterChain');

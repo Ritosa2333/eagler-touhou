@@ -9,7 +9,10 @@ struct EclInstruction {
     template<class T=u32>T argument(u32 index=0)const noexcept{T v;std::memcpy(&v,reinterpret_cast<const u8*>(this)+16+index*4,sizeof v);return v;}
 };
 static_assert(sizeof(EclInstruction)==16);
-struct EclSubroutine {std::string name;u32 offset=0,size=0;};
+struct EclSubroutine {
+    std::string name;u32 offset=0,size=0;
+    u32 branch_offset=0,branch_size=0;
+};
 class EclResource {
 public:
     std::vector<u8> bytes;

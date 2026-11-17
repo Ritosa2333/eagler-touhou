@@ -1,0 +1,206 @@
+{
+  "siteUrl": "https://test.touhou.vip/",
+  "scope": "Actual Launcher controls, production Wasm, room starts and game frames in desktop Chromium",
+  "tests": [
+    {
+      "label": "rollback-two-player-rtc",
+      "generation": "722abc93f8fff26532d397a427b60a1a746c3fd52edabba04b7a526249b18c7d",
+      "sourceCommit": "4fd3ae0d992c4015d1a9ec8712f1f062a91f48fd",
+      "harnessSha256": "2bce04ec69c95ce50fa8c2367feaf273d10f5ebf4c4ac33c9757bf1c5b453ed5",
+      "players": 2,
+      "route": "rtc",
+      "rollback": true,
+      "frames": 600,
+      "finishedAt": "2026-11-01T16:41:43.213Z",
+      "passed": true,
+      "steps": [
+        "P1-directory",
+        "P1-room",
+        "P2-directory",
+        "P2-room",
+        "P1-ready",
+        "P2-ready",
+        "enable-rollback",
+        "synchronized-start",
+        "actual-native-frame-600"
+      ],
+      "seats": [
+        {
+          "active": true,
+          "frame": 606,
+          "confirmed": 604,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "rollback": 0,
+          "resimulated": 0,
+          "options": {
+            "player": 0,
+            "players": 2,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8
+          }
+        },
+        {
+          "active": true,
+          "frame": 606,
+          "confirmed": 605,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "rollback": 0,
+          "resimulated": 0,
+          "options": {
+            "player": 1,
+            "players": 2,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8
+          }
+        }
+      ],
+      "discoveryMisses": 4
+    },
+    {
+      "label": "delay-two-player-rtc",
+      "generation": "3849652a295948ef1b9c5d718445c927a9e65b262792d3eaaf207e02bbc8a260",
+      "sourceCommit": "377d30027e82119b76b848b06fa596a70f05a785",
+      "harnessSha256": "c9d4e9ed8315ad9e35e06cde6b40be3f4954937da5b432dae68c8016d6184269",
+      "players": 2,
+      "route": "rtc",
+      "rollback": false,
+      "frames": 600,
+      "finishedAt": "2026-11-01T16:47:14.096Z",
+      "passed": true,
+      "steps": [
+        "P1-directory",
+        "P1-room",
+        "P2-directory",
+        "P2-room",
+        "P1-ready",
+        "P2-ready",
+        "disable-rollback",
+        "synchronized-start",
+        "actual-native-frame-600"
+      ],
+      "seats": [
+        {
+          "active": true,
+          "frame": 605,
+          "confirmed": 604,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "rollback": 0,
+          "resimulated": 0,
+          "options": {
+            "player": 0,
+            "players": 2,
+            "mode": "lan",
+            "adonisMode": 1,
+            "prediction": 8
+          }
+        },
+        {
+          "active": true,
+          "frame": 606,
+          "confirmed": 605,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "rollback": 0,
+          "resimulated": 0,
+          "options": {
+            "player": 1,
+            "players": 2,
+            "mode": "lan",
+            "adonisMode": 1,
+            "prediction": 8
+          }
+        }
+      ],
+      "discoveryMisses": 4
+    },
+    {
+      "label": "rollback-three-player-relay",
+      "generation": "3849652a295948ef1b9c5d718445c927a9e65b262792d3eaaf207e02bbc8a260",
+      "sourceCommit": "377d30027e82119b76b848b06fa596a70f05a785",
+      "harnessSha256": "c9d4e9ed8315ad9e35e06cde6b40be3f4954937da5b432dae68c8016d6184269",
+      "players": 3,
+      "route": "relay",
+      "rollback": true,
+      "frames": 600,
+      "finishedAt": "2026-11-01T16:48:37.394Z",
+      "passed": true,
+      "steps": [
+        "P1-directory",
+        "P1-room",
+        "P2-directory",
+        "P2-room",
+        "P3-directory",
+        "P3-room",
+        "P1-ready",
+        "P2-ready",
+        "P3-ready",
+        "enable-rollback",
+        "synchronized-start",
+        "actual-native-frame-600"
+      ],
+      "seats": [
+        {
+          "active": true,
+          "frame": 604,
+          "confirmed": 599,
+          "route": "relay",
+          "failed": false,
+          "error": "",
+          "rollback": 0,
+          "resimulated": 0,
+          "options": {
+            "player": 0,
+            "players": 3,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8
+          }
+        },
+        {
+          "active": true,
+          "frame": 604,
+          "confirmed": 599,
+          "route": "relay",
+          "failed": false,
+          "error": "",
+          "rollback": 0,
+          "resimulated": 0,
+          "options": {
+            "player": 1,
+            "players": 3,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8
+          }
+        },
+        {
+          "active": true,
+          "frame": 604,
+          "confirmed": 599,
+          "route": "relay",
+          "failed": false,
+          "error": "",
+          "rollback": 0,
+          "resimulated": 0,
+          "options": {
+            "player": 2,
+            "players": 3,
+            "mode": "lan",
+            "adonisMode": 0,
+            "prediction": 8
+          }
+        }
+      ],
+      "discoveryMisses": 6
+    }
+  ]
+}

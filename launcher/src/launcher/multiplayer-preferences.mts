@@ -66,12 +66,12 @@ export function createMultiplayerPreferenceStore({
   };
 
   const replayAutoSave = (product: string): boolean => {
-    if (product !== 'th09mp') return false;
+    if (!['th09mp','th19mp'].includes(product)) return false;
     try { return storage?.getItem(multiplayerReplayAutoSaveStorageKey(product)) !== '0'; }
     catch { return true; }
   };
   const persistReplayAutoSave = (product: string, enabled: boolean): void => {
-    if (product !== 'th09mp') return;
+    if (!['th09mp','th19mp'].includes(product)) return;
     try { storage?.setItem(multiplayerReplayAutoSaveStorageKey(product), enabled ? '1' : '0'); } catch {}
   };
   let turnPreference = false;

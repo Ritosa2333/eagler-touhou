@@ -62,6 +62,7 @@ export interface MultiplayerIdentityStore {
   loadDisplayName(): string;
   updateDisplayName(value: unknown, fallbackName?: string): { updated: boolean; name: string };
   lobbyClientId(product: string): string;
+  retainLobbyClientId(product: string, clientId: string): void;
 }
 
 function browserStorage(name: "localStorage" | "sessionStorage"): MultiplayerIdentityStorage | null {
@@ -132,5 +133,10 @@ export function createMultiplayerIdentityStore({
     }
   };
 
-  return Object.freeze({ loadDisplayName, updateDisplayName, lobbyClientId });
+  function retainLobbyClientId(product: string, clientId: string) {
+    if (!validMultiplayerClientId(clientId)) return;
+    rememberClientId(product, clientId);
+    try { sessionStorage?.setItem(multiplayerLobbyClientStorageKey(product), clientId); } catch {}
+  }
+  return Object.freeze({ loadDisplayName, updateDisplayName, lobbyClientId, retainLobbyClientId });
 }

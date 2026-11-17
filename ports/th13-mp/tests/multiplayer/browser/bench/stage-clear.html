@@ -1,0 +1,150 @@
+<!doctype html>
+<!-- Single-player stage transition probe. It boots the production runtime,
+     enters a run through the title's start_game entry (th13_debug_start_run),
+     plays `frames` frames with the deterministic pump, triggers the stage clear
+     (th13_debug_stage_clear = dialogue opcode 21) and keeps pumping until the
+     next stage has run `after` frames. Every frame records its wall cost and
+     the transition state, so the door, gate and activation frames can be read
+     against the ordinary frame cost.
+     Query: stage, char, diff, frames, after, runtime (module path), mode
+     (pump = th13_debug_frame loop, raf = production rAF loop). -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>th13 stage clear probe</title>
+<style>
+  html, body { margin: 0; background: #101018; color: #ddd; font: 14px system-ui, sans-serif; }
+  canvas { display: block; margin: 0 auto; outline: none; }
+  #status { text-align: center; padding: 8px; }
+</style>
+</head>
+<body>
+<div id="status">starting</div>
+<canvas id="canvas" tabindex="0"></canvas>
+<script type="module">
+import {runtimeAssets} from '/runtime-assets.mjs';
+const status = text => { document.getElementById('status').textContent = text; };
+const params = new URLSearchParams(location.search);
+const stage = Number(params.get('stage') ?? '1');
+const character = Number(params.get('char') ?? '0');
+const diff = Number(params.get('diff') ?? '1');
+const frames = Number(params.get('frames') ?? '300');
+const after = Number(params.get('after') ?? '240');
+const runtime = params.get('runtime') ?? '/artifacts/sdl3/th13-sdl.mjs';
+const mode = params.get('mode') ?? 'pump';
+const fetchBytes = async path => {
+  const response = await fetch(path);
+  if (!response.ok) throw new Error('missing asset: ' + path);
+  return new Uint8Array(await response.arrayBuffer());
+};
+window.__probe = {samples: [], failure: null, done: false, started: false};
+try {
+  const Module = await import(runtime);
+  const mod = await Module.default({
+    canvas: document.getElementById('canvas'),
+    print: t => console.log('[th13]', t),
+    printErr: t => console.warn('[th13]', t),
+  });
+  window.mod = mod;
+  mod.FS.mkdirTree('/assets');
+  for (const name of [...runtimeAssets, `pl0${character}a.sht`])
+    mod.FS.writeFile('/assets/' + name, await fetchBytes('/assets/' + name));
+  mod.FS.writeFile('/msgothic.ttc', await fetchBytes('/assets/msgothic.ttc'));
+  const audioAssets = [
+    'thbgm.fmt',
+    'se_plst00.wav', 'se_enep00.wav', 'se_pldead00.wav', 'se_power0.wav', 'se_power1.wav',
+    'se_tan00.wav', 'se_tan01.wav', 'se_tan02.wav', 'se_ok00.wav', 'se_cancel00.wav',
+    'se_select00.wav', 'se_gun00.wav', 'se_cat00.wav', 'se_lazer00.wav', 'se_lazer01.wav',
+    'se_enep01.wav', 'se_damage00.wav', 'se_item00.wav', 'se_kira00.wav', 'se_kira01.wav',
+    'se_kira02.wav', 'se_timeout.wav', 'se_graze.wav', 'se_powerup.wav', 'se_pause.wav',
+    'se_cardget.wav', 'se_damage01.wav', 'se_timeout2.wav', 'se_invalid.wav', 'se_slash.wav',
+    'se_ch00.wav', 'se_ch01.wav', 'se_extend.wav', 'se_nep00.wav', 'se_bonus.wav',
+    'se_bonus2.wav', 'se_enep02.wav', 'se_lazer02.wav', 'se_nodamage.wav', 'se_boon00.wav',
+    'se_don00.wav', 'se_boon01.wav', 'se_ch02.wav', 'se_ch03.wav', 'se_extend2.wav',
+    'se_pin00.wav', 'se_pin01.wav', 'se_lgods1.wav', 'se_lgods2.wav', 'se_lgods3.wav',
+    'se_lgods4.wav', 'se_lgodsget.wav', 'se_msl.wav', 'se_msl2.wav', 'se_pldead01.wav',
+    'se_heal.wav', 'se_astralup.wav', 'se_fault.wav', 'se_noise.wav',
+  ];
+  for (const name of audioAssets)
+    mod.FS.writeFile('/assets/' + name, await fetchBytes('/assets/' + name));
+  const music = mod.FS.open('/assets/thbgm.ogg', 'w');
+  try {
+    for (let n = 0; n < 30; ++n) {
+      const bytes = await fetchBytes('/assets/thbgm-' + String(n).padStart(2, '0') + '.part');
+      mod.FS.write(music, bytes, 0, bytes.length);
+    }
+  } finally { mod.FS.close(music); }
+
+  const runtimeError = () => mod.UTF8ToString(mod._th13_error());
+  if (!mod._th13_prepare_loading()) throw new Error(runtimeError());
+  mod._th13_draw_startup(90);
+  if (!mod._th13_initialize()) throw new Error(runtimeError());
+  if (!mod._th13_debug_start_run(stage, character, diff, -1)) throw new Error('start_run: ' + runtimeError());
+
+  const transition = () => JSON.parse(mod.UTF8ToString(mod._th13_debug_transition_state()));
+  const samples = window.__probe.samples;
+  let lastWork = null;
+  mod.onGameWorkFrame = row => { lastWork = row; };
+  // Each sample carries the state before the frame (b*) and after it, so a
+  // frame's cost can be attributed to the transition step it executed.
+  let before = transition();
+  const record = (ms, extra) => {
+    const t = transition();
+    samples.push({ms: +ms.toFixed(3), b_loading: before.loading, b_transition: before.transition,
+      b_startup_age: before.startup_age, b_clear_age: before.clear_age, b_stage: before.stage,
+      b_pending: before.pending_destination, b_pending_load: before.pending_load, ...t, ...extra});
+    before = t;
+  };
+  // Hold the shot key so the pilot behaves like a player.
+  mod._th13_key(44, 1);
+  window.__probe.started = true;
+  let cleared = false, clearedAt = -1, finished = false, sawTransition = false;
+  const step = () => {
+    if (!cleared && samples.length >= frames) {
+      const t = transition();
+      if (t.run && !t.loading && !t.transition && t.stage === stage) {
+        if (!mod._th13_debug_stage_clear()) throw new Error('stage_clear: ' + runtimeError());
+        cleared = true; clearedAt = samples.length;
+      }
+    }
+    if (cleared) {
+      const t = transition();
+      if (t.transition) sawTransition = true;
+      if (sawTransition && !t.transition && !t.loading && t.stage_frame >= after) finished = true;
+      if (samples.length - clearedAt > 60 * 40) finished = true;
+    }
+  };
+  if (mode === 'raf') {
+    mod.onGameFrame = (ok, ms) => {
+      record(ms, {src: lastWork ? lastWork.source : -1});
+      step();
+      if (finished && !window.__probe.done) { window.__probe.done = true; status('done'); }
+    };
+    mod._th13_loop_start();
+  } else {
+    // Frames draw fully but only present to the canvas once per yield, so the
+    // headless compositor's canvas throttle never lands inside a measured frame.
+    let slice = performance.now();
+    while (!finished) {
+      const begin = performance.now();
+      const ok = mod._th13_debug_frame_present(0);
+      record(performance.now() - begin, {ok});
+      if (!ok) throw new Error('frame failed: ' + runtimeError());
+      step();
+      if (performance.now() - slice > 20) {
+        if (params.get('present') === '1') mod._sdl_commit?.();
+        await new Promise(done => setTimeout(done, 0));
+        slice = performance.now();
+      }
+    }
+    window.__probe.done = true;
+    status('done');
+  }
+  status('running');
+} catch (error) {
+  window.__probe.failure = String(error && (error.stack || error.message) || error);
+  status('failed: ' + window.__probe.failure);
+}
+</script>
+</body>
+</html>

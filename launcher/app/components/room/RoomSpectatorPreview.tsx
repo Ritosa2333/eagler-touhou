@@ -3,6 +3,8 @@ import {multiplayerDisplayInitial} from '../../../src/launcher/multiplayer-ident
 import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/multiplayer-room';
 import {useLocale} from '../../i18n';
 import {RoomSpectatorJoin} from './RoomSpectators';
+import {ParticipantAvatar} from './ParticipantAvatar';
+import {accountsEnabled} from '../../release-features';
 
 /** The room chrome previews avatars; the shared spectator panel owns the list. */
 export function RoomSpectatorPreview({state, service, assetUrl, open, onOpen}: {
@@ -23,10 +25,15 @@ export function RoomSpectatorPreview({state, service, assetUrl, open, onOpen}: {
       <span>{t('room.spectatorLounge')}</span><span id="mpSpectatorCount">{count}</span>
     </UiButton>
     <div className="room-spectator-preview-avatars">
-      {entries.map((entry,index)=><UiButton variant="unstyled" key={entry.clientId} type="button"
-        className={`room-spectator-preview-avatar${entry.clientId===state.localClientId ? ' mine' : ''}`}
-        title={label(index)} aria-label={label(index)} aria-haspopup="dialog" aria-controls="mpRoomPanel"
-        onClick={event=>onOpen(event.currentTarget)}>{multiplayerDisplayInitial(entry.name,'?')}</UiButton>)}
+      {entries.map((entry, index) => {
+        const className = 'room-spectator-preview-avatar' + (entry.clientId === state.localClientId ? ' mine' : '');
+        const initial = multiplayerDisplayInitial(entry.name, '?');
+        return accountsEnabled && entry.profile
+          ? <ParticipantAvatar key={entry.clientId} className={className} profile={entry.profile} name={label(index)}>{initial}</ParticipantAvatar>
+          : <UiButton variant="unstyled" key={entry.clientId} type="button" className={className}
+              title={label(index)} aria-label={label(index)} aria-haspopup="dialog" aria-controls="mpRoomPanel"
+              onClick={event => onOpen(event.currentTarget)}>{initial}</UiButton>;
+      })}
     </div>
     <RoomSpectatorJoin state={state} service={service} id="mpSpectatorPreviewJoin" className="room-spectator-preview-join"/>
   </section>;

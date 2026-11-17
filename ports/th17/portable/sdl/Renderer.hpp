@@ -10,6 +10,7 @@
 
 // Semantic GLES renderer shared by the two games. Matrices and vertices stay
 // in C++; only resource decoding knows the original file format codes.
+struct ImDrawData;
 namespace touhou::sdl {
 using u32=uint32_t;using i32=int32_t;using u8=uint8_t;
 using namespace touhou::graphics;
@@ -34,6 +35,7 @@ public:
     bool lazy_depth_clears=false;
     Renderer(int version,Resolve,void*);~Renderer();
     bool initialize();void flush();void discard();bool commit();
+    bool presentation_pending()const noexcept{return pending!=0;}
     PipelineState& pipeline() override { return state.pipeline; }
     void transform(MatrixKind,const void*);void viewport(const Viewport&);
     void draw(Topology primitive,u32 count,const void*,u32 stride,const void* indices=nullptr,IndexType indexFormat=IndexType::UInt16);
@@ -43,10 +45,13 @@ public:
     void copy(u32 source,const i32* rect,u32 target,const i32* point);
     bool resample(u32,const i32*,u32,const i32*,const float*,u32,u32);
     void changed(u32,u32,const std::array<u32,4>&);void read(u32);void release(u32);void present(u32);void prepare(u32);
+#if TH_ENABLE_THPRAC
+    void render_imgui(const ImDrawData*,u32 target);
+#endif
     const char* error()const{return failure.c_str();}
     int version;Resolve resolve;void* owner;
 private:
-    struct GPU {GLuint texture=0,framebuffer=0;u32 version=~0u,dirtyBase=~0u;std::array<u32,4> dirty{};bool rendered=false;GLuint attached=~0u;std::array<GLint,4> sampler{};};
+    struct GPU {GLuint texture=0,framebuffer=0;u32 version=~0u,dirtyBase=~0u,renderScale=1;std::array<u32,4> dirty{};bool rendered=false;GLuint attached=~0u;std::array<GLint,4> sampler{};};
     struct DepthClear {u32 target;std::array<i32,4> rect;float value;};
     struct Depth {GLuint buffer=0;bool stencil=false;std::vector<DepthClear> pending;};
     struct Uniform {GLint location=-1;std::array<float,16> value{};int count=-1;};
@@ -55,10 +60,16 @@ private:
     SDL_Window* window=nullptr;SDL_GLContext context=nullptr;
     std::map<u32,GPU> surfaces;std::map<u32,Depth> depths;std::map<std::array<u32,10>,Program> programs;
     GLuint vertex=0,currentProgram=0,boundTexture=~0u,readFramebuffer=~0u,drawFramebuffer=~0u;
-    std::map<std::array<u32,6>,GLuint> layouts;GLuint currentLayout=0;
-    std::map<GLuint,u32> instanceBases;
+    struct Layout {GLuint vao=0,elements=0;u32 instanceBase=~0u;};
+    std::map<std::array<u32,6>,Layout> layouts;
+    GLuint currentLayout=0,boundArrayBuffer=~0u;
+#if TH_ENABLE_THPRAC
+    GLuint imguiProgram=0,imguiVao=0,imguiVbo=0,imguiEbo=0,imguiFontTexture=0;
+    GLint imguiProjMtx=-1,imguiTexture=-1;
+#endif
     GLuint resampleProgram=0,resampleVao=0,weightTexture=0;
     Program generic{};bool warming=true,buildingGeneric=false;Program* program=nullptr;
+    std::array<u32,10> selectedProgramKey{2}; // The texture field in a valid key is 0 or 1.
     Stream vertices{},indices{},instances{};GLuint quadIndices=0;u32 quadIndexCapacity=0;State batchState{};
     std::vector<u8> batchBytes,batchScratch,quad,worlds,pixels;Topology batchTopology=Topology::Triangles;bool batching=false,instancing=false;
     u32 batchCount=0,pending=0;std::string failure;
@@ -70,7 +81,7 @@ private:
     bool draining=false;u32 drawOffset=0,instanceOffset=0;
     void flush_batch();void drain();
     GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32,bool quads=false);
-    void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);
+    void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);void bind_array_buffer(GLuint);
     void flush_depth(u32,u32 preferredTarget=0);void queue_depth(float,const i32*,u32);
     void select(const State&);void uniform(int,int,const float*);void integer(int,int);
     u32 upload(Stream&,GLenum,const void*,u32,u32);

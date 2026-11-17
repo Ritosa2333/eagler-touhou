@@ -19,7 +19,10 @@ test("runtime build profiles", async () => {
 
 
 const config = await loadRuntimeBuildConfig();
-assert.deepEqual(Object.keys(config.games).sort(), Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn).sort());
+assert.deepEqual(Object.keys(config.games).sort(), Object.keys(PRODUCT_GAMES)
+  .filter(game => !PRODUCT_GAMES[game].buildOptIn || Object.hasOwn(config.games, game)).sort());
+assert.ok(config.games.th13, 'TH13 remains available as an explicitly selected source build');
+assert.equal(PRODUCT_GAMES.th13.buildOptIn, true, 'Registering a build must not add TH13 to default publications');
 for (const variant of ["normal", "multiplayer"]) {
   assert.equal(config.games.th09.variants[variant].features.thcrap, true,
     `TH09 ${variant} must attest its existing language-pack support`);

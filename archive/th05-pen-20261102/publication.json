@@ -1,0 +1,27 @@
+{
+  "publishedAt": "2026-11-02T04:07:34Z",
+  "siteUrl": "https://touhouonline.com/",
+  "previous": "/var/www/eagler-touhou/releases/th05-native-20261102",
+  "current": "/var/www/eagler-touhou/releases/th05-pen-20261102",
+  "releaseId": "sha256-a88645dfeda6f677df18160a7afec793dee1cc52f4d2e6f37e06bcb827102429",
+  "preservedFiles": 7909,
+  "updates": [
+    {
+      "game": "th05",
+      "variant": "normal",
+      "root": "runtime/th05/",
+      "previousGeneration": "7939a3cee41237fc895d6f034757c7500e4586d2533469093b75e09d0579d5d7",
+      "generation": "ccd7bd8a0144b524eebf7d4ece377e80851090a3ef770e17199574bda46967a8",
+      "files": 21
+    },
+    {
+      "game": "th05",
+      "variant": "multiplayer",
+      "root": "runtime/th05/multiplayer/",
+      "previousGeneration": "e263c94d16676c1d21736a1cd9fbcc36edec069e0280f69c823e3c99d64d298d",
+      "generation": "a6fcecd2de8ab2afd5d2a2d233bb0d380ab4aa02520dcc420284650e67b0f10e",
+      "files": 25
+    }
+  ],
+  "mode": "th05-pen"
+}

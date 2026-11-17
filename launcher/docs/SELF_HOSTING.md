@@ -4,6 +4,12 @@
 
 ## 准备输入
 
+生产构建默认启用账号。将本站 `/api/` 反向代理到兼容的账号服务，并将 `/u/<用户名>` 路由到应用入口。只提供游客访问的站点可以在构建前设置 `VITE_ACCOUNTS_ENABLED=false`。本地开发可用 `VITE_ACCOUNTS_ENABLED=true` 启用账号，再用 `EAGLER_UI_API_ORIGIN` 指定 API 监听地址。
+
+可选的账号 API 双线路通过 `VITE_ACCOUNT_EDGE_ORIGIN` 和 `VITE_ACCOUNT_DIRECT_ORIGIN` 启用，分别使用站点的 `api.` 和 `direct-api.` HTTPS 子域。两个入口共用账号服务和站点域的会话 Cookie，允许本站携带凭据跨域访问，并对账号响应设置 `Cache-Control: private, no-store`。`/api/ready` 以 `X-Eagler-Account-Route` 返回 `direct` 或 `edge`，跨域入口须暴露此响应头。国内使用同源 API，海外优先使用边缘入口，失败时改用直连子域。
+
+房间音乐默认开放。前端构建可用 `VITE_METING_API_URL` 指定可从浏览器访问的 HTTPS Meting 接口，或用 `VITE_LISTEN_TOGETHER_ENABLED=false` 关闭房间音乐。Relay 设置 `EAGLER_NETPLAY_LISTEN_TOGETHER=1` 后开放同步邀请。验收时用网易云音乐和 QQ 音乐分别检查搜索、歌单与播放，再用两个玩家席验证邀请和同步。
+
 需要 Node.js 22+、Python 3 和匹配当前 Launcher Product Catalog 的完整 `runtime-release/`。源码前端构建另需 Bun 1.4.4。每个已登记游戏都准备 `games/<game-id>/` 目录，并放入对应原作文件。游戏列表见 [`common/contracts/product-catalog.mjs`](../../common/contracts/product-catalog.mjs)。
 
 在 `launcher/` 或自托管包根目录使用以下目录结构：
@@ -52,6 +58,14 @@ npm run host -- --no-open
 ```
 
 ## 发布
+
+打包、刷新启动器和 `npm run verify:server` 会核对前端构建产物是否支持站点清单中的每部作品。单独替换启动器时，使用目标站点保留的 `site-manifest.json` 检查待上线的前端产物，再切换站点：
+
+```sh
+node scripts/verify-frontend-game-catalog.mjs .cache/build/ui-rewrite/client path/to/site-manifest.json
+```
+
+检查失败时按报错补齐作品目录并重新构建。清单中的测试作品（如 TH01–TH04）也参与检查。
 
 将 `dist/site/` 内容复制到静态网站、对象存储或 CDN 的文档根目录，并通过 HTTPS 提供服务以启用浏览器 Service Worker 存储。然后验证公开地址：
 

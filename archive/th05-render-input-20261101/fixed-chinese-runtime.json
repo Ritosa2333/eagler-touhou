@@ -1,0 +1,59 @@
+{
+  "label": "fixed-chinese",
+  "coldStarts": [
+    3,
+    {
+      "backScene": 2
+    },
+    3,
+    {
+      "backScene": 2
+    }
+  ],
+  "samples": [
+    {
+      "name": "music-room",
+      "seconds": 8.013200000017882,
+      "tickRate": 60.02595717053445,
+      "drawsPerTick": 9.008316008316008,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 60,
+      "textures": 11,
+      "textureBytes": 55353344
+    },
+    {
+      "name": "playing-0",
+      "seconds": 10.012,
+      "tickRate": 56.03276068717539,
+      "drawsPerTick": 99.97326203208556,
+      "uniformLookups": 0,
+      "heap": 115998720,
+      "displayFps": 55.98880224021939,
+      "textures": 384,
+      "textureBytes": 38406144
+    }
+  ],
+  "piano": {
+    "notes": [
+      57,
+      36,
+      43,
+      55,
+      91,
+      75,
+      71,
+      255
+    ],
+    "measure": 5
+  },
+  "font": {
+    "simplifiedGlyphs": 1829
+  },
+  "displayFps": {
+    "normal": 55.98880224021939,
+    "stalled": 13.417969757836646,
+    "recovered": 55.489496631650304
+  },
+  "errors": []
+}

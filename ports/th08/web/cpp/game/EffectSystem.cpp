@@ -107,7 +107,7 @@ void EffectSystem::presentation_geometry(const EffectState& source,EffectState& 
     if(!EffectGeometry::interpolation_preserves_topology(before.height,before.frequency,before.segments,source.height,source.frequency,source.segments))return;
     draw.radius=presentation::lerp_world(before.radius,source.radius);draw.width=presentation::lerp_world(before.width,source.width);draw.height=presentation::lerp_world(before.height,source.height);
     constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;
-    auto angle=[&](float a,float b){if(presentation::world_alpha>=1)return b;if(presentation::world_alpha<=0)return a;float d=b-a;if(d>pi)d-=tau;else if(d<-pi)d+=tau;return add_angle(a+d*presentation::world_alpha,0);};
+    auto angle=[&](float a,float b){if(presentation::world_alpha==1)return b;if(presentation::world_alpha<=0)return a;float d=b-a;if(d>pi)d-=tau;else if(d<-pi)d+=tau;return add_angle(a+d*presentation::world_alpha,0);};
     draw.angle=angle(before.angle,source.angle);draw.angle_y=angle(before.angle_y,source.angle_y);
 }
 JobResult EffectSystem::update(){

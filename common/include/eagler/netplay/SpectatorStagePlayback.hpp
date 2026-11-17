@@ -10,10 +10,21 @@ class SpectatorStagePlayback {
 public:
     static constexpr std::uint32_t BufferFrames = 90;
     enum class Action { Pause, Play, Seek, Live };
+    enum class RestoreMode { Stage, Run };
+    SpectatorStagePlayback() = default;
+    // 帧限历史构造（th13-mp 全程录像）：限定历史容量，不入 live。
+    explicit SpectatorStagePlayback(RestoreMode mode, std::size_t frame_limit)
+        : SpectatorStagePlayback(mode, frame_limit, false) {}
+    // joinLive 构造（旁观入场）：默认容量，Bootstrap 后直取前沿。
+    explicit SpectatorStagePlayback(RestoreMode mode, bool joinLive = false)
+        : SpectatorStagePlayback(mode, SpectatorStageHistory::MaxFrames, joinLive) {}
     bool Receive(const SpectatorStageEvent& event) {
         if (event.kind == SpectatorEventKind::Bootstrap) {
             if (bootstrapped_ || !history_.BootstrapMatches(event)) return false;
             bootstrapped_ = true;
+            if (join_live_) return Request(Edge(), true, true);
+            if (mode_ == RestoreMode::Run)
+                return Request(std::min(Edge(), history_.Segments().back().checkpoint.frame), false, true);
             // Joining starts at the first available native Replay stage.
             // Boss marks are navigation only; receipt never seeks past input.
             return Request(history_.Segments().front().checkpoint.frame, false, false);
@@ -35,7 +46,7 @@ public:
                 // the required restore and stop at that checkpoint instead
                 // of cancelling initialization or claiming an invalid frame.
                 if (restore_ && !has_restored_checkpoint_) {
-                    const auto* segment = history_.Locate(target_);
+                    const auto* segment = RestoreSegment(target_);
                     if (!segment) return false;
                     target_ = segment->checkpoint.frame;
                 } else {
@@ -70,7 +81,7 @@ public:
         const bool mustInstallInitialCheckpoint = restore_ && !has_restored_checkpoint_;
         if (!bootstrapped_ || (paused_ && !seeking_ && !mustInstallInitialCheckpoint) || failed_) return !failed_;
         if (restore_) {
-            const auto* segment = history_.Locate(target_);
+            const auto* segment = RestoreSegment(target_);
             if (!segment || !restore(segment->checkpoint)) return !(failed_ = true);
             restored_checkpoint_serial_ = segment->checkpoint.serial;
             has_restored_checkpoint_ = true;
@@ -91,8 +102,7 @@ public:
             // forward playback reaches its first buffered input, install that
             // checkpoint before consuming the input. No restore occurs merely
             // because the event arrived, so a paused viewer stays where it is.
-            if (!has_restored_checkpoint_ ||
-                restored_checkpoint_serial_ != segment->checkpoint.serial) {
+            if (mode_ == RestoreMode::Stage && restored_checkpoint_serial_ != segment->checkpoint.serial) {
                 if (position_ != segment->checkpoint.frame || !restore(segment->checkpoint))
                     return !(failed_ = true);
                 restored_checkpoint_serial_ = segment->checkpoint.serial;
@@ -115,8 +125,7 @@ public:
     std::uint32_t Target() const {return target_;}
     bool Paused() const {return paused_;}
     bool Seeking() const {return seeking_;}
-    // Only an explicit Seek/Live operation may request bounded fast-forward.
-    // Following, delayed input and bootstrap all keep normal playback pace.
+    // A seek to a fixed target can catch up in bounded batches.
     bool FastForwarding() const {
         return seeking_ && accelerated_;
     }
@@ -131,10 +140,15 @@ public:
     }
     bool Failed() const {return failed_;}
     const SpectatorStageHistory& History() const {return history_;}
-    void Clear() {*this = {};}
+    void Clear() {*this = SpectatorStagePlayback(mode_, history_.FrameLimit(), join_live_);}
 private:
+    explicit SpectatorStagePlayback(RestoreMode mode, std::size_t frame_limit, bool joinLive)
+        : history_(frame_limit), mode_(mode), join_live_(joinLive) {}
+    const SpectatorStageHistory::Segment* RestoreSegment(std::uint32_t frame) const {
+        return mode_ == RestoreMode::Run ? &history_.Segments().front() : history_.Locate(frame);
+    }
     bool Request(std::uint32_t frame, bool live, bool accelerated) {
-        const auto* segment = history_.Locate(frame);
+        const auto* segment = RestoreSegment(frame);
         if (!segment) return false;
         // Rebuild only when necessary. The target is latched once, including
         // Return-to-live, so incoming input cannot keep moving the destination.
@@ -144,6 +158,8 @@ private:
         live_requested_ = live; following_ = false; paused_ = false; return true;
     }
     SpectatorStageHistory history_;
+    RestoreMode mode_ = RestoreMode::Stage;
+    bool join_live_ = false;
     std::uint32_t position_ = 0, target_ = 0;
     std::uint32_t restored_checkpoint_serial_ = 0;
     bool bootstrapped_ = false, restore_ = false;

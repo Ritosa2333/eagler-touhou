@@ -17,7 +17,8 @@ bool Player::initialize(){
 }
 bool Player::update(const PlayerFrameContext& context,float& rate){if(!initialized){error="Player not initialized";return false;}if(!error.empty())return false;if(!frame.update(context,rate)){error=frame.error;return false;}return true;}
 bool Player::draw(AnmRenderer& renderer){if(life.state==2)return true;auto& vm=visuals.root;vm.visual.translation=motion.position;vm.visual.render_flags=(vm.visual.render_flags&~0x80000u)|0x40000;const i32 result=renderer.draw(vm);if(result<0){error=renderer.error;return false;}
-    if(presentation::always_hitbox&&life.state==1&&!visuals.focus_handle){
+    if(presentation::always_hitbox&&life.state==1&&!visuals.focus_handle&&
+       (!visuals.presentation_seat||visuals.presentation_seat==renderer.hud_viewer)){
         const float scale=motion.behavior_flags&16?float((motion.enlargement-1)*2+1):1;
         if(!visuals.hitbox_display.draw(animations,visuals.effect_bank(),renderer,motion.position,scale,motion.input_frame)){error="Hitbox display failed";return false;}
     }else visuals.hitbox_display.reset();
@@ -29,6 +30,7 @@ bool Player::finish_stage_options(){
 }
 bool Player::reset_for_stage(){
     if(!initialized){error="Player not initialized";return false;}if(!error.empty())return false;
+    if(shot_context.cooperative&&!shots.clear_lasers()){error=shots.error;return false;}
     life.state=1;frame.shooting.shot.set(-1);frame.shooting.continuous.set(-1);life.age.set(0);frame.input_age.set(0);frame.ready_age.set(0);motion.behavior_flags&=~9u;
     if(!animations.retire(visuals.focus_handle)||!animations.retire(visuals.barrier_handle)){error=animations.error;return false;}visuals.focus_handle=visuals.barrier_handle=0;
     if(!world.life_hud(session.extra_lives,session.life_pieces)){error="Stage life display reset failed";return false;}

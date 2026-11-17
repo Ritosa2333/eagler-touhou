@@ -4,13 +4,14 @@
   'use strict';
   if (globalThis.__eaglerCrashReporterV1) return;
   const scriptUrl = document.currentScript?.src || location.href;
-  const game = /\bth(?:12|15)\b/.exec(location.pathname)?.[0] || '';
-  const multiplayer = location.pathname.includes('/multiplayer/');
+  const game = /\bth(?:12|14|15)\b/.exec(location.pathname)?.[0] || '';
+  const multiplayer = location.pathname.includes('/multiplayer/') ||
+    new URLSearchParams(location.search).get('runtimeVariant') === 'multiplayer';
   const generation = /\/([a-f0-9]{64})\//.exec(location.pathname)?.[1] || '';
   const logs = [], events = [], samples = [];
-  let core, context, report, build, stopped = false;
+  let core, context, report, build, stopped = false, autoSample = true;
   const append = (list, value, limit) => { list.push(value); if (list.length > limit) list.shift(); };
-  const trim = value => String(value).slice(0, 12000).replace(/https?:\/\/[^\s"<>]+/g, url => {
+  const trim = value => String(value).slice(0, 12000).replace(/(?:https?|wss?):\/\/[^\s"<>]+/gi, url => {
     try { const parsed = new URL(url); parsed.search = ''; parsed.hash = ''; return parsed.href; } catch { return url; }
   });
   function plain(value, depth = 0, seen = new Set()) {
@@ -54,13 +55,30 @@
         return Array.from((signed ? new Int32Array(heap.buffer) : new Uint32Array(heap.buffer)).subarray(pointer / 4, pointer / 4 + count));
       };
       const prefix = game || (core._th15_frame ? 'th15' : 'th12');
-      value.frame = scalar('_' + prefix + '_frame');
-      value.phase = scalar('_' + prefix + '_phase');
-      value.netplayStatus = words('_' + prefix + '_mp_status', 24);
-      const rollback = words('_' + prefix + '_mp_rollback_status', prefix === 'th12' ? 8 : 9);
-      if (rollback) value.rollback = prefix === 'th12'
-        ? {version:rollback[0], corrections:rollback[1], replayedFrames:rollback[2], committedFrames:rollback[3], correcting:!!rollback[4], requestedFrame:rollback[5], frontier:rollback[6], worldReady:!!rollback[7]}
-        : {version:rollback[0], enabled:!!rollback[1], corrections:rollback[2], replayedFrames:rollback[3], lastDepth:rollback[4], peakDepth:rollback[5], replayRemaining:rollback[6], fenceFrame:rollback[7], presentationFps:rollback[8]/100};
+      const nativePrefix = prefix === 'th14' ? 'th11' : prefix;
+      value.frame = scalar('_' + nativePrefix + '_frame');
+      value.phase = scalar('_' + nativePrefix + '_phase');
+      if (prefix === 'th14') {
+        value.stage = scalar('_th11_stage');
+        value.wasmAllocatedBytes = scalar('_th11_dynamic_allocs');
+        value.checkpointArenaBytes = scalar('_th14_checkpoint_bytes');
+        const battle = words('_th14_battle_diagnostics', 5);
+        if (battle) {
+          const [spellFlags, spellId, spellElapsed, bullets, items] = battle;
+          value.battle = {spellFlags, spellId: spellId | 0, spellElapsed: spellElapsed | 0, bullets, items};
+        }
+        const rollback = words('_th14_room_rollback', 6);
+        if (rollback) {
+          const [frame, confirmedFrame, corrections, replayedFrames, combatCorrections, predictionLimit] = rollback;
+          value.rollback = {frame, confirmedFrame, corrections, replayedFrames, combatCorrections, predictionLimit};
+        }
+      } else {
+        value.netplayStatus = words('_' + prefix + '_mp_status', 24);
+        const rollback = words('_' + prefix + '_mp_rollback_status', prefix === 'th12' ? 8 : 9);
+        if (rollback) value.rollback = prefix === 'th12'
+          ? {version:rollback[0], corrections:rollback[1], replayedFrames:rollback[2], committedFrames:rollback[3], correcting:!!rollback[4], requestedFrame:rollback[5], frontier:rollback[6], worldReady:!!rollback[7]}
+          : {version:rollback[0], enabled:!!rollback[1], corrections:rollback[2], replayedFrames:rollback[3], lastDepth:rollback[4], peakDepth:rollback[5], replayRemaining:rollback[6], fenceFrame:rollback[7], presentationFps:rollback[8]/100};
+      }
       if (context) value.gameState = plain(context());
       if (prefix === 'th12' && value.gameState?.session) {
         if (typeof core._th12_stage_flow === 'function' && typeof core._th12_stage_flow_size === 'function') {
@@ -123,8 +141,9 @@
         }).observe(doc.body,{attributes:true,subtree:true,attributeFilter:['open']});
       }
       description.textContent=`${(value.game||'游戏').toUpperCase()} · ${value.multiplayer?'多人':'单人'} · ${value.createdAt} · 报告 ${value.id}`;
-      const last=value.samples.at(-1),stage=last?.gameState?.session?.stage;
-      summary.textContent=[value.runtime.build?.version,stage&&`第 ${stage} 面`,last?.frame!==undefined&&`帧 ${last.frame}`,value.wasmMemoryBytes&&`WASM 内存 ${(value.wasmMemoryBytes/1048576).toFixed(1)} MiB`].filter(v=>v!==false&&v!==undefined&&v!==null&&v!=='').join(' · ');
+      const last=value.samples.at(-1),stage=last?.stage??last?.gameState?.session?.stage;
+      const frame=last?.rollback?.frame??last?.frame;
+      summary.textContent=[value.runtime.build?.version,stage===7&&value.game==='th14'?'Extra':stage?`第 ${stage} 面`:null,frame!==undefined&&`帧 ${frame}`,value.wasmMemoryBytes&&`WASM 内存 ${(value.wasmMemoryBytes/1048576).toFixed(1)} MiB`].filter(v=>v!==false&&v!==undefined&&v!==null&&v!=='').join(' · ');
       const messages=value.errors.map(e=>`[${e.source}] ${e.error.stack||e.error.message}`).join('\n\n');
       detail.textContent=messages.slice(0,16000)+(value.logs.length?'\n\n最近错误日志：\n'+value.logs.slice(-12).map(l=>l.values.map(v=>typeof v==='string'?v:JSON.stringify(v)).join(' ')).join('\n').slice(-8000):'');
       if(!panel.isConnected)doc.body.append(panel);
@@ -139,13 +158,16 @@
         const when=new Date();
         report={schema:'eagler-touhou/crash-report/1',reporterVersion:1,id:when.toISOString().replace(/[^0-9TZ]/g,'')+'-'+Math.random().toString(16).slice(2,8),createdAt:when.toISOString(),game,multiplayer,generation,
           runtime:{url:location.origin+location.pathname,build:plain(build)},
-          environment:{userAgent:navigator.userAgent,language:navigator.language,languages:navigator.languages,platform:navigator.platform,hardwareConcurrency:navigator.hardwareConcurrency,deviceMemoryGiB:navigator.deviceMemory,online:navigator.onLine,visibility:document.visibilityState,viewport:{width:innerWidth,height:innerHeight,pixelRatio:devicePixelRatio},timezone:Intl.DateTimeFormat().resolvedOptions().timeZone},
+          environment:{userAgent:navigator.userAgent,language:navigator.language,languages:navigator.languages,platform:navigator.platform,hardwareConcurrency:navigator.hardwareConcurrency,deviceMemoryGiB:navigator.deviceMemory,online:navigator.onLine,crossOriginIsolated:globalThis.crossOriginIsolated,sharedArrayBuffer:typeof SharedArrayBuffer==='function',visibility:document.visibilityState,viewport:{width:innerWidth,height:innerHeight,pixelRatio:devicePixelRatio},timezone:Intl.DateTimeFormat().resolvedOptions().timeZone},
           errors:[],logs:[],events:[],samples:[]};
       }
       const entry={time:new Date().toISOString(),source:fields.source||'runtime-fatal',error:errorValue(error)};
       if (!report.errors.some(e=>e.source===entry.source&&e.error.message===entry.error.message)) append(report.errors,entry,12);
       report.logs=logs.slice();report.events=events.slice();report.samples=samples.slice();
       report.runtime.build=plain(build);
+      if (game === 'th14' && globalThis.__eaglerNetplayLanActive) {
+        report.lastFrame = {frame:globalThis.__eaglerNetplayLanFrame, confirmedFrame:globalThis.__eaglerNetplayLanConfirmed};
+      }
       if (core?.HEAPU8) report.wasmMemoryBytes=core.HEAPU8.byteLength;
       const memory=performance.memory; if(memory)report.browserMemory={usedBytes:memory.usedJSHeapSize,totalBytes:memory.totalJSHeapSize,limitBytes:memory.jsHeapSizeLimit};
       const transport=globalThis.__eaglerPeerTransport;
@@ -160,11 +182,13 @@
     } catch {}
   }
   function bindCore(module, details={}) {
-    core=module;context=details.context; if(details.build)build={...build,...details.build};
-    try { const before=module.onAbort; module.onAbort=reason=>{fatal(new Error(String(reason)),{source:'wasm-abort'});if(typeof before==='function')before(reason);}; } catch {}
+    core=module;context=details.context;autoSample=details.autoSample!==false; if(details.build)build={...build,...details.build};
+    if (details.hookAbort!==false) {
+      try { const before=module.onAbort; module.onAbort=reason=>{fatal(new Error(String(reason)),{source:'wasm-abort'});if(typeof before==='function')before(reason);}; } catch {}
+    }
     sample();
   }
-  globalThis.__eaglerCrashReporterV1={fatal,bindCore,sample,report:()=>report};
+  globalThis.__eaglerCrashReporterV1={fatal,bindCore,sample,identify:details=>{build={...build,...details};if(report)report.runtime.build=plain(build);},report:()=>report};
   addEventListener('error',event=>{
     if(event.error||event.message)fatal(event.error||new Error(event.message),{source:'uncaught-error'});
     else if(event.target?.tagName==='SCRIPT')fatal(new Error('游戏脚本加载失败：'+(event.target.src||'')),{source:'script-load'});
@@ -172,7 +196,7 @@
   addEventListener('unhandledrejection',event=>fatal(event.reason,{source:'unhandled-rejection'}));
   function observe() {
     for(const element of document.querySelectorAll('#error,#notice')) {
-      const check=()=>{const message=element.textContent.trim();if(message&&(element.id==='error'||/^运行中断[：:]/.test(message)))fatal(new Error(message),{source:'native-fatal'});};
+      const check=()=>{const message=element.textContent.trim();if(message&&!element.hasAttribute('data-crash-reported')&&(element.id==='error'||/^运行中断[：:]/.test(message)))fatal(new Error(message),{source:'native-fatal'});};
       new MutationObserver(check).observe(element,{childList:true,subtree:true,characterData:true});check();
     }
     document.querySelector('canvas')?.addEventListener('webglcontextlost',()=>fatal(new Error('WebGL 图形上下文丢失'),{source:'webgl-context-lost'}));
@@ -182,7 +206,14 @@
     if(event.origin!==location.origin||event.source!==window&&event.source!==parent)return;
     const data=event.data;
     if(data?.protocol!=='eagler-touhou/1')return;
-    if(data.command==='configure')append(events,{time:new Date().toISOString(),type:'configure',options:plain(data.options),language:data.language},60);
+    if(data.command==='configure'){
+      const options = game === 'th14'
+        ? Object.fromEntries(['netplayMode','netplayPlayer','netplayPlayerCount','netplayInputDelay','netplayAdonisMode',
+          'netplayPredictionLimit','netplayDifficulty','netplaySeed','netplaySpectator','netplayLoadouts','replayViewer',
+          'touchEnabled','touchMovementMode'].filter(key=>Object.hasOwn(data.options??{},key)).map(key=>[key,data.options[key]]))
+        : data.options;
+      append(events,{time:new Date().toISOString(),type:'configure',options:plain(options),language:data.language},60);
+    }
   });
   // postMessage to the parent does not dispatch in the child; retain emitted
   // health events at the parent without collecting other Runtime instances.
@@ -190,9 +221,9 @@
     const source=window, receive=event=>{if(event.source!==source||event.origin!==location.origin)return;const d=event.data;if(d?.protocol==='eagler-touhou/1'&&['frame-health','audio-health','runtime-info','error','peer-connection'].includes(d.event))append(events,{time:new Date().toISOString(),...plain(d)},60);};
     parent.addEventListener('message',receive); addEventListener('pagehide',()=>parent.removeEventListener('message',receive),{once:true});
   }} catch {}
-  setInterval(()=>{if(!core&&globalThis.Module)bindCore(globalThis.Module);else sample();},1000);
+  setInterval(()=>{if(!stopped&&!core&&globalThis.Module)bindCore(globalThis.Module);else if(autoSample)sample();},1000);
   fetch(new URL('./manifest.json',scriptUrl)).then(r=>r.ok?r.json():null).then(value=>{if(value){build={...value,...build};if(report)report.runtime.build=plain(build);}}).catch(()=>{});
   fetch(new URL('./crash-code-identities.json',scriptUrl)).then(r=>r.ok?r.json():null).then(value=>{
-    if(Array.isArray(value?.files)){build={...build,codeIdentities:value.files.filter(f=>/\.wasm$|^(?:core|th15)\.mjs$/.test(f.path))};if(report)report.runtime.build=plain(build);}
+    if(Array.isArray(value?.files)){build={...build,codeIdentities:value.files.filter(f=>/\.wasm$|^(?:core|th14-sdl(?:-single)?|th15|shell)\.mjs$/.test(f.path))};if(report)report.runtime.build=plain(build);}
   }).catch(()=>{});
 })();

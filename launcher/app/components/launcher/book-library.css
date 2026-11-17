@@ -223,6 +223,9 @@
       transform 480ms cubic-bezier(.2,.65,.25,1),
       box-shadow 480ms cubic-bezier(.2,.65,.25,1);
   }
+  @media (pointer: coarse) {
+    :is(.book-game-link, .book-recent-link) { -webkit-tap-highlight-color: transparent; }
+  }
   .book-game-link {
     display: flex;
     flex-direction: column;
@@ -239,6 +242,7 @@
     container: book-cover / inline-size;
   }
   .book-art img {
+    position: relative;
     display: block;
     width: 100%;
     height: 100%;
@@ -403,11 +407,6 @@
   .book-view-list .book-favorite::before {
     display: none;
   }
-  html[data-ui-home] .site-footer {
-    margin-top: 32px;
-    padding: 22px 0 24px;
-    border-top: 1px solid var(--kit-border);
-  }
   html[data-ui-home] .server-status-note {
     position: static;
     inset: auto;
@@ -515,10 +514,6 @@
     }
     .book-identity strong {
       font-size: 13px;
-    }
-    html[data-ui-home] .site-footer {
-      margin-top: 26px;
-      padding-bottom: max(24px, env(safe-area-inset-bottom));
     }
   }
   @media (min-width: 781px) and (pointer: coarse) {

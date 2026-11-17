@@ -1,0 +1,74 @@
+[
+  {
+    "frames": 6000,
+    "nodes": 256,
+    "bullets": 108,
+    "allocations": 90000,
+    "allocatedBytes": 2040966000,
+    "ms": 323.237,
+    "variant": "baseline"
+  },
+  {
+    "frames": 6000,
+    "nodes": 256,
+    "bullets": 108,
+    "allocations": 36000,
+    "allocatedBytes": 6048000,
+    "ms": 321.313,
+    "variant": "reused"
+  },
+  {
+    "frames": 6000,
+    "nodes": 256,
+    "bullets": 108,
+    "allocations": 36000,
+    "allocatedBytes": 6048000,
+    "ms": 322.737,
+    "variant": "reused"
+  },
+  {
+    "frames": 6000,
+    "nodes": 256,
+    "bullets": 108,
+    "allocations": 90000,
+    "allocatedBytes": 2040966000,
+    "ms": 328.246,
+    "variant": "baseline"
+  },
+  {
+    "frames": 6000,
+    "nodes": 256,
+    "bullets": 108,
+    "allocations": 90000,
+    "allocatedBytes": 2040966000,
+    "ms": 333.683,
+    "variant": "baseline"
+  },
+  {
+    "frames": 6000,
+    "nodes": 256,
+    "bullets": 108,
+    "allocations": 36000,
+    "allocatedBytes": 6048000,
+    "ms": 316.679,
+    "variant": "reused"
+  },
+  {
+    "frames": 6000,
+    "nodes": 256,
+    "bullets": 108,
+    "allocations": 36000,
+    "allocatedBytes": 6048000,
+    "ms": 315.734,
+    "variant": "reused"
+  },
+  {
+    "frames": 6000,
+    "nodes": 256,
+    "bullets": 108,
+    "allocations": 90000,
+    "allocatedBytes": 2040966000,
+    "ms": 334.868,
+    "variant": "baseline"
+  }
+]

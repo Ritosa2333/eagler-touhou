@@ -5,6 +5,7 @@ import {cycleFocus} from '../cycle-focus';
 import {useLocale} from '../../i18n';
 import {useOptionsViewport} from '../launcher/use-options-viewport';
 import {useSurfaceMotion} from '../../ui/use-surface-motion';
+import {useCompactNavigation} from '../../navigation/navigation-motion';
 export interface RoomSettingsDrawerProps {
   roomOpen: boolean;
   open: boolean;
@@ -13,12 +14,12 @@ export interface RoomSettingsDrawerProps {
   foregroundActive?: boolean;
   onClosingChange?(closing: boolean): void;
 }
-/** Main index716–719 and app2125–2207/6577–6593. Original regular drawer,
- * not an extra native dialog. OptionsPanel relocates its one header/fold here. */
+/** The shared OptionsPanel renders its header and fold into these outlets. */
 export function RoomSettingsDrawer({roomOpen, open, foregroundActive = false, onCloseRequest, onClosingChange}: RoomSettingsDrawerProps) {
   const {t} = useLocale(), drawer = useRef<HTMLElement>(null), backdrop = useRef<HTMLButtonElement>(null), generation = useRef(0);
-  useOptionsViewport(drawer);
+  const compact = useCompactNavigation();
   const [presence, setPresence] = useState({hidden: true, closing: false});
+  useOptionsViewport(drawer, !presence.hidden && !foregroundActive);
   const suspendedFocus = useRef<HTMLElement | null>(null);
   const pendingReturnFocus = useRef(false);
   const closingFocus = useRef(false);
@@ -41,13 +42,13 @@ export function RoomSettingsDrawer({roomOpen, open, foregroundActive = false, on
     return () => {generation.current++;};
   }, [roomOpen, open, foregroundActive]);
   const phase = presence.hidden || foregroundActive ? null : presence.closing ? 'exit' : 'enter';
-  useSurfaceMotion(drawer, phase, {onComplete() {
+  useSurfaceMotion(drawer, phase, {kind: compact ? 'panel' : 'dialog', onComplete() {
     if (!presence.closing) return;
     pendingReturnFocus.current = closingFocus.current && latest.current.roomOpen && !latest.current.foregroundActive;
     closingFocus.current = false;
     setPresence({hidden: true, closing: false});
   }});
-  useSurfaceMotion(backdrop, phase, {kind: 'backdrop'});
+  useSurfaceMotion(backdrop, phase, {kind: compact ? 'panel' : 'backdrop'});
   useLayoutEffect(() => {
     onClosingChange?.(presence.closing);
     if (presence.hidden && pendingReturnFocus.current) {
@@ -67,29 +68,19 @@ export function RoomSettingsDrawer({roomOpen, open, foregroundActive = false, on
   useEffect(() => {
     const node = drawer.current;
     if (!node) return;
-    // The header and fold retain their OptionsPanel React ancestry when main's
-    // same-node relocation moves them here. Native bubbling follows the actual
-    // drawer and therefore preserves original Escape/Tab ownership.
+    // Native bubbling keeps Escape and Tab scoped to the visible drawer.
     const keydown = (event: KeyboardEvent) => {
       if (!latest.current.open || latest.current.foregroundActive || event.defaultPrevented) return;
       if (event.key === 'Escape') {event.preventDefault(); latest.current.onCloseRequest();}
       cycleFocus(node, event);
     };
     node.addEventListener('keydown', keydown);
-    // The shared header is moved out of its original React container. Native
-    // bubbling must own its Back action here just as it already owns Escape.
-    const click = (event: MouseEvent) => {
-      if (!latest.current.open || latest.current.foregroundActive || !(event.target instanceof Element) ||
-          !event.target.closest('#libraryBack')) return;
-      event.preventDefault(); event.stopPropagation(); latest.current.onCloseRequest();
-    };
-    node.addEventListener('click', click);
     const gesture = createEdgeDrawerGesture({side: 'right', drawer: node,
       enabled: () => latest.current.open && !latest.current.foregroundActive,
       isOpen: () => latest.current.open, open: () => {}, close: () => latest.current.onCloseRequest()});
-    return () => {node.removeEventListener('keydown', keydown); node.removeEventListener('click', click); gesture.destroy();};
+    return () => {node.removeEventListener('keydown', keydown); gesture.destroy();};
   }, []);
   return <><UiButton variant="unstyled" ref={backdrop} className={`settings-room-backdrop${presence.closing ? ' closing' : ''}`} id="mpSettingsRoomBackdrop" type="button" aria-label={t('settings.drawerClose')} hidden={!roomOpen || presence.hidden || foregroundActive} onClick={onCloseRequest}/>
-    <aside ref={drawer} className={`mp-settings-room-drawer settings-ui${presence.closing ? ' closing' : ''}`} id="mpSettingsRoomDrawer" role="dialog" aria-modal="true" aria-label={t('settings.title')} hidden={presence.hidden || foregroundActive} inert={foregroundActive}><div className="mp-settings-room-content" id="mpSettingsRoomDrawerContent"/></aside>
+    <aside ref={drawer} className={`mp-settings-room-drawer settings-ui${presence.closing ? ' closing' : ''}`} id="mpSettingsRoomDrawer" data-ui-surface="room-settings" role="dialog" aria-modal="true" aria-label={t('settings.title')} hidden={presence.hidden || foregroundActive} inert={foregroundActive}><div id="mpSettingsRoomDrawerHeader" className="mp-settings-room-header"/><div className="mp-settings-room-content" id="mpSettingsRoomDrawerContent"/></aside>
   </>;
 }

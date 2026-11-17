@@ -1,5 +1,5 @@
 // Generated from purple shared tools (MIT). Algorithm and drawing order remain source-owned.
-bool GameFPSOpt(eagler::thprac::PracticeSpeed& ctx, bool replay, bool* reset_ui=nullptr)
+bool GameFPSOpt(eagler::thprac::PracticeSpeed& ctx, bool replay, bool* reset_ui=nullptr, int min_fps=60)
 {
     static char tmpStr[32] {};
     static int fps = 0;
@@ -27,7 +27,9 @@ bool GameFPSOpt(eagler::thprac::PracticeSpeed& ctx, bool replay, bool* reset_ui=
         } else if (ctx.fps_status == 2) {
             fpsStatic = fps = ctx.fps;
 
-            if (fps <= 60)
+            if (fps < 60 && min_fps < 60)
+                canFpsChangeFreely = true;
+            else if (fps <= 60)
                 fpsStatic = fps = 60;
             else if (fps % 15)
                 canFpsChangeFreely = true;
@@ -91,9 +93,9 @@ bool GameFPSOpt(eagler::thprac::PracticeSpeed& ctx, bool replay, bool* reset_ui=
 
     ImGui::PushItemWidth(ImGui::GetIO().DisplaySize.x*.23f);
     if (canFpsChangeFreely) {
-        ImGui::DragInt(label(practice_TH_FPS_ADJ), &fps, 1.0f, 60, 6000);
+        ImGui::DragInt(label(practice_TH_FPS_ADJ), &fps, 1.0f, min_fps, 6000);
         if (!ImGui::IsItemActive())
-            fps = std::clamp(fps, 60, 6000);
+            fps = std::clamp(fps, min_fps, 6000);
     } else {
         ImGui::SliderInt(label(practice_TH_FPS_ADJ), &fpsMultiplier, 0, 8, fpsMultiplierStr);
         fps = fpsMultiplier * 15 + 60;
@@ -105,7 +107,7 @@ bool GameFPSOpt(eagler::thprac::PracticeSpeed& ctx, bool replay, bool* reset_ui=
             int i = 0;
             for (; (i * 15 + 60) <= fps && i <= 8; ++i)
                 ;
-            fpsMultiplier = --i;
+            fpsMultiplier = std::max(0, i - 1);
             fps = fpsMultiplier * 15 + 60;
         }
     }

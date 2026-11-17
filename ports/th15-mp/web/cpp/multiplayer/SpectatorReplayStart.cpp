@@ -12,7 +12,7 @@ bool SpectatorReplayStart::Capture(sdl::ApplicationState& app,const SessionSetup
     if(!native){error="Native Replay stage header is missing";return false;}
     SpectatorStageState s;s.frame=frame;s.stage=u32(app.progress.stage);s.seats=setup.player_count;
     if(s.seats<2||s.seats>3)return false;
-    for(unsigned i=0;i<s.seats;++i)s.headers[i]=app.replay->seat_entry(i).bytes();
+    for(unsigned i=0;i<s.seats;++i){s.headers[i]=app.replay->seat_entry(i).bytes();s.challenge_misses[i]=app.scene()->battle.pilots[i]->session.challenge_misses;}
     return EncodeSpectatorStageState(s,out);
 }
 bool SpectatorReplayStart::Restore(sdl::ApplicationState& app,const SessionSetup& setup,GameInput& menu,
@@ -31,6 +31,7 @@ bool SpectatorReplayStart::Restore(sdl::ApplicationState& app,const SessionSetup
     if(!app.begin_run(&entries)||!app.scene()||!app.session||!app.session->driver()){error=app.failure;return false;}
     // Run the native Replay entrance once, before consuming input frame F.
     if(!app.session->enter_replay_stage()){error=app.session->error;return false;}
+    for(unsigned i=0;i<s.seats;++i)app.scene()->battle.pilots[i]->session.challenge_misses=s.challenge_misses[i];
     // This Application clock drives multiplayer spell timing as well as the
     // native frame telemetry. A rewind or independent late-stage join starts
     // at the confirmed stream's frame, independently of prior local playback.

@@ -1,0 +1,5 @@
+exact animation graph: 33 instances, 91128 retained bytes
+repeated 512-VM restore allocations: 32 across 8 restores
+2048 -> 2049 roots: largest allocation 65536; retained payload 3276974
+13 frames / 512 unchanged roots: 734448 additional allocated bytes; VM bytes 1504
+TH15 animation rollback ownership checks passed

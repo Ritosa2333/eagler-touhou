@@ -17,12 +17,12 @@ bool PlayerLife::advance_state(u32 pressed,float& rate,bool hud_available,Player
     case 4:
         if(age.current<8){
             if((session.roaring_flags&2)&&!(session.roaring_flags&4)){if(!host.end_roaring(true))return false;cancel_death();}
-            if(session.bomb_available&&(pressed&2)&&session.bombs>0&&host.allow_bomb()){if(!host.begin_bomb())return false;cancel_death();}return true;
+            if(session.bomb_available&&((pressed&2)||(session.practice_tools&PracticeAutoBomb))&&session.bombs>0&&host.allow_bomb()){if(!host.begin_bomb())return false;cancel_death();}return true;
         }
         if(!commit_death())return false;[[fallthrough]];
     case 2:
         if(age.current==3){
-            session.power=wrapping_sub(session.power,session.power_step/2);if(session.power<session.power_step)session.power=session.power_step;
+            if(!(session.practice_tools&PracticeInfinitePower))session.power=wrapping_sub(session.power,session.power_step/2);if(session.power<session.power_step)session.power=session.power_step;
             const float dy=float(float(motion.position.y-224.f)-motion.position.y),dx=float(-motion.position.x),angle=dy==0&&dx==0?1.5707964f:float(std::atan2(double(dy),double(dx)));
             for(i32 i=0;i<7;i++){const float direction=float(float(float(float(float(i)*3.1415927f)/28.f)+angle)-.3926991f);if(!host.item(1,motion.position,direction,3.f))return false;}
             Vec3 p=motion.position;p.x=float(p.x-16);p.y=float(p.y-96);if(!host.item(session.animal+16,p,-1.5707964f,2.2f))return false;p.x=float(p.x+32);if(!host.item(session.animal+16,p,-1.5707964f,2.2f)||!host.options_changed())return false;

@@ -78,6 +78,8 @@ function normalizedActualReplay(){
  // and copy still match the pinned main markup.
  assert.equal(actual.getAttribute('data-launcher-document'),'');
  actual.removeAttribute('data-launcher-document');
+ assert.equal(actual.getAttribute('data-window-managed'),'');
+ actual.removeAttribute('data-window-managed');
  for(const row of actual.querySelectorAll('[data-replay-file]'))row.removeAttribute('data-replay-file');
  return normalize(actual);
 }

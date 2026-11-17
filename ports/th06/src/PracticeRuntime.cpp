@@ -2136,10 +2136,9 @@ bool UpdatePauseMenu()
         SDL_Log("TH06 thprac original pause: quick restart");
 #endif
         ScreenEffect::RequestShakeCancelForRestart();
-        ResetTouchReplayForPracticeRestart();
         SetConfig(Config {});
         g_GameManager.isInGameMenu = 0;
-        g_Supervisor.curState = SUPERVISOR_STATE_GAMEMANAGER_REINIT;
+        g_Supervisor.curState = SUPERVISOR_STATE_GAMEMANAGER_RESTART;
         return true;
     }
 
@@ -3352,7 +3351,7 @@ bool DebugSectionCatalogSelfTest()
 
     g_CurFrameInput = TH_BUTTON_R;
     const bool quickRestartHandled = UpdatePauseMenu() && !g_Config.active && g_GameManager.isInGameMenu == 0 &&
-        g_Supervisor.curState == SUPERVISOR_STATE_GAMEMANAGER_REINIT;
+        g_Supervisor.curState == SUPERVISOR_STATE_GAMEMANAGER_RESTART;
 
     g_Config = savedConfig;
     g_GameManager.isInGameMenu = savedInGameMenu;

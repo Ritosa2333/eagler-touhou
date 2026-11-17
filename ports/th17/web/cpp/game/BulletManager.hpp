@@ -1,15 +1,23 @@
 #pragma once
 #include "BulletState.hpp"
+#include <memory>
 #include <vector>
 namespace th17 {
+namespace multiplayer { class FrameImage; }
 struct BulletManagerHost:BulletSoundHost {virtual ~BulletManagerHost()=default;virtual BulletFrameHost& bullet(u32 slot)=0;virtual void prepare(u32 slot,BulletFrameContext& context)=0;virtual const std::string* failure()const noexcept{return nullptr;}};
 class BulletManager final:public BulletEmissionHost {
 public:
     static constexpr u32 capacity=2000,none=UINT32_MAX;
 private:
     friend class BulletCheckpoint;
-    struct Slot {BulletState state;u32 free_next=UINT32_MAX,active_next=UINT32_MAX,active_previous=UINT32_MAX;bool active=false;};
+    struct Slot {
+        BulletState state;
+        std::weak_ptr<const BulletState> inactive_image;
+        u32 free_next=UINT32_MAX,active_next=UINT32_MAX,active_previous=UINT32_MAX;
+        bool active=false,pristine=true;
+    };
     std::vector<Slot> slots;u32 free_head=UINT32_MAX,active_head=UINT32_MAX;
+    BulletState pristine_state;
     std::array<u32,(capacity+31)/32> occupied{};
     BulletManagerHost& host;
     u32 acquire()noexcept;
@@ -30,5 +38,6 @@ public:
     // Rectangle/full-field cancellation uses native storage order, which differs
     // from the update list. Skip empty slots without changing that order.
     u32 next_occupied(u32 start)const noexcept;
+    void save_rollback(multiplayer::FrameImage&);
 };
 }

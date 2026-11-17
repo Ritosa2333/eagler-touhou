@@ -1,0 +1,33 @@
+{
+  "format": "junowen",
+  "header": {
+    "randSeed1": 1,
+    "randSeed2": 2,
+    "difficulty": 1,
+    "matchup": 0,
+    "common": 0,
+    "p1Settings": 12,
+    "p2Settings": 12,
+    "p1Character": 0,
+    "p1Card": 0,
+    "p2Character": 1,
+    "p2Card": 0
+  },
+  "frames": 600,
+  "settings": {
+    "timeLimitIndex": 0,
+    "roundIndex": 0,
+    "cardMode": 0,
+    "lifeIndices": [
+      4,
+      4
+    ],
+    "barrierModes": [
+      1,
+      1
+    ]
+  },
+  "byteExactRoundtrip": true,
+  "nativePlaybackVerified": false,
+  "warnings": []
+}

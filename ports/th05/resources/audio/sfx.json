@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "game": "TH05",
+  "source": "Original TH05 PMD86 FM effects, rendered by the shipped DOSBox-X at 44100 Hz",
+  "sampleRate": 44100,
+  "channels": 1,
+  "format": "s16le",
+  "url": "effects.pcm",
+  "bytes": 2387748,
+  "sha256": "11b0c5cddc0b859624bf123c3fec87bb531e6dc1d502313e3ff8bc0c2892af1b",
+  "effects": [
+    {
+      "id": 0,
+      "offset": 0,
+      "frames": 0,
+      "peak": 0,
+      "rawFrames": 308736
+    },
+    {
+      "id": 1,
+      "offset": 0,
+      "frames": 5844,
+      "peak": 0.113006591796875,
+      "rawFrames": 308736,
+      "removedDC": 0
+    },
+    {
+      "id": 2,
+      "offset": 5844,
+      "frames": 137549,
+      "peak": 0.461669921875,
+      "rawFrames": 308736,
+      "removedDC": 0
+    },
+    {
+      "id": 3,
+      "offset": 143393,
+      "frames": 50761,
+      "peak": 0.55548095703125,
+      "rawFrames": 308736,
+      "removedDC": 0
+    },
+    {
+      "id": 4,
+      "offset": 194154,
+      "frames": 17710,
+      "peak": 0.186553955078125,
+      "rawFrames": 308736,
+      "removedDC": 0.000152587890625
+    },
+    {
+      "id": 5,
+      "offset": 211864,
+      "frames": 40846,
+      "peak": 0.1754150390625,
+      "rawFrames": 308736,
+      "removedDC": 0
+    },
+    {
+      "id": 6,
+      "offset": 252710,
+      "frames": 32052,
+      "peak": 0.546630859375,
+      "rawFrames": 308736,
+      "removedDC": 0.000152587890625
+    },
+    {
+      "id": 7,
+      "offset": 284762,
+      "frames": 104844,
+      "peak": 0.2874755859375,
+      "rawFrames": 308736,
+      "removedDC": 0.000152587890625
+    },
+    {
+      "id": 8,
+      "offset": 389606,
+      "frames": 131558,
+      "peak": 0.709625244140625,
+      "rawFrames": 308736,
+      "removedDC": 0.000152587890625
+    },
+    {
+      "id": 9,
+      "offset": 521164,
+      "frames": 46313,
+      "peak": 0.504852294921875,
+      "rawFrames": 308736,
+      "removedDC": 0.000091552734375
+    },
+    {
+      "id": 10,
+      "offset": 567477,
+      "frames": 10695,
+      "peak": 0.11834716796875,
+      "rawFrames": 308224,
+      "removedDC": 0.000152587890625
+    },
+    {
+      "id": 11,
+      "offset": 578172,
+      "frames": 119465,
+      "peak": 0.143798828125,
+      "rawFrames": 308736,
+      "removedDC": 0.000152587890625
+    },
+    {
+      "id": 12,
+      "offset": 697637,
+      "frames": 177063,
+      "peak": 0.8314208984375,
+      "rawFrames": 308736,
+      "removedDC": 0.000152587890625
+    },
+    {
+      "id": 13,
+      "offset": 874700,
+      "frames": 208430,
+      "peak": 0.557403564453125,
+      "rawFrames": 308736,
+      "removedDC": 0.000152587890625
+    },
+    {
+      "id": 14,
+      "offset": 1083130,
+      "frames": 90670,
+      "peak": 0.36383056640625,
+      "rawFrames": 308736,
+      "removedDC": 0
+    },
+    {
+      "id": 15,
+      "offset": 1173800,
+      "frames": 20074,
+      "peak": 0.7247314453125,
+      "rawFrames": 308736,
+      "removedDC": 0.0001220703125
+    }
+  ]
+}

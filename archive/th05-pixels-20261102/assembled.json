@@ -1,0 +1,29 @@
+{
+  "previous": "/var/www/eagler-touhou/releases/th05-lifecycle-20261102",
+  "candidate": "/var/www/eagler-touhou/releases/th05-pixels-20261102",
+  "releaseId": "sha256-ed8448a9567e56521ef5f777e74294d2305c8818a658f2267b9470390aea80e5",
+  "buildId": "b0a255515a9d334d5215",
+  "siteUrl": "https://touhouonline.com/",
+  "files": 8178,
+  "preserved": 8123,
+  "updates": [
+    {
+      "game": "th05",
+      "variant": "normal",
+      "root": "runtime/th05/",
+      "previousGeneration": "ccd7bd8a0144b524eebf7d4ece377e80851090a3ef770e17199574bda46967a8",
+      "generation": "f8b88d6d96243a51b72e090ec8064552e4e7a1572c4f5dfa15c4c41f6e879801",
+      "files": 21
+    },
+    {
+      "game": "th05",
+      "variant": "multiplayer",
+      "root": "runtime/th05/multiplayer/",
+      "previousGeneration": "ec43edab2048d2650ddf474f186c88cdfbb960aaf2add4dd044d370b1df67937",
+      "generation": "47c00f0484c1a656e6e1bc9c2690c3e96b6b7a44b13bf0137b7add3af0bcb767",
+      "files": 26
+    }
+  ],
+  "revision": "ed87e8f69a7afb2ddaca74bdab5c6b827dfa7a13",
+  "syncPointerExceptions": []
+}

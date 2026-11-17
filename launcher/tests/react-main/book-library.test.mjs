@@ -69,7 +69,7 @@ async function mount(products, locale = 'en') {
 }
 
 test('anchored multiplayer menu preserves deep-link selection and shares multi-selection with the icon rail', async () => {
-  const products=api.createLibraryProducts(['th06mp','th075mp','th09mp','th10mp','th15mp'],p=>p,id=>'?game='+id);
+  const products=api.createLibraryProducts(['th01mp','th03mp','th06mp','th075mp','th09mp','th10mp','th15mp'],p=>p,id=>'?game='+id);
   function Fixture(){const[filters,setFilters]=React.useState([]),[viewing,setViewing]=React.useState('th09mp');return React.createElement(api.BookDirectoryGames,{products,productFilters:filters,viewingProduct:viewing,onProductFiltersChange:ids=>{setFilters(ids);setViewing('');},onSelect(){assert.fail('Checkboxes must not replace a multi-selection');}});}
   const container=env.document.createElement('div');env.document.body.append(container);root=createRoot(container);
   await React.act(async()=>root.render(React.createElement(api.LocaleProvider,{locale:'en'},React.createElement(Fixture))));
@@ -79,7 +79,7 @@ test('anchored multiplayer menu preserves deep-link selection and shares multi-s
   await click('.book-lobby-picker-trigger');
   assert.equal(node('.book-lobby-picker').getAttribute('role'),'menu');assert.equal(env.document.querySelector('[role="dialog"]'),null);
   const grouping=scope=>[...env.document.querySelectorAll(`${scope} [data-lobby-category]`)].map(group=>[group.dataset.lobbyCategory,[...group.querySelectorAll('[data-lobby-product]')].map(row=>row.dataset.lobbyProduct)]);
-  const expectedGroups=[['versus',['th09mp']],['original',['th06mp','th10mp','th15mp']],['fighting',['th075mp']]];
+  const expectedGroups=[['versus',['th09mp']],['original',['th06mp','th10mp','th15mp']],['fighting',['th075mp']],['pc98',['th01mp','th03mp']]];
   assert.deepEqual(grouping('.book-lobby-desktop'),expectedGroups);
   assert.deepEqual(grouping('.book-lobby-picker'),expectedGroups,'Both presentations consume the same catalog classification');
   assert.equal(node('.book-lobby-picker [data-lobby-product="th10mp"] strong').textContent,'東方風神録');
@@ -117,10 +117,19 @@ test('only supplied published products become cards; hidden/MP/demo titles never
   assert.equal(env.document.querySelector('[data-book-product="dj01"]'), null);
   await click('[data-book-category="spin-off"]'); assert.deepEqual(ids(), ['th075']);
 });
+test('HSoB is listed with doujin games and not with official spin-offs', async () => {
+  const products = api.createLibraryProducts(['th075'], p => p, id => '?game=' + id);
+  products.push({...products[0], id: 'hsob', gameId: 'hsob', number: 'HSOB', title: 'Hollow Song of Birds'});
+  await mount(products);
+  await click('[data-book-category="doujin"]');
+  assert.deepEqual(ids(), ['hsob']);
+  await click('[data-book-category="spin-off"]');
+  assert.deepEqual(ids(), ['th075']);
+});
 test('TH05 is discoverable through the PC98 category in the current library', async () => {
   const products = api.createLibraryProducts(['th05', 'th06'], p => p, id => '?game=' + id);
   await mount(products);
-  assert.deepEqual(ids(), ['th05', 'th06']);
+  assert.deepEqual(ids(), ['th06', 'th05']);
   await click('[data-book-category="pc98"]');
   assert.deepEqual(ids(), ['th05']);
   await click('[data-book-category="windows"]');
@@ -151,6 +160,29 @@ test('unavailable history IDs are ignored, search is case insensitive, numeric s
   assert.deepEqual(api.readBookPreference('favorites', [], api.stringArray), []);
 });
 
+test('all single-player works put favorites first and PC-98 last at equal priority', () => {
+  const products = api.createLibraryProducts(['th01', 'th06', 'th07'], p => p, id => '?game=' + id);
+  const order = favorites => api.filterBookProducts(products, 'all', favorites, '', 'number').map(p => p.id);
+  assert.deepEqual(order([]), ['th06', 'th07', 'th01']);
+  assert.deepEqual(order(['th01']), ['th01', 'th06', 'th07']);
+  assert.deepEqual(order(['th01', 'th07']), ['th07', 'th01', 'th06']);
+});
+
+test('number sorting places numeric works including decimals before lettered fan works', () => {
+  const [base] = api.createLibraryProducts(['th06'], p => p, id => '?game=' + id);
+  const products = [
+    {...base, id:'thalpha', number:'alpha', title:'A'},
+    {...base, id:'th10', number:'10', title:'B'},
+    {...base, id:'th075', number:'7.5', title:'C'},
+    {...base, id:'th06', number:'6', title:'D'},
+    {...base, id:'thbeta', number:'beta', title:'E'},
+  ];
+  assert.deepEqual(api.filterBookProducts(products, 'all', [], '', 'number').map(p=>p.id), ['th06','th075','th10','thalpha','thbeta']);
+  assert.deepEqual(api.filterBookProducts(products, 'all', [], '', 'reverse').map(p=>p.id), ['th10','th075','th06','thalpha','thbeta']);
+  assert.deepEqual(api.filterBookProducts(products, 'doujin', [], '', 'number').map(p=>p.id), ['thalpha','thbeta']);
+  assert.deepEqual(api.filterBookProducts(products, 'all', [], '', 'name').map(p=>p.id), ['thalpha','th10','th075','th06','thbeta']);
+});
+
 test('appearance defaults to dark, persists light, and restores it on remount', async () => {
   const container = env.document.createElement('div'); env.document.body.append(container);
   const render = () => React.createElement(api.LocaleProvider, {locale:'en'}, React.createElement(api.BookThemeToggle));
@@ -158,12 +190,13 @@ test('appearance defaults to dark, persists light, and restores it on remount', 
   await React.act(async () => root.render(render()));
   assert.equal(env.document.documentElement.dataset.bookTheme, 'dark');
   await click('.book-theme-toggle');
+  await click('.custom-theme-switch [data-theme-value="light"]');
   assert.equal(env.document.documentElement.dataset.bookTheme, 'light');
   await React.act(async () => root.unmount()); root = createRoot(container);
   await React.act(async () => root.render(render()));
   assert.equal(env.document.documentElement.dataset.bookTheme, 'light');
-  assert.equal(node('.book-theme-toggle').getAttribute('aria-pressed'), 'false');
   await click('.book-theme-toggle');
+  await click('.custom-theme-switch [data-theme-value="dark"]');
   assert.equal(env.document.documentElement.dataset.bookTheme, 'dark');
 });
 

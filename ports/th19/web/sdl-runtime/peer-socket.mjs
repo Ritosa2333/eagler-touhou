@@ -3,6 +3,7 @@
 export class PeerSocket {
  constructor(address,options={}){
   this.readyState=0;this.pending=[];this.candidates=[];this.closed=false;this.options=options;
+  this.iceServers=Array.isArray(options.netplayIceServers)?options.netplayIceServers:[];
   this.url=new URL(address);this.side=Number(this.url.searchParams.get('player'));this.peer=1-this.side;
   const signalUrl=new URL(this.url);signalUrl.searchParams.set('signal','1');signalUrl.searchParams.set('players','2');
   this.signal=new WebSocket(signalUrl);this.serial=Promise.resolve();
@@ -12,13 +13,14 @@ export class PeerSocket {
   this.timeout=setTimeout(()=>this.fail(Error('WebRTC 连接超时')),45000);
   // Both relay streams must exist before the server can release its fallback
   // barrier. Opening one only after receiving that barrier would deadlock.
-  if(options.netplayAllowWebsocketFallback===true)this.openRelay();
+  this.spectatorPending=[];
+  if(options.netplayAllowWebsocketFallback===true||this.side===0)this.openRelay();
  }
  get bufferedAmount(){return (this.route==='relay'?this.relay:this.channel)?.bufferedAmount||0;}
  signalMessage(value){if(this.signal.readyState===WebSocket.OPEN)this.signal.send(JSON.stringify(value));}
- async createPeer(iceServers=[]){
+ async createPeer(){
   if(this.pc)return;
-  this.pc=new RTCPeerConnection({iceServers:this.options.netplayIceServers?.length?this.options.netplayIceServers:iceServers,iceTransportPolicy:this.options.netplayPreferTurn?'relay':'all'});
+  this.pc=new RTCPeerConnection({iceServers:this.iceServers,iceTransportPolicy:this.options.netplayPreferTurn?'relay':'all'});
   this.pc.onicecandidate=event=>{if(event.candidate)this.signalMessage({type:'signal',to:this.peer,candidate:event.candidate.toJSON()});};
   this.pc.onconnectionstatechange=()=>{if(this.pc.connectionState==='failed'){if(this.readyState===1)this.fail(Error('WebRTC 连接中断'));else this.signalMessage({type:'rtc-failed'});}};
   this.pc.ondatachannel=event=>this.attach(event.channel);
@@ -40,13 +42,13 @@ export class PeerSocket {
   if(this.closed)return;
   if(message.type==='peers'){
    // Creating an offer waits for the other signaling endpoint to exist.
-   this.iceServers=message.iceServers||[];
-   if(message.peers?.includes(this.peer))await this.createPeer(this.iceServers);
+   if(Array.isArray(message.iceServers))this.iceServers=message.iceServers;
+   if(message.peers?.includes(this.peer))await this.createPeer();
    if(message.route)this.select(message.route);
   }else if(message.type==='peer-join'){
-   if(message.player===this.peer)await this.createPeer(this.iceServers);
+   if(message.player===this.peer)await this.createPeer();
   }else if(message.type==='signal'&&message.from===this.peer){
-   await this.createPeer(this.iceServers);
+   await this.createPeer();
    if(message.description){
     if(message.description.type!==(this.side===0?'answer':'offer'))throw Error('对局 SDP 身份错误');
     await this.pc.setRemoteDescription(message.description);
@@ -67,7 +69,7 @@ export class PeerSocket {
    this.openRelay();
    this.channel?.close();this.pc?.close();
   }else{
-   this.relay?.close();
+   if(this.side!==0)this.relay?.close();
   }
   this.open();
  }
@@ -88,7 +90,7 @@ export class PeerSocket {
     }
    }catch(error){this.fail(error);}
   };
-  this.relay.onopen=()=>this.open();
+  this.relay.onopen=()=>{this.open();for(const bytes of this.spectatorPending.splice(0))this.relay.send(bytes);};
   this.relay.onclose=()=>{if(!this.closed&&this.route==='relay')this.fail(Error('中继连接已关闭'));};
   this.relay.onerror=()=>{if(this.route==='relay')this.fail(Error('中继连接失败'));};
  }
@@ -100,6 +102,13 @@ export class PeerSocket {
   for(const event of this.pending.splice(0))this.onmessage?.(event);
  }
  send(bytes){if(this.readyState!==1)throw Error('对局通道未就绪');if(this.bufferedAmount>256*1024)throw Error('对局通道拥塞');(this.route==='rtc'?this.channel:this.relay).send(bytes);}
+ sendSpectator(payload){
+  if(this.side!==0||this.closed)return;
+  const bytes=new Uint8Array(payload.length+1);bytes[0]=0xe8;bytes.set(payload,1);
+  if(this.relay?.readyState===WebSocket.OPEN){if(this.relay.bufferedAmount>256*1024)throw Error('旁观上传积压');this.relay.send(bytes);}
+  else if(this.relay?.readyState===0){if(this.spectatorPending.length>=256)throw Error('旁观上传未就绪');this.spectatorPending.push(bytes);}
+  else throw Error('旁观上传连接已断开');
+ }
  fail(error){if(this.closed)return;this.error=error;this.onerror?.({error});this.close();}
  close(){if(this.closed)return;this.closed=true;this.readyState=3;clearTimeout(this.timeout);this.channel?.close();this.pc?.close();this.relay?.close();this.signal?.close();this.pending.length=0;this.onclose?.({reason:this.error?.message||''});}
 }

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 const root=resolve(import.meta.dirname,'../..');
-const {multiplayerBuildWords,validateMultiplayerOptions,multiplayerSetupWords}=await import('../../build-eagler-multiplayer/multiplayer.mjs');
+const {multiplayerBuildWords,validateMultiplayerOptions,multiplayerSetupWords,createMultiplayerBridge}=await import('../../build-eagler-multiplayer/multiplayer.mjs');
 const manifest=JSON.parse(readFileSync(resolve(root,'build-eagler-multiplayer/manifest.json')));
 const build=multiplayerBuildWords(manifest);assert.equal(build.length,4);
 const options={netplayMode:'lan',netplayUrl:'ws://localhost/?room=th15mp-test&run=1',netplayPlayer:0,netplayPlayerCount:3,netplayDifficulty:1,netplaySeed:417,netplayLoadouts:[0,1,3].map(character=>({character,shot:0})),netplayInputDelay:2,netplayAdonisMode:1,netplayPredictionLimit:0,netplayPredictionReserve:2};
@@ -19,7 +19,23 @@ assert.deepEqual(validateMultiplayerOptions({replayViewer:true}),{replay:true});
 assert.throws(()=>validateMultiplayerOptions({...options,replayViewer:true}));
 const exports=WebAssembly.Module.exports(new WebAssembly.Module(readFileSync(resolve(root,'build-eagler-multiplayer/th15.wasm')))).map(e=>e.name);
 assert.ok(exports.includes('th15_mp_start'));assert.ok(exports.includes('th15_mp_replay_load'));
+assert.ok(exports.includes('th15_mp_wake'));
 assert.ok(!exports.some(n=>/^th15_probe|^th15_check_|^application_/.test(n)));
+// Receive callbacks belong to one launch. Retired callbacks must not wake the
+// next session even when the same Runtime and bridge are reused.
+{
+ const memory=new Uint8Array(65536),target={};let allocated=1024,wakes=0,closed=0;
+ const core={HEAPU8:memory,_malloc:n=>{const p=allocated;allocated+=n;return p;},_free(){},
+  _th15_mp_configure:()=>1,_th15_mp_start:()=>1,
+  _th15_mp_connect(){target.__eaglerPeerTransport={};return 1;},
+  _th15_mp_wake(){wakes++;},_th15_mp_close(){closed++;},_th15_loop_stop(){},_th15_phase:()=>1};
+ const bridge=createMultiplayerBridge({core,getOptions:()=>({...options,netplayAdonisMode:0,netplayInputDelay:0,netplayPredictionLimit:12}),manifest,target,emit(){},onError:e=>{throw e;},onExit(){}});
+ await bridge.launch();const oldTransport=target.__eaglerPeerTransport,oldReceive=oldTransport.onReceive;
+ oldReceive();assert.equal(wakes,1);bridge.close();assert.equal(oldTransport.onReceive,null);
+ oldReceive();assert.equal(wakes,1,'Closed launch woke the Runtime');
+ await bridge.launch();oldReceive();assert.equal(wakes,1,'Retired launch woke a replacement session');
+ target.__eaglerPeerTransport.onReceive();assert.equal(wakes,2);bridge.close();assert.equal(closed,2);
+}
 const ordinaryRoot=process.env.TH15_TEST_ORDINARY_RUNTIME||resolve(root,'build-eagler');
 const ordinary=WebAssembly.Module.exports(new WebAssembly.Module(readFileSync(resolve(ordinaryRoot,'th15.wasm')))).map(e=>e.name);
 assert.ok(!ordinary.some(n=>n.startsWith('th15_mp_')),'Ordinary THPrac build exposed multiplayer');

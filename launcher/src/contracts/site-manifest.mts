@@ -6,6 +6,7 @@ import {
   isGameId,
   type GameId,
   type HostRuntimeFeatures,
+  productRequiresImport,
 } from "./product-catalog.mjs";
 import {
   RESOURCE_MODE_EXTERNAL,
@@ -63,6 +64,7 @@ export interface SiteLanguageOption {
 export interface SiteGameManifest {
   runtime: string;
   multiplayerRuntime?: string;
+  th075MultiplayerAssets?: {path: string; sha256: string};
   gameData: SiteGameData;
   music: {
     midi: SiteMidiManifest;
@@ -110,12 +112,12 @@ function isRecord(value: unknown): value is UnknownRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function validMusicFileName(value: unknown, extension: "mid" | "ogg"): value is string {
+function validMusicFileName(value: unknown, suffix: "mid" | "ogg" | "(?:ogg|flac)"): value is string {
   return typeof value === "string" &&
-    new RegExp(`^[A-Za-z0-9][A-Za-z0-9._-]*\\.${extension}$`, "i").test(value);
+    new RegExp(`^[A-Za-z0-9][A-Za-z0-9._-]*\\.${suffix}$`, "i").test(value);
 }
 
-function validMusicFiles(value: unknown, extension: "mid" | "ogg", allowEmpty: boolean): value is string[] {
+function validMusicFiles(value: unknown, extension: "mid" | "ogg" | "(?:ogg|flac)", allowEmpty: boolean): value is string[] {
   return Array.isArray(value) && (allowEmpty || value.length > 0) &&
     new Set(value).size === value.length && value.every(file => validMusicFileName(file, extension));
 }
@@ -131,14 +133,14 @@ function validMidiManifest(value: unknown): value is SiteMidiManifest {
     (value.supported == null || typeof value.supported === "boolean");
 }
 
-function validOggManifest(value: unknown): value is SiteOggManifest | null | undefined {
+function validOggManifest(value: unknown, gameId: GameId): value is SiteOggManifest | null | undefined {
   if (value == null) return true;
   if (!isRecord(value)) return false;
   const files = value.files;
   const sizes = value.sizes;
   const sha256 = value.sha256;
   return typeof value.version === "string" && SHA256_VERSION.test(value.version) &&
-    validMusicFiles(files, "ogg", false) && validMusicSizes(sizes, files.length) &&
+    validMusicFiles(files, gameId === "th14" ? "(?:ogg|flac)" : "ogg", false) && validMusicSizes(sizes, files.length) &&
     Array.isArray(sha256) && files.length === sha256.length &&
     sha256.every(hash => typeof hash === "string" && SHA256.test(hash));
 }
@@ -188,7 +190,7 @@ function validLanguageCatalogs(value: UnknownRecord): boolean {
 }
 
 function validOfflineCompatibility(item: UnknownRecord, resourceMode: ResourceMode, gameId: GameId): boolean {
-  if (resourceMode !== RESOURCE_MODE_IMPORT) return true;
+  if (resourceMode !== RESOURCE_MODE_IMPORT && !productRequiresImport(gameId)) return true;
   const compatibility = item.offlineCompatibility;
   const gameData = item.gameData;
   if (!isRecord(compatibility) || !isRecord(gameData)) return false;
@@ -226,9 +228,14 @@ function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): 
   // game available; Launcher availability is derived from this Host field.
   if (value.multiplayerRuntime != null &&
       (!("multiplayerRuntime" in product) || typeof value.multiplayerRuntime !== "string" || !value.multiplayerRuntime)) return false;
+  const split = value.th075MultiplayerAssets;
+  if (split !== undefined && (gameId !== "th075" || resourceMode === RESOURCE_MODE_IMPORT || !value.multiplayerRuntime ||
+      !isRecord(split) || typeof split.path !== "string" || typeof split.sha256 !== "string" ||
+      !/^[a-f0-9]{64}$/.test(split.sha256) || !/^\/?(?:[a-zA-Z0-9_-]+\/)+[a-f0-9]{64}\.json$/.test(split.path) ||
+      !split.path.endsWith("/" + split.sha256 + ".json"))) return false;
   const expectedDataPath = product.package.dataTarget.slice(1);
   const packagePointer = value.package;
-  const validExternalPackage = resourceMode !== RESOURCE_MODE_EXTERNAL ||
+  const validExternalPackage = resourceMode !== RESOURCE_MODE_EXTERNAL || productRequiresImport(gameId) ||
     (isRecord(packagePointer) && typeof packagePointer.revision === "string" && /^[a-f0-9]{16}$/i.test(packagePointer.revision) &&
       typeof packagePointer.descriptor === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]*\.package\.json$/i.test(packagePointer.descriptor));
   return typeof gameData.version === "string" && SHA256_VERSION.test(gameData.version) &&
@@ -236,7 +243,7 @@ function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): 
     gameData.path === expectedDataPath &&
     Number.isSafeInteger(gameData.bytes) && Number(gameData.bytes) > 0 &&
     typeof gameData.sha256 === "string" && SHA256.test(gameData.sha256) &&
-    validExternalPackage && validHostRuntimeFeatures(value.features) && validOggManifest(music.ogg) &&
+    validExternalPackage && validHostRuntimeFeatures(value.features) && validOggManifest(music.ogg, gameId) &&
     validLanguageCatalogs(value) &&
     validOfflineCompatibility(value, resourceMode, gameId);
 }

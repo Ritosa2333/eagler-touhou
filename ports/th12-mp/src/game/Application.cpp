@@ -2,7 +2,6 @@
 #include "CameraEffects.hpp"
 #include "AdaptedInput.hpp"
 #include "EnemyCallbacks.hpp"
-#include "FriendlyPool.hpp"
 #include "GameState.hpp"
 #include "HostilePool.hpp"
 #include "ItemPresentation.hpp"
@@ -36,10 +35,13 @@ void tickGameplay(int held, int pressed) {
   tickItems(held & 8);
   tickSpell();
   if (multiplayer::active) multiplayer::tickRules();
-  bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [](auto& b) { return !b.active; }),
-                bullets.end());
-  refreshHostilePointers();
-  refreshFriendlyPointers();
+  const auto retained = std::remove_if(bullets.begin(), bullets.end(), [](auto& b) { return !b.active; });
+  // Birth and retirement maintain slot ownership. Only compaction can move
+  // live deque elements and require rebuilding both pointer tables here.
+  if (retained != bullets.end()) {
+    bullets.erase(retained, bullets.end());
+    refreshProjectilePointers();
+  }
   tickBossHud();
   tickMessage(held, pressed);
   syncItemPresentation();

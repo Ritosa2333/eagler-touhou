@@ -34,7 +34,7 @@ enum HostStateField : size_t {
 static_assert(HostStateLength==27);
 
 // Core input bits (native held word); menus also read Enter and Retry.
-enum Input:u32 {InShot=1,InBomb=2,InFocus=8,InUp=16,InDown=32,InLeft=64,InRight=128,InPause=256,InSkip=512,InEnter=0x80000,InRetry=0x200000};
+enum Input:u32 {InShot=1,InBomb=2,InFocus=8,InUp=16,InDown=32,InLeft=64,InRight=128,InPause=256,InSkip=512,InQuit=0x10000,InEnter=0x80000,InRetry=0x200000};
 // One controller sample: Switch buttons by pad-button number (the original's
 // joystick buttons, which Key Config assigns) plus directions.
 //   0 B  1 A  2 L/ZL  3 R/ZR  4 +  5 X  6 Y
@@ -49,6 +49,7 @@ public:
     // draw. Returns false to quit.
     bool frame(const PadSample& pad,u32 ticks,double now_ms,float alpha=1,bool draw_frame=true);
     double logical_interval()const;
+    bool draw_on_game_tick()const;
     void present(i32 width,i32 height){gpu.present(width,height);}
     void presented(double ms); // present + swap time of the frame just shown (the log)
     void focus_lost();

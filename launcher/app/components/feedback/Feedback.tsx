@@ -10,7 +10,7 @@ import {localizeKnownError} from '../../../src/launcher/localized-error-text.mts
 export function Feedback({model}: {model: FeedbackModel}) {
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot), {t} = useLocale();
   const toast = useRef<HTMLDivElement>(null);
-  useSurfaceMotion(toast, state.toast ? state.toastOpen ? 'enter' : 'exit' : null, {kind: 'dialog'});
+  useSurfaceMotion(toast, state.toast ? state.toastOpen ? 'enter' : 'exit' : null, {kind: 'toast'});
   // biome-ignore lint/correctness/useExhaustiveDependencies: A replacement toast closes menus even when toastOpen stays true.
   useLayoutEffect(() => {
     if (state.toastOpen) closeMainSelectMenus();

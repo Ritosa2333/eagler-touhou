@@ -1,6 +1,6 @@
 import { useDocumentUiLocale } from './navigation/document-locale';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation, useNavigate } from 'react-router';
-import { useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, UNSAFE_ViewTransitionContext, useLocation, useNavigate } from 'react-router';
+import { useContext, useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
 import { BrowserLauncher } from './BrowserLauncher';
 import {
   LauncherNavigationTransitionOptIn,
@@ -25,13 +25,15 @@ import './components/launcher/options-sheet.css';
 import './components/settings/settings-ui.css';
 import './ui/scrollbars.css';
 import { UiTheme } from './ui/theme';
+import { BackgroundController } from './components/launcher/CustomBackground';
 import { UiScrollbars } from './ui/scrollbars';
 import { isLauncherHomePath } from './navigation/addresses';
 import UptimeRoute from './routes/uptime';
-import { helpDocumentAtPath, isStandalonePage } from './components/documents/catalog';
-import { isPreviewOnlyPage, previewFeaturesEnabled } from './release-features';
+import { helpDocumentAtPath, isStandalonePage, isTh09RatingPage } from './components/documents/catalog';
+import { isPreviewOnlyPage } from './release-features';
 import { SITE_BRAND_PREPAINT_SCRIPT } from '../lib/site-brand.mjs';
 const HelpRoute = lazy(() => import('./routes/help'));
+const Th09RatingsRoute = lazy(() => import('./routes/th09-ratings'));
 
 // Overlay history shares page scroll. Profile anchors have separate history entries.
 const pageScrollKey = (location: { pathname: string; key: string }) =>
@@ -39,7 +41,10 @@ const pageScrollKey = (location: { pathname: string; key: string }) =>
 
 export function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const previewOnly = !previewFeaturesEnabled && isPreviewOnlyPage(pathname);
+  const transition = useContext(UNSAFE_ViewTransitionContext);
+  // The Router may replay a page transition on Back even when only the overlay URL changed.
+  const samePageTransition = transition.isTransitioning && transition.currentLocation.pathname === transition.nextLocation.pathname;
+  const previewOnly = isPreviewOnlyPage(pathname);
   const review = !previewOnly && (/\/ui-review\.html\/?$/.test(pathname) || isStandalonePage(pathname));
   const home = previewOnly || isLauncherHomePath(pathname);
   const locale = useDocumentUiLocale();
@@ -53,6 +58,7 @@ export function Layout({ children }: { children: ReactNode }) {
       lang={locale}
       data-ui-locale={locale}
       data-ui-home={home ? '' : undefined}
+      data-ui-route-transition={transition.isTransitioning ? (samePageTransition ? 'inline' : 'page') : undefined}
       className="dark"
       data-book-theme="dark"
       data-original-entry={initialLobby ? 'lobby' : 'library'}
@@ -73,6 +79,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </head>
       <InitialDocumentBody lobby={lobby}>
         <UiTheme />
+        <BackgroundController />
         <UiScrollbars />
         {!review && <OriginalPreloads />}
         {children}
@@ -90,11 +97,12 @@ export function Layout({ children }: { children: ReactNode }) {
 /** Framework's index.html SPA fallback renders this rather than App. */
 export function HydrateFallback() {
   const pathname = useLocation().pathname;
+  if (isTh09RatingPage(pathname) && !isPreviewOnlyPage(pathname)) return <Suspense><Th09RatingsRoute /></Suspense>;
   return helpDocumentAtPath(pathname) ? (
     <Suspense>
       <HelpRoute />
     </Suspense>
-  ) : isStandalonePage(pathname) ? (
+  ) : isStandalonePage(pathname) && !isPreviewOnlyPage(pathname) ? (
     <UptimeRoute />
   ) : (
     <InitialLauncher />
@@ -105,7 +113,7 @@ export default function App() {
   const location = useLocation(),
     navigate = useNavigate(),
     pathname = location.pathname,
-    previewOnly = !previewFeaturesEnabled && isPreviewOnlyPage(pathname);
+    previewOnly = isPreviewOnlyPage(pathname);
   useEffect(() => {
     if (previewOnly) navigate({ pathname: '/', search: location.search }, { replace: true });
   }, [location.search, navigate, previewOnly]);

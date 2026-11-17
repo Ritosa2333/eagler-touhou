@@ -1,0 +1,36 @@
+{
+  "builds": {
+    "production": {
+      "sha256": "c3a4c19d9f957e87236bd92de7cd6bf5cea927a77e944566d4b426c8aafb9308",
+      "builtAt": "2026-11-01T17:06:58.446Z",
+      "diagnostic": false,
+      "variant": "multiplayer",
+      "sourceFilesSha256": "f70e883aff7f42e978a29ceefb13af0a8f4dd59a09bc0c4126c0abe760bc5817"
+    },
+    "diagnostic": {
+      "sha256": "2ee05711e7acf17930be450f8e14a16c6a7c00344fcb9ba196e95e6e05f88925",
+      "builtAt": "2026-11-01T17:05:07.245Z",
+      "diagnostic": true,
+      "variant": "multiplayer",
+      "sourceFilesSha256": "342f16e0a7681ffa5f74b18937d9f256147a362578703c3254a1028c2e697090"
+    }
+  },
+  "prReference": "659e65658d4cd1bcfee1670f4c5cc63d79d2819f",
+  "stockRule": {
+    "spares": [
+      0,
+      5
+    ],
+    "bombs": [
+      0,
+      3
+    ],
+    "defaults": [
+      2,
+      3
+    ],
+    "excludesCurrentLife": true
+  },
+  "nativeSourceCommit": "baf4e02a7ba3ca749db8b9d0de40720ab2e348e4",
+  "relaySourceCommit": "6e90426f98a6905b441cf6d1e7cd0d835c537dda"
+}

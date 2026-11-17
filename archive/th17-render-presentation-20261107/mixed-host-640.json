@@ -1,0 +1,533 @@
+{
+  "rollback": true,
+  "extended": false,
+  "difficulty": 1,
+  "version": "1.0.14-eagler-904ba36fc710",
+  "wasm": "904ba36fc7107738876af01de3adb2bcd5d32af845133bc42cdd011fd0715b5b",
+  "throughStageTwo": false,
+  "denseExtra": false,
+  "extraBoss": false,
+  "extraFinale": false,
+  "independent": true,
+  "seatRenderScales": [
+    1,
+    2,
+    1
+  ],
+  "music": "ogg",
+  "cpuProfile": false,
+  "traceGaps": false,
+  "glTrace": false,
+  "touchDrag": true,
+  "touchComparison": false,
+  "touchSeat": 1,
+  "symmetricDelay": true,
+  "injectedDelayMs": 60,
+  "jitterMs": 15,
+  "cpuThrottle": 4,
+  "cpuWarmupThrough": 0,
+  "reports": [
+    {
+      "room": "th17mp-room-test-3",
+      "seats": 3,
+      "comparedFrames": 2201,
+      "maxEnemyBullets": 47,
+      "maxLasers": 0,
+      "activeSpellFrames": 0,
+      "dialogueFrames": 0,
+      "bossNonspellFrames": 0,
+      "stageTwoFrames": 0,
+      "denseWindows": [],
+      "touchEvents": 1883,
+      "touchDelivery": {
+        "downs": 1,
+        "direct": 1883,
+        "fallback": 0
+      },
+      "bossPatterns": [],
+      "settledPeaks": [],
+      "diagnostics": [
+        {
+          "corrections": 84,
+          "resimulated": 165,
+          "maxPrediction": 7,
+          "combatCorrections": 41,
+          "spellCorrections": 0,
+          "lastConfirmed": 2322,
+          "phase": 1,
+          "measuredFrom": 8742.539999999106,
+          "measuredThrough": 45858.70499999821,
+          "presentations": 2205,
+          "simulationTicks": 2206,
+          "presentationStart": 8742.550000000745,
+          "presentationEnd": 45858.70499999821,
+          "actualPresentations": 2220,
+          "lastPresent": 45858.70499999821,
+          "peakLinearMemory": 231997440,
+          "touchInputFrames": 0,
+          "touchInputTargets": 0,
+          "touchCombatInputs": 0,
+          "touchLayoutReads": 0,
+          "touchPresentIntervals": {
+            "stationary": {
+              "count": 487,
+              "p50": 16.560000002384186,
+              "p95": 21.07999999821186,
+              "max": 38.480000000447035,
+              "fps": 59.162540271841465,
+              "overFrameBudget": 233,
+              "over25Ms": 9
+            },
+            "dragging": {
+              "count": 1205,
+              "p50": 16.66000000014901,
+              "p95": 20.075000002980232,
+              "max": 54.440000001341105,
+              "fps": 59.953947407695885,
+              "overFrameBudget": 600,
+              "over25Ms": 4
+            },
+            "released": {
+              "count": 527,
+              "p50": 16.650000002235174,
+              "p95": 19.91000000014901,
+              "max": 22.25,
+              "fps": 59.98291568190955,
+              "overFrameBudget": 260,
+              "over25Ms": 0
+            }
+          },
+          "touchCosts": {
+            "stationary": {
+              "callbacks": 495,
+              "withoutPresentation": 7,
+              "repairWithoutPresentation": 7,
+              "atPredictionCap": 0,
+              "corrections": 27,
+              "resimulated": 101
+            },
+            "dragging": {
+              "callbacks": 1205,
+              "withoutPresentation": 0,
+              "repairWithoutPresentation": 0,
+              "atPredictionCap": 0,
+              "corrections": 57,
+              "resimulated": 64
+            },
+            "released": {
+              "callbacks": 527,
+              "withoutPresentation": 0,
+              "repairWithoutPresentation": 0,
+              "atPredictionCap": 0,
+              "corrections": 0,
+              "resimulated": 0
+            }
+          },
+          "liveHeapBytes": 222933176,
+          "captures": 2373,
+          "captureUs": 2998402,
+          "replaySlices": 7,
+          "logicalDraws": 156,
+          "stageCorrections": 84,
+          "bossCorrections": 0,
+          "bossCosts": [],
+          "canvas": [
+            640,
+            480
+          ],
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "presentIntervals": {
+            "count": 2219,
+            "p50": 16.649999998509884,
+            "p95": 20.260000001639128,
+            "max": 54.440000001341105
+          },
+          "longPresentations": [
+            {
+              "frame": 1382,
+              "confirmed": 1378,
+              "stage": 1,
+              "stageClock": 1332,
+              "gap": 54.440000001341105,
+              "callbackMs": 3.8900000005960464,
+              "resimulated": 0
+            }
+          ],
+          "presentationsOver50Ms": 1,
+          "storyPresentIntervals": {
+            "1/route": {
+              "count": 2215,
+              "p50": 16.649999998509884,
+              "p95": 20.24499999731779,
+              "max": 54.440000001341105,
+              "fps": 59.81412793499689
+            }
+          },
+          "densePresentIntervals": {
+            "count": 0,
+            "fps": null
+          },
+          "delayedPackets": 4546,
+          "updates": {
+            "count": 2137,
+            "p50": 5.635000001639128,
+            "p95": 8.689999997615814,
+            "max": 20.71499999985099
+          },
+          "repairs": {
+            "count": 90,
+            "p50": 8.234999999403954,
+            "p95": 11.120000001043081,
+            "max": 14.280000001192093
+          },
+          "denseUpdates": {
+            "count": 0
+          },
+          "denseRepairs": {
+            "count": 0
+          }
+        },
+        {
+          "corrections": 23,
+          "resimulated": 87,
+          "maxPrediction": 12,
+          "combatCorrections": 0,
+          "spellCorrections": 0,
+          "lastConfirmed": 2321,
+          "phase": 1,
+          "measuredFrom": 8084.39999999851,
+          "measuredThrough": 45183.98999999836,
+          "presentations": 2212,
+          "simulationTicks": 2212,
+          "presentationStart": 8084.404999997467,
+          "presentationEnd": 45183.99499999732,
+          "actualPresentations": 2216,
+          "lastPresent": 45183.99499999732,
+          "peakLinearMemory": 278396928,
+          "touchInputFrames": 1180,
+          "touchInputTargets": 1174,
+          "touchCombatInputs": 880,
+          "touchLayoutReads": 1,
+          "touchPresentIntervals": {
+            "stationary": {
+              "count": 482,
+              "p50": 16.75,
+              "p95": 20.574999999254942,
+              "max": 53.16999999806285,
+              "fps": 59.036360028703335,
+              "overFrameBudget": 250,
+              "over25Ms": 8
+            },
+            "dragging": {
+              "count": 1200,
+              "p50": 16.615000002086163,
+              "p95": 19.524999998509884,
+              "max": 55.84499999880791,
+              "fps": 59.847672711028686,
+              "overFrameBudget": 589,
+              "over25Ms": 3
+            },
+            "released": {
+              "count": 533,
+              "p50": 16.640000000596046,
+              "p95": 19.62000000104308,
+              "max": 23.37999999895692,
+              "fps": 59.99397809039439,
+              "overFrameBudget": 256,
+              "over25Ms": 0
+            }
+          },
+          "touchCosts": {
+            "stationary": {
+              "callbacks": 491,
+              "withoutPresentation": 8,
+              "repairWithoutPresentation": 8,
+              "atPredictionCap": 0,
+              "corrections": 23,
+              "resimulated": 87
+            },
+            "dragging": {
+              "callbacks": 1203,
+              "withoutPresentation": 3,
+              "repairWithoutPresentation": 0,
+              "atPredictionCap": 3,
+              "corrections": 0,
+              "resimulated": 0
+            },
+            "released": {
+              "callbacks": 533,
+              "withoutPresentation": 0,
+              "repairWithoutPresentation": 0,
+              "atPredictionCap": 0,
+              "corrections": 0,
+              "resimulated": 0
+            }
+          },
+          "liveHeapBytes": 224275448,
+          "captures": 2313,
+          "captureUs": 3019853,
+          "replaySlices": 8,
+          "logicalDraws": 84,
+          "stageCorrections": 23,
+          "bossCorrections": 0,
+          "bossCosts": [],
+          "canvas": [
+            1280,
+            960
+          ],
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "presentIntervals": {
+            "count": 2215,
+            "p50": 16.644999999552965,
+            "p95": 19.809999998658895,
+            "max": 55.84499999880791
+          },
+          "longPresentations": [
+            {
+              "frame": 1390,
+              "confirmed": 1377,
+              "stage": 1,
+              "stageClock": 1331,
+              "gap": 55.84499999880791,
+              "callbackMs": 8.554999999701977,
+              "resimulated": 0
+            },
+            {
+              "frame": 155,
+              "confirmed": 152,
+              "stage": 1,
+              "stageClock": 106,
+              "gap": 53.16999999806285,
+              "callbackMs": 8.234999999403954,
+              "resimulated": 1
+            }
+          ],
+          "presentationsOver50Ms": 2,
+          "storyPresentIntervals": {
+            "1/route": {
+              "count": 2212,
+              "p50": 16.644999999552965,
+              "p95": 19.769999999552965,
+              "max": 55.84499999880791,
+              "fps": 59.73413987024298
+            }
+          },
+          "densePresentIntervals": {
+            "count": 0,
+            "fps": null
+          },
+          "delayedPackets": 4538,
+          "updates": {
+            "count": 2196,
+            "p50": 5.46000000089407,
+            "p95": 8.504999998956919,
+            "max": 16.864999998360872
+          },
+          "repairs": {
+            "count": 28,
+            "p50": 8.234999999403954,
+            "p95": 10.445000000298023,
+            "max": 10.900000002235174
+          },
+          "denseUpdates": {
+            "count": 0
+          },
+          "denseRepairs": {
+            "count": 0
+          }
+        },
+        {
+          "corrections": 203,
+          "resimulated": 282,
+          "maxPrediction": 10,
+          "combatCorrections": 123,
+          "spellCorrections": 0,
+          "lastConfirmed": 2321,
+          "phase": 1,
+          "measuredFrom": 7407.204999998212,
+          "measuredThrough": 44523.3200000003,
+          "presentations": 2207,
+          "simulationTicks": 2207,
+          "presentationStart": 7407.210000000894,
+          "presentationEnd": 44523.3200000003,
+          "actualPresentations": 2218,
+          "lastPresent": 44523.3200000003,
+          "peakLinearMemory": 231997440,
+          "touchInputFrames": 0,
+          "touchInputTargets": 0,
+          "touchCombatInputs": 0,
+          "touchLayoutReads": 0,
+          "touchPresentIntervals": {
+            "stationary": {
+              "count": 485,
+              "p50": 16.66999999806285,
+              "p95": 21.109999999403954,
+              "max": 51.24500000104308,
+              "fps": 58.78983844917636,
+              "overFrameBudget": 243,
+              "over25Ms": 9
+            },
+            "dragging": {
+              "count": 1204,
+              "p50": 16.684999998658895,
+              "p95": 20.355000000447035,
+              "max": 37.95499999821186,
+              "fps": 59.99845020613788,
+              "overFrameBudget": 611,
+              "over25Ms": 5
+            },
+            "released": {
+              "count": 528,
+              "p50": 16.674999997019768,
+              "p95": 19.304999999701977,
+              "max": 23.92000000178814,
+              "fps": 60.00545504137248,
+              "overFrameBudget": 264,
+              "over25Ms": 0
+            }
+          },
+          "touchCosts": {
+            "stationary": {
+              "callbacks": 496,
+              "withoutPresentation": 10,
+              "repairWithoutPresentation": 10,
+              "atPredictionCap": 0,
+              "corrections": 28,
+              "resimulated": 101
+            },
+            "dragging": {
+              "callbacks": 1204,
+              "withoutPresentation": 0,
+              "repairWithoutPresentation": 0,
+              "atPredictionCap": 0,
+              "corrections": 175,
+              "resimulated": 181
+            },
+            "released": {
+              "callbacks": 528,
+              "withoutPresentation": 0,
+              "repairWithoutPresentation": 0,
+              "atPredictionCap": 0,
+              "corrections": 0,
+              "resimulated": 0
+            }
+          },
+          "liveHeapBytes": 226754672,
+          "captures": 2375,
+          "captureUs": 2936410,
+          "replaySlices": 10,
+          "logicalDraws": 276,
+          "stageCorrections": 203,
+          "bossCorrections": 0,
+          "bossCosts": [],
+          "canvas": [
+            640,
+            480
+          ],
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "presentIntervals": {
+            "count": 2217,
+            "p50": 16.675000000745058,
+            "p95": 20.28999999910593,
+            "max": 51.24500000104308
+          },
+          "longPresentations": [
+            {
+              "frame": 126,
+              "confirmed": 121,
+              "stage": 1,
+              "stageClock": 75,
+              "gap": 51.24500000104308,
+              "callbackMs": 5.0150000005960464,
+              "resimulated": 1
+            }
+          ],
+          "presentationsOver50Ms": 1,
+          "storyPresentIntervals": {
+            "1/route": {
+              "count": 2213,
+              "p50": 16.675000000745058,
+              "p95": 20.28999999910593,
+              "max": 51.24500000104308,
+              "fps": 59.727466780809365
+            }
+          },
+          "densePresentIntervals": {
+            "count": 0,
+            "fps": null
+          },
+          "delayedPackets": 4548,
+          "updates": {
+            "count": 2017,
+            "p50": 5.445000000298023,
+            "p95": 8.480000000447035,
+            "max": 20.109999999403954
+          },
+          "repairs": {
+            "count": 211,
+            "p50": 7.625,
+            "p95": 10.67000000178814,
+            "max": 15.725000001490116
+          },
+          "denseUpdates": {
+            "count": 0
+          },
+          "denseRepairs": {
+            "count": 0
+          }
+        }
+      ],
+      "initialPower": [
+        100,
+        100,
+        100
+      ],
+      "initialLives": [
+        2,
+        2,
+        2
+      ],
+      "last": [
+        2321,
+        3,
+        0,
+        1,
+        2275,
+        2,
+        0,
+        4775,
+        4400,
+        2,
+        47,
+        2937,
+        4294943744,
+        51200,
+        2,
+        3,
+        0,
+        51200,
+        1,
+        4,
+        0,
+        33920,
+        2,
+        3,
+        100,
+        109,
+        112,
+        4,
+        4,
+        0,
+        0,
+        47900,
+        1191570528,
+        0,
+        0,
+        0,
+        1065353216,
+        65362,
+        0
+      ]
+    }
+  ]
+}

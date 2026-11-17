@@ -37,7 +37,7 @@ bool GameSession::start_stage(bool first){
     if(is_replay&&!restore_replay())return false;
     current.selection.lives=scores[0].lives;
     struct RouteOutput:StageSelectionActions {WorldPresentation& output;explicit RouteOutput(WorldPresentation& p):output(p){}void encounter(i32 c)override{output.encountered(c);}} route_output(output);
-    if(!StageSelection::select(current.selection,state.random,route_output))return fail("Campaign route");
+    if(!StageSelection::select(current.selection,state.random,route_output,is_replay))return fail("Campaign route");
     if(!is_replay){
         ReplayRoundSettings header;for(i32 side=0;side<2;++side){auto& p=header.players[side];p.seed=capture_seed;p.points=scores[side].points;p.character=u8(current.selection.characters[side]);p.cpu=u8(current.controllers[side]);p.lives=u8(i32(scores[side].lives));p.cpu_level=u16(current.selection.cpu_levels[side]);}
         header.players[0].selector=i8(current.selection.selector);header.players[0].background=u8(current.selection.background);header.players[0].extends=u32(scores[0].extends);

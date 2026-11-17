@@ -1,0 +1,34 @@
+{
+  "scope": "build-and-static-contracts",
+  "runtimeTests": false,
+  "variants": {
+    "normal": {
+      "version": "1.0.14-eagler-6e5c9b792c06",
+      "wasm": "6e5c9b792c0601ba3ff38856ba07e0f5805f4ce2cd3f91e610b16ab3148c292e",
+      "files": 14,
+      "exportsChecked": [
+        "th17_initialize",
+        "th17_save_replay"
+      ]
+    },
+    "multiplayer": {
+      "version": "1.0.14-eagler-f7af0593f03d",
+      "wasm": "f7af0593f03d9775e8cd3644e2b240300774fd02891471e81441d898959aa6a3",
+      "files": 14,
+      "exportsChecked": [
+        "th17_room_preview",
+        "th17_room_return",
+        "th17_room_open",
+        "th17_mp_replay_save",
+        "th17_mp_replay_validate",
+        "th17_mp_replay_load",
+        "eagler_replay_inspect",
+        "eagler_replay_step",
+        "eagler_replay_state",
+        "th17_mp_spectator_state",
+        "th17_mp_spectator_control",
+        "th17_mp_spectator_result"
+      ]
+    }
+  }
+}

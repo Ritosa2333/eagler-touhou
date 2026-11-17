@@ -7,11 +7,10 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const compiled = resolve(root, process.env.TH09_OUTPUT || 'artifacts/sdl-release');
-const variant = process.argv.includes('--multiplayer') ? 'multiplayer' : 'normal';
-const output = process.env.EAGLER_RUNTIME_OUTPUT ? resolve(process.env.EAGLER_RUNTIME_OUTPUT) : resolve(root, process.env.TH09_PACKAGE_OUTPUT || (variant === 'multiplayer' ? 'build-eagler-multiplayer' : 'build-eagler'));
+const output = process.env.EAGLER_RUNTIME_OUTPUT ? resolve(process.env.EAGLER_RUNTIME_OUTPUT) : resolve(root, process.env.TH09_PACKAGE_OUTPUT || 'build-eagler');
 const native = process.env.TH09_RUNTIME_ASSETS ? resolve(process.env.TH09_RUNTIME_ASSETS) : resolve(root, 'assets/sdl-native');
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
-const common = resolve(process.env.EAGLER_COMMON_ROOT || resolve(root, '../third_party/eagler-common'));
+const common = resolve(process.env.EAGLER_COMMON_ROOT || resolve(root, '../../../common'));
 const inputs = [
   ['th09.html', resolve(root, 'sdl-runtime/managed.html')],
   ['shell.mjs', resolve(root, 'sdl-runtime/managed.mjs')],
@@ -19,6 +18,9 @@ const inputs = [
   ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'spectator-timeline.mjs', 'spectator-timeline-view.mjs', 'spectator-tape.mjs', 'motion-replay.mjs', 'auto-replay.mjs', 'startup-branding.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
   ['replay-player.mjs', resolve(common, 'browser/versus-replay-th09.mjs')],
   ['playback-clock.mjs', resolve(common, 'browser/playback-clock.mjs')],
+  ['th09-replay-upload.mjs', resolve(common, 'browser/th09-replay-upload.mjs')],
+  ['th09-match-archive.mjs', resolve(common, 'contracts/th09-match-archive.mjs')],
+  ['match-archive-player.mjs', resolve(root, 'sdl-runtime/match-archive-player.mjs')],
   ['th09.mjs', resolve(compiled, 'th09.mjs')],
   ['th09.wasm', resolve(compiled, 'th09.wasm')],
   ['fonts/cp932.bin', resolve(native, 'cp932.bin')],
@@ -31,36 +33,30 @@ if (!Number.isFinite(Date.parse(build.builtAt))) throw Error('Rebuild TH09 to re
 if (build.kind !== 'th09-native-web-release-candidate' || build.sha256 !== sha256(wasm)) {
   throw Error('TH09 release WASM does not match its build attestation');
 }
-if (variant === 'multiplayer') {
-  const exports = new Set(WebAssembly.Module.exports(new WebAssembly.Module(wasm)).map(entry => entry.name));
-  const required = [
-    'th09_peer_url_buffer', 'th09_peer_spectator_id_buffer', 'th09_peer_packet_buffer',
-    'th09_peer_error', 'th09_peer_connect', 'th09_peer_connect_spectator',
-    'th09_peer_state', 'th09_peer_send', 'th09_peer_has_spectators',
-    'th09_peer_send_spectator', 'th09_peer_poll', 'th09_peer_close',
-    'th09_peer_spectator_state', 'th09_peer_stop_spectators', 'th09_spectator_info',
-    'th09_network_info', 'th09_network_room_begin', 'th09_network_receive',
-    'th09_network_hash', 'th09_network_end', 'th09_spectator_begin',
-    'th09_rollback_begin', 'th09_rollback_enable', 'th09_rollback_pump', 'th09_rollback_wake', 'th09_rollback_info',
-    'th09_adonis_configure', 'th09_adonis_info',
-    'th09_local_charge_priority','th09_spectator_charge_buffer','th09_spectator_feed_charge',
-    'th09_measured_begin', 'th09_startup_info',
-    'th09_network_selection_begin', 'th09_network_selection_info', 'th09_spectator_prepare',
-    'th09_auto_save_replay', 'th09_auto_replay_folder_buffer', 'th09_play_replay', 'th09_replay_view_info', 'th09_replay_view_step', 'th09_replay_view_silent',
-    'th09_spectator_feed', 'th09_spectator_frame', 'th09_spectator_end',
-  ];
-  const missing = required.filter(name => !exports.has(name));
-  if (missing.length) throw Error(`TH09 multiplayer WASM is missing exports: ${missing.join(', ')}`);
-}
+const exports = new Set(WebAssembly.Module.exports(new WebAssembly.Module(wasm)).map(entry => entry.name));
+const required = [
+  'th09_peer_url_buffer', 'th09_peer_spectator_id_buffer', 'th09_peer_packet_buffer',
+  'th09_peer_error', 'th09_peer_connect', 'th09_peer_connect_spectator',
+  'th09_peer_state', 'th09_peer_send', 'th09_peer_has_spectators',
+  'th09_peer_send_spectator', 'th09_peer_poll', 'th09_peer_close',
+  'th09_peer_spectator_state', 'th09_peer_stop_spectators', 'th09_spectator_info',
+  'th09_network_info', 'th09_network_room_begin', 'th09_network_receive',
+  'th09_network_hash', 'th09_network_end', 'th09_spectator_begin',
+  'th09_rollback_begin', 'th09_rollback_enable', 'th09_rollback_pump', 'th09_rollback_wake', 'th09_rollback_info',
+  'th09_adonis_configure', 'th09_adonis_info',
+  'th09_local_charge_priority','th09_spectator_charge_buffer','th09_spectator_feed_charge',
+  'th09_measured_begin', 'th09_startup_info',
+  'th09_network_selection_begin', 'th09_network_selection_info', 'th09_spectator_prepare',
+  'th09_auto_save_replay', 'th09_auto_replay_folder_buffer', 'th09_play_replay', 'th09_replay_view_info', 'th09_replay_view_step', 'th09_replay_view_silent',
+  'th09_spectator_feed', 'th09_spectator_frame', 'th09_spectator_end',
+];
+const missing = required.filter(name => !exports.has(name));
+if (missing.length) throw Error(`TH09 multiplayer WASM is missing exports: ${missing.join(', ')}`);
+
 mkdirSync(output, { recursive: true });
 for (const [name, source] of inputs) {
   mkdirSync(resolve(output, name, '..'), { recursive: true });
-  if (name === 'th09.html') {
-    const marker = '<meta name="eagler-runtime-variant" content="normal">';
-    const html = readFileSync(source, 'utf8');
-    if (html.split(marker).length !== 2) throw Error('Missing or ambiguous TH09 Runtime variant marker');
-    writeFileSync(resolve(output, name), html.replace(marker, `<meta name="eagler-runtime-variant" content="${variant}">`));
-  } else copyFileSync(source, resolve(output, name));
+  copyFileSync(source, resolve(output, name));
 }
 writeFileSync(resolve(output, 'manifest.json'), JSON.stringify({
   game: 'th09', protocol: 'eagler-touhou/1', features: { thprac: false, languages: true, focusHitbox: false },

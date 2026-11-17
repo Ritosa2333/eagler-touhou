@@ -37,6 +37,10 @@ const shellSources = Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game
 
 assert.deepEqual(Object.keys(shellSources), Object.keys(PRODUCT_GAMES));
 for (const [game, paths] of Object.entries(shellSources)) {
+  if (game === 'th05') {
+    for (const owner of ['th05','th05mp']) execFileSync(process.execPath,['--test',workspacePath(owner,'tests/managed-adapter.test.mjs')],{encoding:'utf8',windowsHide:true});
+    continue;
+  }
   if (game === 'th12') {
     execFileSync(nativeNodeExecutable(),['--test','--test-name-pattern=managed (protocol|touch):',workspacePath(game,'tests/managed-adapter.test.mjs')],
       {encoding:'utf8',windowsHide:true});

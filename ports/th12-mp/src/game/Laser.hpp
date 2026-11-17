@@ -161,9 +161,18 @@ public:
 };
 class Manager {
 public:
+  // Checkpoints need ordered state values, not live virtual objects/list nodes.
+  class Snapshot {
+    friend class Manager;
+    std::vector<State> objects;
+    uint32_t serial = 0x10000;
+  };
   Manager() = default;
   Manager(const Manager&);
   Manager& operator=(const Manager&);
+  Snapshot snapshot() const;
+  void snapshot(Snapshot&) const;
+  void restore(const Snapshot&);
   int spawn(Kind, const Parameters&, World&);
   void tick(World&);
   Laser* find(int);

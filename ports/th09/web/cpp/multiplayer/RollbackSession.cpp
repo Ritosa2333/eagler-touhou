@@ -42,10 +42,7 @@ bool RollbackSession::Configure(const Netplay::SessionConfig& session,std::uint6
     // actions require actual input. Every eventual release is reconciled.
     config.predictableButtons = 1 | 4 | 0xf0;
     config.directionButtons = 0xf0;
-    // Hold the last direction throughout our bounded prediction window, as
-    // Higan does. Inventing a release after three frames repeatedly freezes
-    // the remote ship and makes recovery jump it forward, including cut-ins.
-    config.maxDirectionPredictionFrames = History;
+    config.prediction = Netplay::InputPrediction::ConfirmedHold;
     // TH09 transmits a held absolute field target, not fresh displacement.
     // Both rollback modes retain that target (or the held joystick vector).
     // Actual moves, releases and metadata changes still use full input
@@ -65,6 +62,7 @@ void RollbackSession::Clear() {
     charges_=ChargeHistory{};
     chargeChannel_=ChargeChannel{};chargeNow_=0;
     channel_.Clear(); gate_.Clear(); core_.Clear();hashes_={};
+    replayHashes_ = false;
     next_ = replayEnd_ = captures_ = corrections_ = resimulated_ = 0;
     configured_ = failed_ = invalidInput_ = false; error_ = "";
     mode_ = Netplay::AdonisMode::Rollback; inputDelay_ = 0; phaseDebtMs_ = 0;
@@ -129,6 +127,15 @@ bool RollbackSession::Pump(std::uint64_t now, bool expectsInput,std::uint64_t me
     const bool captureFollows = deferOrdinaryInput && expectsInput &&
         mode_ == Netplay::AdonisMode::Rollback && NeedsCapture();
     if (!channel_.Pump(gate_, core_, now, expectsInput && gate_.CanStart(), captureFollows)) return Fail(channel_.ErrorText());
+    if (transport_.Recovering()) replayHashes_ = true;
+    else if (replayHashes_ && transport_.IsOpen()) {
+        replayHashes_ = false;
+        const auto latest = next_ / 120;
+        for (auto index = latest > 1 ? latest - 1 : 1; index <= latest; ++index) {
+            const auto& slot = hashes_[index % hashes_.size()];
+            if (slot.hasLocal && slot.frame == index * 120 && !SendHash(slot)) replayHashes_ = true;
+        }
+    }
     chargeNow_=now;
     if(!chargeChannel_.Pump(transport_,charges_,now))return Fail("TH09 charge delivery failed");
     if (invalidInput_) return Fail("Invalid TH09 peer input");
@@ -145,9 +152,13 @@ bool RollbackSession::Verify(std::uint32_t frame,std::uint32_t hash) {
     auto& slot=hashes_[(frame/120)%hashes_.size()];
     if(slot.frame!=frame)slot={frame};slot.local=hash;slot.hasLocal=true;
     if(slot.hasRemote&&slot.remote!=hash)return Fail("TH09 confirmed world hash mismatch");
+    if (!SendHash(slot)) replayHashes_ = true;
+    return true;
+}
+bool RollbackSession::SendHash(const HashSlot& slot) {
     std::uint8_t packet[20]={'T','9','H','C'};const auto id=gate_.Config().sessionId;
-    std::memcpy(packet+4,&id,8);std::memcpy(packet+12,&frame,4);std::memcpy(packet+16,&hash,4);
-    return transport_.SendControl(packet,sizeof(packet))||Fail("TH09 hash send failed");
+    std::memcpy(packet+4,&id,8);std::memcpy(packet+12,&slot.frame,4);std::memcpy(packet+16,&slot.local,4);
+    return transport_.SendControl(packet,sizeof(packet));
 }
 bool RollbackSession::Poll(std::vector<std::uint8_t>* bytes) {
     for(unsigned count=0;count<256;++count){

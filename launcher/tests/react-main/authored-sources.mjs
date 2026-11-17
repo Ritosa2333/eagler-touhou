@@ -5,6 +5,8 @@ import {authoredSourcesPlugin as authoredSources} from '../../lib/authored-sourc
 export function authoredSourcesPlugin(project) {
   const source = authoredSources(project);
   return {...source, setup(context) {
+    context.onResolve({filter: /\?worker&url$/}, args => ({path: args.path, namespace: 'fixture-worker-url'}));
+    context.onLoad({filter: /.*/, namespace: 'fixture-worker-url'}, () => ({contents: 'export default "https://fixture.invalid/worker.js"', loader: 'js'}));
     source.setup(context);
     context.onResolve({filter: /\.(?:webp|png|svg)\?url$/}, args => ({path: resolve(args.resolveDir, args.path.slice(0, -4)), namespace: 'fixture-asset-url'}));
     context.onLoad({filter: /.*/, namespace: 'fixture-asset-url'}, args => ({contents: readFileSync(args.path), loader: 'dataurl'}));

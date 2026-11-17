@@ -5,17 +5,18 @@ import {reactDeploymentConfig} from './scripts/ui-rewrite/deployment-config.ts';
 import {buildReactAppShell, writeReactAppShellGraph} from './scripts/ui-rewrite/app-shell-build.ts';
 import {buildRuntimeProgramWorkerSource} from './lib/frontend-assets.mjs';
 import {writeFileAtomic} from './lib/atomic-file.mjs';
-import {REACT_PRERENDER_PATHS} from './lib/frontend-static-manifest.mjs';
+import {REACT_PRERENDER_PATHS, UI_REVIEW_DOCUMENT, uiReviewEnabled} from './lib/frontend-static-manifest.mjs';
 const deployment = reactDeploymentConfig();
+const includeUiReview = uiReviewEnabled();
 /** Build-time HTML only; no rendering server or deployment is introduced. */
 export default {
   ssr: false,
   basename: deployment.mountPath,
   buildDirectory: deployment.outputDirectory,
-  prerender: [...REACT_PRERENDER_PATHS],
+  prerender: [...REACT_PRERENDER_PATHS, ...(includeUiReview ? [UI_REVIEW_DOCUMENT.path] : [])],
   async buildEnd({reactRouterConfig}) {
     const clientDirectory = resolve(reactRouterConfig.buildDirectory, 'client');
-    await finalizeOriginalEntrypoints(clientDirectory, deployment.mountPath);
+    await finalizeOriginalEntrypoints(clientDirectory, deployment.mountPath, includeUiReview);
     await writeFileAtomic(resolve(clientDirectory, 'runtime-program-sw.js'), await buildRuntimeProgramWorkerSource({project: import.meta.dirname}));
     await writeReactAppShellGraph({clientDirectory, mountPath: deployment.mountPath, appShell: deployment.appShell});
     await buildReactAppShell({clientDirectory, ...deployment});

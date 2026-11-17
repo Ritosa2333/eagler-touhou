@@ -18,7 +18,7 @@ const preview = {...profile, games: Object.fromEntries(Object.keys(PRODUCT_GAMES
 assert.equal(validateOperatorProfile(preview), preview);
 const missingRequired = structuredClone(preview);
 delete missingRequired.games.th06;
-assert.throws(() => validateOperatorProfile(missingRequired), /every registered game/);
+assert.throws(() => validateOperatorProfile(missingRequired), /every default build game/);
 const manifest = {
   schema: "eagler-touhou/site-manifest/1",
   shared: {
@@ -39,6 +39,12 @@ const manifest = {
 };
 
 assert.equal(assertHostedSiteMatchesOperatorProfile(manifest, profile), profile);
+const optInProfile = structuredClone(profile);
+optInProfile.games.th13 = structuredClone(profile.games.th12);
+assert.throws(() => validateOperatorProfile(optInProfile), /every default build game/);
+const missingGame = structuredClone(profile);
+delete missingGame.games.th06;
+assert.throws(() => validateOperatorProfile(missingGame), /every default build game/);
 
 const missingLanguage = structuredClone(manifest);
 missingLanguage.games.th06.languageOptions = missingLanguage.games.th06.languageOptions.filter(entry => entry.id !== "lang_en");

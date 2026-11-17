@@ -13,7 +13,11 @@
 namespace web_sfx = eagler::audio::web_sfx;
 #include <algorithm>
 namespace th17::sdl {
-namespace {float amplitude(i32 db){return std::pow(10.f,float(db)/2000.f);}std::string wave_name(const std::string& value){return value.size()>=4&&value.compare(value.size()-4,4,".wav")==0?value:value+".wav";}}
+namespace {
+float amplitude(i32 db){return std::pow(10.f,float(db)/2000.f);}
+float pan_balance(i32 value){return value>=0?1.f-amplitude(-value):amplitude(value)-1.f;}
+std::string wave_name(const std::string& value){return value.size()>=4&&value.compare(value.size()-4,4,".wav")==0?value:value+".wav";}
+}
 struct AudioDevice::Impl final:MusicCommandOutput {
  AudioDevice& owner;explicit Impl(AudioDevice& o):owner(o),commands(layout,*this){}
  struct Voice {ma_decoder decoder{};ma_sound sound{};bool decoded=false,attached=false;~Voice(){web_sfx::erase(&sound);if(attached)ma_sound_uninit(&sound);if(decoded)ma_decoder_uninit(&decoder);}};
@@ -85,8 +89,13 @@ bool AudioDevice::sound_available(u32 id)const{return id<impl->sounds.size()&&im
 bool AudioDevice::sound_playing(u32 id){auto* voice=impl->voice(id);return voice&&(web_sfx::contains(&voice->sound)?web_sfx::playing(&voice->sound):ma_sound_is_playing(&voice->sound));}
 void AudioDevice::sound_stop(u32 id){if(auto* voice=impl->voice(id)){web_sfx::stop(&voice->sound);ma_sound_stop(&voice->sound);}}
 void AudioDevice::sound_position(u32 id,u32 frame){if(auto* voice=impl->voice(id)){web_sfx::seek(&voice->sound,frame,44100);ma_sound_seek_to_pcm_frame(&voice->sound,frame);}}
-void AudioDevice::sound_pan(u32 id,i32 value){if(auto* voice=impl->voice(id)){const float pan=value>=0?1.f-std::pow(10.f,-float(value)/2000.f):std::pow(10.f,float(value)/2000.f)-1.f;web_sfx::pan(&voice->sound,pan);ma_sound_set_pan_mode(&voice->sound,ma_pan_mode_balance);ma_sound_set_pan(&voice->sound,pan);}}
+void AudioDevice::sound_pan(u32 id,i32 value){if(auto* voice=impl->voice(id)){const float pan=pan_balance(value);web_sfx::pan(&voice->sound,pan);ma_sound_set_pan_mode(&voice->sound,ma_pan_mode_balance);ma_sound_set_pan(&voice->sound,pan);}}
 void AudioDevice::sound_volume(u32 id,i32 value){if(auto* voice=impl->voice(id)){web_sfx::volume(&voice->sound,amplitude(value));ma_sound_set_volume(&voice->sound,amplitude(value));}}
 void AudioDevice::sound_play(u32 id,u32 flags){if(auto* voice=impl->voice(id)){ma_sound_set_looping(&voice->sound,(flags&1)?MA_TRUE:MA_FALSE);if(!web_sfx::play(&voice->sound,flags&1))ma_sound_start(&voice->sound);}}
+void AudioDevice::sound_restart(u32 id,i32 pan,i32 volume,u32 flags){
+ auto* voice=impl->voice(id);
+ if(voice&&web_sfx::restart(&voice->sound,amplitude(volume),pan_balance(pan),flags&1))return;
+ SoundOutput::sound_restart(id,pan,volume,flags);
+}
 const u32* AudioDevice::statistics()const{auto& a=*impl;a.stats[0]=a.ready;a.stats[4]=a.stream?std::max(0,SDL_GetAudioStreamQueued(a.stream))/8:0;a.stats[5]=u32(a.track);a.stats[6]=a.fade;a.stats[7]=a.current()?u32(std::round(ma_sound_get_volume(&a.current()->sound)*1000000.f)):0;a.stats[8]=a.music_paused;ma_uint64 cursor=0;if(a.current())ma_sound_get_cursor_in_pcm_frames(&a.current()->sound,&cursor);a.stats[9]=u32(cursor);a.stats[10]=a.layout.count();return a.stats;}
 }

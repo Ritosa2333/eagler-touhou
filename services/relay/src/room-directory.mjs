@@ -6,14 +6,16 @@ export function publicControlMode(seat) {
   if (seat.touchEnabled === false) return 'normal';
   if (seat.touchEnabled !== true) return null;
   if (seat.movementMode === 'touch-unlimited') return 'cheat';
-  if (seat.movementMode === 'touch') return 'touch';
-  return ['joystick', 'joystick-free'].includes(seat.movementMode) ? 'normal' : null;
+  if (seat.movementMode === 'touch' || seat.movementMode === 'joystick-free') return 'touch';
+  return seat.movementMode === 'joystick' ? 'normal' : null;
 }
 
 // Discovery never joins a room. Membership is anonymous and browser-scoped;
 // it prevents accidental multi-tab seats, not multiple accounts/devices.
 export function createRoomDirectory({
   publicNames = false,
+  publicTrack,
+  publicProfile,
   rooms,
   clearSeat,
   invalidateReady,
@@ -70,6 +72,7 @@ export function createRoomDirectory({
     return {
       ...(publicNames ? {publicNames:true} : {}),
       product: match[1],
+      listeningTrack: publicTrack?.(room),
       code: match[2],
       phase: room.lobby.phase,
       capacity: room.lobby.playerCount,
@@ -82,6 +85,7 @@ export function createRoomDirectory({
       startedAt: room.lobby.startedAt || 0,
       host: publicNames ? seats[0]?.name || '' : initial(seats[0]?.name),
       disableCheatMovement: room.lobby.disableCheatMovement === true,
+      ...(match[1] === 'th09mp' && room.lobby.unrated ? {unrated: true} : {}),
       challengeMode: room.lobby.challengeMode === true,
       ...((match[1]==='th02mp'||match[1]==='th03mp')?{disableFocus:room.lobby.disableFocus===true}:{}),
       ...(match[1]==='th01mp'?{ballCount:room.lobby.ballCount??2}:{}),
@@ -94,7 +98,8 @@ export function createRoomDirectory({
               initial: initial(seat.name),
               loadout: seat.loadout,
               ...(publicNames ? {name:seat.name || ''} : {}),
-              ...(['th03mp','th09mp'].includes(match[1])
+              profile: publicProfile?.(room, seat.clientId),
+              ...(['th03mp','th09mp', 'th19mp'].includes(match[1])
                 ? {
                     ...(!publicNames && typeof seat.machineSign === 'string' && seat.machineSign.trim()
                       ? {
@@ -124,7 +129,7 @@ export function createRoomDirectory({
       // A full/playing room has no player seat to join. This separate
       // capability admits observers only through the normal room authority.
       spectatable:
-        (match[1] === 'th09mp' || !!run?.spectatorStages) &&
+        (match[1] === 'th09mp' || match[1] === 'th19mp' || !!run?.spectatorStages) &&
         room.lobby.phase === 'running' &&
         run?.spectatorTimeline === true &&
         run.spectatorAdmissionOpen &&
@@ -168,6 +173,7 @@ export function createRoomDirectory({
       type: 'directory',
       version: 1,
       membershipRecovery: true,
+      globalRoomCodes: true,
       product,
       rooms: page.rooms,
       total: page.total,
@@ -377,6 +383,13 @@ export function createRoomDirectory({
     const entry = clients.get(clientId);
     return entry?.roomId === roomId ? entry.memberId : undefined;
   };
+  function moveMembers(from, to, clientIds) {
+    for (const clientId of clientIds) {
+      const entry = clients.get(clientId);
+      if (entry?.roomId === from) entry.roomId = to;
+    }
+    changed();
+  }
   return {
     admit,
     connect,
@@ -386,6 +399,7 @@ export function createRoomDirectory({
     evict,
     track,
     memberIdFor,
+    moveMembers,
     memberLocation: memberId => members.get(memberId),
     close() {
       clearInterval(maintenance);

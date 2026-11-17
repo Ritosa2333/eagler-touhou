@@ -161,6 +161,7 @@ void emit(Enemy& e, Shooter& s, bool audible) {
                 product = float(double(unit) * delta);
     return float(double(low) + product);
   };
+  std::shared_ptr<const eb::Program> program;
   for (int layer = 0; layer < layers; layer++)
     for (int j = 0; j < count; j++) {
       const int physicalSlot = hostilePool.reserve();
@@ -227,8 +228,9 @@ void emit(Enemy& e, Shooter& s, bool audible) {
       auto& born = bullets.back();
       attachHostileSlot(born); // Parent occupies its slot before child births.
       born.enemy.cancelEffect = hostilePool.cancelEffects[physicalSlot];
-      eb::initialize(born.enemy, born.entityId, s.extensions, s.type, s.color, x, y, a, speed,
-                     bulletWorld);
+      if (!program) program = std::make_shared<const eb::Program>(s.extensions);
+      eb::initializeWithProgram(born.enemy, born.entityId, program, s.type, s.color, x, y, a,
+                                speed, bulletWorld);
       born.x = born.enemy.x;
       born.y = born.enemy.y;
       born.type = born.enemy.type;

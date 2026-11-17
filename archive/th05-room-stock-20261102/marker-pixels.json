@@ -1,0 +1,113 @@
+{
+  "passed": true,
+  "markers": [
+    {
+      "character": "reimu",
+      "variant": "p1-original",
+      "size": [
+        16,
+        16
+      ],
+      "matches": true
+    },
+    {
+      "character": "reimu",
+      "variant": "p2-blue",
+      "size": [
+        16,
+        16
+      ],
+      "matches": true
+    },
+    {
+      "character": "reimu",
+      "variant": "p3-green",
+      "size": [
+        16,
+        16
+      ],
+      "matches": true
+    },
+    {
+      "character": "marisa",
+      "variant": "p1-original",
+      "size": [
+        16,
+        16
+      ],
+      "matches": true
+    },
+    {
+      "character": "marisa",
+      "variant": "p2-blue",
+      "size": [
+        16,
+        16
+      ],
+      "matches": true
+    },
+    {
+      "character": "marisa",
+      "variant": "p3-green",
+      "size": [
+        16,
+        16
+      ],
+      "matches": true
+    },
+    {
+      "character": "mima",
+      "variant": "p1-original",
+      "size": [
+        16,
+        16
+      ],
+      "matches": true
+    },
+    {
+      "character": "mima",
+      "variant": "p2-orange",
+      "size": [
+        16,
+        16
+      ],
+      "matches": true
+    },
+    {
+      "character": "mima",
+      "variant": "p3-magenta",
+      "size": [
+        16,
+        16
+      ],
+      "matches": true
+    },
+    {
+      "character": "yuuka",
+      "variant": "p1-original",
+      "size": [
+        16,
+        16
+      ],
+      "matches": true
+    },
+    {
+      "character": "yuuka",
+      "variant": "p2-orange",
+      "size": [
+        16,
+        16
+      ],
+      "matches": true
+    },
+    {
+      "character": "yuuka",
+      "variant": "p3-magenta",
+      "size": [
+        16,
+        16
+      ],
+      "matches": true
+    }
+  ]
+}

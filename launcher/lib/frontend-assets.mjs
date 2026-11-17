@@ -11,10 +11,10 @@ const FEATURE_STYLE_STARTS = Object.freeze([
   line => line === "/* R is an ordinary cross-game control: below ESC and before the optional thprac group. */",
 ]);
 const FEATURE_STYLE_ENDS = Object.freeze([
+  line => line === "/* First-use notice drawer. */",
   line => line === "/* Top bar and rounded surfaces; preserve the existing neutral palette. */",
   line => line === "/* Desktop reduced motion follows the mobile lightweight selection cue. */",
   line => line === "/* Shared Multiplayer product surface. It deliberately inherits the launcher's",
-  line => line === "/* Edge drawers: First-use Notice owns the right edge; Site Notice owns the left. */",
   line => line === "/* Shared Multiplayer mobile-first room shell. */",
   line => line === "/* Persistent game category dock; reserve space so it never covers the tools. */",
 ]);

@@ -52,6 +52,7 @@ public:
     void begin_stage(i32 number,i32 seed,const ReplayInitial& initial);
     void push(u32 held,u32 pressed,u32 released,float fps);
     void motion(i32 x,i32 y,bool unlimited);
+    void tools(const std::array<i32,3>& state);
     bool unlimited()const{return extension.unlimited;}
     void metadata(std::optional<std::array<i32,20>> practice,bool assisted,std::map<i32,std::vector<i32>> damage){extension.practice=practice;extension.assisted=assisted;extension.damage=std::move(damage);}
     void set_spell_time(i32 index,i32 encoded){if(active&&index>=0&&index<20)active->spell_times[size_t(index)]=encoded;}

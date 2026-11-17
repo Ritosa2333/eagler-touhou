@@ -1,8 +1,8 @@
 // Only small, targeted lobby diagnostics. No broadcast or Runtime control.
-export function roomProbeEnvelope(message, from, onlinePeers) {
+export function roomProbeEnvelope(message, from, onlinePeers, swarmLanes) {
   if (!message || typeof message !== 'object' || message.type !== 'room-probe' ||
       typeof message.to !== 'string' || message.to === from || !onlinePeers.has(message.to) ||
-      !['direct', 'turn', 'relay'].includes(message.lane)) return null;
+      (!['direct', 'turn', 'relay'].includes(message.lane) && !swarmLanes?.has(message.lane))) return null;
   if (message.lane === 'relay') {
     if (typeof message.echo !== 'string' || !/^(ping|pong):\d{1,12}$/.test(message.echo)) return null;
     return { type: 'room-probe', from, lane: 'relay', echo: message.echo };

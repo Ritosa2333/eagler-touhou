@@ -47,6 +47,8 @@ public:
     EclProgram* program=nullptr;
     EclThreadHost* threads=nullptr;i32 thread_id=0,thread_state=0;u32 thread_flags=0;
     EclCommands* commands=nullptr;
+    void* observer_owner=nullptr;
+    void (*observe_instruction)(void*,const EclContext&)=nullptr;
     Rng* game_rng=nullptr;float interpolation_rate=1;const float* interpolation_clock=nullptr;
     float current_interpolation_rate()const noexcept{return interpolation_clock?*interpolation_clock:interpolation_rate;}
     std::array<ScalarInterpolation,8> interpolators{};
@@ -61,6 +63,6 @@ public:
     bool enter_frame(i32 size)noexcept;bool leave_frame()noexcept;
     bool bind_code(const u8* bytes,u32 size,i32 routine_id=0)noexcept;
     bool bind(EclProgram&,i32 routine_id)noexcept;
-    int step(float elapsed);
+    int step(float elapsed,bool lock_stage_clock=false);
 };
 }

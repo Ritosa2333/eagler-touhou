@@ -3,14 +3,16 @@ import type {ReactNode} from 'react';
 import { useLocale } from '../../i18n';
 import type { LibraryCardsProps } from './LibraryCards';
 import {BookDirectoryGames} from './BookDirectoryGames';
-import './directory-page.css';
+import {accountsEnabled} from '../../release-features';
+import {withUiLanguage} from '../../../src/launcher/i18n.mts';
 
 export interface LobbySurfaceProps extends Omit<
   LibraryCardsProps,
   'variant' | 'lobbyLink' | 'inert'
 > {
   masthead: ReactNode;
-  onGuide: (() => void) | null;
+  guideHref: string | null;
+  rankingsHref: string;
   onNetwork: (() => void) | null;
   networkRunning?: boolean;
   connectionWarning?: ReactNode;
@@ -36,7 +38,8 @@ export interface LobbySurfaceProps extends Omit<
 /** Dedicated lobby skeleton from main lobby.html43–105, without home brand/footer. */
 export function LobbySurface({
   masthead,
-  onGuide,
+  guideHref,
+  rankingsHref,
   onNetwork,
   networkRunning = false,
   connectionWarning,
@@ -53,7 +56,7 @@ export function LobbySurface({
   children,
   ...rail
 }: LobbySurfaceProps) {
-  const {t} = useLocale();
+  const {t, locale} = useLocale();
   return (
     <>
       <main className="lobby-main book-directory" inert={rail.interactive === false}>
@@ -61,15 +64,13 @@ export function LobbySurface({
         <header className="lobby-intro">
           <h1 className="visually-hidden">{t('lobby.title')}</h1>
           <nav className="lobby-support-links" aria-label={t('multiplayerGuide.title')}>
-            <BookButton variant="quiet" size="sm"
+            <BookButton variant="quiet" size="sm" asChild={!!guideHref}
               className="lobby-support-link h-9 px-0 max-[780px]:h-11"
               id="lobbyGuideOpen"
-              type="button"
-              disabled={!onGuide}
-              onClick={onGuide ?? undefined}
+              disabled={guideHref ? undefined : true}
             >
-              <span>{t('multiplayerGuide.action')}</span>
-              <span aria-hidden="true">›</span>
+              {guideHref ? <a href={guideHref}><span>{t('multiplayerGuide.action')}</span><span aria-hidden="true">›</span></a>
+                : <span>{t('multiplayerGuide.action')}</span>}
             </BookButton>
             <BookButton variant="quiet" size="sm"
               className={`lobby-support-link h-9 px-0 max-[780px]:h-11${networkRunning ? ' running' : ''}`}
@@ -82,12 +83,14 @@ export function LobbySurface({
               <span>{t('networkCheck.action')}</span>
               <span aria-hidden="true">›</span>
             </BookButton>
-            <BookButton variant="quiet" size="sm" className="lobby-support-link lobby-survey-link h-9 px-0 max-[780px]:h-11" asChild><a href="https://v.wjx.cn/vm/QqmTdwh.aspx#" target="_blank" rel="noopener noreferrer" title={t('lobby.surveyNotice')}>
-              <span>{t('lobby.surveyAction')}</span><span aria-hidden="true">›</span>
-            </a></BookButton>
+            {accountsEnabled && <BookButton variant="quiet" size="sm" asChild
+              className="lobby-support-link h-9 px-0 max-[780px]:h-11">
+              <a href={withUiLanguage(rankingsHref, locale)}>
+                <span>{t('th09.ratingBoard')}</span><span aria-hidden="true">›</span>
+              </a>
+            </BookButton>}
           </nav>
         </header>
-        {connectionWarning}
         <p className="lobby-notice" id="notice" role="status" hidden={!notice}>
           {notice}
         </p>
@@ -106,6 +109,7 @@ export function LobbySurface({
           aria-label={t('lobby.rooms')}
           data-has-rooms={hasRooms}
         >
+          {connectionWarning}
           <ul className="lobby-room-list" id="roomList" aria-busy={loading} hidden={!hasRooms}>
             {roomList}
           </ul>

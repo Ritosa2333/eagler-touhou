@@ -1,0 +1,10 @@
+[Unit]
+Description=Follow the monitored TURN selection
+
+[Timer]
+OnBootSec=20
+OnUnitInactiveSec=15
+AccuracySec=1
+
+[Install]
+WantedBy=timers.target

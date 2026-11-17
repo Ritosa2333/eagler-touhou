@@ -69,6 +69,10 @@ assert.match(html, /const EXPLICIT_LOCAL_STORAGE_KEYS = new Set\(\["eagler\.mpSp
 assert.match(html, /!key\.startsWith\("eagler-touhou-origin-migration-"\)[\s\S]*key\.startsWith\("eagler-"\)[\s\S]*EXPLICIT_LOCAL_STORAGE_KEYS\.has\(key\)/,
   "migration authorization state must never migrate as player data");
 
+assert.match(html, /const ownedLocalStorageKey = key =>[\s\S]*EXPLICIT_LOCAL_STORAGE_KEYS\.has\(key\)/,
+  "TH13 stable and beta save keys must be owned through the explicit key set");
+assert.doesNotMatch(html, /key === "th13\.save"/,
+  "TH13 save ownership must stay in the explicit key set that also covers beta:th13.save");
 assert.match(html, /target\.protocol = "https:";/);
 assert.match(html, /source\.protocol = "http:";/);
 assert.match(html, /authorization\.token !== handoff[\s\S]*authorization\.sourceOrigin !== source\.origin[\s\S]*authorization\.targetOrigin !== location\.origin[\s\S]*authorization\.expires < Date\.now\(\)/,

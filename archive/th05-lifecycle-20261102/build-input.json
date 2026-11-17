@@ -1,0 +1,155 @@
+{
+  "base": "/var/www/eagler-touhou",
+  "siteUrl": "https://touhouonline.com/",
+  "tooling": "/opt/module-mime-20261029/launcher",
+  "release": "th05-lifecycle-20261102",
+  "revision": "494cac535b14d6bf38131abfa2a0d4b420ce7ae6",
+  "binarySource": "deterministic stage homing initialization",
+  "expectedCurrent": "/var/www/eagler-touhou/releases/th05-battle-20261102",
+  "baselineDeploymentSha256": "8c6f59c8928245fa51fcf9b788b34ea692cb772e41fac06981696438618e7dff",
+  "variants": {
+    "multiplayer": {
+      "game": "th05",
+      "variant": "multiplayer",
+      "root": "runtime/th05/multiplayer/",
+      "entry": "th05.html",
+      "previousGeneration": "9df5d4f97a30ea47b3118bd548424e74dcad8e9a5e45d94f8f25d603969f93e8",
+      "expectedGeneration": "ec43edab2048d2650ddf474f186c88cdfbb960aaf2add4dd044d370b1df67937",
+      "files": [
+        {
+          "path": "audio-layout.mjs",
+          "bytes": 54633,
+          "sha256": "27b992142a91990fb6aa7a9b50639a17ab75f3583fe50642910d5a5bf70478e3"
+        },
+        {
+          "path": "audio.mjs",
+          "bytes": 7432,
+          "sha256": "6f40e22a1a667b1182a4cdff402aabbb05f4cb8766f3c329576ff2ce36623202"
+        },
+        {
+          "path": "clock.mjs",
+          "bytes": 1483,
+          "sha256": "93da6be3ab5af1256b10ae3ad4be234266fc62f005b635513089e8d7ed9f5239"
+        },
+        {
+          "path": "data.mjs",
+          "bytes": 3024,
+          "sha256": "c8e24133cca5d0c8a0c2dbae5f6ecf19174694c2d6921c99751610a93372d936"
+        },
+        {
+          "path": "direct-input-bridge.mjs",
+          "bytes": 1318,
+          "sha256": "28a01c9b3f4fb181e8278995c602ae3f2bc0351856102755513266c47abb6062"
+        },
+        {
+          "path": "directory-keyboard.mjs",
+          "bytes": 5180,
+          "sha256": "9c9d8d99b46a802650821dd96ddc96509aef5c0f7bc50220b8ebc26fc086642d"
+        },
+        {
+          "path": "display.mjs",
+          "bytes": 1339,
+          "sha256": "b5ed5c02db19bc61329ecebd0fe9af190dac13d9bf60a373d956ba6f45a61bda"
+        },
+        {
+          "path": "input-transport.mjs",
+          "bytes": 10834,
+          "sha256": "1ebc7119d439ed35feccbb834a5526232419c877b723c58d692d171727c2cd38"
+        },
+        {
+          "path": "input.mjs",
+          "bytes": 3816,
+          "sha256": "8887f08c8595284102b6cdaf62a89a1a0df87ee95e204b49c30e3bf7dd2cbe23"
+        },
+        {
+          "path": "keyboard-input-bridge.mjs",
+          "bytes": 4775,
+          "sha256": "2955402127f0ce1a90f50b01a6147272d423338596591fba0b502bc8a1ec0cd2"
+        },
+        {
+          "path": "keyboard-owners.mjs",
+          "bytes": 1670,
+          "sha256": "b8d75f6aac5e493a09b69de0c5aef57aa4b2e91f5a46e91709aab29395afcfb3"
+        },
+        {
+          "path": "managed-transport.mjs",
+          "bytes": 11312,
+          "sha256": "339c19b79afc8ff4239c01095905f7c5e2c0eb0b5361f8b78ef2134d10d13d63"
+        },
+        {
+          "path": "managed.mjs",
+          "bytes": 8330,
+          "sha256": "bb4e7c71ad4c1289a6980ebca4c7c07f39b46406d527168ce2672e04682f29ec"
+        },
+        {
+          "path": "manifest.json",
+          "bytes": 234,
+          "sha256": "43e9ec0fd6e08ffb054fa3bc750fe6216e708847addc1930c17c12cd54a9eace"
+        },
+        {
+          "path": "multiplayer.mjs",
+          "bytes": 13469,
+          "sha256": "bfccbc8364339d2ebc4f148c322051791d2b0adc7cc520ce1db4b336573dcef9"
+        },
+        {
+          "path": "music-notes.mjs",
+          "bytes": 1124,
+          "sha256": "110bf3b10dc6058ba0806783af7db6ef27167e02b314a7c2615404f1e33f0935"
+        },
+        {
+          "path": "playback.mjs",
+          "bytes": 3358,
+          "sha256": "a17a117df30c1e20ddd26f932747a5db48b66be7a3bfc5bb5a6e5b707266ffc7"
+        },
+        {
+          "path": "pointer.mjs",
+          "bytes": 1107,
+          "sha256": "495eb7915270f9ded966c91da04e97f620ea2a76b57972460eab78b72f562bc6"
+        },
+        {
+          "path": "replay.mjs",
+          "bytes": 2719,
+          "sha256": "4df79f70cd7977a6bf35f242a27bbe6211f00780ffd27bcb3f8df2c717b2e272"
+        },
+        {
+          "path": "sfx.mjs",
+          "bytes": 2299,
+          "sha256": "3a966c786d0bcfdc9ddcaddca55210c704391ca029c6789dda2a83c44d461c35"
+        },
+        {
+          "path": "shell.mjs",
+          "bytes": 17811,
+          "sha256": "b32a71c467e778115652f85677a16fec1303b4067628e02ac6f580fc80ff07f5"
+        },
+        {
+          "path": "spectator.mjs",
+          "bytes": 11210,
+          "sha256": "6ef593482658175cce1dbdcf3048200172b8613a29c37c9455ef76ddcffc0df1"
+        },
+        {
+          "path": "storage.mjs",
+          "bytes": 2599,
+          "sha256": "315220c59b88397bed650dc854a78f79913fd73d6504e2c3e9ea1b8111aaf595"
+        },
+        {
+          "path": "th05.html",
+          "bytes": 671,
+          "sha256": "d33601507eb1341fbcd710a6f23da4ee7be254cde404a49b3de3ddc4220229ad"
+        },
+        {
+          "path": "th05.mjs",
+          "bytes": 155430,
+          "sha256": "7cb4baeba722cbe64f2ef5dd6e830ef12464cd22315d940e8e021cb1623fc47b"
+        },
+        {
+          "path": "th05.wasm",
+          "bytes": 1185097,
+          "sha256": "5863fc8c9e6d23974f043332e7f181c51c71d57e18bea0a62cdaeb9e23854d0d"
+        }
+      ],
+      "changedFiles": [
+        "th05.wasm"
+      ]
+    }
+  }
+}

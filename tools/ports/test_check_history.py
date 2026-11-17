@@ -4,6 +4,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -71,7 +72,46 @@ class SourceHistoryTests(unittest.TestCase):
         self.assertEqual(result["subtrees"]["ports/th12"], self.upstream)
         self.assertEqual(result["sourceAnchors"], 0)
 
+    def test_fast_check_validates_joins_without_exporting(self):
+        class AncestryRepository(history.Repository):
+            def git(self, *arguments):
+                if arguments[:1] == ("subtree",):
+                    raise AssertionError("Fast history check should not export a subtree")
+                return super().git(*arguments)
+
+        repo = AncestryRepository(self.repo)
+        recorded = self.git(self.repo, "rev-parse", "HEAD")
+        (self.repo / "ports/th12/README.md").write_text("ordinary source change\n", encoding="utf-8")
+        self.git(self.repo, "add", ".")
+        self.git(self.repo, "commit", "-qm", "ordinary source change")
+        self.assertEqual(history.verify(repo, base=recorded, changed_only=True)["subtrees"], {"ports/th12": None})
+
+        self.record["subtree"]["currentSplit"] = self.base
+        self.write("docs/migration/th12-eagler-20261020.json", self.record)
+        self.git(self.repo, "add", ".")
+        self.git(self.repo, "commit", "-qm", "corrupt latest split")
+        with self.assertRaisesRegex(RuntimeError, "has a different subtree split"):
+            history.verify(repo, base=recorded, changed_only=True)
+
+    def test_new_connection_trailer_schedules_export_before_record_update(self):
+        recorded = self.git(self.repo, "rev-parse", "HEAD")
+        self.git(self.repo, "commit", "--allow-empty", "-qm", "connection", "-m", "git-subtree-dir: ports/th12")
+        calls = []
+        upstream = self.upstream
+
+        class TrackingRepository(history.Repository):
+            def git(self, *arguments):
+                if arguments[:2] == ("subtree", "split"):
+                    calls.append(arguments[2])
+                    return upstream
+                return super().git(*arguments)
+
+        result = history.verify(TrackingRepository(self.repo), base=recorded, changed_only=True)
+        self.assertEqual(calls, ["--prefix=ports/th12"])
+        self.assertEqual(result["subtrees"]["ports/th12"], upstream)
+
     def test_multiplayer_source_record_runs_standard_export_and_ancestry_checks(self):
+        recorded = self.git(self.repo, "rev-parse", "HEAD")
         self.write("launcher/config/workspace.json", {"repositories": {"th12": "ports/th12", "th15mp": "ports/th15-mp"}})
         self.git(self.repo, "add", ".")
         self.git(self.repo, "commit", "-qm", "register multiplayer directory")
@@ -84,7 +124,8 @@ class SourceHistoryTests(unittest.TestCase):
         (self.repo / "ports/th15-mp/README.md").write_text("multiplayer frame restoration\n", encoding="utf-8")
         self.git(self.repo, "add", ".")
         self.git(self.repo, "commit", "-qm", "adapt multiplayer")
-        result = history.verify(history.Repository(self.repo), base=self.base)
+        result = history.verify(history.Repository(self.repo), base=recorded, jobs=2, changed_only=True)
+        self.assertIsNone(result["subtrees"]["ports/th12"])
         split = result["subtrees"]["ports/th15-mp"]
         self.assertTrue(history.Repository(self.repo).ancestor(self.upstream, split))
         self.assertEqual(self.git(self.repo, "rev-parse", "HEAD:ports/th15-mp"), self.git(self.repo, "rev-parse", split + "^{tree}"))
@@ -99,8 +140,13 @@ class SourceHistoryTests(unittest.TestCase):
         (self.repo / "ports/th12/README.md").write_text("adapted source\n", encoding="utf-8")
         self.git(self.repo, "add", "ports/th12/README.md")
         self.git(self.repo, "commit", "-qm", "adapt port")
-        result = history.verify(history.Repository(self.repo), base=self.base)
+        output = subprocess.check_output([
+            sys.executable, history.__file__, "--repo", str(self.repo),
+            "--subtree", "ports/th12", "--push", str(self.source), "published",
+        ], text=True, encoding="utf-8")
+        result = json.loads(output)
         split = result["subtrees"]["ports/th12"]
+        self.assertEqual(self.git(self.source, "rev-parse", "refs/heads/published"), split)
         self.assertNotEqual(split, self.upstream)
         self.assertTrue(history.Repository(self.repo).ancestor(self.upstream, split))
         self.assertEqual(self.git(self.repo, "rev-parse", "HEAD:ports/th12"),

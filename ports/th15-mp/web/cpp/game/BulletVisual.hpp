@@ -6,8 +6,11 @@ namespace th15 {
 // Animation ownership for one pooled bullet. Collision and frame logic share
 // the same visual fields rather than maintaining an unrelated display copy.
 class BulletVisual {
+    friend class BulletScene;
     BulletState& state;Rng& random;BulletSpriteSource source;
     void push()noexcept;void pull()noexcept;
+    void prepare(AnmVm& vm){vm.presentation_motion=true;if(vm.visual.render_flags&0x80){vm.variables.rotation.z=normalize_angle(float(state.motion.angle+1.5707963705062866f));vm.visual.flags|=4;}if(state.flags&0x40){vm.visual.flags|=8;vm.visual.secondary_scale={state.scale,state.scale};}}
+    bool logical_draw(){if(overlay.visual.visible()||body.rotation_parent||body.geometry.overlay)return false;body.visual.translation=state.motion.position;prepare(body);state.visual_flags=body.visual.flags;return true;}
 public:
     AnmVm body,overlay;AnmResource* resource=nullptr;float rate=1;
     std::string error;
@@ -21,7 +24,7 @@ public:
     bool hit()noexcept{return interrupt(1);}
     bool interrupt_overlay(i32 id)noexcept;
     // 1 destroys the animation; 0 keeps it; -1 reports an execution error.
-    i32 tick(bool overlay_animation);
+    i32 tick(bool overlay_animation,bool tracked_interpolators=false);
     bool draw(AnmRenderer&,const MultiplayerGrazeVisual* graze=nullptr);
 };
 }

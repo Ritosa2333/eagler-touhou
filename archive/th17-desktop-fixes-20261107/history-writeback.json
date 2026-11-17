@@ -1,0 +1,14 @@
+{
+  "sourceHead": "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
+  "game": "th17",
+  "target": "ports/th17-mp",
+  "merged": "43ea19250132e9fe56766e2e29dd89389103ac83",
+  "tree": "9ebabae50fa16bb5b208285873a97dfb9619ac7b",
+  "parents": [
+    "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
+    "43ea19250132e9fe56766e2e29dd89389103ac83"
+  ],
+  "message": "同步 TH17 单人诊断模块回归的目录历史\n\ngit-subtree-dir: ports/th17-mp\ngit-subtree-mainline: cd0b9fc7f299b2b76e6c84e9cfa6964e955351af\ngit-subtree-split: 43ea19250132e9fe56766e2e29dd89389103ac83\nPort-History-Writeback: 1\n",
+  "changed": [],
+  "candidateCommit": "d7d379083994947f25168f492d945e24be975024"
+}

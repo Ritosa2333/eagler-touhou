@@ -9,6 +9,7 @@ class AnmManager final:public AnmObjectHost {
     std::unordered_map<i32,std::unique_ptr<Bank>> banks;
     std::vector<std::unique_ptr<Bank>> retired_banks;
     Bank* last_instantiated_bank=nullptr;
+    u32 rollback_leases=0;
     Rng& random;AnmEnvironment& environment;
     static void copy_template(AnmVm&,const AnmVm&);
     AnmVm* instantiate(AnmResource&,i32);
@@ -28,6 +29,7 @@ public:
     bool load(i32 id,const u8*,u32 size);
     bool load(i32 id,AnmResource&&);
     void unload(i32 id);void collect_resources();
+    bool save_rollback(multiplayer::FrameImage&);
     u32 resource_count()const noexcept{return banks.size();}
     u32 retired_resource_count()const noexcept{return retired_banks.size();}
     std::function<void(const AnmResource&)> resource_release;
@@ -36,8 +38,8 @@ public:
     bool sprite_fallback(i32 id)noexcept{auto* bank=resource(id);if(!bank)return false;environment.fallback_sprite_resource=bank;return true;}
     AnmVm* script_template(i32 id,u32 script)const noexcept;
     bool bind_template(AnmVm&,i32 id,i32 script);
-    u32 create(i32 resource,i32 script,i32 layer=-1,u32 ordering=2,const Vec3& translation={},float rotation_z=0);
-    u32 create_overlay(i32 resource,i32 script);
+    u32 create(i32 resource,i32 script,i32 layer=-1,u32 ordering=2,const Vec3& translation={},float rotation_z=0,u8 hud_viewer=0,u8 pilot_draw_owner=0);
+    u32 create_overlay(i32 resource,i32 script,u8 hud_viewer=0);
     AnmVm* spawn_child(AnmVm&,i32 script,u32 ordering)override;
     AnmVm* spawn_detached(AnmVm&,i32 script)override;
     bool spawn_effect(AnmVm&,i32 script)override;

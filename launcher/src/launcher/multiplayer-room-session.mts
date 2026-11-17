@@ -15,6 +15,7 @@ export interface MultiplayerRoomSessionSnapshot {
   room: {
     visibility?: "public" | "private";
     disableCheatMovement?: boolean;
+    unrated?: boolean;
     disableLocalChargePriority?: boolean;
     disableFocus?: boolean;
   ballCount?: number;
@@ -71,6 +72,7 @@ export function createMultiplayerRoomSessionStore({
           code: snapshot.room.code,
           visibility: snapshot.room.visibility,
           disableCheatMovement: snapshot.room.disableCheatMovement,
+          unrated: snapshot.room.unrated,
           disableLocalChargePriority: snapshot.room.disableLocalChargePriority,
           disableFocus: snapshot.room.disableFocus,
           ballCount: snapshot.room.ballCount,
@@ -121,6 +123,7 @@ export function createMultiplayerRoomSessionStore({
         code: roomCode,
         visibility: room.visibility === "private" ? "private" : "public",
         disableCheatMovement: room.disableCheatMovement === true,
+        ...(product === 'th09mp' && typeof room.unrated === 'boolean' ? {unrated: room.unrated} : {}),
         ...(product === 'th09mp' ? {disableLocalChargePriority: room.disableLocalChargePriority === true} : {}),
         ...(product === 'th01mp' ? {ballCount:[1,2,3,4,6,8,9].includes(room.ballCount as number) ? room.ballCount as number : 2} : {}),
         ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false} : product === 'th02mp' ? {disableFocus:room.disableFocus===true} : {}),

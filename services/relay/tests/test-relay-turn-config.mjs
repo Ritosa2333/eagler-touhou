@@ -89,7 +89,7 @@ for (const packaged of [false, true]) test(`${packaged ? 'packaged' : 'source'} 
     const guestSignal = connect({room, run: String(started.serial), player: '1', players: '2', signal: '1', member: 'turn_guest_member'});
     await guestSignal.wait(m => m.type === 'peers');
 
-    async function check(urls, secret) {
+    async function check(urls, secret, backups = []) {
       const lobby = connect({room, lobby: 'turn_probe_client', member: 'turn_probe_member'});
       const state = await lobby.wait(m => m.type === 'state');
       const signal = connect({room, run: String(started.serial), player: '0', players: '2', signal: '1', member: 'turn_host_member'});
@@ -97,7 +97,13 @@ for (const packaged of [false, true]) test(`${packaged ? 'packaged' : 'source'} 
       const diagnostic = connect({diagnostic: '1'});
       const ready = await diagnostic.wait(m => m.type === 'diagnostic-ready');
       for (const servers of [state.roomProbe.iceServers, peers.iceServers, ready.iceServers]) {
-        assert.equal(servers.length, 1);
+        assert.equal(servers.length, 1 + backups.length);
+        for (const [index, backup] of backups.entries()) {
+          const entry = servers[index + 1];
+          assert.deepEqual(entry.urls, backup.urls);
+          assert.equal(entry.credential, createHmac('sha1', backup.sharedSecret).update(entry.username).digest('base64'));
+          assert.equal('sharedSecret' in entry, false);
+        }
         const turn = servers[0];
         assert.deepEqual(turn.urls, urls);
         assert.equal(turn.credential, createHmac('sha1', secret).update(turn.username).digest('base64'));
@@ -118,13 +124,14 @@ for (const packaged of [false, true]) test(`${packaged ? 'packaged' : 'source'} 
     await publish({urls: ['turn:first.example:3478?transport=udp'], sharedSecret: 'first-secret'});
     await check(['turn:first.example:3478?transport=udp'], 'first-secret');
     const urls = ['turn:second.example:3478?transport=udp', 'turns:second.example:5349'];
-    await publish({urls, sharedSecret: 'second-secret'});
-    await check(urls, 'second-secret');
+    const backups = [{urls: ['turn:backup.example:3478'], sharedSecret: 'separate-key'}];
+    await publish({urls, sharedSecret: 'second-secret', backups});
+    await check(urls, 'second-secret', backups);
     await publish({urls: ['https://invalid.example'], sharedSecret: 'invalid-secret'});
-    await check(urls, 'second-secret');
+    await check(urls, 'second-secret', backups);
     await rm(config);
     await delay(1100);
-    await check(urls, 'second-secret');
+    await check(urls, 'second-secret', backups);
   } finally {
     for (const socket of sockets) if (socket.readyState < WebSocket.CLOSING) socket.terminate();
     if (child && child.exitCode === null) {const exited = once(child, 'exit'); child.kill(); await exited;}

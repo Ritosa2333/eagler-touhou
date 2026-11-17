@@ -40,11 +40,11 @@ async function storedObjectBuffer(stored: StoredPackageObject | null) {
   return null;
 }
 
-async function readObjectBuffer(objectId: string, readObject: ReadObject, timeoutMs: number) {
+async function readObjectBeforeTimeout<T>(read: () => Promise<T>, timeoutMs: number) {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
-      readObject(objectId).then(storedObjectBuffer),
+      read(),
       new Promise<never>((_resolve, reject) => {
         timer = setTimeout(() => reject(new Error("本地存储读取超时，请重试")), timeoutMs);
       }),
@@ -54,15 +54,30 @@ async function readObjectBuffer(objectId: string, readObject: ReadObject, timeou
   }
 }
 
+function readObjectBuffer(objectId: string, readObject: ReadObject, timeoutMs: number) {
+  return readObjectBeforeTimeout(() => readObject(objectId).then(storedObjectBuffer), timeoutMs);
+}
+
 export async function readManagedRuntimeData(
   generation: InstalledPackageGeneration,
-  { readObject = readPackageObject, timeoutMs = 30_000 }: ReadOptions = {},
+  { readObject = readPackageObject, timeoutMs = 30_000, preferBlob = false }: ReadOptions & {preferBlob?: boolean} = {},
 ) {
   const fileId = packageDataFileId(generation);
   const declaration = generation.descriptor.files[fileId];
   const fileRef = generation.files[fileId];
   if (!declaration || !fileRef?.objectId) throw new InstalledGameDataError("Installed game DATA is missing");
   const objectId = fileRef.objectId;
+  if (preferBlob) {
+    const stored = await readObjectBeforeTimeout(() => readObject(objectId), timeoutMs);
+    // TH14 reads chunks without transferring or mutating the IndexedDB result.
+    const data = stored?.data;
+    const blob = data instanceof ArrayBuffer ? undefined : stored?.blob;
+    const bytes = data?.byteLength ?? blob?.size;
+    if (bytes === undefined) throw new InstalledGameDataError("Installed game DATA cannot be read");
+    if (declaration.bytes != null && bytes !== Number(declaration.bytes))
+      throw new InstalledGameDataError(`Installed game DATA size mismatch: ${bytes}/${declaration.bytes}`);
+    return blob ? {blob, bytes, fileId} : {buffer: data, bytes, fileId};
+  }
   const buffer = await readObjectBuffer(objectId, readObject, timeoutMs);
   if (!(buffer instanceof ArrayBuffer)) throw new InstalledGameDataError("Installed game DATA cannot be read");
   if (declaration.bytes != null && buffer.byteLength !== Number(declaration.bytes)) {

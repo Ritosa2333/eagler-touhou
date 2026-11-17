@@ -23,6 +23,7 @@ const sha=b=>createHash('sha256').update(b).digest('hex');
 const headers=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headers(resolve(dir,e.name)):
   /\.(hpp|h|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
 const headerInputs=[...headers(resolve(root,'cpp/multiplayer')),...headers(resolve(root,'cpp/game')),...headers(resolve(common,'include')),
+  resolve(root,'cpp/third_party/miniz/miniz.c'),resolve(root,'cpp/third_party/miniz/miniz.h'),
   resolve(root,'../portable/input/TouchController.hpp')];
 const headerHashes=Object.fromEntries(headerInputs.map(p=>[p,sha(readFileSync(p))]));
 function compile(args){
@@ -32,7 +33,7 @@ function compile(args){
 }
 const suites={
   'charge-channel':[],
-  'charge-history':['ChargeReplayTrack','Lzss'].map(n=>resolve(root,'cpp/game',n+'.cpp')),
+  'charge-history':['ChargeReplayTrack','Lzss','ReplayCompression','TouchMotionTrack'].map(n=>resolve(root,'cpp/game',n+'.cpp')),
   'local-charge':['LocalCharge','ShotControl','AttackAreas','Timer','GameMath','GameInput','InputFrame','Rng'].map(n=>resolve(root,'cpp/game',n+'.cpp')),
   'image-resample':[resolve(root,'cpp/game/ImageResample.cpp')],
   'graphics-projection':[resolve(root,'cpp/game/GraphicsMath.cpp')],

@@ -21,9 +21,12 @@
 #include "netplay/Th07RollbackState.hpp"
 #endif
 
-i32 g_FullPowerScoreBonus[30] = {10,   20,   30,   40,   50,   60,   70,   80,    90,    100,
+// 31 entries: the counter is clamped to 30, and the last value (51200) is what
+// a full-power small power item is worth from the 31st one on.
+i32 g_FullPowerScoreBonus[31] = {10,   20,   30,   40,   50,   60,   70,   80,    90,    100,
                                  200,  300,  400,  500,  600,  700,  800,  900,   1000,  2000,
-                                 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000};
+                                 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000,
+                                 51200};
 
 i32 g_PowerLevels[9] = {8, 16, 32, 48, 64, 80, 96, 128, 999};
 

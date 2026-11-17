@@ -106,6 +106,13 @@ void EclVm::push_float(float v){stack_.push_back(1);i32 bits;std::memcpy(&bits,&
 i32 EclVm::pop_int(){if(stack_.size()<2){error_=true;return 0;}i32 v=stack_.back();stack_.pop_back();i32 type=stack_.back();stack_.pop_back();if(type==1){float f;std::memcpy(&f,&v,4);return i32(f);}return v;}
 float EclVm::pop_float(){if(stack_.size()<2){error_=true;return 0;}i32 bits=stack_.back();stack_.pop_back();i32 type=stack_.back();stack_.pop_back();if(type==0)return float(bits);float v;std::memcpy(&v,&bits,4);return v;}
 i32 EclVm::var_int(i32 addr) const {
+    // 0x4fdc22..0x4fdc56: boss slot 0's second host integer.
+    // Orin's dead fairies wait for this live revival signal.
+    if(world_&&addr==-9942){
+        const u32 id=world_->boss_slots[0];
+        for(const auto&e:world_->enemies)if(e.active&&id&&e.id==id)return e.ecl_ints[1];
+        return 0;
+    }
     if(world_&&addr==-9896)return world_->boss_escape_result;
     if(world_&&addr==-9887)return world_->story_boss_phase;
     if(world_&&addr==-9886)return world_->story_final_boss;
@@ -128,6 +135,7 @@ i32 EclVm::var_int(i32 addr) const {
     auto it=globals_.find(addr);return it!=globals_.end()?it->second:0;
 }
 float EclVm::var_float(i32 addr) const {
+    if(addr==-9942)return float(var_int(addr)); // same alias in 0x4fc530
     // 0x4fc530 -> 0x404b70: signed unit random, used by pl01 laser angles.
     if(addr==-9999)return world_?world_->bullet_rng.unit():AnmVm::rand_unit();
     if(addr==-9998)return (world_?world_->bullet_rng.signedUnit():AnmVm::rand_unit()*2.f-1.f)*3.14159274101257324219f;

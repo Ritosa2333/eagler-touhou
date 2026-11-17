@@ -1,0 +1,17 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "repository": "https://github.com/AgentMystia/th13",
+  "branch": "main",
+  "commit": "ca705e2339622348611590bb325dd013a95aa9a2",
+  "destination": "ports/th13",
+  "mode": "git-subtree",
+  "currentMode": "git-subtree",
+  "subtree": {
+    "upstreamCommit": "ca705e2339622348611590bb325dd013a95aa9a2",
+    "initialJoin": "e01e7b6d6f0e65b209df8bf7f9eca50b30193474",
+    "initialSplit": "ca705e2339622348611590bb325dd013a95aa9a2",
+    "latestJoin": "e01e7b6d6f0e65b209df8bf7f9eca50b30193474",
+    "currentSplit": "ca705e2339622348611590bb325dd013a95aa9a2",
+    "aheadCommits": 0
+  }
+}

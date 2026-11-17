@@ -1,5 +1,6 @@
 #include "Practice.hpp"
 #include "PracticeTools.hpp"
+#include <bit>
 #include "GameSession.hpp"
 #include "GameState.hpp"
 #include "StageFlow.hpp"
@@ -16,7 +17,8 @@
 
 namespace th12::practice {
 namespace {
-bool profileEnabled=false, live=false, playback=false, modified=false;
+bool profileEnabled=false, live=false, playback=false, modified=false, recordedTools=false;
+ReplayToolState liveTools{0,0,0x3f000000};
 uint32_t toolFlags=0, generation=0;int32_t resolved_input[2]{};
 Parameters config{};
 std::string failure, stateBuffer;
@@ -155,7 +157,8 @@ void setEnabled(bool value) {
   if (!profileEnabled) reset(true);
 }
 void reset(bool clearTools) {
-  config={};live=playback=modified=false;pristineFiles.clear();failure.clear();tracker={};++generation;
+  setReplay(false);
+  config={};live=playback=modified=recordedTools=false;pristineFiles.clear();failure.clear();tracker={};++generation;
   if (clearTools) {
     toolFlags=0;
     toolSettings()={};
@@ -229,12 +232,26 @@ bool prepareReplay(int difficulty) {
 #endif
 }
 void applyBirth(){if(profileEnabled&&live&&config.mode) itemManager.tokenSideCounter=config.ufo_side;}
-void setReplay(bool value){playback=value;}
+void setReplay(bool value){
+  if(value&&!playback)liveTools=replayToolState();
+  if(!value&&playback)applyReplayToolState(liveTools);
+  playback=value;recordedTools=false;
+}
+bool replayToolsActive(){return playback&&recordedTools;}
+void applyReplayToolState(const ReplayToolState& state){
+  if(!profileEnabled||!playback)return;
+  recordedTools=true;toolFlags=uint32_t(state[0])&511u;
+  auto& settings=toolSettings();
+  settings.map_inf_life_to_no_continue=state[1]&1;
+  settings.force_boss_move_down=state[1]&2;
+  settings.chromatic_ufo=state[1]&4;
+  settings.boss_move_down_range=std::bit_cast<float>(state[2]);
+}
 bool replay(){return playback;}
 bool active(){return profileEnabled&&live;}
 void setTools(uint32_t value){if(profileEnabled&&!playback){toolFlags=value&511u;if(toolFlags&447u)modified=true;}}
 uint32_t tools(){return toolFlags;}
-bool tool(Tool flag){return profileEnabled&&!playback&&(toolFlags&uint32_t(flag));}
+bool tool(Tool flag){return profileEnabled&&(!playback||recordedTools)&&(toolFlags&uint32_t(flag));}
 bool assisted(){return modified||(profileEnabled&&live&&config.mode);}
 void markAssisted(){if(profileEnabled&&!playback)modified=true;}
 void resetTracker(){tracker={};}

@@ -2,12 +2,13 @@
 import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {cp, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile} from 'node:fs/promises';
+import {cp, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, symlink, writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {parse} from 'parse5';
+import {parse as parseCss} from 'postcss';
 import {parse as parseJavaScript} from 'acorn';
 import {buildReactAppShell} from '../../scripts/ui-rewrite/app-shell-build.ts';
 import {APP_SHELL_RETIREMENT_WORKER} from '../../lib/app-shell-retirement.mjs';
@@ -26,7 +27,7 @@ before(async () => {
   // launcher cache. Keep dependency installation shared; copy no build output.
   for (const path of ['app', 'src', 'lib', 'messages', 'project.inlang/settings.json', 'compat', 'package', 'public', 'config', 'scripts', 'host', 'server', 'integrations',
     'content', 'favicon.ico', 'docs/FAQ.md', 'docs/SELF_HOSTING.md', 'docs/SELF_HOSTING_REFERENCE.md', 'docs/EXTERNAL_RESOURCE_MODE.md',
-    'product-catalog.mjs','site-manifest.mjs','release-catalog.mjs','resource-mode.mjs','runtime-protocol.mjs','NOTICE.txt', 'README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'bun.lock', '.bun-version', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
+    'product-catalog.mjs','site-manifest.mjs','release-catalog.mjs','resource-mode.mjs','runtime-protocol.mjs','README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'bun.lock', '.bun-version', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
     'tsconfig.ui-rewrite.json', 'tsconfig.ui-rewrite.tools.json', 'vite.config.ts', 'react-router.config.ts']) {
     await mkdir(resolve(coldSource, path, '..'), {recursive: true});
     await cp(resolve(path), resolve(coldSource, path), {recursive: true});
@@ -46,6 +47,7 @@ before(async () => {
   for (const [name, mountPath, enabled] of [['default', '/', true], ['disabled', '/', false], ['root', '/', true], ['nested', '/nested/', true]]) {
     const output = resolve(work, name);
     const env = {...process.env, EAGLER_REACT_BUILD_DIRECTORY: output, EAGLER_REACT_MOUNT_PATH: mountPath,
+      VITE_ACCOUNTS_ENABLED: ['root', 'nested'].includes(name) ? 'true' : 'false',
       EAGLER_REACT_APP_SHELL: name === 'default' ? '' : enabled ? 'isolated' : 'disabled', EAGLER_REACT_APP_SHELL_ORIGIN: name !== 'default' && enabled ? origin : '', EAGLER_REACT_APP_SHELL_ISOLATED_ORIGIN: ''};
     try {execFileSync(process.execPath, ['node_modules/@react-router/dev/bin.cjs', 'build'], {cwd: coldSource, env, encoding: 'utf8', stdio: 'pipe', timeout: 120000});}
     catch (error) {throw new Error(`React ${name} build failed:\n${error.stdout ?? ''}\n${error.stderr ?? ''}`, {cause: error});}
@@ -60,6 +62,30 @@ function nodes(html) {
   const result = []; const visit = node => {if (node.tagName) result.push(node); for (const child of node.childNodes ?? []) visit(child);};
   visit(parse(html)); return result;
 }
+async function builtCssRules(directory) {
+  const assets = resolve(directory, 'assets');
+  const rules = [];
+  for (const name of (await readdir(assets)).filter(name => name.endsWith('.css'))) {
+    const root = parseCss(await readFile(resolve(assets, name), 'utf8'));
+    root.walkRules(rule => {
+      const declarations = new Map();
+      rule.walkDecls(declaration => declarations.set(declaration.prop.toLowerCase(), declaration.value.toLowerCase()));
+      rules.push({selector: rule.selector.replace(/\s+/g, ''), declarations});
+    });
+  }
+  return rules;
+}
+test('actual builds preserve composed individual transforms in shared and route styles', async () => {
+  for (const [name, {directory}] of outputs) {
+    const rules = await builtCssRules(directory);
+    const contains = (selector, translate, transform) => rules.some(rule => rule.selector.includes(selector)
+      && rule.declarations.get('translate') === translate
+      && rule.declarations.get('transform') === transform);
+    assert.ok(contains('.book-lobby-checksvg', '-2px -6px', 'scale(.7)'), `${name}: lobby check keeps its optical offset and scale`);
+    assert.ok(contains('.ui-button:active', 'none', 'none'), `${name}: shared button active state keeps both transform properties`);
+    assert.ok(contains('.less-motion.book-recent-link', 'none', 'none'), `${name}: reduced-motion rule keeps both transform properties`);
+  }
+});
 test('default actual build publishes an enabled same-origin offline worker', async () => {
   const {directory} = outputs.get('default');
   const worker = await readFile(resolve(directory, 'app-shell-sw.js'), 'utf8');
@@ -144,7 +170,7 @@ test('actual build keeps canonical public URLs including bounded legacy readers'
       assert.ok(order>=0&&order<style,`${file}: layer order precedes split stylesheets`);
       assert.equal([...html.matchAll(/name="darkreader-lock"/g)].length,1,`${file}: explicit theme ownership`);
     }
-    for (const file of ['README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'NOTICE.txt']) {
+    for (const file of ['README.md', 'ASSETS.md', 'THIRD_PARTY.md']) {
       assert.deepEqual(await readFile(resolve(directory, file)), await readFile(resolve(file)));
     }
     for (const file of ['faq.html', 'content/FIRST_USE_NOTICE.html', 'content/MULTIPLAYER.html']) {
@@ -203,7 +229,12 @@ test('selected self-host bundle consumes prebuilt React and private graph inputs
     }
     // These are declared operator parsers and their locked transitive decoder,
     // not the maintainer's TS/React Router/esbuild dependency environment.
-    for (const dependency of ['acorn', 'parse5', 'entities']) await cp(resolve('node_modules', dependency), resolve(operator, 'node_modules', dependency), {recursive: true});
+    // Worktree dependencies may be junctions into the shared install. Copy the
+    // resolved package directory so the temporary operator bundle stays portable.
+    for (const dependency of ['acorn', 'parse5', 'entities']) {
+      const source = await realpath(resolve('node_modules', dependency));
+      await cp(source, resolve(operator, 'node_modules', dependency), {recursive: true});
+    }
     const environment = {...process.env, EAGLER_FRONTEND: 'react'};
     delete environment.EAGLER_REACT_BUILD_DIRECTORY; delete environment.EAGLER_REACT_MOUNT_PATH;
     const script = `import {FRONTEND_PACKAGE_FILES, REACT_FRONTEND_ARTIFACT} from './lib/frontend-manifest.mjs';

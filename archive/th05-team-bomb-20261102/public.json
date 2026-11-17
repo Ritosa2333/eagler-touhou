@@ -1,0 +1,93 @@
+{
+  "siteUrl": "https://touhouonline.com/",
+  "passed": true,
+  "players": 2,
+  "language": "lang_zh-hans",
+  "rollback": true,
+  "sourceCommit": "1f2d4de6f08689f6fd39e63d993c2e1bc134d7d1",
+  "errors": [],
+  "httpErrors": [],
+  "runtime": [
+    {
+      "frame": 189,
+      "confirmed": 187,
+      "route": "rtc",
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "failed": false,
+      "error": ""
+    },
+    {
+      "frame": 189,
+      "confirmed": 187,
+      "route": "rtc",
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "failed": false,
+      "error": ""
+    }
+  ],
+  "spectator": {
+    "errors": [],
+    "paused": {
+      "version": 1,
+      "run": "s4d510fa4c05d690f_0",
+      "revision": 5,
+      "min": 0,
+      "position": 1330,
+      "received": 1331,
+      "edge": 1331,
+      "target": 1330,
+      "paused": true,
+      "seeking": false,
+      "following": false,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "receivedWhilePaused": 1342,
+    "live": {
+      "version": 1,
+      "run": "s4d510fa4c05d690f_0",
+      "revision": 12,
+      "min": 0,
+      "position": 1384,
+      "received": 1385,
+      "edge": 1385,
+      "target": 1385,
+      "paused": false,
+      "seeking": false,
+      "following": true,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "exitPreservesPlayers": true
+  },
+  "mirrors": {
+    "overseas": "/var/www/eagler-touhou/releases/hk-th05-team-bomb-20261102-1f82bd0739e5",
+    "domestic": "/var/www/eagler-touhou-online/releases/hk-th05-team-bomb-20261102-1f82bd0739e5-mirror-e57222f770c0"
+  }
+}

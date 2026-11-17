@@ -5,7 +5,7 @@
 namespace th08 {
 namespace {
 Vec3 lerp_position(const Vec3& before,const Vec3& current){return {presentation::lerp_world(before.x,current.x),presentation::lerp_world(before.y,current.y),presentation::lerp_world(before.z,current.z)};}
-float lerp_angle(float before,float current){if(presentation::world_alpha>=1)return current;if(presentation::world_alpha<=0)return before;constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=current-before;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(before+delta*presentation::world_alpha,0);}
+float lerp_angle(float before,float current){if(presentation::world_alpha==1)return current;if(presentation::world_alpha<=0)return before;constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=current-before;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(before+delta*presentation::world_alpha,0);}
 }
 void PlayerShots::draw_trail(PlayerShot& shot,const Vec2& offset){
     const u8 alpha=shot.animation.color1.a;const u32 faded=(u32(alpha)*3)>>2;

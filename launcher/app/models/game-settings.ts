@@ -3,7 +3,7 @@ import type {GameVersion} from "../../src/contracts/package-read-models.mts";
 import {
   gamePreferenceStorageKey, applySharedTouchPreferences, loadOrInitializeSharedTouchPreferences,
   loadStoredGamePreferences, loadStoredLanguagePreference, persistSharedTouchPreferences,
-  persistStoredGamePreferences, touchMovementUsesJoystick, normalizeTh05MultiplayerDisplay,
+  persistStoredGamePreferences, touchMovementUsesJoystick, normalizeTh05MultiplayerDisplay, normalizeGameVolume,
   type GameOptions, type GamePreferenceStorage, type MusicMode,
 } from '../../src/launcher/game-preferences.mts';
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_GAMES, productFeatureAvailable,
@@ -29,7 +29,7 @@ function musicAvailabilityForContext(context: SettingsContext): MusicAvailabilit
   const policy = PRODUCT_GAMES[gameIdForProduct(context.productId)].musicRuntime;
   return {...context.musicAvailability, musicSources: 'sources' in policy ? policy.sources : []};
 }
-export interface SettingsDisclosureState {touch: boolean; files: boolean; display: boolean; advanced: boolean}
+export interface SettingsDisclosureState {touch: boolean; files: boolean; display: boolean; audio: boolean; advanced: boolean}
 export interface SettingsSnapshot {
   context: SettingsContext;
   gameId: GameId;
@@ -70,6 +70,7 @@ export function settingsChangeResetsRuntime({previous, current, reason}: Setting
     case 'option': return (Object.keys(current.options) as (keyof GameOptions)[]).some(name =>
       previous.options[name] !== current.options[name]
       && name !== 'touchSensitivity' && name !== 'touchControlOpacity'
+      && name !== 'bgmVolume' && name !== 'sfxVolume'
       && !(current.multiplayer && name === 'frameLimit60Enabled'));
     case 'host-restore': case 'locale-restore': case 'context': case 'preview': case 'presentation': case 'replay-auto-save': return false;
   }
@@ -88,6 +89,7 @@ export interface GameSettingsModel {
   setMovementRestriction(forbidden: boolean): void;
   setTouchSettingsPriority(mobile: boolean): void;
   setOption<K extends keyof GameOptions>(name: K, value: GameOptions[K]): void;
+  previewVolume(name: 'bgmVolume' | 'sfxVolume', value: number): void;
   previewSensitivity(value: number): void;
   commitPreferences(): void;
   restoreRoomSettings(saved: SettingsSnapshot): void;
@@ -133,7 +135,7 @@ export function createGameSettingsModel({storage, onChange}: {
     const shareSingleplayerSettings = true;
     const preferenceId = gameId;
     const disclosureKey = multiplayer ? 'multiplayer' : 'singleplayer';
-    const disclosure = disclosures[disclosureKey] ?? {touch: context.mobile, files: true, display: true, advanced: false};
+    const disclosure = disclosures[disclosureKey] ?? {touch: context.mobile, files: true, display: true, audio: false, advanced: false};
     disclosures[disclosureKey] = disclosure;
     const normalized = loadStoredGamePreferences({storage, preferenceId,
       fallbackPreferenceId: multiplayer ? gameId : null,
@@ -151,7 +153,7 @@ export function createGameSettingsModel({storage, onChange}: {
     if (multiplayer) options.thpracEnabled = false;
     const savedLanguage = loadStoredLanguagePreference({storage, preferenceId, fallbackPreferenceId: multiplayer ? gameId : null});
     publish({context, gameId, preferenceId, multiplayer, shareSingleplayerSettings, disclosure: {...disclosure}, options,
-      ...(context.productId === 'th09mp' ? {replayAutoSave: multiplayerPreferences.replayAutoSave(context.productId)} : {}),
+      ...(['th09mp','th19mp'].includes(context.productId) ? {replayAutoSave: multiplayerPreferences.replayAutoSave(context.productId)} : {}),
       music: resolveEffectiveMusicMode({...musicAvailabilityForContext(context), requested: normalized.musicPreference, explicit: normalized.musicPreferenceExplicit}),
       musicPreference: normalized.musicPreference, musicPreferenceExplicit: normalized.musicPreferenceExplicit,
       gameVersion: gameId === 'th075' ? 'original' : loadGameVersion(storage, gameId),
@@ -220,11 +222,17 @@ export function createGameSettingsModel({storage, onChange}: {
       if (name === 'touchMovementMode' && touchMovementUsesJoystick(value) && options.touchFocusMode === 'two-finger') options.touchFocusMode = 'hold-button';
       if (name === 'touchSensitivity') options.touchSensitivity = Math.max(100, Math.min(300, Math.round(Number(value) || 100)));
       if (name === 'touchControlOpacity') options.touchControlOpacity = Math.max(20, Math.min(100, Math.round(Number(value) / 5) * 5 || 20));
+      if (name === 'bgmVolume') options.bgmVolume = normalizeGameVolume(value);
+      if (name === 'sfxVolume') options.sfxVolume = normalizeGameVolume(value);
       publish({...state, options}, 'option'); commitPreferences();
     },
     previewSensitivity(value: number) {
       const state = required();
       publish({...state, options: {...state.options, touchSensitivity: Math.max(100, Math.min(300, Math.round(value) || 100))}}, 'preview');
+    },
+    previewVolume(name: 'bgmVolume' | 'sfxVolume', value: number) {
+      const state = required(), volume = normalizeGameVolume(value);
+      if (state.options[name] !== volume) publish({...state, options: {...state.options, [name]: volume}}, 'preview');
     },
     commitPreferences,
     restoreRoomSettings(saved: SettingsSnapshot) {
@@ -235,7 +243,7 @@ export function createGameSettingsModel({storage, onChange}: {
       // as one transaction rather than emitting one reload per option.
       publish({...state, preferenceId: state.gameId,
         shareSingleplayerSettings: true,
-        options: {...saved.options}, music: saved.music,
+        options: {...saved.options, bgmVolume: state.options.bgmVolume, sfxVolume: state.options.sfxVolume}, music: saved.music,
         musicPreference: saved.musicPreference, musicPreferenceExplicit: saved.musicPreferenceExplicit,
         language: saved.language, gameVersion: saved.gameVersion}, 'host-restore');
       commitPreferences();
@@ -272,7 +280,7 @@ export function createGameSettingsModel({storage, onChange}: {
     },
     setReplayAutoSave(enabled: boolean) {
       const state = required();
-      if (state.context.productId !== 'th09mp' || state.replayAutoSave === enabled) return;
+      if (!['th09mp','th19mp'].includes(state.context.productId) || state.replayAutoSave === enabled) return;
       multiplayerPreferences.persistReplayAutoSave(state.context.productId, enabled);
       publish({...state, replayAutoSave: enabled}, 'replay-auto-save');
     },

@@ -1,0 +1,80 @@
+{
+  "publishedAt": "2026-11-06T08:22:52.911778+00:00",
+  "verifiedAt": "2026-11-06T08:27:20.817091+00:00",
+  "sourceRevision": "26b37c5f7",
+  "releaseId": "sha256-b42b17bec17b44970308dbaa5766be1c2f9fd793b890da463670afa9ac0bc176",
+  "previousRelease": "sha256-34f1495252f76f0657e66b37dd067fb5bbcc9f95485c8e7710e6bd2891a5c172",
+  "buildId": "75f595d595f976db0805",
+  "scope": [
+    "TH17 room title",
+    "confirmed-input multiplayer replay",
+    "stage spectator",
+    "TH15 boss balance"
+  ],
+  "entry": {
+    "url": "https://touhouonline.com/",
+    "betaOptInRequired": true,
+    "normalSiteTestBuild": false
+  },
+  "runtime": {
+    "multiplayer": {
+      "prefix": "runtime/th17/multiplayer/fa647b199dc1a18a67b1d3c431f5f26bced3f6ce17528aac5815c86714853fa1/",
+      "wasmSha256": "f7af0593f03d9775e8cd3644e2b240300774fd02891471e81441d898959aa6a3",
+      "httpFilesVerified": 14
+    },
+    "normal": {
+      "prefix": "runtime/th17/dee6223fe2d59c50401be80cfcc587d235000ea5da0352686713ae4e64bfb449/",
+      "wasmSha256": "6e5c9b792c0601ba3ff38856ba07e0f5805f4ce2cd3f91e610b16ab3148c292e",
+      "httpFilesVerified": 14
+    }
+  },
+  "preservedFiles": 9019,
+  "publications": [
+    {
+      "url": "https://touhouonline.com/",
+      "releaseId": "sha256-b42b17bec17b44970308dbaa5766be1c2f9fd793b890da463670afa9ac0bc176"
+    },
+    {
+      "url": "https://jp-site.touhouonline.com/",
+      "releaseId": "sha256-b42b17bec17b44970308dbaa5766be1c2f9fd793b890da463670afa9ac0bc176",
+      "multiplayerWasmSha256": "f7af0593f03d9775e8cd3644e2b240300774fd02891471e81441d898959aa6a3"
+    },
+    {
+      "url": "https://cn-site.touhouonline.com:8443/",
+      "releaseId": "sha256-b42b17bec17b44970308dbaa5766be1c2f9fd793b890da463670afa9ac0bc176",
+      "multiplayerWasmSha256": "f7af0593f03d9775e8cd3644e2b240300774fd02891471e81441d898959aa6a3"
+    }
+  ],
+  "relay": {
+    "service": "eagler-netplay-lifecycle-20261025.service",
+    "activation": "2026-11-06T08:22:48.616238+00:00",
+    "activeRoomsAtActivation": {
+      "th09mp": 2,
+      "th12mp": 1,
+      "th08mp": 1,
+      "th17mp": 1
+    },
+    "health": "ok",
+    "files": [
+      {
+        "path": "/opt/eagler-relay-36841d97/common/contracts/product-catalog.mjs",
+        "before": "f9af29054646d993032875c7429981fde5e88a36f05229b7061a76988f875d2b",
+        "after": "c959f01bbe45a6681846df8e02e37b95c2572426b404ec68757b335ed9d1759b"
+      },
+      {
+        "path": "/opt/eagler-relay-36841d97/services/relay/src/spectator-stages.mjs",
+        "before": "4f7ecf1a34f8ea3a1ca24b0d6c754020e4102764e8cb7aaa50f85b721e1f62b2",
+        "after": "2a54cca9095d4fa1bcb34157dd6353964f21c4767f874e6a7e48c1d485bebc17"
+      }
+    ],
+    "cnFallback": "reverse proxy to primary Relay"
+  },
+  "checks": {
+    "siteAndHostManifest": true,
+    "frontendAndServiceWorker": true,
+    "gamePackageDescriptorUnchanged": true,
+    "th19CoverSha256": "725f14d0a2cc71c7a117fcb41a98fcca1155f51234839d71906587794f5f735d",
+    "separateTestHostPreserved": true
+  },
+  "validationScope": "Release integrity, HTTP runtime hashes, beta gating, Relay health and mirror publication. Gameplay testing remains paused at user request."
+}

@@ -17,7 +17,7 @@ export function safePath(raw) {
   const path = raw.split('?')[0];
   let decoded;
   try { decoded = decodeURIComponent(path); } catch { return false; }
-  return (/^\/(games|shared|language|language-updates)\//.test(path) || /^\/runtime\/(?:[A-Za-z0-9_-]+\/)+[a-f0-9]{64}\/fonts\/[A-Za-z0-9._-]+$/.test(path)) && !/[\\\x00-\x20\x7f]/.test(decoded)
+  return (/^\/(games|shared|language)\//.test(path) || /^\/runtime\/(?:[A-Za-z0-9_-]+\/)+[a-f0-9]{64}\/fonts\/[A-Za-z0-9._-]+$/.test(path)) && !/[\\\x00-\x20\x7f]/.test(decoded)
     && !decoded.split('/').some(part => part === '.' || part === '..')
     && !/%(?:2f|5c|25)/i.test(path);
 }
@@ -84,6 +84,15 @@ export async function start(config) {
   async function refreshSite(host, state) {
     try {
       const names = (await readdir(state.pool.root)).filter(name => /^th\d+\.package\.json$/.test(name));
+      const manifest = state.pool.packageGames?.length || state.pool.languageGames?.length
+        ? JSON.parse(await readFile(`${state.pool.root}/site-manifest.json`, 'utf8')) : null;
+      for (const game of state.pool.packageGames ?? []) {
+        const descriptor = manifest.games[game]?.package?.descriptor;
+        if (!/^th\d+(?:-[A-Za-z0-9-]+)?\.package\.json$/.test(descriptor ?? '')) {
+          throw new Error(`Invalid active package descriptor for ${game}`);
+        }
+        if (!names.includes(descriptor)) names.push(descriptor);
+      }
       if (!names.length) throw new Error('No local package descriptors');
       const descriptors = await Promise.all(names.map(async name => [name,
         JSON.parse(await readFile(`${state.pool.root}/${name}`, 'utf8'))]));
@@ -94,6 +103,20 @@ export async function start(config) {
         const previous = inventory.get(path);
         if (previous && previous.sha256 !== file.sha256) throw new Error(`Conflicting resource: ${path}`);
         inventory.set(path, file);
+      }
+      if (state.pool.languageGames?.length) {
+        for (const game of state.pool.languageGames) {
+          for (const { pack } of manifest.games[game]?.languages ?? []) {
+            if (!pack) continue;
+            const path = '/' + pack.url.replace(/^\/+/, '');
+            if (!safePath(path)) throw new Error(`Unsafe language pack source: ${path}`);
+            const previous = inventory.get(path);
+            if (previous && (previous.sha256 !== pack.sha256 || previous.bytes !== pack.bytes)) {
+              throw new Error(`Conflicting resource: ${path}`);
+            }
+            inventory.set(path, pack);
+          }
+        }
       }
       const deployment = JSON.parse(await readFile(`${state.pool.root}/deployment.json`, 'utf8'));
       const fonts = deployment.files.filter(file => file.path.startsWith('runtime/') && file.path.includes('/fonts/') && safePath('/' + file.path));
