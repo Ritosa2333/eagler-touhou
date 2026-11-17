@@ -76,7 +76,7 @@ export class PresentationLabControllerCore {
     this.observer.setNegativeControl(negativeControl);
     try {
       const value = Number(alpha);
-      if (!Number.isFinite(value) || value < 0 || value > 1) throw Error('Invalid presentation alpha');
+      if (!Number.isFinite(value) || value < 0 || value > (this.capabilities.features.extrapolation ? 2 : 1)) throw Error('Invalid presentation alpha');
       const receipt = this.driver.drawOnly({alpha: value, world: !!world});
       if (!receipt || receipt.status !== 'drawn')
         throw Error(`Presentation draw failed: ${receipt?.status || 'invalid receipt'}`);
@@ -84,19 +84,24 @@ export class PresentationLabControllerCore {
     } finally { this.observer.setNegativeControl(false); }
   }
 
-  sweep({label = '', negativeControl = false, images = false, world = !this.observer.worldFrozen()} = {}) {
+  sweep({label = '', negativeControl = false, images = false, world = !this.observer.worldFrozen(), mode = 'interpolation'} = {}) {
     this.freeze();
     const {previous, current} = this.references();
     const stateBefore = this.state(), traceBefore = this.trace();
+    if (!['current','interpolation','extrapolation'].includes(mode)) throw Error('Invalid presentation mode');
+    if (mode==='extrapolation'&&!this.capabilities.features.extrapolation) throw Error('This runtime does not support extrapolation');
+    const phases = [0, .25, .5, .75, 1, .5, .5, 1];
     const samples = [], statesAfter = [], pictures = [];
-    for (const alpha of [0, .25, .5, .75, 1, .5, .5, 1]) {
+    for (const phase of phases) {
+      const alpha = mode==='extrapolation'?1+phase:mode==='current'?1:phase;
       const frame = this.preview(alpha, {world, negativeControl});
       samples.push({...frame, alpha});
       statesAfter.push(this.state());
       if (images && pictures.length < 5) pictures.push(this.observer.captureImage(frame, alpha));
     }
     const report = this.observer.analyze({previous, current, samples, stateBefore, statesAfter,
-      worldFrozen: !world, gate: this.observer.readGate(), build: this.identity, label, negativeControl});
+      mode, worldFrozen: !world, gate: this.observer.readGate(), build: this.identity, label, negativeControl});
+    report.mode = mode;
     report.traceBefore = traceBefore;
     report.traceAfter = this.trace();
     report.scene = this.observer.readScene();
@@ -107,14 +112,14 @@ export class PresentationLabControllerCore {
     return report;
   }
 
-  mark() {
+  mark({mode = 'interpolation'} = {}) {
     this.freeze();
-    const timing = this.timing(), report = this.sweep({label: 'f8-incident', images: true});
+    const timing = this.timing(), report = this.sweep({label: 'f8-incident', images: true, mode});
     report.timing = timing;
     return report;
   }
 
-  async scan({ticks = 180, stride = 6, negativeControl = false, onWindow = () => {}, signal} = {}) {
+  async scan({ticks = 180, stride = 6, negativeControl = false, mode = 'interpolation', onWindow = () => {}, signal} = {}) {
     if (!Number.isInteger(ticks) || ticks < 1 || ticks > 3600 || !Number.isInteger(stride) || stride < 1 || stride > 60 || Math.ceil(ticks / stride) > 120)
       throw Error('Bounded scan: 1..3600 ticks, stride 1..60, at most 120 windows');
     const reports = [];
@@ -123,7 +128,7 @@ export class PresentationLabControllerCore {
       if (signal?.aborted) break;
       this.step(Math.min(stride, ticks - n));
       completedTicks = Math.min(n + stride, ticks);
-      const report = this.sweep({label: `scan+${completedTicks}`, negativeControl});
+      const report = this.sweep({label: `scan+${completedTicks}`, negativeControl, mode});
       reports.push(this.observer.compact(report, {maxObjects: 96, images: false}));
       onWindow(report);
       if (purityFailed(report)) break;

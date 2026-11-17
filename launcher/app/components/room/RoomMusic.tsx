@@ -40,22 +40,18 @@ export type MusicPanelTab = 'search' | 'queue';
 const tracksPerPage = 30;
 const paletteCache = new Map<string, string[]>();
 function MusicCover({ url, onColors }: { url?: string; onColors?(colors: string[]): void }) {
-  const [cors, setCors] = useState(!!onColors),
-    [failed, setFailed] = useState(false);
-  return url && !failed ? (
+  const [failedUrl, setFailedUrl] = useState<string>();
+  return url && failedUrl !== url ? (
     <img
       className="room-music-cover"
       src={url}
       alt=""
       loading={onColors ? 'eager' : 'lazy'}
-      crossOrigin={cors ? 'anonymous' : undefined}
+      crossOrigin="anonymous"
       referrerPolicy="no-referrer"
-      onError={() => {
-        if (cors) setCors(false);
-        else setFailed(true);
-      }}
+      onError={() => setFailedUrl(url)}
       onLoad={async (event) => {
-        if (!cors || !onColors) return;
+        if (!onColors) return;
         const img = event.currentTarget,
           cached = paletteCache.get(url);
         if (cached) {
@@ -159,10 +155,14 @@ export function RoomMusicToggle({ model, open, onToggle }: {
 }) {
   const { t } = useLocale();
   const offered = useSyncExternalStore(model.subscribe, () => !!model.getPendingInvitation());
+  const playing = useSyncExternalStore(model.subscribe, () => model.getSnapshot().status === 'playing', () => false);
   return (
-    <Button variant={open ? "action" : "quiet"} size="sm" className="room-workspace-music-toggle" aria-expanded={open}
+    <Button variant="quiet" size="sm" className="room-workspace-music-toggle" aria-label={t('settings.music')} title={t('settings.music')} data-playing={playing} aria-expanded={open}
       aria-controls={open ? 'roomMusicPlayer' : undefined} onClick={onToggle}>
-      {t('settings.music')}
+      <svg className="room-music-record" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="14" cy="17" r="11"/><circle cx="14" cy="17" r="7"/><circle cx="14" cy="17" r="2"/>
+        <g className="room-music-tonearm"><circle cx="26" cy="5" r="2"/><path d="M26 7v6l-5 5"/><path d="m19.5 17 2.5 2.5-2 2-2.5-2.5z"/></g>
+      </svg>
       {offered && <span className="room-music-invite-dot" role="status" aria-label={t('music.offer')} />}
     </Button>
   );

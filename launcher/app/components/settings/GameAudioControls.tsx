@@ -1,5 +1,6 @@
 import { useRef, useSyncExternalStore } from 'react';
 import { useLocale } from '../../i18n';
+import type { SitePreferencesModel } from '../../models/site-preferences';
 import type { GameSettingsModel } from '../../models/game-settings';
 import { Button } from '../../ui/controls';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '../../ui/popover';
@@ -34,7 +35,21 @@ export function GameAudioFields({ model }: { model: GameSettingsModel }) {
   });
 }
 
-export function GameSettingsPopover({ model, exit }: {
+export function QuickChatVolumeField({preferences}: {preferences: SitePreferencesModel}) {
+  const {quickChatVolume: value} = useSyncExternalStore(preferences.subscribe, preferences.getSnapshot, preferences.getSnapshot);
+  const {t} = useLocale();
+  const label = t('settings.quickChatVolume');
+  return <OptionRow className="item" label={label} control={
+    <div className="game-audio-control flex w-36 shrink-0 items-center gap-2">
+      <Slider className="min-w-0 flex-1" aria-label={label} aria-valuetext={String(value) + '%'}
+        min={0} max={100} step={1} value={value} onValueChange={preferences.setQuickChatVolume}/>
+      <output className="w-9 shrink-0 text-right tabular-nums" aria-hidden="true">{value}%</output>
+    </div>
+  }/>;
+}
+
+export function GameSettingsPopover({ model, preferences, exit }: {
+  preferences?: SitePreferencesModel;
   model: GameSettingsModel;
   exit?: { label: string; onSelect(): void };
 }) {
@@ -47,6 +62,7 @@ export function GameSettingsPopover({ model, exit }: {
     </PopoverTrigger>
     <PopoverContent align="end" aria-label={label} className="game-settings-popover">
       <GameAudioFields model={model} />
+      {preferences && <QuickChatVolumeField preferences={preferences}/>}
       {exit && <div className="game-settings-actions">
         <PopoverClose asChild>
           <Button variant="quiet" size="sm" type="button" className="game-settings-exit" onClick={exit.onSelect}>

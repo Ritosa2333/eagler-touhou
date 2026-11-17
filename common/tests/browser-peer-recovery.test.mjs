@@ -26,7 +26,8 @@ class WebSocketStub {
     static CONNECTING = 0;
     static CLOSING = 2;
     constructor() { this.readyState = WebSocketStub.OPEN; }
-    send() {}
+    sent = [];
+    send(message) { this.sent.push(JSON.parse(message)); }
     close() { this.readyState = 3; }
 }
 globalThis.WebSocket = WebSocketStub;
@@ -119,6 +120,20 @@ for(const kind of ['input','control']){
  s.close();
 }
 
+timers.length = 0;
+connect(0, 100, 0, 2);
+const standbyMixed = globalThis.__eaglerPeerTransport;
+standbyMixed.rtcReplaceCapable = true;
+standbyMixed.setRoute('rtc');
+let standbyReady = true;
+const standbyPeer = {adaptive: {recover: () => standbyReady, close() {}}};
+standbyMixed.handleChannelUnavailable(standbyPeer, 'primary channel closed');
+assert.equal(standbyMixed.rtcReplaceRequested, false, 'a working standby keeps the current game transport');
+standbyReady = false;
+standbyMixed.handleChannelUnavailable(standbyPeer, 'primary channel closed');
+assert.equal(standbyMixed.rtcReplaceRequested, true, 'full replacement is available when the standby cannot recover');
+standbyMixed.close();
+
 timers.length=0;connect(0,100,1,2);const clientState=globalThis.__eaglerPeerTransport;
 clientState.peers.set(0,{pc:{connectionState:'connected',iceConnectionState:'connected',close(){}},inputDc:{bufferedAmount:0},controlDc:{bufferedAmount:0},lastReceivedAt:Date.now()-10_000,lastInputSentAt:Date.now(),restartAttempts:0});
 clientState.setRoute('rtc');globalThis.__eaglerNetplayLanActive=true;
@@ -127,4 +142,41 @@ assert.equal(clientState.peers.get(0).restartAttempts,1);
 timers.at(-1).fn();assert.equal(clientState.peers.get(0).restartAttempts,2);
 timers.at(-1).fn();assert.equal(clientState.disconnected,true,'A client also has a bounded ICE recovery wait');
 assert.equal(clientState.failed,false);clientState.close();delete globalThis.__eaglerNetplayLanActive;
+
+timers.length = 0;
+assert.equal(connect(0, 100, 1, 2), 1);
+const mixed = globalThis.__eaglerPeerTransport;
+mixed.setRoute('rtc');
+mixed.rtcReplaceCapable = true;
+const oldSignal = mixed.signal;
+oldSignal.readyState = 3;
+oldSignal.onclose({code: 1006});
+timers.shift().fn();
+const newSignal = mixed.signal;
+assert.notEqual(newSignal, oldSignal);
+assert.equal(timers[0].delay, 2500, 'a replacement signaling handshake has a deadline');
+newSignal.onopen();
+oldSignal.onmessage({data: JSON.stringify({type: 'peer-disconnected', from: 0})});
+assert.equal(mixed.disconnected, false, 'late frames from the old socket cannot retire the game');
+mixed.requestRtcReplacement();
+assert.deepEqual(newSignal.sent.at(-1), {type: 'rtc-replace-request', generation: 0});
+newSignal.onmessage({data: JSON.stringify({type: 'peers', peers: [], route: 'rtc', rtcReplace: true})});
+assert.deepEqual(newSignal.sent.at(-1), {type: 'rtc-replace-request', generation: 0});
+assert.equal(newSignal.sent.filter(m => m.type === 'rtc-replace-request').length, 2);
+newSignal.onmessage({data: JSON.stringify({type: 'peers', peers: [], route: null})});
+assert.equal(mixed.disconnected, true, 'a fresh run cannot claim the established game');
+mixed.close();
+
+timers.length = 0;
+assert.equal(connect(0, 100, 1, 2), 1);
+const stalledMixed = globalThis.__eaglerPeerTransport;
+stalledMixed.setRoute('rtc');
+stalledMixed.rtcReplaceCapable = true;
+stalledMixed.peers.set(0, {
+    pc: {connectionState: 'connected', iceConnectionState: 'connected', close() {}},
+    inputDc: {bufferedAmount: 40000}, lastInputSentAt: Date.now(), lastReceivedAt: Date.now() - 3500,
+});
+await stalledMixed.schedulePeerRecovery(0, false, true);
+assert.equal(timers.shift().delay, 1000, 'a sustained mixed-client stall uses the shorter recovery grace');
+stalledMixed.close();
 console.log('browser peer silent recovery: PASS');

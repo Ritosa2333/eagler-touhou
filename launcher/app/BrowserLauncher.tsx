@@ -73,8 +73,9 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const catalogProducts = useMemo(() => createLibraryProducts(PRODUCT_IDS, assetUrl, id => `?game=${id}`), [assetUrl]);
   const masthead = <Header session={session} firstUse={firstUse} donationAvailable={donationAvailable}/>;
   const host: LauncherHost = {
-    locale: state.locale, lessMotion, products, catalogProducts, productAvailable: session.productAvailable, onProductSelected: session.reportProductSelection, onRouteSelection: session.selectRouteProduct, settings: session.settings, touchLayout: session.touchLayout,
+    locale: state.locale, lessMotion, products, catalogProducts, productAvailable: session.productAvailable, onProductSelected: session.reportProductSelection, onRouteSelection: session.selectRouteProduct, settings: session.settings, preferences: session.preferences, touchLayout: session.touchLayout,
     settingsContext: session.settingsContext, settingsActions: session.settingsActions, decisions: session.decisions, readLocalSaves:session.readLocalSaves, cloudSync:session.cloudSync,
+    watchTh09Replay: session.accessTh09MatchReplay,
     bootTouchPreview: state.bootTouchPreview !== null, bootTouchPreviewImage: state.bootTouchPreviewImage,
     nativeTouch: session.nativeTouch, touchFireEnabled: state.touchFireEnabled, assetUrl, lobbyHref: assetUrl('lobby.html'), masthead,
     serverStatusNote: <ServerStatusNote session={session}/>, metadataRevision: state.metadataRevision,

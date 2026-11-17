@@ -90,12 +90,15 @@ export interface MultiplayerRoomState {
   predictionLimit?: number;
   settingsVersion?: number;
   phase?: 'lobby' | 'starting' | 'running';
+  gameplayRelayFallback?: boolean;
   created: boolean;
   connection?: MultiplayerConnectionState;
   seats?: NormalizedMultiplayerLobbySnapshot['seats'] | null;
   spectators?: NormalizedMultiplayerLobbySnapshot['spectators'];
   spectatorCount?: number;
   spectatorTimeline?: boolean;
+  swarmSelected?: boolean;
+  startupRoutes?: NormalizedMultiplayerLobbySnapshot['startupRoutes'];
   synced?: boolean;
   [key: string]: unknown;
 }

@@ -4,7 +4,7 @@ const hsobReplayName = /^Main_replay(\d{2}|ud[0-9a-z]{4})\.dat$/i;
 const hsobReplayPrefix = "Main_replay";
 
 export function replayImportAcceptFor(product: string): string {
-  return product === "hsob" ? ".zip,.dat" : replayImportAccept;
+  return product === "hsob" ? ".zip,.dat" : product === "th09mp" ? replayImportAccept + ",.th09r" : replayImportAccept;
 }
 
 export interface ReplayMutationQueue {
@@ -194,7 +194,8 @@ export function allocateReplayName(
 
 export function isReplayImportFileName(name: unknown, product?: string): name is string {
   return typeof name === "string" &&
-    (product === "hsob" ? hsobReplayName.test(name) || /\.zip$/i.test(name) : /\.(?:rpyx?|rep|zip)$/i.test(name));
+    (product === "hsob" ? hsobReplayName.test(name) || /\.zip$/i.test(name) :
+      /\.(?:rpyx?|rep|zip)$/i.test(name) || product === "th09mp" && /\.th09r$/i.test(name));
 }
 
 export function planReplayArchiveImport(

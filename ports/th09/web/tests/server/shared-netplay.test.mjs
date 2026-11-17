@@ -1,7 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {SharedNetplay} from '../../sdl-runtime/shared-netplay.mjs';
+import {registerHooks} from 'node:module';
 import {SpectatorTape} from '../../sdl-runtime/spectator-tape.mjs';
+
+// The runtime package places the shared uploader next to shared-netplay.mjs.
+const runtime = new URL('../../sdl-runtime/shared-netplay.mjs', import.meta.url);
+const uploader = new URL('../../../../../common/browser/th09-replay-upload.mjs', import.meta.url);
+const runtimeImports = registerHooks({resolve(specifier, context, nextResolve) {
+  return nextResolve(context.parentURL === runtime.href && specifier === './th09-replay-upload.mjs'
+    ? uploader.href : specifier, context);
+}});
+const {SharedNetplay} = await import(runtime.href);
+runtimeImports.deregister();
 
 // The two entries (Launcher card and the in-game title dialog) share one room
 // and one gameplay transport; these tests cover the transport contract itself.
@@ -149,7 +159,7 @@ test('game selection starts a neutral native menu and leaves room presets outsid
   try{
     pair=await connectPair(box,0,0,false,true);
     assert.equal(pair.leftCore.calls.begin.length,0);
-    assert.deepEqual(pair.leftCore.calls.selection,[1234,0,0xaaaaaaab,0xaaaaaaaa,(0xaaaaaaaa^0x09020001)>>>0,0,2]);
+    assert.deepEqual(pair.leftCore.calls.selection,[1234,0,0xaaaaaaab,0xaaaaaaaa,(0xaaaaaaaa^0x09020002)>>>0,0,2]);
     assert.notEqual(pair.leftCore.calls.selection[4],(0xaaaaaaaa^0x09010000^(3<<16))>>>0,'Easy Sakuya/Reimu fixed-loadout entry cannot share the menu ABI');
     assert.equal(pair.left.betweenMatches,true);
   }finally{pair?.left.close();pair?.right.close();box.restore();}
@@ -361,6 +371,38 @@ for(const transportEnd of [-1,3]) test(`viewer drains buffered final packets acr
     state[1]=127;viewer.frame();assert.equal(viewer.connected,true);assert.equal(results,0);
     state[1]=129;viewer.frame();assert.equal(viewer.connected,false);assert.equal(results,1);
     assert.equal(pair.left.connected,true);assert.equal(pair.right.connected,true);
+  }finally{viewer?.close();pair?.left.close();pair?.right.close();box.restore();}
+});
+
+test('a paused viewer retains overflow frames and the end packet until native playback catches up',async()=>{
+  const box=harness(true);let pair,viewer;
+  try{
+    pair=await connectPair(box);const core=box.core();
+    let played=0,received=0,finished=false;
+    core._th09_spectator_frame=()=>played;
+    core._th09_spectator_feed=frame=>{
+      if(frame!==received||received-played>=4096)return 0;
+      ++received;return 1;
+    };
+    core._th09_spectator_finish=frame=>{finished=frame===received;return +finished;};
+    viewer=new SharedNetplay(core,{onStatus(){},onClose(){},onResult(){}});
+    await viewer.connect({netplayUrl:'wss://example.test/netplay?room=th09mp-1234&run=1&spectator=c12345678',
+      netplayPlayerCount:2,netplaySpectator:true,netplaySpectatorId:'c12345678',netplaySeed:1234,
+      netplayDifficulty:2,netplayLoadouts:[{character:3},{character:10}]});viewer.pump();
+    for(let frame=0;frame<=5000;frame++){
+      const end=frame===5000,bytes=new Uint8Array(end?24:46);
+      bytes.set(end?[84,57,83,69,1,0,2,0]:[84,57,83,80,1,3,2,0]);
+      new DataView(bytes.buffer).setUint32(8,frame,true);bytes.fill(0xaa,12,24);viewer.receive(bytes);
+    }
+    viewer.drainSpectatorHistory();
+    assert.equal(viewer.connected,true);
+    assert.equal(received,4096);
+    assert.equal(finished,false);
+    played=1000;
+    for(let batch=0;batch<15;batch++)viewer.drainSpectatorHistory();
+    assert.equal(received,5000);
+    assert.equal(finished,true);
+    assert.equal(viewer.connected,true);
   }finally{viewer?.close();pair?.left.close();pair?.right.close();box.restore();}
 });
 

@@ -812,6 +812,9 @@ export declare const PRODUCT_GAMES: Readonly<{
         package: Readonly<{
             dataFileId: "game-data";
             dataTarget: "/th13.data";
+            rawDataImport: Readonly<{
+                fileNames: readonly string[];
+            }>;
             musicSourceDirectories: Readonly<{
                 ogg: "bgm-ogg";
             }>;
@@ -821,6 +824,28 @@ export declare const PRODUCT_GAMES: Readonly<{
         }>;
         replay: Readonly<{
             prefix: "th13";
+        }>;
+        multiplayerRuntime: "./runtime/th13/multiplayer/th13.html";
+        multiplayer: Readonly<{
+            titleKey: "game.title.th13mp";
+            gameplay: "cooperative";
+            inputTiming: Readonly<{
+                rollbackLimit: 12;
+                sendPredictionLimit: 12;
+                measuredStartup: true;
+                manualDelayLimit: 9;
+            }>;
+            playerCounts: readonly [2, 3];
+            difficulties: readonly ["Easy", "Normal", "Hard", "Lunatic", "Extra"];
+            loadouts: readonly {
+                labelKey: string;
+                glyph: string;
+                character: number;
+                shot: number;
+            }[];
+            peerTransportGlobal: "__th13PeerTransport";
+            spectator: true;
+            titleRoomEntry: false;
         }>;
         features: Readonly<{
             thprac: false;
@@ -842,6 +867,12 @@ export declare const PRODUCT_GAMES: Readonly<{
         package: Readonly<{dataFileId:"game-data";dataTarget:"/th14.dat";rawDataImport:Readonly<{fileNames:readonly string[]}>;
             musicSourceDirectories:Readonly<{ogg:"music"}>;musicMounts:Readonly<{ogg:"/music"}>}>;
         replay: Readonly<{prefix: "th14"}>;
+        multiplayerRuntime: "./runtime/th14/multiplayer/th14.html";
+        multiplayer: Readonly<{titleKey:"game.title.th14mp";gameplay:"cooperative";
+            playerCounts:readonly [2,3];difficulties:readonly ["Easy","Normal","Hard","Lunatic","Extra"];
+            loadouts:ReadonlyArray<Readonly<{labelKey:string;glyph:string;character:number;shot:number}>>;
+            peerTransportGlobal:"__th14PeerTransport";spectator:true;titleRoomEntry:false;
+            inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:12;manualDelayLimit:9}>}>;
         thpracRuntime: Readonly<{session: "native"}>;
         thpracExtraFunctionKeys: readonly ["U"];
         features: Readonly<{thprac:true;languages:true;focusHitbox:false}>;

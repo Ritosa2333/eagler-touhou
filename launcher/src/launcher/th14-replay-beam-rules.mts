@@ -19,6 +19,8 @@ export function annotateTh14ReplayBeamRule(input: Uint8Array,rule: 0 | 1){
   }
   const result=new Uint8Array(input.length+20);result.set(input);
   const tail=new DataView(result.buffer,input.length,20);
-  [USER,20,T14B,1,rule].forEach((value,index)=>tail.setUint32(index*4,value,true));
+  [USER,20,T14B,1,rule].forEach((value,index)=>{
+    tail.setUint32(index*4,value,true);
+  });
   return result;
 }

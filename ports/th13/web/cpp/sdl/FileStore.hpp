@@ -11,6 +11,7 @@
 
 #include "../game/Types.hpp"
 #include "../game/ScoreDat.hpp"
+#include "../game/ReplayFile.hpp"
 #include "../game/TitlePlayerDataMenu.hpp"
 #include <string>
 #include <array>
@@ -78,6 +79,10 @@ public:
     // 00416130 reads/writes score+0x1b26a..0x1b276 in memory. Persist with
     // the score at subsequent save points, never infer these from Extra bits.
     std::array<u8, 13> ending_seen_bytes{};
+    // Score ST+0x0C (0x449a55): the last confirmed name, eight bytes padded
+    // with spaces. Every name entry seeds from it and every END writes it.
+    std::string last_name = "        ";
+    void remember_name(const std::string& name);
     bool ending_history_complete = true; // v1–v5 did not encode this history
     bool player_data_summary(i32 difficulty, i32 character, TitlePlayerDataSummary& out) const;
     bool record_run_start(i32 character);
@@ -148,6 +153,12 @@ public:
     i64 max_ranking_timestamp() const;
     // 得分面映射层（save_score 落镜像 / initialize 导入覆盖的内部步骤；public
     // 供单测直测映射保真——native 通道不激活，无这两个入口外的写入路径）。
+    // 每帧推进一片 scoreth13.dat 压缩（kScoreDatTokensPerFrame 个 token ≈
+    // 关终门帧预算的零头）；tokens 取 ~0u 即同步补齐。存储写失败同 save_score
+    // 语义：false + error。
+    static constexpr u32 kScoreDatTokensPerFrame = 400;
+    bool advance_pending_writes(u32 tokens = kScoreDatTokensPerFrame);
+    bool pending_writes() const { return score_dat_encoder_.active(); }
     void sync_score_face_to_dat();   // FileStore 字段 → ScoreDat 镜像（save_score）
     void overlay_score_face_from_dat();  // ScoreDat 镜像 → FileStore 字段（导入）
 
@@ -167,6 +178,14 @@ private:
     // Immutable full v5 import, including unknown values and its v1–v4 archive.
     std::vector<u8> pre_ending_save_bytes_;
     std::array<u8, 13> committed_ending_bytes_{};
+    // 存储层已持有的字节（web 通道）：序列化结果未变的保存点不重复写入，
+    // scoreth13.dat 镜像未变时不重复压缩。
+    std::vector<u8> persisted_save_bytes_;
+    std::vector<u8> persisted_score_dat_image_;
+    // scoreth13.dat 分片压缩作业（web 通道）：保存点只登记变化后的镜像，
+    // 0x458c30 压缩由 advance_pending_writes 逐帧推进，完成即写存储。
+    std::vector<u8> pending_score_dat_image_;
+    LzssEncoder score_dat_encoder_;
     bool score_dat_loaded_ = false;
     bool write_save(bool commit_ending);
     // 现有 v6 "TH13SAVE" 读档体（initialize 的原始逻辑，缺档/坏档 true+默认值）。

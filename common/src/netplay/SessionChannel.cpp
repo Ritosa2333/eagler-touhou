@@ -429,7 +429,9 @@ bool SessionChannel::Pump(SessionGate &gate, RollbackCore &core, std::uint64_t n
     gate.SetTransportAvailable(!transport_.Disconnected()&&!transport_.Recovering());
     if (transport_.Disconnected()) {
         for(auto& watchdog:watchdog_)watchdog.Disarm();
-        return true;
+        // Inputs delivered before the channel ended still complete the
+        // local history (a finished peer leaves right after its last ACK).
+        return Receive(gate, core, nowMs);
     }
     if (active_ && (gate.Config().sessionId != session_.sessionId ||
         gate.Config().localPlayer != session_.localPlayer || gate.Config().playerCount != session_.playerCount))

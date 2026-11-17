@@ -10,6 +10,7 @@
 
 namespace th13 {
 struct HudDrawServices;
+struct ReplayFile;
 
 // GameOver = 0x43f570 mode0（0x43fa90/142）；BGameOver = 0x43f570 mode≠0
 // （0x440960 态 0x18/147，三项：标题/录像/重试，无续关）。
@@ -27,9 +28,11 @@ struct RunPausePlatform {
     virtual bool open_pause_options() { return false; }
     virtual bool can_open_pause_options() const { return false; }
     virtual bool save_replay_slot(i32, const std::string&) { return false; }
+    virtual const ReplayFile* replay_entry(i32) const { return nullptr; }
     virtual bool change_pause_option(i32, i32) { return false; }
     virtual i32 pause_option_value(i32) const { return 0; }
     virtual bool record_result_name(const std::string&) { return false; }
+    virtual std::string last_result_name() const { return {}; }
     virtual bool result_needs_name() const { return false; }
     // 0x43f8f0 排名门（mode0）：合格 = FUN_0043d6b0 把新分当场插入榜块并经
     // 0x415030(rank) 把 0 基入榜行写进覆盖层 +0x38；不合格 -1。返回行号并把

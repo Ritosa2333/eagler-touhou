@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState, type PointerEvent} from 'react';
 import {Dialog, DialogContent, DialogTitle} from '../../ui/dialog';
 import {Button} from '../../ui/button';
 import {ChoiceGroup, ChoiceItem} from '../../ui/choice-group';
@@ -10,15 +10,15 @@ const settingsEvent = 'eagler-background-settings-change';
 const imageEvent = 'eagler-background-image-change';
 const settingsKey = 'eagler.background.settings';
 const imageRevisionKey = 'eagler.background.image-revision';
-const backgroundModes = ['plain','image','dots','grid'] as const;
+const backgroundModes = ['plain','image','dots','grid','seigaiha'] as const;
 type BackgroundMode = typeof backgroundModes[number];
 const backgroundSurfaces = ['navigation', 'category', 'card', 'panel'] as const;
 export type BackgroundSurface = typeof backgroundSurfaces[number];
 const defaults = {mode:'image' as BackgroundMode, shade: 45, panel: 88, navigation: 88, category: 88, card: 88, fit: 'cover' as 'cover'|'contain'};
 const text = {
-  'zh-CN': {title:'主题设置', base:'主题基底', light:'亮色', dark:'暗色', background:'背景', presets:'内置背景', plain:'空白', image:'自定义图片', dots:'星点', grid:'方格', choose:'选择图片', change:'更换图片', remove:'移除图片', shade:'背景遮罩', panel:'内容面板不透明度', navigation:'顶部栏不透明度', category:'分类条不透明度', card:'作品卡片不透明度', fit:'图片铺放', cover:'铺满', contain:'完整显示', note:'图片只保存在此浏览器中。', error:'无法保存图片，请选择不超过 10 MB 的有效图片。'},
-  en: {title:'Theme settings', base:'Base theme', light:'Light', dark:'Dark', background:'Background', presets:'Built-in backgrounds', plain:'Plain', image:'Custom image', dots:'Dots', grid:'Grid', choose:'Choose image', change:'Change image', remove:'Remove image', shade:'Background overlay', panel:'Content panel opacity', navigation:'Navigation opacity', category:'Category opacity', card:'Game card opacity', fit:'Image fit', cover:'Cover', contain:'Contain', note:'The image is stored only in this browser.', error:'Could not save the image. Choose a valid image up to 10 MB.'},
-  ja: {title:'テーマ設定', base:'基本テーマ', light:'ライト', dark:'ダーク', background:'背景', presets:'背景のプリセット', plain:'なし', image:'カスタム画像', dots:'星点', grid:'格子', choose:'画像を選択', change:'画像を変更', remove:'画像を削除', shade:'背景の覆い', panel:'コンテンツの不透明度', navigation:'ナビの不透明度', category:'カテゴリーの不透明度', card:'作品カードの不透明度', fit:'画像の表示', cover:'画面を埋める', contain:'画像全体', note:'画像はこのブラウザーにのみ保存されます。', error:'画像を保存できません。10 MB 以下の画像を選択してください。'},
+  'zh-CN': {title:'主题设置', base:'主题基底', light:'亮色', dark:'暗色', background:'背景', presets:'内置背景', plain:'空白', image:'自定义图片', dots:'星点', grid:'方格', seigaiha:'青海波', choose:'选择图片', change:'更换图片', remove:'移除图片', shade:'背景遮罩', panel:'内容面板不透明度', navigation:'顶部栏不透明度', category:'分类条不透明度', card:'作品卡片不透明度', fit:'图片铺放', cover:'铺满', contain:'完整显示', note:'图片只保存在此浏览器中。', error:'无法保存图片，请选择不超过 10 MB 的有效图片。'},
+  en: {title:'Theme settings', base:'Base theme', light:'Light', dark:'Dark', background:'Background', presets:'Built-in backgrounds', plain:'Plain', image:'Custom image', dots:'Dots', grid:'Grid', seigaiha:'Seigaiha', choose:'Choose image', change:'Change image', remove:'Remove image', shade:'Background overlay', panel:'Content panel opacity', navigation:'Navigation opacity', category:'Category opacity', card:'Game card opacity', fit:'Image fit', cover:'Cover', contain:'Contain', note:'The image is stored only in this browser.', error:'Could not save the image. Choose a valid image up to 10 MB.'},
+  ja: {title:'テーマ設定', base:'基本テーマ', light:'ライト', dark:'ダーク', background:'背景', presets:'背景のプリセット', plain:'なし', image:'カスタム画像', dots:'星点', grid:'格子', seigaiha:'青海波', choose:'画像を選択', change:'画像を変更', remove:'画像を削除', shade:'背景の覆い', panel:'コンテンツの不透明度', navigation:'ナビの不透明度', category:'カテゴリーの不透明度', card:'作品カードの不透明度', fit:'画像の表示', cover:'画面を埋める', contain:'画像全体', note:'画像はこのブラウザーにのみ保存されます。', error:'画像を保存できません。10 MB 以下の画像を選択してください。'},
 };
 function settings(): typeof defaults {
   try {
@@ -80,8 +80,26 @@ export function BackgroundSettings({open,onOpenChange,dark,onThemeChange,surface
   surfaces?:readonly BackgroundSurface[];
 }) {
   const {locale}=useLocale(), labels=text[locale] ?? text.en, input=useRef<HTMLInputElement>(null);
+  const dialog=useRef<HTMLDivElement>(null);
+  const drag=useRef<{pointerId:number; x:number; y:number; left:number; top:number; offsetX:number; offsetY:number} | null>(null);
+  const [offset,setOffset]=useState({x:0,y:0});
   const [values,setValues]=useState(defaults),[hasImage,setHasImage]=useState(false),[error,setError]=useState(false);
-  useEffect(()=>{if(open){setValues(settings()); void imageStore('readonly').then(blob=>setHasImage(!!blob)).catch(()=>setError(true));}},[open]);
+  useEffect(()=>{if(open){setOffset({x:0,y:0}); setValues(settings()); void imageStore('readonly').then(blob=>setHasImage(!!blob)).catch(()=>setError(true));}},[open]);
+  function startDrag(event:PointerEvent<HTMLDivElement>){
+    if(event.button!==0 || !dialog.current)return;
+    const rect=dialog.current.getBoundingClientRect();
+    drag.current={pointerId:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left,top:rect.top,offsetX:offset.x,offsetY:offset.y};
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+  function moveDrag(event:PointerEvent<HTMLDivElement>){
+    const start=drag.current, panel=dialog.current;
+    if(!start || start.pointerId!==event.pointerId || !panel)return;
+    const rect=panel.getBoundingClientRect();
+    const x=Math.max(0,Math.min(window.innerWidth-rect.width,start.left+event.clientX-start.x));
+    const y=Math.max(0,Math.min(window.innerHeight-rect.height,start.top+event.clientY-start.y));
+    setOffset({x:start.offsetX+x-start.left,y:start.offsetY+y-start.top});
+  }
+  function endDrag(event:PointerEvent<HTMLDivElement>){if(drag.current?.pointerId===event.pointerId)drag.current=null;}
   function setValue(key:keyof typeof defaults,value:number|'cover'|'contain'|BackgroundMode){const next={...values,[key]:value}; setValues(next); try{localStorage.setItem(settingsKey,JSON.stringify(next));window.dispatchEvent(new Event(settingsEvent));}catch{setError(true);}}
   async function choose(file:File|undefined){if(!file)return; try{if(!file.type.startsWith('image/')||file.size>10*1024*1024)throw Error(); const bitmap=await createImageBitmap(file);bitmap.close();await imageStore('readwrite',file);setHasImage(true);setError(false);setValue('mode','image');announceImage();}catch{setError(true);} finally {if(input.current)input.current.value='';}}
   async function remove(){try{await imageStore('readwrite',null);setHasImage(false);setError(false);announceImage();}catch{setError(true);}}
@@ -89,8 +107,10 @@ export function BackgroundSettings({open,onOpenChange,dark,onThemeChange,surface
   const opacitySettings = ['shade', ...surfaces] as const;
   const theme = dark ? 'dark' : 'light';
   return <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="custom-background-dialog" overlayClassName="custom-background-overlay" aria-describedby={undefined}>
-      <DialogTitle>{labels.title}</DialogTitle>
+    <DialogContent ref={dialog} className="custom-background-dialog" overlayClassName="custom-background-overlay" aria-describedby={undefined} style={{translate:`${offset.x}px ${offset.y}px`}}>
+      <div className="custom-background-drag-handle" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag}>
+        <DialogTitle>{labels.title}</DialogTitle>
+      </div>
       <div className="custom-theme-base">
         <span id="custom-theme-label">{labels.base}</span>
         <ChoiceGroup type="single" aria-labelledby="custom-theme-label" className="custom-theme-switch" data-theme={theme} value={theme}

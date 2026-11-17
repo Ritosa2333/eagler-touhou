@@ -216,6 +216,7 @@ function sanitizePath(value) {
 function apply() {
   core.eaglerOptions = options;
   core._th13_music_enabled(+music);
+  core._th13_always_hitbox(+(options.alwaysHitbox === true));
   core._th13_touch_options(+!!options.touchEnabled,
     Math.max(0, ['touch', 'touch-unlimited', 'joystick', 'joystick-free'].indexOf(options.touchMovementMode)),
     Math.max(100,Math.min(300,Number(options.touchSensitivity) || 100)) / 100,
@@ -499,9 +500,10 @@ const initialized = (async () => {
   // 异常——持久化失败不影响游戏内保存/下载流程。
   core.onReplaySaved = (name, bytes) => {
     try {
-      writeReplayFile(String(name).toLowerCase(), bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
+      return writeReplayFile(String(name).toLowerCase(), bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
     } catch (error) {
       console.warn('[th13] replay persist failed:', error);
+      return false;
     }
   };
 

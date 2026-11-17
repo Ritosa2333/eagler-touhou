@@ -1,6 +1,6 @@
 # 文档总表
 
-共 617 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 663 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -50,7 +50,9 @@
 | 作品入口 | [ports/th11/README.md](../ports/th11/README.md) | 東方地霊殿 TH11 |
 | 作品入口 | [ports/th12-mp/README.md](../ports/th12-mp/README.md) | 东方星莲船多人合作版 |
 | 作品入口 | [ports/th12/README.md](../ports/th12/README.md) | 东方星莲船网页版与行为还原 |
+| 作品入口 | [ports/th13-mp/README.md](../ports/th13-mp/README.md) | 东方神灵庙（th13）多人版移植（th13-mp） |
 | 作品入口 | [ports/th13/README.md](../ports/th13/README.md) | 东方神灵庙（th13）移植 |
+| 作品入口 | [ports/th14-mp/README.md](../ports/th14-mp/README.md) | TH14 多人版 |
 | 作品入口 | [ports/th15-mp/README.md](../ports/th15-mp/README.md) | 東方紺珠伝 TH15 多人版 |
 | 作品入口 | [ports/th15/README.md](../ports/th15/README.md) | 東方紺珠伝 TH15 |
 | 作品入口 | [ports/th17-mp/README.md](../ports/th17-mp/README.md) | TH17 MP · 东方鬼形兽联机版 |
@@ -72,6 +74,7 @@
 | 作品适配表 | [ports/th11/ADAPTATION.md](../ports/th11/ADAPTATION.md) | th11 适配检查 |
 | 作品适配表 | [ports/th12-mp/ADAPTATION.md](../ports/th12-mp/ADAPTATION.md) | th12 MP 适配检查 |
 | 作品适配表 | [ports/th12/ADAPTATION.md](../ports/th12/ADAPTATION.md) | th12 适配检查 |
+| 作品适配表 | [ports/th13-mp/ADAPTATION.md](../ports/th13-mp/ADAPTATION.md) | th13 MP 适配检查 |
 | 作品适配表 | [ports/th13/ADAPTATION.md](../ports/th13/ADAPTATION.md) | th13 适配检查 |
 | 作品适配表 | [ports/th15-mp/ADAPTATION.md](../ports/th15-mp/ADAPTATION.md) | th15 MP 适配检查 |
 | 作品适配表 | [ports/th15/ADAPTATION.md](../ports/th15/ADAPTATION.md) | th15 适配检查 |
@@ -151,6 +154,33 @@
 | 作品源码文档 | [ports/th12/third_party/stb_vorbis/README.md](../ports/th12/third_party/stb_vorbis/README.md) | stb_vorbis README |
 | 作品源码文档 | [ports/th12/tools/frame-inspector/README.md](../ports/th12/tools/frame-inspector/README.md) | TH12 原版逐帧检查 |
 | 作品源码文档 | [ports/th12/tools/replay-verifier/README.md](../ports/th12/tools/replay-verifier/README.md) | TH12 Replay verification |
+| 作品源码文档 | [ports/th13-mp/docs/ASSETS.md](../ports/th13-mp/docs/ASSETS.md) | th13 资源格式清单 |
+| 作品源码文档 | [ports/th13-mp/docs/DECOMP.md](../ports/th13-mp/docs/DECOMP.md) | th13 反编译函数地图 |
+| 作品源码文档 | [ports/th13-mp/docs/DEVELOPMENT.md](../ports/th13-mp/docs/DEVELOPMENT.md) | th13 开发指南 |
+| 作品源码文档 | [ports/th13-mp/docs/M9-CANDIDATE.md](../ports/th13-mp/docs/M9-CANDIDATE.md) | TH13 MP M9 候选交接（M9-CANDIDATE） |
+| 作品源码文档 | [ports/th13-mp/docs/MP-DEVELOPMENT.md](../ports/th13-mp/docs/MP-DEVELOPMENT.md) | TH13 MP 开发指南（M0 骨架 → M10 交付） |
+| 作品源码文档 | [ports/th13-mp/docs/RULES.md](../ports/th13-mp/docs/RULES.md) | TH13 MP 规则契约（v3，2026-11-13） |
+| 作品源码文档 | [ports/th13-mp/docs/feedback-fast-forward-20261107.md](../ports/th13-mp/docs/feedback-fast-forward-20261107.md) | 2026-11-07 Replay / result / staff feedback fixes |
+| 作品源码文档 | [ports/th13-mp/docs/plans/anm-pipeline.md](../ports/th13-mp/docs/plans/anm-pipeline.md) | TH13 ANM（v8）管线行为规格与移植方案 |
+| 作品源码文档 | [ports/th13-mp/docs/plans/coverage-matrix.md](../ports/th13-mp/docs/plans/coverage-matrix.md) | 场景覆盖矩阵（coverage matrix） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/draw-contract.md](../ports/th13-mp/docs/plans/draw-contract.md) | 语义绘制清单契约（draw contract）v1 |
+| 作品源码文档 | [ports/th13-mp/docs/plans/ecl-vm.md](../ports/th13-mp/docs/plans/ecl-vm.md) | th13 ECL 虚拟机（ECL v13）行为规格 |
+| 作品源码文档 | [ports/th13-mp/docs/plans/event-contract.md](../ports/th13-mp/docs/plans/event-contract.md) | stage1 事件契约（oracle 对拍合同） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/feedback-closure-todo.md](../ports/th13-mp/docs/plans/feedback-closure-todo.md) | TH13 feedback closure todo |
+| 作品源码文档 | [ports/th13-mp/docs/plans/hud-capture-plan.md](../ports/th13-mp/docs/plans/hud-capture-plan.md) | 对局窗 HUD 捕获面扩展方案（S2 前置研究报告） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/oracle-entry.md](../ports/th13-mp/docs/plans/oracle-entry.md) | TH13 原版可直调入口施工图（Unicorn oracle） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/render-chain.md](../ports/th13-mp/docs/plans/render-chain.md) | TH13 渲染提交链逆向 —— 假设备语义捕获施工图 |
+| 作品源码文档 | [ports/th13-mp/docs/plans/replay-twin-divergence.md](../ports/th13-mp/docs/plans/replay-twin-divergence.md) | th1301 回放自机孪生模型分歧根因排查（S4 拦路虎分析报告） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/replay.md](../ports/th13-mp/docs/plans/replay.md) | 录像（.rpy）格式与回放注入 |
+| 作品源码文档 | [ports/th13-mp/docs/plans/results-flow.md](../ports/th13-mp/docs/plans/results-flow.md) | th13 Stage 终了 → 结算 → 下一关 / 标题 / 结局 场景链（反编译研究报告） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/results-overlay-anatomy.md](../ports/th13-mp/docs/plans/results-overlay-anatomy.md) | 结算幕（对局内覆盖层）静态解剖（S3 关键前置研究报告） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/scoredat.md](../ports/th13-mp/docs/plans/scoredat.md) | scoreth13.dat 原版格式落移植（ScoreDat + FileStore 集成） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/stage1-acceptance.md](../ports/th13-mp/docs/plans/stage1-acceptance.md) | Stage 1 全链路验收合同 |
+| 作品源码文档 | [ports/th13-mp/docs/plans/title-anm-blueprint.md](../ports/th13-mp/docs/plans/title-anm-blueprint.md) | th13 主菜单 ANM 蓝图（title.anm / titlev.anm 脚本号总表与重锚方案） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/ui-base.md](../ports/th13-mp/docs/plans/ui-base.md) | TH13–15 同代引擎 UI 基座移植方案 |
+| 作品源码文档 | [ports/th13-mp/docs/release-packaging.md](../ports/th13-mp/docs/release-packaging.md) | th13 网页版发布打包排除清单（Pre-Release，2026-11-05） |
+| 作品源码文档 | [ports/th13-mp/tools/replay-verifier/README.md](../ports/th13-mp/tools/replay-verifier/README.md) | replay-verifier |
+| 作品源码文档 | [ports/th13-mp/web/sdl-runtime/build-badge.txt](../ports/th13-mp/web/sdl-runtime/build-badge.txt) | cea70e4f |
 | 作品源码文档 | [ports/th13/archive/th13-dialogue-filter-20261105/README.md](../ports/th13/archive/th13-dialogue-filter-20261105/README.md) | 神灵庙对话文字缩放 |
 | 作品源码文档 | [ports/th13/archive/th13-performance-investigation-20261105/README.md](../ports/th13/archive/th13-performance-investigation-20261105/README.md) | 神灵庙绘制开销与补帧放大试验 |
 | 作品源码文档 | [ports/th13/archive/th13-seiga-timer-retirement-20261105/README.md](../ports/th13/archive/th13-seiga-timer-retirement-20261105/README.md) | 神灵庙青娥退场倒计时清理 |
@@ -181,6 +211,10 @@
 | 作品源码文档 | [ports/th13/docs/release-packaging.md](../ports/th13/docs/release-packaging.md) | th13 网页版发布打包排除清单（Pre-Release，2026-11-05） |
 | 作品源码文档 | [ports/th13/tools/replay-verifier/README.md](../ports/th13/tools/replay-verifier/README.md) | replay-verifier |
 | 作品源码文档 | [ports/th13/web/sdl-runtime/build-badge.txt](../ports/th13/web/sdl-runtime/build-badge.txt) | cea70e4f |
+| 作品源码文档 | [ports/th14-mp/docs/porting/TH14_ANM_VM_ORACLE.md](../ports/th14-mp/docs/porting/TH14_ANM_VM_ORACLE.md) | TH14 ANM VM 原版对照 |
+| 作品源码文档 | [ports/th14-mp/docs/porting/TH14_BROWSER_PERFORMANCE.md](../ports/th14-mp/docs/porting/TH14_BROWSER_PERFORMANCE.md) | TH14 browser frame pacing |
+| 作品源码文档 | [ports/th14-mp/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md](../ports/th14-mp/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md) | TH14 texture sizes |
+| 作品源码文档 | [ports/th14-mp/docs/porting/TH14_UI_ORACLE.md](../ports/th14-mp/docs/porting/TH14_UI_ORACLE.md) | TH14 界面 Oracle |
 | 作品源码文档 | [ports/th14/docs/porting/TH14_ANM_VM_ORACLE.md](../ports/th14/docs/porting/TH14_ANM_VM_ORACLE.md) | TH14 ANM VM 原版对照 |
 | 作品源码文档 | [ports/th14/docs/porting/TH14_BROWSER_PERFORMANCE.md](../ports/th14/docs/porting/TH14_BROWSER_PERFORMANCE.md) | TH14 browser frame pacing |
 | 作品源码文档 | [ports/th14/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md](../ports/th14/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md) | TH14 texture sizes |
@@ -264,11 +298,14 @@
 | 迁移记录 | [docs/migration/local-workspace-20261019.md](migration/local-workspace-20261019.md) | 本地工作区归并 ｜ 2026-10-19 |
 | 迁移记录 | [docs/migration/th12-subtree-20261024.md](migration/th12-subtree-20261024.md) | th12 子树继承 ｜ 上游同源历史 |
 | 迁移记录 | [docs/migration/th13-subtree-20261028.md](migration/th13-subtree-20261028.md) | th13 独立源码与子树维护 |
+| 迁移记录 | [docs/migration/th13mp-derivation-20261108.md](migration/th13mp-derivation-20261108.md) | th13-mp 目录来源登记（仓内派生） |
 | 迁移记录 | [docs/migration/th17-subtree-20261106.md](migration/th17-subtree-20261106.md) | TH17 普通版与多人版目录历史 |
 | 历史记录 | [archive/README.md](../archive/README.md) | 历史记录 |
 | 历史记录 | [archive/hk-mirror-relay-20261028/deployment.md](../archive/hk-mirror-relay-20261028/deployment.md) | 香港镜像与统一 Relay 入口 ｜ 2026-10-28 |
 | 历史记录 | [archive/main-refresh-20261028/README.md](../archive/main-refresh-20261028/README.md) | 主线发布与镜像一致性 |
 | 历史记录 | [archive/main-thprac-th08-test-th12-20261028/README.md](../archive/main-thprac-th08-test-th12-20261028/README.md) | 主站 THPrac／TH08 与测试站 TH12 多人发布 |
+| 历史记录 | [archive/motion-extrapolation-153-20261028/README.md](../archive/motion-extrapolation-153-20261028/README.md) | #153 高刷外推与 Presentation Lab |
+| 历史记录 | [archive/motion-extrapolation-integration-20261031/README.md](../archive/motion-extrapolation-integration-20261031/README.md) | 高刷当前帧外推 |
 | 历史记录 | [archive/multiplayer-replay-background-clock-20261030/README.md](../archive/multiplayer-replay-background-clock-20261030/README.md) | 多人章节回放背景时钟 |
 | 历史记录 | [archive/relay-entry-20261027/deployment.md](../archive/relay-entry-20261027/deployment.md) | Relay 入口自动切换发布 |
 | 历史记录 | [archive/relay-session-identity-20261028/README.md](../archive/relay-session-identity-20261028/README.md) | 多入口会话匹配 |
@@ -337,6 +374,25 @@
 | 历史记录 | [archive/th12-web-adaptation-20261020/README.md](../archive/th12-web-adaptation-20261020/README.md) | th12 旧网页前端接入记录 |
 | 历史记录 | [archive/th12mp-public-20261028/README.md](../archive/th12mp-public-20261028/README.md) | 星莲船正式发布 |
 | 历史记录 | [archive/th12mp-public-20261028/cn129.md](../archive/th12mp-public-20261028/cn129.md) | 原主站入口同步 |
+| 历史记录 | [archive/th13-mp-sync-20261112/README.md](../archive/th13-mp-sync-20261112/README.md) | TH13 MP 同步修复与提交交接（2026-11-12） |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/README.md](../archive/th14-behavior-acceptance-20261117/README.md) | TH14 行为验收与交付记录 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_AUDIO_RESUME_RACE_NOV15.md](../archive/th14-behavior-acceptance-20261117/TH14_AUDIO_RESUME_RACE_NOV15.md) | TH14 音频恢复与暂停竞态修复 · 2026-11-15 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_CURRENT_AUDIO_EXTRA_NOV09.md](../archive/th14-behavior-acceptance-20261117/TH14_CURRENT_AUDIO_EXTRA_NOV09.md) | TH14 当前提供者的六机体完整 Extra 回归 · 2026-11-09 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_CURRENT_EXTRA_BROWSER_NOV15.md](../archive/th14-behavior-acceptance-20261117/TH14_CURRENT_EXTRA_BROWSER_NOV15.md) | TH14 当前构建 Extra 浏览器自然结束与成绩保护 · 2026-11-15 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_IMPORT_RECOVERY_NOV15.md](../archive/th14-behavior-acceptance-20261117/TH14_IMPORT_RECOVERY_NOV15.md) | TH14 录像导入错误恢复 · 2026-11-15 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_MANAGED_ARCHIVE_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_MANAGED_ARCHIVE_NOV17.md) | TH14 资源分块加载与原生所有权 · 2026-11-17 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_NATIVE_MANUAL_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_NATIVE_MANUAL_NOV17.md) | TH14 原生操作说明流程 · 2026-11-17 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_NATIVE_MUSIC_ROOM_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_NATIVE_MUSIC_ROOM_NOV17.md) | TH14 当前原生 Music Room · 2026-11-17 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_NATIVE_OPTIONS_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_NATIVE_OPTIONS_NOV17.md) | TH14 原生设置与跨页保存 · 2026-11-17 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_NATIVE_PRACTICE_CANCEL_NOV15.md](../archive/th14-behavior-acceptance-20261117/TH14_NATIVE_PRACTICE_CANCEL_NOV15.md) | TH14 原生练习锁定、取消与普通重开 · 2026-11-15 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_PRACTICE_ENTRY_UNLOCK_NOV15.md](../archive/th14-behavior-acceptance-20261117/TH14_PRACTICE_ENTRY_UNLOCK_NOV15.md) | TH14 普通进入关卡后的练习解锁修复 · 2026-11-15 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_REPLAY_END_PRESENTATION_NOV15.md](../archive/th14-behavior-acceptance-20261117/TH14_REPLAY_END_PRESENTATION_NOV15.md) | TH14 网页录像结束后的完整分数动画 · 2026-11-15 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_REPLAY_END_RELEASE_NOV15.md](../archive/th14-behavior-acceptance-20261117/TH14_REPLAY_END_RELEASE_NOV15.md) | TH14 录像终点分数显示修复交付 · 2026-11-15 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_RESOURCE_ABORT_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_RESOURCE_ABORT_NOV17.md) | TH14 资源安装取消信号 · 2026-11-17 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_STARTUP_ABORT_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_STARTUP_ABORT_NOV17.md) | TH14 缓存恢复后的加载取消 · 2026-11-17 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_STARTUP_RENDER_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_STARTUP_RENDER_NOV17.md) | TH14 上游首帧渲染接续 · 2026-11-17 |
+| 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_TRACK_VOLUME_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_TRACK_VOLUME_NOV17.md) | TH14 切曲音量与 OGG 静音流程 · 2026-11-17 |
+| 历史记录 | [archive/th14-rollback-20261114/README.md](../archive/th14-rollback-20261114/README.md) | TH14 多人延迟输入验证 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/README.md](../archive/th14-subtree-runtime-restoration-20261114/README.md) | TH14 子树运行时修复接续 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_FULL_BROWSER_REPLAY_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_FULL_BROWSER_REPLAY_NOV14.md) | TH14 当前版本完整录像浏览器验收 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_LEGACY_BROWSER_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_LEGACY_BROWSER_NOV14.md) | TH14 魔理沙 A Easy 当前浏览器终态 |
@@ -577,9 +633,13 @@
 | 许可证与声明 | [ports/th12/portable/sdl/third_party/stb_image.LICENSE](../ports/th12/portable/sdl/third_party/stb_image.LICENSE) | stb_image |
 | 许可证与声明 | [ports/th12/src/practice/THPRAC-LICENSE.txt](../ports/th12/src/practice/THPRAC-LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th12/third_party/stb_vorbis/LICENSE](../ports/th12/third_party/stb_vorbis/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th13-mp/LICENSE](../ports/th13-mp/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th13-mp/NOTICE.md](../ports/th13-mp/NOTICE.md) | Source and asset notices |
+| 许可证与声明 | [ports/th13-mp/portable/sdl/third_party/miniaudio.LICENSE](../ports/th13-mp/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th13/LICENSE](../ports/th13/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th13/NOTICE.md](../ports/th13/NOTICE.md) | Source and asset notices |
 | 许可证与声明 | [ports/th13/portable/sdl/third_party/miniaudio.LICENSE](../ports/th13/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
+| 许可证与声明 | [ports/th14-mp/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE](../ports/th14-mp/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th14/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE](../ports/th14/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th15-mp/LICENSE](../ports/th15-mp/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th15-mp/portable/browser/LICENSE.eagler-common](../ports/th15-mp/portable/browser/LICENSE.eagler-common) | LICENSE |
@@ -602,24 +662,10 @@
 | 许可证与声明 | [services/turn/LICENSE](../services/turn/LICENSE) | LICENSE |
 | 协作约定 | [AGENTS.md](../AGENTS.md) | 普通版与 MP 维护 |
 | 协作约定 | [launcher/tools/maintainer/operator-delivery/payload/AGENTS.md](../launcher/tools/maintainer/operator-delivery/payload/AGENTS.md) | 部署代理约定 |
+| 协作约定 | [ports/th13-mp/AGENTS.md](../ports/th13-mp/AGENTS.md) | th13-mp 端口局部入口 |
 | 协作约定 | [ports/th13/AGENTS.md](../ports/th13/AGENTS.md) | th13 端口局部入口 |
 | CI 与协作模板 | [.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md) | 改动 |
 | 项目文档 | [docs/README.md](README.md) | 文档 |
 | 项目文档 | [docs/TOUHOU_PROGRESS.md](TOUHOU_PROGRESS.md) | 东方作品进度 |
-| 项目文档 | [docs/porting/TH14_AUDIO_RESUME_RACE_NOV15.md](porting/TH14_AUDIO_RESUME_RACE_NOV15.md) | TH14 音频恢复与暂停竞态修复 · 2026-11-15 |
-| 项目文档 | [docs/porting/TH14_CURRENT_AUDIO_EXTRA_NOV09.md](porting/TH14_CURRENT_AUDIO_EXTRA_NOV09.md) | TH14 当前提供者的六机体完整 Extra 回归 · 2026-11-09 |
-| 项目文档 | [docs/porting/TH14_CURRENT_EXTRA_BROWSER_NOV15.md](porting/TH14_CURRENT_EXTRA_BROWSER_NOV15.md) | TH14 当前构建 Extra 浏览器自然结束与成绩保护 · 2026-11-15 |
-| 项目文档 | [docs/porting/TH14_IMPORT_RECOVERY_NOV15.md](porting/TH14_IMPORT_RECOVERY_NOV15.md) | TH14 录像导入错误恢复 · 2026-11-15 |
-| 项目文档 | [docs/porting/TH14_MANAGED_ARCHIVE_NOV17.md](porting/TH14_MANAGED_ARCHIVE_NOV17.md) | TH14 资源分块加载与原生所有权 · 2026-11-17 |
-| 项目文档 | [docs/porting/TH14_NATIVE_MANUAL_NOV17.md](porting/TH14_NATIVE_MANUAL_NOV17.md) | TH14 原生操作说明流程 · 2026-11-17 |
-| 项目文档 | [docs/porting/TH14_NATIVE_MUSIC_ROOM_NOV17.md](porting/TH14_NATIVE_MUSIC_ROOM_NOV17.md) | TH14 当前原生 Music Room · 2026-11-17 |
-| 项目文档 | [docs/porting/TH14_NATIVE_OPTIONS_NOV17.md](porting/TH14_NATIVE_OPTIONS_NOV17.md) | TH14 原生设置与跨页保存 · 2026-11-17 |
-| 项目文档 | [docs/porting/TH14_NATIVE_PRACTICE_CANCEL_NOV15.md](porting/TH14_NATIVE_PRACTICE_CANCEL_NOV15.md) | TH14 原生练习锁定、取消与普通重开 · 2026-11-15 |
-| 项目文档 | [docs/porting/TH14_PRACTICE_ENTRY_UNLOCK_NOV15.md](porting/TH14_PRACTICE_ENTRY_UNLOCK_NOV15.md) | TH14 普通进入关卡后的练习解锁修复 · 2026-11-15 |
-| 项目文档 | [docs/porting/TH14_REPLAY_END_PRESENTATION_NOV15.md](porting/TH14_REPLAY_END_PRESENTATION_NOV15.md) | TH14 网页录像结束后的完整分数动画 · 2026-11-15 |
-| 项目文档 | [docs/porting/TH14_REPLAY_END_RELEASE_NOV15.md](porting/TH14_REPLAY_END_RELEASE_NOV15.md) | TH14 录像终点分数显示修复交付 · 2026-11-15 |
-| 项目文档 | [docs/porting/TH14_RESOURCE_ABORT_NOV17.md](porting/TH14_RESOURCE_ABORT_NOV17.md) | TH14 资源安装取消信号 · 2026-11-17 |
-| 项目文档 | [docs/porting/TH14_STARTUP_ABORT_NOV17.md](porting/TH14_STARTUP_ABORT_NOV17.md) | TH14 缓存恢复后的加载取消 · 2026-11-17 |
-| 项目文档 | [docs/porting/TH14_STARTUP_RENDER_NOV17.md](porting/TH14_STARTUP_RENDER_NOV17.md) | TH14 上游首帧渲染接续 · 2026-11-17 |
-| 项目文档 | [docs/porting/TH14_TRACK_VOLUME_NOV17.md](porting/TH14_TRACK_VOLUME_NOV17.md) | TH14 切曲音量与 OGG 静音流程 · 2026-11-17 |
+| 项目文档 | [docs/porting/th14-behavior-status.md](porting/th14-behavior-status.md) | TH14 行为适配状态 |
 | 项目文档 | [docs/th075-thcrap.md](th075-thcrap.md) | th075 语言资源准备 |

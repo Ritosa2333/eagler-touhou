@@ -108,3 +108,50 @@ test('channel diagnostics retain at most the last eight events',()=>{
     assert.equal(f.state.channelEvents.at(-1).error.message,'failure-11');
   }finally{f.state.close();}
 });
+
+test('late ICE for a retired startup connection cannot disconnect the active TURN path',async()=>{
+  const f=fixture();try{
+    f.pc.signalingState='closed';
+    f.pc.remoteDescription={type:'offer'};
+    let added=0;
+    f.pc.addIceCandidate=async()=>{++added;throw Error('The peer connection is closed');};
+    f.peer.pc={connectionState:'connected',signalingState:'stable',close(){}};
+    f.state.signal.onmessage({data:JSON.stringify({
+      type:'signal',from:1,candidate:{candidate:'candidate:late 1 UDP 1 192.0.2.1 40001 typ srflx',sdpMid:'0'}
+    })});
+    await f.state.signalTasks;
+    assert.equal(f.state.disconnected,false);
+    assert.equal(added,0);
+  }finally{f.state.close();}
+});
+
+test('the original channels can open after TURN without replacing the active channels',()=>{
+  const f=fixture();try{
+    const turnPc={close(){}};
+    f.peer.pc=turnPc;
+    for(const kind of ['input','control']){
+      const turn=f.channel(kind),original=f.channel(kind);
+      f.peer[kind+'Dc']=turn;
+      f.state.setupChannel(1,original,kind);
+      original.onopen();
+      assert.equal(f.peer[kind+'Dc'],turn);
+      assert.equal(f.peer.primary[kind+'Dc'],original);
+    }
+    assert.equal(f.state.disconnected,false);
+  }finally{f.state.close();}
+});
+
+test('an open inactive peer still receives ICE, and its errors stay local to it',async()=>{
+  const f=fixture();try{
+    f.pc.remoteDescription={type:'offer'};
+    let added=0;
+    f.pc.addIceCandidate=async()=>{++added;throw Error('Inactive peer rejected a candidate');};
+    f.peer.pc={connectionState:'connected',signalingState:'stable',close(){}};
+    f.state.signal.onmessage({data:JSON.stringify({
+      type:'signal',from:1,candidate:{candidate:'candidate:late 1 UDP 1 192.0.2.1 40001 typ srflx',sdpMid:'0'}
+    })});
+    await f.state.signalTasks;
+    assert.equal(f.state.disconnected,false);
+    assert.equal(added,1);
+  }finally{f.state.close();}
+});

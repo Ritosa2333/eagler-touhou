@@ -1,0 +1,137 @@
+Apply after reselect-character.patch. Compile GamePresentation.cpp with TH09_DESKTOP_MOTION_SMOOTHING enabled.
+
+--- a/ports/th09/web/cpp/sdl/Application.cpp
++++ b/ports/th09/web/cpp/sdl/Application.cpp
+@@ -5,6 +5,7 @@
+ // SDL application integration under validation. Test-only entry points are
+ // compiled behind TH09_DEVELOPMENT_HARNESS; no original executable is linked.
+ #include "Assets.hpp"
++#include "MotionCapture.hpp"
+ #include "AudioDevice.hpp"
+ #include "FontDevice.hpp"
+ #include "PerformanceDiagnostics.hpp"
+@@ -230,7 +231,23 @@
+     std::unique_ptr<GameResources> loading_resources;std::array<AnmVm,3> loading_vms{};
+     u32 startup_background=0,startup_branding=0;
+     EclWorldState state;AnmExecutor executor{state.random};GameResources resources{assets,graphics,executor};
+-    GamePresentation presentation{graphics,resources,*this};InGameMenus menus{resources,*this};
++    MotionCapture motion_capture{graphics};
++    GamePresentation presentation{motion_capture,resources,*this};InGameMenus menus{resources,*this};
++    bool motion_enabled=false,motion_pending=false;
++    double motion_draw_started=0.,motion_draw_cost=0.,motion_extra_cost=0.;
++
++    const Player* motion_player() const {
++        if(!motion_enabled||in_title||!session||!world||network.active||rollback_active||spectator_mode||
++           paused||over||complete||session->is_replay||session->phase!=SessionPhase::match||
++           world->transition_pending||world->scene->phase!=0||world->dialogue->id>=0||
++           world->battle->state.hide_players||(world->battle->state.flags&0x1800)||
++           world->configuration.controllers[0]||!world->configuration.controllers[1])return nullptr;
++        const auto& field=world->battle->fields[0];
++        const auto& player=*field.player;
++        if((field.script.flags&1)||player.motion.health<=0||
++           (player.control.player_state!=0&&player.control.player_state!=3))return nullptr;
++        return &player;
++    }
+     std::array<u8,2> local_focus{};i32 local_versus=1;
+     void clear_charge(){local_charge.clear();charge_frames={};if(session)session->charge_frames={};}
+     void release_network(){network.end();clear_charge();network_selection=false;settings.auto_focus=local_focus;settings.versus=local_versus;sync_records();}
+@@ -341,7 +358,7 @@
+         if(!ok){error=session->error;return false;}world=session->world.get();presentation.world=world;
+         if(!presentation.ascii.initialize()){error="ASCII initialization failed";return false;}paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};requested_transition=-1;return true;
+     }
+-    bool render_text(AnmVm& a,const char* s,u32 color,u32 shadow)override{TH09_PERF_SCOPE(text_cost,TextRender);if(!fonts.text(a,s,color,shadow)){error=fonts.error;return false;}return true;}
++    bool render_text(AnmVm& a,const char* s,u32 color,u32 shadow)override{if(motion_enabled)motion_capture.invalidate();TH09_PERF_SCOPE(text_cost,TextRender);if(!fonts.text(a,s,color,shadow)){error=fonts.error;return false;}return true;}
+     bool replay_view_silent=false;
+     void sound(i32 id,i32 pan)override{if(replay_view_silent||(spectator_mode&&spectator_playback.seeking))return;if(!queue_sound(0,id,float(pan)))audio.effects.enqueue(id,pan);}
+     void positioned_sound(i32 id,float x)override{if(replay_view_silent||(spectator_mode&&spectator_playback.seeking))return;if(!queue_sound(1,id,x))audio.effects.positioned(id,x);}
+@@ -523,9 +540,27 @@
+     }
+     void draw(bool present=true){
+         TH09_PERF_SCOPE(draw_cost,SemanticDraw);
++        const auto* player=present?motion_player():nullptr;
++        if(motion_enabled){
++            motion_pending=false;
++            if(player){
++                motion_capture.begin(&player->body);
++                active_motion_capture=&motion_capture;
++                motion_draw_started=now_ms();
++            }else motion_capture.invalidate();
++        }
+         presentation.begin_frame();if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
+         TH09_PERF_STOP(draw_cost);
++        if(player){
++            active_motion_capture=nullptr;
++            motion_capture.end();
++        }
+         if(present){TH09_PERF_SCOPE(present_cost,Present);graphics.present();}
++        if(player){
++            motion_pending=motion_capture.ready();
++            motion_draw_cost=now_ms()-motion_draw_started;
++            motion_extra_cost*=0.95;
++        }
+     }
+     i32 requested_transition=-1;
+     bool import_file(u32 kind,u32 size){
+@@ -1725,6 +1760,40 @@
+ }
+ #endif
+
++static u16 motion_held_keys(){
++    bool keys[256]{};
++    const auto* physical=SDL_GetKeyboardState(nullptr);
++    for(const auto& key:keyboard_map){
++        if(key.native==SDL_SCANCODE_UNKNOWN||!physical[key.native])continue;
++        if(key.vk)keys[key.vk]=true;
++        if(key.vk>=160&&key.vk<=165)keys[16+(key.vk-160)/2]=true;
++    }
++    return keyboard_input(keys,2)|joy_keys(0)|joy_keys(1);
++}
++
++static void present_motion_midpoint(){
++    const double now=now_ms();
++    if(now-probe->motion_draw_started<1000./120.)return;
++    probe->motion_pending=false;
++    const auto* player=probe->motion_player();
++    if(!player||suspended||!SDL_GetKeyboardFocus()||gestures.active())return;
++#if TH09_NATIVE_OVERLAY
++    if(Th09Overlay::CapturesKeyboard())return;
++#endif
++    const auto keys=motion_held_keys();
++    if(!(keys&0xf0)||(keys&8))return;
++    const double budget=std::max(probe->motion_draw_cost,probe->motion_extra_cost)+1.;
++    auto estimate=cadence;
++    if(previous_frame<0.||estimate.advance((now-previous_frame+budget)/1000.))return;
++    const auto& world=*probe->world;
++    const auto delta=predict_sprite(player->motion,keys,world.configuration.automatic_focus[0],
++                                   keys&1?player->input.fire_frames:0,player->resource.movement,
++                                   world.battle->state.limits,world.timing.rate*.5f);
++    if(delta.x==0.&&delta.y==0.)return;
++    probe->motion_capture.present(delta);
++    probe->motion_extra_cost=now_ms()-now;
++}
++
+ int run_desktop() {
+     SDL_SetHint(SDL_HINT_VIDEO_FORCE_EGL, "1");
+ #if TH09_NATIVE_OVERLAY
+@@ -1735,6 +1804,13 @@
+         th09_game_close();
+         return 1;
+     }
++    const auto* motion=SDL_getenv("EAGLER_TH09_MOTION_SMOOTHING");
++    const auto* display=SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(SDL_GL_GetCurrentWindow()));
++    const bool display_fast=display&&display->refresh_rate>=90.f;
++    int swap=-1;
++    probe->motion_enabled=(!motion||std::string_view(motion)!="0")&&display_fast&&
++        SDL_GL_GetSwapInterval(&swap)&&swap==0;
++    if(probe->motion_enabled)SDL_Log("th09 motion smoothing: enabled (fixed midpoint)");
+     th09_loop_start();
+     auto epoch = loop_epoch;
+ #if TH09_NATIVE_ROOM
+@@ -2035,6 +2111,7 @@
+             const auto presentations = probe->graphics.backend.stats.presentations;
+ #endif
+             const bool frameOk = run_frame(now_ms(), epoch);
++            if(frameOk&&probe->motion_pending)present_motion_midpoint();
+             if (!frameOk) {
+                 const char* message = th09_error();
+                 if (!*message) message = "The game could not continue.";

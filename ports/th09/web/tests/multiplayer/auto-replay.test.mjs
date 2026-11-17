@@ -7,7 +7,9 @@ function fixture(extra = {}) {
   const root = '/savesth09mp/replay/abdjfal/';
   const folders = new Set();
   const core = {HEAPU8: new Uint8Array(1024), _th09_auto_replay_folder_buffer: () => 16, FS: {
+    analyzePath: path => ({exists: folders.has(path)}),
     mkdirTree: path => folders.add(path),
+    rmdir: path => folders.delete(path),
     readdir: directory => [...files.keys()].filter(path => path.startsWith(directory+'/')).map(path => path.slice(directory.length+1)),
     readFile(path) {if (!files.has(path)) throw Error('missing'); return files.get(path);},
     writeFile: (path, data) => files.set(path, data),
@@ -40,6 +42,15 @@ test('disabled setting, spectator and incomplete/invalid results never save', ()
   f.options({netplayReplayAutoSave: true, netplaySpectator: true}); f.archive.end(600, 0);
   f.options({netplaySpectator: false}); f.archive.end(600, -1); f.archive.end(0, 1);
   assert.deepEqual(f.writes, []);
+});
+test('publishes the saved Replay without keeping it when browser autosave is disabled', () => {
+  const published = [];
+  const f = fixture({publish: (start, bytes) => published.push({start, bytes})});
+  f.options({netplayReplayAutoSave: false});
+  f.archive.begin(120); f.archive.end(780, 1);
+  assert.deepEqual(published, [{start:120,bytes:new Uint8Array([84,57])}]);
+  assert.equal(f.files.size, 0);
+  assert.equal(f.folders.size, 0);
 });
 test('failed write and persistence failures are notices; archive does not throw or terminate transport', async () => {
   const f = fixture(); f.fail(); f.archive.begin(0); assert.doesNotThrow(() => f.archive.end(600, 0));

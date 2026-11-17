@@ -1,0 +1,132 @@
+<!doctype html>
+<!-- Render workload probe. It boots the production runtime, enters a run or a
+     Spell Practice card (th13_debug_start_run with a spell slot) and pumps
+     deterministic frames while a scripted pilot holds shot and weaves. Every
+     frame records its wall cost together with the renderer statistics delta
+     (draw calls, batches, vertex bytes, texture/framebuffer binds, buffer
+     replacements), so the per-frame GPU submission workload of a card can be
+     read independently of this machine's GPU.
+     Query: stage, slot (-1 = whole stage), char, diff, frames, runtime, present. -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>th13 render stats probe</title>
+<style>
+  html, body { margin: 0; background: #101018; color: #ddd; font: 14px system-ui, sans-serif; }
+  canvas { display: block; margin: 0 auto; outline: none; }
+  #status { text-align: center; padding: 8px; }
+</style>
+</head>
+<body>
+<div id="status">starting</div>
+<canvas id="canvas" tabindex="0"></canvas>
+<script type="module">
+import {runtimeAssets} from '/runtime-assets.mjs';
+const status = text => { document.getElementById('status').textContent = text; };
+const params = new URLSearchParams(location.search);
+const stage = Number(params.get('stage') ?? '3');
+const slot = Number(params.get('slot') ?? '3');
+const character = Number(params.get('char') ?? '0');
+const diff = Number(params.get('diff') ?? '3');
+const frames = Number(params.get('frames') ?? '1800');
+const runtime = params.get('runtime') ?? '/artifacts/sdl3/th13-sdl.mjs';
+const present = params.get('present') === '1';
+const fetchBytes = async path => {
+  const response = await fetch(path);
+  if (!response.ok) throw new Error('missing asset: ' + path);
+  return new Uint8Array(await response.arrayBuffer());
+};
+window.__probe = {samples: [], failure: null, done: false, started: false};
+try {
+  const Module = await import(runtime);
+  const mod = await Module.default({
+    canvas: document.getElementById('canvas'),
+    print: t => console.log('[th13]', t),
+    printErr: t => console.warn('[th13]', t),
+  });
+  window.mod = mod;
+  mod.FS.mkdirTree('/assets');
+  for (const name of [...runtimeAssets, `pl0${character}a.sht`])
+    mod.FS.writeFile('/assets/' + name, await fetchBytes('/assets/' + name));
+  mod.FS.writeFile('/msgothic.ttc', await fetchBytes('/assets/msgothic.ttc'));
+  const audioAssets = [
+    'thbgm.fmt',
+    'se_plst00.wav', 'se_enep00.wav', 'se_pldead00.wav', 'se_power0.wav', 'se_power1.wav',
+    'se_tan00.wav', 'se_tan01.wav', 'se_tan02.wav', 'se_ok00.wav', 'se_cancel00.wav',
+    'se_select00.wav', 'se_gun00.wav', 'se_cat00.wav', 'se_lazer00.wav', 'se_lazer01.wav',
+    'se_enep01.wav', 'se_damage00.wav', 'se_item00.wav', 'se_kira00.wav', 'se_kira01.wav',
+    'se_kira02.wav', 'se_timeout.wav', 'se_graze.wav', 'se_powerup.wav', 'se_pause.wav',
+    'se_cardget.wav', 'se_damage01.wav', 'se_timeout2.wav', 'se_invalid.wav', 'se_slash.wav',
+    'se_ch00.wav', 'se_ch01.wav', 'se_extend.wav', 'se_nep00.wav', 'se_bonus.wav',
+    'se_bonus2.wav', 'se_enep02.wav', 'se_lazer02.wav', 'se_nodamage.wav', 'se_boon00.wav',
+    'se_don00.wav', 'se_boon01.wav', 'se_ch02.wav', 'se_ch03.wav', 'se_extend2.wav',
+    'se_pin00.wav', 'se_pin01.wav', 'se_lgods1.wav', 'se_lgods2.wav', 'se_lgods3.wav',
+    'se_lgods4.wav', 'se_lgodsget.wav', 'se_msl.wav', 'se_msl2.wav', 'se_pldead01.wav',
+    'se_heal.wav', 'se_astralup.wav', 'se_fault.wav', 'se_noise.wav',
+  ];
+  for (const name of audioAssets)
+    mod.FS.writeFile('/assets/' + name, await fetchBytes('/assets/' + name));
+  const music = mod.FS.open('/assets/thbgm.ogg', 'w');
+  try {
+    for (let n = 0; n < 30; ++n) {
+      const bytes = await fetchBytes('/assets/thbgm-' + String(n).padStart(2, '0') + '.part');
+      mod.FS.write(music, bytes, 0, bytes.length);
+    }
+  } finally { mod.FS.close(music); }
+
+  const runtimeError = () => mod.UTF8ToString(mod._th13_error());
+  if (!mod._th13_prepare_loading()) throw new Error(runtimeError());
+  mod._th13_draw_startup(90);
+  if (!mod._th13_initialize()) throw new Error(runtimeError());
+  if (!mod._th13_debug_start_run(stage, character, diff, slot)) throw new Error('start_run: ' + runtimeError());
+
+  // Renderer statistics (portable/sdl/Renderer.hpp Statistics, u32 fields).
+  const fields = ['calls', 'batches', 'uploadBytes', 'readBytes', 'frames', 'presentations',
+    'bufferReplacements', 'bufferSubUpdates', 'vertexUploadBytes', 'directBytes', 'copiedBytes',
+    'layoutSetups', 'textureBinds', 'framebufferBinds', 'programCompiles', 'genericBatches', 'resamples'];
+  // Both ports export HEAPU8; a fresh view follows memory growth.
+  const stats = () => {
+    const words = new Uint32Array(mod.HEAPU8.buffer, mod._th13_debug_stats(), fields.length);
+    const out = {};
+    fields.forEach((name, index) => { out[name] = words[index]; });
+    return out;
+  };
+  const samples = window.__probe.samples;
+  let previous = stats();
+  // Scripted pilot: hold shot, weave left/right every 40 frames, focus every other weave.
+  mod._th13_key(44, 1);
+  window.__probe.started = true;
+  let n = 0;
+  const pump = async () => {
+    let slice = performance.now();
+    while (n < frames) {
+      const phase = Math.floor(n / 40) % 4;
+      mod._th13_key(79, phase === 0 ? 1 : 0);   // right
+      mod._th13_key(80, phase === 2 ? 1 : 0);   // left
+      mod._th13_key(225, phase % 2 ? 1 : 0);    // focus (shift)
+      const begin = performance.now();
+      if (!mod._th13_debug_frame_present(present ? 1 : 0)) throw new Error('frame: ' + runtimeError());
+      const ms = performance.now() - begin;
+      const now = stats();
+      const row = {n, ms: +ms.toFixed(3), stage_frame: mod._th13_debug_stage_frame()};
+      for (const name of fields) row[name] = now[name] - previous[name];
+      previous = now;
+      samples.push(row);
+      ++n;
+      if (performance.now() - slice > 20) {
+        if (!present) mod._sdl_commit?.();
+        await new Promise(done => setTimeout(done, 0));
+        slice = performance.now();
+      }
+    }
+    window.__probe.done = true;
+    status('done ' + samples.length);
+  };
+  await pump();
+} catch (error) {
+  window.__probe.failure = String(error && error.stack || error);
+  status('failed: ' + window.__probe.failure);
+}
+</script>
+</body>
+</html>

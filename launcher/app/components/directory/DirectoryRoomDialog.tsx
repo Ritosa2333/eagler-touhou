@@ -24,7 +24,6 @@ export interface DirectoryRoomDialogProps {
 export function DirectoryRoomDialog({service, assetUrl, open, onCloseRequest, completionContext}: DirectoryRoomDialogProps) {
   const {t} = useLocale(), state = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
   const dialog = useRef<HTMLDialogElement>(null), code = useRef<HTMLInputElement>(null), lifetimeOpen = useRef(false);
-  const rules = useRef<HTMLDetailsElement>(null);
   const submission = useRef<{owner: object; parentKey: string | null | undefined; href?: string} | null>(null);
   const form = state.form, created = form.mode === 'create';
   const policy = form.product ? multiplayerConfigForProduct(form.product) : null;
@@ -38,7 +37,6 @@ export function DirectoryRoomDialog({service, assetUrl, open, onCloseRequest, co
       const opening = !node.open;
       lifetimeOpen.current = true;
       if (opening) {
-        if (rules.current) rules.current.open = false;
         node.showModal();
       }
       if (opening && form.mode === 'join') code.current?.focus();
@@ -97,11 +95,6 @@ export function DirectoryRoomDialog({service, assetUrl, open, onCloseRequest, co
           onChange={() => service.updateForm({unrated: !form.unrated})}/>
       </div>}
       <label className="lobby-field" id="codeField" hidden={created}><span className="sr-only">{t('lobby.roomCode')}</span><Input ref={code} id="roomCodeInput" type="text" inputMode="numeric" autoComplete="off" pattern="[0-9]{4,8}" minLength={4} maxLength={8} placeholder="0000" required={!created} value={form.code} onChange={event => {event.currentTarget.setCustomValidity(''); service.updateForm({code: event.target.value});}}/></label>
-      <details ref={rules} className="lobby-create-rules" hidden={!created}>
-        <summary>
-          <span>{t('room.ruleSettings')}</span>
-          <ChevronDown size={16} aria-hidden="true"/>
-        </summary>
         <div className="lobby-form-pair" id="policyFields" hidden={!created}>
           <div className="lobby-field">
             <div className="flex items-center gap-1">
@@ -114,7 +107,6 @@ export function DirectoryRoomDialog({service, assetUrl, open, onCloseRequest, co
           </div>
           <label className="lobby-field"><span>{t('room.cheatMovement')}</span><MainSelect id="cheatSelect" aria-label={t('room.cheatMovement')} value={form.disableCheatMovement ? '1' : '0'} onChange={event => service.updateForm({disableCheatMovement: event.target.value === '1'})}><option value="0">{t('room.cheatAllowed')}</option><option value="1">{t('room.cheatDisabled')}</option></MainSelect></label>
         </div>
-      </details>
       <p className="lobby-form-error" id="formError" role="alert" hidden/>
       <BookButton variant="primary" className="lobby-button lobby-primary lobby-submit" id="submitRoom" type="submit" disabled={disabled}>{t(created ? 'lobby.create' : 'lobby.joinRoom')}</BookButton>
     </form>

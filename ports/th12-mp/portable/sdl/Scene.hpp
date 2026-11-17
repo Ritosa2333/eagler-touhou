@@ -70,7 +70,7 @@ private:
         u32 item=0; // text / dialogue / mesh index
         float bounds[4]{};u32 argb=0;u32 start=0,end=0;float width=0;
     };
-    struct Triangle {i32 layer,entry,blend;bool point;Vertex v[3];float depth;u32 order=0;};
+    struct Triangle {i32 layer,bank,entry,blend;bool point;Vertex v[3];float depth;u32 order=0;};
 #ifdef TH12_MULTIPLAYER
     std::vector<std::array<u32,2>> visual_owners;
     int local_seat=0;bool local_visibility=false;

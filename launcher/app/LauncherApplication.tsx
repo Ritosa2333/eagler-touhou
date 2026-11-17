@@ -29,6 +29,8 @@ import type { LibraryProduct } from './components/launcher/products';
 import { SettingsBody } from './components/settings/SettingsBody';
 import type { SettingsActions, TouchEditorNativePorts } from './components/settings/types';
 import type { GameSettingsModel, SettingsContext } from './models/game-settings';
+import type { WatchTh09Replay } from './models/th09-replay-archive';
+import type { SitePreferencesModel } from './models/site-preferences';
 import type { DecisionStore } from './models/decisions';
 import type { TouchLayoutModel } from './models/touch-layout';
 import { SurfaceNavigationProvider, useSurfaceNavigation } from './navigation/surface-navigation';
@@ -50,6 +52,7 @@ export type LobbyPresentation = Omit<
 export interface LauncherHost {
   readLocalSaves?:LocalSaveReader;
   cloudSync?:CloudSaveSync|null;
+  watchTh09Replay?: WatchTh09Replay;
   locale: UiLocale;
   lessMotion?: boolean;
   products: readonly LibraryProduct[];
@@ -58,6 +61,7 @@ export interface LauncherHost {
   onProductSelected?(productId: ProductId, changed: boolean): void;
   onRouteSelection?(productId: ProductId, context?: 'library' | 'lobby'): void;
   settings: GameSettingsModel;
+  preferences?: SitePreferencesModel;
   touchLayout: TouchLayoutModel;
   settingsContext(productId: ProductId, locale: UiLocale): SettingsContext;
   settingsActions: SettingsActions;
@@ -246,6 +250,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
         actions={host.settingsActions}
         onOpenTouchLayout={openTouchLayout}
         multiplayerControls={host.multiplayerControls}
+        preferences={host.preferences}
       />
     </OptionsPanel>
   );
@@ -298,7 +303,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
         {accountPage ? (
           <Suspense fallback={<main className="account-page" aria-busy="true"/>}><AccountPage /></Suspense>
         ) : profilePage ? (
-          <Suspense fallback={<ProfileLoading/>}><ProfilePage readLocalSaves={host.readLocalSaves} cloudSync={host.cloudSync}/></Suspense>
+          <Suspense fallback={<ProfileLoading/>}><ProfilePage readLocalSaves={host.readLocalSaves} cloudSync={host.cloudSync} watchTh09Replay={host.watchTh09Replay}/></Suspense>
         ) : navigation.context === 'lobby' ? (
           host.renderLobby ? (
             host.renderLobby(lobbyProps)

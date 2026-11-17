@@ -100,3 +100,20 @@ test('two guests can confirm one unrated result for the room', () => {
   assert.equal(recorded.length,1);
   assert.deepEqual(recorded[0].players,[null,null]);
 });
+
+test('each replay keeps the room nicknames from its first final report', () => {
+  const room = {id:'th09mp-1234',lobby:{startSerial:1}};
+  const run = start(room, ['host','guest'], ['account-a',null]);
+  room.lobby.seats[0].name = '最初の名前';
+  room.lobby.seats[1].name = 'Guest';
+  const recorded = [];
+  const record = round => recorded.push(round);
+  const result = {serial:1,start:0,frames:3600,winner:0,characters:[3,4]};
+  accept(room,run,'guest',result,record);
+  room.lobby.seats[0].name = '次の名前';
+  accept(room,run,'host',result,record);
+  const next = {...result,start:4000};
+  accept(room,run,'host',next,record);
+  accept(room,run,'guest',next,record);
+  assert.deepEqual(recorded.map(round => round.nicknames), [['最初の名前','Guest'],['次の名前','Guest']]);
+});

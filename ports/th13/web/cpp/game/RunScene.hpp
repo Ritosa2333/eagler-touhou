@@ -138,6 +138,7 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
     std::array<FrameCallback, 3> callbacks;
     std::array<FrameCallback, 2> spell_callbacks{};
     FrameCallback laser_update{};
+    FrameCallback bullet_update{};
     // 原版独立调度任务：0x42efb0 @ Update 24（道具）、0x438e70 @ Update 25
     // （神霊）。二者晚于激光 Update 22、子弹 Update 23（0x40e780），是
     // max_point 加成帧内相位的决定序（S5 f2725 根因）。
@@ -158,6 +159,7 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
     bool start_shake(ScreenShake effect);
     std::unique_ptr<LaserPresentation> laser_presentation;
     bool update_lasers();
+    bool update_bullets();
     bool update_items();
     bool update_spirits();
     // Boss HUD 独立任务（原版 0x4265a0 @ Update 0x1c=28，0x424f46/0x424f4b）。
@@ -259,6 +261,58 @@ public:
     bool show_spirit_notice(i32 level, float x, float y, float z) {
         return !spell_presentation ||
                spell_presentation->show_spirit_notice(level, x, y, z);
+    }
+    struct RollbackState {
+        PostGameFlow::RollbackState post;
+        GameHud::RollbackState hud;
+        SpellPresentation::RollbackState spell;
+        MsgPresentation::RollbackState portraits;
+        ScorePopups::RollbackState popups;
+        LaserPresentation::SnapshotData lasers;
+        Vec3 camera_origin, screen_translation, reference_position, background_delta, stage_direction;
+        Vec2 shake_offset;
+        GameRandom environment_rng{0};
+        float animation_rate;
+        bool paused;
+        i32 dialogue_rows;
+        Timer age;
+        bool player_activation_pending;
+        bool transition_wait, scenery_started;
+    };
+    RollbackState capture_rollback() const {
+        return {post_flow.capture_rollback(), hud.capture_rollback(),
+                spell_presentation ? spell_presentation->capture_rollback() : SpellPresentation::RollbackState{},
+                msg_presentation ? msg_presentation->capture_rollback() : MsgPresentation::RollbackState{},
+                score_popups.capture_rollback(),
+                laser_presentation ? laser_presentation->capture() : LaserPresentation::SnapshotData{},
+                environment.camera_origin, environment.screen_translation, environment.reference_position,
+                environment.background_delta, environment.stage_direction, environment.screen_shake_offset,
+                environment.game_rng, animations.rate, environment.paused, dialogue_rows_,
+                age, player_effect_activation_pending,
+                transition_wait, scenery_started};
+    }
+    void restore_rollback(const RollbackState& state,
+            std::unordered_map<const AnmVm*, AnmVm*>& remapped) {
+        post_flow.restore_rollback(state.post);
+        hud.restore_rollback(state.hud);
+        if (spell_presentation) spell_presentation->restore_rollback(state.spell);
+        if (msg_presentation) msg_presentation->restore_rollback(state.portraits);
+        score_popups.restore_rollback(state.popups);
+        if (laser_presentation) laser_presentation->restore(state.lasers, remapped);
+        environment.camera_origin = state.camera_origin;
+        environment.screen_translation = state.screen_translation;
+        environment.reference_position = state.reference_position;
+        environment.background_delta = state.background_delta;
+        environment.stage_direction = state.stage_direction;
+        environment.screen_shake_offset = state.shake_offset;
+        environment.game_rng = state.environment_rng;
+        animations.rate = state.animation_rate;
+        environment.paused = state.paused;
+        dialogue_rows_ = state.dialogue_rows;
+        age = state.age;
+        player_effect_activation_pending = state.player_activation_pending;
+        transition_wait = state.transition_wait;
+        scenery_started = state.scenery_started;
     }
     bool draw();
     bool draw_stage(u32 pass);  // 战斗直绘（initialize 注册的 4 个 Draw 回调）

@@ -59,16 +59,24 @@ async function nativeSnapshot(page){return page.evaluate(()=>{
   if(!r)return null;
   const runtime=Object.keys(r).filter(key=>/^__th\d+Runtime$/.test(key)).map(key=>r[key])[0];
   const module=runtime?.Module??r.Module,core=runtime?.core??r.core??module;
-  let native=null;
-  for(const name of ['th11_mp_status','_th15_mp_status'])if(typeof core?.[name]==='function'){
+  let native=null,rollback=null,mpError='';
+  for(const name of ['th11_mp_status','_th15_mp_status','_th13_mp_status'])if(typeof core?.[name]==='function'){
     const memory=core.memory?.buffer??module?.HEAPU8?.buffer;
     if(memory)native=Array.from(new Uint32Array(memory,core[name](),24));
+  }
+  if(typeof core?._th13_mp_rollback_status==='function'){
+    const memory=core.memory?.buffer??module?.HEAPU8?.buffer;
+    if(memory)rollback=Array.from(new Uint32Array(memory,core._th13_mp_rollback_status(),9));
+  }
+  if(typeof core?._th13_mp_error==='function'){
+    const memory=core.memory?.buffer??module?.HEAPU8?.buffer,p=core._th13_mp_error();
+    if(memory&&p){const bytes=new Uint8Array(memory,p),end=bytes.indexOf(0);mpError=new TextDecoder().decode(bytes.subarray(0,end<0?256:end));}
   }
   const options=module?.eaglerOptions??core?.eaglerOptions??{};
   return{active:r.__eaglerNetplayLanActive??(native?!!native[1]:false),
     frame:r.__eaglerNetplayLanFrame??native?.[3]??-1,confirmed:r.__eaglerNetplayLanConfirmed??native?.[4]??-1,
     route:r.__eaglerPeerTransport?.route??r.__eaglerNetplayTransport??'',
-    failed:r.__eaglerNetplayFailed??false,error:r.__eaglerNetplayError??'',native,
+    failed:r.__eaglerNetplayFailed??false,error:r.__eaglerNetplayError??'',native,rollback,mpError,
     transportState:{disconnected:r.__eaglerPeerTransport?.disconnected===true,recovering:r.__eaglerPeerTransport?.isRecovering?.()===true},
     state:runtime?.status?.()??null,gameplayStage:r.__eaglerNetplayGameplayStage??null,
     rollback:r.__eaglerNetplayLanRollback??null,resimulated:r.__eaglerNetplayLanResimulated??null,
@@ -114,8 +122,19 @@ try{
         page.on('console',message=>{if(message.type()==='error')record.consoleErrors.push({seat,stage:record.stage,text:message.text()});});
         page.on('response',response=>{if(response.status()>=400&&!response.url().endsWith('/favicon.ico'))record.httpErrors.push({seat,url:response.url(),status:response.status()});});
         await step(`P${seat+1}-directory`,async()=>{
-          await page.goto(base);await page.waitForFunction(()=>window.__eaglerBoot?.done===true);await dismiss(page);
-          await page.locator(`[data-product="${game}mp"]`).click();await page.locator('#createButton').waitFor({state:'visible'});
+          // Current Launcher UI keeps multiplayer products on the lobby
+          // directory (data-lobby-product/icon); packaged releases also expose
+          // data-product cards on the library page. Accept either surface.
+          const cardSelector=`[data-product="${game}mp"], [data-lobby-product="${game}mp"], [data-lobby-icon="${game}mp"]`;
+          await page.goto(base);
+          await page.waitForFunction(()=>window.__eaglerBoot?.done===true||!!document.querySelector('#createButton'));
+          await dismiss(page);
+          if(await page.locator(cardSelector).count()===0){
+            await page.goto(new URL('lobby.html',base).href);
+            await page.waitForFunction(()=>!!document.querySelector('#createButton'));
+            await dismiss(page);
+          }
+          await page.locator(cardSelector).first().click();await page.locator('#createButton').waitFor({state:'visible'});
         });
         await step(`P${seat+1}-room`,async()=>{
           await page.locator(seat===0?'#createButton':'#codeButton').click();
@@ -197,6 +216,15 @@ try{
       record.ready=await Promise.all(pages.map(roomSnapshot));
       if(language){record.previewLanguage=await Promise.all(pages.map(nativeSnapshot));checkLanguage(record.previewLanguage);}
       await step('synchronized-start',async()=>{
+        // A late resource reload can retire a READY toggle that was applied
+        // just before it; re-assert both seats before waiting for Start.
+        for(const page of pages){
+          if(await page.locator('#mpReady').getAttribute('aria-pressed')!=='true'&&await page.locator('#mpReady').isEnabled()){
+            record.steps.push({name:'ready-reassert',at:new Date().toISOString()});
+            await page.locator('#mpReady').click();
+          }
+        }
+        for(const page of pages)await page.waitForFunction(()=>document.querySelector('#mpReady')?.getAttribute('aria-pressed')==='true',null,{timeout:60000});
         await pages[0].waitForFunction(()=>!document.querySelector('#mpStartGame')?.disabled,null,{timeout:30000});
         await pages[0].locator('#mpStartGame').click();
         await Promise.all(pages.map(async page=>{

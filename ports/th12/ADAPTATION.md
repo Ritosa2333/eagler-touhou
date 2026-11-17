@@ -73,9 +73,9 @@
 
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
-| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 检查失败 | normal：[normal-presentation](../../docs/adaptation/status.json) |
-| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 检查失败 | normal：[normal-presentation](../../docs/adaptation/status.json) |
-| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 检查失败 | normal：[normal-presentation](../../docs/adaptation/status.json) |
+| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
+| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
+| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
 | DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
@@ -172,7 +172,7 @@
 
 Boss 位移动画执行原版 ECL262／276 的启停规则，依横向位移选择左右移动与停下过渡，保留原 VM 的局部位置和素材库。27 组原版指令边界对照覆盖换向与 ±0.03 像素阈值；原生回归入口为 `th12_enemy_movement_animation`。
 
-SDL 启动画面在原作社团署名下方叠加公共 `EAGLER ☯ TOUHOU Developers` 图案，随原版启动淡入淡出；普通关卡加载继续使用原作画面。图案由浏览器入口生成并交给 GLES 绘制，保持原作素材与署名。
+SDL 启动画面显示原作社团署名和淡入淡出动画。浏览器入口在构建日期可用时生成日期图层，交给 GLES 绘制。普通关卡加载使用原作画面。
 
 手柄左摇杆的本作输入默认使用每轴 50% 的方形死区，普通版与多人版、SDL 原生入口与旧网页入口保持一致。边界、斜向、十字键和启动器映射所有权由 `tests/sdl-gamepad.test.mjs` 检查；主站输入继续采用启动器的手柄配置。
 
@@ -205,3 +205,5 @@ SDL 入口已接上重开与常显判定点、触控位移录制及确认按下�
 RUNTIME-04、INPUT-06、TOUCH-16 与 AUDIO-05 的页面隐藏清理、损坏音乐提示和替换恢复见[SDL 输入与音乐错误验证](../../archive/th12-sdl-invariants-20261030/README.md)。
 
 TOUCH-09、AUDIO-07 的组件与接线结果见[全作核对记录](../../archive/shared-input-audio-20261030/README.md)。按作品、模式读取检查范围及实际 Runtime 结果。
+
+旧浏览器呈现路径的高刷使用当前帧外推，最多向前一个逻辑帧；原始逻辑与回放沿用 60 Hz 更新。构建、原生检查和 Presentation Lab 的验证范围见[外推记录](../../archive/motion-extrapolation-153-20261028/README.md)。

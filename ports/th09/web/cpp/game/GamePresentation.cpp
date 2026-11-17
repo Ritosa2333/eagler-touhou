@@ -1,4 +1,7 @@
 #include "GamePresentation.hpp"
+#if defined(__EMSCRIPTEN__) || defined(TH09_DESKTOP_MOTION_SMOOTHING)
+#include "../sdl/MotionCapture.hpp"
+#endif
 namespace th09 {
 namespace {Topology topology(BattleGeometry kind){return kind==BattleGeometry::fan?Topology::Fan:kind==BattleGeometry::lines?Topology::Lines:Topology::Strip;}}
 void GamePresentation::begin_field(i32 side){
@@ -6,6 +9,16 @@ void GamePresentation::begin_field(i32 side){
     if(side<2&&world&&world->backgrounds[side])renderer.scene_camera(world->backgrounds[side]->camera);else renderer.screen_camera();
 }
 void GamePresentation::animation(AnmVm& a,BattleSprite mode){
+#if defined(__EMSCRIPTEN__) || defined(TH09_DESKTOP_MOTION_SMOOTHING)
+    if(auto* capture=sdl::active_motion_capture;capture&&capture->body==&a&&mode==BattleSprite::unrotated){
+        renderer.flush();
+        capture->body_batch=true;
+        renderer.draw_no_rotation(a);
+        renderer.flush();
+        capture->body_batch=false;
+        return;
+    }
+#endif
     switch(mode){case BattleSprite::unrotated:renderer.draw_no_rotation(a);break;case BattleSprite::rotated:renderer.draw_2d(a);break;case BattleSprite::automatic:renderer.draw_3d(a);break;case BattleSprite::mirrored:renderer.draw_no_rotation(a,true,true);break;}
 }
 void GamePresentation::colored(const AnmVm* vm,const AttackColorVertex* vertices,u32 count,BattleGeometry mode,bool additive){

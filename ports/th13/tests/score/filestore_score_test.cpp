@@ -138,7 +138,7 @@ TEST(v6_migration_into_score_dat) {
     ScoreDat::read_ending_bytes(dat.st.data(), seen);
     CHECK_EQ(seen[0], u8(0xA5));
     CHECK_EQ(seen[12], u8(0x5A));
-    // ST 上次名：端口无名牌追踪，保持默认 8 空格。
+    // ST 上次名：新档未录入任何名字，保持 0x449a55 默认 8 空格。
     CHECK(std::memcmp(ScoreDat::st_name(dat.st.data()).data(), "        \0", 9) == 0);
 
     // 重载实例：v6 是应用侧唯一权威——native 通道不激活（score_dat_loaded 为
@@ -231,6 +231,49 @@ TEST(golden_overlay_on_load) {
                        u16(store.score_dat.st[ScoreDat::kStTableOff + 1] << 8);
     CHECK_EQ(table0, u16(0x7AC4));
     CHECK(std::memcmp(ScoreDat::st_name(store.score_dat.st.data()).data(), "NAME0008\0", 9) == 0);
+    CHECK(store.last_name == "NAME0008");
+}
+
+TEST(last_name_persists_and_mirrors_st_name) {
+    // score ST+0x0C（0x449a55 默认 8 空格）：END 回写的名字随保存点持久，
+    // 并镜像到原版格式 ST 块；v6 档没有该字段时取原版默认。
+    clear_env_files();
+    FileStore first;
+    CHECK(first.initialize());
+    CHECK(first.last_name == "        ");
+    first.remember_name("MYSTIA");
+    CHECK(first.last_name == "MYSTIA  ");
+    CHECK(first.save_score());
+    CHECK(std::memcmp(ScoreDat::st_name(first.score_dat.st.data()).data(), "MYSTIA  \0", 9) == 0);
+    std::vector<u8> v7;
+    CHECK(read_file(kSavePath, v7));
+
+    FileStore second;
+    CHECK(second.initialize());
+    CHECK(second.loaded);
+    CHECK(second.last_name == "MYSTIA  ");
+    second.remember_name("ABCDEFGHIJ");
+    CHECK(second.last_name == "ABCDEFGH");
+    second.remember_name(std::string("A\x01Z\xff", 4));
+    CHECK(second.last_name == "A Z     ");
+
+    // The v6 prefix is unchanged; a v6-sized file keeps every v6 field and
+    // reads the retail default name.
+    std::vector<u8> v6(v7.begin(), v7.end() - 16);
+    v6[8] = 6; v6[9] = v6[10] = v6[11] = 0;
+    CHECK(write_file(kSavePath, v6));
+    FileStore third;
+    CHECK(third.initialize());
+    CHECK(third.loaded);
+    CHECK(third.last_name == "        ");
+
+    // A v7 file whose extension tag is damaged is rejected like any bad save.
+    std::vector<u8> damaged = v7;
+    damaged[damaged.size() - 16] = 'X';
+    CHECK(write_file(kSavePath, damaged));
+    FileStore fourth;
+    CHECK(fourth.initialize());
+    CHECK(!fourth.loaded);
 }
 
 TEST(corrupt_scoredat_falls_back_to_v6) {

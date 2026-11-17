@@ -28,6 +28,7 @@ struct PauseMenuServices {
     virtual bool save_replay_slot(i32, const std::string&) { return false; }
     virtual bool change_option(i32, i32) { return false; }
     virtual bool record_result_name(const std::string&) { return false; }
+    virtual std::string last_result_name() const { return {}; }
 };
 
 class PauseMenu {
@@ -39,6 +40,7 @@ class PauseMenu {
     bool child(i32, i32);
     bool navigate(u32, u32, i32);
     bool close();
+    bool open_replay_slots();
     bool configure_entries();
     i32 entry_script(i32) const;
 

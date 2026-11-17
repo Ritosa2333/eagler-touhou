@@ -9,6 +9,9 @@ try {
  await page.evaluate(()=>{const player=document.querySelector('#player');player.classList.add('room-workspace');player.insertAdjacentHTML('beforeend','<div class="room-workspace-sidebar" data-test-sidebar></div><div class="room-workspace-roster"><div class="mp-seat" data-test-seat data-card-state="ready" style="--seat-background:rgb(255, 0, 0)"></div></div>');});
  let result=await page.evaluate(()=>({background:getComputedStyle(document.querySelector('#player')).backgroundImage,sidebar:getComputedStyle(document.querySelector('[data-test-sidebar]')).backgroundColor,seat:getComputedStyle(document.querySelector('[data-test-seat]')).backgroundColor}));
  assert.match(result.background,/gradient/);assert.match(result.sidebar,/0\.6\)/);assert.equal(result.seat,'rgb(255, 0, 0)');
+ await page.evaluate(()=>{document.documentElement.dataset.backgroundMode='seigaiha';});
+ result=await page.evaluate(()=>({background:getComputedStyle(document.querySelector('#player')).backgroundImage}));
+ assert.match(result.background,/radial-gradient/);
  await page.evaluate(()=>{const root=document.documentElement;root.dataset.backgroundMode='image';root.style.setProperty('--custom-background-image','url("/assets/favicon.png")');});
  result=await page.evaluate(()=>({background:getComputedStyle(document.querySelector('#player')).backgroundImage,size:getComputedStyle(document.querySelector('#player')).backgroundSize}));
  assert.match(result.background,/favicon\.png/);assert.match(result.size,/contain/);

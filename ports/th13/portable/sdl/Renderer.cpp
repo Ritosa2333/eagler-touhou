@@ -26,7 +26,7 @@ struct DrawStateCache {
  // selected for the last batch; target format participates in that decision.
  PipelineState pipeline{};Viewport viewport{};bool valid=false,has_viewport=false,rounded=false;
 } drawState;
-constexpr u32 instanceStride=68;
+constexpr u32 instanceStride=116;
 constexpr std::array<float,16> identity{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
 float bits(u32 n){float f;std::memcpy(&f,&n,4);return f;}
 std::array<float,4> color(u32 n){return {float(n>>16&255)/255,float(n>>8&255)/255,float(n&255)/255,float(n>>24)/255};}
@@ -36,7 +36,7 @@ GLuint shader(GLenum type,const std::string& source){GLuint s=glCreateShader(typ
 bool equal(const State& a,const State& b,bool world=false){
  if(a.layout!=b.layout||a.stride!=b.stride||a.texture!=b.texture||a.target!=b.target||a.depth!=b.depth||std::memcmp(&a.viewport,&b.viewport,sizeof(Viewport)))return false;
  if(!a.pipeline.compatible(b.pipeline,world))return false;
- if(world){for(int i=1;i<4;i++)if(a.matrix[i]!=b.matrix[i])return false;}
+ if(world){for(int i=1;i<3;i++)if(a.matrix[i]!=b.matrix[i])return false;}
  else if(!a.layout.screen&&a.matrix!=b.matrix)return false;
  return true;
 }
@@ -169,7 +169,7 @@ void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,con
  stats.calls++;state.stride=stride;
  if(index||primitive<Topology::Triangles||primitive>Topology::Fan){flush();issue(state,primitive,count,data,vertex_count(primitive,count)*stride,index,indexFormat,nullptr,0);return;}
  const bool instance=version==10&&state.layout==attributes(VertexLayout::WorldUv)&&stride==20&&primitive==Topology::Strip&&count==2;
- if(instance){if(batching&&(!instancing||!equal(batchState,state,true)||quad.size()!=80||std::memcmp(quad.data(),data,80)))flush();if(!batching){batchState=state;quad.assign(static_cast<const u8*>(data),static_cast<const u8*>(data)+80);batching=instancing=true;}const auto old=worlds.size();worlds.resize(old+instanceStride);std::memcpy(worlds.data()+old,state.matrix[0].data(),64);std::memcpy(worlds.data()+old+64,&state.pipeline.textureFactor,4);if(worlds.size()>=1024*instanceStride)flush();return;}
+ if(instance){if(batching&&(!instancing||!equal(batchState,state,true)||quad.size()!=80||std::memcmp(quad.data(),data,80)))flush();if(!batching){batchState=state;quad.assign(static_cast<const u8*>(data),static_cast<const u8*>(data)+80);batching=instancing=true;}const auto old=worlds.size();worlds.resize(old+instanceStride);std::memcpy(worlds.data()+old,state.matrix[0].data(),64);std::memcpy(worlds.data()+old+64,&state.pipeline.textureFactor,4);std::memcpy(worlds.data()+old+68,state.matrix[3].data(),48);if(worlds.size()>=1024*instanceStride)flush();return;}
  if(batching&&(instancing||!equal(batchState,state)))flush();if(!batching){batchState=state;batching=true;instancing=false;batchTopology=Topology::Triangles;}
  // Keep an isolated long strip/fan in its original topology. If a following
  // draw joins the batch, normalize it backwards before appending, preserving
@@ -249,7 +249,8 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,transformed?4:3,GL_FLOAT,fa
 #else
  {
 #endif
- for(int i=0;i<4;i++){glEnableVertexAttribArray(4+i);glVertexAttribPointer(4+i,4,GL_FLOAT,false,instanceStride,reinterpret_cast<void*>(b+i*16));glVertexAttribDivisor(4+i,1);}glEnableVertexAttribArray(8);glVertexAttribPointer(8,4,GL_UNSIGNED_BYTE,true,instanceStride,reinterpret_cast<void*>(b+64));glVertexAttribDivisor(8,1);}
+ for(int i=0;i<4;i++){glEnableVertexAttribArray(4+i);glVertexAttribPointer(4+i,4,GL_FLOAT,false,instanceStride,reinterpret_cast<void*>(b+i*16));glVertexAttribDivisor(4+i,1);}glEnableVertexAttribArray(8);glVertexAttribPointer(8,4,GL_UNSIGNED_BYTE,true,instanceStride,reinterpret_cast<void*>(b+64));glVertexAttribDivisor(8,1);
+ for(int i=0;i<3;i++){glEnableVertexAttribArray(9+i);glVertexAttribPointer(9+i,4,GL_FLOAT,false,instanceStride,reinterpret_cast<void*>(b+68+i*16));glVertexAttribDivisor(9+i,1);}}
  glDrawArraysInstanced(mode,0,n,instanceSize/instanceStride);}
  else if(index){u32 b=upload(indices,GL_ELEMENT_ARRAY_BUFFER,index,n*(indexFormat==IndexType::UInt16?2:4),65536);glDrawElements(mode,n,indexFormat==IndexType::UInt16?GL_UNSIGNED_SHORT:GL_UNSIGNED_INT,reinterpret_cast<void*>(b));}
  else glDrawArrays(mode,0,n);g.rendered=true;
@@ -283,10 +284,10 @@ void Renderer::read(u32 id){flush();auto it=surfaces.find(id);if(it==surfaces.en
   if(s.format==PixelFormat::Argb8332){const uint16_t value=uint16_t((a<<8)|(((r*7+127)/255)<<5)|(((gc*7+127)/255)<<2)|((b*3+127)/255));std::memcpy(out+x*2,&value,2);}else if(s.format==PixelFormat::Bgra8||s.format==PixelFormat::Bgrx8){out+=x*4;out[0]=b;out[1]=gc;out[2]=r;out[3]=s.format==PixelFormat::Bgra8?a:255;}else if((s.format==PixelFormat::Rgb565||s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555||s.format==PixelFormat::Argb4444)){uint16_t n=s.format==PixelFormat::Argb4444?(a>>4)<<12|(r>>4)<<8|(gc>>4)<<4|(b>>4):s.format==PixelFormat::Rgb565?(r>>3)<<11|(gc>>2)<<5|(b>>3):(s.format==PixelFormat::Argb1555&&a>=128?0x8000:0)|(r>>3)<<10|(gc>>3)<<5|(b>>3);std::memcpy(out+x*2,&n,2);}else if(s.format==PixelFormat::Alpha8)out[x]=a;else if(s.format==PixelFormat::Luminance8)out[x]=r;else std::abort();
  }g.rendered=false;
 }
-void Renderer::release(u32 id){flush();auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
+void Renderer::release(u32 id){flush();auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}if(presented==id)presented=0;if(pending==id)pending=0;auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
 #include "ImguiRenderer.inc"
 void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
-bool Renderer::commit(){if(!pending)return false;auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);int width=640,height=480;SDL_GetWindowSizeInPixels(window,&width,&height);glBlitFramebuffer(0,0,s.width*s.renderScale,s.height*s.renderScale,0,flip_present_y?0:height,width,flip_present_y?height:0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
+bool Renderer::commit(bool repeat){u32 id=pending;if(!id){if(!repeat||!presented||!surfaces.count(presented))return false;id=presented;}auto s=resolve(owner,id);auto& g=surface(id);pending=0;presented=id;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);int width=640,height=480;SDL_GetWindowSizeInPixels(window,&width,&height);glBlitFramebuffer(0,0,s.width*s.renderScale,s.height*s.renderScale,0,flip_present_y?0:height,width,flip_present_y?height:0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
 #if TH_ENABLE_THPRAC
 u32 Renderer::create_imgui_texture(u32 width,u32 height,const u8* rgba){flush();GLuint texture=0;glGenTextures(1,&texture);glActiveTexture(GL_TEXTURE0);bind_texture(texture);glPixelStorei(GL_UNPACK_ALIGNMENT,1);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,rgba);return texture;}
 void Renderer::release_imgui_texture(u32 value){flush();GLuint texture=value;if(texture)glDeleteTextures(1,&texture);boundTexture=~0u;}

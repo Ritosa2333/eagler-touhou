@@ -19,5 +19,11 @@ int main() {
     assert(result_record_stage(true, 6) == 8);
     assert(result_record_stage(false, 4) == 4);
     assert(result_record_stage(false, 0) == 0);
-    std::puts("result_record_test: PASS (clear preview, slowdown semantics, original float rounding)");
+    // 0043f961: the Extra results overlay records stage 7 as 9 ("ExClear");
+    // Game Over during Extra keeps stage 7.
+    assert(result_record_stage(false, true, 7) == 9);
+    assert(result_record_stage(false, false, 7) == 7);
+    assert(result_record_stage(false, true, 3) == 3);
+    assert(result_record_stage(true, false, 6) == 8);
+    std::puts("result_record_test: PASS (clear preview, Extra clear stage, slowdown semantics, original float rounding)");
 }

@@ -84,7 +84,7 @@ export function RoomComposition({
       workspaceStage={workspace?.stage}
       playbackControls={playback}
       playerSettings={state.runtime?.ready && (
-        <GameSettingsPopover model={session.settings}
+        <GameSettingsPopover model={session.settings} preferences={session.preferences}
           exit={state.playerOpen && state.runtime.launched
             ? {label: t(canReturnToRoom ? state.runtime.spectator ? 'player.exitSpectating' : 'netplay.return' : 'player.leaveRoom'),
               onSelect: canReturnToRoom ? navigation.closeSurface : session.requestRoomLeave}

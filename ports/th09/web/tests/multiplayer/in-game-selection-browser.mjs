@@ -7,6 +7,7 @@ import {existsSync,mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {launchBrowser} from '../../../../../tools/browser/launch.mjs';
 import {presentationServer} from '../../scripts/presentation-server.mjs';
+import {issueRoomNickname} from '../../../../../common/contracts/account-nickname-ticket.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
 const label=process.env.RUN_LABEL;if(!/^[\w-]+$/.test(label||''))throw Error('Unique RUN_LABEL required');
@@ -14,12 +15,14 @@ const buildDir=resolve(process.env.PC_BUILD||resolve(root,'artifacts/in-game-sel
 const out=resolve(root,'artifacts/multiplayer-tests',label);if(existsSync(out))throw Error('Retained run already exists');mkdirSync(out,{recursive:true});
 const fallback=process.argv.includes('--relay'),mode=Number(process.env.ADONIS_MODE||0),selectionOnly=process.argv.includes('--selection-only'),packetDelay=Number(process.env.MENU_PACKET_DELAY_MS||0);
 const exitAfterDecision=process.argv.includes('--exit-after-decision');
+const archiveApi=process.env.TH09_ARCHIVE_API;
+const archivePoints=process.env.TH09_ARCHIVE_POINTS==='2'?2:1;
 const report={passed:false,scope:process.argv.includes('--reentry-only')?'Five room return/start cycles with real Release worlds and local Relay. Each restart compares a common confirmed frame hash.':selectionOnly?'Local Chromium selection cadence, independent character inputs and shared difficulty/stage controls under delayed packets. Not full-match/public-network/device acceptance.':'Local Chromium, real Release worlds and shared transport. Natural match completion. Not public-network/device acceptance.',build:JSON.parse(readFileSync(resolve(buildDir,'build.json'))).sha256,fallback,mode,stages:[],errors:[]};
 const stage=(name,details={})=>{const row={name,at:new Date().toISOString(),...details};report.stages.push(row);console.log(JSON.stringify(row));};
 const relayPort=await new Promise(r=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});
 const relay=spawn(process.execPath,[resolve(process.env.TH09_SELECTION_RELAY||resolve(root,'../../eagler-touhou/services/netplay/netplay-relay.mjs'))],{windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1',EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:fallback?'1':'0'},stdio:['ignore','pipe','pipe']});
 let relayLog='';relay.stderr.on('data',b=>relayLog+=b);await new Promise((ok,fail)=>{relay.stdout.on('data',b=>{relayLog+=b;if(relayLog.includes('netplay relay listening'))ok();});relay.on('error',fail);relay.on('exit',code=>fail(Error('relay '+code+' '+relayLog)));});
-const host=await presentationServer(0,{release:true,artifactDirectory:buildDir});
+const host=await presentationServer(0,{release:true,artifactDirectory:buildDir,archiveApi});
 const browser=await launchBrowser({headless:true,args:['--enable-gpu','--use-gl=angle','--use-angle=d3d11','--autoplay-policy=no-user-gesture-required']});
 const pages=[];
 async function actor(index){
@@ -35,7 +38,7 @@ if(fallback)window.RTCPeerConnection=undefined;
     addEventListener('keyup',e=>{if(scanCodes[e.code]){e.preventDefault();core._th09_key(scanCodes[e.code],0);}});
     window.notices=[];window.closeEvents=[];window.begins=[];window.ends=[];window.finals=[];window.hashes={};
     window.lobby=new WebSocket(`ws://127.0.0.1:${relayPort}/?room=th09mp-0777&lobby=selectionpeer${index}&member=selectionmember${index}`);
-    lobby.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='error')throw Error(m.error);window.room=m.room||window.room;window.roomMessage=m;};
+    lobby.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='error')throw Error(m.error);window.room=m.room||window.room;window.roomMessage=m;window.accountChallenge=m.accountChallenge||window.accountChallenge;};
     window.observeFinal=(match,via)=>finals.push({match,via,phase:core.HEAP32[core._th09_session_status()/4]});
     const send=WebSocket.prototype.send;
     WebSocket.prototype.send=function(data){
@@ -46,7 +49,16 @@ if(fallback)window.RTCPeerConnection=undefined;
       return send.call(this,data);
     };
   },{index,relayPort,fallback,packetDelay});
-  await page.waitForFunction(()=>window.room);return page;
+  await page.waitForFunction(()=>window.room);
+  if(archiveApi && index<2){
+    await page.waitForFunction(()=>window.accountChallenge);
+    const challenge=await page.evaluate(()=>window.accountChallenge);
+    const username=['archivealice','archivebob'][index];
+    const ticket=issueRoomNickname(process.env.ACCOUNT_RELAY_SECRET,challenge,username,{userId:username,sessionId:username,profile:{username}});
+    await page.evaluate(ticket=>lobby.send(JSON.stringify({type:'account-nickname',ticket})),ticket);
+    await page.waitForFunction(()=>roomMessage.type==='nickname-status'||roomMessage.type==='chat-status'||roomMessage.room?.seats?.some(seat=>seat?.name?.startsWith('archive')));
+  }
+  return page;
 }
 async function state(page){return page.evaluate(()=>{
   const words=(fn,n)=>{const at=fn()/4;return Array.from(core.HEAP32.subarray(at,at+n));};
@@ -62,12 +74,21 @@ async function connect(index){await pages[index].evaluate(async({index,relayPort
     if(match.winner!==undefined)observeFinal(match,'lobby');
     lobby.send(JSON.stringify({type:'th09-match',serial:room.startSerial,...match}));
   }});
+  const {createAutoReplay}=await import('/app/auto-replay.mjs');
+  window.gameSavedReplays={};
+  const autoReplay=createAutoReplay({core,saveRoot:'/save',options:()=>options,enabled:()=>!spectator,
+    sync:async()=>{},notice:()=>{},publish:(start,bytes)=>{
+      gameSavedReplays[start]=Array.from(bytes);
+      play.captureReplay(start,bytes);
+    }});
   const readHash=frame=>{const at=core._th09_confirmed_frame_hash(frame)/4;if(core.HEAPU32[at]===frame)hashes[frame+1]=core.HEAPU32[at+1];};
-  core.onNetworkReplayBoundary=(frame,winner)=>{if(winner<0)play.startMatchReport(frame);};
+  core.onNetworkReplayBoundary=(frame,winner)=>{
+    if(winner<0){play.startMatchReport(frame);autoReplay.begin(frame);}else autoReplay.end(frame,winner);
+  };
   core.onNetworkMatchDecided=(...args)=>play.finishMatchReport(...args);
   core.onNetworkSpectatorBegin=(frame,bytes)=>{begins.push({frame,bytes:bytes.length});play.beginMatch(frame,bytes);};
   core.onNetworkSpectatorEnd=(frame,winner)=>{ends.push({frame,winner});play.endMatch(frame,winner);};
-  core.onNetworkSpectatorRound=(...args)=>play.roundStart(...args);
+  core.onNetworkSpectatorRound=(frame,round,replayFrame)=>{autoReplay.roundStart(replayFrame);play.roundStart(frame,round);};
   core.onNetworkSpectatorFrame=(frame,...args)=>{readHash(frame);play.publish(frame,...args);};
   core.onNetworkResult=()=>play.result();
   core.onGameFrame=()=>{if(!spectator){const at=core._th09_rollback_info()/4;const confirmed=core.HEAPU32[at+1];for(let f=Math.max(0,confirmed-9);f<confirmed;f++)readHash(f);}
@@ -76,6 +97,51 @@ async function connect(index){await pages[index].evaluate(async({index,relayPort
   core._th09_room_preview(0);core._th09_loop_start();core._th09_loop_pause(1);await play.connect(options);
 },{index,relayPort,mode,fallback});}
 async function menu(screen){for(const page of pages.slice(0,2))await waitFor(page,s=>s.selection[1]===1&&s.title[2]===screen&&s.title[3]===1&&s.title[5]>=10,'menu '+screen);}
+async function verifyArchive(match, point) {
+  const deadline=Date.now()+15000;
+  let duel;
+  while(Date.now()<deadline){
+    const data=await (await fetch(new URL('/api/v1/profiles/archivealice/th09-duels',archiveApi))).json();
+    duel=data.duels?.find(row=>row.replayCount===point);
+    if(duel)break;
+    await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  assert.ok(duel,'the completed match saved a game Replay');
+  const path='/api/v1/th09/duels/'+duel.duelId+'/replays';
+  const {files}=await (await fetch(new URL(path,archiveApi))).json();
+  assert.equal(files.length,point);
+  const file=files.find(row=>row.roundId.endsWith(':'+match.start));
+  assert.ok(file,'confirmed point has its own recording');
+  assert.equal(file.frames,match.frames);
+  assert.equal(file.winner,match.winner);
+  assert.deepEqual(file.characters,match.characters);
+  const response=await fetch(new URL(path+'/'+encodeURIComponent(file.roundId),archiveApi));
+  assert.equal(response.status,200);
+  const bytes=Buffer.from(await response.arrayBuffer());
+  assert.equal(bytes.length,file.size);
+  const local=await Promise.all(pages.slice(0,2).map(page=>page.evaluate(start=>gameSavedReplays[start],match.start)));
+  assert.ok(local.some(file=>file&&bytes.equals(Buffer.from(file))),'server returned the original game file byte for byte');
+  const viewer=await browser.newPage({viewport:{width:900,height:700}});
+  viewer.on('pageerror',error=>report.errors.push({error:error.stack}));
+  await viewer.goto(host.url);await viewer.waitForFunction(()=>typeof window.openProbe==='function');
+  await viewer.evaluate(async source=>{
+    await openProbe(0,1,2,3,true);
+    const {createReplayPlayer}=await import('/app/replay-player.mjs');
+    window.archiveViewer=createReplayPlayer({core,onError:error=>{window.archiveError=error.message;}});
+    archiveViewer.play('match.rpy',Uint8Array.from(atob(source),character=>character.charCodeAt(0)));
+    archiveViewer.control('pause');
+    archiveViewer.control('seek',archiveViewer.state().total);
+  },bytes.toString('base64'));
+  await viewer.waitForFunction(()=>archiveViewer.state().ended||window.archiveError,undefined,{timeout:120000});
+  assert.equal(await viewer.evaluate(()=>window.archiveError),undefined);
+  const played=await viewer.evaluate(()=>archiveViewer.state());
+  assert.equal(played.frame,played.total);
+  assert.deepEqual([played.left,played.right],match.characters);
+  await viewer.evaluate(()=>archiveViewer.control('seek',60));
+  await viewer.waitForFunction(()=>archiveViewer.state().frame===60||window.archiveError,undefined,{timeout:15000});
+  stage('stored-file-playback',{duelId:duel.duelId,roundId:file.roundId,bytes:bytes.length,frames:played.total});
+  await viewer.close();
+}
 try{selectionRun:{
   await actor(0);await actor(1);await actor(2);
   for(let i=0;i<2;i++)await pages[i].evaluate(i=>lobby.send(JSON.stringify({type:'take-seat',seat:i,loadout:i})),i);
@@ -86,12 +152,14 @@ try{selectionRun:{
   await pages[0].evaluate(mode=>lobby.send(JSON.stringify({type:'start',adonisMode:mode,inputDelay:mode?2:0,inputDelayAuto:false})),mode);
   await pages[0].waitForFunction(()=>roomMessage.type==='start');
   await connect(2);await connect(0);await connect(1);await menu(7);stage('connected-selection');
+  for(const page of pages.slice(0,2))assert.equal((await state(page)).title[4],3,'initial difficulty is Lunatic');
   // Waiting for people is valid; it must not trigger the gameplay-stream timeout.
   const startFrames=(await state(pages[0])).title[0],startAt=Date.now();await pages[0].waitForTimeout(selectionOnly?3000:16000);
   if(selectionOnly){const rate=((await state(pages[0])).title[0]-startFrames)*1000/(Date.now()-startAt);assert.ok(rate>48,'menu rate '+rate);stage('menu-cadence',{fps:rate,packetDelay});}
   assert.equal((await state(pages[2])).closed.length,0);
-  await press(1,'ArrowDown');assert.equal((await state(pages[0])).title[4],2,'P2 can move shared difficulty cursor');await press(1,'ArrowUp');
-  await press(0,'ArrowDown');await press(0,'KeyZ');await menu(8);
+  await press(1,'ArrowUp');await waitFor(pages[0],s=>s.title[4]===2,'P2 can move shared difficulty cursor',7000);await press(1,'ArrowDown');
+  await waitFor(pages[0],s=>s.title[4]===3,'P2 restores difficulty cursor',7000);
+  await press(0,'ArrowUp');await press(0,'KeyZ');await menu(8);
   const before=await state(pages[0]);await press(0,'ArrowRight');const left=await state(pages[0]);
   assert.notEqual(left.selection[3],before.selection[3]);assert.equal(left.selection[4],before.selection[4]);
   await press(1,'ArrowRight');const right=await state(pages[0]);assert.equal(right.selection[3],left.selection[3]);assert.notEqual(right.selection[4],left.selection[4]);
@@ -144,7 +212,28 @@ try{selectionRun:{
     }
     break selectionRun;
   }
-  if(selectionOnly){stage('both-stage-selection-and-launch');break selectionRun;}
+  if(selectionOnly){
+    await press(1,'Escape');await press(1,'ArrowDown');await press(1,'KeyZ');
+    await press(1,'ArrowUp');await press(1,'KeyZ');await menu(8);
+    for(const page of pages.slice(0,2)){
+      const reselect=await state(page);
+      assert.equal(reselect.selection[7],first.selection[7],'reselection keeps the difficulty');
+      assert.equal(reselect.finals.length,0,'the abandoned point has no result');
+      assert.ok(await page.evaluate(()=>play.active&&room.phase==='running'&&!Object.keys(gameSavedReplays).length));
+    }
+    const abandoned=await waitFor(pages[0],s=>s.ends.length===1,'abandoned point spectator end');
+    assert.equal(abandoned.ends[0].winner,-1);
+    await press(0,'Escape');await menu(7);
+    assert.equal((await state(pages[0])).title[4],first.selection[7],'difficulty is still editable');
+    await press(0,'KeyZ');await menu(8);
+    await press(0,'ArrowRight');await press(0,'KeyZ');await press(1,'KeyZ');
+    await menu(16);await press(0,'KeyZ');
+    const next=await waitFor(pages[0],s=>s.begins.length===2&&!s.selection[1]&&s.session[1]>120,'match after pause reselect');
+    assert.notEqual(next.selection[8],first.selection[8]);
+    await waitFor(pages[2],s=>s.viewer[8]===next.begins[1].frame&&s.viewer[1]>next.begins[1].frame+30,'viewer follows pause reselect');
+    stage('pause-reselect-and-spectate',{end:abandoned.ends[0].frame,next:next.begins[1].frame});
+    break selectionRun;
+  }
   await pages[2].locator('#spectatorToggle').click();await pages[2].locator('#spectatorPause').click();const held=await state(pages[2]);
   for(const page of pages.slice(0,2)){await page.keyboard.down('KeyZ');await page.keyboard.down('ControlLeft');}
   stage('both-selected-and-playing',{characters:first.selection.slice(8,10),health:first.selection.slice(10,12),route:first.route,pausedViewer:held.viewer});
@@ -164,15 +253,16 @@ try{selectionRun:{
     break selectionRun;
   }
   const completed=await waitFor(pages[0],s=>s.session[0]===3&&s.ends.length===1,'natural match completion',240000);
+  if(archiveApi){await verifyArchive(match,1);if(archivePoints===1)break selectionRun;}
   for(const page of pages.slice(0,2)){await page.keyboard.up('KeyZ');await page.keyboard.up('ControlLeft');}
   stage('natural-match-complete',{end:completed.ends[0],frame:completed.rollback[0]});await pages[0].screenshot({path:resolve(out,'first-result.png')});
-  await pages[0].waitForTimeout(500);await press(0,'ArrowDown');await press(0,'KeyZ');await menu(7);
+  await pages[0].waitForTimeout(500);await press(0,'ArrowDown');await press(0,'KeyZ');await menu(8);
   assert.equal((await state(pages[2])).viewer[1],held.viewer[1]);
-  await press(0,'ArrowDown');await press(0,'KeyZ');await menu(8);await press(0,'ArrowRight');await press(1,'ArrowRight');
+  await press(0,'ArrowRight');await press(1,'ArrowRight');
   await press(0,'Shift+KeyZ');await press(1,'KeyZ');await menu(16);await press(0,'ArrowDown');await press(0,'KeyZ');
   const second=await waitFor(pages[0],s=>s.begins.length===2&&!s.selection[1]&&s.session[1]>120,'second match');
   assert.deepEqual(second.selection.slice(8,10),[2,3]);assert.equal((await state(pages[2])).viewer[1],held.viewer[1]);
-  assert.equal(second.selection[7],3);assert.deepEqual(second.selection.slice(12,14),[1,0]);assert.equal(second.selection[14],-2);
+  assert.equal(second.selection[7],first.selection[7]);assert.deepEqual(second.selection.slice(12,14),[1,0]);assert.equal(second.selection[14],-2);
   if(mode===1)assert.deepEqual(second.rollback.slice(2,4),[0,0]);
   await pages[2].waitForFunction(()=>play.spectatorTape.begins===1);
   stage('reselected-without-leaving',{characters:second.selection.slice(8,10),starts:second.begins,viewer:await state(pages[2])});
@@ -191,6 +281,14 @@ try{selectionRun:{
   assert.deepEqual(late.selection.slice(8,10),[2,3]);
   await pages[2].screenshot({path:resolve(out,'spectator-second-match.png')});
   stage('spectator-continuity-and-late-join',{oldTail:{frame:end,hash:expected},newMatch:{frame:target,hash:expected2},late:late.viewer});
+  if(archiveApi){
+    for(const page of pages.slice(0,2)){await page.keyboard.down('KeyZ');await page.keyboard.down('ControlLeft');}
+    const [left,right]=await Promise.all(pages.slice(0,2).map(page=>waitFor(page,s=>s.finals.length===2,'second deciding frame',240000)));
+    assert.deepEqual(left.finals[1],right.finals[1]);
+    await waitFor(pages[0],s=>s.session[0]===3&&s.ends.length===2,'second natural match completion',240000);
+    await verifyArchive(left.finals[1].match,2);
+    break selectionRun;
+  }
   if(process.argv.includes('--retry-late')){
     for(const page of pages.slice(0,2)){await page.keyboard.down('KeyZ');await page.keyboard.down('ControlLeft');}
     await waitFor(pages[0],s=>s.session[0]===3&&s.ends.length===2,'second natural completion',240000);

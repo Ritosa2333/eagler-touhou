@@ -9,7 +9,7 @@ import type { UiMessageKey } from '../i18n';
 import { isAbortError, linkAbortSignals, waitWithAbort } from './abort-signals';
 import { AccountRequestError, accountRequest } from './account-client';
 import { accountSession } from './account-session';
-import { type CloudSaveList, type CloudSaveSnapshot, listCloudSaves, uploadCloudSave } from './cloud-saves';
+import { type CloudSaveList, type CloudSaveSnapshot, listCloudSaves, supportsCloudSaveSync, uploadCloudSave } from './cloud-saves';
 import type { LocalSaveReader } from './local-save-storage';
 import { compareSaveVersions, localSaveFingerprint, manifestFingerprint, relateSaveVersions, type SaveVersionComparison } from './cloud-save-comparison';
 
@@ -88,7 +88,7 @@ export function createCloudSaveSync(ports: Ports) {
     void ports.closeForHandoff(active.product).catch(() => false).finally(() => { closingForHandoff = false; });
   });
   const listeners = new Set<() => void>();
-  const productIds = PRODUCT_IDS.filter((product): product is ProductId => !isMultiplayerProductId(product));
+  const productIds = PRODUCT_IDS.filter(supportsCloudSaveSync);
   const readRecord = (product: ProductId) => {
     const raw = ports.storage.getItem(prefix + 'save:' + product);
     if (raw === null) return undefined;
@@ -498,7 +498,7 @@ export function createCloudSaveSync(ports: Ports) {
   async function review(product: ProductId, externalSignal: AbortSignal, context: 'launch' | 'manual', reserved?: ProductLock, launch?: LaunchReview): Promise<'continue' | 'reload' | 'cancel'> {
     const preparing = context === 'launch';
     if (!owner || disposed || active || (!preparing && ports.isRunning()) || ports.isPlaying?.() ||
-        isMultiplayerProductId(product) || !validAccount() || (preparing && !enabled)) return 'continue';
+        !supportsCloudSaveSync(product) || !validAccount() || (preparing && !enabled)) return 'continue';
     const user = owner;
     const lease = reserved ?? await acquireProductLock(product).catch(() => {
       warn(product, 'cloudSave.syncPending');
@@ -647,7 +647,7 @@ export function createCloudSaveSync(ports: Ports) {
   }
 
   async function beforeStart(product: ProductId, signal: AbortSignal, launch?: LaunchReview): Promise<'continue' | 'reload' | 'cancel'> {
-    if (disposed || active || ports.isPlaying?.() || isMultiplayerProductId(product)) return 'continue';
+    if (disposed || active || ports.isPlaying?.() || !supportsCloudSaveSync(product)) return 'continue';
     releaseLaunchLease();
     let lease: ProductLock | null;
     try {
@@ -694,12 +694,13 @@ export function createCloudSaveSync(ports: Ports) {
   return {
     prepareLocalLaunch() { launchData = null; releaseLaunchLease(); interruptSync(); },
     deferLaunch(product: ProductId) {
+      if (!supportsCloudSaveSync(product)) return;
       launchData = null;
       flagReview(product);
     },
     beforeStart,
     started(product: ProductId) {
-      if (disposed || active || isMultiplayerProductId(product)) return;
+      if (disposed || active || !supportsCloudSaveSync(product)) return;
       validAccount();
       const account = currentAccount();
       const lease = launchLease?.product === product ? launchLease.lease : undefined;
@@ -744,7 +745,7 @@ export function createCloudSaveSync(ports: Ports) {
       refreshEnabled();
     },
     hasLocalPending(product: ProductId) {
-      if (identityStatus !== 'member') return false;
+      if (!supportsCloudSaveSync(product) || identityStatus !== 'member') return false;
       try {
         const record = readRecord(product);
         return needsReview(product) || !!record?.runId && (record.owner === owner || record.unclaimed);

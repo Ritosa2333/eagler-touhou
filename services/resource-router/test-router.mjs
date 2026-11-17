@@ -49,13 +49,20 @@ try {
 
 await writeFile(join(root,'th075.package.json'),JSON.stringify({files:{language:{source:'/language/th075/en.zip',sha256:'c'.repeat(64),bytes:4}}}));
 const otherInventory=join(root,'other-inventory.json');
-const matching={...inventory,'/language/th075/en.zip':{sha256:'c'.repeat(64),bytes:4}};
+const manifestLanguage='/games/th14/language/lang_en-versioned.zip';
+const pack={url:manifestLanguage.slice(1),sha256:'d'.repeat(64),bytes:9};
+const versionedData='/games/th02/pr201/abcd.data';
+const versionedFile={source:versionedData.slice(1),sha256:'e'.repeat(64),bytes:120};
+await writeFile(join(root,'th02-pr201.package.json'),JSON.stringify({files:{data:versionedFile}}));
+await writeFile(join(root,'site-manifest.json'),JSON.stringify({games:{th14:{languages:[{pack}]},
+  th02:{package:{descriptor:'th02-pr201.package.json'}}}}));
+const matching={...inventory,[manifestLanguage]:pack,[versionedData]:versionedFile,'/language/th075/en.zip':{sha256:'c'.repeat(64),bytes:4}};
 await writeFile(otherInventory,JSON.stringify(matching));
 await writeFile(inventoryFile,JSON.stringify(matching));
 try {
- service=await start({port:0,sites:{'play.example':{root,nodes:[
+ service=await start({port:0,sites:{'play.example':{root,languageGames:['th14'],packageGames:['th02'],nodes:[
   {id:'a',origin:'https://a.example',weight:1,inventoryFile},
-  {id:'b',origin:'https://b.example',weight:1,inventoryFile:otherInventory},
+  {id:'b',origin:'https://b.example',weight:1,emergency:true,inventoryFile:otherInventory},
  ]}}});
  const request=path=>new Promise((resolve,reject)=>http.get({hostname:'127.0.0.1',port:service.server.address().port,path,
   headers:{'X-Resource-Site':'play.example','X-Resource-Client':'client'}},response=>{
@@ -68,6 +75,18 @@ try {
  assert(value.sources.every(url=>url.endsWith('/games/th06/th06.data?v=abc')));
  const language=await request('/_eagler/resource-routes?path='+encodeURIComponent('/language/th075/en.zip'));assert.equal(language.status,200);
  assert.equal(JSON.parse(language.body).sources.length,2);
+ const versionedLanguage=await request('/_eagler/resource-routes?path='+encodeURIComponent(manifestLanguage));
+ assert.equal(versionedLanguage.status,200);
+ assert.deepEqual(JSON.parse(versionedLanguage.body).sources,[
+  'https://a.example'+manifestLanguage,'https://b.example'+manifestLanguage,
+ ]);
+ assert.equal((await request(manifestLanguage)).headers.location,'https://a.example'+manifestLanguage);
+ const versioned=await request('/_eagler/resource-routes?path='+encodeURIComponent(versionedData+'?v=1'));
+ assert.equal(versioned.status,200);
+ assert.equal(JSON.parse(versioned.body).sha256,versionedFile.sha256);
+ assert.deepEqual(JSON.parse(versioned.body).sources,[
+  'https://a.example'+versionedData+'?v=1','https://b.example'+versionedData+'?v=1',
+ ]);
  assert.equal((await request('/_eagler/resource-routes?path='+encodeURIComponent('/games/missing/file.data'))).status,404);
  assert.equal((await request('/_eagler/resource-routes?path='+encodeURIComponent('/games/%2e%2e/private'))).status,404);
  console.log('ordered mirror discovery, version preservation, language paths and identity gating verified');

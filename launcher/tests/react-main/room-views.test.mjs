@@ -71,6 +71,7 @@ test('Room connection distinguishes initial connect, synchronization and actual 
   assert.equal(message(), `${t('zh-CN', 'multiplayer.reconnecting')} | ${t('zh-CN', 'network.relayClosed', {code: 1006})}`);
 });
 class Socket {
+  constructor(url) {this.url = new URL(url);}
   readyState = 0; sent = []; listeners = new Map(); closes = [];
   addEventListener(type, fn) {this.listeners.set(type, [...(this.listeners.get(type) || []), fn]);}
   emit(type, value = {}) {for (const fn of this.listeners.get(type) || []) fn(value);}
@@ -97,7 +98,7 @@ function fixture({product = 'th06mp', locale = 'en', created = true, checkGame =
   const runtimeState = {launched:false};
   const settings = {touchMovementMode: 'joystick', touchEnabled: false, mobileDevice: false, iceServers: []}, network = syntheticNetwork();
   const service = owners.createMultiplayerRoom({identity, sessions: owners.createMultiplayerRoomSessionStore({storage: session}), preferences: owners.createMultiplayerPreferenceStore({storage: persistent}), decisions,
-    memberId: () => 'synthetic-member', createSocket: () => {const socket = new Socket(); sockets.push(socket); return socket;}, relayUrl: () => 'wss://relay.invalid/socket',
+    memberId: () => 'synthetic-member', createSocket: url => {const socket = new Socket(url); sockets.push(socket); return socket;}, relayUrl: () => 'wss://relay.invalid/socket',
     settings: () => settings, setMovementMode: value => {settings.touchMovementMode = value;}, translate: (key, params) => t(locale, key, params), notify: message => events.push(['notify', message]),
     prepareResources: (context, report) => {const task = deferred(); preparations.push({context, report, ...task}); return task.promise;},
     preparationFailed: error => events.push(['prepare-error', error]), beginManualImport: context => events.push(['import', context]),
@@ -134,23 +135,28 @@ const click = (selector, scope) => act(() => {
     node.dispatchEvent(new env.window.KeyboardEvent('keydown', {key: node.getAttribute('role') === 'tab' ? 'Enter' : 'ArrowDown', bubbles:true}));
   } else node.click();
 });
-test('TH09 local charge rule defaults on, restores native Replay by room agreement, and locks during play', async () => {
-  const f=await fixture({product:'th09mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
-  const toggle=n('#mpDisableLocalChargePriority');
+test('TH09 new rooms use original charging, let the host enable local priority, and lock it during play', async () => {
+  const directory=fixture({product:'th09mp'});
+  await act(() => assert.equal(directory.service.restoreInvite('https://launcher.invalid/?game=th09mp&mpRoom=1234&lobbyAction=create'), true));
+  assert.equal(directory.socket.url.searchParams.get('disableLocalChargePriority'),'1');
+  const f=await fixture({product:'th09mp',locale:'zh-CN'}).live({disableLocalChargePriority:true});
+  assert.equal(f.socket.url.searchParams.get('disableLocalChargePriority'),'1');
+  assert.equal(f.socket.sent.find(m=>m.type==='settings').disableLocalChargePriority,true);
+  await mountRoom(f,{panel:{kind:'game'}});
+  const toggle=n('#mpLocalChargePriority');
   assert.equal(toggle.getAttribute('aria-checked'),'false');
-  assert.equal(toggle.getAttribute('aria-label'),'关闭本地优先的蓄力条进度');
-  assert.equal(n('#mpLocalChargeReplayHint').textContent,'默认启用本地优先蓄力。勾选该选项后，使用原版蓄力逻辑和即时显示。');
-  assert.equal(f.service.runtimeOptions().netplayDisableLocalChargePriority,false);
-  await click('#mpDisableLocalChargePriority');
-  assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableLocalChargePriority,true);
-  await f.receive({disableLocalChargePriority:true});
-  assert.equal(toggle.getAttribute('aria-checked'),'true');
+  assert.equal(toggle.getAttribute('aria-label'),'回滚不吞蓄力条');
+  assert.equal(n('#mpLocalChargeReplayHint').textContent,'默认使用原版蓄力逻辑。开启后优先采用本机蓄力进度，录像会额外保存蓄力数据。');
   assert.equal(f.service.runtimeOptions().netplayDisableLocalChargePriority,true);
-  await f.receive({disableLocalChargePriority:true,phase:'running'});
+  await click('#mpLocalChargePriority');
+  assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableLocalChargePriority,false);
+  await f.receive({disableLocalChargePriority:false,phase:'running'});
+  assert.equal(toggle.getAttribute('aria-checked'),'true');
+  assert.equal(f.service.runtimeOptions().netplayDisableLocalChargePriority,false);
   assert.equal(toggle.disabled,true);
-  const sent=f.socket.sent.length;await act(()=>f.service.setRoomSettings({disableLocalChargePriority:false}));assert.equal(f.socket.sent.length,sent);
+  const sent=f.socket.sent.length;await act(()=>f.service.setRoomSettings({disableLocalChargePriority:true}));assert.equal(f.socket.sent.length,sent);
   const other=await fixture({product:'th07mp'}).live();const {m}=await mountRoom(other,{panel:{kind:'game'}});
-  assert.equal(all('#mpDisableLocalChargePriority',m.container).length,0);
+  assert.equal(all('#mpLocalChargePriority',m.container).length,0);
   assert.equal('netplayDisableLocalChargePriority' in other.service.runtimeOptions(),false);
 });
 test('TH09 auto-save preference reaches only player Runtime options and survives leaving', async () => {
@@ -891,6 +897,19 @@ test('public nickname drafts stay editable during review and only submission wai
  await m.unmount();
 });
 
+
+test('music toggle moves the tonearm only while playing', async () => {
+  let status='paused'; const listeners=new Set(); let toggled=0;
+  const model={getSnapshot:()=>({status}),getPendingInvitation:()=>null,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn);}};
+  await mount(owners.RoomMusicToggle,{model,open:false,onToggle:()=>{toggled++;}});
+  assert.equal(n('.room-workspace-music-toggle').dataset.playing,'false');
+  assert.ok(n('.room-music-record .room-music-tonearm'));
+  await act(()=>{status='playing';listeners.forEach(fn=>fn());});
+  assert.equal(n('.room-workspace-music-toggle').dataset.playing,'true');
+  await act(()=>n('.room-workspace-music-toggle').click()); assert.equal(toggled,1);
+  await act(()=>{status='ended';listeners.forEach(fn=>fn());});
+  assert.equal(n('.room-workspace-music-toggle').dataset.playing,'false');
+});
 
 test('Music seek stays at the released target through old ticks, then follows the room acknowledgement', async () => {
   let state = {enabled:true,inRoom:true,seated:true,connected:true,joined:true,syncState:'shared',volume:1,position:90,seekTarget:null,duration:120,status:'playing',error:null,

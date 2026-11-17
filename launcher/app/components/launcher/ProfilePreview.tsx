@@ -14,6 +14,7 @@ import {useLocale, type UiMessageKey} from '../../i18n';
 import {withUiLanguage} from '../../../src/launcher/i18n.mts';
 import {ProfileLoading, ProfilePanelLoading} from './ProfileLoading';
 import {ProfileGameDataCard} from './ProfileGameDataCard';
+import type {WatchTh09Replay} from './ProfileTh09Duels';
 import {ProfileCover} from './ProfileCover';
 import {CountryFlag} from './CountryFlag';
 import {profileSocialTab, SocialCounts, SocialFollowControl, SocialProvider, SocialSection} from './SocialSection';
@@ -28,7 +29,7 @@ const imageData = (value: string) => /^data:image\/(png|jpeg|webp);base64,/i.tes
 const safeUrl = (value: string) => {try {const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url : null;} catch {return null;}};
 export type ProfileReview = Partial<Record<'name' | 'bio' | 'avatar' | 'cover' | 'links', 'pending' | 'rejected'>>;
 type RemoteProfile = {username: string; nickname: string; joinedAt: string | null; countryCode?:string | null; regionCode?:string | null; roomAvatarReady?:boolean; reviewPending?:boolean; characterRatingPreview?:boolean; details: (Profile & {display:unknown}) | null};
-export function ProfilePage({readLocalSaves,cloudSync}:{readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null}={}) {
+export function ProfilePage({readLocalSaves,cloudSync,watchTh09Replay}:{readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null;watchTh09Replay?:WatchTh09Replay}={}) {
   const {pathname, search, hash} = useLocation();
   const {state,retry} = useAccountSession();
   const {locale} = useLocale();
@@ -40,10 +41,10 @@ export function ProfilePage({readLocalSaves,cloudSync}:{readLocalSaves?:LocalSav
       withUiLanguage('/login.html?next='+encodeURIComponent(pathname+search+hash),locale);
     return <><ProfileLoading/><Navigate to={destination} replace/></>;
   }
-  return <AccountProfile key={pathname} pathname={pathname} viewer={viewer} viewerLoading={state.status==='loading'} readLocalSaves={readLocalSaves} cloudSync={cloudSync}/>;
+  return <AccountProfile key={pathname} pathname={pathname} viewer={viewer} viewerLoading={state.status==='loading'} readLocalSaves={readLocalSaves} cloudSync={cloudSync} watchTh09Replay={watchTh09Replay}/>;
 }
-function AccountProfile({pathname,viewer,viewerLoading,readLocalSaves,cloudSync}: {
-  pathname:string;viewer:string;viewerLoading:boolean;readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null;
+function AccountProfile({pathname,viewer,viewerLoading,readLocalSaves,cloudSync,watchTh09Replay}: {
+  pathname:string;viewer:string;viewerLoading:boolean;readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null;watchTh09Replay?:WatchTh09Replay;
 }) {
   const {hash} = useLocation();
   const panel = ['#edit','#settings','#security','#game-settings'].includes(hash) ? hash : '';
@@ -88,10 +89,10 @@ function AccountProfile({pathname,viewer,viewerLoading,readLocalSaves,cloudSync}
   const owner = viewer === state.profile.username;
   if (panel && viewerLoading) return <ProfileLoading/>;
   return <ProfileBody key={owner ? 'owner' : 'public'} panel={panel} remote={state.profile} owner={owner}
-    viewer={viewer} viewerLoading={viewerLoading} readLocalSaves={readLocalSaves} cloudSync={cloudSync}/>;
+    viewer={viewer} viewerLoading={viewerLoading} readLocalSaves={readLocalSaves} cloudSync={cloudSync} watchTh09Replay={watchTh09Replay}/>;
 }
-function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,cloudSync}: {
-  remote:RemoteProfile;owner:boolean;panel:string;viewer:string;viewerLoading:boolean;readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null;
+function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,cloudSync,watchTh09Replay}: {
+  remote:RemoteProfile;owner:boolean;panel:string;viewer:string;viewerLoading:boolean;readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null;watchTh09Replay?:WatchTh09Replay;
 }) {
   const {locale,t}=useLocale();
   const location=useLocation(),navigate=useNavigate();
@@ -162,7 +163,7 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
       <div className="profile-header-details">{details}</div>
       <div className="profile-columns"><aside className="profile-aside"><div className="profile-sidebar-details">{details}</div></aside>
         <div className="profile-content">
-        {showGameData && <ProfileGameDataCard key={remote.username} username={remote.username} owner={owner}
+        {showGameData && <ProfileGameDataCard key={remote.username} username={remote.username} owner={owner} watchTh09Replay={watchTh09Replay}
           display={display} statistics={statistics} statisticsError={statisticsError}/>}
         <div className="profile-end-actions"><BackToTop/></div>
         </div></div>
