@@ -442,6 +442,16 @@
       ]
     },
     {
+      "id": "m4.challenge_mode",
+      "layer": "native",
+      "files": [
+        "tests/multiplayer/native/challenge_mode_test.cpp"
+      ],
+      "tests": [
+        "challenge_blocks_bombs_counts_misses_and_locks_trance"
+      ]
+    },
+    {
       "id": "m4.team_trance_shooting_four_roles",
       "layer": "native",
       "files": [

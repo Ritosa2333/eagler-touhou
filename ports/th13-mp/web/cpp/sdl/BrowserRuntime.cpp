@@ -451,6 +451,7 @@ bool mp_restore_history_root(const multiplayer::SessionSetup& setup, unsigned st
         return false;
     }
     app->mp_history_playback = true;
+    app->mp_challenge = setup.challenge;
     app->progress = th13::SessionState{};
     app->pending_load = 0;
     app->transition_gate_active = false;
@@ -488,6 +489,7 @@ bool mp_restore_history_root(const multiplayer::SessionSetup& setup, unsigned st
         for (unsigned seat = 0; seat < entry->seat_count && seat < 3; ++seat)
             app->run->battle.seat_inputs[seat] = entry->inputs[seat];
     }
+    if (app->mp_challenge && app->run) app->run->battle.apply_challenge_locks();
     return true;
 }
 
@@ -2113,6 +2115,7 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_start() {
         last_error = "TH13 multiplayer seat configuration rejected";
         return 0;
     }
+    app->mp_challenge = setup.challenge;
     // 新局状态：清练习/符卡残位（start_game 的 mode 分支读 run_mode_flags）。
     app->progress.run_mode_flags = 0;
     app->progress.practice_mode = 0;

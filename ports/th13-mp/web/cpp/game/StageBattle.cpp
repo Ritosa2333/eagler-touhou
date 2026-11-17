@@ -2128,7 +2128,8 @@ bool StageBattle::commit_death() {
     // 手动语义：结束时正常 -200，不走 0x444a10 死亡（决死灵界）。
     if (!progress_ ||
         (progress_->run_mode_flags & 0x30u) == 0x20u ||
-        (sim.dialog_host && sim.dialog_host->dialog_active())) {
+        (sim.dialog_host && sim.dialog_host->dialog_active()) ||
+        challenge) {
         return commit_death_normal();
     }
     if (!trance_active(*progress_)) {
@@ -2152,9 +2153,10 @@ bool StageBattle::commit_death() {
 }
 
 bool StageBattle::commit_death_normal() {
-    player_->deaths++;
-    --player_->extra_lives;  // -1 是最后一命死亡；不能过早打开 GameOver。
-    if (seat_count >= 2 && player_->extra_lives < 0) {
+    if (player_->deaths < 0x7fffffff) ++player_->deaths;
+    // R-C2：挑战死亡只记 Miss，不扣残机、不进幽灵。
+    if (!challenge) --player_->extra_lives;  // -1 是最后一命死亡；不能过早打开 GameOver。
+    if (!challenge && seat_count >= 2 && player_->extra_lives < 0) {
         player_state_.final_death = true;
         if (!retire_final_death_combat()) return false;
     }
@@ -2209,7 +2211,7 @@ bool StageBattle::update_player(const GameInput& input, bool deathbomb_prepared)
         }
         item_manager.spawn_value_item(3,player_x,player_y,0,2.f,false);
         if (player_phase_frame >= 30) {
-            if (player_->extra_lives < 0 || (seat_count >= 2 && player_state_.final_death)) {
+            if (!challenge && (player_->extra_lives < 0 || (seat_count >= 2 && player_state_.final_death))) {
                 // M5：MP 最后命死亡 → 转幽灵（R-I8：待救援；不触发单人
                 // GameOver——全队终局由 team_wipe 计数判定，180 逻辑帧
                 // 全灭等待在 RunScene/宿主层）。单席保持 SP GameOver。
@@ -2228,7 +2230,7 @@ bool StageBattle::update_player(const GameInput& input, bool deathbomb_prepared)
                 // freezes subsequent updates, not this callback's final tick.
                 }
             } else {
-                if (player_->bombs < 2) {
+                if (!challenge && player_->bombs < 2) {
                     player_->bombs = 2;
                     if (!host_->bomb_hud_seat(active_seat, player_->bombs,
                                               player_->bomb_pieces)) {
@@ -2641,8 +2643,35 @@ bool StageBattle::end_trance() {
     return true;
 }
 
+void StageBattle::apply_challenge_locks() {
+    if (!challenge) return;
+    item_manager.challenge = true;
+    const bool was_active = progress_ && trance_active(*progress_);
+    if (progress_) {
+        progress_->ending_points = 0;
+        progress_->run_mode_flags &= ~kTranceActiveFlag;
+    }
+    // set_spirit_trance 会重置全部神霊计时，只在退出已打开的灵界时调用。
+    if (was_active) item_manager.set_spirit_trance(false);
+    trance_mode = TranceMode::Idle;
+    trance_protection_ = false;
+    if (seat_count >= 2) {
+        for (i32 seat = 0; seat < seat_count; ++seat) {
+            seat_huds[size_t(seat)].bombs = 0;
+            seat_huds[size_t(seat)].bomb_pieces = 0;
+        }
+    } else if (player_) {
+        player_->bombs = 0;
+        player_->bomb_pieces = 0;
+    }
+}
+
 bool StageBattle::update_trance(const GameInput& input) {
     if (!progress_) return true;
+    if (challenge) {
+        apply_challenge_locks();
+        return true;
+    }
     if (trance_active(*progress_)) {
         ++trance_task_frame_;
         // 0x4057f0:28 / 0x43d4f0:12：激活期每帧 0x42b030（在 −1 之前）。
@@ -2687,6 +2716,10 @@ bool StageBattle::update_trance(const GameInput& input) {
 // 单席（seat_count==0）不经过本入口（update_trance 的 SP 路径不变）。
 bool StageBattle::update_trance_mp() {
     if (!progress_) return true;
+    if (challenge) {
+        apply_challenge_locks();
+        return true;
+    }
     if (trance_active(*progress_)) {
         // 活跃期：槽消耗全场一次（step_mp 每帧只调本函数一次——R-T3）。
         return update_trance(seat_inputs[0]);
@@ -2945,6 +2978,7 @@ bool StageBattle::prepare_expired_deathbombs(std::array<bool, 3>& prepared) {
 }
 
 bool StageBattle::step_transition(const GameInput& input) {
+    apply_challenge_locks();
     // 42bfa0 retains player update/draw while enemy/bullet callbacks stop.
     // Input remains the old Replay slot until 448ec0 at startup age 30.
     // M2：多席分派（与 step 同拍——转场帧每席玩家面都推进，世界面保持
@@ -3344,7 +3378,7 @@ bool StageBattle::enable_seats(EclResourceProvider& provider, i32 count,
         auto& hud = seat_huds[size_t(seat)];
         hud = HudPlayerState{};
         hud.extra_lives = std::max(0, progress_ ? progress_->configured_lives - 1 : 2);
-        hud.bombs = 2;
+        hud.bombs = challenge ? 0 : 2;
         hud.bomb_pieces = 0;
         hud.life_pieces = 0;
         hud.power_step = 100;
@@ -3388,9 +3422,12 @@ bool StageBattle::step(const GameInput& input) {
     // M2：多席分派（seat_count>=2）。单席路径（seat_count==0/1）零变化。
     // M7：本地席写入目标 = mp_local_seat（联机会话 LocalSeat——
     // 硬编码 seat 0 会令 seat1 端的本地/远端输入错位，双端席位面发散）。
+    apply_challenge_locks();
     if (seat_count >= 2) {
         seat_inputs[size_t(mp_local_seat)] = input;  // 本地席输入沿
-        return step_mp();
+        const bool stepped = step_mp();
+        apply_challenge_locks();
+        return stepped;
     }
     // Retail schedule:42c550/43d4f0 drain ->4057f0 activation ->443240
     // player ->418e00 enemies ->42e380/438660 items/spirits. In particular,

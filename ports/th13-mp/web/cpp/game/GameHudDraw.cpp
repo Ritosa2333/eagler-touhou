@@ -158,7 +158,17 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
             style.alignment = 2;
             style.color = opacity | 0x00ffffffu;
             const i32 life_threshold = life_piece_threshold(seat_player->life_piece_threshold_index);
-            if (life_threshold >= 999999) {
+            if (seats->challenge) {
+                style.font = 1;
+                style.alignment = 1;
+                style.scale = {1, 1};
+                if (!text(428, row - 10, "MISS")) return false;
+                style.font = 4;
+                style.alignment = 2;
+                style.scale = {1, 1};
+                if (!text(628, row + 17, grouped_number(u32(std::max(0, seat_player->deaths)))))
+                    return false;
+            } else if (life_threshold >= 999999) {
                 style.alignment = 2;
                 if (!text(628, row + 17, "---/---")) return false;
             } else {
