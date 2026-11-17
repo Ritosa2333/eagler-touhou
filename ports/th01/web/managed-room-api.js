@@ -12,7 +12,7 @@ export const managedAPI={
   identity={role:roles[slot],room:url.searchParams.get('room'),token:'launcher-owned'};
   room={room:identity.room,runId,generation:[identity.room,runId,url.searchParams.get('runtimeGeneration')].join(':'),transport:'ws',phase:'loading',
    seats:{host:0,guest:1,guest2:2},ready:{host:true,guest:true,guest2:true},present:{host:true,guest:true,guest2:count===3},
-   settings:{players:count,rank:options.netplayDifficulty,count:ballCount,lifeCompensation:true,startStage:'normal',network:'lan',transport:'ws',ice:'all',delay:0,rollback:options.netplayAdonisMode!==1}};
+   settings:{players:count,rank:options.netplayDifficulty,count:ballCount,lifeCompensation:false,initialSpares:2,initialBombs:2,startStage:'normal',network:'lan',transport:'ws',ice:'all',delay:0,rollback:options.netplayAdonisMode!==1}};
   globalThis.__eaglerPC98RoomEnd=()=>managedAPI.end('本局结束');
   session=new NetSession(identity,room,{canvas:$('canvas'),api:post,status,buttons:sample,render,failure:message=>{managedAPI.stop();globalThis.__eaglerPC98Emit({event:'error',message});}});
   session.game.setMusicVolume(music==='none'?0:.7);

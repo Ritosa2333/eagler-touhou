@@ -14,7 +14,7 @@ test('TH02 and TH04 initial stock reaches each runtime',()=>{
   for(const game of ['th02mp','th04mp']){
     const config=api.multiplayerConfigForProduct(game);
     const input={url:`wss://relay.invalid/?room=${game}-1234&run=1`,player:0,playerCount:2,seed:1234,difficulty:1,adonisMode:0,predictionLimit:6,spectator:false,spectatorId:'',spectatorCount:0,iceServers:[],loadouts:config.loadouts};
-    const defaults=api.buildMultiplayerRuntimeOptions(input,config);assert.equal(defaults.netplayInitialSpares,3);assert.equal(defaults.netplayInitialBombs,2);
+    const defaults=api.buildMultiplayerRuntimeOptions(input,config);assert.equal(defaults.netplayInitialSpares,2);assert.equal(defaults.netplayInitialBombs,2);
     for(let lives=0;lives<=5;lives++)for(let bombs=0;bombs<=2;bombs++){
       const result=api.buildMultiplayerRuntimeOptions({...input,initialSpares:lives,initialBombs:bombs},config);
       assert.equal(result.netplayInitialSpares,lives);assert.equal(result.netplayInitialBombs,bombs);
