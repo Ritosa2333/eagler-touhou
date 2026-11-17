@@ -1,0 +1,102 @@
+{
+  "generation": "0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c",
+  "wasm": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb",
+  "currentTitleMusicSha256": "965db283d16b2cf43a19ef4616b55b8395ca1cb2f5e419ab48662b82342d2106",
+  "baselineTitleMusicSha256": "3b8325066cf5851189d21f7fddb1bc46b28fee30f741285fa99327c6e1cd1be5",
+  "onlyDifferenceIsLocalizedNumberedTitleFormat": true,
+  "historicalNativeProof": {
+    "reportSha256": "93ac04879c2c2501ce50e30e9e30710500126421346d0393874c31e2659d675b",
+    "tracks": 17,
+    "controls": 6120,
+    "textRequests": 2724,
+    "interpolations": 2308,
+    "rerun": false,
+    "actualBrowserOrWaveformProof": false
+  },
+  "knownTrack": 1,
+  "unknownTrack": 17,
+  "wraps": [
+    [
+      1,
+      17
+    ],
+    [
+      17,
+      1
+    ]
+  ],
+  "firstUnknownConfirmWarned": true,
+  "secondUnknownConfirmShowedComments": true,
+  "movingCursorRetainedPreviouslyConfirmedComments": true,
+  "unknownPromptReappeared": true,
+  "movingAndConfirmingKnownTrackDismissedPrompt": true,
+  "returnedTitleSelection": "Music Room",
+  "nativeQuitCompleted": true,
+  "wholeScoreBytesEqual": true,
+  "scoreBytes": 21640,
+  "beforeScoreSha256": "e9cbad46e721f097a4a0409317533d725f5a832ff94c485d3e4f72f7ea986650",
+  "afterScoreSha256": "e9cbad46e721f097a4a0409317533d725f5a832ff94c485d3e4f72f7ea986650",
+  "musicMode": "none",
+  "musicVolume": 0,
+  "sfxVolume": 0,
+  "oggSongSwitchingAccepted": false,
+  "audibleWaveformAccepted": false,
+  "localizedNumberFormatBrowserAccepted": false,
+  "trueHiddenAccepted": false,
+  "publicUiAccepted": false,
+  "sourceChanged": false,
+  "runtimeChanged": false,
+  "completeGame": false,
+  "evidence": [
+    {
+      "file": "cancel-prompt-known-confirm.png",
+      "bytes": 284238,
+      "sha256": "3c9acffed85ee6eaed636d06583f20ba2adc85ca063e6a9efaaabaaa8c3cd3dc"
+    },
+    {
+      "file": "final-launcher.png",
+      "bytes": 54473,
+      "sha256": "774246bc380cdd2fb506cb03a6f9412437f7a7a81a4b12bdba92a24961f444be"
+    },
+    {
+      "file": "initial.png",
+      "bytes": 290737,
+      "sha256": "5428fe2f7a8b0f0b54bb9d23e09c766f4489f47213cd2bc0879fdcd0a2b728bd"
+    },
+    {
+      "file": "known-first-confirm.png",
+      "bytes": 292263,
+      "sha256": "2b58edde52caaaa5738812142fc30ff4f40fb331d90adbc4413abe02de992062"
+    },
+    {
+      "file": "return-title.png",
+      "bytes": 288930,
+      "sha256": "a98ecbc7601d2398ef49134daf25184ed2b61594e4ed4dbe76d36b9eaf091776"
+    },
+    {
+      "file": "unknown-first-confirm.png",
+      "bytes": 307928,
+      "sha256": "9f59db0fd3614fb7a1486e81903daef2140898c19f356dd2e28cc7d9d9116291"
+    },
+    {
+      "file": "unknown-prompt-again.png",
+      "bytes": 305139,
+      "sha256": "f77e2fcb450584fc91d3a71a87c5d1d665df7c4a98c0246702f818c8d2a1fa89"
+    },
+    {
+      "file": "unknown-second-confirm.png",
+      "bytes": 308474,
+      "sha256": "cda8f7078d834dcca58a3241d412ad92e0b6844bedc0f99365bbf7d0fc694ff2"
+    },
+    {
+      "file": "wrap-first-retains-comment.png",
+      "bytes": 305846,
+      "sha256": "c64d038e611ae8a609969d9f985b73b48f19774af46a0f1927c157f6df3e5fbc"
+    },
+    {
+      "file": "wrap-last.png",
+      "bytes": 300487,
+      "sha256": "e7fb2d41d2f4adffee9a849f4946a3efc0f88643d0ccfa8fb1d576753ac494d0"
+    }
+  ]
+}
