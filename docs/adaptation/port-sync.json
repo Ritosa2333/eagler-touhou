@@ -2166,7 +2166,7 @@
     "th14": {
       "normal": "ports/th14",
       "multiplayer": "ports/th14-mp",
-      "base": "98d035405caaab36131bfb8837aa51f61b5eb73f",
+      "base": "11d5d2a90225f8ab803a9328e9e9b45cbec811cf",
       "history": [
         {
           "kind": "manual",
@@ -2214,6 +2214,16 @@
             "ports/th14-mp/runtimes/th12/th12_web/sdl-runtime/shell.mjs"
           ],
           "note": "普通与多人启动原生循环后再暂停，防止隐藏启动或音频恢复等待期间循环运行；两侧各16项含Asyncify队列通过，旧版各14项失败。保留MP房间与普通模式差异，真实隐藏浏览器验收另记。"
+        },
+        {
+          "kind": "manual",
+          "base": "98d035405caaab36131bfb8837aa51f61b5eb73f",
+          "source": "11d5d2a90225f8ab803a9328e9e9b45cbec811cf",
+          "targetHead": "201de87259deca8573d1180b9bd35c12b77b23cd",
+          "paths": [
+            "ports/th14-mp/runtimes/th12/th12_web/cpp/sdl/Application.cpp"
+          ],
+          "note": "Both variants align replay cursor with selected stage; six compiled status cases pass per variant; normal history merged and two-parent writeback retained."
         }
       ]
     }
