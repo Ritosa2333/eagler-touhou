@@ -2009,5 +2009,39 @@
     "serverBuildVerifierPassed": true,
     "copyOnWritePackaging": true,
     "originalAssetsPublished": false
+  },
+  "upstreamRefresh": {
+    "upstream": "886952931e30e672253ea3abc8464d74ad662531",
+    "originalSource": "74a758c850c4c5d377172df4e470a8b36b53c4ca",
+    "bothTH14SourceTreesUnchanged": true,
+    "onlyMergeConflict": "docs/INDEX.md",
+    "resolution": "regenerated from combined documentation",
+    "commonTests": {
+      "passed": 5,
+      "lastTestLogSha256": "6027dc3856c9f51c53c9aea9805d7713521a10acee79a96c1ebcf5379afe960c",
+      "names": [
+        "adonis-timing",
+        "spectator-stage",
+        "spectator-stage-publisher-boundary",
+        "netplay-base",
+        "simulation-frontier"
+      ]
+    },
+    "mergedServerIsolation": {
+      "passed": true,
+      "cases": 12,
+      "sourceSha256": "8364a800012b3876be50c7f095c463515aa3c6bb3700ef3fd5bc55a3a7d59b0e"
+    },
+    "previousBuildCommonBindingMismatches": {
+      "normal": [],
+      "mp": [
+        "src/netplay/NetplayCore.cpp",
+        "include/eagler/netplay/NetplayCore.hpp"
+      ]
+    },
+    "newMultiplayerCoreBuilt": false,
+    "actualMultiplayerOrSpectatorBrowserAccepted": false,
+    "productionChanged": false,
+    "previewActivated": false
   }
 }

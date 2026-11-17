@@ -4,7 +4,8 @@ import {validateReleaseCatalog} from "../../release-catalog.mjs";
 import type {GameVersion} from "../../src/contracts/package-read-models.mts";
 import {PACKAGE_DESCRIPTOR_SCHEMA} from '../../package/package-descriptor.mjs';
 import {componentFileIds} from '../../package/package-generation.mjs';
-import {installPublishedPackage, repairInstalledPackage} from '../../package/package-launcher.mjs';
+import {pc98RequiredBlockFiles} from '../../package/pc98-block-selection.mjs';
+import {fetchPublishedPackage, installPublishedPackage, repairInstalledPackage} from '../../package/package-launcher.mjs';
 import {installPackageFromAcquisition, installParsedPackageZip} from '../../package/package-installer.mjs';
 import {parsePackageZip} from '../../package/package-zip.mjs';
 import {readCurrentPackageGeneration, readPackageObject} from '../../package/package-store.mjs';
@@ -55,6 +56,7 @@ export interface AcquisitionRequest {
   gameVersion?: GameVersion;
   music: MusicMode;
   language: string;
+  replay?: boolean;
   signal?: AbortSignal;
   /** A cancelled optional update returns to current; a cancelled launch does
    * not. Hosts must not conflate these two original cancellation intents. */
@@ -163,7 +165,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       request.onAcquisitionActivity?.(true);
       progress(request, 'package.installingResources');
       const result = await deps.installAcquired({descriptor, source: 'remote',
-        desiredFileIds: ['game-data', ...(isOgg(request.music) ? componentFileIds(descriptor, 'ogg') : [])],
+        desiredFileIds: ['game-data', ...((['th01','th02','th04'].includes(game) ? request.music === 'ogg-akyu' : isOgg(request.music)) ? componentFileIds(descriptor, 'ogg') : [])],
         acquire: async (id, declaration) => {
           checkPreparationAbort(request.signal);
           const source = id === 'game-data' ? hosted.gameData.source! : `${typeof hosted.music.ogg?.base === 'string' ? hosted.music.ogg.base : ''}${declaration.source}`;
@@ -208,6 +210,40 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     let installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"}); checkPreparationAbort(request.signal);
     if (installed.generation) {
       installed = await repair(installed, request);
+      if (['th01', 'th02', 'th04'].includes(game)) {
+        const generation = installed.generation!;
+        const diskFiles = generation.descriptor.components?.['pc98-manifest']
+          ? pc98RequiredBlockFiles(generation.descriptor, {game, language: request.language, multiplayer: isMultiplayerProductId(request.productId), replay: request.replay}) : [];
+        const missingDisk = diskFiles.some(id => !generation.files[id]?.objectId);
+        const legacyTh01 = game === 'th01' && generation.descriptor.runtimeRequirement?.dataLayout === 'sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579';
+        if ((missingDisk && !metadataSnapshot.releaseCatalog) || (legacyTh01 && !metadataSnapshot.siteManifest)) {
+          try {await metadata.initialize();} catch {checkPreparationAbort(request.signal);}
+          metadataSnapshot = metadata.getSnapshot();
+        }
+        const hostedLayout = metadataSnapshot.siteManifest?.games[game]?.gameData?.layout;
+        const installedLayout = generation.descriptor.runtimeRequirement?.dataLayout;
+        const incompatible = !!hostedLayout && !!installedLayout && hostedLayout !== installedLayout;
+        const published = metadataSnapshot.releaseCatalog?.games[game];
+        if (incompatible || (missingDisk && published && published.revision !== generation.descriptor.revision)) {
+          if (!published) throw new GameDataAcquisitionError('游戏资源版本不兼容，无法获取更新');
+          request.onAcquisitionActivity?.(true);
+          try {
+            progress(request, 'package.installingResources');
+            if (incompatible) {
+              const candidate = await fetchPublishedPackage(game, {catalog: metadataSnapshot.releaseCatalog!, catalogUrl,
+                fetchImpl: getPackageFetch(game), signal: request.signal});
+              if (candidate?.descriptor.runtimeRequirement?.dataLayout !== hostedLayout)
+                throw new GameDataAcquisitionError('游戏资源与运行版本不匹配');
+            }
+            const result = await deps.installPublished(game, {catalog: metadataSnapshot.releaseCatalog!, catalogUrl,
+              gameVersion, expectedGenerationId: generation.id, preserveLocalSource: true, signal: request.signal,
+              fetchImpl: getPackageFetch(game), onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
+            checkPreparationAbort(request.signal);
+            await installedChanged(game);
+            return {kind: 'managed', generation: result.generation, deferredUpdate: null};
+          } finally {request.onAcquisitionActivity?.(false);}
+        }
+      } else {
       const requiredLayout = metadata.getSnapshot().siteManifest?.games[game]?.gameData.layout;
       const installedLayout = installed.generation!.descriptor.runtimeRequirement?.dataLayout;
       if (requiredLayout && installedLayout && requiredLayout !== installedLayout) {
@@ -229,6 +265,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
           checkPreparationAbort(request.signal);
           throw new GameDataAcquisitionError(downloadFailureDetail(error, t) || preparationErrorText(error), {cause: error});
         } finally {request.onAcquisitionActivity?.(false);}
+      }
       }
       if (request.updateBeforePrepare) return installedResult(installed, request);
       const published = metadataSnapshot.releaseCatalog?.games[game];

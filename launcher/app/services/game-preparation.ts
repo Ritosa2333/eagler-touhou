@@ -15,7 +15,7 @@ import type {SettingsSnapshot} from '../models/game-settings';
 import {prepareLanguagePack, type PreparedLanguagePack} from './language-pack';
 import {checkPreparationAbort, preparationErrorText, type AcquisitionRequest, type PackageAcquisition,
   type PackageAcquisitionResult, type PreparationProgress} from './package-acquisition';
-import {ensureOggStartup, ensureRequiredSharedResources, musicTransport, musicModeLabel, oggMusic, packageResourceIds, remoteMusicResources,
+import {ensureOggStartup, ensurePC98Disks, ensureRequiredSharedResources, musicTransport, musicModeLabel, oggMusic, packageResourceIds, remoteMusicResources,
   remoteRuntimeResources, sharedResources} from './game-resources';
 import {startPreparedGameBackground} from './game-preparation-background';
 import type {RuntimePlan, RuntimeService, RuntimeSnapshot} from './runtime';
@@ -82,6 +82,7 @@ function requestFor(input: FilePreparationInput, withUpdate: boolean): Acquisiti
   if (input.settings.context.productId !== input.productId || input.settings.gameId !== gameIdForProduct(input.productId)) throw new Error('Settings product changed before preparation');
   const game = input as GamePreparationInput;
   return {productId: input.productId, gameVersion: input.settings.gameVersion, music: input.settings.music, language: input.settings.language,
+    replay: game.replayWorkspace === true || game.replayPath !== undefined,
     updateBeforePrepare: game.multiplayer?.kind === 'room-preload',
     signal: input.signal, onProgress: input.onProgress, onAcquisitionActivity: input.onAcquisitionActivity,
     ...(withUpdate ? {updateSignal: game.updateSignal, onUpdateActivity: game.onUpdateActivity, decideUpdate: game.decideUpdate, onWarning: game.onWarning} : {})};
@@ -122,6 +123,7 @@ function effectiveMusic(input: GamePreparationInput, generation: InstalledPackag
   const policy = PRODUCT_GAMES[settings.gameId].musicRuntime;
   return resolveEffectiveMusicMode({audio: settings.context.musicAvailability.audio,
     musicSources: 'sources' in policy ? policy.sources : [],
+    embeddedOgg: settings.context.musicAvailability.embeddedOgg,
     midiAvailable: PRODUCT_GAMES[settings.gameId].musicCapabilities.midi && hosted?.music.midi.supported !== false,
     importServer: productRequiresImport(settings.gameId) || host?.shared.resourceMode === 'import', remoteOggAdvertised: !!hosted?.music.ogg || splitAssets,
     remoteRevision: acquisition.getMetadata().releaseCatalog?.games[settings.gameId]?.revision ?? null,
@@ -137,6 +139,7 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
   if (isMultiplayer && !multiplayer) throw new Error('Multiplayer launch requires a room, Replay or game-check intent');
   if (!isMultiplayer && multiplayer) throw new Error('A single-player Runtime cannot use multiplayer launch options');
   return {limitPresentationTo60: !product.support.highRefreshRate || options.frameLimit60Enabled,
+    ...(game === 'th02' ? {th02RapidFire: options.th02RapidFire} : {}),
     touchEnabled: options.touchEnabled, touchMovementMode: options.touchMovementMode, touchSensitivity: options.touchSensitivity,
     touchFocusMode: options.touchFocusMode, doubleTapBombEnabled: options.doubleTapBombEnabled, alwaysHitbox: options.alwaysHitbox,
     oggDecodeMode: music === 'ogg-full' ? 'full' : 'stream',
@@ -176,12 +179,15 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
     input.onWarning?.(t('language.launchFallback', {language: entry?.title || entry?.id || t('language.fallbackName'), reason: preparationErrorText(error)}));
   }
   guard();
+  generation = await ensurePC98Disks(generation, acquisition, language, isMultiplayerProductId(input.productId), input.signal,
+    input.replayWorkspace === true || input.replayPath !== undefined);
+  guard();
   const musicPolicy=PRODUCT_GAMES[input.settings.gameId].musicRuntime;
   // A late TH14 spectator may reach any stage before background installation
   // can deliver its music. Use the same full soundtrack as the room preview.
   const th14Spectator = input.settings.gameId === 'th14' &&
     input.multiplayer?.kind === 'room' && input.multiplayer.options.netplaySpectator === true;
-  const completeOgg = input.multiplayer?.kind === 'room-preload' || th14Spectator ||
+  const completeOgg = (music === 'ogg-akyu' && ['th01','th02','th04'].includes(input.settings.gameId)) || input.multiplayer?.kind === 'room-preload' || th14Spectator ||
     ('requiresCompleteOgg' in musicPolicy && musicPolicy.requiresCompleteOgg) ||
     input.settings.gameId === 'th09' && (input.multiplayer?.kind === 'room' || input.replayPath !== undefined || input.replayWorkspace === true);
   ({generation, music} = await ensureOggStartup({generation, music, acquisition, signal: input.signal,
@@ -191,7 +197,8 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   guard();
   if (music !== 'none') await input.prepareMidi(music);
   guard();
-  const ids = generation && oggMusic(music) ? componentFileIds(generation.descriptor, 'ogg').filter(id => !!generation!.files[id]?.objectId) : [];
+  const useOptionalAlbum = !('embeddedOgg' in musicPolicy && musicPolicy.embeddedOgg === true) || music === 'ogg-akyu';
+  const ids = generation && oggMusic(music) && useOptionalAlbum ? componentFileIds(generation.descriptor, 'ogg').filter(id => !!generation!.files[id]?.objectId) : [];
   const options = gameRuntimeOptions(input, language, music, host);
   const shared = sharedResources({game: settings.gameId, generation, host, language,
     thprac: settings.options.thpracEnabled, baseUrl: input.baseUrl, translate: t});
@@ -245,8 +252,9 @@ export async function prepareGameCheck(input: GamePreparationInput & {
     const snapshot = input.runtime.getSnapshot();
     if (backgroundStarted || !prepared || epoch == null || snapshot.epoch !== epoch || !snapshot.launched) return;
     backgroundStarted = true;
-    void startPreparedGameBackground({input, prepared, epoch,
-      deferredUpdate: acquired.kind === 'managed' ? acquired.deferredUpdate : null}).catch(error => input.onBackgroundError?.(error));
+    const deferred = acquired?.kind === 'managed' ? acquired.deferredUpdate : null;
+    const deferredUpdate = deferred ? {...deferred, generation: prepared.plan.resourceGeneration ?? deferred.generation} : null;
+    void startPreparedGameBackground({input, prepared, epoch, deferredUpdate}).catch(error => input.onBackgroundError?.(error));
   });
   try {
     await input.runtime.checkMultiplayer(initial, input.signal, snapshot => {
@@ -290,8 +298,9 @@ export async function prepareGame(input: GamePreparationInput & {runtime: Runtim
     if (background) return background;
     const snapshot = input.runtime.getSnapshot();
     if (snapshot.epoch !== runtimeSnapshot.epoch || !snapshot.launched) return Promise.reject(new Error('Launch this prepared Runtime before starting background resources'));
-    background = startPreparedGameBackground({input, prepared: result, epoch: runtimeSnapshot.epoch!,
-      deferredUpdate: acquired?.kind === 'managed' && input.multiplayer?.kind !== 'room' && input.multiplayer?.kind !== 'room-preload' ? acquired.deferredUpdate : null});
+    const deferred = acquired?.kind === 'managed' && input.multiplayer?.kind !== 'room' && input.multiplayer?.kind !== 'room-preload' ? acquired.deferredUpdate : null;
+    const deferredUpdate = deferred ? {...deferred, generation: result.plan.resourceGeneration ?? deferred.generation} : null;
+    background = startPreparedGameBackground({input, prepared: result, epoch: runtimeSnapshot.epoch!, deferredUpdate});
     return background;
   }};
 }

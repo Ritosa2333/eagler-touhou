@@ -1,0 +1,63 @@
+{
+  "schema": 3,
+  "package": "emulators",
+  "version": "8.5.2",
+  "machine": "pc98",
+  "local": {
+    "core": "simple",
+    "cycles": "max 100%",
+    "continuation": "JSPI",
+    "initialHeapMiB": 64,
+    "maximumHeapMiB": 256
+  },
+  "network": {
+    "core": "simple",
+    "cycles": 30000,
+    "continuation": "Asyncify boundary with native frame scheduling and guarded CPU",
+    "binaryen": "132",
+    "initialHeapMiB": 64,
+    "maximumHeapMiB": 256,
+    "nativeFrameBridge": false,
+    "optimizations": [
+      "guarded synchronous CPU",
+      "TH04 guarded idle fusion",
+      "word memcmp",
+      "PC98 planar lookup"
+    ],
+    "sourceRevision": "788fde99d3d451eab3621009186e5abe516f2b9c"
+  },
+  "presentation": {
+    "local": "direct",
+    "network": "completed batch",
+    "sha256": "7377affceceead631a9ab9258bc9aad0917b7fcf71f8c8f94522cc51100e614c"
+  },
+  "sourceWasm": "c154235667747e613be00d0955f068b54cbf8e1fb8e5c34d34e5552292f4c72a",
+  "keyboardFix": {
+    "excludedKeys": [
+      340,
+      341,
+      342,
+      343,
+      344,
+      345,
+      346,
+      347
+    ]
+  },
+  "files": {
+    "audio-worklet.js": "e1e8912f986479b1926cca0d8342f6b504defca873d3a51aac1172e5fbbf4c5d",
+    "dosbox-jspi.mjs": "b8371d42179d968d1cf8dfdc65f6f32aa2462d8fff0152464105ca721ac42d4e",
+    "dosbox-rollback-tracked.mjs": "f7224bcb7e5ea881525760f3b71b194d01e127acf31103a5400a06d9d004d048",
+    "dosbox-rollback.mjs": "b86ffabafe90b43c0e12745ebd2d03e0da3353a53f765ad50a2008d12e291e8e",
+    "emulators.js": "066176a9e9e6babfb5388552a5154f3c1f81ed778af3bf4a1f9f904161e3c4bb",
+    "LICENSE": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+    "NOTICE.md": "a273cf230e155381e023320bc4c2e33f7290c5783827163033a767949c3753f5",
+    "snapshot-diff-tracked.wasm": "fb69ccf0818caa9199ac3f357435528622413b690af90a353b99c88d81adb5c2",
+    "snapshot-diff.wasm": "20235d6360a49d633f2db03832ef5ad3fbe6daffd4f44e4d7f8e790875a4662f",
+    "wdosbox-x-fast.wasm": "124e7a66aeac80f997000b5a6c542bda909b9901f33d473e251ccbea01be2fe9",
+    "wdosbox-x-jspi.wasm": "c154235667747e613be00d0955f068b54cbf8e1fb8e5c34d34e5552292f4c72a",
+    "wdosbox-x-rollback-tracked.wasm": "2715d566fd810020b439cd3b2b243bdd5d0a52bedeaf01f8efd56dcede6d81ec",
+    "wdosbox-x-rollback.wasm": "8ffae60df479b5df896233466520f4a3cfb3eb5564082823b652658e19f85048"
+  },
+  "projectile_rgb": true
+}

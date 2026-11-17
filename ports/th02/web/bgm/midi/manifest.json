@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "source": "TH02 original MMD arrangements",
+  "soundBank": "Windows General MIDI (DLS)",
+  "codec": "opus",
+  "tracks": {
+    "boss1-m86": {
+      "url": "midi/boss1.opus",
+      "loopStart": 0.0,
+      "loopEnd": 50.64930000000002,
+      "sha256": "5f3b463b6ded98d5b52e4a799422f899fbbddaa26c61a2ed0d6f934d8c182232",
+      "audioSha256": "82518e461f401a72df32adb09ab2892e43c27a78dfd7fa5ce6aeb6dad350fb4d",
+      "bytes": 411920
+    },
+    "boss2-m86": {
+      "url": "midi/boss2.opus",
+      "loopStart": 46.26496000000043,
+      "loopEnd": 92.52991999999976,
+      "sha256": "153c16d6b0b83a347aeb77489f4f42aeeea2f30fde94180679f3e7274702ad3a",
+      "audioSha256": "93425ac08cab31b2c4a575853972a6df2339f78f872ee8f761fd03b1312c799a",
+      "bytes": 752277
+    },
+    "boss3-m86": {
+      "url": "midi/boss3.opus",
+      "loopStart": 0.0,
+      "loopEnd": 58.838592000000325,
+      "sha256": "ba5ef85d6b1eca0a310e7d586503dd4aba954819b5547d120995d4c0ca2219b4",
+      "audioSha256": "4ff5dc8e69fd1d4fc3d9a7c53ae1a6d79d8d4e6f76edc83cd1ffbd5f465eda19",
+      "bytes": 478578
+    },
+    "boss4-m86": {
+      "url": "midi/boss4.opus",
+      "loopStart": 18.043019499999996,
+      "loopEnd": 93.41396349999901,
+      "sha256": "4e233e9bd85e0878945cf4dedab3057371414ef337dacc7710a7a3b2a321a9f5",
+      "audioSha256": "dc3cc4a8f6015a37d5ddc39396d09d49dd97c9a256fc457d74a6730e55f46741",
+      "bytes": 759605
+    },
+    "boss5-m86": {
+      "url": "midi/boss5.opus",
+      "loopStart": 0.0,
+      "loopEnd": 144.59596000000602,
+      "sha256": "d4fca74a1df27fc555d9dddfc4af2b1ad431fedaa1c0071c968ab1d217a00a10",
+      "audioSha256": "0be6e3074e309cd8e20f13a2ee2ae244cc4cb748b3b90d3bf23db8a6a633fee4",
+      "bytes": 1175587
+    },
+    "end1-m86": {
+      "url": "midi/end1.opus",
+      "loopStart": 10.97900500000001,
+      "loopEnd": 51.39999699999982,
+      "sha256": "4fc15bb9aff36975783357c26f4f030796c8cec07ab21c2e1d8d0f9ea301f2e9",
+      "audioSha256": "ccb4fdcd9d42366794ff05d0ee8673c58906adea7d90fb9987ed3b396350be70",
+      "bytes": 418148
+    },
+    "ending-m86": {
+      "url": "midi/ending.opus",
+      "loopStart": 1.5483839999999993,
+      "loopEnd": 137.80617600000014,
+      "sha256": "11d5162032f93a103aba78e1ae1bc1cb35553a6edd06abe8250f263fa9cf8eb5",
+      "audioSha256": "2572b8e940b3d7c7e5285f56527e9fddb68383e1500c25787ff3c345c817e313",
+      "bytes": 1120369
+    },
+    "mima-m86": {
+      "url": "midi/mima.opus",
+      "loopStart": 6.1661920000000014,
+      "loopEnd": 134.66403360416928,
+      "sha256": "15c470c271ce33008ba746092663f88f3293d3aedd8e35c73a4a281c54cabc41",
+      "audioSha256": "3e2461ae946abffb9c8191f04d7aef8897231d6e25edadb1a4955cdf43b73854",
+      "bytes": 1094802
+    },
+    "op-m86": {
+      "url": "midi/op.opus",
+      "loopStart": 0.39735000000000004,
+      "loopEnd": 83.47509399999956,
+      "sha256": "4dafe853009cbb1c2d218144635e2c9ec1906391fbc56eae8478933ad1e3f515",
+      "audioSha256": "0a0646f12f0a2b88990a53a11ab2631c4ba3000b942610647b2f32aa18096a6e",
+      "bytes": 678826
+    },
+    "stage0-m86": {
+      "url": "midi/stage0.opus",
+      "loopStart": 27.826047999999947,
+      "loopEnd": 137.75330399999655,
+      "sha256": "01297b936c6b766b3780b652cfefcfed677f7fc34e0399f43a3c2710a094dd0b",
+      "audioSha256": "ed072d31c6c4c5de5445c81223dfb058245bcdf2d195578fe7e5915e64a66ad5",
+      "bytes": 1119735
+    },
+    "stage1-m86": {
+      "url": "midi/stage1.opus",
+      "loopStart": 0.0,
+      "loopEnd": 116.11807950000157,
+      "sha256": "bcb4c0a78f47f648ad98d699d8e8f5e8868e2a5b28abe1520b6d258d2290f8d7",
+      "audioSha256": "04e1c06863cda7b38c53b3311318d30a6be421078aadf38e1a2ce0cc5e72c068",
+      "bytes": 944145
+    },
+    "stage2-m86": {
+      "url": "midi/stage2.opus",
+      "loopStart": 0.0,
+      "loopEnd": 103.10547000000234,
+      "sha256": "70135b66f76f127144ea74b7af63c270b85acfecbba91c71cc23d13e966a8529",
+      "audioSha256": "a4f921a12ee90033805e88aec357494df2b85020d713a52cc59db86a166e8763",
+      "bytes": 838302
+    },
+    "stage3-m86": {
+      "url": "midi/stage3.opus",
+      "loopStart": 0.0,
+      "loopEnd": 82.61227999999983,
+      "sha256": "9aab5990925bdec6242c3057b8aa047231ce841959a127853c5f109e517143c1",
+      "audioSha256": "f338c512ddbeaaa1acdc6520905617ba053737d20512a7653607970cf56655f8",
+      "bytes": 671633
+    },
+    "stage4-m86": {
+      "url": "midi/stage4.opus",
+      "loopStart": 0.0,
+      "loopEnd": 68.41528800000026,
+      "sha256": "55f213a8d76ee7904ef18965ad9e74a3ac1961328b2a7c3b8419e3fc1d6af085",
+      "audioSha256": "7b5ebd4608956b50b204b604d55cdf44be65496b47706d90293699f1bf33b8b3",
+      "bytes": 556535
+    },
+    "stage5-m86": {
+      "url": "midi/stage5.opus",
+      "loopStart": 6.4000000000000155,
+      "loopEnd": 96.00000000000112,
+      "sha256": "1e24f10fe5479be157382a4e41db7c026d4fe81fdf08df18e60d21d8272cb38e",
+      "audioSha256": "2cfd6201963910384a69951911ada746ed55582aba67c73b1a9ad08a514fd59a",
+      "bytes": 780619
+    }
+  }
+}

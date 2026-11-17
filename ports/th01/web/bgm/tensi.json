@@ -1,0 +1,11 @@
+{
+  "url": "tensi.opus",
+  "loopStart": 0.013832199546485261,
+  "loopEnd": 78.71628117913832,
+  "sha256": "fd4416395c1402ca560196be980d6a43659738a8ebb7abf71eb1cbda21ab0ba6",
+  "audioSha256": "86c002e8132b0edd1cffb8904d03df4d7c100a33b79409d7f56e3e0bc7027e66",
+  "codec": "opus",
+  "bytes": 640098,
+  "preset": "mdrv2-fmgen-opus64-48k-single-loop-headroom-v2",
+  "fadeSeconds": 1.7950961538461538
+}

@@ -229,6 +229,7 @@ export function bindPlayerInput({
     fireState: session.touchFireState,
     getSettings: session.getActiveSettings,
     editing,
+    controlsBlocked: () => player.classList.contains('browser-practice-open'),
     playerOpen: () => session.getSnapshot().playerOpen,
     iosWebKitTouch: ios,
     refocus,
@@ -350,6 +351,8 @@ export function bindPlayerInput({
       if (message.event === 'first-frame' && runtime.getSnapshot().launched) touch.syncControls();
     });
   const unsubscribeLayout = session.touchLayout.subscribe(applyLayout);
+  const applyPc98SurfaceLayout = () => applySavedPlayerTouchLayout(player, safe, profile());
+  window.addEventListener('pc98-touch-surface-change', applyPc98SurfaceLayout);
   const reset = (event: Event) => {
     if (!runtime.getSnapshot().launched) return;
     event.preventDefault();
@@ -375,6 +378,7 @@ export function bindPlayerInput({
       unsubscribe();
       unsubscribeEvents();
       unsubscribeLayout();
+      window.removeEventListener('pc98-touch-surface-change', applyPc98SurfaceLayout);
       gamepad.dispose();
       keyboard.dispose();
       touch.dispose();

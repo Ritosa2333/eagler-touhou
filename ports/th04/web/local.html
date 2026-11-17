@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TH04 本地双人实验</title>
+<link rel="stylesheet" href="site.css?v=20261007">
+<link rel="stylesheet" href="control-settings.css">
+<body class="shell">
+<header class="masthead"><a class="brand" href="index.html">TOUHOU / 04</a><small>東方幻想郷 · LOTUS LAND STORY</small></header>
+<nav class="mode-nav" aria-label="游戏模式"><a data-mode="solo" href="solo.html">单机游戏</a><a data-mode="local" href="local.html" aria-current="page">本地双人 · 测试</a><a data-mode="lan" href="lan.html?network=lan">局域网联机</a><a data-mode="public" href="lan.html?network=public">公网联机</a></nav>
+<p class="muted">多人默认启用满火力支援：已满火力者拾取大小 Power 时，将火力收益给予火力最低的存活队友；同火力优先离道具最近者，再按席位顺序。分数计入全队。</p>
+<style>
+:root{color-scheme:dark;font-family:system-ui,"Microsoft YaHei",sans-serif;background:#11141b;color:#e5e9f2}body{max-width:1120px;margin:24px auto;padding:0 20px}h1{font-size:26px;margin-bottom:8px}p{color:#acb6c9;line-height:1.7}button,select{font:inherit;background:#252e40;color:#e5e9f2;border:1px solid #45516c;border-radius:7px;padding:9px 14px;cursor:pointer}button:disabled{opacity:.4;cursor:default}button:hover:not(:disabled){background:#354462}.primary{background:#25537e}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.layout{display:grid;grid-template-columns:minmax(500px,800px) 270px;gap:20px}.screen{position:relative;background:black;aspect-ratio:8/5;width:100%}canvas{display:block;width:100%;height:100%;image-rendering:pixelated;outline:none}.tag{position:absolute;font-size:11px;font-weight:bold;pointer-events:none;transform:translate(-50%,-100%);text-shadow:0 1px 2px black;background:#0009;border-radius:3px;padding:0 3px}.p1{color:#7fddff}.p2{color:#ffc75a}aside{font-size:14px;line-height:1.7}aside h2{font-size:16px}#status{color:#8ed3a8}pre{white-space:pre-wrap;font-size:12px;color:#aabbd3;line-height:1.6}details{border-top:1px solid #30394b;padding-top:12px;margin-top:20px}#tests{color:#ffda87}.warning{color:#e2ba7a}small{color:#91a1bb}@media(max-width:850px){.layout{display:block}body{margin:12px auto}.screen{min-width:0}}
+</style>
+<style>aside{min-width:0;overflow-wrap:anywhere}select{max-width:100%}.layout>*{min-width:0}@media(max-width:950px){.layout{grid-template-columns:minmax(0,1fr) 230px}}@media(max-width:720px){.layout{display:block}}</style>
+<header class="intro"><span class="eyebrow">LOCAL / TEST</span><h1>本地双人测试</h1></header>
+<section class="panel local-music-settings" aria-label="本机音乐">
+<label class="bgm-version">本机音乐 <select data-bgm-version-control aria-label="本机音乐版本"><option value="old">游戏原版</option><option value="new">幺乐团专辑版</option></select><small data-bgm-restart-note></small></label>
+<p class="muted">仅影响本机播放的音乐，不改变其他玩家的选择；自动保存，游戏中切换会从头播放当前曲目。</p>
+</section>
+
+<p>在这里选择双方机体和本局设置，开始后直接载入第一关；选择 Extra 则直接进入 EX 关。实验版 0.5 · 本地双人</p>
+<fieldset id="setup"><legend>本局设置</legend><label>游戏语言 <select id="language"><option value="cn">汉化版</option><option value="jp">日文版</option></select></label><div class="toolbar">
+<label>P1 机体 <select id="loadout-p1"><option value="0">灵梦 A</option><option value="1">灵梦 B</option><option value="2">魔理沙 A</option><option value="3">魔理沙 B</option></select></label>
+<label>P2 机体 <select id="loadout-p2"><option value="0">灵梦 A</option><option value="1">灵梦 B</option><option value="2" selected>魔理沙 A</option><option value="3">魔理沙 B</option></select></label>
+<label>难度 / 关卡 <select id="difficulty"><option value="0">Easy</option><option value="1" selected>Normal</option><option value="2">Hard</option><option value="3">Lunatic</option><option value="4">Extra（EX 关）</option></select></label>
+<label>每人初始生命（含当前） <select id="lives"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></label>
+<label>每人初始炸弹 <select id="bombs"><option value="0">0</option><option value="1">1</option><option value="2" selected>2</option></select></label>
+<label>声音 <select id="audio-mode"><option value="independent" selected>独立音乐（建议）</option><option value="original">原声模拟</option></select></label>
+</div><small>双方可以选择相同机体。剧情与关卡分支跟随 P1；本局开始后机体锁定。</small></fieldset>
+<div class="toolbar"><button id="start" class="primary">开始游戏</button><button id="pause" disabled>暂停模拟器</button><button id="restart" disabled>返回设置</button><button id="fullscreen">全屏</button></div>
+<div id="status" role="status">等待启动；每次启动使用干净的实验磁盘，不写入原版存档。</div>
+<div id="control-settings" class="toolbar"></div>
+<p id="controls-summary"></p>
+<div class="layout"><main><div class="screen" id="screen"><canvas id="canvas" width="640" height="400" tabindex="0" aria-label="TH04 游戏画面"></canvas><span id="p1" class="tag p1" hidden>P1</span><span id="p2" class="tag p2" hidden>P2</span></div>
+<div class="toolbar"><button data-key="KeyZ">确认 / Z</button><button data-key="KeyX">返回 / X</button><button data-key="ArrowUp">暂停菜单 ↑</button><button data-key="ArrowDown">暂停菜单 ↓</button><button data-key="Escape">游戏暂停 / P</button></div>
+<small>加载完成后，P1 从左侧出场，P2 从右侧出场。无需操作原版菜单；返回设置后可重新选择。</small>
+</main><aside><h2>P1 · 键盘</h2><div>当前键位见画面上方操作说明；点击「自定义操作」可修改。</div><h2>P2 · 手柄</h2><div>左摇杆移动；默认十字键移动，A / × 射击，B / ○ 炸弹，RB / R1 低速，Start 暂停。按钮可在「自定义操作」中修改。</div><p id="pad">未检测到手柄：连接后按一下手柄按钮。</p><label>使用手柄 <select id="pad-select"><option value="auto">自动选择</option></select></label><p>P2 也支持键盘：默认 WASD 移动、J 射击、K 低速、L 炸弹。当前键位见上方操作说明。</p><h2>实验规则</h2><div>独立选择角色与 A/B 机体，独立火力、炸弹与残机；Power 归拾取者；1UP 给所有玩家加一命，已退场者会带短暂无敌复活；Bomb 道具给仍在场的玩家各加一颗。分数、点、梦、擦弹全队共享，得分保持原版倍率。分数 Extend 像 1UP 一样给全队加命并复活幽灵，离线队员除外；过关炸弹奖励发给仍在场的玩家。炸弹同时只能生效一个，背景板与演出跟随施放者，另一人不会扣库存。耗尽残机后，变成初始位置附近漂浮的小幽灵；过关时免费复活。借命：有备用残机的玩家停火、不放 Bomb，靠近队友（含幽灵）后低速键连按 5 次，每两次最多间隔 24 个游戏帧；成功后扣自己一命给对方，松开后才能再次借命。两人均退场才结束；续关时两人一同回归。双方使用各自的原版射击、子机与激光，吃到 Power 后分别升级。右栏沿用拾取道具图标：小 P 旁显示火力 0.00–4.00，1UP 旁显示备用残机，Bomb 旁显示炸弹数。备用残机为 0 时仍可继续当前一命。</div><p class="warning">P2 已接入普通敌弹与杂鱼碰撞；Boss 接触、特殊激光等判定尚未完整适配。当前用于验证双人基础，不作为完整通关版。</p></aside></div>
+<details open><summary>单机验证与状态</summary><div class="toolbar"><button id="selftest" disabled>检查 P2 移动与射击</button><button id="hit-test" disabled>检查 P2 受击与复活</button><button id="capture" disabled>保存当前画面</button></div><div id="tests">进入关卡后可运行检查；运行时请暂时松开所有按键和手柄。</div><pre id="diagnostics">尚未进入 MAIN.EXE。</pre><small>受击检查会在 P2 位置生成一颗真实普通敌弹，消耗 P2 残机；仅用于这个不保存进度的实验版本。</small></details>
+<script type="module" src="lab.js?v=0.5"></script>
+<script type="module" src="bgm-version.js"></script></body></html>
+

@@ -1,0 +1,13 @@
+{
+  "source": "77efbc5cac5de8a2b92a3943bec93f1811ac738a8d3947c1e1f3414a0136a431",
+  "sha256": "ab25a3e076ef0d95de100c400990178ae10781c1f93b8d6124420bbe33c3d051",
+  "url": "vendor/dosbox-x/wdosbox-x-practice.wasm",
+  "ports": [
+    32720,
+    32721,
+    32722,
+    32723,
+    32724,
+    32725
+  ]
+}
