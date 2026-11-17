@@ -313,6 +313,236 @@
     "completeGame": false
   },
   "completeGame": false,
-  "productionDeployed": false,
-  "wasmAndAll153CppObjectsUnchanged": true
+  "productionDeployed": true,
+  "wasmAndAll153CppObjectsUnchanged": true,
+  "deployment": {
+    "productionDeployed": true,
+    "source": "3fbbc12163dc0531fd7824b90fe1ba98dc55fdcb",
+    "runtimeCodeSource": "3fbbc12163dc0531fd7824b90fe1ba98dc55fdcb",
+    "wasm": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb",
+    "generation": "0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c",
+    "runtimeFilesIdenticalToPrivate": 32,
+    "previousGenerationFilesRetained": 32,
+    "runtimeFilesOriginVerified": 32,
+    "frontendFilesOriginVerified": {
+      "index.html": "aa0debd352a8132cb5d0db0287d68af1998a07bf00e62da77826cb7e1bd3929b",
+      "assets/root-BpO6IxR9.js": "e69a29607ff6c245f06ba9be08981b95a8ff27517e05e0a6940e2838daf275cf",
+      "assets/replays-DxgiFE26.js": "d8c0e922bd206e1d40cf01b1ef039210da961fb1fdd9ffa4195bcdb002c5470b"
+    },
+    "formalSilentOrdinaryBrowserSampleAccepted": true,
+    "shortViewerEndAccepted": false,
+    "previousGenerationShortViewerEvidenceReused": true,
+    "wholeWatcherScoreBytesPreserved": null,
+    "wholePageReloadScorePreserved": false,
+    "frontendCodeSource": "3fbbc12163dc0531fd7824b90fe1ba98dc55fdcb",
+    "formalThpracAvailable": false,
+    "rollback": "/home/i/Code/th14-release/hosted-before-startup-abort-nov17",
+    "serviceConfigurationUnchanged": true,
+    "servicePidPreserved": true,
+    "productionBrowserAfterActivationAccepted": false,
+    "publicHttpAccepted": false,
+    "completeGame": false
+  },
+  "publicHttp": {
+    "passed": true,
+    "scope": "runtime files and frontend modules exact; transformed entry HTML application byte regions checked separately",
+    "source": "3fbbc12163dc0531fd7824b90fe1ba98dc55fdcb",
+    "generation": "0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c",
+    "runtimeFiles": [
+      {
+        "path": "Th14ArchiveDecodeClient.mjs",
+        "bytes": 3920,
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450"
+      },
+      {
+        "path": "Th14ArchiveDecodeEndpoint.mjs",
+        "bytes": 5322,
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f"
+      },
+      {
+        "path": "Th14ArchiveDecodeWorker.mjs",
+        "bytes": 302,
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239"
+      },
+      {
+        "path": "Th14ArchiveReadAhead.mjs",
+        "bytes": 3637,
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee"
+      },
+      {
+        "path": "Th14AsyncRuntime.mjs",
+        "bytes": 3326,
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7"
+      },
+      {
+        "path": "Th14SharedSceneCopy.mjs",
+        "bytes": 4985,
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0"
+      },
+      {
+        "path": "Th14SharedSceneWorker.mjs",
+        "bytes": 369,
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444"
+      },
+      {
+        "path": "Th14StageMemoryClient.mjs",
+        "bytes": 10352,
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698"
+      },
+      {
+        "path": "Th14StageMemoryWorker.mjs",
+        "bytes": 689,
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde"
+      },
+      {
+        "path": "Th14StageMemoryWorker.wasm",
+        "bytes": 1027,
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1"
+      },
+      {
+        "path": "Th14StageRestoreDelivery.mjs",
+        "bytes": 2997,
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697"
+      },
+      {
+        "path": "Th14StageRestoreProtocol.mjs",
+        "bytes": 1701,
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870"
+      },
+      {
+        "path": "Th14StageRestoreWorker.mjs",
+        "bytes": 257,
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909"
+      },
+      {
+        "path": "Th14WebGpuCore.mjs",
+        "bytes": 1004,
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745"
+      },
+      {
+        "path": "Th14WebGpuHost.mjs",
+        "bytes": 19989,
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7"
+      },
+      {
+        "path": "archive-decoder.mjs",
+        "bytes": 11199,
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e"
+      },
+      {
+        "path": "archive-decoder.wasm",
+        "bytes": 96991,
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28"
+      },
+      {
+        "path": "directory-keyboard.mjs",
+        "bytes": 6345,
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243"
+      },
+      {
+        "path": "eagler-host.mjs",
+        "bytes": 17554,
+        "sha256": "e6b62290c3926e9405fc0aeb1fc03ce733c644763733cb31416a67d63079bf93"
+      },
+      {
+        "path": "fonts/cp932.bin",
+        "bytes": 131072,
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+      },
+      {
+        "path": "fonts/msgothic.ttc",
+        "bytes": 8990160,
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
+      },
+      {
+        "path": "fonts/unifont.otf",
+        "bytes": 5105508,
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
+      },
+      {
+        "path": "keyboard.mjs",
+        "bytes": 1297,
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334"
+      },
+      {
+        "path": "managed.css",
+        "bytes": 733,
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+      },
+      {
+        "path": "manifest.json",
+        "bytes": 636,
+        "sha256": "67b1b2e6b360eee679debf45c65013b46ba238ff081d5f3aef3c92c98b234927"
+      },
+      {
+        "path": "motion-replay.mjs",
+        "bytes": 815,
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d"
+      },
+      {
+        "path": "resources.json",
+        "bytes": 641,
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd"
+      },
+      {
+        "path": "runtime-epoch.mjs",
+        "bytes": 340,
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f"
+      },
+      {
+        "path": "shell.mjs",
+        "bytes": 18846,
+        "sha256": "542ff26f2f4fcb4fa6cac363f47a34ff718b2ce22f536d802d118b45e6ad0f6d"
+      },
+      {
+        "path": "th14-sdl.mjs",
+        "bytes": 339998,
+        "sha256": "1bfd63dff6c944a98f94e104da61db31774be6c3ebb1e6c712f9921591e009df"
+      },
+      {
+        "path": "th14-sdl.wasm",
+        "bytes": 5464022,
+        "sha256": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb"
+      },
+      {
+        "path": "th14.html",
+        "bytes": 507,
+        "sha256": "68c187a4359d43f874e5062d483cab4925b68cdfc69680fe4533ea49ed019053"
+      }
+    ],
+    "frontendModules": [
+      {
+        "path": "assets/root-BpO6IxR9.js",
+        "bytes": 654754,
+        "sha256": "e69a29607ff6c245f06ba9be08981b95a8ff27517e05e0a6940e2838daf275cf"
+      },
+      {
+        "path": "assets/replays-DxgiFE26.js",
+        "bytes": 135992,
+        "sha256": "d8c0e922bd206e1d40cf01b1ef039210da961fb1fdd9ffa4195bcdb002c5470b"
+      }
+    ],
+    "entryHtml": {
+      "originSha256": "aa0debd352a8132cb5d0db0287d68af1998a07bf00e62da77826cb7e1bd3929b",
+      "publicSha256": "c1fb4465493552f836791922f011d5de23f215765f826970a88f552dbf0e6ead",
+      "wholeFileHashAccepted": false,
+      "applicationByteRegionsPreserved": true,
+      "applicationReferenceSetPreserved": true,
+      "additionalScripts": [
+        "WebMCP bridge",
+        "Cloudflare JSD"
+      ],
+      "insertionsSha256": [
+        "e2cb14b5fa9e0c60dda83a94781294bd2f17a9eb48a314e93061bcc5b7c7cca2",
+        "70364b8f437f514157eae2563897714f21d1cf06c37da0f53b6992857745ffcf"
+      ],
+      "browserOrResponseContentModified": false
+    },
+    "runtimeWholeFileHashesAndIsolationHeadersAccepted": true,
+    "frontendModuleWholeFileHashesAccepted": true,
+    "entryHtmlWholeFileHashAccepted": false,
+    "productionChanged": true,
+    "productionBrowserAfterActivationAccepted": false,
+    "completeGame": false
+  }
 }
