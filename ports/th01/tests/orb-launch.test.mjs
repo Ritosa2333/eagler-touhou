@@ -54,15 +54,17 @@ test('launch replays identically after restoring a rollback snapshot', async () 
   }
 });
 
-test('multiple orbs begin at distinct positions and move upward', async () => {
+test('multiple orbs start together with distinct velocities and separate after launch', async () => {
   for (const count of [2, 3, 4, 6, 8, 9]) {
-    const core = await launch(2, count);
-    const first = positions(core, count);
-    core.th_step(0, 0, 0);
-    const second = positions(core, count);
-    const vectors = first.map(([x, y], i) => [second[i][0] - x, second[i][1] - y]);
-    assert(vectors.every(([dx, dy]) => dx < 0 && dy < 0), `${count} orbs move up and left`);
-    assert.equal(new Set(first.map(v => v.join(','))).size, count, `${count} distinct positions`);
+    const core = (await WebAssembly.instantiate(binary, {})).instance.exports;
+    core.th_init(2, count, 0x12345678, 0);
+    assert.deepEqual(positions(core, count), Array.from({length: count}, () => [600, 280]));
+    const memory = new DataView(core.memory.buffer), base = 4171008;
+    const velocity = Array.from({length: count}, (_, i) => [memory.getInt32(base + i * 96 + 56, true), memory.getFloat64(base + i * 96 + 24, true)]);
+    assert.equal(new Set(velocity.map(v => v.join(','))).size, count);
+    core.th_step(4, 0, 0);
+    for (let frame = 0; frame < 30; frame++) core.th_step(0, 0, 0);
+    assert.equal(new Set(positions(core, count).map(v => v.join(','))).size, count, `${count} orbs separate`);
   }
 });
 
@@ -82,24 +84,4 @@ test('floor contact resets the combo for one orb and preserves it for multiple o
     core.th_stage_command(14, 0, 2, 0, 0, 0);
     assert.equal(memory.getInt32(combo, true), 0, `${count} orbs reset at stage change`);
   }
-});
-
-test('six-orb launch starts in two aligned rows of three', async () => {
-  const core = (await WebAssembly.instantiate(binary, {})).instance.exports;
-  core.th_init(1, 6, 0x12345678, 0);
-  const [a, b, c, d, e, f] = positions(core, 6);
-  assert.deepEqual([a[0], b[0], c[0]], [d[0], e[0], f[0]]);
-  assert.equal(a[1], b[1]); assert.equal(b[1], c[1]);
-  assert.equal(d[1], e[1]); assert.equal(e[1], f[1]);
-  assert.equal(d[1] - a[1], 32);
-  assert.equal(a[0] - b[0], 32); assert.equal(b[0] - c[0], 32);
-});
-
-test('four-orb launch starts in a two by two grid', async () => {
-  const core = (await WebAssembly.instantiate(binary, {})).instance.exports;
-  core.th_init(1, 4, 0x12345678, 0);
-  const [a, b, c, d] = positions(core, 4);
-  assert.deepEqual([a[0], b[0]], [c[0], d[0]]);
-  assert.equal(a[1], b[1]); assert.equal(c[1], d[1]);
-  assert.equal(a[0] - b[0], 32); assert.equal(c[1] - a[1], 32);
 });
