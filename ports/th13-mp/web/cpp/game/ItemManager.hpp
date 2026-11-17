@@ -265,7 +265,9 @@ public:
     // power_step 边界时 options 重排（0x444df0）。返回是否跨档。
     // R-C1/R-C3：挑战模式不发放 Bomb，也不增加灵界槽。
     bool challenge = false;
-    bool collect_power_small();
+    // 录像版本不超过 3 时沿用录制时的道具规则。
+    bool legacy_pickup_rewards = false;
+    bool collect_power_small(i32 amount = 1);
     // 0x0043d210 大P：power += amount（未满时），满级溢出钳制 + 满灵力演出；
     // 返回是否跨档。
     bool collect_power_big(i32 amount);
@@ -292,6 +294,7 @@ private:
     struct ResourceGrant {
         i32 life_pieces = 0, bomb_pieces = 0;
         i32 lives = 0, bombs = 0;
+        i32 bonus_bomb_piece_seat = -1;
     };
     void grant_resources(const ResourceGrant& grant, const ItemCollector* seats, i32 seat_count);
     // M3：最近合格席（平距平方最小，平局取小席位；全不合格回退 fallback

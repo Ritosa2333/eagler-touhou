@@ -564,7 +564,7 @@ TEST(shared_pickup_once) {
     manager.update_seats(seats, 2);
     // 恰一次物理结算；P 是个人资源，只记到拾取者（R-I2/R-I3）。
     CHECK_EQ(spawned->alive, false);
-    CHECK_EQ(hud0.power, 101);
+    CHECK_EQ(hud0.power, 102);
     CHECK_EQ(hud1.power, 100);
     // 结算事件恰一批（同一道具不重复）。
     size_t collected = 0;
@@ -582,7 +582,7 @@ TEST(shared_pickup_once) {
         dual.battle.seats[size_t(seat)].option_power =
             dual.battle.seat_huds[size_t(seat)].power / dual.battle.seat_huds[size_t(seat)].power_step;
     manager.spawn_item(-95,400,0,ItemPower,0,0); manager.update_seats(seats,2);
-    CHECK_EQ(hud0.power,200); CHECK_EQ(hud1.power,299);
+    CHECK_EQ(hud0.power,201); CHECK_EQ(hud1.power,299);
     CHECK_EQ(dual.battle.seats[0].option_power,2); CHECK_EQ(dual.battle.seats[1].option_power,2);
     CHECK(rebuilt==std::vector<i32>({0})); CHECK_EQ(dual.battle.active_seat,0);
 }
@@ -606,7 +606,7 @@ TEST(personal_power_routing) {
         a.power = 150; b.power = 150; c.power = 150;
         clear_items(); manager.spawn_item(0, 400, 0, ItemBigPower, 0, 0);
         manager.update_seats(seats, 3);
-        CHECK_EQ(a.power, 250); CHECK_EQ(b.power, 150); CHECK_EQ(c.power, 150);
+        CHECK_EQ(a.power, 400); CHECK_EQ(b.power, 150); CHECK_EQ(c.power, 150);
         CHECK(only_item() == nullptr);
     }
     // 2) A seat at max Power touching a P item passes it to the nearest
@@ -628,7 +628,7 @@ TEST(personal_power_routing) {
         CHECK_EQ(a.power, 400); CHECK_EQ(f.score.score, score_before);
         for (i32 frame = 0; frame < 120 && only_item(); ++frame) manager.update_seats(seats, 3);
         CHECK(only_item() == nullptr);
-        CHECK_EQ(c.power, 201); CHECK_EQ(b.power, 100); CHECK_EQ(a.power, 400);
+        CHECK_EQ(c.power, 203); CHECK_EQ(b.power, 100); CHECK_EQ(a.power, 400);
     }
     // 3) Auto-collection sends P items to the nearest seat below max Power,
     //    not to the nearest seat. When that receiver fills up mid-flight the
@@ -648,7 +648,7 @@ TEST(personal_power_routing) {
         if (item && item->alive) CHECK_EQ(item->tracking_seat, 2);
         for (i32 frame = 0; frame < 120 && only_item(); ++frame) manager.update_seats(seats, 3);
         CHECK(only_item() == nullptr);
-        CHECK_EQ(c.power, 101); CHECK_EQ(b.power, 400);
+        CHECK_EQ(c.power, 103); CHECK_EQ(b.power, 400);
     }
     // 4) Every operable seat at max Power: the original full-Power scoring
     //    applies once, to the toucher. A ghost below max is not a receiver.
@@ -720,7 +720,12 @@ TEST(resource_all_types_caps) {
     spirit(0,true); CHECK_EQ(a.life_pieces,3); CHECK_EQ(b.life_pieces,3); CHECK_EQ(c.life_pieces,3); CHECK_EQ(f.progress.ending_points,2);
     a.bombs=b.bombs=c.bombs=2; a.bomb_pieces=b.bomb_pieces=c.bomb_pieces=0;
     spirit(2,false); CHECK_EQ(a.bomb_pieces,1); CHECK_EQ(b.bomb_pieces,1); CHECK_EQ(c.bomb_pieces,1); CHECK_EQ(f.progress.ending_points,4);
-    spirit(2,true); CHECK_EQ(a.bomb_pieces,3); CHECK_EQ(b.bomb_pieces,3); CHECK_EQ(c.bomb_pieces,3); CHECK_EQ(f.progress.ending_points,4);
+    spirit(2,true); CHECK_EQ(a.bomb_pieces,2); CHECK_EQ(b.bomb_pieces,3); CHECK_EQ(c.bomb_pieces,2); CHECK_EQ(f.progress.ending_points,4);
+    manager.legacy_pickup_rewards=true;
+    spirit(2,true); CHECK_EQ(a.bomb_pieces,4); CHECK_EQ(b.bomb_pieces,5); CHECK_EQ(c.bomb_pieces,4);
+    b.power=100;
+    pickup(ItemPower); CHECK_EQ(b.power,101);
+    manager.legacy_pickup_rewards=false;
     CHECK(f.battle.seats[0].ghost);
 
     // R-I8: a dead seat can hold -1 lives while its teammate collects pieces.

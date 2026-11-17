@@ -354,8 +354,10 @@ private:
     bool frame_synced_ = false;      // sync 完成且钩子尚未消费（暂停/覆盖层跳过）
     u32 create_player_effect(i32 bank, i32 script, i32 layer, u32 ordering,
                              const Vec3& position);
+    enum class EffectOpacity { Attack, Support };
     u32 create_player_effect(i32 bank, i32 script, i32 layer, u32 ordering,
-                             const Vec3& position, u8 owner);
+                             const Vec3& position, u8 owner,
+                             EffectOpacity opacity = EffectOpacity::Attack);
     bool end_player_effect(u32& handle, bool retire);
     i32 player_script_ = -1, player_tilt_ = 0;
     i32 player_shot_sprite_;

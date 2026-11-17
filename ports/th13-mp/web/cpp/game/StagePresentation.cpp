@@ -779,7 +779,8 @@ u32 StagePresentation::create_player_effect(i32 bank, i32 script, i32 layer,
 }
 
 u32 StagePresentation::create_player_effect(i32 bank, i32 script, i32 layer,
-                                            u32 ordering, const Vec3& position, u8 owner) {
+                                            u32 ordering, const Vec3& position, u8 owner,
+                                            EffectOpacity opacity) {
     // 00403800 复制已跑完负时间初始化的模板，保留模板的当前指令指针。
     // 自机模块在写 layer12 后只跑 time0；不可重放 -1 的 ins304 把它改回16。
     auto* source = animations.script_template(bank, u32(script));
@@ -796,6 +797,7 @@ u32 StagePresentation::create_player_effect(i32 bank, i32 script, i32 layer,
     if (anm_random_observer)
         anm_random_observer(*vm, -10, script, i32(ordering), u32(bank), 0, 0, 0, false);
     vm->shot_effect_owner = owner;
+    vm->player_support_effect = opacity == EffectOpacity::Support;
     vm->instruction_offset = source->instruction_offset;
     vm->visual.render_flags |= 0x200;
     if (layer >= 0) {
@@ -922,7 +924,8 @@ bool StagePresentation::sync_player_effects(StageBattle& battle, i32 seat) {
     // label1 的8帧退场也由原版脚本完成，不画近似圆、不手工改scale。
     if (visible && player.focus) {
         if (!animations.registry.find(effects.focus_handle)) {
-            effects.focus_handle = create_player_effect(banks.effect, 22, 12, 0, position, owner);
+            effects.focus_handle = create_player_effect(banks.effect, 22, 12, 0, position, owner,
+                                                        EffectOpacity::Support);
             if (!effects.focus_handle) return false;
         }
         animations.registry.find(effects.focus_handle)->visual.translation = position;
@@ -1129,7 +1132,7 @@ bool StagePresentation::sync_player_options(StageBattle& battle, bool power_rebu
                 const auto& option = player.options[i];
                 const Vec3 anchor{option.x, option.y, 0};
                 effects.option_handles[i] = create_player_effect(
-                    bank, option_scripts[character], 12, 0, anchor, owner);
+                    bank, option_scripts[character], 12, 0, anchor, owner, EffectOpacity::Support);
                 if (!effects.option_handles[i]) return false;
             }
         }
@@ -1161,7 +1164,7 @@ bool StagePresentation::sync_player_options(StageBattle& battle, bool power_rebu
         if (!animations.registry.find(effects.full_option_handles[i])) {
             effects.full_option_handles[i] = create_player_effect(
                 bank, full_scripts[character], 12, 2,
-                power_rebuild ? Vec3{} : anchor, owner);
+                power_rebuild ? Vec3{} : anchor, owner, EffectOpacity::Support);
             if (!effects.full_option_handles[i]) return false;
             if (power_rebuild)
                 animations.registry.find(effects.full_option_handles[i])->visual.translation = {0, -32, 0};
@@ -1180,7 +1183,7 @@ bool StagePresentation::sync_player_options(StageBattle& battle, bool power_rebu
         if (!animations.registry.find(effects.option_handles[i])) {
             effects.option_handles[i] = create_player_effect(
                 bank, option_scripts[character], 12, 0,
-                power_rebuild ? Vec3{} : anchor, owner);
+                power_rebuild ? Vec3{} : anchor, owner, EffectOpacity::Support);
             if (!effects.option_handles[i]) return false;
             if (power_rebuild)
                 animations.registry.find(effects.option_handles[i])->visual.translation = {0, -32, 0};

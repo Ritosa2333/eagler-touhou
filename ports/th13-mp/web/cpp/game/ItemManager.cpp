@@ -511,6 +511,7 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
         retire_item(item);
         return;
     }
+    const i32 power_multiplier = !legacy_pickup_rewards && seat_count >= 2 ? seat_count : 1;
     // P items are personal: they fall through to the single-player collectors
     // below, which credit the receiving seat (last_player_) only.
     if (seat_count >= 2 && item.target_seat < 0 && !is_power_item(item.type) &&
@@ -530,7 +531,7 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
     }
     switch (item.type) {
     case 1:  // 小P（0x42edc0）
-        if (collect_power_small()) {
+        if (collect_power_small(power_multiplier)) {
             if (option_power_changed) option_power_changed();
             push_level_up(item);
             // 0x42edc0: 跨 be7f0 档 → 0x44ad60(-1, 道具位, 0xffffff40)
@@ -561,7 +562,7 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
                                0xff808080u});
             events_.push_back({ItemEvent::Kind::PowerLevelUp, 0, item.x, item.y});
         }
-        if (collect_power_big(hud.power_step)) {
+        if (collect_power_big(hud.power_step * power_multiplier)) {
             if (option_power_changed) option_power_changed();
             push_level_up(item);
             // 0x42e959: FUN_0043d210 返回跨档 → popup -1（0xffffff40）。
@@ -590,7 +591,7 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
                                0xff40ff40u});
             events_.push_back({ItemEvent::Kind::PowerLevelUp, 0, item.x, item.y});
         }
-        if (collect_power_big(hud.power_step)) {
+        if (collect_power_big(hud.power_step * power_multiplier)) {
             if (option_power_changed) option_power_changed();
             push_level_up(item);
             // 0x42e8bd: FUN_0043d210 返回跨档 → popup -1（0xffffff40）。
@@ -644,7 +645,7 @@ void ItemManager::grant_resources(const ResourceGrant& grant,
         } else if (grant.bomb_pieces) {
             if (hud.bombs >= 9) hud.bomb_pieces = 0;
             else {
-                hud.bomb_pieces += grant.bomb_pieces;
+                hud.bomb_pieces += grant.bomb_pieces + (seat == grant.bonus_bomb_piece_seat);
                 if (hud.bomb_pieces > 7) {
                     hud.bomb_pieces = 0; ++hud.bombs; bomb_gained = true;
                 }
@@ -680,7 +681,7 @@ void ItemManager::push_level_up(const Item& item) {
 // 0x0042edc0 小P：满灵力（be7e8 >= be7ec）→ score += 1000（原值，cap
 // 999999999）+ popup 10000（显示）；否则 be7e8 += 1，超 be7ec 钳 + 满灵力
 // 演出；跨 be7f0 档（(v-1)/step != v/step）→ 返回 true（0x444df0 options 重排）。
-bool ItemManager::collect_power_small() {
+bool ItemManager::collect_power_small(i32 amount) {
     ItemCollector& c = last_player_;
     HudPlayerState& hud = *c.player;
     HudScoreState& score_state = *c.score;
@@ -692,7 +693,7 @@ bool ItemManager::collect_power_small() {
         return false;
     }
     const i32 before = hud.power;
-    hud.power = before + 1;
+    hud.power = before + amount;
     if (hud.power > hud.max_power) {
         hud.power = hud.max_power;
         events_.push_back({ItemEvent::Kind::FullPower, 0, c.x, c.y});
@@ -1084,7 +1085,10 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player,
         break;
     case 2:
         if (seat_count >= 2) {
-            ResourceGrant grant; grant.bomb_pieces = (s.flags & 1u) == 0 ? 1 : 2;
+            ResourceGrant grant;
+            const bool doubled = (s.flags & 1u) != 0;
+            grant.bomb_pieces = doubled && legacy_pickup_rewards ? 2 : 1;
+            if (doubled && !legacy_pickup_rewards) grant.bonus_bomb_piece_seat = player.seat;
             grant_resources(grant, seats, seat_count);
         } else collect_bomb_piece((s.flags & 1u) == 0 ? 1 : 2);
         break;

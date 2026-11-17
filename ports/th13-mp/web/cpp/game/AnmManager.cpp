@@ -113,6 +113,7 @@ u32 AnmManager::create_preserve_ip(i32 id,i32 script,i32 layer,u32 ordering,cons
 AnmVm* AnmManager::spawn_child(AnmVm& source,i32 script,u32 ordering){
     if(!source.resource){error="Child animation source has no resource";return nullptr;}auto* vm=instantiate(*source.resource,source.local_script_index(script));if(!vm)return nullptr;
     vm->shot_effect_owner=source.shot_effect_owner;
+    vm->player_support_effect=source.player_support_effect;
     // 0x46f990：位置清零、layer 继承父、父指针直挂本源、0x200 活动位。
     vm->visual.translation={};vm->visual.layer=source.visual.layer;vm->creation_parent=&source;vm->rotation_parent=&source;vm->visual.render_flags|=0x200;
     if(!initial_tick(*vm))return nullptr;if(anm_random_observer)anm_random_observer(*vm,-1,0,0,0,0,0,0,false);vm->ordering=ordering;if(!registry.submit(*vm,ordering)||!registry.attach(*vm,source)){error=registry.error;registry.destroy_tree(*vm);return nullptr;}if(anm_spawn_observer)anm_spawn_observer(source,vm->source_script,registry.handle(*vm));return vm;
@@ -120,6 +121,7 @@ AnmVm* AnmManager::spawn_child(AnmVm& source,i32 script,u32 ordering){
 AnmVm* AnmManager::spawn_detached(AnmVm& source,i32 script){
     if(!source.resource){error="Detached animation source has no resource";return nullptr;}auto* vm=instantiate(*source.resource,source.local_script_index(script));if(!vm)return nullptr;
     vm->shot_effect_owner=source.shot_effect_owner;
+    vm->player_support_effect=source.player_support_effect;
     // 0x46fab0：layer/平移/旋转继承父，锚点=父脚本位置，主链尾入链。
     vm->visual.render_flags|=0x200;vm->visual.layer=source.visual.layer;
     vm->visual.translation=source.visual.translation;vm->variables.rotation=source.variables.rotation;vm->visual.child_anchor=source.variables.position;

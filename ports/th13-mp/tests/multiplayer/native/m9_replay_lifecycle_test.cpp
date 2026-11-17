@@ -169,13 +169,19 @@ TEST(replay_roundtrip_seek) {
     ReplayArchive player;
     CHECK(player.Load(wire.data(), wire.size()));
     CHECK(!player.UsesLegacyStagePositions());
+    CHECK(!player.UsesLegacyPickupRewards());
     CHECK(!player.UsesLegacyBossMitigation());
     auto legacy = wire;
     legacy[4] = ReplayArchive::LegacyVersion;
     ReplayArchive old_player;
     CHECK(old_player.Load(legacy.data(), legacy.size()));
     CHECK(old_player.UsesLegacyStagePositions());
+    CHECK(old_player.UsesLegacyPickupRewards());
     CHECK(old_player.UsesLegacyBossMitigation());
+    legacy[4] = 3;
+    CHECK(old_player.Load(legacy.data(), legacy.size()));
+    CHECK(!old_player.UsesLegacyBossMitigation());
+    CHECK(old_player.UsesLegacyPickupRewards());
     CHECK_EQ(old_player.FrameCount(), player.FrameCount());
     auto quarters = wire;
     quarters[4] = 2;  // v2：换面坐标新规则 + 四分之一减伤方案。
