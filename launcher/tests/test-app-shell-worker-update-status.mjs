@@ -37,7 +37,7 @@ function harness({ stores = new Map(), scope = "https://example.test/", build = 
   };
   vm.runInNewContext(source.replaceAll("__APP_SHELL_BUILD_ID__", build)
     .replace("__APP_SHELL_DEFERRED_PATHS__", JSON.stringify(deferredPaths)), {
-    self, caches, URL, Request, Response, Date, Promise, console,
+    self, caches, URL, Request, Response, Headers, Date, Promise, console,
     crypto: webcrypto, AbortController, setTimeout, clearTimeout, Uint8Array,
     fetch: async request => {
       requests.push(request.url);
@@ -70,6 +70,10 @@ assert.equal((await first.meta()).updated, false);
 assert.equal((await first.meta()).appliedAt, null);
 assert.deepEqual(first.forced(), { skipped: 0, claimed: 0 });
 assert.equal(await (await first.request("./?game=th06")).text(), "home");
+for (const [name,value] of [['Cross-Origin-Opener-Policy','same-origin'],
+  ['Cross-Origin-Embedder-Policy','require-corp'],['Cross-Origin-Resource-Policy','same-origin']]) {
+  assert.equal((await first.request('./?game=th14')).headers.get(name),value,'repair cached document headers');
+}
 assert.equal(await first.request("unpublished"), null);
 assert.deepEqual(await first.message({ type: "CHECK_APP_SHELL_ACTIVATION" }), { ok: true, soleClient: true });
 assert.deepEqual(await first.message({ type: "ACTIVATE_APP_SHELL" }), { ok: true, activating: true });

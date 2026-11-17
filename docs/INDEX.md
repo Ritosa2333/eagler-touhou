@@ -1,6 +1,6 @@
 # 文档总表
 
-共 707 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 712 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -37,6 +37,7 @@
 | 作品入口 | [ports/README.md](../ports/README.md) | 选择游戏 |
 | 作品入口 | [ports/th01/README.md](../ports/th01/README.md) | TH01 主项目适配 |
 | 作品入口 | [ports/th02/README.md](../ports/th02/README.md) | TH02 主项目适配 |
+| 作品入口 | [ports/th03/README.md](../ports/th03/README.md) | TH03 原生网页版本 |
 | 作品入口 | [ports/th04/README.md](../ports/th04/README.md) | TH04 主项目接入 |
 | 作品入口 | [ports/th05-mp/README.md](../ports/th05-mp/README.md) | 東方怪綺談 · 原生多人版 |
 | 作品入口 | [ports/th05/README.md](../ports/th05/README.md) | 東方怪綺談 · uth05win for Eagler |
@@ -64,6 +65,7 @@
 | 作品入口 | [ports/th20/README.md](../ports/th20/README.md) | TH20 · 东方锦上京 |
 | 作品适配表 | [ports/th01/ADAPTATION.md](../ports/th01/ADAPTATION.md) | th01 适配检查 |
 | 作品适配表 | [ports/th02/ADAPTATION.md](../ports/th02/ADAPTATION.md) | th02 适配检查 |
+| 作品适配表 | [ports/th03/ADAPTATION.md](../ports/th03/ADAPTATION.md) | th03 适配检查 |
 | 作品适配表 | [ports/th04/ADAPTATION.md](../ports/th04/ADAPTATION.md) | th04 适配检查 |
 | 作品适配表 | [ports/th05-mp/ADAPTATION.md](../ports/th05-mp/ADAPTATION.md) | th05 MP 适配检查 |
 | 作品适配表 | [ports/th05/ADAPTATION.md](../ports/th05/ADAPTATION.md) | th05 适配检查 |
@@ -95,6 +97,8 @@
 | 作品源码文档 | [ports/th02/README-UPSTREAM.md](../ports/th02/README-UPSTREAM.md) | TH02《东方封魔录》· 单人游戏与两／三人合作 |
 | 作品源码文档 | [ports/th02/TH02-PRACTICE-WEB.md](../ports/th02/TH02-PRACTICE-WEB.md) | TH02 网页练习工具 |
 | 作品源码文档 | [ports/th02/联机同时操作卡顿优化记录.md](../ports/th02/联机同时操作卡顿优化记录.md) | TH02 联机同时操作卡顿优化记录 |
+| 作品源码文档 | [ports/th03/README-UPSTREAM.md](../ports/th03/README-UPSTREAM.md) | TH03《东方梦时空》· DOSBox-X 性能版 |
+| 作品源码文档 | [ports/th03/ROLLBACK.md](../ports/th03/ROLLBACK.md) | TH03 原生联机回滚 |
 | 作品源码文档 | [ports/th04/DOSBox-PC98核心优化与五部作品迁移指南.md](../ports/th04/DOSBox-PC98核心优化与五部作品迁移指南.md) | DOSBox-PC98 核心优化与五部作品迁移指南 |
 | 作品源码文档 | [ports/th04/LAN-试玩说明.md](../ports/th04/LAN-试玩说明.md) | 局域网双人／三人试玩：输入同步版 |
 | 作品源码文档 | [ports/th04/README-RELAY.md](../ports/th04/README-RELAY.md) | TH04 Relay 临时部署说明 |
@@ -319,6 +323,7 @@
 | 迁移记录 | [docs/migration/pc98-subtree-20261026.md](migration/pc98-subtree-20261026.md) | TH01–TH04 子树维护 |
 | 迁移记录 | [docs/migration/th01-eagler-20261025.md](migration/th01-eagler-20261025.md) | TH01 来源子树与主项目适配 |
 | 迁移记录 | [docs/migration/th02-eagler-20261025.md](migration/th02-eagler-20261025.md) | TH02 来源子树与主项目适配 |
+| 迁移记录 | [docs/migration/th03-eagler-20261025.md](migration/th03-eagler-20261025.md) | TH03 来源子树与主项目适配 |
 | 迁移记录 | [docs/migration/th04-eagler-20261025.md](migration/th04-eagler-20261025.md) | TH04 来源子树与主项目适配 |
 | 迁移记录 | [docs/migration/th12-subtree-20261024.md](migration/th12-subtree-20261024.md) | th12 子树继承 ｜ 上游同源历史 |
 | 迁移记录 | [docs/migration/th13-subtree-20261028.md](migration/th13-subtree-20261028.md) | th13 独立源码与子树维护 |

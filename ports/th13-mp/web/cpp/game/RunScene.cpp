@@ -692,6 +692,8 @@ void RunScene::sync_mp_hud_view() {
     }
     mp_hud_seats_.count = battle.seat_count;
     mp_hud_seats_.local_seat = battle.mp_local_seat;
+    mp_hud_seats_.challenge = battle.challenge;
+    hud.challenge = battle.challenge;
     for (i32 seat = 0; seat < battle.seat_count && seat < 3; ++seat) {
         mp_hud_seats_.seats[size_t(seat)] = &battle.seat_huds[size_t(seat)];
         if (battle.seats[size_t(seat)].ghost) mp_hud_seats_.ghost |= u8(1u << seat);

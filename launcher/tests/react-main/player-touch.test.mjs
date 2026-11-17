@@ -92,10 +92,14 @@ test('direct contacts preserve independent IDs and normalized iframe coordinates
   assert.deepEqual(f.sent.map(x => [x.type, x.id]), [['down', -1000000], ['move', -1000000], ['down', -1000001], ['up', -1000000], ['up', -1000001]]);
   assert.equal(f.sent[0].x, .5); assert.equal(f.sent[1].x, 1); assert.equal(f.sent[1].y, 1); assert.equal(f.measures(), 1);
 });
-test('direct lost capture releases once; mouse and hidden surface create no movement', () => {
+test('direct lost capture releases once and hidden surface creates no movement', () => {
   const f = fixture(); f.pointer('directSurface', 'pointerdown'); f.pointer('directSurface', 'lostpointercapture'); f.pointer('directSurface', 'pointerup');
   assert.equal(f.sent.filter(x => x.type === 'up').length, 1); f.sent.length = 0;
-  f.pointer('directSurface', 'pointerdown', {pointerType: 'mouse'}); f.elements.directSurface.hidden = true; f.pointer('directSurface', 'pointerdown'); assert.deepEqual(f.sent, []);
+  f.elements.directSurface.hidden = true; f.pointer('directSurface', 'pointerdown'); assert.deepEqual(f.sent, []);
+});
+test.each(['pen', 'mouse'])('drawing tablet %s pointer moves through the direct stream', pointerType => {
+  const f = fixture(); f.pointer('directSurface', 'pointerdown', {pointerType}); f.pointer('directSurface', 'pointermove', {pointerType, clientX: 300}); f.pointer('directSurface', 'pointerup', {pointerType});
+  assert.deepEqual(f.sent.filter(x=>x.command==='direct-touch').map(x=>x.type), ['down','move','up']);
 });
 test('iOS owns native touch sequence and HUD does not refocus an active movement contact', () => {
   const f = fixture({ios: true}); const contact = {identifier: 7, clientX: 210, clientY: 320};

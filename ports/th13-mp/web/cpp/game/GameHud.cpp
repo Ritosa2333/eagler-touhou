@@ -175,6 +175,18 @@ bool GameHud::bombs(i32 stock, i32 pieces) {
 bool GameHud::life_seat(i32 seat, i32 lives, i32 pieces, i32 threshold_index) {
     if (seat < 0 || seat >= mp_seat_count) return life(lives, pieces);
     const auto& icons = seat == 0 ? life_icons : mp_life_icons[size_t(seat) - 1];
+    if (challenge) {
+        if (!icons[0]) return true;
+        for (u32 handle : icons) {
+            auto* vm = animations.registry.find(handle);
+            if (!vm) {
+                error = "HUD animation unavailable";
+                return false;
+            }
+            vm->pending_interrupt = 3;
+        }
+        return true;
+    }
     return interrupt_life_set(*this, animations, icons, lives,
                               pieces, life_piece_threshold(threshold_index));
 }

@@ -36,6 +36,9 @@
   width:var(--pc98-touch-width);height:var(--pc98-touch-height);
 }
 #player.room-workspace.pc98-room-touch-active.touch-layout-custom .touch-hud{display:block}
-#player.room-workspace.pc98-room-touch-active .pc98-room-fullscreen{position:fixed;z-index:40;right:auto;bottom:auto;left:calc(var(--pc98-touch-left) + var(--pc98-touch-width) - 56px);top:calc(var(--pc98-touch-top) + var(--pc98-touch-height) - 56px)}
+#player.room-workspace.pc98-room-touch-active #gameViewport{z-index:35;pointer-events:none}
+#player.room-workspace.pc98-room-touch-active #gameFrame{pointer-events:none!important}
+#player.room-workspace.pc98-room-touch-active .room-workspace-viewport-tools{pointer-events:auto}
+#player.room-workspace.pc98-room-touch-active .room-workspace-viewport-tools{position:fixed;z-index:40;right:auto;bottom:auto;left:calc(var(--pc98-touch-left) + var(--pc98-touch-width) - 108px);top:max(calc(var(--pc98-touch-top) + 8px),8px)}
 
 }

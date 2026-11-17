@@ -28,7 +28,7 @@ export function bindPlayerDirectTouch({surface, frame, ios, zoom, context, allow
   }
   const zoomInput = (touch: Touch): GameZoomPointerInput => ({pointerId: touch.identifier, pointerType: 'touch', clientX: touch.clientX, clientY: touch.clientY, currentTarget: surface});
   on('pointerdown', event => {
-    if (ios || event.pointerType === 'mouse' || surface.hidden || !allowed() || points.has(event.pointerId)) return;
+    if ((ios && event.pointerType === 'touch') || surface.hidden || !allowed() || points.has(event.pointerId)) return;
     const p = point(event, points.size === 0 || zoom.isActive()); if (!p) return;
     event.preventDefault(); const contact = {id: nextId--, ...p}; points.set(event.pointerId, contact);
     try {surface.setPointerCapture(event.pointerId);} catch {}
@@ -36,13 +36,13 @@ export function bindPlayerDirectTouch({surface, frame, ios, zoom, context, allow
     postDirectTouch(context(), 'down', contact);
   });
   on('pointermove', event => {
-    if (ios) return; const contact = points.get(event.pointerId); if (!contact) return;
+    const contact = points.get(event.pointerId); if (!contact) return;
     const p = point(event, zoom.isActive()); if (!p) return;
     event.preventDefault(); Object.assign(contact, p); if (zoom.isActive()) zoom.movePointer(event);
     postDirectTouch(context(), 'move', contact);
   });
   function release(event: PointerEvent) {
-    if (ios) return; const contact = points.get(event.pointerId); if (!contact) return;
+    const contact = points.get(event.pointerId); if (!contact) return;
     event.preventDefault(); const p = Number.isFinite(event.clientX) ? point(event, zoom.isActive()) : null;
     if (p) Object.assign(contact, p); points.delete(event.pointerId);
     if (zoom.isActive()) zoom.endPointer(event);

@@ -664,6 +664,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 写入本席输入沿。默认 0 = 单席/本地多席零变化）。
     i32 mp_local_seat = 0;
     bool mp_history_playback = false;
+    bool mp_challenge = false;
     bool mp_legacy_stage_positions = false;
     bool mp_legacy_boss_mitigation = false;
     // M2：席位输入沿（浏览器侧逐席注入面；seat 0 由 step 参数携带——
@@ -687,6 +688,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
         mp_characters = characters;
         mp_local_seat = local_seat;
         mp_history_playback = false;
+        mp_challenge = false;
         mp_legacy_stage_positions = false;
         mp_legacy_boss_mitigation = false;
         return true;

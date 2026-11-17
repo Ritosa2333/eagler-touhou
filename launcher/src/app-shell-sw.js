@@ -195,10 +195,24 @@ self.addEventListener("activate", event => {
   event.waitUntil(Promise.resolve());
 });
 
+function deliverShell(response, entry) {
+  // Cache reuse verifies bytes; old response headers can still predate the
+  // isolation policy. Repair document headers when serving either cache age.
+  const path = new URL(entry.cacheUrl).pathname;
+  if (!path.endsWith('/') && !path.endsWith('.html') &&
+      !response.headers.get('Content-Type')?.startsWith('text/html')) return response;
+  const headers = new Headers(response.headers);
+  headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+  headers.set('Cross-Origin-Resource-Policy', 'same-origin');
+  headers.delete('Content-Encoding');
+  headers.delete('Content-Length');
+  return new Response(response.body, {status: response.status, statusText: response.statusText, headers});
+}
 async function shellCacheFirst(entry) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(entry.cacheUrl);
-  if (cached) return cached;
+  if (cached) return deliverShell(cached, entry);
   const response = await reusableResponse(entry, await previousCaches()) || await fetchVerified(entry);
   await cache.put(entry.cacheUrl, response.clone());
   if (DEFERRED_PATHS.has(entry.cacheUrl)) {
@@ -207,7 +221,7 @@ async function shellCacheFirst(entry) {
       metadata.runtimeTrusted[entry.cacheUrl] = entry.revision;
     });
   }
-  return response;
+  return deliverShell(response, entry);
 }
 
 self.addEventListener("fetch", event => {

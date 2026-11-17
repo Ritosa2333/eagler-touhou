@@ -1,0 +1,4 @@
+* text=auto
+/web/** -text whitespace=trailing-space,space-before-tab,cr-at-eol
+/build-eagler/** -text whitespace=trailing-space,space-before-tab,cr-at-eol,-blank-at-eof
+/content/** -text

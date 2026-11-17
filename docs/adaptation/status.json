@@ -535,6 +535,218 @@
       ]
     },
     {
+      "game": "th03",
+      "variant": "multiplayer",
+      "directory": "ports/th03",
+      "sourceDigest": "a77e882aca40b34beb74754bbbe2a4f91720587f50e5f928ef6d3dae29eeddd0",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 0,
+      "features": {
+        "thcrap": false,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th03"
+          ]
+        },
+        {
+          "id": "native-runtime-tests",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/managed-shell.mjs",
+            "web/managed-input.mjs",
+            "tests/native-lockstep.test.mjs",
+            "tests/native-rollback.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "game": "th03",
+      "variant": "normal",
+      "directory": "ports/th03",
+      "sourceDigest": "efcb7fb8995d7afe68b25214ec0a356f5e6c4a7fc676c42abad751934e7b0951",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 0,
+      "features": {
+        "thcrap": false,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th03"
+          ]
+        },
+        {
+          "id": "native-runtime-tests",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/managed-shell.mjs",
+            "web/managed-input.mjs",
+            "tests/native-lockstep.test.mjs",
+            "tests/native-rollback.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
       "game": "th04",
       "variant": "multiplayer",
       "directory": "ports/th04",

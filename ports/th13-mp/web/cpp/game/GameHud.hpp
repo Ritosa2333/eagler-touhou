@@ -57,6 +57,8 @@ public:
     // 整体下移（只调 translation，不新建不退役）。
     std::array<u32, 3> mp_shared_labels{};
     static constexpr float kMpRowPitch = 80.f;
+    // R-C2：挑战模式隐藏残机图标，生命栏改显示累计 Miss。
+    bool challenge = false;
     bool enable_multiplayer(i32 seat_count);
     // 席位图标刷新（值变化事件驱动，不逐帧重发——重发同标签会复位图标
     // 脚本的计时/颜色插值）。联机每席从自己的 HudPlayerState 读取阈值。
