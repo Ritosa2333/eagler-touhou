@@ -1,0 +1,160 @@
+{
+  "game": "th02",
+  "version": 2,
+  "codec": "opus",
+  "bitrate": 64000,
+  "headers": {
+    "438131835": "boss1-m86",
+    "3052387819": "boss2-m86",
+    "4040700432": "boss3-m86",
+    "1672847812": "boss4-m86",
+    "2963214533": "boss5-m86",
+    "981811997": "end1-m86",
+    "2673045208": "ending-m86",
+    "1412303209": "mima-m86",
+    "2351825834": "op-m86",
+    "3861907067": "stage0-m86",
+    "2326554120": "stage1-m86",
+    "1966575897": "stage2-m86",
+    "3042498479": "stage3-m86",
+    "939180777": "stage4-m86",
+    "148193232": "stage5-m86"
+  },
+  "tracks": {
+    "boss1-m86": {
+      "url": "boss1-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.019,
+      "loopEnd": 63.213,
+      "sha256": "c3baf374aef5763106da5eb9afa4ed2a8d52d8c955dcfc24de8942dea4b57d89",
+      "audioSha256": "083893da9d7da8a02b3ec2da34618800afa65b1a1a411158cf52fd56ecddba83",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 514045
+    },
+    "boss2-m86": {
+      "url": "boss2-m86-opus64-single-loop-v2.opus",
+      "loopStart": 47.871,
+      "loopEnd": 95.724,
+      "sha256": "97c1bd6d79afaecb80346f8059c9ccc1421bac412ef360c292c96e972fe79a1d",
+      "audioSha256": "b7fd7940aa916dc908fe2df3fa1a5a384f825e2368b838079b29024dd1252db0",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 778133
+    },
+    "boss3-m86": {
+      "url": "boss3-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 56.843,
+      "sha256": "b3aaccd06ad5430f89d4d9b3488cce4b1c810b9d9d8010c58d210396298a2670",
+      "audioSha256": "996d44689d289a457736ab2e21da1bac7a24451695fa3f61cc54220e9d422ecd",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 462321
+    },
+    "boss4-m86": {
+      "url": "boss4-m86-opus64-single-loop-v2.opus",
+      "loopStart": 18.055,
+      "loopEnd": 93.822,
+      "sha256": "d533c3e139b3a019194557384dd304fd9fd7248e9e4e9d2f08d3d93286dd742b",
+      "audioSha256": "b15258825e2051650b7b1b1ba9c683fc5a2b140cd7ee1e112b30d2a273ea4093",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 762959
+    },
+    "boss5-m86": {
+      "url": "boss5-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.035,
+      "loopEnd": 144.333,
+      "sha256": "47a8a83a4fd0bbb1d1f9a63df0226f2a97ee885599ee2e53fc56f7ae995444c6",
+      "audioSha256": "a103368af45fbf25a71bccf7bc2a2cd3cc4c4373fc573303b5e3095f1539cdf9",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1173300
+    },
+    "end1-m86": {
+      "url": "end1-m86-opus64-single-loop-v2.opus",
+      "loopStart": 40.837,
+      "loopEnd": 73.182,
+      "sha256": "35a3fba0d8eefa525fb78c1906fd719dd4c4b6d99db0621ae64d5e89c14a78cd",
+      "audioSha256": "6ae631a83ac90860e765fcc23e1c83ec82254b63aa556a1925f1b06abca0c21b",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 595229
+    },
+    "ending-m86": {
+      "url": "ending-m86-opus64-single-loop-v2.opus",
+      "loopStart": 62.438,
+      "loopEnd": 161.688,
+      "sha256": "b1d263cff1489c49ef6a668bbb87a2c7f6213b27837f47c1e52c99b48403cf27",
+      "audioSha256": "0f1513bf17f1e2cee379f71e870cf91dd45ca2df6f6cf800ec09c73d1de4a4db",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1314359
+    },
+    "mima-m86": {
+      "url": "mima-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 113.65,
+      "sha256": "4f15eae02b63d6dc254d498f9f5872912943e30dca08621443d689162e0c52d4",
+      "audioSha256": "42d7c9781d3e274781d9381d98a9d52b30ae1f91879f902465d9f4a2443e2b8b",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 924028
+    },
+    "op-m86": {
+      "url": "op-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.424,
+      "loopEnd": 82.505,
+      "sha256": "65308fa8ff99b7f6c42e5f87eeb1d5c8a58c1e9f98e93484dc84b7db009a5e99",
+      "audioSha256": "fa3c153c4aca29a24f4a70c090e7fa86cc46ba2d2cb112f5216679acf628e95d",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 670709
+    },
+    "stage0-m86": {
+      "url": "stage0-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.036,
+      "loopEnd": 105.508,
+      "sha256": "9e21a9a19fa3ff697945a8e10edd18a6081f1669d3efb25b3bf932c07f4d1b12",
+      "audioSha256": "4aec2b0ce3c6cad9cb53ac13edc974369fe008676a662561efea3be167fb069b",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 851018
+    },
+    "stage1-m86": {
+      "url": "stage1-m86-opus64-single-loop-v2.opus",
+      "loopStart": 1.937,
+      "loopEnd": 116.382,
+      "sha256": "c495961a0a1dd6ac351f67252c427a1e32eadddf32f723af74484818d7ae66ee",
+      "audioSha256": "3a08aa3975c56c29a7e0f1086a62dc5875fcefb4e3e68dc85c47c36df046054e",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 945991
+    },
+    "stage2-m86": {
+      "url": "stage2-m86-opus64-single-loop-v2.opus",
+      "loopStart": 1.237,
+      "loopEnd": 127.109,
+      "sha256": "3afeec0b5540b0ac4df255638922c77889fa7058d27e49b2dc2d1e6136a430da",
+      "audioSha256": "fefb8a6f2a53c62be3e4e3217e1265144eca1ca9624be30450734ab739af8b84",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 1033353
+    },
+    "stage3-m86": {
+      "url": "stage3-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.018,
+      "loopEnd": 83.428,
+      "sha256": "46664afd7b473092841dd962d17df4883d5346ce0c946930824fd049fab976e5",
+      "audioSha256": "e2b20ae8d106b840898ad342bcfbc1456e2b6fd37737479e8f89860be9c736d9",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 678393
+    },
+    "stage4-m86": {
+      "url": "stage4-m86-opus64-single-loop-v2.opus",
+      "loopStart": 0.031,
+      "loopEnd": 96.644,
+      "sha256": "41b189dc062ab3376468f325fe2207a979c837b401c5a9a3f9251bf4e2067708",
+      "audioSha256": "95a25236013d96c56ea41b8dcbe0ba5093fbb6f7862537a4f3333c1c3fbe52c5",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 785755
+    },
+    "stage5-m86": {
+      "url": "stage5-m86-opus64-single-loop-v2.opus",
+      "loopStart": 6.111,
+      "loopEnd": 91.404,
+      "sha256": "8e1def06c11b66dd4ada1faf2b08ae0b81cc360c4a6e60b86f546add7a0c01ba",
+      "audioSha256": "c95e027532c19e3f9b6545ba44fabd3b88273e4d0dd3a6c29d878f95b4eb0418",
+      "preset": "opus64-single-loop-v2",
+      "bytes": 743051
+    }
+  }
+}

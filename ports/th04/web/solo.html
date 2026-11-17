@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#111210"><title>东方幻想乡 · 单机游戏</title><link rel="stylesheet" href="site.css?v=20261007"><link rel="stylesheet" href="control-settings.css"><style>.solo-screen{position:relative;background:#000}.solo-screen canvas{image-rendering:pixelated}#control-settings label{display:flex;align-items:center;gap:6px}#control-settings input{width:auto}.mode-grid{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}</style></head>
+<body class="shell"><header class="masthead"><a class="brand" href="index.html">TOUHOU / 04</a><small>東方幻想郷 · LOTUS LAND STORY</small></header>
+<nav class="mode-nav" aria-label="游戏模式"><a data-mode="solo" href="solo.html" aria-current="page">单机游戏</a><a data-mode="local" href="local.html">本地双人 · 测试</a><a data-mode="lan" href="lan.html?network=lan">局域网联机</a><a data-mode="public" href="lan.html?network=public">公网联机</a></nav>
+<main><header class="intro"><span class="eyebrow">ORIGINAL / SINGLE PLAYER</span><h1>单机游戏</h1><p>选择汉化或日文版本，从开头进入幻想乡。在原版菜单中选择难度、角色与机体，保留原版单人玩法。</p></header>
+<section class="panel" id="solo-replay"><h2>单人 Replay</h2><label><input id="record-enabled" type="checkbox" checked> 录制本次首局</label><p class="muted">结束或通关时询问保存，只保留首次续关之前的操作。播放自动快进开头和录下的暂停；Esc / 空格暂停，Ctrl 快进。重新启动游戏可录制新局。</p><div class="row"><button id="record-finish" disabled>结束录制</button><button id="record-save" disabled>保存 Replay</button><button id="record-discard" disabled>丢弃 Replay</button><label>导入 Replay <input id="replay-file" type="file" accept=".th04r,application/octet-stream"></label><button id="replay-play" disabled>播放 Replay</button><button id="replay-pause" disabled>暂停播放</button><button id="replay-stop" disabled>停止播放</button></div><p id="replay-status" role="status">等待开始首局；结束或通关时询问保存 Replay。</p></section>
+<section class="panel local-music-settings" aria-label="本机音乐">
+<label class="bgm-version">本机音乐 <select data-bgm-version-control aria-label="本机音乐版本"><option value="old">游戏原版</option><option value="new">幺乐团专辑版</option></select><small data-bgm-restart-note></small></label>
+<p class="muted">仅影响本机播放的音乐，不改变其他玩家的选择；自动保存，游戏中切换会从头播放当前曲目。</p>
+</section>
+
+<div class="row"><label>游戏语言 <select id="language"><option value="cn">汉化版</option><option value="jp">日文版</option></select></label>
+<label>声音 <select id="audio-mode" aria-describedby="audio-help"><option value="independent">独立音乐（手机建议）</option><option value="buffered">原声·抗卡顿缓冲</option><option value="original">原声·低延迟</option></select></label><small id="audio-help">独立音乐保持正常速度，不随游戏掉帧变调；音效仍由游戏播放。原声缓冲适合短暂卡顿，约增加 0.2 秒声音延迟。</small><button class="primary" id="start">开始单机游戏</button><button id="restart" disabled>重新启动</button></div>
+<div id="control-settings" class="row" aria-label="操作与判定点显示设置"></div>
+<p id="controls-summary"></p><p>触屏：拖动移动，第二指低速；菜单使用方向键与「确认」，Bomb 可返回。右上角「按键与触控」可调整布局、双击 Bomb 和不限速移动。</p>
+<div id="status" role="status">等待开始。保留原版开头、标题菜单和选人流程。</div>
+<div id="game"></div>
+<details><summary>模式说明</summary><p>只有一个玩家，不启用合作模式的救援、资源与分数倍率、敌人强度调整或联机功能。触屏移动和两种判定点显示可按需使用。</p><p>本次游戏的原版设置与记录保留在当前运行中；刷新或重新启动会载入初始磁盘。</p></details>
+</main><script type="module" src="solo.js"></script><script type="module" src="bgm-version.js"></script></body></html>

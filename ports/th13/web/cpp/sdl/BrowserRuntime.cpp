@@ -425,6 +425,10 @@ EMSCRIPTEN_KEEPALIVE int th13_initialize() {
     return work.finish(result, result != 0);
 }
 
+EMSCRIPTEN_KEEPALIVE void th13_always_hitbox(unsigned enabled) {
+    if (th13::sdl::app) th13::sdl::app->renderer.always_hitbox = enabled != 0;
+}
+
 EMSCRIPTEN_KEEPALIVE void th13_music_enabled(unsigned enabled) {
     if (th13::sdl::app) th13::sdl::app->audio_device.music_enabled = enabled != 0;
 }

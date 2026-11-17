@@ -30,7 +30,7 @@ function validateCache(cache, label) {
 
 function validateSourceBuild(value, label, partial = false) {
   if (value == null) return;
-  if (!plainObject(value) || ((!partial || value.kind != null) && !["cmake", "node"].includes(value.kind))) {
+  if (!plainObject(value) || ((!partial || value.kind != null) && !["cmake", "node", "managed-import"].includes(value.kind))) {
     throw new Error(`${label} invalid sourceBuild`);
   }
   if (value.build != null && (!Array.isArray(value.build) || !value.build.length ||
@@ -38,7 +38,7 @@ function validateSourceBuild(value, label, partial = false) {
       /[\\:]/.test(value.build[0]) || value.build[0].split("/").some(part => !part || part === "." || part === ".."))) {
     throw new Error(`${label} invalid sourceBuild command`);
   }
-  if (value.kind === "node" && !value.build) throw new Error(`${label} missing sourceBuild command`);
+  if (["node", "managed-import"].includes(value.kind) && !value.build) throw new Error(`${label} missing sourceBuild command`);
   if (value.commonInputs != null && (!Array.isArray(value.commonInputs) || value.commonInputs.some(input =>
       typeof input !== "string" || /[\\:\0]/.test(input) || input.split("/").some(part => !part || part === "." || part === "..")))) {
     throw new Error(`${label} invalid sourceBuild commonInputs`);

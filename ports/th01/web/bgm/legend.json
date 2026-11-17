@@ -1,0 +1,11 @@
+{
+  "url": "legend.opus",
+  "loopStart": 0.013832199546485261,
+  "loopEnd": 101.70113378684808,
+  "sha256": "bca3493c1f3dbccaf394296bbc722a4d5c3dec2408d1a3b24cd86166845dd475",
+  "audioSha256": "545fc3496a9e7013b605feecf32e45f5ba3cd3b414cf75f64ca69343e14e4390",
+  "codec": "opus",
+  "bytes": 826873,
+  "preset": "mdrv2-fmgen-opus64-48k-single-loop-headroom-v2",
+  "fadeSeconds": 1.9782692307692307
+}

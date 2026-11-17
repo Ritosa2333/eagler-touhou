@@ -556,6 +556,20 @@ test('runtime: managed code and DATA stay separately leased and bound to exact g
   assert.equal(f.released.length, 1); await assert.rejects(provide({game: plan.game, generation: plan.generation.id, epoch}), {name: 'AbortError'});
 });
 
+test('runtime: TH14 can request chunk-readable DATA while legacy shells still receive a buffer', async () => {
+  const original = new Blob([new Uint8Array([1, 2, 3])]);
+  const f = fixture({readData: (generation, options) => owners.readManagedRuntimeData(generation, {
+    ...options, readObject: async () => ({blob: original}),
+  })});
+  const plan = managedPlan('th14');
+  await f.prepare(plan);
+  const provide = f.host.__eaglerPrepareManagedRuntimeDataV1;
+  const request = {game: plan.game, generation: plan.generation.id, epoch: f.service.getSnapshot().epoch};
+  const chunked = await provide({...request, preferBlob: true});
+  assert.equal(chunked.blob, original);
+  assert.deepEqual([...new Uint8Array((await provide(request)).buffer)], [1, 2, 3]);
+});
+
 test('runtime: stale epoch, foreign source and foreign origin cannot settle current commands', async () => {
   const f = fixture(); await f.prepare(directPlan()); const oldEpoch = f.service.getSnapshot().epoch;
   await f.service.close({discardUnsaved: true}); await f.prepare(directPlan()); assert.notEqual(f.service.getSnapshot().epoch, oldEpoch);

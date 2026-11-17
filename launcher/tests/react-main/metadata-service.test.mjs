@@ -173,16 +173,19 @@ test('metadata: host publication, test-only product and multiplayer-runtime filt
   hostTest.dispose();
 });
 
-test('published PC-98 multiplayer runtimes are available without enabling unrelated test products', async () => {
-  const games=Object.fromEntries(['th01','th02','th03','th04'].map(game=>[game,hostGame(game,{multiplayerRuntime:`runtime/${game}/mp.html`})]));
-  games.th04=hostGame('th04');
-  const service=fixture(network(host({...games,th20:hostGame('th20')})));
-  await service.initialize();
-  for(const game of ['th01','th02','th03']) assert.ok(service.getSnapshot().products.includes(`${game}mp`));
-  assert.equal(service.getSnapshot().products.includes('th04mp'),false);
-  assert.equal(service.getSnapshot().products.includes('th01'),false);
-  assert.equal(service.getSnapshot().products.includes('th20'),false);
-  service.dispose();
+test('published experimental games and multiplayer runtimes require the visibility preference', async () => {
+  const experimental = ['th01', 'th02', 'th03', 'th04', 'th13', 'th14', 'th19', 'th20', 'hsob'];
+  const multiplayer = ['th01', 'th02', 'th03', 'th04', 'th13', 'th14', 'th19'];
+  const games = Object.fromEntries(experimental.map(game => [game, hostGame(game,
+    multiplayer.includes(game) ? {multiplayerRuntime: `runtime/${game}/mp.html`} : {})]));
+  const products = [...experimental, ...multiplayer.map(game => `${game}mp`)];
+  for (const testBuild of [false, true]) {
+    const service = fixture(network(host(games)), {testBuild});
+    for (const product of products) assert.equal(service.getSnapshot().products.includes(product), testBuild, product);
+    await service.initialize();
+    for (const product of products) assert.equal(service.getSnapshot().products.includes(product), testBuild, product);
+    service.dispose();
+  }
 });
 
 test('visibility mode shows test products while metadata and Runtime identities stay on the same publication', async () => {

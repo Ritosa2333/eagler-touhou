@@ -35,6 +35,13 @@ void cross_stage(unsigned exhausted_seat, bool ghost, const char* name, bool rew
     CHECK(boot(app, name));
     if (!app.run) return;
     auto& old = app.run->battle;
+    for (i32 seat = 1; seat < old.seat_count; ++seat) {
+        auto& player = old.seats[size_t(seat)];
+        player.fixed_x = -6001 * seat;
+        player.fixed_y = 34000 + seat;
+        player.x = float(player.fixed_x) / 128.f;
+        player.y = float(player.fixed_y) / 128.f;
+    }
     auto& exhausted = old.seats[exhausted_seat];
     exhausted.ghost = ghost;
     exhausted.dead = ghost;
@@ -83,6 +90,18 @@ void cross_stage(unsigned exhausted_seat, bool ghost, const char* name, bool rew
     const auto& next = app.run->battle;
     CHECK_EQ(app.progress.stage, 2);
     CHECK_EQ(next.seat_count, 3);
+    for (i32 seat = 1; seat < next.seat_count; ++seat) {
+        const auto& player = next.seats[size_t(seat)];
+        const bool revived = unsigned(seat) == exhausted_seat;
+        const i32 expected_x = revived ? 0 : -6001 * seat;
+        const i32 expected_y = revived ? 51200 : 34000 + seat;
+        CHECK_EQ(player.fixed_x, expected_x);
+        CHECK_EQ(player.fixed_y, expected_y);
+        CHECK_EQ(player.x, float(expected_x) / 128.f);
+        CHECK_EQ(player.y, float(expected_y) / 128.f);
+        CHECK_EQ(player.movement_history[0][0], expected_x);
+        CHECK_EQ(player.movement_history[0][1], expected_y);
+    }
     CHECK(!next.seats[exhausted_seat].ghost);
     CHECK(!next.seats[exhausted_seat].dead);
     CHECK(next.seats[exhausted_seat].phase == StagePlayerState::Phase::Active);

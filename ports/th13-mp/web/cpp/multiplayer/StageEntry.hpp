@@ -13,6 +13,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <vector>
 
 namespace th13 {
@@ -89,6 +90,11 @@ struct StageEntry {
     void PrepareStageClear(HudPlayerState& first_player, const th13::StageBattle& previous);
     // Live activation keeps the new stage's clocks and constructor RNG draws.
     void RestoreBattleCarry(th13::StageBattle& battle) const;
+    void RestoreStageClearPositions(th13::StageBattle& battle) const;
+
+private:
+    // Full-history replay reconstructs these coordinates from earlier inputs.
+    std::array<std::optional<std::array<std::int32_t, 2>>, MaxSeats> stage_clear_positions_{};
 };
 
 }  // namespace th13::multiplayer

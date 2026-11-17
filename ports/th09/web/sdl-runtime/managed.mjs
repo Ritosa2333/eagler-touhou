@@ -15,6 +15,7 @@ const epoch=Number(query.get('runtimeEpoch')),validEpoch=Number.isSafeInteger(ep
 const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
 let core,launched=false,first=false,options={},music=true,chain=Promise.resolve(),queue=Promise.resolve(),revision=0,netplay,stopping=false,networkOverlayPending=false;
 let initializedReady=false,launchSettled=false,lifetime=0,stopPending=false,retired=false,configApplying=null,appliedTouchPolicy=0,autoReplay,replayPlayer;
+let archivePlayback=false;
 const routeSwitch=$('#routeSwitch'),routeSwitchButton=$('#routeSwitchButton'),routeSwitchText=$('#routeSwitchText');
 const startupRoutes=$('#startupRoutes');
 let startupRoute='auto';
@@ -165,7 +166,14 @@ async function initializeTitle(receivedLifetime){
  await new Promise(requestAnimationFrame);assertLifetime(receivedLifetime,owner);
  await new Promise(requestAnimationFrame);assertLifetime(receivedLifetime,owner);
  if(!core._th09_game_open(runtimeVariant==='multiplayer'?0:Date.now()&65535))throw Error(err());titleInitialized=true;
+ core._th09_motion_smoothing?.(+(query.get('motionSmoothing')!=='0'));
  window.__th09Runtime={core,status,save,command};
+}
+async function resetReplayTitle(receivedLifetime){
+ replayPlayer?.close();replayPlayer=null;titleInitialized=false;
+ core._th09_game_close();
+ await initializeTitle(receivedLifetime);
+ apply();
 }
 async function command(m,receivedLifetime=receiveLifetime()){switch(m.command){
 case 'configure':{
@@ -249,10 +257,23 @@ case 'playback':{
  assertLifetime(receivedLifetime);
  if(!launched||!launchSettled||!options.replayViewer||options.netplayMode==='lan')throw Error('当前游戏不支持录像控制');
  if(m.action==='open'){
-  const selected=path(m.path);if(!selected.startsWith('replay/'))throw Error('录像路径无效');
-  const bytes=core.FS.readFile(saveRoot+'/'+selected.replace(/\.rpyx$/,'.rpy'));importReplayName(selected,bytes,9);
-  replayPlayer??=createReplayPlayer({core,onState:playback=>{if(ownsDocument()&&!retired&&!stopPending)emit('runtime-info',{playback});},onError:fatal});
-  clearKeyboard();return {playback:replayPlayer.play(selected,bytes,autoReplay.readMatch(saveRoot+'/'+selected))};
+  const onState=playback=>{if(ownsDocument()&&!retired&&!stopPending)emit('runtime-info',{playback});};
+  if(m.bytes instanceof Uint8Array&&/^[^/\\]{1,180}\.th09r$/i.test(m.path)){
+   if(runtimeVariant!=='multiplayer')throw Error('对战录像需要花映塚多人版');
+   const {readMatchArchive,createMatchArchivePlayer}=await import('./match-archive-player.mjs');
+   const archive=await readMatchArchive(new Response(m.bytes));assertLifetime(receivedLifetime);
+   if(replayPlayer?.active)await resetReplayTitle(receivedLifetime);
+   clearKeyboard();archivePlayback=true;
+   replayPlayer=createMatchArchivePlayer({core,archive,path:m.path,onState,onError:fatal});
+   return {playback:replayPlayer.state()};
+  }
+  const online=m.bytes instanceof Uint8Array&&/^[^/\\]{1,180}\.rpyx?$/i.test(m.path);
+  const selected=online?m.path:path(m.path);if(!online&&!selected.startsWith('replay/'))throw Error('录像路径无效');
+  const bytes=online?m.bytes:core.FS.readFile(saveRoot+'/'+selected.replace(/\.rpyx$/,'.rpy'));importReplayName(selected,bytes,9);
+  if(archivePlayback)await resetReplayTitle(receivedLifetime);
+  archivePlayback=false;
+  replayPlayer??=createReplayPlayer({core,onState,onError:fatal});
+  clearKeyboard();return {playback:replayPlayer.play(selected,bytes,online?null:autoReplay.readMatch(saveRoot+'/'+selected))};
  }
  if(!replayPlayer)throw Error('请先选择录像');return {playback:replayPlayer.control(m.action,m.value)};
 }
@@ -314,7 +335,7 @@ const initialized=(async()=>{
  assertLifetime(initializingLifetime,core);
  window.Module=core;window.FS=core.FS;core.SDL3=core.SDL3||{};if(parent!==window&&parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;
  core.FS.mkdirTree(saveRoot);core.FS.mount(core.IDBFS,{},saveRoot);await sync(true);assertLifetime(initializingLifetime,core);core.FS.mkdirTree(saveRoot+'/replay');core.FS.symlink(saveRoot,'/save');
- autoReplay=createAutoReplay({core,saveRoot,options:()=>options,enabled:()=>runtimeVariant==='multiplayer'&&options.netplayMode==='lan',sync:()=>{revision=core._th09_storage_revision();return sync();},notice:message=>emit('notice',{message})});
+ autoReplay=createAutoReplay({core,saveRoot,options:()=>options,enabled:()=>runtimeVariant==='multiplayer'&&options.netplayMode==='lan',sync:()=>{revision=core._th09_storage_revision();return sync();},notice:message=>emit('notice',{message}),publish:(start,bytes)=>netplay?.captureReplay(start,bytes)});
  if(query.get('managedData')!=='1'||parent===window||typeof parent.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('请从 eagler-touhou 启动花映塚');
  const buffer=(await parent.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch})).buffer;assertLifetime(initializingLifetime,core);
  if(Object.prototype.toString.call(buffer)!=='[object ArrayBuffer]'||buffer.byteLength<1000000)throw Error('花映塚资源无效');core.FS.writeFile('/th09.dat',new Uint8Array(buffer));

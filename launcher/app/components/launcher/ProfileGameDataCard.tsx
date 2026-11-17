@@ -8,7 +8,7 @@ import {Button} from '../../ui/button';
 import {ChoiceGroup, ChoiceItem} from '../../ui/choice-group';
 import {ProfileAllGames} from './ProfileGameData';
 import {ProfilePanelLoading} from './ProfileLoading';
-import {ProfileTh09Duels} from './ProfileTh09Duels';
+import {ProfileTh09Duels, type WatchTh09Replay} from './ProfileTh09Duels';
 import cover from './book-covers/th09.webp?url';
 import './profile-game-data-card.css';
 
@@ -16,8 +16,8 @@ export function GameDataIcon({view}: {view:GameDataView}) {
   return view === 'all' ? <LayoutGrid aria-hidden="true"/> : <img src={cover} alt="" width={24} height={24}/>;
 }
 
-export function ProfileGameDataCard({username, owner, display, statistics, statisticsError}: {
-  username: string; owner: boolean; display: ProfileDisplay; statistics?: ProfileStatistics; statisticsError: boolean;
+export function ProfileGameDataCard({username, owner, display, statistics, statisticsError, watchTh09Replay}: {
+  username: string; owner: boolean; display: ProfileDisplay; statistics?: ProfileStatistics; statisticsError: boolean; watchTh09Replay?: WatchTh09Replay;
 }) {
   const {t} = useLocale();
   const {search,hash} = useLocation();
@@ -39,7 +39,7 @@ export function ProfileGameDataCard({username, owner, display, statistics, stati
   return <section className="profile-panel profile-public-section profile-game-data profile-game-data-card" id="profile-versus"
     aria-labelledby="profile-game-data-title">
     <h2 id="profile-game-data-title" className="sr-only">{t('profile.gameData')}</h2>
-    {view === 'th09' ? <ProfileTh09Duels username={username} owner={owner} icons={icons}/> : statistics
+    {view === 'th09' ? <ProfileTh09Duels username={username} owner={owner} icons={icons} watchTh09Replay={watchTh09Replay}/> : statistics
       ? <ProfileAllGames data={statistics} showCareer={display.visible.career && hasProfileSaveSection(statistics,'career')}
           showRecords={display.visible.records && hasProfileSaveSection(statistics,'records')}/>
       : statisticsError ? <p role="alert">{t('cloudSave.statisticsFailed')}{' '}

@@ -1541,8 +1541,8 @@
     "id": "room_cheatHint",
     "params": []
   },
-  "room.disableLocalChargePriority": {
-    "id": "room_disableLocalChargePriority",
+  "room.localChargePriority": {
+    "id": "room_localChargePriority",
     "params": []
   },
   "room.localChargeReplayHint": {
@@ -10533,6 +10533,196 @@
   },
   "replay.th14BeamCopyInvalid": {
     "id": "replay_th14BeamCopyInvalid",
+    "params": []
+  },
+  "profile.online.view": {
+    "id": "profile_online_view",
+    "params": []
+  },
+  "room.disableLocalChargePriority": {
+    "id": "room_disableLocalChargePriority",
+    "params": []
+  },
+  "account.registerDemo": {
+    "id": "account_registerDemo",
+    "params": []
+  },
+  "notice.dismissForever": {
+    "id": "notice_dismissForever",
+    "params": []
+  },
+  "account.loginDemo": {
+    "id": "account_loginDemo",
+    "params": []
+  },
+  "profile.online.preview": {
+    "id": "profile_online_preview",
+    "params": []
+  },
+  "account.preview": {
+    "id": "account_preview",
+    "params": []
+  },
+  "room.pc98ChallengeHint": {
+    "id": "room_pc98ChallengeHint",
+    "params": []
+  },
+  "notice.label": {
+    "id": "notice_label",
+    "params": []
+  },
+  "account.demoCode": {
+    "id": "account_demoCode",
+    "params": []
+  },
+  "notice.aria": {
+    "id": "notice_aria",
+    "params": []
+  },
+  "footer.group": {
+    "id": "footer_group",
+    "params": []
+  },
+  "touch.th01SlideHold": {
+    "id": "touch_th01SlideHold",
+    "params": []
+  },
+  "profile.online.simulated": {
+    "id": "profile_online_simulated",
+    "params": []
+  },
+  "account.identityRequired": {
+    "id": "account_identityRequired",
+    "params": []
+  },
+  "room.th03SpecialFocus": {
+    "id": "room_th03SpecialFocus",
+    "params": []
+  },
+  "room.th02SpecialFocus": {
+    "id": "room_th02SpecialFocus",
+    "params": []
+  },
+  "account.verification": {
+    "id": "account_verification",
+    "params": []
+  },
+  "room.th01BallCount": {
+    "id": "room_th01BallCount",
+    "params": []
+  },
+  "notice.close": {
+    "id": "notice_close",
+    "params": []
+  },
+  "profile.online.simulate": {
+    "id": "profile_online_simulate",
+    "params": []
+  },
+  "profile.online.demoFriend": {
+    "id": "profile_online_demo_friend",
+    "params": []
+  },
+  "settings.th02RapidFire": {
+    "id": "settings_th02RapidFire",
+    "params": []
+  },
+  "profile.online.disabledPreview": {
+    "id": "profile_online_disabled_preview",
+    "params": []
+  },
+  "footer.donate": {
+    "id": "footer_donate",
+    "params": []
+  },
+  "footer.repository": {
+    "id": "footer_repository",
+    "params": []
+  },
+  "room.th03DisableFocus": {
+    "id": "room_th03DisableFocus",
+    "params": []
+  },
+  "settings.th03Focus": {
+    "id": "settings_th03Focus",
+    "params": []
+  },
+  "account.passwordRequired": {
+    "id": "account_passwordRequired",
+    "params": []
+  },
+  "touch.th01Slide": {
+    "id": "touch_th01Slide",
+    "params": []
+  },
+  "account.discordPending": {
+    "id": "account_discordPending",
+    "params": []
+  },
+  "lobby.codeHint": {
+    "id": "lobby_codeHint",
+    "params": []
+  },
+  "room.pc98ChallengeEnabled": {
+    "id": "room_pc98ChallengeEnabled",
+    "params": []
+  },
+  "notice.restoreHint": {
+    "id": "notice_restoreHint",
+    "params": []
+  },
+  "profile.online.close": {
+    "id": "profile_online_close",
+    "params": []
+  },
+  "profile.online.title": {
+    "id": "profile_online_title",
+    "params": []
+  },
+  "profile.online.stopDemo": {
+    "id": "profile_online_stop_demo",
+    "params": []
+  },
+  "profile.online": {
+    "id": "profile_online",
+    "params": []
+  },
+  "profile.online.notifications": {
+    "id": "profile_online_notifications",
+    "params": []
+  },
+  "room.th01SpecialBalls": {
+    "id": "room_th01SpecialBalls",
+    "params": [
+      "count"
+    ]
+  },
+  "account.discord": {
+    "id": "account_discord",
+    "params": []
+  },
+  "footer.license": {
+    "id": "footer_license",
+    "params": []
+  },
+  "room.th02DisableFocus": {
+    "id": "room_th02DisableFocus",
+    "params": []
+  },
+  "profile.online.justNow": {
+    "id": "profile_online_just_now",
+    "params": []
+  },
+  "account.captchaRequired": {
+    "id": "account_captchaRequired",
+    "params": []
+  },
+  "account.or": {
+    "id": "account_or",
+    "params": []
+  },
+  "profile.online.now": {
+    "id": "profile_online_now",
     "params": []
   }
 }

@@ -40,6 +40,8 @@ export interface InstalledMusicAvailability {
 export interface MusicAvailabilityInput {
   musicSources?: readonly string[];
   audio: boolean;
+  /** Soundtrack ships inside the managed DATA object. */
+  embeddedOgg?: boolean;
   midiAvailable: boolean;
   importServer: boolean;
   // Compatibility/diagnostic signal from the Site Manifest. Once an installed
@@ -61,13 +63,14 @@ export interface MusicAvailability {
 
 export function resolveMusicAvailability({
   audio,
+  embeddedOgg = false,
   midiAvailable,
   importServer,
   remoteOggAdvertised,
   remoteRevision = null,
   installed = null,
 }: MusicAvailabilityInput): MusicAvailability {
-  let localOgg = false;
+  let localOgg = embeddedOgg;
   let remoteOgg = false;
 
   if (installed) {
@@ -79,7 +82,7 @@ export function resolveMusicAvailability({
     // while later tracks are still downloading makes the settings UI silently
     // fall back to MIDI/none even though the next OGG launch is already viable.
     const startupIds = ids.slice(0, 2);
-    localOgg = startupIds.length > 0 && startupIds.every(fileId => !!installed.files[fileId]?.objectId);
+    localOgg = embeddedOgg || startupIds.length > 0 && startupIds.every(fileId => !!installed.files[fileId]?.objectId);
     // Once the installed generation already declares OGG files, matching the
     // Release Catalog revision is enough to prove that the same remote OGG
     // objects remain available for progressive completion. The Site Manifest
@@ -109,6 +112,7 @@ export function resolveEffectiveMusicMode({
   requested,
   explicit,
   audio,
+  embeddedOgg = false,
   midiAvailable,
   importServer,
   remoteOggAdvertised,
@@ -117,6 +121,7 @@ export function resolveEffectiveMusicMode({
 }: EffectiveMusicModeInput): LauncherMusicMode {
   const availability = resolveMusicAvailability({
     audio,
+    embeddedOgg,
     midiAvailable,
     importServer,
     remoteOggAdvertised,

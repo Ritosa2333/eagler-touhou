@@ -42,6 +42,11 @@ target_include_directories(eagler_common_adonis_timing_test PRIVATE "${CMAKE_CUR
 target_link_libraries(eagler_common_adonis_timing_test PRIVATE eagler::netplay_base)
 add_test(NAME eagler-common.adonis-timing COMMAND eagler_common_adonis_timing_test)
 
+add_executable(eagler_common_pc98_prediction_frontier_test pc98-prediction-frontier-test.cpp)
+target_include_directories(eagler_common_pc98_prediction_frontier_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
+target_link_libraries(eagler_common_pc98_prediction_frontier_test PRIVATE eagler::netplay_base)
+add_test(NAME eagler-common.pc98-prediction-frontier COMMAND eagler_common_pc98_prediction_frontier_test)
+
 add_executable(eagler_common_spectator_stage_test spectator-stage-test.cpp)
 target_include_directories(eagler_common_spectator_stage_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
 target_link_libraries(eagler_common_spectator_stage_test PRIVATE eagler::netplay_base)

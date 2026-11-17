@@ -1017,9 +1017,12 @@ bool ApplicationState::begin_run() {
     run->hud.challenge = mp_challenge;
     if (mp_seat_count >= 2 && !run->enable_multiplayer(mp_seat_count, mp_characters))
         return fail(run->error.empty() ? "Multiplayer seat enable failed" : run->error);
+    // R-G Boss 减伤旧回放兼容：archive v1/v2 录像按四分之一方案重演。
+    run->battle.sim.mp_boss_mitigation_legacy = mp_legacy_boss_mitigation;
     if (carry_multiplayer) {
         auto& battle = run->battle;
         carry.RestoreBattleCarry(battle);
+        if (!mp_legacy_stage_positions) carry.RestoreStageClearPositions(battle);
         battle.death_trance_generation = carry_death_generation;
         battle.revive_all_on_stage_clear();
         selection_player = battle.seat_huds[0];

@@ -17,6 +17,7 @@ import {PlayerStage} from './PlayerSurface';
 import {ReplayFileMenu} from './ReplayFileMenu';
 import {ReplayTransport, type ReplayTransportState} from './ReplayTransport';
 import {ReplayFileRow} from './ReplayFileRow';
+import {Th09ReplayArchive} from './Th09ReplayArchive';
 import {useLocale} from '../../i18n';
 import {errorText} from '../../services/error-text';
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_GAMES, type ProductId} from '../../../src/contracts/product-catalog.mts';
@@ -56,6 +57,7 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
   const closing = useRef(false);
   const list = useRef<HTMLDivElement>(null), scrollPositions = useRef(new Map<string, number>());
   const playback = app.runtime?.runtimeInfo.playback as ReplayPlaybackState | undefined;
+  const archive = files.productId === 'th09mp' ? app.th09Replay : undefined;
   const folders = useMemo(() => groupReplayFolders(files.rows), [files.rows]);
   const folderExists = files.phase !== 'ready' || !requestedFolder || folders.some(item => item.key === requestedFolder);
   const folder = folderExists ? requestedFolder : null;
@@ -104,7 +106,7 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
       <UiButton variant="icon" type="button" className="replay-back replay-button" aria-label={t('replay.ui.back')} disabled={busy} onClick={() => {void close();}}>{icon('replay-arrow-left')}</UiButton>
       <div className="workspace-product-heading">
         <h1 title={title}>{title}</h1>
-        {choices.length > 1 && <BookProductMenu products={choices} value={files.productId ?? ''}
+        {!archive && choices.length > 1 && <BookProductMenu products={choices} value={files.productId ?? ''}
           assetUrl={assetUrl} onChange={product => {void switchProduct(product);}}
           trigger={<UiButton id="replayProductSelect" type="button" variant="unstyled" className="workspace-product-trigger"
             disabled={busy} aria-label={t('lobby.game')} title={t('lobby.game')}><ChevronDown aria-hidden="true"/></UiButton>}/>}
@@ -115,11 +117,12 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
     {!fileOnly && stage && createPortal(<>
     <ReplayTransport playback={playback} fps={files.productId === 'th05mp' ? 56 : 60} busy={busy} fullscreen={session.nativeTouch.isFullscreen()} speedId="replaySpeedSelect" onControl={(action, value) => {void control(action, value);}} onToggleFullscreen={() => {void session.togglePlayerFullscreen();}}/>
     <section className="replay-current" aria-label={t('replay.ui.info')}>
-      <h2 title={playback?.path}>{playback?.path.split('/').pop() || (files.phase === 'loading' ? t('replay.ui.reading') : t('replay.ui.chooseOne'))}</h2>
+      <h2 title={archive?.name ?? playback?.path}>{archive?.name ?? (playback?.path.split('/').pop() || (files.phase === 'loading' ? t('replay.ui.reading') : t('replay.ui.chooseOne')))}</h2>
       <p>{playback ? <><span>{PRODUCT_GAMES[game].title}</span><span>{['Easy','Normal','Hard','Lunatic','Extra'][playback.difficulty] ?? ''}</span>{versus ? <span>{characterName(playback.left, 0)} vs {characterName(playback.right, 1)}</span> : <span>{playback.description?.name} | {playback.description?.stages.find(item => item.id === playback.stage)?.label ?? t('replay.ui.stageNumber',{stage:playback.stage})}</span>}</> : t('replay.ui.chooseToPlay')}</p>
       {error && <p className="replay-workspace-error" role="alert">{errorText(error,t)}</p>}
     </section>
     </>, stage)}
+    {archive ? <Th09ReplayArchive key={archive.username} current={archive} watch={session.accessTh09MatchReplay}/> :
     <aside className="replay-file-browser" data-file-only={fileOnly || undefined} aria-label={t('replay.ui.files')} onDragOver={event => {if (!busy && event.dataTransfer.types.includes('Files')) event.preventDefault();}} onDrop={event => {event.preventDefault(); if (busy || files.phase !== 'ready') return; const list = [...event.dataTransfer.files]; if (list.length !== 1) {report(Error('请每次导入一个文件')); return;} void importFile(list[0]).catch(report);}}>
       <header><h2>{t('replay.ui.heading')}</h2><UiButton type="button" className="replay-button" disabled={busy || files.phase !== 'ready'} onClick={() => {setBusy(true); setError(''); void session.chooseReplayFile(files.productId!).catch(report).finally(() => setBusy(false));}}>{icon('replay-upload-simple')}<span>{t('replay.ui.import')}</span></UiButton></header>
       <nav className="replay-breadcrumb" aria-label={t('replay.ui.location')}>{icon('replay-folder')}<UiButton variant="quiet" size="sm" type="button" onClick={() => {if (folder) setFolder(null); else setMoving(null);}}>{t('replay.ui.all')}</UiButton>{folder && <span title={folder.slice(7)}>/ {folder.slice(7)}</span>}</nav>
@@ -159,7 +162,7 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
       {fileOnly && error && <p className="replay-workspace-error" role="alert">{errorText(error,t)}</p>}
       {fileOnly && <footer>{t('replay.hsobPlayback')}</footer>}
       <footer>{t('replay.ui.count',{count:files.rows.length})}</footer>
-    </aside>
+    </aside>}
   </>;
 }
 
@@ -167,9 +170,10 @@ function ReplaySummary({description: d, game}: {description: ReplayDescription; 
   const {locale,t} = useLocale();
   return <span className="replay-file-summary"><span title={t('replay.ui.playerName')}>{d.name || '—'}</span><span title={t('replay.ui.loadout')}>{replayLoadout(d, game, t)}</span><span title={t('replay.ui.date')}>{replayDate(d,locale)}</span><span title={d.spell ? t('replay.ui.spell') : t('replay.ui.difficulty')}>{d.spell || replayRank(d.difficulty)}</span></span>;
 }
-const replayRank = (difficulty: number) => ['Easy','Normal','Hard','Lunatic','Extra','Phantasm'][difficulty] ?? difficulty;
+const replayRank = (difficulty: number) => difficulty < 0 ? '—' : ['Easy','Normal','Hard','Lunatic','Extra','Phantasm'][difficulty] ?? difficulty;
 const replayDate = (d: ReplayDescription, locale: string) => d.date || (d.timestamp && d.timestamp <= 8.64e12 ? new Date(d.timestamp * 1000).toLocaleDateString(locale) : '—');
 function replayLoadout(d: ReplayDescription, game: keyof typeof PRODUCT_GAMES, t: (key: UiMessageKey) => string) {
+  if(d.character < 0)return '—';
   if (game === 'th14' && Number.isInteger(d.character) && d.character >= 0 && d.character < 3 && [0, 1].includes(d.shot ?? 0)) {
     const keys = ['multiplayer.loadout.reimuA', 'multiplayer.loadout.reimuB', 'multiplayer.loadout.marisaA', 'multiplayer.loadout.marisaB', 'multiplayer.loadout.sakuyaA', 'multiplayer.loadout.sakuyaB'] as const;
     return t(keys[d.character * 2 + (d.shot ?? 0)]);

@@ -41,6 +41,7 @@ class AnmRenderer {
                         const Vertex* data);
     u32 tint_color(u32)const noexcept;int overlay(AnmVm&);
 public:
+    bool always_hitbox = false;
     std::array<u8, 4> player_opacity{255, 255, 255, 255};
     u32 presentation_instance=0;
     void submit(AnmVm&,touhou::graphics::Topology,u32,const void*,u32);

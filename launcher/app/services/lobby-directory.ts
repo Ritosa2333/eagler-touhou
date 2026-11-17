@@ -1,5 +1,4 @@
 import {relayFailureDetail} from './network-failure';
-import {publishedPc98Multiplayer} from './published-multiplayer';
 import type {RelayAttempt} from '../../src/launcher/relay-entry-routing.mts';
 import {normalizePublicNickname} from '../../src/contracts/public-nickname.mts';
 import {
@@ -53,6 +52,8 @@ export interface DirectoryRoom {
   seats: readonly (DirectorySeat | null)[];
   disableCheatMovement: boolean;
   challengeMode: boolean;
+  disableFocus?: boolean;
+  ballCount?: number;
   unrated?: boolean;
 }
 export interface DirectoryMembership {
@@ -341,6 +342,8 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       seats: Object.freeze(seats),
       disableCheatMovement: row.disableCheatMovement === true,
       challengeMode: row.challengeMode === true,
+      ...(row.product === 'th02mp' ? {disableFocus: row.disableFocus === true} : {}),
+      ...(row.product === 'th01mp' ? {ballCount:[1,2,3,4,6,8,9].includes(row.ballCount as number) ? row.ballCount as number : 2} : {}),
       ...(row.unrated === true && row.product === 'th09mp' ? {unrated: true} : {}),
       players: seats.filter(Boolean).length,
       ready: bounded(row.ready, capacity),
@@ -512,7 +515,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const products = PRODUCT_IDS.filter(
         (product): product is MultiplayerProductId =>
           isMultiplayerProductId(product) &&
-          (productEnabledForBuild(product, options.testBuild === true || manifest.shared.testBuild === true) || publishedPc98Multiplayer(product, manifest)) &&
+          productEnabledForBuild(product, options.testBuild === true || manifest.shared.testBuild === true) &&
           !!manifest.games[gameIdForProduct(product)]?.multiplayerRuntime,
       );
       const selectedProduct = !snapshot.selectedProduct ? '' : products.includes(snapshot.selectedProduct as MultiplayerProductId)
@@ -650,6 +653,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
           created: true,
           visibility,
           disableCheatMovement,
+          ...(product === 'th09mp' ? {disableLocalChargePriority: true} : {}),
           ...(product === 'th09mp' && unrated ? {unrated: true} : {}),
         },
         seat: 0,

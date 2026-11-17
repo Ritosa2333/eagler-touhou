@@ -43,7 +43,7 @@ export function TouchSettingsFields({model, actions, onAdjustViewport, onResetVi
       <option value="joystick">{t('multiplayer.control.normal')}</option>
       <option value="joystick-free">{t('touch.movement.joystickFree')}</option>
     </MainSelect></div>
-    <div className="touch-layout-setting-row" hidden={nativeActions}><label htmlFor="touchFocusMode">{t('touch.focusMethod')}</label><MainSelect className="option-select" id="touchFocusMode" value={options.touchFocusMode} aria-label={t('touch.focusMethod')} onChange={event => {if (isTouchFocusMode(event.target.value)) model.setOption('touchFocusMode', event.target.value);}}>
+    <div className="touch-layout-setting-row" hidden={nativeActions || state.gameId === 'th01'}><label htmlFor="touchFocusMode">{t('touch.focusMethod')}</label><MainSelect className="option-select" id="touchFocusMode" value={options.touchFocusMode} aria-label={t('touch.focusMethod')} onChange={event => {if (isTouchFocusMode(event.target.value)) model.setOption('touchFocusMode', event.target.value);}}>
       <option value="hold-button">{t('touch.focus.hold')}</option><option value="toggle-button">{t('touch.focus.toggle')}</option><option value="two-finger" disabled={wheel}>{t('touch.focus.twoFinger')}</option>
     </MainSelect></div>
     <div className="touch-layout-setting-row touch-sensitivity-row" hidden={nativeActions}><span className="touch-sensitivity-heading"><span>{t('touch.sensitivity')}</span> <output id="touchSensitivityValue">{options.touchSensitivity}%</output></span><small>{t('touch.sensitivityHint')}</small>

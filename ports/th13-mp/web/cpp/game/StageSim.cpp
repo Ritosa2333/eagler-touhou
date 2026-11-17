@@ -2095,11 +2095,13 @@ float StageSim::absorb(StageEnemy& enemy, float amount) {
         !operable_seats) return amount;
     const i32 operable = operable_seats();
     if (operable < 2) return amount;
-    // 进入血量的四分之几：2 席 3/4（减免 25%），3 席 2/4（减免 50%）。
-    const i32 quarters = operable >= 3 ? 2 : 3;
-    const i32 scaled = i32(amount) * quarters + enemy.mp_boss_damage_remainder;
-    enemy.mp_boss_damage_remainder = scaled % 4;
-    return float(scaled / 4);
+    // 进入血量的几分之几：2 席 3/5（减免 40%），3 席 2/5（减免 60%）；
+    // 旧回放（archive v1/v2）沿用 3/4、2/4（25%/50%）的四分之一方案。
+    const i32 keep = operable >= 3 ? 2 : 3;
+    const i32 denom = mp_boss_mitigation_legacy ? 4 : 5;
+    const i32 scaled = i32(amount) * keep + enemy.mp_boss_damage_remainder;
+    enemy.mp_boss_damage_remainder = scaled % denom;
+    return float(scaled / denom);
 }
 
 void StageSim::damage(StageEnemy& enemy, float amount) {

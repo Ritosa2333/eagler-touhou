@@ -1,0 +1,147 @@
+{
+  "collection": "Akyu Untouched Score",
+  "volume": 5,
+  "codec": "opus",
+  "bitrate": 64000,
+  "sampleRate": 48000,
+  "tracks": {
+    "st0": {
+      "url": "akyu/02.opus",
+      "title": "02. Eternal Shrine Maiden-opus64",
+      "audioSha256": "b55390012357d3169d7b79417fc48902586089a554b8144e84a7681a2e7d1ca8",
+      "bytes": 1977162,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 202.659833
+    },
+    "positive": {
+      "url": "akyu/03.opus",
+      "title": "03. The Positive and Negative-opus64",
+      "audioSha256": "3266f4a973ccc9204d5a2e24ee57bda2e6f20ca89a4447d6ec5a02c0d2018143",
+      "bytes": 1279491,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 133.753167
+    },
+    "st1": {
+      "url": "akyu/04.opus",
+      "title": "04. Highly Responsive to Prayers-opus64",
+      "audioSha256": "3cac325c25afb5379cebe391174b05fcbb537077940ad057119e6967bc733f86",
+      "bytes": 2030347,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 204.8865
+    },
+    "legend": {
+      "url": "akyu/06.opus",
+      "title": "06. Angel's Legend-opus64",
+      "audioSha256": "16a8f6f3863f2777a7a1b9203ff1873ac1589d31bf9dc9158c0f28a64981ddae",
+      "bytes": 2019622,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 203.593167
+    },
+    "st2": {
+      "url": "akyu/05.opus",
+      "title": "05. Eastern Strange Discourse-opus64",
+      "audioSha256": "599658627c89046a25860eb502c2d9787a7f99296e941e4eee5cd3612dfd25a0",
+      "bytes": 1954400,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 186.6865
+    },
+    "kami": {
+      "url": "akyu/09.opus",
+      "title": "09. Magic Mirror-opus64",
+      "audioSha256": "b06a0573a04beeeaab1d58fa75e2f3d7aebaa0c3b12930cb5bbc30ca55799134",
+      "bytes": 2207381,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 221.793167
+    },
+    "kami2": {
+      "url": "akyu/09.opus",
+      "title": "09. Magic Mirror-opus64",
+      "audioSha256": "b06a0573a04beeeaab1d58fa75e2f3d7aebaa0c3b12930cb5bbc30ca55799134",
+      "bytes": 2207381,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 221.793167
+    },
+    "st3": {
+      "url": "akyu/07.opus",
+      "title": "07. Oriental Magician-opus64",
+      "audioSha256": "f51d7cb128b856c2791a46ff9e33de55f44395d4cc3f5e513ea8a5a74d827e49",
+      "bytes": 2284338,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 232.193167
+    },
+    "tensi": {
+      "url": "akyu/11.opus",
+      "title": "11. Now, Until the Moment You Die-opus64",
+      "audioSha256": "019687e935084440f86cae74d627ec5c546ae9ef467a16c19553b026d4036431",
+      "bytes": 1819991,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 182.793167
+    },
+    "st4": {
+      "url": "akyu/08.opus",
+      "title": "08. Blade of Banishment-opus64",
+      "audioSha256": "dd9b644a1ca774c85e79b6e9265e3bc415e1a8615c439198a42a2f2f9d2de271",
+      "bytes": 1546836,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 144.5265
+    },
+    "alice": {
+      "url": "akyu/13.opus",
+      "title": "13. Angel of a Distant Star-opus64",
+      "audioSha256": "4518e8cd5b810c97deeac18b0fa09fec578d419d9d2b73476c8291ca68e6f0a5",
+      "bytes": 2165917,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 222.913167
+    },
+    "st5": {
+      "url": "akyu/10.opus",
+      "title": "10. the Legend of KAGE-opus64",
+      "audioSha256": "6812c4680d046d65c1b3c00ceb557f0cbbf6409980e14926b55bb01680cd7b44",
+      "bytes": 1746989,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 181.4865
+    },
+    "reimu": {
+      "url": "akyu/01.opus",
+      "title": "01. A Sacred Lot-opus64",
+      "audioSha256": "7451cbd531e280e42816129da7cce7d0152b2085c649879b0ed5fbc70eeab1c2",
+      "bytes": 1950480,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 198.019833
+    },
+    "shugen": {
+      "url": "akyu/12.opus",
+      "title": "12. Civilization of Magic-opus64",
+      "audioSha256": "a54c3af2426b0a3f7c9243f378899dd18be72456c8d846669c427cdc968e47de",
+      "bytes": 2573418,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 255.233167
+    },
+    "iris": {
+      "url": "akyu/14.opus",
+      "title": "14. Iris-opus64",
+      "audioSha256": "00055fe39cd1b58f3ad56848284710853ee63b804d5e42d638f0ca39a352db56",
+      "bytes": 1860427,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 177.219833
+    }
+  },
+  "fallback": [
+    "zipangu"
+  ]
+}

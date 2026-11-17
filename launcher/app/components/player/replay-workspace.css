@@ -49,10 +49,23 @@
 #player.replay-workspace .replay-file-browser[data-file-only=true]{grid-column:1/-1}
 .replay-file-browser>header{display:flex;align-items:center;justify-content:space-between;flex:none;padding:16px;gap:10px}
 .replay-file-browser h2{margin:0;font:600 16px/1.4 var(--kit-font)}
+.replay-file-browser[data-profile-replays] h2{overflow-wrap:anywhere}
 .replay-breadcrumb{display:flex;align-items:center;flex:none;gap:6px;padding:8px 0;margin:0 16px;min-width:0;color:var(--kit-muted-foreground);border-block:1px solid var(--kit-border)}
 .replay-breadcrumb>svg{width:18px;height:18px;flex:none}
 .replay-breadcrumb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .replay-workspace-files{flex:1;min-height:160px;overflow:auto;overscroll-behavior:contain;padding:4px 8px;scrollbar-width:thin;scrollbar-gutter:stable;touch-action:pan-y}
+.replay-archive-set{border-bottom:1px solid var(--kit-border);font-size:13px}
+.replay-archive-set>summary{display:flex;align-items:center;gap:12px;padding:10px 12px;min-height:48px;cursor:pointer}
+.replay-archive-set>summary::-webkit-details-marker{display:none}
+.replay-archive-set>summary:hover,.replay-archive-set[open]>summary{background:var(--kit-muted);border-radius:4px}
+.replay-archive-set>summary svg{width:18px;height:18px;flex:none;color:var(--kit-muted-foreground)}
+.replay-archive-set[open] .replay-archive-chevron{transform:rotate(90deg)}
+.replay-archive-set strong{overflow:hidden;flex:1;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.replay-archive-set small{color:var(--kit-muted-foreground)}
+.replay-archive-set ol{margin:0;padding:4px 12px 8px 36px}
+.replay-archive-set li{padding-block:3px}
+.replay-archive-set li>span{display:block}
+.replay-archive-set button[aria-current=true]{background:var(--kit-accent);color:var(--kit-accent-foreground)}
 .replay-workspace-file{display:flex;align-items:center;gap:2px;min-height:48px;border-bottom:1px solid var(--kit-border);position:relative}
 .replay-workspace-file.selected{background:var(--kit-accent);border-radius:6px;border-color:transparent}
 .replay-workspace-file>button:first-child{display:flex;align-items:center;gap:12px;min-width:0;flex:1;min-height:48px;padding:10px 12px;text-align:left;background:transparent;border:0;border-radius:4px;color:var(--kit-foreground);font:400 13px/1.5 var(--kit-font);cursor:pointer;touch-action:manipulation}

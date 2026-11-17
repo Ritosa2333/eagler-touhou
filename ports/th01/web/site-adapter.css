@@ -1,0 +1,26 @@
+/* Native game host on the same launcher palette and layout as the multiorb lab. */
+body.shell>main{max-width:none;padding:0;margin:0}.shell .intro{display:block}.shell .intro h1{color:var(--paper)}
+.shell .masthead{margin:0}.shell .setup .settings-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.shell label{min-width:0}.shell .check{display:flex;flex-direction:row;align-items:center;gap:8px}.shell input[type=checkbox]{min-height:0;width:16px;height:16px;padding:0;accent-color:var(--wine)}
+.shell .settings-grid .check{white-space:normal;flex-direction:row;justify-content:flex-start;align-items:center}
+.shell .setupSummary,.shell #setupSummary{font-size:13px}.shell .player{padding:16px;background:#111210;border-color:#ffffff24}
+.shell .toolbar{margin:0 0 12px;padding:8px 0;border:0}.shell .toolbar button{min-height:40px;padding:8px 12px;font-size:13px}
+.shell .small,.shell .scope p,.shell .keyrow,.shell summary{color:var(--muted);font-size:13px}.shell h3{color:var(--paper);font-size:16px}.shell .keyrow b{color:var(--pink)}
+.shell #phaseTitle{color:var(--pink)}.shell #phaseHint{color:var(--muted)}.shell .statusline{padding:12px 0;border-color:var(--line)}
+.shell #members span{border:1px solid var(--line);border-radius:12px;background:#292a26}.shell #room-code{color:var(--pink)}
+.shell #status{margin:0;padding:10px 14px;font-size:13px}.shell #code{background:#161713;border-color:#ffffff24;border-radius:10px;color:var(--paper);min-width:0;max-width:180px}
+.shell #cover{background:#10110f;color:var(--pink)}.shell .net-touch{flex-wrap:wrap}.shell .net-touch button{padding:8px 12px}
+.shell .touch button{padding:8px;min-height:40px;background:#161713d9;border-color:#ffffff50;border-radius:10px}.shell .touch button.active{background:#a92e4c}
+.shell .telemetry{gap:12px}.shell .diagnostics{border:1px solid var(--line);padding:16px 20px}.shell #music-volume{min-height:0;padding:0;max-width:160px}
+.shell #menuControls button{min-height:40px;padding:8px 12px}.shell .stage:fullscreen{width:100vw;height:100dvh;aspect-ratio:auto}
+/* Size both canvas axes explicitly: auto width can retain the 640px intrinsic
+   size or distort the canvas when the viewport becomes narrower than 8:5. */
+.shell #stage:fullscreen,.shell #screen:fullscreen{display:grid;place-items:center;width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;border-radius:0;aspect-ratio:auto;overflow:hidden;background:#000}
+.shell #stage:fullscreen>canvas,.shell #screen:fullscreen>canvas{width:min(100vw,160vh);width:min(100vw,160dvh);height:min(100vh,62.5vw);height:min(100dvh,62.5vw);max-width:none;max-height:none;min-width:0;min-height:0;object-fit:contain;align-self:center;justify-self:center}
+.shell #screen:fullscreen>.net-touch{position:absolute;bottom:max(8px,env(safe-area-inset-bottom));left:0;right:0;margin:0;padding:8px;pointer-events:none}
+.shell #screen:fullscreen>.net-touch button{pointer-events:auto;background:#161713d9}
+.shell #screen:fullscreen>#menu-touch{bottom:calc(80px + env(safe-area-inset-bottom))}
+.shell #screen:fullscreen>#cover{position:absolute;inset:0;margin:0;display:grid;place-items:center}
+.shell .mode-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.shell .mode-card{min-height:285px}
+@media(max-width:720px){body.shell{padding-left:16px;padding-right:16px}.shell .mode-grid{grid-template-columns:1fr}.shell .setup .settings-grid{grid-template-columns:1fr 1fr}.shell .player{padding:10px}.shell .details{grid-template-columns:1fr}.shell .settings-grid{grid-template-columns:1fr 1fr}.shell .masthead small{max-width:160px;text-align:right}.shell .mode-nav a{padding:9px 12px}.shell .toolbar{gap:8px}}
+@media(max-width:480px){.shell .setup .settings-grid{grid-template-columns:1fr}.shell .panel{padding:16px}.shell .intro h1{font-size:34px}.shell .net-touch{gap:4px}.shell .net-touch button{font-size:12px;min-width:40px;padding:8px}.shell .hash{display:none}}

@@ -34,6 +34,10 @@ struct CoreConfig
     // When predicting missing input, retain the last target instead of
     // clearing the axes as if they represented once-only displacement.
     bool directTouchIsAbsolute = false;
+    // Some title protocols transmit touch as a one-frame impulse and predict
+    // a completely neutral analog lane until the next real sample arrives.
+    bool predictAnalog = true;
+    bool recheckPredictionFrontier = false;
     // Optional short extrapolation for a continuous unlimited absolute drag.
     // Coordinates must use game pixels. Zero keeps the confirmed target.
     std::uint8_t absoluteTouchForecastFrames = 0;
@@ -127,6 +131,12 @@ public:
     std::uint32_t RollbackFrame() const;
     void ClearRollbackRequest();
 
+    // A room-agreed departure replaces this remote lane at and after the
+    // boundary with neutral input. Earlier received input remains intact.
+    bool RetireRemoteFrom(std::uint8_t player, std::uint32_t frame);
+    void RefreshPredictions();
+    void DiscardSimulatedBefore(std::uint32_t frame);
+
     std::uint32_t ConfirmedThrough(std::uint8_t player) const;
     // Minimum confirmed input frontier across every remote player. Returns
     // INVALID_FRAME until every remote has at least one confirmed frame.
@@ -179,6 +189,7 @@ private:
     const UsedSlot *FindUsedSlot(std::uint32_t frame) const;
     bool HasConfirmedInputConflict(std::uint8_t player, std::uint32_t frame,
                                    const FrameInput &input) const;
+    bool RecheckPredictions(std::uint8_t player, std::uint32_t from);
     RemoteInputResult StoreRemoteInput(std::uint8_t player, std::uint32_t frame,
                                       const FrameInput &input);
     FrameInput PredictInput(std::uint8_t player, std::uint32_t frame) const;

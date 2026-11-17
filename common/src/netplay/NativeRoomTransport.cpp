@@ -20,6 +20,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <wincrypt.h>
+#include <winhttp.h>
 #endif
 
 namespace Netplay
@@ -28,6 +29,75 @@ namespace
 {
 using Json = nlohmann::json;
 using Clock = std::chrono::steady_clock;
+
+std::int64_t unixMillis()
+{
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+#ifdef _WIN32
+DWORD postReplay(const std::string &origin, const std::string &token, std::vector<std::uint8_t> &file)
+{
+    using Handle = std::unique_ptr<void, decltype(&WinHttpCloseHandle)>;
+    const std::wstring url(origin.begin(), origin.end());
+    URL_COMPONENTS endpoint{};
+    endpoint.dwStructSize = sizeof(endpoint);
+    endpoint.dwHostNameLength = endpoint.dwUserNameLength = endpoint.dwPasswordLength = DWORD(-1);
+    if (!WinHttpCrackUrl(url.c_str(), 0, 0, &endpoint) || endpoint.dwUserNameLength ||
+        endpoint.dwPasswordLength || !endpoint.dwHostNameLength) return 400;
+    const std::wstring host(endpoint.lpszHostName, endpoint.dwHostNameLength);
+    const bool secure = endpoint.nScheme == INTERNET_SCHEME_HTTPS;
+    if (!secure && (endpoint.nScheme != INTERNET_SCHEME_HTTP || host != L"127.0.0.1")) return 400;
+    Handle session(WinHttpOpen(L"Eagler Touhou", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+        WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0), WinHttpCloseHandle);
+    if (!session || !WinHttpSetTimeouts(session.get(), 2000, 4000, 4000, 4000)) return 0;
+    Handle connection(WinHttpConnect(session.get(), host.c_str(), endpoint.nPort, 0), WinHttpCloseHandle);
+    if (!connection) return 0;
+    Handle request(WinHttpOpenRequest(connection.get(), L"POST", L"/api/v1/th09/replays",
+        nullptr, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, secure ? WINHTTP_FLAG_SECURE : 0),
+        WinHttpCloseHandle);
+    if (!request) return 0;
+    DWORD redirects = WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
+    DWORD autoLogon = WINHTTP_AUTOLOGON_SECURITY_LEVEL_HIGH;
+    if (!WinHttpSetOption(request.get(), WINHTTP_OPTION_REDIRECT_POLICY, &redirects, sizeof(redirects)) ||
+        !WinHttpSetOption(request.get(), WINHTTP_OPTION_AUTOLOGON_POLICY, &autoLogon, sizeof(autoLogon))) return 0;
+    const std::wstring headers = L"Content-Type: application/octet-stream\r\nAuthorization: Bearer " +
+        std::wstring(token.begin(), token.end()) + L"\r\n";
+    const auto size = static_cast<DWORD>(file.size());
+    if (!WinHttpSendRequest(request.get(), headers.c_str(), DWORD(-1), file.data(), size, size, 0) ||
+        !WinHttpReceiveResponse(request.get(), nullptr)) return 0;
+    DWORD status = 0, statusSize = sizeof(status);
+    if (!WinHttpQueryHeaders(request.get(), WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+        WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize, WINHTTP_NO_HEADER_INDEX)) return 0;
+    return status;
+}
+
+void queueReplay(std::string origin, std::string token, std::int64_t expiresAt, std::vector<std::uint8_t> file)
+{
+    static std::atomic<unsigned> active{0};
+    if (active.fetch_add(1, std::memory_order_relaxed) >= 4) {
+        active.fetch_sub(1, std::memory_order_relaxed);
+        return;
+    }
+    try {
+        // This job owns its bytes and can finish after the room closes.
+        std::thread([origin = std::move(origin), token = std::move(token), expiresAt, file = std::move(file)]() mutable {
+            try {
+                for (int delay = 250; unixMillis() < expiresAt; delay = (std::min)(delay * 2, 5000)) {
+                    const DWORD status = postReplay(origin, token, file);
+                    if (status && status < 500 && status != 408 && status != 429) break;
+                    if (unixMillis() + delay >= expiresAt) break;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+                }
+            } catch (const std::exception &) {}
+            active.fetch_sub(1, std::memory_order_relaxed);
+        }).detach();
+    } catch (const std::exception &) {
+        active.fetch_sub(1, std::memory_order_relaxed);
+    }
+}
+#endif
 
 rtc::WebSocket::Configuration signalConfiguration(const std::string &url)
 {
@@ -86,6 +156,12 @@ std::unique_ptr<rtc::WebSocket> OpenRoomWebSocket(const std::string &url)
 
 struct NativeRoomTransport::Impl
 {
+    struct ReplayUpload {
+        std::uint32_t start = 0;
+        std::int64_t expiresAt = 0;
+        std::string token, origin;
+        std::vector<std::uint8_t> file;
+    };
     struct IceTraffic {
         unsigned descriptions = 0, host = 0, reflexive = 0, relay = 0, observations = 0, other = 0;
         void candidate(rtc::Candidate::Type type)
@@ -134,6 +210,9 @@ struct NativeRoomTransport::Impl
     NativeAdaptiveRoute::RetirePeer retirePeer;
     bool adaptiveActive = false;
     bool reportMatch = false;
+    bool replayUploadEnabled = false;
+    std::optional<ReplayUpload> replayUpload;
+    std::optional<std::uint32_t> replayCompleted;
     bool route = false;
     bool disconnected = false;
     bool replaceCapable = false;
@@ -146,6 +225,28 @@ struct NativeRoomTransport::Impl
     Clock::time_point deadline = Clock::now() + std::chrono::seconds(45);
     Clock::time_point nextSignalAttempt{};
     std::chrono::milliseconds signalRetry{500};
+
+    ReplayUpload *replayFor(std::uint32_t start)
+    {
+        if ((replayCompleted && start <= *replayCompleted) ||
+            (replayUpload && start < replayUpload->start)) return nullptr;
+        if (!replayUpload || start != replayUpload->start) {
+            replayUpload.emplace();
+            replayUpload->start = start;
+        }
+        return &*replayUpload;
+    }
+
+    void uploadReplay()
+    {
+#ifdef _WIN32
+        if (!replayUpload || replayUpload->token.empty() || replayUpload->file.empty()) return;
+        auto upload = std::move(*replayUpload);
+        replayCompleted = upload.start;
+        replayUpload.reset();
+        queueReplay(std::move(upload.origin), std::move(upload.token), upload.expiresAt, std::move(upload.file));
+#endif
+    }
 
     void openSignal(bool reconnect = false)
     {
@@ -255,6 +356,24 @@ struct NativeRoomTransport::Impl
         const auto type = message.value("type", "");
         if (type == "error" || type == "route-error") {
             error = message.value("error", "The room rejected the connection");
+        } else if (type == "th09-replay-upload" && replayUploadEnabled) {
+            const auto start = message.find("start");
+            const auto token = message.find("token");
+            const auto expiresAt = message.find("expiresAt");
+            if (start == message.end() || !start->is_number_unsigned() ||
+                start->get<std::uint64_t>() > UINT32_MAX || token == message.end() || !token->is_string() ||
+                expiresAt == message.end() || !expiresAt->is_number_unsigned()) return;
+            const auto &value = token->get_ref<const std::string &>();
+            const auto now = static_cast<std::uint64_t>(unixMillis());
+            const auto deadline = expiresAt->get<std::uint64_t>();
+            if (value.empty() || value.size() > 153 || deadline <= now || deadline > now + 180000 ||
+                value.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.:-") != std::string::npos)
+                return;
+            if (auto *upload = replayFor(start->get<std::uint32_t>())) {
+                upload->token = value;
+                upload->expiresAt = static_cast<std::int64_t>(deadline);
+                uploadReplay();
+            }
         } else if (type == "peers") {
             if (route && message.value("route", Json(nullptr)) != "rtc") {
                 error = "The room no longer owns this WebRTC connection";
@@ -263,6 +382,9 @@ struct NativeRoomTransport::Impl
             nextSignalAttempt = {};
             signalRetry = std::chrono::milliseconds(500);
             reportMatch = message.value("th09MatchReport", false);
+#ifdef _WIN32
+            replayUploadEnabled = message.value("th09ReplayUpload", false);
+#endif
             replaceCapable = replaceCapable || message.value("rtcReplace", false);
             if (!transport) {
                 iceServers = message.value("iceServers", Json::array());
@@ -563,6 +685,21 @@ bool NativeRoomTransport::ReportMatch(std::uint32_t start, std::uint32_t frames,
             {"winner", winner}, {"characters", Json::array({first, second})}}.dump());
         return true;
     } catch (const std::exception &) { return false; }
+}
+
+bool NativeRoomTransport::MatchReplayEnabled() const
+{
+    return impl_ && impl_->replayUploadEnabled;
+}
+
+void NativeRoomTransport::PublishMatchReplay(std::uint32_t start, std::vector<std::uint8_t> file, std::string origin)
+{
+    if (!MatchReplayEnabled() || origin.empty() || file.empty() || file.size() > 1024 * 1024) return;
+    auto *upload = impl_->replayFor(start);
+    if (!upload || !upload->file.empty()) return;
+    upload->origin = std::move(origin);
+    upload->file = std::move(file);
+    impl_->uploadReplay();
 }
 
 void NativeRoomTransport::Pump()

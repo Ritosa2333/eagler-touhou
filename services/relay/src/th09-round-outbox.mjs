@@ -15,6 +15,7 @@ export function createTh09RoundOutbox({ file, send, onStored, retryMs = 1000 }) 
   const head = db.prepare('SELECT id, payload FROM pending_round ORDER BY id LIMIT 1');
   const insert = db.prepare('INSERT INTO pending_round (roundKey, payload) VALUES (?, ?) ON CONFLICT DO NOTHING');
   const remove = db.prepare('DELETE FROM pending_round WHERE id = ?');
+  const replayBacklog = db.prepare("SELECT count(*) AS count FROM pending_round WHERE roundKey LIKE '%/replay'");
   let closed = false;
   let draining = false;
   let timer;
@@ -42,7 +43,7 @@ export function createTh09RoundOutbox({ file, send, onStored, retryMs = 1000 }) 
           result = await send(round);
         } catch (error) {
           if (closed) return;
-          if (![400, 409, 413].includes(error?.status)) {
+          if (![400, 409, 413].includes(error?.status) && !(round.replay && error?.status === 404)) {
             console.warn('th09 round delivery delayed:', error?.code || error?.name);
             retry = true;
             break;
@@ -52,7 +53,7 @@ export function createTh09RoundOutbox({ file, send, onStored, retryMs = 1000 }) 
         if (closed) return;
         remove.run(next.id);
         delay = retryMs;
-        if (result) onStored?.(round, result.players, result.settlement);
+        if (result) onStored?.(round, result);
       }
     } catch (error) {
       console.error('th09 round outbox failed:', error?.code || error?.name);
@@ -71,7 +72,8 @@ export function createTh09RoundOutbox({ file, send, onStored, retryMs = 1000 }) 
     enqueue(round) {
       if (closed || (!round.room && !round.players.some(Boolean)) || (round.players[0] && round.players[0] === round.players[1])) return;
       try {
-        insert.run(`${round.duelId}/${round.roundId}`, JSON.stringify(round));
+        if (round.replay && replayBacklog.get().count >= 128) return;
+        insert.run(`${round.duelId}/${round.roundId}${round.replay ? '/replay' : ''}`, JSON.stringify(round));
         schedule();
       } catch (error) {
         console.error('th09 round could not be queued:', round.duelId, round.roundId, error?.code || error?.name);

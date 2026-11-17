@@ -84,6 +84,15 @@ export async function start(config) {
   async function refreshSite(host, state) {
     try {
       const names = (await readdir(state.pool.root)).filter(name => /^th\d+\.package\.json$/.test(name));
+      const manifest = state.pool.packageGames?.length || state.pool.languageGames?.length
+        ? JSON.parse(await readFile(`${state.pool.root}/site-manifest.json`, 'utf8')) : null;
+      for (const game of state.pool.packageGames ?? []) {
+        const descriptor = manifest.games[game]?.package?.descriptor;
+        if (!/^th\d+(?:-[A-Za-z0-9-]+)?\.package\.json$/.test(descriptor ?? '')) {
+          throw new Error(`Invalid active package descriptor for ${game}`);
+        }
+        if (!names.includes(descriptor)) names.push(descriptor);
+      }
       if (!names.length) throw new Error('No local package descriptors');
       const descriptors = await Promise.all(names.map(async name => [name,
         JSON.parse(await readFile(`${state.pool.root}/${name}`, 'utf8'))]));
@@ -96,7 +105,6 @@ export async function start(config) {
         inventory.set(path, file);
       }
       if (state.pool.languageGames?.length) {
-        const manifest = JSON.parse(await readFile(`${state.pool.root}/site-manifest.json`, 'utf8'));
         for (const game of state.pool.languageGames) {
           for (const { pack } of manifest.games[game]?.languages ?? []) {
             if (!pack) continue;

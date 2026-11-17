@@ -8,7 +8,6 @@ import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manife
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
 import {isAbortError, linkAbortSignals, waitWithAbort} from '../services/abort-signals';
 import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, productRequiresImport, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
-import {isPc98MultiplayerCandidate} from '../services/published-multiplayer';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {detectUiLocale, isUiLocale, isUiMessageKey, localeHome, UI_LOCALE_STORAGE_KEY, type UiLocale} from '../../src/launcher/i18n.mts';
 import {replayImportAcceptFor} from '../../src/launcher/replay-files.mts';
@@ -63,6 +62,8 @@ import {createAppShellService, type AppShellOptions} from '../services/app-shell
 import {createBrowserPorts} from '../services/browser-ports';
 import {createFileActions, type ImportFileKind} from '../services/files';
 import {createReplayStorageReader} from '../services/replay-storage';
+import {accountRequest} from '../services/account-client';
+import type {Th09ReplayEntry, WatchTh09Replay} from '../models/th09-replay-archive';
 import {errorText} from '../services/error-text';
 import {launcherBaseUrl} from '../navigation/addresses';
 import {testFeaturesEnabled} from '../../src/launcher/test-features.mts';
@@ -110,6 +111,7 @@ export interface BrowserSessionSnapshot {
   roomLaunchStage: 'runtime' | 'path' | null;
   roomReloadPending?: boolean;
   replayViewer: boolean;
+  th09Replay?: Th09ReplayEntry;
   spectatorViewer?: boolean;
   th09NetworkOverlayOpen: boolean;
   bootTouchPreview: 'touch' | 'touch-hud' | null;
@@ -288,7 +290,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   function settingsContext(product: ProductId, locale: string) {const room = roomSession?.service.getSnapshot(); return {...metadata.settingsContext(product, locale), mobile: preferTouchSettings(), forbidUnlimitedMovement: !!room?.room?.disableCheatMovement && room.seat != null};}
   const directoryEntry = /\/lobby(?:\.html)?\/?$/.test(entryUrl.pathname);
   const rawInitialProduct = directoryEntry ? null : routedProductFromUrl(entryUrl, new Set(PRODUCT_IDS));
-  const initialProduct = rawInitialProduct && (productEnabledForBuild(rawInitialProduct, testBuild) || isPc98MultiplayerCandidate(rawInitialProduct)) ? rawInitialProduct : DEFAULT_PRODUCT_ID;
+  const initialProduct = rawInitialProduct && productEnabledForBuild(rawInitialProduct, testBuild) ? rawInitialProduct : DEFAULT_PRODUCT_ID;
   settings.hydrate(settingsContext(DEFAULT_PRODUCT_ID, snapshot.locale));
   if (initialProduct !== DEFAULT_PRODUCT_ID) settings.hydrate(settingsContext(initialProduct, snapshot.locale));
   touchLayout.setGame(settings.getSnapshot()?.gameId ?? DEFAULT_PRODUCT_ID);
@@ -323,7 +325,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (firstHost && !runtime?.getSnapshot().launched) settings.restoreHostPreferences(settingsContext(product, snapshot.locale));
       appliedHost = host;
       localPackageMaintenance.schedule();
-    const hadSelection = pendingHostSelection?.hasSelection ?? navigation?.hasSelection ?? (!!rawInitialProduct && (productEnabledForBuild(rawInitialProduct, testBuild) || isPc98MultiplayerCandidate(rawInitialProduct)));
+    const hadSelection = pendingHostSelection?.hasSelection ?? navigation?.hasSelection ?? (!!rawInitialProduct && productEnabledForBuild(rawInitialProduct, testBuild));
       pendingHostSelection = {productId: product, hasSelection: hadSelection && current.products.includes(product)};
       if (navigation) {navigation.applyHostSelection(pendingHostSelection); pendingHostSelection = null;}
       if (roomSession?.service.getSnapshot().room && host.shared.netplayRelay) roomSession.service.reconnect();
@@ -721,7 +723,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       prompt: (message, initial, validation) => decisions.askText({title: t('action.rename'), confirmText: t('action.rename'), confirmOnEnter: true,
         input: {label: message, defaultValue: initial, ...validation}}), confirm: decisions.askConfirmation,
       download: ports.download, toast: feedback.toast, afterPaint: ports.afterPaint,
-      closeViewer: () => {if (snapshot.replayViewer) void requestRuntimeClose().catch(reportError);},
+      closeViewer: () => {
+        if (snapshot.th09Replay) publish({th09Replay: undefined});
+        if (snapshot.replayViewer) void requestRuntimeClose().catch(reportError);
+      },
       afterClose: () => {
         if (replayRoomEpoch !== null && !runtime?.getSnapshot().launched) {
           if (roomSession?.service.getSnapshot().epoch === replayRoomEpoch) roomSession.service.resourcesChanged();
@@ -872,7 +877,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     const player = document.querySelector<HTMLElement>('#player');
     if (!player) throw new Error('Launcher Player is not mounted');
     player.classList.add('open'); player.setAttribute('aria-hidden', 'false'); document.body.classList.add('player-active');
-      if (fullscreen) {navigation?.openRoomFullscreen?.(); publish({roomPlayerExpanded: true}); try {await nativeTouch.enterFullscreen(player);} catch (error) {feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error, t)}));}}
+      if (fullscreen) {navigation?.openRoomFullscreen?.(); publish({roomPlayerExpanded: true}); try {await nativeTouch.enterFullscreen(player);} catch (error) {navigation?.closeRoomFullscreen?.(); publish({roomPlayerExpanded: false}); feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error, t)}));}}
     if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
   }
   async function launchRoom(context: RoomLaunchContext) {
@@ -1002,8 +1007,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     }).finally(() => {replayPreparation = null;});
     return replayPreparation;
   }
-  function openReplayViewer(product: ProductId, path?: string): Promise<void> {
+  function openReplayViewer(product: ProductId, path?: string, archive?: Th09ReplayEntry): Promise<void> {
     return (async () => {
+      if (!archive && snapshot.th09Replay) publish({th09Replay: undefined});
       if (roomSession?.service.suspendPreparation()) replayRoomEpoch = roomSession.service.getSnapshot().epoch;
       if (!replays?.getSnapshot().open || replays.getSnapshot().productId !== product) {requiredNavigation().openInfoDialog('replayDialog', {replace: true}); await replays!.open(product);}
       if (path) {
@@ -1011,6 +1017,40 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         else await replays!.inspect(path);
       }
     })();
+  }
+  function watchTh09Archive(path: string, bytes: Uint8Array, archive?: Th09ReplayEntry): Promise<void> {
+    return activity(async () => {
+      await openReplayViewer('th09mp', undefined, archive);
+      await prepareReplayWorkspace('th09mp');
+      const owner = requiredRuntime(), epoch = owner.getSnapshot().epoch;
+      await owner.send('playback', {action:'open', path, bytes});
+      if (archive && replays?.getSnapshot().open && owner.getSnapshot().epoch === epoch) publish({th09Replay: archive});
+    });
+  }
+  const accessTh09MatchReplay: WatchTh09Replay = async (entry, action) => {
+    const {duelId, name} = entry;
+    const archive = navigation?.infoDialogOpen('replayDialog') ? snapshot.th09Replay : undefined;
+    const key = entry.roundId.replace(':', '-');
+    const blob = await accountRequest<Blob>(`v1/th09/duels/${duelId}/replays/${key}`, undefined, {responseType:'blob'});
+    if (!blob.size || blob.size > 1024 * 1024) throw Error(t('file.importStoredTooLarge'));
+    const extension = blob.type === 'application/x-th09-rpyx' ? 'rpyx' : blob.type === 'application/x-th09-rpy' ? 'rpy' : 'th09r';
+    const path = `th09-${duelId}-${key}.${extension}`;
+    const bytes = await blob.arrayBuffer();
+    if (action === 'download') {
+      ports.download(name ? `${name}.${extension}` : path, bytes, 'application/octet-stream');
+      return;
+    }
+    if (archive && (snapshot.th09Replay !== archive || !navigation?.infoDialogOpen('replayDialog'))) return;
+    await watchTh09Archive(path, new Uint8Array(bytes), entry);
+  };
+  async function importReplayFile(file: File, product: ProductId) {
+    if (product === 'th09mp' && /\.th09r$/i.test(file.name)) {
+      if (file.size > 1024 * 1024) throw Error(t('file.importStoredTooLarge'));
+      await watchTh09Archive(file.name, new Uint8Array(await file.arrayBuffer()));
+      return;
+    }
+    if (!files) throw new Error('File service is not attached');
+    await activity(() => files!.importFile('replay', file, product));
   }
   async function switchReplayProduct(product: ProductId): Promise<void> {
     const model = replays, previous = model?.getSnapshot().productId;
@@ -1524,10 +1564,11 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       try {
         const target = document.querySelector<HTMLElement>('#player.replay-workspace #gameViewport') ?? document.querySelector<HTMLElement>('#player');
         if (target) await nativeTouch.enterFullscreen(target);
-      } catch (error) {feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}
+      } catch (error) {if (roomPlayer) {navigation?.closeRoomFullscreen?.(); publish({roomPlayerExpanded: false});} feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}
     },
     getRuntime: () => runtime, getReplays: () => replays, getDiagnostics: () => diagnostics, getGameplayNetwork: () => gameplayNetwork,
-    async chooseReplayFile(product: ProductId) {const file = await ports.pickFile(replayImportAcceptFor(product)); if (file) {if (!files) throw new Error('File service is not attached'); await activity(() => files!.importFile('replay', file, product));}},
+    async chooseReplayFile(product: ProductId) {const file = await ports.pickFile(replayImportAcceptFor(product)); if (file) await importReplayFile(file, product);},
+    accessTh09MatchReplay,
     async warnDiscouragedBrowser(isCurrent: () => boolean = () => true): Promise<boolean> {
       let dismissed = false; try {dismissed = storage?.getItem('browser-warning-dismissed') === '1';} catch {}
       if (dismissed || !discouragedBrowserId(window.navigator.userAgent)) return !disposed && isCurrent();
@@ -1538,7 +1579,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (choice === 'secondary') {window.location.href = new URL('faq.html', baseUrl).href; return false;}
       return true;
     },
-    importFile: (kind: ImportFileKind, file: File, product: ProductId) => activity(async () => {if (!files) throw new Error('File service is not attached'); await files.importFile(kind, file, product);}),
+    importFile: (kind: ImportFileKind, file: File, product: ProductId) => kind === 'replay' ? importReplayFile(file, product) :
+      activity(async () => {if (!files) throw new Error('File service is not attached'); await files.importFile(kind, file, product);}),
     setLocale(locale: UiLocale) {try {storage?.setItem(UI_LOCALE_STORAGE_KEY, locale);} catch {} requiredNavigation().setLocaleAddress(locale); if (!runtime?.getSnapshot().launched) settings.restoreLocalePreferences(settingsContext(settings.getSnapshot()!.context.productId, locale)); publish({locale}); feedback.refreshLocale(); externalMidi.refreshLocale(t); document.documentElement.lang = locale; document.documentElement.dataset.uiLocale = locale; window.dispatchEvent(new CustomEvent('eagler-ui-locale-change', {detail: {locale}})); appShellOwner.refreshLocale(); diagnostics?.refresh(); gameplayNetwork?.refresh(); const canonical = document.querySelector<HTMLLinkElement>('link[rel=canonical]'); if (canonical) canonical.href = new URL(locale === 'en' ? 'en.html' : './', canonical.href).href;},
     reportError,
     async dispose() {

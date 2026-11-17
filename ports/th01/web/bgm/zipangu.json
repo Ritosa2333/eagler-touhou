@@ -1,0 +1,11 @@
+{
+  "url": "zipangu.opus",
+  "loopStart": 0.013832199546485261,
+  "loopEnd": 74.4515873015873,
+  "sha256": "bf606f8a2d652af3436cc78cf45ad86c123e873a0fdb57dadfecf969000ec781",
+  "audioSha256": "bb6a9df89cc9a99b2293a210e4cdc2eb099e6010f3b384bdde1c17b9ac770aa5",
+  "codec": "opus",
+  "bytes": 605348,
+  "preset": "mdrv2-fmgen-opus64-48k-single-loop-headroom-v2",
+  "fadeSeconds": 2.3446153846153845
+}

@@ -1,4 +1,6 @@
 import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../../common/contracts/th19-versus-rules.mjs';
+import {PC98_INITIAL_STOCK,validPc98InitialSpares,validPc98InitialBombs} from '../../../common/contracts/pc98-initial-stock.mjs';
+const pc98StockRoom=id=>/^th0[24]mp-/.test(id);
 import {Th19SpectatorHistory} from './th19-spectator.mjs';
 import {createRemoteNicknameService} from './account-nickname-source.mjs';
 import {createNicknameService} from './nickname-service.mjs';
@@ -55,7 +57,7 @@ import {
 import { isSpectatorFrameForRoom } from './spectator-frame.mjs';
 import { COOPERATIVE_SPECTATOR_MARKERS, SpectatorStageRelay } from './spectator-stages.mjs';
 import {isPc98SpectatorRoom,Pc98SpectatorRelay} from './pc98-spectator.mjs';
-import {SpectatorReplayTransfer} from './spectator-replay.mjs';
+import {SPECTATOR_REPLAY_LIMITS, SpectatorReplayTransfer} from './spectator-replay.mjs';
 import { th09PlayerStats, acceptTh09MatchStats, bindTh09Duel, reconcileTh09Duel } from './th09-room-stats.mjs';
 import { acceptTh19MatchStats } from './th19-room-stats.mjs';
 import {
@@ -345,13 +347,24 @@ accountChat?.start();
 const th09OutboxPath = process.env.EAGLER_NETPLAY_TH09_OUTBOX;
 const th09Rounds = th09OutboxPath && accountChat ? createTh09RoundOutbox({
   file: th09OutboxPath,
-  send: accountChat.recordTh09Round,
-  onStored({players, room: scope}, summaries, settlement) {
+  send: round => round.replay ? accountChat.recordTh09Replay(round) :
+    accountChat.recordTh09Round({...round, requestReplayUpload: !!round.characters && round.players.some(Boolean)}),
+  onStored({players, room: scope, duelId, roundId}, {players: summaries, settlement, replayUpload}) {
     if (!Array.isArray(summaries)) return;
     for (const room of rooms.values()) {
       if (!room.id.startsWith('th09mp-')) continue;
-      if (settlement && room.chatScope === scope)
-        broadcastLobby(room, {type: 'th09-rating', room: room.id, settlement});
+      if (room.chatScope === scope) {
+        if (settlement) broadcastLobby(room, {type: 'th09-rating', room: room.id, settlement});
+        if (replayUpload) {
+          const [serial, start] = roundId.split(':');
+          const run = room.runs.get(serial);
+          if (run?.th09Duel?.id === duelId) {
+            const message = JSON.stringify({type:'th09-replay-upload', start:Number(start), ...replayUpload});
+            for (const socket of [...run.signalClients.values(), ...run.clients.values()])
+              if (socket.readyState === WebSocket.OPEN) sendBounded(socket, message);
+          }
+        }
+      }
       let changed = false;
       for (const socket of room.lobbyClients.values()) {
         const account = socket.accountIdentity;
@@ -368,9 +381,16 @@ const th09Rounds = th09OutboxPath && accountChat ? createTh09RoundOutbox({
     }
   },
 }) : null;
+const replayFileAdmission = {
+  maxBytes: SPECTATOR_REPLAY_LIMITS.header + SPECTATOR_REPLAY_LIMITS.chunk,
+  messagesPerSecond: 120,
+  bytesPerSecond: 4 * 1024 * 1024,
+};
 function th09RoundRecorder(room, run) {
-  return th09Rounds && (round => th09Rounds.enqueue({...round, finishedAt: Date.now(),
-    room: room.chatScope, rated: run.th09Rated !== false}));
+  return th09Rounds && (round => {
+    const report = {...round, finishedAt: Date.now(), room: room.chatScope, rated: run.th09Rated !== false};
+    th09Rounds.enqueue(report);
+  });
 }
 process.once('exit', () => {
   th09Rounds?.close();
@@ -489,7 +509,9 @@ function newRoom(id, chatScope = 'room-' + randomUUID()) {
     lobby: {
       playerCount: defaultPlayerCount(multiplayer),
       difficulty: 1,
-      ...(id.startsWith('th03mp-') ? {disableFocus:true} : {}),
+      ...(id.startsWith('th03mp-') ? {disableFocus:true} : id.startsWith('th02mp-') ? {disableFocus:false} : {}),
+      ...(id.startsWith('th01mp-') ? {ballCount:2} : {}),
+      ...(pc98StockRoom(id)?{initialSpares:PC98_INITIAL_STOCK.spares,initialBombs:PC98_INITIAL_STOCK.bombs}:{}),
       ...(id.startsWith('th19mp-')?{th19Rules:[...TH19_VERSUS_RULES]}:{}),
       visibility: 'public',
       disableCheatMovement: false,
@@ -1180,7 +1202,7 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
         ...(grant ? {swarmGrant:grant} : {}),
         ...(observeStun ? {nat4Observers} : {}),
         ...(run.rtcReplacementClients.size === 2 ? {rtcReplace:true} : {}),
-        ...(roomId.startsWith('th09mp-') && run.memberIds ? {th09MatchReport:true} : {}),
+        ...(roomId.startsWith('th09mp-') && run.memberIds ? {th09MatchReport:true, th09ReplayUpload:!!th09Rounds} : {}),
       });
     }
     for (const target of announced) sendSignal(target, {type:'peer-join', player});
@@ -1414,6 +1436,9 @@ function lobbySnapshot(room) {
     ...(room.id.startsWith('th03mp-') ? {disableFocus:room.lobby.disableFocus} : {}),
     ...(room.id.startsWith('th09mp-') ? {unrated: room.lobby.unrated} : {}),
     ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
+    ...(room.id.startsWith('th02mp-') ? {disableFocus:room.lobby.disableFocus} : {}),
+    ...(room.id.startsWith('th01mp-') ? {ballCount:room.lobby.ballCount} : {}),
+    ...(pc98StockRoom(room.id)?{initialSpares:room.lobby.initialSpares,initialBombs:room.lobby.initialBombs}:{}),
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
     ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
     challengeMode: room.lobby.challengeMode,
@@ -1453,7 +1478,7 @@ function lobbySnapshot(room) {
             clientId: seat.clientId,
             name: seat.name || '',
             profile: publicRoomProfile(room, seat.clientId),
-            ...(/^th(?:09|19)mp-/.test(room.id)
+            ...(/^th(?:03|09|19)mp-/.test(room.id)
               ? { stats: th09PlayerStats(room, seat.clientId) }
               : {}),
             loadout: seat.loadout,
@@ -1667,10 +1692,13 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     if(room.id.startsWith('th19mp-'))room.lobby.th19Rules=[...(initialPolicy?.th19Rules??TH19_VERSUS_RULES)];
     room.lobby.visibility = initialPolicy?.visibility === 'private' ? 'private' : 'public';
     room.lobby.disableCheatMovement = initialPolicy?.disableCheatMovement === true;
-    if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus!==false;
     room.lobby.unrated = room.id.startsWith('th09mp-') && initialPolicy?.unrated === true;
     if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=initialPolicy?.disableLocalChargePriority===true;
-    const modesSupported = room.multiplayer?.gameplay === 'cooperative';
+    if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus!==false;
+    if(room.id.startsWith('th02mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus===true;
+    if(room.id.startsWith('th01mp-') && [1,2,3,4,6,8,9].includes(initialPolicy?.ballCount))room.lobby.ballCount=initialPolicy.ballCount;
+    if(pc98StockRoom(room.id)&&validPc98InitialSpares(initialPolicy?.initialSpares)&&validPc98InitialBombs(initialPolicy?.initialBombs)){room.lobby.initialSpares=initialPolicy.initialSpares;room.lobby.initialBombs=initialPolicy.initialBombs;}
+    const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
     room.lobby.challengeMode = modesSupported && initialPolicy?.challengeMode === true;
     room.lobby.prankMode = false;
     if (validPlayerCount(room.multiplayer, initialPolicy?.playerCount))
@@ -2321,7 +2349,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       }
       const difficultyMax = Math.max(0, (room.multiplayer?.difficulties?.length ?? 6) - 1);
       const difficulty = Math.max(0, Math.min(difficultyMax, Number(message.difficulty) || 0));
-      if(message.initialSpares!==undefined&&(!room.id.startsWith('th05mp-')||!validTh05InitialSpares(message.initialSpares))||message.initialBombs!==undefined&&(!room.id.startsWith('th05mp-')||!validTh05InitialBombs(message.initialBombs))){sendLobby(socket,{type:'error',error:'invalid TH05 initial stocks'});return;}
+      if(message.initialSpares!==undefined&&!(room.id.startsWith('th05mp-')?validTh05InitialSpares(message.initialSpares):pc98StockRoom(room.id)&&validPc98InitialSpares(message.initialSpares))||message.initialBombs!==undefined&&!(room.id.startsWith('th05mp-')?validTh05InitialBombs(message.initialBombs):pc98StockRoom(room.id)&&validPc98InitialBombs(message.initialBombs))){sendLobby(socket,{type:'error',error:'invalid TH05 initial stocks'});return;}
       const initialSpares=message.initialSpares??room.lobby.initialSpares,initialBombs=message.initialBombs??room.lobby.initialBombs;
       if (
         message.chapterThreshold !== undefined &&
@@ -2352,15 +2380,14 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         sendLobby(socket,{type:'error',error:'invalid local charge priority setting'});return;
       }
       const disableLocalChargePriority=message.disableLocalChargePriority ?? room.lobby.disableLocalChargePriority;
-      if(message.disableFocus!==undefined&&(!room.id.startsWith('th03mp-')||typeof message.disableFocus!=='boolean')){
-        sendLobby(socket,{type:'error',error:'invalid focus rule'});return;
-      }
+      if(message.disableFocus!==undefined&&(!(room.id.startsWith('th02mp-')||room.id.startsWith('th03mp-'))||typeof message.disableFocus!=='boolean')){sendLobby(socket,{type:'error',error:'invalid focus rule'});return;}
       const disableFocus=message.disableFocus??room.lobby.disableFocus;
-      if (message.unrated !== undefined && (!room.id.startsWith('th09mp-') || typeof message.unrated !== 'boolean')) {
-        sendLobby(socket,{type:'error',error:'invalid rating setting'});return;
-      }
+      if(message.ballCount!==undefined && (!room.id.startsWith('th01mp-') || ![1,2,3,4,6,8,9].includes(message.ballCount))){sendLobby(socket,{type:'error',error:'invalid ball count'});return;}
+      const ballCount=message.ballCount??room.lobby.ballCount;
+      if(pc98StockRoom(room.id)&&(!validPc98InitialSpares(message.initialSpares??room.lobby.initialSpares)||!validPc98InitialBombs(message.initialBombs??room.lobby.initialBombs))){sendLobby(socket,{type:'error',error:'invalid initial stock'});return;}
+      if (message.unrated !== undefined && (!room.id.startsWith('th09mp-') || typeof message.unrated !== 'boolean')) {sendLobby(socket,{type:'error',error:'invalid rating setting'});return;}
       const unrated = message.unrated ?? room.lobby.unrated;
-      const modesSupported = room.multiplayer?.gameplay === 'cooperative';
+      const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
       const challengeMode =
         modesSupported &&
         (typeof message.challengeMode === 'boolean'
@@ -2377,6 +2404,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.unrated !== unrated ||
         room.lobby.disableLocalChargePriority !== disableLocalChargePriority ||
         room.lobby.disableFocus !== disableFocus ||
+        room.lobby.ballCount !== ballCount ||
         room.lobby.challengeMode !== challengeMode ||
         room.lobby.prankMode !== prankMode ||
         room.lobby.initialSpares !== initialSpares || room.lobby.initialBombs !== initialBombs ||
@@ -2388,6 +2416,9 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=disableFocus;
         room.lobby.unrated = unrated;
         if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
+        if(room.id.startsWith('th02mp-'))room.lobby.disableFocus=disableFocus;
+        if(room.id.startsWith('th01mp-'))room.lobby.ballCount=ballCount;
+        if(pc98StockRoom(room.id)){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
         room.lobby.challengeMode = challengeMode;
         room.lobby.prankMode = prankMode;
         if(room.id.startsWith('th05mp-')){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
@@ -2499,6 +2530,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         (message.predictionReserve !== undefined && !adonisSupported) ||
         (adonisMode === 1 && !room.multiplayer?.inputTiming) ||
         (adonisMode === 2 && !adonisSupported) ||
+        (room.multiplayer?.inputTiming?.runtimeTiming && inputDelay !== 0) ||
         (!timingPolicy.rollback &&
           (adonisMode !== 1 ||
             (message.predictionLimit !== undefined && message.predictionLimit !== 0))) ||
@@ -2821,9 +2853,12 @@ server.on('connection', (socket, request) => {
     handleLobbyConnection(socket, roomId, lobbyClient, memberId, url.searchParams.get('intent'), {
       visibility: url.searchParams.get('visibility'),
       disableCheatMovement: url.searchParams.get('disableCheatMovement') === '1',
-      disableFocus: url.searchParams.has('disableFocus') ? url.searchParams.get('disableFocus') === '1' : undefined,
       unrated: url.searchParams.get('unrated') === '1',
       disableLocalChargePriority: url.searchParams.get('disableLocalChargePriority') === '1',
+      disableFocus: url.searchParams.has('disableFocus') ? url.searchParams.get('disableFocus') === '1' : undefined,
+      ballCount: url.searchParams.has('ballCount') ? Number(url.searchParams.get('ballCount')) : undefined,
+      initialSpares: url.searchParams.has('initialSpares') ? Number(url.searchParams.get('initialSpares')) : undefined,
+      initialBombs: url.searchParams.has('initialBombs') ? Number(url.searchParams.get('initialBombs')) : undefined,
       th19Rules: url.searchParams.has('th19Rules') ? (()=>{try{return JSON.parse(url.searchParams.get('th19Rules'));}catch{return null;}})() : undefined,
       chapterThreshold: url.searchParams.has('chapterThreshold')
         ? Number(url.searchParams.get('chapterThreshold'))
@@ -2957,7 +2992,7 @@ server.on('connection', (socket, request) => {
     messagesPerSecond: 10,
     bytesPerSecond: 256 * 1024,
   });
-  const acceptReplayFile=createRelayMessageGate({maxBytes:32788,messagesPerSecond:120,bytesPerSecond:4*1024*1024});
+  const acceptReplayFile=createRelayMessageGate(replayFileAdmission);
   const acceptPc98Spectator=createRelayMessageGate({maxBytes:RELAY_LIMITS.gameplayBytes,messagesPerSecond:120,bytesPerSecond:512*1024});
   socket.on('message', (data, isBinary) => {
     if(isBinary&&data[0]===0xe9){
@@ -2998,7 +3033,7 @@ server.on('connection', (socket, request) => {
         return;
       }
       if (run.spectatorStopped) return;
-      if (player !== 0) return;
+      if (player !== 0 || run.clients.get(player) !== socket) return;
       const payload = incoming.subarray(1);
       if(pc98Lane&&payload.length>=4&&payload[0]===0x50&&payload[1]===0x39&&payload[2]===0x38&&payload[3]===0x53){
         try{
@@ -3181,7 +3216,7 @@ server.on('connection', (socket, request) => {
       const wait = Math.max(0, delayMs + spread);
       // Native TH03 sends targeted JSON and requires a trusted sender seat.
       // Legacy untargeted DOSBox packets retain their existing framing.
-      const outgoing = isPc98SpectatorRoom(roomId) && requestedPeer !== null && forwardedPayload[0] === 0x7b
+      const outgoing = roomId.startsWith('th03mp-') && requestedPeer !== null && forwardedPayload[0] === 0x7b
         ? Buffer.concat([Buffer.from([0xe6, player]), forwardedPayload])
         : relayGameplayPayload(multiplayer,player,forwardedPayload);
       sendBounded(target, outgoing, { binary: true, delayMs: wait });

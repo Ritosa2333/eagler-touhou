@@ -14,11 +14,12 @@ export interface TouchHelpProps {
   showIosFullscreenHelp: boolean;
   nativeControls?: boolean;
   th19Charge?: boolean;
+  th01?: boolean;
 }
 type HelpSection = 'controls' | 'touch' | 'orientation' | 'thprac';
 
 /** The Player owns seen gating and game refocus; help adds no history entry. */
-export const TouchHelp = memo(function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIosFullscreenHelp, nativeControls = false, th19Charge = false}: TouchHelpProps) {
+export const TouchHelp = memo(function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIosFullscreenHelp, nativeControls = false, th19Charge = false, th01 = false}: TouchHelpProps) {
   const {t} = useLocale(), [expanded, setExpanded] = useState<HelpSection | null>(null);
   useLayoutEffect(() => {
     const player = document.getElementById('player');
@@ -35,14 +36,14 @@ export const TouchHelp = memo(function TouchHelp({open, onCloseRequest, touchEna
     <div className="game-help-content ui-document prose">
       {group('controls', t('help.gameControls'), <>
         <p>{t(nativeControls ? 'help.fightingIntro' : 'help.gameControlsIntro')}</p>
-        {keys(nativeControls ? [[t('help.arrowKeys'), 'help.fightingMovement'], ['Z', 'help.fightingA'], ['X', 'help.fightingB'], ['C / V', 'help.fightingCD'], ['Esc', 'help.pauseBack'], ['Ctrl', 'help.skipDialogue']] : th19Charge ? [[t('help.arrowKeys'), 'help.moveSelect'], ['Z', 'help.fireConfirm'], ['X', 'th19.chargeCancel'], ['C', 'input.action.bomb'], ['Shift', 'help.focusMove'], ['Esc', 'help.pauseBack'], ['Ctrl', 'help.skipDialogue']] : [[t('help.arrowKeys'), 'help.moveSelect'], ['Z', 'help.fireConfirm'], ['X', 'help.bombCancel'], ['Shift', 'help.focusMove'], ['Esc', 'help.pauseBack'], ['Ctrl', 'help.skipDialogue']])}
+        {keys(nativeControls ? [[t('help.arrowKeys'), 'help.fightingMovement'], ['Z', 'help.fightingA'], ['X', 'help.fightingB'], ['C / V', 'help.fightingCD'], ['Esc', 'help.pauseBack'], ['Ctrl', 'help.skipDialogue']] : th01 ? [[t('help.arrowKeys'), 'help.moveSelect'], ['Z', 'help.fireConfirm'], ['X', 'touch.th01Slide'], ['C', 'input.action.bomb'], ['Esc', 'help.pauseBack']] : th19Charge ? [[t('help.arrowKeys'), 'help.moveSelect'], ['Z', 'help.fireConfirm'], ['X', 'th19.chargeCancel'], ['C', 'input.action.bomb'], ['Shift', 'help.focusMove'], ['Esc', 'help.pauseBack'], ['Ctrl', 'help.skipDialogue']] : [[t('help.arrowKeys'), 'help.moveSelect'], ['Z', 'help.fireConfirm'], ['X', 'help.bombCancel'], ['Shift', 'help.focusMove'], ['Esc', 'help.pauseBack'], ['Ctrl', 'help.skipDialogue']])}
         <p>{t(nativeControls ? 'help.fightingNote' : 'help.gameControlsNote')}</p>
       </>)}
       {touchEnabled && !nativeControls && group('touch', t('help.touchControls'), <>
         <h3>{t('help.inGame')}</h3>
         <p>{t('help.touchMove')}</p>
         {th19Charge && <p>{t('th19.touchChargeHint')}</p>}
-        <p>{t(focusMode === 'two-finger' ? 'help.focusTwoFingerSummary' : focusMode === 'toggle-button' ? 'help.focusToggleSummary' : 'help.focusHoldSummary')}</p>
+        <p>{t(th01 ? 'touch.th01SlideHold' : focusMode === 'two-finger' ? 'help.focusTwoFingerSummary' : focusMode === 'toggle-button' ? 'help.focusToggleSummary' : 'help.focusHoldSummary')}</p>
         <h3>{t('help.menu')}</h3>
         <ul><li>{t('help.slideConfirm')}</li><li>{t('help.twoFingerBack')}</li></ul>
         <h3>{t('help.dialogue')}</h3>

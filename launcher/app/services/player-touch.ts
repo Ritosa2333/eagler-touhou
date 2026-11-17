@@ -28,6 +28,7 @@ export interface PlayerTouchOptions {
   getSettings(): SettingsSnapshot | null;
   fireState: TouchFireStatePort;
   editing(): boolean;
+  controlsBlocked?(): boolean;
   playerOpen(): boolean;
   iosWebKitTouch: boolean;
   refocus(): void;
@@ -77,7 +78,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     return disposed || muted || value.spectator ? {...value, launched: false, target: null} : value;
   };
   const settings = () => options.getSettings();
-  const allowed = () => !disposed && !options.editing() && options.playerOpen() && !!settings()?.options.touchEnabled && !!context().launched;
+  const allowed = () => !disposed && !options.editing() && !options.controlsBlocked?.() && options.playerOpen() && !!settings()?.options.touchEnabled && !!context().launched;
   const heldMode = () => {const game = settings()?.gameId; return !!game && PRODUCT_GAMES[game].touchFire.mode === 'held-key';};
   const key = (spec: Readonly<HostedKeySpec>, down: boolean) => postHostedKey(context(), spec, down);
   function syncControls() {
@@ -124,25 +125,26 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     on(element,'click',event=>{if(!customActions())return;event.stopImmediatePropagation();if(event.detail===0&&allowed()){change(-1,true);const timer=win.setTimeout(()=>{timers.delete(timer);change(-1,false);},70);timers.add(timer);}},{capture:true});
   }
   function capture(element: HTMLElement, event: PointerEvent) {try {element.setPointerCapture(event.pointerId);} catch {}}
+  const focusMode = () => settings()?.gameId === 'th01' ? 'hold-button' : settings()?.options.touchFocusMode;
   function setFocus(value: boolean) {
-    if (!context().launched || settings()?.options.touchFocusMode === 'two-finger' || controls.focusEnabled === value) return;
+    if (!context().launched || focusMode() === 'two-finger' || controls.focusEnabled === value) return;
     controls.focusEnabled = value; publish(); refocus(); syncControls();
   }
   on(el.focus, 'pointerdown', event => {
-    if (ios || !allowed() || settings()?.options.touchFocusMode === 'two-finger') return;
+    if (ios || !allowed() || focusMode() === 'two-finger') return;
     event.preventDefault(); capture(el.focus, event);
-    setFocus(settings()?.options.touchFocusMode === 'hold-button' ? true : !controls.focusEnabled);
+    setFocus(focusMode() === 'hold-button' ? true : !controls.focusEnabled);
   });
-  const releaseFocus = (event: PointerEvent) => {if (ios || settings()?.options.touchFocusMode !== 'hold-button') return; event.preventDefault(); setFocus(false);};
+  const releaseFocus = (event: PointerEvent) => {if (ios || focusMode() !== 'hold-button') return; event.preventDefault(); setFocus(false);};
   for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) on(el.focus, type, releaseFocus);
   on(el.focus, 'touchstart', event => {
-    if (!ios || !allowed() || settings()?.options.touchFocusMode === 'two-finger') return;
-    event.preventDefault(); setFocus(settings()?.options.touchFocusMode === 'hold-button' ? true : !controls.focusEnabled);
+    if (!ios || !allowed() || focusMode() === 'two-finger') return;
+    event.preventDefault(); setFocus(focusMode() === 'hold-button' ? true : !controls.focusEnabled);
   }, {passive: false});
   for (const type of ['touchend', 'touchcancel'] as const) on(el.focus, type, event => {
-    if (!ios || settings()?.options.touchFocusMode !== 'hold-button') return; event.preventDefault(); setFocus(false);
+    if (!ios || focusMode() !== 'hold-button') return; event.preventDefault(); setFocus(false);
   }, {passive: false});
-  on(el.focus, 'click', event => {if (event.detail === 0 && allowed() && settings()?.options.touchFocusMode === 'toggle-button') setFocus(!controls.focusEnabled);});
+  on(el.focus, 'click', event => {if (event.detail === 0 && allowed() && focusMode() === 'toggle-button') setFocus(!controls.focusEnabled);});
   on(el.functionKey, 'pointerdown', event => {
     if (ios || !allowed() || el.functionKey.hidden) return; event.preventDefault();
     if (functionOwner().down(event.pointerId)) capture(el.functionKey, event);

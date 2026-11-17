@@ -161,6 +161,7 @@ const manifest = () => ({
   games: {
     th06: {
       runtime: 'runtime/th06/game.html',
+      multiplayerRuntime: 'runtime/th06/mp.html',
       gameData: { version: `sha256-${hash}`, layout: `sha256-${hash}`, path: 'th06.data', bytes: 1, sha256: hash },
       music: { midi: { files: [] } },
     },
@@ -242,27 +243,27 @@ test('directory preserves main host-existence product subset and 3s retry withou
 for (const mode of ['normal', 'manifest-test', 'query-test'])
   test(`directory applies test-product visibility to filters and creation: ${mode}`, async () => {
     const published = manifest();
-    published.games.th075 = {
+    published.games.th13 = {
       ...published.games.th06,
-      runtime: 'runtime/th075/game.html',
-      multiplayerRuntime: 'runtime/th075/mp.html',
-      gameData: { ...published.games.th06.gameData, path: 'th075.data' },
+      runtime: 'runtime/th13/game.html',
+      multiplayerRuntime: 'runtime/th13/mp.html',
+      gameData: { ...published.games.th06.gameData, path: 'th13.data' },
     };
     if (mode === 'manifest-test') published.shared.testBuild = true;
     const { service, sockets } = directory({
       loadSiteManifest: async () => published,
       testBuild: mode === 'query-test',
-      selectedProduct: 'th075mp',
+      selectedProduct: 'th13mp',
     });
     try {
       await service.initialize();
       sockets[0].open();
       sockets[0].message(directoryState({ product: service.getSnapshot().selectedProduct }));
-      assert.deepEqual(service.getSnapshot().products, mode === 'normal' ? ['th06mp'] : ['th06mp', 'th075mp']);
-      assert.equal(service.getSnapshot().selectedProduct, mode === 'normal' ? 'th06mp' : 'th075mp');
+      assert.deepEqual(service.getSnapshot().products, mode === 'normal' ? ['th06mp'] : ['th06mp', 'th13mp']);
+      assert.equal(service.getSnapshot().selectedProduct, mode === 'normal' ? 'th06mp' : 'th13mp');
       assert.equal(service.prepareForm('create'), true);
-      service.updateForm({ product: 'th075mp' });
-      assert.equal(service.getSnapshot().form.product, mode === 'normal' ? 'th06mp' : 'th075mp');
+      service.updateForm({ product: 'th13mp' });
+      assert.equal(service.getSnapshot().form.product, mode === 'normal' ? 'th06mp' : 'th13mp');
     } finally {
       service.dispose();
     }
@@ -414,6 +415,31 @@ function roomFixture(extra = {}) {
   const service = owner.createMultiplayerRoom(ports);
   return { service, ports, clock, sockets, events, decisions, settings, ...storage };
 }
+test('directory TH09 creation keeps original charging when the saved room is restored', async () => {
+  const published = manifest();
+  published.games.th09 = {
+    ...published.games.th06,
+    runtime: 'runtime/th09/th09.html',
+    multiplayerRuntime: 'runtime/th09/th09.html',
+    gameData: {...published.games.th06.gameData, path: 'th09.data'},
+  };
+  const directory = await liveDirectory({selectedProduct: 'th09mp', loadSiteManifest: async () => published});
+  const room = roomFixture({sessions: directory.sessions, identity: directory.identity});
+  try {
+    assert.equal(directory.service.prepareForm('create'), true);
+    assert.equal(directory.service.getSnapshot().form.product, 'th09mp');
+    assert.equal(directory.service.submitForm(), 'close');
+    directory.service.formDidClose();
+    assert.equal(room.service.restoreInvite(directory.navigation[0]), true);
+    const socket = room.sockets[0];
+    assert.equal(new URL(socket.url).searchParams.get('disableLocalChargePriority'), '1');
+    socket.open();
+    assert.equal(socket.sent.find(message => message.type === 'settings').disableLocalChargePriority, true);
+  } finally {
+    room.service.dispose();
+    directory.service.dispose();
+  }
+});
 test('rollback products default to D0 for both room creation and restored invites',async()=>{
   for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp']){
     const f=roomFixture();f.service.enterRoom(product,'1234',true);await flush();

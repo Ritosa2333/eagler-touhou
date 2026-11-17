@@ -142,7 +142,7 @@ async function verifyGenericRoom(port) {
 
 async function verifyModes(port, product) {
   const capability = multiplayerConfigForProduct(product);
-  const challengeSupported = capability.gameplay === "cooperative";
+  const challengeSupported = capability.gameplay === "cooperative" && capability.challengeMode !== false;
   const timingPolicy = multiplayerInputTimingPolicy(capability);
   const room = `${product}-modes${Date.now().toString(36)}`;
   // Distinct cases must not race an earlier room's asynchronous close using

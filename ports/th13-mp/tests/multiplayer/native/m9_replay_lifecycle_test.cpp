@@ -168,6 +168,22 @@ TEST(replay_roundtrip_seek) {
     CHECK(ReplayArchive::HasSignature(wire.data(), wire.size()));
     ReplayArchive player;
     CHECK(player.Load(wire.data(), wire.size()));
+    CHECK(!player.UsesLegacyStagePositions());
+    CHECK(!player.UsesLegacyBossMitigation());
+    auto legacy = wire;
+    legacy[4] = ReplayArchive::LegacyVersion;
+    ReplayArchive old_player;
+    CHECK(old_player.Load(legacy.data(), legacy.size()));
+    CHECK(old_player.UsesLegacyStagePositions());
+    CHECK(old_player.UsesLegacyBossMitigation());
+    CHECK_EQ(old_player.FrameCount(), player.FrameCount());
+    auto quarters = wire;
+    quarters[4] = 2;  // v2：换面坐标新规则 + 四分之一减伤方案。
+    ReplayArchive quarter_player;
+    CHECK(quarter_player.Load(quarters.data(), quarters.size()));
+    CHECK(!quarter_player.UsesLegacyStagePositions());
+    CHECK(quarter_player.UsesLegacyBossMitigation());
+    CHECK_EQ(quarter_player.FrameCount(), player.FrameCount());
     // 身份/元数据 roundtrip。
     CHECK(player.Setup().session_id == setup.session_id);
     CHECK(player.Setup().seed == setup.seed);
