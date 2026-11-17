@@ -23,7 +23,7 @@ export async function presentationServer(port=0,{release=false,artifactDirectory
   [release?'/th09.wasm':'/th09-presentation.wasm',resolve(compiled,release?'th09.wasm':'th09-presentation.wasm')],
   ['/th09.dat',resolve(process.env.TH09_FIXTURE_DATA||resolve(fixtureWorkspace,'[th09] 东方花映塚 (日文版)/th09.dat'))],
  ]);
- for(const name of ['th09.html','style.css','shell.mjs','keyboard.mjs','netplay.mjs','shared-netplay.mjs','spectator-tape.mjs','spectator-timeline.mjs','spectator-timeline-view.mjs','motion-replay.mjs'])files.set('/app/'+name,resolve(root,'sdl-runtime',name));
+ for(const name of ['th09.html','style.css','shell.mjs','keyboard.mjs','directory-keyboard.mjs','netplay.mjs','shared-netplay.mjs','spectator-tape.mjs','spectator-timeline.mjs','spectator-timeline-view.mjs','motion-replay.mjs'])files.set('/app/'+name,resolve(root,'sdl-runtime',name));
  files.set('/app/match-archive-player.mjs',resolve(root,'sdl-runtime/match-archive-player.mjs'));
  files.set('/app/th09-match-archive.mjs',resolve(workspace,'../../common/contracts/th09-match-archive.mjs'));
  files.set('/app/auto-replay.mjs',resolve(root,'sdl-runtime/auto-replay.mjs'));

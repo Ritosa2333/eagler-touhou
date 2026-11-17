@@ -166,6 +166,7 @@ async function initializeTitle(receivedLifetime){
  await new Promise(requestAnimationFrame);assertLifetime(receivedLifetime,owner);
  await new Promise(requestAnimationFrame);assertLifetime(receivedLifetime,owner);
  if(!core._th09_game_open(runtimeVariant==='multiplayer'?0:Date.now()&65535))throw Error(err());titleInitialized=true;
+ core._th09_motion_smoothing?.(+(query.get('motionSmoothing')!=='0'));
  window.__th09Runtime={core,status,save,command};
 }
 async function resetReplayTitle(receivedLifetime){
