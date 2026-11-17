@@ -405,7 +405,7 @@
   "room_cheatMovement": "作弊移动",
   "room_cheatHint": "禁止触控突破游戏原有的移动速度上限。",
   "room_disableLocalChargePriority": "关闭本地优先的蓄力条进度",
-  "room_localChargeReplayHint": "默认启用本地优先蓄力。勾选该选项后，使用原版蓄力逻辑和即时显示。",
+  "room_localChargeReplayHint": "新房间默认使用原版蓄力逻辑。关闭此开关可启用本地优先蓄力，录像会额外保存蓄力数据。",
   "room_challengeMode": "挑战模式",
   "room_th15ChapterThreshold": "奖残所需得分",
   "room_th15ChapterSettingsHint": "（可在“房间/难度设置”处更改）",

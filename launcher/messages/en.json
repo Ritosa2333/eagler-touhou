@@ -405,7 +405,7 @@
   "room_cheatMovement": "Cheat movement",
   "room_cheatHint": "Prevents touch controls from exceeding the game's original movement speed limit.",
   "room_disableLocalChargePriority": "Disable local-priority charge progress",
-  "room_localChargeReplayHint": "Local-priority charging is enabled by default. Check this option to use the original charging logic with immediate display.",
+  "room_localChargeReplayHint": "New rooms default to the original charging logic. Turn this switch off to use local-priority charging, which saves extra charge data in replays.",
   "room_challengeMode": "Challenge mode",
   "room_th15ChapterThreshold": "Chapter score required for a life fragment",
   "room_th15ChapterSettingsHint": "(Change in Room / Difficulty settings)",

@@ -405,7 +405,7 @@
   "room_cheatMovement": "移動補助",
   "room_cheatHint": "タッチ操作で原作の移動速度の上限を超えないようにします。",
   "room_disableLocalChargePriority": "ローカル優先のチャージ表示を無効化",
-  "room_localChargeReplayHint": "標準ではローカル優先のチャージを使用します。有効にすると原作のチャージ処理と即時表示に切り替わります。",
+  "room_localChargeReplayHint": "新規ルームは原作のチャージ処理を使用します。この設定をオフにするとローカル優先のチャージに切り替わり、リプレイに追加のチャージデータが保存されます。",
   "room_challengeMode": "チャレンジモード",
   "room_th15ChapterThreshold": "残機の欠片に必要なチャプタースコア",
   "room_th15ChapterSettingsHint": "（「部屋／難易度設定」で変更できます）",
