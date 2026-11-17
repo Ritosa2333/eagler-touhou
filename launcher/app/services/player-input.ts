@@ -337,6 +337,7 @@ export function bindPlayerInput({
     }
     if (snapshot.launched && snapshot.epoch !== startedEpoch) {
       startedEpoch = snapshot.epoch;
+      if (session.getActiveSettings()?.gameId === 'th03') touch.resetTh03Fire();
       zoom.applyTransform(1, 0, 0);
       touch.syncControls();
       keyboard.startFocusRelay();

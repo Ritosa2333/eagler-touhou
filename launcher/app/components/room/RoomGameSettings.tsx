@@ -97,6 +97,8 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
             checked={!room.disableLocalChargePriority} disabled={disabled}
             onChange={()=>service.setRoomSettings({disableLocalChargePriority:!room.disableLocalChargePriority})}/>
         </div>}
+      {state.product === 'th03mp' && <div className="room-rule-field"><div><strong>{t('settings.alwaysHitbox')}</strong></div><OptionSwitch id="mpTh03ShowHitboxes" label={t('settings.alwaysHitbox')} checked={room.showHitboxes === true} disabled={disabled} onChange={()=>service.setRoomSettings({showHitboxes:room.showHitboxes !== true})}/></div>}
+      {state.product === 'th03mp' && <div className="room-rule-field"><div><strong>{t('room.th03SpecialFocus')}</strong></div><OptionSwitch id="mpTh03DisableFocus" label={t('room.th03SpecialFocus')} checked={room.disableFocus === false} disabled={disabled} onChange={()=>service.setRoomSettings({disableFocus:room.disableFocus === false})}/></div>}
       {state.product === 'th02mp' && <div className="room-rule-field"><div><strong>{t('room.th02DisableFocus')}</strong></div><OptionSwitch id="mpTh02DisableFocus" label={t('room.th02DisableFocus')} checked={room.disableFocus === true} disabled={disabled} onChange={()=>service.setRoomSettings({disableFocus:room.disableFocus !== true})}/></div>}
     </section>
     {!owner && <p className="room-setting-description" id="mpRoomSettingsHint">{t(!room.seats?.[0] ? 'room.hostAvailable' : 'multiplayer.ownerRemoteHint')}</p>}

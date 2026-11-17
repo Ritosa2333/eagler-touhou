@@ -47,6 +47,7 @@ export interface MultiplayerRuntimeOptionInput {
   challengeMode?: boolean;
   disableLocalChargePriority?: boolean;
   disableFocus?: boolean;
+  showHitboxes?: boolean;
   ballCount?: number;
   chapterThreshold?: number;
   iceServers: unknown;
@@ -80,6 +81,7 @@ export interface MultiplayerRuntimeOptions {
   netplayChallengeMode?: boolean;
   netplayDisableLocalChargePriority?: boolean;
   netplayDisableFocus?: boolean;
+  netplayShowHitboxes?: boolean;
   netplayBallCount?: number;
   netplayChapterThreshold?: number;
   netplayIceServers: unknown[];
@@ -115,7 +117,8 @@ export function buildMultiplayerRuntimeOptions(
   if(input.disableLocalChargePriority !== undefined && (roomProduct !== 'th09mp' || typeof input.disableLocalChargePriority !== 'boolean'))
     throw new Error('蓄力进度参数无效');
   if(input.ballCount!==undefined && (roomProduct!=='th01mp'||![1,2,3,4,6,8,9].includes(input.ballCount)))throw new Error('TH01 ball count is invalid');
-  if(input.disableFocus!==undefined&&(roomProduct!=='th02mp'||typeof input.disableFocus!=='boolean'))throw new Error('低速规则参数无效');
+  if(input.disableFocus!==undefined&&((roomProduct!=='th02mp'&&roomProduct!=='th03mp')||typeof input.disableFocus!=='boolean'))throw new Error('低速规则参数无效');
+  if(input.showHitboxes!==undefined&&(roomProduct!=='th03mp'||typeof input.showHitboxes!=='boolean'))throw new Error('判定点规则参数无效');
   if (
     input.chapterThreshold !== undefined &&
     (roomProduct !== "th15mp" ||
@@ -223,7 +226,7 @@ export function buildMultiplayerRuntimeOptions(
     ...(input.challengeMode !== undefined ? { netplayChallengeMode: input.challengeMode } : {}),
     ...(roomProduct === 'th09mp' ? {netplayDisableLocalChargePriority:input.disableLocalChargePriority===true} : {}),
     ...(roomProduct === 'th01mp' ? {netplayBallCount:input.ballCount ?? 2} : {}),
-    ...(roomProduct === 'th02mp' ? {netplayDisableFocus:input.disableFocus===true} : {}),
+    ...(roomProduct === 'th03mp' ? {netplayDisableFocus:input.disableFocus!==false,netplayShowHitboxes:input.showHitboxes===true} : roomProduct === 'th02mp' ? {netplayDisableFocus:input.disableFocus===true} : {}),
     netplayUrl: url.href,
     netplayPlayer: player,
     netplayPlayerCount: playerCount,

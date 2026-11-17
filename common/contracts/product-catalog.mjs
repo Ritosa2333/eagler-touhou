@@ -135,7 +135,7 @@ export const PRODUCT_GAMES = Object.freeze({
         testOnly: true, buildOptIn: true, number: '03', title: '東方夢時空', subtitle: 'Phantasmagoria of Dim.Dream', cardArtwork: 'th03-card.webp',
         storage: Object.freeze({saveRoot:'/savesth03',scoreFile:'YUME.NEM',configFiles:Object.freeze(["YUME.CFG"])}),
         runtime:'./runtime/th03/th03.html', runtimeFileLayout:'directory', runtimeFileTree:true,
-        runtimeAssets:Object.freeze(['th03.html','manifest.json','managed-shell.mjs','managed-data.mjs','managed-worker.mjs']), requiredShared:Object.freeze([]),
+        runtimeAssets:Object.freeze(['th03.html','manifest.json','managed-shell.mjs','managed-data.mjs','native-classic.js','native-classic.wasm']), requiredShared:Object.freeze([]),
         dataProvider:'retail-memory', runtimeResourceTransport:'resources',
         package:Object.freeze({dataFileId:'game-data',dataTarget:'/th03.data',musicSourceDirectories:Object.freeze({ogg:'music'}),musicMounts:Object.freeze({ogg:'/bgm/akyu'})}),
         musicCapabilities:Object.freeze({midi:false}),musicRuntime:Object.freeze({localOggConfigureMode:'runtime-selection',embeddedOgg:true,sources:Object.freeze(['original','akyu'])}),touchFire:TOGGLE_TOUCH_FIRE,

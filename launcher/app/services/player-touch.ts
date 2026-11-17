@@ -1,7 +1,7 @@
 import {PRODUCT_GAMES} from '../../src/contracts/product-catalog.mts';
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import {postHostedKey, postTouchControls, postTouchCancel, type HostedKeySpec, type TouchControlsSnapshot} from '../../src/launcher/touch-runtime-protocol.mts';
-import {createFunctionKeyOwner, functionKeySpec, th19ChargeKeySpec} from '../../src/launcher/touch-function-key.mts';
+import {createFunctionKeyOwner, functionKeySpec, th03ChargeKeySpec, th19ChargeKeySpec} from '../../src/launcher/touch-function-key.mts';
 import type {SettingsSnapshot} from '../models/game-settings';
 import type {RuntimeService, RuntimeMidiEventContext} from './runtime';
 import {bindPlayerDirectTouch, type TouchZoomPort} from './player-direct-touch';
@@ -100,8 +100,9 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
   function refocus() {if (!(ios && direct.hasPointers())) options.refocus();}
   const ordinaryFunctionOwner = createFunctionKeyOwner(down => {functionDown = down; publish(); key(functionKeySpec, down);});
   const th19ChargeOwner = createFunctionKeyOwner(down => {functionDown = down; publish(); key(th19ChargeKeySpec, down);}, 'hold');
-  const functionOwner = () => settings()?.gameId === 'th19' ? th19ChargeOwner : ordinaryFunctionOwner;
-  function cancelTouchFunction() {ordinaryFunctionOwner.cancel(); th19ChargeOwner.cancel();}
+  const th03ChargeOwner = createFunctionKeyOwner(down => {functionDown = down; publish(); key(th03ChargeKeySpec, down);}, 'hold');
+  const functionOwner = () => settings()?.gameId === 'th19' ? th19ChargeOwner : settings()?.gameId === 'th03' ? th03ChargeOwner : ordinaryFunctionOwner;
+  function cancelTouchFunction() {ordinaryFunctionOwner.cancel(); th19ChargeOwner.cancel(); th03ChargeOwner.cancel();}
   function on<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, listener: (event: HTMLElementEventMap[K]) => void, config?: AddEventListenerOptions) {
     element.addEventListener(type, listener, config); cleanup.push(() => element.removeEventListener(type, listener, config));
   }
@@ -260,6 +261,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
   return {
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};}, getSnapshot: () => snapshot,
     sync, syncControls, reset, cancelPointers, releaseHeldTouchFire, cancelTouchFunction,
+    resetTh03Fire() {controls.fireEnabled = false; options.fireState.setEnabled(false); publish();},
     hasDirectPointers: direct.hasPointers, pulseThprac,
     dispose() {
       if (disposed) return; reset(); disposed = true; unsubscribe(); unbindNative?.();

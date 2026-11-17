@@ -79,15 +79,23 @@ try{
       assert(Math.abs(box.x-rect.x)<2&&Math.abs(box.y-rect.y)<2&&Math.abs(box.width-rect.width)<2&&Math.abs(box.height-rect.height)<2,'touch surface follows game frame');
       assert.equal(await page.evaluate(({x,y})=>document.elementFromPoint(x,y)?.id,{x:start,y}),'touchDirectSurface','touch reaches game surface');
       const full=await (await page.$('.room-workspace-fullscreen')).boundingBox();
-      assert(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.room-workspace-fullscreen'),{x:full.x+full.width/2,y:full.y+full.height/2}),'fullscreen control remains clickable');
+      const fullHit=await page.evaluate(({x,y})=>{const hit=document.elementFromPoint(x,y),button=document.querySelector('.room-workspace-fullscreen'),tools=button?.parentElement;return {hit:hit?.outerHTML.slice(0,200),box:{x,y},tools:tools&&{rect:tools.getBoundingClientRect().toJSON(),position:getComputedStyle(tools).position,z:getComputedStyle(tools).zIndex},ok:!!hit?.closest('.room-workspace-fullscreen')};},{x:full.x+full.width/2,y:full.y+full.height/2});assert(fullHit.ok,'fullscreen control remains clickable '+JSON.stringify(fullHit));
       const fire=await page.$('#touchFire'),fireBox=await fire.boundingBox(),firePoint={x:fireBox.x+fireBox.width/2,y:fireBox.y+fireBox.height/2};
       const initialFire=await fire.evaluate(el=>el.getAttribute('aria-pressed'));
       await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...firePoint,id:9}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
       await wait(async()=>await fire.evaluate(el=>el.getAttribute('aria-pressed'))!==initialFire,'room touch fire button',5000);
       await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...firePoint,id:9}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
       const send=(type,x)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y,id:1}]});
-      await send('touchStart',start);for(let i=1;i<=8;i++){await send('touchMove',start-box.width*.015*i);await new Promise(r=>setTimeout(r,100));}await send('touchEnd',start-box.width*.12);await cdp.detach();
+      await send('touchStart',start);for(let i=1;i<=8;i++){await send('touchMove',start-box.width*.015*i);await new Promise(r=>setTimeout(r,100));}await send('touchEnd',start-box.width*.12);
       await wait(async()=>(await position())<before,'launcher touch moves P'+(seat+1),15000);
+      for(const pointerType of ['pen','mouse']){
+        const prior=await position();await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:start,y,pointerType});await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',x:start,y,button:'left',buttons:1,clickCount:1,pointerType});
+        for(let i=1;i<=8;i++){await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:start+box.width*.015*i,y,button:'left',buttons:1,pointerType});await new Promise(r=>setTimeout(r,80));}
+        await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:start+box.width*.12,y,button:'left',buttons:0,clickCount:1,pointerType});
+        await wait(async()=>(await position())>prior,`launcher ${pointerType} moves P${seat+1}`,15000);
+      }
+      console.log('PASS real Launcher pen and mouse P'+(seat+1));
+      await cdp.detach();
       console.log('PASS real Launcher touch P'+(seat+1));
     }
     console.log('PASS mobile room touch');break;

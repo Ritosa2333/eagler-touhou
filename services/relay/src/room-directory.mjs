@@ -99,7 +99,7 @@ export function createRoomDirectory({
               loadout: seat.loadout,
               ...(publicNames ? {name:seat.name || ''} : {}),
               profile: publicProfile?.(room, seat.clientId),
-              ...(['th09mp', 'th19mp'].includes(match[1])
+              ...(['th03mp', 'th09mp', 'th19mp'].includes(match[1])
                 ? {
                     ...(!publicNames && typeof seat.machineSign === 'string' && seat.machineSign.trim()
                       ? {
