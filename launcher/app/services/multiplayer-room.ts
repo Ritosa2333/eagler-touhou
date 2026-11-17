@@ -898,8 +898,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       difficulty:
         saved?.room.difficulty ??
         (created
-          ? Math.max(0, Math.min(config.difficulties.length - 1, Math.trunc(invite.d ?? 0)))
-          : 1),
+          ? Math.max(0, Math.min(config.difficulties.length - 1, Math.trunc(invite.d ?? (product === 'th03mp' ? 3 : 0))))
+          : product === 'th03mp' ? 3 : 1),
       created: created || !!saved?.room.created,
       visibility: saved?.room.visibility ?? (invite.v === 'private' ? 'private' : 'public'),
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
@@ -942,7 +942,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     room = {
       code,
       playerCount: policy()!.playerCounts[0],
-      difficulty: 1,
+      difficulty: nextProduct === 'th03mp' ? 3 : 1,
       ...(nextProduct === 'th03mp' ? {disableFocus:true,showHitboxes:false} : nextProduct === 'th02mp' ? {disableFocus:false} : {}),
       created,
       ...(created && nextProduct === 'th09mp' ? {disableLocalChargePriority: true} : {}),

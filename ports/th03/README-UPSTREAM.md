@@ -31,7 +31,7 @@ TH03《东方梦时空》的浏览器单机、本地双人和联机项目。当�
 
 2026-10-19 新增联机独立线程试用：开局前在房间页的“本机运行方式”选择“独立线程（试用）”，模拟、快照和校验在后台线程执行，页面处理输入、网络和音频。选择仅影响本机并自动保存；默认仍为兼容模式。已补充真实原生恢复、双端 WebRTC 和性能对照测试，主要观察到页面响应改善，推进速度未显示稳定提升，仍需实体设备联测。更新后双方刷新并重新建房，试玩后下载两端“日志”；`executionThread` 为 `worker` 表示实际启用。遇到问题可结束本局，切回兼容模式后重新建房。
 
-公网直连使用 WebRTC / STUN，可配置 TURN；服务器转发使用 WebSocket / WSS。需要转发时先运行 `install-relay.bat`，需要 TURN 时运行 `configure-turn.bat`。TURN 凭据只保存在本机。部署与排障见 [公网联机说明](README-PUBLIC.md)和 [Relay 说明](README-RELAY.md)。
+公网直连使用 WebRTC / STUN，可配置 TURN；服务器转发使用 WebSocket / WSS。需要转发时先运行 `install-relay.bat`，需要 TURN 时运行 `configure-turn.bat`。TURN 凭据只保存在本机。部署与排障见 [公网联机说明](https://github.com/IxinorTyan/th03-netplay-lab/blob/63d8c211c131ab52a43e706f8b5ad7718ba7858f/README-PUBLIC.md)和 [Relay 说明](https://github.com/IxinorTyan/th03-netplay-lab/blob/63d8c211c131ab52a43e706f8b5ad7718ba7858f/README-RELAY.md)。
 
 ## 操作设置
 
@@ -105,8 +105,8 @@ git rm -r --cached --ignore-unmatch -- tools patches reports build vendor-source
 
 网页文本通过 `.gitattributes` 固定为 LF，原生 DOS 文件保持原始字节，确保 GitHub 下载包与 SHA-256 清单一致。不要用编辑器批量转换发布资源的换行符。
 
-旧 `web/vendor/np2/` 为历史资源，当前入口使用 DOSBox-X；本次文档更新不删除历史文件。迁移记录见 [MIGRATION.md](MIGRATION.md)，其中独立目录的描述记录的是覆盖到主目录之前的状态。
+旧 `web/vendor/np2/` 为历史资源，当前入口使用 DOSBox-X；本次文档更新不删除历史文件。迁移记录见 [MIGRATION.md](https://github.com/IxinorTyan/th03-netplay-lab/blob/63d8c211c131ab52a43e706f8b5ad7718ba7858f/MIGRATION.md)，其中独立目录的描述记录的是覆盖到主目录之前的状态。
 
 本地开发与重建说明保存在 `DEVELOPMENT.md`；下载的发布包不包含开发工具和构建源码，普通游玩无需这些文件。
 
-DOSBox-X / js-dos 的 GPL-2.0 许可证及来源见 [LICENSE](web/vendor/dosbox-x/LICENSE) 和 [NOTICE.md](web/vendor/dosbox-x/NOTICE.md)。游戏及汉化资源沿用提供的 TH03 镜像。
+DOSBox-X / js-dos 的 GPL-2.0 许可证及来源见 [LICENSE](https://github.com/IxinorTyan/th03-netplay-lab/blob/63d8c211c131ab52a43e706f8b5ad7718ba7858f/web/vendor/dosbox-x/LICENSE) 和 [NOTICE.md](https://github.com/IxinorTyan/th03-netplay-lab/blob/63d8c211c131ab52a43e706f8b5ad7718ba7858f/web/vendor/dosbox-x/NOTICE.md)。游戏及汉化资源沿用提供的 TH03 镜像。

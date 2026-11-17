@@ -483,7 +483,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   }
   function formDefaults(product: MultiplayerProductId | '') {
     const policy = product ? multiplayerConfigForProduct(product) : null;
-    return { product, capacity: policy?.playerCounts[0] ?? 2, difficulty: 1 } as const;
+    return { product, capacity: policy?.playerCounts[0] ?? 2, difficulty: product === 'th03mp' ? 3 : 1 } as const;
   }
   async function initialize() {
     if (bootRunning || disposed || snapshot.leaving) return;
