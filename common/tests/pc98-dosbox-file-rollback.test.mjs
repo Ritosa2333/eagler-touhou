@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {existsSync} from 'node:fs';
+const available=game=>existsSync(new URL(`../../ports/th${game}/web/dosbox-snapshots.js`,import.meta.url));
 
-for(const game of ['02','04'])test(`TH${game} restores heap-backed files after native memory`,async()=>{
+for(const game of ['02','04'])test(`TH${game} restores heap-backed files after native memory`,{skip:!available(game)},async()=>{
   const {createDosboxSnapshots}=await import(`../../ports/th${game}/web/dosbox-snapshots.js`);
   const heap=new Uint8Array(8192),file={mode:1,contents:heap.subarray(4096,4104)},root={mode:2,contents:{file}},marked=[];
   file.contents.fill(7);
@@ -17,7 +19,7 @@ for(const game of ['02','04'])test(`TH${game} restores heap-backed files after n
   assert.deepEqual(marked,[[4096,1]],'heap-backed writes remain synchronized with the checkpoint');
 });
 
-for(const game of ['02','04'])test(`TH${game} restores the checkpoint before native and file writes on one heap page`,async()=>{
+for(const game of ['02','04'])test(`TH${game} restores the checkpoint before native and file writes on one heap page`,{skip:!available(game)},async()=>{
   const {createDosboxSnapshots}=await import(`../../ports/th${game}/web/dosbox-snapshots.js`);
   const heap=new Uint8Array(8192),file={mode:1,contents:heap.subarray(4096,4104)},root={mode:2,contents:{file}},marked=[];
   file.contents.fill(7);let preimage;
@@ -33,7 +35,7 @@ for(const game of ['02','04'])test(`TH${game} restores the checkpoint before nat
   assert.deepEqual(marked,[[4096,1]],'heap-backed JS file writes mark native pages');
 });
 
-for(const game of ['02','04'])test(`TH${game} restores filesystem node and stream metadata from independent snapshots`,async()=>{
+for(const game of ['02','04'])test(`TH${game} restores filesystem node and stream metadata from independent snapshots`,{skip:!available(game)},async()=>{
   const {createDosboxSnapshots}=await import(`../../ports/th${game}/web/dosbox-snapshots.js`);
   const file={mode:1,contents:new Uint8Array([1,2]),name:'original',labels:['a']};
   const root={mode:2,contents:{file}},shared={flags:['read']},stream={node:file,position:2,shared};
