@@ -179,7 +179,7 @@ try{
       }
       for(const name of ['surface','fire','bomb','escape']){const r=layout[name],f=layout.frame;assert(r.left>=f.left-1&&r.top>=f.top-1&&r.right<=f.right+1&&r.bottom<=f.bottom+1,`${name} must remain inside the game after exiting fullscreen`);}
       if(!await host.$eval('#player',el=>el.classList.contains('room-workspace'))){await host.$eval('#fullscreenToggle',el=>el.click());await host.waitForFunction(()=>document.querySelector('#player')?.classList.contains('room-workspace'),{timeout:10000});}
-      const ui=await host.evaluate(()=>{const player=document.querySelector('#player'),surface=document.querySelector('#touchDirectSurface'),fire=document.querySelector('#touchFire'),frame=document.querySelector('#gameFrame'),r=frame.getBoundingClientRect(),x=r.left+r.width*.7,y=r.top+r.height*.6;return {classes:player.className,options:localStorage.getItem('eagler-touhou-game-options-v1-th03'),active:player.classList.contains('th03-room-touch-active'),surface:getComputedStyle(surface).display,fire:getComputedStyle(fire.closest('.touch-hud')).display,pressed:fire.getAttribute('aria-pressed'),hit:document.elementFromPoint(x,y)?.id,rect:{x:r.left,y:r.top,w:r.width,h:r.height}};});
+      const ui=await host.evaluate(()=>{const player=document.querySelector('#player'),surface=document.querySelector('#touchDirectSurface'),fire=document.querySelector('#touchFire'),frame=document.querySelector('#gameFrame'),r=frame.getBoundingClientRect(),x=r.left+r.width*.7,y=r.top+r.height*.6;return {classes:player.className,options:localStorage.getItem('eagler-touhou-game-options-v1-th03'),active:player.classList.contains('pc98-room-touch-active'),surface:getComputedStyle(surface).display,fire:getComputedStyle(fire.closest('.touch-hud')).display,pressed:fire.getAttribute('aria-pressed'),hit:document.elementFromPoint(x,y)?.id,rect:{x:r.left,y:r.top,w:r.width,h:r.height}};});
       console.log('room touch state',ui);assert(ui.active&&ui.surface!=='none'&&ui.fire!=='none','room touch controls must be visible');assert.equal(ui.pressed,'false','TH03 touch fire starts released');assert.equal(ui.hit,'touchDirectSurface','drag surface owns game area');
       const fire=await host.$('#touchFire'),fb=await fire.boundingBox(),cdp=await host.createCDPSession();
       const tap=async(x,y)=>{await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:0}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});};
@@ -195,7 +195,15 @@ try{
       await new Promise(r=>setTimeout(r,500));for(const frame of frames){const state=await frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health());assert(state.confirmedInput.every(n=>!(n&32)),'touch toggle release stops firing');}
       const x=ui.rect.x+ui.rect.w*.7,y=ui.rect.y+ui.rect.h*.6,before=await frames[0].evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().players.find(p=>p.seat===0)?.x);
       await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+100,y,id:1}]});await new Promise(r=>setTimeout(r,400));await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-      await wait(async()=>frames[0].evaluate(async old=>(await import('./managed-native-room.mjs')).managedAPI.health().players.find(p=>p.seat===0)?.x>old,before),'real room touch moves player',10000);await cdp.detach();console.log('PASS room touch surface and released fire');
+      await wait(async()=>frames[0].evaluate(async old=>(await import('./managed-native-room.mjs')).managedAPI.health().players.find(p=>p.seat===0)?.x>old,before),'real room touch moves player',10000);
+      for(const pointerType of ['pen','mouse']){
+        const prior=await frames[0].evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().players.find(p=>p.seat===0)?.x);
+        await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x,y,pointerType});await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',buttons:1,clickCount:1,pointerType});
+        for(let i=1;i<=8;i++){await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:x-12*i,y,button:'left',buttons:1,pointerType});await new Promise(r=>setTimeout(r,80));}
+        await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:x-96,y,button:'left',buttons:0,clickCount:1,pointerType});
+        await wait(async()=>frames[0].evaluate(async old=>(await import('./managed-native-room.mjs')).managedAPI.health().players.find(p=>p.seat===0)?.x<old,prior),`room ${pointerType} moves player`,10000);
+      }
+      await cdp.detach();console.log('PASS room touch, pen and mouse movement');
     }
     for(const frame of frames){
       await frame.evaluate(()=>{__eaglerPC98Options().alwaysHitbox=false;__eaglerPC98Options().focusHitboxEnabled=false;});
