@@ -109,3 +109,10 @@ main{max-width:1328px}.screen{max-width:1280px}
 .web-input-button:active{background:#315f73e8}
 @media(any-pointer:coarse){.web-input{display:block}}
 @media(max-width:500px){.web-input-actions{gap:4px}.web-input-button{font-size:10px;padding:5px;min-height:38px}}
+
+.practice-menu{position:fixed;z-index:20;inset:15vh auto auto 50%;transform:translateX(-50%);width:min(560px,calc(100vw - 28px));max-height:75vh;overflow:auto;padding:24px;border:1px solid #518295;border-radius:10px;background:#101f2cf5;box-shadow:0 20px 80px #000c}
+.practice-menu h2{margin:0 0 12px;font-size:24px;color:#e1f9fc}
+.practice-menu p{font-size:14px;line-height:1.8;color:#b5cbd7}
+.practice-menu label{display:flex;flex-wrap:wrap;gap:10px;font-size:14px;margin:14px 0}
+.practice-menu select{min-height:44px;flex:1}.practice-replace input{width:18px;height:18px}.practice-actions{display:flex;gap:10px;flex-wrap:wrap}.practice-actions button{min-height:44px}
+#practice-open{min-height:40px;font-size:13px;flex-shrink:0}

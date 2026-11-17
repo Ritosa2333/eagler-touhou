@@ -10,7 +10,15 @@
 </head>
 <body>
   <main>
-    <header><a href="/play.html">妖精大战争</a><span>方向键移动 · Z 射击 · X 完美冻结 · Esc 暂停</span></header>
+    <header><a href="/play.html">妖精大战争</a><button id="practice-open" type="button" aria-controls="practice-menu" aria-expanded="false" disabled>练习</button><span>方向键移动 · Z 射击 · X 完美冻结 · Esc 暂停</span></header>
+    <section id="practice-menu" class="practice-menu" role="dialog" aria-modal="true" aria-labelledby="practice-title" hidden>
+      <h2 id="practice-title">练习</h2>
+      <p>可练习六条路线第三面（Normal）或 EX 起点。每次从关卡开头开始，练习局不计正常通关与解锁。</p>
+      <label>练习关卡 <select data-practice="select" aria-label="练习关卡"></select></label>
+      <label data-practice="replaceRow" class="practice-replace" hidden><input data-practice="replace" type="checkbox">替换当前局，放弃尚未保存的进度</label>
+      <p data-practice="status" role="status">正在准备练习入口…</p>
+      <div class="practice-actions"><button data-practice="start" type="button">开始练习</button><button data-practice="restart" type="button" disabled>重新开始此练习</button><button data-practice="cancel" type="button">关闭 / 取消启动</button></div>
+    </section>
     <section id="debug-stage-jump" class="debug-stage-jump" aria-label="调试跳关" data-development-only hidden inert aria-hidden="true">
       <label for="debug-stage-select">调试选关 · Normal / EX</label>
       <select id="debug-stage-select" aria-describedby="debug-stage-note" disabled>

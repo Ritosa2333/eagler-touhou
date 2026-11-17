@@ -14,7 +14,7 @@ for(const code of ['ArrowDown','KeyZ','Enter','KeyX','ShiftLeft']){
     const released=[],nativeInputs=[],state={worldMode:true,pressed:new Set([code,'ArrowLeft']),
       normalPostrun:{input:{up:value=>released.push(value)}}};
     const suppressedKeys=new Set([code,'ArrowLeft']);let handler;
-    const context={state,suppressedKeys,window:{addEventListener(type,callback){assert.equal(type,'keyup');handler=callback;}},
+    const context={state,suppressedKeys,practiceMenu:null,window:{addEventListener(type,callback){assert.equal(type,'keyup');handler=callback;}},
       menu:{pauseOpen:false},movementKeys:new Map(),worldMovementInput(){assert.fail('Postrun key release must not reach World');},
       gameplayXRelease(){assert.fail('Postrun cancel must not reach gameplay freeze');}};
     vm.createContext(context);vm.runInContext(source.slice(begin,end),context);handler({code});

@@ -3,6 +3,7 @@ import {readWorldDrawRecords} from './runtime/world-presentation.mjs';
 import {mountWebInput} from './runtime/web-input.mjs';
 import {getPageLaunchContext} from './runtime/page-launch-context.mjs';
 import {musicOutput,musicOutputEnabled} from './runtime/music-output.mjs';
+import {mountPracticeMenu} from './runtime/practice-menu.mjs';
 import {QualificationOwner,evaluateOwnedQualification,EX_QUALIFICATION_SCHEMA} from './runtime/ex-qualification.mjs';
 import {loadOriginalType33ForWorld,originalType33Profile} from './runtime/original-bullet-type33.mjs';
 const {assertStageStartAllowed,mountExtraMenu,setDebugExtraSaveEligibility,setOwnedExtraSaveEligibility,readCurrentExtraAccess,requestNormalExtraStart}=(()=>{
@@ -944,6 +945,7 @@ const state={module:null,renderer:null,manifest:null,base:'',catalog:null,stageC
   debugInfiniteRespawnRequested:false,
   endingHost:null,endingResources:null,endingLoading:false,endingBusy:false,endingPromise:null,endingStepPromise:null,endingTicket:0,
   flowCapabilityModule:null,flowReady:false,flowCapabilities:null,nativePause:null,nativePausePending:null,menuSoundLedger:null,manualPageLoaded:-1,replayStore:null,replaySlots:null,replayClockLast:null,replayNativeBound:false};
+let practiceMenu=null,practiceLaunchOwner=null;
 // BEGIN HIGH_FRAMERATE_PRESENTATION
 const highFramerateHistory=new WorldPresentationInterpolator();
 let highFramerateEnabled=false,highFramerateOwner=null,highFramerateGeneration=0;
@@ -1234,6 +1236,7 @@ function debugThirdStageSelection(route){
 }
 
 function syncDebugStageJumpControls(){
+  practiceMenu?.refresh();
   const select=find('#debug-stage-select'),button=find('#debug-stage-start'),note=find('#debug-stage-status');
   if(!select||!button)return;
   const ready=debugRespawnSupported()&&!!state.stageCatalog&&find('#variant')?.disabled!==true;
@@ -1269,6 +1272,35 @@ async function startDebugThirdStage(route){
     if(note)note.textContent=`调试跳关失败：${problem.message??String(problem)}`;
     throw problem;
   }finally{syncDebugStageJumpControls();}
+}
+async function startPracticeStage(route,{signal,isCurrent}){
+ const current=()=>!signal.aborted&&isCurrent();
+ if(!current())throw new DOMException('Practice owner exited','AbortError');
+ if(practiceLaunchOwner)throw new Error('Practice launch is already pending');
+ const owner={};practiceLaunchOwner=owner;let selection=null,launchId=null;
+ const abort=()=>{if(practiceLaunchOwner===owner&&menu.launching&&menu.launchId===launchId&&menu.launchSelection===selection)cancelLaunch();};
+ try{
+  const pending=startDebugThirdStage(route);selection=menu.launchSelection;launchId=menu.launchId;
+  signal.addEventListener('abort',abort,{once:true});if(!current())abort();
+  let receipt;try{receipt=await pending;}catch(error){if(!current())throw new DOMException('Practice owner exited','AbortError');throw error;}
+  if(!current()||menu.launchId!==launchId||state.stageSelection!==selection)throw new DOMException('Practice launch owner changed','AbortError');
+  return receipt;
+ }finally{signal.removeEventListener('abort',abort);if(practiceLaunchOwner===owner)practiceLaunchOwner=null;}
+}
+function installPracticeMenu(){
+ if(practiceMenu)return practiceMenu;
+ practiceMenu=mountPracticeMenu({root:find('#practice-menu'),opener:find('#practice-open'),
+  getAvailability:()=>({
+   ready:!state.launcherExited&&debugRespawnSupported()&&!!state.stageCatalog&&find('#variant')?.disabled!==true,
+   busy:menu.launching||state.handoff||!!state.pendingCarryToken||!!state.nativePausePending||!!state.normalPostrun||!!state.endingHost||state.endingLoading||!!state.replayPlayback,
+   inRun:state.worldMode&&state.active,
+   practiceRoute:state.worldMode&&state.stageSelection?.debugJump?state.stageSelection.debugJump.route:null
+  }),
+  onOpen:async()=>{loseFocus();await state.nativePausePending;},
+  onFocusGame:()=>find('#game')?.focus(),launch:startPracticeStage
+ });
+ window.addEventListener('pagehide',()=>practiceMenu?.dispose(),{once:true});
+ return practiceMenu;
 }
 function menuPageNodes(){return [...document.querySelectorAll('[data-menu-page]')];}
 function menuRows(page=menu.page){
@@ -3016,6 +3048,7 @@ find('#debug-stage-start').addEventListener('click',()=>{
 find('#debug-extra-start').addEventListener('click',()=>{
   startDebugThirdStage('EX').catch(problem=>status(`EX 启动失败：${problem.message??String(problem)}`));
 });
+installPracticeMenu();
 syncDebugStageJumpControls();
 find('#previous').addEventListener('click',()=>select(-1));find('#next').addEventListener('click',()=>select(1));
 find('#ecl').addEventListener('click',async()=>{
@@ -4132,6 +4165,7 @@ find('#high-framerate-mode').addEventListener('change',event=>{
   setHighFramerateMode(event.target.checked);find('#game').focus();
 });
 window.addEventListener('keydown',event=>{
+  if(practiceMenu?.isOpen)return;
   if(state.launcherExited)return;
   if(event.target instanceof HTMLSelectElement||event.target instanceof HTMLInputElement)return;
   const menuKeys=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','Enter','Escape'];
@@ -4184,6 +4218,7 @@ window.addEventListener('keydown',event=>{
   }
 });
 window.addEventListener('keyup',event=>{
+  if(practiceMenu?.isOpen)return;
   if(state.launcherExited)return;
   if(state.webInput&&!state.webInput.acceptKeyUp(event))return;
   if(state.normalPostrun){state.pressed.delete(event.code);suppressedKeys.delete(event.code);state.normalPostrun.input.up(event.code);return;}
@@ -4250,6 +4285,7 @@ function installLauncherRuntime(){
     exit(){
       if(state.launcherExited)return;
       state.launcherExited=true;state.active=false;state.paused=true;state.loading=(state.loading??0)+1;++menu.launchId;
+      practiceMenu?.dispose();
       state.controller?.abort();
       try{cancelOriginalEnding();}finally{
         try{state.webInput?.dispose();releaseGameInput();}finally{

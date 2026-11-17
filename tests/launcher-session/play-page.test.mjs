@@ -6,7 +6,7 @@ function bind(e,config={}){
  const notices=[],c=createPageLaunchContext({config,onPresented:value=>notices.push(value)}),counts={audio:0,ending:0,renderer:0,high:[]};
  const find=()=>({hidden:false}),releaseGameInput=()=>{e.state.pressed.clear();},clock={reset(){}},resetHighFrameratePresentation=()=>{};
  const ctor=new Function('state','menu','getPageLaunchContext','releaseGameInput','clock','resetHighFrameratePresentation','stopAudio','cancelOriginalEnding','setHighFramerateMode','find',
-  ['installLauncherRuntime','finishLauncherStartup','noteLauncherPresentation'].map(functionSource).join('\n')+'\nreturn {installLauncherRuntime,finishLauncherStartup,noteLauncherPresentation};');
+  'let practiceMenu=null;'+['installLauncherRuntime','finishLauncherStartup','noteLauncherPresentation'].map(functionSource).join('\n')+'\nreturn {installLauncherRuntime,finishLauncherStartup,noteLauncherPresentation};');
  const api=ctor(e.state,e.menu,()=>c,releaseGameInput,clock,resetHighFrameratePresentation,()=>counts.audio++,()=>counts.ending++,value=>counts.high.push(value),find);
  e.state.loading=4;e.state.renderer={dispose(){counts.renderer++;}};e.state.controller=new AbortController();
  api.installLauncherRuntime();return{c,api,counts,notices};

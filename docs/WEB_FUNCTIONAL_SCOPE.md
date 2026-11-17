@@ -11,8 +11,10 @@
 | 语言 | 真实catalog提供zh/ja、已选语言初始化、缺失选择回退；父配置只接受已安装catalog语言 | 中文资源真实使用；原生日文字形/额外语言/缺font设备兼容保待办，不冒已全验 |
 | 存储/录像 | 25槽Replay exact-CAS/strict事务/完整回读822、823原RPY与游戏读取者；原生捕获分数及T821只读导出；JSON设置与独立9B姓名保持 | 不伪造scoreimport/原binarycfg或默认/解锁；原版完整录像617为单列兼容 |
 | 生命周期 | 840启动失败/版本不符保旧/退出取消；843持久缓存返回请求fresh document，845受影响110；844真实历史返回＋IDB保持 | 844实际pageshow.persisted=false；cached true分支仅CPU事件边界验证，设备BFCache单列 |
-| 用户练习入口 | 现有函数可做六路线第三面Normal和EX起点/taint/有限重开 | **剩余必需可见入口**：play.html所有现选关控件仍data-development-only hidden/inert，不能把隐藏调试工具当已交付练习UI。需最小独立可见“练习”界面接已有consumer，不能恢复自动弹出调试面板或误造正常通关/解锁 |
+| 用户练习入口 | 独立可见“练习”入口：六路线第三面Normal＋EX起点；主动打开/关闭、替换确认、归属/取消/重开、native taint严格核对；846→847与850→851 RED/GREEN，851受影响304项；854真实HTML/CSS/当前调用者浏览器15项 | engine/resource/pause明确接缝；不冒完整thprac、原作浏览器画面/FPS；隐藏开发工具仍隐藏 |
 
-MAIN决定：当前Web阶段还剩一个具体的用户练习入口，完成该有限子集的可见接线、归属/重开/taint和取消验证后，基于上述功能范围转入第四阶段；不以“完整thprac、任意文件格式/音乐/设备”无限拖延。此次尚未宣布第三阶段完成，多人尚未实施。
+MAIN决定：上述有限Web功能基线在846–854可见练习交付后完成。第三阶段的功能完成与公网部署、设备兼容、完整原资源浏览器端实测分别记录；没有公开URL，也没有完整原作设备60FPS或整体100%的声明。第四阶段已从855–856的实际规则握手模块开始，尚未接通实际多人游戏。
 
-练习子集应明确仅支持已有六路线第三面Normal及EX起点，使用既有新World/taint接口；辅助局保持非正常成绩/解锁资格。应提供用户主动打开/关闭、准备状态、正在加载时禁止重复、当前局替换提示和重开，不自动显示开发数据或提供清库/模拟通关按钮。普通流程、个人存档和已接受核心保持。
+练习仅支持已有六路线第三面Normal与EX起点，固定seed34772/progress0/fresh，不带已验证的前关carry。练习局保持非正常成绩/解锁资格，不清库、不改设置/音量。854使用实际HTML/CSS/组件及逐字节源提取的当前startLaunch/cancel/taint/exit；native模块、资源加载、暂停和渲染明确为边界替身，0World/Factory/GPU/物理音频。完整游戏引擎沿用已接受基线，不重跑六线/EX。
+
+后续多人规则见[MULTIPLAYER_RULES.md](MULTIPLAYER_RULES.md)，可见练习说明及验收见[VISIBLE_PRACTICE.md](VISIBLE_PRACTICE.md)。
