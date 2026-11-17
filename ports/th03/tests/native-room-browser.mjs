@@ -238,9 +238,9 @@ try{
     console.log('PASS touch drag moves the native player');}
     for(const frame of frames)await frame.evaluate(()=>{
       const peer=[...globalThis.__th03PeerTransport.peers.values()][0],channel=peer.channel,send=channel.send.bind(channel);
-      channel.send=text=>{const data=JSON.parse(text);if(data.type==='native-rollback-input'&&data.frame%17===0)setTimeout(()=>{if(channel.readyState==='open')send(text);},80);else send(text);};
+      let delayed=false;channel.send=text=>{const data=JSON.parse(text);if(!delayed&&data.type==='native-rollback-input'&&(data.input&512)){delayed=true;setTimeout(()=>{if(channel.readyState==='open')send(text);},120);}else send(text);};
     });
-    for(const page of pages){await page.bringToFront();await page.keyboard.down('KeyZ');await new Promise(resolve=>setTimeout(resolve,500));await page.keyboard.up('KeyZ');}
+    await Promise.all(pages.map(page=>page.keyboard.down('KeyZ')));await new Promise(resolve=>setTimeout(resolve,500));await Promise.all(pages.map(page=>page.keyboard.up('KeyZ')));
     if(process.env.TH03_TOUCH_CUSTOM!=='1'){
       await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().rollbacks>0)))).every(Boolean),'both clients roll back delayed input',30000);
       console.log('PASS delayed input triggers rollback on both clients');
