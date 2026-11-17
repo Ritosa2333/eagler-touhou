@@ -1,0 +1,109 @@
+{
+  "schema": "th14/launcher-room-scoped/1",
+  "sourceSiteHead": "810d5884b44a85649d9209ff828191823b1ec138",
+  "cppSourceHead": "5fca1f600bbbe738806c8da8343a3caaedc5adbe",
+  "harnessPrivateSnapshotCommit": "4367bb83563f2bca0e0c4f71801329cc96000ce9",
+  "harnessSha256": "18bb1448e956de14fa65b944df14f68f25f4c2772b699d2c87fa24088ee4d488",
+  "reportSha256": "07724106148439bf143c50987774d98c7bfd8aee913c1ce615f4701c0042619e",
+  "nativeRoomUiPassed": true,
+  "wholeSiteCheckPassed": false,
+  "rawHarnessPassed": false,
+  "rawHarnessFailure": "Required /api/ready responses returned 404 on the isolated static preview",
+  "steps": [
+    "P1-directory",
+    "P1-room",
+    "P2-directory",
+    "P2-room",
+    "P1-ready",
+    "P2-ready",
+    "synchronized-start",
+    "actual-native-frame-180"
+  ],
+  "native": [
+    {
+      "active": true,
+      "frame": 190,
+      "confirmed": 190,
+      "route": "rtc",
+      "failed": false,
+      "error": "",
+      "options": {
+        "player": 0,
+        "players": 2,
+        "mode": "lan",
+        "adonisMode": 0,
+        "prediction": 12
+      }
+    },
+    {
+      "active": true,
+      "frame": 190,
+      "confirmed": 189,
+      "route": "rtc",
+      "failed": false,
+      "error": "",
+      "options": {
+        "player": 1,
+        "players": 2,
+        "mode": "lan",
+        "adonisMode": 0,
+        "prediction": 12
+      }
+    }
+  ],
+  "privateConfiguration": "Only manifest Relay URL replaced with owned loopback Relay; all other preview responses forwarded unchanged",
+  "returningUser": true,
+  "silence": {
+    "music": "none",
+    "chromiumMuteAudio": true
+  },
+  "fontNavigationRecovery": {
+    "reportSha256": "0f7620a2b46a45b28216472b56b090c97955ba3bd28c4a15581a3638630908df",
+    "passed": true,
+    "workerOwnedFontRequest": true,
+    "nativeFilesystemAbortAccepted": false,
+    "heldFont": {
+      "path": "/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/fonts/cp932.bin",
+      "initiatorFrame": null,
+      "workerOwned": true
+    },
+    "steps": [
+      {
+        "name": "actual-font-request-held",
+        "passed": true
+      },
+      {
+        "name": "left-loading-document-and-returned-idle",
+        "passed": true
+      },
+      {
+        "name": "retry-native-title",
+        "passed": true
+      },
+      {
+        "name": "native-quit",
+        "passed": true
+      }
+    ],
+    "pageErrors": [],
+    "retry": {
+      "path": "/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14.html",
+      "phase": 0,
+      "title": [
+        1,
+        2,
+        0
+      ],
+      "error": ""
+    },
+    "abortedRequests": [
+      {
+        "path": "/_eagler/resource-routes",
+        "error": "net::ERR_ABORTED"
+      }
+    ]
+  },
+  "fullLauncherSpectatorUiAccepted": false,
+  "productionChanged": false,
+  "completeGame": false
+}
