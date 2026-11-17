@@ -560,9 +560,14 @@ public:
     // 可操作席位的灵界射击查询：灵界期间全体可操作席（R-T2）。
     bool seat_trance_active() const { return team_trance_active(); }
     // R-T2：团队灵界激活期间，所有席位禁止发动新 Bomb。
+    // R-C1：挑战模式整局禁雷，包括决死窗。
     bool bomb_allowed() const {
-        return !team_trance_active();
+        return !challenge && !team_trance_active();
     }
+    // 房间设置的挑战模式（SessionSetup.challenge）。单席不使用。
+    bool challenge = false;
+    // 挑战：Bomb 库存与灵界槽恒为零，并清掉已经打开的灵界位（不走结束死亡）。
+    void apply_challenge_locks();
     // 把 seats[seat] 的内容换入 player_state_ 窗口（当前窗口内容先写回
     // 其权威槽位）。引用别名自动跟随；席位切换不触碰共享世界/RNG。
     void swap_player_context(i32 seat);
@@ -614,7 +619,7 @@ public:
         seats[size_t(recipient)].dead = false;
         seats[size_t(recipient)].final_death = false;
         // SP 重生资源（R-G：救援数值用本作 SP 上限与初始 Bomb）。
-        recipient_hud.bombs = 2;
+        recipient_hud.bombs = challenge ? 0 : 2;
         recipient_hud.bomb_pieces = 0;
         recipient_hud.extra_lives = std::max(0, recipient_hud.extra_lives);
         recipient_hud.power = recipient_hud.max_power / 2;
@@ -633,7 +638,7 @@ public:
             seats[size_t(seat)].ghost = false;
             seats[size_t(seat)].dead = false;
             seats[size_t(seat)].final_death = false;
-            seat_huds[size_t(seat)].bombs = 2;
+            seat_huds[size_t(seat)].bombs = challenge ? 0 : 2;
             seat_huds[size_t(seat)].bomb_pieces = 0;
             seat_huds[size_t(seat)].extra_lives = std::max(0, seat_huds[size_t(seat)].extra_lives);
             seat_huds[size_t(seat)].power = seat_huds[size_t(seat)].max_power / 2;

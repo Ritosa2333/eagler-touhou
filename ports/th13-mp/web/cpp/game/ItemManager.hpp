@@ -263,6 +263,8 @@ public:
 
     // 0x0042edc0 小P收集：满灵力 → score+1000（原值）；否则 power+1，跨
     // power_step 边界时 options 重排（0x444df0）。返回是否跨档。
+    // R-C1/R-C3：挑战模式不发放 Bomb，也不增加灵界槽。
+    bool challenge = false;
     bool collect_power_small();
     // 0x0043d210 大P：power += amount（未满时），满级溢出钳制 + 满灵力演出；
     // 返回是否跨档。

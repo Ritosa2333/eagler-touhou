@@ -31,6 +31,7 @@ struct MpHudSeats {
     i32 count = 0;
     i32 local_seat = 0;
     u8 ghost = 0;
+    bool challenge = false;
     std::array<const HudPlayerState*, 3> seats{};
 };
 

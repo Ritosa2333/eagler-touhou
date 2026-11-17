@@ -1012,6 +1012,9 @@ bool ApplicationState::begin_run() {
     if (!run->initialize(HudEntryContext{0, new_run, title_flow_ran})) return fail(run->error);
     // M2：多人会话席位启用（宿主在对局前 configure_multiplayer；单席
     // mp_seat_count==0 时零变化）。
+    run->battle.challenge = mp_challenge;
+    run->battle.item_manager.challenge = mp_challenge;
+    run->hud.challenge = mp_challenge;
     if (mp_seat_count >= 2 && !run->enable_multiplayer(mp_seat_count, mp_characters))
         return fail(run->error.empty() ? "Multiplayer seat enable failed" : run->error);
     if (carry_multiplayer) {
@@ -1021,6 +1024,7 @@ bool ApplicationState::begin_run() {
         battle.revive_all_on_stage_clear();
         selection_player = battle.seat_huds[0];
     }
+    if (mp_challenge) run->battle.apply_challenge_locks();
     // M5：图标 interrupt 是事件驱动的——新建席位图标集需要一次显式初值；
     // carry 恢复/过关复活后各席资源已变，全席按各自库存和阈值刷新一次。
     if (mp_seat_count >= 2) {

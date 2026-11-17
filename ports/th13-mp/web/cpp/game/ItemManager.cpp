@@ -638,7 +638,10 @@ void ItemManager::grant_resources(const ResourceGrant& grant,
                 if (hud.extra_lives < 8) { ++hud.extra_lives; extended = true; }
             }
         }
-        if (grant.bomb_pieces) {
+        if (challenge) {
+            hud.bombs = 0;
+            hud.bomb_pieces = 0;
+        } else if (grant.bomb_pieces) {
             if (hud.bombs >= 9) hud.bomb_pieces = 0;
             else {
                 hud.bomb_pieces += grant.bomb_pieces;
@@ -648,7 +651,7 @@ void ItemManager::grant_resources(const ResourceGrant& grant,
             }
         }
         hud.extra_lives = std::min(8, hud.extra_lives + grant.lives);
-        if (grant.bombs && hud.bombs < 9) { ++hud.bombs; bomb_gained = true; }
+        if (!challenge && grant.bombs && hud.bombs < 9) { ++hud.bombs; bomb_gained = true; }
     }
     if (extended) events_.push_back({ItemEvent::Kind::Extend, 1, last_player_.x, last_player_.y});
     if (bomb_gained) events_.push_back({ItemEvent::Kind::BombGained, 1, last_player_.x, last_player_.y});
@@ -744,6 +747,11 @@ void ItemManager::collect_life_piece(i32 amount) {
 void ItemManager::collect_bomb_piece(i32 amount) {
     ItemCollector& c = last_player_;
     HudPlayerState& hud = *c.player;
+    if (challenge) {
+        hud.bombs = 0;
+        hud.bomb_pieces = 0;
+        return;
+    }
     if (hud.bombs > 8) {
         hud.bomb_pieces = 0;
         return;
@@ -772,6 +780,11 @@ void ItemManager::collect_extra_life() {
 void ItemManager::collect_bomb() {
     ItemCollector& c = last_player_;
     HudPlayerState& hud = *c.player;
+    if (challenge) {
+        hud.bombs = 0;
+        hud.bomb_pieces = 0;
+        return;
+    }
     hud.bombs += 1;
     if (hud.bombs < 10) {
         events_.push_back({ItemEvent::Kind::BombGained, hud.bombs, c.x, c.y});
@@ -784,6 +797,7 @@ void ItemManager::collect_bomb() {
 // 0x0043d530 灵界值：be808 += amount（cap 600）；跨 200 段 → sound 0x44 +
 // 段位演出（事件面）。与 SessionState::trance_add 同式（含 0x42e380 路径）。
 void ItemManager::collect_trance(i32 amount) {
+    if (challenge) return;
     SessionState& progress = *last_player_.progress;
     const i32 before = progress.ending_points;
     trance_add(progress, amount);
