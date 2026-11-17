@@ -35,9 +35,9 @@
     "controlledSessionBoundaries": true,
     "rows": [
       {
-        "source": "normal/runtimes/th12/th12_web/cpp/sdl/Application.cpp",
+        "source": "normal/Application.cpp",
         "methodSha256": "d7f388023433ab8869f587e5f09bb368d5cc153cec9cd307178441458365b987",
-        "cases": 6,
+        "cases": 8,
         "current": {
           "exitCode": 0,
           "results": [
@@ -46,7 +46,9 @@
             "next-stage-activated-old-cursor 0 0 PASS",
             "next-stage-selected 4 4 PASS",
             "natural-end-retains-declared-tail 200 200 PASS",
-            "early-game-over-keeps-real-cursor 4 4 PASS"
+            "early-game-over-keeps-real-cursor 4 4 PASS",
+            "award-pending-end-not-yet-reported 0 0 PASS",
+            "award-finished-end-reported 1 1 PASS"
           ]
         },
         "obsolete": {
@@ -57,14 +59,29 @@
             "next-stage-activated-old-cursor 80 0 FAIL",
             "next-stage-selected 4 4 PASS",
             "natural-end-retains-declared-tail 200 200 PASS",
-            "early-game-over-keeps-real-cursor 4 4 PASS"
+            "early-game-over-keeps-real-cursor 4 4 PASS",
+            "award-pending-end-not-yet-reported 0 0 PASS",
+            "award-finished-end-reported 1 1 PASS"
+          ]
+        },
+        "premature-end": {
+          "exitCode": 1,
+          "results": [
+            "same-stage-live 80 80 PASS",
+            "next-stage-loading-old-cursor 0 0 PASS",
+            "next-stage-activated-old-cursor 0 0 PASS",
+            "next-stage-selected 4 4 PASS",
+            "natural-end-retains-declared-tail 200 200 PASS",
+            "early-game-over-keeps-real-cursor 4 4 PASS",
+            "award-pending-end-not-yet-reported 1 0 FAIL",
+            "award-finished-end-reported 1 1 PASS"
           ]
         }
       },
       {
-        "source": "multiplayer/runtimes/th12/th12_web/cpp/sdl/Application.cpp",
+        "source": "multiplayer/Application.cpp",
         "methodSha256": "d7f388023433ab8869f587e5f09bb368d5cc153cec9cd307178441458365b987",
-        "cases": 6,
+        "cases": 8,
         "current": {
           "exitCode": 0,
           "results": [
@@ -73,7 +90,9 @@
             "next-stage-activated-old-cursor 0 0 PASS",
             "next-stage-selected 4 4 PASS",
             "natural-end-retains-declared-tail 200 200 PASS",
-            "early-game-over-keeps-real-cursor 4 4 PASS"
+            "early-game-over-keeps-real-cursor 4 4 PASS",
+            "award-pending-end-not-yet-reported 0 0 PASS",
+            "award-finished-end-reported 1 1 PASS"
           ]
         },
         "obsolete": {
@@ -84,7 +103,66 @@
             "next-stage-activated-old-cursor 80 0 FAIL",
             "next-stage-selected 4 4 PASS",
             "natural-end-retains-declared-tail 200 200 PASS",
-            "early-game-over-keeps-real-cursor 4 4 PASS"
+            "early-game-over-keeps-real-cursor 4 4 PASS",
+            "award-pending-end-not-yet-reported 0 0 PASS",
+            "award-finished-end-reported 1 1 PASS"
+          ]
+        },
+        "premature-end": {
+          "exitCode": 1,
+          "results": [
+            "same-stage-live 80 80 PASS",
+            "next-stage-loading-old-cursor 0 0 PASS",
+            "next-stage-activated-old-cursor 0 0 PASS",
+            "next-stage-selected 4 4 PASS",
+            "natural-end-retains-declared-tail 200 200 PASS",
+            "early-game-over-keeps-real-cursor 4 4 PASS",
+            "award-pending-end-not-yet-reported 1 0 FAIL",
+            "award-finished-end-reported 1 1 PASS"
+          ]
+        }
+      },
+      {
+        "source": "independent-core/Application.cpp",
+        "methodSha256": "d7f388023433ab8869f587e5f09bb368d5cc153cec9cd307178441458365b987",
+        "cases": 8,
+        "current": {
+          "exitCode": 0,
+          "results": [
+            "same-stage-live 80 80 PASS",
+            "next-stage-loading-old-cursor 0 0 PASS",
+            "next-stage-activated-old-cursor 0 0 PASS",
+            "next-stage-selected 4 4 PASS",
+            "natural-end-retains-declared-tail 200 200 PASS",
+            "early-game-over-keeps-real-cursor 4 4 PASS",
+            "award-pending-end-not-yet-reported 0 0 PASS",
+            "award-finished-end-reported 1 1 PASS"
+          ]
+        },
+        "obsolete": {
+          "exitCode": 1,
+          "results": [
+            "same-stage-live 80 80 PASS",
+            "next-stage-loading-old-cursor 80 0 FAIL",
+            "next-stage-activated-old-cursor 80 0 FAIL",
+            "next-stage-selected 4 4 PASS",
+            "natural-end-retains-declared-tail 200 200 PASS",
+            "early-game-over-keeps-real-cursor 4 4 PASS",
+            "award-pending-end-not-yet-reported 0 0 PASS",
+            "award-finished-end-reported 1 1 PASS"
+          ]
+        },
+        "premature-end": {
+          "exitCode": 1,
+          "results": [
+            "same-stage-live 80 80 PASS",
+            "next-stage-loading-old-cursor 0 0 PASS",
+            "next-stage-activated-old-cursor 0 0 PASS",
+            "next-stage-selected 4 4 PASS",
+            "natural-end-retains-declared-tail 200 200 PASS",
+            "early-game-over-keeps-real-cursor 4 4 PASS",
+            "award-pending-end-not-yet-reported 1 0 FAIL",
+            "award-finished-end-reported 1 1 PASS"
           ]
         }
       }
@@ -393,8 +471,993 @@
     "wholeSiteAllGreen": false,
     "multiplayerActualFullPlaybackRepeated": false,
     "allCharactersAndDifficultiesCurrentBuildClaimed": false,
-    "developmentDeploymentChanged": false,
+    "developmentDeploymentChanged": true,
     "muted": true,
     "completeGame": false
+  },
+  "publicCoreSyntax": {
+    "passed": true,
+    "exitCode": 0,
+    "publicSourceHead": "dfe0f3f3aefabeadd36148fcd2a7697a673c5bc1",
+    "actualPublicApplicationAndHeaders": true,
+    "check": "C++17 syntax-only, current TH14 GLES feature flags and verified common dependency headers",
+    "linkedRuntimeClaimed": false,
+    "seconds": 1.592826399995829
+  },
+  "sourcePublication": {
+    "siteHead": "c7777f4ef86a7382354bd3228463d31e4e7ee32f",
+    "coreHead": "dfe0f3f3aefabeadd36148fcd2a7697a673c5bc1",
+    "siteTree": "f2b941a2ed05d07c57930c549d367d70618a8bd7",
+    "publicSiteTreeVerified": true,
+    "writebackParents": [
+      "11d5d2a90225f8ab803a9328e9e9b45cbec811cf",
+      "00a85c24502c7b4271e525003f5919bfb19a23a7"
+    ],
+    "publicCoreMethodMatchesCompiledRegression": true,
+    "completeGame": false
+  },
+  "legacyBrowserCases": [
+    {
+      "inputSha256": "c48412a95f0fe9f685d97574e8ab0655d41e44ff9c41fda7bf788589b1b29c74",
+      "inputBytes": 110022,
+      "rule": "original unmodified retail replay, no T14B protection extension",
+      "character": "Reimu B",
+      "difficulty": "Normal",
+      "terminalKind": "complete-declared-replay",
+      "fullDeclaredReplayCompleted": true,
+      "observedStages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "terminalFrame": 122385,
+      "declaredFrames": 122385,
+      "declaredScore": 914525760,
+      "observedScore": 914525760,
+      "graze": 17551,
+      "timeline": {
+        "samples": 270,
+        "last": 122385,
+        "backwards": []
+      },
+      "tools": 0,
+      "seekUsed": false,
+      "stageSkipUsed": false,
+      "harnessSha256": "0a93948c193c89272118ec71bd256d482c48836ec6168e50b40d30620a40bb36",
+      "seconds": 69.161,
+      "originalScoreDecode": {
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "decodedBytes": 149076,
+        "characterRecordsUnchanged": true,
+        "characterRecords": 7,
+        "settingsDifferences": [
+          {
+            "offset": 4,
+            "before": 203,
+            "after": 215
+          },
+          {
+            "offset": 39,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 40,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 41,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 42,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 43,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 44,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 45,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 46,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 47,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 48,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 49,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 50,
+            "before": 0,
+            "after": 1
+          }
+        ],
+        "semanticSettingsDifferences": [
+          {
+            "offset": 39,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 40,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 41,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 42,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 43,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 44,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 45,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 46,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 47,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 48,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 49,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 50,
+            "before": 0,
+            "after": 1
+          }
+        ],
+        "onlyMusicHeardFlagsChanged": true,
+        "nativeMusicRequestReferenceSha256": "01277073a339c1af2c1fda716999640431c2a130c174c504533481cf4efe31e3",
+        "nativeMusicRequestRelevantCases": [
+          {
+            "stage": 1,
+            "id": -3,
+            "replay": 0,
+            "stop": 1,
+            "match": 0,
+            "events": [
+              [
+                "audio",
+                4,
+                0
+              ],
+              [
+                "audio",
+                2,
+                0
+              ],
+              [
+                "front",
+                1
+              ]
+            ],
+            "dialogueAfter": 1879343104,
+            "unlocks": [
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "stage": 1,
+            "id": -3,
+            "replay": 1,
+            "stop": 1,
+            "match": 0,
+            "events": [
+              [
+                "audio",
+                4,
+                0
+              ],
+              [
+                "audio",
+                2,
+                0
+              ],
+              [
+                "front",
+                1
+              ]
+            ],
+            "dialogueAfter": 1879343104,
+            "unlocks": [
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ],
+        "beforeDecodedSha256": "26585f24f29a371060af9582f75d5f8e8dd0f2c3e7c3a4e619739cf50152d0f1",
+        "afterDecodedSha256": "4d7a048a6ff2f583a8263bb0d308a63010319f09cec3e240e743b96dbce751ea",
+        "completeGame": false
+      },
+      "pageErrors": [],
+      "nativeErrors": [],
+      "wholeSiteHttpErrors": [
+        {
+          "path": "/assets/th17-card.webp",
+          "status": 404
+        },
+        {
+          "path": "/api/ready",
+          "status": 404
+        },
+        {
+          "path": "/assets/th17-card.webp",
+          "status": 404
+        },
+        {
+          "path": "/_eagler/resource-routes",
+          "status": 404
+        },
+        {
+          "path": "/api/ready",
+          "status": 404
+        },
+        {
+          "path": "/api/ready",
+          "status": 404
+        },
+        {
+          "path": "/api/ready",
+          "status": 404
+        }
+      ]
+    },
+    {
+      "inputSha256": "b3f5e7d00a46c7b33a77645e12fb72f70d601a239b34c894c38dc42c41f6ae10",
+      "inputBytes": 43563,
+      "rule": "original unmodified retail replay, no T14B protection extension",
+      "character": "Sakuya B",
+      "difficulty": "Extra",
+      "terminalKind": "complete-declared-replay",
+      "fullDeclaredReplayCompleted": true,
+      "observedStages": [
+        7
+      ],
+      "terminalFrame": 50937,
+      "declaredFrames": 50937,
+      "declaredScore": 857559650,
+      "observedScore": 857559650,
+      "graze": 19864,
+      "timeline": {
+        "samples": 161,
+        "last": 50937,
+        "backwards": []
+      },
+      "tools": 0,
+      "seekUsed": false,
+      "stageSkipUsed": false,
+      "harnessSha256": "1e4b0af45f9d7af13c0a22245fc02f468becfbd4fb5fbc936d8491fa5c41461f",
+      "seconds": 41.379,
+      "originalScoreDecode": {
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "decodedBytes": 149076,
+        "characterRecordsUnchanged": true,
+        "characterRecords": 7,
+        "settingsDifferences": [
+          {
+            "offset": 4,
+            "before": 37,
+            "after": 39
+          },
+          {
+            "offset": 51,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 52,
+            "before": 0,
+            "after": 1
+          }
+        ],
+        "semanticSettingsDifferences": [
+          {
+            "offset": 51,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 52,
+            "before": 0,
+            "after": 1
+          }
+        ],
+        "onlyMusicHeardFlagsChanged": true,
+        "nativeMusicRequestReferenceSha256": "01277073a339c1af2c1fda716999640431c2a130c174c504533481cf4efe31e3",
+        "nativeMusicRequestRelevantCases": [
+          {
+            "stage": 1,
+            "id": -3,
+            "replay": 0,
+            "stop": 1,
+            "match": 0,
+            "events": [
+              [
+                "audio",
+                4,
+                0
+              ],
+              [
+                "audio",
+                2,
+                0
+              ],
+              [
+                "front",
+                1
+              ]
+            ],
+            "dialogueAfter": 1879343104,
+            "unlocks": [
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "stage": 1,
+            "id": -3,
+            "replay": 1,
+            "stop": 1,
+            "match": 0,
+            "events": [
+              [
+                "audio",
+                4,
+                0
+              ],
+              [
+                "audio",
+                2,
+                0
+              ],
+              [
+                "front",
+                1
+              ]
+            ],
+            "dialogueAfter": 1879343104,
+            "unlocks": [
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ],
+        "beforeDecodedSha256": "a212e5d7fbaa745c8005074e8989fdfc2f29231896dc8a4139325b4584e6c63d",
+        "afterDecodedSha256": "275f9a184209465a9fdbca5b774cbe93efa1d14ce3298227a14e63eeb412e2f5",
+        "completeGame": false
+      },
+      "pageErrors": [],
+      "nativeErrors": [],
+      "wholeSiteHttpErrors": [
+        {
+          "path": "/assets/th17-card.webp",
+          "status": 404
+        },
+        {
+          "path": "/api/ready",
+          "status": 404
+        },
+        {
+          "path": "/assets/th17-card.webp",
+          "status": 404
+        },
+        {
+          "path": "/_eagler/resource-routes",
+          "status": 404
+        },
+        {
+          "path": "/api/ready",
+          "status": 404
+        },
+        {
+          "path": "/api/ready",
+          "status": 404
+        },
+        {
+          "path": "/api/ready",
+          "status": 404
+        }
+      ],
+      "observedEndHudScore": 857559650,
+      "endScreenshotSha256": "a349247bd270a725cd9fe442a1e0abf5a795e2dbd22b4a1dc517de8b56b6e13d"
+    },
+    {
+      "inputSha256": "aec3b3045be9a0ddd4e7e4005182a9561e97f9d3f66f7f93a81397a1b614ec92",
+      "inputBytes": 81793,
+      "rule": "original unmodified retail replay, expected native early Game Over",
+      "character": "Marisa A",
+      "difficulty": "Easy",
+      "terminalKind": "native-early-game-over",
+      "fullDeclaredReplayCompleted": false,
+      "observedStages": [
+        1,
+        2,
+        3
+      ],
+      "terminalFrame": 34783,
+      "declaredFrames": 95789,
+      "declaredScore": 572056580,
+      "observedScore": 82434130,
+      "graze": 1353,
+      "timeline": {
+        "samples": 101,
+        "last": 34783,
+        "backwards": []
+      },
+      "tools": 0,
+      "seekUsed": false,
+      "stageSkipUsed": false,
+      "harnessSha256": "840b038fbb0dbe7b0554cf07c8030dc43e04f09f704d757b6881017e88f4ebea",
+      "seconds": 24.273,
+      "originalScoreDecode": {
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "decodedBytes": 149076,
+        "characterRecordsUnchanged": true,
+        "characterRecords": 7,
+        "settingsDifferences": [
+          {
+            "offset": 4,
+            "before": 18,
+            "after": 24
+          },
+          {
+            "offset": 39,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 40,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 41,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 42,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 43,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 44,
+            "before": 0,
+            "after": 1
+          }
+        ],
+        "semanticSettingsDifferences": [
+          {
+            "offset": 39,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 40,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 41,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 42,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 43,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 44,
+            "before": 0,
+            "after": 1
+          }
+        ],
+        "onlyMusicHeardFlagsChanged": true,
+        "nativeMusicRequestReferenceSha256": "01277073a339c1af2c1fda716999640431c2a130c174c504533481cf4efe31e3",
+        "nativeMusicRequestRelevantCases": [
+          {
+            "stage": 1,
+            "id": -3,
+            "replay": 0,
+            "stop": 1,
+            "match": 0,
+            "events": [
+              [
+                "audio",
+                4,
+                0
+              ],
+              [
+                "audio",
+                2,
+                0
+              ],
+              [
+                "front",
+                1
+              ]
+            ],
+            "dialogueAfter": 1879343104,
+            "unlocks": [
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "stage": 1,
+            "id": -3,
+            "replay": 1,
+            "stop": 1,
+            "match": 0,
+            "events": [
+              [
+                "audio",
+                4,
+                0
+              ],
+              [
+                "audio",
+                2,
+                0
+              ],
+              [
+                "front",
+                1
+              ]
+            ],
+            "dialogueAfter": 1879343104,
+            "unlocks": [
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ],
+        "beforeDecodedSha256": "6eebc9a705dafd841700d91c65b3f20acc7b3c4909220c8bc0a11d36d1968dfa",
+        "afterDecodedSha256": "8ba9399957accff2f068a6ccf4a64b9878372b53a575dcf927736414b8845fad",
+        "completeGame": false
+      },
+      "pageErrors": [],
+      "nativeErrors": [],
+      "wholeSiteHttpErrors": [
+        {
+          "path": "/assets/th17-card.webp",
+          "status": 404
+        },
+        {
+          "path": "/api/ready",
+          "status": 404
+        },
+        {
+          "path": "/assets/th17-card.webp",
+          "status": 404
+        },
+        {
+          "path": "/_eagler/resource-routes",
+          "status": 404
+        },
+        {
+          "path": "/api/ready",
+          "status": 404
+        },
+        {
+          "path": "/api/ready",
+          "status": 404
+        },
+        {
+          "path": "/api/ready",
+          "status": 404
+        }
+      ]
+    }
+  ],
+  "developmentDelivery": {
+    "passed": true,
+    "url": "https://wth.saop.cc/",
+    "sourceCommit": "24fc965f1828a63e04738e8ece561712a03a4c24",
+    "currentRuntimeFiles": 68,
+    "originResponsesVerified": 205,
+    "publicResponsesVerified": 72,
+    "servicePid": 443019,
+    "serviceRestarted": false,
+    "serviceConfigurationChanged": false,
+    "rollbackRetained": true,
+    "upstreamProductionChanged": false,
+    "publicUiSteps": [
+      {
+        "name": "fresh-launcher-and-zero-volume",
+        "passed": true,
+        "elapsedMs": 5105,
+        "observation": {
+          "volumes": [
+            {
+              "label": "游戏音乐",
+              "value": "0"
+            },
+            {
+              "label": "游戏音效",
+              "value": "0"
+            },
+            {
+              "label": "快捷发言语音",
+              "value": "0"
+            }
+          ],
+          "isolated": true
+        }
+      },
+      {
+        "name": "ui-launch-streaming-ogg",
+        "passed": true,
+        "elapsedMs": 59998,
+        "observation": {
+          "src": "https://wth.saop.cc/runtime/th14/08759279802b926a67c8099c0f59777030924f8c7c8629268ae604df9fefa14c/th14.html?hosted=1&managedData=1&gameGeneration=gen-mwlaik1k-d7db565361d2&runtimeVariant=normal&runtimeEpoch=1",
+          "phase": 0,
+          "title": [
+            1,
+            2,
+            0,
+            0,
+            10
+          ],
+          "audio": "running"
+        }
+      },
+      {
+        "name": "ui-normal-game-entry",
+        "passed": true,
+        "elapsedMs": 4286,
+        "observation": {
+          "navigation": [
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 207,
+              "title": [
+                1,
+                2,
+                0,
+                0,
+                10
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 248,
+              "title": [
+                5,
+                2,
+                1,
+                0,
+                4
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 287,
+              "title": [
+                6,
+                2,
+                0,
+                0,
+                3
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 329,
+              "title": [
+                7,
+                2,
+                0,
+                0,
+                2
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 370,
+              "title": [
+                2,
+                0,
+                0,
+                1,
+                2
+              ],
+              "error": ""
+            },
+            {
+              "phase": 6,
+              "stage": 1,
+              "frame": 0,
+              "title": [
+                -1,
+                -1,
+                -1,
+                -1,
+                -1
+              ],
+              "error": ""
+            }
+          ],
+          "state": {
+            "phase": 1,
+            "stage": 1,
+            "frame": 30,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          }
+        }
+      },
+      {
+        "name": "pause-freeze-resume",
+        "passed": true,
+        "elapsedMs": 2837,
+        "observation": {
+          "before": {
+            "phase": 2,
+            "stage": 1,
+            "frame": 38,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          },
+          "held": {
+            "phase": 2,
+            "stage": 1,
+            "frame": 38,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          },
+          "resumed": {
+            "phase": 1,
+            "stage": 1,
+            "frame": 82,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          }
+        }
+      },
+      {
+        "name": "native-return-title-and-quit",
+        "passed": true,
+        "elapsedMs": 4995,
+        "observation": {
+          "returned": {
+            "phase": 0,
+            "stage": 0,
+            "frame": 12,
+            "title": [
+              1,
+              2,
+              0,
+              0,
+              10
+            ],
+            "error": ""
+          },
+          "playerClosed": true,
+          "launchVisible": true
+        }
+      }
+    ],
+    "actualPublicUiCodeResponsesVerified": 85,
+    "actualLegacyBrowserCodeResponsesVerified": 234,
+    "publicMultiplayerClaimed": false
   }
 }
