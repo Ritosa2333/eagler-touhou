@@ -1,6 +1,6 @@
 # 文档总表
 
-共 712 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 713 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -426,6 +426,7 @@
 | 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_UPSTREAM_RECONCILE_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_UPSTREAM_RECONCILE_NOV17.md) | TH14 上游接续与公共修复同步 · 2026-11-17 |
 | 历史记录 | [archive/th14-browser-entry-20261118/TH14_LAUNCHER_ENTRY_NOV18.md](../archive/th14-browser-entry-20261118/TH14_LAUNCHER_ENTRY_NOV18.md) | TH14 最新预览与公网普通入口验收 |
 | 历史记录 | [archive/th14-browser-entry-20261118/TH14_LAUNCHER_ROOM_NOV18.md](../archive/th14-browser-entry-20261118/TH14_LAUNCHER_ROOM_NOV18.md) | TH14 实际网页联机与加载离开恢复 |
+| 历史记录 | [archive/th14-browser-entry-20261118/TH14_SPECTATOR_SETTINGS_RECOVERY_NOV18.md](../archive/th14-browser-entry-20261118/TH14_SPECTATOR_SETTINGS_RECOVERY_NOV18.md) | TH14 旁观资源重载后的启动恢复 |
 | 历史记录 | [archive/th14-cold-room-handshake-20261118/TH14_COLD_ROOM_HANDSHAKE_NOV18.md](../archive/th14-cold-room-handshake-20261118/TH14_COLD_ROOM_HANDSHAKE_NOV18.md) | TH14 冷启动房间握手 |
 | 历史记录 | [archive/th14-cold-room-handshake-20261118/TH14_NATIVE_GPU_MULTIPLAYER_NOV18.md](../archive/th14-cold-room-handshake-20261118/TH14_NATIVE_GPU_MULTIPLAYER_NOV18.md) | TH14 硬件图形路径的联机与录像验收 |
 | 历史记录 | [archive/th14-rollback-20261114/README.md](../archive/th14-rollback-20261114/README.md) | TH14 多人延迟输入验证 |
