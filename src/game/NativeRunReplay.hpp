@@ -17,6 +17,7 @@ class NativeRunReplay {
     };
     std::vector<Stage> stages_;
     unsigned route_=0,rank_=0,lastStage_=0;
+    bool practice_=false;
     double seconds_=0,activeSeconds_=0;
     static void store16(std::span<std::uint8_t> bytes,std::size_t offset,std::uint16_t value){bytes[offset]=std::uint8_t(value);bytes[offset+1]=std::uint8_t(value>>8);}
     static void store32(std::span<std::uint8_t> bytes,std::size_t offset,std::uint32_t value){for(unsigned index=0;index<4;++index)bytes[offset+index]=std::uint8_t(value>>(index*8));}
@@ -32,6 +33,7 @@ class NativeRunReplay {
         return source<first.size()&&(first[source]==target||(source==1&&target==4)||(source==6&&target==9)||(source==11&&target==14));
     }
 public:
+    static NativeRunReplay practice(){NativeRunReplay result;result.practice_=true;return result;}
     bool empty()const{return stages_.empty();}
     unsigned frames()const{unsigned count=0;for(const auto& stage:stages_)count+=unsigned(stage.input.frame());return count;}
     unsigned stages()const{return unsigned(stages_.size());}
@@ -46,7 +48,7 @@ public:
            ||pointValue<0||motivation<0||motivation>100000||perfect<0||perfect>30000||!std::isfinite(frozenArea)||frozenArea<0
            ||graze<0||graze>1000000000||stages_.size()>=3)throw std::runtime_error("normal replay initial native stage fields rejected");
         if(stages_.empty()){
-            if(stage!=1&&stage!=6&&stage!=11&&stage!=16)throw std::runtime_error("normal replay must start at original route beginning");
+            if(!practice_&&stage!=1&&stage!=6&&stage!=11&&stage!=16)throw std::runtime_error("normal replay must start at original route beginning");
         }else if(rank!=rank_||!nextStage(lastStage_,stage))throw std::runtime_error("normal replay stage carry identity rejected");
         Stage candidate;candidate.input.beginStageBuffers(stage);
         store16(candidate.header,0,std::uint16_t(stage));store16(candidate.header,2,std::uint16_t(seed));
@@ -57,7 +59,7 @@ public:
         std::uint32_t value=0;for(unsigned index=0;index<20;++index){store32(candidate.header,0x30+index*4,value);value-=0x21522153u;}
         store32(candidate.header,0x80,std::bit_cast<std::uint32_t>(motivation));store32(candidate.header,0x84,std::bit_cast<std::uint32_t>(perfect));
         store32(candidate.header,0x88,std::bit_cast<std::uint32_t>(frozenArea));store32(candidate.header,0x8c,1);
-        if(stages_.empty())route_=stage==16?6:stage==11?4:stage==6?2:0;
+        if(stages_.empty())route_=practice_?(stage==16?6:stage<=5?(stage>=4?1:0):stage<=10?(stage>=9?3:2):(stage>=14?5:4)):(stage==16?6:stage==11?4:stage==6?2:0);
         else if(stage==4||stage==9||stage==14)++route_;
         stages_.push_back(std::move(candidate));lastStage_=stage;rank_=rank;
     }

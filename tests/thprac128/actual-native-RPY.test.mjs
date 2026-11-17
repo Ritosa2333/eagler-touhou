@@ -1,0 +1,12 @@
+// Native recording bytes were created by actual whole WorldExports case921; no World/compile is run here.
+import test from'node:test';import assert from'node:assert/strict';import fs from'node:fs';import{createHash}from'node:crypto';
+import{nativeReplayToFile,OwnedReplayStore}from'../../site/runtime/sound.mjs';import{decodeReplay}from'../../site/runtime/replay.mjs';import{createThprac128Session}from'../../site/runtime/thprac128.mjs';import{attachThprac128Replay,readThprac128Replay,Thprac128ReplayPlayback}from'../../site/runtime/thprac128-replay.mjs';import{createReplayIDB}from'../launcher-session/replay-idb.mjs';
+const W='D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113',home=W+'/case921-thprac128-native-record-playback-lock/run',raw=new Uint8Array(fs.readFileSync(home+'/original/actual-practice-native.rpyraw'));
+const hash=b=>createHash('sha256').update(b).digest('hex'),identity={coreSHA256:hash(fs.readFileSync(home+'/initial-resources.wasm')),resourceSHA256:'38be25a5f1b0bf5e88dd7f66e34e295338d6bb968794a1ff587337f46b3db045'};
+const params=createThprac128Session({stage:2,section:10302,score:1234567890,motivation:54321,perfect_freeze:12345,ice_power:6789,ice_area:800},1);
+test('actual native arbitrary-stage input history becomes source-correct RPY plus PRAC and returns identical playback packet',async()=>{
+ assert.equal(raw.length,311);const base=nativeReplayToFile(raw),file=attachThprac128Replay(base,params,identity),decoded=decodeReplay(file),metadata=readThprac128Replay(file,identity);
+ assert.deepEqual(decoded.rawPayload,raw.slice(36));assert.deepEqual(metadata.session.params,params.params);assert.equal(decoded.stages[0].stage,3);assert.equal(decoded.stages[0].numFrames,3);assert.deepEqual([...decoded.stages[0].inputRaw],[16,0,16,0,0,0,16,0,0,0,0,0,0,0,0,0,16,0]);
+ const idb=createReplayIDB(),store=new OwnedReplayStore(idb),saved=await store.saveThprac(12,file,{expectedDigest:null,isCurrent:()=>true});assert.equal(saved.strictDurability,true);assert.equal(saved.strictFullReadback,true);store.close();
+ const reopened=new OwnedReplayStore(idb),bytes=await reopened.export(12),owner=new Thprac128ReplayPlayback(bytes,12,identity);assert.deepEqual(owner.stagePacket(),raw.slice(148,310));assert.equal(owner.firstSelection().stage,3);assert.equal(owner.firstSelection().thprac.params.section,10302);assert.equal(owner.playLock,true);assert.equal((await reopened.observe()).filter(Boolean).length,1);reopened.close();owner.cancel();
+});

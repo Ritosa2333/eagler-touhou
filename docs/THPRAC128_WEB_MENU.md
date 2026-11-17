@@ -11,3 +11,5 @@ Web会话保留eagler-touhou/thprac-session/1与TH128字段，严格整数和上
 本批修复两个真实调用缺口：section root原time0出生早于玩家资源配置，现只练习section推迟到首个真实tick；原生select在空options时丢失默认值，现显式保Practice/Normal初值。失败夹具/观察竞态及每个首FAIL原raw保留，不覆盖成功证据。完整历史有1项旧case772外部Python二进制更新未解，当前Emsdk及8不可变产物指纹不受影响。
 
 **完整thprac与第三阶段仍未完成。** 练习Replay元数据/录制与playLock、Backspace/F1..F7 overlay、F12高级速度及启动器持久开关仍须接真实消费者；手机/JA/617兼容不追加为无关门槛。当前enable与locale是页面内控制，未写个人设置。普通模式EX沿用既有资格入口。完整菜单代码与私有113已具备，旧本地v7和公开页仍是112；本地Runtime打包与公开发布继续暂停。
+
+2026-11-17更新：915–934练习Replay批次已接实际native输入录制、原RPY＋上游USER/PRAC元数据、严格25槽CAS保存/回读、同参数播放与playLock。921实际录制/回放3帧，930新114真实2Factory/2World/6tick/294检查投影一致；933真实浏览器IDB与当前save/watch页面10项通过。114仅owned编译产物，旧112/v7/public不动；不重新打包。剩余Backspace/F1..F7/F12速度/持久launcher gate仍须完成，完整thprac/第三阶段仍未完成。具体范围见THPRAC128_REPLAY.md。

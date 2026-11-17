@@ -4,6 +4,9 @@ import {mountWebInput} from './runtime/web-input.mjs';
 import {getPageLaunchContext} from './runtime/page-launch-context.mjs';
 import {musicOutput,musicOutputEnabled} from './runtime/music-output.mjs';
 import {mountThprac128Menu} from './runtime/thprac128-menu.mjs';
+import {createThprac128Recorder} from './runtime/thprac128-recording.mjs';
+import {readThprac128Replay,Thprac128ReplayPlayback} from './runtime/thprac128-replay.mjs';
+
 import {createThprac128Session,prepareThprac128Native,readThprac128Native,thprac128RuntimeSupported,thprac128Presentation} from './runtime/thprac128.mjs';
 import {QualificationOwner,evaluateOwnedQualification,EX_QUALIFICATION_SCHEMA} from './runtime/ex-qualification.mjs';
 import {loadOriginalType33ForWorld,originalType33Profile} from './runtime/original-bullet-type33.mjs';
@@ -1318,6 +1321,50 @@ async function startThprac128Session(input,{signal,isCurrent}){
   throw error;
  }finally{signal.removeEventListener('abort',abort);if(practiceLaunchOwner===owner)practiceLaunchOwner=null;syncDebugStageJumpControls();}
 }
+async function thpracReplayResourceIdentity(module,byteCache){
+ const coreSHA256=checkpointModuleBuilds.get(module)?.artifacts?.['core.wasm']?.sha256;
+ if(!/^[a-f0-9]{64}$/.test(coreSHA256??''))throw new Error('Practice Replay requires the actual compiled core SHA');
+ const rows=[];
+ for(const [name,pending]of [...byteCache].sort((a,b)=>a[0].localeCompare(b[0]))){const bytes=await pending;if(!(bytes instanceof Uint8Array)||!bytes.length)throw new Error('Practice resource identity bytes unavailable');rows.push([name,[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('')]);}
+ const resourceSHA256=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(rows))))].map(v=>v.toString(16).padStart(2,'0')).join('');
+ return Object.freeze({coreSHA256,resourceSHA256});
+}
+async function refreshThpracReplaySlots(){
+ const select=find('#thprac-replay-slot');if(!select)return;
+ const module=state.module,action=state.action,selection=state.stageSelection;
+ const rows=await (state.replayStore??=new OwnedReplayStore()).observe();
+ if(module!==state.module||action!==state.action||selection!==state.stageSelection||state.launcherExited)return;
+ const prior=select.value;select.replaceChildren(...rows.map((row,slot)=>{const o=document.createElement('option');o.value=String(slot);o.textContent='No.'+String(slot+1).padStart(2,'0')+(row?' · '+(row.source==='thprac-rpy'?'thprac':'Replay'):' · —');return o;}));select.value=/^(?:[0-9]|1[0-9]|2[0-4])$/.test(prior)?prior:'0';state.thpracReplayRows=rows;
+ find('#thprac-replay-overwrite').checked=false;find('#thprac-replay-save').disabled=!state.thpracRecorder;find('#thprac-replay-watch').disabled=false;
+}
+async function saveThpracReplayFromMenu(){
+ const owner=state.thpracRecorder,module=state.module,action=state.action,selection=state.stageSelection;
+ if(!owner||!selection?.thprac||state.replayPlayback||state.thpracReplaySaving)throw new Error('Practice recording owner unavailable or busy');
+ const slot=Number(find('#thprac-replay-slot').value),observed=state.thpracReplayRows?.[slot];
+ if(!Number.isInteger(slot)||slot<0||slot>24)throw new Error('Practice Replay slot outside25entries');
+ if(observed&&!find('#thprac-replay-overwrite').checked)throw new Error('请先确认覆盖所选录像槽');
+ const nameText=find('#thprac-replay-name').value;if(!/^[\x20-\x7e]{1,8}$/.test(nameText))throw new Error('练习录像姓名须为1..8个ASCII字符');
+ const name=new TextEncoder().encode(nameText.padEnd(8,' ')),current=()=>owner===state.thpracRecorder&&module===state.module&&action===state.action&&selection===state.stageSelection&&!state.launcherExited;
+ state.thpracReplaySaving=true;
+ try{const bytes=owner.capture(BigInt(Math.floor(Date.now()/1000)),name),store=state.replayStore??=new OwnedReplayStore();const saved=await store.saveThprac(slot,bytes,{expectedDigest:observed?.digest??null,isCurrent:current});
+  if(!current())throw new DOMException('Practice save owner exited','AbortError');
+  await refreshThpracReplaySlots();find('#thprac-replay-status').textContent='练习录像已保存 No.'+String(slot+1).padStart(2,'0')+' · 参数/完整RPY已回读';return saved;
+ }finally{state.thpracReplaySaving=false;}
+}
+async function watchThpracReplayFromMenu(slotOverride=null){
+ if(menu.launching||state.handoff||state.thpracReplaySaving||state.replayPlayback)throw new Error('Replay playback owner is busy');
+ const slot=slotOverride===null?Number(find('#thprac-replay-slot').value):slotOverride,store=state.replayStore??=new OwnedReplayStore(),module=state.module,action=state.action;
+ const row=(await store.observe())[slot];if(!row?.bytes||row.digest!==await store.hash(row.bytes))throw new Error('所选练习录像为空或文件SHA不符');
+ const metadata=readThprac128Replay(row.bytes);if(!metadata)throw new Error('所选录像不是带TH128 thprac参数的练习录像');
+ if(module!==state.module||action!==state.action||state.launcherExited)throw new DOMException('Practice replay page changed','AbortError');
+ const owner=new Thprac128ReplayPlayback(row.bytes,slot),next=owner.firstSelection(),selection=thpracStageSelection(next.thprac).selection;
+ selection.seed=next.seed;selection.thpracReplayIdentity=owner.identity;state.replayPlayback=owner;state.replayFinished=false;state.thpracRecorder?.close();state.thpracRecorder=null;practiceMenu?.close({focus:false});
+ try{await startLaunch(selection,'route');if(state.replayPlayback!==owner||lastCheckWorldError||state.stageSelection!==selection||!state.worldMode)throw new Error(lastCheckWorldError||'Practice replay did not adopt its recorded stage');return owner;}
+ catch(error){if(state.replayPlayback===owner){try{owner.cancel();}catch{}state.replayPlayback=null;state.active=false;state.paused=true;}throw error;}
+}
+function installThpracReplayControls(){
+ for(const [id,run]of [['#thprac-replay-save',saveThpracReplayFromMenu],['#thprac-replay-watch',watchThpracReplayFromMenu]])find(id)?.addEventListener('click',()=>{run().catch(error=>{find('#thprac-replay-status').textContent=String(error.message??error);});});
+}
 function installPracticeMenu(){
  if(practiceMenu)return practiceMenu;
  practiceMenu=mountThprac128Menu({root:find('#practice-menu'),opener:find('#practice-open'),
@@ -1327,7 +1374,7 @@ function installPracticeMenu(){
    inRun:state.worldMode&&state.active,
    practiceSession:state.worldMode?state.stageSelection?.thprac??null:null
   }),
-  onOpen:async()=>{loseFocus();await state.nativePausePending;},
+  onOpen:async()=>{loseFocus();await state.nativePausePending;await refreshThpracReplaySlots();},
   onFocusGame:()=>find('#game')?.focus(),launch:startThprac128Session
  });
  window.addEventListener('pagehide',()=>practiceMenu?.dispose(),{once:true});
@@ -1746,6 +1793,7 @@ function stopAudio({keepContext=false}={}){
   state.extraRun?.close();state.extraRun=null;state.extraPresentation=null;
   closeOrdinaryWorldAudio();
   disposeOriginalMain();
+  state.thpracRecorder?.close();state.thpracRecorder=null;state.thpracReplayRows=null;
   state.replayStore?.close();state.replayStore=null;state.replaySlots=null;state.replayNativeBound=false;state.replayClockLast=null;
   const retiredPause=state.nativePause;state.nativePause=null;state.nativePausePending=null;
   retiredPause?.dispose().catch(problem=>status(String(problem.message??problem)));state.menuSoundLedger?.close();state.menuSoundLedger=null;
@@ -2097,7 +2145,7 @@ async function readJson(url,signal){
   })(),url,abort);}finally{signal?.removeEventListener('abort',abort);}
 }
 
-const checkpointModuleGenerations=new WeakMap();
+const checkpointModuleGenerations=new WeakMap(),checkpointModuleBuilds=new WeakMap();
 const startedWorldModules=new WeakSet();
 async function runtimeFactory(signal){
   const build=await readJson('/runtime/build.json',signal);
@@ -2106,7 +2154,7 @@ async function runtimeFactory(signal){
   const factory=(await import(new URL(build.entry,location.href).href)).default;
   return async options=>{
     const module=await factory(options);
-    checkpointModuleGenerations.set(module,build.generation);
+    checkpointModuleGenerations.set(module,build.generation);checkpointModuleBuilds.set(module,build);
     return module;
   };
 }
@@ -2454,6 +2502,7 @@ async function advanceSerial(){
       if(maybeStartOriginalEnding())return;
       throw new Error('Original ending request changed at the logical preupdate boundary');
     }
+    if(state.thpracRecorder){const seconds=performance.now()/1000,delta=seconds-state.replayClockLast;state.thpracRecorder.clock(seconds,delta>0?1/delta:0);state.replayClockLast=seconds;}
     if(state.replayNativeBound){
       const seconds=performance.now()/1000,delta=seconds-state.replayClockLast;
       const fps=delta>0?1/delta:0;
@@ -2794,6 +2843,11 @@ async function refreshOriginalReplayImportRows(snapshot){
 
 async function showOwnedReplayStages(snapshot){
   if(state.module._th128_title_sound_count()!==0)return;
+  const row=(await state.mainReplayStore.observe())[snapshot.selection];
+  if(row?.bytes&&readThprac128Replay(row.bytes)){
+    if(state.module._th128_title_main_action_ack(snapshot.mainActionSerial,3)!==1)throw new Error('Practice Replay selection action rejected');
+    state.replayStore=state.mainReplayStore;await watchThpracReplayFromMenu(snapshot.selection);return;
+  }
   const owner=await OwnedReplayPlayback.fromStore(state.mainReplayStore,snapshot.selection),packet=owner.stageChoicePacket();
   if(nativeMainMemory(packet,(pointer,length)=>state.module._th128_title_replay_stage_prepare(pointer,length))!==1)
     throw new Error('原录像关卡选择页不可用');
@@ -3079,7 +3133,7 @@ find('#debug-stage-start').addEventListener('click',()=>{
 find('#debug-extra-start').addEventListener('click',()=>{
   startDebugThirdStage('EX').catch(problem=>status(`EX 启动失败：${problem.message??String(problem)}`));
 });
-installPracticeMenu();
+installPracticeMenu();installThpracReplayControls();
 syncDebugStageJumpControls();
 find('#previous').addEventListener('click',()=>select(-1));find('#next').addEventListener('click',()=>select(1));
 find('#ecl').addEventListener('click',async()=>{
@@ -3661,7 +3715,11 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
           for(const [bank,name]of [[0,'front'],[24,'title'],[25,'title_v'],[11,'ascii']])assets.push({bank,bytes:await bytesAt('runtime/'+name+'.anm')});
           if(stale())return;extraRun.bind(assets);
         }
-        if(thprac)readThprac128Native(module,thprac);
+        if(thprac){
+          readThprac128Native(module,thprac);selection.thpracIdentity=await thpracReplayResourceIdentity(module,byteCache);
+          if(stale())return;
+          const expected=selection.thpracReplayIdentity;if(expected&&(expected.coreSHA256!==selection.thpracIdentity.coreSHA256||expected.resourceSHA256!==selection.thpracIdentity.resourceSHA256))throw new Error('Practice replay core/resource identity differs from loaded bytes');
+        }
         else verifyFreshExtraOwner(JSON.parse(module.UTF8ToString(module._th128_world_state())),selection);
         state.shotMode=shots;find('#emit-shot').disabled=!shots;
         state.worldMode=true;state.active=true;state.paused=window.__TH128_DIAGNOSTIC_PAUSED__===true;clock.reset();resetHighFrameratePresentation();stopAudio();
@@ -3672,6 +3730,11 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         if(extraRun){state.extraRun=extraRun;extraRun=null;}
         disposeOriginalStageTextRasters(state.stageTextRasters);state.stageTextRasters=preparedTextRasters;preparedTextRasters=null;
         if(state.replayPlayback){state.replayNativeBound=false;state.replayPlayback.bindNativeStage(module);}
+        else if(thprac){
+          const clockSeconds=performance.now()/1000,ownedSelection=selection;
+          state.thpracRecorder=createThprac128Recorder(module,thprac,selection.thpracIdentity,{seconds:clockSeconds,isCurrent:()=>state.module===module&&state.stageSelection===ownedSelection&&!state.launcherExited});
+          state.replayClockLast=clockSeconds;
+        }
         else if(!state.extraRun&&!selection.debugJump&&!selection.thprac&&!find('#debug-infinite-respawn').checked){
           if(typeof module._th128_world_replay_begin!=='function')throw new Error('正常录像录制内核未载入');
           if(!carryToken){
@@ -3719,7 +3782,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
   }}
   finally{extraRun?.close();disposeOriginalStageTextRasters(preparedTextRasters);if(pendingAudio){pendingAudio.queue.dispose();pendingAudio.music.dispose();pendingAudio.audio.close().catch(()=>{});}if(ticket===state.loading){find('#world').disabled=false;find('#emission').disabled=!module._th128_world_enable_bullets;find('#segment').disabled=!module._th128_world_enable_bullet_updates;find('#shots').disabled=!module._th128_world_enable_player_shots;find('#play-stage').disabled=!module._th128_world_enable_z_fire;}}
 }
-function prepareStage(stageId,{difficulty=1,seed=34772,progress=0,debugExtra=false}={}){
+function prepareStage(stageId,{difficulty=1,seed=34772,progress=0,debugExtra=false,thprac=null,thpracReplayIdentity=null}={}){
   assertStageStartAllowed(stageId,difficulty,{debugExtra});
   if(!state.stageCatalog)throw new Error('关卡目录尚未加载');
   if(!Number.isInteger(stageId)||stageId<1||stageId>16)throw new Error(`非法关卡ID：${stageId}`);
@@ -3733,6 +3796,7 @@ function prepareStage(stageId,{difficulty=1,seed=34772,progress=0,debugExtra=fal
     selection.debugJump={schema:'th128-debug-extra-start/1',route:'EX',stageId:16,difficulty:4,
       startingFrame:0,mode:'fresh-direct-stage',carryVerified:false,previousStagesVerified:false,normalModeClear:false};
   }
+  if(thprac){selection.thprac=createThprac128Session(thprac.params,thprac.difficulty);delete selection.debugJump;if(thpracReplayIdentity)selection.thpracReplayIdentity=thpracReplayIdentity;}
   return selection;
 }
 async function startStage(stageId,options={}){

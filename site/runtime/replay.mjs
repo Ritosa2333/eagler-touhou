@@ -319,18 +319,19 @@ export function decodeReplay(input) {
     dataGapRaw = data.slice(end, userDataOffset);
     let cursor = userDataOffset;
     let userSize = 0;
-    for (let index = 0; index < 2; index += 1) {
+    for (let index = 0; index < 3; index += 1) {
+      if(index===2&&(cursor+12>data.length||dataView(data).getUint32(cursor,true)!==0x52455355||dataView(data).getUint32(cursor+8,true)!==0x43415250))break;
       const headerRaw = span(data, cursor, 12, 'USER header').slice();
       const userView = dataView(headerRaw);
       require(userView.getUint32(0, true) === 0x52455355, 'invalid USER block magic');
-      const size = userView.getUint32(4, true);
+      const size = userView.getUint32(4, true),kind=userView.getUint32(8,true);
       require(size >= 12 && size <= MAX_USER_DATA_SIZE - userSize, 'invalid USER block size');
       const block = span(data, cursor, size, 'USER block').slice();
       const content = block.slice(12);
-      userBlocks.push({ headerRaw, kind: userView.getUint32(8, true), data: content,
-        raw: block, text: text(content) });
-      cursor += size;
-      userSize += size;
+      if(kind===0x43415250)require(index===0||index===2,'invalid or duplicate PRAC USER position');
+      userBlocks.push({ headerRaw, kind, data: content, raw: block, text: text(content) });
+      cursor += size;userSize += size;
+      if(kind===0x43415250)break;
     }
     fileTailRaw = data.slice(cursor);
   } else {
@@ -396,8 +397,9 @@ export function encodeReplay(decoded, options = {}) {
     0x800, 0x5e, 0xe7, true);
   const gap = bytes(decoded.dataGapRaw, 'container gap');
   const tail = bytes(decoded.fileTailRaw, 'file tail');
-  require(Array.isArray(decoded.userBlocks) && [0, 2].includes(decoded.userBlocks.length),
-    'expected zero or two USER blocks');
+  require(Array.isArray(decoded.userBlocks) && ([0,2].includes(decoded.userBlocks.length)
+    ||[1,3].includes(decoded.userBlocks.length)&&decoded.userBlocks.at(-1)?.kind===0x43415250),
+    'expected ordinary USER pair with optional trailing PRAC USER block');
   require(decoded.userBlocks.length > 0 || gap.length === 0, 'container gap needs a USER section');
   const userParts = [];
   let userSize = 0;

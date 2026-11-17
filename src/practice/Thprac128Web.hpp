@@ -6,3 +6,12 @@ extern "C" {
 int th128_world_prepare_thprac128(const void* data,unsigned bytes);
 const char* th128_world_thprac128_state();
 }
+#define TH128_THPRAC_REPLAY_ABI 1
+extern "C" {
+int th128_world_thprac_replay_begin(double seconds);
+int th128_world_thprac_replay_clock(double seconds,float fps);
+unsigned th128_world_thprac_replay_snapshot(unsigned timestampLow,unsigned timestampHigh,const void* name,unsigned nameBytes);
+const void* th128_world_thprac_replay_data();
+const char* th128_world_thprac_replay_state();
+int th128_world_thprac_replay_playback_load(const void* data,unsigned bytes);
+}

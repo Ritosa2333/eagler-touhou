@@ -642,6 +642,17 @@ export class OwnedReplayStore{
       throw new Error('Saved replay native payload differs');
     return{slot,bytes:observed.bytes,digest,rawBytes:native.length,rawChecksum:OwnedReplayStore.nativeChecksum(native),strictFullReadback:true,strictDurability:true};
   }
+  async saveThprac(slot,input,{expectedDigest=null,isCurrent=()=>true,signal}={}){
+    if(!Number.isInteger(slot)||slot<0||slot>=25||!(input instanceof Uint8Array)||typeof isCurrent!=='function')throw new Error('Practice Replay file/slot/owner rejected');
+    const current=()=>{if(signal?.aborted||!isCurrent())throw new DOMException('Practice Replay owner cancelled','AbortError');};current();
+    const bytes=input.slice(),{readThprac128Replay}=await import('./thprac128-replay.mjs');
+    const practice=readThprac128Replay(bytes);if(!practice)throw new Error('Practice PRAC metadata missing');
+    const decoded=decodeReplay(bytes),digest=await this.hash(bytes);current();
+    const record={bytes,digest,name:Array.from(decoded.metadata.nameRaw),timestamp:String(decoded.metadata.timestamp),stageCount:1,score:decoded.metadata.scoreRaw,source:'thprac-rpy'};
+    const result=await this.replaceFileSlot(slot,expectedDigest,record,{isCurrent,signal});current();
+    const readback=readThprac128Replay(result.record.bytes,practice.identity);if(JSON.stringify(readback.session.params)!==JSON.stringify(practice.session.params))throw new Error('Practice Replay metadata durable readback differs');
+    return{slot,bytes:result.record.bytes.slice(),digest,alreadyPresent:result.alreadyPresent,strictFullReadback:true,strictDurability:true,scoreProfileImported:false,practice:true};
+  }
   async importOriginal(input,{fileName='original.rpy',isCurrent=()=>true}={}){
     if(!(input instanceof Uint8Array)||input.length<36||input.length>16*1024*1024
         ||typeof fileName!=='string'||fileName.length>180||/[\x00-\x1f\\/]/.test(fileName)

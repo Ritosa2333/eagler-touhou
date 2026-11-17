@@ -47,3 +47,5 @@
 899–914真实Web主菜单与原生桥已接：TH128专用schema保原10字段，126章节/156选段/EX四phase/对话及中英日label；实际页面load后/start前prepare，五字段进真实配置并核nativeframe0/五值/taint，取消/重开与正常资格隔离。新private113首次构建通过，908实际3Factory/3World/427checks/每个首tick；914真实HTML/CSS/组件和9wholecaller16检查通过。两者范围独立，不能冒完整原资源browser游戏。
 
 实际native section初始化顺序901RED→903修复，真实空select默认910/911RED→912/914修复；所有首FAIL保留。完整thprac/第三阶段仍未完成：练习Replay metadata/recording/playLock、F1..F7/Backspace overlay、F12speed、持久launcher开关还需实际消费者。菜单内enable/locale已经生效，未改个人设置。旧112/v7/public产物不动，新113只owned编译产物，打包/公开发布暂停。详见THPRAC128_WEB_MENU.md及thprac128-Web-menu899-914.json。
+
+2026-11-17更新：915–934练习Replay批次已接实际native输入录制、原RPY＋上游USER/PRAC元数据、严格25槽CAS保存/回读、同参数播放与playLock。921实际录制/回放3帧，930新114真实2Factory/2World/6tick/294检查投影一致；933真实浏览器IDB与当前save/watch页面10项通过。114仅owned编译产物，旧112/v7/public不动；不重新打包。剩余Backspace/F1..F7/F12速度/持久launcher gate仍须完成，完整thprac/第三阶段仍未完成。具体范围见THPRAC128_REPLAY.md。

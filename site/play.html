@@ -33,6 +33,13 @@
         <label><span data-thprac-label="TH128_ICE_AREA">冰冻面积</span> <input type="number" inputmode="numeric" min="0" max="3000" step="1" data-thprac="ice_area"></label>
       </div>
       <label data-thprac="replaceRow" class="practice-replace" hidden><input data-thprac="replace" type="checkbox"><span data-thprac-copy="replace">替换当前局，放弃尚未保存的进度</span></label>
+      <fieldset class="thprac-replay-controls"><legend>练习 Replay · 参数会随录像保存</legend>
+        <label>录像槽 <select id="thprac-replay-slot" aria-label="练习录像槽"><option value="0">No.01</option></select></label>
+        <label>姓名 <input id="thprac-replay-name" aria-label="练习录像姓名" maxlength="8" value="PLAYER" autocomplete="off"></label>
+        <label><input id="thprac-replay-overwrite" type="checkbox">确认覆盖所选已占用录像槽</label>
+        <div class="practice-actions"><button id="thprac-replay-save" type="button" disabled>保存当前练习录像</button><button id="thprac-replay-watch" type="button">观看所选练习录像</button></div>
+        <p id="thprac-replay-status" role="status">仅练习局可保存；播放使用录像内的参数，期间锁定输入和练习修改。</p>
+      </fieldset>
       <p data-thprac="status" role="status">正在准备 thprac 入口…</p>
       <div class="practice-actions"><button data-thprac="start" type="button">开始</button><button data-thprac="restart" type="button" disabled>重新开始</button><button data-thprac="cancel" type="button">关闭 / 取消启动</button></div>
     </section>

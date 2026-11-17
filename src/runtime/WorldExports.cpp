@@ -350,6 +350,18 @@ std::string worldStartedName;
 int worldStartDifficulty=0;
 int currentStageProgress=0;
 unsigned worldGeneration=0;
+struct ThpracReplayOwner {
+    std::unique_ptr<th128::record::NativeRunReplay> record;
+    th128::StageWorld::ThpracChapter practice{};
+    std::vector<std::uint8_t> bytes;
+    unsigned generation=0,seed=0,clockFrame=0;
+    double origin=0,clock=0;
+    float fps=60;
+    bool clockPending=false,playback=false;
+};
+ThpracReplayOwner thpracReplay;
+unsigned worldStartedSeed=0;
+
 
 struct DebugRecordPrefixState {
     bool prepared=false;
@@ -773,7 +785,7 @@ void beginNewWorldGeneration() {
     if(worldGeneration==0)++worldGeneration;
     stageIntro=std::make_unique<th128::stageintro::Host>();
     stageIntroDrawError.clear();
-    worldStartedName.clear();
+    worldStartedName.clear();worldStartedSeed=0;thpracReplay={};
     worldStartDifficulty=0;
     currentStageProgress=0;
     if(stageCarry.valid&&!stageCarry.consumed){
@@ -1998,7 +2010,7 @@ int th128_world_start(const char* name,std::uint32_t nameLength,int difficulty,u
     spellVisuals=std::make_unique<th128::spell::Visuals>();spellsConfigured=false;spellResult={};spellResultFrames=0;spellStartSeconds.reset();
     laserLines=std::make_unique<th128::laser::LineHost>();
     beginNewWorldGeneration();
-    worldStartedName=identifier;worldStartDifficulty=difficulty;currentStageProgress=0;
+    worldStartedName=identifier;worldStartDifficulty=difficulty;worldStartedSeed=seed;thpracReplay={};currentStageProgress=0;
     const auto practice=world->thpracChapter();
     if(debugRecordPrefix.prepared){
         debugRecordPrefix.worldBound=true;debugRecordPrefix.generation=worldGeneration;
@@ -2212,6 +2224,7 @@ int th128_world_enable_player_motion(int horizontal,int vertical){
 int th128_world_input(unsigned holding,unsigned pressed,unsigned released){
     operationError.clear();
     if(ownedBattle.attempted()){operationError="retired gameplay input owner is unavailable";return 0;}
+    if(thpracReplay.playback){operationError="practice replay playLock rejects live gameplay input";return 0;}
     if(world->faulted()||!playerConfigured||!playerMotion||(holding|pressed|released)>65535){operationError="Invalid player input state";return 0;}
     const auto perfectInput=perfectConfigured?th128::perfect::XKeyBit:0U;
     const auto unsupported=(holding|pressed|released)&~(16U|32U|64U|128U|(rapidShotConfigured?512U|8U:0U)|(playerFireConfigured?1U:0U)|perfectInput);
@@ -2220,7 +2233,7 @@ int th128_world_input(unsigned holding,unsigned pressed,unsigned released){
 }
 int th128_world_set_debug_infinite_respawn(int enabled){
     operationError.clear();
-    if(world->faulted()||enabled<0||enabled>1){operationError="debug infinite respawn requires a legal unfaulted world and 0/1";return 0;}
+    if(world->faulted()||enabled<0||enabled>1||thpracReplay.playback){operationError="debug infinite respawn requires a legal unfaulted unlocked world and 0/1";return 0;}
     if(debugSetterExecuting){operationError="debug infinite respawn setter is non-reentrant";return 0;}
     if(worldTickExecuting){operationError="debug infinite respawn setter is not available during world tick";return 0;}
     struct SetterGuard {bool& flag;explicit SetterGuard(bool& value):flag(value){flag=true;}~SetterGuard(){flag=false;}} guard(debugSetterExecuting);
@@ -3568,6 +3581,66 @@ int th128_world_records_ack(unsigned serial,unsigned bytes,unsigned digest){
     operationError.clear();if(!normalRecord||debugRunTainted){operationError="ordinary durable record owner absent";return 0;}
     try{normalRecord->acknowledge(serial,bytes,digest);return 1;}catch(const std::exception& failure){operationError=failure.what();return 0;}
 }
+int th128_world_thprac_replay_begin(double seconds){
+    operationError.clear();const auto owner=world->thpracChapter();
+    if(!owner||!debugRunTainted||world->faulted()||world->frame()!=0||worldTickExecuting||!playerMotion
+        ||!playerConfigured||!playerShotsConfigured||!shotHitsConfigured||!grazeConfigured||normalReplay||normalRecord
+        ||replayPlayback.active()||thpracReplay.record||thpracReplay.playback||!std::isfinite(seconds)||seconds<0){
+        operationError="practice recorder requires its actual fresh native gameplay owner";return 0;
+    }
+    try{
+        const auto group=th128::playershot::selectShotGroup(cumulativeFrozenArea,shotDifficulty);
+        if(!group)throw std::runtime_error("practice replay initial shot group unavailable");
+        auto record=std::make_unique<th128::record::NativeRunReplay>(th128::record::NativeRunReplay::practice());
+        record->begin(owner->stageId,unsigned(owner->difficulty),worldStartedSeed,*group,0,scoreRaw,pointValueRaw,motivationRaw,
+            playerWindowControl.perfectCharge4b4d70,cumulativeFrozenArea,playerRaw.horizontal,playerRaw.vertical,grazeGlobals.grazeCount);
+        thpracReplay={std::move(record),*owner,{},worldGeneration,worldStartedSeed,0,seconds,seconds,60,false,false};return 1;
+    }catch(const std::exception& e){operationError=e.what();return 0;}
+}
+int th128_world_thprac_replay_clock(double seconds,float fps){
+    operationError.clear();
+    if(!thpracReplay.record||thpracReplay.generation!=worldGeneration||world->faulted()||worldTickExecuting
+        ||th128_world_pause_active()||thpracReplay.clockPending||!std::isfinite(seconds)||seconds<thpracReplay.clock
+        ||!std::isfinite(fps)||fps<0){operationError="practice replay requires a monotonic owned pre-tick clock";return 0;}
+    thpracReplay.clock=seconds;thpracReplay.fps=fps;thpracReplay.clockFrame=world->frame();thpracReplay.clockPending=true;return 1;
+}
+unsigned th128_world_thprac_replay_snapshot(unsigned low,unsigned high,const void* data,unsigned bytes){
+    operationError.clear();
+    if(!thpracReplay.record||thpracReplay.generation!=worldGeneration||!thpracReplay.record->frames()||worldTickExecuting
+        ||thpracReplay.clockPending||bytes!=8||!th128::runtime::inputRange(data,bytes)){
+        operationError="practice replay snapshot requires completed recorded frames and explicit8byte name";return 0;
+    }
+    std::array<std::uint8_t,8> name{};std::memcpy(name.data(),data,8);
+    try{auto snapshot=thpracReplay.record->snapshot((std::uint64_t(high)<<32)|low,scoreRaw,thpracReplay.practice.stageId,0,name);
+        thpracReplay.bytes=std::move(snapshot);return unsigned(thpracReplay.bytes.size());}
+    catch(const std::exception& e){operationError=e.what();return 0;}
+}
+const void* th128_world_thprac_replay_data(){return thpracReplay.bytes.empty()?nullptr:thpracReplay.bytes.data();}
+const char* th128_world_thprac_replay_state(){
+    static std::string text;std::ostringstream out;
+    out<<"{\"active\":"<<(thpracReplay.record?"true":"false")<<",\"playLock\":"<<(thpracReplay.playback?"true":"false")
+        <<",\"generation\":"<<thpracReplay.generation<<",\"stage\":"<<thpracReplay.practice.stageId
+        <<",\"rank\":"<<thpracReplay.practice.difficulty<<",\"seed\":"<<thpracReplay.seed
+        <<",\"frames\":"<<(thpracReplay.record?thpracReplay.record->frames():0)<<",\"worldFrame\":"<<world->frame()
+        <<",\"clockPending\":"<<(thpracReplay.clockPending?"true":"false")<<'}';text=out.str();return text.c_str();
+}
+int th128_world_thprac_replay_playback_load(const void* data,unsigned bytes){
+    operationError.clear();const auto owner=world->thpracChapter();
+    if(!owner||!debugRunTainted||worldTickExecuting||world->faulted()||world->frame()!=0||thpracReplay.record||thpracReplay.playback
+        ||normalReplay||normalRecord||!playerConfigured||!playerMotion||!playerShotsConfigured||!shotHitsConfigured
+        ||!th128::runtime::inputRange(data,bytes)){
+        operationError="practice playback requires a fresh matching actual practice resource owner";return 0;
+    }
+    const auto group=th128::playershot::selectShotGroup(cumulativeFrozenArea,shotDifficulty);
+    if(!group){operationError="practice playback shot group unavailable";return 0;}
+    try{
+        const th128::record::ReplayPlaybackInitial actual{owner->stageId,unsigned(owner->difficulty),worldStartedSeed,*group,0,
+            worldGeneration,0,scoreRaw,pointValueRaw,playerRaw.horizontal,playerRaw.vertical,motivationRaw,
+            playerWindowControl.perfectCharge4b4d70,cumulativeFrozenArea,grazeGlobals.grazeCount};
+        replayPlayback.bind({static_cast<const std::uint8_t*>(data),bytes},actual);
+        thpracReplay.playback=true;thpracReplay.generation=worldGeneration;thpracReplay.practice=*owner;thpracReplay.seed=worldStartedSeed;return 1;
+    }catch(const std::exception& e){operationError=e.what();return 0;}
+}
 int th128_world_replay_begin(unsigned seed,double seconds){
     operationError.clear();
     if(world->faulted()||world->frame()!=0||!playerFireConfigured||!playerMotion||seed>65536||debugRunTainted||!std::isfinite(seconds)||seconds<0){
@@ -3719,7 +3792,7 @@ const char* th128_world_replay_playback_state(){
 int th128_world_replay_playback_cancel(){
     operationError.clear();
     if(worldTickExecuting){operationError="cannot release replay input during actual World tick";return 0;}
-    replayPlayback.cancel();return 1;
+    replayPlayback.cancel();thpracReplay.playback=false;return 1;
 }
 
 int th128_world_tick(){
@@ -3757,6 +3830,14 @@ int th128_world_tick(){
             if(actual.phase!=th128::routechoice::Phase::Failed)auxiliary=actual.handle!=0;
         }
         if(!auxiliary){operationError="normal replay MSG auxiliary ownership unknown";return 0;}
+        normalReplayAuxiliary=*auxiliary;
+    }
+    if(thpracReplay.record){
+        if(thpracReplay.generation!=worldGeneration||!thpracReplay.clockPending||thpracReplay.clockFrame!=world->frame()){
+            operationError="practice recording pre-tick clock or generation missing";return 0;
+        }
+        const auto auxiliary=messagesConfigured?messages->recordAuxiliaryLive():std::optional<bool>{false};
+        if(!auxiliary){operationError="practice replay MSG auxiliary ownership unknown";return 0;}
         normalReplayAuxiliary=*auxiliary;
     }
     struct TickGuard {bool& flag;explicit TickGuard(bool& value):flag(value){flag=true;}~TickGuard(){flag=false;}} tickGuard(worldTickExecuting);
@@ -4236,6 +4317,11 @@ int th128_world_tick(){
             if(recorded&&normalRecord)normalRecord->activeFrame(playerHit->snapshot().soundControl.flags60,th128::record::NativeRecordSessionPolicy::stageClearHeld(stageManager.flags5a04,stageManager.field5a0c));
             normalReplayClockPending=false;}
         catch(const std::exception& failure){world->reportRuntimeFault(failure.what());return 0;}
+    }
+    if(success&&thpracReplay.record){
+        try{thpracReplay.record->append(normalReplayInput,normalReplayAuxiliary,thpracReplay.fps,thpracReplay.clock-thpracReplay.origin);
+            thpracReplay.clockPending=false;}
+        catch(const std::exception& e){world->reportRuntimeFault(e.what());return 0;}
     }
     if(success&&debugRecordDriver.bound)debugRecordDriver.phase=2;
     return success?1:0;
