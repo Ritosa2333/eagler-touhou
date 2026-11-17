@@ -33,5 +33,6 @@
   width:var(--th03-touch-width);height:var(--th03-touch-height);
 }
 #player.room-workspace.th03-room-touch-active.touch-layout-custom .touch-hud{display:block}
+#player.room-workspace.th03-room-touch-active .th03-room-fullscreen{position:fixed;z-index:40;right:auto;bottom:auto;left:calc(var(--th03-touch-left) + var(--th03-touch-width) - 56px);top:calc(var(--th03-touch-top) + var(--th03-touch-height) - 56px)}
 
 }

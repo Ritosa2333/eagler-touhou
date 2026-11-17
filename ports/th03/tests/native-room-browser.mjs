@@ -30,6 +30,7 @@ async function open(seat,url){
     };
   });
   if(touchQa)await page.evaluateOnNewDocument(()=>{Object.defineProperty(navigator,'maxTouchPoints',{value:5,configurable:true});localStorage.setItem('eagler-touhou-game-options-v1-th03',JSON.stringify({options:{touchEnabled:true,touchMovementMode:'touch',th03RapidFire:true}}));});
+  if(touchQa&&process.env.TH03_FULLSCREEN_REJECT==='1')await page.evaluateOnNewDocument(()=>{HTMLElement.prototype.requestFullscreen=()=>Promise.reject(Error('fullscreen denied'));});
   if(touchQa&&process.env.TH03_TOUCH_CUSTOM==='1')await page.evaluateOnNewDocument(()=>{
     const point=(x,y)=>({x,y,scale:0.8,priority:0});
     const profile={viewport:{x:0},controls:{focus:point(.18,.52),fire:point(.18,.25),bomb:point(.18,.77),function:point(.38,.75),escape:point(.12,.10),joystick:point(.75,.65)}};
@@ -145,6 +146,18 @@ try{
     }
     console.log('PASS match entry does not retain selection fire');
     if(touchQa){
+      if(process.env.TH03_FULLSCREEN_REJECT==='1'){
+        assert(await host.$eval('#player',el=>el.classList.contains('room-workspace')),'fullscreen rejection returns to room');
+        const button=await (await host.$('.room-workspace-fullscreen')).boundingBox();
+        assert(await host.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.room-workspace-fullscreen'),{x:button.x+button.width/2,y:button.y+button.height/2}),'fullscreen button is clickable');
+        await host.click('.room-workspace-fullscreen');
+        await wait(()=>host.$eval('#player',el=>el.classList.contains('room-workspace')),'rejected fullscreen keeps room touch',5000);
+        const surface=await (await host.$('#touchDirectSurface')).boundingBox(),x=surface.x+surface.width*.7,y=surface.y+surface.height*.6;
+        const before=await frames[0].evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().players.find(p=>p.seat===0)?.x);
+        const cdp=await host.createCDPSession();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:3}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+100,y,id:3}]});await new Promise(r=>setTimeout(r,400));await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();
+        await wait(async()=>frames[0].evaluate(async old=>(await import('./managed-native-room.mjs')).managedAPI.health().players.find(p=>p.seat===0)?.x>old,before),'touch after rejected fullscreen',10000);
+        console.log('PASS TH03 touch after fullscreen rejection');break;
+      }
       if(!await host.evaluate(()=>!!document.fullscreenElement))await host.$eval('#fullscreenToggle',el=>el.click());
       await host.waitForFunction(()=>!!document.fullscreenElement,{timeout:10000});
       await host.evaluate(()=>document.exitFullscreen());
