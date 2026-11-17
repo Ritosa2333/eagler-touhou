@@ -37,6 +37,7 @@ struct CoreConfig
     // Some title protocols transmit touch as a one-frame impulse and predict
     // a completely neutral analog lane until the next real sample arrives.
     bool predictAnalog = true;
+    bool recheckPredictionFrontier = false;
     // Optional short extrapolation for a continuous unlimited absolute drag.
     // Coordinates must use game pixels. Zero keeps the confirmed target.
     std::uint8_t absoluteTouchForecastFrames = 0;
@@ -188,6 +189,7 @@ private:
     const UsedSlot *FindUsedSlot(std::uint32_t frame) const;
     bool HasConfirmedInputConflict(std::uint8_t player, std::uint32_t frame,
                                    const FrameInput &input) const;
+    bool RecheckPredictions(std::uint8_t player, std::uint32_t from);
     RemoteInputResult StoreRemoteInput(std::uint8_t player, std::uint32_t frame,
                                       const FrameInput &input);
     FrameInput PredictInput(std::uint8_t player, std::uint32_t frame) const;

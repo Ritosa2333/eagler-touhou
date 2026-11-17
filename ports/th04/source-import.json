@@ -72,6 +72,9 @@
     "vendor/np2/np21-mobile.wasm",
     "vendor/np2/np21-rollback-mobile.wasm",
     "vendor/np2/np21-rollback.wasm",
-    "vendor/np2/np21.wasm"
+    "vendor/np2/np21.wasm",
+    "assets/player-body-dim.bin",
+    "assets/projectiles-original-dim.bin",
+    "assets/projectiles-rgb-dim.bin"
   ]
 }

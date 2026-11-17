@@ -30,7 +30,7 @@ export function multiplayerMemberId(): string {
   const localTest = ['localhost', '127.0.0.1', '[::1]'].includes(globalThis.location?.hostname ?? '');
   try {
     const saved = (localTest ? sessionStorage : localStorage).getItem(key);
-    if (validMultiplayerClientId(saved)) return rememberedMemberId = saved;
+    if (validMultiplayerClientId(saved)) {rememberedMemberId = saved; return saved;}
   } catch {}
   const words = new Uint32Array(4);
   // Membership also authorizes room transports. Fail closed if cryptographic

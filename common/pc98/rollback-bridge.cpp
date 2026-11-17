@@ -21,6 +21,7 @@ Pc98Rollback *pc98_rollback_create(unsigned players, unsigned local, unsigned li
     config.directionButtons = static_cast<std::uint16_t>(directions);
     config.maxDirectionPredictionFrames = static_cast<std::uint8_t>(directionFrames);
     config.predictAnalog = false;
+    config.recheckPredictionFrontier = true;
     if (!state->core.Reset(config)) { delete state; return nullptr; }
     return state;
 }

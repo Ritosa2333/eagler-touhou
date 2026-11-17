@@ -4,7 +4,7 @@
 using namespace Netplay;
 
 void directionHorizon(unsigned players, unsigned remote) {
-    CoreConfig config; config.playerCount=players; config.localPlayer=0; config.maxRollbackFrames=8;
+    CoreConfig config; config.recheckPredictionFrontier=true; config.playerCount=players; config.localPlayer=0; config.maxRollbackFrames=8;
     config.predictableButtons=15; config.directionButtons=15; config.maxDirectionPredictionFrames=2;
     RollbackCore core; assert(core.Reset(config));
     for(unsigned slot=1;slot<players;slot++)

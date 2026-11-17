@@ -69,6 +69,7 @@
     "vendor/dosbox-x/wdosbox-x-fast.wasm",
     "vendor/dosbox-x/wdosbox-x-practice.wasm",
     "vendor/dosbox-x/wdosbox-x-rollback-tracked.wasm",
-    "vendor/dosbox-x/wdosbox-x-rollback.wasm"
+    "vendor/dosbox-x/wdosbox-x-rollback.wasm",
+    "assets/th02-player-art-dim.bin"
   ]
 }
