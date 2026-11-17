@@ -143,20 +143,20 @@ test('TH09 new rooms use original charging, let the host enable local priority, 
   assert.equal(f.socket.url.searchParams.get('disableLocalChargePriority'),'1');
   assert.equal(f.socket.sent.find(m=>m.type==='settings').disableLocalChargePriority,true);
   await mountRoom(f,{panel:{kind:'game'}});
-  const toggle=n('#mpDisableLocalChargePriority');
-  assert.equal(toggle.getAttribute('aria-checked'),'true');
-  assert.equal(toggle.getAttribute('aria-label'),'关闭本地优先的蓄力条进度');
-  assert.equal(n('#mpLocalChargeReplayHint').textContent,'新房间默认使用原版蓄力逻辑。关闭此开关可启用本地优先蓄力，录像会额外保存蓄力数据。');
+  const toggle=n('#mpLocalChargePriority');
+  assert.equal(toggle.getAttribute('aria-checked'),'false');
+  assert.equal(toggle.getAttribute('aria-label'),'回滚不吞蓄力条');
+  assert.equal(n('#mpLocalChargeReplayHint').textContent,'默认使用原版蓄力逻辑。开启后优先采用本机蓄力进度，录像会额外保存蓄力数据。');
   assert.equal(f.service.runtimeOptions().netplayDisableLocalChargePriority,true);
-  await click('#mpDisableLocalChargePriority');
+  await click('#mpLocalChargePriority');
   assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableLocalChargePriority,false);
   await f.receive({disableLocalChargePriority:false,phase:'running'});
-  assert.equal(toggle.getAttribute('aria-checked'),'false');
+  assert.equal(toggle.getAttribute('aria-checked'),'true');
   assert.equal(f.service.runtimeOptions().netplayDisableLocalChargePriority,false);
   assert.equal(toggle.disabled,true);
   const sent=f.socket.sent.length;await act(()=>f.service.setRoomSettings({disableLocalChargePriority:true}));assert.equal(f.socket.sent.length,sent);
   const other=await fixture({product:'th07mp'}).live();const {m}=await mountRoom(other,{panel:{kind:'game'}});
-  assert.equal(all('#mpDisableLocalChargePriority',m.container).length,0);
+  assert.equal(all('#mpLocalChargePriority',m.container).length,0);
   assert.equal('netplayDisableLocalChargePriority' in other.service.runtimeOptions(),false);
 });
 test('TH09 auto-save preference reaches only player Runtime options and survives leaving', async () => {

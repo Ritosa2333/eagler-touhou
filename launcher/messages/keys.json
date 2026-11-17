@@ -1541,8 +1541,8 @@
     "id": "room_cheatHint",
     "params": []
   },
-  "room.disableLocalChargePriority": {
-    "id": "room_disableLocalChargePriority",
+  "room.localChargePriority": {
+    "id": "room_localChargePriority",
     "params": []
   },
   "room.localChargeReplayHint": {

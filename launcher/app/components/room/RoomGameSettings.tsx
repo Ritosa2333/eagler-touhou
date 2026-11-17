@@ -85,10 +85,12 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
       {state.product === 'th09mp' &&
         <div className="room-rule-field">
           <div className="flex items-center gap-1">
-            <label htmlFor="mpDisableLocalChargePriority">{t('room.disableLocalChargePriority')}</label>
-            <FieldHelp id="mpLocalChargeReplayHint" label={t('room.disableLocalChargePriority')}>{t('room.localChargeReplayHint')}</FieldHelp>
+            <label htmlFor="mpLocalChargePriority">{t('room.localChargePriority')}</label>
+            <FieldHelp id="mpLocalChargeReplayHint" label={t('room.localChargePriority')}>{t('room.localChargeReplayHint')}</FieldHelp>
           </div>
-          <OptionSwitch id="mpDisableLocalChargePriority" label={t('room.disableLocalChargePriority')} describedBy="mpLocalChargeReplayHint" checked={!!room.disableLocalChargePriority} disabled={disabled} onChange={()=>service.setRoomSettings({disableLocalChargePriority:!room.disableLocalChargePriority})}/>
+          <OptionSwitch id="mpLocalChargePriority" label={t('room.localChargePriority')} describedBy="mpLocalChargeReplayHint"
+            checked={!room.disableLocalChargePriority} disabled={disabled}
+            onChange={()=>service.setRoomSettings({disableLocalChargePriority:!room.disableLocalChargePriority})}/>
         </div>}
     </section>
     {!owner && <p className="room-setting-description" id="mpRoomSettingsHint">{t(!room.seats?.[0] ? 'room.hostAvailable' : 'multiplayer.ownerRemoteHint')}</p>}
