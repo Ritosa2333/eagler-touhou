@@ -1,0 +1,1242 @@
+{
+  "passed": true,
+  "casesPerMode": 48,
+  "allPostSwitchGainsAndPcmHashesEqual": true,
+  "mixedFrames": 12582912,
+  "currentSourceSha256": "a6c46c7cd45f51eaf8d04d6d202aa4d8957ec2f8d76d1e1dbc70512084285021",
+  "upstreamSourceSha256": "45049dc3ac283e7c649851ed9ee5b3b84ee35bc9935e0fdd2eabba993877dd1e",
+  "sourceWasmSha256": {
+    "current": "e754533ee857c1038d33b66afe5254cdb8b21baba0fd0fcfcf7dc1292f6f8c12",
+    "upstream": "1c11de882bd8b79252dc56789315bd49f95efcd7cb0e0bdbbf032c9c0326496b"
+  },
+  "hardwareDeviceOpened": false,
+  "gameplayOrBrowserAudioAccepted": false,
+  "newAssetsCopied": false,
+  "upstreamPatchAppliedToProduction": false,
+  "completeGame": false,
+  "build": {
+    "modes": {
+      "current": {
+        "directory": "current-v2",
+        "wasmSha256": "e754533ee857c1038d33b66afe5254cdb8b21baba0fd0fcfcf7dc1292f6f8c12",
+        "audioSourceSha256": "a6c46c7cd45f51eaf8d04d6d202aa4d8957ec2f8d76d1e1dbc70512084285021",
+        "includedAudioSourceSha256": "b761b51c8da11efa55ee1380fce7eae9843538774aeef4b0cfb1524700c79902",
+        "fixtureSha256": "3f5c1cee0e88e9eb9daef9b998947d99fd8297901bbfb91bccd40716c19242d3"
+      },
+      "upstream": {
+        "directory": "upstream-v2",
+        "wasmSha256": "1c11de882bd8b79252dc56789315bd49f95efcd7cb0e0bdbbf032c9c0326496b",
+        "audioSourceSha256": "45049dc3ac283e7c649851ed9ee5b3b84ee35bc9935e0fdd2eabba993877dd1e",
+        "includedAudioSourceSha256": "45daa001bc8a3ab57e9227cef49289314e287622cdd8f70ad84e912cad77a104",
+        "fixtureSha256": "3f5c1cee0e88e9eb9daef9b998947d99fd8297901bbfb91bccd40716c19242d3"
+      }
+    },
+    "currentFrozenAudioSourceSha256": "a6c46c7cd45f51eaf8d04d6d202aa4d8957ec2f8d76d1e1dbc70512084285021",
+    "providerObjectsVerified": 145,
+    "providerObjectsReused": 144,
+    "onlySelectedAudioDeviceRecompiled": true,
+    "abiHeadersVerified": 5,
+    "quotedIncludePathsRedirected": true,
+    "deviceOpened": false,
+    "completeGame": false
+  },
+  "rows": {
+    "current": [
+      {
+        "level": 0,
+        "target": 1,
+        "state": "clean",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "3bedfdd91695f7e05e49010ba16fe1c00a6a4d78523ad00f0e54eeeeef46ee2a",
+          "energy": 4.259688924179707e-07,
+          "peak": 5.886036433366826e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "clean",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "partial-fade",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "3bedfdd91695f7e05e49010ba16fe1c00a6a4d78523ad00f0e54eeeeef46ee2a",
+          "energy": 4.259688924179707e-07,
+          "peak": 5.886036433366826e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "partial-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "finished-fade",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "3bedfdd91695f7e05e49010ba16fe1c00a6a4d78523ad00f0e54eeeeef46ee2a",
+          "energy": 4.259688924179707e-07,
+          "peak": 5.886036433366826e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "finished-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "paused",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "3bedfdd91695f7e05e49010ba16fe1c00a6a4d78523ad00f0e54eeeeef46ee2a",
+          "energy": 4.259688924179707e-07,
+          "peak": 5.886036433366826e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "paused",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "clean",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "a1ddd73e29b76069c9536fc7b698c899f659e9887837678a6464f8c34ec9b06d",
+          "energy": 1.2619319270573288e-07,
+          "peak": 4.342217835073825e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "clean",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "partial-fade",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "a1ddd73e29b76069c9536fc7b698c899f659e9887837678a6464f8c34ec9b06d",
+          "energy": 1.2619319270573288e-07,
+          "peak": 4.342217835073825e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "partial-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "finished-fade",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "a1ddd73e29b76069c9536fc7b698c899f659e9887837678a6464f8c34ec9b06d",
+          "energy": 1.2619319270573288e-07,
+          "peak": 4.342217835073825e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "finished-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "paused",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "a1ddd73e29b76069c9536fc7b698c899f659e9887837678a6464f8c34ec9b06d",
+          "energy": 1.2619319270573288e-07,
+          "peak": 4.342217835073825e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "paused",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "clean",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "5783bbe8ec62de9c86d0b947525babd0b529b3c297322b6b0ac5f4fc74c65908",
+          "energy": 44.09383472973714,
+          "peak": 0.05988567695021629
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "clean",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "partial-fade",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "5783bbe8ec62de9c86d0b947525babd0b529b3c297322b6b0ac5f4fc74c65908",
+          "energy": 44.09383472973714,
+          "peak": 0.05988567695021629
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "partial-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "finished-fade",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "5783bbe8ec62de9c86d0b947525babd0b529b3c297322b6b0ac5f4fc74c65908",
+          "energy": 44.09383472973714,
+          "peak": 0.05988567695021629
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "finished-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "paused",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "5783bbe8ec62de9c86d0b947525babd0b529b3c297322b6b0ac5f4fc74c65908",
+          "energy": 44.09383472973714,
+          "peak": 0.05988567695021629
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "paused",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "clean",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "16325efbcd437889bdf6d141e5caf9286692a392b111df0810540ebc392722a3",
+          "energy": 13.062789047049977,
+          "peak": 0.044178564101457596
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "clean",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "partial-fade",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "16325efbcd437889bdf6d141e5caf9286692a392b111df0810540ebc392722a3",
+          "energy": 13.062789047049977,
+          "peak": 0.044178564101457596
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "partial-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "finished-fade",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "16325efbcd437889bdf6d141e5caf9286692a392b111df0810540ebc392722a3",
+          "energy": 13.062789047049977,
+          "peak": 0.044178564101457596
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "finished-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "paused",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "16325efbcd437889bdf6d141e5caf9286692a392b111df0810540ebc392722a3",
+          "energy": 13.062789047049977,
+          "peak": 0.044178564101457596
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "paused",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "clean",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "8102dab4ff1dfb95f14045a3738b99c8b0b57dedb747cd282887fa2c954a68c3",
+          "energy": 4259.689137849163,
+          "peak": 0.588603675365448
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "clean",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "partial-fade",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "8102dab4ff1dfb95f14045a3738b99c8b0b57dedb747cd282887fa2c954a68c3",
+          "energy": 4259.689137849163,
+          "peak": 0.588603675365448
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "partial-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "finished-fade",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "8102dab4ff1dfb95f14045a3738b99c8b0b57dedb747cd282887fa2c954a68c3",
+          "energy": 4259.689137849163,
+          "peak": 0.588603675365448
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "finished-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "paused",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "8102dab4ff1dfb95f14045a3738b99c8b0b57dedb747cd282887fa2c954a68c3",
+          "energy": 4259.689137849163,
+          "peak": 0.588603675365448
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "paused",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "clean",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "1a5360b4ea2e60cede3405121fc00858acdb4ac3093e7ddc81a009a998cec499",
+          "energy": 1261.9319906257479,
+          "peak": 0.4342218041419983
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "clean",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "partial-fade",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "1a5360b4ea2e60cede3405121fc00858acdb4ac3093e7ddc81a009a998cec499",
+          "energy": 1261.9319906257479,
+          "peak": 0.4342218041419983
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "partial-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "finished-fade",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "1a5360b4ea2e60cede3405121fc00858acdb4ac3093e7ddc81a009a998cec499",
+          "energy": 1261.9319906257479,
+          "peak": 0.4342218041419983
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "finished-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "paused",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "1a5360b4ea2e60cede3405121fc00858acdb4ac3093e7ddc81a009a998cec499",
+          "energy": 1261.9319906257479,
+          "peak": 0.4342218041419983
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "paused",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      }
+    ],
+    "upstream": [
+      {
+        "level": 0,
+        "target": 1,
+        "state": "clean",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "3bedfdd91695f7e05e49010ba16fe1c00a6a4d78523ad00f0e54eeeeef46ee2a",
+          "energy": 4.259688924179707e-07,
+          "peak": 5.886036433366826e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "clean",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "partial-fade",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "3bedfdd91695f7e05e49010ba16fe1c00a6a4d78523ad00f0e54eeeeef46ee2a",
+          "energy": 4.259688924179707e-07,
+          "peak": 5.886036433366826e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "partial-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "finished-fade",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "3bedfdd91695f7e05e49010ba16fe1c00a6a4d78523ad00f0e54eeeeef46ee2a",
+          "energy": 4.259688924179707e-07,
+          "peak": 5.886036433366826e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "finished-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "paused",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "3bedfdd91695f7e05e49010ba16fe1c00a6a4d78523ad00f0e54eeeeef46ee2a",
+          "energy": 4.259688924179707e-07,
+          "peak": 5.886036433366826e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 1,
+        "state": "paused",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "clean",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "a1ddd73e29b76069c9536fc7b698c899f659e9887837678a6464f8c34ec9b06d",
+          "energy": 1.2619319270573288e-07,
+          "peak": 4.342217835073825e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "clean",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "partial-fade",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "a1ddd73e29b76069c9536fc7b698c899f659e9887837678a6464f8c34ec9b06d",
+          "energy": 1.2619319270573288e-07,
+          "peak": 4.342217835073825e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "partial-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "finished-fade",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "a1ddd73e29b76069c9536fc7b698c899f659e9887837678a6464f8c34ec9b06d",
+          "energy": 1.2619319270573288e-07,
+          "peak": 4.342217835073825e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "finished-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "paused",
+        "muted": false,
+        "gain": 10,
+        "pcm": {
+          "sha256": "a1ddd73e29b76069c9536fc7b698c899f659e9887837678a6464f8c34ec9b06d",
+          "energy": 1.2619319270573288e-07,
+          "peak": 4.342217835073825e-06
+        }
+      },
+      {
+        "level": 0,
+        "target": 17,
+        "state": "paused",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "clean",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "5783bbe8ec62de9c86d0b947525babd0b529b3c297322b6b0ac5f4fc74c65908",
+          "energy": 44.09383472973714,
+          "peak": 0.05988567695021629
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "clean",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "partial-fade",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "5783bbe8ec62de9c86d0b947525babd0b529b3c297322b6b0ac5f4fc74c65908",
+          "energy": 44.09383472973714,
+          "peak": 0.05988567695021629
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "partial-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "finished-fade",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "5783bbe8ec62de9c86d0b947525babd0b529b3c297322b6b0ac5f4fc74c65908",
+          "energy": 44.09383472973714,
+          "peak": 0.05988567695021629
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "finished-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "paused",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "5783bbe8ec62de9c86d0b947525babd0b529b3c297322b6b0ac5f4fc74c65908",
+          "energy": 44.09383472973714,
+          "peak": 0.05988567695021629
+        }
+      },
+      {
+        "level": 37,
+        "target": 1,
+        "state": "paused",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "clean",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "16325efbcd437889bdf6d141e5caf9286692a392b111df0810540ebc392722a3",
+          "energy": 13.062789047049977,
+          "peak": 0.044178564101457596
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "clean",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "partial-fade",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "16325efbcd437889bdf6d141e5caf9286692a392b111df0810540ebc392722a3",
+          "energy": 13.062789047049977,
+          "peak": 0.044178564101457596
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "partial-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "finished-fade",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "16325efbcd437889bdf6d141e5caf9286692a392b111df0810540ebc392722a3",
+          "energy": 13.062789047049977,
+          "peak": 0.044178564101457596
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "finished-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "paused",
+        "muted": false,
+        "gain": 101742,
+        "pcm": {
+          "sha256": "16325efbcd437889bdf6d141e5caf9286692a392b111df0810540ebc392722a3",
+          "energy": 13.062789047049977,
+          "peak": 0.044178564101457596
+        }
+      },
+      {
+        "level": 37,
+        "target": 17,
+        "state": "paused",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "clean",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "8102dab4ff1dfb95f14045a3738b99c8b0b57dedb747cd282887fa2c954a68c3",
+          "energy": 4259.689137849163,
+          "peak": 0.588603675365448
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "clean",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "partial-fade",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "8102dab4ff1dfb95f14045a3738b99c8b0b57dedb747cd282887fa2c954a68c3",
+          "energy": 4259.689137849163,
+          "peak": 0.588603675365448
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "partial-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "finished-fade",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "8102dab4ff1dfb95f14045a3738b99c8b0b57dedb747cd282887fa2c954a68c3",
+          "energy": 4259.689137849163,
+          "peak": 0.588603675365448
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "finished-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "paused",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "8102dab4ff1dfb95f14045a3738b99c8b0b57dedb747cd282887fa2c954a68c3",
+          "energy": 4259.689137849163,
+          "peak": 0.588603675365448
+        }
+      },
+      {
+        "level": 100,
+        "target": 1,
+        "state": "paused",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "clean",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "1a5360b4ea2e60cede3405121fc00858acdb4ac3093e7ddc81a009a998cec499",
+          "energy": 1261.9319906257479,
+          "peak": 0.4342218041419983
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "clean",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "partial-fade",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "1a5360b4ea2e60cede3405121fc00858acdb4ac3093e7ddc81a009a998cec499",
+          "energy": 1261.9319906257479,
+          "peak": 0.4342218041419983
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "partial-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "finished-fade",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "1a5360b4ea2e60cede3405121fc00858acdb4ac3093e7ddc81a009a998cec499",
+          "energy": 1261.9319906257479,
+          "peak": 0.4342218041419983
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "finished-fade",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "paused",
+        "muted": false,
+        "gain": 1000000,
+        "pcm": {
+          "sha256": "1a5360b4ea2e60cede3405121fc00858acdb4ac3093e7ddc81a009a998cec499",
+          "energy": 1261.9319906257479,
+          "peak": 0.4342218041419983
+        }
+      },
+      {
+        "level": 100,
+        "target": 17,
+        "state": "paused",
+        "muted": true,
+        "gain": 0,
+        "pcm": {
+          "sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+          "energy": 0,
+          "peak": 0
+        }
+      }
+    ]
+  },
+  "browser": {
+    "generation": "0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c",
+    "musicMode": "ogg-streaming",
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "musicRoomConfirmedTracks": [
+      2,
+      17
+    ],
+    "nativeReturnTitleAndQuit": true,
+    "sampledErrorWarningLogCount": 0,
+    "wholeEncodedScoreEqual": true,
+    "scoreBytes": 21640,
+    "scoreSha256": "e9cbad46e721f097a4a0409317533d725f5a832ff94c485d3e4f72f7ea986650",
+    "audibleWaveformAccepted": false,
+    "allBrowserAudioTransitionsAccepted": false,
+    "publicUiAccepted": false
+  },
+  "upstreamCommit": "ace94d0e219856494141a45559ef570e1a22f2a0",
+  "fixtureRecoveryNotes": [
+    "Initial precompile patch locator assumed a blank line; tightened to a bounded current_music boundary before compiling.",
+    "First compile fixture used stat/close names colliding with WASI libc; renamed to audio_stat/audio_close. Failed current/build.log preserved; no game source was changed."
+  ],
+  "toolSha256": "4472c047ded02a9c8819e699d20262574e2422bb203a0209106e282ba1e5488b",
+  "evidence": [
+    {
+      "file": "final-launcher.png",
+      "bytes": 54348,
+      "sha256": "e08178285460bb1c4e0c71c9ebeaad6a24d45ce6835f9c8667d1c2690c849ee3"
+    },
+    {
+      "file": "ogg-track-02.png",
+      "bytes": 293740,
+      "sha256": "1781d785318357b9c4ba3348a4980bbdd2aa42a0eb7689ab75af9822983a12fe"
+    },
+    {
+      "file": "ogg-track-17.png",
+      "bytes": 303437,
+      "sha256": "39e877213e0631e9e07b55ab7d57dfe83699104d7211032d9fb177ace202bc8a"
+    }
+  ]
+}
