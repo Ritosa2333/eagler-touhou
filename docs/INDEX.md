@@ -1,6 +1,6 @@
 # 文档总表
 
-共 722 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 723 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -424,6 +424,7 @@
 | 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_STARTUP_RENDER_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_STARTUP_RENDER_NOV17.md) | TH14 上游首帧渲染接续 · 2026-11-17 |
 | 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_TRACK_VOLUME_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_TRACK_VOLUME_NOV17.md) | TH14 切曲音量与 OGG 静音流程 · 2026-11-17 |
 | 历史记录 | [archive/th14-behavior-acceptance-20261117/TH14_UPSTREAM_RECONCILE_NOV17.md](../archive/th14-behavior-acceptance-20261117/TH14_UPSTREAM_RECONCILE_NOV17.md) | TH14 上游接续与公共修复同步 · 2026-11-17 |
+| 历史记录 | [archive/th14-behavior-completion-20261118/README.md](../archive/th14-behavior-completion-20261118/README.md) | TH14 行为完成审计与当前图形接线 · 2026-11-18 |
 | 历史记录 | [archive/th14-browser-entry-20261118/TH14_LAUNCHER_ENTRY_NOV18.md](../archive/th14-browser-entry-20261118/TH14_LAUNCHER_ENTRY_NOV18.md) | TH14 最新预览与公网普通入口验收 |
 | 历史记录 | [archive/th14-browser-entry-20261118/TH14_LAUNCHER_ROOM_NOV18.md](../archive/th14-browser-entry-20261118/TH14_LAUNCHER_ROOM_NOV18.md) | TH14 实际网页联机与加载离开恢复 |
 | 历史记录 | [archive/th14-browser-entry-20261118/TH14_MUSIC_CANCEL_DEV_RELEASE_NOV18.md](../archive/th14-browser-entry-20261118/TH14_MUSIC_CANCEL_DEV_RELEASE_NOV18.md) | TH14 音乐安装退出与开发站交付 |

@@ -1,0 +1,2887 @@
+{
+  "schema": "th14/behavior-completion-archive/1",
+  "coreSource": "3bc7dc9adbc008da7ea40082db0016992cbd3112",
+  "completeGame": false,
+  "productionRuntimeUnchanged": true,
+  "silent": true,
+  "scaledCollision": {
+    "passed": true,
+    "completeGame": false,
+    "silent": true,
+    "source": "Current verified PlayerFrame::collision and update_bounds adapters plus actual PlayerCollision circle/rectangle; synthetic SHT hitbox, player shape/state and native input cases are declared controlled boundaries. No Application/gameplay progression or native whole-game claim.",
+    "cases": 16122,
+    "pinnedPriorModuleCases": 16122,
+    "legacyCases": 10800,
+    "newNativeEdgeCases": 5322,
+    "scaledCircularCases": 5622,
+    "currentBoundsCases": 1080,
+    "currentBoundsWords": 25920,
+    "legacyCorpusFaultDetection": {
+      "missingScale": 0,
+      "doubleScale": 45
+    },
+    "negativeControlMismatches": {
+      "missingScale": 729,
+      "doubleScale": 589
+    },
+    "priorWeakCorpusFailurePreserved": true,
+    "nativeExeSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+    "newNativeInstructionReferencesExecuted": true,
+    "nativeInstructionsPatched": 0,
+    "nativeHitApplicationBoundary": "0x44f7a0 recorded sink, no code patch",
+    "newNativeGameProcessRun": false,
+    "newGameAssetCopies": 0,
+    "newGameProvidersCompiled": 0,
+    "providerObjectsVerified": 145,
+    "legacyReferenceSha256": "0ab5604e3edb652c74c2898b34d9f077ad5d425dfc367ebe3276b6493cfdb3ca",
+    "boundsNativeReferenceSha256": "4f7fd2dffb350354814ad784ff73640d37d5a089d69882e852e87c5765c3009e",
+    "focusedNativeReferenceSha256": "7ae812ddbe91b78d8c1bf5c79fee4c9129406064d6feb602a55262361da79f6e",
+    "focusedNativeGeneratorSha256": "c7dbd23448887093199cc7d6a888148528e320b57985ef0e5777f17b1ce03ea6",
+    "priorModuleSha256": "55b6b0fabe88b9638afd36d199b25446ba3c70a87d86e5c9b3b71fae47274608",
+    "currentWasmSha256": "89642abcba3469d9666aa39e332db4264fb8fb588d79e475c881accdd9bac168",
+    "fixtureSha256": "a48d3446c71323db9b5b98b0591b75bfa9a1d92365f00623f809e0dd9b5e9bd2",
+    "unexpectedHostCalls": [],
+    "publicGeneratorSha256": "5e38a57521ad93e6666674e6c02852d1ae2f6f0c24d005d7045c393fa0584d1f",
+    "publicFixture": "runtimes/th12/th12_web/tests/cpp/th14-player-scale-collision-integration-nov18.cpp",
+    "siteSourceQualification": {
+      "allFunctionsRawEqual": false,
+      "allNormalTools0FunctionsEquivalent": true,
+      "functions": [
+        {
+          "file": "runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp",
+          "function": "PlayerFrame::collision()const noexcept",
+          "currentSdkFunctionSha256": "5a15dff5a50366d85f550c660e0d403211bc7e2d33d37f5ad6bb28f17be43751",
+          "currentWebsiteFunctionSha256": "d075499158b346e6fdfe1a09764480d69b78b046208f09ead4c0f08477bada96",
+          "rawFunctionEqualIgnoringCrlfOnly": false,
+          "normalTools0FunctionEquivalent": true,
+          "websiteFileMatchesDeliveredBuildBinding": true
+        },
+        {
+          "file": "runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp",
+          "function": "PlayerFrame::update_bounds()",
+          "currentSdkFunctionSha256": "79dd48b0df366e91c4e03e70a79a938b03e295164ba7a87e469d72b22ed1376f",
+          "currentWebsiteFunctionSha256": "79dd48b0df366e91c4e03e70a79a938b03e295164ba7a87e469d72b22ed1376f",
+          "rawFunctionEqualIgnoringCrlfOnly": true,
+          "normalTools0FunctionEquivalent": true,
+          "websiteFileMatchesDeliveredBuildBinding": true
+        },
+        {
+          "file": "runtimes/th12/th12_web/cpp/game/PlayerCollision.cpp",
+          "function": "PlayerCollision::circle(",
+          "currentSdkFunctionSha256": "4754c0ff8d17b8a3ddd17910b765a54366317cbd71ecd5695d40b28ad57bb7d1",
+          "currentWebsiteFunctionSha256": "4754c0ff8d17b8a3ddd17910b765a54366317cbd71ecd5695d40b28ad57bb7d1",
+          "rawFunctionEqualIgnoringCrlfOnly": true,
+          "normalTools0FunctionEquivalent": true,
+          "websiteFileMatchesDeliveredBuildBinding": true
+        },
+        {
+          "file": "runtimes/th12/th12_web/cpp/game/PlayerCollision.cpp",
+          "function": "PlayerCollision::rectangle(",
+          "currentSdkFunctionSha256": "b0575d11f5f0e6282b1c16de632ca2dafd38e9d705b58d413b16e077c0db6368",
+          "currentWebsiteFunctionSha256": "b0575d11f5f0e6282b1c16de632ca2dafd38e9d705b58d413b16e077c0db6368",
+          "rawFunctionEqualIgnoringCrlfOnly": true,
+          "normalTools0FunctionEquivalent": true,
+          "websiteFileMatchesDeliveredBuildBinding": true
+        },
+        {
+          "file": "runtimes/th12/th12_web/cpp/game/GameBattle.cpp",
+          "function": "GameBattle::collision(const BulletState& b)",
+          "currentSdkFunctionSha256": "a4d0ef6576496d12c1d69edaffa29a350cbbae22b56d3223fd4a000dd9bc7102",
+          "currentWebsiteFunctionSha256": "a4d0ef6576496d12c1d69edaffa29a350cbbae22b56d3223fd4a000dd9bc7102",
+          "rawFunctionEqualIgnoringCrlfOnly": true,
+          "normalTools0FunctionEquivalent": true,
+          "websiteFileMatchesDeliveredBuildBinding": true
+        }
+      ],
+      "optionalWebsiteDifference": "Exact PrInvincible guard can raise invincibility_frames; normal tools0 skips it. No other text normalization thanCRLF and exact known block removal for that conditional scope. Optional invincible mode is not claimed identical to retail.",
+      "runtimeWasmSha256": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43",
+      "websiteSourceReceiptSha256": "34f246c146dd994410a8e1cbfb42ac062c5652eecc5601259706691652e8d31f",
+      "arbitraryDiffIgnoreRules": false
+    }
+  },
+  "shortNativeReplay": {
+    "passedWithinScope": true,
+    "primaryObserverPassed": false,
+    "primaryObserverErrorPreserved": "Requested744-frame terminal not observed before bound",
+    "observerPredicateExplanation": "Original entry state2 transitions to ready3; primary completion predicate required2. Six retained independent30sec read-only polls show stable ready3, frame744, marker cursor743 and freeze16, including native HUD/economy. No native process was restarted.",
+    "scoreUsedToSelectWitnesses": false,
+    "hudOwnerField": "4db550 owner +140, original sidebar43144a uses this field",
+    "scoreUnits": 370,
+    "displayedScoreUnits": 370,
+    "nativeProcessExited": true,
+    "rngScoreHealthOrInputWrites": 0,
+    "originalInstructionsPatched": 0,
+    "sourceReplaySha256": "6980e8aec1b0c38a682e61d18a40ffb64e4f90af4e419ab02c97e0c4d040ddae",
+    "originalExeSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+    "primaryReportSha256": "0c863d8b89d0de94962c2e118c6955f6b00e7b387320e74847eb8bd8f98937fc",
+    "naturalOriginalUiSelectionClaimed": false,
+    "fullOriginalGameProcessLogic": true,
+    "silent": true,
+    "completeGame": false,
+    "terminalWitnessSamples": [
+      {
+        "seconds": 64.91783740000392,
+        "stage": 1,
+        "frame": 744,
+        "controlFlags": 16,
+        "scoreUnits": 370,
+        "graze": 1,
+        "pointValue": 1000100,
+        "lifeFragments": 0,
+        "lives": 1,
+        "power": 102,
+        "lifeState": 1,
+        "hudDisplayedScoreUnits": 370,
+        "menuState": 3,
+        "replayCursor": 743,
+        "replayGlobalCursor": 743
+      },
+      {
+        "seconds": 94.93472850001126,
+        "stage": 1,
+        "frame": 744,
+        "controlFlags": 16,
+        "scoreUnits": 370,
+        "graze": 1,
+        "pointValue": 1000100,
+        "lifeFragments": 0,
+        "lives": 1,
+        "power": 102,
+        "lifeState": 1,
+        "hudDisplayedScoreUnits": 370,
+        "menuState": 3,
+        "replayCursor": 743,
+        "replayGlobalCursor": 743
+      },
+      {
+        "seconds": 124.94821280000906,
+        "stage": 1,
+        "frame": 744,
+        "controlFlags": 16,
+        "scoreUnits": 370,
+        "graze": 1,
+        "pointValue": 1000100,
+        "lifeFragments": 0,
+        "lives": 1,
+        "power": 102,
+        "lifeState": 1,
+        "hudDisplayedScoreUnits": 370,
+        "menuState": 3,
+        "replayCursor": 743,
+        "replayGlobalCursor": 743
+      },
+      {
+        "seconds": 155.0406526000006,
+        "stage": 1,
+        "frame": 744,
+        "controlFlags": 16,
+        "scoreUnits": 370,
+        "graze": 1,
+        "pointValue": 1000100,
+        "lifeFragments": 0,
+        "lives": 1,
+        "power": 102,
+        "lifeState": 1,
+        "hudDisplayedScoreUnits": 370,
+        "menuState": 3,
+        "replayCursor": 743,
+        "replayGlobalCursor": 743
+      },
+      {
+        "seconds": 185.1506078000093,
+        "stage": 1,
+        "frame": 744,
+        "controlFlags": 16,
+        "scoreUnits": 370,
+        "graze": 1,
+        "pointValue": 1000100,
+        "lifeFragments": 0,
+        "lives": 1,
+        "power": 102,
+        "lifeState": 1,
+        "hudDisplayedScoreUnits": 370,
+        "menuState": 3,
+        "replayCursor": 743,
+        "replayGlobalCursor": 743
+      },
+      {
+        "seconds": 215.24443380000594,
+        "stage": 1,
+        "frame": 744,
+        "controlFlags": 16,
+        "scoreUnits": 370,
+        "graze": 1,
+        "pointValue": 1000100,
+        "lifeFragments": 0,
+        "lives": 1,
+        "power": 102,
+        "lifeState": 1,
+        "hudDisplayedScoreUnits": 370,
+        "menuState": 3,
+        "replayCursor": 743,
+        "replayGlobalCursor": 743
+      }
+    ],
+    "attractClearCount": 1,
+    "metadataScore": 3690,
+    "currentBrowser": {
+      "passed": true,
+      "reportSha256": "522b3e2a011d0dff224d777b9a7c2a53c4248eb9214b4a67f06f21798c4afdc7",
+      "delivery": {
+        "passed": true,
+        "codeResponsesVerified": 78,
+        "normalWasmUnchanged": true,
+        "compiledPolicyObservedInActualBrowserResponse": [
+          {
+            "path": "/assets/replays-DawzJzB7.js",
+            "sha256": "2ef96e69f6a8cb69c7da7946d76fcc42224f0fb7853e0eb6022fb9dbe27a9bb1",
+            "compiledScope": "{return Promise.reject(e)}let l=b.game===`th14`&&t===`playback`&&[`open`,`seek`].includes(r.action),u=o===void 0?l?e.timeouts?.launch??12e4:e.timeouts?.command??15e3:o,d=`runtime-${s.id}-${++w}`;return new Promise(("
+          }
+        ]
+      },
+      "imageInspected": true,
+      "visibleHudScore": 3700,
+      "visibleMetadataScore": 3690,
+      "imageSha256": "9fd485687ebce64673f9eee7a6a12895a5084944ce4dc9d541e62206dd187bed"
+    }
+  },
+  "endingBoundaryGpu": {
+    "schema": "th14/current-ending-gpu-boundary/1",
+    "passedWithinScope": true,
+    "silent": true,
+    "completeGame": false,
+    "naturalCampaignClaimed": false,
+    "productionChanged": false,
+    "testOnlyCompletionEvent": "GameBattle::dialogue_stage_complete, same production event as MSG21; only explicitly called after active matching resource and recording stage, ordinary tools0 mode",
+    "otherBridgeExportsReadOnly": true,
+    "forcedCompletionBoundaryUsed": true,
+    "productionWasm": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43",
+    "privateProbeWasm": "9c11feeaf1b9297e5226018008633ed06e3ea6e6d3aab3a2199a432ffb17e221",
+    "compiledUnits": 1,
+    "reusedVerifiedUnits": 152,
+    "originalApplicationBytePrefixRetained": true,
+    "normalMenuCases": 6,
+    "explicitStageCompletionEvents": 36,
+    "cases": [
+      {
+        "character": 0,
+        "shot": 0,
+        "endingIndex": 1,
+        "ordinaryToolsDemoReplayPracticeAllZero": true,
+        "staffMessageObserved": true,
+        "resultsMenuReady": true,
+        "returnedToMain": true,
+        "images": {
+          "ending": {
+            "sha256": "6eb41259e75be2f85a92ad3c58989b283c68334056a15ff1c67efc3ada313708",
+            "inspected": true
+          },
+          "staff": {
+            "sha256": "14efca8ac74d436c5735041325aca444cf2dbd2174b4a459a6500c0db17fa896",
+            "inspected": true
+          },
+          "results": {
+            "sha256": "47f6ae74b25973f85003907609965dcf3415d86c64fa72e1908ff668dfaafe19",
+            "inspected": true
+          }
+        }
+      },
+      {
+        "character": 0,
+        "shot": 1,
+        "endingIndex": 2,
+        "ordinaryToolsDemoReplayPracticeAllZero": true,
+        "staffMessageObserved": true,
+        "resultsMenuReady": true,
+        "returnedToMain": true,
+        "images": {
+          "ending": {
+            "sha256": "6eb41259e75be2f85a92ad3c58989b283c68334056a15ff1c67efc3ada313708",
+            "inspected": true
+          },
+          "staff": {
+            "sha256": "14efca8ac74d436c5735041325aca444cf2dbd2174b4a459a6500c0db17fa896",
+            "inspected": true
+          },
+          "results": {
+            "sha256": "f7bb2138555f251e5be87392ebafb47ea43c0d9992ecdce550f4887e599ca1b5",
+            "inspected": true
+          }
+        }
+      },
+      {
+        "character": 1,
+        "shot": 0,
+        "endingIndex": 3,
+        "ordinaryToolsDemoReplayPracticeAllZero": true,
+        "staffMessageObserved": true,
+        "resultsMenuReady": true,
+        "returnedToMain": true,
+        "images": {
+          "ending": {
+            "sha256": "e1a4bf63aa11e7c13af8f4f2c9a4857d5be7093c6970ec9bd6dba05997f80a0a",
+            "inspected": true
+          },
+          "staff": {
+            "sha256": "f8846c293021ee6e059f6ab17f08f7588b7de9448c1908c9a1723736f0990b55",
+            "inspected": true
+          },
+          "results": {
+            "sha256": "a0663182d662736b83909fe3024be4929cf64661850c24881166668a433c00e5",
+            "inspected": true
+          }
+        }
+      },
+      {
+        "character": 1,
+        "shot": 1,
+        "endingIndex": 4,
+        "ordinaryToolsDemoReplayPracticeAllZero": true,
+        "staffMessageObserved": true,
+        "resultsMenuReady": true,
+        "returnedToMain": true,
+        "images": {
+          "ending": {
+            "sha256": "a46af6c8ef2fa53ef46a3acfc921a5e008f3185975bcf1adbb0ebd38008110b5",
+            "inspected": true
+          },
+          "staff": {
+            "sha256": "21493c686342306855ed30bd605c9f5e33762811d6ffb683cbc4ba19a306b46a",
+            "inspected": true
+          },
+          "results": {
+            "sha256": "425490f7c6702163fcb88e073ea7e7979a040b34c5f9f6ac156def5c4fba856f",
+            "inspected": true
+          }
+        }
+      },
+      {
+        "character": 2,
+        "shot": 0,
+        "endingIndex": 5,
+        "ordinaryToolsDemoReplayPracticeAllZero": true,
+        "staffMessageObserved": true,
+        "resultsMenuReady": true,
+        "returnedToMain": true,
+        "images": {
+          "ending": {
+            "sha256": "27896135f7e894a2290e327602fc334a851847cbd1b60af39e3bb13d45a076f2",
+            "inspected": true
+          },
+          "staff": {
+            "sha256": "c29f9c8f03002e7bc0fb6315d4730a69051067ee5160d0661d09b1597a2f860b",
+            "inspected": true
+          },
+          "results": {
+            "sha256": "235c6be15519d1913945931c547c31d8ac292ba137333b23a8248df538a258b3",
+            "inspected": true
+          }
+        }
+      },
+      {
+        "character": 2,
+        "shot": 1,
+        "endingIndex": 6,
+        "ordinaryToolsDemoReplayPracticeAllZero": true,
+        "staffMessageObserved": true,
+        "resultsMenuReady": true,
+        "returnedToMain": true,
+        "images": {
+          "ending": {
+            "sha256": "a754e33d28f6cd6d572485936ee34ffa75488550523bf8467f91854293944668",
+            "inspected": true
+          },
+          "staff": {
+            "sha256": "cc5cb00de52f5f38855eecaab9015669888ffb13e0eb923022ecfa4117259586",
+            "inspected": true
+          },
+          "results": {
+            "sha256": "de017354986a185d784002ab168fb7b3f7d67d532680f626204f3550f4446ef2",
+            "inspected": true
+          }
+        }
+      }
+    ],
+    "stableImagesInspected": 18,
+    "staffCaptureWaitFrames": 600,
+    "resultsCaptureWait": "substate2 then1200ms",
+    "originalTooEarlyScreenshotsReportSha256": "db0bdf3f55b2285161b9270fa4f1e8b380203c1982250ee01cd243686bce4811",
+    "originalTooEarlyScreenshotsNotAcceptedAsVisibleTextProof": true,
+    "currentReportSha256": "be66dc8190ec82f33240b1778c9ecef5daed2365be51d03e9319f1556d6de281",
+    "delivery": {
+      "passed": true,
+      "codeResponsesVerified": 59,
+      "privateProbeWasmVerified": true,
+      "compiledPolicyObservedInActualBrowserResponse": [
+        {
+          "path": "/assets/replays-DawzJzB7.js",
+          "sha256": "2ef96e69f6a8cb69c7da7946d76fcc42224f0fb7853e0eb6022fb9dbe27a9bb1",
+          "compiledScope": "{return Promise.reject(e)}let l=b.game===`th14`&&t===`playback`&&[`open`,`seek`].includes(r.action),u=o===void 0?l?e.timeouts?.launch??12e4:e.timeouts?.command??15e3:o,d=`runtime-${s.id}-${++w}`;return new Promise(("
+        }
+      ]
+    },
+    "httpErrorsPreserved": [
+      {
+        "url": "http://localhost:8257/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "url": "http://localhost:8257/api/ready",
+        "status": 404
+      },
+      {
+        "url": "http://localhost:8257/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "url": "http://localhost:8257/_eagler/resource-routes?path=%2Fgames%2Fth14%2Fth14.dat",
+        "status": 404
+      },
+      {
+        "url": "http://localhost:8257/api/ready",
+        "status": 404
+      }
+    ],
+    "pageErrors": [],
+    "directRawGameStateRngInventoryWrites": false
+  },
+  "retainedThirty": {
+    "passedWithinScope": true,
+    "ordinaryRetainedReports": 30,
+    "freshReaderRetainedReports": 30,
+    "reportAndSaveHashesVerified": true,
+    "matrixReceiptSha256": "46c14f6f620eacaa9f9dc728328c64cfee953593d1bc1c2269f04f32f1732f91",
+    "cases": [
+      "reimua-normal",
+      "reimub-normal",
+      "marisaa-normal",
+      "marisab-normal",
+      "sakuyaa-normal",
+      "sakuyab-normal",
+      "reimua-extra",
+      "reimub-extra",
+      "marisaa-extra",
+      "marisab-extra",
+      "sakuyaa-extra",
+      "sakuyab-extra",
+      "reimua-easy",
+      "reimub-easy",
+      "marisab-easy",
+      "sakuyaa-easy",
+      "sakuyab-easy",
+      "marisaa-easy",
+      "reimua-hard",
+      "reimub-hard",
+      "marisab-hard",
+      "sakuyaa-hard",
+      "sakuyab-hard",
+      "marisaa-hard",
+      "reimua-lunatic",
+      "reimub-lunatic",
+      "marisaa-lunatic",
+      "sakuyaa-lunatic",
+      "sakuyab-lunatic",
+      "marisab-lunatic"
+    ],
+    "newCampaignsRun": 0,
+    "currentSourceReuseRequiresSeparateQualification": true,
+    "fullGpuFlowClaimed": false,
+    "completeGame": false
+  },
+  "currentSpell": {
+    "baselineWasm": "4f9b87f190756fc38cc330eefbfe6e0a249503776963dbb5f4294998d0db2ebc",
+    "currentWasm": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43",
+    "verifiedNativeGameFiles": 315,
+    "rawEqual": 304,
+    "crlfOnly": 5,
+    "textChanges": [
+      "runtimes/th12/th12_web/cpp/game/GameBattle.cpp",
+      "runtimes/th12/th12_web/cpp/game/GameBattle.hpp",
+      "runtimes/th12/th12_web/cpp/game/GameSession.cpp",
+      "runtimes/th12/th12_web/cpp/game/GameSession.hpp",
+      "runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp",
+      "runtimes/th12/th12_web/cpp/game/PlayerFrame.hpp"
+    ],
+    "rows": [
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmExecutionContextTh14.hpp",
+        "oldSha256": "66900d30b457326b6901794f7341e008d016b95c18139a74f3fb0d490f98dafa",
+        "currentSha256": "66900d30b457326b6901794f7341e008d016b95c18139a74f3fb0d490f98dafa",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmFlagWordTh14.hpp",
+        "oldSha256": "03381f977b5408c84f8c8c3c1d404689825b8d8c4963cf0bc55bcdc25a17d115",
+        "currentSha256": "03381f977b5408c84f8c8c3c1d404689825b8d8c4963cf0bc55bcdc25a17d115",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmGeometry.cpp",
+        "oldSha256": "2e0b99038cd5555b1223301fd9abb166a9ca3907e47dea30c9d5519114fc9e4f",
+        "currentSha256": "2e0b99038cd5555b1223301fd9abb166a9ca3907e47dea30c9d5519114fc9e4f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmGeometry.hpp",
+        "oldSha256": "25cd1c1f086c2d128a75235033d7c9c1950160153490878f773e832a6023736f",
+        "currentSha256": "25cd1c1f086c2d128a75235033d7c9c1950160153490878f773e832a6023736f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmInterpreter.cpp",
+        "oldSha256": "690933caec3a8be5ff1eb51abcdc00795fde106d6a6a77e9b32099b486063a72",
+        "currentSha256": "690933caec3a8be5ff1eb51abcdc00795fde106d6a6a77e9b32099b486063a72",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmManager.cpp",
+        "oldSha256": "74b1ecd3c5fc485c89f0e62e43ca3ea3bb2bfd17487d661c064c11b5b9464a3f",
+        "currentSha256": "74b1ecd3c5fc485c89f0e62e43ca3ea3bb2bfd17487d661c064c11b5b9464a3f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmManager.hpp",
+        "oldSha256": "cd5a3e8adfb44b19ca32c8451dbf1bf7c2cbac4371f0ecf7c66bc9dd7fe533bd",
+        "currentSha256": "cd5a3e8adfb44b19ca32c8451dbf1bf7c2cbac4371f0ecf7c66bc9dd7fe533bd",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmOpcodes.hpp",
+        "oldSha256": "a912657329b5e780a6876e0edac2fcae6e2321f2328d7030baeca11d1bd31140",
+        "currentSha256": "a912657329b5e780a6876e0edac2fcae6e2321f2328d7030baeca11d1bd31140",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmProjection.cpp",
+        "oldSha256": "3b15ef8326aae6295671135243f7da324e7b5ce7eabc69fcd74a4807f36b2e8b",
+        "currentSha256": "3b15ef8326aae6295671135243f7da324e7b5ce7eabc69fcd74a4807f36b2e8b",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmProjection.hpp",
+        "oldSha256": "90e6db88b5abe8328ba1d6be1fd05628820a81185c88e79536fd5e562c8a6fbe",
+        "currentSha256": "90e6db88b5abe8328ba1d6be1fd05628820a81185c88e79536fd5e562c8a6fbe",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmRenderer.cpp",
+        "oldSha256": "a5c9a4f168a3998d36f02f62068ec47efd04a29143ed4dab673955dd2c6dd432",
+        "currentSha256": "a5c9a4f168a3998d36f02f62068ec47efd04a29143ed4dab673955dd2c6dd432",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmRenderer.hpp",
+        "oldSha256": "c5e037ed013c7eebd805f3bde1b13bf117d590e7687b264d75e4e2c1532c24b2",
+        "currentSha256": "c5e037ed013c7eebd805f3bde1b13bf117d590e7687b264d75e4e2c1532c24b2",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmResource.cpp",
+        "oldSha256": "d1979f79190528263fa5fb67b0dbb6dd497c604c4cb8cb96efe18b7348111a8e",
+        "currentSha256": "d1979f79190528263fa5fb67b0dbb6dd497c604c4cb8cb96efe18b7348111a8e",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmResource.hpp",
+        "oldSha256": "f2b35e13c4438c278f23d77f6cffc7e9cd30209dfd8386060052c20852765226",
+        "currentSha256": "f2b35e13c4438c278f23d77f6cffc7e9cd30209dfd8386060052c20852765226",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmTrace.hpp",
+        "oldSha256": "ab2505e016f7439d50a5e09c7f3cff53b57bc68f7b93f4bc0afb23bee1155e89",
+        "currentSha256": "ab2505e016f7439d50a5e09c7f3cff53b57bc68f7b93f4bc0afb23bee1155e89",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmTransferTh14.hpp",
+        "oldSha256": "133b38cd0b5033f06be91809d30eb4f49c08d87f72b9d74ee34c38841e00baba",
+        "currentSha256": "133b38cd0b5033f06be91809d30eb4f49c08d87f72b9d74ee34c38841e00baba",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmVm.cpp",
+        "oldSha256": "7530d6808a7eef143f319607fa7f10fea41c1f7a86dd7963740d44e4c89d5e97",
+        "currentSha256": "7530d6808a7eef143f319607fa7f10fea41c1f7a86dd7963740d44e4c89d5e97",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AnmVm.hpp",
+        "oldSha256": "448c51d5c14e92a98eac759800d2126aa7921968552181e234facb533fedcc86",
+        "currentSha256": "448c51d5c14e92a98eac759800d2126aa7921968552181e234facb533fedcc86",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Archive.cpp",
+        "oldSha256": "18ddd5a4b212d02c13d79d3b2958889bb3513301c1ed7656825822f77e21d8fe",
+        "currentSha256": "18ddd5a4b212d02c13d79d3b2958889bb3513301c1ed7656825822f77e21d8fe",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Archive.hpp",
+        "oldSha256": "6a89a3b3ff5fa6f3c56efc01398ada4906fd021699a78b43a13220f75a90933a",
+        "currentSha256": "6a89a3b3ff5fa6f3c56efc01398ada4906fd021699a78b43a13220f75a90933a",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AsciiText.cpp",
+        "oldSha256": "1f068ef16135be119caa8ef46fc61f1a268fe21ba684feda21734a6911788eb8",
+        "currentSha256": "1f068ef16135be119caa8ef46fc61f1a268fe21ba684feda21734a6911788eb8",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/AsciiText.hpp",
+        "oldSha256": "1e9202980e4dd3aede2c117a4553451c7c36b8e1c110584b61b3c023d7c00afb",
+        "currentSha256": "1e9202980e4dd3aede2c117a4553451c7c36b8e1c110584b61b3c023d7c00afb",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BombController.cpp",
+        "oldSha256": "99263b2c66149762cd32ff1dc42497a5c21c683a1da941fccf5fd5ab9f7716d3",
+        "currentSha256": "99263b2c66149762cd32ff1dc42497a5c21c683a1da941fccf5fd5ab9f7716d3",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BombController.hpp",
+        "oldSha256": "04b10ac4cbedb070595b53faaf7d6d96dff82c9911151ce3aa8fdbbf7d5ff0c7",
+        "currentSha256": "04b10ac4cbedb070595b53faaf7d6d96dff82c9911151ce3aa8fdbbf7d5ff0c7",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BombReimuTh14.cpp",
+        "oldSha256": "4dddc1e474bfe78fab7ea76890a72f2631ea596b565b69ff806b56b165314f41",
+        "currentSha256": "4dddc1e474bfe78fab7ea76890a72f2631ea596b565b69ff806b56b165314f41",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BombReimuTh14.hpp",
+        "oldSha256": "34213db7f6b5b67c4182320b6c154e5e9630a3582032d9f62f255ba246929d1b",
+        "currentSha256": "34213db7f6b5b67c4182320b6c154e5e9630a3582032d9f62f255ba246929d1b",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BootCppResourcesTh14.hpp",
+        "oldSha256": "928e2a154b485aa89983635a7e0d4aec07c422e026d3c9bb90121d23e258df83",
+        "currentSha256": "928e2a154b485aa89983635a7e0d4aec07c422e026d3c9bb90121d23e258df83",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BootFileMailboxTh14.hpp",
+        "oldSha256": "41262c5585430719e49da0684e4087a2f383ef7fc273c0c1a23521f19d29fbe8",
+        "currentSha256": "41262c5585430719e49da0684e4087a2f383ef7fc273c0c1a23521f19d29fbe8",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletAppearance.cpp",
+        "oldSha256": "01789552e5a03f3713a21f0ec60796aa5c93dc2f63e1488e97ce1f3218fbc69e",
+        "currentSha256": "01789552e5a03f3713a21f0ec60796aa5c93dc2f63e1488e97ce1f3218fbc69e",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletAppearance.hpp",
+        "oldSha256": "c40e4b1a79f2c1dbf89806494b24a1a356099f8404f6a0029eb7a9445dc23c7c",
+        "currentSha256": "c40e4b1a79f2c1dbf89806494b24a1a356099f8404f6a0029eb7a9445dc23c7c",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletEmitter.hpp",
+        "oldSha256": "2aa5f499550e568c89601fe88e6560cd3783b646924fda33d74c8fac7926e1f7",
+        "currentSha256": "2aa5f499550e568c89601fe88e6560cd3783b646924fda33d74c8fac7926e1f7",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletLaunch.cpp",
+        "oldSha256": "23cb53eddde04b9a5ff8905f331433820035448a5c48c1d3bfb2ba84d8022a25",
+        "currentSha256": "23cb53eddde04b9a5ff8905f331433820035448a5c48c1d3bfb2ba84d8022a25",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletLaunch.hpp",
+        "oldSha256": "56e858640b41bf9b7df9449cc09656673f260acc175925c2c17248748abedac3",
+        "currentSha256": "56e858640b41bf9b7df9449cc09656673f260acc175925c2c17248748abedac3",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletManager.cpp",
+        "oldSha256": "45586320823a51549df9c15b009337cae238e5d9346c46d9ce595c26c47d6556",
+        "currentSha256": "45586320823a51549df9c15b009337cae238e5d9346c46d9ce595c26c47d6556",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletManager.hpp",
+        "oldSha256": "7d31124d3b921f968588cce8224e94b796d82c7b46abef755f2b98c3f44fc5ef",
+        "currentSha256": "7d31124d3b921f968588cce8224e94b796d82c7b46abef755f2b98c3f44fc5ef",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletMotion.cpp",
+        "oldSha256": "9d5f3d80f433c0b4d5370d0821711daafd49d93c87712452d6d1aea447a97510",
+        "currentSha256": "9d5f3d80f433c0b4d5370d0821711daafd49d93c87712452d6d1aea447a97510",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletState.hpp",
+        "oldSha256": "9404630c828de0840ff590c940b8229974841b5ce6d28875b91ad6b77991f108",
+        "currentSha256": "9404630c828de0840ff590c940b8229974841b5ce6d28875b91ad6b77991f108",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletTh14.cpp",
+        "oldSha256": "f70f296d73f4510ba167ab1c73ed809e01c7c224cba09a637b5d7ba7ab331f4b",
+        "currentSha256": "f70f296d73f4510ba167ab1c73ed809e01c7c224cba09a637b5d7ba7ab331f4b",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletTh14.hpp",
+        "oldSha256": "0c1748b5fba0a461a94402d9dd0a772a7313504fcdb85583261739d7f64e0207",
+        "currentSha256": "0c1748b5fba0a461a94402d9dd0a772a7313504fcdb85583261739d7f64e0207",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletTh14Launch.cpp",
+        "oldSha256": "f081116da8a89d7e25890072cfbe0c089d3746f51dc37a0f99a2577429c3a7bc",
+        "currentSha256": "f081116da8a89d7e25890072cfbe0c089d3746f51dc37a0f99a2577429c3a7bc",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletTh16.cpp",
+        "oldSha256": "7a4d88e12cf38e48f0f6934aeee7dfef08a74173d60fc0aff19b08e9aff9d159",
+        "currentSha256": "7a4d88e12cf38e48f0f6934aeee7dfef08a74173d60fc0aff19b08e9aff9d159",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletTh16.hpp",
+        "oldSha256": "e2a3839bc1d6104ff2c503ed6cf74372e75e09ba9679a58bc02476a777d99442",
+        "currentSha256": "e2a3839bc1d6104ff2c503ed6cf74372e75e09ba9679a58bc02476a777d99442",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletTh16Launch.cpp",
+        "oldSha256": "94a506c91a7f6b790a4f702b93d375134bdb47e8b013d0b292139404f48c1e2a",
+        "currentSha256": "94a506c91a7f6b790a4f702b93d375134bdb47e8b013d0b292139404f48c1e2a",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/BulletTransforms.cpp",
+        "oldSha256": "a7e3e2779dd446c5a3958040d3b1502088d1160ad9ec494bf61466cbbe29e954",
+        "currentSha256": "a7e3e2779dd446c5a3958040d3b1502088d1160ad9ec494bf61466cbbe29e954",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ClockSeedTh14.hpp",
+        "oldSha256": "697dafe938c06d3e82410ea02f1450b0aac3b3a2bdaab6e98fc0903a95a48088",
+        "currentSha256": "697dafe938c06d3e82410ea02f1450b0aac3b3a2bdaab6e98fc0903a95a48088",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Communication.cpp",
+        "oldSha256": "440d6d45ef77dee26e55c65ed47575f19015253e8d541ffd986d09adec21ca1f",
+        "currentSha256": "440d6d45ef77dee26e55c65ed47575f19015253e8d541ffd986d09adec21ca1f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Communication.hpp",
+        "oldSha256": "5a35535dd86b0f3a72776c32c9694b9e5d3b954614b3dbe30f2b3c0ce0d810dc",
+        "currentSha256": "5a35535dd86b0f3a72776c32c9694b9e5d3b954614b3dbe30f2b3c0ce0d810dc",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ContinueTh14.cpp",
+        "oldSha256": "ad79a2ea5ddc266e83bfdf1822619a695a09e963949424e19341cf59ec03aa18",
+        "currentSha256": "ad79a2ea5ddc266e83bfdf1822619a695a09e963949424e19341cf59ec03aa18",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ContinueTh14.hpp",
+        "oldSha256": "191217621bc6adb12e13a6479c4c0db239206e2934ba43126d99dba841060cac",
+        "currentSha256": "191217621bc6adb12e13a6479c4c0db239206e2934ba43126d99dba841060cac",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ContinueWordsTh14.hpp",
+        "oldSha256": "29eb79fb458150c64f37a6b8444b8d03c15624c1bae42fb3e7421d81e13789ee",
+        "currentSha256": "29eb79fb458150c64f37a6b8444b8d03c15624c1bae42fb3e7421d81e13789ee",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ControlStateTh14.hpp",
+        "oldSha256": "ff532e7613228551a36d065bbde80dea629d7e31bd14908d0b2cdb86c5a6ad4b",
+        "currentSha256": "ff532e7613228551a36d065bbde80dea629d7e31bd14908d0b2cdb86c5a6ad4b",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/D3dxRsqrtTable.hpp",
+        "oldSha256": "0779a5fe69e94dff1b14388e37977c6a53efebe158dd706837576d618407c912",
+        "currentSha256": "0779a5fe69e94dff1b14388e37977c6a53efebe158dd706837576d618407c912",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/DamageArea.cpp",
+        "oldSha256": "f41c484dc5761c873f317d9c3834f05f045b5f8dac5a3d9905bd2e0b7e4e8e7e",
+        "currentSha256": "f41c484dc5761c873f317d9c3834f05f045b5f8dac5a3d9905bd2e0b7e4e8e7e",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/DamageArea.hpp",
+        "oldSha256": "04a62c3f04497823f8f4e5a9ba4eaf2f6d49021543177aad94e18f426382a5d5",
+        "currentSha256": "04a62c3f04497823f8f4e5a9ba4eaf2f6d49021543177aad94e18f426382a5d5",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/DeferredCaptureQueueTh14.hpp",
+        "oldSha256": "24fe90744e04cf3b6a1637ae9583c2c92456b90983b8ef24796e58c91814cd7e",
+        "currentSha256": "24fe90744e04cf3b6a1637ae9583c2c92456b90983b8ef24796e58c91814cd7e",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Dialogue.cpp",
+        "oldSha256": "da786d7b732cd365851fdc11615a2512f62257e4cb013611e5d7c5021210a12d",
+        "currentSha256": "da786d7b732cd365851fdc11615a2512f62257e4cb013611e5d7c5021210a12d",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Dialogue.hpp",
+        "oldSha256": "d81fa77f20b42d204a2f08d3c40c8c8fbe7142af08bea8ffe8b66657b8416992",
+        "currentSha256": "d81fa77f20b42d204a2f08d3c40c8c8fbe7142af08bea8ffe8b66657b8416992",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EclContext.cpp",
+        "oldSha256": "c04d33d52178fdee8b79d19dce918281c72c06c0c2c4ab4b4717e566b6688425",
+        "currentSha256": "c04d33d52178fdee8b79d19dce918281c72c06c0c2c4ab4b4717e566b6688425",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EclContext.hpp",
+        "oldSha256": "4904ed0605d1a6b81d0af493989babed12bd8a4e30496d6ca688bb52b6f30b69",
+        "currentSha256": "4904ed0605d1a6b81d0af493989babed12bd8a4e30496d6ca688bb52b6f30b69",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EclInterpreter.cpp",
+        "oldSha256": "0875788c6fdbc55f20f9df412450c163b36e6fbbb87dc545235102b3f1fc88d2",
+        "currentSha256": "0875788c6fdbc55f20f9df412450c163b36e6fbbb87dc545235102b3f1fc88d2",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EclOwner.cpp",
+        "oldSha256": "d89a5b6c3ed78bec89e20264ed9d2549a89ab5183f12cf1d34cc502a5fc8542e",
+        "currentSha256": "d89a5b6c3ed78bec89e20264ed9d2549a89ab5183f12cf1d34cc502a5fc8542e",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EclOwner.hpp",
+        "oldSha256": "6a1ceb725de22fe6357e29c3a6328c1da3416bdd960040a4ba76224bcda0a2b8",
+        "currentSha256": "6a1ceb725de22fe6357e29c3a6328c1da3416bdd960040a4ba76224bcda0a2b8",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EclResource.cpp",
+        "oldSha256": "0c9f9fc3f54202680e420f7c415e6e1838a3042afc3d0ba51a8e8aaa9d2a6c40",
+        "currentSha256": "0c9f9fc3f54202680e420f7c415e6e1838a3042afc3d0ba51a8e8aaa9d2a6c40",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EclResource.hpp",
+        "oldSha256": "f7e6b89fc237c96399ddc6edc7c993e312f605ac9ed652451aff085447460af9",
+        "currentSha256": "f7e6b89fc237c96399ddc6edc7c993e312f605ac9ed652451aff085447460af9",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EclRoutes.hpp",
+        "oldSha256": "d656d43e2820e731c1670061e4e9ce65a98856512c700f46d5ca8d2900e5f6f0",
+        "currentSha256": "d656d43e2820e731c1670061e4e9ce65a98856512c700f46d5ca8d2900e5f6f0",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EclTrap.hpp",
+        "oldSha256": "89d05e2d83af851be54bc08e095377e78cbfbbae1be90c144777dac1a6e0d131",
+        "currentSha256": "89d05e2d83af851be54bc08e095377e78cbfbbae1be90c144777dac1a6e0d131",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EffectTh16Slots.cpp",
+        "oldSha256": "f750e65d6e16430395ff14e7ddad00172a95c7415b0095dbd8313748688c4343",
+        "currentSha256": "f750e65d6e16430395ff14e7ddad00172a95c7415b0095dbd8313748688c4343",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EffectTh16Slots.hpp",
+        "oldSha256": "00daae745fe7a424397a063e33d6d0b6dd9af4f97f2649b7a1d71bf043c2e269",
+        "currentSha256": "00daae745fe7a424397a063e33d6d0b6dd9af4f97f2649b7a1d71bf043c2e269",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Ending.cpp",
+        "oldSha256": "84ed2a892a6038be0568629b38703864c849c7aaf4c1430fea1f0b954889b20b",
+        "currentSha256": "84ed2a892a6038be0568629b38703864c849c7aaf4c1430fea1f0b954889b20b",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Ending.hpp",
+        "oldSha256": "dc83bd58aca788c5b6254d28bb7019cda7d6236e4798c1d47c0abdd7bc6d5329",
+        "currentSha256": "dc83bd58aca788c5b6254d28bb7019cda7d6236e4798c1d47c0abdd7bc6d5329",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyAnimations.cpp",
+        "oldSha256": "679368266889498f43f4233b6f88e316ebeafb7e61503ea3fe8f16c23050c32a",
+        "currentSha256": "679368266889498f43f4233b6f88e316ebeafb7e61503ea3fe8f16c23050c32a",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyAnimations.hpp",
+        "oldSha256": "a072208c16c8fcc2a5e52997758e3072b89400a1a478daebfc0bc924805695f0",
+        "currentSha256": "a072208c16c8fcc2a5e52997758e3072b89400a1a478daebfc0bc924805695f0",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyCallbacks.cpp",
+        "oldSha256": "7d32da2fa7ad31e8e4a8ec47c7ace4787d2dea6194087ad432770451ccc9a47e",
+        "currentSha256": "7d32da2fa7ad31e8e4a8ec47c7ace4787d2dea6194087ad432770451ccc9a47e",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyCallbacks.hpp",
+        "oldSha256": "1de8ec26a95077a2871157cfbf0210bfaa3a211ba2572b363a5f18119cdd75c2",
+        "currentSha256": "1de8ec26a95077a2871157cfbf0210bfaa3a211ba2572b363a5f18119cdd75c2",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyCommands.cpp",
+        "oldSha256": "8c7c820ee0ad0794d122ba15bd3688709b8395fef23914cb456b59e5fd2dd5cd",
+        "currentSha256": "8c7c820ee0ad0794d122ba15bd3688709b8395fef23914cb456b59e5fd2dd5cd",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyCommands.hpp",
+        "oldSha256": "edc14812b8d7b253a55a913fbf9b74e5bc3d6ab22c76a6f203fc05e529ad2477",
+        "currentSha256": "edc14812b8d7b253a55a913fbf9b74e5bc3d6ab22c76a6f203fc05e529ad2477",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyEmitterCommands.cpp",
+        "oldSha256": "4e4cfeb50a74bf689a93c34392639b2f0c563f9c96208ecf1a5aa7deeb7a279d",
+        "currentSha256": "4e4cfeb50a74bf689a93c34392639b2f0c563f9c96208ecf1a5aa7deeb7a279d",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyFrame.cpp",
+        "oldSha256": "b2506ad9f149f7a8986bb00740885f31cd93197224aa4b2946b37ee845158805",
+        "currentSha256": "b2506ad9f149f7a8986bb00740885f31cd93197224aa4b2946b37ee845158805",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyFrame.hpp",
+        "oldSha256": "da3ff16e8aa1afcc6827f2710cea163d7944955c4617a56f68363a4059a04e9c",
+        "currentSha256": "da3ff16e8aa1afcc6827f2710cea163d7944955c4617a56f68363a4059a04e9c",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyLaserCommands.cpp",
+        "oldSha256": "0cbe7bbb11a7ed9c7d4876c258ce99b3c5e3217dbdedc003db35b4eb03392d54",
+        "currentSha256": "0cbe7bbb11a7ed9c7d4876c258ce99b3c5e3217dbdedc003db35b4eb03392d54",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyManager.cpp",
+        "oldSha256": "ac66b7469136363d8d132d83662a5565d1a101516b7010aa7a9b0a049b8a7025",
+        "currentSha256": "ac66b7469136363d8d132d83662a5565d1a101516b7010aa7a9b0a049b8a7025",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyManager.hpp",
+        "oldSha256": "7f7e9fe13e7c51be71bb347753a40befb448c9a223b5e788f87458d22947d2e4",
+        "currentSha256": "7f7e9fe13e7c51be71bb347753a40befb448c9a223b5e788f87458d22947d2e4",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyPhase.cpp",
+        "oldSha256": "86d6f9dc7b4cd6773fa8f80e78c725a8c0d33bbae701aeaf1812c3b507496642",
+        "currentSha256": "86d6f9dc7b4cd6773fa8f80e78c725a8c0d33bbae701aeaf1812c3b507496642",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyScript.cpp",
+        "oldSha256": "b75b99f4b5b1c7908892d215bd536d664441c6f57a7cdf07a6a679192a0e7770",
+        "currentSha256": "b75b99f4b5b1c7908892d215bd536d664441c6f57a7cdf07a6a679192a0e7770",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyScript.hpp",
+        "oldSha256": "f418983c051e04f7ee40b6995d05b3f9e2ba7d2c0a84b2e559be8b4979ade3d8",
+        "currentSha256": "f418983c051e04f7ee40b6995d05b3f9e2ba7d2c0a84b2e559be8b4979ade3d8",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyState.cpp",
+        "oldSha256": "1b970b38ff844fc16cb3ee012a3e417147d2bed468c9351a19a605a679402eb6",
+        "currentSha256": "1b970b38ff844fc16cb3ee012a3e417147d2bed468c9351a19a605a679402eb6",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyState.hpp",
+        "oldSha256": "f7f408c7b3dc30e0b29f9d5e1a8f0aaf497b5e8621dc8bd33cf961a528aea26c",
+        "currentSha256": "f7f408c7b3dc30e0b29f9d5e1a8f0aaf497b5e8621dc8bd33cf961a528aea26c",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyStateCommands.cpp",
+        "oldSha256": "4037d9325a2e77765d45c1d78df91b24d803a4a0a31c0c946f047258ca4133a7",
+        "currentSha256": "4037d9325a2e77765d45c1d78df91b24d803a4a0a31c0c946f047258ca4133a7",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyTh14Callbacks.cpp",
+        "oldSha256": "73f797a023c6a5dcba947f23c4f3b67e899cdfce657b372f9e3588eb2fcdc183",
+        "currentSha256": "73f797a023c6a5dcba947f23c4f3b67e899cdfce657b372f9e3588eb2fcdc183",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyTh14Commands.cpp",
+        "oldSha256": "7b1828b4a16c601b5b983def4ca3a97aedf1556e13b5db4606276ad2effe14af",
+        "currentSha256": "7b1828b4a16c601b5b983def4ca3a97aedf1556e13b5db4606276ad2effe14af",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyTh14Emitter.cpp",
+        "oldSha256": "c42d5428da9b41d0570243aa565e84c9b52a4c8db24e72d1cc7811a70ad417c2",
+        "currentSha256": "c42d5428da9b41d0570243aa565e84c9b52a4c8db24e72d1cc7811a70ad417c2",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyTh14Emitter.hpp",
+        "oldSha256": "c0838e7a908e67c2ac79c8ae03daae916951ae1babda4e2c34085ada16ff7d46",
+        "currentSha256": "c0838e7a908e67c2ac79c8ae03daae916951ae1babda4e2c34085ada16ff7d46",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyTh14Fire.cpp",
+        "oldSha256": "5d441a37465f7d1fb53a4a9ef98e1ba386161e775f6a3a042b14767fd7be4084",
+        "currentSha256": "5d441a37465f7d1fb53a4a9ef98e1ba386161e775f6a3a042b14767fd7be4084",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyTh16Commands.cpp",
+        "oldSha256": "ddea64e97ce44c938e9dcf765054d21fcf6f287453aab05b598f0f30995b26f0",
+        "currentSha256": "ddea64e97ce44c938e9dcf765054d21fcf6f287453aab05b598f0f30995b26f0",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyTh16Emitter.cpp",
+        "oldSha256": "b4129da2683645f23adde9dea775093b6265e8250f4e2cd5078f88ee667867a6",
+        "currentSha256": "b4129da2683645f23adde9dea775093b6265e8250f4e2cd5078f88ee667867a6",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyTh16Emitter.hpp",
+        "oldSha256": "bc98a2b635025b54c8b33c9c099fd3a95550813743a9769a45d2b785accd8173",
+        "currentSha256": "bc98a2b635025b54c8b33c9c099fd3a95550813743a9769a45d2b785accd8173",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyTh16Fire.cpp",
+        "oldSha256": "f4d895b8b60ba4ffbf0a24ba8754dfd421bce2855281c89c0a2cafde78983df1",
+        "currentSha256": "f4d895b8b60ba4ffbf0a24ba8754dfd421bce2855281c89c0a2cafde78983df1",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyTh16Movement.cpp",
+        "oldSha256": "2d2b1d6d00bf317444ceb27492c4eb231af674790dc7b2fea0fd181b5333bd4a",
+        "currentSha256": "2d2b1d6d00bf317444ceb27492c4eb231af674790dc7b2fea0fd181b5333bd4a",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyTh16Targets.cpp",
+        "oldSha256": "f5054b90faad931c2f279d7156932334be9d730a25f7d89a834a6cb93d38e933",
+        "currentSha256": "f5054b90faad931c2f279d7156932334be9d730a25f7d89a834a6cb93d38e933",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/EnemyTh16Targets.hpp",
+        "oldSha256": "8a8ba1ea672cad7e0e58eee19f49865db370b4ca17033c096b5d77e5d734cc04",
+        "currentSha256": "8a8ba1ea672cad7e0e58eee19f49865db370b4ca17033c096b5d77e5d734cc04",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/FogInterpolation.cpp",
+        "oldSha256": "b34a1c498084f208ec12b0a9a5cbdaeac11d887190d73dc840dafc5957c9e94f",
+        "currentSha256": "b34a1c498084f208ec12b0a9a5cbdaeac11d887190d73dc840dafc5957c9e94f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/FogInterpolation.hpp",
+        "oldSha256": "42e4c9a0c2b89feee912ea71d7104c99097d401db340a990235d43b592129f24",
+        "currentSha256": "42e4c9a0c2b89feee912ea71d7104c99097d401db340a990235d43b592129f24",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/FontBitmapTh14.hpp",
+        "oldSha256": "62b9ca1dbdd08b2d2ddaeb9c1f88541dc6e80348543cd83c14789e85fa8ad689",
+        "currentSha256": "62b9ca1dbdd08b2d2ddaeb9c1f88541dc6e80348543cd83c14789e85fa8ad689",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/FrameStatistics.cpp",
+        "oldSha256": "01f3b006f3a0880efe82fc68ef71ba6070d07019b9be0c7da6e4f59f6a8bdc45",
+        "currentSha256": "01f3b006f3a0880efe82fc68ef71ba6070d07019b9be0c7da6e4f59f6a8bdc45",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/FrameStatistics.hpp",
+        "oldSha256": "de4cf3eac96ac519c8b41f7ad9d829d56fec2975971d098453370d60764d22a9",
+        "currentSha256": "de4cf3eac96ac519c8b41f7ad9d829d56fec2975971d098453370d60764d22a9",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameBattle.cpp",
+        "oldSha256": "51bbea2903bd99b9e571aca9cd09c99c787b5741183ae95390d52aeb7678dc71",
+        "currentSha256": "cddd773f280aea4f3a289f69a3a3c9431356c831bf76616d07163ecd55b7ffec",
+        "rawEqual": false,
+        "normalizedCrlfEqual": false
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameBattle.hpp",
+        "oldSha256": "8fe764e06e4d7162f4f542d7a17685b8209a3007d04ed95a3b89666b656da99d",
+        "currentSha256": "09a2e88c2a70abd00415b8e58bcd40683f2ba3f0bcc58d32534864456938fc2d",
+        "rawEqual": false,
+        "normalizedCrlfEqual": false
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameConfig.cpp",
+        "oldSha256": "4bd2d4c225c2cb270e4edf5af7ce347776daaaee2d09fada74c54d378ca9c613",
+        "currentSha256": "4bd2d4c225c2cb270e4edf5af7ce347776daaaee2d09fada74c54d378ca9c613",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameConfig.hpp",
+        "oldSha256": "b6dff5d5647af9a472f02cf1b3cdd9766645111aab19582e9c574980557ec78a",
+        "currentSha256": "b6dff5d5647af9a472f02cf1b3cdd9766645111aab19582e9c574980557ec78a",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameEconomy.cpp",
+        "oldSha256": "98ca652f789b5f5e2eee532bbb26115f03c2b4245ccf86d26034f1770f6f009f",
+        "currentSha256": "98ca652f789b5f5e2eee532bbb26115f03c2b4245ccf86d26034f1770f6f009f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameEconomy.hpp",
+        "oldSha256": "23570cc3451b4ca257be06605cc7b1888cd41e7ca123476cf16f690fca79d520",
+        "currentSha256": "23570cc3451b4ca257be06605cc7b1888cd41e7ca123476cf16f690fca79d520",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameInput.cpp",
+        "oldSha256": "7c6bd87bde99c9a7dbc7e4f176d76fd16d76284d76810e26f628fc026d04472b",
+        "currentSha256": "7c6bd87bde99c9a7dbc7e4f176d76fd16d76284d76810e26f628fc026d04472b",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameInput.hpp",
+        "oldSha256": "6d3500f2cc120413e85c4018c87693837b2286dad0c97d2d03b55456f1d12fc6",
+        "currentSha256": "6d3500f2cc120413e85c4018c87693837b2286dad0c97d2d03b55456f1d12fc6",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameResources.cpp",
+        "oldSha256": "55351759ad931df1a4ee105d7f259201a631b389bbdbf56ba82689240e2abd7a",
+        "currentSha256": "55351759ad931df1a4ee105d7f259201a631b389bbdbf56ba82689240e2abd7a",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameResources.hpp",
+        "oldSha256": "1baa055b739557eab61317f7650e0bfc2e32576bc7661500363c4a0887920b49",
+        "currentSha256": "1baa055b739557eab61317f7650e0bfc2e32576bc7661500363c4a0887920b49",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameSession.cpp",
+        "oldSha256": "f50634ec0fafb86b1d2ce581d71ba8c1a6a974b495d4fa87a53f59b9661cd7e5",
+        "currentSha256": "f9ad61bbacd8a4e5baf9e3d6e6b10659e82cf2f562080792016410daf6007f88",
+        "rawEqual": false,
+        "normalizedCrlfEqual": false
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameSession.hpp",
+        "oldSha256": "495f7a54f77e9f2c3f2b0ac59ab1cb33014a0f78a81f746aa436e75a65028de9",
+        "currentSha256": "451af274da133bf61b6385ae2dde8affcbd331409c8fcb9a56288c734093135e",
+        "rawEqual": false,
+        "normalizedCrlfEqual": false
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameSessionResources.cpp",
+        "oldSha256": "320951d8e561b78b9f519c7cba7a7a6a12d25eba54205b86e3529a92fb7d78bb",
+        "currentSha256": "320951d8e561b78b9f519c7cba7a7a6a12d25eba54205b86e3529a92fb7d78bb",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GameSessionResources.hpp",
+        "oldSha256": "36d26b78352bad2f749ed1f71e66ee4a8bc10b14a6683f0b3a6b1e7c36a8f296",
+        "currentSha256": "36d26b78352bad2f749ed1f71e66ee4a8bc10b14a6683f0b3a6b1e7c36a8f296",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GlyphAtlas.cpp",
+        "oldSha256": "acd99b80ce746f18be6cf86703af37d41258284e1d94876bcdac3b66bc347cc3",
+        "currentSha256": "acd99b80ce746f18be6cf86703af37d41258284e1d94876bcdac3b66bc347cc3",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GlyphAtlas.hpp",
+        "oldSha256": "56f4297af0410bb514a6997716312f598c74f9d7bbce0f12cc1cfa9710335665",
+        "currentSha256": "56f4297af0410bb514a6997716312f598c74f9d7bbce0f12cc1cfa9710335665",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GraphicsMath.cpp",
+        "oldSha256": "85a31c86d8b6bc6ea7c2795f280547289a9c4d5003597a0cb36e5ab6f8fd4c13",
+        "currentSha256": "85a31c86d8b6bc6ea7c2795f280547289a9c4d5003597a0cb36e5ab6f8fd4c13",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GraphicsMath.hpp",
+        "oldSha256": "0bbc2fde83670864172b41f30b01b76089660c587a3e0f3d3570b816aedb5b7e",
+        "currentSha256": "0bbc2fde83670864172b41f30b01b76089660c587a3e0f3d3570b816aedb5b7e",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/GrazeWordsTh14.hpp",
+        "oldSha256": "b8c4a366786896cdecaf67af8223c9836eeb12097581c7f4575c13339c493ae8",
+        "currentSha256": "b8c4a366786896cdecaf67af8223c9836eeb12097581c7f4575c13339c493ae8",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Hud.cpp",
+        "oldSha256": "d1e03a3d18d78cb3492c2fe50d1a3f9dfca6c5d1cab1b469c54b01631147f15d",
+        "currentSha256": "d1e03a3d18d78cb3492c2fe50d1a3f9dfca6c5d1cab1b469c54b01631147f15d",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Hud.hpp",
+        "oldSha256": "3ae58d91edf1618323f8edac9f9bfb9b192e7bf5733d788ce46599e522aa0e38",
+        "currentSha256": "3ae58d91edf1618323f8edac9f9bfb9b192e7bf5733d788ce46599e522aa0e38",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/HudCounterWordsTh14.hpp",
+        "oldSha256": "b26faf51d4af70afdb1d96212f93ce4281f80dc5977cc0a199c9faf69c91cfbb",
+        "currentSha256": "b26faf51d4af70afdb1d96212f93ce4281f80dc5977cc0a199c9faf69c91cfbb",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/HudScalarTh14.hpp",
+        "oldSha256": "0754dae2cb792f5195b7f0fee788dfd7eaa0da2af5a7b1a9bc5546d4a682aa1e",
+        "currentSha256": "0754dae2cb792f5195b7f0fee788dfd7eaa0da2af5a7b1a9bc5546d4a682aa1e",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/HudTh14Boss.cpp",
+        "oldSha256": "6b2d88fc450cf6558c1a8f4f480e7b0027c4aee495296afcf5253aeaeb84226c",
+        "currentSha256": "6b2d88fc450cf6558c1a8f4f480e7b0027c4aee495296afcf5253aeaeb84226c",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/HudTh14Notice.cpp",
+        "oldSha256": "8cfa181734db1a68ede0cd4ff9d8c33f87ee24e8f97f4c0416eb06e09ec302aa",
+        "currentSha256": "8cfa181734db1a68ede0cd4ff9d8c33f87ee24e8f97f4c0416eb06e09ec302aa",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/HudTh14Text.cpp",
+        "oldSha256": "f08b4c298437cf910bbfdd2e18dfe4a7915a6a5e8893b8c46d0c38c5fa66d51b",
+        "currentSha256": "f08b4c298437cf910bbfdd2e18dfe4a7915a6a5e8893b8c46d0c38c5fa66d51b",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/HudTh14Text.hpp",
+        "oldSha256": "f574df2d26dade171575eec13f6e96d3f54d4722f70dc8166caa9347db2e0ff1",
+        "currentSha256": "f574df2d26dade171575eec13f6e96d3f54d4722f70dc8166caa9347db2e0ff1",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ImageResample.cpp",
+        "oldSha256": "3f90c8f9a2e31bfc6cc65fd0f75310410b0bc0d3123e79fdac0a8df31293f109",
+        "currentSha256": "3f90c8f9a2e31bfc6cc65fd0f75310410b0bc0d3123e79fdac0a8df31293f109",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ImageResample.hpp",
+        "oldSha256": "feb1304db723421eaf180aa75386d75bf5de8cee40f6cc41e1fedc6e38089810",
+        "currentSha256": "feb1304db723421eaf180aa75386d75bf5de8cee40f6cc41e1fedc6e38089810",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/InitialCppResourcesTh14.hpp",
+        "oldSha256": "122e7c49e13c57461b0872b61c43adbf15d840d801d2b0244ebd187e02a12e25",
+        "currentSha256": "122e7c49e13c57461b0872b61c43adbf15d840d801d2b0244ebd187e02a12e25",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Interpolation.cpp",
+        "oldSha256": "707668ebec86da2484c1080b3e056a5008b6622e3ca34020a82c334a42c7c763",
+        "currentSha256": "707668ebec86da2484c1080b3e056a5008b6622e3ca34020a82c334a42c7c763",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Interpolation.hpp",
+        "oldSha256": "ee945f18f4cf569cb7f6f31de70fa9b5800937a20c58d04e5ac6c1886fb1716a",
+        "currentSha256": "ee945f18f4cf569cb7f6f31de70fa9b5800937a20c58d04e5ac6c1886fb1716a",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ItemManager.cpp",
+        "oldSha256": "d6c75088fbde95ea3b5250292081108d323d3cc297a4a661ff83e57d84c03cfe",
+        "currentSha256": "d6c75088fbde95ea3b5250292081108d323d3cc297a4a661ff83e57d84c03cfe",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ItemManager.hpp",
+        "oldSha256": "8ba07f3e0460ad538cf25784383f28f49cd7c2138156929d9aa1005ee73c7b63",
+        "currentSha256": "8ba07f3e0460ad538cf25784383f28f49cd7c2138156929d9aa1005ee73c7b63",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ItemRewards.cpp",
+        "oldSha256": "e8c204cd7ad6777fcd611067ccc616c8f83f781fe042168d39d98ad8b2216579",
+        "currentSha256": "e8c204cd7ad6777fcd611067ccc616c8f83f781fe042168d39d98ad8b2216579",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ItemRewards.hpp",
+        "oldSha256": "ab6591602b9af5e22c60371a8298dbc2793f1e675f033d99d222910d1b066a94",
+        "currentSha256": "ab6591602b9af5e22c60371a8298dbc2793f1e675f033d99d222910d1b066a94",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ItemTh14.cpp",
+        "oldSha256": "3f6d4b9c74d356d5b956a647e016e49b886b725e2413956e88af0866687e94f4",
+        "currentSha256": "3f6d4b9c74d356d5b956a647e016e49b886b725e2413956e88af0866687e94f4",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ItemTh16.cpp",
+        "oldSha256": "05bd4a77139441a366be85e29b7b6f3bf65660315e984c73443a3e2bd9fdeee1",
+        "currentSha256": "05bd4a77139441a366be85e29b7b6f3bf65660315e984c73443a3e2bd9fdeee1",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ItemTh16Drop.cpp",
+        "oldSha256": "3b81443129f81580f823053ead8368cd2d49b94ba227b914414990c8023306df",
+        "currentSha256": "3b81443129f81580f823053ead8368cd2d49b94ba227b914414990c8023306df",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserCurveTh14.cpp",
+        "oldSha256": "7c0713fa9766fe37cc4ba08511e86457afbeb3cf7873ff7aff784c670fc412f3",
+        "currentSha256": "7c0713fa9766fe37cc4ba08511e86457afbeb3cf7873ff7aff784c670fc412f3",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserCurveTh14.hpp",
+        "oldSha256": "f65be7f008e96f15a92d715a31fd38db1527eef81a42839023c7f749526af520",
+        "currentSha256": "f65be7f008e96f15a92d715a31fd38db1527eef81a42839023c7f749526af520",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserCurveTh14Runtime.cpp",
+        "oldSha256": "614ea88a80014ed7270f2967d550143e69068956d9be5f27d9e6c270d2dcb30a",
+        "currentSha256": "614ea88a80014ed7270f2967d550143e69068956d9be5f27d9e6c270d2dcb30a",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserCut.cpp",
+        "oldSha256": "b00405c0c14ef28a507368acb49e7451735809c6813f490f8c358baf4b6f7e9f",
+        "currentSha256": "b00405c0c14ef28a507368acb49e7451735809c6813f490f8c358baf4b6f7e9f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserCutTh16.cpp",
+        "oldSha256": "73eb6855a2904925cfdaf36819f87a901b0c749661e2979103f9cdd670e12a97",
+        "currentSha256": "73eb6855a2904925cfdaf36819f87a901b0c749661e2979103f9cdd670e12a97",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserInfinite.cpp",
+        "oldSha256": "eeed57d321158d275e489697d2840d0ccde46a635702b54cc8e31d933de18ab7",
+        "currentSha256": "eeed57d321158d275e489697d2840d0ccde46a635702b54cc8e31d933de18ab7",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserInfiniteCut.cpp",
+        "oldSha256": "922397f494aae885912b760c68a6eacdba30c4e8bba61643058cade7ad2a263d",
+        "currentSha256": "922397f494aae885912b760c68a6eacdba30c4e8bba61643058cade7ad2a263d",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserInfiniteTh14.cpp",
+        "oldSha256": "e1ac25f7003e7ed9aba04f516fba86ec6b9dfa1316904027d8224986e0a2e1ee",
+        "currentSha256": "e1ac25f7003e7ed9aba04f516fba86ec6b9dfa1316904027d8224986e0a2e1ee",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserLine.cpp",
+        "oldSha256": "85030486035d071e282decfffe5b327075a3e692bcb230fb1ac57763b2992fa0",
+        "currentSha256": "85030486035d071e282decfffe5b327075a3e692bcb230fb1ac57763b2992fa0",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserLineTh14.cpp",
+        "oldSha256": "b6d4e5491447cd09fee5d7a7560254f36e2e44b19a2e6358927cd65f736dd018",
+        "currentSha256": "b6d4e5491447cd09fee5d7a7560254f36e2e44b19a2e6358927cd65f736dd018",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserLineTh16.cpp",
+        "oldSha256": "dd6728cd8d4b97b6dc6a958907d01188fb39bff8d4073b9a685dc0f767f609b9",
+        "currentSha256": "dd6728cd8d4b97b6dc6a958907d01188fb39bff8d4073b9a685dc0f767f609b9",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserManager.cpp",
+        "oldSha256": "d65c985e087acb0cec6098536266947446a71f9b353b93eb20d12c243d26d24a",
+        "currentSha256": "d65c985e087acb0cec6098536266947446a71f9b353b93eb20d12c243d26d24a",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserManager.hpp",
+        "oldSha256": "bf3d19d359aab0864243d8ac34fa80e8dc96b0cbe2d2b52761c49878f51073e3",
+        "currentSha256": "bf3d19d359aab0864243d8ac34fa80e8dc96b0cbe2d2b52761c49878f51073e3",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserState.cpp",
+        "oldSha256": "d47452fe86a7fb7b66a5c86c41e4d991950c41cfe7a819afb9d5c5c2cdcea209",
+        "currentSha256": "d47452fe86a7fb7b66a5c86c41e4d991950c41cfe7a819afb9d5c5c2cdcea209",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LaserState.hpp",
+        "oldSha256": "d4533b833575431ab30e18d74eeae8cb0cb47d48c3cc19cea7492b4ae6d90ff5",
+        "currentSha256": "d4533b833575431ab30e18d74eeae8cb0cb47d48c3cc19cea7492b4ae6d90ff5",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LoadingTh14.hpp",
+        "oldSha256": "20f9a65cc9699fadbf3b44982001b74c1f9c3ec8f8ee5510191fa3e2ed7ef18c",
+        "currentSha256": "20f9a65cc9699fadbf3b44982001b74c1f9c3ec8f8ee5510191fa3e2ed7ef18c",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/LoadingWordTh14.hpp",
+        "oldSha256": "a828ddea9ecba96e4af17a5878410715007913fbd5affdd9ed52e7fb5137f9e4",
+        "currentSha256": "a828ddea9ecba96e4af17a5878410715007913fbd5affdd9ed52e7fb5137f9e4",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Localization.cpp",
+        "oldSha256": "c5dbb2e6079cd5a33bc2181034bb7486117dcdbb57b22d0b8a77baa6e5547c3f",
+        "currentSha256": "c5dbb2e6079cd5a33bc2181034bb7486117dcdbb57b22d0b8a77baa6e5547c3f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Localization.hpp",
+        "oldSha256": "d2140239323fa4e10d0c486e8ae540f4ae472ed1b36800598e158ce02f959df7",
+        "currentSha256": "d2140239323fa4e10d0c486e8ae540f4ae472ed1b36800598e158ce02f959df7",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Lzss.cpp",
+        "oldSha256": "7bf9b34043ee21f6e23244369069b2807314f3d7ddf7f37a556b34780afa4e48",
+        "currentSha256": "7bf9b34043ee21f6e23244369069b2807314f3d7ddf7f37a556b34780afa4e48",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Lzss.hpp",
+        "oldSha256": "df264a260821a4cbc8ec60e46b02f15ad0eb00bf998a8d6ad5260622f8224290",
+        "currentSha256": "df264a260821a4cbc8ec60e46b02f15ad0eb00bf998a8d6ad5260622f8224290",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/MenuCursor.cpp",
+        "oldSha256": "acbe07403cfbd9310ce742240023bb739695b8340d1a815c304ab6d0b020a112",
+        "currentSha256": "acbe07403cfbd9310ce742240023bb739695b8340d1a815c304ab6d0b020a112",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/MenuCursor.hpp",
+        "oldSha256": "77f3b2da217ab9a312563d39bd5f0fe341db01fae409d132a187992dd213f5c6",
+        "currentSha256": "77f3b2da217ab9a312563d39bd5f0fe341db01fae409d132a187992dd213f5c6",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Movement.cpp",
+        "oldSha256": "ea823e71f48f15d1d5e038c4fa62b6a4dfcaa31b087ebc183e42ef2dd439cccb",
+        "currentSha256": "ea823e71f48f15d1d5e038c4fa62b6a4dfcaa31b087ebc183e42ef2dd439cccb",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Movement.hpp",
+        "oldSha256": "1e7aa978bb48ee2a23e781273b945e5bff0674ff8731d83c15ffddd30a5e599f",
+        "currentSha256": "1e7aa978bb48ee2a23e781273b945e5bff0674ff8731d83c15ffddd30a5e599f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/MusicCatalog.hpp",
+        "oldSha256": "6140437daa966fd346b89daec86503d0fbd70a142dd771d4ffacc0e46c230a80",
+        "currentSha256": "6140437daa966fd346b89daec86503d0fbd70a142dd771d4ffacc0e46c230a80",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/NativeStackTh14.hpp",
+        "oldSha256": "0ff498ab5bcd8944c2d47f6f8d53d9f83811946f9b66c10ee468c73c818c78c9",
+        "currentSha256": "27853928cbffd84c8eb779b42f5fcbb8f737a0b4136ccbf10ab615d0b4c0e1cb",
+        "rawEqual": false,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/NoopOpcodes.hpp",
+        "oldSha256": "80a6631cb5a29de88e0c2d299ca04f4bb7ff8db1c22c78ca52e3131e34d6c317",
+        "currentSha256": "80a6631cb5a29de88e0c2d299ca04f4bb7ff8db1c22c78ca52e3131e34d6c317",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PauseEnd.cpp",
+        "oldSha256": "9260093c8d301a698c770cb09ca395282b3903a4f69c23cf7e2108f3b634ead7",
+        "currentSha256": "9260093c8d301a698c770cb09ca395282b3903a4f69c23cf7e2108f3b634ead7",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PauseMenu.cpp",
+        "oldSha256": "c4bcc404c7724e32e298b1a1edb6a29bbea08f46bc82c6c2c73e21db269867f1",
+        "currentSha256": "c4bcc404c7724e32e298b1a1edb6a29bbea08f46bc82c6c2c73e21db269867f1",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PauseMenu.hpp",
+        "oldSha256": "398c71de186245a4675ccc602465f0dc137b4b6365340d0fb2b5c9fce13ba975",
+        "currentSha256": "398c71de186245a4675ccc602465f0dc137b4b6365340d0fb2b5c9fce13ba975",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PauseReplay.cpp",
+        "oldSha256": "baeefa619abf5f00773022298ca17dab1907e29a17c162b40cc67c6883a81125",
+        "currentSha256": "baeefa619abf5f00773022298ca17dab1907e29a17c162b40cc67c6883a81125",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PauseText.cpp",
+        "oldSha256": "4e0f66fe2062543f4843c366d9a4f021b35d0bbd175b3f2b0f26e5bc7d5c18c6",
+        "currentSha256": "4e0f66fe2062543f4843c366d9a4f021b35d0bbd175b3f2b0f26e5bc7d5c18c6",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PlayerCollision.cpp",
+        "oldSha256": "855f92f2b0161a34697862c7061ac8ee4cd13c66b7d1d1862ceb7feeea9b48df",
+        "currentSha256": "855f92f2b0161a34697862c7061ac8ee4cd13c66b7d1d1862ceb7feeea9b48df",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PlayerCollision.hpp",
+        "oldSha256": "47e75ab3bb62b1885192e7576e695e484b7098140fbcf6da369520a3dab8eac3",
+        "currentSha256": "47e75ab3bb62b1885192e7576e695e484b7098140fbcf6da369520a3dab8eac3",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PlayerFrame.cpp",
+        "oldSha256": "9408ea060e48972aa3b1c850a1c140bf2b68a400f76b79a14e88fc438f9d1dc6",
+        "currentSha256": "46acd7b0a20c2020a4df147472e3030e297daad25019ee68c3c4e9565268ce2d",
+        "rawEqual": false,
+        "normalizedCrlfEqual": false
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PlayerFrame.hpp",
+        "oldSha256": "bb29161263a81b2352ef5857d99783854c52f5075d656e803d28c7168d6c5129",
+        "currentSha256": "29ec060d0f1860a48125200974da44c494647c133bcbce479a2ff2146bfb8475",
+        "rawEqual": false,
+        "normalizedCrlfEqual": false
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PlayerMotion.cpp",
+        "oldSha256": "5f27cb5b4779a1e8b0b6cf172a8055c3b2ed68aef3e058de410435489dd90f67",
+        "currentSha256": "5f27cb5b4779a1e8b0b6cf172a8055c3b2ed68aef3e058de410435489dd90f67",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PlayerMotion.hpp",
+        "oldSha256": "df8ed7e3d74b5702ad5cb0a4572df57a4993ee4a06212fc8a73b9828f1633c89",
+        "currentSha256": "df8ed7e3d74b5702ad5cb0a4572df57a4993ee4a06212fc8a73b9828f1633c89",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PlayerTh16Life.cpp",
+        "oldSha256": "dae2284839580d2027b2f8307c8179892b6ab97a40997e77f7970853a2558a44",
+        "currentSha256": "dae2284839580d2027b2f8307c8179892b6ab97a40997e77f7970853a2558a44",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PlayerTh16Life.hpp",
+        "oldSha256": "ad4753a62f4b4ec1990e71de4642c17efb90aa4ae062a87fb7b62b5bcb75ffbd",
+        "currentSha256": "ad4753a62f4b4ec1990e71de4642c17efb90aa4ae062a87fb7b62b5bcb75ffbd",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PortTitle.hpp",
+        "oldSha256": "5531b9b0a2364098ec023e09eddbf66907c392fb58a24e1a84c5bf7a9a033d2f",
+        "currentSha256": "5531b9b0a2364098ec023e09eddbf66907c392fb58a24e1a84c5bf7a9a033d2f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PowerAddWordsTh14.hpp",
+        "oldSha256": "01aec0108c0570f95d9677847cfe3be02e937aca7672c4c88acf8500f20b97d0",
+        "currentSha256": "01aec0108c0570f95d9677847cfe3be02e937aca7672c4c88acf8500f20b97d0",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PowerPointWordsTh14.hpp",
+        "oldSha256": "e6c18ca1daeb3a14545afd7c5a413184c1270e523410ed4c91c05334951d264e",
+        "currentSha256": "e6c18ca1daeb3a14545afd7c5a413184c1270e523410ed4c91c05334951d264e",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PracticeCatalogTh14.inc",
+        "oldSha256": "a36c9e405d7d7f58ccc543f0a899243f549b6a1029a7a73fdc7fb2f442eef195",
+        "currentSha256": "a36c9e405d7d7f58ccc543f0a899243f549b6a1029a7a73fdc7fb2f442eef195",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PracticeLaserPurpleTh14.hpp",
+        "oldSha256": "bca7db1d088b8a1f6f84d6086f424ec1de3d8a4887c5d20bbddb4227e63af450",
+        "currentSha256": "bca7db1d088b8a1f6f84d6086f424ec1de3d8a4887c5d20bbddb4227e63af450",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PracticePatchesTh14.inc",
+        "oldSha256": "d310c1dbe9d6a62b4a4a52d82e7749b059d21ab0ed892193ffcb0131879d2c21",
+        "currentSha256": "d310c1dbe9d6a62b4a4a52d82e7749b059d21ab0ed892193ffcb0131879d2c21",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PracticeReplayPurpleTh14.hpp",
+        "oldSha256": "f78f36af7aaff12e3cda0254814d88181418ec0e12a6b9b215379c722a77d84c",
+        "currentSha256": "f78f36af7aaff12e3cda0254814d88181418ec0e12a6b9b215379c722a77d84c",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PracticeTh14.cpp",
+        "oldSha256": "d49f8a22e83877d53a9086da93eef8fbfa8790660e47ea625fd550ee53f7a943",
+        "currentSha256": "d49f8a22e83877d53a9086da93eef8fbfa8790660e47ea625fd550ee53f7a943",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PracticeTh14.hpp",
+        "oldSha256": "5ce6600edbbb1cb1f7f633674678a660617343ff541b6e648ee069c6594ab9dc",
+        "currentSha256": "5ce6600edbbb1cb1f7f633674678a660617343ff541b6e648ee069c6594ab9dc",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/PublishedOwnerTh14.hpp",
+        "oldSha256": "bdd5cdb921b28feaa87add628186e2754ecfe7f5c6b6fe93227ba1076406e933",
+        "currentSha256": "bdd5cdb921b28feaa87add628186e2754ecfe7f5c6b6fe93227ba1076406e933",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/RateScalarTh14.hpp",
+        "oldSha256": "7d46c541ca50a569c84aae7eab537a91199d96de72e5b531e7f2f64341c720f2",
+        "currentSha256": "7d46c541ca50a569c84aae7eab537a91199d96de72e5b531e7f2f64341c720f2",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/RectangleRotationTh14.hpp",
+        "oldSha256": "ac90abb90df8ebbfe794d36b3ac9949c42c0415f74515d6d5bcc53998b1aa3a9",
+        "currentSha256": "ac90abb90df8ebbfe794d36b3ac9949c42c0415f74515d6d5bcc53998b1aa3a9",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Replay.cpp",
+        "oldSha256": "88b3893488fcc00ec2e3b1ed949e5abf718defee706c4e71e07fb12c934d4dbd",
+        "currentSha256": "a2a1a94ebd6b66c691bbdc11122e1e5a5e343926569b06f7e01fb925dbe2f75e",
+        "rawEqual": false,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Replay.hpp",
+        "oldSha256": "ffd6ffa9f2c5c242e92173edacc949284e3ac32f63c8fbf74c75a78f8c5a5caf",
+        "currentSha256": "84475e11274aa50e620a456b75fde8f8277a836d87c4914d319d7b98f573cd50",
+        "rawEqual": false,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ReplayCadenceTh14.hpp",
+        "oldSha256": "828e568b0f30c501af19c87b29b8065ffc791f29ed98febb17cfc6d7e16b3337",
+        "currentSha256": "828e568b0f30c501af19c87b29b8065ffc791f29ed98febb17cfc6d7e16b3337",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ReplayDescriptionTh14.hpp",
+        "oldSha256": "e3f42fcfa31e534caa2bdb0698a230b565f9b8272da530b139e8489afd6beae4",
+        "currentSha256": "e3f42fcfa31e534caa2bdb0698a230b565f9b8272da530b139e8489afd6beae4",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ReplayMenu.hpp",
+        "oldSha256": "22b6021d8638de32abcb4da3fb11501842f24be1401075625267e548d0ee8513",
+        "currentSha256": "22b6021d8638de32abcb4da3fb11501842f24be1401075625267e548d0ee8513",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ReplayRecorder.cpp",
+        "oldSha256": "fa73ef3399c747040464a5906fe537eb7a6b8788083ae39191e327bbf8fe448c",
+        "currentSha256": "6d3b95deb6cb1461357adaecd35cc0d95a96b701a4f45ae01dcae86b810a9dd3",
+        "rawEqual": false,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ReplayRecorder.hpp",
+        "oldSha256": "d30147b6a5c9831cf57a2ee5aa9b6e407234bcc9dead4a8e729a3eb5904abd48",
+        "currentSha256": "d30147b6a5c9831cf57a2ee5aa9b6e407234bcc9dead4a8e729a3eb5904abd48",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ReplayRngRestoreTh14.hpp",
+        "oldSha256": "f16d24f8948ec999659ff434a58cb2d7529e6814db0f63dfd9a399d0e1993882",
+        "currentSha256": "f16d24f8948ec999659ff434a58cb2d7529e6814db0f63dfd9a399d0e1993882",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ReplayTextTh14.hpp",
+        "oldSha256": "dbe84b160652af9c9222d3314dc039615c20a54d21866c0bffba741e2903a7d1",
+        "currentSha256": "dbe84b160652af9c9222d3314dc039615c20a54d21866c0bffba741e2903a7d1",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ResourceCrypt.cpp",
+        "oldSha256": "a291010053963e25dadef2be15ddb3c217110cd2377fc495402ef375150f8c45",
+        "currentSha256": "a291010053963e25dadef2be15ddb3c217110cd2377fc495402ef375150f8c45",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ResourceCrypt.hpp",
+        "oldSha256": "dba560d8380ef04611c41da473972aaa30f9725afe9bdb49709b8dbfa9ccda27",
+        "currentSha256": "dba560d8380ef04611c41da473972aaa30f9725afe9bdb49709b8dbfa9ccda27",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Rng.hpp",
+        "oldSha256": "f53daa06e3dbadd20afc300f56f9ff7b3983155496ccdb1ce046c1031b789437",
+        "currentSha256": "f53daa06e3dbadd20afc300f56f9ff7b3983155496ccdb1ce046c1031b789437",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SceneCamera.cpp",
+        "oldSha256": "749e5fd0db3473d4c171b04f46cd55d1e0e5e7e40bbc3b1ff76be8a62334632b",
+        "currentSha256": "749e5fd0db3473d4c171b04f46cd55d1e0e5e7e40bbc3b1ff76be8a62334632b",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SceneCamera.hpp",
+        "oldSha256": "b2681bfcb31c87eaf2c2649cb168ec78ac6029e816b364f0792217beb414630f",
+        "currentSha256": "b2681bfcb31c87eaf2c2649cb168ec78ac6029e816b364f0792217beb414630f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SceneCameraMatrixWordsTh14.hpp",
+        "oldSha256": "b5c84a6e996b80dc8a2a5dcdbb70ef6ac06d2f5247bd0b7e8c26b6ff0015d2f0",
+        "currentSha256": "b5c84a6e996b80dc8a2a5dcdbb70ef6ac06d2f5247bd0b7e8c26b6ff0015d2f0",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SceneCameraReadJobTh14.hpp",
+        "oldSha256": "6c1fbdc13e598aab81e49cd5c1c087b184a5e409f901b968596cc5ebc7884595",
+        "currentSha256": "6c1fbdc13e598aab81e49cd5c1c087b184a5e409f901b968596cc5ebc7884595",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SceneCameraRightWordsTh14.hpp",
+        "oldSha256": "a36024c5869ac6528cf98c862f93c667c442df1f5c3258eb8a4c96f32ab9529f",
+        "currentSha256": "a36024c5869ac6528cf98c862f93c667c442df1f5c3258eb8a4c96f32ab9529f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SceneCompositor.cpp",
+        "oldSha256": "e04f0d8fb89b1f85d817afebac33666635b2c9dc8565b5675e82c97e0432d667",
+        "currentSha256": "e04f0d8fb89b1f85d817afebac33666635b2c9dc8565b5675e82c97e0432d667",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SceneCompositor.hpp",
+        "oldSha256": "75326da4e2d8859b4391c64a60a800fbbb4e107cc5e804fb4324112458a05dbd",
+        "currentSha256": "75326da4e2d8859b4391c64a60a800fbbb4e107cc5e804fb4324112458a05dbd",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SceneSchedule.hpp",
+        "oldSha256": "77d0744bb084fe14f78b4dd91974a82072932e1b85840f955f2a9472d646ac53",
+        "currentSha256": "77d0744bb084fe14f78b4dd91974a82072932e1b85840f955f2a9472d646ac53",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ScoreFile.cpp",
+        "oldSha256": "d1a0e7305769386e9e48eaab60ad2882576cedcf49dea73d6cca6213a1692e48",
+        "currentSha256": "d1a0e7305769386e9e48eaab60ad2882576cedcf49dea73d6cca6213a1692e48",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ScoreFile.hpp",
+        "oldSha256": "7c3844493999a84fa31aba3ab434e4a277ad4e39daf947f6d1f6daf942447941",
+        "currentSha256": "7c3844493999a84fa31aba3ab434e4a277ad4e39daf947f6d1f6daf942447941",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ScorePopups.cpp",
+        "oldSha256": "5219939add97f51005b08db6fd6f422cc5ad906c567140f8bae27632be6f2561",
+        "currentSha256": "5219939add97f51005b08db6fd6f422cc5ad906c567140f8bae27632be6f2561",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ScorePopups.hpp",
+        "oldSha256": "8bbaf7d8f3b8c427d42e9ddd26ce56310ebacff633797f69fbe77613e7ae1e25",
+        "currentSha256": "8bbaf7d8f3b8c427d42e9ddd26ce56310ebacff633797f69fbe77613e7ae1e25",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ScoreScalarTh14.hpp",
+        "oldSha256": "51ac19c0a3bb8c3e9a89d1a2c8ea32577390c9d69e63daa9be0412cf50dc5140",
+        "currentSha256": "51ac19c0a3bb8c3e9a89d1a2c8ea32577390c9d69e63daa9be0412cf50dc5140",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ScreenDeformation.cpp",
+        "oldSha256": "ed6305704fd87230d89201e6e846d751c80f6ec4b55bed8b63623a75a2b07d6c",
+        "currentSha256": "ed6305704fd87230d89201e6e846d751c80f6ec4b55bed8b63623a75a2b07d6c",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ScreenDeformation.hpp",
+        "oldSha256": "22786f41f32e9e2ac01d0457595db80917500d6eee8137ab6496bd9672b6aaf2",
+        "currentSha256": "22786f41f32e9e2ac01d0457595db80917500d6eee8137ab6496bd9672b6aaf2",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ScreenFade.cpp",
+        "oldSha256": "ce3a16c8d7280795d3bb1621258f5ad5afe9f6c5d5a15cbd26bb97ea53ae7110",
+        "currentSha256": "ce3a16c8d7280795d3bb1621258f5ad5afe9f6c5d5a15cbd26bb97ea53ae7110",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ScreenFade.hpp",
+        "oldSha256": "cbc5e08592f9c020118c2bab69299eede2b2a082316ddd38558d24f92e5804a2",
+        "currentSha256": "cbc5e08592f9c020118c2bab69299eede2b2a082316ddd38558d24f92e5804a2",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ScreenShake.cpp",
+        "oldSha256": "db52d6d2c8a4c130fa8ba4634fc4656e02a8a810bc827110f71118d6a3248f91",
+        "currentSha256": "db52d6d2c8a4c130fa8ba4634fc4656e02a8a810bc827110f71118d6a3248f91",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ScreenShake.hpp",
+        "oldSha256": "35d75e9f877a209d6f9f39b29772696e1c7e94559f4bbb564c619fbe03f88d22",
+        "currentSha256": "35d75e9f877a209d6f9f39b29772696e1c7e94559f4bbb564c619fbe03f88d22",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SeasonTh16.cpp",
+        "oldSha256": "f1859130696c3a90914a763c915468d7d017a27acc867395e48e39117482c038",
+        "currentSha256": "f1859130696c3a90914a763c915468d7d017a27acc867395e48e39117482c038",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SeasonTh16.hpp",
+        "oldSha256": "f1151a70526f0548842f67c78e37efcc840210fa1cd3255a551ba751fe05506f",
+        "currentSha256": "f1151a70526f0548842f67c78e37efcc840210fa1cd3255a551ba751fe05506f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SessionFailureScopeTh14.hpp",
+        "oldSha256": "100afa8c9f0c0a5d973a29e0bf2ded479805ff2f00c3dcd2a52e13d69f4406c5",
+        "currentSha256": "100afa8c9f0c0a5d973a29e0bf2ded479805ff2f00c3dcd2a52e13d69f4406c5",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotCallbacksTh14.cpp",
+        "oldSha256": "825ca51ec977ec38ed86dc4369b84071d4d82d5d0e6a02fc940951e75bc230f8",
+        "currentSha256": "14d8cf9c423453b72ea464ca0ef40f9354ddc43f309d8365c4c9c5b4505ca5ad",
+        "rawEqual": false,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotDamageTh14.cpp",
+        "oldSha256": "895660e557a67c492c43ae97649185e04c8f850305d403a74623f7923e3061cb",
+        "currentSha256": "895660e557a67c492c43ae97649185e04c8f850305d403a74623f7923e3061cb",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotDamageTh14.hpp",
+        "oldSha256": "03312b3dd8bebbf62c36f70579a5ad99f6e3128dfee6f09c47e7050dc522c6e3",
+        "currentSha256": "03312b3dd8bebbf62c36f70579a5ad99f6e3128dfee6f09c47e7050dc522c6e3",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotFiles.hpp",
+        "oldSha256": "b19ed97d1278dda8c7384a73e8840e746ab1c2eb970674382667df87c6851cfb",
+        "currentSha256": "b19ed97d1278dda8c7384a73e8840e746ab1c2eb970674382667df87c6851cfb",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotManager.cpp",
+        "oldSha256": "ed94585ad7d7ffa8ea30a49ac2794257ab0e3a10b0fb88918f3f41a1ea607d64",
+        "currentSha256": "ed94585ad7d7ffa8ea30a49ac2794257ab0e3a10b0fb88918f3f41a1ea607d64",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotManager.hpp",
+        "oldSha256": "64f817e23861f4f0ae2d46c8adb9219db1978439ad85a99bb8ea2e28aa1e6c09",
+        "currentSha256": "64f817e23861f4f0ae2d46c8adb9219db1978439ad85a99bb8ea2e28aa1e6c09",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotPoolTh14.hpp",
+        "oldSha256": "fa8f9ce53b96a7f9a7d944e195d90a57c4a5a6f950b293f4168caa491e78deca",
+        "currentSha256": "fa8f9ce53b96a7f9a7d944e195d90a57c4a5a6f950b293f4168caa491e78deca",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotSakuyaTh14.cpp",
+        "oldSha256": "3b396e73c601dac12437fc1e816b2cab8b3e6101c9bf47c70fa752393c313049",
+        "currentSha256": "3b396e73c601dac12437fc1e816b2cab8b3e6101c9bf47c70fa752393c313049",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotSchedule.cpp",
+        "oldSha256": "9d2e78f65ad1daa535b2d2415c150c652aec06704f3d001b9fe43f9649f76951",
+        "currentSha256": "9d2e78f65ad1daa535b2d2415c150c652aec06704f3d001b9fe43f9649f76951",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotSchedule.hpp",
+        "oldSha256": "efdf6d52ddc892f620c4772be8a748e2d80392529df91195825bdb8873e2c1ba",
+        "currentSha256": "efdf6d52ddc892f620c4772be8a748e2d80392529df91195825bdb8873e2c1ba",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotTh14.cpp",
+        "oldSha256": "abe71e1589075f1660810d934d5a9d9e1bce892f7be60ee8b0477f95940e18fe",
+        "currentSha256": "abe71e1589075f1660810d934d5a9d9e1bce892f7be60ee8b0477f95940e18fe",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotTh16.cpp",
+        "oldSha256": "ea3d4679fd14ccadba9289493dd6a829d6278a75dcb8601b7381094a21696063",
+        "currentSha256": "ea3d4679fd14ccadba9289493dd6a829d6278a75dcb8601b7381094a21696063",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotTh16.hpp",
+        "oldSha256": "b22ef1bea42bb5186acf0583e710b355cdccd5fa1c08c0bbcdccb1f60050e7d1",
+        "currentSha256": "b22ef1bea42bb5186acf0583e710b355cdccd5fa1c08c0bbcdccb1f60050e7d1",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotTh16Geometry.cpp",
+        "oldSha256": "0c5b7790edfa4705110fba0a0b5745de05ce9cd07de119fbf0b9b68c35b96b60",
+        "currentSha256": "0c5b7790edfa4705110fba0a0b5745de05ce9cd07de119fbf0b9b68c35b96b60",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotTh16Hit.cpp",
+        "oldSha256": "7e98815cff0688f48cea32753e5f653ef9fb8cefd0ef8ab08cddfb4f2e0b46f3",
+        "currentSha256": "7e98815cff0688f48cea32753e5f653ef9fb8cefd0ef8ab08cddfb4f2e0b46f3",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShotTh16Production.cpp",
+        "oldSha256": "2ca6036d19170a755a02c3f6061076a3772d1be1e73319eadb21847c43bd1e7f",
+        "currentSha256": "2ca6036d19170a755a02c3f6061076a3772d1be1e73319eadb21847c43bd1e7f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShtResource.cpp",
+        "oldSha256": "d3c3eb0103f4ea9eee6468c863a3ad8e9abb871f3245091290701ecb03161c9b",
+        "currentSha256": "d3c3eb0103f4ea9eee6468c863a3ad8e9abb871f3245091290701ecb03161c9b",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShtResource.hpp",
+        "oldSha256": "d4e6050c8797c896f80bb7b983147a09cfa3704b81914e96519dd83ed53bcebe",
+        "currentSha256": "d4e6050c8797c896f80bb7b983147a09cfa3704b81914e96519dd83ed53bcebe",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ShtTransferTh14.hpp",
+        "oldSha256": "47c94dfd2f6f7619084ba21e190dcabff27efa2c8141c52a3dd9f084ca4c3dcb",
+        "currentSha256": "47c94dfd2f6f7619084ba21e190dcabff27efa2c8141c52a3dd9f084ca4c3dcb",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SoundEffects.cpp",
+        "oldSha256": "a38d8ee72d1525f9af1846c0d80eef108e20f194b6147547b4659c987af65a08",
+        "currentSha256": "a38d8ee72d1525f9af1846c0d80eef108e20f194b6147547b4659c987af65a08",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SoundEffects.hpp",
+        "oldSha256": "0c4e1edcfea79a3ba8738351c1d13159fb7d65a53557eef763c41142560c6dc6",
+        "currentSha256": "0c4e1edcfea79a3ba8738351c1d13159fb7d65a53557eef763c41142560c6dc6",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SpellController.cpp",
+        "oldSha256": "c13d05492b5739e3e6e20086fb2af62af74f0e24775b9d78f498ec58b1488396",
+        "currentSha256": "c13d05492b5739e3e6e20086fb2af62af74f0e24775b9d78f498ec58b1488396",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SpellController.hpp",
+        "oldSha256": "ac68ed0fa1e0c584a259d4fb691068a4862475500188666eb17899062f2d972a",
+        "currentSha256": "ac68ed0fa1e0c584a259d4fb691068a4862475500188666eb17899062f2d972a",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SpellMenuTh14.hpp",
+        "oldSha256": "7dd9a4bb91c4045fbbf0be3d58f6e53fefa615c9d0e4b99abe3022e7a91ac9e5",
+        "currentSha256": "7dd9a4bb91c4045fbbf0be3d58f6e53fefa615c9d0e4b99abe3022e7a91ac9e5",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SpellTh14Visuals.cpp",
+        "oldSha256": "d8fd090b5619d6d8469307934065755d4f89aeb9b4c97b735afa347790b1ee61",
+        "currentSha256": "d8fd090b5619d6d8469307934065755d4f89aeb9b4c97b735afa347790b1ee61",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SpellTh14Visuals.hpp",
+        "oldSha256": "6c6b169e531e72216de022a724c6026314207b1bb9582c15eaaba572c926208b",
+        "currentSha256": "6c6b169e531e72216de022a724c6026314207b1bb9582c15eaaba572c926208b",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SpellTh16Visuals.cpp",
+        "oldSha256": "ced358ca36239c716efb0e8abf47f20a0d87fe1a5a27da529e3489dcffb1c343",
+        "currentSha256": "ced358ca36239c716efb0e8abf47f20a0d87fe1a5a27da529e3489dcffb1c343",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SpellTh16Visuals.hpp",
+        "oldSha256": "212653a21164ca92848d7711adc9fe102cea7cfffa320a6fe1b31f5df53e56be",
+        "currentSha256": "212653a21164ca92848d7711adc9fe102cea7cfffa320a6fe1b31f5df53e56be",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SpellTiming.cpp",
+        "oldSha256": "b47cce01612c88caeebba8276aba03a349698eab08f45458955705fd5c460a5f",
+        "currentSha256": "b47cce01612c88caeebba8276aba03a349698eab08f45458955705fd5c460a5f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/SpellTiming.hpp",
+        "oldSha256": "b27800fce5a41811b88ade4f92679e5ef3624ae3b32a8dbfdb30bc104a34a3b5",
+        "currentSha256": "b27800fce5a41811b88ade4f92679e5ef3624ae3b32a8dbfdb30bc104a34a3b5",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Stage.cpp",
+        "oldSha256": "11a24b4247bf98a211d831ee8dc17313d6ca271c1ab96f3ac331e0fe4e3f8fd9",
+        "currentSha256": "11a24b4247bf98a211d831ee8dc17313d6ca271c1ab96f3ac331e0fe4e3f8fd9",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Stage.hpp",
+        "oldSha256": "9ca7c447792d1394a61e799ad1684a360d29e9f22a7df489fea4e2f350c497c6",
+        "currentSha256": "9ca7c447792d1394a61e799ad1684a360d29e9f22a7df489fea4e2f350c497c6",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageCompletion.cpp",
+        "oldSha256": "aa4d5420dda1f5a7cf96df3f74927a242f6b38d51119aa4c88a73f0abbf89e5b",
+        "currentSha256": "aa4d5420dda1f5a7cf96df3f74927a242f6b38d51119aa4c88a73f0abbf89e5b",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageCompletion.hpp",
+        "oldSha256": "341ea7da6763637e76ae56d0c8b5e5afbee7432376a620e98d37841abcc986ca",
+        "currentSha256": "341ea7da6763637e76ae56d0c8b5e5afbee7432376a620e98d37841abcc986ca",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageCopyTailTh14.hpp",
+        "oldSha256": "34269b993cef46718cfbff2b648985a8e448a41be505eee1c3edc05230c3d383",
+        "currentSha256": "34269b993cef46718cfbff2b648985a8e448a41be505eee1c3edc05230c3d383",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageCppDecodeTh14.hpp",
+        "oldSha256": "268fd4e68042f1b5e49cd8a88e15bbc63aa77ff193247887255d3bb0716570a9",
+        "currentSha256": "268fd4e68042f1b5e49cd8a88e15bbc63aa77ff193247887255d3bb0716570a9",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageCppWorkerTh14.hpp",
+        "oldSha256": "da8ff068779afae85a4b190b5b346263d8d0b0b6ec1414e573b20467022adc89",
+        "currentSha256": "da8ff068779afae85a4b190b5b346263d8d0b0b6ec1414e573b20467022adc89",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StagedLoaderPrototype.hpp",
+        "oldSha256": "79f0c679fa64ea25c77b0ca8356b7a3f65011ce82dc282d0071e47d677739e0d",
+        "currentSha256": "79f0c679fa64ea25c77b0ca8356b7a3f65011ce82dc282d0071e47d677739e0d",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageDraw.cpp",
+        "oldSha256": "8fcf152305f800b0458b4df3ba31256b0229da31731069914e0e92d9a3977025",
+        "currentSha256": "8fcf152305f800b0458b4df3ba31256b0229da31731069914e0e92d9a3977025",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageDrawCameraWordsTh14.hpp",
+        "oldSha256": "6753fc35246df09b46a387ce35d25e827630f5870676b16cfe1ed35031b88cf8",
+        "currentSha256": "6753fc35246df09b46a387ce35d25e827630f5870676b16cfe1ed35031b88cf8",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageEclTransferTh14.hpp",
+        "oldSha256": "5147d2e7cfda3c967f454d41c9a026b513f3e0d5f85dd44e6a5ec4fe2e25ebef",
+        "currentSha256": "5147d2e7cfda3c967f454d41c9a026b513f3e0d5f85dd44e6a5ec4fe2e25ebef",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageFiles.hpp",
+        "oldSha256": "4d54c88a6a7e8683f096a182358b08469c7f4a53e00a6c45dbfa39320044431c",
+        "currentSha256": "4d54c88a6a7e8683f096a182358b08469c7f4a53e00a6c45dbfa39320044431c",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StagePreRngTh14.hpp",
+        "oldSha256": "44d19cc4751ca1b143c6c1b6e037aa3f30acc3d8f3d318fd795e947e46efe699",
+        "currentSha256": "44d19cc4751ca1b143c6c1b6e037aa3f30acc3d8f3d318fd795e947e46efe699",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageResource.cpp",
+        "oldSha256": "c5bc8f8f793fc1ccd6c73d5e5b9b238e48de7e35fab7d81fe27df5b335a335c7",
+        "currentSha256": "c5bc8f8f793fc1ccd6c73d5e5b9b238e48de7e35fab7d81fe27df5b335a335c7",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageResource.hpp",
+        "oldSha256": "7e31c2ff2c0a190283733376a1d48c81e6cba2263f013150b81a7df667cca555",
+        "currentSha256": "7e31c2ff2c0a190283733376a1d48c81e6cba2263f013150b81a7df667cca555",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageRestoreMemoryTh14.hpp",
+        "oldSha256": "06fde255db7b0cc1fa97242975aa76f4014b068c2ad752503c7f1e04e30d5e16",
+        "currentSha256": "06fde255db7b0cc1fa97242975aa76f4014b068c2ad752503c7f1e04e30d5e16",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageScoreSaveTh14.hpp",
+        "oldSha256": "da6403bc9b666b4bf0b88b37d3411e3a0c6ccd0416e959cb57570777df38dde3",
+        "currentSha256": "da6403bc9b666b4bf0b88b37d3411e3a0c6ccd0416e959cb57570777df38dde3",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageScript.cpp",
+        "oldSha256": "ee28283c182d25f9d8cefcf3ff11444bb8ba02d04f4841a4535c9db18a5e32a7",
+        "currentSha256": "ee28283c182d25f9d8cefcf3ff11444bb8ba02d04f4841a4535c9db18a5e32a7",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/StageWorkerTailTh14.hpp",
+        "oldSha256": "a4969108b9198de74de18714cd91cb67bfc500d9fe3215761fc9a1d239c03c22",
+        "currentSha256": "a4969108b9198de74de18714cd91cb67bfc500d9fe3215761fc9a1d239c03c22",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TextLayoutTh14.hpp",
+        "oldSha256": "dffe94cd343c68a7027c2984d4ffa4f28bb58f7481ff9b1206b6a4c847e8ade2",
+        "currentSha256": "dffe94cd343c68a7027c2984d4ffa4f28bb58f7481ff9b1206b6a4c847e8ade2",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TextRaster.cpp",
+        "oldSha256": "c29bc2fc87579164aa3768a6b9a4e3cb417e7c54d9526d0eda0272625d5dcd21",
+        "currentSha256": "c29bc2fc87579164aa3768a6b9a4e3cb417e7c54d9526d0eda0272625d5dcd21",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TextRaster.hpp",
+        "oldSha256": "6be5ba7c6f6df501f6eaf72619b94073ddf5940278c69fdb331a68b2bd7972be",
+        "currentSha256": "6be5ba7c6f6df501f6eaf72619b94073ddf5940278c69fdb331a68b2bd7972be",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TextureImage.cpp",
+        "oldSha256": "dc7f625a61953f90ff0145942ceac32980036c4f2ba2368e51ba75cfd92ecff6",
+        "currentSha256": "dc7f625a61953f90ff0145942ceac32980036c4f2ba2368e51ba75cfd92ecff6",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TextureImage.hpp",
+        "oldSha256": "f216dd92b69dfeecd5f180bf5b1482b70eeb3b34d1fe4e3823de79b419202ba0",
+        "currentSha256": "f216dd92b69dfeecd5f180bf5b1482b70eeb3b34d1fe4e3823de79b419202ba0",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Th12NoopOpcodes.hpp",
+        "oldSha256": "80f6788d13559776bbaeacb294edf738a29bedf3917ff7c1c346d3fc03647989",
+        "currentSha256": "80f6788d13559776bbaeacb294edf738a29bedf3917ff7c1c346d3fc03647989",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Th14AudioTables.inc",
+        "oldSha256": "1e1cda57f021ed1cb64f8c23dd72f295989001d94f273bf104874e82728987b1",
+        "currentSha256": "1e1cda57f021ed1cb64f8c23dd72f295989001d94f273bf104874e82728987b1",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Th14BulletTables.inc",
+        "oldSha256": "e532cff5cbae64f61561e4a571594f5e499fc877f380ac6e00035bf8dc45ecc1",
+        "currentSha256": "e532cff5cbae64f61561e4a571594f5e499fc877f380ac6e00035bf8dc45ecc1",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Th14CriticalSections.hpp",
+        "oldSha256": "4edfa697c2ed8eba126b3e0805722b1fc3b53632c1d5b700c01f8bb21a4aac0d",
+        "currentSha256": "4edfa697c2ed8eba126b3e0805722b1fc3b53632c1d5b700c01f8bb21a4aac0d",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Th14LifeFragments.hpp",
+        "oldSha256": "18fab2372922aaaed2bfdac8def0a72172d98c91afa36b30801a1f9d180858f3",
+        "currentSha256": "18fab2372922aaaed2bfdac8def0a72172d98c91afa36b30801a1f9d180858f3",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Th14MusicFade.hpp",
+        "oldSha256": "de4b25b5d08e610608c23f29f3da25a44ae009d91679a5e638db5583f79b9ac5",
+        "currentSha256": "de4b25b5d08e610608c23f29f3da25a44ae009d91679a5e638db5583f79b9ac5",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Th14MusicQueue.hpp",
+        "oldSha256": "218e5f4b123fa10537bc112d03d67268ef61ae5eb5931d12567640236cbc2761",
+        "currentSha256": "218e5f4b123fa10537bc112d03d67268ef61ae5eb5931d12567640236cbc2761",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Th16AnmDispatch.hpp",
+        "oldSha256": "f552d83db7a126c154c2a40166c4e45e7ff22f92ebc45851bf6b89f801598041",
+        "currentSha256": "f552d83db7a126c154c2a40166c4e45e7ff22f92ebc45851bf6b89f801598041",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Th16AudioTables.inc",
+        "oldSha256": "dc649adad094e3f4fe4529f864de7a74acbca2a5cc84a798d58cfa9319f171ab",
+        "currentSha256": "dc649adad094e3f4fe4529f864de7a74acbca2a5cc84a798d58cfa9319f171ab",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Th16BulletTables.inc",
+        "oldSha256": "1ba99afb129cf2b5f3b2e59fa7b6e116eef11fb5be44d1271845d388f27d4e17",
+        "currentSha256": "1ba99afb129cf2b5f3b2e59fa7b6e116eef11fb5be44d1271845d388f27d4e17",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Th17AudioTables.inc",
+        "oldSha256": "adbc7253a2c9eb259f10e9d92e2650ce904bba7dd3d65177795b325d3f885be4",
+        "currentSha256": "adbc7253a2c9eb259f10e9d92e2650ce904bba7dd3d65177795b325d3f885be4",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Th18AudioTables.inc",
+        "oldSha256": "25e5c4da671ed3505add773e5cc84f0325306e8822f4534d187ec50fe890ba7d",
+        "currentSha256": "25e5c4da671ed3505add773e5cc84f0325306e8822f4534d187ec50fe890ba7d",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Timer.hpp",
+        "oldSha256": "fc0d743143b54da1c61e18d9920a8d1fbdfae09065b07e3ae26ce5a39cc92eca",
+        "currentSha256": "fc0d743143b54da1c61e18d9920a8d1fbdfae09065b07e3ae26ce5a39cc92eca",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TitleCppResourcesTh14.hpp",
+        "oldSha256": "726d0ff51caf8c739b0b19924148789cf81d691820171079e22e5ce6e795a714",
+        "currentSha256": "726d0ff51caf8c739b0b19924148789cf81d691820171079e22e5ce6e795a714",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TitleKeys.cpp",
+        "oldSha256": "82a837f2dfe486c90470c2d14b30a15cc8da99f88cfac1c13738e69cdda7dfea",
+        "currentSha256": "82a837f2dfe486c90470c2d14b30a15cc8da99f88cfac1c13738e69cdda7dfea",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TitleMenu.cpp",
+        "oldSha256": "4c12351b41e967694026c885f46e542134bc540081e56de090968654c879da0d",
+        "currentSha256": "4c12351b41e967694026c885f46e542134bc540081e56de090968654c879da0d",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TitleMenu.hpp",
+        "oldSha256": "ee24e736e2b39c6614a7bf720338306641575f64375e44d62022e8f7445d16a2",
+        "currentSha256": "ee24e736e2b39c6614a7bf720338306641575f64375e44d62022e8f7445d16a2",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TitleMusic.cpp",
+        "oldSha256": "965db283d16b2cf43a19ef4616b55b8395ca1cb2f5e419ab48662b82342d2106",
+        "currentSha256": "965db283d16b2cf43a19ef4616b55b8395ca1cb2f5e419ab48662b82342d2106",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TitleOptions.cpp",
+        "oldSha256": "4bb79e9dc04e5525d788c70d65092764e5137360fdf7fbf003d77ff2e961fc6a",
+        "currentSha256": "4bb79e9dc04e5525d788c70d65092764e5137360fdf7fbf003d77ff2e961fc6a",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TitleRecords.cpp",
+        "oldSha256": "f59c327b1ed20664612aa8f134c0eec444c4918293ece59498229c02e611265a",
+        "currentSha256": "f59c327b1ed20664612aa8f134c0eec444c4918293ece59498229c02e611265a",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TitleReplay.cpp",
+        "oldSha256": "1b6c800c79f9bc40acf0bd3451034d81cd45638b8a3d9a9a530ddc0b048f3add",
+        "currentSha256": "1b6c800c79f9bc40acf0bd3451034d81cd45638b8a3d9a9a530ddc0b048f3add",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TitleResults.cpp",
+        "oldSha256": "d157f3bcc21f02b805970296fd6ecb63606f8e53077c5224a8cd0bad38191bc1",
+        "currentSha256": "d157f3bcc21f02b805970296fd6ecb63606f8e53077c5224a8cd0bad38191bc1",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TitleSelection.cpp",
+        "oldSha256": "9fcb4a0ecfeed24128cb080141fb673ef8e7053e8816c9c433d8b2f365d58672",
+        "currentSha256": "9fcb4a0ecfeed24128cb080141fb673ef8e7053e8816c9c433d8b2f365d58672",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TitleText.cpp",
+        "oldSha256": "490a0d9e2d0e4cc296d6f971d65ea97250cceca9ed086cc77b0a66c012781ca1",
+        "currentSha256": "490a0d9e2d0e4cc296d6f971d65ea97250cceca9ed086cc77b0a66c012781ca1",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TitleTh14.cpp",
+        "oldSha256": "5d472d6e46260a29d9ef950565f30d4a44f6e3e6cc42627822609292fb1515ec",
+        "currentSha256": "5d472d6e46260a29d9ef950565f30d4a44f6e3e6cc42627822609292fb1515ec",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Trace.cpp",
+        "oldSha256": "043160954f83a0dd612566a175a982b7368ff639769b9a799f4df753db048f9c",
+        "currentSha256": "043160954f83a0dd612566a175a982b7368ff639769b9a799f4df753db048f9c",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Trace.hpp",
+        "oldSha256": "47c177bee90ec630d7938ecc615e6eb44446f2285948044faf6d37977a26370d",
+        "currentSha256": "47c177bee90ec630d7938ecc615e6eb44446f2285948044faf6d37977a26370d",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/TransitionType0Th14.hpp",
+        "oldSha256": "b3c0fb41ab29e13038ce67251c47d75ceeb8cd7e926e3415444ae4c89704b81f",
+        "currentSha256": "b3c0fb41ab29e13038ce67251c47d75ceeb8cd7e926e3415444ae4c89704b81f",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/Types.hpp",
+        "oldSha256": "f79c1ed7cb200413ef0dea75bf0d58842745b6b47182a97e496733c1d7bb2669",
+        "currentSha256": "f79c1ed7cb200413ef0dea75bf0d58842745b6b47182a97e496733c1d7bb2669",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      },
+      {
+        "file": "runtimes/th12/th12_web/cpp/game/ZunGraphics.hpp",
+        "oldSha256": "4b3f922a682631e52a216012853c8c5e9c0df6bb2b622ef0154933578189aef5",
+        "currentSha256": "4b3f922a682631e52a216012853c8c5e9c0df6bb2b622ef0154933578189aef5",
+        "rawEqual": true,
+        "normalizedCrlfEqual": true
+      }
+    ],
+    "sourceAuditOnly": true,
+    "currentSpellBrowserExecutionClaimed": true,
+    "completeGame": false,
+    "sourceDeltaReview": {
+      "GameSession.cpp": "entered-stage flag now records real entry, already original450 and six saves qualified; tools key callback assignment; existing stage-decode macro guard, both browser builds define it",
+      "GameSession.hpp": "nullable practice-key observation callback",
+      "GameBattle.cpp": "key observation callback, unchanged stage-decode bodies guarded by macro present in both builds",
+      "GameBattle.hpp": "nullable practice-key observation callback",
+      "PlayerFrame.cpp": "optional always-visible hitbox drawing, default false",
+      "PlayerFrame.hpp": "default local_hitbox argument and optional default-false always_hitbox field"
+    },
+    "stageDecodeMacroPresentInBoth": true,
+    "currentSuccessfulSpellBrowser": {
+      "passed": true,
+      "frames": 1737,
+      "score": 3179620,
+      "graze": 39,
+      "noSeekOrSkip": true,
+      "tools": 0,
+      "reportSha256": "0a2a9429f804049a82503d066cd11eae43ec2eb6ff79892e3c92e8d2b4c169f7",
+      "delivery": {
+        "passed": true,
+        "codeResponsesVerified": 78,
+        "normalWasmUnchanged": true,
+        "compiledPolicyObservedInActualBrowserResponse": [
+          {
+            "path": "/assets/replays-DawzJzB7.js",
+            "sha256": "2ef96e69f6a8cb69c7da7946d76fcc42224f0fb7853e0eb6022fb9dbe27a9bb1",
+            "compiledScope": "{return Promise.reject(e)}let l=b.game===`th14`&&t===`playback`&&[`open`,`seek`].includes(r.action),u=o===void 0?l?e.timeouts?.launch??12e4:e.timeouts?.command??15e3:o,d=`runtime-${s.id}-${++w}`;return new Promise(("
+          }
+        ]
+      },
+      "imageInspected": true,
+      "imageSha256": "9fc88cc6fd357dbd911e1d3eca81bc0b25d43a83607d59f72e0d4a49c0b1f14a",
+      "scoreValidation": {
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "decodedBytes": 149076,
+        "characterRecordsUnchanged": true,
+        "characterRecords": 7,
+        "settingsDifferences": [
+          {
+            "offset": 4,
+            "before": 203,
+            "after": 205
+          },
+          {
+            "offset": 39,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 40,
+            "before": 0,
+            "after": 1
+          }
+        ],
+        "semanticSettingsDifferences": [
+          {
+            "offset": 39,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 40,
+            "before": 0,
+            "after": 1
+          }
+        ],
+        "onlyMusicHeardFlagsChanged": true,
+        "nativeMusicRequestReferenceSha256": "01277073a339c1af2c1fda716999640431c2a130c174c504533481cf4efe31e3",
+        "nativeMusicRequestRelevantCases": [
+          {
+            "stage": 1,
+            "id": -3,
+            "replay": 0,
+            "stop": 1,
+            "match": 0,
+            "events": [
+              [
+                "audio",
+                4,
+                0
+              ],
+              [
+                "audio",
+                2,
+                0
+              ],
+              [
+                "front",
+                1
+              ]
+            ],
+            "dialogueAfter": 1879343104,
+            "unlocks": [
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "stage": 1,
+            "id": -3,
+            "replay": 1,
+            "stop": 1,
+            "match": 0,
+            "events": [
+              [
+                "audio",
+                4,
+                0
+              ],
+              [
+                "audio",
+                2,
+                0
+              ],
+              [
+                "front",
+                1
+              ]
+            ],
+            "dialogueAfter": 1879343104,
+            "unlocks": [
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ],
+        "beforeDecodedSha256": "26585f24f29a371060af9582f75d5f8e8dd0f2c3e7c3a4e619739cf50152d0f1",
+        "afterDecodedSha256": "2a5936d8a45adc080d0466631176efb871e6026079e6f53992e1d8e0ac404b33",
+        "completeGame": false
+      }
+    },
+    "priorSpellStatisticsEvidenceReusedForUnchangedNativeImplementations": true,
+    "fullCurrentOrdinarySpellSaveUiRerunClaimed": false
+  }
+}
