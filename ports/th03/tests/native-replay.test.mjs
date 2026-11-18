@@ -14,7 +14,7 @@ test('native replay retains both players and touch input and rejects corruption'
 
 test('solo replay validates input and initial files while preserving legacy multiplayer',async()=>{
  const rows=[[32,32,0,packTouch(0,{active:true,x:-10,y:4}),1],[0,0,0,0,0]];
- const files={'YUME.CFG':[1,2,3]},bytes=await encodeReplay(rows,true,Uint8Array.of(5),{mode:'solo',files});
+ const files={'YUME.CFG':[1,2,3],'PODD.CFG':[4,5,6]},bytes=await encodeReplay(rows,true,Uint8Array.of(5),{mode:'solo',files});
  const replay=await decodeReplay(bytes);assert.equal(replay.mode,'solo');assert.deepEqual(replay.rows,rows);assert.deepEqual(replay.files,files);
  const invalid=await encodeReplay([[64,0,0,0,1]],true,Uint8Array.of(5),{mode:'solo',files});await assert.rejects(decodeReplay(invalid),/无效/);
  const badFile=await encodeReplay(rows,true,Uint8Array.of(5),{mode:'solo',files:{'../config':[1]}});await assert.rejects(decodeReplay(badFile),/无效/);
@@ -26,4 +26,12 @@ test('multiplayer replay preserves charge releases and rejects malformed samples
  assert.deepEqual((await decodeReplay(bytes)).rows,rows);
  const invalid=await encodeReplay([[0,0,[0,0,1024,4],[0,0,-1,0]]],true,Uint8Array.of(7));
  await assert.rejects(decodeReplay(invalid),/无效/);
+});
+
+test('multiplayer replay preserves and validates room difficulty and seed',async()=>{
+ const rows=[[0,0]],native=Uint8Array.of(7);
+ const replay=await decodeReplay(await encodeReplay(rows,true,native,{difficulty:3,seed:1234}));
+ assert.equal(replay.difficulty,3);assert.equal(replay.seed,1234);
+ await assert.rejects(decodeReplay(await encodeReplay(rows,true,native,{difficulty:4})),/无效/);
+ await assert.rejects(decodeReplay(await encodeReplay(rows,true,native,{seed:-1})),/无效/);
 });

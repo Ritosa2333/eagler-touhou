@@ -308,3 +308,21 @@ test('single-player and multiplayer bind common options while keeping practice s
   assert.equal(model.getSnapshot().options.pixelPerfectEnabled, true); assert.equal(model.getSnapshot().music, 'midi');
   assert.equal(model.getSnapshot().options.thpracEnabled, true, 'multiplayer saves retain the single-player practice preference');
 });
+
+test('TH01 touch preferences are independent and shared by its solo and multiplayer modes', () => {
+ const values=new Map(),storage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)};
+ const model=api.createGameSettingsModel({storage}),context=fixture('th06').context;
+ model.hydrate(context);model.setOption('touchSensitivity',225);model.setOption('touchMovementMode','joystick');
+ model.hydrate({...context,productId:'th01'});model.setOption('touchSensitivity',135);model.setOption('touchMovementMode','touch');
+ model.hydrate({...context,productId:'th01mp'});assert.equal(model.getSnapshot().options.touchSensitivity,135);assert.equal(model.getSnapshot().options.touchMovementMode,'touch');
+ model.hydrate({...context,productId:'th07'});assert.equal(model.getSnapshot().options.touchSensitivity,225);assert.equal(model.getSnapshot().options.touchMovementMode,'joystick');
+ model.setOption('touchSensitivity',250);model.hydrate({...context,productId:'th01'});assert.equal(model.getSnapshot().options.touchSensitivity,135);
+});
+
+test('TH01 defaults to joystick while preserving an existing movement choice', () => {
+ const values=new Map(),storage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)};
+ const model=api.createGameSettingsModel({storage}),context=fixture('th06').context;
+ model.hydrate({...context,productId:'th01'});assert.equal(model.getSnapshot().options.touchMovementMode,'joystick');
+ model.setOption('touchMovementMode','touch');model.hydrate({...context,productId:'th01mp'});assert.equal(model.getSnapshot().options.touchMovementMode,'touch');
+ const fresh=api.createGameSettingsModel({storage:null});fresh.hydrate({...context,productId:'th01mp'});assert.equal(fresh.getSnapshot().options.touchMovementMode,'joystick');
+});

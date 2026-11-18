@@ -1,5 +1,5 @@
 // Two or three real PC-98 player runtimes and a delayed local Relay.
-// Reports native gameplay and displayed frames; does not assert machine-specific FPS.
+// Reports native gameplay, actual page displays and frame intervals; does not assert machine-specific FPS.
 // Run from launcher with ROOM_RUNTIME_GAME, ROOM_RUNTIME_ROOT and
 // ROOM_RUNTIME_DATA pointing to a built TH02 or TH04 runtime and data file.
 // Relay delay defaults to 45 ms each way plus 5 ms jitter. Set
@@ -11,6 +11,7 @@
 // PC98_FPS_PLAYERS selects 2 or 3 players (default 3).
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
+import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import {spawn} from 'node:child_process';
@@ -26,6 +27,9 @@ assert(Number.isInteger(sampleSeconds)&&sampleSeconds>=1&&sampleSeconds<=300,'in
 const timing={...multiplayerInputTimingPolicy(PRODUCT_GAMES[game].multiplayer),rollback:process.env.PC98_FPS_ROLLBACK!=='0'};
 for(const key of ['ROOM_RUNTIME_ROOT','ROOM_RUNTIME_DATA'])assert(process.env[key],key+' is required');
 const runtime=resolve(process.env.ROOM_RUNTIME_ROOT),data=await readFile(process.env.ROOM_RUNTIME_DATA);
+const roomSource=await readFile(resolve(runtime,'netplay/room.js'),'utf8');
+assert(roomSource.includes('export const managedAPI={'),'managed room instrumentation boundary');
+const instrumentedRoom=roomSource.replace('export const managedAPI={','globalThis.__pc98TestRuntime=()=>runtime;\nexport const managedAPI={');
 let relayLog='',browser,page;
 const clients=[],errors=[],relay=spawn(process.execPath,['services/relay/src/netplay-relay.mjs'],{
   cwd:resolve('..'),windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_DELAY_MS:process.env.EAGLER_NETPLAY_RELAY_DELAY_MS??'45',EAGLER_NETPLAY_RELAY_JITTER_MS:process.env.EAGLER_NETPLAY_RELAY_JITTER_MS??'5',EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:'1',EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1'},stdio:['ignore','pipe','pipe']});
@@ -42,7 +46,9 @@ const server=createServer(async(req,res)=>{try{
   if(path==='/data'){res.end(data);return;}
   if(!path.startsWith('/runtime/'))throw Error('route');
   const file=resolve(runtime,path.slice(9));if(!file.startsWith(runtime+sep))throw Error('path');
-  res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(file)]||'application/octet-stream');  res.end(await readFile(file));
+  res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(file)]||'application/octet-stream');  if(path==='/runtime/netplay/room.js'){res.end(instrumentedRoom);return;}
+  if(path==='/runtime/netplay/runtime.json'&&game==='th02'){const manifest=JSON.parse(await readFile(file,'utf8'));manifest.assets['netplay/room.js']=createHash('sha256').update(instrumentedRoom).digest('hex');res.end(JSON.stringify(manifest));return;}
+  res.end(await readFile(file));
 }catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 function send(client,message,predicate){return new Promise((ok,no)=>{const timer=setTimeout(()=>{cleanup();no(Error('Relay timeout '+JSON.stringify(message)));},15000);
@@ -82,12 +88,19 @@ try{
   await page.evaluate(count=>Promise.all(Array.from({length:count},(_,n)=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))),playerCount);
   await wait(async()=>{const values=await Promise.all(frames().slice(0,3).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
   await wait(async()=>{const values=await Promise.all(frames().map(f=>f.evaluate(playerFrame)));return values.every(v=>v>=300);},'warmup',120000);
-  const sample=(includeTape=false)=>Promise.all(frames().map(f=>f.evaluate(async({game,includeTape})=>{const {managedAPI}=await import('./netplay/room.js');const recorder=globalThis[game+'Replay'],health=managedAPI.health();const native=await managedAPI.sampleGame();if(!native||!Number.isInteger(native.gameFrame))throw Error('native game counter unavailable');health.gameFrame=native.gameFrame;return {health,pointError:recorder?.pointError||'',snapshot:includeTape?recorder?.snapshot():null,diagnostics:includeTape?document.getElementById('diagnostics')?.textContent||'':''};},{game,includeTape})));
+  const sample=(includeTape=false)=>Promise.all(frames().map(f=>f.evaluate(async({game,includeTape})=>{const {managedAPI}=await import('./netplay/room.js');const recorder=globalThis[game+'Replay'],health=managedAPI.health();const native=await managedAPI.sampleGame();if(!native||!Number.isInteger(native.gameFrame))throw Error('native game counter unavailable');health.gameFrame=native.gameFrame;return {health,performance:globalThis.__pc98TestRuntime?.()?.performanceInfo?.()??null,render:globalThis.__pc98TestRuntime?.()?.renderInfo?.()??null,pointError:recorder?.pointError||'',snapshot:includeTape?recorder?.snapshot():null,diagnostics:includeTape?document.getElementById('diagnostics')?.textContent||'':''};},{game,includeTape})));
   const begin=await sample(),at=performance.now();
   const directions=setInterval(()=>void page.evaluate(count=>Promise.all(Array.from({length:count},(_,n)=>rpc(n,'keyboard',{code:'ArrowLeft',key:'ArrowLeft',keyCode:37,location:0,down:Math.floor(Date.now()/300)%2===0}))),playerCount).catch(()=>{}),300);
   const windows=[];let prior=begin,priorAt=at;for(let n=0;n<sampleSeconds;n++){await new Promise(r=>setTimeout(r,1000));const next=await sample(),now=performance.now(),seconds=(now-priorAt)/1000;windows.push(next.map((x,i)=>(x.health.gameFrame-prior[i].health.gameFrame)/seconds));prior=next;priorAt=now;}clearInterval(directions);const elapsed=(priorAt-at)/1000,finalTape=await sample(true),end=prior;for(let i=0;i<end.length;i++){end[i].snapshot=finalTape[i].snapshot;end[i].pointError=finalTape[i].pointError;end[i].diagnostics=finalTape[i].diagnostics;}
   assert.deepEqual(errors,[]);const boundary=Math.floor(Math.min(...end.map(x=>x.snapshot.rows.length))/120)*120;
   const hashes=end.map(x=>x.snapshot.rows[boundary-1]?.hash);assert(hashes.every(h=>h&&h.tick===boundary&&typeof h.hash==='string'&&JSON.stringify(h)===JSON.stringify(hashes[0])),'confirmed hashes missing or differ');assert(end.every(x=>!x.pointError),'checkpoint builder error');
-  console.log('RESULT',JSON.stringify({playerCount,elapsed,boundary,hashes,points:(finalTape[0].snapshot.points||[]).map(p=>({frame:p.frame,base64Bytes:p.data.length})),windows,diagnostics:end.map(x=>x.diagnostics),clients:begin.map((b,i)=>({begin:b.health,end:end[i].health,gameFps:(end[i].health.gameFrame-b.health.gameFrame)/elapsed,syncFps:(end[i].health.frame-b.health.frame)/elapsed,drawFps:(end[i].health.frames-b.health.frames)/elapsed}))}));
+  const intervals=values=>{if(!values?.length)return null;const sorted=values.slice().sort((a,b)=>a-b),percentile=p=>sorted[Math.floor((sorted.length-1)*p)];return {count:sorted.length,p50Ms:percentile(.5),p95Ms:percentile(.95),p99Ms:percentile(.99),maxMs:sorted.at(-1)};};
+  console.log('RESULT',JSON.stringify({playerCount,elapsed,boundary,hashes,points:(finalTape[0].snapshot.points||[]).map(p=>({frame:p.frame,base64Bytes:p.data.length})),windows,diagnostics:end.map(x=>x.diagnostics),clients:begin.map((b,i)=>{
+    const finish=end[i],displayedStart=b.render?.pageDrawn??b.performance?.page?.displayed,displayedEnd=finish.render?.pageDrawn??finish.performance?.page?.displayed;
+    return {begin:b.health,end:finish.health,performanceBegin:b.performance,performanceEnd:finish.performance,
+      pageIntervals:intervals(finish.render?.pageIntervals),replacedStart:b.render?.replaced??b.performance?.page?.replaced,replacedEnd:finish.render?.replaced??finish.performance?.page?.replaced,
+      gameFps:(finish.health.gameFrame-b.health.gameFrame)/elapsed,syncFps:(finish.health.frame-b.health.frame)/elapsed,
+      submittedFps:(finish.health.frames-b.health.frames)/elapsed,displayFps:Number.isFinite(displayedStart)&&Number.isFinite(displayedEnd)?(displayedEnd-displayedStart)/elapsed:null};
+  })}));
   if(process.env.PC98_FPS_MIN!==undefined){const min=Number(process.env.PC98_FPS_MIN);assert(Number.isFinite(min)&&min>=0,'invalid PC98_FPS_MIN');assert(windows.every(window=>window.every(fps=>fps>=min)),`one-second game frame rate fell below ${min}`);}
 }finally{for(const c of clients)c.close();await browser?.close();await new Promise(r=>server.close(r));relay.kill();}

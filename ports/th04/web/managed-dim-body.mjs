@@ -7,7 +7,7 @@ const hooks=[
 export function installDimBody(source,patch,challenge){
   const v=new DataView(source.buffer,source.byteOffset,source.byteLength);
   const headerBytes=v.getUint16(8,true)*16,cs=patch.code_segment,offset=0xb920+(challenge?160:0);
-  const at=cs*16+offset,gap=224,table=v.getUint16(24,true),count=v.getUint16(6,true);
+  const at=cs*16+offset,gap=240,table=v.getUint16(24,true),count=v.getUint16(6,true);
   const image=source.slice(headerBytes),iv=new DataView(image.buffer),rel=[];
   for(let i=0;i<count;i++){
     const pos=table+i*4,loc=v.getUint16(pos,true)+v.getUint16(pos+2,true)*16;
@@ -24,6 +24,20 @@ export function installDimBody(source,patch,challenge){
   result.set(priority,headerBytes+cs*16+offset+192);
   const rescue=headerBytes+cs*16+0xa004;
   result[rescue]=0xe8;new DataView(result.buffer).setUint16(rescue+1,(offset+192-0xa007)&65535,true);result.fill(0x90,rescue+3,rescue+6);
+  // Native resources include the active life. A ghost at zero needs the
+  // base life plus one reserve; future awards add exactly one reserve.
+  const lifeCode=offset+212,life=Uint8Array.from('2e807c0601750b2e807c040075042efe44042efe4404c3'.match(/../g),v=>parseInt(v,16));
+  const codeBase=headerBytes+cs*16;
+  if(!result.subarray(codeBase+lifeCode,codeBase+lifeCode+life.length).every(value=>value===0))throw Error('TH04 残机补丁空间不匹配');
+  result.set(life,codeBase+lifeCode);
+  for(const [location,original] of [[0x8d37,[0x2e,0xfe,0x00]],[0x8eb0,[0x2e,0xfe,0x44,0x04]]]){
+    if(!original.every((byte,index)=>result[codeBase+location+index]===byte))throw Error('TH04 1UP 残机入口不匹配');
+    result[codeBase+location]=0xe8;new DataView(result.buffer).setUint16(codeBase+location+1,(lifeCode-location-3)&65535,true);if(original.length===4)result[codeBase+location+3]=0x90;
+  }
+  for(const location of [0x8d46,0x8ebb]){
+    if(result[codeBase+location]!==0xe8)throw Error('TH04 自动复活入口不匹配');
+    result.fill(0x90,codeBase+location,codeBase+location+3);
+  }
   const call=headerBytes+cs*16+0x9bd4;
   if(result[call]!==0xe8||result[call+1]!==0x36||result[call+2]!==0xc5)throw Error('TH04 人物绘制入口不匹配');
   new DataView(result.buffer).setUint16(call+1,(offset-0x9bd7)&65535,true);

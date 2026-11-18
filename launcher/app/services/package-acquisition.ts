@@ -209,10 +209,19 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     if (metadataSnapshot.siteManifest?.profile === 'web-development') await installDevelopment(game, metadataSnapshot.siteManifest, request);
     let installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"}); checkPreparationAbort(request.signal);
     if (installed.generation) {
-      installed = await repair(installed, request);
+      const nativeTh03Layout = 'sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e';
+      const legacyTh03 = game === 'th03' && (installed.generation.descriptor.runtimeRequirement?.dataLayout !== nativeTh03Layout || !!installed.generation.descriptor.components?.['pc98-manifest']);
+      const pc98DiskGame = ['th01', 'th02', 'th04'].includes(game);
+      if (pc98DiskGame && (!metadataSnapshot.releaseCatalog || !metadataSnapshot.siteManifest)) {
+        try {await metadata.initialize();} catch {checkPreparationAbort(request.signal);}
+        metadataSnapshot = metadata.getSnapshot();
+      }
+      const publishedRevision = metadataSnapshot.releaseCatalog?.games[game]?.revision;
+      const pc98Update = pc98DiskGame && !!publishedRevision && publishedRevision !== installed.generation.descriptor.revision;
+      if (!legacyTh03 && !pc98Update) installed = await repair(installed, request);
       if (['th01', 'th02', 'th04'].includes(game)) {
         const generation = installed.generation!;
-        const diskFiles = generation.descriptor.components?.['pc98-manifest']
+        const diskFiles = !pc98Update && generation.descriptor.components?.['pc98-manifest']
           ? pc98RequiredBlockFiles(generation.descriptor, {game, language: request.language, multiplayer: isMultiplayerProductId(request.productId), replay: request.replay}) : [];
         const missingDisk = diskFiles.some(id => !generation.files[id]?.objectId);
         const legacyTh01 = game === 'th01' && generation.descriptor.runtimeRequirement?.dataLayout === 'sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579';
@@ -224,12 +233,12 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         const installedLayout = generation.descriptor.runtimeRequirement?.dataLayout;
         const incompatible = !!hostedLayout && !!installedLayout && hostedLayout !== installedLayout;
         const published = metadataSnapshot.releaseCatalog?.games[game];
-        if (incompatible || (missingDisk && published && published.revision !== generation.descriptor.revision)) {
+        if (incompatible || pc98Update || (missingDisk && published && published.revision !== generation.descriptor.revision)) {
           if (!published) throw new GameDataAcquisitionError('游戏资源版本不兼容，无法获取更新');
           request.onAcquisitionActivity?.(true);
           try {
             progress(request, 'package.installingResources');
-            if (incompatible) {
+            if (hostedLayout) {
               const candidate = await fetchPublishedPackage(game, {catalog: metadataSnapshot.releaseCatalog!, catalogUrl,
                 fetchImpl: getPackageFetch(game), signal: request.signal});
               if (candidate?.descriptor.runtimeRequirement?.dataLayout !== hostedLayout)
@@ -239,14 +248,24 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
               gameVersion, expectedGenerationId: generation.id, preserveLocalSource: true, signal: request.signal,
               fetchImpl: getPackageFetch(game), onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
             checkPreparationAbort(request.signal);
+            if (hostedLayout && result.generation.descriptor.runtimeRequirement?.dataLayout !== hostedLayout)
+              throw new GameDataAcquisitionError('游戏资源与运行版本不匹配');
             await installedChanged(game);
             return {kind: 'managed', generation: result.generation, deferredUpdate: null};
           } finally {request.onAcquisitionActivity?.(false);}
         }
       } else {
+      // A cached legacy TH03 disk bundle has the old PC-98 layout. Fetch the
+      // current publication before choosing it, even when metadata is cold.
+      if (legacyTh03) {
+        await metadata.initialize(); checkPreparationAbort(request.signal);
+        metadataSnapshot = metadata.getSnapshot();
+        if (metadataSnapshot.siteManifest?.games.th03?.gameData.layout !== nativeTh03Layout)
+          throw new GameDataAcquisitionError('梦时空旧资源需要更新，但暂时无法获取新版资源信息');
+      }
       const requiredLayout = metadata.getSnapshot().siteManifest?.games[game]?.gameData.layout;
       const installedLayout = installed.generation!.descriptor.runtimeRequirement?.dataLayout;
-      if (requiredLayout && installedLayout && requiredLayout !== installedLayout) {
+      if (requiredLayout && ((installedLayout && requiredLayout !== installedLayout) || legacyTh03)) {
         request.onAcquisitionActivity?.(true);
         try {
           progress(request, 'package.installingResources');
@@ -257,7 +276,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
             addComponents: [], signal: request.signal, fetchImpl: getPackageFetch(game),
             onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
           checkPreparationAbort(request.signal);
-          if (result.generation.descriptor.runtimeRequirement?.dataLayout !== requiredLayout)
+          if (result.generation.descriptor.runtimeRequirement?.dataLayout !== requiredLayout || (game === 'th03' && result.generation.descriptor.components?.['pc98-manifest']))
             throw new Error('游戏资源与当前版本不兼容，请更新游戏资源');
           installed = {...installed, generation: result.generation};
           await installedChanged(game);

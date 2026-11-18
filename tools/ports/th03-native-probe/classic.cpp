@@ -10,12 +10,15 @@
 #include "th03/app/classic/classic_audio_session.hpp"
 #include "th03/app/classic/classic_runner.hpp"
 #include "th03/app/runtime/host_surface.hpp"
+#include "th03/app/new_classic/persistence/new_classic_settings_store.hpp"
 #include "th03/formats/v14.hpp"
 
 extern "C" { extern int th03_assist_focus, th03_assist_focus_p2, th03_assist_x, th03_assist_y, th03_assist_x2, th03_assist_y2, th03_netplay_paused; extern unsigned th03_assist_seen; }
 extern "C" { extern int th03_touch_active[2], th03_touch_unlimited[2], th03_touch_x[2], th03_touch_y[2]; }
 extern "C" { extern int th03_surrender_request, th03_surrender_allowed; }
 extern "C" { extern int th03_semantic_speculative, th03_semantic_boundary, th03_match_winner, th03_assist_charge; extern unsigned th03_match_serial; }
+extern "C" { int th03_room_rank = -1; }
+static std::uint32_t th03_room_seed = 0;
 extern "C" { int th03_semantic_capture(int); int th03_semantic_restore(int); }
 extern "C" { extern int th03_charge_enabled, th03_charge_mode[2], th03_charge_input[2][4], th03_charge_output[2][4], th03_charge_reset[2], th03_charge_overflow; }
 
@@ -32,6 +35,7 @@ static_assert(sizeof(th03::app::ClassicAudioCommand) == 4);
 std::size_t frame_command_count = 0;
 bool deferred_audio = false;
 int music_external = 0;
+unsigned master_volume = 100, music_volume = 100, effect_volume = 100;
 std::uint64_t tick = 0;
 unsigned point_age = 99;
 int scene = 0;
@@ -45,21 +49,26 @@ int drain() {
 		if(frame_command_count == frame_commands.size()) return -30;
 		frame_commands[frame_command_count++] = *command;
 		if(!deferred_audio) {
+			if(command->type == th03::app::ClassicAudioCommandType::set_music_volume) music_volume = command->parameter;
+			if(command->type == th03::app::ClassicAudioCommandType::set_effect_volume) effect_volume = command->parameter;
 			if(!audio->apply(*command)) return -30;
-			if(music_external && !audio->set_user_volumes(0,100)) return -30;
+			if(music_external && !audio->set_user_volumes(0,static_cast<std::uint8_t>(effect_volume))) return -30;
 		}
 	}
 	return 0;
 }
 }
 extern "C" {
+unsigned th03_classic_master_volume() { return master_volume; }
+unsigned th03_classic_music_volume() { return music_volume; }
 void th03_classic_external_music(int enabled) { music_external = enabled != 0; }
 int th03_classic_create_mode(bool versus) {
-	runner.reset(); audio.reset(); th03_charge_enabled = 0; th03_charge_mode[0] = th03_charge_mode[1] = 0; th03_match_winner = -1; th03_match_serial = 0; tick = 0; samples.clear(); replay_bytes.clear(); replay_serial = 0; deferred_audio = false; frame_command_count = 0; point_age = 99; scene = 0; th03_netplay_paused = 0; th03_assist_focus = 0; th03_assist_x = -1; th03_assist_y = -1;
+	runner.reset(); audio.reset(); if(!versus) th03_room_rank = -1; master_volume = music_volume = effect_volume = 100; th03_charge_enabled = 0; th03_charge_mode[0] = th03_charge_mode[1] = 0; th03_match_winner = -1; th03_match_serial = 0; tick = 0; samples.clear(); replay_bytes.clear(); replay_serial = 0; deferred_audio = false; frame_command_count = 0; point_age = 99; scene = 0; th03_netplay_paused = 0; th03_assist_focus = 0; th03_assist_x = -1; th03_assist_y = -1;
 	for(int seat = 0; seat < 2; ++seat) th03_touch_active[seat] = th03_touch_unlimited[seat] = th03_touch_x[seat] = th03_touch_y[seat] = 0;
 	th03_surrender_request = th03_surrender_allowed = 0;
 	th03::app::ClassicRunnerRequest request{};
 	request.th03_direct_versus = versus;
+	if(versus) request.seed = th03_room_seed;
 	request.content.data_root = "/content";
 	request.content.main_executable = "/content/MAIN.EXE";
 	request.content.mainl_executable = "/content/MAINL.EXE";
@@ -75,13 +84,18 @@ int th03_classic_create_mode(bool versus) {
 	auto created = th03::app::ClassicRunner::load(std::move(request));
 	if(!created) return -1000 - static_cast<int>(created.error().code)*100 - static_cast<int>(created.error().detail_code);
 	runner = std::move(*created);
+	auto saved_settings = th03::app::load_new_classic_settings_store("/user/PODD.CFG", "/user/YUME.CFG");
+	if(saved_settings) { master_volume = saved_settings->settings.master_volume_percent; music_volume = saved_settings->settings.music_volume_percent; effect_volume = saved_settings->settings.effect_volume_percent; }
 	auto sound = th03::app::ClassicAudioSession::create({.data_root = "/content", .tick_rate = th03::app::pc98_24khz_nominal_tick_rate, .effects_follow_bgm = false, .music_volume_percent = static_cast<std::uint8_t>(music_external ? 0 : 100)});
 	if(!sound) { runner.reset(); return -200 - static_cast<int>(sound.error().code); }
 	audio = std::move(*sound);
+	if(music_external && !audio->set_user_volumes(0,static_cast<std::uint8_t>(effect_volume))) return -30;
 	return drain() == 0 ? 1 : -30;
 }
 int th03_classic_create() { return th03_classic_create_mode(false); }
 int th03_classic_create_versus() { return th03_classic_create_mode(true); }
+void th03_classic_room_seed(unsigned seed) { th03_room_seed = seed; }
+int th03_classic_room_rank(int rank) { if(rank < 0 || rank > 3) return 0; th03_room_rank = rank; return 1; }
 int th03_classic_step_pair(std::uint16_t input, std::uint16_t second, std::uint16_t system, std::uint8_t charge) {
 	if(!runner || !audio) return -1;
 	frame_command_count = 0;
@@ -98,6 +112,7 @@ int th03_classic_step_pair(std::uint16_t input, std::uint16_t second, std::uint1
 	if(th03_charge_overflow) return -32;
 	if(!result) return -100 - static_cast<int>(result.error().code);
 	scene = static_cast<int>(result->pixel_oracle_identity.scene);
+	if(auto volume = runner->take_new_classic_master_volume_update()) master_volume = *volume;
 	if(!th03_semantic_speculative) if(auto replay = runner->take_completed_replay()) {
 		auto encoded = th03::formats::write_v14_replay(*replay);
 		if(!encoded) return -31;
@@ -139,7 +154,7 @@ void* th03_classic_audio_commands() { return frame_commands.data(); }
 int th03_classic_audio_command_count() { return static_cast<int>(frame_command_count); }
 int th03_classic_audio_commit(int count) {
 	if(!audio || count < 0 || count > static_cast<int>(frame_commands.size())) return -1;
-	for(int i=0;i<count;i++) { if(!audio->apply(frame_commands[static_cast<std::size_t>(i)])) return -30; if(music_external && !audio->set_user_volumes(0,100)) return -30; }
+	for(int i=0;i<count;i++) { if(frame_commands[static_cast<std::size_t>(i)].type == th03::app::ClassicAudioCommandType::set_effect_volume) effect_volume = frame_commands[static_cast<std::size_t>(i)].parameter; if(!audio->apply(frame_commands[static_cast<std::size_t>(i)])) return -30; if(music_external && !audio->set_user_volumes(0,static_cast<std::uint8_t>(effect_volume))) return -30; }
 	auto rendered=audio->advance_tick(); if(!rendered) return -200-static_cast<int>(rendered.error().code);
 	samples.assign(rendered->canonical_frames.begin(),rendered->canonical_frames.end());return 0;
 }

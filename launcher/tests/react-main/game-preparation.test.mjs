@@ -124,6 +124,22 @@ test('cached DATA with an incompatible layout upgrades before it is pinned for l
  const result=await f.acquisition.acquire({productId:'th06',music:'none',language:'ja',onAcquisitionActivity:v=>activity.push(v),decideUpdate:async()=>{throw Error('incompatible DATA is not an optional update');}});
  assert.equal(result.generation,next);assert.equal(installs,1);assert.deepEqual(activity,[true,false]);assert.ok(f.calls.includes('refresh:th06'));
 });
+for (const stamp of ['legacy','native','missing']) test(`TH03 legacy disk package refreshes cold metadata and installs native DATA before preparing disks (stamp: ${stamp})`, async () => {
+ const old=generation(),next=generation({id:'th03-native',revision:'native'}),legacy='sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579',native='sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e';
+ for(const g of [old,next]){g.game=g.descriptor.game='th03';g.descriptor.runtimeRequirement.target='th03';}
+ old.descriptor.runtimeRequirement.dataLayout=stamp==='native'?native:stamp==='legacy'?legacy:undefined;old.descriptor.components['pc98-manifest']={type:'pc98-manifest',files:[]};
+ next.descriptor.runtimeRequirement.dataLayout=native;
+ const site={...host(),games:{th03:{...host().games.th06,gameData:{...host().games.th06.gameData,layout:native}}}},catalogValue={...catalog('native'),games:{th03:{revision:'native',descriptor:'th03-pr232.package.json'}}};
+ let f;f=acquisitionFixture({current:old,testBuild:true,initialize:async()=>{f.metadata.siteManifest=site;f.metadata.releaseCatalog=catalogValue;},dependencies:{repairInstalled:async()=>{throw Error('old disk must not be repaired');},installPublished:async(game,options)=>{assert.equal(game,'th03');assert.equal(options.expectedGenerationId,old.id);return {generation:next};}}});
+ const result=await f.acquisition.acquire({productId:'th03mp',music:'none',language:'ja'});
+ assert.equal(result.generation,next);assert.ok(f.calls.includes('metadata'));assert.equal(result.generation.descriptor.components['pc98-manifest'],undefined);
+});
+test('TH03 legacy disk package is not used when new metadata is unavailable', async () => {
+ const old=generation();old.game=old.descriptor.game=old.descriptor.runtimeRequirement.target='th03';
+ old.descriptor.runtimeRequirement.dataLayout='sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579';
+ const f=acquisitionFixture({current:old,testBuild:true});
+ await assert.rejects(()=>f.acquisition.acquire({productId:'th03mp',music:'none',language:'ja'}),/旧资源需要更新/);
+});
 for(const failure of ['network','still-incompatible'])test(`incompatible DATA cannot launch after a failed migration: ${failure}`,async()=>{
  const old=generation();old.descriptor.runtimeRequirement.dataLayout='sha256-'+'c'.repeat(64);
  const f=acquisitionFixture({current:old,hostValue:host(),catalogValue:catalog('new'),dependencies:{installPublished:async()=>{
@@ -296,6 +312,7 @@ test('TH05 album acquisition includes its declared soundtrack files', async () =
 for(const game of ['th01','th02','th03','th04']) test(`${game} original mode never attaches cached album or downloads it in background`,async()=>{
   const current=generation({ogg:['track-1','track-2','track-3','track-4']});
   current.game=current.descriptor.game=game;current.descriptor.runtimeRequirement.target=game;
+  if(game==='th03')current.descriptor.runtimeRequirement.dataLayout='sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e';
   current.descriptor.files['game-data'].target=`/${game}.data`;
   const f=acquisitionFixture({current,testBuild:true}),r=runtimeFixture();
   const state=settingsFixture({productId:game,music:'ogg-stream'});
@@ -324,7 +341,7 @@ test('background update follows the generation committed during ready preparatio
 for (const game of ['th01','th02','th03','th04']) test(`${game} album files are acquired only when selected`,async()=>{
   const declared=host().games.th06;
   const development=api.validateSiteManifest({...host(),profile:'web-development',shared:{...host().shared,testBuild:true},games:{[game]:{
-    ...declared,runtime:api.PRODUCT_GAMES[game].runtime,gameData:{...declared.gameData,path:`${game}.data`,source:`development/${game}.data`},
+    ...declared,runtime:api.PRODUCT_GAMES[game].runtime,gameData:{...declared.gameData,path:`${game}.data`,source:`development/${game}.data`,...(game==='th03'?{layout:'sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e'}:{})},
     music:{midi:{files:[],supported:false},ogg:{base:'music/',mount:'/bgm/akyu',files:['01.ogg'],sizes:[bytes.length],sha256:[hash],version:`sha256-${hash}`}}
   }}});
   for(const music of ['ogg-stream','none','ogg-akyu']){

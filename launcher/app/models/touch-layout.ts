@@ -37,10 +37,10 @@ export interface TouchLayoutModel {
  * The root decides exits; the React editor supplies measured original geometry. */
 export function createTouchLayoutModel({storage}: {storage: TouchLayoutStorage | null}): TouchLayoutModel {
   const listeners = new Set<() => void>();
-  // Fighting controls do not inherit or overwrite the shared shooter layout.
+  // TH01 and fighting controls keep their own touch layout.
   let scope = 'shared';
   const sessionLayouts = new Map<string, TouchLayout | null>();
-  const scopedKey = (key: string) => scope === 'th075' ? key + '-th075' : key;
+  const scopedKey = (key: string) => scope === 'shared' ? key : key + '-' + scope;
   const layoutStorage: TouchLayoutStorage | null = storage && {
     getItem: key => storage.getItem(scopedKey(key)),
     setItem: (key, value) => storage.setItem(scopedKey(key), value),
@@ -98,7 +98,7 @@ export function createTouchLayoutModel({storage}: {storage: TouchLayoutStorage |
     getSnapshot: () => snapshot,
     hydrate() {if (editing) return; saved = loadTouchLayoutFromStorage(layoutStorage); windowPositions.reload(); publish();},
     setGame(game: string) {
-      const next = game === 'th075' ? 'th075' : 'shared';
+      const next = game === 'th075' || game === 'th01' ? game : 'shared';
       if (scope === next) return;
       sessionLayouts.set(scope, cloneTouchLayout(saved));
       scope = next; editing = false; draft = null; lastSave = null; automaticDefaults.clear();

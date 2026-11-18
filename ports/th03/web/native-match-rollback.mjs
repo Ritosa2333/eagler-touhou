@@ -89,7 +89,7 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
   channel.onclose=()=>{if(running){running=false;onError(Error('另一位玩家已断开'));}};
   return {tick(){if(!running)return;if(now()-lastProgress>10000){running=false;sync.close();onError(Error('另一位玩家连接超时'));return;}
     const scene=engine._th03_classic_scene(),canPredict=scene===9&&!!engine._th03_classic_surrender_allowed()&&pause.state.owner===null&&!engine._th03_classic_paused();
-    if(sync.nextLocal-sync.confirmed<24)sync.enqueue(sample()+(options.rapid===false?1024:0));
+    if(canPredict ? sync.nextLocal<=sync.frame+1 : sync.nextLocal-sync.confirmed<24)sync.enqueue(sample()+(options.rapid===false?1024:0));
     if(sync.frame-sync.confirmed<sync.maxPrediction)sync.advance(canPredict);
   },stop(){running=false;sync.close();remoteCharge.clear();localCharge.clear();chargeBoundaries.clear();outputs.clear();proofs.clear();remoteProofs.clear();},get snapshotStats(){return {captures,restores};},get pause(){return pause;},get frame(){return sync.frame;},get confirmed(){return sync.confirmed;},get confirmedInput(){return confirmedInput;},get rollbacks(){return sync.rollbacks;},get running(){return running;}};
 }

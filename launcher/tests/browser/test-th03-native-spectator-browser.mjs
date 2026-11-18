@@ -118,7 +118,7 @@ try{
   for(let actor=0;actor<2;actor++)await send(clients[actor],{type:'set-ready',ready:true},m=>m.room?.seats[actor]?.ready);
   const start=await send(clients[0],{type:'start',inputDelay:0,adonisMode:timing.rollback?0:1,predictionLimit:timing.predictionLimit},m=>m.type==='start');
   let run=start.serial,roles=[0,1,null];
-  const options=actor=>({touchEnabled:process.env.PC98_TOUCH_INPUT==='1',touchMovementMode:'touch-unlimited',touchSensitivity:150,netplayMode:'lan',netplayShowHitboxes:game==='th03'&&actor!==2,netplayChallengeMode:process.env.PC98_TEST_CHALLENGE==='1',netplayDisableFocus:process.env.PC98_TEST_DISABLE_FOCUS==='1',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,...roles[actor]===null?{spectator:'retention_client_'+actor}:{player:String(roles[actor])}}),netplayPlayer:roles[actor]??0,netplayPlayerCount:2,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:0,shot:1}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:roles[actor]===null,netplaySpectatorId:roles[actor]===null?'retention_client_'+actor:'',netplaySpectatorCount:1,netplaySpectatorTimeline:true});
+  const options=actor=>({touchEnabled:process.env.PC98_TOUCH_INPUT==='1',touchMovementMode:'touch-unlimited',touchSensitivity:150,netplayMode:'lan',netplayShowHitboxes:game==='th03'&&actor!==2,netplayChallengeMode:process.env.PC98_TEST_CHALLENGE==='1',netplayDisableFocus:process.env.PC98_TEST_DISABLE_FOCUS==='1',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,...roles[actor]===null?{spectator:'retention_client_'+actor}:{player:String(roles[actor])}}),netplayPlayer:roles[actor]??0,netplayPlayerCount:2,netplaySeed:1234,netplayDifficulty:game==='th03'?3:1,netplayLoadouts:[{character:0,shot:0},{character:0,shot:1}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:roles[actor]===null,netplaySpectatorId:roles[actor]===null?'retention_client_'+actor:'',netplaySpectatorCount:1,netplaySpectatorTimeline:true});
   const configure=async(actor,serial)=>{
     await page.evaluate(async({actor,options})=>rpc(actor,'configure',{music:'none',options,resources:[],runtimeResources:[],sharedResources:[]}),{actor,options:options(actor)});
     // Give the running native title several ticks between protocol commands.
@@ -136,6 +136,52 @@ try{
   }
   if(game==='th02'||game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
   await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
+  // Exercise local input after a network delay has had time to fill the queue.
+  if(game==='th03' && process.env.TH03_TEST_INPUT_LATENCY==='1'){
+    await wait(async()=>(await Promise.all(frames().slice(0,2).map(f=>f.evaluate(()=>globalThis.th03SyncState?.phase===1)))).every(Boolean),'battle',30000);
+    const delay=Number(process.env.TH03_TEST_NETWORK_DELAY_MS||45);
+    for(const frame of frames().slice(0,2))await frame.evaluate(ms=>{
+      const channel=[...globalThis.__th03PeerTransport.peers.values()][0].channel;
+      const send=channel.send.bind(channel);
+      channel.send=message=>setTimeout(()=>{if(channel.readyState==='open')send(message);},ms);
+    },delay);
+    await new Promise(resolve=>setTimeout(resolve,1500));
+    const samples=[];
+    for(let repeat=0;repeat<5;repeat++)for(let seat=0;seat<2;seat++){
+      const sample=await frames()[seat].evaluate(async ({seat,repeat})=>{
+        const api=(await import('./managed-native-room.mjs')).managedAPI;
+        const before=api.health(), x=before.players.find(player=>player.seat===seat)?.x;
+        const key=repeat%2?'ArrowLeft':'ArrowRight', keyCode=repeat%2?37:39;
+        const start=performance.now();
+        window.__eaglerPC98Input.key({code:key,key,keyCode,down:true});
+        return await new Promise(resolve=>{
+          function check(){
+            const current=api.health(), player=current.players.find(item=>item.seat===seat);
+            if((player && player.x!==x) || performance.now()-start>2000){
+              window.__eaglerPC98Input.key({code:key,key,keyCode,down:false});
+              resolve({seat,ms:performance.now()-start,frames:current.gameFrame-before.gameFrame,moved:!!player && player.x!==x});
+            }else requestAnimationFrame(check);
+          }
+          requestAnimationFrame(check);
+        });
+      },{seat,repeat});
+      samples.push(sample);
+      await new Promise(resolve=>setTimeout(resolve,150));
+    }
+    const start=await Promise.all(frames().slice(0,2).map(frame=>frame.evaluate(async()=>{
+      const health=(await import('./managed-native-room.mjs')).managedAPI.health();
+      return {frame:health.gameFrame,draw:health.frames,at:performance.now()};
+    })));
+    await new Promise(resolve=>setTimeout(resolve,8000));
+    const rates=await Promise.all(frames().slice(0,2).map((frame,index)=>frame.evaluate(async before=>{
+      const health=(await import('./managed-native-room.mjs')).managedAPI.health();
+      const seconds=(performance.now()-before.at)/1000;
+      return {simulationFps:(health.gameFrame-before.frame)/seconds,drawFps:(health.frames-before.draw)/seconds};
+    },start[index])));
+    console.log('TH03_INPUT_LATENCY',JSON.stringify({oneWayDelayMs:delay,samples,rates}));
+    assert(samples.every(sample=>sample.moved),'local input did not move the player');
+    assert(samples.every(sample=>sample.frames<=3),'local input was queued for more than three game frames');
+  }
   if(process.env.PC98_TEST_ENDING==='1'){
     await page.evaluate(()=>{let down=false;window.qaEndingKeys=setInterval(()=>{down=!down;void rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down});},250);});
     await wait(()=>page.evaluate(()=>[1,2].every(epoch=>events.some(e=>e.epoch===epoch&&e.event==='qa-ending-open'))),'both players load native ending',120000);
@@ -219,6 +265,11 @@ try{
   await configure(2,1);
   await page.waitForFunction(()=>events.some(e=>e.epoch===3&&['first-frame','error'].includes(e.event)),{timeout:120000});const viewerError=await page.evaluate(()=>events.find(e=>e.epoch===3&&e.event==='error'));if(viewerError)throw Error(JSON.stringify(viewerError));
   await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&!s.seeking;},{timeout:90000});
+  if(game==='th03'){
+    await wait(async()=>(await Promise.all(frames().map(f=>f.evaluate(playerFrame)))).every(v=>v>420),'TH03 players and spectator enter battle');
+    const nativeRules=await Promise.all(frames().map(f=>f.evaluate(async()=>{const api=(await import('./managed-native-room.mjs')).managedAPI;return api.health().roomRules;})));
+    assert.deepEqual(nativeRules,[{difficulty:3,seed:1234},{difficulty:3,seed:1234},{difficulty:3,seed:1234}],'players and spectator receive the same room rules');
+  }
   if(process.env.PC98_TEST_INPUT_ONLY_LATE==='1')await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&s.received>1800&&s.received-s.position<180;},{timeout:120000});
   if(process.env.PC98_TEST_LATE_STAGE==='1')assert((await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback?.min))>0,'late spectator should start from a stage checkpoint');
   if(game==='th02')await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));

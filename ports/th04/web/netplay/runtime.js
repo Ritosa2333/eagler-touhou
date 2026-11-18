@@ -1,3 +1,4 @@
+import {installBossResistance,updateBossResistance} from '../pc98-boss-resistance.mjs';
 import {installChallengeHud} from '../pc98-challenge-hud-install.mjs';
 import {installDimBody} from '../managed-dim-body.mjs';
 import {createChallengeStocks} from '../pc98-challenge-stocks.mjs';
@@ -164,7 +165,8 @@ async function boot(config){
     }
   }
   for(const edit of sound.edits)edit.targets.forEach((at,i)=>{disk[at]=edit.values[i];});
-  let patchedMain=installNetPause(fat.read(main),overlay);if(challenge){const hud=installChallengeHud(patchedMain,'04',patch);patchedMain=hud.bytes;patch.challengeHudOffset=hud.countsOffset;patch.data_segment+=hud.addedParagraphs;}patchedMain=installDimBody(patchedMain,patch,!!challenge);patch.data_segment+=14;fat.replace(main,patchedMain);
+  const bossMain=fat.read(main);installBossResistance(bossMain,'04',patch);
+  let patchedMain=installNetPause(bossMain,overlay);if(challenge){const hud=installChallengeHud(patchedMain,'04',patch);patchedMain=hud.bytes;patch.challengeHudOffset=hud.countsOffset;patch.data_segment+=hud.addedParagraphs;}patchedMain=installDimBody(patchedMain,patch,!!challenge);patch.data_segment+=15;fat.replace(main,patchedMain);
   await bootProgress('下载、编译并初始化 DOSBox-X WASM 与音频设备',5);
   emulator=await NP21.create({canvas:nativeCanvas,artPatch:patch,wasmBinary,lockstep:true,externalEffects:true,
     ...(workerHost?{workerRuntime:true,audioContext:workerHost.audioContext}:{}),rollbackEnabled:config.rollback!==false,lockstepEpoch:version.epoch,
@@ -308,6 +310,7 @@ function stepInner(inputs){
   const previousMailbox=mailbox,challengeLayout=challenge&&mailboxOwned(mailbox,guestMemoryBase,residentAddress)&&!pauseMenu.paused&&!active?challengeStockLayout('04',emulator.module.HEAPU8,mailbox,patch,residentAddress):null;
   const offline=mailbox>=0?emulator.module.HEAPU8[mailbox-patch.mailbox_cs_offset+patch.offline_mask_cs_offset]:0;
   if(challengeLayout){writeChallengeHud(emulator.module.HEAPU8,mailbox,patch.mailbox_cs_offset,patch.challengeHudOffset,challenge.snapshot(),(at,size)=>emulator.module.thDirtyMark?.(at,size));challengeLayout.write(challenge.begin(offline),offline,(at,size)=>emulator.module.thDirtyMark?.(at,size));}
+  if(mailbox>=0)updateBossResistance(emulator.module.HEAPU8,'04',mailbox,patch,playerCount,(at,size)=>emulator.module.thDirtyMark?.(at,size));
   try{emulator.step();}catch(error){challenge?.abort();throw error;}emulatedTicks++;
   refreshMailbox();
   if(restartPhase===1&&mailbox<0)restartPhase=2;

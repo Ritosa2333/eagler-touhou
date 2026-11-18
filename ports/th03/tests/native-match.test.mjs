@@ -81,3 +81,12 @@ test('selection continues at tick rate after a three-frame network delay',()=>{
  for(clock=0;clock<180;clock++){peers.forEach(p=>p.tick());for(let seat=0;seat<2;seat++)while(queues[seat].length&&queues[seat][0].due<=clock)channels[seat].onmessage({data:queues[seat].shift().data});}
  assert.deepEqual(errors,[]);assert.ok(peers.every(p=>p.frame>=175),`frames: ${peers.map(p=>p.frame)}`);
 });
+test('battle stalls do not queue a long history of stale local controls',()=>{
+ const sent=[];let sampled=0;
+ const engine={_th03_classic_scene:()=>9,_th03_classic_surrender_allowed:()=>1,_th03_classic_paused:()=>0,
+  _th03_classic_defer_audio(){},_th03_classic_capture:()=>0};
+ const match=createRollbackMatch({seat:0,channel:{send:value=>sent.push(JSON.parse(value))},engine,sample:()=>++sampled,now:()=>0});
+ for(let i=0;i<40;i++)match.tick();
+ assert.equal(match.frame,0);assert.equal(sampled,2);
+ assert.deepEqual(sent.filter(m=>m.type==='native-rollback-input').map(m=>m.frame),[0,1]);
+});

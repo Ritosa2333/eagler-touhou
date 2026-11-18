@@ -10,8 +10,9 @@ async function copy(m,dir,dst){for(const e of await readdir(dir,{withFileTypes:t
  const {packTouch}=await import(pathToFileURL(resolve('ports/th03/web/touch-input.js')));
  const modules=await Promise.all([create(),create(),create()]);
  for(const m of modules){m.FS.mkdir('/content');m.FS.mkdir('/user');m.FS.mkdir('/user/REPLAY');await copy(m,root,'/content');m.FS.mkdir('/content/PODDUI');await copy(m,ui,'/content/PODDUI');m._th03_classic_external_music(process.env.TH03_TEST_EXTERNAL_MUSIC==='1'?1:0);assert.equal(m._th03_classic_create_versus(),1);assert.equal(m._th03_classic_step_pair(0,0,0,0),0);assert.equal(m._th03_classic_scene(),3);}
- const spectator=createConfirmedDriver(modules[2]);let compared=0;
- const queues=[[],[]], channels=[{},{}], errors=[],played=[[],[]],confirmedInputs=[[],[]];let hostTick=0,audibleBattleFrames=0,battleEffectCommands=0;
+ const spectator=createConfirmedDriver(modules[2]);let compared=0,interstitialCompared=0;
+ const queues=[[],[]], channels=[{},{}], errors=[],played=[[],[]],confirmedInputs=[[],[]],blockedCaptures=[0,0],interstitialCaptures=[0,0],interstitialRestores=[0,0];let hostTick=0,audibleBattleFrames=0,battleEffectCommands=0;
+ modules.slice(0,2).forEach((m,i)=>{const restore=m._th03_classic_restore;m._th03_classic_restore=slot=>{if(m._th03_semantic_interstitial())interstitialRestores[i]++;return restore(slot);};const capture=m._th03_classic_capture;m._th03_classic_capture=slot=>{const result=capture(slot);if(!result&&hostTick>700)blockedCaptures[i]++;if(result&&m._th03_semantic_interstitial()){interstitialCaptures[i]++;}return result;};});
  channels.forEach((ch,i)=>ch.send=message=>{const type=JSON.parse(message).type,extra=process.env.TH03_REORDER_CHARGE==='1'&&type==='native-charge'?(hostTick%3===0?3:0):0;queues[1-i].push({message,due:hostTick+(hostTick>700?(process.env.TH03_BOTH_DELAY?Number(process.env.TH03_BOTH_DELAY):(i===1?3:0)):0)+extra});});
  const matches=channels.map((channel,seat)=>createRollbackMatch({seat,channel,engine:modules[seat],sample:()=>{const bits=hostTick<500?0:hostTick<650?(hostTick%60<5?512:0):((hostTick%600<180)?32:512);const active=hostTick>=800&&hostTick<900;return packTouch(bits,{active,begin:hostTick===800,x:active?(seat?-16:16):0,y:active?8:0});},onConfirmedInput:(frame,inputs,metadata)=>confirmedInputs[seat].push([frame,...inputs,metadata.replaySamples,metadata.charge]),onFrame:(frame,pcm,commands)=>{if(frame>1500&&pcm.some(v=>v!==0))audibleBattleFrames++;if(frame>1500&&commands)for(let i=0;i<commands.length;i+=4)if(commands[i]===8||commands[i]===9)battleEffectCommands++;let hash=2166136261;for(const value of pcm)hash=Math.imul(hash^value,16777619);played[seat].push([frame,pcm.length,hash>>>0]);},onError:e=>errors.push(e),now:()=>hostTick*5}));
  for(hostTick=0;hostTick<Number(process.env.TH03_TEST_TICKS||18000);hostTick++){
@@ -19,7 +20,13 @@ async function copy(m,dir,dst){for(const e of await readdir(dir,{withFileTypes:t
   for(let i=0;i<2;i++)for(let n=0;n<queues[i].length;){if(queues[i][n].due<=hostTick)channels[i].onmessage({data:queues[i].splice(n,1)[0].message});else n++;}
   if(errors.length)throw errors[0];
   if(hostTick%1000===0)console.log("progress",hostTick,matches.map(m=>[m.frame,m.confirmed,m.rollbacks]),modules[0]._th03_semantic_round());
-  while(spectator.frame<confirmedInputs[0].length){const row=confirmedInputs[0][spectator.frame];spectator.step(row.slice(1,3),row[4]);}
+  while(spectator.frame<confirmedInputs[0].length){const row=confirmedInputs[0][spectator.frame];
+    const m=modules[2];if(m._th03_semantic_interstitial() && interstitialCompared<8){
+      assert.equal(m._th03_classic_capture(15),1,'capture during warning animation');
+      const probe=()=>{assert.equal(m._th03_classic_step_pair(0,0,0,0),0);const p=m._th03_classic_pixels();return [m._th03_semantic_state_hash(),m.HEAPU8.slice(p,p+640*400*4),m._th03_semantic_replay_samples()];};
+      const first=probe();assert.equal(m._th03_classic_restore(15),1);assert.deepEqual(probe(),first,'warning replay restores simulation and pixels');assert.equal(m._th03_classic_restore(15),1);interstitialCompared++;
+    }
+    spectator.step(row.slice(1,3),row[4]);}
   if(hostTick%120===0&&matches[0].frame===matches[0].confirmed&&spectator.frame===matches[0].frame&&spectator.frame>750){
     assert.equal(modules[2]._th03_classic_scene(),modules[0]._th03_classic_scene());
     if(modules[0]._th03_classic_scene()===9)assert.equal(modules[2]._th03_semantic_state_hash(),modules[0]._th03_semantic_state_hash());
@@ -28,7 +35,7 @@ async function copy(m,dir,dst){for(const e of await readdir(dir,{withFileTypes:t
  }
  if(process.env.TH03_TEST_EXTERNAL_MUSIC==='1')assert.ok(audibleBattleFrames>0&&battleEffectCommands>0,'battle effect commands and audio continue with native music muted');
  if(!process.env.TH03_BOTH_DELAY)assert.ok(compared>0,'confirmed spectator re-simulation matched native player');
- if(process.env.TH03_BOTH_DELAY)assert.ok(matches.every(m=>m.frame>=hostTick-30),'both games must keep up with the game clock after startup');
+ if(process.env.TH03_BOTH_DELAY){console.log('snapshot boundary blocks',blockedCaptures,'interstitial captures/restores',interstitialCaptures,interstitialRestores);assert.ok(interstitialCaptures.every(n=>n>0)&&interstitialCompared>=8,'captured and replayed warning cut-ins');assert.ok(matches.every(m=>m.frame>=hostTick-30),'both games must keep up with the game clock after startup');}
  assert.ok(matches[0].rollbacks>0,'late input caused real rollback');
  assert.ok(matches.every(m=>m.snapshotStats.captures>0&&m.snapshotStats.restores>0),'native semantic snapshots were captured and restored');
  const common=Math.min(played[0].length,played[1].length);

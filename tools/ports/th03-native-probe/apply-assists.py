@@ -219,6 +219,117 @@ replace('src/app/classic/op/classic_op_session_backend.cpp',
         '\t\t\t\tvs_pause_menu.emplace(\n\t\t\t\t\treplay_recorder && replay_recorder->recording(), patch_assets',
         '\t\t\t\tth03_netplay_paused = 1;\n\t\t\t\tvs_pause_menu.emplace(\n\t\t\t\t\treplay_recorder && replay_recorder->recording(), patch_assets')
 
+# The web audio host supplies FM and Off; upstream MIDI requires a native device.
+replace('src/app/classic/op/classic_op_options_scene.cpp',
+        '''\tcase ClassicOpOptionsChoice::music_driver:
+\t\tvalue = config_.bgm_mode == ClassicBgmMode::midi ?
+\t\t\tmessages.text(NewClassicMessageId::value_midi_sc88) :
+\t\t\tmessages.text(NewClassicMessageId::value_fm86);''',
+        '''\tcase ClassicOpOptionsChoice::music_driver:
+\t\tvalue = config_.bgm_mode == ClassicBgmMode::off ?
+\t\t\tmessages.text(NewClassicMessageId::value_off) :
+\t\t\tmessages.text(NewClassicMessageId::value_fm86);''')
+replace('src/app/classic/op/classic_op_options_scene.cpp',
+        '''\t\tconst auto current = static_cast<std::uint8_t>(
+\t\t\tconfig_.bgm_mode == ClassicBgmMode::midi ? 1U : 0U
+\t\t);
+\t\tconfig_.bgm_mode = ring_step(current, direction, 1U) == 0U ?
+\t\t\tClassicBgmMode::fm : ClassicBgmMode::midi;''',
+        '''\t\tconfig_.bgm_mode = config_.bgm_mode == ClassicBgmMode::off ?
+\t\t\tClassicBgmMode::fm : ClassicBgmMode::off;''')
+replace('src/app/classic/op/classic_op_options_scene.cpp',
+        '''\t\t}) || !push_audio_command({
+\t\t\t.type = ClassicAudioCommandType::play_song,
+\t\t\t.cue = ClassicMusicCue::menu_main,
+\t\t}))) {
+\t\t\treturn false;
+\t\t}
+\t\tconfig_changed = true;
+\t\tbreak;
+\t}
+\tcase ClassicOpOptionsChoice::sfx:''',
+        '''\t\t}) || (config_.bgm_mode != ClassicBgmMode::off && !push_audio_command({
+\t\t\t.type = ClassicAudioCommandType::play_song,
+\t\t\t.cue = ClassicMusicCue::menu_main,
+\t\t})))) {
+\t\t\treturn false;
+\t\t}
+\t\tconfig_changed = true;
+\t\tbreak;
+\t}
+\tcase ClassicOpOptionsChoice::sfx:''')
+
+# Raising music volume must not turn an explicitly disabled driver back on.
+replace('src/app/classic/op/classic_op_options_scene.cpp',
+        '''\t\t\t\tif(config_.bgm_mode == ClassicBgmMode::off) {
+\t\t\t\t\tconfig_.bgm_mode = ClassicBgmMode::fm;
+\t\t\t\t}
+\t\t\t\tif(!push_audio_command({''',
+        '''\t\t\t\tif(!push_audio_command({''')
+replace('src/app/classic/op/classic_op_options_scene.cpp',
+        '''\t\t\t\t}) || !push_audio_command({
+\t\t\t\t\t.type = ClassicAudioCommandType::play_song,
+\t\t\t\t\t.cue = ClassicMusicCue::menu_main,
+\t\t\t\t})) {
+\t\t\t\t\treturn false;
+\t\t\t\t}
+\t\t\t} else if(!push_audio_command({''',
+        '''\t\t\t\t}) || (config_.bgm_mode != ClassicBgmMode::off && !push_audio_command({
+\t\t\t\t\t.type = ClassicAudioCommandType::play_song,
+\t\t\t\t\t.cue = ClassicMusicCue::menu_main,
+\t\t\t\t}))) {
+\t\t\t\t\treturn false;
+\t\t\t\t}
+\t\t\t} else if(!push_audio_command({''')
+
+# Direct network matches take the shared room rank instead of local settings.
+replace('src/app/classic/op/classic_op_session_backend.cpp',
+        'struct ClassicOpSessionBackend final {',
+        'extern "C" int th03_room_rank;\nstruct ClassicOpSessionBackend final {')
+replace('src/app/classic/op/classic_op_session_backend.cpp',
+        '''\t\t\tresident.rank = static_cast<std::uint8_t>(config.rank);
+\t\t\tresident.key_mode = static_cast<std::uint8_t>(config.key_mode);
+\t\t\tauto direct = ClassicOpTitleMenuScene::direct_vs_reentry(''',
+        '''\t\t\tresident.rank = th03_room_rank >= 0 ? static_cast<std::uint8_t>(th03_room_rank) : static_cast<std::uint8_t>(config.rank);
+\t\t\tresident.key_mode = static_cast<std::uint8_t>(config.key_mode);
+\t\t\tauto direct = ClassicOpTitleMenuScene::direct_vs_reentry(''')
+
+# The web build exposes the native game only; omit the unavailable Classic switch.
+for size in (6, 7):
+    replace('src/app/classic/op/classic_op_options_scene.cpp',
+            f'constexpr std::array<ClassicOpOptionsChoice, {size}U> ' +
+            ('system_choices' if size == 6 else 'system_update_choices') +
+            '{{\n\tClassicOpOptionsChoice::switch_classic,\n',
+            f'constexpr std::array<ClassicOpOptionsChoice, {size - 1}U> ' +
+            ('system_choices' if size == 6 else 'system_update_choices') + '{{\n')
+
+# The host provides multiplayer through the launcher, not the upstream online mode.
+replace('src/app/classic/op/classic_op_scene.cpp',
+        'constexpr std::array<ClassicOpVsChoice, 4U> new_classic_vs_choices{\n\tClassicOpVsChoice::one_player_cpu,\n\tClassicOpVsChoice::one_player_two_player,\n\tClassicOpVsChoice::cpu_cpu,\n\tClassicOpVsChoice::online_match,',
+        'constexpr std::array<ClassicOpVsChoice, 3U> new_classic_vs_choices{\n\tClassicOpVsChoice::one_player_cpu,\n\tClassicOpVsChoice::one_player_two_player,\n\tClassicOpVsChoice::cpu_cpu,')
+
+# Preserve the nonblocking charge cut-in across prediction and rollback. The
+# presenter state already captures pixels and palette; retain its two counters
+# instead of treating the whole visual effect as a network synchronization barrier.
+replace('include/th03/present/main_rollback.hpp',
+        '\tstd::uint8_t warning_next_interstitial_sample = 0U;',
+        '\tstd::uint8_t warning_next_interstitial_sample = 0U;\n\tstd::uint8_t warning_nonblocking_frames = 0U;\n\tstd::uint8_t warning_nonblocking_mask = 0U;')
+replace('src/present/main_rollback.cpp',
+        '\t\twarning_gauge.nonblocking_interstitial_frames_ == 0U &&\n', '')
+replace('src/present/main_rollback.cpp',
+        '\tstate.warning_interstitial_active = warning_gauge.interstitial_active_;',
+        '\tstate.warning_nonblocking_frames = warning_gauge.nonblocking_interstitial_frames_;\n\tstate.warning_nonblocking_mask = warning_gauge.nonblocking_interstitial_player_mask_;\n\tstate.warning_interstitial_active = warning_gauge.interstitial_active_;')
+replace('src/present/main_rollback.cpp',
+        '\twarning_gauge.nonblocking_interstitial_frames_ = 0U;\n\twarning_gauge.nonblocking_interstitial_player_mask_ = 0U;',
+        '\twarning_gauge.nonblocking_interstitial_frames_ = state.warning_nonblocking_frames;\n\twarning_gauge.nonblocking_interstitial_player_mask_ = state.warning_nonblocking_mask;')
+
+# Warning cut-ins can be predicted because presenter and round state are saved.
+replace('src/present/main_rollback.cpp', '\t\tstate.warning_interstitial_active ||\n', '')
+replace('src/present/main_rollback.cpp', '\t\tstate.hud_late_state_pending ||\n', '')
+for condition in ('!warning_gauge.interstitial_active_', '!hud_result.hud_late_state_pending_',
+                  '!round.warning_interstitial_active_', '!round.hud_start_step_seen_'):
+    replace('src/present/main_rollback.cpp', '\t\t' + condition + ' &&\n', '')
+
 # Prototype a local-only semantic snapshot boundary for an active VS process.
 # Network and audio-device state are deliberately outside this snapshot.
 replace('include/th03/present/main_round.hpp',
@@ -283,7 +394,7 @@ replace('src/app/main/main_process.cpp',
         '\tif(!rollback_boundary_available() && !th03_semantic_boundary) {\n\t\treturn std::unexpected(MainProcessRollbackError{')
 replace('src/app/main/main_process_driver.cpp',
         "\tconst bool deferred = operations_.deferred_frame_pending &&\n\t\toperations_.deferred_frame_pending(operations_.context);",
-        "\tif(th03_semantic_speculative && stepped->status != StepStatus::running) { th03_semantic_boundary = 1; return MainProcessDriverTick{}; }\n\tconst bool deferred = operations_.deferred_frame_pending &&\n\t\toperations_.deferred_frame_pending(operations_.context);")
+        "\tif(th03_semantic_speculative && stepped->status != StepStatus::running && (stepped->status != StepStatus::phase_transition || context_before == InputContext::pause || (operations_.deferred_frame_pending && operations_.deferred_frame_pending(operations_.context)))) { th03_semantic_boundary = 1; return MainProcessDriverTick{}; }\n\tconst bool deferred = operations_.deferred_frame_pending &&\n\t\toperations_.deferred_frame_pending(operations_.context);")
 replace('src/app/classic/op/classic_op_session_backend.cpp',
         'struct ClassicOpSessionBackend final {',
         'extern "C" { int th03_match_winner = -1; unsigned th03_match_serial = 0; }\nstruct ClassicOpSessionBackend final {')
@@ -322,7 +433,8 @@ extern "C" int th03_semantic_capture(int slot) {
 	auto *backend = th03_active_vs_backend;
 	if(slot < 0 || slot >= 16 || !backend || !backend->vs_process || !backend->vs_driver ||
 		backend->vs_pause_menu || backend->vs_terminal ||
-		backend->vs_driver->input_context() != InputContext::gameplay ||
+		(backend->vs_driver->input_context() != InputContext::gameplay &&
+		 backend->vs_driver->input_context() != InputContext::interstitial) ||
 		backend->vs_driver->status() != MainProcessDriverStatus::running ||
 		!backend->vs_process->rollback_boundary_available()) return 0;
 	auto &saved = th03_semantic_slots[static_cast<std::size_t>(slot)];
@@ -351,6 +463,14 @@ extern "C" int th03_semantic_restore(int slot) {
 extern "C" int th03_selection_index(int seat) {
  auto *backend=th03_active_vs_backend;
  return backend && backend->selection && seat>=0 && seat<2 ? backend->selection->local_selection()[static_cast<std::size_t>(seat)] : -1;
+}
+extern "C" int th03_semantic_interstitial() {
+ auto *backend=th03_active_vs_backend;
+ return backend && backend->vs_driver && backend->vs_driver->input_context() == InputContext::interstitial;
+}
+extern "C" int th03_match_speed() {
+ auto *backend=th03_active_vs_backend;
+ return backend && backend->vs_process ? backend->vs_process->canonical_state().round_speed : -1;
 }
 extern "C" int th03_semantic_round() {
  auto *backend=th03_active_vs_backend;
