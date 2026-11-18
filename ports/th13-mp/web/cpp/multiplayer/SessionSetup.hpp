@@ -20,7 +20,8 @@ struct SessionSetup {
     // Legacy 兼容读：旧纯延迟会话与回放。
     static constexpr std::uint32_t Version = 2, LegacyVersion = 1, Words = 22,
                                   // v4：挑战模式（禁雷、累计 Miss、灵界槽恒为零）。
-                                  GameplayVersion = 4, MaxRollbackFrames = 12,
+                                  // v5：合作灵力按人数，灵界绿灵碎片偏置拾取者。
+                                  GameplayVersion = 5, MaxRollbackFrames = 12,
                                   RulesVersion = 3;
     // TH13 面：难度 0..5（Easy..Lunatic/Overdrive+Extra 由 stage 表达）、
     // 角色 0..3（灵梦/魔理沙/早苗/妖梦，允许重复）、2..3 席。

@@ -1019,6 +1019,7 @@ bool ApplicationState::begin_run() {
         return fail(run->error.empty() ? "Multiplayer seat enable failed" : run->error);
     // R-G Boss 减伤旧回放兼容：archive v1/v2 录像按四分之一方案重演。
     run->battle.sim.mp_boss_mitigation_legacy = mp_legacy_boss_mitigation;
+    run->battle.item_manager.legacy_pickup_rewards = mp_legacy_pickup_rewards;
     if (carry_multiplayer) {
         auto& battle = run->battle;
         carry.RestoreBattleCarry(battle);

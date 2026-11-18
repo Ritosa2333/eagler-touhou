@@ -121,7 +121,7 @@ bool ReplayArchive::DecodeHeader(const std::uint8_t* bytes, std::size_t size,
                                  std::string& name, std::size_t& headerBytes) {
     if (size < kFixedHeader) return false;
     const auto version = Read32(bytes + 4);
-    if (version != Version && version != 2 && version != LegacyVersion) return false;
+    if (version < LegacyVersion || version > Version) return false;
     const std::uint32_t declared = Read32(bytes + 8);
     if (declared < kFixedHeader - 12 || std::size_t(declared) + 12 > size)
         return false;

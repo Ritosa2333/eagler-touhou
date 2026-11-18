@@ -249,8 +249,9 @@ int AnmRenderer::draw(AnmVm& vm) {
     if (!vm.shot_effect_owner || vm.shot_effect_owner >= player_opacity.size())
         return draw_vm(vm);
     const u8 opacity = player_opacity[vm.shot_effect_owner];
-    // Match TH17: teammates' shots are subtler than their ships.
-    return draw_with_opacity(vm, opacity == 255 ? 255 : opacity / 4);
+    // Options and focus markers retain their existing visibility.
+    const u8 divisor = vm.player_support_effect ? 4 : 3;
+    return draw_with_opacity(vm, opacity == 255 ? 255 : opacity / divisor);
 }
 
 template<class Vertex>

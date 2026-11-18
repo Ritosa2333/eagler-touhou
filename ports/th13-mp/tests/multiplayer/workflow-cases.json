@@ -289,7 +289,8 @@
         "equal_generation_shot_fades_are_independent_for_every_seat",
         "shot_fade_snapshot_order_and_restore_boundaries",
         "shot_fade_history_preserves_unknown_high_words_and_future_reuse",
-        "ghost_ship_bodies_remain_visible_with_draw_only_opacity"
+        "ghost_ship_bodies_remain_visible_with_draw_only_opacity",
+        "teammate_attacks_use_higher_draw_only_opacity"
       ]
     },
     {

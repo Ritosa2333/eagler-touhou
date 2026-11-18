@@ -442,6 +442,41 @@ TEST(ghost_ship_bodies_remain_visible_with_draw_only_opacity) {
         CHECK_EQ(before.digest(),after.digest());
     }
 }
+TEST(teammate_attacks_use_higher_draw_only_opacity) {
+    Fixture f;
+    CHECK(f.load()); CHECK(f.boot({0,0,0},3));
+    const auto stage = asset("st01enm.anm");
+    CHECK(!stage.empty() && f.animations.load(4, stage.data(), stage.size()));
+    f.presentation.enemies_from_ecl = true;
+    f.battle.defer_item_side = true;
+    f.environment.screen_offsets = {320,240,320,16};
+    GameInput idle;
+    for (i32 frame = 0; frame < 32; ++frame) CHECK(f.battle.step(idle));
+    CHECK(f.presentation.sync(f.battle, 0));
+    StagePresentation::SnapshotData snapshot;
+    CHECK(f.presentation.capture_presentation(snapshot));
+    if (!snapshot.has_player) { CHECK(false); return; }
+    f.renderer.player_opacity = {255, 255, 72, 160};
+    for (bool support : {false, true}) {
+        const std::array<u32, 3> expected = support
+            ? std::array<u32, 3>{255, 18, 40}
+            : std::array<u32, 3>{255, 24, 53};
+        for (u8 owner = 1; owner <= 3; ++owner) {
+            AnmVm vm = snapshot.player;
+            vm.shot_effect_owner = owner;
+            vm.player_support_effect = support;
+            vm.visual.color = 0xffffffffu;
+            f.graphics.submitted.clear();
+            CHECK(f.renderer.draw(vm) != -2);
+            f.renderer.flush();
+            CHECK_EQ(f.graphics.submitted.size(), size_t(6));
+            for (const auto& vertex : f.graphics.submitted)
+                CHECK_EQ(vertex.color >> 24, expected[owner - 1]);
+            CHECK_EQ(vm.visual.color, 0xffffffffu);
+        }
+    }
+}
+
 TEST(focus_exit_tree_does_not_create_an_extra_bullet_collision) {
     // Diagnostic fixture: production input and ANM lifecycle, then inject one
     // stationary enemy bullet into each of the two separated positions.
