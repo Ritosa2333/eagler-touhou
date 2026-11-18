@@ -27,6 +27,11 @@ export function installRescueSound(source,patch,overlay){
   const jump=(site,target,length)=>{result[cs+site]=0xe9;new DataView(result.buffer).setUint16(cs+site+1,(target-site-3)&65535,true);result.fill(0x90,cs+site+3,cs+site+length);};
   jump(0x75df,aim,8);
   result[cs+0x6042]=0xe8;new DataView(result.buffer).setUint16(cs+0x6043,(rescue-0x6045)&65535,true);result.fill(0x90,cs+0x6045,cs+0x6048);
+  // A shared 1UP grants a reserve to a ghost without clearing its out flag.
+  // The preceding item-type check still excludes Bombs and offline seats.
+  const itemGhost=cs+0x7f3a,original=fromHex('2ec6852a8500');
+  if(!original.every((byte,index)=>result[itemGhost+index]===byte))throw Error('TH02 1UP 入口不匹配');
+  jump(0x7f3a,0x7f59,6);
   // The score award stores a reserve for ghosts; a later rescue keeps it.
   result.set([0xeb,0x1d],cs+0x8067);
   result.fill(0x90,cs+0x60db,cs+0x60e0);
