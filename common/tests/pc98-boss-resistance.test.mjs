@@ -5,9 +5,9 @@ import {gunzipSync} from 'node:zlib';
 import {Fat12} from '../../ports/th02/web/solo-fat12.js';
 import {installBossResistance,updateBossResistance} from '../browser/pc98-boss-resistance.mjs';
 for(const game of ['02','04'])for(const language of ['jp','cn'])test(`TH${game} ${language} installs and tracks living players`,()=>{
- const patch=JSON.parse(readFileSync(game==='02'?'ports/th02/web/local-patch.json':`ports/th04/web/patch${language==='jp'?'-jp':''}.json`));
+ const patch=JSON.parse(readFileSync(new URL(game==='02'?'../../ports/th02/web/local-patch.json':`../../ports/th04/web/patch${language==='jp'?'-jp':''}.json`,import.meta.url)));
  const file=game==='02'?`ports/th02/web/th02-local-${language}.hdi.gz`:`ports/th04/web/th04-coop${language==='jp'?'-jp':''}.hdi.gz`;
- const fat=new Fat12(gunzipSync(readFileSync(file))),exe=fat.read(fat.find(game==='02'?'HUMAROKU/MAIN.EXE':'GENSO/MAIN.EXE'));
+ const fat=new Fat12(gunzipSync(readFileSync(new URL(`../../${file}`,import.meta.url)))),exe=fat.read(fat.find(game==='02'?'HUMAROKU/MAIN.EXE':'GENSO/MAIN.EXE'));
  installBossResistance(exe,game,patch);
  const heap=new Uint8Array(131072),code=4096,mailbox=code+(game==='02'?patch.entries.mailbox:patch.mailbox_cs_offset),scale=code+(game==='02'?0x81ff+6:0xad7c+1),marks=[];
  for(let count=1;count<=3;count++)for(let mask=0;mask<8;mask++){
