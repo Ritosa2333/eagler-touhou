@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {oracle,core,memory,report} from './helpers.mjs';
 test('CPU sprite vertices, clipping, tint, blend and depth match original draw paths',async()=>{
  const m=await oracle(),c=await core(),f=c.renderer_fixture(),p=Array.from({length:7},(_,i)=>c.renderer_part(f,i)),manager=m.allocate(0x12900),vm=m.allocate(0x2a4),sprite=m.allocate(0x44),device=m.allocate(4),vt=m.allocate(0x160),arg=i=>m.u32(m.reg('ESP')+4+4*i);
- let dv=new DataView(c.memory.buffer),drawn=[],checks=0,submitted=0,blend=5,depth=1,seed=0x81263714;const random=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return seed>>>0;},real=(scale=1)=>(random()%10001-5000)/5000*scale;
+ let dv=new DataView(c.memory.buffer),drawn=[],checks=0,submitted=0,automaticChecks=0,blend=5,depth=1,seed=0x81263714;const random=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return seed>>>0;},real=(scale=1)=>(random()%10001-5000)/5000*scale;
  m.view(manager,0x12900).fill(0);m.write(manager+0x12884,[3,0,0xff,0xff]);m.u32(0x4dc550,manager);m.u32(0x4b3108,device);m.u32(device,vt);m.u32(0x4b3448,0x4b3178);
  m.u32(vt+0xf4,m.registerImport({dll:'renderer',name:'texture',argc:3,handler:()=>0}));m.u32(vt+0xc8,m.registerImport({dll:'renderer',name:'state',argc:3,handler:()=>{assert.equal(arg(1),20);blend=arg(2)===2?1:5;return 0;}}));
  m.replace(0x4396a0,'flush-boundary',()=>0);m.replace(0x439730,'quad-boundary',()=>{const b=m.bytes(arg(0),112);for(const n of [0,1,2,2,1,3])drawn.push(...b.subarray(n*28,(n+1)*28));return 0;},1);
@@ -17,6 +17,37 @@ test('CPU sprite vertices, clipping, tint, blend and depth match original draw p
   const view=[scenario%3*160,16,scenario%5===0?640:288,448];view.forEach((v,i)=>{dv.setUint32(p[2]+i*4,v,true);m.u32(0x4b3178+0xcc+i*4,v);});const shake=[real(3),real(3)];shake.forEach((v,i)=>{dv.setFloat32(p[3]+i*4,v,true);m.f32(manager+0x1c+i*4,v);});const tint=random();dv.setUint32(p[4],tint,true);m.u32(manager,tint);memory(c,p[5],1)[0]=scenario&1;m.u32(manager+4,scenario&1);
   const kind=scenario%5;drawn=[];const original=m.call([0x43a950,0x43aa50,0x43ab50,0x43ad40,0x43afe0][kind],{ecx:manager,args:[vm]})|0;assert.equal(c.renderer_draw(f,kind),original,'return '+scenario);dv=new DataView(c.memory.buffer);
   assert.deepEqual(memory(c,p[6],112),m.bytes(0x4dc558,112),'quad '+scenario+'/'+kind);assert.deepEqual(memory(c,c.renderer_data(f),c.renderer_size(f)),Uint8Array.from(drawn),'submit '+scenario);assert.equal(c.renderer_state(f,0),m.u32(manager+0x12880),'texture');assert.equal(c.renderer_state(f,1),blend,'blend');assert.equal(c.renderer_state(f,2),depth,'depth');assert.equal(c.renderer_state(f,3),m.bytes(manager+0x12884,1)[0]);assert.equal(c.renderer_state(f,4),m.bytes(manager+0x12887,1)[0]);++checks;if(drawn.length)++submitted;
- }report('sprite-renderer',{checks,submitted,paths:5,scope:'Original rounded/unrounded/rotated/mirrored CPU sprite geometry, pixel centering, viewport clipping, UVs, tint, blend/depth state and ordered triangle payloads. GPU submission is a recorded boundary.'});
+  if(scenario<1200&&kind!==1){
+   const mode=[0,-1,2,3,1][kind];
+   u(0x200,mode);
+   drawn=[];
+   m.call(0x436d70,{ecx:manager,args:[vm]});
+   c.renderer_draw(f,8);
+   assert.deepEqual(memory(c,p[6],112),m.bytes(0x4dc558,112),'automatic quad '+scenario+'/'+mode);
+   assert.deepEqual(memory(c,c.renderer_data(f),c.renderer_size(f)),Uint8Array.from(drawn),'automatic submit '+scenario+'/'+mode);
+   ++automaticChecks;
+  }
+
+ }
+ c.renderer_draw(f,9);
+ assert.equal(c.renderer_state(f,5),2,'presentation submits a continuous line strip');
+ assert.equal(c.renderer_size(f),60,'presentation submits all three line-strip vertices');
+ assert.equal(c.renderer_state(f,6),5,'presentation uses original inverse-source-alpha line blending');
+ assert.equal(c.renderer_state(f,9),4,'sprite alpha reference matches the original device state');
+ c.renderer_draw(f,10);
+ assert.equal(c.renderer_state(f,7),0,'gameplay backgrounds manage their own clears');
+ c.renderer_draw(f,11);
+ assert.equal(c.renderer_state(f,7),1,'menu frames clear the target once');
+ assert.equal(c.renderer_state(f,8),3,'menu frames clear both color and depth');
+ c.renderer_draw(f,12);
+ assert.equal(c.renderer_state(f,10),1,'centered spell captions reach the platform font renderer');
+ c.renderer_draw(f,13);
+ assert.equal(c.renderer_state(f,10),0,'ordinary text uses the existing left alignment');
+ assert.equal(c.renderer_state(f,11),2,'both text requests reach the platform');
+ c.renderer_draw(f,14);
+ assert.equal(c.renderer_state(f,12),1,'HUD vertices exclude the field shake');
+ assert.equal(c.renderer_state(f,13),1,'HUD clears the stored field shake for later overlays');
+ assert.equal(c.renderer_state(f,14),0,'HUD selects the original screen camera');
+ report('sprite-renderer',{checks,submitted,automaticChecks,paths:5,scope:'Original rounded/unrounded/rotated/mirrored CPU sprite geometry, pixel centering, viewport clipping, UVs, tint, blend/depth state and ordered triangle payloads. GPU submission is a recorded boundary.'});
  }finally{c.renderer_delete(f);m.close();}
 });

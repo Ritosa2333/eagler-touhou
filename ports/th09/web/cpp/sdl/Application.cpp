@@ -406,7 +406,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         if(!ok){error=session->error;return false;}world=session->world.get();presentation.world=world;
         if(!presentation.ascii.initialize()){error="ASCII initialization failed";return false;}paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};requested_transition=-1;return true;
     }
-    bool render_text(AnmVm& a,const char* s,u32 color,u32 shadow)override{if(motionEnabled)motionCapture.invalidate();TH09_PERF_SCOPE(text_cost,TextRender);if(!fonts.text(a,s,color,shadow)){error=fonts.error;return false;}return true;}
+    bool render_text(AnmVm& a,const char* s,u32 color,u32 shadow,bool centered=false)override{if(motionEnabled)motionCapture.invalidate();TH09_PERF_SCOPE(text_cost,TextRender);if(!fonts.text(a,s,color,shadow,centered)){error=fonts.error;return false;}return true;}
     bool replay_view_silent=false;
     void sound(i32 id,i32 pan)override{if(replay_view_silent||(spectator_mode&&spectator_playback.seeking))return;if(!queue_sound(0,id,float(pan)))audio.effects.enqueue(id,pan);}
     void positioned_sound(i32 id,float x)override{if(replay_view_silent||(spectator_mode&&spectator_playback.seeking))return;if(!queue_sound(1,id,x))audio.effects.positioned(id,x);}
@@ -599,7 +599,8 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
 #endif
             }else motionCapture.invalidate();
         }
-        presentation.begin_frame();if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
+        presentation.begin_frame(in_title||session->phase==SessionPhase::ending);
+        if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
         TH09_PERF_STOP(draw_cost);
         if(player){
             active_motion_capture=nullptr;

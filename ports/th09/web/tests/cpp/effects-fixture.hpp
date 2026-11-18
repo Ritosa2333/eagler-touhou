@@ -20,7 +20,7 @@ struct Fixture:EffectServices {
     template<class T>void draw(u32 mode,const T* p,u32 count){events.push_back({mode,count});const u8* bytes=reinterpret_cast<const u8*>(p);vertices.insert(vertices.end(),bytes,bytes+sizeof(T)*count);}
     void draw_color_fan(AnmVm&,const AttackColorVertex* p,u32 n)override{draw(8,p,n);}
     void draw_texture_strip(AnmVm&,const AttackTextureVertex* p,u32 n)override{draw(9,p,n);}
-    void draw_additive_lines(const AttackColorVertex* p,u32 n)override{draw(10,p,n);}
+    void draw_line_strip(const AttackColorVertex* p,u32 n)override{draw(10,p,n);}
     void draw_color_strip(AnmVm&,const AttackColorVertex* p,u32 n)override{draw(11,p,n);}
     void clear(){events.clear();bullets.clear();vertices.clear();}
 };

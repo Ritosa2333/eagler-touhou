@@ -47,7 +47,7 @@ void burst(EffectActor& a,EffectServices& s){
     b.fan[0]=vertex(g,a.position,(u32(alpha)<<22)|0xff0000);float angle=-pi;constexpr float step=.20268340408802032f;
     for(u32 i=0;i<32;++i){if(angle>=pi)angle-=tau;b.fan[i+1]=vertex(g,plus(polar(angle,b.radius),a.position),color|0xff0000);angle+=step;}
     s.draw_color_fan(*a.animation,b.fan.data(),33);
-    for(u32 r=0;r<(b.phase?4u:1u);++r){for(u32 i=0;i<32;++i){if(angle>=pi)angle-=tau;b.rings[r][i]=vertex(g,plus(polar(angle,b.jitter[r][i]+b.radius),a.position),color|0xffffff);angle+=step;}s.draw_additive_lines(b.rings[r].data(),32);angle+=.05067085102200508f;}
+    for(u32 r=0;r<(b.phase?4u:1u);++r){for(u32 i=0;i<32;++i){if(angle>=pi)angle-=tau;b.rings[r][i]=vertex(g,plus(polar(angle,b.jitter[r][i]+b.radius),a.position),color|0xffffff);angle+=step;}s.draw_line_strip(b.rings[r].data(),32);angle+=.05067085102200508f;}
 }
 }
 bool draw_effect(EffectActor& a,EffectServices& s){

@@ -8,6 +8,9 @@ struct Fixture:CharacterAttackServices {
     std::array<u8,3912> state_image{};u32 state_size=0;
     BulletManager bullet_managers[2];Bullet emitted;Vec2 effect_scales[2]{{1,1},{1,1}};
     std::vector<u8> draw_bytes;
+    i32 selected_side=0;
+    void select_field(i32 side)override{selected_side=side;}
+    Vec3 screen_position(const Vec3& p,i32)const override{return geometry[selected_side].to_screen(p);}
     Fixture():CharacterAttackServices(rng){queue.limits[0]=queue.limits[1]=256;}
     static u32 bits(float f){u32 u;std::memcpy(&u,&f,4);return u;}
     i32 index(const AttackActor& a)const{return i32(&a-queue.actors.data());}
@@ -33,7 +36,7 @@ struct Fixture:CharacterAttackServices {
     void draw(u32 kind,const void* vertices,u32 count,u32 stride){events.push_back({kind,count});const auto p=static_cast<const u8*>(vertices);draw_bytes.insert(draw_bytes.end(),p,p+count*stride);}
     void draw_color_fan(const AnmVm&,const AttackColorVertex* p,u32 count)override{draw(9,p,count,sizeof(*p));}
     void draw_texture_fan(const AnmVm&,const AttackTextureVertex* p,u32 count)override{draw(10,p,count,sizeof(*p));}
-    void draw_additive_lines(const AttackColorVertex* p,u32 count)override{draw(11,p,count,sizeof(*p));}
+    void draw_line_strip(const AttackColorVertex* p,u32 count)override{draw(11,p,count,sizeof(*p));}
     AttackActor* spawn_attack(i32 kind,i32 side,const Vec3& p,const Vec3* extra,const AttackActor* parent)override{return queue.create(kind,side,p,extra,parent);}
     void clear_events(){events.clear();bullet_events.clear();draw_bytes.clear();}
     const void* snapshot(u32 index){

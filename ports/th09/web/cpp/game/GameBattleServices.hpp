@@ -13,6 +13,9 @@
 namespace th09 {
 struct GameBattle::Services {
     GameBattle& g;DamageRules* active_damage=nullptr;
+    // Transfer origins use the field left selected by earlier callbacks.
+    // Each completed transfer restores its source field.
+    i32 selected_field=0;
     struct Field final:PlayerActions,EnemyFrameActions,EnemyDeathActions,EclSceneActions,BulletFrameActions,
                        BulletEmissionActions,LaserEmissionActions,LaserCollisionActions,EnemyAnimationActions,
                        EclSpecialActions,AreaCollisionActions,EnemyDrawServices,BulletDrawServices {
@@ -59,6 +62,7 @@ struct GameBattle::Services {
         void charge_level(i32 level)override{game().output.notice(side,BattleNotice::charge_level,level);}
         void charge(float amount)override{player().charge(amount);}
         TransferParameters* create_transfer(i32 kind,const Vec3& p,const Vec3& to)override{return root.transfer(side,kind,p,to,0);}
+        Vec3 transfer_position(const Vec3& p,const PlayfieldGeometry&)const override{return game().state.geometry[root.selected_field].to_screen(p);}
         TransferParameters* delayed_transfer(i32 kind,const Vec3& p,const Vec3& to,float delay)override{return root.transfer(side,kind,p,to,delay);}
         void critical_opponent_time(i32 frames)override{game().output.notice(side,BattleNotice::begin_survival,frames);}
         void opponent_survival_display(i32 frames)override{game().output.notice(1-side,BattleNotice::survival_time,frames);}
@@ -123,11 +127,13 @@ struct GameBattle::Services {
         void draw_color_fan(AnmVm& vm,const AttackColorVertex* p,u32 n)override{root.g.output.colored(&vm,p,n,BattleGeometry::fan);}
         void draw_color_strip(AnmVm& vm,const AttackColorVertex* p,u32 n)override{root.g.output.colored(&vm,p,n,BattleGeometry::strip);}
         void draw_texture_strip(AnmVm& vm,const AttackTextureVertex* p,u32 n)override{root.g.output.textured(vm,p,n,BattleGeometry::strip);}
-        void draw_additive_lines(const AttackColorVertex* p,u32 n)override{root.g.output.colored(nullptr,p,n,BattleGeometry::lines,true);}
+        void draw_line_strip(const AttackColorVertex* p,u32 n)override{root.g.output.colored(nullptr,p,n,BattleGeometry::line_strip,false);}
     } effects{*this};
     struct Attacks final:CharacterAttackServices {
         Services& root;explicit Attacks(Services& r):CharacterAttackServices(r.g.world.random),root(r){}
         void sync();
+        void select_field(i32 side)override{root.selected_field=side;}
+        Vec3 screen_position(const Vec3& p,i32)const override{return root.g.state.geometry[root.selected_field].to_screen(p);}
         void play_sound(i32 id,i32 pan)override{root.g.output.sound(id,pan);}
         void advance_animation(AnmVm& vm)override{root.g.resources.advance(vm);}
         bool start_animation(AttackActor& a,u32 slot,i32 side,AttackAnimationResource resource,i32 script)override{return root.start(resource==AttackAnimationResource::shared_effects?AnimationFile::bullets:character_animation(side),a.animations[slot],script,false);}
@@ -145,7 +151,7 @@ struct GameBattle::Services {
         void draw_animation(AnmVm& vm)override{root.g.output.animation(vm);}
         void draw_color_fan(const AnmVm& vm,const AttackColorVertex* p,u32 n)override{root.g.output.colored(&vm,p,n,BattleGeometry::fan);}
         void draw_texture_fan(const AnmVm& vm,const AttackTextureVertex* p,u32 n)override{root.g.output.textured(vm,p,n,BattleGeometry::fan);}
-        void draw_additive_lines(const AttackColorVertex* p,u32 n)override{root.g.output.colored(nullptr,p,n,BattleGeometry::lines,true);}
+        void draw_line_strip(const AttackColorVertex* p,u32 n)override{root.g.output.colored(nullptr,p,n,BattleGeometry::line_strip,false);}
         AttackActor* spawn_attack(i32 kind,i32 side,const Vec3& p,const Vec3* extra,const AttackActor* parent)override{return root.spawn_attack(kind,side,p,extra,parent);}
     } attacks{*this};
     struct Controller final:AttackControllerServices {
@@ -157,7 +163,7 @@ struct GameBattle::Services {
         void set_sprite(AnmVm& vm,bool text,i32 sprite)override{root.sprite(text?AnimationFile::text:AnimationFile::front,vm,sprite);}
         bool advance_animation(AnmVm& vm)override{return root.g.resources.advance(vm);}
         void draw_animation(AnmVm& vm)override{root.g.output.animation(vm,BattleSprite::unrotated);}
-        void draw_text(AnmVm& vm,const char* text,u32 color,u32 shadow)override{root.g.output.text(vm,text,color,shadow);}
+        void draw_text(AnmVm& vm,const char* text,u32 color,u32 shadow)override{root.g.output.text(vm,text,color,shadow,true);}
         void play_sound(i32 id,i32 pan)override{root.g.output.sound(id,pan);}
         void background_transition(i32 target,i32 state,i32 frames)override{root.g.output.background_transition(target,state,frames);}
         void reset_background(i32 target)override{root.g.output.reset_background(target);}
@@ -173,6 +179,9 @@ struct GameBattle::Services {
     EffectActor* effect(i32 side,i32 kind,const Vec3&,i32 slot=-1,u32 color=0xffffffff);
     TransferParameters* transfer(i32 source,i32 kind,const Vec3&,const Vec3&,float delay);
     Bullet* emit(i32 side,bool secondary,const BulletEmission&);
-    AttackActor* spawn_attack(i32 kind,i32 source,const Vec3& p,const Vec3* extra,const AttackActor* parent){attacks.sync();return g.attack_queue?g.attack_queue->create(kind,source,p,extra,parent):nullptr;}
+    AttackActor* spawn_attack(i32 kind,i32 source,const Vec3& p,const Vec3* extra,const AttackActor* parent){
+        attacks.sync();
+        return g.attack_queue?g.attack_queue->create(kind,source,p,extra,parent):nullptr;
+    }
 };
 }

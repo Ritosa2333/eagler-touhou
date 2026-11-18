@@ -303,9 +303,9 @@ API(enemy_death_part) void* enemy_death_part(enemy_death_test::Fixture* f,u32 pa
 API(combo_fixture) combo_test::Fixture* combo_fixture(){return new combo_test::Fixture;}
 API(combo_delete) void combo_delete(combo_test::Fixture* f){delete f;}
 API(combo_setup) void combo_setup(combo_test::Fixture* f,i32 rank,i32 difficulty,i32 side,u32 blocked,u32 boss,i32 spirits,float rate,u32 flags,u32 seed){
-    f->world.rank=rank;f->world.difficulty=difficulty;f->side=side;f->blocked=blocked;f->boss=boss;f->spirits=spirits;f->timing={rate,bool(flags&32)};f->world.random={u16(seed),0,0};f->geometry={u32(32+side*304),16,{17.25f,13.125f},384};f->events.clear();f->next_transfer=0;
+    f->world.rank=rank;f->world.difficulty=difficulty;f->side=side;f->blocked=blocked;f->boss=boss;f->spirits=spirits;f->timing={rate,bool(flags&32)};f->world.random={u16(seed),0,0};f->geometry={u32(32+side*304),16,{17.25f,13.125f},384};f->events.clear();f->next_transfer=0;f->selected_side=side;f->switch_coordinates=0;
 }
-API(combo_part) void* combo_part(combo_test::Fixture* f,u32 part){return part==0?static_cast<void*>(&f->state):static_cast<void*>(&f->world.random);}
+API(combo_part) void* combo_part(combo_test::Fixture* f,u32 part){if(part==2)return &f->switch_coordinates;return part==0?static_cast<void*>(&f->state):static_cast<void*>(&f->world.random);}
 API(combo_add) u32 combo_add(combo_test::Fixture* f,const Vec3* p,i32 normal,i32 spirit,i32 character,i32 score,u32 kill){return kill?f->system().kill(f->state,*p,normal,spirit,character,score):f->system().add(f->state,*p,normal,spirit,character,score);}
 API(combo_reset) void combo_reset(combo_test::Fixture* f,u32 flush){f->events.clear();if(flush)f->system().flush(f->state);else f->state.reset_chain();}
 API(combo_events) const void* combo_events(combo_test::Fixture* f){return f->events.data();}
@@ -342,7 +342,7 @@ API(enemy_frame_timeline_part) void* enemy_frame_timeline_part(enemy_frame_test:
 API(enemy_frame_timeline_cursor) i32 enemy_frame_timeline_cursor(enemy_frame_test::Fixture* f){return f->manager.timeline.instruction_offset();}
 API(attack_queue_fixture) attack_queue_test::Fixture* attack_queue_fixture(){return new attack_queue_test::Fixture;}
 API(attack_queue_delete) void attack_queue_delete(attack_queue_test::Fixture* f){delete f;}
-API(attack_queue_part) void* attack_queue_part(attack_queue_test::Fixture* f,u32 which){return which==0?static_cast<void*>(&f->rng):which==1?static_cast<void*>(f->geometry):which==2?static_cast<void*>(f->queue.limits):static_cast<void*>(f->queue.counts);}
+API(attack_queue_part) void* attack_queue_part(attack_queue_test::Fixture* f,u32 which){if(which==4)return &f->selected_side;return which==0?static_cast<void*>(&f->rng):which==1?static_cast<void*>(f->geometry):which==2?static_cast<void*>(f->queue.limits):static_cast<void*>(f->queue.counts);}
 API(attack_queue_fields) const void* attack_queue_fields(){return attack_queue_test::fields;}
 API(attack_queue_field_count) u32 attack_queue_field_count(){return std::size(attack_queue_test::fields);}
 API(attack_queue_actor) AttackActor* attack_queue_actor(attack_queue_test::Fixture* f,u32 index){return &f->queue.actors[index%(AttackQueue::capacity+1)];}
@@ -369,7 +369,7 @@ API(attack_queue_draw_size) u32 attack_queue_draw_size(attack_queue_test::Fixtur
 API(attack_queue_render_all) void attack_queue_render_all(attack_queue_test::Fixture* f){f->clear_events();draw_character_attacks(f->queue,*f,false);draw_character_attacks(f->queue,*f,true);}
 API(attack_areas_fixture) attack_areas_test::Fixture* attack_areas_fixture(){return new attack_areas_test::Fixture;}
 API(attack_areas_delete) void attack_areas_delete(attack_areas_test::Fixture* f){delete f;}
-API(attack_areas_part) void* attack_areas_part(attack_areas_test::Fixture* f,u32 which){switch(which){case 0:return f->areas.pool.data();case 1:return &f->rng;case 2:return f->context.geometry;case 3:return &f->context.side;case 4:return &f->bullet;case 5:return &f->graze;case 6:return &f->transfer;}return nullptr;}
+API(attack_areas_part) void* attack_areas_part(attack_areas_test::Fixture* f,u32 which){switch(which){case 0:return f->areas.pool.data();case 1:return &f->rng;case 2:return f->context.geometry;case 3:return &f->context.side;case 4:return &f->bullet;case 5:return &f->graze;case 6:return &f->transfer;case 7:return &f->selected_side;}return nullptr;}
 API(attack_areas_list) i32 attack_areas_list(attack_areas_test::Fixture* f,u32 which,u32 index){auto p=which?f->areas.free[index]:f->areas.active[index];return p?i32(p-f->areas.pool.data()):-1;}
 API(attack_areas_count) i32 attack_areas_count(attack_areas_test::Fixture* f,u32 which){return which?f->areas.free_count:f->areas.count;}
 API(attack_areas_create) i32 attack_areas_create(attack_areas_test::Fixture* f,const Vec3* p,i32 lifetime,i32 delay){return i32(&f->areas.create(*p,lifetime,delay)-f->areas.pool.data());}
@@ -466,6 +466,7 @@ API(player_frame_area_count) i32 player_frame_area_count(player_frame_test::Fixt
 API(player_frame_beam) i32 player_frame_beam(player_frame_test::Fixture* f){auto& s=f->player.shots;return s.beam?i32(s.beam-s.shots.data()):-1;}
 API(player_frame_life_value) i32 player_frame_life_value(player_frame_test::Fixture* f,u32 which){return which==0?f->player.life.display_frames:which==1?f->player.life.hidden:f->player.motion.focus_effects;}
 API(player_frame_draw) void player_frame_draw(player_frame_test::Fixture* f,u32 fading){f->events.clear();f->player.draw(fading);}
+API(player_frame_draw_live) void player_frame_draw_live(player_frame_test::Fixture* f,u32 fading,i32 scene,i32 ending,u32 hidden){f->events.clear();f->player.draw(fading,scene,ending,hidden!=0);}
 API(effects_fixture) effects_test::Fixture* effects_fixture(i32 side,u32 size){return new effects_test::Fixture(side,size);}
 API(effects_delete) void effects_delete(effects_test::Fixture* f){delete f;}
 API(effects_fields) const void* effects_fields(){return effects_test::fields;}
@@ -557,10 +558,46 @@ API(background_invalid) u32 background_invalid(background_test::Fixture* f){retu
 API(renderer_fixture) renderer_test::Fixture* renderer_fixture(){return new renderer_test::Fixture;}
 API(renderer_delete) void renderer_delete(renderer_test::Fixture* f){delete f;}
 API(renderer_part) void* renderer_part(renderer_test::Fixture* f,u32 n){switch(n){case 0:return &f->vm;case 1:return &f->sprite;case 2:return &f->renderer.view;case 3:return &f->renderer.shake;case 4:return &f->renderer.tint;case 5:return &f->renderer.tint_enabled;case 6:return f->renderer.quad.data();case 7:return &f->renderer.camera;case 8:return &f->renderer.last_world;case 9:return &f->renderer.texture_matrix;case 10:return &f->renderer.background_camera_data;case 11:return f->matrices;}return nullptr;}
-API(renderer_draw) i32 renderer_draw(renderer_test::Fixture* f,u32 kind){f->submitted.clear();f->calls=0;f->vm.loadedSprite=&f->sprite;i32 result=0;switch(kind){case 0:result=f->renderer.draw_no_rotation(f->vm);break;case 1:result=f->renderer.draw_no_rotation(f->vm,true,true);break;case 2:result=f->renderer.draw_2d(f->vm);break;case 3:result=f->renderer.draw_2d(f->vm,true);break;case 4:result=f->renderer.draw_no_rotation(f->vm,false);break;case 5:result=f->renderer.draw_world(f->vm);break;case 6:result=f->renderer.draw_facing_camera(f->vm);break;case 7:result=f->renderer.draw_3d(f->vm);break;}f->renderer.flush();return result;}
+API(renderer_draw) i32 renderer_draw(renderer_test::Fixture* f,u32 kind){
+    f->submitted.clear();
+    f->calls=0;
+    f->clear_calls=0;
+    f->vm.loadedSprite=&f->sprite;
+    i32 result=0;
+    switch(kind){
+    case 0:result=f->renderer.draw_no_rotation(f->vm);break;
+    case 1:result=f->renderer.draw_no_rotation(f->vm,true,true);break;
+    case 2:result=f->renderer.draw_2d(f->vm);break;
+    case 3:result=f->renderer.draw_2d(f->vm,true);break;
+    case 4:result=f->renderer.draw_no_rotation(f->vm,false);break;
+    case 5:result=f->renderer.draw_world(f->vm);break;
+    case 6:result=f->renderer.draw_facing_camera(f->vm);break;
+    case 7:result=f->renderer.draw_3d(f->vm);break;
+    case 8:f->presentation.animation(f->vm,BattleSprite::automatic);break;
+    case 9:{
+        const AttackColorVertex vertices[3]{
+            {{10,10,0},1,0xffffffff},
+            {{20,30,0},1,0xffffffff},
+            {{30,10,0},1,0xffffffff}
+        };
+        f->presentation.colored(nullptr,vertices,3,BattleGeometry::line_strip,false);
+        break;
+    }
+    case 10:f->presentation.begin_frame(false);break;
+    case 11:f->presentation.begin_frame(true);break;
+    case 12:f->presentation.text(f->vm,"caption",0xffffff,0,true);break;
+    case 13:f->presentation.text(f->vm,"dialogue",0xffffff,0);break;
+    case 14:
+        f->presentation.offsets[1]={9.25f,-13.5f};
+        f->presentation.begin_hud(1);
+        break;
+    }
+    f->renderer.flush();
+    return result;
+}
 API(renderer_data) const void* renderer_data(renderer_test::Fixture* f){return f->submitted.data();}
 API(renderer_size) u32 renderer_size(renderer_test::Fixture* f){return f->submitted.size();}
-API(renderer_state) u32 renderer_state(renderer_test::Fixture* f,u32 n){switch(n){case 0:return f->renderer.texture;case 1:return u32(f->renderer.state.destinationBlend);case 2:return f->renderer.state.depthWrite;case 3:return f->renderer.blend_mode;case 4:return f->renderer.depth_disabled;}return 0;}
+API(renderer_state) u32 renderer_state(renderer_test::Fixture* f,u32 n){switch(n){case 0:return f->renderer.texture;case 1:return u32(f->renderer.state.destinationBlend);case 2:return f->renderer.state.depthWrite;case 3:return f->renderer.blend_mode;case 4:return f->renderer.depth_disabled;case 5:return u32(f->last_topology);case 6:return u32(f->last_state.destinationBlend);case 7:return f->clear_calls;case 8:return f->clear_flags;case 9:return f->renderer.state.alphaReference;case 10:return f->media.centered;case 11:return f->media.text_calls;case 12:return f->renderer.shake.x==0&&f->renderer.shake.y==0;case 13:return f->presentation.offsets[1].x==0&&f->presentation.offsets[1].y==0;case 14:return f->renderer.camera_mode;}return 0;}
 API(graphics_math_op) void graphics_math_op(u32 op,float* out,const float* a,const float* b,const float* d){switch(op){case 0:*reinterpret_cast<Vec3*>(out)=GraphicsMath::normalize(*reinterpret_cast<const Vec3*>(a));break;case 1:*reinterpret_cast<Vec3*>(out)=GraphicsMath::cross(*reinterpret_cast<const Vec3*>(a),*reinterpret_cast<const Vec3*>(b));break;case 2:*reinterpret_cast<Matrix4*>(out)=GraphicsMath::multiply(*reinterpret_cast<const Matrix4*>(a),*reinterpret_cast<const Matrix4*>(b));break;case 3:*reinterpret_cast<Matrix4*>(out)=GraphicsMath::rotation(u32(a[0]),a[1]);break;case 4:*reinterpret_cast<Matrix4*>(out)=GraphicsMath::look_at(*reinterpret_cast<const Vec3*>(a),*reinterpret_cast<const Vec3*>(b),*reinterpret_cast<const Vec3*>(d));break;case 5:*reinterpret_cast<Matrix4*>(out)=GraphicsMath::perspective(a[0],a[1],a[2],a[3]);break;}}
 API(graphics_project) void graphics_project(Vec3* out,const Vec3* p,const Viewport* v,const Matrix4* projection,const Matrix4* view,const Matrix4* world){*out=GraphicsMath::project(*p,*v,*projection,*view,*world);}
 API(graphics_camera) void graphics_camera(Camera* out,const Viewport* v,const BackgroundCamera* bg,u32 scene){if(scene)out->scene(*v,*bg);else out->screen(*v);}

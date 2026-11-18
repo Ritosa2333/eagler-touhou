@@ -10,11 +10,12 @@ namespace th09 {
 struct WorldPresentation {
     virtual ~WorldPresentation()=default;
     virtual void begin_field(i32 side)=0;
+    virtual void begin_hud(i32 side){begin_field(side);}
     virtual void animation(AnmVm&,BattleSprite)=0;
     virtual void hitbox(i32,AnmLoaded*,const Vec3&,i32){}
     virtual void colored(const AnmVm*,const AttackColorVertex*,u32,BattleGeometry,bool additive)=0;
     virtual void textured(const AnmVm&,const AttackTextureVertex*,u32,BattleGeometry)=0;
-    virtual void text(AnmVm&,const char* shift_jis,u32 color,u32 shadow)=0;
+    virtual void text(AnmVm&,const char* shift_jis,u32 color,u32 shadow,bool centered=false)=0;
     virtual void sound(i32 id,i32 pan)=0;
     virtual void positioned_sound(i32 side,i32 id,float x)=0;
     virtual void music(i32 track)=0;
@@ -23,6 +24,7 @@ struct WorldPresentation {
     virtual void score_popup(i32 side,const Vec3&,i32 value,u32 color)=0;
     virtual void draw_score_popups(){}
     virtual void draw_overlay(){}
+    virtual bool reset_ascii(){return true;}
     virtual void number(const Vec3&,i32 width,i32 value)=0;
     virtual void clock(const Vec3&,i32 stage,i32 minutes,i32 seconds)=0;
     virtual void shake(i32 side,float x,float y)=0;

@@ -27,7 +27,7 @@ struct EffectServices {
     virtual void draw_color_fan(AnmVm&,const AttackColorVertex*,u32)=0;
     virtual void draw_color_strip(AnmVm&,const AttackColorVertex*,u32)=0;
     virtual void draw_texture_strip(AnmVm&,const AttackTextureVertex*,u32)=0;
-    virtual void draw_additive_lines(const AttackColorVertex*,u32)=0;
+    virtual void draw_line_strip(const AttackColorVertex*,u32)=0;
 };
 struct EffectBurst {
     i32 phase=0;float radius=0;

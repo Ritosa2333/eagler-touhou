@@ -2,7 +2,7 @@
 namespace th09 {
 namespace {i32 multiply(i32 a,i32 b){return signed_bits(u32(a)*u32(b));}}
 TransferParameters* Combo::transfer(const Vec3& p,bool spirit){
-    auto& rng=world.random;Vec3 screen=geometry.to_screen(p);
+    auto& rng=world.random;Vec3 screen=actions.transfer_position(p,geometry);
     screen.x=float(rng.signed_unit())*32.f+screen.x;screen.y=float(rng.signed_unit())*32.f+screen.y;
     const float x=float(rng.signed_unit())*(opposing_width*.5f-8.f),y=float(rng.range(128));
     return actions.create_transfer(side+(spirit?3:1),screen,{x,y,0});

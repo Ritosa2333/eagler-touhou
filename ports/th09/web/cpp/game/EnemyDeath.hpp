@@ -13,6 +13,7 @@ struct EnemyDeathActions {
     virtual void drop_item(i32,const Vec3&)=0;
     virtual void charge(float amount)=0;
     virtual i32 opposing_spirits()const=0;
+    virtual Vec3 transfer_position(const Vec3& p,const PlayfieldGeometry& fallback)const{return fallback.to_screen(p);}
     virtual TransferParameters* create_transfer(i32 effect,const Vec3& position,const Vec3& control)=0;
 };
 class EnemyDeath {

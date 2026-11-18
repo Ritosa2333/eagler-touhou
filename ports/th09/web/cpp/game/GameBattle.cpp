@@ -46,6 +46,7 @@ void GameBattle::sync_players(){
     services->effects.sync();services->attacks.sync();
 }
 bool GameBattle::update_enemies(i32 side){
+    services->selected_field=side;
     auto& f=fields[side];auto& m=*f.enemies;sync_players();m.timing=state.timing;m.frame_step=state.ecl_step;m.difficulty_mask=state.difficulty_mask;
     auto& p=*f.player;auto& enemy_player=f.enemy_player;
     // A spell can spawn an enemy and sync both fields during this step.
@@ -58,6 +59,7 @@ bool GameBattle::update_enemies(i32 side){
     return error.empty();
 }
 bool GameBattle::update_bullets(i32 side){
+    services->selected_field=side;
     auto& f=fields[side];auto& a=*services->fields[side];sync_players();
     // The original manager checks the global pause once, before processing
     // bullets. A combo may start a spell cut-in inside that loop; its lasers
@@ -68,6 +70,7 @@ bool GameBattle::update_bullets(i32 side){
 }
 bool GameBattle::update_attacks(){services->attacks.sync();if(!attack_queue->update(state.timing,state.flags,fields[0].script.flags))return fail("Character attack frame");return error.empty();}
 void GameBattle::update_player(i32 side){
+    services->selected_field=side;
     auto& f=fields[side];auto& other=fields[1-side];PlayerFrameContext c;c.timing=state.timing;c.limits=state.limits;
     std::copy_n(state.geometry,2,c.geometry);c.game_flags=state.flags;c.field_flags=f.script.flags;c.dialogue=state.dialogue>=0||state.dialogue==-2;
     c.automatic_focus=state.automatic_focus[side];c.extra_mode=rules.mode==GameMode::extra;c.hide_players=state.hide_players;c.scene_state=state.scene_phase;c.ending_frames=state.ending_frames;
@@ -104,7 +107,9 @@ void GameBattle::reward_enemy(i32 side,i32 reward){
 }
 void GameBattle::draw_enemies(i32 side,bool upper){output.begin_field(side);auto& a=*services->fields[side];a.EnemyDrawServices::geometry=state.geometry[side];EnemyDraw::layers(*fields[side].enemies,upper?2:0,upper?4:2,a);}
 void GameBattle::draw_player(i32 side,bool fading){
-    output.begin_field(side);auto& p=*fields[side].player;p.draw(fading);
+    output.begin_field(side);auto& p=*fields[side].player;
+    // A hit or scene update can finish the round after this player's update.
+    p.draw(fading,state.scene_phase,state.ending_frames,state.hide_players);
 }
 void GameBattle::draw_attacks(bool cross){draw_character_attacks(*attack_queue,services->attacks,cross);}
 void GameBattle::draw_effects(i32 side,i32 layer){
@@ -135,7 +140,7 @@ EffectActor* GameBattle::Services::effect(i32 side,i32 kind,const Vec3& p,i32 sl
 }
 TransferParameters* GameBattle::Services::transfer(i32 source,i32 kind,const Vec3& p,const Vec3& to,float delay){
     if(!g.cross_effects)return nullptr;effects.sync();effects.coordinate_side=1-source;
-    auto* e=g.cross_effects->create(EffectKind(kind),p,to);if(!e)return nullptr;e->rotation=delay;return &e->transfer;
+    auto* e=g.cross_effects->create(EffectKind(kind),p,to);selected_field=source;if(!e)return nullptr;e->rotation=delay;return &e->transfer;
 }
 Bullet* GameBattle::Services::emit(i32 side,bool secondary,const BulletEmission& e){
     auto& f=g.fields[side];const auto& p=f.player->motion.position;const float dx=p.x-e.position.x,dy=p.y-e.position.y;

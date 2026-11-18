@@ -12,7 +12,12 @@ void tangents(TravelAttackState& t,CharacterAttackServices& s){
     float r=float(s.random.range(192)),angle=float(s.random.signed_unit())*pi;t.start_tangent=polar(angle,r);
     r=float(s.random.range(192));angle=float(s.random.signed_unit())*pi;t.end_tangent=polar(angle,r);
 }
-void endpoints(AttackActor& a,TravelAttackState& t,const CharacterAttackServices& s){t.origin=s.geometry[a.source_side].to_screen(a.position);t.destination=s.geometry[a.destination_side].to_screen(t.target);}
+void endpoints(AttackActor& a,TravelAttackState& t,CharacterAttackServices& s,bool restore_source=true){
+    t.origin=s.screen_position(a.position,a.source_side);
+    s.select_field(a.destination_side);
+    t.destination=s.geometry[a.destination_side].to_screen(t.target);
+    if(restore_source)s.select_field(a.source_side);
+}
 bool initialize_reisen_common(AttackActor& a,CharacterAttackServices& s,bool scripted){
     auto& t=allocate<ReisenAttackState>(a);if(!s.start_animation(a,0,a.source_side,AttackAnimationResource::shared_effects,37))return true;
     if(scripted&&!a.extra_position)return true;
@@ -20,7 +25,7 @@ bool initialize_reisen_common(AttackActor& a,CharacterAttackServices& s,bool scr
     a.layer=2;tangents(t,s);
     if(scripted)t.target={a.extra_position->x,a.extra_position->y,0};
     else {t.target.x=float(s.random.signed_unit())*(s.geometry[a.source_side].width*.5f-8.f);t.target.y=float(s.random.range(128));}
-    endpoints(a,t,s);return false;
+    endpoints(a,t,s,!scripted);return false;
 }
 bool initialize_reisen(AttackActor& a,AttackServices& s){return initialize_reisen_common(a,static_cast<CharacterAttackServices&>(s),false);}
 bool initialize_reisen_script(AttackActor& a,AttackServices& s){return initialize_reisen_common(a,static_cast<CharacterAttackServices&>(s),true);}
@@ -60,7 +65,7 @@ void draw_reisen(AttackActor& a,AttackServices& services){
         a.animations[0].color1.d3dColor=-1;s.draw_color_fan(a.animations[0],t.fan.data(),33);
         for(u32 ring=0;ring<4;++ring){
             for(u32 j=0;j<32;++j){if(angle>=pi)angle-=2*pi;t.rings[ring][j]={g.to_screen(plus(polar(angle,t.jitter[ring][j]+t.radius),a.position)),1,color|0xffffff};angle+=sector;}
-            s.draw_additive_lines(t.rings[ring].data(),32);angle+=.050670851200819016f;
+            s.draw_line_strip(t.rings[ring].data(),32);angle+=.050670851200819016f;
         }
     }t.draw_flag=0;
 }

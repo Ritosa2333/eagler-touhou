@@ -15,8 +15,10 @@ void random_tangents(TravelAttackState& t,Rng& r){
     radius=float(r.range(192));angle=float(r.signed_unit())*pi;t.end_tangent=polar(angle,radius);
 }
 void screen_endpoints(AttackActor& a,TravelAttackState& t,CharacterAttackServices& s){
-    t.origin=s.geometry[a.source_side].to_screen(a.position);t.origin.z=0;
+    t.origin=s.screen_position(a.position,a.source_side);t.origin.z=0;
+    s.select_field(a.destination_side);
     t.destination=s.geometry[a.destination_side].to_screen(t.target);t.destination.z=0;
+    s.select_field(a.source_side);
 }
 template<class State=TravelAttackState> bool initialize_travel(AttackActor& a,CharacterAttackServices& s,TravelDestination kind,u32 animation_count=1){
     auto& t=allocate_travel<State>(a,animation_count);
@@ -24,7 +26,7 @@ template<class State=TravelAttackState> bool initialize_travel(AttackActor& a,Ch
     if(kind!=TravelDestination::youmu)t.velocity=polar(float(s.random.range(-pi)),2);a.layer=2;
     if(kind==TravelDestination::script_nearby||kind==TravelDestination::script_exact)a.time.reset(90);
     random_tangents(t,s.random);
-    t.origin=s.geometry[a.source_side].to_screen(a.position);t.origin.z=0;
+    t.origin=s.screen_position(a.position,a.source_side);t.origin.z=0;
     if(kind==TravelDestination::script_nearby){
         t.target.x=float(s.random.signed_unit())*64.f+a.position.x;
         // The original script-triggered variant uses source X for both axes.
@@ -43,7 +45,9 @@ template<class State=TravelAttackState> bool initialize_travel(AttackActor& a,Ch
         else if(kind==TravelDestination::komachi)t.target.y=float(s.random.range(144))+32.f;
         else t.target.y=float(s.random.range(128));
     }
-    t.destination=s.geometry[kind==TravelDestination::script_nearby?a.source_side:a.destination_side].to_screen(t.target);t.destination.z=0;
+    if(kind==TravelDestination::script_nearby)t.destination=s.screen_position(t.target,a.source_side);
+    else {s.select_field(a.destination_side);t.destination=s.geometry[a.destination_side].to_screen(t.target);s.select_field(a.source_side);}
+    t.destination.z=0;
     if(kind==TravelDestination::komachi){t.speed=1;t.heading=float(s.random.signed_unit())*pi;t.turn=s.random.below(2)?0.10471975803375244f:-0.10471975803375244f;}
     return false;
 }
@@ -89,14 +93,17 @@ SakuyaAttackState& allocate_sakuya(AttackActor& a){
 bool initialize_sakuya(AttackActor& a,AttackServices& services){
     auto& s=static_cast<CharacterAttackServices&>(services);auto& t=allocate_sakuya(a);
     for(u32 i=0;i<5;++i)if(!s.start_animation(a,i,a.source_side,AttackAnimationResource::character_shots,i32(i)+9))return true;
-    const auto target=s.geometry[a.destination_side].to_screen(s.players[a.destination_side]);a.position=s.geometry[a.source_side].to_screen(a.position);a.layer=2;
+    s.select_field(a.destination_side);
+    const auto target=s.geometry[a.destination_side].to_screen(s.players[a.destination_side]);
+    s.select_field(a.source_side);
+    a.position=s.geometry[a.source_side].to_screen(a.position);a.layer=2;
     const float dx=target.x-a.position.x,dy=target.y-a.position.y;a.angle=float(std::atan2(double(dy),double(dx)));t.velocity=polar(a.angle,3.5f);
     s.spawn_attack(4,a.source_side,a.position,nullptr,&a);t.history.fill(a.position);return false;
 }
 bool initialize_sakuya_collision(AttackActor& a,AttackServices& services){
     auto& s=static_cast<CharacterAttackServices&>(services);auto& t=allocate_sakuya(a);
     for(u32 i=0;i<5;++i)if(!s.start_animation(a,i,a.source_side,AttackAnimationResource::character_shots,i32(i)+14))return true;
-    if(!a.parent||!a.parent->state)return true;t.parent=a.parent;a.position=s.geometry[a.destination_side].to_local(a.position);a.layer=a.destination_side;a.angle=a.parent->angle;
+    if(!a.parent||!a.parent->state)return true;s.select_field(a.destination_side);t.parent=a.parent;a.position=s.geometry[a.destination_side].to_local(a.position);a.layer=a.destination_side;a.angle=a.parent->angle;
     t.velocity=static_cast<SakuyaAttackState&>(*a.parent->state).velocity;t.history.fill(a.position);return false;
 }
 void advance_trail(AttackActor& a,SakuyaAttackState& t){

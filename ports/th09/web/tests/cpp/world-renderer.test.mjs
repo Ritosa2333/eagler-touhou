@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {oracle,core,memory,report,d3dxScalar} from './helpers.mjs';
 test('World sprites and billboards match original transforms and submitted vertices',async()=>{
  const m=await oracle(),c=await core(),f=c.renderer_fixture(),p=Array.from({length:12},(_,i)=>c.renderer_part(f,i)),manager=m.allocate(0x12900),vm=m.allocate(0x2a4),sprite=m.allocate(0x44),device=m.allocate(4),vt=m.allocate(0x160),arg=i=>m.u32(m.reg('ESP')+4+4*i);d3dxScalar(m);
- let dv=new DataView(c.memory.buffer),drawn=[],matrices=new Map(),checks=0,seed=0x21423812;const random=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return seed>>>0;},real=scale=>(random()%10001-5000)/5000*scale;
+ let dv=new DataView(c.memory.buffer),drawn=[],matrices=new Map(),checks=0,automaticChecks=0,seed=0x21423812;const random=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return seed>>>0;},real=scale=>(random()%10001-5000)/5000*scale;
  m.view(manager,0x12900).fill(0);m.write(manager+0x12884,[3,0,255,255,255]);m.u32(0x4dc550,manager);m.u32(0x4b3108,device);m.u32(device,vt);m.u32(0x4b3448,0x4b3178);
  for(const [slot,argc] of [[0xf4,3],[0xc8,3],[0x130,2],[0x14c,4],[0xfc,4],[0xa0,2]])m.u32(vt+slot,m.registerImport({dll:'world-draw',name:'state',argc,handler:()=>0}));
  m.u32(vt+0x94,m.registerImport({dll:'world-draw',name:'matrix',argc:3,handler:()=>{matrices.set(arg(1),m.bytes(arg(2),64));return 0;}}));
@@ -23,6 +23,17 @@ test('World sprites and billboards match original transforms and submitted verti
   const kind=scenario%3+5;drawn=[];matrices.clear();const ret=m.call([0x43b140,0x43b0e0,0x43b1a0][kind-5],{ecx:manager,args:[vm]})|0;assert.equal(c.renderer_draw(f,kind),ret,'return '+scenario);dv=new DataView(c.memory.buffer);
   assert.deepEqual(memory(c,p[0],0x200),m.bytes(vm,0x200),'VM matrix/flags '+scenario);assert.deepEqual(memory(c,c.renderer_data(f),c.renderer_size(f)),Uint8Array.from(drawn),'submitted '+scenario+'/'+kind);
   if(kind!==7)assert.deepEqual(memory(c,p[6],112),m.bytes(0x4dc558,112),'quad '+scenario);else{assert.deepEqual(memory(c,p[8],64),matrices.get(256),'world '+scenario);if(matrices.has(16))assert.deepEqual(memory(c,p[9],64),matrices.get(16),'texture '+scenario);}++checks;
- }report('world-renderer',{checks,scope:'Original 3D world matrices, matrix invalidation flags, anchoring, world-to-screen projection, billboards, UV transform caching and vertex payloads. Original scalar D3DX executes; final GPU rasterization is a boundary.'});
+  if(scenario<600&&kind!==7){
+   const mode=kind===5?5:4;
+   dv.setInt32(p[0]+0x200,mode,true);m.u32(vm+0x200,mode);
+   drawn=[];matrices.clear();
+   m.call(0x436d70,{ecx:manager,args:[vm]});
+   c.renderer_draw(f,8);
+   assert.deepEqual(memory(c,c.renderer_data(f),c.renderer_size(f)),Uint8Array.from(drawn),'automatic world '+scenario+'/'+mode);
+   assert.deepEqual(memory(c,p[6],112),m.bytes(0x4dc558,112),'automatic world quad '+scenario+'/'+mode);
+   ++automaticChecks;
+  }
+
+ }report('world-renderer',{checks,automaticChecks,scope:'Original 3D world matrices, matrix invalidation flags, anchoring, world-to-screen projection, billboards, UV transform caching and vertex payloads. Original scalar D3DX executes; final GPU rasterization is a boundary.'});
  }finally{c.renderer_delete(f);m.close();}
 });

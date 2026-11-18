@@ -56,7 +56,16 @@ test('Integrated player frame preserves original component order and combined st
             if(frame===51||frame===94){set(1,0x30388,400,true);set(1,0x30384,299,true);}
             if(frame===95&&side===0){set(1,0,0);const shock=controlFields.find(x=>x[0]===0x1b74);memory(c,parts[1]+shock[1],12).fill(0);m.view(q+0x1b74,12).fill(0);const motion=motionFields.find(x=>x[0]===0x1b88);memory(c,tmp,12).set(memory(c,parts[0]+motion[1],12));c.player_hazards_add(parts[8],0,tmp,0,0,8,0,0);}
             const hazards=c.player_hazards_count(parts[8]);m.u32(q+0x1b70,hazards);m.write(q+0x370,memory(c,c.player_hazards_entries(parts[8]),128*48));events=[];m.call(0x41e900,{ecx:q});c.player_frame_step(f,gameFlags,fieldFlags,dialogue,auto,locked,rate,frame);compare(`${character}/${side}/${frame}`);
-            if(frame%41===40){for(let fading=0;fading<2;++fading){events=[];m.call(fading?0x41cdc0:0x41eb10,{ecx:q});c.player_frame_draw(f,fading);compare(`draw ${character}/${side}/${frame}/${fading}`);++draws;}}
+            if(frame%41===40){for(let fading=0;fading<2;++fading){events=[];m.call(fading?0x41cdc0:0x41eb10,{ecx:q});c.player_frame_draw(f,fading);compare(`draw ${character}/${side}/${frame}/${fading}`);++draws;}
+                const saved=[m.i32(q+0xa8),m.i32(scene+0x1095c),m.i32(scene+0x10960),m.bytes(0x4a7ecd,1)[0]];
+                set(0,0xa8,0);
+                for(const [phase,ending,hidden] of [[2,0,0],[0,31,0],[0,0,1]]){
+                    m.i32(scene+0x1095c,phase);m.i32(scene+0x10960,ending);m.write(0x4a7ecd,[hidden]);
+                    events=[];m.call(0x41eb10,{ecx:q});c.player_frame_draw_live(f,0,phase,ending,hidden);
+                    compare(`live draw ${character}/${side}/${frame}/${phase}/${ending}/${hidden}`);++draws;
+                }
+                set(0,0xa8,saved[0]);m.i32(scene+0x1095c,saved[1]);m.i32(scene+0x10960,saved[2]);m.write(0x4a7ecd,[saved[3]]);
+            }
         }
         c.player_frame_delete(f);f=0;
     }report('player-frame',{checks,draws,characters:16,scope:'Integrated original player round reset and main frame, actual motion, AI, charge control, shots, hazards, damage, recovery, areas and combo timers. ANM execution, sound/effect ownership, HUD and opponent scheduling remain recorded service boundaries.'});
