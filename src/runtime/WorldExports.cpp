@@ -3747,7 +3747,7 @@ int th128_world_enable_spells(const void* bullet,unsigned bulletSize,const void*
                     medals=th128::record::NativeScoreProfile::spellMedals(debugRecordPrefix.profile,event.state.id);
             }catch(const std::exception& failure){error=failure.what();return false;}
             spellStartSeconds=normalReplay?std::optional<double>(normalReplayClock):std::nullopt;
-            spellResultFrames=0;if(!spellVisuals->start(event.position,error,medals))return false;
+            spellResultFrames=0;if(!spellVisuals->start(event.position,error,medals,stageIdForEcl(worldStartedName)))return false;
             if(normalRecord&&normalRecord->started()&&!debugRunTainted&&!replayPlayback.active()){
                 try{normalRecord->beginSpell(event.state.id,event.title);}
                 catch(const std::exception& failure){error=failure.what();return false;}

@@ -140,7 +140,9 @@ function roundedPixel(value) {
 }
 
 export function quadVertices(record) {
-  const mode=record.mode===2&&record.bank===3&&record.script===11&&record.rx===0&&record.ry===0&&record.rotation===0&&record.z===0?0:record.mode;
+  const spellPortrait=record.bank===3&&(record.script===11
+    ||record.script===17&&record.entry===20&&record.sprite===43&&record.layer===6);
+  const mode=record.mode===2&&spellPortrait&&record.rx===0&&record.ry===0&&record.rotation===0&&record.z===0?0:record.mode;
   if (mode !== 0 && mode !== 1) throw new Error(`Unimplemented geometry mode ${record.mode}`);
   if (!Number.isFinite(record.rotation ?? 0)) throw new Error('Non-finite draw rotation');
   const positionX = Math.fround(record.x), positionY = Math.fround(record.y);

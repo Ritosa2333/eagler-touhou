@@ -542,7 +542,7 @@ export class WebGlRenderer {
     if(meshes.length>4096||meshes.some(mesh=>mesh.vertices.length!==66||!mesh.vertices.every(Number.isFinite)))throw new Error('Invalid original STD geometry');
     graphics.useProgram(this.stageProgram);graphics.bindVertexArray(this.stageArray);graphics.bindBuffer(graphics.ARRAY_BUFFER,this.stageBuffer);
     const viewport=this.stageViewport();graphics.viewport(218,0,844,960);graphics.enable(graphics.SCISSOR_TEST);graphics.scissor(...viewport);
-    graphics.clearDepth(1);graphics.clear(graphics.DEPTH_BUFFER_BIT);graphics.enable(graphics.DEPTH_TEST);graphics.depthFunc(graphics.LEQUAL);
+    graphics.depthMask(true);graphics.clearDepth(1);graphics.clear(graphics.DEPTH_BUFFER_BIT);graphics.enable(graphics.DEPTH_TEST);graphics.depthFunc(graphics.LEQUAL);
     const needed=meshes.length*66;
     if(!this.stageVertices||this.stageVertices.length<needed)this.stageVertices=new Float32Array(needed);
     const groups=[];
@@ -776,7 +776,7 @@ export class WebGlRenderer {
     if(!Array.isArray(records)||records.length>65536)throw new Error('Invalid draw-record budget');
     if(nativeMenu&&(world||background||overlay||this.canvas.width!==1280||this.canvas.height!==960))throw new Error('Invalid native menu raster context');
     if(world)records=records.map(record=>applyWorldShake(record,shake));
-    const meshes=new Map(),fans=new Map(),lines=new Map();
+    const meshes=new Map(),fans=new Map(),lines=new Map(),laserDepths=new Map();
     let meshPoints=0,mainCount=0,priority=-1,mainSeen=false;
     for(const record of records){
       if(world){
@@ -805,6 +805,9 @@ export class WebGlRenderer {
         }else if(record.geometry.kind==='laser-selector3-quad'){
           if(!world)throw new Error('Original selector3 quad requires its actual World draw pass');
           fans.set(record,selector3QuadVertices(record));
+          const z=record.geometry.vertices[0].z;
+          if(z<0||z>1||record.geometry.vertices.some(vertex=>vertex.z!==z))throw new Error('Invalid original pretransformed laser depth');
+          laserDepths.set(record,z);
         }else throw new Error('Unimplemented original custom geometry');
         meshPoints+=record.geometry.vertices.length;
         if(meshPoints>65536)throw new Error('World mesh vertex budget exceeded');
@@ -813,13 +816,24 @@ export class WebGlRenderer {
     if(mainCount>1)throw new Error('Ambiguous Main82 stage compositor');
     const graphics = this.gl;
     if(nativeMenu)this.bindNativeMenuRaster();
+    // Original selector3 draw 4327f0 uses ZWRITE + LESS across its columns, then ALWAYS + writes off.
+    // Keep the stage depth buffer; return to the ordinary 2D pass before drawing any other owner.
+    let laserDepth=null;
+    const leaveLaserDepth=()=>{
+      if(laserDepth===null)return;
+      graphics.depthRange(0,1);graphics.depthFunc(graphics.ALWAYS);graphics.depthMask(false);
+      graphics.disable(graphics.DEPTH_TEST);laserDepth=null;
+    };
     try{
     const renderWidth=nativeMenu?640:this.canvas.width,renderHeight=nativeMenu?480:this.canvas.height;
     graphics.bindVertexArray(this.array);
     graphics.bindBuffer(graphics.ARRAY_BUFFER,this.buffer);
     graphics.viewport(0,0,renderWidth,renderHeight);
     graphics.disable(graphics.SCISSOR_TEST);
-    if(!overlay){graphics.clearColor(0,0,0,1);graphics.clear(graphics.COLOR_BUFFER_BIT);}
+    if(!overlay){
+      graphics.clearColor(0,0,0,1);graphics.clear(graphics.COLOR_BUFFER_BIT);
+      if(!background&&laserDepths.size){graphics.depthMask(true);graphics.clearDepth(1);graphics.clear(graphics.DEPTH_BUFFER_BIT);}
+    }
     this.current = null;
     this.blend = -1;
     this.vertices.length = 0;
@@ -827,6 +841,12 @@ export class WebGlRenderer {
     let captured=false;
     for (const record of records) {
       if(mainCount&&!captured&&nativeRecordPriority(record)>=12){this.captureStage();captured=true;}
+      const z=laserDepths.get(record);
+      if(z===undefined)leaveLaserDepth();
+      else if(z!==laserDepth){
+        this.flush();graphics.enable(graphics.DEPTH_TEST);graphics.depthMask(true);graphics.depthFunc(graphics.LESS);
+        graphics.depthRange(z,z);laserDepth=z;
+      }
       if(fans.has(record)||lines.has(record)){
         const fan=fans.get(record)??lines.get(record);if(record.geometry.vertices.every(vertex=>(vertex.color>>>24)===0))continue;
         this.material(record.blend);this.flush();
@@ -890,6 +910,6 @@ export class WebGlRenderer {
     }
     const error = graphics.getError();
     if (error !== graphics.NO_ERROR) throw new Error(`WebGL 错误 ${error}`);
-    }finally{if(nativeMenu){graphics.bindFramebuffer(graphics.FRAMEBUFFER,null);graphics.viewport(0,0,this.canvas.width,this.canvas.height);this.current=null;this.point=null;}}
+    }finally{leaveLaserDepth();if(nativeMenu){graphics.bindFramebuffer(graphics.FRAMEBUFFER,null);graphics.viewport(0,0,this.canvas.width,this.canvas.height);this.current=null;this.point=null;}}
   }
 }

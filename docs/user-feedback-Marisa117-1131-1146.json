@@ -1,0 +1,236 @@
+{
+  "schema": "th128-marisa-render117/1",
+  "date": "2026-11-18",
+  "officiallyShipped": false,
+  "stage3Complete": false,
+  "fullThpracComplete": false,
+  "core": {
+    "ordinal": 117,
+    "generation": "9533900ed72385daa8bcb381be4c2f2a0a8bb2b94cf64466bea803664dc21009",
+    "sourceCount": 233,
+    "translationUnits": 83,
+    "exports": 223,
+    "compilerCalls": 1,
+    "artifacts": {
+      "core.mjs": {
+        "bytes": 142081,
+        "sha256": "f3a8b02b1f5fa20c94bad992285bd859cd79b20ca78fed2af853e2b1f98c623e"
+      },
+      "core.wasm": {
+        "bytes": 2479267,
+        "sha256": "18770f38063bcc7b6b2bb0c519c848f86db18ec7bd80b96652fc4cf8064ff20c"
+      }
+    }
+  },
+  "sourceProof": {
+    "constructorSHA": "2dd9fb931d6e3925fac5e8207c52eab96cba4c473d7db7e396e0438320455b28",
+    "laserDrawSHA": "6c3863f07d7d7220e6539abafa8d845aeaa4293b420666283609d5580f43db94",
+    "originalExtraBackdrop": {
+      "bossFile": "boss04.anm",
+      "root": 18,
+      "children": [
+        19,
+        20
+      ],
+      "textures": [
+        "eff04_b",
+        "eff04_bb"
+      ]
+    },
+    "originalExtraPortrait": {
+      "bank": 3,
+      "entry": 20,
+      "sprite": 43,
+      "script": 17,
+      "layer": 6,
+      "z": 0
+    }
+  },
+  "denseBefore": {
+    "nativeFrame": 533,
+    "stage": 16,
+    "section": 156,
+    "records": 479,
+    "columns": 245,
+    "quadsSampleSHA": "0194e849355cbcf057e1bf0ce06dcb41e38caadb0da9a93d06dbfcfdfcf43eb5",
+    "screenshotFrames": [
+      550,
+      554
+    ]
+  },
+  "rasterComparison": {
+    "pixels": 8640,
+    "overbrightBefore": 4320,
+    "overbrightAfter": 0,
+    "nearSingleAfter": 8640,
+    "blackSurfaceNotFullGame": true
+  },
+  "finalGame": {
+    "checks": 8,
+    "consoleWarningsAndErrors": 0,
+    "elapsedMs": 18543,
+    "frames": [
+      549,
+      554
+    ],
+    "screenshotSHA": "2646130d9f1d401f5fa7d5d0f4be137262758e0fb21db38748af577085acbcf1",
+    "fontVisible": "Chinese spell name and HUD in native EX scene only",
+    "R": {
+      "from": 609,
+      "at": 0,
+      "advanced": 9
+    },
+    "ownedTabClosed": true,
+    "viewportReset": true,
+    "serverROOTReleased": true,
+    "actualFactoryCountsNotInstrumented": true,
+    "bounds": {
+      "worldStarts": 2,
+      "factories": 8,
+      "totalWorldTicks": 4200
+    },
+    "noEndingOrTerminalTitleAdoption": true,
+    "noNativeReplayInThisDeviceRun": true
+  },
+  "web": {
+    "pass": 27,
+    "fail": 0,
+    "skip": 0,
+    "cancelled": 0,
+    "tests": 27
+  },
+  "cases": [
+    {
+      "case": 1131,
+      "request": "de7aff016fc59b0d6be37b1bfe3ee351bd7722a4555df2725a19410ad4b5ff50",
+      "result": "d6e046a52700891a0b0680f10cb1294873dac0b1c3334f598e0cfcae6b24b925",
+      "rawPassed": false,
+      "validPass": false,
+      "scope": "Title + selection; inactive external start button fixture"
+    },
+    {
+      "case": 1132,
+      "request": "35d08fd0886e9d601e450a974c33b05fa537220591d75f8a0266d36adc00b029",
+      "result": "839853ce085fee415b028750c56f3a1ffbf77d3e109f1465a6b09afb2acb768b",
+      "rawPassed": true,
+      "validPass": true,
+      "scope": "Full116 production body + read-only probe: dense EX defect reproduced"
+    },
+    {
+      "case": 1133,
+      "request": "f2796cfcdd1e620e136322c2e9a6dffd16aa518cfb60f7875269108f649570f9",
+      "result": "dc2bf09e1ee102fc09033547fead5b7482e36495467090954795405f3a9557b2",
+      "rawPassed": false,
+      "validPass": false,
+      "scope": "Normal WebGL native frame533: double contribution in 4320/8640 pixels"
+    },
+    {
+      "case": 1134,
+      "request": "6703c783ef478eb6ac9c9057bcaa3bf9bd53741f16b9e5cac0c12488e7208f8f",
+      "result": "fe9cee3857dc31ba8e93e54c66d910e528f249eedaebb579bcd87f685443c567",
+      "rawPassed": false,
+      "validPass": false,
+      "scope": "No tab: entry reserve expired"
+    },
+    {
+      "case": 1135,
+      "request": "0a69ee77e58dd6100fdd13b8a87761b622f053a265adb7fa3b6133e1ac0f0edb",
+      "result": "55b2bf2c173e6bcd57462fbca4fa42278ccc5868d2514aeb27d0f722c8636899",
+      "rawPassed": true,
+      "validPass": false,
+      "scope": "Pixel success only; invalid missing actual thread at launch, wrapper exited 1. Separately recovered its exact expired lease"
+    },
+    {
+      "case": 1136,
+      "request": "a1df2c217861a471eb16d846298a4af22fb29558b7e9b83c96e635f50b23b1a4",
+      "result": "d07407c7022b8d77b49158742fe36cb95277d5c83cef5806562454d6bb1e9c0d",
+      "rawPassed": false,
+      "validPass": false,
+      "scope": "No tab: entry reserve expired; closed normally"
+    },
+    {
+      "case": 1137,
+      "request": "787ea9bca83bf374dd2d41976a10daf091d695ac7f6298f0f5610679e20e3105",
+      "result": "905f760796d1f5a66aac5504cde01d452f214448c248db5a18f62a17d58eeb35",
+      "rawPassed": true,
+      "validPass": true,
+      "scope": "Matched real native single-coverage: 8640/8640, launcher/ROOT exit 0"
+    },
+    {
+      "case": 1138,
+      "request": "5761085c2f3ac68d0bf19902abe85e28d42b2db04956f285aba2ba98af0df94d",
+      "result": "fbf545071578d51e377ee49811818e03d3b4dc8ea76a2a89a7d2f10b969581d6",
+      "rawPassed": true,
+      "validPass": true,
+      "scope": "4 TU real ANM scene, Extra and normal portraits/backgrounds and retirement"
+    },
+    {
+      "case": 1139,
+      "request": "83917434b8a097dfff8325169311c2a94763f9f5e9ef209819565f32d272f84b",
+      "result": "0eca5282bd6c15b847cb37621d84f7e98360cd553a556b2eb629a8ddf761302d",
+      "rawPassed": true,
+      "validPass": true,
+      "scope": "Single full core117 build; no gameplay in this run"
+    },
+    {
+      "case": 1140,
+      "request": "e4005b7d86d6e20ecb4da7147793602069e25646a544a76a4bfa72e4a800381f",
+      "result": "4198b69df2262dce957e8c5a267089ca202fca0735cfa5e0822018f58657ae44",
+      "rawPassed": false,
+      "validPass": false,
+      "scope": "Original importer rejected fixture revision mismatch before cache commit"
+    },
+    {
+      "case": 1141,
+      "request": "770f45342184956e3fb88044a4ca84a2c22b9b1483112d4ac12f638104643d31",
+      "result": "696a04e946dd1e3bb4c3e528eb1d6a6ea87c069184115736afa9dae6d05c1909",
+      "rawPassed": false,
+      "validPass": false,
+      "scope": "Correct package and core loaded, Title frame0 scheduler-pause, driver timed out"
+    },
+    {
+      "case": 1142,
+      "request": "930007b4069bb17bae590f1d5a943a7c1634516efd2bf4ac7fb9170a91897e0a",
+      "result": "baa8fcfc5a5d9f9737a840b66df041cdaad359199c3eec8d081b5c98080e3737",
+      "rawPassed": false,
+      "validPass": false,
+      "scope": "Full Title→EX, real World62 renderer refused original portrait mode2"
+    },
+    {
+      "case": 1143,
+      "request": "0f9a60b5bb40884b9057b72f38a29e5852404699b9f5fd8e5544a4340b4c0a50",
+      "result": "f4f036fe979ab085777f0e524677cef2346f7e9a221e405070a69277b7214803",
+      "rawPassed": false,
+      "validPass": false,
+      "scope": "Actual title resume frames16/53/69/73; fixture imposed three resumes"
+    },
+    {
+      "case": 1144,
+      "request": "920ae201466c8e9f6b75f99d8c478cf038a56c776b43bb99859885fc84ff6894",
+      "result": "4af739f5d6d62bb2ff6ffceaca2b741bd350815b2b0bdd7a68e373b77a93fa0d",
+      "rawPassed": true,
+      "validPass": true,
+      "scope": "Unmodified formal HTML, importer and play, full117/real DAT. Native Title→EX156, corrected scene, high-refresh toggle/reset, R restart 609→0→9"
+    },
+    {
+      "case": 1145,
+      "request": "303bf5193a4e7c94e26fd1ade0707cd671da34a2376f6f48fafc723622e8fbe7",
+      "result": "18c8273c996dac6df90567e96e594529d35b4eaeb3b409dc498b151003fc4ff9",
+      "rawPassed": false,
+      "validPass": false,
+      "scope": "Pure Web suites26 pass/1 fail; 526 test double lacked blendEquation"
+    },
+    {
+      "case": 1146,
+      "request": "b10d3b4fe561ee7a1fd3e0f2b41b5c9472ffaf209e467eb76c93bc1dcabdf728",
+      "result": "373ebe1b47a7155061ff3f674c22d5080d121d41439b3b896d52678f3d86fd15",
+      "rawPassed": true,
+      "validPass": true,
+      "scope": "7 affected suites27 pass; 526 test now uses shipped renderer and prior order checks"
+    }
+  ],
+  "remaining": [
+    "Full production practice natural flow + Replay/Ending/Title adoption, original ending glyph visibility, other pending input/error-cancel flows and parent protocol.",
+    "Local replacement Runtime only after outstanding user feedback acceptance; public hosting and multiplayer follow-up remain paused."
+  ]
+}

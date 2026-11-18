@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as draws from '../site/runtime/draw.mjs';
-import {WebGlRenderer} from '../site/runtime/renderer.mjs';
+import {WebGlRenderer} from '../site/runtime/renderer-owned-ending-v2.mjs';
 
 function mesh(){
   return {mode:12,geometry:{kind:'triangle-strip',vertices:Array.from({length:34},(_,index)=>({
@@ -16,13 +16,15 @@ function harness(width=1280,height=960){
     createTexture:()=>({id:'surface'+events.length}),deleteTexture:value=>events.push(['delete',value?.id]),
     bindTexture:(_,value)=>{texture=value;},texParameteri:()=>{},bindVertexArray:()=>{},bindBuffer:()=>{},
     viewport:(...values)=>events.push(['viewport',...values]),clearColor:()=>{},clear:()=>events.push(['clear']),enable:()=>{},disable:()=>{},scissor:(...values)=>events.push(['scissor',...values]),
-    blendFunc:()=>{},getError:()=>0,
+    FUNC_ADD:22,FUNC_REVERSE_SUBTRACT:23,blendEquation:value=>events.push(['equation',value]),
+    blendFunc:()=>{},uniform2fv:()=>{},uniform4fv:()=>{},getError:()=>0,
     copyTexImage2D:(...values)=>events.push(['copy',texture?.id,...values]),
     copyTexSubImage2D:(...values)=>events.push(['copySub',texture?.id,...values]),
     bufferData:(_,values)=>{uploads.push([...values]);},drawArrays:(_,start,count)=>events.push(['draw',texture?.id,start,count]),
     texImage2D:(...values)=>events.push(['texImage',...values])};
   const renderer=Object.create(WebGlRenderer.prototype);
-  Object.assign(renderer,{gl:graphics,canvas:{width,height},textures:new Map([['0:0',{texture:{id:'image'},width:2,height:2}]]),vertices:[],current:null,blend:-1,point:null});
+  Object.assign(renderer,{gl:graphics,canvas:{width,height},textures:new Map([['0:0',{texture:{id:'image'},width:2,height:2}]]),vertices:[],current:null,blend:-1,point:null,
+    verticalClamp:[-1048576,1048576],spriteClamp:[-1048576,-1048576,1048576,1048576]});
   return {renderer,events,uploads};
 }
 function quad(layer){return {layer,bank:0,entry:0,color:0xffffffff,width:2,height:2,x:150,y:30,sx:1,sy:1,mode:0,
@@ -74,6 +76,7 @@ test('native stage capture happens once before layer5, Main82 and all526 rows sa
   const records=draws.orderDrawLayers([quad(8),row,quad(0),quad(5),main],{world:true});
   const ordered=[records[0],records[1],main,row,records.at(-1)];
   renderer.render(ordered,{world:true});
+  assert.ok(events.some(event=>event[0]==='equation'&&event[1]===renderer.gl.FUNC_ADD));
   assert.equal(events.filter(event=>event[0]==='copy').length,1);
   const capture=events.findIndex(event=>event[0]==='copy');
   assert.ok(events.slice(0,capture).some(event=>event[0]==='draw'&&event[1]==='image'));
