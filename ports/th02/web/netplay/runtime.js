@@ -1,3 +1,4 @@
+import {installBossResistance,updateBossResistance} from '../pc98-boss-resistance.mjs';
 import {installChallengeHud} from '../pc98-challenge-hud-install.mjs';
 import {installRescueSound} from '../managed-rescue-sound.mjs';
 import {createChallengeStocks} from '../pc98-challenge-stocks.mjs';
@@ -138,6 +139,7 @@ async function boot(settings){
   if(!expected.every((b,i)=>exe[offset+i]===b))throw Error('TH02 音乐分离补丁版本不匹配');
  }
  for(const edit of soundPolicy.edits)exe.set(edit.replacement.match(/../g).map(n=>parseInt(n,16)),patch.headerSize+edit.imageOffset);
+ installBossResistance(exe,'02',patch);
  const at=patch.headerSize+patch.codeSegment*16+patch.entries.run_config;
  exe[at]=config.p2;exe[at+1]=config.p3;exe[at+2]=players;exe=installNetPause(exe,overlay);patch.dataSegment+=overlay.bytes/16;if(challenge){const hud=installChallengeHud(exe,'02',patch);exe=hud.bytes;patch.challengeHudOffset=hud.countsOffset;}exe=installRescueSound(exe,patch,overlay);patch.dataSegment+=6;fat.replace(main,exe);
  const core=config.rollback&&supportsWriteJournal()?'tracked':'plain',coreEntry=version.cores[core];
@@ -262,7 +264,8 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
   const pausedBefore=nativePaused(m.HEAPU8,mailbox,patch),previousMailbox=mailbox;
   const challengeLayout=challenge&&state()&&!pausedBefore?challengeStockLayout('02',m.HEAPU8,mailbox,patch):null;
   if(challengeLayout){writeChallengeHud(m.HEAPU8,mailbox,patch.entries.mailbox,patch.challengeHudOffset,challenge.snapshot(),(at,size)=>m.thDirtyMark?.(at,size));challengeLayout.write(challenge.begin(offlineMask),offlineMask,(at,size)=>m.thDirtyMark?.(at,size));}
-  try{emulator.step();}catch(error){challenge?.abort();throw error;}
+  if(mailbox>=0)updateBossResistance(m.HEAPU8,'02',mailbox,patch,players,(at,size)=>m.thDirtyMark?.(at,size));
+ try{emulator.step();}catch(error){challenge?.abort();throw error;}
   workerHost?.recordNative?.(performance.now()-nativeStarted,frame,replay);
   ticks++;emulatedTicks++;
   refreshMailbox();
