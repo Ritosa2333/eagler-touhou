@@ -101,3 +101,21 @@ test('Attack queue and reconstructed character attacks reproduce native lifecycl
         report('attack-queue',{checks,creations,drawChecks,conversionChecks,capacity:256,behaviors:[...kinds,4].sort((a,b)=>a-b),scope:'Original queue allocation/update/clear, all 27 character attack state/RNG callbacks, custom draw vertices and Eiki conversion in both bullet pools. Native animation/shot collision/player collision/enemy spawn/effects/bullet emission/draw submission are explicit recorded boundaries. Medicine collision temporary Z is undefined native stack data and excluded; X/Y and radius are compared.'});
     }finally{c.attack_queue_delete(f);c.release(pos);m.close();}
 });
+
+test('Round reset discards queued attacks even when the next update is frozen', async () => {
+    const c = await core(), fixture = c.attack_queue_fixture(), position = c.allocate(12);
+    try {
+        assert.equal(c.attack_queue_create(fixture, 0, 0, position, 0), 0);
+        assert.equal(c.attack_queue_step(fixture, 1, 0, 0, 0, 0), 1);
+        assert.equal(c.attack_queue_draw(fixture, 2, 0), 0);
+
+        c.attack_queue_clear(fixture);
+        assert.equal(c.attack_queue_step(fixture, 1, 0, 0x800, 0, 0), 1);
+        c.attack_queue_render_all(fixture);
+        for (let layer = 0; layer < 3; ++layer)
+            assert.equal(c.attack_queue_draw(fixture, layer, 0), -1);
+    } finally {
+        c.attack_queue_delete(fixture);
+        c.release(position);
+    }
+});
