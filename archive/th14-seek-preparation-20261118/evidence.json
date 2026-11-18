@@ -188,16 +188,209 @@
       }
     ]
   },
-  "productionChanged": false,
+  "productionChanged": true,
   "independentPreviewPort": 8254,
   "fullGpuCampaignOrCollisionScaleClaimed": false,
   "publishedOriginalAssetsOrImages": false,
-  "lint": {
-    "lintExitCode": 0,
-    "existingWarningsRetained": true,
-    "sourceHashes": {
-      "launcher/app/services/runtime.ts": "51a045eb1ec7e4f6a61c88a99c97885250c3dc2300a2d92ba7c3ec56fe6c8ecd",
-      "launcher/tests/react-main/runtime-service.test.mjs": "13ac4cb75a9074856afa27f6fd3d4dd8ad5cd057b379fd5a5cb351160dad977a"
+  "developmentDelivery": {
+    "passed": true,
+    "siteHead": "64232d28a64071fec4193e86561360dff46a7070",
+    "url": "https://wth.saop.cc/?game=th14",
+    "publicFilesVerified": 72,
+    "servicePid": 443019,
+    "serviceRestarted": false,
+    "serviceConfigurationChanged": false,
+    "runtimeUnchanged": true,
+    "atomicExchange": true,
+    "copyOnWrite": true,
+    "rollbackRetained": true,
+    "publicBrowser": {
+      "passed": true,
+      "inputSha256": "c48412a95f0fe9f685d97574e8ab0655d41e44ff9c41fda7bf788589b1b29c74",
+      "points": [
+        {
+          "name": "vertical-inversion",
+          "targetRelativeFrame": 15206,
+          "actualRelativeFrame": 15206
+        }
+      ],
+      "steps": [
+        {
+          "name": "fresh-silent-title-and-native-quit-establish-save",
+          "elapsedMs": 67058
+        },
+        {
+          "name": "actual-replay-workspace-import-and-inspect",
+          "elapsedMs": 21118
+        },
+        {
+          "name": "stage5-start-and-native-pause",
+          "elapsedMs": 23589
+        },
+        {
+          "name": "actual-ui-seek-vertical-inversion",
+          "elapsedMs": 13593
+        }
+      ],
+      "errors": [],
+      "nativeErrors": [],
+      "saveValidation": {
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "decodedBytes": 149076,
+        "characterRecordsUnchanged": true,
+        "characterRecords": 7,
+        "settingsDifferences": [
+          {
+            "offset": 4,
+            "before": 254,
+            "after": 0
+          },
+          {
+            "offset": 5,
+            "before": 238,
+            "after": 239
+          },
+          {
+            "offset": 47,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 48,
+            "before": 0,
+            "after": 1
+          }
+        ],
+        "semanticSettingsDifferences": [
+          {
+            "offset": 47,
+            "before": 0,
+            "after": 1
+          },
+          {
+            "offset": 48,
+            "before": 0,
+            "after": 1
+          }
+        ],
+        "onlyMusicHeardFlagsChanged": true,
+        "nativeMusicRequestReferenceSha256": "01277073a339c1af2c1fda716999640431c2a130c174c504533481cf4efe31e3",
+        "nativeMusicRequestRelevantCases": [
+          {
+            "stage": 1,
+            "id": -3,
+            "replay": 0,
+            "stop": 1,
+            "match": 0,
+            "events": [
+              [
+                "audio",
+                4,
+                0
+              ],
+              [
+                "audio",
+                2,
+                0
+              ],
+              [
+                "front",
+                1
+              ]
+            ],
+            "dialogueAfter": 1879343104,
+            "unlocks": [
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "stage": 1,
+            "id": -3,
+            "replay": 1,
+            "stop": 1,
+            "match": 0,
+            "events": [
+              [
+                "audio",
+                4,
+                0
+              ],
+              [
+                "audio",
+                2,
+                0
+              ],
+              [
+                "front",
+                1
+              ]
+            ],
+            "dialogueAfter": 1879343104,
+            "unlocks": [
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ],
+        "beforeDecodedSha256": "9c15be2cdf48f4caef1f85f910340ac331a901968e55d9d217838e68ae7393fb",
+        "afterDecodedSha256": "1a6624be81a703f09519cb3bfab34703814d5ca977d08e1ddd56c821aaa43142",
+        "completeGame": false
+      },
+      "browserClosed": true,
+      "reportSha256": "2bae8fe2508ede3e7d0db18762d887a8834f928330c6cfcbf05b043097c5e2ab",
+      "delivery": {
+        "passed": true,
+        "codeResponsesVerified": 130,
+        "normalWasmUnchanged": true,
+        "compiledPolicyObservedInActualBrowserResponse": [
+          {
+            "path": "/assets/replays-DawzJzB7.js",
+            "sha256": "2ef96e69f6a8cb69c7da7946d76fcc42224f0fb7853e0eb6022fb9dbe27a9bb1",
+            "compiledScope": "{return Promise.reject(e)}let l=b.game===`th14`&&t===`playback`&&[`open`,`seek`].includes(r.action),u=o===void 0?l?e.timeouts?.launch??12e4:e.timeouts?.command??15e3:o,d=`runtime-${s.id}-${++w}`;return new Promise(("
+          }
+        ]
+      }
     }
-  }
+  },
+  "upstreamProductionChanged": false
 }
