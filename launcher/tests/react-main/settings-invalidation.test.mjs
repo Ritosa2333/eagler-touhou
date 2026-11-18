@@ -318,3 +318,11 @@ test('TH01 touch preferences are independent and shared by its solo and multipla
  model.hydrate({...context,productId:'th07'});assert.equal(model.getSnapshot().options.touchSensitivity,225);assert.equal(model.getSnapshot().options.touchMovementMode,'joystick');
  model.setOption('touchSensitivity',250);model.hydrate({...context,productId:'th01'});assert.equal(model.getSnapshot().options.touchSensitivity,135);
 });
+
+test('TH01 defaults to joystick while preserving an existing movement choice', () => {
+ const values=new Map(),storage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)};
+ const model=api.createGameSettingsModel({storage}),context=fixture('th06').context;
+ model.hydrate({...context,productId:'th01'});assert.equal(model.getSnapshot().options.touchMovementMode,'joystick');
+ model.setOption('touchMovementMode','touch');model.hydrate({...context,productId:'th01mp'});assert.equal(model.getSnapshot().options.touchMovementMode,'touch');
+ const fresh=api.createGameSettingsModel({storage:null});fresh.hydrate({...context,productId:'th01mp'});assert.equal(fresh.getSnapshot().options.touchMovementMode,'joystick');
+});

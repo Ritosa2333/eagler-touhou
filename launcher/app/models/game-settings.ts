@@ -144,6 +144,9 @@ export function createGameSettingsModel({storage, onChange}: {
         externalMidiAvailable: PRODUCT_GAMES[gameId].musicCapabilities.midi && context.webMidiAvailable}});
     const options = gameId === 'th01' ? {...normalized.options} :
       applySharedTouchPreferences(normalized.options, loadOrInitializeSharedTouchPreferences(storage, normalized.options));
+    if (gameId === 'th01') {
+      try {if (!storage?.getItem(gamePreferenceStorageKey(preferenceId))) options.touchMovementMode = 'joystick';} catch {}
+    }
     const product=PRODUCT_GAMES[gameId];
     if('touchMovementModes' in product){
       if(!(product.touchMovementModes as readonly string[]).includes(options.touchMovementMode))options.touchMovementMode=product.touchMovementModes[0];
