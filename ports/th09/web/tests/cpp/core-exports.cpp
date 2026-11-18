@@ -591,6 +591,7 @@ API(bullet_draw_fixture) bullet_draw_test::Fixture* bullet_draw_fixture(){return
 API(bullet_draw_delete) void bullet_draw_delete(bullet_draw_test::Fixture* f){delete f;}
 API(bullet_draw_part) void* bullet_draw_part(bullet_draw_test::Fixture* f,u32 n,u32 index){switch(n){case 0:return &f->geometry;case 1:return &f->bullets.pool[index];case 2:return f->visuals.instances[index].data();case 3:return &f->lasers.pool[index];case 4:return f->bullets.draw_heads.data();}return nullptr;}
 API(bullet_draw_link) void bullet_draw_link(bullet_draw_test::Fixture* f,u32 index,i32 next){f->bullets.pool[index].draw_next=next;}
+API(bullet_draw_reset_pool) void bullet_draw_reset_pool(bullet_draw_test::Fixture* f){f->bullets.reset_pool();}
 API(bullet_draw_run) void bullet_draw_run(bullet_draw_test::Fixture* f){f->draw();}
 API(bullet_draw_count) u32 bullet_draw_count(bullet_draw_test::Fixture* f,u32 n){return n?f->animations.size():f->order.size();}
 API(bullet_draw_data) const void* bullet_draw_data(bullet_draw_test::Fixture* f,u32 n){return n?static_cast<const void*>(f->animations.data()):static_cast<const void*>(f->order.data());}

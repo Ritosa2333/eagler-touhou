@@ -20,3 +20,16 @@ test('Bullets and lasers retain original geometry, glow gates and six-layer orde
  }report('bullet-draw',{checks,draws,scope:'Both fields, six ordered bullet lists including both pools and all five animation phases; laser endpoints, phase-dependent glow, scales, colors and retained state. Final sprite rasterization is a boundary.'});
  }finally{c.bullet_draw_delete(f);m.close();}
 });
+
+test('Resetting bullets clears draw indices before the next update', async () => {
+    const c = await core();
+    const fixture = c.bullet_draw_fixture();
+    try {
+        new DataView(c.memory.buffer).setInt32(c.bullet_draw_part(fixture,4,0),1,true);
+        c.bullet_draw_reset_pool(fixture);
+        c.bullet_draw_run(fixture);
+        assert.equal(c.bullet_draw_count(fixture,1),0);
+    } finally {
+        c.bullet_draw_delete(fixture);
+    }
+});

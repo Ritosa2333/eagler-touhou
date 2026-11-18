@@ -36,6 +36,7 @@ void BulletManager::reset_pool(){
     // bytes, so the observer deduplicates by slot before recording first writes.
     for(u32 i=0;i<pool.size();++i){if(checkpoint)checkpoint->BeforeBullet(*this,i);pool[i]=Bullet{};}
     pool[first_capacity].state=pool[update_count].state=6;
+    draw_heads.fill(-1);
 }
 void BulletManager::add_draw(Bullet& b,u32 index) noexcept {
     if(b.draw_group>=draw_heads.size())return;b.draw_next=draw_heads[b.draw_group];draw_heads[b.draw_group]=i32(index);
