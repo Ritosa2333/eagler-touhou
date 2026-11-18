@@ -1,6 +1,6 @@
 # 文档总表
 
-共 720 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 721 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -437,6 +437,7 @@
 | 历史记录 | [archive/th14-replay-progress-20261118/README.md](../archive/th14-replay-progress-20261118/README.md) | TH14 换关进度与完整录像验收 · 2026-11-18 |
 | 历史记录 | [archive/th14-replay-progress-20261118/TH14_NATIVE_TAB_VISIBILITY_NOV18.md](../archive/th14-replay-progress-20261118/TH14_NATIVE_TAB_VISIBILITY_NOV18.md) | TH14 真实标签隐藏、暂停保留与后台启动 · 2026-11-18 |
 | 历史记录 | [archive/th14-rollback-20261114/README.md](../archive/th14-rollback-20261114/README.md) | TH14 多人延迟输入验证 |
+| 历史记录 | [archive/th14-seek-preparation-20261118/README.md](../archive/th14-seek-preparation-20261118/README.md) | TH14 录像定位的关卡准备预算 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/README.md](../archive/th14-subtree-runtime-restoration-20261114/README.md) | TH14 子树运行时修复接续 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_FULL_BROWSER_REPLAY_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_FULL_BROWSER_REPLAY_NOV14.md) | TH14 当前版本完整录像浏览器验收 |
 | 历史记录 | [archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_LEGACY_BROWSER_NOV14.md](../archive/th14-subtree-runtime-restoration-20261114/TH14_CURRENT_LEGACY_BROWSER_NOV14.md) | TH14 魔理沙 A Easy 当前浏览器终态 |

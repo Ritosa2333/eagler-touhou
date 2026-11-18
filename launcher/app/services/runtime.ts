@@ -522,20 +522,27 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       waiters.delete(waiter); timers.clearTimeout(waiter.timer); waiter.resolve();
     }
   }
-  function send<C extends RuntimeProtocolCommand>(command: C, payload: RuntimeCommandPayloads[C], timeout = options.timeouts?.command ?? 15_000): Promise<RuntimeResponseMessage> {
+  function send<C extends RuntimeProtocolCommand>(command: C, payload: RuntimeCommandPayloads[C], timeout?: number): Promise<RuntimeResponseMessage> {
     const token = sessions.current();
     const runtime = frame.contentWindow;
     if (!token || !snapshot.ready || !runtime || disposed) return Promise.reject(new Error(options.translate('runtime.notReady')));
     try { runtimeIdentity(token); } catch (error) { return Promise.reject(error); }
+    // Opening a TH14 replay stage, including the reload at the start of a seek,
+    // performs the same native preparation as launch before it can acknowledge.
+    const preparesReplayStage = snapshot.game === 'th14' && command === 'playback' &&
+      ['open', 'seek'].includes((payload as RuntimeCommandPayloads['playback']).action);
+    const budget = timeout === undefined
+      ? preparesReplayStage ? options.timeouts?.launch ?? 120_000 : options.timeouts?.command ?? 15_000
+      : timeout;
     const request = `runtime-${token.id}-${++requestSerial}`;
     return new Promise((resolve, reject) => {
       const expire = () => { pending.delete(request); reject(new Error(options.translate('runtime.operationTimeout', {command}))); };
-      const item: PendingRequest = { token, resolve, reject, timer: timers.setTimeout(expire, timeout) };
+      const item: PendingRequest = { token, resolve, reject, timer: timers.setTimeout(expire, budget) };
       if (command === 'configure') {
         const loaded = new Map<string, number>();
         item.progress = (mode, bytes) => {
           if (!Number.isFinite(bytes) || bytes <= (loaded.get(mode) ?? 0)) return;
-          loaded.set(mode, bytes); timers.clearTimeout(item.timer); item.timer = timers.setTimeout(expire, timeout);
+          loaded.set(mode, bytes); timers.clearTimeout(item.timer); item.timer = timers.setTimeout(expire, budget);
         };
       }
       pending.set(request, item);

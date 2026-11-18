@@ -1,0 +1,203 @@
+{
+  "schema": "th14/replay-stage-preparation-budget/1",
+  "date": "2026-11-18",
+  "passed": true,
+  "completeGame": false,
+  "silent": true,
+  "change": "TH14 playback open/seek uses existing native launch preparation budget, default120s; other commands15s and explicit caller values retained",
+  "ordinaryAndMultiplayerCovered": true,
+  "runtimeUnchanged": {
+    "normalWasmSha256": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43",
+    "multiplayerWasmSha256": "d4548f7c67b34fdfd191e9def53f78274c1ddd4c2813fe3a81a492a0e30d8dea",
+    "normalGeneration": "08759279802b926a67c8099c0f59777030924f8c7c8629268ae604df9fefa14c",
+    "multiplayerGeneration": "f040f56bc3b848dfccf8f72a073c0d5314896c14bfac5f6088360417e9f152a4"
+  },
+  "serviceTests": {
+    "newTests": 8,
+    "previousImplementationNewTestsFailed": 5,
+    "previousImplementationNewControlsPassed": 3,
+    "currentWholeServiceFilePassed": 64,
+    "covers": [
+      "normal/MP beyond15s",
+      "open/seek120s bounds",
+      "explicit250ms deadline",
+      "configured native launch budget",
+      "pause/other game unchanged15s",
+      "frame retirement cancels pending request"
+    ]
+  },
+  "typecheckPassed": true,
+  "frontendBuildPassed": true,
+  "packageVerifyPassed": true,
+  "actualBrowser": {
+    "inputSha256": "c48412a95f0fe9f685d97574e8ab0655d41e44ff9c41fda7bf788589b1b29c74",
+    "inputBytes": 110022,
+    "seekUsed": true,
+    "initialStage": 5,
+    "fullReplayClaimed": false,
+    "pointSteps": [
+      {
+        "name": "stage5-start-and-native-pause",
+        "elapsedMs": 20458
+      },
+      {
+        "name": "actual-ui-seek-mirror",
+        "elapsedMs": 10974
+      },
+      {
+        "name": "actual-ui-seek-vertical-inversion",
+        "elapsedMs": 12153
+      },
+      {
+        "name": "actual-ui-seek-large-bullets",
+        "elapsedMs": 9947
+      },
+      {
+        "name": "actual-ui-seek-giant-player",
+        "elapsedMs": 14261
+      }
+    ],
+    "points": [
+      {
+        "name": "mirror",
+        "targetRelativeFrame": 12892,
+        "actualRelativeFrame": 12892,
+        "imageSha256": "112e2fd9ba016787de36e346ec55ec1b847c86c892719499e7e9b869a5d288ea",
+        "stage": 5,
+        "nativeFrame": 12892,
+        "tools": 0,
+        "visualInspectionCompleted": true,
+        "observation": "Mirror spell frame rendered with complete playfield and upright HUD; no blank scene or serious trails observed."
+      },
+      {
+        "name": "vertical-inversion",
+        "targetRelativeFrame": 15206,
+        "actualRelativeFrame": 15206,
+        "imageSha256": "44f1e90b7aefd2bc7cb47b7ab390a744babda536730cbbfc6c5a88cd909a4538",
+        "stage": 5,
+        "nativeFrame": 15206,
+        "tools": 0,
+        "visualInspectionCompleted": true,
+        "observation": "World inversion is visible, including inverted lower-edge boss-name text; HUD remains upright."
+      },
+      {
+        "name": "large-bullets",
+        "targetRelativeFrame": 33387,
+        "actualRelativeFrame": 33387,
+        "imageSha256": "89aa73017ad8704186bd9ab3f4835d86d5f84129a04dfb48d5694b1b57c7de3e",
+        "stage": 6,
+        "nativeFrame": 12604,
+        "tools": 0,
+        "visualInspectionCompleted": true,
+        "observation": "Enlarged bullet circles and their glow are visible in the playfield; HUD remains upright."
+      },
+      {
+        "name": "giant-player",
+        "targetRelativeFrame": 39546,
+        "actualRelativeFrame": 39546,
+        "imageSha256": "b319b063a76dcb69863d70c5e0e8edf1fefcb87810c988e1df1a5ef44e147033",
+        "stage": 6,
+        "nativeFrame": 18763,
+        "tools": 0,
+        "visualInspectionCompleted": true,
+        "observation": "Enlarged player sprite is visible at lower edge; boss and HUD remain rendered."
+      }
+    ],
+    "noNativeOrPageErrors": true,
+    "workspaceTimeoutAlertAbsentAtAllFourPoints": true,
+    "characterRecordsUnchanged": true,
+    "onlyExpectedMusicHeardAndChecksumChanges": true,
+    "scoreNativeValidation": {
+      "actualRetailDecryptAndLzss": true,
+      "originalInstructionBytesPatched": 0,
+      "controlledCrtBoundaries": [
+        "malloc",
+        "memcpy",
+        "free"
+      ],
+      "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+      "decodedBytes": 149076,
+      "characterRecordsUnchanged": true,
+      "characterRecords": 7,
+      "settingsDifferences": [
+        {
+          "offset": 4,
+          "before": 214,
+          "after": 218
+        },
+        {
+          "offset": 47,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 48,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 49,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 50,
+          "before": 0,
+          "after": 1
+        }
+      ],
+      "semanticSettingsDifferences": [
+        {
+          "offset": 47,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 48,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 49,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 50,
+          "before": 0,
+          "after": 1
+        }
+      ],
+      "onlyMusicHeardFlagsChanged": true,
+      "nativeMusicRequestReferenceSha256": "01277073a339c1af2c1fda716999640431c2a130c174c504533481cf4efe31e3",
+      "beforeDecodedSha256": "d9a94623e1973ad45cf7f99724babb1c1bb4f2f0faee46b6de38d6305ceee267",
+      "afterDecodedSha256": "1f22f922b7f9d7cb766d19e6d6c34cf5d6ab0b3b780147d0dde631fb891e0fc1",
+      "completeGame": false
+    },
+    "reportSha256": "aba5c93d90a12df99c03f63cd38017584280256dc41ca9b63967b22c49d6d4ef"
+  },
+  "delivery": {
+    "passed": true,
+    "codeResponsesVerified": 78,
+    "normalWasmUnchanged": true,
+    "compiledPolicyObservedInActualBrowserResponse": [
+      {
+        "path": "/assets/replays-DawzJzB7.js",
+        "sha256": "2ef96e69f6a8cb69c7da7946d76fcc42224f0fb7853e0eb6022fb9dbe27a9bb1",
+        "compiledScope": "{return Promise.reject(e)}let l=b.game===`th14`&&t===`playback`&&[`open`,`seek`].includes(r.action),u=o===void 0?l?e.timeouts?.launch??12e4:e.timeouts?.command??15e3:o,d=`runtime-${s.id}-${++w}`;return new Promise(("
+      }
+    ]
+  },
+  "productionChanged": false,
+  "independentPreviewPort": 8254,
+  "fullGpuCampaignOrCollisionScaleClaimed": false,
+  "publishedOriginalAssetsOrImages": false,
+  "lint": {
+    "lintExitCode": 0,
+    "existingWarningsRetained": true,
+    "sourceHashes": {
+      "launcher/app/services/runtime.ts": "51a045eb1ec7e4f6a61c88a99c97885250c3dc2300a2d92ba7c3ec56fe6c8ecd",
+      "launcher/tests/react-main/runtime-service.test.mjs": "13ac4cb75a9074856afa27f6fd3d4dd8ad5cd057b379fd5a5cb351160dad977a"
+    }
+  }
+}
