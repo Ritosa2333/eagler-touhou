@@ -373,11 +373,15 @@ test('TH075 layout is independent from shared shooters and persists across game 
   const model=api.createTouchLayoutModel({storage});model.hydrate();
   model.begin('landscape',defaults,['joystick']);model.updateControl('joystick',{x:.25});model.save();model.discard();
   const shared=values.get('eagler-touhou-touch-layout-v1');
+  model.setGame('th01');assert.equal(model.getSnapshot().saved,null);
+  model.begin('landscape',defaults,['joystick']);model.updateControl('joystick',{x:.45});model.save();model.discard();
+  assert.equal(values.get('eagler-touhou-touch-layout-v1'),shared);assert.ok(values.has('eagler-touhou-touch-layout-v1-th01'));
   model.setGame('th075');assert.equal(model.getSnapshot().saved,null);
   model.begin('landscape',defaults,['joystick']);model.updateControl('joystick',{x:.7,y:.6});model.save();model.discard();
   assert.equal(values.get('eagler-touhou-touch-layout-v1'),shared);assert.ok(values.has('eagler-touhou-touch-layout-v1-th075'));
   model.setGame('th06');assert.equal(model.getSnapshot().saved.profiles.landscape.controls.joystick.x,.25);
   model.setGame('th07');assert.equal(model.getSnapshot().saved.profiles.landscape.controls.joystick.x,.25);
+  model.setGame('th01');assert.equal(model.getSnapshot().saved.profiles.landscape.controls.joystick.x,.45);
   model.setGame('th075');assert.equal(model.getSnapshot().saved.profiles.landscape.controls.joystick.x,.7);
   const reopened=api.createTouchLayoutModel({storage});reopened.hydrate();reopened.setGame('th075');
   assert.equal(reopened.getSnapshot().saved.profiles.landscape.controls.joystick.x,.7);
