@@ -392,5 +392,826 @@
       }
     }
   },
-  "upstreamProductionChanged": false
+  "upstreamProductionChanged": false,
+  "currentSixBombGraphics": {
+    "schema": "th14/current-browser-six-bomb-graphics/1",
+    "date": "2026-11-18",
+    "passed": true,
+    "completeGame": false,
+    "silent": true,
+    "runtimeWasmSha256": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43",
+    "actualMenuSelectedLoadouts": 6,
+    "firstStageNormalOnly": true,
+    "currentBrowserGpu": true,
+    "keyboardActions": [
+      "ordinary menu selection",
+      "shot",
+      "slow movement",
+      "Bomb",
+      "pause and title return",
+      "native Quit"
+    ],
+    "gameStateWritesToMatchReference": false,
+    "coreOrWebsiteImplementationChanged": false,
+    "ordinaryCases": [
+      {
+        "character": 0,
+        "shot": 0,
+        "selectedCharacter": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 288,
+          "title": [
+            6,
+            2,
+            0,
+            0,
+            3
+          ],
+          "error": ""
+        },
+        "selectedShot": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 329,
+          "title": [
+            7,
+            2,
+            0,
+            0,
+            2
+          ],
+          "error": ""
+        },
+        "started": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 9,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "active": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 59,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "tail": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 488,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "status": {
+          "tools": 0,
+          "readOnly": 1,
+          "error": ""
+        },
+        "imageSha256": "78dedba08746581999840cd73ee6b1066ec52bcaa8d3ddb0b91b783176bc3399",
+        "tailImageSha256": "65c380d1607bc4904a5af2650d427ecdf5c66a1360d81a5869ba5b334a8ce291",
+        "bombKey": "x",
+        "visualInspectionPending": true,
+        "componentSixBombLifecycleEvidenceReused": true,
+        "currentGameStateNotWritten": true
+      },
+      {
+        "character": 0,
+        "shot": 1,
+        "selectedCharacter": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 95,
+          "title": [
+            6,
+            2,
+            0,
+            0,
+            3
+          ],
+          "error": ""
+        },
+        "selectedShot": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 177,
+          "title": [
+            7,
+            2,
+            1,
+            0,
+            2
+          ],
+          "error": ""
+        },
+        "started": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 9,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "active": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 58,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "tail": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 486,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "status": {
+          "tools": 0,
+          "readOnly": 1,
+          "error": ""
+        },
+        "imageSha256": "5fb52e3007745e98e36a7194bbe754d61087c325750d483f319d7d83bcca22ec",
+        "tailImageSha256": "261a103b7c7a810c74f5b8b8b17b024b7e0a3cfbdcc4283a1406738f716f122d",
+        "bombKey": "x",
+        "visualInspectionPending": true,
+        "componentSixBombLifecycleEvidenceReused": true,
+        "currentGameStateNotWritten": true
+      },
+      {
+        "character": 1,
+        "shot": 0,
+        "selectedCharacter": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 137,
+          "title": [
+            6,
+            2,
+            1,
+            0,
+            3
+          ],
+          "error": ""
+        },
+        "selectedShot": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 178,
+          "title": [
+            7,
+            2,
+            0,
+            0,
+            2
+          ],
+          "error": ""
+        },
+        "started": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 9,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "active": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 58,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "tail": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 489,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "status": {
+          "tools": 0,
+          "readOnly": 1,
+          "error": ""
+        },
+        "imageSha256": "f62bf3be26c128f093c039f8c14e629ac6201d294750e2220ece4d4535cd205b",
+        "tailImageSha256": "e7637f11c72e2dae9420f1a9f24864ffff4133ea1f7cfee960fecb134ef55308",
+        "bombKey": "x",
+        "visualInspectionPending": true,
+        "componentSixBombLifecycleEvidenceReused": true,
+        "currentGameStateNotWritten": true
+      },
+      {
+        "character": 1,
+        "shot": 1,
+        "selectedCharacter": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 94,
+          "title": [
+            6,
+            2,
+            1,
+            0,
+            3
+          ],
+          "error": ""
+        },
+        "selectedShot": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 176,
+          "title": [
+            7,
+            2,
+            1,
+            0,
+            2
+          ],
+          "error": ""
+        },
+        "started": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 9,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "active": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 58,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "tail": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 487,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "status": {
+          "tools": 0,
+          "readOnly": 1,
+          "error": ""
+        },
+        "imageSha256": "dbb2e007324e3f3fac446719e2913462db3eb5f5cec1d791b250432c5edcacc7",
+        "tailImageSha256": "4ec4de761900e4b6fd25e4f63efdafad7ddeab94975ccb998059005b508f44af",
+        "bombKey": "x",
+        "visualInspectionPending": true,
+        "componentSixBombLifecycleEvidenceReused": true,
+        "currentGameStateNotWritten": true
+      },
+      {
+        "character": 2,
+        "shot": 0,
+        "selectedCharacter": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 136,
+          "title": [
+            6,
+            2,
+            2,
+            0,
+            3
+          ],
+          "error": ""
+        },
+        "selectedShot": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 177,
+          "title": [
+            7,
+            2,
+            0,
+            0,
+            2
+          ],
+          "error": ""
+        },
+        "started": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 9,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "active": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 58,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "tail": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 486,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "status": {
+          "tools": 0,
+          "readOnly": 1,
+          "error": ""
+        },
+        "imageSha256": "ba8697e8ffea575447e923e4583b78ec3c8ddbdf246e5b92dafdc3d8ce69cdb5",
+        "tailImageSha256": "128bbb35a8cf1e08cc6a85a761c30ec94ca95d5cf3b7629224f1ec3192260cd0",
+        "bombKey": "x",
+        "visualInspectionPending": true,
+        "componentSixBombLifecycleEvidenceReused": true,
+        "currentGameStateNotWritten": true
+      },
+      {
+        "character": 2,
+        "shot": 1,
+        "selectedCharacter": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 95,
+          "title": [
+            6,
+            2,
+            2,
+            0,
+            3
+          ],
+          "error": ""
+        },
+        "selectedShot": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 177,
+          "title": [
+            7,
+            2,
+            1,
+            0,
+            2
+          ],
+          "error": ""
+        },
+        "started": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 9,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "active": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 58,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "tail": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 487,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "status": {
+          "tools": 0,
+          "readOnly": 1,
+          "error": ""
+        },
+        "imageSha256": "65f243dcfbb3b7fb1a3adce3d616e3df9e95462cc6932613cf17251043af941e",
+        "tailImageSha256": "9acdfee063c7e9372ce89e1bd75478ad31424b91367466852a05b3a58581fa2a",
+        "bombKey": "x",
+        "visualInspectionPending": true,
+        "componentSixBombLifecycleEvidenceReused": true,
+        "currentGameStateNotWritten": true
+      }
+    ],
+    "targetedLongTails": [
+      {
+        "character": 0,
+        "shot": 0,
+        "selectedCharacter": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 282,
+          "title": [
+            6,
+            2,
+            0,
+            0,
+            3
+          ],
+          "error": ""
+        },
+        "selectedShot": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 323,
+          "title": [
+            7,
+            2,
+            0,
+            0,
+            2
+          ],
+          "error": ""
+        },
+        "started": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 9,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "active": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 58,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "tail": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 1000,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "status": {
+          "tools": 0,
+          "readOnly": 1,
+          "error": ""
+        },
+        "imageSha256": "a4cab4df0bfca17343b23cc0dbf3ada190c2630ec3c095e7d3739f6d58c24c3b",
+        "tailImageSha256": "223a34ac8f71f8ddfbcdb0f20692cec69e99578472a4b9b9715bdb7782b6fb24",
+        "bombKey": "x",
+        "visualInspectionPending": true,
+        "componentSixBombLifecycleEvidenceReused": true,
+        "currentGameStateNotWritten": true
+      },
+      {
+        "character": 1,
+        "shot": 1,
+        "selectedCharacter": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 136,
+          "title": [
+            6,
+            2,
+            1,
+            0,
+            3
+          ],
+          "error": ""
+        },
+        "selectedShot": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 218,
+          "title": [
+            7,
+            2,
+            1,
+            0,
+            2
+          ],
+          "error": ""
+        },
+        "started": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 9,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "active": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 58,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "tail": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 1000,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "status": {
+          "tools": 0,
+          "readOnly": 1,
+          "error": ""
+        },
+        "imageSha256": "04c6c58ecb435c95fef4d153f4cfb1191c73230e8e390900f28db2962ab4b29d",
+        "tailImageSha256": "7181b7b8df6e5a0d947441a6ea0ffdc23b3183711e270eae0f6fd2b851214753",
+        "bombKey": "x",
+        "visualInspectionPending": true,
+        "componentSixBombLifecycleEvidenceReused": true,
+        "currentGameStateNotWritten": true
+      },
+      {
+        "character": 2,
+        "shot": 0,
+        "selectedCharacter": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 136,
+          "title": [
+            6,
+            2,
+            2,
+            0,
+            3
+          ],
+          "error": ""
+        },
+        "selectedShot": {
+          "phase": 0,
+          "stage": 0,
+          "frame": 177,
+          "title": [
+            7,
+            2,
+            0,
+            0,
+            2
+          ],
+          "error": ""
+        },
+        "started": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 9,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "active": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 58,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "tail": {
+          "phase": 1,
+          "stage": 1,
+          "frame": 1000,
+          "title": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "error": ""
+        },
+        "status": {
+          "tools": 0,
+          "readOnly": 1,
+          "error": ""
+        },
+        "imageSha256": "9f4759472788a29696fddf7c50658084b0d86d19059bc9dede7b54ce1a20a6c9",
+        "tailImageSha256": "168c559cc524867d2ce43085c20a2b315c6c0cca1012b7c54963b22dfa948098",
+        "bombKey": "x",
+        "visualInspectionPending": true,
+        "componentSixBombLifecycleEvidenceReused": true,
+        "currentGameStateNotWritten": true
+      }
+    ],
+    "reviewedImages": 15,
+    "visualInspectionCompleted": true,
+    "review": {
+      "reimuA": "Visible sweep/distortion; frame1000 normal background recovered",
+      "reimuB": "Visible luminous ring; later ordinary scene visible",
+      "marisaA": "Visible rectangular beam; later ordinary scene visible",
+      "marisaB": "Visible moving ring still present near frame488, consistent with500-frame lifetime; absent atframe1000",
+      "sakuyaA": "Shield darkening persists near486, consistent with720-frame shield; normal background recovered at1000",
+      "sakuyaB": "Visible time/colour effect followed by ordinary scene and death effect"
+    },
+    "rawReportVisualPendingFieldsPreserved": true,
+    "sourceLimits": "Current graphics integration supplements existing six-Bomb SDK inventory/damage/controller lifecycle tests; no new damage counter or exact controller-end observation claimed. Three1000-frame observations are chosen from known long visual lifetimes; native original full UI/GPU pixel equality not claimed.",
+    "delivery": [
+      {
+        "name": "results-six-bombs-current-nov18",
+        "passed": true,
+        "actualCodeResponsesVerified": 59
+      },
+      {
+        "name": "results-three-long-bomb-tails-nov18",
+        "passed": true,
+        "actualCodeResponsesVerified": 59
+      }
+    ],
+    "browsersAndOwnedForwardsClosed": true,
+    "otherSite404sPreserved": [
+      [
+        {
+          "url": "http://localhost:8257/assets/th17-card.webp",
+          "status": 404
+        },
+        {
+          "url": "http://localhost:8257/api/ready",
+          "status": 404
+        },
+        {
+          "url": "http://localhost:8257/assets/th17-card.webp",
+          "status": 404
+        },
+        {
+          "url": "http://localhost:8257/_eagler/resource-routes?path=%2Fgames%2Fth14%2Fth14.dat",
+          "status": 404
+        },
+        {
+          "url": "http://localhost:8257/api/ready",
+          "status": 404
+        }
+      ],
+      [
+        {
+          "url": "http://localhost:8257/assets/th17-card.webp",
+          "status": 404
+        },
+        {
+          "url": "http://localhost:8257/api/ready",
+          "status": 404
+        },
+        {
+          "url": "http://localhost:8257/assets/th17-card.webp",
+          "status": 404
+        },
+        {
+          "url": "http://localhost:8257/_eagler/resource-routes?path=%2Fgames%2Fth14%2Fth14.dat",
+          "status": 404
+        },
+        {
+          "url": "http://localhost:8257/api/ready",
+          "status": 404
+        }
+      ]
+    ],
+    "rawReportSha256": [
+      "4db7a8611bd251210288e533778e64f1fc140a8478c669115ae343b979cc7c28",
+      "64306b3b3745a64ba14933455ac8c01ab9d517e2ecc9d01d81aa005241ccd438"
+    ],
+    "originalAssetsOrImagesPublished": false
+  }
 }
