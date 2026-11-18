@@ -1107,7 +1107,7 @@ EMSCRIPTEN_KEEPALIVE int th13_room_preview() {
 
 EMSCRIPTEN_KEEPALIVE int th13_room_return_ready() {
     using namespace th13::sdl;
-    return app && mp_started && !th13::multiplayer::session.Simulating() &&
+    return app && mp_started && !mp_spectator_mode && !th13::multiplayer::session.Simulating() &&
         (app->exiting || (!app->run && !app->ending && app->title &&
                          app->title->state.screen == th13::TitleScreen::Main));
 }
