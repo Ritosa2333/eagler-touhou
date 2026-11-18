@@ -365,9 +365,10 @@ export function SettingsBody({
       </OptionsGroup>
       {(actions.keyboard || actions.gamepad) && (
         <InputSettings
-          keyboard={state.gameId === 'th19' ? actions.th19Keyboard : actions.keyboard}
+          keyboard={state.gameId === 'th075' ? actions.th075Keyboard : state.gameId === 'th19' ? actions.th19Keyboard : actions.keyboard}
           gamepad={state.gameId === 'th19' ? actions.th19Gamepad : actions.gamepad}
           th19={state.gameId === 'th19'}
+          th075={state.gameId === 'th075'}
           th09Local={state.gameId === 'th09' && !multiplayer ? actions.th09Local : undefined}
         />
       )}

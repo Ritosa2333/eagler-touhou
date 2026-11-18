@@ -26,6 +26,7 @@ public:
     static Viewport viewport(i32 side){return side<2?Viewport{u32(16+320*side),16,288,448,0,1}:Viewport{};}
     void begin_field(i32)override;
     void animation(AnmVm&,BattleSprite)override;
+    void bullet_animation(AnmVm&,const Bullet&)override;
     void hitbox(i32 side,AnmLoaded* file,const Vec3& position,i32 frame)override{
         if(!file){hitbox_displays[side].reset();return;}
         auto marker=hitbox_displays[side].sample(*file,position,frame);renderer.draw_2d(marker);

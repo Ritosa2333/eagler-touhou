@@ -2,10 +2,10 @@ import {test, beforeAll as before} from 'vitest';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {fileURLToPath} from 'node:url';
-let KeyboardMapping,wasdKeyboardAliases;
+let KeyboardMapping,wasdKeyboardAliases,createKeyboardPreferences,keyboardCaptureCode;
 before(async()=>{
-  const result=await build({stdin:{contents:`export {KeyboardMapping} from './src/launcher/keyboard-mapping.mts';export {wasdKeyboardAliases} from './src/launcher/keyboard-preferences.mts';`,resolveDir:fileURLToPath(new URL('../../',import.meta.url))},bundle:true,write:false,format:'esm',platform:'node'});
-  ({KeyboardMapping,wasdKeyboardAliases}=await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64')));
+  const result=await build({stdin:{contents:`export {KeyboardMapping} from './src/launcher/keyboard-mapping.mts';export {wasdKeyboardAliases,createKeyboardPreferences,keyboardCaptureCode} from './src/launcher/keyboard-preferences.mts';`,resolveDir:fileURLToPath(new URL('../../',import.meta.url))},bundle:true,write:false,format:'esm',platform:'node'});
+  ({KeyboardMapping,wasdKeyboardAliases,createKeyboardPreferences,keyboardCaptureCode}=await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64')));
 });
 const event=(code,extra={})=>({type:'keydown',code,key:'',keyCode:0,location:0,...extra});
 const context=()=>({target:{},game:'th06',epoch:1,launched:true,ready:true,spectator:false});
@@ -75,4 +75,24 @@ test('TH09 split profiles route the new keys through the selected keyboard devic
 test('a new runtime epoch receives no held state or release from its predecessor',()=>{
   const owner=new KeyboardMapping(()=>wasdKeyboardAliases),ctx=context();owner.map(event('KeyJ'),true,'physical','standard',ctx);
   assert.deepEqual(compact(owner.map(event('KeyK'),true,'physical','standard',{...ctx,epoch:2})),[['KeyX',true]]);
+});
+test('TH075 keeps keypad directions separate and persists keypad dash and attack aliases',()=>{
+  const entries=new Map(),storage={getItem:key=>entries.get(key),setItem:(key,value)=>entries.set(key,value)};
+  const preferences=createKeyboardPreferences(storage,'th075');
+  const keypad=(key,keyCode)=>event('Unidentified',{key,keyCode,location:3});
+  preferences.bind('focus',keyboardCaptureCode(keypad('Insert',45)));
+  preferences.bind('shoot','NumpadAdd');
+  preferences.bind('left','Numpad4');
+  const saved=createKeyboardPreferences(storage,'th075');
+  assert.deepEqual(saved.getSnapshot(),{Numpad0:'KeyV',NumpadAdd:'KeyZ',Numpad4:'ArrowLeft'});
+  assert.deepEqual(createKeyboardPreferences(storage).getSnapshot(),{});
+  const owner=new KeyboardMapping(saved.getSnapshot),ctx={...context(),game:'th075'};
+  const map=(key,down)=>compact(owner.map(key,down,'physical','th075',ctx));
+  assert.deepEqual(map(event('ArrowLeft',{key:'ArrowLeft',keyCode:37}),true),[['ArrowLeft',true]]);
+  assert.deepEqual(map(keypad('ArrowLeft',37),true),[['Th075Action0',true]]);
+  assert.deepEqual(map(event('Numpad4',{key:'4',keyCode:100,location:3}),false),[['Th075Action0',false]]);
+  assert.deepEqual(map(keypad('Insert',45),true),[['Th075Action7',true]]);
+  assert.deepEqual(map(event('NumpadAdd',{key:'+',keyCode:107,location:3}),true),[['Th075Action4',true]]);
+  assert.deepEqual(map(event('KeyZ'),true),[['KeyZ',true]],'original DirectInput binding remains available');
+  assert.deepEqual(compact(owner.clear()),[['ArrowLeft',false],['Th075Action7',false],['Th075Action4',false],['KeyZ',false]]);
 });

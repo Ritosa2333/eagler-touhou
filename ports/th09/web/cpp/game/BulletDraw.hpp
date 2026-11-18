@@ -8,6 +8,7 @@ struct BulletDrawServices {
     virtual ~BulletDrawServices()=default;
     virtual void begin_field()=0;
     virtual void draw_animation(AnmVm&)=0;
+    virtual void draw_bullet(AnmVm& vm,const Bullet&){draw_animation(vm);}
     virtual void upper_effects()=0;
 };
 class BulletDraw {

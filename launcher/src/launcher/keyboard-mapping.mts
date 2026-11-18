@@ -1,6 +1,6 @@
 import {HostedKeyboard, hostedKeyCodes, type HostedKeyboardEvent} from './hosted-keyboard.mjs';
 import type {HostedKeySpec, TouchRuntimeContext} from './touch-runtime-protocol.mjs';
-import {defaultKeyboardAliases} from './keyboard-preferences.mjs';
+import {defaultKeyboardAliases,keyboardCaptureCode} from './keyboard-preferences.mjs';
 import {Th09LocalKeyboard, type Th09LocalInput} from './th09-local-input.mjs';
 
 export const keyboardMappingSchema = 'eagler-touhou/keyboard-input/1';
@@ -13,7 +13,12 @@ for(let n=65;n<=90;n++)codes['Key'+String.fromCharCode(n)]=[String.fromCharCode(
 for(let n=0;n<=9;n++)codes['Digit'+n]=[String(n),48+n];
 for(let n=0;n<=9;n++)if(!codes['Numpad'+n])codes['Numpad'+n]=[String(n),96+n];
 Object.assign(codes,{Minus:['-',189],Period:['.',190],NumpadSubtract:['-',109],NumpadDecimal:['.',110],
-  Delete:['delete',46],Insert:['insert',45],End:['end',35],PageUp:['pageup',33],PageDown:['pagedown',34]});
+  NumpadAdd:['+',107],NumpadMultiply:['*',106],NumpadDivide:['/',111],
+  Delete:['delete',46],Insert:['insert',45],End:['end',35],PageUp:['pageup',33],PageDown:['pagedown',34],
+  Equal:['=',187],BracketLeft:['[',219],BracketRight:[']',221],Semicolon:[';',186],
+  Quote:["'",222],Backquote:['`',192],Backslash:['\\',220],Comma:[',',188],Slash:['/',191],
+  CapsLock:['capslock',20],NumLock:['numlock',144],ScrollLock:['scrolllock',145],
+  PrintScreen:['printscreen',44],Pause:['pause',19],ContextMenu:['contextmenu',93]});
 for(let n=1;n<=12;n++)codes['F'+n]=['f'+n,111+n];
 export interface CanonicalKeyTransition extends HostedKeySpec {down: boolean; location: number;}
 export interface KeyboardMappingPort {
@@ -29,13 +34,20 @@ function spec(raw: HostedKeySpec): HostedKeySpec {
   const preferred = (code: string) => raw.location === 2 ? code.endsWith('Right') : raw.location === 3 ? code.startsWith('Numpad') : true;
   const byKey = candidates.filter(code => codes[code]![0] === key);
   const byNumber = candidates.filter(code => codes[code]![1] === raw.keyCode);
-  const code = Object.hasOwn(codes, raw.code) ? raw.code : byKey.find(preferred) ?? byKey[0] ?? byNumber.find(preferred) ?? byNumber[0] ?? raw.code;
+  const evidence=keyboardCaptureCode(raw);
+  const code = Object.hasOwn(codes, evidence) ? evidence : byKey.find(preferred) ?? byNumber.find(preferred) ?? byKey[0] ?? byNumber[0] ?? raw.code;
   const [name,keyCode] = codes[code] ?? [raw.key,raw.keyCode];
   return {code,key:name,keyCode,location: /^(Shift|Control)Right$/.test(code) ? 2 : /^(Shift|Control)Left$/.test(code) ? 1 : code.startsWith('Numpad') ? 3 : 0};
 }
 function mapped(raw: HostedKeySpec, profile: string, aliases:Readonly<Record<string,string>>) {
   const original = spec(raw);
   let code = aliases[original.code];
+  if(code && profile==='th075'){
+    // Deliver explicit fighting-game aliases as actions; raw keys still
+    // reach the original configurable DirectInput scans for both seats.
+    const action=({ArrowLeft:0,ArrowRight:1,ArrowUp:2,ArrowDown:3,KeyZ:4,KeyX:5,KeyC:6,KeyV:7} as Record<string,number>)[code];
+    if(action!==undefined)return {...spec({code,key:'',keyCode:0}),code:'Th075Action'+action};
+  }
   if (code && profile === 'th09-left') code = ({ArrowUp:'KeyT',ArrowDown:'KeyB',ArrowLeft:'KeyF',ArrowRight:'KeyH'} as Record<string,string>)[code] ?? code;
   if (code && profile === 'th09-right') code = ({ArrowUp:'Numpad8',ArrowDown:'Numpad2',ArrowLeft:'Numpad4',ArrowRight:'Numpad6',KeyZ:'ArrowDown',KeyX:'ArrowRight',ShiftLeft:'ArrowLeft'} as Record<string,string>)[code] ?? code;
   return code ? spec({code,key:'',keyCode:0}) : original;
@@ -53,7 +65,7 @@ export class KeyboardMapping {
   private published = new Map<string,HostedKeySpec>();
   private context: TouchRuntimeContext | null = null;
   supports(code: string): boolean { return Object.hasOwn(codes,code); }
-  recognizes(event: HostedKeySpec): boolean { return this.physical.recognizes(event); }
+  recognizes(event: HostedKeySpec): boolean { return this.physical.recognizes({...event,code:keyboardCaptureCode(event)}); }
   private publish(): CanonicalKeyTransition[] {
     const next = new Map([...this.held.values(),...this.virtual.values()].map(key=>[key.code,key]));
     const changes: CanonicalKeyTransition[] = [];
@@ -71,8 +83,9 @@ export class KeyboardMapping {
       return this.publish();
     }
     if(profile==='th09-local')return this.local?.map(event,down,context)?[]:null;
-    if (!this.physical.recognizes(event)) return null;
-    const owners = this.physical.forward({...event,type:down?'keydown':'keyup'},context,!!event.launcherOwnsFocus);
+    const physical={...event,code:keyboardCaptureCode(event)};
+    if (!this.physical.recognizes(physical)) return null;
+    const owners = this.physical.forward({...physical,type:down?'keydown':'keyup'},context,!!event.launcherOwnsFocus);
     const orphaned: HostedKeySpec[] = [];
     for (const raw of owners) {
       if (down) {if (!this.held.has(raw)) this.held.set(raw,mapped(raw,profile,this.getAliases()));}

@@ -5,7 +5,7 @@ namespace th075::multiplayer {
 // Device edges live outside rollback state. A tap that begins and ends while
 // prediction is blocked must survive until the next once-only logical capture.
 class InputLatch {
-    std::array<bool,256> pressed{},held{};
+    std::array<bool,264> pressed{},held{};
     std::uint8_t touch=0,touchHeld=0;
 public:
     void Key(unsigned scan,bool down){if(scan<pressed.size()){if(down&&!held[scan])pressed[scan]=true;held[scan]=down;}}

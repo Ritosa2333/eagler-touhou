@@ -150,8 +150,11 @@ void input_latch(){
  th075::multiplayer::InputLatch input;
  input.Key(44,true);input.Key(44,false);assert(input.TakeKey(44));assert(!input.TakeKey(44));
  input.Key(44,true);assert(input.TakeKey(44));input.Key(44,true);assert(!input.TakeKey(44));input.Key(44,false);
+ input.Key(260,true);input.Key(260,false);assert(input.TakeKey(260));assert(!input.TakeKey(260));
+ input.Key(263,true);assert(input.TakeKey(263));input.Key(263,true);assert(!input.TakeKey(263));
  input.Touch(16);input.Touch(0);assert(input.TakeTouch()==16);assert(input.TakeTouch()==0);
- input.Key(45,true);input.Touch(32);input.Clear();assert(!input.TakeKey(45)&&input.TakeTouch()==0);
+ input.Key(45,true);input.Key(261,true);input.Touch(32);input.Clear();
+ assert(!input.TakeKey(45)&&!input.TakeKey(261)&&input.TakeTouch()==0);
  input.Key(999,true);assert(!input.TakeKey(999));
  std::puts("PASS: short key/touch taps survive peer wait and transfer once");
 }

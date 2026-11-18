@@ -22,6 +22,7 @@ void AnmRenderer::prepare(const AnmVm& vm){
 void AnmRenderer::append(const SpriteVertex* v){
     if(!batch.empty()&&(!batch_state.compatible(state)||batch_texture!=texture))flush();
     if(batch.empty()){batch_state=state;batch_texture=texture;}
+    if(sprite_velocity.x||sprite_velocity.y)backend.sprite_motion(u32(batch.size()),sprite_velocity);
     for(u32 n:{0u,1u,2u,2u,1u,3u})batch.push_back(v[n]);if(batch.size()>=3072)flush();
 }
 void AnmRenderer::unrotated(const AnmVm& vm,bool write_z){

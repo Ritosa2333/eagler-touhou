@@ -429,7 +429,7 @@ export const PRODUCT_GAMES = Object.freeze({
         musicCapabilities: Object.freeze({ midi: false }),
         musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
         touchFire: CHARGE_TOUCH_FIRE,
-        support: Object.freeze({ highRefreshRate: false, sourceRepository: "https://github.com/YomotsuHisami/th09", adaptationNotice: "early-test" }),
+        support: Object.freeze({ highRefreshRate: true, sourceRepository: "https://github.com/YomotsuHisami/th09", adaptationNotice: "early-test" }),
         runtimeFileLayout: "directory",
         requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),
         runtimeAssets: Object.freeze([

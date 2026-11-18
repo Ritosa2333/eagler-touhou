@@ -107,6 +107,7 @@ struct GameBattle::Services {
         void set_sprite(Bullet& b,i32 sprite)override;
         void draw_strip(AnmVm& vm,const EnemyTrailVertex* p,u32 n)override;
         void begin_field()override{game().output.begin_field(side);}
+        void draw_bullet(AnmVm& vm,const Bullet& bullet)override{game().output.bullet_animation(vm,bullet);}
         void upper_effects()override{field().effects->draw(1);}
     };
     struct Effects final:EffectServices {

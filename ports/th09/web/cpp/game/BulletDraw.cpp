@@ -18,7 +18,7 @@ void BulletDraw::draw(BulletManager& bullets,BulletVisuals& visuals,LaserManager
         auto& bullet=bullets.pool[index];const u32 kind=bullet.state>=2&&bullet.state<=5?u32(bullet.state)-1:0;auto& vm=visuals.instances[index][kind];
         if(visuals.checkpoint)visuals.checkpoint->BeforeBulletAnimation(visuals,u32(index),kind);
         vm.pos=s.geometry.to_screen(bullet.position);vm.pos.z=.05f;vm.color1.d3dColor=i32(u32(vm.color1.d3dColor)|0xffffff);
-        if(vm.type){vm.rotation.z=float(add_angle(bullet.direction+1.5707963705062866f,0));vm.updateRotation=1;}s.draw_animation(vm);
+        if(vm.type){vm.rotation.z=float(add_angle(bullet.direction+1.5707963705062866f,0));vm.updateRotation=1;}s.draw_bullet(vm,bullet);
     }}
     s.upper_effects();
 }

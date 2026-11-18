@@ -10,16 +10,32 @@ void GamePresentation::begin_field(i32 side){
 }
 void GamePresentation::animation(AnmVm& a,BattleSprite mode){
 #if defined(__EMSCRIPTEN__) || defined(TH09_DESKTOP_MOTION_SMOOTHING)
-    if(auto* capture=sdl::active_motion_capture;capture&&capture->body==&a&&mode==BattleSprite::unrotated){
-        renderer.flush();
-        capture->body_batch=true;
-        renderer.draw_no_rotation(a);
-        renderer.flush();
-        capture->body_batch=false;
-        return;
+    if(auto* capture=sdl::active_motion_capture;capture&&mode==BattleSprite::unrotated){
+        if(const int side=capture->slot(a);side>=0){
+            renderer.flush();
+            capture->body_batch=side;
+            renderer.draw_no_rotation(a);
+            renderer.flush();
+            capture->body_batch=-1;
+            return;
+        }
     }
 #endif
     switch(mode){case BattleSprite::unrotated:renderer.draw_no_rotation(a);break;case BattleSprite::rotated:renderer.draw_2d(a);break;case BattleSprite::automatic:renderer.draw_3d(a);break;case BattleSprite::mirrored:renderer.draw_no_rotation(a,true,true);break;}
+}
+void GamePresentation::bullet_animation(AnmVm& vm,const Bullet& bullet){
+#if defined(__EMSCRIPTEN__) || defined(TH09_DESKTOP_MOTION_SMOOTHING)
+    if(sdl::active_motion_capture&&world&&active_field<2&&
+       !(world->battle->fields[active_field].script.flags&1)&&
+       bullet.state==1&&!bullet.cancel_pending&&!bullet.active_extras&&bullet.movement_time.current>1&&
+       bullet.velocity.x*bullet.velocity.x+bullet.velocity.y*bullet.velocity.y<=16.f*16.f){
+        renderer.sprite_velocity={bullet.velocity.x,bullet.velocity.y};
+        renderer.draw_2d(vm);
+        renderer.sprite_velocity={};
+        return;
+    }
+#endif
+    animation(vm,BattleSprite::rotated);
 }
 void GamePresentation::colored(const AnmVm* vm,const AttackColorVertex* vertices,u32 count,BattleGeometry mode,bool additive){
     renderer.flush();PipelineState state=renderer.state;state.depthWrite=false;state.fog=false;state.destinationBlend=additive?BlendFactor::One:BlendFactor::InverseSourceAlpha;
