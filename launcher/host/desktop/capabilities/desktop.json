@@ -1,0 +1,13 @@
+{
+  "identifier": "desktop",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "allow-games",
+    "allow-choose-directory",
+    "allow-prepare-game",
+    "allow-launch-game",
+    "allow-swarm-ping"
+  ]
+}

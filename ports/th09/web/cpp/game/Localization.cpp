@@ -1,5 +1,6 @@
 #ifdef TH_ENABLE_THCRAP
 #include "Localization.hpp"
+#include "../sdl/RuntimePath.hpp"
 
 #include <cctype>
 #include <cstring>
@@ -733,7 +734,7 @@ const char* Localization::Utf8(const char* text)
     {
         ready=true;
         std::size_t size=0;
-        if(void* bytes=SDL_LoadFile("/fonts/cp932.bin",&size))
+        if(void* bytes=SDL_LoadFile(runtime_path("/fonts/cp932.bin"),&size))
         {
             table.load(static_cast<const u8*>(bytes),u32(size));
             SDL_free(bytes);

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-swarm-ping"
+description = "Enables the swarm_ping command without any pre-configured scope."
+commands.allow = ["swarm_ping"]
+
+[[permission]]
+identifier = "deny-swarm-ping"
+description = "Denies the swarm_ping command without any pre-configured scope."
+commands.deny = ["swarm_ping"]

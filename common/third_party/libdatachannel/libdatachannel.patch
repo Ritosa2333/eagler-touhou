@@ -1,0 +1,127 @@
+--- a/src/impl/icetransport.cpp
++++ b/src/impl/icetransport.cpp
+@@ -102,16 +102,15 @@
+ 	std::vector<IceServer> servers = config.iceServers;
+ 	std::shuffle(servers.begin(), servers.end(), utils::random_engine());
+ 
+-	// Pick a STUN server
+-	for (auto &server : servers) {
+-		if (!server.hostname.empty() && server.type == IceServer::Type::Stun) {
+-			if (server.port == 0)
+-				server.port = 3478; // STUN UDP port
+-			PLOG_INFO << "Using STUN server \"" << server.hostname << ":" << server.port << "\"";
+-			jconfig.stun_server_host = server.hostname.c_str();
+-			jconfig.stun_server_port = server.port;
+-			break;
+-		}
++	// The STUN observers use this same ICE agent and UDP socket.
++	std::vector<const IceServer *> stunServers;
++	for (const auto &server : servers) {
++		if (!server.hostname.empty() && server.type == IceServer::Type::Stun)
++			stunServers.push_back(&server);
++	}
++	if (!stunServers.empty()) {
++		jconfig.stun_server_host = stunServers.front()->hostname.c_str();
++		jconfig.stun_server_port = stunServers.front()->port;
+ 	}
+ 
+ 	// Bind address
+@@ -130,6 +129,12 @@
+ 	mAgent = decltype(mAgent)(juice_create(&jconfig), juice_destroy);
+ 	if (!mAgent)
+ 		throw std::runtime_error("Failed to create the ICE agent");
++
++	if (config.enableStunObservations && stunServers.size() == 3) {
++		for (size_t i = 1; i < stunServers.size(); ++i)
++			if (juice_add_stun_observer(mAgent.get(), stunServers[i]->hostname.c_str(), stunServers[i]->port) < 0)
++				PLOG_WARNING << "Failed to register STUN observer";
++	}
+ 
+ 	// ICE-TCP
+ 	juice_set_ice_tcp_mode(mAgent.get(), config.enableIceTcp ? JUICE_ICE_TCP_MODE_ACTIVE
+--- a/src/impl/peerconnection.cpp
++++ b/src/impl/peerconnection.cpp
+@@ -17,6 +17,9 @@
+ #include "processor.hpp"
+ #include "rtp.hpp"
+ #include "sctptransport.hpp"
++#ifdef _WIN32
++#include "socket.hpp"
++#endif
+ #include "utils.hpp"
+ 
+ #if RTC_ENABLE_MEDIA
+@@ -1121,7 +1124,8 @@
+ 	PLOG_VERBOSE << "Issuing local candidate: " << candidate;
+ 
+ 	candidate.resolve(Candidate::ResolveMode::Simple);
+-	mLocalDescription->addCandidate(candidate);
++	if (candidate.candidate().rfind("candidate:natobs ", 0) != 0)
++		mLocalDescription->addCandidate(candidate);
+ 
+ 	mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
+ 	                   &localCandidateCallback, std::move(candidate));
+@@ -1233,17 +1237,38 @@
+ 	if (candidate.isResolved()) {
+ 		iceTransport->addRemoteCandidate(std::move(candidate));
+ 	} else {
+-		// We might need a lookup, do it asynchronously
+-		// We don't use the thread pool because we have no control on the timeout
++		// A hostname lookup can wait on the system resolver. Keep it off the RTC pool.
+ 		if ((iceTransport = std::atomic_load(&mIceTransport))) {
+ 			weak_ptr<IceTransport> weakIceTransport{iceTransport};
+-			std::thread t([weakIceTransport, candidate = std::move(candidate)]() mutable {
+-				utils::this_thread::set_name("RTC resolver");
++			auto lookup = [weakIceTransport, candidate = std::move(candidate)]() mutable {
++				if (weakIceTransport.expired())
++					return;
+ 				if (candidate.resolve(Candidate::ResolveMode::Lookup))
+ 					if (auto iceTransport = weakIceTransport.lock())
+ 						iceTransport->addRemoteCandidate(std::move(candidate));
+-			});
+-			t.detach();
++			};
++#ifdef _WIN32
++			// Queue the lookup without synchronously creating a thread for each candidate.
++			using Lookup = decltype(lookup);
++			auto task = std::make_unique<Lookup>(std::move(lookup));
++			if (TrySubmitThreadpoolCallback([](PTP_CALLBACK_INSTANCE instance, PVOID context) {
++				    std::unique_ptr<Lookup> task(static_cast<Lookup *>(context));
++				    CallbackMayRunLong(instance);
++				    try {
++					    (*task)();
++				    } catch (const std::exception &e) {
++					    PLOG_WARNING << "ICE candidate lookup failed: " << e.what();
++				    }
++			    }, task.get(), nullptr))
++				task.release();
++			else
++				PLOG_WARNING << "ICE candidate lookup queue failed";
++#else
++			std::thread([lookup = std::move(lookup)]() mutable {
++				utils::this_thread::set_name("RTC resolver");
++				lookup();
++			}).detach();
++#endif
+ 		}
+ 	}
+ }
+--- a/include/rtc/configuration.hpp
++++ b/include/rtc/configuration.hpp
+@@ -8,6 +8,8 @@
+ 
+ #ifndef RTC_ICE_CONFIGURATION_H
+ #define RTC_ICE_CONFIGURATION_H
++
++#define RTC_HAS_STUN_OBSERVATIONS 1
+ 
+ #include "common.hpp"
+ 
+@@ -73,6 +75,7 @@
+ 	CertificateType certificateType = CertificateType::Default;
+ 	TransportPolicy iceTransportPolicy = TransportPolicy::All;
+ 	bool enableIceTcp = false;
++	bool enableStunObservations = false; // libjuice only
+ 	bool enableIceUdpMux = false; // libjuice only
+ 	bool disableAutoNegotiation = false;
+ 	bool disableAutoGathering = false;

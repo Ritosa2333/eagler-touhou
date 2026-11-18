@@ -1,4 +1,7 @@
 #include <eagler/netplay/BrowserPeerTransport.hpp>
+#if TH09_NATIVE_ROOM
+#include <eagler/netplay/NativeRoomTransport.hpp>
+#endif
 
 #include <algorithm>
 #include <cstdint>
@@ -6,14 +9,24 @@
 #include <vector>
 
 namespace {
+#if TH09_NATIVE_ROOM
+Netplay::NativeRoomTransport transport;
+#else
 Netplay::BrowserPeerTransport transport;
+#endif
+#ifdef __EMSCRIPTEN__
 char relay_url[1024]{};
 char spectator_id[128]{};
 std::uint8_t packet_buffer[8192]{};
 char error_buffer[256]{};
+#endif
 }
 
 Netplay::PeerTransport& th09_shared_transport(){return transport;}
+#if TH09_NATIVE_ROOM
+Netplay::NativeRoomTransport& th09_native_room_transport(){return transport;}
+#endif
+#ifdef __EMSCRIPTEN__
 extern "C" {
 #define TH09_PEER_EXPORT(name) __attribute__((export_name(name)))
 TH09_PEER_EXPORT("th09_peer_url_buffer") char* th09_peer_url_buffer() { return relay_url; }
@@ -60,3 +73,4 @@ TH09_PEER_EXPORT("th09_peer_poll") int th09_peer_poll() {
 }
 TH09_PEER_EXPORT("th09_peer_close") void th09_peer_close() { transport.Close(); }
 }
+#endif

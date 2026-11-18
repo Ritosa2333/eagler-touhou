@@ -260,6 +260,7 @@
 | 公共库 | [common/testkit/presentation-lab/README.md](../common/testkit/presentation-lab/README.md) | Presentation Lab |
 | 公共库 | [common/testkit/replay-verifier/README.md](../common/testkit/replay-verifier/README.md) | Replay Verifier |
 | 公共库 | [common/testkit/replay-verifier/windows-present-observer/README.md](../common/testkit/replay-verifier/windows-present-observer/README.md) | Windows D3D8 Present 观察器 |
+| 公共库 | [common/third_party/libdatachannel/README.md](../common/third_party/libdatachannel/README.md) | 原生 WebRTC 补丁 |
 | Launcher | [launcher/ASSETS.md](../launcher/ASSETS.md) | 资源来源与生成 |
 | Launcher | [launcher/README.en.md](../launcher/README.en.md) | launcher README |
 | Launcher | [launcher/README.md](../launcher/README.md) | launcher README |
@@ -288,6 +289,7 @@
 | Launcher | [launcher/docs/paraglide-i18n.md](../launcher/docs/paraglide-i18n.md) | 界面语言与消息编译 |
 | Launcher | [launcher/docs/ui-controls.md](../launcher/docs/ui-controls.md) | 启动器 UI ｜ 源码研究与扩展设计 |
 | Launcher | [launcher/examples/deployment/README.md](../launcher/examples/deployment/README.md) | HTTP 配置示例 |
+| Launcher | [launcher/examples/imgui-overlay/README.md](../launcher/examples/imgui-overlay/README.md) | ImGui 面板备选 |
 | Launcher | [launcher/integrations/LOCALIZATION.md](../launcher/integrations/LOCALIZATION.md) | 语言包与字体 |
 | Launcher | [launcher/integrations/RUNTIME_CONTRACT.md](../launcher/integrations/RUNTIME_CONTRACT.md) | Runtime 语言包与 thprac 接口 |
 | Launcher | [launcher/lib/README.md](../launcher/lib/README.md) | lib/ 目录归属 |
