@@ -219,6 +219,15 @@ replace('src/app/classic/op/classic_op_session_backend.cpp',
         '\t\t\t\tvs_pause_menu.emplace(\n\t\t\t\t\treplay_recorder && replay_recorder->recording(), patch_assets',
         '\t\t\t\tth03_netplay_paused = 1;\n\t\t\t\tvs_pause_menu.emplace(\n\t\t\t\t\treplay_recorder && replay_recorder->recording(), patch_assets')
 
+# The web build exposes the native game only; omit the unavailable Classic switch.
+for size in (6, 7):
+    replace('src/app/classic/op/classic_op_options_scene.cpp',
+            f'constexpr std::array<ClassicOpOptionsChoice, {size}U> ' +
+            ('system_choices' if size == 6 else 'system_update_choices') +
+            '{{\n\tClassicOpOptionsChoice::switch_classic,\n',
+            f'constexpr std::array<ClassicOpOptionsChoice, {size - 1}U> ' +
+            ('system_choices' if size == 6 else 'system_update_choices') + '{{\n')
+
 # The host provides multiplayer through the launcher, not the upstream online mode.
 replace('src/app/classic/op/classic_op_scene.cpp',
         'constexpr std::array<ClassicOpVsChoice, 4U> new_classic_vs_choices{\n\tClassicOpVsChoice::one_player_cpu,\n\tClassicOpVsChoice::one_player_two_player,\n\tClassicOpVsChoice::cpu_cpu,\n\tClassicOpVsChoice::online_match,',
