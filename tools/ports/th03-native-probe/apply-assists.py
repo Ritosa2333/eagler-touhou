@@ -219,6 +219,69 @@ replace('src/app/classic/op/classic_op_session_backend.cpp',
         '\t\t\t\tvs_pause_menu.emplace(\n\t\t\t\t\treplay_recorder && replay_recorder->recording(), patch_assets',
         '\t\t\t\tth03_netplay_paused = 1;\n\t\t\t\tvs_pause_menu.emplace(\n\t\t\t\t\treplay_recorder && replay_recorder->recording(), patch_assets')
 
+# The web audio host supplies FM and Off; upstream MIDI requires a native device.
+replace('src/app/classic/op/classic_op_options_scene.cpp',
+        '''\tcase ClassicOpOptionsChoice::music_driver:
+\t\tvalue = config_.bgm_mode == ClassicBgmMode::midi ?
+\t\t\tmessages.text(NewClassicMessageId::value_midi_sc88) :
+\t\t\tmessages.text(NewClassicMessageId::value_fm86);''',
+        '''\tcase ClassicOpOptionsChoice::music_driver:
+\t\tvalue = config_.bgm_mode == ClassicBgmMode::off ?
+\t\t\tmessages.text(NewClassicMessageId::value_off) :
+\t\t\tmessages.text(NewClassicMessageId::value_fm86);''')
+replace('src/app/classic/op/classic_op_options_scene.cpp',
+        '''\t\tconst auto current = static_cast<std::uint8_t>(
+\t\t\tconfig_.bgm_mode == ClassicBgmMode::midi ? 1U : 0U
+\t\t);
+\t\tconfig_.bgm_mode = ring_step(current, direction, 1U) == 0U ?
+\t\t\tClassicBgmMode::fm : ClassicBgmMode::midi;''',
+        '''\t\tconfig_.bgm_mode = config_.bgm_mode == ClassicBgmMode::off ?
+\t\t\tClassicBgmMode::fm : ClassicBgmMode::off;''')
+replace('src/app/classic/op/classic_op_options_scene.cpp',
+        '''\t\t}) || !push_audio_command({
+\t\t\t.type = ClassicAudioCommandType::play_song,
+\t\t\t.cue = ClassicMusicCue::menu_main,
+\t\t}))) {
+\t\t\treturn false;
+\t\t}
+\t\tconfig_changed = true;
+\t\tbreak;
+\t}
+\tcase ClassicOpOptionsChoice::sfx:''',
+        '''\t\t}) || (config_.bgm_mode != ClassicBgmMode::off && !push_audio_command({
+\t\t\t.type = ClassicAudioCommandType::play_song,
+\t\t\t.cue = ClassicMusicCue::menu_main,
+\t\t})))) {
+\t\t\treturn false;
+\t\t}
+\t\tconfig_changed = true;
+\t\tbreak;
+\t}
+\tcase ClassicOpOptionsChoice::sfx:''')
+
+# Raising music volume must not turn an explicitly disabled driver back on.
+replace('src/app/classic/op/classic_op_options_scene.cpp',
+        '''\t\t\t\tif(config_.bgm_mode == ClassicBgmMode::off) {
+\t\t\t\t\tconfig_.bgm_mode = ClassicBgmMode::fm;
+\t\t\t\t}
+\t\t\t\tif(!push_audio_command({''',
+        '''\t\t\t\tif(!push_audio_command({''')
+replace('src/app/classic/op/classic_op_options_scene.cpp',
+        '''\t\t\t\t}) || !push_audio_command({
+\t\t\t\t\t.type = ClassicAudioCommandType::play_song,
+\t\t\t\t\t.cue = ClassicMusicCue::menu_main,
+\t\t\t\t})) {
+\t\t\t\t\treturn false;
+\t\t\t\t}
+\t\t\t} else if(!push_audio_command({''',
+        '''\t\t\t\t}) || (config_.bgm_mode != ClassicBgmMode::off && !push_audio_command({
+\t\t\t\t\t.type = ClassicAudioCommandType::play_song,
+\t\t\t\t\t.cue = ClassicMusicCue::menu_main,
+\t\t\t\t}))) {
+\t\t\t\t\treturn false;
+\t\t\t\t}
+\t\t\t} else if(!push_audio_command({''')
+
 # The web build exposes the native game only; omit the unavailable Classic switch.
 for size in (6, 7):
     replace('src/app/classic/op/classic_op_options_scene.cpp',
