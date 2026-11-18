@@ -303,6 +303,9 @@ function GameplayControls({ session, roomWorkspace }: { session: BrowserSession;
   }, [roomWorkspace, settings.gameId, enabled, state.runtime?.launched]);
   useLayoutEffect(() => {if (roomWorkspace) input?.cancelPointers(); else input?.syncControls();}, [input, roomWorkspace]);
   const browserPractice = !settings.multiplayer && 'practiceUI' in product && product.practiceUI === 'browser';
+  const hostDirect = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches ||
+    /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const pc98Direct = ['th01', 'th02', 'th03', 'th04'].includes(settings.gameId);
   useLayoutEffect(() => {
     if (!browserPractice) return;
     const runtime = session.getRuntime(), player = document.getElementById('player');
@@ -358,7 +361,7 @@ function GameplayControls({ session, roomWorkspace }: { session: BrowserSession;
         className="touch-direct-surface"
         id="touchDirectSurface"
         aria-hidden="true"
-        hidden={!(state.runtime?.launched && enabled && !wheel)}
+        hidden={!(state.runtime?.launched && enabled && (hostDirect || pc98Direct) && !wheel)}
       />
       <TouchControlPreview settings={settings} live={touch} spectator={spectator} />
     </>
