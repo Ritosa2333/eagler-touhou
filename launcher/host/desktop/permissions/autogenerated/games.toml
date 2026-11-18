@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-games"
+description = "Enables the games command without any pre-configured scope."
+commands.allow = ["games"]
+
+[[permission]]
+identifier = "deny-games"
+description = "Denies the games command without any pre-configured scope."
+commands.deny = ["games"]

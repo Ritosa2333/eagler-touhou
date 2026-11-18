@@ -24,7 +24,7 @@ void GamePresentation::animation(AnmVm& a,BattleSprite mode){
     switch(mode){case BattleSprite::unrotated:renderer.draw_no_rotation(a);break;case BattleSprite::rotated:renderer.draw_2d(a);break;case BattleSprite::automatic:renderer.draw_3d(a);break;case BattleSprite::mirrored:renderer.draw_no_rotation(a,true,true);break;}
 }
 void GamePresentation::bullet_animation(AnmVm& vm,const Bullet& bullet){
-#if defined(__EMSCRIPTEN__) || defined(TH09_DESKTOP_MOTION_SMOOTHING)
+#ifdef __EMSCRIPTEN__
     if(sdl::active_motion_capture&&world&&active_field<2&&
        !(world->battle->fields[active_field].script.flags&1)&&
        bullet.state==1&&!bullet.cancel_pending&&!bullet.active_extras&&bullet.movement_time.current>1&&

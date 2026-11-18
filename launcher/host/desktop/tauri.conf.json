@@ -1,0 +1,14 @@
+{
+  "productName": "Eagler Touhou",
+  "version": "0.1.0",
+  "identifier": "vip.touhou.launcher.desktop",
+  "build": {
+    "devUrl": "http://127.0.0.1:5173",
+    "frontendDist": "../../.cache/build/ui-rewrite/client"
+  },
+  "app": {
+    "windows": [{ "label": "main", "title": "Eagler Touhou", "width": 1200, "height": 800, "minWidth": 530, "maximized": true }],
+    "withGlobalTauri": true
+  },
+  "bundle": { "active": false }
+}
