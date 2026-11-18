@@ -5,6 +5,8 @@ import {mountLauncherSession} from './runtime/launcher-session.mjs';
 import {bindManagedDatProvider} from './runtime/managed-dat-owner.mjs';
 import {createReplayFileBridge} from './runtime/replay-file-bridge.mjs';
 import {createPageLaunchContext,installPageLaunchContext} from './runtime/page-launch-context.mjs';
+import {mountLocalLaunchPanel} from './runtime/local-launch-panel.mjs';
+import {configureLocalPlayerLaunch,writeLocalPlayerSettings} from './runtime/local-player-settings.mjs';
 const main=document.querySelector('main');
 if(main)main.hidden=true;
 const loader=document.createElement('section');
@@ -17,7 +19,7 @@ let store=null,storeError=null;
 if(typeof globalThis.indexedDB?.open==='function'){
  try{store=new DatPackageArchiveStore();}catch(error){storeError=error;}
 }
-let busy=true,launched=false,launchAttempted=false,pageGone=false,provider=null,deployment=null,launcher=null,pageLaunch=null,managedOwner=null,replayFiles=null;
+let busy=true,launched=false,launchAttempted=false,pageGone=false,provider=null,deployment=null,launcher=null,pageLaunch=null,managedOwner=null,replayFiles=null,localLaunchPanel=null;
 const controller=new AbortController(),isCurrent=()=>!pageGone&&!controller.signal.aborted;
 function requireCurrent(){if(!isCurrent())throw new DOMException('Game launch page was closed','AbortError');}
 function progress(value){
@@ -40,6 +42,10 @@ async function ready(next){
  try{requireCurrent();}catch(error){nextOwner?.dispose();throw error;}
  managedOwner?.dispose();provider?.dispose();managedOwner=nextOwner;provider=next;start.disabled=!provider;
  status.textContent=provider?'资源已准备好，点击“开始游戏”。':'请选择 TH128 资源 ZIP。';
+ if(localLaunchPanel){
+  let variants=null;if(provider)try{const response=await provider.fetch(location.origin+'/assets/catalog.json',{signal:controller.signal});variants=(await response.json()).variants;}catch{}
+  requireCurrent();localLaunchPanel.ready(variants);
+ }
 }
 async function launch(config=null){
  if(launchAttempted){if(config)throw new Error('Runtime initialization was already attempted; reopen this page');return;}
@@ -48,6 +54,7 @@ async function launch(config=null){
  try{
   requireCurrent();installResourceFetchProvider(provider);
   if(config){pageLaunch=createPageLaunchContext({config,onPresented:actual=>launcher?.notePresented(actual)});installPageLaunchContext(pageLaunch);}
+  else if(localLaunchPanel){const settings=localLaunchPanel.settings();configureLocalPlayerLaunch(settings);if(settings.openLayout)writeLocalPlayerSettings(window,{openLayout:false});}
   await import('./play.mjs');requireCurrent();
   if(pageLaunch)await pageLaunch.waitRuntime();requireCurrent();
   launched=true;loader.remove();if(main)main.hidden=false;store?.close();
@@ -61,7 +68,7 @@ async function runOnline(){
   const result=await loadOnlineResources(deployment,options());next=result.provider;requireCurrent();
   await ready(next);next=null;
   if(!result.cached)hint.textContent='资源已就绪；此浏览器未保存缓存，关闭后需要重新下载。';
-  if(launcher)hostedReady();else await launch();
+  if(launcher)hostedReady();else if(new URLSearchParams(location.search).has('settings'))start.hidden=false;else await launch();
  }catch(error){
   next?.dispose();
   if(isCurrent()&&!launchAttempted){status.textContent='游戏资源加载失败：'+error.message;retry.hidden=false;retry.disabled=false;}
@@ -156,4 +163,5 @@ launcher=mountLauncherSession({window:parentWindow,document,location,hooks:{
  },
  exit(){closeEntry();}
 }});
+if(!launcher)localLaunchPanel=mountLocalLaunchPanel({window,loader,file,start,retry,hint,meter,status,signal:controller.signal});
 await discover();

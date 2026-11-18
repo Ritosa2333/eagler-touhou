@@ -18,12 +18,17 @@ bool Visuals::checked(std::string& error){
   const auto& state=node->vm.state();if(state.ended||state.deleteRequested)node->alive=false;
  }scene_.collect();return true;
 }
-bool Visuals::start(std::array<float,3> position,std::string& error,std::array<bool,3> medals,int stageId){
+bool Visuals::start(std::array<float,3> position,std::string& error,std::array<bool,3> medals,int stageId,int spellId){
  error.clear();if(executing_||!failure_.empty()){error="unavailable spell visual start";return false;}Guard guard(executing_);
  for(int key=1;key<=7;++key)scene_.remove(key);scene_.collect();position_=position;
  // The original spell start selects the Extra boss's own background and cut-in (40e1cf / 40e2d9).
  const bool extra=stageId==16;
- for(const auto request:std::array<std::array<int,3>,7>{{{1,extra?3:12,extra?18:0},{2,11,1},{3,6,74},{4,11,2},{5,0,158},{6,0,168},{7,3,extra?17:11}}}){
+ const bool jointStage=stageId==3||stageId==5||stageId==8||stageId==10||stageId==13||stageId==15;
+ if(jointStage&&(spellId<0||spellId>=240)){error="joint stage spell lacks the original cut-in selector";return false;}
+ // Original 40e216 stage map and 40e270 card-id dispatch in the shared spell constructor.
+ const auto in=[spellId](int first){return spellId>=first&&spellId<first+4;};
+ const int cutIn=extra?17:jointStage?(in(20)||in(216)?36:in(100)||in(180)?37:in(56)||in(136)?38:39):11;
+ for(const auto request:std::array<std::array<int,3>,7>{{{1,extra?3:12,extra?18:0},{2,11,1},{3,6,74},{4,11,2},{5,0,158},{6,0,168},{7,3,cutIn}}}){
   const bool follow=request[0]==5;
   if(!scene_.bind(request[0],request[0],request[1],request[2],anm::Membership::Primary,follow?320+position[0]:0,follow?16+position[1]:0,{},false,nullptr,0,0,23,false,follow?position[2]:0)){error="original spell animation constructor rejected";return false;}
  }

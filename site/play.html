@@ -7,6 +7,7 @@
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/play.css">
   <link rel="stylesheet" href="/runtime/full-touch.css">
+  <link rel="stylesheet" href="/runtime/launcher-shell.css">
   <script type="module" src="/import-entry.mjs"></script>
 </head>
 <body>
@@ -44,7 +45,6 @@
       <p id="debug-stage-note" class="debug-stage-note">六路线第三面为 Normal；EX 使用原版 stage 16 / rank 4，从起点开始。当前局会被替换；练习跳关与无限复活不计正常通关或解锁记录。</p>
     </section>
     <section class="screen" aria-label="原版动画画面">
-      <div id="gameViewport" class="game-viewport">
       <div id="thprac-layer" class="thprac-layer">
       <section id="practice-menu" class="thprac-window" data-mode="practice" lang="zh-CN" role="dialog" aria-labelledby="practice-title" hidden>
         <h2 id="practice-title" data-thprac-title>练习选项</h2>
@@ -112,6 +112,7 @@ SOFTWARE.
         </section>
       </div>
       </div>
+      <div id="gameViewport" class="game-viewport">
       <canvas id="game" width="1280" height="960" tabindex="0" aria-label="妖精大战争 1280×960 渲染画面"></canvas>
       <div id="game-frame-indicator" data-status="title" aria-label="原生游戏帧" data-development-only hidden aria-hidden="true">未进入关卡 · 原生帧 —</div>
       <div id="debug-respawn-indicator" data-development-only hidden aria-hidden="true">调试：无限复活</div>
@@ -191,6 +192,31 @@ SOFTWARE.
         </div>
       </div>
       <div id="menu-keyhint" class="canvas-keyhint" aria-hidden="true" hidden>↑↓ 选择 · Z/ENTER 确认 · X/ESC 返回</div>
+      </div>
+      <nav id="player-tools" class="player-tools" aria-label="游戏工具" hidden>
+        <button type="button" data-player-tool="fullscreen" aria-label="全屏"></button>
+        <button type="button" data-player-tool="help" aria-label="帮助" title="帮助" aria-expanded="false" aria-controls="player-help"></button>
+        <button type="button" data-player-tool="settings" aria-label="设置" title="设置" aria-expanded="false" aria-controls="player-settings"></button>
+      </nav>
+      <section id="player-settings" class="player-settings" aria-label="游戏设置" hidden>
+        <label>游戏音乐 <input type="range" min="0" max="100" data-player-volume="musicVolume" aria-label="游戏音乐"><output></output></label>
+        <label>游戏音效 <input type="range" min="0" max="100" data-player-volume="effectsVolume" aria-label="游戏音效"><output></output></label>
+        <div class="player-settings-actions">
+          <button type="button" data-player-action="touch">触控设置</button><button type="button" data-player-action="layout">按键布局</button>
+          <button type="button" data-player-action="practice">thprac 与录像</button><button type="button" data-player-action="exit">↪ 退出游戏</button>
+        </div>
+      </section>
+      <div id="player-help" class="player-help" hidden>
+        <button type="button" class="player-help-background" data-help-background aria-label="关闭帮助" tabindex="-1"></button>
+        <section role="dialog" aria-modal="true" aria-labelledby="player-help-title">
+          <header><strong id="player-help-title">帮助</strong><button type="button" data-help-close aria-label="关闭帮助">×</button></header>
+          <div class="player-help-body">
+            <details><summary>游戏操作</summary><p>方向键移动；Z 射击或蓄力冻结，C 连射，Shift 低速，X 完美冻结，Esc 暂停，R 重开。</p></details>
+            <details open><summary>触控操作</summary><h3>移动与低速</h3><p>在触控区域拖动或使用摇杆。低速可以设为按钮按住、切换或双指。</p><h3>菜单手势</h3><ul><li>滑动选择，再单击确认</li><li>两指点按返回</li></ul><h3>对话手势</h3><p>轻点继续对话，长按快进。</p></details>
+            <details><summary>横屏显示</summary><p>右上角进入全屏。画面保持 4:3，横屏和竖屏的按键布局分别保存。</p></details>
+            <details><summary>thprac</summary><p>在路线页选择练习模式。Backspace 显示辅助选项，F12 打开高级设置。无限直连属于作弊触控。</p></details>
+          </div>
+        </section>
       </div>
     </section>
 

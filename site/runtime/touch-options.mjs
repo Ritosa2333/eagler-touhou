@@ -1,5 +1,5 @@
 export const TOUCH_OPTIONS_KEY='th128-owned-touch-options-v1';
-export const TOUCH_DEFAULTS=Object.freeze({touchEnabled:false,touchMovementMode:'touch-unlimited',touchSensitivity:150,touchFocusMode:'two-finger',doubleTapBombEnabled:false,restartButtonEnabled:true,thpracTouchControlsEnabled:true,touchControlOpacity:80});
+export const TOUCH_DEFAULTS=Object.freeze({touchEnabled:false,touchMovementMode:'touch',touchSensitivity:150,touchFocusMode:'two-finger',doubleTapBombEnabled:false,restartButtonEnabled:true,thpracTouchControlsEnabled:true,touchControlOpacity:80});
 export function touchOptions(value={},previous=TOUCH_DEFAULTS){
  if(!value||typeof value!=='object'||Array.isArray(value))throw TypeError('Invalid touch options');
  const next={...previous};for(const key of Object.keys(TOUCH_DEFAULTS))if(Object.hasOwn(value,key))next[key]=value[key];

@@ -6,7 +6,7 @@ struct Visual {unsigned id=0;anm::State state;std::optional<anm::SpriteInfo> spr
 class Visuals {
 public:
  bool load(int bank,std::span<const std::uint8_t> bytes,std::string& error);
- bool start(std::array<float,3> position,std::string& error,std::array<bool,3> medals={},int stageId=1);
+ bool start(std::array<float,3> position,std::string& error,std::array<bool,3> medals={},int stageId=1,int spellId=-1);
  bool finish(std::string& error);
  bool retireFollowEffect(std::string& error);
  bool levelUp(int level,std::array<float,3> player,std::string& error);

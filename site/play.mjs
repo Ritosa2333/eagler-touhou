@@ -3,6 +3,10 @@ import {readWorldDrawRecords} from './runtime/world-presentation.mjs';
 import {mountWebInput} from './runtime/web-input.mjs';
 import {getPageLaunchContext} from './runtime/page-launch-context.mjs';
 import {musicOutput,musicOutputEnabled} from './runtime/music-output.mjs';
+import {localPlayerLaunch,writeLocalPlayerSettings} from './runtime/local-player-settings.mjs';
+import {bindGameAudioMix,applyGameAudioMix} from './runtime/game-audio-mix.mjs';
+import {mountLocalPlayerTools} from './runtime/local-player-tools.mjs';
+import {mountLocalBindings} from './runtime/local-input-bindings.mjs';
 import {mountThprac128Menu} from './runtime/thprac128-menu.mjs';
 import {createThprac128Tools,Thprac128LogicClock,Thprac128Settings,mountThprac128ToolsPanel,validateThprac128Speed} from './runtime/thprac128-tools.mjs';
 import {createThprac128Recorder} from './runtime/thprac128-recording.mjs';
@@ -928,7 +932,7 @@ function resolveStage(catalog,stageId){
 }
 
 async function initialize(){
-const launcherContext=getPageLaunchContext();launcherContext?.signal.throwIfAborted();
+const launcherContext=getPageLaunchContext(),localConfig=localPlayerLaunch();launcherContext?.signal.throwIfAborted();
 const [renderer,draws,timing,inspector,sound]=await loadingDeadline(Promise.all([
   import('./runtime/renderer-owned-ending-v2.mjs'),import('./runtime/draw.mjs'),import('./runtime/timing.mjs'),
   import('./inspector.mjs'),import('./runtime/sound.mjs')]),'运行页依赖');
@@ -952,7 +956,7 @@ const state={module:null,renderer:null,manifest:null,base:'',catalog:null,stageC
   flowCapabilityModule:null,flowReady:false,flowCapabilities:null,nativePause:null,nativePausePending:null,menuSoundLedger:null,manualPageLoaded:-1,replayStore:null,replaySlots:null,replayClockLast:null,replayNativeBound:false};
 let practiceMenu=null,practiceLaunchOwner=null,thpracToolsPanel=null;
 const thpracLogicClock=new Thprac128LogicClock(clock),thpracOptionsStore=new Thprac128Settings();
-let thpracSettings=thpracOptionsStore.launch(launcherContext?.config??{});
+let thpracSettings=thpracOptionsStore.launch(launcherContext?.config??(localConfig?.thprac==null?{}:{options:{thpracEnabled:localConfig.thprac}}));
 state.thpracUIEnabled=thpracSettings.enabled;
 const thpracDraft={mask:0,speed:validateThprac128Speed()};
 const thpracDraftOwner=state.thpracDraftOwner=Object.freeze({pending:true,playback:false,snapshot:()=>({mask:thpracDraft.mask,frame:0}),speedFor:()=>thpracDraft.speed,setMask(mask){if(!Number.isInteger(mask)||mask<0||mask>127)throw new Error('Invalid practice mask');thpracDraft.mask=mask;},setSpeed(value){thpracDraft.speed=validateThprac128Speed(value);}});
@@ -964,8 +968,8 @@ function syncThpracRouteMenu(snapshot){
  if(practiceMenu?.isOpen){if(Number.isInteger(state.thpracRouteTarget)&&state.thpracRouteTarget!==snapshot.selection){const code=(state.thpracRouteTarget-snapshot.selection+4)%4===1?'ArrowRight':'ArrowLeft';handleNativeTitleKey(code);state.mainController?.keyUp(code);}else{state.thpracRouteTarget=null;practiceMenu.syncRoute(snapshot.selection,menu.difficulty);}}
 }
 function scaleThpracViewport(){
- const screen=find('#game')?.parentElement,layer=find('#thprac-layer');if(!screen||!layer)return;
- const update=()=>layer.style.setProperty('--thprac-scale',String(screen.clientWidth/640));update();
+ const screen=find('#gameViewport'),layer=find('#thprac-layer');if(!screen||!layer)return;
+ const update=()=>{const scale=screen.clientWidth/640;layer.style.setProperty('--thprac-scale',String(scale));layer.style.setProperty('--thprac-surface-w',screen.clientWidth+'px');layer.style.setProperty('--thprac-surface-h',480*scale+'px');};update();
  const observer=new ResizeObserver(update);observer.observe(screen);window.addEventListener('pagehide',()=>observer.disconnect(),{once:true});
 }
 
@@ -1165,6 +1169,9 @@ function savePreference(key,value){try{sessionStorage.setItem('th128.'+key,Strin
 menu.difficulty=preferenceNumber('difficulty',0,3,1);
 menu.route=preferenceNumber('route',0,3,0);
 menu.volume=preferenceNumber('volume',0,100,35);
+let localVolumes=localConfig?{musicVolume:localConfig.musicVolume,effectsVolume:localConfig.effectsVolume}:null;
+if(localVolumes)menu.volume=localVolumes.effectsVolume;
+let localTools=null;
 state.debugInfiniteRespawnRequested=preferenceText('debugInfiniteRespawn','')==='true';
 try{find('#volume').value=String(menu.volume);}catch{}
 function debugRespawnSupported(){
@@ -2053,7 +2060,7 @@ function drainWorld(){assertSynchronousWorldDrainAllowed();drainGameSoundsLegacy
 async function prepareGameSounds(base,signal,tracks,selection=null){
   const retained=selection?.thpracRetainFrom&&state.audio?.state!=='closed'&&state.stageMusic?.retainPracticeOwner(selection.thpracRetainFrom,selection,tracks[0]);
   const audio=retained?state.audio:new AudioContext(),gain=retained?state.gain:audio.createGain();
-  if(!retained){gain.gain.value=Number(find('#volume').value)/100;gain.connect(audio.destination);}
+  if(!retained){gain.gain.value=Number(find('#volume').value)/100;gain.connect(audio.destination);if(localVolumes)bindGameAudioMix(audio,gain,localVolumes);}
   const queue=new GameSoundQueue(audio,gain),music=retained?state.stageMusic:new StageMusic(audio,gain);
   try{
     await audio.resume();const bindings=await readJson('/assets/runtime/sound-bindings.json',signal);
@@ -2068,6 +2075,7 @@ async function startAudio(){
     state.audio=new AudioContext({sampleRate:state.track.sampleRate});
     state.gain=state.audio.createGain();state.gain.gain.value=Number(find('#volume').value)/100;
     state.gain.connect(state.audio.destination);
+    if(localVolumes)bindGameAudioMix(state.audio,state.gain,localVolumes);
   }
   const audio=state.audio;
   await audio.resume();
@@ -2106,8 +2114,20 @@ function buildOptions(){
   }));
   updateMenuSelection();
 }
+function setLocalVolume(key,value){
+  if(!localVolumes||!Object.hasOwn(localVolumes,key)||!Number.isInteger(value)||value<0||value>100)return;
+  localVolumes={...localVolumes,[key]:value};writeLocalPlayerSettings(window,{[key]:value});
+  if(state.gain)applyGameAudioMix(state.gain,localVolumes);
+  if(key==='effectsVolume'){
+    menu.volume=value;find('#volume').value=String(value);
+    if(state.gameSounds?.gain&&state.gameSounds.gain!==state.gain)state.gameSounds.gain.gain.value=value/100;
+    savePreference('volume',value);
+  }
+  localTools?.syncVolumes();
+}
 function setMenuVolume(value){
   menu.volume=Math.max(0,Math.min(100,Math.round(value)));
+  if(localVolumes){setLocalVolume('musicVolume',menu.volume);setLocalVolume('effectsVolume',menu.volume);if(menu.page==='options')buildOptions();return;}
   find('#volume').value=String(menu.volume);
   if(state.gain)state.gain.gain.value=menu.volume/100;
   savePreference('volume',menu.volume);
@@ -3154,7 +3174,7 @@ function resumeTitlePause(){
   status('动画继续。');
 }
 function pause(){
-  state.focusPausedTitle=null;
+  state.focusPausedTitle=null;state.focusPausedWorld=null;
   if(state.normalPostrun){if(state.paused)resumeNormalPostrun();else pauseNormalPostrun();return;}
   if(state.endingHost||state.endingLoading){if(state.paused)resumeTitlePause();else pauseOriginalEnding();return;}
   if(state.worldMode){if(state.paused)resumeGame();else openPauseMenu();return;}
@@ -3185,12 +3205,7 @@ find('#restart-stage').addEventListener('click',()=>{
 find('#reset').addEventListener('click',()=>{returnToTitle();});
 find('#variant').addEventListener('change',event=>{savePreference('variant',event.target.value);menu.optionsInitialized=false;loadVariant(event.target.value);});
 find('#fullscreen').addEventListener('click',()=>find('.screen').requestFullscreen().catch(error));
-find('#volume').addEventListener('input',event=>{
-  menu.volume=Number(event.target.value);
-  if(state.gain)state.gain.gain.value=menu.volume/100;
-  savePreference('volume',menu.volume);
-  if(menu.page==='options')buildOptions();
-});
+find('#volume').addEventListener('input',event=>setMenuVolume(Number(event.target.value)));
 find('#debug-infinite-respawn').addEventListener('change',event=>{
   setDebugInfiniteRespawn(event.target.checked);
   find('#game').focus();
@@ -4361,6 +4376,7 @@ find('#high-framerate-mode').addEventListener('change',event=>{
   setHighFramerateMode(event.target.checked);find('#game').focus();
 });
 window.addEventListener('keydown',event=>{
+  if(!document.hidden&&(state.focusPausedWorld||state.focusPausedTitle)&&event.isTrusted)regainRuntimeFocus();
   if(state.restartSealing){event.preventDefault();return;}
   if(practiceMenu?.isOpen&&practiceMenu.keyDown(event))return;
   if(thpracToolsPanel?.isOpen){if(['Escape','F12','Backspace'].includes(event.code)){event.preventDefault();thpracToolsPanel.close();}return;}
@@ -4454,24 +4470,41 @@ function loseFocus(){
   if(state.endingHost||state.endingLoading){state.pressed.clear();pauseOriginalEnding();return;}
   releaseGameInput();
   if(menu.launching){cancelLaunch();return;}
-  if(state.worldMode&&state.active&&!state.paused)openPauseMenu();
-  else if(state.active&&!state.worldMode&&!state.paused){
+  if(state.worldMode&&state.active&&!state.paused&&!menu.fault&&!state.handoff&&!state.nativePausePending){
+    const audio=state.audio,owner={module:state.module,action:state.action,selection:state.stageSelection,audio,audioSuspend:null};
+    state.focusPausedWorld=owner;
+    state.paused=true;clock.reset();resetHighFrameratePresentation();
+    if(audio?.state==='running')owner.audioSuspend=audio.suspend().catch(()=>{});
+  }else if(state.active&&!state.worldMode&&!state.paused){
     const controller=state.mainController;
-    state.focusPausedTitle=menu.page==='route'&&controller?.prepared?{controller,module:state.module,action:state.action}:null;
+    state.focusPausedTitle=controller?.prepared?{controller,module:state.module,action:state.action,page:menu.page}:null;
     state.paused=true;clock.reset();resetHighFrameratePresentation();state.audio?.suspend().catch(()=>{});
   }
 }
-function regainTitleFocus(){
+function regainRuntimeFocus(){
   if(document.hidden)return;
+  const world=state.focusPausedWorld;state.focusPausedWorld=null;
+  if(world){
+    const current=()=>state.worldMode&&state.active&&!state.handoff&&!state.launcherExited&&!state.endingHost
+      &&!state.endingLoading&&!state.normalPostrun&&!menu.pauseOpen&&!menu.launching&&!menu.fault&&!state.nativePausePending
+      &&state.module===world.module&&state.action===world.action&&state.stageSelection===world.selection;
+    if(!state.paused||!current()||thpracToolsPanel?.isOpen||practiceMenu?.isOpen)return;
+    state.paused=false;clock.reset();resetHighFrameratePresentation();
+    if(world.audioSuspend)void world.audioSuspend.then(()=>{
+      if(current()&&!document.hidden&&!state.paused&&state.audio===world.audio&&world.audio.state!=='closed')return world.audio.resume();
+    }).catch(error);
+    return;
+  }
   const owner=state.focusPausedTitle;state.focusPausedTitle=null;
   if(!owner||!state.paused||!state.active||state.worldMode||state.handoff||state.launcherExited
-    ||state.endingHost||state.endingLoading||state.normalPostrun||state.mainQuit||menu.launching||menu.pauseOpen||menu.page!=='route'
+    ||state.endingHost||state.endingLoading||state.normalPostrun||state.mainQuit||menu.launching||menu.pauseOpen||menu.page!==owner.page
     ||owner.controller!==state.mainController||owner.controller.disposed||owner.module!==state.module||owner.action!==state.action)return;
   resumeTitlePause();
 }
 window.addEventListener('blur',loseFocus);
-window.addEventListener('focus',regainTitleFocus);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)loseFocus();else regainTitleFocus();});
+window.addEventListener('focus',regainRuntimeFocus);
+document.addEventListener('pointerdown',event=>{if(event.isTrusted&&(state.focusPausedWorld||state.focusPausedTitle))regainRuntimeFocus();},true);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)loseFocus();else regainRuntimeFocus();});
 window.addEventListener('pagehide',()=>{state.webInput?.dispose();cancelOriginalEnding();state.controller?.abort();state.renderer?.dispose();stopAudio();});
 
 async function restartTouchRun(){
@@ -4498,7 +4531,7 @@ function installWebInput(){
   if(state.webInput)return state.webInput;
   const canvas=find('#game');let previous=[],owner=0;
   let touchStorage=null;try{touchStorage=window.localStorage;}catch{}
-  const launchOptions=getPageLaunchContext()?.config.options??{};
+  const launchOptions=getPageLaunchContext()?.config.options??localConfig?.touch??{};
   state.webInput=mountWebInput({canvas,container:canvas.closest('.screen'),
     getContext:()=>{
       const next=[state.module,state.action,state.stageSelection,state.worldMode,state.normalPostrun,state.endingHost,state.endingLoading,
@@ -4507,11 +4540,12 @@ function installWebInput(){
       return owner;
     },
     isEnabled:()=>Boolean(state.active||menu.launching||state.normalPostrun||state.endingHost||menu.fault),
-    storage:touchStorage,options:launchOptions,viewport:find('#gameViewport'),
+    storage:touchStorage,options:launchOptions,zoomEnabled:localConfig?.layoutZoom??true,viewport:find('#gameViewport'),
     getGameContext:()=>{
       const s=state.worldMode&&state.module?._th128_world_state?JSON.parse(state.module.UTF8ToString(state.module._th128_world_state())):null;
       const blocked=state.paused||menu.pauseOpen||state.handoff||state.endingLoading||state.endingHost||state.normalPostrun||thpracToolsPanel?.isOpen;
-      const kind=state.replayPlayback?'replay':state.worldMode&&!blocked?(s?.message?.active?'dialogue':'game'):'menu';
+      const choosingRoute=s?.message?.active===true&&['intro','select','confirm','releasing'].includes(s.message.routeChoice?.phase);
+      const kind=state.replayPlayback?'replay':state.worldMode&&!blocked&&!choosingRoute?(s?.message?.active?'dialogue':'game'):'menu';
       return{key:[state.action,menu.launchId,menu.page,s?.flow?.worldGeneration??0,s?.playerState??0,kind].join(':'),kind,
         instance:[state.action,s?.flow?.worldGeneration??0,s?.playerState??0].join(':'),gestureScope:state.action,
         ready:kind==='game'&&s?.playerState===1,paused:!!blocked,generation:s?.flow?.worldGeneration??0,
@@ -4529,6 +4563,27 @@ function installWebInput(){
   return state.webInput;
 }
 installWebInput();
+let pollLocalBindings=null;
+if(localConfig){
+ document.body.dataset.localRuntime='true';
+ const screen=find('.screen');
+ pollLocalBindings=mountLocalBindings({window,document,input:state.webInput,bindings:localConfig.bindings,
+   getActive:()=>state.active&&!state.launcherExited&&!menu.launching&&(!document.activeElement?.closest?.('#player-help,#player-settings,#practice-menu,#touchWindowsRoot'))});
+ if(localConfig.pixelPerfect){
+   screen.dataset.pixelPerfect='';
+   const update=()=>{const {clientWidth:w,clientHeight:h}=screen;const dpr=window.devicePixelRatio||1;
+     const scale=Math.min(w*dpr/640,h*dpr/480),integer=scale>=1?Math.floor(scale):scale;
+     if(integer>0){screen.style.setProperty('--integer-game-w',640*integer/dpr+'px');screen.style.setProperty('--integer-game-h',480*integer/dpr+'px');}};
+   const observer=new ResizeObserver(update);observer.observe(screen);window.addEventListener('pagehide',()=>observer.disconnect(),{once:true});update();
+ }
+ if(localConfig.highRefresh!==null){find('#high-framerate-mode').checked=localConfig.highRefresh;setHighFramerateMode(localConfig.highRefresh);}
+ find('#fullscreen').hidden=true;
+ const savedPanel=find('#thprac-web-controls');
+ localTools=mountLocalPlayerTools({document,screen:find('.screen'),canvas:find('#game'),input:state.webInput,
+   onExit:()=>{location.assign(new URL('play.html?settings=1',location.href));},getVolumes:()=>localVolumes,setVolume:setLocalVolume,
+   togglePractice:()=>{savedPanel.open=!savedPanel.open;if(savedPanel.open)savedPanel.querySelector('summary').focus();},
+   onError:reason=>status(reason.message)});
+}
 function installLauncherRuntime(){
   const context=getPageLaunchContext();if(!context)return;
   state.launcherManaged=true;const owner=Symbol('launcher-keyboard');
@@ -4574,7 +4629,7 @@ installLauncherRuntime();
 async function present(timestamp){
   if(state.launcherExited)return;
   try{
-    state.webInput?.syncContext();
+    state.webInput?.syncContext();pollLocalBindings?.();
     let interpolation=1,presentationSteps=0;
     const nativeMenu=state.active&&state.worldMode&&menu.pauseOpen&&!menu.fault?state.nativePause:null;
     if(nativeMenu){
@@ -4703,7 +4758,7 @@ window.th128Debug={
     if(!state.replayPlayback&&world.normalRecord?.bound&&!world.normalRecord?.tainted&&!world.normalRecord?.prepared&&state.replayNativeBound)
       if(state.module._th128_world_records_present(performance.now()/1000)!==1)throw new Error(state.module.UTF8ToString(state.module._th128_world_error())||'原生成绩显示时钟被拒绝');
     const message=world.message,canvas=find('#game');let overlay=find('#dialogue-text');
-    canvas.dataset.nativePresentation=JSON.stringify({frame:world.frame,highFramerate:highFramerateEnabled,interpolation:presentation.interpolated?interpolation:1,nativePlayerX:nativePlayer?.x??null,displayedPlayerX:displayedPlayer?.x??null,stage:world.flow?.currentId??null,messageActive:!!message?.active,messageClock:message?.clock??null,dialogueText:message?.active?messageTextLayout(message,find('#variant').value).map(line=>line.text).join('\n'):'',bossAnimations:records.filter(record=>record.bank===3&&record.entry===0).slice(0,16).map(record=>({id:record.id,script:record.script??null,sprite:record.sprite,clock:record.clock??null,visualTicks:record.visualTicks??null,x:record.x,y:record.y,flags:record.flags,flags2:record.flags2}))});
+    canvas.dataset.nativePresentation=JSON.stringify({frame:world.frame,highFramerate:highFramerateEnabled,interpolation:presentation.interpolated?interpolation:1,nativePlayerX:nativePlayer?.x??null,displayedPlayerX:displayedPlayer?.x??null,stage:world.flow?.currentId??null,messageActive:!!message?.active,messageClock:message?.clock??null,routeChoice:message?.routeChoice?.started?{phase:message.routeChoice.phase,selection:message.routeChoice.message78}:null,dialogueText:message?.active?messageTextLayout(message,find('#variant').value).map(line=>line.text).join('\n'):'',bossAnimations:records.filter(record=>record.bank===3&&record.entry===0).slice(0,16).map(record=>({id:record.id,script:record.script??null,sprite:record.sprite,clock:record.clock??null,visualTicks:record.visualTicks??null,x:record.x,y:record.y,flags:record.flags,flags2:record.flags2}))});
     if(!overlay){overlay=document.createElement('canvas');overlay.id='dialogue-text';overlay.setAttribute('aria-label','原版剧情对话');canvas.parentElement.append(overlay);}
     if(overlay.width!==canvas.width||overlay.height!==canvas.height){overlay.width=canvas.width;overlay.height=canvas.height;}
     const context=overlay.getContext('2d');context.clearRect(0,0,overlay.width,overlay.height);
@@ -4807,10 +4862,11 @@ try{
   selector.disabled=false;
   const preferredVariant=preferenceText('variant','');
   selector.value=state.catalog.variants[preferredVariant]?preferredVariant:(state.catalog.variants.zh?'zh':Object.keys(state.catalog.variants)[0]);
-  if(launcherContext?.config.language){
-    const variant=launcherContext.config.language;if(!state.catalog.variants[variant])throw new Error('Requested runtime language is unavailable');selector.value=variant;
+  if(launcherContext?.config.language||localConfig?.language){
+    const variant=launcherContext?.config.language??localConfig.language;if(!state.catalog.variants[variant])throw new Error('Requested runtime language is unavailable');selector.value=variant;
   }
   await loadVariant(selector.value);finishLauncherStartup();
+  if(localConfig?.openLayout)state.webInput.beginTouchLayout();
 }catch(problem){launcherContext?.fail(problem);error(problem);}
 }
 

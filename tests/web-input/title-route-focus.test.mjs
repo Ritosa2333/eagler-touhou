@@ -23,5 +23,21 @@ test('returning to a route with the practice panel open resumes its own focus pa
 test('focus never resumes a manual pause, a replacement Title, or a paused World',()=>{
  const manual=route();manual.state.paused=true;visible(manual,false);visible(manual,true);assert.equal(manual.state.paused,true);
  const replaced=route();visible(replaced,false);++replaced.state.action;visible(replaced,true);assert.equal(replaced.state.paused,true);
- const field=bootPlay();visible(field,false);assert.equal(field.menu.pauseOpen,true);visible(field,true);assert.equal(field.state.paused,true);
+ const field=bootPlay();field.state.paused=true;field.menu.pauseOpen=true;visible(field,false);visible(field,true);assert.equal(field.state.paused,true);
+});
+
+test('the owned native World is held in the background and can receive route input after returning',()=>{
+ const h=bootPlay();h.state.worldSnapshot={message:{active:true,routeChoice:{phase:'select',message7c:0}}};
+ h.state.pressed.add('KeyZ');h.window.dispatchEvent({type:'blur'});visible(h,false);
+ assert.equal(h.state.paused,true);assert.equal(h.state.pressed.size,0);
+ assert.equal(h.menu.pauseOpen,false,'a hidden world must not open a gesture-gated native pause menu');
+ assert.equal(h.pause.length,0);
+ h.window.dispatchEvent({type:'focus'});assert.equal(h.state.paused,true);
+ visible(h,true);assert.equal(h.state.paused,false);
+ h.key('keydown','ArrowDown');assert(h.receipts.some(args=>args[1]===32));
+});
+
+test('the old background receipt cannot unpause a replacement World',()=>{
+ const h=bootPlay();visible(h,false);++h.state.action;visible(h,true);
+ assert.equal(h.state.paused,true);assert.equal(h.menu.pauseOpen,false);
 });

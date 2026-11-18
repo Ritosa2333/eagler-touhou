@@ -2591,6 +2591,12 @@ int th128_world_enable_z_fire(const void* animation,unsigned animationSize,const
             if(frozen.frozen>0)perfectBatchOwned=true;
             result={frozen.frozen,0,frozen.skipped,true};return true;
         };
+        if(stageIdForEcl(worldStartedName)==16)perfectServices.freezeLasers=[](int,std::string& error){
+            // Original 407d1c calls whole-line dispatch at phase120 with [0,1]: honor guard and skip retired.
+            const auto count=world->laserObjectCount();
+            if(!count||!laserLines||!laserLines->healthy()){error="Perfect EX requires actual laser owner";return false;}
+            return *count==0||laserLines->cancelLive(error,true,false,true);
+        };
         perfectServices.shatterIce=[icePointer](std::string& error){
             return icePointer->shatterPerfect(error);
         };
@@ -3747,7 +3753,7 @@ int th128_world_enable_spells(const void* bullet,unsigned bulletSize,const void*
                     medals=th128::record::NativeScoreProfile::spellMedals(debugRecordPrefix.profile,event.state.id);
             }catch(const std::exception& failure){error=failure.what();return false;}
             spellStartSeconds=normalReplay?std::optional<double>(normalReplayClock):std::nullopt;
-            spellResultFrames=0;if(!spellVisuals->start(event.position,error,medals,stageIdForEcl(worldStartedName)))return false;
+            spellResultFrames=0;if(!spellVisuals->start(event.position,error,medals,stageIdForEcl(worldStartedName),event.state.id))return false;
             if(normalRecord&&normalRecord->started()&&!debugRunTainted&&!replayPlayback.active()){
                 try{normalRecord->beginSpell(event.state.id,event.title);}
                 catch(const std::exception& failure){error=failure.what();return false;}
@@ -4568,14 +4574,17 @@ int th128_world_tick(){
         if(!perfectStatus.active&&(playerInput.holding&th128::perfect::XKeyBit)){
             std::string denied;
             const auto laserCount=world->laserObjectCount();
+            const bool extraLight=laserCount&&*laserCount>0&&stageIdForEcl(worldStartedName)==16
+                &&laserLines&&laserLines->healthy()&&laserLines->selector3Snapshots().size()==*laserCount;
             if(!laserCount){
                 perfectHost->reject("laser object count is unknown",denied);
-            }else if(*laserCount!=0){
+            }else if(*laserCount!=0&&!extraLight){
                 perfectHost->reject("populated lasers are outside the supported Perfect domain",denied);
             }else if(iceHost->statistics().busy!=0||iceHost->statistics().objects!=0){
                 perfectHost->reject("ordinary ice batch or live Perfect objects are nonempty",denied);
             }else{
-                if(perfectHost->activate(makePerfectContext(th128::perfect::LaserContext::Empty,0),denied,practiceTool(4u))){
+                const auto kind=extraLight?th128::perfect::LaserContext::Populated:th128::perfect::LaserContext::Empty;
+                if(perfectHost->activate(makePerfectContext(kind,int(*laserCount)),denied,practiceTool(4u))){
                     if(grazeSounds.size()>65534){world->reportRuntimeFault("perfect activation sound journal budget");return 0;}
                     const float perfectSoundX=world->playerAimPosition().x;
                     grazeSounds.push_back({46,perfectSoundX,0});

@@ -18,8 +18,9 @@ bool validPose(const Context& context){
     return finite(context.x)&&finite(context.y)&&finite(context.radius)&&context.radius>0.f;
 }
 
-bool validLaser(const Context& context){
-    return context.lasers==LaserContext::Empty&&context.laserCount==0;
+bool validLaser(const Context& context,bool allowPopulated=false){
+    return (context.lasers==LaserContext::Empty&&context.laserCount==0)
+        ||(allowPopulated&&context.lasers==LaserContext::Populated&&context.laserCount>0);
 }
 }
 
@@ -118,7 +119,7 @@ bool Host::activateOwned(const Context& input,std::string& error,bool keepCharge
     }
     if(!(input.keys&XKeyBit))return deny("perfect freeze requires the X key",error);
     if(!input.systemPresent||input.systemMode3c!=0||input.busy!=0||input.playerState!=(deathbomb?4:1)
-        ||!validPose(input)||!validLaser(input)){
+        ||!validPose(input)||!validLaser(input,!deathbomb&&bool(services_.freezeLasers))){
         return deny("perfect freeze input gate is not satisfied",error);
     }
     if(input.perfectCharge<CostRaw)return deny("perfect freeze charge stock is insufficient",error);
@@ -176,6 +177,9 @@ bool Host::tick(bool paused,std::string& error){
         BulletResult bullets;
         error.clear();
         try{
+            if(services_.freezeLasers&&!services_.freezeLasers(context_.laserCount,error)){
+                return fail(error.empty()?"required perfect laser manager rejected":error,error);
+            }
             if(!services_.freezeBullets(bulletRequest_,bullets,error)||!error.empty()||!bullets.completed){
                 return fail(error.empty()?"required perfect freeze bullet owner rejected":error,error);
             }

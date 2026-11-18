@@ -3,7 +3,7 @@ import{mountFullTouch}from'./full-touch.mjs';
 const INPUT_KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','KeyR','Enter','Escape','ShiftLeft','ShiftRight','Tab','Backspace','F1','F2','F3','F4','F5','F6','F7','F12']);
 export function mountWebInput({canvas,container=canvas?.parentElement,document=canvas?.ownerDocument??globalThis.document,
  window=document?.defaultView??globalThis.window,getContext=()=>null,isEnabled=()=>true,
- getGameContext=null,onTouchMotion=null,storage=null,options={},onSettingsOpen,viewport}={}){
+ getGameContext=null,onTouchMotion=null,storage=null,options={},onSettingsOpen,viewport,zoomEnabled}={}){
  if(!canvas||!container||!document||!window)throw new Error('Web input needs a canvas container');
  const layer=document.createElement('div');layer.className='web-input';layer.setAttribute('aria-label','触控游戏操作');
  const pad=document.createElement('div');pad.className='web-input-pad';pad.setAttribute('data-web-drag','1');pad.setAttribute('aria-label','拖动方向');
@@ -75,7 +75,7 @@ export function mountWebInput({canvas,container=canvas?.parentElement,document=c
  };
  if(typeof getGameContext==='function'){
   pad.remove();actions.remove();
-  fullTouch=mountFullTouch({canvas,container,layer,document,window,input,getGameContext,onTouchMotion,storage,options,onSettingsOpen,viewport});
+  fullTouch=mountFullTouch({canvas,container,layer,document,window,input,getGameContext,onTouchMotion,storage,options,onSettingsOpen,viewport,zoomEnabled});
   for(const[name,value]of Object.entries(fullTouch))if(name!=='dispose')input[name]=value;
  }
  return input;

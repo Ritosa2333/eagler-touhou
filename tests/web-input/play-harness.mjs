@@ -24,7 +24,7 @@ export function bootPlay({worldMode=true,capability=true,practiceMenu=null}={}){
  const find=s=>s==='#game'||s==='#gameViewport'?env.canvas:{hidden:true,style:{}};
  const openPauseMenu=()=>{pause.push('pause');menu.pauseOpen=true;state.paused=true;state.nativePause={held:0,pressed:0,keyUp:code=>pause.push(['up',code]),suspend:async()=>{}};};
  const context={...env,state,menu,practiceMenu,thpracToolsPanel:null,suppressedKeys,movementKeys,perfectFreezeXBit:2,mountWebInput,find,HTMLSelectElement:class {},HTMLInputElement:class {},
-  getPageLaunchContext:()=>null,flowCapabilities:()=>({perfectFreezeNormalEmptyLasers:capability}),status(){},clock:{reset(){}},resetHighFrameratePresentation(){},openPauseMenu,
+  getPageLaunchContext:()=>null,localConfig:null,flowCapabilities:()=>({perfectFreezeNormalEmptyLasers:capability}),status(){},clock:{reset(){}},resetHighFrameratePresentation(){},openPauseMenu,
   error(){},handleFaultKey:code=>menus.push(['fault',code]),handlePauseKey:code=>menus.push(['pause',code]),handleMenuKey:code=>menus.push(['menu',code]),
   unlockMenuAudio(){},nativePageNames:['main','difficulty','route','replay','options'],handleNativeTitleKey:code=>menus.push(['native',code]),
   resumeTitlePause(){state.paused=false;},resumeNormalPostrun(){},pauseNormalPostrun(){},pauseOriginalEnding(){},cancelLaunch(){},
