@@ -282,6 +282,18 @@ replace('src/app/classic/op/classic_op_options_scene.cpp',
 \t\t\t\t}
 \t\t\t} else if(!push_audio_command({''')
 
+# Direct network matches take the shared room rank instead of local settings.
+replace('src/app/classic/op/classic_op_session_backend.cpp',
+        'struct ClassicOpSessionBackend final {',
+        'extern "C" int th03_room_rank;\nstruct ClassicOpSessionBackend final {')
+replace('src/app/classic/op/classic_op_session_backend.cpp',
+        '''\t\t\tresident.rank = static_cast<std::uint8_t>(config.rank);
+\t\t\tresident.key_mode = static_cast<std::uint8_t>(config.key_mode);
+\t\t\tauto direct = ClassicOpTitleMenuScene::direct_vs_reentry(''',
+        '''\t\t\tresident.rank = th03_room_rank >= 0 ? static_cast<std::uint8_t>(th03_room_rank) : static_cast<std::uint8_t>(config.rank);
+\t\t\tresident.key_mode = static_cast<std::uint8_t>(config.key_mode);
+\t\t\tauto direct = ClassicOpTitleMenuScene::direct_vs_reentry(''')
+
 # The web build exposes the native game only; omit the unavailable Classic switch.
 for size in (6, 7):
     replace('src/app/classic/op/classic_op_options_scene.cpp',
@@ -455,6 +467,10 @@ extern "C" int th03_selection_index(int seat) {
 extern "C" int th03_semantic_interstitial() {
  auto *backend=th03_active_vs_backend;
  return backend && backend->vs_driver && backend->vs_driver->input_context() == InputContext::interstitial;
+}
+extern "C" int th03_match_speed() {
+ auto *backend=th03_active_vs_backend;
+ return backend && backend->vs_process ? backend->vs_process->canonical_state().round_speed : -1;
 }
 extern "C" int th03_semantic_round() {
  auto *backend=th03_active_vs_backend;

@@ -27,3 +27,11 @@ test('multiplayer replay preserves charge releases and rejects malformed samples
  const invalid=await encodeReplay([[0,0,[0,0,1024,4],[0,0,-1,0]]],true,Uint8Array.of(7));
  await assert.rejects(decodeReplay(invalid),/无效/);
 });
+
+test('multiplayer replay preserves and validates room difficulty and seed',async()=>{
+ const rows=[[0,0]],native=Uint8Array.of(7);
+ const replay=await decodeReplay(await encodeReplay(rows,true,native,{difficulty:3,seed:1234}));
+ assert.equal(replay.difficulty,3);assert.equal(replay.seed,1234);
+ await assert.rejects(decodeReplay(await encodeReplay(rows,true,native,{difficulty:4})),/无效/);
+ await assert.rejects(decodeReplay(await encodeReplay(rows,true,native,{seed:-1})),/无效/);
+});

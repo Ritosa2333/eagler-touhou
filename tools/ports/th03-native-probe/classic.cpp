@@ -17,6 +17,8 @@ extern "C" { extern int th03_assist_focus, th03_assist_focus_p2, th03_assist_x, 
 extern "C" { extern int th03_touch_active[2], th03_touch_unlimited[2], th03_touch_x[2], th03_touch_y[2]; }
 extern "C" { extern int th03_surrender_request, th03_surrender_allowed; }
 extern "C" { extern int th03_semantic_speculative, th03_semantic_boundary, th03_match_winner, th03_assist_charge; extern unsigned th03_match_serial; }
+extern "C" { int th03_room_rank = -1; }
+static std::uint32_t th03_room_seed = 0;
 extern "C" { int th03_semantic_capture(int); int th03_semantic_restore(int); }
 extern "C" { extern int th03_charge_enabled, th03_charge_mode[2], th03_charge_input[2][4], th03_charge_output[2][4], th03_charge_reset[2], th03_charge_overflow; }
 
@@ -61,11 +63,12 @@ unsigned th03_classic_master_volume() { return master_volume; }
 unsigned th03_classic_music_volume() { return music_volume; }
 void th03_classic_external_music(int enabled) { music_external = enabled != 0; }
 int th03_classic_create_mode(bool versus) {
-	runner.reset(); audio.reset(); master_volume = music_volume = effect_volume = 100; th03_charge_enabled = 0; th03_charge_mode[0] = th03_charge_mode[1] = 0; th03_match_winner = -1; th03_match_serial = 0; tick = 0; samples.clear(); replay_bytes.clear(); replay_serial = 0; deferred_audio = false; frame_command_count = 0; point_age = 99; scene = 0; th03_netplay_paused = 0; th03_assist_focus = 0; th03_assist_x = -1; th03_assist_y = -1;
+	runner.reset(); audio.reset(); if(!versus) th03_room_rank = -1; master_volume = music_volume = effect_volume = 100; th03_charge_enabled = 0; th03_charge_mode[0] = th03_charge_mode[1] = 0; th03_match_winner = -1; th03_match_serial = 0; tick = 0; samples.clear(); replay_bytes.clear(); replay_serial = 0; deferred_audio = false; frame_command_count = 0; point_age = 99; scene = 0; th03_netplay_paused = 0; th03_assist_focus = 0; th03_assist_x = -1; th03_assist_y = -1;
 	for(int seat = 0; seat < 2; ++seat) th03_touch_active[seat] = th03_touch_unlimited[seat] = th03_touch_x[seat] = th03_touch_y[seat] = 0;
 	th03_surrender_request = th03_surrender_allowed = 0;
 	th03::app::ClassicRunnerRequest request{};
 	request.th03_direct_versus = versus;
+	if(versus) request.seed = th03_room_seed;
 	request.content.data_root = "/content";
 	request.content.main_executable = "/content/MAIN.EXE";
 	request.content.mainl_executable = "/content/MAINL.EXE";
@@ -91,6 +94,8 @@ int th03_classic_create_mode(bool versus) {
 }
 int th03_classic_create() { return th03_classic_create_mode(false); }
 int th03_classic_create_versus() { return th03_classic_create_mode(true); }
+void th03_classic_room_seed(unsigned seed) { th03_room_seed = seed; }
+int th03_classic_room_rank(int rank) { if(rank < 0 || rank > 3) return 0; th03_room_rank = rank; return 1; }
 int th03_classic_step_pair(std::uint16_t input, std::uint16_t second, std::uint16_t system, std::uint8_t charge) {
 	if(!runner || !audio) return -1;
 	frame_command_count = 0;
