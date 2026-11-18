@@ -48,5 +48,13 @@ public:
     u32 replay_length()const{return playback.length();}
     u32 playback_schedule()const{return world?playback.after_update(world->battle->state.flags,world->dialogue->id):1;}
     ReplayFile save_replay(const char* name);
+    std::vector<u8> encode_match_replay(){
+        const auto random=state.random;
+        const auto prior_error=error;
+        auto bytes=save_replay("AUTO").encode();
+        state.random=random;
+        error=prior_error;
+        return bytes;
+    }
 };
 }

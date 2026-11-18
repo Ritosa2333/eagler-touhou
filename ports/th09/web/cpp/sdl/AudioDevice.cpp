@@ -4,10 +4,16 @@
 #define MA_NO_FLAC
 #define MA_NO_ENCODING
 #define MA_NO_THREADING
+#ifdef _WIN32
+// The mixer consumes float samples. Omit stb_vorbis integer helpers and their Windows macro collisions.
+#define STB_VORBIS_NO_INTEGER_CONVERSION
+#endif
 #include "../../../portable/sdl/third_party/stb_vorbis.h"
 #define MINIAUDIO_IMPLEMENTATION
 #include "../../../portable/sdl/third_party/miniaudio.h"
 #include "AudioDevice.hpp"
+#include "Assets.hpp"
+#include "RuntimePath.hpp"
 #include "PerformanceDiagnostics.hpp"
 #include "../game/MusicCatalog.hpp"
 #include <cmath>
@@ -19,12 +25,43 @@ namespace {
 u32 word(const u8* p){u32 v;std::memcpy(&v,p,4);return v;}
 u16 short_word(const u8* p){u16 v;std::memcpy(&v,p,2);return v;}
 float volume(i32 db){return std::pow(10.f,float(db)/2000.f);}
+#ifdef _WIN32
+bool read_packed_music(const u8* format, std::vector<u8>& wave){
+    const auto start=word(format+16), length=word(format+28);
+    if(start<8||!length||length>128*1024*1024||short_word(format+32)!=1)return false;
+    auto* file=SDL_IOFromFile("thbgm.dat","rb");
+    if(!file)return false;
+    u8 header[8]{};
+    const auto file_size=SDL_GetIOSize(file);
+    const bool valid=file_size>=0&&u64(start)+length<=u64(file_size)&&SDL_ReadIO(file,header,sizeof(header))==sizeof(header)
+        &&std::memcmp(header,"ZWAV",4)==0&&word(header+4)==1&&SDL_SeekIO(file,start,SDL_IO_SEEK_SET)==start;
+    if(!valid){SDL_CloseIO(file);return false;}
+    wave.resize(44+length);
+    auto put=[&](size_t offset,u32 value){std::memcpy(wave.data()+offset,&value,4);};
+    std::memcpy(wave.data(),"RIFF",4);put(4,36+length);
+    std::memcpy(wave.data()+8,"WAVEfmt ",8);put(16,16);
+    std::memcpy(wave.data()+20,format+32,16);
+    std::memcpy(wave.data()+36,"data",4);put(40,length);
+    const bool read=SDL_ReadIO(file,wave.data()+44,length)==length;
+    SDL_CloseIO(file);
+    return read;
+}
+#endif
 }
 struct AudioDevice::Impl {
-    struct Voice {ma_decoder decoder{};ma_sound sound{};bool decoded=false,attached=false;~Voice(){web_sfx::erase(&sound);if(attached)ma_sound_uninit(&sound);if(decoded)ma_decoder_uninit(&decoder);}};
+    struct Voice {
+        ma_decoder decoder{};ma_sound sound{};bool decoded=false,attached=false;
+#ifdef _WIN32
+        std::vector<u8> music_bytes;
+#endif
+        ~Voice(){web_sfx::erase(&sound);if(attached)ma_sound_uninit(&sound);if(decoded)ma_decoder_uninit(&decoder);}
+    };
     ma_engine engine{};SDL_AudioStream* stream=nullptr;bool engine_ready=false,ready=false,suspended=false,refill=true,music_paused=false;
     std::array<std::unique_ptr<Voice>,54> sounds;std::array<std::vector<u8>,39> samples;std::unique_ptr<Voice> music;
     std::vector<u8> formats;i32 track=-1,fade=0,fade_total=0;mutable u32 stats[8]{};
+#ifdef _WIN32
+    bool room_music_audible = false;
+#endif
     ~Impl(){music.reset();for(auto& sound:sounds)sound.reset();if(stream)SDL_DestroyAudioStream(stream);if(engine_ready)ma_engine_uninit(&engine);}
     // TH09 never changes voice pitch or uses Doppler. Avoid the dynamic pitch
     // filter at unity rate; miniaudio still enables necessary resampling when
@@ -65,20 +102,45 @@ bool AudioDevice::music(i32 track){
     const auto filename=std::string(stem)+".wav";const u8* format=nullptr;
     for(u32 n=0;n+52<=a.formats.size();n+=52)if(std::strncmp(reinterpret_cast<const char*>(a.formats.data()+n),filename.c_str(),16)==0){format=a.formats.data()+n;break;}
     if(!format){error="Music layout entry not found";return false;}
-    if(a.track==track&&a.music){TH09_PERF_COUNT(MusicSameTrackRestarts,1);a.fade=0;a.music_paused=false;ma_sound_seek_to_pcm_frame(&a.music->sound,0);ma_sound_set_volume(&a.music->sound,music_enabled?volume(SoundEffects::adjusted_volume(0,music_volume,true)):0.f);ma_sound_start(&a.music->sound);return true;}
-    auto next=std::make_unique<Impl::Voice>();const auto path=std::string("/music/")+stem+".ogg";const u32 rate=word(format+36),align=short_word(format+44),channels=short_word(format+34),total=word(format+28),intro=word(format+24);
+    if(a.track==track&&a.music){TH09_PERF_COUNT(MusicSameTrackRestarts,1);a.fade=0;a.music_paused=false;ma_sound_seek_to_pcm_frame(&a.music->sound,0);refresh_volume();ma_sound_start(&a.music->sound);return true;}
+    auto next=std::make_unique<Impl::Voice>();const auto path=std::string(runtime_path("/music/"))+stem+".ogg";const u32 rate=word(format+36),align=short_word(format+44),channels=short_word(format+34),total=word(format+28),intro=word(format+24);
     if(!align||!rate||!channels||intro>=total){error="Invalid music loop";return false;}
     auto config=ma_decoder_config_init(ma_format_f32,channels,rate);
-    if(ma_decoder_init_file(path.c_str(),&config,&next->decoder)!=MA_SUCCESS){error="Unable to decode "+path;return false;}next->decoded=true;TH09_PERF_COUNT(MusicDecoderOpens,1);
+    auto decoded=MA_ERROR;
+#ifdef _WIN32
+    const auto loose=std::string("music/")+filename;
+    if(read_file(path.c_str(),next->music_bytes))
+        decoded=ma_decoder_init_memory(next->music_bytes.data(),next->music_bytes.size(),&config,&next->decoder);
+    if(decoded!=MA_SUCCESS&&read_packed_music(format,next->music_bytes))
+        decoded=ma_decoder_init_memory(next->music_bytes.data(),next->music_bytes.size(),&config,&next->decoder);
+    if(decoded!=MA_SUCCESS)decoded=ma_decoder_init_file(loose.c_str(),&config,&next->decoder);
+#else
+    if(decoded!=MA_SUCCESS)decoded=ma_decoder_init_file(path.c_str(),&config,&next->decoder);
+#endif
+    if(decoded!=MA_SUCCESS){error="Unable to decode "+path;return false;}next->decoded=true;TH09_PERF_COUNT(MusicDecoderOpens,1);
     ma_uint64 length=0;if(ma_decoder_get_length_in_pcm_frames(&next->decoder,&length)!=MA_SUCCESS||length!=total/align){error="Music PCM frame count differs from original: "+path;return false;}
     ma_data_source_set_loop_point_in_pcm_frames(&next->decoder,intro/align,total/align);
-    if(!a.attach(*next)){error="Unable to attach music voice";return false;}ma_sound_set_looping(&next->sound,MA_TRUE);ma_sound_set_volume(&next->sound,music_enabled?volume(SoundEffects::adjusted_volume(0,music_volume,true)):0.f);
-    a.music=std::move(next);a.track=track;a.fade=0;a.music_paused=false;ma_sound_start(&a.music->sound);return true;
+    if(!a.attach(*next)){error="Unable to attach music voice";return false;}ma_sound_set_looping(&next->sound,MA_TRUE);
+    a.music=std::move(next);a.track=track;a.fade=0;a.music_paused=false;refresh_volume();ma_sound_start(&a.music->sound);return true;
 }
 bool AudioDevice::music_file(const char* name){std::string file=name?name:"";const auto slash=file.find_last_of("/\\");if(slash!=std::string::npos)file.erase(0,slash+1);const auto dot=file.find_last_of('.');if(dot!=std::string::npos)file.erase(dot);for(const auto& track:music_tracks)if(file==track.file)return music(track.cue);error="Unknown music filename: "+file;return false;}
 void AudioDevice::fade_music(i32 frames){auto& a=*impl;a.fade=a.fade_total=std::max(0,frames);if(!frames&&a.music)ma_sound_stop(&a.music->sound);}
 void AudioDevice::pause_music(bool paused){auto& a=*impl;if(!a.music||a.music_paused==paused)return;a.music_paused=paused;if(paused)ma_sound_stop(&a.music->sound);else ma_sound_start(&a.music->sound);}
-void AudioDevice::refresh_volume(){auto& a=*impl;if(a.music)ma_sound_set_volume(&a.music->sound,music_enabled?volume(SoundEffects::adjusted_volume(a.fade?a.fade*5000/a.fade_total-5000:0,music_volume,true)):0.f);}
+void AudioDevice::refresh_volume(){
+    auto& a=*impl;
+    bool audible=music_enabled;
+#ifdef _WIN32
+    audible=audible&&!a.room_music_audible;
+#endif
+    if(a.music)ma_sound_set_volume(&a.music->sound,audible?volume(SoundEffects::adjusted_volume(a.fade?a.fade*5000/a.fade_total-5000:0,music_volume,true)):0.f);
+}
+#ifdef _WIN32
+void AudioDevice::set_room_music_audible(bool audible){
+    if(impl->room_music_audible==audible)return;
+    impl->room_music_audible=audible;
+    refresh_volume();
+}
+#endif
 void AudioDevice::update(){TH09_PERF_SCOPE(update_cost,AudioUpdate);auto& a=*impl;effects.process();if(a.music&&a.fade&&!a.music_paused){--a.fade;if(!a.fade)ma_sound_stop(&a.music->sound);}refresh_volume();}
 void AudioDevice::pump(){
     TH09_PERF_SCOPE(pump_cost,AudioPump);

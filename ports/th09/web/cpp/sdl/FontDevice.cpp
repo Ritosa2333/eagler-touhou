@@ -1,4 +1,5 @@
 #include "FontDevice.hpp"
+#include "RuntimePath.hpp"
 #include "Assets.hpp"
 #include "../game/MessageResource.hpp"
 #include "../game/ShotResource.hpp"
@@ -26,8 +27,8 @@ struct FontDevice::Impl {
     const Glyph* glyph(i32 height,u16 code){
         const auto key=std::make_pair(height,code);const auto known=glyphs.find(key);if(known!=glyphs.end())return &known->second;
         auto& font=faces[height];if(!font){
-            if(const char* pack=Localization::FontFile())font=TTF_OpenFont((std::string("/thcrap/th09/fonts/")+pack).c_str(),float(height));
-            if(!font)font=TTF_OpenFont("/fonts/msgothic.ttc",float(height));
+            if(const char* pack=Localization::FontFile())font=TTF_OpenFont((std::string(runtime_path("/thcrap/th09/fonts/"))+pack).c_str(),float(height));
+            if(!font)font=TTF_OpenFont(runtime_path("/fonts/msgothic.ttc"),float(height));
             if(!font)return nullptr;TTF_SetFontKerning(font,false);TTF_SetFontHinting(font,TTF_HINTING_NORMAL);
         }
         if(!TTF_FontHasGlyph(font,code))code=0x30fb;int left,right,bottom,top,advance;
@@ -47,7 +48,7 @@ struct FontDevice::Impl {
 };
 FontDevice::FontDevice(GraphicsDevice& g):impl(std::make_unique<Impl>()),graphics(g){}
 FontDevice::~FontDevice()=default;
-bool FontDevice::initialize(){auto& f=*impl;if(!TTF_Init()){error=SDL_GetError();return false;}f.ready=true;if(!read_file("/fonts/cp932.bin",f.encoding)||f.encoding.size()!=131072||!read_file("/fonts/blend.bin",f.blend)||f.blend.size()!=131072){error="Missing Japanese font tables";return false;}return true;}
+bool FontDevice::initialize(){auto& f=*impl;if(!TTF_Init()){error=SDL_GetError();return false;}f.ready=true;if(!read_file(runtime_path("/fonts/cp932.bin"),f.encoding)||f.encoding.size()!=131072||!read_file(runtime_path("/fonts/blend.bin"),f.blend)||f.blend.size()!=131072){error="Missing Japanese font tables";return false;}return true;}
 void FontDevice::prewarm(const char* text,i32 height){if(!impl->ready||height<1||height>128)return;text=Localization::Utf8(text);const auto* p=reinterpret_cast<const u8*>(text);const auto* end=p+std::strlen(text);while(p<end)impl->glyph(height,impl->next(p,end));}
 void FontDevice::prewarm_game(ResourceReader& resources){
     std::set<u16> codepoints;

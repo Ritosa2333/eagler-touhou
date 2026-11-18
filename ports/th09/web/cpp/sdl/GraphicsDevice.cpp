@@ -70,8 +70,13 @@ void override_embedded(TextureImage& image,const AnmTextureSource& source){
 touhou::sdl::Surface GraphicsDevice::resolve(void* opaque,u32 id){auto& device=*static_cast<GraphicsDevice*>(opaque);const auto it=device.textures.find(id);if(it==device.textures.end())return {};auto& t=it->second;auto& i=t.image;return {id,i.width,i.height,i.format,i.pitch,i.pixels.data(),u32(i.pixels.size()),t.revision};}
 bool GraphicsDevice::initialize(){
     for(u32 id:{screen,depth}){auto& i=textures[id].image;i.width=640;i.height=480;i.format=id==screen?PixelFormat::Bgra8:PixelFormat::Depth16;i.pitch=640*(id==screen?4:2);if(id==screen)i.pixels.resize(i.pitch*i.height);}
+#ifdef __EMSCRIPTEN__
     SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT,"#canvas");
-    if(!backend.initialize()){error=backend.error();return false;}backend.state.target=screen;backend.state.depth=depth;return true;
+    const bool initialized=backend.initialize();
+#else
+    const bool initialized=backend.initialize("Touhou 09");
+#endif
+    if(!initialized){error=backend.error();return false;}backend.state.target=screen;backend.state.depth=depth;return true;
 }
 TextureAllocation GraphicsDevice::create(const AnmTextureSource& source,const u8* bytes,u32 count){
     Texture t;if(!t.image.load(source,bytes,count)){error="Invalid ANM texture: "+source.name;return {};}

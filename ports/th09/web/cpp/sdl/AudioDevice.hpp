@@ -11,6 +11,9 @@ public:
     bool initialize(ResourceReader&);
     bool music(i32 track);bool music_file(const char*);void fade_music(i32 frames=240);void pause_music(bool);
     void refresh_volume();void update();void pump();void suspend(bool);
+#ifdef _WIN32
+    void set_room_music_audible(bool);
+#endif
     void sound_stop(u32)override;void sound_position(u32,u32)override;
     void sound_pan(u32,i32)override;void sound_volume(u32,i32)override;void sound_play(u32)override;
     const u32* statistics()const;
