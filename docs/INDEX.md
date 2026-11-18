@@ -1,6 +1,6 @@
 # 文档总表
 
-共 723 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 724 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -436,6 +436,7 @@
 | 历史记录 | [archive/th14-core-practice-entry-20261118/TH14_CURRENT_BROWSER_AUDIO_NOV18.md](../archive/th14-core-practice-entry-20261118/TH14_CURRENT_BROWSER_AUDIO_NOV18.md) | TH14 当前网页 OGG 队列与真实隐藏 · 2026-11-18 |
 | 历史记录 | [archive/th14-current-core-flows-20261118/README.md](../archive/th14-current-core-flows-20261118/README.md) | TH14 当前核心普通流程与证据复用 · 2026-11-18 |
 | 历史记录 | [archive/th14-extra-recording-20261118/README.md](../archive/th14-extra-recording-20261118/README.md) | TH14 独立核心 Extra 保存与跨宿主完整读回 |
+| 历史记录 | [archive/th14-natural-browser-flows-20261118/README.md](../archive/th14-natural-browser-flows-20261118/README.md) | TH14 自然普通游戏的浏览器闭环 · 2026-11-18 |
 | 历史记录 | [archive/th14-replay-progress-20261118/README.md](../archive/th14-replay-progress-20261118/README.md) | TH14 换关进度与完整录像验收 · 2026-11-18 |
 | 历史记录 | [archive/th14-replay-progress-20261118/TH14_NATIVE_TAB_VISIBILITY_NOV18.md](../archive/th14-replay-progress-20261118/TH14_NATIVE_TAB_VISIBILITY_NOV18.md) | TH14 真实标签隐藏、暂停保留与后台启动 · 2026-11-18 |
 | 历史记录 | [archive/th14-rollback-20261114/README.md](../archive/th14-rollback-20261114/README.md) | TH14 多人延迟输入验证 |

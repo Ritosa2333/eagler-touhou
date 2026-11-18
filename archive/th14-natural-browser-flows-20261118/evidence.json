@@ -1,0 +1,688 @@
+{
+  "coreSource": "daeb79a007b1105288354d4604171d5a3d5c2773",
+  "schema": "th14/natural-browser-flows/1",
+  "passedWithinDeclaredScope": true,
+  "allTestsSilent": true,
+  "productionRuntimeChanged": false,
+  "completeGame": false,
+  "acceptanceStandard": "Observable behavior; not internal-word, pixel or PCM equality",
+  "testBoundary": {
+    "samplerOnlyOriginalAppEdits": 2,
+    "compiledTranslationUnitsPerProbe": 1,
+    "verifiedReusedProviderObjects": 152,
+    "nativeRafAndAsyncRuntimeUnchanged": true,
+    "completionEventsInvoked": false,
+    "sessionPlaybackRestored": false,
+    "rngScoreStockOrPositionWrites": false,
+    "input": "Only held u16 from original input records; terminal FF supplies shoot only",
+    "externalClocksDeclared": true,
+    "firstObservedSceneRngNotClaimedEqualToRecordingEntrySeed": true,
+    "physicalRealtimePerformanceClaimed": false,
+    "privateProbeWasmNotDeployed": true
+  },
+  "cases": [
+    {
+      "name": "normal",
+      "passedWithinDeclaredScope": true,
+      "producerHarnessSha256": "7301d15a71cedd51b41fe0f58a90262a9858eb3f5b3df41fc185d38f184d518f",
+      "producerReportSha256": "4be0c0bafe00b28df6b6391056db72063a3e34a3634c6df1c3c7093d5ef0bf8c",
+      "producerPrivateWasm": "812839e69f9f53789c3869a2d09c879b5237d4fa74ec71bd2a00d1aea23185fd",
+      "externallyDeclaredStartupClock": 241224550,
+      "hostDisplayClockFactor": 8,
+      "actualPlayerCallbacks": 122385,
+      "recordedFrames": 122386,
+      "completedScore": 914525760,
+      "freshNativeUiAndFileReadback": true,
+      "savedFiles": [
+        {
+          "kind": "scoreth14.dat",
+          "bytes": 22376,
+          "sha256": "4c0e43f0d91f518fd5e0a243c1763980e58bded7281fceacf97b6abb8841bc33"
+        },
+        {
+          "kind": "th14_01.rpy",
+          "bytes": 111509,
+          "sha256": "76081f21149b70551c99007e4643edecc16827f6759c54f25b3b8db9fa4dfe78"
+        },
+        {
+          "kind": "th14.cfg",
+          "bytes": 92,
+          "sha256": "1c81526f3147ae1f916cfba4171d3ea260ac20d1f5c17a15b68eb8948952a22b"
+        }
+      ],
+      "nativeCodec": {
+        "passed": true,
+        "inputBytes": 111509,
+        "inputSha256": "76081f21149b70551c99007e4643edecc16827f6759c54f25b3b8db9fa4dfe78",
+        "packedBytes": 111453,
+        "decodedBytes": 739865,
+        "decodedSha256": "5a8cca059dee781bb819138621481feccb05c39d07fbad068a40c7b7a94b4d18",
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "nativeEntryPoints": [
+          "0x4028e0",
+          "0x4028e0",
+          "0x465840"
+        ],
+        "actualRetailInstructionBodies": true,
+        "controlledCrtBoundaries": true,
+        "freshZeroDictionary": true,
+        "allDecodedBytesEqualIndependentPythonMirror": true,
+        "nameHex": "4141414141414141",
+        "stageCount": 6,
+        "character": 0,
+        "subtype": 1,
+        "difficulty": 1,
+        "stages": [
+          {
+            "stage": 1,
+            "seed": 4607,
+            "frames": 14211,
+            "payloadBytes": 85740,
+            "headerSha256": "b63f29817f85fbae12099f0b0c1a6d3082ffee60696b2475ab3e7b6b57111fe3",
+            "payloadSha256": "74f68d7f32414f67e266eda7eac209936ecbdf6245dcbeefe3991505204e12be"
+          },
+          {
+            "stage": 2,
+            "seed": 34382,
+            "frames": 16616,
+            "payloadBytes": 100250,
+            "headerSha256": "71ce2c00b1c5afac98693e9e02691133aab12cdca519b84d197e592f0a0ec289",
+            "payloadSha256": "c0121e1d4f50c4e18fb5d6ebd392e8bf1d23eaf279bd01e61542d86f563b0ea3"
+          },
+          {
+            "stage": 3,
+            "seed": 44160,
+            "frames": 20817,
+            "payloadBytes": 125596,
+            "headerSha256": "765044e8230e2856f25be9bf66ecf98ed17442678a2300b6ae836ce8bc1e5d66",
+            "payloadSha256": "dd6d947b4c69d266f9943f3f7c0e41d47d864ddaec56069a2a00a6c6189046d4"
+          },
+          {
+            "stage": 4,
+            "seed": 29215,
+            "frames": 23489,
+            "payloadBytes": 141717,
+            "headerSha256": "33af309e01dc09ba37a7ab7d117b15e330f8435602a493c796e75f4efaf65da8",
+            "payloadSha256": "97a7434fa3930347f973560577c8dea79ff56564ce91dfcd746e8c30d911618f"
+          },
+          {
+            "stage": 5,
+            "seed": 37947,
+            "frames": 20783,
+            "payloadBytes": 125391,
+            "headerSha256": "8b88cdc8f5b7cdc5aea6a14c5b91ea473918b6f8372ed88b93fcc1c079a1d746",
+            "payloadSha256": "a773cba25cae38ce378c6e53284a6db088ec07932f5680983a8cfaf96ae23a69"
+          },
+          {
+            "stage": 6,
+            "seed": 47628,
+            "frames": 26470,
+            "payloadBytes": 159703,
+            "headerSha256": "f3aa9a817faeb57f3cb7920a94402c51dee9ffe33ea7a616f847a09bec39ef5f",
+            "payloadSha256": "a1bff7357cef895d02e26293c1f87f4357d282bd69d198282d15614b4fe8b589"
+          }
+        ],
+        "trailingBytes": 20,
+        "trailingSha256": "aeddfc6c57e207e3ff31b51acb3059d9552a83319449c606e706e79c361a559f",
+        "mirrorSha256": "b96b655447c3cae140062c2023beb6a98cbb6052cd0fd54707fc8150ebaa90d9",
+        "toolSha256": "717673b12060f02261c2e1af04b68de63227db65fd6f2cc96f98ccfc5cbecd8e",
+        "elapsedSeconds": 0.5535151999938535,
+        "nativeFilesystemOrPlaybackAcceptance": false,
+        "completeGame": false,
+        "nativeEquivalent": false
+      },
+      "scoreCodec": {
+        "passedWithinScope": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allFreshLoadedFileBytesMatchIndependentMirror": true,
+        "decodedRecordsUnchangedAcrossNativeQuitAndReload": true,
+        "rows": [
+          {
+            "label": "written",
+            "encodedBytes": 22376,
+            "encodedSha256": "4c0e43f0d91f518fd5e0a243c1763980e58bded7281fceacf97b6abb8841bc33",
+            "decodedSha256": "265d86d5df89a97fc807795445b026ad22689b581483d371af2c973e50132a3c",
+            "decodedBytes": 149076,
+            "allBytesMatchIndependentMirror": true,
+            "checksumsVerified": 8,
+            "score": 914525760,
+            "rankStage": 8,
+            "continues": 0,
+            "clearCount": 1,
+            "noContinueClearCount": 1,
+            "endingFlags": 17,
+            "staffFlags": 1
+          },
+          {
+            "label": "fresh",
+            "encodedBytes": 22376,
+            "encodedSha256": "4c0e43f0d91f518fd5e0a243c1763980e58bded7281fceacf97b6abb8841bc33",
+            "decodedSha256": "265d86d5df89a97fc807795445b026ad22689b581483d371af2c973e50132a3c",
+            "decodedBytes": 149076,
+            "allBytesMatchIndependentMirror": true,
+            "checksumsVerified": 8,
+            "score": 914525760,
+            "rankStage": 8,
+            "continues": 0,
+            "clearCount": 1,
+            "noContinueClearCount": 1,
+            "endingFlags": 17,
+            "staffFlags": 1
+          }
+        ],
+        "originalWholeGameUiLoadClaimed": false,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "completeGame": false
+      },
+      "visualChecks": [
+        {
+          "file": "stage-1-private.png",
+          "sha256": "23ac2d7c7ba5e96db297204b855de8110e1d51b4587e67686a5017a62daab890",
+          "inspected": true
+        },
+        {
+          "file": "stage-2-private.png",
+          "sha256": "fbab86e24676338b9977efdf38ca57b593b508de82d908961c910e88f8e1bcc0",
+          "inspected": true
+        },
+        {
+          "file": "stage-3-private.png",
+          "sha256": "1a6bfdc4ebb0d2cf4a17e01c4befd9b45713293b626b554b94679a29c07065dd",
+          "inspected": true
+        },
+        {
+          "file": "stage-4-private.png",
+          "sha256": "c6affd162fa69bb4a29d8d5ee4a6bc3ea10a39f75d83502a430ca9b65592d12e",
+          "inspected": true
+        },
+        {
+          "file": "stage-5-private.png",
+          "sha256": "180bff23f0c0fd5d78b2db3f085a1c0af7811b4711672b9d00f26abbef706406",
+          "inspected": true
+        },
+        {
+          "file": "stage-6-private.png",
+          "sha256": "4aa88c7d1321d4f7b03a7e237446c52ecfc0ab54daeb713f3dd1350428fbe890",
+          "inspected": true
+        },
+        {
+          "file": "natural-ending-private.png",
+          "sha256": "7d15c6334b5b0f8fa25e73ff452b164c1cea6633e792f75dabe39006552f0ea7",
+          "inspected": true
+        },
+        {
+          "file": "natural-staff-private.png",
+          "sha256": "3b8643df61c00cb43815804b48a81ef2fd60cfc544c5f8f3904d3060c56f6415",
+          "inspected": true
+        },
+        {
+          "file": "natural-results-private.png",
+          "sha256": "c2bc2478b815927b0f8920e6245dde6d590b0daad419b4b42d107425f24d8760",
+          "inspected": true
+        },
+        {
+          "file": "natural-fresh-title-private.png",
+          "sha256": "d507b6cd40470b6ab42f57681a5920a5bb0cc5fa97183b76391be806b5dd2f79",
+          "inspected": true
+        }
+      ],
+      "consumer": {
+        "uninstrumentedCurrentWasm": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43",
+        "harnessSha256": "4daec024e1f830cdbc3f0c7f3757e91a0fc13f6143bc8ea2baa8aeb2bc944b03",
+        "reportSha256": "49ec5eb696a30458915da78335128721824093ff667b23c89291965bfc340a4d",
+        "completePlayback": true,
+        "noSeekOrSkip": true,
+        "score": 914525760,
+        "graze": 17551,
+        "producerGrazeEqualityClaimed": false,
+        "progressEvents": 272,
+        "progressBackwards": 0,
+        "characterSaveProtectionPassed": true
+      }
+    },
+    {
+      "name": "extra",
+      "passedWithinDeclaredScope": true,
+      "producerHarnessSha256": "66886c46c686f91c7d0b9cd870d4860af30fcaa5e5e81b18f1b64a02b232beac",
+      "producerReportSha256": "627b0995a73c861c88f1793e75534d3b3868eacee0847f562f8057c95ce887c5",
+      "producerPrivateWasm": "a3aa1f790762461e8b9a347d2092c6c2bb12004973c33f7580fb02d057b900c6",
+      "externallyDeclaredStartupClock": 241201554,
+      "hostDisplayClockFactor": 8,
+      "actualPlayerCallbacks": 46936,
+      "recordedFrames": 46937,
+      "completedScore": 732411200,
+      "freshNativeUiAndFileReadback": true,
+      "savedFiles": [
+        {
+          "kind": "scoreth14.dat",
+          "bytes": 22780,
+          "sha256": "772ee006d65f177a0a3f2f00e850d08c14d01e29f584a33f2cf430846c7327c6"
+        },
+        {
+          "kind": "th14_01.rpy",
+          "bytes": 40722,
+          "sha256": "02ca8525d0111d928cc42778c5efd69c4c1d6a808012ca8891b905c2bb6d9aa0"
+        },
+        {
+          "kind": "th14.cfg",
+          "bytes": 92,
+          "sha256": "1c81526f3147ae1f916cfba4171d3ea260ac20d1f5c17a15b68eb8948952a22b"
+        }
+      ],
+      "nativeCodec": {
+        "passed": true,
+        "inputBytes": 40722,
+        "inputSha256": "02ca8525d0111d928cc42778c5efd69c4c1d6a808012ca8891b905c2bb6d9aa0",
+        "packedBytes": 40666,
+        "decodedBytes": 283555,
+        "decodedSha256": "170ac18cfbfef8f266a76b3258f9bd5fadf7d65eb9b836bdaba6cb9ee1a4c784",
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "nativeEntryPoints": [
+          "0x4028e0",
+          "0x4028e0",
+          "0x465840"
+        ],
+        "actualRetailInstructionBodies": true,
+        "controlledCrtBoundaries": true,
+        "freshZeroDictionary": true,
+        "allDecodedBytesEqualIndependentPythonMirror": true,
+        "nameHex": "4141414141414141",
+        "stageCount": 1,
+        "character": 0,
+        "subtype": 1,
+        "difficulty": 4,
+        "stages": [
+          {
+            "stage": 7,
+            "seed": 35124,
+            "frames": 46937,
+            "payloadBytes": 283187,
+            "headerSha256": "e855879a911f0412905df9c2dd646fff2337058d2380b206ba2585318f75f91a",
+            "payloadSha256": "0e4db079e62adc16c6d54f896ba782cd0a002afa83cfaf45090ad594859185c4"
+          }
+        ],
+        "trailingBytes": 20,
+        "trailingSha256": "aeddfc6c57e207e3ff31b51acb3059d9552a83319449c606e706e79c361a559f",
+        "mirrorSha256": "b96b655447c3cae140062c2023beb6a98cbb6052cd0fd54707fc8150ebaa90d9",
+        "toolSha256": "717673b12060f02261c2e1af04b68de63227db65fd6f2cc96f98ccfc5cbecd8e",
+        "elapsedSeconds": 0.22272849999717437,
+        "nativeFilesystemOrPlaybackAcceptance": false,
+        "completeGame": false,
+        "nativeEquivalent": false
+      },
+      "scoreCodec": {
+        "passedWithinScope": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allFreshLoadedFileBytesMatchIndependentMirror": true,
+        "decodedRecordsUnchangedAcrossNativeQuitAndReload": true,
+        "rows": [
+          {
+            "label": "written",
+            "encodedBytes": 22780,
+            "encodedSha256": "772ee006d65f177a0a3f2f00e850d08c14d01e29f584a33f2cf430846c7327c6",
+            "decodedSha256": "fe0867dae5134286026b8379a554b5aeb4f64be3520bd2ffeab1519b6b95f3e6",
+            "decodedBytes": 149076,
+            "allBytesMatchIndependentMirror": true,
+            "checksumsVerified": 8,
+            "score": 732411200,
+            "rankStage": 8,
+            "continues": 0,
+            "extraClearCount": 1,
+            "extraNoContinueClearCount": 1,
+            "normalClearCountPreserved": 1,
+            "normalNoContinueClearCountPreserved": 1,
+            "allFourNormalRanksAndFiveUnrelatedRolesPreserved": true,
+            "endingFlags": 17,
+            "staffFlags": 1
+          },
+          {
+            "label": "fresh",
+            "encodedBytes": 22780,
+            "encodedSha256": "772ee006d65f177a0a3f2f00e850d08c14d01e29f584a33f2cf430846c7327c6",
+            "decodedSha256": "fe0867dae5134286026b8379a554b5aeb4f64be3520bd2ffeab1519b6b95f3e6",
+            "decodedBytes": 149076,
+            "allBytesMatchIndependentMirror": true,
+            "checksumsVerified": 8,
+            "score": 732411200,
+            "rankStage": 8,
+            "continues": 0,
+            "extraClearCount": 1,
+            "extraNoContinueClearCount": 1,
+            "normalClearCountPreserved": 1,
+            "normalNoContinueClearCountPreserved": 1,
+            "allFourNormalRanksAndFiveUnrelatedRolesPreserved": true,
+            "endingFlags": 17,
+            "staffFlags": 1
+          }
+        ],
+        "originalWholeGameUiLoadClaimed": false,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "completeGame": false
+      },
+      "visualChecks": [
+        {
+          "file": "extra-stage-private.png",
+          "sha256": "e34a4e2563b77fe71fb3066681bceb5111b48c300925d6ac9d78ac13e426a484",
+          "inspected": true
+        },
+        {
+          "file": "extra-result-name-private.png",
+          "sha256": "2d61455012e7d044a8b5f1ce77dcbcd0f21a54b24fb3385d22839bdfed7685a0",
+          "inspected": true
+        },
+        {
+          "file": "extra-replay-slots-private.png",
+          "sha256": "284ff728f2811b381f5932bef07421d83d1f3794f2209d2d1f3ef1689b320a1b",
+          "inspected": true
+        },
+        {
+          "file": "extra-fresh-title-private.png",
+          "sha256": "6d41c884b2c1113218b814abd798f2f343bb4af1de48fd86bb3f1c95ba8ca744",
+          "inspected": true
+        }
+      ],
+      "consumer": {
+        "uninstrumentedCurrentWasm": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43",
+        "harnessSha256": "4daec024e1f830cdbc3f0c7f3757e91a0fc13f6143bc8ea2baa8aeb2bc944b03",
+        "reportSha256": "7dba894c08df407859bc94744072c50c4c2e0c2b3e6e0b83541167c3c8181a0f",
+        "completePlayback": true,
+        "noSeekOrSkip": true,
+        "score": 732411200,
+        "graze": 12484,
+        "producerGrazeEqualityClaimed": true,
+        "progressEvents": 140,
+        "progressBackwards": 0,
+        "characterSaveProtectionPassed": true
+      }
+    },
+    {
+      "name": "practice",
+      "passedWithinDeclaredScope": true,
+      "producerHarnessSha256": "f7cb297603571b171ea864662e756791c29250c12d834b9ddc221a9d705861b9",
+      "producerReportSha256": "3d6229d344a4a523e91c271034e01b90e57b720548636c50c8f3d9435c1cb4dd",
+      "producerPrivateWasm": "a3aa1f790762461e8b9a347d2092c6c2bb12004973c33f7580fb02d057b900c6",
+      "externallyDeclaredStartupClock": 241224550,
+      "hostDisplayClockFactor": 8,
+      "actualPlayerCallbacks": 14061,
+      "recordedFrames": 14062,
+      "completedScore": 10074140,
+      "freshNativeUiAndFileReadback": true,
+      "savedFiles": [
+        {
+          "kind": "scoreth14.dat",
+          "bytes": 22381,
+          "sha256": "a2c1c12815a4a7b15612167fb5dfc93c217e7a8b89cab2c53f6927249607871a"
+        },
+        {
+          "kind": "th14_01.rpy",
+          "bytes": 13528,
+          "sha256": "8a6f2184936f80b1fc55d046807fbfe1a2ff7623130d26380c1834b2f2540ca8"
+        },
+        {
+          "kind": "th14.cfg",
+          "bytes": 92,
+          "sha256": "1c81526f3147ae1f916cfba4171d3ea260ac20d1f5c17a15b68eb8948952a22b"
+        }
+      ],
+      "nativeCodec": {
+        "passed": true,
+        "inputBytes": 13528,
+        "inputSha256": "8a6f2184936f80b1fc55d046807fbfe1a2ff7623130d26380c1834b2f2540ca8",
+        "packedBytes": 13472,
+        "decodedBytes": 85209,
+        "decodedSha256": "116fd1dc03f8e46023ecc910e23a3fd979d0920cc1b088f4dba240c2dee61bed",
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "nativeEntryPoints": [
+          "0x4028e0",
+          "0x4028e0",
+          "0x465840"
+        ],
+        "actualRetailInstructionBodies": true,
+        "controlledCrtBoundaries": true,
+        "freshZeroDictionary": true,
+        "allDecodedBytesEqualIndependentPythonMirror": true,
+        "nameHex": "4141414141414141",
+        "stageCount": 1,
+        "character": 0,
+        "subtype": 1,
+        "difficulty": 1,
+        "stages": [
+          {
+            "stage": 1,
+            "seed": 4607,
+            "frames": 14062,
+            "payloadBytes": 84841,
+            "headerSha256": "7e639d46fbf04f9b396fb9b35f4dd32e4ec38c64e45face235dfe24a2eefe532",
+            "payloadSha256": "dd24f6401548bbc75b9da0c758d2df1ea31f5a130ee152c97d790e68ecd1d09c"
+          }
+        ],
+        "trailingBytes": 20,
+        "trailingSha256": "aeddfc6c57e207e3ff31b51acb3059d9552a83319449c606e706e79c361a559f",
+        "mirrorSha256": "b96b655447c3cae140062c2023beb6a98cbb6052cd0fd54707fc8150ebaa90d9",
+        "toolSha256": "717673b12060f02261c2e1af04b68de63227db65fd6f2cc96f98ccfc5cbecd8e",
+        "elapsedSeconds": 0.07324910000897944,
+        "nativeFilesystemOrPlaybackAcceptance": false,
+        "completeGame": false,
+        "nativeEquivalent": false
+      },
+      "scoreCodec": {
+        "passedWithinScope": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allFreshLoadedFileBytesMatchIndependentMirror": true,
+        "decodedRecordsUnchangedAcrossNativeQuitAndReload": true,
+        "rows": [
+          {
+            "label": "written",
+            "encodedBytes": 22381,
+            "encodedSha256": "a2c1c12815a4a7b15612167fb5dfc93c217e7a8b89cab2c53f6927249607871a",
+            "decodedSha256": "46182b20ba89b560d2d717139f6920d87b8b3945350e59d55c87cc6bfb0de7df",
+            "decodedBytes": 149076,
+            "allBytesMatchIndependentMirror": true,
+            "checksumsVerified": 8,
+            "practiceScore": 10074140,
+            "practiceStage": 1,
+            "difficulty": 1,
+            "normalClearCountPreserved": 1,
+            "extraClearCountPreserved": 0,
+            "allFiveRanksAndFiveUnrelatedRolesPreserved": true,
+            "endingFlags": 17,
+            "staffFlags": 1
+          },
+          {
+            "label": "fresh",
+            "encodedBytes": 22381,
+            "encodedSha256": "a2c1c12815a4a7b15612167fb5dfc93c217e7a8b89cab2c53f6927249607871a",
+            "decodedSha256": "46182b20ba89b560d2d717139f6920d87b8b3945350e59d55c87cc6bfb0de7df",
+            "decodedBytes": 149076,
+            "allBytesMatchIndependentMirror": true,
+            "checksumsVerified": 8,
+            "practiceScore": 10074140,
+            "practiceStage": 1,
+            "difficulty": 1,
+            "normalClearCountPreserved": 1,
+            "extraClearCountPreserved": 0,
+            "allFiveRanksAndFiveUnrelatedRolesPreserved": true,
+            "endingFlags": 17,
+            "staffFlags": 1
+          }
+        ],
+        "originalWholeGameUiLoadClaimed": false,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "completeGame": false
+      },
+      "visualChecks": [
+        {
+          "file": "practice-stage-private.png",
+          "sha256": "9d6ac8027491802035272808ceea522d063ce27551a2ca9c8011f60f7f28b58e",
+          "inspected": true
+        },
+        {
+          "file": "practice-clear-menu-private.png",
+          "sha256": "3f85135105c8afadccf6d6ccbf82422958aa11165c6f511e884cbe2b68e7a9db",
+          "inspected": true
+        },
+        {
+          "file": "practice-replay-slots-private.png",
+          "sha256": "c33c2e58d4f3134884c022b9d988b9e78494133561517bde06bf5c6fac09fd69",
+          "inspected": true
+        },
+        {
+          "file": "practice-fresh-title-private.png",
+          "sha256": "d3c94a2d42ad72d884600e9daa3fca29da6e0224d6a79edbbf250ae3815e9bb9",
+          "inspected": true
+        }
+      ],
+      "consumer": {
+        "uninstrumentedCurrentWasm": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43",
+        "harnessSha256": "4daec024e1f830cdbc3f0c7f3757e91a0fc13f6143bc8ea2baa8aeb2bc944b03",
+        "reportSha256": "2f9510091e4f99db9def0b28145118a6313ba9a8fc0d3a9966f8f6cf286c333c",
+        "completePlayback": true,
+        "noSeekOrSkip": true,
+        "score": 10074140,
+        "graze": 3548,
+        "producerGrazeEqualityClaimed": true,
+        "progressEvents": 36,
+        "progressBackwards": 0,
+        "characterSaveProtectionPassed": true
+      }
+    }
+  ],
+  "producerDelivery": [
+    {
+      "passed": true,
+      "cases": [
+        {
+          "name": "producer",
+          "passed": true,
+          "actualCodeResponsesVerified": 116,
+          "expectedWasm": "812839e69f9f53789c3869a2d09c879b5237d4fa74ec71bd2a00d1aea23185fd"
+        },
+        {
+          "name": "consumer",
+          "passed": true,
+          "actualCodeResponsesVerified": 78,
+          "expectedWasm": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43"
+        }
+      ],
+      "productionFilesChanged": false
+    },
+    {
+      "passed": true,
+      "cases": [
+        {
+          "name": "extra-natural",
+          "passed": true,
+          "actualCodeResponsesVerified": 148,
+          "expectedWasm": "a3aa1f790762461e8b9a347d2092c6c2bb12004973c33f7580fb02d057b900c6"
+        },
+        {
+          "name": "vanilla-practice",
+          "passed": true,
+          "actualCodeResponsesVerified": 148,
+          "expectedWasm": "a3aa1f790762461e8b9a347d2092c6c2bb12004973c33f7580fb02d057b900c6"
+        }
+      ],
+      "productionFilesChanged": false
+    }
+  ],
+  "consumerDelivery": {
+    "passed": true,
+    "cases": [
+      {
+        "name": "normal-new-recording-clean-consumer",
+        "passed": true,
+        "actualCodeResponsesVerified": 78,
+        "expectedWasm": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43"
+      },
+      {
+        "name": "extra-new-recording-clean-consumer",
+        "passed": true,
+        "actualCodeResponsesVerified": 78,
+        "expectedWasm": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43"
+      },
+      {
+        "name": "practice-new-recording-clean-consumer",
+        "passed": true,
+        "actualCodeResponsesVerified": 78,
+        "expectedWasm": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43"
+      }
+    ],
+    "productionFilesChanged": false
+  },
+  "sourceAndPublicTools": {
+    "passed": true,
+    "rows": [
+      {
+        "path": "tools/th14-check-natural-normal-gpu-nov18.mjs",
+        "executedHarnessSha256": "7301d15a71cedd51b41fe0f58a90262a9858eb3f5b3df41fc185d38f184d518f",
+        "publishedHarnessSha256": "86fc7e3f319578d659936c361aec12ecd507d52b8d66e8d4d0503db00e023ece",
+        "changes": "Output default under artifacts/th14; remove unused replayPath in Normal only; executable test operations retained"
+      },
+      {
+        "path": "tools/th14-check-natural-extra-gpu-nov18.mjs",
+        "executedHarnessSha256": "66886c46c686f91c7d0b9cd870d4860af30fcaa5e5e81b18f1b64a02b232beac",
+        "publishedHarnessSha256": "50bee82cc44b0594008be1afc1607d881610ad424d20483e0987bd1b20048b1e",
+        "changes": "Output default under artifacts/th14; remove unused replayPath in Normal only; executable test operations retained"
+      },
+      {
+        "path": "tools/th14-check-natural-practice-gpu-nov18.mjs",
+        "executedHarnessSha256": "f7cb297603571b171ea864662e756791c29250c12d834b9ddc221a9d705861b9",
+        "publishedHarnessSha256": "f0fce762fbdfcb10de3e7969b8bf9a0644ba74344b3a0766efa2440d153413c7",
+        "changes": "Output default under artifacts/th14; remove unused replayPath in Normal only; executable test operations retained"
+      },
+      {
+        "path": "tools/th14-natural-held-input-raf-nov18.cpp.inc",
+        "sha256": "18cb5a63b7c2e5c40fe47493002164319bf9a8764df44b76419bae8bb1890e0e",
+        "testAppSha256": "f5d2ca14775faf6fc670fcbaab286456e67189d0c99fe85c9dfabbb2542044b2",
+        "privateWasm": "812839e69f9f53789c3869a2d09c879b5237d4fa74ec71bd2a00d1aea23185fd",
+        "originalAppEdits": 2,
+        "compiledUnits": 1,
+        "verifiedReusedObjects": 152,
+        "nativeRafAndAsyncRuntimeRetained": true,
+        "sourceInputCount": 361
+      },
+      {
+        "path": "tools/th14-natural-held-input-extra-nov18.cpp.inc",
+        "sha256": "bead4393df17a73b20838521059a8a13b2801062f9c11dbc8a3765c399b9a1cc",
+        "testAppSha256": "ba26bceab90fa91c96f283386196b1e878098d920cbe117caf0b7d2826cd0df3",
+        "privateWasm": "a3aa1f790762461e8b9a347d2092c6c2bb12004973c33f7580fb02d057b900c6",
+        "originalAppEdits": 2,
+        "compiledUnits": 1,
+        "verifiedReusedObjects": 152,
+        "nativeRafAndAsyncRuntimeRetained": true,
+        "sourceInputCount": 361
+      }
+    ],
+    "muted": true,
+    "productionRuntimeChanged": false
+  },
+  "retainedFailures": [
+    "Manual-tick prototypes failed pthread cleanup before gameplay; native RAF retained instead",
+    "A prior Normal run lost its collector to unsupported Node inspector dynamic import; not claimed as completed",
+    "Original collector omitted nested replay directory; corrected collector regression verified before rerun",
+    "Extra menu v1 omitted its dedicated difficulty confirmation; no gameplay reached",
+    "Extra consumer v1 supplied private .bin suffix; launcher correctly refused; unchanged bytes imported as .rpy"
+  ],
+  "limits": [
+    "Six normal endings use separate previously qualified boundary tests; natural GPU full route here is ReimuB",
+    "Not all loadouts/difficulties freshly run in one instrumented build; use explicit current source reuse audit",
+    "Normal terminal graze comparison is not claimed because live economy reset before results",
+    "No original whole-game UI load/playback claim for T14B extension",
+    "No physical device latency, untested browser or public Relay claim"
+  ]
+}
