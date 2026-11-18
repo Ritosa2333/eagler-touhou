@@ -3145,6 +3145,7 @@ function titlePauseOverlay(){
   find('#runtime-overlay').hidden=false;
 }
 function resumeTitlePause(){
+  state.focusPausedTitle=null;
   if(state.normalPostrun){resumeNormalPostrun();return;}
   if(state.endingHost||state.endingLoading){resumeOriginalEnding();return;}
   state.paused=false;clock.reset();resetHighFrameratePresentation();find('#runtime-overlay').hidden=true;
@@ -3153,6 +3154,7 @@ function resumeTitlePause(){
   status('动画继续。');
 }
 function pause(){
+  state.focusPausedTitle=null;
   if(state.normalPostrun){if(state.paused)resumeNormalPostrun();else pauseNormalPostrun();return;}
   if(state.endingHost||state.endingLoading){if(state.paused)resumeTitlePause();else pauseOriginalEnding();return;}
   if(state.worldMode){if(state.paused)resumeGame();else openPauseMenu();return;}
@@ -3639,7 +3641,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         if(!updateReady)throw new Error(module.UTF8ToString(module._th128_world_error()));
         if(!module._th128_world_enable_graze(0,thprac?.params.ice_power??10000,0x1234))throw new Error(module.UTF8ToString(module._th128_world_error()));
         const playerPointer=memory(playerBytes);
-        const playerReady=module._th128_world_enable_player_context(playerPointer,playerBytes.length,1,extraRun?2:0,extraRun?65535:120,0,0,0,0,0,thprac?.params.perfect_freeze??0);
+        const playerReady=module._th128_world_enable_player_context(playerPointer,playerBytes.length,1,0,120,0,0,0,0,0,thprac?.params.perfect_freeze??0);
         module._free(playerPointer);
         if(!playerReady)throw new Error(module.UTF8ToString(module._th128_world_error()));
         if(!module._th128_world_enable_player_motion(state.replayPlayback?.stageInitial().horizontal??0,state.replayPlayback?.stageInitial().vertical??51200))throw new Error(module.UTF8ToString(module._th128_world_error()));
@@ -4453,10 +4455,23 @@ function loseFocus(){
   releaseGameInput();
   if(menu.launching){cancelLaunch();return;}
   if(state.worldMode&&state.active&&!state.paused)openPauseMenu();
-  else if(state.active&&!state.worldMode&&!state.paused){state.paused=true;clock.reset();resetHighFrameratePresentation();state.audio?.suspend().catch(()=>{});}
+  else if(state.active&&!state.worldMode&&!state.paused){
+    const controller=state.mainController;
+    state.focusPausedTitle=menu.page==='route'&&controller?.prepared?{controller,module:state.module,action:state.action}:null;
+    state.paused=true;clock.reset();resetHighFrameratePresentation();state.audio?.suspend().catch(()=>{});
+  }
+}
+function regainTitleFocus(){
+  if(document.hidden)return;
+  const owner=state.focusPausedTitle;state.focusPausedTitle=null;
+  if(!owner||!state.paused||!state.active||state.worldMode||state.handoff||state.launcherExited
+    ||state.endingHost||state.endingLoading||state.normalPostrun||state.mainQuit||menu.launching||menu.pauseOpen||menu.page!=='route'
+    ||owner.controller!==state.mainController||owner.controller.disposed||owner.module!==state.module||owner.action!==state.action)return;
+  resumeTitlePause();
 }
 window.addEventListener('blur',loseFocus);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)loseFocus();});
+window.addEventListener('focus',regainTitleFocus);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)loseFocus();else regainTitleFocus();});
 window.addEventListener('pagehide',()=>{state.webInput?.dispose();cancelOriginalEnding();state.controller?.abort();state.renderer?.dispose();stopAudio();});
 
 async function restartTouchRun(){

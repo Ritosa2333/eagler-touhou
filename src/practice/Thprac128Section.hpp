@@ -5,6 +5,25 @@
 #include <unordered_set>
 #include <stdexcept>
 namespace th128::practice {
+namespace section_detail {
+// The upstream direct-card patch calls all three cards from Boss1A/B/C.
+// BossB/C reach those calls one tick before BossA. Let the leader's entry
+// synchronization run before the partners register their NEXT phase.
+inline void alignDirectThreeBossCard(std::vector<ecl::Program::PracticeRegion>& regions){
+    if(regions.size()!=3||regions[0].instructions.size()!=2||regions[0].instructions[0].opcode!=411
+        ||regions[1].instructions.size()!=1||regions[2].instructions.size()!=1)return;
+    auto& a=regions[0].instructions[1];auto& b=regions[1].instructions[0];auto& c=regions[2].instructions[0];
+    const auto card=[](const ecl::Instruction& ins){
+        const auto& words=ins.rawWords;
+        return ins.time==0&&ins.opcode==11&&ins.parameterCount==1&&ins.parameterMask==0
+            &&words.size()==4&&words[0]==12&&words[1]==0x73736f42u&&words[2]==0x64726143u; // BossCard
+    };
+    if(!card(a)||!card(b)||!card(c))return;
+    const auto number=a.rawWords[3];
+    if(number<'1'||number>'5'||b.rawWords[3]!=(number|('B'<<8))||c.rawWords[3]!=(number|('C'<<8)))return;
+    b.time=1;c.time=1;
+}
+}
 inline bool prepareOwnedSection(const std::unordered_map<std::string,ecl::Program>& sources,
         unsigned stageId,unsigned section,unsigned phase,bool dialogue,ecl::Program& rootOutput,
         std::unordered_map<std::string,ecl::Program>& sourceOutput,std::string& error){
@@ -43,6 +62,7 @@ inline bool prepareOwnedSection(const std::unordered_map<std::string,ecl::Progra
             }
             if(cursor!=limit)throw std::runtime_error("section instruction trailing data");
         }catch(const std::exception& e){error=e.what();return false;}
+        section_detail::alignDirectThreeBossCard(regions);
         ecl::Program prepared;
         if(!found->second.withPracticeRegions(found->second.resource().bytes,regions,prepared,error)){error=name+": "+error;return false;}
         candidate[name]=std::move(prepared);

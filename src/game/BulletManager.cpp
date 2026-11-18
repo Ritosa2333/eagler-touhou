@@ -460,6 +460,21 @@ bool Manager::emitInternal(const Emitter& emitter, const Profile& profile, const
                 birth.state.extensionIndex=liveIndex;
             }
             birth.extensionListEmpty=nextExtensionEmpty(birth.state);
+            // The original constructor dispatches the pending ETEX before the
+            // first appearance update. A trailing256 keeps even a state-2
+            // projectile born outside the playfield alive through its entry.
+            const auto& appearanceTail=birth.state.laterExtensions[0];
+            if(!nested&&birth.state.motionState==2&&birth.state.extensionIndex==1
+                &&appearanceTail.type==256&&birth.state.laterExtensions[1].type==0){
+                const auto initial=initializeExtension256(appearanceTail);
+                if(!initial||(appearanceTail.control!=0&&appearanceTail.control!=1)){
+                    error="unsupported initial appearance/256 extension";success=false;break;
+                }
+                birth.extension256=*initial;
+                birth.state.activeExtensions|=0x100u;
+                ++birth.state.extensionIndex;
+                birth.extensionListEmpty=nextExtensionEmpty(birth.state);
+            }
             birth.cancellationScript=*cancellation;
             nestedConstruction_=true;
             try {

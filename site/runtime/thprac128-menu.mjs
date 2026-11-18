@@ -15,7 +15,7 @@ export function mountThprac128Menu({root,controls=root,opener,getAvailability,on
  const options=(target,rows,preferred)=>{const wanted=String(preferred??target.value);target.replaceChildren(...rows.map(row=>{const o=root.ownerDocument.createElement('option');o.value=String(row.value);o.textContent=row.label;return o;}));target.value=rows.some(r=>String(r.value)===wanted)?wanted:String(rows[0]?.value??'');};
  const index=(key,fallback=0)=>{const n=Number(node[key].value);return Number.isInteger(n)&&n>=0?n:fallback;};
  function stage(){return THPRAC128_STAGE_MAP[index('startPoint')][index('path')][index('stage')];}
- function refresh(){
+ function refresh({routeDifficulty}={}){
   if(disposed)return;const locale=language(),label=key=>thprac128Label(key,locale),a=getAvailability(),blocked=!a.ready||a.busy||opening||!!pending;
   options(node.locale,[{value:'zh',label:'中文'},{value:'en',label:'English'},{value:'ja',label:'日本語'}],locale);
   options(node.mode,[{value:0,label:label('TH128_NORMAL_PLAY')},{value:1,label:label('TH128_PRACTICE_MODE')}],node.mode.value||'0');
@@ -23,7 +23,7 @@ export function mountThprac128Menu({root,controls=root,opener,getAvailability,on
   const point=index('startPoint'),extra=point===3,practice=index('mode')===1;
   options(node.path,[0,1].map(value=>({value,label:extra?'Extra':label('TH128_PATHDESC_'+String.fromCharCode(65+point)+(value+1))})));
   options(node.stage,(extra?[0]:[0,1,2]).map(value=>({value,label:extra?'Extra':String(value+1)})));
-  options(node.difficulty,(extra?[4]:[0,1,2,3]).map(value=>({value,label:['Easy','Normal','Hard','Lunatic','Extra'][value]})),extra?4:node.difficulty.value||'1');
+  options(node.difficulty,(extra?[4]:[0,1,2,3]).map(value=>({value,label:['Easy','Normal','Hard','Lunatic','Extra'][value]})),extra?4:routeDifficulty??(node.difficulty.value||'1'));
   options(node.warp,['TH_NONE','TH_STAGE_PORTION','TH_MID_STAGE','TH_END_STAGE','TH_NONSPELL','TH_SPELL'].map((key,value)=>({value,label:label(key)})));
   root.setAttribute('data-mode',practice?'practice':'normal');root.setAttribute('lang',locale==='zh'?'zh-CN':locale==='ja'?'ja':'en');
   const warp=index('warp');options(node.section,thprac128SectionChoices(stage(),warp,locale));
@@ -89,7 +89,12 @@ export function mountThprac128Menu({root,controls=root,opener,getAvailability,on
  for(const key of resourceNames)listen(node[key],'input',()=>{const output=root.querySelector('[data-thprac-value="'+key+'"]');if(output)output.textContent=thprac128ResourceText(key,Number(node[key].value));});
  for(const key of ['locale','difficulty','enabled'])listen(node[key],'change',()=>{if(key!=='difficulty')onSettings({enabled:node.enabled.checked,locale:language()});refresh();});
  function back(){close();onCancel();}
- function syncRoute(selection,difficulty){if(!routeOpen||root.hidden||!Number.isInteger(selection)||selection<0||selection>3)return;node.startPoint.value=String(selection);node.difficulty.value=String(selection===3?4:difficulty);refresh();}
+ function syncRoute(selection,difficulty){
+  if(!routeOpen||root.hidden||!Number.isInteger(selection)||selection<0||selection>3)return;
+  const point=String(selection),rank=String(selection===3?4:difficulty);
+  if(node.startPoint.value===point&&node.difficulty.value===rank)return;
+  node.startPoint.value=point;refresh({routeDifficulty:rank});
+ }
  function keyDown(event,fromRoot=false){
   if(disposed||root.hidden)return false;const code=event.code;
   if(routeOpen&&index('mode')===0&&['ArrowLeft','ArrowRight','KeyZ','Enter'].includes(code)){

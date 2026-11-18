@@ -49,6 +49,19 @@ function surface(){const names=['enabled','locale','mode','startPoint','path','s
 function harness(overrides={}){assert.equal(typeof uiApi.mountThprac128Menu,'function','Actual complete TH128 thprac menu is missing');const ui=surface(),availability={ready:true,busy:false,inRun:false,practiceSession:null},calls=[];
  const controller=uiApi.mountThprac128Menu({...ui,getAvailability:()=>availability,onOpen:async()=>{},onFocusGame(){},launch:async(s,owner)=>{calls.push({s,owner});return{session:s,stageId:s.params.stage+1,difficulty:s.difficulty,nativeTainted:s.params.mode===1,normalModeClear:false};},...overrides});return{...ui,availability,calls,controller};}
 async function open(h){h.nodes.mode.value='1';h.nodes.mode.emit('change');h.opener.emit('click');await flush();}
+test('unchanged native route ticks leave the existing select options in the DOM',async()=>{
+ const h=harness();await h.controller.open({route:true});
+ h.nodes.mode.value='1';h.nodes.mode.emit('change');h.nodes.path.value='1';h.nodes.path.emit('change');
+ h.nodes.stage.value='2';h.nodes.stage.emit('change');h.nodes.warp.value='5';h.nodes.warp.emit('change');
+ const current=h.nodes.section.children[0];assert(current);
+ for(let i=0;i<120;++i)h.controller.syncRoute(0,1);
+ assert.equal(h.nodes.section.children[0],current,'native title ticks must not replace form options');
+ assert.equal(h.nodes.path.value,'1');assert.equal(h.nodes.stage.value,'2');
+ h.controller.syncRoute(3,1);assert.equal(h.nodes.startPoint.value,'3');assert.equal(h.nodes.difficulty.value,'4');
+ assert.notEqual(h.nodes.section.children[0],current);assert(h.nodes.section.children.some(el=>el.value==='154'));
+ h.controller.syncRoute(0,2);assert.equal(h.nodes.startPoint.value,'0');assert.equal(h.nodes.difficulty.value,'2');
+ h.controller.dispose();
+});
 test('complete menu opens explicitly and maps A2 third stage with upstream resource defaults',async()=>{
  const h=harness();assert.equal(h.root.hidden,true);h.controller.refresh();assert.equal(h.root.hidden,true);await open(h);assert.equal(h.root.hidden,false);assert.equal(h.nodes.motivation.value,'100000');assert.equal(h.nodes.perfect_freeze.value,'30000');assert.equal(h.nodes.ice_power.value,'10000');assert.equal(h.nodes.ice_area.value,'3000');
  h.nodes.startPoint.value='0';h.nodes.startPoint.emit('change');h.nodes.path.value='1';h.nodes.path.emit('change');h.nodes.stage.value='2';h.nodes.stage.emit('change');h.nodes.warp.value='1';h.nodes.warp.emit('change');h.nodes.section.value='9';h.nodes.start.emit('click');await flush();assert.equal(h.calls[0].s.params.stage,4);assert.equal(h.calls[0].s.params.section,10509);h.controller.dispose();
