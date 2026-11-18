@@ -29,3 +29,7 @@
 ## 2026-11-18 普通触控自然结局与回放终局（1115）
 
 1107原三面Perfect120对后出生激光错误要求Empty真RED；1108仅改为实际manager可用校验，80TU组件通过。1110实际普通[1,2,3]两自然carry/89799游戏步/89715主帧+84选路辅助，真实IDB原RPY和成绩ACK、原Ending15进入，整轮时限失败保留。1114同实际记录输入经LIVE NativeRecord重建（非playLock），14项99.600s/1Factory3World89799游戏+206Ending、真实音频/strictIDB/source.stop/cleaned16→sealed普通结算current4mode3、profile不变/allcontexts关闭通过。1115真实nativeplayLock前两段40360World步通过，第三Worldframe0被普通NormalRecord terminal资源门拒绝，专属Replay终局待修。0新117/包/部署，完整第三步false。见[本批范围](USER_FEEDBACK_NATURAL_ENDING.md)。
+
+## 2026-11-18 原生Replay终局与移动浮窗（1129）
+
+1118真正native playLock原三关89799步/89715主帧+84选路辅助、两carry、原MSG与真实音乐ACK→独立Replay终局380/score795972通过，17项85.981s，未创建普通记录；World组件范围，不冒Title/Ending回放/GPU。1126首关录制重入真RED→1127最小原生守卫与真实1World0步消费者GREEN。1124真实顶层横竖视口21交互/存储/重挂载/受控iOS事件通过；离线图发现字段裁切后1125最小CSS修复、8实际内容边界和局部像素复核通过。1129最终48受影响Websuite293PASS0skip。两个80TU组件、无117/包/部署；魔理沙EX材质与背景、完整生产页/Title/原字形音频、最终本地包仍待，第三步false。详见[本批范围](USER_FEEDBACK_REPLAY_MOBILE.md)。

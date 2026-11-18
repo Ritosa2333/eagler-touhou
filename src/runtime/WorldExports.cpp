@@ -210,6 +210,14 @@ struct NormalTerminalRuntime {
     th128::stage::OrdinaryTransition transition;
 };
 NormalTerminalRuntime normalTerminal;
+struct ReplayTerminalRuntime {
+    bool configured=false,begun=false,messageDone=false,requested=false;
+    unsigned generation=0,seed=0,frames=0,carryToken=0,sourceGeneration=0,lastTickFrame=0,musicSerial=0;
+    int stage=0,progress=0,rank=0,route=0,bonus=0,counter=0;
+    std::unique_ptr<th128::stage::StageSettlementHost> settlement;
+    th128::ending::Kind5Fade fade;
+};
+ReplayTerminalRuntime replayTerminal;
 // Native fixed60 scheduler clock; global tasks retain this owner across BattleResources retirement.
 th128::anm::Runtime ordinaryGlobalTaskRuntime;
 struct NormalPostrunRuntime {
@@ -308,7 +316,7 @@ struct StageCarryRecord {
     std::optional<th128::StageWorld::ThpracChapter> practice;
     std::shared_ptr<th128::record::NativeRunReplay> practiceReplay;
     double practiceReplayOrigin=0,practiceReplayClock=0;
-    bool practicePlayback=false;
+    bool practicePlayback=false,sourcePlaybackComplete=false;
     std::shared_ptr<th128::record::NativeRunReplay> normalReplay;
     std::shared_ptr<th128::record::NativeNormalRecord> normalRecord;
     int originalContinueCount=0;
@@ -713,6 +721,16 @@ void writeNormalTerminalState(Writer& text){
         <<",\"replayPlayback\":"<<(replayPlayback.active()?"true":"false")<<",\"debugTainted\":"<<(debugRunTainted?"true":"false")
         <<",\"normalClear\":false,\"provenance\":\"ordinary-native-terminal-owner\"}";
 }
+template<class Writer>
+void writeReplayTerminalState(Writer& text){
+    text<<"{\"configured\":"<<(replayTerminal.configured?"true":"false")<<",\"begun\":"<<(replayTerminal.begun?"true":"false")
+        <<",\"generation\":"<<replayTerminal.generation<<",\"stage\":"<<replayTerminal.stage<<",\"rank\":"<<replayTerminal.rank
+        <<",\"seed\":"<<replayTerminal.seed<<",\"frames\":"<<replayTerminal.frames<<",\"carryToken\":"<<replayTerminal.carryToken
+        <<",\"counter\":"<<replayTerminal.counter<<",\"messageDone\":"<<(replayTerminal.messageDone?"true":"false")
+        <<",\"requested\":"<<(replayTerminal.requested?"true":"false")<<",\"musicSerial\":"<<replayTerminal.musicSerial
+        <<",\"score\":"<<scoreRaw<<",\"fadeAlpha\":"<<(replayTerminal.fade.state().active?replayTerminal.fade.state().alpha:0)
+        <<",\"normalClear\":false,\"provenance\":\"actual-native-Replay-terminal\"}";
+}
 std::string retiredOrdinaryLifecycle(){
     std::ostringstream text;
     text<<"{\"frame\":"<<world->frame()<<",\"scoreRaw\":"<<scoreRaw<<",\"worldLifecycle\":\"ordinary-battle-retirement\",\"battleRetirement\":{\"attempted\":"<<(ownedBattle.attempted()?"true":"false")
@@ -774,7 +792,7 @@ void resetStageTransition() {
     stageTransitionCurrentId=0;stageTransitionProgress=0;stageTransitionGate74=0;stageTransitionMessage78=0;
     stageSessionPresent=0;stageSessionField74=0;
     stageManager={};
-    debugTerminal={};normalTerminal={};normalPostrun={};normalMainAdoptedGeneration=0;ordinaryCarryContinue={};
+    debugTerminal={};normalTerminal={};replayTerminal={};normalPostrun={};normalMainAdoptedGeneration=0;ordinaryCarryContinue={};
     debugTerminalSettlement=std::make_unique<th128::stage::StageSettlementHost>();
     stageTransitionError.clear();
 }
@@ -1116,6 +1134,105 @@ bool tickOrdinaryTerminal(std::string& error){
     return true;
 }
 
+bool replayTerminalCarryMatches(){
+    if(!replayTerminal.carryToken)return stageCarry.restoredGeneration!=worldGeneration;
+    static constexpr std::array<int,6> previous{2,4,7,9,12,14};
+    const auto& c=stageCarry;
+    return c.token==replayTerminal.carryToken&&c.valid&&c.consumed&&c.acknowledged&&c.targetBound
+        &&c.preInitBound&&c.gameRandomRestored&&c.scalarRestored&&c.restoredGeneration==worldGeneration
+        &&c.scalarRestoredGeneration==worldGeneration&&c.sourceGeneration==replayTerminal.sourceGeneration
+        &&c.sourceGeneration<worldGeneration&&c.sourceCurrentId==previous[replayTerminal.route]
+        &&c.sourcePlaybackComplete&&!c.practice&&!c.normalRecord&&!c.normalReplay
+        &&!c.debugRunTainted&&!c.debugInfiniteRespawn&&c.sourceDifficulty==worldStartDifficulty
+        &&c.difficulty==worldStartDifficulty&&c.targetDifficulty==worldStartDifficulty
+        &&c.nextId==replayTerminal.stage&&c.nextProgress==currentStageProgress
+        &&c.targetWorldName==worldStartedName&&stageIdForEcl(c.sourceWorldName)==c.sourceCurrentId
+        &&c.sourceTransitionSerial&&c.sourceControlActionRecreate&&c.sourceDestroyExisting
+        &&c.sourceControlCurrent==7&&c.sourceControlPending==7&&c.sourceControlSessionArgument==0
+        &&c.originalContinueCount==originalContinueCount;
+}
+bool replayTerminalIdentityReady(std::string& error){
+    if(!world||world->faulted()||!replayTerminal.configured||replayTerminal.generation!=worldGeneration
+        ||!replayPlayback.active()||replayPlayback.generation()!=worldGeneration
+        ||replayPlayback.stage()!=unsigned(replayTerminal.stage)||replayPlayback.rank()!=unsigned(worldStartDifficulty)
+        ||replayPlayback.seed()!=replayTerminal.seed||replayPlayback.frames()!=replayTerminal.frames
+        ||replayTerminal.rank!=worldStartDifficulty||replayTerminal.stage!=stageIdForEcl(worldStartedName)
+        ||replayTerminal.progress!=currentStageProgress||normalRecord||normalReplay||world->thpracChapter()
+        ||thpracReplay.playback||thpracReplay.record||debugRunTainted||debugInfiniteRespawnRun||debugRecordPrefix.worldBound
+        ||ordinaryRecordOwner.configured||normalTerminal.resourcesConfigured||debugTerminal.configured||stageTransitionConfigured
+        ||!replayTerminal.settlement||!playerHit||!playerConfigured||!playerShotGroupsConfigured||!messagesConfigured
+        ||!stageControl.initialized()||!stageControl.sessionConstructed()||stageControl.current()!=7||stageControl.gateSet()
+        ||stageControl.pending()!=(replayTerminal.requested?15:7)||!replayTerminalCarryMatches()){
+        error="Replay terminal differs from its bound native input and restored session";return false;
+    }
+    return true;
+}
+bool replayTerminalDrainReady(std::string& error){
+    if(!replayTerminalIdentityReady(error))return false;
+    const auto settled=replayTerminal.settlement->state();
+    if(!worldTickExecuting||!replayTerminal.begun||!replayTerminal.messageDone||!settled.begun||settled.failed
+        ||!settled.scalarApplied||!settled.cleanupCalled||messages->state().active||messages->state().entry!=1
+        ||!messages->state().eclReleased||replayTerminal.counter>380
+        ||(replayTerminal.requested&&(replayTerminal.counter!=380||replayTerminal.lastTickFrame!=world->frame()+1))){
+        error="Replay terminal drain requires its actual completed MSG and settlement";return false;
+    }
+    return true;
+}
+bool beginReplayTerminalMsg21(const th128::message::Event& event,const th128::stage::StageSettlementCallbacks& callbacks,std::string& error){
+    if(!replayTerminalIdentityReady(error))return false;
+    if(!worldTickExecuting||!world->frame()||event.entry!=1||event.opcode!=21||replayTerminal.begun
+        ||pointValueRaw<0||motivationRaw<0||motivationRaw>100000){
+        error="Replay terminal MSG21 identity or order differs";return false;
+    }
+    th128::stage::StageSettlementContext context;
+    context.stage=replayTerminal.stage;context.score=scoreRaw;context.manager=stageManager;
+    if(!replayTerminal.settlement->beginTerminal(context,callbacks,error)||!replayTerminalIdentityReady(error))return false;
+    const auto committed=replayTerminal.settlement->state();
+    if(!committed.begun||committed.failed||!committed.scalarApplied||!committed.cleanupCalled){
+        error="Replay terminal native settlement failed";return false;
+    }
+    const std::array<int,4> multipliers{5000,10000,20000,40000};
+    const int quotient=pointValueRaw/100;
+    const auto bits=std::uint32_t(std::int64_t(quotient-quotient%10)*100
+        +std::int64_t(motivationRaw/100)*multipliers[std::size_t(worldStartDifficulty)]);
+    replayTerminal.bonus=std::bit_cast<std::int32_t>(bits);
+    scoreRaw=std::bit_cast<std::int32_t>(std::uint32_t(committed.context.score)+std::uint32_t(replayTerminal.bonus/10));
+    if(scoreRaw>=1000000000)scoreRaw=999999999;
+    stageManager=committed.context.manager;stageManager.flags5a04|=0x18u;
+    stageManager.baseScore5a38=std::bit_cast<std::int32_t>(std::uint32_t(stageManager.baseScore5a38)+bits);
+    replayTerminal.begun=true;return true;
+}
+bool tickReplayTerminal(std::string& error){
+    if(!replayTerminalIdentityReady(error))return false;
+    const auto frame=unsigned(world->frame()+1);
+    if(!worldTickExecuting||frame<=replayTerminal.lastTickFrame||replayTerminal.counter>=380
+        ||!replayTerminal.settlement->tick(error)){
+        if(error.empty())error="Replay terminal requires one actual manager callback per frame";return false;
+    }
+    replayTerminal.lastTickFrame=frame;
+    stageManager.field5a08=stageManager.field5a0c;++stageManager.field5a0c;stageManager.field5a10=float(stageManager.field5a0c);
+    ++replayTerminal.counter;
+    if(replayTerminal.counter==180&&!replayTerminal.fade.startTerminal(error))return false;
+    if(replayTerminal.counter>180&&replayTerminal.fade.state().active
+        &&!replayTerminal.fade.tick(ordinaryGlobalTaskControls(),error))return false;
+    if(replayTerminal.counter==380){
+        const bool allInput=replayPlayback.consumed()+(replayPlayback.pending()?1u:0u)==replayPlayback.frames()
+            &&(!ordinaryReplayAuxiliary.active||(ordinaryReplayAuxiliary.generation==worldGeneration
+                &&ordinaryReplayAuxiliary.cursor==ordinaryReplayAuxiliary.inputs.size()&&ordinaryReplayAuxiliary.worldFrames==frame))
+            &&(!nativeTouch.playback||(nativeTouch.generation==worldGeneration&&nativeTouch.worldFrames==frame
+                &&nativeTouch.cursor==nativeTouch.events.size()));
+        if(!replayTerminal.messageDone||!replayTerminal.musicSerial||!musicControl.active||!musicControl.acknowledged
+            ||musicControl.operation!=5||musicControl.serial!=replayTerminal.musicSerial||!allInput){
+            error="Replay terminal completion requires exact input exhaustion and original music ACK";return false;
+        }
+        const auto requested=stageControl.request(15);
+        if(requested.status!=th128::stage::RequestStatus::Written||requested.pending!=15){
+            error="Replay terminal actual controller15 request rejected";return false;
+        }
+        replayTerminal.requested=true;
+    }
+    return true;
+}
 bool worldPacketCapturing=false;
 std::vector<std::array<double,39>> worldPacketRows;
 std::array<double,8> worldPacketHeader{};
@@ -2980,7 +3097,7 @@ int th128_world_enable_messages(const void* data,unsigned size,const void* text,
             routeChoiceStarted=true;return true;
         }
         if(event.opcode==21){
-            if(normalTerminal.resourcesConfigured){
+            if(normalTerminal.resourcesConfigured||replayTerminal.configured){
                 th128::stage::StageSettlementCallbacks callbacks;
                 callbacks.setClearFlag=[](std::string& failure){return playerHit->applyStageClearStart(failure);};
                 callbacks.slot=[](unsigned group,unsigned slot){return playerShotGroups->slot(group,slot);};
@@ -2990,7 +3107,7 @@ int th128_world_enable_messages(const void* data,unsigned size,const void* text,
                     return playerShotGroups->retireWithChildren(handle,code,failure);
                 };
                 callbacks.finish=[](std::string& failure){return playerHit->applyStageClearStart(failure);};
-                return beginOrdinaryTerminalMsg21(event,callbacks,error);
+                return replayTerminal.configured?beginReplayTerminalMsg21(event,callbacks,error):beginOrdinaryTerminalMsg21(event,callbacks,error);
             }
             if(debugTerminal.configured){
                 if(event.entry!=1||debugTerminal.begun||debugTerminal.generation!=worldGeneration
@@ -3109,9 +3226,10 @@ int th128_world_enable_messages(const void* data,unsigned size,const void* text,
         if(event.opcode==22){
             if(event.entry!=1){error="original MSG22 is only accepted in the post-Boss entry";return false;}
             if(normalTerminal.resourcesConfigured&&!ordinaryTerminalContinuationReady(error))return false;
-            if(!stageTransitionConfigured&&!debugTerminal.begun&&!normalTerminal.begun){error="original MSG22 requires an actual ordinary or debug terminal owner";return false;}
+            if(replayTerminal.configured&&(!replayTerminalIdentityReady(error)||!replayTerminal.begun))return false;
+            if(!stageTransitionConfigured&&!debugTerminal.begun&&!normalTerminal.begun&&!replayTerminal.begun){error="original MSG22 requires an actual ordinary, Replay or debug terminal owner";return false;}
             if(musicControl.active){error="original MSG22 was already queued";return false;}
-            const auto plan=th128::message::planMsg22({normalTerminal.begun?normalTerminal.selector:debugTerminal.begun?debugTerminal.selector:stageTransitionCurrentId,1.0f});
+            const auto plan=th128::message::planMsg22({normalTerminal.begun?normalTerminal.selector:replayTerminal.begun?replayTerminal.route+17:debugTerminal.begun?debugTerminal.selector:stageTransitionCurrentId,1.0f});
             if(plan.status!=th128::message::Msg22Status::BgmFadeOut){
                 error="original MSG22 fade request is unsupported for the current stage";return false;
             }
@@ -3124,9 +3242,14 @@ int th128_world_enable_messages(const void* data,unsigned size,const void* text,
             musicControl.acknowledged=false;
             musicControl.active=true;
             if(normalTerminal.begun)normalTerminal.musicSerial=musicControl.serial;
+            if(replayTerminal.begun)replayTerminal.musicSerial=musicControl.serial;
             return true;
         }
         if(!messageVisuals->event(event,error))return false;
+        if(event.opcode==0&&replayTerminal.begun){
+            if(event.entry!=1||replayTerminal.messageDone||!replayTerminalIdentityReady(error)){if(error.empty())error="Replay terminal MSG0 order differs";return false;}
+            replayTerminal.messageDone=true;
+        }
         if(event.opcode==0&&normalTerminal.begun&&!ordinaryTerminalMessageDone(event,error))return false;
         if(event.opcode==0&&debugTerminal.begun){
             if(event.entry!=1){error="debug terminal MSG0 entry mismatch";return false;}
@@ -3224,6 +3347,35 @@ int th128_world_enable_stage_transition(const void* front,unsigned size,int curr
             &&stageCarry.gameRandomRestored&&stageCarry.preInitBound&&stageCarry.restoredGeneration==worldGeneration
             &&stageCarry.targetWorldName==worldStartedName&&stageCarry.targetDifficulty==worldStartDifficulty
             &&stageCarry.difficulty==worldStartDifficulty&&stageCarry.nextId==currentId&&stageCarry.nextProgress==progress;
+        if(!extraTerminal&&replayPlayback.active()&&!thpracReplay.playback){
+            if(world->faulted()||world->frame()!=0||worldTickExecuting||replayTerminal.configured
+                ||normalTerminal.resourcesConfigured||debugTerminal.configured||stageTransitionConfigured
+                ||normalRecord||normalReplay||world->thpracChapter()||thpracReplay.record||ordinaryRecordOwner.configured
+                ||debugRunTainted||debugInfiniteRespawnRun||debugRecordPrefix.worldBound
+                ||!messagesConfigured||!playerConfigured||!playerShotGroupsConfigured
+                ||!stageControl.initialized()||!stageControl.sessionConstructed()
+                ||stageControl.current()!=7||stageControl.pending()!=7||stageControl.gateSet()
+                ||stageIdForEcl(worldStartedName)!=currentId||worldStartDifficulty<0||worldStartDifficulty>3
+                ||replayPlayback.generation()!=worldGeneration||replayPlayback.stage()!=unsigned(currentId)
+                ||replayPlayback.rank()!=unsigned(worldStartDifficulty)||replayPlayback.pending()||replayPlayback.consumed()
+                ||currentStageProgress!=progress||gate74||message78||sessionPresent!=1||sessionField74
+                ||!th128::runtime::inputRange(front,size)||size>8u*1024u*1024u){
+                operationError="Replay terminal resources require the fresh actual bound playback and session";return 0;
+            }
+            ReplayTerminalRuntime candidate;candidate.generation=worldGeneration;candidate.stage=currentId;candidate.progress=progress;
+            candidate.route=int(terminalIndex-terminalStages.begin());candidate.rank=worldStartDifficulty;
+            candidate.seed=replayPlayback.seed();candidate.frames=replayPlayback.frames();
+            if(stageCarry.restoredGeneration==worldGeneration){
+                candidate.carryToken=stageCarry.token;candidate.sourceGeneration=stageCarry.sourceGeneration;
+            }
+            candidate.settlement=std::make_unique<th128::stage::StageSettlementHost>();
+            if(!candidate.settlement->load({static_cast<const std::uint8_t*>(front),size},operationError))return 0;
+            candidate.configured=true;replayTerminal=std::move(candidate);
+            if(!replayTerminalIdentityReady(operationError)){replayTerminal={};return 0;}
+            if(!world->bindReplayTerminalDrain(replayPlayback,worldGeneration,unsigned(currentId),unsigned(worldStartDifficulty),
+                [](std::string& error){return replayTerminalDrainReady(error);},operationError)){replayTerminal={};return 0;}
+            return 1;
+        }
         if(!extraTerminal&&!debugRunTainted&&!debugInfiniteRespawnRun&&!debugRecordPrefix.worldBound&&!replayPlayback.active()){
             if(world->faulted()||world->frame()!=0||worldTickExecuting||normalTerminal.resourcesConfigured
                 ||debugTerminal.configured||stageTransitionConfigured||!messagesConfigured||!playerConfigured||!playerShotGroupsConfigured
@@ -3339,6 +3491,20 @@ unsigned th128_world_capture_stage_carry() {
             ||((thpracReplay.playback||replayPlayback.active())&&!playbackComplete)){operationError="practice carry requires its completed non-normal native history owner";return 0;}
         if(thpracReplay.record&&(thpracReplay.generation!=worldGeneration||!thpracReplay.record->configuredFor(candidate.practice->stageId))){operationError="practice carry recorder generation/stage changed";return 0;}
         candidate.practiceReplay=thpracReplay.record;candidate.practiceReplayOrigin=thpracReplay.origin;candidate.practiceReplayClock=thpracReplay.clock;candidate.practicePlayback=playbackComplete;
+    }
+    if(replayPlayback.active()&&!candidate.practice){
+        const auto auxiliaryFrames=ordinaryReplayAuxiliary.active?ordinaryReplayAuxiliary.inputs.size():0;
+        if(normalRecord||normalReplay||debugRunTainted||debugInfiniteRespawnRun||debugRecordPrefix.worldBound
+            ||replayPlayback.generation()!=worldGeneration||replayPlayback.stage()!=unsigned(candidate.sourceCurrentId)
+            ||replayPlayback.rank()!=unsigned(worldStartDifficulty)||replayPlayback.pending()
+            ||replayPlayback.consumed()!=replayPlayback.frames()||world->frame()!=replayPlayback.frames()+auxiliaryFrames
+            ||(ordinaryReplayAuxiliary.active&&(ordinaryReplayAuxiliary.generation!=worldGeneration
+                ||ordinaryReplayAuxiliary.cursor!=auxiliaryFrames||ordinaryReplayAuxiliary.worldFrames!=world->frame()))
+            ||(nativeTouch.playback&&(nativeTouch.generation!=worldGeneration||nativeTouch.worldFrames!=world->frame()
+                ||nativeTouch.cursor!=nativeTouch.events.size()))){
+            operationError="ordinary Replay carry requires its completed actual native input history";return 0;
+        }
+        candidate.sourcePlaybackComplete=true;
     }
     candidate.normalReplay=normalReplay;candidate.normalRecord=normalRecord;candidate.originalContinueCount=originalContinueCount;candidate.normalReplayOrigin=normalReplayOrigin;candidate.normalReplayClock=normalReplayClock;
     candidate.scoreRaw=scoreRaw;
@@ -3882,7 +4048,8 @@ int th128_world_thprac_replay_playback_load(const void* data,unsigned bytes){
 }
 int th128_world_replay_begin(unsigned seed,double seconds){
     operationError.clear();
-    if(world->faulted()||world->frame()!=0||!playerFireConfigured||!playerMotion||seed>65536||debugRunTainted||!std::isfinite(seconds)||seconds<0){
+    if(world->faulted()||world->frame()!=0||!playerFireConfigured||!playerMotion||seed>65536||debugRunTainted
+        ||replayPlayback.active()||replayTerminal.configured||!std::isfinite(seconds)||seconds<0){
         operationError="normal replay requires actual fresh gameplay resources and a finite host clock";return 0;
     }
     const unsigned stage=unsigned(stageIdForEcl(worldStartedName));const auto random=world->gameRandomState();
@@ -3972,7 +4139,7 @@ int th128_world_replay_saved(unsigned serial,unsigned slot,unsigned byteCount,un
 int th128_world_replay_playback_restore(const std::uint8_t* data,unsigned length,int rank){
     operationError.clear();
     if(world->faulted()||worldTickExecuting||world->frame()!=0||!playerMotion||!playerFireConfigured||normalReplay
-        ||debugRunTainted||rank!=worldStartDifficulty||length!=144||!th128::runtime::inputRange(data,length)){
+        ||normalRecord||replayPlayback.active()||debugRunTainted||rank!=worldStartDifficulty||length!=144||!th128::runtime::inputRange(data,length)){
         operationError="recorded stage restoration requires fresh replay-only ownership";return 0;
     }
     const auto bytes=std::span<const std::uint8_t>(data,length);
@@ -3999,7 +4166,7 @@ int th128_world_replay_playback_restore(const std::uint8_t* data,unsigned length
 int th128_world_replay_playback_load(const void* data,unsigned length,int rank){
     operationError.clear();
     if(world->faulted()||worldTickExecuting||world->frame()!=0||!playerConfigured||!playerMotion||!playerFireConfigured
-        ||normalReplay||debugRunTainted||rank!=worldStartDifficulty||!th128::runtime::inputRange(data,length)){
+        ||normalRecord||normalReplay||debugRunTainted||rank!=worldStartDifficulty||!th128::runtime::inputRange(data,length)){
         operationError="replay playback requires actual fresh non-recording World with matching rank";return 0;
     }
     const auto group=th128::playershot::selectShotGroup(cumulativeFrozenArea,shotDifficulty);
@@ -4075,6 +4242,7 @@ bool tryPracticeDeathbomb(std::string& error){
 }
 int th128_world_tick(){
     operationError.clear();bool assistedTouchMovement=false;
+    if(replayTerminal.requested){operationError="completed native Replay terminal cannot generate further World input";return 0;}
     if(normalTerminal.requested){operationError="pending ordinary ending requires audio-first controller consumption before another World update";return 0;}
     if(world->faulted())return 0;
     if(th128_world_pause_active()){operationError="actual World tick is suspended by original pause/GameOver owner";return 0;}
@@ -4492,6 +4660,7 @@ int th128_world_tick(){
             }
         }
     }
+    if(replayTerminal.begun&&!tickReplayTerminal(operationError)){world->reportRuntimeFault(operationError);return 0;}
     if(normalTerminal.begun&&!tickOrdinaryTerminal(operationError)){world->reportRuntimeFault(operationError);return 0;}
     if(debugTerminal.begun){
         if(debugTerminal.generation!=worldGeneration){world->reportRuntimeFault("debug terminal generation changed");return 0;}
@@ -4723,6 +4892,7 @@ const char* th128_world_state() {
     writeStageTransitionState(text);
     text<<",\"debugTerminal\":";
     writeDebugTerminalState(text);
+    text<<",\"replayTerminal\":";writeReplayTerminalState(text);
     text<<",\"normalTerminal\":";writeNormalTerminalState(text);
     text<<",\"stageControl\":";
     writeStageControlState(text);

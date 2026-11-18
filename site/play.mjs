@@ -3751,7 +3751,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
           module._free(icePointer);module._free(maskPointer);
           if(!zReady)throw new Error(module.UTF8ToString(module._th128_world_error())||'Z/ice runtime is unavailable; rebuild required');
           if(!module._th128_world_enable_focus_indicator?.())throw new Error(module.UTF8ToString(module._th128_world_error())||'Original focus marker runtime is unavailable');
-          if(terminalStageIds.has(stage.id)||extraRun){
+          if((terminalStageIds.has(stage.id)||extraRun)&&(!state.replayPlayback||thprac)){
             if(!flowReady||typeof module._th128_world_enable_stage_transition!=='function')
               throw new Error('terminal requires the original scene owner interface');
             const terminalPointer=memory(frontBytes);
@@ -3799,14 +3799,25 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         state.stageSelection=selection;state.endingResources=preparedEnding;thpracLogicClock.reset();
         if(extraRun){state.extraRun=extraRun;extraRun=null;}
         disposeOriginalStageTextRasters(state.stageTextRasters);state.stageTextRasters=preparedTextRasters;preparedTextRasters=null;
-        if(state.replayPlayback){state.replayNativeBound=false;state.replayPlayback.bindNativeStage(module);}
+        if(state.replayPlayback){
+          state.replayNativeBound=false;state.replayPlayback.bindNativeStage(module);
+          if(terminalStageIds.has(stage.id)&&!thprac){
+            const bytes=await bytesAt('runtime/front.anm'),pointer=memory(bytes);
+            try{
+              if(module._th128_world_enable_stage_transition(pointer,bytes.length,stage.id,progress,
+                stageTransitionContext.gate74,stageTransitionContext.message78,stageTransitionContext.sessionPresent,stageTransitionContext.sessionField74)!==1)
+                throw new Error(module.UTF8ToString(module._th128_world_error())||'native Replay terminal resources rejected');
+              transitionEnabled=true;
+            }finally{module._free(pointer);}
+          }
+        }
         if(thprac){const ownedSelection=selection;state.thpracTools=createThprac128Tools(module,thprac,{isCurrent:()=>state.module===module&&state.stageSelection===ownedSelection&&!state.launcherExited,playback:!!state.replayPlayback,history:state.replayPlayback?.tools,initial:selection.thpracRestartTools??thpracDraft});syncThpracToolMusic();}
         if(!state.replayPlayback&&thprac){
           const clockSeconds=performance.now()/1000,ownedSelection=selection;
           state.thpracRecorder=createThprac128Recorder(module,thprac,selection.thpracIdentity,{seconds:clockSeconds,isCurrent:()=>state.module===module&&state.stageSelection===ownedSelection&&!state.launcherExited,tools:frames=>state.thpracTools.history(frames),continuation:selection.thpracRecordingContinuation??null});
           state.replayClockLast=clockSeconds;
         }
-        else if(!state.extraRun&&!selection.debugJump&&!selection.thprac&&!find('#debug-infinite-respawn').checked){
+        else if(!state.replayPlayback&&!state.extraRun&&!selection.debugJump&&!selection.thprac&&!find('#debug-infinite-respawn').checked){
           if(typeof module._th128_world_replay_begin!=='function')throw new Error('正常录像录制内核未载入');
           if(!carryToken){
             const store=state.nativeScoreStore??=new OwnedNativeTitleRecordStore(),observed=await store.observe();

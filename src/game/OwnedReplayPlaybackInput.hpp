@@ -14,7 +14,7 @@ struct ReplayPlaybackInitial {
 };
 class OwnedReplayPlaybackInput {
     std::vector<std::uint8_t> input_;
-    unsigned generation_=0,stage_=0,rank_=0,frames_=0,consumed_=0;
+    unsigned generation_=0,stage_=0,rank_=0,seed_=0,frames_=0,consumed_=0;
     bool active_=false,pending_=false;
     static std::uint32_t word(std::span<const std::uint8_t> bytes,unsigned offset){
         return std::uint32_t(bytes[offset])|(std::uint32_t(bytes[offset+1])<<8)
@@ -43,7 +43,7 @@ public:
         if(!exact)throw std::runtime_error("recorded replay header differs from actual stage seed resources or position");
         std::vector<std::uint8_t> candidate(bytes.begin()+144,bytes.end());
         input_=std::move(candidate);generation_=actual.generation;stage_=stage;rank_=actual.rank;
-        frames_=frames;consumed_=0;active_=true;pending_=false;
+        seed_=actual.seed;frames_=frames;consumed_=0;active_=true;pending_=false;
     }
     bool prepare(unsigned generation,bool auxiliaryKnown,bool auxiliaryLive,std::array<std::uint16_t,3>& packet){
         if(!active_||generation!=generation_||pending_||!auxiliaryKnown)
@@ -59,11 +59,12 @@ public:
         if(!tickSucceeded)return;
         if(pending_){++consumed_;pending_=false;}
     }
-    void cancel(){input_.clear();active_=pending_=false;generation_=stage_=rank_=frames_=consumed_=0;}
+    void cancel(){input_.clear();active_=pending_=false;generation_=stage_=rank_=seed_=frames_=consumed_=0;}
     bool active()const{return active_;}
     bool pending()const{return pending_;}
     unsigned stage()const{return stage_;}
     unsigned rank()const{return rank_;}
+    unsigned seed()const{return seed_;}
     unsigned frames()const{return frames_;}
     unsigned consumed()const{return consumed_;}
     unsigned generation()const{return generation_;}

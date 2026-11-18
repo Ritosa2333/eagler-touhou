@@ -88,6 +88,25 @@ bool StageWorld::bindThpracTerminalDrain(std::function<bool(std::string&)> valid
     }
     thpracTerminalDrain_=std::move(validator);return true;
 }
+bool StageWorld::bindReplayTerminalDrain(const record::OwnedReplayPlaybackInput& owner,unsigned generation,unsigned stage,unsigned rank,
+        std::function<bool(std::string&)> validator,std::string& error){
+    error.clear();constexpr std::array<unsigned,6> terminals{3,5,8,10,13,15};
+    if(!started_||executing_||frame_||!error_.empty()||activeThpracChapter_||stageTransitionOwner_
+        ||ordinaryTerminalDrain_.bound()||thpracTerminalDrain_||replayTerminalDrain_||!validator
+        ||!generation||!owner.active()||owner.pending()||owner.consumed()||owner.generation()!=generation
+        ||owner.stage()!=stage||owner.rank()!=rank||rank>=4
+        ||std::find(terminals.begin(),terminals.end(),stage)==terminals.end()){
+        error="Replay terminal drain requires its fresh actual native playback owner";return false;
+    }
+    const auto seed=owner.seed();
+    replayTerminalDrain_=[&owner,generation,stage,rank,seed,validator=std::move(validator)](std::string& reason){
+        if(!owner.active()||owner.generation()!=generation||owner.stage()!=stage||owner.rank()!=rank||owner.seed()!=seed){
+            reason="Replay terminal drain playback identity changed";return false;
+        }
+        return validator(reason);
+    };
+    return true;
+}
 bool StageWorld::setThpracTimeLock(bool enabled,std::string& error){
     error.clear();if(!activeThpracChapter_||!started_||executing_||!error_.empty()||entityRetirementAttempted_){error="time lock requires an idle active practice World";return false;}
     thpracTimeLock_=enabled;return true;
@@ -116,7 +135,7 @@ void StageWorld::reset() {
     enemyDeathHost_={};eclDropHost_={};eclRadiusCancellation_={};laserObjectCount_.reset();laserHost_=nullptr;additionalDropsSupported_=false;
     animationVisibilityHost_={};eclEffectHost_={};sceneControl_={};
     eclSoundSink_={};messageStart_={};messageGate_={};messageCancellation_={};
-    stageTransitionOwner_=nullptr;stageTransitionOwnerId_=stageTransitionOwnerProgress_=0;ordinaryTerminalDrain_.reset();thpracTerminalDrain_={};
+    stageTransitionOwner_=nullptr;stageTransitionOwnerId_=stageTransitionOwnerProgress_=0;ordinaryTerminalDrain_.reset();thpracTerminalDrain_={};replayTerminalDrain_={};
 }
 
 const bullet::Manager& StageWorld::bullets() const {return bullets_;}
@@ -155,7 +174,7 @@ bool StageWorld::bindOrdinaryTerminalDrain(const record::NativeOrdinaryTerminalO
         th128::stage::OrdinaryTerminalDrain::Validator validator,std::string& error){
     error.clear();
     if(!started_||executing_||frame_!=0||!error_.empty()||stageTransitionOwner_
-        ||ordinaryTerminalDrain_.bound()||entityRetirementAttempted_||bulletRetirementAttempted_){
+        ||ordinaryTerminalDrain_.bound()||replayTerminalDrain_||entityRetirementAttempted_||bulletRetirementAttempted_){
         error="ordinary terminal World drain binding requires its fresh healthy native session";return false;
     }
     return ordinaryTerminalDrain_.bind(owner,stage,progress,std::move(validator),error);
@@ -436,7 +455,7 @@ bool StageWorld::retireEntitiesForSession(std::string& error) {
     enemyContactHost_={};enemyDamageHost_={};enemyHitFeedbackHost_={};
     enemyDeathHost_={};eclDropHost_={};animationVisibilityHost_={};
     spellHost_={};eclEffectHost_={};eclSoundSink_={};messageStart_={};messageGate_={};
-    messageCancellation_={};eclRadiusCancellation_={};stageTransitionOwner_=nullptr;ordinaryTerminalDrain_.reset();thpracTerminalDrain_={};
+    messageCancellation_={};eclRadiusCancellation_={};stageTransitionOwner_=nullptr;ordinaryTerminalDrain_.reset();thpracTerminalDrain_={};replayTerminalDrain_={};
     started_=false;executing_=false;entityRetirementCompleted_=true;return true;
 }
 
@@ -1774,6 +1793,7 @@ bool StageWorld::tick() {
                 if(!ready&&!reason.empty())fail(reason);
             }
             if(!ready&&activeThpracChapter_&&thpracTerminalDrain_){std::string reason;ready=thpracTerminalDrain_(reason);if(!ready&&!reason.empty())fail(reason);}
+            if(!ready&&replayTerminalDrain_){std::string reason;ready=replayTerminalDrain_(reason);if(!ready&&!reason.empty())fail(reason);}
             if(!ready)fail("stage controller transition is not implemented");
         }
         executing_=false;

@@ -1,11 +1,12 @@
 const touchMovementUsesJoystick=mode=>mode==='joystick'||mode==='joystick-free';
 /** Original .34 travel and .16 radial dead-zone; native adapters own thresholds. */
-export function bindPlayerJoystick({element, knob, allowed, movement, axes, schedule}
+export function bindPlayerJoystick({element, knob, allowed, movement, axes, schedule, listen}
 
  ) {
   let pointer                = null;
   const cleanup                 = [];
   function on(type                                                                                      , listener                               ) {
+    if(listen){cleanup.push(listen(element,type,listener));return;}
     element.addEventListener(type, listener); cleanup.push(() => element.removeEventListener(type, listener));
   }
   function reset(sync = true) {

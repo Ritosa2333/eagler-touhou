@@ -314,10 +314,32 @@
   ],
   "fullTh128Adapter": {
     "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\full-touch.mjs",
-    "bytes": 18894,
-    "sha256": "d20833b88f4ba0e7c1280f0f211ea945c21e052fa389e95a171273ec7df9fef4"
+    "bytes": 24532,
+    "sha256": "f5df6786bd71508a7619185a3cbdbc47033a71007838f8542bfb8bab7856721f"
   },
   "sourceAndLicenseIncludedInRepository": true,
   "RuntimePackageCreated": false,
-  "publicDeployment": false
+  "publicDeployment": false,
+  "mobileFloatingWindows": {
+    "source": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\upstream-UI-parity-20261117\\launcher\\app\\components\\settings\\TouchLayoutEditor.tsx",
+      "bytes": 33580,
+      "sha256": "30bc12a590663a64e8581b63cca3111df7a9bcacf4e072051d23155948f66e0b"
+    },
+    "adapted": {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\touch-floating-window.mjs",
+      "bytes": 4340,
+      "sha256": "dcaa72130f290a155c0c4df716b5c07ab57334d133167a69c11455502a84820f"
+    },
+    "functions": [
+      "visibleViewport",
+      "clampPanelPosition",
+      "rememberPanel",
+      "positionPanel",
+      "panelpointerownership"
+    ],
+    "license": "GPL-3.0 launcher/LICENSE",
+    "originalTypesErased": true,
+    "TH128DOMBindingAdapted": true
+  }
 }
