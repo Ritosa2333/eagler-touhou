@@ -1425,7 +1425,7 @@ function installPracticeMenu(){
  practiceMenu=mountThprac128Menu({root:find('#practice-menu'),controls:find('#thprac-web-controls'),opener:find('#practice-open'),settings:thpracSettings,onSettings:value=>{thpracSettings=thpracOptionsStore.write(value);state.thpracUIEnabled=value.enabled;},
   getAvailability:()=>({
    ready:!state.launcherExited&&thprac128RuntimeSupported(state.module)&&!!state.stageCatalog&&find('#variant')?.disabled!==true,
-   busy:menu.launching||state.handoff||!!state.pendingCarryToken||!!state.nativePausePending||!!state.normalPostrun||!!state.endingHost||state.endingLoading||!!state.replayPlayback,
+   busy:state.restartSealing||menu.launching||state.handoff||!!state.pendingCarryToken||!!state.nativePausePending||!!state.normalPostrun||!!state.endingHost||state.endingLoading||!!state.replayPlayback,
    inRun:state.worldMode&&state.active,
    practiceSession:state.worldMode?state.stageSelection?.thprac??null:null
   }),
@@ -4359,6 +4359,7 @@ find('#high-framerate-mode').addEventListener('change',event=>{
   setHighFramerateMode(event.target.checked);find('#game').focus();
 });
 window.addEventListener('keydown',event=>{
+  if(state.restartSealing){event.preventDefault();return;}
   if(practiceMenu?.isOpen&&practiceMenu.keyDown(event))return;
   if(thpracToolsPanel?.isOpen){if(['Escape','F12','Backspace'].includes(event.code)){event.preventDefault();thpracToolsPanel.close();}return;}
   if(event.target instanceof HTMLSelectElement||event.target instanceof HTMLInputElement)return;
@@ -4459,11 +4460,20 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)loseFocus()
 window.addEventListener('pagehide',()=>{state.webInput?.dispose();cancelOriginalEnding();state.controller?.abort();state.renderer?.dispose();stopAudio();});
 
 async function restartTouchRun(){
-  const selected=state.stageSelection;if(!selected||state.handoff)return;
+  const selected=state.stageSelection,module=state.module,action=state.action;
+  if(!selected||state.handoff||menu.launching||state.restartSealing)return;
   state.webInput?.cancelTouch?.();
   if(state.replayPlayback)return restartOwnedReplay();
-  await recordOwnedMainSession();
-  if(selected!==state.stageSelection||!state.active)return;
+  // Capturing the old record seals it synchronously. Stop and drain the old
+  // World before allowing strict storage readback to yield to another frame.
+  state.restartSealing=true;state.paused=true;
+  clock.reset();resetHighFrameratePresentation();releaseGameInput();
+  const current=()=>state.worldMode&&state.active&&!state.launcherExited&&!state.handoff&&!menu.launching
+    &&module===state.module&&action===state.action&&selected===state.stageSelection;
+  try{
+    await state.worldAdvancePromise;if(!current())return;
+    await recordOwnedMainSession();if(!current())return;
+  }finally{state.restartSealing=false;}
   menu.pauseOpen=false;
   if(selected.thprac)return startLaunch(inheritThpracTools(thpracStageSelection(selected.thprac).selection),'route');
   const stageId=selected.stage.id===16?16:selected.stage.id<=5?1:selected.stage.id<=10?6:11;
@@ -4565,7 +4575,10 @@ async function present(timestamp){
     }else{
       originalMenuClock.advance(timestamp,false);
       const active=state.active&&!state.paused&&!state.endingLoading&&!document.hidden&&!state.thpracReplaySaving&&(!state.worldMode||!practiceMenu?.isOpen)&&!thpracToolsPanel?.isOpen;
-       const timing=state.thpracTools?thpracLogicClock.advance(timestamp,active,practiceLogicRate()):clock.advance(timestamp,active);presentationSteps=timing.steps;
+      // Practice rates are scoped to the playable World. The original ending
+      // runs its own 60 Hz media and durable-receipt sequence.
+      const practiceWorld=!!state.thpracTools&&state.worldMode&&!state.endingHost&&!state.endingLoading&&!state.normalPostrun;
+      const timing=practiceWorld?thpracLogicClock.advance(timestamp,active,practiceLogicRate()):clock.advance(timestamp,active);presentationSteps=timing.steps;
       highFramerateCatchup=timing.steps>1;
       if(highFramerateCatchup)resetHighFrameratePresentation();
       if(timing.stalled&&state.active&&!state.paused){pause();status('浏览器帧调度停顿，已暂停而不是跳过游戏逻辑帧。');}
@@ -4573,6 +4586,9 @@ async function present(timestamp){
         if(state.normalPostrun)await advanceNormalPostrun();else if(state.endingHost)await advanceOriginalEnding();else await advance();
         if(!highFramerateCatchup)captureHighFramerateWorld();
         if(state.endingPromise)await state.endingPromise;
+        if(practiceWorld&&(state.endingHost||state.endingLoading||state.normalPostrun||!state.worldMode)){
+          thpracLogicClock.reset();break;
+        }
       }
       interpolation=renderInterpolationPhase(clock);
     }
