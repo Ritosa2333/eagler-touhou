@@ -219,6 +219,11 @@ replace('src/app/classic/op/classic_op_session_backend.cpp',
         '\t\t\t\tvs_pause_menu.emplace(\n\t\t\t\t\treplay_recorder && replay_recorder->recording(), patch_assets',
         '\t\t\t\tth03_netplay_paused = 1;\n\t\t\t\tvs_pause_menu.emplace(\n\t\t\t\t\treplay_recorder && replay_recorder->recording(), patch_assets')
 
+# The host provides multiplayer through the launcher, not the upstream online mode.
+replace('src/app/classic/op/classic_op_scene.cpp',
+        'constexpr std::array<ClassicOpVsChoice, 4U> new_classic_vs_choices{\n\tClassicOpVsChoice::one_player_cpu,\n\tClassicOpVsChoice::one_player_two_player,\n\tClassicOpVsChoice::cpu_cpu,\n\tClassicOpVsChoice::online_match,',
+        'constexpr std::array<ClassicOpVsChoice, 3U> new_classic_vs_choices{\n\tClassicOpVsChoice::one_player_cpu,\n\tClassicOpVsChoice::one_player_two_player,\n\tClassicOpVsChoice::cpu_cpu,')
+
 # Preserve the nonblocking charge cut-in across prediction and rollback. The
 # presenter state already captures pixels and palette; retain its two counters
 # instead of treating the whole visual effect as a network synchronization barrier.

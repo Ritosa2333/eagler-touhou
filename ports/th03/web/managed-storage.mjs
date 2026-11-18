@@ -2,7 +2,7 @@ const root = '/savesth03/';
 export function userPath(value) {
   if (typeof value !== 'string') throw Error('用户文件路径无效');
   const path = value.replace(/^\/savesth03(?:mp)?\//,'');
-  if (!['YUME.NEM','YUME.CFG'].includes(path) && !(/^replay\/[A-Za-z0-9_(). -]+\.th03r$/i.test(path) && !path.includes('..') && path.length <= 207)) throw Error('不允许访问此文件');
+  if (!['YUME.NEM','YUME.CFG','PODD.CFG'].includes(path) && !(/^replay\/[A-Za-z0-9_(). -]+\.th03r$/i.test(path) && !path.includes('..') && path.length <= 207)) throw Error('不允许访问此文件');
   return path;
 }
 export async function openUserFiles({multiplayer=false}={}) {
