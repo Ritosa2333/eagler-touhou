@@ -1,0 +1,436 @@
+{
+  "schema": "th14/current-browser-audio-lifecycle/1",
+  "date": "2026-11-18",
+  "passed": true,
+  "silent": true,
+  "completeGame": false,
+  "normalGeneration": "08759279802b926a67c8099c0f59777030924f8c7c8629268ae604df9fefa14c",
+  "normalWasmSha256": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43",
+  "browser": "157.0.8103.79",
+  "chromeMuted": true,
+  "volumes": [
+    {
+      "label": "游戏音乐",
+      "value": "0"
+    },
+    {
+      "label": "游戏音效",
+      "value": "0"
+    },
+    {
+      "label": "快捷发言语音",
+      "value": "0"
+    }
+  ],
+  "musicMode": "ogg-stream",
+  "sourceQualification": {
+    "coreAudioSourceSha256": "a6c46c7cd45f51eaf8d04d6d202aa4d8957ec2f8d76d1e1dbc70512084285021",
+    "websiteAudioSourceSha256": "bfcdbbfdd2ec80df8bcb461bacdf1c770920b908b09208f602920444588928db",
+    "acceptedTrackSwitchSourceSha256": "45049dc3ac283e7c649851ed9ee5b3b84ee35bc9935e0fdd2eabba993877dd1e",
+    "websiteBuildBindingVerified": true,
+    "onlyTextDifferencesAfterAcceptedTrackSwitch": [
+      "SDL sample-frames hint at two device initialization sites",
+      "AudioDevice::pump queue refill policy"
+    ],
+    "musicStreamTextIdentical": true,
+    "existingTrackSwitchCasesPerMode": 48,
+    "existingMixerCases": {
+      "soundVoices": 76,
+      "nativeFadeTimelines": 48,
+      "fullMusicLoops": 18
+    },
+    "fullMixerMatrixRerun": false
+  },
+  "foreground": {
+    "a": {
+      "stats": [
+        1,
+        464,
+        475136,
+        0,
+        973,
+        1,
+        0,
+        1000000,
+        0,
+        33792,
+        0,
+        4294967295,
+        0,
+        0
+      ],
+      "frame": 47,
+      "audio": "running"
+    },
+    "b": {
+      "stats": [
+        1,
+        511,
+        523264,
+        0,
+        2061,
+        1,
+        0,
+        1000000,
+        0,
+        81920,
+        0,
+        4294967295,
+        0,
+        0
+      ],
+      "frame": 113,
+      "audio": "running"
+    }
+  },
+  "nativeHidden": {
+    "windows": [
+      {
+        "windowId": 63788372,
+        "bounds": {
+          "left": 10,
+          "top": 10,
+          "width": 945,
+          "height": 1060,
+          "windowState": "normal"
+        }
+      },
+      {
+        "windowId": 63788372,
+        "bounds": {
+          "left": 10,
+          "top": 10,
+          "width": 945,
+          "height": 1060,
+          "windowState": "normal"
+        }
+      }
+    ],
+    "before": {
+      "held": 0,
+      "pressed": 0,
+      "frame": 117,
+      "stageFrame": 117,
+      "phase": 1,
+      "hidden": false,
+      "gameHidden": false,
+      "visibility": "visible",
+      "focus": true,
+      "audio": "running",
+      "stats": [
+        1,
+        517,
+        529408,
+        0,
+        2560,
+        1,
+        0,
+        1000000,
+        0,
+        88064,
+        0,
+        4294967295,
+        0,
+        0
+      ]
+    },
+    "held": {
+      "held": 128,
+      "pressed": 128,
+      "frame": 119,
+      "stageFrame": 119,
+      "phase": 1,
+      "hidden": false,
+      "gameHidden": false,
+      "visibility": "visible",
+      "focus": true,
+      "audio": "running",
+      "stats": [
+        1,
+        517,
+        529408,
+        0,
+        2560,
+        1,
+        0,
+        1000000,
+        0,
+        88064,
+        0,
+        4294967295,
+        0,
+        0
+      ]
+    },
+    "away": {
+      "held": 128,
+      "pressed": 128,
+      "frame": 119,
+      "stageFrame": 119,
+      "phase": 1,
+      "hidden": true,
+      "gameHidden": true,
+      "visibility": "hidden",
+      "focus": false,
+      "audio": "running",
+      "stats": [
+        1,
+        519,
+        531456,
+        0,
+        2727,
+        1,
+        0,
+        1000000,
+        0,
+        90112,
+        0,
+        4294967295,
+        0,
+        0
+      ]
+    },
+    "stableHidden": {
+      "held": 128,
+      "pressed": 128,
+      "frame": 119,
+      "stageFrame": 119,
+      "phase": 1,
+      "hidden": true,
+      "gameHidden": true,
+      "visibility": "hidden",
+      "focus": false,
+      "audio": "running",
+      "stats": [
+        1,
+        519,
+        531456,
+        0,
+        2727,
+        1,
+        0,
+        1000000,
+        0,
+        90112,
+        0,
+        4294967295,
+        0,
+        0
+      ]
+    },
+    "events": [
+      {
+        "target": "game",
+        "event": "blur",
+        "time": 35806.510000005364
+      },
+      {
+        "target": "launcher",
+        "hidden": true,
+        "state": "hidden",
+        "time": 35823.715000003576
+      },
+      {
+        "target": "game",
+        "hidden": true,
+        "state": "hidden",
+        "time": 35847.335000008345
+      }
+    ]
+  },
+  "audioResumed": {
+    "held": 0,
+    "pressed": 0,
+    "frame": 188,
+    "stageFrame": 188,
+    "phase": 1,
+    "hidden": false,
+    "gameHidden": false,
+    "visibility": "visible",
+    "focus": true,
+    "audio": "running",
+    "stats": [
+      1,
+      568,
+      581632,
+      0,
+      2100,
+      1,
+      0,
+      1000000,
+      0,
+      140288,
+      0,
+      4294967295,
+      0,
+      0
+    ]
+  },
+  "titleAudio": [
+    1,
+    862,
+    882688,
+    0,
+    2100,
+    0,
+    0,
+    1000000,
+    0,
+    1024,
+    0,
+    4294967295,
+    0,
+    0
+  ],
+  "pauseLifecycle": {
+    "before": {
+      "phase": 2,
+      "stage": 1,
+      "frame": 188,
+      "title": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "error": ""
+    },
+    "held": {
+      "phase": 2,
+      "stage": 1,
+      "frame": 188,
+      "title": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "error": ""
+    },
+    "resumed": {
+      "phase": 1,
+      "stage": 1,
+      "frame": 235,
+      "title": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "error": ""
+    },
+    "manualHidden": {
+      "phase": 2,
+      "stage": 1,
+      "frame": 188,
+      "title": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "error": ""
+    },
+    "manualReturned": {
+      "phase": 2,
+      "stage": 1,
+      "frame": 188,
+      "title": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "error": ""
+    }
+  },
+  "nativeQuit": {
+    "returned": {
+      "phase": 0,
+      "stage": 0,
+      "frame": 12,
+      "title": [
+        1,
+        2,
+        0,
+        0,
+        10
+      ],
+      "error": ""
+    },
+    "playerClosed": true,
+    "launchVisible": true
+  },
+  "codeDelivery": {
+    "responseCount": 83,
+    "verifiedAgainstActualPreviewFiles": true,
+    "responseReceiptSha256": "1a6c715f0f8a2c5f431574074f30e1b1086026379d7b663ddb0993a1b7d83463"
+  },
+  "actualGamePageErrors": [],
+  "otherSiteHttpErrors": [
+    {
+      "url": "https://wth.saop.cc/assets/th17-card.webp",
+      "status": 404
+    },
+    {
+      "url": "https://wth.saop.cc/assets/th17-card.webp",
+      "status": 404
+    },
+    {
+      "url": "https://wth.saop.cc/api/ready",
+      "status": 404
+    },
+    {
+      "url": "https://wth.saop.cc/api/ready",
+      "status": 404
+    },
+    {
+      "url": "https://wth.saop.cc/api/ready",
+      "status": 404
+    },
+    {
+      "url": "https://wth.saop.cc/api/ready",
+      "status": 404
+    },
+    {
+      "url": "https://wth.saop.cc/api/ready",
+      "status": 404
+    },
+    {
+      "url": "https://wth.saop.cc/api/ready",
+      "status": 404
+    }
+  ],
+  "reportSha256": "8c6d60815567c961fe800e37bebd39735015c9bea57dae61f477665e2ac26f48",
+  "harnessSha256": "4783cafa3cc6e3889943ae22845d558bb684edd6f14144bab8adf60bc3929405",
+  "ownedChromeExited": true,
+  "nativeStatsLayout": [
+    "ready",
+    "queuedBlockCount",
+    "mixedFrames",
+    "mixerOrSubmitError",
+    "queuedFrames",
+    "track",
+    "fadeRemaining",
+    "musicGainMillionths",
+    "musicPaused",
+    "cursorLow",
+    "cursorHigh",
+    "savedTrack",
+    "savedCursorLow",
+    "savedCursorHigh"
+  ],
+  "limitations": [
+    "Statistics observe native mixer/SDL queue and OGG cursor; no device waveform or physical latency measured.",
+    "AudioContext remains running while this game SDL stream is paused.",
+    "Native gain 1000000 does not mean launcher audible; launcher three volumes zero and Chrome mute maintained.",
+    "Stats slot3 is an error flag, not a hardware underrun counter.",
+    "Same-window native visibility in owned Chrome with warm private profile; no all-browser/cold-download claim.",
+    "No synthetic visibility, audio probes/mix calls, game-state edits, PCM output, asset copies, runtime rebuild or deployment."
+  ]
+}

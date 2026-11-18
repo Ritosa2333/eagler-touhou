@@ -1,0 +1,371 @@
+{
+  "schema": "th14/independent-core-practice-entry/1",
+  "date": "2026-11-18",
+  "passed": true,
+  "silent": true,
+  "completeGame": false,
+  "source": {
+    "baseCoreSource": "dfe0f3f3aefabeadd36148fcd2a7697a673c5bc1",
+    "file": "runtimes/th12/th12_web/cpp/game/GameSession.cpp",
+    "beforeSha256": "2a9177a7dcae18a287e3d0a3735f5c7e2f633f3e6b413b75fd437eaad9ab4362",
+    "afterSha256": "c43ee9d73cef86477f4c992c35c46820a218b3c5df61639ee2a833466c428bce",
+    "changedOperation": "write entered-stage practice flag for ordinary non-demo stage entry",
+    "doesNotWrite": [
+      "stage-completed flag",
+      "score",
+      "RNG",
+      "inventory",
+      "replay input"
+    ],
+    "bothWebsiteVariantsAlreadyContainFix": true,
+    "websiteSourceHashes": [
+      "f9ad61bbacd8a4e5baf9e3d6e6b10659e82cf2f562080792016410daf6007f88",
+      "93a100de8d7bec5dd2a6184d38894e770f53eb98fb76934d10eaee2be2527146"
+    ]
+  },
+  "build": {
+    "wasmSha256": "6ef57301af8a53ce2f8d37ff91c17e8e4b44128f6c807c15fa8bf30d9e45d479",
+    "receiptSha256": "11a7adb4a577c5bcd883aa0321087833db0790c1ffc13d905828e777b4360061",
+    "gameProviderObjectsRecompiled": 1,
+    "gameProviderObjectsReusedAndVerified": 144,
+    "fixtureTranslationUnitsLinked": 1,
+    "graphicsRecordingOnly": true,
+    "noGameSelectionOrRngStateWrites": true
+  },
+  "regression": {
+    "passed": true,
+    "negativeControlFailedWithEntered0": true,
+    "ordinaryPrefixesPassed": 6,
+    "freshProcessReadsPassed": 6,
+    "rows": [
+      {
+        "key": "reimua-normal",
+        "mode": "write",
+        "name": "baseline-reimua-normal",
+        "exitCode": 1,
+        "passed": false,
+        "phase": "natural-gameplay",
+        "reportSha256": "ecaff7a781e57f487f6d4f189f8248327522d7b45deec6c0f3bde96a5c909dc7"
+      },
+      {
+        "key": "reimua-normal",
+        "mode": "write",
+        "name": "candidate-reimua-normal",
+        "exitCode": 0,
+        "passed": true,
+        "phase": "ordinary-prefix-observed",
+        "reportSha256": "53c99fd189e8ac422646be1eec13e6ac4eb9742291f57b4391e3cb357dcfd1db"
+      },
+      {
+        "key": "reimua-normal",
+        "mode": "read",
+        "name": "fresh-reimua-normal",
+        "exitCode": 0,
+        "passed": true,
+        "phase": "fresh-title-restored",
+        "reportSha256": "a4f37d3a0390bbe3f8f91081748e6341f1e21cde97a58c091d2e5320ff1a264e"
+      },
+      {
+        "key": "reimub-normal",
+        "mode": "write",
+        "name": "candidate-reimub-normal",
+        "exitCode": 0,
+        "passed": true,
+        "phase": "ordinary-prefix-observed",
+        "reportSha256": "a2e6a5217348303eeaa41840654155953993523b774d29f71afd70a0168434c8"
+      },
+      {
+        "key": "reimub-normal",
+        "mode": "read",
+        "name": "fresh-reimub-normal",
+        "exitCode": 0,
+        "passed": true,
+        "phase": "fresh-title-restored",
+        "reportSha256": "eae9e25f00cfde5d6f3abf3d9539ca80297e67b7968d6ec193cc12a8f844e956"
+      },
+      {
+        "key": "marisaa-normal",
+        "mode": "write",
+        "name": "candidate-marisaa-normal",
+        "exitCode": 0,
+        "passed": true,
+        "phase": "ordinary-prefix-observed",
+        "reportSha256": "89bfa9133670b441c21aa3e5d9f72b75c9a1675a8df3025922f45685382877ca"
+      },
+      {
+        "key": "marisaa-normal",
+        "mode": "read",
+        "name": "fresh-marisaa-normal",
+        "exitCode": 0,
+        "passed": true,
+        "phase": "fresh-title-restored",
+        "reportSha256": "c1a8f70130f71477c64565b211d0375b727a60f7fbdd21d065a017c67ddecfb2"
+      },
+      {
+        "key": "marisab-normal",
+        "mode": "write",
+        "name": "candidate-marisab-normal",
+        "exitCode": 0,
+        "passed": true,
+        "phase": "ordinary-prefix-observed",
+        "reportSha256": "e89c58321a2b69a6ba05efd5f0378ae42d14b1d10124bcfdedf1453d8628b09b"
+      },
+      {
+        "key": "marisab-normal",
+        "mode": "read",
+        "name": "fresh-marisab-normal",
+        "exitCode": 0,
+        "passed": true,
+        "phase": "fresh-title-restored",
+        "reportSha256": "b72f33531bc7b729f72023ce496c75e502713c10b4b19ae3c69cab5349485841"
+      },
+      {
+        "key": "sakuyaa-normal",
+        "mode": "write",
+        "name": "candidate-sakuyaa-normal",
+        "exitCode": 0,
+        "passed": true,
+        "phase": "ordinary-prefix-observed",
+        "reportSha256": "e8263d0bc4bb6baa3d12fde995ce050c81079ea13be3222ee272ff9196381eb8"
+      },
+      {
+        "key": "sakuyaa-normal",
+        "mode": "read",
+        "name": "fresh-sakuyaa-normal",
+        "exitCode": 0,
+        "passed": true,
+        "phase": "fresh-title-restored",
+        "reportSha256": "3f5d46a4f9001ff84e31fcd920a2070c716cc653ca77b470bce5e8b9b0d744ba"
+      },
+      {
+        "key": "sakuyab-normal",
+        "mode": "write",
+        "name": "candidate-sakuyab-normal",
+        "exitCode": 0,
+        "passed": true,
+        "phase": "ordinary-prefix-observed",
+        "reportSha256": "113977e25a0ae4f3b06e6f6c1cf52388f7e087c7d72e742726682189b3be4a3e"
+      },
+      {
+        "key": "sakuyab-normal",
+        "mode": "read",
+        "name": "fresh-sakuyab-normal",
+        "exitCode": 0,
+        "passed": true,
+        "phase": "fresh-title-restored",
+        "reportSha256": "3fb7a3b72c7b57629b07691d191e179d26ade0db1b6dbb7a3c91e41cdb913144"
+      }
+    ],
+    "seconds": 110.82279009999183,
+    "silent": true,
+    "completeGame": false
+  },
+  "originalInstructionReference": {
+    "schema": "th14/practice-unlock-native/1",
+    "passed": true,
+    "caseCount": 450,
+    "ordinaryWrites": 150,
+    "nonzeroControlNoWrites": 300,
+    "executableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+    "instructionAddress": "0x435b6c",
+    "instructionBytes": 56,
+    "instructionSha256": "2904ce695514cb9a1b5d2b408ba487e02870d4cd8eef915c650050267cc08fae",
+    "decodedInputSha256": "38a70d2bd3e8fc2dadad3b953a409ec8101eda3d09d2d0b73df411275711d92e",
+    "onlyExpectedEnteredFlagChanged": true,
+    "stageCompletedFlagNotWritten": true,
+    "originalInstructionsModified": false,
+    "originalProcessLaunched": false,
+    "virtualScoreAndControlPorts": true,
+    "browserAccepted": false,
+    "completeGame": false
+  },
+  "savedFiles": [
+    {
+      "key": "reimua-normal",
+      "observedEnteredFlag": {
+        "selection": 0,
+        "difficulty": 1,
+        "stage": 1,
+        "entered": 1,
+        "completed": 0
+      },
+      "nativeCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 21631,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "e1b9b5c0671d832b62b27d3f0d13e84e72d964b8d4bba8527df3966d4fc847f4",
+        "decodedSha256": "da8f28ec41b5c2e7a76be494285f8030d9dd9e8fa8b40cb37fa86bc6972e5977",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "freshDecodedAllBytesMatch": true,
+      "freshFileUnchanged": true
+    },
+    {
+      "key": "reimub-normal",
+      "observedEnteredFlag": {
+        "selection": 1,
+        "difficulty": 1,
+        "stage": 1,
+        "entered": 1,
+        "completed": 0
+      },
+      "nativeCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 21634,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "1132ce7fb33c63ba3f58606a143fed3933dc1de9080e50512ef3e1cb54dc497d",
+        "decodedSha256": "262ebce9746e59c717541b6d3716fac2a8ce87492ff5c9b9befa867e4c52e01f",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "freshDecodedAllBytesMatch": true,
+      "freshFileUnchanged": true
+    },
+    {
+      "key": "marisaa-normal",
+      "observedEnteredFlag": {
+        "selection": 2,
+        "difficulty": 1,
+        "stage": 1,
+        "entered": 1,
+        "completed": 0
+      },
+      "nativeCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 21634,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "5997381faae4218a0d808a3b991493a6cdb70c5d006fa79f7581244b6c2f5a32",
+        "decodedSha256": "cc98755b0d8cab18e366e600785bc5c9a8fb9313922c73713b58b2e8298ea8eb",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "freshDecodedAllBytesMatch": true,
+      "freshFileUnchanged": true
+    },
+    {
+      "key": "marisab-normal",
+      "observedEnteredFlag": {
+        "selection": 3,
+        "difficulty": 1,
+        "stage": 1,
+        "entered": 1,
+        "completed": 0
+      },
+      "nativeCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 21634,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "ae37cff4804b60442481ff6931e2db1402503ff3e599b8ef743aac5e7b7dfe72",
+        "decodedSha256": "9279c8fde8f1f16017bd0bcfb367d0fcbf7f3fce721ee3bb1d1c0ad4e2df0ac6",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "freshDecodedAllBytesMatch": true,
+      "freshFileUnchanged": true
+    },
+    {
+      "key": "sakuyaa-normal",
+      "observedEnteredFlag": {
+        "selection": 4,
+        "difficulty": 1,
+        "stage": 1,
+        "entered": 1,
+        "completed": 0
+      },
+      "nativeCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 21634,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "ac08815dfe1eb45840dfbcd993f0cb65825f5e1f49c9d70dbb8fffcf13a892b4",
+        "decodedSha256": "f0d4ec781337c4e95444bb39f676e8f891ab2910ac3d59727529ae446751a6ea",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "freshDecodedAllBytesMatch": true,
+      "freshFileUnchanged": true
+    },
+    {
+      "key": "sakuyab-normal",
+      "observedEnteredFlag": {
+        "selection": 5,
+        "difficulty": 1,
+        "stage": 1,
+        "entered": 1,
+        "completed": 0
+      },
+      "nativeCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 21633,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "aa4b851bfc4c51b049702ddf74cb020ee430b0148a3542cdba3dbd86fa18cce6",
+        "decodedSha256": "eed075af547523d7abd1ad64b6f5f8006eaea067f9ba18d96fbfd903e8533e32",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "freshDecodedAllBytesMatch": true,
+      "freshFileUnchanged": true
+    }
+  ],
+  "limits": [
+    "Six fresh ordinary Normal prefixes/save/read cases, not six full campaigns.",
+    "450 original instruction reference cases cover original controlled score/control ports; not 450 full-game C++ campaigns.",
+    "Existing website fix and browser practice menu acceptance reused as version-scoped evidence; no website runtime rebuild/deployment this round.",
+    "No old save inference/backfill. Only future normal stage entry writes its own flag.",
+    "SDK uses recording graphics and controlled audio platform, no actual GPU/device audio claim."
+  ]
+}
