@@ -41,7 +41,7 @@ export function mountThprac128Menu({root,controls=root,opener=null,getAvailabili
   for(const key of ['path','stage'])node[key].disabled||=!practice||extra;
   for(const key of ['warp','section','phase','dlg',...resourceNames])node[key].disabled||=!practice;
   node.section.disabled||=warp===0;node.phase.disabled||=!max;node.dlg.disabled||=!selected?.dlg;
-  for(const key of ['path','stage','difficulty','warp','section','phase','dlg',...resourceNames]){const row=node[key].closest?.('[data-thprac-row]');if(row)row.hidden=!practice||(['path','stage','difficulty'].includes(key)&&extra)||(key==='section'&&warp===0)||(key==='phase'&&!max)||(key==='dlg'&&!selected?.dlg);}
+  for(const key of ['path','stage','warp','section','phase','dlg',...resourceNames]){const row=node[key].closest?.('[data-thprac-row]');if(row)row.hidden=!practice||(['path','stage'].includes(key)&&extra)||(key==='section'&&warp===0)||(key==='phase'&&!max)||(key==='dlg'&&!selected?.dlg);}
   for(const key of resourceNames){const output=root.querySelector('[data-thprac-value="'+key+'"]');if(output)output.textContent=thprac128ResourceText(key,Number(node[key].value));}
   for(const item of root.querySelectorAll('[data-thprac-label]'))item.textContent=label(item.getAttribute('data-thprac-label'));
   for(const item of root.querySelectorAll('[data-thprac-copy]'))item.textContent=menuCopy[language()][item.getAttribute('data-thprac-copy')]??'';
