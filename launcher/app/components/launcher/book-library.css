@@ -407,20 +407,6 @@
   .book-view-list .book-favorite::before {
     display: none;
   }
-  html[data-ui-home] .server-status-note {
-    position: static;
-    inset: auto;
-    z-index: auto;
-    min-height: 0;
-    max-width: 1216px;
-    margin: 0 auto;
-    padding: 0 32px 20px;
-    background: transparent;
-    color: var(--kit-muted-foreground);
-    font: 400 11px / 1.6 var(--kit-font);
-    text-align: right;
-  }
-
   @container (max-width: 720px) {
     .book-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));

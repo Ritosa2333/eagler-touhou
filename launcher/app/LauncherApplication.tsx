@@ -317,7 +317,6 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
             onSelect={setPreview}
             onActivate={activate}
             masthead={null}
-            serverStatusNote={host.serverStatusNote}
             optionsOpen={presence.open}
             roomOpen={roomOpen}
             roomDrawer={host.roomDrawer}
@@ -329,6 +328,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       </div>
       {!accountPage && !profilePage && navigation.context === 'library' && (
         <>
+          {host.serverStatusNote}
           <OptionsBackdrop onBack={navigation.closeSurface} />
           {host.replayWorkspace && !roomOpen ? null : settingsPanel}
         </>
