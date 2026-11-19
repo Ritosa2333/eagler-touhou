@@ -3852,9 +3852,11 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
             if(module._th128_world_spell_medals_restore(pointer,flags.byteLength)!==1)throw new Error(module.UTF8ToString(module._th128_world_error())||'原生徽章历史载入失败');
           }finally{module._free(pointer);}
         }
-        state.shotMode=shots;find('#emit-shot').disabled=!shots;
-        state.worldMode=true;state.active=true;state.paused=window.__TH128_DIAGNOSTIC_PAUSED__===true;clock.reset();resetHighFrameratePresentation();stopAudio({keepContext:pendingAudio?.retained===true,keepPracticeMusic:pendingAudio?.retained?pendingAudio.music:null});
-        find('#game-menu').hidden=true;
+        const recordOrdinary=!state.replayPlayback&&!extraRun&&!selection.debugJump&&!thprac&&!find('#debug-infinite-respawn').checked;
+        // The native profile and recorder must be installed before World frame 1.
+        const observed=recordOrdinary&&!carryToken?await (state.nativeScoreStore??=new OwnedNativeTitleRecordStore()).observe():null;
+        if(stale()||signal.aborted||module!==state.module)return;
+        stopAudio({keepContext:pendingAudio?.retained===true,keepPracticeMusic:pendingAudio?.retained?pendingAudio.music:null});
         if(pendingAudio){state.audio=pendingAudio.audio;state.gain=pendingAudio.gain;state.gameSounds=pendingAudio.queue;
           state.stageMusic=pendingAudio.music;if(!state.stageMusic.source)state.stageMusic.start();recordOwnedHeardTrack(state.stageMusic.track.name).catch(error);pendingAudio=null;state.soundCursor=0;state.soundWindow=null;}
         state.stageSelection=selection;state.endingResources=preparedEnding;thpracLogicClock.reset();
@@ -3863,9 +3865,9 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         if(state.replayPlayback){
           state.replayNativeBound=false;state.replayPlayback.bindNativeStage(module);
           if(terminalStageIds.has(stage.id)&&!thprac){
-            const bytes=await bytesAt('runtime/front.anm'),pointer=memory(bytes);
+            const pointer=memory(frontBytes);
             try{
-              if(module._th128_world_enable_stage_transition(pointer,bytes.length,stage.id,progress,
+              if(module._th128_world_enable_stage_transition(pointer,frontBytes.length,stage.id,progress,
                 stageTransitionContext.gate74,stageTransitionContext.message78,stageTransitionContext.sessionPresent,stageTransitionContext.sessionField74)!==1)
                 throw new Error(module.UTF8ToString(module._th128_world_error())||'native Replay terminal resources rejected');
               transitionEnabled=true;
@@ -3878,10 +3880,9 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
           state.thpracRecorder=createThprac128Recorder(module,thprac,selection.thpracIdentity,{seconds:clockSeconds,isCurrent:()=>state.module===module&&state.stageSelection===ownedSelection&&!state.launcherExited,tools:frames=>state.thpracTools.history(frames),continuation:selection.thpracRecordingContinuation??null});
           state.replayClockLast=clockSeconds;
         }
-        else if(!state.replayPlayback&&!state.extraRun&&!selection.debugJump&&!selection.thprac&&!find('#debug-infinite-respawn').checked){
+        else if(recordOrdinary){
           if(typeof module._th128_world_replay_begin!=='function')throw new Error('正常录像录制内核未载入');
           if(!carryToken){
-            const store=state.nativeScoreStore??=new OwnedNativeTitleRecordStore(),observed=await store.observe();
             const profile=observed?.profile??null;
             const restored=profile?nativeMainMemory(profile,(pointer,length)=>module._th128_world_records_restore(pointer,length)):module._th128_world_records_restore(0,0);
             if(restored!==1)throw new Error(module.UTF8ToString(module._th128_world_error())||'原生最高分档案载入失败');
@@ -3891,6 +3892,9 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
           if(!module._th128_world_replay_begin(carryToken?65536:selection.seed,clockSeconds))throw new Error(module.UTF8ToString(module._th128_world_error()));
           state.replayClockLast=clockSeconds;state.replayNativeBound=true;
         }
+        state.shotMode=shots;find('#emit-shot').disabled=!shots;
+        state.worldMode=true;state.active=true;state.paused=window.__TH128_DIAGNOSTIC_PAUSED__===true;clock.reset();resetHighFrameratePresentation();
+        find('#game-menu').hidden=true;
         if(state.stageIntroLoaded&&state.stageMusic)stageIntroCaption(stage.music?.[0],0);
         captureHighFramerateWorld();
         refreshDebugRespawnUIFromWorld();
