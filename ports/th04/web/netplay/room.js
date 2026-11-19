@@ -1031,6 +1031,9 @@ async function pump(now){
       if(waiting&&!waitingSince)waitingSince=performance.now();
       updateMetrics(performance.now(),waiting);wake(waiting?16:0);return;
     }
+    // A repaired frontier is ready to display while the next live frame runs.
+    // Do not let the live worker command discard its staged bitmap first.
+    if(runtime.asyncExecution&&count&&queue.frame===replayUntil&&!document.hidden&&runtime.present())costs.presentations++;
     while((accumulator>=TICK_MS||runtime.restarting())&&count<4&&(count===0||performance.now()-budgetStart<6)){
       captureLocalInput();
       const pair=nextInputs();if(!pair){queue.retryFrame=queue.frame;accumulator=Math.min(accumulator,TICK_MS);waiting=true;break;}

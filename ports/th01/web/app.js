@@ -24,12 +24,13 @@ setupSummary();
 const tick=440/24830*1000;
 const keys=[['ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC'],['KeyA','KeyD','KeyJ','KeyK','KeyL'],['KeyF','KeyH','KeyT','KeyY','KeyU']];
 const held=new Set(),pressed=new Set(),touchOwners=new Map();
-let core,paused=false,last=0,accumulator=0,steps=0,logicMs=0,drawMs=0,draws=0,statsAt=performance.now(),lastDraw=-Infinity;
+let core,paused=false,last=0,accumulator=0,steps=0,logicMs=0,drawMs=0,draws=0,statsAt=performance.now(),lastDraw=-Infinity,needsDraw=true;
 let musicContext,musicBuffer,musicSource,musicGain,musicEnabled=false,musicWanted=true,musicRequest,musicLoop;
 let musicTrack=null;
 let scoreRevision=0,scoreSaveFailed=false,formalScores;
 let nativeRecorder,nativeRecording,nativeRaw,starting=false,nativeReplayFinished=false,nativePromptWasPaused=false;
 function recordNativeCommand(command){
+  needsDraw=true;
   if(!nativeRecording)return;
   try{
     nativeRecording.consumed();const frame=nativeRecording.frame-1;
@@ -41,7 +42,7 @@ function finishSoloReplay(reason){
   nativeReplayFinished=true;nativeRecording=null;nativeRecorder?.finish(reason);
   const dialog=$('solo-replay-dialog');
   if(dialog){
-    nativePromptWasPaused=paused;paused=true;release();accumulator=0;nativeRaw.th_set_pause_overlay(1);
+    nativePromptWasPaused=paused;paused=true;release();accumulator=0;nativeRaw.th_set_pause_overlay(1);needsDraw=true;
     $('solo-replay-title').textContent=reason==='clear'?'路线完成，保存单人 Replay？':'本局结束，保存单人 Replay？';
     $('solo-replay-summary').textContent=reason==='clear'?'录像覆盖到最终关卡完成，不包含之后的菜单操作。':'录像截止于首次全员阵亡，只包含续关前的操作。';
     dialog.showModal();
@@ -114,7 +115,9 @@ function playEffects(){
     source.onended=()=>sfxSources.delete(source);sfxSources.add(source);source.start();
   }
 }
-const image=new ImageData(640,400),context=$('game').getContext('2d',{alpha:false});
+const canvas=$('game'),context=canvas.getContext('2d',{alpha:false});
+let image,imageBuffer,imageOffset;
+canvas.addEventListener('contextrestored',()=>{needsDraw=true;});
 const phases=['等待开球','游戏中','关卡完成','全员阵亡'];
 const players=()=>solo?1:Number($('players').value)||2;
 
@@ -197,7 +200,11 @@ function reset(){
 }
 function present(){
   const start=performance.now();saveScores();core.th_render();
-  image.data.set(new Uint8Array(core.memory.buffer,core.th_pixels(),640*400*4));context.putImageData(image,0,0);
+  const buffer=core.memory.buffer,offset=core.th_pixels();
+  if(buffer!==imageBuffer||offset!==imageOffset){
+    image=new ImageData(new Uint8ClampedArray(buffer,offset,640*400*4),640,400);imageBuffer=buffer;imageOffset=offset;
+  }
+  context.putImageData(image,0,0);needsDraw=false;
   drawMs+=performance.now()-start;++draws;
 }
 function loop(now){
@@ -211,7 +218,7 @@ function loop(now){
     playEffects();
     accumulator-=tick;++steps;
   }
-  if(now-lastDraw>=1000/60-.5){present();lastDraw=now;}
+  if(needsDraw&&now-lastDraw>=1000/60-.5){present();lastDraw=now;}
   if(musicWanted&&musicContext&&musicTrack!==musicCue())void startMusic();
   if(now-statsAt>=500){
     $('rate').textContent=`${(steps*1000/(now-statsAt)).toFixed(1)} 步/秒`;

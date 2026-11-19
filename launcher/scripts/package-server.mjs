@@ -1,5 +1,5 @@
 import {normalizeSiteManifestArguments, readCompatibleSiteManifest, writeLegacySiteManifestAlias} from '../compat/site-manifest.mjs';
-import {publishPC98Blocks} from '../lib/pc98-static-publication.mjs';
+import {publishPC98Blocks, validateNativeTH03Data} from '../lib/pc98-static-publication.mjs';
 import {reactAppShellMatchesSite} from '../lib/react-app-shell-deployment.mjs';
 import { freezeHostRuntimes } from "../lib/runtime-generations.mjs";
 import { preparePc98WasmGzip } from "../lib/pc98-wasm-compression.mjs";
@@ -706,7 +706,8 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
     await cp(retailDataSource(game), resolve(staging, target));
     const packageFiles = {};
     const components = {};
-    await publishPC98Blocks({game, source: dirname(retailDataSource(game)), data: retailDataSource(game), staging,
+    if (game === 'th03') validateNativeTH03Data(await readFile(resolve(staging, target)));
+    else await publishPC98Blocks({game, source: dirname(retailDataSource(game)), data: retailDataSource(game), staging,
       descriptorFile, packageFiles, components});
     const identity = await fileIdentity(resolve(staging, target));
     entry.gameData = { path: dataPath, ...identity, version: `sha256-${identity.sha256}`, layout: PRODUCT_CONTENT[game].dataLayout };

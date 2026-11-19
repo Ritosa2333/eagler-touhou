@@ -5,7 +5,7 @@ const audioContext={sampleRate:44100,state:'running',currentTime:0,
  addEventListener(){},removeEventListener(){},resume:async()=>{},close:async()=>{}};
 let ready,stopped=false,loaded=false,frameSequence=0,sequence=0,played=0,replayMusic;
 const transfers=new Set();
-const REPLAY_MAX_STEPS=4,REPLAY_BUDGET_MS=6;
+const REPLAY_MAX_STEPS=4,REPLAY_BUDGET_MS=6,CONFIRMED_REPLAY_BUDGET_MS=16;
 globalThis.th04WorkerHost={canvas:new OffscreenCanvas(640,400),audioContext,
  captureAudioState:()=>({sequence,played,music:replayMusic.capture()}),restoreAudioState(saved){const events=replayMusic.restore(saved?.music);sequence=saved.sequence;played=saved.played;send({type:'replay-audio-reset',events,sequence});},
  notify:message=>{
@@ -70,7 +70,10 @@ onmessage=({data})=>{
    if(!Number.isSafeInteger(data.frame)||data.frame<0||data.plans.some((plan,index)=>!plan||plan.frame!==data.frame+index||!Array.isArray(plan.inputs)||!Number.isInteger(plan.offlineMask)))throw Error('TH04 回滚补算帧顺序无效');
    const sliceStarted=performance.now(),records=[];let applied=0,blocked=false,exited=false;
    for(const plan of data.plans){
-    if(applied&&performance.now()-sliceStarted>=REPLAY_BUDGET_MS)break;
+    // Reserve more batch time for adjacent authoritative rows: ordinary
+    // input arrival cannot change them, so they can share a single page RPC.
+    const budget=plan.authoritative&&data.plans[applied-1]?.authoritative?CONFIRMED_REPLAY_BUDGET_MS:REPLAY_BUDGET_MS;
+    if(applied&&performance.now()-sliceStarted>=budget)break;
     if(!plan.authoritative&&!r.canPredict()){blocked=true;break;}
     const stepStarted=performance.now();
     if(plan.capture)r.capture(plan.frame);
