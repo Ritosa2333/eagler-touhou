@@ -1,61 +1,125 @@
-type CaptchaSdk = {
-  open(options: {appId: string}): Promise<string>;
-  close(): void;
-  isCancelled(error: unknown): boolean;
+import {linkAbortSignals} from './abort-signals';
+import './mail-captcha.css';
+
+type TacResponse = {code?: number; data?: {id?: string}};
+type TacConfig = {
+  bindEl: string;
+  requestCaptchaDataUrl: string;
+  validCaptchaUrl: string;
+  validSuccess(response: TacResponse): void;
+  btnCloseFun(): void;
+};
+type TacTransport = {
+  doSendRequest(request: {url: string; data: unknown}): Promise<unknown>;
+};
+type TacWidget = {init(): void; destroyWindow(): void};
+type TacSdk = {
+  TAC: new (config: TacTransport, style: object) => TacWidget;
+  CaptchaConfig: new (config: TacConfig) => TacTransport;
 };
 
-const sdkUrl = 'https://cv.naids.com/sdk/load.min.js';
-let sdkLoad: Promise<CaptchaSdk> | undefined;
+let sdkLoad: Promise<TacSdk> | undefined;
 let opening = false;
 
-function loadSdk() {
-  sdkLoad ??= new Promise<CaptchaSdk>((resolve, reject) => {
+function loadSdk(prefix: string) {
+  sdkLoad ??= new Promise<TacSdk>((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = sdkUrl;
-    script.dataset.preload = 'false';
+    script.src = `${prefix}/tac/js/tac.min.js`;
+    script.crossOrigin = 'anonymous';
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = `${prefix}/tac/css/tac.css`;
+    css.crossOrigin = 'anonymous';
     const fail = () => {
       clearTimeout(timeout);
       script.remove();
+      css.remove();
       sdkLoad = undefined;
       reject(new Error('Captcha SDK unavailable'));
     };
-    const timeout = setTimeout(fail, 10000);
-    script.onerror = fail;
-    script.onload = () => {
-      const sdk = (window as Window & {CaptchaSDK?: CaptchaSdk}).CaptchaSDK;
-      if (!sdk || typeof sdk.open !== 'function' || typeof sdk.close !== 'function' || typeof sdk.isCancelled !== 'function') {
-        fail();
-        return;
-      }
+    let pending = 2;
+    const loaded = () => {
+      if (--pending) return;
+      const sdk = window as Window & Partial<TacSdk>;
+      if (!sdk.TAC || !sdk.CaptchaConfig) return fail();
       clearTimeout(timeout);
-      resolve(sdk);
+      resolve({TAC: sdk.TAC, CaptchaConfig: sdk.CaptchaConfig});
     };
-    document.head.append(script);
+    const timeout = setTimeout(fail, 10000);
+    script.onload = css.onload = loaded;
+    script.onerror = css.onerror = fail;
+    document.head.append(css, script);
   });
   return sdkLoad;
 }
 
-export async function openMailCaptcha(appId: string, signal?: AbortSignal) {
+export async function openMailCaptcha(origin: string, signal?: AbortSignal): Promise<string> {
   signal?.throwIfAborted();
   if (opening) throw new DOMException('Verification already open', 'AbortError');
   opening = true;
+  const prefix = `${origin}/api/account/mail-captcha`;
+  const dialog = document.createElement('dialog');
+  dialog.className = 'mail-captcha-dialog';
+  dialog.setAttribute('aria-label', 'CAPTCHA');
+  const box = document.createElement('div');
+  box.id = 'mail-captcha-widget';
+  dialog.append(box);
+  const lifetime = new AbortController();
+  let widget: TacWidget | undefined;
+  let cancel: (() => void) | undefined;
   try {
-    const sdk = await loadSdk();
-    signal?.throwIfAborted();
-    const close = () => sdk.close();
-    signal?.addEventListener('abort', close, {once: true});
-    try {
-      const token = await sdk.open({appId});
-      signal?.throwIfAborted();
-      if (typeof token !== 'string' || !token.trim() || token.length > 4096) throw new Error('Captcha token missing');
-      return token;
-    } catch (error) {
-      if (sdk.isCancelled(error)) throw new DOMException('Verification cancelled', 'AbortError');
-      throw error;
-    } finally {
-      signal?.removeEventListener('abort', close);
-    }
+    return await new Promise<string>((resolve, reject) => {
+      const cancelDialog = () => {
+        lifetime.abort();
+        reject(new DOMException('Verification cancelled', 'AbortError'));
+      };
+      cancel = cancelDialog;
+      signal?.addEventListener('abort', cancelDialog, {once: true});
+      dialog.addEventListener('cancel', cancelDialog, {once: true});
+      void loadSdk(prefix).then(({TAC, CaptchaConfig}) => {
+        lifetime.signal.throwIfAborted();
+        document.body.append(dialog);
+        dialog.showModal();
+        const config = new CaptchaConfig({
+          bindEl: '#mail-captcha-widget',
+          requestCaptchaDataUrl: `${prefix}/challenge`,
+          validCaptchaUrl: `${prefix}/check`,
+          validSuccess({data}) {
+            if (typeof data?.id === 'string' && data.id) resolve(data.id);
+            else reject(new Error('Captcha token missing'));
+          },
+          btnCloseFun: cancelDialog,
+        });
+        config.doSendRequest = async ({url, data}) => {
+          const request = linkAbortSignals(lifetime.signal, AbortSignal.timeout(8000));
+          try {
+            const response = await fetch(url, {
+              method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data),
+              signal: request.signal,
+            });
+            if (!response.ok) throw new Error('Captcha request failed');
+            return await response.json();
+          } catch (error) {
+            reject(error);
+            // The SDK should stop updating its view once this dialog closes.
+            return new Promise<never>(() => {});
+          } finally {
+            request.dispose();
+          }
+        };
+        widget = new TAC(config, {});
+        widget.init();
+      }).catch(reject);
+    });
   } finally {
-    opening = false;
+    lifetime.abort();
+    if (cancel) signal?.removeEventListener('abort', cancel);
+    dialog.close();
+    try {
+      widget?.destroyWindow();
+    } finally {
+      dialog.remove();
+      opening = false;
+    }
   }
 }
