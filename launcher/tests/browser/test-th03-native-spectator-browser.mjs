@@ -11,12 +11,28 @@ import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 import {PRODUCT_GAMES,multiplayerInputTimingPolicy} from '../../../common/contracts/product-catalog.mjs';
 const game=process.env.ROOM_RUNTIME_GAME;
 assert(['th01','th02','th03','th04'].includes(game),'ROOM_RUNTIME_GAME must be a multiplayer title');
+const forceRelay=game==='th03'&&process.env.TH03_TEST_RELAY==='1';
+const profileNative=game==='th03'&&process.env.TH03_TEST_PROFILE==='1';
+const cpuThrottle=Number(process.env.TH03_TEST_CPU_THROTTLE??1);
 const lateJoin=process.env.PC98_TEST_INPUT_ONLY_LATE==='1'||process.env.PC98_TEST_LATE_JOIN==='1';
 const timing=multiplayerInputTimingPolicy(PRODUCT_GAMES[game].multiplayer);
 for(const key of ['ROOM_RUNTIME_ROOT','ROOM_RUNTIME_DATA'])assert(process.env[key],key+' is required');
 const runtime=resolve(process.env.ROOM_RUNTIME_ROOT),out=resolve('.cache/native-room-retention',game);
 await mkdir(out,{recursive:true});
 const data=await readFile(process.env.ROOM_RUNTIME_DATA),fonts=new Map();
+let profiledRoom;
+if(profileNative){
+ const source=await readFile(resolve(runtime,'managed-native-room.mjs'),'utf8');
+ const factory="return globalThis.createTh03Classic({locateFile:name=>name.endsWith('.wasm')?'./native-classic.wasm':name});";
+ assert(source.includes(factory),'native module profiling hook');
+ profiledRoom=source.replace(factory,`const module=await globalThis.createTh03Classic({locateFile:name=>name.endsWith('.wasm')?'./native-classic.wasm':name});
+ const profile=globalThis.th03NativeProfile={};
+ for(const name of ['step_pair','capture','restore','audio_commit','pixels']){
+  const key='_th03_classic_'+name, original=module[key];
+  module[key]=(...args)=>{const start=performance.now();try{return original(...args);}finally{const values=profile[name]??=[];values.push(performance.now()-start);}};
+ }
+ return module;`);
+}
 let instrumentedRuntime=null;
 if(process.env.PC98_TEST_ENDING==='1'){
   assert.equal(game,'th02');
@@ -67,7 +83,7 @@ if(process.env.PC98_TEST_DISABLE_FOCUS==='1'){
 }
 let relayLog='',browser,page;
 const clients=[],errors=[],relay=spawn(process.execPath,['services/relay/src/netplay-relay.mjs'],{
-  cwd:resolve('..'),windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1'},stdio:['ignore','pipe','pipe']});
+  cwd:resolve('..'),windowsHide:true,env:{...process.env,...(forceRelay?{EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:'1'}:{}),EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1'},stdio:['ignore','pipe','pipe']});
 relay.stdout.on('data',b=>relayLog+=b);relay.stderr.on('data',b=>relayLog+=b);
 async function wait(check,label,timeout=90000){const until=Date.now()+timeout;while(Date.now()<until){if(await check())return;await new Promise(r=>setTimeout(r,30));}throw Error(label+' timed out\n'+relayLog);}
 const html=`<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#111;display:flex}iframe{width:640px;height:480px;border:0}</style><script>
@@ -82,6 +98,7 @@ const server=createServer(async(req,res)=>{try{
   if(fonts.has(path)){res.end(fonts.get(path));return;}
   if(!path.startsWith('/runtime/'))throw Error('route');
   const file=resolve(runtime,path.slice(9));if(!file.startsWith(runtime+sep))throw Error('path');
+  if(profiledRoom&&path==='/runtime/managed-native-room.mjs'){res.setHeader('content-type','text/javascript');res.end(profiledRoom);return;}
   res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(file)]||'application/octet-stream');if(instrumentedRuntime&&path==='/runtime/netplay/runtime.js'){res.end(instrumentedRuntime);return;}
   if(instrumentedRuntime&&game==='th02'&&path==='/runtime/netplay/runtime.json'){const manifest=JSON.parse(await readFile(file,'utf8'));manifest.assets['netplay/runtime.js']=createHash('sha256').update(instrumentedRuntime).digest('hex');res.end(JSON.stringify(manifest));return;}
   if(process.env.PC98_TEST_ENDING==='1'&&path==='/runtime/netplay/managed-runtime.js'){const source=await readFile(file,'utf8');assert(source.includes('notify(data.message)'));res.end(source.replace('notify(data.message)',"(data.message.event?.startsWith('qa-')?globalThis.__eaglerPC98Emit({event:data.message.event,name:data.message.name,tick:data.message.tick}):notify(data.message))"));return;}
@@ -109,6 +126,8 @@ try{
   }
   browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
   page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));
+  if(cpuThrottle!==1)await page.emulateCPUThrottling(cpuThrottle);
+  if(forceRelay)await page.evaluateOnNewDocument(()=>Object.defineProperty(globalThis,'RTCPeerConnection',{value:undefined,configurable:true}));
   page.on('dialog',dialog=>{errors.push(dialog.message());void dialog.dismiss();});
   page.on('console',m=>console.log('Runtime:',m.text()));
   await page.setViewport({width:1920,height:540});await page.goto('http://127.0.0.1:'+server.address().port);
@@ -136,15 +155,26 @@ try{
   }
   if(game==='th02'||game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
   await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
+  let spectatorStarted=false;
   // Exercise local input after a network delay has had time to fill the queue.
   if(game==='th03' && process.env.TH03_TEST_INPUT_LATENCY==='1'){
     await wait(async()=>(await Promise.all(frames().slice(0,2).map(f=>f.evaluate(()=>globalThis.th03SyncState?.phase===1)))).every(Boolean),'battle',30000);
-    const delay=Number(process.env.TH03_TEST_NETWORK_DELAY_MS||45);
-    for(const frame of frames().slice(0,2))await frame.evaluate(ms=>{
-      const channel=[...globalThis.__th03PeerTransport.peers.values()][0].channel;
-      const send=channel.send.bind(channel);
-      channel.send=message=>setTimeout(()=>{if(channel.readyState==='open')send(message);},ms);
-    },delay);
+    if(!lateJoin){
+      await configure(2,1);spectatorStarted=true;
+      await wait(async()=>await frames()[2].evaluate(playerFrame)>0,'spectator rendering during latency test',30000);
+    }
+    const delay=Number((forceRelay?process.env.EAGLER_NETPLAY_RELAY_DELAY_MS:process.env.TH03_TEST_NETWORK_DELAY_MS)??0);
+    const jitter=Number((forceRelay?process.env.EAGLER_NETPLAY_RELAY_JITTER_MS:process.env.TH03_TEST_NETWORK_JITTER_MS)??0);
+    const rawRtc=!forceRelay&&process.env.TH03_TEST_RTC_JITTER==='1';
+    if(forceRelay)for(const frame of frames().slice(0,2))assert.equal(await frame.evaluate(()=>globalThis.__eaglerNetplayPath),'relay');
+    if(!forceRelay)for(const [seat,frame] of frames().slice(0,2).entries())await frame.evaluate(({ms,jitter,rawRtc,seat})=>{
+      const peer=[...globalThis.__th03PeerTransport.peers.values()][0];
+      for(const channel of rawRtc?[peer.rtc.fast,peer.rtc.control]:[peer.channel]){
+        const send=channel.send.bind(channel);
+        let sequence=seat*11,lastDue=0;
+        channel.send=message=>{const offset=jitter*Math.sin(sequence++*0.37),now=performance.now(),due=now+Math.max(0,ms+offset);lastDue=channel.ordered===false?due:Math.max(lastDue,due);setTimeout(()=>{if(channel.readyState==='open')send(message);},lastDue-now);};
+      }
+    },{ms:delay,jitter,rawRtc,seat});
     await new Promise(resolve=>setTimeout(resolve,1500));
     const samples=[];
     for(let repeat=0;repeat<5;repeat++)for(let seat=0;seat<2;seat++){
@@ -169,18 +199,39 @@ try{
       await new Promise(resolve=>setTimeout(resolve,150));
     }
     const start=await Promise.all(frames().slice(0,2).map(frame=>frame.evaluate(async()=>{
-      const health=(await import('./managed-native-room.mjs')).managedAPI.health();
-      return {frame:health.gameFrame,draw:health.frames,at:performance.now()};
+      const api=(await import('./managed-native-room.mjs')).managedAPI,health=api.health();
+      if(globalThis.th03NativeProfile)for(const values of Object.values(globalThis.th03NativeProfile))values.length=0;
+      const stats=globalThis.th03FrameTiming={last:performance.now(),lastProgress:performance.now(),frame:health.gameFrame,gaps:[],progressGaps:[],chargeGaps:[],releaseAt:-Infinity,running:true};
+      let direction=false,charge=true;
+      window.__eaglerPC98Input.key({code:'ShiftLeft',key:'Shift',keyCode:16,down:true});
+      stats.controls=setInterval(()=>{direction=!direction;for(const [code,keyCode,down] of [['ArrowLeft',37,direction],['ArrowRight',39,!direction]])window.__eaglerPC98Input.key({code,key:code,keyCode,down});},400);
+      stats.charge=setInterval(()=>{charge=!charge;if(!charge)stats.releaseAt=performance.now();window.__eaglerPC98Input.key({code:'ShiftLeft',key:'Shift',keyCode:16,down:charge});},2400);
+      function measure(now){if(!stats.running)return;stats.gaps.push(now-stats.last);stats.last=now;const frame=api.health().gameFrame;if(frame!==stats.frame){const gap=now-stats.lastProgress;stats.progressGaps.push(gap);if(now>=stats.releaseAt&&stats.lastProgress<stats.releaseAt+500)stats.chargeGaps.push(gap);stats.lastProgress=now;stats.frame=frame;}requestAnimationFrame(measure);}
+      requestAnimationFrame(measure);
+      return {frame:health.gameFrame,draw:health.frames,rollbacks:health.rollbacks,at:performance.now()};
     })));
     await new Promise(resolve=>setTimeout(resolve,8000));
     const rates=await Promise.all(frames().slice(0,2).map((frame,index)=>frame.evaluate(async before=>{
       const health=(await import('./managed-native-room.mjs')).managedAPI.health();
       const seconds=(performance.now()-before.at)/1000;
-      return {simulationFps:(health.gameFrame-before.frame)/seconds,drawFps:(health.frames-before.draw)/seconds};
+      const stats=globalThis.th03FrameTiming;stats.running=false;clearInterval(stats.controls);clearInterval(stats.charge);
+      for(const [code,key,keyCode] of [['ArrowLeft','ArrowLeft',37],['ArrowRight','ArrowRight',39],['ShiftLeft','Shift',16]])window.__eaglerPC98Input.key({code,key,keyCode,down:false});
+      const summary=values=>{values.sort((a,b)=>a-b);return {count:values.length,p95:values[Math.floor(values.length*.95)]??0,p99:values[Math.floor(values.length*.99)]??0,max:values.at(-1)??0,over50:values.filter(value=>value>50).length};};
+      const native=globalThis.th03NativeProfile&&Object.fromEntries(Object.entries(globalThis.th03NativeProfile).map(([name,values])=>[name,{calls:values.length,totalMs:values.reduce((sum,value)=>sum+value,0),...summary(values)}]));
+      return {simulationFps:(health.gameFrame-before.frame)/seconds,drawFps:(health.frames-before.draw)/seconds,rollbacks:health.rollbacks-before.rollbacks,renderGapsMs:summary(stats.gaps),gameProgressGapsMs:summary(stats.progressGaps),chargeReleaseGapsMs:summary(stats.chargeGaps),native};
     },start[index])));
-    console.log('TH03_INPUT_LATENCY',JSON.stringify({oneWayDelayMs:delay,samples,rates}));
+    console.log('TH03_INPUT_LATENCY',JSON.stringify({oneWayDelayMs:delay,jitterMs:jitter,rawRtc,forceRelay,samples,rates}));
     assert(samples.every(sample=>sample.moved),'local input did not move the player');
     assert(samples.every(sample=>sample.frames<=3),'local input was queued for more than three game frames');
+    const pressEscape=async()=>{
+      for(const down of [true,false]){
+        await page.evaluate(down=>rpc(0,'keyboard',{code:'Escape',key:'Escape',keyCode:27,location:0,down}),down);
+        await new Promise(resolve=>setTimeout(resolve,250));
+      }
+    };
+    const paused=expected=>async()=> (await Promise.all(frames().slice(0,2).map(frame=>frame.evaluate(()=>globalThis.th03SyncState?.pauseSeat)))).every(seat=>seat===expected);
+    await pressEscape();await wait(paused(0),'both players enter pause',15000);
+    await pressEscape();await wait(paused(null),'both players resume',15000);
   }
   if(process.env.PC98_TEST_ENDING==='1'){
     await page.evaluate(()=>{let down=false;window.qaEndingKeys=setInterval(()=>{down=!down;void rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down});},250);});
@@ -262,7 +313,7 @@ try{
     await send(client,null,m=>m.type==='state');
     await send(client,{type:'spectate'},m=>m.type==='spectator-start');
   }
-  await configure(2,1);
+  if(!spectatorStarted)await configure(2,1);
   await page.waitForFunction(()=>events.some(e=>e.epoch===3&&['first-frame','error'].includes(e.event)),{timeout:120000});const viewerError=await page.evaluate(()=>events.find(e=>e.epoch===3&&e.event==='error'));if(viewerError)throw Error(JSON.stringify(viewerError));
   await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&!s.seeking;},{timeout:90000});
   if(game==='th03'){

@@ -148,9 +148,11 @@ export async function installPublishedPackage(game, {
   fetchImpl = globalThis.fetch,
   onProgress = null,
   signal = null,
+  validatePublication,
 } = {}) {
   const published = await fetchPublishedPackage(game, { catalog, catalogUrl, fetchImpl, signal });
   if (!published) throw new Error(`${game}: no published Package`);
+  validatePublication?.(published.descriptor);
   if (normalizeGameVersion(gameVersion) === "beauty") published.descriptor = {...published.descriptor, gameVersion: "beauty"};
   else if (published.descriptor.gameVersion === "beauty") throw new Error(`${game}: original catalog declares a beauty Package`);
   const installed = await installPackageFromRemote(published.descriptor, {

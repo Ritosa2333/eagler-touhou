@@ -2,10 +2,13 @@ import {NativeSimulation} from './runtime-core.js';
 
 // This core owns gameplay. Display cores remain isolated: rendering must never
 // mutate the memory used for checksums, menus, scores or confirmed sound.
-let simulation,core,settings,scoreRevision,failed=false,renderers=[],layout,before,after;
-let renderFrame=-1,sequence=0,renderGeneration=0;const transfers=new Set(),snapshots=new Map();
+let simulation,core,heap,settings,scoreRevision,failed=false,renderers=[],layout,before,after;
+let renderFrame=-1,sequence=0,renderGeneration=0;const transfers=new Set(),snapshots=new Map(),snapshotPool=[];
 const send=(message,transfer=[])=>postMessage(message,transfer);
 function summary(){return {frame:simulation.frame,state:simulation.state(),checksum:simulation.checksum()};}
+function releaseSnapshots(matches){
+  for(const [frame,saved] of snapshots)if(matches(frame)){snapshots.delete(frame);snapshotPool.push(saved.memory);}
+}
 function audio(){
   const end=core.th_get(11,0)>>>0,start=Math.max(0,end-128);
   return {end,start,cue:core.th_get(79,0),events:Array.from({length:end-start},(_,i)=>core.th_sound_event(start+i))};
@@ -14,6 +17,7 @@ async function init(data){
   if(simulation)throw Error('联机模拟线程不能重复初始化');
   settings=data.settings;core=(await WebAssembly.instantiate(data.module,{})).exports;
   if(!core.th_net_checksum||!core.th_set_netplay_rules||core.memory.buffer.byteLength!==4194304)throw Error('游戏核心需要更新');
+  heap=new Uint8Array(core.memory.buffer);
   core.th_score_data();scoreRevision=core.th_get(110,0);
   simulation=new NativeSimulation(core,settings,data.hostSlot);simulation.reset();
   const bytes=core.th_render_snapshot_info?.(0)===1?core.th_render_snapshot_info(1):0,offset=bytes?core.th_pixels():0;
@@ -64,17 +68,22 @@ onmessage=({data})=>{
     else if(!simulation)throw Error('联机模拟线程尚未初始化');
     else if(data.type==='execute'){
       if(data.frame!==simulation.frame||!Array.isArray(data.inputs)||data.inputs.length!==settings.players||data.inputs.some(n=>!Number.isInteger(n)||n<0||n>4294967295))throw Error('联机模拟输入边界无效');
-      if(data.capture){snapshots.set(data.frame,{memory:new Uint8Array(core.memory.buffer).slice(),previous:simulation.previous.slice(),resultFrames:simulation.resultFrames});}
+      if(data.capture){
+        // The worker's heap is fixed. Recycle confirmed/discarded buffers
+        // instead of allocating a new 4 MiB backing store on each prediction.
+        const memory=snapshotPool.pop()??new Uint8Array(heap.length);memory.set(heap);
+        snapshots.set(data.frame,{memory,previous:simulation.previous.slice(),resultFrames:simulation.resultFrames});
+      }
       simulation.step(data.inputs);result={...summary(),audio:audio()};
       const revision=core.th_get(110,0);
       if(revision!==scoreRevision){scoreRevision=revision;result.scores=new Uint8Array(core.memory.buffer,core.th_score_data(),core.th_score_size()).slice();}
     }else if(data.type==='restore'){
       const saved=snapshots.get(data.frame);if(!saved)throw Error('回滚快照已过期');
-      new Uint8Array(core.memory.buffer).set(saved.memory);simulation.frame=data.frame;simulation.previous=saved.previous.slice();simulation.resultFrames=saved.resultFrames;
-      for(const at of snapshots.keys())if(at>=data.frame)snapshots.delete(at);
+      heap.set(saved.memory);simulation.frame=data.frame;simulation.previous=saved.previous.slice();simulation.resultFrames=saved.resultFrames;
+      releaseSnapshots(at=>at>=data.frame);
       renderGeneration++;renderFrame=-1;scoreRevision=core.th_get(110,0);result={...summary(),audio:audio()};
     }else if(data.type==='confirm'){
-      for(const at of snapshots.keys())if(at<data.prefix)snapshots.delete(at);result=true;
+      releaseSnapshots(at=>at<data.prefix);result=true;
     }else if(data.type==='present')result=present(data.localSlot);
     else throw Error('未知联机模拟指令');
     send({type:'result',id:data.id,result,executionMs:performance.now()-started},result?.scores?[result.scores.buffer]:[]);

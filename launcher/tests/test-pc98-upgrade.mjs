@@ -38,7 +38,8 @@ test('PC-98 legacy installations upgrade before pinning a runtime when required'
       const descriptor=(revision,data,components={},files={})=>({schema:'eagler-touhou/package/1',game,revision,
         runtimeRequirement:{protocol:'eagler-touhou/1',target:game,dataFile:'game-data',dataLayout:revision==='old'?legacy:layout},
         files:{'game-data':data,...files},base:{files:['game-data']},components});
-      let old=descriptor('old',oldData), next=descriptor('new',newData);
+      let old=descriptor('old',oldData);
+      const next=descriptor('new',newData);
       if(game!=='th01') {
         const path=game==='th03'?'3-jp.hdi.gz':`${game}-solo-jp.hdi.gz`;
         const id='pc98-block:'+hash('block-'+game);
@@ -46,32 +47,49 @@ test('PC-98 legacy installations upgrade before pinning a runtime when required'
         const block=file(`${game}-block.gz`,'block '+game,`/pc98/disk-blocks/${id.slice(11)}.gz`);
         const components={'pc98-manifest':{type:'pc98-disk',files:['pc98-disk-manifest']},[`pc98-disk:${path}`]:{type:'pc98-disk',files:[id]}};
         old=descriptor('old',oldData,components,{'pc98-disk-manifest':manifest,[id]:block});
-        // The current publication contains static DATA, with no disk components.
-        next=descriptor('new',newData);
+        // Exercise an update from split disk components to a complete DATA package.
       }
-      const requested=[]; let failNew=false;
+      const requested=[]; let failure='';
       const fetchImpl=async url=>{const path=new URL(url).pathname.slice(1);requested.push(path);
-        if(path===`${game}.package.json`) return Response.json(next);
-        if(failNew && path===`${game}-new.data`) return new Response('',{status:503});
+        if(path===`${game}.package.json`) {
+          if(failure==='layout') return Response.json({...next,runtimeRequirement:{...next.runtimeRequirement,dataLayout:'sha256-'+hash('wrong layout')}});
+          if(failure==='descriptor') return Response.json({...next,files:{'game-data':{...newData,sha256:oldData.sha256}}});
+          if(failure==='native-layout-with-disks') return Response.json({...old,revision:'new',
+            runtimeRequirement:next.runtimeRequirement,files:{...old.files,'game-data':newData}});
+          return Response.json(next);
+        }
+        if(path===`${game}-new.data`) {
+          if(failure==='offline') return new Response('',{status:503});
+          if(failure==='corrupt') return new Response('bad '+game);
+        }
         return bodies.has(path)?new Response(bodies.get(path)):new Response('',{status:404});};
       const descriptorUrl=`https://example.test/${game}.package.json`;
       const initial=await installPackageFromRemote(old,{descriptorUrl,fetchImpl,desiredFileIds:Object.keys(old.files)});
       const catalog={schema:'eagler-touhou/release-catalog/1',games:{[game]:{revision:'new',descriptor:`${game}.package.json`}}};
-      const snapshot={siteManifest:{games:{[game]:{gameData:{layout}}}},releaseCatalog:catalog};
+      const snapshot={siteManifest:{games:{[game]:{gameData:{layout,sha256:newData.sha256,bytes:newData.bytes}}}},releaseCatalog:catalog};
+      let loaded=false;
       const acquisition=createPackageAcquisition({baseUrl:'https://example.test/',translate:key=>key,fetchImpl,
-        metadata:{getSnapshot:()=>snapshot,initialize:async()=>{},refreshInstalled:async()=>{}},
+        metadata:{getSnapshot:()=>loaded?snapshot:{siteManifest:null,releaseCatalog:null},initialize:async()=>{loaded=true;},refreshInstalled:async()=>{}},
         dependencies:{repairInstalled:async current=>current.generation},testBuild:true});
-      requested.length=0; failNew=true;
-      await assert.rejects(acquisition.acquire({productId:game,music:'none',language:'ja'}));
-      assert.equal((await readCurrentPackageGeneration(game)).generation.id,initial.generation.id, 'failed update preserves previous installation');
-      requested.length=0; failNew=false;
+      for(const mode of ['offline','layout','descriptor','corrupt',...(game==='th03'?['native-layout-with-disks']:[])]){
+        requested.length=0; failure=mode;
+        await assert.rejects(acquisition.acquire({productId:game,music:'none',language:'ja'}));
+        assert.equal((await readCurrentPackageGeneration(game)).generation.id,initial.generation.id, `${game} ${mode}: keeps previous installation`);
+        if(!['offline','corrupt'].includes(mode))assert.deepEqual(requested,[`${game}.package.json`],'reject metadata before requesting DATA');
+      }
+      requested.length=0; failure='';
       const result=await acquisition.acquire({productId:game,music:'none',language:'ja'});
       assert.equal(result.generation.descriptor.revision,'new',`${game} must update before runtime selection`);
       assert.notEqual(result.generation.id,initial.generation.id);
       assert.equal((await readCurrentPackageGeneration(game)).generation.id,result.generation.id);
       assert(requested.includes(`${game}-new.data`));
+      assert.equal(requested.filter(path=>path===`${game}.package.json`).length,1,'install the descriptor that passed validation');
       assert.equal(result.generation.descriptor.components['pc98-manifest'],undefined);
       assert(!requested.includes(`${game}-block.gz`),'upgrade must not redownload old disk blocks');
+      requested.length=0;
+      const same=await acquisition.acquire({productId:game+'mp',music:'none',language:'ja'});
+      assert.equal(same.generation.id,result.generation.id);
+      assert.deepEqual(requested,[],'an up-to-date room launch reuses the installed objects');
     }
   } finally {await rm(root,{recursive:true,force:true});}
 });

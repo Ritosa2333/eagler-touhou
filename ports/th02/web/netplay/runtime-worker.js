@@ -4,9 +4,8 @@ const send=(message,transfer=[])=>postMessage(message,transfer);
 const audioContext={sampleRate:44100,state:'running',currentTime:0,addEventListener(){},removeEventListener(){},resume:async()=>{},close:async()=>{}};
 let ready,stopped=false,loaded=false,frameSequence=0,replayMusic;
 const transfers=new Set();
-// Keep replay work bounded exactly like TH05. The page can keep receiving
-// authoritative inputs while this Worker owns a short native batch.
-const REPLAY_MAX_STEPS=4,REPLAY_BUDGET_MS=6;
+// The page can keep receiving authoritative inputs during a bounded batch.
+const REPLAY_MAX_STEPS=4,REPLAY_BUDGET_MS=6,CONFIRMED_REPLAY_BUDGET_MS=16;
 const metrics={captureMs:0,captures:0,stepMs:0,steps:0,replaySteps:0,restoreMs:0,restores:0,confirmMs:0,confirmations:0,hashMs:0,hashes:0,presentMs:0,presentations:0,bitmapMs:0,bitmaps:0,nativeMs:0,nativeSteps:0,nativeMaxMs:0,statusMs:0,queueMs:0,commands:0};
 const slowSteps=[];let detailAt=-Infinity,lastGameAt=-Infinity,lastGameStep=-6;
 function timed(kind,count,action){const at=performance.now();try{return action();}finally{metrics[kind]+=performance.now()-at;metrics[count]++;}}
@@ -59,7 +58,10 @@ onmessage=({data})=>{
    if(!Number.isSafeInteger(data.frame)||data.frame<0||data.plans.some((plan,index)=>!plan||plan.frame!==data.frame+index||!Array.isArray(plan.inputs)||!Number.isInteger(plan.offlineMask)))throw Error('TH02 回滚补算帧顺序无效');
    const sliceStarted=performance.now(),records=[];let applied=0,blocked=false,exited=false;
    for(const plan of data.plans){
-    if(applied&&performance.now()-sliceStarted>=REPLAY_BUDGET_MS)break;
+    // Reserve more batch time for adjacent authoritative rows: ordinary
+    // input arrival cannot change them, so they can share a single page RPC.
+    const budget=plan.authoritative&&data.plans[applied-1]?.authoritative?CONFIRMED_REPLAY_BUDGET_MS:REPLAY_BUDGET_MS;
+    if(applied&&performance.now()-sliceStarted>=budget)break;
     // The page labels plans that were authoritative at dispatch time. A menu
     // or stage transition can block prediction while this batch is running.
     if(!plan.authoritative&&!r.canPredict()){blocked=true;break;}

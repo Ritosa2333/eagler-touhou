@@ -83,6 +83,10 @@ export function createManagedTransport(options, roles, fail, environment = globa
     if (peer.rtc) throw Error('重复直连通道'); peer.rtc = rtc;
     rtc.onopen = checkRtc;
     rtc.onmessage = guard(event => { if (!route || route === 'rtc') deliver(peer,event.data); });
+    rtc.oninputbatch = guard(batch => {
+      if (route === 'rtc' && peer.channel.readyState === 'open' && peer.channel.oninputbatch) peer.channel.oninputbatch(batch);
+      else if (!route || route === 'rtc') for (const text of batch) deliver(peer,text);
+    });
     rtc.onerror = event => route === 'rtc' ? fatal(Error('直连通道失败：'+String(event?.error?.message||event?.error||'未知原因'))) : fallback();
     rtc.onclose = () => { if (route === 'rtc') fatal(Error('直连通道已关闭')); else if (!route) fallback(); };
   }

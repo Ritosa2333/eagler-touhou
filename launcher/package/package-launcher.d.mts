@@ -23,6 +23,7 @@ export interface InstallPublishedPackageOptions extends Omit<PublishedPackageFil
   catalogUrl: string;
   preserveLocalSource?: boolean;
   expectedGenerationId?: string | null;
+  validatePublication?: (descriptor: PackageDescriptor) => void;
   fetchImpl?: typeof fetch;
   onProgress?: ((progress: PackageInstallProgress) => void) | null;
   signal?: AbortSignal | null;

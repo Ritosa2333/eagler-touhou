@@ -60,6 +60,7 @@ export class InputTransport {
       if(this.pending.size>=MAX_PENDING||this.pendingBytes+size>MAX_BYTES)throw Error('Unacknowledged input history is full');
       if(!this.pending.size)this.lastProgress=this.lastRepair=this.now();
       const entry={id:++this.sentInput,barrier:this.sentControl,data:text,size};
+      entry.wireSize=bytes(JSON.stringify({id:entry.id,barrier:entry.barrier,data:entry.data}));
       this.pending.set(entry.id,entry);this.pendingBytes+=size;
       this.transmit(false,entry.id);
     }else{
@@ -71,10 +72,12 @@ export class InputTransport {
   packet(limit,preferred){
     const entries=[];
     const envelope=()=>({wire:WIRE,kind:'inputs',ack:this.receivedInput,entries});
+    let packetSize=bytes(JSON.stringify(envelope()));
     const add=entry=>{
       const value={id:entry.id,barrier:entry.barrier,data:entry.data};
-      entries.push(value);
-      if(bytes(JSON.stringify(envelope()))>limit){entries.pop();return false;}
+      const nextSize=packetSize+entry.wireSize+(entries.length?1:0);
+      if(nextSize>limit)return false;
+      entries.push(value);packetSize=nextSize;
       return true;
     };
     if(preferred&&this.pending.has(preferred))add(this.pending.get(preferred));
@@ -150,13 +153,16 @@ export class InputTransport {
       let changed=true;
       while(changed&&this.readyState==='open'){
         changed=false;
+        const batch=this.oninputbatch?[]:null;
         for(const [id,entry]of this.incoming){
           if(entry.barrier>this.deliveredControl)continue;
           this.incoming.delete(id);this.delivered.add(id);
           while(this.delivered.delete(this.deliveredInput+1))this.deliveredInput++;
-          this.onmessage?.({data:entry.data});changed=true;
+          if(batch)batch.push(entry.data);else this.onmessage?.({data:entry.data});
+          changed=true;
           if(this.readyState!=='open')break;
         }
+        if(batch?.length)this.oninputbatch(batch);
         const control=this.controls.get(this.deliveredControl+1);
         if(this.readyState==='open'&&control&&control.fence<=this.deliveredInput){
           this.controls.delete(control.id);this.deliveredControl=control.id;

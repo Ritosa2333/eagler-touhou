@@ -8,7 +8,7 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
   const fire=[new FireControl(),new FireControl()], pause=createVersusPause(), outputs=new Map(),proofs=new Map(),remoteProofs=new Map();let running=true,lastProgress=now(),confirmedInput=[0,0];
   const metadata=()=>({scene:engine._th03_classic_scene(),round:engine._th03_semantic_round?.()??-1,serial:engine._th03_classic_match_serial?.()??0,winner:engine._th03_classic_match_winner?.()??-1});
   const compare=frame=>{if(!proofs.has(frame)||!remoteProofs.has(frame))return;if(proofs.get(frame)!==remoteProofs.get(frame))throw Error(`双方游戏状态不同步（第 ${frame} 帧）`);proofs.delete(frame);remoteProofs.delete(frame);};
-  const freeSlots=Array.from({length:16},(_,i)=>15-i);let captures=0,restores=0;
+  const freeSlots=Array.from({length:16},(_,i)=>15-i);let captures=0,restores=0,correction=Infinity;
   const remoteCharge=new NativeChargeHistory(24),localCharge=new Map(),chargeBoundaries=new Set();
   let localShadow;
   const supportsCharge=typeof engine._th03_classic_charge_enable==='function';
@@ -66,30 +66,55 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
   },confirm(frame){const output=outputs.get(frame);outputs.delete(frame);if(!output)throw Error('确认帧音频缺失');if(output.needsCharge)remoteCharge.confirm(frame);else remoteCharge.skip(frame);localCharge.delete(frame);chargeBoundaries.delete(frame);confirmedInput=output.lanes;let sound=new Int32Array(0);if(!output.paused){engine.HEAPU8.set(output.commands,engine._th03_classic_audio_commands());if(engine._th03_classic_audio_commit(output.count)!==0)throw Error('原生音频提交失败');const ptr=engine._th03_classic_audio(),count=engine._th03_classic_audio_frames();sound=engine.HEAP32.slice(ptr>>>2,(ptr>>>2)+count*2);}if(output.proof!==undefined){proofs.set(frame,output.proof);channel.send(JSON.stringify({type:'native-rollback-proof',frame,proof:output.proof}));compare(frame);}onConfirmedInput(frame,output.inputs,{charge:output.chargePair,replaySamples:output.replaySamples,scene:output.scene,round:output.round,serial:output.serial,winner:output.winner});onFrame(frame,sound,output.commands);}});
   const originalRestore=sync.restore;
   sync.restore=(s,at)=>{originalRestore(s);remoteCharge.rewind(at);for(const frame of outputs.keys())if(frame>=at)outputs.delete(frame);};
-  channel.onmessage=event=>{try{const msg=JSON.parse(event.data);if(msg.type==='native-rollback-proof'){
-    if(!Number.isSafeInteger(msg.frame)||msg.frame<0||(msg.frame+1)%120!==0||msg.frame>sync.frame+240||!Number.isInteger(msg.proof)||msg.proof<0||msg.proof>0xffffffff||remoteProofs.has(msg.frame))throw Error('回滚校验消息无效');
-    remoteProofs.set(msg.frame,msg.proof);compare(msg.frame);
-  }else if(msg.type==='native-charge-boundary'){
-    if(!supportsCharge||!Number.isSafeInteger(msg.frame)||msg.frame<0||msg.frame>sync.frame+24)throw Error('蓄力边界数据无效');
-    if(msg.frame>=sync.confirmed){chargeBoundaries.add(msg.frame);if(msg.frame<sync.frame&&outputs.get(msg.frame)?.needsCharge)sync.rewind(msg.frame);sync.flush();}
-    while(!sync.closed&&sync.local.has(sync.frame)&&sync.remote.has(sync.frame)&&sync.advance(false)){}
-  }else if(msg.type==='native-charge'){
-    if(!supportsCharge)throw Error('联机版本不同，请刷新双方页面');
-    const changed=remoteCharge.accept(msg.frame,msg.sample,sync.frame);
-    if(changed&&msg.frame<sync.frame)sync.rewind(msg.frame);
+  const canPredict=()=>engine._th03_classic_scene()===9&&!!engine._th03_classic_surrender_allowed()&&pause.state.owner===null&&!engine._th03_classic_paused();
+  function reconcile(){
+    if(correction!==Infinity){const frame=correction;correction=Infinity;sync.rewind(frame);}
     sync.flush();
-    while(!sync.closed&&sync.local.has(sync.frame)&&sync.remote.has(sync.frame)&&sync.advance(false)){}
-  }else {
-    sync.receive(event.data);
-    // A confirmed frame may be waiting for this input while prediction is
-    // disabled (selection, pause, or a lifecycle boundary). Run that already
-    // sampled frame immediately instead of waiting for the next clock tick.
-    while(!sync.closed&&sync.local.has(sync.frame)&&sync.remote.has(sync.frame)&&sync.advance(false)){}
-  }}catch(error){running=false;sync.close();onError(error);}};
+  }
+  function receive(messages){
+    if(!running)return;
+    try{
+      let receivedInput=false,boundary=false;
+      for(const text of messages){
+        const msg=JSON.parse(text);
+        if(msg.type==='native-rollback-proof'){
+          if(!Number.isSafeInteger(msg.frame)||msg.frame<0||(msg.frame+1)%120!==0||msg.frame>sync.frame+240||!Number.isInteger(msg.proof)||msg.proof<0||msg.proof>0xffffffff||remoteProofs.has(msg.frame))throw Error('回滚校验消息无效');
+          remoteProofs.set(msg.frame,msg.proof);compare(msg.frame);continue;
+        }
+        receivedInput=true;
+        if(msg.type==='native-charge-boundary'){
+          if(!supportsCharge||!Number.isSafeInteger(msg.frame)||msg.frame<0||msg.frame>sync.frame+24)throw Error('蓄力边界数据无效');
+          if(msg.frame<sync.confirmed)continue;
+          boundary=true;
+          chargeBoundaries.add(msg.frame);
+          if(msg.frame<sync.frame&&outputs.get(msg.frame)?.needsCharge)correction=Math.min(correction,msg.frame);
+        }else if(msg.type==='native-charge'){
+          if(!supportsCharge)throw Error('联机版本不同，请刷新双方页面');
+          if(remoteCharge.accept(msg.frame,msg.sample,sync.frame)&&msg.frame<sync.frame)correction=Math.min(correction,msg.frame);
+        }else {
+          const frame=sync.acceptInput(msg);
+          if(frame!==undefined){correction=Math.min(correction,frame);boundary||=!!(msg.input&128);}
+        }
+      }
+      if(!receivedInput)return;
+      // Coalesce gameplay corrections until the next simulation tick. A
+      // waiting frame or a lifecycle boundary still needs immediate recovery.
+      if(correction!==Infinity&&!boundary&&!sync.blocked&&sync.frame-sync.confirmed<sync.maxPrediction&&canPredict())return;
+      reconcile();
+      while(!sync.closed&&sync.local.has(sync.frame)&&sync.remote.has(sync.frame)&&sync.advance(false)){}
+    }catch(error){running=false;sync.close();onError(error);}
+  }
+  channel.onmessage=event=>receive([event.data]);
+  channel.oninputbatch=receive;
   channel.onclose=()=>{if(running){running=false;onError(Error('另一位玩家已断开'));}};
   return {tick(){if(!running)return;if(now()-lastProgress>10000){running=false;sync.close();onError(Error('另一位玩家连接超时'));return;}
-    const scene=engine._th03_classic_scene(),canPredict=scene===9&&!!engine._th03_classic_surrender_allowed()&&pause.state.owner===null&&!engine._th03_classic_paused();
-    if(canPredict ? sync.nextLocal<=sync.frame+1 : sync.nextLocal-sync.confirmed<24)sync.enqueue(sample()+(options.rapid===false?1024:0));
-    if(sync.frame-sync.confirmed<sync.maxPrediction)sync.advance(canPredict);
+    const predicting=canPredict();
+    // In battle, sample the current frontier only. Pre-sampling an extra
+    // frame during a stall keeps one stale control frame ahead of fresh input.
+    if(predicting ? sync.nextLocal===sync.frame : sync.nextLocal-sync.confirmed<24)sync.enqueue(sample()+(options.rapid===false?1024:0));
+    // Send the fresh frontier input first; historical steps use stored inputs.
+    const recovering=correction!==Infinity;
+    if(recovering)reconcile();
+    sync.advance(recovering?canPredict():predicting);
   },stop(){running=false;sync.close();remoteCharge.clear();localCharge.clear();chargeBoundaries.clear();outputs.clear();proofs.clear();remoteProofs.clear();},get snapshotStats(){return {captures,restores};},get pause(){return pause;},get frame(){return sync.frame;},get confirmed(){return sync.confirmed;},get confirmedInput(){return confirmedInput;},get rollbacks(){return sync.rollbacks;},get running(){return running;}};
 }
