@@ -268,6 +268,9 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
 #else
     bool motion_netplay_enabled=false;
     double motion_deadline=-1.,motion_main_present_at=0.,motion_extra_cost=0.;
+    double fps_sample_start=-1.;
+    u32 fps_sample_frames=0;
+    char fps_label[24]{};
 
     u32 motion_side() const { return network.active?network.side:0; }
 
@@ -586,6 +589,38 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         {TH09_PERF_SCOPE(warm_cost,WarmResources);session->warm_resources();}
         ++frames;return error.empty();
     }
+#ifndef __EMSCRIPTEN__
+    void queue_frame_rate(bool presenting){
+        if(in_title||!world||session->phase!=SessionPhase::match||!(world->battle->state.flags&4u)){
+            fps_sample_start=-1.;
+            return;
+        }
+        if(!presenting)return;
+        const double now=now_ms();
+        if(fps_sample_start<0.){
+            fps_sample_start=now;
+            fps_sample_frames=0;
+            fps_label[0]='\0';
+        }else{
+            // Count game frames only. Midpoint presents reuse the HUD.
+            ++fps_sample_frames;
+            const double elapsed=now-fps_sample_start;
+            if(elapsed>=500.){
+                std::snprintf(fps_label,sizeof(fps_label),"%.2ffps",fps_sample_frames*1000./elapsed);
+                fps_sample_start=now;
+                fps_sample_frames=0;
+            }
+        }
+        auto& ascii=presentation.ascii;
+        const auto color=ascii.color;
+        const auto scale=ascii.scale;
+        const auto field=ascii.field_view;
+        title_ascii({280,466,0},fps_label[0]?fps_label:"--.--fps",0xffffffff,{1,1});
+        ascii.color=color;
+        ascii.scale=scale;
+        ascii.field_view=field;
+    }
+#endif
     void draw(bool present=true,bool captureDeferredMotion=false){
         TH09_PERF_SCOPE(draw_cost,SemanticDraw);
         const auto* player=(present||captureDeferredMotion)?motion_player():nullptr;
@@ -599,6 +634,9 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
 #endif
             }else motionCapture.invalidate();
         }
+#ifndef __EMSCRIPTEN__
+        queue_frame_rate(present||captureDeferredMotion);
+#endif
         presentation.begin_frame(in_title||session->phase==SessionPhase::ending);
         if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
         TH09_PERF_STOP(draw_cost);
