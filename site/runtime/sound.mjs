@@ -934,6 +934,7 @@ export class OriginalMainMenuController{
     if([prepare,consumeSound,consumeMusic,syncText,onState,onAction,getButtons].some(callback=>typeof callback!=='function'))throw new Error('Original complete Title consumers unavailable');
     Object.assign(this,{module,prepare,consumeSound,consumeMusic,syncText,onState,onAction,getButtons});
     this.held=0;this.pressed=0;this.busy=false;this.prepared=false;this.disposed=false;this.controllerHeld=0;this.controllerAdopted=false;
+    this.musicTask=null;this.musicFailure=null;
   }
   snapshot(){return JSON.parse(this.module.UTF8ToString(this.module._th128_title_menu_state()));}
   adoptHeld(keys){
@@ -944,12 +945,29 @@ export class OriginalMainMenuController{
   keyUp(code){const bit=keyBits.get(code);if(bit!==undefined)this.held&=~bit;}
   release(){this.held=0;this.pressed=0;this.controllerHeld=0;this.controllerAdopted=false;}
   dispose(){this.disposed=true;this.release();}
+  pumpMusicRoom(){
+    if(this.musicTask)return true;
+    const module=this.module;
+    if(typeof module._th128_title_music_bgm_request!=='function'
+      ||!JSON.parse(module.UTF8ToString(module._th128_title_music_bgm_request())).serial)return false;
+    // Track decoding and durable playback receipts must not own the animation clock.
+    this.musicTask=Promise.resolve().then(()=>{if(!this.disposed)return this.consumeMusic();});
+    this.musicTask.then(()=>{this.musicTask=null;},problem=>{
+      this.musicTask=null;if(!this.disposed)this.musicFailure=problem;
+    });
+    return true;
+  }
   async step(){
     if(this.disposed)throw new Error('Original Title controller disposed');
     if(this.busy)throw new Error('Original Title step is not serial');
     this.busy=true;
     try{
-      const before=this.snapshot(),pressed=this.pressed;this.pressed=0;
+      if(this.musicFailure)throw this.musicFailure;
+      const before=this.snapshot();
+      // Keep drawing on return, but don't hand the native owner to another
+      // screen until the ordered preview and Title BGM restore are drained.
+      if(before.page!==5&&this.pumpMusicRoom())return before;
+      const pressed=this.pressed;this.pressed=0;
       const controller=this.getButtons();
       if(!controller||!Number.isInteger(controller.buttons)||controller.buttons<0||controller.buttons>0x7fffffff
         ||!Number.isInteger(controller.held)||(controller.held&~0x803ff))throw new Error('Actual controller snapshot rejected');
@@ -962,7 +980,8 @@ export class OriginalMainMenuController{
         throw new Error(this.snapshot().error||'Original Title input rejected');
       if(this.module._th128_tick()!==1)throw new Error(this.snapshot().error||this.module.UTF8ToString(this.module._th128_error()));
       await this.consumeSound();if(this.disposed)return null;
-      await this.consumeMusic();if(this.disposed)return null;
+      if(before.page===5)this.pumpMusicRoom();else await this.consumeMusic();
+      if(this.disposed)return null;
       await this.syncText();if(this.disposed)return null;
       const after=this.snapshot();await this.onState(after);
       if(!this.disposed&&after.mainAction)await this.onAction(after);
@@ -1019,6 +1038,7 @@ export class OriginalTitleAudio{
       pending.performed=true;
     }
     const receipt=pending.receipt,committed=pending.committed??await this.bgmLedger.commit(receipt);
+    this.checked();
     if(committed?.strictReadback!==true||committed.payload!==JSON.stringify(receipt)||!/^[a-f0-9]{64}$/.test(committed.digest))throw new Error('Real Title BGM full durable receipt missing');
     pending.committed=committed;
     if(request.operation===1)await this.onPreview(request.row);

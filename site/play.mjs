@@ -3059,12 +3059,15 @@ async function handleOriginalMainAction(snapshot){
   if(snapshot.mainAction===4)await startOwnedReplayFromMain(snapshot);}
 function originalMainController(){
   if(state.mainController)return state.mainController;
-  state.mainController=new OriginalMainMenuController({module:state.module,prepare:prepareOriginalMain,getButtons:actualMainControllerButtons,
+  const module=state.module,current=()=>state.mainController===owner&&module===state.module&&!owner.disposed;
+  const owner=new OriginalMainMenuController({module,prepare:prepareOriginalMain,getButtons:actualMainControllerButtons,
     consumeSound:async()=>{if(!state.module._th128_title_sound_count())return;const audio=await ensureOriginalTitleAudio();if(audio)await state.titleSoundConsumer.consume();},
-    consumeMusic:async()=>{const request=JSON.parse(state.module.UTF8ToString(state.module._th128_title_music_bgm_request()));if(!request.serial)return;
-      const audio=await ensureOriginalTitleAudio();if(audio)while(JSON.parse(state.module.UTF8ToString(state.module._th128_title_music_bgm_request())).serial){if(!await audio.consumeMusic(state.module))break;}},
+    consumeMusic:async()=>{const hasRequest=()=>JSON.parse(module.UTF8ToString(module._th128_title_music_bgm_request())).serial;
+      if(!current()||!hasRequest())return;
+      const audio=await ensureOriginalTitleAudio();
+      while(audio&&current()&&hasRequest()){if(!await audio.consumeMusic(module))break;}},
     syncText:syncOriginalMainPresentation,onState:syncOriginalMainSettings,onAction:handleOriginalMainAction});
-  return state.mainController;
+  state.mainController=owner;return owner;
 }
 function disposeOriginalMain(){
   state.mainAudioTicket=(state.mainAudioTicket??0)+1;state.mainAudioLoading=null;

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-const source=fs.readFileSync(process.env.TH128_PLAY_SOURCE,'utf8');
+const source=fs.readFileSync(process.env.TH128_PLAY_SOURCE??new URL('../site/play.mjs',import.meta.url),'utf8');
 const match=/^async function ensureOriginalTitleAudio\(/m.exec(source);
 assert(match,'production audio loader is present');
 const body=source.slice(match.index,source.indexOf('\n}',match.index)+2);
