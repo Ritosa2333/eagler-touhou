@@ -391,6 +391,7 @@ try {
     nodes.map(node => node.classList.contains('sr-only'))), [true], 'only the accessible dialog title remains');
   assert.equal(await page.$eval(termsToggle, button => button.getAttribute('aria-checked')), 'false');
   assert.equal(await page.$eval(agreeButton, button => button.disabled), true);
+  assert.equal(await page.$eval(agreeButton, button => button.textContent.trim()), '请阅读完后再同意');
   assert.equal(await page.$eval('.account-terms-reading a', link => getComputedStyle(link).textDecorationLine), 'none');
   await page.click(`${termsDialog} .account-terms-actions button:first-child`);
   await page.waitForSelector(termsDialog, {hidden:true});
@@ -399,6 +400,7 @@ try {
   await page.waitForSelector(termsDialog, {visible:true});
   await page.$eval('.account-terms-reading', pane => {pane.scrollTop = pane.scrollHeight;});
   await page.waitForFunction(selector => !document.querySelector(selector)?.disabled, {}, agreeButton);
+  assert.equal(await page.$eval(agreeButton, button => button.textContent.trim()), '同意');
   await page.click(agreeButton);
   await page.waitForSelector(termsDialog, {hidden:true});
   assert.equal(await page.$eval(termsToggle, button => button.getAttribute('aria-checked')), 'true');

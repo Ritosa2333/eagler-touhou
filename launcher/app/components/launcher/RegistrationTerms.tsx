@@ -66,7 +66,7 @@ export function RegistrationTerms({accepted, disabled, onChange}: {
           <Button disabled={!reachedEnd} onClick={() => {
             onChange(true);
             setOpen(false);
-          }}>{t('account.termsAgree')}</Button>
+          }}>{t(reachedEnd ? 'account.termsAgree' : 'account.termsReadFirst')}</Button>
         </div>
       </DialogContent>
     </Dialog>

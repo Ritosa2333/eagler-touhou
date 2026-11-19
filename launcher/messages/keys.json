@@ -10709,6 +10709,10 @@
     "id": "account_termsAgree",
     "params": []
   },
+  "account.termsReadFirst": {
+    "id": "account_termsReadFirst",
+    "params": []
+  },
   "account.registrationPrivacy": {
     "id": "account_registrationPrivacy",
     "params": [
