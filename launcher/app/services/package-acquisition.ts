@@ -3,7 +3,6 @@ import {normalizeGameVersion} from "../../package/game-version.mjs";
 import {validateReleaseCatalog} from "../../release-catalog.mjs";
 import type {GameVersion} from "../../src/contracts/package-read-models.mts";
 import {PACKAGE_DESCRIPTOR_SCHEMA} from '../../package/package-descriptor.mjs';
-import {componentFileIds} from '../../package/package-generation.mjs';
 import {pc98RequiredBlockFiles} from '../../package/pc98-block-selection.mjs';
 import {installPublishedPackage, repairInstalledPackage} from '../../package/package-launcher.mjs';
 import {installPackageFromAcquisition, installParsedPackageZip} from '../../package/package-installer.mjs';
@@ -24,6 +23,7 @@ import type {RetailInput} from './retail-package';
 import {sha256Hex} from '../../src/launcher/sha256.mts';
 import type {Translate} from '../i18n';
 import {GameDataAcquisitionError} from './game-data-acquisition';
+import {runtimeOggFileIds} from './game-music-selection';
 import type {PreparationNetwork} from './preparation-network';
 
 export interface PreparationMetadataSnapshot {
@@ -186,7 +186,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       request.onAcquisitionActivity?.(true);
       progress(request, 'package.installingResources');
       const result = await deps.installAcquired({descriptor, source: 'remote',
-        desiredFileIds: ['game-data', ...((['th01','th02','th03','th04'].includes(game) ? request.music === 'ogg-akyu' : isOgg(request.music)) ? componentFileIds(descriptor, 'ogg') : [])],
+        desiredFileIds: ['game-data', ...((['th01','th02','th03','th04'].includes(game) ? request.music === 'ogg-akyu' : isOgg(request.music)) ? runtimeOggFileIds(descriptor, request.productId) : [])],
         acquire: async (id, declaration) => {
           checkPreparationAbort(request.signal);
           const source = id === 'game-data' ? hosted.gameData.source! : `${typeof hosted.music.ogg?.base === 'string' ? hosted.music.ogg.base : ''}${declaration.source}`;

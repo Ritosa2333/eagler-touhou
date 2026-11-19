@@ -1,11 +1,11 @@
 import {descriptorGameVersion} from "../../package/game-version.mjs";
-import {componentFileIds} from '../../package/package-generation.mjs';
 import type {GameId} from '../../src/contracts/product-catalog.mts';
 import type {CurrentPackageGeneration, InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
 import type {GamePreparationInput, PreparedGamePlan} from './game-preparation';
 import {preparationErrorText, type PackageAcquisition} from './package-acquisition';
 import type {RuntimeService} from './runtime';
 import {oggMusic} from './game-resources';
+import {runtimeOggFileIds} from './game-music-selection';
 
 // One document-lived acquisition owner gets one progressive worker per game.
 // A replaced Runtime waits for its predecessor's current object transaction,
@@ -29,7 +29,7 @@ export async function startPreparedGameBackground({input, prepared, epoch, defer
   }).catch(error => {input.onBackgroundError?.(error, `${game}: background Package update failed${deferredUpdate.installation?.source === 'local' ? ' for local install' : ''}`);}) : Promise.resolve();
   if (!loaded || !resources || !oggMusic(prepared.music) || !currentOgg() || ((['th01','th02','th03','th04'].includes(game)) && prepared.music !== 'ogg-akyu')) {await backgroundUpdate; return;}
   const initial = new Set(prepared.plan.localOgg?.fileIds ?? []);
-  const ids = componentFileIds(resources.descriptor, 'ogg');
+  const ids = runtimeOggFileIds(resources.descriptor, input.productId);
   const remaining = ids.filter(id => !initial.has(id));
   const installed = remaining.filter(id => !!resources.files[id]?.objectId);
   const local = (async () => {

@@ -280,6 +280,43 @@ test('TH05 album preparation sends the source to Runtime and reads its declared 
   assert.deepEqual(delivered, ['/music/track-1.ogg', '/music/track-2.ogg']);
 });
 
+for (const kind of ['solo', 'replay', 'room-preload']) test(`TH05 ${kind} downloads and mounts only its playable soundtrack`, async () => {
+  const multiplayer = kind !== 'solo', productId = multiplayer ? 'th05mp' : 'th05';
+  const current = generation({ogg: ['track-2', 'track-3']});
+  current.game = current.descriptor.game = current.descriptor.runtimeRequirement.target = 'th05';
+  current.descriptor.files['game-data'].target = '/th05.data';
+  const names = ['op.ogg', 'room-r_00.ogg', 'akyu-01.ogg', 'room-s_01.ogg'];
+  const ids = current.descriptor.components.ogg.files;
+  for (const [index, id] of ids.entries()) {
+    current.descriptor.files[id].source = `music/${names[index]}`;
+    current.descriptor.files[id].target = `/music/${names[index]}`;
+  }
+  const published = {...catalog(), games: {th05: {revision: current.descriptor.revision, descriptor: 'games/th05/package.json'}}};
+  const downloads = [];
+  const f = acquisitionFixture({current, catalogValue: published, testBuild: true, dependencies: {
+    installPublished: async (_game, {addFileIds}) => {
+      downloads.push(addFileIds);
+      const next = added(f.current, addFileIds);
+      f.setCurrent(next);
+      return {generation: next};
+    },
+  }});
+  const r = runtimeFixture();
+  const prepared = await api.prepareGame(gameInput(f, settingsFixture({productId, music: 'ogg-akyu'}), {
+    productId, runtime: r.service, ...(multiplayer ? {multiplayer: {kind}} : {}),
+  }));
+  if (kind === 'room-preload') await r.service.configurePreparedRoom(prepared.runtimeSnapshot.epoch, {
+    netplayMode: 'lan', netplayUrl: 'wss://relay.invalid/?room=th05mp-1234',
+  });
+  await r.service.launch();
+  await prepared.startBackground();
+  assert.deepEqual(downloads, multiplayer ? [['track-1', 'track-3']] : [['track-1', 'track-2'], ['track-4']]);
+  const delivered = r.outbound.filter(message => message.command === 'resources')
+    .flatMap(message => message.resources.map(resource => resource.path)).filter(path => path.endsWith('.ogg')).sort();
+  assert.deepEqual(delivered, (multiplayer ? [names[0], names[2]] : names).map(name => `/music/${name}`).sort());
+  assert.ok(f.current.files['track-2'], 'the shared cache keeps the previously installed track');
+});
+
 test('TH05 album acquisition includes its declared soundtrack files', async () => {
   const base = host(), declared = base.games.th06;
   const development = api.validateSiteManifest({...base, profile: 'web-development',

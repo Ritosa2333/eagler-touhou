@@ -1,5 +1,4 @@
 import {isReplayFilePath} from '../../src/launcher/replay-files.mts';
-import {componentFileIds} from '../../package/package-generation.mjs';
 import {PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, languagePriority, productFeatureAvailable,
   productRequiresImport, type ProductId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
@@ -18,6 +17,7 @@ import {checkPreparationAbort, preparationErrorText, type AcquisitionRequest, ty
 import {ensureOggStartup, ensurePC98Disks, ensureRequiredSharedResources, musicTransport, musicModeLabel, oggMusic, packageResourceIds, remoteMusicResources,
   remoteRuntimeResources, sharedResources} from './game-resources';
 import {startPreparedGameBackground} from './game-preparation-background';
+import {runtimeOggFileIds} from './game-music-selection';
 import type {RuntimePlan, RuntimeService, RuntimeSnapshot} from './runtime';
 
 export type MultiplayerPreparation =
@@ -127,7 +127,7 @@ function effectiveMusic(input: GamePreparationInput, generation: InstalledPackag
     midiAvailable: PRODUCT_GAMES[settings.gameId].musicCapabilities.midi && hosted?.music.midi.supported !== false,
     importServer: productRequiresImport(settings.gameId) || host?.shared.resourceMode === 'import', remoteOggAdvertised: !!hosted?.music.ogg || splitAssets,
     remoteRevision: acquisition.getMetadata().releaseCatalog?.games[settings.gameId]?.revision ?? null,
-    installed: generation ? {revision: generation.descriptor.revision, oggFileIds: componentFileIds(generation.descriptor, 'ogg'), files: generation.files} : null,
+    installed: generation ? {revision: generation.descriptor.revision, oggFileIds: runtimeOggFileIds(generation.descriptor, input.productId), files: generation.files} : null,
     requested: settings.musicPreference, explicit: settings.musicPreferenceExplicit});
 }
 /** Original app 4163–4198. Room timing is supplied by the validated room owner,
@@ -192,7 +192,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   const completeOgg = (music === 'ogg-akyu' && ['th01','th02','th03','th04'].includes(input.settings.gameId)) || input.multiplayer?.kind === 'room-preload' || th14Spectator ||
     ('requiresCompleteOgg' in musicPolicy && musicPolicy.requiresCompleteOgg) ||
     input.settings.gameId === 'th09' && (input.multiplayer?.kind === 'room' || input.replayPath !== undefined || input.replayWorkspace === true);
-  ({generation, music} = await ensureOggStartup({generation, music, acquisition, signal: input.signal,
+  ({generation, music} = await ensureOggStartup({generation, productId: input.productId, music, acquisition, signal: input.signal,
     completeSet: completeOgg,
     downloadSignal: input.musicDownloadSignal, onMusicDownloadActivity: input.onMusicDownloadActivity,
     translate: t, onProgress: input.onProgress, onWarning: input.onWarning}));
@@ -200,12 +200,12 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   if (music !== 'none') await input.prepareMidi(music);
   guard();
   const useOptionalAlbum = !('embeddedOgg' in musicPolicy && musicPolicy.embeddedOgg === true) || music === 'ogg-akyu';
-  const ids = generation && oggMusic(music) && useOptionalAlbum ? componentFileIds(generation.descriptor, 'ogg').filter(id => !!generation!.files[id]?.objectId) : [];
+  const ids = generation && oggMusic(music) && useOptionalAlbum ? runtimeOggFileIds(generation.descriptor, input.productId).filter(id => !!generation!.files[id]?.objectId) : [];
   const options = gameRuntimeOptions(input, language, music, host);
   const shared = sharedResources({game: settings.gameId, generation, host, language,
     thprac: settings.options.thpracEnabled, baseUrl: input.baseUrl, translate: t});
   const plan: RuntimePlan = {...initial, ...(generation && generation !== initial.generation ? {resourceGeneration: generation} : {}),
-    configure: {language, music: musicTransport(music), resources: initial.th075SplitAssets || ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t),
+    configure: {language, music: musicTransport(music), resources: initial.th075SplitAssets || ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t, input.productId),
       runtimeResources: initial.th075SplitAssets ? [] : remoteRuntimeResources(generation, host, metadata.releaseCatalog, acquisition.catalogUrl, t), runtimePack, sharedResources: shared, options},
     ...(generation ? {resourceFileIds: packageResourceIds(generation)} : {}),
     ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: PRODUCT_GAMES[settings.gameId].musicCapabilities?.midi === true}} : {}),
