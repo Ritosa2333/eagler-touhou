@@ -4,14 +4,6 @@ import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 
-export function mergeIce(message, cloudflare) {
-  if (message === null || typeof message !== 'object') return message;
-  if (Array.isArray(message.iceServers)) message.iceServers = [...cloudflare, ...message.iceServers];
-  if (message.roomProbe && Array.isArray(message.roomProbe.iceServers))
-    message.roomProbe.iceServers = [...cloudflare, ...message.roomProbe.iceServers];
-  return message;
-}
-
 function appendTurnPool(entries, poolFile) {
   const active = entries.find(entry => entry.username && entry.credential);
   if (!active || !poolFile) return;
@@ -26,8 +18,9 @@ function appendTurnPool(entries, poolFile) {
   const backups = Array.isArray(pool?.backups) ? pool.backups : [];
   for (const node of [pool, ...backups]) {
     if (!Array.isArray(node?.urls) || typeof node.sharedSecret !== 'string' || !node.sharedSecret) continue;
-    const urls = node.urls.filter(url => typeof url === 'string' && url.startsWith('turn:'));
-    if (!urls.length || entries.some(entry => [].concat(entry.urls).includes(urls[0]))) continue;
+    const urls = node.urls.filter(url => typeof url === 'string' && /^turns?:/i.test(url)
+      && !entries.some(entry => [].concat(entry.urls).includes(url)));
+    if (!urls.length) continue;
     entries.push({urls, username:active.username,
       credential:createHmac('sha1',node.sharedSecret).update(active.username).digest('base64')});
   }
@@ -84,14 +77,21 @@ export function startProxy(config) {
         if (!isBinary && data.length < 65536) {
           try {
             const value = JSON.parse(data.toString());
-            const fixedRoute = value?.turnMode === 'swarm' || value?.turnMode === 'first-party' || value?.turnMode === 'direct' ||
-              (value?.type === 'rtc-standby' && /^(direct|turn|swarm-[0-9]+)$/.test(value.route));
-            if (!fixedRoute &&
-                (Array.isArray(value?.iceServers) || Array.isArray(value?.roomProbe?.iceServers))) {
-              const entries = value.iceServers || value.roomProbe?.iceServers;
-              appendTurnPool(entries, config.poolFile);
-              const cf = overseas ? await credentials() : [];
-              payload = JSON.stringify(mergeIce(value,cf));
+            const fixedRoute = value?.turnMode === 'swarm' || value?.turnMode === 'direct' ||
+              (value?.type === 'rtc-standby' && value.route !== 'turn');
+            const candidates = [
+              ...(!fixedRoute && Array.isArray(value?.iceServers) ? [[value, 'iceServers']] : []),
+              ...(Array.isArray(value?.roomProbe?.iceServers) ? [[value.roomProbe, 'iceServers']] : []),
+              ...(Array.isArray(value?.fallbackIceServers) ? [[value, 'fallbackIceServers']] : []),
+            ];
+            if (candidates.length) {
+              for (const [owner, key] of candidates) {
+                if (owner === value) appendTurnPool(owner[key], config.poolFile);
+                if (overseas && (key === 'fallbackIceServers' || value.turnMode !== 'first-party')) {
+                  owner[key] = [...await credentials(), ...owner[key]];
+                }
+              }
+              payload = JSON.stringify(value);
             }
           } catch {}
         }

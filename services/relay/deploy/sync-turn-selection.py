@@ -63,12 +63,51 @@ def fetch(config):
     return json.loads(data)
 
 
+def turn_backups(value, config, primary_urls):
+    candidates = value.get('backups', [])
+    if not isinstance(candidates, list):
+        raise ValueError('Invalid exported TURN pool')
+    allowed = {tuple(node['urls']) for node in config['nodes'].values()}
+    if any(not isinstance(node, dict) or not isinstance(node.get('urls'), list)
+           or not all(isinstance(url, str) for url in node['urls'])
+           or tuple(node['urls']) not in allowed for node in candidates):
+        raise ValueError('Unexpected TURN node in exported pool')
+    if config.get('backupFile'):
+        local = json.loads(pathlib.Path(config['backupFile']).read_bytes())
+        if not isinstance(local, list):
+            raise ValueError('Invalid local TURN pool')
+        candidates = [*candidates, *local]
+    health = value.get('health', {})
+    blocked_urls = {url for key, node in config['nodes'].items()
+                    if key != value['selected'] and health.get(key) in ('degraded', 'saturated')
+                    for url in node['urls']}
+    seen = set(primary_urls) | blocked_urls
+    backups = []
+    for node in candidates:
+        urls = node.get('urls') if isinstance(node, dict) else None
+        secret = node.get('sharedSecret') if isinstance(node, dict) else None
+        if (not isinstance(urls, list) or not 1 <= len(urls) <= 8
+                or any(not isinstance(url, str) or not re.fullmatch(r'turns?:[^\s]+', url) for url in urls)
+                or not isinstance(secret, str) or not 1 <= len(secret) <= 4096):
+            raise ValueError('Invalid TURN pool entry')
+        new_urls = [url for url in dict.fromkeys(urls) if url not in seen]
+        if new_urls:
+            backups.append({'urls': new_urls, 'sharedSecret': secret})
+            seen.update(new_urls)
+    if len(backups) > 3:
+        raise ValueError('TURN pool exceeds relay capacity')
+    return backups
+
+
 def apply(value, config, run=subprocess.run, clock=time.time):
     now = clock()
     node = validate(value, config, now)
     active_path = pathlib.Path(config['activeConfig'])
     previous = json.loads(active_path.read_text()) if active_path.exists() else None
     active = {'urls': [*value['urls'], config['tlsUrl']], 'sharedSecret': value['sharedSecret']}
+    backups = turn_backups(value, config, active['urls'])
+    if backups:
+        active['backups'] = backups
     state_path = pathlib.Path(config['stateFile'])
     state = json.loads(state_path.read_text()) if state_path.exists() else {}
     if value['evaluatedAt'] < state.get('evaluatedAt', 0):
@@ -114,6 +153,7 @@ def main():
         value = fetch(config)
         if '--validate-only' in sys.argv:
             validate(value, config, time.time())
+            turn_backups(value, config, [*value['urls'], config['tlsUrl']])
             print(json.dumps({'selected': value['selected'], 'valid': True}))
         else:
             print(json.dumps(apply(value, config)))

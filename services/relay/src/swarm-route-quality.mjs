@@ -108,7 +108,7 @@ export function createSwarmStandbyPlanner({workers, ordinaryTurn, dispatch, init
       const shortlist = [...candidates.slice(offset), ...candidates.slice(0, offset)].slice(0, 2);
       const queue = [
         ...(active === 'direct' || outage ? [] : ['direct']),
-        ...(ordinaryTurn && active !== 'turn' ? ['turn'] : []),
+        ...(ordinaryTurn ? ['turn'] : []),
         ...shortlist,
       ];
       if (!queue.length) return false;
