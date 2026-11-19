@@ -24,7 +24,7 @@ import {
 } from '../../src/contracts/runtime-protocol.mts';
 import type { InstalledPackageGeneration } from '../../src/contracts/package-read-models.mts';
 import {sha256Hex} from '../../src/launcher/sha256.mts';
-import {componentFileIds} from '../../package/package-generation.mjs';
+import {runtimeOggFileIds} from './game-music-selection';
 import { createRuntimeSessionOwner, type RuntimeSessionToken } from '../../src/launcher/runtime-session.mts';
 import { createManagedRuntimeGenerationLease } from '../../src/launcher/runtime-generation-lease.mts';
 import { managedRuntimeUrl, readManagedRuntimeData, readManagedRuntimeResource } from '../../src/launcher/runtime-preparation.mts';
@@ -683,7 +683,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (!localResourceProgress || localResourceProgress.epoch !== token.id || localResourceProgress.revision !== generation.descriptor.revision) {
       localResourceProgress = {epoch: token.id, revision: generation.descriptor.revision, started: performance.now(), loaded: 0, completed: new Set()};
     }
-    const ids = componentFileIds(generation.descriptor, 'ogg').filter(id => !!generation.files[id]?.objectId);
+    const product = token.runtimeVariant === 'multiplayer' && token.game === 'th05' ? 'th05mp' : undefined;
+    const ids = runtimeOggFileIds(generation.descriptor, product).filter(id => !!generation.files[id]?.objectId);
     const total = ids.reduce((sum, id) => sum + (Number(generation.descriptor.files[id]?.bytes) || 0), 0);
     options.onLocalResourceProgress({epoch: token.id, game: generation.game, generationId: generation.id, phase,
       loaded: localResourceProgress.loaded, total, completed: localResourceProgress.completed.size, files: ids.length,
@@ -758,7 +759,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (!plan.localOgg) return [];
     if (!plan.generation) throw new Error('Local OGG requires a Package generation');
     const generation = plan.resourceGeneration ?? plan.generation;
-    const ids = [...plan.localOgg.fileIds], allowed = new Set(componentFileIds(generation.descriptor, 'ogg'));
+    const product = plan.runtimeVariant === 'multiplayer' && plan.game === 'th05' ? 'th05mp' : undefined;
+    const ids = [...plan.localOgg.fileIds], allowed = new Set(runtimeOggFileIds(generation.descriptor, product));
     if (plan.configure.music !== 'ogg' || !ids.length || new Set(ids).size !== ids.length || ids.some(id => {
       const declaration = generation.descriptor.files[id], ref = generation.files[id];
       return !allowed.has(id) || generation.descriptor.base.files.includes(id) || !declaration?.target ||
@@ -839,7 +841,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       const same = (id: string) => ['revision', 'source', 'target', 'bytes', 'sha256'].every(key =>
         generation.descriptor.files[id]?.[key] === originalFiles[id]?.[key]);
       if (!loadedGeneration.descriptor.base.files.every(same)) throw new Error('OGG extension changed the Package base');
-      const allowed = new Set(componentFileIds(loadedGeneration.descriptor, 'ogg'));
+      const product = original.runtimeVariant === 'multiplayer' && original.game === 'th05' ? 'th05mp' : undefined;
+      const allowed = new Set(runtimeOggFileIds(loadedGeneration.descriptor, product));
       if (!ids.length || ids.some(id => {
         const declaration = originalFiles[id], ref = generation.files[id];
         return !allowed.has(id) || !same(id) || !declaration?.target || !ref?.objectId || ref.revision !== declaration.revision ||
