@@ -1,6 +1,7 @@
 import {installStartupBranding, finishStartupAnimation} from './startup-branding.mjs';
 import createModule from './th13-sdl.mjs';
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
+import {installLowLatencyCanvas} from './low-latency-canvas.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {runtimeAssets} from './runtime-assets.mjs';
 
@@ -17,6 +18,12 @@ const invalidateCanvasBox = () => { canvasBox = null; };
 addEventListener('resize', invalidateCanvasBox);
 visualViewport?.addEventListener?.('resize', invalidateCanvasBox);
 const canvasRect = () => canvasBox ??= canvas.getBoundingClientRect();
+// 低延迟画布：SP/MP shell 与独立 th13.html 共用模块（详见 low-latency-canvas.mjs）。
+// desynchronized 让支持的平台的画布绕过合成器排队，提前一个刷新周期上屏；
+// high-performance 在双显卡机器上选独显。实际生效情况记入 renderer 报告。
+const lowLatency = installLowLatencyCanvas(canvas);
+const canvasPresentation = () => lowLatency?.presentation() ?? {desynchronized: false, powerPreference: null};
+const rendererReport = () => lowLatency?.rendererReport() ?? 'SDL3 / WebGL2 / C++';
 const keyboard = createBrowserKeyboard({
   hostContext: {
     protocol,
@@ -321,7 +328,8 @@ async function command(m) {
         // 持久化录像回灌 catalog（launcher 工作台经 write 写入的、以及上次
         // 会话游戏内保存的）：晚于 loop_start，与 th13.html 内置预装同一拍。
         restoreReplaysToCatalog();
-        emit('runtime-info', {renderer: 'SDL3 / WebGL2 / C++', architecture: protocol, ...runtimeBuild});
+        emit('runtime-info', {renderer: rendererReport(), presentation: canvasPresentation(),
+          architecture: protocol, ...runtimeBuild});
       }
       return {};
     case 'sync':
