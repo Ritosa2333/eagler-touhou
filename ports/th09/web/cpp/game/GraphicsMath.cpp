@@ -1,14 +1,42 @@
 #include "GraphicsMath.hpp"
 #include <cmath>
+#if defined(_WIN32) && (defined(_M_X64) || defined(__x86_64__))
+#include <xmmintrin.h>
+#endif
 namespace th09 {
+namespace {
+// Match the original D3DX dispatch selected on Windows x64.
+constexpr bool simd_math(){
+#if defined(_WIN32) && (defined(_M_X64) || defined(__x86_64__))
+    return true;
+#else
+    return false;
+#endif
+}
+}
 float GraphicsMath::length(const Vec3& v){return std::sqrt((v.x*v.x+v.y*v.y)+v.z*v.z);}
 Vec3 GraphicsMath::normalize(const Vec3& v){
     const float squared=(v.x*v.x+v.y*v.y)+v.z*v.z;
+#if defined(_WIN32) && (defined(_M_X64) || defined(__x86_64__))
+    if(simd_math()){
+        if(squared<0x1p-46f)return {};
+        const auto value=_mm_set_ss(squared),estimate=_mm_rsqrt_ss(value);
+        const auto correction=_mm_sub_ss(_mm_set_ss(3.f),_mm_mul_ss(_mm_mul_ss(value,estimate),estimate));
+        const float inverse=_mm_cvtss_f32(_mm_mul_ss(_mm_mul_ss(_mm_set_ss(.5f),estimate),correction));
+        return {v.x*inverse,v.y*inverse,v.z*inverse};
+    }
+#endif
     if(std::fabs(squared-1.f)<=0x1p-23f)return v;if(squared<=0x1p-126f)return {};
     const float inverse=1.f/std::sqrt(squared);return {v.x*inverse,v.y*inverse,v.z*inverse};
 }
 Vec3 GraphicsMath::cross(const Vec3& a,const Vec3& b){return {a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x};}
 Matrix4 GraphicsMath::multiply(const Matrix4& a,const Matrix4& b){
+    if(simd_math()){
+        Matrix4 result;
+        for(u32 r=0;r<4;++r)for(u32 c=0;c<4;++c)
+            result.m[r][c]=((a.m[r][0]*b.m[0][c]+a.m[r][1]*b.m[1][c])+a.m[r][2]*b.m[2][c])+a.m[r][3]*b.m[3][c];
+        return result;
+    }
     // Retain the scalar library's accumulation order to avoid changing the
     // original camera projection at adjacent pixel boundaries.
     static constexpr u8 order[16][4]={{3,0,2,1},{1,3,2,0},{3,0,2,1},{3,2,0,1},{3,0,1,2},{2,3,1,0},{1,3,0,2},{1,3,2,0},{3,0,1,2},{3,2,1,0},{1,0,3,2},{3,2,1,0},{3,0,1,2},{3,2,1,0},{1,0,3,2},{3,2,1,0}};
@@ -35,10 +63,24 @@ Vec3 GraphicsMath::project(const Vec3& p,const Viewport& v,const Matrix4& projec
     return project(p,v,multiply(multiply(world,view),projection));
 }
 Vec3 GraphicsMath::project(const Vec3& p,const Viewport& v,const Matrix4& m){
+    if(simd_math()){
+        float q[4];for(u32 c=0;c<4;++c)q[c]=(p.x*m.m[0][c]+p.y*m.m[1][c])+(p.z*m.m[2][c]+m.m[3][c]);
+        float inverse=1.f/q[3];
+#if defined(_WIN32) && (defined(_M_X64) || defined(__x86_64__))
+        const auto value=_mm_set_ss(q[3]),estimate=_mm_rcp_ss(value);
+        inverse=_mm_cvtss_f32(_mm_sub_ss(_mm_add_ss(estimate,estimate),_mm_mul_ss(_mm_mul_ss(estimate,value),estimate)));
+#endif
+        const float x=q[0]*inverse,y=q[1]*inverse,z=q[2]*inverse;
+        return {(x+1.f)*float(v.width)*.5f+float(v.x),(1.f-y)*float(v.height)*.5f+float(v.y),z*(v.far_depth-v.near_depth)+v.near_depth};
+    }
     float q[4];for(u32 c=0;c<4;++c)q[c]=((p.x*m.m[0][c]+p.y*m.m[1][c])+p.z*m.m[2][c])+m.m[3][c];
     const float inv=1.f/q[3];return {(q[0]*inv+1.f)*float(v.width)*.5f+float(v.x),(1.f-q[1]*inv)*float(v.height)*.5f+float(v.y),q[2]*inv*(v.far_depth-v.near_depth)+v.near_depth};
 }
 Matrix4 GraphicsMath::translated_projection(const Vec3& p,const Matrix4& view,const Matrix4& projection,const Matrix4& untranslated){
+    if(simd_math()){
+        Matrix4 world;world.identity();world.m[3][0]=p.x;world.m[3][1]=p.y;world.m[3][2]=p.z;
+        return multiply(multiply(world,view),projection);
+    }
     const auto row=[](float* out,const float* a,const Matrix4& b){
         out[0]=((a[3]*b.m[3][0]+a[0]*b.m[0][0])+a[1]*b.m[1][0])+a[2]*b.m[2][0];
         out[1]=((a[3]*b.m[3][1]+a[2]*b.m[2][1])+a[1]*b.m[1][1])+a[0]*b.m[0][1];
