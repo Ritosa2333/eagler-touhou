@@ -111,6 +111,7 @@ main{max-width:1328px}.screen{max-width:1280px}
 @media(max-width:500px){.web-input-actions{gap:4px}.web-input-button{font-size:10px;padding:5px;min-height:38px}}
 
 /* TH128 thprac: fixed game coordinates and upstream font priority. */
+.screen:has(#thprac-tool-ui:not([hidden]) #thprac-advanced:not([hidden])) .thprac-layer{z-index:60}
 @font-face{font-family:ThpracZh;src:local("Microsoft YaHei UI Light"),local("Microsoft YaHei Light"),local("Microsoft YaHei");font-weight:300;font-style:normal;font-display:swap}
 .thprac-layer{position:absolute;left:0;top:0;width:640px;height:480px;transform:scale(var(--thprac-scale,1));transform-origin:top left;z-index:20;pointer-events:none;font:300 13px/1.3 ThpracZh,"Microsoft YaHei UI Light","Microsoft YaHei Light","Microsoft YaHei","SimHei","SimSun",sans-serif;color:#fff;text-align:left}
 .thprac-layer [lang=en]{font-family:"Segoe UI",Tahoma,sans-serif;font-weight:400}.thprac-layer [lang=ja]{font-family:"Yu Gothic UI","Meiryo UI","MS UI Gothic","MS Mincho",sans-serif;font-weight:400}
