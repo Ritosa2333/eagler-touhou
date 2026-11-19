@@ -37,6 +37,8 @@ th05 使用已有的普通版与多人 Runtime Release，以及 `games/th05/asse
 
 `npm run host:build` 生成完整 Hosted 站点 `dist/site/`。`npm run package:external-site` 从其构建配套 External 站点。`npm run import` 生成 `dist/import-site/`，并在 `dist/import/` 下为每个注册游戏生成一个 ZIP。输入变化后，重新构建这些输出目录。
 
+每个目标站点可在打包时传 `npm run host:build -- --no-download`，从已有 Hosted 清单和 Runtime Release 生成 `dist/import-site/`。直接调用 `scripts/package-server.mjs` 时使用 `--no-download`（或 `--no-download=1`），并传入 Hosted `--site-manifest`；使用 `tools/maintainer/assemble-site.ps1` 时传 `-NoDownload -SiteManifest`。开关关闭时采用常规的 `resourceMode` 配置。
+
 External 部署使用同一 Hosted 版本构建的站点配对。重定向、CORS、Range 请求及配对发布步骤见[外置资源模式](EXTERNAL_RESOURCE_MODE.md)。
 
 ## 静态托管

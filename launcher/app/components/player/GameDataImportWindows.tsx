@@ -42,7 +42,7 @@ export function GameDataImportWindows({model, getRuntimeReady}: GameDataImportWi
         {!state.passwordRequired && <UiButton className="transfer-download" id="transferDownload" type="button" disabled={state.busy || !fallback}
           title={t(fallback ? 'package.fallbackLinkTitle' : 'package.fallbackLinkUnavailableTitle')} onClick={model.openLink}>{t('action.openLink')}</UiButton>}
       </div>
-      <input id="gameDataImportInput" type="file" accept=".zip,.rar,.7z,.dat,.data,.wav,.ogg" multiple hidden onChange={event => {
+      <input id="gameDataImportInput" type="file" accept=".zip,.rar,.7z,.dat,.data,.wav,.ogg,.ttc,.otf" multiple hidden onChange={event => {
         const files = Array.from(event.currentTarget.files ?? []);
         event.currentTarget.value = '';
         void model.importSelection(files);

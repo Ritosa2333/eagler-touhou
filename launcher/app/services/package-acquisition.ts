@@ -116,7 +116,9 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
   const getCatalogUrl = (version: GameVersion = 'original') => version === 'beauty'
     ? new URL('beauty/final/release-catalog.json', baseUrl).href : catalogUrl;
   async function getPublication(version: GameVersion = 'original', signal?: AbortSignal) {
-    if (version === 'original') return {catalog: metadata.getSnapshot().releaseCatalog, catalogUrl};
+    const {siteManifest, releaseCatalog} = metadata.getSnapshot();
+    if (siteManifest?.shared.resourceMode === 'import') return {catalog: null, catalogUrl: getCatalogUrl(version)};
+    if (version === 'original') return {catalog: releaseCatalog, catalogUrl};
     if (!beautyCatalog) {
       const response = await fetchImpl(getCatalogUrl(version), {cache: 'no-store', signal});
       if (!response.ok) throw new Error(`美化版资源目录不可用：HTTP ${response.status}`);
@@ -189,6 +191,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       // and never consult or install an original publication.
       const local = await deps.readCurrent(game, {gameVersion}); checkPreparationAbort(request.signal);
       if (local.generation) return installedResult(await repair(local, request), request);
+      if (metadataSnapshot.siteManifest?.shared.resourceMode === 'import') throw new GameDataAcquisitionError(t('package.importServerNoFiles'));
       try {
         request.onAcquisitionActivity?.(true);
         const publication = await getPublication(gameVersion, request.signal);
@@ -216,7 +219,8 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         try {await metadata.initialize();} catch {checkPreparationAbort(request.signal);}
         metadataSnapshot = metadata.getSnapshot();
       }
-      const publishedRevision = metadataSnapshot.releaseCatalog?.games[game]?.revision;
+      const publishedRevision = metadataSnapshot.siteManifest?.shared.resourceMode === 'import'
+        ? undefined : metadataSnapshot.releaseCatalog?.games[game]?.revision;
       const pc98Update = pc98DiskGame && !!publishedRevision && publishedRevision !== installed.generation.descriptor.revision;
       if (!legacyTh03 && !pc98Update) installed = await repair(installed, request);
       if (['th01', 'th02', 'th04'].includes(game)) {
@@ -232,7 +236,8 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         const hostedLayout = metadataSnapshot.siteManifest?.games[game]?.gameData?.layout;
         const installedLayout = generation.descriptor.runtimeRequirement?.dataLayout;
         const incompatible = !!hostedLayout && !!installedLayout && hostedLayout !== installedLayout;
-        const published = metadataSnapshot.releaseCatalog?.games[game];
+        const published = metadataSnapshot.siteManifest?.shared.resourceMode === 'import'
+          ? undefined : metadataSnapshot.releaseCatalog?.games[game];
         if (incompatible || pc98Update || (missingDisk && published && published.revision !== generation.descriptor.revision)) {
           if (!published) throw new GameDataAcquisitionError('游戏资源版本不兼容，无法获取更新');
           request.onAcquisitionActivity?.(true);
@@ -293,7 +298,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     }
     if (!metadataSnapshot.releaseCatalog) {try {await metadata.initialize();} catch {} checkPreparationAbort(request.signal); metadataSnapshot = metadata.getSnapshot();}
     const {siteManifest: host, releaseCatalog: catalog} = metadataSnapshot;
-    if (catalog?.games[game]) {
+    if (host?.shared.resourceMode !== 'import' && catalog?.games[game]) {
       try {
         request.onAcquisitionActivity?.(true);
         progress(request, 'package.installingResources');
@@ -370,7 +375,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       checkPreparationAbort(signal);
       const shared = metadata.getSnapshot().siteManifest?.shared;
       const path = target === '/msgothic.ttc' ? shared?.vanillaFont : shared?.unicodeFont;
-      try {
+      if (shared?.resourceMode !== 'import') try {
         const response = await fetchImpl(new URL(path ?? 'shared' + target, baseUrl), {signal, cache: 'force-cache'});
         if (response.ok) {
           const font = await response.blob();

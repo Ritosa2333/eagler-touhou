@@ -73,7 +73,14 @@ node scripts/verify-frontend-game-catalog.mjs .cache/build/ui-rewrite/client pat
 npm run verify:deployed -- https://example.com/
 ```
 
-若站点让玩家自行导入 Package，运行 `npm run import`；详情见[自托管参考](SELF_HOSTING_REFERENCE.md)。若大体积 Package 放在独立源站，按[外置资源模式](EXTERNAL_RESOURCE_MODE.md)配置。
+有些站点只接受本地导入时，用同一份 Hosted 构建和 `runtime-release/` 为这些站点单独打包：
+
+```sh
+npm run host:build -- --no-download --site-url=https://example.invalid/ --output=dist/site-a
+npm run verify:server -- dist/site-a
+```
+
+发布 `dist/site-a/`；省略 `--output` 时输出到 `dist/import-site/`。产物包含 Launcher 和单人／多人 Runtime，站点不提供游戏数据、音乐、语言包或备用下载链接。玩家可导入完整游戏包；直接导入原版资源时，可将 `msgothic.ttc` 和 `unifont.otf` 一并选入，或重用浏览器里已导入的字体。该命令读取 `dist/site/site-manifest.json` 取得兼容性信息，不会重建 Hosted 站点或导出游戏 ZIP。其它站点打包时省略 `--no-download`。要同时生成本地导入 ZIP，运行 `npm run import`；大体积 Package 需要放在独立源站时，参见[外置资源模式](EXTERNAL_RESOURCE_MODE.md)。
 
 源码检出的 `npm run host` 和 `npm run import` 使用同一套 Launcher Host 实现。维护者通过[发布流程](RELEASE.md)生成便携自托管包。
 
