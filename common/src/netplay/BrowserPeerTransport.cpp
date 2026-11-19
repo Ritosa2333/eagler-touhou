@@ -34,6 +34,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             !preferTurn && Module.eaglerOptions?.netplayAdaptiveTurn !== false) {
             signalUrl.searchParams.set('rtcStartup', '1');
             signalUrl.searchParams.set('rtcKeepPrimary', '1');
+            if (!choosesRoute || requestedRoute === 'auto') signalUrl.searchParams.set('rtcTurnOnDemand', '1');
         }
 
         // BEGIN generated adaptive-peer-route
@@ -92,6 +93,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 path !== active && ready(path) && !path.measuring);
             const switching = () => options.allowSwitching !== false && peerSwitching;
             const surveyEnabled = () => options.surveyEnabled?.() === true && options.enabled && switching();
+            const onDemandTurn = () => options.onDemandTurn?.() === true;
             const activeRoute = () => active.surveySerial ? active.path :
                 active.path === 'direct' ? 'direct' : options.initialRelayRoute?.() || 'turn';
             const offerRoute = path => {
@@ -102,6 +104,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             };
             const offerReady = () => !!offered && offered.path !== active && ready(offered.path) && eligible() &&
                 now() - offered.at <= 10000 && now() - offered.path.lastRoundTripAt <= 3000;
+            const activeStalled = time => !ready(active) ||
+                time - Math.max(switchedAt, quietUntil, active.lastRoundTripAt, active.lastTrafficAt) >= WarmStandbyStallMs;
             const diagnostic = reason => options.changed?.({
                 selected: pathName(active), generation, epoch, reason,
                 verifying: !!verification, standbyReady: ready(backup),
@@ -177,14 +181,13 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             }
             function backupServers(route) {
                 const protocol = route === 'direct' ? /^stuns?:/i : /^turns?:/i;
-                const servers = options.iceServers().flatMap(server => {
+                return options.iceServers().flatMap(server => {
                     const urls = (Array.isArray(server.urls) ? server.urls : [server.urls]).filter(url => protocol.test(String(url)));
                     return urls.length ? [{...server, urls}] : [];
                 });
-                return route === 'direct' ? servers : servers.slice(0, 1);
             }
             async function ensureBackup() {
-                if (startup || !controller || !started || !supported || !switching() || !alive() || backup || planned || now() < retryAt) return;
+                if (startup || onDemandTurn() || !controller || !started || !supported || !switching() || !alive() || backup || planned || now() < retryAt) return;
                 const route = primary.path === 'direct' ? 'turn' : primary.path === 'turn' && directRetry ? 'direct' : null;
                 if (!route) return;
                 const servers = backupServers(route);
@@ -358,6 +361,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             }
             function beginHandoff(path, offerTicket) {
                 if (proposal || path === active || !ready(path)) return false;
+                if (onDemandTurn() && manualSwitch && !offerTicket && !activeStalled(now())) return false;
                 const id = epoch + 1;
                 if (!sendMessage(path, {kind:'switch', path:pathName(path), epoch:id, generation:wireGeneration(path),
                     ...(offerTicket && {offerTicket})})) return false;
@@ -391,8 +395,12 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             }
             function recover() {
                 if (!started || !supported || !switching() || !eligible()) return false;
-                const surveying = surveyEnabled() && ((planned && planned !== active) || options.surveyPending?.());
-                if (!ready(otherPath()) && !surveying) return false;
+                let surveying = surveyEnabled() && ((planned && planned !== active) || options.surveyPending?.());
+                if (!ready(otherPath()) && !surveying) {
+                    if (!onDemandTurn() || !surveyEnabled() || !pairedQuality) return false;
+                    if (!recoveryUntil && !options.surveySignal?.({type:'rtc-route-unavailable', route:activeRoute()})) return false;
+                    surveying = true;
+                }
                 if (!recoveryUntil) {
                     recoveryUntil = now() + (surveying ? 16000 : 7000);
                     recoveryProbe = active.probeSequence;
@@ -439,7 +447,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                         manualSwitch = pairedQuality && options.manualSwitch === true && m.manualSwitch === true;
                         if (!helloSent) hello();
                         ensureBackup().catch(() => {});
-                    } else if (supported && switching() && ['description', 'candidate'].includes(m.kind) && path === primary && kind === 'control') {
+                    } else if (supported && switching() && !onDemandTurn() && ['description', 'candidate'].includes(m.kind) && path === primary && kind === 'control') {
                         negotiation = negotiation.then(() => receiveNegotiation(m)).catch(() => discardBackup());
                     } else if (supported && m.kind === 'ping' && kind === 'input' && Number.isSafeInteger(m.id) && m.id > 0) {
                         if (!eligible()) { if (!path.measuring) sendMessage(path, {kind: 'pause'}); return true; }
@@ -608,6 +616,13 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 }
                 if (supported && time >= quietUntil && eligible()) {
                     if (offered && !offerReady()) offered = null;
+                    if (onDemandTurn() && previous && !proposal && time > previousUntil) {
+                        const retired = previous;
+                        closePath(retired);
+                        if (retired === planned) planned = null;
+                        if (retired === retained) retained = null;
+                        if (retired === primary) startupPrimaryUntil = 0;
+                    }
                     if (ackPending) ackPending = !sendMessage(active, {kind: 'ack', sequence: receivedSequence});
                     replay(active);
                     ensureBackup().catch(() => {});
@@ -633,8 +648,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     if (offered && !offered.confirmed && current.count >= policy.minimumSamples &&
                         current.score <= offered.toMs * 1.1 + 5) offered = null;
                     // A recently tested spare can cover silence before the ICE watchdog runs.
-                    if (!proposal && offerReady() && time - offered.path.lastRoundTripAt <= policy.probeTimeoutMs &&
-                        time - Math.max(switchedAt, quietUntil, active.lastRoundTripAt, active.lastTrafficAt) >= WarmStandbyStallMs)
+                    if (!proposal && offerReady() && time - offered.path.lastRoundTripAt <= policy.probeTimeoutMs && activeStalled(time))
                         recover();
                     const route = activeRoute();
                     const initialSurvey = standbySerial === 0 && options.initialSwarmSurvey?.() === true && route !== 'direct';
@@ -649,7 +663,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                             planned.reported = options.surveySignal?.({type: 'rtc-route-report', serial: planned.surveySerial, quality: surveyQuality(result)});
                     }
                     const selectPlanned = controller && planned && !planned.measuring && planned !== active && ready(planned);
-                    if (selectPlanned && !verification && !proposal) verify(false, planned);
+                    if (selectPlanned && !verification && !proposal) verify(!!recoveryUntil, planned);
                     if (controller && startupPrimaryUntil && !epoch && !primary.compared && !verification && !proposal &&
                         current.count >= policy.minimumSamples && ready(primary))
                         verify(false, primary);
@@ -674,7 +688,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                                 const current = pairedQuality ? pairedScore(present, verification.remote.present) : present;
                                 if (candidate.received >= policy.minimumSamples && candidate.loss <= .05 &&
                                     (verification.force && !ready(active) || candidate.score * 1.1 + 5 < current.score)) {
-                                    if (!manualSwitch || verification.force) beginHandoff(next);
+                                    const automatic = verification.force && (!onDemandTurn() || activeStalled(time));
+                                    if (!manualSwitch || automatic) beginHandoff(next);
                                     else {
                                         const fromMs = Number.isFinite(current.p95) ? Math.ceil(current.p95) : null;
                                         const toMs = Math.ceil(candidate.p95), ticket = verification.ticket;
@@ -1325,6 +1340,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     manualSwitch: tag === 'th09' || !!hudCanvas,
                     onRouteStatus: hudCanvas ? () => this.refreshRouteSwitch() : undefined,
                     iceServers: () => this.fallbackIceServers ?? this.iceServers,
+                    onDemandTurn: () => this.onDemandTurn === true,
                     surveyEnabled: () => this.canSurveySwarm(),
                     surveyPending: () => Date.now() < this.rtcSurveyUntil,
                     initialSwarmSurvey: () => this.initialSwarmSurvey,
@@ -1463,6 +1479,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                         }
                         this.rtcReplaceCapable ||= message.rtcReplace === true;
                         this.adaptiveSwarm = message.adaptiveSwarm === true;
+                        this.onDemandTurn = message.onDemandTurn === true;
                         this.initialSwarmSurvey = message.surveyInitialSwarm === true;
                         this.initialRelayRoute = message.turnMode !== 'swarm' ? 'turn' :
                             Number.isSafeInteger(message.initialSwarmWorker) ? 'swarm-' + message.initialSwarmWorker : 'swarm';

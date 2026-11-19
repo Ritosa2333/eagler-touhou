@@ -27,7 +27,7 @@ public:
     AnmVm glyph,digit;std::array<AsciiEntry,256> queue;
     std::array<std::array<ScorePopup,100>,2> popups;
     u32 count=0,color=0xffffffff;Vec2 scale{1,1};i32 field_view=0,spacing=9,popup_cursor=0;
-    AsciiRenderer(GameResources& r,AsciiOutput& o):resources(r),output(o){}
+    AsciiRenderer(GameResources& r,AsciiOutput& o):resources(r),output(o){std::memset(popups.data(),0,sizeof(popups));}
     bool initialize();
     void text(const Vec3&,const char*);
     void number(const Vec3&,i32 width,i32 value);

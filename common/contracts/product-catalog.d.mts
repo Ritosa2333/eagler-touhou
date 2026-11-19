@@ -37,7 +37,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         package:Readonly<{dataFileId:'game-data';dataTarget:'/th01.data';musicSourceDirectories:Readonly<{ogg:'music'}>;musicMounts:Readonly<{ogg:'/bgm/akyu'}>}>;
         musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true;sources:readonly ['original','akyu']}>;
         touchFire:Readonly<{mode:'held-key';labelKey:'touch.actionHold';key:Readonly<{code:'KeyZ';key:'z';keyCode:90}>}>;
-        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
+        support:Readonly<{highRefreshRate:false;sourceRepository:string}>;
         replay:Readonly<{prefix:'th01';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th01/multiplayer/th01.html';
         multiplayer:Readonly<{titleKey:'game.title.th01mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th01PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:false;inputTiming:Readonly<{rollbackLimit:8;sendPredictionLimit:8;rollbackDefault:true;runtimeTiming:true}>}>;
@@ -51,7 +51,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         package:Readonly<{dataFileId:'game-data';dataTarget:'/th02.data';musicSourceDirectories:Readonly<{ogg:'bgm'}>;musicMounts:Readonly<{ogg:'/bgm'}>}>;
         musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true}>;
         touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
-        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
+        support:Readonly<{highRefreshRate:false;sourceRepository:string}>;
         replay:Readonly<{prefix:'th02';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th02/multiplayer/th02.html';
         multiplayer:Readonly<{titleKey:'game.title.th02mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th02PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:true;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:true;runtimeTiming:true}>}>;
@@ -65,7 +65,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         package:Readonly<{dataFileId:'game-data';dataTarget:'/th03.data';musicSourceDirectories:Readonly<{ogg:'music'}>;musicMounts:Readonly<{ogg:'/bgm/akyu'}>}>;
         musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true;sources:readonly ['original','akyu']}>;
         touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
-        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
+        support:Readonly<{highRefreshRate:false;sourceRepository:string}>;
         replay:Readonly<{prefix:'th03';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th03/multiplayer/th03.html';
         multiplayer:Readonly<{titleKey:'game.title.th03mp';gameplay:'versus';inGameSelection:true;playerCounts:readonly [2];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th03PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:false;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:true;runtimeTiming:true}>}>;
@@ -79,7 +79,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         package:Readonly<{dataFileId:'game-data';dataTarget:'/th04.data';musicSourceDirectories:Readonly<{ogg:'music'}>;musicMounts:Readonly<{ogg:'/bgm/akyu'}>}>;
         musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true;sources:readonly ['original','akyu']}>;
         touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
-        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
+        support:Readonly<{highRefreshRate:false;sourceRepository:string}>;
         replay:Readonly<{prefix:'th04';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th04/multiplayer/th04.html';
         multiplayer:Readonly<{titleKey:'game.title.th04mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th04PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:true;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:true;runtimeTiming:true}>}>;
@@ -95,7 +95,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"; sources: readonly ["original", "akyu"]}>;
         thpracRuntime: Readonly<{session: "native"}>;
         touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
-        support: Readonly<{highRefreshRate: false; sourceRepository: "https://github.com/Goan114/uth05win-vibe"; adaptationNotice: "early-test"}>;
+        support: Readonly<{highRefreshRate: false; sourceRepository: "https://github.com/Goan114/uth05win-vibe"}>;
         package: Readonly<{dataFileId: "game-data"; dataTarget: "/th05.data"; rawDataImport: Readonly<{fileNames: readonly string[]}>;
             musicSourceDirectories: Readonly<{ogg: "music"}>; musicMounts: Readonly<{ogg: "/music"}>}>;
         replay: Readonly<{prefix: "th05"; slotPrefix: "replay"; slots: 100; extensions: readonly ["rpy"]}>; features: Readonly<{thprac: true; languages: true; focusHitbox: true}>;
@@ -107,7 +107,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         requiredShared: readonly string[]; runtimeAssets: readonly string[];
         musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"}>;
         touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
-        support: Readonly<{highRefreshRate: false; sourceRepository: "https://github.com/Ritosa2333/ph3-modern"; adaptationNotice: "early-test"}>;
+        support: Readonly<{highRefreshRate: false; sourceRepository: "https://github.com/Ritosa2333/ph3-modern"}>;
         package: Readonly<{dataFileId: "game-data"; dataTarget: "/hsob.data"; musicSourceDirectories: Readonly<{ogg: "music"}>; musicMounts: Readonly<{ogg: "/game/script/th_hsob/music"}>}>;
         replay: Readonly<{prefix: "Main_replay"; extensions: readonly ["dat"]}>;
         features: Readonly<{thprac: false; languages: false; focusHitbox: false}>;
@@ -299,7 +299,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         touchFire: Readonly<{mode:"held-key";labelKey:"touch.actionHold";key:Readonly<{code:"KeyZ";key:"z";keyCode:90}>}>;
         musicCapabilities: Readonly<{midi:false}>;
         musicRuntime: Readonly<{localOggConfigureMode:"runtime-selection";requiresCompleteOgg:true}>;
-        support: Readonly<{highRefreshRate:false;sourceRepository:"https://github.com/Goan114/th075";adaptationNotice:"early-test"}>;
+        support: Readonly<{highRefreshRate:false;sourceRepository:"https://github.com/Goan114/th075"}>;
         runtimeFileLayout: "directory"; requiredShared: readonly string[]; runtimeAssets: readonly string[]; dataProvider: "retail-memory";
         package: Readonly<{dataFileId:"game-data";dataTarget:"/th075.data";maxImportBytes:number;musicSourceDirectories:Readonly<{ogg:"music"}>;musicMounts:Readonly<{ogg:"/music"}>}>;
         replay: Readonly<{prefix:"th075";extensions:readonly string[];naming:"filename"}>;
@@ -332,7 +332,6 @@ export declare const PRODUCT_GAMES: Readonly<{
         support: Readonly<{
             highRefreshRate: true;
             sourceRepository: "https://github.com/YomotsuHisami/th08";
-            adaptationNotice: "early-test";
         }>;
         runtimeFileLayout: "directory";
         requiredShared: readonly string[];
@@ -466,7 +465,6 @@ export declare const PRODUCT_GAMES: Readonly<{
         support: Readonly<{
             highRefreshRate: true;
             sourceRepository: "https://github.com/YomotsuHisami/th09";
-            adaptationNotice: "early-test";
         }>;
         runtimeFileLayout: "directory";
         requiredShared: readonly string[];
@@ -545,7 +543,6 @@ export declare const PRODUCT_GAMES: Readonly<{
         support: Readonly<{
             highRefreshRate: true;
             sourceRepository: "https://github.com/YomotsuHisami/th10";
-            adaptationNotice: "early-test";
         }>;
         runtimeFileLayout: "directory";
         requiredShared: readonly string[];
@@ -639,7 +636,6 @@ export declare const PRODUCT_GAMES: Readonly<{
         support: Readonly<{
             highRefreshRate: false;
             sourceRepository: "https://github.com/YomotsuHisami/th11";
-            adaptationNotice: "early-test";
         }>;
         runtimeFileLayout: "directory";
         requiredShared: readonly string[];
@@ -754,7 +750,6 @@ export declare const PRODUCT_GAMES: Readonly<{
         support: Readonly<{
             highRefreshRate: true;
             sourceRepository: "https://github.com/Tweet-META/th12";
-            adaptationNotice: "early-test";
         }>;
         replay: Readonly<{
             prefix: "th12";
@@ -803,7 +798,6 @@ export declare const PRODUCT_GAMES: Readonly<{
         support: Readonly<{
             highRefreshRate: false;
             sourceRepository: "https://github.com/AgentMystia/th13";
-            adaptationNotice: "early-test";
         }>;
         runtimeFileLayout: "directory";
         requiredShared: readonly string[];
@@ -863,7 +857,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         musicCapabilities: Readonly<{midi: false}>;
         musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"}>;
         touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
-        support: Readonly<{highRefreshRate: false; sourceRepository: string; adaptationNotice: "early-test"}>;
+        support: Readonly<{highRefreshRate: false; sourceRepository: string}>;
         package: Readonly<{dataFileId:"game-data";dataTarget:"/th14.dat";rawDataImport:Readonly<{fileNames:readonly string[]}>;
             musicSourceDirectories:Readonly<{ogg:"music"}>;musicMounts:Readonly<{ogg:"/music"}>}>;
         replay: Readonly<{prefix: "th14"}>;
@@ -902,7 +896,6 @@ export declare const PRODUCT_GAMES: Readonly<{
         support: Readonly<{
             highRefreshRate: true;
             sourceRepository: "https://github.com/YomotsuHisami/th15";
-            adaptationNotice: "early-test";
         }>;
         runtimeFileLayout: "directory";
         requiredShared: readonly string[];
@@ -979,7 +972,6 @@ export declare const PRODUCT_GAMES: Readonly<{
         support: Readonly<{
             highRefreshRate: false;
             sourceRepository: "https://github.com/Goan114/eagler-touhou";
-            adaptationNotice: "early-test";
         }>;
         runtimeFileLayout: "directory";
         requiredShared: readonly ["/msgothic.ttc", "/unifont.otf"];
@@ -1018,7 +1010,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         requiredShared:readonly string[];runtimeAssets:readonly string[];
         musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:"runtime-selection"}>;
         touchFire:Readonly<{mode:"toggle";labelKey:"touch.tapToggle"}>;
-        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:"early-test"}>;
+        support:Readonly<{highRefreshRate:false;sourceRepository:string}>;
         package:Readonly<{dataFileId:"game-data";dataTarget:"/th19.dat";rawDataImport:Readonly<{fileNames:readonly string[]}>;musicSourceDirectories:Readonly<{ogg:"music"}>;musicMounts:Readonly<{ogg:"/music"}>}>;
         replay:Readonly<{prefix:"th19"}>;multiplayerRuntime:"./runtime/th19/multiplayer/th19.html";
         multiplayer:Readonly<MultiplayerProductConfig>;
@@ -1049,7 +1041,6 @@ export declare const PRODUCT_GAMES: Readonly<{
         support: Readonly<{
             highRefreshRate: false;
             sourceRepository: "https://github.com/Goan114/touhou20";
-            adaptationNotice: "early-test";
             credit: Readonly<{
                 name: "ぃ尐懒猫ゞ";
                 url: "https://space.bilibili.com/15669619";
@@ -1374,7 +1365,6 @@ export declare function createLocalProductManifest(): {
             support: Readonly<{
                 highRefreshRate: true;
                 sourceRepository: "https://github.com/YomotsuHisami/th08";
-                adaptationNotice: "early-test";
             }>;
             runtimeFileLayout: "directory";
             requiredShared: readonly string[];
@@ -1521,7 +1511,6 @@ export declare function createLocalProductManifest(): {
             support: Readonly<{
                 highRefreshRate: true;
                 sourceRepository: "https://github.com/YomotsuHisami/th09";
-                adaptationNotice: "early-test";
             }>;
             runtimeFileLayout: "directory";
             requiredShared: readonly string[];
@@ -1613,7 +1602,6 @@ export declare function createLocalProductManifest(): {
             support: Readonly<{
                 highRefreshRate: true;
                 sourceRepository: "https://github.com/YomotsuHisami/th10";
-                adaptationNotice: "early-test";
             }>;
             runtimeFileLayout: "directory";
             requiredShared: readonly string[];
@@ -1720,7 +1708,6 @@ export declare function createLocalProductManifest(): {
             support: Readonly<{
                 highRefreshRate: false;
                 sourceRepository: "https://github.com/YomotsuHisami/th11";
-                adaptationNotice: "early-test";
             }>;
             runtimeFileLayout: "directory";
             requiredShared: readonly string[];
@@ -1833,7 +1820,6 @@ export declare function createLocalProductManifest(): {
             support: Readonly<{
                 highRefreshRate: true;
                 sourceRepository: "https://github.com/YomotsuHisami/th15";
-                adaptationNotice: "early-test";
             }>;
             runtimeFileLayout: "directory";
             requiredShared: readonly string[];
@@ -1921,7 +1907,6 @@ export declare function createLocalProductManifest(): {
             support: Readonly<{
                 highRefreshRate: false;
                 sourceRepository: "https://github.com/Goan114/touhou20";
-                adaptationNotice: "early-test";
                 credit: Readonly<{
                     name: "ぃ尐懒猫ゞ";
                     url: "https://space.bilibili.com/15669619";

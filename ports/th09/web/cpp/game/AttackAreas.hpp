@@ -12,6 +12,7 @@ struct AttackArea {
 };
 struct AreaCollisionActions {
     virtual ~AreaCollisionActions()=default;
+    virtual Vec3 transfer_position(const Vec3& p,const PlayfieldGeometry& fallback)const{return fallback.to_screen(p);}
     virtual TransferParameters* create_transfer(i32 effect,const Vec3& from,const Vec3& target)=0;
     virtual void charge(float)=0;
     virtual void play_sound(i32,i32)=0;

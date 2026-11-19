@@ -6,7 +6,6 @@ import {SiteFooter} from './SiteFooter';
 
 export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> {
   masthead: ReactNode;
-  serverStatusNote?: ReactNode;
   optionsOpen: boolean;
   roomOpen?: boolean;
   roomDrawer?: ReactNode;
@@ -14,7 +13,7 @@ export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' |
   onDonation?: () => void;
 }
 /** The page holds library content. Settings occupy the application overlay layer. */
-export function LibrarySurface({masthead, serverStatusNote, optionsOpen, roomOpen = false, roomDrawer, children, onDonation, ...rail}: LibrarySurfaceProps) {
+export function LibrarySurface({masthead, optionsOpen, roomOpen = false, roomDrawer, children, onDonation, ...rail}: LibrarySurfaceProps) {
   const {t} = useLocale();
   return <><div className="library-background" aria-hidden="true"/><div className="sheet">
     {masthead}
@@ -26,6 +25,6 @@ export function LibrarySurface({masthead, serverStatusNote, optionsOpen, roomOpe
       {children}
     </main>
     <SiteFooter onDonation={onDonation}/>
-    {roomDrawer}{serverStatusNote}
+    {roomDrawer}
   </div></>;
 }

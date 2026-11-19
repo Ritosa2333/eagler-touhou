@@ -78,7 +78,8 @@ public:
     void update(const PlayerFrameContext&,DamageRules&);
     void finish_charge_frame(){prioritized_charge(false);}
     bool apply_charge_sample(const ChargeSample& sample){return !sample.active||ShotControl(control,shots.areas,*this).update_priority(input,frame.automatic_focus,i32(motion.player),resource,motion.position,frame.timing,sample,pending_charge,false);}
-    void draw(bool fading=false);
+    void draw(bool fading,i32 scene_state,i32 ending_frames,bool hide_players);
+    void draw(bool fading=false){draw(fading,frame.scene_state,frame.ending_frames,frame.hide_players);}
     void charge(float amount)override;
     bool add_combo(const Vec3& p,i32 normal,i32 spirit,i32 character,i32 score){return combo_system().add(combo_state,p,normal,spirit,character,score);}
 };

@@ -87,6 +87,29 @@ test('battle stalls do not queue a long history of stale local controls',()=>{
   _th03_classic_defer_audio(){},_th03_classic_capture:()=>0};
  const match=createRollbackMatch({seat:0,channel:{send:value=>sent.push(JSON.parse(value))},engine,sample:()=>++sampled,now:()=>0});
  for(let i=0;i<40;i++)match.tick();
- assert.equal(match.frame,0);assert.equal(sampled,2);
- assert.deepEqual(sent.filter(m=>m.type==='native-rollback-input').map(m=>m.frame),[0,1]);
+ assert.equal(match.frame,0);assert.equal(sampled,1);
+ assert.deepEqual(sent.filter(m=>m.type==='native-rollback-input').map(m=>m.frame),[0]);
+});
+
+test('battle coalesces successive corrections and sends fresh input before replay',()=>{
+ const events=[],confirmed=[];
+ const engine={HEAPU8:new Uint8Array(16),HEAP32:new Int32Array(4),_th03_classic_scene:()=>9,
+  _th03_classic_surrender_allowed:()=>1,_th03_classic_paused:()=>0,_th03_classic_defer_audio(){},
+  _th03_classic_capture:()=>1,_th03_classic_restore(){events.push('restore');return 1;},
+  _th03_classic_touch(){},_th03_classic_assist_pair(){},_th03_classic_speculative(){},
+  _th03_classic_boundary:()=>0,_th03_classic_step_pair:()=>0,_th03_classic_audio_commands:()=>0,
+  _th03_classic_audio_command_count:()=>0,_th03_classic_audio_commit:()=>0,_th03_classic_audio:()=>0,
+  _th03_classic_audio_frames:()=>0,_th03_semantic_replay_samples:()=>0};
+ const channel={send:text=>events.push(JSON.parse(text).frame)};
+ let input=0;
+ const match=createRollbackMatch({seat:0,channel,engine,sample:()=>input,onConfirmedInput:(frame,pair)=>confirmed.push([frame,pair])});
+ for(let i=0;i<4;i++)match.tick();
+ for(const [frame,value] of [[2,8],[0,4],[1,4]])channel.onmessage({data:JSON.stringify({type:'native-rollback-input',frame,input:value})});
+ assert.equal(match.frame,4);assert.equal(match.rollbacks,0);assert.deepEqual(confirmed,[]);
+ input=2;match.tick();
+ assert.deepEqual(events,[0,1,2,3,4,'restore']);assert.equal(match.frame,5);assert.equal(match.rollbacks,1);
+ assert.deepEqual(confirmed,[[0,[0,4]],[1,[0,4]],[2,[0,8]]]);
+ channel.onmessage({data:JSON.stringify({type:'native-rollback-input',frame:4,input:8})});
+ channel.onmessage({data:JSON.stringify({type:'native-rollback-input',frame:3,input:8})});
+ assert.deepEqual(confirmed.at(-1),[4,[2,8]]);
 });

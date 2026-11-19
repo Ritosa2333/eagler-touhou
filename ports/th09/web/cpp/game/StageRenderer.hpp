@@ -11,7 +11,7 @@ class StageRenderer final:public BackgroundDrawServices,private StageDrawService
     void begin_models(const Camera&)override{renderer.scene_camera(active->camera);renderer.state.textureTransform=true;}
     void fog_enabled(bool value)override{renderer.flush();renderer.state.fog=value;}
     void world_sprite(AnmVm& vm)override{sync_tint();renderer.draw_3d(vm);}
-    void screen_sprite(AnmVm& vm)override{sync_tint();renderer.draw_2d(vm,true);}
+    void screen_sprite(AnmVm& vm)override{sync_tint();renderer.draw_no_rotation(vm,false);}
     void screen_quad(AnmVm& vm,const SpriteVertex* p)override{sync_tint();renderer.draw_quad(vm,p);}
 public:
     explicit StageRenderer(AnmRenderer& r):renderer(r){}

@@ -16,7 +16,7 @@ struct Fixture:ResourceReader,ResourceTextures,BattlePresentation,MatchRuleActio
     void animation(AnmVm&,BattleSprite)override{++draws;}
     void colored(const AnmVm*,const AttackColorVertex*,u32,BattleGeometry,bool)override{++draws;}
     void textured(const AnmVm&,const AttackTextureVertex*,u32,BattleGeometry)override{++draws;}
-    void text(AnmVm&,const char*,u32,u32)override{++events;}
+    void text(AnmVm&,const char*,u32,u32,bool=false)override{++events;}
     void score_popup(i32,const Vec3&,i32,u32)override{++events;}
     void notice(i32,BattleNotice,i32)override{++events;}
     void damage_flash(i32,i32,u32)override{++events;}

@@ -13,7 +13,8 @@ if(!ctx)throw Error('浏览器无法创建游戏画面');
 if(!bitmapContext)ctx.imageSmoothingEnabled=false;
 let worker,serial=0,stopped=false,settings,configuration=[0,0,2],volume=.7,blocked=false,listener=()=>{},keys=new Set();
 let fat,pmd,context,sfx,bgm,musicTask,musicError='',playedName='',pendingMusic=[],cache={},check=null,queuedFrame=null,preparedFrame=null,raf=0,presentPending=false;
-let frameCutoff=0;
+let frameCutoff=0,lastDraw=0;
+const intervals=[];
 let raw=false,points={focus:true,always:false},lastPoints='',acknowledgedPrefix=0,sentPrefix=0,stagedMode=false,preparedReady=false,bootPromise;
 const requests=new Map();
 const rpcMetrics={renderer:bitmapContext?'bitmaprenderer':'2d',roundTripMs:0,commands:0,workerExecutionMs:0,loadRoundTripMs:0,loadExecutionMs:0,displayMs:0,displayed:0,replaced:0,expired:0,lateDisplayed:0,hiddenDiscarded:0,queuedConfirmations:0,presentationRpcs:0};
@@ -36,7 +37,7 @@ function draw(){
  if(document.hidden){releaseFrame(frame);rpcMetrics.hiddenDiscarded++;return;}
  if(Number.isFinite(frame.producedAt)&&performance.timeOrigin+performance.now()-frame.producedAt>50)rpcMetrics.lateDisplayed++;
  const at=performance.now();
- try{if(bitmapContext)bitmapContext.transferFromImageBitmap(frame.bitmap);else ctx.drawImage(frame.bitmap,0,0,640,400);rpcMetrics.displayMs+=performance.now()-at;rpcMetrics.displayed++;}
+ try{if(bitmapContext)bitmapContext.transferFromImageBitmap(frame.bitmap);else ctx.drawImage(frame.bitmap,0,0,640,400);const now=performance.now();rpcMetrics.displayMs+=now-at;rpcMetrics.displayed++;if(lastDraw)intervals.push(now-lastDraw);lastDraw=now;if(intervals.length>120)intervals.shift();}
  catch(error){fatal(error.message);}
  finally{releaseFrame(frame);}
 }
@@ -106,7 +107,7 @@ const sync={
  setRawPresentation(value){raw=!!value;fire('setRawPresentation',[raw]);},
  async unlockAudio(){await sfx?.resume();if(context?.state!=='running')await context?.resume();return context?.state==='running';},
  touchContext:()=>cache.touch??{key:'boot',play:false},readyForRollback:()=>!!cache.ready,restarting:()=>!!cache.restarting,canPredict:()=>cache.reason==='',predictionBlockReason:()=>cache.reason??'原版菜单或关卡加载',
- rollbackInfo:()=>cache.rollback??{},renderInfo:()=>({...cache.render,worker:true}),
+ rollbackInfo:()=>cache.rollback??{},renderInfo:()=>({...cache.render,worker:true,pageDrawn:rpcMetrics.displayed,pageIntervals:intervals.slice(),replaced:rpcMetrics.replaced}),
  performanceInfo:()=>({worker:{...cache.performance},page:{...rpcMetrics},slowSteps:cache.slowSteps?.slice()??[],scope:'cumulative wall-clock observations; nested native/step/restore costs overlap; RPC round trip includes queue/transport/page scheduling; not physical input latency'}),
  diagnosticText:()=>`${(cache.diagnostics||'TH02 启动中').split('\n').slice(0,2).join('\n')}\nWorker 独立模拟 · 核心固定 30000 cycles\n浏览器 BGM：${musicError||bgm?.status||'等待确认关卡'} · 本地完整音效 ${sfx?.info().played??0} 次`,
  faultReport:()=>({...cache.fault,game:cache.game,settings,worker:true,performance:sync.performanceInfo(),music:{...cache.fault?.music,error:musicError,status:bgm?.status,track:bgm?.active?.id},sound:{...cache.fault?.sound,...sfx?.info()}})

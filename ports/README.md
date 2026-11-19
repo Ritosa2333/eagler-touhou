@@ -6,6 +6,10 @@
 
 | 游戏 | 普通版 | MP | 适配检查 |
 | --- | --- | --- | --- |
+| th01 | [开发](th01/README.md) | 同一源码目录 | [普通版／MP](th01/ADAPTATION.md) |
+| th02 | [开发](th02/README.md) | 同一源码目录 | [普通版／MP](th02/ADAPTATION.md) |
+| th03 | [开发](th03/README.md) | 同一源码目录 | [普通版／MP](th03/ADAPTATION.md) |
+| th04 | [开发](th04/README.md) | 同一源码目录 | [普通版／MP](th04/ADAPTATION.md) |
 | th05 | [开发](th05/README.md) | [开发](th05-mp/docs/MULTIPLAYER.md) | [普通版](th05/ADAPTATION.md) · [MP](th05-mp/ADAPTATION.md) |
 | th06 | [源码与开发](th06/README.md) | 同一源码目录，单独构建 | [普通版／MP](th06/ADAPTATION.md) |
 | th07 | [源码与开发](th07/README.md) | 同一源码目录，单独构建 | [普通版／MP](th07/ADAPTATION.md) |
@@ -15,6 +19,7 @@
 | th10 | [开发](th10/README.md) | [开发](th10-mp/README.md) | [普通版](th10/ADAPTATION.md) · [MP](th10-mp/ADAPTATION.md) |
 | th11 | [开发](th11/README.md) | [开发](th11-mp/README.md) | [普通版](th11/ADAPTATION.md) · [MP](th11-mp/ADAPTATION.md) |
 | th12 | [开发](th12/README.md) | [开发](th12-mp/README.md) | [普通版](th12/ADAPTATION.md)／[多人版](th12-mp/ADAPTATION.md) |
+| th13 | [开发](th13/README.md) | [开发](th13-mp/README.md) | [普通版](th13/ADAPTATION.md)／[多人版](th13-mp/ADAPTATION.md) |
 | th14 | [开发](../docs/adaptation/th14.md) | [开发](th14-mp/README.md) | [回滚验证](../archive/th14-rollback-20261114/README.md) |
 | th15 | [开发](th15/README.md) | [开发](th15-mp/README.md) | [普通版](th15/ADAPTATION.md) · [MP](th15-mp/ADAPTATION.md) |
 | th17 | [开发](th17/README.md) | [开发](th17-mp/README.md) | [普通版](th17/ADAPTATION.md) · [MP](th17-mp/ADAPTATION.md) |

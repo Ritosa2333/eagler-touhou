@@ -15,7 +15,7 @@ EffectActor* EffectManager::create(EffectKind kind,const Vec3& p,const Vec3& ext
 EffectActor* EffectManager::slotted(EffectKind kind,const Vec3& p,u32 slot,u32 color){if(slot>=reserved_slots)return nullptr;auto& a=actors[capacity+slot];if(!initialize(a,kind,p,{},color))return nullptr;a.slot=i32(slot);return &a;}
 void EffectManager::clear(){for(auto& a:actors){before_write(a);a=EffectActor{};}for(auto& l:draw_lists)l.clear();}
 void EffectManager::update(u32 flags,u32 first_field_flags){
-    if((flags&0x1800)||(first_field_flags&1))return;services.coordinate_side=side;for(auto& l:draw_lists)l.clear();count=0;
+    if((flags&0x1800)||(first_field_flags&1))return;services.coordinate_side=side;services.select_field(side);for(auto& l:draw_lists)l.clear();count=0;
     for(u32 i=0;i<capacity+reserved_slots;++i){auto& a=actors[i];if(!a.active){a.animation.reset();a.burst.reset();a.colors.clear();a.texture.clear();continue;}++count;
         if(!update_effect(a,services)){a.active=0;continue;}
         if(!a.animation||services.advance_animation(*a.animation)){a.active=0;continue;}

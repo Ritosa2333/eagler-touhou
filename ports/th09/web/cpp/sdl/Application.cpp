@@ -269,6 +269,9 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
 #else
     bool motion_netplay_enabled=false;
     double motion_deadline=-1.,motion_main_present_at=0.,motion_extra_cost=0.;
+    double fps_sample_start=-1.;
+    u32 fps_sample_frames=0;
+    char fps_label[24]{};
 
     u32 motion_side() const { return network.active?network.side:0; }
 
@@ -409,7 +412,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         if(!ok){error=session->error;return false;}world=session->world.get();presentation.world=world;
         if(!presentation.ascii.initialize()){error="ASCII initialization failed";return false;}paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};requested_transition=-1;return true;
     }
-    bool render_text(AnmVm& a,const char* s,u32 color,u32 shadow)override{if(motionEnabled)motionCapture.invalidate();TH09_PERF_SCOPE(text_cost,TextRender);if(!fonts.text(a,s,color,shadow)){error=fonts.error;return false;}return true;}
+    bool render_text(AnmVm& a,const char* s,u32 color,u32 shadow,bool centered=false)override{if(motionEnabled)motionCapture.invalidate();TH09_PERF_SCOPE(text_cost,TextRender);if(!fonts.text(a,s,color,shadow,centered)){error=fonts.error;return false;}return true;}
     bool replay_view_silent=false;
     void sound(i32 id,i32 pan)override{if(replay_view_silent||(spectator_mode&&spectator_playback.seeking))return;if(!queue_sound(0,id,float(pan)))audio.effects.enqueue(id,pan);}
     void positioned_sound(i32 id,float x)override{if(replay_view_silent||(spectator_mode&&spectator_playback.seeking))return;if(!queue_sound(1,id,x))audio.effects.positioned(id,x);}
@@ -612,12 +615,42 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
             if(recording){motionCapture.begin(bodies);active_motion_capture=&motionCapture;}
             else motionCapture.invalidate();
         }
-        presentation.begin_frame();if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
+        presentation.begin_frame(in_title||session->phase==SessionPhase::ending);if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
         TH09_PERF_STOP(draw_cost);
         if(recording){active_motion_capture=nullptr;motionCapture.end();}
         if(present){TH09_PERF_SCOPE(present_cost,Present);graphics.present();}
     }
 #else
+    void queue_frame_rate(bool presenting){
+        if(in_title||!world||session->phase!=SessionPhase::match||!(world->battle->state.flags&4u)){
+            fps_sample_start=-1.;
+            return;
+        }
+        if(!presenting)return;
+        const double now=now_ms();
+        if(fps_sample_start<0.){
+            fps_sample_start=now;
+            fps_sample_frames=0;
+            fps_label[0]='\0';
+        }else{
+            // Count game frames only. Midpoint presents reuse the HUD.
+            ++fps_sample_frames;
+            const double elapsed=now-fps_sample_start;
+            if(elapsed>=500.){
+                std::snprintf(fps_label,sizeof(fps_label),"%.2ffps",fps_sample_frames*1000./elapsed);
+                fps_sample_start=now;
+                fps_sample_frames=0;
+            }
+        }
+        auto& ascii=presentation.ascii;
+        const auto color=ascii.color;
+        const auto scale=ascii.scale;
+        const auto field=ascii.field_view;
+        title_ascii({280,466,0},fps_label[0]?fps_label:"--.--fps",0xffffffff,{1,1});
+        ascii.color=color;
+        ascii.scale=scale;
+        ascii.field_view=field;
+    }
     void draw(bool present=true,bool captureDeferredMotion=false){
         TH09_PERF_SCOPE(draw_cost,SemanticDraw);
         const auto* player=(present||captureDeferredMotion)?motion_player():nullptr;
@@ -631,7 +664,11 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
 #endif
             }else motionCapture.invalidate();
         }
-        presentation.begin_frame();if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
+#ifndef __EMSCRIPTEN__
+        queue_frame_rate(present||captureDeferredMotion);
+#endif
+        presentation.begin_frame(in_title||session->phase==SessionPhase::ending);
+        if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
         TH09_PERF_STOP(draw_cost);
         if(player){
             active_motion_capture=nullptr;

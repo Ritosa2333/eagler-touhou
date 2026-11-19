@@ -5,6 +5,24 @@ import {gunzipSync} from 'node:zlib';
 import {restoreDiskBlocks} from './pc98-disk-blocks.mjs';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+export function validateNativeTH03Data(bytes) {
+  if (bytes.length < 14 || bytes.length > 1024 * 1024 * 1024 || bytes.subarray(0,8).toString() !== 'EPC98PK1') throw Error('Invalid TH03 DATA header');
+  const size = bytes.readUInt32LE(8), base = 12 + size;
+  if (size < 2 || size > 4 * 1024 * 1024 || base > bytes.length) throw Error('Invalid TH03 DATA manifest size');
+  const manifest = JSON.parse(bytes.subarray(12,base));
+  if (manifest.schema !== 'eagler-touhou/pc98-content/1' || manifest.game !== 'th03' ||
+      !Array.isArray(manifest.files) || !manifest.files.length || manifest.files.length > 10000) throw Error('Invalid TH03 DATA identity');
+  const seen = new Set(); let end = 0;
+  for (const {path, offset, bytes: length, sha256} of manifest.files) {
+    if (typeof path !== 'string' || !path.startsWith('native-th03/')) throw Error('TH03 DATA must use the native-th03/ layout');
+    if (/[\\:\0?#]/.test(path) || path.split('/').some(part => !part || part === '.' || part === '..') ||
+        seen.has(path) || offset !== end || !Number.isSafeInteger(length) || length <= 0 || base + end + length > bytes.length) throw Error('Invalid TH03 DATA entry');
+    seen.add(path);
+    if (hash(bytes.subarray(base+end,base+end+length)) !== sha256) throw Error('Corrupt TH03 DATA asset: ' + path);
+    end += length;
+  }
+  if (base + end !== bytes.length) throw Error('Invalid TH03 DATA length');
+}
 const diskNames = Object.freeze({
   th02: ['th02-local-cn.hdi.gz', 'th02-local-jp.hdi.gz', 'th02-solo-cn.hdi.gz', 'th02-solo-jp.hdi.gz'],
   th03: ['disks/3-cn.hdi.gz', 'disks/3-jp.hdi.gz'],

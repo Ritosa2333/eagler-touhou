@@ -32,7 +32,7 @@ function App(){
   return <LocaleProvider locale="en">
     <main id="player" className="room-workspace"/>
     {createPortal(<RoomSettingsDrawer roomOpen open onCloseRequest={noop}/>,document.body)}
-    <OptionsPanel product={product} open={false} roomDrawer onBack={noop} assetUrl={noop}>
+    <OptionsPanel product={product} open={false} roomDrawer onBack={noop}>
       <SettingsBody model={model} actions={actions} onOpenTouchLayout={noop}/>
     </OptionsPanel>
   </LocaleProvider>;

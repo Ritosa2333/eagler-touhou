@@ -3,10 +3,20 @@
 #include "../sdl/MotionCapture.hpp"
 #endif
 namespace th09 {
-namespace {Topology topology(BattleGeometry kind){return kind==BattleGeometry::fan?Topology::Fan:kind==BattleGeometry::lines?Topology::Lines:Topology::Strip;}}
+namespace {Topology topology(BattleGeometry kind){return kind==BattleGeometry::fan?Topology::Fan:kind==BattleGeometry::line_strip?Topology::LineStrip:Topology::Strip;}}
 void GamePresentation::begin_field(i32 side){
     if(side<0||side>2)return;active_field=side;renderer.set_viewport(viewport(side));renderer.shake=offsets[side];
     if(side<2&&world&&world->backgrounds[side])renderer.scene_camera(world->backgrounds[side]->camera);else renderer.screen_camera();
+}
+void GamePresentation::begin_hud(i32 side){
+    if(side<0||side>1)return;
+    // The original HUD draw clears the field's shake before selecting its
+    // screen camera. Subsequent overlays inherit that stable coordinate space.
+    active_field=side;
+    offsets[side]={};
+    renderer.set_viewport(viewport(side));
+    renderer.shake={};
+    renderer.screen_camera();
 }
 void GamePresentation::animation(AnmVm& a,BattleSprite mode){
 #if defined(__EMSCRIPTEN__) || defined(TH09_DESKTOP_MOTION_SMOOTHING)
@@ -14,14 +24,14 @@ void GamePresentation::animation(AnmVm& a,BattleSprite mode){
         if(const int side=capture->slot(a);side>=0){
             renderer.flush();
             capture->body_batch=side;
-            renderer.draw_no_rotation(a);
+            renderer.draw_subpixel(a);
             renderer.flush();
             capture->body_batch=-1;
             return;
         }
     }
 #endif
-    switch(mode){case BattleSprite::unrotated:renderer.draw_no_rotation(a);break;case BattleSprite::rotated:renderer.draw_2d(a);break;case BattleSprite::automatic:renderer.draw_3d(a);break;case BattleSprite::mirrored:renderer.draw_no_rotation(a,true,true);break;}
+    switch(mode){case BattleSprite::unrotated:renderer.draw_no_rotation(a);break;case BattleSprite::rotated:renderer.draw_2d(a);break;case BattleSprite::automatic:renderer.draw_automatic(a);break;case BattleSprite::mirrored:renderer.draw_no_rotation(a,true,true);break;}
 }
 void GamePresentation::bullet_animation(AnmVm& vm,const Bullet& bullet){
 #ifdef __EMSCRIPTEN__

@@ -35,7 +35,7 @@ i32 AttackAreas::cancel(const Vec3& position,Bullet* bullet,AreaCollisionContext
     for(auto a:active){if(!a)break;if((a->kind!=AttackAreaKind::cancel&&a->kind!=AttackAreaKind::reflect_damage&&a->kind!=AttackAreaKind::reflect)||a->delay>0||!contains(*a,position))continue;
         if(a->kind==AttackAreaKind::cancel){a->applied_damage=wrapping_add(a->applied_damage,1);return 2;}
         if(!bullet||bullet->sprite!=0)continue;
-        const auto from=context.geometry[context.side].to_screen(position);Vec3 target;
+        const auto from=context.actions.transfer_position(position,context.geometry[context.side]);Vec3 target;
         target.x=float(context.random.signed_unit())*(context.geometry[1-context.side].width*.5f-8.f);target.y=float(context.random.range(128));
         if(auto transfer=context.actions.create_transfer(context.side+1,from,target)){
             transfer->source_kind=bullet->sprite;transfer->target_kind=bullet->color;transfer->speed=bullet->speed;transfer->source_side=i16(context.transfer_kind);transfer->owner_flags=bullet->owner_flags;

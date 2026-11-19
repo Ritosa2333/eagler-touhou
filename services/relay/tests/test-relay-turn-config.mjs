@@ -96,9 +96,10 @@ for (const packaged of [false, true]) test(`${packaged ? 'packaged' : 'source'} 
       const peers = await signal.wait(m => m.type === 'peers');
       const diagnostic = connect({diagnostic: '1'});
       const ready = await diagnostic.wait(m => m.type === 'diagnostic-ready');
-      for (const servers of [state.roomProbe.iceServers, peers.iceServers, ready.iceServers]) {
-        assert.equal(servers.length, 1 + backups.length);
-        for (const [index, backup] of backups.entries()) {
+      for (const [servers, expectedBackups] of [[state.roomProbe.iceServers, []],
+        [peers.iceServers, backups], [ready.iceServers, backups]]) {
+        assert.equal(servers.length, 1 + expectedBackups.length);
+        for (const [index, backup] of expectedBackups.entries()) {
           const entry = servers[index + 1];
           assert.deepEqual(entry.urls, backup.urls);
           assert.equal(entry.credential, createHmac('sha1', backup.sharedSecret).update(entry.username).digest('base64'));
@@ -132,6 +133,8 @@ for (const packaged of [false, true]) test(`${packaged ? 'packaged' : 'source'} 
     await rm(config);
     await delay(1100);
     await check(urls, 'second-secret', backups);
+    await publish({urls, sharedSecret: 'second-secret'});
+    await check(urls, 'second-secret');
   } finally {
     for (const socket of sockets) if (socket.readyState < WebSocket.CLOSING) socket.terminate();
     if (child && child.exitCode === null) {const exited = once(child, 'exit'); child.kill(); await exited;}

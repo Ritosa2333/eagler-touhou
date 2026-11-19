@@ -15,7 +15,7 @@ struct Fixture:ResourceReader,ResourceTextures,WorldPresentation {
     void animation(AnmVm&,BattleSprite)override{}
     void colored(const AnmVm*,const AttackColorVertex*,u32,BattleGeometry,bool)override{}
     void textured(const AnmVm&,const AttackTextureVertex*,u32,BattleGeometry)override{}
-    void text(AnmVm&,const char* value,u32 color,u32 shadow)override{events.push_back({0,signed_bits(color),signed_bits(shadow)});for(;*value;++value)text_bytes.push_back(u8(*value));text_bytes.push_back(0);}
+    void text(AnmVm&,const char* value,u32 color,u32 shadow,bool=false)override{events.push_back({0,signed_bits(color),signed_bits(shadow)});for(;*value;++value)text_bytes.push_back(u8(*value));text_bytes.push_back(0);}
     void sound(i32 id,i32 pan)override{events.push_back({1,id,pan});}
     void positioned_sound(i32 side,i32 id,float x)override{events.push_back({2,id,signed_bits(float_bits(x))});}
     void music(i32 track)override{events.push_back({3,track,0});}

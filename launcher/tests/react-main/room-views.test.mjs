@@ -854,7 +854,7 @@ async function sharedDrawer(f, {strict = false, roomOpen = true, open = true} = 
     return React.createElement(MemoryRouter, null,
       React.createElement(owners.RoomView, {service: f.service, network: f.network, context: defaultContext, workspaceHost:host, workspaceStage:stage, assetUrl: path => path, onLeave: () => {}, onCopyRoomCode: () => {}, guideHref: '/docs/multiplayer/th07', onOpenSettings: () => {}, settingsOpen: open && !foregroundActive, settingsClosing: closing, panel: null, onOpenPanel: () => {}, onClosePanel: () => {}}),
       React.createElement(owners.RoomSettingsDrawer, {roomOpen, open, foregroundActive, onCloseRequest: requestClose, onClosingChange: setClosing}),
-      React.createElement(owners.OptionsPanel, {product: owners.createLibraryProducts([product], path => path, id => `/?game=${id}`)[0], open: !roomOpen, roomDrawer: roomOpen, onBack: requestClose, assetUrl: path => path, lobbyHref: '/lobby.html',
+      React.createElement(owners.OptionsPanel, {product: owners.createLibraryProducts([product], path => path, id => `/?game=${id}`)[0], open: !roomOpen, roomDrawer: roomOpen, onBack: requestClose, lobbyHref: '/lobby.html',
         multiplayerDiagnostics: React.createElement('section', {id: 'mpNetworkDiagnostics'}, 'Synthetic diagnostics slot'), actions: React.createElement('div', {className: 'launch-wrap launch-actions', id: 'ordinary-launch-actions'}, 'Synthetic ordinary launch slot')},
       React.createElement(owners.SettingsBody, {model, actions, onOpenTouchLayout: () => events.push(['editor']), multiplayerControls: React.createElement(owners.MultiplayerSettingsControls, {product, service: f.service, onReplayViewer: () => events.push(['replay-viewer']), onImport: () => events.push(['import'])})})));
   }

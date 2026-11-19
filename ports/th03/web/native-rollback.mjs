@@ -47,15 +47,18 @@ export class NativeRollback {
   receive(text) {
     if(this.closed)return;
     try{
-      const msg=JSON.parse(text);
-      if(msg.type!=='native-rollback-input'||!Number.isSafeInteger(msg.frame)||msg.frame<0||msg.frame>this.frame+24)throw Error('Invalid rollback input');
-      this.validate(msg.input);
-      if(msg.frame<this.confirmed)return;
-      if(this.remote.has(msg.frame)&&this.remote.get(msg.frame)!==msg.input)throw Error('Conflicting rollback input');
-      this.remote.set(msg.frame,msg.input);
-      if(msg.frame<this.frame && this.used.get(msg.frame)!==msg.input)this.rewind(msg.frame);
+      const correction=this.acceptInput(JSON.parse(text));
+      if(correction!==undefined)this.rewind(correction);
       this.flush();
     }catch(error){this.closed=true;this.onError(error);}
+  }
+  acceptInput(msg) {
+    if(msg.type!=='native-rollback-input'||!Number.isSafeInteger(msg.frame)||msg.frame<0||msg.frame>this.frame+24)throw Error('Invalid rollback input');
+    this.validate(msg.input);
+    if(msg.frame<this.confirmed)return;
+    if(this.remote.has(msg.frame)&&this.remote.get(msg.frame)!==msg.input)throw Error('Conflicting rollback input');
+    this.remote.set(msg.frame,msg.input);
+    if(msg.frame<this.frame&&this.used.get(msg.frame)!==msg.input)return msg.frame;
   }
   rewind(frame) {
     const snapshot=this.snapshots.get(frame);if(snapshot==null)throw Error('Rollback snapshot unavailable');

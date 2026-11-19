@@ -255,6 +255,7 @@ struct AnmVmBase
     };
     i16 type;
     i16 pendingInterrupt;
+    // ANM instruction 83 selects an automatic sprite drawing mode, 0 through 5.
     i32 playerBulletHitAnimationType;
     AnmLoaded *anmFile;
 };

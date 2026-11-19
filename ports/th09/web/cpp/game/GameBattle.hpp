@@ -10,7 +10,7 @@
 #include <memory>
 namespace th09 {
 enum class BattleNotice {begin_charge,end_charge,charge_level,critical_health,begin_survival,survival_time,survival_expired,reward};
-enum class BattleGeometry {fan,strip,lines};
+enum class BattleGeometry {fan,strip,line_strip};
 enum class BattleSprite {unrotated,rotated,automatic,mirrored};
 // Presentation owns backgrounds, HUD, text surfaces and the match scene. These
 // callbacks contain no simulated Windows or graphics-device operations.
@@ -24,7 +24,7 @@ struct BattlePresentation {
     virtual void hitbox(i32,AnmLoaded*,const Vec3&,i32){}
     virtual void colored(const AnmVm*,const AttackColorVertex*,u32,BattleGeometry,bool additive=false)=0;
     virtual void textured(const AnmVm&,const AttackTextureVertex*,u32,BattleGeometry)=0;
-    virtual void text(AnmVm&,const char*,u32 color,u32 shadow)=0;
+    virtual void text(AnmVm&,const char*,u32 color,u32 shadow,bool centered=false)=0;
     virtual void score_popup(i32 side,const Vec3&,i32,u32)=0;
     virtual void notice(i32 side,BattleNotice,i32 value=0)=0;
     virtual void damage_flash(i32 side,i32 duration,u32 color)=0;

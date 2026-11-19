@@ -15,14 +15,26 @@ import {createLocalSpectator} from './pc98-local-spectator.mjs';
 
 let roomRules,engine, transport, match, timer, animation, publisher, viewer, reportTimer, replayPlayer, bgm, run, revision=0, frames=0, audio, audioTime=0, stopped=true, localSeat=0, localPoint=false, roomHitboxes=false, lastPlaying=false, menuChoice=0, language='ja',musicMode='ogg';
 const canvas = () => document.querySelector('#canvas');
+let frameImage,frameBuffer,framePointer,drawnEngine,drawnFrame,drawnRollbacks,drawnCanvas;
 function report(error){if(!stopped){stop();globalThis.__eaglerPC98Emit({event:'error',message:String(error?.message||error)});}}
 function readMusicTrack(id){return engine.FS.readFile('/content/YUME1.DAT/'+id.toUpperCase()+'.M');}
 function unlock(){if(!audio) audio=new AudioContext({sampleRate:48000});bgm?.unlock(audio);if(audio.state==='suspended')void audio.resume();}
 function draw(){
  if(stopped)return;
- if(!engine){animation=requestAnimationFrame(draw);return;}
- const pointer=engine._th03_classic_pixels();
- if(pointer){const context=canvas().getContext('2d',{alpha:false}), image=context.createImageData(640,400);image.data.set(engine.HEAPU8.subarray(pointer,pointer+image.data.length));context.putImageData(image,0,0);if(roomHitboxes){drawHitPoint(context,engine._th03_classic_point_x(),engine._th03_classic_point_y());drawHitPoint(context,engine._th03_classic_point_x2(),engine._th03_classic_point_y2());}else if(replayPlayer&&localPoint)drawHitPoint(context,engine._th03_classic_point_x(),engine._th03_classic_point_y());(match?.pause??viewer?.driver?.pause)?.draw(context,language);frames++;}
+ const frame=match?.frame??viewer?.frame??0,rollbacks=match?.rollbacks??0,target=canvas();
+ // Refresh the surface on a correction even when replay returns to the same tick.
+ if(engine&&(engine!==drawnEngine||frame!==drawnFrame||rollbacks!==drawnRollbacks||target!==drawnCanvas)){
+  const pointer=engine._th03_classic_pixels();
+  if(pointer){
+   const context=target.getContext('2d',{alpha:false}),buffer=engine.HEAPU8.buffer;
+   if(frameBuffer!==buffer||framePointer!==pointer){frameBuffer=buffer;framePointer=pointer;frameImage=new ImageData(new Uint8ClampedArray(buffer,pointer,640*400*4),640,400);}
+   context.putImageData(frameImage,0,0);
+   if(roomHitboxes){drawHitPoint(context,engine._th03_classic_point_x(),engine._th03_classic_point_y());drawHitPoint(context,engine._th03_classic_point_x2(),engine._th03_classic_point_y2());}
+   else if(replayPlayer&&localPoint)drawHitPoint(context,engine._th03_classic_point_x(),engine._th03_classic_point_y());
+   (match?.pause??viewer?.driver?.pause)?.draw(context,language);
+   drawnEngine=engine;drawnFrame=frame;drawnRollbacks=rollbacks;drawnCanvas=target;frames++;
+  }
+ }
  animation=requestAnimationFrame(draw);
 }
 function play(saved){
@@ -33,7 +45,7 @@ function play(saved){
  if(audioTime<audio.currentTime||audioTime>audio.currentTime+.3)audioTime=audio.currentTime+.04;
  const node=audio.createBufferSource();node.buffer=buf;node.connect(audio.destination);node.start(audioTime);audioTime+=n/48000;
 }
-function stop(){bgm?.stop();bgm=undefined;replayPlayer?.stop();replayPlayer=undefined;stopped=true;clearInterval(reportTimer);publisher?.stop();publisher=undefined;viewer?.stop();viewer=undefined;clearInterval(timer);cancelAnimationFrame(animation);match?.stop();match=undefined;transport?.close();transport=undefined;engine?._th03_classic_destroy();engine=undefined;canvas()?.removeEventListener('pointerdown',clickMenu);canvas()?.removeEventListener('pointerdown',unlock);removeEventListener('keydown',unlock);delete globalThis.__eaglerPC98Input.menuPointer;void audio?.close();audio=undefined;}
+function stop(){bgm?.stop();bgm=undefined;replayPlayer?.stop();replayPlayer=undefined;stopped=true;clearInterval(reportTimer);publisher?.stop();publisher=undefined;viewer?.stop();viewer=undefined;clearInterval(timer);cancelAnimationFrame(animation);match?.stop();match=undefined;transport?.close();transport=undefined;engine?._th03_classic_destroy();engine=drawnEngine=drawnCanvas=frameImage=frameBuffer=undefined;canvas()?.removeEventListener('pointerdown',clickMenu);canvas()?.removeEventListener('pointerdown',unlock);removeEventListener('keydown',unlock);delete globalThis.__eaglerPC98Input.menuPointer;void audio?.close();audio=undefined;}
 function menuPointer(message){const state=match?.pause.state;if(!state||state.owner===null)return false;if(state.owner===localSeat&&message.type==='down'){const r=canvas().getBoundingClientRect(),scale=Math.min(r.width/640,r.height/400),x=(message.x*r.width-(r.width-640*scale)/2)/scale,y=(message.y*r.height-(r.height-400*scale)/2)/scale,left=16+localSeat*320,row=Math.floor((y-100)/46);if(x>=left&&x<left+288&&row>=0&&row<3&&(y-100)%46<40&&(row===0||state.allowed))menuChoice=row+1;}return true;}
 function clickMenu(event){unlock();if(event.pointerType==='touch')return;const r=canvas().getBoundingClientRect(),scale=Math.min(r.width/640,r.height/400),left=r.left+(r.width-640*scale)/2,top=r.top+(r.height-400*scale)/2;menuPointer({type:'down',x:(event.clientX-left)/(640*scale),y:(event.clientY-top)/(400*scale)});}
 async function loadContent(){

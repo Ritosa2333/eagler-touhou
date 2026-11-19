@@ -16,6 +16,7 @@ struct EffectServices {
     Vec3 players[2];float player_angles[2]{},player_steps[2]{};i32 characters[2]{},spirit_counts[2]{};bool rewards_blocked=false;
     explicit EffectServices(Rng& r):random(r){}
     virtual ~EffectServices()=default;
+    virtual void select_field(i32){}
     virtual void start_animation(AnmVm&,i32 side,bool character_resource,i32 script)=0;
     virtual bool advance_animation(AnmVm&)=0;
     virtual void draw_animation(AnmVm&)=0;
@@ -27,7 +28,7 @@ struct EffectServices {
     virtual void draw_color_fan(AnmVm&,const AttackColorVertex*,u32)=0;
     virtual void draw_color_strip(AnmVm&,const AttackColorVertex*,u32)=0;
     virtual void draw_texture_strip(AnmVm&,const AttackTextureVertex*,u32)=0;
-    virtual void draw_additive_lines(const AttackColorVertex*,u32)=0;
+    virtual void draw_line_strip(const AttackColorVertex*,u32)=0;
 };
 struct EffectBurst {
     i32 phase=0;float radius=0;

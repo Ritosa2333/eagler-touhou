@@ -29,7 +29,8 @@ public:
     std::uint32_t ActivePathEpoch() const;
     using SurveySignal = std::function<bool(const nlohmann::json &)>;
     using RetirePeer = std::function<void(std::unique_ptr<NativePeerTransport>)>;
-    void ConfigureSurvey(std::string initialRoute, bool initialSurvey, SurveySignal send, RetirePeer retire);
+    void ConfigureSurvey(std::string initialRoute, bool initialSurvey, SurveySignal send, RetirePeer retire,
+                         bool onDemandTurn = false);
     void BeginStartup();
     bool SelectStartup(std::uint32_t serial, bool keepPrimary = false);
     RouteSwitchStatus SwitchStatus() const;

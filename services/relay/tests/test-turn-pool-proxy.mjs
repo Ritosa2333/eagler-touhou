@@ -36,6 +36,16 @@ test('TURN pool augments ordinary WebRTC and leaves Swarm ICE policy intact', as
       peer.send(JSON.stringify({type:'peers',turnMode:'first-party',iceServers:[stun,ordinary]}));
       return;
     }
+    if (mode === 'direct-primary' || mode === 'lobby') {
+      const response = mode === 'direct-primary' ? {type:'peers',turnMode:'direct',onDemandTurn:true,iceServers:[stun]}
+        : {type:'state',roomProbe:{iceServers:[stun,ordinary]}};
+      peer.send(JSON.stringify(response));
+      return;
+    }
+    if (mode === 'recovery') {
+      peer.send(JSON.stringify({type:'peers',turnMode:'swarm',iceServers:[stun,swarm],fallbackIceServers:[stun,ordinary]}));
+      return;
+    }
     const iceServers = mode === 'native' ? [stun] : [stun, mode === 'swarm' ? swarm : ordinary];
     peer.send(JSON.stringify({type:'peers',iceServers,...(mode !== 'ordinary' ? {turnMode:'swarm'} : {})}));
   });
@@ -52,36 +62,43 @@ test('TURN pool augments ordinary WebRTC and leaves Swarm ICE policy intact', as
     });
     try {
       const [message] = await once(ws,'message',{signal:AbortSignal.timeout(5000)});
-      return JSON.parse(message).iceServers;
+      return JSON.parse(message);
     } finally {
       const closed = once(ws,'close');
       ws.terminate();
       await closed;
     }
   }
+  const ice = async (mode, region) => (await peers(mode, region)).iceServers;
+  const urls = servers => servers.flatMap(server => server.urls);
   try {
     await once(proxy,'listening');
-    assert.deepEqual(await peers('swarm'), [stun,swarm]);
-    assert.deepEqual(await peers('native'), [stun]);
-    assert.deepEqual(await peers('swarm-standby'), [swarm]);
-    assert.deepEqual(await peers('direct-standby'), [stun]);
-    assert.deepEqual(await peers('turn-standby'), [ordinary]);
-    assert.deepEqual(await peers('first-party'), [stun,ordinary]);
+    assert.deepEqual(await ice('swarm'), [stun,swarm]);
+    assert.deepEqual(await ice('native'), [stun]);
+    assert.deepEqual(await ice('swarm-standby'), [swarm]);
+    assert.deepEqual(await ice('direct-standby'), [stun]);
+    assert.deepEqual(await ice('direct-primary'), [stun]);
+    assert.deepEqual(urls(await ice('first-party')), [...stun.urls,...ordinary.urls,backup]);
     assert.equal(brokerCalls,0);
-    assert.deepEqual((await peers('ordinary')).flatMap(server => server.urls),
+    assert.deepEqual(urls(await ice('turn-standby')), [...cloudflare.urls,...ordinary.urls,backup]);
+    const recovery = await peers('recovery');
+    assert.deepEqual(recovery.iceServers, [stun,swarm]);
+    assert.deepEqual(urls(recovery.fallbackIceServers), [...cloudflare.urls,...stun.urls,...ordinary.urls,backup]);
+    assert.deepEqual(urls(await ice('ordinary')),
       [...cloudflare.urls,...stun.urls,...ordinary.urls,backup]);
-    assert.equal(brokerCalls,1);
+    assert.equal(brokerCalls,3);
 
     await writeFile(poolFile, JSON.stringify({urls:[backup], sharedSecret:'fixture'}));
-    assert.deepEqual((await peers('ordinary', '1')).flatMap(server => server.urls),
+    assert.deepEqual(urls(await ice('ordinary', '1')),
       [...stun.urls,...ordinary.urls,backup]);
-    assert.equal(brokerCalls,1);
+    assert.deepEqual((await peers('lobby', '1')).roomProbe.iceServers,[stun,ordinary]);
+    assert.equal(brokerCalls,3);
 
     await rm(poolFile);
-    assert.deepEqual(await peers('ordinary'), [cloudflare,stun,ordinary]);
+    assert.deepEqual(await ice('ordinary'), [cloudflare,stun,ordinary]);
     await writeFile(poolFile, '{');
-    assert.deepEqual(await peers('ordinary'), [cloudflare,stun,ordinary]);
-    assert.equal(brokerCalls,3);
+    assert.deepEqual(await ice('ordinary'), [cloudflare,stun,ordinary]);
+    assert.equal(brokerCalls,5);
   } finally {
     await Promise.all([proxy,upstream,broker].map(server => new Promise(resolve => server.close(resolve))));
     await rm(directory,{recursive:true,force:true});

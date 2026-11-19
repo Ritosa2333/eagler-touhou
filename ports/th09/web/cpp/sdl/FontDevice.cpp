@@ -8,11 +8,64 @@
 #include "../game/ImageResample.hpp"
 #include <SDL3_ttf/SDL_ttf.h>
 #include <algorithm>
+#if defined(_WIN32)
+#include <windows.h>
+#endif
 namespace th09::sdl {
 struct FontDevice::Impl {
     struct Glyph {i32 advance=0,width=0,height=0;std::vector<u8> coverage;};
     std::map<i32,TTF_Font*> faces;std::map<std::pair<i32,u16>,Glyph> glyphs;std::vector<u8> encoding,blend;TextureImage scratch;bool ready=false;
-    ~Impl(){for(auto& f:faces)TTF_CloseFont(f.second);if(ready)TTF_Quit();}
+#if defined(_WIN32)
+    std::map<i32,HFONT> original_faces;
+    bool private_font=false;
+    bool draw_original(TextureImage& image,i32 x,i32 height,u32 color,u32 outline,const char* text){
+        auto& font=original_faces[height];
+        if(!font)font=CreateFontW(height,0,0,0,400,FALSE,FALSE,FALSE,
+            SHIFTJIS_CHARSET,0,0,ANTIALIASED_QUALITY,0x11,L"ＭＳ ゴシック");
+        if(!font)return false;
+        BITMAPV4HEADER header{};
+        header.bV4Size=sizeof(header);
+        header.bV4Width=i32(image.width);
+        header.bV4Height=-i32(image.height)-1;
+        header.bV4Planes=1;
+        header.bV4BitCount=16;
+        header.bV4V4Compression=BI_BITFIELDS;
+        header.bV4RedMask=0x7c00;
+        header.bV4GreenMask=0x3e0;
+        header.bV4BlueMask=0x1f;
+        header.bV4AlphaMask=0x8000;
+        void* pixels=nullptr;
+        HBITMAP bitmap=CreateDIBSection(nullptr,reinterpret_cast<BITMAPINFO*>(&header),DIB_RGB_COLORS,&pixels,nullptr,0);
+        if(!bitmap)return false;
+        HDC dc=CreateCompatibleDC(nullptr);
+        if(!dc){DeleteObject(bitmap);return false;}
+        const HGDIOBJ before_bitmap=SelectObject(dc,bitmap),before_font=SelectObject(dc,font);
+        std::memcpy(pixels,image.pixels.data(),image.pixels.size());
+        SetBkMode(dc,TRANSPARENT);
+        SetTextColor(dc,0);
+        const i32 shift=outline==0xffffffff?1:2,count=i32(std::strlen(text));
+        bool success=true;
+        for(const auto& offset:{Vec2{float(shift),0},Vec2{-float(shift),0},Vec2{0,-float(shift)},Vec2{0,float(shift)}})
+            success=TextOutA(dc,x+i32(offset.x),2+i32(offset.y),text,count)&&success;
+        SetTextColor(dc,color);
+        success=TextOutA(dc,x,2,text,count)&&success;
+        success=GdiFlush()&&success;
+        std::memcpy(image.pixels.data(),pixels,image.pixels.size());
+        SelectObject(dc,before_font);
+        SelectObject(dc,before_bitmap);
+        DeleteDC(dc);
+        DeleteObject(bitmap);
+        return success;
+    }
+#endif
+    ~Impl(){
+#if defined(_WIN32)
+        for(auto& face:original_faces)if(face.second)DeleteObject(face.second);
+        if(private_font)RemoveFontResourceExW(L"fonts/msgothic.ttc",FR_PRIVATE,nullptr);
+#endif
+        for(auto& f:faces)TTF_CloseFont(f.second);
+        if(ready)TTF_Quit();
+    }
     u16 next(const u8*& p,const u8* end){
         if(Localization::Active()){
             const u8 first=*p++;if(first<0x80)return first;
@@ -48,7 +101,11 @@ struct FontDevice::Impl {
 };
 FontDevice::FontDevice(GraphicsDevice& g):impl(std::make_unique<Impl>()),graphics(g){}
 FontDevice::~FontDevice()=default;
-bool FontDevice::initialize(){auto& f=*impl;if(!TTF_Init()){error=SDL_GetError();return false;}f.ready=true;if(!read_file(runtime_path("/fonts/cp932.bin"),f.encoding)||f.encoding.size()!=131072||!read_file(runtime_path("/fonts/blend.bin"),f.blend)||f.blend.size()!=131072){error="Missing Japanese font tables";return false;}return true;}
+bool FontDevice::initialize(){auto& f=*impl;if(!TTF_Init()){error=SDL_GetError();return false;}f.ready=true;
+#if defined(_WIN32)
+    f.private_font=AddFontResourceExW(L"fonts/msgothic.ttc",FR_PRIVATE,nullptr)>0;
+#endif
+    if(!read_file(runtime_path("/fonts/cp932.bin"),f.encoding)||f.encoding.size()!=131072||!read_file(runtime_path("/fonts/blend.bin"),f.blend)||f.blend.size()!=131072){error="Missing Japanese font tables";return false;}return true;}
 void FontDevice::prewarm(const char* text,i32 height){if(!impl->ready||height<1||height>128)return;text=Localization::Utf8(text);const auto* p=reinterpret_cast<const u8*>(text);const auto* end=p+std::strlen(text);while(p<end)impl->glyph(height,impl->next(p,end));}
 void FontDevice::prewarm_game(ResourceReader& resources){
     std::set<u16> codepoints;
@@ -65,7 +122,7 @@ void FontDevice::prewarm_game(ResourceReader& resources){
     for(i32 ending=0;ending<15;++ending){char name[24];if(ending<14)std::snprintf(name,sizeof(name),"end%02d.end",ending);else std::snprintf(name,sizeof(name),"endstaff.end");std::vector<u8> bytes;if(!resources.read(name,bytes))continue;std::string line;for(const u8 byte:bytes){if(byte==0||byte==10||byte==13){if(!line.empty()&&line[0]!='@')collect(line.c_str());line.clear();}else line+=char(byte);}if(!line.empty())collect(line.c_str());}
     for(const auto height:{16,30,48})for(const auto code:codepoints)impl->glyph(height,code);
 }
-bool FontDevice::text(AnmVm& vm,const char* text,u32 color,u32 outline){
+bool FontDevice::text(AnmVm& vm,const char* text,u32 color,u32 outline,bool centered){
     if(!vm.loadedSprite||!text||!impl->ready)return false;const auto& s=*vm.loadedSprite;auto* target=graphics.pixels(s.texture);if(!target)return false;
     const i32 fw=vm.fontWidth?vm.fontWidth:15,fh=vm.fontHeight?vm.fontHeight:15;const bool large=fw>8;
     const i32 height=large?i32(float(fw)*s.scaleFactor.x):8,destination_height=large?i32(float(fh)*s.scaleFactor.y):8;
@@ -75,7 +132,34 @@ bool FontDevice::text(AnmVm& vm,const char* text,u32 color,u32 outline){
     auto& scratch=impl->scratch;scratch.width=1024;scratch.height=std::max(128,height*2+6);scratch.pitch=2048;scratch.format=PixelFormat::Argb1555;scratch.pixels.assign(size_t(scratch.pitch)*scratch.height,u8{});
     const i32 area_width=large?width*2:1024,area=area_width*(height*2+6);if(size_t(area)*2>scratch.pixels.size())return false;
     for(i32 n=0;n<area;++n)scratch.pixels[n*2+1]=0x80;
-    const i32 center=x*2+2,shift=outline==0xffffffff?1:2;
+    i32 left=x;
+    if(centered){
+        // Original centered text uses CP932 byte count and the authored sprite
+        // width. Translation fonts instead use the same advances as drawing.
+        float text_width=float(std::strlen(text))*float(fw)*s.scaleFactor.x;
+        if(Localization::Active()){
+            const char* translated=Localization::Utf8(text);
+            const auto* cursor=reinterpret_cast<const u8*>(translated);
+            const auto* end=cursor+std::strlen(translated);
+            i32 advance=0;
+            while(cursor<end){
+                const auto* glyph=impl->glyph(height*2,impl->next(cursor,end));
+                if(!glyph){error="Japanese glyph measurement failed";return false;}
+                advance+=glyph->advance;
+            }
+            text_width=float(advance);
+        }
+        left=i32(s.startPixelInclusive.x+s.widthPx*s.scaleFactor.x*0.5f-text_width*0.25f);
+    }
+    const i32 center=left*2+2,shift=outline==0xffffffff?1:2;
+#if defined(_WIN32)
+    if(!Localization::Active()){
+        if(!impl->draw_original(scratch,center,height*2,color,outline,text)){
+            error="Japanese text rendering failed";
+            return false;
+        }
+    }else
+#endif
     for(const auto& offset:{Vec2{float(shift),0},Vec2{-float(shift),0},Vec2{0,-float(shift)},Vec2{0,float(shift)},Vec2{0,0}}){const bool main=offset.x==0&&offset.y==0;if(!impl->draw(scratch,center+i32(offset.x),2+i32(offset.y),height*2,main?color:0,text)){error="Japanese glyph rendering failed";return false;}}
     for(i32 n=0;n<area;++n){u8* p=scratch.pixels.data()+n*2;u16 v=(u16(p[0])|(u16(p[1])<<8))^0x8000;if(!(v&0x8000))v=0;else if(outline==0xffffffff){i32 r=(v>>10)&31,g=(v>>5)&31,b=v&31;const auto shade=[&](i32 c){return c-(c*n/area)/4;};if(r>=b)r=shade(r);else b=shade(b);g=shade(g);v=u16(0x8000|(r<<10)|(g<<5)|b);}p[0]=u8(v);p[1]=u8(v>>8);}
     const i32 source_width=std::min(1024,width*2+(large?2:0)),source_height=height*2+(large?2:0);

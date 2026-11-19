@@ -50,6 +50,9 @@ else()
     target_compile_options(th09 PRIVATE -ffp-contract=off -fno-strict-aliasing)
 endif()
 target_link_libraries(th09 PRIVATE SDL3::SDL3 SDL3_ttf::SDL3_ttf "${TH09_GLES_LIBRARY}")
+if(WIN32)
+    target_link_libraries(th09 PRIVATE gdi32)
+endif()
 
 option(TH09_RMLUI_OVERLAY "Build the native RmlUi room overlay" ON)
 

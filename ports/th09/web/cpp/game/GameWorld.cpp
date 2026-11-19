@@ -34,7 +34,7 @@ struct GameWorld::Services:BattlePresentation,HudPresentation,MatchRuleActions,S
         void advance_animation(AnmVm& vm)override{root.g.resources.advance(vm);}
         void draw_animation(AnmVm& vm)override{root.g.output.animation(vm,BattleSprite::unrotated);}
         void begin_view(i32 side)override{root.g.output.begin_field(side);}
-        void outline(const AttackColorVertex* p,u32 count)override{for(u32 n=0;n<count;++n)root.g.output.colored(nullptr,p+n,2,BattleGeometry::lines,false);}
+        void outline(const AttackColorVertex* p,u32 count)override{for(u32 n=0;n<count;++n)root.g.output.colored(nullptr,p+n,2,BattleGeometry::line_strip,false);}
         void number(const Vec3& p,i32 width,i32 value)override{root.g.output.number(p,width,value);}
         void clock(const Vec3& p,i32 stage,i32 min,i32 sec)override{root.g.output.clock(p,stage,min,sec);}
         i32 dialogue_state()const override{return root.g.dialogue->id;}
@@ -69,7 +69,7 @@ struct GameWorld::Services:BattlePresentation,HudPresentation,MatchRuleActions,S
     void hitbox(i32 side,AnmLoaded* file,const Vec3& position,i32 frame)override{g.output.hitbox(side,file,position,frame);}
     void colored(const AnmVm* vm,const AttackColorVertex* p,u32 n,BattleGeometry mode,bool additive)override{g.output.colored(vm,p,n,mode,additive);}
     void textured(const AnmVm& vm,const AttackTextureVertex* p,u32 n,BattleGeometry mode)override{g.output.textured(vm,p,n,mode);}
-    void text(AnmVm& vm,const char* s,u32 color,u32 shadow)override{g.output.text(vm,s,color,shadow);}
+    void text(AnmVm& vm,const char* s,u32 color,u32 shadow,bool centered=false)override{g.output.text(vm,s,color,shadow,centered);}
     void score_popup(i32 side,const Vec3& p,i32 value,u32 color)override{g.output.score_popup(side,p,value,color);}
     void notice(i32 side,BattleNotice kind,i32 value)override{if(!g.huds[side])return;auto& h=*g.huds[side];switch(kind){case BattleNotice::begin_charge:h.begin_charge();break;case BattleNotice::end_charge:h.end_charge();break;case BattleNotice::charge_level:h.charge_level(value);break;case BattleNotice::critical_health:h.health_notice(0);break;case BattleNotice::begin_survival:h.begin_survival(value);break;case BattleNotice::survival_time:h.survival_time(value);break;case BattleNotice::survival_expired:h.survival_expired();break;case BattleNotice::reward:h.health_notice(1);break;}}
     void damage_flash(i32 side,i32 duration,u32 color)override{g.scene->flash_frames[side]=duration;g.scene->flash_colors[side]=color;}
@@ -83,7 +83,7 @@ struct GameWorld::Services:BattlePresentation,HudPresentation,MatchRuleActions,S
     void reset_background(i32 side)override{g.backgrounds[side]->end_boss();}
     void boss_background(i32 side)override{if(g.backgrounds[side])g.backgrounds[side]->begin_boss(character_resources(g.configuration.selection.characters[1-side])->boss_background);}
     void portrait(i32 side,u32 layer,i32 script)override{g.huds[side]->portrait(layer,script,character_animation(side));}
-    void begin_hud(i32 side)override{g.output.begin_field(side);}
+    void begin_hud(i32 side)override{g.output.begin_hud(side);}
     void hud_animation(AnmVm& vm,bool rotated)override{g.output.animation(vm,rotated?BattleSprite::rotated:BattleSprite::unrotated);}
     void hud_triangle(const AttackColorVertex* p)override{g.output.colored(nullptr,p,3,BattleGeometry::strip,false);}
     void reward_enemy(i32 side,i32 kind)override{g.battle->reward_enemy(side,kind);}
@@ -119,7 +119,9 @@ void GameWorld::sync(){
     if(battle){battle->state.timing=timing;battle->state.dialogue=dialogue->id;battle->sync_players();}services->sync_scene();services->publish_scene();
 }
 void GameWorld::reset_round(){
-    markers={};battle->state.extra_damage=0;battle->state.script_extra_time=0;battle->state.hide_players=false;scene->reset_round();battle->attack_queue->clear();
+    markers={};battle->state.extra_damage=0;battle->state.script_extra_time=0;battle->state.hide_players=false;
+    if(!output.reset_ascii()){fail("Round ASCII initialization");return;}
+    scene->reset_round();battle->attack_queue->clear();
     for(i32 s=0;s<2;++s){backgrounds[s]->end_boss();battle->reset_field(s,configuration.health[s]);huds[s]->open();}
     battle->cross_effects->clear();rules.restart_round(rules.progress.round);sync();
 }

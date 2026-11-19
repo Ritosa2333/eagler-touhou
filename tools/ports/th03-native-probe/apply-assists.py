@@ -1,4 +1,4 @@
-"""Apply the TH03 solo movement and position hooks to a pinned source copy."""
+"""Apply the Eagler runtime adaptations to a pinned TH03 source copy."""
 from pathlib import Path
 import sys
 
@@ -10,6 +10,20 @@ def replace(path, old, new):
     if text.count(old) != 1:
         raise SystemExit(f'Unexpected source at {path}')
     file.write_text(text.replace(old, new), encoding='utf-8', newline='\n')
+
+replace('src/audio/pmd_opna.cpp', '''		for(std::uint32_t elapsed = 0U; elapsed < clocks_per_sample; ++elapsed) {
+			++chip_clocks;''', '''		const auto end_clock = chip_clocks + clocks_per_sample;
+		while(chip_clocks < end_clock) {
+			// Only timer IRQs can change state between sample boundaries.
+			auto next_clock = end_clock;
+			for(const auto deadline : timer_deadlines) {
+				if(deadline >= 0) {
+					next_clock = std::min(next_clock, static_cast<std::uint64_t>(deadline));
+				}
+			}
+			// Re-read each timer in hardware order: its callback can change
+			// either deadline, including scheduling work for the next clock.
+			chip_clocks = std::max(chip_clocks + 1U, next_clock);''')
 
 replace('src/core/frame.cpp', 'namespace th03::detail {', '''extern "C" {
 int th03_assist_focus = 0;
@@ -330,8 +344,83 @@ for condition in ('!warning_gauge.interstitial_active_', '!hud_result.hud_late_s
                   '!round.warning_interstitial_active_', '!round.hud_start_step_seen_'):
     replace('src/present/main_rollback.cpp', '\t\t' + condition + ' &&\n', '')
 
+# Resolve the 16 graphics and 8 text colors once per surface, rather than
+# expanding and ordering channels for every pixel. Keep the source validation.
+replace('src/app/runtime/host_surface.cpp', '#include <cstdint>\n', '#include <cstdint>\n#include <cstring>\n')
+replace('src/app/runtime/host_surface.cpp', '''	for(std::size_t y = 0U; y < source_height; ++y) {
+		const auto row_offset = y * target.pitch_bytes;
+		const auto source_offset = y * source_width;
+		for(std::size_t x = 0U; x < source_width; ++x) {
+			const auto pixel = source.pixels[source_offset + x];
+			const auto color = (pixel.layer ==
+				present::ComposedPixelLayer::graphics) ?
+				graphics_color(source.graphics_palette.colors[pixel.value]) :
+				text_color(pixel.value);
+			const auto bytes = ordered_bytes(color, target.byte_order);
+			const auto destination = row_offset + (x * channel_count);
+			for(std::size_t channel = 0U; channel < channel_count; ++channel) {
+				target.bytes[destination + channel] =
+					static_cast<std::byte>(bytes[channel]);
+			}
+		}
+	}''', '''	std::array<std::array<std::uint8_t, channel_count>, 16> graphics_lut;
+	std::array<std::array<std::uint8_t, channel_count>, 8> text_lut;
+	for(std::size_t i = 0; i < graphics_lut.size(); ++i) {
+		graphics_lut[i] = ordered_bytes(graphics_color(source.graphics_palette.colors[i]), target.byte_order);
+	}
+	for(std::size_t i = 0; i < text_lut.size(); ++i) {
+		text_lut[i] = ordered_bytes(text_color(static_cast<std::uint8_t>(i)), target.byte_order);
+	}
+	for(std::size_t y = 0; y < source_height; ++y) {
+		auto *row = target.bytes.data() + y * target.pitch_bytes;
+		const auto *pixels = source.pixels.data() + y * source_width;
+		for(std::size_t x = 0; x < source_width; ++x) {
+			const auto pixel = pixels[x];
+			const auto &bytes = pixel.layer == present::ComposedPixelLayer::graphics ? graphics_lut[pixel.value] : text_lut[pixel.value];
+			std::memcpy(row + x * channel_count, bytes.data(), channel_count);
+		}
+	}''')
+
 # Prototype a local-only semantic snapshot boundary for an active VS process.
 # Network and audio-device state are deliberately outside this snapshot.
+# The visual snapshots belong to this runtime and never cross the network. Use
+# a distinct marker and checksum that processes four bytes at a time.
+replace('src/present/rollback_snapshot.cpp',
+        "std::byte{'V'}, std::byte{'0'}, std::byte{'0'}, std::byte{'1'},",
+        "std::byte{'L'}, std::byte{'0'}, std::byte{'0'}, std::byte{'1'},")
+replace('src/present/rollback_snapshot.cpp',
+        '''\tauto hash = fnv_offset_basis;
+\tfor(const auto value : bytes) {
+\t\thash ^= std::to_integer<std::uint8_t>(value);
+\t\thash *= fnv_prime;
+\t}
+\treturn hash;''',
+        '''\tauto hash = fnv_offset_basis;
+\tstd::size_t at = 0;
+\tfor(; at + sizeof(std::uint32_t) <= bytes.size(); at += sizeof(std::uint32_t)) {
+\t\tstd::uint32_t word;
+\t\tstd::memcpy(&word, bytes.data() + at, sizeof(word));
+\t\thash = (hash ^ word) * fnv_prime;
+\t}
+\tfor(; at < bytes.size(); ++at) hash = (hash ^ std::to_integer<std::uint8_t>(bytes[at])) * fnv_prime;
+\treturn hash;''')
+replace('tests/test_present.cpp',
+        '''\tstd::uint32_t hash = 2166136261U;
+\tfor(const auto value : bytes) {
+\t\thash ^= std::to_integer<std::uint8_t>(value);
+\t\thash *= 16777619U;
+\t}
+\treturn hash;''',
+        '''\tstd::uint32_t hash = 2166136261U;
+\tstd::size_t at = 0;
+\tfor(; at + 4 <= bytes.size(); at += 4) {
+\t\tstd::uint32_t word = 0;
+\t\tfor(unsigned i = 0; i < 4; ++i) word |= std::uint32_t(std::to_integer<std::uint8_t>(bytes[at + i])) << (8 * i);
+\t\thash = (hash ^ word) * 16777619U;
+\t}
+\tfor(; at < bytes.size(); ++at) hash = (hash ^ std::to_integer<std::uint8_t>(bytes[at])) * 16777619U;
+\treturn hash;''')
+replace('tests/test_present.cpp', ')) == 1721220782U,', ')) == 1006282275U,')
 replace('include/th03/present/main_round.hpp',
         'MainRoundPresenter(const MainRoundPresenter &) = delete;\n\tMainRoundPresenter &operator=(const MainRoundPresenter &) = delete;',
         'MainRoundPresenter(const MainRoundPresenter &) = default;\n\tMainRoundPresenter &operator=(const MainRoundPresenter &) = default;')

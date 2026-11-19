@@ -242,7 +242,6 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       multiplayerOnline={host.multiplayerOnline}
       lobbyHref={host.lobbyHref}
       embeddedInLobby={navigation.context === 'lobby'}
-      assetUrl={host.assetUrl}
       actions={host.optionsActions}
     >
       <SettingsBody
@@ -318,7 +317,6 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
             onSelect={setPreview}
             onActivate={activate}
             masthead={null}
-            serverStatusNote={host.serverStatusNote}
             optionsOpen={presence.open}
             roomOpen={roomOpen}
             roomDrawer={host.roomDrawer}
@@ -330,6 +328,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       </div>
       {!accountPage && !profilePage && navigation.context === 'library' && (
         <>
+          {host.serverStatusNote}
           <OptionsBackdrop onBack={navigation.closeSurface} />
           {host.replayWorkspace && !roomOpen ? null : settingsPanel}
         </>

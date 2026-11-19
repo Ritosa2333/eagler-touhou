@@ -4,7 +4,7 @@
 namespace th09 {
 AnmRenderer::AnmRenderer(ZunGraphics& g):backend(g){
     state.depthTest=true;state.depthCompare=Compare::Always;state.blend=true;state.sourceBlend=BlendFactor::SourceAlpha;state.destinationBlend=BlendFactor::InverseSourceAlpha;
-    state.alphaTest=true;state.alphaReference=1;state.alphaCompare=Compare::GreaterEqual;
+    state.alphaTest=true;state.alphaReference=4;state.alphaCompare=Compare::GreaterEqual;
     state.color.operation=state.alpha.operation=ColorOperation::Multiply;state.color.first=state.alpha.first={ArgumentSource::Texture};state.color.second=state.alpha.second={ArgumentSource::Diffuse};
     batch.reserve(3072);
 }
@@ -23,7 +23,8 @@ void AnmRenderer::append(const SpriteVertex* v){
     if(!batch.empty()&&(!batch_state.compatible(state)||batch_texture!=texture))flush();
     if(batch.empty()){batch_state=state;batch_texture=texture;}
     if(sprite_velocity.x||sprite_velocity.y)backend.sprite_motion(u32(batch.size()),sprite_velocity);
-    for(u32 n:{0u,1u,2u,2u,1u,3u})batch.push_back(v[n]);if(batch.size()>=3072)flush();
+    // The original triangle list reverses the winding of the second triangle.
+    for(u32 n:{0u,1u,2u,1u,2u,3u})batch.push_back(v[n]);if(batch.size()>=3072)flush();
 }
 void AnmRenderer::unrotated(const AnmVm& vm,bool write_z){
     float x=vm.spriteSize.x*vm.scale.x*.5f,y=vm.spriteSize.y*vm.scale.y*.5f;
@@ -38,9 +39,9 @@ void AnmRenderer::rotated(const AnmVm& vm){
 }
 i32 AnmRenderer::finish(AnmVm& vm,bool round,bool mirror,bool keep_color){
     for(auto& v:quad){v.position.x+=shake.x;v.position.y+=shake.y;}
-    // Keep fractional sprite motion and size at the final presentation boundary.
+    // Match the original rounded sprite path before subtracting the half pixel.
     // The half-pixel offset is still required by the original raster convention.
-    if(round){const float left=quad[0].position.x-.5f,right=quad[1].position.x-.5f,top=quad[0].position.y-.5f,bottom=quad[2].position.y-.5f;
+    if(round){const float left=std::nearbyint(quad[0].position.x)-.5f,right=std::nearbyint(quad[1].position.x)-.5f,top=std::nearbyint(quad[0].position.y)-.5f,bottom=std::nearbyint(quad[2].position.y)-.5f;
         quad[0].position.x=quad[2].position.x=left;quad[1].position.x=quad[3].position.x=right;quad[0].position.y=quad[1].position.y=top;quad[2].position.y=quad[3].position.y=bottom;}
     const auto& sprite=*vm.loadedSprite;const float u0=(mirror?sprite.uvEnd.x:sprite.uvStart.x)+vm.uvScrollPos.x,u1=(mirror?sprite.uvStart.x:sprite.uvEnd.x)+vm.uvScrollPos.x,v0=sprite.uvStart.y+vm.uvScrollPos.y,v1=sprite.uvEnd.y+vm.uvScrollPos.y;
     for(u32 n=0;n<4;++n)quad[n].uv={n&1?u1:u0,n&2?v1:v0};
@@ -48,7 +49,26 @@ i32 AnmRenderer::finish(AnmVm& vm,bool round,bool mirror,bool keep_color){
     if(maxx<float(view.x)||maxy<float(view.y)||minx>float(view.x+view.width)||miny>float(view.y+view.height))return 0;
     if(!keep_color){const u32 rgba=color(vm);for(auto& v:quad)v.color=rgba;}prepare(vm);append(quad.data());return 0;
 }
+void AnmRenderer::draw_automatic(AnmVm& vm){
+    // ANM instruction 83 selects the original automatic draw dispatch.
+    switch(vm.playerBulletHitAnimationType){
+    case 0:draw_no_rotation(vm);break;
+    case 1:draw_no_rotation(vm,false);break;
+    case 2:draw_2d(vm);break;
+    case 3:draw_2d(vm,true);break;
+    case 4:draw_facing_camera(vm);break;
+    case 5:draw_world(vm);break;
+    }
+}
+
 i32 AnmRenderer::draw_no_rotation(AnmVm& vm,bool round,bool mirror){if(!drawable(vm))return -1;if(omit_sprite_geometry)return 0;unrotated(vm,true);return finish(vm,round,mirror);}
+i32 AnmRenderer::draw_subpixel(AnmVm& vm){
+    if(!drawable(vm))return -1;
+    if(omit_sprite_geometry)return 0;
+    unrotated(vm,true);
+    for(auto& vertex:quad){vertex.position.x-=.5f;vertex.position.y-=.5f;}
+    return finish(vm,false);
+}
 i32 AnmRenderer::draw_2d(AnmVm& vm,bool no_round){if(!vm.rotation.z&&!no_round)return draw_no_rotation(vm);if(!drawable(vm))return -1;if(omit_sprite_geometry)return 0;if(vm.rotation.z)rotated(vm);else unrotated(vm,false);return finish(vm,false);}
 i32 AnmRenderer::draw_quad(AnmVm& vm,const SpriteVertex* p){if(!drawable(vm))return -1;if(omit_sprite_geometry)return 0;prepare(vm);append(p);return 0;}
 i32 AnmRenderer::draw_strip(AnmVm& vm,const SpriteVertex* p,u32 n){if(!drawable(vm)||n<3)return -1;if(omit_sprite_geometry)return 0;prepare(vm);flush();backend.draw(state,texture,Topology::Strip,VertexLayout::ScreenColorUv,p,n);return 0;}
