@@ -38,9 +38,15 @@ html[data-ui-route-transition="page"] .account-art{clip-path:inset(var(--site-he
 .account-page :is(a,.account-text-action){text-decoration:none}
 .account-page :is(a,.account-text-action):hover{color:var(--book-ink)}
 .ui-kit-dialog.account-terms-dialog{display:flex;flex-direction:column;width:min(640px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:hidden}
-.account-terms-reading{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding-right:8px}
+.account-terms-dialog > h2{margin-bottom:12px;padding-inline-end:0}
+.account-terms-reading.ui-document{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding-inline-end:8px;font-size:14px;line-height:1.65}
+.account-terms-reading h2{margin-block:14px 5px;font-size:1em}
+.account-terms-reading p{margin-block:0 10px}
+.account-terms-reading ol{margin-block:0 10px;padding-inline-start:2.4em;list-style:decimal outside}
+.account-terms-reading li{margin-block:3px;padding-inline-start:0}
+.account-terms-reading a{font-weight:600;text-decoration:none}
 .account-terms-reading:focus-visible{outline:2px solid var(--kit-ring);outline-offset:-2px}
-.account-terms-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:16px}
+.account-terms-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:8px}
  .account-field-error{color:var(--kit-destructive);font-size:12px}
 .account-back{margin:0 0 24px;padding-inline:0;color:var(--book-muted)}
 .account-back svg{width:16px;height:16px}
@@ -63,4 +69,3 @@ html[data-ui-route-transition="page"] .account-art{clip-path:inset(var(--site-he
 @media(prefers-reduced-motion:reduce){.account-mode-content{animation:none}}
 html:has(body.less-motion) .account-mode-content{animation:none}
 }
-.account-terms-dialog .account-terms-reading a{font-weight:600;text-decoration:none}

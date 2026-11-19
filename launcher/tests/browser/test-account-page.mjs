@@ -387,11 +387,16 @@ try {
   assert.match(await page.$eval('.account-privacy a', link => link.getAttribute('href')), /privacy\.html\?lang=zh-CN$/);
   await page.click(termsToggle);
   await page.waitForSelector(termsDialog, {visible:true});
-  assert.deepEqual(await page.$$eval(`${termsDialog} > h2, ${termsDialog} > p`, nodes =>
-    nodes.map(node => node.classList.contains('sr-only'))), [true], 'only the accessible dialog title remains');
+  assert.equal(await page.$eval(`${termsDialog} > h2`, title => title.textContent.trim()), '服务条款');
+  assert.equal(await page.$(`${termsDialog} > p`), null);
+  assert.deepEqual(await page.$$eval('.account-terms-reading ol', lists =>
+    lists.map(list => [list.children.length, getComputedStyle(list).listStylePosition])),
+  [[3, 'outside'], [3, 'outside'], [6, 'outside']]);
   assert.equal(await page.$eval(termsToggle, button => button.getAttribute('aria-checked')), 'false');
-  assert.equal(await page.$eval(agreeButton, button => button.disabled), true);
-  assert.equal(await page.$eval(agreeButton, button => button.textContent.trim()), '请阅读完后再同意');
+  assert.equal(await page.$eval(agreeButton, button => {
+    const pane = button.closest('.account-terms-reading');
+    return !button.disabled && pane && button.getBoundingClientRect().top >= pane.getBoundingClientRect().bottom;
+  }), true, 'the enabled button is below the visible terms');
   assert.equal(await page.$eval('.account-terms-reading a', link => getComputedStyle(link).textDecorationLine), 'none');
   await page.click(`${termsDialog} .account-terms-actions button:first-child`);
   await page.waitForSelector(termsDialog, {hidden:true});
@@ -399,7 +404,6 @@ try {
   await page.click(termsToggle);
   await page.waitForSelector(termsDialog, {visible:true});
   await page.$eval('.account-terms-reading', pane => {pane.scrollTop = pane.scrollHeight;});
-  await page.waitForFunction(selector => !document.querySelector(selector)?.disabled, {}, agreeButton);
   assert.equal(await page.$eval(agreeButton, button => button.textContent.trim()), '同意');
   await page.click(agreeButton);
   await page.waitForSelector(termsDialog, {hidden:true});
