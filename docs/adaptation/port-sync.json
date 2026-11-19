@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "b0bba4888e4eecbe282454b2d75655f3789336ff",
+      "base": "1fef4eb4b86f554b54857cdd029a8ac45c3a270a",
       "history": [
         {
           "kind": "manual",
@@ -440,6 +440,16 @@
             "ports/th05-mp/tests/BrowserNativeTests.cpp"
           ],
           "note": "同步 Extra All Cast 跨音乐循环的节拍推进、无音乐回退及翻页与退出按键；两侧使用相同结局规则。"
+        },
+        {
+          "kind": "manual",
+          "base": "b0bba4888e4eecbe282454b2d75655f3789336ff",
+          "source": "1fef4eb4b86f554b54857cdd029a8ac45c3a270a",
+          "targetHead": "63d280e2a5cfe40c9cc18feb7a723493e86b9905",
+          "paths": [
+            "ports/th05-mp/Game/Stage/Boss/BossStage4.cpp"
+          ],
+          "note": "同步舞的激光转向帧：80–143 帧每 4 帧尝试转向，其余每 8 帧；保留多人版 AimAngle。0–400 帧的转向条件与 ReC98 汇编一致。"
         }
       ]
     },
