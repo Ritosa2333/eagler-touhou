@@ -29,7 +29,7 @@ test('world shake projects game sprites and typed geometry without mutating simu
     assert.throws(()=>draws.applyWorldShake(record,[Infinity,0]));
 });
 test('manual bullet/player/frozen-bullet callbacks retain native priorities independently of their ANM layer',()=>{
-    const report=JSON.parse(fs.readFileSync(path.join(root,'local/research/player-render-fixtures.json')));
+    const report=JSON.parse(fs.readFileSync(path.join(process.env.TH128_RESEARCH_FIXTURES??path.join(root,'local/research'),'player-render-fixtures.json')));
     assert.equal(typeof draws.nativeRecordPriority,'function');
     for(const pass of report.passes)assert.equal(draws.nativeRecordPriority({layer:0,drawPass:pass.name}),pass.priority);
     const records=[{id:1,layer:0,drawPass:'hostile-bullets'},{id:2,layer:0,drawPass:'player'},{id:3,layer:7},
@@ -39,7 +39,7 @@ test('manual bullet/player/frozen-bullet callbacks retain native priorities inde
 });
 test('world layer ordering follows actual native callback priorities, not numeric layer29 after HUD23',()=>{
     assert.equal(typeof draws.nativeDrawPriority,'function','original TH128 draw priority mapping is missing');
-    const report=JSON.parse(fs.readFileSync(path.join(root,'local/research/draw-pipeline-fixtures.json')));
+    const report=JSON.parse(fs.readFileSync(path.join(process.env.TH128_RESEARCH_FIXTURES??path.join(root,'local/research'),'draw-pipeline-fixtures.json')));
     assert.equal(report.executable.sha256,report.executable.sha256After);
     assert.equal(createHash('sha256').update(fs.readFileSync(path.join(root,'tools/research/draw_pipeline_probe.py'))).digest('hex'),report.generatorSha256);
     for(const sample of report.layers)assert.equal(draws.nativeDrawPriority(sample.layer),sample.priority);

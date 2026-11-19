@@ -53,10 +53,20 @@ bool Visuals::finish(std::string& error){
  error.clear();if(executing_||!failure_.empty()){error="unavailable spell visual end";return false;}Guard guard(executing_);
  scene_.remove(1);scene_.remove(5);scene_.remove(6);scene_.remove(7);for(int key=2;key<=4;++key)scene_.interrupt(key,1);return checked(error);
 }
+bool Visuals::bindShotLevel(int level,std::string& error){
+ scene_.remove(100);scene_.collect();
+ if(level>=0&&!scene_.bind(100,100,7,26+level*3,anm::Membership::Primary,0,0,{},false,nullptr,0,0,23)){error="native persistent shot level notice rejected";return false;}
+ return true;
+}
+bool Visuals::initializeShotLevel(unsigned level,std::string& error){
+ error.clear();if(executing_||!failure_.empty()||level>15){error="invalid initial shot level notice context";return false;}Guard guard(executing_);
+ // A World can start with the final group already selected. Only bind the
+ // authored persistent notice, without playing a level-up burst or sound.
+ return bindShotLevel(level==15?15:-1,error)&&checked(error);
+}
 bool Visuals::levelUp(int level,std::array<float,3> player,std::string& error){
  error.clear();if(executing_||!failure_.empty()||level<0||level>15){error="invalid original shot level-up context";return false;}Guard guard(executing_);
- scene_.remove(100);scene_.collect();
- if(!scene_.bind(100,100,7,26+level*3,anm::Membership::Primary,0,0,{},false,nullptr,0,0,23)){error="native persistent shot level notice rejected";return false;}
+ if(!bindShotLevel(level,error))return false;
  const auto identity=1000u+unsigned(level);scene_.remove(identity);scene_.collect();
  if(!scene_.bind(identity,identity,7,24+level*3,anm::Membership::Primary,320+player[0],16+player[1],{},false,nullptr,0,0,23,false,player[2])){error="native shot level effect rejected";return false;}
  return checked(error);

@@ -1170,6 +1170,77 @@ function nativeProfileView(profile){
   block(STATS_OFFSET,0x00025453,1068);block(CLEAR_OFFSET,0x00014443,38012);
   return view;
 }
+export const SPELL_MEDAL_CARDS=250;
+export function nativeSpellMedalFlags(profile){
+  const flags=new Uint8Array(SPELL_MEDAL_CARDS);
+  if(profile==null)return flags;
+  const view=nativeProfileView(profile);
+  for(let card=0;card<flags.length;card++){
+    const row=CLEAR_OFFSET+12+card*152;
+    flags[card]=(view.getInt32(row+132,true)>0?1:0)|(view.getInt32(row+128,true)>0?2:0)|(view.getInt32(row+136,true)>0?4:0);
+  }
+  return flags;
+}
+
+// Practice completion medals are local presentation history, not normal CD
+// counts, replay input, score eligibility, or extra-stage qualification.
+const PRACTICE_MEDAL_DB='th128-owned-practice-spell-medals-v1',PRACTICE_MEDAL_STORE='medals';
+function checkedMedalFlags(flags){
+  if(!(flags instanceof Uint8Array)||flags.length!==SPELL_MEDAL_CARDS||flags.some(bits=>bits>7))throw new Error('Practice medal table differs');
+  return flags;
+}
+export class OwnedPracticeSpellMedalStore{
+  constructor(indexedDB=globalThis.indexedDB){this.indexedDB=indexedDB;}
+  open(create){return new Promise((resolve,reject)=>{
+    const request=create?this.indexedDB.open(PRACTICE_MEDAL_DB,1):this.indexedDB.open(PRACTICE_MEDAL_DB);
+    request.onupgradeneeded=()=>{
+      if(!create){request.transaction.abort();return;}
+      request.result.createObjectStore(PRACTICE_MEDAL_STORE);
+    };
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error??new Error('Practice medal store unavailable'));
+    request.onblocked=()=>reject(new Error('Practice medal store open blocked'));
+  });}
+  async observe(){
+    if(!(await this.indexedDB.databases()).some(row=>row.name===PRACTICE_MEDAL_DB))return new Uint8Array(SPELL_MEDAL_CARDS);
+    const db=await this.open(false);
+    try{
+      const tx=db.transaction(PRACTICE_MEDAL_STORE,'readonly'),done=replayTransaction(tx);
+      const value=new Promise((resolve,reject)=>{
+        const request=tx.objectStore(PRACTICE_MEDAL_STORE).get('earned');
+        request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+      });
+      const [stored]=await Promise.all([value,done]);
+      return stored===undefined?new Uint8Array(SPELL_MEDAL_CARDS):checkedMedalFlags(stored).slice();
+    }finally{db.close();}
+  }
+  async merge(earned){
+    const additions=checkedMedalFlags(earned).slice();
+    if(!additions.some(Boolean))return this.observe();
+    const db=await this.open(true);let merged,problem;
+    try{
+      const tx=db.transaction(PRACTICE_MEDAL_STORE,'readwrite',{durability:'strict'}),done=replayTransaction(tx);
+      if(tx.durability!=='strict'){
+        tx.abort();try{await done;}catch{}
+        throw new Error('Practice medal strict persistence unavailable');
+      }
+      const store=tx.objectStore(PRACTICE_MEDAL_STORE),request=store.get('earned');
+      request.onsuccess=()=>{
+        try{
+          merged=request.result===undefined?new Uint8Array(SPELL_MEDAL_CARDS):checkedMedalFlags(request.result).slice();
+          let changed=false;for(let card=0;card<merged.length;card++)if((merged[card]|additions[card])!==merged[card]){
+            merged[card]|=additions[card];changed=true;
+          }
+          if(changed)store.put(merged,'earned');
+        }catch(error){problem=error;tx.abort();}
+      };
+      try{await done;}catch(error){throw problem??error;}
+    }finally{db.close();}
+    const observed=await this.observe();
+    if(!merged||merged.some((bits,card)=>(observed[card]&bits)!==bits))throw new Error('Practice medal durable readback differs');
+    return observed;
+  }
+}
 export function nativeRouteScorePacket(profile){
   const source=profile===null?null:nativeProfileView(profile),packet=new Uint8Array(428),view=new DataView(packet.buffer);
   view.setUint32(0,0x31485254,true);view.setUint32(4,35,true);

@@ -9,6 +9,7 @@ public:
  bool start(std::array<float,3> position,std::string& error,std::array<bool,3> medals={},int stageId=1,int spellId=-1);
  bool finish(std::string& error);
  bool retireFollowEffect(std::string& error);
+ bool initializeShotLevel(unsigned level,std::string& error);
  bool levelUp(int level,std::array<float,3> player,std::string& error);
  bool tick(std::array<float,3> position,bool active,std::string& error);
  std::vector<Visual> snapshots() const;
@@ -20,6 +21,7 @@ private:
  std::string failure_;
  bool executing_=false;
  bool checked(std::string& error);
+ bool bindShotLevel(int level,std::string& error);
  bool pose(const anm::Node& node,Visual& output,unsigned depth=0) const;
 };
 }

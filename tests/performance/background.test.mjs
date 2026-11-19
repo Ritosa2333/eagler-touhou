@@ -76,7 +76,8 @@ test('STD background uses one vertex upload per display',()=>{
 test('only adjacent equal texture blend and fog draws merge in stable triangle order',()=>{
  const {renderer,calls}=glHarness();renderer.drawBackground({geometry:drawRows});
  assert.deepEqual(calls.draws,[{start:0,count:12,texture:'A'},{start:12,count:6,texture:'B'},{start:18,count:6,texture:'A'}]);
- assert.deepEqual(calls.depth,[true,false,true,true]);
+ // The initial depth clear explicitly enables writes, before the first group.
+ assert.deepEqual(calls.depth,[true,true,false,true,true]);
 });
 test('different fog colours are never merged into one draw',()=>{
  const {renderer,calls}=glHarness(),rows=tiles();rows[1].fog[0]=7;renderer.drawBackground({geometry:()=>rows});

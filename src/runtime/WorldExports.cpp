@@ -489,6 +489,9 @@ unsigned postrunPresented=0,postrunMediaACKs=0;
 
 
 auto& spellVisuals=ownedBattle.spellVisuals;bool spellsConfigured=false;
+// Local presentation history is separate from the original normal score owner.
+std::array<std::uint8_t,250> spellMedalHistory{},practiceMedalAwards{};
+bool spellMedalHistoryBound=false;
 th128::spell::Result spellResult;
 int spellResultFrames=0;
 std::optional<double> spellStartSeconds;
@@ -1469,6 +1472,7 @@ void th128_world_reset() {
     battleEndingRuntime15=std::make_unique<th128::ending::Runtime15>();ordinaryDetachedEnding.reset();endingRuntimeSnapshot.clear();
     beginNewWorldGeneration();
     spellVisuals=std::make_unique<th128::spell::Visuals>();spellsConfigured=false;spellResult={};spellResultFrames=0;spellStartSeconds.reset();
+    spellMedalHistory={};practiceMedalAwards={};spellMedalHistoryBound=false;
     messages=std::make_unique<th128::message::Host>();messageVisuals=std::make_unique<th128::message::Visuals>();messagesConfigured=false;messageFrontConfigured=false;messageMusicSerial=0;resetRouteChoice();resetStageTransition();resetMusicControl();
     world=std::make_unique<th128::StageWorld>();laserLines=std::make_unique<th128::laser::LineHost>();operationError.clear();snapshot.clear();
     bulletAnimations.clear();bulletVisuals=std::make_unique<th128::bullet::BulletVisuals>();bulletDraws.clear();
@@ -2184,6 +2188,7 @@ int th128_world_start(const char* name,std::uint32_t nameLength,int difficulty,u
         }
     }else if(!world->start(identifier,difficulty,std::uint16_t(seed)))return 0;
     spellVisuals=std::make_unique<th128::spell::Visuals>();spellsConfigured=false;spellResult={};spellResultFrames=0;spellStartSeconds.reset();
+    spellMedalHistory={};practiceMedalAwards={};spellMedalHistoryBound=false;
     laserLines=std::make_unique<th128::laser::LineHost>();
     beginNewWorldGeneration();
     worldStartedName=identifier;worldStartDifficulty=difficulty;worldStartedSeed=seed;thpracReplay={};ordinaryReplayAuxiliary={};currentStageProgress=0;
@@ -2709,6 +2714,7 @@ int th128_world_enable_player_shots(const void* shot,std::uint32_t shotSize,cons
     const auto playerPose=world->playerAimPosition();
     if(!groups->configureNativeDefaultSelection(cumulativeArea,difficulty,0,
                                                {playerPose.x,playerPose.y,playerPose.z},operationError))return 0;
+    if(spellsConfigured&&!spellVisuals->initializeShotLevel(groups->state().group,operationError))return 0;
     candidate->setCallbackBindings({birthCallback,tickCallback,unknownCallback,collisionCallback});
     candidate->setSoundHost([](int identifier,float position,std::string& error){
         if(grazeSounds.size()>=65536){error="player shot sound journal budget";return false;}
@@ -3661,6 +3667,9 @@ int th128_world_restore_stage_carry(unsigned token) {
                                           {playerPose.x,playerPose.y,playerPose.z},operationError)){
         world->reportRuntimeFault(operationError);return 0;
     }
+    if(spellsConfigured&&!spellVisuals->initializeShotLevel(playerShotGroups->state().group,operationError)){
+        world->reportRuntimeFault(operationError);return 0;
+    }
     if(playerWindowControl.perfectCharge4b4d70/10000<stageCarry.perfectCharge/10000
         &&!perfectHud->notice(operationError)){
         world->reportRuntimeFault(operationError);return 0;
@@ -3746,6 +3755,19 @@ const char* th128_world_flow_capabilities() {
     return "{\"protocol\":1,\"opaqueCarry\":true,\"tokenAck\":true,\"ordinaryTransitions\":true,\"terminalCarry\":true,\"terminalTransitions\":false,\"initialContext\":\"explicit-diagnostic\",\"supportedBulletTypes\":[4,6,8,9,10,13,16,18,20,21,23,24,25,29,30,32],\"perfectFreezeNormalEmptyLasers\":true}";
 }
 const char* th128_world_message_state(){static std::string result;std::ostringstream text;writeMessageState(text);result=text.str();return result.c_str();}
+int th128_world_spell_medals_restore(const void* data,unsigned size){
+    operationError.clear();
+    if(world->faulted()||world->frame()!=0||worldTickExecuting||!spellsConfigured||spellMedalHistoryBound
+        ||size!=spellMedalHistory.size()||!th128::runtime::inputRange(data,size)){
+        operationError="spell medal history requires one fresh World and the native card table";return 0;
+    }
+    const auto* bytes=static_cast<const std::uint8_t*>(data);
+    if(std::any_of(bytes,bytes+size,[](auto flags){return flags>7;})){
+        operationError="invalid spell medal history flags";return 0;
+    }
+    std::copy_n(bytes,size,spellMedalHistory.begin());spellMedalHistoryBound=true;return 1;
+}
+const void* th128_world_practice_medal_awards(){return practiceMedalAwards.data();}
 int th128_world_enable_spells(const void* bullet,unsigned bulletSize,const void* boss,unsigned bossSize,const void* text,unsigned textSize,const void* font,unsigned fontSize,const void* card,unsigned cardSize,const void* player,unsigned playerSize){
     operationError.clear();
     if(world->faulted()||world->frame()!=0||spellsConfigured||!scoreFontLoaded){operationError="spell graphics require a fresh original font/world context";return 0;}
@@ -3760,6 +3782,7 @@ int th128_world_enable_spells(const void* bullet,unsigned bulletSize,const void*
             operationError=context+": "+(operationError.empty()?"ANM loader rejected without a diagnostic":operationError);return 0;
         }
     }
+    if(playerShotGroupsConfigured&&!candidate->initializeShotLevel(playerShotGroups->state().group,operationError))return 0;
     if(!world->setSpellHost([](const th128::SpellEvent& event,std::string& error){
         if(event.retireFollowEffect)return spellVisuals->retireFollowEffect(error);
         if(event.starting){
@@ -3769,6 +3792,10 @@ int th128_world_enable_spells(const void* bullet,unsigned bulletSize,const void*
                 else if(debugRecordPrefix.worldBound&&debugRecordPrefix.generation==worldGeneration)
                     medals=th128::record::NativeScoreProfile::spellMedals(debugRecordPrefix.profile,event.state.id);
             }catch(const std::exception& failure){error=failure.what();return false;}
+            if(event.state.id>=0&&std::size_t(event.state.id)<spellMedalHistory.size()){
+                const auto bits=spellMedalHistory[std::size_t(event.state.id)];
+                for(unsigned i=0;i<medals.size();++i)medals[i]=medals[i]||(bits&(1u<<i));
+            }
             spellStartSeconds=normalReplay?std::optional<double>(normalReplayClock):std::nullopt;
             spellResultFrames=0;if(!spellVisuals->start(event.position,error,medals,stageIdForEcl(worldStartedName),event.state.id))return false;
             if(normalRecord&&normalRecord->started()&&!debugRunTainted&&!replayPlayback.active()){
@@ -3785,6 +3812,15 @@ int th128_world_enable_spells(const void* bullet,unsigned bulletSize,const void*
         if(!perfectHudConfigured||!perfectHud->spellResult(event.result.notice,event.result.bonus,error))return false;
         const auto elapsed=normalReplay&&spellStartSeconds?std::optional<double>(normalReplayClock-*spellStartSeconds):std::nullopt;
         if(!perfectHud->spellTimes(unsigned(std::max(event.state.age,0))+1,elapsed,error))return false;
+        if(world->thpracChapter()&&thpracReplay.record&&thpracReplay.generation==worldGeneration
+            &&!thpracReplay.playback&&!replayPlayback.active()&&(event.state.flags&1u)
+            &&event.state.id>=0&&std::size_t(event.state.id)<practiceMedalAwards.size()){
+            // 40e3d2 records any actual finish; 40e40d/40e464 add the capture grades.
+            const auto card=std::size_t(event.state.id);
+            const auto flags=event.state.flags;
+            const auto earned=std::uint8_t(4u|((flags&2u)?2u|((flags&4u)?1u:0u):0u));
+            practiceMedalAwards[card]|=earned;spellMedalHistory[card]|=earned;
+        }
         spellResult=event.result;spellResultFrames=120;
         scoreRaw=int(std::min<std::int64_t>(999999999,std::int64_t(scoreRaw)+event.result.rawScore));
         if(event.result.captured)grazeSounds.push_back({48,0});return true;
@@ -3808,7 +3844,8 @@ int th128_world_pause_open(int gameOver){
         operationError="Game Over requires the actual negative-motivation death gate";return 0;
     }
     try{
-        originalPauseMenu->open(gameOver!=0,originalContinueCount,normalReplay&&normalReplay->frames()>0&&!debugRunTainted,world->frame(),replayPlayback.active());
+        const bool playback=replayPlayback.active()||thpracReplay.playback;
+        originalPauseMenu->open(gameOver!=0,originalContinueCount,normalReplay&&normalReplay->frames()>0&&!debugRunTainted,world->frame(),replayPlayback.active(),world->thpracChapter().has_value()&&!playback);
         originalMenuInput.reset();
         originalPauseSoundCursor=0;
         for(const auto identifier:originalPauseMenu->sounds())grazeSounds.push_back({identifier,0});
@@ -3979,6 +4016,7 @@ int th128_world_restore_thprac_replay_initial(){
     const auto pixels=th128::player::toPixels({x,y});
     if(!perfectHud->charge(std::bit_cast<int>(word(132)),operationError)
         ||!playerShotGroups->updateSelection(area,owner->difficulty,0,{pixels.horizontal,pixels.vertical,0},operationError)
+        ||(spellsConfigured&&!spellVisuals->initializeShotLevel(playerShotGroups->state().group,operationError))
         ||!world->setPlayerAimPosition({pixels.horizontal,pixels.vertical,0},operationError))return 0;
     playerRaw={x,y};scoreRaw=std::bit_cast<int>(word(12));pointValueRaw=std::bit_cast<int>(word(20));
     motivationRaw=std::bit_cast<int>(word(128));motivationFlag=0;grazeGlobals.grazeCount=std::bit_cast<int>(word(40));grazeGlobals.powerRaw=int(word(144));
@@ -4270,7 +4308,9 @@ int th128_world_tick(){
     if(world->faulted())return 0;
     if(th128_world_pause_active()){operationError="actual World tick is suspended by original pause/GameOver owner";return 0;}
     if(playerDeathConfigured&&playerHit->snapshot().gate.stateF78==2&&playerHit->snapshot().stateTimer.current>=30&&motivationRaw<0&&!debugInfiniteRespawnRun){
-        normalReplayClockPending=false;return th128_world_pause_open(1)?2:0;
+        // Opening the original menu does not commit a World or Replay frame.
+        normalReplayClockPending=false;thpracReplay.clockPending=false;
+        return th128_world_pause_open(1)?2:0;
     }
     if(worldTickExecuting){operationError="world tick is not reentrant";return 0;}
     if(debugRecordDriver.bound&&(debugRecordDriver.phase!=1
@@ -4841,6 +4881,50 @@ int th128_world_tick(){
     if(success&&debugRecordDriver.bound)debugRecordDriver.phase=2;
     return success?1:0;
 }
+static void writeSpellPresentation(th128::runtime::DrawJsonWriter& text){
+    const auto spell=world->phaseSpellContext();
+    text<<"{\"active\":"<<(spell&&(spell->flags&1u)?"true":"false")<<",\"id\":"<<(spell?spell->id:-1)
+        <<",\"age\":"<<(spell?spell->age:0)<<",\"bonus\":"<<(spell?spell->value80:0)<<",\"flags\":"<<(spell?spell->flags:0)<<",\"title\":[";
+    for(std::size_t index=0;index<world->spellTitle().size();++index){if(index)text<<',';text<<unsigned(world->spellTitle()[index]);}
+    text<<"],\"pose\":";
+    const auto pose=spellsConfigured?spellVisuals->titlePose():std::nullopt;
+    if(pose)text<<"{\"x\":"<<pose->x<<",\"y\":"<<pose->y<<",\"sx\":"<<pose->state.sx<<",\"sy\":"<<pose->state.sy<<",\"color\":"<<pose->state.primary<<'}';else text<<"null";
+    text<<",\"resultFrames\":"<<spellResultFrames<<",\"captured\":"<<(spellResult.captured?"true":"false")<<",\"resultBonus\":"<<spellResult.bonus<<'}';
+}
+const char* th128_world_presentation_state(){
+    static std::string result;
+    if(ownedBattle.attempted())return th128_world_state();
+    const auto pos=world->playerAimPosition();
+    th128::runtime::DrawJsonWriter text;
+    text<<"{\"frame\":"<<world->frame()<<",\"playerX\":"<<pos.x<<",\"playerY\":"<<pos.y
+        <<",\"playerState\":"<<(playerConfigured?playerHit->snapshot().gate.stateF78:-1)
+        <<",\"playerProtection\":"<<(playerConfigured?playerHit->snapshot().protection.current:-1)
+        <<",\"playerLaserContactCounter43a90\":"<<(playerConfigured?playerHit->snapshot().laserContactCounter43a90:-1)
+        <<",\"motivationRaw\":"<<motivationRaw<<",\"deathsCommitted\":"<<deathsCommitted
+        <<",\"screenShake\":["<<world->screenShake()[0]<<','<<world->screenShake()[1]<<']'
+        <<",\"debug\":{\"infiniteRespawn\":"<<(debugInfiniteRespawnRun?"true":"false")
+        <<",\"runTainted\":"<<(debugRunTainted?"true":"false")<<"},\"normalRecord\":";
+    writeNormalRecordState(text);text<<",\"flow\":";writeFlowEvidence(text);
+    text<<",\"normalTerminal\":";writeNormalTerminalState(text);
+    text<<",\"stageControl\":{\"current\":"<<stageControl.current()<<"},\"stageTransition\":";writeStageTransitionState(text);
+    text<<",\"musicControl\":";writeMusicControlState(text);
+    text<<",\"message\":";writeMessageState(text);
+    text<<",\"spell\":";writeSpellPresentation(text);text<<'}';
+    result=text.str();return result.c_str();
+}
+const char* th128_world_touch_state(){
+    static std::string result;
+    const auto pos=world->playerAimPosition();
+    const bool dialogue=messagesConfigured&&messages->state().active;
+    const auto route=routeChoice->status().phase;
+    using Phase=th128::routechoice::Phase;
+    const bool selection=dialogue&&routeChoiceConfigured&&(route==Phase::Intro||route==Phase::Select||route==Phase::Confirm||route==Phase::Releasing);
+    th128::runtime::DrawJsonWriter text;
+    text<<"{\"generation\":"<<worldGeneration<<",\"state\":"<<(playerConfigured?playerHit->snapshot().gate.stateF78:-1)
+        <<",\"x\":"<<pos.x<<",\"y\":"<<pos.y<<",\"dialogue\":"<<(dialogue?"true":"false")
+        <<",\"route\":"<<(selection?"true":"false")<<'}';
+    result=text.str();return result.c_str();
+}
 const char* th128_world_state() {
     if(ownedBattle.attempted()){
         if(normalTerminal.resourcesConfigured){snapshot=retiredOrdinaryLifecycle();return snapshot.c_str();}
@@ -4926,12 +5010,7 @@ const char* th128_world_state() {
     writeMusicControlState(text);
     text<<",\"flow\":";
     writeFlowEvidence(text);
-    text<<",\"spell\":{";
-    const auto spell=world->phaseSpellContext();text<<"\"active\":"<<(spell&&(spell->flags&1u)?"true":"false")<<",\"id\":"<<(spell?spell->id:-1)<<",\"age\":"<<(spell?spell->age:0)<<",\"bonus\":"<<(spell?spell->value80:0)<<",\"flags\":"<<(spell?spell->flags:0)<<",\"title\":[";
-    for(std::size_t index=0;index<world->spellTitle().size();++index){if(index)text<<',';text<<unsigned(world->spellTitle()[index]);}text<<"],\"pose\":";
-    const auto pose=spellsConfigured?spellVisuals->titlePose():std::nullopt;
-    if(pose)text<<"{\"x\":"<<pose->x<<",\"y\":"<<pose->y<<",\"sx\":"<<pose->state.sx<<",\"sy\":"<<pose->state.sy<<",\"color\":"<<pose->state.primary<<'}';else text<<"null";
-    text<<",\"resultFrames\":"<<spellResultFrames<<",\"captured\":"<<(spellResult.captured?"true":"false")<<",\"resultBonus\":"<<spellResult.bonus<<"},\"phaseTransitions\":[";
+    text<<",\"spell\":";writeSpellPresentation(text);text<<",\"phaseTransitions\":[";
     for(std::size_t index=0;index<world->phaseTransitions().size();++index){if(index)text<<',';const auto& phase=world->phaseTransitions()[index];text<<"{\"frame\":"<<phase.frame<<",\"entity\":"<<phase.entity<<",\"target\":\""<<phase.target<<"\",\"life\":"<<phase.life<<",\"timedOut\":"<<(phase.timedOut?"true":"false")<<'}';}text<<"],\"playerShots\":[";
     bool shotComma=false;
     for(const auto& shot:playerShots->snapshots()){

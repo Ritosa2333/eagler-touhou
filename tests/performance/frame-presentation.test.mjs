@@ -65,10 +65,10 @@ function presentationHarness(){
  const drawSource='function draw(alpha){const raw=worldPresentationForDraw(),view=highFramerateWorldView(raw.world,raw.records,alpha);calls.presentations.push({frame:raw.world.frame,x:view.records[0].x,interpolated:view.interpolated});return true;}return {present,setHighFramerateMode};';
  const construct=new Function('state','menu','document','WorldPresentationInterpolator','clock','originalMenuClock','originalPresentationFPS',
  'renderInterpolationPhase','stageIntroDrawFailure','advance','advanceNormalPostrun','advanceOriginalEnding','maybeAutoHandoff',
- 'syncGameplayFrameUI','requestAnimationFrame','performance','pause','status','error','calls',
+ 'syncGameplayFrameUI','requestAnimationFrame','performance','pause','status','error','calls','pollLocalBindings','practiceMenu','thpracToolsPanel',
  hfrSource+'\n'+presentSource+'\n'+drawSource);
  const tick=async()=>{calls.inputs.push(state.frame);calls.ticks++;state.frame++;};
- const h=construct(state,menu,{hidden:false},CountedHistory,clock,new FrameStepper(),fps,renderInterpolationPhase,()=>'',tick,tick,tick,()=>{},()=>{},()=>{},performance,()=>{},()=>{},e=>{throw e;},calls);
+ const h=construct(state,menu,{hidden:false},CountedHistory,clock,new FrameStepper(),fps,renderInterpolationPhase,()=>'',tick,tick,tick,()=>{},()=>{},()=>{},performance,()=>{},()=>{},e=>{throw e;},calls,()=>{},null,null);
  return {calls,state,...h};
 }
 test('four catch-up logic ticks export only the final display and keep all four inputs',async()=>{

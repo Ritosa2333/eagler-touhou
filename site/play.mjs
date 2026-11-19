@@ -938,6 +938,7 @@ const [renderer,draws,timing,inspector,sound]=await loadingDeadline(Promise.all(
   import('./inspector.mjs'),import('./runtime/sound.mjs')]),'运行页依赖');
 launcherContext?.signal.throwIfAborted();
 const {OwnedNativeTitleRecordStore,nativeRouteScorePacket,originalResultModel,originalResultPacket,persistOwnedNativeScoreCapture}=sound;
+const {OwnedPracticeSpellMedalStore,nativeSpellMedalFlags,SPELL_MEDAL_CARDS}=sound;
 const {WebGlRenderer}=renderer,{OriginalPresentationFPS,originalFPSDraws,originalFPSText,decodeDrawBuffer,orderDrawLayers,messageTextLayout,loadOriginalStageTextBank,drawOriginalStageText,loadOriginalHelpPage,splitOriginalMenuDraws,originalHelpPagePins,loadOriginalMainMusicRasters,disposeOriginalMainMusicRasters,uploadOriginalMainMusicRequest,decodeOriginalMainMusicPNG,loadOriginalResultFont,uploadOriginalResultTextRequest}=draws,{FrameStepper,WorldPresentationInterpolator,renderInterpolationPhase}=timing,
   {safeAssetUrl}=inspector,{GameSoundQueue,StageMusic,OriginalPauseController,MenuAudioGate,OwnedMenuSoundLedger,consumeMenuSoundWindow,OwnedReplayStore,originalReplayPreviewPacket,originalReplayNameContextPacket,OwnedLastNameFieldStore,originalNameProfilePacket,OriginalMainMenuController,OriginalMainSettingsStore,OriginalTitleAudio,TitleSoundWindowConsumer,OwnedReplayPlayback,clearOwnedWebSaveData}=sound,{parseStd,StageBackground}=renderer;
 if([WebGlRenderer,decodeDrawBuffer,orderDrawLayers,FrameStepper,WorldPresentationInterpolator,renderInterpolationPhase,OriginalPresentationFPS,originalFPSDraws,originalFPSText,safeAssetUrl,GameSoundQueue,StageMusic].some(value=>typeof value!=='function')){
@@ -975,9 +976,10 @@ function scaleThpracViewport(){
 
 function inheritThpracTools(selection){
  const prior=state.stageSelection,tools=state.thpracTools;
- if(!selection.thprac||!prior?.thprac||!tools||state.replayPlayback||selection.thprac.difficulty!==prior.thprac.difficulty||JSON.stringify(selection.thprac.params)!==JSON.stringify(prior.thprac.params))return selection;
+ const origin=prior?.thpracOrigin??prior?.thprac;
+ if(!selection.thprac||!origin||!tools||state.replayPlayback||selection.thprac.difficulty!==origin.difficulty||JSON.stringify(selection.thprac.params)!==JSON.stringify(origin.params))return selection;
  const s=tools.snapshot();selection.thpracRestartTools={mask:s.mask,speed:tools.speedFor(s.frame)};
- if(s.mask&64)selection.thpracRetainFrom=prior;return selection;
+ if((s.mask&64)&&JSON.stringify(selection.thprac.params)===JSON.stringify(prior.thprac.params))selection.thpracRetainFrom=prior;return selection;
 }
 function handleThpracToolKey(event){
  if(!['Backspace','F1','F2','F3','F4','F5','F6','F7','F12'].includes(event.code)||!state.active||state.launcherExited||state.thpracUIEnabled===false)return false;
@@ -1036,8 +1038,13 @@ function readNativeWorldPresentation(){
   const module=state.module,records=state.extraPresentation?.draws??(typeof readWorldDrawRecords==='function'?readWorldDrawRecords(module,{fastNumbers:true}):JSON.parse(module.UTF8ToString(module._th128_world_bullet_draws())));
   const drawError=module.UTF8ToString(module._th128_world_bullet_draw_error());if(drawError)throw new Error(drawError);
   const stageError=stageIntroDrawFailure(module);if(stageError)throw new Error(stageError);
-  const world=JSON.parse(module.UTF8ToString(module._th128_world_state()));
-  return {world,records};
+  const world=JSON.parse(module.UTF8ToString((module._th128_world_presentation_state??module._th128_world_state)()));
+  const hud={medals:[],levelMax:false};
+  for(const record of records){
+    if(record.bank===11&&record.script>=4&&record.script<=6&&record.sprite>=308&&record.sprite<=311)hud.medals[record.script-4]=record.sprite;
+    else if(record.bank===7&&record.script===71&&record.sprite===78&&(record.color>>>24)!==0)hud.levelMax=true;
+  }
+  return {world,records,hud};
 }
 function worldPresentationForDraw(){
   if(state.extraPresentation)return readNativeWorldPresentation();
@@ -1559,7 +1566,8 @@ function enterFaultMenu(reason){
 }
 function restartFaultWorld(){
   if(!state.stageSelection){status('没有可重建的 stage selection');faultOverlay();return;}
-  const selection=state.stageSelection;
+  const prior=state.stageSelection;
+  const selection=prior.thprac?inheritThpracTools(thpracStageSelection(prior.thpracOrigin??prior.thprac).selection):prior;
   menu.fault=false;menu.pauseOpen=false;menu.page='launch';
   find('#runtime-overlay').hidden=true;
   startLaunch(selection,'fault');
@@ -2602,6 +2610,7 @@ async function advanceSerial(){
       return;
     }
     const advanced=state.module._th128_world_tick();
+    if(advanced===1&&state.thpracRecorder&&!state.replayPlayback)saveEarnedPracticeMedals(state.module);
     if(advanced===2){await drainGameSounds();if(state.replayPlayback)finishOwnedReplay('实际游戏进入结束状态，回放已停止');else await openOriginalNativePause(true);return;}
     await drainGameSounds();
     if(advanced){await drainMusicControl();state.background?.tick();if(state.replayPlayback){const replay=state.replayPlayback.snapshot();if(replay.complete&&!state.replayPlayback.hasNext())finishOwnedReplay();}}
@@ -2698,6 +2707,34 @@ function recordOwnedMainSession(){
   const prior=state.mainStorageTask??Promise.resolve();
   const operation=prior.then(()=>persistOwnedNativeScoreCapture(module,store,state.nativeScoreRevision??0,capture)).then(receipt=>{state.nativeScoreRevision=receipt.revision;return receipt;});
   state.nativeScoreSaveTask=operation;state.mainStorageTask=operation;operation.catch(error);return operation;
+}
+const practiceMedalMemory=new Uint8Array(SPELL_MEDAL_CARDS);
+let practiceMedalSaveTask=Promise.resolve();
+function saveEarnedPracticeMedals(module){
+  if(typeof module._th128_world_practice_medal_awards!=='function')return;
+  const address=module._th128_world_practice_medal_awards(),heap=module.HEAPU8;
+  if(!address||address+SPELL_MEDAL_CARDS>heap.length)throw new Error('原生练习徽章范围无效');
+  let changed=false;
+  for(let card=0;card<practiceMedalMemory.length;card++){
+    const earned=heap[address+card];if(earned>7)throw new Error('原生练习徽章状态无效');
+    if((practiceMedalMemory[card]|earned)!==practiceMedalMemory[card]){practiceMedalMemory[card]|=earned;changed=true;}
+  }
+  if(!changed)return;
+  const earned=practiceMedalMemory.slice();
+  practiceMedalSaveTask=practiceMedalSaveTask.then(()=>new OwnedPracticeSpellMedalStore().merge(earned)).catch(problem=>{
+    status(`练习徽章暂未保存：${problem.message??problem}`);
+  });
+}
+async function readOwnedSpellMedals(practice){
+  await practiceMedalSaveTask;
+  await state.mainStorageTask;
+  const store=state.nativeScoreStore??=new OwnedNativeTitleRecordStore();
+  const flags=nativeSpellMedalFlags((await store.observe())?.profile);
+  if(practice){
+    const earned=await new OwnedPracticeSpellMedalStore().observe();
+    for(let card=0;card<flags.length;card++)flags[card]|=earned[card]|practiceMedalMemory[card];
+  }
+  return flags;
 }
 function nativeMainMemory(bytes,operation){
   const pointer=state.module._malloc(bytes.byteLength);
@@ -3808,6 +3845,13 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
           const expected=selection.thpracReplayIdentity;if(expected&&(expected.coreSHA256!==selection.thpracIdentity.coreSHA256||expected.resourceSHA256!==selection.thpracIdentity.resourceSHA256))throw new Error('Practice replay core/resource identity differs from loaded bytes');
         }
         else verifyFreshExtraOwner(JSON.parse(module.UTF8ToString(module._th128_world_state())),selection);
+        if((thprac||state.replayPlayback)&&typeof module._th128_world_spell_medals_restore==='function'){
+          const flags=await readOwnedSpellMedals(!!thprac);if(stale())return;
+          const pointer=memory(flags);
+          try{
+            if(module._th128_world_spell_medals_restore(pointer,flags.byteLength)!==1)throw new Error(module.UTF8ToString(module._th128_world_error())||'原生徽章历史载入失败');
+          }finally{module._free(pointer);}
+        }
         state.shotMode=shots;find('#emit-shot').disabled=!shots;
         state.worldMode=true;state.active=true;state.paused=window.__TH128_DIAGNOSTIC_PAUSED__===true;clock.reset();resetHighFrameratePresentation();stopAudio({keepContext:pendingAudio?.retained===true,keepPracticeMusic:pendingAudio?.retained?pendingAudio.music:null});
         find('#game-menu').hidden=true;
@@ -3921,7 +3965,7 @@ function handoffFailure(message){
 function prepareThprac128Continuation(selection,prior){
  const previous=prior?.thprac;if(!previous||previous.params.mode!==1||selection.difficulty!==previous.difficulty||selection.stage.id===16)throw new Error('Practice next-stage owner differs');
  const thprac=createThprac128Session({...previous.params,stage:selection.stage.id-1,section:0,phase:0,dlg:false},previous.difficulty);
- const tools=state.thpracTools,snapshot=tools?.snapshot();selection.thprac=thprac;selection.practiceContinuation=true;
+ const tools=state.thpracTools,snapshot=tools?.snapshot();selection.thprac=thprac;selection.thpracOrigin=prior.thpracOrigin??previous;selection.practiceContinuation=true;
  if(snapshot)selection.thpracRestartTools={mask:snapshot.mask,speed:tools.speedFor(snapshot.frame)};
  if(!state.replayPlayback&&state.thpracRecorder)selection.thpracRecordingContinuation=state.thpracRecorder.continuation();return selection;
 }
@@ -4078,7 +4122,7 @@ function originalPauseConsumer(){
       if(!current())return;
       const selected=state.stageSelection;
       if(!selected)throw new Error('重新开始缺少当前路线');
-      if(selected.thprac){menu.pauseOpen=false;return startLaunch(inheritThpracTools(thpracStageSelection(selected.thprac).selection),'route');}
+      if(selected.thprac){menu.pauseOpen=false;return startLaunch(inheritThpracTools(thpracStageSelection(selected.thpracOrigin??selected.thprac).selection),'route');}
       const stageId=selected.stage.id===16?16:selected.stage.id<=5?1:selected.stage.id<=10?6:11;
       const next=prepareStage(stageId,{difficulty:selected.difficulty,seed:34772,progress:0,debugExtra:selected.debugExtra===true});
       menu.pauseOpen=false;return startLaunch(next,'route');
@@ -4523,7 +4567,7 @@ async function restartTouchRun(){
     await recordOwnedMainSession();if(!current())return;
   }finally{state.restartSealing=false;}
   menu.pauseOpen=false;
-  if(selected.thprac)return startLaunch(inheritThpracTools(thpracStageSelection(selected.thprac).selection),'route');
+  if(selected.thprac)return startLaunch(inheritThpracTools(thpracStageSelection(selected.thpracOrigin??selected.thprac).selection),'route');
   const stageId=selected.stage.id===16?16:selected.stage.id<=5?1:selected.stage.id<=10?6:11;
   return startLaunch(prepareStage(stageId,{difficulty:selected.difficulty,seed:34772,progress:0,debugExtra:selected.debugExtra===true}),'route');
 }
@@ -4542,14 +4586,17 @@ function installWebInput(){
     isEnabled:()=>Boolean(state.active||menu.launching||state.normalPostrun||state.endingHost||menu.fault),
     storage:touchStorage,options:launchOptions,zoomEnabled:localConfig?.layoutZoom??true,viewport:find('#gameViewport'),
     getGameContext:()=>{
-      const s=state.worldMode&&state.module?._th128_world_state?JSON.parse(state.module.UTF8ToString(state.module._th128_world_state())):null;
+      const module=state.module;
+      const t=state.worldMode&&module?._th128_world_touch_state?JSON.parse(module.UTF8ToString(module._th128_world_touch_state())):null;
+      const s=!t&&state.worldMode&&module?._th128_world_state?JSON.parse(module.UTF8ToString(module._th128_world_state())):null;
       const blocked=state.paused||menu.pauseOpen||state.handoff||state.endingLoading||state.endingHost||state.normalPostrun||thpracToolsPanel?.isOpen;
-      const choosingRoute=s?.message?.active===true&&['intro','select','confirm','releasing'].includes(s.message.routeChoice?.phase);
-      const kind=state.replayPlayback?'replay':state.worldMode&&!blocked&&!choosingRoute?(s?.message?.active?'dialogue':'game'):'menu';
-      return{key:[state.action,menu.launchId,menu.page,s?.flow?.worldGeneration??0,s?.playerState??0,kind].join(':'),kind,
-        instance:[state.action,s?.flow?.worldGeneration??0,s?.playerState??0].join(':'),gestureScope:state.action,
-        ready:kind==='game'&&s?.playerState===1,paused:!!blocked,generation:s?.flow?.worldGeneration??0,
-        x:Math.trunc((s?.playerX??0)*128),y:Math.trunc((s?.playerY??400)*128),fast:576,slow:256,trackerAvailable:false};
+      const choosingRoute=t?.route??(s?.message?.active===true&&['intro','select','confirm','releasing'].includes(s.message.routeChoice?.phase));
+      const kind=state.replayPlayback?'replay':state.worldMode&&!blocked&&!choosingRoute?((t?.dialogue??s?.message?.active)?'dialogue':'game'):'menu';
+      const generation=t?.generation??s?.flow?.worldGeneration??0,playerState=t?.state??s?.playerState??0;
+      return{key:[state.action,menu.launchId,menu.page,generation,playerState,kind].join(':'),kind,
+        instance:[state.action,generation,playerState].join(':'),gestureScope:state.action,
+        ready:kind==='game'&&playerState===1,paused:!!blocked,generation,
+        x:Math.trunc((t?.x??s?.playerX??0)*128),y:Math.trunc((t?.y??s?.playerY??400)*128),fast:576,slow:256,trackerAvailable:false};
     },
     onTouchMotion:motion=>{
       if(!state.worldMode||state.paused||state.replayPlayback)return;
@@ -4736,19 +4783,23 @@ window.th128Debug={
   },
   redrawEmission:({interpolation=1}={})=>{
     if(!state.module?._th128_world_bullet_draws||!state.renderer)throw new Error('Bullet presentation is unavailable');
-    const raw=worldPresentationForDraw();let records=raw.records.slice();const world=raw.world;
+    const raw=worldPresentationForDraw();let records=raw.records;const world=raw.world;
     state.worldSnapshot=world;
     const nativePlayer=records.find(record=>record.id===4000000&&record.drawPass==='player');
     const presentation=highFramerateWorldView(world,records,interpolation);records=presentation.records;
     const displayedPlayer=records.find(record=>record.id===4000000&&record.drawPass==='player');
-    const fpsRate=state.shotMode?originalPresentationFPS.value:null,fpsDraws=originalFPSDraws(fpsRate);
-    records.push(...fpsDraws);
+    const fpsRate=state.shotMode?originalPresentationFPS.value:null,fpsDraws=originalFPSDraws(fpsRate),canvas=find('#game');
+    if(fpsDraws.length)records=records.concat(fpsDraws);
     syncDebugRespawnUI(world);
     syncGameplayFrameUI(world);
     if(menu.pauseOpen&&!menu.fault&&state.nativePause){
       const layers=splitOriginalMenuDraws(records);
       state.renderer.render(orderDrawLayers(layers.battle,{world:true}),{world:true,background:state.background,shake:world.screenShake??[0,0]});
-      if(state.nativePause.active)state.renderer.renderOriginalPauseFrame(orderDrawLayers(layers.menu,{world:true}),state.nativePause.snapshot());
+      if(state.nativePause.active){
+        const paused=state.nativePause.snapshot();
+        state.renderer.renderOriginalPauseFrame(orderDrawLayers(layers.menu,{world:true}),paused);
+        canvas.dataset.nativePausePresentation=JSON.stringify({ready:paused.ready,kind:paused.kind,selection:paused.selection,confirm:paused.confirm,closing:paused.closing});
+      }
       syncOriginalFPSPresentation(fpsRate,fpsDraws);
       const dialogue=find('#dialogue-text');if(dialogue)dialogue.hidden=true;
       return records.length;
@@ -4757,24 +4808,31 @@ window.th128Debug={
     syncOriginalFPSPresentation(fpsRate,fpsDraws);
     if(!state.replayPlayback&&world.normalRecord?.bound&&!world.normalRecord?.tainted&&!world.normalRecord?.prepared&&state.replayNativeBound)
       if(state.module._th128_world_records_present(performance.now()/1000)!==1)throw new Error(state.module.UTF8ToString(state.module._th128_world_error())||'原生成绩显示时钟被拒绝');
-    const message=world.message,canvas=find('#game');let overlay=find('#dialogue-text');
+    const message=world.message;let overlay=find('#dialogue-text');
+    if(canvas.dataset.nativePausePresentation!==undefined)delete canvas.dataset.nativePausePresentation;
     const playerHit={state:world.playerState,protection:world.playerProtection,deaths:world.deathsCommitted,
       motivation:world.motivationRaw,lightContact:world.playerLaserContactCounter43a90};
-    canvas.dataset.nativePresentation=JSON.stringify({frame:world.frame,highFramerate:highFramerateEnabled,interpolation:presentation.interpolated?interpolation:1,nativePlayerX:nativePlayer?.x??null,displayedPlayerX:displayedPlayer?.x??null,stage:world.flow?.currentId??null,playerHit,spellId:world.spell?.active?world.spell.id:null,messageActive:!!message?.active,messageClock:message?.clock??null,routeChoice:message?.routeChoice?.started?{phase:message.routeChoice.phase,selection:message.routeChoice.message78}:null,dialogueText:message?.active?messageTextLayout(message,find('#variant').value).map(line=>line.text).join('\n'):'',bossAnimations:records.filter(record=>record.bank===3&&record.entry===0).slice(0,16).map(record=>({id:record.id,script:record.script??null,sprite:record.sprite,clock:record.clock??null,visualTicks:record.visualTicks??null,x:record.x,y:record.y,flags:record.flags,flags2:record.flags2}))});
+    canvas.dataset.nativePresentation=JSON.stringify({frame:world.frame,highFramerate:highFramerateEnabled,interpolation:presentation.interpolated?interpolation:1,nativePlayerX:nativePlayer?.x??null,displayedPlayerX:displayedPlayer?.x??null,stage:world.flow?.currentId??null,playerHit,spellId:world.spell?.active?world.spell.id:null,hud:raw.hud,spellResult:world.spell?.resultFrames>0?{frames:world.spell.resultFrames,captured:world.spell.captured}:null,messageActive:!!message?.active,messageClock:message?.clock??null,routeChoice:message?.routeChoice?.started?{phase:message.routeChoice.phase,selection:message.routeChoice.message78}:null,dialogueText:message?.active?messageTextLayout(message,find('#variant').value).map(line=>line.text).join('\n'):'',bossAnimations:records.filter(record=>record.bank===3&&record.entry===0).slice(0,16).map(record=>({id:record.id,script:record.script??null,sprite:record.sprite,clock:record.clock??null,visualTicks:record.visualTicks??null,x:record.x,y:record.y,flags:record.flags,flags2:record.flags2}))});
     if(!overlay){overlay=document.createElement('canvas');overlay.id='dialogue-text';overlay.setAttribute('aria-label','原版剧情对话');canvas.parentElement.append(overlay);}
     if(overlay.width!==canvas.width||overlay.height!==canvas.height){overlay.width=canvas.width;overlay.height=canvas.height;}
-    const context=overlay.getContext('2d');context.clearRect(0,0,overlay.width,overlay.height);
-    const spell=world.spell;overlay.hidden=(!message?.active||!message.lines?.length)&&!spell?.pose&&!spell?.active&&!spell?.resultFrames;
-    if(!overlay.hidden){context.setTransform(overlay.width/640,0,0,overlay.height/480,0,0);context.lineJoin='round';context.textBaseline='top';
-      for(const line of messageTextLayout(message,find('#variant').value,{nativeRasters:find('#variant').value==='zh'})){if(find('#variant').value==='zh'){drawOriginalStageText(context,state.stageTextRasters,{...line,kind:line.rasterKind,rawHex:line.rawHex});}else{context.save();context.translate(line.x,line.y);context.scale(line.sx,line.sy);context.textAlign=line.align;context.font=`400 ${line.font}px ${originalStageTextFamily(find('#variant').value)}`;context.lineWidth=3;context.strokeStyle='#101018';context.fillStyle='#fff';context.globalAlpha=line.outlineAlpha;if(line.outlineAlpha>0)context.strokeText(line.text,0,0);context.globalAlpha=line.alpha;if(line.alpha>0)context.fillText(line.text,0,0);context.restore();}}
+    const spell=world.spell,locale=find('#variant').value;
+    const needsText=!!(message?.active&&message.lines?.length||spell?.pose&&spell.title?.length);
+    if(overlay.hidden===needsText)overlay.hidden=!needsText;
+    const context=needsText?overlay.getContext('2d'):null,previousText=state.stageTextPresentation;
+    const reuseText=needsText&&!world.normalTerminal?.begun&&previousText?.world===world&&previousText.canvas===overlay
+      &&previousText.width===overlay.width&&previousText.height===overlay.height&&previousText.locale===locale&&previousText.rasters===state.stageTextRasters;
+    if(needsText&&!reuseText){context.clearRect(0,0,overlay.width,overlay.height);context.setTransform(overlay.width/640,0,0,overlay.height/480,0,0);context.lineJoin='round';context.textBaseline='top';
+      for(const line of messageTextLayout(message,locale,{nativeRasters:locale==='zh'})){if(locale==='zh'){drawOriginalStageText(context,state.stageTextRasters,{...line,kind:line.rasterKind,rawHex:line.rawHex});}else{context.save();context.translate(line.x,line.y);context.scale(line.sx,line.sy);context.textAlign=line.align;context.font=`400 ${line.font}px ${originalStageTextFamily(locale)}`;context.lineWidth=3;context.strokeStyle='#101018';context.fillStyle='#fff';context.globalAlpha=line.outlineAlpha;if(line.outlineAlpha>0)context.strokeText(line.text,0,0);context.globalAlpha=line.alpha;if(line.alpha>0)context.fillText(line.text,0,0);context.restore();}}
       if(spell?.pose&&spell.title?.length){
-        const pose=spell.pose,title=new TextDecoder(find('#variant').value==='ja'?'shift_jis':'gbk',{fatal:true}).decode(Uint8Array.from(spell.title));
-        if(find('#variant').value==='zh'){drawOriginalStageText(context,state.stageTextRasters,{kind:'spell',rawHex:spell.title.map(value=>value.toString(16).padStart(2,'0')).join(''),x:pose.x,y:pose.y,sx:pose.sx,sy:pose.sy,alpha:(pose.color>>>24)/255,outlineAlpha:(pose.color>>>24)/255,align:'right'});}else{context.save();context.translate(pose.x,pose.y);context.scale(pose.sx,pose.sy);context.globalAlpha=(pose.color>>>24)/255;context.font='18px "Microsoft YaHei","Yu Gothic",sans-serif';context.textAlign='right';context.lineWidth=3;context.strokeStyle='#101018';context.fillStyle='#fff';context.strokeText(title,0,0);context.fillText(title,0,0);context.restore();}
+        const pose=spell.pose;
+        if(locale==='zh'){drawOriginalStageText(context,state.stageTextRasters,{kind:'spell',rawHex:spell.title.map(value=>value.toString(16).padStart(2,'0')).join(''),x:pose.x,y:pose.y,sx:pose.sx,sy:pose.sy,alpha:(pose.color>>>24)/255,outlineAlpha:(pose.color>>>24)/255,align:'right'});}else{const title=new TextDecoder(locale==='ja'?'shift_jis':'gbk',{fatal:true}).decode(Uint8Array.from(spell.title));context.save();context.translate(pose.x,pose.y);context.scale(pose.sx,pose.sy);context.globalAlpha=(pose.color>>>24)/255;context.font='18px "Microsoft YaHei","Yu Gothic",sans-serif';context.textAlign='right';context.lineWidth=3;context.strokeStyle='#101018';context.fillStyle='#fff';context.strokeText(title,0,0);context.fillText(title,0,0);context.restore();}
       }
       context.resetTransform();
+      state.stageTextPresentation=world.normalTerminal?.begun?null:{world,canvas:overlay,width:overlay.width,height:overlay.height,locale,rasters:state.stageTextRasters};
     }
+    if(!needsText)state.stageTextPresentation=null;
     syncGameplayMusicState(message);
-    if(!state.replayPlayback)state.renderer.renderOriginalTerminalFade(world,overlay.hidden?null:context);
+    if(!state.replayPlayback)state.renderer.renderOriginalTerminalFade(world,context);
     return records.length;
   },
   state:()=>{

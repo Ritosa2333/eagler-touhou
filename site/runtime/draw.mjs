@@ -39,17 +39,17 @@ export function messageTextLayout(state,variant,{nativeRasters=false}={}){
   return output;
 }
 
+const nativeLayerPriorities=[4,6,8,9,11,13,16,17,18,19,20,23,26,27,29,31,36,38,40,43,44,53,54,56,57,68,69,null,null,14,41,71,70];
+const nativePassPriorities={'hostile-bullets':32,'hostile-lasers':30,player:25,items:28,'frozen-bullets':24,'original-percent-hud':55,'original-freeze-reward-panel':47,'original-spell-bonus':47,'original-fps':67,'original-menu-font0':74,'original-pause-shade':52,'original-pause-backdrop':70,'original-pause-front':68};
 export function nativeDrawPriority(layer) {
-  const priorities=[4,6,8,9,11,13,16,17,18,19,20,23,26,27,29,31,36,38,40,43,44,53,54,56,57,68,69,null,null,14,41,71,70];
-  if(!Number.isInteger(layer)||layer<0||layer>=priorities.length||priorities[layer]===null)throw new Error(`Unimplemented native ANM layer priority ${layer}`);
-  return priorities[layer];
+  if(!Number.isInteger(layer)||layer<0||layer>=nativeLayerPriorities.length||nativeLayerPriorities[layer]===null)throw new Error(`Unimplemented native ANM layer priority ${layer}`);
+  return nativeLayerPriorities[layer];
 }
 export function nativeRecordPriority(record){
   if(record.drawPass===undefined)return nativeDrawPriority(record.layer);
   if(record.drawPass==='playerShotGroup')return nativeDrawPriority(record.layer);
-  const priorities={'hostile-bullets':32,'hostile-lasers':30,player:25,items:28,'frozen-bullets':24,'original-percent-hud':55,'original-freeze-reward-panel':47,'original-spell-bonus':47,'original-fps':67,'original-menu-font0':74,'original-pause-shade':52,'original-pause-backdrop':70,'original-pause-front':68};
-  if(!Object.hasOwn(priorities,record.drawPass))throw new Error(`Unimplemented native draw callback ${record.drawPass}`);
-  return priorities[record.drawPass];
+  if(!Object.hasOwn(nativePassPriorities,record.drawPass))throw new Error(`Unimplemented native draw callback ${record.drawPass}`);
+  return nativePassPriorities[record.drawPass];
 }
 export function applyWorldShake(record,offset){
   if(!Array.isArray(offset)||offset.length!==2||!offset.every(value=>Number.isFinite(value)&&Math.abs(value)<=4096))throw new Error('Invalid original shake offset');
@@ -59,11 +59,22 @@ export function applyWorldShake(record,offset){
 }
 
 export function orderDrawLayers(records,{world=false}={}) {
-  if(!Array.isArray(records)||records.length>65536||records.some(record=>!record||!Number.isInteger(record.layer)||record.layer<0||record.layer>255)){
+  if(!Array.isArray(records)||records.length>65536){
     throw new Error('Invalid world ANM layer records');
   }
-  if(world)for(const record of records)nativeRecordPriority(record);
-  return records.slice().sort((first,second)=>world?nativeRecordPriority(first)-nativeRecordPriority(second):first.layer-second.layer);
+  // Bounded priorities: evaluate each once and retain submission order for
+  // equal priorities (blending and overlapping sprites depend on this).
+  const offsets=new Uint32Array(256),keys=new Uint8Array(records.length);
+  for(let i=0;i<records.length;i++){
+    const record=records[i];
+    if(!record||!Number.isInteger(record.layer)||record.layer<0||record.layer>255)throw new Error('Invalid world ANM layer records');
+    const key=world?nativeRecordPriority(record):record.layer;keys[i]=key;offsets[key]++;
+  }
+  let next=0;
+  for(let key=0;key<offsets.length;key++){const count=offsets[key];offsets[key]=next;next+=count;}
+  const ordered=new Array(records.length);
+  for(let i=0;i<records.length;i++)ordered[offsets[keys[i]]++]=records[i];
+  return ordered;
 }
 
 export function argbColor(value) {

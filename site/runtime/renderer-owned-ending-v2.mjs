@@ -3,6 +3,8 @@ import {argbColor, quadVertices, nativeRecordPriority,applyWorldShake,triangleSt
 import {safeAssetUrl} from '../inspector.mjs';
 const scalar=Math.fround;
 const finite=value=>Number.isFinite(value)&&Math.abs(value)<=1048576;
+const unboundedSpriteClamp=Object.freeze([-1048576,-1048576,1048576,1048576]);
+const unboundedVerticalClamp=Object.freeze([-1048576,1048576]);
 function appendQuad(renderer,record,texture,colors){
   const positions=renderer.quadPositions??=new Float64Array(8),mode=record.mode;
   if(mode!==0&&mode!==1){
@@ -572,12 +574,17 @@ export class WebGlRenderer {
     graphics.uniform2fv(this.verticalClampUniform,this.verticalClamp);
     graphics.uniform4fv(this.spriteClampUniform,this.spriteClamp);
     graphics.bindTexture(graphics.TEXTURE_2D,this.current.texture);
-    graphics.bufferData(graphics.ARRAY_BUFFER,new Float32Array(this.vertices),graphics.STREAM_DRAW);
+    const length=this.vertices.length;
+    if(!this.batchUpload||this.batchUpload.length<length)
+      this.batchUpload=new Float32Array(Math.max(length,(this.batchUpload?.length??0)*2,256));
+    this.batchUpload.set(this.vertices);
+    graphics.bufferData(graphics.ARRAY_BUFFER,this.batchUpload.subarray(0,length),graphics.STREAM_DRAW);
     graphics.drawArrays(graphics.TRIANGLES,0,this.vertices.length/8);
     this.vertices.length = 0;
   }
 
   material(mode) {
+    if(this.blend===mode&&Number.isInteger(mode)&&mode>=0&&mode<=6)return;
     const graphics = this.gl;
     const factors = [[graphics.SRC_ALPHA,graphics.ONE_MINUS_SRC_ALPHA],[graphics.SRC_ALPHA,graphics.ONE],
       [graphics.SRC_ALPHA,graphics.ONE],[graphics.ONE,graphics.ZERO],
@@ -775,7 +782,7 @@ export class WebGlRenderer {
   render(records,{world=false,background=null,shake=[0,0],overlay=false,nativeMenu=false}={}) {
     if(!Array.isArray(records)||records.length>65536)throw new Error('Invalid draw-record budget');
     if(nativeMenu&&(world||background||overlay||this.canvas.width!==1280||this.canvas.height!==960))throw new Error('Invalid native menu raster context');
-    if(world)records=records.map(record=>applyWorldShake(record,shake));
+    if(world&&!(Array.isArray(shake)&&shake.length===2&&shake[0]===0&&shake[1]===0))records=records.map(record=>applyWorldShake(record,shake));
     const meshes=new Map(),fans=new Map(),lines=new Map(),laserDepths=new Map();
     let meshPoints=0,mainCount=0,priority=-1,mainSeen=false;
     for(const record of records){
@@ -886,10 +893,11 @@ export class WebGlRenderer {
         &&record.u===0&&record.v===0&&record.uvScaleX===1&&record.uvScaleY===1;
       const spriteClamp=staticAtlas
         ?[Math.min(record.u0,record.u1)+.5/texture.width,Math.min(record.v0,record.v1)+.5/texture.height,Math.max(record.u0,record.u1)-.5/texture.width,Math.max(record.v0,record.v1)-.5/texture.height]
-        :[-1048576,-1048576,1048576,1048576];
+        :unboundedSpriteClamp;
       const verticalClamp=texture.balloon&&record.script>=138&&record.script<=155
-        ?[Math.min(record.v0,record.v1)+0.5/texture.height,Math.max(record.v0,record.v1)-0.5/texture.height]:[-1048576,1048576];
-      if (this.current !== texture || point !== this.point || verticalClamp[0]!==this.verticalClamp[0] || verticalClamp[1]!==this.verticalClamp[1]||spriteClamp.some((value,index)=>value!==this.spriteClamp?.[index])) {
+        ?[Math.min(record.v0,record.v1)+0.5/texture.height,Math.max(record.v0,record.v1)-0.5/texture.height]:unboundedVerticalClamp;
+      if (this.current !== texture || point !== this.point || verticalClamp[0]!==this.verticalClamp[0] || verticalClamp[1]!==this.verticalClamp[1]
+          ||spriteClamp!==this.spriteClamp&&spriteClamp.some((value,index)=>value!==this.spriteClamp?.[index])) {
         this.flush();
         this.current = texture;
         this.point = point;

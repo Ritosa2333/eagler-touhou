@@ -42,7 +42,7 @@ class Host {
     std::vector<int> sounds_;
     std::string failure_;
     unsigned age_=0;
-    bool executing_=false,confirmationLeaving_=false,confirmationAccepted_=false,helpEntering_=false;
+    bool executing_=false,confirmationLeaving_=false,confirmationAccepted_=false,helpEntering_=false,practiceRetry_=false;
     Action requested_=Action::None;
     static constexpr unsigned Root=1;
     [[noreturn]] void fail(const std::string& reason){if(failure_.empty())failure_=reason;throw std::runtime_error(failure_);}
@@ -62,7 +62,7 @@ class Host {
     void sound(int identifier){sounds_.push_back(identifier);}
     void signal(int code){scene_.interrupt(Root,code);checked();}
     Action selectedAction() const{
-        if(state_.selection==0)return state_.kind==Kind::GameOver?Action::Continue:Action::Resume;
+        if(state_.selection==0)return state_.kind==Kind::GameOver?(practiceRetry_?Action::Restart:Action::Continue):Action::Resume;
         if(state_.selection==1)return Action::Title;
         if(state_.selection==2)return state_.kind==Kind::Replay?Action::Restart:Action::ReplaySave;
         if(state_.selection==3)return Action::Manual;
@@ -139,12 +139,13 @@ public:
     void loadBackdrop(std::span<const std::uint8_t> bytes){if(state_.active||executing_||backdropLoaded_)fail("backdrop resource requires fresh pause owner");backdrop_.load(bytes);backdropLoaded_=true;}
     bool backdropLoaded()const{return backdropLoaded_;}
     const OriginalPauseBackdrop& backdrop()const{return backdrop_;}
-    void open(bool gameOver,int continues,bool replayAvailable,std::uint64_t sourceFrame=0,bool playback=false){
+    void open(bool gameOver,int continues,bool replayAvailable,std::uint64_t sourceFrame=0,bool playback=false,bool practiceRetry=false){
         if(!state_.loaded||state_.active||executing_||continues<0||continues>9)fail("invalid original pause entry");
         const auto serial=state_.serial+1;state_={};state_.loaded=true;state_.active=true;state_.serial=serial;
         state_.kind=playback?Kind::Replay:gameOver?Kind::GameOver:Kind::Pause;
         state_.rows=playback?3:5;
-        state_.disabled[0]=gameOver&&continues>=5;
+        practiceRetry_=gameOver&&!playback&&practiceRetry;
+        state_.disabled[0]=gameOver&&!practiceRetry_&&continues>=5;
         state_.disabled[2]=!playback&&(!replayAvailable||continues>0);
         state_.selection=state_.disabled[0]?1:0;
         age_=0;requested_=Action::None;confirmationLeaving_=false;confirmationAccepted_=false;helpEntering_=false;sounds_.clear();scene_.reset();
