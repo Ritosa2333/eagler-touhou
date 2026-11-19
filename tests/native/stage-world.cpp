@@ -361,7 +361,7 @@ int main(int argc,char** argv) {
             require(damageWorld.error().find("0x417370")!=std::string::npos,"death remains mandatory, not automatic removal");
             require(!damageWorld.tick()&&queries==4,"fault cannot replay damage");
         }
-        for(const auto hiddenFlag:{1u,32u}){
+        for(const auto hiddenFlag:{2u,32u,32768u}){
             th128::StageWorld gated;
             auto targetWords=stringWords("target");targetWords.insert(targetWords.end(),{floatBits(0),floatBits(100),20,0,0});
             const auto data=program({{"main",join({instruction(260,targetWords,0,0,255,6),instruction(0,{},100)})},
@@ -370,11 +370,11 @@ int main(int argc,char** argv) {
             require(gated.load("gated.ecl",data.data(),data.size(),reason)&&gated.start("gated.ecl",1,0),reason);
             require(gated.setEnemyContactHost([&](const th128::EnemySnapshot&,th128::enemy::Bounds,std::string&){++contacts;return true;},reason),reason);
             require(gated.enableLocalEnemyPasses(reason),reason);
-            require(contacts==0,"flags1/32 skip actual after-ECL shot query");
+            require(contacts==0,"flags 2/32/32768 skip the default after-ECL body contact");
             require(gated.tick()&&gated.tick(),gated.error());
             require(contacts==0,"constructor guard prevents a duplicate first-pass update before ECL time2");
             require(gated.tick(),gated.error());
-            require(contacts==1,"clearing the gate enables the query on that actual ECL tick");
+            require(contacts==1,"clearing the gate enables body contact on that actual ECL tick");
         }
         {
             th128::StageWorld visible;
@@ -391,26 +391,35 @@ int main(int argc,char** argv) {
             auto childWords=stringWords("target");
             childWords.insert(childWords.end(),{floatBits(7),floatBits(100),20,0,0});
             const auto data=program({{"main",join({instruction(260,childWords,0,0,255,6),instruction(1,{},200)})},
-                {"target",join({instruction(400,{floatBits(24),floatBits(28)}),instruction(0,{},200)})}});
+                {"target",join({instruction(400,{floatBits(24),floatBits(28)}),
+                    instruction(401,{floatBits(16),floatBits(20)}),instruction(0,{},200)})}});
             std::string reason;
             require(contactWorld.load("contact.ecl",data.data(),data.size(),reason),reason);
             require(contactWorld.start("contact.ecl",1,0),contactWorld.error());
-            unsigned visits=0;
+            unsigned visits=0,shotQueries=0;
+            require(contactWorld.setEnemyDamageHost([&](const th128::EnemySnapshot&,th128::enemy::Bounds bounds,std::string&)
+                ->std::optional<th128::EnemyDamageSample>{
+                require(bounds.width==24&&bounds.height==28,"shot query still receives opcode400");
+                ++shotQueries;th128::EnemyDamageSample sample;
+                sample.query.continuation=th128::shotenemy::QueryContinuation::Complete;return sample;
+            },reason),reason);
             require(contactWorld.setEnemyContactHost([&](const th128::EnemySnapshot& enemy,th128::enemy::Bounds bounds,std::string& error){
                 require(!enemy.root&&enemy.x==7&&enemy.y==100,"contact uses actual combined state after ECL");
-                require(bounds.width==24&&bounds.height==28,"opcode400 extents reach real query");
+                require(bounds.width==16&&bounds.height==20,"body contact receives opcode401, independently of opcode400 shot extents");
+                require(shotQueries==1,"body contact runs after the actual shot query");
                 ++visits;error="contact continuation required";return false;
             },reason),reason);
             require(!contactWorld.enableLocalEnemyPasses(reason),"constructor-time contact must fail before linking");
             require(visits==1&&contactWorld.error()=="contact continuation required","contact host is mandatory and sticky");
             require(!contactWorld.tick()&&visits==1,"failed contact cannot be replayed");
         }
-        auto initial=program({{"main",join({instruction(40,{0}),instruction(900),instruction(1)})}});
+        // Out-of-table host misses above 615 are intentionally ignored by the original VM.
+        auto initial=program({{"main",join({instruction(40,{0}),instruction(499),instruction(1)})}});
         std::string error;
         require(world.load("fixture.ecl",initial.data(),initial.size(),error),error);
         require(world.start("fixture.ecl",1,0x1234),world.error());
         require(!world.tick(),"unknown world callback must halt");
-        require(world.error().find("900")!=std::string::npos,"world diagnostics preserve actual opcode");
+        require(world.error().find("499")!=std::string::npos,"world diagnostics preserve actual opcode");
         const auto retained=world.error();
         require(!world.tick()&&world.error()==retained,"world fault is sticky");
         require(!world.start("missing.ecl",1,0),"missing stage rejects");

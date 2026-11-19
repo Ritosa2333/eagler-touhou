@@ -3,6 +3,7 @@
 #include "game/BulletVisuals.hpp"
 #include "game/AppearanceBounds.hpp"
 #include "game/BulletUpdateHost.hpp"
+#include "game/BulletCollisionRules.hpp"
 #include "game/GrazeRules.hpp"
 #include "game/EnemyVisuals.hpp"
 #include "game/PlayerHitHost.hpp"
@@ -2340,6 +2341,22 @@ int th128_world_enable_bullet_updates(const void* shot,std::uint32_t size) {
         if(removed)bulletAnimations.erase(bullet.id);
         return success;
     },operationError))return 0;
+    if(worldStartedName=="st_ex.ecl"&&worldStartDifficulty==4&&!world->setEnemyContactHost(
+        [](const th128::EnemySnapshot& enemy,th128::enemy::Bounds body,std::string& error){
+            // The authored Marisa body in BossCard9 uses the ordinary 0x416811 circle branch.
+            // Other phases/actors and the selector-3 light columns keep their existing owners.
+            const auto spell=world->phaseSpellContext();
+            if(!playerConfigured||!spell||!(spell->flags&1u)||spell->id!=248
+                ||world->bossSlots().owners[0]!=enemy.id)return true;
+            const auto player=world->playerAimPosition();
+            namespace collision=th128::bullet::collision;
+            const auto geometry=collision::circleGeometry({enemy.x,enemy.y},body.width*.5f,
+                {player.x,player.y},playerProfileRadius);
+            if(!geometry){error="EX155 body contact geometry is out of range";return false;}
+            // The original enemy caller ignores the circle helper's graze return.
+            if(*geometry!=collision::Geometry::PotentialHit)return true;
+            return playerHit->confirmedOverlap({player.x,player.y,player.z},playerHitControl,error).has_value();
+        },operationError))return 0;
     playerProfileRadius=radius;
     const auto attraction=std::uint32_t(bytes[8])|(std::uint32_t(bytes[9])<<8)|(std::uint32_t(bytes[10])<<16)|(std::uint32_t(bytes[11])<<24);
     playerAttractionSpeed=std::bit_cast<float>(attraction);

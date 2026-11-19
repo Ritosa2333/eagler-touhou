@@ -112,6 +112,7 @@ public:
     using GeometryUpdater=std::function<bool(std::uint32_t,const std::array<float,3>&,std::string&)>;
     using GeometryRemover=std::function<bool(std::uint32_t,std::string&)>;
     bool setGeometryHost(GeometryConstructor create,GeometryUpdater update,GeometryRemover remove,std::string& error);
+    // Default circular body contact after the ECL, shot query and phase update; uses opcode 401.
     using EnemyContactHost=std::function<bool(const EnemySnapshot&,enemy::Bounds,std::string&)>;
     bool setEnemyContactHost(EnemyContactHost host,std::string& error);
     using EnemyDamageHost=std::function<std::optional<EnemyDamageSample>(const EnemySnapshot&,enemy::Bounds,std::string&)>;

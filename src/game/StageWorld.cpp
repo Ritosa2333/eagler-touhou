@@ -294,14 +294,14 @@ bool StageWorld::setGeometryHost(GeometryConstructor create,GeometryUpdater upda
 }
 bool StageWorld::setEnemyContactHost(EnemyContactHost host,std::string& error){
     error.clear();
-    if(!started_||executing_||frame_!=0||spawnCount_!=0||!error_.empty()||enemyContactHost_||enemyDamageHost_||!host){
+    if(!started_||executing_||frame_!=0||spawnCount_!=0||!error_.empty()||enemyContactHost_||!host){
         error="enemy contact host requires a fresh pre-pass world";return false;
     }
     enemyContactHost_=std::move(host);return true;
 }
 bool StageWorld::setEnemyDamageHost(EnemyDamageHost host,std::string& error){
     error.clear();
-    if(!started_||executing_||frame_!=0||spawnCount_!=0||!error_.empty()||enemyContactHost_||enemyDamageHost_||!host){
+    if(!started_||executing_||frame_!=0||spawnCount_!=0||!error_.empty()||enemyDamageHost_||!host){
         error="enemy damage host requires a fresh pre-pass world";return false;
     }
     enemyDamageHost_=std::move(host);return true;
@@ -569,11 +569,6 @@ bool StageWorld::updateLocal(Entity& entity) {
     if(!error_.empty())return false;
     if(!run(entity))return false;
     entity.state.flags&=~0x400000u;
-    if(!entity.state.root&&entity.state.active&&!(entity.state.flags&0x21u)&&enemyContactHost_){
-        std::string reason;
-        try{if(!enemyContactHost_(entity.state,entity.hitbox,reason))return fail(reason.empty()?"enemy contact host rejected":reason);}
-        catch(...){return fail("enemy contact host threw");}
-    }
     bool phaseSwitched=false;
     if(!entity.state.root&&entity.state.active&&!(entity.state.flags&0x21u)&&enemyDamageHost_){
         std::string reason;std::optional<EnemyDamageSample> sample;
@@ -616,6 +611,15 @@ bool StageWorld::updateLocal(Entity& entity) {
         }
     }
     if(!phaseSwitched&&!advancePhase(entity))return false;
+    // 0x4167ae: body contact is separate from the 0x21 shot query gate.
+    // The registered owner covers the default circle, not transformed or callback bodies.
+    if(enemyContactHost_&&!entity.state.root&&entity.state.active&&entity.callbackSelector==0
+        &&!(entity.state.flags&0x08008022u)){
+        std::string reason;
+        try{if(!enemyContactHost_(entity.state,entity.hurtbox,reason)||!reason.empty()||!error_.empty())
+            return fail(reason.empty()?"enemy body contact host rejected":reason);}
+        catch(...){return fail("enemy body contact host threw");}
+    }
     if(entity.geometryActive){
         std::string reason;
         try{if(!geometryUpdater_||!geometryUpdater_(entity.state.id,{entity.state.x,entity.state.y,entity.state.z},reason))
