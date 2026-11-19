@@ -16,6 +16,7 @@ struct EffectServices {
     Vec3 players[2];float player_angles[2]{},player_steps[2]{};i32 characters[2]{},spirit_counts[2]{};bool rewards_blocked=false;
     explicit EffectServices(Rng& r):random(r){}
     virtual ~EffectServices()=default;
+    virtual void select_field(i32){}
     virtual void start_animation(AnmVm&,i32 side,bool character_resource,i32 script)=0;
     virtual bool advance_animation(AnmVm&)=0;
     virtual void draw_animation(AnmVm&)=0;

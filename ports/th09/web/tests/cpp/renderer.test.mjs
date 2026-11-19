@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {oracle,core,memory,report} from './helpers.mjs';
+import {oracle,core,memory,report,originalSpriteTriangleOrder} from './helpers.mjs';
 test('CPU sprite vertices, clipping, tint, blend and depth match original draw paths',async()=>{
  const m=await oracle(),c=await core(),f=c.renderer_fixture(),p=Array.from({length:7},(_,i)=>c.renderer_part(f,i)),manager=m.allocate(0x12900),vm=m.allocate(0x2a4),sprite=m.allocate(0x44),device=m.allocate(4),vt=m.allocate(0x160),arg=i=>m.u32(m.reg('ESP')+4+4*i);
+ const triangleOrder=await originalSpriteTriangleOrder();
+ assert.deepEqual(triangleOrder,[0,1,2,1,2,3]);
  let dv=new DataView(c.memory.buffer),drawn=[],checks=0,submitted=0,automaticChecks=0,blend=5,depth=1,seed=0x81263714;const random=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return seed>>>0;},real=(scale=1)=>(random()%10001-5000)/5000*scale;
  m.view(manager,0x12900).fill(0);m.write(manager+0x12884,[3,0,0xff,0xff]);m.u32(0x4dc550,manager);m.u32(0x4b3108,device);m.u32(device,vt);m.u32(0x4b3448,0x4b3178);
  m.u32(vt+0xf4,m.registerImport({dll:'renderer',name:'texture',argc:3,handler:()=>0}));m.u32(vt+0xc8,m.registerImport({dll:'renderer',name:'state',argc:3,handler:()=>{assert.equal(arg(1),20);blend=arg(2)===2?1:5;return 0;}}));
- m.replace(0x4396a0,'flush-boundary',()=>0);m.replace(0x439730,'quad-boundary',()=>{const b=m.bytes(arg(0),112);for(const n of [0,1,2,2,1,3])drawn.push(...b.subarray(n*28,(n+1)*28));return 0;},1);
+ m.replace(0x4396a0,'flush-boundary',()=>0);m.replace(0x439730,'quad-boundary',()=>{const b=m.bytes(arg(0),112);for(const n of triangleOrder)drawn.push(...b.subarray(n*28,(n+1)*28));return 0;},1);
  m.replace(0x42ff40,'depth-boundary',()=>{assert.equal(arg(0),14);depth=arg(1);return 0;},2);
  m.view(0x4dc558,112).fill(0);for(let n=0;n<4;++n){m.f32(0x4dc558+n*28+12,1);m.u32(0x4dc558+n*28+16,0xffffffff);}
  function u(off,value){dv.setUint32(p[0]+off,value,true);m.u32(vm+off,value);}function q(off,value){dv.setFloat32(p[0]+off,value,true);m.f32(vm+off,value);}function s(off,value){dv.setFloat32(p[1]+off,value,true);m.f32(sprite+off,value);}

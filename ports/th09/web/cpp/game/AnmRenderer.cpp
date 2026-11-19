@@ -22,7 +22,8 @@ void AnmRenderer::prepare(const AnmVm& vm){
 void AnmRenderer::append(const SpriteVertex* v){
     if(!batch.empty()&&(!batch_state.compatible(state)||batch_texture!=texture))flush();
     if(batch.empty()){batch_state=state;batch_texture=texture;}
-    for(u32 n:{0u,1u,2u,2u,1u,3u})batch.push_back(v[n]);if(batch.size()>=3072)flush();
+    // The original triangle list reverses the winding of the second triangle.
+    for(u32 n:{0u,1u,2u,1u,2u,3u})batch.push_back(v[n]);if(batch.size()>=3072)flush();
 }
 void AnmRenderer::unrotated(const AnmVm& vm,bool write_z){
     float x=vm.spriteSize.x*vm.scale.x*.5f,y=vm.spriteSize.y*vm.scale.y*.5f;

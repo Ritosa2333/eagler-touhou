@@ -7,6 +7,18 @@ import {NativeMachine} from '../../scripts/native/machine.mjs';
 export const root=fileURLToPath(new URL('../../',import.meta.url));
 export const target=JSON.parse(readFileSync(resolve(root,'target.json'),'utf8'));
 export const bits=value=>new Uint32Array(new Float32Array([value]).buffer)[0];
+export async function originalSpriteTriangleOrder(){
+    const m=await oracle();
+    try{
+        const manager=m.allocate(0x2b2900),quad=m.allocate(112),triangles=m.allocate(168);
+        m.view(manager,0x2b2900).fill(0);
+        m.view(quad,112).fill(0);
+        for(let vertex=0;vertex<4;++vertex)m.u32(quad+vertex*28,vertex);
+        m.u32(manager+0x2b28e8,triangles);
+        m.call(0x439730,{ecx:manager,args:[quad]});
+        return Array.from({length:6},(_,vertex)=>m.u32(triangles+vertex*28));
+    }finally{m.close();}
+}
 let loadedCoreSha256=null;
 export async function oracle(){
     const bytes=readFileSync(resolve(root,target.executable));

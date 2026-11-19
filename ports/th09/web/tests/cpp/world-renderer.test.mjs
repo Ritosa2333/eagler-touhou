@@ -1,15 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {oracle,core,memory,report,d3dxScalar} from './helpers.mjs';
+import {oracle,core,memory,report,d3dxScalar,originalSpriteTriangleOrder} from './helpers.mjs';
 test('World sprites and billboards match original transforms and submitted vertices',async()=>{
  const m=await oracle(),c=await core(),f=c.renderer_fixture(),p=Array.from({length:12},(_,i)=>c.renderer_part(f,i)),manager=m.allocate(0x12900),vm=m.allocate(0x2a4),sprite=m.allocate(0x44),device=m.allocate(4),vt=m.allocate(0x160),arg=i=>m.u32(m.reg('ESP')+4+4*i);d3dxScalar(m);
+ const triangleOrder=await originalSpriteTriangleOrder();
+ assert.deepEqual(triangleOrder,[0,1,2,1,2,3]);
  let dv=new DataView(c.memory.buffer),drawn=[],matrices=new Map(),checks=0,automaticChecks=0,seed=0x21423812;const random=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return seed>>>0;},real=scale=>(random()%10001-5000)/5000*scale;
  m.view(manager,0x12900).fill(0);m.write(manager+0x12884,[3,0,255,255,255]);m.u32(0x4dc550,manager);m.u32(0x4b3108,device);m.u32(device,vt);m.u32(0x4b3448,0x4b3178);
  for(const [slot,argc] of [[0xf4,3],[0xc8,3],[0x130,2],[0x14c,4],[0xfc,4],[0xa0,2]])m.u32(vt+slot,m.registerImport({dll:'world-draw',name:'state',argc,handler:()=>0}));
  m.u32(vt+0x94,m.registerImport({dll:'world-draw',name:'matrix',argc:3,handler:()=>{matrices.set(arg(1),m.bytes(arg(2),64));return 0;}}));
  const worldVertices=[-128,-128,0,0,0,128,-128,0,1,0,-128,128,0,0,1,128,128,0,1,1],worldBytes=new Uint8Array(new Float32Array(worldVertices).buffer);m.write(manager+0x12894,worldBytes);
  m.u32(vt+0x118,m.registerImport({dll:'world-draw',name:'vertices',argc:4,handler:()=>{drawn.push(...worldBytes);return 0;}}));
- m.replace(0x4396a0,'flush',()=>0);m.replace(0x439730,'quad',()=>{const b=m.bytes(arg(0),112);for(const n of [0,1,2,2,1,3])drawn.push(...b.subarray(n*28,(n+1)*28));return 0;},1);m.replace(0x42ff40,'depth',()=>0,2);
+ m.replace(0x4396a0,'flush',()=>0);m.replace(0x439730,'quad',()=>{const b=m.bytes(arg(0),112);for(const n of triangleOrder)drawn.push(...b.subarray(n*28,(n+1)*28));return 0;},1);m.replace(0x42ff40,'depth',()=>0,2);
  m.view(0x4dc558,112).fill(0);for(let n=0;n<4;++n){m.f32(0x4dc558+28*n+12,1);m.u32(0x4dc558+28*n+16,0xffffffff);}
  const write=(at,n,values)=>{const b=new Uint8Array(new Float32Array(values).buffer);memory(c,at,b.length).set(b);m.write(n,b);};
  const identity=[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
