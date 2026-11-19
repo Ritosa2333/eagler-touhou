@@ -172,6 +172,8 @@
 
 ## 运行验收记录
 
+2026-10-28 normal／multiplayer：高刷使用当前帧外推，最多向前一个逻辑帧；原始逻辑与回放沿用 60 Hz 更新。构建、原生检查和 Presentation Lab 的验证范围见[外推记录](../../archive/motion-extrapolation-153-20261028/README.md)。
+
 2026-10-25 multiplayer：共同菜单、局末本地结算、旁观原生保存与三人挑战恢复通过，见[多人生命周期记录](../../docs/adaptation/multiplayer-lifecycle-20261025.md)。
 
 2026-10-19 multiplayer：修复对话与共享结界同帧开启造成重复结算及待开启状态残留，2P/3P 生产函数级回归见[共享结界记录](../../docs/adaptation/th07-border-dialogue-20261019.md)。Gameplay ABI 13、Netplay ABI 14。

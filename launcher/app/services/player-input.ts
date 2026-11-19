@@ -229,6 +229,7 @@ export function bindPlayerInput({
     fireState: session.touchFireState,
     getSettings: session.getActiveSettings,
     editing,
+    controlsBlocked: () => player.classList.contains('browser-practice-open'),
     playerOpen: () => session.getSnapshot().playerOpen,
     iosWebKitTouch: ios,
     refocus,
@@ -336,6 +337,7 @@ export function bindPlayerInput({
     }
     if (snapshot.launched && snapshot.epoch !== startedEpoch) {
       startedEpoch = snapshot.epoch;
+      if (session.getActiveSettings()?.gameId === 'th03') touch.resetTh03Fire();
       zoom.applyTransform(1, 0, 0);
       touch.syncControls();
       keyboard.startFocusRelay();
@@ -350,6 +352,8 @@ export function bindPlayerInput({
       if (message.event === 'first-frame' && runtime.getSnapshot().launched) touch.syncControls();
     });
   const unsubscribeLayout = session.touchLayout.subscribe(applyLayout);
+  const applyPc98SurfaceLayout = () => applySavedPlayerTouchLayout(player, safe, profile());
+  window.addEventListener('pc98-touch-surface-change', applyPc98SurfaceLayout);
   const reset = (event: Event) => {
     if (!runtime.getSnapshot().launched) return;
     event.preventDefault();
@@ -375,6 +379,7 @@ export function bindPlayerInput({
       unsubscribe();
       unsubscribeEvents();
       unsubscribeLayout();
+      window.removeEventListener('pc98-touch-surface-change', applyPc98SurfaceLayout);
       gamepad.dispose();
       keyboard.dispose();
       touch.dispose();

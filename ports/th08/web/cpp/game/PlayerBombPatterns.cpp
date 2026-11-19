@@ -43,7 +43,7 @@ Vec3 PlayerBombPatterns::presentation_position(u32 index)const{
     return {presentation::lerp_world(p.position.x,o.position.x),presentation::lerp_world(p.position.y,o.position.y),presentation::lerp_world(p.position.z,o.position.z)};
 }
 float PlayerBombPatterns::presentation_angle(u32 index)const{
-    if(index<128&&presentation::world_alpha>=1)return objects.objects[index].angle;
+    if(index<128&&presentation::world_alpha==1)return objects.objects[index].angle;
     if(index>=128||!presentation::active)return index<128?objects.objects[index].angle:0;const auto& o=objects.objects[index];const auto& p=presentation_previous[index];if(p.state!=o.state||p.script!=o.animation[0].scriptIndex||o.animation[0].currentTimeInScript.current<p.age)return o.angle;
     constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=o.angle-p.angle;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(p.angle+delta*presentation::world_alpha,0);
 }

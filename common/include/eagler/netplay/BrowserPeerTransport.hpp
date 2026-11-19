@@ -33,6 +33,11 @@ public:
     bool ConnectSpectator(const char *relayUrl, const char *spectatorId,
                           std::uint8_t playerCount, bool stageSpectatorHistory = false);
     void Close();
+    // Leave the relay's run (signaling + relay lane) once the gameplay
+    // session is complete, while the RTC data channels stay open. The relay
+    // sees this seat finish without any peer losing its final inputs. No
+    // signaling reconnect follows; relay-routed gameplay is unaffected.
+    void ReleaseRelayPresence();
     bool IsOpen() const override;
     bool Failed() const override;
     bool Recovering() const override;

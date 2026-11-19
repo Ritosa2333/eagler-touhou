@@ -26,7 +26,7 @@ def prepare_host_shell(source, identity):
     source = source[:start] + json.dumps(identity, ensure_ascii=False) + source[end:]
     anchor = ' await mountData();'
     assert source.count(anchor) == 1
-    source = source.replace(anchor, anchor + "\n Module.FS.symlink('/th14.dat','/th11.dat');", 1)
+    source = source.replace(anchor, anchor + "\n if(!Module._th14_adopt_managed_archive)Module.FS.symlink('/th14.dat','/th11.dat');", 1)
     assert "game='th14'" in source and "core?.th11_key(" in source
     return source
 
@@ -38,6 +38,7 @@ def main():
     parser.add_argument('--common', type=Path, default=os.environ.get('EAGLER_COMMON', repo.parents[1] / 'common'))
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--jobs', type=int, choices=range(1, 17), default=3)
+    parser.add_argument('--single-threaded', action='store_true', help='Build the fallback for browsers without cross-origin isolation')
     args = parser.parse_args()
     sdk = args.emsdk.resolve()
     compiler = sdk / 'upstream/emscripten/emcc.py'
@@ -58,6 +59,11 @@ def main():
     sources = [portable / 'Renderer.cpp', *sorted((cpp / 'game').glob('*.cpp'), key=lambda p: p.name),
                *sorted((cpp / 'sdl').glob('*.cpp'), key=lambda p: p.name)]
     flags = profile['flags'][:]
+    if args.single_threaded:
+        threaded = {'-pthread', '-DTH14_CPP_BOOT_WORKER=1', '-DTH14_CPP_STAGE_WORKER=1',
+                    '-DTH14_CPP_STAGE_DECODE=1', '-DTH14_CPP_STAGE_RESOURCE_HANDSHAKE=1',
+                    '-DTH14_SHARED_SCENE_COPY=1', '-DTH14_STAGE_RESTORE_DELIVERY=1'}
+        flags = [flag for flag in flags if flag not in threaded]
     common = args.common.resolve()
     imgui = common / 'third_party/imgui'
     shared = common / 'include'
@@ -67,7 +73,8 @@ def main():
     flags += ['-I' + str(imgui), '-I' + str(shared), '-DIMGUI_DISABLE_WIN32_FUNCTIONS']
     tracked = set(source for source in sources if source.is_relative_to(repo))
     common_files = [*sorted(imgui.glob('*.h')), *sorted(imgui.glob('*.inl')), *sorted(imgui.glob('*.cpp')),
-                    *sorted((shared / 'eagler/thprac').glob('Practice*'))]
+                    *sorted((shared / 'eagler/thprac').glob('Practice*')),
+                    shared / 'eagler/input/DialogueGesture.hpp']
     common_bindings = {p.relative_to(common).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in common_files}
     for directory in (cpp, runtime / 'portable'):
         tracked.update(p for p in directory.rglob('*')
@@ -89,6 +96,9 @@ def main():
 
     link_flags = [str(portable / 'Th14WebGpuLibrary.js') if f == 'portable/sdl/Th14WebGpuLibrary.js' else f
                   for f in profile['linkFlags']]
+    if args.single_threaded:
+        link_flags = [flag for flag in link_flags
+                      if not flag.startswith('-sPTHREAD_') and flag != '-sALLOW_BLOCKING_ON_MAIN_THREAD=1']
     with tempfile.TemporaryDirectory(dir=output, prefix='emsdk-') as temp:
         env.update(TMP=temp, TMPDIR=temp, TEMP=temp)
         with ThreadPoolExecutor(max_workers=args.jobs) as pool:

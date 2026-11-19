@@ -1,0 +1,15 @@
+include(FetchContent)
+set(WEBP_BUILD_ANIM_UTILS OFF)
+set(WEBP_BUILD_CWEBP OFF)
+set(WEBP_BUILD_DWEBP OFF)
+set(WEBP_BUILD_EXTRAS OFF)
+set(WEBP_BUILD_GIF2WEBP OFF)
+set(WEBP_BUILD_IMG2WEBP OFF)
+set(WEBP_BUILD_LIBWEBPMUX OFF)
+set(WEBP_BUILD_VWEBP OFF)
+set(WEBP_BUILD_WEBPINFO OFF)
+set(WEBP_BUILD_WEBPMUX OFF)
+FetchContent_Declare(th09_webp
+    URL "https://codeload.github.com/webmproject/libwebp/tar.gz/refs/tags/v1.6.0"
+    URL_HASH SHA512=298e0ad4c09392213baf5abb69d330c6203b618800073fe2df91d01d35034197c5d3e29a74573b06971473c52c74514f0e6e0f6c8162f923e2dd15cb1a692aef)
+FetchContent_MakeAvailable(th09_webp)

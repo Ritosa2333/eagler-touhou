@@ -53,6 +53,8 @@ struct GameSessionInput {
     float recording_fps=60;
 #if PORT_TITLE == 14
     u32 dialogue_skip_frames=0,dialogue_fire_frames=0;
+    // A hosted viewer holds completed spell playback for its end-state API.
+    bool hold_replay_result=false;
 #endif
 };
 
@@ -118,6 +120,7 @@ public:
     bool purple_show_history=false,purple_fast_retry=false;
     u32 purple_retry_misses=0;
     bool practice_enabled=false,practice_input_captured=false;
+    void (*practice_key_sample)(u32)=nullptr;
     u32 practice_tools=0;
     size_t practice_event=0;
 #endif

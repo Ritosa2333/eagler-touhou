@@ -27,6 +27,38 @@ npm --prefix launcher run dev:workspace
 
 资源准备入口为 [`prepare-retail-assets.mjs`](../web/scripts/prepare-retail-assets.mjs) 和 [`prepare-th09-content.mjs`](../../../launcher/scripts/prepare-th09-content.mjs)。准备的游戏内容在 `ports/th09/assets-ogg/`，包括 `th09.data` 和 19 首 `music/*.ogg`。Runtime 内容目录还需 `ports/th09/web/assets/sdl-native/cp932.bin`、`blend.bin`。编译产物在 `ports/th09/web/artifacts/sdl-release/`；普通和多人入口共用 `ports/th09/web/build-eagler/`。Launcher 通过 `runtimeVariant` 选择模式和存档目录。Launcher 地址为 <http://127.0.0.1:8130/>。房间联调另开终端：首次运行 `npm --prefix services/relay ci --ignore-scripts`，之后运行 `npm --prefix services/relay start`。
 
+## Windows 原生构建
+
+桌面实验目标支持 MSVC 和 MinGW-w64 UCRT64，需要 CMake 3.21 以上、SDL3、SDL3_ttf 和 Mesa 的 x64 EGL/GLES。SDL 安装目录须包含 CMake 包配置，Mesa 目录须包含 `mesa-devel` 和 `mesa-release`。以下使用 MinGW-w64，先把 UCRT64 的 `bin` 加入当前 PowerShell 的 `PATH`。
+
+```powershell
+$sdl = 'C:\tools\sdl3-prefix'
+$mesa = 'C:\tools\mesa'
+$build = 'ports/th09/web/artifacts/windows'
+cmake -S ports/th09 -B $build -G 'MinGW Makefiles' -DCMAKE_BUILD_TYPE=Release "-DCMAKE_PREFIX_PATH=$sdl" "-DTH_MESA_ROOT=$mesa"
+cmake --build $build --parallel
+$exe = (Resolve-Path "$build/th09.exe").Path
+
+$gles = "$mesa\mesa-release\x64"
+$env:PATH = "$sdl\bin;$gles;$env:PATH"
+$env:SDL_OPENGL_ES_DRIVER = "$gles\libGLESv2.dll"
+$env:SDL_EGL_LIBRARY = "$gles\libEGL.dll"
+Push-Location 'C:\local-content\th09'
+try { & $exe } finally { Pop-Location }
+```
+
+使用 Visual Studio 2022 时，配置参数改为 `-G "Visual Studio 17 2022" -A x64`，构建命令加上 `--config Release`，程序位于构建目录的 `Release/th09.exe`。
+
+启动目录需要原版 `th09.dat`、准备好的 `music/*.ogg` 和 `fonts/` 下的 `msgothic.ttc`、`cp932.bin`、`blend.bin`。程序从启动目录读取原版配置、分数与录像。
+
+原生版启动前设置 `$env:EAGLER_DESKTOP_VSYNC='0'` 可关闭垂直同步。游戏逻辑仍按每秒 60 帧推进。
+
+桌面联机可从启动器或游戏内 F2 面板发起。构建时设置 `TH09_LIBDATACHANNEL_SOURCE` 为包含子模块的 libdatachannel 源码目录，并提供与编译器匹配的 OpenSSL。使用动态 OpenSSL 时，将对应 DLL 放在运行包目录或加入运行时 `PATH`。
+
+自动 NAT4 打洞需要应用[原生 WebRTC 的 STUN 观测补丁](../../../common/third_party/libdatachannel/README.md)。Swarm 构建可通过 `TH09_SWARM_TURN_HELPER` 指定辅助程序，构建时会复制到游戏程序目录。
+
+启用桌面联机后，F2 面板默认用 RmlUi，构建时用 Node.js 生成共用的快捷聊天数据。分发时将游戏、字体、许可和运行时 DLL 放在同一目录。需要构建 ImGui 备选时，先执行 `npm ci --prefix launcher/examples/imgui-overlay`，再安装 Bun 与 ffmpeg，并设置 `-DTH09_RMLUI_OVERLAY=OFF`。
+
 ## 源码与验证
 
 游戏逻辑和 SDL 宿主位于 [`web/cpp/`](../web/cpp/)，浏览器运行时位于 [`web/sdl-runtime/`](../web/sdl-runtime/)。原版路径由 [`target.json`](../web/target.json) 指定。

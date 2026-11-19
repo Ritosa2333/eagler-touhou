@@ -55,6 +55,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, Dia
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '../ui/field';
 import { InputGroup, InputGroupInput } from '../ui/input-group';
 import { PageInventory } from '../ui/page-inventory';
+import { RoomExample } from '../ui/room-example';
 import { Slider } from '../ui/slider';
 import { Skeleton } from '../ui/skeleton';
 import '../components/player/replay-workspace.css';
@@ -72,7 +73,9 @@ export default function UiReview() {
   const preview = new URLSearchParams(search).get('preview');
   return (
     <LocaleProvider locale={catalogLocale}>
-      {Th09RatingsPreview && preview === 'th09-ratings'
+      {import.meta.env.DEV && preview === 'room-chat'
+        ? <div className="ui-review"><main className="catalog-main"><RoomExample chatDemo announce={() => {}}/></main></div>
+        : Th09RatingsPreview && preview === 'th09-ratings'
         ? <Suspense fallback={null}><Th09RatingsPreview /></Suspense>
         : <Catalog />}
     </LocaleProvider>

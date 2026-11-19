@@ -10,6 +10,8 @@ struct CharacterAttackServices:AttackServices {
     Rng& random;FrameTiming timing;PlayfieldGeometry geometry[2];Vec3 players[2];
     i32 rank=0,difficulty=0,attack_levels[2][2]{};
     explicit CharacterAttackServices(Rng& r):random(r){}
+    virtual void select_field(i32){}
+    virtual Vec3 screen_position(const Vec3& p,i32 fallback_side)const{return geometry[fallback_side].to_screen(p);}
     virtual bool start_animation(AttackActor&,u32 slot,i32 side,AttackAnimationResource,i32 script)=0;
     virtual i32 probe_cancellation(i32 side,const Vec3&,const Vec3& extent)=0;
     virtual void collide_player(i32 side,const Vec3&,float radius)=0;
@@ -23,7 +25,7 @@ struct CharacterAttackServices:AttackServices {
     virtual void draw_animation(AnmVm&)=0;
     virtual void draw_color_fan(const AnmVm&,const AttackColorVertex*,u32 count)=0;
     virtual void draw_texture_fan(const AnmVm&,const AttackTextureVertex*,u32 count)=0;
-    virtual void draw_additive_lines(const AttackColorVertex*,u32 count)=0;
+    virtual void draw_line_strip(const AttackColorVertex*,u32 count)=0;
     virtual AttackActor* spawn_attack(i32 kind,i32 side,const Vec3&,const Vec3* extra=nullptr,const AttackActor* parent=nullptr)=0;
 };
 struct TravelAttackState:CopyableAttackState<TravelAttackState> {

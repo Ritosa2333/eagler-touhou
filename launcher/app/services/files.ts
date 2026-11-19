@@ -3,7 +3,7 @@ import * as replay from '../../src/launcher/replay-files.mts';
 import {replayFilePolicy} from '../../src/launcher/replay-storage-policy.mts';
 import {parseTh09ReplayMatch, th09ReplayImportDirectory, type Th09ReplayMatch} from '../../src/launcher/th09-replay-match.mts';
 import type {RuntimeResponseMessage} from '../../src/contracts/runtime-protocol.mts';
-import type {RuntimeService, RuntimeFileSession} from './runtime';
+import {RuntimeSessionSupersededError, type RuntimeService, type RuntimeFileSession} from './runtime';
 import type {SettingsDecision, SettingsFileAction} from '../components/settings/types';
 
 export type ImportFileKind = 'save' | 'replay' | 'hint';
@@ -76,7 +76,8 @@ export function createFileActions(options: FileActionsOptions) {
   function sessionOptions(product: ProductId) {
     return {runtimeVariant: isMultiplayerProductId(product) ? 'multiplayer' as const : 'normal' as const};
   }
-  const saveAccept = (product: ProductId) => supportsSaveArchive(gameIdForProduct(product)) ? '.dat,.zip' : '.dat';
+  const saveExtension = (product: ProductId) => '.' + PRODUCT_GAMES[gameIdForProduct(product)].storage.scoreFile.split('.').at(-1)!.toLowerCase();
+  const saveAccept = (product: ProductId) => saveExtension(product) + (supportsSaveArchive(gameIdForProduct(product)) ? ',.zip' : '');
   async function exportFiles(kind: 'save' | 'replay', product: ProductId): Promise<void> {
     const game = gameIdForProduct(product);
     const label = t(kind === 'save' ? 'file.kind.save' : 'file.kind.replay');
@@ -130,6 +131,9 @@ export function createFileActions(options: FileActionsOptions) {
       feedback.playerStatus(t('file.exported', {kind: label}));
     } catch (error) {
       if (!wasReady) await options.releasePrepared(product);
+      // Cancellation is propagated to the common file-action boundary below.
+      // It is not an export failure and must not overwrite a newer session's UI.
+      if (error instanceof RuntimeSessionSupersededError) throw error;
       const missingSave = kind === 'save' && error !== null && typeof error === 'object' && 'errno' in error && error.errno === 44;
       const missingReplay = kind === 'replay' && message(error) === t('file.noReplayToExport');
       if (missingSave || missingReplay) {
@@ -161,7 +165,7 @@ export function createFileActions(options: FileActionsOptions) {
       let access: RuntimeFileSession = initial;
       let files: {path: string; bytes: Uint8Array; replayMatch?: Th09ReplayMatch}[];
       const lowerName = file.name.toLowerCase();
-      if (kind === 'save' && lowerName.endsWith('.dat')) {
+      if (kind === 'save' && lowerName.endsWith(saveExtension(product))) {
         files = [{path: PRODUCT_GAMES[gameIdForProduct(product)].storage.scoreFile, bytes: new Uint8Array(await file.arrayBuffer())}];
       } else if (kind === 'save' && supportsSaveArchive(game) && lowerName.endsWith('.zip')) {
         const zip = await import('fflate'), seen = new Set<string>();let expanded = 0;
@@ -180,7 +184,7 @@ export function createFileActions(options: FileActionsOptions) {
       } else if (kind === 'hint' && lowerName.endsWith('.txt') && hints(product).length) {
         if (file.size > 16 * 1024 * 1024) throw new Error(t('file.hintTooLarge'));
         files = [{path: hints(product)[0]!, bytes: new Uint8Array(await file.arrayBuffer())}];
-      } else if (kind === 'replay' && (game === 'hsob' ? replay.isReplayImportFileName(file.name, product) && lowerName.endsWith('.dat') : /\.rpyx?$/.test(lowerName))) {
+      } else if (kind === 'replay' && !lowerName.endsWith('.zip') && replay.isReplayImportFileName(file.name, product)) {
         const existing = listing(await access.send('list', {})).map(item => item.path);
         const name = replay.allocateReplayName(prefix(product), existing, file.name, replayFilePolicy(product).sharedExtensionSlot);
         if (!name) throw new Error(t('file.replaySlotsExhausted'));
@@ -263,6 +267,7 @@ export function createFileActions(options: FileActionsOptions) {
         if (file) await importFile(kind, file, product);
       }
     } catch (error) {
+      if (error instanceof RuntimeSessionSupersededError) return;
       const reason = message(error);
       feedback.playerStatus(reason); feedback.status(t('status.errorReason', {reason})); feedback.toast(t('status.errorReason', {reason}));
     }

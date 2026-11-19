@@ -33,5 +33,14 @@ bool AttackQueue::update(const FrameTiming& timing,u32 game_flags,u32 first_play
     }
     return true;
 }
-void AttackQueue::clear(){for(u32 n=0;n<capacity;++n){auto& actor=actors[n];if(!actor.active)continue;dispose(actor);actor=AttackActor{};}}
+void AttackQueue::clear(){
+    // A round can reset after update, before the current frame is drawn.
+    for (auto& list : draw_lists) list.clear();
+    for (u32 n = 0; n < capacity; ++n) {
+        auto& actor = actors[n];
+        if (!actor.active) continue;
+        dispose(actor);
+        actor = AttackActor{};
+    }
+}
 }

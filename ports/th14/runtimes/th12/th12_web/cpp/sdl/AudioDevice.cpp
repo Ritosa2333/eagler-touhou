@@ -143,7 +143,12 @@ void AudioDevice::close(){effects.reset();impl=std::make_unique<Impl>();}
 bool AudioDevice::initialize(GameResources& resources){
     if(impl->ready)return true;if(impl->engine_ready)impl=std::make_unique<Impl>();auto& a=*impl;auto engine=ma_engine_config_init();engine.noDevice=MA_TRUE;engine.channels=2;engine.sampleRate=44100;engine.defaultVolumeSmoothTimeInPCMFrames=0;
     if(ma_engine_init(&engine,&a.engine)!=MA_SUCCESS){error="Unable to initialize audio mixer";return false;}a.engine_ready=true;
-    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"2048");const SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
+#if defined(__EMSCRIPTEN__) && PORT_TITLE == 14
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"1024");
+#else
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"2048");
+#endif
+    const SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
     if(SDL_InitSubSystem(SDL_INIT_AUDIO))a.stream=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);
     if(!a.stream){error=SDL_GetError();return false;}
     // The count is the title's, not the array's: TH12 loads 49 samples and TH13 loads 60, and a bound taken from
@@ -165,7 +170,12 @@ bool AudioDevice::initialize(GameResources& resources){
 #if PORT_TITLE == 14
 bool AudioDevice::initialize_device(){
     if(impl->stream)return true;
-    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"2048");const SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
+#if defined(__EMSCRIPTEN__) && PORT_TITLE == 14
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"1024");
+#else
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"2048");
+#endif
+    const SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
     if(SDL_InitSubSystem(SDL_INIT_AUDIO))impl->stream=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);
     if(!impl->stream){error=SDL_GetError();return false;}error.clear();return true;
 }
@@ -309,7 +319,7 @@ bool AudioDevice::music(i32 track){
     next->time.rate=rate;next->time.total=total;next->time.intro=intro;
     next->time.channels=channels;next->time.bits=short_word(format+46);
 #endif
-    if(!a.attach(*next)){error="Unable to attach music voice";return false;}ma_sound_set_looping(&next->sound,MA_TRUE);ma_sound_set_volume(&next->sound,music_enabled?volume(SoundEffects::adjusted_volume(0,music_volume,true)):0.f);
+    if(!a.attach(*next)){error="Unable to attach music voice";return false;}ma_sound_set_looping(&next->sound,MA_TRUE);
     a.music=std::move(next);a.track=track;a.fade=0;a.music_paused=false;
 #if PORT_TITLE == 14
     a.music_fade={};
@@ -317,6 +327,7 @@ bool AudioDevice::music(i32 track){
 #if PORT_TITLE == 14
     a.music->time.started=a.clock();
 #endif
+    refresh_volume();
     ma_sound_start(&a.music->sound);return true;
 }
 i32 AudioDevice::current_music()const noexcept{return impl->track;}
@@ -422,8 +433,22 @@ bool AudioDevice::mix(float* pcm,u32 frames){
 }
 void AudioDevice::pump(){
     auto& a=*impl;if(!a.ready||!a.stream||a.suspended)return;i32 queued=std::max(0,SDL_GetAudioStreamQueued(a.stream))/8;
-    if(!a.refill&&queued<4096)a.refill=true;if(!a.refill)return;if(queued>=6144){a.refill=false;return;}
-    for(i32 n=0;n<6&&queued<6144;++n){float pcm[2048]{};if(!mix(pcm,1024)){a.stats[3]=1;return;}if(!SDL_PutAudioStreamData(a.stream,pcm,sizeof(pcm))){a.stats[3]=2;return;}++a.stats[1];a.stats[2]+=1024;queued+=1024;}if(queued>=6144)a.refill=false;
+#if defined(__EMSCRIPTEN__) && PORT_TITLE == 14
+    // Refill every browser frame. Two mixer blocks bridge the SDL callback
+    // without retaining several frames of old sound effects.
+    constexpr i32 target=2048;
+#else
+    constexpr i32 target=6144;
+    if(!a.refill&&queued<4096)a.refill=true;
+    if(!a.refill||queued>=target){a.refill=false;return;}
+#endif
+    for(;queued<target;queued+=1024){
+        float pcm[2048]{};
+        if(!mix(pcm,1024)){a.stats[3]=1;return;}
+        if(!SDL_PutAudioStreamData(a.stream,pcm,sizeof(pcm))){a.stats[3]=2;return;}
+        ++a.stats[1];a.stats[2]+=1024;
+    }
+    a.refill=false;
 }
 void AudioDevice::suspend(bool paused){auto& a=*impl;
 #if PORT_TITLE == 14

@@ -116,6 +116,43 @@ const journal=f=>JSON.parse(f.storage.getItem(journalKey));
 const sessions=f=>f.requests.filter(item=>item.path==='v1/me/cloud-saves/th06/sessions');
 const signal=()=>new AbortController().signal;
 const beforeStart=sync=>sync.beforeStart('th06',signal());
+test('TH17 keeps its local journal without making cloud requests or showing sync prompts', async () => {
+  const f = environment(), key = 'eagler-cloud-sync-v1:save:th17';
+  const stored = JSON.stringify({owner:'alice',product:'th17',revision:0,fingerprint:'',
+    runId:'550e8400-e29b-41d4-a716-446655440009'});
+  f.storage.setItem(key, stored);
+  const sync = f.makeSync({decide:async () => assert.fail('TH17 must not request a save decision'),
+    decideStart:async () => assert.fail('TH17 must not request a cloud handoff')});
+  assert.equal(await sync.beforeStart('th17', signal()), 'continue');
+  sync.started('th17');
+  sync.deferLaunch('th17');
+  sync.finished();
+  await sync.resolve('th17', signal());
+  await sync.flush();
+  assert.equal(sync.hasLocalPending('th17'), false);
+  assert.equal(sync.getSnapshot(), null);
+  assert.equal(f.storage.getItem(key), stored);
+  assert.deepEqual(f.requests, []);
+  assert.deepEqual(f.reads, []);
+});
+
+test('pending saves stay idle while a multiplayer room owns preparation', async () => {
+  const f = environment();
+  let inRoom = true;
+  const sync = f.makeSync({files:[makeFile(scoreName,[1,2,3])],isRunning:() => inRoom});
+  await beforeStart(sync);
+  sync.started('th06');
+  sync.finished();
+  await sync.flush();
+  const requests = f.requests.length;
+  assert.equal(f.uploaded.length, 0);
+  await sync.flush();
+  assert.equal(f.requests.length, requests);
+  inRoom = false;
+  await sync.flush();
+  assert.equal(f.uploaded.length, 1);
+});
+
 const oldMarker=(deviceId='550e8400-e29b-41d4-a716-446655440000',baseRevision=0)=>({
   product:'th06',deviceId,runId:'550e8400-e29b-41d4-a716-446655440001',baseRevision,startedAt:'2026-11-06T00:00:00.000Z',
 });
@@ -407,6 +444,37 @@ test('launch cloud choice restores before native start and requests fresh native
  const sync=f.makeSync({files:[makeFile(scoreName,[2])],decide:async()=> 'cloud',restore:async(product,snapshot,signal,names,preparing)=>{assert.equal(preparing,true);assert.equal(snapshot.revision,2);restores++;}});
  sync.prepareLocalLaunch('th06');assert.equal(await sync.beforeStart('th06',new AbortController().signal),'reload');
  assert.equal(restores,1);assert.equal(f.uploaded.length,0);assert.equal(journal(f).revision,2);assert.equal(journal(f).runId,null);
+});
+
+test('choosing local while a cloud archive is being staged prevents the restore and upload', async () => {
+  const f = environment();
+  f.current = listing({revision: 2, files: [manifestFile(scoreName, [1])]});
+  const choice = new AbortController();
+  let staging = false;
+  let finishStaging;
+  const staged = new Promise(resolve => {finishStaging = resolve;});
+  let wrote = false;
+  const sync = f.makeSync({restore: async (_product, _snapshot, _signal, _files, _preparing, beforeWrite) => {
+    staging = true;
+    await staged;
+    await beforeWrite();
+    wrote = true;
+  }});
+  sync.prepareLocalLaunch();
+  const launch = sync.beforeStart('th06', choice.signal, {
+    beforeDecision: async () => {},
+    beforeRestore: async () => {choice.signal.throwIfAborted();},
+  });
+  await until(() => staging);
+  choice.abort();
+  sync.deferLaunch('th06');
+  finishStaging();
+  await assert.rejects(launch, {name: 'AbortError'});
+  assert.equal(wrote, false);
+  sync.started('th06');
+  sync.finished();
+  await sync.flush();
+  assert.equal(f.uploaded.length, 0);
 });
 
 test('skipping launch comparison plays browser bytes and never overwrites cloud on exit',async()=>{

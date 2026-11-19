@@ -26,7 +26,7 @@ export function RoomTiming({state, service, settings = false}: {state: RoomOwner
       <span>{t('room.enableRollback')}</span><Toggle id="mpRollbackToggle" checked={rollback} aria-label={t('room.enableRollback')}
         hidden={!supported} disabled={!editable} onCheckedChange={value => service.setRollbackEnabled(value)}/>
     </label>}
-    {settings && <section className="mp-room-delay" id="mpInputDelaySetting" hidden={rollback}>
+    {settings && <section className="mp-room-delay" id="mpInputDelaySetting" hidden={rollback || config.inputTiming?.runtimeTiming}>
       <span id="mpInputDelayLabel">{t('room.inputDelay')}：</span>
       <ButtonGroup className="mp-delay-stepper" aria-labelledby="mpInputDelayLabel">
         <UiButton size="icon-sm" id="mpInputDelayMinus" className="mp-delay-step" type="button" disabled={!manualEditable || value <= 0}

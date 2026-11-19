@@ -65,7 +65,7 @@ before(async () => {
     export {getAcquisitionOptions} from 'captured-acquisition';
     export {setPackageReadGate} from 'gated-package-read';
     export {setCloudRunProbe, setCloudBeforeStartProbe, getCloudSaveStartedProducts, getCloudSaveEvents} from 'captured-cloud-save-sync';
-    export {setAccountSessionResult} from 'captured-account-client';
+    export {setAccountSessionResult, setReplayAccountRequest} from 'captured-account-client';
     export {accountSession as testAccountSession} from './app/services/account-session.ts';
     export {validateSiteManifest} from './src/contracts/site-manifest.mts';
     export {PRODUCT_GAMES, multiplayerConfigForProduct} from './src/contracts/product-catalog.mts';
@@ -87,7 +87,7 @@ before(async () => {
       // delegate to the authored owners; no preparation/queue policy is replaced.
       ctx.onResolve({filter: /^(captured-browser-session|gated-package-read|captured-acquisition|captured-cloud-save-sync|captured-account-client|cloud-sync-release-features)$/}, args => ({path: args.path, namespace: 'session-edge'}));
       ctx.onResolve({filter: /release-features$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/session/browser-session.ts') ? {path:'cloud-sync-release-features',namespace:'session-edge'} : undefined);
-      ctx.onResolve({filter: /account-client$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/services/account-session.ts') ? {path:'captured-account-client',namespace:'session-edge'} : undefined);
+      ctx.onResolve({filter: /account-client$/}, args => /\/(account-session\.ts|browser-session\.ts|Th09ReplayArchive\.tsx|DuelReplayGroup\.tsx)$/.test(args.importer.replaceAll('\\', '/')) ? {path:'captured-account-client',namespace:'session-edge'} : undefined);
       ctx.onResolve({filter: /services\/cloud-save-sync$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/session/browser-session.ts') ? {path:'captured-cloud-save-sync',namespace:'session-edge'} : undefined);
       ctx.onResolve({filter: /session\/browser-session$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/BrowserLauncher.tsx') ? {path: 'captured-browser-session', namespace: 'session-edge'} : undefined);
       ctx.onResolve({filter: /package-store\.mjs$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/services/package-acquisition.ts') ? {path: 'gated-package-read', namespace: 'session-edge'} : undefined);
@@ -98,8 +98,17 @@ before(async () => {
         export function createBrowserSession(options) {return session = create(options);}
       ` : args.path === 'captured-account-client' ? `
         let sessionResult=new Error('account service offline');
+        let replayRequest;
         export function setAccountSessionResult(value){sessionResult=value;}
-        export async function accountRequest(path){if(path!=='auth/get-session')throw Error('Unexpected account request '+path);if(sessionResult instanceof Error)throw sessionResult;return sessionResult;}
+        export function setReplayAccountRequest(value){replayRequest=value;}
+        export async function accountRequest(path, body, options){
+          if(path!=='auth/get-session'){
+            if(replayRequest) return replayRequest(path, options);
+            throw Error('Unexpected account request '+path);
+          }
+          if(sessionResult instanceof Error)throw sessionResult;
+          return sessionResult;
+        }
         export function cancelAccountRequests(){}
         export class AccountRequestError extends Error {constructor(code,status){super(code);this.name='AccountRequestError';this.status=status;}}
       ` : args.path === 'captured-acquisition' ? `
@@ -117,7 +126,8 @@ before(async () => {
         import {cloudSaveEnabled} from 'captured-cloud-save-sync';
         export {cloudSaveEnabled as accountsEnabled};
       ` : `
-        import {readCurrentPackageGeneration as readCurrent} from './package/package-store.mjs';
+        import {readCurrentPackageGeneration as readCurrent, readPackageObject} from './package/package-store.mjs';
+        export {readPackageObject};
         let gate; export function setPackageReadGate(value) {gate = value;}
         export function readCurrentPackageGeneration(game) {const wait = gate?.(game); return wait ? Promise.resolve(wait).then(() => readCurrent(game)) : readCurrent(game);}
       `}));
@@ -349,6 +359,36 @@ async function start() {
   assert.equal(playerOpen(), false, 'Player stays closed before original input/music confirmation');
   await click('#decisionConfirm');
 }
+
+for (const {game, touchDevice, rail} of [
+  {game: 'th13', touchDevice: false, rail: true},
+  {game: 'th06', touchDevice: false, rail: false},
+  {game: 'th13', touchDevice: true, rail: false},
+]) test(`TH13 desktop tool rail follows ${game}, touch=${touchDevice} and player lifetime`, async () => {
+  const host = developmentAcquisitionHost(game === 'th13' && !touchDevice ? ['th13', 'th06'] : [game]);
+  host.shared.testBuild = true;
+  const f = await mountBrowser({initial: `/?game=${game}`, host, touchDevice,
+    fetchBoundary(url) {
+      return /\/fixture-th(?:06|13)\.data$/.test(url.pathname) ? new Response(new Uint8Array([1, 2, 3])) : null;
+    },
+    seedStorage(storage) {
+      storage.values.set(api.gamePreferenceStorageKey(game), JSON.stringify({music: 'none', options: {touchEnabled: false, thpracEnabled: false}}));
+    }});
+  assert.equal(node('#player').classList.contains('th13-desktop-tool-rail'), false);
+  await start();
+  await until(() => commands().includes('launch'), 'runtime launched');
+  assert.equal(node('#player').classList.contains('th13-desktop-tool-rail'), rail);
+  await React.act(async () => {f.native.emit('exit', {status: 'success'});});
+  await until(() => !playerOpen(), 'player closes after runtime exit');
+  assert.equal(node('#player').classList.contains('th13-desktop-tool-rail'), false);
+  assert.equal(node('#player').style.getPropertyValue('--th13-rail-offset'), '');
+  if (game === 'th13' && !touchDevice) {
+    await click('.book-game-link[data-game="th06"]');
+    await start();
+    await until(() => api.getTestSession().getRuntime()?.getSnapshot().game === 'th06', 'new game starts');
+    assert.equal(node('#player').classList.contains('th13-desktop-tool-rail'), false);
+  }
+});
 
 for (const exitScenario of ['success', 'error', 'error-on-exit', 'error-without-reason', 'success-with-error-code']) test(`actual BrowserLauncher: original warning, fullscreen, ready/configure/ACK launch and native ${exitScenario} Exit preserve one frame`, async () => {
   const exitStatus=exitScenario.startsWith('success')?'success':'error';
@@ -2224,9 +2264,19 @@ for (const locale of ['en', 'zh-CN']) for (const code of [4004, 4007, 4008, 4009
     assert.equal(f.sessionStorage.removals.slice(removesBefore).filter(key => key === 'eagler-touhou-th06mp-room-v1').length, 1);
     assert.deepEqual(feedback.toasts, expected.toasts, 'one feedback owner; directory departure has no transient toast');
     assert.equal(session.feedback.getSnapshot().toastRevision - feedback.initial.toastRevision, expected.toasts.length);
-    assert.deepEqual(f.sessionStorage.writes.slice(writesBefore).filter(([key]) => key === 'eagler-lobby-message'), expected.storageWrites);
     const message = expected.storageWrites[0][1];
-    assert.equal(session.directory.getSnapshot().notice, message); assert.equal(node('#notice').textContent, message); assert.equal(node('#notice').hidden, false);
+    if (code === 4010) {
+      assert.deepEqual(f.sessionStorage.writes.slice(writesBefore).filter(([key]) => key === 'eagler-lobby-message'), []);
+      await until(() => node('#decisionDialog').open, 'removed player sees a modal');
+      assert.equal(node('#decisionTitle').textContent, message);
+      assert.equal(node('#decisionDialog').dataset.tone, 'danger');
+      assert.ok(node('#decisionConfirm').className.includes('bg-destructive'));
+      assert.equal(node('#notice').hidden, true);
+      await click('#decisionConfirm');
+    } else {
+      assert.deepEqual(f.sessionStorage.writes.slice(writesBefore).filter(([key]) => key === 'eagler-lobby-message'), expected.storageWrites);
+      assert.equal(session.directory.getSnapshot().notice, message); assert.equal(node('#notice').textContent, message); assert.equal(node('#notice').hidden, false);
+    }
     assert.equal(f.sessionStorage.getItem('eagler-lobby-message'), null, 'directory consumes the committed return message once');
     assert.equal(session.feedback.getSnapshot().toastOpen, feedback.initial.toastOpen);
     const socketCount = f.sockets.filter(value => new URL(value.url).searchParams.has('lobby')).length;
@@ -2275,6 +2325,17 @@ for (const fromDirectory of [false, true]) test(`actual BrowserLauncher terminal
   await React.act(async () => {f.native.emit('exit', {status: 'error'});});
   await until(() => !session.getSnapshot().playerOpen && !session.getRuntime().getSnapshot().launched, 'authenticated Runtime Exit finishes the synthetic preflight');
   assert.equal(node('#player').classList.contains('room-workspace'), true);
+});
+test('removed player receives a warning modal while a game is running', async () => {
+  const {session, socket} = await actualTerminalRoom({fromDirectory:true});
+  await click('[data-mp-seat="0"] .mp-seat-edit'); await click('#mpCheckGame');
+  await until(() => session.getRuntime().getSnapshot().launched, 'multiplayer Runtime has launched');
+  await React.act(async () => {socket.close(4010);});
+  await until(() => node('#decisionDialog').open, 'removed player sees a modal');
+  assert.equal(node('#decisionTitle').textContent, api.translate('en','lobby.removed'));
+  assert.equal(node('#decisionDialog').dataset.tone, 'danger');
+  assert.ok(node('#decisionConfirm').className.includes('bg-destructive'));
+  await click('#decisionConfirm');
 });
 for (const strictMode of [false, true]) test(`actual BrowserLauncher terminal warm directory return preserves notice (StrictMode=${strictMode})`, async () => {
   const {f, session, directorySocket} = await liveActualDirectory({strictMode});
@@ -2459,6 +2520,56 @@ test('offline lobby masthead Replay opens the selected multiplayer workspace and
   assert.equal(session.directory.getSnapshot().selectedProduct, 'th06mp');
   assert.equal(session.room.service.getSnapshot().room, null);
   assert.equal(f.sockets.some(socket => new URL(socket.url).searchParams.has('lobby')), false);
+});
+
+test('th09 profile replay sidebar loads sets on demand and switches within the same player', async () => {
+  const first = '72aeaea1-dd24-43cb-ad47-68ced29d8881';
+  const second = '72aeaea1-dd24-43cb-ad47-68ced29d8882';
+  const endpoint = 'v1/profiles/alice/th09-replays';
+  const name = '2026-11-17 13-26-34 UTC+08 - Alice (Youmu) vs Bob (Reisen)';
+  const cursor = '1794884400000:' + first;
+  const group = (duelId, wins, losses) => ({duelId, playedAt:1794884400000, wins, losses, replayCount:1,
+    opponent:{username:'bob',displayName:'Bob'}});
+  const calls = [];
+  api.setReplayAccountRequest(async (path, options) => {
+    calls.push(path);
+    if (path === endpoint) return options.query
+      ? {duels:[group(second,0,1)],nextCursor:null} : {duels:[group(first,1,0)],nextCursor:cursor};
+    if (path === `v1/th09/duels/${second}/replays`)
+      return {files:[{roundId:'1:50',name,frames:60,characters:[3,4]}]};
+    if (path.endsWith('/replays/1-50') || path.endsWith('/replays/1-100'))
+      return new Blob([new Uint8Array([1,2,3])], {type:'application/x-th09-rpyx'});
+    throw Error('Unexpected replay API request ' + path);
+  });
+  try {
+    const f = await mountBrowser({host:subsetHost(['th09']), seedPackages:['th09']});
+    const session = api.getTestSession(), frame = node('#gameFrame');
+    let initialPlayback;
+    await React.act(async () => {
+      initialPlayback = session.accessTh09MatchReplay({username:'alice',duelId:first,roundId:'1:100'}, 'play');
+      void initialPlayback.catch(session.reportError);
+    });
+    await until(() => !!env.document.querySelector('.replay-archive-set summary'), 'archive opens for the profile being watched');
+    await initialPlayback;
+    assert.deepEqual(calls, [`v1/th09/duels/${first}/replays/1-100`, endpoint]);
+    assert.match(node('.replay-file-browser h2').textContent, /@alice/);
+    const epoch = session.getRuntime().getSnapshot().epoch;
+    await click('.replay-workspace-files > button');
+    await until(() => env.document.querySelectorAll('.replay-archive-set').length === 2, 'older sets are paginated');
+    assert.equal(calls.length, 3);
+    const set = env.document.querySelectorAll('.replay-archive-set')[1];
+    await React.act(async () => {set.open = true;set.dispatchEvent(new env.window.Event('toggle'));});
+    await until(() => !!set.querySelector('li button'), 'only the expanded set loads its files');
+    assert.equal(calls.at(-1), `v1/th09/duels/${second}/replays`);
+    await React.act(async () => {set.querySelector('li button').click();});
+    await until(() => session.getSnapshot().th09Replay?.duelId === second, 'choosing the second set starts playback');
+    assert.equal(node('#gameFrame'), frame);
+    assert.equal(session.getRuntime().getSnapshot().epoch, epoch);
+    assert.equal(f.outbound.findLast(message => message.command === 'playback').path, `th09-${second}-1-50.rpyx`);
+    assert.ok(set.querySelector('button[aria-current="true"]'));
+    await React.act(async () => {set.querySelector('li button:last-child').click();});
+    await until(() => f.downloads.at(-1)?.name === name + '.rpyx', 'download uses the readable filename and the actual extension');
+  } finally {api.setReplayAccountRequest(undefined);}
 });
 
 test('Replay root Back uses real BrowserHistory and folder, move, then manager layers unwind one at a time', async () => {
@@ -2802,6 +2913,22 @@ for (const localSeat of [0,1]) test(`room title switch reuses the room code and 
   assert.equal(session.room.service.getSnapshot().seat,localSeat);
 });
 
+test('room title menu offers published PC-98 multiplayer and sends its switch request', async () => {
+  const host=subsetHost(['th06','th03']); host.shared.netplayRelay='wss://relay.invalid/socket';
+  const f=await mountBrowser({initial:'/?game=th06mp&mpRoom=1234',host,socketBoundary:true,seedPackages:['th06']});
+  const session=api.getTestSession(); await until(()=>f.sockets.length>0,'room socket');
+  const socket=f.sockets[0],clientId=new URL(socket.url).searchParams.get('lobby');
+  const room={code:'1234',playerCount:2,difficulty:1,phase:'lobby',startSerial:0,seats:[{clientId,name:'Local',loadout:0,ready:false},null],spectators:[]};
+  await React.act(async()=>{socket.open();socket.message({type:'state',roomDirectory:{version:1,globalRoomCodes:true},room});});
+  await until(()=>session.metadata.getSnapshot().products.includes('th03mp'),'published PC-98 runtime is available');
+  await until(()=>!!env.document.querySelector('#roomProductSelect'),'host game selector');
+  await React.act(async()=>node('#roomProductSelect').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
+  await until(()=>!!env.document.querySelector('[data-product-choice="th03mp"]'),'PC-98 game appears in switch menu');
+  assert.equal(node('[data-product-choice="th03mp"]').closest('[data-lobby-category]').dataset.lobbyCategory,'versus');
+  await click('[data-product-choice="th03mp"]');
+  assert.deepEqual(socket.sent.at(-1),{type:'switch-product',product:'th03mp'});
+});
+
 test('actual BrowserLauncher: spectator toolbar exits playback into the existing room', async () => {
   const invite = api.encodeRoomInvite({g: 'th09mp', r: '1234', f: true, a: 'join', s: true});
   const host = subsetHost(['th09']); host.shared.netplayRelay = 'wss://relay.invalid/socket';
@@ -3079,6 +3206,19 @@ for(const presented of [true,false])test(`room ready requires native game menu p
  assert.equal(session.getRuntime().getSnapshot().roomPreview===true,presented);
  if(presented)assert.equal(node('#playerStatus').textContent,'Ready');
  else assert.notEqual(node('#mpRoomResourceLabel').textContent,'Game loaded');
+});
+
+test('room resources can become ready when the Runtime has no native lobby preview',async()=>{
+ const host=developmentAcquisitionHost(['th09']);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const invite=api.encodeRoomInvite({g:'th09mp',r:'1234',f:true,a:'join',s:true});
+ const f=await mountBrowser({initial:'/?j='+invite,host,autoReady:false,socketBoundary:true,seedPackages:['th09']});
+ const session=api.getTestSession();
+ await until(()=>!!f.native?.envelope,'native program loading',15_000);
+ f.holdRoomPreview=true;
+ await React.act(async()=>f.native.emit('ready'));
+ await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','prepared without a title preview');
+ assert.equal(session.getRuntime().getSnapshot().phase,'prepared');
+ assert.equal(f.outbound.some(message=>message.command==='prepare-room'),false);
 });
 
 test('ordinary game loading reports success only after its first frame',async()=>{

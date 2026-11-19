@@ -1,5 +1,5 @@
-// FileStore: v6 little-endian layout; accepts v1 (36), v2 (52), v3 (64 bytes)
-// and both prior v4 spell-record layouts.
+// FileStore: v7 little-endian layout; accepts v1 (36), v2 (52), v3 (64 bytes),
+// both prior v4 spell-record layouts, v5 and v6.
 // "TH13SAVE" | u32 version | u32 cleared_mask | i32 bgm | i32 effect | u32[3]
 // v2 appends 16 stage-played bytes (character*4+rank, bits0..5).
 // v3 appends 5*i16 pad bindings and 2 padding bytes.
@@ -11,6 +11,9 @@
 // v6 retains that prefix, appends END1, history-complete(u32), 13 ending bytes,
 // then an immutable full v5 import (u32 length and a fixed v5-sized archive).
 // Old saves have unknown ending history; no progress bits manufacture it.
+// v7 retains the v6 bytes and appends NAM1 + the 9-byte last-name buffer
+// (score ST+0x0C, 0x449a55) + 3 padding bytes. Older saves keep the retail
+// default of eight spaces.
 // 读档：magic/版本/尺寸不符 = 默认值（原版坏 scoreth13.dat 语义，不报错）。
 // 写档：任何 I/O 失败 = false + error。web 走 localStorage（EM_JS try/catch），
 // native/WASI 走真实文件；两侧同一序列化，互不伪造成功。
@@ -29,22 +32,24 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 // localStorage 持久化（宿主无文件系统持久卷）：base64 文本。任何异常/限额
-// 都返回 false —— 失败可见，不吞。
-EM_JS(bool, th13_save_write_js, (const char* data, int length), {
+// 都返回 false —— 失败可见，不吞。编码按 32 KiB 片经 String.fromCharCode
+// 批量转换：保存点落在关终门帧与关首激活帧上，编码成本直接计入这两帧。
+EM_JS(bool, th13_storage_write_js, (const char* key, const char* data, int length), {
     try {
-        let binary = '';
         const bytes = new Uint8Array(HEAPU8.buffer, data, length);
-        for (let i = 0; i < length; ++i) binary += String.fromCharCode(bytes[i]);
-        localStorage.setItem('th13.save', btoa(binary));
+        const parts = [];
+        for (let at = 0; at < length; at += 0x8000)
+            parts.push(String.fromCharCode.apply(null, bytes.subarray(at, Math.min(length, at + 0x8000))));
+        localStorage.setItem(UTF8ToString(key), btoa(parts.join("")));
         return true;
     } catch (e) {
         return false;
     }
 });
-EM_JS(int, th13_save_read_js, (char* out, int capacity), {
+EM_JS(int, th13_storage_read_js, (const char* key, char* out, int capacity), {
     try {
-        const text = localStorage.getItem('th13.save');
-        if (text === null || text === '') return 0;
+        const text = localStorage.getItem(UTF8ToString(key));
+        if (text === null || text === "") return 0;
         const binary = atob(text);
         if (binary.length > capacity) return 0;
         const bytes = new Uint8Array(HEAPU8.buffer, out, binary.length);
@@ -56,37 +61,25 @@ EM_JS(int, th13_save_read_js, (char* out, int capacity), {
         return 0;
     }
 });
+static bool th13_save_write_js(const char* data, int length) {
+    return th13_storage_write_js("th13.save", data, length);
+}
+static int th13_save_read_js(char* out, int capacity) {
+    return th13_storage_read_js("th13.save", out, capacity);
+}
 // scoreth13.dat 原版格式通道（base64，同上语义）。
-EM_JS(bool, th13_scoredat_write_js, (const char* data, int length), {
-    try {
-        let binary = '';
-        const bytes = new Uint8Array(HEAPU8.buffer, data, length);
-        for (let i = 0; i < length; ++i) binary += String.fromCharCode(bytes[i]);
-        localStorage.setItem('th13.scoredat', btoa(binary));
-        return true;
-    } catch (e) {
-        return false;
-    }
-});
-EM_JS(int, th13_scoredat_read_js, (char* out, int capacity), {
-    try {
-        const text = localStorage.getItem('th13.scoredat');
-        if (text === null || text === '') return 0;
-        const binary = atob(text);
-        if (binary.length > capacity) return 0;
-        const bytes = new Uint8Array(HEAPU8.buffer, out, binary.length);
-        for (let i = 0; i < binary.length; ++i) bytes[i] = binary.charCodeAt(i);
-        return binary.length;
-    } catch (e) {
-        return 0;
-    }
-});
+static bool th13_scoredat_write_js(const char* data, int length) {
+    return th13_storage_write_js("th13.scoredat", data, length);
+}
+static int th13_scoredat_read_js(char* out, int capacity) {
+    return th13_storage_read_js("th13.scoredat", out, capacity);
+}
 #endif
 
 namespace th13::sdl {
 namespace {
 constexpr char kSaveMagic[8] = {'T', 'H', '1', '3', 'S', 'A', 'V', 'E'};
-constexpr u32 kSaveVersion = 6;
+constexpr u32 kSaveVersion = 7;
 constexpr size_t kLegacySaveBytes = 36;
 constexpr size_t kV2SaveBytes = 52;
 constexpr size_t kV3SaveBytes = 64;
@@ -105,7 +98,10 @@ constexpr size_t kV5SaveBytes = kMigratedArchiveOffset + 4 + kV4SaveBytes;
 constexpr size_t kEndingBytesOffset = kV5SaveBytes + 8;
 constexpr size_t kPreEndingSizeOffset = kEndingBytesOffset + 13;
 constexpr size_t kPreEndingArchiveOffset = kPreEndingSizeOffset + 4;
-constexpr size_t kSaveBytes = kPreEndingArchiveOffset + kV5SaveBytes;
+constexpr size_t kV6SaveBytes = kPreEndingArchiveOffset + kV5SaveBytes;
+constexpr size_t kLastNameOffset = kV6SaveBytes + 4;
+constexpr size_t kSaveBytes = kV6SaveBytes + 16;
+constexpr char kBlankName[] = "        ";
 
 // v1.00c data at VA 004bbd30, consumed by 00412970/00453b30/00456b50.
 // Slot rank is intrinsic to the spell; Extra=4 and Overdrive=5.
@@ -315,6 +311,7 @@ bool FileStore::initialize() {
     ordinary_records = {};
     ending_seen_bytes.fill(0);
     committed_ending_bytes_.fill(0);
+    last_name = kBlankName;
     ending_history_complete = true;
     migrated_save_bytes_.clear();
     pre_ending_save_bytes_.clear();
@@ -354,7 +351,7 @@ bool FileStore::load_v6() {
     if (size_t(length) != kLegacySaveBytes && size_t(length) != kV2SaveBytes &&
         size_t(length) != kV3SaveBytes && size_t(length) != kV4BaseBytes &&
         size_t(length) != kV4SaveBytes && size_t(length) != kV5SaveBytes &&
-        size_t(length) != kSaveBytes) return true;
+        size_t(length) != kV6SaveBytes && size_t(length) != kSaveBytes) return true;
 #else
     const char* override_path = std::getenv("TH13_SAVE_PATH");
     const std::string path = override_path ? override_path : "th13-save.bin";
@@ -369,7 +366,7 @@ bool FileStore::load_v6() {
     }
     if (length != kLegacySaveBytes && length != kV2SaveBytes &&
         length != kV3SaveBytes && length != kV4BaseBytes && length != kV4SaveBytes &&
-        length != kV5SaveBytes && length != kSaveBytes) return true;
+        length != kV5SaveBytes && length != kV6SaveBytes && length != kSaveBytes) return true;
 #endif
     const u32 version = get32(buffer.data() + 8);
     if (std::memcmp(buffer.data(), kSaveMagic, sizeof(kSaveMagic)) != 0 ||
@@ -378,6 +375,7 @@ bool FileStore::load_v6() {
           (version == 3 && size_t(length) == kV3SaveBytes) ||
           (version == 4 && (size_t(length) == kV4BaseBytes || size_t(length) == kV4SaveBytes)) ||
           (version == 5 && size_t(length) == kV5SaveBytes) ||
+          (version == 6 && size_t(length) == kV6SaveBytes) ||
           (version == kSaveVersion && size_t(length) == kSaveBytes)))
         return true;  // 坏档 = 默认值（原版语义）
     if (version >= 6 &&
@@ -385,6 +383,7 @@ bool FileStore::load_v6() {
          get32(buffer.data() + kV5SaveBytes + 4) > 1 ||
          (get32(buffer.data() + kPreEndingSizeOffset) != 0 &&
           get32(buffer.data() + kPreEndingSizeOffset) != kV5SaveBytes))) return true;
+    if (version >= 7 && std::memcmp(buffer.data() + kV6SaveBytes, "NAM1", 4) != 0) return true;
     if (version >= 4 && size_t(length) != kV4BaseBytes) {
         const u32 legacy_size = get32(buffer.data() + kV4BaseBytes + 4);
         if (std::memcmp(buffer.data() + kV4BaseBytes, "REC1", 4) != 0 ||
@@ -492,9 +491,19 @@ bool FileStore::load_v6() {
         if (version == 5)
             pre_ending_save_bytes_.assign(buffer.begin(), buffer.begin() + length);
     }
+    if (version >= 7)
+        remember_name(std::string(reinterpret_cast<const char*>(buffer.data() + kLastNameOffset),
+                                  strnlen(reinterpret_cast<const char*>(buffer.data() + kLastNameOffset), 8)));
     loaded = true;
     committed_ending_bytes_ = ending_seen_bytes;
     return true;
+}
+
+void FileStore::remember_name(const std::string& name) {
+    // ascii.anm font0 only covers 0x20..0x7e; imported score files may hold any byte.
+    last_name = name.substr(0, 8);
+    for (char& c : last_name) if (c < 0x20 || c > 0x7e) c = ' ';
+    last_name.resize(8, ' ');
 }
 
 bool FileStore::save() {
@@ -596,11 +605,19 @@ bool FileStore::write_save(bool commit_ending) {
     put32(buffer.data() + kPreEndingSizeOffset, u32(pre_ending_save_bytes_.size()));
     std::copy(pre_ending_save_bytes_.begin(), pre_ending_save_bytes_.end(),
               buffer.data() + kPreEndingArchiveOffset);
+    std::memcpy(buffer.data() + kV6SaveBytes, "NAM1", 4);
+    std::memcpy(buffer.data() + kLastNameOffset, last_name.data(), std::min(last_name.size(), size_t(8)));
 #ifdef __EMSCRIPTEN__
-    if (!th13_save_write_js(reinterpret_cast<const char*>(buffer.data()),
-                            int(buffer.size()))) {
-        error = "Save storage write failed";
-        return false;
+    // 存储层写入只在序列化字节变化时发生：原版每个保存点（关终门、关首、
+    // 续关、结局）都重写整档，端口保留这些保存点，但同一份字节不重复提交给
+    // localStorage——关终/关首帧因此只承担序列化，不承担 I/O。
+    if (buffer != persisted_save_bytes_) {
+        if (!th13_save_write_js(reinterpret_cast<const char*>(buffer.data()),
+                                int(buffer.size()))) {
+            error = "Save storage write failed";
+            return false;
+        }
+        persisted_save_bytes_ = buffer;
     }
     if (commit_ending) committed_ending_bytes_ = ending_seen_bytes;
     return true;
@@ -656,20 +673,48 @@ bool FileStore::read_score_dat(std::vector<u8>& out) {
 bool FileStore::write_score_dat() {
 #ifdef __EMSCRIPTEN__
     if (!score_dat_file_ready()) return true;  // 阶段 B 门（见上）
-    std::vector<u8> file;
-    if (!score_dat.build_file(file)) {
+    // 0x458c30 LZ 压缩是保存点最重的一步（镜像 0x1B678 字节）。镜像体未变
+    // 时文件逐字节相同，压缩与存储写入都省去：关终门帧/关首激活帧只在
+    // 榜表真正变化时才付出压缩成本。
+    std::vector<u8> image(ScoreDat::kImageSize);
+    const size_t uncomp = score_dat.build_image(image.data(), image.size());
+    if (uncomp == 0) {
         error = "ScoreDat build failed: " + score_dat.error;
         return false;
     }
+    image.resize(uncomp);
+    if (image == persisted_score_dat_image_) {
+        pending_score_dat_image_.clear();
+        score_dat_encoder_ = LzssEncoder{};
+        return true;
+    }
+    if (score_dat_encoder_.active() && image == pending_score_dat_image_) return true;
+    score_dat_encoder_.begin(image.data(), image.size());
+    pending_score_dat_image_ = std::move(image);
+    return true;
+#else
+    // native/WASI 构建通道不激活：不落盘（save_score 语义 = 仅写 v6，与旧版
+    // 逐字节一致）。镜像仍由 sync_score_face_to_dat() 留在内存供测试检视。
+    return true;
+#endif
+}
+
+bool FileStore::advance_pending_writes(u32 tokens) {
+#ifdef __EMSCRIPTEN__
+    if (!score_dat_encoder_.active()) return true;
+    if (!score_dat_encoder_.step(tokens)) return true;
+    std::vector<u8> file;
+    ScoreDat::wrap_file(score_dat_encoder_.take(), pending_score_dat_image_.size(), file);
     if (!th13_scoredat_write_js(reinterpret_cast<const char*>(file.data()),
                                 int(file.size()))) {
         error = "ScoreDat storage write failed";
         return false;
     }
+    persisted_score_dat_image_ = std::move(pending_score_dat_image_);
+    pending_score_dat_image_.clear();
     return true;
 #else
-    // native/WASI 构建通道不激活：不落盘（save_score 语义 = 仅写 v6，与旧版
-    // 逐字节一致）。镜像仍由 sync_score_face_to_dat() 留在内存供测试检视。
+    (void)tokens;
     return true;
 #endif
 }
@@ -744,7 +789,10 @@ void FileStore::sync_score_face_to_dat() {
     u8 seen[ScoreDat::kEndingBytes];
     std::copy(ending_seen_bytes.begin(), ending_seen_bytes.end(), seen);
     ScoreDat::write_ending_bytes(score_dat.st.data(), seen);
-    // ST 上次名（+0x0C）：端口暂无名牌输入追踪，保持 parse/默认透传不臆造。
+    // ST+0x0C 上次输入名（0x4544ee/0x44050e 等 END 回写点）：8 字节 + NUL。
+    std::array<u8, 9> name{};
+    std::memcpy(name.data(), last_name.data(), std::min(last_name.size(), size_t(8)));
+    ScoreDat::set_st_name(score_dat.st.data(), name);
 }
 
 void FileStore::overlay_score_face_from_dat() {
@@ -804,7 +852,9 @@ void FileStore::overlay_score_face_from_dat() {
     ScoreDat::read_ending_bytes(score_dat.st.data(), seen);
     std::copy(seen, seen + ScoreDat::kEndingBytes, ending_seen_bytes.begin());
     ending_history_complete = true;
-    // ST 上次名留在 score_dat.st（端口读侧未接名牌显示，透传保真）。
+    const std::array<u8, 9> name = ScoreDat::st_name(score_dat.st.data());
+    remember_name(std::string(reinterpret_cast<const char*>(name.data()),
+                              strnlen(reinterpret_cast<const char*>(name.data()), 8)));
 }
 
 }  // namespace th13::sdl

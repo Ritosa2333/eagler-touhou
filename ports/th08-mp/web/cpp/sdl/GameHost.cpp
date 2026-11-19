@@ -1,3 +1,4 @@
+#include <eagler/presentation/Extrapolation.hpp>
 #include <eagler/thprac/PracticePointer.hpp>
 #include <eagler/input/BrowserGamepad.hpp>
 #ifdef TH_NATIVE_PLATFORM
@@ -432,9 +433,9 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
 #if defined(TH_PRESENTATION_AUDIT)
         const double presentation_started=emscripten_get_now();
 #endif
-        presentation_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;
+        presentation_alpha=interpolate?eagler::presentation::ExtrapolationWeight(cadence.interpolation_alpha()):1.0f;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        if(catchup&&interpolate)presentation_alpha=float(network_schedule.presentation_alpha());
+        if(catchup&&interpolate)presentation_alpha=eagler::presentation::ExtrapolationWeight(network_schedule.presentation_alpha());
 #endif
         presented=runtime->app.draw(presentation_alpha,interpolate,true,!frozen);
 #if defined(TH_PRESENTATION_AUDIT)
@@ -512,7 +513,7 @@ EX("sdl_loop_time") double sdl_loop_time(){return elapsed;}
 // Diagnostic freeze is NOT the in-game pause. It retains the last endpoint pair
 // and never polls input, advances clocks, executes ANM/ECL, or pumps audio.
 EX("audit_draw") i32 audit_draw(float alpha,u32 world){
-    if(running||!runtime||!std::isfinite(alpha)||alpha<0||alpha>1)return -1;
+    if(running||!runtime||!std::isfinite(alpha)||alpha<0||alpha>2)return -1;
     if(runtime->app.title.modal())return -2; // No Draw occurs: do not reuse stale captures.
     return runtime->app.draw(alpha,true,true,world!=0)?0:1;
 }

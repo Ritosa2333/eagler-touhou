@@ -12,6 +12,7 @@ bool ApplicationState::finish_practice(){return rollback_boundary()&&(pause&&pau
 bool ApplicationState::record_play_time(){return rollback_boundary()&&(pause&&pause->time.account(i32(flow.current))||fail(pause?pause->time.error:"Run play-time owner unavailable"));}
 bool ApplicationState::return_to_title(){if(!rollback_boundary())return false;if(progress.practice_record)return replay_finished();flow.pending=AppScene::Title;return true;}
 bool ApplicationState::dialogue_text(AnmVm& vm,u32 color,u32 shadow,i32 style,i32 x,i32 spacing,const std::string& bytes){return rollback_boundary()&&(fonts.dialogue(vm,color,shadow,style,x,spacing,bytes)||fail(fonts.error));}
+i32 ApplicationState::dialogue_width(AnmVm& vm,const std::string& text,i32 style){return fonts.dialogue_width(vm,text,style);}
 bool ApplicationState::spell_title(AnmVm& vm,const std::string& bytes){
  const auto* name=scene()?localized_spell(scene()->battle.spell.id):nullptr;
 #if TH17_MULTIPLAYER

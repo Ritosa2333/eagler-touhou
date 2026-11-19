@@ -31,7 +31,7 @@ Renderer::~Renderer() = default;
 bool Renderer::initialize() { return true; }
 void Renderer::flush() {}
 void Renderer::discard() {}
-bool Renderer::commit() { return true; }
+bool Renderer::commit(bool) { return true; }
 void Renderer::transform(MatrixKind, const void*) {}
 void Renderer::viewport(const Viewport&) {}
 void Renderer::draw(Topology, u32, const void*, u32, const void*, IndexType) {}

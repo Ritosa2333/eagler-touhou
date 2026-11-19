@@ -15,7 +15,7 @@ bool initialize_bird(AttackActor& a,CharacterAttackServices& s,BirdPath path){
     a.layer=2;if(path!=BirdPath::normal)a.time.reset(90);
     float radius=float(s.random.range(192)),heading=float(s.random.signed_unit())*pi;t.start_tangent=polar(heading,radius);
     radius=float(s.random.range(192));heading=float(s.random.signed_unit())*pi;t.end_tangent=polar(heading,radius);
-    t.origin=s.geometry[a.source_side].to_screen(a.position);t.origin.z=0;
+    t.origin=s.screen_position(a.position,a.source_side);t.origin.z=0;
     switch(path){
     case BirdPath::normal:case BirdPath::crossing:{
         const bool right=s.random.bounded32(2)==0;t.target.x=right?144.f:-144.f;
@@ -28,7 +28,9 @@ bool initialize_bird(AttackActor& a,CharacterAttackServices& s,BirdPath path){
     case BirdPath::right:t.target={144,192,0};t.flight_angle=pi;break;
     case BirdPath::directed:t.target={a.position.x,a.position.y,0};break;
     }
+    s.select_field(a.destination_side);
     t.destination=s.geometry[a.destination_side].to_screen(t.target);t.destination.z=0;
+    s.select_field(a.source_side);
     if(path!=BirdPath::normal)t.volley_angle=float(s.random.signed_unit())*pi;return false;
 }
 bool initialize_mystia(AttackActor& a,AttackServices& s){return initialize_bird(a,static_cast<CharacterAttackServices&>(s),BirdPath::normal);}

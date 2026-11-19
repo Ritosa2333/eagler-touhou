@@ -10,7 +10,8 @@ import type { GameSettingsModel } from '../../models/game-settings';
 import { useLocale } from '../../i18n';
 import { OptionsGroup, OptionsGroupHeading } from './OptionsGroup';
 import { InputSettings } from './InputSettings';
-import { GameAudioFields } from './GameAudioControls';
+import { GameAudioFields, QuickChatVolumeField } from './GameAudioControls';
+import type { SitePreferencesModel } from '../../models/site-preferences';
 import { OptionRow } from './OptionRow';
 import { OptionSwitch } from './TouchSettingsFields';
 import { SettingsSelect } from './SettingsSelect';
@@ -23,11 +24,13 @@ export function SettingsBody({
   actions,
   onOpenTouchLayout,
   multiplayerControls,
+  preferences,
 }: {
   model: GameSettingsModel;
   actions: SettingsActions;
   onOpenTouchLayout(): void;
   multiplayerControls?: ReactNode;
+  preferences?: SitePreferencesModel;
 }) {
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const midi = useSyncExternalStore(
@@ -218,6 +221,8 @@ export function SettingsBody({
         onOpenChange={(open) => model.setDisclosure('display', open)}
         bodyClassName="options-advanced-body"
       >
+        {state.gameId === 'th03' && <OptionRow className={item('option-frame-limit')} label={t('settings.th02RapidFire')} control={<OptionSwitch id={id('th03RapidFireToggle')} label={t('settings.th02RapidFire')} checked={options.th03RapidFire} onChange={() => model.setOption('th03RapidFire', !options.th03RapidFire)}/>}/>}
+        {state.gameId === 'th02' && <OptionRow className={item('option-frame-limit')} label={t('settings.th02RapidFire')} control={<OptionSwitch id={id('th02RapidFireToggle')} label={t('settings.th02RapidFire')} checked={options.th02RapidFire} onChange={() => model.setOption('th02RapidFire', !options.th02RapidFire)}/>}/>}
         <OptionRow
           className={item('option-frame-limit')}
           hidden={!product.support.highRefreshRate}
@@ -311,6 +316,8 @@ export function SettingsBody({
             />
           }
         />
+        {state.gameId === 'th03' && !multiplayer && <OptionRow className={item('option-focus-hitbox')} label={t('settings.th03Focus')} control={<OptionSwitch id={id('th03FocusToggle')} label={t('settings.th03Focus')} checked={options.th03FocusEnabled} onChange={()=>model.setOption('th03FocusEnabled', !options.th03FocusEnabled)}/>}/>}
+        {state.gameId === 'th03' && <OptionRow className={item('option-focus-hitbox')} label={t('settings.focusHitbox')} control={<OptionSwitch id={id('th03FocusHitboxToggle')} label={t('settings.focusHitbox')} checked={options.th03FocusPointEnabled} onChange={()=>model.setOption('th03FocusPointEnabled', !options.th03FocusPointEnabled)}/>}/>}
         <OptionRow
           className={item('option-focus-hitbox')}
           id={id('focusHitboxOption')}
@@ -372,6 +379,7 @@ export function SettingsBody({
         bodyClassName="options-advanced-body"
       >
         <GameAudioFields model={model} />
+        {preferences && <QuickChatVolumeField preferences={preferences}/>}
       </OptionsGroup>
       <OptionsGroup
         id={id('advancedOptions')}

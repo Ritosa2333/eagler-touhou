@@ -3,7 +3,7 @@
 import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
-import {existsSync} from 'node:fs';
+import {existsSync, writeFileSync} from 'node:fs';
 import {resolve, dirname} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
@@ -48,6 +48,26 @@ function fixture({game = 'th06', ios = false, movement = 'touch', focus = 'hold-
   }; active.push(f); return f;
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+test('TH01 slide holds and releases even with an old focus preference', () => {
+  for (const focus of ['two-finger', 'toggle-button']) {
+    const f = fixture({game: 'th01', focus});
+    f.pointer('focus', 'pointerdown'); assert.equal(f.sent.at(-1).focusEnabled, true);
+    f.pointer('focus', 'pointerup'); assert.equal(f.sent.at(-1).focusEnabled, false);
+    f.pointer('focus', 'pointerdown'); f.pointer('focus', 'pointercancel'); assert.equal(f.sent.at(-1).focusEnabled, false);
+  }
+  const f = fixture({game: 'th01', focus: 'two-finger', ios: true});
+  f.iosEvent('focus', 'touchstart', [{identifier: 1}]); assert.equal(f.sent.at(-1).focusEnabled, true);
+  f.iosEvent('focus', 'touchcancel', [{identifier: 1}]); assert.equal(f.sent.at(-1).focusEnabled, false);
+});
+test('TH03 fire is a persistent toggle like TH02 and TH04', () => {
+  const f=fixture({game:'th03'});
+  f.touch.syncControls(); assert.equal(f.sent.at(-1).fireEnabled,true);
+  f.pointer('fire','pointerdown'); f.pointer('fire','pointerup');
+  assert.equal(f.touch.getSnapshot().fireEnabled,false);
+  f.pointer('fire','pointerdown'); f.pointer('fire','pointerup');
+  assert.equal(f.touch.getSnapshot().fireEnabled,true);
+  assert.equal(f.sent.at(-1).fireEnabled,true);
+});
 test('declared native actions hold A/B/C/D together without keyboard or auto-fire ownership', () => {
   const f=fixture({game:'th075'});
   for(const [index,name] of ['fire','bomb','focus','functionKey'].entries())f.pointer(name,'pointerdown',{pointerId:index+1});
@@ -72,10 +92,14 @@ test('direct contacts preserve independent IDs and normalized iframe coordinates
   assert.deepEqual(f.sent.map(x => [x.type, x.id]), [['down', -1000000], ['move', -1000000], ['down', -1000001], ['up', -1000000], ['up', -1000001]]);
   assert.equal(f.sent[0].x, .5); assert.equal(f.sent[1].x, 1); assert.equal(f.sent[1].y, 1); assert.equal(f.measures(), 1);
 });
-test('direct lost capture releases once; mouse and hidden surface create no movement', () => {
+test('direct lost capture releases once and hidden surface creates no movement', () => {
   const f = fixture(); f.pointer('directSurface', 'pointerdown'); f.pointer('directSurface', 'lostpointercapture'); f.pointer('directSurface', 'pointerup');
   assert.equal(f.sent.filter(x => x.type === 'up').length, 1); f.sent.length = 0;
-  f.pointer('directSurface', 'pointerdown', {pointerType: 'mouse'}); f.elements.directSurface.hidden = true; f.pointer('directSurface', 'pointerdown'); assert.deepEqual(f.sent, []);
+  f.elements.directSurface.hidden = true; f.pointer('directSurface', 'pointerdown'); assert.deepEqual(f.sent, []);
+});
+test.each(['pen', 'mouse'])('drawing tablet %s pointer moves through the direct stream', pointerType => {
+  const f = fixture(); f.pointer('directSurface', 'pointerdown', {pointerType}); f.pointer('directSurface', 'pointermove', {pointerType, clientX: 300}); f.pointer('directSurface', 'pointerup', {pointerType});
+  assert.deepEqual(f.sent.filter(x=>x.command==='direct-touch').map(x=>x.type), ['down','move','up']);
 });
 test('iOS owns native touch sequence and HUD does not refocus an active movement contact', () => {
   const f = fixture({ios: true}); const contact = {identifier: 7, clientX: 210, clientY: 320};
@@ -191,4 +215,34 @@ for(const reason of ['pointercancel','lostpointercapture','editing','cancel'])te
  const f=fixture({game:'th19'});f.pointer('functionKey','pointerdown');
  if(reason==='editing')f.edit(true);else if(reason==='cancel')f.touch.cancelPointers();else f.pointer('functionKey',reason);
  assert.equal(f.touch.getSnapshot().functionDown,false);assert.deepEqual(f.sent.filter(m=>m.command==='keyboard').map(m=>[m.code,m.down]),[['KeyX',true],['KeyX',false]]);
+});
+
+const th14CancelCases=[];
+function keepTh14CancelCase(name,f){
+ const messages=f.sent.filter(m=>m.command==='direct-touch'||m.command==='touch-cancel');
+ th14CancelCases.push({name,messages});return messages;
+}
+after(()=>{if(process.env.TH14_TOUCH_CASES_OUTPUT)writeFileSync(process.env.TH14_TOUCH_CASES_OUTPUT,JSON.stringify(th14CancelCases,null,2)+'\n');});
+for(const reason of ['pointercancel','lostpointercapture'])test('TH14 cancelled dialogue contact emits cancellation: '+reason,()=>{
+ const f=fixture({game:'th14'});f.pointer('directSurface','pointerdown');f.pointer('directSurface',reason);f.pointer('directSurface','pointerup');
+ const messages=keepTh14CancelCase(reason,f);
+ assert.deepEqual(messages.map(m=>[m.command,m.type]),[['direct-touch','down'],['touch-cancel',undefined]]);
+});
+test('TH14 iOS cancelled dialogue contact emits cancellation, not tap release',()=>{
+ const f=fixture({game:'th14',ios:true}),p={identifier:7,clientX:210,clientY:320};
+ f.iosEvent('directSurface','touchstart',[p]);f.iosEvent('directSurface','touchcancel',[p]);f.iosEvent('directSurface','touchend',[p]);
+ const messages=keepTh14CancelCase('ios-touchcancel',f);
+ assert.deepEqual(messages.map(m=>[m.command,m.type]),[['direct-touch','down'],['touch-cancel',undefined]]);
+});
+for(const ios of [false,true])test('TH14 intentional dialogue tap retains normal release: '+ios,()=>{
+ const f=fixture({game:'th14',ios}),p={identifier:7,clientX:210,clientY:320};
+ if(ios){f.iosEvent('directSurface','touchstart',[p]);f.iosEvent('directSurface','touchend',[p]);}
+ else{f.pointer('directSurface','pointerdown');f.pointer('directSurface','pointerup');}
+ const messages=keepTh14CancelCase(ios?'ios-tap':'pointer-tap',f);
+ assert.deepEqual(messages.map(m=>[m.command,m.type]),[['direct-touch','down'],['direct-touch','up']]);
+});
+test('TH14 interrupted drag retires without a final confirmation release',()=>{
+ const f=fixture({game:'th14'});f.pointer('directSurface','pointerdown');f.pointer('directSurface','pointermove',{clientX:250});f.pointer('directSurface','pointercancel');
+ const messages=keepTh14CancelCase('drag-cancel',f);
+ assert.deepEqual(messages.map(m=>[m.command,m.type]),[['direct-touch','down'],['direct-touch','move'],['touch-cancel',undefined]]);
 });

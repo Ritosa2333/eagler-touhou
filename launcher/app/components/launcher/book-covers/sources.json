@@ -1,5 +1,41 @@
 [
   {
+    "game": "th01",
+    "file": "th01.webp",
+    "source_file": "https://upload.thbwiki.cc/1/13/%E4%B8%9C%E6%96%B9%E7%81%B5%E5%BC%82%E4%BC%A0cover.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6%3A%E4%B8%9C%E6%96%B9%E7%81%B5%E5%BC%82%E4%BC%A0cover.png",
+    "source_sha256": "efcccdbacbc26e84261788f8d34621b11376d29c362a1bd98fbc9fa1d31cde35",
+    "generated_sha256": "a056cbb7652a1035acf121ade1ed4cbebf57a5254edfcb98985858ab0f681a1a",
+    "conversion": "Existing local 960x960 WebP; square crop coordinates from PC-98 artwork preparation script: [0, 100, 1499, 1599]"
+  },
+  {
+    "game": "th02",
+    "file": "th02.webp",
+    "source_file": "https://upload.thbwiki.cc/5/55/%E4%B8%9C%E6%96%B9%E5%B0%81%E9%AD%94%E5%BD%95cover.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6%3A%E4%B8%9C%E6%96%B9%E5%B0%81%E9%AD%94%E5%BD%95cover.png",
+    "source_sha256": "9970f1bbfe121c0bd8c7651667ef01be6b7c3555b26a63f53b8351dc46c71a09",
+    "generated_sha256": "2f681ce828c38147f2534c5cdf3ad693d23f83537f9e67e658d20b9a615fb364",
+    "conversion": "Existing local 960x960 WebP; square crop coordinates from PC-98 artwork preparation script: [0, 175, 1525, 1700]"
+  },
+  {
+    "game": "th03",
+    "file": "th03.webp",
+    "source_file": "https://upload.thbwiki.cc/5/5d/%E4%B8%9C%E6%96%B9%E6%A2%A6%E6%97%B6%E7%A9%BAcover.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6%3A%E4%B8%9C%E6%96%B9%E6%A2%A6%E6%97%B6%E7%A9%BAcover.png",
+    "source_sha256": "8223a75673a6076f321c53b0c320603c8187fe9b9ead28994c6302183a5f3af1",
+    "generated_sha256": "7da488b2a85969f0fa0282acd3bb0df35e6f9e62b001ac6f52bc1c7114bece82",
+    "conversion": "Existing local 960x960 WebP; square crop coordinates from PC-98 artwork preparation script: [0, 0, 1522, 1522]"
+  },
+  {
+    "game": "th04",
+    "file": "th04.webp",
+    "source_file": "https://upload.thbwiki.cc/f/fd/%E4%B8%9C%E6%96%B9%E5%B9%BB%E6%83%B3%E4%B9%A1cover.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6%3A%E4%B8%9C%E6%96%B9%E5%B9%BB%E6%83%B3%E4%B9%A1cover.png",
+    "source_sha256": "dc02b94e9c0e1abc58de2cfd3843e08e44cde257ad31ce0c7e0f473a1b84cb11",
+    "generated_sha256": "caee932f9336af15d1e8868768a2bb7c83761d0e447bf05b180f2b195768845f",
+    "conversion": "Existing local 960x960 WebP; square crop coordinates from PC-98 artwork preparation script: [180, 0, 1665, 1485]"
+  },
+  {
     "game": "th05",
     "file": "th05.webp",
     "source_file": "docs/assets/game-covers/th05.jpg",

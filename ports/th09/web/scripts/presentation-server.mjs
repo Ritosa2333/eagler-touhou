@@ -11,7 +11,11 @@ const root=fileURLToPath(new URL('../',import.meta.url)),workspace=resolve(root,
 const fixtureWorkspace=process.env.TH09_FIXTURE_ROOT?resolve(process.env.TH09_FIXTURE_ROOT):workspace;
 const fixtureAssets=resolve(process.env.TH09_FIXTURE_ASSETS||resolve(fixtureWorkspace,'web/assets/sdl-native'));
 const fixtureMusic=resolve(process.env.TH09_FIXTURE_MUSIC||resolve(fixtureAssets,'music'));
-export async function presentationServer(port=0,{release=false,artifactDirectory}={}){
+export async function presentationServer(port=0,{release=false,artifactDirectory,archiveApi}={}){
+ const replayPath='/api/v1/th09/replays';
+ const replayEndpoint=archiveApi ? new URL(replayPath,archiveApi) : null;
+ if(replayEndpoint&&(replayEndpoint.protocol!=='http:'||replayEndpoint.hostname!=='127.0.0.1'))
+  throw Error('The fixture replay API must be on IPv4 loopback');
  const compiled=artifactDirectory?resolve(artifactDirectory):resolve(root,release?'artifacts/sdl-release':'artifacts/sdl3');
  const files=new Map([
   ['/',resolve(root,'tests/browser/presentation.html')],
@@ -19,7 +23,13 @@ export async function presentationServer(port=0,{release=false,artifactDirectory
   [release?'/th09.wasm':'/th09-presentation.wasm',resolve(compiled,release?'th09.wasm':'th09-presentation.wasm')],
   ['/th09.dat',resolve(process.env.TH09_FIXTURE_DATA||resolve(fixtureWorkspace,'[th09] 东方花映塚 (日文版)/th09.dat'))],
  ]);
- for(const name of ['th09.html','style.css','shell.mjs','keyboard.mjs','netplay.mjs','shared-netplay.mjs','spectator-tape.mjs','spectator-timeline.mjs','spectator-timeline-view.mjs','motion-replay.mjs'])files.set('/app/'+name,resolve(root,'sdl-runtime',name));
+ for(const name of ['th09.html','style.css','shell.mjs','keyboard.mjs','directory-keyboard.mjs','netplay.mjs','shared-netplay.mjs','spectator-tape.mjs','spectator-timeline.mjs','spectator-timeline-view.mjs','motion-replay.mjs'])files.set('/app/'+name,resolve(root,'sdl-runtime',name));
+ files.set('/app/match-archive-player.mjs',resolve(root,'sdl-runtime/match-archive-player.mjs'));
+ files.set('/app/th09-match-archive.mjs',resolve(workspace,'../../common/contracts/th09-match-archive.mjs'));
+ files.set('/app/auto-replay.mjs',resolve(root,'sdl-runtime/auto-replay.mjs'));
+ files.set('/app/playback-clock.mjs',resolve(workspace,'../../common/browser/playback-clock.mjs'));
+ files.set('/app/replay-player.mjs',resolve(workspace,'../../common/browser/versus-replay-th09.mjs'));
+ files.set('/app/th09-replay-upload.mjs',resolve(workspace,'../../common/browser/th09-replay-upload.mjs'));
  for(const name of ['cp932.bin','blend.bin','msgothic.ttc'])files.set('/'+name,resolve(fixtureAssets,name));
  const music=readdirSync(fixtureMusic).filter(n=>n.endsWith('.ogg')).sort();
  for(const name of music)files.set('/music/'+name,resolve(fixtureMusic,name));
@@ -27,6 +37,14 @@ export async function presentationServer(port=0,{release=false,artifactDirectory
  const server=http.createServer((req,res)=>{
   const path=new URL(req.url,'http://127.0.0.1').pathname;
   res.setHeader('Cross-Origin-Opener-Policy','same-origin');res.setHeader('Cross-Origin-Embedder-Policy','require-corp');res.setHeader('Cache-Control','no-store');
+  if(replayEndpoint&&req.method==='POST'&&path===replayPath){
+   const upstream=http.request(replayEndpoint,{method:req.method,headers:{
+    authorization:req.headers.authorization??'', 'content-type':req.headers['content-type']??'',
+   }},response=>{res.writeHead(response.statusCode??502);response.pipe(res);});
+   upstream.on('error',()=>res.writeHead(502).end());
+   req.pipe(upstream);
+   return;
+  }
   if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405).end();return;}
   if(path==='/version.json'||path==='/app/version.json'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({game:'th09',build:JSON.parse(readFileSync(resolve(compiled,'build.json'),'utf8')).sha256.slice(0,24)}));return;}
   if(path==='/'&&release){const html=readFileSync(files.get('/'),'utf8').replace('core._th09_title_open()','core._th09_game_open(12345)').replaceAll('core._th09_probe_error()','core._th09_error()').replace(/window.probeStatus=.*?;/,'window.probeStatus=()=>[];');res.setHeader('Content-Type','text/html; charset=utf-8');res.end(html);return;}

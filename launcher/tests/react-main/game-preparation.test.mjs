@@ -112,12 +112,53 @@ function host(extra = {}) {
       version: `sha256-${hash}`, layout: `sha256-${'b'.repeat(64)}`}, music: {midi: {files: []}}, ...extra}}});
 }
 function catalog(revision = 'package-r1') {return {schema: 'eagler-touhou/release-catalog/1', games: {th06: {revision, descriptor: 'games/th06/package.json'}}};}
+test('cached DATA with an incompatible layout upgrades before it is pinned for launch', async () => {
+ const old=generation(),next=generation({id:'compatible',revision:'new'}),required=host().games.th06.gameData.layout;
+ old.descriptor.runtimeRequirement.dataLayout='sha256-'+'c'.repeat(64);
+ next.descriptor.runtimeRequirement.dataLayout=required;
+ const activity=[];let installs=0;
+ const f=acquisitionFixture({current:old,hostValue:host(),catalogValue:catalog('new'),dependencies:{installPublished:async(game,options)=>{
+  installs++;assert.equal(game,'th06');assert.equal(options.expectedGenerationId,old.id);assert.equal(options.preserveLocalSource,true);
+  assert.deepEqual(options.addComponents,[]);return {generation:next};
+ }}});
+ const result=await f.acquisition.acquire({productId:'th06',music:'none',language:'ja',onAcquisitionActivity:v=>activity.push(v),decideUpdate:async()=>{throw Error('incompatible DATA is not an optional update');}});
+ assert.equal(result.generation,next);assert.equal(installs,1);assert.deepEqual(activity,[true,false]);assert.ok(f.calls.includes('refresh:th06'));
+});
+for (const stamp of ['legacy','native','missing']) test(`TH03 legacy disk package refreshes cold metadata and installs native DATA before preparing disks (stamp: ${stamp})`, async () => {
+ const old=generation(),next=generation({id:'th03-native',revision:'native'}),legacy='sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579',native='sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e';
+ for(const g of [old,next]){g.game=g.descriptor.game='th03';g.descriptor.runtimeRequirement.target='th03';}
+ old.descriptor.runtimeRequirement.dataLayout=stamp==='native'?native:stamp==='legacy'?legacy:undefined;old.descriptor.components['pc98-manifest']={type:'pc98-manifest',files:[]};
+ next.descriptor.runtimeRequirement.dataLayout=native;
+ const site={...host(),games:{th03:{...host().games.th06,gameData:{...host().games.th06.gameData,layout:native}}}},catalogValue={...catalog('native'),games:{th03:{revision:'native',descriptor:'th03-pr232.package.json'}}};
+ let f;f=acquisitionFixture({current:old,testBuild:true,initialize:async()=>{f.metadata.siteManifest=site;f.metadata.releaseCatalog=catalogValue;},dependencies:{repairInstalled:async()=>{throw Error('old disk must not be repaired');},installPublished:async(game,options)=>{assert.equal(game,'th03');assert.equal(options.expectedGenerationId,old.id);return {generation:next};}}});
+ const result=await f.acquisition.acquire({productId:'th03mp',music:'none',language:'ja'});
+ assert.equal(result.generation,next);assert.ok(f.calls.includes('metadata'));assert.equal(result.generation.descriptor.components['pc98-manifest'],undefined);
+});
+test('TH03 legacy disk package is not used when new metadata is unavailable', async () => {
+ const old=generation();old.game=old.descriptor.game=old.descriptor.runtimeRequirement.target='th03';
+ old.descriptor.runtimeRequirement.dataLayout='sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579';
+ const f=acquisitionFixture({current:old,testBuild:true});
+ await assert.rejects(()=>f.acquisition.acquire({productId:'th03mp',music:'none',language:'ja'}),/旧资源需要更新/);
+});
+for(const failure of ['network','still-incompatible'])test(`incompatible DATA cannot launch after a failed migration: ${failure}`,async()=>{
+ const old=generation();old.descriptor.runtimeRequirement.dataLayout='sha256-'+'c'.repeat(64);
+ const f=acquisitionFixture({current:old,hostValue:host(),catalogValue:catalog('new'),dependencies:{installPublished:async()=>{
+  if(failure==='network')throw Error('unavailable');return {generation:old};
+ }}});
+ await assert.rejects(()=>f.acquisition.acquire({productId:'th06',music:'none',language:'ja'}),error=>error.gameDataAcquisition===true);
+});
+test('an older revision with the same layout still launches from cache without a foreground update',async()=>{
+ const old=generation();old.descriptor.runtimeRequirement.dataLayout=host().games.th06.gameData.layout;
+ const f=acquisitionFixture({current:old,hostValue:host(),catalogValue:catalog('new')});
+ const result=await f.acquisition.acquire({productId:'th06',music:'none',language:'ja'});
+ assert.equal(result.generation,old);assert.ok(result.deferredUpdate);assert.deepEqual(f.calls,['current:th06']);
+});
 function acquisitionFixture({current = generation(), hostValue = null, catalogValue = null, dependencies = {}, fetchImpl, network,
-  initialize = async () => {}} = {}) {
+  initialize = async () => {}, testBuild = false} = {}) {
   const calls = [], metadata = {siteManifest: hostValue, releaseCatalog: catalogValue};
   const installation = () => ({generation: current, installation: current ? {game: 'th06', currentGeneration: current.id,
     pendingGeneration: null, source: 'local'} : null});
-  const acquisition = api.createPackageAcquisition({baseUrl, translate: t, indexedDBAvailable: () => true,
+  const acquisition = api.createPackageAcquisition({baseUrl, translate: t, indexedDBAvailable: () => true, testBuild,
     network,
     fetchImpl: fetchImpl ?? (async () => {throw new Error('Unexpected real network path');}),
     metadata: {getSnapshot: () => metadata, initialize: async () => {calls.push('metadata'); await initialize();},
@@ -207,6 +248,16 @@ test('TH05 native thprac preference reaches configure without a Windows session 
   assert.equal('thpracSession' in options, false);
 });
 
+for(const productId of ['th03','th03mp']) test(`${productId} saves and applies its rapid-fire preference`,()=>{
+  const state=settingsFixture({productId});
+  const multiplayer=productId.endsWith('mp')?{kind:'room',options:{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?room=th03mp-1234',netplayPlayer:0,netplayPlayerCount:2,netplaySeed:1,netplayDifficulty:3}}:undefined;
+  const configure=model=>api.gameRuntimeOptions({productId,settings:model.getSnapshot(),multiplayer},'ja','none',null);
+  assert.equal(configure(state.model).th03RapidFire,true);
+  state.model.setOption('th03RapidFire',false);assert.equal(configure(state.model).th03RapidFire,false);
+  const restored=api.createGameSettingsModel({storage:{getItem:key=>state.storage.get(key)??null,setItem:(key,value)=>state.storage.set(key,value),removeItem:key=>state.storage.delete(key)}});
+  restored.hydrate(state.snapshot.context);assert.equal(configure(restored).th03RapidFire,false);
+});
+
 test('TH05 album preparation sends the source to Runtime and reads its declared OGG targets', async () => {
   const current = generation({ogg: ['track-1', 'track-2']});
   current.game = current.descriptor.game = 'th05';
@@ -254,6 +305,58 @@ test('TH05 album acquisition includes its declared soundtrack files', async () =
   const result = await acquisition.acquire({productId: 'th05', music: 'ogg-akyu', language: 'ja'});
   assert.equal(result.generation, current);
   assert.deepEqual(downloaded, ['/deploy/development/th05.data', '/deploy/music/op.ogg', '/deploy/music/akyu-01.ogg']);
+});
+
+
+
+for(const game of ['th01','th02','th03','th04']) test(`${game} original mode never attaches cached album or downloads it in background`,async()=>{
+  const current=generation({ogg:['track-1','track-2','track-3','track-4']});
+  current.game=current.descriptor.game=game;current.descriptor.runtimeRequirement.target=game;
+  if(game==='th03')current.descriptor.runtimeRequirement.dataLayout='sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e';
+  current.descriptor.files['game-data'].target=`/${game}.data`;
+  const f=acquisitionFixture({current,testBuild:true}),r=runtimeFixture();
+  const state=settingsFixture({productId:game,music:'ogg-stream'});
+  const prepared=await api.prepareGame(gameInput(f,state,{productId:game,runtime:r.service}));
+  assert.equal(prepared.plan.localOgg,undefined);
+  assert.equal(prepared.plan.configure.options.musicSource,'original');
+  assert.equal(r.outbound.filter(m=>m.command==='resources').flatMap(m=>m.resources).filter(x=>x.path.includes('track-')).length,0);
+  assert.equal(f.calls.some(call=>call.startsWith('install')),false);
+});
+
+test('background update follows the generation committed during ready preparation', async () => {
+  const initial=generation(), newer=added(initial,['track-1'],'ready-resources');let seen;
+  const fixture=acquisitionFixture({current:initial});
+  const acquisition={...fixture.acquisition,acquire:async()=>({kind:'managed',generation:initial,
+    deferredUpdate:{generation:initial,installation:{source:'remote'}}}),
+    startBackgroundUpdate:async value=>{seen=value;}};
+  const runtime={getSnapshot:()=>({epoch:1,launched:true,game:'th06',music:'none'}),
+    prepareWithReady:async(plan,onReady)=>{await onReady(1);return {epoch:1};}};
+  const input=gameInput({...fixture,acquisition},settingsFixture({music:'none'}),{runtime});
+  const prepared=await api.prepareGame(input);
+  prepared.plan.resourceGeneration=newer;
+  await prepared.startBackground();
+  assert.equal(seen.generation.id,'ready-resources');
+});
+
+for (const game of ['th01','th02','th03','th04']) test(`${game} album files are acquired only when selected`,async()=>{
+  const declared=host().games.th06;
+  const development=api.validateSiteManifest({...host(),profile:'web-development',shared:{...host().shared,testBuild:true},games:{[game]:{
+    ...declared,runtime:api.PRODUCT_GAMES[game].runtime,gameData:{...declared.gameData,path:`${game}.data`,source:`development/${game}.data`,...(game==='th03'?{layout:'sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e'}:{})},
+    music:{midi:{files:[],supported:false},ogg:{base:'music/',mount:'/bgm/akyu',files:['01.ogg'],sizes:[bytes.length],sha256:[hash],version:`sha256-${hash}`}}
+  }}});
+  for(const music of ['ogg-stream','none','ogg-akyu']){
+    let current=null;const downloaded=[];
+    const acquisition=api.createPackageAcquisition({baseUrl,translate:t,indexedDBAvailable:()=>true,
+      metadata:{getSnapshot:()=>({siteManifest:development,releaseCatalog:null}),initialize:async()=>{}},
+      fetchImpl:async url=>{downloaded.push(new URL(url).pathname);return new Response(bytes);},
+      dependencies:{readCurrent:async()=>({generation:current,installation:null}),repairInstalled:async value=>value.generation,
+        installAcquired:async options=>{for(const id of options.desiredFileIds)await options.acquire(id,options.descriptor.files[id]);
+          current={id:'dev',game,descriptor:options.descriptor,files:Object.fromEntries(options.desiredFileIds.map(id=>[id,ref(id)]))};return {generation:current};}}});
+    await acquisition.acquire({productId:game,music,language:'ja'});
+    assert.deepEqual(downloaded,music==='ogg-akyu'?[`/deploy/development/${game}.data`,'/deploy/music/01.ogg']:[`/deploy/development/${game}.data`]);
+    const opts=api.gameRuntimeOptions({productId:game,settings:settingsFixture({productId:game,music}).snapshot},'ja',music,null);
+    assert.equal(opts.musicSource,music==='ogg-akyu'?'akyu':'original');
+  }
 });
 
 for (const productId of ['th11', 'th11mp']) test(`${productId} high refresh setting reaches Runtime without changing room options`, () => {
@@ -466,6 +569,35 @@ test('in-game room resource warming does not navigate or configure the running n
   assert.equal(result.plan.configure.options.netplayMode, undefined);
   assert.equal(midi, 0, 'no-music resource warming does not require live MIDI ownership');
   await assert.rejects(api.prepareRoomResourcePlan(gameInput(f, state)), /room-entry intent/);
+});
+
+test('TH14 late spectator mounts later-stage BGM before native launch', async () => {
+  const initial = generation({ogg: ['track-1', 'track-2']});
+  initial.game = initial.descriptor.game = initial.descriptor.runtimeRequirement.target = 'th14';
+  initial.descriptor.files['game-data'].target = '/th14.dat';
+  const published = catalog();
+  published.games.th14 = published.games.th06;
+  delete published.games.th06;
+  const downloads = [];
+  const f = acquisitionFixture({current: initial, catalogValue: published, testBuild: true, dependencies: {
+    installPublished: async (game, {addFileIds}) => {
+      assert.equal(game, 'th14');
+      downloads.push(addFileIds);
+      return {generation: added(initial, addFileIds)};
+    },
+  }});
+  const r = runtimeFixture();
+  const prepared = await api.prepareGame(gameInput(f, settingsFixture({productId: 'th14mp', music: 'ogg-stream'}), {
+    productId: 'th14mp', runtime: r.service,
+    multiplayer: {kind: 'room', options: {netplayMode: 'lan', netplayUrl: 'wss://relay.invalid/?room=th14mp-1234',
+      netplayPlayer: 0, netplayPlayerCount: 3, netplaySeed: 1, netplayDifficulty: 1,
+      netplaySpectator: true, netplaySpectatorId: 'spectator-test'}},
+  }));
+  assert.deepEqual(downloads, [['track-1', 'track-2', 'track-3', 'track-4']]);
+  assert.equal(prepared.music, 'ogg-stream');
+  const configure = r.outbound.find(message => message.command === 'configure');
+  assert.equal(configure.music, 'ogg');
+  assert.equal(configure.options.netplaySpectator, true);
 });
 
 test('room preparation carries the selected language independently of its one-time pack payload', async () => {

@@ -1,0 +1,24 @@
+import {createServer} from 'node:http';
+import {createHash} from 'node:crypto';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {resolve,extname,sep} from 'node:path';
+import puppeteer from 'puppeteer-core';
+import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
+const count=Number(process.env.PC98_TEST_PLAYERS||2),language=process.env.PC98_TEST_LANGUAGE||'jp',localSlot=Number(process.env.PC98_TEST_SLOT||0);
+for(const game of ['th02','th04']){
+ const root=resolve('ports',game,'build-eagler'),data=await readFile(resolve('ports',game,'content',game+'.data'));
+ const runtimePath=resolve(root,'netplay/runtime.js');
+ const instrumented=Buffer.concat([await readFile(runtimePath),Buffer.from(`\nglobalThis.__auditModule=()=>emulator.module;\n`)]);
+ const runtimeHash=createHash('sha256').update(instrumented).digest('hex');
+ const server=createServer(async(req,res)=>{try{const p=new URL(req.url,'http://localhost').pathname;
+ if(p==='/runtime/host'){res.setHeader('content-type','text/html');res.end(`<script type="module">import {ManagedContent} from './managed-data.mjs';window.__eaglerPC98Content=await ManagedContent.open(await (await fetch('/data')).arrayBuffer(),'${game}');let f=document.createElement('iframe');f.src='./netplay/runtime.html';document.body.append(f);</script>`);return;}
+ if(p==='/data'){res.end(data);return;}const file=resolve(root,p.slice('/runtime/'.length));if(!p.startsWith('/runtime/')||!file.startsWith(root+sep))throw Error('path');
+ res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.json':'application/json','.wasm':'application/wasm','.css':'text/css'})[extname(file)]||'application/octet-stream');let bytes=await readFile(file);if(p==='/runtime/netplay/runtime.js')bytes=instrumented;
+ if(game==='th02'&&p==='/runtime/netplay/runtime.json'){const manifest=JSON.parse(bytes);manifest.assets['netplay/runtime.js']=runtimeHash;bytes=Buffer.from(JSON.stringify(manifest));}res.end(bytes);
+ }catch(e){res.writeHead(404).end();}});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});
+ try {const page=await browser.newPage();await page.evaluateOnNewDocument(()=>{window.Worker=undefined});page.on('pageerror',e=>console.log(game,'ERROR',e.message));await page.goto(`http://127.0.0.1:${server.address().port}/runtime/host`);await page.waitForFunction(()=>document.querySelector('iframe')?.contentWindow?.['th'+location.search+'Sync']||document.querySelector('iframe')?.contentWindow?.th02Sync||document.querySelector('iframe')?.contentWindow?.th04Sync,{timeout:30000});const frame=page.frames().find(f=>f.url().includes('netplay/runtime.html'));
+ let result=await frame.evaluate(async({game,count,language,localSlot})=>{const r=window[game+'Sync'];r.configure(0,localSlot,count);let unexpectedExit=false,confirm=r.confirm.bind(r);r.confirm=(...args)=>{let x=confirm(...args);if(x==='exit')unexpectedExit=true;return x;};await r.load({language,players:count,p1:0,p2:1,p3:2,difficulty:1,lives:3,bombs:2,stage:0,rollback:true});r.start();let i=0;for(;i<4500&&!r.snapshot();i++){r.step(Array(count).fill(0),{frame:i});r.confirm(i+1);}for(let n=0;n<150;n++,i++){r.step(Array.from({length:count},(_,slot)=>slot===0?16:16|(slot===1?4:8)),{frame:i});r.confirm(i+1);}const m=__auditModule(),api=m.nativeExports();if(!api.thPlanarState)throw Error('missing planar interface');const ptr=api.thPlanarState(),old=m.HEAPU32[ptr>>>2];const digest=(data)=>{let h=2166136261;for(let k=0;k<data.length;k++)h=Math.imul(h^data[k],16777619);return h>>>0;};const run=flag=>{m.thDirtyMark?.(ptr,4);m.HEAPU32[ptr>>>2]=flag;let values=[],start=performance.now();for(let j=0;j<120;j++){r.step(Array.from({length:count},(_,s)=>16|(j%24<12?4:8)),{frame:i+j});r.present();let f=m.framePresenter.capture(),pixels=m.HEAPU8.subarray(f.frame,f.frame+f.frameWidth*f.frameHeight*3);const rgba=new Uint8Array(f.frameWidth*f.frameHeight*4);m.gl.readPixels(0,0,f.frameWidth,f.frameHeight,m.gl.RGBA,m.gl.UNSIGNED_BYTE,rgba);values.push([r.checksum(),digest(pixels),digest(rgba)]);}return {ms:performance.now()-start,values};};r.capture(i);let a=run(0);r.restore(i);r.capture(i);let b=run(1);r.restore(i);m.thDirtyMark?.(ptr,4);m.HEAPU32[ptr>>>2]=old;if(JSON.stringify(a.values)!==JSON.stringify(b.values))throw Error('planar state or RGB mismatch');return {parity:true,baseline:a.ms,planar:b.ms};},{game,count,language,localSlot});assert.equal(result.parity,true);console.log(game,JSON.stringify(result)); await browser.close();await new Promise(r=>server.close(r));
+ }catch(e){console.error(game,e);await browser.close();await new Promise(r=>server.close(r));process.exitCode=1;}
+}

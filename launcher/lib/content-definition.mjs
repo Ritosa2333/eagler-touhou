@@ -17,12 +17,12 @@ const TH05_PREPARED_CONTENT = Object.freeze({directory: "assets-eagler", markerF
   "th05.data", ...TH05_MUSIC_FILES.map(file => `music/${file}`), "artwork/th05-card.webp",
 ])});
 const PC98_DATA_LAYOUT = "sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579";
-function pc98PreparedContent(game, tracks) {
+function pc98PreparedContent(game, tracks, script, layout = PC98_DATA_LAYOUT) {
   const files = Object.freeze([`${game}.data`]);
-  const preparedContent = Object.freeze({directory: "content", markerFiles: files});
+  const preparedContent = Object.freeze({directory: "content", markerFiles: files, ...(script ? {script} : {})});
   return Object.freeze({
     original: Object.freeze({files, preparedAlternative: preparedContent}),
-    dataLayout: PC98_DATA_LAYOUT,
+    dataLayout: layout,
     music: Object.freeze({ogg: Object.freeze({
       mount: PRODUCT_GAMES[game].package.musicMounts.ogg,
       files: Object.freeze(Array.from({length: tracks}, (_, index) => `${String(index + 1).padStart(2, "0")}.ogg`)),
@@ -39,10 +39,10 @@ function pc98PreparedContent(game, tracks) {
 // Product content shape only. This file declares names and Runtime mounts, but
 // never points at a workstation build, asset directory, or generated identity.
 export const PRODUCT_CONTENT = Object.freeze({
-  th01: pc98PreparedContent("th01", 14),
-  th02: pc98PreparedContent("th02", 15),
-  th03: pc98PreparedContent("th03", 21),
-  th04: pc98PreparedContent("th04", 22),
+  th01: pc98PreparedContent("th01", 14, "scripts/prepare-th01-content.mjs", "sha256-3b51bdd9400868145f321cd9e62eedf2846d5a164e023f61c987a4cfa4ea169e"),
+  th02: pc98PreparedContent("th02", 15, "scripts/prepare-th02-content.mjs"),
+  th03: pc98PreparedContent("th03", 21, "scripts/prepare-th03-content.mjs", "sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e"),
+  th04: pc98PreparedContent("th04", 22, "scripts/prepare-th04-content.mjs"),
   th05: Object.freeze({
     original: Object.freeze({files: Object.freeze(["kaiki1.dat", "kaiki2.dat", "zun.com"]), preparedAlternative: TH05_PREPARED_CONTENT}),
     dataLayout: TH05_DATA_LAYOUT,

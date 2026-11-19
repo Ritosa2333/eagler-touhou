@@ -1,6 +1,8 @@
 #include "RunPause.hpp"
 #include "GameHud.hpp"
+#include "TitleResultView.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <ctime>
 
@@ -46,6 +48,7 @@ struct RunPause::Services final : PauseMenuServices {
     bool save_replay_slot(i32 slot, const std::string& name) override { return owner.save_replay_slot(slot, name); }
     bool change_option(i32 row, i32 delta) override { return owner.change_option(row, delta); }
     bool record_result_name(const std::string& name) override { return owner.record_result_name(name); }
+    std::string last_result_name() const override { return owner.platform.last_result_name(); }
 };
 
 RunPause::RunPause(SessionState& p, AnmManager& a, AnmEnvironment& e, RunPausePlatform& h,
@@ -89,12 +92,13 @@ bool RunPause::draw_overlay(HudDrawServices& sink) {
         if (state.name_is_result) {
             if (rank < 0) return fail("Result rank unavailable for name entry");
             // 0x43de80 case 0x13：头部 (48,64) → 名字行 (75,96+rank*18)+黄 _ →
-            // 榜 10 行 (48,96+18i) 高亮=rank 黄 0xffffff00、余 0xff808180
+            // 榜 10 行 (48,96+18i) 高亮=rank 黄 0xffffff00、余 0xff808080
+            //（0x43e235：-(i!=rank)&0xff808180 + 0xffffff00 回绕）
             //（0x43e1bd：y = rank*18.0(0x4aeb30) + 96.0(0x4aecc0)，与榜行同基）。
             if (!put(48, 64, 0xffffffffu, "            Score Ranking!!")) return false;
             for (i32 i = 0; i < 10; ++i)
                 if (!put(48, 96.f + 18.f * i,
-                         i == rank ? 0xffffff00u : 0xff808180u,
+                         i == rank ? 0xffffff00u : 0xff808080u,
                          rank_row_text(rows[i], i)))
                     return false;
             const float name_y = 96.f + 18.f * rank;
@@ -104,35 +108,40 @@ bool RunPause::draw_overlay(HudDrawServices& sink) {
             if (state.replay_name.size() >= 8) underscore_x -= 9.f;
             if (!put(underscore_x, name_y, 0xffffff00u, "_")) return false;
         } else {
-            // 0x43de80 case 10/0x12/0x1b（回放保存名前录入）：名字行定格
-            // (102,224)（原版 age<10 自选中槽行 y=slot*15 滑入，属插值细节）。
-            if (!put(102, 224, 0xffffffffu, state.replay_name)) return false;
+            // 0043e06d: slide the selected slot from the list to the name row.
+            const float slot_y = 64.f + 15.f * (state.replay_slot - 1);
+            const float age = std::min(10.f, state.age.fractional);
+            const float y = 224.f + (slot_y - 224.f) * (10.f - age) / 10.f;
+            char slot[8];
+            std::snprintf(slot, sizeof slot, "No.%02d", state.replay_slot);
+            if (!put(48, y, 0xffffff00u, slot) ||
+                !put(102, y, 0xffffffffu, state.replay_name)) return false;
             float underscore_x = 102.f + 9.f * float(state.replay_name.size());
             if (state.replay_name.size() >= 8) underscore_x -= 9.f;
-            if (!put(underscore_x, 224, 0xffffff00u, "_")) return false;
-            // "No.%02d ..." 选中槽行（(48,224)）需要逐槽回放元数据，未接线，
-            // 保持省略（不占位伪造）。
+            if (!put(underscore_x, y, 0xffffff00u, "_")) return false;
         }
         // 91 字符网格 (112,320)，列步 18 行步 16；SPACE/DEL/END 槽画 font0
         // 专用字形（原版推字符 0x81/0x7f/0x80 → sprite 95/96/97）；
-        // 光标字符黄 0xffffff00、余 0xff808180（0x43dd10 主循环）。
+        // 光标字符黄 0xffffff00、余 0xff808080（0x43ddd5 同式回绕）。
         for (i32 i = 0; i < 91; ++i) {
             const u8 ch = i < 0x58 ? u8(kResultNameCharacters[i])
                         : i == 0x58 ? u8(0x81) : i == 0x59 ? u8(0x7f) : u8(0x80);
             const float x = 112.f + 18.f * float(i % 13);
             const float y = 320.f + 16.f * float(i / 13);
-            if (!put(x, y, i == state.name_cursor ? 0xffffff00u : 0xff808180u,
+            if (!put(x, y, i == state.name_cursor ? 0xffffff00u : 0xff808080u,
                      std::string(1, char(ch))))
                 return false;
         }
         return true;
     }
     if (state.phase == 17) {
-        // 回放选槽：原版 = 25 行 "No.%02d ..." 榜单（0x43de80 case 9，
-        // (48,64+15i) 高亮黄）。逐槽回放元数据未接线，占位保持（font0）。
-        const std::string text =
-            "REPLAY SLOT  " + std::to_string(state.replay_slot) + " / 25";
-        return put(150, 180, 0xffffffffu, text);
+        for (i32 slot = 1; slot <= 25; ++slot) {
+            const u32 color = slot == state.replay_slot ? 0xffffff00u : 0xff808080u;
+            if (!put(48, 64.f + 15.f * (slot - 1), color,
+                     replay_save_slot_row(slot, platform.replay_entry(slot - 1), true)))
+                return false;
+        }
+        return true;
     }
     if (state.phase == 19) {
         const std::string text =

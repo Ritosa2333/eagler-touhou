@@ -76,6 +76,9 @@ export interface MultiplayerRoomState {
   visibility?: 'public' | 'private';
   disableCheatMovement?: boolean;
   disableLocalChargePriority?: boolean;
+  disableFocus?: boolean;
+  showHitboxes?: boolean;
+  ballCount?: number;
   challengeMode?: boolean;
   chapterThreshold?: number;
   prankMode?: boolean;
@@ -90,12 +93,15 @@ export interface MultiplayerRoomState {
   predictionLimit?: number;
   settingsVersion?: number;
   phase?: 'lobby' | 'starting' | 'running';
+  gameplayRelayFallback?: boolean;
   created: boolean;
   connection?: MultiplayerConnectionState;
   seats?: NormalizedMultiplayerLobbySnapshot['seats'] | null;
   spectators?: NormalizedMultiplayerLobbySnapshot['spectators'];
   spectatorCount?: number;
   spectatorTimeline?: boolean;
+  swarmSelected?: boolean;
+  startupRoutes?: NormalizedMultiplayerLobbySnapshot['startupRoutes'];
   synced?: boolean;
   [key: string]: unknown;
 }

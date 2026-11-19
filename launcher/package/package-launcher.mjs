@@ -113,11 +113,10 @@ export function desiredFilesForPublishedPackage(descriptor, {
       ids.push(...componentFileIds(descriptor, componentId, installedEntryIds));
       continue;
     }
-    if (nextComponent.type === "ogg" && previousComponent.type === "ogg") {
-      // OGG is intentionally progressive: retain exactly the tracks already
-      // installed, then let addFileIds advance the set one track at a time.
-      // Treating it like an all-or-nothing component makes the first
-      // background step reacquire the complete soundtrack.
+    if ((nextComponent.type === "ogg" && previousComponent.type === "ogg") ||
+        (nextComponent.type === "pc98-disk" && previousComponent.type === "pc98-disk")) {
+      // Progressive components retain only installed files. Shared disk
+      // blocks must not cause every disk using them to be acquired.
       ids.push(...componentFileIds(current.descriptor, componentId)
         .filter(fileId => !!current.files?.[fileId]?.objectId && Object.hasOwn(descriptor.files, fileId)));
       continue;
@@ -129,6 +128,13 @@ export function desiredFilesForPublishedPackage(descriptor, {
   return unique(ids);
 }
 
+export function publishedLanguageSelection(descriptor, preferredLanguage) {
+  const entries = descriptor.components?.language?.entries;
+  if (!Array.isArray(entries) || !preferredLanguage) return {};
+  if (preferredLanguage === "ja") return { language: [] };
+  return entries.some(entry => entry.id === preferredLanguage) ? { language: [preferredLanguage] } : {};
+}
+
 export async function installPublishedPackage(game, {
   gameVersion = "original",
   catalog,
@@ -136,14 +142,17 @@ export async function installPublishedPackage(game, {
   addComponents = [],
   addFileIds = [],
   selectedComponentEntries = {},
+  preferredLanguage,
   preserveLocalSource = true,
   expectedGenerationId = null,
   fetchImpl = globalThis.fetch,
   onProgress = null,
   signal = null,
+  validatePublication,
 } = {}) {
   const published = await fetchPublishedPackage(game, { catalog, catalogUrl, fetchImpl, signal });
   if (!published) throw new Error(`${game}: no published Package`);
+  validatePublication?.(published.descriptor);
   if (normalizeGameVersion(gameVersion) === "beauty") published.descriptor = {...published.descriptor, gameVersion: "beauty"};
   else if (published.descriptor.gameVersion === "beauty") throw new Error(`${game}: original catalog declares a beauty Package`);
   const installed = await installPackageFromRemote(published.descriptor, {
@@ -163,7 +172,12 @@ export async function installPublishedPackage(game, {
           files: Object.fromEntries(Object.entries(current.files).filter(([id]) => !damaged.has(id)))};
       }
       return desiredFilesForPublishedPackage(published.descriptor, {
-        current, addComponents, addFileIds, selectedComponentEntries,
+        current, addComponents, addFileIds,
+        selectedComponentEntries: {
+          // A site may deliver translations separately in its language catalog.
+          ...publishedLanguageSelection(published.descriptor, preferredLanguage),
+          ...selectedComponentEntries,
+        },
       });
     },
     source: currentResult => preserveLocalSource && currentResult.installation?.source === "local" ? "local" : "remote",

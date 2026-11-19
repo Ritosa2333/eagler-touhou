@@ -64,6 +64,18 @@ public:
 
     MsgPresentation(AnmManager& animations, Banks banks) : animations(animations), banks(banks) {}
     std::string error;
+    struct RollbackState {
+        u32 player_;
+        u32 side_;
+        u32 nameplate_;
+    };
+    RollbackState capture_rollback() const { return {player_, side_, nameplate_}; }
+    void restore_rollback(const RollbackState& state) {
+        player_ = state.player_;
+        side_ = state.side_;
+        nameplate_ = state.nameplate_;
+    }
+
     // 舞台行（1..7）+ ANM 名单（ECL ANIM 序）+ 读通道：算各文件的全局脚本
     // 基号。缺文件/解析失败置 error 并返回 false（显式，不静默降级）。
     bool bind_stage_scripts(i32 stage, const std::vector<std::string>& anim_list,

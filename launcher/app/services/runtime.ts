@@ -37,6 +37,7 @@ import { deliverRuntimeInput, type HostedKeySpec, type TouchRuntimeContext, type
 import type {TouchLayout} from '../../src/launcher/touch-layout-model.mts';
 import { retainPackageGeneration, releasePackageGeneration } from '../../package/package-store.mjs';
 import { createRuntimeAudioMix, type RuntimeAudioWindow } from './runtime-audio-mix';
+import {uploadTh09Replay} from '../../../common/browser/th09-replay-upload.mjs';
 
 export interface RuntimeFilesystem {
   mkdirTree(path: string): void;
@@ -69,12 +70,13 @@ export interface RuntimeFrame {
   addEventListener(type: 'load', listener: EventListener): void;
   removeEventListener(type: 'load', listener: EventListener): void;
 }
-export interface ManagedDataRequest { game: string; generation: string; epoch: number }
+export interface ManagedDataRequest { game: string; generation: string; epoch: number; preferBlob?: boolean }
 export interface RuntimeHost {
   location: { href: string; origin: string };
   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
   removeEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
   __eaglerPrepareManagedRuntimeDataV1?: (request: ManagedDataRequest) => ReturnType<typeof readManagedRuntimeData>;
+  __eaglerUploadTh09ReplayV1?: typeof uploadTh09Replay;
 }
 export interface RuntimeLauncherControls {
   readonly restartButtonEnabled: boolean;
@@ -123,6 +125,13 @@ export interface RuntimePlan {
   launcherControls?: RuntimeLauncherControls;
 }
 export type RuntimeReadyContinuation = (epoch: number) => Promise<RuntimePlan>;
+export interface RuntimeRoomReturnContext {
+  readonly epoch: number;
+  readonly launchSerial: number;
+  readonly netplayUrl: string;
+  readonly player: number;
+  readonly spectator: boolean;
+}
 export type RuntimePhase = 'idle' | 'loading' | 'configuring' | 'prepared' | 'launching' | 'running' | 'saving' | 'exited' | 'error';
 export type RuntimeRequestCommand = 'playback' | 'spectator-playback' | 'list' | 'read' | 'write' | 'remove' | 'resources' | 'retry-music';
 export type RuntimeFileCommand = 'list' | 'read' | 'write' | 'remove';
@@ -294,6 +303,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   const generations = createManagedRuntimeGenerationLease();
   const listeners = new Set<() => void>();
   const eventListeners = new Set<(message: RuntimeEventMessage) => void>();
+  const roomReturnListeners = new Set<(context: RuntimeRoomReturnContext) => void>();
   const pending = new Map<string, PendingRequest>();
   const waiters = new Set<Waiter>();
   let snapshot = initialSnapshot();
@@ -308,6 +318,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   let roomMenuConfigure: RuntimePlan['configure'] | null = null;
   let roomReturnPending: {epoch: number; promise: Promise<void>} | null = null;
   let roomLaunchSerial = 0;
+  let roomReturnContext: RuntimeRoomReturnContext | null = null;
   let codeUpdate: {epoch:number; check:NonNullable<Awaited<ReturnType<typeof prepareRuntimeLaunch>>['checkForUpdate']>} | null = null;
   const updateNotices = new Set<string>();
   let oggExtensionTail: Promise<void> = Promise.resolve();
@@ -450,7 +461,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     finishProgramTransfers(); sessions.clear(); generations.clear(); releaseLease();
     rejectPending(new RuntimeSessionSupersededError());
     audioMix.detach();
-    runtimeDocument = null; preparedPlan = null; roomMenuConfigure = null; roomReturnPending = null; roomLaunchSerial = 0; launchRequested = false;codeUpdate = null;
+    runtimeDocument = null; preparedPlan = null; roomMenuConfigure = null; roomReturnPending = null; roomReturnContext = null; roomLaunchSerial = 0; launchRequested = false;codeUpdate = null;
     if (!hasTerminalSaveLoss) preflightEpoch = null;
     takeTelemetry(); // A display tick from an old epoch cannot repopulate reset state.
     if (!hasTerminalSaveLoss) terminalLossEpoch = null;
@@ -540,7 +551,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     const generation = generations.resolve(request);
     const before = runtimeIdentity(token);
     try {
-      const result = await deps.readData(generation);
+      const result = await deps.readData(generation, {preferBlob: token.game === 'th14' && request.preferBlob === true});
       const after = runtimeIdentity(token);
       if (after.runtime !== before.runtime || after.document !== before.document) throw new RuntimeSessionSupersededError();
       return result;
@@ -1098,7 +1109,14 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   }
   function completeRoomReturn(token: RuntimeSessionToken): Promise<void> {
     if (roomReturnPending?.epoch === token.id) return roomReturnPending.promise;
-    const promise = restoreRoomMenu(token), pending = {epoch: token.id, promise};
+    if (!launchRequested && snapshot.roomPreview) return Promise.resolve();
+    const returned = roomReturnContext;
+    const promise = restoreRoomMenu(token).then(() => {
+      assertCurrent(token);
+      if (!returned || roomReturnContext !== returned || returned.launchSerial !== roomLaunchSerial) return;
+      roomReturnContext = null;
+      for (const listener of roomReturnListeners) listener(returned);
+    }), pending = {epoch: token.id, promise};
     roomReturnPending = pending;
     void promise.then(() => {if (roomReturnPending === pending) roomReturnPending = null;},
       () => {if (roomReturnPending === pending) roomReturnPending = null;});
@@ -1145,21 +1163,29 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     const product = PRODUCT_GAMES[plan.game];
     const directory = 'runtimeFileLayout' in product && product.runtimeFileLayout === 'directory';
     const networked = plan.configure.options?.netplayMode === 'lan';
+    // TH12 multiplayer acknowledges an empty replay viewer before it has a
+    // replay to present. Inspect must be able to run before playback opens.
+    const waitingForReplay = plan.game === 'th12' && plan.runtimeVariant === 'multiplayer' &&
+      plan.configure.options?.replayViewer === true && !plan.configure.options?.replayPath;
     launchRequested = true;
     if (snapshot.roomReturnSupported) roomLaunchSerial++;
     const serial = roomLaunchSerial;
+    const roomOptions = plan.configure.options;
+    roomReturnContext = snapshot.roomReturnSupported && networked && roomOptions?.netplayUrl
+      ? Object.freeze({epoch: token.id, launchSerial: serial, netplayUrl: roomOptions.netplayUrl,
+        player: Number(roomOptions.netplayPlayer), spectator: roomOptions.netplaySpectator === true}) : null;
     update({ phase: 'launching' });
-    const presented = awaitFirstFrame ? waitFor('first-frame', token, options.timeouts?.firstFrame ?? (directory || networked ? 122_000 : 14_000)) : null;
+    const presented = awaitFirstFrame && !waitingForReplay ? waitFor('first-frame', token, options.timeouts?.firstFrame ?? (directory || networked ? 122_000 : 14_000)) : null;
     if (presented) void presented.catch(() => {});
     // Main app.mts4241–4289: networked launch has no local watchdog; ordinary
     // launch does not require a first-frame event to acknowledge running.
-    if (networked) clearFirstFrameWatchdog();
+    if (networked || waitingForReplay) clearFirstFrameWatchdog();
     else armFirstFrameWatchdog(token, directory ? 122_000 : 12_000);
     try {
       await send('launch', snapshot.roomReturnSupported ? {launchSerial:roomLaunchSerial} : {}, options.timeouts?.launch ?? (directory ? 120_000 : 15_000));
       assertCurrent(token);
       if (snapshot.roomReturnSupported && (serial !== roomLaunchSerial || !launchRequested)) throw new RuntimeSessionSupersededError();
-      if (directory && !networked && !snapshot.firstFrame) armFirstFrameWatchdog(token, 12_000);
+      if (directory && !networked && !waitingForReplay && !snapshot.firstFrame) armFirstFrameWatchdog(token, 12_000);
       update({ launched: true, roomPreview: false, phase: 'running' });
       const pendingUpdate = codeUpdate;
       if (!snapshot.multiplayerPreflight && pendingUpdate?.epoch === token.id) {
@@ -1478,8 +1504,10 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     audioMix.detach();
     host.removeEventListener('message', onMessage); frame.removeEventListener('load', onLoad);
     if (host.__eaglerPrepareManagedRuntimeDataV1 === provideData) delete host.__eaglerPrepareManagedRuntimeDataV1;
+    if (host.__eaglerUploadTh09ReplayV1 === uploadTh09Replay) delete host.__eaglerUploadTh09ReplayV1;
     listeners.clear();
     eventListeners.clear();
+    roomReturnListeners.clear();
   }
   /**
    * Last-resort cleanup AFTER a DOM owner has already removed this iframe.
@@ -1510,12 +1538,14 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (hadSession) warn(failure);
   }
   host.__eaglerPrepareManagedRuntimeDataV1 = provideData;
+  host.__eaglerUploadTh09ReplayV1 = uploadTh09Replay;
   host.addEventListener('message', onMessage); frame.addEventListener('load', onLoad);
   return Object.freeze({ prepare, prepareWithReady, checkPreparedCodeUpdate, prepareRoomPreview, configurePreparedRoom, returnToRoom, launch, checkMultiplayer, sync, close, cancel, dispose, disposeDetachedFrame, withFileSession, send: request, cancelTitleNetwork, postInput, spectatorRoomState, getInputContext, getMidiEventContext, getLauncherControlContext, extendOggResources,
     setAudioLevels: audioMix.set,
     getSnapshot: () => snapshot, getNetworkSnapshot: () => network.snapshot(),
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     subscribeEvents: (listener: (message: RuntimeEventMessage) => void) => {eventListeners.add(listener); return () => {eventListeners.delete(listener);};},
+    subscribeRoomReturns: (listener: (context: RuntimeRoomReturnContext) => void) => {roomReturnListeners.add(listener); return () => {roomReturnListeners.delete(listener);};},
   });
 }
 type RuntimeServiceImplementation = ReturnType<typeof createRuntimeService>;

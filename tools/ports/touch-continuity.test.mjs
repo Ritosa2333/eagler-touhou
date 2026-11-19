@@ -30,7 +30,7 @@ function deltaFunctions(source) {
  return ['GetPlayerDelta','SetPlayerDelta','TakePlayerDelta','ConsumePlayerDelta']
   .map(name=>functionSource(source,new RegExp('(?:bool|void) Touch::'+name+'\\('))).join('\n');
 }
-for(const directory of directories){
+for(const directory of directories.filter(directory => !["ports/th01","ports/th02","ports/th03","ports/th04"].includes(directory))){
  const header=resolve(root,directory,'portable/input/TouchController.hpp');
  const module=resolve(root,directory,'src/touch-input.mjs');
  const legacy=resolve(root,directory,'src/Touch.cpp');

@@ -47,10 +47,10 @@ test('Attack queue and reconstructed character attacks reproduce native lifecycl
         if(draw)for(let layer=0;layer<3;++layer){let ptr=m.u32(manager+0x4c68+layer*4),n=0;while(ptr){assert.ok(n<256);assert.equal(c.attack_queue_draw(f,layer,n++),index(ptr),label+' draw order');ptr=m.u32(ptr+0x30);}assert.equal(c.attack_queue_draw(f,layer,n),-1);}
         compareEvents(label);++checks;
     }
-    function create(kind,side,p=[-32.75,187.125,.25]){
+    function create(kind,side,p=[-32.75,187.125,.25],selected=side){
         activeKind=kind;
-        const bytes=Buffer.alloc(12);p.forEach((v,i)=>bytes.writeFloatLE(v,i*4));m.write(position,bytes);memory(c,pos,12).set(bytes);m.call(0x401440,{ecx:0x4b3100,args:[side]});events=[];bulletEvents=[];
-        const expected=m.call(0x4151f0,{ecx:manager,args:[kind,position,side,kind===22?position:0]}),actual=c.attack_queue_create(f,kind,side,pos,kind===22?pos:0);assert.equal(actual,index(expected));++creations;compareEvents('creation');return actual;
+        const bytes=Buffer.alloc(12);p.forEach((v,i)=>bytes.writeFloatLE(v,i*4));m.write(position,bytes);memory(c,pos,12).set(bytes);m.call(0x401440,{ecx:0x4b3100,args:[selected]});dv.setInt32(c.attack_queue_part(f,4),selected,true);events=[];bulletEvents=[];
+        const expected=m.call(0x4151f0,{ecx:manager,args:[kind,position,side,kind===22?position:0]}),actual=c.attack_queue_create(f,kind,side,pos,kind===22?pos:0);assert.equal(actual,index(expected));++creations;compareEvents('creation');assert.equal(dv.getInt32(c.attack_queue_part(f,4),true),(m.u32(0x4b3448)-0x4b3178)/0xf0,'initializer leaves the original coordinate field');return actual;
     }
     function step(rate,paused=0,frozen=0){events=[];bulletEvents=[];m.f32(0x4b36b8,rate);m.u32(0x4a7ec4,paused);m.u32(0x4a7dc4,frozen);assert.equal(m.call(0x415340,{ecx:manager}),1);assert.equal(c.attack_queue_step(f,rate,0,paused,frozen,collision),1);}
     function clear(){events=[];bulletEvents=[];m.call(0x4156f0,{ecx:manager});c.attack_queue_clear(f);compareEvents('clear');}
@@ -76,6 +76,13 @@ test('Attack queue and reconstructed character attacks reproduce native lifecycl
     }
     try{
         setGeometry();
+        for(const kind of kinds)for(let side=0;side<2;++side){
+            clear();m.heap=heap;
+            for(let n=0;n<2;++n){dv.setFloat32(c.attack_queue_effect_scales(f)+n*8,1,true);dv.setFloat32(c.attack_queue_effect_scales(f)+n*8+4,1,true);m.f32(players[n]+0x1ce4,1);m.f32(players[n]+0x1ce8,1);}
+            dv.setUint32(c.attack_queue_part(f,0),0x631f+kind*17+side,true);dv.setUint32(c.attack_queue_part(f,0)+4,0,true);m.write(0x4ace0c,memory(c,c.attack_queue_part(f,0),8));
+            create(kind,side,[-32.75,187.125,.25],1-side);
+            compare(`opposing coordinates ${kind}/${side}`,kind===3?2:1,false);
+        }
         for(const kind of kinds)for(let side=0;side<2;++side)for(const rate of [1,.5,.99])for(const cancel of [false,true]){
             clear();m.heap=heap;dv.setUint32(c.attack_queue_part(f,0),0x631f+kind*17+side,true);dv.setUint32(c.attack_queue_part(f,0)+4,0,true);m.write(0x4ace0c,memory(c,c.attack_queue_part(f,0),8));
             for(let n=0;n<2;++n){dv.setFloat32(c.attack_queue_effect_scales(f)+n*8,1,true);dv.setFloat32(c.attack_queue_effect_scales(f)+n*8+4,1,true);m.f32(players[n]+0x1ce4,1);m.f32(players[n]+0x1ce8,1);
@@ -92,6 +99,12 @@ test('Attack queue and reconstructed character attacks reproduce native lifecycl
                 if(frame%29===0)drawQueue(label+' full queue rendering',actors);else if([14,19,21,22].includes(kind))draw(kind,side,label+' rendering');}
             assert.ok(finished,`attack eventually expires kind${kind}/side${side}/rate${rate}/cancel${cancel}`);
         }
+        for(let side=0;side<2;++side)for(const limit of [1,2]){
+            clear();m.heap=heap;
+            dv.setInt32(c.attack_queue_part(f,2)+side*4,limit,true);m.i32(manager+0x14+side*4,limit);
+            assert.equal(create(3,side),0);
+            assert.equal(dv.getInt32(c.attack_queue_part(f,4),true),limit===1?side:1-side,'Sakuya child allocation controls the final coordinate field');
+        }
         clear();m.heap=heap;collision=0;
         for(let side=0;side<2;++side){dv.setInt32(c.attack_queue_part(f,2)+side*4,130,true);m.i32(manager+0x14+side*4,130);}
         for(let n=0;n<256;++n)assert.equal(create(n%3,n%2),n);
@@ -100,4 +113,22 @@ test('Attack queue and reconstructed character attacks reproduce native lifecycl
         clear();compare('clear active objects',256,false);
         report('attack-queue',{checks,creations,drawChecks,conversionChecks,capacity:256,behaviors:[...kinds,4].sort((a,b)=>a-b),scope:'Original queue allocation/update/clear, all 27 character attack state/RNG callbacks, custom draw vertices and Eiki conversion in both bullet pools. Native animation/shot collision/player collision/enemy spawn/effects/bullet emission/draw submission are explicit recorded boundaries. Medicine collision temporary Z is undefined native stack data and excluded; X/Y and radius are compared.'});
     }finally{c.attack_queue_delete(f);c.release(pos);m.close();}
+});
+
+test('Round reset discards queued attacks even when the next update is frozen', async () => {
+    const c = await core(), fixture = c.attack_queue_fixture(), position = c.allocate(12);
+    try {
+        assert.equal(c.attack_queue_create(fixture, 0, 0, position, 0), 0);
+        assert.equal(c.attack_queue_step(fixture, 1, 0, 0, 0, 0), 1);
+        assert.equal(c.attack_queue_draw(fixture, 2, 0), 0);
+
+        c.attack_queue_clear(fixture);
+        assert.equal(c.attack_queue_step(fixture, 1, 0, 0x800, 0, 0), 1);
+        c.attack_queue_render_all(fixture);
+        for (let layer = 0; layer < 3; ++layer)
+            assert.equal(c.attack_queue_draw(fixture, layer, 0), -1);
+    } finally {
+        c.attack_queue_delete(fixture);
+        c.release(position);
+    }
 });

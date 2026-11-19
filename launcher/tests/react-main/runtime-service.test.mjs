@@ -199,6 +199,27 @@ test('room preload: binding a run reuses the epoch/DATA and retains the prepared
   await assert.rejects(f.service.configurePreparedRoom(before.epoch, {netplayMode: 'lan', netplayUrl: 'wss://relay.invalid'}));
 });
 
+test('TH12 multiplayer inspects an empty replay viewer before playback presents a frame', async () => {
+  const f = fixture(), plan = managedPlan('th12', {replayViewer: true});
+  plan.runtimeVariant = 'multiplayer';
+  await f.prepare(plan, {roomReturn: true});
+  const launching = f.service.launch({awaitFirstFrame: true});
+  const launch = f.ack('launch');
+  await flush();
+  f.timers.advance(125_000);
+  const snapshot = await launching;
+  assert.equal(snapshot.launched, true);
+  assert.equal(snapshot.firstFrame, false);
+  assert.equal(f.service.getSnapshot().firstFrameTimedOut, false);
+
+  const inspection = f.service.send('playback', {action: 'inspect', path: 'replay/th12_mp_01.rpy'});
+  const description = {mode: 'multiplayer', stages: [{id: 1, label: 'Stage 1', frames: 100}]};
+  assert.equal(f.ack('playback', {description}).action, 'inspect');
+  assert.deepEqual((await inspection).description, description);
+  f.event('first-frame', {launchSerial: launch.launchSerial});
+  assert.equal(f.service.getSnapshot().firstFrame, true);
+});
+
 test('room return keeps the same engine, synchronizes first and rejects first frames from an older launch', async () => {
   const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
   plan.configure.language='lang_zh-hans';
@@ -244,6 +265,44 @@ test('native menu return cancels an unfinished first-frame wait without retiring
   assert.equal(f.service.getSnapshot().epoch,epoch);assert.equal(f.runtime.document,document);
   const next=f.service.launch();await flush();f.ack('launch');await next;
   assert.equal(f.service.getSnapshot().launched,true);
+});
+
+for (const native of [false,true]) test(`successful ${native?'native':'requested'} room return reports the original run once after local configure acknowledgment`,async()=>{
+  const f=fixture(),plan=managedPlan('th11');plan.runtimeVariant='multiplayer';
+  await f.prepare(plan,{roomReturn:true});const epoch=f.service.getSnapshot().epoch,returns=[];
+  const unsubscribe=f.service.subscribeRoomReturns(context=>returns.push(context));
+  const netplayUrl='wss://relay.invalid/?room=th11mp-1234&run=7';
+  const configuring=f.service.configurePreparedRoom(epoch,{netplayMode:'lan',netplayUrl,netplayPlayer:1});
+  await flush();f.ack('configure');await configuring;
+  const launching=f.service.launch();await flush();const launched=f.ack('launch');await launching;
+  for(const [extra,envelope] of [
+    [{launchSerial:launched.launchSerial-1},{}],
+    [{launchSerial:launched.launchSerial,epoch:epoch+1},{}],
+    [{launchSerial:launched.launchSerial},{origin:'https://other.invalid'}],
+    [{launchSerial:launched.launchSerial},{source:{}}],
+  ])f.event('room-menu',extra,envelope);
+  assert.equal(f.service.getSnapshot().launched,true);assert.equal(returns.length,0);
+  let returning;
+  if(native){f.event('room-menu',{launchSerial:launched.launchSerial});await flush();}
+  else{returning=f.service.returnToRoom();await flush();f.ack('sync');await flush();f.ack('return-room',{presented:true});await flush();}
+  assert.equal(returns.length,0,'native terminal receipt alone does not report an unfinished local menu');
+  f.ack('configure');if(returning)await returning;await flush();
+  assert.deepEqual(returns,[{epoch,launchSerial:launched.launchSerial,netplayUrl,player:1,spectator:false}]);
+  assert.equal(f.service.getLauncherControlContext().options.netplayUrl,undefined,'payload survives restoring mutable menu options');
+  const sends=f.outbound.length;f.event('room-menu',{launchSerial:launched.launchSerial});await flush();
+  assert.equal(returns.length,1);assert.equal(f.outbound.length,sends,'duplicate return cannot reconfigure a prepared menu');
+  unsubscribe();
+});
+
+for(const failure of ['native-ack','not-presented','restore'])test(`failed room return ${failure} never emits a lifecycle receipt`,async()=>{
+  const f=fixture(),plan=managedPlan('th11',{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=8',netplayPlayer:0});plan.runtimeVariant='multiplayer';
+  await f.prepare(plan,{roomReturn:true});const returns=[];f.service.subscribeRoomReturns(context=>returns.push(context));
+  const launching=f.service.launch();await flush();f.ack('launch');await launching;
+  const returning=f.service.returnToRoom(),rejected=assert.rejects(returning);
+  await flush();f.ack('sync');await flush();
+  f.ack('return-room',failure==='native-ack'?{ok:false,error:'return failed'}:{presented:failure!=='not-presented'});await flush();
+  if(failure==='restore'){f.ack('configure',{ok:false,error:'restore failed'});await flush();}
+  await rejected;assert.deepEqual(returns,[]);
 });
 
 test('a Runtime without room-return support stays loaded when return is requested', async () => {
@@ -495,6 +554,20 @@ test('runtime: managed code and DATA stay separately leased and bound to exact g
   const data = await provide({game: plan.game, generation: plan.generation.id, epoch}); assert.deepEqual([...new Uint8Array(data.buffer)], [1,2,3]);
   assert.equal(f.dataReads.length, 1); await f.service.close({discardUnsaved: true});
   assert.equal(f.released.length, 1); await assert.rejects(provide({game: plan.game, generation: plan.generation.id, epoch}), {name: 'AbortError'});
+});
+
+test('runtime: TH14 can request chunk-readable DATA while legacy shells still receive a buffer', async () => {
+  const original = new Blob([new Uint8Array([1, 2, 3])]);
+  const f = fixture({readData: (generation, options) => owners.readManagedRuntimeData(generation, {
+    ...options, readObject: async () => ({blob: original}),
+  })});
+  const plan = managedPlan('th14');
+  await f.prepare(plan);
+  const provide = f.host.__eaglerPrepareManagedRuntimeDataV1;
+  const request = {game: plan.game, generation: plan.generation.id, epoch: f.service.getSnapshot().epoch};
+  const chunked = await provide({...request, preferBlob: true});
+  assert.equal(chunked.blob, original);
+  assert.deepEqual([...new Uint8Array((await provide(request)).buffer)], [1, 2, 3]);
 });
 
 test('runtime: stale epoch, foreign source and foreign origin cannot settle current commands', async () => {

@@ -145,8 +145,6 @@ const entries = [
   ['assets/quick-chat/amazing.wav', true],
   ['assets/quick-chat/great-opportunity.wav', true],
   ['assets/quick-chat/feels-good.wav', true],
-  ['assets/notice-bilibili.svg', true],
-  ['assets/notice-github.svg', true],
   ['assets/fonts/touhou98.woff2', true],
   ['assets/fonts/unifont-site.woff2', true],
   ['assets/fonts/yatra-one-latin.woff2', true],

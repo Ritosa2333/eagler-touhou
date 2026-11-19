@@ -96,9 +96,11 @@ function harness(groupRoot=root) {
     const response=await resource(sw,selected,"game.html");
     return {...selected,body:await response.text()};
   }
-  function resource(sw,selected,name){
+  function resource(sw,selected,name,destination){
     const path=runtimeGenerationBase(root,selected.generation)+name;
-    return sw.handle({request:new Request(new URL(path,scopeUrl))});
+    const request = new Request(new URL(path,scopeUrl));
+    if (destination) Object.defineProperty(request, 'destination', {value:destination});
+    return sw.handle({request});
   }
   return{stores,clients,requests,cacheModes,state,publish,worker,launch,resource,scopeUrl,caches,a};
 }
@@ -118,6 +120,10 @@ for(const [name,type]of [['game.html','text/html'],['shell.mjs','text/javascript
 const mimeRequests=mime.requests.length;mime.state.outage=true;
 const mimeOffline=await mime.launch(mime.worker(),'mime-offline',{localOnly:true});
 assert.equal((await mime.resource(mime.worker(),mimeOffline,'shell.mjs')).headers.get('Content-Type'),'text/javascript');
+for (const destination of ['worker', 'sharedworker']) {
+  const entry = await mime.resource(mime.worker(), mimeOffline, 'worker.mjs', destination);
+  assert.equal(entry.headers.get('Cross-Origin-Embedder-Policy'), 'require-corp');
+}
 assert.equal(mime.requests.length,mimeRequests,'old binary MIME headers are repaired offline without redownloading bytes');
 const uncachedMime=harness();uncachedMime.state.contentType='application/octet-stream';
 assert.equal((await uncachedMime.resource(uncachedMime.worker(),{generation:uncachedMime.a.generation},'shell.mjs')).headers.get('Content-Type'),'text/javascript',
@@ -140,7 +146,8 @@ assert.equal(imported.generation,handoff.a.generation);assert.equal(handoff.requ
 assert.equal(await(await handoff.resource(handoffWorker,imported,'game.wasm')).text(),'wasm a');
 assert.equal((await handoff.resource(handoffWorker,imported,'worker.mjs')).headers.get('Cross-Origin-Embedder-Policy'),null);
 
-const th14Root="runtime/th14/", th14=harness(th14Root), th14Worker=th14.worker();
+for (const th14Root of ["runtime/th14/", "runtime/th14/multiplayer/"]) {
+const th14=harness(th14Root), th14Worker=th14.worker();
 const th14Base=runtimeGenerationBase(th14Root,th14.a.generation);
 const th14Files=th14.a.files.map(({path})=>({path,buffer:new TextEncoder().encode(th14.state.files[th14Base+path]).buffer}));
 th14.state.outage=true;
@@ -152,6 +159,7 @@ for(const name of ["game.html","shell.mjs","worker.mjs"]){
   assert.equal(response.headers.get("Cross-Origin-Resource-Policy"),"same-origin",name);
 }
 assert.equal(th14.requests.length,0);
+}
 const broken=harness(),brokenWorker=broken.worker();broken.state.outage=true;
 const damagedFiles=importedFiles.map(file=>file.path==='game.wasm'?{...file,buffer:new TextEncoder().encode('bad').buffer}:file);
 await assert.rejects(brokenWorker.importLaunch(root,broken.a,damagedFiles),/integrity mismatch/);

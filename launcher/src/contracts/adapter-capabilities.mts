@@ -282,6 +282,7 @@ export const GAME_OPTION_CLASSIFICATION = Object.freeze({
   doubleTapBombEnabled: { capability: "touch-controls", class: "required", owner: "launcher-runtime" },
   restartButtonEnabled: { capability: "restart-action", class: "required", owner: "launcher-runtime", note: "the preference only controls shared Launcher R-button visibility; every adapter still owes pause-menu restart semantics" },
   alwaysHitbox: { capability: "always-hitbox", class: "required", owner: "launcher-runtime" },
+  th02RapidFire: { capability: "rapid-fire", class: "optional", owner: "product" },
   multiplayerLocalPlayerVisibility: { capability: "multiplayer-local-player-visibility", class: "profile-required", owner: "launcher-runtime" },
   externalMidiDeviceId: { capability: "midi-music", class: "optional", owner: "product", note: "opaque MIDIPort.id of the selected output; empty means the first available device. The external-MIDI on/off switch is session-only Launcher state and deliberately not a GameOptions field" },
 } satisfies Readonly<Record<string, GameOptionClassification>>);
@@ -356,9 +357,6 @@ export const OPTIONAL_PRODUCT_CAPABILITIES = Object.freeze([
   { id: "raw-data-import", class: "optional", owner: "product", declaration: "package.rawDataImport",
     verification: ["repository:tests/test-raw-data-import-policy.mjs", "repository:tests/test-product-catalog.mjs"],
     summary: "direct acquisition from a named retail DATA file; accepted bytes must enter the canonical Package Store at the product-declared data target" },
-  { id: "adaptation-notice", class: "optional", owner: "product", declaration: "support.adaptationNotice",
-    verification: ["repository:tests/test-product-catalog.mjs", "repository:tests/test-product-surface.mjs"],
-    summary: "temporary support/early-test notice" },
 ] satisfies readonly AdapterCapabilityDefinition[]);
 
 // Internal mechanisms used by existing Runtime adapters. They may be important

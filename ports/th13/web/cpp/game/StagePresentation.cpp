@@ -27,6 +27,15 @@ namespace {
 // 是 f61 敌机行走位差 96px 的根因，2026-10-23 实测修正），此处外部平移
 // 增量置 0，杜绝双重叠加。
 constexpr float kGameToScreenX = 0.0f, kGameToScreenY = 0.0f;
+// Direct-touch movement updates position without setting direction keys.
+i32 ship_tilt(u32 held, float player_x, bool touch_active, const AnmVm* ship) {
+    const i32 keyboard_tilt = ((held & 0x80u) != 0) - ((held & 0x40u) != 0);
+    if ((held & 0xf0u) || !touch_active || !ship || !ship->resource)
+        return keyboard_tilt;
+    const float x = player_x + kGameToScreenX;
+    const float previous_x = ship->visual.translation.x;
+    return (x > previous_x) - (x < previous_x);
+}
 // 弹体贴图基准角：贴图朝右时旋转 = 弹角（对屏检验后校准）。
 constexpr float kBulletSpriteForward = 0.0f;
 
@@ -102,10 +111,30 @@ StagePresentation::~StagePresentation() {
     }
 }
 
+// generation → 槽位下标（按 generation、下标升序）。只收录重建时 active 的
+// 槽位；bullet_slot 逐次复核，故重建之后的出生/回收/恢复不影响正确性。
+void StagePresentation::rebuild_bullet_lookup() {
+    bullet_lookup_.clear();
+    for (size_t index = 0; index < bullets_.size(); ++index)
+        if (bullets_[index].active)
+            bullet_lookup_.emplace_back(bullets_[index].generation, u32(index));
+    std::sort(bullet_lookup_.begin(), bullet_lookup_.end());
+}
+
 StagePresentation::BulletSlot* StagePresentation::bullet_slot(StageBullet& bullet) {
     BulletSlot* slot = nullptr;
-    for (auto& entry : bullets_)
-        if (entry.active && entry.generation == bullet.generation) { slot = &entry; break; }
+    // 加速索引（纯提示）：命中必须复核槽位 active/generation；未命中或
+    // 失效一律回落到下方原有的有序线性扫描，槽位分配结果不变。
+    const auto hint = std::lower_bound(bullet_lookup_.begin(), bullet_lookup_.end(),
+                                       std::pair<u32, u32>{bullet.generation, 0u});
+    if (hint != bullet_lookup_.end() && hint->first == bullet.generation &&
+        hint->second < bullets_.size()) {
+        BulletSlot& entry = bullets_[hint->second];
+        if (entry.active && entry.generation == bullet.generation) slot = &entry;
+    }
+    if (!slot)
+        for (auto& entry : bullets_)
+            if (entry.active && entry.generation == bullet.generation) { slot = &entry; break; }
     if (!slot) {
         for (auto& entry : bullets_) if (!entry.active) { slot = &entry; break; }
         if (!slot) { bullets_.emplace_back(); slot = &bullets_.back(); }
@@ -1544,12 +1573,16 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
     // Production bullet ANM is advanced by StageSim at birth/update time.
     // Standalone presentation clients retain the existing sync entry point.
     if (battle.sim.bullet_animation) {
-        for (auto& slot : bullets_) {
-            bool live = false;
-            for (const auto& bullet : battle.sim.bullets)
-                if (bullet.alive && slot.generation == bullet.generation) { live = true; break; }
-            slot.active = live;
-        }
+        // 同一谓词（存在 alive 且 generation 相同的弹），由逐槽全表扫描
+        // 改为排序后二分：千弹时原 O(槽×弹) 扫描是 sync 的主要开销。
+        live_bullet_generations_.clear();
+        for (const auto& bullet : battle.sim.bullets)
+            if (bullet.alive) live_bullet_generations_.push_back(bullet.generation);
+        std::sort(live_bullet_generations_.begin(), live_bullet_generations_.end());
+        for (auto& slot : bullets_)
+            slot.active = std::binary_search(live_bullet_generations_.begin(),
+                                             live_bullet_generations_.end(), slot.generation);
+        rebuild_bullet_lookup();
     } else {
     // ---- 敌弹：bullet.anm 脚本 + 外观表精灵源（出生中断 2，0x40e840 尾）----
     if (bullets_.size() < battle.sim.bullets.size()) {
@@ -1861,7 +1894,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
 
     // ---- 自机：00442960，0直立、1左倾、2左倾回正、3右倾、4右倾回正 ----
     if (battle.player_visible()) {
-        const i32 tilt = ((held & 0x80) ? 1 : 0) - ((held & 0x40) ? 1 : 0);
+        const i32 tilt = ship_tilt(held, battle.player_x, battle.touch.mode != 0, player_.get());
         if (!player_) player_ = std::make_unique<AnmVm>();
         bool rebound = false;
         if (!player_->resource || tilt != player_tilt_) {
@@ -1998,7 +2031,16 @@ bool StagePresentation::draw(u32 pass) {
             if (shot) one(*shot);
         break;
     case 1:
-        if (player_) one(*player_);
+        if (player_) {
+            // Ship transforms are presentation scratch. Repeated presentation
+            // must leave the snapshot consumed by simulation unchanged.
+            const auto visual = player_->visual;
+            const auto rotation = player_->variables.rotation;
+            const bool ok = one(*player_);
+            player_->visual = visual;
+            player_->variables.rotation = rotation;
+            return ok;
+        }
         break;
     case 2:
         for (auto& enemy : enemies_)
@@ -2007,15 +2049,32 @@ bool StagePresentation::draw(u32 pass) {
     case 3: {
         // 原版敌弹按池/链序（新生在前 = generation 降序）绘制；port 旧实现
         // 按 bullets_ 槽位序，同一 UP 批内两精灵顺序反转（f0-47 48 帧）。
-        std::vector<BulletSlot*> order;
-        order.reserve(bullets_.size());
+        draw_bullet_order_.clear();
         for (auto& slot : bullets_)
-            if (slot.active && slot.vm) order.push_back(&slot);
-        std::stable_sort(order.begin(), order.end(),
+            if (slot.active && slot.vm) draw_bullet_order_.push_back(&slot);
+        std::sort(draw_bullet_order_.begin(), draw_bullet_order_.end(),
             [](const BulletSlot* a, const BulletSlot* b) {
                 return a->generation > b->generation;
             });
-        for (auto* slot : order) one(*slot->vm);
+        for (auto* slot : draw_bullet_order_) one(*slot->vm);
+        if (renderer.always_hitbox && battle_) {
+            if (battle_->player_visible() && battle_->player_phase == StageBattle::PlayerPhase::Active &&
+                !battle_->focus) {
+                // Draw the native focus sprite without putting an animation
+                // in the registry or changing gameplay focus.
+                const auto* source = animations.script_template(banks.effect, 22);
+                if (!source) return fail("Focus marker template unavailable");
+                AnmVm marker = *source;
+                if (!marker.select_sprite(23)) return fail("Focus marker sprite unavailable");
+                marker.visible = true;
+                marker.visual.set_layer(12);
+                marker.visual.scale = {1.f, 1.f};
+                marker.visual.color = 0xffffffffu;
+                marker.visual.translation = {battle_->player_x + kGameToScreenX,
+                                             battle_->player_y + kGameToScreenY, 0.f};
+                if (!one(marker)) return false;
+            }
+        }
         break;
     }
     default:

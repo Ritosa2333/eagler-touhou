@@ -1,0 +1,252 @@
+Apply to the Windows RmlUi runtime after motion-smoothing.patch.
+
+--- a/ports/th09/web/cpp/sdl/Application.cpp
++++ b/ports/th09/web/cpp/sdl/Application.cpp
+@@ -233,16 +233,28 @@
+     EclWorldState state;AnmExecutor executor{state.random};GameResources resources{assets,graphics,executor};
+     MotionCapture motion_capture{graphics};
+     GamePresentation presentation{motion_capture,resources,*this};InGameMenus menus{resources,*this};
+-    bool motion_enabled=false,motion_pending=false;
+-    double motion_draw_started=0.,motion_draw_cost=0.,motion_extra_cost=0.;
++    bool motion_enabled=false,motion_netplay_enabled=false,motion_pending=false;
++    double motion_deadline=-1.,motion_main_present_at=0.,motion_extra_cost=0.;
++
++    u32 motion_side() const { return network.active?network.side:0; }
++
++    void cancel_motion_frame() {
++        motion_pending=false;
++        motion_capture.invalidate();
++    }
+
+     const Player* motion_player() const {
+-        if(!motion_enabled||in_title||!session||!world||network.active||rollback_active||spectator_mode||
++        if(!motion_enabled||in_title||!session||!world||spectator_mode||
+            paused||over||complete||session->is_replay||session->phase!=SessionPhase::match||
+            world->transition_pending||world->scene->phase!=0||world->dialogue->id>=0||
+-           world->battle->state.hide_players||(world->battle->state.flags&0x1800)||
+-           world->configuration.controllers[0]||!world->configuration.controllers[1])return nullptr;
+-        const auto& field=world->battle->fields[0];
++           world->battle->state.hide_players||(world->battle->state.flags&0x1800))return nullptr;
++        const auto side=motion_side();
++        if(network.active){
++            if(!motion_netplay_enabled||!rollback_active||side>=2||
++               !rollback.Ready()||session->motion_input[side].enabled)return nullptr;
++        }else if(rollback_active||!world->configuration.controllers[1])return nullptr;
++        if(world->configuration.controllers[side])return nullptr;
++        const auto& field=world->battle->fields[side];
+         const auto& player=*field.player;
+         if((field.script.flags&1)||player.motion.health<=0||
+            (player.control.player_state!=0&&player.control.player_state!=3))return nullptr;
+@@ -489,7 +501,8 @@
+     void ending_sprite(AnmVm& vm)override{presentation.renderer.draw_2d(vm);}
+     void ending_cover(u32 color)override{presentation.renderer.rectangle(0,0,640,480,color,color);}
+     bool tick(u16 keys){return tick_inputs(keys,0,keys);}
+-    bool tick_inputs(u16 left,u16 right,u16 keys,bool render=true,bool afterRestart=false,bool submit=true){
++    bool tick_inputs(u16 left,u16 right,u16 keys,bool render=true,bool afterRestart=false,
++                     bool submit=true,bool captureDeferredMotion=false){
+         TH09_PERF_SCOPE(tick_cost,TickInputs);
+ #if TH09_DEVELOPMENT_HARNESS
+         const double cost_begin=now_ms();
+@@ -528,7 +541,7 @@
+ #if TH09_DEVELOPMENT_HARNESS
+             if(probe_full_sprite_geometry)presentation.renderer.omit_sprite_geometry=false;
+ #endif
+-            draw(render&&submit);presentation.renderer.omit_sprite_geometry=false;graphics.skipSubmission=false;
++            draw(render&&submit,render&&captureDeferredMotion);presentation.renderer.omit_sprite_geometry=false;graphics.skipSubmission=false;
+         }
+         else if(render)draw();
+ #if TH09_DEVELOPMENT_HARNESS
+@@ -538,15 +551,15 @@
+         {TH09_PERF_SCOPE(warm_cost,WarmResources);session->warm_resources();}
+         ++frames;return error.empty();
+     }
+-    void draw(bool present=true){
++    void draw(bool present=true,bool captureDeferredMotion=false){
+         TH09_PERF_SCOPE(draw_cost,SemanticDraw);
+-        const auto* player=present?motion_player():nullptr;
++        const auto* player=(present||captureDeferredMotion)?motion_player():nullptr;
+         if(motion_enabled){
+             motion_pending=false;
+             if(player){
+                 motion_capture.begin(&player->body);
+                 active_motion_capture=&motion_capture;
+-                motion_draw_started=now_ms();
++                motion_deadline=-1.;
+             }else motion_capture.invalidate();
+         }
+         presentation.begin_frame();if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
+@@ -555,10 +568,13 @@
+             active_motion_capture=nullptr;
+             motion_capture.end();
+         }
+-        if(present){TH09_PERF_SCOPE(present_cost,Present);graphics.present();}
++        if(present){
++            if(player)motion_main_present_at=now_ms();
++            TH09_PERF_SCOPE(present_cost,Present);
++            graphics.present();
++        }
+         if(player){
+             motion_pending=motion_capture.ready();
+-            motion_draw_cost=now_ms()-motion_draw_started;
+             motion_extra_cost*=0.95;
+         }
+     }
+@@ -1031,6 +1047,7 @@
+         if(rollback.Frame()-rollback_published>=rollback_frames.size()||!next.canAdvance)forwardOnly=false;
+     }
+     if(correction!=Netplay::INVALID_FRAME&&!forwardOnly){
++        if(probe->motion_netplay_enabled)probe->cancel_motion_frame();
+         TH09_PERF_SCOPE(restore_cost,Restore);
+         rollback_catchup=std::max(rollback_catchup,rollback.Frame());
+         probe->presentation.renderer.flush();probe->graphics.backend.flush();
+@@ -1111,7 +1128,9 @@
+             else if(side==u32(network.side))step.owner=&probe->local_charge;
+         }
+         if(probe->session){probe->session->charge_frames=probe->charge_frames;probe->session->charge_input_recorded=false;}
+-        const auto ok=probe->tick_inputs(decision.inputs[0].buttons,decision.inputs[1].buttons,decision.inputs[0].buttons|decision.inputs[1].buttons,paint,false,!deferPresent);
++        const auto ok=probe->tick_inputs(decision.inputs[0].buttons,decision.inputs[1].buttons,
++            decision.inputs[0].buttons|decision.inputs[1].buttons,paint,false,!deferPresent,
++            paint&&final&&deferPresent);
+         std::array<ChargeSample,2> samples;
+         if(rollback.LocalChargePriority()){
+             if(probe->world&&!probe->in_title)for(auto& field:probe->world->battle->fields)field.player->finish_charge_frame();
+@@ -1147,7 +1166,10 @@
+         if(!ok)return 0;
+         if(!rollback.CommitChargeFrame(f,samples)){probe->error=rollback.Error();return 0;}
+         if(!rollback.Complete(decision,forwardOnly)){probe->error=rollback.Error();return 0;}
+-        if(deferPresent)probe->graphics.present();
++        if(deferPresent){
++            if(probe->motion_pending)probe->motion_main_present_at=now_ms();
++            probe->graphics.present();
++        }
+         // Historical replay stays silent. Fresh forward feedback need not
+         // wait for remote confirmation; its later publication is deduplicated.
+         if(final)record.audio.Emit(record.sounds,false,[](const auto& s){if(s.kind==0)probe->audio.effects.enqueue(s.id,i32(s.value));else probe->audio.effects.positioned(s.id,s.value);});
+@@ -1771,22 +1793,64 @@
+     return keyboard_input(keys,2)|joy_keys(0)|joy_keys(1);
+ }
+
++static double display_tick_deadline(double now,double intervalScale){
++    // Project the same cadence as the current simulation without consuming any
++    // queued online phase correction. A blocked tick has priority over drawing.
++    double low=0.,high=1000./60.*intervalScale;
++    for(unsigned i=0;i<10;++i){
++        const double middle=(low+high)*.5;
++        auto estimate=cadence;
++        if(estimate.advance((std::max(0.,now-previous_frame)+middle)/(1000.*intervalScale)))high=middle;
++        else low=middle;
++    }
++    return now+high;
++}
++
++static void wait_display_deadline(){
++    if(!SDL_GetKeyboardFocus()){SDL_Delay(1);return;}
++    if(previous_frame<0.||!probe->session||probe->in_title||probe->paused||
++       probe->session->phase!=SessionPhase::match||cadence.retry_pending()){
++        SDL_Delay(1);
++        return;
++    }
++    const double now=now_ms();
++    const double scale=network.active&&rollback_active?rollback.IntervalScale():1.;
++    double deadline=display_tick_deadline(now,scale);
++    if(probe->motion_pending&&probe->motion_deadline>=0.)
++        deadline=std::min(deadline,probe->motion_deadline);
++    const double wait=deadline-now;
++    if(wait>2.1)SDL_Delay(1);
++    else if(wait>.04)SDL_DelayPrecise(Uint64(wait*1.e6));
++}
++
+ static void present_motion_midpoint(){
++    if(cadence.retry_pending()||previous_frame<0.){
++        probe->cancel_motion_frame();
++        return;
++    }
+     const double now=now_ms();
+-    if(now-probe->motion_draw_started<1000./120.)return;
++    const double scale=network.active&&rollback_active?rollback.IntervalScale():1.;
++    const double nextTick=display_tick_deadline(now,scale);
++    if(probe->motion_deadline<0.)
++        probe->motion_deadline=probe->motion_main_present_at+1000./120.*scale;
++    const double late=now-probe->motion_deadline;
++    if(late<0.)return;
+     probe->motion_pending=false;
++    if(late>1.5)return;
+     const auto* player=probe->motion_player();
+     if(!player||suspended||!SDL_GetKeyboardFocus()||gestures.active())return;
+ #if TH09_NATIVE_OVERLAY
+     if(Th09Overlay::CapturesKeyboard())return;
+ #endif
+-    const auto keys=motion_held_keys();
++    // With a negotiated input delay, extrapolate the last simulated direction.
++    // A fresh key press still enters the match through the delayed input queue.
++    const auto keys=network.active&&rollback.InputDelay()!=0?player->input.device.held:motion_held_keys();
+     if(!(keys&0xf0)||(keys&8))return;
+-    const double budget=std::max(probe->motion_draw_cost,probe->motion_extra_cost)+1.;
+-    auto estimate=cadence;
+-    if(previous_frame<0.||estimate.advance((now-previous_frame+budget)/1000.))return;
++    const double budget=probe->motion_extra_cost+1.;
++    if(now+budget>=nextTick)return;
+     const auto& world=*probe->world;
+-    const auto delta=predict_sprite(player->motion,keys,world.configuration.automatic_focus[0],
++    const auto side=probe->motion_side();
++    const auto delta=predict_sprite(player->motion,keys,world.configuration.automatic_focus[side],
+                                    keys&1?player->input.fire_frames:0,player->resource.movement,
+                                    world.battle->state.limits,world.timing.rate*.5f);
+     if(delta.x==0.&&delta.y==0.)return;
+@@ -1810,7 +1874,10 @@
+     int swap=-1;
+     probe->motion_enabled=(!motion||std::string_view(motion)!="0")&&display_fast&&
+         SDL_GL_GetSwapInterval(&swap)&&swap==0;
+-    if(probe->motion_enabled)SDL_Log("th09 motion smoothing: enabled (fixed midpoint)");
++    const auto* netplayMotion=SDL_getenv("EAGLER_TH09_NETPLAY_MOTION_SMOOTHING");
++    probe->motion_netplay_enabled=probe->motion_enabled&&(!netplayMotion||std::string_view(netplayMotion)!="0");
++    if(probe->motion_enabled)SDL_Log("th09 motion smoothing: enabled (fixed midpoint, netplay %s)",
++        probe->motion_netplay_enabled?"on":"off");
+     th09_loop_start();
+     auto epoch = loop_epoch;
+ #if TH09_NATIVE_ROOM
+@@ -2140,7 +2207,7 @@
+             if (probe->graphics.backend.stats.presentations == presentations) refreshOverlay();
+             else overlayIdlePresent = now_ms();
+ #endif
+-            SDL_Delay(1);
++            wait_display_deadline();
+         } else {
+             SDL_Event event;
+             if (SDL_WaitEventTimeout(&event, 50) && desktop_close_event(event.type)) break;
+--- a/ports/th09/web/cpp/sdl/AudioDevice.cpp
++++ b/ports/th09/web/cpp/sdl/AudioDevice.cpp
+@@ -12,6 +12,7 @@
+ #define MINIAUDIO_IMPLEMENTATION
+ #include "../../../portable/sdl/third_party/miniaudio.h"
+ #include "AudioDevice.hpp"
++#include "Assets.hpp"
+ #include "RuntimePath.hpp"
+ #include "PerformanceDiagnostics.hpp"
+ #include "../game/MusicCatalog.hpp"
+@@ -51,7 +52,7 @@
+     struct Voice {
+         ma_decoder decoder{};ma_sound sound{};bool decoded=false,attached=false;
+ #ifdef _WIN32
+-        std::vector<u8> wave;
++        std::vector<u8> music_bytes;
+ #endif
+         ~Voice(){web_sfx::erase(&sound);if(attached)ma_sound_uninit(&sound);if(decoded)ma_decoder_uninit(&decoder);}
+     };
+@@ -109,10 +110,13 @@
+ #ifdef _WIN32
+     const auto loose=std::string("music/")+filename;
+     decoded=ma_decoder_init_file(loose.c_str(),&config,&next->decoder);
+-    if(decoded!=MA_SUCCESS&&read_packed_music(format,next->wave))
+-        decoded=ma_decoder_init_memory(next->wave.data(),next->wave.size(),&config,&next->decoder);
++    if(decoded!=MA_SUCCESS&&read_packed_music(format,next->music_bytes))
++        decoded=ma_decoder_init_memory(next->music_bytes.data(),next->music_bytes.size(),&config,&next->decoder);
++    if(decoded!=MA_SUCCESS&&read_file(path.c_str(),next->music_bytes))
++        decoded=ma_decoder_init_memory(next->music_bytes.data(),next->music_bytes.size(),&config,&next->decoder);
++#else
++    if(decoded!=MA_SUCCESS)decoded=ma_decoder_init_file(path.c_str(),&config,&next->decoder);
+ #endif
+-    if(decoded!=MA_SUCCESS)decoded=ma_decoder_init_file(path.c_str(),&config,&next->decoder);
+     if(decoded!=MA_SUCCESS){error="Unable to decode "+path;return false;}next->decoded=true;TH09_PERF_COUNT(MusicDecoderOpens,1);
+     ma_uint64 length=0;if(ma_decoder_get_length_in_pcm_frames(&next->decoder,&length)!=MA_SUCCESS||length!=total/align){error="Music PCM frame count differs from original: "+path;return false;}
+     ma_data_source_set_loop_point_in_pcm_frames(&next->decoder,intro/align,total/align);

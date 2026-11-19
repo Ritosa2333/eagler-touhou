@@ -27,7 +27,7 @@ public:
     using Resolve=Surface(*)(void*,u32);
     Statistics stats{};State state{};bool defer=false;
     Renderer(int version,Resolve,void*);~Renderer();
-    bool initialize();void flush();void discard();bool commit();
+    bool initialize(const char* title=nullptr);void flush();void discard();bool commit();
     PipelineState& pipeline() override { return state.pipeline; }
     void transform(MatrixKind,const void*);void viewport(const Viewport&);
     void draw(Topology primitive,u32 count,const void*,u32 stride,const void* indices=nullptr,IndexType indexFormat=IndexType::UInt16);
@@ -67,6 +67,7 @@ private:
 Renderer* current();void set_current(Renderer*);
 }
 
+#ifdef __EMSCRIPTEN__
 extern "C" {
 __attribute__((export_name("sdl_stats"))) const touhou::sdl::Statistics* sdl_stats();
 __attribute__((export_name("sdl_defer"))) void sdl_defer(int);
@@ -75,3 +76,4 @@ __attribute__((export_name("sdl_error"))) const char* sdl_error();
 __attribute__((export_name("sdl_version"))) int sdl_version();
 __attribute__((export_name("sdl_ticks"))) double sdl_ticks();
 }
+#endif

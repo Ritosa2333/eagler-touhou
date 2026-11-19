@@ -1,0 +1,11 @@
+{
+  "url": "shugen.opus",
+  "loopStart": 1.5897278911564625,
+  "loopEnd": 145.2798185941043,
+  "sha256": "d20c475ea3d79725460ce883a06fb12672504bfe5a6a5454d8e1857f26980842",
+  "audioSha256": "7da0e12a2d9097eaa8095730be73a1daecc7af178b12217fe81f7a6ec9c8cf85",
+  "codec": "opus",
+  "bytes": 1171746,
+  "preset": "mdrv2-fmgen-opus64-48k-single-loop-headroom-v2",
+  "fadeSeconds": 1.9782692307692307
+}

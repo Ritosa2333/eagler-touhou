@@ -474,7 +474,7 @@
     "th08": {
       "normal": "ports/th08",
       "multiplayer": "ports/th08-mp",
-      "base": "0b53caf56004cd2dd53695d8e9097fc73f9b5064",
+      "base": "80005e42a71a78b3eb1dafc1de7703798434b2af",
       "history": [
         {
           "kind": "manual",
@@ -549,6 +549,43 @@
             "ports/th08-mp/web/cpp/game/GameplayScene.cpp"
           ],
           "note": "普通版和多人版都使用关卡背景动画的色值为萤火虫着色。多人版构建指南已采用 Bun 安装和构建命令，保留该模式的启动说明。"
+        },
+        {
+          "kind": "manual",
+          "base": "0b53caf56004cd2dd53695d8e9097fc73f9b5064",
+          "source": "4907be17b806e3b76d25e86b50ba6976e138de95",
+          "targetHead": "0400256361e0f67b8e27aa87026913fe78ad3d70",
+          "paths": [
+            "ports/th08-mp/web/cpp/platform/BrowserRuntime.hpp"
+          ],
+          "note": "同步原版方形摇杆死区到多人端的浏览器手柄路径。"
+        },
+        {
+          "kind": "manual",
+          "base": "4907be17b806e3b76d25e86b50ba6976e138de95",
+          "source": "80005e42a71a78b3eb1dafc1de7703798434b2af",
+          "targetHead": "80005e42a71a78b3eb1dafc1de7703798434b2af",
+          "paths": [
+            "ports/th08-mp/ADAPTATION.md",
+            "ports/th08-mp/portable/ending-controls-check.cpp",
+            "ports/th08-mp/portable/presentation-lab/adapter.mjs",
+            "ports/th08-mp/portable/presentation-lab/analyzer.mjs",
+            "ports/th08-mp/portable/presentation-lab/app.mjs",
+            "ports/th08-mp/portable/presentation-lab/index.html",
+            "ports/th08-mp/web/cpp/game/BackgroundView.cpp",
+            "ports/th08-mp/web/cpp/game/BulletDrawing.cpp",
+            "ports/th08-mp/web/cpp/game/EffectSystem.cpp",
+            "ports/th08-mp/web/cpp/game/EnemyDrawing.cpp",
+            "ports/th08-mp/web/cpp/game/PlayerBombPatterns.cpp",
+            "ports/th08-mp/web/cpp/game/PlayerShotDraw.cpp",
+            "ports/th08-mp/web/cpp/game/Presentation.hpp",
+            "ports/th08-mp/web/cpp/game/PresentationVisual.hpp",
+            "ports/th08-mp/web/cpp/game/SpellDrawing.cpp",
+            "ports/th08-mp/web/cpp/game/TitleFlow.cpp",
+            "ports/th08-mp/web/cpp/game/TitleSupport.cpp",
+            "ports/th08-mp/web/cpp/sdl/GameHost.cpp"
+          ],
+          "note": "接收高刷当前帧外推，保持 60 Hz 游戏逻辑。多人版保留各作品当前的联机输入、回滚与观战路径。"
         }
       ],
       "origin": {
@@ -1668,7 +1705,7 @@
             "portable/sdl/Scene.cpp",
             "portable/sdl/Scene.hpp"
           ],
-          "base": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+          "base": "353543ececfba792235d65f456eccb9736dffdaa",
           "history": [
             {
               "kind": "manual",
@@ -1680,6 +1717,17 @@
                 "ports/th12-mp/portable/sdl/Scene.hpp"
               ],
               "note": "单人与多人同步原版背景动画绘制顺序；录像落盘与槽位刷新属于多人版。"
+            },
+            {
+              "kind": "manual",
+              "base": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+              "source": "353543ececfba792235d65f456eccb9736dffdaa",
+              "targetHead": "b332cc701920ab55b8bf815be8e41c5a4aed01b4",
+              "paths": [
+                "ports/th12-mp/portable/sdl/Scene.cpp",
+                "ports/th12-mp/portable/sdl/Scene.hpp"
+              ],
+              "note": "单机与多人版同步恢复第 26 层船影的世界坐标绘制和雾距渐变。多人版保留其本地机体显示与 HUD 实现，双人浏览器一面开场已核对。此监控范围内先前的残像连续性修正已存在于两版。"
             }
           ]
         },
@@ -1703,10 +1751,191 @@
         }
       }
     },
+    "th13": {
+      "normal": "ports/th13",
+      "multiplayer": "ports/th13-mp",
+      "base": "31509984da4dee92d5bc0b2e4e95cfaddec8b0a1",
+      "history": [
+        {
+          "kind": "manual",
+          "base": "e1111b4daeb21296a5d0da526e2d512efc449aa2",
+          "source": "9ee91331fade771479437feabdd8a4b590661c5b",
+          "targetHead": "6d2e41bf08b128fb9524d2aecee3b56bc99a305c",
+          "paths": [
+            "ports/th13-mp/ADAPTATION.md",
+            "ports/th13-mp/portable/sdl/Renderer.cpp",
+            "ports/th13-mp/portable/sdl/Renderer.hpp",
+            "ports/th13-mp/portable/sdl/UnormBlendProfile.hpp",
+            "ports/th13-mp/tests/render/color01-fixture/build.sh",
+            "ports/th13-mp/tests/render/color01-fixture/build/fixture.html",
+            "ports/th13-mp/tests/render/color01-fixture/build/fixture.mjs",
+            "ports/th13-mp/tests/render/color01-fixture/build/result.json",
+            "ports/th13-mp/tests/render/color01-fixture/fixture.cpp",
+            "ports/th13-mp/tests/render/color01-fixture/fixture.html",
+            "ports/th13-mp/tests/render/color01-fixture/run-ci.sh",
+            "ports/th13-mp/tests/render/color01-fixture/run-shot.mjs",
+            "ports/th13-mp/tests/render/color01_expected.hpp",
+            "ports/th13-mp/tests/ui/title_practice_flow_test.cpp",
+            "ports/th13-mp/tests/ui/title_route_player_data_spell_practice_test.cpp",
+            "ports/th13-mp/tests/ui/title_run_transition_test.cpp",
+            "ports/th13-mp/tests/ui/title_spell_practice_menu_test.cpp",
+            "ports/th13-mp/tests/ui/title_spell_practice_view_test.cpp",
+            "ports/th13-mp/tests/ui/unorm_blend_profile_test.cpp",
+            "ports/th13-mp/web/cpp/game/AnmManager.cpp",
+            "ports/th13-mp/web/cpp/game/AnmOverlay.cpp",
+            "ports/th13-mp/web/cpp/game/AnmOverlay.hpp",
+            "ports/th13-mp/web/cpp/game/RunTransitionEffect.hpp",
+            "ports/th13-mp/web/cpp/game/SessionState.hpp",
+            "ports/th13-mp/web/cpp/game/StageBattle.cpp",
+            "ports/th13-mp/web/cpp/game/TitleFrame.cpp",
+            "ports/th13-mp/web/cpp/game/TitleFrame.hpp",
+            "ports/th13-mp/web/cpp/game/TitleScene.cpp",
+            "ports/th13-mp/web/cpp/game/TitleScene.hpp",
+            "ports/th13-mp/web/cpp/game/TitleSpellPracticeMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitleSpellPracticeMenu.hpp",
+            "ports/th13-mp/web/cpp/game/TitleSpellPracticeView.cpp",
+            "ports/th13-mp/web/cpp/sdl/Application.cpp",
+            "ports/th13-mp/web/cpp/sdl/ApplicationState.hpp",
+            "ports/th13-mp/web/cpp/sdl/ApplicationTitle.cpp",
+            "ports/th13-mp/web/cpp/sdl/GraphicsDevice.cpp"
+          ],
+          "note": "SP 修复同步：符卡练习返回重建/对局返回级联/伤害池逐出 + PR#159 残留（转场/UNORM）；MP 侧同名文件整份镜像，TitleScene/ApplicationTitle 按共同部分外科补丁"
+        },
+        {
+          "kind": "manual",
+          "base": "9ee91331fade771479437feabdd8a4b590661c5b",
+          "source": "dc9a747eee712649f8b06b5d31120cd4da300ec0",
+          "targetHead": "724446c00d19addc90cc00d3e660beee6ea400b6",
+          "paths": [
+            "ports/th13-mp/tests/ui/dialogue_text_test.cpp",
+            "ports/th13-mp/web/cpp/game/AnmRegistry.cpp",
+            "ports/th13-mp/web/cpp/game/AnmResource.cpp",
+            "ports/th13-mp/web/cpp/game/AnmResource.hpp",
+            "ports/th13-mp/web/cpp/game/AnmVm.hpp",
+            "ports/th13-mp/web/cpp/game/BossPresentation.hpp",
+            "ports/th13-mp/web/cpp/game/DialogueText.cpp",
+            "ports/th13-mp/web/cpp/game/DialogueText.hpp",
+            "ports/th13-mp/web/cpp/game/GameHud.hpp",
+            "ports/th13-mp/web/cpp/game/LaserPresentation.cpp",
+            "ports/th13-mp/web/cpp/game/LaserPresentation.hpp",
+            "ports/th13-mp/web/cpp/game/MsgPresentation.hpp",
+            "ports/th13-mp/web/cpp/game/PauseFrame.hpp",
+            "ports/th13-mp/web/cpp/game/PostGameFlow.hpp",
+            "ports/th13-mp/web/cpp/game/RunScene.hpp",
+            "ports/th13-mp/web/cpp/game/ScorePopups.hpp",
+            "ports/th13-mp/web/cpp/game/SpellPresentation.hpp",
+            "ports/th13-mp/web/cpp/game/StageBattle.cpp",
+            "ports/th13-mp/web/cpp/game/StageLaser.cpp",
+            "ports/th13-mp/web/cpp/game/StageSim.hpp",
+            "ports/th13-mp/web/cpp/game/YoumuBomb.hpp",
+            "ports/th13-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th13-mp/web/cpp/sdl/SceneDisplay.cpp",
+            "ports/th13-mp/web/cpp/sdl/SceneDisplay.hpp",
+            "ports/th13-mp/web/sdl-runtime/shell.mjs"
+          ],
+          "note": "接收 dc9a747 的25个通用文件：17个同blob，8个保留多人适配；动画资源身份/退役绑定、对话/HUD/Boss/激光/符卡恢复及绘制准备拆分已随 ec57e3c 与 3da0ed775 迁入。保留多人世界/宿主快照、全席位输入、Run前缀旁观、存档隔离和网络唤醒。目录投影合并154f31df、双亲写回724446c 保持已验证内容树不变；SP原有六个未提交菜单文件未纳入。M1–M9 56/56、69987断言，旁观/录像及Relay定向回归通过；正式整场网络与GPU未认证。"
+        },
+        {
+          "kind": "manual",
+          "base": "dc9a747eee712649f8b06b5d31120cd4da300ec0",
+          "source": "d19f1b0a8919ea6d40413e97821433c934638519",
+          "targetHead": "b22af1836ffa3648764865fc8a346a23e41f7d14",
+          "paths": [
+            "ports/th13-mp/portable/build.mjs",
+            "ports/th13-mp/portable/build.test.mjs",
+            "ports/th13-mp/tests/ui/stage_presentation_repeat_draw_test.cpp",
+            "ports/th13-mp/tests/ui/title_option_menu_test.cpp",
+            "ports/th13-mp/tests/ui/title_spell_practice_esc_flow_test.cpp",
+            "ports/th13-mp/tests/ui/title_spell_practice_view_test.cpp",
+            "ports/th13-mp/web/cpp/game/StagePresentation.cpp",
+            "ports/th13-mp/web/cpp/game/TitleOptionsMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitleOptionsMenu.hpp",
+            "ports/th13-mp/web/cpp/game/TitleSpellPracticeView.cpp",
+            "ports/th13-mp/web/cpp/sdl/BrowserRuntime.cpp"
+          ],
+          "note": "接收 c76a79a1b 与 d19f1b0a8：菜单实现和三套测试逐字节同步；StagePresentation 在 MP 多席绘制路径保留同样的自机临时状态恢复，MP generation/ghost 快照按自身规则保留，SP 专用重复呈现测试由单席对照及 MP 席位表现回归补充；两侧 TH13_OUTPUT 隔离与 build.test 同源；完整帧观测在 MP 额外计入回滚和终局交接。原生56+3、单席五组7200帧与RTC六面终局诊断分别验证，不扩展成全游戏/性能/像素认证。"
+        },
+        {
+          "kind": "manual",
+          "base": "d19f1b0a8919ea6d40413e97821433c934638519",
+          "source": "b3384bb1ab57805a8c1d37b73dae8eb578d771a5",
+          "targetHead": "b3384bb1ab57805a8c1d37b73dae8eb578d771a5",
+          "paths": [
+            "ports/th13-mp/tests/ui/bgameover_retry_test.cpp",
+            "ports/th13-mp/tests/ui/pause_name_entry_overlay_test.cpp",
+            "ports/th13-mp/web/cpp/game/PauseMenu.cpp",
+            "ports/th13-mp/web/cpp/game/PauseMenu.hpp",
+            "ports/th13-mp/web/cpp/game/RunPause.cpp",
+            "ports/th13-mp/web/cpp/game/RunPause.hpp",
+            "ports/th13-mp/web/cpp/game/TitleResultEntry.cpp",
+            "ports/th13-mp/web/cpp/game/TitleResultView.hpp"
+          ],
+          "note": "接收 b3384bb1a（AgentMystia/th13 PR#3 疮痍菜单保存 Replay 选槽与命名流程）：8 个文件（6 个实现、2 个测试）在同一提交内落到两端口，逐字节相同，MP 无适配差异；bgameover_retry_test 期望按 0x440960 光标压栈/出栈（0x440df6/0x44100f）证据在两侧一并更正。提交内容树 08dcd583d 独立导出验证：MP 原生 M1-M9 56/56、78442 断言；两侧 tests/ui 各 540 ok，余 curve_laser 两例缺参考数据的既有环境失败；两端 wasm 构建通过。浏览器与实际联机未验证。"
+        },
+        {
+          "kind": "manual",
+          "base": "b3384bb1ab57805a8c1d37b73dae8eb578d771a5",
+          "source": "a053611f6a46ecd229f8d1954e2f6e1ca5cfbee4",
+          "targetHead": "ae315c6654e5588424c491b9b658373616e67281",
+          "paths": [
+            "ports/th13-mp/tests/combat/player_shot_birth_order_test.cpp",
+            "ports/th13-mp/tests/combat/player_shot_culling_test.cpp",
+            "ports/th13-mp/tests/harness/harness.cpp",
+            "ports/th13-mp/tests/harness/test_framework.hpp",
+            "ports/th13-mp/tests/ui/curve_laser_presentation_test.cpp",
+            "ports/th13-mp/tests/ui/stage_transition_lifecycle_test.cpp",
+            "ports/th13-mp/tests/ui/title_spell_practice_esc_flow_test.cpp",
+            "ports/th13-mp/tests/ui/title_state_test.cpp",
+            "ports/th13-mp/web/cpp/game/AnmGeometry.cpp",
+            "ports/th13-mp/web/cpp/game/AnmGeometry.hpp",
+            "ports/th13-mp/web/cpp/game/AnmRegistry.cpp",
+            "ports/th13-mp/web/cpp/game/AnmVm.hpp",
+            "ports/th13-mp/web/cpp/game/GameHud.hpp",
+            "ports/th13-mp/web/cpp/game/MsgPlayer.cpp",
+            "ports/th13-mp/web/cpp/game/RunScene.cpp",
+            "ports/th13-mp/web/cpp/game/RunScene.hpp",
+            "ports/th13-mp/web/cpp/game/StageBattle.cpp",
+            "ports/th13-mp/web/cpp/game/StagePresentation.cpp",
+            "ports/th13-mp/web/cpp/game/StagePresentation.hpp",
+            "ports/th13-mp/web/cpp/game/StageSim.cpp",
+            "ports/th13-mp/web/cpp/game/StageSim.hpp",
+            "ports/th13-mp/web/cpp/game/TitleMainMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitleScene.cpp",
+            "ports/th13-mp/web/cpp/game/ZunGraphics.hpp",
+            "ports/th13-mp/web/cpp/sdl/Application.cpp",
+            "ports/th13-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th13-mp/web/cpp/sdl/FileStore.cpp",
+            "ports/th13-mp/web/cpp/sdl/SceneDisplay.cpp",
+            "ports/th13-mp/web/cpp/sdl/SceneDisplay.hpp"
+          ],
+          "note": "abec186dc 至 a053611f6 的普通版修改均以 th13/th13-mp 成对提交落地：子弹优先级 23、回放台 ANM 随机、击中火花与复活槽位、四角缺失中心盒退休、换关析构摘下 bullet_update；多人版同提交同源码，无模式专属差异"
+        },
+        {
+          "kind": "manual",
+          "base": "a053611f6a46ecd229f8d1954e2f6e1ca5cfbee4",
+          "source": "8a59928db9c9a4d9d409d7e2df93c568406d8018",
+          "targetHead": "f0cfc4df78c77f1776b43ee2d65cf4fd9b3e44a6",
+          "paths": [
+            "ports/th13-mp/web/cpp/sdl/Application.cpp"
+          ],
+          "note": "fps_text_draw unlink mirrored in th13-mp Application teardown"
+        },
+        {
+          "kind": "manual",
+          "base": "8a59928db9c9a4d9d409d7e2df93c568406d8018",
+          "source": "31509984da4dee92d5bc0b2e4e95cfaddec8b0a1",
+          "targetHead": "31509984da4dee92d5bc0b2e4e95cfaddec8b0a1",
+          "paths": [
+            "ports/th13-mp/web/cpp/game/StageBattle.cpp"
+          ],
+          "note": "consume_player_shot_geometry 注释成对更新"
+        }
+      ]
+    },
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "2dc8e0603d8fef1ed85ba485a18ce88f889e9c1c",
+      "base": "61b48d3882fab77fe660871da0d1d8ff04a8937b",
       "history": [
         {
           "kind": "manual",
@@ -1887,8 +2116,58 @@
             "ports/th17-mp/portable/sdl/Renderer.hpp"
           ],
           "note": "普通版与多人版都接收 #208 的绘制绑定优化，成就提示属于单机版。"
+        },
+        {
+          "kind": "manual",
+          "base": "2dc8e0603d8fef1ed85ba485a18ce88f889e9c1c",
+          "source": "1ce3e9544e4e82f4a032b890e7e643220ddba51d",
+          "targetHead": "0400256361e0f67b8e27aa87026913fe78ad3d70",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/BombController.cpp",
+            "ports/th17-mp/web/cpp/game/GameStart.cpp",
+            "ports/th17-mp/web/cpp/game/PlayerLife.hpp",
+            "ports/th17-mp/web/cpp/game/Replay.cpp",
+            "ports/th17-mp/web/cpp/game/Replay.hpp",
+            "ports/th17-mp/web/cpp/game/ReplayRecording.cpp",
+            "ports/th17-mp/web/cpp/game/RoaringSystem.cpp",
+            "ports/th17-mp/web/cpp/game/RunInput.cpp",
+            "ports/th17-mp/web/cpp/game/RunInput.hpp",
+            "ports/th17-mp/web/cpp/sdl/Application.cpp",
+            "ports/th17-mp/web/cpp/sdl/ApplicationState.hpp",
+            "ports/th17-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th17-mp/web/cpp/sdl/ThpracUi.cpp"
+          ],
+          "note": "练习计数接入多人端本地练习，联机房间保持既有面板和检查点格式；保留多人端现有作弊权限及录像规则。"
+        },
+        {
+          "kind": "manual",
+          "base": "1ce3e9544e4e82f4a032b890e7e643220ddba51d",
+          "source": "61b48d3882fab77fe660871da0d1d8ff04a8937b",
+          "targetHead": "2e41427791afcf5c89bb0cd87be87d2493a218c8",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/Dialogue.cpp",
+            "ports/th17-mp/web/cpp/game/Dialogue.hpp",
+            "ports/th17-mp/web/cpp/game/GameBattle.cpp",
+            "ports/th17-mp/web/cpp/game/StageGameplay.cpp",
+            "ports/th17-mp/web/cpp/game/StageGameplay.hpp",
+            "ports/th17-mp/web/cpp/game/TextLayout.hpp",
+            "ports/th17-mp/web/cpp/game/TitleScene.cpp",
+            "ports/th17-mp/web/cpp/sdl/ApplicationGame.cpp",
+            "ports/th17-mp/web/cpp/sdl/ApplicationState.hpp",
+            "ports/th17-mp/web/cpp/sdl/FontDevice.cpp",
+            "ports/th17-mp/web/cpp/sdl/FontDevice.hpp",
+            "ports/th17-mp/web/cpp/sdl/FontLocalization.cpp",
+            "ports/th17-mp/web/tests/sdl/application-browser.test.mjs"
+          ],
+          "note": "普通版与多人版共用对话气泡边界、字体居中和 Manual 重入修复。多人版保留回滚时符卡名的纹理写入流程，普通版浏览器测试继续覆盖 Manual 回归。已合并两侧投影，写回前后多人运行时源码一致。"
         }
       ]
+    },
+    "th14": {
+      "normal": "ports/th14",
+      "multiplayer": "ports/th14-mp",
+      "base": "c4faf858a047bfe2b26d6274ab946a5166ec576e",
+      "history": []
     }
   }
 }

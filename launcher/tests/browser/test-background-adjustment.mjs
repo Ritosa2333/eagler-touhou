@@ -13,10 +13,29 @@ try {
   const desktop = await page.evaluate(() => {
     const panel = document.querySelector('.custom-background-dialog').getBoundingClientRect();
     const overlay = getComputedStyle(document.querySelector('.custom-background-overlay'));
-    return {right: innerWidth - panel.right, left: panel.left, overlay: overlay.backgroundColor};
+    return {right: document.documentElement.clientWidth - panel.right, left: panel.left, centerY: (panel.top + panel.bottom) / 2, overlay: overlay.backgroundColor};
   });
   assert.equal(desktop.overlay, 'rgba(0, 0, 0, 0)', 'preview is not dimmed by the dialog');
-  assert.ok(desktop.right <= 40 && desktop.left > desktop.right, 'desktop settings panel sits at the right edge');
+  assert.ok(Math.abs(desktop.left - desktop.right) <= 16, 'desktop settings panel starts centered within the page scrollbar gutter');
+  assert.ok(Math.abs(desktop.centerY - 320) < 2, 'desktop settings panel starts slightly below center');
+  const initial = await page.$eval('.custom-background-dialog', panel => ({rect: panel.getBoundingClientRect().toJSON(), background: getComputedStyle(panel).backgroundColor}));
+  assert.match(initial.background, /0\.75\)$/, 'settings background is 25% transparent');
+  const handle = await page.$eval('.custom-background-drag-handle', node => node.getBoundingClientRect().toJSON());
+  await page.mouse.move(handle.left + 40, handle.top + 15);
+  await page.mouse.down();
+  await page.mouse.move(handle.left - 40, handle.top + 35, {steps: 5});
+  await page.mouse.up();
+  const moved = await page.$eval('.custom-background-dialog', panel => panel.getBoundingClientRect().toJSON());
+  assert.ok(moved.left < initial.rect.left - 70, 'dragging the title row moves the settings panel');
+  assert.ok(moved.left >= 0 && moved.top >= 0 && moved.right <= 800 && moved.bottom <= 600, 'dragged panel remains inside the viewport');
+  const touchHandle = await page.$eval('.custom-background-drag-handle', node => node.getBoundingClientRect().toJSON());
+  const client = await page.createCDPSession();
+  await client.send('Input.dispatchTouchEvent', {type:'touchStart', touchPoints:[{x:touchHandle.left + 40, y:touchHandle.top + 15}]});
+  await client.send('Input.dispatchTouchEvent', {type:'touchMove', touchPoints:[{x:touchHandle.left + 80, y:touchHandle.top + 15}]});
+  await client.send('Input.dispatchTouchEvent', {type:'touchEnd', touchPoints:[]});
+  const touched = await page.$eval('.custom-background-dialog', panel => panel.getBoundingClientRect().toJSON());
+  assert.ok(touched.left > moved.left + 30, 'touching and dragging the title row moves the settings panel');
+  await client.detach();
   await page.click('.custom-theme-switch [data-theme-value="light"]');
   await page.waitForFunction(() => document.documentElement.dataset.bookTheme === 'light');
   await page.click('.custom-theme-switch [data-theme-value="dark"]');
@@ -24,11 +43,12 @@ try {
   await (await page.$('.custom-background-dialog input[type=file]')).uploadFile(image);
   await page.waitForFunction(() => document.documentElement.hasAttribute('data-custom-background'));
   const imageUrl = await page.evaluate(() => document.documentElement.style.getPropertyValue('--custom-background-image'));
-  for (const mode of ['dots', 'grid']) {
+  for (const mode of ['dots', 'grid', 'seigaiha']) {
     await page.click(`.background-preset[data-preset="${mode}"]`);
     assert.equal(await page.evaluate(() => document.documentElement.dataset.backgroundMode), mode);
     assert.equal(await page.$eval(`.background-preset[data-preset="${mode}"]`, node => node.getAttribute('aria-pressed')), 'true');
     assert.match(await page.evaluate(() => getComputedStyle(document.body).backgroundImage), /gradient/);
+    assert.doesNotMatch(await page.evaluate(() => getComputedStyle(document.body).backgroundImage), /blob:/, `${mode} must not display the custom image`);
   }
   await page.click('.background-preset[data-preset="plain"]');
   assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-custom-background')), false);
@@ -61,11 +81,11 @@ try {
     return {left:box.left, right:box.right, width:innerWidth};
   });
   assert.ok(mobile.left >= 0 && mobile.right <= mobile.width, 'mobile settings fit within the viewport');
-  await page.click('.background-preset[data-preset="grid"]');
+  await page.click('.background-preset[data-preset="seigaiha"]');
   await page.keyboard.press('Escape');
   await page.waitForSelector('.custom-background-dialog', {hidden:true});
   await page.reload({waitUntil:'networkidle2'});
-  await page.waitForFunction(() => document.documentElement.dataset.backgroundMode === 'grid');
+  await page.waitForFunction(() => document.documentElement.dataset.backgroundMode === 'seigaiha');
   assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-custom-background')), true, 'built-in background persists');
   const rankings = await page.$eval('body', body => body.querySelector('.lobby-support-links a[href*="ratings.html"]')?.href);
   if (rankings) {

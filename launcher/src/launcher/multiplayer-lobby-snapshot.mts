@@ -18,6 +18,12 @@ import {
 import { parseTh09PlayerStats, type Th09PlayerStats } from './th09-room-stats.mjs';
 import {parseRoomAccountProfile, type RoomAccountProfile} from './room-account-profile.mjs';
 
+export type StartupRoute = 'auto' | 'direct' | 'swarm' | 'turn';
+
+function isStartupRoute(value: unknown): value is StartupRoute {
+  return value === 'auto' || value === 'direct' || value === 'swarm' || value === 'turn';
+}
+
 export interface MultiplayerLobbySeat {
   clientId: string;
   name: string;
@@ -25,6 +31,7 @@ export interface MultiplayerLobbySeat {
   stats?: Th09PlayerStats;
   loadout: number;
   ready: boolean;
+  startupRoute?: StartupRoute;
   runtimeGeneration?: string;
   offline: boolean;
   controlMode: ReturnType<typeof multiplayerControlMode>;
@@ -57,6 +64,9 @@ export interface NormalizedMultiplayerLobbySnapshot {
   disableCheatMovement: boolean;
   unrated?: boolean;
   disableLocalChargePriority?: boolean;
+  disableFocus?: boolean;
+  showHitboxes?: boolean;
+  ballCount?: number;
   challengeMode?: boolean;
   chapterThreshold?: number;
   prankMode?: boolean;
@@ -70,10 +80,13 @@ export interface NormalizedMultiplayerLobbySnapshot {
   predictionLimit: number;
   settingsVersion: number;
   phase: 'lobby' | 'starting' | 'running';
+  gameplayRelayFallback: boolean;
   runtimeGeneration?: string;
   spectators: MultiplayerLobbySpectator[];
   spectatorCount: number;
   spectatorTimeline?: boolean;
+  swarmSelected?: boolean;
+  startupRoutes?: StartupRoute[];
   seats: Array<MultiplayerLobbySeat | null>;
   localSeat: number | null;
   localSpectator: boolean;
@@ -106,6 +119,9 @@ export function normalizeMultiplayerLobbySnapshot(
   },
 ): NormalizedMultiplayerLobbySnapshot | null {
   const source = record(value);
+  if(source?.ballCount!==undefined && ![1,2,3,4,6,8,9].includes(source.ballCount as number))return null;
+  if(source?.disableFocus!==undefined&&typeof source.disableFocus!=='boolean')return null;
+  if(source?.showHitboxes!==undefined&&typeof source.showHitboxes!=='boolean')return null;
   if(source?.th19Rules!==undefined&&!validTh19VersusRules(source.th19Rules))return null;
   if(source&&(source.initialSpares!==undefined&&!validTh05InitialSpares(source.initialSpares)||source.initialBombs!==undefined&&!validTh05InitialBombs(source.initialBombs)))return null;
   if (!source ||
@@ -205,6 +221,7 @@ export function normalizeMultiplayerLobbySnapshot(
       stats: parseTh09PlayerStats(seat.stats),
       loadout,
       ready: !!seat.ready,
+      ...(isStartupRoute(seat.startupRoute) ? {startupRoute:seat.startupRoute} : {}),
       ...(typeof seat.runtimeGeneration === 'string' && /^[a-f0-9]{64}$/.test(seat.runtimeGeneration)
         ? {runtimeGeneration: seat.runtimeGeneration} : {}),
       offline: !!seat.offline,
@@ -235,6 +252,9 @@ export function normalizeMultiplayerLobbySnapshot(
     ...(typeof source.unrated === 'boolean' ? {unrated: source.unrated} : {}),
     ...(source.disableLocalChargePriority !== undefined ? {disableLocalChargePriority: source.disableLocalChargePriority === true} : {}),
     ...(source.challengeMode !== undefined ? { challengeMode: source.challengeMode === true } : {}),
+    ...(source.ballCount !== undefined ? {ballCount:source.ballCount as number} : {}),
+    ...(source.disableFocus !== undefined ? {disableFocus:source.disableFocus===true} : {}),
+    ...(source.showHitboxes !== undefined ? {showHitboxes:source.showHitboxes===true} : {}),
     ...(source.prankMode !== undefined ? { prankMode: false } : {}),
     difficulty,
     inputDelay,
@@ -247,11 +267,17 @@ export function normalizeMultiplayerLobbySnapshot(
     predictionLimit,
     settingsVersion,
     phase,
+    // Relay-server capability mirror: only a deployment that enables the
+    // gameplay relay fallback may select a relay route. Absent (older relay)
+    // normalizes to false; runtime options only opt in on server truth.
+    gameplayRelayFallback: source.gameplayRelayFallback === true,
     ...(typeof source.runtimeGeneration === 'string' && /^[a-f0-9]{64}$/.test(source.runtimeGeneration)
       ? {runtimeGeneration: source.runtimeGeneration} : {}),
     spectators,
     spectatorCount,
     ...(source.spectatorTimeline === true ? { spectatorTimeline: true } : {}),
+    ...(source.swarmSelected === true ? { swarmSelected: true } : {}),
+    ...(Array.isArray(source.startupRoutes) ? {startupRoutes:[...new Set(source.startupRoutes.filter(isStartupRoute))]} : {}),
     seats,
     localSeat,
     localSpectator,

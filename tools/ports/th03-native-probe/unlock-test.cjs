@@ -1,0 +1,7 @@
+const {readdir,readFile}=require('node:fs/promises');const {resolve,join}=require('node:path');const assert=require('node:assert/strict');const create=require(resolve(process.argv[2]));
+async function copy(m,dir,dst){for(const e of await readdir(dir,{withFileTypes:true})){const p=dst+'/'+e.name;if(e.isDirectory()){m.FS.mkdir(p);await copy(m,join(dir,e.name),p);}else if(e.isFile())m.FS.writeFile(p,await readFile(join(dir,e.name)));}}
+(async()=>{for(const versus of [false,true]){const m=await create();m.FS.mkdir('/content');m.FS.mkdir('/user');m.FS.mkdir('/user/REPLAY');await copy(m,process.argv[3],'/content');m.FS.mkdir('/content/PODDUI');await copy(m,process.argv[4],'/content/PODDUI');assert.equal(m._th03_classic_create(),1);if(versus)m._th03_classic_start_versus();
+ for(let i=0;i<5000&&m._th03_classic_scene()!==3;i++){const input=!versus&&i>300&&i%100<8?32:0;assert.equal(m._th03_classic_step_pair(input,0,input,0),0);}assert.equal(m._th03_classic_scene(),3);
+ for(let i=0;i<200;i++)m._th03_classic_step_pair(0,0,0,0);const seen=new Set();for(let i=0;i<1500;i++){const input=i%50<8?2:0;assert.equal(m._th03_classic_step_pair(input,0,input,0),0);const x=m._th03_selection_index(0);if(x>=0&&x<9)seen.add(x);}assert(seen.has(7)&&seen.has(8),`${versus?'versus':'solo'} roster ${[...seen]}`);console.log(versus?'Versus':'Solo','selectable characters', [...seen].sort());}
+})().catch(e=>{console.error(e);process.exitCode=1});
+

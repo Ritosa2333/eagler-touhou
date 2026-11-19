@@ -8,7 +8,7 @@ public:
     std::string error;
     explicit FontDevice(GraphicsDevice&);~FontDevice();
     bool initialize();
-    bool text(AnmVm&,const char* cp932,u32 color,u32 outline);
+    bool text(AnmVm&,const char* cp932,u32 color,u32 outline,bool centered=false);
     void prewarm(const char* cp932,i32 height);
     void prewarm_game(ResourceReader&);
 };

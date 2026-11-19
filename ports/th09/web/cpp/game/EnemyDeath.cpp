@@ -20,7 +20,7 @@ bool EnemyDeath::apply(EclVm& enemy,i32 source,const PlayfieldGeometry& geometry
     actions.chain_kill(v.resolved_position,normal,spirits,special,score);
     const i32 after=actions.chain_count();actions.charge(after<129?float(after)*.0078125f+1.f:2.f);
     if(kind>0&&kind<3&&source<2&&actions.opposing_spirits()<25){
-        const Vec3 screen=geometry.to_screen(v.position);
+        const Vec3 screen=actions.transfer_position(v.position,geometry);
         const float x=float(random.signed_unit())*(opposing_width*.5f-8.f),y=float(random.range(128));
         auto transfer=actions.create_transfer(v.field->side+3,screen,{x,y,0});if(!transfer)return false;
         transfer->source_kind=i16(std::min(kind,2u));transfer->target_kind=i16(std::min(kind+1,3u));

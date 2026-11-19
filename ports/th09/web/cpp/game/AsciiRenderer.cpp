@@ -4,7 +4,10 @@
 namespace th09 {
 bool AsciiRenderer::initialize(){
     std::memset(&glyph,0,sizeof(glyph));std::memset(&digit,0,sizeof(digit));
-    std::memset(queue.data(),0,sizeof(queue));std::memset(popups.data(),0,sizeof(popups));
+    std::memset(queue.data(),0,sizeof(queue));
+    // The original reset clears the first field's popup pool and restarts the
+    // shared cursor. The second field's existing popup records survive it.
+    std::memset(popups[0].data(),0,sizeof(popups[0]));
     count=0;color=0xffffffff;scale={1,1};field_view=0;spacing=9;popup_cursor=0;
     auto* file=resources.animation(AnimationFile::ascii);if(!file)return false;
     glyph.Initialize();digit.Initialize();glyph.anmFile=digit.anmFile=file;

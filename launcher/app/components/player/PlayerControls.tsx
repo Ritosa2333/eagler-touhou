@@ -27,8 +27,9 @@ import { FullscreenIcons, PlayerExitIcon, TouchHelpIcon, OrientationIcon } from 
 import { SpectatorMatchScore } from './SpectatorMatchScore';
 import { Th09MatchStats } from './Th09MatchStats';
 import { SpectatorPlayback } from './SpectatorPlayback';
-import { NetplayPlayerStatus } from './NetplayPlayerStatus';
-import { PlayerStage } from './PlayerSurface';
+import {NetplayPlayerStatus} from './NetplayPlayerStatus';
+import {PlayerStage} from './PlayerSurface';
+import './browser-practice.css';
 const noopSubscribe = () => () => {};
 const initialTouch = () => undefined;
 const noNetwork = () => null;
@@ -91,6 +92,37 @@ export function PlayerControls({
     state.runtime.game !== 'th09' &&
     !state.replayViewer;
   const informationColumn = th09Information || cooperativeSpectator;
+  useLayoutEffect(() => {
+    const player = document.getElementById('player');
+    if (!player) return;
+    const enabled = state.playerOpen && state.runtime?.game === 'th13' && !state.replayViewer &&
+      !roomWorkspace && !replayWorkspace && navigation.surface !== 'touch' &&
+      !session.mobile && navigator.maxTouchPoints === 0 && !settings?.options.touchEnabled;
+    player.classList.toggle('th13-desktop-tool-rail', enabled);
+    if (!enabled) return () => player.classList.remove('th13-desktop-tool-rail');
+    // The zoom owner writes the saved touch profile's translation even when
+    // touch zoom is unavailable. Reserve its displacement without overriding
+    // that owner's transform or clipping either edge of the game viewport.
+    const updateOffset = () => {
+      const width = window.visualViewport?.width || document.documentElement.clientWidth || player.clientWidth;
+      const height = window.visualViewport?.height || document.documentElement.clientHeight || player.clientHeight;
+      const orientation = width >= height ? 'landscape' : 'portrait';
+      const x = session.touchLayout.getSnapshot().saved?.profiles[orientation]?.viewport.x ?? 0;
+      player.style.setProperty('--th13-rail-offset', `${x * player.clientWidth}px`);
+    };
+    const unsubscribe = session.touchLayout.subscribe(updateOffset);
+    window.addEventListener('resize', updateOffset);
+    window.visualViewport?.addEventListener('resize', updateOffset);
+    updateOffset();
+    return () => {
+      unsubscribe();
+      window.removeEventListener('resize', updateOffset);
+      window.visualViewport?.removeEventListener('resize', updateOffset);
+      player.classList.remove('th13-desktop-tool-rail');
+      player.style.removeProperty('--th13-rail-offset');
+    };
+  }, [state.playerOpen, state.runtime?.game, state.replayViewer, roomWorkspace, replayWorkspace,
+      navigation.surface, session, settings?.options.touchEnabled]);
   const wins = [room.room?.seats?.[0]?.stats?.wins ?? 0, room.room?.seats?.[1]?.stats?.wins ?? 0] as const;
   return (
     <>
@@ -166,9 +198,8 @@ export function PlayerControls({
       {session.getActiveSettings() &&
         playerUsesGameInput(mode) &&
         !replayWorkspace &&
-        !roomWorkspace &&
         navigation.surface !== 'touch' &&
-        state.playerOpen && <GameplayControls session={session} />}
+        state.playerOpen && <GameplayControls session={session} roomWorkspace={roomWorkspace} />}
     </>
   );
 }
@@ -237,7 +268,7 @@ function SpectatorChatKeyboard({ session }: { session: BrowserSession }) {
   }, [session]);
   return null;
 }
-function GameplayControls({ session }: { session: BrowserSession }) {
+function GameplayControls({ session, roomWorkspace }: { session: BrowserSession; roomWorkspace: boolean }) {
   const { t } = useLocale(),
     state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const settings = session.getActiveSettings()!,
@@ -252,9 +283,53 @@ function GameplayControls({ session }: { session: BrowserSession }) {
   const spectator = session.getPlayerMode() === 'spectator',
     enabled = settings.options.touchEnabled && playerUsesGameInput(session.getPlayerMode());
   const wheel = touchMovementUsesJoystick(settings.options.touchMovementMode);
-  const hostDirect =
-    /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-    (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  const product = PRODUCT_GAMES[settings.gameId];
+  useLayoutEffect(() => {
+    const player = document.getElementById('player'), frame = document.getElementById('gameFrame');
+    const active = !!player && roomWorkspace && ['th01','th02','th03','th04'].includes(settings.gameId) && enabled && state.runtime?.launched === true;
+    player?.classList.toggle('pc98-room-touch-active', active);
+    if (!active || !player || !frame) return () => player?.classList.remove('pc98-room-touch-active');
+    const update = () => {
+      const rect = frame.getBoundingClientRect();
+      for (const [name, value] of Object.entries({left:rect.left, top:rect.top, width:rect.width, height:rect.height})) player.style.setProperty(`--pc98-touch-${name}`, `${value}px`);
+      window.dispatchEvent(new Event('pc98-touch-surface-change'));
+    };
+    const observer = new ResizeObserver(update); observer.observe(frame);
+    const classes = new MutationObserver(() => {if (!player.classList.contains('touch-enabled')) player.classList.add('touch-enabled');});
+    classes.observe(player, {attributes:true,attributeFilter:['class']});
+    window.addEventListener('resize', update); window.addEventListener('scroll', update, true); update();
+    return () => {observer.disconnect(); classes.disconnect(); window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true);
+      player.classList.remove('pc98-room-touch-active'); for (const name of ['left','top','width','height']) player.style.removeProperty(`--pc98-touch-${name}`);};
+  }, [roomWorkspace, settings.gameId, enabled, state.runtime?.launched]);
+  useLayoutEffect(() => {if (roomWorkspace) input?.cancelPointers(); else input?.syncControls();}, [input, roomWorkspace]);
+  const browserPractice = !settings.multiplayer && 'practiceUI' in product && product.practiceUI === 'browser';
+  const hostDirect = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches ||
+    /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const pc98Direct = ['th01', 'th02', 'th03', 'th04'].includes(settings.gameId);
+  useLayoutEffect(() => {
+    if (!browserPractice) return;
+    const runtime = session.getRuntime(), player = document.getElementById('player');
+    if (!runtime || !player) return;
+    let nativeDocument: Document | null = null, observer: MutationObserver | null = null;
+    const update = () => {
+      const open = runtime.getSnapshot().launched && nativeDocument?.documentElement.dataset.browserPracticeOpen === 'true';
+      if (open && !player.classList.contains('browser-practice-open')) input?.cancelPointers();
+      player.classList.toggle('browser-practice-open',open);
+    };
+    const sync = () => {
+      const next = runtime.getMidiEventContext()?.document as Document | null;
+      if (next !== nativeDocument) {
+        observer?.disconnect(); nativeDocument = next;
+        if (next?.documentElement) {
+          observer = new MutationObserver(update);
+          observer.observe(next.documentElement,{attributes:true,attributeFilter:['data-browser-practice-open']});
+        }
+      }
+      update();
+    };
+    const unsubscribe = runtime.subscribe(sync); sync();
+    return () => {unsubscribe();observer?.disconnect();player.classList.remove('browser-practice-open');};
+  },[session,browserPractice,input]);
   useLayoutEffect(() => {
     const binding = bindPlayerInput({
       session,
@@ -286,7 +361,7 @@ function GameplayControls({ session }: { session: BrowserSession }) {
         className="touch-direct-surface"
         id="touchDirectSurface"
         aria-hidden="true"
-        hidden={!(state.runtime?.launched && enabled && hostDirect && !wheel)}
+        hidden={!(state.runtime?.launched && enabled && (hostDirect || pc98Direct) && !wheel)}
       />
       <TouchControlPreview settings={settings} live={touch} spectator={spectator} />
     </>
@@ -330,6 +405,7 @@ function PlayerUtilities({
       <TouchHelp
         nativeControls={'touchActions' in PRODUCT_GAMES[settings.gameId]}
         th19Charge={settings.gameId === 'th19'}
+        th01={settings.gameId === 'th01'}
         open={state.touchHelpOpen && !spectating && !roomWorkspace}
         onCloseRequest={session.closeTouchHelp}
         touchEnabled={settings.options.touchEnabled}

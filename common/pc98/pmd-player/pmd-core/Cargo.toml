@@ -1,0 +1,13 @@
+[package]
+name = "pmd-core"
+version.workspace = true
+edition = "2021"
+license = "AGPL-3.0-only"
+description = "Pure-Rust PMD sequencer and YM2608/OPNA core"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+encoding_rs = "0.8"
+libm = "0.2"

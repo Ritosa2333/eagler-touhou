@@ -1,6 +1,6 @@
 # 文档总表
 
-共 572 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 658 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -35,6 +35,10 @@
 | 适配指南 | [docs/adaptation/th15-pointdevice-issue113-20261020.md](adaptation/th15-pointdevice-issue113-20261020.md) | TH15 无欠检查点与完整存档导出 |
 | 适配指南 | [docs/adaptation/validation.md](adaptation/validation.md) | 验证与交付 |
 | 作品入口 | [ports/README.md](../ports/README.md) | 选择游戏 |
+| 作品入口 | [ports/th01/README.md](../ports/th01/README.md) | TH01 主项目适配 |
+| 作品入口 | [ports/th02/README.md](../ports/th02/README.md) | TH02 主项目适配 |
+| 作品入口 | [ports/th03/README.md](../ports/th03/README.md) | TH03 原生网页版本 |
+| 作品入口 | [ports/th04/README.md](../ports/th04/README.md) | TH04 主项目接入 |
 | 作品入口 | [ports/th05-mp/README.md](../ports/th05-mp/README.md) | 東方怪綺談 · 原生多人版 |
 | 作品入口 | [ports/th05/README.md](../ports/th05/README.md) | 東方怪綺談 · uth05win for Eagler |
 | 作品入口 | [ports/th06/README.md](../ports/th06/README.md) | 東方紅魔郷 TH06 |
@@ -50,13 +54,19 @@
 | 作品入口 | [ports/th11/README.md](../ports/th11/README.md) | 東方地霊殿 TH11 |
 | 作品入口 | [ports/th12-mp/README.md](../ports/th12-mp/README.md) | 东方星莲船多人合作版 |
 | 作品入口 | [ports/th12/README.md](../ports/th12/README.md) | 东方星莲船网页版与行为还原 |
+| 作品入口 | [ports/th13-mp/README.md](../ports/th13-mp/README.md) | 东方神灵庙（th13）多人版移植（th13-mp） |
 | 作品入口 | [ports/th13/README.md](../ports/th13/README.md) | 东方神灵庙（th13）移植 |
+| 作品入口 | [ports/th14-mp/README.md](../ports/th14-mp/README.md) | TH14 多人版 |
 | 作品入口 | [ports/th15-mp/README.md](../ports/th15-mp/README.md) | 東方紺珠伝 TH15 多人版 |
 | 作品入口 | [ports/th15/README.md](../ports/th15/README.md) | 東方紺珠伝 TH15 |
 | 作品入口 | [ports/th17-mp/README.md](../ports/th17-mp/README.md) | TH17 MP · 东方鬼形兽联机版 |
 | 作品入口 | [ports/th17/README.md](../ports/th17/README.md) | TH17 · 东方鬼形兽 |
 | 作品入口 | [ports/th19/README.md](../ports/th19/README.md) | 东方兽王园 TH19 |
 | 作品入口 | [ports/th20/README.md](../ports/th20/README.md) | TH20 · 东方锦上京 |
+| 作品适配表 | [ports/th01/ADAPTATION.md](../ports/th01/ADAPTATION.md) | th01 适配检查 |
+| 作品适配表 | [ports/th02/ADAPTATION.md](../ports/th02/ADAPTATION.md) | th02 适配检查 |
+| 作品适配表 | [ports/th03/ADAPTATION.md](../ports/th03/ADAPTATION.md) | th03 适配检查 |
+| 作品适配表 | [ports/th04/ADAPTATION.md](../ports/th04/ADAPTATION.md) | th04 适配检查 |
 | 作品适配表 | [ports/th05-mp/ADAPTATION.md](../ports/th05-mp/ADAPTATION.md) | th05 MP 适配检查 |
 | 作品适配表 | [ports/th05/ADAPTATION.md](../ports/th05/ADAPTATION.md) | th05 适配检查 |
 | 作品适配表 | [ports/th06/ADAPTATION.md](../ports/th06/ADAPTATION.md) | th06 适配检查 |
@@ -72,6 +82,7 @@
 | 作品适配表 | [ports/th11/ADAPTATION.md](../ports/th11/ADAPTATION.md) | th11 适配检查 |
 | 作品适配表 | [ports/th12-mp/ADAPTATION.md](../ports/th12-mp/ADAPTATION.md) | th12 MP 适配检查 |
 | 作品适配表 | [ports/th12/ADAPTATION.md](../ports/th12/ADAPTATION.md) | th12 适配检查 |
+| 作品适配表 | [ports/th13-mp/ADAPTATION.md](../ports/th13-mp/ADAPTATION.md) | th13 MP 适配检查 |
 | 作品适配表 | [ports/th13/ADAPTATION.md](../ports/th13/ADAPTATION.md) | th13 适配检查 |
 | 作品适配表 | [ports/th15-mp/ADAPTATION.md](../ports/th15-mp/ADAPTATION.md) | th15 MP 适配检查 |
 | 作品适配表 | [ports/th15/ADAPTATION.md](../ports/th15/ADAPTATION.md) | th15 适配检查 |
@@ -79,6 +90,21 @@
 | 作品适配表 | [ports/th17/ADAPTATION.md](../ports/th17/ADAPTATION.md) | th17 适配检查 |
 | 作品适配表 | [ports/th19/ADAPTATION.md](../ports/th19/ADAPTATION.md) | th19 适配检查 |
 | 作品适配表 | [ports/th20/ADAPTATION.md](../ports/th20/ADAPTATION.md) | th20 适配检查 |
+| 作品源码文档 | [ports/th01/README-NETPLAY.md](../ports/th01/README-NETPLAY.md) | 原生移植版 UDP 联机 |
+| 作品源码文档 | [ports/th01/README-PUBLIC.md](../ports/th01/README-PUBLIC.md) | 公网联机 |
+| 作品源码文档 | [ports/th01/README-UPSTREAM.md](../ports/th01/README-UPSTREAM.md) | TH01《东方灵异传》· 原生移植与多人合作 |
+| 作品源码文档 | [ports/th02/LAN-公网联机说明.md](../ports/th02/LAN-公网联机说明.md) | TH02 局域网与公网联机 |
+| 作品源码文档 | [ports/th02/README-UPSTREAM.md](../ports/th02/README-UPSTREAM.md) | TH02《东方封魔录》· 单人游戏与两／三人合作 |
+| 作品源码文档 | [ports/th02/TH02-PRACTICE-WEB.md](../ports/th02/TH02-PRACTICE-WEB.md) | TH02 网页练习工具 |
+| 作品源码文档 | [ports/th02/联机同时操作卡顿优化记录.md](../ports/th02/联机同时操作卡顿优化记录.md) | TH02 联机同时操作卡顿优化记录 |
+| 作品源码文档 | [ports/th03/README-UPSTREAM.md](../ports/th03/README-UPSTREAM.md) | TH03《东方梦时空》· DOSBox-X 性能版 |
+| 作品源码文档 | [ports/th03/ROLLBACK.md](../ports/th03/ROLLBACK.md) | TH03 原生联机回滚 |
+| 作品源码文档 | [ports/th04/DOSBox-PC98核心优化与五部作品迁移指南.md](../ports/th04/DOSBox-PC98核心优化与五部作品迁移指南.md) | DOSBox-PC98 核心优化与五部作品迁移指南 |
+| 作品源码文档 | [ports/th04/LAN-试玩说明.md](../ports/th04/LAN-试玩说明.md) | 局域网双人／三人试玩：输入同步版 |
+| 作品源码文档 | [ports/th04/README-RELAY.md](../ports/th04/README-RELAY.md) | TH04 Relay 临时部署说明 |
+| 作品源码文档 | [ports/th04/README-UPSTREAM.md](../ports/th04/README-UPSTREAM.md) | TH04《东方幻想乡》· DOSBox-X 单机与合作版 |
+| 作品源码文档 | [ports/th04/TH04-PRACTICE-WEB.md](../ports/th04/TH04-PRACTICE-WEB.md) | TH04 网页单人练习工具 |
+| 作品源码文档 | [ports/th04/联机同时操作卡顿优化记录.md](../ports/th04/联机同时操作卡顿优化记录.md) | 联机同时操作卡顿优化记录 |
 | 作品源码文档 | [ports/th05-mp/PRACTICE.md](../ports/th05-mp/PRACTICE.md) | uth05win Practice 工具 |
 | 作品源码文档 | [ports/th05-mp/README-UPSTREAM.md](../ports/th05-mp/README-UPSTREAM.md) | 这是被vibe coding魔改的uth05win |
 | 作品源码文档 | [ports/th05-mp/docs/DEVELOPMENT.md](../ports/th05-mp/docs/DEVELOPMENT.md) | TH05 多人版开发指南 |
@@ -151,6 +177,33 @@
 | 作品源码文档 | [ports/th12/third_party/stb_vorbis/README.md](../ports/th12/third_party/stb_vorbis/README.md) | stb_vorbis README |
 | 作品源码文档 | [ports/th12/tools/frame-inspector/README.md](../ports/th12/tools/frame-inspector/README.md) | TH12 原版逐帧检查 |
 | 作品源码文档 | [ports/th12/tools/replay-verifier/README.md](../ports/th12/tools/replay-verifier/README.md) | TH12 Replay verification |
+| 作品源码文档 | [ports/th13-mp/docs/ASSETS.md](../ports/th13-mp/docs/ASSETS.md) | th13 资源格式清单 |
+| 作品源码文档 | [ports/th13-mp/docs/DECOMP.md](../ports/th13-mp/docs/DECOMP.md) | th13 反编译函数地图 |
+| 作品源码文档 | [ports/th13-mp/docs/DEVELOPMENT.md](../ports/th13-mp/docs/DEVELOPMENT.md) | th13 开发指南 |
+| 作品源码文档 | [ports/th13-mp/docs/M9-CANDIDATE.md](../ports/th13-mp/docs/M9-CANDIDATE.md) | TH13 MP M9 候选交接（M9-CANDIDATE） |
+| 作品源码文档 | [ports/th13-mp/docs/MP-DEVELOPMENT.md](../ports/th13-mp/docs/MP-DEVELOPMENT.md) | TH13 MP 开发指南（M0 骨架 → M10 交付） |
+| 作品源码文档 | [ports/th13-mp/docs/RULES.md](../ports/th13-mp/docs/RULES.md) | TH13 MP 规则契约（v3，2026-11-13） |
+| 作品源码文档 | [ports/th13-mp/docs/feedback-fast-forward-20261107.md](../ports/th13-mp/docs/feedback-fast-forward-20261107.md) | 2026-11-07 Replay / result / staff feedback fixes |
+| 作品源码文档 | [ports/th13-mp/docs/plans/anm-pipeline.md](../ports/th13-mp/docs/plans/anm-pipeline.md) | TH13 ANM（v8）管线行为规格与移植方案 |
+| 作品源码文档 | [ports/th13-mp/docs/plans/coverage-matrix.md](../ports/th13-mp/docs/plans/coverage-matrix.md) | 场景覆盖矩阵（coverage matrix） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/draw-contract.md](../ports/th13-mp/docs/plans/draw-contract.md) | 语义绘制清单契约（draw contract）v1 |
+| 作品源码文档 | [ports/th13-mp/docs/plans/ecl-vm.md](../ports/th13-mp/docs/plans/ecl-vm.md) | th13 ECL 虚拟机（ECL v13）行为规格 |
+| 作品源码文档 | [ports/th13-mp/docs/plans/event-contract.md](../ports/th13-mp/docs/plans/event-contract.md) | stage1 事件契约（oracle 对拍合同） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/feedback-closure-todo.md](../ports/th13-mp/docs/plans/feedback-closure-todo.md) | TH13 feedback closure todo |
+| 作品源码文档 | [ports/th13-mp/docs/plans/hud-capture-plan.md](../ports/th13-mp/docs/plans/hud-capture-plan.md) | 对局窗 HUD 捕获面扩展方案（S2 前置研究报告） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/oracle-entry.md](../ports/th13-mp/docs/plans/oracle-entry.md) | TH13 原版可直调入口施工图（Unicorn oracle） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/render-chain.md](../ports/th13-mp/docs/plans/render-chain.md) | TH13 渲染提交链逆向 —— 假设备语义捕获施工图 |
+| 作品源码文档 | [ports/th13-mp/docs/plans/replay-twin-divergence.md](../ports/th13-mp/docs/plans/replay-twin-divergence.md) | th1301 回放自机孪生模型分歧根因排查（S4 拦路虎分析报告） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/replay.md](../ports/th13-mp/docs/plans/replay.md) | 录像（.rpy）格式与回放注入 |
+| 作品源码文档 | [ports/th13-mp/docs/plans/results-flow.md](../ports/th13-mp/docs/plans/results-flow.md) | th13 Stage 终了 → 结算 → 下一关 / 标题 / 结局 场景链（反编译研究报告） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/results-overlay-anatomy.md](../ports/th13-mp/docs/plans/results-overlay-anatomy.md) | 结算幕（对局内覆盖层）静态解剖（S3 关键前置研究报告） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/scoredat.md](../ports/th13-mp/docs/plans/scoredat.md) | scoreth13.dat 原版格式落移植（ScoreDat + FileStore 集成） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/stage1-acceptance.md](../ports/th13-mp/docs/plans/stage1-acceptance.md) | Stage 1 全链路验收合同 |
+| 作品源码文档 | [ports/th13-mp/docs/plans/title-anm-blueprint.md](../ports/th13-mp/docs/plans/title-anm-blueprint.md) | th13 主菜单 ANM 蓝图（title.anm / titlev.anm 脚本号总表与重锚方案） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/ui-base.md](../ports/th13-mp/docs/plans/ui-base.md) | TH13–15 同代引擎 UI 基座移植方案 |
+| 作品源码文档 | [ports/th13-mp/docs/release-packaging.md](../ports/th13-mp/docs/release-packaging.md) | th13 网页版发布打包排除清单（Pre-Release，2026-11-05） |
+| 作品源码文档 | [ports/th13-mp/tools/replay-verifier/README.md](../ports/th13-mp/tools/replay-verifier/README.md) | replay-verifier |
+| 作品源码文档 | [ports/th13-mp/web/sdl-runtime/build-badge.txt](../ports/th13-mp/web/sdl-runtime/build-badge.txt) | cea70e4f |
 | 作品源码文档 | [ports/th13/archive/th13-dialogue-filter-20261105/README.md](../ports/th13/archive/th13-dialogue-filter-20261105/README.md) | 神灵庙对话文字缩放 |
 | 作品源码文档 | [ports/th13/archive/th13-performance-investigation-20261105/README.md](../ports/th13/archive/th13-performance-investigation-20261105/README.md) | 神灵庙绘制开销与补帧放大试验 |
 | 作品源码文档 | [ports/th13/archive/th13-seiga-timer-retirement-20261105/README.md](../ports/th13/archive/th13-seiga-timer-retirement-20261105/README.md) | 神灵庙青娥退场倒计时清理 |
@@ -181,6 +234,10 @@
 | 作品源码文档 | [ports/th13/docs/release-packaging.md](../ports/th13/docs/release-packaging.md) | th13 网页版发布打包排除清单（Pre-Release，2026-11-05） |
 | 作品源码文档 | [ports/th13/tools/replay-verifier/README.md](../ports/th13/tools/replay-verifier/README.md) | replay-verifier |
 | 作品源码文档 | [ports/th13/web/sdl-runtime/build-badge.txt](../ports/th13/web/sdl-runtime/build-badge.txt) | cea70e4f |
+| 作品源码文档 | [ports/th14-mp/docs/porting/TH14_ANM_VM_ORACLE.md](../ports/th14-mp/docs/porting/TH14_ANM_VM_ORACLE.md) | TH14 ANM VM 原版对照 |
+| 作品源码文档 | [ports/th14-mp/docs/porting/TH14_BROWSER_PERFORMANCE.md](../ports/th14-mp/docs/porting/TH14_BROWSER_PERFORMANCE.md) | TH14 browser frame pacing |
+| 作品源码文档 | [ports/th14-mp/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md](../ports/th14-mp/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md) | TH14 texture sizes |
+| 作品源码文档 | [ports/th14-mp/docs/porting/TH14_UI_ORACLE.md](../ports/th14-mp/docs/porting/TH14_UI_ORACLE.md) | TH14 界面 Oracle |
 | 作品源码文档 | [ports/th14/docs/porting/TH14_ANM_VM_ORACLE.md](../ports/th14/docs/porting/TH14_ANM_VM_ORACLE.md) | TH14 ANM VM 原版对照 |
 | 作品源码文档 | [ports/th14/docs/porting/TH14_BROWSER_PERFORMANCE.md](../ports/th14/docs/porting/TH14_BROWSER_PERFORMANCE.md) | TH14 browser frame pacing |
 | 作品源码文档 | [ports/th14/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md](../ports/th14/docs/porting/TH14_TEXTURE_DISPLAY_ORACLE.md) | TH14 texture sizes |
@@ -198,10 +255,12 @@
 | 公共库 | [common/contracts/README.md](../common/contracts/README.md) | 客户端与服务端契约 |
 | 公共库 | [common/docs/input-replay.md](../common/docs/input-replay.md) | 多人输入 Replay |
 | 公共库 | [common/docs/thprac.md](../common/docs/thprac.md) | 共用 thprac 工具 |
+| 公共库 | [common/pc98/pmd-player/pmd-core/README.md](../common/pc98/pmd-player/pmd-core/README.md) | pmd-core |
 | 公共库 | [common/testkit/presentation-lab/CONTRACT.md](../common/testkit/presentation-lab/CONTRACT.md) | Presentation Lab 接入契约 |
 | 公共库 | [common/testkit/presentation-lab/README.md](../common/testkit/presentation-lab/README.md) | Presentation Lab |
 | 公共库 | [common/testkit/replay-verifier/README.md](../common/testkit/replay-verifier/README.md) | Replay Verifier |
 | 公共库 | [common/testkit/replay-verifier/windows-present-observer/README.md](../common/testkit/replay-verifier/windows-present-observer/README.md) | Windows D3D8 Present 观察器 |
+| 公共库 | [common/third_party/libdatachannel/README.md](../common/third_party/libdatachannel/README.md) | 原生 WebRTC 补丁 |
 | Launcher | [launcher/ASSETS.md](../launcher/ASSETS.md) | 资源来源与生成 |
 | Launcher | [launcher/README.en.md](../launcher/README.en.md) | launcher README |
 | Launcher | [launcher/README.md](../launcher/README.md) | launcher README |
@@ -230,6 +289,7 @@
 | Launcher | [launcher/docs/paraglide-i18n.md](../launcher/docs/paraglide-i18n.md) | 界面语言与消息编译 |
 | Launcher | [launcher/docs/ui-controls.md](../launcher/docs/ui-controls.md) | 启动器 UI ｜ 源码研究与扩展设计 |
 | Launcher | [launcher/examples/deployment/README.md](../launcher/examples/deployment/README.md) | HTTP 配置示例 |
+| Launcher | [launcher/examples/imgui-overlay/README.md](../launcher/examples/imgui-overlay/README.md) | ImGui 面板备选 |
 | Launcher | [launcher/integrations/LOCALIZATION.md](../launcher/integrations/LOCALIZATION.md) | 语言包与字体 |
 | Launcher | [launcher/integrations/RUNTIME_CONTRACT.md](../launcher/integrations/RUNTIME_CONTRACT.md) | Runtime 语言包与 thprac 接口 |
 | Launcher | [launcher/lib/README.md](../launcher/lib/README.md) | lib/ 目录归属 |
@@ -262,13 +322,21 @@
 | 架构说明 | [docs/architecture/spectator.md](architecture/spectator.md) | 旁观协议 |
 | 迁移记录 | [docs/migration/README.md](migration/README.md) | Monorepo 迁移记录 |
 | 迁移记录 | [docs/migration/local-workspace-20261019.md](migration/local-workspace-20261019.md) | 本地工作区归并 ｜ 2026-10-19 |
+| 迁移记录 | [docs/migration/pc98-subtree-20261026.md](migration/pc98-subtree-20261026.md) | TH01–TH04 子树维护 |
+| 迁移记录 | [docs/migration/th01-eagler-20261025.md](migration/th01-eagler-20261025.md) | TH01 来源子树与主项目适配 |
+| 迁移记录 | [docs/migration/th02-eagler-20261025.md](migration/th02-eagler-20261025.md) | TH02 来源子树与主项目适配 |
+| 迁移记录 | [docs/migration/th03-eagler-20261025.md](migration/th03-eagler-20261025.md) | TH03 来源子树与主项目适配 |
+| 迁移记录 | [docs/migration/th04-eagler-20261025.md](migration/th04-eagler-20261025.md) | TH04 来源子树与主项目适配 |
 | 迁移记录 | [docs/migration/th12-subtree-20261024.md](migration/th12-subtree-20261024.md) | th12 子树继承 ｜ 上游同源历史 |
 | 迁移记录 | [docs/migration/th13-subtree-20261028.md](migration/th13-subtree-20261028.md) | th13 独立源码与子树维护 |
+| 迁移记录 | [docs/migration/th13mp-derivation-20261108.md](migration/th13mp-derivation-20261108.md) | th13-mp 目录来源登记（仓内派生） |
 | 迁移记录 | [docs/migration/th17-subtree-20261106.md](migration/th17-subtree-20261106.md) | TH17 普通版与多人版目录历史 |
 | 历史记录 | [archive/README.md](../archive/README.md) | 历史记录 |
 | 历史记录 | [archive/hk-mirror-relay-20261028/deployment.md](../archive/hk-mirror-relay-20261028/deployment.md) | 香港镜像与统一 Relay 入口 ｜ 2026-10-28 |
 | 历史记录 | [archive/main-refresh-20261028/README.md](../archive/main-refresh-20261028/README.md) | 主线发布与镜像一致性 |
 | 历史记录 | [archive/main-thprac-th08-test-th12-20261028/README.md](../archive/main-thprac-th08-test-th12-20261028/README.md) | 主站 THPrac／TH08 与测试站 TH12 多人发布 |
+| 历史记录 | [archive/motion-extrapolation-153-20261028/README.md](../archive/motion-extrapolation-153-20261028/README.md) | #153 高刷外推与 Presentation Lab |
+| 历史记录 | [archive/motion-extrapolation-integration-20261031/README.md](../archive/motion-extrapolation-integration-20261031/README.md) | 高刷当前帧外推 |
 | 历史记录 | [archive/multiplayer-replay-background-clock-20261030/README.md](../archive/multiplayer-replay-background-clock-20261030/README.md) | 多人章节回放背景时钟 |
 | 历史记录 | [archive/relay-entry-20261027/deployment.md](../archive/relay-entry-20261027/deployment.md) | Relay 入口自动切换发布 |
 | 历史记录 | [archive/relay-session-identity-20261028/README.md](../archive/relay-session-identity-20261028/README.md) | 多入口会话匹配 |
@@ -337,6 +405,8 @@
 | 历史记录 | [archive/th12-web-adaptation-20261020/README.md](../archive/th12-web-adaptation-20261020/README.md) | th12 旧网页前端接入记录 |
 | 历史记录 | [archive/th12mp-public-20261028/README.md](../archive/th12mp-public-20261028/README.md) | 星莲船正式发布 |
 | 历史记录 | [archive/th12mp-public-20261028/cn129.md](../archive/th12mp-public-20261028/cn129.md) | 原主站入口同步 |
+| 历史记录 | [archive/th13-mp-sync-20261112/README.md](../archive/th13-mp-sync-20261112/README.md) | TH13 MP 同步修复与提交交接（2026-11-12） |
+| 历史记录 | [archive/th14-rollback-20261114/README.md](../archive/th14-rollback-20261114/README.md) | TH14 多人延迟输入验证 |
 | 历史记录 | [archive/th15-bomb-snapshot-memory-20261028/README.md](../archive/th15-bomb-snapshot-memory-20261028/README.md) | TH15 多人放雷快照内存峰值 |
 | 历史记录 | [archive/th15-boss-transfer-20261027/README.md](../archive/th15-boss-transfer-20261027/README.md) | TH15 多人：共享碎片与 Boss 入场输入 |
 | 历史记录 | [archive/th15-input-latency-20261105/README.md](../archive/th15-input-latency-20261105/README.md) | th15 MP 输入时序 |
@@ -448,6 +518,8 @@
 | 许可证与声明 | [common/LICENSE](../common/LICENSE) | LICENSE |
 | 许可证与声明 | [common/contracts/LICENSE](../common/contracts/LICENSE) | LICENSE |
 | 许可证与声明 | [common/include/eagler/thprac/THPRAC-LICENSE.txt](../common/include/eagler/thprac/THPRAC-LICENSE.txt) | MIT License |
+| 许可证与声明 | [common/pc98/pmd-player/LICENSE](../common/pc98/pmd-player/LICENSE) | LICENSE |
+| 许可证与声明 | [common/pc98/pmd-player/NOTICE](../common/pc98/pmd-player/NOTICE) | NOTICE |
 | 许可证与声明 | [launcher/LICENSE](../launcher/LICENSE) | LICENSE |
 | 许可证与声明 | [launcher/content/FIRST_USE_NOTICE.md](../launcher/content/FIRST_USE_NOTICE.md) | 首次使用须知 |
 | 许可证与声明 | [launcher/public/assets/LICENSE-Phosphor.txt](../launcher/public/assets/LICENSE-Phosphor.txt) | MIT License |
@@ -463,6 +535,16 @@
 | 许可证与声明 | [launcher/public/vendor/react-easy-crop.LICENSE](../launcher/public/vendor/react-easy-crop.LICENSE) | react easy crop |
 | 许可证与声明 | [launcher/public/vendor/uzip.LICENSE](../launcher/public/vendor/uzip.LICENSE) | uzip |
 | 许可证与声明 | [launcher/public/vendor/webaudio-tinysynth.LICENSE](../launcher/public/vendor/webaudio-tinysynth.LICENSE) | webaudio tinysynth |
+| 许可证与声明 | [ports/th01/web/room-ui-assets/LICENSE.txt](../ports/th01/web/room-ui-assets/LICENSE.txt) | MIT License |
+| 许可证与声明 | [ports/th02/NOTICE-runtime.md](../ports/th02/NOTICE-runtime.md) | DOSBox-X / js-dos runtime for TH02 |
+| 许可证与声明 | [ports/th02/web/room-ui-assets/LICENSE.txt](../ports/th02/web/room-ui-assets/LICENSE.txt) | MIT License |
+| 许可证与声明 | [ports/th02/web/vendor/dosbox-x/LICENSE](../ports/th02/web/vendor/dosbox-x/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th02/web/vendor/dosbox-x/NOTICE.md](../ports/th02/web/vendor/dosbox-x/NOTICE.md) | DOSBox-X / js-dos runtime for TH02 |
+| 许可证与声明 | [ports/th04/web/room-ui-assets/LICENSE.txt](../ports/th04/web/room-ui-assets/LICENSE.txt) | MIT License |
+| 许可证与声明 | [ports/th04/web/vendor/dosbox-x/LICENSE](../ports/th04/web/vendor/dosbox-x/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th04/web/vendor/dosbox-x/NOTICE.md](../ports/th04/web/vendor/dosbox-x/NOTICE.md) | DOSBox-X / js-dos runtime for TH04 |
+| 许可证与声明 | [ports/th04/web/vendor/np2/LICENSE](../ports/th04/web/vendor/np2/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th04/web/vendor/np2/NOTICE.md](../ports/th04/web/vendor/np2/NOTICE.md) | Upstream components |
 | 许可证与声明 | [ports/th05-mp/LICENSE](../ports/th05-mp/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th05-mp/third_party/imgui/LICENSE.txt](../ports/th05-mp/third_party/imgui/LICENSE.txt) | The MIT License (MIT) |
 | 许可证与声明 | [ports/th05/LICENSE](../ports/th05/LICENSE) | LICENSE |
@@ -548,9 +630,13 @@
 | 许可证与声明 | [ports/th12/portable/sdl/third_party/stb_image.LICENSE](../ports/th12/portable/sdl/third_party/stb_image.LICENSE) | stb_image |
 | 许可证与声明 | [ports/th12/src/practice/THPRAC-LICENSE.txt](../ports/th12/src/practice/THPRAC-LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th12/third_party/stb_vorbis/LICENSE](../ports/th12/third_party/stb_vorbis/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th13-mp/LICENSE](../ports/th13-mp/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th13-mp/NOTICE.md](../ports/th13-mp/NOTICE.md) | Source and asset notices |
+| 许可证与声明 | [ports/th13-mp/portable/sdl/third_party/miniaudio.LICENSE](../ports/th13-mp/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th13/LICENSE](../ports/th13/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th13/NOTICE.md](../ports/th13/NOTICE.md) | Source and asset notices |
 | 许可证与声明 | [ports/th13/portable/sdl/third_party/miniaudio.LICENSE](../ports/th13/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
+| 许可证与声明 | [ports/th14-mp/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE](../ports/th14-mp/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th14/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE](../ports/th14/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th15-mp/LICENSE](../ports/th15-mp/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th15-mp/portable/browser/LICENSE.eagler-common](../ports/th15-mp/portable/browser/LICENSE.eagler-common) | LICENSE |
@@ -571,10 +657,12 @@
 | 许可证与声明 | [services/relay/LICENSE](../services/relay/LICENSE) | LICENSE |
 | 许可证与声明 | [services/telemetry/LICENSE](../services/telemetry/LICENSE) | LICENSE |
 | 许可证与声明 | [services/turn/LICENSE](../services/turn/LICENSE) | LICENSE |
-| 协作约定 | [AGENTS.md](../AGENTS.md) | 普通版与 MP 维护 |
+| 协作约定 | [AGENTS.md](../AGENTS.md) | 主仓库合并：房间选项与观战 |
 | 协作约定 | [launcher/tools/maintainer/operator-delivery/payload/AGENTS.md](../launcher/tools/maintainer/operator-delivery/payload/AGENTS.md) | 部署代理约定 |
+| 协作约定 | [ports/th13-mp/AGENTS.md](../ports/th13-mp/AGENTS.md) | th13-mp 端口局部入口 |
 | 协作约定 | [ports/th13/AGENTS.md](../ports/th13/AGENTS.md) | th13 端口局部入口 |
 | CI 与协作模板 | [.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md) | 改动 |
 | 项目文档 | [docs/README.md](README.md) | 文档 |
 | 项目文档 | [docs/TOUHOU_PROGRESS.md](TOUHOU_PROGRESS.md) | 东方作品进度 |
+| 项目文档 | [docs/pc98-server-build.md](pc98-server-build.md) | TH01–TH04 服务器构建 |
 | 项目文档 | [docs/th075-thcrap.md](th075-thcrap.md) | th075 语言资源准备 |

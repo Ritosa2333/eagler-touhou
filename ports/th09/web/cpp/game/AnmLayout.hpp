@@ -255,11 +255,13 @@ struct AnmVmBase
     };
     i16 type;
     i16 pendingInterrupt;
+    // ANM instruction 83 selects an automatic sprite drawing mode, 0 through 5.
     i32 playerBulletHitAnimationType;
     AnmLoaded *anmFile;
 };
 
-static_assert(sizeof(AnmVmBase) == 0x208);
+// These in-memory layouts include pointers and match the retail size on 32-bit targets.
+static_assert(sizeof(void*) != 4 || sizeof(AnmVmBase) == 0x208);
 
 struct AnmVm : AnmVmBase
 {
@@ -303,7 +305,7 @@ struct AnmVm : AnmVmBase
     i32 *GetIntVarPtr(i32 *varPtr, u16 varMask, u32 variableNumber);
 };
 
-static_assert(sizeof(AnmVm) == 0x2a4);
+static_assert(sizeof(void*) != 4 || sizeof(AnmVm) == 0x2a4);
 
 
 }

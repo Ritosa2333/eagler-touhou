@@ -2,12 +2,12 @@
 // Game construction, input, timing, rendering, text and sound belong to C++.
 // Mirrors th10/th20 shell.mjs and imports the shared eagler-host transport.
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
-import createModule from './th11-sdl.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {validateMotionReplay} from './motion-replay.mjs';
 import {runtimeEpochContract} from './runtime-epoch.mjs';
 import {bindOutsideTouches,normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError,createReplayViewerHostTh14} from './eagler-host.mjs';
 const runtimeBuild=/*TH11_BUILD_INFO*/{version:'development-incomplete',completeGame:false};
+const crashReporter=globalThis.__eaglerCrashReporterV1;
 const protocol='eagler-touhou/1',game='th11',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');
 const navigation=runtimeEpochContract(game,query.get('runtimeEpoch'));
 const emit=(event,fields={})=>parent.postMessage({protocol,game,...navigation.fields,event,...fields},location.origin);
@@ -79,7 +79,7 @@ async function installRuntimePack(pack){
   Module.FS.writeFile(file.path,file.bytes,{canOwn:true});runtimePackFiles.push(file.path);
  }
 }
-function apply(){applyTouchOptions(core,options);core.th11_music_enabled(+music);}
+function apply(){applyTouchOptions(core,options);core.th14_always_hitbox?.(+(options.alwaysHitbox===true));core.th11_music_enabled(+music);}
 async function resumeForegroundAudio(forcePause=false){
  if(replayViewer?.state&&(replayViewer.state.paused||replayViewer.state.seeking||replayViewer.state.ended)){await replayViewer.foreground();return false;}
  if(!Module||!core||!launched||document.hidden)return false;
@@ -94,11 +94,13 @@ async function closeAudio(){
   try{core.th11_audio_close();}finally{if(borrowed)s.audioContext=context;}};
  const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;if(runtime)await runtime.run(close);else close();
 }
-async function stop(){if(stopping)return;stopping=true;core?.th14_practice_state?.(10,0);clearKeyboard();try{core.th11_loop_stop();if(replayViewer)await replayViewer.close();await save();await closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
+async function stop(){if(stopping)return;stopping=true;core?.th14_practice_state?.(10,0);clearKeyboard();try{suspendRuntimeAudio(Module,core);core.th11_loop_stop();if(replayViewer)await replayViewer.close();await save();await closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth11\//,'').replace(/^\//,'');if(!/^(?:scoreth11\.dat|th11\.cfg|replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
 async function launch(){
  if(launched)return;clearKeyboard();
  if(!await callCore('th11_initialize'))throw Error(coreError());
+ // The native archive owns its bytes for the lifetime of this Runtime.
+ if(game==='th14'&&Module.FS.analyzePath('/th14.dat').exists)Module.FS.unlink('/th14.dat');
  const runtime=Module.th14AsyncRuntime??Module.th14WebGpuRuntime;
  if(runtime){core=runtime.bindCore(core);window.core=core;}
  if(core.th11_phase()===4&&!await callCore('th11_return_title'))throw Error(coreError());
@@ -133,8 +135,10 @@ function replayPlayback(){
   rate:async value=>{if(!await callCore('th14_replay_rate',value))throw Error('录像倍率无效');},
   pause:async on=>{
    if(!launched)return;
-   if(!on&&!document.hidden)await resumeRuntimeAudio(Module,core,()=>launched&&!document.hidden);
-   await callCore('th11_loop_pause',on||document.hidden?1:0);
+   if(on||document.hidden){suspendRuntimeAudio(Module,core);await callCore('th11_loop_pause',1);return;}
+   const owner=core;
+   if(await resumeRuntimeAudio(Module,owner,()=>launched&&!stopping&&core===owner&&!document.hidden))
+    await callCore('th11_loop_pause',0);
   },
   close:async()=>{if(core)await callCore('th14_replay_close');},
   visible:()=>!document.hidden&&!th14PageLeaving,
@@ -158,7 +162,11 @@ async function command(m){switch(m.command){
  case 'list':{const files=[];for(const dir of ['','/replay'])for(const name of Module.FS.readdir('/savesth11'+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=Module.FS.stat('/savesth11/'+n);if(Module.FS.isFile(s.mode)){files.push({path:n,size:s.size});}}return {files};}
  case 'read':return {bytes:Array.from(Module.FS.readFile('/savesth11/'+path(m.path)))};
  case 'write':{
-  if(launched)throw Error('请先退出游戏');const target=path(m.path),bytes=new Uint8Array(m.bytes||[]);
+  const target=path(m.path),bytes=new Uint8Array(m.bytes||[]);
+  // A new replay does not replace the active viewer's owned byte buffer.
+  const viewerImport=game==='th14'&&options.replayViewer===true&&target.startsWith('replay/');
+  if(launched&&!viewerImport)throw Error('请先退出游戏');
+  if(launched&&Module.FS.analyzePath('/savesth11/'+target).exists)throw Error('录像文件已存在，请使用其他文件名');
   if(!bytes.length||bytes.length>64*1024*1024)throw Error('文件大小无效');
   const p=core.malloc(bytes.length);if(!p)throw Error('文件导入内存不足');let valid=false;try{Module.HEAPU8.set(bytes,p);valid=!!await callCore('th11_validate_file',target==='scoreth11.dat'?0:target==='th11.cfg'?2:1,p,bytes.length);}finally{core.free(p);}
   if(!valid)throw Error('文件不是有效的地灵殿存档或录像');
@@ -196,11 +204,21 @@ for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
 // A mobile browser may terminate a hidden page before pagehide's IDB callback.
 // Persist during play as well, with writes serialized by the sync chain.
 setInterval(()=>{if(launched&&!document.hidden&&core)try{queue=queue.then(()=>save()).catch(error);}catch(e){error(e);}},30000);
+const startupAbort=new AbortController();
+window.addEventListener('pagehide',event=>{if(!event.persisted)startupAbort.abort();},{once:true});
 const initialized=(async()=>{
  let audioContext;try{audioContext=parent.__touhouAudioContext;}catch{}
+ const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const useSingleThread=!!runtimeBuild.singleThreaded&&(ios||!globalThis.crossOriginIsolated||typeof SharedArrayBuffer!=='function');
+ const entry=useSingleThread?'./th14-sdl-single.':'./th11-sdl.';
+ const details={...runtimeBuild,threading:useSingleThread?'single':'workers'};
+ crashReporter?.identify?.(details);
+ const {default:createModule}=await import(entry+'mjs');
  Module=await createModule({canvas,noInitialRun:true,resetBrowserKeyboard:()=>keyboard.clear(),...(audioContext?{SDL3:{audioContext}}:{}),print:console.log,printErr:console.error,
-  instantiateWasm(imports,ready){return WebAssembly.instantiateStreaming(fetch('./th11-sdl.wasm'),imports).then(({instance,module})=>{core=instance.exports;ready(instance,module);return core;});}});
+  onAbort:reason=>crashReporter?.fatal(new Error(String(reason)),{source:'wasm-abort'}),
+  instantiateWasm(imports,ready){return WebAssembly.instantiateStreaming(fetch(entry+'wasm'),imports).then(({instance,module})=>{core=instance.exports;ready(instance,module);return core;});}});
  window.Module=Module;window.FS=Module.FS;window.core=core;
+ crashReporter?.bindCore(Module,{build:details,hookAbort:false});
  Module.onWebGpuError=error;
  Module.onAsyncError=error;
  if(typeof Module._th14_async_frame==='function'){
@@ -221,5 +239,5 @@ async function mountData(){
  // eagler-touhou managed package: the retail archive arrives through the parent
  // (written to /th11.dat, which the C++ archive layer opens) and the baked font
  // tables through the sibling resources.json.
- await mountManagedData(Module,{game,parentWindow:parent,query,emit});
+ await mountManagedData(Module,{game,parentWindow:parent,query,emit,signal:startupAbort.signal});
 }

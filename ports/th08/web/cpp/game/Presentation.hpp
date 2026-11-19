@@ -17,6 +17,8 @@ struct SnapshotMarker {
     uint64_t last_epoch=~uint64_t(0);
     bool capture(){if(!calculation_open)return true;if(last_epoch==calculation_epoch)return false;last_epoch=calculation_epoch;return true;}
 };
+// Weight 1 is current; live high-refresh draws use 1 + display phase.
+// Values below 1 remain available to explicit interpolation diagnostics.
 inline float alpha=1.0f;
 inline float world_alpha=1.0f;
 inline bool active=false;
@@ -25,7 +27,7 @@ inline bool render_only=false;
 inline bool audit_hold_interpolation=false;
 #endif
 inline void begin(float value,bool enabled,bool only,bool world_enabled=true)noexcept{
-    alpha=enabled?std::clamp(value,0.0f,1.0f):1.0f;
+    alpha=enabled?std::clamp(value,0.0f,2.0f):1.0f;
     world_alpha=enabled&&world_enabled?alpha:1.0f;
     active=enabled;
     render_only=only;
@@ -35,14 +37,14 @@ inline float lerp(float previous,float current)noexcept{
 #if defined(TH_PRESENTATION_AUDIT)
     if(audit_hold_interpolation)return current;
 #endif
-    if(alpha>=1)return current;if(alpha<=0)return previous;
+    if(alpha==1)return current;if(alpha<=0)return previous;
     return previous+(current-previous)*alpha;
 }
 inline float lerp_world(float previous,float current)noexcept{
 #if defined(TH_PRESENTATION_AUDIT)
     if(audit_hold_interpolation)return current;
 #endif
-    if(world_alpha>=1)return current;if(world_alpha<=0)return previous;
+    if(world_alpha==1)return current;if(world_alpha<=0)return previous;
     return previous+(current-previous)*world_alpha;
 }
 }

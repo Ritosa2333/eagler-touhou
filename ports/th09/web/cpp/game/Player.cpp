@@ -79,10 +79,10 @@ void Player::update(const PlayerFrameContext& context,DamageRules& damage){
     shots.target=secondary_target={-999,-999,0};target_priority=0;motion.effect_scale={1,1};motion.flags=control.flags;
     if(!frozen)combo_system().update_timers(combo_state);hazard_trace.push(i32(motion.player),hazards);hazards.clear();
 }
-void Player::draw(bool fading){
+void Player::draw(bool fading,i32 scene_state,i32 ending_frames,bool hide_players){
     const auto& geometry=frame.geometry[motion.player];if(fading){shots.draw(geometry,true);return;}
-    if(control.player_state!=5){shots.draw(geometry,false);if(motion.health==0&&(frame.scene_state>1||frame.ending_frames>30))return;
-        if(!frame.hide_players){body.pos=geometry.to_screen(motion.position);body.pos.z=.1f;actions.draw_body(body);}}
+    if(control.player_state!=5){shots.draw(geometry,false);if(motion.health==0&&(scene_state>1||ending_frames>30))return;
+        if(!hide_players){body.pos=geometry.to_screen(motion.position);body.pos.z=.1f;actions.draw_body(body);}}
     items.draw(geometry);
 }
 }

@@ -6,6 +6,8 @@ using namespace th09;
 struct Fixture:EffectServices {
     Rng rng;EffectManager manager;EclVm enemy;AnmLoadedSprite sprite{};i32 sequence=0;
     std::vector<std::array<u32,8>> events;std::vector<BulletEmission> bullets;std::vector<u8> vertices;
+    i32 selected_side=0;
+    void select_field(i32 side)override{selected_side=side;}
     Fixture(i32 side,u32 size):EffectServices(rng),manager(*this,side,size,8){sprite.uvStart={.125f,.25f};sprite.uvEnd={.625f,.875f};}
     static u32 bits(float f){u32 n;std::memcpy(&n,&f,4);return n;}
     i32 index(const AnmVm& vm){for(u32 i=0;i<manager.actors.size();++i)if(manager.actors[i].animation.get()==&vm)return i32(i);return -1;}
@@ -16,11 +18,11 @@ struct Fixture:EffectServices {
     void emit_bullets(i32 side,const BulletEmission& b)override{events.push_back({4,u32(side)});bullets.push_back(b);}
     EclVm* spawn_spirit(i32 side,i32 script,const Vec3& p)override{events.push_back({5,u32(side),u32(script),bits(p.x),bits(p.y),bits(p.z)});enemy.values.position=p;enemy.values.resolved_position={p.x+1.25f,p.y-2.5f,p.z};enemy.values.acceleration=.003f;enemy.values.flags=0x2020;enemy.values.direction=-.5f;return &enemy;}
     void fire_shots(i32 side,u32 set,i32 time)override{events.push_back({6,u32(side),set,u32(time)});}
-    void begin_layer(i32 side,i32 layer)override{events.push_back({7,u32(side),u32(layer)});}
+    void begin_layer(i32 side,i32 layer)override{selected_side=side;events.push_back({7,u32(side),u32(layer)});}
     template<class T>void draw(u32 mode,const T* p,u32 count){events.push_back({mode,count});const u8* bytes=reinterpret_cast<const u8*>(p);vertices.insert(vertices.end(),bytes,bytes+sizeof(T)*count);}
     void draw_color_fan(AnmVm&,const AttackColorVertex* p,u32 n)override{draw(8,p,n);}
     void draw_texture_strip(AnmVm&,const AttackTextureVertex* p,u32 n)override{draw(9,p,n);}
-    void draw_additive_lines(const AttackColorVertex* p,u32 n)override{draw(10,p,n);}
+    void draw_line_strip(const AttackColorVertex* p,u32 n)override{draw(10,p,n);}
     void draw_color_strip(AnmVm&,const AttackColorVertex* p,u32 n)override{draw(11,p,n);}
     void clear(){events.clear();bullets.clear();vertices.clear();}
 };

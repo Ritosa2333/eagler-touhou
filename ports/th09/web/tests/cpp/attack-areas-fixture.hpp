@@ -6,6 +6,8 @@ using namespace th09;
 static_assert(sizeof(AttackArea)==68);
 struct Fixture:AreaCollisionActions {
     AttackAreas areas;Rng rng;AreaCollisionContext context{rng,*this};Bullet bullet;Bounds graze;TransferParameters transfer;std::vector<std::array<u32,10>> events;
+    i32 selected_side=0;
+    Vec3 transfer_position(const Vec3& p,const PlayfieldGeometry&)const override{return context.geometry[selected_side].to_screen(p);}
     static u32 bits(float f){u32 n;std::memcpy(&n,&f,4);return n;}
     TransferParameters* create_transfer(i32 effect,const Vec3& p,const Vec3& target)override{events.push_back({0,u32(effect),bits(p.x),bits(p.y),bits(p.z),bits(target.x),bits(target.y),bits(target.z)});return &transfer;}
     void charge(float n)override{events.push_back({1,bits(n)});}

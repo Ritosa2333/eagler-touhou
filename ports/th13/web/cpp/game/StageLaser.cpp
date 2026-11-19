@@ -292,6 +292,29 @@ bool StageSim::advance_line_behaviors(StageLaser& laser) {
 void StageSim::advance_lasers() {
     const float rate=time_rate();
     const float tick=rate>.99f&&rate<1.01f?1.f:rate;
+    const auto collide = [&](size_t index, const StageLaser& geometry) {
+        laser_collision_count = 0;
+        const i32 result = laser_collision(geometry);
+        if (result != 1) return result;
+        if (laser_collision_count == 0) {
+            split_laser(index, {player_x, player_y, 0}, {32, 32, 0}, 0, false, false, true);
+            return result;
+        }
+        // A prior contact may have made children containing the next contact.
+        // Keep this query's fragments in fixed order and cut every hit once.
+        std::vector<size_t> fragments{index};
+        for (i32 hit = 0; hit < laser_collision_count; ++hit) {
+            const size_t before = lasers.size();
+            for (size_t fragment : fragments)
+                if (!lasers[fragment].pending_remove)
+                    split_laser(fragment, laser_collision_centers[size_t(hit)],
+                                {32, 32, 0}, 0, false, false, true);
+            for (size_t child = before; child < lasers.size(); ++child)
+                fragments.push_back(child);
+        }
+        laser_collision_count = 0;
+        return result;
+    };
     // Only boss slot0 is followed (43350e); do not substitute slot1/slot2 or
     // the enemy that originally emitted this laser.
     const float* first_boss = nullptr;
@@ -348,8 +371,7 @@ void StageSim::advance_lasers() {
                 segment.length=point.speed;segment.width=lasers[index].width;
                 segment.generation=lasers[index].generation;segment.id=lasers[index].id;
                 segment.graze_timer=lasers[index].graze_timer;
-                if(laser_collision(segment)==1)
-                    split_curve_laser(index,{player_x,player_y,0},{32,32,0},0,false,false,true);
+                collide(index, segment);
                 if(!error_.empty())return;
             }
             // Splitting can append nodes and reallocate the vector.
@@ -370,10 +392,8 @@ void StageSim::advance_lasers() {
             continue;
         }
         if (laser_collision && lasers[index].collision_enabled()) {
-            const i32 result = laser_collision(lasers[index]);
-            if (result == 1)
-                split_laser(index, {player_x, player_y, 0}, {32, 32, 0}, 0, false, false, true);
-            else if (result == 2 && lasers[index].kind == StageLaser::Kind::Line)
+            const i32 result = collide(index, lasers[index]);
+            if (result == 2 && lasers[index].kind == StageLaser::Kind::Line)
                 ++lasers[index].graze_timer;
         }
         auto& laser = lasers[index];

@@ -1,0 +1,352 @@
+--- a/src/agent.c
++++ b/src/agent.c
+@@ -98,6 +98,7 @@
+ 	bool alloc_failed = false;
+ 	agent->ice_tcp_mode = JUICE_ICE_TCP_MODE_NONE;
+ 	agent->config.concurrency_mode = config->concurrency_mode;
++	agent->config.require_local_relay = config->require_local_relay;
+ 	agent->config.stun_server_host = alloc_string_copy(config->stun_server_host, &alloc_failed);
+ 	agent->config.stun_server_port = config->stun_server_port;
+ 	agent->config.bind_address = alloc_string_copy(config->bind_address, &alloc_failed);
+@@ -162,7 +163,7 @@
+ 
+ 	if (agent->resolver_thread_started) {
+ 		JLOG_VERBOSE("Waiting for resolver thread");
+-		thread_join(agent->resolver_thread, NULL);
++		thread_work_join(&agent->resolver_thread);
+ 	}
+ 
+ 	if (agent->conn_impl) {
+@@ -179,6 +180,9 @@
+ 	}
+ 
+ 	// Free strings in config
++
++    for (int i = 0; i < agent->stun_observer_count; ++i)
++        free(agent->stun_observers[i].host);
+ 	free((void *)agent->config.stun_server_host);
+ 	for (int i = 0; i < agent->config.turn_servers_count; ++i) {
+ 		juice_turn_server_t *turn_server = agent->config.turn_servers + i;
+@@ -197,7 +201,10 @@
+ 	JLOG_VERBOSE("Destroyed agent");
+ }
+ 
+-static bool has_nonnumeric_server_hostnames(const juice_config_t *config) {
++static bool has_nonnumeric_server_hostnames(const juice_agent_t *agent) {
++	const juice_config_t *config = &agent->config;
++	for (int i = 0; i < agent->stun_observer_count; ++i)
++		if (!addr_is_numeric_hostname(agent->stun_observers[i].host)) return true;
+ 	if (config->stun_server_host && !addr_is_numeric_hostname(config->stun_server_host))
+ 		return true;
+ 
+@@ -211,7 +218,9 @@
+ }
+ 
+ static thread_return_t THREAD_CALL resolver_thread_entry(void *arg) {
++#ifndef _WIN32
+ 	thread_set_name_self("juice resolver");
++#endif
+ 	agent_resolve_servers((juice_agent_t *)arg);
+ 	return (thread_return_t)0;
+ }
+@@ -323,10 +332,10 @@
+ 	conn_unlock(agent);
+ 	conn_interrupt(agent);
+ 
+-	if (has_nonnumeric_server_hostnames(&agent->config)) {
++	if (has_nonnumeric_server_hostnames(agent)) {
+ 		// Resolve server hostnames in a separate thread as it may block
+ 		JLOG_DEBUG("Starting resolver thread for servers");
+-		int ret = thread_init(&agent->resolver_thread, resolver_thread_entry, agent);
++		int ret = thread_work_init(&agent->resolver_thread, resolver_thread_entry, agent);
+ 		if (ret) {
+ 			JLOG_FATAL("Thread creation failed, error=%d", ret);
+ 			agent_update_gathering_done(agent);
+@@ -444,48 +453,36 @@
+ 		}
+ 	}
+ 
+-	// STUN server resolution
+-	// The entry is added after so the TURN server address will be matched in priority
+-	if (agent->config.stun_server_host) {
+-		if (!agent->config.stun_server_port)
+-			agent->config.stun_server_port = 3478; // default STUN port
+-
+-		char hostname[256];
++	// Register STUN after TURN so TURN address matching keeps priority.
++	const bool observing = agent->stun_observer_count > 0;
++	for (int i = 0; i <= agent->stun_observer_count; ++i) {
++		const char *hostname = i == 0 ? agent->config.stun_server_host : agent->stun_observers[i - 1].host;
++		uint16_t port = i == 0 ? agent->config.stun_server_port : agent->stun_observers[i - 1].port;
++		if (!hostname) continue;
+ 		char service[8];
+-		snprintf(hostname, 256, "%s", agent->config.stun_server_host);
+-		snprintf(service, 8, "%hu", agent->config.stun_server_port);
+-
++		snprintf(service, sizeof(service), "%hu", port ? port : 3478);
++		addr_record_t records[MAX_STUN_SERVER_RECORDS_COUNT];
+ 		conn_unlock(agent);
+-
+-		addr_record_t records[MAX_STUN_SERVER_RECORDS_COUNT];
+-		int records_count =
+-		    addr_resolve(hostname, service, SOCK_DGRAM, records, MAX_STUN_SERVER_RECORDS_COUNT);
+-
++		int count = addr_resolve(hostname, service, SOCK_DGRAM, records, MAX_STUN_SERVER_RECORDS_COUNT);
+ 		conn_lock(agent);
+-
+-		if (records_count > 0) {
+-			if (records_count > MAX_STUN_SERVER_RECORDS_COUNT)
+-				records_count = MAX_STUN_SERVER_RECORDS_COUNT;
+-
+-			JLOG_INFO("Using STUN server %s:%s", agent->config.stun_server_host, service);
+-
+-			for (int i = 0; i < records_count; ++i) {
+-				if (i >= MAX_SERVER_ENTRIES_COUNT)
+-					break;
+-				JLOG_VERBOSE("Registering STUN entry %d for server request", agent->entries_count);
+-				agent_stun_entry_t *entry = agent->entries + agent->entries_count;
+-				entry->type = AGENT_STUN_ENTRY_TYPE_SERVER;
+-				entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
+-				entry->pair = NULL;
+-				entry->record = records[i];
+-				juice_random(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
+-				entry->transaction_id_expired = false;
+-				++agent->entries_count;
+-
+-				agent_arm_transmission(agent, entry, STUN_PACING_TIME * i);
+-			}
+-		} else {
++		if (count <= 0) {
+ 			JLOG_ERROR("STUN server address resolution failed");
++			continue;
++		}
++		JLOG_INFO("Using STUN server %s:%s", hostname, service);
++		const int limit = observing ? MAX_STUN_SERVER_RECORDS_COUNT : MAX_SERVER_ENTRIES_COUNT;
++		for (int j = 0; j < count && j < limit && agent->entries_count < MAX_STUN_ENTRIES_COUNT; ++j) {
++			if (observing && records[j].addr.ss_family != AF_INET) continue;
++			agent_stun_entry_t *entry = agent->entries + agent->entries_count++;
++			entry->type = AGENT_STUN_ENTRY_TYPE_SERVER;
++			entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
++			entry->pair = NULL;
++			entry->record = records[j];
++			entry->stun_observer = observing;
++			entry->transaction_id_expired = false;
++			juice_random(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
++			agent_arm_transmission(agent, entry, STUN_PACING_TIME * (observing ? i : j));
++			if (observing) break;
+ 		}
+ 	}
+ 
+@@ -657,6 +654,20 @@
+ 	}
+ 	agent->config.turn_servers_count++;
+ 	return 0;
++}
++
++
++JUICE_EXPORT int juice_add_stun_observer(juice_agent_t *agent, const char *host, uint16_t port) {
++    if (!agent || !host || !*host || strlen(host) >= 256 || agent->conn_impl ||
++        agent->stun_observer_count >= MAX_STUN_OBSERVERS)
++        return -1;
++    bool failed = false;
++    char *copy = (char *)alloc_string_copy(host, &failed);
++    if (failed) return -1;
++    int index = agent->stun_observer_count++;
++    agent->stun_observers[index].host = copy;
++    agent->stun_observers[index].port = port ? port : 3478;
++    return 0;
+ }
+ 
+ int agent_set_remote_gathering_done(juice_agent_t *agent) {
+@@ -1552,6 +1563,23 @@
+ 			ice_candidate_type_t type = (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK)
+ 			                                ? ICE_CANDIDATE_TYPE_PEER_REFLEXIVE
+ 			                                : ICE_CANDIDATE_TYPE_SERVER_REFLEXIVE;
++            if (entry->stun_observer && !entry->observation_reported && agent->config.cb_candidate &&
++                addr_record_is_equal(src, &entry->record, true) && msg->mapped.addr.ss_family == AF_INET) {
++                entry->observation_reported = true;
++                ice_candidate_t candidate;
++                char observer[ADDR_MAX_STRING_LEN];
++                char buffer[BUFFER_SIZE];
++                if (!ice_create_local_candidate(type, 1, agent->local.candidates_count, &msg->mapped,
++                                                &candidate, ICE_CANDIDATE_TRANSPORT_UDP) &&
++                    addr_record_to_string(&entry->record, observer, sizeof(observer)) >= 0) {
++                    snprintf(candidate.foundation, sizeof(candidate.foundation), "natobs");
++                    int size = ice_generate_candidate_sdp(&candidate, buffer, sizeof(buffer));
++                    if (size > 0 && (size_t)size + strlen(observer) + 11 < sizeof(buffer)) {
++                        snprintf(buffer + size, sizeof(buffer) - size, " observer %s", observer);
++                        agent->config.cb_candidate(agent, buffer, agent->config.user_ptr);
++                    }
++                }
++            }
+ 			if (agent_add_local_reflexive_candidate(agent, type, &msg->mapped)) {
+ 				JLOG_WARN("Failed to add local peer reflexive candidate from STUN mapped address");
+ 			}
+@@ -2398,6 +2426,9 @@
+ 
+ int agent_add_candidate_pair(juice_agent_t *agent, ice_candidate_t *local, // local may be NULL
+                              ice_candidate_t *remote) {
++	if (agent->config.require_local_relay && (!local || local->type != ICE_CANDIDATE_TYPE_RELAYED))
++		return 0;
++
+ 	ice_candidate_pair_t pair;
+ 	bool is_controlling = agent->mode == AGENT_MODE_CONTROLLING;
+ 	if (ice_create_candidate_pair(local, remote, is_controlling, &pair)) {
+--- a/src/agent.h
++++ b/src/agent.h
+@@ -68,7 +68,8 @@
+ #define MAX_TURN_REDIRECTIONS 1
+ 
+ // Compute max candidates and entries count
+-#define MAX_STUN_SERVER_RECORDS_COUNT MAX_SERVER_ENTRIES_COUNT
++#define MAX_STUN_OBSERVERS 2
++#define MAX_STUN_SERVER_RECORDS_COUNT (1 + MAX_STUN_OBSERVERS)
+ #define MAX_HOST_CANDIDATES_COUNT ((ICE_MAX_CANDIDATES_COUNT - MAX_STUN_SERVER_RECORDS_COUNT) / 2)
+ #define MAX_PEER_REFLEXIVE_CANDIDATES_COUNT MAX_HOST_CANDIDATES_COUNT
+ #define MAX_CANDIDATE_PAIRS_COUNT (ICE_MAX_CANDIDATES_COUNT * (1 + MAX_RELAY_ENTRIES_COUNT))
+@@ -116,6 +117,8 @@
+ 	timediff_t retransmission_timeout;
+ 	int retransmissions;
+ 	bool transaction_id_expired;
++	bool stun_observer;
++	bool observation_reported;
+ 	tcp_state_t tcp_state;
+ 
+ 	// TURN
+@@ -127,6 +130,8 @@
+ 
+ struct juice_agent {
+ 	juice_config_t config;
++	struct { char *host; uint16_t port; } stun_observers[MAX_STUN_OBSERVERS];
++	int stun_observer_count;
+ 	juice_state_t state;
+ 	agent_mode_t mode;
+ 	juice_ice_tcp_mode_t ice_tcp_mode;
+@@ -152,7 +157,7 @@
+ 	int conn_index;
+ 	void *conn_impl;
+ 
+-	thread_t resolver_thread;
++	thread_work_t resolver_thread;
+ 	bool resolver_thread_started;
+ };
+ 
+--- a/include/juice/juice.h
++++ b/include/juice/juice.h
+@@ -96,6 +96,7 @@
+ } juice_ice_tcp_mode_t;
+ 
+ typedef struct juice_config {
++	int require_local_relay; // Only form pairs using a local relayed candidate.
+ 	juice_concurrency_mode_t concurrency_mode;
+ 
+ 	const char *stun_server_host;
+@@ -125,6 +126,7 @@
+ JUICE_EXPORT int juice_get_local_description(juice_agent_t *agent, char *buffer, size_t size);
+ JUICE_EXPORT int juice_set_remote_description(juice_agent_t *agent, const char *sdp);
+ JUICE_EXPORT int juice_add_remote_candidate(juice_agent_t *agent, const char *sdp);
++JUICE_EXPORT int juice_add_stun_observer(juice_agent_t *agent, const char *host, uint16_t port);
+ JUICE_EXPORT int juice_add_turn_server(juice_agent_t *agent, const juice_turn_server_t *turn_server);
+ JUICE_EXPORT int juice_set_remote_gathering_done(juice_agent_t *agent);
+ JUICE_EXPORT int juice_send(juice_agent_t *agent, const char *data, size_t size);
+--- a/src/conn_poll.c
++++ b/src/conn_poll.c
+@@ -20,7 +20,7 @@
+ #define BUFFER_SIZE 4096
+ 
+ typedef struct registry_impl {
+-	thread_t thread;
++	thread_work_t thread;
+ #ifdef _WIN32
+ 	socket_t interrupt_sock;
+ #else
+@@ -60,7 +60,9 @@
+ int conn_poll_run(conn_registry_t *registry);
+ 
+ static thread_return_t THREAD_CALL conn_thread_entry(void *arg) {
++#ifndef _WIN32
+ 	thread_set_name_self("juice poll");
++#endif
+ 	conn_registry_t *registry = (conn_registry_t *)arg;
+ 	conn_poll_run(registry);
+ 	return (thread_return_t)0;
+@@ -101,7 +103,7 @@
+ 	registry->impl = registry_impl;
+ 
+ 	JLOG_DEBUG("Starting connections thread");
+-	int ret = thread_init(&registry_impl->thread, conn_thread_entry, registry);
++	int ret = thread_work_init(&registry_impl->thread, conn_thread_entry, registry);
+ 	if (ret) {
+ 		JLOG_FATAL("Thread creation failed, error=%d", ret);
+ 		goto error;
+@@ -110,7 +112,9 @@
+ 	return 0;
+ 
+ error:
+-#ifndef _WIN32
++#ifdef _WIN32
++	closesocket(registry_impl->interrupt_sock);
++#else
+ 	close(registry_impl->interrupt_pipe_out);
+ 	close(registry_impl->interrupt_pipe_in);
+ #endif
+@@ -123,7 +127,7 @@
+ 	registry_impl_t *registry_impl = registry->impl;
+ 
+ 	JLOG_VERBOSE("Waiting for connections thread");
+-	thread_join(registry_impl->thread, NULL);
++	thread_work_join(&registry_impl->thread);
+ 
+ #ifdef _WIN32
+ 	closesocket(registry_impl->interrupt_sock);
+--- a/src/thread.h
++++ b/src/thread.h
+@@ -64,6 +64,37 @@
+ 	((*(t) = CreateThread(NULL, 0, func, arg, 0, NULL)) != NULL ? 0 : (int)GetLastError())
+ #define thread_join(t, res) thread_join_impl(t, res)
+ 
++// ICE callbacks can block on socket polling or DNS. Scheduling them on the OS
++// pool keeps thread creation off the signaling path.
++typedef struct thread_work {
++	PTP_WORK work;
++	LPTHREAD_START_ROUTINE entry;
++	void *arg;
++} thread_work_t;
++
++static inline VOID CALLBACK thread_work_entry(PTP_CALLBACK_INSTANCE instance, PVOID context,
++                                              PTP_WORK work) {
++	(void)work;
++	thread_work_t *task = context;
++	CallbackMayRunLong(instance);
++	task->entry(task->arg);
++}
++
++static inline int thread_work_init(thread_work_t *task, LPTHREAD_START_ROUTINE entry, void *arg) {
++	task->entry = entry;
++	task->arg = arg;
++	task->work = CreateThreadpoolWork(thread_work_entry, task, NULL);
++	if (!task->work)
++		return (int)GetLastError();
++	SubmitThreadpoolWork(task->work);
++	return 0;
++}
++
++static inline void thread_work_join(thread_work_t *task) {
++	WaitForThreadpoolWorkCallbacks(task->work, TRUE);
++	CloseThreadpoolWork(task->work);
++}
++
+ #else // POSIX
+ 
+ #include <pthread.h>
+@@ -101,6 +132,10 @@
+ 
+ #define thread_init(t, func, arg) pthread_create(t, NULL, func, arg)
+ #define thread_join(t, res) (void)pthread_join(t, res)
++
++typedef thread_t thread_work_t;
++#define thread_work_init(task, entry, arg) thread_init(task, entry, arg)
++#define thread_work_join(task) thread_join(*(task), NULL)
+ 
+ #endif // ifdef _WIN32
+ 

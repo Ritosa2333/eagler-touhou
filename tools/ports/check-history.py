@@ -103,7 +103,21 @@ def verify_subtree(repo, head, record, workspace, *, export_tree):
         return None
     started = perf_counter()
     print(f"{directory}: exporting Git subtree", file=sys.stderr, flush=True)
-    split = repo.git("subtree", "split", f"--prefix={directory}", "--quiet", head)
+    args = ["subtree", "split", f"--prefix={directory}", "--quiet"]
+    export_mode = record.get("exportMode", "incremental")
+    if export_mode == "rebuild-from-source":
+        # The verified join's real parent supplies the source ancestry even
+        # when historical subtree trailers retained pre-rewrite commit IDs.
+        args += ["--ignore-joins", f"--onto={joins['currentSplit']}"]
+    elif export_mode != "incremental":
+        raise RuntimeError(f"{directory}: unrecognized subtree export mode")
+    try:
+        split = repo.git(*args, head)
+    except RuntimeError as error:
+        if "already exists" not in str(error) or export_mode != "incremental":
+            raise
+        split = repo.git("subtree", "split", f"--prefix={directory}", "--quiet",
+                         "--ignore-joins", f"--onto={joins['currentSplit']}", head)
     print(f"{directory}: exported in {perf_counter() - started:.1f}s", file=sys.stderr, flush=True)
     if not repo.ancestor(upstream, split):
         raise RuntimeError(f"{directory}: original upstream {upstream} is not an ancestor of exported history")

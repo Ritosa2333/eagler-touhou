@@ -18,6 +18,27 @@
   aspect-ratio:4/3;
 }
 /* Workspace controls own these surfaces; gameplay hit areas stay inactive. */
-#player:is(.room-workspace,.replay-workspace):not(.touch-layout-edit) :is(.touch-hud,.touch-escape,.touch-restart,.touch-joystick,.touch-direct-surface,.touch-layout-safe-zone,.touch-layout-reserved-zone,.touch-thprac-input,.touch-thprac-tab,.touch-thprac-menu,.touch-utility-row,.touch-help-open){display:none!important}
+#player:is(.room-workspace,.replay-workspace):not(.touch-layout-edit,.pc98-room-touch-active) :is(.touch-hud,.touch-escape,.touch-restart,.touch-joystick,.touch-direct-surface,.touch-layout-safe-zone,.touch-layout-reserved-zone,.touch-thprac-input,.touch-thprac-tab,.touch-thprac-menu,.touch-utility-row,.touch-help-open){display:none!important}
+#player.room-workspace.pc98-room-touch-active .touch-hud{display:flex}
+#player.room-workspace.pc98-room-touch-active .touch-escape{display:block}
+#player.room-workspace.pc98-room-touch-active:not(.touch-layout-custom) .touch-hud{
+  position:fixed!important;inset:auto!important;left:var(--pc98-touch-left)!important;top:var(--pc98-touch-top)!important;
+  width:var(--pc98-touch-width)!important;height:var(--pc98-touch-height)!important;z-index:31!important;
+}
+#player.room-workspace.pc98-room-touch-active:not(.touch-layout-custom) .touch-escape{
+  position:fixed!important;left:calc(var(--pc98-touch-left) + 8px)!important;top:calc(var(--pc98-touch-top) + 8px)!important;
+}
+#player.room-workspace.pc98-room-touch-active:not(.touch-layout-custom) .touch-joystick:not([hidden]){
+  position:fixed;left:calc(var(--pc98-touch-left) + 10px);top:calc(var(--pc98-touch-top) + var(--pc98-touch-height) - 122px);bottom:auto;
+}
+#player.room-workspace.pc98-room-touch-active :is(.touch-direct-surface:not([hidden]),.touch-layout-safe-zone){
+  position:fixed;inset:auto;left:var(--pc98-touch-left);top:var(--pc98-touch-top);
+  width:var(--pc98-touch-width);height:var(--pc98-touch-height);
+}
+#player.room-workspace.pc98-room-touch-active.touch-layout-custom .touch-hud{display:block}
+#player.room-workspace.pc98-room-touch-active #gameViewport{z-index:35;pointer-events:none}
+#player.room-workspace.pc98-room-touch-active #gameFrame{pointer-events:none!important}
+#player.room-workspace.pc98-room-touch-active .room-workspace-viewport-tools{pointer-events:auto}
+#player.room-workspace.pc98-room-touch-active .room-workspace-viewport-tools{position:fixed;z-index:40;right:auto;bottom:auto;left:calc(var(--pc98-touch-left) + var(--pc98-touch-width) - 108px);top:max(calc(var(--pc98-touch-top) + 8px),8px)}
 
 }

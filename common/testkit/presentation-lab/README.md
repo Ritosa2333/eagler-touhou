@@ -14,7 +14,9 @@ node --test common/testkit/presentation-lab/controller-core.test.mjs common/test
 
 实现 [`CONTRACT.md`](CONTRACT.md) 规定的 `RuntimeDriverV1` 与 `ObservationAdapterV1`，然后从标题专属审计配置启动工作台。适配层提供 `/lab-config.mjs`，说明固定步更新、绘制、输入、状态覆盖和 Replay 导航。
 
-首次支持的游戏是 TH08 与 TH10。是否支持由该游戏自己的绘制纯度证据决定；common 测试通过不代替游戏适配检查。
+工作台支持原始当前帧、回顾插值和外推三种对照。外推使用当前帧到未来一帧的权重 `1..2`，由支持该能力的作品适配器显式开放。
+
+现有原生观察适配器包括 TH08、TH10、TH11 与 TH15。是否支持由该游戏自己的绘制纯度证据决定；common 测试通过不代替游戏适配检查。
 
 ## 目录
 

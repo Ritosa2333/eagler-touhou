@@ -381,7 +381,7 @@ bool ApplicationState::result_screen_data(TitleResultScreenData& out) const {
         (title->state.return_reason == 3 ||
          title->state.screen == TitleScreen::ResultName ||
          title->state.screen == TitleScreen::ResultReplaySlot);
-    out.current.stage = result_record_stage(clear_result, progress.stage);
+    out.current.stage = result_record_stage(clear_result, extra_results_open(), progress.stage);
     out.current.continues = progress.continues;
     out.current.timestamp = i64(std::time(nullptr));
     out.current.available = true;
@@ -466,7 +466,10 @@ bool ApplicationState::save_replay_slot(i32 slot, const std::string& name,
     const bool closed = std::fclose(file) == 0;
     if (!written || !closed) return fail("Replay file write failed");
 #endif
-    return true;
+    // 0x43f29a/0x4402b0/0x44130f/0x454e2c: a saved Replay's name becomes the
+    // next default name.
+    files.remember_name(name);
+    return files.save() || fail(files.error);
 }
 
 bool ApplicationState::can_open_pause_options() const { return true; }
@@ -495,11 +498,20 @@ bool ApplicationState::record_result_entry(const std::string& name, i32 stage) {
     result.progress_percent = result_slowdown_percent(slow_actual_, slow_budget_);
     result.available=true;
     files.record_high_score(progress.character, progress.difficulty, result);
+    files.remember_name(name);
     return files.save_score() || fail(files.error);
 }
 
 bool ApplicationState::record_result_name(const std::string& name) {
-    return record_result_entry(name, progress.stage);
+    return record_result_entry(name, result_record_stage(false, extra_results_open(), progress.stage));
+}
+
+bool ApplicationState::extra_results_open() const {
+    return run && pause && pause->state.screen == PauseScreen::ExtraEnd;
+}
+
+std::string ApplicationState::last_result_name() const {
+    return files.last_name;
 }
 
 bool ApplicationState::record_clear_result_name(const std::string& name) {

@@ -1,0 +1,1 @@
+export function setRoomRules(engine,difficulty=1,seed=0){if(!Number.isInteger(difficulty)||difficulty<0||difficulty>3||engine._th03_classic_room_rank(difficulty)!==1)throw Error('梦时空难度设置无效');if(!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('梦时空随机种子无效');engine._th03_classic_room_seed(seed);}

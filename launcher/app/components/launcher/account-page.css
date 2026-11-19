@@ -53,10 +53,3 @@ html[data-ui-route-transition="page"] .account-art{clip-path:inset(var(--site-he
 @media(prefers-reduced-motion:reduce){.account-mode-content{animation:none}}
 html:has(body.less-motion) .account-mode-content{animation:none}
 }
-
-/* Fit the provider's 300px slider on a 320px screen without scaling its drag coordinates. */
-@media(max-width:364px){
- #captcha-sdk-modal{padding-inline:0!important}
- #captcha-sdk-modal > div{min-width:316px!important}
- #captcha-sdk-modal #tianai-captcha-parent{padding-inline:8px}
-}

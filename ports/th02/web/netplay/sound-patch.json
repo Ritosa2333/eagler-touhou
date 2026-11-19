@@ -1,0 +1,46 @@
+{
+  "schema": 2,
+  "nativeBgm": false,
+  "nativeEffects": false,
+  "browserEffects": true,
+  "sequence": 37704,
+  "command": 37706,
+  "filename": 9534,
+  "fmEffects": 9530,
+  "effects": {
+    "sequence": 37708,
+    "ring": 37710,
+    "capacity": 32,
+    "count": 19,
+    "playing": 2218,
+    "priorityFrame": 2285,
+    "manifest": "sfx/manifest.json"
+  },
+  "edits": [
+    {
+      "imageOffset": 63993,
+      "expected": "803e9a080074108b4606803e3b25017404cd60eb02cd61",
+      "replacement": "8b460680fc02760580fc197507a34a93ff064893909090"
+    },
+    {
+      "imageOffset": 63507,
+      "expected": "8b460a3d00067520803e3b2500741933db4380bf3e250075f8c6873e256dc6873f2564c687402500",
+      "replacement": "1f5e5dcbb40ca0aa08538b1e4c9383e31f88874e93ff064c935bc390909090909090909090909090"
+    },
+    {
+      "imageOffset": 63454,
+      "expected": "55",
+      "replacement": "cb"
+    },
+    {
+      "imageOffset": 64021,
+      "expected": "803e9a08007509",
+      "replacement": "90909090909090"
+    },
+    {
+      "imageOffset": 64159,
+      "expected": "b40ca0aa08cd60",
+      "replacement": "e875fd90909090"
+    }
+  ]
+}

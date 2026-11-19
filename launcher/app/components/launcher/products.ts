@@ -15,9 +15,7 @@ export interface LibraryProduct {
   href: string;
   hidden?: boolean;
   presentation?: {positionPercent: number; artBrightness: number; artSaturation: number; glowBrightness: number; glowSaturation: number};
-  adaptationNotice: boolean;
   sourceRepository: string;
-  credit?: {name: string; url: string};
 }
 
 export function isPc98Product(product: Pick<LibraryProduct, 'number'>): boolean {
@@ -30,7 +28,8 @@ export function multiplayerGroup(product: Pick<LibraryProduct, 'gameId'>): Multi
   const game = PRODUCT_GAMES[product.gameId];
   if (isPc98Product(game)) return 'pc98';
   if ('inputProfile' in game && game.inputProfile === 'fighting') return 'fighting';
-  return 'multiplayer' in game && game.multiplayer.gameplay === 'versus' ? 'versus' : 'original';
+  if ('multiplayer' in game && game.multiplayer.gameplay === 'versus') return 'versus';
+  return 'original';
 }
 
 /** Same catalog fields as lib/frontend-assets.mjs; no copied product list. */
@@ -43,9 +42,7 @@ export function createLibraryProducts(ids: readonly ProductId[], assetUrl: (path
       artwork: 'cardArtwork' in game && game.cardArtwork ? assetUrl(`assets/${game.cardArtwork}`) : null,
       href: hrefForProduct(id),
       presentation: 'cardPresentation' in game ? game.cardPresentation : undefined,
-      adaptationNotice: 'adaptationNotice' in support && support.adaptationNotice === 'early-test',
       sourceRepository: support.sourceRepository,
-      credit: 'credit' in support ? support.credit : undefined,
     };
   });
 }

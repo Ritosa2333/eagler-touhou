@@ -125,7 +125,7 @@ export function createGameSettingsModel({storage, onChange}: {
   }
   function commitPreferences() {
     const state = required();
-    persistSharedTouchPreferences(storage, {...state.options});
+    if (state.gameId !== 'th01') persistSharedTouchPreferences(storage, {...state.options});
     persistStoredGamePreferences({storage, preferenceId: state.preferenceId,
       preferences: {...state, options: {...state.options, thpracEnabled: state.multiplayer ? practicePreferences.get(state.gameId) ?? false : state.options.thpracEnabled}}, language: state.language});
     if (!state.multiplayer) practicePreferences.set(state.gameId, state.options.thpracEnabled);
@@ -142,7 +142,11 @@ export function createGameSettingsModel({storage, onChange}: {
       context: {uiLocale: context.uiLocale, thpracAvailable: productFeatureAvailable(gameId, 'thprac', context.hostFeatures),
         webAudioAvailable: context.musicAvailability.audio,
         externalMidiAvailable: PRODUCT_GAMES[gameId].musicCapabilities.midi && context.webMidiAvailable}});
-    const options = applySharedTouchPreferences(normalized.options, loadOrInitializeSharedTouchPreferences(storage, normalized.options));
+    const options = gameId === 'th01' ? {...normalized.options} :
+      applySharedTouchPreferences(normalized.options, loadOrInitializeSharedTouchPreferences(storage, normalized.options));
+    if (gameId === 'th01') {
+      try {if (!storage?.getItem(gamePreferenceStorageKey(preferenceId))) options.touchMovementMode = 'joystick';} catch {}
+    }
     const product=PRODUCT_GAMES[gameId];
     if('touchMovementModes' in product){
       if(!(product.touchMovementModes as readonly string[]).includes(options.touchMovementMode))options.touchMovementMode=product.touchMovementModes[0];

@@ -61,6 +61,12 @@ try {
       const plan = await planRuntimeSourceBuild({ game, variant, emsdk: sdk }, context);
       assert.deepEqual(await readdir(source), before, "planning must not create build output");
       assert.equal(plan.common, layout.path("common"), "a monorepo resolves its declared common directory");
+      if (recipe.kind === 'managed-import') {
+        assert.equal(plan.toolchain.kind, 'managed-import');
+        assert.equal(plan.steps[0].args[0], resolve(source, recipe.build[0]));
+        plans.push(plan);
+        continue;
+      }
       assert.equal(plan.environment.EMSDK, sdk);
       assert.equal(plan.environment.TH09_EMSDK, sdk);
       assert.equal(plan.environment.TH15_EMSDK, sdk);
@@ -75,7 +81,7 @@ try {
       plans.push(plan);
     }
   }
-  assert.equal(plans.length, 26);
+  assert.equal(plans.length, 33);
   const th13 = plans.find(plan => plan.game === 'th13');
   assert.equal(th13.variant, 'normal');
   assert.equal(th13.source, layout.path('th13'));

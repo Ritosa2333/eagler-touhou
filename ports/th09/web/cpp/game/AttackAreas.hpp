@@ -12,6 +12,7 @@ struct AttackArea {
 };
 struct AreaCollisionActions {
     virtual ~AreaCollisionActions()=default;
+    virtual Vec3 transfer_position(const Vec3& p,const PlayfieldGeometry& fallback)const{return fallback.to_screen(p);}
     virtual TransferParameters* create_transfer(i32 effect,const Vec3& from,const Vec3& target)=0;
     virtual void charge(float)=0;
     virtual void play_sound(i32,i32)=0;
@@ -30,8 +31,6 @@ public:
     std::array<AttackArea*,capacity> free{};
     i32 count=0,free_count=capacity;
     AttackAreas();
-    AttackAreas(const AttackAreas&)=delete;
-    AttackAreas& operator=(const AttackAreas&)=delete;
     void reset();
     AttackArea& create(const Vec3&,i32 lifetime,i32 delay);
     AttackArea& circle(const Vec3&,float radius,float growth,i32 damage,i32 lifetime,i32 delay,AttackAreaKind);
@@ -40,5 +39,10 @@ public:
     i32 cancel(const Vec3&,Bullet*,AreaCollisionContext&);
     i32 probe(const Vec3&,const Vec3& extent,const Bounds& player_graze,Bullet*,AreaCollisionContext&);
     i32 damage(const Vec3&,const Vec3& extent,i32& special_damage);
+private:
+    // The rollback journal restores the same pool at its original address.
+    // Keep the representation trivially copyable and prevent copies to other pools.
+    AttackAreas(const AttackAreas&)=default;
+    AttackAreas& operator=(const AttackAreas&)=default;
 };
 }

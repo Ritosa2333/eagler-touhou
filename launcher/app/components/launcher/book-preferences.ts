@@ -54,5 +54,8 @@ export function filterBookProducts(products: readonly LibraryProduct[], category
   return products.filter(product => !product.hidden && !product.multiplayer)
     .filter(product => category === 'all' || (category === 'favorites' ? favorites.includes(product.id) : bookCategory(product) === category))
     .filter(product => `${product.id} th${product.number} ${product.title} ${product.subtitle}`.toLocaleLowerCase().includes(term))
-    .sort((a, b) => sort === 'name' ? a.title.localeCompare(b.title, 'zh-CN') : compareBookNumbers(a, b, sort === 'reverse'));
+    .sort((a, b) =>
+      (category === 'all' ? Number(favorites.includes(b.id)) - Number(favorites.includes(a.id)) ||
+        Number(isPc98Product(a)) - Number(isPc98Product(b)) : 0) ||
+      (sort === 'name' ? a.title.localeCompare(b.title, 'zh-CN') : compareBookNumbers(a, b, sort === 'reverse')));
 }

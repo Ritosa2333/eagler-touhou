@@ -1,0 +1,9 @@
+[Unit]
+Description=Publish the monitored TURN selection
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+StateDirectory=eagler-turn-selection
+ExecStart=/usr/bin/python3 /opt/eagler-turn-selection/sync-turn-selection.py /etc/eagler-turn-monitor/selection-sync.json

@@ -1,12 +1,24 @@
+#if TH09_NATIVE_OVERLAY
+#include "../../desktop/ImGuiOverlay.hpp"
+#endif
 #include "Renderer.hpp"
 #include "Shaders.hpp"
 #include "ResampleShader.hpp"
+#ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#endif
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <string_view>
+#if defined(_WIN32) && !defined(__EMSCRIPTEN__)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 // Coarse TH09 development probes; no title dependency or clocks in other
 // builds. Draw order, storage lifetime and existing GL statistics are intact.
@@ -17,10 +29,14 @@
 #define TH09_PERF_COUNT(counter,amount) ((void)0)
 #endif
 
+#ifdef __EMSCRIPTEN__
 EM_JS(int, touhou_clip_control, (), {
   const e=GL.currentContext.GLctx.getExtension('EXT_clip_control');
   if(e)e.clipControlEXT(e.LOWER_LEFT_EXT,e.ZERO_TO_ONE_EXT);return !!e;
 });
+#else
+static int touhou_clip_control() { return 0; }
+#endif
 namespace touhou::sdl {
 namespace {
 Renderer* active=nullptr;
@@ -33,6 +49,18 @@ constexpr std::array<float,16> identity{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
 constexpr u32 instanceMatrixBytes=sizeof(identity),instanceStride=2*instanceMatrixBytes+sizeof(u32);
 float bits(u32 n){float f;std::memcpy(&f,&n,4);return f;}
 std::array<float,4> color(u32 n){return {float(n>>16&255)/255,float(n>>8&255)/255,float(n&255)/255,float(n>>24)/255};}
+bool precombined(const State& state){
+ if(state.layout.screen)return false;
+ const auto& p=state.matrix[2];
+ return !state.pipeline.fog||(!state.pipeline.rangeFog&&p[3]==0&&p[7]==0&&p[11]==1&&p[15]==0);
+}
+std::array<float,16> multiply(const std::array<float,16>& a,const std::array<float,16>& b){
+ std::array<float,16> result;
+ for(u32 row=0;row<4;++row)for(u32 column=0;column<4;++column)
+   result[row*4+column]=((a[row*4]*b[column]+a[row*4+1]*b[4+column])+a[row*4+2]*b[8+column])+a[row*4+3]*b[12+column];
+ return result;
+}
+std::array<float,16> combined_transform(const State& state){return multiply(multiply(state.matrix[0],state.matrix[1]),state.matrix[2]);}
 void replace(std::string& s,const std::string& a,const std::string& b){size_t p=0;while((p=s.find(a,p))!=std::string::npos){s.replace(p,a.size(),b);p+=b.size();}}
 GLuint shader(GLenum type,const std::string& source){GLuint s=glCreateShader(type);const char* p=source.c_str();glShaderSource(s,1,&p,nullptr);glCompileShader(s);GLint ok=0;glGetShaderiv(s,GL_COMPILE_STATUS,&ok);if(!ok){char log[2048];glGetShaderInfoLog(s,sizeof(log),nullptr,log);std::fprintf(stderr,"SDL shader: %s\n",log);std::abort();}return s;}
 
@@ -47,13 +75,96 @@ bool equal(const State& a,const State& b,bool world=false){
 Renderer* current(){return active;}void set_current(Renderer* r){active=r;}
 State::State(){for(auto& m:matrix)m=identity;}
 Renderer::Renderer(int v,Resolve r,void* p):version(v),resolve(r),owner(p){}
-bool Renderer::initialize(){
+#ifndef __EMSCRIPTEN__
+namespace {
+#ifdef _WIN32
+bool read_windows_display_mode(SDL_DisplayID display, DEVMODEW& mode) {
+    const auto monitor = static_cast<HMONITOR>(
+        SDL_GetPointerProperty(SDL_GetDisplayProperties(display), SDL_PROP_DISPLAY_WINDOWS_HMONITOR_POINTER, nullptr));
+    MONITORINFOEXW info{};
+    info.cbSize = sizeof(info);
+    if (!monitor || !GetMonitorInfoW(monitor, &info)) return false;
+    mode.dmSize = sizeof(mode);
+    return EnumDisplaySettingsW(info.szDevice, ENUM_CURRENT_SETTINGS, &mode) != FALSE;
+}
+#endif
+
+void apply_desktop_display_mode(SDL_Window* window) {
+    const char* configured = SDL_getenv("EAGLER_DESKTOP_DISPLAY_MODE");
+    const std::string_view mode = configured ? configured : "windowed";
+    if (mode != "borderless" && mode != "exclusive") return;
+
+    SDL_DisplayMode exclusiveMode{};
+    const bool exclusive = mode == "exclusive";
+    const auto display = SDL_GetDisplayForWindow(window);
+#ifdef _WIN32
+    DEVMODEW original{};
+#endif
+    if (exclusive) {
+        // Keep the desktop refresh rate when the exclusive resolution supports it.
+        if (!SDL_GetClosestFullscreenDisplayMode(display, 640, 480, 0.0f, false, &exclusiveMode)) {
+            SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO, "Exclusive fullscreen unavailable, using a window: %s", SDL_GetError());
+            return;
+        }
+#ifdef _WIN32
+        if (!read_windows_display_mode(display, original)) {
+            SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO, "Unable to query the Windows display mode, using a window");
+            return;
+        }
+#endif
+    }
+    bool applied = SDL_SetWindowFullscreenMode(window, exclusive ? &exclusiveMode : nullptr) &&
+        SDL_SetWindowFullscreen(window, true) && SDL_SyncWindow(window) &&
+        (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) &&
+        (SDL_GetWindowFullscreenMode(window) != nullptr) == exclusive;
+#ifdef _WIN32
+    if (applied && exclusive) {
+        DEVMODEW actual{};
+        applied = read_windows_display_mode(display, actual) &&
+            actual.dmPelsWidth == static_cast<DWORD>(exclusiveMode.w) &&
+            actual.dmPelsHeight == static_cast<DWORD>(exclusiveMode.h) &&
+            (actual.dmPelsWidth != original.dmPelsWidth || actual.dmPelsHeight != original.dmPelsHeight ||
+             actual.dmDisplayFrequency != original.dmDisplayFrequency);
+        if (applied) {
+            SDL_Log("Windows display mode: %lux%lu @ %lu Hz (desktop %lux%lu @ %lu Hz)",
+                actual.dmPelsWidth, actual.dmPelsHeight, actual.dmDisplayFrequency,
+                original.dmPelsWidth, original.dmPelsHeight, original.dmDisplayFrequency);
+        } else {
+            SDL_SetError("Windows did not report the requested display mode change");
+        }
+    }
+#endif
+    if (applied) return;
+    SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO, "Unable to enter %s fullscreen, using a window: %s", mode.data(), SDL_GetError());
+    SDL_SetWindowFullscreen(window, false);
+    SDL_SetWindowFullscreenMode(window, nullptr);
+    SDL_SyncWindow(window);
+}
+}
+#endif
+
+bool Renderer::initialize(const char* title){
  if(!SDL_Init(SDL_INIT_VIDEO|SDL_INIT_EVENTS)){failure=SDL_GetError();return false;}
  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,SDL_GL_CONTEXT_PROFILE_ES);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,0);
  SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE,0);SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,0);SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE,0);SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
- window=SDL_CreateWindow(version==8?"Touhou 08":"Touhou 10",640,480,SDL_WINDOW_OPENGL);if(!window){failure=SDL_GetError();return false;}
+ window=SDL_CreateWindow(title?title:(version==8?"Touhou 08":"Touhou 10"),640,480,SDL_WINDOW_OPENGL);if(!window){failure=SDL_GetError();return false;}
  SDL_SetWindowSize(window,640,480);
- context=SDL_GL_CreateContext(window);if(!context){failure=SDL_GetError();return false;}SDL_GL_SetSwapInterval(1);drawState=DrawStateCache{};
+ context=SDL_GL_CreateContext(window);if(!context){failure=SDL_GetError();return false;}
+#ifndef __EMSCRIPTEN__
+ apply_desktop_display_mode(window);
+ const auto* vsync = SDL_getenv("EAGLER_DESKTOP_VSYNC");
+ const int interval = vsync && std::string_view(vsync) == "0" ? 0 : 1;
+ if (!SDL_GL_SetSwapInterval(interval)) {
+     SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO, "Could not set vertical sync interval to %d: %s", interval, SDL_GetError());
+ } else if (interval == 0) {
+     int actual = -1;
+     if (SDL_GL_GetSwapInterval(&actual)) SDL_Log("SDL GL swap interval: %d", actual);
+     else SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO, "Could not verify the vertical sync setting: %s", SDL_GetError());
+ }
+#else
+ SDL_GL_SetSwapInterval(1);
+#endif
+ drawState=DrawStateCache{};
  std::string source=vertexSource;if(version==10&&touhou_clip_control()){replace(source,"position.z*2.0-1.0","position.z");replace(source,"gl_Position.z=gl_Position.z*2.0-gl_Position.w;","");}
  vertex=shader(GL_VERTEX_SHADER,source);glGenBuffers(1,&vertices.id);glGenBuffers(1,&indices.id);glGenBuffers(1,&instances.id);
  glActiveTexture(GL_TEXTURE0);buildingGeneric=true;select(State{});generic=*program;programs.clear();buildingGeneric=false;
@@ -68,9 +179,16 @@ bool Renderer::initialize(){
  glAttachShader(resampleProgram,rv);glAttachShader(resampleProgram,rf);glLinkProgram(resampleProgram);glDeleteShader(rv);glDeleteShader(rf);
  GLint linked=0;glGetProgramiv(resampleProgram,GL_LINK_STATUS,&linked);if(!linked){failure="Resample program link failed";return false;}
  glGenVertexArrays(1,&resampleVao);glGenTextures(1,&weightTexture);
+ #if TH09_NATIVE_OVERLAY
+ Th09Overlay::Open(window);
+#endif
  warming=false;set_current(this);return true;
 }
-Renderer::~Renderer(){discard();for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second.id);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
+Renderer::~Renderer(){discard();if(context){
+#if TH09_NATIVE_OVERLAY
+ Th09Overlay::Close();
+#endif
+ for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second.id);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);SDL_GL_DestroyContext(context);}if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
 void Renderer::bind_texture(GLuint id){if(boundTexture!=id){glBindTexture(GL_TEXTURE_2D,id);boundTexture=id;++stats.textureBinds;}}
 void Renderer::bind_framebuffer(GLenum target,GLuint id){
  const bool read=target!=GL_DRAW_FRAMEBUFFER,draw=target!=GL_READ_FRAMEBUFFER;
@@ -95,10 +213,10 @@ void Renderer::select(const State& s){
   std::string source=fragmentSource,defs;if(!buildingGeneric){replace(source,"uniform bool hasTexture,alphaTest,fogEnabled;","");replace(source,"uniform int colorOp,alphaOp,colorArg1,colorArg2,alphaArg1,alphaArg2,alphaFunc;","");
   for(int i=0;i<10;i++)defs+="const "+std::string(i<3?"bool ":"int ")+constants[i]+"="+(i<3?(key[i]?"true":"false"):std::to_string(key[i]))+";\n";
   replace(source,"precision highp float;","precision highp float;\n"+defs);}
-  if(version==8){replace(source,"float a=c.a*255.0","float a=floor(c.a*255.0+.5)");replace(source,"gl_FragDepth=depth16?(floor(scaled)+floor(fract(scaled)-gl_FragCoord.z+0.5))/65535.0:gl_FragCoord.z;","");}
+  if(version==8){replace(source,"gl_FragDepth=depth16?(floor(scaled)+floor(fract(scaled)-gl_FragCoord.z+0.5))/65535.0:gl_FragCoord.z;","");}
   Program p;p.id=glCreateProgram();GLuint fs=shader(GL_FRAGMENT_SHADER,source);glAttachShader(p.id,vertex);glAttachShader(p.id,fs);glLinkProgram(p.id);glDeleteShader(fs);GLint linked=0;glGetProgramiv(p.id,GL_LINK_STATUS,&linked);if(!linked){char log[2048];glGetProgramInfoLog(p.id,sizeof(log),nullptr,log);std::fprintf(stderr,"SDL program: %s\n",log);std::abort();}
-  const char* names[]{"viewport","transformed","textureTransform","instanced","world","view","projection","textureMatrix","fogEnabled","rangeFog","fogMode","fogParams","fogColor","hasTexture","factor","colorOp","colorArg1","colorArg2","alphaOp","alphaArg1","alphaArg2","alphaTest","alphaRef","alphaFunc","depth16","tex"};
-  for(int i=0;i<26;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);it=programs.emplace(key,p).first;
+  const char* names[]{"viewport","transformed","textureTransform","instanced","world","view","projection","textureMatrix","fogEnabled","rangeFog","fogMode","fogParams","fogColor","hasTexture","factor","colorOp","colorArg1","colorArg2","alphaOp","alphaArg1","alphaArg2","alphaTest","alphaRef","alphaFunc","depth16","tex","precombined","screenTransform"};
+  for(int i=0;i<28;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);it=programs.emplace(key,p).first;
  }
  program=&it->second;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}
 }
@@ -146,7 +264,7 @@ void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,con
  // This is a property of the semantic vertex layout, independent of the
  // title's alpha/depth compatibility rules selected by version.
  const bool instance=state.layout==attributes(VertexLayout::WorldUv)&&stride==20&&primitive==Topology::Strip&&count==2;
- if(instance){if(batching&&(!instancing||!equal(batchState,state,true)||quad.size()!=80||std::memcmp(quad.data(),data,80)))finish_batch();if(!batching){batchState=state;quad.assign(static_cast<const u8*>(data),static_cast<const u8*>(data)+80);batching=instancing=true;}const auto old=worlds.size();worlds.resize(old+instanceStride);std::memcpy(worlds.data()+old,state.matrix[0].data(),instanceMatrixBytes);std::memcpy(worlds.data()+old+instanceMatrixBytes,state.matrix[3].data(),instanceMatrixBytes);std::memcpy(worlds.data()+old+2*instanceMatrixBytes,&state.pipeline.textureFactor,sizeof(u32));if(worlds.size()>=1024*instanceStride)finish_batch();return;}
+ if(instance){if(batching&&(!instancing||!equal(batchState,state,true)||quad.size()!=80||std::memcmp(quad.data(),data,80)))finish_batch();if(!batching){batchState=state;quad.assign(static_cast<const u8*>(data),static_cast<const u8*>(data)+80);batching=instancing=true;}const auto old=worlds.size();worlds.resize(old+instanceStride);const auto model=precombined(state)?combined_transform(state):state.matrix[0];std::memcpy(worlds.data()+old,model.data(),instanceMatrixBytes);std::memcpy(worlds.data()+old+instanceMatrixBytes,state.matrix[3].data(),instanceMatrixBytes);std::memcpy(worlds.data()+old+2*instanceMatrixBytes,&state.pipeline.textureFactor,sizeof(u32));if(worlds.size()>=1024*instanceStride)finish_batch();return;}
  // Independent line segments concatenate without introducing a connection
  // between owner draws. Line strips and indexed draws keep their barriers.
  const auto topology=lines?Topology::Lines:Topology::Triangles;
@@ -197,13 +315,19 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  GPU* texture=d.texture?&surface(d.texture):nullptr;auto& g=target(d.target,d.depth);const auto& v=d.viewport;
  if(!drawState.has_viewport||std::memcmp(&drawState.viewport,&v,sizeof(v))){glViewport(v.x,v.y,v.width,v.height);glDepthRangef(v.min,v.max);drawState.viewport=v;drawState.has_viewport=true;}select(d);
  float vp[]{float(v.x),float(v.y),float(v.width),float(v.height)};uniform(0,4,vp);const bool transformed=d.layout.screen;
+ // Match the CPU-rounded constants uploaded by the original renderer.
+ const float scale=transformed?2.f:1.f;
+ const float screen[]{.5f-vp[0]-vp[2]*.5f,.5f-vp[1]-vp[3]*.5f,scale/vp[2],scale/vp[3]};
+ uniform(27,4,screen);
  integer(1,transformed);integer(2,p.textureTransform);integer(3,!!instance);
  // Screen vertices already contain their projection and fog. Instanced
  // world/texture transforms and factors come from the instance buffer.
  // Leave skipped uniform caches untouched so a later regular draw uploads
  // its own values even when it reuses this program.
  if(!transformed){if(!instance)uniform(4,16,d.matrix[0].data());uniform(5,16,d.matrix[1].data());uniform(6,16,d.matrix[2].data());if(p.textureTransform&&!instance)uniform(7,16,d.matrix[3].data());}
- integer(8,p.fog);if(p.fog){if(!transformed){integer(9,p.rangeFog);integer(10,u32(p.fogMode));float fog[]{p.fogNear,p.fogFar,p.fogDensity};uniform(11,3,fog);}uniform(12,4,color(p.fogColor).data());}
+ integer(26,precombined(d));
+ if(!instance&&precombined(d)){const auto model=combined_transform(d);uniform(4,16,model.data());}
+ integer(8,p.fog);if(p.fog){if(!transformed){integer(9,p.rangeFog);integer(10,u32(p.fogMode));const float reciprocal=1.f/(p.fogFar-p.fogNear);float fog[]{-reciprocal,p.fogFar*reciprocal,p.fogDensity};uniform(11,3,fog);}uniform(12,4,color(p.fogColor).data());}
  integer(13,!!texture);if(!instance)uniform(14,4,color(p.textureFactor).data());
  auto arg=[](Argument a){return int(u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u));};
  integer(15,u32(p.color.operation));integer(16,arg(p.color.first));integer(17,arg(p.color.second));integer(18,u32(p.alpha.operation));integer(19,arg(p.alpha.first));integer(20,arg(p.alpha.second));integer(21,p.alphaTest);float alpha=float(p.alphaReference)/255;uniform(22,1,&alpha);integer(23,u32(p.alphaCompare));integer(24,version==10&&p.depthTest&&d.depth&&resolve(owner,d.depth).format==PixelFormat::Depth16);
@@ -290,8 +414,55 @@ void Renderer::read(u32 id){flush();auto it=surfaces.find(id);if(it==surfaces.en
 }
 void Renderer::release(u32 id){flush();auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
 void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
-bool Renderer::commit(){if(!pending)return false;TH09_PERF_SCOPE(commit_cost,GpuCommit);auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
+bool Renderer::commit(){if(!pending)return false;TH09_PERF_SCOPE(commit_cost,GpuCommit);auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);
+ int gameX=0,gameBottom=0,gameWidth=640,gameTop=480;
+#if TH09_NATIVE_OVERLAY
+ int windowHeight=480;
+#endif
+#ifndef __EMSCRIPTEN__
+ int pixelsWide=0,pixelsHigh=0;
+ if(SDL_GetWindowSizeInPixels(window,&pixelsWide,&pixelsHigh)){
+ #if TH09_NATIVE_OVERLAY
+    windowHeight=pixelsHigh;
+ #endif
+    const int scale=std::min(pixelsWide/4,pixelsHigh/3);
+    if(scale<=0)return false;
+    const int viewWidth=scale*4,viewHeight=scale*3;
+    gameX=(pixelsWide-viewWidth)/2;gameBottom=(pixelsHigh-viewHeight)/2;
+    gameWidth=viewWidth;gameTop=gameBottom+viewHeight;
+    if(gameWidth!=pixelsWide||gameTop-gameBottom!=pixelsHigh){
+        const GLfloat black[]={0,0,0,1};
+        glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
+        glClearBufferfv(GL_COLOR,0,black);
+        drawState=DrawStateCache{};
+    }
+ }
+#endif
+ glBlitFramebuffer(0,0,s.width,s.height,gameX,gameTop,gameX+gameWidth,gameBottom,GL_COLOR_BUFFER_BIT,GL_NEAREST);
+#if TH09_NATIVE_OVERLAY
+ #if TH09_PROFILE_OVERLAY
+ static const auto* profile=SDL_getenv("TH09_OVERLAY_PROFILE");
+ static std::array<Uint64,300> profileSamples{};
+ static unsigned profileFrame=0;
+ if(profile&&profileFrame==0&&std::string_view(profile)=="open")Th09Overlay::ShowLobby();
+ const auto profileStart=profile?SDL_GetTicksNS():0;
+ #endif
+ Th09Overlay::Composite(gameX,windowHeight-gameTop,gameWidth,gameTop-gameBottom);
+ #if TH09_PROFILE_OVERLAY
+ if(profile&&profileFrame<360){
+    const auto cost=SDL_GetTicksNS()-profileStart;
+    if(profileFrame>=60)profileSamples[profileFrame-60]=cost;
+    if(++profileFrame==360){
+        std::sort(profileSamples.begin(),profileSamples.end());
+        SDL_Log("Overlay CPU profile %s n=300 p50=%.5f ms p95=%.5f ms p99=%.5f ms",profile,
+            profileSamples[150]/1e6,profileSamples[285]/1e6,profileSamples[297]/1e6);
+    }
+ }
+ #endif
+#endif
+ SDL_GL_SwapWindow(window);stats.presentations++;return true;}
 }
+#ifdef __EMSCRIPTEN__
 extern "C" {
 const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}
 void sdl_defer(int enabled){if(auto* r=touhou::sdl::current())r->defer=enabled;}
@@ -302,3 +473,4 @@ double sdl_ticks(){return double(SDL_GetTicksNS())/1000000.0;}
 __attribute__((export_name("sdl_canvas"))) void sdl_canvas(const char* selector){SDL_SetHint(SDL_HINT_EMSCRIPTEN_CANVAS_SELECTOR,selector);}
 __attribute__((export_name("sdl_pump"))) void sdl_pump(){SDL_Event event;while(SDL_PollEvent(&event)){};}
 }
+#endif

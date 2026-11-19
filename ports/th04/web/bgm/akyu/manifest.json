@@ -1,0 +1,408 @@
+{
+  "collection": "Akyu Untouched Score",
+  "volume": 1,
+  "codec": "opus",
+  "bitrate": 64000,
+  "sampleRate": 48000,
+  "tracks": {
+    "st00-m26": {
+      "url": "akyu/02.opus",
+      "title": "1-02. Witching Dream-opus64",
+      "audioSha256": "c9f92bacb18888ad321bedd28437d3f0bde7e43c19c233affd87244bb60c70ff",
+      "bytes": 2562151,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 263.219833
+    },
+    "st00b-m26": {
+      "url": "akyu/04.opus",
+      "title": "1-04. Decoration Battle-opus64",
+      "audioSha256": "9a8aaea87b09d454be1a766395a6a6db5f6d2a090322624bbf4e372c5039e226",
+      "bytes": 1481126,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 158.4465
+    },
+    "st01-m26": {
+      "url": "akyu/05.opus",
+      "title": "1-05. Break the Sabbath-opus64",
+      "audioSha256": "d163767e8139f26d27e67412ce3bdb36d6ea0d2a252b8248451eaa3a9713adbb",
+      "bytes": 2249561,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 266.379833
+    },
+    "st01b-m26": {
+      "url": "akyu/06.opus",
+      "title": "1-06. Scarlet Symphony ~ Scarlet Phoneme-opus64",
+      "audioSha256": "5222e8d04616fc66c56e311779ce6c3f52e5d85b762a1714ceecb3f4f41869a5",
+      "bytes": 1686049,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 160.499833
+    },
+    "st02-m26": {
+      "url": "akyu/07.opus",
+      "title": "1-07. Bad Apple!!-opus64",
+      "audioSha256": "75224297899796e8221d07b9b095018adb3958058dcd74c845fa2e28ed3b2749",
+      "bytes": 1955663,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 193.193167
+    },
+    "st02b-m26": {
+      "url": "akyu/08.opus",
+      "title": "1-08. Spirit Battle ~ Perdition crisis-opus64",
+      "audioSha256": "fe4a78c767f5a4f6c0f1761e05cb51740727bbc9ced10da4a4f3f013069d00e8",
+      "bytes": 2414374,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 228.113167
+    },
+    "st03b-m26": {
+      "url": "akyu/11.opus",
+      "title": "1-11. Vessel of Stars ~ Casket of Star-opus64",
+      "audioSha256": "bbfecfa1dad3373c2b69ca8ca41f3d3d627691a7b3b74daf3d5223aacc8194bf",
+      "bytes": 1677652,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 172.193167
+    },
+    "st03c-m26": {
+      "url": "akyu/10.opus",
+      "title": "1-10. Maiden's Capriccio-opus64",
+      "audioSha256": "8051c3fe317d1e11c0e31e2a937d2f16e763d67b5313e17a6b4019fefff7a0ab",
+      "bytes": 1902660,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 188.913167
+    },
+    "st04b-m26": {
+      "url": "akyu/13.opus",
+      "title": "1-13. Sleeping Terror-opus64",
+      "audioSha256": "5c0a7808034c6f14709f3d1b2cb29adf09da5369271c60c6a138c291918f252e",
+      "bytes": 2941802,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 300.553167
+    },
+    "st05-m26": {
+      "url": "akyu/14.opus",
+      "title": "1-14. Dream Land-opus64",
+      "audioSha256": "22bf6fe6a8e629e17a055639225f87cde8b6f090734a8ec281b0673c185c5eab",
+      "bytes": 2003218,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 198.299833
+    },
+    "st05b-m26": {
+      "url": "akyu/15.opus",
+      "title": "1-15. Faint Dream ~ Inanimate Dream-opus64",
+      "audioSha256": "81ffc06b8238423067b64239203d4c5ed53230abc6a3af3b5dae763c94d616c3",
+      "bytes": 2999857,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 314.4865
+    },
+    "st06-m26": {
+      "url": "akyu/16.opus",
+      "title": "2-01. The Inevitably Forbidden Game-opus64",
+      "audioSha256": "722a643c4e385981707547069fb26a3d72ea14e78a0b68e0f4e7046a4c194287",
+      "bytes": 2681774,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 280.499833
+    },
+    "st06b-m26": {
+      "url": "akyu/17.opus",
+      "title": "2-02. Illusion of a Maid ~ Icemilk Magic-opus64",
+      "audioSha256": "98f9f2bf7aca8004fa2cc9c0cfa6deb320e0b99b1d195ffc054fc067a47d2e16",
+      "bytes": 1939504,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 198.019833
+    },
+    "st06c-m26": {
+      "url": "akyu/18.opus",
+      "title": "2-03. Cute Devil ~ Innocence-opus64",
+      "audioSha256": "61401a71b334169eafff597e20e17151b56f84acc282c3d841f8948d62f3391c",
+      "bytes": 3096913,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 303.5265
+    },
+    "st10-m26": {
+      "url": "akyu/03.opus",
+      "title": "1-03. Selene's light-opus64",
+      "audioSha256": "1d260620a811aa7f725d32bfbf8761fb8455e90695c5c0c349886b96a1bda351",
+      "bytes": 1514535,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 161.793167
+    },
+    "st00-m86": {
+      "url": "akyu/02.opus",
+      "title": "1-02. Witching Dream-opus64",
+      "audioSha256": "c9f92bacb18888ad321bedd28437d3f0bde7e43c19c233affd87244bb60c70ff",
+      "bytes": 2562151,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 263.219833
+    },
+    "st00b-m86": {
+      "url": "akyu/04.opus",
+      "title": "1-04. Decoration Battle-opus64",
+      "audioSha256": "9a8aaea87b09d454be1a766395a6a6db5f6d2a090322624bbf4e372c5039e226",
+      "bytes": 1481126,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 158.4465
+    },
+    "st01-m86": {
+      "url": "akyu/05.opus",
+      "title": "1-05. Break the Sabbath-opus64",
+      "audioSha256": "d163767e8139f26d27e67412ce3bdb36d6ea0d2a252b8248451eaa3a9713adbb",
+      "bytes": 2249561,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 266.379833
+    },
+    "st01b-m86": {
+      "url": "akyu/06.opus",
+      "title": "1-06. Scarlet Symphony ~ Scarlet Phoneme-opus64",
+      "audioSha256": "5222e8d04616fc66c56e311779ce6c3f52e5d85b762a1714ceecb3f4f41869a5",
+      "bytes": 1686049,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 160.499833
+    },
+    "st02-m86": {
+      "url": "akyu/07.opus",
+      "title": "1-07. Bad Apple!!-opus64",
+      "audioSha256": "75224297899796e8221d07b9b095018adb3958058dcd74c845fa2e28ed3b2749",
+      "bytes": 1955663,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 193.193167
+    },
+    "st02b-m86": {
+      "url": "akyu/08.opus",
+      "title": "1-08. Spirit Battle ~ Perdition crisis-opus64",
+      "audioSha256": "fe4a78c767f5a4f6c0f1761e05cb51740727bbc9ced10da4a4f3f013069d00e8",
+      "bytes": 2414374,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 228.113167
+    },
+    "st03b-m86": {
+      "url": "akyu/11.opus",
+      "title": "1-11. Vessel of Stars ~ Casket of Star-opus64",
+      "audioSha256": "bbfecfa1dad3373c2b69ca8ca41f3d3d627691a7b3b74daf3d5223aacc8194bf",
+      "bytes": 1677652,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 172.193167
+    },
+    "st03c-m86": {
+      "url": "akyu/10.opus",
+      "title": "1-10. Maiden's Capriccio-opus64",
+      "audioSha256": "8051c3fe317d1e11c0e31e2a937d2f16e763d67b5313e17a6b4019fefff7a0ab",
+      "bytes": 1902660,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 188.913167
+    },
+    "st04b-m86": {
+      "url": "akyu/13.opus",
+      "title": "1-13. Sleeping Terror-opus64",
+      "audioSha256": "5c0a7808034c6f14709f3d1b2cb29adf09da5369271c60c6a138c291918f252e",
+      "bytes": 2941802,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 300.553167
+    },
+    "st05-m86": {
+      "url": "akyu/14.opus",
+      "title": "1-14. Dream Land-opus64",
+      "audioSha256": "22bf6fe6a8e629e17a055639225f87cde8b6f090734a8ec281b0673c185c5eab",
+      "bytes": 2003218,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 198.299833
+    },
+    "st05b-m86": {
+      "url": "akyu/15.opus",
+      "title": "1-15. Faint Dream ~ Inanimate Dream-opus64",
+      "audioSha256": "81ffc06b8238423067b64239203d4c5ed53230abc6a3af3b5dae763c94d616c3",
+      "bytes": 2999857,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 314.4865
+    },
+    "st06-m86": {
+      "url": "akyu/16.opus",
+      "title": "2-01. The Inevitably Forbidden Game-opus64",
+      "audioSha256": "722a643c4e385981707547069fb26a3d72ea14e78a0b68e0f4e7046a4c194287",
+      "bytes": 2681774,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 280.499833
+    },
+    "st06b-m86": {
+      "url": "akyu/17.opus",
+      "title": "2-02. Illusion of a Maid ~ Icemilk Magic-opus64",
+      "audioSha256": "98f9f2bf7aca8004fa2cc9c0cfa6deb320e0b99b1d195ffc054fc067a47d2e16",
+      "bytes": 1939504,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 198.019833
+    },
+    "st06c-m86": {
+      "url": "akyu/18.opus",
+      "title": "2-03. Cute Devil ~ Innocence-opus64",
+      "audioSha256": "61401a71b334169eafff597e20e17151b56f84acc282c3d841f8948d62f3391c",
+      "bytes": 3096913,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 303.5265
+    },
+    "st10-m86": {
+      "url": "akyu/03.opus",
+      "title": "1-03. Selene's light-opus64",
+      "audioSha256": "1d260620a811aa7f725d32bfbf8761fb8455e90695c5c0c349886b96a1bda351",
+      "bytes": 1514535,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 161.793167
+    },
+    "st04-m86": {
+      "url": "akyu/12.opus",
+      "title": "1-12. Lotus Love-opus64",
+      "audioSha256": "eea2e26985a0c2fb5383a4cc6f9e7f89a3268cb3ea2badf02060f67f9de591c1",
+      "bytes": 2439009,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 248.539833
+    },
+    "st04-m26": {
+      "url": "akyu/12.opus",
+      "title": "1-12. Lotus Love-opus64",
+      "audioSha256": "eea2e26985a0c2fb5383a4cc6f9e7f89a3268cb3ea2badf02060f67f9de591c1",
+      "bytes": 2439009,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 248.539833
+    },
+    "st03-m86": {
+      "url": "akyu/09.opus",
+      "title": "1-09. Alice Maestra-opus64",
+      "audioSha256": "88f25be2f47634e4357b72be1531a2900181828dbbcfca4a4aed46c231c8305b",
+      "bytes": 3406650,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 346.353167
+    },
+    "st03-m26": {
+      "url": "akyu/09.opus",
+      "title": "1-09. Alice Maestra-opus64",
+      "audioSha256": "88f25be2f47634e4357b72be1531a2900181828dbbcfca4a4aed46c231c8305b",
+      "bytes": 3406650,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 346.353167
+    },
+    "end1-m26": {
+      "url": "akyu/19.opus",
+      "title": "2-04. Days-opus64",
+      "audioSha256": "66366491ea2f38fc1927c2b9a0c835384283552d14a9813d8116bd76a737541c",
+      "bytes": 1505947,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 155.659833
+    },
+    "end2-m26": {
+      "url": "akyu/20.opus",
+      "title": "2-05. Peaceful-opus64",
+      "audioSha256": "b85cb7f8e41b7892dffca430882f6abb534419cdc4fd6e80f25f3c880abfabfe",
+      "bytes": 1731836,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 168.113167
+    },
+    "name-m26": {
+      "url": "akyu/22.opus",
+      "title": "2-07. Those Who Live in Illusions-opus64",
+      "audioSha256": "ced111c539a1176a7a9a7a63bb02ddf2b83fdc667a0f62bc972bc68ddc182623",
+      "bytes": 1284840,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 143.033167
+    },
+    "op-m26": {
+      "url": "akyu/01.opus",
+      "title": "1-01. Gensokyo ~ Lotus Land Story-opus64",
+      "audioSha256": "45a477498f7e444901e25d5f9cbf0786ea2d1098fc30676689c16608534efa7b",
+      "bytes": 1948782,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 225.513167
+    },
+    "end1-m86": {
+      "url": "akyu/19.opus",
+      "title": "2-04. Days-opus64",
+      "audioSha256": "66366491ea2f38fc1927c2b9a0c835384283552d14a9813d8116bd76a737541c",
+      "bytes": 1505947,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 155.659833
+    },
+    "end2-m86": {
+      "url": "akyu/20.opus",
+      "title": "2-05. Peaceful-opus64",
+      "audioSha256": "b85cb7f8e41b7892dffca430882f6abb534419cdc4fd6e80f25f3c880abfabfe",
+      "bytes": 1731836,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 168.113167
+    },
+    "name-m86": {
+      "url": "akyu/22.opus",
+      "title": "2-07. Those Who Live in Illusions-opus64",
+      "audioSha256": "ced111c539a1176a7a9a7a63bb02ddf2b83fdc667a0f62bc972bc68ddc182623",
+      "bytes": 1284840,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 143.033167
+    },
+    "op-m86": {
+      "url": "akyu/01.opus",
+      "title": "1-01. Gensokyo ~ Lotus Land Story-opus64",
+      "audioSha256": "45a477498f7e444901e25d5f9cbf0786ea2d1098fc30676689c16608534efa7b",
+      "bytes": 1948782,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 225.513167
+    },
+    "staff-m86": {
+      "url": "akyu/21.opus",
+      "title": "2-06. Arcadian Dream-opus64",
+      "audioSha256": "80abe40e3351c40c22afb31bf0bcfd7c0888ce775c4df1834892cd783f0ab8f2",
+      "bytes": 2547894,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 258.2065
+    },
+    "staff-m26": {
+      "url": "akyu/21.opus",
+      "title": "2-06. Arcadian Dream-opus64",
+      "audioSha256": "80abe40e3351c40c22afb31bf0bcfd7c0888ce775c4df1834892cd783f0ab8f2",
+      "bytes": 2547894,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 258.2065
+    }
+  },
+  "fallback": [
+    "logo-m26"
+  ]
+}

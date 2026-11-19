@@ -17,6 +17,7 @@ struct ComboActions {
     virtual void add_score(i32 points)=0;
     virtual void score_popup(const Vec3&,i32 score,u32 color)=0;
     virtual void character_meter(ComboState&,const Vec3&)=0;
+    virtual Vec3 transfer_position(const Vec3& p,const PlayfieldGeometry& fallback)const{return fallback.to_screen(p);}
     virtual TransferParameters* create_transfer(i32 effect,const Vec3&,const Vec3& control)=0;
 };
 class Combo {

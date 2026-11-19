@@ -75,6 +75,8 @@ private:
     std::deque<std::vector<std::uint8_t>> startupPending_;
     struct HashSlot {std::uint32_t frame=Netplay::INVALID_FRAME,local=0,remote=0;bool hasLocal=false,hasRemote=false;};
     std::array<HashSlot,64> hashes_{};
+    bool replayHashes_ = false;
+    bool SendHash(const HashSlot& slot);
     Netplay::PeerTransport& transport_;
     Netplay::RollbackCore core_;
     Netplay::SessionGate gate_;

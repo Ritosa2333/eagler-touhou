@@ -1,10 +1,15 @@
+#if TH09_NATIVE_OVERLAY
+#include "../../../desktop/ImGuiOverlay.hpp"
+#endif
 #include "browser-gamepad-input.hpp"
 // SDL application integration under validation. Test-only entry points are
 // compiled behind TH09_DEVELOPMENT_HARNESS; no original executable is linked.
 #include "Assets.hpp"
 #include "AudioDevice.hpp"
 #include "FontDevice.hpp"
+#include "MotionCapture.hpp"
 #include "PerformanceDiagnostics.hpp"
+#include "RuntimePath.hpp"
 #include "../game/GamePresentation.hpp"
 #include "../game/BulletDraw.hpp"
 #include "../game/TitleMenus.hpp"
@@ -21,21 +26,36 @@
 #include "../multiplayer/RecoverySchedule.hpp"
 #include "../multiplayer/SpectatorSchedule.hpp"
 #include "../multiplayer/SpectatorPlayback.hpp"
+#ifdef __EMSCRIPTEN__
 #include <dirent.h>
+#endif
 #include <ctime>
 #include <algorithm>
 #include <deque>
 #include <iterator>
+#include <optional>
 #include "../../../portable/input/TouchController.hpp"
+#include "../../../portable/sdl/FrameCadence.hpp"
+
+Netplay::PeerTransport& th09_shared_transport();
+#if TH09_NATIVE_ROOM
+#include <eagler/netplay/NativeRoomTransport.hpp>
+#include "../../../desktop/SpectatorStream.hpp"
+#include <nlohmann/json.hpp>
+#if defined(_WIN32) && TH09_NATIVE_OVERLAY
+#include <windows.h>
+#endif
+Netplay::NativeRoomTransport& th09_native_room_transport();
+#endif
+#ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <emscripten/html5.h>
-#include "../../../portable/sdl/FrameCadence.hpp"
+#define TH09_EXPORT(name) __attribute__((export_name(name)))
 // DOM keys have one owner in updated shells; preserve older-shell input.
 EM_JS(int, th09_browser_keyboard, (), {return typeof Module["resetBrowserKeyboard"]==='function';});
 EM_JS(void, th09_reset_browser_keyboard, (), {Module["resetBrowserKeyboard"]?.();});
 EM_JS(int, th09_local_keyboard, (int seat), {return globalThis.__eaglerKeyboardInputBridge?.sampleLocal?.(seat) ?? -1;});
 
-Netplay::PeerTransport& th09_shared_transport();
 EM_JS(void, th09_browser_frame, (int ok,double milliseconds), { Module["onGameFrame"]?.(ok,milliseconds); });
 EM_JS(void, th09_network_result, (), { Module["onNetworkResult"]?.(); });
 EM_JS(void, th09_network_replay_boundary, (std::uint32_t frame,int winner), { Module["onNetworkReplayBoundary"]?.(frame,winner); });
@@ -64,12 +84,91 @@ EM_JS(int, th09_keyboard_gamepad_dpad, (), {
     }
     return bits;
 });
+#else
+#define TH09_EXPORT(name)
+static int th09_browser_keyboard() { return 0; }
+static void th09_reset_browser_keyboard() {}
+static int th09_local_keyboard(int) { return -1; }
+static int th09_keyboard_gamepad_dpad() { return 0; }
+static void th09_browser_frame(int, double) {}
+static void th09_network_result() {}
+#if TH09_NATIVE_ROOM
+static std::optional<std::uint32_t> native_match_start;
+static std::optional<std::uint32_t> native_replay_start;
+namespace th09::sdl { namespace { void th09_publish_match_replay(std::uint32_t start); } }
+#endif
+static void th09_network_replay_boundary(std::uint32_t frame, int winner) {
+#if TH09_NATIVE_ROOM
+    if (winner < 0) {
+        native_replay_start = native_match_start = frame;
+    } else if (native_replay_start) {
+        const auto start = *native_replay_start;
+        native_replay_start.reset();
+        th09::sdl::th09_publish_match_replay(start);
+    }
+#endif
+}
+static void th09_network_match_decided(std::uint32_t frame, int winner, int first, int second) {
+#if TH09_NATIVE_ROOM
+    if (native_match_start && frame > *native_match_start) {
+        const auto start = *native_match_start;
+        const bool reported = th09_native_room_transport().ReportMatch(start, frame - start, winner, first, second);
+#if TH09_NATIVE_OVERLAY
+        if (!reported) Th09Overlay::ReportMatch(start, frame - start, winner, first, second);
+#endif
+        native_match_start.reset();
+    }
+#endif
+}
+static void th09_network_spectator_begin(std::uint32_t frame, const void* state, std::uint32_t size) {
+#if TH09_NATIVE_ROOM
+    th09::desktop::publishBegin(frame, state, size);
+#endif
+}
+static void th09_network_spectator_end(std::uint32_t frame, int) {
+#if TH09_NATIVE_ROOM
+    th09::desktop::publishEnd(frame);
+#endif
+}
+static void th09_network_spectator_round(std::uint32_t frame, std::uint32_t round, std::uint32_t) {
+#if TH09_NATIVE_ROOM
+    th09::desktop::publishRound(frame, round);
+#endif
+}
+static void th09_network_request() {
+#if TH09_NATIVE_OVERLAY
+    if (Th09Overlay::ShowLobby()) return;
+#endif
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "th09", "Online play is available in the Web Launcher.", SDL_GetKeyboardFocus());
+}
+static void th09_network_send(unsigned, unsigned, int, float, float) {}
+static void th09_network_spectator_frame(unsigned frame, unsigned left, unsigned right, int leftMode, float leftX, float leftY,
+    int rightMode, float rightX, float rightY, const void* charge, unsigned size) {
+#if TH09_NATIVE_ROOM
+    th09::desktop::publishInput(frame, left, right, leftMode, leftX, leftY, rightMode, rightX, rightY, charge, size);
+#endif
+}
+#endif
 #include <memory>
+#include <utility>
 #if TH09_DEVELOPMENT_HARNESS
 #include "../../tests/world-snapshot.hpp"
 #endif
 namespace th09::sdl {
 namespace {
+double now_ms() {
+#ifdef __EMSCRIPTEN__
+    return emscripten_get_now();
+#else
+    return double(SDL_GetTicksNS()) / 1000000.0;
+#endif
+}
+#ifndef __EMSCRIPTEN__
+bool desktop_quit_requested = false;
+bool desktop_close_event(Uint32 type) {
+    return type == SDL_EVENT_QUIT || type == SDL_EVENT_WINDOW_CLOSE_REQUESTED;
+}
+#endif
 i32 joy_button(i32);
 NetworkInput network;
 multiplayer::RollbackSession rollback(th09_shared_transport());
@@ -133,7 +232,73 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     std::unique_ptr<GameResources> loading_resources;std::array<AnmVm,3> loading_vms{};
     u32 startup_background=0,startup_branding=0;
     EclWorldState state;AnmExecutor executor{state.random};GameResources resources{assets,graphics,executor};
-    GamePresentation presentation{graphics,resources,*this};InGameMenus menus{resources,*this};
+    MotionCapture motionCapture{graphics};
+    GamePresentation presentation{motionCapture,resources,*this};InGameMenus menus{resources,*this};
+    bool motionEnabled=false,motionPending=false;
+#ifdef __EMSCRIPTEN__
+    double displayPeriod=0.,motionBase=-1.,motionCost=0.;
+    unsigned fastCallbacks=0,extraPresentations=0;
+
+    void reset_motion(){
+        motionPending=false;
+        motionBase=-1.;
+        displayPeriod=0.;
+        fastCallbacks=0;
+        motionCost=0.;
+        motionCapture.invalidate();
+    }
+    void observe_refresh(double interval){
+        // Require a stable foreground refresh cadence with spare callbacks.
+        if(interval<=0.||interval>12.){fastCallbacks=0;displayPeriod=0.;return;}
+        displayPeriod=displayPeriod>0.?displayPeriod*.8+interval*.2:interval;
+        if(fastCallbacks<6)++fastCallbacks;
+    }
+    const Player* motion_player() const {
+        if(!motionEnabled||fastCallbacks<6||in_title||!session||!world||network.active||
+           rollback_active||spectator_mode||paused||over||complete||session->is_replay||
+           session->phase!=SessionPhase::match||world->transition_pending||world->scene->phase!=0||
+           world->dialogue->id>=0||world->battle->state.hide_players||(world->battle->state.flags&0x1800)||
+           world->configuration.controllers[0]||!world->configuration.controllers[1])return nullptr;
+        const auto& field=world->battle->fields[0];
+        const auto& player=*field.player;
+        if((field.script.flags&1)||player.motion.health<=0||
+           (player.control.player_state!=0&&player.control.player_state!=3))return nullptr;
+        return &player;
+    }
+#else
+    bool motion_netplay_enabled=false;
+    double motion_deadline=-1.,motion_main_present_at=0.,motion_extra_cost=0.;
+    double fps_sample_start=-1.;
+    u32 fps_sample_frames=0;
+    char fps_label[24]{};
+
+    u32 motion_side() const { return network.active?network.side:0; }
+
+    void cancel_motion_frame() {
+        motionPending=false;
+        motionCapture.invalidate();
+    }
+
+    void reset_motion(){cancel_motion_frame();}
+
+    const Player* motion_player() const {
+        if(!motionEnabled||in_title||!session||!world||spectator_mode||
+           paused||over||complete||session->is_replay||session->phase!=SessionPhase::match||
+           world->transition_pending||world->scene->phase!=0||world->dialogue->id>=0||
+           world->battle->state.hide_players||(world->battle->state.flags&0x1800))return nullptr;
+        const auto side=motion_side();
+        if(network.active){
+            if(!motion_netplay_enabled||!rollback_active||side>=2||
+               !rollback.Ready()||session->motion_input[side].enabled)return nullptr;
+        }else if(rollback_active||!world->configuration.controllers[1])return nullptr;
+        if(world->configuration.controllers[side])return nullptr;
+        const auto& field=world->battle->fields[side];
+        const auto& player=*field.player;
+        if((field.script.flags&1)||player.motion.health<=0||
+           (player.control.player_state!=0&&player.control.player_state!=3))return nullptr;
+        return &player;
+    }
+#endif
     std::array<u8,2> local_focus{};i32 local_versus=1;
     void clear_charge(){local_charge.clear();charge_frames={};if(session)session->charge_frames={};}
     void release_network(){network.end();clear_charge();network_selection=false;settings.auto_focus=local_focus;settings.versus=local_versus;sync_records();}
@@ -155,7 +320,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         presentation.renderer.flush();session->finish();presentation.world=nullptr;world=nullptr;
         title=std::make_unique<TitleMenus>(resources,*this,state.random,settings);
         if(!title->initialize()){error=title->error;return false;}
-        if(!title->open_network_selection()){error=title->error;return false;}in_title=true;launch_pending=false;
+        if(!title->open_network_selection(true)){error=title->error;return false;}in_title=true;launch_pending=false;
         paused=over=complete=false;pending_action=requested_transition=-1;
         settings.versus=4;settings.game_flags=0;settings.versus_unlocked.fill(1);
         pause_audio(false);music(0);return true;
@@ -183,7 +348,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     bool prepare_platform(){
         if(platform_prepared)return true;
         {TH09_PERF_SCOPE(graphics_cost,GraphicsInit);if(!graphics.initialize()){error=graphics.error;return false;}}
-        if(!assets.open("/th09.dat")){error=assets.error;return false;}platform_prepared=true;return true;
+        if(!assets.open(runtime_path("/th09.dat"))){error=assets.error;return false;}platform_prepared=true;return true;
     }
     bool prepare_loading(){
         if(!prepare_platform()||!title_background("th09logo.jpg"))return false;
@@ -191,7 +356,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         // Optional in standalone development harnesses. Managed builds install
         // a separate transparent texture, never a replacement retail image.
         std::vector<u8> branding;
-        if(read_file("/eagler-startup.png",branding)){
+        if(read_file(runtime_path("/eagler-startup.png"),branding)){
             const auto texture=graphics.image(branding.data(),u32(branding.size()));
             if(!texture.handle){error=graphics.error;return false;}
             startup_branding=texture.handle;
@@ -206,7 +371,22 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         if(!prepare_platform())return false;
         {TH09_PERF_SCOPE(font_cost,FontInit);if(!fonts.initialize()){error=fonts.error;return false;}}
         {TH09_PERF_SCOPE(warm_cost,FontWarm);fonts.prewarm_game(assets);}
-        if(!audio.initialize(assets)){error=audio.error;return false;}SDL_CreateDirectory("/save/replay");std::vector<u8> bytes;if(read_file("/save/th09.cfg",bytes))saved_configuration.load(bytes.data(),u32(bytes.size()));saved_configuration.apply(settings);title_configuration();if(!write_file("/save/th09.cfg",saved_configuration.data().data(),204)){error="Unable to save configuration";return false;}if(read_file("/save/score.dat",bytes))records.load(bytes.data(),u32(bytes.size()));sync_records();records.application_clock=records.game_clock=u32(SDL_GetTicks());loading_vms={};loading_resources.reset();return true;
+        if(!audio.initialize(assets)){error=audio.error;return false;}
+#ifdef __EMSCRIPTEN__
+        SDL_CreateDirectory("/save/replay");
+#else
+        if (!SDL_CreateDirectory(save_path("replay").c_str())) {
+            error = SDL_GetError();
+            return false;
+        }
+#endif
+        std::vector<u8> bytes;
+        if(read_file(save_path("th09.cfg").c_str(),bytes))saved_configuration.load(bytes.data(),u32(bytes.size()));
+        saved_configuration.apply(settings);title_configuration();
+        const auto& config = saved_configuration.data();
+        if(!write_file(save_path("th09.cfg").c_str(),config.data(),u32(config.size()))){error="Unable to save configuration";return false;}
+        if(read_file(save_path("score.dat").c_str(),bytes))records.load(bytes.data(),u32(bytes.size()));
+        sync_records();records.application_clock=records.game_clock=u32(SDL_GetTicks());loading_vms={};loading_resources.reset();return true;
     }
     void update_clocks(){const u32 now=u32(SDL_GetTicks());if(clock_running)records.update_application_clock(now);else records.application_clock=now;if(clock_running&&!in_title&&!paused&&!over&&!complete&&session&&session->phase==SessionPhase::match)records.update_game_clock(now);else records.game_clock=now;}
     void clock_pause(bool on){update_clocks();clock_running=!on;}
@@ -229,7 +409,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         if(!ok){error=session->error;return false;}world=session->world.get();presentation.world=world;
         if(!presentation.ascii.initialize()){error="ASCII initialization failed";return false;}paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};requested_transition=-1;return true;
     }
-    bool render_text(AnmVm& a,const char* s,u32 color,u32 shadow)override{TH09_PERF_SCOPE(text_cost,TextRender);if(!fonts.text(a,s,color,shadow)){error=fonts.error;return false;}return true;}
+    bool render_text(AnmVm& a,const char* s,u32 color,u32 shadow,bool centered=false)override{if(motionEnabled)motionCapture.invalidate();TH09_PERF_SCOPE(text_cost,TextRender);if(!fonts.text(a,s,color,shadow,centered)){error=fonts.error;return false;}return true;}
     bool replay_view_silent=false;
     void sound(i32 id,i32 pan)override{if(replay_view_silent||(spectator_mode&&spectator_playback.seeking))return;if(!queue_sound(0,id,float(pan)))audio.effects.enqueue(id,pan);}
     void positioned_sound(i32 id,float x)override{if(replay_view_silent||(spectator_mode&&spectator_playback.seeking))return;if(!queue_sound(1,id,x))audio.effects.positioned(id,x);}
@@ -255,6 +435,12 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
             // This tick constructs the world. Its first gameplay input is the
             // following tick, unlike Retry which updates its new world now.
             if(network_selection&&recording_frame){recording_frame->begin=match_initializer(true);recording_frame->hasBegin=true;recording_frame->beginFrame=rollback.Frame()+1;}
+#if TH09_NATIVE_ROOM
+            if(network.active&&!network_selection&&!recording_frame&&network.side==0) {
+                const auto begin=match_initializer(true);
+                th09_network_spectator_begin(0,&begin,spectator_begin_bytes);
+            }
+#endif
             launch_pending=false;in_title=false;if(!start())return false;
         }
         else{if(render)draw();audio.update();audio.pump();++frames;}return error.empty();
@@ -281,10 +467,25 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     }
     void title_configuration()override{audio.music_volume=settings.music_volume;audio.music_enabled=host_music_enabled&&settings.music_mode!=0;audio.effects.enabled=settings.effects!=0;audio.effects.master_volume=settings.sound_volume;audio.refresh_volume();}
     bool write_file(const char* path,const u8* bytes,u32 size){auto* file=SDL_IOFromFile(path,"wb");const bool ok=file&&SDL_WriteIO(file,bytes,size)==size;if(file)SDL_CloseIO(file);if(ok)++storage_revision;return ok;}
-    void save_configuration(){if(network.active||spectator_mode)return;if(saved_configuration.capture(settings)){title_configuration();const auto& bytes=saved_configuration.data();if(!write_file("/save/th09.cfg",bytes.data(),u32(bytes.size())))error="Unable to save th09.cfg";}}
+    static std::string save_path(const char* name){
+#ifdef _WIN32
+        // Earlier desktop builds stored these files under save/. Keep using that
+        // directory for existing desktop installations with no retail save files.
+        static const bool legacy = [] {
+            SDL_PathInfo info{};
+            for (const char* path : {"th09.cfg", "score.dat", "replay"})
+                if (SDL_GetPathInfo(path, &info)) return false;
+            return SDL_GetPathInfo("save", &info) && info.type == SDL_PATHTYPE_DIRECTORY;
+        }();
+        return legacy ? std::string("save/") + name : std::string(name);
+#else
+        return std::string("/save/") + name;
+#endif
+    }
+    void save_configuration(){if(network.active||spectator_mode)return;if(saved_configuration.capture(settings)){title_configuration();const auto& bytes=saved_configuration.data();if(!write_file(save_path("th09.cfg").c_str(),bytes.data(),u32(bytes.size())))error="Unable to save th09.cfg";}}
     u32 title_clear_count(i32 c,i32 d)override{return records.clear_count(c,d);}
     PlayerRecords& title_records()override{return records;}
-    void title_save_records()override{if(spectator_mode)return;update_clocks();auto local_random=state.random;auto bytes=records.save(network.active?local_random:state.random);if(!write_file("/save/score.dat",bytes.data(),u32(bytes.size())))error="Unable to save score.dat";}
+    void title_save_records()override{if(spectator_mode)return;update_clocks();auto local_random=state.random;auto bytes=records.save(network.active?local_random:state.random);if(!write_file(save_path("score.dat").c_str(),bytes.data(),u32(bytes.size())))error="Unable to save score.dat";}
     void title_ascii(const Vec3& p,const char* text,u32 color,const Vec2& scale)override{presentation.ascii.color=color;presentation.ascii.scale=scale;presentation.ascii.field_view=0;presentation.ascii.text(p,text);}
     i32 title_joy_button(i32 device)override{return joy_button(device);}
     static std::string replay_path(const char* name){
@@ -293,12 +494,22 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         const auto relative=path.substr(7);const auto slash=relative.find('/');
         if(relative.empty()||relative=="."||relative=="..")return {};
         if(slash!=std::string::npos&&(slash==0||relative.substr(0,slash)=="."||relative.substr(0,slash)==".."||relative.find('/',slash+1)!=std::string::npos||relative.substr(slash+1).empty()||relative.substr(slash+1)=="."||relative.substr(slash+1)==".."))return {};
-        return "/save/"+path;
+        return save_path(path.c_str());
     }
     bool title_read_replay(const char* name,std::vector<u8>& bytes)override{const auto path=replay_path(name);return !path.empty()&&read_file(path.c_str(),bytes);}
     std::vector<std::string> title_imported_replays()override{
-        std::vector<std::string> names;auto* dir=opendir("/save/replay");
+        std::vector<std::string> names;
+#ifdef __EMSCRIPTEN__
+        auto* dir=opendir("/save/replay");
         if(dir){while(auto* entry=readdir(dir)){std::string n=entry->d_name;if(n.rfind("th9_ud",0)==0&&n.size()==14&&n.substr(10)==".rpy")names.push_back(n);}closedir(dir);}
+#else
+        SDL_EnumerateDirectory(save_path("replay").c_str(), [](void* data, const char*, const char* filename) {
+            std::string name = filename;
+            if (name.rfind("th9_ud", 0) == 0 && name.size() == 14 && name.substr(10) == ".rpy")
+                static_cast<std::vector<std::string>*>(data)->push_back(std::move(name));
+            return SDL_ENUM_CONTINUE;
+        }, &names);
+#endif
         std::sort(names.begin(),names.end());return names;
     }
     bool title_save_replay(const char* name,const char* player)override{const auto path=replay_path(name);if(!session||path.empty())return false;auto replay=session->save_replay(player);const auto bytes=replay.encode();if(bytes.empty()){error=session->error;return false;}const bool ok=write_file(path.c_str(),bytes.data(),u32(bytes.size()));if(!ok)error="Unable to write replay";return ok;}
@@ -329,10 +540,10 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     void ending_sprite(AnmVm& vm)override{presentation.renderer.draw_2d(vm);}
     void ending_cover(u32 color)override{presentation.renderer.rectangle(0,0,640,480,color,color);}
     bool tick(u16 keys){return tick_inputs(keys,0,keys);}
-    bool tick_inputs(u16 left,u16 right,u16 keys,bool render=true,bool afterRestart=false,bool submit=true){
+    bool tick_inputs(u16 left,u16 right,u16 keys,bool render=true,bool afterRestart=false,bool submit=true,bool captureDeferredMotion=false){
         TH09_PERF_SCOPE(tick_cost,TickInputs);
 #if TH09_DEVELOPMENT_HARNESS
-        const double cost_begin=emscripten_get_now();
+        const double cost_begin=now_ms();
 #endif
         if(in_title)return tick_title(left,right,keys,render);if(!session||!world||!error.empty())return false;
         TH09_PERF_SCOPE(update_cost,Update);
@@ -351,7 +562,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
                     else {th09_network_replay_boundary(network.frame()-1,-1);if(network.side==0)th09_network_spectator_begin(network.frame()-1,&begin,spectator_begin_bytes);}}
                 presentation.renderer.flush();if(!session->retry()){error=session->error;return false;}world=session->world.get();presentation.world=world;paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};pause_audio(false);}
             else if(action==InGameAction::continue_match){pause_audio(true);if(!session->continue_game()){error="Unable to continue";return false;}paused=over=complete=false;pause_audio(false);}
-            else if(action==InGameAction::title&&network_selection&&complete)return reselect_network_match();
+            else if(action==InGameAction::title&&network_selection)return reselect_network_match();
             else {session->finish();return return_title(action==InGameAction::save_score);}
         }
         }
@@ -361,40 +572,110 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         requested_transition=world->transition_pending?100+i32(world->transition):-1;
         TH09_PERF_STOP(update_cost);
 #if TH09_DEVELOPMENT_HARNESS
-        const double cost_draw=emscripten_get_now();probe_tick_cost[0]=cost_draw-cost_begin;
+        const double cost_draw=now_ms();probe_tick_cost[0]=cost_draw-cost_begin;
 #endif
         if(rollback_active){
             graphics.skipSubmission=!render;presentation.renderer.omit_sprite_geometry=!render;
 #if TH09_DEVELOPMENT_HARNESS
             if(probe_full_sprite_geometry)presentation.renderer.omit_sprite_geometry=false;
 #endif
-            draw(render&&submit);presentation.renderer.omit_sprite_geometry=false;graphics.skipSubmission=false;
+            draw(render&&submit,render&&captureDeferredMotion);presentation.renderer.omit_sprite_geometry=false;graphics.skipSubmission=false;
         }
         else if(render)draw();
 #if TH09_DEVELOPMENT_HARNESS
-        probe_tick_cost[1]=emscripten_get_now()-cost_draw;
+        probe_tick_cost[1]=now_ms()-cost_draw;
 #endif
         if(!recording_frame){audio.update();audio.pump();}
         {TH09_PERF_SCOPE(warm_cost,WarmResources);session->warm_resources();}
         ++frames;return error.empty();
     }
-    void draw(bool present=true){
+#ifndef __EMSCRIPTEN__
+    void queue_frame_rate(bool presenting){
+        if(in_title||!world||session->phase!=SessionPhase::match||!(world->battle->state.flags&4u)){
+            fps_sample_start=-1.;
+            return;
+        }
+        if(!presenting)return;
+        const double now=now_ms();
+        if(fps_sample_start<0.){
+            fps_sample_start=now;
+            fps_sample_frames=0;
+            fps_label[0]='\0';
+        }else{
+            // Count game frames only. Midpoint presents reuse the HUD.
+            ++fps_sample_frames;
+            const double elapsed=now-fps_sample_start;
+            if(elapsed>=500.){
+                std::snprintf(fps_label,sizeof(fps_label),"%.2ffps",fps_sample_frames*1000./elapsed);
+                fps_sample_start=now;
+                fps_sample_frames=0;
+            }
+        }
+        auto& ascii=presentation.ascii;
+        const auto color=ascii.color;
+        const auto scale=ascii.scale;
+        const auto field=ascii.field_view;
+        title_ascii({280,466,0},fps_label[0]?fps_label:"--.--fps",0xffffffff,{1,1});
+        ascii.color=color;
+        ascii.scale=scale;
+        ascii.field_view=field;
+    }
+#endif
+    void draw(bool present=true,bool captureDeferredMotion=false){
         TH09_PERF_SCOPE(draw_cost,SemanticDraw);
-        presentation.begin_frame();if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
+        const auto* player=(present||captureDeferredMotion)?motion_player():nullptr;
+        if(motionEnabled){
+            motionPending=false;
+            if(player){
+                motionCapture.begin(&player->body);
+                active_motion_capture=&motionCapture;
+#ifndef __EMSCRIPTEN__
+                motion_deadline=-1.;
+#endif
+            }else motionCapture.invalidate();
+        }
+#ifndef __EMSCRIPTEN__
+        queue_frame_rate(present||captureDeferredMotion);
+#endif
+        presentation.begin_frame(in_title||session->phase==SessionPhase::ending);
+        if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
         TH09_PERF_STOP(draw_cost);
-        if(present){TH09_PERF_SCOPE(present_cost,Present);graphics.present();}
+        if(player){
+            active_motion_capture=nullptr;
+            motionCapture.end();
+            motionPending=motionCapture.ready();
+        }
+        if(present){
+#ifndef __EMSCRIPTEN__
+            if(player)motion_main_present_at=now_ms();
+#endif
+            TH09_PERF_SCOPE(present_cost,Present);
+            graphics.present();
+        }
+#ifndef __EMSCRIPTEN__
+        if(player)motion_extra_cost*=0.95;
+#endif
     }
     i32 requested_transition=-1;
     bool import_file(u32 kind,u32 size){
         if(!in_title||size>import_bytes.size())return false;
         const u8* bytes=import_bytes.data();
-        if(kind==0){PlayerRecords next;if(!next.load(bytes,size))return false;if(!write_file("/save/score.dat",bytes,size))return false;records=std::move(next);records.application_clock=records.game_clock=u32(SDL_GetTicks());sync_records();title->state.selection=0;title->change(TitleScreen::main);return true;}
+        if(kind==0){PlayerRecords next;if(!next.load(bytes,size))return false;if(!write_file(runtime_path("/save/score.dat"),bytes,size))return false;records=std::move(next);records.application_clock=records.game_clock=u32(SDL_GetTicks());sync_records();title->state.selection=0;title->change(TitleScreen::main);return true;}
         if(kind==1){ReplayFile file;touch::MotionTrack motion;ChargeReplayTrack charge;if(!file.decode(bytes,size)||!motion.load(bytes,size,9)||!charge.load(file.data().data(),u32(file.data().size())))return false;bool found=false;for(u32 stage=0;stage<10;++stage)if(file.stream_offset(0,stage)){ReplayPlayback playback;ReplayRoundSettings header;if(!playback.begin(file,stage,header))return false;found=true;}if(!found)return false;
             for(u32 n=1;n<=9999;++n){char name[40];std::snprintf(name,sizeof(name),"replay/th9_ud%04u.rpy",n);if(!title_replay_exists(name)){const auto path=replay_path(name);return write_file(path.c_str(),bytes,size);}}return false;}
-        if(kind==2){GameConfiguration next;if(!next.load(bytes,size))return false;if(!write_file("/save/th09.cfg",bytes,size))return false;saved_configuration=next;saved_configuration.apply(settings);title_configuration();return true;}return false;
+        if(kind==2){GameConfiguration next;if(!next.load(bytes,size))return false;if(!write_file(runtime_path("/save/th09.cfg"),bytes,size))return false;saved_configuration=next;saved_configuration.apply(settings);title_configuration();return true;}return false;
     }
 };
 std::unique_ptr<Application> probe;std::string failure;
+#if TH09_NATIVE_ROOM && !defined(__EMSCRIPTEN__)
+void th09_publish_match_replay(std::uint32_t start) {
+    auto &room = th09_native_room_transport();
+    if (!room.MatchReplayEnabled() || !probe || !probe->complete || !probe->session) return;
+    auto &session = *probe->session;
+    const auto* site = SDL_getenv("EAGLER_DESKTOP_OVERLAY_SITE");
+    if (site && *site) room.PublishMatchReplay(start, session.encode_match_replay(), site);
+}
+#endif
 bool running=false,suspended=false,room_preview=false;u32 loop_epoch=0;double previous_frame=-1;multiplayer::FrameSchedule cadence;
 multiplayer::RecoverySchedule recovery_schedule;
 u32 recovery_callbacks=0,recovery_ticks=0,recovery_last_us=0;
@@ -404,7 +685,12 @@ bool deferred_recovery_active(){
         probe->session&&probe->session->phase==SessionPhase::match&&!spectator_mode&&
         !probe->paused&&!probe->over&&!probe->complete&&probe->pending_action<0;
 }
-struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
+struct Key {
+    const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;
+#ifndef __EMSCRIPTEN__
+    bool pressed=false;
+#endif
+};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
 KeyboardInputBuffer keyboard_inputs;
@@ -437,12 +723,51 @@ bool local_versus_input_context(){
     const auto screen=probe->title->state.screen;
     return screen==TitleScreen::versus_difficulty||screen==TitleScreen::versus_character||screen==TitleScreen::versus_stage||(local_world&&screen==TitleScreen::replay_name);
 }
+void collect_input_events(){
+    SDL_Event e;while(SDL_PollEvent(&e)){
+#if TH09_NATIVE_OVERLAY
+        const bool focused = Th09Overlay::CapturesKeyboard();
+        const bool consumed = Th09Overlay::HandleEvent(e);
+        if (focused != Th09Overlay::CapturesKeyboard()) {
+            clear_inputs();
+            for (auto &key : keyboard_map) key.pressed = false;
+        }
+        if (consumed) continue;
+#endif
+#ifndef __EMSCRIPTEN__
+        if (desktop_close_event(e.type)) desktop_quit_requested = true;
+        if (e.type == SDL_EVENT_WINDOW_FOCUS_LOST)
+            for (auto& key : keyboard_map) key.pressed = false;
+        if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat)
+            for (auto& key : keyboard_map)
+                if (key.native == e.key.scancode) key.pressed = true;
+#endif
+        if(e.type==SDL_EVENT_GAMEPAD_ADDED)add_controller(e.gdevice.which);else if(e.type==SDL_EVENT_GAMEPAD_REMOVED)for(auto*& p:controllers)if(p&&SDL_GetGamepadID(p)==e.gdevice.which){SDL_CloseGamepad(p);p=nullptr;}}
+}
 void sample_keys(u16 (&out)[3]){
-    SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_EVENT_GAMEPAD_ADDED)add_controller(e.gdevice.which);else if(e.type==SDL_EVENT_GAMEPAD_REMOVED)for(auto*& p:controllers)if(p&&SDL_GetGamepadID(p)==e.gdevice.which){SDL_CloseGamepad(p);p=nullptr;}}
+#if !TH09_NATIVE_OVERLAY
+    collect_input_events();
+#endif
     for(unsigned seat=0;seat<2;++seat)launcher_gamepad[seat]=eagler::input::BrowserGamepadState(seat);
     int local_keyboard[2];u16 local_keys[2]{};
     for(unsigned seat=0;seat<2;++seat){local_keyboard[seat]=th09_local_keyboard(seat);if(local_keyboard[seat]>=0){bool mapped[256]{};eagler::input::ApplyGamepadVirtualKeys(mapped,local_keyboard[seat]);local_keys[seat]=keyboard_input(mapped,2);}}
-    bool keys[256]{};const auto* physical=th09_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.vk)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
+    bool keys[256]{};
+    const auto* physical=th09_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
+#if TH09_NATIVE_OVERLAY
+    if (Th09Overlay::CapturesKeyboard()) physical = nullptr;
+#endif
+    for (auto& key : keyboard_map) {
+        bool down = key.hosted || (physical && key.native != SDL_SCANCODE_UNKNOWN && physical[key.native]);
+#ifndef __EMSCRIPTEN__
+        // SDL's current key state loses strokes released before the next game tick.
+        down = down || key.pressed;
+        key.pressed = false;
+#endif
+        if (!down) continue;
+        if(key.vk)keys[key.vk]=true;
+        if(key.vk>=160&&key.vk<=165)keys[16+(key.vk-160)/2]=true;
+        if(key.scan==28||key.scan==156)keys[13]=true;
+    }
     const int keyboardDpad=th09_keyboard_gamepad_dpad();if(keyboardDpad&1)keys[38]=true;if(keyboardDpad&2)keys[40]=true;if(keyboardDpad&4)keys[37]=true;if(keyboardDpad&8)keys[39]=true;
     const auto state=touch_state();keyboard_inputs.sample(keys,state.context==1);
     const u16 keyboard[]={keyboard_inputs.input(keys,probe->settings.devices[0]),keyboard_inputs.input(keys,probe->settings.devices[1]),keyboard_inputs.input(keys,2)};
@@ -474,7 +799,6 @@ void sample_keys(u16 (&out)[3]){
 
 }
 extern "C" {
-#define TH09_EXPORT(n) __attribute__((export_name(n)))
 void queue_rollback_recovery();
 TH09_EXPORT("th09_local_charge_priority") u32 th09_local_charge_priority(u32 enabled){
     if(enabled>1||rollback_active)return 0;local_charge_priority=enabled!=0;
@@ -490,7 +814,24 @@ TH09_EXPORT("th09_rollback_recovery_info") const u32* th09_rollback_recovery_inf
 }
 TH09_EXPORT("th09_game_open") u32 th09_game_open(u32 seed){
     TH09_PERF_SCOPE(open_cost,GameOpen);
-    network.end();spectator_mode=false;spectator_frames.clear();spectator_next=spectator_simulated=0;clear_inputs();close_controllers();SDL_InitSubSystem(SDL_INIT_GAMEPAD);i32 count=0;auto* ids=SDL_GetGamepads(&count);for(i32 n=0;n<count;++n)add_controller(ids[n]);SDL_free(ids);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);
+    network.end();spectator_mode=false;spectator_frames.clear();spectator_next=spectator_simulated=0;clear_inputs();close_controllers();SDL_InitSubSystem(SDL_INIT_GAMEPAD);i32 count=0;auto* ids=SDL_GetGamepads(&count);for(i32 n=0;n<count;++n)add_controller(ids[n]);SDL_free(ids);for(auto& k:keyboard_map) {
+#ifndef __EMSCRIPTEN__
+        // The shared map uses DOM names for the keypad. SDL calls it "Keypad".
+        std::string name = k.sdl;
+        if (name.compare(0, 6, "Numpad") == 0) {
+            name.erase(0, 6);
+            if (name == "Multiply") name = "*";
+            else if (name == "Subtract") name = "-";
+            else if (name == "Add") name = "+";
+            else if (name == "Decimal") name = ".";
+            else if (name == "Divide") name = "/";
+            name.insert(0, "Keypad ");
+        }
+        k.native = SDL_GetScancodeFromName(name.c_str());
+#else
+        k.native = SDL_GetScancodeFromName(k.sdl);
+#endif
+    }
     if(!probe||!probe->platform_prepared||probe->in_title)probe=std::make_unique<Application>();if(!probe->open_title()){failure=probe->error;return 0;}probe->state.random={u16(seed),0,0};return 1;
 }
 TH09_EXPORT("th09_room_preview") u32 th09_room_preview(u32 on){
@@ -531,13 +872,13 @@ TH09_EXPORT("th09_rollback_enable") u32 th09_rollback_enable(u32 seed,u32 side,u
     for(auto& frame:rollback_frames){frame.number=Netplay::INVALID_FRAME;frame.captured=false;frame.sounds.clear();}
     Netplay::SessionConfig c;c.seed=seed;c.localPlayer=side;c.gameId=9;c.gameplayAbi=abi;c.sessionId=(std::uint64_t(idHigh)<<32)|idLow;
     if(!rollback.SetLocalChargePriority(local_charge_priority))return 0;probe->local_charge.clear();
-    rollback_published=rollback_catchup=adonis_snapshots=adonis_waits=0;rollback_active=rollback.Begin(c,std::uint64_t(emscripten_get_now()),u8(inputDelay),adonis_mode);
+    rollback_published=rollback_catchup=adonis_snapshots=adonis_waits=0;rollback_active=rollback.Begin(c,std::uint64_t(now_ms()),u8(inputDelay),adonis_mode);
     if(rollback_active&&!network_selection)th09_network_replay_boundary(0,-1);return rollback_active;
 }
 TH09_EXPORT("th09_network_selection_begin") u32 th09_network_selection_begin(u32 seed,u32 side,u32 idLow,u32 idHigh,u32 abi,u32 requestedDelay,u32 reserve){
     if(rollback_active||side>1||reserve<1||reserve>2||
        (requestedDelay!=Netplay::AdonisStartup::Automatic&&requestedDelay>9)||
-       !th09_network_begin(seed,i32(side),0xffff,1,0))return 0;
+       !th09_network_begin(seed,i32(side),0xffff,3,0))return 0;
     network_selection=true;
     if(!probe->title->open_network_selection()){probe->error=probe->title->error;return 0;}
     // Warm the shared selection resources before timing probes. Future world
@@ -549,7 +890,7 @@ TH09_EXPORT("th09_network_selection_begin") u32 th09_network_selection_begin(u32
     Netplay::SessionConfig c;c.seed=seed;c.localPlayer=side;c.gameId=9;c.gameplayAbi=abi;c.sessionId=(std::uint64_t(idHigh)<<32)|idLow;
     rollback_published=rollback_catchup=adonis_snapshots=adonis_waits=0;
     if(!rollback.SetLocalChargePriority(local_charge_priority))return 0;probe->local_charge.clear();
-    rollback_active=rollback.BeginMeasured(c,std::uint64_t(emscripten_get_now()),requestedDelay,adonis_mode,reserve);return rollback_active;
+    rollback_active=rollback.BeginMeasured(c,std::uint64_t(now_ms()),requestedDelay,adonis_mode,reserve);return rollback_active;
 }
 TH09_EXPORT("th09_rollback_begin") u32 th09_rollback_begin(u32 seed,u32 side,u32 difficulty,u32 left,u32 right,u32 idLow,u32 idHigh,u32 abi,u32 inputDelay){
     if(rollback_active||inputDelay>9||!th09_network_room_begin(seed,i32(side),0xffff,difficulty,0,left,right))return 0;
@@ -560,7 +901,7 @@ TH09_EXPORT("th09_rollback_begin") u32 th09_rollback_begin(u32 seed,u32 side,u32
 u32 pump_rollback_transport(bool deferOrdinaryInput){
     TH09_PERF_SCOPE(network_cost,NetworkPump);
     if(!rollback_active)return 0;
-    const double now=emscripten_get_now();
+    const double now=now_ms();
     if(!rollback.Pump(std::uint64_t(now),network.active,std::uint64_t(now*1000),deferOrdinaryInput)){probe->error=rollback.Error();return 0;}
     return rollback.Ready()?2:1;
 }
@@ -578,7 +919,7 @@ TH09_EXPORT("th09_measured_begin") u32 th09_measured_begin(u32 seed,u32 side,u32
     Netplay::SessionConfig c;c.seed=seed;c.localPlayer=side;c.gameId=9;c.gameplayAbi=abi;c.sessionId=(std::uint64_t(idHigh)<<32)|idLow;
     rollback_published=rollback_catchup=adonis_snapshots=adonis_waits=0;
     if(!rollback.SetLocalChargePriority(local_charge_priority))return 0;probe->local_charge.clear();
-    rollback_active=rollback.BeginMeasured(c,std::uint64_t(emscripten_get_now()),requestedDelay,adonis_mode,reserve);
+    rollback_active=rollback.BeginMeasured(c,std::uint64_t(now_ms()),requestedDelay,adonis_mode,reserve);
     if(rollback_active)th09_network_replay_boundary(0,-1);
     return rollback_active;
 }
@@ -714,7 +1055,7 @@ bool publish_rollback_outputs(){
         // Both players archive only reconciled full-match boundaries.
         if(record.hasBegin)th09_network_replay_boundary(record.beginFrame,-1);
         if(record.decidedWinner>=0)th09_network_match_decided(rollback_published+1,record.decidedWinner,record.decidedCharacters[0],record.decidedCharacters[1]);
-        if(record.hasEnd)th09_network_replay_boundary(rollback_published+1,record.winner);
+        if(record.hasEnd&&record.winner>=0)th09_network_replay_boundary(rollback_published+1,record.winner);
         if(network.side==0){std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> in;if(!rollback.ConfirmedInputs(rollback_published,&in))return false;const auto mode=[](const Netplay::FrameInput& i){return i.analogMode==Netplay::AnalogMode::None?0:i.analogMode==Netplay::AnalogMode::Joystick?1:i.unlimited?3:2;};
             if(record.hasBegin)th09_network_spectator_begin(record.beginFrame,&record.begin,spectator_begin_bytes);
             std::array<u8,80> charges{};
@@ -723,7 +1064,7 @@ bool publish_rollback_outputs(){
             }
             if(!network_selection||record.gameplay)th09_network_spectator_frame(rollback_published,in[0].buttons,in[1].buttons,mode(in[0]),in[0].x,in[0].y,mode(in[1]),in[1].x,in[1].y,charges.data(),rollback.LocalChargePriority()?80:0);}
         if(record.round>0)th09_network_spectator_round(rollback_published+1,u32(record.round),record.replayRoundFrame);
-        if(network.side==0&&record.hasEnd)th09_network_spectator_end(rollback_published+1,record.winner);
+        if(network.side==0&&record.hasEnd)th09_network_spectator_end(rollback_published+record.gameplay,record.winner);
         if(network.active&&(rollback_published+1)%120==0&&!rollback.Verify(rollback_published+1,record.hash)){probe->error=rollback.Error();return false;}
         ++rollback_published;
         TH09_PERF_COUNT(PublishedFrames,1);
@@ -733,7 +1074,7 @@ bool publish_rollback_outputs(){
 u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
     TH09_PERF_SCOPE(rollback_cost,RollbackTick);
     // Recovery and transport work consume the same callback budget as replay.
-    const double start=emscripten_get_now();
+    const double start=now_ms();
     bool deferOrdinaryInput=true;
 #if TH09_DEVELOPMENT_HARNESS
     deferOrdinaryInput=rollback.Frame()<rollback_test_limit;
@@ -741,7 +1082,7 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
     bool forwardOnly=!recoveryOnly&&!forceRecovery&&deferred_recovery_active();
     const auto pumped=pump_rollback_transport(deferOrdinaryInput&&!recoveryOnly);
     const auto flush=[](){
-        if(!rollback.FlushDeferredInputs(std::uint64_t(emscripten_get_now()))){probe->error=rollback.Error();return false;}
+        if(!rollback.FlushDeferredInputs(std::uint64_t(now_ms()))){probe->error=rollback.Error();return false;}
         return true;
     };
     if(!pumped){flush();return 0;}
@@ -754,7 +1095,7 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         TH09_PERF_SCOPE(input_cost,InputCapture);
         u16 keys[3]{};sample_keys(keys);Netplay::FrameInput in(keys[2]);
         if(probe->session){const auto& m=probe->session->motion_input[network.side];if(m.enabled){in.analogMode=m.target?Netplay::AnalogMode::DirectTouch:Netplay::AnalogMode::Joystick;in.x=m.x;in.y=m.y;in.unlimited=m.unlimited;in.touchUsed=true;}}
-        if(!rollback.Capture(in,std::uint64_t(emscripten_get_now()))){probe->error=rollback.Error();return false;}
+        if(!rollback.Capture(in,std::uint64_t(now_ms()))){probe->error=rollback.Error();return false;}
         return true;
     };
     // Sample the visible frontier once, before recovery can span callbacks.
@@ -779,6 +1120,9 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         if(rollback.Frame()-rollback_published>=rollback_frames.size()||!next.canAdvance)forwardOnly=false;
     }
     if(correction!=Netplay::INVALID_FRAME&&!forwardOnly){
+#ifndef __EMSCRIPTEN__
+        if(probe->motion_netplay_enabled)probe->cancel_motion_frame();
+#endif
         TH09_PERF_SCOPE(restore_cost,Restore);
         rollback_catchup=std::max(rollback_catchup,rollback.Frame());
         probe->presentation.renderer.flush();probe->graphics.backend.flush();
@@ -859,7 +1203,9 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
             else if(side==u32(network.side))step.owner=&probe->local_charge;
         }
         if(probe->session){probe->session->charge_frames=probe->charge_frames;probe->session->charge_input_recorded=false;}
-        const auto ok=probe->tick_inputs(decision.inputs[0].buttons,decision.inputs[1].buttons,decision.inputs[0].buttons|decision.inputs[1].buttons,paint,false,!deferPresent);
+        const auto ok=probe->tick_inputs(decision.inputs[0].buttons,decision.inputs[1].buttons,
+            decision.inputs[0].buttons|decision.inputs[1].buttons,paint,false,!deferPresent,
+            paint&&final&&deferPresent);
         std::array<ChargeSample,2> samples;
         if(rollback.LocalChargePriority()){
             if(probe->world&&!probe->in_title)for(auto& field:probe->world->battle->fields)field.player->finish_charge_frame();
@@ -885,14 +1231,22 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
             if(record.decidedWinner>=0)
                 for(i32 side=0;side<2;++side)record.decidedCharacters[side]=world.configuration.selection.characters[side];
         }
-        record.hasEnd=!wasComplete&&probe->complete;
-        if(record.hasEnd)record.winner=probe->world->scene->winner;
+        // Do not send the menu action that retires the viewer's world.
+        const bool reselect=network_selection&&record.gameplay&&probe->in_title;
+        if(reselect)record.gameplay=false;
+        record.hasEnd=!wasComplete&&(probe->complete||reselect);
+        if(record.hasEnd)record.winner=probe->complete?probe->world->scene->winner:-1;
         recording_frame=nullptr;probe->graphics.checkpoint=nullptr;
         if(record.captured){if(!record.state->Seal()){probe->error="Rollback checkpoint seal failed";return 0;}TH09_PERF_COUNT(SealedCheckpoints,1);}
         if(!ok)return 0;
         if(!rollback.CommitChargeFrame(f,samples)){probe->error=rollback.Error();return 0;}
         if(!rollback.Complete(decision,forwardOnly)){probe->error=rollback.Error();return 0;}
-        if(deferPresent)probe->graphics.present();
+        if(deferPresent){
+#ifndef __EMSCRIPTEN__
+            if(probe->motionPending)probe->motion_main_present_at=now_ms();
+#endif
+            probe->graphics.present();
+        }
         // Historical replay stays silent. Fresh forward feedback need not
         // wait for remote confirmation; its later publication is deduplicated.
         if(final)record.audio.Emit(record.sounds,false,[](const auto& s){if(s.kind==0)probe->audio.effects.enqueue(s.id,i32(s.value));else probe->audio.effects.positioned(s.id,s.value);});
@@ -902,13 +1256,14 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         // in this same call. Release reconciled output before slot reuse.
         if(!publish_rollback_outputs())return 0;
         if(final||!network.active)break;
-        if(emscripten_get_now()-start>=8)break;
+        if(now_ms()-start>=8)break;
     }
     if(!publish_rollback_outputs())return 0;
     probe->audio.update();probe->audio.pump();
     return (recoveryOnly?rollback.Frame()<rollback_catchup:rollback.Frame()<=rollback_catchup)?2:1;
 }
 void queue_rollback_recovery(){
+#ifdef __EMSCRIPTEN__
     if(!deferred_recovery_active())return;
     const auto ticket=recovery_schedule.Schedule(loop_epoch);if(!ticket)return;
     // A timer returns control to the browser after this RAF's GL submission.
@@ -916,12 +1271,13 @@ void queue_rollback_recovery(){
     emscripten_async_call([](void* token){
         const auto ticket=u32(uintptr_t(token));
         if(!recovery_schedule.Take(ticket,loop_epoch)||!deferred_recovery_active())return;
-        const double begin=emscripten_get_now();const auto before=rollback.Resimulated();
+        const double begin=now_ms();const auto before=rollback.Resimulated();
         const auto ok=rollback_tick(0,true);
         ++recovery_callbacks;recovery_ticks+=rollback.Resimulated()-before;
-        recovery_last_us=u32((emscripten_get_now()-begin)*1000);
-        if(!ok){running=false;probe->audio.suspend(true);th09_browser_frame(0,emscripten_get_now()-begin);}
+        recovery_last_us=u32((now_ms()-begin)*1000);
+        if(!ok){running=false;probe->audio.suspend(true);th09_browser_frame(0,now_ms()-begin);}
     },reinterpret_cast<void*>(uintptr_t(ticket)),0);
+#endif
 }
 // New packets can correct the displayed frontier between rAF callbacks. That
 // recovery owns no clock credit. A previously blocked due tick may also wake.
@@ -933,17 +1289,17 @@ TH09_EXPORT("th09_rollback_wake") void th09_rollback_wake(){
         return;
     }
     if(rollback.RollbackFrame()==Netplay::INVALID_FRAME&&!rollback.Prepare().canAdvance)return;
-    const double begin=emscripten_get_now();const auto ok=rollback_tick(1);
+    const double begin=now_ms();const auto ok=rollback_tick(1);
     if(ok==2)cadence.blocked(true);
     else{
         cadence.complete();
         // The stalled interval earned no catch-up debt. Resume from the wake,
         // keeping only the fractional clock credit retained by blocked().
-        previous_frame=emscripten_get_now();
+        previous_frame=now_ms();
     }
     probe->audio.pump();if(ok)queue_rollback_recovery();
     if(!ok){running=false;probe->audio.suspend(true);}
-    th09_browser_frame(ok,emscripten_get_now()-begin);
+    th09_browser_frame(ok,now_ms()-begin);
 }
 u32 spectator_tick(u32 render,u32 dueTicks=1){
         spectator_last_ticks=0;
@@ -952,9 +1308,9 @@ u32 spectator_tick(u32 render,u32 dueTicks=1){
         const auto available=spectator_playback.Available(spectator_simulated,spectator_next);
         const auto count=fast?available:std::min(available,std::min(multiplayer::SpectatorSchedule::MaxTicks,std::min(dueTicks,4u)));
         if(!count)return 2;
-        const double began=emscripten_get_now();u32 ok=1;
+        const double began=now_ms();u32 ok=1;
         for(u32 n=0;n<count&&ok&&!spectator_frames.empty();++n){
-            if(!multiplayer::SpectatorSchedule::CanStart(n,emscripten_get_now()-began,fast)){++spectator_yields;break;}
+            if(!multiplayer::SpectatorSchedule::CanStart(n,now_ms()-began,fast)){++spectator_yields;break;}
             const auto packet=spectator_frames.front();spectator_frames.pop_front();
             if(packet.frame!=spectator_simulated)return 0;
             const bool was_title=probe->in_title;
@@ -974,7 +1330,7 @@ u32 spectator_tick(u32 render,u32 dueTicks=1){
             if(!was_title&&probe->in_title){spectator_mode=false;spectator_frames.clear();break;}
         }
         spectator_max_ticks=std::max(spectator_max_ticks,spectator_last_ticks);
-        spectator_max_work_us=std::max(spectator_max_work_us,u32((emscripten_get_now()-began)*1000));
+        spectator_max_work_us=std::max(spectator_max_work_us,u32((now_ms()-began)*1000));
         return ok;
 }
 TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){TH09_PERF_SCOPE(game_cost,GameTick);if(!probe)return 0;u16 keys[3]{};
@@ -1011,15 +1367,99 @@ TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){TH09_PERF_SCOPE(gam
         return ok;}
     sample_keys(keys);u32 ok=1;for(u32 extra=0;extra<3&&ok;++extra){ok=probe->tick_inputs(keys[0],keys[1],keys[2],false);if(!ok||probe->in_title||probe->paused||probe->over||probe->complete||!probe->session->is_replay||probe->session->phase!=SessionPhase::match||probe->session->playback_schedule()!=6)break;}if(ok&&render)probe->draw();return ok;
 }
-TH09_EXPORT("th09_loop_pause") void th09_loop_pause(u32 on){recovery_schedule.Cancel();suspended=on!=0;previous_frame=-1;cadence.reset();clear_inputs();if(probe){probe->clock_pause(suspended);probe->audio.suspend(suspended);}}
+#ifdef __EMSCRIPTEN__
+// Read the held snapshot only. The normal sampler owns press/release queues.
+static u16 motion_held_keys(){
+    bool keys[256]{};
+    const auto* physical=th09_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
+    for(const auto& key:keyboard_map){
+        if(!key.hosted&&(!physical||key.native==SDL_SCANCODE_UNKNOWN||!physical[key.native]))continue;
+        if(key.vk)keys[key.vk]=true;
+        if(key.vk>=160&&key.vk<=165)keys[16+(key.vk-160)/2]=true;
+    }
+    return keyboard_input(keys,2)|joy_keys(0)|joy_keys(1);
+}
+
+static void present_midpoint(double time,double begin){
+    if(!probe->motionPending||probe->motionBase<0.||gestures.active())return;
+    const auto* body=probe->motion_player();
+    if(!body)return;
+    constexpr double midpoint=1000./120.;
+    const double phase=time-probe->motionBase;
+    // At 144/165 Hz the nearest spare callback is often before 8.33 ms.
+    if(phase<midpoint-probe->displayPeriod*.5-.4)return;
+    probe->motionPending=false;
+    const double budget=std::max(1.5,probe->motionCost+1.);
+    auto estimate=cadence;
+    if(emscripten_get_now()-begin+budget>=probe->displayPeriod||
+       estimate.advance(budget/1000.))return;
+    const auto keys=motion_held_keys();
+    if(!(keys&0xf0)||(keys&8))return;
+    const bool autoFocus=probe->world->configuration.automatic_focus[0];
+    const auto delta=predict_sprite(body->motion,keys,autoFocus,keys&1?body->input.fire_frames:0,
+                                   body->resource.movement,probe->world->battle->state.limits,
+                                   probe->world->timing.rate*.5f);
+    if(delta.x==0.&&delta.y==0.)return;
+    const double started=emscripten_get_now();
+    if(probe->motionCapture.present(delta))++probe->extraPresentations;
+    probe->motionCost=emscripten_get_now()-started;
+}
+
+TH09_EXPORT("th09_motion_smoothing") void th09_motion_smoothing(u32 enabled){
+    if(!probe)return;
+    probe->reset_motion();
+    probe->motionEnabled=enabled!=0;
+}
+#if TH09_DEVELOPMENT_HARNESS
+TH09_EXPORT("th09_probe_extra_presentations") u32 th09_probe_extra_presentations(){
+    return probe?probe->extraPresentations:0;
+}
+#endif
+
+#endif
+TH09_EXPORT("th09_loop_pause") void th09_loop_pause(u32 on){recovery_schedule.Cancel();suspended=on!=0;previous_frame=-1;cadence.reset();clear_inputs();if(probe){probe->reset_motion();probe->clock_pause(suspended);probe->audio.suspend(suspended);}}
 TH09_EXPORT("th09_loop_stop") void th09_loop_stop(){recovery_schedule.Cancel();running=false;++loop_epoch;if(probe){probe->clock_pause(true);probe->audio.suspend(true);}}
+static bool run_frame(double time, u32 epoch){
+    if(!running||epoch!=loop_epoch)return false;
+    TH09_PERF_SCOPE(callback_cost,FrameCallback);
+    const double begin=now_ms(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
+    if(suspended||!probe){cadence.reset();return true;}
+    const bool active=rollback_active&&network.active;
+    // A pending due tick ignores new wall-time credit. Keep phase advice
+    // queued until the scheduler can actually apply it to a future tick;
+    // consuming it on a retry would silently discard the correction.
+    const auto elapsed=active&&!cadence.retry_pending()?rollback.PacedElapsedMs(delta*1000)/1000/rollback.IntervalScale():delta;
+    const auto ticks=cadence.advance(elapsed,active);u32 ok=1;
+    if(spectator_mode&&ticks){
+        // Flatten the old four outer ticks x four inner steps. One shared
+        // 6-step/8ms start budget owns this callback; pending inputs remain.
+        ok=spectator_tick(1,ticks);
+        if(ok==2)cadence.blocked(false);else cadence.complete();
+    }else for(u32 n=0;n<ticks&&ok;++n){
+        // A netplay tick can exhaust the callback budget by itself. Draw
+        // its current result before that exit instead of waiting for a
+        // later due tick that may never run. Historical resimulation is
+        // still filtered by rollback_tick's catch-up frontier.
+        ok=th09_game_tick(rollback_active||n+1==ticks);if(ok==2){cadence.blocked(rollback_active&&network.active);break;}
+        cadence.complete();
+        if(rollback_active&&now_ms()-begin>=10){
+            // Drop overdue work only when due ticks were left unfinished.
+            // A costly but completed callback must keep its fractional
+            // clock remainder, otherwise recovery itself slows the game.
+            cadence.exhausted(n+1,ticks);break;
+        }
+    }
+    probe->audio.pump();if(ok)queue_rollback_recovery();TH09_PERF_STOP(callback_cost);th09_browser_frame(ok,now_ms()-begin);if(!ok){running=false;probe->audio.suspend(true);}return running;
+}
 TH09_EXPORT("th09_loop_start") void th09_loop_start(){
     if(!probe||running)return;running=true;suspended=false;previous_frame=-1;cadence.reset();probe->clock_pause(false);probe->audio.suspend(false);
+#ifdef __EMSCRIPTEN__
     emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
         if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
         TH09_PERF_SCOPE(callback_cost,FrameCallback);
         const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
         if(suspended||!probe){cadence.reset();return EM_TRUE;}
+        if(probe->motionEnabled)probe->observe_refresh(delta*1000.);
         const bool active=rollback_active&&network.active;
         // A pending due tick ignores new wall-time credit. Keep phase advice
         // queued until the scheduler can actually apply it to a future tick;
@@ -1045,8 +1485,15 @@ TH09_EXPORT("th09_loop_start") void th09_loop_start(){
                 cadence.exhausted(n+1,ticks);break;
             }
         }
+        if(ok&&probe->motionEnabled){
+            if(ticks)probe->motionBase=probe->motionPending?time:-1.;
+            else present_midpoint(time,begin);
+        }
         probe->audio.pump();if(ok)queue_rollback_recovery();TH09_PERF_STOP(callback_cost);th09_browser_frame(ok,emscripten_get_now()-begin);if(!ok){running=false;probe->audio.suspend(true);}return running?EM_TRUE:EM_FALSE;
     },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
+#else
+    ++loop_epoch;
+#endif
 }
 TH09_EXPORT("th09_game_draw") void th09_game_draw(){if(probe)probe->draw();}
 TH09_EXPORT("th09_key") void th09_key(u32 scan,u32 down){if(spectator_mode)return;for(auto& k:keyboard_map)if(k.scan==scan){k.hosted=down!=0;keyboard_inputs.event(k.vk,k.hosted);}}
@@ -1274,7 +1721,7 @@ TH09_EXPORT("th09_probe_bullet_boundary") u32 th09_probe_bullet_boundary(){
     constexpr std::size_t pageBytes=64*sizeof(AnmVm);
     for(u32 pass=0;pass<3;++pass){
         auto& field=battle.fields[0];auto& pool=field.bullets->pool;auto& visual=*field.bullet_visuals;
-        field.bullets->reset_pool();field.bullets->draw_heads.fill(-1);
+        field.bullets->reset_pool();
         for(auto& laser:field.lasers->pool)laser.active=false;
         const bool tail=pass!=1;const u32 tailSlot=pass==2?BulletManager::update_count:25;
         if(!visual.prepare(pool[12],12,0,0,8))return 0;
@@ -1427,11 +1874,522 @@ TH09_EXPORT("th09_replay_view_step") u32 th09_replay_view_step(u32 render){
 TH09_EXPORT("th09_replay_view_silent") void th09_replay_view_silent(u32 on){if(probe)probe->replay_view_silent=on!=0;}
 TH09_EXPORT("th09_import_buffer") u8* th09_import_buffer(u32 size){if(!probe||size>16*1024*1024)return nullptr;probe->import_bytes.resize(size);return probe->import_bytes.data();}
 TH09_EXPORT("th09_import_file") u32 th09_import_file(u32 kind,u32 size){return probe&&probe->import_file(kind,size);}
-TH09_EXPORT("th09_save_snapshot") u32 th09_save_snapshot(){if(!probe)return 0;probe->update_clocks();auto rng=probe->state.random;const auto bytes=probe->records.save(rng);probe->save_configuration();return probe->write_file("/save/score.dat",bytes.data(),u32(bytes.size()));}
+TH09_EXPORT("th09_save_snapshot") u32 th09_save_snapshot(){if(!probe)return 0;probe->update_clocks();auto rng=probe->state.random;const auto bytes=probe->records.save(rng);probe->save_configuration();return probe->write_file(Application::save_path("score.dat").c_str(),bytes.data(),u32(bytes.size()));}
 TH09_EXPORT("th09_audio_pump") void th09_audio_pump(){if(probe)probe->audio.pump();}
 TH09_EXPORT("th09_suspend") void th09_suspend(u32 on){if(probe)probe->audio.suspend(on!=0);}
 #if TH09_DEVELOPMENT_HARNESS
 TH09_EXPORT("th09_probe_close") void th09_probe_close(){th09_loop_stop();close_controllers();clear_inputs();probe.reset();}
 #endif
 }
+
+#ifndef __EMSCRIPTEN__
+#if defined(_WIN32) && TH09_NATIVE_ROOM && TH09_NATIVE_OVERLAY
+static bool apply_native_spectator_packet(const std::vector<u8>& packet) {
+    if (packet.size() < 24 || packet[0] != 'T' || packet[1] != '9')
+        return false;
+    const auto word = [](const u8* bytes) {
+        return u32(bytes[0]) | u32(bytes[1]) << 8 | u32(bytes[2]) << 16 | u32(bytes[3]) << 24;
+    };
+    const auto frame = word(packet.data() + 8);
+    const auto type = std::string_view(reinterpret_cast<const char*>(packet.data() + 2), 2);
+    if (type == "TM") return packet.size() == 40 && packet[4] == 1;
+    if (packet[6] != 2 || packet[7] != 0) return false;
+    if (type == "BG" && (packet.size() == 102 || packet.size() == 74)) {
+        std::memcpy(th09_spectator_begin_buffer(), packet.data() + 24, packet.size() - 24);
+        return th09_spectator_restart(frame, u32(packet.size() - 24)) != 0;
+    }
+    if (type == "SE" && packet.size() == 24) return th09_spectator_finish(frame) != 0;
+    if (type == "RD" && packet.size() == 28) return true;
+    const size_t stride = packet[4] == 2 ? 126 : 46;
+    if (type != "SP" || packet[4] < 1 || packet[4] > 2 || packet.size() % stride || packet.size() > stride * 64)
+        return false;
+    for (size_t at = 0; at < packet.size(); at += stride) {
+        const auto* bytes = packet.data() + at;
+        if (std::memcmp(bytes, packet.data(), 8) || std::memcmp(bytes + 12, packet.data() + 12, 12)) return false;
+        const auto floating = [&](const u8* p) {
+            const auto bits = word(p);
+            float value;
+            std::memcpy(&value, &bits, sizeof(value));
+            return value;
+        };
+        if (stride == 126) std::memcpy(th09_spectator_charge_buffer(), bytes + 46, 80);
+        const auto feed = stride == 126 ? th09_spectator_feed_charge : th09_spectator_feed;
+        if (!feed(word(bytes + 8), u32(bytes[24]) | u32(bytes[25]) << 8, u32(bytes[35]) | u32(bytes[36]) << 8,
+                  bytes[26], floating(bytes + 27), floating(bytes + 31), bytes[37], floating(bytes + 38), floating(bytes + 42)))
+            return false;
+    }
+    return true;
+}
+
+// The launcher owns the write end. Poll available bytes before reading.
+static std::string read_desktop_room_start(std::string& pending) {
+    auto pop_line = [&]() -> std::string {
+        const auto end = pending.find('\n');
+        if (end == std::string::npos) return {};
+        auto line = pending.substr(0, end);
+        pending.erase(0, end + 1);
+        return line;
+    };
+    if (auto line = pop_line(); !line.empty()) return line;
+    const auto input = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD available = 0;
+    if (!PeekNamedPipe(input, nullptr, 0, nullptr, &available, nullptr) || !available) return {};
+    char bytes[4096];
+    DWORD count = 0;
+    if (!ReadFile(input, bytes, std::min<DWORD>(available, sizeof(bytes)), &count, nullptr)) return {};
+    pending.append(bytes, count);
+    auto line = pop_line();
+    if (pending.size() >= sizeof(bytes)) pending.clear();
+    return line;
+}
+#endif
+
+static u16 desktop_motion_held_keys(){
+    bool keys[256]{};
+    const auto* physical=SDL_GetKeyboardState(nullptr);
+    for(const auto& key:keyboard_map){
+        if(key.native==SDL_SCANCODE_UNKNOWN||!physical[key.native])continue;
+        if(key.vk)keys[key.vk]=true;
+        if(key.vk>=160&&key.vk<=165)keys[16+(key.vk-160)/2]=true;
+    }
+    return keyboard_input(keys,2)|joy_keys(0)|joy_keys(1);
+}
+
+static double display_tick_deadline(double now,double intervalScale){
+    // Project the same cadence as the current simulation without consuming any
+    // queued online phase correction. A blocked tick has priority over drawing.
+    double low=0.,high=1000./60.*intervalScale;
+    for(unsigned i=0;i<10;++i){
+        const double middle=(low+high)*.5;
+        auto estimate=cadence;
+        if(estimate.advance((std::max(0.,now-previous_frame)+middle)/(1000.*intervalScale)))high=middle;
+        else low=middle;
+    }
+    return now+high;
+}
+
+static void wait_display_deadline(){
+    if(!SDL_GetKeyboardFocus()){SDL_Delay(1);return;}
+    if(previous_frame<0.||!probe->session||probe->in_title||probe->paused||
+       probe->session->phase!=SessionPhase::match||cadence.retry_pending()){
+        SDL_Delay(1);
+        return;
+    }
+    const double now=now_ms();
+    const double scale=network.active&&rollback_active?rollback.IntervalScale():1.;
+    double deadline=display_tick_deadline(now,scale);
+    if(probe->motionPending&&probe->motion_deadline>=0.)
+        deadline=std::min(deadline,probe->motion_deadline);
+    const double wait=deadline-now;
+    if(wait>2.1)SDL_Delay(1);
+    else if(wait>.04)SDL_DelayPrecise(Uint64(wait*1.e6));
+}
+
+static void present_motion_midpoint(){
+    if(cadence.retry_pending()||previous_frame<0.){
+        probe->cancel_motion_frame();
+        return;
+    }
+    const double now=now_ms();
+    const double scale=network.active&&rollback_active?rollback.IntervalScale():1.;
+    const double nextTick=display_tick_deadline(now,scale);
+    if(probe->motion_deadline<0.)
+        probe->motion_deadline=probe->motion_main_present_at+1000./120.*scale;
+    const double late=now-probe->motion_deadline;
+    if(late<0.)return;
+    probe->motionPending=false;
+    if(late>1.5)return;
+    const auto* player=probe->motion_player();
+    if(!player||suspended||!SDL_GetKeyboardFocus()||gestures.active())return;
+#if TH09_NATIVE_OVERLAY
+    if(Th09Overlay::CapturesKeyboard())return;
+#endif
+    // With a negotiated input delay, extrapolate the last simulated direction.
+    // A fresh key press still enters the match through the delayed input queue.
+    const auto keys=network.active&&rollback.InputDelay()!=0?player->input.device.held:desktop_motion_held_keys();
+    if(!(keys&0xf0)||(keys&8))return;
+    const double budget=probe->motion_extra_cost+1.;
+    if(now+budget>=nextTick)return;
+    const auto& world=*probe->world;
+    const auto side=probe->motion_side();
+    const auto delta=predict_sprite(player->motion,keys,world.configuration.automatic_focus[side],
+                                   keys&1?player->input.fire_frames:0,player->resource.movement,
+                                   world.battle->state.limits,world.timing.rate*.5f);
+    if(delta.x==0.&&delta.y==0.)return;
+    probe->motionCapture.present(delta);
+    probe->motion_extra_cost=now_ms()-now;
+}
+
+int run_desktop() {
+    SDL_SetHint(SDL_HINT_VIDEO_FORCE_EGL, "1");
+#if TH09_NATIVE_OVERLAY
+    SDL_SetHint(SDL_HINT_IME_IMPLEMENTED_UI, "composition");
+#endif
+    if (!th09_prepare_loading() || !th09_game_open(u32(std::time(nullptr)))) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", th09_error());
+        th09_game_close();
+        return 1;
+    }
+    const auto* motion=SDL_getenv("EAGLER_TH09_MOTION_SMOOTHING");
+    const auto* display=SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(SDL_GL_GetCurrentWindow()));
+    const bool display_fast=display&&display->refresh_rate>=90.f;
+    int swap=-1;
+    probe->motionEnabled=(!motion||std::string_view(motion)!="0")&&display_fast&&
+        SDL_GL_GetSwapInterval(&swap)&&swap==0;
+    const auto* netplayMotion=SDL_getenv("EAGLER_TH09_NETPLAY_MOTION_SMOOTHING");
+    probe->motion_netplay_enabled=probe->motionEnabled&&(!netplayMotion||std::string_view(netplayMotion)!="0");
+    if(probe->motionEnabled)SDL_Log("th09 motion smoothing: enabled (fixed midpoint, netplay %s)",
+        probe->motion_netplay_enabled?"on":"off");
+    th09_loop_start();
+    auto epoch = loop_epoch;
+#if TH09_NATIVE_ROOM
+    auto& room = th09_native_room_transport();
+    nlohmann::json start;
+    bool waiting = false;
+    bool match_finished = false;
+    bool viewing = false;
+    bool publishedTiming = false;
+    Uint64 roomDeadline = 0;
+#if TH09_NATIVE_OVERLAY
+    Netplay::ConfirmedInputWatchdog peerWait;
+    Uint64 nextConnectionStatus = 0;
+    auto sampledRoute = Netplay::NativeRoomTransport::Route::Connecting;
+    std::uint64_t sampledRevision = 0;
+    std::array<unsigned,20> recentRtts{};
+    unsigned rttCount = 0, rttSlot = 0;
+#endif
+    auto closeRoom = [&] {
+        room.Close();
+        th09::desktop::closeSpectatorStream();
+        waiting = viewing = match_finished = false;
+        roomDeadline = 0;
+#if TH09_NATIVE_OVERLAY
+        peerWait.Disarm();
+        nextConnectionStatus = 0;
+        sampledRoute = Netplay::NativeRoomTransport::Route::Connecting;
+        sampledRevision = 0;
+        rttCount = rttSlot = 0;
+        Th09Overlay::SetConnectionStatus({});
+#endif
+    };
+    auto notifyRoomEnded = [](const char* message, bool showRoom = true) {
+        if (message) SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", message);
+#if TH09_NATIVE_OVERLAY
+        const std::string_view detail = message ? message : "";
+        Th09Overlay::FinishRoom(detail == "Confirmed peer input stopped advancing"
+            ? "对手的输入长时间没有更新，已结束本局。" : message, showRoom);
+#endif
+    };
+    auto recoverRoom = [&](std::string message, bool restoreTitle, bool showRoom = true) {
+        closeRoom();
+        // Network failures are stored in Application::error by the runtime.
+        // The local title rejects every tick while that error is present.
+        probe->error.clear();
+        failure.clear();
+        const bool wasNetwork = network.active;
+        th09_network_end();
+        if (!wasNetwork && restoreTitle && !th09_room_return()) return false;
+        if (!probe->error.empty()) return false;
+        if (wasNetwork || restoreTitle) {
+            probe->launch_pending = false;
+            probe->pending_action = -1;
+        }
+        room_preview = false;
+        previous_frame = -1;
+        cadence.reset();
+        if (!running) {
+            th09_loop_start();
+            epoch = loop_epoch;
+        }
+        notifyRoomEnded(message.empty() ? nullptr : message.c_str(), showRoom);
+        return true;
+    };
+    auto connect_room = [&](const std::string& options) {
+        roomDeadline = SDL_GetTicks() + 45'000;
+        try {
+            start = nlohmann::json::parse(options);
+            native_match_start.reset();
+            native_replay_start.reset();
+            publishedTiming = false;
+            namespace stream = th09::desktop;
+            const auto build = start.at("build").get<std::string>();
+            if (start.value("netplaySpectator", false)) {
+                if (!probe->in_title && !th09_room_return()) throw std::runtime_error("Could not return to the title");
+                if (!th09_spectator_prepare() || !stream::openSpectatorStream(start.at("signalUrl").get<std::string>(), build, true)) {
+                    th09_room_return();
+                    throw std::runtime_error("Could not open the spectator stream");
+                }
+                room_preview = false;
+                viewing = true;
+                return true;
+            }
+            const auto side = start.at("netplayPlayer").get<u8>();
+            const auto count = start.at("netplayPlayerCount").get<u8>();
+#if TH09_RMLUI_OVERLAY
+            room.Connect(start.at("signalUrl").get<std::string>(), "th09", side, count, false, Th09Overlay::InitialRouteChoice());
+#else
+            room.Connect(start.at("signalUrl").get<std::string>(), "th09", side, count, start.value("netplayPreferTurn", false));
+#endif
+            if (side == 0 && start.value("netplaySpectatorTimeline", false)) {
+                const auto url = start.at("netplayUrl").get<std::string>() + "&players=" + std::to_string(count);
+                stream::openSpectatorStream(url, build, false);
+            }
+            waiting = true;
+            return true;
+        } catch (const std::exception& error) {
+            return recoverRoom(error.what(), spectator_mode);
+        }
+    };
+    auto startRoom = [&](const std::string& options) {
+        if (!connect_room(options)) return false;
+#if TH09_NATIVE_OVERLAY
+        if (waiting || viewing) Th09Overlay::AdoptRoom(options.c_str());
+#endif
+        return true;
+    };
+    if (const char* options = SDL_getenv("EAGLER_DESKTOP_ROOM"); options && !startRoom(options)) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", th09_error());
+        th09_game_close();
+        return 1;
+    }
+#if defined(_WIN32) && TH09_NATIVE_OVERLAY
+    #if TH09_RMLUI_OVERLAY
+    const bool accepts_room_start = true;
+#else
+    const bool accepts_room_start = SDL_getenv("EAGLER_DESKTOP_OVERLAY") != nullptr;
+#endif
+    std::string room_input, pending_room_start;
+#endif
+#endif
+#if TH09_NATIVE_OVERLAY
+    double overlayIdlePresent = 0;
+    auto refreshOverlay = [&] {
+        if (!Th09Overlay::NeedsPresentation()) return;
+        const auto now = now_ms();
+        if (now - overlayIdlePresent >= 1000.0 / 60) {
+            probe->graphics.present();
+            overlayIdlePresent = now;
+        }
+    };
+#endif
+    while (!desktop_quit_requested && probe->requested_transition != 0) {
+#if TH09_NATIVE_OVERLAY
+        probe->audio.set_room_music_audible(Th09Overlay::RoomMusicAudible());
+#endif
+        SDL_PumpEvents();
+        if (SDL_HasEvent(SDL_EVENT_QUIT) || SDL_HasEvent(SDL_EVENT_WINDOW_CLOSE_REQUESTED)) break;
+#if TH09_NATIVE_OVERLAY
+        collect_input_events();
+#endif
+#if TH09_NATIVE_ROOM
+#if defined(_WIN32) && TH09_NATIVE_OVERLAY
+        if (accepts_room_start) {
+#if TH09_RMLUI_OVERLAY
+            if (auto options = Th09Overlay::TakeRoomStart(); !options.empty())
+                pending_room_start = std::move(options);
+#endif
+            if (auto options = read_desktop_room_start(room_input); !options.empty())
+                pending_room_start = std::move(options);
+            if (!pending_room_start.empty() && !waiting && !network.active && !viewing && !match_finished &&
+                !startRoom(std::exchange(pending_room_start, {}))) break;
+        }
+#endif
+        room.SetAdaptiveRouteActive(network.active && rollback_active &&
+            (rollback.Ready() || rollback.Frame() > 0 || room.Recovering()));
+        room.Pump();
+        if (viewing) {
+            if (!probe->in_title) roomDeadline = 0;
+            bool valid = !th09::desktop::spectatorStreamFailed() &&
+                (!roomDeadline || SDL_GetTicks() < roomDeadline);
+            std::vector<u8> packet;
+            for (unsigned i = 0; valid && i < 4 && th09::desktop::takeSpectatorPacket(packet); ++i)
+                valid = apply_native_spectator_packet(packet);
+            if (!valid && !recoverRoom("旁观连接中断或等待数据超时。", true)) break;
+        }
+#if TH09_NATIVE_OVERLAY
+        if (Th09Overlay::TakeEscapeRequest()) {
+            if (!recoverRoom({}, true, false)) break;
+        }
+        if (Th09Overlay::TakeReturnRequest() && (waiting || network.active || viewing || match_finished)) {
+            if (!recoverRoom({}, viewing || match_finished)) break;
+        }
+#endif
+        if (!match_finished && (room.Failed() || room.Disconnected())) {
+            const auto error = room.LastError().empty() ? "对手已断开连接。" : room.LastError();
+            if (!recoverRoom(error, viewing)) break;
+        } else if (waiting && room.IsOpen()) {
+            waiting = false;
+            try {
+                const auto build = start.at("build").get<std::string>();
+                if (build.size() != 24 || build.find_first_not_of("0123456789abcdef") != std::string::npos)
+                    throw std::runtime_error("Invalid th09 runtime build");
+                auto word = [&](size_t offset){return u32(std::stoul(build.substr(offset,8),nullptr,16));};
+                const u32 low=word(0)^start.at("run").get<u32>(), high=word(8);
+                const auto& loadouts = start.at("netplayLoadouts");
+                const u32 left=loadouts.at(0).at("character").get<u32>(), right=loadouts.at(1).at("character").get<u32>();
+                const auto seed=start.at("netplaySeed").get<u32>(), side=start.at("netplayPlayer").get<u32>();
+                const auto difficulty=start.at("netplayDifficulty").get<u32>();
+                const auto reserve=start.value("netplayPredictionReserve",2u);
+                const auto inputDelay=start.value("netplayInputDelayAuto",false)?0xffffffffu:start.value("netplayInputDelay",0u);
+                const auto mode=start.value("netplayAdonisMode",0u)==1?1u:0u;
+                const bool selection=start.value("netplayInGameSelection",false);
+                const auto abi=word(16)^(selection?0x09020002u:(left<<16)^(right<<20)^(difficulty<<24)^0x09010000u);
+                if (!probe->in_title) {
+                    probe->session->finish();
+                    if (!probe->return_title(false)) throw std::runtime_error("Could not leave the single-player match");
+                }
+                if (!th09_adonis_configure(mode) ||
+                    !th09_local_charge_priority(!start.value("netplayDisableLocalChargePriority",false)))
+                    throw std::runtime_error("Could not configure match timing");
+                if (!(selection ? th09_network_selection_begin(seed,side,low,high,abi,inputDelay,reserve)
+                        : mode ? th09_measured_begin(seed,side,difficulty,left,right,low,high,abi,inputDelay,reserve)
+                        : th09_rollback_begin(seed,side,difficulty,left,right,low,high,abi,inputDelay))) {
+                    const auto* detail = th09_error();
+                    throw std::runtime_error(*detail ? detail : "Could not start the synchronized match");
+                }
+                room_preview = false;
+                SDL_Log("Native room started (run %u)", start.at("run").get<u32>());
+            } catch (const std::exception& error) {
+                if (!recoverRoom(error.what(), false)) break;
+            }
+        } else if (waiting && SDL_GetTicks() >= roomDeadline) {
+            if (!recoverRoom("连接其他玩家超时。", false)) break;
+        }
+        if (!publishedTiming && rollback_active && network.active && network.side == 0 &&
+            start.value("netplaySpectatorTimeline", false) && rollback.Mode() != Netplay::AdonisMode::Rollback) {
+            const auto* timing = th09_startup_info();
+            if (timing[1] == 4) {
+                th09::desktop::publishTiming(timing, start.value("netplayInputDelayAuto", false));
+                publishedTiming = true;
+            }
+        }
+        th09::desktop::pumpSpectatorStream();
+        if (rollback_active && !th09_rollback_pump() &&
+            !recoverRoom(th09_error(), false)) break;
+#if TH09_NATIVE_OVERLAY
+        using RoomPhase = Th09Overlay::RoomPhase;
+        Th09Overlay::SetTransportRecovering(network.active && room.Recovering());
+#if TH09_RMLUI_OVERLAY
+        if (Th09Overlay::TakeRouteSwitchRequest() && network.active) room.ConfirmRouteSwitch();
+        const auto routeSwitch = network.active ? room.SwitchStatus() : Netplay::RouteSwitchStatus{};
+        Th09Overlay::SetRouteSwitch(routeSwitch.from, routeSwitch.fromMs, routeSwitch.to, routeSwitch.toMs, routeSwitch.switching);
+#endif
+        const auto statusNow = SDL_GetTicks();
+        if ((waiting || network.active) && statusNow >= nextConnectionStatus) {
+            using Route = Netplay::NativeRoomTransport::Route;
+            const auto link = room.LinkStatus();
+            const char* label = link.route == Route::Direct ? "direct" : link.route == Route::Nat4 ? "NAT4" :
+                link.route == Route::Swarm ? "Swarm" : link.route == Route::Turn ? "turn" :
+                link.route == Route::Reconnecting ? "重连中" : "连接中";
+            if (link.route != sampledRoute || link.revision != sampledRevision) {
+                rttCount = rttSlot = 0;
+                sampledRoute = link.route;
+                sampledRevision = link.revision;
+            }
+            Th09Overlay::ConnectionStatus status{label, 2 - start.value("netplayPlayer", 0u)};
+            status.probesUnanswered = link.probesUnanswered;
+            if (link.rttMs) {
+                status.rtt = static_cast<int>(*link.rttMs);
+                recentRtts[rttSlot] = *link.rttMs;
+                rttSlot = (rttSlot + 1) % recentRtts.size();
+                rttCount = std::min(rttCount + 1, static_cast<unsigned>(recentRtts.size()));
+                if (rttCount >= 3) {
+                    auto sorted = recentRtts;
+                    std::sort(sorted.begin(), sorted.begin() + rttCount);
+                    status.variation = sorted[(rttCount - 1) * 95 / 100] - sorted[(rttCount - 1) / 2];
+                }
+            }
+            Th09Overlay::SetConnectionStatus(status);
+            nextConnectionStatus = statusNow + 500;
+        }
+        if (waiting) Th09Overlay::SetRoomPhase(RoomPhase::connecting);
+        else if (viewing) Th09Overlay::SetRoomPhase(roomDeadline ? RoomPhase::loadingSpectator : RoomPhase::spectating);
+        else if (match_finished) Th09Overlay::SetRoomPhase(RoomPhase::results);
+        else if (network.active) {
+            if (rollback_active && !rollback.Ready()) {
+                const auto& startup = rollback.Startup();
+                const bool measuring = startup.State() == Netplay::AdonisStartup::Stage::Measuring;
+                Th09Overlay::SetRoomPhase(RoomPhase::synchronizing, measuring ? startup.Probes() : 0,
+                    measuring ? Netplay::AdonisStartup::ProbeCount : 0);
+            } else Th09Overlay::SetRoomPhase(probe->in_title ? RoomPhase::selection : RoomPhase::playing);
+        }
+        if (waiting || viewing || network.active) {
+            // A held Esc yields only repeat events. A fresh press can leave as
+            // soon as the authoritative remote input stops for five seconds.
+            const auto& startup = rollback.Startup();
+            const auto frontier = waiting ? 0u : viewing ? spectator_next :
+                (rollback.Ready() || rollback.Frame() > 0) ? rollback.RemoteInputFrontier() :
+                0x80000000u | (static_cast<u32>(startup.State()) << 16) | startup.Probes();
+            Th09Overlay::SetEscapeAvailable(peerWait.Observe(frontier, SDL_GetTicks(), 5000));
+        } else peerWait.Disarm();
+#endif
+        if (waiting) {
+#if TH09_NATIVE_OVERLAY
+            refreshOverlay();
+#endif
+            probe->audio.pump();
+            SDL_Delay(5);
+            continue;
+        }
+#endif
+        if (running) {
+#if TH09_NATIVE_ROOM
+            const bool was_network = network.active;
+#endif
+#if TH09_NATIVE_OVERLAY
+            const auto presentations = probe->graphics.backend.stats.presentations;
+#endif
+            const bool frameOk = run_frame(now_ms(), epoch);
+            if(frameOk&&probe->motionPending)present_motion_midpoint();
+            if (!frameOk) {
+                const char* message = th09_error();
+                if (!*message) message = "The game could not continue.";
+#if TH09_NATIVE_ROOM
+                if (was_network || viewing || match_finished) {
+                    if (!recoverRoom(message, true)) break;
+                } else
+#endif
+                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Touhou 09", message, SDL_GetKeyboardFocus());
+            }
+#if TH09_NATIVE_ROOM
+            if (frameOk && was_network && !network.active) {
+                th09_network_end();
+                match_finished = true;
+            }
+            if (match_finished && probe->in_title && probe->title && probe->title->state.screen == TitleScreen::main) {
+                closeRoom();
+                notifyRoomEnded(nullptr);
+            }
+            if (frameOk && viewing && !spectator_mode) {
+                closeRoom();
+                notifyRoomEnded(nullptr);
+            }
+#endif
+#if TH09_NATIVE_OVERLAY
+            if (probe->graphics.backend.stats.presentations == presentations) refreshOverlay();
+            else overlayIdlePresent = now_ms();
+#endif
+            wait_display_deadline();
+        } else {
+            SDL_Event event;
+            if (SDL_WaitEventTimeout(&event, 50) && desktop_close_event(event.type)) break;
+        }
+    }
+
+    bool ok = running && probe->error.empty();
+    if (ok && probe->requested_transition != 0 && !th09_save_snapshot()) {
+        probe->error = "Unable to save score.dat";
+        ok = false;
+    }
+    if (!ok || !probe->error.empty()) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", th09_error());
+        ok = false;
+    }
+    th09_game_close();
+#if TH09_NATIVE_ROOM
+    th09::desktop::closeSpectatorStream();
+#endif
+    return ok ? 0 : 1;
+}
+#endif
 }

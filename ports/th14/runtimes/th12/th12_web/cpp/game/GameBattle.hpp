@@ -113,8 +113,6 @@ public:
 #endif
 #if PORT_TITLE == 14
     u32 th14_dialogue_skip_frames=0,th14_dialogue_fire_frames=0;
-    u32 th14_practice_misses=0,th14_practice_extends=0;
-    std::array<u32,5> th14_practice_collections{};
     u32 th14_spell_background=0;
     bool th14_spell_result_requested=false;
     i32 th14_current_music=-1;
@@ -153,6 +151,10 @@ public:
     // Optional state observer at native priority 16, before the player callback.
     // Aligns whole-session traces without changing gameplay.
     void (*before_player_update)(const GameBattle&)=nullptr;
+#if PORT_TITLE == 14
+    // Observe effective game input only on an actual player update.
+    void (*practice_key_sample)(u32)=nullptr;
+#endif
 
     GameBattle(GameSessionResources&,AnmManager&,GameEconomy&,SpellRecords&,SceneCompositor&,ClearRecords&);
 #if PORT_TITLE == 14 && defined(TH14_CPP_STAGE_RESOURCE_HANDSHAKE)
@@ -459,7 +461,7 @@ public:
     Th14ItemCombo& item_th14_combo_state()override{return economy.th14_combo;}
     bool item_th14_combo_settle()override{
         const i32 count=economy.th14_combo.count;
-        if(count>=20)++th14_practice_collections[std::min(count/10-2,4)];
+        if(count>=20)++economy.th14_practice_collections[std::min(count/10-2,4)];
         return item_rewards.th14_combo_settle(dialogue&&dialogue->active);
     }
     bool th14_combo_drop(i32 type,Vec3 p,i32 delay)override{return items.spawn_ordinary_th14(type,p,-1.5707963705062866f,2.2f,delay)==0;}
@@ -500,6 +502,11 @@ public:
     bool bomb_stop_sound(i32 id)override{events.push_back({BattleEventKind::StopSound,id});return true;}
     bool bomb_cancel(Vec3,float,u32,bool)override;
     i32& bomb_count()override{return enemy_environment.shared_integers[1];}
+#if PORT_TITLE == 14
+    // shared_integers[1] is the ECL-visible bomb counter, which stage and boss
+    // scripts reset; the practice panel counts every Bomb of the run.
+    void bomb_used()override{++economy.th14_practice_bombs;}
+#endif
     bool bomb_background_color(u32 color)override{if(!stage)return false;stage->state.tint=color;return true;}
     bool bomb_refund_power()override{bool changed=false;return item_rewards.add_power(10,changed)&&power_changed();}
     bool bomb_cancel_beam(Vec3,bool)override;

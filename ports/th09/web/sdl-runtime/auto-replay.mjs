@@ -13,7 +13,7 @@ export function parseReplayMatch(value) {
         Number.isSafeInteger(frame) && frame >= 0 && frame < value.frames && (!index || frame > frames[index - 1]))
       ? {roundStarts: [...value.roundStarts]} : {})};
 }
-export function createAutoReplay({core, saveRoot, options, enabled, sync, notice, now = Date.now}) {
+export function createAutoReplay({core, saveRoot, options, enabled, sync, notice, publish, now = Date.now}) {
   let match = null, lastEnd = -1;
   const sidecar = path => path.replace(/\.rpyx?$/, '.json');
   const readMatch = path => {
@@ -42,7 +42,8 @@ export function createAutoReplay({core, saveRoot, options, enabled, sync, notice
         match.roundStarts.push(frame);
     },
     end(frame, winner) {
-      if (!enabled() || options().netplaySpectator || options().netplayReplayAutoSave === false ||
+      const keepLocal = options().netplayReplayAutoSave !== false;
+      if (!enabled() || options().netplaySpectator || (!keepLocal && !publish) ||
           !match || frame <= match.frame || frame === lastEnd || ![0, 1].includes(winner)) return;
       lastEnd = frame;
       try {
@@ -52,6 +53,7 @@ export function createAutoReplay({core, saveRoot, options, enabled, sync, notice
         if (encoded.length >= 512) throw Error('录像目录名过长');
         const pointer = core._th09_auto_replay_folder_buffer();
         core.HEAPU8.set(encoded, pointer); core.HEAPU8[pointer + encoded.length] = 0;
+        const transientDirectory = !keepLocal && !core.FS.analyzePath(directory).exists;
         core.FS.mkdirTree(directory);
         const occupied = new Set(core.FS.readdir(directory).map(name => name.toLowerCase()));
         let slot = 0;
@@ -62,9 +64,18 @@ export function createAutoReplay({core, saveRoot, options, enabled, sync, notice
         if (slot > 0xffff) throw Error('自动保存 Replay 失败：录像存储已满，请下载并整理旧录像');
         if (!core._th09_auto_save_replay(slot)) throw Error('自动保存 Replay 失败，请在游戏内手动保存');
         const path = `${directory}/th9_ud${slot.toString(16).padStart(4, '0')}.rpy`;
+        if (!keepLocal) {
+          try {publish(match.frame, core.FS.readFile(path));}
+          finally {
+            core.FS.unlink(path);
+            if (transientDirectory) core.FS.rmdir(directory);
+          }
+          return;
+        }
         writeMatch(path, {schema: 'eagler-touhou/th09-match-replay/1', names: match.names,
           startedAt: match.startedAt, frames: frame - match.frame, winner,
           roundStarts: match.roundStarts.filter(offset => offset < frame - match.frame)});
+        publish?.(match.frame, core.FS.readFile(path));
         const label = match.names.join(' vs ');
         // Capture synchronously before another match can replace the recording.
         // A flush failure must not terminate the player's connection.

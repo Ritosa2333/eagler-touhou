@@ -1,5 +1,5 @@
 import {BookButton} from '../launcher/BookButton';
-import { Fragment, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import {Music2, UsersRound} from 'lucide-react';
 import {OverflowText} from '../../ui/overflow-text';
 import {
@@ -96,7 +96,7 @@ function RoomRow({
   const artwork = bookGameArtwork(gameIdForProduct(room.product)) ?? ('cardArtwork' in meta && meta.cardArtwork ? assetUrl(`assets/${meta.cardArtwork}`) : undefined);
   const title = meta.title;
   const policy = multiplayerConfigForProduct(room.product)!;
-  const duel = room.product === 'th09mp' || room.product === 'th19mp';
+  const duel = room.product === 'th03mp' || room.product === 'th09mp' || room.product === 'th19mp';
   const firstWins = room.seats[0]?.stats?.wins ?? 0;
   const secondWins = room.seats[1]?.stats?.wins ?? 0;
   const hasDuelPair = duel && !!room.seats[0] && !!room.seats[1];
@@ -123,7 +123,17 @@ function RoomRow({
   const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
   const difficulty = policy.inGameSelection && room.product !== 'th03mp' ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
-  const statusLabel = t(`lobby.${state}`);
+  const waitingSince = policy.gameplay === 'versus' && state === 'recruiting' ? room.createdAt : undefined;
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    if (waitingSince === undefined) return;
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [waitingSince]);
+  const waitingSeconds = waitingSince === undefined ? 0 : Math.max(0, Math.floor((now - waitingSince) / 1000));
+  const longWait = waitingSeconds >= 15 * 60;
+  const statusLabel = t(longWait ? 'lobby.longWait' : `lobby.${state}`);
   const spectating = directoryRoomSpectatorEntry(room);
   const count = t('lobby.count', { players: room.players, capacity: room.capacity });
   const disabled =
@@ -139,6 +149,7 @@ function RoomRow({
       aria-hidden={exiting || undefined}
       data-key={`${room.product}-${room.code}`}
       data-state={state}
+      data-long-wait={longWait || undefined}
       data-listening={room.listeningTrack ? '' : undefined}
     >
       <div className="lobby-room-identity">
@@ -168,7 +179,10 @@ function RoomRow({
             </span>
             {room.phase !== 'lobby' && (duel || !!room.startedAt) && <span className="lobby-room-duration">
               <span className="lobby-room-fact-divider" aria-hidden="true">|</span>
-              <RoomElapsed phase={room.phase} startedAt={duel ? undefined : room.startedAt} elapsedMinutes={duel ? minutes : undefined}/>
+              <RoomElapsed phase={room.phase} startedAt={room.startedAt} elapsedMinutes={duel && !room.startedAt ? minutes : undefined}/>
+            </span>}
+            {waitingSince !== undefined && <span className="lobby-room-duration"><span className="lobby-room-fact-divider" aria-hidden="true">|</span>
+              <span>{t('lobby.waitTime', {time:`${Math.floor(waitingSeconds / 60)}:${String(waitingSeconds % 60).padStart(2,'0')}`})}</span>
             </span>}
             {room.listeningTrack && <span className="lobby-room-music">
               <Music2 aria-hidden="true"/>
@@ -178,8 +192,8 @@ function RoomRow({
         </div>
       </div>
       <div className="lobby-room-rules">
-        {!room.disableCheatMovement && !room.challengeMode && !room.unrated ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
-          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : '', room.unrated ? t('room.unrated') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
+        {!room.disableCheatMovement && !room.challengeMode && !room.unrated && !(room.product === 'th01mp' && (room.ballCount ?? 2) !== 2) && !(room.product === 'th02mp' && room.disableFocus === true) ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
+          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : '', room.unrated ? t('room.unrated') : '', room.product === 'th01mp' && (room.ballCount ?? 2) !== 2 ? t('room.th01SpecialBalls',{count:room.ballCount ?? 2}) : '', room.product === 'th02mp' && room.disableFocus === true ? t('room.th02SpecialFocus') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
       </div>
       <fieldset className="lobby-party" aria-label={count}>
         <div
@@ -252,6 +266,7 @@ function RoomRow({
       </fieldset>
       <BookButton variant="primary"
         className="lobby-button lobby-join"
+        data-entry={spectating ? 'spectate' : 'join'}
         type="button"
         disabled={disabled}
         aria-label={`${t(spectating ? 'multiplayer.joinSpectator' : 'lobby.joinRoom')} ${title} #${room.code}`}

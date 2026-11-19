@@ -3,7 +3,7 @@
 // 1. 进榜路径 open() 不建菜单脚本 142（LAB_00440520 在录入 END 才建）；
 // 2. 覆盖层文本 = 原版逐帧面："Score Ranking!!"(48,64)、名字行 (75,96+rank*18)
 //    + 黄 _、10 行榜 (48,96+18i) 高亮=rank、91 字符网格 (112,320) 列步 18
-//    行步 16，光标黄 0xffffff00/余 0xff808180，全 font0+阴影；
+//    行步 16，光标黄 0xffffff00/余 0xff808080（0x43ddd5 回绕），全 font0+阴影；
 // 3. SPACE/DEL/END 槽画 font0 专用字形（字符 0x81/0x7f/0x80 → sprite
 //    95/96/97）——旧占位 "NAME [END]" 的 font4 '['→sprite 313 曾令生产帧
 //    硬失败（2026-11-06 用户实测，ascii.anm 全文件仅 302+3=305 sprite）；
@@ -25,11 +25,19 @@ struct NameEntryHost final : RunPausePlatform {
     bool restart_run() override { return true; }
     bool return_to_title() override { return true; }
     bool result_needs_name() const override { return true; }
-    bool record_result_name(const std::string&) override { ++record_calls; return true; }
-    bool save_replay_slot(i32 slot, const std::string&) override {
-        saved_slots.push_back(slot);
+    bool can_save_replay() const override { return true; }
+    bool record_result_name(const std::string& name) override {
+        ++record_calls;
+        last_name = name;
         return true;
     }
+    bool save_replay_slot(i32 slot, const std::string& name) override {
+        saved_slots.push_back(slot);
+        last_name = name;
+        return true;
+    }
+    std::string last_result_name() const override { return last_name; }
+    std::string last_name = "        ";
     std::vector<i32> sounds;
     std::vector<i32> saved_slots;
     mutable int record_calls = 0;
@@ -99,6 +107,12 @@ const GlyphSink::Glyph* find_glyph(const GlyphSink& sink, float x, float y) {
         if (glyph.position.x == x && glyph.position.y == y) return &glyph;
     return nullptr;
 }
+
+const GlyphSink::Glyph* find_sprite(const GlyphSink& sink, float x, float y, i32 sprite) {
+    for (const auto& glyph : sink.glyphs)
+        if (glyph.position.x == x && glyph.position.y == y && glyph.sprite == sprite) return &glyph;
+    return nullptr;
+}
 }  // namespace
 
 TEST(game_over_name_entry_menu_deferred_and_original_face_drawn) {
@@ -121,10 +135,14 @@ TEST(game_over_name_entry_menu_deferred_and_original_face_drawn) {
         CHECK_EQ(header->color, 0xffffffffu);
     }
     // 网格原点 (112,320) = 'A'（sprite 33）；列 12 行 0 = 'M' (328,320)；
-    // END 槽 (328,416) = 字符 0x80 → sprite 96；初值光标 90=END → 黄。
+    // END 槽 (328,416) = 字符 0x80 → sprite 96。上次名为 8 空格：0x43f9cc
+    // 光标置 0 后不回退 → 'A' 黄、END 灰。
     const auto* grid_a = find_glyph(sink, 112, 320);
     CHECK(grid_a != nullptr);
-    if (grid_a) CHECK_EQ(grid_a->sprite, 33);
+    if (grid_a) {
+        CHECK_EQ(grid_a->sprite, 33);
+        CHECK_EQ(grid_a->color, 0xffffff00u);
+    }
     const auto* grid_m = find_glyph(sink, 328, 320);
     CHECK(grid_m != nullptr);
     if (grid_m) CHECK_EQ(grid_m->sprite, 'M' - 32);
@@ -132,15 +150,15 @@ TEST(game_over_name_entry_menu_deferred_and_original_face_drawn) {
     CHECK(grid_end != nullptr);
     if (grid_end) {
         CHECK_EQ(grid_end->sprite, 96);
-        CHECK_EQ(grid_end->color, 0xffffff00u);
+        CHECK_EQ(grid_end->color, 0xff808080u);
     }
-    // 普通网格字符 0xff808180；'['（字符表索引 72，sprite 59）在行 5 列 7
+    // 普通网格字符 0xff808080；'['（字符表索引 72，sprite 59）在行 5 列 7
     // → (238,400)。
     const auto* bracket = find_glyph(sink, 238.f, 400.f);
     CHECK(bracket != nullptr);
     if (bracket) {
         CHECK_EQ(bracket->sprite, 59);
-        CHECK_EQ(bracket->color, 0xff808180u);
+        CHECK_EQ(bracket->color, 0xff808080u);
     }
     // 榜行 0 (48,96)/高亮行 3 (48,150)："%2d" 前导空格推进 9px，首字形
     // '1'/'4' 落 x=57；行 0 灰、高亮行黄。名字空 → 名字行无字形，黄 _
@@ -151,7 +169,7 @@ TEST(game_over_name_entry_menu_deferred_and_original_face_drawn) {
     CHECK(row0 != nullptr);
     if (row0) {
         CHECK_EQ(row0->sprite, '1' - 32);
-        CHECK_EQ(row0->color, 0xff808180u);
+        CHECK_EQ(row0->color, 0xff808080u);
     }
     const auto* row3 = find_glyph(sink, 57, 150);
     CHECK(row3 != nullptr);
@@ -264,6 +282,7 @@ TEST(name_entry_end_creates_menu_and_credit_text) {
     // 空名 Esc：0x43fa90 态 0x13 原地不动。
     harness.frame(0x102);
     CHECK_EQ(harness.pause->state.phase, 18);
+    harness.pause->state.name_cursor = 90;
     // 光标 90=END 直接 Z：END → LAB_00440520 建 142 → phase 6。
     harness.frame(1);
     CHECK_EQ(harness.pause->state.phase, 6);
@@ -291,12 +310,109 @@ TEST(replay_save_name_entry_uses_slot_face) {
     harness.frame(1);                       // Z → phase 18（回放保存变体）
     CHECK_EQ(harness.pause->state.phase, 18);
     CHECK(!harness.pause->state.name_is_result);
+    harness.advance(10);
     harness.draw();
     GlyphSink sink;
     CHECK(harness.ascii.draw(0, sink));
     CHECK(find_glyph(sink, 102, 224) != nullptr);
     CHECK(find_glyph(sink, 112, 320) != nullptr);
-    CHECK(find_glyph(sink, 48, 64) == nullptr);  // 无 Score Ranking 头
+    CHECK(find_glyph(sink, 48, 224) != nullptr);  // selected replay slot
+}
+
+TEST(game_over_replay_save_switches_faces_and_restores_menu_on_cancel) {
+    OverlayHarness harness;
+    CHECK(harness.pause->open(PauseEntrance::GameOver));
+    harness.advance(24);
+    harness.pause->state.name_cursor = 90;
+    harness.frame(1);  // finish entering the high-score name
+    CHECK_EQ(harness.pause->state.phase, 6);
+    auto* menu = harness.manager.registry.find(harness.pause->state.menu_animation);
+    CHECK(menu != nullptr);
+    if (!menu) return;
+    menu->visual.flags |= 2u;
+    harness.frame(0x20);
+    harness.frame(0x20);
+    CHECK_EQ(harness.pause->state.menu.cursor, 2);
+    harness.frame(1);  // Save Replay
+    CHECK_EQ(harness.pause->state.phase, 17);
+    CHECK_EQ(menu->visual.flags & 2u, 0u);
+    harness.draw();
+    GlyphSink sink;
+    CHECK(harness.ascii.draw(0, sink));
+    CHECK(find_glyph(sink, 48, 64) != nullptr);
+    CHECK(find_glyph(sink, 48, 424) != nullptr);
+
+    harness.advance(10);
+    harness.frame(0x20);
+    CHECK_EQ(harness.pause->state.replay_slot, 2);
+    harness.frame(1);
+    CHECK_EQ(harness.pause->state.phase, 18);
+    CHECK_EQ(menu->visual.flags & 2u, 0u);
+    harness.advance(10);
+    harness.frame(1);  // enter A at the initial cursor
+    CHECK_EQ(harness.pause->state.replay_name, std::string("A"));
+    harness.pause->state.name_cursor = 90;
+    harness.frame(1);  // END saves and returns to slot selection
+    CHECK_EQ(harness.host.saved_slots, std::vector<i32>{2});
+    CHECK_EQ(harness.pause->state.phase, 17);
+    CHECK_EQ(menu->visual.flags & 2u, 0u);
+    harness.advance(10);
+    harness.frame(2);
+    CHECK_EQ(harness.pause->state.phase, 6);
+    CHECK_EQ(harness.pause->state.menu.cursor, 2);
+    CHECK_EQ(menu->visual.flags & 2u, 2u);
+}
+
+TEST(every_name_entry_starts_from_the_last_confirmed_name) {
+    // 0x43f9d9..0x43fa6f（GameOver 进榜）与 0x43eeca..0x43ef54（回放保存）：
+    // 缓冲 = score ST+0x0C 上次名，长度去尾空格，非空白时光标回退到 END。
+    OverlayHarness harness;
+    harness.host.last_name = "MYSTIA  ";
+    CHECK(harness.pause->open(PauseEntrance::GameOver));
+    harness.advance(12);
+    CHECK_EQ(harness.pause->state.phase, 18);
+    CHECK_EQ(harness.pause->state.replay_name, std::string("MYSTIA"));
+    CHECK_EQ(harness.pause->state.name_cursor, 90);
+    harness.draw();
+    GlyphSink sink;
+    CHECK(harness.ascii.draw(0, sink));
+    // 名字行 (75,150) 起 'M'；黄 _ 紧随第 6 字 → x = 75 + 9*6。
+    const auto* first = find_sprite(sink, 75, 150, 'M' - 32);
+    CHECK(first != nullptr);
+    if (first) CHECK_EQ(first->color, 0xffffffffu);
+    const auto* underscore = find_sprite(sink, 75 + 9 * 6, 150, '_' - 32);
+    CHECK(underscore != nullptr);
+    if (underscore) CHECK_EQ(underscore->color, 0xffffff00u);
+    // 再录一字后 END：写回的名字成为下一次录入的默认名。
+    harness.advance(12);  // phase 18 age > 9
+    harness.pause->state.name_cursor = 'R' - 'A';
+    harness.frame(1);
+    CHECK_EQ(harness.pause->state.replay_name, std::string("MYSTIAR"));
+    harness.pause->state.name_cursor = 90;
+    harness.frame(1);
+    CHECK_EQ(harness.host.record_calls, 1);
+    CHECK_EQ(harness.host.last_name, std::string("MYSTIAR"));
+
+    // Replay save on the same overlay seeds from that confirmed name.
+    harness.pause->state.select_phase(17);
+    harness.pause->state.name_is_result = false;
+    harness.advance(12);
+    harness.frame(1);
+    CHECK_EQ(harness.pause->state.phase, 18);
+    CHECK_EQ(harness.pause->state.replay_name, std::string("MYSTIAR"));
+    CHECK_EQ(harness.pause->state.name_cursor, 90);
+}
+
+TEST(blank_last_name_starts_the_editor_on_the_first_character) {
+    OverlayHarness harness;
+    CHECK(harness.pause->open(PauseEntrance::Pause));
+    harness.advance(12);
+    harness.pause->state.select_phase(17);
+    harness.advance(12);
+    harness.frame(1);
+    CHECK_EQ(harness.pause->state.phase, 18);
+    CHECK(harness.pause->state.replay_name.empty());
+    CHECK_EQ(harness.pause->state.name_cursor, 0);
 }
 
 int main() { return th13test::run_all("暂停名前录入覆盖层"); }

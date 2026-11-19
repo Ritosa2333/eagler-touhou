@@ -28,6 +28,21 @@ test('SDL clock keeps 60 logical ticks under 144 Hz presentation and rebases ful
         presented+=c.present(i/144.,true);
       }
       assert(ticks==120&&presented==60); // accelerated logic obeys the display limit
+      for(unsigned hz:{60u,90u,120u,144u}){
+        c.reset();assert(c.advance(0)==0);assert(!c.present_after_tick(0,0));
+        unsigned fresh=0;
+        for(unsigned i=1;i<=hz;++i){
+          const double now=i/double(hz);
+          fresh+=c.present_after_tick(now,c.advance(now));
+        }
+        assert(fresh==60);
+        assert(!c.present(1.005,true)); // returning to a menu respects the last draw
+        assert(c.present(1.+1./60,true));
+      }
+      c.reset();c.advance(0);assert(c.present(1./120,true));
+      assert(c.present_after_tick(1./60,c.advance(1./60))); // old deadline would skip this tick
+      assert(!c.present_after_tick(1./40,c.advance(1./40)));
+      assert(c.present_after_tick(.1,c.advance(.1))); // a catch-up batch only draws once
       c.reset();assert(c.advance(0)==0);assert(c.present(0,true));
       for(unsigned i=1;i<=180;++i){
         const double deadline=i*FrameClock::interval;

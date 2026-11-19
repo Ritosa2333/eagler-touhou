@@ -142,7 +142,7 @@ async function verifyGenericRoom(port) {
 
 async function verifyModes(port, product) {
   const capability = multiplayerConfigForProduct(product);
-  const challengeSupported = capability.gameplay === "cooperative";
+  const challengeSupported = capability.gameplay === "cooperative" && capability.challengeMode !== false;
   const timingPolicy = multiplayerInputTimingPolicy(capability);
   const room = `${product}-modes${Date.now().toString(36)}`;
   // Distinct cases must not race an earlier room's asynchronous close using
@@ -158,7 +158,7 @@ async function verifyModes(port, product) {
     const changed = await sendAndMatch(host, {type:'settings',playerCount:2,difficulty:1,challengeMode:true,prankMode:true}, r =>
       r.room?.challengeMode === challengeSupported);
     assert.equal(changed.room.prankMode, false, 'settings cannot enable the withdrawn prank mode');
-    if (challengeSupported) {
+    if (changed.room.seats.some(seat => seat && !seat.ready)) {
       assert.equal(changed.room.seats.every(seat => !seat?.ready), true);
       await sendAndMatch(host, {type:'set-ready',ready:true}, r => r.room?.seats[0]?.ready);
       await sendAndMatch(guest, {type:'set-ready',ready:true}, r => r.room?.seats[1]?.ready);

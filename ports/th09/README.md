@@ -1,6 +1,6 @@
 # 東方花映塚 th09
 
-th09 支持网页运行与双人联机对战，普通版和多人版共用同一份游戏程序。
+th09 支持网页运行与双人联机对战，普通版和多人版共用同一份游戏程序。另有 [Windows x64 原生构建](docs/DEVELOPMENT.md#windows-原生构建)支持本地游戏和 F2 房间联机。
 
 **适配明细：** [本游戏适配表](./ADAPTATION.md) | [全项目适配总览与分类](../../docs/adaptation/README.md)
 
