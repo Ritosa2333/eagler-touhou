@@ -2,7 +2,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {useLocale} from '../../i18n';
 import {Button} from '../../ui/button';
 import {Check} from '../../ui/controls';
-import {Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle} from '../../ui/dialog';
+import {Dialog, DialogClose, DialogContent, DialogTitle} from '../../ui/dialog';
 import {renderHelpContent} from '../documents/content';
 import '../../ui/document-body.css';
 
@@ -44,7 +44,7 @@ export function RegistrationTerms({accepted, disabled, onChange}: {
       {t('account.termsConsent')}
     </label>
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="account-terms-dialog" showClose={false}
+      <DialogContent className="account-terms-dialog" showClose={false} aria-describedby={undefined}
         onOpenAutoFocus={event => {
           event.preventDefault();
           readingPane.current?.focus({preventScroll: true});
@@ -54,8 +54,7 @@ export function RegistrationTerms({accepted, disabled, onChange}: {
           event.preventDefault();
           checkbox.current?.focus({preventScroll: true});
         }}>
-        <DialogTitle>{t('document.terms')}</DialogTitle>
-        <DialogDescription>{t('account.termsReadToEnd')}</DialogDescription>
+        <DialogTitle className="sr-only">{t('document.terms')}</DialogTitle>
         <section className="account-terms-reading ui-document ui-document--fumadocs prose" lang={locale}
           aria-label={t('document.terms')} ref={readingPane} onScroll={checkEnd}
           // biome-ignore lint/a11y/noNoninteractiveTabindex: The scroll pane must be reachable by keyboard to read the terms.

@@ -38,7 +38,6 @@ html[data-ui-route-transition="page"] .account-art{clip-path:inset(var(--site-he
 .account-page :is(a,.account-text-action){text-decoration:none}
 .account-page :is(a,.account-text-action):hover{color:var(--book-ink)}
 .ui-kit-dialog.account-terms-dialog{display:flex;flex-direction:column;width:min(640px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:hidden}
-.account-terms-dialog > h2{padding-right:0}
 .account-terms-reading{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding-right:8px}
 .account-terms-reading:focus-visible{outline:2px solid var(--kit-ring);outline-offset:-2px}
 .account-terms-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:16px}

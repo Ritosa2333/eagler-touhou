@@ -387,6 +387,8 @@ try {
   assert.match(await page.$eval('.account-privacy a', link => link.getAttribute('href')), /privacy\.html\?lang=zh-CN$/);
   await page.click(termsToggle);
   await page.waitForSelector(termsDialog, {visible:true});
+  assert.deepEqual(await page.$$eval(`${termsDialog} > h2, ${termsDialog} > p`, nodes =>
+    nodes.map(node => node.classList.contains('sr-only'))), [true], 'only the accessible dialog title remains');
   assert.equal(await page.$eval(termsToggle, button => button.getAttribute('aria-checked')), 'false');
   assert.equal(await page.$eval(agreeButton, button => button.disabled), true);
   assert.equal(await page.$eval('.account-terms-reading a', link => getComputedStyle(link).textDecorationLine), 'none');
