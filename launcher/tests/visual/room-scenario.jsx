@@ -102,7 +102,7 @@ function Scenario() {
       context={{launched:false,th09NetworkOverlayOpen:false,launchStage:null,touchEnabled:false,touchMovementMode:'joystick'}} assetUrl={model.assetUrl} quickChat={model.quickChat}
       panel={panel} onOpenPanel={(kind,peerId)=>setPanel({kind,peerId})} onClosePanel={()=>setPanel(null)} onLeave={()=>{}} onCopyRoomCode={()=>{}} onGuide={()=>{}} onOpenSettings={()=>setSettingsOpen(true)} settingsOpen={settingsOpen} settingsClosing={settingsClosing}/>
     <RoomSettingsDrawer roomOpen open={settingsOpen} onCloseRequest={()=>setSettingsOpen(false)} onClosingChange={setSettingsClosing}/>
-    <OptionsPanel product={model.product} open={false} roomDrawer onBack={()=>setSettingsOpen(false)} assetUrl={model.assetUrl} lobbyHref="/lobby.html">
+    <OptionsPanel product={model.product} open={false} roomDrawer onBack={()=>setSettingsOpen(false)} lobbyHref="/lobby.html">
       <SettingsBody model={model.settings} actions={model.actions} onOpenTouchLayout={()=>{}}
         multiplayerControls={<MultiplayerSettingsControls onReplayViewer={()=>{}} onImport={()=>{}}/>}/>
     </OptionsPanel>

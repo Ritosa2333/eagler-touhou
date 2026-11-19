@@ -242,7 +242,6 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       multiplayerOnline={host.multiplayerOnline}
       lobbyHref={host.lobbyHref}
       embeddedInLobby={navigation.context === 'lobby'}
-      assetUrl={host.assetUrl}
       actions={host.optionsActions}
     >
       <SettingsBody

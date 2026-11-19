@@ -64,7 +64,7 @@ for (const file of FRONTEND_PACKAGE_FILES) {
   const source = relative(project, resolveFrontendPackageSource(file)).replaceAll("\\", "/");
   assert.equal(targets.get(file), source, `frontend publication input is missing from self-host bundle: ${file}`);
 }
-for (const file of ["assets/notice-github.svg", "vendor/fflate.min.js"]) {
+for (const file of ["assets/donation.webp", "vendor/fflate.min.js"]) {
   assert.equal(targets.get(file), relative(project,resolveFrontendPackageSource(file)).replaceAll("\\","/"),
     `authored browser source must be copied from public/ without changing its self-host target: ${file}`);
 }

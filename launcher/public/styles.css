@@ -84,7 +84,6 @@ button{font:inherit;color:inherit}
 .less-motion .main:not(.library-layout):not(.has-selection) .game .card-art{filter:brightness(.72) saturate(.72);transform:scale(1.02)}.less-motion .main:not(.library-layout).has-selection .game.selected .card-art{inset:0;transform:scale(1.02);transition:filter .18s ease,opacity .16s ease}.less-motion .main:not(.library-layout).has-selection .game:not(.selected) .card-art{inset:0;transition:filter .18s ease,opacity .16s ease}
 .main:not(.library-layout).has-selection .game:not(.selected) .no,.main:not(.library-layout).has-selection .game:not(.selected) .game-copy{opacity:0;transform:translateY(20px)}
 .main:not(.library-layout).has-selection .game:not(.selected) .rail-title{opacity:.8;transform:translate(-50%,0);font-size:18px;line-height:1.25}.game-id{position:absolute;z-index:0;right:5px;top:5px;margin:0;text-align:right;color:rgba(218,224,215,.08);font:900 56px/.9 var(--art-font);letter-spacing:-.06em;pointer-events:none;user-select:none}
-.tools-callout{position:relative;margin:0 0 12px;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);font-family:var(--ui-font)}.tools-callout[hidden]{display:none}.tools-callout-title{display:flex;align-items:center;gap:7px;margin-bottom:6px;color:#aab0a6;font:700 11px/16px var(--ui-font);letter-spacing:.045em}.tools-callout-title svg{display:block;flex:0 0 16px;width:16px;height:16px;fill:currentColor}.tools-callout-title span{display:block;line-height:16px}.tools-callout p{margin:0;color:#b9beb6;font:9px/1.6 var(--ui-font);letter-spacing:.015em}.tools-callout p+p{margin-top:5px}.tools-callout-caution{background:rgba(217,77,85,.08);border-color:rgba(217,77,85,.14)}.tools-callout-caution .tools-callout-title{color:#ff7d86}.tools-callout-caution p{color:#c9b5b7}
 .item{padding:10px 0;border:0}.itemtop{position:relative;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:7px;padding-left:14px;font:700 12px/1.2 var(--ui-font);letter-spacing:.06em}.itemtop:before{content:"";position:absolute;left:0;top:50%;width:4px;height:16px;border-radius:999px;background:var(--red-bright);transform:translateY(-50%)}.mini{display:flex;gap:7px;flex-wrap:wrap}
 .feature-section .itemtop{margin-bottom:7px}.feature-section .itemtop>span>small{display:block;margin-top:3px}.feature-language .itemtop>small{margin:0}.feature-language .itemtop:before{top:.6em}.feature-language .option-select{width:calc(100% - 14px);margin-left:14px;font-size:9px;padding:5px 7px}.feature-music{padding-top:4px}
 .netplay-option>.option-select{width:calc(100% - 14px);margin-left:14px}.netplay-fields{display:grid;gap:7px;margin:8px 0 0 14px;padding:8px;border-radius:8px;background:#10120f}.netplay-fields[hidden]{display:none}.netplay-fields label{display:grid;gap:4px;color:#aeb4ac;font:8px/1.2 var(--ui-font);letter-spacing:.03em}.netplay-fields input{min-width:0;box-sizing:border-box;border:0;border-radius:7px;background:#1b1e1a;color:#e0e4de;padding:6px 7px;font:9px/1.2 var(--ui-font)}.netplay-grid,.netplay-loadouts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.netplay-fields .option-select{min-width:0;padding:5px;font-size:8px}
@@ -631,15 +630,10 @@ html:has(body.mp-room-active){overflow-y:hidden}
 @media(hover:hover){.options-lobby-link:hover{background:#ffffff14}}
 .options-lobby-link:active{background:#ffffff1c}
 .tools.mp-mode .options-singleplayer{display:none}
-.library-layout .tools-callout{padding:0;margin:0 0 6px;border:0;border-radius:0;background:none}
-.library-layout .tools-callout-title{min-height:32px;margin:0;list-style:none;cursor:pointer;color:var(--paper);font:400 12px/1.4 var(--ui-font)}
-.library-layout .tools-callout p{font-size:12px;line-height:1.6;padding:0 0 6px}
-.tools-callout-title::-webkit-details-marker{display:none}
 :is(.library-layout,.mp-settings-room-drawer) .options-advanced-body{padding:0 4px 8px 10px}
 :is(.library-layout,.mp-settings-room-drawer) .options-advanced-body .item{padding:10px 0}
 :is(.library-layout,.mp-settings-room-drawer) .options-advanced-body .itemtop small{font:400 12px/1.5 var(--ui-font);letter-spacing:0;color:var(--muted)}
 :is(.library-layout,.mp-settings-room-drawer) .options-advanced-body :is(.option-select,.mizuki-select){width:100%;margin:8px 0 0;font-size:13px}
-.library-layout .tools-callout-title:focus-visible{outline:2px solid var(--red-bright);outline-offset:2px;border-radius:6px}
 :is(.library-layout .tools,.mp-settings-room-drawer) .mini button.sel{background:var(--paper);color:var(--ink)}
 :is(.library-layout .tools,.mp-settings-room-drawer) .option-switch{background:var(--ink)}
 :is(.library-layout .tools,.mp-settings-room-drawer) .option-switch i{background:var(--muted)}

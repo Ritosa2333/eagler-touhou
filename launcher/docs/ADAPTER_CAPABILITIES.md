@@ -46,7 +46,7 @@ npm run adapter:inspect -- --game=th20
 - `languages`：日文原版始终可用；包在发布和启动前校验；缺包安全回退；翻译资源与字体覆盖所需字符。
 - `midi-music`：仅在声明且发布有效 MIDI 时显示；实际播放并遵守标题暂停、切歌和退出生命周期。OGG 仍是必需路径。
 
-可选声明位于 `PRODUCT_GAMES`：`musicCapabilities.midi`、`features.thprac`、`features.languages`、`multiplayer`、`features.focusHitbox`、`display.faithBar`、`storage.hintFiles`、`package.rawDataImport`、`support.adaptationNotice`。仅已声明的产品差异可控制共享 UI。
+可选声明位于 `PRODUCT_GAMES`：`musicCapabilities.midi`、`features.thprac`、`features.languages`、`multiplayer`、`features.focusHitbox`、`display.faithBar`、`storage.hintFiles`、`package.rawDataImport`。仅已声明的产品差异可控制共享 UI。
 
 ## 证据与命令
 

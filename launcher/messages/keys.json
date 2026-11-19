@@ -2634,30 +2634,6 @@
     "id": "multiplayer_th09DialogHint",
     "params": []
   },
-  "gameNotice.title": {
-    "id": "gameNotice_title",
-    "params": []
-  },
-  "gameNotice.earlyTest": {
-    "id": "gameNotice_earlyTest",
-    "params": []
-  },
-  "gameNotice.creditBefore": {
-    "id": "gameNotice_creditBefore",
-    "params": []
-  },
-  "gameNotice.credit": {
-    "id": "gameNotice_credit",
-    "params": []
-  },
-  "gameNotice.creditAfter": {
-    "id": "gameNotice_creditAfter",
-    "params": []
-  },
-  "gameNotice.repo": {
-    "id": "gameNotice_repo",
-    "params": []
-  },
   "settings.title": {
     "id": "settings_title",
     "params": []
@@ -2912,10 +2888,6 @@
   },
   "options.advanced": {
     "id": "options_advanced",
-    "params": []
-  },
-  "options.adaptation": {
-    "id": "options_adaptation",
     "params": []
   },
   "settings.mobile": {
