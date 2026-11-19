@@ -202,7 +202,7 @@ struct NativeRoomTransport::Impl
     bool ready = false;
     bool localSwarm = false;
     bool swarmRoom = false;
-    bool adaptiveSwarm = false;
+    bool adaptiveSwarm = false, onDemandTurn = false;
     bool startupActive = false;
     bool startupPrimaryFailed = false;
     Json startupTurnIce = Json::array();
@@ -331,7 +331,7 @@ struct NativeRoomTransport::Impl
                 !preferTurn, manualRouteConfirmation);
             if (!preferTurn)
                 adaptive->ConfigureSurvey(initialRelayRoute, message.value("surveyInitialSwarm", false),
-                    [this](const Json &message) { return sendSurvey(message); }, retirePeer);
+                    [this](const Json &message) { return sendSurvey(message); }, retirePeer, onDemandTurn);
         }
     }
 
@@ -392,6 +392,7 @@ struct NativeRoomTransport::Impl
                 fallbackIceServers = message.value("fallbackIceServers", Json(nullptr));
                 swarmRoom = message.value("turnMode", "") == "swarm";
                 adaptiveSwarm = message.value("adaptiveSwarm", false);
+                onDemandTurn = message.value("onDemandTurn", false);
                 initialRelayRoute = swarmRoom ? "swarm" : "turn";
                 const auto worker = message.find("initialSwarmWorker");
                 if (swarmRoom && worker != message.end() && worker->is_number_unsigned())
@@ -449,7 +450,12 @@ struct NativeRoomTransport::Impl
                 const auto servers = message.value("iceServers", Json::array());
                 if (startupActive && type == "rtc-standby" && message.value("serial", 0u) == 1)
                     startupTurnIce = servers;
-                adaptive->RelayStandby(message, iceConfiguration(servers, message.value("route", "") != "direct"));
+                const auto route = message.value("route", std::string{});
+                auto ice = iceConfiguration(servers, route != "direct");
+#ifdef RTC_HAS_LOCAL_TURN_RELAY
+                ice.requireLocalTurnRelay = onDemandTurn && route == "turn";
+#endif
+                adaptive->RelayStandby(message, std::move(ice));
             } catch (const std::exception &) {
                 if (message.value("phase", "") == "measure")
                     sendSurvey({{"type", startupActive ? "rtc-startup-quality" : "rtc-route-report"},
@@ -655,6 +661,10 @@ void NativeRoomTransport::Connect(const std::string &signalUrl, std::string tag,
     if (playerCount == 2 && !preferTurn)
         next->signalUrl += signalUrl.find('?') == std::string::npos
             ? "?rtcStartup=1&rtcKeepPrimary=1" : "&rtcStartup=1&rtcKeepPrimary=1";
+#ifdef RTC_HAS_LOCAL_TURN_RELAY
+    if (playerCount == 2 && !preferTurn && (initialRoute.empty() || initialRoute == "auto"))
+        next->signalUrl += "&rtcTurnOnDemand=1";
+#endif
     if (playerCount == 2 && !preferTurn &&
         (initialRoute == "auto" || initialRoute == "direct" || initialRoute == "swarm" || initialRoute == "turn")) {
         next->manualRouteConfirmation = true;
