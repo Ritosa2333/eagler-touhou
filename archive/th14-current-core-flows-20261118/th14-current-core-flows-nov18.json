@@ -1,0 +1,953 @@
+{
+  "schema": "th14/current-core-ordinary-source-reuse/1",
+  "date": "2026-11-18",
+  "passed": true,
+  "goal": "observable behavior alignment",
+  "completeGame": false,
+  "onlyTH14": true,
+  "silent": true,
+  "coreSourceHead": "dfe0f3f3aefabeadd36148fcd2a7697a673c5bc1",
+  "currentNativeInputs": 343,
+  "baselineExactRawMatches": 336,
+  "baselineChangedInputs": [
+    {
+      "path": "runtimes/th12/th12_web/cpp/game/GameSession.cpp",
+      "beforeSha256": "0e0fb1e1d4174acbf13652f6118351f8732272f444882e57b690dcd63bce8be9",
+      "currentSha256": "2a9177a7dcae18a287e3d0a3735f5c7e2f633f3e6b413b75fd437eaad9ab4362"
+    },
+    {
+      "path": "runtimes/th12/th12_web/cpp/game/NativeStackTh14.hpp",
+      "beforeSha256": "e2a9cd975410d1afcbd342a18c2fb0afc71d0b74997970f7c2c069fdfc7cc123",
+      "currentSha256": "b80d2725f18a15aa1109ab898bef9bf7a392e01a3ef981cdc3eda6a7e72342c6"
+    },
+    {
+      "path": "runtimes/th12/th12_web/cpp/game/Replay.cpp",
+      "beforeSha256": "6fa7ab566d8ceb6ab60cd5265aca879b0af0c5b53f6a1783d43bc61ce68f2221",
+      "currentSha256": "b30835659024d2d82ce15edadbca5e0969600d0db31591845f31ef1840694959"
+    },
+    {
+      "path": "runtimes/th12/th12_web/cpp/game/Replay.hpp",
+      "beforeSha256": "b21aa12bda3486f7b4a5513fd343ad5edba09568626ca7e1ca563412968ba5cc",
+      "currentSha256": "dc5dc5fdfdae506e66eebb3a136586c89e1295b8da30b124055207ea0654dc35"
+    },
+    {
+      "path": "runtimes/th12/th12_web/cpp/game/ReplayRecorder.cpp",
+      "beforeSha256": "609cd8ac701578aeeef1989345cd63e8c1b37d4575a85539fe173251756450b6",
+      "currentSha256": "c5585b2dc846adb72d94dc88a0be9c16a09f057fa38033cc18e9adbd5a8d25ee"
+    },
+    {
+      "path": "runtimes/th12/th12_web/cpp/game/ShotCallbacksTh14.cpp",
+      "beforeSha256": "d45da075afa7b7d94b8ba9590cfe98639581d2baddcc02dc9cb9fb7cba3c3183",
+      "currentSha256": "940a736332550df441e21f67b576e07a7f42e1c7d576624e99a857381b42cd64"
+    },
+    {
+      "path": "runtimes/th12/th12_web/cpp/sdl/Application.cpp",
+      "beforeSha256": "64c57b10b53dc76a21bcfafe5dc3586d8b3baed2b9981d044bff1871fc98eea4",
+      "currentSha256": "fcae93ba72719f7366f5fe93bcd548de51f305365fb64ba836855b06b41fc0ea"
+    }
+  ],
+  "baselineBuildSha256": "81bd13ad1b6d9796753dae52aec30383ccfa3c4bed77d4e709b9323c7471aa71",
+  "affectedLoadouts": {
+    "nativeShtReportSha256": "f264118500cb2011737f746e8b2be0d0e0a8830342fab064e737051a46260022",
+    "nativeCallbackSelector": 3,
+    "nativeCallbackAddress": "0x452700",
+    "files": [
+      {
+        "file": "pl00a.sht",
+        "sha256": "7140070b80cf0e9112d7543e25ca3cd8018c0f2afd5732c304971331d9df71a2",
+        "shotRecords": 34,
+        "beamHitCallbackRecords": 0
+      },
+      {
+        "file": "pl00b.sht",
+        "sha256": "17244d2279f33b6ad7a6d7ee2583c2f66ef96a76df353e8fb24a8fb28d5fea90",
+        "shotRecords": 49,
+        "beamHitCallbackRecords": 0
+      },
+      {
+        "file": "pl01a.sht",
+        "sha256": "4bdc9e69febfd5a750cf242aa809a3ec7f24e11cd848b7f8ecf4fac9fee5f33e",
+        "shotRecords": 60,
+        "beamHitCallbackRecords": 10
+      },
+      {
+        "file": "pl01b.sht",
+        "sha256": "eaa4ffe175507a4db28ab552fb877c8dd4d2eba0e63305baa25c4739fbad854b",
+        "shotRecords": 40,
+        "beamHitCallbackRecords": 10
+      },
+      {
+        "file": "pl02a.sht",
+        "sha256": "3249371c753179a0ef12790e3c2554161459c747a23f219ca98447a6443e3044",
+        "shotRecords": 50,
+        "beamHitCallbackRecords": 0
+      },
+      {
+        "file": "pl02b.sht",
+        "sha256": "6750cae4b49782f9c2195c64f3b9ae562ff777af07bc70fd5325b69a5f5dec33",
+        "shotRecords": 50,
+        "beamHitCallbackRecords": 0
+      }
+    ],
+    "affectedSelections": [
+      "Marisa A",
+      "Marisa B"
+    ],
+    "originalGameAssetCopiesCreated": 0
+  },
+  "builds": [
+    {
+      "mode": "normal",
+      "wasmSha256": "b80929f71f2990af9c45ae5b78658fcc8a98df5c2d25bd4c8e4dd77e65038188",
+      "buildReceiptSha256": "924b60eb4d5082020d007810389fb727ddc5a4e4f5843dce058d5c8d75d876f5",
+      "nativeSourceInputsVerified": 343,
+      "providerObjectsReusedAndVerified": 145,
+      "fixtureTranslationUnitsRecompiled": 1,
+      "gameProvidersRecompiledThisRound": 0
+    },
+    {
+      "mode": "extra",
+      "wasmSha256": "25a6b3dccc28f07b3c6c702ca66207a9768f6fe93ca2bd06c1d413e016cf7de7",
+      "buildReceiptSha256": "c7e6fd777e9a3e048801546a08352b35f5180041e467347ec149c0db46a67a7e",
+      "nativeSourceInputsVerified": 343,
+      "providerObjectsReusedAndVerified": 145,
+      "fixtureTranslationUnitsRecompiled": 1,
+      "gameProvidersRecompiledThisRound": 0
+    }
+  ],
+  "freshFlowCases": [
+    {
+      "key": "marisaa-normal",
+      "score": 775709810,
+      "stage": 8,
+      "continues": 0,
+      "visitedStages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "naturalClearAndResultsSaved": true,
+      "freshProcessReadPassed": true,
+      "writerReportSha256": "db80332bed98c06bb89eefbec7b916e77ff09a76cc23e3965e7aabd40ce10ab7",
+      "readerReportSha256": "89cb35b29dc55358ffb2db3c3a7023170b5bb65331dc338561f6e280b713435e",
+      "writerSeconds": 85.9757768,
+      "readerSeconds": 6.550914100000001,
+      "nativeScoreCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 22388,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "1279ea5b7fb022b2afa5bde8c1080e8f6277c1a5aa24441eaa16c8960d4dc335",
+        "decodedSha256": "b0229c37c6edc34288eb116c42540e16d907aeddd883f93a5172cac5b30f7a3e",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "scoreSemantics": {
+        "key": "marisaa-normal",
+        "writer": "artifacts/th14/current-concurrent-mixer-nov14/launch-runtime-acceptance-nov17/late-reload-fix/source-reuse-audit/current-core-flow/runs/marisaa-normal-full-current-core",
+        "score": 775709810,
+        "recordChecksumsVerified": 8,
+        "onlySerializedIndicesAndChecksumsDifferFromRuntimeObservation": true,
+        "runtimeObservationDifferenceCount": 25,
+        "freshReaderFileUnchanged": true,
+        "decodedSha256": "b0229c37c6edc34288eb116c42540e16d907aeddd883f93a5172cac5b30f7a3e"
+      },
+      "newRecordingNativeCodec": {
+        "passed": true,
+        "inputSha256": "3c8c1a0d79e2415f9fcc119a95726bd5b90e226e776aba78c7a778d84b329e14",
+        "inputBytes": 94093,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "originalDecryptAndLzssInstructionBytesPatched": 0,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "decodedBytes": 649826,
+        "decodedSha256": "6d49af939000dfada55c8807b6922c7359b72e841eb13a094f80d087cf437e7f",
+        "independentMirrorAllBytesEqual": true,
+        "character": 1,
+        "subtype": 0,
+        "difficulty": 1,
+        "stages": [
+          {
+            "stage": 1,
+            "seed": 17641,
+            "frames": 12124,
+            "payloadBytes": 73149
+          },
+          {
+            "stage": 2,
+            "seed": 36707,
+            "frames": 16024,
+            "payloadBytes": 96679
+          },
+          {
+            "stage": 3,
+            "seed": 20137,
+            "frames": 16183,
+            "payloadBytes": 97638
+          },
+          {
+            "stage": 4,
+            "seed": 43912,
+            "frames": 20673,
+            "payloadBytes": 124728
+          },
+          {
+            "stage": 5,
+            "seed": 36504,
+            "frames": 17819,
+            "payloadBytes": 107508
+          },
+          {
+            "stage": 6,
+            "seed": 4218,
+            "frames": 24639,
+            "payloadBytes": 148656
+          }
+        ],
+        "totalFrames": 107462,
+        "explicitBeamRule": 1,
+        "unknownRuleOrDuplicate": false,
+        "nativePlaybackClaimed": false,
+        "completeGame": false
+      }
+    },
+    {
+      "key": "marisaa-extra",
+      "score": 744413340,
+      "stage": 8,
+      "continues": 0,
+      "visitedStages": [
+        7
+      ],
+      "naturalClearAndResultsSaved": true,
+      "freshProcessReadPassed": true,
+      "writerReportSha256": "1bb2eb1beaf71c94dd8f95370961016e80d09ed8651315a27c938371fd5129b0",
+      "readerReportSha256": "7a4287e74e79b11b9780696c49e75b82bdb0cddf38da7dad407d05339c6b2cd7",
+      "writerSeconds": 48.611922099999994,
+      "readerSeconds": 6.530760900000001,
+      "nativeScoreCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 22786,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "d257aa4095c15df5fa75e69045a2e6163f8645a969c7412691a8bab2cd326eb0",
+        "decodedSha256": "999e87756e2ffde4d6c081c9012797cf25fd751706eba3ed53d56050d3628df7",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "scoreSemantics": {
+        "key": "marisaa-extra",
+        "writer": "artifacts/th14/current-concurrent-mixer-nov14/launch-runtime-acceptance-nov17/late-reload-fix/source-reuse-audit/current-core-flow/runs/marisaa-extra-full-current-core",
+        "score": 744413340,
+        "recordChecksumsVerified": 8,
+        "onlySerializedIndicesAndChecksumsDifferFromRuntimeObservation": true,
+        "runtimeObservationDifferenceCount": 7,
+        "freshReaderFileUnchanged": true,
+        "decodedSha256": "999e87756e2ffde4d6c081c9012797cf25fd751706eba3ed53d56050d3628df7"
+      }
+    },
+    {
+      "key": "marisab-normal",
+      "score": 1019280950,
+      "stage": 8,
+      "continues": 0,
+      "visitedStages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "naturalClearAndResultsSaved": true,
+      "freshProcessReadPassed": true,
+      "writerReportSha256": "0462a97030c4ccdbbbed58539f108a0ae4b7af31369c61ef88b567ca4bdccce7",
+      "readerReportSha256": "9a5fa9fb09753544231c6ce6d1015363ae186385df0624efaa6445e1ddc75fae",
+      "writerSeconds": 85.63815120000001,
+      "readerSeconds": 6.517291599999999,
+      "nativeScoreCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 22375,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "2c2d8463b0ddbed34cbc97cb44c16a0f08295909f36ffd09ee03d0a035ccb8bb",
+        "decodedSha256": "3ea903260ac7a1937aaea7fc6cf1d8b287ace51deca6657da17635e214326fec",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "scoreSemantics": {
+        "key": "marisab-normal",
+        "writer": "artifacts/th14/current-concurrent-mixer-nov14/launch-runtime-acceptance-nov17/late-reload-fix/source-reuse-audit/current-core-flow/runs/marisab-normal-full-current-core",
+        "score": 1019280950,
+        "recordChecksumsVerified": 8,
+        "onlySerializedIndicesAndChecksumsDifferFromRuntimeObservation": true,
+        "runtimeObservationDifferenceCount": 25,
+        "freshReaderFileUnchanged": true,
+        "decodedSha256": "3ea903260ac7a1937aaea7fc6cf1d8b287ace51deca6657da17635e214326fec"
+      },
+      "newRecordingNativeCodec": {
+        "passed": true,
+        "inputSha256": "d8f99e73b160e6e091b90b38ead18bd058564b2b2e1eb9afdede9a19d32a6f37",
+        "inputBytes": 111670,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "originalDecryptAndLzssInstructionBytesPatched": 0,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "decodedBytes": 746134,
+        "decodedSha256": "50ee29677a0d5697e89d4d084074fcfde3798a65998f281e5fd3e5df5fb8ce75",
+        "independentMirrorAllBytesEqual": true,
+        "character": 1,
+        "subtype": 1,
+        "difficulty": 1,
+        "stages": [
+          {
+            "stage": 1,
+            "seed": 63427,
+            "frames": 13979,
+            "payloadBytes": 84340
+          },
+          {
+            "stage": 2,
+            "seed": 2492,
+            "frames": 17866,
+            "payloadBytes": 107792
+          },
+          {
+            "stage": 3,
+            "seed": 32789,
+            "frames": 21202,
+            "payloadBytes": 127919
+          },
+          {
+            "stage": 4,
+            "seed": 28407,
+            "frames": 21948,
+            "payloadBytes": 132420
+          },
+          {
+            "stage": 5,
+            "seed": 49817,
+            "frames": 22289,
+            "payloadBytes": 134477
+          },
+          {
+            "stage": 6,
+            "seed": 8378,
+            "frames": 26141,
+            "payloadBytes": 157718
+          }
+        ],
+        "totalFrames": 123425,
+        "explicitBeamRule": 1,
+        "unknownRuleOrDuplicate": false,
+        "nativePlaybackClaimed": false,
+        "completeGame": false
+      }
+    },
+    {
+      "key": "marisab-extra",
+      "score": 1044477760,
+      "stage": 8,
+      "continues": 0,
+      "visitedStages": [
+        7
+      ],
+      "naturalClearAndResultsSaved": true,
+      "freshProcessReadPassed": true,
+      "writerReportSha256": "31fe323968a8f6b29932a43519af47948e34118f3bc2196d1ccab8741fa66ecc",
+      "readerReportSha256": "984470f4f1040c7c49b830cf6c2973a2442cb0766726dbd72f26c737486a227d",
+      "writerSeconds": 52.7993846,
+      "readerSeconds": 6.5101507000000005,
+      "nativeScoreCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 22772,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "67e9c60e540bcb828723d11de2354e4ea7efe8696e896bedeaf9c77d2d81a20d",
+        "decodedSha256": "b2fcf554faf4addc3eff7e0bbd9e46fd88df401882fcf8c00932aa0f82c11dc7",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "scoreSemantics": {
+        "key": "marisab-extra",
+        "writer": "artifacts/th14/current-concurrent-mixer-nov14/launch-runtime-acceptance-nov17/late-reload-fix/source-reuse-audit/current-core-flow/runs/marisab-extra-full-current-core",
+        "score": 1044477760,
+        "recordChecksumsVerified": 8,
+        "onlySerializedIndicesAndChecksumsDifferFromRuntimeObservation": true,
+        "runtimeObservationDifferenceCount": 7,
+        "freshReaderFileUnchanged": true,
+        "decodedSha256": "b2fcf554faf4addc3eff7e0bbd9e46fd88df401882fcf8c00932aa0f82c11dc7"
+      }
+    },
+    {
+      "key": "marisaa-lunatic",
+      "score": 557095680,
+      "stage": 8,
+      "continues": 0,
+      "visitedStages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "naturalClearAndResultsSaved": true,
+      "freshProcessReadPassed": true,
+      "writerReportSha256": "341251b5aee1fc16989d645887366d2330772768f3663243149b5c3eb52b0887",
+      "readerReportSha256": "33f1a25bf63d5ead14033f81d574f7efb41be527dbdd3cf3c4f0d9b39b685ace",
+      "writerSeconds": 93.4936721,
+      "readerSeconds": 6.5071186,
+      "nativeScoreCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 22441,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "88aae8bf2cf6d5b3e7e632b8476357ece2755957743885e3fdcb501f79d6e336",
+        "decodedSha256": "ea5e9583b6a00645c13902ae5d8af1e4232f8efb2d660f7348063e841a50efb3",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "scoreSemantics": {
+        "key": "marisaa-lunatic",
+        "writer": "artifacts/th14/current-concurrent-mixer-nov14/launch-runtime-acceptance-nov17/late-reload-fix/source-reuse-audit/current-core-flow/runs/marisaa-lunatic-full-current-core",
+        "score": 557095680,
+        "recordChecksumsVerified": 8,
+        "onlySerializedIndicesAndChecksumsDifferFromRuntimeObservation": true,
+        "runtimeObservationDifferenceCount": 25,
+        "freshReaderFileUnchanged": true,
+        "decodedSha256": "ea5e9583b6a00645c13902ae5d8af1e4232f8efb2d660f7348063e841a50efb3"
+      },
+      "newRecordingNativeCodec": {
+        "passed": true,
+        "inputSha256": "aaee03eb3c2f0e13bc31366fc8e814cf12019b1290d633de8a2440f6e255ffd1",
+        "inputBytes": 92074,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "originalDecryptAndLzssInstructionBytesPatched": 0,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "decodedBytes": 647768,
+        "decodedSha256": "62a76abe8375f940c82926f8bd12dcdcd87a3a31505d73ed2365af146ca49e88",
+        "independentMirrorAllBytesEqual": true,
+        "character": 1,
+        "subtype": 0,
+        "difficulty": 3,
+        "stages": [
+          {
+            "stage": 1,
+            "seed": 42488,
+            "frames": 10962,
+            "payloadBytes": 66138
+          },
+          {
+            "stage": 2,
+            "seed": 21970,
+            "frames": 14043,
+            "payloadBytes": 84727
+          },
+          {
+            "stage": 3,
+            "seed": 48921,
+            "frames": 15895,
+            "payloadBytes": 95900
+          },
+          {
+            "stage": 4,
+            "seed": 31843,
+            "frames": 20379,
+            "payloadBytes": 122954
+          },
+          {
+            "stage": 5,
+            "seed": 32680,
+            "frames": 19820,
+            "payloadBytes": 119581
+          },
+          {
+            "stage": 6,
+            "seed": 30929,
+            "frames": 26022,
+            "payloadBytes": 157000
+          }
+        ],
+        "totalFrames": 107121,
+        "explicitBeamRule": 1,
+        "unknownRuleOrDuplicate": false,
+        "nativePlaybackClaimed": false,
+        "completeGame": false
+      }
+    },
+    {
+      "key": "marisab-easy",
+      "score": 789774090,
+      "stage": 8,
+      "continues": 0,
+      "visitedStages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "naturalClearAndResultsSaved": true,
+      "freshProcessReadPassed": true,
+      "writerReportSha256": "14a0e14fa173bd49539b13b641801b52570e18af9c2dc9c71dd7583308695e8c",
+      "readerReportSha256": "cf541d6da01bae1e151e8c4220d42edef517456f703f4490e89976084ecbe2e3",
+      "writerSeconds": 74.03913969999999,
+      "readerSeconds": 6.503416100000001,
+      "nativeScoreCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 22379,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "04ce44037c738b040d28f957282f2621d192aff935f688753ec1a9f25f7101f1",
+        "decodedSha256": "1f6bf7ca8c9b08b9e68c4d48bed37ef83fb51c738d9179f0867f6b3f6c920cad",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "scoreSemantics": {
+        "key": "marisab-easy",
+        "writer": "artifacts/th14/current-concurrent-mixer-nov14/launch-runtime-acceptance-nov17/late-reload-fix/source-reuse-audit/current-core-flow/runs/marisab-easy-full-current-core",
+        "score": 789774090,
+        "recordChecksumsVerified": 8,
+        "onlySerializedIndicesAndChecksumsDifferFromRuntimeObservation": true,
+        "runtimeObservationDifferenceCount": 25,
+        "freshReaderFileUnchanged": true,
+        "decodedSha256": "1f6bf7ca8c9b08b9e68c4d48bed37ef83fb51c738d9179f0867f6b3f6c920cad"
+      },
+      "newRecordingNativeCodec": {
+        "passed": true,
+        "inputSha256": "19dffad39b61db206b9a4f84b2ff0ce5abf8f2ea1970adab240ba24a1a531b6e",
+        "inputBytes": 95052,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "originalDecryptAndLzssInstructionBytesPatched": 0,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "decodedBytes": 647966,
+        "decodedSha256": "cfa398018044ee0e95c0464266531374fa7e34b31e6dc7b38c57177fc8f724a6",
+        "independentMirrorAllBytesEqual": true,
+        "character": 1,
+        "subtype": 1,
+        "difficulty": 0,
+        "stages": [
+          {
+            "stage": 1,
+            "seed": 65310,
+            "frames": 13632,
+            "payloadBytes": 82247
+          },
+          {
+            "stage": 2,
+            "seed": 28572,
+            "frames": 19007,
+            "payloadBytes": 114676
+          },
+          {
+            "stage": 3,
+            "seed": 52624,
+            "frames": 16213,
+            "payloadBytes": 97819
+          },
+          {
+            "stage": 4,
+            "seed": 31532,
+            "frames": 16888,
+            "payloadBytes": 101891
+          },
+          {
+            "stage": 5,
+            "seed": 31752,
+            "frames": 20714,
+            "payloadBytes": 124975
+          },
+          {
+            "stage": 6,
+            "seed": 25055,
+            "frames": 20700,
+            "payloadBytes": 124890
+          }
+        ],
+        "totalFrames": 107154,
+        "explicitBeamRule": 1,
+        "unknownRuleOrDuplicate": false,
+        "nativePlaybackClaimed": false,
+        "completeGame": false
+      }
+    },
+    {
+      "key": "marisab-hard",
+      "score": 1305638210,
+      "stage": 8,
+      "continues": 0,
+      "visitedStages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "naturalClearAndResultsSaved": true,
+      "freshProcessReadPassed": true,
+      "writerReportSha256": "72a6f891380e5d4d191dee47fbba2476633b9068ff3716157692042bce5b62e8",
+      "readerReportSha256": "db7c9370d68ac3824fa3ecd5235d5164363334cbb92f9ed02e4ffe111bf13a84",
+      "writerSeconds": 88.898549,
+      "readerSeconds": 6.511182799999999,
+      "nativeScoreCodec": {
+        "passed": true,
+        "actualRetailDecryptAndLzss": true,
+        "originalInstructionBytesPatched": 0,
+        "allocatorCopyAndFreeDeclared": true,
+        "encodedBytes": 22463,
+        "decodedBytes": 149076,
+        "allDecodedBytesEqualToIndependentMirror": true,
+        "freshApplicationClearFlagsVerifiedSeparately": true,
+        "dictionaryZeroStartup": true,
+        "warmNativeDictionaryAccepted": false,
+        "originalWholeGameUiSaveAccepted": false,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "encodedSha256": "e208cf39f79567ec13fad369cb27a4770c31cd2fa12708b01dca7de1b88e8d5f",
+        "decodedSha256": "7bda86f47c3a759433657129c373d1cee844e32bdcd806728cbd414b82ec1c26",
+        "toolSha256": "c8066eac815a8a6db2a47e8c9644472adcde83e9f220a76f4a7527d329b72921",
+        "completeGame": false
+      },
+      "scoreSemantics": {
+        "key": "marisab-hard",
+        "writer": "artifacts/th14/current-concurrent-mixer-nov14/launch-runtime-acceptance-nov17/late-reload-fix/source-reuse-audit/current-core-flow/runs/marisab-hard-full-current-core",
+        "score": 1305638210,
+        "recordChecksumsVerified": 8,
+        "onlySerializedIndicesAndChecksumsDifferFromRuntimeObservation": true,
+        "runtimeObservationDifferenceCount": 25,
+        "freshReaderFileUnchanged": true,
+        "decodedSha256": "7bda86f47c3a759433657129c373d1cee844e32bdcd806728cbd414b82ec1c26"
+      },
+      "newRecordingNativeCodec": {
+        "passed": true,
+        "inputSha256": "6624f232b0b89685b334ca0019eb4030cefecc52b76e0d2897378859fd107e8f",
+        "inputBytes": 105950,
+        "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+        "originalDecryptAndLzssInstructionBytesPatched": 0,
+        "controlledCrtBoundaries": [
+          "malloc",
+          "memcpy",
+          "free"
+        ],
+        "decodedBytes": 722026,
+        "decodedSha256": "ff86920035064646ff611074fb9f020ecd445e876e5f097e3bf21061fb187ad2",
+        "independentMirrorAllBytesEqual": true,
+        "character": 1,
+        "subtype": 1,
+        "difficulty": 2,
+        "stages": [
+          {
+            "stage": 1,
+            "seed": 56041,
+            "frames": 11749,
+            "payloadBytes": 70886
+          },
+          {
+            "stage": 2,
+            "seed": 10134,
+            "frames": 19312,
+            "payloadBytes": 116516
+          },
+          {
+            "stage": 3,
+            "seed": 2738,
+            "frames": 19930,
+            "payloadBytes": 120245
+          },
+          {
+            "stage": 4,
+            "seed": 20293,
+            "frames": 21138,
+            "payloadBytes": 127533
+          },
+          {
+            "stage": 5,
+            "seed": 41085,
+            "frames": 21643,
+            "payloadBytes": 130580
+          },
+          {
+            "stage": 6,
+            "seed": 19904,
+            "frames": 25657,
+            "payloadBytes": 154798
+          }
+        ],
+        "totalFrames": 119429,
+        "explicitBeamRule": 1,
+        "unknownRuleOrDuplicate": false,
+        "nativePlaybackClaimed": false,
+        "completeGame": false
+      }
+    }
+  ],
+  "crossCoreToWebsite": {
+    "passed": true,
+    "inputSha256": "3c8c1a0d79e2415f9fcc119a95726bd5b90e226e776aba78c7a778d84b329e14",
+    "inputBytes": 94093,
+    "totalFrames": 107462,
+    "timelineSamples": 280,
+    "backwards": [],
+    "score": 775709810,
+    "graze": 11492,
+    "tools": 0,
+    "actualCodeResponseCount": 78,
+    "deliveryVerifiedAgainstPreview": true,
+    "reportSha256": "74cc2a1b075f610701022affc418d3b0cf619932b044d86ac40529c8094df895",
+    "scoreValidation": {
+      "actualRetailDecryptAndLzss": true,
+      "originalInstructionBytesPatched": 0,
+      "controlledCrtBoundaries": [
+        "malloc",
+        "memcpy",
+        "free"
+      ],
+      "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+      "decodedBytes": 149076,
+      "characterRecordsUnchanged": true,
+      "characterRecords": 7,
+      "settingsDifferences": [
+        {
+          "offset": 4,
+          "before": 82,
+          "after": 94
+        },
+        {
+          "offset": 39,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 40,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 41,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 42,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 43,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 44,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 45,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 46,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 47,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 48,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 49,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 50,
+          "before": 0,
+          "after": 1
+        }
+      ],
+      "semanticSettingsDifferences": [
+        {
+          "offset": 39,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 40,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 41,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 42,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 43,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 44,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 45,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 46,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 47,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 48,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 49,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 50,
+          "before": 0,
+          "after": 1
+        }
+      ],
+      "onlyMusicHeardFlagsChanged": true,
+      "nativeMusicRequestReferenceSha256": "01277073a339c1af2c1fda716999640431c2a130c174c504533481cf4efe31e3",
+      "beforeDecodedSha256": "38a70d2bd3e8fc2dadad3b953a409ec8101eda3d09d2d0b73df411275711d92e",
+      "afterDecodedSha256": "1503c3951f447b3b05fd461f6b13838bd424612faa7634aa44991994fbe01e62",
+      "completeGame": false
+    },
+    "httpErrorsPreserved": [
+      {
+        "path": "/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "path": "/api/ready",
+        "status": 404
+      },
+      {
+        "path": "/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "path": "/_eagler/resource-routes",
+        "status": 404
+      },
+      {
+        "path": "/api/ready",
+        "status": 404
+      },
+      {
+        "path": "/api/ready",
+        "status": 404
+      },
+      {
+        "path": "/api/ready",
+        "status": 404
+      }
+    ],
+    "seekUsed": false,
+    "stageSkipUsed": false
+  },
+  "limitations": [
+    "Seven fresh core ordinary flows and fresh reads; remaining 23 cells reuse version-scoped evidence, not 30 fresh same-binary runs.",
+    "SDK graphics are recording interfaces, not actual GPU or device-audio acceptance.",
+    "Original executable decrypt/LZSS instructions used with declared malloc/memcpy/free boundaries; not original full-game UI save/playback acceptance.",
+    "Five newly exported normal recordings codec-qualified; Extra replay export not exercised.",
+    "Browser end score/graze match does not prove every pre-header intermediate state.",
+    "Build receipts inherit historical fields; this report states current rebuild/reuse counts explicitly.",
+    "First score comparison incorrectly compared raw runtime records with serialized files; indices and checksums are assigned in ScoreFile::save. Two failed harness assertions preserved. Normalized runtime bytes, independent mirror and original native decoder now agree on every byte."
+  ]
+}

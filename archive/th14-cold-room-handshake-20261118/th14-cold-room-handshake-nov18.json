@@ -1,0 +1,55 @@
+{
+  "schema": "th14-cold-room-handshake/1",
+  "date": "2026-11-18",
+  "timezone": "Asia/Shanghai",
+  "sourceParent": "febc95757142148224c4e7b5e4da7e2d0ef892d9",
+  "candidate": {
+    "sourceSha256": "41d3c21b434397a669141d4c725ce923108d9f29f9916ac30c91d959aab58377",
+    "baselineWasm": "106b2245e2fd47734253d6d9bb95226114960d56bbc008ba8eb1d4bad0943f34",
+    "wasmSha256": "34791e87b7cf8e7cce96e48a12deba941830cc273cd2c2b29ae6b6932b7f16b5",
+    "compiledUnits": 1,
+    "reusedUnits": 162,
+    "baselineSourceRestored": true,
+    "diagnosticExport": false
+  },
+  "sourceBindings": 395,
+  "commonBindings": 73,
+  "allBindingsMatch": true,
+  "nativeRegression": {
+    "baselineExit": -6,
+    "baselineFailure": "test-room-handshake-baseline: ports/th14-mp/tools/tests/test-th14-room-handshake.cpp:28: int main(): Assertion `room->poll(60000)' failed.",
+    "candidatePassed": true,
+    "coldLoadingMs": 59990,
+    "handshakeTimeoutMs": 45000,
+    "actualRoomCode": true,
+    "transport": "controlled native test double, no game assets"
+  },
+  "browser": {
+    "playersReadyFrames": [
+      184,
+      184
+    ],
+    "routes": [
+      "rtc",
+      "rtc"
+    ],
+    "finalPlayerFrames": [
+      613,
+      631
+    ],
+    "spectatorAdmitted": true,
+    "spectatorSessionReceived": true,
+    "spectatorPlaybackPassed": false,
+    "failedStage": "spectator history playback",
+    "spectatorPosition": 0,
+    "harness": "tools/ports/mp-browser.mjs",
+    "reportSha256": "94e490467f8d72d27ec622f855f8e22787939e5ba1b31aaf4b95eb4f42c30592"
+  },
+  "silence": {
+    "headlessChromiumMuteAudio": true,
+    "music": "none"
+  },
+  "productionChanged": false,
+  "candidatePreviewActivated": false,
+  "completeGame": false
+}

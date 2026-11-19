@@ -1,0 +1,230 @@
+{
+  "runtimeGeneration": "72b6c30c01b4ac1b4dfe6c95f111a92c32c984add6123daf31e64aa8b12e5e0d",
+  "wasmSha256": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb",
+  "musicVolume": 0,
+  "sfxVolume": 0,
+  "titleManualPagesObserved": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "pageUpperBoundary": 7,
+  "pageLowerBoundary": 1,
+  "indexForwardWrap": [
+    7,
+    1
+  ],
+  "pausePagesObserved": [
+    3,
+    7
+  ],
+  "indexReverseWrap": [
+    1,
+    7
+  ],
+  "pausedHudBeforeAfter": {
+    "score": 50,
+    "lives": 2,
+    "bombs": 3,
+    "power": 100,
+    "graze": 0
+  },
+  "afterResumeMovePause": {
+    "score": 80,
+    "lives": 2,
+    "bombs": 3,
+    "power": 100,
+    "graze": 0
+  },
+  "unaffectedPauseRegions": {
+    "upperPlayfield": {
+      "rectangle": [
+        305,
+        35,
+        1173,
+        480
+      ],
+      "pixels": 386260,
+      "changedPixels": 19
+    },
+    "hud": {
+      "rectangle": [
+        1180,
+        35,
+        1672,
+        1020
+      ],
+      "pixels": 484620,
+      "changedPixels": 0
+    }
+  },
+  "evidence": [
+    {
+      "file": "idle-demo-interruption.png",
+      "bytes": 279261,
+      "sha256": "ac6873594a119aeb8dd599c13d2822f8f600e07fa11a3b97b8bfc23582bb0076"
+    },
+    {
+      "file": "pause-after-manual.png",
+      "bytes": 246289,
+      "sha256": "7c89726d19bec5d4234638bd16537db79e06c3373adace37d8be7dbc487a8a47"
+    },
+    {
+      "file": "pause-before-manual.png",
+      "bytes": 246534,
+      "sha256": "a8b725abcb88fa1c1973f27eab55be0500fa88d3b44b5addc03d06314e6affaa"
+    },
+    {
+      "file": "pause-manual-index.png",
+      "bytes": 247868,
+      "sha256": "6ec08af1fc08635bbbc9dd267b35d26481c16ed31fd6695b8eb23b214e5324ff"
+    },
+    {
+      "file": "pause-page-03.png",
+      "bytes": 261751,
+      "sha256": "7988573fe417d2c605d360eeedc1bda19ea419b800263fc567df88d7a37ca115"
+    },
+    {
+      "file": "pause-page-07.png",
+      "bytes": 291244,
+      "sha256": "fc07b5d39c1cb1c49adad401279adfb6ad4505cea78d6f3106af8ecef7792372"
+    },
+    {
+      "file": "pause-resumed-moved.png",
+      "bytes": 246331,
+      "sha256": "8f835527eee646092532f0c55f4255296731ec533210902cd9e3d4297f0bd6f6"
+    },
+    {
+      "file": "rapid-repeat-reached-07.png",
+      "bytes": 281311,
+      "sha256": "de23f406908d228326666282c94a30f2c683a1df83255f3395625c9c39648218"
+    },
+    {
+      "file": "title-index-selection-06.png",
+      "bytes": 254365,
+      "sha256": "a63a6691495efad1b712d2fb74561d32b824cd0c7d388364d454ffef9896e089"
+    },
+    {
+      "file": "title-index-wrap-01.png",
+      "bytes": 249703,
+      "sha256": "6097ae696ddb3c9985a3cd1376f331fb4a039100f641c116211adaf28170c876"
+    },
+    {
+      "file": "title-manual-exit.png",
+      "bytes": 298162,
+      "sha256": "40ece829e4fde3177e4c394290306c74131a1db26e922c3b2a1ffd47718fb24e"
+    },
+    {
+      "file": "title-manual-index.png",
+      "bytes": 244149,
+      "sha256": "6f2d386e334c68e4f03b2c3143286ff3ee6c70a26cd0598c35d1f3e1354ff06a"
+    },
+    {
+      "file": "title-page-01-boundary.png",
+      "bytes": 258581,
+      "sha256": "5951d16fefe891aaf7e8310f9d2daf1f32db66e88d2a4f5f62269892be2fc56c"
+    },
+    {
+      "file": "title-page-01.png",
+      "bytes": 244698,
+      "sha256": "7075cfabc9824d2b5eb24e86f7588c9ae27f50a0de8819977a763d951188e291"
+    },
+    {
+      "file": "title-page-02.png",
+      "bytes": 273332,
+      "sha256": "487958bd743943c14db0d14a169932d98f1be9907fc36a2235ff0ffda53737cb"
+    },
+    {
+      "file": "title-page-03.png",
+      "bytes": 259063,
+      "sha256": "eae45882e2aad3c765af901f31d6794955879517a18b279e907bd6905484ff6c"
+    },
+    {
+      "file": "title-page-04.png",
+      "bytes": 257906,
+      "sha256": "3081a75f098682077fde354cbc7222f122bc15dbaac43edb29ecbab442547eab"
+    },
+    {
+      "file": "title-page-05.png",
+      "bytes": 266283,
+      "sha256": "7125fb4068d271b2b77fe0d13c662b4fd303043682c69acc28a3879879b9d372"
+    },
+    {
+      "file": "title-page-06.png",
+      "bytes": 288638,
+      "sha256": "6f0489cf596be55ca308816d1b6223974df65fb0ca69e867ff882d8b750f731a"
+    },
+    {
+      "file": "title-page-07-boundary.png",
+      "bytes": 282695,
+      "sha256": "0057bcfaceaa2ac1ac9608c95e78dac5eacfcc7357e8ba379fe9c55b8a33ea59"
+    },
+    {
+      "file": "title-page-07.png",
+      "bytes": 296792,
+      "sha256": "5188cdade5f094c6d353f2906a0f703d685d339e5a05ee102a30d72b3d9ddfbb"
+    },
+    {
+      "file": "title-reverse-page-06.png",
+      "bytes": 280814,
+      "sha256": "5082e847d53fd7b6ad460a52d8034fbc48ccbba58fea5a6da665de175959b946"
+    }
+  ],
+  "scoreExport": {
+    "bytes": 21642,
+    "sha256": "aa33315960ddb483ab06b5f291df765934ce592752781c91e204f246c016635a",
+    "beforeBytes": 21642,
+    "beforeSha256": "95439f26e15659df0bc4ac561ff30748814ad3d3e3e8fa8d44db2907067a687b",
+    "wholeEncodedEqual": false,
+    "decodedRecordsCompared": true
+  },
+  "visibilityObservation": {
+    "hidden": false,
+    "visibilityState": "visible"
+  },
+  "trueHiddenAccepted": false,
+  "rapidRepeatedInputAccepted": false,
+  "nativeQuitObserved": true,
+  "publicBrowserAccepted": false,
+  "sourceChanged": false,
+  "completeGame": false,
+  "saveComparison": {
+    "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+    "actualRetailDecryptAndLzss": true,
+    "originalInstructionBytesPatched": 0,
+    "allocatorCopyAndFreeBoundariesControlled": true,
+    "dictionaryZeroStartupPerFile": true,
+    "decodedBytes": 149076,
+    "changedBytes": 4,
+    "changes": [
+      {
+        "offset": "0x4",
+        "before": 140,
+        "after": 24
+      },
+      {
+        "offset": "0x5",
+        "before": 161,
+        "after": 162
+      },
+      {
+        "offset": "0x7b8",
+        "before": 7,
+        "after": 8
+      },
+      {
+        "offset": "0x7bc",
+        "before": 65,
+        "after": 204
+      }
+    ],
+    "beforeSha256": "53271b30629c4cf5b750a3f4b98e1d346f04e2da454bbf91eeea112356b2a756",
+    "afterSha256": "e163d21d321dbcf7012f231ab71c84ef2487b5c78dd587d099055ce9d6176cc0",
+    "completeGame": false,
+    "onlyChecksumAndRaPlayCountTimeChanged": true
+  }
+}

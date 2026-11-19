@@ -1,0 +1,280 @@
+{
+  "schema": "th14/paused-panel-release/1",
+  "qualified": true,
+  "acceptanceStandard": "observable-behavior-alignment",
+  "source": "5969924e96c48909b67b90597f8ff6a40e96a960",
+  "runtimeCodeSource": "5969924e96c48909b67b90597f8ff6a40e96a960",
+  "wasm": "2e4b1f5b38f61c94811c3faa5ed17de0bb04e397fe26858369c1e03ce03de65b",
+  "generation": "c557963dca60d8a6a192ee325d9700303f10d3e72942994b3537572f53862814",
+  "deployed": {
+    "productionDeployed": true,
+    "source": "5969924e96c48909b67b90597f8ff6a40e96a960",
+    "runtimeCodeSource": "5969924e96c48909b67b90597f8ff6a40e96a960",
+    "wasm": "2e4b1f5b38f61c94811c3faa5ed17de0bb04e397fe26858369c1e03ce03de65b",
+    "generation": "c557963dca60d8a6a192ee325d9700303f10d3e72942994b3537572f53862814",
+    "runtimeFilesIdenticalToPrivate": 32,
+    "previousGenerationFilesRetained": 32,
+    "runtimeFilesOriginVerified": 32,
+    "frontendFilesOriginVerified": {
+      "index.html": "b32fba7a7dfe7068dcb9a8feba5574bb697944c6f566e4f6e0227ac082c71764",
+      "assets/root-mp2Vn23W.js": "4daeafc2133ec02b86b99bcd7e4170d2be99b9de508638a9e071fd4a5b0a05c5",
+      "assets/replays-C2g9HNOB.js": "607f0396bc51c777defec9e5f69fd87752f0c3989f70ffa28fea3058737e989c"
+    },
+    "formalSilentOrdinaryBrowserSampleAccepted": true,
+    "formalThpracAvailable": false,
+    "rollback": "/home/i/Code/th14-release/hosted-before-paused-panel-nov14",
+    "serviceConfigurationUnchanged": true,
+    "servicePidPreserved": true,
+    "productionBrowserAfterActivationAccepted": false,
+    "publicHttpAccepted": false,
+    "completeGame": false
+  },
+  "publicHttp": {
+    "passed": true,
+    "scope": "runtime files and frontend modules exact; transformed entry HTML application byte regions checked separately",
+    "source": "5969924e96c48909b67b90597f8ff6a40e96a960",
+    "generation": "c557963dca60d8a6a192ee325d9700303f10d3e72942994b3537572f53862814",
+    "runtimeFiles": [
+      {
+        "path": "Th14ArchiveDecodeClient.mjs",
+        "bytes": 3920,
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450"
+      },
+      {
+        "path": "Th14ArchiveDecodeEndpoint.mjs",
+        "bytes": 5322,
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f"
+      },
+      {
+        "path": "Th14ArchiveDecodeWorker.mjs",
+        "bytes": 302,
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239"
+      },
+      {
+        "path": "Th14ArchiveReadAhead.mjs",
+        "bytes": 3637,
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee"
+      },
+      {
+        "path": "Th14AsyncRuntime.mjs",
+        "bytes": 3326,
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7"
+      },
+      {
+        "path": "Th14SharedSceneCopy.mjs",
+        "bytes": 4985,
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0"
+      },
+      {
+        "path": "Th14SharedSceneWorker.mjs",
+        "bytes": 369,
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444"
+      },
+      {
+        "path": "Th14StageMemoryClient.mjs",
+        "bytes": 10352,
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698"
+      },
+      {
+        "path": "Th14StageMemoryWorker.mjs",
+        "bytes": 689,
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde"
+      },
+      {
+        "path": "Th14StageMemoryWorker.wasm",
+        "bytes": 1027,
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1"
+      },
+      {
+        "path": "Th14StageRestoreDelivery.mjs",
+        "bytes": 2997,
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697"
+      },
+      {
+        "path": "Th14StageRestoreProtocol.mjs",
+        "bytes": 1701,
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870"
+      },
+      {
+        "path": "Th14StageRestoreWorker.mjs",
+        "bytes": 257,
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909"
+      },
+      {
+        "path": "Th14WebGpuCore.mjs",
+        "bytes": 1004,
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745"
+      },
+      {
+        "path": "Th14WebGpuHost.mjs",
+        "bytes": 19989,
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7"
+      },
+      {
+        "path": "archive-decoder.mjs",
+        "bytes": 11199,
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e"
+      },
+      {
+        "path": "archive-decoder.wasm",
+        "bytes": 96991,
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28"
+      },
+      {
+        "path": "directory-keyboard.mjs",
+        "bytes": 6345,
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243"
+      },
+      {
+        "path": "eagler-host.mjs",
+        "bytes": 15908,
+        "sha256": "984530455bb03ef2a15dc6a98e00526592d31bf4d418fe4357acfc3d6bc1494c"
+      },
+      {
+        "path": "fonts/cp932.bin",
+        "bytes": 131072,
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+      },
+      {
+        "path": "fonts/msgothic.ttc",
+        "bytes": 8990160,
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
+      },
+      {
+        "path": "fonts/unifont.otf",
+        "bytes": 5105508,
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
+      },
+      {
+        "path": "keyboard.mjs",
+        "bytes": 1297,
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334"
+      },
+      {
+        "path": "managed.css",
+        "bytes": 733,
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+      },
+      {
+        "path": "manifest.json",
+        "bytes": 636,
+        "sha256": "c8cb36bd799032445e755293326dd085d501f8431982e7c2e1f0145e9c029eaa"
+      },
+      {
+        "path": "motion-replay.mjs",
+        "bytes": 815,
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d"
+      },
+      {
+        "path": "resources.json",
+        "bytes": 641,
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd"
+      },
+      {
+        "path": "runtime-epoch.mjs",
+        "bytes": 340,
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f"
+      },
+      {
+        "path": "shell.mjs",
+        "bytes": 18363,
+        "sha256": "dfc28fc46609040087ae4601cb10337b25192e2612ace5af0b4dbb4cec28f784"
+      },
+      {
+        "path": "th14-sdl.mjs",
+        "bytes": 337166,
+        "sha256": "2219249129f17cf01fa40ae4e9f3bced8e52ba134ad37243ce052cb3b0cdc7e8"
+      },
+      {
+        "path": "th14-sdl.wasm",
+        "bytes": 5458278,
+        "sha256": "2e4b1f5b38f61c94811c3faa5ed17de0bb04e397fe26858369c1e03ce03de65b"
+      },
+      {
+        "path": "th14.html",
+        "bytes": 507,
+        "sha256": "68c187a4359d43f874e5062d483cab4925b68cdfc69680fe4533ea49ed019053"
+      }
+    ],
+    "frontendModules": [
+      {
+        "path": "assets/root-mp2Vn23W.js",
+        "bytes": 654754,
+        "sha256": "4daeafc2133ec02b86b99bcd7e4170d2be99b9de508638a9e071fd4a5b0a05c5"
+      },
+      {
+        "path": "assets/replays-C2g9HNOB.js",
+        "bytes": 135543,
+        "sha256": "607f0396bc51c777defec9e5f69fd87752f0c3989f70ffa28fea3058737e989c"
+      }
+    ],
+    "entryHtml": {
+      "originSha256": "b32fba7a7dfe7068dcb9a8feba5574bb697944c6f566e4f6e0227ac082c71764",
+      "publicSha256": "d7796be1c49d4afa3be95942368828df81ca29979ed5e4f42caeafd12bbc128e",
+      "wholeFileHashAccepted": false,
+      "applicationByteRegionsPreserved": true,
+      "applicationReferenceSetPreserved": true,
+      "additionalScripts": [
+        "WebMCP bridge",
+        "Cloudflare JSD"
+      ],
+      "insertionsSha256": [
+        "e2cb14b5fa9e0c60dda83a94781294bd2f17a9eb48a314e93061bcc5b7c7cca2",
+        "7b61e000e5d0fa5771d6017532c843f67a57c61de2967257bfe690aaa6427125"
+      ],
+      "browserOrResponseContentModified": false
+    },
+    "runtimeWholeFileHashesAndIsolationHeadersAccepted": true,
+    "frontendModuleWholeFileHashesAccepted": true,
+    "entryHtmlWholeFileHashAccepted": false,
+    "productionChanged": true,
+    "productionBrowserAfterActivationAccepted": false,
+    "completeGame": false
+  },
+  "formalPrivateBrowser": {
+    "qualified": true,
+    "source": "5969924e96c48909b67b90597f8ff6a40e96a960",
+    "generation": "c557963dca60d8a6a192ee325d9700303f10d3e72942994b3537572f53862814",
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "music": "ogg-streaming",
+    "formalThpracAvailable": false,
+    "advancedThpracControlAbsent": true,
+    "runtimeReady": true,
+    "rank": "Normal",
+    "character": "Reimu",
+    "equipment": "A",
+    "ordinaryFirstStageEntered": true,
+    "pauseObserved": true,
+    "resumeObserved": true,
+    "rightMovementObserved": true,
+    "gameOverObservedScore": 4740,
+    "secondPauseAccepted": false,
+    "secondPauseOutcome": "natural game over before second pause sampling",
+    "returnedToTitle": true,
+    "nativeQuitReturnedToLauncher": true,
+    "oggAndZeroVolumesKeptOnReturn": true,
+    "fullGameAcceptance": false,
+    "productionChanged": false,
+    "localProofHashes": {
+      "browser-formal-game-over.png": "5ee53e85171e8b457c558c2e12286720e05e37e7c5ca6c40a8f2c17610a6390d",
+      "browser-formal-pause.png": "e28b1fbc040b9af3b04efb3791a0b03a284711db98f5bab98a53000ad2de2309",
+      "browser-formal-quit.png": "ac490a80afa06b9f4efe8c5d7f8bae9cb352dc82167d8046c2a8b523cf87681b"
+    }
+  },
+  "privateOptionalUiEvidence": "TH14_PAUSED_PANEL_NOV14.json",
+  "nativePausedComponentCases": 576,
+  "eventPumpComponentCases": 144,
+  "documentLifecycleCases": 7,
+  "sourceBindings": 387,
+  "productionChanged": true,
+  "publicBrowserAfterActivationAccepted": false,
+  "publicEntryDomObserved": true,
+  "publicBrowserObservation": "Same tab 52 navigation and native selection timed out; inventory confirmed target URL. Same-tab documented DOM snapshot showed TH14 launch options; subsequent audio-options interaction timed out and final 60-second native observation timed out. No game launch was attempted without verified zero volume. Browser confirmation remains incomplete; no service restart or manual recovery requested.",
+  "transportFirstAttempt": "25-second full-font transfers timed out; no integrity result. Preserved failure, then completed all 32 files with 180-second transfer deadline and identical full-byte/hash/header checks.",
+  "knownRemaining": [
+    "post-activation public actual gameplay operation",
+    "remaining TH14 gameplay/loadout/difficulty/graphics/audio/save acceptance"
+  ],
+  "completeGame": false
+}

@@ -146,6 +146,7 @@ public:
     std::array<std::vector<PracticeEventTh14>,8> practice_events;
     std::vector<PurpleLaserRecordTh14> purple_laser_records;
     u32 callback_frame() const {return callback_cursor;}
+    bool uses_bounded_th14_beams()const{return th14_beam_rules==1;}
 #endif
     // The input the last tick consumed. Read-only, so a diagnostic can line the recording's own bits up against
     // what the player did with them without advancing the stream to ask.
@@ -162,5 +163,8 @@ private:
     u32 callback_cursor=0;
 #endif
     bool metadata_only=false;
+#if PORT_TITLE == 14
+    u8 th14_beam_rules=0;
+#endif
 };
 }

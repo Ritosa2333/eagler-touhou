@@ -1,0 +1,319 @@
+{
+  "schema": "th14/native-gpu-multiplayer/1",
+  "date": "2026-11-18",
+  "cppSourceCommit": "5fca1f600bbbe738806c8da8343a3caaedc5adbe",
+  "wasmSha256": "34791e87b7cf8e7cce96e48a12deba941830cc273cd2c2b29ae6b6932b7f16b5",
+  "originalDataSha256": "57d84a5cbe82460931cca26f090a0fde7aef180889ce5bfe8315851fc97b0233",
+  "graphics": {
+    "api": "WebGL2",
+    "backend": "ANGLE / D3D11 hardware",
+    "preflightSha256": "2b6b627b3c1aea009232c70e00a2fa90d7a5eb370ee07d8ee54355e7b5748024"
+  },
+  "silence": {
+    "music": "none",
+    "chromiumMuteAudio": true
+  },
+  "functional": {
+    "schema": "eagler-touhou/mp-browser/1",
+    "harnessSha256": "b67e74b2e8ff13016a40c4c720fd6f19a0afaf1823519ac58729a17bf42271fc",
+    "reportSha256": "706176e151c60e832321453de620a8cd32354fd2e952b7720ba2ecc66aa9e41f",
+    "passed": true,
+    "exitCode": 0,
+    "elapsedSeconds": 63.99133515357971,
+    "browser": "157.0.8103.79",
+    "scope": "Normal two-player real local Relay, WebRTC and Runtime iframe protocol; controlled keyboard input",
+    "configuredStepTimeoutMs": 360000,
+    "requestedSustainedFrames": 700,
+    "steps": [
+      "runtime-identity",
+      "players-start",
+      "join-during-play",
+      "pause-seek-resume",
+      "upload-backpressure-recovery",
+      "sustained-playback",
+      "late-join-after-recovery",
+      "normal-end-buffer-drain",
+      "screenshots"
+    ],
+    "initial": {
+      "min": 0,
+      "position": 250,
+      "received": 541,
+      "edge": 451,
+      "paused": false,
+      "seeking": false,
+      "following": true,
+      "ended": false
+    },
+    "paused": {
+      "min": 0,
+      "position": 257,
+      "received": 548,
+      "edge": 458,
+      "paused": true,
+      "seeking": false,
+      "following": true,
+      "ended": false
+    },
+    "held": {
+      "min": 0,
+      "position": 257,
+      "received": 577,
+      "edge": 487,
+      "paused": true,
+      "seeking": false,
+      "following": true,
+      "ended": false
+    },
+    "seekTarget": 20,
+    "playersAdvancedWhileSpectatorPaused": true,
+    "uploadBackpressureRecovered": true,
+    "sustained": {
+      "min": 0,
+      "position": 926,
+      "received": 1513,
+      "edge": 1423,
+      "paused": false,
+      "seeking": false,
+      "following": false,
+      "ended": false
+    },
+    "late": {
+      "min": 0,
+      "position": 1550,
+      "received": 1664,
+      "edge": 1664,
+      "paused": false,
+      "seeking": false,
+      "following": true,
+      "ended": true
+    },
+    "completed": {
+      "min": 0,
+      "position": 1664,
+      "received": 1664,
+      "edge": 1664,
+      "paused": false,
+      "seeking": false,
+      "following": false,
+      "ended": true
+    },
+    "httpErrors": 0,
+    "consoleErrors": 0,
+    "runtimeErrors": 0
+  },
+  "rollbackAndReplayCases": [
+    {
+      "reportSha256": "16f628ebb8f51ccd772cc284040257bfbde651869d772afe88d2e6f961783580",
+      "passed": true,
+      "exitCode": 0,
+      "elapsedSeconds": 59.395073890686035,
+      "version": "1.00b-thp-34791e87b7cf",
+      "wasm": "34791e87b7cf8e7cce96e48a12deba941830cc273cd2c2b29ae6b6932b7f16b5",
+      "mode": "rollback",
+      "count": 2,
+      "delay": 90,
+      "jitter": 24,
+      "compared": 1817,
+      "peakBullets": 10,
+      "viewers": {
+        "spectatorFrame": 500,
+        "replayFrame": 500
+      },
+      "peers": [
+        {
+          "head": 1825,
+          "confirmed": 1818,
+          "corrections": 319,
+          "resimulated": 2119,
+          "combatCorrections": 110,
+          "prediction": 12,
+          "route": "rtc",
+          "packets": 0,
+          "error": ""
+        },
+        {
+          "head": 1825,
+          "confirmed": 1824,
+          "corrections": 378,
+          "resimulated": 382,
+          "combatCorrections": 129,
+          "prediction": 12,
+          "route": "rtc",
+          "packets": 3516,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "reportSha256": "321174df71f007aff873b698645f54b7dc64e972dfa8b3ad723a2f7c2de5c7b9",
+      "passed": true,
+      "exitCode": 0,
+      "elapsedSeconds": 72.368412733078,
+      "version": "1.00b-thp-34791e87b7cf",
+      "wasm": "34791e87b7cf8e7cce96e48a12deba941830cc273cd2c2b29ae6b6932b7f16b5",
+      "mode": "rollback",
+      "count": 3,
+      "delay": 110,
+      "jitter": 24,
+      "compared": 2382,
+      "peakBullets": 19,
+      "viewers": {
+        "spectatorFrame": 500,
+        "replayFrame": 500
+      },
+      "peers": [
+        {
+          "head": 2390,
+          "confirmed": 2383,
+          "corrections": 813,
+          "resimulated": 5333,
+          "combatCorrections": 118,
+          "prediction": 12,
+          "route": "rtc",
+          "packets": 0,
+          "error": ""
+        },
+        {
+          "head": 2390,
+          "confirmed": 2383,
+          "corrections": 478,
+          "resimulated": 3246,
+          "combatCorrections": 69,
+          "prediction": 12,
+          "route": "rtc",
+          "packets": 9312,
+          "error": ""
+        },
+        {
+          "head": 2392,
+          "confirmed": 2383,
+          "corrections": 749,
+          "resimulated": 4523,
+          "combatCorrections": 112,
+          "prediction": 12,
+          "route": "rtc",
+          "packets": 9311,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "reportSha256": "ba231a44a9d2e06598598812276d898b060a9b6443313d79ff244482acaadc18",
+      "passed": true,
+      "exitCode": 0,
+      "elapsedSeconds": 64.2790150642395,
+      "version": "1.00b-thp-34791e87b7cf",
+      "wasm": "34791e87b7cf8e7cce96e48a12deba941830cc273cd2c2b29ae6b6932b7f16b5",
+      "mode": "manual-delay",
+      "count": 2,
+      "delay": 90,
+      "jitter": 24,
+      "compared": 1821,
+      "peakBullets": 13,
+      "viewers": {
+        "spectatorFrame": 500,
+        "replayFrame": 500
+      },
+      "peers": [
+        {
+          "head": 1821,
+          "confirmed": 1821,
+          "corrections": 0,
+          "resimulated": 0,
+          "combatCorrections": 0,
+          "prediction": 0,
+          "route": "rtc",
+          "packets": 0,
+          "error": ""
+        },
+        {
+          "head": 1824,
+          "confirmed": 1824,
+          "corrections": 0,
+          "resimulated": 0,
+          "combatCorrections": 0,
+          "prediction": 0,
+          "route": "rtc",
+          "packets": 3526,
+          "error": ""
+        }
+      ]
+    }
+  ],
+  "softwarePathResultPreserved": {
+    "reportSha256": "1f1db3910b8355b11e18ca81203bdb0dd60d163b2ca5702d16930148648638b2",
+    "status": "failed",
+    "stage": "normal-end-buffer-drain",
+    "position": 894,
+    "received": 1664,
+    "ended": true,
+    "nativePhase": 1,
+    "configuredStepTimeoutMs": 360000,
+    "framesRequested": 300,
+    "gameError": ""
+  },
+  "preview": {
+    "passed": true,
+    "currentRuntimeFiles": 68,
+    "retainedRuntimeFiles": 98,
+    "frontendFiles": 3,
+    "service": "th14-preview-cold-room-nov18",
+    "serviceStatus": [
+      "ActiveState=active",
+      "MainPID=3811796"
+    ],
+    "groups": [
+      {
+        "root": "runtime/th14/",
+        "current": "fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1",
+        "previous": [
+          "12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8",
+          "0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c"
+        ]
+      },
+      {
+        "root": "runtime/th14/multiplayer/",
+        "current": "4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667",
+        "previous": [
+          "6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8"
+        ]
+      }
+    ],
+    "normalRuntimeUnchanged": true,
+    "productionChanged": false,
+    "previewActivated": true,
+    "completeGame": false
+  },
+  "previewFullReceiptSha256": "1c7aca3a7095982c681a2c33ba8e76dca67fb1b0a7e3d2ddbe853643f9044b9e",
+  "package": {
+    "passed": true,
+    "productionChanged": false,
+    "previewActivated": false,
+    "copyMode": "COPYFILE_FICLONE_FORCE",
+    "frontendBuiltAt": "2c93921b5e58659facf56e543defe8a5b8bb1557",
+    "gameSource": "5fca1f600bbbe738806c8da8343a3caaedc5adbe",
+    "groups": [
+      {
+        "root": "runtime/th14/",
+        "generation": "fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1",
+        "files": 34,
+        "previous": [
+          "12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8",
+          "0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c"
+        ]
+      },
+      {
+        "root": "runtime/th14/multiplayer/",
+        "generation": "4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667",
+        "files": 34,
+        "previous": [
+          "6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8"
+        ]
+      }
+    ]
+  },
+  "latestLauncherFullUiAccepted": false,
+  "publicEntryUiAccepted": false,
+  "completeGame": false
+}

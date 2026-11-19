@@ -1,0 +1,58 @@
+{
+  "schema": "th14/save-import-recovery/1",
+  "passed": true,
+  "standard": "observable behavior alignment",
+  "frontendSource": "6cf284bf3fd2201e52361494b69fbda467392f12",
+  "runtimeCodeSource": "7a83c3eeba3ff6c15c8559d14ec175e4b92bad93",
+  "generation": "55696f7fc59af78c3c91fb87bae0e4a3cde4d890b126cc04e1af643a0b37eda8",
+  "invalidInput": {
+    "bytes": 43,
+    "sha256": "f582a96a7b54492c5917bcddc22c680d7d8239b88c9875f51b9270c9d678d4e1",
+    "namedAsOriginalScore": true,
+    "actualUiRejected": true
+  },
+  "actualUi": {
+    "overwriteConfirmationObserved": true,
+    "firstChooserWaitEncounteredConfirmationNotFileDialog": true,
+    "invalidThenValidImportAccepted": true,
+    "validSuccessMessageObserved": true,
+    "nativeStartAndPlayerDataAccepted": true,
+    "observedStatistics": [
+      {
+        "selection": 0,
+        "plays": 1,
+        "playSecondsDisplayed": 2
+      },
+      {
+        "selection": 1,
+        "plays": 1,
+        "playSecondsDisplayed": 34
+      }
+    ],
+    "normalRankingsDefaultAndZeroClearObserved": true,
+    "reimuBNormalOrdinarySpellCountersZeroObserved": true,
+    "nativeQuitReturnedToLauncher": true,
+    "music": "none",
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "actualGameplayStarted": false
+  },
+  "protection": {
+    "beforeAndAfterInvalidAndAfterValidAndAfterNativeQuitAllEncodedEqual": true,
+    "encodedBytes": 21641,
+    "encodedSha256": "21cad13473a17c44064412e8a5302e3c1597330cedaa2a5d6d0072cd9dc4c55b",
+    "decodedBytes": 149076,
+    "decodedSha256": "3c264226dda5516cee14a03264feace4d8c55f930c549cfc2990dd250df0d098",
+    "allEightRecordTypesLengthsAndChecksumsAccepted": true,
+    "allSevenCharacterRecordsUnchanged": true,
+    "wholeSettingsRecordUnchanged": true,
+    "nativeDisplayedStatisticsMatchIndependentDecode": true,
+    "retailCodecNewExecution": false
+  },
+  "codeChanged": false,
+  "gameRuntimeRebuilt": false,
+  "assetsCopied": false,
+  "newProductionDeployment": false,
+  "activatedPublicBrowserAccepted": false,
+  "completeGame": false
+}

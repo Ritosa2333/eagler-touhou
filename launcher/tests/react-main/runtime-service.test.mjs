@@ -797,3 +797,28 @@ for (const fileOnly of [false, true]) test(`runtime: authenticated ${fileOnly ? 
   assert.deepEqual(event.message, {protocol: 'eagler-touhou/1', game: 'th06', epoch, event: 'exit', status: 'success'});
   assert.deepEqual(received, [event.message], 'genuine file/gameplay events still reach subscribers unchanged'); unsubscribe();
 });
+
+for (const runtimeVariant of ['normal','multiplayer']) test(`TH14 replay stage preparation keeps ${runtimeVariant} seek alive beyond the ordinary command budget`,async()=>{
+ const f=fixture();await f.prepare({...managedPlan('th14'),runtimeVariant});
+ const command=f.service.send('playback',{action:'seek',value:88025});let state='pending';void command.then(()=>{state='resolved';},()=>{state='rejected';});
+ f.timers.advance(15_001);await flush();assert.equal(state,'pending');f.ack('playback');await command;
+});
+for(const action of ['open','seek'])test(`TH14 replay stage preparation has a bounded ${action} deadline`,async()=>{
+ const f=fixture();await f.prepare(managedPlan('th14'));const payload=action==='open'?{action,path:'replay/th14_01.rpy',stage:5}:{action,value:88025};
+ const command=f.service.send('playback',payload);let state='pending';void command.then(()=>{state='resolved';},()=>{state='rejected';});
+ f.timers.advance(119_999);await flush();assert.equal(state,'pending');const rejected=assert.rejects(command,{message:'runtime.operationTimeout'});f.timers.advance(1);await rejected;
+});
+test('TH14 replay stage preparation preserves explicit caller deadlines',async()=>{
+ const f=fixture();await f.prepare(managedPlan('th14'));const command=f.service.send('playback',{action:'seek',value:88025},250),rejected=assert.rejects(command,{message:'runtime.operationTimeout'});f.timers.advance(250);await rejected;
+});
+test('TH14 replay stage preparation uses the configured native launch budget',async()=>{
+ const f=fixture({serviceOptions:{timeouts:{launch:500}}});await f.prepare(managedPlan('th14'));const command=f.service.send('playback',{action:'seek',value:88025});let state='pending';void command.then(()=>{state='resolved';},()=>{state='rejected';});f.timers.advance(500);await flush();assert.equal(state,'rejected');await assert.rejects(command,{message:'runtime.operationTimeout'});
+});
+test('TH14 replay stage preparation leaves pause and other game deadlines unchanged',async()=>{
+ for(const [game,action]of [['th14','pause'],['th06','seek']]){
+  const f=fixture();await f.prepare(managedPlan(game));const command=f.service.send('playback',{action,...(action==='seek'?{value:1000}:{})}),rejected=assert.rejects(command,{message:'runtime.operationTimeout'});f.timers.advance(15_000);await rejected;
+ }
+});
+test('TH14 replay stage preparation remains cancellable by frame retirement',async()=>{
+ const f=fixture();await f.prepare(managedPlan('th14'));const command=f.service.send('playback',{action:'seek',value:88025}),rejected=assert.rejects(command,{name:'AbortError'});await f.service.close({discardUnsaved:true});await rejected;assert.equal(f.timers.pending.size,0);
+});

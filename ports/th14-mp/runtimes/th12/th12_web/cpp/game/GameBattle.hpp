@@ -202,6 +202,10 @@ public:
     // Optional state observer at native priority 16, before the player callback.
     // Aligns whole-session traces without changing gameplay.
     void (*before_player_update)(const GameBattle&)=nullptr;
+#if PORT_TITLE == 14
+    // Observe effective game input only on an actual player update.
+    void (*practice_key_sample)(u32)=nullptr;
+#endif
 
     GameBattle(GameSessionResources&,AnmManager&,GameEconomy&,SpellRecords&,SceneCompositor&,ClearRecords&);
 #if PORT_TITLE == 14 && defined(TH14_CPP_STAGE_RESOURCE_HANDSHAKE)

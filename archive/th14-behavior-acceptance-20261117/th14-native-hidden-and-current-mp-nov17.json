@@ -1,0 +1,918 @@
+{
+  "schema": "th14/native-hidden-and-current-mp/1",
+  "source": "2c93921b5e58659facf56e543defe8a5b8bb1557",
+  "normalBrowser": {
+    "schema": "th14/native-hidden-observation/1",
+    "generation": "fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1",
+    "timing": {
+      "start": 1794927112743,
+      "end": 1794927200527,
+      "hiddenWallMs": 87784,
+      "musicVolume": 0,
+      "effectsVolume": 0,
+      "voiceVolume": 0,
+      "realBrowserDebuggerDetached": true,
+      "before": {
+        "score": 4100,
+        "visibleSpareHearts": 0,
+        "bombs": 3,
+        "power": 1,
+        "graze": 4
+      },
+      "after": {
+        "score": 4100,
+        "visibleSpareHearts": 0,
+        "bombs": 3,
+        "power": 1,
+        "graze": 4
+      },
+      "heldKeyReleaseAccepted": false,
+      "exactHiddenFrameCountMeasured": false,
+      "completeGame": false
+    },
+    "hudImageComparisons": [
+      {
+        "field": "score",
+        "box": [
+          1090,
+          192,
+          1307,
+          231
+        ],
+        "pixels": 8463,
+        "differentPixels": 0
+      },
+      {
+        "field": "spare-hearts",
+        "box": [
+          1105,
+          251,
+          1308,
+          289
+        ],
+        "pixels": 7714,
+        "differentPixels": 0
+      },
+      {
+        "field": "bombs",
+        "box": [
+          1105,
+          320,
+          1308,
+          355
+        ],
+        "pixels": 7105,
+        "differentPixels": 0
+      },
+      {
+        "field": "power",
+        "box": [
+          1160,
+          448,
+          1310,
+          490
+        ],
+        "pixels": 6300,
+        "differentPixels": 0
+      },
+      {
+        "field": "point-value",
+        "box": [
+          1165,
+          490,
+          1308,
+          531
+        ],
+        "pixels": 5863,
+        "differentPixels": 0
+      },
+      {
+        "field": "graze",
+        "box": [
+          1215,
+          530,
+          1307,
+          567
+        ],
+        "pixels": 3404,
+        "differentPixels": 0
+      }
+    ],
+    "probeEventsFromEarlierControlInSameDebuggerDetachedWorkflow": [
+      {
+        "event": "initial",
+        "at": 1794926609707,
+        "hidden": false,
+        "visibility": "visible",
+        "focus": true
+      },
+      {
+        "event": "pageshow",
+        "at": 1794926610096,
+        "hidden": false,
+        "visibility": "visible",
+        "focus": true
+      },
+      {
+        "event": "blur",
+        "at": 1794926658434,
+        "hidden": false,
+        "visibility": "visible",
+        "focus": false
+      },
+      {
+        "event": "visibilitychange",
+        "at": 1794926685059,
+        "hidden": true,
+        "visibility": "hidden",
+        "focus": false
+      },
+      {
+        "event": "visibilitychange",
+        "at": 1794926976415,
+        "hidden": false,
+        "visibility": "visible",
+        "focus": false
+      }
+    ],
+    "gameVisibilityReadDirectly": false,
+    "wholeHiddenFrameCountMeasured": false,
+    "heldKeyReleaseAccepted": false,
+    "nativeReturnTitleAndQuitObserved": true,
+    "invalidEarlierSampleBeforeHideAlreadyEnded": true,
+    "scope": "ordinary native-window tab switch, retained HUD values, foreground pause, return title and native Quit",
+    "privateImages": {
+      "native-running-before-valid-hide.png": {
+        "bytes": 222204,
+        "sha256": "da2e70ff0774584165ec2b1ea0ef5273b3773649c0a89baf945c34fd3d2c8a5a"
+      },
+      "native-after-valid-hide-paused.png": {
+        "bytes": 226858,
+        "sha256": "ca8e28e65e132a4597b2f02ebb102af3b374c426de90cd0b8b989fb1727d7fe7"
+      }
+    },
+    "imagesPublished": false,
+    "audibleOutput": false,
+    "completeGame": false
+  },
+  "normalBrowserFrontend": {
+    "index.html": {
+      "bytes": 84856,
+      "sha256": "b4eaaf5fed0661c6554995e577b44a767126700259557b16a10c0892119093f4"
+    },
+    "assets/root-CXLkI4Df.js": {
+      "bytes": 667480,
+      "sha256": "faf618e05e54a4e85b8e604dd5a60e73b68c0bf534e2874d9d49c7f1a96a9281"
+    },
+    "assets/replays-D8JU-kyb.js": {
+      "bytes": 137641,
+      "sha256": "8a5bcb8b27eaaf3161eb071042d90aefa4b4f571cd6903945f0a6c1fb05180ab"
+    }
+  },
+  "multiplayer": {
+    "units": 163,
+    "wasmSha256": "106b2245e2fd47734253d6d9bb95226114960d56bbc008ba8eb1d4bad0943f34",
+    "loaderSha256": "89085f0cb5690ce70e32212cc7a0f93659d7e4204877b99eee57dd4be173dd85",
+    "sourceBindings": 395,
+    "commonBindings": 73,
+    "allBindingsMatchCurrentSource": true,
+    "compiledObjectsVerifiedLocally": 163,
+    "checks": {
+      "launch": {
+        "schema": "th14/launch-suspension/1",
+        "passed": true,
+        "variant": "mp",
+        "sourceSha256": "11bc9e5d9d695d0ba0ea9d2644a18603d3f310fe66f673bd715e5b6cbdd08e91",
+        "actualLaunchFunction": true,
+        "actualAudioHelper": true,
+        "actualAsyncQueue": true,
+        "controlledNativeLoopAndAudio": true,
+        "actualBrowserHiddenAccepted": false,
+        "completeGame": false,
+        "rows": [
+          {
+            "name": "visible-running",
+            "queued": false,
+            "passed": true,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": false,
+            "calls": [
+              "start",
+              "pause",
+              "resume"
+            ]
+          },
+          {
+            "name": "visible-pending",
+            "queued": false,
+            "passed": true,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause",
+              "resume"
+            ]
+          },
+          {
+            "name": "visible-rejected",
+            "queued": false,
+            "passed": true,
+            "paused": true,
+            "expectedPaused": true,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause"
+            ]
+          },
+          {
+            "name": "hidden-running",
+            "queued": false,
+            "passed": true,
+            "paused": true,
+            "expectedPaused": true,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause"
+            ]
+          },
+          {
+            "name": "hidden-pending",
+            "queued": false,
+            "passed": true,
+            "paused": true,
+            "expectedPaused": true,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause"
+            ]
+          },
+          {
+            "name": "hide-in-initialize",
+            "queued": false,
+            "passed": true,
+            "paused": true,
+            "expectedPaused": true,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause"
+            ]
+          },
+          {
+            "name": "hide-in-open-room",
+            "queued": false,
+            "passed": true,
+            "paused": true,
+            "expectedPaused": true,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause"
+            ]
+          },
+          {
+            "name": "hide-before-resume-settles",
+            "queued": false,
+            "passed": true,
+            "paused": true,
+            "expectedPaused": true,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause"
+            ]
+          },
+          {
+            "name": "visible-running",
+            "queued": true,
+            "passed": true,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": false,
+            "calls": [
+              "start",
+              "pause",
+              "resume"
+            ]
+          },
+          {
+            "name": "visible-pending",
+            "queued": true,
+            "passed": true,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause",
+              "resume"
+            ]
+          },
+          {
+            "name": "visible-rejected",
+            "queued": true,
+            "passed": true,
+            "paused": true,
+            "expectedPaused": true,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause"
+            ]
+          },
+          {
+            "name": "hidden-running",
+            "queued": true,
+            "passed": true,
+            "paused": true,
+            "expectedPaused": true,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause"
+            ]
+          },
+          {
+            "name": "hidden-pending",
+            "queued": true,
+            "passed": true,
+            "paused": true,
+            "expectedPaused": true,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause"
+            ]
+          },
+          {
+            "name": "hide-in-initialize",
+            "queued": true,
+            "passed": true,
+            "paused": true,
+            "expectedPaused": true,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause"
+            ]
+          },
+          {
+            "name": "hide-in-open-room",
+            "queued": true,
+            "passed": true,
+            "paused": true,
+            "expectedPaused": true,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause"
+            ]
+          },
+          {
+            "name": "hide-before-resume-settles",
+            "queued": true,
+            "passed": true,
+            "paused": true,
+            "expectedPaused": true,
+            "beforeSettlePaused": true,
+            "calls": [
+              "start",
+              "pause"
+            ]
+          }
+        ]
+      },
+      "audio": {
+        "schema": "th14/audio-resume-race-check/1",
+        "hostSha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+        "shellSha256": "11bc9e5d9d695d0ba0ea9d2644a18603d3f310fe66f673bd715e5b6cbdd08e91",
+        "cases": [
+          {
+            "name": "running context ordinary resume",
+            "passed": true
+          },
+          {
+            "name": "suspend then successful reconnect",
+            "passed": true
+          },
+          {
+            "name": "new pause cancels pending resume",
+            "passed": true
+          },
+          {
+            "name": "repeated pause still cancels pending resume",
+            "passed": true
+          },
+          {
+            "name": "foreground lost while awaiting context",
+            "passed": true
+          },
+          {
+            "name": "resume rejection preserves suspended loop",
+            "passed": true
+          },
+          {
+            "name": "reconnect failure preserves suspended loop",
+            "passed": true
+          },
+          {
+            "name": "silent no-context control remains resumable",
+            "passed": true
+          },
+          {
+            "name": "detached node without context remains paused",
+            "passed": true
+          },
+          {
+            "name": "only newest concurrent resume commits",
+            "passed": true
+          },
+          {
+            "name": "independent runtime cancellation stays independent",
+            "passed": true
+          },
+          {
+            "name": "actual shell newer viewer pause wins",
+            "passed": true
+          },
+          {
+            "name": "actual shell denied resume does not unpause",
+            "passed": true
+          },
+          {
+            "name": "actual shell hidden document stays paused",
+            "passed": true
+          },
+          {
+            "name": "actual shell normal viewer resume works",
+            "passed": true
+          },
+          {
+            "name": "actual shell stop cancels pending viewer resume",
+            "passed": true
+          },
+          {
+            "name": "actual viewer foreground resume cannot override newer pause command",
+            "passed": true
+          }
+        ],
+        "passed": 17,
+        "failed": 0,
+        "realBrowserAudioAccepted": false,
+        "audibleOutput": false,
+        "completeGame": false
+      },
+      "lifecycle": {
+        "passed": true,
+        "rows": [
+          {
+            "name": "ordinary-departure",
+            "observations": [
+              true
+            ],
+            "expected": [
+              true
+            ],
+            "passed": true
+          },
+          {
+            "name": "cache-entry",
+            "observations": [
+              false
+            ],
+            "expected": [
+              false
+            ],
+            "passed": true
+          },
+          {
+            "name": "cache-return-and-departure",
+            "observations": [
+              false,
+              false,
+              true
+            ],
+            "expected": [
+              false,
+              false,
+              true
+            ],
+            "passed": true
+          },
+          {
+            "name": "two-cache-returns-and-departure",
+            "observations": [
+              false,
+              false,
+              false,
+              false,
+              true
+            ],
+            "expected": [
+              false,
+              false,
+              false,
+              false,
+              true
+            ],
+            "passed": true
+          },
+          {
+            "name": "ordinary-departure-is-terminal",
+            "observations": [
+              true,
+              true
+            ],
+            "expected": [
+              true,
+              true
+            ],
+            "passed": true
+          },
+          {
+            "name": "unspecified-persisted",
+            "observations": [
+              true
+            ],
+            "expected": [
+              true
+            ],
+            "passed": true
+          }
+        ],
+        "sourceSha256": "11bc9e5d9d695d0ba0ea9d2644a18603d3f310fe66f673bd715e5b6cbdd08e91",
+        "actualCompleteShellEvaluated": true,
+        "moduleFactoryIntentionallyPending": false,
+        "moduleLoadIntentionallyPending": true,
+        "eventTargetFixture": true,
+        "actualBrowserHiddenAccepted": false,
+        "actualBrowserBfcacheAccepted": false,
+        "completeGame": false
+      },
+      "resource": {
+        "passed": true,
+        "cases": 14,
+        "failedCases": 0,
+        "rows": [
+          {
+            "name": "install-already-aborted",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 0,
+              "parents": 0,
+              "malloc": 0,
+              "free": 0,
+              "adopt": 0,
+              "writes": [],
+              "signals": []
+            },
+            "error": {
+              "name": "AbortError",
+              "message": "This operation was aborted"
+            }
+          },
+          {
+            "name": "install-abort-after-fetch",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 1,
+              "parents": 0,
+              "malloc": 0,
+              "free": 0,
+              "adopt": 0,
+              "writes": [],
+              "signals": [
+                true
+              ]
+            },
+            "error": {
+              "name": "AbortError",
+              "message": "This operation was aborted"
+            }
+          },
+          {
+            "name": "install-abort-after-body",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 1,
+              "parents": 0,
+              "malloc": 0,
+              "free": 0,
+              "adopt": 0,
+              "writes": [],
+              "signals": [
+                true
+              ]
+            },
+            "error": {
+              "name": "AbortError",
+              "message": "This operation was aborted"
+            }
+          },
+          {
+            "name": "install-abort-between-resources",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 1,
+              "parents": 0,
+              "malloc": 0,
+              "free": 0,
+              "adopt": 0,
+              "writes": [
+                "/fonts/test0.bin"
+              ],
+              "signals": [
+                true
+              ]
+            },
+            "error": {
+              "name": "AbortError",
+              "message": "This operation was aborted"
+            }
+          },
+          {
+            "name": "compressed-abort-during-body",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 1,
+              "parents": 0,
+              "malloc": 0,
+              "free": 0,
+              "adopt": 0,
+              "writes": [],
+              "signals": [
+                true
+              ]
+            },
+            "error": {
+              "name": "AbortError",
+              "message": "This operation was aborted"
+            }
+          },
+          {
+            "name": "install-completes",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 2,
+              "parents": 0,
+              "malloc": 0,
+              "free": 0,
+              "adopt": 0,
+              "writes": [
+                "/fonts/test0.bin",
+                "/fonts/test1.bin"
+              ],
+              "signals": [
+                true,
+                true
+              ]
+            },
+            "error": null
+          },
+          {
+            "name": "compressed-completes",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 1,
+              "parents": 0,
+              "malloc": 0,
+              "free": 0,
+              "adopt": 0,
+              "writes": [
+                "/fonts/font0.bin"
+              ],
+              "signals": [
+                true
+              ]
+            },
+            "error": null
+          },
+          {
+            "name": "mount-aborted-before-parent",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 0,
+              "parents": 0,
+              "malloc": 0,
+              "free": 0,
+              "adopt": 0,
+              "writes": [],
+              "signals": []
+            },
+            "error": {
+              "name": "AbortError",
+              "message": "This operation was aborted"
+            }
+          },
+          {
+            "name": "mount-abort-after-parent",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 0,
+              "parents": 1,
+              "malloc": 0,
+              "free": 0,
+              "adopt": 0,
+              "writes": [],
+              "signals": []
+            },
+            "error": {
+              "name": "AbortError",
+              "message": "This operation was aborted"
+            }
+          },
+          {
+            "name": "legacy-abort-after-parent",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 0,
+              "parents": 1,
+              "malloc": 0,
+              "free": 0,
+              "adopt": 0,
+              "writes": [],
+              "signals": []
+            },
+            "error": {
+              "name": "AbortError",
+              "message": "This operation was aborted"
+            }
+          },
+          {
+            "name": "mount-abort-after-adoption",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 0,
+              "parents": 1,
+              "malloc": 1,
+              "free": 0,
+              "adopt": 1,
+              "writes": [],
+              "signals": []
+            },
+            "error": {
+              "name": "AbortError",
+              "message": "This operation was aborted"
+            }
+          },
+          {
+            "name": "mount-abort-during-manifest-body",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 1,
+              "parents": 1,
+              "malloc": 1,
+              "free": 0,
+              "adopt": 1,
+              "writes": [],
+              "signals": [
+                true
+              ]
+            },
+            "error": {
+              "name": "AbortError",
+              "message": "This operation was aborted"
+            }
+          },
+          {
+            "name": "mount-abort-during-font-fetch",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 2,
+              "parents": 1,
+              "malloc": 1,
+              "free": 0,
+              "adopt": 1,
+              "writes": [],
+              "signals": [
+                true,
+                true
+              ]
+            },
+            "error": {
+              "name": "AbortError",
+              "message": "This operation was aborted"
+            }
+          },
+          {
+            "name": "mount-completes",
+            "passed": true,
+            "failures": [],
+            "calls": {
+              "fetch": 2,
+              "parents": 1,
+              "malloc": 1,
+              "free": 0,
+              "adopt": 1,
+              "writes": [
+                "/fonts/test0.bin"
+              ],
+              "signals": [
+                true,
+                true
+              ]
+            },
+            "error": null
+          }
+        ],
+        "sourceSha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+        "actualHostModule": true,
+        "syntheticAssets": true,
+        "fetchFilesystemAndNativeOwnershipBoundariesControlled": true,
+        "actualBrowserCancelAccepted": false,
+        "completeGame": false
+      }
+    },
+    "actualRoomAndSpectatorAccepted": false
+  },
+  "frontendBuild": {
+    "exitCode": 0,
+    "command": [
+      "bun",
+      "--bun",
+      "run",
+      "build:launcher"
+    ],
+    "cwd": "/home/i/Code/th14-release/launch-suspension-upstream-nov17/launcher",
+    "earlierBuildCommandFailed": true,
+    "earlierFailure": "sparse checkout omitted directly imported TH09 motion-replay.mjs",
+    "dependencyMaterializedWithoutGameAssets": true,
+    "vendorAndContentStagesReused": true,
+    "audibleOutput": false,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "frontendTypecheckPassed": true,
+  "frontendTypecheckLogSha256": "4ec84e13a4da9a30d02028adf45620b42c29c65392fc3b540dda162688bc8446",
+  "package": {
+    "source": "2c93921b5e58659facf56e543defe8a5b8bb1557",
+    "frontendBuildPassed": true,
+    "packageVerified": true,
+    "groups": [
+      {
+        "root": "runtime/th14/",
+        "generation": "fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1",
+        "files": 34
+      },
+      {
+        "root": "runtime/th14/multiplayer/",
+        "generation": "6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8",
+        "files": 34
+      }
+    ],
+    "normalWasmUnchanged": true,
+    "multiplayerWasm": "106b2245e2fd47734253d6d9bb95226114960d56bbc008ba8eb1d4bad0943f34",
+    "actualMultiplayerAccepted": false,
+    "previewActivated": false,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "preview": {
+    "passed": true,
+    "runtimeFiles": 68,
+    "frontendFiles": 3,
+    "groups": [
+      {
+        "root": "runtime/th14/",
+        "generation": "fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1"
+      },
+      {
+        "root": "runtime/th14/multiplayer/",
+        "generation": "6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8"
+      }
+    ],
+    "service": "th14-preview-native-hidden-nov17",
+    "serviceStatus": [
+      "ActiveState=active",
+      "MainPID=2682683"
+    ],
+    "productionChanged": false,
+    "actualBrowserAccepted": false,
+    "actualBrowserHiddenAccepted": false,
+    "completeGame": false
+  },
+  "latestFrontendActualBrowserAccepted": false,
+  "productionChanged": false,
+  "audibleOutput": false,
+  "originalImagesAndAssetsPublished": false,
+  "completeGame": false
+}

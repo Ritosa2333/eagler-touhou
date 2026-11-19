@@ -1,0 +1,2047 @@
+{
+  "schema": "th14/launch-suspension-acceptance/1",
+  "normalSourceCommit": "98d035405caaab36131bfb8837aa51f61b5eb73f",
+  "normalProjection": "a39af09728a0d0c69f3c185509d91f06e10d22ac",
+  "multiplayerMerge": "768fa99706f490fc10b2b22ce3451e1582911294",
+  "writeback": "c019e2714251ac62fee93fe8a18cc9b56adcb380",
+  "projection": {
+    "sourceHead": "c019e2714251ac62fee93fe8a18cc9b56adcb380",
+    "game": "th14",
+    "results": {
+      "th14": {
+        "head": "a39af09728a0d0c69f3c185509d91f06e10d22ac",
+        "ref": "refs/heads/port-history/th14",
+        "initialAncestor": true,
+        "latestAncestor": true,
+        "treeMatches": true,
+        "mapping": [
+          {
+            "source": "1ded667e982e3c55643d397b962a0bcc7883b9a0",
+            "projected": "f24a0c36eeee89a8761eb034a9994bc3e48f2e0a"
+          },
+          {
+            "source": "f0bbd8b3124278012f3d7a0f0f79d03025663659",
+            "projected": "9a452c9a5315af0d48760d273521504507af4816"
+          },
+          {
+            "source": "9b6fbc78d358945dd47edabb5c5f950a0929f1fc",
+            "projected": "a599b5d446845115bf32eb18e2602685a96ba801"
+          },
+          {
+            "source": "21b8bc076e78300a1470c84b82ccb220fe4c61ba",
+            "projected": "86ce2959b48c9499f4c61337d132b1ca9732fe7d"
+          },
+          {
+            "source": "c4a5850f37039a826701ec082b906ad4d053b2b6",
+            "projected": "46b893374d14751f44445b49e970c1e1f657d5a3"
+          },
+          {
+            "source": "9388323896c617e1839f614dbe0f69c3f5c23d72",
+            "projected": "780d223df2439100330043fdd7c140191ab290e8"
+          },
+          {
+            "source": "feaa624c6d2110cecf9e4e71139651421ab30bd4",
+            "projected": "e76130709b492d88a1e54ec7ac71f452061e7be4"
+          },
+          {
+            "source": "0a73dd6d658638d12de621bf3c32a34cc1f1dcab",
+            "projected": "f3f742a3a64dde1ec508774d46b825f24679a339"
+          },
+          {
+            "source": "bd2e0463c54baac65d4291c02be5fedaafd9023c",
+            "projected": "871d08de962504231b4416f0ef1b2b4f2cf4d271"
+          },
+          {
+            "source": "098f642b2a360b05768f66fe481387c2022475e1",
+            "projected": "4fff3fd6c850e3d905866efab7372950860a6f12"
+          },
+          {
+            "source": "ba39ded6378cfb57fd95e05b9a5a5d5ffac0c695",
+            "projected": "1520605a820fd100803f3203dcd5254cad113cfd"
+          },
+          {
+            "source": "300c3eeca331fd830925e14e1d5decb4bcdff138",
+            "projected": "8befed851acfedb4004a2e777d6fd911378f330b"
+          },
+          {
+            "source": "5969924e96c48909b67b90597f8ff6a40e96a960",
+            "projected": "e1606bff7aeb0deb2aae2a1c6716aeb6a4b9039b"
+          },
+          {
+            "source": "c7f04a13d38d93de5abf934053e31285afc0df20",
+            "projected": "90f9a1fbdefa0f46d97b8fa43f3ff11325d25cef"
+          },
+          {
+            "source": "88a3905cbbfda894c60ff187cec90c13073d37f4",
+            "projected": "1292b0f6dec992694c382d94a57ff80438965d11"
+          },
+          {
+            "source": "f64207e05ac73cd82e7a5086f7a7aea544232ed9",
+            "projected": "9ebd929b0e36741fb2710ffac0298327ad8dafc9"
+          },
+          {
+            "source": "6fa94b0725ba125c715e4ae2e219f651c87e9b83",
+            "projected": "f46d2fafc2c61fddbeaa5eadb858b6b33358b529"
+          },
+          {
+            "source": "7cf3366984281af8bad95a8867489b9c83cf349e",
+            "projected": "fb2293124b10f889e29e45a81b6e3d2970276ba6"
+          },
+          {
+            "source": "09b149a47c65fb34b2382b51e854e55d9307032e",
+            "projected": "1e8c5838b7ce970a1a57ec1463e8bdd36127a4f7"
+          },
+          {
+            "source": "7a83c3eeba3ff6c15c8559d14ec175e4b92bad93",
+            "projected": "9954e27d9ac3187d1f7d0408cd5ea43120fc3e57"
+          },
+          {
+            "source": "53ad371f30c9c6cb8c1e27c094d365663b774276",
+            "projected": "64340362aaa1b4ab1d8b661852ae55ba226ad3dd"
+          },
+          {
+            "source": "755b45d57c72df9e287811de9e0136b78a040bc3",
+            "projected": "f42dea393ca24dcc28200a0befefe6395c7a24e3"
+          },
+          {
+            "source": "dacc94687cbef7f062651c8627790de8eca02797",
+            "projected": "8fa2edda5443b5e4254068f98abdcf486a0c7b8b"
+          },
+          {
+            "source": "3fbbc12163dc0531fd7824b90fe1ba98dc55fdcb",
+            "projected": "7a4457d9fd24cc204520ef8b3c3077caacebe7f3"
+          },
+          {
+            "source": "b76115910fd7a7797eaa77c1dc18cabdd85fce5d",
+            "projected": "5a56af052b5fb13e7c02820ee8db076ae0be0f35"
+          },
+          {
+            "source": "440d512af10ba9b1f9427a38397a72d4878c2d9a",
+            "projected": "15b68c34a9da6453cb7d3e013f01f394e068248c"
+          },
+          {
+            "source": "62189b7ebd5e359f4f00b61960fa14ff5fd89602",
+            "projected": "9b7cfebed4b10b03cb3a69e191e599014700d9a5"
+          },
+          {
+            "source": "8bf12ec421b56cb08296ab1953888813c1efe4ad",
+            "projected": "805c0d45e94cdf7dd2b44d3d910be7412f99c3c1"
+          },
+          {
+            "source": "0fe7bf7300ed3e326bb25a7ba66cbacbf1686867",
+            "projected": "6095b40c3254fb40fdb0d3bc3a9c6814d97df41a"
+          },
+          {
+            "source": "209b7898afe4905dce14ceb8695343172c87cb22",
+            "projected": "32a43b0827f43b8d1b36059ccb8cd6c24a7280ff"
+          },
+          {
+            "source": "139be05e3bde88901db6846670bd5d6875296d9a",
+            "projected": "4f362bb30065c1b26fa2e02d2bb62718f3d811ba"
+          },
+          {
+            "source": "ace94d0e219856494141a45559ef570e1a22f2a0",
+            "projected": "487428f515a932334f92d9d4ef82d0804ee08b44"
+          },
+          {
+            "source": "f13cf3f49947a730a2220c290956809b10db33c0",
+            "projected": "cc7c478000c23905736b28023468e235f9f449f6"
+          },
+          {
+            "source": "98d035405caaab36131bfb8837aa51f61b5eb73f",
+            "projected": "a39af09728a0d0c69f3c185509d91f06e10d22ac"
+          }
+        ]
+      },
+      "th14mp": {
+        "head": "768fa99706f490fc10b2b22ce3451e1582911294",
+        "ref": "refs/heads/port-history/th14mp",
+        "initialAncestor": true,
+        "latestAncestor": true,
+        "treeMatches": true,
+        "mapping": [
+          {
+            "source": "af2eeefe5a5cac47055102053456a2cb73127fce",
+            "projected": "b8a14e8989e7d6a7c2f7284d6264a4ce7aa79628"
+          },
+          {
+            "source": "f76c801bece8e2049f5fa863ad16413e23818ede",
+            "projected": "d15d234a43f44ce81e6414b751fba2266410b892"
+          },
+          {
+            "source": "62189b7ebd5e359f4f00b61960fa14ff5fd89602",
+            "projected": "f4293b19842b0bb52caad232df31cd66a7326dd9"
+          },
+          {
+            "source": "ca3ce7b65e7c5956b365447ffe88076258d1b8e4",
+            "projected": "d96f19add96ccdc34067c5e889ee27285eadc685"
+          },
+          {
+            "source": "0fe7bf7300ed3e326bb25a7ba66cbacbf1686867",
+            "projected": "02522940f7231305cab4906c655cd18b2bbc0db6"
+          },
+          {
+            "source": "362fd6974b5b227c698341ea4fad341dd53df61a",
+            "projected": "ccf9ffbd63f1f2fc2b96eba0b0033f0e21e7a899"
+          },
+          {
+            "source": "7f5b7638dd650cb9266ee5cb9dfdf9fe7fa201de",
+            "projected": "4a740363319a0fc5057bab850ab4dbfb5b44cc51"
+          },
+          {
+            "source": "f851cf3e08a72360c8c08a0157977c1ea7e34c58",
+            "projected": "8166ac2d47fdf4ffe033684d4f2ec8280a24cdc4"
+          },
+          {
+            "source": "209b7898afe4905dce14ceb8695343172c87cb22",
+            "projected": "f00c85ccce9c26d2a4ba0113971db31c57647f37"
+          },
+          {
+            "source": "139be05e3bde88901db6846670bd5d6875296d9a",
+            "projected": "cd5521c665d2c33c860a5f557ca4c4347d33540d"
+          },
+          {
+            "source": "ace94d0e219856494141a45559ef570e1a22f2a0",
+            "projected": "192726ac9c503a0b62868bc19b657f327d8f390f"
+          }
+        ]
+      }
+    },
+    "mergeBases": [
+      "a39af09728a0d0c69f3c185509d91f06e10d22ac"
+    ],
+    "aheadBehind": "0\t13"
+  },
+  "builds": {
+    "normal": {
+      "wasmSha256": "13dedcb8c4f2fcbe7051a22865f13c9d68b560ed282499ca6177b3bd7b64c5b3",
+      "loaderSha256": "61b0b9749a01cb3e0a41c4f43bc01d6e3a9ab2ac8a2908eec8c11abf52d4212b",
+      "nativeSourceSha256": "1f82d597bc8febc0e8a66a0ffe0c5ff9c2958a4e2b757350890c713d1fce552b",
+      "nativeCodeRecompiled": false,
+      "previousCompiledUnits": 153,
+      "allOtherSourceAndCommonBindingsMatch": true,
+      "compiledObjectReceiptUnchanged": true,
+      "before": {
+        "schema": "th14/launch-suspension/1",
+        "passed": false,
+        "variant": "normal",
+        "sourceSha256": "e848217e8848547a0f68ef40aadffa9c8a953d835a39fc221f698661de8ccff2",
+        "actualLaunchFunction": true,
+        "actualAudioHelper": true,
+        "actualAsyncQueue": true,
+        "controlledNativeLoopAndAudio": true,
+        "actualBrowserHiddenAccepted": false,
+        "completeGame": false,
+        "rows": [
+          {
+            "name": "visible-running",
+            "queued": false,
+            "passed": true,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "resume",
+              "start"
+            ]
+          },
+          {
+            "name": "visible-pending",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start",
+              "resume"
+            ]
+          },
+          {
+            "name": "visible-rejected",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hidden-running",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hidden-pending",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hide-in-initialize",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hide-in-open-room",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start",
+              "resume"
+            ]
+          },
+          {
+            "name": "hide-before-resume-settles",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "visible-running",
+            "queued": true,
+            "passed": true,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "resume",
+              "start"
+            ]
+          },
+          {
+            "name": "visible-pending",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start",
+              "resume"
+            ]
+          },
+          {
+            "name": "visible-rejected",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hidden-running",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hidden-pending",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hide-in-initialize",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hide-in-open-room",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start",
+              "resume"
+            ]
+          },
+          {
+            "name": "hide-before-resume-settles",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          }
+        ]
+      },
+      "checks": {
+        "launch": {
+          "schema": "th14/launch-suspension/1",
+          "passed": true,
+          "variant": "normal",
+          "sourceSha256": "7fdedbb90a7831fb3fc1d7ec2f4a67889b5341c6a854f85f638db6d8b12a9a4a",
+          "actualLaunchFunction": true,
+          "actualAudioHelper": true,
+          "actualAsyncQueue": true,
+          "controlledNativeLoopAndAudio": true,
+          "actualBrowserHiddenAccepted": false,
+          "completeGame": false,
+          "rows": [
+            {
+              "name": "visible-running",
+              "queued": false,
+              "passed": true,
+              "paused": false,
+              "expectedPaused": false,
+              "beforeSettlePaused": false,
+              "calls": [
+                "start",
+                "pause",
+                "resume"
+              ]
+            },
+            {
+              "name": "visible-pending",
+              "queued": false,
+              "passed": true,
+              "paused": false,
+              "expectedPaused": false,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause",
+                "resume"
+              ]
+            },
+            {
+              "name": "visible-rejected",
+              "queued": false,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hidden-running",
+              "queued": false,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hidden-pending",
+              "queued": false,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hide-in-initialize",
+              "queued": false,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hide-in-open-room",
+              "queued": false,
+              "passed": true,
+              "paused": false,
+              "expectedPaused": false,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause",
+                "resume"
+              ]
+            },
+            {
+              "name": "hide-before-resume-settles",
+              "queued": false,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "visible-running",
+              "queued": true,
+              "passed": true,
+              "paused": false,
+              "expectedPaused": false,
+              "beforeSettlePaused": false,
+              "calls": [
+                "start",
+                "pause",
+                "resume"
+              ]
+            },
+            {
+              "name": "visible-pending",
+              "queued": true,
+              "passed": true,
+              "paused": false,
+              "expectedPaused": false,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause",
+                "resume"
+              ]
+            },
+            {
+              "name": "visible-rejected",
+              "queued": true,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hidden-running",
+              "queued": true,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hidden-pending",
+              "queued": true,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hide-in-initialize",
+              "queued": true,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hide-in-open-room",
+              "queued": true,
+              "passed": true,
+              "paused": false,
+              "expectedPaused": false,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause",
+                "resume"
+              ]
+            },
+            {
+              "name": "hide-before-resume-settles",
+              "queued": true,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            }
+          ]
+        },
+        "audio": {
+          "schema": "th14/audio-resume-race-check/1",
+          "hostSha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+          "shellSha256": "7fdedbb90a7831fb3fc1d7ec2f4a67889b5341c6a854f85f638db6d8b12a9a4a",
+          "cases": [
+            {
+              "name": "running context ordinary resume",
+              "passed": true
+            },
+            {
+              "name": "suspend then successful reconnect",
+              "passed": true
+            },
+            {
+              "name": "new pause cancels pending resume",
+              "passed": true
+            },
+            {
+              "name": "repeated pause still cancels pending resume",
+              "passed": true
+            },
+            {
+              "name": "foreground lost while awaiting context",
+              "passed": true
+            },
+            {
+              "name": "resume rejection preserves suspended loop",
+              "passed": true
+            },
+            {
+              "name": "reconnect failure preserves suspended loop",
+              "passed": true
+            },
+            {
+              "name": "silent no-context control remains resumable",
+              "passed": true
+            },
+            {
+              "name": "detached node without context remains paused",
+              "passed": true
+            },
+            {
+              "name": "only newest concurrent resume commits",
+              "passed": true
+            },
+            {
+              "name": "independent runtime cancellation stays independent",
+              "passed": true
+            },
+            {
+              "name": "actual shell newer viewer pause wins",
+              "passed": true
+            },
+            {
+              "name": "actual shell denied resume does not unpause",
+              "passed": true
+            },
+            {
+              "name": "actual shell hidden document stays paused",
+              "passed": true
+            },
+            {
+              "name": "actual shell normal viewer resume works",
+              "passed": true
+            },
+            {
+              "name": "actual shell stop cancels pending viewer resume",
+              "passed": true
+            },
+            {
+              "name": "actual viewer foreground resume cannot override newer pause command",
+              "passed": true
+            }
+          ],
+          "passed": 17,
+          "failed": 0,
+          "realBrowserAudioAccepted": false,
+          "audibleOutput": false,
+          "completeGame": false
+        },
+        "lifecycle": {
+          "passed": true,
+          "rows": [
+            {
+              "name": "ordinary-departure",
+              "observations": [
+                true
+              ],
+              "expected": [
+                true
+              ],
+              "passed": true
+            },
+            {
+              "name": "cache-entry",
+              "observations": [
+                false
+              ],
+              "expected": [
+                false
+              ],
+              "passed": true
+            },
+            {
+              "name": "cache-return-and-departure",
+              "observations": [
+                false,
+                false,
+                true
+              ],
+              "expected": [
+                false,
+                false,
+                true
+              ],
+              "passed": true
+            },
+            {
+              "name": "two-cache-returns-and-departure",
+              "observations": [
+                false,
+                false,
+                false,
+                false,
+                true
+              ],
+              "expected": [
+                false,
+                false,
+                false,
+                false,
+                true
+              ],
+              "passed": true
+            },
+            {
+              "name": "ordinary-departure-is-terminal",
+              "observations": [
+                true,
+                true
+              ],
+              "expected": [
+                true,
+                true
+              ],
+              "passed": true
+            },
+            {
+              "name": "unspecified-persisted",
+              "observations": [
+                true
+              ],
+              "expected": [
+                true
+              ],
+              "passed": true
+            }
+          ],
+          "sourceSha256": "7fdedbb90a7831fb3fc1d7ec2f4a67889b5341c6a854f85f638db6d8b12a9a4a",
+          "actualCompleteShellEvaluated": true,
+          "moduleFactoryIntentionallyPending": false,
+          "moduleLoadIntentionallyPending": true,
+          "eventTargetFixture": true,
+          "actualBrowserHiddenAccepted": false,
+          "actualBrowserBfcacheAccepted": false,
+          "completeGame": false
+        },
+        "resource": {
+          "passed": true,
+          "cases": 14,
+          "failedCases": 0,
+          "rows": [
+            {
+              "name": "install-already-aborted",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 0,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": []
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "install-abort-after-fetch",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 1,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": [
+                  true
+                ]
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "install-abort-after-body",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 1,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": [
+                  true
+                ]
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "install-abort-between-resources",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 1,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [
+                  "/fonts/test0.bin"
+                ],
+                "signals": [
+                  true
+                ]
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "compressed-abort-during-body",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 1,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": [
+                  true
+                ]
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "install-completes",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 2,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [
+                  "/fonts/test0.bin",
+                  "/fonts/test1.bin"
+                ],
+                "signals": [
+                  true,
+                  true
+                ]
+              },
+              "error": null
+            },
+            {
+              "name": "compressed-completes",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 1,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [
+                  "/fonts/font0.bin"
+                ],
+                "signals": [
+                  true
+                ]
+              },
+              "error": null
+            },
+            {
+              "name": "mount-aborted-before-parent",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 0,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": []
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "mount-abort-after-parent",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 0,
+                "parents": 1,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": []
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "legacy-abort-after-parent",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 0,
+                "parents": 1,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": []
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "mount-abort-after-adoption",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 0,
+                "parents": 1,
+                "malloc": 1,
+                "free": 0,
+                "adopt": 1,
+                "writes": [],
+                "signals": []
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "mount-abort-during-manifest-body",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 1,
+                "parents": 1,
+                "malloc": 1,
+                "free": 0,
+                "adopt": 1,
+                "writes": [],
+                "signals": [
+                  true
+                ]
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "mount-abort-during-font-fetch",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 2,
+                "parents": 1,
+                "malloc": 1,
+                "free": 0,
+                "adopt": 1,
+                "writes": [],
+                "signals": [
+                  true,
+                  true
+                ]
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "mount-completes",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 2,
+                "parents": 1,
+                "malloc": 1,
+                "free": 0,
+                "adopt": 1,
+                "writes": [
+                  "/fonts/test0.bin"
+                ],
+                "signals": [
+                  true,
+                  true
+                ]
+              },
+              "error": null
+            }
+          ],
+          "sourceSha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+          "actualHostModule": true,
+          "syntheticAssets": true,
+          "fetchFilesystemAndNativeOwnershipBoundariesControlled": true,
+          "actualBrowserCancelAccepted": false,
+          "completeGame": false
+        }
+      },
+      "generation": "fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1",
+      "runtimeFiles": 34
+    },
+    "mp": {
+      "wasmSha256": "82e7a35416a446262eead30488bfb3acb407c72ead0945f2d68e28e84568795e",
+      "loaderSha256": "142891ae1ffedae729b63ea0b44252c6ac4909413f9c3ffbc67f6bb36a29582e",
+      "nativeSourceSha256": "cfb4767a790ab1d5c90c89f59c4b2bfba1558dc5371fa50688a7c361427fcebf",
+      "nativeCodeRecompiled": false,
+      "previousCompiledUnits": 163,
+      "allOtherSourceAndCommonBindingsMatch": true,
+      "compiledObjectReceiptUnchanged": true,
+      "before": {
+        "schema": "th14/launch-suspension/1",
+        "passed": false,
+        "variant": "mp",
+        "sourceSha256": "769da48990aab2a0916e664deee9e059ecdf99aa17f4b15d8fcb179a83834393",
+        "actualLaunchFunction": true,
+        "actualAudioHelper": true,
+        "actualAsyncQueue": true,
+        "controlledNativeLoopAndAudio": true,
+        "actualBrowserHiddenAccepted": false,
+        "completeGame": false,
+        "rows": [
+          {
+            "name": "visible-running",
+            "queued": false,
+            "passed": true,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "resume",
+              "start"
+            ]
+          },
+          {
+            "name": "visible-pending",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start",
+              "resume"
+            ]
+          },
+          {
+            "name": "visible-rejected",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hidden-running",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hidden-pending",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hide-in-initialize",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hide-in-open-room",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hide-before-resume-settles",
+            "queued": false,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "visible-running",
+            "queued": true,
+            "passed": true,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "resume",
+              "start"
+            ]
+          },
+          {
+            "name": "visible-pending",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": false,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start",
+              "resume"
+            ]
+          },
+          {
+            "name": "visible-rejected",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hidden-running",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hidden-pending",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hide-in-initialize",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hide-in-open-room",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          },
+          {
+            "name": "hide-before-resume-settles",
+            "queued": true,
+            "passed": false,
+            "paused": false,
+            "expectedPaused": true,
+            "beforeSettlePaused": false,
+            "calls": [
+              "pause",
+              "start"
+            ]
+          }
+        ]
+      },
+      "checks": {
+        "launch": {
+          "schema": "th14/launch-suspension/1",
+          "passed": true,
+          "variant": "mp",
+          "sourceSha256": "43241119d859bd19c854fd47ca05a4426f05d8f8a84bfb61a9773b2c461a6977",
+          "actualLaunchFunction": true,
+          "actualAudioHelper": true,
+          "actualAsyncQueue": true,
+          "controlledNativeLoopAndAudio": true,
+          "actualBrowserHiddenAccepted": false,
+          "completeGame": false,
+          "rows": [
+            {
+              "name": "visible-running",
+              "queued": false,
+              "passed": true,
+              "paused": false,
+              "expectedPaused": false,
+              "beforeSettlePaused": false,
+              "calls": [
+                "start",
+                "pause",
+                "resume"
+              ]
+            },
+            {
+              "name": "visible-pending",
+              "queued": false,
+              "passed": true,
+              "paused": false,
+              "expectedPaused": false,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause",
+                "resume"
+              ]
+            },
+            {
+              "name": "visible-rejected",
+              "queued": false,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hidden-running",
+              "queued": false,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hidden-pending",
+              "queued": false,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hide-in-initialize",
+              "queued": false,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hide-in-open-room",
+              "queued": false,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hide-before-resume-settles",
+              "queued": false,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "visible-running",
+              "queued": true,
+              "passed": true,
+              "paused": false,
+              "expectedPaused": false,
+              "beforeSettlePaused": false,
+              "calls": [
+                "start",
+                "pause",
+                "resume"
+              ]
+            },
+            {
+              "name": "visible-pending",
+              "queued": true,
+              "passed": true,
+              "paused": false,
+              "expectedPaused": false,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause",
+                "resume"
+              ]
+            },
+            {
+              "name": "visible-rejected",
+              "queued": true,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hidden-running",
+              "queued": true,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hidden-pending",
+              "queued": true,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hide-in-initialize",
+              "queued": true,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hide-in-open-room",
+              "queued": true,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            },
+            {
+              "name": "hide-before-resume-settles",
+              "queued": true,
+              "passed": true,
+              "paused": true,
+              "expectedPaused": true,
+              "beforeSettlePaused": true,
+              "calls": [
+                "start",
+                "pause"
+              ]
+            }
+          ]
+        },
+        "audio": {
+          "schema": "th14/audio-resume-race-check/1",
+          "hostSha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+          "shellSha256": "43241119d859bd19c854fd47ca05a4426f05d8f8a84bfb61a9773b2c461a6977",
+          "cases": [
+            {
+              "name": "running context ordinary resume",
+              "passed": true
+            },
+            {
+              "name": "suspend then successful reconnect",
+              "passed": true
+            },
+            {
+              "name": "new pause cancels pending resume",
+              "passed": true
+            },
+            {
+              "name": "repeated pause still cancels pending resume",
+              "passed": true
+            },
+            {
+              "name": "foreground lost while awaiting context",
+              "passed": true
+            },
+            {
+              "name": "resume rejection preserves suspended loop",
+              "passed": true
+            },
+            {
+              "name": "reconnect failure preserves suspended loop",
+              "passed": true
+            },
+            {
+              "name": "silent no-context control remains resumable",
+              "passed": true
+            },
+            {
+              "name": "detached node without context remains paused",
+              "passed": true
+            },
+            {
+              "name": "only newest concurrent resume commits",
+              "passed": true
+            },
+            {
+              "name": "independent runtime cancellation stays independent",
+              "passed": true
+            },
+            {
+              "name": "actual shell newer viewer pause wins",
+              "passed": true
+            },
+            {
+              "name": "actual shell denied resume does not unpause",
+              "passed": true
+            },
+            {
+              "name": "actual shell hidden document stays paused",
+              "passed": true
+            },
+            {
+              "name": "actual shell normal viewer resume works",
+              "passed": true
+            },
+            {
+              "name": "actual shell stop cancels pending viewer resume",
+              "passed": true
+            },
+            {
+              "name": "actual viewer foreground resume cannot override newer pause command",
+              "passed": true
+            }
+          ],
+          "passed": 17,
+          "failed": 0,
+          "realBrowserAudioAccepted": false,
+          "audibleOutput": false,
+          "completeGame": false
+        },
+        "lifecycle": {
+          "passed": true,
+          "rows": [
+            {
+              "name": "ordinary-departure",
+              "observations": [
+                true
+              ],
+              "expected": [
+                true
+              ],
+              "passed": true
+            },
+            {
+              "name": "cache-entry",
+              "observations": [
+                false
+              ],
+              "expected": [
+                false
+              ],
+              "passed": true
+            },
+            {
+              "name": "cache-return-and-departure",
+              "observations": [
+                false,
+                false,
+                true
+              ],
+              "expected": [
+                false,
+                false,
+                true
+              ],
+              "passed": true
+            },
+            {
+              "name": "two-cache-returns-and-departure",
+              "observations": [
+                false,
+                false,
+                false,
+                false,
+                true
+              ],
+              "expected": [
+                false,
+                false,
+                false,
+                false,
+                true
+              ],
+              "passed": true
+            },
+            {
+              "name": "ordinary-departure-is-terminal",
+              "observations": [
+                true,
+                true
+              ],
+              "expected": [
+                true,
+                true
+              ],
+              "passed": true
+            },
+            {
+              "name": "unspecified-persisted",
+              "observations": [
+                true
+              ],
+              "expected": [
+                true
+              ],
+              "passed": true
+            }
+          ],
+          "sourceSha256": "43241119d859bd19c854fd47ca05a4426f05d8f8a84bfb61a9773b2c461a6977",
+          "actualCompleteShellEvaluated": true,
+          "moduleFactoryIntentionallyPending": false,
+          "moduleLoadIntentionallyPending": true,
+          "eventTargetFixture": true,
+          "actualBrowserHiddenAccepted": false,
+          "actualBrowserBfcacheAccepted": false,
+          "completeGame": false
+        },
+        "resource": {
+          "passed": true,
+          "cases": 14,
+          "failedCases": 0,
+          "rows": [
+            {
+              "name": "install-already-aborted",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 0,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": []
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "install-abort-after-fetch",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 1,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": [
+                  true
+                ]
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "install-abort-after-body",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 1,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": [
+                  true
+                ]
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "install-abort-between-resources",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 1,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [
+                  "/fonts/test0.bin"
+                ],
+                "signals": [
+                  true
+                ]
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "compressed-abort-during-body",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 1,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": [
+                  true
+                ]
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "install-completes",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 2,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [
+                  "/fonts/test0.bin",
+                  "/fonts/test1.bin"
+                ],
+                "signals": [
+                  true,
+                  true
+                ]
+              },
+              "error": null
+            },
+            {
+              "name": "compressed-completes",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 1,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [
+                  "/fonts/font0.bin"
+                ],
+                "signals": [
+                  true
+                ]
+              },
+              "error": null
+            },
+            {
+              "name": "mount-aborted-before-parent",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 0,
+                "parents": 0,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": []
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "mount-abort-after-parent",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 0,
+                "parents": 1,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": []
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "legacy-abort-after-parent",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 0,
+                "parents": 1,
+                "malloc": 0,
+                "free": 0,
+                "adopt": 0,
+                "writes": [],
+                "signals": []
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "mount-abort-after-adoption",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 0,
+                "parents": 1,
+                "malloc": 1,
+                "free": 0,
+                "adopt": 1,
+                "writes": [],
+                "signals": []
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "mount-abort-during-manifest-body",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 1,
+                "parents": 1,
+                "malloc": 1,
+                "free": 0,
+                "adopt": 1,
+                "writes": [],
+                "signals": [
+                  true
+                ]
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "mount-abort-during-font-fetch",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 2,
+                "parents": 1,
+                "malloc": 1,
+                "free": 0,
+                "adopt": 1,
+                "writes": [],
+                "signals": [
+                  true,
+                  true
+                ]
+              },
+              "error": {
+                "name": "AbortError",
+                "message": "This operation was aborted"
+              }
+            },
+            {
+              "name": "mount-completes",
+              "passed": true,
+              "failures": [],
+              "calls": {
+                "fetch": 2,
+                "parents": 1,
+                "malloc": 1,
+                "free": 0,
+                "adopt": 1,
+                "writes": [
+                  "/fonts/test0.bin"
+                ],
+                "signals": [
+                  true,
+                  true
+                ]
+              },
+              "error": null
+            }
+          ],
+          "sourceSha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+          "actualHostModule": true,
+          "syntheticAssets": true,
+          "fetchFilesystemAndNativeOwnershipBoundariesControlled": true,
+          "actualBrowserCancelAccepted": false,
+          "completeGame": false
+        }
+      },
+      "generation": "f80f694d13df4326c171c102b5eff9443a5ba4e083bdfbd8536ff52fba4fa8b8",
+      "runtimeFiles": 34
+    }
+  },
+  "productionChanged": false,
+  "previewActivated": false,
+  "actualBrowserHiddenAccepted": false,
+  "actualMultiplayerMatchAccepted": false,
+  "audibleOutput": false,
+  "completeGame": false,
+  "productionGenerations": [
+    "12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8"
+  ],
+  "productionService": [
+    "ActiveState=active",
+    "MainPID=443019"
+  ],
+  "candidatePackage": {
+    "files": 1931,
+    "bytes": 3880601545,
+    "serverBuildVerifierPassed": true,
+    "copyOnWritePackaging": true,
+    "originalAssetsPublished": false
+  },
+  "upstreamRefresh": {
+    "upstream": "886952931e30e672253ea3abc8464d74ad662531",
+    "originalSource": "74a758c850c4c5d377172df4e470a8b36b53c4ca",
+    "bothTH14SourceTreesUnchanged": true,
+    "onlyMergeConflict": "docs/INDEX.md",
+    "resolution": "regenerated from combined documentation",
+    "commonTests": {
+      "passed": 5,
+      "lastTestLogSha256": "6027dc3856c9f51c53c9aea9805d7713521a10acee79a96c1ebcf5379afe960c",
+      "names": [
+        "adonis-timing",
+        "spectator-stage",
+        "spectator-stage-publisher-boundary",
+        "netplay-base",
+        "simulation-frontier"
+      ]
+    },
+    "mergedServerIsolation": {
+      "passed": true,
+      "cases": 12,
+      "sourceSha256": "8364a800012b3876be50c7f095c463515aa3c6bb3700ef3fd5bc55a3a7d59b0e"
+    },
+    "previousBuildCommonBindingMismatches": {
+      "normal": [],
+      "mp": [
+        "src/netplay/NetplayCore.cpp",
+        "include/eagler/netplay/NetplayCore.hpp"
+      ]
+    },
+    "newMultiplayerCoreBuilt": false,
+    "actualMultiplayerOrSpectatorBrowserAccepted": false,
+    "productionChanged": false,
+    "previewActivated": false
+  }
+}

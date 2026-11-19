@@ -1,0 +1,193 @@
+{
+  "schema": "th14/current-spell-score-persistence/1",
+  "passed": true,
+  "acceptanceStandard": "observable-behavior-alignment",
+  "writerReportSha256": "139c8c239f68f5408acb93e576a3ec0757b8fda88fba0f31d9f295b4d71ea938",
+  "moduleSha256": "db75647bb384a0d25f31c5fd026bba2186756924f8b3b3808ad34512d72d4b31",
+  "sourceFilesUnchanged": true,
+  "freshReadersNeverStartedGameplay": true,
+  "freshReadersRetired": true,
+  "decodedBytesPerFile": 149076,
+  "changedSpellRecords": [
+    {
+      "selection": 1,
+      "spell": 3,
+      "before": {
+        "ordinaryCaptures": 1,
+        "practiceCaptures": 0,
+        "ordinaryAttempts": 1,
+        "practiceAttempts": 0
+      },
+      "after": {
+        "ordinaryCaptures": 1,
+        "practiceCaptures": 0,
+        "ordinaryAttempts": 1,
+        "practiceAttempts": 2
+      }
+    },
+    {
+      "selection": 6,
+      "spell": 3,
+      "before": {
+        "ordinaryCaptures": 1,
+        "practiceCaptures": 0,
+        "ordinaryAttempts": 1,
+        "practiceAttempts": 0
+      },
+      "after": {
+        "ordinaryCaptures": 1,
+        "practiceCaptures": 0,
+        "ordinaryAttempts": 1,
+        "practiceAttempts": 2
+      }
+    }
+  ],
+  "all840OrdinaryCapturesAndAttemptsPreserved": true,
+  "all840PracticeCapturesPreserved": true,
+  "all840SpellHighScoresPreserved": true,
+  "unchangedSpellRecordCounters": 838,
+  "playCountDelta": 3,
+  "playTimeDelta": 711,
+  "actualWriterPlayerCallbacks": 711,
+  "allSixLoadoutClearAndPracticeUnlockFieldsPreserved": true,
+  "otherFiveLoadoutsWholeRecordsUnchanged": [
+    0,
+    2,
+    3,
+    4,
+    5
+  ],
+  "settingsWholeRecordUnchanged": true,
+  "decodedChangedBytes": 8,
+  "everyChangedByteWithinDeclaredCountersAndChecksums": true,
+  "changedBytes": [
+    {
+      "selection": 1,
+      "offsetWithinRecord": "0x4",
+      "before": 153,
+      "after": 103
+    },
+    {
+      "selection": 1,
+      "offsetWithinRecord": "0x5",
+      "before": 175,
+      "after": 176
+    },
+    {
+      "selection": 1,
+      "offsetWithinRecord": "0x7b8",
+      "before": 1,
+      "after": 4
+    },
+    {
+      "selection": 1,
+      "offsetWithinRecord": "0x7bc",
+      "before": 35,
+      "after": 234
+    },
+    {
+      "selection": 1,
+      "offsetWithinRecord": "0x7bd",
+      "before": 219,
+      "after": 221
+    },
+    {
+      "selection": 1,
+      "offsetWithinRecord": "0xbd8",
+      "before": 0,
+      "after": 2
+    },
+    {
+      "selection": 6,
+      "offsetWithinRecord": "0x4",
+      "before": 140,
+      "after": 142
+    },
+    {
+      "selection": 6,
+      "offsetWithinRecord": "0xbd8",
+      "before": 0,
+      "after": 2
+    }
+  ],
+  "nativeCodecs": {
+    "before": {
+      "passed": true,
+      "actualRetailDecryptAndLzss": true,
+      "originalInstructionBytesPatched": 0,
+      "allocatorCopyAndFreeDeclared": true,
+      "encodedBytes": 22375,
+      "decodedBytes": 149076,
+      "allDecodedBytesEqualToFreshApplicationLoadedRecords": true,
+      "dictionaryZeroStartup": true,
+      "warmNativeDictionaryAccepted": false,
+      "originalWholeGameUiSaveAccepted": false,
+      "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+      "encodedSha256": "f1d54c86327feb3ea10195386a8b545c90a8ae3bc9c899b723c3ece10de92506",
+      "decodedSha256": "cc4afe69558ff92c08c8628048af575edb3dffc0e164b2a00e1c3e2ae8e0b50d",
+      "toolSha256": "bcf58ea51de4b45dc9a75062dec331ddd22db898fd08079c1e8291a10c48ec49",
+      "completeGame": false
+    },
+    "after": {
+      "passed": true,
+      "actualRetailDecryptAndLzss": true,
+      "originalInstructionBytesPatched": 0,
+      "allocatorCopyAndFreeDeclared": true,
+      "encodedBytes": 22377,
+      "decodedBytes": 149076,
+      "allDecodedBytesEqualToFreshApplicationLoadedRecords": true,
+      "dictionaryZeroStartup": true,
+      "warmNativeDictionaryAccepted": false,
+      "originalWholeGameUiSaveAccepted": false,
+      "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+      "encodedSha256": "f76355a80ef4d40cbb6479f44dc9d7c05371fa977a92c0291c4dbbc52dc436a7",
+      "decodedSha256": "2424a5f4cbde84ac3067688746a23801b716865c5c97024f2d064bed4fb5ae3b",
+      "toolSha256": "bcf58ea51de4b45dc9a75062dec331ddd22db898fd08079c1e8291a10c48ec49",
+      "completeGame": false
+    }
+  },
+  "readers": {
+    "before": {
+      "key": "before",
+      "finished": true,
+      "exception": null,
+      "errors": [],
+      "retired": true,
+      "updates": 412,
+      "sourceSha256": "f1d54c86327feb3ea10195386a8b545c90a8ae3bc9c899b723c3ece10de92506",
+      "loadedSha256": "cc4afe69558ff92c08c8628048af575edb3dffc0e164b2a00e1c3e2ae8e0b50d",
+      "loadedBytes": 149076,
+      "moduleSha256": "db75647bb384a0d25f31c5fd026bba2186756924f8b3b3808ad34512d72d4b31",
+      "noGameplayStarted": true,
+      "noLiveStateWrites": true,
+      "silentMemoryAudio": true,
+      "graphicsRecordingOnly": true,
+      "browserAccepted": false,
+      "completeGame": false
+    },
+    "after": {
+      "key": "after",
+      "finished": true,
+      "exception": null,
+      "errors": [],
+      "retired": true,
+      "updates": 408,
+      "sourceSha256": "f76355a80ef4d40cbb6479f44dc9d7c05371fa977a92c0291c4dbbc52dc436a7",
+      "loadedSha256": "2424a5f4cbde84ac3067688746a23801b716865c5c97024f2d064bed4fb5ae3b",
+      "loadedBytes": 149076,
+      "moduleSha256": "db75647bb384a0d25f31c5fd026bba2186756924f8b3b3808ad34512d72d4b31",
+      "noGameplayStarted": true,
+      "noLiveStateWrites": true,
+      "silentMemoryAudio": true,
+      "graphicsRecordingOnly": true,
+      "browserAccepted": false,
+      "completeGame": false
+    }
+  },
+  "silentMemoryAudio": true,
+  "graphicsRecordingOnly": true,
+  "originalWholeSpellFlowAccepted": false,
+  "browserPersistenceAccepted": false,
+  "productionChanged": false,
+  "completeGame": false
+}

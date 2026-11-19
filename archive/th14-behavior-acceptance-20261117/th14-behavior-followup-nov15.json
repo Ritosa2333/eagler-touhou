@@ -1,0 +1,187 @@
+{
+  "schema": "th14/behavior-followup-nov15/1",
+  "standard": "observable behavior alignment",
+  "generation": "ea4e3257b8d4baa316594249f522cf8897c0d479bbf23e74db5bfde937c00a49",
+  "musicOptionRecall": {
+    "schema": "th14/music-option-recall/1",
+    "passed": true,
+    "scope": "actual browser whole-page reload music selection and zero-volume retention",
+    "generation": "ea4e3257b8d4baa316594249f522cf8897c0d479bbf23e74db5bfde937c00a49",
+    "cases": [
+      {
+        "mode": "stream",
+        "visibleAfterWholePageReload": "ogg(流式解码，避免切歌时卡顿)",
+        "musicVolume": 0,
+        "sfxVolume": 0,
+        "axSha256": "e515b91b34af7b4c574c19342873e90aea3ab736dc48fd0c712b98ca51687dc0"
+      },
+      {
+        "mode": "none",
+        "visibleAfterWholePageReload": "无",
+        "musicVolume": 0,
+        "sfxVolume": 0,
+        "axSha256": "ed321624ae354a3e83c35e8e2ce8effbf0ad1c71355012d61a770c0454a6dcad"
+      },
+      {
+        "mode": "full",
+        "visibleAfterWholePageReload": "ogg(全量解码，避免音频卡顿)",
+        "musicVolume": 0,
+        "sfxVolume": 0,
+        "axSha256": "0d75806cbb58dfec9f11cacd1756bed812f5f938458172b107b99f5b551edafd"
+      }
+    ],
+    "explicitNoneRemainsNone": true,
+    "restoredMode": "ogg-stream",
+    "gameLaunchedDuringThisCheck": false,
+    "audibleOutput": false,
+    "actualDecodeOrMixerAcceptedByThisCheck": false,
+    "previousTransientNoneLabelReproduced": false,
+    "transientNoneCauseProven": false,
+    "sourceChanged": false,
+    "productionChanged": false,
+    "newGameAssetCopies": 0,
+    "completeGame": false
+  },
+  "stage56Visual": {
+    "schema": "th14/stage56-visual/1",
+    "generation": "ea4e3257b8d4baa316594249f522cf8897c0d479bbf23e74db5bfde937c00a49",
+    "scope": "Reimu B Normal stages 5 and 6 graphics point checks, with normal viewer seeking after natural tail ended",
+    "inputBytes": 110022,
+    "inputSha256": "c48412a95f0fe9f685d97574e8ab0655d41e44ff9c41fda7bf788589b1b29c74",
+    "naturalTailFrames": 47252,
+    "naturalTailHudScore": 801525760,
+    "naturalTailGraze": 17551,
+    "naturalTailEndedBeforeSeeking": true,
+    "visualPointChecks": [
+      {
+        "effect": "mirror spell transition and settled rendering",
+        "frame": 12892,
+        "proof": "mirror-active",
+        "txtSha256": "d34837b19b426fa95149a0bfc32883cb73942c09d8695f22d63ed60315364f82",
+        "pngSha256": "dc35b9dfb499fc153c5c1a3135089c6e90a372e9fbef3dc40a9dfd21a0c16b65"
+      },
+      {
+        "effect": "vertical inversion active",
+        "frame": 15206,
+        "proof": "vertical-active",
+        "txtSha256": "089257f2ce25ccaf10a7763ddb8e3f967a4f9af6abb4eb9f4c5f91b38aae0b16",
+        "pngSha256": "70e877c6963c16a80f12290bfb85438b4fe8d24a31914f19de86c2ff86e7e72c"
+      },
+      {
+        "effect": "enlarged bullet rendering",
+        "frame": 33387,
+        "proof": "large-bullets-active",
+        "txtSha256": "4604fcf508bfa19b9f8451ecc9319f95717860824de9569e62aa18d17800c0da",
+        "pngSha256": "f727be0ea894205d9234cdcc212fae17be98b3f12da43fc3a0cb24157f5b42ee"
+      },
+      {
+        "effect": "giant player rendering",
+        "frame": 39546,
+        "proof": "giant-player-active",
+        "txtSha256": "903caab774a0228326292f2a598016d1e87e4f0192f6de8c8788ee21b76c2de1",
+        "pngSha256": "3675a7990cfc177941d780d27cf76186afb8df4893d6fcbfd3b0f562afbd0926"
+      }
+    ],
+    "seekUsedForGraphicsPoints": true,
+    "graphicsScope": "observable effect rendering, upright HUD and no blank playfield at these points; not pixel equality or collision scale verification",
+    "scoreBeforeBytes": 21647,
+    "scoreAfterBytes": 21644,
+    "wholeEncodedEqual": false,
+    "scoreBeforeSha256": "74f740eb3733510b8be32f9fbbf75a96f7098702f57289d7e91c32e41edabd7e",
+    "scoreAfterSha256": "3d7de8afc09600b618711ef71785991b01caa5aafe1ce9b91b50525f594ad090",
+    "decodedBytes": 149076,
+    "allSevenCharacterRecordsEqual": true,
+    "settingsDifferences": [
+      {
+        "offset": 4,
+        "before": 19,
+        "after": 22
+      },
+      {
+        "offset": 48,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 49,
+        "before": 0,
+        "after": 1
+      },
+      {
+        "offset": 50,
+        "before": 0,
+        "after": 1
+      }
+    ],
+    "onlyMusicUnlockAndChecksumChanges": true,
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "practiceToolsEnabled": false,
+    "sourceChanged": false,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "publicBrowserAfterActivationAccepted": false,
+  "completeGame": false,
+  "focusRecovery": {
+    "schema": "th14/focus-recovery/1",
+    "standard": "observable behavior alignment",
+    "generation": "ea4e3257b8d4baa316594249f522cf8897c0d479bbf23e74db5bfde937c00a49",
+    "scope": "actual ordinary Reimu A Normal canvas-to-web-settings focus ownership and recovery; separate synthetic loss controls",
+    "actualBrowser": {
+      "newGameStarted": true,
+      "initialPreparationLostToGameOver": true,
+      "preparationFailureRetained": "preparation-ranking.png",
+      "secondStartPausedImmediately": true,
+      "rightMovementBeforeFocusChange": true,
+      "webSettingsFocusObserved": {
+        "activeTag": "SPAN",
+        "activeLabel": "游戏音乐"
+      },
+      "confirmZDidNotResumeGame": true,
+      "escapeClosedWebPopupOnly": true,
+      "canvasClickRestoredFocus": true,
+      "resumedAndNewLeftMovementThenPaused": true,
+      "directionKeyReleasedBeforeFocusChange": true,
+      "heldKeyAcrossFocusLossAccepted": false,
+      "realTabHiddenAccepted": false,
+      "helperTabObservedOldPageStillVisible": true,
+      "helperTabClosed": true
+    },
+    "componentChecks": {
+      "source": "launcher/tests/react-main/player-keyboard.test.mjs",
+      "sourceHead": "a08ff057e6d367bac81e397ea051f6021dcc2422",
+      "command": "/home/i/.bun/bin/bun run ./node_modules/vitest/vitest.mjs run tests/react-main/player-keyboard.test.mjs -t \"keyboard: (blur|hidden|pagehide) releases\"",
+      "passed": 3,
+      "skipped": 21,
+      "syntheticJsdomNotRealBrowser": true,
+      "initialNodeInvocationRejectedMissingBunRuntime": true,
+      "recoveredUsingExistingBun": true
+    },
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "sourceChanged": false,
+    "productionChanged": false,
+    "completeGame": false,
+    "proofHashes": {
+      "escape-popup-only.png": "8d540e270496e636d344dc82fdf8ed0a7f01123bb1c20d178a67a3e287f45a36",
+      "left-restored-paused.png": "e0d51da08f771ff19a32c7d94e34783d4ccbd1b243c882b6752eab81617e71bd",
+      "left-restored-paused.txt": "4503fb6c83ba4cb0142591568e7048a968ff1ccc87453a89cf599c33e5dd9eb6",
+      "preparation-ranking.png": "4d8bd98e3080411dac8b99ce5c7b860719b7b21b9dcc705189994578b6d60526",
+      "right-paused.png": "26577f38d00212a2a7b439552ca29fb820e14576f70c6dd1b62aacda6a9fb403",
+      "web-settings-focus.png": "4f26870d5e4f7b2ffc482897107de80161618ea1d9ce67a676cc466d8ec15bbc",
+      "web-settings-focus.txt": "0c096a5a6c3b7c44ee0d7ad5da480f932a086a6432b0877b87c151f155a7f318",
+      "web-z-owned.png": "94404e047faf2c1787738aebaaf6a5ccc1b392fe22a2c980727db0e92633e010"
+    },
+    "publicObservation": {
+      "tabId": "57",
+      "url": "https://wth.saop.cc/?game=th14",
+      "inventoryConfirmedTabAndPageTitle": true,
+      "nativeReadTimedOut": true,
+      "documentedScreenshotAlternativeTimedOut": true,
+      "actualPublicGameplayAccepted": false,
+      "productionRestarted": false,
+      "securitySettingsChanged": false
+    }
+  }
+}

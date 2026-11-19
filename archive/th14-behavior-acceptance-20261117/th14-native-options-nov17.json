@@ -1,0 +1,115 @@
+{
+  "generation": "0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c",
+  "wasm": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb",
+  "sourceBindings": {
+    "runtimes/th12/th12_web/cpp/game/TitleOptions.cpp": "4bb79e9dc04e5525d788c70d65092764e5137360fdf7fbf003d77ff2e961fc6a",
+    "runtimes/th12/th12_web/cpp/game/TitleKeys.cpp": "82a837f2dfe486c90470c2d14b30a15cc8da99f88cfac1c13738e69cdda7dfea"
+  },
+  "nativeVolumeInitial": [
+    100,
+    80
+  ],
+  "nativeVolumeChanged": [
+    95,
+    75
+  ],
+  "nativeVolumeAfterPageReload": [
+    95,
+    75
+  ],
+  "nativeVolumeAfterDefault": [
+    100,
+    80
+  ],
+  "bgmObservedBounds": [
+    0,
+    100
+  ],
+  "seObservedBounds": [
+    0,
+    100
+  ],
+  "nativeStepPercent": 5,
+  "controllerDigits": [
+    0,
+    1,
+    2,
+    5
+  ],
+  "cancelOnFirstControllerRowStayedInMenu": true,
+  "controllerQuitCancelReturnedToOptions": true,
+  "firstQuitBeforeReloadFullyObserved": false,
+  "finalNativeQuitCompleted": true,
+  "musicVolume": 0,
+  "sfxVolume": 0,
+  "musicMode": "none",
+  "fullConfigurationBytesCompared": false,
+  "physicalControllerRebindingAccepted": false,
+  "actualHiddenAccepted": false,
+  "actualPublicUiAccepted": false,
+  "sourceChanged": false,
+  "runtimeChanged": false,
+  "completeGame": false,
+  "evidence": [
+    {
+      "file": "after-page-reload.png",
+      "bytes": 297026,
+      "sha256": "33c0eafac66c7665a940de02f8831d69ac4b8e6c0a8d09b499cbcc1b80bb87fe"
+    },
+    {
+      "file": "bgm-lower-boundary.png",
+      "bytes": 293423,
+      "sha256": "be70b4ab38b69dc7a7b3ce38eb773003cc55f665c82100ec5b5f5d67912a9400"
+    },
+    {
+      "file": "bgm-upper-boundary.png",
+      "bytes": 295511,
+      "sha256": "fd1633993e3c9a5a706424fbc792b030135f2451d58cc5bbffe53a1a3797a491"
+    },
+    {
+      "file": "changed-95-75.png",
+      "bytes": 295331,
+      "sha256": "d632d040770aae262a18174f3c525e1f990e28b96be53bb1406d1664d56b3baf"
+    },
+    {
+      "file": "default-restored.png",
+      "bytes": 294186,
+      "sha256": "64a2d44efe14421a1fce67567df8ed2ced7eecafedac948320fdec56bfee3ea3"
+    },
+    {
+      "file": "final-launcher.png",
+      "bytes": 53938,
+      "sha256": "5dda74de69ccea53f9cacf3df1ce4dcd4b736b50cf98c40897aceab32198b15c"
+    },
+    {
+      "file": "initial.png",
+      "bytes": 296433,
+      "sha256": "7313b988b120da53798760d2939a3ad7e4be5b37e978772ca9a7c37e04eeadea"
+    },
+    {
+      "file": "key-config-cancel-on-row.png",
+      "bytes": 297915,
+      "sha256": "a552d0069d39cbd6715d0ba43c5dc84ca3885d95c3521eb92d263784d6833ff4"
+    },
+    {
+      "file": "key-config-return.png",
+      "bytes": 296279,
+      "sha256": "230828d387a3f6d90e8ac5ffa97cb43698eb3d357cea58c4e89b421d706e3465"
+    },
+    {
+      "file": "key-config.png",
+      "bytes": 297975,
+      "sha256": "849e643d73afe0f9fc054f370a9d455807887302b52e6c06065639077545b278"
+    },
+    {
+      "file": "se-lower-boundary.png",
+      "bytes": 295679,
+      "sha256": "0c3cd4d6a3e8bb33fdee635f36fc03c6dcfe344b481259b035d941b9347fc6c4"
+    },
+    {
+      "file": "se-upper-boundary.png",
+      "bytes": 295656,
+      "sha256": "32fb463cb539fc5e8f1977f0a8608cf716abb109c52954b728f383a0950c7463"
+    }
+  ]
+}

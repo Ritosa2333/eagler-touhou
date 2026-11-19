@@ -1,0 +1,359 @@
+{
+  "schema": "th14/statistics-ui/1",
+  "actualWebGL2": true,
+  "site": "http://localhost:8231/?game=th14",
+  "generation": "7a459b6cb44ea023f15551de7afa380dae5e1db0f8fc076692d7deeeea1f29d6",
+  "wasm": "811dc8cb1ffd607f12b7ca23b8dc2b2aee76e5cdc8a0fbca72f7d08c2e542053",
+  "loadout": "Reimu A",
+  "difficulty": "Normal",
+  "bgmVolume": 0,
+  "sfxVolume": 0,
+  "music": "ogg streaming",
+  "practiceControls": {
+    "invulnerabilityVisiblyConfirmed": true,
+    "autoShoot": true,
+    "speed": 3,
+    "dialogueAdvance": "native Control key holds"
+  },
+  "sessionContext": "ordinary menu start with two continues before protective controls; UI-specific controlled sample",
+  "handoffs": [
+    {
+      "fromStage": 1,
+      "toStage": 2,
+      "before": "stage1End",
+      "after": "stage2Entry",
+      "allDisplayedValuesEqual": true,
+      "note": "all sampled fields and next-bonus highlight agree"
+    },
+    {
+      "fromStage": 2,
+      "toStage": 3,
+      "before": "stage2End",
+      "after": "stage3Active",
+      "allDisplayedValuesEqual": false,
+      "note": "total increased naturally from 14 to 15 before the stage-three sample; not an exact boundary capture"
+    },
+    {
+      "fromStage": 3,
+      "toStage": 4,
+      "before": "stage3End",
+      "after": "stage4Entry",
+      "allDisplayedValuesEqual": true,
+      "note": "all sampled fields and next-bonus highlight agree"
+    },
+    {
+      "fromStage": 4,
+      "toStage": 5,
+      "before": "stage4End",
+      "after": "stage5Entry",
+      "allDisplayedValuesEqual": true,
+      "note": "all sampled fields and next-bonus highlight agree"
+    },
+    {
+      "fromStage": 5,
+      "toStage": 6,
+      "before": "stage5End",
+      "after": "stage6Entry",
+      "allDisplayedValuesEqual": true,
+      "note": "all sampled fields and next-bonus highlight agree"
+    }
+  ],
+  "observations": [
+    {
+      "id": "stage1End",
+      "stage": 1,
+      "observedPhase": "Wakasagihime post-battle dialogue",
+      "displayed": {
+        "miss": 6,
+        "bomb": 1,
+        "collectionTiers": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "totalBonus": 5,
+        "extendCount": 0,
+        "highlightIndex": 0
+      },
+      "privateProof": {
+        "path": "dialogue-cycle/publication/stage-ui-before-handoff.jpg",
+        "sha256": "4711ed00ed92cfc77d048366b9d51763017018aee6e6c68f04c5fc364b3fd61d",
+        "bytes": 282188
+      }
+    },
+    {
+      "id": "stage2Entry",
+      "stage": 2,
+      "observedPhase": "stage after Wakasagihime",
+      "displayed": {
+        "miss": 6,
+        "bomb": 1,
+        "collectionTiers": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "totalBonus": 5,
+        "extendCount": 0,
+        "highlightIndex": 0
+      },
+      "privateProof": {
+        "path": "dialogue-cycle/publication/stage-ui-after-handoff.jpg",
+        "sha256": "2a23812c56daff10a878a1a6a867a9fb6a9313797ed21e32e6c2590f34a878b2",
+        "bytes": 264443
+      }
+    },
+    {
+      "id": "stage2End",
+      "stage": 2,
+      "observedPhase": "Sekibanki post-battle dialogue; filename is historical",
+      "displayed": {
+        "miss": 6,
+        "bomb": 1,
+        "collectionTiers": [
+          1,
+          2,
+          0,
+          0,
+          0
+        ],
+        "totalBonus": 14,
+        "extendCount": 0,
+        "highlightIndex": 4
+      },
+      "privateProof": {
+        "path": "stage-statistics-ui/stage3-observation.jpg",
+        "sha256": "24e48d9fb41551d54464faa96ba6bbe04bc968d96a107fd7f44547888553a502",
+        "bytes": 259958
+      }
+    },
+    {
+      "id": "stage3Active",
+      "stage": 3,
+      "observedPhase": "bamboo stage after Sekibanki",
+      "displayed": {
+        "miss": 6,
+        "bomb": 1,
+        "collectionTiers": [
+          1,
+          2,
+          0,
+          0,
+          0
+        ],
+        "totalBonus": 15,
+        "extendCount": 0,
+        "highlightIndex": 0
+      },
+      "privateProof": {
+        "path": "stage-statistics-ui/after-sekibanki.jpg",
+        "sha256": "6d2dc03465f7cc985e6e55648a73a4c186b1df1f9ad478df78a4deeadb39995b",
+        "bytes": 270037
+      }
+    },
+    {
+      "id": "stage3End",
+      "stage": 3,
+      "observedPhase": "Kagerou post-battle dialogue",
+      "displayed": {
+        "miss": 6,
+        "bomb": 1,
+        "collectionTiers": [
+          1,
+          2,
+          1,
+          0,
+          0
+        ],
+        "totalBonus": 23,
+        "extendCount": 1,
+        "highlightIndex": 3
+      },
+      "privateProof": {
+        "path": "stage-statistics-ui/kagerou-ended.jpg",
+        "sha256": "ae4dbc17928c683b942cdbd953f23e547c37f8145a286b6a9a282169c5d2ed91",
+        "bytes": 256276
+      }
+    },
+    {
+      "id": "stage4Entry",
+      "stage": 4,
+      "observedPhase": "sky stage after Kagerou",
+      "displayed": {
+        "miss": 6,
+        "bomb": 1,
+        "collectionTiers": [
+          1,
+          2,
+          1,
+          0,
+          0
+        ],
+        "totalBonus": 23,
+        "extendCount": 1,
+        "highlightIndex": 3
+      },
+      "privateProof": {
+        "path": "stage-statistics-ui/after-kagerou.jpg",
+        "sha256": "9237720c26ecdf173205c8996e852df5168fb892a8048bd977bbd4f74c9ee37a",
+        "bytes": 249115
+      }
+    },
+    {
+      "id": "stage4End",
+      "stage": 4,
+      "observedPhase": "Benben post-battle dialogue",
+      "displayed": {
+        "miss": 6,
+        "bomb": 1,
+        "collectionTiers": [
+          1,
+          2,
+          2,
+          0,
+          0
+        ],
+        "totalBonus": 32,
+        "extendCount": 2,
+        "highlightIndex": 2
+      },
+      "privateProof": {
+        "path": "stage-statistics-ui/benben-ended.jpg",
+        "sha256": "bdc8dba67a3c921764224c44d9f784eda5a94a8aae774a4e552cd9b0207fe22c",
+        "bytes": 278012
+      }
+    },
+    {
+      "id": "stage5Entry",
+      "stage": 5,
+      "observedPhase": "palace stage after Benben",
+      "displayed": {
+        "miss": 6,
+        "bomb": 1,
+        "collectionTiers": [
+          1,
+          2,
+          2,
+          0,
+          0
+        ],
+        "totalBonus": 32,
+        "extendCount": 2,
+        "highlightIndex": 2
+      },
+      "privateProof": {
+        "path": "stage-statistics-ui/after-benben.jpg",
+        "sha256": "c46b740568a93a7ab29de999ad7b6160b632cc45c76cbedb272c8d89a8bb8d50",
+        "bytes": 256953
+      }
+    },
+    {
+      "id": "stage5End",
+      "stage": 5,
+      "observedPhase": "Seija post-battle dialogue",
+      "displayed": {
+        "miss": 6,
+        "bomb": 1,
+        "collectionTiers": [
+          1,
+          2,
+          4,
+          0,
+          0
+        ],
+        "totalBonus": 43,
+        "extendCount": 2,
+        "highlightIndex": 3
+      },
+      "privateProof": {
+        "path": "stage-statistics-ui/seija-ended.jpg",
+        "sha256": "ebe0146f5bc15239da8b5c9219572c0b41213ea36f8fe4283410501d890a55a3",
+        "bytes": 271280
+      }
+    },
+    {
+      "id": "stage6Entry",
+      "stage": 6,
+      "observedPhase": "stage after Seija ending; later final-boss name confirms route",
+      "displayed": {
+        "miss": 6,
+        "bomb": 1,
+        "collectionTiers": [
+          1,
+          2,
+          4,
+          0,
+          0
+        ],
+        "totalBonus": 43,
+        "extendCount": 2,
+        "highlightIndex": 3
+      },
+      "privateProof": {
+        "path": "stage-statistics-ui/after-seija.jpg",
+        "sha256": "37a7661c937b731e5251ac64e8f3bbb43b3c443117d67ccaadcf98c3900b36dd",
+        "bytes": 252507
+      }
+    },
+    {
+      "id": "stage6Dialogue",
+      "stage": 6,
+      "observedPhase": "final-stage dialogue",
+      "displayed": {
+        "miss": 6,
+        "bomb": 1,
+        "collectionTiers": [
+          1,
+          2,
+          4,
+          0,
+          1
+        ],
+        "totalBonus": 45,
+        "extendCount": 3,
+        "highlightIndex": 0
+      },
+      "privateProof": {
+        "path": "stage-statistics-ui/shinmyoumaru-intro.jpg",
+        "sha256": "c2ba75690beecefc65b6501b7f09d0d8a8861148bde8ec9f757185531e7ea475",
+        "bytes": 265516
+      }
+    },
+    {
+      "id": "stage6Boss",
+      "stage": 6,
+      "observedPhase": "visible Sukuna Shinmyoumaru name and first spell",
+      "displayed": {
+        "miss": 6,
+        "bomb": 1,
+        "collectionTiers": [
+          1,
+          2,
+          4,
+          0,
+          1
+        ],
+        "totalBonus": 46,
+        "extendCount": 3,
+        "highlightIndex": 1
+      },
+      "privateProof": {
+        "path": "stage-statistics-ui/shinmyoumaru-confirmed.jpg",
+        "sha256": "f8115849228185fb012e4430952d378c9a4b01164956d4502e125590601c1926",
+        "bytes": 299463
+      }
+    }
+  ],
+  "exactPairs": 4,
+  "ordinaryGameplayFidelityAccepted": false,
+  "wholeCampaignFinished": false,
+  "otherLoadoutsAndDifficultiesAccepted": false,
+  "realTouchDeviceAccepted": false,
+  "gameOrUiSourceChanged": false,
+  "productionChanged": false,
+  "completeGame": false
+}

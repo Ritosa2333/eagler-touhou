@@ -1,0 +1,181 @@
+{
+  "coreSource": "db81cbe9198d0a4522cefaac4a6df61b09e9b051",
+  "schema": "th14/observable-behavior-acceptance-decision/1",
+  "decision": "accepted",
+  "criteria": "TH14_BEHAVIOR_ACCEPTANCE_NOV13.md; user superseded strict 1:1 with observable behavior",
+  "allEightRequiredGroupsReviewed": true,
+  "requiredImplementationOrAcceptanceGapsRemaining": [],
+  "testAndPreviewAudioSilent": true,
+  "completeGameUnderBehaviorAcceptance": true,
+  "strictNativeEquivalent": false,
+  "sameBinaryFreshThirtyClaimed": false,
+  "evidenceReuseRequiresCurrentSourceBindings": true,
+  "historicalFailuresRewritten": false,
+  "privateProbeDeployed": false,
+  "onlyTH14": true,
+  "groups": [
+    {
+      "requirement": "rules",
+      "decision": "accepted under observable-behavior requirements",
+      "references": [
+        {
+          "path": "docs/porting/TH14_BEHAVIOR_MATRIX_NOV13.md",
+          "sha256": "7c580613bc3cd26a4f873133fbdf2d6dbe3c5a4e80a254c1c1c65761d2550fc8"
+        },
+        {
+          "path": "docs/porting/TH14_FULL_REPLAY_BEHAVIOR_NOV13.md",
+          "sha256": "6e6ea49ea26fa912d826f5e65d5ae9d10e2eb17ac7739ff6bd3db0aa9fd9fd49"
+        },
+        {
+          "path": "docs/porting/TH14_PLAYER_SCALE_INTEGRATION_NOV18.md",
+          "sha256": "9dd228cee54d34db9dc531966000943ad6cc9efcae0e6010563479c3ed1375f8"
+        },
+        {
+          "path": "docs/porting/TH14_NATIVE_BEAM_RULE_BOUNDARY_NOV18.md",
+          "sha256": "049386d4f8a6d8cfbe1d2dce3935e67e71fd5bc0f73ac09f22c4328b6937c29a"
+        }
+      ]
+    },
+    {
+      "requirement": "loadouts-and-difficulties",
+      "decision": "accepted under observable-behavior requirements",
+      "references": [
+        {
+          "path": "docs/porting/TH14_ORDINARY_FLOW_MATRIX_NOV14.md",
+          "sha256": "94b394600fa46682a147e961d6a38e9413b376b6d24072b07f618a02207c1380"
+        },
+        {
+          "path": "docs/porting/TH14_CURRENT_CORE_FLOWS_NOV18.md",
+          "sha256": "63d2328f17b40307328c65491dd42cc06878fc0addb7a1ecdf0333e4f1e3251b"
+        },
+        {
+          "path": "docs/porting/th14-retained-thirty-identity-audit-nov18.json",
+          "sha256": "45117c87a2d6cd3b6a7c685b233e49371f6a6150aabdab1237dc3507a0577410"
+        }
+      ]
+    },
+    {
+      "requirement": "ordinary-and-practice-flows",
+      "decision": "accepted under observable-behavior requirements",
+      "references": [
+        {
+          "path": "docs/porting/TH14_ORDINARY_HIGHER_AND_CONTINUE_NOV14.md",
+          "sha256": "48424e138e709c005019431c9508988ea66e7f1182aa27802bbae283f18040b2"
+        },
+        {
+          "path": "docs/porting/TH14_CORE_PRACTICE_ENTRY_NOV18.md",
+          "sha256": "8d1eca500963d1a68ba5f7cf7c312c2a404568c149a43320a933407bc8be8609"
+        },
+        {
+          "path": "docs/porting/TH14_NATURAL_BROWSER_FLOWS_NOV18.md",
+          "sha256": "e7d7046fec9d2da32762b2f149b82d538dd753322c52ef205f16cc03fbe04cfa"
+        }
+      ]
+    },
+    {
+      "requirement": "replays",
+      "decision": "accepted under observable-behavior requirements",
+      "references": [
+        {
+          "path": "docs/porting/TH14_FULL_REPLAY_BEHAVIOR_NOV13.md",
+          "sha256": "6e6ea49ea26fa912d826f5e65d5ae9d10e2eb17ac7739ff6bd3db0aa9fd9fd49"
+        },
+        {
+          "path": "docs/porting/TH14_REPLAY_SEEK_BUDGET_NOV18.md",
+          "sha256": "82e47396fd918f9c20edbf3e4d18610bc59e8d7357243856f3e7e841a82e7fd8"
+        },
+        {
+          "path": "docs/porting/TH14_REPLAY_PROGRESS_CONTEXT_NOV18.md",
+          "sha256": "e071147d8dd45893d6e5cbcc290d6e8e31c68164e7a30d367b855879bc174945"
+        },
+        {
+          "path": "docs/porting/th14-natural-browser-flows-nov18.json",
+          "sha256": "f91a04602659d8b8108420d98a9b95201d8b313e97d7ddd951a43089b770b310"
+        }
+      ]
+    },
+    {
+      "requirement": "graphics",
+      "decision": "accepted under observable-behavior requirements",
+      "references": [
+        {
+          "path": "docs/porting/TH14_CURRENT_SIX_BOMB_GRAPHICS_NOV18.md",
+          "sha256": "8b97204eb31c657807bdbbdbc95c69288b15db7303c53e7c79d205b628ca41a2"
+        },
+        {
+          "path": "docs/porting/TH14_CURRENT_ENDING_GPU_NOV18.md",
+          "sha256": "cfee286d45e1a893a035bfc3e6ce997d7fd9c7a99c060106889439ac7c361ea6"
+        },
+        {
+          "path": "docs/porting/TH14_NATURAL_BROWSER_FLOWS_NOV18.md",
+          "sha256": "e7d7046fec9d2da32762b2f149b82d538dd753322c52ef205f16cc03fbe04cfa"
+        }
+      ]
+    },
+    {
+      "requirement": "audio",
+      "decision": "accepted under observable-behavior requirements",
+      "references": [
+        {
+          "path": "docs/porting/TH14_CURRENT_AUDIO_MIXER_NOV14.md",
+          "sha256": "d0544ba4fcbf0d48d2691bb3c975750a6193f1e03caf4373931929b75d3b5131"
+        },
+        {
+          "path": "docs/porting/TH14_CURRENT_BROWSER_AUDIO_NOV18.md",
+          "sha256": "d7363fe54fdbce9d0a234f5ba8f96dea58c491b920435a16820622d58099431d"
+        }
+      ]
+    },
+    {
+      "requirement": "persistence",
+      "decision": "accepted under observable-behavior requirements",
+      "references": [
+        {
+          "path": "docs/porting/TH14_SPELL_BROWSER_PERSISTENCE_NOV14.md",
+          "sha256": "e1a07408c231bcee83b20ec9f51bd6741509e997e3e70612259de213314d1d7d"
+        },
+        {
+          "path": "docs/porting/TH14_CURRENT_CORE_FLOWS_NOV18.md",
+          "sha256": "63d2328f17b40307328c65491dd42cc06878fc0addb7a1ecdf0333e4f1e3251b"
+        },
+        {
+          "path": "docs/porting/TH14_NATURAL_BROWSER_FLOWS_NOV18.md",
+          "sha256": "e7d7046fec9d2da32762b2f149b82d538dd753322c52ef205f16cc03fbe04cfa"
+        }
+      ]
+    },
+    {
+      "requirement": "browser-delivery",
+      "decision": "accepted under observable-behavior requirements",
+      "references": [
+        {
+          "path": "docs/porting/TH14_REPLAY_SEEK_BUDGET_NOV18.md",
+          "sha256": "82e47396fd918f9c20edbf3e4d18610bc59e8d7357243856f3e7e841a82e7fd8"
+        },
+        {
+          "path": "docs/porting/TH14_NATIVE_TAB_VISIBILITY_NOV18.md",
+          "sha256": "e590900aeef9b65b1297818409a0184fdd4f4802fb8fb94b68137c6c9b582b18"
+        },
+        {
+          "path": "docs/porting/TH14_NATURAL_BROWSER_FLOWS_NOV18.md",
+          "sha256": "e7d7046fec9d2da32762b2f149b82d538dd753322c52ef205f16cc03fbe04cfa"
+        }
+      ]
+    }
+  ],
+  "developmentRuntime": {
+    "url": "https://wth.saop.cc/",
+    "normalGeneration": "08759279802b926a67c8099c0f59777030924f8c7c8629268ae604df9fefa14c",
+    "normalWasm": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43",
+    "multiplayerWasm": "d4548f7c67b34fdfd191e9def53f78274c1ddd4c2813fe3a81a492a0e30d8dea"
+  },
+  "remainingExternalDelivery": "Existing upstream PR review/merge and formal-site deployment by maintainers; development site and fork delivered",
+  "knownCompatibilityPolicy": "Retail uninitialized NaN laser path retained for legacy recordings; explicit finite rule retained and recorded for ordinary/new recordings; 4360-point reference difference not hidden",
+  "unclaimed": [
+    "Exhaustive arbitrary input/seed proof",
+    "Internal-word, pixel or PCM identity",
+    "All browsers, hardware input devices or physical audio latency",
+    "Original whole-game playback of extended rule files",
+    "Unconfigured public Relay or optional multiplayer completion"
+  ]
+}

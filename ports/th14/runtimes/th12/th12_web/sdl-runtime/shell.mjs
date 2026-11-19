@@ -44,7 +44,7 @@ function practiceTouchControls(message){
  const c=message.controls??message;
  core.th14_practice_state?.(5,(c.thpracMobilePanelsEnabled?1:0)|(c.thpracMobilePanelsVisible?2:0));
 }
-async function installResources(resources=[]){return installHostResources(Module,resources,{game,emit});}
+async function installResources(resources=[]){return installHostResources(Module,resources,{game,emit,signal:startupAbort.signal});}
 // The Launcher has already verified the ZIP identity. Match TH10's Runtime
 // manifest/path/size checks before exposing any file to the native game.
 let runtimePackFiles=[];
@@ -106,7 +106,9 @@ async function launch(){
  if(core.th11_phase()===4&&!await callCore('th11_return_title'))throw Error(coreError());
  launched=true;apply();first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  const loading=$('#loading');if(loading)loading.textContent='';
- canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();core.th11_loop_start();
+ // Starting the native loop clears its suspended flag. Apply the startup
+ // pause afterwards so hidden launches and pending audio remain stopped.
+ canvas.focus({preventScroll:true});core.th11_loop_start();core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();
  emit('runtime-info',{renderer:Module.th14WebGpuRuntime?'SDL3 / WebGPU / C++':'SDL3 / WebGL2 / C++',architecture:protocol,version:runtimeBuild.version});
 }
 function replayPlayback(){
@@ -205,7 +207,9 @@ for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
 // Persist during play as well, with writes serialized by the sync chain.
 setInterval(()=>{if(launched&&!document.hidden&&core)try{queue=queue.then(()=>save()).catch(error);}catch(e){error(e);}},30000);
 const startupAbort=new AbortController();
-window.addEventListener('pagehide',event=>{if(!event.persisted)startupAbort.abort();},{once:true});
+// A persisted pagehide can return from bfcache; retain cancellation for the
+// eventual non-persisted departure in this same document lifetime.
+window.addEventListener('pagehide',event=>{if(!event.persisted)startupAbort.abort();});
 const initialized=(async()=>{
  let audioContext;try{audioContext=parent.__touhouAudioContext;}catch{}
  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);

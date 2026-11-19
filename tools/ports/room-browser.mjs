@@ -99,7 +99,9 @@ try{
   for(const game of games){
     assert.ok(PRODUCT_GAMES[game]?.multiplayer,game);
     if(!PRODUCT_GAMES[game].multiplayer.playerCounts.includes(players))continue;
-    const browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',
+    const hardware=process.env.NATIVE_GPU==='1'||process.env.PIXEL_GPU==='1';
+    const graphics=hardware?(process.platform==='win32'?['--enable-gpu','--use-gl=angle','--use-angle=d3d11']:['--enable-gpu']):['--enable-unsafe-swiftshader'];
+    const browser=await launchBrowser({args:[...graphics,'--mute-audio','--autoplay-policy=no-user-gesture-required',
       '--disable-background-timer-throttling','--disable-renderer-backgrounding']});report.browser=browser.version();
     const contexts=[],pages=[],record={game,players,route,steps:[],errors:[],consoleErrors:[],httpErrors:[]};report.targets.push(record);
     const step=async(name,operation)=>{record.stage=name;record.steps.push({name,at:new Date().toISOString()});await save();return operation();};
@@ -138,7 +140,7 @@ try{
         });
         await step(`P${seat+1}-room`,async()=>{
           await page.locator(seat===0?'#createButton':'#codeButton').click();
-          await page.locator('#gameSelect').selectOption(game+'mp');
+          if(seat===0||await page.locator('#gameSelect').isVisible())await page.locator('#gameSelect').selectOption(game+'mp');
           if(seat===0){
             if(await page.locator('#capacitySelect').isEnabled())await page.locator('#capacitySelect').selectOption(String(players));
             else assert.equal(await page.locator('#capacitySelect').inputValue(),String(players));

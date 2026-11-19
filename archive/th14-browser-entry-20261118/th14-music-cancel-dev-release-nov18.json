@@ -1,0 +1,1717 @@
+{
+  "schema": "th14/music-cancel-development-release/1",
+  "sourceCommit": "4f99e4da3059178553fba08f649a7a44ed49cc2e",
+  "musicInstallCancel": {
+    "passed": true,
+    "instrumentation": "Delay completion of actual SHA-256 for a real OggS buffer; return original digest unchanged after actual native Quit",
+    "originalBytesChanged": false,
+    "bytes": 1917229,
+    "nativeAtGate": {
+      "phase": 0,
+      "frame": 6,
+      "title": [
+        1,
+        1,
+        0,
+        0,
+        10
+      ]
+    },
+    "steps": [
+      {
+        "name": "actual-ogg-hash-completion-held-before-fs-write",
+        "passed": true
+      },
+      {
+        "name": "native-quit-closed-while-music-hash-pending",
+        "passed": true
+      },
+      {
+        "name": "hash-released-after-close-no-late-music-write",
+        "passed": true
+      },
+      {
+        "name": "retry-entered-native-title",
+        "passed": true
+      },
+      {
+        "name": "retry-native-quit",
+        "passed": true
+      }
+    ],
+    "afterQuit": {
+      "realOggBody": true,
+      "bytes": 1917229,
+      "algorithm": "SHA-256",
+      "hashAlreadyComputed": true,
+      "hashReturned": false,
+      "released": false,
+      "closed": false,
+      "writes": [],
+      "frameUrl": "http://localhost:8252/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14.html?hosted=1&managedData=1&gameGeneration=gen-mwl67w2e-dea11978da04&runtimeVariant=normal&runtimeEpoch=1",
+      "fsObserved": true
+    },
+    "afterRelease": {
+      "realOggBody": true,
+      "bytes": 1917229,
+      "algorithm": "SHA-256",
+      "hashAlreadyComputed": true,
+      "hashReturned": true,
+      "released": true,
+      "closed": true,
+      "writes": [],
+      "frameUrl": "http://localhost:8252/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14.html?hosted=1&managedData=1&gameGeneration=gen-mwl67w2e-dea11978da04&runtimeVariant=normal&runtimeEpoch=1",
+      "fsObserved": true
+    },
+    "reportSha256": "bcb2f04e7021e288072d5bc8c51cd55e6d0f187e740c0ec20daf352a3d4a355e",
+    "harnessSha256": "2b77cacb9bf4a7e7d56aa8e9fe3ab9cdd732da7fafc888eebdadfee2ca8411d9",
+    "newGameCodeRequired": false
+  },
+  "delivery": {
+    "passed": true,
+    "originPassed": true,
+    "awaitingPublicValidation": false,
+    "sourceCommit": "4f99e4da3059178553fba08f649a7a44ed49cc2e",
+    "siteDocumentationHead": "1f304a26535a222a9241ef3a3cff47af5e7c9665",
+    "developmentSite": "https://wth.saop.cc/",
+    "developmentSiteActivated": true,
+    "upstreamProductionChanged": false,
+    "servicePid": 443019,
+    "serviceConfigurationChanged": false,
+    "serviceRestarted": false,
+    "copyMode": "COPYFILE_FICLONE_FORCE / cp --reflink=always",
+    "atomicRenameExchange": true,
+    "backup": "/home/i/Code/th14-release/hosted-before-recovery-success-nov18",
+    "currentRuntimeFiles": 68,
+    "originVerified": [
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14ArchiveDecodeClient.mjs",
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14ArchiveDecodeEndpoint.mjs",
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14ArchiveDecodeWorker.mjs",
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14ArchiveReadAhead.mjs",
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14AsyncRuntime.mjs",
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14SharedSceneCopy.mjs",
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14SharedSceneWorker.mjs",
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14StageMemoryClient.mjs",
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14StageMemoryWorker.mjs",
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14StageMemoryWorker.wasm",
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14StageRestoreDelivery.mjs",
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14StageRestoreProtocol.mjs",
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14StageRestoreWorker.mjs",
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14WebGpuCore.mjs",
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14WebGpuHost.mjs",
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/archive-decoder.mjs",
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/archive-decoder.wasm",
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/crash-code-identities.json",
+        "sha256": "2e7df96ce5414f4f59ff0bc90b1b5e744b20d382dec2ee562eed5ef2eecaeea0",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/directory-keyboard.mjs",
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/eagler-host.mjs",
+        "sha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/fonts/cp932.bin",
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/fonts/msgothic.ttc",
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/fonts/unifont.otf",
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/keyboard.mjs",
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/managed.css",
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/manifest.json",
+        "sha256": "d5e2440a655523ebe7868d67cb6672dd5e5c78c0100d4c4e087b2e5061da787c",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/motion-replay.mjs",
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/resources.json",
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/runtime-crash-reporter.js",
+        "sha256": "b6816293bac4a6f7a5f0b94712e1ea9b62f434d6c8c3cc34629356fd8e4633f6",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/runtime-epoch.mjs",
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/shell.mjs",
+        "sha256": "d054623fbf7ff54afff716efe040f9b9edf50ae098eccc8732e84477e598ca7d",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14-sdl.mjs",
+        "sha256": "61b0b9749a01cb3e0a41c4f43bc01d6e3a9ab2ac8a2908eec8c11abf52d4212b",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14-sdl.wasm",
+        "sha256": "13dedcb8c4f2fcbe7051a22865f13c9d68b560ed282499ca6177b3bd7b64c5b3",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14.html",
+        "sha256": "9371bc15319b10bf348fc250bb6a32f949f8693deba58b0b6a9aecae49503f39",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14ArchiveDecodeClient.mjs",
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14ArchiveDecodeEndpoint.mjs",
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14ArchiveDecodeWorker.mjs",
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14ArchiveReadAhead.mjs",
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14AsyncRuntime.mjs",
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14SharedSceneCopy.mjs",
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14SharedSceneWorker.mjs",
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14StageMemoryClient.mjs",
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14StageMemoryWorker.mjs",
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14StageMemoryWorker.wasm",
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14StageRestoreDelivery.mjs",
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14StageRestoreProtocol.mjs",
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14StageRestoreWorker.mjs",
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14WebGpuCore.mjs",
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/Th14WebGpuHost.mjs",
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/archive-decoder.mjs",
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/archive-decoder.wasm",
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/directory-keyboard.mjs",
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/eagler-host.mjs",
+        "sha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/fonts/cp932.bin",
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/fonts/msgothic.ttc",
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/fonts/unifont.otf",
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/keyboard.mjs",
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/managed.css",
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/manifest.json",
+        "sha256": "67b1b2e6b360eee679debf45c65013b46ba238ff081d5f3aef3c92c98b234927",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/motion-replay.mjs",
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/resources.json",
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/runtime-epoch.mjs",
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/shell.mjs",
+        "sha256": "26fa8c317163c2230ef53f311b05d1d5ba1c7ca7d79967b81aa472030b3a70e6",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/th14-sdl.mjs",
+        "sha256": "1bfd63dff6c944a98f94e104da61db31774be6c3ebb1e6c712f9921591e009df",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/th14-sdl.wasm",
+        "sha256": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/12219d17e5dcd2787ee8a76850ff5f27c75e4afdc71fbe0c658370cc994dbcb8/th14.html",
+        "sha256": "68c187a4359d43f874e5062d483cab4925b68cdfc69680fe4533ea49ed019053",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14ArchiveDecodeClient.mjs",
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14ArchiveDecodeEndpoint.mjs",
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14ArchiveDecodeWorker.mjs",
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14ArchiveReadAhead.mjs",
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14AsyncRuntime.mjs",
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14SharedSceneCopy.mjs",
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14SharedSceneWorker.mjs",
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14StageMemoryClient.mjs",
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14StageMemoryWorker.mjs",
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14StageMemoryWorker.wasm",
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14StageRestoreDelivery.mjs",
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14StageRestoreProtocol.mjs",
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14StageRestoreWorker.mjs",
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14WebGpuCore.mjs",
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/Th14WebGpuHost.mjs",
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/archive-decoder.mjs",
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/archive-decoder.wasm",
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/directory-keyboard.mjs",
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/eagler-host.mjs",
+        "sha256": "e6b62290c3926e9405fc0aeb1fc03ce733c644763733cb31416a67d63079bf93",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/fonts/cp932.bin",
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/fonts/msgothic.ttc",
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/fonts/unifont.otf",
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/keyboard.mjs",
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/managed.css",
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/manifest.json",
+        "sha256": "67b1b2e6b360eee679debf45c65013b46ba238ff081d5f3aef3c92c98b234927",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/motion-replay.mjs",
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/resources.json",
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/runtime-epoch.mjs",
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/shell.mjs",
+        "sha256": "542ff26f2f4fcb4fa6cac363f47a34ff718b2ce22f536d802d118b45e6ad0f6d",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/th14-sdl.mjs",
+        "sha256": "1bfd63dff6c944a98f94e104da61db31774be6c3ebb1e6c712f9921591e009df",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/th14-sdl.wasm",
+        "sha256": "9d405b7346050cb94863ad86eaf6fc631aa32a002431bb9599c3a096812d8dbb",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/0516c1a94880a61afa79260160e22bd7d54abbd92ec11d5cddca1122a1e3214c/th14.html",
+        "sha256": "68c187a4359d43f874e5062d483cab4925b68cdfc69680fe4533ea49ed019053",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14ArchiveDecodeClient.mjs",
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14ArchiveDecodeEndpoint.mjs",
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14ArchiveDecodeWorker.mjs",
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14ArchiveReadAhead.mjs",
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14AsyncRuntime.mjs",
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14SharedSceneCopy.mjs",
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14SharedSceneWorker.mjs",
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14StageMemoryClient.mjs",
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14StageMemoryWorker.mjs",
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14StageMemoryWorker.wasm",
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14StageRestoreDelivery.mjs",
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14StageRestoreProtocol.mjs",
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14StageRestoreWorker.mjs",
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14WebGpuCore.mjs",
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14WebGpuHost.mjs",
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/archive-decoder.mjs",
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/archive-decoder.wasm",
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/crash-code-identities.json",
+        "sha256": "db72038c9f440f2c41dba103a958c14228c51df4481c60823b20c3ace088e15a",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/directory-keyboard.mjs",
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/eagler-host.mjs",
+        "sha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/fonts/cp932.bin",
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/fonts/msgothic.ttc",
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/fonts/unifont.otf",
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/keyboard.mjs",
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/managed.css",
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/manifest.json",
+        "sha256": "2e7f5f4a53a83a4eb4f4c66dea9517e04b9f227d215c9fab37a1d141c96c3242",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/motion-replay.mjs",
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/resources.json",
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/runtime-crash-reporter.js",
+        "sha256": "b6816293bac4a6f7a5f0b94712e1ea9b62f434d6c8c3cc34629356fd8e4633f6",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/runtime-epoch.mjs",
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/shell.mjs",
+        "sha256": "a93214d7e4d0bedfc25884efac79ee2d927d0a94e8c00a2a71648d47dc04d882",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/th14-sdl.mjs",
+        "sha256": "89085f0cb5690ce70e32212cc7a0f93659d7e4204877b99eee57dd4be173dd85",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/th14-sdl.wasm",
+        "sha256": "34791e87b7cf8e7cce96e48a12deba941830cc273cd2c2b29ae6b6932b7f16b5",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/th14.html",
+        "sha256": "9371bc15319b10bf348fc250bb6a32f949f8693deba58b0b6a9aecae49503f39",
+        "scope": "current"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14ArchiveDecodeClient.mjs",
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14ArchiveDecodeEndpoint.mjs",
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14ArchiveDecodeWorker.mjs",
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14ArchiveReadAhead.mjs",
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14AsyncRuntime.mjs",
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14SharedSceneCopy.mjs",
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14SharedSceneWorker.mjs",
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14StageMemoryClient.mjs",
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14StageMemoryWorker.mjs",
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14StageMemoryWorker.wasm",
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14StageRestoreDelivery.mjs",
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14StageRestoreProtocol.mjs",
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14StageRestoreWorker.mjs",
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14WebGpuCore.mjs",
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/Th14WebGpuHost.mjs",
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/archive-decoder.mjs",
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/archive-decoder.wasm",
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/crash-code-identities.json",
+        "sha256": "52c11cb133aad47b4d84212d17ee7e5667865ebee6ff8e1e30c1391c87d27df1",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/directory-keyboard.mjs",
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/eagler-host.mjs",
+        "sha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/fonts/cp932.bin",
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/fonts/msgothic.ttc",
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/fonts/unifont.otf",
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/keyboard.mjs",
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/managed.css",
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/manifest.json",
+        "sha256": "01ddd977011313870c26cb5c021c5b58173b088ac9f393c75f6e6e7bf899c18d",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/motion-replay.mjs",
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/resources.json",
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/runtime-crash-reporter.js",
+        "sha256": "b6816293bac4a6f7a5f0b94712e1ea9b62f434d6c8c3cc34629356fd8e4633f6",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/runtime-epoch.mjs",
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/shell.mjs",
+        "sha256": "9153ea370c21eae84d39ae233f07e3728c7e024f1c1269dffb1f96697cea792d",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/th14-sdl.mjs",
+        "sha256": "89085f0cb5690ce70e32212cc7a0f93659d7e4204877b99eee57dd4be173dd85",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/th14-sdl.wasm",
+        "sha256": "106b2245e2fd47734253d6d9bb95226114960d56bbc008ba8eb1d4bad0943f34",
+        "scope": "retained"
+      },
+      {
+        "path": "runtime/th14/multiplayer/6d0ed6c78525ac5032c95ec7a4583d4ad5b0465d023b100ef5e8ade51a5a69f8/th14.html",
+        "sha256": "9371bc15319b10bf348fc250bb6a32f949f8693deba58b0b6a9aecae49503f39",
+        "scope": "retained"
+      },
+      {
+        "path": "index.html",
+        "sha256": "bb5b77c2244ab9a1f1ef70c56c77e7f9241d00d6b19d38076f86495b9eddbc3c",
+        "scope": "frontend"
+      },
+      {
+        "path": "assets/root-B_HalpjI.js",
+        "sha256": "03ea35e3f4c27dfc7caaffba2fbff80e327c3c6dff4d18b406ce67733fb199b9",
+        "scope": "frontend"
+      },
+      {
+        "path": "assets/replays-0hK6m82f.js",
+        "sha256": "ef1c4f0265e7ca2b040fcf26510720788b80373f9dd52d69a1d77fc96d0382a9",
+        "scope": "frontend"
+      }
+    ],
+    "publicVerified": [
+      {
+        "path": "assets/replays-0hK6m82f.js",
+        "bytes": 137641,
+        "sha256": "ef1c4f0265e7ca2b040fcf26510720788b80373f9dd52d69a1d77fc96d0382a9",
+        "scope": "frontend",
+        "status": 200
+      },
+      {
+        "path": "assets/root-B_HalpjI.js",
+        "bytes": 683656,
+        "sha256": "03ea35e3f4c27dfc7caaffba2fbff80e327c3c6dff4d18b406ce67733fb199b9",
+        "scope": "frontend",
+        "status": 200
+      },
+      {
+        "path": "runtime-manifest.json",
+        "bytes": 32817,
+        "sha256": "f2c9dfb2de559a86f2bd444652ecf2c39d99d7a480614c287dbde1fc134c0365",
+        "scope": "publication-metadata",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/archive-decoder.mjs",
+        "bytes": 11199,
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/archive-decoder.wasm",
+        "bytes": 96991,
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/crash-code-identities.json",
+        "bytes": 465,
+        "sha256": "2e7df96ce5414f4f59ff0bc90b1b5e744b20d382dec2ee562eed5ef2eecaeea0",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/directory-keyboard.mjs",
+        "bytes": 6345,
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/eagler-host.mjs",
+        "bytes": 17869,
+        "sha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/fonts/cp932.bin",
+        "bytes": 131072,
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/fonts/msgothic.ttc",
+        "bytes": 8990160,
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/fonts/unifont.otf",
+        "bytes": 5105508,
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/keyboard.mjs",
+        "bytes": 1297,
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/managed.css",
+        "bytes": 733,
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/manifest.json",
+        "bytes": 636,
+        "sha256": "d5e2440a655523ebe7868d67cb6672dd5e5c78c0100d4c4e087b2e5061da787c",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/motion-replay.mjs",
+        "bytes": 815,
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/resources.json",
+        "bytes": 641,
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/runtime-crash-reporter.js",
+        "bytes": 18654,
+        "sha256": "b6816293bac4a6f7a5f0b94712e1ea9b62f434d6c8c3cc34629356fd8e4633f6",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/runtime-epoch.mjs",
+        "bytes": 340,
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/shell.mjs",
+        "bytes": 19897,
+        "sha256": "d054623fbf7ff54afff716efe040f9b9edf50ae098eccc8732e84477e598ca7d",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14-sdl.mjs",
+        "bytes": 340194,
+        "sha256": "61b0b9749a01cb3e0a41c4f43bc01d6e3a9ab2ac8a2908eec8c11abf52d4212b",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14-sdl.wasm",
+        "bytes": 5464333,
+        "sha256": "13dedcb8c4f2fcbe7051a22865f13c9d68b560ed282499ca6177b3bd7b64c5b3",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14.html",
+        "bytes": 556,
+        "sha256": "9371bc15319b10bf348fc250bb6a32f949f8693deba58b0b6a9aecae49503f39",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14ArchiveDecodeClient.mjs",
+        "bytes": 3920,
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14ArchiveDecodeEndpoint.mjs",
+        "bytes": 5322,
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14ArchiveDecodeWorker.mjs",
+        "bytes": 302,
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14ArchiveReadAhead.mjs",
+        "bytes": 3637,
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14AsyncRuntime.mjs",
+        "bytes": 3326,
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14SharedSceneCopy.mjs",
+        "bytes": 4985,
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14SharedSceneWorker.mjs",
+        "bytes": 369,
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14StageMemoryClient.mjs",
+        "bytes": 10352,
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14StageMemoryWorker.mjs",
+        "bytes": 689,
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14StageMemoryWorker.wasm",
+        "bytes": 1027,
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14StageRestoreDelivery.mjs",
+        "bytes": 2997,
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14StageRestoreProtocol.mjs",
+        "bytes": 1701,
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14StageRestoreWorker.mjs",
+        "bytes": 257,
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14WebGpuCore.mjs",
+        "bytes": 1004,
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/Th14WebGpuHost.mjs",
+        "bytes": 19989,
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/archive-decoder.mjs",
+        "bytes": 11199,
+        "sha256": "88ad1781faf24be04002cb36d39f70998d2c17ecfc8e208ea951050859920a5e",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/archive-decoder.wasm",
+        "bytes": 96991,
+        "sha256": "b1967b96e9d8c5e484c9f008fb3b31b81889dec33a6e48876e7373f4541cae28",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/crash-code-identities.json",
+        "bytes": 465,
+        "sha256": "db72038c9f440f2c41dba103a958c14228c51df4481c60823b20c3ace088e15a",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/directory-keyboard.mjs",
+        "bytes": 6345,
+        "sha256": "77394cea8730d203f95ba4c38daaf542a78a4219985ce4f1cee65a4351250243",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/eagler-host.mjs",
+        "bytes": 17869,
+        "sha256": "2e90d7129ced155c8c609acaaa7638a191a04f6c3982901d1d3a75a9522bfb85",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/fonts/cp932.bin",
+        "bytes": 131072,
+        "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/fonts/msgothic.ttc",
+        "bytes": 8990160,
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/fonts/unifont.otf",
+        "bytes": 5105508,
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/keyboard.mjs",
+        "bytes": 1297,
+        "sha256": "df5ff6e6ed6bd2921a09d50c236741a05a73d39c9ac906428c10bc8043e87334",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/managed.css",
+        "bytes": 733,
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/manifest.json",
+        "bytes": 713,
+        "sha256": "2e7f5f4a53a83a4eb4f4c66dea9517e04b9f227d215c9fab37a1d141c96c3242",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/motion-replay.mjs",
+        "bytes": 815,
+        "sha256": "3643a3cf65aa7e2340a498a6da03b976875b63570b74c583c13169d57fd8dc5d",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/resources.json",
+        "bytes": 641,
+        "sha256": "0ff33492b98202aadb740594348023e706609f98865528178146397896c33cbd",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/runtime-crash-reporter.js",
+        "bytes": 18654,
+        "sha256": "b6816293bac4a6f7a5f0b94712e1ea9b62f434d6c8c3cc34629356fd8e4633f6",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/runtime-epoch.mjs",
+        "bytes": 340,
+        "sha256": "e82fecd59b600c3978a516389c159b1a0a2c6b551b949dca3a82de5d5c505b4f",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/shell.mjs",
+        "bytes": 30414,
+        "sha256": "a93214d7e4d0bedfc25884efac79ee2d927d0a94e8c00a2a71648d47dc04d882",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/th14-sdl.mjs",
+        "bytes": 430878,
+        "sha256": "89085f0cb5690ce70e32212cc7a0f93659d7e4204877b99eee57dd4be173dd85",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/th14-sdl.wasm",
+        "bytes": 5811893,
+        "sha256": "34791e87b7cf8e7cce96e48a12deba941830cc273cd2c2b29ae6b6932b7f16b5",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/th14.html",
+        "bytes": 556,
+        "sha256": "9371bc15319b10bf348fc250bb6a32f949f8693deba58b0b6a9aecae49503f39",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14ArchiveDecodeClient.mjs",
+        "bytes": 3920,
+        "sha256": "a696dd2daaf079cf989aebca69d493144e2f66db509107a919e8e38f70f3d450",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14ArchiveDecodeEndpoint.mjs",
+        "bytes": 5322,
+        "sha256": "940f0277f4418cd231fda388c5c4a39c84969e26552923971f2006c256a1569f",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14ArchiveDecodeWorker.mjs",
+        "bytes": 302,
+        "sha256": "a4c0c8983b03705d31cc7cec77e15205226aa2e1888181d338fb35d19bcd1239",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14ArchiveReadAhead.mjs",
+        "bytes": 3637,
+        "sha256": "f08632bf558312b725b2b271a0fdb5ea3ed9ff95078bdd57c985dcf1caf37dee",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14AsyncRuntime.mjs",
+        "bytes": 3326,
+        "sha256": "4abcd2a1aadc554c3da8fa11e55ce1ea5299866ee6f7a9729db6e09228c6fbb7",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14SharedSceneCopy.mjs",
+        "bytes": 4985,
+        "sha256": "d00125f52b38ad642cc3f97be1513450bcd8f5a975e86f2854ac2062d06d86e0",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14SharedSceneWorker.mjs",
+        "bytes": 369,
+        "sha256": "423ce2d8734b973726dfb2251a8d3cdd2fce777771c13be9b4889f0766e4d444",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14StageMemoryClient.mjs",
+        "bytes": 10352,
+        "sha256": "8a3c0fc627fa88d79cd2427b6e54a91d320ed7529f0988163849907704224698",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14StageMemoryWorker.mjs",
+        "bytes": 689,
+        "sha256": "05b7415ae808c5d5f05129890f3a9b2ac16a498ce7b5920cadb76f9c9a14cbde",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14StageMemoryWorker.wasm",
+        "bytes": 1027,
+        "sha256": "050f8025cbc84be9447be48775ac8bacda98487355acb4b20e3d9986879f77f1",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14StageRestoreDelivery.mjs",
+        "bytes": 2997,
+        "sha256": "56a8b4e7acd5ccf2f6900c707751d66e91de9b524febf9b41e825df3b1845697",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14StageRestoreProtocol.mjs",
+        "bytes": 1701,
+        "sha256": "a451e36b430ec5c3ca80557eda7e48300b8dbfe504e9b4eba63efcdce52d9870",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14StageRestoreWorker.mjs",
+        "bytes": 257,
+        "sha256": "416f723b2503471d7f4b3be154e172200e8575a9d807fb3cc67634ba6ce62909",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14WebGpuCore.mjs",
+        "bytes": 1004,
+        "sha256": "646af08f35857c92772daf3dfb93bab8a0f7732745df014dc9230773d8223745",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "runtime/th14/multiplayer/4bad52bcfeb557e28300701b8b9c5d75eaf191717b68d9eac2cc060152054667/Th14WebGpuHost.mjs",
+        "bytes": 19989,
+        "sha256": "fd4ee2922cd976548a8425433767dc055ffb9f028603eccebc0522d98a3329b7",
+        "scope": "current",
+        "status": 200
+      },
+      {
+        "path": "site-manifest.json",
+        "bytes": 4163,
+        "sha256": "b4daa10e7cc38e327fb753eaa82bea6445a0882983b7d8cf777db9bb5993b721",
+        "scope": "publication-metadata",
+        "status": 200
+      }
+    ],
+    "extraOldGenerationsRetained": [],
+    "rootPublicHtmlFullBytesClaimed": false,
+    "publicUiOperated": false,
+    "publicMultiplayerOperated": false,
+    "publicRelayConfigured": false,
+    "completeGame": false,
+    "publicVerificationNetwork": "Windows client to public Cloudflare hostname"
+  },
+  "tunnel": {
+    "recovered": true,
+    "unit": "cloudflared@th14-wth.service",
+    "status": [
+      "ActiveState=active",
+      "MainPID=994751"
+    ],
+    "protocol": "original QUIC configuration",
+    "temporaryHttp2ProbeKept": false,
+    "temporaryDropInRemoved": true,
+    "credentialsChanged": false,
+    "routingChanged": false,
+    "sourceServiceRestarted": false,
+    "incident": "Public Cloudflare 530; HTTP2 probe TLS EOF; original transport restored and connector re-registered",
+    "completeGame": false
+  },
+  "publicNormalUi": {
+    "passed": true,
+    "steps": [
+      {
+        "name": "fresh-launcher-and-zero-volume",
+        "passed": true,
+        "elapsedMs": 4855,
+        "observation": {
+          "volumes": [
+            {
+              "label": "游戏音乐",
+              "value": "0"
+            },
+            {
+              "label": "游戏音效",
+              "value": "0"
+            },
+            {
+              "label": "快捷发言语音",
+              "value": "0"
+            }
+          ],
+          "isolated": true
+        }
+      },
+      {
+        "name": "ui-launch-streaming-ogg",
+        "passed": true,
+        "elapsedMs": 57667,
+        "observation": {
+          "src": "https://wth.saop.cc/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/th14.html?hosted=1&managedData=1&gameGeneration=gen-mwl6zxnr-abcafce6d822&runtimeVariant=normal&runtimeEpoch=1",
+          "phase": 0,
+          "title": [
+            1,
+            2,
+            0,
+            0,
+            10
+          ],
+          "audio": "running"
+        }
+      },
+      {
+        "name": "ui-normal-game-entry",
+        "passed": true,
+        "elapsedMs": 4207,
+        "observation": {
+          "navigation": [
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 205,
+              "title": [
+                1,
+                2,
+                0,
+                0,
+                10
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 246,
+              "title": [
+                5,
+                2,
+                1,
+                0,
+                4
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 287,
+              "title": [
+                6,
+                2,
+                0,
+                0,
+                3
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 325,
+              "title": [
+                7,
+                2,
+                0,
+                0,
+                2
+              ],
+              "error": ""
+            },
+            {
+              "phase": 0,
+              "stage": 0,
+              "frame": 365,
+              "title": [
+                7,
+                3,
+                0,
+                0,
+                2
+              ],
+              "error": ""
+            },
+            {
+              "phase": 6,
+              "stage": 1,
+              "frame": 0,
+              "title": [
+                -1,
+                -1,
+                -1,
+                -1,
+                -1
+              ],
+              "error": ""
+            }
+          ],
+          "state": {
+            "phase": 1,
+            "stage": 1,
+            "frame": 30,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          }
+        }
+      },
+      {
+        "name": "pause-freeze-resume",
+        "passed": true,
+        "elapsedMs": 2827,
+        "observation": {
+          "before": {
+            "phase": 2,
+            "stage": 1,
+            "frame": 38,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          },
+          "held": {
+            "phase": 2,
+            "stage": 1,
+            "frame": 38,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          },
+          "resumed": {
+            "phase": 1,
+            "stage": 1,
+            "frame": 82,
+            "title": [
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            ],
+            "error": ""
+          }
+        }
+      },
+      {
+        "name": "native-return-title-and-quit",
+        "passed": true,
+        "elapsedMs": 4982,
+        "observation": {
+          "returned": {
+            "phase": 0,
+            "stage": 0,
+            "frame": 12,
+            "title": [
+              1,
+              2,
+              0,
+              0,
+              10
+            ],
+            "error": ""
+          },
+          "playerClosed": true,
+          "launchVisible": true
+        }
+      }
+    ],
+    "pageErrors": [],
+    "httpErrors": [
+      {
+        "url": "https://wth.saop.cc/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/api/ready",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/_eagler/resource-routes?path=%2Fgames%2Fth14%2Fth14.dat",
+        "status": 404
+      }
+    ],
+    "codeResponses": 85,
+    "uniqueCodePaths": 69,
+    "allCodeBytesMatched": true,
+    "normalWasmSha256": "13dedcb8c4f2fcbe7051a22865f13c9d68b560ed282499ca6177b3bd7b64c5b3",
+    "reportSha256": "afcf9eab807d488d413b4ca53a49e1d8d8049c7b091c382ff917fb7ace3cc947",
+    "harnessSha256": "a847eafc6f2479db0dceb7cbaf6bd9c40b800e5bdd3405e93eca3e6159ec32d9"
+  },
+  "excludedAttempts": [
+    {
+      "reportSha256": "65ddbecc30a82826d7b98b08aa01ebda2558d5d5adc2c0eb08c2ed56c4651c68",
+      "reason": "Fetch probe targeted a transport not used by TH14 music"
+    },
+    {
+      "reportSha256": "a3efeecd6c69583c34fd5286eb7009eb4ac2f3215636463f674ac6ceae0c4c4e",
+      "reason": "Exit input was sent during title transition rather than interactive menu"
+    },
+    {
+      "reason": "First public response observer requested a 302 response body and terminated before game acceptance; original output retained"
+    }
+  ],
+  "silence": true,
+  "upstreamProductionChanged": false,
+  "publicMultiplayerAccepted": false,
+  "completeGame": false
+}

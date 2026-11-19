@@ -1,0 +1,420 @@
+{
+  "schema": "th14/native-tab-visibility/1",
+  "passedWithinScope": true,
+  "runtimeWasmSha256": "6b5e86f99a7e9749b6a31cce6e2ff2aa6c6029d504ff7c68f11faa0d93bfac43",
+  "generation": "08759279802b926a67c8099c0f59777030924f8c7c8629268ae604df9fefa14c",
+  "url": "https://wth.saop.cc/?game=th14",
+  "browser": "157.0.8103.79",
+  "playwrightCoreVersion": "1.62.0",
+  "method": {
+    "ownedNativeChrome": true,
+    "mutedChromeFlag": true,
+    "allThreeUiVolumesZero": true,
+    "connectOverCDPNoDefaults": true,
+    "usesDefaultBrowserContext": true,
+    "sameWindowTabSwitch": true,
+    "documentVisibilityPropertyOverridden": false,
+    "syntheticVisibilityEvents": false,
+    "warmPrivateProfileReused": true
+  },
+  "runningGame": {
+    "windows": [
+      {
+        "windowId": 63788173,
+        "bounds": {
+          "left": 10,
+          "top": 10,
+          "width": 945,
+          "height": 1060,
+          "windowState": "normal"
+        }
+      },
+      {
+        "windowId": 63788173,
+        "bounds": {
+          "left": 10,
+          "top": 10,
+          "width": 945,
+          "height": 1060,
+          "windowState": "normal"
+        }
+      }
+    ],
+    "before": {
+      "held": 0,
+      "pressed": 0,
+      "frame": 51,
+      "stageFrame": 51,
+      "phase": 1,
+      "hidden": false,
+      "gameHidden": false,
+      "visibility": "visible",
+      "focus": true,
+      "audio": "running"
+    },
+    "held": {
+      "held": 128,
+      "pressed": 128,
+      "frame": 52,
+      "stageFrame": 52,
+      "phase": 1,
+      "hidden": false,
+      "gameHidden": false,
+      "visibility": "visible",
+      "focus": true,
+      "audio": "running"
+    },
+    "away": {
+      "held": 128,
+      "pressed": 128,
+      "frame": 52,
+      "stageFrame": 52,
+      "phase": 1,
+      "hidden": true,
+      "gameHidden": true,
+      "visibility": "hidden",
+      "focus": false,
+      "audio": "running"
+    },
+    "stableHidden": {
+      "held": 128,
+      "pressed": 128,
+      "frame": 52,
+      "stageFrame": 52,
+      "phase": 1,
+      "hidden": true,
+      "gameHidden": true,
+      "visibility": "hidden",
+      "focus": false,
+      "audio": "running"
+    },
+    "returned": {
+      "held": 0,
+      "pressed": 0,
+      "frame": 53,
+      "stageFrame": 53,
+      "phase": 1,
+      "hidden": false,
+      "gameHidden": false,
+      "visibility": "visible",
+      "focus": true,
+      "audio": "running"
+    },
+    "events": [
+      {
+        "target": "game",
+        "event": "blur",
+        "time": 34939.610000014305
+      },
+      {
+        "target": "launcher",
+        "hidden": true,
+        "state": "hidden",
+        "time": 34950.960000008345
+      },
+      {
+        "target": "game",
+        "hidden": true,
+        "state": "hidden",
+        "time": 34974.24500000477
+      },
+      {
+        "target": "launcher",
+        "hidden": false,
+        "state": "visible",
+        "time": 36918.10000000894
+      },
+      {
+        "target": "game",
+        "hidden": false,
+        "state": "visible",
+        "time": 36918.38000001013
+      }
+    ],
+    "noSyntheticVisibilityEvents": true,
+    "sourceKeyUpSentOnlyAfterAssertions": true,
+    "defaultContextNoFocusEmulation": true
+  },
+  "explicitPauseAcrossVisibility": {
+    "before": {
+      "phase": 2,
+      "stage": 1,
+      "frame": 54,
+      "title": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "error": ""
+    },
+    "held": {
+      "phase": 2,
+      "stage": 1,
+      "frame": 54,
+      "title": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "error": ""
+    },
+    "resumed": {
+      "phase": 1,
+      "stage": 1,
+      "frame": 99,
+      "title": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "error": ""
+    },
+    "manualHidden": {
+      "phase": 2,
+      "stage": 1,
+      "frame": 54,
+      "title": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "error": ""
+    },
+    "manualReturned": {
+      "phase": 2,
+      "stage": 1,
+      "frame": 54,
+      "title": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "error": ""
+    }
+  },
+  "hiddenStartup": {
+    "startedHidden": {
+      "hidden": true,
+      "gameHidden": true,
+      "phase": 6,
+      "frame": 0,
+      "title": [
+        -1,
+        -1,
+        -1
+      ],
+      "audio": "running",
+      "info": [
+        {
+          "renderer": "SDL3 / WebGL2 / C++",
+          "version": "1.00b-thp-6b5e86f99a7e",
+          "time": 26646.454999998212
+        }
+      ],
+      "events": [
+        {
+          "hidden": true,
+          "state": "hidden",
+          "time": 3318.1299999952316
+        }
+      ]
+    },
+    "heldHidden": {
+      "hidden": true,
+      "gameHidden": true,
+      "phase": 6,
+      "frame": 0,
+      "title": [
+        -1,
+        -1,
+        -1
+      ],
+      "audio": "running",
+      "info": [
+        {
+          "renderer": "SDL3 / WebGL2 / C++",
+          "version": "1.00b-thp-6b5e86f99a7e",
+          "time": 26646.454999998212
+        }
+      ],
+      "events": [
+        {
+          "hidden": true,
+          "state": "hidden",
+          "time": 3318.1299999952316
+        }
+      ]
+    },
+    "visibleReady": {
+      "hidden": false,
+      "gameHidden": false,
+      "phase": 0,
+      "frame": 192,
+      "title": [
+        1,
+        2,
+        0
+      ],
+      "audio": "running",
+      "info": [
+        {
+          "renderer": "SDL3 / WebGL2 / C++",
+          "version": "1.00b-thp-6b5e86f99a7e",
+          "time": 26646.454999998212
+        }
+      ],
+      "events": [
+        {
+          "hidden": true,
+          "state": "hidden",
+          "time": 3318.1299999952316
+        },
+        {
+          "hidden": false,
+          "state": "visible",
+          "time": 29679.890000000596
+        }
+      ]
+    },
+    "realVisibilityOnly": true,
+    "noSyntheticVisibilityEvents": true
+  },
+  "gameplayQuitPassed": {
+    "returned": {
+      "phase": 0,
+      "stage": 0,
+      "frame": 12,
+      "title": [
+        1,
+        2,
+        0,
+        0,
+        10
+      ],
+      "error": ""
+    },
+    "playerClosed": true,
+    "launchVisible": true
+  },
+  "hiddenStartupQuitPassed": {
+    "playerClosed": true,
+    "launchVisible": true
+  },
+  "actualRuntimeAndFrontendResponsesVerified": 166,
+  "harnessSha256": {
+    "running": "a8e74511b1a7ed5b5d0ee88595dbbb2ed55853772b7a29baff86e39abb286f60",
+    "hiddenStartup": "aa8baff9eb98058081b266c06d2388e3a0a2e24d932650d7e82bbb8261e0d573"
+  },
+  "privateProbeAndFailedAssertionsRetained": true,
+  "earlierAssertionCorrections": [
+    "Frozen th11_input returns the previous tick snapshot; release is checked after an actual resumed tick and before explicit keyup.",
+    "A stopped startup can remain phase 6 with no interactive title; use native runtime-info plus zero control frames, then verify foreground title and Quit."
+  ],
+  "errors": {
+    "running": [],
+    "startup": [],
+    "runningHttp": [
+      {
+        "url": "https://wth.saop.cc/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/api/ready",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/api/ready",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/api/ready",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/_eagler/resource-routes?path=%2Fgames%2Fth14%2Fmusic%2Fogg%2Fth128_08.ogg",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/api/ready",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/api/ready",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/api/ready",
+        "status": 404
+      }
+    ],
+    "startupHttp": [
+      {
+        "url": "https://wth.saop.cc/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/assets/th17-card.webp",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/api/ready",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/api/ready",
+        "status": 404
+      },
+      {
+        "url": "https://wth.saop.cc/api/ready",
+        "status": 404
+      }
+    ]
+  },
+  "preview": {
+    "passed": true,
+    "service": "th14-preview-progress-context-nov18",
+    "status": [
+      "ActiveState=active",
+      "MainPID=1948225"
+    ],
+    "port": 8251,
+    "root": "/home/i/Code/th14-release/launch-runtime-acceptance-nov17/late-reload-fix/progress-build/hosted",
+    "groups": [
+      {
+        "root": "runtime/th14/",
+        "generation": "08759279802b926a67c8099c0f59777030924f8c7c8629268ae604df9fefa14c"
+      },
+      {
+        "root": "runtime/th14/multiplayer/",
+        "generation": "f040f56bc3b848dfccf8f72a073c0d5314896c14bfac5f6088360417e9f152a4"
+      }
+    ],
+    "verifiedResponses": 205,
+    "currentResponses": 68,
+    "retainedResponses": 134,
+    "rollbackUnit": "th14-preview-main3006-nov18",
+    "sourceBindingsVerified": true,
+    "developmentSiteChanged": false,
+    "completeGame": false
+  },
+  "sourceOrRuntimeModifiedForThisAcceptance": false,
+  "deviceAudioOutputMeasured": false,
+  "coldUncachedDownloadClaimed": false,
+  "otherBrowsersOrPhysicalInputDevicesClaimed": false,
+  "multiplayerVisibilityClaimed": false,
+  "completeGame": false
+}

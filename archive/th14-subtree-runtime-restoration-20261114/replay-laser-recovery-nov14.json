@@ -1,0 +1,107 @@
+{
+  "schema": "th14/replay-laser-recovery-reopen/1",
+  "passed": true,
+  "baseProductionSource": "098f642b2a360b05768f66fe481387c2022475e1",
+  "sourceBefore": "018e8095acb4a095878dbb27d2c24590da41237833f3e21b869a6ab3e88a8eac",
+  "sourceAfter": "f0b561a903cf1f3bae94385ec6f5a90cf688844f71bb0ab0b8438fa129cf1596",
+  "baselineReportSha256": "f5af0015f506b06426b7e6e1b146763e7be105b22087d309446a07581437dfc5",
+  "candidateReportSha256": "51caf2fe60d70f8ee20a047a0c71adbef2b1c0bbda4710549da921bd49bf3221",
+  "sameSourceReopen": {
+    "oldRecoveredRecords": 0,
+    "candidateRecoveredRecords": 2,
+    "editedRecord": [
+      3,
+      2935,
+      0,
+      2147483646,
+      1
+    ],
+    "oldClipScore": 64383460,
+    "candidateClipScore": 64383430,
+    "candidateActualLengthAtEditedFrame": 8
+  },
+  "differentSourceReopen": {
+    "candidateRecoveredRecords": 0,
+    "candidateClipScore": 64383460,
+    "variantOnlyAddsUnknownUserBlock": true
+  },
+  "firstClipScore": 64383460,
+  "clipFramesPerPass": 3600,
+  "passesPerCase": 3,
+  "ordinaryReplayBytesUnchanged": true,
+  "actualEditorAndNativeReopenActions": true,
+  "normalGameplayAccessControl": true,
+  "fixtureRelaxedAccessOnly": true,
+  "noRngOrEconomyWrites": true,
+  "silentMemoryAudioBackend": true,
+  "graphicsRecordingOnly": true,
+  "browserAccepted": true,
+  "fullReplayAccepted": false,
+  "productionChanged": false,
+  "completeGame": false,
+  "browser": {
+    "actualWebGL2": true,
+    "site": "http://localhost:8236/?game=th14",
+    "runtimeGeneration": "0adcd12be8ab72f9b6f8b199a62a81a2d73b50a338abd7a5ec5a734c2655653b",
+    "wasmSha256": "df0078886de57ebf6b315a1cd0ac8a509e41ec387443f10cadb2ca0a738d6805",
+    "bgmVolume": 0,
+    "sfxVolume": 0,
+    "practiceUiEnabled": true,
+    "entry": "ordinary launch -> native Replay menu -> imported file user page -> stage 3",
+    "inputSha256": "aec3b3045be9a0ddd4e7e4005182a9561e97f9d3f66f7f93a81397a1b614ec92",
+    "processingMode": 3,
+    "observedRecords": [
+      {
+        "stage": 3,
+        "frame": 1280,
+        "raw": "047c7e87",
+        "correction": 0
+      },
+      {
+        "stage": 3,
+        "frame": 2935,
+        "raw": "7ffffffe",
+        "correction": 1
+      }
+    ],
+    "pausedBeforeEditing": true,
+    "nativePauseReplayAgainUsed": true,
+    "sameSourceReopenRetainsBothRecordsAndZeroEdit": true,
+    "scoreBeforeReplayAgain": 71467800,
+    "scoreAfterReplayAgainObservation": 58427350,
+    "exactBrowserClipTerminalAccepted": false,
+    "differentFileBrowserAccepted": false,
+    "managedReplayWorkspaceShortcutAttemptAccepted": false,
+    "managedReplayWorkspaceNote": "native edit shortcuts did not open tools; used ordinary game native Replay menu",
+    "privateProofs": {
+      "ui-recovery-mode-selected.png": {
+        "sha256": "70cae0b80f9ede46100afe20ab8ae517403af0484fcfa3bffa1f4878a27110a9",
+        "bytes": 190300
+      },
+      "ui-before-edit.png": {
+        "sha256": "95b3159dcab31b71bd3555c4e4b2b2afcbf5c6326d47688a9c64e6edccfdfe60",
+        "bytes": 199813
+      },
+      "ui-edited-zero.png": {
+        "sha256": "0d0613a6909e0b814005422d965f97fd8d0b1ea8fec46a974791b06effeb4268",
+        "bytes": 199184
+      },
+      "ui-after-replay-again.png": {
+        "sha256": "03f7b096c138a849fe9fed9d21137c48decb9a4ec5c36c4674d16763ab540943",
+        "bytes": 196916
+      }
+    }
+  },
+  "sourcePublicationPending": true,
+  "exportAttempt": {
+    "downloadEventObserved": false,
+    "downloadSuccessEstablished": false,
+    "waitTimeouts": 2,
+    "consoleErrorsObservedOnFirstCheck": [],
+    "iframeSandboxAttribute": null,
+    "replayAgainEditRetentionAccepted": true,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "exportAndPlaybackRoundtripAccepted": false
+}

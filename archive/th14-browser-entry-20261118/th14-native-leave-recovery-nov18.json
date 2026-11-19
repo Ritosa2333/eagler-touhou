@@ -1,0 +1,207 @@
+{
+  "schema": "th14/native-leave-recovery/1",
+  "sourceCommit": "4f99e4da3059178553fba08f649a7a44ed49cc2e",
+  "previewDocumentationHead": "c2ea193f529010460924fb49e369729da3433005",
+  "normalGeneration": "fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1",
+  "normalWasmSha256": "13dedcb8c4f2fcbe7051a22865f13c9d68b560ed282499ca6177b3bd7b64c5b3",
+  "fontInstallLeave": {
+    "passed": true,
+    "steps": [
+      {
+        "name": "actual-native-iframe-font-install-pending",
+        "passed": true
+      },
+      {
+        "name": "reload-left-native-install-and-restored-launcher",
+        "passed": true
+      },
+      {
+        "name": "retry-entered-native-title",
+        "passed": true
+      },
+      {
+        "name": "retry-native-quit-restored-launcher",
+        "passed": true
+      }
+    ],
+    "requestFromNativeIframe": true,
+    "serviceWorker": false,
+    "serviceWorkersBlocked": true,
+    "resourcePath": "/runtime/th14/fdb227a602f0c5482ac78580da14ec77637fc2130bafab68ef8fdf8869cbe8d1/fonts/cp932.bin",
+    "cancelButtonHidden": true,
+    "navigationReloadUsed": true,
+    "requestAbortEventForFontObserved": false,
+    "retry": {
+      "phase": 0,
+      "title": [
+        1,
+        2,
+        0
+      ],
+      "error": "",
+      "isolated": true
+    },
+    "pageErrors": [],
+    "reportSha256": "2de6052641d8699c466fd6d1556e95fda00bbce1f57bd2b8545d99da76c3b46f",
+    "harnessSha256": "9054650739251a67f78f5a3381df5ec03a4cb0240840cfb775c3ad677f669cec"
+  },
+  "focusLoss": {
+    "passed": true,
+    "headedChrome": true,
+    "focusEmulationDisabled": true,
+    "observation": {
+      "before": {
+        "held": 0,
+        "pressed": 0,
+        "frame": 46,
+        "phase": 1,
+        "focus": true,
+        "visibility": "visible"
+      },
+      "held": {
+        "held": 128,
+        "pressed": 128,
+        "frame": 47,
+        "phase": 1,
+        "focus": true,
+        "visibility": "visible"
+      },
+      "away": {
+        "held": 0,
+        "pressed": 0,
+        "frame": 53,
+        "phase": 1,
+        "focus": false,
+        "visibility": "visible"
+      },
+      "returned": {
+        "held": 0,
+        "pressed": 0,
+        "frame": 56,
+        "phase": 1,
+        "focus": true,
+        "visibility": "visible"
+      },
+      "stable": {
+        "held": 0,
+        "pressed": 0,
+        "frame": 87,
+        "phase": 1,
+        "focus": true,
+        "visibility": "visible"
+      },
+      "events": [
+        {
+          "target": "game",
+          "type": "blur",
+          "visibility": "visible",
+          "focused": false,
+          "stamp": 20834.57500000298
+        },
+        {
+          "target": "game",
+          "type": "blur",
+          "visibility": "visible",
+          "focused": false,
+          "stamp": 20835.04999999702
+        }
+      ],
+      "sourceKeyUpSentOnlyAfterAssertions": true
+    },
+    "pageRemainedVisible": true,
+    "hiddenPauseAccepted": false,
+    "normalFlowAlsoPassed": true,
+    "steps": [
+      "fresh-launcher-and-zero-volume",
+      "ui-launch-streaming-ogg",
+      "ui-normal-game-entry",
+      "actual-focus-loss-releases-held-key",
+      "pause-freeze-resume",
+      "native-return-title-and-quit"
+    ],
+    "codeResponses": 60,
+    "allCodeBytesMatched": true,
+    "reportSha256": "96e375fe31c9ed6435da8ef6a351047a86dc2e43e64cbab9fb1c4cd5f0971a7b",
+    "harnessSha256": "d94f3a53b7d71118d9f6725f2540f530b8177b8a7005dc716bec445a4e36e4d4"
+  },
+  "hiddenAttempt": {
+    "accepted": false,
+    "audit": [
+      {
+        "defaults": true,
+        "before": {
+          "bounds": {
+            "bounds": {
+              "left": 10,
+              "top": 10,
+              "width": 1296,
+              "height": 808,
+              "windowState": "normal"
+            }
+          },
+          "page": {
+            "visibility": "visible",
+            "focus": true
+          }
+        },
+        "minimized": {
+          "bounds": {
+            "bounds": {
+              "left": 10,
+              "top": 10,
+              "width": 1296,
+              "height": 808,
+              "windowState": "minimized"
+            }
+          },
+          "page": {
+            "visibility": "visible",
+            "focus": false
+          }
+        }
+      },
+      {
+        "defaults": false,
+        "before": {
+          "bounds": {
+            "bounds": {
+              "left": 10,
+              "top": 10,
+              "width": 1296,
+              "height": 808,
+              "windowState": "normal"
+            }
+          },
+          "page": {
+            "visibility": "visible",
+            "focus": true
+          }
+        },
+        "minimized": {
+          "bounds": {
+            "bounds": {
+              "left": 10,
+              "top": 10,
+              "width": 1296,
+              "height": 808,
+              "windowState": "minimized"
+            }
+          },
+          "page": {
+            "visibility": "visible",
+            "focus": false
+          }
+        }
+      }
+    ],
+    "timerPollingAttemptReportSha256": "3a308b89129283bb008a8cb8d2d3f7660ecdc43871adbd90351e5862c802d4a3",
+    "reason": "Owned browser window reported minimized but document remained visible; no hidden-pause claim"
+  },
+  "silence": {
+    "chromeMuteAudio": true,
+    "allThreeVolumeControlsZero": true
+  },
+  "runtimeCodeChanged": false,
+  "productionChanged": false,
+  "completeGame": false
+}

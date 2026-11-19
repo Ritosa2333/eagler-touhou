@@ -1,0 +1,347 @@
+{
+  "schema": "th14/upstream-touch-stats/1",
+  "sourceCommit": "0a73dd6d658638d12de621bf3c32a34cc1f1dcab",
+  "sourceParents": [
+    "a3fd7414586ae06ace0c0729c9efad24ae3005e0",
+    "feaa624c6d2110cecf9e4e71139651421ab30bd4"
+  ],
+  "upstreamFixCommit": "feaa624c6d2110cecf9e4e71139651421ab30bd4",
+  "sourceBindingsVerified": 387,
+  "commonBindingsVerified": 25,
+  "semanticCoreChanges": 13,
+  "browserWasmSha256": "48f552bf04b43bf9b641f88c49973a064e57d5dda601f0e721de505f6ec37646",
+  "browserUnitsFresh": 153,
+  "componentSemantics": {
+    "passed": true,
+    "cases": [
+      {
+        "name": "new",
+        "kind": "dialogue",
+        "module": "new-dialogue.wasm",
+        "sha256": "7ba8494368d8f5e7379cb2de0df9a207ca205b56fa2cb3d44e9fca5211cff274",
+        "result": 0,
+        "checks": 9
+      },
+      {
+        "name": "new",
+        "kind": "cycle",
+        "module": "new-cycle.wasm",
+        "sha256": "457e34d985b0348894f17c228a14e21915ff8c61876e74a0b69f5c1b8c2528ae",
+        "result": 0
+      },
+      {
+        "name": "old",
+        "kind": "dialogue",
+        "module": "old-dialogue.wasm",
+        "sha256": "34de646e8edd6aaeade34d9d13ea8886d0ff142a5797759cff102273e3411a7f",
+        "result": 2,
+        "checks": 0
+      },
+      {
+        "name": "old",
+        "kind": "cycle",
+        "module": "old-cycle.wasm",
+        "sha256": "c11b06438971cd8bb4ccf2757db0cb418f052bbac0f799ab7365cfd2f132c3cf",
+        "result": 1
+      }
+    ],
+    "dialogueGroups": 9,
+    "cycleAwardCombinations": 200,
+    "oldDialogueAndCycleControlsRejected": true,
+    "actualHardwareTouchAccepted": false,
+    "wholeRunCountersAcrossStagesAccepted": false,
+    "silent": true,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "frontend": {
+    "passed": true,
+    "checks": [
+      "i18n.log",
+      "typecheck-resumed.log",
+      "replay-model.log",
+      "frontend-build.log"
+    ],
+    "dependencyVersion": "simple-icons@16.37.0",
+    "dependencyIntegrityVerified": true,
+    "sparseDependencyRestored": "ports/th09/web/sdl-runtime",
+    "productionChanged": false,
+    "observedBeforeSourceCommit": true
+  },
+  "privateBrowser": {
+    "scope": "new merged TH14 candidate manual short flow",
+    "wasm": "48f552bf04b43bf9b641f88c49973a064e57d5dda601f0e721de505f6ec37646",
+    "generation": "b85b335036e3b01ad51ce2e35ce4689a21c2d4d8a0f15fa15ba01720c0035f98",
+    "site": "http://localhost:8230/?game=th14",
+    "musicVolume": 0,
+    "sfxVolume": 0,
+    "observedAudioMode": "ogg streaming",
+    "graphics": "SDL3 / WebGL2 / C++",
+    "loadout": "Reimu A Normal",
+    "accepted": [
+      "ordinary start",
+      "shooting and movement",
+      "Bomb reduced stock from 3 to 2",
+      "pause and resume",
+      "return to title after selecting affirmative confirmation"
+    ],
+    "confirmationObservation": "The default selection is cancel. Confirm without changing selection returns to the pause menu. Up then confirm returned to title.",
+    "actualHardwareTouchAccepted": false,
+    "wholeRunCountersAcrossStagesAccepted": false,
+    "productionChanged": false,
+    "completeGame": false,
+    "screenshots": {
+      "browser-pause.jpg": "ece7c4000822213741e503443ea8b41dbc5f23fc7962427015543c1c4c1dd2aa",
+      "browser-bomb-paused.jpg": "d0742568fecb94f43c2252a72b0ac22f64c366024d932b9a487f928fe117faca",
+      "browser-return-title.jpg": "5469af5913dddee582362caa15f1d24f871d705b6f0839048f9c974e7e33851b",
+      "browser-return-final.jpg": "c2c939d6e88e3dbb0148cd8cf1cc667bfc69a040e5bc5de3b732f1a59031eeb1",
+      "browser-title-confirmed.jpg": "570c4def876922009e9f233fe7f9a7602aefa7f8788b072b356c498717ab9dfb"
+    },
+    "observedBeforeSourceCommit": true
+  },
+  "http": {
+    "files": 32,
+    "allWholeFileHashesVerified": true,
+    "coiAndNoTransformAccepted": true
+  },
+  "history": {
+    "passed": true,
+    "commit": "0a73dd6d658638d12de621bf3c32a34cc1f1dcab",
+    "parents": [
+      "a3fd7414586ae06ace0c0729c9efad24ae3005e0",
+      "feaa624c6d2110cecf9e4e71139651421ab30bd4"
+    ],
+    "th14HistoryAndExportAccepted": true,
+    "productionChanged": false,
+    "completeGame": false
+  },
+  "ordinaryCounterAudit": {
+    "passed": true,
+    "wasmSha256": "7975fd2f3994f78b938e7faf039295fae85e131a99a618ecf92d4825623874d5",
+    "providersFresh": 146,
+    "normalProductionAccessControl": true,
+    "fixtureOnlyRelaxedAccess": true,
+    "observerReadsOnly": true,
+    "optionalUiCompiled": false,
+    "loadout": "Marisa B Lunatic",
+    "inputSha256": "e452a97814aecdb9480540761dfaed979c865be62d57a32a616720a6114913af",
+    "naturalClearResultsSaved": true,
+    "retired": true,
+    "callbacks": 120192,
+    "rank": {
+      "scoreUnits": 150807232,
+      "stage": 8,
+      "continues": 0
+    },
+    "sameRankAndFlowAsPreviousDeclaredSample": true,
+    "stageCarries": [
+      {
+        "from": 1,
+        "to": 2,
+        "before": [
+          4,
+          16,
+          6,
+          6,
+          3,
+          0,
+          10,
+          4,
+          16,
+          1,
+          0,
+          1
+        ],
+        "after": [
+          4,
+          16,
+          6,
+          6,
+          3,
+          0,
+          10,
+          4,
+          16,
+          2,
+          0,
+          1
+        ],
+        "frame": 15323
+      },
+      {
+        "from": 2,
+        "to": 3,
+        "before": [
+          12,
+          36,
+          7,
+          9,
+          5,
+          1,
+          30,
+          11,
+          25,
+          2,
+          0,
+          1
+        ],
+        "after": [
+          12,
+          36,
+          7,
+          9,
+          5,
+          1,
+          30,
+          11,
+          25,
+          3,
+          0,
+          1
+        ],
+        "frame": 32830
+      },
+      {
+        "from": 3,
+        "to": 4,
+        "before": [
+          18,
+          54,
+          11,
+          14,
+          6,
+          4,
+          45,
+          17,
+          38,
+          3,
+          1,
+          1
+        ],
+        "after": [
+          18,
+          54,
+          11,
+          14,
+          6,
+          4,
+          45,
+          17,
+          38,
+          4,
+          1,
+          1
+        ],
+        "frame": 50331
+      },
+      {
+        "from": 4,
+        "to": 5,
+        "before": [
+          28,
+          81,
+          12,
+          16,
+          10,
+          8,
+          88,
+          32,
+          51,
+          4,
+          1,
+          1
+        ],
+        "after": [
+          28,
+          81,
+          12,
+          16,
+          10,
+          8,
+          88,
+          32,
+          51,
+          5,
+          1,
+          1
+        ],
+        "frame": 72274
+      },
+      {
+        "from": 5,
+        "to": 6,
+        "before": [
+          37,
+          103,
+          17,
+          18,
+          12,
+          12,
+          115,
+          41,
+          65,
+          5,
+          1,
+          1
+        ],
+        "after": [
+          37,
+          103,
+          17,
+          18,
+          12,
+          12,
+          115,
+          41,
+          65,
+          6,
+          1,
+          1
+        ],
+        "frame": 93757
+      }
+    ],
+    "lastGameplayCounters": [
+      43,
+      123,
+      21,
+      19,
+      18,
+      16,
+      139,
+      48,
+      84,
+      6,
+      0,
+      1
+    ],
+    "afterSessionEnd": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "allSevenCounterTypesExercised": true,
+    "gameplayStateWrites": false,
+    "completionBoundaryInvokedDirectly": false,
+    "initialAuditFailure": {
+      "reportSha256": "9c231466b7c2e51332e91573ec9e44d3300338496a2361ba4482bc8c7fc2285b",
+      "exception": "AssertionError [ERR_ASSERTION]: whole-run counter cannot reset at stage boundary: 0\n    at observeCounters (file:///H:/code/thp/tools/th14-run-feaa-practice-counters-nov14.mjs:44:104)\n    at file:///H:/code/thp/tools/th14-run-feaa-practice-counters-nov14.mjs:76:119",
+      "cause": "Observer incorrectly extended its monotonic-run requirement beyond gameplay into title reset. First report retained; second audit scopes active stages and explicitly verifies end reset."
+    },
+    "silent": true
+  },
+  "actualHardwareTouchAccepted": false,
+  "optionalUiCounterDisplayAcrossStagesAccepted": false,
+  "wholeGameAccepted": false,
+  "productionChanged": false,
+  "completeGame": false
+}

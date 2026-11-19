@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "sourceParent": "ab3953ef86e88afaa0b75bceb515f4b9260f2f95",
+  "baselineRejected": true,
+  "baselineFailed": 2,
+  "baselinePassed": 22,
+  "candidatePassed": 24,
+  "newRegressionCases": 4,
+  "runner": "same actual-service esbuild fixture and test bodies; Node test runner with only test API import/project-root adaptation",
+  "projectVitestPassed": false,
+  "projectVitestAttempt": "Bun CLI timed out after 180 seconds with empty output; no matching test process remained",
+  "files": {
+    "launcher/app/services/files.ts": "e12fea320d4c894c9ecebae8f64e9b8916755ddb3e05ec61ebe82b5430414bbf",
+    "launcher/tests/react-main/files-service.test.mjs": "84b9b3bc30a7b5eacd3c5cd5127ed310c4b68a8e9c94fe81344157a1ccf918f1"
+  },
+  "baselineLogSha256": "a7e621b437d7f1bbfe72fba4847f73224d38e7a82bd7c4caf72a1fe46a72fccd",
+  "candidateLogSha256": "fe256282bf9df9d587909fae63492f1472f22399dd080686a6b2cd7be3ae8780",
+  "actualBrowserCandidateAccepted": false,
+  "frozenServiceUnmodified": true,
+  "gameSourceChanged": false,
+  "productionChanged": false,
+  "completeGame": false,
+  "typecheckPassed": true,
+  "frontendBuildPassed": true,
+  "packageVerified": true,
+  "copyOnWriteForced": true,
+  "runtimeFilesUnchanged": 32,
+  "frontendBuildLogSha256": "c441a17f478e350b5de5c247663a9e15a95ca2945cac0468ebc307268d6a39ad",
+  "privatePreviewPort": 8241,
+  "browserNormalFileFlowSmokePassed": true,
+  "browserCancelRaceDirectlyObserved": false,
+  "browserSmokeScope": "cold export reported completed; normal replay manager and original metadata loaded; current runtime selected through normal update prompt",
+  "browserSmokeMusicVolume": 0,
+  "browserSmokeSfxVolume": 0,
+  "browserEvidenceSha256": {
+    "browser-ready.txt": "ce03c213e0b24673d875a9c8618c81be5fffb46c872e751db3e091774b9930ac",
+    "browser-ready.png": "16cf344ea9e551635160d3e474a366a2717a28afe1bd0634687ae66b5ad5be35",
+    "browser-current-ready.txt": "d656350221a1c94a61d9985bb163dc52af3f132dd109b1890f5a3a5323ddddf1",
+    "browser-current-ready.png": "861cd67018b499a8f03f8fdb471e2ac2b2d8fb014603fad17a5fb3428c38404e"
+  },
+  "deploymentAccepted": false
+}

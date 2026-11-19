@@ -1,0 +1,155 @@
+{
+  "schema": "th14/native-practice-cancel/1",
+  "passedWithinDeclaredScope": true,
+  "standard": "observable behavior alignment",
+  "generation": "55696f7fc59af78c3c91fb87bae0e4a3cde4d890b126cc04e1af643a0b37eda8",
+  "runtimeCodeSource": "7a83c3eeba3ff6c15c8559d14ec175e4b92bad93",
+  "formalThpracAvailable": false,
+  "onlyOrdinaryNativeInput": true,
+  "savedGameStateInjected": false,
+  "music": "none",
+  "musicVolume": 0,
+  "sfxVolume": 0,
+  "observations": {
+    "reimuANormalSixStageFlagsZeroBefore": true,
+    "allSixStagesShownLocked": true,
+    "firstStageConfirmationStayedInStageList": true,
+    "actualConfirmOtherFiveLockedStagesAccepted": false,
+    "cancelReturnedThroughWeaponCharacterDifficultyTitle": true,
+    "sameApplicationNormalModeStarted": true,
+    "initialInventoryBeforeHitDirectlyAccepted": false,
+    "firstEarlyEscapeDidNotShowPauseAndLaterObservationHadOneLifeLost": true,
+    "firstLatePauseRetained": true,
+    "nativeNormalRetryAccepted": true,
+    "normalRetryInventory": {
+      "lives": 2,
+      "bombs": 3,
+      "power": 100,
+      "score": 20,
+      "graze": 0
+    },
+    "returnedTitleAndNativeQuitAccepted": true
+  },
+  "score": {
+    "encodedBytes": 21643,
+    "encodedSha256": "537063c9842a2654beca45174eca613376e9b13a1b10107315a11d4af37ab185",
+    "decodedBytes": 149076,
+    "decodedSha256": "9ac2db2808224a9f8ba4c70e1a37c8d7a68db63c09c0d3afadd090545244c4ac",
+    "changedDecodedBytes": 4,
+    "changes": [
+      {
+        "record": 0,
+        "changedBytes": 4,
+        "offsets": [
+          "0x4",
+          "0x7b8",
+          "0x7bc",
+          "0x7bd"
+        ],
+        "playCountBefore": 1,
+        "playCountAfter": 3,
+        "playFramesBefore": 122,
+        "playFramesAfter": 836,
+        "practiceFlagsUnchanged": true,
+        "spellRecordsUnchanged": true
+      },
+      {
+        "record": 1,
+        "changedBytes": 0,
+        "offsets": [],
+        "playCountBefore": 1,
+        "playCountAfter": 1,
+        "playFramesBefore": 2084,
+        "playFramesAfter": 2084,
+        "practiceFlagsUnchanged": true,
+        "spellRecordsUnchanged": true
+      },
+      {
+        "record": 2,
+        "changedBytes": 0,
+        "offsets": [],
+        "playCountBefore": 0,
+        "playCountAfter": 0,
+        "playFramesBefore": 0,
+        "playFramesAfter": 0,
+        "practiceFlagsUnchanged": true,
+        "spellRecordsUnchanged": true
+      },
+      {
+        "record": 3,
+        "changedBytes": 0,
+        "offsets": [],
+        "playCountBefore": 0,
+        "playCountAfter": 0,
+        "playFramesBefore": 0,
+        "playFramesAfter": 0,
+        "practiceFlagsUnchanged": true,
+        "spellRecordsUnchanged": true
+      },
+      {
+        "record": 4,
+        "changedBytes": 0,
+        "offsets": [],
+        "playCountBefore": 0,
+        "playCountAfter": 0,
+        "playFramesBefore": 0,
+        "playFramesAfter": 0,
+        "practiceFlagsUnchanged": true,
+        "spellRecordsUnchanged": true
+      },
+      {
+        "record": 5,
+        "changedBytes": 0,
+        "offsets": [],
+        "playCountBefore": 0,
+        "playCountAfter": 0,
+        "playFramesBefore": 0,
+        "playFramesAfter": 0,
+        "practiceFlagsUnchanged": true,
+        "spellRecordsUnchanged": true
+      },
+      {
+        "record": 6,
+        "changedBytes": 0,
+        "offsets": [],
+        "playCountBefore": 0,
+        "playCountAfter": 0,
+        "playFramesBefore": 0,
+        "playFramesAfter": 0,
+        "practiceFlagsUnchanged": true,
+        "spellRecordsUnchanged": true
+      },
+      {
+        "record": 7,
+        "changedBytes": 0,
+        "offsets": []
+      }
+    ],
+    "ordinaryStartsAndRetriesDelta": 2,
+    "playFramesDelta": 714,
+    "allChangesOnlyReimuAPlayCountPlayTimeAndChecksum": true,
+    "allRankingClearPracticeAndSpellDataUnchanged": true,
+    "otherSixWholeCharacterRecordsUnchanged": true,
+    "wholeSettingsRecordUnchanged": true,
+    "independentDecodeOnly": true,
+    "newRetailCodecExecution": false
+  },
+  "codeChanged": false,
+  "runtimeRebuilt": false,
+  "assetsCopied": false,
+  "newProductionDeployment": false,
+  "publicBrowserAccepted": false,
+  "allPracticeStagesAndLoadoutsAccepted": false,
+  "completeGame": false,
+  "followupRetailAudit": {
+    "caseCount": 450,
+    "ordinaryEntryShouldSetPracticeAvailable": true,
+    "currentOrdinaryVisitDoesNotWriteEnteredFlag": true,
+    "ordinaryVisitUnlockCompatibilityAccepted": false,
+    "candidateImplementedNotBrowserAccepted": false,
+    "productionChanged": false,
+    "candidateActualBrowserAccepted": true,
+    "subsequentReleasedRuntimeSource": "53ad371f30c9c6cb8c1e27c094d365663b774276",
+    "subsequentReleasedGeneration": "77230ead1bcaacd6bb52bc9e04f88c6a1c1c1653d090622c1be7d708fcd1552f"
+  }
+}

@@ -38,6 +38,7 @@ def main():
     parser.add_argument('--common', type=Path, default=os.environ.get('EAGLER_COMMON', repo.parents[1] / 'common'))
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--jobs', type=int, choices=range(1, 17), default=3)
+    parser.add_argument('--single-threaded', action='store_true', help='Build the fallback for browsers without cross-origin isolation')
     args = parser.parse_args()
     sdk = args.emsdk.resolve()
     compiler = sdk / 'upstream/emscripten/emcc.py'
@@ -58,6 +59,11 @@ def main():
     sources = [portable / 'Renderer.cpp', *sorted((cpp / 'game').glob('*.cpp'), key=lambda p: p.name),
                *sorted((cpp / 'sdl').glob('*.cpp'), key=lambda p: p.name)]
     flags = profile['flags'][:]
+    if args.single_threaded:
+        threaded = {'-pthread', '-DTH14_CPP_BOOT_WORKER=1', '-DTH14_CPP_STAGE_WORKER=1',
+                    '-DTH14_CPP_STAGE_DECODE=1', '-DTH14_CPP_STAGE_RESOURCE_HANDSHAKE=1',
+                    '-DTH14_SHARED_SCENE_COPY=1', '-DTH14_STAGE_RESTORE_DELIVERY=1'}
+        flags = [flag for flag in flags if flag not in threaded]
     common = args.common.resolve()
     imgui = common / 'third_party/imgui'
     shared = common / 'include'
@@ -107,6 +113,9 @@ def main():
              'room_replay_open', 'room_replay_pause', 'room_spectator_state', 'room_spectator_control')
     link_flags = [f + ''.join(',_th14_' + name for name in names) if f.startswith('-sEXPORTED_FUNCTIONS=') else f
                   for f in link_flags]
+    if args.single_threaded:
+        link_flags = [flag for flag in link_flags
+                      if not flag.startswith('-sPTHREAD_') and flag != '-sALLOW_BLOCKING_ON_MAIN_THREAD=1']
     with tempfile.TemporaryDirectory(dir=output, prefix='emsdk-') as temp:
         env.update(TMP=temp, TMPDIR=temp, TEMP=temp)
         with ThreadPoolExecutor(max_workers=args.jobs) as pool:

@@ -383,6 +383,17 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     publish();
   }
   let settingsReloadPending = false;
+  // Resource work can be interrupted after spectator-start was accepted.
+  // Resume that admission when its resources are ready, without creating an
+  // admission from a room snapshot or reviving a viewer that already exited.
+  function resumePendingSpectatorLaunch() {
+    if (!resourceRetrySpectatorSerial || resourceRetrySpectatorSerial !== state.startSerial ||
+        !room || room.phase === 'lobby' || disposed || stopped || !state.connected ||
+        settingsReloadPending || !state.spectatorRequested || state.seat != null ||
+        state.preparation?.status !== 'ready' || state.launchBusy || roleChanging || ports.isLaunched()) return;
+    resourceRetrySpectatorSerial = 0;
+    void launch();
+  }
   function prepareResources(refresh = false): Promise<void> {
     if (!room || !product || disposed || settingsReloadPending) return Promise.resolve();
     if (preparation?.epoch === epoch && !(refresh && state.preparation?.status === 'ready')) return preparation.task;
@@ -409,6 +420,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           if (result && !/^[a-f0-9]{64}$/.test(result.runtimeGeneration)) throw new Error(ports.translate('multiplayer.runtimeCheckFailed'));
           preparedRuntimeGeneration = result?.runtimeGeneration;
           reportProgress({ status: 'ready', stage: 'runtime', percent: 100, error: '' });
+          resumePendingSpectatorLaunch();
         }
       })
       .catch((error) => {
@@ -1454,6 +1466,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         launchController = null;
         state.launchBusy = false;
         publish();
+        if (owned.isCurrent()) resumePendingSpectatorLaunch();
       }
     }
   }

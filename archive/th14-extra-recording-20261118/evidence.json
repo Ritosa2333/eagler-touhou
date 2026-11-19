@@ -1,0 +1,244 @@
+{
+  "schema": "th14/current-core-extra-recording/1",
+  "date": "2026-11-18",
+  "passed": true,
+  "completeGame": false,
+  "silent": true,
+  "onlyTH14": true,
+  "codeChanged": false,
+  "source": {
+    "coreHead": "2d93b0d6d7afc865a0d70e25e99376294a39b50c",
+    "cppDeltaSinceVerified343Inputs": [
+      "runtimes/th12/th12_web/cpp/game/GameSession.cpp"
+    ],
+    "currentGameSessionBytesMatchPublishedHead": true,
+    "currentGameSessionSha256": "c43ee9d73cef86477f4c992c35c46820a218b3c5df61639ee2a833466c428bce",
+    "allOtherNativeCppInputsReuseVerifiedDfeBaseline": true,
+    "providerObjectsVerified": 145,
+    "newGameProvidersCompiled": 0,
+    "newFixtureLink": true,
+    "fixtureWasmSha256": "8fa44ba635eb5f9387abbbe9956c67ed0f1fe7282707768f9aa5ac247698b15c"
+  },
+  "ordinary": {
+    "loadout": "Marisa A",
+    "difficulty": "Extra",
+    "naturalClear": true,
+    "normalClearSaveUsedForUnlock": true,
+    "score": 744413340,
+    "graze": 12053,
+    "exportDuringActualExtraResultMenu": true,
+    "saveBoundary": "production GameSession::save_replay",
+    "actualSaveMenuButtonClaimed": false,
+    "gameStateWritesToMatchReference": false,
+    "reportSha256": "b9dbc60c676d4d6134661b81dda5b5173ee9a850a2dfd7d31908e244a2960494",
+    "retired": true
+  },
+  "recording": {
+    "passed": true,
+    "inputSha256": "66d29bdc5868b6a7756ebbc1295f7255078eb92079ce9f87b95ddf1425e31b45",
+    "inputBytes": 39590,
+    "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+    "originalDecryptAndLzssInstructionBytesPatched": 0,
+    "controlledCrtBoundaries": [
+      "malloc",
+      "memcpy",
+      "free"
+    ],
+    "decodedBytes": 280267,
+    "decodedSha256": "175dc6b4ce7792df2f6a0cf4e85b23830ac967a48f2cc5e197eea979d04cad6a",
+    "independentMirrorAllBytesEqual": true,
+    "character": 1,
+    "subtype": 0,
+    "difficulty": 4,
+    "stages": [
+      {
+        "stage": 7,
+        "seed": 30535,
+        "frames": 46392,
+        "payloadBytes": 279899
+      }
+    ],
+    "totalFrames": 46392,
+    "explicitBeamRule": 1,
+    "unknownRuleOrDuplicate": false,
+    "nativePlaybackClaimed": false,
+    "completeGame": false
+  },
+  "actualFreshBrowser": {
+    "passed": true,
+    "stages": [
+      7
+    ],
+    "frames": 46392,
+    "score": 744413340,
+    "graze": 12053,
+    "tools": 0,
+    "seekUsed": false,
+    "stageSkipUsed": false,
+    "replaySeconds": 40.691,
+    "timeline": {
+      "samples": 161,
+      "last": 46392,
+      "backwards": []
+    },
+    "nativeErrors": [],
+    "pageErrors": [],
+    "saveValidation": {
+      "actualRetailDecryptAndLzss": true,
+      "originalInstructionBytesPatched": 0,
+      "controlledCrtBoundaries": [
+        "malloc",
+        "memcpy",
+        "free"
+      ],
+      "nativeExecutableSha256": "f08e885e28d2e0fc8c579e88034dd7de8f2a648d8f08ce781cf08eadc9ffe353",
+      "decodedBytes": 149076,
+      "characterRecordsUnchanged": true,
+      "characterRecords": 7,
+      "settingsDifferences": [
+        {
+          "offset": 4,
+          "before": 82,
+          "after": 84
+        },
+        {
+          "offset": 51,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 52,
+          "before": 0,
+          "after": 1
+        }
+      ],
+      "semanticSettingsDifferences": [
+        {
+          "offset": 51,
+          "before": 0,
+          "after": 1
+        },
+        {
+          "offset": 52,
+          "before": 0,
+          "after": 1
+        }
+      ],
+      "onlyMusicHeardFlagsChanged": true,
+      "nativeMusicRequestReferenceSha256": "01277073a339c1af2c1fda716999640431c2a130c174c504533481cf4efe31e3",
+      "nativeMusicRequestRelevantCases": [
+        {
+          "stage": 1,
+          "id": -3,
+          "replay": 0,
+          "stop": 1,
+          "match": 0,
+          "events": [
+            [
+              "audio",
+              4,
+              0
+            ],
+            [
+              "audio",
+              2,
+              0
+            ],
+            [
+              "front",
+              1
+            ]
+          ],
+          "dialogueAfter": 1879343104,
+          "unlocks": [
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "stage": 1,
+          "id": -3,
+          "replay": 1,
+          "stop": 1,
+          "match": 0,
+          "events": [
+            [
+              "audio",
+              4,
+              0
+            ],
+            [
+              "audio",
+              2,
+              0
+            ],
+            [
+              "front",
+              1
+            ]
+          ],
+          "dialogueAfter": 1879343104,
+          "unlocks": [
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "beforeDecodedSha256": "38a70d2bd3e8fc2dadad3b953a409ec8101eda3d09d2d0b73df411275711d92e",
+      "afterDecodedSha256": "cdf98d8b7d2356f8ed1ff6a58b85e278945054854a627a9086dcf0bc0d76fc31",
+      "completeGame": false
+    },
+    "delivery": {
+      "passed": true,
+      "codeResponsesVerified": 78,
+      "normalWasmUnchanged": true,
+      "compiledPolicyObservedInActualBrowserResponse": [
+        {
+          "path": "/assets/replays-DawzJzB7.js",
+          "sha256": "2ef96e69f6a8cb69c7da7946d76fcc42224f0fb7853e0eb6022fb9dbe27a9bb1",
+          "compiledScope": "{return Promise.reject(e)}let l=b.game===`th14`&&t===`playback`&&[`open`,`seek`].includes(r.action),u=o===void 0?l?e.timeouts?.launch??12e4:e.timeouts?.command??15e3:o,d=`runtime-${s.id}-${++w}`;return new Promise(("
+        }
+      ]
+    },
+    "actualHudVisuallyInspected": true,
+    "imageSha256": "14c8fdc01300fa761337ecfa724f4de9cba6eef6625b72f9cc12f73cc86c1d2f",
+    "imageObservation": "Extra end menu and final HUD show744,413,340 score and12,053 graze; no blank playfield.",
+    "browserClosed": true,
+    "ownedForwardClosed": true,
+    "reportSha256": "ec377052132c8b9dea911ea84e2a60ba1bca482d112a12a0d4caaa5ca2641eec"
+  },
+  "scope": "One current core Extra ordinary save and fresh current browser continuous playback, supplements existing six-loadout Extra campaign/save and original replay evidence; not original whole-game playback of T14B1 or six new Extra exports",
+  "assetsAndBinaryPublished": false
+}
