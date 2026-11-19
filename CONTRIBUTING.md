@@ -2,6 +2,8 @@
 
 先选择一项工作，运行对应组件，再开始修改。前端需要 Git 和 Bun 1.4.4；工作区工具使用 Node.js 24，游戏编译所需的工具链在各作开发指南中列出。
 
+发布已有站点或组装自托管包时，从[部署指南](launcher/docs/SELF_HOSTING.md)开始。
+
 ## 1. 取需要的目录
 
 在 GitHub 上 fork 本仓库。把下面 URL 的 `YOUR-NAME` 换成你的账号：
@@ -28,7 +30,7 @@ git switch -c your-change
 
 只改页面时运行前端开发服务器。需要游戏时，按[联调指南](launcher/docs/DEVELOPMENT.md)依次完成 Runtime 构建、打包、资源准备和启动。
 
-记录所用作品、模式和构建。普通版与 MP 的目录和输出关系见[工作区](WORKSPACE.md)。
+记录所用作品、模式和构建。用[工作区](WORKSPACE.md)的查询命令确认普通版与 MP 的源码位置。
 
 ## 3. 修改并填写适配表
 
