@@ -373,7 +373,36 @@ try {
   }
   await page.setViewport({width:1440,height:900});
   await goto(new URL('login.html',base).href);
+  for (const selector of ['.account-forgot', '.account-switch']) {
+    await page.hover(selector);
+    assert.equal(await page.$eval(selector, element => getComputedStyle(element).textDecorationLine), 'none');
+  }
   await selectMode(page,'register');
+
+  await page.setViewport({width:390,height:640});
+  const termsToggle = '#registration-terms';
+  const termsDialog = '.account-terms-dialog';
+  const agreeButton = `${termsDialog} .account-terms-actions button:last-child`;
+  assert.equal(await page.$eval('.account-submit', button => button.disabled), true);
+  assert.match(await page.$eval('.account-privacy a', link => link.getAttribute('href')), /privacy\.html\?lang=zh-CN$/);
+  await page.click(termsToggle);
+  await page.waitForSelector(termsDialog, {visible:true});
+  assert.equal(await page.$eval(termsToggle, button => button.getAttribute('aria-checked')), 'false');
+  assert.equal(await page.$eval(agreeButton, button => button.disabled), true);
+  assert.equal(await page.$eval('.account-terms-reading a', link => getComputedStyle(link).textDecorationLine), 'none');
+  await page.click(`${termsDialog} .account-terms-actions button:first-child`);
+  await page.waitForSelector(termsDialog, {hidden:true});
+  assert.equal(await page.$eval('.account-submit', button => button.disabled), true);
+  await page.click(termsToggle);
+  await page.waitForSelector(termsDialog, {visible:true});
+  await page.$eval('.account-terms-reading', pane => {pane.scrollTop = pane.scrollHeight;});
+  await page.waitForFunction(selector => !document.querySelector(selector)?.disabled, {}, agreeButton);
+  await page.click(agreeButton);
+  await page.waitForSelector(termsDialog, {hidden:true});
+  assert.equal(await page.$eval(termsToggle, button => button.getAttribute('aria-checked')), 'true');
+  assert.equal(await page.$eval('.account-submit', button => button.disabled), false);
+  assert.equal(challengeStarts, 0, 'reading the terms sends no email request');
+  await page.setViewport({width:1440,height:900});
 
   const registrationPassword = 'Tengu-password-42';
   await page.type('[name=username]', 'reimu');

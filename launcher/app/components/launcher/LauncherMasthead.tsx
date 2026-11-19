@@ -13,6 +13,7 @@ import {
   PlaySquare,
   Code,
   FlaskConical,
+  FileText,
   ShieldCheck,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
@@ -150,6 +151,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     {href: props.aboutHref, icon: <InfoCircledIcon/>, label: t('nav.siteInfo')},
     {href: 'https://github.com/YomotsuHisami/eagler-touhou', icon: <GitHubLogoIcon/>, label: 'GitHub', external: true},
     ...(props.migrationHref ? [{href: props.migrationHref, icon: <ReaderIcon/>, label: t('nav.oldSiteMigration'), policy: props.migrationPolicyKnown ? 'host-manifest-origin-migration-policy/1' : undefined}] : []),
+    {href: withUiLanguage(props.assetUrl('terms.html'), locale), icon: <FileText aria-hidden="true"/>, label: t('document.terms')},
     {href: withUiLanguage(props.assetUrl('privacy.html'), locale), icon: <ShieldCheck aria-hidden="true"/>, label: t('nav.privacyPolicy')},
   ];
   const menuLinks = (links: readonly MastheadSiteLink[]) => links.map(({href, icon, label, external, policy}) => <DropdownMenu.Item key={href} asChild>

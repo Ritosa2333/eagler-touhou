@@ -10696,5 +10696,31 @@
   "profile.online.now": {
     "id": "profile_online_now",
     "params": []
+  },
+  "document.terms": {
+    "id": "document_terms",
+    "params": []
+  },
+  "account.termsConsent": {
+    "id": "account_termsConsent",
+    "params": []
+  },
+  "account.termsReadToEnd": {
+    "id": "account_termsReadToEnd",
+    "params": []
+  },
+  "account.termsAgree": {
+    "id": "account_termsAgree",
+    "params": []
+  },
+  "account.registrationPrivacy": {
+    "id": "account_registrationPrivacy",
+    "params": [
+      "policy"
+    ]
+  },
+  "content.terms": {
+    "id": "content_terms",
+    "params": []
   }
 }

@@ -30,6 +30,7 @@ export const REACT_DOCUMENTS = Object.freeze([
   {path: '/profile.html', file: 'profile.html'},
   {path: '/login.html', file: 'login.html'},
   {path: '/u/account-profile-template', file: 'profile-entry.html'},
+  {path: '/terms.html', file: 'terms.html'},
   {path: '/privacy.html', file: 'privacy.html'},
   {path: '/faq.html', file: 'faq.html'},
   {path: '/about.html', file: 'about.html'},
