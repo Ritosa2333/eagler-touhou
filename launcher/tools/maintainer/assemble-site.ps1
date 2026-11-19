@@ -25,6 +25,7 @@ param(
     [string] $ArtworkDirectory,
     [string] $FeatureConfig,
     [string] $SiteManifest,
+    [switch] $NoDownload,
     [string[]] $Games,
     [string] $Profile = 'web-validation-package',
     [switch] $SuppressCompletionSummary
@@ -71,7 +72,7 @@ $configuredResourceMode = if ($null -ne $featureSettings.resourceMode) { [string
 if ($configuredResourceMode -notin @('hosted', 'import')) {
     throw "Invalid resourceMode in server feature config: $featureConfigPath"
 }
-$resourceMode = $configuredResourceMode
+$resourceMode = if ($NoDownload) { 'import' } else { $configuredResourceMode }
 $Games = @($Games | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim().ToLowerInvariant() } | Where-Object { $_ })
 if ($Games.Count -eq 0 -or @($Games | Select-Object -Unique).Count -ne $Games.Count) {
     throw 'Games must be a non-empty unique product list'
@@ -106,7 +107,7 @@ $selectedPreloadGames = @($Games | Where-Object { $_ -in @('th06', 'th07') })
 $selectedHasTh08 = $Games -contains 'th08'
 $selectedHasTh09 = $Games -contains 'th09'
 $selectedHasTh10 = $Games -contains 'th10'
-if ($null -ne $featureSettings.gameDataFallback) {
+if (-not $NoDownload -and $null -ne $featureSettings.gameDataFallback) {
     $fallbackUrl = [string]$featureSettings.gameDataFallback.url
     if (-not $fallbackUrl -or $fallbackUrl -notmatch '^https://') {
         throw "Invalid gameDataFallback.url in server feature config: $featureConfigPath"
@@ -236,6 +237,7 @@ if ($resourceMode -eq 'import') {
         "--games=$([string]::Join(',', $Games))",
         "--profile=$Profile"
     )
+    if ($NoDownload) { $nodeArgs += '--no-download' }
     if ($importArtwork) { $nodeArgs += "--artwork-dir=$importArtwork" }
     if ($runtimeReleasePath) {
         $nodeArgs += "--runtime-release=$runtimeReleasePath"

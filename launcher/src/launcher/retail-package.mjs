@@ -28,6 +28,7 @@ export function retailRequiredFiles(game) {
 export function retailArchiveLimits(game) {
   const datLimit = game === 'th19' || game === 'th20' ? 600 * MiB : 128 * MiB;
   const limits = Object.fromEntries(retailRequiredFiles(game).map(name => [name.toLowerCase(), datLimit]));
+  limits['msgothic.ttc'] = limits['unifont.otf'] = 64 * MiB;
   if (game === 'th06') {
     for (const suffix of ['cm', 'ed', 'in', 'md', 'st', 'tl']) limits['th06_' + suffix + '.dat'] = datLimit;
     limits['eagler-hitbox.png'] = 2 * MiB;
@@ -154,9 +155,9 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
   async function read(name, max) {
     const key = name.toLowerCase();
     let entry = sources.get(root + key) ?? sources.get(key);
-    if (!entry && key === 'thbgm.dat') {
-      const matches = [...sources].filter(([path]) => path.endsWith('/thbgm.dat'));
-      if (matches.length > 1) throw Error('The selection contains multiple thbgm.dat files');
+    if (!entry && (key === 'thbgm.dat' || key === 'msgothic.ttc' || key === 'unifont.otf')) {
+      const matches = [...sources].filter(([path]) => path.endsWith('/' + key));
+      if (matches.length > 1) throw Error(`The selection contains multiple ${name} files`);
       entry = matches[0]?.[1];
     }
     if (!entry) return null;
@@ -195,7 +196,7 @@ export async function createRetailPackage({game, expected, inputs, fontTargets =
   await addFile(product.package.dataTarget, data, base, product.package.dataFileId);
   for (const target of fontTargets) {
     const name = target.slice(1);
-    const blob = await loadFont?.(target);
+    const blob = await read(name, 64 * MiB) ?? await loadFont?.(target);
     if (!blob?.size || blob.size > 64 * MiB) throw Error(`Missing shared font: ${name}`);
     const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
     const magic = String.fromCharCode(...header);

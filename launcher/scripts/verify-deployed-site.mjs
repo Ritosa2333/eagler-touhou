@@ -187,7 +187,7 @@ else {
   if (!games || !catalog) {
     // Site Manifest validation already recorded the concrete failure.
   } else {
-    if (!games.shared?.gameDataFallback) {
+    if (!games.shared?.gameDataFallback && games.shared.resourceMode !== RESOURCE_MODE_IMPORT) {
       console.warn("OPERATOR WARNING: deployed Site Manifest has no gameDataFallback; configure the fallback download link.");
     }
   if (deployment.appShell) {
