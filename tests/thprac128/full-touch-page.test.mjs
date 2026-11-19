@@ -34,6 +34,16 @@ test('original layout model edits scale and position with separate orientation s
  const s=e.input.touchSnapshot();assert.equal(s.layout.saved.profiles.landscape.controls.fire.scale,2.5);assert.equal(s.layout.saved.profiles.portrait.controls.fire.x,.7);assert(e.data.size>0);
  e.input.beginTouchLayout('landscape');e.input.updateTouchLayout('fire',{scale:99});assert.equal(e.input.touchSnapshot().layout.draft.profiles.landscape.controls.fire.scale,3);e.input.endTouchLayout();assert.equal(e.input.touchSnapshot().layout.saved.profiles.landscape.controls.fire.scale,2.5);e.input.dispose();
 });
+test('the launch master switch also blocks touch practice shortcuts without blocking ordinary controls',()=>{
+ const e=fixture({thpracEnabled:false,thpracTouchControlsEnabled:true,restartButtonEnabled:true});
+ assert.equal(e.node('touchThpracMenu').hidden,true);
+ e.input.touchControls({thpracMobilePanelsEnabled:true,thpracMobilePanelsVisible:true});
+ assert.equal(e.node('touchThpracMenu').hidden,true);
+ for(const id of ['touchThpracBackspace','touchAdvanced'])e.emit(e.node(id),'pointerdown',3);
+ assert(!e.keys.has('Backspace')&&!e.keys.has('F12'));
+ assert.equal(e.node('touchRestart').hidden,false);e.emit(e.node('touchRestart'),'pointerdown',4);assert(e.keys.has('KeyR'));
+ e.input.dispose();
+});
 test('menu gestures and mobile Backspace/F12/R controls use real shared keyboard owners, no gameplay modal freeze',()=>{
  const e=fixture({thpracTouchControlsEnabled:true,restartButtonEnabled:true});e.setContext({key:'route',kind:'menu',ready:false});const surface=e.node('touchDirectSurface');e.emit(surface,'pointerdown',1,100,100);e.emit(surface,'pointermove',1,160,100);e.input.sampleTouch();assert(e.keys.has('ArrowRight'));e.input.sampleTouch();assert(!e.keys.has('ArrowRight'));
  for(const[id,code]of[['touchThpracBackspace','Backspace'],['touchAdvanced','F12'],['touchRestart','KeyR']]){const n=e.node(id);assert(n,id);e.emit(n,'pointerdown',2);assert(e.keys.has(code),code);e.emit(n,'pointerup',2);assert(!e.keys.has(code),code);}

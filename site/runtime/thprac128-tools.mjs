@@ -89,6 +89,12 @@ export function mountThprac128ToolsPanel({root,getOwner,getLocale=()=>"zh",onOpe
  for(const key of ['fps','slow','fast'])check('[data-tool-speed="'+key+'"]').addEventListener('input',()=>{try{editableOwner();const next={...draft,[key]:integer(key)};validateThprac128Speed(next);draft=next;message.hidden=true;message.textContent='';renderDraft();}catch(e){message.hidden=false;message.textContent=e.message;}});
  check('[data-tools-apply]').addEventListener('click',()=>action(()=>{const owner=editableOwner(),value={free:draft.free};for(const key of ['fps','slow','fast'])value[key]=integer(key);owner.setSpeed(validateThprac128Speed(value));}));
  root.querySelector('[data-tools-licence]')?.addEventListener('toggle',()=>{const n=root.querySelector('[data-tools-licence-label]');if(n)n.textContent=label(root.querySelector('[data-tools-licence]').open?'TH_ABOUT_HIDE_LICENCE':'TH_ABOUT_SHOW_LICENCE');});
- check('[data-tools-close]').addEventListener('click',close);root.addEventListener('keydown',e=>{if(!advancedOpen)return;e.stopPropagation();if(['Escape','Backspace','F12'].includes(e.code)){e.preventDefault();close();}else if(e.code==='Tab'){const nodes=[...root.querySelectorAll('button,input')].filter(n=>!n.disabled&&!n.closest('[hidden]'));const a=root.ownerDocument.activeElement;if(nodes.length&&(e.shiftKey?a===nodes[0]:a===nodes.at(-1))){e.preventDefault();(e.shiftKey?nodes.at(-1):nodes[0]).focus();}}});root.addEventListener('keyup',e=>{if(advancedOpen)e.stopPropagation();});root.hidden=true;
+ check('[data-tools-close]').addEventListener('click',close);root.addEventListener('keydown',e=>{if(!advancedOpen)return;e.stopPropagation();
+  if(e.code==='Backspace'&&e.target?.id==='thprac-replay-name')return;
+  if(['Escape','Backspace','F12'].includes(e.code)){e.preventDefault();close();}else if(e.code==='Tab'){
+   const nodes=[...advanced.querySelectorAll('summary,button,input,select,a[href]')].filter(n=>!n.disabled&&n.getClientRects().length);
+   const a=root.ownerDocument.activeElement;if(nodes.length&&(e.shiftKey?a===nodes[0]:a===nodes.at(-1))){e.preventDefault();(e.shiftKey?nodes.at(-1):nodes[0]).focus();}
+  }
+ });root.addEventListener('keyup',e=>{if(advancedOpen)e.stopPropagation();});root.hidden=true;
  return Object.freeze({open,close,refresh,get isOpen(){return !root.hidden&&!closed&&advancedOpen;},get overlayOpen(){return !root.hidden&&!closed&&!advancedOpen;},dispose(){closed=true;root.hidden=true;}});
 }

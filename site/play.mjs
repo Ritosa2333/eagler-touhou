@@ -957,7 +957,8 @@ const state={module:null,renderer:null,manifest:null,base:'',catalog:null,stageC
   flowCapabilityModule:null,flowReady:false,flowCapabilities:null,nativePause:null,nativePausePending:null,menuSoundLedger:null,manualPageLoaded:-1,replayStore:null,replaySlots:null,replayClockLast:null,replayNativeBound:false};
 let practiceMenu=null,practiceLaunchOwner=null,thpracToolsPanel=null;
 const thpracLogicClock=new Thprac128LogicClock(clock),thpracOptionsStore=new Thprac128Settings();
-let thpracSettings=thpracOptionsStore.launch(launcherContext?.config??(localConfig?.thprac==null?{}:{options:{thpracEnabled:localConfig.thprac}}));
+const thpracLaunch=thpracOptionsStore.launch(launcherContext?.config??(localConfig?.thprac==null?{}:{options:{thpracEnabled:localConfig.thprac}}));
+const thpracSettings={...thpracLaunch,locale:launcherContext?.config.language??localConfig?.language??thpracLaunch.locale};
 state.thpracUIEnabled=thpracSettings.enabled;
 const thpracDraft={mask:0,speed:validateThprac128Speed()};
 const thpracDraftOwner=state.thpracDraftOwner=Object.freeze({pending:true,playback:false,snapshot:()=>({mask:thpracDraft.mask,frame:0}),speedFor:()=>thpracDraft.speed,setMask(mask){if(!Number.isInteger(mask)||mask<0||mask>127)throw new Error('Invalid practice mask');thpracDraft.mask=mask;},setSpeed(value){thpracDraft.speed=validateThprac128Speed(value);}});
@@ -1001,7 +1002,7 @@ function practiceLogicRate(){
 }
 function installThpracToolPanel(){
  if(thpracToolsPanel)return;thpracToolsPanel=mountThprac128ToolsPanel({root:find('#thprac-tool-ui'),getOwner:()=>state.thpracTools??thpracDraftOwner,getLocale:()=>thpracSettings.locale,
-  onOpen:advanced=>{state.webInput?.setOverlayActive?.(advanced);if(!advanced)return;state.thpracToolsPaused=state.paused;state.paused=true;state.pressed.clear();worldMovementInput(0,763);clock.reset();thpracLogicClock.reset();},
+  onOpen:advanced=>{state.webInput?.setOverlayActive?.(advanced);if(!advanced)return;state.thpracToolsPaused=state.paused;state.paused=true;state.pressed.clear();worldMovementInput(0,763);clock.reset();thpracLogicClock.reset();refreshOpenPracticeReplay();},
   onClose:advanced=>{state.webInput?.setOverlayActive?.(false);if(!advanced)return;if(state.active&&!menu.pauseOpen&&!document.hidden){state.paused=state.thpracToolsPaused===true;}clock.reset();thpracLogicClock.reset();find('#game')?.focus();},
   onChange:()=>{syncThpracToolMusic();clock.reset();thpracLogicClock.reset();}
  });
@@ -1366,6 +1367,7 @@ function thpracStageSelection(input){
 async function startThprac128Session(input,{signal,isCurrent}){
  const current=()=>!signal.aborted&&isCurrent();
  if(!current())throw new DOMException('Practice owner exited','AbortError');
+ if(state.thpracUIEnabled===false)throw new Error('thprac 已在启动设置中关闭');
  if(practiceLaunchOwner||menu.launching||state.handoff||state.pendingCarryToken||state.nativePausePending)
   throw new Error('当前正在加载或已有 pending practice launch');
  if(state.launcherExited||!state.stageCatalog||find('#variant')?.disabled===true||!thprac128RuntimeSupported(state.module))
@@ -1402,7 +1404,7 @@ async function refreshThpracReplaySlots(){
  const rows=await (state.replayStore??=new OwnedReplayStore()).observe();
  if(module!==state.module||action!==state.action||selection!==state.stageSelection||state.launcherExited)return;
  const prior=select.value;select.replaceChildren(...rows.map((row,slot)=>{const o=document.createElement('option');o.value=String(slot);o.textContent='No.'+String(slot+1).padStart(2,'0')+(row?' · '+(row.source==='thprac-rpy'?'thprac':'Replay'):' · —');return o;}));select.value=/^(?:[0-9]|1[0-9]|2[0-4])$/.test(prior)?prior:'0';state.thpracReplayRows=rows;
- find('#thprac-replay-overwrite').checked=false;find('#thprac-replay-save').disabled=!state.thpracRecorder;find('#thprac-replay-watch').disabled=false;
+ find('#thprac-replay-overwrite').checked=false;find('#thprac-replay-save').disabled=!state.thpracRecorder||!!state.replayPlayback;find('#thprac-replay-watch').disabled=!!state.replayPlayback;
 }
 async function saveThpracReplayFromMenu(){
  const owner=state.thpracRecorder,module=state.module,action=state.action,selection=state.stageSelection;
@@ -1429,21 +1431,23 @@ async function watchThpracReplayFromMenu(slotOverride=null){
  try{await startLaunch(selection,'route');if(state.replayPlayback!==owner||lastCheckWorldError||state.stageSelection!==selection||!state.worldMode)throw new Error(lastCheckWorldError||'Practice replay did not adopt its recorded stage');return owner;}
  catch(error){if(state.replayPlayback===owner){try{owner.cancel();}catch{}state.replayPlayback=null;state.active=false;state.paused=true;}throw error;}
 }
+function refreshOpenPracticeReplay(){
+ if(find('#thprac-web-controls')?.open)refreshThpracReplaySlots().catch(error=>{find('#thprac-replay-status').textContent=String(error.message??error);});
+}
 function installThpracReplayControls(){
  const controls=find('#thprac-web-controls');
- controls?.addEventListener('toggle',()=>{if(controls.open)refreshThpracReplaySlots().catch(error=>{find('#thprac-replay-status').textContent=String(error.message??error);});});
+ controls?.addEventListener('toggle',refreshOpenPracticeReplay);
  for(const [id,run]of [['#thprac-replay-save',saveThpracReplayFromMenu],['#thprac-replay-watch',watchThpracReplayFromMenu]])find(id)?.addEventListener('click',()=>{run().catch(error=>{find('#thprac-replay-status').textContent=String(error.message??error);});});
 }
 function installPracticeMenu(){
  if(practiceMenu)return practiceMenu;installThpracToolPanel();scaleThpracViewport();
- practiceMenu=mountThprac128Menu({root:find('#practice-menu'),controls:find('#thprac-web-controls'),opener:find('#practice-open'),settings:thpracSettings,onSettings:value=>{thpracSettings=thpracOptionsStore.write(value);state.thpracUIEnabled=value.enabled;},
+ practiceMenu=mountThprac128Menu({root:find('#practice-menu'),settings:thpracSettings,
   getAvailability:()=>({
    ready:!state.launcherExited&&thprac128RuntimeSupported(state.module)&&!!state.stageCatalog&&find('#variant')?.disabled!==true,
    busy:state.restartSealing||menu.launching||state.handoff||!!state.pendingCarryToken||!!state.nativePausePending||!!state.normalPostrun||!!state.endingHost||state.endingLoading||!!state.replayPlayback,
    inRun:state.worldMode&&state.active,
    practiceSession:state.worldMode?state.stageSelection?.thprac??null:null
   }),
-  onOpen:async({route=false}={})=>{if(!route){loseFocus();await state.nativePausePending;}await refreshThpracReplaySlots();},
   onRouteKey:code=>{handleNativeTitleKey(code);state.mainController?.keyUp(code);},
   onRouteChange:selection=>{if(selection>=0&&selection<4)state.thpracRouteTarget=selection;},
   onCancel:()=>{if(!state.worldMode&&menu.page==='route'){thpracRouteShown=true;state.paused=false;clock.reset();resetHighFrameratePresentation();backNativePage();}},
@@ -2792,10 +2796,12 @@ async function observeOriginalExtraQualification(module,signal){
   try{qualification=await evaluateOwnedQualification({record,name,owner,token});}
   catch(problem){
     check();
-    // A failed run can save scores before any replay name was ever saved.
-    // That leaves optional EX proof unavailable, while the Main score record
-    // remains valid. Never manufacture or persist the missing name receipt.
-    if(problem.code!=='name-absent'||name.strictRead!==true||name.absent!==true||name.revision!==0||name.digest!==null)throw problem;
+    // A score can be saved before a replay name, and saving a replay in
+    // pause can update that independent name without touching the scores.
+    // Both cases leave the optional EX proof unavailable, not the Main record.
+    const absent=problem.code==='name-absent'&&name.absent===true&&name.revision===0&&name.digest===null;
+    const mismatch=problem.code==='name-mismatch'&&name.absent===false&&name.revision>0&&/^[a-f0-9]{64}$/.test(name.digest);
+    if(name.strictRead!==true||(!absent&&!mismatch))throw problem;
     originalNameProfilePacket(name);
     return {record,name,qualification:null,token};
   }
@@ -3254,7 +3260,9 @@ find('#debug-stage-start').addEventListener('click',()=>{
 find('#debug-extra-start').addEventListener('click',()=>{
   startDebugThirdStage('EX').catch(problem=>status(`EX 启动失败：${problem.message??String(problem)}`));
 });
-installPracticeMenu();installThpracReplayControls();
+find('#thprac-layer').hidden=!state.thpracUIEnabled;
+find('[data-thprac-help]').hidden=!state.thpracUIEnabled;
+if(state.thpracUIEnabled){installPracticeMenu();installThpracReplayControls();}
 syncDebugStageJumpControls();
 find('#previous').addEventListener('click',()=>select(-1));find('#next').addEventListener('click',()=>select(1));
 find('#ecl').addEventListener('click',async()=>{
@@ -4588,7 +4596,7 @@ function installWebInput(){
       return owner;
     },
     isEnabled:()=>Boolean(state.active||menu.launching||state.normalPostrun||state.endingHost||menu.fault),
-    storage:touchStorage,options:launchOptions,zoomEnabled:localConfig?.layoutZoom??true,viewport:find('#gameViewport'),
+    storage:touchStorage,options:{...launchOptions,thpracEnabled:state.thpracUIEnabled!==false},zoomEnabled:localConfig?.layoutZoom??true,viewport:find('#gameViewport'),
     getGameContext:()=>{
       const module=state.module;
       const t=state.worldMode&&module?._th128_world_touch_state?JSON.parse(module.UTF8ToString(module._th128_world_touch_state())):null;
@@ -4629,10 +4637,8 @@ if(localConfig){
  }
  if(localConfig.highRefresh!==null){find('#high-framerate-mode').checked=localConfig.highRefresh;setHighFramerateMode(localConfig.highRefresh);}
  find('#fullscreen').hidden=true;
- const savedPanel=find('#thprac-web-controls');
  localTools=mountLocalPlayerTools({document,screen:find('.screen'),canvas:find('#game'),input:state.webInput,
    onExit:()=>{location.assign(new URL('play.html?settings=1',location.href));},getVolumes:()=>localVolumes,setVolume:setLocalVolume,
-   togglePractice:()=>{savedPanel.open=!savedPanel.open;if(savedPanel.open)savedPanel.querySelector('summary').focus();},
    onError:reason=>status(reason.message)});
 }
 function installLauncherRuntime(){

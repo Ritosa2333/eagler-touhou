@@ -49,6 +49,23 @@ function surface(){const names=['enabled','locale','mode','startPoint','path','s
 function harness(overrides={}){assert.equal(typeof uiApi.mountThprac128Menu,'function','Actual complete TH128 thprac menu is missing');const ui=surface(),availability={ready:true,busy:false,inRun:false,practiceSession:null},calls=[];
  const controller=uiApi.mountThprac128Menu({...ui,getAvailability:()=>availability,onOpen:async()=>{},onFocusGame(){},launch:async(s,owner)=>{calls.push({s,owner});return{session:s,stageId:s.params.stage+1,difficulty:s.difficulty,nativeTainted:s.params.mode===1,normalModeClear:false};},...overrides});return{...ui,availability,calls,controller};}
 async function open(h){h.nodes.mode.value='1';h.nodes.mode.emit('change');h.opener.emit('click');await flush();}
+test('the route owns an in-context form without a page button or duplicate settings',async()=>{
+ const {root,nodes}=surface();delete nodes.enabled;delete nodes.locale;
+ const launches=[];
+ const controller=uiApi.mountThprac128Menu({root,settings:{enabled:true,locale:'ja'},
+  getAvailability:()=>({ready:true,busy:false,inRun:false}),launch:async session=>{
+   launches.push(session);return{session,stageId:session.params.stage+1,difficulty:session.difficulty,nativeTainted:true,normalModeClear:false};
+  }});
+ await controller.open({route:true});assert.equal(root.hidden,false);assert.equal(root.getAttribute('lang'),'ja');
+ nodes.mode.value='1';nodes.mode.emit('change');nodes.start.emit('click');await flush();
+ assert.equal(launches.length,1);assert.equal(launches[0].params.mode,1);assert.equal(root.hidden,true);controller.dispose();
+});
+test('without a second switch the disabled launch cannot open even from a route',async()=>{
+ const {root,nodes}=surface();delete nodes.enabled;delete nodes.locale;
+ const controller=uiApi.mountThprac128Menu({root,settings:{enabled:false,locale:'en'},
+  getAvailability:()=>({ready:true,busy:false,inRun:false}),launch:async()=>assert.fail('disabled launch started practice')});
+ await controller.open({route:true});assert.equal(root.hidden,true);assert.equal(controller.isOpen,false);controller.dispose();
+});
 test('unchanged native route ticks leave the existing select options in the DOM',async()=>{
  const h=harness();await h.controller.open({route:true});
  h.nodes.mode.value='1';h.nodes.mode.emit('change');h.nodes.path.value='1';h.nodes.path.emit('change');

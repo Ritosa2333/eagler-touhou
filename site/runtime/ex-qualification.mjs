@@ -143,7 +143,8 @@ export function independentNameIdentity({ profile, name }) {
     throw fail('Independent9B observation is absent; the owned qualification needs the actual saved name field', 'name-absent');
   }
   const bytes = independentNameBytes(name.bytes);
-  if (!bytes.every((value, index) => value === profile[NAME_OFFSET + index])) {
+  const embedded = independentNameBytes(profile.slice(NAME_OFFSET, NAME_OFFSET + NAME_BYTES));
+  if (!bytes.every((value, index) => value === embedded[index])) {
     throw fail('Independent9B differs from the observed owned profile name field', 'name-mismatch');
   }
   return Object.freeze({

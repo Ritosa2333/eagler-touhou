@@ -5,7 +5,7 @@ function icon(document,name){
  svg.setAttribute('aria-hidden','true');svg.setAttribute('viewBox','0 0 24 24');svg.append(path);
  path.setAttribute('d',icons[name]);return svg;
 }
-export function mountLocalPlayerTools({document,screen,canvas,input,onExit,getVolumes,setVolume,togglePractice,focusGame=()=>canvas.focus({preventScroll:true}),onError=()=>{}}){
+export function mountLocalPlayerTools({document,screen,canvas,input,onExit,getVolumes,setVolume,focusGame=()=>canvas.focus({preventScroll:true}),onError=()=>{}}){
  const rail=document.querySelector('#player-tools'),help=document.querySelector('#player-help'),settings=document.querySelector('#player-settings');
  const full=rail.querySelector('[data-player-tool="fullscreen"]'),helpOpen=rail.querySelector('[data-player-tool="help"]'),gear=rail.querySelector('[data-player-tool="settings"]');
  for(const [button,name]of[[full,'fullscreen'],[helpOpen,'help'],[gear,'settings']])button.append(icon(document,name));
@@ -51,7 +51,6 @@ export function mountLocalPlayerTools({document,screen,canvas,input,onExit,getVo
  for(const range of settings.querySelectorAll('[data-player-volume]'))range.addEventListener('input',()=>{setVolume(range.dataset.playerVolume,Number(range.value));syncVolumes();});
  settings.querySelector('[data-player-action="touch"]').addEventListener('click',()=>{show(null);input.openTouchSettings();});
  settings.querySelector('[data-player-action="layout"]').addEventListener('click',()=>{show(null);input.beginTouchLayout();});
- settings.querySelector('[data-player-action="practice"]').addEventListener('click',()=>{show(null);togglePractice();});
  settings.querySelector('[data-player-action="exit"]').addEventListener('click',async()=>{if(closing)return;closing=true;try{await onExit();}catch(error){closing=false;onError(error);}});
  return{syncVolumes};
 }

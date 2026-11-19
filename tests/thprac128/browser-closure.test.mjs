@@ -4,7 +4,7 @@ function whole(name,next){const start=source.indexOf(name),end=source.indexOf(ne
 test('actual page Replay disclosure observes slots after recording owner exists',async()=>{
  const controls={open:false,listeners:{},addEventListener(type,fn){this.listeners[type]=fn;}},status={textContent:''};let observations=0;
  const env={find:s=>s==='#thprac-web-controls'?controls:s==='#thprac-replay-status'?status:{addEventListener(){}},refreshThpracReplaySlots:async()=>{++observations;},saveThpracReplayFromMenu:async()=>{},watchThpracReplayFromMenu:async()=>{}};
- const install=new Function(...Object.keys(env),whole('function installThpracReplayControls(', '\nfunction installPracticeMenu(')+';return installThpracReplayControls;')(...Object.values(env));install();assert.equal(typeof controls.listeners.toggle,'function');controls.open=true;controls.listeners.toggle();await Promise.resolve();assert.equal(observations,1);controls.open=false;controls.listeners.toggle();assert.equal(observations,1);
+ const install=new Function(...Object.keys(env),whole('function refreshOpenPracticeReplay(', '\nfunction installPracticeMenu(')+';return installThpracReplayControls;')(...Object.values(env));install();assert.equal(typeof controls.listeners.toggle,'function');controls.open=true;controls.listeners.toggle();await Promise.resolve();assert.equal(observations,1);controls.open=false;controls.listeners.toggle();assert.equal(observations,1);
 });
 function startHarness(cancelled=false){
  const state={module:{},stageCatalog:{},active:true,worldMode:false,paused:true},menu={launchId:0,launching:false};let live=true;

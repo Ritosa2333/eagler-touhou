@@ -52,10 +52,22 @@ test('invalid route counters are still rejected before name availability is hand
  const r=await profile();new DataView(r.profile.buffer).setUint32(0x658,100000,true);r.sha256=await sha(r.profile);
  await assert.rejects(harness(r).run(),e=>e.code==='clear-count-cap');
 });
-test('a saved independent name mismatch remains an explicit consistency error',async()=>{
- const r=await profile(),bytes=blanks.slice();bytes[0]=65;
+test('a different valid replay name preserves the original score profile for Main without granting EX',async()=>{
+ const r=await profile(6),bytes=blanks.slice();bytes[0]=65;
  const stored={kind:'th128-original-stats-last-name-field9-v1',revision:1,bytes,digest:await sha(bytes)};
- await assert.rejects(harness(r,{stored}).run(),e=>e.code==='name-mismatch');
+ const original=r.profile.slice(),h=harness(r,{stored}),out=await h.run();
+ assert.equal(out.record,r);assert.deepEqual(out.record.profile,original);
+ assert.deepEqual(out.name.bytes,bytes);assert.equal(out.qualification,null);
+ assert.equal(new DataView(nativeRouteScorePacket(out.record.profile).buffer).getUint32(8,true),1234560);
+ assert.deepEqual(h.events,{reads:1,writes:0,closed:1});
+ await assert.rejects(evaluateOwnedQualification({record:r,name:out.name}),e=>e.code==='name-mismatch');
+});
+test('a bad replay name digest and damaged embedded field are never accepted as a valid mismatch',async()=>{
+ const r=await profile(),bytes=blanks.slice();bytes[0]=65;
+ const stored={kind:'th128-original-stats-last-name-field9-v1',revision:1,bytes,digest:await sha(blanks)};
+ await assert.rejects(harness(r,{stored}).run(),/complete field digest differs/);
+ r.profile[13172]=1;r.sha256=await sha(r.profile);stored.digest=await sha(bytes);
+ await assert.rejects(harness(r,{stored}).run(),e=>e.code==='name-field-bytes');
 });
 test('storage read errors propagate and close the temporary name owner',async()=>{
  const h=harness(await profile(),{readFailure:new Error('read unavailable')});
