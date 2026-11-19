@@ -9,7 +9,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 test('playerShotGroup follows the original ANM layer12 native priority and keeps known passes', () => {
     const fixture = JSON.parse(fs.readFileSync(
-        path.join(root, 'local/research/player-shot-groups-fixtures.json'), 'utf8'));
+        path.join(process.env.TH128_RESEARCH_FIXTURES??path.join(root,'local/research'), 'player-shot-groups-fixtures.json'), 'utf8'));
     assert.equal(fixture.selection.layer, 12);
     const groupPriority = draw.nativeDrawPriority(12);
     assert.equal(groupPriority, 26);

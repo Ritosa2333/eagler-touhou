@@ -81,11 +81,24 @@ export function argbColor(value) {
   return [(value >>> 16 & 255) / 255, (value >>> 8 & 255) / 255, (value & 255) / 255, (value >>> 24) / 255];
 }
 
-export function nativeQuadColors(record){
+const validColorWord=value=>Number.isInteger(value)&&value>=0&&value<=0xffffffff;
+function writeArgbColor(out,value){
+  out[0]=(value>>>16&255)/255;out[1]=(value>>>8&255)/255;out[2]=(value&255)/255;out[3]=(value>>>24)/255;
+}
+export function nativeQuadColors(record,scratch=null){
   const flags=record?.flags??0,primary=record?.color,secondary=record?.secondary??0;
-  if(![flags,primary,secondary].every(value=>Number.isInteger(value)&&value>=0&&value<=0xffffffff))
+  if(!validColorWord(flags)||!validColorWord(primary)||!validColorWord(secondary))
     throw new Error('Invalid original quad diffuse color domain');
-  const mode=(flags>>>16)&3,first=argbColor(primary),second=argbColor(secondary);
+  const mode=(flags>>>16)&3;
+  if(scratch){
+    const {first,second,corners}=scratch;
+    if(mode!==1)writeArgbColor(first,primary);
+    if(mode!==0)writeArgbColor(second,secondary);
+    corners[0]=mode===1?second:first;corners[1]=mode===1||mode===2?second:first;
+    corners[2]=mode===0?first:second;corners[3]=mode===1||mode===3?second:first;
+    return corners;
+  }
+  const first=argbColor(primary),second=argbColor(secondary);
   if(mode===0)return [first,first,first,first];
   if(mode===1)return [second,second,second,second];
   return mode===2?[first,second,second,first]:[first,first,second,second];

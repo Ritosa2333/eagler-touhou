@@ -40,7 +40,9 @@ function appendQuad(renderer,record,texture,colors){
   }
   const left=record.u0+record.u,right=record.u0+(record.u1-record.u0)*record.uvScaleX+record.u;
   const top=record.v0+record.v,bottom=record.v0+(record.v1-record.v0)*record.uvScaleY+record.v;
-  const vertices=renderer.vertices;let at=vertices.length;vertices.length=at+48;
+  let vertices,at;
+  if(renderer.spriteStream){at=renderer.spriteStream.length;vertices=renderer.extendSpriteStream(48);}
+  else{vertices=renderer.vertices;at=vertices.length;vertices.length=at+48;}
   for(let n=0;n<6;n++){
     const i=n<3?n:n===3?0:n===4?2:3,color=colors[i];
     vertices[at++]=positions[i*2];vertices[at++]=positions[i*2+1];
@@ -569,6 +571,16 @@ export class WebGlRenderer {
   }
 
   flush() {
+    const stream=this.spriteStream;
+    if(stream){
+      const count=stream.length-stream.first;
+      if(count){
+        stream.ranges.push({first:stream.first/8,count:count/8,texture:this.current,point:this.point,
+          vertical:this.verticalClamp,sprite:this.spriteClamp,blend:this.blend});
+        stream.first=stream.length;
+      }
+      return;
+    }
     if (!this.vertices.length) return;
     const graphics = this.gl;
     graphics.uniform2fv(this.verticalClampUniform,this.verticalClamp);
@@ -583,20 +595,54 @@ export class WebGlRenderer {
     this.vertices.length = 0;
   }
 
-  material(mode) {
-    if(this.blend===mode&&Number.isInteger(mode)&&mode>=0&&mode<=6)return;
-    const graphics = this.gl;
-    const factors = [[graphics.SRC_ALPHA,graphics.ONE_MINUS_SRC_ALPHA],[graphics.SRC_ALPHA,graphics.ONE],
-      [graphics.SRC_ALPHA,graphics.ONE],[graphics.ONE,graphics.ZERO],
-      [graphics.ONE_MINUS_DST_COLOR,graphics.ONE_MINUS_SRC_ALPHA],[graphics.DST_COLOR,graphics.ZERO],
-      [graphics.ONE_MINUS_SRC_COLOR,graphics.ONE_MINUS_SRC_ALPHA]];
-    if (!factors[mode]) throw new Error(`Unimplemented blend mode ${mode}`);
-    if (this.blend !== mode) {
-      this.flush();
-      graphics.blendEquation(mode === 2 ? graphics.FUNC_REVERSE_SUBTRACT : graphics.FUNC_ADD);
-      graphics.blendFunc(...factors[mode]);
-      this.blend = mode;
+  extendSpriteStream(count){
+    const stream=this.spriteStream,end=stream.length+count;
+    if(!this.spriteStreamUpload||this.spriteStreamUpload.length<end){
+      const previous=this.spriteStreamUpload;
+      this.spriteStreamUpload=new Float32Array(Math.max(end,(previous?.length??0)*2,4096));
+      if(previous&&stream.length)this.spriteStreamUpload.set(previous.subarray(0,stream.length));
     }
+    stream.length=end;return this.spriteStreamUpload;
+  }
+
+  // Submit one upload for each consecutive stretch of textured draws. Draws
+  // retain their authored order and separate WebGL blend/depth settings.
+  submitSpriteStream(){
+    const stream=this.spriteStream;if(!stream?.ranges.length)return;
+    const graphics=this.gl;
+    graphics.bufferData(graphics.ARRAY_BUFFER,this.spriteStreamUpload.subarray(0,stream.length),graphics.STREAM_DRAW);
+    let texture=null,point=null,vertical=null,sprite=null;
+    const filterByTexture=new Map();
+    for(const draw of stream.ranges){
+      if(stream.gpuBlend!==draw.blend){this.applyBlend(draw.blend);stream.gpuBlend=draw.blend;}
+      if(draw.texture!==texture){texture=draw.texture;graphics.bindTexture(graphics.TEXTURE_2D,texture.texture);point=filterByTexture.get(texture);}
+      if(draw.point!==point){
+        point=draw.point;filterByTexture.set(texture,point);
+        const filter=point?graphics.NEAREST:graphics.LINEAR;
+        graphics.texParameteri(graphics.TEXTURE_2D,graphics.TEXTURE_MIN_FILTER,filter);
+        graphics.texParameteri(graphics.TEXTURE_2D,graphics.TEXTURE_MAG_FILTER,filter);
+      }
+      if(vertical!==draw.vertical){vertical=draw.vertical;graphics.uniform2fv(this.verticalClampUniform,vertical);}
+      if(sprite!==draw.sprite){sprite=draw.sprite;graphics.uniform4fv(this.spriteClampUniform,sprite);}
+      graphics.drawArrays(graphics.TRIANGLES,draw.first,draw.count);
+    }
+    stream.ranges.length=0;stream.length=0;stream.first=0;
+  }
+
+  material(mode) {
+    if(!Number.isInteger(mode)||mode<0||mode>6)throw new Error(`Unimplemented blend mode ${mode}`);
+    if(this.blend===mode)return;
+    this.flush();
+    if(!this.spriteStream)this.applyBlend(mode);
+    this.blend=mode;
+  }
+
+  applyBlend(mode){
+    const graphics = this.gl;
+    const source=mode<=2?graphics.SRC_ALPHA:mode===3?graphics.ONE:mode===4?graphics.ONE_MINUS_DST_COLOR:mode===5?graphics.DST_COLOR:graphics.ONE_MINUS_SRC_COLOR;
+    const destination=mode===1||mode===2?graphics.ONE:mode===3||mode===5?graphics.ZERO:graphics.ONE_MINUS_SRC_ALPHA;
+    graphics.blendEquation(mode===2?graphics.FUNC_REVERSE_SUBTRACT:graphics.FUNC_ADD);
+    graphics.blendFunc(source,destination);
   }
 
   captureStage() {
@@ -604,6 +650,7 @@ export class WebGlRenderer {
     const viewport=this.stageViewport(),width=this.canvas.width,height=this.canvas.height;
     if(!surface?.dynamic)throw new Error('Actual text@R stage surface is unavailable');
     this.flush();
+    this.submitSpriteStream();
     let provisional=null;
     try{
       const texture=surface.texture??(provisional=graphics.createTexture());
@@ -828,6 +875,7 @@ export class WebGlRenderer {
     let laserDepth=null;
     const leaveLaserDepth=()=>{
       if(laserDepth===null)return;
+      this.flush();this.submitSpriteStream();
       graphics.depthRange(0,1);graphics.depthFunc(graphics.ALWAYS);graphics.depthMask(false);
       graphics.disable(graphics.DEPTH_TEST);laserDepth=null;
     };
@@ -845,18 +893,21 @@ export class WebGlRenderer {
     this.blend = -1;
     this.vertices.length = 0;
     if(background&&!overlay)this.drawBackground(background);
-    let captured=false;
+    if(world&&records.length>=128)this.spriteStream={ranges:[],length:0,first:0,gpuBlend:-1};
+    let captured=false,previousBank=-1,previousEntry=-1,previousTexture=null;
+    const quadColors=this.quadColors??={first:[0,0,0,0],second:[0,0,0,0],corners:new Array(4)};
     for (const record of records) {
       if(mainCount&&!captured&&nativeRecordPriority(record)>=12){this.captureStage();captured=true;}
       const z=laserDepths.get(record);
       if(z===undefined)leaveLaserDepth();
       else if(z!==laserDepth){
-        this.flush();graphics.enable(graphics.DEPTH_TEST);graphics.depthMask(true);graphics.depthFunc(graphics.LESS);
+        this.flush();this.submitSpriteStream();graphics.enable(graphics.DEPTH_TEST);graphics.depthMask(true);graphics.depthFunc(graphics.LESS);
         graphics.depthRange(z,z);laserDepth=z;
       }
       if(fans.has(record)||lines.has(record)){
         const fan=fans.get(record)??lines.get(record);if(record.geometry.vertices.every(vertex=>(vertex.color>>>24)===0))continue;
-        this.material(record.blend);this.flush();
+        this.material(record.blend);this.flush();this.submitSpriteStream();
+        if(this.spriteStream&&this.spriteStream.gpuBlend!==record.blend){this.applyBlend(record.blend);this.spriteStream.gpuBlend=record.blend;}
         if(!this.solidTexture){
           const texture=graphics.createTexture();if(!texture)throw new Error('Cannot allocate original untextured ANM material');
           graphics.bindTexture(graphics.TEXTURE_2D,texture);graphics.texParameteri(graphics.TEXTURE_2D,graphics.TEXTURE_WRAP_S,graphics.CLAMP_TO_EDGE);
@@ -871,12 +922,16 @@ export class WebGlRenderer {
         graphics.bufferData(graphics.ARRAY_BUFFER,fan,graphics.STREAM_DRAW);if(lines.has(record))graphics.lineWidth(this.canvas.width/640);graphics.drawArrays(lines.has(record)?graphics.LINE_STRIP:graphics.TRIANGLES,0,fan.length/8);
         this.current=null;this.point=null;continue;
       }
-      const colors=meshes.has(record)?null:nativeQuadColors(record);
-      if ((colors?colors.every(color=>color[3]===0):(record.color>>>24)===0) || record.width === 0 || record.height === 0) continue;
-      if (![record.u,record.v,record.uvScaleX,record.uvScaleY,record.u0,record.v0,record.u1,record.v1].every(Number.isFinite)) {
+      const colors=meshes.has(record)?null:nativeQuadColors(record,quadColors);
+      if ((colors?colors[0][3]===0&&colors[1][3]===0&&colors[2][3]===0&&colors[3][3]===0:(record.color>>>24)===0) || record.width === 0 || record.height === 0) continue;
+      if (!Number.isFinite(record.u)||!Number.isFinite(record.v)||!Number.isFinite(record.uvScaleX)||!Number.isFinite(record.uvScaleY)
+          ||!Number.isFinite(record.u0)||!Number.isFinite(record.v0)||!Number.isFinite(record.u1)||!Number.isFinite(record.v1)) {
         throw new Error('Non-finite texture coordinates');
       }
-      const texture = this.textures.get(`${record.bank}:${record.entry}`);
+      if(record.bank!==previousBank||record.entry!==previousEntry){
+        previousBank=record.bank;previousEntry=record.entry;previousTexture=this.textures.get(`${previousBank}:${previousEntry}`);
+      }
+      const texture=previousTexture;
       if (!texture) throw new Error(`没有绘制纹理：bank=${record.bank}, entry=${record.entry}`);
       if(texture.dynamic&&(!texture.initialized||record.bank!==6||record.entry!==2&&!(record.entry===1&&texture.originalPauseCapture&&this.pauseRenderingEpoch===texture.pauseEpoch)))throw new Error('Dynamic texture has no established current-frame capture');
       this.material(record.blend);
@@ -903,14 +958,22 @@ export class WebGlRenderer {
         this.point = point;
         this.verticalClamp=verticalClamp;
         this.spriteClamp=spriteClamp;
-        graphics.bindTexture(graphics.TEXTURE_2D,texture.texture);
-        graphics.texParameteri(graphics.TEXTURE_2D,graphics.TEXTURE_MIN_FILTER,point?graphics.NEAREST:graphics.LINEAR);
-        graphics.texParameteri(graphics.TEXTURE_2D,graphics.TEXTURE_MAG_FILTER,point?graphics.NEAREST:graphics.LINEAR);
+        if(!this.spriteStream){
+          graphics.bindTexture(graphics.TEXTURE_2D,texture.texture);
+          graphics.texParameteri(graphics.TEXTURE_2D,graphics.TEXTURE_MIN_FILTER,point?graphics.NEAREST:graphics.LINEAR);
+          graphics.texParameteri(graphics.TEXTURE_2D,graphics.TEXTURE_MAG_FILTER,point?graphics.NEAREST:graphics.LINEAR);
+        }
       }
-      if(meshes.has(record)){this.vertices.push(...meshes.get(record));continue;}
+      if(meshes.has(record)){
+        const mesh=meshes.get(record);
+        if(this.spriteStream){const first=this.spriteStream.length;this.extendSpriteStream(mesh.length).set(mesh,first);}
+        else this.vertices.push(...mesh);
+        continue;
+      }
       appendQuad(this,record,texture,colors);
     }
     this.flush();
+    this.submitSpriteStream();
     if(nativeMenu){
       graphics.bindFramebuffer(graphics.READ_FRAMEBUFFER,this.nativeMenuRasterSurface.framebuffer);
       graphics.bindFramebuffer(graphics.DRAW_FRAMEBUFFER,null);
@@ -918,6 +981,6 @@ export class WebGlRenderer {
     }
     const error = graphics.getError();
     if (error !== graphics.NO_ERROR) throw new Error(`WebGL 错误 ${error}`);
-    }finally{leaveLaserDepth();if(nativeMenu){graphics.bindFramebuffer(graphics.FRAMEBUFFER,null);graphics.viewport(0,0,this.canvas.width,this.canvas.height);this.current=null;this.point=null;}}
+    }finally{this.spriteStream=null;this.vertices.length=0;leaveLaserDepth();if(nativeMenu){graphics.bindFramebuffer(graphics.FRAMEBUFFER,null);graphics.viewport(0,0,this.canvas.width,this.canvas.height);this.current=null;this.point=null;}}
   }
 }
