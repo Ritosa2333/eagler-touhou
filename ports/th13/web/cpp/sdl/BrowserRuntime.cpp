@@ -157,6 +157,13 @@ float presentation_fps = 60;
 constexpr double kDisplayStaleMs = 250.;
 double last_display_callback_ms = -1;
 
+// E2 input kick（source=4）：keydown 锁存后的即时微拍状态。edge 在 _th13_key
+// 记按下边沿（重复触发/双路转发时 hosted 已置位，天然去重），任何采样了按键的
+// tick 将其消费；kick 只在有未消费边沿时驱动一帧。last 记上次 kick 时刻，
+// 双路监听对同一物理按键各调一次时按刷新间隔去重。
+bool input_kick_edge = false;
+double last_input_kick_ms = -1;
+
 void reset_presentation_window() {
     presentation_elapsed = 0;
     presentation_count = 0;
@@ -234,6 +241,7 @@ void clear_inputs() {
     for (auto& key : keyboard_map) key.hosted = false;
     SDL_ResetKeyboard();
     controls = {};
+    input_kick_edge = false;
 }
 
 bool sample_and_tick(float fps = 60.f, unsigned* simulated = nullptr) {
@@ -266,6 +274,8 @@ bool sample_and_tick(float fps = 60.f, unsigned* simulated = nullptr) {
             if (key.scan == 28 || key.scan == 156) keys[13] = true;                    // Enter
         }
     }
+    // 本 tick 已采样 hosted 按键态：keydown 边沿视为已消费（含 kick 自己驱动的帧）。
+    input_kick_edge = false;
     // Launcher 手柄桥（PR159 审查定案）：浏览器映射经共享 bridge 注入虚键；
     // 桥未接管（mapped_pad<0，如本地/测试构建）才回落 SDL 原生摇杆采样。
     const int mapped_pad = eagler::input::BrowserGamepadState();
@@ -325,7 +335,9 @@ bool drive_one_frame(double delta, unsigned source) {
     }
     const bool display_callback = source == 1;
     if (display_callback) last_display_callback_ms = begin;
-    const bool presents = display_callback ||
+    // E2 input kick（source=4）：呈现提交无条件（与 source=3 手动泵同型入口，
+    // 但不受 kDisplayStaleMs 停摆门限制）；有新帧交新帧，无新帧重复上一帧。
+    const bool presents = display_callback || source == 4 ||
         (source == 3 && (last_display_callback_ms < 0 ||
                          begin - last_display_callback_ms > kDisplayStaleMs));
     if (presents) frame_meter.sample(cadence.debt);
@@ -491,8 +503,13 @@ EMSCRIPTEN_KEEPALIVE const int* th13_probe_state() {
 }
 
 EMSCRIPTEN_KEEPALIVE void th13_key(unsigned scan, unsigned down) {
-    for (auto& key : th13::sdl::keyboard_map)
-        if (key.scan == scan) key.hosted = down != 0;
+    for (auto& key : th13::sdl::keyboard_map) {
+        if (key.scan != scan) continue;
+        // 按下边沿记账（E2 input kick）：hosted 尚未置位的 down 才是边沿；
+        // 浏览器按键重复（e.repeat）与双路监听重复转发时 hosted 已 true，不重复记。
+        if (down && !key.hosted) th13::sdl::input_kick_edge = true;
+        key.hosted = down != 0;
+    }
 }
 
 EMSCRIPTEN_KEEPALIVE void th13_touch_options(unsigned enabled, unsigned mode, float sensitivity,
@@ -592,6 +609,42 @@ EMSCRIPTEN_KEEPALIVE int th13_frame_tick(double delta_milliseconds) {
     using namespace th13::sdl;
     if (!running) return -1;  // 循环未开/已停：不泵
     return drive_one_frame(delta_milliseconds < 0 ? 0 : delta_milliseconds / 1000., 3) ? 1 : 0;
+}
+
+// E2 input kick（source=4）：页面在 keydown 锁存后立刻请求一次即时微拍
+//（sample+tick+present），让按键不必等到下一个显示回调才被采样。守卫全部
+// 满足才驱动，任一不满足静默返回 0：
+//   1) running 且非 suspended/loading/pause（与显示回调同门）；
+//   2) 有自上次 tick 起未消费的按下边沿（_th13_key 记账、tick 消费）；
+//   3) 距上次 kick ≥ 一个刷新间隔：同一物理按键的直连/消息双路转发各触发
+//      一次时只认首次；
+//   4) rAF 帧钟就绪且显示回调仍新鲜（< kDisplayStaleMs）：停摆期由
+//      th13_frame_tick 看门狗接管，kick 不与固定 16.67ms 泵叠加计时；
+//   5) 时间信用 ≥ 1 帧：按 FrameCadence::advance 同式计算 debt+delta。
+// 信用语义（不凭空制造模拟时间）：delta = now − 上一 rAF 帧钟读数，只是把
+// 已经流逝、下一显示回调本会记帐的墙钟时间提前记在本帧；驱动成功后把
+// previous_frame 推进到 now，下一 rAF 的 delta 相应缩短同一数量。任意时间
+// 窗口内的模拟帧数仍由墙钟/interval 决定——60fps 总速率仍由显示回调的到达
+// 节奏决定，kick 只是把本刷新周期内已到期的那一帧提前到按键时刻执行，下一
+// rAF 无新帧时按 vsync 语义重复呈现上一帧（commit(repeat)），不产生额外
+// 模拟帧。presents=true：与 source=3 手动泵同型的入口形状，但呈现无条件
+// 提交（有新帧交新帧，无新帧重复上一帧）。
+EMSCRIPTEN_KEEPALIVE int th13_input_kick(double now_ms) {
+    using namespace th13::sdl;
+    if (!running || !app || suspended || app->loading_waiting() ||
+        (app->pause && app->pause->active())) return 0;
+    if (!input_kick_edge) return 0;
+    const double now = std::isfinite(now_ms) && now_ms > 0. ? now_ms : emscripten_get_now();
+    constexpr double refresh_ms = 1000. * touhou::sdl::FrameCadence::interval;
+    if (last_input_kick_ms >= 0 && now - last_input_kick_ms < refresh_ms) return 0;
+    if (previous_frame < 0 || last_display_callback_ms < 0 ||
+        now - last_display_callback_ms > kDisplayStaleMs) return 0;
+    const double delta = std::max(0., (now - previous_frame) / 1000.);
+    const double credited = std::min(.1, cadence.debt + std::clamp(delta, 0., .1));
+    if (credited + 1.e-9 < touhou::sdl::FrameCadence::interval) return 0;
+    last_input_kick_ms = now;
+    previous_frame = now;  // 本周期剩余时间归下一显示回调记帐（同一时间只记一次）
+    return drive_one_frame(delta, 4) ? 1 : 0;
 }
 
 // ---- [R3-M] 标题 Replay 菜单：本地 .rpy 导入 ----

@@ -209,6 +209,13 @@ float presentation_fps = 60;
 constexpr double kDisplayStaleMs = 250.;
 double last_display_callback_ms = -1;
 
+// E2 input kick（source=4）：keydown 锁存后的即时微拍状态。edge 在 _th13_key
+// 记按下边沿（重复触发/双路转发时 hosted 已置位，天然去重），任何采样了按键的
+// tick（含 pending 队列消费）将其消费；kick 只在有未消费边沿时驱动一帧。
+// last 记上次 kick 时刻，双路监听对同一物理按键各调一次时按刷新间隔去重。
+bool input_kick_edge = false;
+double last_input_kick_ms = -1;
+
 void reset_presentation_window() {
     presentation_window_start = -1;
     presentation_count = 0;
@@ -304,6 +311,7 @@ void clear_inputs() {
     }
     SDL_ResetKeyboard();
     controls = {};
+    input_kick_edge = false;
 }
 
 // P2：输入采样与模拟推进拆开——mp 每 tick 只采样一次，重模拟帧复用
@@ -372,6 +380,9 @@ SampledFrame sample_input() {
             if (key.scan == 28 || key.scan == 156) keys[13] = true;                    // Enter
         }
     }
+    // 本 tick 已采样 hosted 按键态（含 pending 边沿队列消费）：keydown 边沿视为
+    // 已消费（含 kick 自己驱动的帧）。
+    input_kick_edge = false;
     // Launcher 手柄桥（PR159 审查定案）：浏览器映射经共享 bridge 注入虚键；
     // 桥未接管（mapped_pad<0，如本地/测试构建）才回落 SDL 原生摇杆采样。
     const int mapped_pad = eagler::input::BrowserGamepadState();
@@ -837,7 +848,9 @@ bool drive_one_frame(double delta, unsigned source = 0) {
     }
     const bool display_callback = source == 1;
     if (display_callback) last_display_callback_ms = begin;
-    const bool presents = display_callback ||
+    // E2 input kick（source=4）：呈现提交无条件（与 source=3 手动泵同型入口，
+    // 但不受 kDisplayStaleMs 停摆门限制）；有新帧交新帧，无新帧重复上一帧。
+    const bool presents = display_callback || source == 4 ||
         (source == 3 && (last_display_callback_ms < 0 ||
                          begin - last_display_callback_ms > kDisplayStaleMs));
     if (presents) {
@@ -941,6 +954,45 @@ int mp_run_frame(double delta_ms) {
     if (!std::isfinite(delta_ms) || delta_ms < 0.0) return 0;
     mp_clock.elapsed(emscripten_get_now()); // Explicit delta owns elapsed time up to now.
     return drive_one_frame(delta_ms / 1000.0, 3) ? 1 : 0;
+}
+
+// E2 input kick（source=4，MultiplayerExports.cpp 的 th13_input_kick 转发）：
+// 页面在 keydown 锁存后立刻请求一次即时微拍（sample+tick+present）。守卫全部
+// 满足才驱动，任一不满足静默返回 0：running 且非 suspended/loading/pause；
+// 有自上次 tick 起未消费的按下边沿；距上次 kick ≥ 一个刷新间隔（双路监听去重）。
+// 两种时钟态（镜像 rAF 回调自身的驱动选择）：
+//   对局态（session Active 且 Simulating 且非 Spectator/playback）：与
+//   queue_mp_work 的 source=2 追帧泵同型——delta=0，只花显示回调已经把流逝
+//   时间挣到的 mp_schedule 信用（has_work），不把新的流逝时间变成帧信用，
+//   「只有显示回调产生新帧信用」的锁步相位对齐保持不变。
+//   菜单态（无会话）：与 SP 同型——delta = now − 上一 rAF 帧钟读数，把下一
+//   显示回调本会记帐的时间提前消费，驱动后把 previous_frame 推进到 now；
+//   任意窗口模拟帧数仍由墙钟/interval 决定，60fps 总速率仍由显示回调节拍
+//   决定，下一 rAF 无新帧时重复呈现上一帧。会话时钟态（mp_room_preview 等
+//   rAF 用 mp_clock.elapsed 驱动的非模拟态）无无副作用的时间窥视接口，
+//   不 kick（守卫拒绝），也不为此改动共享 FrameSchedule。
+int input_kick(double now_ms) {
+    if (!running || !app) return 0;
+    if (suspended || app->loading_waiting() || (app->pause && app->pause->active())) return 0;
+    if (!input_kick_edge) return 0;
+    const double now = std::isfinite(now_ms) && now_ms > 0. ? now_ms : emscripten_get_now();
+    constexpr double refresh_ms = 1000. * touhou::sdl::FrameCadence::interval;
+    if (last_input_kick_ms >= 0 && now - last_input_kick_ms < refresh_ms) return 0;
+    double delta;
+    if (multiplayer::session.Active() || mp_room_preview) {
+        if (!multiplayer::session.Simulating() || multiplayer::session.Spectator() ||
+            mp_playback_pending || !mp_schedule.has_work()) return 0;
+        delta = 0.;  // 只花已有信用，不产生新帧信用（source=2 同型）
+    } else {
+        if (previous_frame < 0 || last_display_callback_ms < 0 ||
+            now - last_display_callback_ms > kDisplayStaleMs) return 0;
+        delta = std::max(0., (now - previous_frame) / 1000.);
+        const double credited = std::min(.1, cadence.debt + std::clamp(delta, 0., .1));
+        if (credited + 1.e-9 < touhou::sdl::FrameCadence::interval) return 0;
+        previous_frame = now;  // 本周期剩余时间归下一显示回调记帐（同一时间只记一次）
+    }
+    last_input_kick_ms = now;
+    return drive_one_frame(delta, 4) ? 1 : 0;
 }
 
 // Configure/Stop 清零时间同步累积（Session::Configure 成功路径调用）。
@@ -1181,6 +1233,9 @@ EMSCRIPTEN_KEEPALIVE void th13_key(unsigned scan, unsigned down) {
             key.managed = true;
             if (key.hosted != (down != 0)) key.pending.push_back(down != 0);
         }
+        // 按下边沿记账（E2 input kick）：hosted 尚未置位的 down 才是边沿；
+        // 浏览器按键重复（e.repeat）与双路监听重复转发时 hosted 已 true，不重复记。
+        if (down && !key.hosted) th13::sdl::input_kick_edge = true;
         key.hosted = down != 0;
         if (th13::multiplayer::session.Simulating()) {
             bool keys[256]{};

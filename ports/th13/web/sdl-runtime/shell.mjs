@@ -11,6 +11,8 @@ const epoch = Number(query.get('runtimeEpoch'));
 const validEpoch = Number.isSafeInteger(epoch) && epoch > 0;
 let core, launched = false, first = false, stopping = false, options = {}, music = true, queue = Promise.resolve();
 const emit = (event, fields = {}) => parent.postMessage({protocol, game, epoch, event, ...fields}, location.origin);
+// E2 input kick：壳消息路径 down 边沿后的即时微拍（?inputKick=0 关闭，默认开）。
+const inputKick = query.get('inputKick') !== '0';
 // 触摸坐标换算的 canvas 包围盒缓存：resize/视口变化时失效，避免每次
 // pointermove 消息都强制布局（getBoundingClientRect）。
 let canvasBox = null;
@@ -34,7 +36,10 @@ const keyboard = createBrowserKeyboard({
     reset: clearKeyboard,
   },
   accept: code => !!scanCodes[code],
-  send: (code, down) => core?._th13_key(scanCodes[code], +down),
+  send: (code, down) => {
+    core?._th13_key(scanCodes[code], +down);
+    if (+down && inputKick) core?._th13_input_kick?.(performance.now());
+  },
 });
 function clearKeyboard() {
   keyboard.clear();
