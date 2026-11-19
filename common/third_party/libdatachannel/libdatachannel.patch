@@ -1,6 +1,14 @@
 --- a/src/impl/icetransport.cpp
 +++ b/src/impl/icetransport.cpp
-@@ -102,16 +102,15 @@
+@@ -90,6 +90,7 @@
+ 	jconfig.cb_gathering_done = IceTransport::GatheringDoneCallback;
+ 	jconfig.cb_recv = IceTransport::RecvCallback;
+ 	jconfig.user_ptr = this;
++	jconfig.require_local_relay = config.requireLocalTurnRelay;
+ 
+ 	if (config.enableIceUdpMux) {
+ 		PLOG_DEBUG << "Enabling ICE UDP mux";
+@@ -102,16 +103,15 @@
  	std::vector<IceServer> servers = config.iceServers;
  	std::shuffle(servers.begin(), servers.end(), utils::random_engine());
  
@@ -26,7 +34,7 @@
  	}
  
  	// Bind address
-@@ -130,6 +129,12 @@
+@@ -130,6 +130,12 @@
  	mAgent = decltype(mAgent)(juice_create(&jconfig), juice_destroy);
  	if (!mAgent)
  		throw std::runtime_error("Failed to create the ICE agent");
@@ -108,20 +116,22 @@
  }
 --- a/include/rtc/configuration.hpp
 +++ b/include/rtc/configuration.hpp
-@@ -8,6 +8,8 @@
+@@ -8,6 +8,9 @@
  
  #ifndef RTC_ICE_CONFIGURATION_H
  #define RTC_ICE_CONFIGURATION_H
 +
 +#define RTC_HAS_STUN_OBSERVATIONS 1
++#define RTC_HAS_LOCAL_TURN_RELAY 1
  
  #include "common.hpp"
  
-@@ -73,6 +75,7 @@
+@@ -73,6 +76,8 @@
  	CertificateType certificateType = CertificateType::Default;
  	TransportPolicy iceTransportPolicy = TransportPolicy::All;
  	bool enableIceTcp = false;
 +	bool enableStunObservations = false; // libjuice only
++	bool requireLocalTurnRelay = false; // libjuice only
  	bool enableIceUdpMux = false; // libjuice only
  	bool disableAutoNegotiation = false;
  	bool disableAutoGathering = false;

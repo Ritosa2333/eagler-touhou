@@ -47,7 +47,6 @@ bun run vendor
 
 - 主页通用操作使用 [Lucide](https://github.com/lucide-icons/lucide)，包为 lucide-react@1.65.0，采用 ISC。作品封面独立于通用图标系统。
 
-- 游戏来源图标来自 `@iconify-json/fa7-brands@1.2.4`（Font Awesome Brands 7.3.1），采用 CC BY 4.0。Bilibili 和 GitHub SVG 位于 `public/assets/notice-bilibili.svg` 和 `notice-github.svg`。
 - 站点页眉使用 `@iconify-json/material-symbols@1.2.86`，来源为 [Google Material Design Icons](https://github.com/google/material-design-icons)，采用 Apache License 2.0。内嵌图形为 `language`、`history`、`person`、`warning`；触控帮助还内嵌 `fullscreen`、`fullscreen_exit`、`help`、`screen_rotation`。
 - 房间和输入控件使用 [Phosphor](https://github.com/phosphor-icons/core) 中未修改的 regular 图标，包为 `@phosphor-icons/core@2.1.1`，采用 MIT。随包图标包括 caret、copy、gear、sliders、chart、user 和 users；许可证为 `public/assets/LICENSE-Phosphor.txt`。
 

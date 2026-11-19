@@ -15,7 +15,7 @@ function configuredAccountOrigins() {
     ? {edge: edgeOrigin, direct: directOrigin} : null;
 }
 type RequestOptions = {signal?: AbortSignal; query?: URLSearchParams; responseType?: 'json' | 'blob'; timeoutMs?: number; emailCaptcha?: boolean; anonymous?: boolean; fresh?: boolean};
-type AccountReady = {origin: string; region?: AccountRegion; captchaAppId?: string};
+type AccountReady = {origin: string; region?: AccountRegion; mailCaptcha: boolean};
 type SharedRead<T> = {controller: AbortController; result: Promise<T>; waiters: number};
 const activeRequests = new Set<AbortController>();
 const readiness = new Map<string, SharedRead<AccountReady | null>>();
@@ -104,7 +104,7 @@ async function probeAccountOrigin(origin: string, signal: AbortSignal): Promise<
     if (data?.ready !== true) return null;
     const region = response.headers.get('X-Eagler-Account-Route');
     return {origin, region: region === 'direct' || region === 'edge' ? region : undefined,
-      captchaAppId: typeof data.captchaAppId === 'string' && data.captchaAppId ? data.captchaAppId : undefined};
+      mailCaptcha: data.mailCaptcha === true};
   } catch {
     return null;
   } finally {
@@ -196,11 +196,11 @@ async function sendAccountRequest<T>(path: string, body: Record<string, unknown>
   const endpoint = await selectAccountEndpoint(options.signal);
   if (options.signal?.aborted) throw new DOMException('Request cancelled', 'AbortError');
   if (!endpoint) throw new AccountRequestError('ACCOUNT_API_UNAVAILABLE');
-  const {origin, captchaAppId} = endpoint;
-  if (options.emailCaptcha && captchaAppId) {
+  const {origin, mailCaptcha} = endpoint;
+  if (options.emailCaptcha && mailCaptcha) {
     if (!body || body instanceof FormData) throw new AccountRequestError('ACCOUNT_REQUEST_FAILED');
     try {
-      const captchaToken = await openMailCaptcha(captchaAppId, options.signal);
+      const captchaToken = await openMailCaptcha(origin, options.signal);
       body = {...body, captchaToken};
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') throw error;

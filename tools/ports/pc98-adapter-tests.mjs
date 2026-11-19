@@ -138,13 +138,18 @@ export function registerPC98AdapterTests(game) {
       const start=source.indexOf('function loop(now){'),end=source.indexOf('\nasync function startMusic',start);
       assert.ok(start>=0&&end>start);
       for(const hz of [60,120,144]){
-        let ticks=0;
+        let ticks=0,draws=0;
         const context={configuring:false,last:0,accumulator:0,paused:false,document:{hidden:false},tick:1000/60,
-          buttons:()=>[],performance:{now:()=>0},core:{th_step(){ticks++;}},horizontalTouch:{consume(){}},pressed:new Set(),
-          logicMs:0,steps:0,playEffects(){},lastDraw:0,present(){},musicWanted:false,statsAt:1e12,requestAnimationFrame(){}};
+          buttons:()=>[],performance:{now:()=>0},core:{th_step(){ticks++;context.needsDraw=true;}},horizontalTouch:{consume(){}},pressed:new Set(),
+          logicMs:0,steps:0,playEffects(){},lastDraw:0,needsDraw:true,present(){draws++;context.needsDraw=false;},musicWanted:false,statsAt:1e12,requestAnimationFrame(){}};
         runInNewContext(source.slice(start,end)+';globalThis.frame=loop;',context);
         for(let n=1;n<=hz*10;n++)context.frame(n*1000/hz);
         assert.ok(Math.abs(ticks-600)<=2,`${hz} Hz: ${ticks} logic steps`);
+        assert.ok(draws>0&&draws<=600,`${hz} Hz: ${draws} draws`);
+        context.paused=true;context.needsDraw=true;
+        context.frame(10020);const pauseDraws=draws;
+        for(let n=1;n<=hz;n++)context.frame(10020+n*1000/hz);
+        assert.equal(draws,pauseDraws,'a clean paused frame is not redrawn');
       }
     }else{
       const {createFrameGate}=await import(new URL(`../../ports/${game}/web/frame-limit.js`,import.meta.url));

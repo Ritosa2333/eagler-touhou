@@ -8,6 +8,21 @@ import {createNat4CandidateExchange, readNat4PortSteps} from '../src/nat4-candid
 import {createSwarmStandbyPlanner, rankSwarmCandidates, selectSwarmRoute} from '../src/swarm-route-quality.mjs';
 
 {
+  const updates = [];
+  const planner = createSwarmStandbyPlanner({workers:[], ordinaryTurn:true, dispatch:update=>updates.push(update)});
+  try {
+    assert.ok(planner.consider('turn',{sent:12,received:0,p95:null}));
+    const trial = updates.at(-1);
+    assert.deepEqual([trial.phase,trial.route],['measure','turn']);
+    planner.report(0,trial.serial,{sent:12,received:12,p95:54});
+    planner.report(1,trial.serial,{sent:12,received:12,p95:58});
+    assert.deepEqual([updates.at(-1).phase,updates.at(-1).route],['select','turn']);
+  } finally {
+    planner.close();
+  }
+}
+
+{
   const workers = [0, 12, 9].map(id => ({id, ip:`192.0.2.${id + 1}`}));
   const pings = times => ({at:100, samples:new Map(workers.map(({id,ip}, i) => [id, {ip, rtt:times[i]}]))});
   const ranked = rankSwarmCandidates(workers, null, null, 101, [pings([10, 44, 31]), pings([95, 20, 42])]);
@@ -606,6 +621,61 @@ try {
       }
     }
     for (const {ws} of [...autoSignals, ...autoGames, ...autoSeats]) ws.terminate();
+  }
+
+  for (const [index, {modernPair, nativeSeats}] of [
+    {modernPair:true,nativeSeats:0},
+    {modernPair:false,nativeSeats:0},
+    {modernPair:true,nativeSeats:1},
+    {modernPair:true,nativeSeats:2},
+  ].entries()) {
+    const query = 'room=th09mp-on-demand-turn-' + index;
+    const webAddresses = ['192.0.2.' + (31 + index),'198.51.100.' + (31 + index)];
+    const web = await Promise.all([0,1].map(seat =>
+      connect(seat, query + '&lobby=web_client_' + seat + '&member=web_member_' + seat, webAddresses[seat])));
+    for (const [seat,peer] of web.entries()) peer.send({type:'take-seat',seat,loadout:seat});
+    await until(() => web[0].state()?.seats.slice(0,2).every(Boolean));
+    for (const [seat,peer] of web.entries())
+      peer.send({type:'set-ready',ready:true,nativeRuntime:seat < nativeSeats,runtimeGeneration:generation});
+    await until(() => web[0].state()?.seats.slice(0,2).every(seat => seat?.ready));
+    web[0].send({type:'start'});
+    await until(() => web[1].received.some(message => message.type === 'start'));
+    const signal = await Promise.all([0,1].map(seat => connect(seat,
+      query + '&run=1&players=2&signal=1&rtcStartup=1&player=' + seat + '&member=web_member_' + seat +
+      '&runtimeGeneration=' + generation + (modernPair || seat === 0 ? '&rtcTurnOnDemand=1' : ''), webAddresses[seat])));
+    for (const peer of signal) {
+      const peers = await until(() => peer.received.find(message => message.type === 'peers'));
+      assert.equal(peers.onDemandTurn === true,modernPair);
+      assert.deepEqual(peers.iceServers.map(server => server.urls),
+        modernPair ? [nativeSeats ? observers : [stunUrl]] : [[stunUrl],[ordinaryTurnUrl]]);
+      if (modernPair) {
+        assert.equal(peers.turnMode,'direct');
+        assert.equal(peers.swarmGrant,undefined);
+      }
+    }
+    if (modernPair) {
+      for (const peer of signal)
+        await until(() => peer.received.some(message => message.type === 'rtc-startup'));
+      signal[0].send({type:'rtc-startup-quality',serial:0,quality:null});
+      for (const peer of signal) {
+        const standby = await until(() => peer.received.find(message => message.type === 'rtc-standby'));
+        assert.equal(standby.route,'turn');
+        assert.deepEqual(standby.iceServers.map(server => server.urls),[[ordinaryTurnUrl]]);
+        peer.send({type:'rtc-startup-quality',serial:1,quality:{sent:6,received:6,p95:45}});
+      }
+      for (const peer of signal) {
+        await until(() => peer.received.some(message => message.type === 'rtc-startup-select' && message.serial === 1));
+        peer.send({type:'rtc-startup-selected',serial:1,rtcRouteSurvey:true});
+      }
+      await until(() => signal.every(peer => peer.received.some(message => message.type === 'route' && message.mode === 'rtc')));
+      signal[0].send({type:'rtc-route-unavailable',route:'turn'});
+      for (const peer of signal) {
+        const standby = await until(() => peer.received.find(message => message.type === 'rtc-standby' && message.serial > 1));
+        assert.equal(standby.route,'turn');
+        assert.deepEqual(standby.iceServers.map(server => server.urls),[[ordinaryTurnUrl]]);
+      }
+    }
+    for (const {ws} of [...signal,...web]) ws.terminate();
   }
 
   const abandoned = 'room=th09mp-abandoned';

@@ -4,7 +4,7 @@
 
 ## 输入与配置
 
-Host 读取 `runtime-release/`、Product Catalog 中每个注册游戏的 `games/<game-id>/`、可选 `shared/` 字体和可选 `eagler-touhou.config.json`。Runtime Release 必须匹配当前 Launcher Catalog。Host 构建包含所有注册游戏；单作开发使用 workspace 开发服务器。
+Host 读取 `runtime-release/`、所选作品的 `games/<game-id>/`、可选 `shared/unifont.otf` 和 `shared/japanese-font.otf`，以及可选 `eagler-touhou.config.json`。Runtime Release 必须与当前 Launcher 版本匹配。默认作品范围由 [Product Catalog](../../common/contracts/product-catalog.mjs) 的 Host 配方决定。使用 `npm run host:doctor` 检查启用作品和缺失输入。运营者自行提供合法取得的原作资源。
 
 th05 使用已有的普通版与多人 Runtime Release，以及 `games/th05/assets-eagler/` 中的完整预制内容。该目录须包含 `th05.data`、全部声明的 `music/` 文件和 `artwork/th05-card.webp`。当前前端接入不包含 th05 的原生编译器与原始音源制作链；更新界面时沿用已发布的 Runtime 和内容。
 
@@ -27,6 +27,13 @@ th05 使用已有的普通版与多人 Runtime Release，以及 `games/th05/asse
 
 两个配置项均可选。`netplay.relay` 设置站点 WebSocket 地址。`externalImportSource` 提供玩家手动下载 Package 的链接；它与外置资源模式分开配置。默认文件为 [`config/eagler-touhou.config.example.json`](../config/eagler-touhou.config.example.json)。
 
+## 可选功能
+
+- **账号**。源码生产构建默认启用账号。将 `/api/` 反代到兼容的账号服务，并把 `/u/<用户名>` 路由到应用入口。游客站构建时设置 `VITE_ACCOUNTS_ENABLED=false`。本地开发使用 `VITE_ACCOUNTS_ENABLED=true` 和 `EAGLER_UI_API_ORIGIN`。
+- **账号双线路**。构建时设置 `VITE_ACCOUNT_EDGE_ORIGIN` 和 `VITE_ACCOUNT_DIRECT_ORIGIN`。两个 HTTPS 入口共用账号服务和站点域的会话 Cookie，允许本站携带凭据跨域访问，账号响应使用 `Cache-Control: private, no-store`。`/api/ready` 通过 `X-Eagler-Account-Route` 标识 `direct` 或 `edge`，跨域入口需暴露该头。
+- **房间音乐**。构建时可用 `VITE_METING_API_URL` 指定浏览器可访问的 HTTPS Meting 接口，用 `VITE_LISTEN_TOGETHER_ENABLED=false` 关闭房间音乐。Relay 设置 `EAGLER_NETPLAY_LISTEN_TOGETHER=1` 可启用同步邀请。验收时检查网易云音乐和 QQ 音乐的搜索、歌单与播放，再用两个玩家席验证同步。
+- **抢先体验作品**。玩家在「开发人员选项」里打开「测试版功能」并刷新，即可看到已经发布的抢先体验作品。`testOnly` 控制默认可见性。
+
 ## 生成模式
 
 | 模式 | Launcher 与 Runtime | 游戏 Package | 玩家操作 |
@@ -35,7 +42,7 @@ th05 使用已有的普通版与多人 Runtime Release，以及 `games/th05/asse
 | `external` | 发布在玩家访问的站点 | 重定向到配对的 Hosted 源站 | 从站点安装 |
 | `import` | 发布 | 不发布在站点 | 导入游戏 Package ZIP |
 
-`npm run host:build` 生成完整 Hosted 站点 `dist/site/`。`npm run package:external-site` 从其构建配套 External 站点。`npm run import` 生成 `dist/import-site/`，并在 `dist/import/` 下为每个注册游戏生成一个 ZIP。输入变化后，重新构建这些输出目录。
+`npm run host:build` 生成 Hosted 站点 `dist/site/`。`npm run package:external-site` 从其构建配套 External 站点。`npm run import` 生成 `dist/import-site/`，并把各作 Package ZIP 放入 `dist/import/`。输入变化后重新构建对应输出目录。
 
 每个目标站点可在打包时传 `npm run host:build -- --no-download`，从已有 Hosted 清单和 Runtime Release 生成 `dist/import-site/`。直接调用 `scripts/package-server.mjs` 时使用 `--no-download`（或 `--no-download=1`），并传入 Hosted `--site-manifest`；使用 `tools/maintainer/assemble-site.ps1` 时传 `-NoDownload -SiteManifest`。开关关闭时采用常规的 `resourceMode` 配置。
 
@@ -43,7 +50,13 @@ External 部署使用同一 Hosted 版本构建的站点配对。重定向、COR
 
 ## 静态托管
 
-将文件发布到站点配置的挂载路径。服务器返回正确的 JavaScript、WebAssembly 和 Web App Manifest 内容类型，保留请求查询参数，并支持站点缓存策略。HTML、JSON 清单和 App Shell worker 需要重新验证；带版本的 Runtime 与 Package 资源可设为 immutable 缓存。`npm run verify:server -- dist/site` 检查本地目录；`npm run verify:deployed -- https://example.com/` 检查公开部署。
+将文件发布到站点配置的挂载路径。Launcher 和 Runtime HTML 响应须带 `Cross-Origin-Opener-Policy: same-origin` 与 `Cross-Origin-Embedder-Policy: require-corp`。确认代理和 CDN 也返回这些头。使用正确的 JavaScript、WebAssembly 和 Web App Manifest MIME 类型，保留查询参数，缺失文件返回 404。Launcher HTML、可变 JSON 清单和 App Shell worker 需要重新验证，带内容哈希的 Runtime 与 Package 可以使用 immutable 缓存。
+
+单独替换 Launcher 时，先用目标站点的清单检查新前端是否仍支持已发布的作品：
+
+```sh
+node scripts/verify-frontend-game-catalog.mjs .cache/build/ui-rewrite/client path/to/site-manifest.json
+```
 
 External 模式中，玩家站将 `/games/**` 和 `/shared/**` 重定向到资源源站；资源源站允许玩家站 HTTPS Origin 并保留字节范围响应。公开站点验证器会按 External 模式检查这些路径。
 

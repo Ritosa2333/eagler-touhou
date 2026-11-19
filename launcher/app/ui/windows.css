@@ -492,44 +492,6 @@
     gap: 8px;
     margin-top: 16px;
   }
-  .game-source-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 28px;
-    max-width: 100%;
-    padding: 3px 8px;
-    border: 1px solid var(--kit-border);
-    border-radius: 6px;
-    background: var(--kit-muted);
-    color: var(--kit-foreground);
-    font-weight: 500;
-    white-space: normal;
-    text-decoration: none;
-    box-shadow: none;
-  }
-  .game-source-link:hover {
-    background: var(--kit-accent);
-  }
-  .game-source-link:focus-visible {
-    outline: 2px solid var(--kit-ring);
-    outline-offset: 2px;
-  }
-  .game-source-link-icon {
-    display: flex;
-    flex: none;
-    width: 18px;
-    height: 18px;
-  }
-  .game-source-link-icon img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  html[data-book-theme="light"] .game-source-link-icon img:is([src*="notice-github"]) {
-    filter: brightness(0) opacity(0.8);
-  }
   .toast {
     --ui-surface-duration: var(--ui-feedback-duration);
     position: fixed;
@@ -571,6 +533,46 @@
   }
   .toast.show .toast-close {
     pointer-events: auto;
+  }
+  .server-status-note {
+    --notice-gap: 12px;
+    --notice-left: max(var(--notice-gap), env(safe-area-inset-left));
+    --notice-right: max(var(--notice-gap), env(safe-area-inset-right));
+    position: fixed;
+    right: var(--notice-right);
+    bottom: max(var(--notice-gap), env(safe-area-inset-bottom));
+    z-index: 79;
+    max-width: min(28rem, calc(100% - var(--notice-left) - var(--notice-right)));
+    padding: 6px 12px;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    border: 1px solid var(--kit-border);
+    border-radius: 8px;
+    background: var(--kit-card);
+    color: var(--kit-foreground);
+    font: 400 12px / 1.5 var(--kit-font);
+    box-shadow: 0 4px 16px #0002;
+    pointer-events: none;
+  }
+  .server-status-note[hidden],
+  body.player-active .server-status-note {
+    display: none;
+  }
+  .server-status-note[data-kind="update"]::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red-bright) 45%, transparent);
+    animation: server-status-progress 1.25s ease-in-out infinite;
+  }
+  @keyframes server-status-progress {
+    from {transform: translateX(-100%);}
+    to {transform: translateX(100%);}
+  }
+  .less-motion .server-status-note[data-kind="update"]::after {
+    animation: none;
+    opacity: .55;
   }
   .decision-body .decision-mark {
     display: flex;

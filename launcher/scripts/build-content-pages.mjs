@@ -136,7 +136,6 @@ export async function buildContentPages({project = defaultProject, check = false
 
   const firstUseNoticeHtml = renderFirstUseNoticeFragment(await readFile(firstUseNoticeSourcePath, "utf8"));
   const multiplayerHtml = renderDocumentFragment(await readFile(multiplayerSourcePath, "utf8"));
-  const privacyHtml = renderDocumentFragment(await readFile(resolve(project, "content", "PRIVACY_POLICY.md"), "utf8"));
 
   async function emit(path, body, staleMessage) {
     if (path.endsWith('.html') && /<head\b/i.test(body) && !/<meta\s+name=["']darkreader-lock["']/i.test(body)) {
@@ -153,13 +152,27 @@ export async function buildContentPages({project = defaultProject, check = false
 
   await emit(firstUseNoticeOutputPath, firstUseNoticeHtml, "public/content/FIRST_USE_NOTICE.html is stale; run npm run build:content");
   await emit(multiplayerOutputPath, multiplayerHtml, "public/content/MULTIPLAYER.html is stale; run npm run build:content");
-  // The authored documents also supply the in-app Chinese messages.
-  const catalogPath = resolve(project, 'messages/zh-CN.json');
-  const catalog = JSON.parse(await readFile(catalogPath, 'utf8'));
+  // Authored documents supply the in-app messages used by the pages and dialogs.
   const keys = JSON.parse(await readFile(resolve(project, 'messages/keys.json'), 'utf8'));
   const aboutBody = parseFragment(await readFile(resolve(project, 'content/ABOUT.html'), 'utf8'));
-  for (const [key, html] of Object.entries({'content.faq': content, 'content.firstUse': firstUseNoticeHtml, 'content.multiplayer': multiplayerHtml, 'content.about': serialize(aboutBody), 'content.privacy': privacyHtml})) catalog[keys[key].id] = html.trim();
-  await emit(catalogPath, JSON.stringify(catalog, null, 2) + '\n', 'Chinese document messages are stale; run bun run build:content');
+  const chineseDocuments = {'content.faq': content, 'content.firstUse': firstUseNoticeHtml, 'content.multiplayer': multiplayerHtml, 'content.about': serialize(aboutBody)};
+  const policies = [
+    {key: 'content.terms', file: 'TERMS_OF_SERVICE', originalLocale: 'en'},
+    {key: 'content.privacy', file: 'PRIVACY_POLICY', originalLocale: 'zh-CN'},
+  ];
+  for (const locale of ['zh-CN', 'en', 'ja']) {
+    const catalogPath = resolve(project, `messages/${locale}.json`);
+    const catalog = JSON.parse(await readFile(catalogPath, 'utf8'));
+    if (locale === 'zh-CN') {
+      for (const [key, html] of Object.entries(chineseDocuments)) catalog[keys[key].id] = html.trim();
+    }
+    for (const {key, file, originalLocale} of policies) {
+      const suffix = locale === originalLocale ? '' : `.${locale}`;
+      const source = await readFile(resolve(project, 'content', `${file}${suffix}.md`), 'utf8');
+      catalog[keys[key].id] = renderDocumentFragment(source).trim();
+    }
+    await emit(catalogPath, JSON.stringify(catalog, null, 2) + '\n', `${locale} document messages are stale; run bun run build:content`);
+  }
   const migrationTokens=await readFile(resolve(project,'app/ui/tokens.css'),'utf8');
   const compatibilityPath = resolve(project, 'public/compatibility.html');
   const documentControls = await readFile(resolve(project, 'app/ui/document-controls.css'), 'utf8');

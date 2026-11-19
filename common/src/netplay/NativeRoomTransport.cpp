@@ -202,12 +202,12 @@ struct NativeRoomTransport::Impl
     bool ready = false;
     bool localSwarm = false;
     bool swarmRoom = false;
-    bool adaptiveSwarm = false;
+    bool adaptiveSwarm = false, onDemandTurn = false;
     bool startupActive = false;
     bool startupPrimaryFailed = false;
     Json startupTurnIce = Json::array();
     std::string initialRelayRoute;
-    NativeAdaptiveRoute::RetirePeer retirePeer;
+    std::function<void(std::unique_ptr<NativePeerTransport>, std::unique_ptr<NativeAdaptiveRoute>)> retireTransport;
     bool adaptiveActive = false;
     bool reportMatch = false;
     bool replayUploadEnabled = false;
@@ -331,7 +331,9 @@ struct NativeRoomTransport::Impl
                 !preferTurn, manualRouteConfirmation);
             if (!preferTurn)
                 adaptive->ConfigureSurvey(initialRelayRoute, message.value("surveyInitialSwarm", false),
-                    [this](const Json &message) { return sendSurvey(message); }, retirePeer);
+                    [this](const Json &message) { return sendSurvey(message); },
+                    [this](std::unique_ptr<NativePeerTransport> peer) { retireTransport(std::move(peer), nullptr); },
+                    onDemandTurn);
         }
     }
 
@@ -392,6 +394,7 @@ struct NativeRoomTransport::Impl
                 fallbackIceServers = message.value("fallbackIceServers", Json(nullptr));
                 swarmRoom = message.value("turnMode", "") == "swarm";
                 adaptiveSwarm = message.value("adaptiveSwarm", false);
+                onDemandTurn = message.value("onDemandTurn", false);
                 initialRelayRoute = swarmRoom ? "swarm" : "turn";
                 const auto worker = message.find("initialSwarmWorker");
                 if (swarmRoom && worker != message.end() && worker->is_number_unsigned())
@@ -449,7 +452,12 @@ struct NativeRoomTransport::Impl
                 const auto servers = message.value("iceServers", Json::array());
                 if (startupActive && type == "rtc-standby" && message.value("serial", 0u) == 1)
                     startupTurnIce = servers;
-                adaptive->RelayStandby(message, iceConfiguration(servers, message.value("route", "") != "direct"));
+                const auto route = message.value("route", std::string{});
+                auto ice = iceConfiguration(servers, route != "direct");
+#ifdef RTC_HAS_LOCAL_TURN_RELAY
+                ice.requireLocalTurnRelay = onDemandTurn && route == "turn";
+#endif
+                adaptive->RelayStandby(message, std::move(ice));
             } catch (const std::exception &) {
                 if (message.value("phase", "") == "measure")
                     sendSurvey({{"type", startupActive ? "rtc-startup-quality" : "rtc-route-report"},
@@ -467,8 +475,7 @@ struct NativeRoomTransport::Impl
             ready = false;
             deadline = Clock::now() + std::chrono::seconds(17);
             std::fprintf(stderr, "Replacing WebRTC transport (generation %u)\n", generation);
-            adaptive.reset();
-            transport.reset();
+            retireTransport(std::move(transport), std::move(adaptive));
         } else if (type == "rtc-replace" && replacing && !transport && message.value("generation", 0u) == generation) {
             createTransport(message, cancelled);
             if (transport) transport->AddPeer(1 - player);
@@ -545,11 +552,11 @@ struct NativeRoomTransport::ConnectionWorker
         wake.notify_one();
     }
 
-    void retirePeer(std::unique_ptr<NativePeerTransport> peer)
+    void retireTransport(std::unique_ptr<NativePeerTransport> transport, std::unique_ptr<NativeAdaptiveRoute> adaptive)
     {
         {
             std::lock_guard lock(mutex);
-            retiredPeers.push_back(std::move(peer));
+            retiredTransports.push_back({std::move(transport), std::move(adaptive)});
         }
         wake.notify_one();
     }
@@ -561,6 +568,12 @@ struct NativeRoomTransport::ConnectionWorker
     }
 
 private:
+    struct RetiredTransport {
+        // The adaptive route borrows the primary transport.
+        std::unique_ptr<NativePeerTransport> transport;
+        std::unique_ptr<NativeAdaptiveRoute> adaptive;
+    };
+
     struct Attempt {
         std::unique_ptr<Impl> state;
         std::shared_ptr<std::atomic_bool> cancelled;
@@ -606,18 +619,18 @@ private:
         for (;;) {
             Attempt attempt;
             std::deque<std::unique_ptr<Impl>> closing;
-            std::deque<std::unique_ptr<NativePeerTransport>> closingPeers;
+            std::deque<RetiredTransport> closingTransports;
             {
                 std::unique_lock lock(mutex);
-                wake.wait(lock, [&] { return stop || pending.state || !retired.empty() || !retiredPeers.empty(); });
-                if (stop && retired.empty() && retiredPeers.empty()) return;
+                wake.wait(lock, [&] { return stop || pending.state || !retired.empty() || !retiredTransports.empty(); });
+                if (stop && retired.empty() && retiredTransports.empty()) return;
                 closing.swap(retired);
-                closingPeers.swap(retiredPeers);
+                closingTransports.swap(retiredTransports);
                 attempt = std::move(pending);
             }
             for (auto &state : closing) state->close();
             closing.clear();
-            closingPeers.clear();
+            closingTransports.clear();
             if (attempt.state) connect(std::move(attempt));
         }
     }
@@ -628,7 +641,7 @@ private:
     std::shared_ptr<std::atomic_bool> active;
     std::unique_ptr<Impl> result;
     std::deque<std::unique_ptr<Impl>> retired;
-    std::deque<std::unique_ptr<NativePeerTransport>> retiredPeers;
+    std::deque<RetiredTransport> retiredTransports;
     bool stop = false;
     std::thread thread;
 };
@@ -655,6 +668,10 @@ void NativeRoomTransport::Connect(const std::string &signalUrl, std::string tag,
     if (playerCount == 2 && !preferTurn)
         next->signalUrl += signalUrl.find('?') == std::string::npos
             ? "?rtcStartup=1&rtcKeepPrimary=1" : "&rtcStartup=1&rtcKeepPrimary=1";
+#ifdef RTC_HAS_LOCAL_TURN_RELAY
+    if (playerCount == 2 && !preferTurn && (initialRoute.empty() || initialRoute == "auto"))
+        next->signalUrl += "&rtcTurnOnDemand=1";
+#endif
     if (playerCount == 2 && !preferTurn &&
         (initialRoute == "auto" || initialRoute == "direct" || initialRoute == "swarm" || initialRoute == "turn")) {
         next->manualRouteConfirmation = true;
@@ -666,7 +683,9 @@ void NativeRoomTransport::Connect(const std::string &signalUrl, std::string tag,
     next->player = localPlayer;
     next->count = playerCount;
     next->preferTurn = preferTurn;
-    next->retirePeer = [worker = worker_.get()](std::unique_ptr<NativePeerTransport> peer) { worker->retirePeer(std::move(peer)); };
+    next->retireTransport = [worker = worker_.get()](auto transport, auto adaptive) {
+        worker->retireTransport(std::move(transport), std::move(adaptive));
+    };
     worker_->begin(std::move(next));
     opening_ = true;
 }

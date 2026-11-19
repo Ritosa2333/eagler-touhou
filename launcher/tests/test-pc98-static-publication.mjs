@@ -6,7 +6,23 @@ import {join} from 'node:path';
 import {gzipSync} from 'node:zlib';
 import {test} from 'node:test';
 import {exportPC98Disks} from '../../tools/build/pc98-disks.mjs';
-import {publishPC98Blocks} from '../lib/pc98-static-publication.mjs';
+import {publishPC98Blocks, validateNativeTH03Data} from '../lib/pc98-static-publication.mjs';
+
+test('native TH03 publication rejects validly hashed legacy disks and corrupted native data', () => {
+  const payload = Buffer.from('asset data'), header = Buffer.alloc(12);
+  header.write('EPC98PK1');
+  const make = path => {
+    const index = Buffer.from(JSON.stringify({game:'th03', schema:'eagler-touhou/pc98-content/1',
+      files:[{path, offset:0, bytes:payload.length, sha256:createHash('sha256').update(payload).digest('hex')}]}));
+    header.writeUInt32LE(index.length,8);
+    return Buffer.concat([header,index,payload]);
+  };
+  const native = make('native-th03/PODDUI/splash.bmp');
+  assert.doesNotThrow(() => validateNativeTH03Data(native));
+  assert.throws(() => validateNativeTH03Data(make('disks/3-jp.hdi.gz')), /native-th03/);
+  native[native.length-1] ^= 1;
+  assert.throws(() => validateNativeTH03Data(native), /Corrupt TH03 DATA asset/);
+});
 
 test('publishes independently addressed blocks only when disks match DATA', async () => {
   const root = await mkdtemp(join(tmpdir(), 'pc98-publish-'));

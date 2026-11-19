@@ -78,14 +78,42 @@ try{
     const frame=page.frames().find(f=>f.url().includes('runtimeEpoch='));
     const health=await frame.evaluate(async()=>{const m=await import('./app.js');return m.managedAPI.health();});
     assert(health.frames>0);assert.equal(health.menu,1,'single player starts at the native title menu');
-    await new Promise(r=>setTimeout(r,1000));assert.equal((await frame.evaluate(async()=>(await import('./app.js')).managedAPI.health())).menu,1,'title remains open without input');
+    const view=()=>frame.evaluate(async()=>{
+      const health=(await import('./app.js')).managedAPI.health(),{core}=window.th01Native;
+      const canvas=document.getElementById('game'),context=canvas.getContext('2d');
+      const oldCanvas=new OffscreenCanvas(640,400),oldContext=oldCanvas.getContext('2d',{alpha:false});
+      core.th_render();
+      const copy=new ImageData(640,400);copy.data.set(new Uint8Array(core.memory.buffer,core.th_pixels(),copy.data.length));oldContext.putImageData(copy,0,0);
+      const pixels=context.getImageData(0,0,640,400).data,expected=oldContext.getImageData(0,0,640,400).data;
+      return {...health,identical:pixels.every((value,index)=>value===expected[index])};
+    });
+    const idleStart=await view();
+    await new Promise(r=>setTimeout(r,1000));const idleEnd=await view();
+    assert.equal(idleEnd.menu,1,'title remains open without input');
+    assert.equal(idleEnd.frames,idleStart.frames,'static title is not redrawn');
+    assert(idleStart.identical&&idleEnd.identical,'direct Wasm surface matches the old copied pixels');
+    const tap=async(code,key,keyCode)=>{
+      await page.evaluate(({code,key,keyCode})=>rpc(0,'keyboard',{code,key,keyCode,down:true}),{code,key,keyCode});
+      await new Promise(r=>setTimeout(r,100));
+      await page.evaluate(({code,key,keyCode})=>rpc(0,'keyboard',{code,key,keyCode,down:false}),{code,key,keyCode});
+    };
+    await tap('ArrowDown','ArrowDown',40);
+    const moved=await view();assert(moved.frames>idleEnd.frames&&moved.identical,'title selection redraws with correct pixels');
+    await tap('ArrowUp','ArrowUp',38);
+    await tap('KeyZ','z',90);
+    await wait(async()=>{const state=await view();return state.menu===0&&state.frames>moved.frames&&state.identical;},'native game replaces title');
+    await tap('Escape','Escape',27);
+    await wait(async()=>{const state=await view();return state.menu===3&&state.identical;},'pause menu redraws');
+    const pause=await view();await new Promise(r=>setTimeout(r,250));assert.equal((await view()).frames,pause.frames,'stable pause is not redrawn');
+    await tap('Escape','Escape',27);
+    await wait(async()=>{const state=await view();return state.menu===0&&state.frames>pause.frames&&state.identical;},'resume redraws');
     results.push({solo:health});console.log('SOLO presented',health.frames);
     await page.evaluate(()=>rpc(0,'sync'));const saved=await page.evaluate(()=>rpc(0,'list'));
     assert(saved.files.some(file=>file.path==='scores.dat'),'native score must be exported');
     const score=await page.evaluate(()=>rpc(0,'read',{path:'scores.dat'}));for(let at=8;at<808;at+=20)assert.equal(new DataView(Uint8Array.from(score.bytes).buffer).getUint32(at,true),0,'fresh score table is empty');
   }
   if(!process.argv.includes('--solo-only')){
-    relay=spawn(process.execPath,['services/relay/src/netplay-relay.mjs'],{cwd:root,windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_RTC_TIMEOUT_MS:'10000'},stdio:['ignore','pipe','pipe']});
+    relay=spawn(process.execPath,['services/relay/src/netplay-relay.mjs'],{cwd:root,windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_RTC_TIMEOUT_MS:'10000',EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:process.env.PC98_TEST_RELAY==='1'?'1':'0'},stdio:['ignore','pipe','pipe']});
     relay.stdout.on('data',b=>{log+=b;});relay.stderr.on('data',b=>{log+=b;});
     await wait(()=>/listening ws:\/\/127.0.0.1:(\d+)/.test(log),'relay startup',15000);
     const relayPort=/listening ws:\/\/127.0.0.1:(\d+)/.exec(log)[1],count=Number(process.env.PC98_TEST_PLAYERS||2),room='th01mp-managed'+Date.now().toString(36),generation='a'.repeat(64),lobbies=[];
@@ -148,7 +176,7 @@ try{
     }
     if(process.env.PC98_TEST_LAG==='1'){
       await frames()[1].evaluate(()=>{const peer=window.th01Net.session.peers.get('host'),send=peer.channel.send.bind(peer.channel),end=performance.now()+4000;
-        peer.channel.send=text=>{const data=JSON.parse(text);if(data.type==='input'&&performance.now()<end)setTimeout(()=>send(text),70);else send(text);};});
+        peer.channel.send=text=>{const data=JSON.parse(text);if(data.type==='input'&&performance.now()<end)setTimeout(()=>{if(peer.channel.readyState==='open')send(text);},70);else send(text);};});
     }
     if(process.env.PC98_TEST_SLIDE==='1'){
       await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',down:true}));

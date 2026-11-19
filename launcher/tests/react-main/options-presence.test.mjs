@@ -104,7 +104,7 @@ async function mount({entry = '/?game=th06', mobile = true, coarse = false, noHo
     observed.push(presence);
     const onBack = () => navigate(context === 'lobby' ? '/lobby.html' : '/');
     const panel = presence.product && React.createElement(owners.OptionsPanel, {product: presence.product,
-      open: presence.open, closing:presence.closing, onBack, assetUrl: path => `/fixtures/${path}`},
+      open: presence.open, closing:presence.closing, onBack},
     React.createElement(owners.MainSelect, {id: 'presenceSelect', 'aria-label': 'Synthetic options select', defaultValue: 'a'},
       React.createElement('option', {value: 'a'}, 'A'), React.createElement('option', {value: 'b'}, 'B')));
     return React.createElement(owners.OptionsOwnership, {value: presence.targets}, React.createElement(owners.LocaleProvider, {locale: 'en'},

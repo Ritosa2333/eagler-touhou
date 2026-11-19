@@ -375,7 +375,8 @@ int CBossStage4::MaiShootType1()
 	if (m_curPhaseFrame==80)
 		m_pStage->m_pLaser->StartGrow(0);
 	if (m_curPhaseFrame%4==0)
-		if (!(m_curPhaseFrame<80&&m_curPhaseFrame>=144&&m_curPhaseFrame%8!=0))
+		// MAIN.EXE sub_1A775: every 4 frames inside [80,144), every 8 frames outside.
+		if (!((m_curPhaseFrame<80||m_curPhaseFrame>=144)&&m_curPhaseFrame%8!=0))
 		{
 			int deltaAngle=(int)(m_pStage->m_pLaser->LaserAngle(0)-m_pStage->m_pChara->AngleToChara(m_curX,m_curY));
 			while(deltaAngle<0)

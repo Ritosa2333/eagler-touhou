@@ -66,13 +66,14 @@ function fixture(config = {}) {
     }
     const [ca, cb] = channels('control', 'primary'), [ia, ib] = channels('input', 'primary');
     const paths = [
-        {pc: {}, controlDc: ca, inputDc: ia, path: 'direct'},
-        {pc: {}, controlDc: cb, inputDc: ib, path: 'direct'},
+        {pc: {close() {}}, controlDc: ca, inputDc: ia, path: 'direct'},
+        {pc: {close() {}}, controlDc: cb, inputDc: ib, path: 'direct'},
     ];
     const routes = paths.map((primary, seat) => createAdaptivePeerRoute({
         primary, localPlayer: seat, peerId: 1 - seat, tag: 'test', enabled: config.enabled?.[seat] ?? true,
         directRetry: config.directRetry?.[seat],
         manualSwitch: config.manualSwitch === true,
+        onDemandTurn: () => config.onDemandTurn === true,
         surveyEnabled: () => config.survey === true,
         surveyPending: () => config.surveyPending === true,
         initialRelayRoute: () => 'swarm-0',
@@ -81,7 +82,7 @@ function fixture(config = {}) {
             else reports[seat].push(message);
             return true;
         },
-        iceServers: () => [{urls: 'stun:fixture:3478'}, {urls: 'turn:fixture:3478', username: 'test', credential: 'test'}],
+        iceServers: () => config.iceServers ?? [{urls: 'stun:fixture:3478'}, {urls: 'turn:fixture:3478', username: 'test', credential: 'test'}],
         alive: () => true, running: () => running, visible: () => visible[seat],
         now: () => time, later, cancel, PeerConnection: Peer,
         receive: bytes => deliveries[seat].push(Array.from(new Uint8Array(bytes.buffer || bytes, bytes.byteOffset || 0, bytes.byteLength))),
@@ -230,6 +231,61 @@ for (const choice of [0, 1, 'outage']) {
     await f.advance(5000);
     assert.deepEqual(f.selected,[['turn'],['turn']]);
     assert.deepEqual(f.errors,[]);
+    f.close();
+}
+
+{
+    const f = fixture({onDemandTurn:true, survey:true, manualSwitch:true, primaryDelay:105});
+    await f.advance(2700);
+    await Promise.all(f.routes.map(route => route.relayStandby({
+        type:'rtc-standby', serial:1, phase:'select', route:'turn',
+        iceServers:[{urls:'turn:fixture:3478'}],
+    })));
+    await f.advance(4200);
+    assert(f.routes[0].routeSwitchStatus(), 'the better path is ready for manual confirmation');
+    assert(f.routes[0].recover(), 'a recovery notification may arrive before traffic has actually stopped');
+    await f.advance(250);
+    assert.deepEqual(f.selected,[[],[]], 'recent traffic keeps the handoff manual');
+    assert(f.routes[0].confirmOffer());
+    await f.advance(200);
+    assert.deepEqual(f.selected,[['turn'],['turn']]);
+    assert.deepEqual(f.errors,[]);
+    f.close();
+}
+
+{
+    const f = fixture({onDemandTurn:true, survey:true, manualSwitch:true,
+        iceServers:[{urls:'turn:withdrawn.test:3478'}]});
+    await f.advance(7000);
+    assert.equal(f.pcs.size,0, 'a healthy path does not allocate a TURN standby');
+    assert.deepEqual(f.reports,[[],[]]);
+    f.drop();
+    assert(f.routes[0].recover());
+    assert(f.routes[0].recover());
+    assert.deepEqual(f.reports[0],[{type:'rtc-route-unavailable',route:'direct'}]);
+    const iceServers = [{urls:'turn:current.test:3478'}];
+    await Promise.all(f.routes.map(route => route.relayStandby({
+        type:'rtc-standby',serial:1,phase:'select',route:'turn',iceServers,
+    })));
+    await f.advance(9000);
+    assert.deepEqual(f.selected,[['turn'],['turn']]);
+    assert.equal(f.pcs.size,2);
+    for (const peer of f.pcs.values()) assert.deepEqual(peer.config.iceServers,iceServers);
+    assert(f.paths.every(path => path.closed), 'the replaced path is retired after the replay window');
+    assert.deepEqual(f.errors,[]);
+    f.close();
+}
+
+{
+    const turn = [
+        {urls: ['turn:first.test:3478'], username: 'first', credential: 'first-key'},
+        {urls: ['turns:second.test:443'], username: 'second', credential: 'second-key'},
+    ];
+    const f = fixture({iceServers: [{urls: ['stun:fixture:3478']}, ...turn]});
+    await f.advance(1500);
+    const backups = [...f.pcs.values()].filter(peer => peer.config.iceTransportPolicy === 'relay');
+    assert.equal(backups.length, 2);
+    for (const peer of backups) assert.deepEqual(peer.config.iceServers, turn);
     f.close();
 }
 

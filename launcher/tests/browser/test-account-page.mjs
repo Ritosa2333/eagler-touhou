@@ -39,14 +39,23 @@ try {
   await page.setRequestInterception(true);
   page.on('request', request => {
     const url = new URL(request.url());
-    if (url.href === 'https://cv.naids.com/sdk/load.min.js') {
-      void request.respond({status:200, contentType:'text/javascript', body:`window.CaptchaSDK = {
-        async open({appId}) {
-          if (appId !== 'test-app') throw Error('wrong application');
-          if (window.cancelCaptcha) throw Object.assign(Error('cancelled'), {code:'CAPTCHA_CANCELLED'});
-          return 'one-time-proof';
-        }, close() {}, isCancelled(error) {return error.code === 'CAPTCHA_CANCELLED';}
-      }`});
+    if (url.pathname === '/api/account/mail-captcha/tac/js/tac.min.js') {
+      void request.respond({status:200, contentType:'text/javascript', body:`
+        window.CaptchaConfig = class {constructor(config) {Object.assign(this, config);}};
+        window.TAC = class {
+          constructor(config) {this.config = config;}
+          async init() {
+            if (window.cancelCaptcha) return;
+            const challenge = await this.config.doSendRequest({url: this.config.requestCaptchaDataUrl, data: {}});
+            const checked = await this.config.doSendRequest({url: this.config.validCaptchaUrl, data: {id: challenge.data.id}});
+            this.config.validSuccess(checked);
+          }
+          destroyWindow() {}
+        };`});
+      return;
+    }
+    if (url.pathname === '/api/account/mail-captcha/tac/css/tac.css') {
+      void request.respond({status:200, contentType:'text/css', body:'/* Test SDK styles */'});
       return;
     }
     if (url.pathname === '/api/auth/email-otp/request-password-reset' && holdResetCodeRequest) {
@@ -54,13 +63,15 @@ try {
       return;
     }
     if (url.pathname === '/api/ready') {
-      void request.respond({status: 200, contentType: 'application/json', body: JSON.stringify({ready: true, captchaAppId: captchaEnabled ? 'test-app' : undefined})});
+      void request.respond({status: 200, contentType: 'application/json', body: JSON.stringify({ready: true, mailCaptcha: captchaEnabled || undefined})});
       return;
     }
     if (url.pathname.startsWith('/api/')) {
       const entry = {path: url.pathname, method: request.method(), body: request.postData()};
       if (request.method() === 'POST') submissions.push(entry);
       let status = 200, body = {};
+      if (url.pathname === '/api/account/mail-captcha/challenge') body = {code: 200, data: {id: 'challenge-id'}};
+      if (url.pathname === '/api/account/mail-captcha/check') body = {code: 200, data: {id: 'one-time-proof'}};
       if (url.pathname === '/api/auth/get-session') body = {user: sessionUser};
       if (url.pathname === '/api/v1/profiles/reimu') body = {
         username: 'reimu', nickname: '博丽灵梦', joinedAt: '2025-01-01T00:00:00.000Z',
@@ -362,7 +373,36 @@ try {
   }
   await page.setViewport({width:1440,height:900});
   await goto(new URL('login.html',base).href);
+  for (const selector of ['.account-forgot', '.account-switch']) {
+    await page.hover(selector);
+    assert.equal(await page.$eval(selector, element => getComputedStyle(element).textDecorationLine), 'none');
+  }
   await selectMode(page,'register');
+
+  await page.setViewport({width:390,height:640});
+  const termsToggle = '#registration-terms';
+  const termsDialog = '.account-terms-dialog';
+  const agreeButton = `${termsDialog} .account-terms-actions button:last-child`;
+  assert.equal(await page.$eval('.account-submit', button => button.disabled), true);
+  assert.match(await page.$eval('.account-privacy a', link => link.getAttribute('href')), /privacy\.html\?lang=zh-CN$/);
+  await page.click(termsToggle);
+  await page.waitForSelector(termsDialog, {visible:true});
+  assert.equal(await page.$eval(termsToggle, button => button.getAttribute('aria-checked')), 'false');
+  assert.equal(await page.$eval(agreeButton, button => button.disabled), true);
+  assert.equal(await page.$eval('.account-terms-reading a', link => getComputedStyle(link).textDecorationLine), 'none');
+  await page.click(`${termsDialog} .account-terms-actions button:first-child`);
+  await page.waitForSelector(termsDialog, {hidden:true});
+  assert.equal(await page.$eval('.account-submit', button => button.disabled), true);
+  await page.click(termsToggle);
+  await page.waitForSelector(termsDialog, {visible:true});
+  await page.$eval('.account-terms-reading', pane => {pane.scrollTop = pane.scrollHeight;});
+  await page.waitForFunction(selector => !document.querySelector(selector)?.disabled, {}, agreeButton);
+  await page.click(agreeButton);
+  await page.waitForSelector(termsDialog, {hidden:true});
+  assert.equal(await page.$eval(termsToggle, button => button.getAttribute('aria-checked')), 'true');
+  assert.equal(await page.$eval('.account-submit', button => button.disabled), false);
+  assert.equal(challengeStarts, 0, 'reading the terms sends no email request');
+  await page.setViewport({width:1440,height:900});
 
   const registrationPassword = 'Tengu-password-42';
   await page.type('[name=username]', 'reimu');
@@ -378,7 +418,9 @@ try {
   captchaEnabled = true;
   await page.evaluate(() => {window.cancelCaptcha = true;});
   await page.click('.account-submit');
-  await page.waitForFunction(() => window.CaptchaSDK && !document.querySelector('.account-submit').disabled);
+  await page.waitForSelector('.mail-captcha-dialog[open]');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('.account-submit').disabled);
   assert.equal(challengeStarts, 0, 'closing the slider sends no email request');
   await page.evaluate(() => {window.cancelCaptcha = false;});
   await page.click('.account-submit');

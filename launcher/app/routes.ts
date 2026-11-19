@@ -7,6 +7,7 @@ export default [
   index('routes/surface.tsx', {id: 'library'}),
   ...(uiReviewEnabled() ? [route(UI_REVIEW_DOCUMENT.path.slice(1), 'routes/ui-review.tsx')] : []),
   route(TH09_RATINGS_DOCUMENT.file, 'routes/th09-ratings.tsx'),
+  route('terms.html', 'routes/help.tsx', {id:'help-terms'}),
   route('privacy.html', 'routes/help.tsx', {id:'help-privacy'}),
   route('faq.html', 'routes/help.tsx', {id:'help-faq'}),
   route('about.html', 'routes/help.tsx', {id:'help-about'}),

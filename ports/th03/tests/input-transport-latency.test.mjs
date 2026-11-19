@@ -37,3 +37,34 @@ for (const [game, InputTransport] of transports) test(`${game}: lost last frame 
     assert.equal(f.peers[0].transportStats.retransmitted, 1);
   } finally {f.close();}
 });
+
+test('th03 packet size accounting matches encoded JSON including unicode and escaped data', () => {
+  const f=setup(transports.find(([game])=>game==='th03')[1]);
+  try {
+    for(let frame=0;frame<30;frame++)f.peers[0].send(JSON.stringify({type:'native-rollback-input',frame,input:frame,label:'夢"\\時空'}));
+    const transport=f.peers[0], encoder=new TextEncoder();
+    for(const limit of [100,200,500,1150,16384])for(const preferred of [undefined,1,15,30]){
+      const actual=transport.packet(limit,preferred), expected=[];
+      const append=entry=>{expected.push({id:entry.id,barrier:entry.barrier,data:entry.data});if(encoder.encode(JSON.stringify({wire:'pc98-input/1',kind:'inputs',ack:transport.receivedInput,entries:expected})).length>limit){expected.pop();return false;}return true;};
+      if(preferred)append(transport.pending.get(preferred));
+      for(const entry of transport.pending.values())if(entry.id!==preferred&&!append(entry))break;
+      assert.deepEqual(actual.entries,expected);
+    }
+  } finally {f.close();}
+});
+
+test('th03 delivers recovered inputs together before their fenced control', () => {
+  const f=setup(transports.find(([game])=>game==='th03')[1]);
+  try {
+    const order=[];
+    f.peers[1].oninputbatch=batch=>order.push(batch.map(text=>JSON.parse(text).frame));
+    f.peers[1].onmessage=event=>order.push(JSON.parse(event.data).type);
+    f.peers[0].send(JSON.stringify({type:'native-rollback-input',frame:0,input:0}));
+    f.peers[0].send(JSON.stringify({type:'native-charge',frame:0,sample:[0,0,-1,0]}));
+    const recovered=f.queues[1].pop();f.queues[1].length=0;
+    f.peers[0].send(JSON.stringify({type:'native-rollback-proof'}));
+    f.deliver(1);assert.deepEqual(order,[]);
+    f.peers[1].receive(recovered.data,true);
+    assert.deepEqual(order,[[0,0],'native-rollback-proof']);
+  } finally {f.close();}
+});

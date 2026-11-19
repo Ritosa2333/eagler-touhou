@@ -12,7 +12,7 @@ import { withUiLanguage } from '../../src/launcher/i18n.mts';
 import { multiplayerGuideTopic } from '../../lib/multiplayer-guide.mjs';
 import { sitePageTitle } from '../navigation/document-locale';
 import documentHistory from 'virtual:document-history';
-import { helpDocuments, helpDocumentAtPath, helpDocumentLocale, type HelpDocument } from '../components/documents/catalog';
+import { helpDocuments, helpDocumentAtPath, type HelpDocument } from '../components/documents/catalog';
 import { prepareHelpDocument, prepareMultiplayerRules } from '../components/documents/content';
 import { guideTitle, multiplayerGuideTree, MultiplayerExceptions, MultiplayerGuidePicker, MultiplayerOverviewTable, MultiplayerScope, MultiplayerStart, type GuideTopic } from '../components/documents/multiplayer';
 import '../components/documents/documents.css';
@@ -64,20 +64,20 @@ function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic
   const { pathname, search } = useLocation(),
     { locale, t } = useLocale(),
     base = useHref('/'),
-    progress = page.id === 'faq' && new URLSearchParams(search).get('view') === 'progress',
-    contentLocale = helpDocumentLocale(page, locale);
+    progress = page.id === 'faq' && new URLSearchParams(search).get('view') === 'progress';
   const { body, toc } = useMemo(() => {
     if (progress) return prepareHelpDocument(progressHtml, base, 'zh-CN');
-    if (!topic) return prepareHelpDocument(translate(contentLocale, page.content), base, locale);
+    if (!topic) return prepareHelpDocument(t(page.content), base, locale);
     if (topic === 'start' || topic === 'th09' || topic === 'th19') return {body:null, toc:[]};
     return prepareMultiplayerRules(t('content.multiplayer'), base, locale, topic, t('guide.specific'));
-  }, [page.content, contentLocale, locale, t, base, topic, progress]);
+  }, [page.content, locale, t, base, topic, progress]);
+  const policyPages = helpDocuments.filter(document => document.id === 'terms' || document.id === 'privacy');
   const helpTree: Root = {
     $id: `help-${locale}`,
     name: t('document.title'),
     children: [
       { type: 'separator' as const, name: t('nav.help') },
-      ...helpDocuments.filter(document => document.id !== 'about' && document.id !== 'privacy').map((document) => document.id === 'multiplayer' ? multiplayerGuideTree(t) : ({
+      ...helpDocuments.filter(document => document.id !== 'about' && document.id !== 'terms' && document.id !== 'privacy').map((document) => document.id === 'multiplayer' ? multiplayerGuideTree(t) : ({
         type: 'page' as const,
         name: t(document.title),
         url: '/' + document.path,
@@ -89,7 +89,7 @@ function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic
     children: [
       ...helpTree.children,
       { type: 'separator', name: t('nav.aboutSite') },
-      ...helpDocuments.filter(document => document.id === 'privacy').map(document => ({type: 'page' as const, name: t(document.title), url: '/' + document.path})),
+      ...policyPages.map(document => ({type: 'page' as const, name: t(document.title), url: `/${document.path}`})),
     ],
   };
   const footer = findNeighbour(helpTree, pathname.replace(/\/$/, ''));
@@ -127,7 +127,7 @@ function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic
           {topic ? <div className="documentation-guide-heading">
             <DocsTitle>{t(guideTitle(topic))}</DocsTitle><MultiplayerGuidePicker topic={topic} />
           </div> : <DocsTitle>{progress ? '东方作品进度' : t(page.title)}</DocsTitle>}
-          <DocsBody data-help-page={page.id} data-guide-topic={topic} lang={progress ? 'zh-CN' : contentLocale}>
+          <DocsBody data-help-page={page.id} data-guide-topic={topic} lang={progress ? 'zh-CN' : locale}>
             {topic === 'start' && <MultiplayerStart />}
             {topic === 'coop' && <>
               <MultiplayerOverviewTable />
@@ -146,7 +146,7 @@ function Documentation({ page, topic }: { page: HelpDocument; topic?: GuideTopic
 }
 function DocumentRevision({ page }: { page: HelpDocument }) {
   const { locale, t } = useLocale(),
-    revision = documentHistory[helpDocumentLocale(page, locale)]?.[page.id];
+    revision = documentHistory[locale]?.[page.id];
   if (!revision) return null;
   if (revision.pending) return <p className="documentation-revision">{t('document.uncommitted')}</p>;
   if (!revision.commit || !revision.date || !revision.author) return null;

@@ -2634,30 +2634,6 @@
     "id": "multiplayer_th09DialogHint",
     "params": []
   },
-  "gameNotice.title": {
-    "id": "gameNotice_title",
-    "params": []
-  },
-  "gameNotice.earlyTest": {
-    "id": "gameNotice_earlyTest",
-    "params": []
-  },
-  "gameNotice.creditBefore": {
-    "id": "gameNotice_creditBefore",
-    "params": []
-  },
-  "gameNotice.credit": {
-    "id": "gameNotice_credit",
-    "params": []
-  },
-  "gameNotice.creditAfter": {
-    "id": "gameNotice_creditAfter",
-    "params": []
-  },
-  "gameNotice.repo": {
-    "id": "gameNotice_repo",
-    "params": []
-  },
   "settings.title": {
     "id": "settings_title",
     "params": []
@@ -2912,10 +2888,6 @@
   },
   "options.advanced": {
     "id": "options_advanced",
-    "params": []
-  },
-  "options.adaptation": {
-    "id": "options_adaptation",
     "params": []
   },
   "settings.mobile": {
@@ -10723,6 +10695,32 @@
   },
   "profile.online.now": {
     "id": "profile_online_now",
+    "params": []
+  },
+  "document.terms": {
+    "id": "document_terms",
+    "params": []
+  },
+  "account.termsConsent": {
+    "id": "account_termsConsent",
+    "params": []
+  },
+  "account.termsReadToEnd": {
+    "id": "account_termsReadToEnd",
+    "params": []
+  },
+  "account.termsAgree": {
+    "id": "account_termsAgree",
+    "params": []
+  },
+  "account.registrationPrivacy": {
+    "id": "account_registrationPrivacy",
+    "params": [
+      "policy"
+    ]
+  },
+  "content.terms": {
+    "id": "content_terms",
     "params": []
   }
 }
