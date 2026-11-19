@@ -39,6 +39,11 @@ test('failed path rejects original failure, timeout is120s and room/document rep
  const b=fixture();const timeout=b.model.waitForGameplayPath({isCurrent:()=>true});b.advance(120000);b.poll();await assert.rejects(timeout,/gameplayPathTimeout/);b.model.dispose();
  const c=fixture();const old=c.model.waitForGameplayPath({isCurrent:()=>true});c.replace();c.poll();await assert.rejects(old,{name:'AbortError',message:'EAGLER_RUNTIME_SESSION_SUPERSEDED'});c.model.dispose();
 });
+test('runtime error during the wait rejects with the native cause instead of the timeout',async()=>{
+ const f=fixture();const wait=f.model.waitForGameplayPath({isCurrent:()=>true});
+ f.state.error='A player did not join WebRTC signaling';f.poll();
+ await assert.rejects(wait,/did not join WebRTC signaling/);f.model.dispose();
+});
 test('readiness disconnect overlay uses original connectedOnce and exact channel state',()=>{const f=fixture();f.peer.inputOpen=f.peer.controlOpen=true;f.model.refresh();assert.equal(f.model.getSnapshot().connection.hidden,true);f.peer.inputOpen=false;f.model.refresh();assert.equal(f.model.getSnapshot().connection.reconnecting,true);assert.equal(f.model.getSnapshot().returnToRoom,true);f.context.replayViewer=true;f.model.refresh();assert.equal(f.model.getSnapshot().connection,null);assert.equal(f.model.getSnapshot().playerStatusVisible,false);f.model.dispose();});
 test('quality follows the selected RTC pair and does not show stale RTT on relay',async()=>{
  const f=fixture();let stats=rtcStats();f.peer.pc.getStats=async()=>stats;
