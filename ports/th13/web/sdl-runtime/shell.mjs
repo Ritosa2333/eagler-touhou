@@ -12,7 +12,16 @@ const validEpoch = Number.isSafeInteger(epoch) && epoch > 0;
 let core, launched = false, first = false, stopping = false, options = {}, music = true, queue = Promise.resolve();
 const emit = (event, fields = {}) => parent.postMessage({protocol, game, epoch, event, ...fields}, location.origin);
 // E2 input kick：壳消息路径 down 边沿后的即时微拍（?inputKick=0 关闭，默认开）。
-const inputKick = query.get('inputKick') !== '0';
+// launcher 内嵌时 iframe URL 由 launcher 自构（不透传站点页 query）；
+// 同源下回退读父窗 query——把 ?inputKick=0 加到站点 URL 重载即可关闭
+//（生产回退路径；跨源读不到时保持默认开）。
+const inputKickParam = () => {
+  let value = query.get('inputKick');
+  if (value === null && parent !== window)
+    try { value = new URLSearchParams(parent.location.search).get('inputKick'); } catch {}
+  return value;
+};
+const inputKick = inputKickParam() !== '0';
 // 触摸坐标换算的 canvas 包围盒缓存：resize/视口变化时失效，避免每次
 // pointermove 消息都强制布局（getBoundingClientRect）。
 let canvasBox = null;

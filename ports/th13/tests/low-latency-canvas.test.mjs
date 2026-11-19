@@ -15,10 +15,12 @@ import {readFileSync} from 'node:fs';
 const read = rel => readFileSync(new URL(rel, import.meta.url), 'utf8');
 const ports = ['th13', 'th13-mp'];
 const SPECIFIER = './low-latency-canvas.mjs';
+// 每个 port 读自己的文件：测试在 ports/th13/tests/，MP 在 ../../th13-mp/。
+const runtimeDir = port => port === 'th13' ? '../web/sdl-runtime' : '../../th13-mp/web/sdl-runtime';
 
 for (const port of ports) {
   test(`${port}: th13.html 在 Module.default 之前装好低延迟画布`, () => {
-    const source = read(`../web/sdl-runtime/th13.html`);
+    const source = read(`${runtimeDir(port)}/th13.html`);
     assert.match(source, new RegExp(
       `import\\s*\\{installLowLatencyCanvas\\}\\s*from\\s*['"]${'\\./low-latency-canvas\\.mjs'}['"]`));
     const install = source.indexOf('installLowLatencyCanvas(canvas)');
@@ -31,8 +33,11 @@ for (const port of ports) {
   });
 
   test(`${port}: shell.mjs 与 th13.html 引同一共享模块且 install 先于 createModule`, () => {
-    const shell = read(`../web/sdl-runtime/shell.mjs`);
-    const page = read(`../web/sdl-runtime/th13.html`);
+    const shell = read(`${runtimeDir(port)}/shell.mjs`);
+    const page = read(`${runtimeDir(port)}/th13.html`);
+    // 防路径别名回归：MP 迭代必须真读到 MP 侧文件（两侧 shell 内容必然不同）。
+    if (port === 'th13-mp') assert.notEqual(shell, read('../web/sdl-runtime/shell.mjs'),
+      'th13-mp 迭代读到了 SP 的 shell.mjs（路径解析回归）');
     const importRe = /import\s*\{installLowLatencyCanvas\}\s*from\s*['"]([^'"]+)['"]/;
     const shellSpecifier = importRe.exec(shell)?.[1];
     const pageSpecifier = importRe.exec(page)?.[1];
@@ -105,3 +110,16 @@ test('共享模块无授予状态分支（if 条件不含 desynchronized）', ()
   assert.deepEqual(offending, [],
     'desynchronized 只允许出现在上报路径（presentation/rendererReport），不得出现在 if 分支改游戏行为');
 });
+
+// input kick 生产回退开关的形状：launcher 内嵌时不透传页面 query，shell 必须在
+// 同源下回退读父窗 query；默认开、仅精确 '0' 关闭；跨源不可读时保持默认。
+for (const port of ports) {
+  test(`${port}: shell.mjs inputKick 回退读父窗 query 且仅 '0' 关闭`, () => {
+    const shell = read(`${runtimeDir(port)}/shell.mjs`);
+    assert.match(shell, /parent !== window/, '回退必须先判非顶层窗');
+    assert.match(shell, /URLSearchParams\(parent\.location\.search\)/, '回退必须读父窗 query');
+    assert.match(shell, /catch\s*\{\s*\}/, '跨源读取必须 try 包裹');
+    assert.match(shell, /inputKickParam\(\) !== '0'/, "默认开，仅精确 '0' 关闭");
+    assert.doesNotMatch(shell, /inputKick.*=== '1'/, '不得要求显式 =1 才开启');
+  });
+}

@@ -529,7 +529,7 @@ export async function run(ctx) {
                 // 扑浸泡，不再把终局后的帧号冻结当停死。
                 cleanEnd = {frame: Math.max(...frames), at: Date.now()};
                 evidence.push(`soak ${seats}p 正常终局@帧${cleanEnd.frame}（game over/ending，` +
-                  `浸泡 ${((cleanEnd.at - began) / 1000).toFixed(0)}s 后余段按页面存活计）`);
+                  `模拟期 ${((cleanEnd.at - began) / 1000).toFixed(0)}s 全绿；终局后不再模拟，本拓扑提前收卷）`);
                 ctx.evidence.push(`soak ${seats}p 正常终局@帧${cleanEnd.frame}`);
                 break;
               }
