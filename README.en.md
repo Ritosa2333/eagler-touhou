@@ -167,7 +167,7 @@ npm run host:build -- --site-url=https://play.example.org/
 npm run verify:server -- dist/site
 ```
 
-Use your own URL and publish `dist/site/`. The [deployment guide](launcher/docs/SELF_HOSTING.md) covers source builds, separate asset hosting, player-imported packages, and multiplayer. A source checkout needs a matching Runtime Release and the original game inputs.
+If Python is installed as `python3`, add `--python=python3` to the build command after npm's `--`. Use your own URL and publish `dist/site/`. The [deployment guide](launcher/docs/SELF_HOSTING.md) covers source builds, separate asset hosting, player-imported packages, and multiplayer.
 
 ## Contributing
 

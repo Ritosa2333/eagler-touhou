@@ -22,6 +22,8 @@ npm run host:build -- --site-url=https://play.example.org/
 npm run verify:server -- dist/site
 ```
 
+如果系统只提供 `python3` 命令，在运行 `host:build`、`host` 或 `import` 时加上 `--python=python3`，放在 npm 的 `--` 后。
+
 将示例 URL 换成最终访问地址。Hosted 模式生成的 `dist/site/` 就是要发布的目录，玩家可以直接安装游戏。仅在本机试用时，可运行 `npm run host -- --no-open`，打开 <http://127.0.0.1:8130/>。
 
 如果游戏数据放在另一个域名，使用[配对的 External 站点](EXTERNAL_RESOURCE_MODE.md)。如果由玩家自行导入 ZIP，运行 `npm run import -- --site-url=https://play.example.org/`，站点发布目录是 `dist/import-site/`，本地 ZIP 输出在 `dist/import/`。
