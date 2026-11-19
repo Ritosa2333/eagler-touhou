@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {signTh09ReplayReceipt,verifyTh09ReplayReceipt} from '../contracts/th09-replay-receipt.mjs';
-import {uploadTh09Replay} from '../browser/th09-replay-upload.mjs';
+import {uploadTh09Replay,reportTh09ReplayUpload} from '../browser/th09-replay-upload.mjs';
 
 test('a saved replay receipt binds the duel, round and time and expires', () => {
   const secret='test-relay-bridge-secret-at-least-32-bytes';
@@ -24,4 +24,17 @@ test('the browser forwards a receipt only after a successful upload', async t =>
   assert.equal(await uploadTh09Replay(grant,bytes),'saved-receipt');
   globalThis.fetch=async () => Response.json({error:'rejected'}, {status:400});
   assert.equal(await uploadTh09Replay(grant,bytes),undefined);
+});
+
+test('old relays receive no new receipt messages until they advertise support', () => {
+  const messages=[];
+  const socket={readyState:1,send:message=>messages.push(JSON.parse(message))};
+  assert.equal(reportTh09ReplayUpload({},'saved-receipt',socket),false);
+  assert.equal(reportTh09ReplayUpload({notify:false},'saved-receipt',socket),false);
+  assert.deepEqual(messages,[]);
+  assert.equal(reportTh09ReplayUpload({notify:true},'saved-receipt',socket),true);
+  assert.deepEqual(messages,[{type:'th09-replay-saved',receipt:'saved-receipt'}]);
+  assert.equal(reportTh09ReplayUpload({notify:true},undefined,socket),false);
+  assert.equal(reportTh09ReplayUpload({notify:true},'saved-receipt',{...socket,readyState:3}),false);
+  assert.equal(messages.length,1);
 });

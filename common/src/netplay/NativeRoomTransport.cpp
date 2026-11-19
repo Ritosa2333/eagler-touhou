@@ -91,7 +91,7 @@ DWORD postReplay(const std::string &origin, const std::string &token, std::vecto
 }
 
 void queueReplay(std::string origin, std::string token, std::int64_t expiresAt, std::vector<std::uint8_t> file,
-    std::shared_ptr<ReplayReceipts> receipts)
+    std::shared_ptr<ReplayReceipts> receipts, bool notify)
 {
     static std::atomic<unsigned> active{0};
     if (active.fetch_add(1, std::memory_order_relaxed) >= 4) {
@@ -101,12 +101,12 @@ void queueReplay(std::string origin, std::string token, std::int64_t expiresAt, 
     try {
         // This job owns its bytes and can finish after the room closes.
         std::thread([origin = std::move(origin), token = std::move(token), expiresAt,
-            file = std::move(file), receipts = std::move(receipts)]() mutable {
+            file = std::move(file), receipts = std::move(receipts), notify]() mutable {
             try {
                 for (int delay = 250; unixMillis() < expiresAt; delay = (std::min)(delay * 2, 5000)) {
                     std::string receipt;
                     const DWORD status = postReplay(origin, token, file, receipt);
-                    if (!receipt.empty() && receipt.size() <= 160) {
+                    if (notify && !receipt.empty() && receipt.size() <= 160) {
                         std::lock_guard<std::mutex> lock(receipts->mutex);
                         if (receipts->pending.size() < 16) receipts->pending.push_back(std::move(receipt));
                     }
@@ -184,6 +184,7 @@ struct NativeRoomTransport::Impl
         std::uint32_t start = 0;
         std::int64_t expiresAt = 0;
         std::string token, origin;
+        bool notify = false;
         std::vector<std::uint8_t> file;
     };
     struct IceTraffic {
@@ -269,7 +270,7 @@ struct NativeRoomTransport::Impl
         auto upload = std::move(*replayUpload);
         replayCompleted = upload.start;
         replayUpload.reset();
-        queueReplay(std::move(upload.origin), std::move(upload.token), upload.expiresAt, std::move(upload.file), replayReceipts);
+        queueReplay(std::move(upload.origin), std::move(upload.token), upload.expiresAt, std::move(upload.file), replayReceipts, upload.notify);
 #endif
     }
 
@@ -399,6 +400,7 @@ struct NativeRoomTransport::Impl
             if (auto *upload = replayFor(start->get<std::uint32_t>())) {
                 upload->token = value;
                 upload->expiresAt = static_cast<std::int64_t>(deadline);
+                upload->notify = message.value("notify", Json(nullptr)) == true;
                 uploadReplay();
             }
         } else if (type == "peers") {

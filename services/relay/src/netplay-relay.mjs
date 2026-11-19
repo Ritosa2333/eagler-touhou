@@ -364,7 +364,7 @@ const th09Rounds = th09OutboxPath && accountChat ? createTh09RoundOutbox({
               run.th09Settlements.set(roundId, settlement);
               if (run.th09Settlements.size > 64) run.th09Settlements.delete(run.th09Settlements.keys().next().value);
             }
-            const message = JSON.stringify({type:'th09-replay-upload', start:Number(start), ...replayUpload});
+            const message = JSON.stringify({type:'th09-replay-upload', start:Number(start), ...replayUpload, notify:true});
             for (const socket of [...run.signalClients.values(), ...run.clients.values()])
               if (socket.readyState === WebSocket.OPEN) sendBounded(socket, message);
           }

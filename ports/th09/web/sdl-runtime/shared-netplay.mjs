@@ -1,7 +1,7 @@
 // TH09 uses the shared C++ rollback session and BrowserPeerTransport lanes.
 import {attachSpectatorTimeline} from './spectator-timeline.mjs';
 import {SpectatorTape} from './spectator-tape.mjs';
-import {uploadTh09Replay, validTh09ReplayGrant} from './th09-replay-upload.mjs';
+import {uploadTh09Replay, validTh09ReplayGrant, reportTh09ReplayUpload} from './th09-replay-upload.mjs';
 const spectatorMagic = [0x54, 0x39, 0x53, 0x50, 1, 3, 2, 0]; // T9SP/1, 2 players
 const spectatorFrameBytes = 46;
 const spectatorNativeQueueLimit = 4096;
@@ -577,11 +577,9 @@ export class SharedNetplay {
     this.replayRequest = this.savedReplay = null;
     const upload = globalThis.parent?.__eaglerUploadTh09ReplayV1 ?? uploadTh09Replay;
     void upload(request, saved.bytes).then(receipt => {
-      if (typeof receipt !== 'string') return;
       const transport = this.startupTransport;
       const socket = transport?.route === 'relay' ? transport.relay : transport?.signal;
-      if (socket?.readyState === WebSocket.OPEN)
-        socket.send(JSON.stringify({type:'th09-replay-saved',receipt}));
+      reportTh09ReplayUpload(request, receipt, socket);
     }).catch(() => {});
   }
   beginMatch(frame,state) {

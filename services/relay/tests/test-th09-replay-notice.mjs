@@ -78,6 +78,7 @@ try {
   const result={type:'th09-match',serial:1,start:100,frames:3600,winner:0,characters:[0,1]};
   send(first,result);send(second,result);
   await wait(()=>first.messages.some(message=>message.type==='th09-replay-upload'),'upload grant');
+  assert.equal(first.messages.find(message=>message.type==='th09-replay-upload').notify,true);
   const claim={duelId:saved.duelId,roundId:saved.roundId,uploadedAt:Date.now()};
   const receipt=signTh09ReplayReceipt(secret,claim);
   send(first,{type:'th09-replay-saved',receipt:signTh09ReplayReceipt('wrong-key',claim)});

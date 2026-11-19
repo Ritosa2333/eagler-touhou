@@ -1,10 +1,16 @@
-/** @typedef {{token: string, expiresAt: number}} Th09ReplayGrant */
+/** @typedef {{token: string, expiresAt: number, notify?: boolean}} Th09ReplayGrant */
 
 /** @param {Th09ReplayGrant} grant */
 export function validTh09ReplayGrant(grant) {
   const now = Date.now();
   return typeof grant?.token === 'string' && /^[A-Za-z0-9_.:-]{1,153}$/.test(grant.token) &&
     Number.isSafeInteger(grant.expiresAt) && grant.expiresAt > now && grant.expiresAt <= now + 180_000;
+}
+
+export function reportTh09ReplayUpload(grant, receipt, socket) {
+  if (grant?.notify !== true || typeof receipt !== 'string' || socket?.readyState !== 1) return false;
+  socket.send(JSON.stringify({type:'th09-replay-saved',receipt}));
+  return true;
 }
 
 /**
