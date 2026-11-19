@@ -30,6 +30,7 @@ public:
     void prepare(const AnmVm&);
     u32 color(const AnmVm&)const;
     i32 draw_no_rotation(AnmVm&,bool round=true,bool mirror=false);
+    i32 draw_subpixel(AnmVm&);
     i32 draw_2d(AnmVm&,bool no_round=false);
     i32 draw_quad(AnmVm&,const SpriteVertex*);
     i32 draw_strip(AnmVm&,const SpriteVertex*,u32);

@@ -50,6 +50,23 @@ test('CPU sprite vertices, clipping, tint, blend and depth match original draw p
  assert.equal(c.renderer_state(f,12),1,'HUD vertices exclude the field shake');
  assert.equal(c.renderer_state(f,13),1,'HUD clears the stored field shake for later overlays');
  assert.equal(c.renderer_state(f,14),0,'HUD selects the original screen camera');
+ memory(c,p[0],0x2a4).fill(0);
+ u(0x1f8,3);
+ u(0x1f0,0xffffffff);
+ q(0x18,1);q(0x1c,1);
+ q(0x28,16);q(0x2c,10);
+ q(0x208,100.25);q(0x20c,80.25);q(0x210,0.25);
+ [0,0,640,480].forEach((value,i)=>dv.setUint32(p[2]+i*4,value,true));
+ c.renderer_draw(f,15);
+ const firstX=dv.getFloat32(p[6],true);
+ assert.equal(firstX,91.75,'motion capture preserves the fractional body position and half-pixel centering');
+ assert.equal(dv.getFloat32(p[6]+4,true),74.75);
+ assert.equal(dv.getFloat32(p[6]+8,true),0.25);
+ q(0x208,100.5);
+ c.renderer_draw(f,15);
+ assert.equal(dv.getFloat32(p[6],true)-firstX,0.25,'consecutive motion frames retain the full fractional movement');
+ c.renderer_draw(f,0);
+ assert.equal(dv.getFloat32(p[6],true),91.5,'ordinary draw retains the existing pixel rounding');
  report('sprite-renderer',{checks,submitted,automaticChecks,paths:5,scope:'Original rounded/unrounded/rotated/mirrored CPU sprite geometry, pixel centering, viewport clipping, UVs, tint, blend/depth state and ordered triangle payloads. GPU submission is a recorded boundary.'});
  }finally{c.renderer_delete(f);m.close();}
 });

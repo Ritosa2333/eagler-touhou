@@ -591,6 +591,7 @@ API(renderer_draw) i32 renderer_draw(renderer_test::Fixture* f,u32 kind){
         f->presentation.offsets[1]={9.25f,-13.5f};
         f->presentation.begin_hud(1);
         break;
+    case 15:result=f->renderer.draw_subpixel(f->vm);break;
     }
     f->renderer.flush();
     return result;

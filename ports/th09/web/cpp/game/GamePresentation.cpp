@@ -23,7 +23,8 @@ void GamePresentation::animation(AnmVm& a,BattleSprite mode){
     if(auto* capture=sdl::active_motion_capture;capture&&capture->body==&a&&mode==BattleSprite::unrotated){
         renderer.flush();
         capture->body_batch=true;
-        renderer.draw_no_rotation(a);
+        // Start midpoint motion from the fractional position of this tick.
+        renderer.draw_subpixel(a);
         renderer.flush();
         capture->body_batch=false;
         return;

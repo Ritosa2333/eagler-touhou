@@ -61,6 +61,13 @@ void AnmRenderer::draw_automatic(AnmVm& vm){
 }
 
 i32 AnmRenderer::draw_no_rotation(AnmVm& vm,bool round,bool mirror){if(!drawable(vm))return -1;if(omit_sprite_geometry)return 0;unrotated(vm,true);return finish(vm,round,mirror);}
+i32 AnmRenderer::draw_subpixel(AnmVm& vm){
+    if(!drawable(vm))return -1;
+    if(omit_sprite_geometry)return 0;
+    unrotated(vm,true);
+    for(auto& vertex:quad){vertex.position.x-=.5f;vertex.position.y-=.5f;}
+    return finish(vm,false);
+}
 i32 AnmRenderer::draw_2d(AnmVm& vm,bool no_round){if(!vm.rotation.z&&!no_round)return draw_no_rotation(vm);if(!drawable(vm))return -1;if(omit_sprite_geometry)return 0;if(vm.rotation.z)rotated(vm);else unrotated(vm,false);return finish(vm,false);}
 i32 AnmRenderer::draw_quad(AnmVm& vm,const SpriteVertex* p){if(!drawable(vm))return -1;if(omit_sprite_geometry)return 0;prepare(vm);append(p);return 0;}
 i32 AnmRenderer::draw_strip(AnmVm& vm,const SpriteVertex* p,u32 n){if(!drawable(vm)||n<3)return -1;if(omit_sprite_geometry)return 0;prepare(vm);flush();backend.draw(state,texture,Topology::Strip,VertexLayout::ScreenColorUv,p,n);return 0;}
