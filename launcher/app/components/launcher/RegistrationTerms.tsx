@@ -29,7 +29,7 @@ export function RegistrationTerms({accepted, disabled, onChange}: {
       {t('account.termsConsent')}
     </label>
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="account-terms-dialog" showClose={false} aria-describedby={undefined}
+      <DialogContent className="account-terms-dialog" aria-describedby={undefined}
         onOpenAutoFocus={event => {
           event.preventDefault();
           readingPane.current?.focus({preventScroll: true});

@@ -383,11 +383,18 @@ try {
   const termsToggle = '#registration-terms';
   const termsDialog = '.account-terms-dialog';
   const agreeButton = `${termsDialog} .account-terms-actions button:last-child`;
+  const closeButton = `${termsDialog} .ui-kit-dialog-close`;
   assert.equal(await page.$eval('.account-submit', button => button.disabled), true);
   assert.match(await page.$eval('.account-privacy a', link => link.getAttribute('href')), /privacy\.html\?lang=zh-CN$/);
   await page.click(termsToggle);
   await page.waitForSelector(termsDialog, {visible:true});
   assert.equal(await page.$eval(`${termsDialog} > h2`, title => title.textContent.trim()), '服务条款');
+  assert.equal(await page.$eval(termsDialog, dialog => {
+    const titleSize = parseFloat(getComputedStyle(dialog.querySelector(':scope > h2')).fontSize);
+    return [...dialog.querySelectorAll('.account-terms-reading h2')].every(
+      heading => parseFloat(getComputedStyle(heading).fontSize) < titleSize,
+    );
+  }), true, 'the dialog title is larger than the section headings');
   assert.equal(await page.$(`${termsDialog} > p`), null);
   assert.deepEqual(await page.$$eval('.account-terms-reading ol', lists =>
     lists.map(list => [list.children.length, getComputedStyle(list).listStylePosition])),
@@ -398,6 +405,12 @@ try {
     return !button.disabled && pane && button.getBoundingClientRect().top >= pane.getBoundingClientRect().bottom;
   }), true, 'the enabled button is below the visible terms');
   assert.equal(await page.$eval('.account-terms-reading a', link => getComputedStyle(link).textDecorationLine), 'none');
+  await page.click(closeButton);
+  await page.waitForSelector(termsDialog, {hidden:true});
+  assert.equal(await page.$eval(termsToggle, button => button.getAttribute('aria-checked')), 'false');
+  assert.equal(await page.$eval('.account-submit', button => button.disabled), true);
+  await page.click(termsToggle);
+  await page.waitForSelector(termsDialog, {visible:true});
   await page.click(`${termsDialog} .account-terms-actions button:first-child`);
   await page.waitForSelector(termsDialog, {hidden:true});
   assert.equal(await page.$eval('.account-submit', button => button.disabled), true);
