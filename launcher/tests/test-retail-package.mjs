@@ -62,6 +62,19 @@ test('three-digit retail version markers are valid for the selected game', async
   await assert.rejects(createRetailPackage({game, inputs: [th07('th19_100a.ver')]}), /game version marker does not match TH07/);
 });
 
+test('original resource import takes fonts from the local archive without a font server', async () => {
+  const archive = th07();
+  const zip = new File([zipSync({
+    'game/th07.dat': new Uint8Array(await archive.arrayBuffer()),
+    'fonts/unifont.otf': new TextEncoder().encode('OTTO local font'),
+  })], 'game.zip');
+  const inputs = await expandRetailInputs([zip], retailArchiveLimits('th07'), '');
+  const {descriptor, payloads} = await createRetailPackage({game: 'th07', inputs, fontTargets: ['/unifont.otf'],
+    loadFont() {assert.fail('local font should take precedence');}});
+  const font = descriptor.base.files.find(id => descriptor.files[id].target === '/unifont.otf');
+  assert.equal(await payloads.get(font).text(), 'OTTO local font');
+});
+
 test('a Deflate ZIP is detected by its header and extracts only selected game resources', async () => {
   const archive = th07();
   const data = new Uint8Array(await archive.arrayBuffer());

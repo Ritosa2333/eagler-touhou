@@ -3,12 +3,13 @@ import {reactAppShellMatchesSite} from '../../lib/react-app-shell-deployment.mjs
 import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { resolve } from "node:path";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { reactFrontendArtifactDirectory, readReactFrontendArtifact } from "../../lib/react-frontend-artifact.mjs";
 import { privateFrontendAssetSource } from "../../lib/private-frontend-assets.mjs";
 import { normalizeSiteUrl, writeSiteMetadata } from "../../lib/site-metadata.mjs";
-import { HOST_WORKSPACE_GAMES as GAMES, inspectHostWorkspace } from "../../lib/host-workspace.mjs";
+import { HOST_WORKSPACE_GAMES as GAMES, hostWorkspacePaths, inspectHostWorkspace } from "../../lib/host-workspace.mjs";
+import { readHostConfig } from "../../lib/host-config.mjs";
 import { PRODUCT_CONTENT } from "../../lib/content-definition.mjs";
 import { PRODUCT_GAMES } from "../../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../../lib/workspace-layout.mjs";
@@ -181,22 +182,24 @@ async function resolveFonts(projectRoot, layout) {
   return Object.freeze({ unicode, japanese });
 }
 
-async function prepareFeatureConfig(projectRoot, layout, resourceMode, languageSelections) {
+async function prepareFeatureConfig(projectRoot, layout, resourceMode, languageSelections, noDownloadManifest) {
   const basePath = script(projectRoot, "host/config/site-features.default.json");
   const features = JSON.parse(await readFile(basePath, "utf8"));
   features.resourceMode = resourceMode;
   const hostedManifest = !languageSelections && resourceMode === "import"
-    ? JSON.parse(await readFile(resolve(layout.site, "site-manifest.json"), "utf8")) : null;
+    ? noDownloadManifest ?? JSON.parse(await readFile(resolve(layout.site, "site-manifest.json"), "utf8")) : null;
   for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
     if (!product.features.languages && !product.features.thprac) continue;
     const available = languageSelections?.[game] ?? hostedManifest?.games?.[game]?.languageOptions
       ?.filter(option => option.id === "ja" || option.pack).map(option => option.id) ?? ["ja"];
     features.games[game] = {
       ...(product.features.languages ? { languages: ["ja", ...new Set(available.filter(id => id !== "ja"))] } : {}),
-      ...(product.features.thprac ? { thprac: true } : {}),
+      ...(product.features.thprac ? { thprac: noDownloadManifest?.games?.[game]?.features?.thprac ?? true } : {}),
     };
   }
-  if (layout.hostConfig.netplay.relay) features.netplayRelay = layout.hostConfig.netplay.relay;
+  const relay = layout.hostConfig.present ? layout.hostConfig.netplay.relay
+    : noDownloadManifest?.shared?.netplayRelay ?? layout.hostConfig.netplay.relay;
+  if (relay) features.netplayRelay = relay;
   else delete features.netplayRelay;
   if (layout.hostConfig.externalImportSource.url) {
     features.gameDataFallback = {
@@ -457,26 +460,11 @@ export async function buildImportArtifacts({
   } else {
     ({ layout } = await buildHostedSite({ projectRoot, hostRoot, music, python, siteUrl: frontend.siteUrl }));
   }
-  const features = await prepareFeatureConfig(projectRoot, layout, "import");
+  await assembleImportSite({ projectRoot, layout, frontend, testBuild });
   const packageTemporaryRoot = resolve(layout.dist, ".tmp");
   const packageStaging = resolve(packageTemporaryRoot, `import.staging-${randomUUID()}`);
   try {
-    console.log("[Import 1/3] Assembling import site");
-    await run(process.execPath, [
-      script(projectRoot, "scripts/package-server.mjs"),
-      `--output=${layout.importSite}`,
-      ...(frontend.siteUrl ? [`--site-url=${frontend.siteUrl}`] : []),
-      `--feature-config=${features}`,
-      `--site-manifest=${resolve(layout.site, "site-manifest.json")}`,
-      `--runtime-release=${layout.runtimeRelease}`,
-      `--artwork-dir=${resolve(layout.site, "assets")}`,
-      `--games=${GAMES.join(",")}`,
-      "--profile=web-validation-self-host-import",
-      `--test-build=${testBuild ? "1" : "0"}`,
-    ], { cwd: projectRoot });
-    await run(process.execPath, [script(projectRoot, "scripts/verify-server-build.mjs"), layout.importSite], { cwd: projectRoot });
-
-    console.log("[Import 2/3] Building game-content packages");
+    console.log("[Import] Building game-content packages");
     await mkdir(packageStaging, { recursive: true });
     for (const game of GAMES) {
       const archive = resolve(packageStaging, `${game}.zip`);
@@ -486,10 +474,55 @@ export async function buildImportArtifacts({
     await rm(layout.importPackages, { recursive: true, force: true });
     await mkdir(resolve(layout.importPackages, ".."), { recursive: true });
     await rename(packageStaging, layout.importPackages);
-    console.log("[Import 3/3] Import artifacts verified");
   } finally {
-    await rm(features, { force: true });
     await rm(packageStaging, { recursive: true, force: true });
   }
   return Object.freeze({ layout });
+}
+
+export async function buildNoDownloadSite({ projectRoot, hostRoot, siteUrl, testBuild, output }) {
+  const frontend = await resolveHostFrontend({ projectRoot, siteUrl });
+  const paths = hostWorkspacePaths(hostRoot);
+  if (!await fileExists(resolve(paths.site, "site-manifest.json"))) {
+    throw new Error("--no-download requires an existing Hosted build in dist/site; run host:build once to prepare it");
+  }
+  const layout = Object.freeze({ ...paths, hostConfig: await readHostConfig(paths.config) });
+  const manifest = JSON.parse(await readFile(resolve(paths.site, "site-manifest.json"), "utf8"));
+  const games = Object.keys(manifest.games);
+  const target = output ? resolve(output) : layout.importSite;
+  const contains = (parent, child) => {
+    const path = relative(parent, child);
+    return !isAbsolute(path) && path !== ".." && !path.startsWith(".." + sep);
+  };
+  if ([layout.site, layout.runtimeRelease, layout.importPackages, ...Object.values(layout.games)]
+      .some(path => contains(path, target) || contains(target, path))) {
+    throw new Error("--output must be separate from the Hosted site, Runtime Release, and game content directories");
+  }
+  await assembleImportSite({ projectRoot, layout, frontend, testBuild: testBuild ?? (manifest.shared?.testBuild === true), games,
+    output: target, noDownloadManifest: manifest });
+  return Object.freeze({ layout, output: target });
+}
+
+async function assembleImportSite({ projectRoot, layout, frontend, testBuild, games = GAMES,
+    output = layout.importSite, noDownloadManifest }) {
+  const features = await prepareFeatureConfig(projectRoot, layout, "import", undefined, noDownloadManifest);
+  try {
+    console.log("[Import] Assembling import site");
+    await run(process.execPath, [
+      script(projectRoot, "scripts/package-server.mjs"),
+      `--output=${output}`,
+      ...(frontend.siteUrl ? [`--site-url=${frontend.siteUrl}`] : []),
+      `--feature-config=${features}`,
+      `--site-manifest=${resolve(layout.site, "site-manifest.json")}`,
+      `--runtime-release=${layout.runtimeRelease}`,
+      `--artwork-dir=${resolve(layout.site, "assets")}`,
+      `--games=${games.join(",")}`,
+      "--profile=web-validation-self-host-import",
+      `--test-build=${testBuild ? "1" : "0"}`,
+      ...(noDownloadManifest ? ["--no-download"] : []),
+    ], { cwd: projectRoot });
+    await run(process.execPath, [script(projectRoot, "scripts/verify-server-build.mjs"), output], { cwd: projectRoot });
+  } finally {
+    await rm(features, { force: true });
+  }
 }

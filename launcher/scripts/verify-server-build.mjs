@@ -302,7 +302,7 @@ if (resourceMode === RESOURCE_MODE_HOSTED) {
   }
 }
 const fallback = games.shared?.gameDataFallback;
-if (!fallback) {
+if (!fallback && resourceMode !== RESOURCE_MODE_IMPORT) {
   console.warn("OPERATOR WARNING: Site Manifest has no gameDataFallback; configure the fallback download link before publication.");
 }
 if (fallback != null && (typeof fallback !== "object" || typeof fallback.url !== "string" || !/^https:\/\//.test(fallback.url) ||

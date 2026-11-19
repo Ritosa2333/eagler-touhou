@@ -28,6 +28,15 @@ npm run verify:server -- dist/site
 
 如果游戏数据放在另一个域名，使用[配对的 External 站点](EXTERNAL_RESOURCE_MODE.md)。如果由玩家自行导入 ZIP，运行 `npm run import -- --site-url=https://play.example.org/`，站点发布目录是 `dist/import-site/`，本地 ZIP 输出在 `dist/import/`。
 
+有些站点只接受本地导入时，用同一份 Hosted 构建和 `runtime-release/` 为这些站点单独打包：
+
+```sh
+npm run host:build -- --no-download --site-url=https://example.invalid/ --output=dist/site-a
+npm run verify:server -- dist/site-a
+```
+
+发布 `dist/site-a/`；省略 `--output` 时输出到 `dist/import-site/`。产物包含 Launcher 和单人／多人 Runtime，站点不提供游戏数据、音乐、语言包或备用下载链接。玩家可导入完整游戏包；直接导入原版资源时，可将 `msgothic.ttc` 和 `unifont.otf` 一并选入，或重用浏览器里已导入的字体。该命令读取 `dist/site/site-manifest.json` 取得兼容性信息，不会重建 Hosted 站点或导出游戏 ZIP。其它站点打包时省略 `--no-download`。要同时生成本地导入 ZIP，运行 `npm run import`；大体积 Package 需要放在独立源站时，参见[外置资源模式](EXTERNAL_RESOURCE_MODE.md)。
+
 ## 准备源码构建输入
 
 源码构建需要 Bun 1.4.4。下面从 monorepo 根目录进入 `launcher/` 后运行。自托管游客站可关闭账号功能：
