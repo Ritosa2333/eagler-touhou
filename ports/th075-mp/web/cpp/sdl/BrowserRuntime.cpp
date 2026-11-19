@@ -14,7 +14,7 @@ std::unique_ptr<Application> app;
 struct Key{const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 std::array<ControlCounts,2> controlCounts;std::array<i32,2> cancelCounts{};
-touhou::sdl::FrameCadence cadence;bool suspended=false;double previous=-1;u8 touchButtons=0;float stickX=0,stickY=0;bool touchEnabled=true,touchEscape=false;SDL_Gamepad* joystick=nullptr;bool musicEnabled=true;
+touhou::sdl::FrameCadence cadence;bool suspended=false;double previous=-1;u8 touchButtons=0,mappedButtons=0;float stickX=0,stickY=0;bool touchEnabled=true,touchEscape=false;SDL_Gamepad* joystick=nullptr;bool musicEnabled=true;
 #if TH075_MULTIPLAYER
 th075::multiplayer::InputLatch mpInputLatch;
 #endif
@@ -22,16 +22,21 @@ void clear_inputs(){
 #if TH075_MULTIPLAYER
 mpInputLatch.Clear();
 #endif
-for(auto& k:keyboard_map)k.hosted=false;for(auto& c:controlCounts)c.clear();cancelCounts.fill(0);SDL_ResetKeyboard();touchButtons=0;stickX=stickY=0;touchEscape=false;}
+for(auto& k:keyboard_map)k.hosted=false;for(auto& c:controlCounts)c.clear();cancelCounts.fill(0);SDL_ResetKeyboard();touchButtons=mappedButtons=0;stickX=stickY=0;touchEscape=false;}
 u8 stick_held(float x,float y){if(x*x+y*y<.04f)return 0;const double angle=std::atan2(double(y),double(x));const int sector=int(std::floor((angle+3.141592653589793/8)/(3.141592653589793/4)))&7;constexpr u8 dirs[8]{2,10,8,9,1,5,4,6};return dirs[sector];}
 BattleSystemInput sample(){BattleSystemInput input;SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_EVENT_WINDOW_FOCUS_LOST)clear_inputs();if(e.type==SDL_EVENT_GAMEPAD_ADDED&&!joystick)joystick=SDL_OpenGamepad(e.jdevice.which);if(e.type==SDL_EVENT_GAMEPAD_REMOVED&&joystick&&SDL_GetGamepadID(joystick)==e.jdevice.which){SDL_CloseGamepad(joystick);joystick=nullptr;}}const auto* keys=SDL_GetKeyboardState(nullptr);for(const auto& k:keyboard_map)if(k.scan<256&&(k.hosted||(k.native!=SDL_SCANCODE_UNKNOWN&&keys[k.native]&&!EM_ASM_INT({return !!Module.resetBrowserKeyboard;}))))input.keys[k.scan]=128;
 #if TH075_MULTIPLAYER
  if(multiplayer::active()){for(const auto& key:keyboard_map)if(mpInputLatch.TakeKey(key.scan)){for(unsigned button=4;button<8;++button)if(app->settings.mappings[0].bindings[button]==key.scan)input.keys[key.scan]=128;}}
- const u8 capturedTouch=multiplayer::active()?mpInputLatch.TakeTouch():0;
+ const bool networkInput=multiplayer::active();
+ const u8 capturedTouch=networkInput?mpInputLatch.TakeTouch():0;
+ u8 capturedMapped=mappedButtons;
+ if(networkInput)for(unsigned action=4;action<8;++action)
+     if(mpInputLatch.TakeKey(256+action))capturedMapped|=u8(1u<<action);
 #else
- const u8 capturedTouch=0;
+ const bool networkInput=false;
+ const u8 capturedTouch=0,capturedMapped=mappedButtons;
 #endif
- for(u8 side=0;side<2;side++){u8 held=0;const auto& mapping=app->settings.mappings[side];for(u8 i=0;i<8;i++)if(mapping.bindings[i]<256&&input.keys[mapping.bindings[i]])held|=u8(1u<<i);const u8 active=app->selection.activePlayer<2?app->selection.activePlayer:0;if(touchEnabled&&side==active)held|=touchButtons|capturedTouch|stick_held(stickX,stickY);if(joystick&&side==active){float x=SDL_GetGamepadAxis(joystick,SDL_GAMEPAD_AXIS_LEFTX)/32767.f,y=SDL_GetGamepadAxis(joystick,SDL_GAMEPAD_AXIS_LEFTY)/32767.f;held|=stick_held(x,y);if(SDL_GetGamepadButton(joystick,SDL_GAMEPAD_BUTTON_DPAD_LEFT))held|=1;if(SDL_GetGamepadButton(joystick,SDL_GAMEPAD_BUTTON_DPAD_RIGHT))held|=2;if(SDL_GetGamepadButton(joystick,SDL_GAMEPAD_BUTTON_DPAD_UP))held|=4;if(SDL_GetGamepadButton(joystick,SDL_GAMEPAD_BUTTON_DPAD_DOWN))held|=8;constexpr SDL_GamepadButton face[]{SDL_GAMEPAD_BUTTON_SOUTH,SDL_GAMEPAD_BUTTON_EAST,SDL_GAMEPAD_BUTTON_WEST,SDL_GAMEPAD_BUTTON_NORTH};for(u8 b=0;b<4;b++)if(SDL_GetGamepadButton(joystick,face[b]))held|=u8(16<<b);if(SDL_GetGamepadButton(joystick,SDL_GAMEPAD_BUTTON_START))input.keys[1]=128;}controlCounts[side].from_held(held);input.players[side]=controlCounts[side];const auto cancel=mapping.bindings[8]<256&&input.keys[mapping.bindings[8]];cancelCounts[side]=cancel?increment_wrapped(cancelCounts[side],1):0;input.cancel[side]=cancelCounts[side];}if(touchEnabled&&touchEscape)input.keys[1]=128;return input;}
+ for(u8 side=0;side<2;side++){u8 held=0;const auto& mapping=app->settings.mappings[side];for(u8 i=0;i<8;i++)if(mapping.bindings[i]<256&&input.keys[mapping.bindings[i]])held|=u8(1u<<i);const u8 active=app->selection.activePlayer<2?app->selection.activePlayer:0;if(side==(networkInput?0:active))held|=capturedMapped;if(touchEnabled&&side==active)held|=touchButtons|capturedTouch|stick_held(stickX,stickY);if(joystick&&side==active){float x=SDL_GetGamepadAxis(joystick,SDL_GAMEPAD_AXIS_LEFTX)/32767.f,y=SDL_GetGamepadAxis(joystick,SDL_GAMEPAD_AXIS_LEFTY)/32767.f;held|=stick_held(x,y);if(SDL_GetGamepadButton(joystick,SDL_GAMEPAD_BUTTON_DPAD_LEFT))held|=1;if(SDL_GetGamepadButton(joystick,SDL_GAMEPAD_BUTTON_DPAD_RIGHT))held|=2;if(SDL_GetGamepadButton(joystick,SDL_GAMEPAD_BUTTON_DPAD_UP))held|=4;if(SDL_GetGamepadButton(joystick,SDL_GAMEPAD_BUTTON_DPAD_DOWN))held|=8;constexpr SDL_GamepadButton face[]{SDL_GAMEPAD_BUTTON_SOUTH,SDL_GAMEPAD_BUTTON_EAST,SDL_GAMEPAD_BUTTON_WEST,SDL_GAMEPAD_BUTTON_NORTH};for(u8 b=0;b<4;b++)if(SDL_GetGamepadButton(joystick,face[b]))held|=u8(16<<b);if(SDL_GetGamepadButton(joystick,SDL_GAMEPAD_BUTTON_START))input.keys[1]=128;}controlCounts[side].from_held(held);input.players[side]=controlCounts[side];const auto cancel=mapping.bindings[8]<256&&input.keys[mapping.bindings[8]];cancelCounts[side]=cancel?increment_wrapped(cancelCounts[side],1):0;input.cancel[side]=cancelCounts[side];}if(touchEnabled&&touchEscape)input.keys[1]=128;return input;}
 }
 extern "C" {
 EMSCRIPTEN_KEEPALIVE int th075_initialize(unsigned scale){using namespace th075::sdl;if(!app)app=std::make_unique<Application>();app->audio.musicEnabled=musicEnabled;if(!app->initialize(scale))return 0;for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);SDL_InitSubSystem(SDL_INIT_GAMEPAD);int count=0;auto* ids=SDL_GetGamepads(&count);if(count)joystick=SDL_OpenGamepad(ids[0]);SDL_free(ids);return 1;}
@@ -59,9 +64,12 @@ EMSCRIPTEN_KEEPALIVE int th075_tick(double timestamp){using namespace th075::sdl
  app->graphics.renderer.commit();app->graphics.renderer.defer=false;app->audio.pump();return ok?1:0;}
 EMSCRIPTEN_KEEPALIVE void th075_key(unsigned scan,unsigned down){
 #if TH075_MULTIPLAYER
-if(th075::sdl::multiplayer::active())th075::sdl::mpInputLatch.Key(scan,down!=0);
+if(th075::sdl::multiplayer::active()&&(scan<256||scan>=260))th075::sdl::mpInputLatch.Key(scan,down!=0);
 #endif
-for(auto& k:th075::sdl::keyboard_map)if(k.scan==scan)k.hosted=down!=0;}
+using namespace th075::sdl;
+// 256..263 carry managed aliases outside the original DirectInput scans.
+if(scan>=256&&scan<264){const auto bit=1u<<(scan-256);mappedButtons=down?mappedButtons|bit:mappedButtons&~bit;return;}
+for(auto& k:keyboard_map)if(k.scan==scan)k.hosted=down!=0;}
 EMSCRIPTEN_KEEPALIVE void th075_keys_clear(){th075::sdl::clear_inputs();}
 EMSCRIPTEN_KEEPALIVE void th075_loop_pause(unsigned on){using namespace th075::sdl;suspended=on!=0;previous=-1;cadence.reset();clear_inputs();if(app)app->audio.suspend(suspended);}
 EMSCRIPTEN_KEEPALIVE void th075_touch_controls(unsigned enabled,unsigned a,unsigned b,unsigned c,unsigned d,unsigned pause){using namespace th075::sdl;touchEnabled=enabled!=0;touchButtons=unsigned(a!=0)*16|unsigned(b!=0)*32|unsigned(c!=0)*64|unsigned(d!=0)*128;touchEscape=pause!=0;
@@ -78,7 +86,7 @@ EMSCRIPTEN_KEEPALIVE int th075_pause(){using namespace th075::sdl;if(!app||!app-
 EMSCRIPTEN_KEEPALIVE int th075_resume(){using namespace th075::sdl;if(!app||!app->battle)return 0;app->battle->progress.paused=false;return 1;}
 EMSCRIPTEN_KEEPALIVE int th075_restart(){using namespace th075::sdl;return app&&app->restart();}
 EMSCRIPTEN_KEEPALIVE void th075_music_enabled(unsigned on){using namespace th075::sdl;musicEnabled=on!=0;if(app)app->audio.musicEnabled=musicEnabled;}
-EMSCRIPTEN_KEEPALIVE void th075_touch_cancel(){using namespace th075::sdl;touchButtons=0;stickX=stickY=0;touchEscape=false;
+EMSCRIPTEN_KEEPALIVE void th075_touch_cancel(){using namespace th075::sdl;touchButtons=mappedButtons=0;stickX=stickY=0;touchEscape=false;
 #if TH075_MULTIPLAYER
 mpInputLatch.Clear();
 #endif

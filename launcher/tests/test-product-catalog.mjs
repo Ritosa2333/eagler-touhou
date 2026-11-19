@@ -304,7 +304,7 @@ assert.notEqual(PRODUCT_GAMES.th17.testOnly, true);
 assert.equal(PRODUCT_GAMES.th19.testOnly, true);
 assert.equal(productEnabledForBuild("th99", true), false);
 
-assert.deepEqual(Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id, product]) => [id, product.support.highRefreshRate])), {th01: false, th02: false, th03: false, th04: false, th05: false, hsob: false, th06: true, th07: true, th075: false, th08: true, th09: false, th10: true, th11: true, th12: true, th13: false, th14: false, th15: true, th17: false, th19: false, th20: false}, "high-refresh UI must follow the catalog capability");
+assert.deepEqual(Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id, product]) => [id, product.support.highRefreshRate])), {th01: false, th02: false, th03: false, th04: false, th05: false, hsob: false, th06: true, th07: true, th075: false, th08: true, th09: true, th10: true, th11: true, th12: true, th13: false, th14: false, th15: true, th17: false, th19: false, th20: false}, "high-refresh UI must follow the catalog capability");
 assert.equal(PRODUCT_GAMES.th15.features.languages,true);
 assert.equal(PRODUCT_GAMES.th15.features.thprac,true);
 assert.ok(PRODUCT_GAMES.th15.requiredShared.includes('/unifont.otf'));

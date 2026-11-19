@@ -463,7 +463,7 @@ export declare const PRODUCT_GAMES: Readonly<{
             }>;
         }>;
         support: Readonly<{
-            highRefreshRate: false;
+            highRefreshRate: true;
             sourceRepository: "https://github.com/YomotsuHisami/th09";
         }>;
         runtimeFileLayout: "directory";
@@ -1509,7 +1509,7 @@ export declare function createLocalProductManifest(): {
                 }>;
             }>;
             support: Readonly<{
-                highRefreshRate: false;
+                highRefreshRate: true;
                 sourceRepository: "https://github.com/YomotsuHisami/th09";
             }>;
             runtimeFileLayout: "directory";

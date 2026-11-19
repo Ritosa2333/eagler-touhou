@@ -11,7 +11,18 @@ const canvas=document.querySelector('canvas'),$=s=>document.querySelector(s);
 const build=/*TH075_EAGLER_BUILD*/{version:'development',completeGame:false};
 let core,bundle,launched=false,stopping=false,busy=false,loopId=0,options={},music='none',commands=Promise.resolve();
 let escapeSerial=0,stick={x:0,y:0},direct=null,actionButtons=0;
-const keyboard=createBrowserKeyboard({accept:code=>!!scanCodes[code],send:(code,down)=>core?._th075_key(scanCodes[code],+down)});
+const inputActive=()=>!!core&&launched&&!document.hidden&&!stopping;
+const actionCode=/^Th075Action[0-7]$/;
+const keyboard=createBrowserKeyboard({
+  hostContext:{protocol,game,epoch,origin:location.origin,ready:inputActive,profile:()=>'th075',reset:clearKeyboard},
+  accept:code=>!!scanCodes[code]||actionCode.test(code),
+  onClear:()=>core?._th075_keys_clear(),
+  send(code,down){
+    if(code==='KeyR'&&down&&core?._th075_phase()===2){core._th075_restart();return;}
+    const scan=actionCode.test(code)?256+Number(code.at(-1)):scanCodes[code];
+    core?._th075_key(scan,+down);
+  },
+});
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
 // The common Launcher fits other games to the available 4:3 player area.
 // Keep integer scaling only when an older host explicitly requests it.
@@ -19,12 +30,8 @@ const updateDisplay=attachDisplay(canvas,()=>options.displayScaleMode==='integer
 const error=()=>core.UTF8ToString(core._th075_error());
 const call=(name,types=[],args=[])=>core.ccall('th075_'+name,'number',types,args,{async:true});
 const sync=createSaveSync(()=>core);
-function clearKeyboard(){keyboard.clear();core?._th075_keys_clear();}
+function clearKeyboard(){keyboard.clear();}
 function cancelTouch(){direct=null;stick={x:0,y:0};actionButtons=0;core?._th075_touch_cancel();}
-function inputKey(event,down,source){
-  if(event.code==='KeyR'&&down&&!event.repeat&&core._th075_phase()===2){core._th075_restart();return true;}
-  return keyboard.event(event,down,source);
-}
 const fatal=e=>{
   ++loopId;
   const message=e?.message||String(e),inspect=name=>{try{return core?.[name]?.()??null;}catch{return null;}};
@@ -112,7 +119,7 @@ function loop(){
 
 // Share one input owner across the same-origin fast path and postMessage fallback.
 function dispatchInput(m){switch(m.command){
-  case 'keyboard':if(launched&&!document.hidden&&!stopping)inputKey(m,!!m.down,'hosted');return true;
+  case 'keyboard':if(inputActive())keyboard.event(m,!!m.down,'hosted');return true;
   case 'keyboard-clear':clearKeyboard();return true;
   case 'touch-controls':if(launched&&!document.hidden&&!stopping)touch(m);return true;
   case 'touch-cancel':cancelTouch();return true;
@@ -173,7 +180,13 @@ window.addEventListener('message',event=>{
   if(event.source!==parent||event.origin!==location.origin||m?.protocol!==protocol||m.game!==game||!validEpoch||m.epoch!==epoch||typeof m.command!=='string')return;
   commands=commands.then(async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')emit(undefined,{request:m.request,ok:true,...result});}catch(e){if(typeof m.request==='string')emit(undefined,{request:m.request,ok:false,error:String(e),errno:e?.errno});else fatal(e);}}).catch(fatal);
 });
-for(const type of ['keydown','keyup'])window.addEventListener(type,event=>{if(!launched||event.altKey||event.metaKey||document.hidden)return;if(inputKey(event,type==='keydown','native')){event.preventDefault();event.stopPropagation();}},{capture:true});
+for(const type of ['keydown','keyup'])window.addEventListener(type,event=>{
+  const down=type==='keydown';
+  if(!inputActive()||(down&&(event.altKey||event.metaKey)))return;
+  if(keyboard.mapped()){
+    if(keyboard.mapNative(event,down)){event.preventDefault();event.stopImmediatePropagation();}
+  }else if(keyboard.event(event,down)){event.preventDefault();event.stopPropagation();}
+},{capture:true});
 window.addEventListener('blur',()=>{clearKeyboard();cancelTouch();});
 document.addEventListener('visibilitychange',()=>{clearKeyboard();cancelTouch();if(launched){core._th075_loop_pause(+document.hidden);if(document.hidden)void save().catch(fatal);}});
 window.addEventListener('pagehide',()=>{++loopId;clearKeyboard();cancelTouch();core?._th075_loop_pause(1);if(core)void save().catch(()=>{});});

@@ -33,6 +33,7 @@ export interface SettingsActions {
   gamepad?: GamepadMappingModel;
   keyboard?: KeyboardPreferences;
   th19Keyboard?: KeyboardPreferences;
+  th075Keyboard?: KeyboardPreferences;
   th19Gamepad?: GamepadMappingModel;
   th09Local?:Th09LocalInput;
 }

@@ -258,6 +258,7 @@ export function bindPlayerInput({
     frame,
     preferences: session.keyboardPreferences,
     th19Preferences: session.th19Keyboard,
+    th075Preferences: session.th075Keyboard,
     th09Local: session.th09LocalInput,
     playerOpen: () => session.getSnapshot().playerOpen,
     android,

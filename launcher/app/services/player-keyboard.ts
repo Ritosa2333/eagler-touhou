@@ -35,6 +35,7 @@ export interface PlayerKeyboardOptions {
   chatTextTarget?(target: EventTarget | null): boolean;
   preferences?: KeyboardPreferences;
   th19Preferences?: KeyboardPreferences;
+  th075Preferences?: KeyboardPreferences;
   th09Local?: Th09LocalInput;
   now?: () => number;
   setInterval?: typeof globalThis.setInterval;
@@ -327,7 +328,10 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
     const mappingTarget = inputContext.target;
     if (!options.shortcutsOnly && mappingTarget && keyboardInputBridge(inputContext)) {
       const owner = new KeyboardMapping(
-        () => (options.runtime.getInputContext().game === 'th19' ? options.th19Preferences : options.preferences)?.getSnapshot() ?? {},
+        () => {
+          const {game}=options.runtime.getInputContext();
+          return (game==='th075'?options.th075Preferences:game==='th19'?options.th19Preferences:options.preferences)?.getSnapshot()??{};
+        },
         options.th09Local,
       );
       mapping = owner;
@@ -410,6 +414,7 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
   const unsubscribe = options.runtime.subscribe(rebind);
   const unsubscribePreferences = options.preferences?.subscribe(clear);
   const unsubscribeTh19 = options.th19Preferences?.subscribe(clear);
+  const unsubscribeTh075 = options.th075Preferences?.subscribe(clear);
   const unsubscribeLocal = options.th09Local?.subscribe(clear);
   const unsubscribeChat = options.chat?.subscribe(syncChat);
   rebind();
@@ -430,6 +435,7 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
       unsubscribe();
       unsubscribePreferences?.();
       unsubscribeTh19?.();
+      unsubscribeTh075?.();
       unsubscribeLocal?.();
       unsubscribeChat?.();
       unbind?.();

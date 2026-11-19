@@ -15,11 +15,16 @@ const $=s=>document.querySelector(s);
 let th14PageLeaving=false;
 let replayViewer=null;
 let Module,core,app=0,launched=false,first=false,stopping=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true,musicMode='none';
+const inputActive=()=>!!core&&launched&&!document.hidden&&!stopping;
 const keyboard=createBrowserKeyboard({
+ hostContext:{protocol,game,epoch:Number(query.get('runtimeEpoch')),origin:location.origin,ready:inputActive,reset:clearKeyboard},
  accept:code=>!!scanCodes[code],
- send:(code,down)=>core?.th11_key(scanCodes[code],+down),
+ send:(code,down)=>{
+  const captured=practiceKey({code},down);
+  if(!down||!captured)core?.th11_key(scanCodes[code],+down);
+ },
 });
-function clearKeyboard(){keyboard.clear();core?.th11_keys_clear();}
+function clearKeyboard(){keyboard.clear();core?.th14_practice_state?.(9,0);core?.th11_keys_clear();}
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null,storageSync=Promise.resolve();
 const cancelTouches=bindOutsideTouches(document,canvas,()=>core,()=>launched&&options.touchEnabled);
 const error=reason=>{const message=reason?.stack||String(reason);const node=$('#error');if(node)node.textContent=message;emit('error',{message,error:message});console.error(reason);};
@@ -148,11 +153,8 @@ function replayPlayback(){
 async function command(m){switch(m.command){
  case 'configure':if(launched)throw Error('不能配置正在运行的游戏');language=m.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(m.options);music=m.music!=='none';musicMode=m.music;await installResources(m.sharedResources);await installResources(m.runtimeResources);await installResources(m.resources);if(m.runtimePack)await installRuntimePack(m.runtimePack);configurePractice();apply();return {};
  case 'resources':await installResources(m.resources);return {};
- case 'keyboard':if(launched&&!document.hidden&&!stopping){
-  const down=!!m.down, captured=practiceKey(m,down);
-  if(!down||!captured)keyboard.event(m,down,'hosted');
- }return {};
- case 'keyboard-clear':core?.th14_practice_state?.(9,0);clearKeyboard();return {};
+ case 'keyboard':if(inputActive())keyboard.event(m,!!m.down,'hosted');return {};
+ case 'keyboard-clear':clearKeyboard();return {};
  case 'touch-cancel':cancelTouches();return {};
  case 'direct-touch':directTouch(core,canvas,m,{width:innerWidth,height:innerHeight});return {};
  case 'touch-controls':practiceTouchControls(m);touchControls(core,options,m);return {};
@@ -195,11 +197,11 @@ window.addEventListener('pageshow',()=>{if(game==='th14')th14PageLeaving=false;i
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeyboard();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
 for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
- if(!core||!launched||stopping||document.hidden)return;
- const down=name==='keydown', captured=practiceKey(event,down);
- if(captured)event.preventDefault();
- // A key pressed by the native menu may be released over the practice panel.
- if(!down||!captured)keyboard.event(event,down);
+ const down=name==='keydown';
+ if(!inputActive()||(down&&(event.altKey||event.metaKey)))return;
+ if(keyboard.mapped()){
+  if(keyboard.mapNative(event,down)){event.preventDefault();event.stopImmediatePropagation();}
+ }else if(keyboard.event(event,down)){event.preventDefault();event.stopPropagation();}
 },{capture:true});
 // A mobile browser may terminate a hidden page before pagehide's IDB callback.
 // Persist during play as well, with writes serialized by the sync chain.
