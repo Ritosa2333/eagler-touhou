@@ -576,7 +576,13 @@ export class SharedNetplay {
     if (!request || !saved || saved.start !== request.start) return;
     this.replayRequest = this.savedReplay = null;
     const upload = globalThis.parent?.__eaglerUploadTh09ReplayV1 ?? uploadTh09Replay;
-    void upload(request, saved.bytes);
+    void upload(request, saved.bytes).then(receipt => {
+      if (typeof receipt !== 'string') return;
+      const transport = this.startupTransport;
+      const socket = transport?.route === 'relay' ? transport.relay : transport?.signal;
+      if (socket?.readyState === WebSocket.OPEN)
+        socket.send(JSON.stringify({type:'th09-replay-saved',receipt}));
+    }).catch(() => {});
   }
   beginMatch(frame,state) {
     if(!this.timelineExperiment||this.spectator||!this.connected||this.side!==0||![50,78].includes(state.length))return;

@@ -268,6 +268,15 @@ test('settlement chat uses a plain bot until the published account is available'
     assert.match(query(`${view} a.chat-avatar`).getAttribute('href'), /^\/u\/ritosa(?:\?|$)/);
     assert.equal(query(`${view} .chat-avatar img`).getAttribute('src'),'/api/v1/profiles/ritosa/avatar/1234567890abcdef');
   }
+  const uploaded={...settlement,authorProfile,replayUploadedAt:101};
+  await act(()=>model.receive({type:'th09-rating',room,settlement:uploaded}));
+  await act(()=>model.receive({type:'th09-rating',room,settlement:uploaded}));
+  for (const view of ['#mpRoomChat','.mp-quick-chat-log']) {
+    const rows=env.document.querySelectorAll(`${view} .chat-body`);
+    assert.equal(rows.length,2);
+    assert.equal(rows[1].textContent,'Replay upload complete.');
+    assert.ok(!rows[1].textContent.includes('match has ended'));
+  }
 });
 test('account-enabled chat gives guests the same input with a sign-in hint', async () => {
   const {model,calls}=fixture();

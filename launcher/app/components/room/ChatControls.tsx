@@ -220,7 +220,7 @@ export function ChatMessageText({ entry, label }: {entry: QuickChatEntry; label:
       {(!rating || rating.authorProfile) && <strong>{rating ? <a href={profile(rating.author)} target="_blank" rel="noopener">{entry.name}</a> : entry.name || badge}</strong>}
       <span className="chat-role">{badge}</span>
     </span>
-    <span className="chat-body">{entry.delivery === 'pending' ? <span className="chat-sending" role="status" aria-label={t('chat.sending')}><i/><i/><i/></span> : rating ? <>
+    <span className="chat-body">{entry.delivery === 'pending' ? <span className="chat-sending" role="status" aria-label={t('chat.sending')}><i/><i/><i/></span> : entry.replayUploaded ? t('th09.replayUploaded') : rating ? <>
       {t('th09.matchEnded')}
       {rating.changes.length === 0 && <span className="chat-rating-line">{t('th09.matchUnrated')}</span>}
       {rating.changes.map(({username,before,after}) => {

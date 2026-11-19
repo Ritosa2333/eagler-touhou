@@ -347,6 +347,7 @@
   "th09_elapsed": "{minutes}分経過",
   "room_unrated": "レーティング対象外",
   "th09_ratingGames": "({games} 局)",
+  "th09_replayUploaded": "リプレイのアップロードが完了しました。",
   "th09_matchEnded": "対戦が終了しました。",
   "th09_matchUnrated": "この対戦はレーティング対象外です。",
   "th09_firstRating": "初期レート {rating}",

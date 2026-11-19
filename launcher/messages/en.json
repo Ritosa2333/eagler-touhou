@@ -347,6 +347,7 @@
   "th09_elapsed": "{minutes} min elapsed",
   "room_unrated": "Unrated room",
   "th09_ratingGames": "({games} games)",
+  "th09_replayUploaded": "Replay upload complete.",
   "th09_matchEnded": "The match has ended.",
   "th09_matchUnrated": "This match was unrated.",
   "th09_firstRating": "Placed at {rating}",

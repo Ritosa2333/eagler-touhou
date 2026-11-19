@@ -37,7 +37,12 @@ std::int64_t unixMillis()
 }
 
 #ifdef _WIN32
-DWORD postReplay(const std::string &origin, const std::string &token, std::vector<std::uint8_t> &file)
+struct ReplayReceipts {
+    std::mutex mutex;
+    std::deque<std::string> pending;
+};
+
+DWORD postReplay(const std::string &origin, const std::string &token, std::vector<std::uint8_t> &file, std::string &receipt)
 {
     using Handle = std::unique_ptr<void, decltype(&WinHttpCloseHandle)>;
     const std::wstring url(origin.begin(), origin.end());
@@ -70,10 +75,23 @@ DWORD postReplay(const std::string &origin, const std::string &token, std::vecto
     DWORD status = 0, statusSize = sizeof(status);
     if (!WinHttpQueryHeaders(request.get(), WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
         WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize, WINHTTP_NO_HEADER_INDEX)) return 0;
+    if (status == 200) {
+        std::string body;
+        char buffer[512];
+        DWORD read = 0;
+        while (WinHttpReadData(request.get(), buffer, sizeof(buffer), &read) && read) {
+            if (body.size() + read > 1024) return status;
+            body.append(buffer, read);
+        }
+        const auto result = Json::parse(body, nullptr, false);
+        if (result.is_object() && result.contains("receipt") && result["receipt"].is_string())
+            receipt = result["receipt"].get<std::string>();
+    }
     return status;
 }
 
-void queueReplay(std::string origin, std::string token, std::int64_t expiresAt, std::vector<std::uint8_t> file)
+void queueReplay(std::string origin, std::string token, std::int64_t expiresAt, std::vector<std::uint8_t> file,
+    std::shared_ptr<ReplayReceipts> receipts)
 {
     static std::atomic<unsigned> active{0};
     if (active.fetch_add(1, std::memory_order_relaxed) >= 4) {
@@ -82,10 +100,16 @@ void queueReplay(std::string origin, std::string token, std::int64_t expiresAt, 
     }
     try {
         // This job owns its bytes and can finish after the room closes.
-        std::thread([origin = std::move(origin), token = std::move(token), expiresAt, file = std::move(file)]() mutable {
+        std::thread([origin = std::move(origin), token = std::move(token), expiresAt,
+            file = std::move(file), receipts = std::move(receipts)]() mutable {
             try {
                 for (int delay = 250; unixMillis() < expiresAt; delay = (std::min)(delay * 2, 5000)) {
-                    const DWORD status = postReplay(origin, token, file);
+                    std::string receipt;
+                    const DWORD status = postReplay(origin, token, file, receipt);
+                    if (!receipt.empty() && receipt.size() <= 160) {
+                        std::lock_guard<std::mutex> lock(receipts->mutex);
+                        if (receipts->pending.size() < 16) receipts->pending.push_back(std::move(receipt));
+                    }
                     if (status && status < 500 && status != 408 && status != 429) break;
                     if (unixMillis() + delay >= expiresAt) break;
                     std::this_thread::sleep_for(std::chrono::milliseconds(delay));
@@ -185,6 +209,7 @@ struct NativeRoomTransport::Impl
     std::unique_ptr<rtc::WebSocket> socket;
 #ifdef _WIN32
     DesktopSwarmTurn swarm;
+    std::shared_ptr<ReplayReceipts> replayReceipts = std::make_shared<ReplayReceipts>();
 #endif
     std::unique_ptr<NativePeerTransport> transport;
     std::unique_ptr<NativeAdaptiveRoute> adaptive;
@@ -244,7 +269,7 @@ struct NativeRoomTransport::Impl
         auto upload = std::move(*replayUpload);
         replayCompleted = upload.start;
         replayUpload.reset();
-        queueReplay(std::move(upload.origin), std::move(upload.token), upload.expiresAt, std::move(upload.file));
+        queueReplay(std::move(upload.origin), std::move(upload.token), upload.expiresAt, std::move(upload.file), replayReceipts);
 #endif
     }
 
@@ -735,6 +760,16 @@ void NativeRoomTransport::Impl::pump(const std::atomic_bool* cancelled)
     if (!error.empty()) return;
     auto &state = *this;
     try {
+#ifdef _WIN32
+        if (state.socket->isOpen()) {
+            std::deque<std::string> receipts;
+            {
+                std::lock_guard<std::mutex> lock(state.replayReceipts->mutex);
+                receipts.swap(state.replayReceipts->pending);
+            }
+            for (const auto &receipt : receipts) state.send({{"type", "th09-replay-saved"}, {"receipt", receipt}});
+        }
+#endif
         for (unsigned i = 0; i < 64; ++i) {
             const auto message = state.socket->receive();
             if (!message) break;

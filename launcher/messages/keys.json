@@ -1299,6 +1299,10 @@
       "games"
     ]
   },
+  "th09.replayUploaded": {
+    "id": "th09_replayUploaded",
+    "params": []
+  },
   "th09.matchEnded": {
     "id": "th09_matchEnded",
     "params": []

@@ -359,6 +359,11 @@ const th09Rounds = th09OutboxPath && accountChat ? createTh09RoundOutbox({
           const [serial, start] = roundId.split(':');
           const run = room.runs.get(serial);
           if (run?.th09Duel?.id === duelId) {
+            if (settlement) {
+              run.th09Settlements ??= new Map();
+              run.th09Settlements.set(roundId, settlement);
+              if (run.th09Settlements.size > 64) run.th09Settlements.delete(run.th09Settlements.keys().next().value);
+            }
             const message = JSON.stringify({type:'th09-replay-upload', start:Number(start), ...replayUpload});
             for (const socket of [...run.signalClients.values(), ...run.clients.values()])
               if (socket.readyState === WebSocket.OPEN) sendBounded(socket, message);
@@ -386,6 +391,15 @@ const replayFileAdmission = {
   messagesPerSecond: 120,
   bytesPerSecond: 4 * 1024 * 1024,
 };
+function announceTh09Replay(room, run, message) {
+  const receipt = accountChat?.replayReceipt(message.receipt);
+  if (!receipt || receipt.duelId !== run.th09Duel?.id) return;
+  const settlement = run.th09Settlements?.get(receipt.roundId);
+  if (!settlement || settlement.replayUploadedAt) return;
+  const completed = {...settlement, replayUploadedAt:receipt.uploadedAt};
+  run.th09Settlements.set(receipt.roundId, completed);
+  broadcastLobby(room, {type:'th09-rating',room:room.id,settlement:completed});
+}
 function th09RoundRecorder(room, run) {
   return th09Rounds && (round => {
     const report = {...round, finishedAt: Date.now(), room: room.chatScope, rated: run.th09Rated !== false};
@@ -1226,6 +1240,10 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
     }
     if (roomId.startsWith('th09mp-') && message.type === 'th09-match') {
       if (run.signalClients.get(player) === socket) acceptTh09PlayerReport(room, run, runId, player, message);
+      return;
+    }
+    if (roomId.startsWith('th09mp-') && message.type === 'th09-replay-saved') {
+      if (run.signalClients.get(player) === socket) announceTh09Replay(room, run, message);
       return;
     }
     if (message.type === 'spectator-stop') {
@@ -3039,6 +3057,10 @@ server.on('connection', (socket, request) => {
       let message; try { message = JSON.parse(String(data)); } catch {}
       if (roomId.startsWith('th09mp-') && message?.type === 'th09-match') {
         if (run.clients.get(player) === socket) acceptTh09PlayerReport(room, run, runId, player, message);
+        return;
+      }
+      if (roomId.startsWith('th09mp-') && message?.type === 'th09-replay-saved') {
+        if (run.clients.get(player) === socket) announceTh09Replay(room, run, message);
         return;
       }
       if (player === 0 && run.clients.get(player) === socket && message?.type === 'spectator-session' &&

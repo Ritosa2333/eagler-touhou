@@ -347,6 +347,7 @@
   "th09_elapsed": "已进行 {minutes} 分钟",
   "room_unrated": "不计等级分",
   "th09_ratingGames": "(局数 {games})",
+  "th09_replayUploaded": "录像上传已完成。",
   "th09_matchEnded": "本局已结束。",
   "th09_matchUnrated": "本局不计分。",
   "th09_firstRating": "定级在 {rating}",

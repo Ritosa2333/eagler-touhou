@@ -1,3 +1,5 @@
+import {verifyTh09ReplayReceipt} from '../../../common/contracts/th09-replay-receipt.mjs';
+
 /** Account identity and chat storage belong to the private API. */
 export function createAccountChatSource({
   onRetract,
@@ -90,6 +92,7 @@ export function createAccountChatSource({
     report: (input) => call('reports', scopedInput(input)),
     recordTh09Round: (input) => call('rounds', input.room ? scopedInput(input) : input, 'th09'),
     recordTh09Replay: ({duelId, roundId, replay}) => call('replays', {duelId, roundId, replay}, 'th09'),
+    replayReceipt: receipt => verifyTh09ReplayReceipt(secret, receipt),
     close() {
       stop.abort();
     },

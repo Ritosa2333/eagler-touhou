@@ -60,7 +60,9 @@ EM_JS(int, th09_local_keyboard, (int seat), {return globalThis.__eaglerKeyboardI
 EM_JS(void, th09_browser_frame, (int ok,double milliseconds), { Module["onGameFrame"]?.(ok,milliseconds); });
 EM_JS(void, th09_network_result, (), { Module["onNetworkResult"]?.(); });
 EM_JS(void, th09_network_replay_boundary, (std::uint32_t frame,int winner), { Module["onNetworkReplayBoundary"]?.(frame,winner); });
-EM_JS(void, th09_network_match_decided, (std::uint32_t frame,int winner,int first,int second), { Module["onNetworkMatchDecided"]?.(frame,winner,first,second); });
+EM_JS(void, th09_network_match_decided, (std::uint32_t frame,int winner,int first,int second,const void* replay,std::uint32_t size), {
+    Module["onNetworkMatchDecided"]?.(frame,winner,first,second,HEAPU8.slice(replay,replay+size));
+});
 EM_JS(void, th09_network_spectator_begin, (std::uint32_t frame,const void* bytes,std::uint32_t size), {
     Module["onNetworkSpectatorBegin"]?.(frame,HEAPU8.slice(bytes,bytes+size));
 });
@@ -95,29 +97,30 @@ static void th09_browser_frame(int, double) {}
 static void th09_network_result() {}
 #if TH09_NATIVE_ROOM
 static std::optional<std::uint32_t> native_match_start;
-static std::optional<std::uint32_t> native_replay_start;
-namespace th09::sdl { namespace { void th09_publish_match_replay(std::uint32_t start); } }
 #endif
 static void th09_network_replay_boundary(std::uint32_t frame, int winner) {
 #if TH09_NATIVE_ROOM
     if (winner < 0) {
-        native_replay_start = native_match_start = frame;
-    } else if (native_replay_start) {
-        const auto start = *native_replay_start;
-        native_replay_start.reset();
-        th09::sdl::th09_publish_match_replay(start);
+        native_match_start = frame;
     }
 #endif
 }
-static void th09_network_match_decided(std::uint32_t frame, int winner, int first, int second) {
+static void th09_network_match_decided(std::uint32_t frame, int winner, int first, int second,
+                                      const void* replay, std::uint32_t size) {
 #if TH09_NATIVE_ROOM
     if (native_match_start && frame > *native_match_start) {
         const auto start = *native_match_start;
-        const bool reported = th09_native_room_transport().ReportMatch(start, frame - start, winner, first, second);
+        auto& room = th09_native_room_transport();
+        const bool reported = room.ReportMatch(start, frame - start, winner, first, second);
 #if TH09_NATIVE_OVERLAY
         if (!reported) Th09Overlay::ReportMatch(start, frame - start, winner, first, second);
 #endif
         native_match_start.reset();
+        const auto* site = SDL_getenv("EAGLER_DESKTOP_OVERLAY_SITE");
+        if (size && room.MatchReplayEnabled() && site && *site) {
+            const auto* bytes = static_cast<const std::uint8_t*>(replay);
+            room.PublishMatchReplay(start, std::vector<std::uint8_t>(bytes, bytes + size), site);
+        }
     }
 #endif
 }
@@ -201,6 +204,7 @@ struct RollbackFrame {
     u32 beginFrame=0;
     i32 winner=-1,decidedWinner=-1;
     std::array<i32,2> decidedCharacters{};
+    std::vector<u8> replay;
     i32 round=-1;
     u32 replayRoundFrame=0;
     SpectatorBeginState begin;
@@ -698,15 +702,6 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     }
 };
 std::unique_ptr<Application> probe;std::string failure;
-#if TH09_NATIVE_ROOM && !defined(__EMSCRIPTEN__)
-void th09_publish_match_replay(std::uint32_t start) {
-    auto &room = th09_native_room_transport();
-    if (!room.MatchReplayEnabled() || !probe || !probe->complete || !probe->session) return;
-    auto &session = *probe->session;
-    const auto* site = SDL_getenv("EAGLER_DESKTOP_OVERLAY_SITE");
-    if (site && *site) room.PublishMatchReplay(start, session.encode_match_replay(), site);
-}
-#endif
 bool running=false,suspended=false,room_preview=false;u32 loop_epoch=0;double previous_frame=-1;multiplayer::FrameSchedule cadence;
 multiplayer::RecoverySchedule recovery_schedule;
 u32 recovery_callbacks=0,recovery_ticks=0,recovery_last_us=0;
@@ -1085,7 +1080,10 @@ bool publish_rollback_outputs(){
         record.sounds.clear();
         // Both players archive only reconciled full-match boundaries.
         if(record.hasBegin)th09_network_replay_boundary(record.beginFrame,-1);
-        if(record.decidedWinner>=0)th09_network_match_decided(rollback_published+1,record.decidedWinner,record.decidedCharacters[0],record.decidedCharacters[1]);
+        if(record.decidedWinner>=0){
+            auto replay=std::move(record.replay);
+            th09_network_match_decided(rollback_published+1,record.decidedWinner,record.decidedCharacters[0],record.decidedCharacters[1],replay.data(),u32(replay.size()));
+        }
         if(record.hasEnd&&record.winner>=0)th09_network_replay_boundary(rollback_published+1,record.winner);
         if(network.side==0){std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> in;if(!rollback.ConfirmedInputs(rollback_published,&in))return false;const auto mode=[](const Netplay::FrameInput& i){return i.analogMode==Netplay::AnalogMode::None?0:i.analogMode==Netplay::AnalogMode::Joystick?1:i.unlimited?3:2;};
             if(record.hasBegin)th09_network_spectator_begin(record.beginFrame,&record.begin,spectator_begin_bytes);
@@ -1210,7 +1208,7 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         record.captured=speculative;
         if(speculative){if(!record.state)record.state=std::make_unique<multiplayer::WorldState>();if(!probe->checkpoint(*record.state)){probe->error="Rollback world capture failed";return 0;}probe->graphics.checkpoint=record.state.get();}
         // Retain arena capacity across exact and speculative frames.
-        record.hasBegin=record.hasEnd=false;record.decidedWinner=record.round=-1;record.beginFrame=f;record.gameplay=!probe->in_title;recording_frame=&record;
+        record.hasBegin=record.hasEnd=false;record.decidedWinner=record.round=-1;record.replay.clear();record.beginFrame=f;record.gameplay=!probe->in_title;recording_frame=&record;
         if(probe->session&&!probe->in_title)for(unsigned side=0;side<2;++side){const auto& in=decision.inputs[side];probe->session->motion_input[side]={in.analogMode!=Netplay::AnalogMode::None,in.x,in.y,in.unlimited,in.analogMode==Netplay::AnalogMode::DirectTouch};}
         // Recovery does not consume the wall-clock tick's forward step. Replay
         // through the old frontier, then capture/simulate its new input once.
@@ -1261,8 +1259,12 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         if(record.gameplay&&matchUndecided&&probe->world&&!probe->in_title){
             const auto& world=*probe->world;
             record.decidedWinner=world.scene->decided_winner();
-            if(record.decidedWinner>=0)
+            if(record.decidedWinner>=0){
                 for(i32 side=0;side<2;++side)record.decidedCharacters[side]=world.configuration.selection.characters[side];
+                // Capture before later predicted frames append input or consume RNG.
+                // Re-simulation replaces these bytes until this frame is confirmed.
+                record.replay=probe->session->encode_match_replay();
+            }
         }
         // Do not send the menu action that retires the viewer's world.
         const bool reselect=network_selection&&record.gameplay&&probe->in_title;
@@ -1390,7 +1392,10 @@ TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){TH09_PERF_SCOPE(gam
             const auto& world=*probe->world;
             const auto winner=world.scene->decided_winner();
             const auto& characters=world.configuration.selection.characters;
-            if(winner>=0)th09_network_match_decided(frame+1,winner,characters[0],characters[1]);
+            if(winner>=0){
+                const auto replay=probe->session->encode_match_replay();
+                th09_network_match_decided(frame+1,winner,characters[0],characters[1],replay.data(),u32(replay.size()));
+            }
         }
         if(ok&&publisher){const auto mode=[](const NetworkInput::Motion& m){return !m.enabled?0:m.target?(m.unlimited?3:2):1;};
             th09_network_spectator_frame(frame,keys[0],keys[1],mode(motion[0]),motion[0].x,motion[0].y,mode(motion[1]),motion[1].x,motion[1].y,nullptr,0);}

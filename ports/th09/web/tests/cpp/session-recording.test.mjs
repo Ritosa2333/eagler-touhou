@@ -24,3 +24,40 @@ test('Fresh C++ runs saved as native replays reproduce their original complete m
   report('session-recording',{checks,frames,scenarios,scope:'Unforced recorded gameplay and reloaded native replay state: RNG seed, both scores/players/shot controls/combo, scene state and body animations. These are finite match windows, not full campaign proof.'});
  }finally{c.session_delete(f);c.replay_delete(decoded);}
 });
+
+test('A deciding-frame replay reproduces the winner and RNG before match completion',async()=>{
+ const c=await core(),f=c.session_create(),name=c.allocate(128),data=c.allocate(16000000),out=c.allocate(16000000);
+ const snapshot=()=>Array.from(new Int32Array(c.memory.buffer,c.session_snapshot(f),48));
+ const replayState=()=>snapshot().map((v,i)=>i===2?v&~8:v).filter((_,i)=>i!==1);
+ const error=()=>{const bytes=memory(c,c.session_error(f),256);return new TextDecoder().decode(bytes.subarray(0,bytes.indexOf(0)));};
+ try{
+  for(const n of readdirSync(resolve(root,'reference/assets')).filter(n=>/\.(anm|sht|ecl|msg|std|bmp|png|jpg)$/.test(n))){
+   const bytes=readFileSync(resolve(root,'reference/assets',n));
+   memory(c,name,128).fill(0);memory(c,name,128).set(new TextEncoder().encode(n));
+   memory(c,data,bytes.length).set(bytes);c.session_file(f,name,data,bytes.length);
+  }
+  assert.equal(c.session_begin_human(f,12345),1,error());
+  const states=[];
+  for(let frame=0;frame<30000&&c.session_decided_winner(f)<0;++frame){
+   const keys=1|(frame<240?256:0)|(frame%121===0?2:0);
+   assert.equal(c.session_step(f,keys,0,keys),1,error());
+   states.push(replayState());
+  }
+  const winner=c.session_decided_winner(f);
+  assert.ok(winner>=0,'Unforced human match reaches a deciding frame');
+  assert.equal(c.session_value(f,0),1,'Victory dialogue has not completed');
+  const before=snapshot(),size=c.session_match_replay(f,out,16000000);
+  assert.ok(size>0,error());
+  assert.deepEqual(snapshot(),before,'Encoding preserves live RNG and game state');
+  const replay=Uint8Array.from(memory(c,out,size));
+  for(let frame=0;frame<120&&c.session_value(f,0)===1;++frame)assert.equal(c.session_step(f,0,0,0),1,error());
+  memory(c,data,size).set(replay);
+  assert.equal(c.session_play(f,data,size,9),1,error());
+  for(let frame=0;frame<states.length;++frame){
+   assert.equal(c.session_step(f,0,0,0),1,error());
+   assert.deepEqual(replayState(),states[frame],'Deciding-frame replay '+frame);
+  }
+  assert.equal(c.session_decided_winner(f),winner);
+  report('deciding-frame-replay',{passed:true,frames:states.length,winner,bytes:size,rngPreserved:true});
+ }finally{c.session_delete(f);c.release(name);c.release(data);c.release(out);}
+});

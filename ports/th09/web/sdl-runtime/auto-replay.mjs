@@ -41,12 +41,16 @@ export function createAutoReplay({core, saveRoot, options, enabled, sync, notice
       if (match && Number.isSafeInteger(frame) && frame > match.roundStarts.at(-1) && match.roundStarts.length < 10)
         match.roundStarts.push(frame);
     },
-    end(frame, winner) {
+    end(frame, winner, replay) {
       const keepLocal = options().netplayReplayAutoSave !== false;
       if (!enabled() || options().netplaySpectator || (!keepLocal && !publish) ||
-          !match || frame <= match.frame || frame === lastEnd || ![0, 1].includes(winner)) return;
+          !match || frame <= match.frame || lastEnd >= 0 || ![0, 1].includes(winner)) return;
       lastEnd = frame;
       try {
+        if (replay) {
+          publish?.(match.frame, replay);
+          if (!keepLocal) return;
+        }
         const folder = match.names[match.opponent].replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, '_').slice(0, 128).replace(/[. ]+$/g, '') || `P${match.opponent + 1}`;
         const directory = `${saveRoot}/replay/${folder}`;
         const encoded = new TextEncoder().encode(folder);
@@ -62,8 +66,9 @@ export function createAutoReplay({core, saveRoot, options, enabled, sync, notice
           if (![base + '.rpy', base + '.rpyx', base + '.json'].some(name => occupied.has(name))) break;
         }
         if (slot > 0xffff) throw Error('自动保存 Replay 失败：录像存储已满，请下载并整理旧录像');
-        if (!core._th09_auto_save_replay(slot)) throw Error('自动保存 Replay 失败，请在游戏内手动保存');
         const path = `${directory}/th9_ud${slot.toString(16).padStart(4, '0')}.rpy`;
+        if (replay) core.FS.writeFile(path, replay);
+        else if (!core._th09_auto_save_replay(slot)) throw Error('自动保存 Replay 失败，请在游戏内手动保存');
         if (!keepLocal) {
           try {publish(match.frame, core.FS.readFile(path));}
           finally {
@@ -75,7 +80,7 @@ export function createAutoReplay({core, saveRoot, options, enabled, sync, notice
         writeMatch(path, {schema: 'eagler-touhou/th09-match-replay/1', names: match.names,
           startedAt: match.startedAt, frames: frame - match.frame, winner,
           roundStarts: match.roundStarts.filter(offset => offset < frame - match.frame)});
-        publish?.(match.frame, core.FS.readFile(path));
+        if (!replay) publish?.(match.frame, core.FS.readFile(path));
         const label = match.names.join(' vs ');
         // Capture synchronously before another match can replace the recording.
         // A flush failure must not terminate the player's connection.
