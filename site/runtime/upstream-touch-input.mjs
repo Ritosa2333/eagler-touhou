@@ -103,6 +103,21 @@ export class TouchInput {
     }
     if(cancelled)this.tap=null;
   }
+  // Predict only the next display pose. Input sampling and collision still
+  // consume a single fixed-step command from the actual live drag.
+  previewDirectMotion(state,phase,{arrows=false,keyFocused=false}={}){
+    const drag=this.primary,mode=this.options.touchMovementMode;
+    if(!drag||drag.blocked||drag.instance!==state.instance||this.context!==state.key||!state.ready||state.paused
+      ||state.kind!=='game'||arrows||!this.options.touchEnabled||(mode!=='touch'&&mode!=='touch-unlimited'))return null;
+    let dx=Math.trunc(drag.targetX)-state.x,dy=Math.trunc(drag.targetY)-state.y;
+    if(mode==='touch'){
+      const speed=(this.focused()||keyFocused)?state.slow:state.fast,length=Math.hypot(dx,dy);
+      if(length>speed){dx*=speed/length;dy*=speed/length;}
+      dx=Math.trunc(dx);dy=Math.trunc(dy);
+    }
+    const blend=clamp(phase,0,1)/128;
+    return {x:dx*blend,y:dy*blend,generation:state.generation};
+  }
   sample(state,{arrows=false,keyFocused=false,now=performance.now()}={}){
     this.sync(state);const pulses=this.pending;this.pending=0;
     if(!this.options.touchEnabled)return {held:0,pressed:0,motion:null};

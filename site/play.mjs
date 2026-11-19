@@ -1059,7 +1059,16 @@ function highFramerateWorldView(world,records,alpha=1){
   if(!highFramerateOwnerMatches()){resetHighFrameratePresentation();return current;}
   const sample=typeof highFramerateHistory.sampleForDraw==='function'?highFramerateHistory.sampleForDraw(alpha):highFramerateHistory.sample(alpha);
   if(!sample||sample.frame!==world.frame)return current;
-  return {records:sample.records,background:state.background?{geometry:()=>sample.background}:null,interpolated:alpha<1};
+  // The direct pilot uses the current native pose and the latest finger target.
+  // The rest of the scene still interpolates the two committed World frames.
+  const touch=!state.replayPlayback?state.webInput?.previewDirectMotion?.(alpha):null;
+  const displayed=touch&&touch.generation===world.flow?.worldGeneration&&world.playerState===1
+    ?sample.records.map((draw,index)=>{
+      const raw=records[index];
+      return raw.id===4000000||raw.id===4000001||(raw.id>=14000000&&raw.id<15000000)
+        ?{...draw,x:raw.x+touch.x,y:raw.y+touch.y}:draw;
+    }):sample.records;
+  return {records:displayed,background:state.background?{geometry:()=>sample.background}:null,interpolated:alpha<1};
 }
 function setHighFramerateMode(enabled){
   if(typeof enabled!=='boolean')throw new Error('Invalid high framerate mode');
@@ -4599,7 +4608,7 @@ function installWebInput(){
       return owner;
     },
     isEnabled:()=>Boolean(state.active||menu.launching||state.normalPostrun||state.endingHost||menu.fault),
-    storage:touchStorage,options:{...launchOptions,thpracEnabled:state.thpracUIEnabled!==false},zoomEnabled:localConfig?.layoutZoom??true,viewport:find('#gameViewport'),
+    storage:touchStorage,options:{...launchOptions,thpracEnabled:state.thpracUIEnabled!==false,touchUtilityShortcuts:!localConfig},zoomEnabled:localConfig?.layoutZoom??true,viewport:find('#gameViewport'),
     getGameContext:()=>{
       const module=state.module;
       const t=state.worldMode&&module?._th128_world_touch_state?JSON.parse(module.UTF8ToString(module._th128_world_touch_state())):null;
@@ -4611,6 +4620,8 @@ function installWebInput(){
       return{key:[state.action,menu.launchId,menu.page,generation,playerState,kind].join(':'),kind,
         instance:[state.action,generation,playerState].join(':'),gestureScope:state.action,
         ready:kind==='game'&&playerState===1,paused:!!blocked,generation,
+        keyFocused:state.pressed.has('ShiftLeft')||state.pressed.has('ShiftRight')||t?.focused===true,
+        arrowsHeld:state.pressed.has('ArrowLeft')||state.pressed.has('ArrowRight')||state.pressed.has('ArrowUp')||state.pressed.has('ArrowDown'),
         x:Math.trunc((t?.x??s?.playerX??0)*128),y:Math.trunc((t?.y??s?.playerY??400)*128),fast:576,slow:256,trackerAvailable:false};
     },
     onTouchMotion:motion=>{

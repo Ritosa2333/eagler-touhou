@@ -34,6 +34,44 @@ test('original layout model edits scale and position with separate orientation s
  const s=e.input.touchSnapshot();assert.equal(s.layout.saved.profiles.landscape.controls.fire.scale,2.5);assert.equal(s.layout.saved.profiles.portrait.controls.fire.x,.7);assert(e.data.size>0);
  e.input.beginTouchLayout('landscape');e.input.updateTouchLayout('fire',{scale:99});assert.equal(e.input.touchSnapshot().layout.draft.profiles.landscape.controls.fire.scale,3);e.input.endTouchLayout();assert.equal(e.input.touchSnapshot().layout.saved.profiles.landscape.controls.fire.scale,2.5);e.input.dispose();
 });
+test('Z and X shape edits use the same per-orientation save as position and scale',()=>{
+ const e=fixture();e.input.beginTouchLayout('landscape');
+ const selector=e.node('touchLayoutSelected'),shape=e.node('touchLayoutShape');assert(shape,'Layout offers button shapes');
+ selector.value='function';selector.dispatchEvent({type:'change'});shape.value='rectangle';shape.dispatchEvent({type:'change'});
+ e.input.updateTouchLayout('function',{x:.2,y:.7,scale:1.35});
+ selector.value='bomb';selector.dispatchEvent({type:'change'});shape.value='square';shape.dispatchEvent({type:'change'});
+ assert.equal(e.node('touchFunction').getAttribute('data-touch-shape'),'rectangle');
+ assert.equal(e.node('touchBomb').getAttribute('data-touch-shape'),'square');
+ e.input.saveTouchLayout();e.input.endTouchLayout();
+ e.input.beginTouchLayout('portrait');assert.equal(e.node('touchBomb').getAttribute('data-touch-shape'),'circle');
+ e.input.endTouchLayout();e.input.beginTouchLayout('landscape');
+ const z=e.input.touchSnapshot().layout.draft.profiles.landscape.controls.function;
+ assert.equal(z.shape,'rectangle');assert.deepEqual([z.x,z.y,z.scale],[.2,.7,1.35]);e.input.dispose();
+});
+test('an editing preview accepts Z/X selection and dragging without sending gameplay keys',()=>{
+ const e=fixture({touchEnabled:false});e.input.beginTouchLayout('landscape');
+ assert.equal(e.input.layer.style.display,'block');assert.equal(e.node('touchDirectSurface').style.pointerEvents,'none');
+ for(const [id,name] of [['touchFunction','function'],['touchBomb','bomb']]){
+  const button=e.node(id);e.emit(button,'pointerdown',1,250,300,'mouse');e.emit(button,'pointermove',1,350,400,'mouse');e.emit(button,'pointerup',1,350,400,'mouse');
+  assert.equal(e.input.touchSnapshot().layout.selected,name);assert(!e.keys.has('KeyX')&&!e.keys.has('KeyZ'));
+ }
+ e.input.endTouchLayout();e.input.configureTouch({touchEnabled:true});
+ assert.equal(e.node('touchDirectSurface').style.pointerEvents,'auto');
+ e.emit(e.node('touchFunction'),'pointerdown',1);assert(e.keys.has('KeyZ'));e.emit(e.node('touchFunction'),'pointerup',1);assert(!e.keys.has('KeyZ'));e.input.dispose();
+});
+test('direct player display samples the live target between ticks without submitting input or ignoring the speed cap',()=>{
+ for(const mode of ['touch','touch-unlimited']){
+  const e=fixture({touchMovementMode:mode,touchSensitivity:100}),pad=e.node('touchDirectSurface');
+  e.emit(pad,'pointerdown',5,640,480);e.emit(pad,'pointermove',5,680,480);
+  const a=e.input.previewDirectMotion(.25),b=e.input.previewDirectMotion(.75);
+  assert.equal(a.generation,7);assert.equal(a.y,0);assert.equal(b.y,0);
+  assert.equal(b.x,a.x*3);assert.equal(b.x,mode==='touch'?3.375:15);
+  assert.equal(e.commands.length,0);assert.equal(e.keys.size,0);
+  e.key('keydown','ArrowLeft');assert.equal(e.input.previewDirectMotion(.5),null);e.key('keyup','ArrowLeft');
+  e.input.sampleTouch();assert.equal(e.commands.at(-1).x,2560);
+  e.emit(pad,'pointercancel',5,680,480);assert.equal(e.input.previewDirectMotion(.5),null);e.input.dispose();
+ }
+});
 test('the launch master switch also blocks touch practice shortcuts without blocking ordinary controls',()=>{
  const e=fixture({thpracEnabled:false,thpracTouchControlsEnabled:true,restartButtonEnabled:true});
  assert.equal(e.node('touchThpracMenu').hidden,true);

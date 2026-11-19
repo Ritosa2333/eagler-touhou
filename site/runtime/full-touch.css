@@ -803,3 +803,11 @@
 .touch-windows-root :is(#touchSettings,#touchLayoutEditor) :is(.touch-layout-arrangement,.touch-layout-settings-list,.touch-layout-setting-row){width:100%;min-width:0;box-sizing:border-box}
 .touch-windows-root :is(#touchSettings,#touchLayoutEditor) .touch-layout-setting-row{display:flex;flex-flow:row wrap;align-items:center;justify-content:space-between;gap:8px;padding:4px 0}
 .touch-windows-root :is(#touchSettings,#touchLayoutEditor) .touch-layout-setting-row>span{max-width:100%;min-width:0}
+.web-input-full.touch-layout-edit:not(.touch-enabled) .touch-hud :is(#touchFire,#touchFunction,#touchBomb,#touchFocus){min-width:44px;min-height:44px}
+.web-input-full .touch-hud :is(#touchFunction,#touchBomb)[data-touch-shape="square"]{border-radius:4px}
+.web-input-full .touch-hud :is(#touchFunction,#touchBomb)[data-touch-shape="rectangle"]{width:104px;border-radius:6px}
+.web-input-full .touch-hud :is(#touchFunction,#touchBomb){text-align:center;align-items:center}
+.web-input-full .touch-hud :is(#touchFunction,#touchBomb) :is(strong,small){color:#ff626d;text-shadow:0 1px 2px #210007}
+.web-input-full .touch-hud :is(#touchFunction,#touchBomb) strong{font:700 13px/1.1 var(--ui-font)}
+.web-input-full .touch-hud #touchFire strong{letter-spacing:0;white-space:nowrap;font-size:10px}
+.touch-windows-root .touch-layout-shape{display:flex;align-items:center;gap:8px;white-space:nowrap}

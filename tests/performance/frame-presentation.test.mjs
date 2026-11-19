@@ -54,7 +54,7 @@ function presentationHarness(){
  const state={worldMode:true,shotMode:true,active:true,paused:false,handoff:false,endingHost:null,endingLoading:false,normalPostrun:null,
   stageSelection:{stage:{id:1}},background:{tick(){},geometry:()=>[]},frame:0,autoFlow:false,extraPresentation:null};
  state.module={UTF8ToString:v=>v,
-  _th128_world_state(){calls.states++;return JSON.stringify({frame:state.frame,flow:{currentId:1}});},
+  _th128_world_state(){calls.states++;return JSON.stringify({frame:state.frame,playerState:1,flow:{currentId:1,worldGeneration:7}});},
   _th128_world_bullet_draws(){calls.draws++;return JSON.stringify([{id:4000000,drawPass:'player',x:state.frame*2,y:400,bank:1,entry:0,sprite:0}]);},
   _th128_world_bullet_draw_error:()=>''};
  class CountedHistory extends WorldPresentationInterpolator{
@@ -89,4 +89,12 @@ test('60 Hz fixed mode keeps its original tick and presentation counts',async()=
  const h=presentationHarness();await h.present(0);
  for(let tick=1;tick<=60;tick++)await h.present(tick*1000/60);
  assert.equal(h.calls.ticks,60);assert.equal(h.calls.presentations.length,60);assert.equal(h.calls.captures,0);assert.equal(h.calls.states,60);
+});
+test('live direct touch draws ahead of the old player frame without advancing World or changing playback',async()=>{
+ const h=presentationHarness();let reads=0;
+ h.state.webInput={syncContext(){},previewDirectMotion:phase=>{++reads;return {x:4*phase,y:0,generation:7};}};
+ h.setHighFramerateMode(true);await h.present(0);await h.present(1000/60);await h.present(1000/40);
+ assert.equal(h.calls.ticks,1);assert.equal(Math.round(h.calls.presentations.at(-1).x*1000),4000);
+ const prior=reads;h.state.replayPlayback={};await h.present(1000/36);
+ assert.equal(reads,prior);assert(h.calls.presentations.at(-1).x<2,'Replay uses normal display interpolation');
 });

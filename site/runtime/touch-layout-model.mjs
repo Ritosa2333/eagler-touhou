@@ -3,18 +3,20 @@ export const touchLayoutVersion = 6;
 
 export const touchLayoutControlMeta = Object.freeze({
   focus: Object.freeze({ id: "touchFocus", title: "低速", titleKey: "touch.focus", priority: 0 }),
-  fire: Object.freeze({ id: "touchFire", title: "开火", titleKey: "touch.fire", priority: 1 }),
-  bomb: Object.freeze({ id: "touchBomb", title: "Bomb", priority: 2 }),
+  fire: Object.freeze({ id: "touchFire", title: "自动开火", titleKey: "touch.fire", priority: 1 }),
+  bomb: Object.freeze({ id: "touchBomb", title: "X 完美冻结", priority: 2 }),
   joystick: Object.freeze({ id: "touchJoystick", title: "摇杆", titleKey: "touch.movement.joystick", priority: 3 }),
   escape: Object.freeze({ id: "touchEscape", title: "ESC", priority: 4 }),
   restart: Object.freeze({ id: "touchRestart", title: "R", priority: 5 }),
-  function: Object.freeze({ id: "touchFunction", title: "特殊功能", titleKey: "touch.specialFunction", priority: 5.5 }),
+  function: Object.freeze({ id: "touchFunction", title: "Z", titleKey: "touch.specialFunction", priority: 5.5 }),
   thpracTab: Object.freeze({ id: "touchThpracTab", title: "Tab", priority: 6 }),
   thpracMenu: Object.freeze({ id: "touchThpracMenu", title: "作弊和高级设置", titleKey: "touch.cheatsAndSettings", priority: 7 }),
 });
 
 export const touchLayoutScaleMin = 0.6;
 export const touchLayoutScaleMax = 3;
+export const touchButtonShapes = Object.freeze(['circle','square','rectangle']);
+export const hasTouchButtonShape = name => name==='bomb'||name==='function';
 export const touchLayoutOrientations = Object.freeze(["landscape", "portrait"]         );
 
 export const touchLayoutControlNames = Object.freeze(Object.keys(touchLayoutControlMeta)                            );
@@ -83,6 +85,8 @@ function normalizeTouchLayoutProfile(profile         )                          
       scale,
       priority: finiteNumber(priority) ? priority : touchLayoutControlMeta[name].priority,
     };
+    // Optional metadata so existing layouts retain the same coordinates and scale.
+    if (hasTouchButtonShape(name) && touchButtonShapes.includes(rawItem.shape)) controls[name].shape=rawItem.shape;
   }
 
   const rawViewport = profile.viewport == null ? { x: 0 } : profile.viewport;

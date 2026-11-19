@@ -87,6 +87,8 @@ struct UpdateDecision {
 
 std::optional<Geometry> circleGeometry(Vec2 bulletPosition, float hitboxSize,
                                       Vec2 playerPosition, float profileHitRadius) noexcept;
+std::optional<bool> circleSweepHit(Vec2 bulletPosition, float hitboxSize, Vec2 from,
+                                  Vec2 to, float profileHitRadius) noexcept;
 std::optional<RectangleDecision> rectangleDecision(Vec2 center, Vec2 fullSize,
                                                   PlayerSnapshot player, ControlSnapshot control) noexcept;
 std::optional<CircleDecision> circleDecision(Vec2 center, float hitboxSize,

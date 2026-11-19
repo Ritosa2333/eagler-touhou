@@ -19,7 +19,8 @@ bool updateBulletWithKnownMisses(Birth& bullet,BulletVisuals& visuals,BulletVisu
                                  const GrazeCallback& graze,const HitCallback& hit,const CancellationCallback& cancellation,const ExtensionSound& sound,
                                  const Manager::NestedEmitter& nestedEmitter,
                                  const std::function<const Profile*(int)>& profileForType,
-                                 const RestartCallback& restart,const EnemySpawnCallback& spawnEnemy) {
+                                 const RestartCallback& restart,const EnemySpawnCallback& spawnEnemy,
+                                 const std::optional<Position>& playerPathStart) {
     removed=false;error.clear();
     if(bullet.updateExecuting){if(bullet.extensionFailure.empty())bullet.extensionFailure="bullet update reentered";error=bullet.extensionFailure;return false;}
     if(!bullet.extensionFailure.empty()){error=bullet.extensionFailure;return false;}
@@ -321,9 +322,18 @@ bool updateBulletWithKnownMisses(Birth& bullet,BulletVisuals& visuals,BulletVisu
         if(!(pending->next.flags&0x10U)||(pending->next.flags&0x40U)) {
             error="unimplemented rectangular or scaled bullet collision context";return false;
         }
-        const auto geometry=collision::circleGeometry({pending->next.position.x,pending->next.position.y},
+        const collision::Vec2 center{pending->next.position.x,pending->next.position.y};
+        auto geometry=collision::circleGeometry(center,
             bullet.state.hitboxSize,{player.x,player.y},profileHitRadius);
         if(!geometry){error="unsupported bullet/player collision numeric domain";return false;}
+        // Only this newer unlimited-touch rule sweeps hits. Graze and all
+        // normal or legacy Replay motion keep their original endpoints.
+        if(playerPathStart&&*geometry!=collision::Geometry::PotentialHit){
+            const auto hitOnPath=collision::circleSweepHit(center,bullet.state.hitboxSize,
+                {playerPathStart->x,playerPathStart->y},{player.x,player.y},profileHitRadius);
+            if(!hitOnPath){error="unsupported swept touch collision domain";return false;}
+            if(*hitOnPath)geometry=collision::Geometry::PotentialHit;
+        }
         if(*geometry==collision::Geometry::PotentialHit) {
             if(!hit){error="unimplemented player hit gate/damage lifecycle";return false;}
             const auto returned=hit(bullet,error);

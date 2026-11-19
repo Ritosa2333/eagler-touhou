@@ -9,14 +9,16 @@ struct TouchMotion {
     std::int32_t x=0,y=0;
     bool operator==(const TouchMotion&) const=default;
 };
+inline constexpr unsigned SweptUnlimitedTouch = 4;
+inline bool unlimitedTouch(unsigned mode) noexcept {return mode==2||mode==SweptUnlimitedTouch;}
 inline bool validTouch(TouchMotion command) noexcept {
     if(command.mode==0)return command.x==0&&command.y==0;
-    if(command.mode==1||command.mode==2)return command.x>=MinimumHorizontalRaw&&command.x<=MaximumHorizontalRaw
+    if(command.mode==1||unlimitedTouch(command.mode))return command.x>=MinimumHorizontalRaw&&command.x<=MaximumHorizontalRaw
         &&command.y>=MinimumVerticalRaw&&command.y<=MaximumVerticalRaw;
     return command.mode==3&&command.x>=-32767&&command.x<=32767&&command.y>=-32767&&command.y<=32767;
 }
 inline bool usedUnlimitedTouchMovement(RawPosition before,const Movement& movement,TouchMotion command,Input input) noexcept {
-    return command.mode==2&&!(input.holding&(UpKey|DownKey|LeftKey|RightKey))
+    return unlimitedTouch(command.mode)&&!(input.holding&(UpKey|DownKey|LeftKey|RightKey))
         &&(movement.position.horizontal!=before.horizontal||movement.position.vertical!=before.vertical);
 }
 inline Movement moveTouch(Movement base,RawPosition position,TouchMotion command) noexcept {

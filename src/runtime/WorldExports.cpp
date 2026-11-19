@@ -179,6 +179,7 @@ struct NativeTouchOwner {
     std::vector<std::array<std::int32_t,4>> events;
 };
 NativeTouchOwner nativeTouch;
+std::optional<th128::bullet::Position> sweptTouchStart;
 struct OrdinaryReplayAuxiliaryOwner {
     bool active=false;
     unsigned generation=0,worldFrames=0,cursor=0;
@@ -2342,7 +2343,7 @@ int th128_world_enable_bullet_updates(const void* shot,std::uint32_t size) {
                 return true;
             },[](const th128::bullet::Birth& birth,const th128::bullet::ExtensionRaw& record,int index,std::string& reason){
                 return world->spawnBulletExtensionEnemy(birth,record,index,reason);
-            });
+            },sweptTouchStart);
         if(removed)bulletAnimations.erase(bullet.id);
         return success;
     },operationError))return 0;
@@ -2436,7 +2437,11 @@ int th128_world_touch_motion(unsigned mode,int x,int y,unsigned generation){
         ||!th128::player::validTouch(command)){
         operationError="touch movement requires current live native owner, valid raw command and unlocked input";return 0;
     }
-    nativeTouch.generation=generation;nativeTouch.command=command;return 1;
+    nativeTouch.generation=generation;nativeTouch.command=command;
+    // Keep historical Replay command 2 endpoint-only; new live commands are
+    // recorded as 4 so the same replay always uses the same collision rules.
+    if(mode==2)nativeTouch.command.mode=th128::player::SweptUnlimitedTouch;
+    return 1;
 }
 int th128_world_touch_playback(const void* data,unsigned size,unsigned generation){
     operationError.clear();
@@ -4382,7 +4387,16 @@ int th128_world_tick(){
         if(!auxiliary){operationError="practice replay MSG auxiliary ownership unknown";return 0;}
         normalReplayAuxiliary=*auxiliary;
     }
-    struct TickGuard {bool& flag;explicit TickGuard(bool& value):flag(value){flag=true;}~TickGuard(){flag=false;}} tickGuard(worldTickExecuting);
+    struct TickGuard {
+        bool& flag;
+        explicit TickGuard(bool& value):flag(value){flag=true;}
+        ~TickGuard(){sweptTouchStart.reset();flag=false;}
+    } tickGuard(worldTickExecuting);
+    const auto noteTouchMovement=[&](const th128::player::Movement& movement){
+        if(!th128::player::usedUnlimitedTouchMovement(playerRaw,movement,nativeTouch.command,playerInput))return;
+        assistedTouchMovement=true;
+        if(nativeTouch.command.mode==th128::player::SweptUnlimitedTouch)sweptTouchStart=world->playerAimPosition();
+    };
     if(normalTerminal.transition.bound()){
         if(!normalTerminal.transition.tickBattle(worldGeneration,world->frame()+1,ordinaryGlobalTaskControls(),operationError)){world->reportRuntimeFault(operationError);return 0;}
         projectOrdinaryGlobalFade();
@@ -4586,7 +4600,7 @@ int th128_world_tick(){
             if(playerHit->snapshot().gate.stateF78==1&&playerMotion){
                 const auto movement=playerHit->moveUnit(playerRaw,playerInput,{rapidShotConfigured,rapidShotConfigured,playerHit->focusCounter(),playerFireConfigured?playerHit->snapshot().heldTimer.current:0},operationError,nativeTouch.command);
                 if(!movement){world->reportRuntimeFault(operationError);return 0;}
-                assistedTouchMovement|=th128::player::usedUnlimitedTouchMovement(playerRaw,*movement,nativeTouch.command,playerInput);
+                noteTouchMovement(*movement);
                 playerFocused=movement->focused;playerRaw=movement->position;const auto moved=th128::player::toPixels(playerRaw);
                 if(!world->setPlayerAimPosition({moved.horizontal,moved.vertical,respawnSavedPosition.depth},operationError)){world->reportRuntimeFault(operationError);return 0;}
             }else if(!playerHit->advanceAnimationUnit(operationError)){world->reportRuntimeFault(operationError);return 0;}
@@ -4597,7 +4611,7 @@ int th128_world_tick(){
                 const auto movement=playerHit->moveUnit(playerRaw,playerInput,
                     {rapidShotConfigured,rapidShotConfigured,playerHit->focusCounter(),playerFireConfigured?playerHit->snapshot().heldTimer.current:0},operationError,nativeTouch.command);
                 if(!movement){world->reportRuntimeFault(operationError);return 0;}
-                assistedTouchMovement|=th128::player::usedUnlimitedTouchMovement(playerRaw,*movement,nativeTouch.command,playerInput);
+                noteTouchMovement(*movement);
                 playerFocused=movement->focused;playerRaw=movement->position;
                 const auto pixel=th128::player::toPixels(playerRaw);
                 if(!world->setPlayerAimPosition({pixel.horizontal,pixel.vertical,0},operationError)){world->reportRuntimeFault(operationError);return 0;}
@@ -4922,7 +4936,7 @@ const char* th128_world_touch_state(){
     th128::runtime::DrawJsonWriter text;
     text<<"{\"generation\":"<<worldGeneration<<",\"state\":"<<(playerConfigured?playerHit->snapshot().gate.stateF78:-1)
         <<",\"x\":"<<pos.x<<",\"y\":"<<pos.y<<",\"dialogue\":"<<(dialogue?"true":"false")
-        <<",\"route\":"<<(selection?"true":"false")<<'}';
+        <<",\"route\":"<<(selection?"true":"false")<<",\"focused\":"<<(playerFocused?"true":"false")<<'}';
     result=text.str();return result.c_str();
 }
 const char* th128_world_state() {

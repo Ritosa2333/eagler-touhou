@@ -182,6 +182,20 @@ std::optional<Geometry> circleGeometry(Vec2 bulletPosition, float hitboxSize,
     return evaluated->geometry;
 }
 
+std::optional<bool> circleSweepHit(Vec2 bullet, float size, Vec2 from, Vec2 to, float radius) noexcept {
+    if(!coordinate(from)||!coordinate(to)||!coordinate(bullet)||!bounded(size)||!bounded(radius)||size<0||radius<0)
+        return std::nullopt;
+    const double reach=double(size)+radius;
+    if(bullet.horizontal < std::min(from.horizontal,to.horizontal)-reach||bullet.horizontal > std::max(from.horizontal,to.horizontal)+reach
+        ||bullet.vertical < std::min(from.vertical,to.vertical)-reach||bullet.vertical > std::max(from.vertical,to.vertical)+reach)
+        return false;
+    const double dx=double(to.horizontal)-from.horizontal,dy=double(to.vertical)-from.vertical,length=dx*dx+dy*dy;
+    const double t=length?std::clamp(((double(bullet.horizontal)-from.horizontal)*dx+(double(bullet.vertical)-from.vertical)*dy)/length,0.,1.):0.;
+    const auto result=circleGeometry(bullet,size,{float(from.horizontal+t*dx),float(from.vertical+t*dy)},radius);
+    if(!result)return std::nullopt;
+    return *result==Geometry::PotentialHit;
+}
+
 std::optional<RectangleDecision> rectangleDecision(Vec2 center, Vec2 fullSize,
                                                   PlayerSnapshot player, ControlSnapshot control) noexcept {
     if (!bounded(center) || !nonnegative(fullSize) || !bounded(player)) return std::nullopt;

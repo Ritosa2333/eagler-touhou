@@ -6,6 +6,10 @@ test('native touch trailer becomes aligned modern USER with exact signed command
  const{raw,stage}=sample(),block=nativeTouchReplayBlock(raw,[stage]);assert.equal(block.kind,0x31484354);assert.equal(block.raw.length%4,0);assert.equal(new DataView(block.raw.buffer).getUint32(0,true),0x52455355);
  assert.deepEqual(readTouchReplay({userBlocks:[block],stages:[stage]}),[{stage:3,worldFrames:2,events:[[0,1,-576,51200],[1,0,0,0]]}]);
 });
+test('legacy unlimited and swept unlimited stay distinct across RPY encoding',()=>{
+ const events=[[0,2,-23552,4096],[1,4,23552,55296]],{stage,raw}=sample(events),block=nativeTouchReplayBlock(raw,[stage]);
+ assert.deepEqual(readTouchReplay({userBlocks:[block],stages:[stage]})[0].events,events);
+});
 test('malformed touch frame order, raw domain and nonzero USER padding are rejected',()=>{
  for(const events of [[[1,1,0,51200],[0,0,0,0]],[[0,2,999999,51200]],[[2,0,0,0]],[[0,4,0,0]]]){const{raw,stage}=sample(events);assert.throws(()=>nativeTouchReplayBlock(raw,[stage]));}
  const{raw,stage}=sample(),b=nativeTouchReplayBlock(raw,[stage]);b.data[b.data.length-1]=1;assert.throws(()=>readTouchReplay({userBlocks:[b],stages:[stage]}));

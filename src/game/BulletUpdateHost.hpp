@@ -16,5 +16,5 @@ bool updateBulletWithKnownMisses(Birth& bullet,BulletVisuals& visuals,BulletVisu
                                  const Manager::NestedEmitter& nestedEmitter={},
                                  const std::function<const Profile*(int)>& profileForType={},
                                  const RestartCallback& restart={},
-                                 const EnemySpawnCallback& spawnEnemy={});
+                                 const EnemySpawnCallback& spawnEnemy={},const std::optional<Position>& playerPathStart={});
 }

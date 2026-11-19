@@ -1,7 +1,7 @@
 import {
   canonicalTouchLayout, cloneTouchLayout, cloneTouchLayoutProfile, emptyTouchLayout, loadTouchLayoutFromStorage,
   normalizeTouchLayoutPriorityOrder, persistTouchLayoutResult, touchLayoutControlMeta,
-  touchLayoutControlNames, touchLayoutScaleMax, touchLayoutScaleMin,
+  touchLayoutControlNames, touchLayoutScaleMax, touchLayoutScaleMin, touchButtonShapes, hasTouchButtonShape,
 
 } from './touch-layout-model.mjs';
 import {createTouchLayoutWindowPositionStore} from './touch-layout-editor-state.mjs';
@@ -103,6 +103,7 @@ export function createTouchLayoutModel({storage}                                
       if (update.x != null) item.x = Math.min(1, Math.max(0, update.x));
       if (update.y != null) item.y = Math.min(1, Math.max(0, update.y));
       if (update.scale != null) item.scale = Math.min(touchLayoutScaleMax, Math.max(touchLayoutScaleMin, update.scale));
+      if (hasTouchButtonShape(name) && touchButtonShapes.includes(update.shape)) item.shape=update.shape;
       publish();
     },
     setViewport(x        ) {profile().viewport.x = Math.max(-.5, Math.min(.5, x)); publish();},

@@ -14,7 +14,7 @@ body[data-local-runtime] .screen{margin-inline:auto}
 }
 body[data-local-runtime] .screen:is(:fullscreen,.player-viewport-full){height:100%}
 .web-input-full{opacity:1}
-.web-input-full :is(.touch-hud,.touch-joystick,.touch-escape,.touch-restart,.touch-thprac-menu){opacity:var(--touch-control-opacity,.8)}
+.web-input-full :is(.touch-hud>button,.touch-joystick,.touch-escape,.touch-restart,.touch-thprac-menu){opacity:var(--touch-control-opacity,.8)}
 .web-input-full .touch-utility-row{right:max(8px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));flex-direction:column;gap:5px}
 body[data-local-runtime] .web-input-full .touch-utility-row{top:calc(max(8px,env(safe-area-inset-top)) + 132px)}
 .web-input-full .touch-utility-row button{min-height:36px;max-width:68px;border-color:#ffffff26;border-radius:8px;background:#1f2024;color:#e5e5e9;white-space:normal}

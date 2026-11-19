@@ -3,7 +3,7 @@ const KIND=0x31484354,SCHEMA='th128-touch-replay/1';
 export function validTouchMotion(mode,x,y){
  if(![mode,x,y].every(Number.isSafeInteger))return false;
  if(mode===0)return x===0&&y===0;
- if(mode===1||mode===2)return x>=-23552&&x<=23552&&y>=4096&&y<=55296;
+ if(mode===1||mode===2||mode===4)return x>=-23552&&x<=23552&&y>=4096&&y<=55296;
  return mode===3&&x>=-32767&&x<=32767&&y>=-32767&&y<=32767;
 }
 function plans(value,stages){
