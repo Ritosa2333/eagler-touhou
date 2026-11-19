@@ -169,6 +169,11 @@ const control = await session('none');
 check('granted: desynchronized===true', control.attributes?.desynchronized === true,
   JSON.stringify(control.attributes));
 check('granted: powerPreference===high-performance', control.attributes?.powerPreference === 'high-performance');
+// 透明度前置：desynchronized 的覆盖层直送路径只在**不透明**画布（alpha:false）
+// 上真实生效——透明画布即使属性被授予，多数平台也不会进入旁路。SDL3 本就
+// 以 alpha:false 创建本作上下文；此处锁定该前置不被未来改动静默破坏（否则
+// 容器授予仍绿、真实平台失去收益，成为盲区）。
+check('granted: alpha===false（不透明画布——覆盖层直送的前置）', control.attributes?.alpha === false);
 check('presentation() 与 getContextAttributes 同源一致',
   control.presentation?.desynchronized === (control.attributes?.desynchronized === true) &&
   control.presentation?.powerPreference === (control.attributes?.powerPreference ?? null),
