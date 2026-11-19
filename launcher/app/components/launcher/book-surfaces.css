@@ -76,7 +76,6 @@ body:not(.mp-room-active) .multiplayer-rule-tabs-shell {background:var(--book-su
 body:not(.mp-room-active) .multiplayer-rule-game-tabs {background:var(--book-bg)}
 body:not(.mp-room-active) .multiplayer-rule-game-tab {color:var(--book-muted)}
 body:not(.mp-room-active) .multiplayer-rule-game-tab.selected {background:var(--book-accent-soft);color:var(--book-accent)}
-.server-status-note {top:auto;bottom:0;padding-bottom:max(3px,env(safe-area-inset-bottom))}
 :is(.tools[data-options-panel],.mp-settings-room-drawer) .library-back svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8}
 
 }

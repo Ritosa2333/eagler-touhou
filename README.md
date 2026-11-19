@@ -12,6 +12,7 @@
     <a href="launcher/LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg?style=flat-square" alt="License: GPL-3.0-or-later"></a>
   </p>
   <p>简体中文 | <a href="README.en.md">English</a></p>
+  <p><a href="launcher/docs/SELF_HOSTING.md">自托管与部署</a> | <a href="WORKSPACE.md">工作区</a></p>
 </div>
 
 > [!WARNING]
@@ -181,13 +182,7 @@ WASD 布局保留原键位：方向键 / WASD 移动，Z / K 射击，X / J 使�
 
 ## 自托管
 
-部署者可以根据资源和带宽条件选择三种模式：
-
-- **Hosted**：站点直接提供启动器、运行组件和全部游戏资源。玩家可以直接安装，部署最集中，站点需要承担全部资源流量。
-- **External**：用户站点提供启动器和运行组件，游戏大文件由单独的完整资源站或 CDN 提供。玩家仍可直接安装，前端服务器无需承担大文件流量。
-- **Import**：站点只提供启动器和运行组件，不发布原版游戏数据。玩家导入自己合法持有的游戏包 ZIP，适合没有 CDN 流量预算或不希望托管原版资源的部署者。
-
-三种模式共用同一套前端、浏览器本地游戏包和离线运行能力。自托管站点默认是游客模式，不接账号服务也能联机。完整部署方法见[自托管指南](launcher/docs/SELF_HOSTING.md)。
+已有站点产物时，把目录内容放到 HTTPS 文档根目录。拿到自托管包或只有源码时，先按[部署指南](launcher/docs/SELF_HOSTING.md)组装站点。指南也列出了外置资源、玩家导入和独立联机服务的入口。
 
 ## 参与开发
 

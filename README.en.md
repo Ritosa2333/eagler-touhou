@@ -12,6 +12,7 @@
     <a href="launcher/LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg?style=flat-square" alt="License: GPL-3.0-or-later"></a>
   </p>
   <p><a href="README.md">简体中文</a> | English</p>
+  <p><a href="#deployment">Deployment</a> | <a href="WORKSPACE.md">Workspace</a></p>
 </div>
 
 > [!WARNING]
@@ -153,7 +154,20 @@ Operators can choose among three modes based on their resources and bandwidth:
 - **External**: the user-facing site serves the Launcher and Runtime components, while a separate complete resource site or CDN serves large game files. Players can still install games directly without sending large-file traffic through the frontend server;
 - **Import**: the site serves only the Launcher and Runtime components and does not publish original game data. Players import a ZIP made from their legally owned game copy. This suits operators without a CDN traffic budget or who do not want to host original resources.
 
-All three modes share the same frontend, browser-local game packages, and offline-play support. Self-hosted sites run in guest mode by default, and multiplayer works without an account service. See the [self-hosting guide](launcher/docs/SELF_HOSTING.md) for complete deployment instructions.
+All three modes share the same frontend, browser-local game packages, and offline-play support. A guest site can use multiplayer with its own Relay.
+
+## Deployment
+
+If you have an assembled site, publish its contents at the HTTPS document root. If you have a SelfHost ZIP, extract it, add your original game files under `games/<game-id>/`, and run these commands from the extracted directory with Node.js 22.18+ and Python 3:
+
+```sh
+npm ci --ignore-scripts
+npm run host:doctor
+npm run host:build -- --site-url=https://play.example.org/
+npm run verify:server -- dist/site
+```
+
+If Python is installed as `python3`, add `--python=python3` to the build command after npm's `--`. Use your own URL and publish `dist/site/`. The [deployment guide](launcher/docs/SELF_HOSTING.md) covers source builds, separate asset hosting, player-imported packages, and multiplayer.
 
 ## Contributing
 
