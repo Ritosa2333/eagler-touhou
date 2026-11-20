@@ -31,7 +31,7 @@ export const catalogPages: readonly CatalogPage[] = [
     name: '游戏书库',
     area: '浏览',
     href: './',
-    views: ['封面 / 列表', '桌面作品详情', '中文 / English / 日本語'],
+    views: ['封面 / 列表', '桌面作品详情 / 手机底部详情卡', '中文 / English / 日本語'],
     regions: [
       region(
         'find',
@@ -47,6 +47,7 @@ export const catalogPages: readonly CatalogPage[] = [
         ['number', '作品名后的小号灰字编号', '亮暗对比、窄屏标题截断'],
         ['favorite', '收藏操作', '黄色已收藏星形、未收藏、点击回弹、键盘焦点'],
         ['detail', '桌面作品详情', '左栏导航保留、封面与作品标题、启动与导入、各作设置、直接链接及返回'],
+        ['mobile-detail', '手机底部详情卡', '滑入与收起、完整封面与作品名、统计留空、设置折叠、启动与导入默认展开、减少动画'],
         ['recent', '最近游玩', '桌面紧凑封面与作品信息，悬停或聚焦时一起移动；手机横向排列方形封面，聚焦时轻微放大；封面与列表视图文字一致、无记录、打开作品选项'],
       ),
       region(

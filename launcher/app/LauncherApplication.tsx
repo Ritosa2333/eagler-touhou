@@ -164,11 +164,13 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const inlineProduct = host.desktopLibraryDetails && !compact && !accountPage && !profilePage &&
     optionsOpen && navigation.context === 'library' && selectedProduct?.id === navigation.productId &&
     !selectedProduct.multiplayer ? selectedProduct : undefined;
+  const bookSheet = !!(host.desktopLibraryDetails && compact && navigation.context === 'library' && !accountPage && !profilePage);
   const presence = useLibraryOptionsPresence({
     open: optionsOpen && !inlineProduct,
     context: navigation.context,
     product: selectedProduct,
     lessMotion: host.lessMotion === true,
+    bookSheet,
     concealed:
       !!inlineProduct || ((host.runtimeOpen === true || host.runtimeLaunched === true || host.replayWorkspace === true) &&
       navigation.surface !== 'touch'),
@@ -266,6 +268,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       multiplayerOnline={host.multiplayerOnline}
       lobbyHref={host.lobbyHref}
       embeddedInLobby={navigation.context === 'lobby'}
+      bookSheet={bookSheet && !presence.product.multiplayer}
       actions={host.optionsActions}
     >
       {settingsBody}
@@ -358,7 +361,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       {!accountPage && !profilePage && navigation.context === 'library' && (
         <>
           {host.serverStatusNote}
-          {!inlineProduct && <OptionsBackdrop onBack={navigation.closeSurface} />}
+          {!inlineProduct && <OptionsBackdrop onBack={navigation.closeSurface} bookSheet={bookSheet} />}
           {host.replayWorkspace && !roomOpen ? null : settingsPanel}
         </>
       )}

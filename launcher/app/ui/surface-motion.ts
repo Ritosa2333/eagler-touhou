@@ -1,7 +1,7 @@
 import {animate} from 'motion/mini';
 
 export type SurfacePhase = 'enter' | 'exit';
-export type SurfaceKind = 'panel' | 'dialog' | 'menu' | 'backdrop' | 'content' | 'toast';
+export type SurfaceKind = 'panel' | 'sheet' | 'dialog' | 'menu' | 'backdrop' | 'content' | 'toast';
 export interface SurfaceAnimation {
   finished: Promise<void>;
   cancel(): void;
@@ -20,14 +20,15 @@ const windowTiming = {
   enter: {duration: 245, ease: [.258, 1, .491, 1] as Easing},
   exit: {duration: 150, ease: [1 / 3, 0, 2 / 3, 0] as Easing},
 };
-const distances: Record<SurfaceKind, number> = {panel: 0, dialog: 6, menu: 4, backdrop: 0, content: 0, toast: 6};
+const distances: Record<SurfaceKind, number> = {panel: 0, sheet: 0, dialog: 6, menu: 4, backdrop: 0, content: 0, toast: 6};
 const active = new WeakMap<HTMLElement, Map<string, SurfaceAnimation>>();
 
 export function surfaceMotionTokens(element: HTMLElement, kind: SurfaceKind = 'panel', phase: SurfacePhase = 'enter') {
   const style = element.ownerDocument.defaultView!.getComputedStyle(element);
   const windowSurface = kind === 'dialog' || kind === 'backdrop';
-  const timing = windowSurface ? windowTiming[phase] : {duration: 180, ease: defaultEase};
-  const timingPrefix = windowSurface ? `--ui-window-${phase}` : '--ui-surface';
+  const timing = kind === 'sheet' ? {duration: phase === 'enter' ? 320 : 220, ease: windowTiming[phase].ease}
+    : windowSurface ? windowTiming[phase] : {duration: 180, ease: defaultEase};
+  const timingPrefix = kind === 'sheet' ? `--ui-sheet-${phase}` : windowSurface ? `--ui-window-${phase}` : '--ui-surface';
   const rawDuration = style.getPropertyValue(`${timingPrefix}-duration`).trim();
   const parsedDuration = Number.parseFloat(rawDuration);
   const duration = Number.isFinite(parsedDuration)
@@ -83,9 +84,10 @@ export function animateSurface(element: HTMLElement, phase: SurfacePhase, option
   const timing = surfaceMotionTokens(element, options.kind, phase);
   const {distance, scale} = timing;
   const opening = phase === 'enter';
-  const offset = distance ? `0 ${distance}px` : undefined;
+  const slide = options.kind === 'sheet';
+  const offset = slide ? '0 100%' : distance ? `0 ${distance}px` : undefined;
   const keyframes = {
-    opacity: [currentOpacity || (opening ? options.kind === 'content' ? '.25' : '0' : '1'), opening ? '1' : '0'],
+    opacity: slide ? ['1', '1'] : [currentOpacity || (opening ? options.kind === 'content' ? '.25' : '0' : '1'), opening ? '1' : '0'],
     ...(offset ? {translate: [currentTranslate && currentTranslate !== 'none' ? currentTranslate : opening ? offset : '0 0', opening ? '0 0' : offset]} : {}),
     ...(scale && scale !== '1' ? {scale: [currentScale && currentScale !== 'none' ? currentScale : opening ? scale : '1', opening ? '1' : scale]} : {}),
   };

@@ -352,4 +352,113 @@
       display: none;
     }
   }
+
+  @media (max-width: 780px) {
+    .library-backdrop[data-book-sheet-backdrop]::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgb(0 0 0 / .52);
+      pointer-events: none;
+    }
+    .tools[data-options-panel][data-book-sheet] {
+      top: auto;
+      bottom: calc(100dvh - var(--options-view-height, 100dvh) - var(--options-view-top, 0px));
+      height: auto !important;
+      max-height: calc(var(--options-view-height, 100dvh) - max(env(safe-area-inset-top), min(18dvh, 120px)));
+      border-radius: 20px 20px 0 0;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      box-shadow: 0 -12px 40px rgb(0 0 0 / .2);
+    }
+    .tools[data-book-sheet] .tools-head {
+      display: grid;
+      flex: none;
+      grid-template-columns: clamp(68px, 25vw, 116px) minmax(0, 1fr);
+      align-items: center;
+      gap: 16px;
+      padding: 22px max(54px, env(safe-area-inset-right)) 22px max(18px, env(safe-area-inset-left));
+      touch-action: manipulation;
+      border-bottom: 1px solid var(--kit-border);
+    }
+    .tools[data-book-sheet] .book-sheet-art {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      mask-image: linear-gradient(to right, transparent 12%, #000);
+      opacity: .23;
+      z-index: -1;
+    }
+    .tools[data-book-sheet] :is(.options-cover, .book-sheet-cover-fallback) {
+      position: static;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1;
+      object-fit: contain;
+      background: var(--kit-muted);
+      border-radius: 8px;
+      z-index: auto;
+    }
+    .book-sheet-cover-fallback { display: grid; place-items: center; color: var(--kit-muted-foreground); }
+    .tools[data-book-sheet] .tools-title { position: static; gap: 4px; }
+    .tools[data-book-sheet] .tools-title::before { display: none; }
+    .tools[data-book-sheet] .tools-head h3 {
+      font-size: clamp(17px, 4.4vw, 23px);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .tools[data-book-sheet] .tools-title p {
+      margin: 0;
+      color: var(--kit-muted-foreground);
+      overflow-wrap: anywhere;
+    }
+    .tools[data-book-sheet] .library-back {
+      top: 8px;
+      right: max(8px, env(safe-area-inset-right));
+      width: 44px;
+      height: 44px;
+    }
+    .tools[data-book-sheet] .options-scroll { flex: 0 1 auto; padding: 0; }
+    .book-sheet-section { border-bottom: 1px solid var(--kit-border); }
+    .book-sheet-section > h4 { margin: 0; }
+    .tools[data-book-sheet] .book-sheet-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      min-height: 52px;
+      border: 0;
+      border-radius: 0;
+      padding-block: 0;
+      padding-inline: max(18px, env(safe-area-inset-left)) max(18px, env(safe-area-inset-right));
+      background: transparent;
+      color: inherit;
+      text-align: start;
+      font: 650 15px / 1.4 var(--kit-font);
+      touch-action: manipulation;
+    }
+    .tools[data-book-sheet] .book-sheet-toggle[aria-expanded="true"] { background: var(--kit-muted); }
+    .book-sheet-toggle:focus-visible { outline-offset: -3px; }
+    .book-sheet-toggle svg { transition: rotate 200ms var(--ui-surface-easing); }
+    .book-sheet-toggle[aria-expanded="true"] svg { rotate: 180deg; }
+    .book-sheet-fold {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 220ms var(--ui-surface-easing);
+    }
+    .book-sheet-fold[data-open="true"] { grid-template-rows: 1fr; }
+    .book-sheet-fold-clip { min-height: 0; overflow: clip; }
+    .book-sheet-fold-clip > .options-settings { padding-inline: 18px; }
+    .book-sheet-fold-clip > .launch-actions { border-top: 0; padding-block: 10px; }
+    .book-sheet-fold-clip > .launch-actions .launch { min-height: 44px; }
+    .less-motion :is(.book-sheet-fold, .book-sheet-toggle svg) { transition: none; }
+    @media (prefers-reduced-motion: reduce) {
+      :is(.book-sheet-fold, .book-sheet-toggle svg) { transition: none; }
+    }
+  }
+  @media (max-width: 780px) and (max-height: 520px) {
+    .tools[data-book-sheet] .tools-head { grid-template-columns: 68px minmax(0, 1fr); padding-block: 12px; }
+  }
 }

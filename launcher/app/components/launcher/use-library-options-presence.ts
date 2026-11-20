@@ -12,6 +12,7 @@ export interface LibraryOptionsPresenceInput {
   product: LibraryProduct | undefined;
   /** The document-lived site preference, supplied by its existing owner. */
   lessMotion: boolean;
+  bookSheet?: boolean;
   /** Running game conceals its retained settings without a home-close motion. */
   concealed?: boolean;
   /** Focus the options only while they are the foreground surface. */
@@ -35,6 +36,7 @@ export function useLibraryOptionsPresence({
   context,
   product,
   lessMotion,
+  bookSheet = false,
   concealed = false,
   focusActive = true,
 }: LibraryOptionsPresenceInput): LibraryOptionsPresence {
@@ -103,8 +105,9 @@ export function useLibraryOptionsPresence({
     }
   });
   const phase = presence.open && !concealed ? (presence.closing ? 'exit' : 'enter') : null;
+  const slide = bookSheet && !presence.product?.multiplayer;
   useSurfaceMotion(panel, phase, {
-    kind: compact ? 'panel' : 'dialog',
+    kind: slide ? 'sheet' : compact ? 'panel' : 'dialog',
     reduced: lessMotion,
     onComplete() {
       if (!presence.closing) return;
@@ -113,7 +116,7 @@ export function useLibraryOptionsPresence({
       setPresence((current) => ({ ...current, open: false, closing: false }));
     },
   });
-  useSurfaceMotion(backdrop, phase, { kind: compact ? 'panel' : 'backdrop', reduced: lessMotion });
+  useSurfaceMotion(backdrop, phase, { kind: compact && !slide ? 'panel' : 'backdrop', reduced: lessMotion });
   useLayoutEffect(() => {
     if (!presence.open || !presence.product?.id || concealed || !focusActive) return;
     restoreFocus();

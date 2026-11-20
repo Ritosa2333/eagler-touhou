@@ -2394,6 +2394,14 @@
     "id": "library_back",
     "params": []
   },
+  "library.statistics": {
+    "id": "library_statistics",
+    "params": []
+  },
+  "library.launchAndImport": {
+    "id": "library_launchAndImport",
+    "params": []
+  },
   "library.quickNav": {
     "id": "library_quickNav",
     "params": []

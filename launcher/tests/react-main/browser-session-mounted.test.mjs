@@ -1320,6 +1320,48 @@ test('desktop book opens one inline game detail and keeps the library controls m
   await until(() => env.document.querySelector('.book-view-covers .book-card[data-book-card="th06"]'), 'desktop can switch back to covers');
 });
 
+test('mobile book opens a bottom sheet with empty statistics and the original settings and launch actions', async t => {
+  const matchMedia = env.window.matchMedia;
+  t.onTestFinished(() => {env.window.matchMedia = matchMedia;});
+  env.window.matchMedia = query => {
+    const media = matchMedia.call(env.window, query);
+    if (query === '(max-width: 780px)') Object.defineProperty(media, 'matches', {value: true});
+    return media;
+  };
+  await mountBrowser({initial: '/', touchDevice: true, mobileDevice: true, host: subsetHost(['th06', 'th07'])});
+  const card = '.book-grid [data-book-product="th06"]';
+  await click(card);
+  const sheet = node('.tools[data-book-sheet][data-state="open"]');
+  assert.equal(sheet.getAttribute('aria-modal'), 'true');
+  assert.equal(node('.game-library').hasAttribute('inert'), true);
+  assert.equal(env.document.querySelector('[data-game-detail]'), null);
+  const section = name => `[data-book-sheet-section="${name}"]`;
+  const trigger = name => `${section(name)} button[aria-expanded]`;
+  const fold = name => node(`${section(name)} .book-sheet-fold`);
+  assert.equal(fold('statistics').textContent, '');
+  assert.equal(fold('settings').hasAttribute('inert'), true);
+  assert.equal(fold('launch').hasAttribute('inert'), false);
+  node(`${section('launch')} #launch`);
+  node(`${section('launch')} #gamePackageImport`);
+  await click(trigger('settings'));
+  node(`${section('settings')} .options-settings`);
+  assert.equal(fold('settings').hasAttribute('inert'), false);
+  await click(trigger('settings'));
+  assert.equal(fold('settings').hasAttribute('inert'), true);
+  await click('#gamePackageImport');
+  await until(() => !node('#gameDataImportWindow').hidden, 'mobile sheet opens the real import dialog');
+  await click('#gameDataImportClose');
+  await until(() => node('#gameDataImportWindow').hidden, 'import closes back to the sheet');
+  await click('#libraryBack');
+  await until(() => !visibleOptions(), 'mobile sheet closes back to the book');
+  assert.equal(node('.game-library').hasAttribute('inert'), false);
+  node(`.book-view-covers ${card}`);
+  await click(card);
+  await click(`${section('launch')} #launch`);
+  await until(() => node('#decisionDialog').open, 'mobile sheet starts the existing touch confirmation flow');
+  assert.match(node('#decisionTitle').textContent, /touch controls/i);
+});
+
 for (const preview of ['touch', 'touch-hud']) test(`actual BrowserLauncher: boot ${preview} is a one-time preference override before Host, with no native or history side effects`, async () => {
   const initial = `/?game=th07&preview=${preview}&keep=a%20b#retained`;
   const f = await mountBrowser({initial, holdHost: true, host: subsetHost(['th07']), seedStorage(storage) {
