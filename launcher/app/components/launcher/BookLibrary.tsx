@@ -39,7 +39,6 @@ import {useLibraryMotion} from './use-library-motion';
 import {useCompactNavigation} from '../../navigation/navigation-motion';
 
 type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & {
-  desktopList?: boolean;
   detail?: ReactNode;
   onBrowse?: () => void;
 };
@@ -53,11 +52,10 @@ const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
 ];
 
 /** Product membership, settings activation and persistence stay with their existing owners. */
-export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, desktopList = false, detail, onBrowse }: Props) {
+export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, detail, onBrowse }: Props) {
   const { t } = useLocale(),
     [search] = useSearchParams();
   const compact = useCompactNavigation();
-  const listOnly = desktopList && !compact;
   const showDetail = detail != null;
   const previousDetail = useRef<string | undefined>(undefined);
   const [category, setCategory] = useState<BookCategory>('all');
@@ -67,7 +65,6 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   const [query, setQuery] = useState(''),
     [sort, setSort] = useState('number');
   const [view, setView] = useState<'covers' | 'list'>('covers');
-  const displayView = listOnly ? 'list' : view;
   const [resultsMinHeight, setResultsMinHeight] = useState(0);
   const [favorites, setFavorites] = useState<string[]>([]),
     [recent, setRecent] = useState<string[]>([]);
@@ -77,10 +74,10 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   useLayoutEffect(() => {
     const previous = previousDetail.current;
     previousDetail.current = showDetail ? openedProduct : undefined;
-    if (showDetail || !previous || !listOnly || document.activeElement !== document.body) return;
+    if (showDetail || !previous || compact || document.activeElement !== document.body) return;
     const target = results.current?.querySelector<HTMLElement>(`[data-book-product="${previous}"]`);
     (target ?? input.current)?.focus({ preventScroll: true });
-  }, [showDetail, openedProduct, listOnly]);
+  }, [showDetail, openedProduct, compact]);
   const {run: animateLibraryChange, cancel: cancelLibraryMotion} = useLibraryMotion(results);
   function reserveResultsSpace() {
     if (!results.current) return;
@@ -181,7 +178,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     .filter((product): product is LibraryProduct => !!product)
     .slice(0, 20);
   return (
-    <div className={`book-library book-view-${displayView}`} data-desktop-list={desktopList || undefined} data-ui-kit="home">
+    <div className={`book-library book-view-${view}`} data-ui-kit="home">
       <aside className="book-sidebar" aria-label={t('library.categories')}>
         <div className="book-search-slot">
           <InputGroup className="book-search min-[781px]:focus-within:ring-inset">
@@ -228,7 +225,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
               reserveResultsSpace();
               const next = value as BookCategory;
               const nextIds = new Set(filterBookProducts(products, next, favorites, query, sort).map(product => product.id));
-              animateLibraryChange(() => setCategory(next), displayView === 'covers' ? nextIds : undefined);
+              animateLibraryChange(() => setCategory(next), view === 'covers' ? nextIds : undefined);
               if (showDetail) onBrowse?.();
             }
           }}

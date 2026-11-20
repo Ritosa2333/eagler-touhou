@@ -122,7 +122,6 @@ function InitialSurface({ lobby, profile, account }: { lobby: boolean; profile: 
       onSelect={inactive}
       onActivate={inactive}
       optionsOpen={false}
-      desktopList
     />
   );
 }

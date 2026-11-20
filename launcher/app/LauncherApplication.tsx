@@ -336,7 +336,6 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
             onActivate={activate}
             masthead={null}
             optionsOpen={!inlineProduct && presence.open}
-            desktopList={host.desktopLibraryDetails}
             onBrowse={browseLibrary}
             detail={inlineProduct && (
               <BookGameDetail

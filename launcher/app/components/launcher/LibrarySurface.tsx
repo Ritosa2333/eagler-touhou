@@ -7,7 +7,6 @@ import {SiteFooter} from './SiteFooter';
 export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> {
   masthead: ReactNode;
   optionsOpen: boolean;
-  desktopList?: boolean;
   detail?: ReactNode;
   onBrowse?: () => void;
   roomOpen?: boolean;

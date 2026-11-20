@@ -1292,6 +1292,8 @@ function visibleOptions() {return env.document.querySelector('[data-game-detail]
 test('desktop book opens one inline game detail and keeps the library controls mounted', async () => {
   const f = await mountBrowser({initial: '/', host: subsetHost(['th06', 'th07'])});
   const search = node('#librarySearch');
+  node('.book-view-covers .book-card[data-book-card="th06"] .book-art');
+  node('.book-view-covers .book-card[data-book-card="th06"] .book-identity');
   await click('[data-book-category-disclosure="windows"]');
   await click('.book-grid [data-book-product="th06"]');
   await until(() => !!env.document.querySelector('[data-game-detail="th06"] #launch'), 'TH06 has a start action');
@@ -1304,9 +1306,18 @@ test('desktop book opens one inline game detail and keeps the library controls m
   assert.equal(new URLSearchParams(f.router.state.location.search).get('game'), 'th07');
   assert.equal(env.document.querySelectorAll('#launch').length, 1);
   await click('#libraryBack');
-  await until(() => !visibleOptions(), 'book returns to the list');
+  await until(() => !visibleOptions(), 'book returns to the cover grid');
   assert.equal(node('#librarySearch'), search);
+  node('.book-view-covers .book-card[data-book-card="th06"]');
   assert.equal(node('[data-book-category-disclosure="windows"]').getAttribute('aria-expanded'), 'true');
+  await click('.book-view-switch [data-book-view="list"]');
+  await until(() => env.document.querySelector('.book-view-list .book-card[data-book-card="th06"]'), 'desktop can switch to list view');
+  await click('.book-grid [data-book-product="th06"]');
+  await until(() => env.document.querySelector('[data-game-detail="th06"] #launch'), 'detail also opens from list view');
+  await click('#libraryBack');
+  await until(() => env.document.querySelector('.book-view-list .book-card[data-book-card="th06"]'), 'returning preserves list view');
+  await click('.book-view-switch [data-book-view="covers"]');
+  await until(() => env.document.querySelector('.book-view-covers .book-card[data-book-card="th06"]'), 'desktop can switch back to covers');
 });
 
 for (const preview of ['touch', 'touch-hud']) test(`actual BrowserLauncher: boot ${preview} is a one-time preference override before Host, with no native or history side effects`, async () => {
