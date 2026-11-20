@@ -94,7 +94,57 @@ try {
     await page.waitForSelector(sheet, {hidden: true});
     await page.close();
   }
-  console.log('PASS: desktop room entry alignment, mobile room actions, and light/dark mobile settings hierarchy');
+
+  const resize = await browser.newPage();
+  await resize.setViewport({width: 1440, height: 540});
+  await resize.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
+  await resize.goto(origin, {waitUntil: 'domcontentloaded'});
+  const card = '#bookGameGrid [data-book-product="th01"]';
+  const detail = '[data-game-detail="th01"]';
+  const sheet = '.tools[data-book-sheet][data-state="open"]';
+  await resize.waitForSelector(card, {visible: true});
+  await resize.click(card);
+  await resize.waitForSelector(`${detail} #launch`, {visible: true});
+  const selectedUrl = resize.url(), historyLength = await resize.evaluate(() => history.length);
+  await resize.$eval(`${detail} .book-game-detail-settings`, node => node.scrollIntoView({block:'end'}));
+  for (const width of [390, 1440, 390, 1440, 390]) {
+    await resize.setViewport({width, height: 540});
+    const compact = width === 390;
+    const surface = compact ? sheet : detail;
+    await resize.waitForSelector(`${surface} #launch`, {visible: true});
+    const state = await resize.$eval(surface, node => {
+      const rect = node.getBoundingClientRect();
+      return {
+        bottomOffset: Math.abs(rect.bottom - innerHeight),
+        animations: [...node.getAnimations(), ...node.parentElement.getAnimations()].map(animation => ({
+          id: animation.id, frames: animation.effect.getKeyframes(),
+        })),
+        launchCount: document.querySelectorAll('#launch').length,
+        grid: !!document.querySelector('#bookGameGrid'),
+        libraryInert: document.querySelector('.game-library').inert,
+        focus: document.activeElement.id,
+        historyLength: history.length,
+      };
+    });
+    assert.deepEqual(state.animations, [], `${width}px resize must not start a navigation animation`);
+    if (compact) assert.ok(state.bottomOffset <= 1, 'The first mobile sheet frame is already pinned to the viewport');
+    assert.equal(state.launchCount, 1, 'Only the active surface owns the game controls');
+    assert.equal(state.grid, compact);
+    assert.equal(state.libraryInert, compact);
+    assert.equal(state.focus, compact ? 'libraryBack' : 'gameTitle');
+    assert.equal(state.historyLength, historyLength);
+    assert.equal(resize.url(), selectedUrl);
+  }
+  await resize.goBack();
+  await resize.waitForFunction(() => !new URLSearchParams(location.search).has('game'));
+  await resize.setViewport({width: 1440, height: 540});
+  await resize.waitForSelector(card, {visible: true});
+  assert.equal(await resize.evaluate(() =>
+    document.querySelector('.game-library').inert ||
+    document.body.classList.contains('library-tools-closing') ||
+    !!document.querySelector('[data-game-detail]')), false, 'Resize must retire an exiting mobile sheet');
+  await resize.close();
+  console.log('PASS: room action alignment, mobile settings hierarchy, and desktop/mobile detail handoff');
 } finally {
   await browser.close();
 }

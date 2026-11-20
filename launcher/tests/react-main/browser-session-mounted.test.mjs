@@ -700,16 +700,30 @@ test('actual BrowserLauncher: fullscreen locks Escape before delayed native prep
   assert.equal(f.fullscreen,null);assert.equal(calls.at(-1).type,'unlock');
 });
 
-test('actual BrowserLauncher: fullscreen exit during native preparation conceals options; Back cancels before configure or launch', async () => {
+for (const compact of [false, true]) test(`actual BrowserLauncher: fullscreen exit during native preparation conceals options (compact=${compact}); Back cancels before configure or launch`, async t => {
+  const matchMedia = env.window.matchMedia;
+  t.onTestFinished(() => {env.window.matchMedia = matchMedia;});
+  env.window.matchMedia = query => {
+    const media = matchMedia.call(env.window, query);
+    if (query === '(max-width: 780px)') Object.defineProperty(media, 'matches', {value: compact});
+    return media;
+  };
   const f = await mountBrowser({autoReady: false}); await start();
   await until(() => f.navigations.some(url => url !== 'about:blank'), 'actual native preparation started');
-  const frame=node('#gameFrame'),panel=node('[data-options-panel]'),url=currentUrl();
+  const surface = compact ? '[data-options-panel][data-book-sheet]' : '[data-game-detail="th06"]';
+  const frame=node('#gameFrame'),panel=node(surface),url=currentUrl();
+  const assertInactive = () => {
+    assert.equal(node(surface),panel);
+    assert.equal(panel.hasAttribute('inert'),true);
+    if (compact) assert.equal(panel.dataset.state,'closed');
+    else assert.equal(env.document.querySelector('[data-options-panel]'),null);
+  };
   assert.equal(api.getTestSession().getRuntime().getSnapshot().launched,false);
-  assert.equal(panel.dataset.state,'closed');assert.equal(panel.hasAttribute('inert'),true);
+  assertInactive();
   await React.act(async()=>env.document.exitFullscreen());await tick();
   assert.equal(f.fullscreen,null);assert.equal(playerOpen(),true);
   assert.equal(node('#gameFrame'),frame);assert.equal(currentUrl(),url);
-  assert.equal(node('[data-options-panel]'),panel);assert.equal(panel.dataset.state,'closed');assert.equal(panel.hasAttribute('inert'),true);
+  assertInactive();
   await back(); await until(() => !playerOpen(), 'Back closes unlaunched Player');
   await React.act(async () => {f.native.emit('ready');}); await tick();
   assert.equal(commands().includes('configure'), false); assert.equal(commands().includes('launch'), false);

@@ -36,9 +36,9 @@ import { bookArtwork } from './book-artwork';
 import {impressFavorite} from './ink-feedback';
 import { BookWorkNumber } from './BookWorkNumber';
 import {useLibraryMotion} from './use-library-motion';
-import {useCompactNavigation} from '../../navigation/navigation-motion';
 
 type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & {
+  compact?: boolean;
   detail?: ReactNode;
   onBrowse?: () => void;
   onDetailExit?: () => void;
@@ -53,16 +53,16 @@ const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
 ];
 
 /** Product membership, settings activation and persistence stay with their existing owners. */
-export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, detail, onBrowse, onDetailExit }: Props) {
+export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, compact = false, detail, onBrowse, onDetailExit }: Props) {
   const { t } = useLocale(),
     [search] = useSearchParams();
-  const compact = useCompactNavigation();
-  const showDetail = detail != null;
+  const showDetail = !compact && detail != null;
   const detailId = showDetail ? openedProduct : undefined;
   const [retainedDetail, setRetainedDetail] = useState<{id: string; node: ReactNode} | null>(null);
   const displayedDetail = showDetail ? detail : compact ? null : retainedDetail?.node;
   const displayedDetailId = showDetail ? detailId : compact ? undefined : retainedDetail?.id;
   const previousDetail = useRef(displayedDetailId);
+  const previousCompact = useRef(compact);
   const [category, setCategory] = useState<BookCategory>('all');
   // Keep a visited list mounted while its height animates back to zero.
   const [disclosures, setDisclosures] = useState<ReadonlyMap<BookCategory, boolean>>(() => new Map());
@@ -99,6 +99,8 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   }, [showDetail, displayedDetailId, compact, onDetailExit]);
   useLayoutEffect(() => {
     const previous = previousDetail.current;
+    const resized = previousCompact.current !== compact;
+    previousCompact.current = compact;
     previousDetail.current = displayedDetailId;
     if (compact || previous === displayedDetailId) return;
     if (displayedDetailId) cancelLibraryMotion();
@@ -107,7 +109,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
       (target ?? input.current)?.focus({ preventScroll: true });
     }
     const panel = content.current?.firstElementChild;
-    if (!panel?.animate || panel.closest('.less-motion') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (resized || !panel?.animate || panel.closest('.less-motion') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const animation = panel.animate(
       [{opacity: 0, translate: '0 8px'}, {opacity: 1, translate: '0 0'}],
       {id: displayedDetailId ? 'book-detail-enter' : 'book-grid-enter', duration: 240, easing: 'cubic-bezier(.22,.7,.2,1)'},

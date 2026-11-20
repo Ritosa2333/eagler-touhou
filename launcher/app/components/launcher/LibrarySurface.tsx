@@ -7,6 +7,7 @@ import {SiteFooter} from './SiteFooter';
 export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> {
   masthead: ReactNode;
   optionsOpen: boolean;
+  compact?: boolean;
   detail?: ReactNode;
   onBrowse?: () => void;
   onDetailExit?: () => void;

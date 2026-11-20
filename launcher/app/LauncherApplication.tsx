@@ -347,6 +347,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
             onActivate={activate}
             masthead={null}
             optionsOpen={!inlineProduct && presence.open}
+            compact={compact}
             onBrowse={browseLibrary}
             onDetailExit={onDetailExit}
             detail={inlineProduct && (
