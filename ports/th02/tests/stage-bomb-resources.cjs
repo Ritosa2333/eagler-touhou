@@ -21,7 +21,7 @@ const files = new Map(JSON.parse(pack.subarray(12, headerSize)).files.map(entry 
 // supplied by the harness, so resource loading is identical to a match.
 const harness = `
 {
-let frame=0,stage4Start,marisaStart,issued=0,pending=null,shared;
+let frame=0,stage4Start,marisaStart,issued=0,pending=null,shared,bonusAt;
 const artCounts=[0,0,0],piSizes=[24416,44928,71040];
 sync.resourceQA=(steps)=>{
  const m=emulator.module,h=m.HEAPU8,v=new DataView(h.buffer);
@@ -32,6 +32,11 @@ sync.resourceQA=(steps)=>{
   const put=(at,size,value)=>{m.thDirtyMark?.(at,size);if(size===1)h[at]=value;else v.setInt16(at,value,true);};
   const stage=state?.stage,phase=h[ds+0x19f6],bomb=h[ds+0x3e44];
   const input=Array(players).fill((phase||stage===4)&&frame%8<4?32:0);
+  if(bonusActive()){
+   bonusAt??=frame;
+   if(sync.canPredict()||sync.touchContext().play)throw Error('Stage bonus is not a confirmed menu');
+   input.fill(0);if(frame===bonusAt+24){input[1]=32;observed.bonusConfirmed=true;}
+  }
   shared??=word(0x3e50);
   if(stage===3){
    if(word(0x3e50)!==shared)throw Error('BOMBS.BFT was reallocated');
@@ -80,7 +85,7 @@ sync.resourceQA=(steps)=>{
  }
  return {frame,issued,artCounts,...observed};
 };
-const observed={enemies:0,background:0,boss:0};
+const observed={enemies:0,background:0,boss:0,bonusConfirmed:false};
 }
 `;
 
@@ -146,6 +151,7 @@ const server = createServer((req, res) => {
       if (outcome.enemies && outcome.background > 200 && outcome.boss > 100) break;
     }
     assert.equal(outcome.issued, 24);
+    assert.equal(outcome.bonusConfirmed, true);
     assert.deepEqual(outcome.artCounts, players === 2 ? [0, 0, 24] : [0, 12, 12]);
     assert(outcome.enemies && outcome.background > 200 && outcome.boss > 100, JSON.stringify(outcome));
     console.log('PASS', language, players, outcome);
