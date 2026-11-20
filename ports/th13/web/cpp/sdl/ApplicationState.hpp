@@ -7,6 +7,7 @@
 #include "../game/TitleSpellPracticeMenu.hpp"
 #include "../game/SpellCatalog.hpp"
 #include "../game/SpellElapsedTime.hpp"
+#include "../game/PracticeSession.hpp"
 
 namespace th13::sdl {
 
@@ -302,6 +303,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // Original two-surface game composition; no gameplay-coordinate shortcut.
     std::unique_ptr<PlayfieldTargets> playfield_targets;
     i32 pending_destination = -1, selected_stage = 1, current_destination = 13;
+    th13::PracticeRequest practice;
     u32 frames = 0;
     // 回放调试会话（th13_debug_* 帧泵驱动；正常标题流不经过）。输入流以
     // 0x448200 节奏逐帧接管 controls——装载态/难度/角色取自录像头，直入对局。
@@ -453,6 +455,8 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool sound(i32) override;
     bool begin_transition(u32&) override;
     bool start_game(i32 stage) override;
+    void set_practice(bool enabled, i32 section, i32 life, i32 bomb, i32 power, i32 trance);
+    i32 practice_stage() const;
     bool start_spell_practice(const SpellPracticeCommand&) override;
     bool can_start_spell_practice(const SpellPracticeCommand&) const override;
     bool record_menu_views() const override { return true; }

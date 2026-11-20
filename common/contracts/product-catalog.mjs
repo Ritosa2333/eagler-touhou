@@ -632,6 +632,8 @@ export const PRODUCT_GAMES = Object.freeze({
             "directory-keyboard.mjs",
             "runtime-assets.mjs",
             "low-latency-canvas.mjs",
+            "language-pack.mjs",
+            "practice-catalog.mjs",
             "startup-branding.mjs",
             "th13-sdl.mjs",
             "th13-sdl.wasm",
@@ -654,7 +656,7 @@ export const PRODUCT_GAMES = Object.freeze({
             loadouts: TH13_MULTIPLAYER_LOADOUTS, peerTransportGlobal: "__th13PeerTransport",
             spectator: true, titleRoomEntry: false,
         }),
-        features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
+        features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
     }),
     th14: Object.freeze({
         testOnly: true,

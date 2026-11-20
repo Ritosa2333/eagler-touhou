@@ -79,6 +79,19 @@ bool ApplicationState::begin_transition(u32& animation) {
     return true;
 }
 
+void ApplicationState::set_practice(bool enabled, i32 section, i32 life, i32 bomb, i32 power, i32 trance) {
+    practice.enabled = enabled;
+    practice.section = section;
+    practice.life = life;
+    practice.bomb = bomb;
+    practice.power = power;
+    practice.trance = trance;
+}
+i32 ApplicationState::practice_stage() const {
+    if (!practice.enabled) return 0;
+    return th13::resolve_practice(practice, selected_stage).stage;
+}
+
 bool ApplicationState::start_game(i32 stage) {
     selected_stage = stage;
     // 新局/Retry 不能沿用上一局的零残机、灵力、得分；换关则不经过此入口。
@@ -113,6 +126,14 @@ bool ApplicationState::start_game(i32 stage) {
     // 0x42d404 写 [esi+0x50]=0xc8 → DAT_004be808=200；符卡练习 mode==2
     // 随后 0x42bbfd 清零。helper 按 run_mode_flags bit4-5 分流（0x20→0，其余→200）。
     trance_reset_fresh_entry(progress);
+    if (practice.enabled) {
+        const auto effect = th13::resolve_practice(practice, stage);
+        if (effect.section) selected_stage = effect.stage;
+        if (effect.life >= 0) selection_player.extra_lives = effect.life;
+        if (effect.bomb >= 0) selection_player.bombs = effect.bomb;
+        if (effect.power >= 0) selection_player.power = effect.power;
+        if (effect.trance >= 0) progress.ending_points = effect.trance;
+    }
     progress.run_mode_flags &= ~kTranceActiveFlag;
     progress.stage_clear_bonus = 0;
     progress.good_endings = 0;

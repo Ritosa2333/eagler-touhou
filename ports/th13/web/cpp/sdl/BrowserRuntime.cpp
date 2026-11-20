@@ -441,6 +441,14 @@ EMSCRIPTEN_KEEPALIVE void th13_always_hitbox(unsigned enabled) {
     if (th13::sdl::app) th13::sdl::app->renderer.always_hitbox = enabled != 0;
 }
 
+EMSCRIPTEN_KEEPALIVE void th13_practice_set(int enabled, int section, int life, int bomb, int power, int trance) {
+    if (th13::sdl::app) th13::sdl::app->set_practice(enabled != 0, section, life, bomb, power, trance);
+}
+
+EMSCRIPTEN_KEEPALIVE int th13_practice_stage() {
+    return th13::sdl::app ? th13::sdl::app->practice_stage() : 0;
+}
+
 EMSCRIPTEN_KEEPALIVE void th13_music_enabled(unsigned enabled) {
     if (th13::sdl::app) th13::sdl::app->audio_device.music_enabled = enabled != 0;
 }

@@ -2,6 +2,8 @@ import {installStartupBranding, finishStartupAnimation} from './startup-branding
 import createModule from './th13-sdl.mjs';
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import {installLowLatencyCanvas} from './low-latency-canvas.mjs';
+import {installLanguagePack} from './language-pack.mjs';
+import {practiceSections} from './practice-catalog.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {runtimeAssets} from './runtime-assets.mjs';
 
@@ -234,8 +236,69 @@ function sanitizePath(value) {
   return name;
 }
 
+function syncPracticePanel() {
+  let dialog = document.getElementById('th13-practice');
+  if (!options.thpracEnabled) {
+    if (dialog instanceof HTMLDialogElement) dialog.close();
+    dialog?.remove();
+    core?._th13_practice_set?.(0, 0, -1, -1, -1, -1);
+    return;
+  }
+  if (dialog) return;
+  dialog = document.createElement('dialog');
+  dialog.id = 'th13-practice';
+  const section = document.createElement('select');
+  const none = document.createElement('option');
+  none.value = '0';
+  none.textContent = '不传送';
+  section.append(none);
+  for (const item of practiceSections) {
+    const option = document.createElement('option');
+    option.value = String(item.id);
+    option.textContent = `${item.stage}-${item.group}-${item.index} ${item.zh}`;
+    section.append(option);
+  }
+  const field = (id, label, max, value) => {
+    const input = document.createElement('input');
+    input.id = id;
+    input.type = 'number';
+    input.min = '0';
+    input.max = String(max);
+    input.value = String(value);
+    const caption = document.createElement('label');
+    caption.textContent = label;
+    caption.append(input);
+    dialog.append(caption);
+    return input;
+  };
+  const title = document.createElement('p');
+  title.textContent = 'thprac';
+  dialog.append(title, section);
+  const life = field('th13-practice-life', '残机', 8, 8);
+  const bomb = field('th13-practice-bomb', '灵击', 8, 8);
+  const power = field('th13-practice-power', '灵力', 400, 400);
+  const applyButton = document.createElement('button');
+  applyButton.type = 'button';
+  applyButton.textContent = '应用练习';
+  applyButton.addEventListener('click', () => {
+    core?._th13_practice_set?.(1, Number(section.value) || 0, Number(life.value), Number(bomb.value), Number(power.value), 200);
+    if (dialog instanceof HTMLDialogElement) dialog.close();
+  });
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.textContent = '关闭';
+  close.addEventListener('click', () => { if (dialog instanceof HTMLDialogElement) dialog.close(); });
+  dialog.append(applyButton, close);
+  document.body.append(dialog);
+  addEventListener('keydown', event => {
+    if (!options.thpracEnabled || (event.key !== 'p' && event.key !== 'P') || event.repeat) return;
+    if (dialog instanceof HTMLDialogElement && !dialog.open) dialog.showModal();
+  });
+}
+
 function apply() {
   core.eaglerOptions = options;
+  syncPracticePanel();
   core._th13_music_enabled(+music);
   core._th13_always_hitbox(+(options.alwaysHitbox === true));
   core._th13_touch_options(+!!options.touchEnabled,
@@ -270,6 +333,7 @@ async function command(m) {
       options = m.options || {};
       music = m.music === 'ogg';
       for (const r of [...(m.sharedResources || []), ...(m.runtimeResources || []), ...(m.resources || [])]) await resource(r);
+      if (m.runtimePack) await installLanguagePack(core, m.runtimePack, game);
       apply();
       return {};
     case 'resources':
@@ -592,6 +656,7 @@ const initialized = (async () => {
     if (font && font.ok) core.FS.writeFile('/msgothic.ttc', new Uint8Array(await font.arrayBuffer()));
   }
 
+  if (query.get('probe') === '1') window.__th13Core = core;
   emit('ready');
   if (query.get('standalone') === '1' || (!validEpoch && parent === window)) {
     await command({command: 'launch'});

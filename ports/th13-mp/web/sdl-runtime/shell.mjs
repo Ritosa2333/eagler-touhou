@@ -2,6 +2,7 @@ import {installStartupBranding, finishStartupAnimation} from './startup-branding
 import createModule from './th13-sdl.mjs';
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import {installLowLatencyCanvas} from './low-latency-canvas.mjs';
+import {installLanguagePack} from './language-pack.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {runtimeAssets} from './runtime-assets.mjs';
 
@@ -546,6 +547,7 @@ function sanitizePath(value) {
 }
 
 function apply() {
+  options.thpracEnabled = false;
   core.eaglerOptions = options;
   core._th13_music_enabled(+music);
   core._th13_always_hitbox(+(options.alwaysHitbox === true));
@@ -627,6 +629,7 @@ async function command(m) {
       options = m.options || {};
       music = m.music === 'ogg';
       for (const r of [...(m.sharedResources || []), ...(m.runtimeResources || []), ...(m.resources || [])]) await resource(r);
+      if (m.runtimePack) await installLanguagePack(core, m.runtimePack, game);
       apply();
       return {};
     case 'resources':

@@ -37,6 +37,8 @@ const runtimeNames = [
   'directory-keyboard.mjs',
   'runtime-assets.mjs',
   'low-latency-canvas.mjs',
+  'language-pack.mjs',
+  'practice-catalog.mjs',
   ...(multiplayer ? ['multiplayer.mjs'] : []),
 ];
 const names = [
@@ -105,7 +107,7 @@ const resources = fontNames.map(name => {
 });
 write('resources.json', JSON.stringify({schema: 'eagler-sdl-resources/1', game, resources}, null, 2) + '\n');
 
-const features = {multiplayer, thprac: false, languages: false, focusHitbox: false};
+const features = {multiplayer, thprac: false, languages: true, focusHitbox: false};
 write(
   'manifest.json',
   JSON.stringify(
