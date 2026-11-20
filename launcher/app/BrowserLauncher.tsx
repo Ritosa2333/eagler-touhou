@@ -48,6 +48,8 @@ export function BrowserLauncher() {
 }
 const workspaceView = (state: BrowserSessionSnapshot, session: BrowserSession) => ({
   locale: state.locale, playerOpen: state.playerOpen, runtimeLaunched: state.runtime?.launched,
+  roomGameplayKeyboard: state.runtime?.launched === true && state.runtime.runtimeVariant === 'multiplayer' &&
+    !state.runtime.spectator && !state.replayViewer && !state.th09NetworkOverlayOpen,
   bootTouchPreview: state.bootTouchPreview, bootTouchPreviewImage: state.bootTouchPreviewImage,
   roomPlayerExpanded: state.roomPlayerExpanded, th09NetworkOverlayOpen: state.th09NetworkOverlayOpen,
   metadataRevision: state.metadataRevision,
@@ -81,6 +83,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
     serverStatusNote: <ServerStatusNote session={session}/>, metadataRevision: state.metadataRevision,
     replayWorkspace,
     roomWorkspace,
+    roomGameplayKeyboard: state.roomGameplayKeyboard,
     roomPlayerExpanded: state.roomPlayerExpanded,
     runtimeOpen: state.playerOpen, runtimeLaunched: state.runtimeLaunched, titleOverlayOpen: state.th09NetworkOverlayOpen, runtimeFrame: session.attachFrame, requestRuntimeClose: session.requestRuntimeClose, requestReplayClose: session.requestReplayManagerClose, requestRoomLeave: session.requestRoomLeave, requestRoomFullscreenExit: session.exitRoomPlayerFullscreen,
     optionsActions: <SessionLaunchActions session={session}/>, multiplayerControls: <RoomSettingsControls session={session}/>, multiplayerDiagnostics: <InlineMultiplayerDiagnostics session={session}/>, multiplayerOnline: <LegacyMultiplayerOnline session={session}/>,
