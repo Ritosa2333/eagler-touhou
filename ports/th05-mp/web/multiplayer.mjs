@@ -67,7 +67,10 @@ export function createMultiplayer(options,{module,sample,saveReplay,emit=()=>{},
  function begin(){
   if(started)throw Error('Duplicate TH05 start');
   const chars=options.netplayLoadouts.map(p=>p.character);while(chars.length<3)chars.push(0);
-  if(!module._th05_coop_start_rules(count,local,options.netplayDifficulty,options.netplaySeed,...chars,+(options.netplayChallengeMode===true)+2*(options.netplayChallengeKeepBullets===true),+(options.multiplayerLocalPlayerVisibility===true),options.netplayInitialSpares??2,options.netplayInitialBombs??3))throw Error('TH05 cooperative world could not start');
+  const keepBullets=options.netplayChallengeKeepBullets===true;
+  const challengeMode=options.netplayChallengeMode===true;
+  const startCoop=keepBullets?module._th05_coop_start_rules:module._th05_coop_start_stock;
+  if(!startCoop(count,local,options.netplayDifficulty,options.netplaySeed,...chars,+challengeMode+2*keepBullets,+(options.multiplayerLocalPlayerVisibility===true),options.netplayInitialSpares??2,options.netplayInitialBombs??3))throw Error('TH05 cooperative world could not start');
   applyDisplay(module,options.th05MultiplayerDisplay);
   if(!module._th05_net_reset(delay,limit))throw Error('TH05 rollback session could not start');
   for(let i=0;i<delay;i++)for(const row of rows)row.set(i,[0,0,0,0]);
