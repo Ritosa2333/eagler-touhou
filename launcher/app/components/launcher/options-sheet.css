@@ -149,13 +149,13 @@
     padding: 8px 24px 20px;
     scrollbar-width: thin;
   }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer) .options-settings {
+  :is(.tools[data-options-panel], .mp-settings-room-drawer, .book-game-detail-settings) .options-settings {
     display: flex;
     flex-direction: column;
     gap: 0;
     color: var(--kit-foreground);
   }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer) .options-group {
+  :is(.tools[data-options-panel], .mp-settings-room-drawer, .book-game-detail-settings) .options-group {
     display: block;
     margin: 0;
     padding: 4px 0 8px;
@@ -166,7 +166,7 @@
     box-shadow: none;
     overflow: visible;
   }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer) .options-group:last-child {
+  :is(.tools[data-options-panel], .mp-settings-room-drawer, .book-game-detail-settings) .options-group:last-child {
     border-bottom: 0;
   }
   .options-group-head {
@@ -189,7 +189,7 @@
   .options-group-head[aria-expanded="true"] > .options-group-chevron {
     rotate: 180deg;
   }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer)
+  :is(.tools[data-options-panel], .mp-settings-room-drawer, .book-game-detail-settings)
     :is(.file-tools-grid, .options-advanced-body, .mobile-options-body) {
     display: flex;
     flex-direction: column;
@@ -204,7 +204,7 @@
     background: transparent;
     overflow: visible;
   }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer) .settings-field {
+  :is(.tools[data-options-panel], .mp-settings-room-drawer, .book-game-detail-settings) .settings-field {
     margin: 0;
     padding: 6px 0;
     border: 0;
@@ -213,24 +213,24 @@
     box-shadow: none;
     min-height: 44px;
   }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer) .ui-field-label small {
+  :is(.tools[data-options-panel], .mp-settings-room-drawer, .book-game-detail-settings) .ui-field-label small {
     margin-left: 8px;
     color: var(--kit-muted-foreground);
     font-weight: 400;
   }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer) .file-tool-item {
+  :is(.tools[data-options-panel], .mp-settings-room-drawer, .book-game-detail-settings) .file-tool-item {
     min-height: 44px;
     padding: 4px 0;
   }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer) .ui-field-content {
+  :is(.tools[data-options-panel], .mp-settings-room-drawer, .book-game-detail-settings) .ui-field-content {
     flex: 1;
     min-width: 0;
   }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer) .settings-field .ui-field-label {
+  :is(.tools[data-options-panel], .mp-settings-room-drawer, .book-game-detail-settings) .settings-field .ui-field-label {
     font: 500 13px / 1.5 var(--kit-font);
     color: var(--kit-foreground);
   }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer) .settings-field .ui-field-description {
+  :is(.tools[data-options-panel], .mp-settings-room-drawer, .book-game-detail-settings) .settings-field .ui-field-description {
     color: var(--kit-muted-foreground);
     font: 400 12px / 1.65 var(--kit-font);
   }
@@ -245,14 +245,14 @@
     text-decoration: underline;
     text-underline-offset: 3px;
   }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer) .input-settings-entries {
+  :is(.tools[data-options-panel], .mp-settings-room-drawer, .book-game-detail-settings) .input-settings-entries {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     padding: 0;
     margin: 0;
   }
-  :is(.tools[data-options-panel], .mp-settings-room-drawer) .input-settings-content {
+  :is(.tools[data-options-panel], .mp-settings-room-drawer, .book-game-detail-settings) .input-settings-content {
     padding: 0 0 4px 12px;
     border-inline-start: 1px solid var(--kit-border);
     min-height: 0;

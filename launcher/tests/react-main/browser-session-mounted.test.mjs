@@ -824,9 +824,9 @@ test('actual BrowserLauncher: same-card reopen preserves session-only settings a
   await click('#focusHitboxToggle'); await click('#mobileOptionsToggle');
   assert.equal(node('#focusHitboxToggle').getAttribute('aria-checked'), 'true');
   assert.equal(node('#mobileOptionsToggle').getAttribute('aria-expanded'), 'true');
-  await click('#libraryBack'); await until(() => !env.document.querySelector('.tools[data-state="open"]:not([inert])'), 'options close');
+  await click('#libraryBack'); await until(() => !visibleOptions(), 'options close');
   await click('.book-game-link[data-game="th06"]');
-  await until(() => !!env.document.querySelector('.tools[data-state="open"]:not([inert])'), 'same selected product reopens');
+  await until(() => !!visibleOptions(), 'same selected product reopens');
   assert.equal(node('#status').textContent, 'Selected 東方紅魔郷', 'main app1790/8652 uses the product title for selection status');
   assert.equal(node('#toast').classList.contains('show'), false, 'status-only selection must not open an empty toast');
   assert.equal(node('#toastText').textContent, '');
@@ -1287,7 +1287,27 @@ async function acceptHeldHost(f) {
   await React.act(async () => {f.releaseHost();});
   await until(() => f.order.includes('boot-ready'), 'first real Host finished');
 }
-function visibleOptions() {return env.document.querySelector('.tools[data-state="open"]:not([inert])');}
+function visibleOptions() {return env.document.querySelector('[data-game-detail], .tools[data-state="open"]:not([inert])');}
+
+test('desktop book opens one inline game detail and keeps the library controls mounted', async () => {
+  const f = await mountBrowser({initial: '/', host: subsetHost(['th06', 'th07'])});
+  const search = node('#librarySearch');
+  await click('[data-book-category-disclosure="windows"]');
+  await click('.book-grid [data-book-product="th06"]');
+  await until(() => !!env.document.querySelector('[data-game-detail="th06"] #launch'), 'TH06 has a start action');
+  assert.equal(env.document.querySelector('#libraryBackdrop'), null);
+  assert.equal(node('#librarySearch'), search);
+  assert.equal(node('.game-library').hasAttribute('inert'), false);
+  assert.equal(node('[data-book-sidebar-product="th06"]').getAttribute('aria-current'), 'page');
+  await click('[data-book-sidebar-product="th07"]');
+  await until(() => !!env.document.querySelector('[data-game-detail="th07"] #launch'), 'TH07 has a start action');
+  assert.equal(new URLSearchParams(f.router.state.location.search).get('game'), 'th07');
+  assert.equal(env.document.querySelectorAll('#launch').length, 1);
+  await click('#libraryBack');
+  await until(() => !visibleOptions(), 'book returns to the list');
+  assert.equal(node('#librarySearch'), search);
+  assert.equal(node('[data-book-category-disclosure="windows"]').getAttribute('aria-expanded'), 'true');
+});
 
 for (const preview of ['touch', 'touch-hud']) test(`actual BrowserLauncher: boot ${preview} is a one-time preference override before Host, with no native or history side effects`, async () => {
   const initial = `/?game=th07&preview=${preview}&keep=a%20b#retained`;

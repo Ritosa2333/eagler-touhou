@@ -1,0 +1,108 @@
+@layer components {
+  .book-game-detail {
+    min-width: 0;
+    display: grid;
+    gap: 18px;
+    scroll-margin-top: calc(var(--site-header-height, 64px) + 12px);
+  }
+  .book-game-detail .book-game-detail-back {
+    justify-self: start;
+    padding-inline: 8px;
+  }
+  .book-game-detail-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: clip;
+    display: grid;
+    grid-template-columns: clamp(120px, 18vw, 218px) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(16px, 3vw, 32px);
+    padding: clamp(16px, 3vw, 28px);
+    background: var(--kit-card);
+    border: 1px solid var(--kit-border);
+    border-radius: 12px;
+  }
+  .book-game-detail-art {
+    position: absolute;
+    inset: 0 0 0 24%;
+    z-index: -1;
+    opacity: .54;
+    mask-image: linear-gradient(to right, transparent, black 95%);
+    pointer-events: none;
+  }
+  .book-game-detail-art img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--detail-art-position, 50%) center;
+    filter: brightness(var(--detail-art-brightness, .68)) saturate(var(--detail-art-saturation, .85));
+  }
+  .book-game-detail-cover {
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    aspect-ratio: 1;
+    background: var(--kit-muted);
+    color: var(--kit-muted-foreground);
+    border-radius: 8px;
+  }
+  .book-game-detail-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .book-game-detail-cover svg { width: 32px; height: 32px; }
+  .book-game-detail-intro {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .book-game-detail-code {
+    color: var(--kit-brand);
+    font-size: 12px;
+    font-weight: 650;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .book-game-detail-intro h2 {
+    margin: 0;
+    font: 650 clamp(23px, 3vw, 38px) / 1.2 var(--kit-font);
+    outline: none;
+  }
+  .book-game-detail-intro p { margin: 0; color: var(--kit-muted-foreground); }
+  .book-game-detail .launch-actions {
+    flex-wrap: wrap;
+    justify-self: start;
+    padding: 0;
+    margin-block-start: 12px;
+    border: 0;
+    background: transparent;
+  }
+  .book-game-detail .launch-actions > .launch {
+    flex: 0 1 auto;
+    width: auto;
+    min-height: 40px;
+    white-space: normal;
+  }
+  .book-game-detail .launch-actions > .launch:not(.launch-secondary) {
+    min-width: min(128px, 100%);
+  }
+  .book-game-detail-settings {
+    min-width: 0;
+    padding: 16px clamp(16px, 3vw, 28px) 20px;
+    background: var(--kit-card);
+    border: 1px solid var(--kit-border);
+    border-radius: 12px;
+  }
+  .book-game-detail-settings > h3 {
+    margin: 0 0 8px;
+    font: 650 16px / 1.45 var(--kit-font);
+  }
+  @container (max-width: 410px) {
+    .book-game-detail-hero { grid-template-columns: minmax(0, 1fr); }
+    .book-game-detail-cover { width: min(44%, 160px); }
+    .book-game-detail-art { inset-inline-start: 12%; }
+  }
+}

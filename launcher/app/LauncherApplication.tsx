@@ -18,6 +18,7 @@ import { TH09_RATINGS_DOCUMENT } from '../lib/frontend-static-manifest.mjs';
 import { LocaleProvider, translate } from './i18n';
 import { PlayerSurface } from './components/player/PlayerSurface';
 import { LibrarySurface } from './components/launcher/LibrarySurface';
+import { BookGameDetail } from './components/launcher/BookGameDetail';
 import { LobbySurface, type LobbySurfaceProps } from './components/launcher/LobbySurface';
 import { ProfileLoading } from './components/launcher/ProfileLoading';
 import { OptionsPanel } from './components/launcher/OptionsPanel';
@@ -34,7 +35,7 @@ import type { SitePreferencesModel } from './models/site-preferences';
 import type { DecisionStore } from './models/decisions';
 import type { TouchLayoutModel } from './models/touch-layout';
 import { SurfaceNavigationProvider, useSurfaceNavigation } from './navigation/surface-navigation';
-import { useNavigationPageMotion } from './navigation/navigation-motion';
+import { useCompactNavigation, useNavigationPageMotion } from './navigation/navigation-motion';
 import { useStoreSelector, shallowEqual } from './shared/react-store';
 import { accountsEnabled } from './release-features';
 import type {LocalSaveReader} from './services/local-save-storage';
@@ -50,6 +51,7 @@ export type LobbyPresentation = Omit<
 /** One document-lived domain host. Tests may explicitly inject fixture ports;
  * production must supply the actual storage, file, runtime and room owners. */
 export interface LauncherHost {
+  desktopLibraryDetails?: boolean;
   readLocalSaves?:LocalSaveReader;
   cloudSync?:CloudSaveSync|null;
   watchTh09Replay?: WatchTh09Replay;
@@ -134,8 +136,9 @@ export function LauncherApplication({ host }: { host: LauncherHost }) {
 
 function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const navigation = useSurfaceNavigation();
-  const pathname = useLocation().pathname;
+  const { pathname, key: locationKey } = useLocation();
   const pageSurface = useNavigationPageMotion(pathname, host.lessMotion === true);
+  const compact = useCompactNavigation();
   const accountPage = accountsEnabled && /\/login\.html\/?$/.test(pathname);
   const profilePage = accountsEnabled && /^(?:\/profile\.html|\/u\/[^/]+)\/?$/.test(pathname);
   const settings = useSyncExternalStore(host.settings.subscribe, host.settings.getSnapshot, host.settings.getSnapshot);
@@ -146,6 +149,8 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
   );
   const contextRevision = useRef<number | undefined>(undefined);
   const [playerElement, setPlayerElement] = useState<HTMLElement | null>(null);
+  const browseIssuedFor = useRef<string | null>(null);
+  useLayoutEffect(() => { browseIssuedFor.current = null; }, [locationKey]);
   const roomOpen =
     navigation.roomCode !== null && navigation.productId !== null && isMultiplayerProductId(navigation.productId);
   const roomWorkspace = roomOpen && host.roomWorkspace === true && navigation.surface !== 'touch';
@@ -156,14 +161,17 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
     retainedProduct.current = navigation.productId;
   // Main keeps the selected panel in the DOM during its closing transition.
   const selectedProduct = catalog.find((product) => product.id === retainedProduct.current);
+  const inlineProduct = host.desktopLibraryDetails && !compact && !accountPage && !profilePage &&
+    optionsOpen && navigation.context === 'library' && selectedProduct?.id === navigation.productId &&
+    !selectedProduct.multiplayer ? selectedProduct : undefined;
   const presence = useLibraryOptionsPresence({
-    open: optionsOpen,
+    open: optionsOpen && !inlineProduct,
     context: navigation.context,
     product: selectedProduct,
     lessMotion: host.lessMotion === true,
     concealed:
-      (host.runtimeOpen === true || host.runtimeLaunched === true || host.replayWorkspace === true) &&
-      navigation.surface !== 'touch',
+      !!inlineProduct || ((host.runtimeOpen === true || host.runtimeLaunched === true || host.replayWorkspace === true) &&
+      navigation.surface !== 'touch'),
     focusActive: navigation.surface === 'options',
   });
   useLayoutEffect(() => {
@@ -231,7 +239,22 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
     }
     navigation.openTouchLayout();
   };
-  const settingsPanel = presence.product && (
+  const browseLibrary = () => {
+    // Several input events can arrive before the same history return commits.
+    if (browseIssuedFor.current === locationKey) return;
+    browseIssuedFor.current = locationKey;
+    navigation.closeSurface();
+  };
+  const settingsBody = (
+    <SettingsBody
+      model={host.settings}
+      actions={host.settingsActions}
+      onOpenTouchLayout={openTouchLayout}
+      multiplayerControls={host.multiplayerControls}
+      preferences={host.preferences}
+    />
+  );
+  const settingsPanel = !inlineProduct && presence.product && (
     <OptionsPanel
       product={presence.product}
       coverArtwork={roomOpen ? undefined : bookArtwork(presence.product)}
@@ -245,13 +268,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       embeddedInLobby={navigation.context === 'lobby'}
       actions={host.optionsActions}
     >
-      <SettingsBody
-        model={host.settings}
-        actions={host.settingsActions}
-        onOpenTouchLayout={openTouchLayout}
-        multiplayerControls={host.multiplayerControls}
-        preferences={host.preferences}
-      />
+      {settingsBody}
     </OptionsPanel>
   );
   const editor = playerElement && navigation.surface === 'touch' && settings && (
@@ -314,11 +331,23 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
           <LibrarySurface
             products={host.products}
             selectedProduct={preview}
-            openedProduct={presence.openedProduct}
+            openedProduct={inlineProduct?.id ?? presence.openedProduct}
             onSelect={setPreview}
             onActivate={activate}
             masthead={null}
-            optionsOpen={presence.open}
+            optionsOpen={!inlineProduct && presence.open}
+            desktopList={host.desktopLibraryDetails}
+            onBrowse={browseLibrary}
+            detail={inlineProduct && (
+              <BookGameDetail
+                product={inlineProduct}
+                active={navigation.surface === 'options' && !host.runtimeOpen && !host.runtimeLaunched && !host.replayWorkspace}
+                actions={settings?.context.productId === inlineProduct.id ? host.optionsActions : undefined}
+                onBack={browseLibrary}
+              >
+                {settings?.context.productId === inlineProduct.id && settingsBody}
+              </BookGameDetail>
+            )}
             roomOpen={roomOpen}
             roomDrawer={host.roomDrawer}
             onDonation={() => navigation.openInfoDialog('donationDialog')}
@@ -330,7 +359,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       {!accountPage && !profilePage && navigation.context === 'library' && (
         <>
           {host.serverStatusNote}
-          <OptionsBackdrop onBack={navigation.closeSurface} />
+          {!inlineProduct && <OptionsBackdrop onBack={navigation.closeSurface} />}
           {host.replayWorkspace && !roomOpen ? null : settingsPanel}
         </>
       )}

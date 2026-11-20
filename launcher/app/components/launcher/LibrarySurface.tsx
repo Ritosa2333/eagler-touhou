@@ -7,12 +7,15 @@ import {SiteFooter} from './SiteFooter';
 export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> {
   masthead: ReactNode;
   optionsOpen: boolean;
+  desktopList?: boolean;
+  detail?: ReactNode;
+  onBrowse?: () => void;
   roomOpen?: boolean;
   roomDrawer?: ReactNode;
   children?: ReactNode;
   onDonation?: () => void;
 }
-/** The page holds library content. Settings occupy the application overlay layer. */
+/** The book houses inline details; compact and multiplayer overlays keep their own carriers. */
 export function LibrarySurface({masthead, optionsOpen, roomOpen = false, roomDrawer, children, onDonation, ...rail}: LibrarySurfaceProps) {
   const {t} = useLocale();
   return <><div className="library-background" aria-hidden="true"/><div className="sheet">

@@ -502,6 +502,24 @@
   .book-view-list .book-favorite::before {
     display: none;
   }
+  @media (min-width: 781px) {
+    .book-library[data-desktop-list] .book-view-switch { display: none; }
+    .book-library[data-desktop-list] .book-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+    .book-library[data-desktop-list] .book-game-link {
+      grid-template-columns: 44px minmax(0, 1fr);
+      min-height: 62px;
+      padding-block: 8px;
+    }
+    .book-library[data-desktop-list] .book-game-link .book-art { width: 44px; height: 44px; }
+    .book-library[data-desktop-list] .book-card:hover { background: var(--kit-card); }
+    .book-library[data-desktop-list] .book-card:has(.book-game-link:is(:hover, :focus-visible)) {
+      transform: none;
+      box-shadow: none;
+    }
+  }
   @container (max-width: 720px) {
     .book-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
