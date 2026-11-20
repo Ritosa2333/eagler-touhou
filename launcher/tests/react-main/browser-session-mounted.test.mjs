@@ -1327,9 +1327,10 @@ test('desktop book opens one inline game detail and keeps the library controls m
   node(`${detail} .book-game-detail-hero #gamePackageImport`);
   const [statistics, gameSettings] = node(`${detail} .book-game-detail-content`).children;
   assert.equal(statistics.getAttribute('aria-labelledby'), 'bookGameStatistics');
-  const emptyRows = [...statistics.querySelectorAll('tbody tr')];
-  assert.deepEqual(emptyRows.map(row => row.dataset.difficulty), ['easy', 'normal', 'hard', 'lunatic', 'extra']);
-  assert.ok(emptyRows.every(row => row.querySelector('[data-clear="unread"]')), 'no account backend still displays grey cells');
+  const matrix = node(`${detail} .profile-clear-chart[data-fixed-game="th06"]`);
+  assert.equal(matrix.querySelectorAll('.profile-clear-character').length, 2);
+  assert.equal(matrix.querySelectorAll('.profile-clear-shot').length, 4);
+  assert.equal(matrix.querySelectorAll('.profile-clear-shot [data-status="unread"]').length, 20);
   assert.equal(gameSettings.getAttribute('aria-labelledby'), 'bookGameSettings');
   assert.ok(gameSettings.querySelector('.options-settings'));
   assert.equal(env.document.querySelector(`${detail} #libraryBack`), null);
@@ -1377,8 +1378,8 @@ test('mobile book opens a bottom sheet with an unfilled progress table and the o
   const actions = '[data-book-sheet] > .launch-actions';
   assert.equal(fold('statistics').hasAttribute('inert'), true);
   await click(trigger('statistics'));
-  const emptyCells = fold('statistics').querySelectorAll('[data-clear="unread"]');
-  assert.equal(emptyCells.length, 5);
+  const emptyCells = fold('statistics').querySelectorAll('.profile-clear-shot [data-status="unread"]');
+  assert.equal(emptyCells.length, 20);
   await click(trigger('statistics'));
   assert.equal(fold('settings').hasAttribute('inert'), true);
   assert.equal(sheet.querySelector(section('launch')), null);
@@ -1419,7 +1420,7 @@ test('book details read only current single-player cloud statistics and keep the
     product, revision, uploadedAt: '2026-11-05T00:00:00.000Z', files: [],
     statistics: {game, parserVersion: 1, format: 'classic', complete: true, playtimeSeconds, applicationTimeSeconds: null,
       playCount: 0, clearCount: 1, loadouts: [], warnings: [],
-      progress: [{character: 0, shot: null, difficulty: 'normal', cleared: true, oneCreditClear: true, clearCount: 1,
+      progress: [{character: 0, shot: 1, difficulty: 'normal', cleared: true, oneCreditClear: true, clearCount: 1,
         playCount: 1, bestScore, playtimeSeconds: null}]},
   });
   api.setReplayAccountRequest(async path => {
@@ -1443,13 +1444,15 @@ test('book details read only current single-player cloud statistics and keep the
   assert.equal(node(`${th06} [data-stat="duration"]`).textContent, '1h 1m');
   assert.equal(node(`${th06} [data-stat="play-count"]`).textContent, '0');
   assert.equal(node(`${th06} [data-stat="clears"]`).textContent, 'Normal');
-  node(`${th06} [data-difficulty="normal"] [data-clear="one-credit"]`);
-  node(`${th06} [data-difficulty="easy"] [data-clear="unread"]`);
+  const clearedShot = `${th06} [data-character="0"] [data-shot="1"] [data-difficulty="normal"][data-status="one-credit"]`;
+  assert.match(node(clearedShot).getAttribute('title'), /4,567/);
+  node(`${th06} [data-character="0"] [data-shot="0"] [data-difficulty="normal"][data-status="unread"]`);
+  node(`${th06} [data-character="1"] [data-shot="1"] [data-difficulty="normal"][data-status="unread"]`);
   await click('[data-book-sidebar-product="th07"]');
   await until(() => !!env.document.querySelector(th07), 'TH07 shows its own cloud record');
   assert.equal(node(`${th07} [data-stat="best-score"]`).textContent, '89');
   assert.equal(node(`${th07} [data-stat="duration"]`).textContent, api.translate('en', 'cloudSave.unknownValue'));
-  node(`${th07} [data-difficulty="phantasm"] [data-clear="unread"]`);
+  assert.equal(env.document.querySelectorAll(`${th07} [data-difficulty="phantasm"][data-status="unread"]`).length, 6);
   assert.equal(env.document.querySelector(th06), null);
   const url = currentUrl();
   await React.act(async () => {compact = true; media.dispatchEvent(new env.window.Event('change'));});
@@ -1468,14 +1471,46 @@ test('book details read only current single-player cloud statistics and keep the
   selectedRevision = 3;
   await React.act(async () => {env.window.dispatchEvent(new env.window.Event('cloud-save-change'));});
   assert.equal(node('.book-game-detail .book-game-stats-message').textContent, api.translate('en', 'cloudSave.noSave'));
-  node('[data-statistics-game="th06"][data-cloud-record="false"] [data-difficulty="normal"] [data-clear="unread"]');
+  node('[data-statistics-game="th06"][data-cloud-record="false"] [data-difficulty="normal"][data-status="unread"]');
   api.setAccountSessionResult(null);
   await React.act(async () => env.window.dispatchEvent(new env.window.StorageEvent('storage', {key: 'account-session-changed'})));
   const login = node('.book-game-detail .book-game-stats-message a');
   assert.equal(new URL(login.href, 'https://example.test').searchParams.get('next'), currentUrl());
   assert.equal(env.document.querySelector('[data-cloud-record="true"]'), null);
-  node('[data-statistics-game="th06"] .book-game-progress');
+  node('[data-statistics-game="th06"] .profile-clear-chart');
   assert.equal(requests, 4, 'the guest view never reads private statistics');
+});
+
+test('book details reuse the profile matrix and keep TH15 mode records separate', async () => {
+  api.setBookStatisticsEnabled(true);
+  api.setAccountSessionResult({user: {username: 'alice', name: 'Alice'}});
+  api.setReplayAccountRequest(async path => {
+    assert.equal(path, 'v1/me/cloud-saves');
+    const score = (mode, character, bestScore, oneCreditClear) => ({
+      mode, character, shot: null, difficulty: 'normal', cleared: true, oneCreditClear, clearCount: 1,
+      playCount: 1, bestScore, playtimeSeconds: null,
+    });
+    return {
+      products: [{id: 'th15', game: 'th15', multiplayer: false, files: [], requiredFiles: [], revision: 1}],
+      saves: [{product: 'th15', revision: 1, uploadedAt: '2026-11-05T00:00:00.000Z', files: [],
+        statistics: {game: 'th15', parserVersion: 1, format: 'classic', complete: true, playtimeSeconds: null,
+          applicationTimeSeconds: null, playCount: 2, clearCount: 2, loadouts: [], warnings: [],
+          progress: [score('legacy', 0, 100, true), score('pointdevice', 1, 200, false)]}}],
+      limits: {fileBytes: 1024, totalBytes: 2048, files: 6},
+    };
+  });
+  await mountBrowser({initial: '/?game=th15&lang=en', host: developmentAcquisitionHost(['th15'])});
+  const chart = '.profile-clear-chart[data-fixed-game="th15"]';
+  const normal = character => `${chart} [data-character="${character}"] [data-difficulty="normal"]`;
+  await until(() => env.document.querySelector(normal(0))?.dataset.status === 'one-credit', 'Legacy Reimu clear appears');
+  assert.equal(node(normal(1)).dataset.status, 'unread');
+  const pointdevice = `${chart} .profile-clear-modes button:last-child`;
+  await click(pointdevice);
+  assert.equal(node(pointdevice).getAttribute('aria-pressed'), 'true');
+  assert.equal(node(normal(0)).dataset.status, 'unread');
+  assert.equal(node(normal(1)).dataset.status, 'cleared');
+  assert.match(node(normal(1)).getAttribute('title'), /200/);
+  assert.equal(env.document.querySelectorAll(`${chart} .profile-clear-character`).length, 4);
 });
 
 for (const preview of ['touch', 'touch-hud']) test(`actual BrowserLauncher: boot ${preview} is a one-time preference override before Host, with no native or history side effects`, async () => {

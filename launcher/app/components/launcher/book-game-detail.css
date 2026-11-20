@@ -107,7 +107,7 @@
   }
   .book-game-detail-content > .book-game-detail-settings { padding-inline: clamp(12px, 2vw, 20px); }
   .book-game-detail-statistics { min-height: 144px; }
-  .book-game-stats { padding-block: 4px 0; }
+  .book-game-stats { padding-block: 4px 0; container-type: inline-size; }
   .book-game-stats-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -134,41 +134,7 @@
     overflow-wrap: anywhere;
   }
   .book-game-stats-grid dd[data-stat="clears"] { font-size: 13px; }
-  .book-game-progress {
-    width: 100%;
-    margin-block-start: 14px;
-    border-collapse: collapse;
-    table-layout: fixed;
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-    overflow-wrap: anywhere;
-  }
-  .book-game-progress th, .book-game-progress td {
-    padding: 7px 4px;
-    border-bottom: 1px solid var(--kit-border);
-    text-align: start;
-  }
-  .book-game-progress thead th { color: var(--kit-muted-foreground); }
-  .book-game-progress th:last-child, .book-game-progress td:last-child { text-align: end; }
-  .book-game-clear-cell {
-    display: inline-block;
-    box-sizing: border-box;
-    width: 12px;
-    height: 12px;
-    margin-inline-end: 5px;
-    border: 1px solid var(--kit-border);
-    border-radius: 3px;
-    background: var(--kit-muted);
-    vertical-align: -1px;
-  }
-  .book-game-clear-cell[data-clear="cleared"] {
-    background: color-mix(in srgb, var(--kit-success, #3a9b71) 42%, var(--kit-background));
-    border-color: var(--kit-success, #3a9b71);
-  }
-  .book-game-clear-cell[data-clear="one-credit"] {
-    background: var(--kit-success, #3a9b71);
-    border-color: transparent;
-  }
+  .book-game-stats .profile-clear-frame { margin-block-start: 14px; }
   .book-game-stats-source { margin: 10px 0 0; }
   .book-game-stats-source time { margin-inline-start: 4px; }
   .book-game-stats-message { margin: 0; padding-block: 10px; }

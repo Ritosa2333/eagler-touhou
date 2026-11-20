@@ -125,7 +125,7 @@ try {
   assert.ok(desktopLayout.statistics > desktopLayout.settings, 'Desktop gives the statistics column more space');
   assert.ok(Math.abs(desktopLayout.launch - desktopLayout.import) < 1, 'Desktop Start and Import buttons must have equal width');
   assert.ok(desktopLayout.actionOrder, 'Desktop Start must be above Import');
-  await resize.waitForSelector(`${detail} .book-game-progress [data-clear="unread"]`, {visible: true});
+  await resize.waitForSelector(`${detail} .profile-clear-chart .profile-clear-shot [data-status="unread"]`, {visible: true});
   const selectedUrl = resize.url(), historyLength = await resize.evaluate(() => history.length);
   await resize.$eval(`${detail} .book-game-detail-settings`, node => node.scrollIntoView({block:'end'}));
   for (const width of [390, 1440, 390, 1440, 390]) {
