@@ -367,7 +367,6 @@
       height: auto !important;
       max-height: calc(var(--options-view-height, 100dvh) - max(env(safe-area-inset-top), min(18dvh, 120px)));
       border-radius: 20px 20px 0 0;
-      padding-bottom: max(8px, env(safe-area-inset-bottom));
       box-shadow: 0 -12px 40px rgb(0 0 0 / .2);
     }
     .tools[data-book-sheet] .tools-head {
@@ -421,7 +420,7 @@
       height: 44px;
     }
     .tools[data-book-sheet] .options-scroll { flex: 0 1 auto; padding: 0; }
-    .book-sheet-section { border-bottom: 1px solid var(--kit-border); }
+    .book-sheet-section + .book-sheet-section { border-top: 1px solid var(--kit-border); }
     .book-sheet-section > h4 { margin: 0; }
     .tools[data-book-sheet] .book-sheet-toggle {
       display: flex;
@@ -451,8 +450,7 @@
     .book-sheet-fold[data-open="true"] { grid-template-rows: 1fr; }
     .book-sheet-fold-clip { min-height: 0; overflow: clip; }
     .book-sheet-fold-clip > .options-settings { padding-inline: 18px; }
-    .book-sheet-fold-clip > .launch-actions { border-top: 0; padding-block: 10px; }
-    .book-sheet-fold-clip > .launch-actions .launch { min-height: 44px; }
+    .tools[data-book-sheet] > .launch-actions .launch { min-height: 44px; }
     .less-motion :is(.book-sheet-fold, .book-sheet-toggle svg) { transition: none; }
     @media (prefers-reduced-motion: reduce) {
       :is(.book-sheet-fold, .book-sheet-toggle svg) { transition: none; }

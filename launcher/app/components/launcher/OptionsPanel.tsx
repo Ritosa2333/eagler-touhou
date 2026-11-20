@@ -66,9 +66,9 @@ export function OptionsPanel({product, coverArtwork, open, closing=false, onBack
           mode. Keep that DOM contract and one probe presentation owner while
           the one active shared settings body changes its product context. */}
       <section className="mp-shell" id="mpShell" hidden={!product.multiplayer}>{multiplayerOnline}{inRoomDrawer ? drawerTargets && createPortal(fold, drawerTargets.content) : fold}{multiplayerDiagnostics}</section>
-      {bookSheet ? <BookSheetSections key={product.id} actions={actions}>{children}</BookSheetSections> : !product.multiplayer && children}
+      {bookSheet ? <BookSheetSections key={product.id}>{children}</BookSheetSections> : !product.multiplayer && children}
     </div>
-    {!bookSheet && actions}
+    {actions}
   </aside>;
 }
 
