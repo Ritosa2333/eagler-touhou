@@ -1,4 +1,4 @@
-import {NativeRollback} from './native-rollback.mjs';
+import {NativeRollback,NATIVE_INPUT_AHEAD} from './native-rollback.mjs';
 import {FireControl} from './fire-control.js';
 import {unpackTouch} from './touch-input.js';
 import {createVersusPause} from './native-versus-pause.mjs';
@@ -9,7 +9,7 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
   const metadata=()=>({scene:engine._th03_classic_scene(),round:engine._th03_semantic_round?.()??-1,serial:engine._th03_classic_match_serial?.()??0,winner:engine._th03_classic_match_winner?.()??-1});
   const compare=frame=>{if(!proofs.has(frame)||!remoteProofs.has(frame))return;if(proofs.get(frame)!==remoteProofs.get(frame))throw Error(`双方游戏状态不同步（第 ${frame} 帧）`);proofs.delete(frame);remoteProofs.delete(frame);};
   const freeSlots=Array.from({length:16},(_,i)=>15-i);let captures=0,restores=0,correction=Infinity;
-  const remoteCharge=new NativeChargeHistory(24),localCharge=new Map(),chargeBoundaries=new Set();
+  const remoteCharge=new NativeChargeHistory(NATIVE_INPUT_AHEAD-1),localCharge=new Map(),chargeBoundaries=new Set();
   let localShadow;
   const supportsCharge=typeof engine._th03_classic_charge_enable==='function';
   const activeCharge=()=>supportsCharge&&engine._th03_classic_scene()===9&&!!engine._th03_classic_surrender_allowed()&&pause.state.owner===null&&!engine._th03_classic_paused();
@@ -83,14 +83,14 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
         }
         receivedInput=true;
         if(msg.type==='native-charge-boundary'){
-          if(!supportsCharge||!Number.isSafeInteger(msg.frame)||msg.frame<0||msg.frame>sync.frame+24)throw Error('蓄力边界数据无效');
+          if(!supportsCharge||!sync.canReceive(msg.frame))throw Error('蓄力边界数据无效');
           if(msg.frame<sync.confirmed)continue;
           boundary=true;
           chargeBoundaries.add(msg.frame);
           if(msg.frame<sync.frame&&outputs.get(msg.frame)?.needsCharge)correction=Math.min(correction,msg.frame);
         }else if(msg.type==='native-charge'){
           if(!supportsCharge)throw Error('联机版本不同，请刷新双方页面');
-          if(remoteCharge.accept(msg.frame,msg.sample,sync.frame)&&msg.frame<sync.frame)correction=Math.min(correction,msg.frame);
+          if(remoteCharge.accept(msg.frame,msg.sample,sync.nextLocal)&&msg.frame<sync.frame)correction=Math.min(correction,msg.frame);
         }else {
           const frame=sync.acceptInput(msg);
           if(frame!==undefined){correction=Math.min(correction,frame);boundary||=!!(msg.input&128);}
@@ -111,7 +111,7 @@ export function createRollbackMatch({seat,channel,engine,sample,options={},onFra
     const predicting=canPredict();
     // In battle, sample the current frontier only. Pre-sampling an extra
     // frame during a stall keeps one stale control frame ahead of fresh input.
-    if(predicting ? sync.nextLocal===sync.frame : sync.nextLocal-sync.confirmed<24)sync.enqueue(sample()+(options.rapid===false?1024:0));
+    if(predicting ? sync.nextLocal===sync.frame : sync.nextLocal-sync.confirmed<NATIVE_INPUT_AHEAD)sync.enqueue(sample()+(options.rapid===false?1024:0));
     // Send the fresh frontier input first; historical steps use stored inputs.
     const recovering=correction!==Infinity;
     if(recovering)reconcile();

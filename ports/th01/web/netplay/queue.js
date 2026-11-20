@@ -39,7 +39,12 @@ export class FrameQueue{
     if(!this.rollback&&!this.lanes.every(lane=>lane.has(this.frame)))return null;
     const inputs=this.core.prepare(this.frame);return inputs?inputs.map(value=>this.encode(value)):null;
   }
-  commit(pair){this.core.commit(this.frame);this.frame++;}
+  commit(){
+    // Register the decision made before the Worker ran, then check whether
+    // authoritative inputs arrived while that decision was in flight.
+    this.core.commit(this.frame);this.frame++;
+    if(this.rollback)this.refreshCorrection();
+  }
   rewind(frame){this.core.rewind(frame);this.frame=frame;this.dirty=null;}
-  prune(){const prefix=Math.min(this.frame,this.confirmed);this.core.discard(prefix);for(const at of this.used.keys())if(at<prefix)this.used.delete(at);for(const lane of this.lanes)for(const at of lane.keys())if(at<prefix-32)lane.delete(at);}
+  prune(){const prefix=Math.min(this.frame,this.confirmed,this.dirty??Infinity);this.core.discard(prefix);for(const at of this.used.keys())if(at<prefix)this.used.delete(at);for(const lane of this.lanes)for(const at of lane.keys())if(at<prefix-32)lane.delete(at);}
 }

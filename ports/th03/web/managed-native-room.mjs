@@ -14,11 +14,12 @@ import {createPc98SpectatorChannel} from './pc98-spectator-channel.mjs';
 import {createLocalSpectator} from './pc98-local-spectator.mjs';
 
 let roomRules,engine, transport, match, timer, animation, publisher, viewer, reportTimer, replayPlayer, bgm, run, revision=0, frames=0, audio, audioTime=0, stopped=true, localSeat=0, localPoint=false, roomHitboxes=false, lastPlaying=false, menuChoice=0, language='ja',musicMode='ogg';
+let spectatorGestures;
 const canvas = () => document.querySelector('#canvas');
 let frameImage,frameBuffer,framePointer,drawnEngine,drawnFrame,drawnRollbacks,drawnCanvas;
 function report(error){if(!stopped){stop();globalThis.__eaglerPC98Emit({event:'error',message:String(error?.message||error)});}}
 function readMusicTrack(id){return engine.FS.readFile('/content/YUME1.DAT/'+id.toUpperCase()+'.M');}
-function unlock(){if(!audio) audio=new AudioContext({sampleRate:48000});bgm?.unlock(audio);if(audio.state==='suspended')void audio.resume();}
+function unlock(){if(!audio) audio=new AudioContext({sampleRate:48000});bgm?.unlock(audio);if(audio.state==='suspended')void audio.resume().catch(()=>{});}
 function draw(){
  if(stopped)return;
  const frame=match?.frame??viewer?.frame??0,rollbacks=match?.rollbacks??0,target=canvas();
@@ -45,7 +46,7 @@ function play(saved){
  if(audioTime<audio.currentTime||audioTime>audio.currentTime+.3)audioTime=audio.currentTime+.04;
  const node=audio.createBufferSource();node.buffer=buf;node.connect(audio.destination);node.start(audioTime);audioTime+=n/48000;
 }
-function stop(){bgm?.stop();bgm=undefined;replayPlayer?.stop();replayPlayer=undefined;stopped=true;clearInterval(reportTimer);publisher?.stop();publisher=undefined;viewer?.stop();viewer=undefined;clearInterval(timer);cancelAnimationFrame(animation);match?.stop();match=undefined;transport?.close();transport=undefined;engine?._th03_classic_destroy();engine=drawnEngine=drawnCanvas=frameImage=frameBuffer=undefined;canvas()?.removeEventListener('pointerdown',clickMenu);canvas()?.removeEventListener('pointerdown',unlock);removeEventListener('keydown',unlock);delete globalThis.__eaglerPC98Input.menuPointer;void audio?.close();audio=undefined;}
+function stop(){spectatorGestures?.abort();spectatorGestures=undefined;bgm?.stop();bgm=undefined;replayPlayer?.stop();replayPlayer=undefined;stopped=true;clearInterval(reportTimer);publisher?.stop();publisher=undefined;viewer?.stop();viewer=undefined;clearInterval(timer);cancelAnimationFrame(animation);match?.stop();match=undefined;transport?.close();transport=undefined;engine?._th03_classic_destroy();engine=drawnEngine=drawnCanvas=frameImage=frameBuffer=undefined;canvas()?.removeEventListener('pointerdown',clickMenu);canvas()?.removeEventListener('pointerdown',unlock);removeEventListener('keydown',unlock);delete globalThis.__eaglerPC98Input.menuPointer;void audio?.close();audio=undefined;audioTime=0;}
 function menuPointer(message){const state=match?.pause.state;if(!state||state.owner===null)return false;if(state.owner===localSeat&&message.type==='down'){const r=canvas().getBoundingClientRect(),scale=Math.min(r.width/640,r.height/400),x=(message.x*r.width-(r.width-640*scale)/2)/scale,y=(message.y*r.height-(r.height-400*scale)/2)/scale,left=16+localSeat*320,row=Math.floor((y-100)/46);if(x>=left&&x<left+288&&row>=0&&row<3&&(y-100)%46<40&&(row===0||state.allowed))menuChoice=row+1;}return true;}
 function clickMenu(event){unlock();if(event.pointerType==='touch')return;const r=canvas().getBoundingClientRect(),scale=Math.min(r.width/640,r.height/400),left=r.left+(r.width-640*scale)/2,top=r.top+(r.height-400*scale)/2;menuPointer({type:'down',x:(event.clientX-left)/(640*scale),y:(event.clientY-top)/(400*scale)});}
 async function loadContent(){
@@ -73,7 +74,7 @@ export function bootToSelection(engine,bgm){
 function spectatorReport(){if(!viewer)return;const position=viewer.frame,received=viewer.received;
  globalThis.__eaglerPC98Emit({event:'runtime-info',spectatorPlayback:{version:1,run,revision:++revision,min:viewer.min,position,received,edge:received,target:viewer.target,paused:viewer.paused,seeking:viewer.seeking,following:viewer.following,ended:viewer.ended,nodes:viewer.nodes}});
 }
-async function startSpectator(options,music){bgm=createNativeMusic({onError:error=>__eaglerPC98Emit({event:'music-error',message:error.message}),source:options.musicSource,muted:music==='none',readTrack:readMusicTrack});
+async function startSpectator(options,music){bgm=createNativeMusic({onError:error=>__eaglerPC98Emit({event:'music-error',message:error.message}),source:options.musicSource,muted:music==='none',outputEnabled:false,readTrack:readMusicTrack});
  const url=new URL(options.netplayUrl);run='pc98_03_'+url.searchParams.get('run');revision=0;
  viewer=createLocalSpectator({game:'03',options,smoothPresentation:true,
   stable:JSON.stringify,
@@ -83,9 +84,27 @@ async function startSpectator(options,music){bgm=createNativeMusic({onError:erro
   async createReplica(header,{onFrame}){roomHitboxes=header.showHitboxes===true;roomRules={difficulty:header.difficulty??1,seed:header.seed??0};
    engine=await moduleFactory();await loadContent();setRoomRules(engine,header.difficulty,header.seed);engine._th03_classic_external_music(1);if(engine._th03_classic_create_versus()!==1)throw Error('原生游戏启动失败');bootToSelection(engine,bgm);
    const driver=createConfirmedDriver(engine,{focus:header.focus});
-   return {get frame(){return driver.frame;},get executed(){return driver.frame;},driver,advance(row){driver.step(row.inputs,row.charge);if(viewer?.following&&!viewer?.catching){bgm?.commands(engine.HEAPU8.slice(engine._th03_classic_audio_commands(),engine._th03_classic_audio_commands()+engine._th03_classic_audio_command_count()*4));play();}},present(){onFrame();},stop(){engine?._th03_classic_destroy();engine=undefined;}};
+   return {get frame(){return driver.frame;},get executed(){return driver.frame;},driver,advance(row){
+    const stepped=driver.step(row.inputs,row.charge),audible=viewer.following&&!viewer.catching;
+    // Follow BGM state during silent catch-up: its one-shot stage cue may
+    // already be behind the viewer by the time live presentation begins.
+    if(!audible)bgm.setOutputEnabled(false);
+    if(stepped){const at=engine._th03_classic_audio_commands(),count=engine._th03_classic_audio_command_count();
+      if(count)bgm.commands(engine.HEAPU8.subarray(at,at+count*4));
+      if(audible)play();}
+    if(audible)bgm.setOutputEnabled(true);
+   },present(){onFrame();},stop(){engine?._th03_classic_destroy();engine=undefined;}};
   },onError:report});
- reportTimer=setInterval(spectatorReport,200);document.querySelector('#cover').hidden=true;canvas().addEventListener('pointerdown',unlock);addEventListener('keydown',unlock,{once:true});animation=requestAnimationFrame(draw);
+ // Spectators interact with Launcher controls, not the gameplay input bridge.
+ // Start with the join gesture's activation, and retry directly in a trusted
+ // event on either document if the browser requires a fresh interaction.
+ spectatorGestures=new AbortController();
+ const gestures=spectatorGestures;
+ const gesture=event=>{if(event.isTrusted)unlock();};
+ for(const target of [window,parent])for(const type of ['click','keydown'])target.addEventListener(type,gesture,{capture:true,signal:gestures.signal});
+ addEventListener('pagehide',()=>gestures.abort(),{once:true,signal:gestures.signal});
+ unlock();
+ reportTimer=setInterval(spectatorReport,200);document.querySelector('#cover').hidden=true;animation=requestAnimationFrame(draw);
 }
 
 export const managedAPI={
@@ -124,6 +143,6 @@ export const managedAPI={
   replayPlayer?.stop();clearInterval(timer);cancelAnimationFrame(animation);let driver;
   replayPlayer=createNativeReplayPlayer({replay,path,async boot(){engine?._th03_classic_destroy();engine=await moduleFactory();await loadContent();const opts=__eaglerPC98Options();bgm?.stop();bgm=createNativeMusic({onError:error=>__eaglerPC98Emit({event:'music-error',message:error.message}),source:opts.musicSource,muted:musicMode==='none',readTrack:readMusicTrack});setRoomRules(engine,replay.difficulty,replay.seed);engine._th03_classic_external_music(1);if(engine._th03_classic_create_versus()!==1)throw Error('原生游戏启动失败');bootToSelection(engine,bgm);bgm.unlock(audio);driver=createConfirmedDriver(engine,{focus:replay.focus});},step(row,_frame,audible){driver.step(row.slice(0,2),row.length===4?row.slice(2):undefined);localSeat=0;localPoint=showHitPoint({playing:engine._th03_classic_point_x()>=0,focus:driver.focus[0],focusPoint:__eaglerPC98Options().focusHitboxEnabled,always:__eaglerPC98Options().alwaysHitbox});if(audible){bgm?.commands(engine.HEAPU8.slice(engine._th03_classic_audio_commands(),engine._th03_classic_audio_commands()+engine._th03_classic_audio_command_count()*4));play();}},onState:state=>globalThis.__eaglerPC98Emit({event:'runtime-info',playback:state}),onFrame(){},onError:report});
   match={get pause(){return driver?.pause;},stop(){},get frame(){return replayPlayer?.state().frame??0;}};canvas().addEventListener('pointerdown',unlock);addEventListener('keydown',unlock,{once:true});animation=requestAnimationFrame(draw);return {playback:await replayPlayer.start()};
- }if(!viewer||message.run!==run)throw Error('观战对局已改变');if(message.action==='pause')viewer.pause(true);else if(message.action==='play')viewer.pause(false);else if(message.action==='live')viewer.live();else if(message.action==='seek')viewer.seek(message.frame);else throw Error('观战命令无效');spectatorReport();return {};},
+ }if(!viewer||message.run!==run)throw Error('观战对局已改变');if(message.action==='pause'){viewer.pause(true);bgm.setOutputEnabled(false);}else if(message.action==='play')viewer.pause(false);else if(message.action==='live'){viewer.live();bgm.setOutputEnabled(false);}else if(message.action==='seek'){viewer.seek(message.frame);bgm.setOutputEnabled(false);}else throw Error('观战命令无效');spectatorReport();return {};},
  stop,
 };

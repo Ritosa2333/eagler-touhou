@@ -306,8 +306,7 @@ export class NetSession{
         if(this.game.asyncExecution)await this.game.execute(inputs,recordedFrame,this.queue.rollback&&recordedFrame>=this.queue.confirmed);else this.game.step(inputs);
         if(this.closed)return;
         this.recorder.stage(recordedFrame,{inputs,offlineMask:0,proof:this.game.replayProof(),hash:(recordedFrame+1)%120===0?this.game.checksum():null});
-        this.queue.commit(inputs);progressed=true;
-        if(this.queue.rollback)this.queue.refreshCorrection();
+        this.queue.commit();progressed=true;
         if(this.queue.frame%HASH_INTERVAL===0)this.pendingHashes.set(this.queue.frame,this.game.checksum());
         if(this.queue.dirty!==null)break;
         confirm();

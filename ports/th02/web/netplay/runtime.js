@@ -15,6 +15,7 @@ import {hashNativeMemory} from './native-hash.js';
 import {installNetPause} from '../pc98-net-pause.mjs';
 import {extractOriginalPmd} from '../pmd-archives.mjs';
 import {endingMusicSignatures,scanEndingMusic} from './ending-music.js';
+import {installBonusConfirm,bonusConfirmAddress,freshBonusConfirm} from './bonus-confirm.js';
 const workerHost=globalThis.th02WorkerHost;
 const PROTOCOL='th02-rollback/6',canvas=workerHost?.canvas??document.getElementById('canvas'),details=workerHost?{}:document.getElementById('details');
 const nativeCanvas=workerHost?.canvas??document.createElement('canvas');nativeCanvas.width=640;nativeCanvas.height=400;
@@ -60,6 +61,7 @@ function refreshMailbox(scan=false){
  emulator.module.playerArt?.bind(mailbox);
 }
 const state=()=>emulator?readState(emulator.module.HEAPU8,mailbox,patch):null;
+const bonusActive=()=>mailbox>=0&&emulator.module.HEAPU8[bonusConfirmAddress(mailbox,patch)]!==0;
 function clearKeys(){keys.clear();inputListener(0);}
 if(!workerHost){
 window.addEventListener('keydown',e=>{if(editing||isFormTarget(e.target)||e.metaKey||e.ctrlKey||e.altKey||!isBound(e.code))return;e.preventDefault();e.stopImmediatePropagation();keys.add(e.code);inputListener(keyboardBits(keys));},true);
@@ -133,6 +135,7 @@ async function boot(settings){
     !bulletExpected.every((b,i)=>exe[swapBase+bulletBank.entry+i]===b)||
     !exe.subarray(swapBase+bulletBank.target,swapBase+bulletBank.target+bulletBank.bytes).every(b=>b===0))throw Error('TH02 普通弹碰撞原程序不匹配');
  exe.set(bulletJump,swapBase+bulletBank.entry);exe.set(bulletBody,swapBase+bulletBank.target);
+ installBonusConfirm(exe,patch);
  soundPolicy=await get('./sound-patch.json');
  for(const edit of soundPolicy.edits){
   const offset=patch.headerSize+edit.imageOffset,expected=edit.expected.match(/../g).map(n=>parseInt(n,16));
@@ -187,6 +190,7 @@ function applyKeys(bits){
 }
 function nativeInput(inputs){
  if(mailbox<0){pendingNative.fill(0);consumedNative.fill(0);return inputs;}
+ if(bonusActive()){pendingNative.fill(0);return pendingNative;}
  const heap=emulator.module.HEAPU8,v=new DataView(heap.buffer),paused=nativePaused(heap,mailbox,patch);
  return inputs.map((value,i)=>{
   const ack=v.getUint16(mailbox+138+i*2,true);
@@ -249,6 +253,7 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
   // MAIN is not resident throughout DOS boot. A full heap signature scan on
   // every step spent most startup work searching memory that cannot match.
   refreshMailbox(emulatedTicks%15===0);
+  const bonus=bonusActive();
   if(mailbox>=0){
    const offlineAt=mailbox-patch.entries.mailbox+patch.entries.offline_mask;
    m.thDirtyMark?.(offlineAt,1);m.HEAPU8[offlineAt]=offlineMask;
@@ -258,7 +263,14 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
   // Before MAIN and inside native pause, P1 operates original menus. Every
   // seat can request pause/confirm; all key events carry the virtual timestamp.
   const mapped=inputs.map(nativeBits);
-  applyKeys(mapped[0]|mapped.slice(1).reduce((v,n)=>v|(n&192),0));
+  if(bonus){
+   // A press from any online seat advances BONUS. Held battle keys and
+   // automatic fire cannot acknowledge it or block another seat's press.
+   applyKeys(0);
+   if(freshBonusConfirm(inputs,previousInputs)){
+    const at=bonusConfirmAddress(mailbox,patch);m.thDirtyMark?.(at,1);m.HEAPU8[at]=2;
+   }
+  }else applyKeys(mapped[0]|mapped.slice(1).reduce((v,n)=>v|(n&192),0));
   previousInputs=inputs.slice();
   const nativeStarted=workerHost?performance.now():0;
   const pausedBefore=nativePaused(m.HEAPU8,mailbox,patch),previousMailbox=mailbox;
@@ -340,7 +352,7 @@ function present(){
  if(ctx)ctx.drawImage(nativeCanvas,0,0,640,400);
  pending=false;presentationCount++;return true;
 }
-function predictionBlockReason(){return !state()?'原版菜单或关卡加载':nativePaused(emulator.module.HEAPU8,mailbox,patch)?'原生暂停菜单':'';}
+function predictionBlockReason(){return bonusActive()?'原版关卡结算':!state()?'原版菜单或关卡加载':nativePaused(emulator.module.HEAPU8,mailbox,patch)?'原生暂停菜单':'';}
 function diagnosticText(){const s=state(),info=sfx?.info();return `TH02 · 同步步 ${ticks} · 游戏帧 ${s?.gameFrame??'菜单'} · 画面提交 ${presentationCount}\n团队分数 ${s?.players.map(p=>`P${p.id} ${p.score}`).join(' / ')||'等待入关'}\n本地完整音效 ${info?.played??0} 次 · 核心固定 30000 cycles · ${version?.th02IdleOptimization?'TH02 等价忙等优化':'通用核心'}\n浏览器 BGM：${musicError||bgm?.status||'等待确认关卡'} · 浏览器独立音效：${info?.ready?'就绪':'加载中'}`;}
 
 // Portable captures belong exclusively to a verified replay Worker, never a player.
@@ -378,7 +390,7 @@ const sync={
  updateControls(value,blocked=false){clearKeys();useControlSnapshot(value);editing=blocked;if(!workerHost)document.getElementById('controls-summary').textContent=controlsSummary('online');},
  setPointPreferences(value){points={...value};},setRawPresentation(value){raw=!!value;pending=true;},
  async unlockAudio(){const context=emulator?.audio.context;if(context?.state!=='running')await context?.resume();return context?.state==='running';},
- touchContext(){const s=state(),p=s?.players[localSlot],paused=emulator&&nativePaused(emulator.module.HEAPU8,mailbox,patch);return {key:`${s?.generation??0}:${!s||paused?'menu':'game'}`,play:!!p&&!p.hit&&!p.out&&!paused};},
+ touchContext(){const s=state(),p=s?.players[localSlot],bonus=bonusActive(),paused=emulator&&nativePaused(emulator.module.HEAPU8,mailbox,patch);return {key:`${s?.generation??0}:${bonus?'bonus':!s||paused?'menu':'game'}`,play:!!p&&!p.hit&&!p.out&&!paused&&!bonus};},
  replayProof:()=>JSON.stringify([ticks,emulatedTicks,oldP1,mailbox,guestMemoryBase,residentAddress,gameplaySeen,previousInputs,pendingNative,consumedNative,musicSequence,musicName,sfxSequence,state(),...(challenge?[challenge.snapshot()]:[])]),
  replayScene(){const s=state();return s?{kind:'stage',stage:s.stage}:null;},
  replaySave,replayLoad,

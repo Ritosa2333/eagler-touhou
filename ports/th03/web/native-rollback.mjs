@@ -1,4 +1,5 @@
 import {packTouch,unpackTouch} from './touch-input.js';
+export const NATIVE_INPUT_AHEAD=24;
 // Bounded rollback scheduler. Snapshot ownership and boundary eligibility are
 // supplied by the runtime; no remote-provided bytes are ever restored.
 export class NativeRollback {
@@ -8,7 +9,7 @@ export class NativeRollback {
     this.frame=0;this.confirmed=0;this.nextLocal=0;this.local=new Map();this.remote=new Map();this.used=new Map();this.snapshots=new Map();this.closed=false;this.rollbacks=0;this.blocked=false;
   }
   enqueue(input) {
-    if(this.closed||this.nextLocal-this.confirmed>=24)return false;
+    if(this.closed||this.nextLocal-this.confirmed>=NATIVE_INPUT_AHEAD)return false;
     this.validate(input);const frame=this.nextLocal++;
     this.local.set(frame,input);this.send(JSON.stringify({type:'native-rollback-input',frame,input}));return true;
   }
@@ -53,12 +54,17 @@ export class NativeRollback {
     }catch(error){this.closed=true;this.onError(error);}
   }
   acceptInput(msg) {
-    if(msg.type!=='native-rollback-input'||!Number.isSafeInteger(msg.frame)||msg.frame<0||msg.frame>this.frame+24)throw Error('Invalid rollback input');
+    if(msg.type!=='native-rollback-input'||!this.canReceive(msg.frame))throw Error('Invalid rollback input');
     this.validate(msg.input);
     if(msg.frame<this.confirmed)return;
     if(this.remote.has(msg.frame)&&this.remote.get(msg.frame)!==msg.input)throw Error('Conflicting rollback input');
     this.remote.set(msg.frame,msg.input);
     if(msg.frame<this.frame&&this.used.get(msg.frame)!==msg.input)return msg.frame;
+  }
+  canReceive(frame) {
+    // The peer can confirm the inputs we've already published, then fill its
+    // own send window even if this simulation is still waiting to catch up.
+    return Number.isSafeInteger(frame)&&frame>=0&&frame<this.nextLocal+NATIVE_INPUT_AHEAD;
   }
   rewind(frame) {
     const snapshot=this.snapshots.get(frame);if(snapshot==null)throw Error('Rollback snapshot unavailable');

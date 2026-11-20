@@ -10,7 +10,7 @@ export function createConfirmedDriver(engine,options={}){
   if(!Array.isArray(pair)||pair.length!==2||pair.some(v=>!Number.isSafeInteger(v)||v<0||v>MAX_INPUT))throw Error('确认输入无效');
   if(charges!==undefined&&(!Array.isArray(charges)||charges.length!==2||charges.some(sample=>!validChargeSample(sample))))throw Error('确认蓄力数据无效');
   let inputs=pair;const menu=pause.advance(inputs,engine._th03_classic_scene(),engine._th03_classic_surrender_allowed());
-  if(menu.paused){fire.forEach(f=>f.reset());focus=[false,false];frame++;return;}
+  if(menu.paused){fire.forEach(f=>f.reset());focus=[false,false];frame++;return false;}
   if(menu.resumed){fire.forEach(f=>f.reset());if(menu.result>1)engine._th03_classic_surrender(menu.seat,menu.result===3);inputs=[0,0];}
   inputs.forEach((value,seat)=>{const t=unpackTouch(value);engine._th03_classic_touch(seat,t.active,t.begin||false,t.unlimited,t.x,t.y);});
   const selecting=engine._th03_classic_scene()===3;
@@ -19,6 +19,6 @@ export function createConfirmedDriver(engine,options={}){
   const system=lanes[0]|((engine._th03_classic_scene()!==9&&(inputs[0]&128))?0x1000:0)|((inputs[0]&256)?0x2000:0);
   const charge=((inputs[0]&32)?1:0)|((inputs[1]&32)?2:0);
   if(engine._th03_classic_charge_enable){engine._th03_classic_charge_enable(charges?1:0);if(charges)charges.forEach((sample,p)=>engine._th03_classic_charge_set(p,1,...sample));}
-  const result=engine._th03_classic_step_pair(lanes[0],lanes[1],system,charge);if(result!==0)throw Error('原生对局重放失败：'+result);frame++;
+  const result=engine._th03_classic_step_pair(lanes[0],lanes[1],system,charge);if(result!==0)throw Error('原生对局重放失败：'+result);frame++;return true;
  }};
 }

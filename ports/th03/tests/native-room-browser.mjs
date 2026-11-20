@@ -47,6 +47,8 @@ async function wait(check,label,ms=120000){const until=Date.now()+ms;let lastLog
   await new Promise(r=>setTimeout(r,200));
 }throw Error(label+' timeout');}
 try{
+  let lobby, scoreSelector;
+  const lobbyScore=score=>lobby.waitForFunction((selector,score)=>document.querySelector(selector)?.textContent.replace(/\s/g,'')===score,{timeout:15000},scoreSelector,score);
   for(const round of ['check','match-1','match-2']){
   for(const list of events)list.length=0;
   const host=pages[0]??await open(0,base+'lobby.html?test=th03');
@@ -56,6 +58,11 @@ try{
   await host.waitForSelector('#roomDialog[open]');await host.select('#gameSelect','th03mp');await host.click('#submitRoom');
   await host.waitForSelector('#mpRoomCode',{timeout:45000});const code=await host.$eval('#mpRoomCode',e=>e.textContent);
   console.log('Created through main lobby',code);
+  if(round==='match-1'){
+    scoreSelector=`[data-key="th03mp-${code}"] .book-room-score-value`;
+    lobby=await browser.newPage();await navigate(lobby,base+'lobby.html?test=th03');
+    await lobbyScore('VS');
+  }
   const joinUrl=base+'?'+new URLSearchParams({game:'th03mp',mpRoom:code,lobbyAction:'join',test:'th03'});
   const guest=pages[1]??await open(1,joinUrl);if(round!=='check')await navigate(guest,joinUrl);
   await guest.waitForSelector('#mpSeatStage',{timeout:45000});
@@ -63,6 +70,7 @@ try{
     const join=await page.$('[data-mp-seat-drop="'+seat+'"] button');
     if(join&&await join.evaluate(e=>!e.closest('[hidden]')&&!e.disabled))await join.click();
   }
+  if(round==='match-1')await lobbyScore('0:0');
   }
   await wait(async()=>{const e=events.flat().filter(e=>e.event==='error');if(e.length)throw Error(JSON.stringify(e));return(await Promise.all(pages.map(page=>page.evaluate(()=>document.querySelector('#mpReady')?.disabled===false)))).every(Boolean);},'main room preparation');
   assert(await host.$eval('#mpRoomChallengeToggle',e=>!!e.closest('[hidden]')),'unsupported challenge rules must not be offered');
@@ -276,9 +284,8 @@ try{
     for(let i=0;i<25;i++){for(const page of pages){await page.bringToFront();await page.keyboard.press('KeyZ',{delay:120});}await new Promise(r=>setTimeout(r,500));if(await frames[0].evaluate(()=>[...__eaglerPC98Files.memory.keys()].some(k=>k.endsWith('.th03r'))))break;}
     await wait(async()=>frames[0].evaluate(()=>[...__eaglerPC98Files.memory.keys()].some(k=>k.endsWith('.th03r'))),'native replay persisted',15000);
     const results=events[0].filter(e=>e.event==='runtime-info'&&e.th03Match?.winner!==undefined);assert.equal(results.length,1,'one score update for completed match');assert.equal(results[0].th03Match.winner,0,'guest match surrender gives host the win');
-    const lobby=await browser.newPage();await navigate(lobby,base+'lobby.html?test=th03');
-    await lobby.waitForFunction(()=>[...document.querySelectorAll('.book-room-score-value')].some(e=>e.textContent.replace(/\s/g,'')==='1:0'),{timeout:15000});await lobby.close();
-    console.log('PASS match surrender reports host win exactly once and lobby shows 1:0');
+    await lobbyScore('1:0');await lobby.close();
+    console.log('PASS the same lobby receives VS, 0:0 and then 1:0 without reloading');
     for(const frame of frames){const replay=await frame.evaluate(async()=>{const path=[...__eaglerPC98Files.memory.keys()].find(k=>k.endsWith('.th03r'));if(!path)return null;const data=await (await import('./native-replay.mjs')).decodeReplay(__eaglerPC98Files.memory.get(path));return {path,rows:data.rows.length,native:data.native.length};});assert(replay?.rows>0&&replay.native>0,'native replay contains input stream and V14 document');}
     const replayPath=await frames[0].evaluate(()=>[...__eaglerPC98Files.memory.keys()].find(k=>k.endsWith('.th03r')));
     await frames[0].evaluate(async path=>{const api=(await import('./managed-native-room.mjs')).managedAPI;api.stop();__eaglerPC98Options().replayViewer=true;await api.start({options:__eaglerPC98Options(),music:'none',language:'ja'});const description=await api.playback({action:'inspect',path});if(!description.description.stages.length)throw Error('missing replay description');await api.playback({action:'open',path,stage:0});},replayPath);

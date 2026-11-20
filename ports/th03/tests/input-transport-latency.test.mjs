@@ -53,6 +53,21 @@ test('th03 packet size accounting matches encoded JSON including unicode and esc
   } finally {f.close();}
 });
 
+for (const [game, InputTransport] of transports) test(`${game}: newer fast inputs do not cancel a reliable ACK during one-way loss`, () => {
+  const f=setup(InputTransport);
+  try {
+    const send=frame=>f.peers[0].send(JSON.stringify({type:'frame',frame}));
+    send(0); f.deliver(1);
+    // The return fast lane is down; forward traffic still gets through.
+    f.time(80); f.peers[0].pump(); f.deliver(1);
+    f.time(81); send(1); f.deliver(1); f.peers[1].pump();
+    f.queues[0].splice(0,f.queues[0].length,...f.queues[0].filter(packet=>!packet.fast));
+    f.deliver(0);
+    assert.equal(f.peers[0].transportStats.pending,0);
+    assert.deepEqual(f.received[1].map(input=>input.frame),[0,1]);
+  } finally {f.close();}
+});
+
 test('th03 delivers recovered inputs together before their fenced control', () => {
   const f=setup(transports.find(([game])=>game==='th03')[1]);
   try {

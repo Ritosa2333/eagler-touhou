@@ -26,9 +26,9 @@ export function isPc98Product(product: Pick<LibraryProduct, 'number'>): boolean 
 export type MultiplayerGroup = 'versus' | 'original' | 'fighting' | 'pc98';
 export function multiplayerGroup(product: Pick<LibraryProduct, 'gameId'>): MultiplayerGroup {
   const game = PRODUCT_GAMES[product.gameId];
-  if (isPc98Product(game)) return 'pc98';
   if ('inputProfile' in game && game.inputProfile === 'fighting') return 'fighting';
   if ('multiplayer' in game && game.multiplayer.gameplay === 'versus') return 'versus';
+  if (isPc98Product(game)) return 'pc98';
   return 'original';
 }
 
