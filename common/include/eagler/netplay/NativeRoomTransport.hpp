@@ -11,6 +11,7 @@ namespace rtc { class WebSocket; }
 
 namespace Netplay
 {
+class NativeUdpTransport;
 std::unique_ptr<rtc::WebSocket> OpenRoomWebSocket(const std::string &url);
 
 struct RouteSwitchStatus {
@@ -33,11 +34,13 @@ public:
                  std::uint8_t playerCount, bool preferTurn = false);
     void Connect(const std::string &signalUrl, std::string tag, std::uint8_t localPlayer,
                  std::uint8_t playerCount, bool preferTurn, std::string_view initialRoute);
+    void ConnectUdp(bool host, std::string_view endpoint, std::string identity, std::uint32_t run);
+    std::uint32_t UdpRun() const;
     void Close();
     void Pump();
     void SetAdaptiveRouteActive(bool active);
 
-    enum class Route { Connecting, Reconnecting, Direct, Nat4, Swarm, Turn };
+    enum class Route { Connecting, Reconnecting, Direct, Nat4, Swarm, Turn, Udp };
     struct Link {
         Route route = Route::Connecting;
         std::optional<unsigned> rttMs;
@@ -67,6 +70,7 @@ private:
     struct ConnectionWorker;
     std::unique_ptr<Impl> impl_;
     std::unique_ptr<ConnectionWorker> worker_;
+    std::unique_ptr<NativeUdpTransport> udp_;
     bool opening_ = false;
 };
 }

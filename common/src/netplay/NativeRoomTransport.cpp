@@ -2,6 +2,7 @@
 #include <eagler/netplay/NativePeerTransport.hpp>
 #include "DesktopSwarmTurn.hpp"
 #include "NativeAdaptiveRoute.hpp"
+#include <eagler/netplay/NativeUdpTransport.hpp>
 #include <nlohmann/json.hpp>
 #include <rtc/websocket.hpp>
 
@@ -717,8 +718,20 @@ void NativeRoomTransport::Connect(const std::string &signalUrl, std::string tag,
     opening_ = true;
 }
 
+void NativeRoomTransport::ConnectUdp(bool host, std::string_view endpoint, std::string identity, std::uint32_t run)
+{
+    Close();
+    udp_ = std::make_unique<NativeUdpTransport>(host, endpoint, std::move(identity), run);
+}
+
+std::uint32_t NativeRoomTransport::UdpRun() const
+{
+    return udp_ ? udp_->Run() : 0;
+}
+
 void NativeRoomTransport::Close()
 {
+    udp_.reset();
     opening_ = false;
     if (worker_) worker_->retire(std::move(impl_));
 }
@@ -750,6 +763,7 @@ void NativeRoomTransport::PublishMatchReplay(std::uint32_t start, std::vector<st
 
 void NativeRoomTransport::Pump()
 {
+    if (udp_) udp_->Pump();
     if (opening_) {
         impl_ = worker_->take();
         opening_ = !impl_;
@@ -864,11 +878,12 @@ void NativeRoomTransport::Impl::pump(const std::atomic_bool* cancelled)
 const std::string &NativeRoomTransport::LastError() const
 {
     static const std::string empty;
-    return impl_ ? impl_->error : empty;
+    return udp_ ? udp_->LastError() : impl_ ? impl_->error : empty;
 }
 
 NativeRoomTransport::Link NativeRoomTransport::LinkStatus() const
 {
+    if (udp_) return IsOpen() ? Link{Route::Udp, udp_->RoundTripMs()} : Link{};
     if (Recovering()) return {Route::Reconnecting,{}};
     if (!IsOpen()) return {};
     const bool live = impl_->adaptive && impl_->adaptive->HasLatencyProbes();
@@ -884,6 +899,7 @@ NativeRoomTransport::Link NativeRoomTransport::LinkStatus() const
 
 bool NativeRoomTransport::IsOpen() const
 {
+    if (udp_) return udp_->IsOpen();
     return impl_ && impl_->route && !Failed() && !Recovering() && impl_->Active() && impl_->Active()->IsOpen();
 }
 
@@ -913,31 +929,37 @@ void NativeRoomTransport::SetAdaptiveRouteActive(bool active)
 
 bool NativeRoomTransport::Disconnected() const
 {
+    if (udp_) return udp_->Disconnected();
     return impl_ && impl_->route && (Failed() || impl_->disconnected);
 }
 
 bool NativeRoomTransport::SendTo(std::uint8_t player, const std::uint8_t *data, std::size_t size)
 {
+    if (udp_) return udp_->SendTo(player, data, size);
     return IsOpen() && impl_->Active()->SendTo(player, data, size);
 }
 
 bool NativeRoomTransport::SendRepairTo(std::uint8_t player, const std::uint8_t *data, std::size_t size)
 {
+    if (udp_) return udp_->SendRepairTo(player, data, size);
     return IsOpen() && impl_->Active()->SendRepairTo(player, data, size);
 }
 
 bool NativeRoomTransport::SendControl(const std::uint8_t *data, std::size_t size)
 {
+    if (udp_) return udp_->SendControl(data, size);
     return IsOpen() && (impl_->adaptive ? impl_->adaptive->SendControl(data, size) : impl_->Active()->SendControl(data, size));
 }
 
 bool NativeRoomTransport::Poll(std::vector<std::uint8_t> *packet)
 {
+    if (udp_) return udp_->Poll(packet);
     return IsOpen() && (impl_->adaptive ? impl_->adaptive->Poll(packet) : impl_->Active()->Poll(packet));
 }
 
 std::size_t NativeRoomTransport::BufferedAmount() const
 {
+    if (udp_) return udp_->BufferedAmount();
     return impl_ && impl_->Active() ? impl_->Active()->BufferedAmount() : 0;
 }
 }

@@ -1070,6 +1070,9 @@ TH09_EXPORT("th09_game_restart") u32 th09_game_restart(){if(!probe||!probe->in_t
 // A later correction cannot make an earlier unpublished record expendable.
 bool publish_rollback_outputs(){
     TH09_PERF_SCOPE(publish_cost,ConfirmedPublish);
+#if TH09_RMLUI_TEST
+    static const bool traceUdp = SDL_getenv("TH09_TEST_UDP_TRACE") != nullptr;
+#endif
     const auto through=rollback.ConfirmedThrough();
     while(through!=Netplay::INVALID_FRAME&&rollback_published<=through){
         auto& record=rollback_frames[rollback_published%rollback_frames.size()];
@@ -1095,6 +1098,10 @@ bool publish_rollback_outputs(){
         if(record.round>0)th09_network_spectator_round(rollback_published+1,u32(record.round),record.replayRoundFrame);
         if(network.side==0&&record.hasEnd)th09_network_spectator_end(rollback_published+record.gameplay,record.winner);
         if(network.active&&(rollback_published+1)%120==0&&!rollback.Verify(rollback_published+1,record.hash)){probe->error=rollback.Error();return false;}
+#if TH09_RMLUI_TEST
+        if (traceUdp && record.gameplay && rollback_published % 60 == 0)
+            SDL_Log("TH09_TEST_UDP_FRAME %u %u", rollback_published, record.hash);
+#endif
         ++rollback_published;
         TH09_PERF_COUNT(PublishedFrames,1);
     }
@@ -2129,8 +2136,16 @@ int run_desktop() {
         try {
             start = nlohmann::json::parse(options);
             native_match_start.reset();
-            native_replay_start.reset();
             publishedTiming = false;
+            if (const auto udp = start.find("udp"); udp != start.end()) {
+                const bool host = udp->at("host").get<bool>();
+                room.ConnectUdp(host, udp->at("endpoint").get<std::string>(), "th09:" TH09_UDP_BUILD,
+                    SDL_rand_bits() | 1u);
+                start["netplayPlayer"] = host ? 0 : 1;
+                roomDeadline = host ? 0 : SDL_GetTicks() + 12'000;
+                waiting = true;
+                return true;
+            }
             namespace stream = th09::desktop;
             const auto build = start.at("build").get<std::string>();
             if (start.value("netplaySpectator", false)) {
@@ -2167,7 +2182,7 @@ int run_desktop() {
 #endif
         return true;
     };
-    if (const char* options = SDL_getenv("EAGLER_DESKTOP_ROOM"); options && !startRoom(options)) {
+    if (const char* options = SDL_getenv("EAGLER_DESKTOP_ROOM"); options && *options && !startRoom(options)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", th09_error());
         th09_game_close();
         return 1;
@@ -2240,6 +2255,16 @@ int run_desktop() {
         } else if (waiting && room.IsOpen()) {
             waiting = false;
             try {
+                if (start.contains("udp")) {
+                    const auto run = room.UdpRun();
+                    start["build"] = TH09_UDP_BUILD;
+                    start["run"] = run;
+                    start["netplaySeed"] = run;
+                    start["netplayLoadouts"] = nlohmann::json::array({{{"character", 0}}, {{"character", 0}}});
+                    start["netplayDifficulty"] = 1;
+                    start["netplayInGameSelection"] = true;
+                    start["netplayDisableLocalChargePriority"] = true;
+                }
                 const auto build = start.at("build").get<std::string>();
                 if (build.size() != 24 || build.find_first_not_of("0123456789abcdef") != std::string::npos)
                     throw std::runtime_error("Invalid th09 runtime build");
@@ -2272,8 +2297,9 @@ int run_desktop() {
             } catch (const std::exception& error) {
                 if (!recoverRoom(error.what(), false)) break;
             }
-        } else if (waiting && SDL_GetTicks() >= roomDeadline) {
-            if (!recoverRoom("连接其他玩家超时。", false)) break;
+        } else if (waiting && roomDeadline && SDL_GetTicks() >= roomDeadline) {
+            const auto* error = start.contains("udp") ? "UDP 连接超时，请检查地址和房主端口转发。" : "连接其他玩家超时。";
+            if (!recoverRoom(error, false)) break;
         }
         if (!publishedTiming && rollback_active && network.active && network.side == 0 &&
             start.value("netplaySpectatorTimeline", false) && rollback.Mode() != Netplay::AdonisMode::Rollback) {
@@ -2298,7 +2324,7 @@ int run_desktop() {
         if ((waiting || network.active) && statusNow >= nextConnectionStatus) {
             using Route = Netplay::NativeRoomTransport::Route;
             const auto link = room.LinkStatus();
-            const char* label = link.route == Route::Direct ? "direct" : link.route == Route::Nat4 ? "NAT4" :
+            const char* label = link.route == Route::Udp ? "UDP" : link.route == Route::Direct ? "direct" : link.route == Route::Nat4 ? "NAT4" :
                 link.route == Route::Swarm ? "Swarm" : link.route == Route::Turn ? "turn" :
                 link.route == Route::Reconnecting ? "重连中" : "连接中";
             if (link.route != sampledRoute || link.revision != sampledRevision) {
