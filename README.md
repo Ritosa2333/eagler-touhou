@@ -2,11 +2,11 @@
 
 《妖精大戦争 ～ 東方三月精》独立行为还原工程，使用 C++/WebAssembly 核心与 JavaScript 浏览器宿主。
 
-本仓库保存截至 **2026-11-17** 的开发源码。第三步的协议、高刷新率、触控、多语言、thprac、Replay六项已按约定功能范围完成；最新本地交付为 **v8 / core116**，含真实TH128 thprac与原版界面。六条普通路线＋EX保持已接受的单人功能基线。多人原型保留、后续开发与公开发布仍暂停。见[最新本地交付](docs/RUNTIME116_V8.md)。
+当前以 **Runtime122 v17** 对应的源码为基线。先建立可核对的[单机行为还原](docs/RESTORATION.md)与独立移植构建，再向上游接共用 Web 启动器。六条普通路线和 EX 的已验收单机功能范围保持。协议、高刷、触控、多语言、thprac 和 Replay 保留现有实现与验收边界。
 
 ## 当前进度
 
-已完成范围与兼容性边界见[WEB_FUNCTIONAL_SCOPE](docs/WEB_FUNCTIONAL_SCOPE.md)。真实TH128菜单、126章节/156选段/EX阶段、五资源、Backspace/F1–F7、F12、练习录像参数/存储/playLock、取消重开和实际正式页原资源游戏已验收，见[最终验收](docs/THPRAC128_ACCEPTANCE.md)。旧七项简易选关只保留历史证据。
+已有 Web 证据与兼容性边界见[功能范围](docs/WEB_FUNCTIONAL_SCOPE.md)及 [TH128 练习验收记录](docs/THPRAC128_ACCEPTANCE.md)。这些记录的验证范围和所用版本不同，不代表所有练习功能、整套原版还原或上游启动器接入已完成。
 
 用户已明确要求按 eagler-touhou 和上游 TH128 专用 thprac 实现对接，见[纠正与计划](docs/THPRAC_CORRECTION.md)。
 
