@@ -9,7 +9,9 @@ const {findChromiumExecutable}=await import(pathToFileURL(resolve(launcher,'lib/
 import {writeFile,mkdir} from 'node:fs/promises';
 const output=resolve(root,'web/artifacts/multiplayer-browser');await mkdir(output,{recursive:true});
 const rollback=process.argv.includes('--rollback');
-const outputFile=name=>resolve(output,name),finishOnly=process.argv.includes('--finish-only'),disconnect=process.argv.includes('--disconnect'),spectatorFailure=process.argv.includes('--spectator-failure'),target=finishOnly||disconnect||spectatorFailure?400:1800;
+const lateSpectator=process.argv.includes('--late-spectator');
+const outputFile=name=>resolve(output,name),finishOnly=process.argv.includes('--finish-only'),disconnect=process.argv.includes('--disconnect'),spectatorFailure=process.argv.includes('--spectator-failure');
+let target=finishOnly||disconnect||spectatorFailure?400:1800;
 const base=process.env.EAGLER_TH075_MP_TEST_RELAY||'ws://127.0.0.1:18376/',room='th075mp-'+String(1000+Math.floor(Math.random()*9000)),sockets=[];
 const clients=[0,1,2].map(i=>'mp_test_'+room+'_'+i),members=clients.map(id=>'member_'+id);
 function next(socket,predicate=()=>true){return new Promise((resolve,reject)=>{
@@ -23,12 +25,51 @@ function next(socket,predicate=()=>true){return new Promise((resolve,reject)=>{
 async function send(s,m,p){const wait=next(s,p);s.send(JSON.stringify(m));return wait;}
 let browser;
 try{
- for(let i=0;i<3;i++){const s=new WebSocket(base+'?room='+room+'&lobby='+clients[i]+'&member='+members[i]+(i===0?'&intent=create':''));sockets.push(s);await next(s,m=>m.type==='state');if(i<2)await send(s,{type:'take-seat',seat:i,loadout:i===0?0:18},m=>m.room?.seats[i]?.clientId===clients[i]);else await send(s,{type:'spectate'},m=>m.room?.spectators?.some(v=>v.clientId===clients[i]));}
+ for(let i=0;i<3;i++){const s=new WebSocket(base+'?room='+room+'&lobby='+clients[i]+'&member='+members[i]+(i===0?'&intent=create':''));sockets.push(s);await next(s,m=>m.type==='state');if(i<2)await send(s,{type:'take-seat',seat:i,loadout:i===0?0:18},m=>m.room?.seats[i]?.clientId===clients[i]);else if(!lateSpectator)await send(s,{type:'spectate'},m=>m.room?.spectators?.some(v=>v.clientId===clients[i]));}
  for(let seat=0;seat<2;seat++)await send(sockets[seat],{type:'set-ready',ready:true},m=>m.room?.seats?.[seat]?.clientId===clients[seat]&&m.room.seats[seat].ready);
  const start=await send(sockets[0],{type:'start',adonisMode:rollback?0:1,predictionLimit:rollback?8:undefined,inputDelay:rollback?0:2,inputDelayAuto:false},m=>m.type==='start');console.log('room started',start.serial,start.room.seed);
  browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:[...(process.env.EAGLER_TH075_BROWSER_GPU==='hardware'?['--use-angle=d3d11']:['--use-angle=swiftshader','--enable-unsafe-swiftshader']),'--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
  const pages=await Promise.all([0,1,2].map(async i=>{const c=await browser.createBrowserContext(),p=await c.newPage();if(process.argv.includes('--relay'))await p.evaluateOnNewDocument(()=>{globalThis.RTCPeerConnection=undefined;});p.on('console',m=>{if(m.type()==='error')console.log('browser',i,m.text());});p.on('pageerror',e=>console.log('pageerror',i,e.message));await p.goto(process.env.EAGLER_TH075_MP_TEST_URL||'http://127.0.0.1:18375/');await p.waitForFunction(()=>host.events.some(e=>e.event==='ready')||host.error(),{timeout:120000});return p;}));
- await Promise.all(pages.map((p,i)=>p.evaluate(async({i,run,seed,room,relay,client,member,rollback})=>{if(host.error())throw Error(JSON.stringify(host.error()));await host.request('configure',{language:'ja',music:'none',options:{netplayMode:'lan',netplayUrl:`${relay}?room=${room}&run=${run}&${i===2?'spectator='+client:'player='+i}&players=2&member=${member}`,netplaySpectator:i===2,netplaySpectatorId:i===2?client:'',netplaySpectatorCount:1,netplayPlayer:i===2?null:i,netplayPlayerCount:2,netplaySeed:seed,netplayDifficulty:1,netplayAdonisMode:rollback?0:1,netplayPredictionLimit:rollback?8:0,netplayInputDelay:rollback?0:2,netplayInputDelayAuto:false,netplayLoadouts:[{character:0,shot:0},{character:2,shot:0}],netplayIceServers:[],multiplayerLocalPlayerVisibility:true}});await host.request('launch');},{i,run:start.serial,seed:1947,room,relay:base,client:clients[i],member:members[i],rollback})));
+ const launch=(p,i)=>p.evaluate(async({i,run,seed,room,relay,client,member,rollback,spectatorCount})=>{if(host.error())throw Error(JSON.stringify(host.error()));await host.request('configure',{language:'ja',music:'none',options:{netplayMode:'lan',netplayUrl:`${relay}?room=${room}&run=${run}&${i===2?'spectator='+client:'player='+i}&players=2&member=${member}`,netplaySpectator:i===2,netplaySpectatorId:i===2?client:'',netplaySpectatorCount:spectatorCount,netplayPlayer:i===2?null:i,netplayPlayerCount:2,netplaySeed:seed,netplayDifficulty:1,netplayAdonisMode:rollback?0:1,netplayPredictionLimit:rollback?8:0,netplayInputDelay:rollback?0:2,netplayInputDelayAuto:false,netplayLoadouts:[{character:0,shot:0},{character:2,shot:0}],netplayIceServers:[],multiplayerLocalPlayerVisibility:true}});await host.request('launch');},{i,run:start.serial,seed:1947,room,relay:base,client:clients[i],member:members[i],rollback,spectatorCount:lateSpectator?0:1});
+ await Promise.all((lateSpectator?pages.slice(0,2):pages).map(launch));
+ if(lateSpectator){
+  const viewer=pages[2];
+  const expectedHash=await pages[0].waitForFunction(()=>{
+    const s=host.state();
+    return s?.[53]===120?{value:s[54]}:false;
+  },{timeout:30000}).then(handle=>handle.jsonValue());
+  await pages[0].waitForFunction(()=>host.state()?.[2]>=360,{timeout:30000});
+  await send(sockets[2],{type:'spectate'},m=>m.type==='spectator-start'&&m.room.spectatorTimeline);
+  await launch(viewer,2);
+  const playback=()=>host.events.findLast(e=>e.spectatorPlayback)?.spectatorPlayback;
+  const waitPlayback=(fields,{minPosition=0,minReceived=0,maxLag=Infinity}={})=>viewer.waitForFunction((fields,minPosition,minReceived,maxLag)=>{
+    const state=host.events.findLast(e=>e.spectatorPlayback)?.spectatorPlayback;
+    return !!state&&Object.entries(fields).every(([key,value])=>state[key]===value)&&
+      state.position>=minPosition&&state.received>=minReceived&&(!maxLag||state.received-state.position<=maxLag);
+  },{timeout:15000},fields,minPosition,minReceived,maxLag===Infinity?0:maxLag);
+  await viewer.waitForFunction(()=>host.events.some(e=>e.spectatorPlayback?.seeking),{timeout:15000});
+  await waitPlayback({following:true,seeking:false},{minPosition:360,maxLag:11});
+  const command=(action,frame)=>viewer.evaluate((action,frame)=>{
+    const {run}=host.events.findLast(e=>e.spectatorPlayback).spectatorPlayback;
+    return host.request('spectator-playback',{run,action,frame});
+  },action,frame);
+  await command('pause');
+  const frozen=await viewer.evaluate(playback);
+  await waitPlayback({paused:true},{minReceived:frozen.received+31});
+  assert.equal((await viewer.evaluate(playback)).position,frozen.position);
+  await command('seek',121);
+  await waitPlayback({paused:true,seeking:false,position:121});
+  const hash=await viewer.evaluate(()=>host.state()[7]);
+  assert.equal(hash,expectedHash.value,'rewind did not reproduce the host state');
+  await command('seek',0);
+  await waitPlayback({paused:true,seeking:false,position:0});
+  await command('play');
+  await waitPlayback({paused:false,following:false},{minPosition:131});
+  await command('live');
+  await waitPlayback({following:true,seeking:false},{maxLag:11});
+  target+=await pages[0].evaluate(()=>host.state()[2]);
+  console.log('PASS zero-viewer startup, late join, pause, rewind, resume and live catch-up');
+ }
  if(rollback)await Promise.all(pages.slice(0,2).map(p=>p.evaluate(()=>{const w=document.querySelector('iframe').contentWindow,t=w.__eaglerPeerTransport,receive=t.receiveBinary.bind(t);let packets=0;w.__rollbackFault={delayed:0,dropped:0};t.receiveBinary=function(data){const b=(data instanceof ArrayBuffer||data instanceof w.ArrayBuffer)?new Uint8Array(data):ArrayBuffer.isView(data)?new Uint8Array(data.buffer,data.byteOffset,data.byteLength):null;if(b&&b[4]===4&&b[5]===1&&host.state()?.[9]===1&&host.state()?.[2]>220){++packets;if(packets%23===0){++w.__rollbackFault.dropped;return;}++w.__rollbackFault.delayed;setTimeout(()=>receive(data),25+(packets%5)*15);}else receive(data);};host.checkpoints=new Map();const observe=()=>{const s=host.state();if(s&&s[53]!==0xffffffff)host.checkpoints.set(s[53],s[54]);requestAnimationFrame(observe);};observe();})));
  if(rollback)await pages[2].evaluate(()=>{host.checkpoints=new Map();const observe=()=>{const s=host.state();if(s&&s[53]!==0xffffffff)host.checkpoints.set(s[53],s[54]);requestAnimationFrame(observe);};observe();});
  let moved=false,movingAt=0,initialX=[];const asFloat=n=>new Float32Array(new Uint32Array([n]).buffer)[0];
@@ -68,13 +109,14 @@ await Promise.all(pages.slice(0,2).map(p=>p.waitForFunction(()=>host.state()[10]
 await pages[0].evaluate(()=>host.key('Escape',false));
 await pages[0].evaluate(()=>host.key('ArrowDown',true));await pages[0].waitForFunction(()=>host.state()[13]===1,{timeout:5000});await pages[0].evaluate(()=>host.key('ArrowDown',false));await new Promise(r=>setTimeout(r,100));
 await pages[0].evaluate(()=>host.key('KeyZ',true));await pages[0].waitForFunction(()=>host.state()[9]===6||host.state()[15]||host.events.some(e=>e.event==='exit'),{timeout:15000});await pages[0].evaluate(()=>host.key('KeyZ',false));
-await Promise.all(pages.map(p=>p.waitForFunction(()=>document.querySelector('iframe').contentDocument.querySelector('#th075ReplaySavePrompt[open]')||host.events.some(e=>e.event==='exit')||host.error(),{timeout:40000})));
+await Promise.all(pages.map((p,i)=>p.waitForFunction(i=>(i===2?host.events.some(e=>e.spectatorPlayback?.ended):document.querySelector('iframe').contentDocument.querySelector('#th075ReplaySavePrompt[open]'))||host.error(),{timeout:40000},i)));
 for(const p of pages.slice(0,2)){
  const downloads=await p.evaluate(async()=>{const w=document.querySelector('iframe').contentWindow,c=w.Module,dialog=w.document.querySelector('#th075ReplaySavePrompt[open]');if(!dialog)throw Error('Missing completed Replay prompt');return Promise.all([...dialog.querySelectorAll('a[download]')].map(async a=>({name:a.download,download:Array.from(new Uint8Array(await(await fetch(a.href)).arrayBuffer())),stored:Array.from(c.FS.readFile('/save/replay/'+a.download))})));});
  assert.ok(downloads.length);for(const file of downloads){assert.ok(file.download.length>64);assert.deepEqual(file.download,file.stored,'Replay download differs from native file');}
  await p.evaluate(()=>document.querySelector('iframe').contentDocument.querySelector('#th075ReplayReturn').click());
 }
 assert.equal(await pages[2].evaluate(()=>!!document.querySelector('iframe').contentDocument.querySelector('#th075ReplaySavePrompt')),false,'spectator must not save a player Replay');
+await pages[2].evaluate(()=>host.request('exit'));
 await Promise.all(pages.map(p=>p.waitForFunction(()=>host.events.some(e=>e.event==='exit')||host.error(),{timeout:40000})));
 assert.ok((await Promise.all(pages.map(p=>p.evaluate(()=>host.error())))).every(v=>!v));console.log('PASS synchronized battle exit, terminal fence and spectator finish');
 const replays=await Promise.all(pages.slice(0,2).map(p=>p.evaluate(()=>{const c=document.querySelector('iframe').contentWindow.Module;return c.FS.readdir('/save/replay').filter(n=>n.endsWith('.rep')).map(n=>({name:n,bytes:Array.from(c.FS.readFile('/save/replay/'+n))}));})));assert.ok(replays[0].length>=(finishOnly?1:2));await writeFile(outputFile('replays.json'),JSON.stringify(replays));assert.deepEqual(replays[0],replays[1],'completed native replay bytes diverged');console.log('identical completed native replay; current files',replays[0].map(v=>[v.name,v.bytes.length]));assert.ok(last.every(v=>v.s[2]>=target),JSON.stringify(last));assert.ok(last.every(v=>v.s[1]===3));await pages[0].screenshot({path:outputFile('match.png')});await writeFile(outputFile('browser-match.json'),JSON.stringify({comparisons,states},null,2));console.log('PASS actual two-runtime match, frames',last.map(v=>v.s[2]),'routes',last.map(v=>v.route));

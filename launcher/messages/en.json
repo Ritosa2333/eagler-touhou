@@ -362,6 +362,7 @@
   "th09_quickChat": "Quick chat",
   "room_matchStats": "{wins} W {losses} L | {minutes} min",
   "room_th09SpectatorHint": "Join from the start of the current match. Pause, fast-forward or rewind received history. Leaving spectating clears it.",
+  "room_th075SpectatorHint": "Join mid-match and automatically catch up to live play. Pause or drag the timeline to revisit received footage.",
   "room_spectatorJoined": "Joined as spectator",
   "room_loadingSpectator": "Loading spectator playback",
   "room_versus": "{count} players | versus",

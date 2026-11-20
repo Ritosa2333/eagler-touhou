@@ -52,11 +52,17 @@ EMSCRIPTEN_KEEPALIVE int th075_tick(double timestamp){using namespace th075::sdl
  app->graphics.renderer.defer=true;bool ok=true;
 #if TH075_MULTIPLAYER
  if(multiplayer::active()){
-  cadence.accumulate(elapsed);const auto ticks=cadence.due();const double started=emscripten_get_now();
-  for(unsigned n=0;n<ticks&&ok;++n){
-   if(!Netplay::FrameBudget::CanStartTick(n,std::uint64_t((emscripten_get_now()-started)*1'000'000)))break;
-   bool advanced=false;ok=multiplayer::step(emscripten_get_now()*1000,n==0,advanced);
-   if(!advanced)break;cadence.consume();
+  multiplayer::update_spectator_audio();
+  const double started=emscripten_get_now();
+  if(multiplayer::spectator_fast_forward()){
+   cadence.reset();ok=multiplayer::advance_spectator(started);
+  }else{
+   cadence.accumulate(elapsed);const auto ticks=cadence.due();
+   for(unsigned n=0;n<ticks&&ok;++n){
+    if(!Netplay::FrameBudget::CanStartTick(n,std::uint64_t((emscripten_get_now()-started)*1'000'000)))break;
+    bool advanced=false;ok=multiplayer::step(emscripten_get_now()*1000,n==0,advanced);
+    if(!advanced)break;cadence.consume();
+   }
   }
  }else
 #endif

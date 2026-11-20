@@ -1369,6 +1369,10 @@
     "id": "room_th09SpectatorHint",
     "params": []
   },
+  "room.th075SpectatorHint": {
+    "id": "room_th075SpectatorHint",
+    "params": []
+  },
   "room.spectatorJoined": {
     "id": "room_spectatorJoined",
     "params": []

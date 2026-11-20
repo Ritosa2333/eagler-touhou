@@ -37,3 +37,7 @@ node ports/th075-mp/portable/prepare-split-content.mjs --prepared=/private/th075
 历史验收按原始哈希核验，目录映射与普通版共用。原生协议、双端浏览器、手机设备和公网长时间对局按场景分别记录输入与结果。
 
 旁观沿原生对局入口重放全席位已确认输入。Relay 使用 th075 独立的 `EPTM` 与 `EPNP` 标记核验时序和输入，双端浏览器驱动同时比较旁观者、玩家的同帧状态与暂停／重开流程。
+
+新版多人 Runtime 通过 `EPTS` 声明支持中途旁观。Relay 收到时序和第 0 帧后开放本局旁观，按序补发开局输入，再发送实时确认帧。中继为每局保留最多 30 分钟的输入，达到上限后停止接受中途加入，已经追上实时流的观众可继续观看。观战端可暂停、拖动时间轴和回到直播。向后拖动会从对局初始状态重新模拟。
+
+使用本地 Relay、新构建的诊断 Runtime 和已准备的 `th075.data` 做浏览器验收。启动 `web/tests/multiplayer/browser-host.mjs` 后，运行 `node ports/th075-mp/web/tests/multiplayer/browser-match.mjs --late-spectator`，检查零观众开局、中途加入、暂停时持续收帧、回拖后与玩家同帧状态一致，以及继续播放和追到直播。
