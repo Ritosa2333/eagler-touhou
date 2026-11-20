@@ -1,8 +1,9 @@
 // Add a native Extend call at the successful life-transfer branch.
 const code=Uint8Array.from('2ec6869c5e016a082eff1e9c8083c402c3'.match(/../g),x=>parseInt(x,16));
+export const rescueSoundBytes=96;
 export function installRescueSound(source,patch,overlay){
   const v=new DataView(source.buffer,source.byteOffset,source.byteLength),hs=v.getUint16(8,true)*16;
-  const at=overlay.insert+overlay.bytes,gap=96,table=v.getUint16(24,true),count=v.getUint16(6,true);
+  const at=overlay.insert+overlay.bytes,gap=rescueSoundBytes,table=v.getUint16(24,true),count=v.getUint16(6,true);
   const image=source.slice(hs),iv=new DataView(image.buffer),rel=[];
   for(let i=0;i<count;i++){
     const pos=table+i*4,loc=v.getUint16(pos,true)+v.getUint16(pos+2,true)*16,segment=iv.getUint16(loc,true);
