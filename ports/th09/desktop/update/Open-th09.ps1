@@ -1,4 +1,4 @@
-[CmdletBinding(PositionalBinding = $false)]
+﻿[CmdletBinding(PositionalBinding = $false)]
 param(
     [Uri]$FeedUri = 'https://touhouonline.com/native/th09/windows-x64/manifest.json',
     [switch]$UpdateOnly
@@ -12,6 +12,8 @@ $installation = $PSScriptRoot
 $state = Join-Path $installation '.th09-update'
 $versions = Join-Path $state 'versions'
 $pointer = Join-Path $state 'current.txt'
+$data = Join-Path $installation 'data'
+$settings = Join-Path $data 'th09.settings.json'
 $required = @(
     'eagler-desktop.exe', 'catalog.template.json', 'runtime/th09.exe',
     'runtime/ChillRoundGothic_Medium.ttf', 'runtime/fonts/cp932.bin', 'runtime/fonts/blend.bin'
@@ -84,7 +86,10 @@ function Update-Th09 {
     [IO.Directory]::CreateDirectory($versions) | Out-Null
     try { $lock = [IO.File]::Open((Join-Path $state 'update.lock'), 'OpenOrCreate', 'ReadWrite', 'None') }
     catch [IO.IOException] {
-        if (($_.Exception.HResult -band 0xffff) -eq 32) { return }
+        if (($_.Exception.HResult -band 0xffff) -eq 32) {
+            Write-Host '另一窗口正在更新 th09。'
+            return
+        }
         throw
     }
     try {
@@ -119,11 +124,12 @@ function Update-Th09 {
                 }
             }
             if ($valid) {
-                Write-Host 'th09 is up to date.'
+                Write-Host 'th09 已是最新版。'
                 return $active
             }
         }
 
+        Write-Host '发现 th09 新版，正在更新……'
         $id = $revision + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
         $stage = [IO.Directory]::CreateDirectory((Join-Path $versions ('.staging-' + $id))).FullName
         $download = Join-Path $stage 'download.gz'
@@ -139,7 +145,7 @@ function Update-Th09 {
                         New-Item -ItemType HardLink -Path $target -Target $original | Out-Null
                     } catch { [IO.File]::Copy($original, $target) }
                 } else {
-                    Write-Host "Downloading $($entry.path)"
+                    Write-Host "下载 $($entry.path)"
                     Install-RuntimeFile $entry $target $download
                     [IO.File]::Delete($download)
                     $received += [long]$entry.downloadSize
@@ -151,7 +157,7 @@ function Update-Th09 {
             if ([IO.File]::Exists($pointer)) {
                 [IO.File]::Replace($pending, $pointer, [NullString]::Value)
             } else { [IO.File]::Move($pending, $pointer) }
-            Write-Host "th09 updated. Downloaded $received bytes."
+            Write-Host ("th09 更新完成。下载 {0:N1} MB。" -f ($received / 1MB)) -ForegroundColor Green
             return $installed
         } finally {
             if ([IO.Directory]::Exists($stage) -and
@@ -164,16 +170,62 @@ function Update-Th09 {
     } finally { $lock.Dispose() }
 }
 
-if ($UpdateOnly) {
-    try { Update-Th09 | Out-Null }
-    catch {
-        $message = '[{0:u}] {1}' -f [datetime]::UtcNow, $_.Exception.Message
-        Set-Content -LiteralPath (Join-Path $state 'last-error.txt') -Value $message -Encoding UTF8
-        throw
+function Save-InitialSettings($active) {
+    if ([IO.File]::Exists($settings)) { return }
+
+    # A legacy catalog belongs to the template in the same directory.
+    $candidates = @($active)
+    if ([IO.Directory]::Exists($versions)) {
+        $candidates += @(Get-ChildItem -LiteralPath $versions -Directory |
+            Where-Object { $_.Name -match '^[a-f0-9]{64}-[a-f0-9]{8}$' } |
+            Sort-Object LastWriteTime -Descending | ForEach-Object FullName)
     }
-    [IO.File]::Delete((Join-Path $state 'last-error.txt'))
-    exit 0
+    $candidates += $installation
+    $overrides = [ordered]@{}
+    foreach ($candidate in ($candidates | Select-Object -Unique)) {
+        $oldCatalog = Join-Path $candidate 'catalog.local.json'
+        $oldTemplate = Join-Path $candidate 'catalog.template.json'
+        if (![IO.File]::Exists($oldCatalog) -or ![IO.File]::Exists($oldTemplate)) { continue }
+        $edited = (Get-Content -LiteralPath $oldCatalog -Encoding UTF8 -Raw | ConvertFrom-Json).games.th09.environment
+        $defaults = (Get-Content -LiteralPath $oldTemplate -Encoding UTF8 -Raw | ConvertFrom-Json).games.th09.environment
+        foreach ($property in $edited.PSObject.Properties) {
+            $name = $property.Name
+            $value = $property.Value
+            if ($name -eq 'EAGLER_OVERLAY_FONT' -and
+                $value -eq (Join-Path $candidate 'runtime/ChillRoundGothic_Medium.ttf')) { continue }
+            if ($value -is [string] -and $value -cne $defaults.$name -and !$overrides.Contains($name)) {
+                $overrides[$name] = $value
+            }
+        }
+    }
+    $pending = Join-Path $data ([Guid]::NewGuid().ToString('N') + '.tmp')
+    try {
+        [IO.File]::WriteAllText($pending, (@{environment = $overrides} | ConvertTo-Json -Depth 3))
+        [IO.File]::Move($pending, $settings)
+    } catch [IO.IOException] {
+        if (![IO.File]::Exists($settings)) { throw }
+    } finally { [IO.File]::Delete($pending) }
+    if ($overrides.Count) { Write-Host "已迁移设置到 $settings" }
 }
+
+[IO.Directory]::CreateDirectory($data) | Out-Null
+$active = Get-ActiveInstall
+try { Save-InitialSettings $active }
+catch { Write-Warning "无法迁移旧设置。$($_.Exception.Message)" }
+
+Write-Host '正在检查 th09 更新……'
+try {
+    Update-Th09 | Out-Null
+    [IO.File]::Delete((Join-Path $state 'last-error.txt'))
+} catch {
+    $message = '[{0:u}] {1}' -f [datetime]::UtcNow, $_.Exception.Message
+    try {
+        Set-Content -LiteralPath (Join-Path $state 'last-error.txt') -Value $message -Encoding UTF8
+    } catch { Write-Warning $_.Exception.Message }
+    if ($UpdateOnly) { throw $message }
+    Write-Warning "更新失败，尝试启动已安装的版本。$message"
+}
+if ($UpdateOnly) { exit 0 }
 
 $active = Get-ActiveInstall
 $runtime = Join-Path $active 'runtime'
@@ -192,15 +244,25 @@ if (![IO.File]::Exists($font)) {
     catch [IO.IOException] { if (![IO.File]::Exists($font)) { throw } }
 }
 
-$env:EAGLER_DESKTOP_DATA = Join-Path $installation 'data'
-$env:WEBVIEW2_USER_DATA_FOLDER = Join-Path $env:EAGLER_DESKTOP_DATA 'webview'
-[IO.Directory]::CreateDirectory($env:EAGLER_DESKTOP_DATA) | Out-Null
+$env:EAGLER_DESKTOP_DATA = $data
+$env:WEBVIEW2_USER_DATA_FOLDER = Join-Path $data 'webview'
 
-$env:EAGLER_DESKTOP_CATALOG = Join-Path $active 'catalog.local.json'
+# Keep user data and the launch config at fixed paths across runtime updates.
+$env:EAGLER_DESKTOP_CATALOG = Join-Path $data 'catalog.launch.json'
 $catalog = Get-Content -LiteralPath (Join-Path $active 'catalog.template.json') -Encoding UTF8 -Raw | ConvertFrom-Json
 $catalog.games.th09 | Add-Member -NotePropertyName executable -NotePropertyValue $executable -Force
 $catalog.games.th09.environment | Add-Member -NotePropertyName EAGLER_OVERLAY_FONT -NotePropertyValue (Join-Path $runtime 'ChillRoundGothic_Medium.ttf') -Force
-$localCatalog = Join-Path $active ('catalog-' + [Guid]::NewGuid().ToString('N') + '.tmp')
+if ([IO.File]::Exists($settings)) {
+    try {
+        $user = Get-Content -LiteralPath $settings -Encoding UTF8 -Raw | ConvertFrom-Json
+        foreach ($property in $user.environment.PSObject.Properties) {
+            if ($property.Value -is [string]) {
+                $catalog.games.th09.environment | Add-Member -NotePropertyName $property.Name -NotePropertyValue $property.Value -Force
+            }
+        }
+    } catch { Write-Warning "无法读取 $settings。$($_.Exception.Message)" }
+}
+$localCatalog = Join-Path $data ('catalog-' + [Guid]::NewGuid().ToString('N') + '.tmp')
 try {
     [IO.File]::WriteAllText($localCatalog, ($catalog | ConvertTo-Json -Depth 10))
     if ([IO.File]::Exists($env:EAGLER_DESKTOP_CATALOG)) {
@@ -211,10 +273,3 @@ try {
 } finally { [IO.File]::Delete($localCatalog) }
 
 Start-Process -FilePath $launcher -WorkingDirectory $installation -WindowStyle Normal
-
-$worker = "& '" + $PSCommandPath.Replace("'", "''") + "' -UpdateOnly -FeedUri '" + $FeedUri.AbsoluteUri.Replace("'", "''") + "'"
-$encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($worker))
-$powershell = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
-Start-Process -FilePath $powershell -WindowStyle Hidden -ArgumentList @(
-    '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', $encoded
-)

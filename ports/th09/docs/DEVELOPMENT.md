@@ -53,6 +53,10 @@ try { & $exe } finally { Pop-Location }
 
 原生版启动前设置 `$env:EAGLER_DESKTOP_VSYNC='0'` 可关闭垂直同步。游戏逻辑仍按每秒 60 帧推进。
 
+发行包由 `Open-th09.cmd` 启动。打开时检查更新，校验完成后启动新版。显示模式等本机环境设置可在安装目录下的 `data/th09.settings.json` 的 `environment` 中修改。重装更新入口时请解压到原目录，这样可迁移旧启动目录中已修改的设置。
+
+原生发行版默认关闭高刷中点补帧。F2 面板可开放 UDP 端口或输入对方 IP 和端口直连，默认端口为 10800。
+
 桌面联机可从启动器或游戏内 F2 面板发起。构建时设置 `TH09_LIBDATACHANNEL_SOURCE` 为包含子模块的 libdatachannel 源码目录，并提供与编译器匹配的 OpenSSL。使用动态 OpenSSL 时，将对应 DLL 放在运行包目录或加入运行时 `PATH`。
 
 自动 NAT4 打洞需要应用[原生 WebRTC 的 STUN 观测补丁](../../../common/third_party/libdatachannel/README.md)。Swarm 构建可通过 `TH09_SWARM_TURN_HELPER` 指定辅助程序，构建时会复制到游戏程序目录。
