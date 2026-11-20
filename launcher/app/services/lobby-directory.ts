@@ -17,6 +17,7 @@ import {
 } from '../../src/launcher/multiplayer-identity.mts';
 import { buildMultiplayerDirectoryRelayUrl } from '../../src/launcher/multiplayer-relay-url.mts';
 import type { MultiplayerRoomSessionStore } from '../../src/launcher/multiplayer-room-session.mts';
+import {normalizeRoomName} from '../../../common/contracts/room-name.mjs';
 import { encodeRoomInvite, ROOM_INVITE_KEY } from '../../src/launcher/room-invite.mts';
 import type { UiMessageKey, UiMessageParams } from '../../src/launcher/i18n.mts';
 import { parseTh09PlayerStats, type Th09PlayerStats } from '../../src/launcher/th09-room-stats.mts';
@@ -36,6 +37,7 @@ export interface DirectorySeat {
   controlMode: ReturnType<typeof multiplayerControlMode>;
 }
 export interface DirectoryRoom {
+  roomName?: string;
   startedAt?: number;
   createdAt?: number;
   listeningTrack?: { name: string; artist: string };
@@ -62,6 +64,7 @@ export interface DirectoryMembership {
   recoveryToken: string;
 }
 export interface DirectoryForm {
+  roomName?: string;
   mode: DirectoryFormMode;
   product: MultiplayerProductId | '';
   capacity: 2 | 3;
@@ -73,6 +76,7 @@ export interface DirectoryForm {
   validationMessage: string;
 }
 export interface DirectorySnapshot {
+  roomNames?: boolean;
   products: readonly MultiplayerProductId[];
   selectedProduct: MultiplayerProductId | '';
   rooms: readonly DirectoryRoom[];
@@ -331,7 +335,9 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     });
     const track = record(row.listeningTrack);
     const trackName = typeof track?.name === 'string' ? track.name.slice(0, 64).trim() : '';
+    const roomName = normalizeRoomName(row.roomName);
     return Object.freeze({
+      ...(roomName ? {roomName} : {}),
       ...(trackName ? {listeningTrack: {
         name: trackName,
         artist: typeof track?.artist === 'string' ? track.artist.slice(0, 64).trim() : '',
@@ -441,6 +447,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         notice: noticeText,
         supportsRecovery: message.membershipRecovery === true,
         globalRoomCodes: message.globalRoomCodes === true,
+        roomNames: message.roomNames === true,
         rooms: Object.freeze(rooms),
         total: Math.max(rooms.length, bounded(message.total, 100000) - (candidates.length - rooms.length)),
         connection: 'live',
@@ -579,6 +586,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         ...snapshot.form,
         ...formDefaults(product),
         mode,
+        roomName: '',
         validationMessage: '',
       }),
     });
@@ -592,7 +600,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     patch: Partial<
       Pick<
         DirectoryForm,
-        'product' | 'capacity' | 'difficulty' | 'code' | 'visibility' | 'disableCheatMovement' | 'unrated'
+        'product' | 'capacity' | 'difficulty' | 'code' | 'visibility' | 'disableCheatMovement' | 'unrated' | 'roomName'
       >
     >,
   ) {
@@ -624,6 +632,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     if (patch.disableCheatMovement !== undefined)
       next.disableCheatMovement = patch.disableCheatMovement;
     if (patch.unrated !== undefined) next.unrated = patch.unrated;
+    if (patch.roomName !== undefined) next.roomName = patch.roomName;
     publish({ form: Object.freeze(next) });
   }
   function enterRoom(
@@ -636,6 +645,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     disableCheatMovement = false,
     spectator = false,
     unrated = false,
+    initialRoomName?: string,
   ) {
     if (disposed || snapshot.leaving || snapshot.connection !== 'live') return;
     if (snapshot.mine) {
@@ -646,6 +656,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     options.identity.lobbyClientId(product);
     if (created)
       options.sessions.save(product, {
+        ...(initialRoomName ? {initialRoomName} : {}),
         room: {
           code,
           playerCount: playerCount || policy.playerCounts[0],
@@ -704,6 +715,9 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       return 'invalid-code';
     }
     const created = form.mode === 'create';
+    const requestedName = created ? form.roomName?.trim() : undefined;
+    const initialRoomName = normalizeRoomName(form.roomName);
+    if (requestedName && (!snapshot.roomNames || !initialRoomName)) return 'unavailable';
     if (created) {
       code = generateMultiplayerRoomCode(options.randomWord);
       while (snapshot.rooms.some((room) => (snapshot.globalRoomCodes || room.product === form.product) && room.code === code))
@@ -725,6 +739,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
           form.disableCheatMovement,
           false,
           form.unrated,
+          requestedName ? initialRoomName ?? undefined : undefined,
         ),
     };
     return 'close';

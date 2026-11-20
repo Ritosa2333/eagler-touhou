@@ -219,6 +219,7 @@ export function RoomExample({
       setState((previous) => ({ ...previous, ready: false, spectatorRequested: false }));
     },
     setRoomSettings: updateRoom,
+    setRoomName: (roomName: Room['roomName']) => updateRoom({ roomName }),
     timingRecommendation: () => ({ inputDelay: 0, targetRollbackFrames: 12, networkFrames: 0, mobileSeats: 0 }),
     setRollbackEnabled: (value: boolean) => setState((previous) => ({ ...previous, rollbackEnabled: value })),
     setTimingChoice: (value: 'auto' | number) => setState((previous) => ({ ...previous, timingChoice: value })),

@@ -1521,6 +1521,48 @@
     "id": "lobby_loadingOptions",
     "params": []
   },
+  "roomName.label": {
+    "id": "roomName_label",
+    "params": []
+  },
+  "roomName.limit": {
+    "id": "roomName_limit",
+    "params": [
+      "count"
+    ]
+  },
+  "roomName.save": {
+    "id": "roomName_save",
+    "params": []
+  },
+  "roomName.status.reviewing": {
+    "id": "roomName_status_reviewing",
+    "params": []
+  },
+  "roomName.status.saved": {
+    "id": "roomName_status_saved",
+    "params": []
+  },
+  "roomName.status.approved": {
+    "id": "roomName_status_approved",
+    "params": []
+  },
+  "roomName.status.rejected": {
+    "id": "roomName_status_rejected",
+    "params": []
+  },
+  "roomName.status.invalid": {
+    "id": "roomName_status_invalid",
+    "params": []
+  },
+  "roomName.status.unavailable": {
+    "id": "roomName_status_unavailable",
+    "params": []
+  },
+  "roomName.status.rate-limited": {
+    "id": "roomName_status_rate_limited",
+    "params": []
+  },
   "room.visibility": {
     "id": "room_visibility",
     "params": []
@@ -7611,6 +7653,12 @@
     "id": "library_category_doujin",
     "params": []
   },
+  "library.categoryContents": {
+    "id": "library_categoryContents",
+    "params": [
+      "category"
+    ]
+  },
   "library.categories": {
     "id": "library_categories",
     "params": []
@@ -10545,6 +10593,10 @@
   },
   "notice.label": {
     "id": "notice_label",
+    "params": []
+  },
+  "notice.unread": {
+    "id": "notice_unread",
     "params": []
   },
   "account.demoCode": {

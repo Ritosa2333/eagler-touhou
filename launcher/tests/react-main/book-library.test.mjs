@@ -1,6 +1,7 @@
 import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
-import {mkdtemp, rm} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {mkdtemp, readFile, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
@@ -15,7 +16,9 @@ before(async () => {
   const outfile = resolve(work, 'views.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'tsx', contents: `
     export {MemoryRouter} from 'react-router';
+    export {Tooltip} from 'radix-ui';
     export {BookLibrary} from './app/components/launcher/BookLibrary.tsx';
+    export {LibraryAnnouncements} from './app/components/launcher/LibraryAnnouncements.tsx';
     export {BookDirectoryGames} from './app/components/launcher/BookDirectoryGames.tsx';
     export {BookThemeToggle} from './app/components/launcher/BookThemeToggle.tsx';
     export * from './app/components/launcher/book-preferences.ts';
@@ -68,6 +71,67 @@ async function mount(products, locale = 'en') {
   return activated;
 }
 
+function mountAnnouncements() {
+  const container = env.document.createElement('div');
+  env.document.body.append(container);
+  root = createRoot(container);
+  return (entries, key, persistRead = true) => React.act(async () => root.render(
+    React.createElement(api.LocaleProvider, {locale: 'en'},
+      React.createElement(api.Tooltip.Provider, null, React.createElement(api.LibraryAnnouncements, {entries, key, persistRead}))),
+  ));
+}
+
+const announcementTrigger = '.library-announcements-trigger';
+const announcementDot = '.library-announcements-unread';
+
+test('announcement icon marks the three latest localized announcements as read', async () => {
+  const render = mountAnnouncements();
+  const entries = [
+    {id: 'old', date: '2026-11-17', 'zh-CN': {title: '旧公告'}},
+    {id: 'first', date: '2026-11-20', 'zh-CN': {title: '新公告', summary: '中文正文'}, en: {title: 'New release'}},
+    {id: 'third', date: '2026-11-19', 'zh-CN': {title: '次新公告'}},
+    {id: 'second', date: '2026-11-20', 'zh-CN': {title: '同日公告', summary: '回退正文'}},
+  ];
+  await render(entries, 'first-visit');
+  assert.equal(node(announcementTrigger).getAttribute('aria-haspopup'), 'dialog');
+  assert.equal(node(announcementTrigger).getAttribute('aria-label'), 'Unread announcements');
+  node(announcementDot);
+  assert.equal(env.document.querySelector('.library-announcements-dialog'), null);
+  await click(announcementTrigger);
+  assert.equal(env.document.querySelector(announcementDot), null);
+  const dialog = node('.library-announcements-dialog');
+  assert.equal(env.document.getElementById(dialog.getAttribute('aria-labelledby')).textContent, 'Notice');
+  const items = [...dialog.querySelectorAll('.library-announcement')];
+  assert.deepEqual(items.map(item => item.querySelector('time').dateTime), ['2026-11-20', '2026-11-20', '2026-11-19']);
+  assert.deepEqual(items.map(item => item.querySelector('header h3 + time').dateTime), ['2026-11-20', '2026-11-20', '2026-11-19']);
+  assert.deepEqual(items.map(item => item.querySelector('h3').textContent), ['New release', '同日公告', '次新公告']);
+  assert.deepEqual(items.map(item => item.querySelector('h3').lang), ['en', 'zh-CN', 'zh-CN']);
+  assert.equal(items[0].querySelector('p'), null);
+  assert.equal(items[1].querySelector('header + p').textContent, '回退正文');
+  await click('.library-announcements-dialog button');
+  assert.equal(env.document.querySelector('.library-announcements-dialog'), null);
+  assert.equal(env.document.activeElement, node(announcementTrigger));
+  await render(entries, 'next-visit');
+  assert.equal(env.document.querySelector(announcementDot), null);
+  await render([...entries, {id: 'new', date: '2026-11-21', 'zh-CN': {title: '最新公告'}}], 'next-visit');
+  node(announcementDot);
+});
+
+test('the announcement icon stays with no entries, and handbook demos do not write preferences', async () => {
+  const render = mountAnnouncements();
+  await render([], 'empty');
+  node(announcementTrigger);
+  assert.equal(env.document.querySelector(announcementDot), null);
+  await click(announcementTrigger);
+  node('.library-announcements-dialog');
+  assert.equal(env.document.querySelector('.library-announcement'), null);
+  await render([{id: 'demo', date: '2026-11-20', 'zh-CN': {title: '示例'}}], 'demo', false);
+  node(announcementDot);
+  await click(announcementTrigger);
+  assert.equal(env.document.querySelector(announcementDot), null);
+  assert.equal(api.readBookPreference('announcementReadIds', 'unset', Array.isArray), 'unset');
+});
+
 test('anchored multiplayer menu preserves deep-link selection and shares multi-selection with the icon rail', async () => {
   const products=api.createLibraryProducts(['th01mp','th02mp','th03mp','th04mp','th05mp','th06mp','th075mp','th09mp','th10mp','th15mp','th19mp'],p=>p,id=>'?game='+id);
   function Fixture(){const[filters,setFilters]=React.useState([]),[viewing,setViewing]=React.useState('th09mp');return React.createElement(api.BookDirectoryGames,{products,productFilters:filters,viewingProduct:viewing,onProductFiltersChange:ids=>{setFilters(ids);setViewing('');},onSelect(){assert.fail('Checkboxes must not replace a multi-selection');}});}
@@ -118,22 +182,60 @@ test('only supplied published products become cards; hidden/MP/demo titles never
   await click('[data-book-category="spin-off"]'); assert.deepEqual(ids(), ['th075']);
 });
 test('HSoB is listed with doujin games and not with official spin-offs', async () => {
-  const products = api.createLibraryProducts(['th075'], p => p, id => '?game=' + id);
-  products.push({...products[0], id: 'hsob', gameId: 'hsob', number: 'HSOB', title: 'Hollow Song of Birds'});
+  const products = api.createLibraryProducts(['th075', 'hsob'], p => p, id => '?game=' + id);
   await mount(products);
   await click('[data-book-category="doujin"]');
   assert.deepEqual(ids(), ['hsob']);
+  assert.match(node('[data-book-product="hsob"] .book-art img').src, /^data:image\/webp;base64,/);
+  await click('[data-book-category-disclosure="doujin"]');
+  const sidebar = node('#bookCategory-doujin [data-book-sidebar-product="hsob"]');
+  assert.equal(sidebar.querySelector('.book-work-number').textContent, 'thHSOB');
+  assert.equal(sidebar.querySelector('img').src, node('[data-book-product="hsob"] .book-art img').src);
   await click('[data-book-category="spin-off"]');
   assert.deepEqual(ids(), ['th075']);
 });
 test('TH05 is discoverable through the PC98 category in the current library', async () => {
   const products = api.createLibraryProducts(['th05', 'th06'], p => p, id => '?game=' + id);
   await mount(products);
-  assert.deepEqual(ids(), ['th06', 'th05']);
+  assert.deepEqual(ids(), ['th05', 'th06']);
   await click('[data-book-category="pc98"]');
   assert.deepEqual(ids(), ['th05']);
   await click('[data-book-category="windows"]');
   assert.deepEqual(ids(), ['th06']);
+});
+test('sidebar disclosures list playable single-player entries without changing the category filter', async () => {
+  const products = api.createLibraryProducts(['th13', 'th06mp', 'th01', 'th06', 'th07'], p => p, id => '?game=' + id);
+  products.find(product => product.id === 'th07').hidden = true;
+  const activated = await mount(products);
+  const disclosure = id => `[data-book-category-disclosure="${id}"]`;
+  const members = id => [...node(`#bookCategory-${id}`).querySelectorAll('[data-book-sidebar-product]')]
+    .map(link => link.dataset.bookSidebarProduct);
+  assert.equal(env.document.querySelector(disclosure('favorites')), null);
+  assert.equal(node(disclosure('windows')).getAttribute('aria-expanded'), 'false');
+  assert.ok(node(`${disclosure('windows')} .lucide-plus`));
+  const windows = () => node('#bookCategory-windows');
+  assert.equal(windows().hasAttribute('inert'), true);
+  assert.deepEqual(members('windows'), []);
+
+  await click(disclosure('windows'));
+  assert.equal(node(disclosure('windows')).getAttribute('aria-expanded'), 'true');
+  assert.equal(windows().hasAttribute('inert'), false);
+  assert.ok(node(`${disclosure('windows')} .lucide-minus`));
+  assert.deepEqual(members('windows'), ['th06', 'th13']);
+  assert.deepEqual(ids(), ['th01', 'th06', 'th13']);
+  await click(disclosure('pc98'));
+  assert.deepEqual(members('pc98'), ['th01']);
+  assert.equal(node('#bookCategory-pc98 .book-work-number').textContent, 'th01');
+  await click('[data-book-category="pc98"]');
+  assert.deepEqual(ids(), ['th01']);
+  assert.deepEqual(members('windows'), ['th06', 'th13']);
+  await click('#bookCategory-windows [data-book-sidebar-product="th13"]');
+  assert.deepEqual(activated, ['th13']);
+  await click(disclosure('windows'));
+  assert.equal(windows().getAttribute('aria-hidden'), 'true');
+  assert.equal(windows().hasAttribute('inert'), true);
+  assert.deepEqual(members('windows'), ['th06', 'th13'], 'entries stay mounted for the closing animation');
+  assert.deepEqual(ids(), ['th01']);
 });
 test('favorites and view persist through remount, retain empty state, and recent list records actual launches only', async () => {
   const products = api.createLibraryProducts(['th06', 'th07'], p => p, id => '?game=' + id);
@@ -160,12 +262,29 @@ test('unavailable history IDs are ignored, search is case insensitive, numeric s
   assert.deepEqual(api.readBookPreference('favorites', [], api.stringArray), []);
 });
 
-test('all single-player works put favorites first and PC-98 last at equal priority', () => {
-  const products = api.createLibraryProducts(['th01', 'th06', 'th07'], p => p, id => '?game=' + id);
-  const order = favorites => api.filterBookProducts(products, 'all', favorites, '', 'number').map(p => p.id);
-  assert.deepEqual(order([]), ['th06', 'th07', 'th01']);
-  assert.deepEqual(order(['th01']), ['th01', 'th06', 'th07']);
-  assert.deepEqual(order(['th01', 'th07']), ['th07', 'th01', 'th06']);
+test('default single-player list starts at TH01 and keeps favorite priority', async () => {
+  const ascending = ['th01', 'th02', 'th03', 'th04', 'th05', 'th06', 'th07'];
+  const products = api.createLibraryProducts([...ascending].reverse(), p => p, id => '?game=' + id);
+  await mount(products);
+  assert.deepEqual(ids(), ascending);
+  const order = (favorites, sort = 'number') => api.filterBookProducts(products, 'all', favorites, '', sort).map(p => p.id);
+  assert.deepEqual(order(['th07', 'th01']), ['th01', 'th07', 'th02', 'th03', 'th04', 'th05', 'th06']);
+  assert.deepEqual(order([], 'reverse'), [...ascending].reverse());
+});
+
+test('TH13, TH14 and TH17 single-player cards use the bundled disc covers', async () => {
+  const games = ['th13', 'th14', 'th17'];
+  const coverDir = resolve(project, 'app/components/launcher/book-covers');
+  const sources = JSON.parse(await readFile(resolve(coverDir, 'sources.json'), 'utf8'));
+  const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+  await mount(api.createLibraryProducts(games, p => p, id => '?game=' + id));
+  for (const game of games) {
+    const source = sources.find(entry => entry.game === game);
+    const image = node(`[data-book-product="${game}"] .book-art img`);
+    assert.match(image.src, /^data:image\/webp;base64,/);
+    assert.equal(sha256(Buffer.from(image.src.split(',')[1], 'base64')), source.generated_sha256);
+    assert.equal(sha256(await readFile(resolve(project, source.source_file))), source.source_sha256);
+  }
 });
 
 test('number sorting places numeric works including decimals before lettered fan works', () => {

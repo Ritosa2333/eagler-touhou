@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useSearchParams } from 'react-router';
 import {
   Search,
@@ -9,6 +9,8 @@ import {
   Disc3,
   Gamepad2,
   Shapes,
+  Plus,
+  Minus,
   History,
   X,
 } from 'lucide-react';
@@ -23,7 +25,6 @@ import type { LibraryCardsProps } from './LibraryCards';
 import type { LibraryProduct } from './products';
 import {
   BOOK_PREFERENCES_EVENT,
-  bookCategory,
   filterBookProducts,
   readBookPreference,
   writeBookPreference,
@@ -50,6 +51,9 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   const { t } = useLocale(),
     [search] = useSearchParams();
   const [category, setCategory] = useState<BookCategory>('all');
+  // Keep a visited list mounted while its height animates back to zero.
+  const [disclosures, setDisclosures] = useState<ReadonlyMap<BookCategory, boolean>>(() => new Map());
+  const [sidebarOrigin, setSidebarOrigin] = useState<BookCategory | null>(null);
   const [query, setQuery] = useState(''),
     [sort, setSort] = useState('number');
   const [view, setView] = useState<'covers' | 'list'>('covers');
@@ -103,20 +107,27 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     };
   }, [interactive]);
   const list = filterBookProducts(products, category, favorites, query, sort);
+  const categoryProducts = new Map(categories.map(({id}) =>
+    [id, filterBookProducts(available, id, favorites, '', sort)] as const));
+  const selectedSidebar = sidebarOrigin && disclosures.get(sidebarOrigin) &&
+    categoryProducts.get(sidebarOrigin)?.some(product => product.id === openedProduct) ? sidebarOrigin : null;
   const toggleFavorite = (id: string) => {
     reserveResultsSpace();
     const next = favorites.includes(id) ? favorites.filter((item) => item !== id) : [...favorites, id];
     setFavorites(next);
     writeBookPreference('favorites', next);
   };
-  const activate = (product: LibraryProduct) => {
+  const activate = (event: MouseEvent<HTMLAnchorElement>, product: LibraryProduct, origin: BookCategory | null = null) => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    setSidebarOrigin(origin);
     onSelect(product.id);
     onActivate(product.id);
   };
   const gameLink = (product: LibraryProduct, recentLink = false, priority = false) => (
     <a
       ref={
-        openedProduct === product.id && (!recentLink || !list.some((item) => item.id === product.id))
+        openedProduct === product.id && !selectedSidebar && (!recentLink || !list.some((item) => item.id === product.id))
           ? selectedCard
           : undefined
       }
@@ -125,15 +136,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
       data-book-product={product.id}
       data-game={product.gameId}
       aria-current={openedProduct === product.id ? 'page' : 'false'}
-      onClick={
-        interactive
-          ? (event) => {
-              if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-              event.preventDefault();
-              activate(product);
-            }
-          : undefined
-      }
+      onClick={interactive ? event => activate(event, product) : undefined}
     >
       <span className="book-art">
         <BookCover key={bookArtwork(product)} product={product} priority={priority} />
@@ -156,38 +159,40 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   return (
     <div className={`book-library book-view-${view}`} data-ui-kit="home">
       <aside className="book-sidebar" aria-label={t('library.categories')}>
-        <InputGroup className="book-search">
-          <Search aria-hidden="true" />
-          <InputGroupInput
-            ref={input}
-            id="librarySearch"
-            type="search"
-            value={query}
-            onChange={(event) => {
-              reserveResultsSpace();
-              setQuery(event.target.value);
-            }}
-            disabled={!interactive}
-            placeholder={t('library.searchPlaceholder')}
-            aria-label={t('library.search')}
-            aria-controls="bookGameGrid"
-          />
-          {query && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="max-[780px]:size-11"
-              aria-label={t('library.clearSearch')}
-              onClick={() => {
+        <div className="book-search-slot">
+          <InputGroup className="book-search min-[781px]:focus-within:ring-inset">
+            <Search aria-hidden="true" />
+            <InputGroupInput
+              ref={input}
+              id="librarySearch"
+              type="search"
+              value={query}
+              onChange={(event) => {
                 reserveResultsSpace();
-                setQuery('');
-                input.current?.focus();
+                setQuery(event.target.value);
               }}
-            >
-              <X />
-            </Button>
-          )}
-        </InputGroup>
+              disabled={!interactive}
+              placeholder={t('library.searchPlaceholder')}
+              aria-label={t('library.search')}
+              aria-controls="bookGameGrid"
+            />
+            {query && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="max-[780px]:size-11"
+                aria-label={t('library.clearSearch')}
+                onClick={() => {
+                  reserveResultsSpace();
+                  setQuery('');
+                  input.current?.focus();
+                }}
+              >
+                <X />
+              </Button>
+            )}
+          </InputGroup>
+        </div>
         <ChoiceGroup
           asChild
           type="single"
@@ -204,27 +209,56 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
           aria-label={t('library.category')}
         >
           <nav>
-            {categories.map(({ id, Icon }) => (
-              <ChoiceItem
-                key={id}
-                value={id}
-                data-book-category={id}
-                onClick={() => {if (id === category) cancelLibraryMotion();}}
-                className="grid min-h-10 w-full shrink-0 pointer-coarse:min-h-11 grid-cols-[18px_minmax(0,1fr)_auto] justify-start gap-2.5 px-2.5 text-left text-[13px] max-[780px]:inline-flex max-[780px]:min-h-11 max-[780px]:w-auto max-[780px]:min-w-max max-[780px]:text-xs"
-              >
-                <Icon aria-hidden="true" />
-                <span>{labels[id]}</span>
-                <small>
-                  {
-                    available.filter(
-                      (product) =>
-                        id === 'all' ||
-                        (id === 'favorites' ? favorites.includes(product.id) : bookCategory(product) === id),
-                    ).length
-                  }
-                </small>
-              </ChoiceItem>
-            ))}
+            {categories.map(({ id, Icon }) => {
+              const entries = categoryProducts.get(id) ?? [];
+              const open = entries.length > 0 && disclosures.get(id) === true;
+              const listId = `bookCategory-${id}`;
+              const DisclosureIcon = open ? Minus : Plus;
+              return <div key={id} className="book-category" data-book-category-group={id} data-selected={id === category}>
+                <div className="book-category-row">
+                  <ChoiceItem
+                    value={id}
+                    data-book-category={id}
+                    onClick={() => {if (id === category) cancelLibraryMotion();}}
+                    className="grid min-h-10 w-full shrink-0 pointer-coarse:min-h-11 grid-cols-[18px_minmax(0,1fr)_auto] justify-start gap-2.5 px-2.5 text-left text-[13px] max-[780px]:inline-flex max-[780px]:min-h-11 max-[780px]:w-auto max-[780px]:min-w-max max-[780px]:text-xs"
+                  >
+                    <Icon aria-hidden="true" />
+                    <span>{labels[id]}</span>
+                    <small>{entries.length}</small>
+                  </ChoiceItem>
+                  {entries.length > 0 && <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="book-category-disclosure hidden size-full focus-visible:ring-inset focus-visible:ring-offset-0 min-[781px]:inline-flex"
+                    data-book-category-disclosure={id}
+                    disabled={!interactive}
+                    aria-label={t('library.categoryContents', {category:labels[id]})}
+                    aria-controls={listId}
+                    aria-expanded={open}
+                    onClick={() => setDisclosures(previous =>
+                      new Map(previous).set(id, !previous.get(id)))}
+                  ><DisclosureIcon aria-hidden="true" /></Button>}
+                </div>
+                {entries.length > 0 && <div className="book-category-fold" id={listId} data-open={open} inert={!open} aria-hidden={!open}>
+                  <div className="book-category-fold-clip">
+                    <ul className="book-category-games">
+                      {disclosures.has(id) && entries.map(product => <li key={product.id}><a
+                        ref={selectedSidebar === id && openedProduct === product.id ? selectedCard : undefined}
+                        href={product.href}
+                        data-book-sidebar-product={product.id}
+                        aria-current={openedProduct === product.id ? 'page' : undefined}
+                        title={product.title}
+                        onClick={interactive ? event => activate(event, product, id) : undefined}
+                      >
+                        <BookSidebarCover key={bookArtwork(product)} product={product} />
+                        <span className="book-category-game-title">{product.title}</span>
+                        <BookWorkNumber gameId={product.gameId} number={product.number} />
+                      </a></li>)}
+                    </ul>
+                  </div>
+                </div>}
+              </div>;
+            })}
           </nav>
         </ChoiceGroup>
       </aside>
@@ -352,6 +386,16 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
       </div>
     </div>
   );
+}
+
+function BookSidebarCover({product}: {product: LibraryProduct}) {
+  const [failed, setFailed] = useState(false);
+  const source = bookArtwork(product);
+  return <span className="book-category-game-cover" aria-hidden="true">
+    {source && !failed
+      ? <img src={source} alt="" loading="lazy" decoding="async" onError={()=>setFailed(true)} />
+      : <Gamepad2 />}
+  </span>;
 }
 
 function BookCover({ product, priority }: { product: LibraryProduct; priority: boolean }) {

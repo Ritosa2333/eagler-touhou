@@ -1,4 +1,5 @@
 import {isPc98StockProduct} from './pc98-initial-stock.mjs';
+import {normalizeRoomName} from '../../../common/contracts/room-name.mjs';
 import {validTh19VersusRules} from './th19-versus-rules.mjs';
 import {validTh15ChapterThreshold} from "./th15-chapter-reward.mjs";
 import {validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
@@ -12,6 +13,7 @@ export interface MultiplayerRoomSessionStorage {
 }
 
 export interface MultiplayerRoomSessionSnapshot {
+  initialRoomName?: string;
   room: {
     visibility?: "public" | "private";
     disableCheatMovement?: boolean;
@@ -69,6 +71,7 @@ export function createMultiplayerRoomSessionStore({
     try {
       storage?.setItem(multiplayerRoomSessionStorageKey(product), JSON.stringify({
         product,
+        initialRoomName: snapshot.initialRoomName,
         room: {
           code: snapshot.room.code,
           visibility: snapshot.room.visibility,
@@ -121,6 +124,7 @@ export function createMultiplayerRoomSessionStore({
       : null;
     return {
       product,
+      initialRoomName: normalizeRoomName(saved.initialRoomName) ?? undefined,
       room: {
         code: roomCode,
         visibility: room.visibility === "private" ? "private" : "public",
