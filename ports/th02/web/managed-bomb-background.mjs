@@ -14,3 +14,31 @@ export function installBombBackgroundRepair(exe, patch) {
   exe.set([0xe8,lo(jump),hi(jump),0x90,0x90,0x90,0x90,0x90,0x90,0x90],base+hook);
   exe.set(body,base+target);
 }
+
+// MAIN loads BOMBS.BFT once before the first stage. The co-op selector frees
+// only the outgoing shot type's PI/BFT, so it must not run the shared loader
+// again: each reload would strand another 0x438 bytes of conventional memory.
+export function installBombResourceReuse(exe, patch) {
+  const base=patch.headerSize+patch.codeSegment*16;
+  const call=patch.entries.bomb_art_select+0x33, thunk=0x8aa8, loadShotArt=0x3051;
+  const relative=(target,next)=>[(target-next)&255,(target-next)>>8&255];
+  const original=[0xe8,...relative(0x3018,call+3)];
+  const shotArtEntry=[0xc4,0x1e,0xfc,0x27]; // les bx, [resident]
+  const body=[0x55,0x8b,0xec,0xe9,...relative(loadShotArt,thunk+6)]; // native prologue + tail jump
+  if(!original.every((byte,i)=>exe[base+call+i]===byte)||
+     !shotArtEntry.every((byte,i)=>exe[base+loadShotArt+i]===byte)||
+     !body.every((_,i)=>exe[base+thunk+i]===0))throw Error('TH02 Bomb 素材切换补丁位置不匹配');
+  exe.set(body,base+thunk);
+  exe.set([0xe8,...relative(thunk,call+3)],base+call);
+}
+
+// Co-op can switch to the largest Bomb PI while stage tiles and wave data are
+// already resident. The original 18,000-paragraph arena can't fit that PI's
+// decoder and output together in stage 4. Its failed load leaves the decoder
+// workspace allocated, so subsequent native stage loads fail as well.
+export function installCoopAssetHeap(exe, patch) {
+  const at=patch.headerSize+patch.codeSegment*16+0x47b6;
+  const original=[0x68,0x50,0x46,0x9a,0x10,0x29]; // push 0x4650; call far hmem_assign
+  if(!original.every((byte,i)=>exe[at+i]===byte))throw Error('TH02 联机素材内存补丁位置不匹配');
+  exe[at+2]=0x56; // add 0x1000 paragraphs (64 KiB) within conventional DOS memory
+}
