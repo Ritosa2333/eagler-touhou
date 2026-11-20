@@ -2490,6 +2490,10 @@
     "id": "nav_migrationPart2",
     "params": []
   },
+  "game.title.bromp": {
+    "id": "game_title_bromp",
+    "params": []
+  },
   "game.title.th06mp": {
     "id": "game_title_th06mp",
     "params": []
@@ -4468,6 +4472,22 @@
     "params": [
       "reason"
     ]
+  },
+  "multiplayer.loadout.bro.reimu": {
+    "id": "multiplayer_loadout_bro_reimu",
+    "params": []
+  },
+  "multiplayer.loadout.bro.marisa": {
+    "id": "multiplayer_loadout_bro_marisa",
+    "params": []
+  },
+  "multiplayer.loadout.bro.chiruno": {
+    "id": "multiplayer_loadout_bro_chiruno",
+    "params": []
+  },
+  "multiplayer.loadout.bro.aya": {
+    "id": "multiplayer_loadout_bro_aya",
+    "params": []
   },
   "multiplayer.loadout.reimuA": {
     "id": "multiplayer_loadout_reimuA",

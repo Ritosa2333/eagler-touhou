@@ -1,0 +1,109 @@
+// 草案：eagler-touhou 主库 `common/contracts/product-catalog.mjs` 的 BRO 登记片段
+// ⚠️ 不是真实文件。迁入时把下面条目加进 PRODUCT_GAMES 对象，并按文件顶部常量定义补 4 个新常量。
+// 依据：hsob（第三方/importOnly 先例）+ th07（多人）+ th20（自包含 WASM）原文格式。
+
+// ---------- A. 文件顶部需要新增的常量（和现有 MULTIPLAYER_LOADOUTS 等并列） ----------
+// 首期只上 [2,3]，与官方 STANDARD_MULTIPLAYER_PLAYER_COUNTS 一致，直接用标准常量。
+// 4 人是 BRO 内部已支持的能力，但用户要求暂缓开放大厅，后续需要时再单独声明 [2,3,4]。
+const BRO_MULTIPLAYER_PLAYER_COUNTS = STANDARD_MULTIPLAYER_PLAYER_COUNTS;
+const BRO_MULTIPLAYER_LOADOUTS = Object.freeze([
+  Object.freeze({ field: "character", labelKey: "game.loadout.character", values: Object.freeze([
+    "reimu_player", "marisa_player", "chiruno_player", "aya_player",
+  ]) }),
+]);
+const BRO_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Normal", "Hard", "Lunatic"]); // 需与 BRO 实际难度核对
+
+// ---------- B. 加入 PRODUCT_GAMES 的条目（gameId = bro） ----------
+bro: Object.freeze({
+  // 第三方衍生作标记（参照 hsob）：测试构建 + 显式 opt-in，避免影响官方正式发布列表
+  testOnly: true,
+  buildOptIn: true,
+
+  number: "BRO",
+  title: "東方 BossRush",
+  subtitle: "Touhou BossRush",
+  cardArtwork: "bro-card.webp", // 需提供一张启动器卡片图（可拿现有 title.png 裁剪）
+
+  storage: Object.freeze({
+    saveRoot: "/bro",
+    scoreFile: "Score.dat",
+    configFiles: Object.freeze(["setting", "Spellcard.dat"]),
+    // 注：BRO 实际用 IndexedDB `BossRush-save` + MEMFS /User /replay /bro/data；
+    // 上面是主库 storage 契约的最小映射，联调时需核对落盘路径。
+  }),
+
+  runtime: "./runtime/bro/bro.html",
+  runtimeFileLayout: "directory",
+  runtimeAssets: Object.freeze([
+    "bro.html", "bro.mjs", "bro.wasm", "manifest.json",
+    "shell.mjs", "eagler-adapter.mjs", "storage.mjs",
+    // 其余 JS/资源按 web/dist/package-manifest.json 的清单登记
+  ]),
+  requiredShared: Object.freeze([]), // BRO 自带字体，不依赖共享 TTC
+  dataProvider: "emscripten-preload", // 与 BRO 的 scripts.json 分发模型最接近；或按主库要求自定义
+  runtimeResourceTransport: "resources",
+
+  package: Object.freeze({
+    dataFileId: "game-data",
+    dataTarget: "/bro.data",
+    musicSourceDirectories: Object.freeze({ ogg: "music" }),
+    musicMounts: Object.freeze({ ogg: "/music" }),
+    // 若走玩家导入原始游戏包，再补 rawDataImport.fileNames
+  }),
+
+  musicCapabilities: Object.freeze({ midi: false }),
+  musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
+  touchFire: TOGGLE_TOUCH_FIRE,
+
+  support: Object.freeze({
+    highRefreshRate: true, // BRO 逻辑 60Hz / 渲染可跟随刷新率
+    sourceRepository: "https://github.com/TSake/TouHou-BossRushOnline",
+    credit: Object.freeze({
+      name: "吃药图书 (Cyoltose) / 清酒 (Tidew)",
+      url: "https://github.com/Cyoltose509/boss-rush",
+    }),
+  }),
+
+  replay: Object.freeze({
+    prefix: "bro",
+    extensions: Object.freeze(["rep", "multi"]), // STGR 单流 + 旁路多流
+  }),
+
+  // 多人：同时声明下面两项会自动生成产品 ID "bromp"
+  multiplayerRuntime: "./runtime/bro/multiplayer/bro.html",
+  multiplayer: Object.freeze({
+    titleKey: "game.title.bromp",
+    gameplay: "cooperative",
+    playerCounts: BRO_MULTIPLAYER_PLAYER_COUNTS, // 首期 [2,3]（标准常量）；4 人后续再开
+    difficulties: BRO_MULTIPLAYER_DIFFICULTIES,
+    loadouts: BRO_MULTIPLAYER_LOADOUTS,
+    peerTransportGlobal: "__broPeerTransport",
+    spectator: false,     // BRO 未启用旁观
+    titleRoomEntry: false,
+    relaySourceEnvelope: true,
+    inputTiming: Object.freeze({
+      rollbackLimit: 12,
+      sendPredictionLimit: 12,
+      rollbackDefault: true,
+      runtimeTiming: true,
+    }),
+  }),
+
+  features: Object.freeze({
+    thprac: false,
+    languages: false,
+    focusHitbox: false,
+  }),
+}),
+
+// ---------- C. 待维护者拍板的点 ----------
+// 1. gameId 用 bro 还是 bossrush？需全表一致（workspace.json / runtime-builds.json / 适配表 / 本目录名）。
+// 2. testOnly/buildOptIn：BRO 是第三方衍生作，建议先用测试版 opt-in 上线（同 hsob），
+//    等维护者确认授权与署名后再考虑去掉。
+// 3. dataProvider：BRO 的 scripts.json + 分片分发模型与官方 .data 单文件不同，
+//    需确认是走 emscripten-preload、自定义 provider，还是把资源打包成 /bro.data。
+// 4. 首期玩家数按用户要求只开 [2,3]，用官方标准常量；BRO 引擎内部仍是 4 槽
+//    （BRO_MAX_PLAYERS=4），只是大厅不开放第 4 席。后续要开时把上面的常量改成
+//    Object.freeze([2,3,4]) 即可，无需改 Runtime。
+// 5. 若新增 capability（如 focusHitbox 动态），必须同步 PRODUCT_FEATURE_POLICY /
+//    PRODUCT_FEATURE_IDS / HOST_RUNTIME_FEATURE_IDS 与 Host/Launcher 消费逻辑。

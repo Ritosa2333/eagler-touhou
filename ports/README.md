@@ -6,6 +6,7 @@
 
 | 游戏 | 普通版 | MP | 适配检查 |
 | --- | --- | --- | --- |
+| bro | [开发](bossrush/README.md) | 同一源码目录（`bromp`，首期 2~3 人） | [普通版／MP](bossrush/ADAPTATION.md) |
 | th01 | [开发](th01/README.md) | 同一源码目录 | [普通版／MP](th01/ADAPTATION.md) |
 | th02 | [开发](th02/README.md) | 同一源码目录 | [普通版／MP](th02/ADAPTATION.md) |
 | th03 | [开发](th03/README.md) | 同一源码目录 | [普通版／MP](th03/ADAPTATION.md) |

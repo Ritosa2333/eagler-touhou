@@ -112,6 +112,25 @@ export declare const PRODUCT_GAMES: Readonly<{
         replay: Readonly<{prefix: "Main_replay"; extensions: readonly ["dat"]}>;
         features: Readonly<{thprac: false; languages: false; focusHitbox: false}>;
     }>;
+    bro: Readonly<{
+        testOnly: true; buildOptIn: true; importOnly: true;
+        number: "BRO"; title: "東方 BossRush"; subtitle: "Touhou BossRush"; cardArtwork: "bro-card.webp";
+        storage: Readonly<{saveRoot: "/bro"; scoreFile: "Score.dat"; configFiles: readonly string[]}>;
+        runtime: "./runtime/bro/bro.html"; runtimeFileLayout: "directory";
+        runtimeAssets: readonly string[]; requiredShared: readonly string[];
+        dataProvider: "emscripten-preload"; runtimeResourceTransport: "resources";
+        package: Readonly<{dataFileId: "game-data"; dataTarget: "/bro.data"; musicSourceDirectories: Readonly<{ogg: "music"}>; musicMounts: Readonly<{ogg: "/music"}>}>;
+        musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"}>;
+        touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
+        support: Readonly<{highRefreshRate: true; sourceRepository: "https://github.com/TSake/TouHou-BossRushOnline"; credit: Readonly<{name: string; url: string}>}>;
+        replay: Readonly<{prefix: "bro"; extensions: readonly string[]}>;
+        multiplayerRuntime: "./runtime/bro/multiplayer/bro.html";
+        multiplayer: Readonly<{titleKey: "game.title.bromp"; gameplay: "cooperative"; playerCounts: readonly [2,3];
+            difficulties: readonly string[]; loadouts: readonly Readonly<{labelKey: string; glyph: string; character: number; shot: number}>[];
+            peerTransportGlobal: "__broPeerTransport"; relaySourceEnvelope: true; spectator: false; titleRoomEntry: false;
+            inputTiming: Readonly<{rollbackLimit: number; sendPredictionLimit: number; rollbackDefault: true; runtimeTiming: true}>}>;
+        features: Readonly<{thprac: false; languages: false; focusHitbox: false}>;
+    }>;
     th06: Readonly<{
         cardArtwork: "th06-card.webp";
         number: "06";

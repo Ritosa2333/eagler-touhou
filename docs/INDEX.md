@@ -1,6 +1,6 @@
 # 文档总表
 
-共 663 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 671 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -35,6 +35,7 @@
 | 适配指南 | [docs/adaptation/th15-pointdevice-issue113-20261020.md](adaptation/th15-pointdevice-issue113-20261020.md) | TH15 无欠检查点与完整存档导出 |
 | 适配指南 | [docs/adaptation/validation.md](adaptation/validation.md) | 验证与交付 |
 | 作品入口 | [ports/README.md](../ports/README.md) | 选择游戏 |
+| 作品入口 | [ports/bossrush/README.md](../ports/bossrush/README.md) | Touhou BossRush（BRO）网页版 |
 | 作品入口 | [ports/th01/README.md](../ports/th01/README.md) | TH01 主项目适配 |
 | 作品入口 | [ports/th02/README.md](../ports/th02/README.md) | TH02 主项目适配 |
 | 作品入口 | [ports/th03/README.md](../ports/th03/README.md) | TH03 原生网页版本 |
@@ -63,6 +64,7 @@
 | 作品入口 | [ports/th17/README.md](../ports/th17/README.md) | TH17 · 东方鬼形兽 |
 | 作品入口 | [ports/th19/README.md](../ports/th19/README.md) | 东方兽王园 TH19 |
 | 作品入口 | [ports/th20/README.md](../ports/th20/README.md) | TH20 · 东方锦上京 |
+| 作品适配表 | [ports/bossrush/ADAPTATION.md](../ports/bossrush/ADAPTATION.md) | bro 适配检查 |
 | 作品适配表 | [ports/th01/ADAPTATION.md](../ports/th01/ADAPTATION.md) | th01 适配检查 |
 | 作品适配表 | [ports/th02/ADAPTATION.md](../ports/th02/ADAPTATION.md) | th02 适配检查 |
 | 作品适配表 | [ports/th03/ADAPTATION.md](../ports/th03/ADAPTATION.md) | th03 适配检查 |
@@ -90,6 +92,10 @@
 | 作品适配表 | [ports/th17/ADAPTATION.md](../ports/th17/ADAPTATION.md) | th17 适配检查 |
 | 作品适配表 | [ports/th19/ADAPTATION.md](../ports/th19/ADAPTATION.md) | th19 适配检查 |
 | 作品适配表 | [ports/th20/ADAPTATION.md](../ports/th20/ADAPTATION.md) | th20 适配检查 |
+| 作品源码文档 | [ports/bossrush/docs/DEVELOPMENT.md](../ports/bossrush/docs/DEVELOPMENT.md) | BossRush 开发指南 |
+| 作品源码文档 | [ports/bossrush/proposals/ISSUE_DRAFT.md](../ports/bossrush/proposals/ISSUE_DRAFT.md) | Issue 草案：认领并接入 Touhou BossRush（第三方衍生作）到 eagler-touhou |
+| 作品源码文档 | [ports/bossrush/proposals/MANIFEST_DIFF.md](../ports/bossrush/proposals/MANIFEST_DIFF.md) | BRO manifest ↔ eagler product-catalog 字段差集 |
+| 作品源码文档 | [ports/bossrush/proposals/README.md](../ports/bossrush/proposals/README.md) | BRO 接入提案（待维护者确认） |
 | 作品源码文档 | [ports/th01/README-NETPLAY.md](../ports/th01/README-NETPLAY.md) | 原生移植版 UDP 联机 |
 | 作品源码文档 | [ports/th01/README-PUBLIC.md](../ports/th01/README-PUBLIC.md) | 公网联机 |
 | 作品源码文档 | [ports/th01/README-UPSTREAM.md](../ports/th01/README-UPSTREAM.md) | TH01《东方灵异传》· 原生移植与多人合作 |
@@ -260,7 +266,7 @@
 | 公共库 | [common/testkit/presentation-lab/README.md](../common/testkit/presentation-lab/README.md) | Presentation Lab |
 | 公共库 | [common/testkit/replay-verifier/README.md](../common/testkit/replay-verifier/README.md) | Replay Verifier |
 | 公共库 | [common/testkit/replay-verifier/windows-present-observer/README.md](../common/testkit/replay-verifier/windows-present-observer/README.md) | Windows D3D8 Present 观察器 |
-| 公共库 | [common/third_party/libdatachannel/README.md](../common/third_party/libdatachannel/README.md) | 原生 WebRTC 补丁 |
+| 公共库 | [common/third_party/libdatachannel/README.md](../common/third_party/libdatachannel/README.md) | 原生 WebRTC 依赖补丁 |
 | Launcher | [launcher/ASSETS.md](../launcher/ASSETS.md) | 资源来源与生成 |
 | Launcher | [launcher/README.en.md](../launcher/README.en.md) | launcher README |
 | Launcher | [launcher/README.md](../launcher/README.md) | launcher README |
@@ -294,7 +300,7 @@
 | Launcher | [launcher/docs/paraglide-i18n.md](../launcher/docs/paraglide-i18n.md) | 界面语言与消息编译 |
 | Launcher | [launcher/docs/ui-controls.md](../launcher/docs/ui-controls.md) | 启动器 UI ｜ 源码研究与扩展设计 |
 | Launcher | [launcher/examples/deployment/README.md](../launcher/examples/deployment/README.md) | HTTP 配置示例 |
-| Launcher | [launcher/examples/imgui-overlay/README.md](../launcher/examples/imgui-overlay/README.md) | ImGui 面板备选 |
+| Launcher | [launcher/examples/imgui-overlay/README.md](../launcher/examples/imgui-overlay/README.md) | th09 ImGui Overlay 原型 |
 | Launcher | [launcher/integrations/LOCALIZATION.md](../launcher/integrations/LOCALIZATION.md) | 语言包与字体 |
 | Launcher | [launcher/integrations/RUNTIME_CONTRACT.md](../launcher/integrations/RUNTIME_CONTRACT.md) | Runtime 语言包与 thprac 接口 |
 | Launcher | [launcher/lib/README.md](../launcher/lib/README.md) | lib/ 目录归属 |

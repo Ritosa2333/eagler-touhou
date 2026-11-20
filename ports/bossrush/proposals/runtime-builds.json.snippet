@@ -1,0 +1,36 @@
+// 草案：eagler-touhou 主库 `launcher/config/runtime-builds.json` 的 BRO 登记片段
+// ⚠️ 不是真实文件。格式来自官方 main 分支原文（schema: eagler-touhou/runtime-builds/1，
+// 顶层 {schema, defaults, games}，每作 {builder, sourceBuild, workspaceRepository, variants}）。
+// 把下面 "bro" 键加进 games 对象。
+
+"bro": {
+  // BRO 的自包含 WASM 由 web/build.sh（Emscripten + Lua 5.1.5）产出，
+  // 不是 CMake 也不是官方那些 portable/build.mjs → 用 prebuilt + node 构建脚本。
+  "builder": "prebuilt",
+  "workspaceRepository": "bro",
+  "sourceBuild": {
+    "kind": "node",
+    "build": ["tools/build-eagler.mjs"],  // 需新写：封装 web/build.sh + 产物搬运
+    "commonMarker": "web/src/eagler_adapter.mjs" // 用于确认公共运行库存在的标记文件
+  },
+  "variants": {
+    "normal": {
+      "features": { "thcrap": false, "thprac": false },
+      "cache": {}
+    },
+    "multiplayer": {
+      // 共用源码目录：不另设 workspaceRepository（若主库要求独立目录再改为 "bromp"）
+      "sourceBuild": { "build": ["tools/build-eagler.mjs", "--multiplayer"] },
+      "features": { "thcrap": false, "thprac": false },
+      "cache": {}
+    }
+  }
+}
+
+// 说明：
+// 1. 迁入主库后需要新写 tools/build-eagler.mjs：
+//    - 调 BRO 的 bash web/build.sh（注意 emsdk 路径，主库环境不一定有 RGL .toolchain）
+//    - 把 web/build/bro.{mjs,wasm} + web/src/*.mjs + web/dist/*.json 搬到 runtime/bro/ 下
+//    - 生成 bro.html 入口（加载 eagler-adapter + shell，处理 runtimeEpoch）
+// 2. 若主库不接受 Node 脚本调 bash（Windows 兼容问题），可改为预构建产物直接入库 + "builder":"prebuilt" 无 sourceBuild。
+// 3. variants 的 features 要与 product-catalog.mjs 的 features 保持一致（都是 false）。
