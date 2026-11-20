@@ -92,7 +92,7 @@
   .book-directory .lobby-room-state[data-state='recruiting'] {color:var(--kit-success)}
   .book-directory .lobby-room-row[data-long-wait] .lobby-room-state {color:var(--kit-warning)}
   .book-directory .lobby-room-state:is([data-state='playing'],[data-state='full']) {color:var(--kit-destructive)}
-  .book-directory .lobby-room-row>.lobby-join {grid-column:4;grid-row:2;justify-self:end;align-self:center;width:78px;min-height:44px;margin:0;padding:7px 9px;font-size:12px;white-space:normal}
+  .book-directory .lobby-room-row>.lobby-join {grid-column:4;grid-row:1/span 2;justify-self:end;align-self:center;width:78px;min-height:44px;margin:0;padding:7px 9px;font-size:12px;white-space:normal}
   @media(min-width:1081px) and (max-width:1200px) {
     .book-directory .book-room-score[data-compact] {padding-inline:2px}
     .book-directory .book-room-score[data-compact] .book-room-score-value {gap:3px;font-size:13px}
