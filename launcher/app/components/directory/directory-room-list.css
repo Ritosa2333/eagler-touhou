@@ -61,6 +61,8 @@
   .book-directory .lobby-room-rules>span {max-width:100%;overflow-wrap:anywhere}
   .book-directory .lobby-room-rules>span {color:var(--kit-warning)}
   .book-directory .lobby-room-rules>.lobby-room-rules-standard {color:var(--book-muted)}
+  .book-directory .lobby-room-rules>.lobby-room-name {color:#9ac8ff;font-weight:700}
+  html[data-book-theme='light'] .book-directory .lobby-room-rules>.lobby-room-name {color:#185aa5}
   .book-directory .lobby-party {display:grid;gap:6px;min-width:0;margin:0;padding:0;border:0;grid-column:3;grid-row:1/span 2;align-self:center}
   .book-directory .lobby-seats {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-flow:row;grid-auto-columns:auto;gap:8px;min-width:0;width:auto;padding:0}
   .book-directory .lobby-seats[data-capacity='2'] {grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
@@ -90,7 +92,7 @@
   .book-directory .lobby-room-state[data-state='recruiting'] {color:var(--kit-success)}
   .book-directory .lobby-room-row[data-long-wait] .lobby-room-state {color:var(--kit-warning)}
   .book-directory .lobby-room-state:is([data-state='playing'],[data-state='full']) {color:var(--kit-destructive)}
-  .book-directory .lobby-room-row>.lobby-join {grid-column:4;grid-row:2;justify-self:end;align-self:center;width:78px;min-height:44px;margin:0;padding:7px 9px;font-size:12px;white-space:normal}
+  .book-directory .lobby-room-row>.lobby-join {grid-column:4;grid-row:1/span 2;justify-self:end;align-self:center;width:78px;min-height:44px;margin:0;padding:7px 9px;font-size:12px;white-space:normal}
   @media(min-width:1081px) and (max-width:1200px) {
     .book-directory .book-room-score[data-compact] {padding-inline:2px}
     .book-directory .book-room-score[data-compact] .book-room-score-value {gap:3px;font-size:13px}

@@ -68,6 +68,7 @@ export interface LauncherState {
 }
 
 export interface MultiplayerRoomState {
+  roomName?: string | null;
   unrated?: boolean;
   th19Rules?: number[];
   initialSpares?: number;

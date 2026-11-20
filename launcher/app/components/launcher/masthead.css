@@ -438,18 +438,29 @@
 .account-menu-identity strong,.account-menu-identity small{display:block;overflow-wrap:anywhere}.account-menu-identity small{color:var(--kit-muted-foreground)}
 .profile-avatar>.account-avatar,.profile-draft-avatar>.account-avatar{width:100%;height:100%;border-radius:inherit}
 /* Subtle icon feedback on masthead actions. */
-.book-masthead :is(.book-top-faq, .book-top-donation) > svg {
+.book-top-donation > svg {
   transition: transform 300ms cubic-bezier(.22,.7,.2,1);
   transform-origin: center;
 }
 @media (hover:hover) and (pointer:fine) {
-  .book-masthead .book-top-faq:is(:hover,:focus-visible) > svg {transform: rotate(-10deg) scale(1.08)}
   .book-masthead .book-top-donation:is(:hover,:focus-visible):not(:disabled) > svg {animation: masthead-heartbeat 800ms ease-in-out both}
 }
 @keyframes masthead-heartbeat {0%, 100% {transform:scale(1)} 25% {transform:scale(1.18)} 45% {transform:scale(1)} 65% {transform:scale(1.12)}}
-.book-masthead .book-top-faq:active > svg {transform:rotate(8deg) scale(.94)}
+.book-top-faq .book-faq-question {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+.book-top-faq:focus-visible .book-faq-question {animation: masthead-faq-hop 460ms ease-in-out}
+@media (hover: hover) and (pointer: fine) {
+  .book-top-faq:hover .book-faq-question {animation: masthead-faq-hop 460ms ease-in-out}
+}
+@keyframes masthead-faq-hop {
+  24% {transform: scaleY(.82)}
+  52% {transform: translateY(-2px) scaleY(1.08)}
+  76% {transform: scaleY(.94)}
+}
 .book-masthead .book-top-donation:active:not(:disabled) > svg {animation:none;transform:scale(.9)}
 @media (prefers-reduced-motion:reduce) {
-  .book-masthead :is(.book-top-faq, .book-top-donation) > svg {animation:none!important;transition:none;transform:none!important}
+  :is(.book-faq-question, .book-top-donation > svg) {animation:none!important;transition:none;transform:none!important}
 }
-.less-motion .book-masthead :is(.book-top-faq, .book-top-donation) > svg {animation:none!important;transition:none;transform:none!important}
+.less-motion :is(.book-faq-question, .book-top-donation > svg) {animation:none!important;transition:none;transform:none!important}

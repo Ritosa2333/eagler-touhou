@@ -30,6 +30,7 @@ import { useLocation } from 'react-router';
 import { PRODUCT_GAMES } from '../../src/contracts/product-catalog.mts';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import { BookThemeToggle } from '../components/launcher/BookThemeToggle';
+import { LibraryAnnouncements } from '../components/launcher/LibraryAnnouncements';
 import { bookGameArtwork } from '../components/launcher/book-artwork';
 import { SiteBrand } from '../components/launcher/SiteBrand';
 import {
@@ -295,6 +296,23 @@ function Catalog() {
             description="两种入口组织使用相同内容。候选支持分组折叠记忆，窄屏改为底栏，游戏区域预览隐藏站点导航。"
           >
             <NavigationComparison />
+          </Section>
+          <Section id="announcements" description="公告是站点顶栏的固定入口。绿点表示有未读；弹窗展示最近三条，标题和日期同行，正文另起一段。">
+            <Tooltip.Provider delayDuration={0} disableHoverableContent>
+              <LibraryAnnouncements
+                persistRead={false}
+                entries={[
+                  { id: 'example-library', date: '2026-11-20', 'zh-CN': { title: '示例：书库更新', summary: '公告正文可以简述本次更新。' } },
+                  { id: 'example-cover', date: '2026-11-19', 'zh-CN': { title: '示例：作品封面更新', summary: '为书库补充几部作品的封面。' } },
+                ]}
+              />
+            </Tooltip.Provider>
+            <Usage title="发布公告">
+              <span>
+                在 <code>launcher/content/LIBRARY_ANNOUNCEMENTS.json</code> 新增一条记录，填写唯一 ID、发布日期（YYYY-MM-DD）和简短文案。
+                英文、日文可分别提供；缺少对应语言时显示中文。公告随前端一同发布。
+              </span>
+            </Usage>
           </Section>
           <Section
             id="modules"

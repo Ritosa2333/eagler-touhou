@@ -117,12 +117,36 @@
     "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
   },
   {
+    "game": "th13",
+    "file": "th13.webp",
+    "source_file": "docs/assets/game-covers/th13.png",
+    "source_sha256": "12b336337b895331cd3900f28fd463f4c554775ea163f921b3f09896268c5eeb",
+    "generated_sha256": "8622bce65a83d3f6d5c951d7ac8e7287531fd040c99fd190c04f7a73a1a11f9f",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
+    "game": "th14",
+    "file": "th14.webp",
+    "source_file": "docs/assets/game-covers/th14.png",
+    "source_sha256": "bb538ee58dd6e035f497f1ed489313ae86610af7dce51699eb99ba637c8e8a7f",
+    "generated_sha256": "920d7bb99f24b1d097bc610cc247971efa133c507b39bf0a55aefbc6239075d0",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
     "game": "th15",
     "file": "th15.webp",
     "source_file": "docs/assets/game-covers/th15.png",
     "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E7%BB%80%E7%8F%A0%E4%BC%A0%E5%B0%81%E9%9D%A2.png",
     "source_sha256": "b1551513dd8bcd2158dd3eefeb6a334e35f68921cfb522416f30ac6c33273b30",
     "generated_sha256": "147242c3dd7a79334feee75facb6dc22e8288ad2aa131c3ae5077c25878f9d9d",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
+    "game": "th17",
+    "file": "th17.webp",
+    "source_file": "docs/assets/game-covers/th17.png",
+    "source_sha256": "37f9127f1996eff91e3dc94393c941aea5bffa98dd4439d52d0518c9b22c7be5",
+    "generated_sha256": "38d585af196209b4f7e1bc5bc070360d511b91f5f5996e1c8ae5c3a8871ac4cc",
     "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
   },
   {
@@ -142,5 +166,14 @@
     "source_sha256": "db96503c7fee9971781a26d4993d1097a1740d77e68348249d6823d19abb3fb4",
     "generated_sha256": "abc0f6c96e44d6981cd9517c2a237a059be3afd9c1d5c6171b8ee7f50bfe0d3b",
     "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
+    "game": "hsob",
+    "file": "hsob.webp",
+    "source_file": "https://upload.thbwiki.cc/e/e1/%E6%9D%B1%E6%96%B9%E7%9C%9F%E7%8F%A0%E5%B3%B6_%EF%BD%9E_Hollow_Song_of_Birds.%E5%B0%81%E9%9D%A2.jpg",
+    "source_page": "https://thbwiki.cc/%E6%9D%B1%E6%96%B9%E7%9C%9F%E7%8F%A0%E5%B3%B6_%EF%BD%9E_Hollow_Song_of_Birds.",
+    "source_sha256": "77f5c185ab51a6dbbf779b7deb40599f6968eb1d0889fbc5cd4aeb6404612a4f",
+    "generated_sha256": "9c5c1d6507716abfdcc0e350ad5d2082932eac2a2dfcdeb154013b8b83866af8",
+    "conversion": "Pillow; RGB; original 512x512; WebP quality 82, method 6"
   }
 ]

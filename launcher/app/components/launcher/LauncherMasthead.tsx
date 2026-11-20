@@ -20,10 +20,12 @@ import { Button } from '../../ui/button';
 import { uiPortalHost } from '../../ui/portal';
 import { usePopupPadding } from '../../ui/use-popup-padding';
 import { useLocale } from '../../i18n';
+import libraryAnnouncements from '../../../content/LIBRARY_ANNOUNCEMENTS.json';
 import { useCompactNavigation } from '../../navigation/navigation-motion';
 import { useSurfaceLayerState } from '../../navigation/surface-layer';
 import { AppLink } from './AppLink';
 import { BookThemeToggle } from './BookThemeToggle';
+import { LibraryAnnouncements } from './LibraryAnnouncements';
 import type { BackgroundSurface } from './CustomBackground';
 import { isTh09RatingPage } from '../documents/catalog';
 import { MastheadOverview, type MastheadSiteLink } from './MastheadOverview';
@@ -212,7 +214,15 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
         </a>
         <MastheadTooltip label={faqLink.label}>
           <Button asChild variant="ghost" size="icon" className="masthead-action book-top-faq">
-            <a href={faqLink.href} aria-label={faqLink.label}>{faqLink.icon}</a>
+            <a href={faqLink.href} aria-label={faqLink.label}>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <g className="book-faq-question">
+                  <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4" />
+                  <path d="M12 17h.01" />
+                </g>
+              </svg>
+            </a>
           </Button>
         </MastheadTooltip>
         {props.donationAvailable !== false && (
@@ -223,6 +233,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
             </Button>
           </MastheadTooltip>
         )}
+        <LibraryAnnouncements entries={libraryAnnouncements} disabled={!interactive} />
         <BookThemeToggle interactive={interactive} surfaces={themeSurfaces} tooltip />
         {!compact && <div hidden ref={language}>
           {props.languageControl}

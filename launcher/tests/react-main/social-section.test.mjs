@@ -48,19 +48,25 @@ afterAll(async()=>{
 });
 
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json'}});}
-function useApi(snapshot){
-  const calls=[],reads=[];globalThis.__socialViewer={username:'alice',name:'Alice'};
+function useApi(snapshot,profiles={}){
+  const calls=[],reads=[],avatarReads=[];globalThis.__socialViewer={username:'alice',name:'Alice'};
   globalThis.fetch=async(url,init={})=>{
     const address=new URL(String(url),env.window.location.href),path=address.pathname;
     if(path==='/api/ready')return json({ready:true});
     if(path==='/api/auth/get-session')return json({user:globalThis.__socialViewer});
     if(path==='/api/v1/profiles/alice/social'&&init.method!=='POST'){reads.push(address.searchParams.get('list'));return json(snapshot);}
+    const profile=path.match(/^\/api\/v1\/profiles\/([^/]+)$/);
+    if(profile){
+      const username=decodeURIComponent(profile[1]);
+      avatarReads.push({username,media:address.searchParams.get('media'),credentials:init.credentials});
+      if(username in profiles)return json(profiles[username]);
+    }
     if(path==='/api/v1/me/following'&&init.method==='POST'){
       const body=JSON.parse(init.body);calls.push(body);snapshot.following=body.follow;return json({following:body.follow});
     }
     return json({message:'not found'},404);
   };
-  return {calls,reads};
+  return {calls,reads,avatarReads};
 }
 async function mount(children){
   const container=env.document.createElement('div');env.document.body.append(container);root=createRoot(container);
@@ -95,9 +101,53 @@ test('friends and following switch to server lists and the profile action persis
   assert.doesNotMatch(page.textContent,/Bob/);
 });
 
+test('followers and following load public avatars near the viewport and retain the icon fallback',async()=>{
+  const OriginalObserver=globalThis.IntersectionObserver;
+  const observed=new Map();
+  globalThis.IntersectionObserver=class {
+    constructor(callback){this.callback=callback;}
+    observe(element){this.element=element;observed.set(element,this);}
+    disconnect(){observed.delete(this.element);}
+  };
+  const mediaUrl='/api/v1/profiles/bob/avatar/0123456789abcdef';
+  const inline='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+  const {avatarReads}=useApi({visible:true,following:false,friends:[],followers:[{username:'bob',nickname:'Bob'},{username:'dan',nickname:'Dan'}],
+    followingUsers:[{username:'carol',nickname:'Carol'}]}, {bob:{media:{avatar:mediaUrl},details:{avatar:inline}},dan:{details:null},carol:{details:{avatar:inline}}});
+  function ProfileSocial(){
+    const {search}=components.useLocation();
+    const tab=components.profileSocialTab(search,'')??'followers';
+    return React.createElement(components.SocialProvider,{username:'alice',includeLists:true,list:tab},React.createElement(components.SocialSection,{username:'alice',tab}));
+  }
+  try {
+    const page=await mount(React.createElement(ProfileSocial));
+    const row=name=>page.querySelector(`a[href="/u/${name}"]`)?.closest('.profile-social-user');
+    const reveal=async name=>{
+      const target=row(name).querySelector('.profile-social-avatar'),observer=observed.get(target);
+      await React.act(async()=>observer.callback([{target,isIntersecting:true}],observer));
+    };
+    await waitFor(()=>observed.size===2,'follower avatars are observed');
+    assert.deepEqual(avatarReads,[]);
+    assert.ok(row('bob').querySelector('.profile-social-avatar svg'));
+    await reveal('bob');
+    await waitFor(()=>row('bob').querySelector('img')?.getAttribute('src')===mediaUrl,'the public media URL is rendered');
+    assert.deepEqual(avatarReads,[{username:'bob',media:'urls',credentials:'omit'}]);
+    await React.act(async()=>row('bob').querySelector('img').dispatchEvent(new env.window.Event('error')));
+    assert.equal(row('bob').querySelector('img'),null);
+    assert.ok(row('bob').querySelector('.profile-social-avatar svg'));
+    await reveal('dan');
+    await waitFor(()=>avatarReads.some(({username})=>username==='dan'),'avatarless followers load their public profile');
+    assert.ok(row('dan').querySelector('.profile-social-avatar svg'));
+    await React.act(async()=>page.querySelector('.profile-social-tabs a[href*="social=following"]').click());
+    await waitFor(()=>!!row('carol'),'the following list is loaded');
+    assert.equal(avatarReads.length,2);
+    await reveal('carol');
+    await waitFor(()=>row('carol').querySelector('img')?.getAttribute('src')===inline,'inline avatars from the deployed API are rendered');
+  } finally {globalThis.IntersectionObserver=OriginalObserver;}
+});
+
 test('hidden relationships are omitted and signed-out visitors get the login action',async()=>{
   const snapshot={visible:false,following:null,friends:[],followingUsers:[]};
-  useApi(snapshot);
+  const {avatarReads}=useApi(snapshot);
   function ProfileSocial(){return React.createElement(React.Fragment,null,
     React.createElement(components.SocialProvider,{username:'alice',includeLists:true,list:'friends'},React.createElement(React.Fragment,null,
       React.createElement(components.SocialFollowControl,{username:'alice'}),
@@ -107,6 +157,7 @@ test('hidden relationships are omitted and signed-out visitors get the login act
   assert.match(page.textContent,/Sign in to follow/);
   assert.equal(page.querySelector('a[href*="login.html"]')?.textContent,'Sign in to follow');
   assert.equal(page.querySelector('.profile-social-users'),null);
+  assert.deepEqual(avatarReads,[]);
 });
 
 function deferred(){let resolve;const promise=new Promise(done=>{resolve=done;});return {promise,resolve};}

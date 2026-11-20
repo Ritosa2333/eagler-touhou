@@ -440,6 +440,43 @@ test('directory TH09 creation keeps original charging when the saved room is res
     directory.service.dispose();
   }
 });
+test('room name draft stays out of the invite and is submitted once after host seating', async () => {
+  const directory = await liveDirectory();
+  const room = roomFixture({sessions:directory.sessions,identity:directory.identity});
+  try {
+    directory.sockets[0].message(directoryState({roomNames:true}));
+    assert.equal(directory.service.prepareForm('create'),true);
+    directory.service.updateForm({roomName:'弹'.repeat(11)});
+    assert.equal(directory.service.submitForm(),'unavailable');
+    const text = '速通练习';
+    directory.service.updateForm({roomName:text});
+    assert.equal(directory.service.submitForm(),'close');
+    directory.service.formDidClose();
+    const invite = directory.navigation[0];
+    const token = new URL(invite).searchParams.get('j');
+    assert.ok(!Buffer.from(token,'base64url').toString().includes(text));
+    assert.equal(room.service.restoreInvite(invite),true);
+    const socket = room.sockets[0], id = directory.identity.lobbyClientId('th06mp');
+    socket.open();
+    const messages=()=>socket.sent.filter(m=>m.type==='set-room-name');
+    socket.message({type:'state',roomNames:true,room:roomState(id,{seats:[null,null]})});
+    assert.deepEqual(messages(),[]);
+    socket.message({type:'state',room:roomState(id)});
+    const saved = directory.sessions.load({product:'th06mp',roomCode:room.service.getSnapshot().room.code,playerCounts:[2],difficulties:[0]});
+    assert.ok(saved);
+    assert.equal(saved.initialRoomName,undefined);
+    socket.message({type:'state',room:roomState(id)});
+    assert.deepEqual(messages(),[{type:'set-room-name',roomName:text}]);
+    socket.message({type:'room-name-status',status:'reviewing'});
+    assert.equal(room.service.getSnapshot().roomNameStatus,'reviewing');
+    assert.equal(room.service.getSnapshot().room.roomName,null);
+    socket.message({type:'state',room:roomState(id,{roomName:text})});
+    assert.equal(room.service.getSnapshot().room.roomName,text);
+  } finally {
+    room.service.dispose();
+    directory.service.dispose();
+  }
+});
 test('rollback products default to D0 for both room creation and restored invites',async()=>{
   for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp']){
     const f=roomFixture();f.service.enterRoom(product,'1234',true);await flush();

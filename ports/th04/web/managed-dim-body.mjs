@@ -28,6 +28,15 @@ export function installDimBody(source,patch,challenge){
   // base life plus one reserve; future awards add exactly one reserve.
   const lifeCode=offset+212,life=Uint8Array.from('2e807c0601750b2e807c040075042efe44042efe4404c3'.match(/../g),v=>parseInt(v,16));
   const codeBase=headerBytes+cs*16;
+  // The active Bomb flag is shared; personal invincibility and hit flags
+  // are banked. Return NE to the native hit gate while either protects.
+  const teamBomb=Uint8Array.from([0x80,0x3e,0x68,0x43,0x00,0x75,0x05,0x80,0x3e,0x62,0x46,0x00,0xc3]);
+  const teamBombCode=offset+176,hitGate=0x5fe6;
+  const oldGate=[0x80,0x3e,0x62,0x46,0x00];
+  if(!oldGate.every((byte,index)=>result[codeBase+hitGate+index]===byte))throw Error('TH04 受击入口不匹配');
+  result.set(teamBomb,codeBase+teamBombCode);
+  result.set([0xe8,0,0,0x90,0x90],codeBase+hitGate);
+  new DataView(result.buffer).setUint16(codeBase+hitGate+1,(teamBombCode-hitGate-3)&65535,true);
   if(!result.subarray(codeBase+lifeCode,codeBase+lifeCode+life.length).every(value=>value===0))throw Error('TH04 残机补丁空间不匹配');
   result.set(life,codeBase+lifeCode);
   for(const [location,original] of [[0x8d37,[0x2e,0xfe,0x00]],[0x8eb0,[0x2e,0xfe,0x44,0x04]]]){

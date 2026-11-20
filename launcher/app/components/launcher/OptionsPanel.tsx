@@ -1,5 +1,5 @@
 import {Button as UiButton} from '../../ui/button';
-import {X, Users, ChevronRight} from 'lucide-react';
+import {X, Users, ChevronRight, Gamepad2} from 'lucide-react';
 import {useLayoutEffect, useRef, useState, type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 import {useOptionsViewport} from './use-options-viewport';
@@ -8,6 +8,7 @@ import {useOptionsTarget} from './options-ownership';
 import {useLocale} from '../../i18n';
 import type {LibraryProduct} from './products';
 import {AppLink} from './AppLink';
+import {BookSheetSections} from './BookSheetSections';
 
 export interface OptionsPanelProps {
   product: LibraryProduct;
@@ -21,13 +22,15 @@ export interface OptionsPanelProps {
   /** Preserve the original MP link only when that product is actually published. */
   lobbyHref?: string;
   embeddedInLobby?: boolean;
+  bookSheet?: boolean;
+  statistics?: ReactNode;
   /** Existing room settings carrier receives the same header and MP fold. */
   roomDrawer?: boolean;
   multiplayerOnline?: ReactNode;
   multiplayerDiagnostics?: ReactNode;
 }
 /** Main index.html354–365 shell; body is the shared SettingsBody, never a copy. */
-export function OptionsPanel({product, coverArtwork, open, closing=false, onBack, children, actions, lobbyHref, embeddedInLobby = false, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics}: OptionsPanelProps) {
+export function OptionsPanel({product, coverArtwork, open, closing=false, onBack, children, actions, lobbyHref, embeddedInLobby = false, bookSheet = false, statistics, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics}: OptionsPanelProps) {
   const {t} = useLocale();
   const panel = useRef<HTMLElement>(null);
   useOptionsViewport(panel, open && !roomDrawer);
@@ -43,13 +46,20 @@ export function OptionsPanel({product, coverArtwork, open, closing=false, onBack
   }, [inRoomDrawer]);
   // Main app.mts4626–4634 carries this product into the directory filter.
   const productLobbyHref = lobbyHref ? lobbyHrefForProduct(lobbyHref, product.id) : undefined;
+  const artwork = coverArtwork ?? product.artwork ?? undefined;
   const header = <div className="tools-head">
-      <img className="options-cover" id="optionsCover" src={coverArtwork ?? product.artwork ?? undefined} hidden={!(coverArtwork ?? product.artwork)} alt="" decoding="async"/>
-      <div className="tools-title"><div className="game-id" id="gameId" data-game={product.gameId}>{product.gameId}{product.multiplayer ? ' | MP' : ''}</div><h3 id="gameTitle" title={product.title}>{product.title}</h3></div>
-      <UiButton variant="secondary" size="icon" className="library-back" id="libraryBack" type="button" aria-label={t(roomDrawer || embeddedInLobby ? 'settings.drawerClose' : 'library.back')} onClick={onBack}><X aria-hidden="true"/></UiButton>
+      {bookSheet && artwork && <img className="book-sheet-art" src={artwork} alt="" decoding="async"/>}
+      <img className="options-cover" id="optionsCover" src={artwork} hidden={!artwork} alt="" decoding="async"/>
+      {bookSheet && !artwork && <span className="book-sheet-cover-fallback" aria-hidden="true"><Gamepad2/></span>}
+      <div className="tools-title">
+        <div className="game-id" id="gameId" data-game={product.gameId}>{product.gameId}{product.multiplayer ? ' | MP' : ''}</div>
+        <h3 id="gameTitle" title={product.title}>{product.title}</h3>
+        {bookSheet && product.subtitle && <p>{product.subtitle}</p>}
+      </div>
+      <UiButton variant="secondary" size="icon" className="library-back" id="libraryBack" type="button" aria-label={t(roomDrawer || embeddedInLobby || bookSheet ? 'settings.drawerClose' : 'library.back')} onClick={onBack}><X aria-hidden="true"/></UiButton>
     </div>;
   const fold = <section className={inRoomDrawer ? 'mp-settings mp-room-drawer-mounted' : 'mp-settings'} id="mpSettingsFold">{product.multiplayer ? children : null}</section>;
-  return <aside ref={panelTarget} data-options-panel data-state={open&&!closing?'open':'closed'} className={`tools${open ? ' is-open' : ''}${product.multiplayer ? ' mp-mode' : ''}`} role="dialog" aria-labelledby="gameTitle" aria-modal={open&&!closing || undefined} inert={!open||closing}>
+  return <aside ref={panelTarget} data-options-panel data-book-sheet={bookSheet || undefined} data-state={open&&!closing?'open':'closed'} className={`tools${open ? ' is-open' : ''}${product.multiplayer ? ' mp-mode' : ''}`} role="dialog" aria-labelledby="gameTitle" aria-modal={open&&!closing || undefined} inert={!open||closing}>
     {inRoomDrawer ? drawerTargets && createPortal(header, drawerTargets.header) : header}
     <div className="options-scroll">
       {product.multiplayer && !embeddedInLobby && productLobbyHref && <AppLink className="options-lobby-link" id="optionsLobbyLink" href={productLobbyHref} aria-label={`${product.title} | ${t('lobby.title')}`}><Users aria-hidden="true"/><span>{t('lobby.title')}</span><ChevronRight aria-hidden="true"/></AppLink>}
@@ -57,7 +67,7 @@ export function OptionsPanel({product, coverArtwork, open, closing=false, onBack
           mode. Keep that DOM contract and one probe presentation owner while
           the one active shared settings body changes its product context. */}
       <section className="mp-shell" id="mpShell" hidden={!product.multiplayer}>{multiplayerOnline}{inRoomDrawer ? drawerTargets && createPortal(fold, drawerTargets.content) : fold}{multiplayerDiagnostics}</section>
-      {!product.multiplayer && children}
+      {bookSheet ? <BookSheetSections key={product.id} statistics={statistics}>{children}</BookSheetSections> : !product.multiplayer && children}
     </div>
     {actions}
   </aside>;

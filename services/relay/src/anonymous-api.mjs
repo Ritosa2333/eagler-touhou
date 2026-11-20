@@ -12,7 +12,7 @@ const server = createServer(async (request,response) => {
     response.end(JSON.stringify(value));
   }
   if (request.headers.authorization !== 'Bearer ' + token) return reply(403,null);
-  if (request.method !== 'POST' || !['/current','/submit'].includes(request.url)) return reply(404,null);
+  if (request.method !== 'POST' || !['/current','/submit','/room-name'].includes(request.url)) return reply(404,null);
   try {
     const chunks = [];
     let size = 0;
@@ -22,6 +22,10 @@ const server = createServer(async (request,response) => {
       chunks.push(chunk);
     }
     const {member,address,name} = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    if (request.url === '/room-name') {
+      if (!isIP(address) || typeof name !== 'string' || name.length > 128) return reply(400,null);
+      return reply(200,await service.reviewRoomName(address,name));
+    }
     if (typeof member !== 'string' || !/^[A-Za-z0-9_-]{8,64}$/.test(member)) return reply(400,null);
     if (request.url === '/current') return reply(200,await service.current(member));
     if (!isIP(address) || typeof name !== 'string' || name.length > 256) return reply(400,null);

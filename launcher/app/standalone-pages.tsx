@@ -7,7 +7,7 @@ import {FirstUseNotice, type FirstUseNoticeHandle} from './components/notices/Fi
 import {LocaleProvider, translate, useLocale, type UiMessageKey} from './i18n';
 import {sitePageTitle, useDocumentUiLocale} from './navigation/document-locale';
 import {StandaloneSurfaceLayers} from './navigation/surface-layer';
-import {UI_LOCALES, UI_LOCALE_LABELS, UI_LOCALE_STORAGE_KEY, isUiLocale, localeHome, withUiLanguage} from '../src/launcher/i18n.mts';
+import {UI_LOCALES, UI_LOCALE_LABELS, isUiLocale, localeHome, readUiLocalePreference, saveUiLocalePreference, withUiLanguage} from '../src/launcher/i18n.mts';
 import {createSitePreferencesModel, bindSitePreferencesToDocument} from './models/site-preferences';
 import {RUNTIME_DIAGNOSTICS_STORAGE_KEY} from './models/runtime-diagnostics';
 import {validateSiteManifest, siteOriginMigrationAvailable} from '../src/contracts/site-manifest.mts';
@@ -49,8 +49,8 @@ function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNo
   useEffect(() => bindSitePreferencesToDocument(preferences), [preferences]);
   useEffect(() => {
     if (new URLSearchParams(location.search).has('lang')) return;
-    let saved: unknown; try {saved = localStorageOrNull()?.getItem(UI_LOCALE_STORAGE_KEY);} catch {}
-    if (isUiLocale(saved) && saved !== locale) navigate(withUiLanguage(location.pathname + location.search + location.hash, saved), {replace: true});
+    const saved = readUiLocalePreference(document, localStorageOrNull());
+    if (saved && saved !== locale) navigate(withUiLanguage(location.pathname + location.search + location.hash, saved), {replace: true});
   }, [location.pathname, location.search, location.hash, locale, navigate]);
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -78,7 +78,7 @@ function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNo
       languageControl={<MainSelect id="uiLanguageSelect" aria-label={t('ui.language')} value={locale} onChange={event => {
         const value = event.target.value;
         if (!isUiLocale(value)) return;
-        try {localStorageOrNull()?.setItem(UI_LOCALE_STORAGE_KEY, value);} catch {}
+        saveUiLocalePreference(document, localStorageOrNull(), new URL(base, window.location.href), value);
         navigate(withUiLanguage(location.pathname + location.search + location.hash, value));
       }}>{UI_LOCALES.map(value => <option key={value} value={value}>{t(UI_LOCALE_LABELS[value])}</option>)}</MainSelect>}/></StandaloneSurfaceLayers>
     <Main className={mainClassName}>{children}</Main>

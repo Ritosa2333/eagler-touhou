@@ -3,7 +3,7 @@ import struct,subprocess,tempfile,re
 from unicorn import Uc,UC_ARCH_X86,UC_MODE_16,UC_HOOK_CODE
 from unicorn.x86_const import *
 root=Path(__file__).resolve().parents[2]
-for game,origin,char,flush,count,row,step,col in [('02',0x8aa8,0x6c02,0x6c6c,0x8528,10,3,59),('04',0xb920,0x90c5,0x9125,0x95a2,7,2,69)]:
+for game,origin,char,flush,count,row,step,col in [('02',0x8f80,0x6c02,0x6c6c,0x8528,10,3,59),('04',0xb920,0x90c5,0x9125,0x95a2,7,2,69)]:
  with tempfile.TemporaryDirectory() as temp:
   output=Path(temp)/'hud.bin'
   args={'CH_ORG':origin,'CH_CHAR':char,'CH_FLUSH':flush,'CH_GAME':int(game),'CH_COUNT':count,'CH_ROW':row,'CH_STEP':step,'CH_COL':col,'CH_WIDTH':11}

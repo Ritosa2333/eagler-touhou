@@ -1,0 +1,22 @@
+@layer components {
+  .ui-disclosure-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition: grid-template-rows var(--ui-disclosure-duration, 220ms) var(--ui-disclosure-easing, var(--ui-surface-easing)),
+      visibility 0s var(--ui-disclosure-duration, 220ms);
+  }
+  .ui-disclosure-panel[data-open='true'] {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .ui-disclosure-clip {
+    min-block-size: 0;
+    overflow: var(--ui-disclosure-overflow, clip);
+  }
+  .less-motion .ui-disclosure-panel { transition: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-disclosure-panel { transition: none; }
+  }
+}

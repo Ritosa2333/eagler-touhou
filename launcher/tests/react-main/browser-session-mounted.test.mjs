@@ -65,7 +65,7 @@ before(async () => {
     export {getAcquisitionOptions} from 'captured-acquisition';
     export {setPackageReadGate} from 'gated-package-read';
     export {setCloudRunProbe, setCloudBeforeStartProbe, getCloudSaveStartedProducts, getCloudSaveEvents} from 'captured-cloud-save-sync';
-    export {setAccountSessionResult, setReplayAccountRequest} from 'captured-account-client';
+    export {setAccountSessionResult, setReplayAccountRequest, setBookStatisticsEnabled} from 'captured-account-client';
     export {accountSession as testAccountSession} from './app/services/account-session.ts';
     export {validateSiteManifest} from './src/contracts/site-manifest.mts';
     export {PRODUCT_GAMES, multiplayerConfigForProduct} from './src/contracts/product-catalog.mts';
@@ -85,9 +85,14 @@ before(async () => {
     plugins: [{name: 'native-acquisition-scheduling', setup(ctx) {
       // Test-only references and a storage-read scheduling edge. Both wrappers
       // delegate to the authored owners; no preparation/queue policy is replaced.
-      ctx.onResolve({filter: /^(captured-browser-session|gated-package-read|captured-acquisition|captured-cloud-save-sync|captured-account-client|cloud-sync-release-features)$/}, args => ({path: args.path, namespace: 'session-edge'}));
-      ctx.onResolve({filter: /release-features$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/session/browser-session.ts') ? {path:'cloud-sync-release-features',namespace:'session-edge'} : undefined);
-      ctx.onResolve({filter: /account-client$/}, args => /\/(account-session\.ts|browser-session\.ts|Th09ReplayArchive\.tsx|DuelReplayGroup\.tsx)$/.test(args.importer.replaceAll('\\', '/')) ? {path:'captured-account-client',namespace:'session-edge'} : undefined);
+      ctx.onResolve({filter: /^(captured-browser-session|gated-package-read|captured-acquisition|captured-cloud-save-sync|captured-account-client|cloud-sync-release-features|book-statistics-release-features)$/}, args => ({path: args.path, namespace: 'session-edge'}));
+      ctx.onResolve({filter: /release-features$/}, args => {
+        const importer = args.importer.replaceAll('\\', '/');
+        const path = importer.endsWith('/app/session/browser-session.ts') ? 'cloud-sync-release-features'
+          : importer.endsWith('/BookGameStatistics.tsx') ? 'book-statistics-release-features' : undefined;
+        return path ? {path, namespace:'session-edge'} : undefined;
+      });
+      ctx.onResolve({filter: /account-client$/}, args => /\/(account-session\.ts|cloud-saves\.ts|browser-session\.ts|Th09ReplayArchive\.tsx|DuelReplayGroup\.tsx)$/.test(args.importer.replaceAll('\\', '/')) ? {path:'captured-account-client',namespace:'session-edge'} : undefined);
       ctx.onResolve({filter: /services\/cloud-save-sync$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/session/browser-session.ts') ? {path:'captured-cloud-save-sync',namespace:'session-edge'} : undefined);
       ctx.onResolve({filter: /session\/browser-session$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/BrowserLauncher.tsx') ? {path: 'captured-browser-session', namespace: 'session-edge'} : undefined);
       ctx.onResolve({filter: /package-store\.mjs$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/services/package-acquisition.ts') ? {path: 'gated-package-read', namespace: 'session-edge'} : undefined);
@@ -99,6 +104,8 @@ before(async () => {
       ` : args.path === 'captured-account-client' ? `
         let sessionResult=new Error('account service offline');
         let replayRequest;
+        export let bookStatisticsEnabled=false;
+        export function setBookStatisticsEnabled(value){bookStatisticsEnabled=value;}
         export function setAccountSessionResult(value){sessionResult=value;}
         export function setReplayAccountRequest(value){replayRequest=value;}
         export async function accountRequest(path, body, options){
@@ -125,6 +132,8 @@ before(async () => {
       ` : args.path === 'cloud-sync-release-features' ? `
         import {cloudSaveEnabled} from 'captured-cloud-save-sync';
         export {cloudSaveEnabled as accountsEnabled};
+      ` : args.path === 'book-statistics-release-features' ? `
+        export {bookStatisticsEnabled as accountsEnabled} from 'captured-account-client';
       ` : `
         import {readCurrentPackageGeneration as readCurrent, readPackageObject} from './package/package-store.mjs';
         export {readPackageObject};
@@ -149,6 +158,8 @@ before(async () => {
 afterEach(async () => {
   api?.setPackageReadGate(null);
   api?.setCloudRunProbe(null);
+  api?.setBookStatisticsEnabled(false);
+  api?.setReplayAccountRequest(undefined);
   api?.setAccountSessionResult(new Error('account service offline'));
   if (mounted?.root) {
     const current = mounted;
@@ -700,16 +711,30 @@ test('actual BrowserLauncher: fullscreen locks Escape before delayed native prep
   assert.equal(f.fullscreen,null);assert.equal(calls.at(-1).type,'unlock');
 });
 
-test('actual BrowserLauncher: fullscreen exit during native preparation conceals options; Back cancels before configure or launch', async () => {
+for (const compact of [false, true]) test(`actual BrowserLauncher: fullscreen exit during native preparation conceals options (compact=${compact}); Back cancels before configure or launch`, async t => {
+  const matchMedia = env.window.matchMedia;
+  t.onTestFinished(() => {env.window.matchMedia = matchMedia;});
+  env.window.matchMedia = query => {
+    const media = matchMedia.call(env.window, query);
+    if (query === '(max-width: 780px)') Object.defineProperty(media, 'matches', {value: compact});
+    return media;
+  };
   const f = await mountBrowser({autoReady: false}); await start();
   await until(() => f.navigations.some(url => url !== 'about:blank'), 'actual native preparation started');
-  const frame=node('#gameFrame'),panel=node('[data-options-panel]'),url=currentUrl();
+  const surface = compact ? '[data-options-panel][data-book-sheet]' : '[data-game-detail="th06"]';
+  const frame=node('#gameFrame'),panel=node(surface),url=currentUrl();
+  const assertInactive = () => {
+    assert.equal(node(surface),panel);
+    assert.equal(panel.hasAttribute('inert'),true);
+    if (compact) assert.equal(panel.dataset.state,'closed');
+    else assert.equal(env.document.querySelector('[data-options-panel]'),null);
+  };
   assert.equal(api.getTestSession().getRuntime().getSnapshot().launched,false);
-  assert.equal(panel.dataset.state,'closed');assert.equal(panel.hasAttribute('inert'),true);
+  assertInactive();
   await React.act(async()=>env.document.exitFullscreen());await tick();
   assert.equal(f.fullscreen,null);assert.equal(playerOpen(),true);
   assert.equal(node('#gameFrame'),frame);assert.equal(currentUrl(),url);
-  assert.equal(node('[data-options-panel]'),panel);assert.equal(panel.dataset.state,'closed');assert.equal(panel.hasAttribute('inert'),true);
+  assertInactive();
   await back(); await until(() => !playerOpen(), 'Back closes unlaunched Player');
   await React.act(async () => {f.native.emit('ready');}); await tick();
   assert.equal(commands().includes('configure'), false); assert.equal(commands().includes('launch'), false);
@@ -824,9 +849,9 @@ test('actual BrowserLauncher: same-card reopen preserves session-only settings a
   await click('#focusHitboxToggle'); await click('#mobileOptionsToggle');
   assert.equal(node('#focusHitboxToggle').getAttribute('aria-checked'), 'true');
   assert.equal(node('#mobileOptionsToggle').getAttribute('aria-expanded'), 'true');
-  await click('#libraryBack'); await until(() => !env.document.querySelector('.tools[data-state="open"]:not([inert])'), 'options close');
+  await click('[data-book-category="all"]'); await until(() => !visibleOptions(), 'options close');
   await click('.book-game-link[data-game="th06"]');
-  await until(() => !!env.document.querySelector('.tools[data-state="open"]:not([inert])'), 'same selected product reopens');
+  await until(() => !!visibleOptions(), 'same selected product reopens');
   assert.equal(node('#status').textContent, 'Selected 東方紅魔郷', 'main app1790/8652 uses the product title for selection status');
   assert.equal(node('#toast').classList.contains('show'), false, 'status-only selection must not open an empty toast');
   assert.equal(node('#toastText').textContent, '');
@@ -1287,7 +1312,214 @@ async function acceptHeldHost(f) {
   await React.act(async () => {f.releaseHost();});
   await until(() => f.order.includes('boot-ready'), 'first real Host finished');
 }
-function visibleOptions() {return env.document.querySelector('.tools[data-state="open"]:not([inert])');}
+function visibleOptions() {return env.document.querySelector('[data-game-detail], .tools[data-state="open"]:not([inert])');}
+
+test('desktop book opens one inline game detail and keeps the library controls mounted', async () => {
+  const f = await mountBrowser({initial: '/', host: subsetHost(['th06', 'th07'])});
+  const search = node('#librarySearch');
+  node('.book-view-covers .book-card[data-book-card="th06"] .book-art');
+  node('.book-view-covers .book-card[data-book-card="th06"] .book-identity');
+  assert.equal(node('[data-book-category-disclosure="windows"]').getAttribute('aria-expanded'), 'false');
+  await click('.book-grid [data-book-product="th06"]');
+  await until(() => !!env.document.querySelector('[data-game-detail="th06"] #launch'), 'TH06 has a start action');
+  const detail = '[data-game-detail="th06"]';
+  node(`${detail} .book-game-detail-hero #launch`);
+  node(`${detail} .book-game-detail-hero #gamePackageImport`);
+  const [statistics, gameSettings] = node(`${detail} .book-game-detail-content`).children;
+  assert.equal(statistics.getAttribute('aria-labelledby'), 'bookGameStatistics');
+  const matrix = node(`${detail} .profile-clear-chart[data-fixed-game="th06"]`);
+  assert.equal(matrix.querySelectorAll('.profile-clear-character').length, 2);
+  assert.equal(matrix.querySelectorAll('.profile-clear-shot').length, 4);
+  assert.equal(matrix.querySelectorAll('.profile-clear-shot [data-status="unread"]').length, 20);
+  assert.equal(gameSettings.getAttribute('aria-labelledby'), 'bookGameSettings');
+  assert.ok(gameSettings.querySelector('.options-settings'));
+  assert.equal(env.document.querySelector(`${detail} #libraryBack`), null);
+  assert.equal(env.document.querySelector('#libraryBackdrop'), null);
+  assert.equal(node('#librarySearch'), search);
+  assert.equal(node('.game-library').hasAttribute('inert'), false);
+  assert.equal(node('[data-book-category-disclosure="windows"]').getAttribute('aria-expanded'), 'true');
+  assert.equal(node('[data-book-sidebar-product="th06"]').getAttribute('aria-current'), 'page');
+  await click('[data-book-sidebar-product="th07"]');
+  await until(() => !!env.document.querySelector('[data-game-detail="th07"] #launch'), 'TH07 has a start action');
+  assert.equal(new URLSearchParams(f.router.state.location.search).get('game'), 'th07');
+  assert.equal(env.document.querySelectorAll('#launch').length, 1);
+  await click('[data-book-category="all"]');
+  await until(() => !visibleOptions(), 'book returns to the cover grid');
+  assert.equal(node('#librarySearch'), search);
+  node('.book-view-covers .book-card[data-book-card="th06"]');
+  assert.equal(node('[data-book-category-disclosure="windows"]').getAttribute('aria-expanded'), 'true');
+  await click('.book-view-switch [data-book-view="list"]');
+  await until(() => env.document.querySelector('.book-view-list .book-card[data-book-card="th06"]'), 'desktop can switch to list view');
+  await click('.book-grid [data-book-product="th06"]');
+  await until(() => env.document.querySelector('[data-game-detail="th06"] #launch'), 'detail also opens from list view');
+  await back();
+  await until(() => env.document.querySelector('.book-view-list .book-card[data-book-card="th06"]'), 'returning preserves list view');
+  await click('.book-view-switch [data-book-view="covers"]');
+  await until(() => env.document.querySelector('.book-view-covers .book-card[data-book-card="th06"]'), 'desktop can switch back to covers');
+});
+
+test('mobile book opens a bottom sheet with an unfilled progress table and the original settings and launch actions', async t => {
+  const matchMedia = env.window.matchMedia;
+  t.onTestFinished(() => {env.window.matchMedia = matchMedia;});
+  env.window.matchMedia = query => {
+    const media = matchMedia.call(env.window, query);
+    if (query === '(max-width: 780px)') Object.defineProperty(media, 'matches', {value: true});
+    return media;
+  };
+  await mountBrowser({initial: '/', touchDevice: true, mobileDevice: true, host: subsetHost(['th06', 'th07'])});
+  const card = '.book-grid [data-book-product="th06"]';
+  await click(card);
+  const sheet = node('.tools[data-book-sheet][data-state="open"]');
+  assert.equal(sheet.getAttribute('aria-modal'), 'true');
+  assert.equal(node('.game-library').hasAttribute('inert'), true);
+  assert.equal(env.document.querySelector('[data-game-detail]'), null);
+  const section = name => `[data-book-sheet-section="${name}"]`;
+  const trigger = name => `${section(name)} button[aria-expanded]`;
+  const fold = name => node(`${section(name)} .book-sheet-fold`);
+  const actions = '[data-book-sheet] > .launch-actions';
+  for (const name of ['statistics', 'settings']) {
+    assert.equal(node(trigger(name)).getAttribute('aria-controls'), fold(name).id);
+    assert.ok(fold(name).classList.contains('ui-disclosure-panel'));
+    assert.equal(fold(name).getAttribute('aria-hidden'), 'true');
+  }
+  assert.equal(fold('statistics').hasAttribute('inert'), true);
+  await click(trigger('statistics'));
+  assert.equal(fold('statistics').hasAttribute('aria-hidden'), false);
+  assert.equal(fold('settings').hasAttribute('inert'), true);
+  const emptyCells = fold('statistics').querySelectorAll('.profile-clear-shot [data-status="unread"]');
+  assert.equal(emptyCells.length, 20);
+  await click(trigger('statistics'));
+  assert.equal(fold('settings').hasAttribute('inert'), true);
+  assert.equal(sheet.querySelector(section('launch')), null);
+  const start = node(`${actions} #launch`);
+  const importButton = node(`${actions} #gamePackageImport`);
+  await click(trigger('settings'));
+  node(`${section('settings')} .options-settings`);
+  assert.equal(fold('settings').hasAttribute('inert'), false);
+  assert.equal(start.closest('[inert]'), null);
+  assert.equal(importButton.closest('[inert]'), null);
+  await click(trigger('settings'));
+  assert.equal(fold('settings').hasAttribute('inert'), true);
+  await click('#gamePackageImport');
+  await until(() => !node('#gameDataImportWindow').hidden, 'mobile sheet opens the real import dialog');
+  await click('#gameDataImportClose');
+  await until(() => node('#gameDataImportWindow').hidden, 'import closes back to the sheet');
+  await click('#libraryBack');
+  await until(() => !visibleOptions(), 'mobile sheet closes back to the book');
+  assert.equal(node('.game-library').hasAttribute('inert'), false);
+  node(`.book-view-covers ${card}`);
+  await click(card);
+  await click(`${actions} #launch`);
+  await until(() => node('#decisionDialog').open, 'mobile sheet starts the existing touch confirmation flow');
+  assert.match(node('#decisionTitle').textContent, /touch controls/i);
+});
+
+test('book details read only current single-player cloud statistics and keep them across resize', async t => {
+  const previousMedia = env.window.matchMedia;
+  const media = new env.window.EventTarget();
+  let compact = false;
+  Object.defineProperty(media, 'matches', {get: () => compact});
+  env.window.matchMedia = query => query === '(max-width: 780px)' ? media : previousMedia.call(env.window, query);
+  t.onTestFinished(() => {env.window.matchMedia = previousMedia;});
+  api.setBookStatisticsEnabled(true);
+  api.setAccountSessionResult({user: {username: 'alice', name: 'Alice'}});
+  let requests = 0, fail = false, selectedRevision = 2;
+  const save = (product, game, revision, bestScore, playtimeSeconds = 3660) => ({
+    product, revision, uploadedAt: '2026-11-05T00:00:00.000Z', files: [],
+    statistics: {game, parserVersion: 1, format: 'classic', complete: true, playtimeSeconds, applicationTimeSeconds: null,
+      playCount: 0, clearCount: 1, loadouts: [], warnings: [],
+      progress: [{character: 0, shot: 1, difficulty: 'normal', cleared: true, oneCreditClear: true, clearCount: 1,
+        playCount: 1, bestScore, playtimeSeconds: null}]},
+  });
+  api.setReplayAccountRequest(async path => {
+    assert.equal(path, 'v1/me/cloud-saves');
+    requests++;
+    if (fail) throw new Error('temporary cloud save outage');
+    return {
+      products: [{id: 'th06', game: 'th06', multiplayer: false, files: [], requiredFiles: [], revision: selectedRevision},
+        {id: 'th07', game: 'th07', multiplayer: false, files: [], requiredFiles: [], revision: 1}],
+      saves: [save('th06', 'th06', 1, 111), save('th06mp', 'th06', 2, 222), save('th06', 'th06', 2, 4567),
+        save('th07', 'th06', 1, 333), save('th07', 'th07', 1, 89, null)],
+      limits: {fileBytes: 1024, totalBytes: 2048, files: 6},
+    };
+  });
+  await mountBrowser({initial: '/', host: subsetHost(['th06', 'th07'])});
+  assert.equal(requests, 0, 'the game grid does not fetch private statistics');
+  await click('.book-grid [data-book-product="th06"]');
+  const th06 = '[data-statistics-game="th06"][data-cloud-record="true"]', th07 = '[data-statistics-game="th07"][data-cloud-record="true"]';
+  await until(() => !!env.document.querySelector(th06), 'active TH06 revision appears');
+  assert.equal(node(`${th06} [data-stat="best-score"]`).textContent, '4,567');
+  assert.equal(node(`${th06} [data-stat="duration"]`).textContent, '1h 1m');
+  assert.equal(node(`${th06} [data-stat="play-count"]`).textContent, '0');
+  assert.equal(node(`${th06} [data-stat="clears"]`).textContent, 'Normal');
+  const clearedShot = `${th06} [data-character="0"] [data-shot="1"] [data-difficulty="normal"][data-status="one-credit"]`;
+  assert.match(node(clearedShot).getAttribute('title'), /4,567/);
+  node(`${th06} [data-character="0"] [data-shot="0"] [data-difficulty="normal"][data-status="unread"]`);
+  node(`${th06} [data-character="1"] [data-shot="1"] [data-difficulty="normal"][data-status="unread"]`);
+  await click('[data-book-sidebar-product="th07"]');
+  await until(() => !!env.document.querySelector(th07), 'TH07 shows its own cloud record');
+  assert.equal(node(`${th07} [data-stat="best-score"]`).textContent, '89');
+  assert.equal(node(`${th07} [data-stat="duration"]`).textContent, api.translate('en', 'cloudSave.unknownValue'));
+  assert.equal(env.document.querySelectorAll(`${th07} [data-difficulty="phantasm"][data-status="unread"]`).length, 6);
+  assert.equal(env.document.querySelector(th06), null);
+  const url = currentUrl();
+  await React.act(async () => {compact = true; media.dispatchEvent(new env.window.Event('change'));});
+  await click('[data-book-sheet-section="statistics"] button');
+  node(`[data-book-sheet] ${th07}`);
+  assert.equal(currentUrl(), url);
+  assert.equal(requests, 1, 'game and viewport switches reuse the same cloud-save list');
+  fail = true;
+  await React.act(async () => {env.window.dispatchEvent(new env.window.Event('cloud-save-change'));});
+  assert.match(node('[data-book-sheet] .book-game-stats-message').textContent, /temporarily unavailable/);
+  fail = false;
+  await click('[data-book-sheet] .book-game-stats-message button');
+  node(`[data-book-sheet] ${th07}`);
+  await React.act(async () => {compact = false; media.dispatchEvent(new env.window.Event('change'));});
+  await click('[data-book-sidebar-product="th06"]');
+  selectedRevision = 3;
+  await React.act(async () => {env.window.dispatchEvent(new env.window.Event('cloud-save-change'));});
+  assert.equal(node('.book-game-detail .book-game-stats-message').textContent, api.translate('en', 'cloudSave.noSave'));
+  node('[data-statistics-game="th06"][data-cloud-record="false"] [data-difficulty="normal"][data-status="unread"]');
+  api.setAccountSessionResult(null);
+  await React.act(async () => env.window.dispatchEvent(new env.window.StorageEvent('storage', {key: 'account-session-changed'})));
+  const login = node('.book-game-detail .book-game-stats-message a');
+  assert.equal(new URL(login.href, 'https://example.test').searchParams.get('next'), currentUrl());
+  assert.equal(env.document.querySelector('[data-cloud-record="true"]'), null);
+  node('[data-statistics-game="th06"] .profile-clear-chart');
+  assert.equal(requests, 4, 'the guest view never reads private statistics');
+});
+
+test('book details reuse the profile matrix and keep TH15 mode records separate', async () => {
+  api.setBookStatisticsEnabled(true);
+  api.setAccountSessionResult({user: {username: 'alice', name: 'Alice'}});
+  api.setReplayAccountRequest(async path => {
+    assert.equal(path, 'v1/me/cloud-saves');
+    const score = (mode, character, bestScore, oneCreditClear) => ({
+      mode, character, shot: null, difficulty: 'normal', cleared: true, oneCreditClear, clearCount: 1,
+      playCount: 1, bestScore, playtimeSeconds: null,
+    });
+    return {
+      products: [{id: 'th15', game: 'th15', multiplayer: false, files: [], requiredFiles: [], revision: 1}],
+      saves: [{product: 'th15', revision: 1, uploadedAt: '2026-11-05T00:00:00.000Z', files: [],
+        statistics: {game: 'th15', parserVersion: 1, format: 'classic', complete: true, playtimeSeconds: null,
+          applicationTimeSeconds: null, playCount: 2, clearCount: 2, loadouts: [], warnings: [],
+          progress: [score('legacy', 0, 100, true), score('pointdevice', 1, 200, false)]}}],
+      limits: {fileBytes: 1024, totalBytes: 2048, files: 6},
+    };
+  });
+  await mountBrowser({initial: '/?game=th15&lang=en', host: developmentAcquisitionHost(['th15'])});
+  const chart = '.profile-clear-chart[data-fixed-game="th15"]';
+  const normal = character => `${chart} [data-character="${character}"] [data-difficulty="normal"]`;
+  await until(() => env.document.querySelector(normal(0))?.dataset.status === 'one-credit', 'Legacy Reimu clear appears');
+  assert.equal(node(normal(1)).dataset.status, 'unread');
+  const pointdevice = `${chart} .profile-clear-modes button:last-child`;
+  await click(pointdevice);
+  assert.equal(node(pointdevice).getAttribute('aria-pressed'), 'true');
+  assert.equal(node(normal(0)).dataset.status, 'unread');
+  assert.equal(node(normal(1)).dataset.status, 'cleared');
+  assert.match(node(normal(1)).getAttribute('title'), /200/);
+  assert.equal(env.document.querySelectorAll(`${chart} .profile-clear-character`).length, 4);
+});
 
 for (const preview of ['touch', 'touch-hud']) test(`actual BrowserLauncher: boot ${preview} is a one-time preference override before Host, with no native or history side effects`, async () => {
   const initial = `/?game=th07&preview=${preview}&keep=a%20b#retained`;
@@ -1433,7 +1665,7 @@ for (const close of ['Exit', 'Back']) test(`actual BrowserLauncher: original tou
 
   // The retained settings owner remains available to programmatic editor entry
   // after returning home, without selecting another product.
-  await click('#libraryBack');
+  await click('[data-book-category="all"]');
   await until(() => !visibleOptions(), 'Back returns to home');
   const home = currentUrl(), homeKey = f.router.state.location.key, retainedButton = node('#touchLayoutEdit');
   assert.equal(visibleOptions(), null); assert.equal(currentUrl(), home);
@@ -2727,9 +2959,9 @@ test('Replay Options close during native preload cancels once and the next Back 
   assert.equal(f.router.state.location.state.launcherSurfaceEntry.parentKey, parentKey);
   assertReplayPreloadRetired(session, f);
 
-  await click('#libraryBack');
+  await click('[data-book-category="all"]');
   await until(() => f.router.state.location.key === parentKey && currentUrl() === '/?keep=a%20b',
-    'the Options Back button commits a real BrowserHistory POP to its parent');
+    'the sidebar commits a real BrowserHistory POP to its parent');
   assert.equal(f.router.state.location.state.launcherPageHistory.page, 'launcher');
   assert.equal(session.getSnapshot().playerOpen, false);
   assert.equal(env.errors.filter(message => !message.includes('not wrapped in act')).length, 0);
@@ -2773,7 +3005,7 @@ test('Replay Options close cancels an in-flight native configure before the next
   assert.equal(f.router.state.location.state.launcherSurfaceEntry.parentKey, parentKey);
   assertReplayPreloadRetired(session, f);
 
-  await click('#libraryBack');
+  await click('[data-book-category="all"]');
   await until(() => f.router.state.location.key === parentKey && currentUrl() === '/?keep=a%20b',
     'the next Options exit reaches its physical parent after configure cancellation');
   assert.equal(f.router.state.location.state.launcherPageHistory.page, 'launcher');

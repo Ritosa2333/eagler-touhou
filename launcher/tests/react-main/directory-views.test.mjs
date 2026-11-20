@@ -961,6 +961,21 @@ test('Directory gameplay flags use their own column and regular rooms name their
   assert.deepEqual([...n('.lobby-room-rules').children].map(node=>node.textContent),[t('zh-CN','directory.regularRules')]);
   assert.equal(n('.lobby-room-rules').firstElementChild.classList.contains('lobby-room-rules-standard'),true);
 });
+test('room names replace the regular label and keep special gameplay rules visible', async () => {
+  const f = await fixture({locale:'zh-CN'}).live([
+    room({roomName:'初见练习'}),
+    room({code:'4321',challengeMode:true,roomName:'避弹练习'}),
+  ]);
+  await mountLobby(f,{}, {locale:'zh-CN'});
+  const standard = n('[data-key="th06mp-1234"] .lobby-room-rules');
+  assert.equal(standard.querySelector('.lobby-room-rules-standard'),null);
+  assert.equal(standard.textContent,'初见练习');
+  const custom = n('[data-key="th06mp-4321"] .lobby-room-rules');
+  assert.match(custom.textContent,/挑战/);
+  assert.equal(n('.lobby-room-name',custom).textContent,'避弹练习');
+  await f.receive([room({roomName:'字'.repeat(11)})]);
+  assert.equal(n('[data-key="th06mp-1234"] .lobby-room-rules').textContent,'常规');
+});
 
 
 test('room quick filters distinguish playable seats, waiting rooms and spectators and update with the live directory', async () => {
