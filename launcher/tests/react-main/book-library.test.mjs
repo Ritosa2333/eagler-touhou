@@ -69,7 +69,7 @@ async function mount(products, locale = 'en') {
 }
 
 test('anchored multiplayer menu preserves deep-link selection and shares multi-selection with the icon rail', async () => {
-  const products=api.createLibraryProducts(['th01mp','th03mp','th06mp','th075mp','th09mp','th10mp','th15mp'],p=>p,id=>'?game='+id);
+  const products=api.createLibraryProducts(['th01mp','th02mp','th03mp','th04mp','th05mp','th06mp','th075mp','th09mp','th10mp','th15mp','th19mp'],p=>p,id=>'?game='+id);
   function Fixture(){const[filters,setFilters]=React.useState([]),[viewing,setViewing]=React.useState('th09mp');return React.createElement(api.BookDirectoryGames,{products,productFilters:filters,viewingProduct:viewing,onProductFiltersChange:ids=>{setFilters(ids);setViewing('');},onSelect(){assert.fail('Checkboxes must not replace a multi-selection');}});}
   const container=env.document.createElement('div');env.document.body.append(container);root=createRoot(container);
   await React.act(async()=>root.render(React.createElement(api.LocaleProvider,{locale:'en'},React.createElement(Fixture))));
@@ -79,7 +79,7 @@ test('anchored multiplayer menu preserves deep-link selection and shares multi-s
   await click('.book-lobby-picker-trigger');
   assert.equal(node('.book-lobby-picker').getAttribute('role'),'menu');assert.equal(env.document.querySelector('[role="dialog"]'),null);
   const grouping=scope=>[...env.document.querySelectorAll(`${scope} [data-lobby-category]`)].map(group=>[group.dataset.lobbyCategory,[...group.querySelectorAll('[data-lobby-product]')].map(row=>row.dataset.lobbyProduct)]);
-  const expectedGroups=[['versus',['th09mp']],['original',['th06mp','th10mp','th15mp']],['fighting',['th075mp']],['pc98',['th01mp','th03mp']]];
+  const expectedGroups=[['versus',['th03mp','th09mp','th19mp']],['original',['th06mp','th10mp','th15mp']],['fighting',['th075mp']],['pc98',['th01mp','th02mp','th04mp','th05mp']]];
   assert.deepEqual(grouping('.book-lobby-desktop'),expectedGroups);
   assert.deepEqual(grouping('.book-lobby-picker'),expectedGroups,'Both presentations consume the same catalog classification');
   assert.equal(node('.book-lobby-picker [data-lobby-product="th10mp"] strong').textContent,'東方風神録');
