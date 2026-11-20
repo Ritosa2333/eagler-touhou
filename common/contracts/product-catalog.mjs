@@ -291,7 +291,7 @@ export const PRODUCT_GAMES = Object.freeze({
             highRefreshRate: true,
             sourceRepository: "https://github.com/TSake/TouHou-BossRushOnline",
             credit: Object.freeze({
-                name: "吃药图书 (Cyoltose) / 清酒 (Tidew)",
+                name: "游戏作者: 吃药图书 (Cyoltose) / 网页端维护: 清酒 (Tidew) / eagler 开发者",
                 url: "https://github.com/Cyoltose509/boss-rush",
             }),
         }),

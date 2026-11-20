@@ -1,0 +1,136 @@
+{
+  "schema": "eagler-touhou/prebuilt-source/1",
+  "game": "bro",
+  "repository": "https://github.com/TSake/TouHou-BossRushOnline",
+  "branch": "web/multiplayer-port",
+  "commit": "848f8f76749bee3607fd38df74a550117a912b21",
+  "buildId": "eb0494bb",
+  "credit": {
+    "author": "吃药图书 (Cyoltose)",
+    "webMaintainer": "清酒 (Tidew)",
+    "eagler": "eagler 开发者"
+  },
+  "note": "自包含 WASM：纯 C Lua 5.1.5 + lstg 绑定 + WebGL2/WebAudio，由 BRO web/build.sh（Emscripten）构建。资源包(138MB)走 importOnly 玩家导入，不在本目录。",
+  "inputs": [
+    {
+      "path": "bro.mjs",
+      "bytes": 113013,
+      "sha256": "5723d31fcc9da1a412278b93649816123ea8423107f5b75ebf3925e26c43b9e9"
+    },
+    {
+      "path": "bro.wasm",
+      "bytes": 3405056,
+      "sha256": "eb0494bb47660ea4f7e8042977980f7030bb675a2b351f62d70ef9ba7346e575"
+    },
+    {
+      "path": "dist/app-shell.json",
+      "bytes": 7428,
+      "sha256": "51c943600d02c0893301da136c2c3f81c85c14d62b1b4a0a99b70654983ba2a1"
+    },
+    {
+      "path": "dist/package-manifest.json",
+      "bytes": 253907,
+      "sha256": "cb88c4d2fe99c5449e9056c76de653d0418f6a57f14ab8c2fb6207a0f212b53c"
+    },
+    {
+      "path": "dist/runtime.json",
+      "bytes": 576,
+      "sha256": "9e96f8e881068cbdb4eecac9cafa2b44c37d319152e33bbf3ea2b3b6a0936623"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 5301,
+      "sha256": "344ac906f39a11d4c2879841c5b14c04d09624d893dc84beaffa04748369dd4e"
+    },
+    {
+      "path": "src/audio.mjs",
+      "bytes": 27702,
+      "sha256": "53f957b70377f8a03135ea13301bfb2d58f7c22d7c1f55e9c639167b3c117382"
+    },
+    {
+      "path": "src/eagler_adapter.mjs",
+      "bytes": 28658,
+      "sha256": "d1084404f543cef10c16effcc92acd770a220e69f7d9e763fe2d7d6a1385976d"
+    },
+    {
+      "path": "src/input.mjs",
+      "bytes": 60827,
+      "sha256": "43f1d06c9c9cb5151d1e0d6c6127a5a8ec6d53ab851cda4a9ce2c57b530223d3"
+    },
+    {
+      "path": "src/input_buffer.mjs",
+      "bytes": 12143,
+      "sha256": "e97695bf91912e1b02595477521368ca8d4dd7ee78aa8da10c7544db47c7e2fe"
+    },
+    {
+      "path": "src/logger.mjs",
+      "bytes": 16891,
+      "sha256": "4d97821b26ab6895695bc510cb0112870fd23367ebcf8d33eb974c0be7e045c2"
+    },
+    {
+      "path": "src/multiplayer.mjs",
+      "bytes": 64749,
+      "sha256": "5c7946b0550fe3984156697a4fe2264416e8d50f2459de56837d20ddfb6c4047"
+    },
+    {
+      "path": "src/netcode.mjs",
+      "bytes": 45926,
+      "sha256": "444b535cf0dd116a621afe93df1c521a8d155f597874e77f12389787552dc493"
+    },
+    {
+      "path": "src/netmesh.mjs",
+      "bytes": 15889,
+      "sha256": "a781ee588f00b0335e8e3ce475e41b5b5266f116c02385bd103cbfc7ed3725d8"
+    },
+    {
+      "path": "src/output_queue.mjs",
+      "bytes": 3159,
+      "sha256": "0fcc2a50719f1e0c6a43bd7ea5ce082f7a330cd12e2be240036ad8e2076ef996"
+    },
+    {
+      "path": "src/postfx.mjs",
+      "bytes": 16748,
+      "sha256": "cd0ba578ec45f44b4c64fa7d97a34571591131fa54ef8fe33aac8fae6398c7d5"
+    },
+    {
+      "path": "src/renderer.mjs",
+      "bytes": 112287,
+      "sha256": "47c9d39833d44b2ff2ea0abe44ae5c17b8e2af36ee9aaf31769952cec88fcc4b"
+    },
+    {
+      "path": "src/replay_archive.mjs",
+      "bytes": 5287,
+      "sha256": "67ec2c98ec83d907c559e28d555456ee78f3f4a3321292ff596041d86b5ddf76"
+    },
+    {
+      "path": "src/rollback.mjs",
+      "bytes": 4189,
+      "sha256": "99ae76c8c7d2f13f1ce11053cdcc72d5c4ba353d21e462be0647a787c006ed1e"
+    },
+    {
+      "path": "src/route_handoff.mjs",
+      "bytes": 5560,
+      "sha256": "d9c88dd3e816ecb6fd91fc0009cd1998f154ab3a32f760476b0217761b3c574e"
+    },
+    {
+      "path": "src/route_monitor.mjs",
+      "bytes": 7946,
+      "sha256": "b1cd0a9ff6efb63c0f210a42826b11810752ad37727f365a31c6626aaf767844"
+    },
+    {
+      "path": "src/route_selector.mjs",
+      "bytes": 7205,
+      "sha256": "89f44d6a2c32b22925c11459b2a31424dec374901da23d5f29f2401a7fe6db5d"
+    },
+    {
+      "path": "src/storage.mjs",
+      "bytes": 11022,
+      "sha256": "b814d29d450efcfe73ad6bc1714749c976c70642672eef489953f5942c6531b0"
+    },
+    {
+      "path": "src/text.mjs",
+      "bytes": 26283,
+      "sha256": "a98be98b266b2e2c71d7e6f03dbaffc28982710f030eb9da88fc0267753538c1"
+    }
+  ]
+}
