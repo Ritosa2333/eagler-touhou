@@ -41,6 +41,8 @@ Json snapshot;
 RoomPhase phase = RoomPhase::idle;
 std::string issue, build, generation, connectionStatus, gameChat;
 std::string routeSwitchText;
+std::string directStart, directPort;
+bool directPage = false;
 constexpr std::array<const char*, 4> startupRoutes{"auto", "direct", "swarm", "turn"};
 constexpr std::array<const char*, 4> startupRouteLabels{"自动", "直连 / NAT4", "Swarm", "TURN"};
 size_t startupRoute = 0;
@@ -185,7 +187,7 @@ void updateGameChat() {
     const auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
     Json recent = Json::array();
-    if (gameOwnsInput() && messages.is_array()) for (auto item = messages.rbegin(); item != messages.rend() && recent.size() < 4; ++item) {
+    if (!directPage && gameOwnsInput() && messages.is_array()) for (auto item = messages.rbegin(); item != messages.rend() && recent.size() < 4; ++item) {
         const auto until = field(*item,"receivedAt",std::int64_t(0)) + 10000;
         if (until <= now) continue;
         recent.insert(recent.begin(),*item);
@@ -201,7 +203,7 @@ void updateGameChat() {
 void updateDocument() {
     using Rml::StringUtilities::EncodeRml;
     const auto current = room();
-    const bool inRoom = current.is_object();
+    const bool inRoom = !directPage && current.is_object();
     const bool connecting = phase == RoomPhase::connecting || phase == RoomPhase::loadingSpectator ||
         phase == RoomPhase::synchronizing;
     display("panel", visible && !gameOwnsInput());
@@ -209,14 +211,17 @@ void updateDocument() {
     display("chat-tools",visible);
     display("game-messages",!gameChat.empty());
     element("game-messages")->SetInnerRML(gameChat);
-    display("phrases", phrases);
-    display("directory", !inRoom && !connecting);
+    display("phrases", phrases && !directPage);
+    display("open-phrases", !directPage);
+    element("return-room")->SetInnerRML(directPage ? "结束直连" : "回房");
+    display("directory", !directPage && !inRoom && !connecting);
+    display("direct", directPage && !connecting);
     display("room", inRoom && !connecting);
     display("startup-routes", inRoom && !connecting && seatOf(current) >= 0 &&
         field(current, "phase", std::string{}) == "lobby");
     display("progress", connecting);
     const bool canChat = field(snapshot, "registered", false);
-    display("account", lobby && !lobby->Settings().accountEndpoint.empty() && !canChat);
+    display("account", !directPage && lobby && !lobby->Settings().accountEndpoint.empty() && !canChat);
     display("composer", canChat);
     display("notice", escapeAvailable || recovering);
     display("connection-status",!connectionStatus.empty());
@@ -234,11 +239,15 @@ void updateDocument() {
     element("notice")->SetInnerRML(escapeAvailable ? "按 Esc 返回标题" : "正在重新连接对手…");
 
     if (connecting) {
-        const auto detail = recovering ? "正在重新连接对手…" :
+        const std::string detail = recovering ? "正在重新连接对手…" :
+            phase == RoomPhase::connecting && directPage ? (directPort.empty() ? "正在连接对手的 UDP 端口…" :
+                "正在 UDP " + directPort + " 端口等待对手…") :
             phase == RoomPhase::connecting ? "正在连接其他玩家…" :
             phase == RoomPhase::loadingSpectator ? "正在等待旁观数据…" :
             "正在同步对局…";
-        element("progress-text")->SetInnerRML(detail);
+        element("progress-text")->SetInnerRML(EncodeRml(detail));
+        display("progress-meter", !directPage || phase == RoomPhase::synchronizing);
+        element("cancel-room")->SetInnerRML(directPage ? "取消直连" : "取消并回房");
         element("progress-meter")->SetAttribute("value", total ? double(completed) / total : 0);
     }
 
@@ -246,7 +255,7 @@ void updateDocument() {
     const auto messages = field(snapshot,"chat",Json::array());
     if (gameOwnsInput()) {
         std::string cells;
-        if (phrases) {
+        if (phrases && !directPage) {
             const auto& entries = th09::desktop::quickPhrases;
             const auto begin = phrasePage * phrasesPerPage;
             for (size_t index = begin; index < std::min<size_t>(begin + phrasesPerPage,entries.size()); ++index)
@@ -257,7 +266,7 @@ void updateDocument() {
         return;
     }
     std::string rows;
-    if (!inRoom && !connecting) {
+    if (!directPage && !inRoom && !connecting) {
         auto rooms = field(snapshot, "rooms", Json::array());
         if (rooms.is_array()) for (const auto& entry : rooms) {
             const auto code = field(entry, "code", std::string{});
@@ -309,7 +318,7 @@ void updateDocument() {
         element("room-actions")->SetInnerRML(rows);
         element("messages")->SetInnerRML(chatText(messages,24));
     }
-    const auto status = field(snapshot, inRoom ? "status" : "directoryStatus", std::string{});
+    const auto status = directPage ? "" : field(snapshot, inRoom ? "status" : "directoryStatus", std::string{});
     element("status")->SetInnerRML(EncodeRml(issue.empty() ? status : issue));
 }
 
@@ -320,6 +329,17 @@ class Actions final : public Rml::EventListener {
             if (action.empty()) continue;
             const auto argument = item->GetAttribute<Rml::String>("data-value", "");
             if (action == "hide") hide();
+            else if (action == "open-direct" || action == "close-direct") {
+                directPage = action == "open-direct";
+                issue.clear();
+                if (!directPage) ShowLobby();
+            } else if (action == "direct-listen" || action == "direct-join") {
+                const bool host = action == "direct-listen";
+                const auto endpoint = static_cast<Rml::ElementFormControlInput*>(
+                    element(host ? "direct-port" : "direct-address"))->GetValue();
+                directStart = Json{{"udp", {{"host", host}, {"endpoint", endpoint}}}}.dump();
+                issue.clear();
+            }
             else if (action == "startup-route" && argument.size() == 1 && argument[0] >= '0' && argument[0] <= '3')
                 startupRoute = static_cast<size_t>(argument[0] - '0');
             else if (action == "return") returnRequest = true;
@@ -424,6 +444,9 @@ void Close() {
     owner = nullptr;
     snapshot = nullptr;
     issue.clear();
+    directPage = false;
+    directStart.clear();
+    directPort.clear();
     connectionStatus.clear();
     gameChat.clear();
     refreshChatAt = 0;
@@ -436,7 +459,7 @@ void Close() {
 
 bool ShowLobby() {
     if (!owner || !ensureDocument()) return false;
-    if (!ensureLobby()) issue = "尚未配置联机服务器";
+    if (!directPage && !ensureLobby()) issue = "尚未配置联机服务器";
     if (!visible) {
         visible = true;
         updateCursor();
@@ -458,7 +481,7 @@ bool HandleEvent(const SDL_Event& event) {
         }
         return true;
     }
-    if (gameOwnsInput() && event.type == SDL_EVENT_KEY_UP && event.key.scancode == SDL_SCANCODE_LALT &&
+    if (!directPage && gameOwnsInput() && event.type == SDL_EVENT_KEY_UP && event.key.scancode == SDL_SCANCODE_LALT &&
         !(event.key.mod & (SDL_KMOD_CTRL | SDL_KMOD_SHIFT | SDL_KMOD_GUI))) {
         if (visible && phrases) hide();
         else if (ShowLobby()) { phrases = true; changed = true; }
@@ -544,6 +567,13 @@ void Composite(int x, int y, int width, int height) {
             if (kind == "show") ShowLobby();
             else if (kind == "hide") hide();
             else if (kind == "resize") SDL_SetWindowSize(owner,320,240);
+            else if ((kind == "udp-listen" || kind == "udp-join") && ShowLobby()) {
+                const bool host = kind == "udp-listen";
+                element("open-direct")->Click();
+                static_cast<Rml::ElementFormControlInput*>(element(host ? "direct-port" : "direct-address"))->
+                    SetValue(field(command, "endpoint", std::string{}));
+                element(host ? "direct-listen" : "direct-join")->Click();
+            }
             else if (kind == "esc" || kind == "confirm") {
                 SDL_Event event{};
                 event.type = SDL_EVENT_KEY_DOWN;
@@ -691,13 +721,25 @@ void FinishRoom(const char* error, bool showRoom) {
     SetRoomPhase(RoomPhase::idle);
     issue = error ? error : "";
     if (showRoom) ShowLobby();
-    else { hide(); send({{"type","leave"}}); }
+    else {
+        hide();
+        if (!directPage) send({{"type","leave"}});
+    }
     SetEscapeAvailable(showRoom && !issue.empty());
     changed = true;
 }
 
 void AdoptRoom(const char* options) {
     const auto config = Json::parse(options,nullptr,false);
+    if (const auto udp = field(config, "udp", Json{}); udp.is_object()) {
+        directPage = true;
+        directPort = field(udp,"host",false) ? field(udp,"endpoint",std::string{}) : "";
+        phrases = false;
+        gameChat.clear();
+        changed = true;
+        return;
+    }
+    directPage = false;
     const auto url = field(config,"netplayUrl",std::string{});
     const auto client = field(config,"lobbyClientId",std::string{});
     const auto member = query(url,"member");
@@ -720,6 +762,8 @@ void ReportMatch(std::uint32_t, std::uint32_t, unsigned, unsigned, unsigned) {
 }
 
 std::string TakeRoomStart() {
+    if (!directStart.empty()) return std::exchange(directStart, {});
+    if (directPage) return {};
     if (!lobby) return {};
     auto next = lobby->TakeSnapshot();
     if (!next.is_object()) return {};

@@ -24,6 +24,7 @@ scrollbarhorizontal { height: 8px; }
 scrollbarvertical sliderbar, scrollbarhorizontal sliderbar { background-color: #61715c; }
 #footer { position: absolute; bottom: 3px; left: 8px; height: 25px; display: flex; align-items: center; font-size: 12px; color: #e3c894; overflow: hidden; }
 .actions { margin: 1px 0 6px; }
+#direct-address { width: 140px; }
 #startup-routes { margin: 3px 0 6px; }
 #startup-routes .route-row { display: flex; align-items: center; height: 23px; }
 #startup-routes button { min-width: 90px; text-align: left; padding: 1px 6px; }
@@ -67,7 +68,20 @@ progress fill { background-color: #c0c987; }
         <input id="code" type="text" maxlength="8" placeholder="房间号"/>
         <button data-action="join-code">加入</button><button data-action="directory">刷新</button>
       </div>
+      <div class="actions"><button id="open-direct" data-action="open-direct">IP 直连</button></div>
       <div id="rooms"></div>
+    </div>
+    <div id="direct">
+      <div class="actions"><button data-action="close-direct">返回大厅</button></div>
+      <div class="actions">
+        <input id="direct-port" type="text" maxlength="5" value="10800"/>
+        <button id="direct-listen" class="primary" data-action="direct-listen">监听 UDP</button>
+      </div>
+      <div class="actions">
+        <input id="direct-address" type="text" maxlength="21" placeholder="对方 IPv4:端口"/>
+        <button id="direct-join" data-action="direct-join">连接</button>
+      </div>
+      <div class="sub">跨网联机时，请房主在路由器转发所填的 UDP 端口。</div>
     </div>
     <div id="room">
       <div class="actions"><button data-action="leave">返回大厅</button> <span id="room-code"></span></div>
@@ -77,14 +91,14 @@ progress fill { background-color: #c0c987; }
       <div id="messages"></div>
       <div id="composer"><input id="message" type="text" maxlength="160" placeholder="发言"/><button data-action="send-chat">发送</button></div>
     </div>
-    <div id="progress"><span id="progress-text"></span><progress id="progress-meter" max="1"></progress><button data-action="return">取消并回房</button></div>
+    <div id="progress"><span id="progress-text"></span><progress id="progress-meter" max="1"></progress><button id="cancel-room" data-action="return">取消并回房</button></div>
   </div>
   <div id="footer"><button id="account" data-action="open-account">登录</button><span id="status"></span></div>
 </div>
 <div id="chat-hud">
   <div id="game-messages"></div>
   <div id="chat-tools">
-    <button data-action="hide">F2 收起</button><button data-action="phrases">快捷发言</button><button data-action="return">回房</button>
+    <button data-action="hide">F2 收起</button><button id="open-phrases" data-action="phrases">快捷发言</button><button id="return-room" data-action="return">回房</button>
     <div id="phrases" class="phrases"></div>
   </div>
 </div>

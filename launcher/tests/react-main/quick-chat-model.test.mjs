@@ -507,6 +507,31 @@ test('free chat uses the shared entry list, accepts history once and never plays
   assert.deepEqual(model.getSnapshot().entries.map(entry=>entry.messageId),[10,11]);
   assert.deepEqual(clock.deadlines(),[]);
 });
+test('replay completion announces once and expires independently after ten seconds', (t) => {
+  const {model,clock}=fixture(t,context({inRoom:true}));
+  const settlement={id:2,author:'ritosa',settledAt:100,changes:[]};
+  const receive=value=>model.receive({type:'th09-rating',room:'ROOM',settlement:value});
+  receive(settlement);
+  clock.advance(10000);
+  assert.equal(model.getSnapshot().entries[0].expiredInGame,true);
+  receive({...settlement,replayUploadedAt:10001});
+  assert.equal(model.getSnapshot().entries.length,2);
+  assert.equal(model.getSnapshot().entries[0].rating.replayUploadedAt,10001);
+  assert.equal(model.getSnapshot().entries[0].expiredInGame,true);
+  assert.equal(model.getSnapshot().entries[1].replayUploaded,true);
+  assert.equal(model.getSnapshot().entries[1].expiredInGame,undefined);
+  clock.advance(5000);
+  receive({...settlement,replayUploadedAt:10001});
+  receive(settlement);
+  assert.deepEqual(clock.deadlines(),[5000]);
+  assert.equal(model.getSnapshot().entries[0].rating.replayUploadedAt,10001);
+  clock.advance(5000);
+  assert.equal(model.getSnapshot().entries[1].expiredInGame,true);
+  model.receive({type:'chat-history',room:'ROOM',throughId:0,entries:[],ratings:[{...settlement,replayUploadedAt:10001}]});
+  assert.equal(model.getSnapshot().entries.length,2);
+  assert.deepEqual(clock.deadlines(),[]);
+});
+
 test('rating settlements survive run transitions and deduplicate replayed history', (t) => {
   const {model,voices}=fixture(t);
   const ranked={id:2,author:'ritosa',authorProfile:{name:'Ritosa',avatar:'0123456789abcdef'},settledAt:100,

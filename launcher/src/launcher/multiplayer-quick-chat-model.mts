@@ -42,6 +42,7 @@ export interface QuickChatEntry {
   readonly authorId?: string;
   readonly at?: number;
   readonly rating?: RatingAnnouncement;
+  readonly replayUploaded?: boolean;
   readonly expiredInGame?: boolean;
   readonly delivery?: 'pending' | 'failed';
 }
@@ -50,6 +51,7 @@ export interface RatingAnnouncement {
   author: string;
   authorProfile?: {name: string; avatar?: string};
   settledAt: number;
+  replayUploadedAt?: number;
   changes: {username: string; before: number | null; after: number}[];
 }
 function ratingAnnouncement(value: unknown): RatingAnnouncement | undefined {
@@ -66,6 +68,7 @@ function ratingAnnouncement(value: unknown): RatingAnnouncement | undefined {
     ? {name: profile.name, ...(typeof profile.avatar === 'string' && /^[a-f0-9]{16}$/.test(profile.avatar) ? {avatar: profile.avatar} : {})}
     : undefined;
   return {id: item.id!, author: item.author, settledAt: item.settledAt!, changes: item.changes,
+    ...(Number.isSafeInteger(item.replayUploadedAt) && item.replayUploadedAt! > 0 ? {replayUploadedAt:item.replayUploadedAt} : {}),
     ...(authorProfile ? {authorProfile} : {})};
 }
 export interface QuickChatSnapshot {
@@ -219,21 +222,32 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       const rating = ratingAnnouncement(message.settlement);
       if (!rating || !snapshot.context?.visible || message.room !== snapshot.context.room) return;
       const name = rating.authorProfile?.name ?? 'bot';
-      const index = snapshot.entries.findIndex(entry => entry.rating?.id === rating.id);
+      const index = snapshot.entries.findIndex(entry => entry.rating?.id === rating.id && !entry.replayUploaded);
+      const replayNotice = (value: RatingAnnouncement) => {
+        if (!value.replayUploadedAt || snapshot.entries.some(entry => entry.replayUploaded && entry.rating?.id === value.id)) return;
+        append({id:++sequence, clientId:'th09-rating', seat:-1, spectator:false, name,
+          phrase:{id:'th09-rating',zh:'',en:''}, rating:value, replayUploaded:true, at:value.replayUploadedAt,
+          ...(silent ? {expiredInGame:true} : {})}, silent);
+      };
       if (index >= 0) {
         const entry = snapshot.entries[index];
         const previous = entry.rating!;
-        if (previous.author === rating.author && previous.authorProfile?.name === rating.authorProfile?.name &&
+        const replayUploadedAt = previous.replayUploadedAt ?? rating.replayUploadedAt;
+        const uploaded = !previous.replayUploadedAt && !!replayUploadedAt;
+        if (!uploaded && previous.author === rating.author && previous.authorProfile?.name === rating.authorProfile?.name &&
             previous.authorProfile?.avatar === rating.authorProfile?.avatar) return;
         const entries = [...snapshot.entries];
-        entries[index] = {...entry, name, rating: {...previous, author: rating.author, authorProfile: rating.authorProfile}};
+        entries[index] = {...entry, name, rating: {...previous, author: rating.author, authorProfile: rating.authorProfile,
+          ...(replayUploadedAt ? {replayUploadedAt} : {})}};
         publish({...snapshot, entries}, silent);
+        if (uploaded) replayNotice(entries[index].rating!);
         return;
       }
       const entry: QuickChatEntry = {id: ++sequence, clientId: 'th09-rating', seat: -1, spectator: false,
         name, phrase: {id: 'th09-rating', zh: '', en: ''}, rating, at: rating.settledAt,
         ...(silent ? {expiredInGame: true} : {})};
       append(entry, silent);
+      replayNotice(rating);
       return;
     }
     if (message.type === 'chat-status') {

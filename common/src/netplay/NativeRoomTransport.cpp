@@ -2,6 +2,7 @@
 #include <eagler/netplay/NativePeerTransport.hpp>
 #include "DesktopSwarmTurn.hpp"
 #include "NativeAdaptiveRoute.hpp"
+#include <eagler/netplay/NativeUdpTransport.hpp>
 #include <nlohmann/json.hpp>
 #include <rtc/websocket.hpp>
 
@@ -37,7 +38,12 @@ std::int64_t unixMillis()
 }
 
 #ifdef _WIN32
-DWORD postReplay(const std::string &origin, const std::string &token, std::vector<std::uint8_t> &file)
+struct ReplayReceipts {
+    std::mutex mutex;
+    std::deque<std::string> pending;
+};
+
+DWORD postReplay(const std::string &origin, const std::string &token, std::vector<std::uint8_t> &file, std::string &receipt)
 {
     using Handle = std::unique_ptr<void, decltype(&WinHttpCloseHandle)>;
     const std::wstring url(origin.begin(), origin.end());
@@ -70,10 +76,23 @@ DWORD postReplay(const std::string &origin, const std::string &token, std::vecto
     DWORD status = 0, statusSize = sizeof(status);
     if (!WinHttpQueryHeaders(request.get(), WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
         WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize, WINHTTP_NO_HEADER_INDEX)) return 0;
+    if (status == 200) {
+        std::string body;
+        char buffer[512];
+        DWORD read = 0;
+        while (WinHttpReadData(request.get(), buffer, sizeof(buffer), &read) && read) {
+            if (body.size() + read > 1024) return status;
+            body.append(buffer, read);
+        }
+        const auto result = Json::parse(body, nullptr, false);
+        if (result.is_object() && result.contains("receipt") && result["receipt"].is_string())
+            receipt = result["receipt"].get<std::string>();
+    }
     return status;
 }
 
-void queueReplay(std::string origin, std::string token, std::int64_t expiresAt, std::vector<std::uint8_t> file)
+void queueReplay(std::string origin, std::string token, std::int64_t expiresAt, std::vector<std::uint8_t> file,
+    std::shared_ptr<ReplayReceipts> receipts, bool notify)
 {
     static std::atomic<unsigned> active{0};
     if (active.fetch_add(1, std::memory_order_relaxed) >= 4) {
@@ -82,10 +101,16 @@ void queueReplay(std::string origin, std::string token, std::int64_t expiresAt, 
     }
     try {
         // This job owns its bytes and can finish after the room closes.
-        std::thread([origin = std::move(origin), token = std::move(token), expiresAt, file = std::move(file)]() mutable {
+        std::thread([origin = std::move(origin), token = std::move(token), expiresAt,
+            file = std::move(file), receipts = std::move(receipts), notify]() mutable {
             try {
                 for (int delay = 250; unixMillis() < expiresAt; delay = (std::min)(delay * 2, 5000)) {
-                    const DWORD status = postReplay(origin, token, file);
+                    std::string receipt;
+                    const DWORD status = postReplay(origin, token, file, receipt);
+                    if (notify && !receipt.empty() && receipt.size() <= 160) {
+                        std::lock_guard<std::mutex> lock(receipts->mutex);
+                        if (receipts->pending.size() < 16) receipts->pending.push_back(std::move(receipt));
+                    }
                     if (status && status < 500 && status != 408 && status != 429) break;
                     if (unixMillis() + delay >= expiresAt) break;
                     std::this_thread::sleep_for(std::chrono::milliseconds(delay));
@@ -160,6 +185,7 @@ struct NativeRoomTransport::Impl
         std::uint32_t start = 0;
         std::int64_t expiresAt = 0;
         std::string token, origin;
+        bool notify = false;
         std::vector<std::uint8_t> file;
     };
     struct IceTraffic {
@@ -185,6 +211,7 @@ struct NativeRoomTransport::Impl
     std::unique_ptr<rtc::WebSocket> socket;
 #ifdef _WIN32
     DesktopSwarmTurn swarm;
+    std::shared_ptr<ReplayReceipts> replayReceipts = std::make_shared<ReplayReceipts>();
 #endif
     std::unique_ptr<NativePeerTransport> transport;
     std::unique_ptr<NativeAdaptiveRoute> adaptive;
@@ -202,12 +229,12 @@ struct NativeRoomTransport::Impl
     bool ready = false;
     bool localSwarm = false;
     bool swarmRoom = false;
-    bool adaptiveSwarm = false;
+    bool adaptiveSwarm = false, onDemandTurn = false;
     bool startupActive = false;
     bool startupPrimaryFailed = false;
     Json startupTurnIce = Json::array();
     std::string initialRelayRoute;
-    NativeAdaptiveRoute::RetirePeer retirePeer;
+    std::function<void(std::unique_ptr<NativePeerTransport>, std::unique_ptr<NativeAdaptiveRoute>)> retireTransport;
     bool adaptiveActive = false;
     bool reportMatch = false;
     bool replayUploadEnabled = false;
@@ -244,7 +271,7 @@ struct NativeRoomTransport::Impl
         auto upload = std::move(*replayUpload);
         replayCompleted = upload.start;
         replayUpload.reset();
-        queueReplay(std::move(upload.origin), std::move(upload.token), upload.expiresAt, std::move(upload.file));
+        queueReplay(std::move(upload.origin), std::move(upload.token), upload.expiresAt, std::move(upload.file), replayReceipts, upload.notify);
 #endif
     }
 
@@ -331,7 +358,9 @@ struct NativeRoomTransport::Impl
                 !preferTurn, manualRouteConfirmation);
             if (!preferTurn)
                 adaptive->ConfigureSurvey(initialRelayRoute, message.value("surveyInitialSwarm", false),
-                    [this](const Json &message) { return sendSurvey(message); }, retirePeer);
+                    [this](const Json &message) { return sendSurvey(message); },
+                    [this](std::unique_ptr<NativePeerTransport> peer) { retireTransport(std::move(peer), nullptr); },
+                    onDemandTurn);
         }
     }
 
@@ -372,6 +401,7 @@ struct NativeRoomTransport::Impl
             if (auto *upload = replayFor(start->get<std::uint32_t>())) {
                 upload->token = value;
                 upload->expiresAt = static_cast<std::int64_t>(deadline);
+                upload->notify = message.value("notify", Json(nullptr)) == true;
                 uploadReplay();
             }
         } else if (type == "peers") {
@@ -392,6 +422,7 @@ struct NativeRoomTransport::Impl
                 fallbackIceServers = message.value("fallbackIceServers", Json(nullptr));
                 swarmRoom = message.value("turnMode", "") == "swarm";
                 adaptiveSwarm = message.value("adaptiveSwarm", false);
+                onDemandTurn = message.value("onDemandTurn", false);
                 initialRelayRoute = swarmRoom ? "swarm" : "turn";
                 const auto worker = message.find("initialSwarmWorker");
                 if (swarmRoom && worker != message.end() && worker->is_number_unsigned())
@@ -449,7 +480,12 @@ struct NativeRoomTransport::Impl
                 const auto servers = message.value("iceServers", Json::array());
                 if (startupActive && type == "rtc-standby" && message.value("serial", 0u) == 1)
                     startupTurnIce = servers;
-                adaptive->RelayStandby(message, iceConfiguration(servers, message.value("route", "") != "direct"));
+                const auto route = message.value("route", std::string{});
+                auto ice = iceConfiguration(servers, route != "direct");
+#ifdef RTC_HAS_LOCAL_TURN_RELAY
+                ice.requireLocalTurnRelay = onDemandTurn && route == "turn";
+#endif
+                adaptive->RelayStandby(message, std::move(ice));
             } catch (const std::exception &) {
                 if (message.value("phase", "") == "measure")
                     sendSurvey({{"type", startupActive ? "rtc-startup-quality" : "rtc-route-report"},
@@ -467,8 +503,7 @@ struct NativeRoomTransport::Impl
             ready = false;
             deadline = Clock::now() + std::chrono::seconds(17);
             std::fprintf(stderr, "Replacing WebRTC transport (generation %u)\n", generation);
-            adaptive.reset();
-            transport.reset();
+            retireTransport(std::move(transport), std::move(adaptive));
         } else if (type == "rtc-replace" && replacing && !transport && message.value("generation", 0u) == generation) {
             createTransport(message, cancelled);
             if (transport) transport->AddPeer(1 - player);
@@ -545,11 +580,11 @@ struct NativeRoomTransport::ConnectionWorker
         wake.notify_one();
     }
 
-    void retirePeer(std::unique_ptr<NativePeerTransport> peer)
+    void retireTransport(std::unique_ptr<NativePeerTransport> transport, std::unique_ptr<NativeAdaptiveRoute> adaptive)
     {
         {
             std::lock_guard lock(mutex);
-            retiredPeers.push_back(std::move(peer));
+            retiredTransports.push_back({std::move(transport), std::move(adaptive)});
         }
         wake.notify_one();
     }
@@ -561,6 +596,12 @@ struct NativeRoomTransport::ConnectionWorker
     }
 
 private:
+    struct RetiredTransport {
+        // The adaptive route borrows the primary transport.
+        std::unique_ptr<NativePeerTransport> transport;
+        std::unique_ptr<NativeAdaptiveRoute> adaptive;
+    };
+
     struct Attempt {
         std::unique_ptr<Impl> state;
         std::shared_ptr<std::atomic_bool> cancelled;
@@ -606,18 +647,18 @@ private:
         for (;;) {
             Attempt attempt;
             std::deque<std::unique_ptr<Impl>> closing;
-            std::deque<std::unique_ptr<NativePeerTransport>> closingPeers;
+            std::deque<RetiredTransport> closingTransports;
             {
                 std::unique_lock lock(mutex);
-                wake.wait(lock, [&] { return stop || pending.state || !retired.empty() || !retiredPeers.empty(); });
-                if (stop && retired.empty() && retiredPeers.empty()) return;
+                wake.wait(lock, [&] { return stop || pending.state || !retired.empty() || !retiredTransports.empty(); });
+                if (stop && retired.empty() && retiredTransports.empty()) return;
                 closing.swap(retired);
-                closingPeers.swap(retiredPeers);
+                closingTransports.swap(retiredTransports);
                 attempt = std::move(pending);
             }
             for (auto &state : closing) state->close();
             closing.clear();
-            closingPeers.clear();
+            closingTransports.clear();
             if (attempt.state) connect(std::move(attempt));
         }
     }
@@ -628,7 +669,7 @@ private:
     std::shared_ptr<std::atomic_bool> active;
     std::unique_ptr<Impl> result;
     std::deque<std::unique_ptr<Impl>> retired;
-    std::deque<std::unique_ptr<NativePeerTransport>> retiredPeers;
+    std::deque<RetiredTransport> retiredTransports;
     bool stop = false;
     std::thread thread;
 };
@@ -655,6 +696,10 @@ void NativeRoomTransport::Connect(const std::string &signalUrl, std::string tag,
     if (playerCount == 2 && !preferTurn)
         next->signalUrl += signalUrl.find('?') == std::string::npos
             ? "?rtcStartup=1&rtcKeepPrimary=1" : "&rtcStartup=1&rtcKeepPrimary=1";
+#ifdef RTC_HAS_LOCAL_TURN_RELAY
+    if (playerCount == 2 && !preferTurn && (initialRoute.empty() || initialRoute == "auto"))
+        next->signalUrl += "&rtcTurnOnDemand=1";
+#endif
     if (playerCount == 2 && !preferTurn &&
         (initialRoute == "auto" || initialRoute == "direct" || initialRoute == "swarm" || initialRoute == "turn")) {
         next->manualRouteConfirmation = true;
@@ -666,13 +711,27 @@ void NativeRoomTransport::Connect(const std::string &signalUrl, std::string tag,
     next->player = localPlayer;
     next->count = playerCount;
     next->preferTurn = preferTurn;
-    next->retirePeer = [worker = worker_.get()](std::unique_ptr<NativePeerTransport> peer) { worker->retirePeer(std::move(peer)); };
+    next->retireTransport = [worker = worker_.get()](auto transport, auto adaptive) {
+        worker->retireTransport(std::move(transport), std::move(adaptive));
+    };
     worker_->begin(std::move(next));
     opening_ = true;
 }
 
+void NativeRoomTransport::ConnectUdp(bool host, std::string_view endpoint, std::string identity, std::uint32_t run)
+{
+    Close();
+    udp_ = std::make_unique<NativeUdpTransport>(host, endpoint, std::move(identity), run);
+}
+
+std::uint32_t NativeRoomTransport::UdpRun() const
+{
+    return udp_ ? udp_->Run() : 0;
+}
+
 void NativeRoomTransport::Close()
 {
+    udp_.reset();
     opening_ = false;
     if (worker_) worker_->retire(std::move(impl_));
 }
@@ -704,6 +763,7 @@ void NativeRoomTransport::PublishMatchReplay(std::uint32_t start, std::vector<st
 
 void NativeRoomTransport::Pump()
 {
+    if (udp_) udp_->Pump();
     if (opening_) {
         impl_ = worker_->take();
         opening_ = !impl_;
@@ -716,6 +776,16 @@ void NativeRoomTransport::Impl::pump(const std::atomic_bool* cancelled)
     if (!error.empty()) return;
     auto &state = *this;
     try {
+#ifdef _WIN32
+        if (state.socket->isOpen()) {
+            std::deque<std::string> receipts;
+            {
+                std::lock_guard<std::mutex> lock(state.replayReceipts->mutex);
+                receipts.swap(state.replayReceipts->pending);
+            }
+            for (const auto &receipt : receipts) state.send({{"type", "th09-replay-saved"}, {"receipt", receipt}});
+        }
+#endif
         for (unsigned i = 0; i < 64; ++i) {
             const auto message = state.socket->receive();
             if (!message) break;
@@ -808,11 +878,12 @@ void NativeRoomTransport::Impl::pump(const std::atomic_bool* cancelled)
 const std::string &NativeRoomTransport::LastError() const
 {
     static const std::string empty;
-    return impl_ ? impl_->error : empty;
+    return udp_ ? udp_->LastError() : impl_ ? impl_->error : empty;
 }
 
 NativeRoomTransport::Link NativeRoomTransport::LinkStatus() const
 {
+    if (udp_) return IsOpen() ? Link{Route::Udp, udp_->RoundTripMs()} : Link{};
     if (Recovering()) return {Route::Reconnecting,{}};
     if (!IsOpen()) return {};
     const bool live = impl_->adaptive && impl_->adaptive->HasLatencyProbes();
@@ -828,6 +899,7 @@ NativeRoomTransport::Link NativeRoomTransport::LinkStatus() const
 
 bool NativeRoomTransport::IsOpen() const
 {
+    if (udp_) return udp_->IsOpen();
     return impl_ && impl_->route && !Failed() && !Recovering() && impl_->Active() && impl_->Active()->IsOpen();
 }
 
@@ -857,31 +929,37 @@ void NativeRoomTransport::SetAdaptiveRouteActive(bool active)
 
 bool NativeRoomTransport::Disconnected() const
 {
+    if (udp_) return udp_->Disconnected();
     return impl_ && impl_->route && (Failed() || impl_->disconnected);
 }
 
 bool NativeRoomTransport::SendTo(std::uint8_t player, const std::uint8_t *data, std::size_t size)
 {
+    if (udp_) return udp_->SendTo(player, data, size);
     return IsOpen() && impl_->Active()->SendTo(player, data, size);
 }
 
 bool NativeRoomTransport::SendRepairTo(std::uint8_t player, const std::uint8_t *data, std::size_t size)
 {
+    if (udp_) return udp_->SendRepairTo(player, data, size);
     return IsOpen() && impl_->Active()->SendRepairTo(player, data, size);
 }
 
 bool NativeRoomTransport::SendControl(const std::uint8_t *data, std::size_t size)
 {
+    if (udp_) return udp_->SendControl(data, size);
     return IsOpen() && (impl_->adaptive ? impl_->adaptive->SendControl(data, size) : impl_->Active()->SendControl(data, size));
 }
 
 bool NativeRoomTransport::Poll(std::vector<std::uint8_t> *packet)
 {
+    if (udp_) return udp_->Poll(packet);
     return IsOpen() && (impl_->adaptive ? impl_->adaptive->Poll(packet) : impl_->Active()->Poll(packet));
 }
 
 std::size_t NativeRoomTransport::BufferedAmount() const
 {
+    if (udp_) return udp_->BufferedAmount();
     return impl_ && impl_->Active() ? impl_->Active()->BufferedAmount() : 0;
 }
 }

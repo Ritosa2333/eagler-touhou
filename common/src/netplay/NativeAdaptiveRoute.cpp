@@ -138,7 +138,7 @@ struct NativeAdaptiveRoute::State
     std::uint32_t standbySerial = 0;
     Millis nextSlowCheck = 0, outageReportedAt = 0;
     std::string initialRelayRoute;
-    bool initialSurvey = false;
+    bool initialSurvey = false, onDemandTurn = false;
     SurveySignal surveySignal;
     RetirePeer retirePeer;
     std::string tag;
@@ -200,6 +200,7 @@ struct NativeAdaptiveRoute::State
         if (!path.peer || !path.peer->IsOpen()) return false;
         if (&path == &primary) return true;
         if (path.direct) return !path.peer->UsesRelay();
+        if (onDemandTurn && path.route == "turn") return path.peer->UsesRelay(true);
         if (!path.relayConfirmed) path.relayConfirmed = path.peer->UsesRelay();
         return path.relayConfirmed;
     }
@@ -364,9 +365,15 @@ struct NativeAdaptiveRoute::State
         return swarm ? "Swarm" : "TURN";
     }
 
+    bool CanSwitchWithoutConfirmation(Millis time) const
+    {
+        return !onDemandTurn || !manualSwitch || !Ready(*active) || Stalled(time);
+    }
+
     bool BeginHandoff(Path &path, Millis time, std::uint32_t offerTicket = 0)
     {
-        if (proposal || &path == active || !Ready(path)) return false;
+        if (proposal || &path == active || !Ready(path) ||
+            (!offerTicket && !CanSwitchWithoutConfirmation(time))) return false;
         const auto id = epoch + 1;
         Json message{{"kind", "switch"}, {"path", Name(path)}, {"epoch", id}, {"generation", WireGeneration(path)}};
         if (offerTicket) message["offerTicket"] = offerTicket;
@@ -554,7 +561,7 @@ struct NativeAdaptiveRoute::State
                 for (auto entry = pending.begin(); entry != end; ++entry) pendingBytes -= entry->second.size();
                 pending.erase(pending.begin(), end);
             }
-        } else if (Switching() && &path == &primary && (kind == "description" || kind == "candidate")) {
+        } else if (Switching() && !onDemandTurn && &path == &primary && (kind == "description" || kind == "candidate")) {
             const auto id = number(m, "generation");
             if (!id || id > 1000000) return;
             try {
@@ -654,7 +661,7 @@ struct NativeAdaptiveRoute::State
         if (!surveySignal || !pairedQuality || !Switching()) return;
         const bool outage = Stalled(time);
         if (!outage) outageReportedAt = 0;
-        if (outage ? !outageReportedAt : time >= nextSlowCheck) {
+        if (outage ? !onDemandTurn && !outageReportedAt : time >= nextSlowCheck) {
             nextSlowCheck = time + 250;
             const auto current = active->Measure(time, outage ? ProbeWaitSince() : time - Window, 40);
             const auto route = active->surveySerial ? active->route :
@@ -671,7 +678,7 @@ struct NativeAdaptiveRoute::State
         if (Measuring()) {
             const auto result = planned->Measure(time, planned->createdAt, 40);
             if (result.count >= 12) StandbyReport(*planned, surveyReport(result));
-        } else if (!planned->measuring && Controller() && !proposal && !verification) Verify(time, false, true, planned.get());
+        } else if (!planned->measuring && Controller() && !proposal && !verification) Verify(time, recovery != 0, true, planned.get());
     }
 
     bool PollPlannedSignals(Millis time)
@@ -755,7 +762,7 @@ struct NativeAdaptiveRoute::State
                     }
                     if (candidate.received >= 12 && candidate.loss <= .05 &&
                         ((force && !Ready(*active)) || candidate.score() * 1.1 + 5 < current.score())) {
-                        if (!manualSwitch || force) BeginHandoff(next, time);
+                        if (!manualSwitch || (force && CanSwitchWithoutConfirmation(time))) BeginHandoff(next, time);
                         else {
                             const auto from = std::isfinite(current.p95) ? static_cast<int>(current.p95) : -1;
                             const auto to = static_cast<int>(candidate.p95);
@@ -824,7 +831,7 @@ void NativeAdaptiveRoute::Pump(bool running)
         s.startupPrimaryUntil = 0;
     }
     if (!s.supported || s.disabled) return;
-    if (s.Switching() && s.Controller() && !s.backup && !s.planned && s.primary.peer->IsOpen() && time >= s.retryAt) {
+    if (!s.onDemandTurn && s.Switching() && s.Controller() && !s.backup && !s.planned && s.primary.peer->IsOpen() && time >= s.retryAt) {
         const bool direct = s.primary.peer->UsesRelay();
         if (!direct || s.directRetry) {
             try { s.MakeBackup(s.generation + 1, time, direct); }
@@ -836,6 +843,14 @@ void NativeAdaptiveRoute::Pump(bool running)
     if (s.ackPending) s.ackPending = !s.Send(*s.active, {{"kind", "ack"}, {"sequence", s.incoming}});
     s.Replay();
     if (s.Eligible(time)) {
+        if (s.onDemandTurn && s.previous && !s.proposal && time > s.previousUntil) {
+            auto *retired = std::exchange(s.previous, nullptr);
+            if (retired == &s.primary) {
+                s.primary.peer->Close();
+                s.startupPrimaryUntil = 0;
+            } else if (retired == s.planned.get()) s.Retire(s.planned);
+            else if (retired == s.retained.get()) s.Retire(s.retained);
+        }
         for (auto *path : s.Paths()) if (path) s.Probe(*path, time);
         s.Survey(time);
         s.Assess(time);
@@ -847,9 +862,16 @@ bool NativeAdaptiveRoute::Recover()
     auto &s = *state_;
     const auto time = now();
     if (!s.supported || s.disabled || !s.Switching() || !s.running) return false;
-    const bool waitingForSurvey = (s.planned && s.planned.get() != s.active) ||
+    bool waitingForSurvey = (s.planned && s.planned.get() != s.active) ||
         (s.outageReportedAt && time - s.outageReportedAt <= 1500);
-    if (!s.Other() && !waitingForSurvey) return false;
+    if (!s.Other() && !waitingForSurvey) {
+        if (!s.onDemandTurn || !s.pairedQuality || !s.surveySignal) return false;
+        const auto &active = *s.active;
+        const auto route = active.surveySerial ? active.route :
+            active.peer->UsesRelay() ? s.initialRelayRoute : "direct";
+        if (!s.recovery && !s.surveySignal({{"type", "rtc-route-unavailable"}, {"route", route}})) return false;
+        waitingForSurvey = true;
+    }
     if (!s.recovery) {
         s.recovery = (std::max)(time, s.quietUntil) + (waitingForSurvey ? 16000 : 7000);
         s.recoveryProbe = s.active->probes;
@@ -908,10 +930,12 @@ bool NativeAdaptiveRoute::ConfirmOffer()
         {"epoch", s.epoch}, {"generation", s.WireGeneration(*offer.path)}});
     return offer.confirmed;
 }
-void NativeAdaptiveRoute::ConfigureSurvey(std::string initialRoute, bool initialSurvey, SurveySignal send, RetirePeer retire)
+void NativeAdaptiveRoute::ConfigureSurvey(std::string initialRoute, bool initialSurvey, SurveySignal send, RetirePeer retire,
+                                          bool onDemandTurn)
 {
     state_->initialRelayRoute = std::move(initialRoute);
     state_->initialSurvey = initialSurvey;
+    state_->onDemandTurn = onDemandTurn;
     state_->surveySignal = std::move(send);
     state_->retirePeer = std::move(retire);
 }

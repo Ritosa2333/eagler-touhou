@@ -1,55 +1,41 @@
 # 工作区
 
-本仓库同时维护启动器、游戏、公共运行库和独立服务。各组件按自己的入口运行；贡献分支从本仓库主线创建。
+在 monorepo 根目录选组件。开发启动器、编译游戏和发布站点各有独立入口。
 
-## 目录与构建模式
-
-| 游戏 | 普通版源码 | MP 源码 | 构建方式 |
-| --- | --- | --- | --- |
-| th05 | `ports/th05` | `ports/th05-mp` | 原生 C++／GLES2，原版与 thprac 共用 Wasm |
-| th06 | `ports/th06` | `ports/th06` | 共用源码，分别构建 normal 与 multiplayer |
-| th07 | `ports/th07` | `ports/th07` | 共用源码，分别构建 normal 与 multiplayer |
-| th075 | `ports/th075` | `ports/th075-mp` | 分目录、分模式构建 |
-| th08 | `ports/th08` | `ports/th08-mp` | 分目录、分模式构建 |
-| th09 | `ports/th09` | `ports/th09` | 共用生产程序，保留普通版与 MP 产品身份 |
-| th10 | `ports/th10` | `ports/th10-mp` | 分目录、分模式构建 |
-| th11 | `ports/th11` | `ports/th11-mp` | 分目录、分模式构建 |
-| th12 | `ports/th12` | `ports/th12-mp` | Web 使用 `scripts/build-eagler.mjs`；CMake 可构建 SDL3 / GLES 3 普通版与多人应用；两侧正式 Web 入口均为 SDL3／GLES |
-| th15 | `ports/th15` | `ports/th15-mp` | 分目录、分模式构建 |
-| th17 | `ports/th17` | — | 普通版 SDL3 / WebGL2 |
-| th19 | `ports/th19` | `ports/th19` | 共用 SDL3 / WebGL2 源码，分别打包 normal 与 multiplayer |
-| th20 | `ports/th20` | — | 普通版实验适配 |
-
-目录来自 [`launcher/config/workspace.json`](launcher/config/workspace.json)，构建命令来自 [`launcher/config/runtime-builds.json`](launcher/config/runtime-builds.json)。`node tools/workspace.mjs list` 直接读取这两份配置。
-
-## 公共依赖
-
-`common/` 是默认共享源码。客户端与服务共用的纯协议和产品定义位于 `common/contracts/`；浏览器桥位于 `common/browser/`；C++ 输入、联机等组件位于 `common/include/eagler/`。
-
-TH06、TH07 的 SDL 依赖按根 `.gitmodules` 取对应游戏的子模块。SDK、原版资源、字体和构建输出放在开发指南指定的本地目录。
-
-| 本地目录 | 内容 |
+| 要做什么 | 从哪里开始 |
 | --- | --- |
-| `toolchains/` | SDK 与编译工具 |
-| `dependencies/` | 额外字体与构建依赖 |
-| `games/` | 自己提供的原版资源和准备结果 |
-| `artifacts/` | 构建记录与验证输出 |
-| `launcher/.cache/` | 前端编译和内容准备缓存 |
+| 自托管、上线或更新网站 | [部署指南](launcher/docs/SELF_HOSTING.md) |
+| 从输入组装正式发布候选 | [发布候选](launcher/docs/RELEASE.md) |
+| 改启动器或联调单作 | [启动器开发](launcher/docs/DEVELOPMENT.md)，源码在 `launcher/` |
+| 编译或适配游戏 | [各作开发指南](ports/README.md)，源码在 `ports/` |
+| 改共享运行库、浏览器桥或协议 | [公共库](common/README.md)，源码在 `common/` |
+| 部署大厅信令和穿透中继 | [Relay](services/relay/deploy/README.md) 和 [TURN](services/turn/README.md) |
+| 部署下载分流或遥测 | [资源路由](services/resource-router/README.md) 和 [遥测](services/telemetry/README.md) |
 
-## 按需检出
+## 找到正确的游戏源码
 
-[贡献指南](CONTRIBUTING.md)给出完整 clone 命令。已建立稀疏检出后，可增加单个作品和相关模式：
+以下命令从仓库根目录运行。普通版和多人版可能共用源码，也可能分目录。先看实际路径和各自的构建配方。
 
 ```sh
-node tools/workspace.mjs select th08 --variant=both
+node tools/workspace.mjs list
+node tools/workspace.mjs paths th10 --variant=both
+node tools/workspace.mjs select th10 --variant=both
 ```
 
-完整检出使用 `git sparse-checkout disable`。旧的 `eagler`、`eagler-mp` 分支身份保存在[来源记录](docs/history/README.md)中，当前源码位置按上表选择。
+`list` 和 `paths` 读取[目录映射](launcher/config/workspace.json)和[构建配方](launcher/config/runtime-builds.json)。`select` 将对应目录加入已有的稀疏检出，完整检出可直接查看路径。首次检出见[贡献指南](CONTRIBUTING.md)。向独立作品仓库同步时，查[来源历史](docs/history/README.md)和[普通版／多人版同步流程](docs/adaptation/port-sync.md)。
 
-## 检查入口
+## 区分源码、输入和构建结果
 
-根 `.github/workflows/` 是 CI 入口。前端、游戏和服务分别执行自己的检查，文档和适配表共用 `npm run docs:check`。`npm run ports:check -- --all` 检查各作各模式的源码输入和实现，`npm run ports:status -- --all` 更新[适配表与检查记录](docs/adaptation/README.md)。构建成功的来源记录位于 `artifacts/validation/source-builds/`。
+| 路径 | 内容 |
+| --- | --- |
+| `common/contracts/`、`common/browser/`、`common/include/eagler/` | 共享契约、浏览器桥和 C++ 公共运行库 |
+| `launcher/runtime-release/`、`launcher/games/` | 从源码运行 Host 时的程序包和本地原作输入 |
+| `launcher/dist/site/` | 从源码运行 Host 生成的 Hosted 站点 |
+| `launcher/.cache/`、`artifacts/validation/source-builds/` | 构建缓存和源码构建记录 |
+| `archive/` | 历史实验、验证和发布记录 |
 
-## 下载服务
+SDK、子模块、字体等输入按各作开发指南准备。
 
-[`services/resource-router/`](services/resource-router/README.md) 按发布清单提供资源分流与备用节点发现。它独立于 Relay 和 TURN，运行 `npm --prefix services/resource-router test` 检查节点内容匹配与分流接口。
+## 验证改动
+
+文档运行 `npm run docs:check`。游戏变更运行各自的构建与联调检查。可用 `npm run ports:check -- --all` 检查源码契约，用 `npm run ports:status -- --all` 更新[适配记录](docs/adaptation/README.md)。服务在各自目录执行测试，完整入口见[文档索引](docs/INDEX.md)。

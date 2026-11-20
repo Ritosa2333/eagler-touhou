@@ -46,10 +46,15 @@ import { PRIVATE_FRONTEND_ASSETS, privateFrontendAssetSource } from "../lib/priv
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const args = Object.fromEntries(process.argv.slice(2).map(value => {
+  if (value === "--no-download") return ["no-download", "1"];
   const split = value.indexOf("=");
   if (!value.startsWith("--") || split < 3) throw new Error(`invalid argument: ${value}`);
   return [value.slice(2, split), value.slice(split + 1)];
 }));
+if (args["no-download"] !== undefined && !["0", "1"].includes(args["no-download"])) {
+  throw new Error("--no-download must be 0 or 1");
+}
+const noDownload = args["no-download"] === "1";
 normalizeSiteManifestArguments(args);
 const required = name => {
   if (!args[name]) throw new Error(`missing --${name}=PATH`);
@@ -89,7 +94,7 @@ const configuredResourceMode = configuredFeatures?.resourceMode || RESOURCE_MODE
 if (![RESOURCE_MODE_HOSTED, RESOURCE_MODE_EXTERNAL, RESOURCE_MODE_IMPORT].includes(configuredResourceMode)) {
   throw new Error(`invalid resourceMode in server feature config: ${featureConfigPath}`);
 }
-const serverResourceMode = configuredResourceMode;
+const serverResourceMode = noDownload ? RESOURCE_MODE_IMPORT : configuredResourceMode;
 const hostedResources = serverResourceMode === RESOURCE_MODE_HOSTED;
 const externalResources = serverResourceMode === RESOURCE_MODE_EXTERNAL;
 if (args["test-build"] !== undefined && !["0", "1"].includes(args["test-build"])) throw new Error("--test-build must be 0 or 1");
@@ -114,6 +119,7 @@ const preloadGames = gameIds.filter(game => PRODUCT_GAMES[game].dataProvider ===
 const runtimeReleaseRoot = args["runtime-release"] ? resolve(args["runtime-release"]) : null;
 const runtimeRelease = runtimeReleaseRoot ? await verifyRuntimeRelease(runtimeReleaseRoot) : null;
 if (externalRecoveryRequest) {
+  if (!externalResources) throw new Error("External recovery context requires external resource mode");
   const requested = externalRecoveryRequest.requestedOverrides;
   const requestedKeys = requested && typeof requested === "object" && !Array.isArray(requested)
     ? Object.keys(requested).sort()
@@ -246,7 +252,7 @@ if (configuredFeatures) {
     if (!/^wss?:$/.test(relay.protocol)) throw new Error(`invalid netplayRelay in server feature config: ${featureConfigPath}`);
     serverNetplayRelay = relay.href;
   }
-  if (configured.gameDataFallback != null) {
+  if (!noDownload && configured.gameDataFallback != null) {
     const fallback = configured.gameDataFallback;
     if (typeof fallback !== "object" || typeof fallback.url !== "string" || !/^https:\/\//.test(fallback.url) ||
         (fallback.hint != null && typeof fallback.hint !== "string")) {
@@ -572,6 +578,13 @@ assertProductEntriesRegistered(manifest.games, "Site Manifest games");
 if (gameIds.some(game => !manifest.games[game])) {
   throw new Error(`Site Manifest is missing selected adapters: ${hostManifestPath || "generated publication Host seed"}`);
 }
+if (noDownload && runtimeRelease) {
+  for (const game of gameIds) {
+    if (manifest.games[game].gameData.layout !== runtimeRelease.games[game].dataLayout) {
+      throw new Error(`${game}: Site Manifest DATA layout must match the Runtime Release for --no-download`);
+    }
+  }
+}
 let externalRecoveryProvenance = null;
 if (externalRecoveryRequest) {
   const sourceRoot = dirname(hostManifestPath);
@@ -623,7 +636,11 @@ manifest.shared = {
     : {}),
 };
 if (serverResourceMode === RESOURCE_MODE_IMPORT) {
-  for (const entry of Object.values(manifest.games)) delete entry.package;
+  for (const entry of Object.values(manifest.games)) {
+    delete entry.package;
+    delete entry.gameData.source;
+    delete entry.th075MultiplayerAssets;
+  }
 }
 
 if (serverResourceMode === RESOURCE_MODE_HOSTED) {

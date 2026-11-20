@@ -166,6 +166,25 @@ try {
   assert.equal(hostManifest.shared.netplayRelay, "wss://relay.example.com/eagler-netplay/");
   assert.equal(hostManifest.shared.gameDataFallback.url, "https://downloads.example.com/packages");
   assert.deepEqual(hostManifest.shared.originMigration, { mode: "http-to-https" });
+
+  const importOnly = resolve(scratch, "no-download");
+  await run([
+    "scripts/package-server.mjs",
+    `--output=${importOnly}`,
+    `--runtime-release=${runtimeRelease}`,
+    `--site-manifest=${resolve(host, "site-manifest.json")}`,
+    `--feature-config=${features}`,
+    "--games=th06,th07",
+    "--profile=web-validation-runtime-release",
+    "--no-download",
+  ], { ...process.env, EAGLER_WORKSPACE_ROOT: fakeWorkspace });
+  await run(["scripts/verify-server-build.mjs", importOnly], { ...process.env, EAGLER_WORKSPACE_ROOT: fakeWorkspace });
+  const importManifest = JSON.parse(await readFile(resolve(importOnly, "site-manifest.json"), "utf8"));
+  assert.equal(importManifest.shared.resourceMode, "import");
+  assert.equal(importManifest.shared.gameDataFallback, undefined);
+  assert.equal(importManifest.shared.netplayRelay, hostManifest.shared.netplayRelay);
+  assert.deepEqual(importManifest.games.th06.gameData, hostManifest.games.th06.gameData);
+  assert.ok(importManifest.games.th06.multiplayerRuntime);
   for (const game of ['th06','th07']) assert.equal(hostManifest.games[game].multiplayerRuntime,
     `${originalRuntimeManifest.games[game].multiplayerRuntime.root}/${game}.html?hosted=1`,
     `${game}: publish the isolated immutable multiplayer generation from Runtime Release`);

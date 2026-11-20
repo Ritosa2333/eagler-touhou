@@ -17,6 +17,7 @@ public:
     // sprite entry points only produce renderer scratch/vertices, so callers
     // suppressing GPU submission may omit their geometry as well.
     bool omit_sprite_geometry=false;
+    Vec2 sprite_velocity{};
     PipelineState state;Viewport view;Vec2 shake;u32 tint=0x80808080;bool tint_enabled=false;
     std::array<SpriteVertex,4> quad;
     u32 texture=0;u8 blend_mode=3,depth_disabled=0xff;

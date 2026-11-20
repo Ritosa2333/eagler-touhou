@@ -130,6 +130,13 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
   if (settings) return <Suspense fallback={<ProfileLoading/>}><AccountSettings username={remote.username} initialProfile={profile} initialDisplay={display} reviewPending={remote.reviewPending}
     panel={panel} readLocalSaves={readLocalSaves} cloudSync={cloudSync}
     onSave={(next,visibility) => {if (remote.reviewPending === undefined) setLegacySaved({source:remote,profile:next,display:visibility});}}/></Suspense>;
+  const actionButtons = owner ? <>
+    <Button variant="outline" size="sm" asChild>
+      <Link to={{pathname:location.pathname,search:location.search,hash:'#game-settings'}}>{t('cloudSave.title')}</Link>
+    </Button>
+    <BookButton variant="action" size="sm" type="button" onClick={editProfile}>{t('profile.edit')}</BookButton>
+  </> : !characterPreview && !viewerLoading ? <SocialFollowControl username={remote.username}/> : null;
+  const actions = actionButtons && <div className="profile-action-buttons">{actionButtons}</div>;
   return <main className="player-profile profile-page" aria-labelledby={socialTab ? "profile-social-title" : "profile-name"}>
     {!socialTab && <ProfileBanner src={imageData(profile.cover) ? profile.cover : undefined}>
       <div className="profile-identity">
@@ -145,14 +152,10 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
           </div>
         </div>
         <div className="profile-actions">
-          {!characterPreview && <SocialProvider key={viewer} username={remote.username} includeLists={false} anonymous={!viewer}>
+          {characterPreview ? actions : <SocialProvider key={viewer} username={remote.username} includeLists={false} anonymous={!viewer}>
             <SocialCounts username={remote.username}/>
-            {!owner && !viewerLoading && <SocialFollowControl username={remote.username}/>}
+            {actions}
           </SocialProvider>}
-          {owner && <Button variant="outline" size="sm" asChild>
-            <Link to={{pathname:location.pathname,search:location.search,hash:'#game-settings'}}>{t('cloudSave.title')}</Link>
-          </Button>}
-          {owner && <BookButton variant="action" size="sm" type="button" onClick={editProfile}>{t('profile.edit')}</BookButton>}
         </div>
       </div>
     </ProfileBanner>}

@@ -7,6 +7,7 @@ html[data-ui-app] .library-background {display:none}
 body:not(.mp-room-active):has(.book-masthead) :is(.sheet,.book-directory) {position:relative;z-index:1;background:transparent}
 /* The same route layer serves the library, multiplayer, and profile pages. */
 .launcher-page-surface {position:relative;width:100%;max-width:var(--launcher-layout-width);margin-inline:auto;view-transition-name:launcher-page}
+html[data-ui-home] body:not(.mp-room-active) .launcher-page-surface[data-page="library"] {max-width:none}
 .book-masthead {view-transition-name:launcher-masthead}
 /* Keep the real masthead clickable while the content snapshots crossfade. */
 html[data-ui-route-transition],html[data-ui-route-transition] .book-masthead,
@@ -25,8 +26,6 @@ body:not(.mp-room-active) .tools[data-options-panel] {
 body:not(.mp-room-active) .tools[data-options-panel] :is(.item) {border-color:var(--book-border)}
 body:not(.mp-room-active) .tools[data-options-panel] :is(.option-row,.itemtop,.options-summary) {color:var(--book-ink);font-size:13px}
 body:not(.mp-room-active) .tools[data-options-panel] :is(.itemtop small,.tiny,.option-note,.options-hint) {color:var(--book-muted)}
-body:not(.mp-room-active) .tools[data-options-panel] .tools-callout {margin-block:7px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-bg);color:var(--book-muted)}
-body:not(.mp-room-active) .tools[data-options-panel] .tools-callout-title {color:var(--book-accent);font-size:12px}
 
 /* One material and control language for startup/help, decisions, file tasks,
    keyboard/gamepad binding, and the create/join lobby form. */
@@ -78,7 +77,6 @@ body:not(.mp-room-active) .multiplayer-rule-tabs-shell {background:var(--book-su
 body:not(.mp-room-active) .multiplayer-rule-game-tabs {background:var(--book-bg)}
 body:not(.mp-room-active) .multiplayer-rule-game-tab {color:var(--book-muted)}
 body:not(.mp-room-active) .multiplayer-rule-game-tab.selected {background:var(--book-accent-soft);color:var(--book-accent)}
-.server-status-note {top:auto;bottom:0;padding-bottom:max(3px,env(safe-area-inset-bottom))}
 :is(.tools[data-options-panel],.mp-settings-room-drawer) .library-back svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8}
 
 }

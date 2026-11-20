@@ -804,6 +804,8 @@ API(session_end_round) void session_end_round(session_test::Fixture* f,i32 winne
 API(session_continue) u32 session_continue(session_test::Fixture* f){return f->session.continue_game();}
 API(session_retry) u32 session_retry(session_test::Fixture* f){return f->session.retry();}
 API(session_save) u32 session_save(session_test::Fixture* f,const char* name,u8* out,u32 capacity){auto file=f->session.save_replay(name);auto bytes=file.encode();if(bytes.size()>capacity)return 0;std::memcpy(out,bytes.data(),bytes.size());return bytes.size();}
+API(session_match_replay) u32 session_match_replay(session_test::Fixture* f,u8* out,u32 capacity){const auto bytes=f->session.encode_match_replay();if(bytes.size()>capacity)return 0;std::memcpy(out,bytes.data(),bytes.size());return bytes.size();}
+API(session_decided_winner) i32 session_decided_winner(session_test::Fixture* f){return f->session.world?f->session.world->scene->decided_winner():-1;}
 
 
 #include "../../cpp/game/GameConfiguration.hpp"

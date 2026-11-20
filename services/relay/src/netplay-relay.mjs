@@ -359,7 +359,12 @@ const th09Rounds = th09OutboxPath && accountChat ? createTh09RoundOutbox({
           const [serial, start] = roundId.split(':');
           const run = room.runs.get(serial);
           if (run?.th09Duel?.id === duelId) {
-            const message = JSON.stringify({type:'th09-replay-upload', start:Number(start), ...replayUpload});
+            if (settlement) {
+              run.th09Settlements ??= new Map();
+              run.th09Settlements.set(roundId, settlement);
+              if (run.th09Settlements.size > 64) run.th09Settlements.delete(run.th09Settlements.keys().next().value);
+            }
+            const message = JSON.stringify({type:'th09-replay-upload', start:Number(start), ...replayUpload, notify:true});
             for (const socket of [...run.signalClients.values(), ...run.clients.values()])
               if (socket.readyState === WebSocket.OPEN) sendBounded(socket, message);
           }
@@ -386,6 +391,15 @@ const replayFileAdmission = {
   messagesPerSecond: 120,
   bytesPerSecond: 4 * 1024 * 1024,
 };
+function announceTh09Replay(room, run, message) {
+  const receipt = accountChat?.replayReceipt(message.receipt);
+  if (!receipt || receipt.duelId !== run.th09Duel?.id) return;
+  const settlement = run.th09Settlements?.get(receipt.roundId);
+  if (!settlement || settlement.replayUploadedAt) return;
+  const completed = {...settlement, replayUploadedAt:receipt.uploadedAt};
+  run.th09Settlements.set(receipt.roundId, completed);
+  broadcastLobby(room, {type:'th09-rating',room:room.id,settlement:completed});
+}
 function th09RoundRecorder(room, run) {
   return th09Rounds && (round => {
     const report = {...round, finishedAt: Date.now(), room: room.chatScope, rated: run.th09Rated !== false};
@@ -1177,60 +1191,6 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
   const waitForOtherChoice = run.lobbyClientIds && !run.initialIceRoute && !run.route &&
       run.signalClients.size < playerCount &&
       [...run.signalClients.values()].every(peer => (peer.hasInitialIceChoice || peer.onDemandTurn) && !peer.peersAnnounced);
-  if (!waitForOtherChoice) {
-    const grantPlayer = run.swarmDirectPlayer;
-    const grantPeer = run.signalClients.get(grantPlayer);
-    if (grantPeer && !grantPeer.peersAnnounced && run.swarm) {
-      const grant = await (run.swarmGrant ??= allocateDesktopSwarm(run));
-      if (socket.readyState !== WebSocket.OPEN || rooms.get(roomId) !== room || room.runs.get(runId) !== run ||
-          run.ended || run.releasedPlayers?.has(player) || run.signalClients.get(player) !== socket) return;
-      if (run.swarm && grantPlayer === run.swarmDirectPlayer && run.signalClients.get(grantPlayer) === grantPeer) {
-        grantPeer.initialSwarmGrant = grant;
-        run.swarmGrantIssued = Boolean(grant);
-      }
-    }
-    const announced = [];
-    for (const [seat, target] of run.signalClients) {
-      if (target.peersAnnounced) {
-        if (seat !== player) announced.push(target);
-        continue;
-      }
-      const relayOnly = run.initialIceRoute === 'swarm' || run.initialIceRoute === 'turn';
-      const observeStun = !relayOnly && run.rtcReplacementAllowed && nat4Observers.length > 0 && !nat4PortSteps.has(target.relayAddress);
-      const stun = relayOnly ? [] : observeStun ? nat4Observers : stunUrls;
-      const grant = run.swarm ? target.initialSwarmGrant : undefined;
-      const unavailableSwarm = run.initialIceRoute === 'swarm' && !swarmAvailable;
-      const directPrimary = run.onDemandTurn && !run.turnMode;
-      const iceServers = grant || directPrimary || run.initialIceRoute === 'direct' || unavailableSwarm
-        ? (stun.length ? [{urls:stun}] : [])
-        : iceServersFor(roomId, runId, seat, run.swarm, run.swarmWorkers?.[seat], stun);
-      target.peersAnnounced = true;
-      sendSignal(target, {
-        type: 'peers',
-        peers: [...run.signalClients.keys()].filter(peer => peer !== seat),
-        route: run.route,
-        iceServers,
-        ...(directPrimary ? {turnMode:'direct'} : run.turnMode ? {turnMode:run.turnMode} : {}),
-        ...(run.onDemandTurn ? {onDemandTurn:true} : {}),
-        ...(relayOnly ? {initialIceRelayOnly:true} : {}),
-        ...(run.initialIceRoute || run.swarm ? {fallbackIceServers:iceServersFor(roomId, runId + '-backup', seat)} : {}),
-        ...(canSurveyRoutes(run) ? {adaptiveSwarm:true, initialSwarmWorker:run.swarmWorkers?.[seat],
-          ...(run.surveyInitialSwarm && {surveyInitialSwarm:true})} : {}),
-        ...(grant ? {swarmGrant:grant} : {}),
-        ...(observeStun ? {nat4Observers} : {}),
-        ...(run.rtcReplacementClients.size === 2 ? {rtcReplace:true} : {}),
-        ...(roomId.startsWith('th09mp-') && run.memberIds ? {th09MatchReport:true, th09ReplayUpload:!!th09Rounds} : {}),
-      });
-    }
-    for (const target of announced) sendSignal(target, {type:'peer-join', player});
-  }
-  console.log(
-    `SIGNAL JOIN room=${roomId} run=${runId} player=${player} peers=${run.signalClients.size}`,
-  );
-  startRtcRouteSelection(roomId, runId, room, run);
-  maybeResolveRoute(roomId, runId, room, run);
-  maybeReplaceRtcTransport(roomId, runId, run);
-
   const acceptSignal = createRelayMessageGate({
     maxBytes: RELAY_LIMITS.controlBytes,
     messagesPerSecond: 120,
@@ -1280,6 +1240,10 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
     }
     if (roomId.startsWith('th09mp-') && message.type === 'th09-match') {
       if (run.signalClients.get(player) === socket) acceptTh09PlayerReport(room, run, runId, player, message);
+      return;
+    }
+    if (roomId.startsWith('th09mp-') && message.type === 'th09-replay-saved') {
+      if (run.signalClients.get(player) === socket) announceTh09Replay(room, run, message);
       return;
     }
     if (message.type === 'spectator-stop') {
@@ -1423,6 +1387,60 @@ async function handleSignalConnection(socket, roomId, runId, player, playerCount
     maybeDeleteRun(room, runId, run);
     maybeDeleteRoom(roomId, room);
   });
+  // Install signaling teardown before a legacy Swarm grant can delay admission.
+  if (!waitForOtherChoice) {
+    const grantPlayer = run.swarmDirectPlayer;
+    const grantPeer = run.signalClients.get(grantPlayer);
+    if (grantPeer && !grantPeer.peersAnnounced && run.swarm) {
+      const grant = await (run.swarmGrant ??= allocateDesktopSwarm(run));
+      if (socket.readyState !== WebSocket.OPEN || rooms.get(roomId) !== room || room.runs.get(runId) !== run ||
+          run.ended || run.releasedPlayers?.has(player) || run.signalClients.get(player) !== socket) return;
+      if (run.swarm && grantPlayer === run.swarmDirectPlayer && run.signalClients.get(grantPlayer) === grantPeer) {
+        grantPeer.initialSwarmGrant = grant;
+        run.swarmGrantIssued = Boolean(grant);
+      }
+    }
+    const announced = [];
+    for (const [seat, target] of run.signalClients) {
+      if (target.peersAnnounced) {
+        if (seat !== player) announced.push(target);
+        continue;
+      }
+      const relayOnly = run.initialIceRoute === 'swarm' || run.initialIceRoute === 'turn';
+      const observeStun = !relayOnly && run.rtcReplacementAllowed && nat4Observers.length > 0 && !nat4PortSteps.has(target.relayAddress);
+      const stun = relayOnly ? [] : observeStun ? nat4Observers : stunUrls;
+      const grant = run.swarm ? target.initialSwarmGrant : undefined;
+      const unavailableSwarm = run.initialIceRoute === 'swarm' && !swarmAvailable;
+      const directPrimary = run.onDemandTurn && !run.turnMode;
+      const iceServers = grant || directPrimary || run.initialIceRoute === 'direct' || unavailableSwarm
+        ? (stun.length ? [{urls:stun}] : [])
+        : iceServersFor(roomId, runId, seat, run.swarm, run.swarmWorkers?.[seat], stun);
+      target.peersAnnounced = true;
+      sendSignal(target, {
+        type: 'peers',
+        peers: [...run.signalClients.keys()].filter(peer => peer !== seat),
+        route: run.route,
+        iceServers,
+        ...(directPrimary ? {turnMode:'direct'} : run.turnMode ? {turnMode:run.turnMode} : {}),
+        ...(run.onDemandTurn ? {onDemandTurn:true} : {}),
+        ...(relayOnly ? {initialIceRelayOnly:true} : {}),
+        ...(run.initialIceRoute || run.swarm ? {fallbackIceServers:iceServersFor(roomId, runId + '-backup', seat)} : {}),
+        ...(canSurveyRoutes(run) ? {adaptiveSwarm:true, initialSwarmWorker:run.swarmWorkers?.[seat],
+          ...(run.surveyInitialSwarm && {surveyInitialSwarm:true})} : {}),
+        ...(grant ? {swarmGrant:grant} : {}),
+        ...(observeStun ? {nat4Observers} : {}),
+        ...(run.rtcReplacementClients.size === 2 ? {rtcReplace:true} : {}),
+        ...(roomId.startsWith('th09mp-') && run.memberIds ? {th09MatchReport:true, th09ReplayUpload:!!th09Rounds} : {}),
+      });
+    }
+    for (const target of announced) sendSignal(target, {type:'peer-join', player});
+  }
+  console.log(
+    `SIGNAL JOIN room=${roomId} run=${runId} player=${player} peers=${run.signalClients.size}`,
+  );
+  startRtcRouteSelection(roomId, runId, room, run);
+  maybeResolveRoute(roomId, runId, room, run);
+  maybeReplaceRtcTransport(roomId, runId, run);
 }
 
 function prefersSwarm(seat, index) {
@@ -3045,6 +3063,10 @@ server.on('connection', (socket, request) => {
       let message; try { message = JSON.parse(String(data)); } catch {}
       if (roomId.startsWith('th09mp-') && message?.type === 'th09-match') {
         if (run.clients.get(player) === socket) acceptTh09PlayerReport(room, run, runId, player, message);
+        return;
+      }
+      if (roomId.startsWith('th09mp-') && message?.type === 'th09-replay-saved') {
+        if (run.clients.get(player) === socket) announceTh09Replay(room, run, message);
         return;
       }
       if (player === 0 && run.clients.get(player) === socket && message?.type === 'spectator-session' &&

@@ -18,5 +18,7 @@ struct ZunGraphics {
     virtual void draw(const PipelineState&,u32 texture,Topology,VertexLayout,const void*,u32 vertices)=0;
     // A backend may directly consume the game's contiguous batch buffer.
     virtual void triangles(const PipelineState& state,u32 texture,const SpriteVertex* p,u32 vertices){draw(state,texture,Topology::Triangles,VertexLayout::ScreenColorUv,p,vertices);}
+    // Optional render-only velocity for the next quad in a triangle batch.
+    virtual void sprite_motion(u32 first_vertex, Vec2 velocity){}
 };
 }

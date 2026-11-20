@@ -9,7 +9,9 @@ import {BookButton} from './BookButton';
 import {useEffect, useLayoutEffect, useRef, useState, type FormEvent} from 'react';
 import {PasswordField} from './PasswordField';
 import {PasswordResetForm} from './PasswordResetForm';
-import {useSearchParams} from 'react-router';
+import {useHref, useSearchParams} from 'react-router';
+import {withUiLanguage} from '../../../src/launcher/i18n.mts';
+import {RegistrationTerms} from './RegistrationTerms';
 import backgroundUrl from '../../../public/assets/launcher-background.webp?url';
 import './account-page.css';
 import {useLocale, type UiMessageKey} from '../../i18n';
@@ -33,7 +35,8 @@ export function AccountPage(props: {artworkSrc?:string}) {
   </main>;
 }
 function AccountForm() {
-  const {t} = useLocale();
+  const {locale, t} = useLocale();
+  const privacyHref = useHref('/privacy.html');
   const [search, setSearch] = useSearchParams();
   const registering = search.get('mode') === 'register';
   const resetting = search.get('mode') === 'reset';
@@ -59,6 +62,7 @@ function AccountForm() {
   const [identity, setIdentity] = useState(''), [loginPassword, setLoginPassword] = useState(''), [registrationPassword, setRegistrationPassword] = useState(''), [confirmation, setConfirmation] = useState('');
   const [nickname, setNickname] = useState(''), [busy, setBusy] = useState(false), [apiError, setApiError] = useState<UiMessageKey | null>(null);
   const [challenge, setChallenge] = useState<RegistrationChallenge | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const registrationLocked = challenge !== null;
   const [code, setCode] = useState('');
   useEffect(() => {if (registrationLocked) codeInput.current?.focus();}, [registrationLocked]);
@@ -74,7 +78,7 @@ function AccountForm() {
   useEffect(() => {
     setApiError(null); setLoginPassword(''); setMessage(null); setError(null);
     if (!registrationLocked) {
-      setChallenge(null); setRemaining(0); setRegistrationPassword(''); setConfirmation(''); setCode(''); setRegistrationExpired(false);
+      setChallenge(null); setRemaining(0); setRegistrationPassword(''); setConfirmation(''); setCode(''); setRegistrationExpired(false); setTermsAccepted(false);
     }
   }, [registering, resetting]);
   useEffect(() => {if (error) messageRef.current?.focus();}, [error]);
@@ -97,7 +101,7 @@ function AccountForm() {
     return 'account.requestFailed';
   };
   const sendCode = async () => {
-    if (busy || remaining) return;
+    if (busy || remaining || !termsAccepted) return;
     setError(null); setMessage(null); setApiError(null);
     const codeTarget = email.trim();
     if (!registrationLocked) {
@@ -137,7 +141,7 @@ function AccountForm() {
   };
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (busy) return;
+    if (busy || (registering && !termsAccepted)) return;
     if (registering && !registrationLocked) {await sendCode(); return;}
     setError(null); setMessage(null); setApiError(null);
     if (registering && (!challenge || registrationExpired || code.length !== 6)) {setError('account.codeRequired'); return;}
@@ -160,7 +164,8 @@ function AccountForm() {
     }
     finally {setBusy(false);}
   };
-  return <div className="account-content">
+  const [privacyBefore, privacyAfter] = t('account.registrationPrivacy', {policy: '{policy}'}).split('{policy}');
+  return <><div className="account-content">
         {resetting ? <PasswordResetForm emailInputRef={entryInput} onBack={keyboard => changeMode('login', keyboard)}/> :
         <div key={activeMode} className="account-mode-content">
         <header><h1 id="account-title">{registering ? t('account.registerTitle') : t('account.login')}</h1></header>
@@ -185,20 +190,27 @@ function AccountForm() {
           <div className="account-password-field">
             <label htmlFor="account-password">{t('account.password')}</label>
             <PasswordField id="account-password" name="password" autoComplete={registering ? 'new-password' : 'current-password'} minLength={registering ? 8 : undefined} maxLength={128} required disabled={busy || (registering && registrationLocked)} value={registering ? registrationPassword : loginPassword} onChange={event => registering ? setRegistrationPassword(event.target.value) : setLoginPassword(event.target.value)} placeholder={registering ? t('account.newPasswordPlaceholder') : undefined}/>
-            {!registering && <Button variant="link" size="sm" className="account-forgot px-0 text-muted-foreground underline" disabled={busy} onClick={event => changeMode('reset', event.detail === 0)}>{t('account.forgotPassword')}</Button>}
+            {!registering && <Button variant="link" size="sm" className="account-forgot account-text-action px-0 text-muted-foreground hover:no-underline" disabled={busy} onClick={event => changeMode('reset', event.detail === 0)}>{t('account.forgotPassword')}</Button>}
           </div>
           {registering && <label htmlFor="account-password-confirmation">{t('account.confirmPassword')}<PasswordField id="account-password-confirmation" name="confirmation" autoComplete="new-password" maxLength={128} required disabled={busy || registrationLocked} value={confirmation} onChange={event => setConfirmation(event.target.value)} aria-invalid={confirmation.length > 0 && registrationPassword !== confirmation ? true : undefined}/>{confirmation.length > 0 && registrationPassword !== confirmation && <small className="account-field-error">{t('account.passwordMismatch')}</small>}</label>}
           {registering && registrationLocked && <div className="account-code-field">
             <label htmlFor="account-registration-code">{t('account.emailCode')}</label>
-            <div className="account-code"><Input id="account-registration-code" ref={codeInput} className="max-[959px]:text-base" name="code" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required disabled={busy || registrationExpired} value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ''))} placeholder={t('account.codePlaceholder')}/><BookButton variant="action" type="button" disabled={busy || registrationExpired || remaining > 0} onClick={sendCode}>{remaining ? `${remaining}s` : t('account.resendCode')}</BookButton></div>
+            <div className="account-code"><Input id="account-registration-code" ref={codeInput} className="max-[959px]:text-base" name="code" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required disabled={busy || registrationExpired} value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ''))} placeholder={t('account.codePlaceholder')}/><BookButton variant="action" type="button" disabled={busy || registrationExpired || remaining > 0 || !termsAccepted} onClick={sendCode}>{remaining ? `${remaining}s` : t('account.resendCode')}</BookButton></div>
           </div>}
           {apiError && <FormCallout type="error" role="alert">{t(apiError)}</FormCallout>}
           {error && <FormCallout type="error" role="alert" ref={messageRef} tabIndex={-1}>{t(error)}</FormCallout>}
           {registering && registrationExpired && <><FormCallout type="warning" role="status">{t('account.codeExpired')}</FormCallout><BookButton variant="action" type="button" className="account-edit-details" disabled={busy} onClick={() => {setChallenge(null); setRegistrationExpired(false); setRemaining(0); setCode(''); setApiError(null); setMessage(null);}}>{t('account.editDetails')}</BookButton></>}
           {message && <FormCallout type="success" role="status">{t(message)}</FormCallout>}
-          <BookButton variant="primary" type="submit" className="account-submit" disabled={busy || registrationExpired && registering}>{t(registering ? registrationLocked ? 'account.register' : 'account.requestCode' : 'account.login')}</BookButton>
+          <BookButton variant="primary" type="submit" className="account-submit" disabled={busy || (registering && (registrationExpired || !termsAccepted))}>{t(registering ? registrationLocked ? 'account.register' : 'account.requestCode' : 'account.login')}</BookButton>
         </form>
-        <Button variant="link" className="account-switch px-0 text-muted-foreground underline" disabled={busy} onClick={event => changeMode(registering ? 'login' : 'register', event.detail === 0)}>{t(registering ? 'account.backToLogin' : 'account.registerTitle')}</Button>
+        <div className="account-form-actions">
+          <Button variant="link" className="account-switch account-text-action px-0 text-muted-foreground hover:no-underline" disabled={busy} onClick={event => changeMode(registering ? 'login' : 'register', event.detail === 0)}>{t(registering ? 'account.backToLogin' : 'account.registerTitle')}</Button>
+          {registering && <RegistrationTerms accepted={termsAccepted} disabled={busy} onChange={setTermsAccepted}/>}
+        </div>
         </div>}
-  </div>;
+  </div>
+  {registering && <p className="account-privacy">
+    {privacyBefore}<a href={withUiLanguage(privacyHref, locale)} target="_blank" rel="noopener noreferrer">{t('document.privacy')}</a>{privacyAfter}
+  </p>}
+  </>;
 }

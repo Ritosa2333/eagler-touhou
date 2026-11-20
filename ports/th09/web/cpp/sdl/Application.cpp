@@ -8,6 +8,7 @@
 #include "AudioDevice.hpp"
 #include "FontDevice.hpp"
 #include "MotionCapture.hpp"
+#include "MotionExtrapolation.hpp"
 #include "PerformanceDiagnostics.hpp"
 #include "RuntimePath.hpp"
 #include "../game/GamePresentation.hpp"
@@ -59,7 +60,9 @@ EM_JS(int, th09_local_keyboard, (int seat), {return globalThis.__eaglerKeyboardI
 EM_JS(void, th09_browser_frame, (int ok,double milliseconds), { Module["onGameFrame"]?.(ok,milliseconds); });
 EM_JS(void, th09_network_result, (), { Module["onNetworkResult"]?.(); });
 EM_JS(void, th09_network_replay_boundary, (std::uint32_t frame,int winner), { Module["onNetworkReplayBoundary"]?.(frame,winner); });
-EM_JS(void, th09_network_match_decided, (std::uint32_t frame,int winner,int first,int second), { Module["onNetworkMatchDecided"]?.(frame,winner,first,second); });
+EM_JS(void, th09_network_match_decided, (std::uint32_t frame,int winner,int first,int second,const void* replay,std::uint32_t size), {
+    Module["onNetworkMatchDecided"]?.(frame,winner,first,second,HEAPU8.slice(replay,replay+size));
+});
 EM_JS(void, th09_network_spectator_begin, (std::uint32_t frame,const void* bytes,std::uint32_t size), {
     Module["onNetworkSpectatorBegin"]?.(frame,HEAPU8.slice(bytes,bytes+size));
 });
@@ -94,29 +97,30 @@ static void th09_browser_frame(int, double) {}
 static void th09_network_result() {}
 #if TH09_NATIVE_ROOM
 static std::optional<std::uint32_t> native_match_start;
-static std::optional<std::uint32_t> native_replay_start;
-namespace th09::sdl { namespace { void th09_publish_match_replay(std::uint32_t start); } }
 #endif
 static void th09_network_replay_boundary(std::uint32_t frame, int winner) {
 #if TH09_NATIVE_ROOM
     if (winner < 0) {
-        native_replay_start = native_match_start = frame;
-    } else if (native_replay_start) {
-        const auto start = *native_replay_start;
-        native_replay_start.reset();
-        th09::sdl::th09_publish_match_replay(start);
+        native_match_start = frame;
     }
 #endif
 }
-static void th09_network_match_decided(std::uint32_t frame, int winner, int first, int second) {
+static void th09_network_match_decided(std::uint32_t frame, int winner, int first, int second,
+                                      const void* replay, std::uint32_t size) {
 #if TH09_NATIVE_ROOM
     if (native_match_start && frame > *native_match_start) {
         const auto start = *native_match_start;
-        const bool reported = th09_native_room_transport().ReportMatch(start, frame - start, winner, first, second);
+        auto& room = th09_native_room_transport();
+        const bool reported = room.ReportMatch(start, frame - start, winner, first, second);
 #if TH09_NATIVE_OVERLAY
         if (!reported) Th09Overlay::ReportMatch(start, frame - start, winner, first, second);
 #endif
         native_match_start.reset();
+        const auto* site = SDL_getenv("EAGLER_DESKTOP_OVERLAY_SITE");
+        if (size && room.MatchReplayEnabled() && site && *site) {
+            const auto* bytes = static_cast<const std::uint8_t*>(replay);
+            room.PublishMatchReplay(start, std::vector<std::uint8_t>(bytes, bytes + size), site);
+        }
     }
 #endif
 }
@@ -200,6 +204,7 @@ struct RollbackFrame {
     u32 beginFrame=0;
     i32 winner=-1,decidedWinner=-1;
     std::array<i32,2> decidedCharacters{};
+    std::vector<u8> replay;
     i32 round=-1;
     u32 replayRoundFrame=0;
     SpectatorBeginState begin;
@@ -237,29 +242,29 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     bool motionEnabled=false,motionPending=false;
 #ifdef __EMSCRIPTEN__
     double displayPeriod=0.,motionBase=-1.,motionCost=0.;
+    float lastMotionPhase=0.;
     unsigned fastCallbacks=0,extraPresentations=0;
+    std::array<ShipExtrapolation,2> shipMotion;
 
+    void invalidate_motion(){
+        motionBase=-1.;lastMotionPhase=0.;motionCapture.invalidate();
+        for(auto& ship:shipMotion)ship.reset();
+    }
     void reset_motion(){
-        motionPending=false;
-        motionBase=-1.;
-        displayPeriod=0.;
-        fastCallbacks=0;
-        motionCost=0.;
-        motionCapture.invalidate();
+        invalidate_motion();displayPeriod=0.;fastCallbacks=0;motionCost=0.;
     }
     void observe_refresh(double interval){
-        // Require a stable foreground refresh cadence with spare callbacks.
-        if(interval<=0.||interval>12.){fastCallbacks=0;displayPeriod=0.;return;}
+        // Require stable foreground refresh with spare callbacks between ticks.
+        if(interval<=0.||interval>14.){fastCallbacks=0;displayPeriod=0.;invalidate_motion();return;}
         displayPeriod=displayPeriod>0.?displayPeriod*.8+interval*.2:interval;
         if(fastCallbacks<6)++fastCallbacks;
     }
-    const Player* motion_player() const {
-        if(!motionEnabled||fastCallbacks<6||in_title||!session||!world||network.active||
-           rollback_active||spectator_mode||paused||over||complete||session->is_replay||
+    const Player* motion_player(int side) const {
+        if(!motionEnabled||fastCallbacks<6||in_title||!session||!world||paused||over||complete||
+           (spectator_mode&&spectator_playback.seeking)||
            session->phase!=SessionPhase::match||world->transition_pending||world->scene->phase!=0||
-           world->dialogue->id>=0||world->battle->state.hide_players||(world->battle->state.flags&0x1800)||
-           world->configuration.controllers[0]||!world->configuration.controllers[1])return nullptr;
-        const auto& field=world->battle->fields[0];
+           world->dialogue->id>=0||world->battle->state.hide_players||(world->battle->state.flags&0x1800))return nullptr;
+        const auto& field=world->battle->fields[side];
         const auto& player=*field.player;
         if((field.script.flags&1)||player.motion.health<=0||
            (player.control.player_state!=0&&player.control.player_state!=3))return nullptr;
@@ -279,6 +284,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         motionCapture.invalidate();
     }
 
+    void invalidate_motion(){cancel_motion_frame();}
     void reset_motion(){cancel_motion_frame();}
 
     const Player* motion_player() const {
@@ -398,6 +404,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     }
     bool start(){
         TH09_PERF_SCOPE(start_cost,StartMatch);
+        invalidate_motion();
         presentation.renderer.flush();presentation.world=nullptr;world=nullptr;session.reset();executor.invalid=false;
         session=std::make_unique<GameSession>(state,resources,executor,presentation,*this,records);
         local_charge.clear();if(!network.active&&!spectator_mode)charge_frames={};session->charge_frames=charge_frames;
@@ -560,7 +567,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
                 if(network.active){const auto begin=match_initializer(false);
                     if(recording_frame){recording_frame->begin=begin;recording_frame->hasBegin=true;}
                     else {th09_network_replay_boundary(network.frame()-1,-1);if(network.side==0)th09_network_spectator_begin(network.frame()-1,&begin,spectator_begin_bytes);}}
-                presentation.renderer.flush();if(!session->retry()){error=session->error;return false;}world=session->world.get();presentation.world=world;paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};pause_audio(false);}
+                invalidate_motion();presentation.renderer.flush();if(!session->retry()){error=session->error;return false;}world=session->world.get();presentation.world=world;paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};pause_audio(false);}
             else if(action==InGameAction::continue_match){pause_audio(true);if(!session->continue_game()){error="Unable to continue";return false;}paused=over=complete=false;pause_audio(false);}
             else if(action==InGameAction::title&&network_selection)return reselect_network_match();
             else {session->finish();return return_title(action==InGameAction::save_score);}
@@ -579,7 +586,11 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
 #if TH09_DEVELOPMENT_HARNESS
             if(probe_full_sprite_geometry)presentation.renderer.omit_sprite_geometry=false;
 #endif
+#ifdef __EMSCRIPTEN__
+            draw(render&&submit,render);presentation.renderer.omit_sprite_geometry=false;graphics.skipSubmission=false;
+#else
             draw(render&&submit,render&&captureDeferredMotion);presentation.renderer.omit_sprite_geometry=false;graphics.skipSubmission=false;
+#endif
         }
         else if(render)draw();
 #if TH09_DEVELOPMENT_HARNESS
@@ -589,7 +600,31 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         {TH09_PERF_SCOPE(warm_cost,WarmResources);session->warm_resources();}
         ++frames;return error.empty();
     }
-#ifndef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
+    void draw(bool present=true,bool capture=true){
+        TH09_PERF_SCOPE(draw_cost,SemanticDraw);
+        std::array<const AnmVm*,2> bodies{};
+        bool recording=false;
+        if(motionEnabled&&capture){
+            motionBase=-1.;lastMotionPhase=0.;
+            for(int side=0;side<2;++side){
+                if(const auto* player=motion_player(side)){
+                    const auto& progress=world->rules.progress;
+                    shipMotion[side].observe(player,progress.stage,progress.round,progress.round_frames,
+                        player->control.player_state,player->motion.position);
+                    bodies[side]=&player->body;
+                }else shipMotion[side].reset();
+            }
+            recording=bodies[0]||bodies[1];
+            if(recording){motionCapture.begin(bodies);active_motion_capture=&motionCapture;}
+            else motionCapture.invalidate();
+        }
+        presentation.begin_frame(in_title||session->phase==SessionPhase::ending);if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();
+        TH09_PERF_STOP(draw_cost);
+        if(recording){active_motion_capture=nullptr;motionCapture.end();}
+        if(present){TH09_PERF_SCOPE(present_cost,Present);graphics.present();}
+    }
+#else
     void queue_frame_rate(bool presenting){
         if(in_title||!world||session->phase!=SessionPhase::match||!(world->battle->state.flags&4u)){
             fps_sample_start=-1.;
@@ -620,7 +655,6 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         ascii.scale=scale;
         ascii.field_view=field;
     }
-#endif
     void draw(bool present=true,bool captureDeferredMotion=false){
         TH09_PERF_SCOPE(draw_cost,SemanticDraw);
         const auto* player=(present||captureDeferredMotion)?motion_player():nullptr;
@@ -656,6 +690,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         if(player)motion_extra_cost*=0.95;
 #endif
     }
+#endif
     i32 requested_transition=-1;
     bool import_file(u32 kind,u32 size){
         if(!in_title||size>import_bytes.size())return false;
@@ -667,15 +702,6 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     }
 };
 std::unique_ptr<Application> probe;std::string failure;
-#if TH09_NATIVE_ROOM && !defined(__EMSCRIPTEN__)
-void th09_publish_match_replay(std::uint32_t start) {
-    auto &room = th09_native_room_transport();
-    if (!room.MatchReplayEnabled() || !probe || !probe->complete || !probe->session) return;
-    auto &session = *probe->session;
-    const auto* site = SDL_getenv("EAGLER_DESKTOP_OVERLAY_SITE");
-    if (site && *site) room.PublishMatchReplay(start, session.encode_match_replay(), site);
-}
-#endif
 bool running=false,suspended=false,room_preview=false;u32 loop_epoch=0;double previous_frame=-1;multiplayer::FrameSchedule cadence;
 multiplayer::RecoverySchedule recovery_schedule;
 u32 recovery_callbacks=0,recovery_ticks=0,recovery_last_us=0;
@@ -1044,6 +1070,9 @@ TH09_EXPORT("th09_game_restart") u32 th09_game_restart(){if(!probe||!probe->in_t
 // A later correction cannot make an earlier unpublished record expendable.
 bool publish_rollback_outputs(){
     TH09_PERF_SCOPE(publish_cost,ConfirmedPublish);
+#if TH09_RMLUI_TEST
+    static const bool traceUdp = SDL_getenv("TH09_TEST_UDP_TRACE") != nullptr;
+#endif
     const auto through=rollback.ConfirmedThrough();
     while(through!=Netplay::INVALID_FRAME&&rollback_published<=through){
         auto& record=rollback_frames[rollback_published%rollback_frames.size()];
@@ -1054,7 +1083,10 @@ bool publish_rollback_outputs(){
         record.sounds.clear();
         // Both players archive only reconciled full-match boundaries.
         if(record.hasBegin)th09_network_replay_boundary(record.beginFrame,-1);
-        if(record.decidedWinner>=0)th09_network_match_decided(rollback_published+1,record.decidedWinner,record.decidedCharacters[0],record.decidedCharacters[1]);
+        if(record.decidedWinner>=0){
+            auto replay=std::move(record.replay);
+            th09_network_match_decided(rollback_published+1,record.decidedWinner,record.decidedCharacters[0],record.decidedCharacters[1],replay.data(),u32(replay.size()));
+        }
         if(record.hasEnd&&record.winner>=0)th09_network_replay_boundary(rollback_published+1,record.winner);
         if(network.side==0){std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> in;if(!rollback.ConfirmedInputs(rollback_published,&in))return false;const auto mode=[](const Netplay::FrameInput& i){return i.analogMode==Netplay::AnalogMode::None?0:i.analogMode==Netplay::AnalogMode::Joystick?1:i.unlimited?3:2;};
             if(record.hasBegin)th09_network_spectator_begin(record.beginFrame,&record.begin,spectator_begin_bytes);
@@ -1066,6 +1098,10 @@ bool publish_rollback_outputs(){
         if(record.round>0)th09_network_spectator_round(rollback_published+1,u32(record.round),record.replayRoundFrame);
         if(network.side==0&&record.hasEnd)th09_network_spectator_end(rollback_published+record.gameplay,record.winner);
         if(network.active&&(rollback_published+1)%120==0&&!rollback.Verify(rollback_published+1,record.hash)){probe->error=rollback.Error();return false;}
+#if TH09_RMLUI_TEST
+        if (traceUdp && record.gameplay && rollback_published % 60 == 0)
+            SDL_Log("TH09_TEST_UDP_FRAME %u %u", rollback_published, record.hash);
+#endif
         ++rollback_published;
         TH09_PERF_COUNT(PublishedFrames,1);
     }
@@ -1120,7 +1156,9 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         if(rollback.Frame()-rollback_published>=rollback_frames.size()||!next.canAdvance)forwardOnly=false;
     }
     if(correction!=Netplay::INVALID_FRAME&&!forwardOnly){
-#ifndef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
+        probe->invalidate_motion();
+#else
         if(probe->motion_netplay_enabled)probe->cancel_motion_frame();
 #endif
         TH09_PERF_SCOPE(restore_cost,Restore);
@@ -1177,7 +1215,7 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         record.captured=speculative;
         if(speculative){if(!record.state)record.state=std::make_unique<multiplayer::WorldState>();if(!probe->checkpoint(*record.state)){probe->error="Rollback world capture failed";return 0;}probe->graphics.checkpoint=record.state.get();}
         // Retain arena capacity across exact and speculative frames.
-        record.hasBegin=record.hasEnd=false;record.decidedWinner=record.round=-1;record.beginFrame=f;record.gameplay=!probe->in_title;recording_frame=&record;
+        record.hasBegin=record.hasEnd=false;record.decidedWinner=record.round=-1;record.replay.clear();record.beginFrame=f;record.gameplay=!probe->in_title;recording_frame=&record;
         if(probe->session&&!probe->in_title)for(unsigned side=0;side<2;++side){const auto& in=decision.inputs[side];probe->session->motion_input[side]={in.analogMode!=Netplay::AnalogMode::None,in.x,in.y,in.unlimited,in.analogMode==Netplay::AnalogMode::DirectTouch};}
         // Recovery does not consume the wall-clock tick's forward step. Replay
         // through the old frontier, then capture/simulate its new input once.
@@ -1228,8 +1266,12 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         if(record.gameplay&&matchUndecided&&probe->world&&!probe->in_title){
             const auto& world=*probe->world;
             record.decidedWinner=world.scene->decided_winner();
-            if(record.decidedWinner>=0)
+            if(record.decidedWinner>=0){
                 for(i32 side=0;side<2;++side)record.decidedCharacters[side]=world.configuration.selection.characters[side];
+                // Capture before later predicted frames append input or consume RNG.
+                // Re-simulation replaces these bytes until this frame is confirmed.
+                record.replay=probe->session->encode_match_replay();
+            }
         }
         // Do not send the menu action that retires the viewer's world.
         const bool reselect=network_selection&&record.gameplay&&probe->in_title;
@@ -1357,7 +1399,10 @@ TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){TH09_PERF_SCOPE(gam
             const auto& world=*probe->world;
             const auto winner=world.scene->decided_winner();
             const auto& characters=world.configuration.selection.characters;
-            if(winner>=0)th09_network_match_decided(frame+1,winner,characters[0],characters[1]);
+            if(winner>=0){
+                const auto replay=probe->session->encode_match_replay();
+                th09_network_match_decided(frame+1,winner,characters[0],characters[1],replay.data(),u32(replay.size()));
+            }
         }
         if(ok&&publisher){const auto mode=[](const NetworkInput::Motion& m){return !m.enabled?0:m.target?(m.unlimited?3:2):1;};
             th09_network_spectator_frame(frame,keys[0],keys[1],mode(motion[0]),motion[0].x,motion[0].y,mode(motion[1]),motion[1].x,motion[1].y,nullptr,0);}
@@ -1368,40 +1413,21 @@ TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){TH09_PERF_SCOPE(gam
     sample_keys(keys);u32 ok=1;for(u32 extra=0;extra<3&&ok;++extra){ok=probe->tick_inputs(keys[0],keys[1],keys[2],false);if(!ok||probe->in_title||probe->paused||probe->over||probe->complete||!probe->session->is_replay||probe->session->phase!=SessionPhase::match||probe->session->playback_schedule()!=6)break;}if(ok&&render)probe->draw();return ok;
 }
 #ifdef __EMSCRIPTEN__
-// Read the held snapshot only. The normal sampler owns press/release queues.
-static u16 motion_held_keys(){
-    bool keys[256]{};
-    const auto* physical=th09_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
-    for(const auto& key:keyboard_map){
-        if(!key.hosted&&(!physical||key.native==SDL_SCANCODE_UNKNOWN||!physical[key.native]))continue;
-        if(key.vk)keys[key.vk]=true;
-        if(key.vk>=160&&key.vk<=165)keys[16+(key.vk-160)/2]=true;
-    }
-    return keyboard_input(keys,2)|joy_keys(0)|joy_keys(1);
-}
-
-static void present_midpoint(double time,double begin){
-    if(!probe->motionPending||probe->motionBase<0.||gestures.active())return;
-    const auto* body=probe->motion_player();
-    if(!body)return;
-    constexpr double midpoint=1000./120.;
-    const double phase=time-probe->motionBase;
-    // At 144/165 Hz the nearest spare callback is often before 8.33 ms.
-    if(phase<midpoint-probe->displayPeriod*.5-.4)return;
-    probe->motionPending=false;
+// Replay GPU commands only; GameWorld::draw is part of the original tick.
+static void present_extrapolated(double time,double begin){
+    if(probe->motionBase<0.||!probe->motionCapture.ready())return;
+    const float phase=eagler::presentation::ExtrapolationWeight((time-probe->motionBase)*.060)-1.f;
+    if(phase<=probe->lastMotionPhase)return;
     const double budget=std::max(1.5,probe->motionCost+1.);
     auto estimate=cadence;
-    if(emscripten_get_now()-begin+budget>=probe->displayPeriod||
-       estimate.advance(budget/1000.))return;
-    const auto keys=motion_held_keys();
-    if(!(keys&0xf0)||(keys&8))return;
-    const bool autoFocus=probe->world->configuration.automatic_focus[0];
-    const auto delta=predict_sprite(body->motion,keys,autoFocus,keys&1?body->input.fire_frames:0,
-                                   body->resource.movement,probe->world->battle->state.limits,
-                                   probe->world->timing.rate*.5f);
-    if(delta.x==0.&&delta.y==0.)return;
+    if(emscripten_get_now()-begin+budget>=probe->displayPeriod||estimate.advance(budget/1000.))return;
+    std::array<Vec2,2> deltas{};
+    for(int side=0;side<2;++side)if(probe->motionCapture.ready(side)&&probe->motion_player(side))
+        deltas[side]=probe->shipMotion[side].offset(phase,probe->world->battle->state.limits);
+    if(!deltas[0].x&&!deltas[0].y&&!deltas[1].x&&!deltas[1].y&&!probe->motionCapture.bullets_ready())return;
     const double started=emscripten_get_now();
-    if(probe->motionCapture.present(delta))++probe->extraPresentations;
+    if(probe->motionCapture.present(deltas,phase))++probe->extraPresentations;
+    probe->lastMotionPhase=phase;
     probe->motionCost=emscripten_get_now()-started;
 }
 
@@ -1452,7 +1478,7 @@ static bool run_frame(double time, u32 epoch){
     probe->audio.pump();if(ok)queue_rollback_recovery();TH09_PERF_STOP(callback_cost);th09_browser_frame(ok,now_ms()-begin);if(!ok){running=false;probe->audio.suspend(true);}return running;
 }
 TH09_EXPORT("th09_loop_start") void th09_loop_start(){
-    if(!probe||running)return;running=true;suspended=false;previous_frame=-1;cadence.reset();probe->clock_pause(false);probe->audio.suspend(false);
+    if(!probe||running)return;running=true;suspended=false;previous_frame=-1;cadence.reset();probe->reset_motion();probe->clock_pause(false);probe->audio.suspend(false);
 #ifdef __EMSCRIPTEN__
     emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
         if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
@@ -1486,8 +1512,9 @@ TH09_EXPORT("th09_loop_start") void th09_loop_start(){
             }
         }
         if(ok&&probe->motionEnabled){
-            if(ticks)probe->motionBase=probe->motionPending?time:-1.;
-            else present_midpoint(time,begin);
+            if(ticks&&ok==1){
+                if(probe->motionBase<0.&&probe->motionCapture.ready())probe->motionBase=time;
+            }else present_extrapolated(time,begin);
         }
         probe->audio.pump();if(ok)queue_rollback_recovery();TH09_PERF_STOP(callback_cost);th09_browser_frame(ok,emscripten_get_now()-begin);if(!ok){running=false;probe->audio.suspend(true);}return running?EM_TRUE:EM_FALSE;
     },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
@@ -2109,8 +2136,16 @@ int run_desktop() {
         try {
             start = nlohmann::json::parse(options);
             native_match_start.reset();
-            native_replay_start.reset();
             publishedTiming = false;
+            if (const auto udp = start.find("udp"); udp != start.end()) {
+                const bool host = udp->at("host").get<bool>();
+                room.ConnectUdp(host, udp->at("endpoint").get<std::string>(), "th09:" TH09_UDP_BUILD,
+                    SDL_rand_bits() | 1u);
+                start["netplayPlayer"] = host ? 0 : 1;
+                roomDeadline = host ? 0 : SDL_GetTicks() + 12'000;
+                waiting = true;
+                return true;
+            }
             namespace stream = th09::desktop;
             const auto build = start.at("build").get<std::string>();
             if (start.value("netplaySpectator", false)) {
@@ -2147,7 +2182,7 @@ int run_desktop() {
 #endif
         return true;
     };
-    if (const char* options = SDL_getenv("EAGLER_DESKTOP_ROOM"); options && !startRoom(options)) {
+    if (const char* options = SDL_getenv("EAGLER_DESKTOP_ROOM"); options && *options && !startRoom(options)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", th09_error());
         th09_game_close();
         return 1;
@@ -2220,6 +2255,16 @@ int run_desktop() {
         } else if (waiting && room.IsOpen()) {
             waiting = false;
             try {
+                if (start.contains("udp")) {
+                    const auto run = room.UdpRun();
+                    start["build"] = TH09_UDP_BUILD;
+                    start["run"] = run;
+                    start["netplaySeed"] = run;
+                    start["netplayLoadouts"] = nlohmann::json::array({{{"character", 0}}, {{"character", 0}}});
+                    start["netplayDifficulty"] = 1;
+                    start["netplayInGameSelection"] = true;
+                    start["netplayDisableLocalChargePriority"] = true;
+                }
                 const auto build = start.at("build").get<std::string>();
                 if (build.size() != 24 || build.find_first_not_of("0123456789abcdef") != std::string::npos)
                     throw std::runtime_error("Invalid th09 runtime build");
@@ -2252,8 +2297,9 @@ int run_desktop() {
             } catch (const std::exception& error) {
                 if (!recoverRoom(error.what(), false)) break;
             }
-        } else if (waiting && SDL_GetTicks() >= roomDeadline) {
-            if (!recoverRoom("连接其他玩家超时。", false)) break;
+        } else if (waiting && roomDeadline && SDL_GetTicks() >= roomDeadline) {
+            const auto* error = start.contains("udp") ? "UDP 连接超时，请检查地址和房主端口转发。" : "连接其他玩家超时。";
+            if (!recoverRoom(error, false)) break;
         }
         if (!publishedTiming && rollback_active && network.active && network.side == 0 &&
             start.value("netplaySpectatorTimeline", false) && rollback.Mode() != Netplay::AdonisMode::Rollback) {
@@ -2278,7 +2324,7 @@ int run_desktop() {
         if ((waiting || network.active) && statusNow >= nextConnectionStatus) {
             using Route = Netplay::NativeRoomTransport::Route;
             const auto link = room.LinkStatus();
-            const char* label = link.route == Route::Direct ? "direct" : link.route == Route::Nat4 ? "NAT4" :
+            const char* label = link.route == Route::Udp ? "UDP" : link.route == Route::Direct ? "direct" : link.route == Route::Nat4 ? "NAT4" :
                 link.route == Route::Swarm ? "Swarm" : link.route == Route::Turn ? "turn" :
                 link.route == Route::Reconnecting ? "重连中" : "连接中";
             if (link.route != sampledRoute || link.revision != sampledRevision) {

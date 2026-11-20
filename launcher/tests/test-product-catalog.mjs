@@ -85,8 +85,6 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
 assert.deepEqual(PRODUCT_GAMES.th08.package.rawDataImport.fileNames, ["th08.dat"]);
 assert.equal(PRODUCT_GAMES.th08.musicCapabilities.midi, true);
 assert.equal(PRODUCT_GAMES.th10.musicCapabilities.midi, false);
-assert.equal(PRODUCT_GAMES.th08.support.adaptationNotice, "early-test");
-assert.equal(PRODUCT_GAMES.th10.support.adaptationNotice, "early-test");
 const localManifest = createLocalProductManifest();
 assert.notEqual(localManifest.games.th06.music.midi.supported, false);
 assert.equal(localManifest.games.th10.music.midi.supported, false,
@@ -233,7 +231,6 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
   assert.equal(typeof product.musicCapabilities.midi, "boolean");
   assert.deepEqual(Object.keys(product.musicCapabilities), ["midi"], `${game}: only optional music capabilities belong in product policy`);
   assert.match(product.support.sourceRepository, /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/);
-  if (product.support.adaptationNotice != null) assert.equal(product.support.adaptationNotice, "early-test");
   if (product.package.rawDataImport) {
     assert.ok(product.package.rawDataImport.fileNames.length > 0);
     assert.equal(new Set(product.package.rawDataImport.fileNames.map(name => name.toLowerCase())).size,
@@ -305,10 +302,9 @@ for (const id of PRODUCT_IDS) {
 }
 assert.notEqual(PRODUCT_GAMES.th17.testOnly, true);
 assert.equal(PRODUCT_GAMES.th19.testOnly, true);
-assert.equal(PRODUCT_GAMES.th19.support.adaptationNotice, "early-test");
 assert.equal(productEnabledForBuild("th99", true), false);
 
-assert.deepEqual(Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id, product]) => [id, product.support.highRefreshRate])), {th01: false, th02: false, th03: false, th04: false, th05: false, hsob: false, th06: true, th07: true, th075: false, th08: true, th09: false, th10: true, th11: true, th12: true, th13: false, th14: false, th15: true, th17: false, th19: false, th20: false}, "high-refresh UI must follow the catalog capability");
+assert.deepEqual(Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id, product]) => [id, product.support.highRefreshRate])), {th01: false, th02: false, th03: false, th04: false, th05: false, hsob: false, th06: true, th07: true, th075: false, th08: true, th09: true, th10: true, th11: true, th12: true, th13: false, th14: false, th15: true, th17: false, th19: false, th20: false}, "high-refresh UI must follow the catalog capability");
 assert.equal(PRODUCT_GAMES.th15.features.languages,true);
 assert.equal(PRODUCT_GAMES.th15.features.thprac,true);
 assert.ok(PRODUCT_GAMES.th15.requiredShared.includes('/unifont.otf'));

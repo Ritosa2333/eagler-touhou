@@ -21,11 +21,13 @@ export function InputSettings({
   gamepad,
   th09Local,
   th19=false,
+  th075=false,
 }: {
   keyboard?: KeyboardPreferences;
   gamepad?: GamepadMappingModel;
   th09Local?: Th09LocalInput;
   th19?:boolean;
+  th075?:boolean;
 }) {
   const { t } = useLocale(),
     id = useId(),
@@ -156,7 +158,7 @@ export function InputSettings({
                         ) : (
                           <>
                             {device === 'keyboard' && keyboard && (
-                              <KeyboardSettings model={keyboard} active={editing} th19={th19} />
+                              <KeyboardSettings model={keyboard} active={editing} th19={th19} th075={th075} />
                             )}
                             {device === 'gamepad' && gamepad && <GamepadSettings model={gamepad} active={editing} th19={th19} />}
                           </>

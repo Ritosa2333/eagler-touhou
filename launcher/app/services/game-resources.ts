@@ -5,13 +5,14 @@ import {fetchPublishedPackage, desiredFilesForPublishedPackage} from '../../pack
 import {installPackageFromRemote} from '../../package/package-installer.mjs';
 import {packageObjectMatches, readPackageObject} from '../../package/package-store.mjs';
 import {linkAbortSignals} from './abort-signals';
-import {PRODUCT_GAMES, type GameId} from '../../src/contracts/product-catalog.mts';
+import {PRODUCT_GAMES, type GameId, type ProductId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {releaseCatalogEntryUrl, type ReleaseCatalog} from '../../src/contracts/release-catalog.mts';
 import type {InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
 import type {MusicMode} from '../../src/launcher/game-preferences.mts';
 import type {Translate} from '../i18n';
 import {GameDataAcquisitionError} from './game-data-acquisition';
+import {includesOggTrack, runtimeOggFileIds} from './game-music-selection';
 import {checkPreparationAbort, preparationErrorText, type PackageAcquisition, type PreparationProgress} from './package-acquisition';
 
 export const oggMusic = (mode: MusicMode) => mode === 'ogg-stream' || mode === 'ogg-full' || mode === 'ogg-akyu';
@@ -129,15 +130,16 @@ export function sharedResources({game, generation, host, language, thprac, baseU
   if ((language !== 'ja' || thprac) && !targets.has('/unifont.otf')) add('/unifont.otf', host?.shared.unicodeFont);
   return result;
 }
-export function remoteMusicResources(game: GameId, music: MusicMode, host: SiteManifest | null, baseUrl: string, t: Translate) {
+export function remoteMusicResources(game: GameId, music: MusicMode, host: SiteManifest | null, baseUrl: string, t: Translate, productId: ProductId) {
   if (!oggMusic(music)) return [];
   if ('embeddedOgg' in PRODUCT_GAMES[game].musicRuntime && PRODUCT_GAMES[game].musicRuntime.embeddedOgg === true) return [];
   const pack = host?.games[game]?.music.ogg;
   if (!pack || !Array.isArray(pack.files)) throw new Error(t('music.manifestInvalid'));
   const mount = typeof pack.mount === 'string' ? pack.mount.replace(/\/$/, '') : '';
   const base = typeof pack.base === 'string' ? pack.base : './';
-  return pack.files.map((name, index) => {
+  return pack.files.flatMap((name, index) => {
     if (typeof name !== 'string' || !name || name.includes('/') || name.includes('\\')) throw new Error(t('music.fileNameInvalid'));
+    if (!includesOggTrack(productId, name)) return [];
     const url = new URL(name, new URL(base, baseUrl));
     if (typeof pack.version === 'string' && pack.version) url.searchParams.set('v', pack.version);
     return {url: url.href, path: `${mount}/${name}`, size: Number(pack.sizes[index]) || 0};
@@ -145,8 +147,9 @@ export function remoteMusicResources(game: GameId, music: MusicMode, host: SiteM
 }
 /** Main 5768–5815: up to the first two OGG objects gate startup. An unavailable
  * optional soundtrack chooses the launch-only MIDI sentinel, never rewrites prefs. */
-export async function ensureOggStartup({generation, music, acquisition, signal, downloadSignal, translate: t, onProgress, onWarning, onMusicDownloadActivity, completeSet = false}: {
+export async function ensureOggStartup({generation, productId, music, acquisition, signal, downloadSignal, translate: t, onProgress, onWarning, onMusicDownloadActivity, completeSet = false}: {
   generation: InstalledPackageGeneration | null; music: MusicMode; acquisition: PackageAcquisition;
+  productId?: ProductId;
   signal?: AbortSignal; downloadSignal?: AbortSignal; translate: Translate;
   onProgress?(progress: PreparationProgress): void; onWarning?(message: string): void;
   onMusicDownloadActivity?(active: boolean): void;
@@ -158,7 +161,7 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   if (embedded && music !== 'ogg-akyu') return {generation, music};
   const fallback: MusicMode = embedded ? 'ogg-stream' : PRODUCT_GAMES[generation.game].musicCapabilities?.midi === true ? 'midi' : 'none';
   checkPreparationAbort(signal);
-  const declared = componentFileIds(generation.descriptor, 'ogg');
+  const declared = runtimeOggFileIds(generation.descriptor, productId);
   const initial = completeSet ? declared : declared.slice(0, 2);
   if (initial.length === 0) return {generation, music: fallback};
   if (initial.every(id => !!generation.files[id]?.objectId)) return {generation, music};

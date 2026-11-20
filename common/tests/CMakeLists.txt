@@ -7,6 +7,12 @@ else()
     add_compile_options(-UNDEBUG)
 endif()
 
+if(TARGET eagler::native_udp_transport)
+    add_executable(eagler_common_native_udp_test native-udp-test.cpp)
+    target_link_libraries(eagler_common_native_udp_test PRIVATE eagler::native_udp_transport)
+    add_test(NAME eagler-common.native-udp COMMAND eagler_common_native_udp_test)
+endif()
+
 add_executable(eagler_common_thprac_test thprac-test.cpp)
 target_link_libraries(eagler_common_thprac_test PRIVATE eagler::thprac)
 add_test(NAME eagler-common.thprac COMMAND eagler_common_thprac_test)

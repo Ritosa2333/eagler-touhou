@@ -72,7 +72,29 @@ if(TH09_LIBDATACHANNEL_SOURCE)
     set(EAGLER_COMMON_NATIVE_ROOM ON)
     add_subdirectory("${EAGLER_COMMON_ROOT}" eagler-common EXCLUDE_FROM_ALL)
     target_link_libraries(th09 PRIVATE eagler::native_peer_transport nlohmann_json::nlohmann_json)
+    # The standalone UDP handshake checks gameplay compatibility independently of
+    # the web runtime's build ID, which the launcher supplies for lobby games.
+    file(GLOB th09_udp_headers CONFIGURE_DEPENDS
+        web/cpp/game/*.hpp web/cpp/multiplayer/*.hpp web/cpp/sdl/*.hpp
+        "${EAGLER_COMMON_ROOT}/include/eagler/netplay/*.hpp")
+    set(th09_udp_sources ${TH09_SOURCES_ALL} ${th09_udp_headers} "${NETPLAY_ROOT}/NativeUdpTransport.cpp")
+    list(SORT th09_udp_sources)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${th09_udp_sources})
+    foreach(source IN LISTS th09_udp_sources)
+        file(READ "${source}" contents)
+        string(REPLACE "\r\n" "\n" contents "${contents}")
+        string(SHA256 digest "${contents}")
+        string(APPEND th09_udp_fingerprint "${digest}")
+    endforeach()
+    string(SHA256 th09_udp_fingerprint "${th09_udp_fingerprint}")
+    string(SUBSTRING "${th09_udp_fingerprint}" 0 24 th09_udp_build)
     target_compile_definitions(th09 PRIVATE TH09_NATIVE_ROOM=1)
+    set_property(SOURCE web/cpp/sdl/Application.cpp APPEND PROPERTY COMPILE_DEFINITIONS
+        TH09_UDP_BUILD="${th09_udp_build}")
+    get_target_property(enet_source enet SOURCE_DIR)
+    add_custom_command(TARGET th09 POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${enet_source}/LICENSE" "$<TARGET_FILE_DIR:th09>/LICENSE-ENet.txt" VERBATIM)
     target_sources(th09 PRIVATE desktop/SpectatorStream.cpp)
     if(TH09_RMLUI_OVERLAY)
         include(desktop/RmlOverlay.cmake)

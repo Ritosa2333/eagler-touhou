@@ -52,6 +52,33 @@ test('publishes the saved Replay without keeping it when browser autosave is dis
   assert.equal(f.files.size, 0);
   assert.equal(f.folders.size, 0);
 });
+
+test('archives the deciding-frame snapshot once before the later match-complete event', async () => {
+  const published = [], replay = new Uint8Array([84,57,82,80,1,2,3]);
+  const f = fixture({publish: (start, bytes) => published.push({start, bytes:bytes.slice()})});
+  f.fail(); // Saving from the later live world is unavailable at this boundary.
+  f.archive.begin(120);
+  f.archive.end(780,1,replay);
+  f.archive.end(1000,1);
+  await Promise.resolve();
+  assert.deepEqual(f.writes, []);
+  assert.deepEqual(published,[{start:120,bytes:replay}]);
+  assert.deepEqual(f.files.get(f.root+'th9_ud0000.rpy'),replay);
+  assert.equal(f.archive.readMatch(f.root+'th9_ud0000.rpy').frames,660);
+  assert.equal(f.notices.length,1);
+});
+
+test('publishes the deciding-frame snapshot with local autosave disabled', () => {
+  const published = [], replay = new Uint8Array([84,57,82,80,1,2,3]);
+  const f = fixture({publish:(start,bytes)=>published.push({start,bytes})});
+  f.options({netplayReplayAutoSave:false});
+  f.archive.begin(120);
+  f.archive.end(780,1,replay);
+  f.archive.end(1000,1);
+  assert.deepEqual(f.writes,[]);
+  assert.deepEqual(published,[{start:120,bytes:replay}]);
+  assert.equal(f.files.size,0);
+});
 test('failed write and persistence failures are notices; archive does not throw or terminate transport', async () => {
   const f = fixture(); f.fail(); f.archive.begin(0); assert.doesNotThrow(() => f.archive.end(600, 0));
   assert.match(f.notices[0], /失败/); assert.equal(f.files.size, 0);

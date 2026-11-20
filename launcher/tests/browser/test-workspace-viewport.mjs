@@ -62,7 +62,7 @@ function App(){
   </PlayerSurface>
   {roomVisible&&host&&<RoomView service={service} quickChat={quickChat} network={network} context={{launched:false,previewReady:false,th09NetworkOverlayOpen:false,launchStage:null,touchEnabled:false,touchMovementMode:'joystick'}} assetUrl={p=>'/'+p} workspaceHost={host} workspaceStage={host.querySelector('.player-stage')} onLeave={noop} onCopyRoomCode={noop} onGuide={noop} onOpenSettings={()=>setSettingsOpen(true)} settingsOpen={settingsOpen} panel={panel} onOpenPanel={(kind,peerId)=>{window.roomPanelIntents.push([kind,peerId]);setPanel({kind,peerId});}} onClosePanel={()=>setPanel(null)}/>}
   {roomVisible&&<><RoomSettingsDrawer roomOpen open={settingsOpen} onCloseRequest={closeSettings}/>
-   <div hidden><OptionsPanel product={settingsProduct} open={false} roomDrawer onBack={closeSettings} assetUrl={p=>'/'+p}>
+   <div hidden><OptionsPanel product={settingsProduct} open={false} roomDrawer onBack={closeSettings}>
     <SettingsBody model={settingsModel} actions={settingsActions} onOpenTouchLayout={noop}/>
    </OptionsPanel></div>
   </>}

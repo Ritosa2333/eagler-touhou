@@ -40,6 +40,14 @@ function openBrowser(url) {
 }
 
 const args = parseArgs(process.argv.slice(2));
+if (args["no-download"] !== undefined && ![true, "0", "1"].includes(args["no-download"])) {
+  throw new Error("--no-download must be 0 or 1");
+}
+const noDownload = args["no-download"] === true || args["no-download"] === "1";
+if (args.output !== undefined && (!noDownload || typeof args.output !== "string" || !args.output.trim())) {
+  throw new Error("--output=PATH is available with --no-download");
+}
+if (noDownload && args["test-build"] !== undefined && !["0", "1"].includes(args["test-build"])) throw new Error("--test-build must be 0 or 1");
 const hostRoot = resolve(String(args.root || projectRoot));
 const music = String(args.music || "midi,ogg");
 const python = String(args.python || process.env.PYTHON || "python");
@@ -53,13 +61,16 @@ assertSupportedNode();
 const siteUrl = args["site-url"];
 assertReactFrontendEnvironment();
 console.log("[Build] Validating self-host inputs and configuration");
-await inspectHostWorkspace(hostRoot, { music });
+if (!noDownload) await inspectHostWorkspace(hostRoot, { music });
 await ensureNodeDependencies(projectRoot);
-const { resolveHostFrontend } = await import("./lib/site-builder.mjs");
+const { resolveHostFrontend, buildHostedSite, buildNoDownloadSite } = await import("./lib/site-builder.mjs");
 await resolveHostFrontend({ projectRoot, siteUrl, serve: !buildOnly });
-const { buildHostedSite } = await import("./lib/site-builder.mjs");
-const { layout } = await buildHostedSite({ projectRoot, hostRoot, music, python, siteUrl });
-await run(process.execPath, [
+const { layout, output } = noDownload
+  ? await buildNoDownloadSite({ projectRoot, hostRoot, siteUrl, output: args.output, testBuild: args["test-build"] === undefined ? undefined : args["test-build"] === "1" })
+  : await buildHostedSite({ projectRoot, hostRoot, music, python, siteUrl });
+const siteDirectory = output ?? layout.site;
+if (noDownload) console.log(`[Build] Verified no-download site: ${siteDirectory}`);
+else await run(process.execPath, [
   resolve(projectRoot, "scripts", "inspect-host.mjs"),
   `--root=${hostRoot}`, `--music=${music}`, "--post-build=1",
 ], { cwd: projectRoot });
@@ -72,7 +83,7 @@ const displayHost = ["0.0.0.0", "::"].includes(bind) ? "127.0.0.1" : bind;
 const url = `http://${displayHost}:${port}/`;
 console.log(`[Host] Serving verified site: ${url}`);
 if (!noOpen && ["127.0.0.1", "localhost", "::1"].includes(bind)) openBrowser(url);
-await run(process.execPath, [resolve(projectRoot, "scripts", "serve-static.mjs"), layout.site, String(port)], {
+await run(process.execPath, [resolve(projectRoot, "scripts", "serve-static.mjs"), siteDirectory, String(port)], {
   cwd: projectRoot,
   env: { EAGLER_TOUHOU_HOST: bind },
 });
