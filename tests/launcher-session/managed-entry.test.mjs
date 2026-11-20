@@ -12,36 +12,81 @@ const owner=fs.existsSync(ownerURL)?await import(ownerURL):{};
 const source=fs.readFileSync(new URL('../../site/import-entry.mjs',import.meta.url),'utf8');
 function element(){return{hidden:false,disabled:true,textContent:'',events:{},addEventListener(type,fn){this.events[type]=fn;},remove(){this.removed=true;}};}
 const search='?runtimeEpoch=41&managedData=1&gameGeneration=package-generation-17';
-async function setup({query=search,referrer=origin+'/app',callback=null,blocked=null,resourceFetch=null,holdRuntime=false}={}){
- const f=fixture(),provider=await createDatOggProviderFromFiles(f.descriptorBytes,f.files,{origin}),env=fakeWindow({search:query,referrer});
+const storeSearch=search+'&managedPackage=1';
+async function setup({query=search,referrer=origin+'/app',callback=null,blocked=null,resourceFetch=null,holdRuntime=false,packageFile=null,packageGeneration=null}={}){
+ const fromStore=new URLSearchParams(query).has('managedPackage');
+ const f=fixture(),provider=fromStore?null:await createDatOggProviderFromFiles(f.descriptorBytes,f.files,{origin}),env=fakeWindow({search:query,referrer});
  env.win.location={origin,href:origin+'/'+query,search:query};
- const main=element(),loader=element(),file=element(),start=element(),status=element(),retry=element(),hint=element(),meter=element(),local={},calls={data:[],imports:0,keys:[],dispose:0,close:0,installed:null};
- const originalDispose=provider.dispose.bind(provider);
+ const main=element(),loader=element(),file=element(),start=element(),status=element(),retry=element(),hint=element(),meter=element(),local={},calls={data:[],packageFiles:[],storeOpen:0,storeReopen:0,deployment:0,imports:0,keys:[],dispose:0,close:0,installed:null};
+ const originalDispose=provider?.dispose.bind(provider);
  // The real provider is frozen; count disposal in a forwarding boundary, not by replacing its methods.
- const wrapped={...provider,dispose(){calls.dispose++;originalDispose();}};
+ const wrapped=provider?{...provider,dispose(){calls.dispose++;originalDispose();}}:null;
  env.parent.__eaglerPrepareManagedRuntimeDataV1=async request=>{
   calls.data.push(structuredClone(request));
   if(blocked)await blocked;
-  return callback?callback(f,request):{buffer:f.files.get('game-data').slice().buffer,bytes:51,fileId:'game-data'};
+  if(callback)return callback(f,request);
+  const data={buffer:f.files.get('game-data').slice().buffer,bytes:51,fileId:'game-data'};
+  if(!fromStore)return data;
+  return{...data,managedPackage:{version:'th128-dat-ogg/1',generation:packageGeneration??request.generation,epoch:request.epoch,
+   descriptor:f.descriptorBytes.slice().buffer,async readFile(id){
+    calls.packageFiles.push(id);
+    const bytes=f.files.get(id).slice(),payload={fileId:id,path:f.descriptor.files[id].target,buffer:bytes.buffer,bytes:bytes.length};
+    return packageFile?packageFile(id,payload):payload;
+   }}};
  };
  loader.querySelector=selector=>selector==='input'?file:selector==='button'?start:selector==='[data-retry]'?retry:selector==='[data-hint]'?hint:selector==='progress'?meter:status;
  const document={referrer,querySelector:()=>main,createElement:()=>loader,body:{prepend(){}}};env.win.document=document;
- class Store{close(){calls.close++;}}
+ class Store{constructor(){calls.storeOpen++;}close(){calls.close++;}}
  let context=null;
  const runtime={keyboard:value=>calls.keys.push(value),clearInput(){},exit(){}};
  const body=source.replace(/^import .*;\r?\n/gm,'').replace("await import('./play.mjs')","await importPlay()");
- const run=new Function('document','globalThis','location','window','addEventListener','DatPackageArchiveStore','installDatPackage','reopenDatPackage','installResourceFetchProvider','readOnlineDeployment','loadOnlineResources','mountLauncherSession','createPageLaunchContext','installPageLaunchContext','importPlay','bindManagedDatProvider','return(async()=>{'+body+'})();');
+ const run=new Function('document','globalThis','location','window','addEventListener','DatPackageArchiveStore','installDatPackage','reopenDatPackage','installResourceFetchProvider','readOnlineDeployment','loadOnlineResources','mountLauncherSession','createPageLaunchContext','installPageLaunchContext','importPlay','bindManagedDatProvider','openManagedDatPackage','return(async()=>{'+body+'})();');
  const bind=async(next,options)=>{
   assert.equal(typeof owner.bindManagedDatProvider,'function','Managed DATA caller module is missing');
   return owner.bindManagedDatProvider(next,{...options,fetchImpl:resourceFetch??(async()=>{throw new Error('Unexpected resource fetch');})});
  };
- const pending=run(document,{indexedDB:{open(){}}},env.win.location,env.win,(type,fn)=>local[type]=fn,Store,async()=>wrapped,async()=>wrapped,p=>{calls.installed=p;},async()=>null,async()=>({provider:wrapped,cached:true}),mountLauncherSession,
- options=>{context=createPageLaunchContext(options);return context;},()=>{},async()=>{calls.imports++;if(!holdRuntime){context.bindRuntime(runtime);context.finish();}return{};},bind);
+ const pending=run(document,{indexedDB:{open(){}}},env.win.location,env.win,(type,fn)=>local[type]=fn,Store,async()=>wrapped,async()=>{calls.storeReopen++;return wrapped;},p=>{calls.installed=p;},async()=>{calls.deployment++;return null;},async()=>({provider:wrapped,cached:true}),mountLauncherSession,
+ options=>{context=createPageLaunchContext(options);return context;},()=>{},async()=>{calls.imports++;if(!holdRuntime){context.bindRuntime(runtime);context.finish();}return{};},bind,owner.openManagedDatPackage);
  return{...env,f,provider,wrapped,calls,main,status,local,pending,send(data){env.send(data,{origin:new URL(referrer).origin});},get context(){return context;},runtime};
 }
 async function finished(e){await e.pending;await flush();return e;}
 const reply=(e,id)=>e.messages.find(row=>row.data.request===id)?.data;
 const events=(e,type)=>e.messages.filter(row=>row.data.event===type);
+test('Package Store generation alone starts the current entry without opening or reopening a separate ZIP store',async()=>{
+ const e=await finished(await setup({query:storeSearch}));
+ try{
+  assert.equal(e.calls.storeOpen,0);assert.equal(e.calls.storeReopen,0);assert.equal(e.calls.deployment,0);
+  assert.deepEqual(e.calls.data,[{game:'th128',generation:'package-generation-17',epoch:41,packageVersion:'th128-dat-ogg/1'}]);
+  assert.deepEqual(e.calls.packageFiles,['language-zh','music-00','music-01','music-02','music-03','music-04','music-05','music-06','music-07','music-08','music-09']);
+  assert.equal(events(e,'ready').length,1);assert.equal(e.calls.imports,0);
+  e.send(envelope('configure','cfg',{music:'ogg'}));await flush();e.send(envelope('launch','go'));await flush();
+  assert.equal(reply(e,'go')?.ok,true);assert.equal(e.calls.imports,1);assert.equal(events(e,'first-frame').length,0);
+  assert.deepEqual(new Uint8Array(await(await e.calls.installed.fetch(origin+'/assets/runtime/front.anm')).arrayBuffer()),rawBytes);
+  assert.deepEqual(new Uint8Array(await(await e.calls.installed.fetch(origin+'/assets/music/first.ogg')).arrayBuffer()),e.f.files.get('music-00'));
+  e.send(envelope('exit','bye'));await flush();assert.equal(reply(e,'bye')?.ok,true);
+  await assert.rejects(e.calls.installed.fetch(origin+'/assets/runtime/front.anm'),{name:'AbortError'});
+ }finally{e.local.pagehide();}
+});
+test('Package Store cancels a pending resource when the Runtime exits before ready',async()=>{
+ let release;const gate=new Promise(resolve=>{release=resolve;});
+ const e=await setup({query:storeSearch,packageFile:async(_id,payload)=>{await gate;return payload;}});await flush();
+ try{
+  assert.deepEqual(e.calls.packageFiles,['language-zh']);assert.equal(events(e,'ready').length,0);
+  e.send(envelope('exit','bye'));await finished(e);release();await flush();
+  assert.equal(reply(e,'bye')?.ok,true);assert.deepEqual(e.calls.packageFiles,['language-zh']);
+  assert.equal(events(e,'ready').length,0);assert.equal(e.calls.imports,0);
+ }finally{release();e.local.pagehide();}
+});
+test('Package Store rejects a stale generation and changed bytes, with no local fallback',async()=>{
+ for(const [options,error] of [[{packageGeneration:'obsolete'},/identity/],[{packageFile(id,payload){if(id==='music-00')new Uint8Array(payload.buffer)[7]^=1;return payload;}},/SHA-256/]]){
+  const e=await finished(await setup({query:storeSearch,...options}));
+  try{
+   assert.equal(e.calls.storeOpen,0);assert.equal(e.calls.storeReopen,0);assert.equal(e.calls.deployment,0);
+   assert.equal(events(e,'ready').length,0);assert.equal(e.calls.imports,0);assert.match(events(e,'error')[0]?.data.message??'',error);
+   if(options.packageGeneration)assert.deepEqual(e.calls.packageFiles,[]);
+  }finally{e.local.pagehide();}
+ }
+});
 test('current entry actually requests the exact managed identity before ready and uses the real DAT consumer',async()=>{
  const e=await finished(await setup());
  try{

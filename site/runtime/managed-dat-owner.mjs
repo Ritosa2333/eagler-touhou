@@ -1,5 +1,6 @@
-// Managed DATA augments an independently verified, complete resource package.
-// It does not implement arbitrary mounts, mutable files or a replacement package.
+import {createDatOggProviderFromFiles,readDatOggDescriptor} from './dat-ogg-provider.mjs';
+
+const PACKAGE_VERSION='th128-dat-ogg/1';
 function need(value,message){if(!value)throw Object.assign(new Error('Managed DAT owner: '+message),{errno:'invalid-field'});}
 function abort(){return new DOMException('Managed DAT owner was superseded or closed','AbortError');}
 async function limitedBody(response,size,current){
@@ -16,7 +17,7 @@ async function limitedBody(response,size,current){
   need(offset===size,'resource bytes are truncated');return result;
  }finally{if(!complete)try{await reader.cancel();}catch{}reader.releaseLock();}
 }
-export async function bindManagedDatProvider(provider,{window=globalThis.window,document=window?.document,location=window?.location,
+function managedLease({window=globalThis.window,document=window?.document,location=window?.location,
  signal,isCurrent=()=>true,fetchImpl=globalThis.fetch}={}){
  const query=new URLSearchParams(location?.search??'');
  if(!query.has('managedData'))return null;
@@ -30,10 +31,8 @@ export async function bindManagedDatProvider(provider,{window=globalThis.window,
  need(['http:','https:'].includes(page.protocol)&&page.origin===location.origin&&referrer.origin===page.origin,'parent DATA must share the runtime origin');
  const callback=parent.__eaglerPrepareManagedRuntimeDataV1;
  need(typeof callback==='function','parent DATA callback is unavailable');
- need(provider?.descriptor?.runtimeRequirement?.dataFile==='game-data'&&provider.descriptor.files?.['game-data']
-  &&typeof provider.adoptManagedData==='function'&&typeof provider.verifyMountedFile==='function','authenticated package consumer is unavailable');
- const descriptor=structuredClone(provider.descriptor),data=descriptor.files['game-data'];
  const controller=new AbortController(),onAbort=()=>controller.abort();let disposed=false;
+ const identity=Object.freeze({game:'th128',generation,epoch}),deadline=Date.now()+30000;
  signal?.addEventListener('abort',onAbort,{once:true});
  function current(){
   if(disposed||signal?.aborted||controller.signal.aborted||!isCurrent()||window.parent!==parent||window.document!==document
@@ -47,22 +46,27 @@ export async function bindManagedDatProvider(provider,{window=globalThis.window,
    const finish=(fn,value)=>{clearTimeout(timer);controller.signal.removeEventListener('abort',cancelled);fn(value);};
    if(controller.signal.aborted){reject(abort());return;}
    controller.signal.addEventListener('abort',cancelled,{once:true});
-   timer=setTimeout(()=>finish(reject,new Error('Managed DATA callback timed out')),30000);
+   timer=setTimeout(()=>finish(reject,new Error('Managed DATA callback timed out')),Math.max(0,deadline-Date.now()));
    Promise.resolve(promise).then(value=>finish(resolve,value),error=>finish(reject,error));
   });
  }
- try{
-  current();const request=Object.freeze({game:'th128',generation,epoch});
-  const result=await waitOwned(callback.call(parent,request));current();
-  need(result&&result.fileId==='game-data'&&Number.isSafeInteger(result.bytes)&&result.bytes===data.bytes,'parent DATA identity/byte receipt mismatch');
-  // Intrinsic ArrayBuffer access accepts a same-origin parent's realm and
-  // rejects array-like objects, detached buffers and SharedArrayBuffer.
-  let copied;
-  try{copied=ArrayBuffer.prototype.slice.call(result.buffer,0);}catch{need(false,'parent DATA buffer is not an owned ArrayBuffer');}
-  need(copied.byteLength===result.bytes,'parent DATA buffer length mismatch');
-  const receipt=await provider.adoptManagedData(new Uint8Array(copied));current();
-  return Object.freeze({
-   identity:Object.freeze({game:'th128',generation,epoch}),dataReceipt:receipt,
+ return {query,page,identity,controller,current,dispose,fetchImpl,waitOwned,request(value){current();return waitOwned(callback.call(parent,value));}};
+}
+const arrayBufferLength=Object.getOwnPropertyDescriptor(ArrayBuffer.prototype,'byteLength').get;
+function ownedBytes(buffer,expected,max){
+ let length;
+ try{length=arrayBufferLength.call(buffer);}catch{need(false,'parent buffer is not an owned ArrayBuffer');}
+ need(length>0&&length<=max&&(expected===null||length===expected),'parent buffer length mismatch');
+ return new Uint8Array(buffer).slice();
+}
+function fileBytes(result,id,row,target){
+ need(result&&result.fileId===id&&result.bytes===row.bytes&&(!target||result.path===row.target),'parent file identity/byte receipt mismatch');
+ return ownedBytes(result.buffer,row.bytes,row.bytes);
+}
+function resourceOwner(lease,provider,descriptor,dataReceipt){
+ const {page,identity,controller,current,dispose,fetchImpl}=lease;
+ return Object.freeze({
+   identity,dataReceipt,
    dispose,
    async resources(input){
     current();need(Array.isArray(input)&&input.length<=Object.keys(descriptor.files).length,'resource list exceeds declared package');
@@ -84,6 +88,38 @@ export async function bindManagedDatProvider(provider,{window=globalThis.window,
     }
     return receipts;
    }
-  });
- }catch(error){dispose();throw error;}
+ });
+}
+export async function bindManagedDatProvider(provider,options={}){
+ const lease=managedLease(options);if(!lease)return null;
+ try{
+  need(provider?.descriptor?.runtimeRequirement?.dataFile==='game-data'&&provider.descriptor.files?.['game-data']
+   &&typeof provider.adoptManagedData==='function'&&typeof provider.verifyMountedFile==='function','authenticated package consumer is unavailable');
+  const descriptor=structuredClone(provider.descriptor),id='game-data';
+  const result=await lease.request(lease.identity);lease.current();
+  const receipt=await provider.adoptManagedData(fileBytes(result,id,descriptor.files[id],false));lease.current();
+  return resourceOwner(lease,provider,descriptor,receipt);
+ }catch(error){lease.dispose();throw error;}
+}
+export async function openManagedDatPackage(options={}){
+ const lease=managedLease(options);need(lease,'Package Store mode requires managed DATA');
+ let provider;
+ try{
+  const {query,identity,current,controller}=lease;
+  need(query.getAll('managedPackage').length===1&&query.get('managedPackage')==='1','invalid Package Store mode');
+  const result=await lease.request(Object.freeze({...identity,packageVersion:PACKAGE_VERSION}));current();
+  const bundle=result?.managedPackage;
+  need(bundle?.version===PACKAGE_VERSION&&bundle.generation===identity.generation&&bundle.epoch===identity.epoch&&typeof bundle.readFile==='function','parent package identity mismatch');
+  const descriptorBytes=ownedBytes(bundle.descriptor,null,1024*1024),descriptor=readDatOggDescriptor(descriptorBytes);
+  const id='game-data',data=descriptor.files[id],files=new Map([[id,fileBytes(result,id,data,false)]]),reader=bundle.readFile;
+  for(const [fileId,row] of Object.entries(descriptor.files)){
+   if(fileId===id)continue;
+   current();const receipt=await lease.waitOwned(reader.call(bundle,fileId));current();
+   files.set(fileId,fileBytes(receipt,fileId,row,true));
+  }
+  provider=await createDatOggProviderFromFiles(descriptorBytes,files,{origin:lease.page.origin,signal:controller.signal,
+   isCurrent:()=>{current();return true;},onProgress:options.onProgress});current();
+  const dataReceipt=Object.freeze({fileId:id,bytes:data.bytes,sha256:data.sha256});
+  return Object.freeze({provider,owner:resourceOwner(lease,provider,descriptor,dataReceipt)});
+ }catch(error){try{provider?.dispose();}finally{lease.dispose();}throw error;}
 }

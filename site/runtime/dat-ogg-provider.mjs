@@ -9,16 +9,18 @@ function safeName(name){return typeof name==='string'&&name.length>0&&!name.star
 function plain(o){return o!==null&&typeof o==='object'&&!Array.isArray(o);}
 async function hash(bytes){return [...new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('');}
 function recordBytes(row){need(plain(row)&&Number.isSafeInteger(row.bytes)&&row.bytes>0&&row.bytes<=MAX_ENTRY&&HASH.test(row.sha256),'invalid file byte receipt');}
-function descriptor(bytes){
+export function readDatOggDescriptor(bytes){
+ need(bytes instanceof Uint8Array&&bytes.length>0&&bytes.length<=1024*1024,'invalid descriptor bytes');
  let d;try{d=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}catch{throw new Error('TH128 DAT package: invalid package descriptor JSON');}
- need(d.schema==='eagler-touhou/package/1'&&d.game==='th128'&&ID.test(d.revision),'unsupported package descriptor');
+ need(plain(d)&&d.schema==='eagler-touhou/package/1'&&d.game==='th128'&&typeof d.revision==='string'&&ID.test(d.revision),'unsupported package descriptor');
  need(!d.runtime&&!d.runtimes,'Runtime scripts cannot be carried by a resource package');
  const r=d.runtimeRequirement;
  need(r?.protocol==='eagler-touhou/1'&&r.target==='th128'&&r.dataFile==='game-data'&&r.dataLayout===LAYOUT,'incompatible DAT mount layout');
  need(plain(d.files)&&Object.keys(d.files).length<=100,'invalid package file table');
- const sources=new Set(),targets=new Set(),kind=new Map();
+ const sources=new Set(),targets=new Set(),kind=new Map();let total=bytes.length;
  for(const[id,row]of Object.entries(d.files)){
   need(ID.test(id)&&plain(row),'invalid file identifier');recordBytes(row);
+  need(row.bytes<=MAX_PACKAGE-total,'file payload package size budget exceeded');total+=row.bytes;
   need(safeName(row.source)&&typeof row.target==='string'&&row.target.startsWith('/'),'unsafe source/target');
   need(!sources.has(row.source)&&!targets.has(row.target),'duplicate package source/target');sources.add(row.source);targets.add(row.target);
   if(id==='game-data')need(row.source==='games/th128/th128.dat'&&row.target==='/th128.dat','missing original DAT mount'),kind.set(id,'data');
@@ -87,14 +89,14 @@ async function createProvider(source,{origin=globalThis.location?.origin,signal,
   const owned=new Uint8Array(source.zip);
   for(const entry of readZipDirectory(owned).entries){need(safeName(entry.name),'unsafe ZIP entry path');entries.set(entry.name,entry);}
   need(entries.has('package.json'),'package descriptor is missing');
-  d=descriptor(await read(entries.get('package.json')));
+   d=readDatOggDescriptor(await read(entries.get('package.json')));
   need(entries.size===Object.keys(d.files).length+1,'ZIP contains undeclared files');
   readPayload=async(row)=>{
    const entry=entries.get(row.source);need(entry&&entry.uncompressedSize===row.bytes,'declared package file is missing or has wrong size');
    return read(entry);
   };
  }else{
-  d=descriptor(new Uint8Array(source.descriptorBytes));
+   d=readDatOggDescriptor(new Uint8Array(source.descriptorBytes));
   const ids=Object.keys(d.files);
   need(source.filesById.size===ids.length,'file payload table differs from descriptor');
   let total=source.descriptorBytes.length;

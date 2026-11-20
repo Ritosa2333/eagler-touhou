@@ -4,7 +4,7 @@
 
 Runtime122 v17 与原 DAT＋OGG 交付保留为独立启动基线。共用 Launcher 接入使用相同 TH128 核心与原资源：页面的样式、入口和构建清单已能从所在的 Runtime 目录读取；`/assets/` 的虚拟原游戏资源仍由验证过的资源提供者处理。Node 源码检查覆盖了根目录与版本子目录、独立资源发现以及资源路由，未运行浏览器。
 
-共用 Launcher 的作品登记、Package Store 挂载、实际导入和启动退出待验。现有独立页面验收继续作为原游戏行为基线；不把旧的独立启动结果写成共用 Launcher 的验收结果。接入边界和构建布局见[共用 Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
+Runtime 已能接收父 Launcher 同一安装代次的 DATA、语言与 OGG 文件并核对字节，无需在 iframe 重复安装资源。20 项 Node 检查覆盖该入口、取消与旧入口，使用自建格式素材。共用 Launcher 的父端供给、作品登记、真实资源导入、启动和退出待联调；现有独立页面验收仍作为原游戏行为基线。接入边界见[共用 Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
 
 2026-11-17当前结论：第三步的协议、高刷新率、触控、多语言、thprac、Replay六项已在约定功能范围内完成。用户已授权打包最新本地Runtime116；公开发布和多人后续开发仍暂停。细项边界见[有限Web范围](docs/WEB_FUNCTIONAL_SCOPE.md)，真实thprac最终证据见[验收](docs/THPRAC128_ACCEPTANCE.md)。
 

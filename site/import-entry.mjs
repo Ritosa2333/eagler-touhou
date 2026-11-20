@@ -2,7 +2,7 @@ import {DatPackageArchiveStore,installDatPackage,reopenDatPackage} from './runti
 import {installResourceFetchProvider} from './resource-fetch.mjs';
 import {readOnlineDeployment,loadOnlineResources} from './runtime/online-resources.mjs';
 import {mountLauncherSession} from './runtime/launcher-session.mjs';
-import {bindManagedDatProvider} from './runtime/managed-dat-owner.mjs';
+import {bindManagedDatProvider,openManagedDatPackage} from './runtime/managed-dat-owner.mjs';
 import {createReplayFileBridge} from './runtime/replay-file-bridge.mjs';
 import {createPageLaunchContext,installPageLaunchContext} from './runtime/page-launch-context.mjs';
 import {mountLocalLaunchPanel} from './runtime/local-launch-panel.mjs';
@@ -15,8 +15,9 @@ loader.innerHTML='<h1>妖精大战争</h1><p data-hint>正在准备游戏…</p>
 document.body.prepend(loader);
 const file=loader.querySelector('input'),start=loader.querySelector('button'),status=loader.querySelector('[role="status"]'),
  retry=loader.querySelector('[data-retry]'),hint=loader.querySelector('[data-hint]'),meter=loader.querySelector('progress');
+const managedPackage=new URLSearchParams(location.search??'').has('managedPackage');
 let store=null,storeError=null;
-if(typeof globalThis.indexedDB?.open==='function'){
+if(!managedPackage&&typeof globalThis.indexedDB?.open==='function'){
  try{store=new DatPackageArchiveStore();}catch(error){storeError=error;}
 }
 let busy=true,launched=false,launchAttempted=false,pageGone=false,provider=null,deployment=null,launcher=null,pageLaunch=null,managedOwner=null,replayFiles=null,localLaunchPanel=null;
@@ -33,9 +34,8 @@ function progress(value){
  else if(value.completed)status.textContent='正在读取资源：'+value.completed+'/'+value.total;
 }
 function options(){return{store,origin:location.origin,pageURL:location.href,signal:controller.signal,isCurrent,onProgress:progress};}
-async function ready(next){
- let nextOwner=null;
- if(next&&new URLSearchParams(location.search??'').has('managedData')){
+async function ready(next,nextOwner=null){
+ if(next&&!nextOwner&&new URLSearchParams(location.search??'').has('managedData')){
   if(!launcher)throw new Error('Managed DATA needs an authenticated launcher session');
   nextOwner=await bindManagedDatProvider(next,{window:parentWindow,document,location,signal:controller.signal,isCurrent});
  }
@@ -100,8 +100,15 @@ addEventListener('pageshow',event=>{
 async function discover(){
  if(launched||launchAttempted||!isCurrent())return;
  busy=true;file.disabled=true;start.disabled=true;retry.hidden=true;retry.disabled=true;
- let next=null;
+ let next=null,nextOwner=null;
  try{
+  if(managedPackage){
+   if(!launcher)throw new Error('Package Store mode needs an authenticated launcher session');
+   file.hidden=true;start.hidden=true;
+   const opened=await openManagedDatPackage({window:parentWindow,document,location,signal:controller.signal,isCurrent,onProgress:progress});
+   next=opened.provider;nextOwner=opened.owner;
+   await ready(next,nextOwner);next=null;nextOwner=null;hostedReady();return;
+  }
   deployment=await readOnlineDeployment({pageURL:location.href,signal:controller.signal,isCurrent});requireCurrent();
   if(deployment){
    file.hidden=true;start.hidden=true;hint.textContent='首次打开自动下载游戏；以后优先读取缓存。';await runOnline();
@@ -111,9 +118,11 @@ async function discover(){
    next=await reopenDatPackage(options());requireCurrent();await ready(next);next=null;file.disabled=false;if(launcher)hostedReady();
   }
  }catch(error){
-  next?.dispose();
+  nextOwner?.dispose();next?.dispose();
   if(isCurrent()){
-   status.textContent='游戏准备失败：'+error.message;retry.textContent='重试加载';retry.hidden=false;retry.disabled=false;
+   status.textContent='游戏准备失败：'+error.message;
+   if(managedPackage)launcher?.reportError(error);
+   else{retry.textContent='重试加载';retry.hidden=false;retry.disabled=false;}
   }
  }finally{if(!launchAttempted)busy=false;}
 }
@@ -121,7 +130,7 @@ async function discover(){
 function hostedReady(){
  if(!provider)return;
  file.hidden=true;start.hidden=true;hint.textContent='资源已准备好，等待启动器开始游戏。';
- launcher.runtimeInfo({version:'th128-hosted-bootstrap/1',partialAdapter:true,musicOutput:{modes:['ogg','none'],requiresCompletePackage:true,midi:false},dataMode:managedOwner?'managed-original-DAT-with-verified-package':'validated-installed-DAT-OGG',fileBridge:false,managedResources:!!managedOwner,replayFiles:{root:'replay/',slots:25,commands:['list','read','write','remove','sync'],mutableBeforeLaunchOnly:true},nativeScoreExport:{path:'scoreth128.dat',readOnly:true}});
+ launcher.runtimeInfo({version:'th128-hosted-bootstrap/1',partialAdapter:true,musicOutput:{modes:['ogg','none'],requiresCompletePackage:true,midi:false},dataMode:managedPackage?'launcher-package-store':managedOwner?'managed-original-DAT-with-verified-package':'validated-installed-DAT-OGG',fileBridge:false,managedResources:!!managedOwner,replayFiles:{root:'replay/',slots:25,commands:['list','read','write','remove','sync'],mutableBeforeLaunchOnly:true},nativeScoreExport:{path:'scoreth128.dat',readOnly:true}});
  launcher.markReady();
 }
 const parentWindow=typeof window==='undefined'?globalThis.window:window;
