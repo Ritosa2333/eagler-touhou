@@ -2250,7 +2250,7 @@ async function readJson(url,signal){
 const checkpointModuleGenerations=new WeakMap(),checkpointModuleBuilds=new WeakMap();
 const startedWorldModules=new WeakSet();
 async function runtimeFactory(signal){
-  const build=await readJson('/runtime/build.json',signal);
+   const build=await readJson(new URL('runtime/build.json',location.href).href,signal);
   if(build.game!=='th128'||!/^runtime\/builds\/[a-f0-9]{64}\/core\.mjs$/.test(build.entry))throw new Error('无效的运行时构建清单');
   if(build.entry!==`runtime/builds/${build.generation}/core.mjs`)throw new Error('Checkpoint runtime generation is inconsistent');
   const factory=(await import(new URL(build.entry,location.href).href)).default;

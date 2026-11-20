@@ -51,7 +51,7 @@ async function bodyBytes(response,limit,{signal,isCurrent,onChunk=()=>{}}){
 }
 export async function readOnlineDeployment({pageURL=globalThis.location?.href,fetchImpl=globalThis.fetch,signal,isCurrent=()=>true}={}){
  current(signal,isCurrent);
- const url=new URL('/deployment.json',pageURL),response=await fetchImpl(url.href,{signal,cache:'no-store',credentials:'same-origin',redirect:'error'});
+ const url=new URL('deployment.json',pageURL),response=await fetchImpl(url.href,{signal,cache:'no-store',credentials:'same-origin',redirect:'error'});
  current(signal,isCurrent);if(response.status===404)return null;
  if(response.status!==200||response.redirected)throw new Error('Online deployment request failed: '+response.status);
  const bytes=await bodyBytes(response,MAX_MANIFEST,{signal,isCurrent});current(signal,isCurrent);

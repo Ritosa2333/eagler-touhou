@@ -11,8 +11,8 @@
 //     dynamic import of play.mjs. Resource requests then go to that provider,
 //     and a missing target throws. There is deliberately no asset fallback to
 //     the network in this mode. The one narrow exception is the same-origin
-//     GET/HEAD /runtime/build.json bootstrap document, which must come from the
-//     local Runtime entry rather than the asset package. The dynamic core.mjs/
+//     GET/HEAD runtime/build.json next to the active Runtime entry, which must
+//     come from that Runtime directory rather than the asset package. The dynamic core.mjs/
 //     wasm files are loaded by the browser module loader and are not fetched by
 //     this module.
 //
@@ -73,7 +73,7 @@ export function resetResourceFetchProvider() {
   installedProvider = null;
 }
 
-const LOCAL_RUNTIME_BUILD_PATH = '/runtime/build.json';
+const LOCAL_RUNTIME_BUILD_PATH = 'runtime/build.json';
 
 function resolveRequestUrl(input) {
   try {
@@ -93,9 +93,7 @@ function isLocalRuntimeBuildRequest(input, init) {
   const page = globalThis.location?.href ? resolveRequestUrl(globalThis.location.href) : null;
   const url = resolveRequestUrl(input);
   if (!page || !url) return false;
-  if (url.origin !== page.origin) return false;
-  if (url.pathname !== LOCAL_RUNTIME_BUILD_PATH) return false;
-  if (url.search || url.hash) return false;
+  if (url.href !== new URL(LOCAL_RUNTIME_BUILD_PATH, page).href) return false;
   const method = String(init?.method ?? (typeof Request !== 'undefined' && input instanceof Request
     ? input.method
     : 'GET')).toUpperCase();
