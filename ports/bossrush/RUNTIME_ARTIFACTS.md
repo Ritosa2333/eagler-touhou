@@ -53,7 +53,7 @@ BadApple!! 视频分卷 20.7 MB（Web 端视频解码非当前范围，不可玩
 
 ## 6. 验证状态
 
-- `node tools/docs/check.mjs`：671 文档 / 27 源码目录通过。
+- `node tools/docs/check.mjs`：672 文档 / 27 源码目录通过（含新增文档索引）。
 - `ports:check --game=bro`：本机缺 `fs-native-extensions` 依赖无法运行（与既有状态一致，非本次回归）。
 - BRO 侧全套纯 Node 回归 44/44 PASS；新 WASM build_id `eb0494bb`，两处署名确认为 `@Tidew`。
 - 联机/流畅度评估与剩余缺口见 BRO 仓库 `web/PROBE_3AK.md`。
