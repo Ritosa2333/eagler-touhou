@@ -4,6 +4,7 @@ import puppeteer from "puppeteer-core";
 const baseUrl = process.argv.find(value => value.startsWith("--url="))?.slice("--url=".length) || "http://127.0.0.1:8130/";
 const executablePath = process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const devServer = process.argv.includes("--dev-server");
+const preferenceKey = 'eagler-touhou-ui-locale-v1';
 const selectChinese = async page => {
   await page.waitForSelector("#mastheadMenuToggle:not([disabled])", {visible: true});
   await page.click("#mastheadMenuToggle");
@@ -86,11 +87,11 @@ try {
       const errors = [];
       region.on("pageerror", error => errors.push(error.message));
       await region.setRequestInterception(true);
-      let lookups = 0;
+      let lookups = 0, currentCountry = country;
       region.on("request", request => {
         if (request.url() !== new URL("_eagler/ui-country", baseUrl).href) return request.continue();
         lookups++;
-        return request.respond({status: 200, contentType: "text/plain", body: country});
+        return request.respond({status: 200, contentType: "text/plain", body: currentCountry});
       });
       await region.goto(new URL("lobby.html?keep=a%20b#rooms", baseUrl), {waitUntil: "domcontentloaded"});
       await region.waitForFunction(value => document.documentElement.lang === value && !!document.querySelector("#uiLanguageSelect"), {}, locale);
@@ -99,16 +100,35 @@ try {
       await region.goto(new URL("?keep=a%20b#library", baseUrl), {waitUntil: "domcontentloaded"});
       await region.waitForFunction(value => document.documentElement.lang === value && window.__eaglerBoot?.done, {}, locale);
       assert.equal(region.url(), new URL(`${entry}?keep=a%20b#library`, baseUrl).href);
-      assert.equal(lookups, country === "ZZ" ? 2 : 1, "only a resolved region may be reused");
+      assert.equal(lookups, 1, "the first language is retained even if the IP has no known region");
       await selectChinese(region);
+      assert.equal((await context.cookies()).find(cookie => cookie.name === preferenceKey)?.value, 'zh-CN');
+      await region.evaluate(key => {
+        localStorage.setItem(key, 'ja');
+        localStorage.removeItem('eagler-touhou-region-locale-v1');
+      }, preferenceKey);
+      currentCountry = 'JP';
+      await region.goto(new URL("en.html", baseUrl), {waitUntil: "domcontentloaded"});
+      await region.waitForFunction(() => document.documentElement.lang === "en" && window.__eaglerBoot?.done);
+      assert.equal((await context.cookies()).find(cookie => cookie.name === preferenceKey)?.value, 'zh-CN', 'explicit links do not overwrite the cookie');
       await region.goto(new URL("lobby.html", baseUrl), {waitUntil: "domcontentloaded"});
       await region.waitForFunction(() => document.documentElement.lang === "zh-CN" && !!document.querySelector("#uiLanguageSelect"));
       assert.equal(await region.$eval("#uiLanguageSelect", select => select.value), "zh-CN");
-      assert.equal(lookups, country === "ZZ" ? 2 : 1, "manual language suppresses region lookup");
+      assert.equal(lookups, 1, "the cookie overrides both a stale storage value and a changed IP region");
       assert.deepEqual(errors, []);
     } finally {
       await context.close();
     }
+  }
+  const docsContext = await browser.createBrowserContext();
+  try {
+    const docs = await docsContext.newPage();
+    await docs.goto(new URL('faq.html?lang=en', baseUrl), {waitUntil: 'domcontentloaded'});
+    assert.equal((await docsContext.cookies()).some(cookie => cookie.name === preferenceKey), false);
+    await selectChinese(docs);
+    assert.equal((await docsContext.cookies()).find(cookie => cookie.name === preferenceKey)?.value, 'zh-CN', 'standalone pages save the same site preference');
+  } finally {
+    await docsContext.close();
   }
   console.log(JSON.stringify({ localizedEntries: "PASS", browser: "Chrome", languages: ["zh-CN", "en", "ja"], fonts: [...fontRequests] }));
 } finally {

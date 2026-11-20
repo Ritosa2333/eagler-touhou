@@ -56,16 +56,17 @@ test('localized entry addresses distinguish all three published documents', () =
   assert.equal(api.localeFromPath('/site/en.html'), 'en'); assert.equal(api.localeHome('zh-CN'), './');
 });
 
-function regionalEntry({country = 'JP', url = '/site/?game=th03&q=a%20b#settings', manual, online = true, fetchCountry} = {}) {
+function regionalEntry({country = 'JP', url = '/site/?game=th03&q=a%20b#settings', manual, cookie = '', online = true, fetchCountry} = {}) {
   const origin = 'https://launcher.invalid', store = new Map(), requests = [];
   if (manual) store.set(api.UI_LOCALE_STORAGE_KEY, manual);
   const storage = {getItem: key => store.get(key), setItem: (key, value) => store.set(key, value)};
+  const document = {cookie};
   const enter = (path = url) => api.initialUiLocaleAddress({href: new URL(path, origin).href, base: '/site/',
-    storage, online, timeoutMs: 20, async fetchCountry(endpoint, init) {
+    storage, document, online, timeoutMs: 20, async fetchCountry(endpoint, init) {
       requests.push([endpoint.href, init.cache, init.credentials, init.mode]);
       return fetchCountry ? fetchCountry(endpoint, init) : new Response(country);
     }});
-  return {enter, store, requests};
+  return {enter, store, requests, document};
 }
 
 test('first visit selects the country language and keeps the URL payload intact', async () => {
@@ -93,14 +94,29 @@ test('explicit links and saved manual language never query IP location', async (
   assert.deepEqual(requests, []);
 });
 
-test('offline, unknown country, HTTP errors and timeouts use English without saving a region', async () => {
+test('manual language cookie overrides the old storage value and is shared across entry pages', async () => {
+  const {enter, store, requests, document} = regionalEntry({manual: 'en', cookie: `other=1; ${api.UI_LOCALE_STORAGE_KEY}=ja`});
+  assert.equal((await enter())?.pathname, '/site/ja.html');
+  assert.equal(await enter('/site/lobby.html?lang=en'), undefined);
+  assert.equal((await enter('/site/faq.html#guide'))?.href, 'https://launcher.invalid/site/faq.html?lang=ja#guide');
+  assert.equal(store.get(api.UI_LOCALE_STORAGE_KEY), 'en');
+  assert.deepEqual(requests, []);
+  api.saveUiLocalePreference(document, null, new URL('https://launcher.invalid/site/'), 'zh-CN');
+  assert.equal(document.cookie, `${api.UI_LOCALE_STORAGE_KEY}=zh-CN; Path=/site/; Max-Age=31536000; SameSite=Lax; Secure`);
+  assert.equal(await enter('/site/lobby.html'), undefined);
+  assert.deepEqual(requests, []);
+});
+
+test('offline, unknown country, HTTP errors and timeouts keep the first English default without another lookup', async () => {
   for (const options of [
     {online: false}, {country: 'ZZ'}, {country: '<!doctype html>'},
     {fetchCountry: () => new Response('JP', {status: 404})},
     {fetchCountry: (_, {signal}) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason), {once: true}))},
   ]) {
-    const {enter, store} = regionalEntry(options);
+    const {enter, store, requests} = regionalEntry(options);
     assert.equal((await enter())?.pathname, '/site/en.html');
-    assert.equal(store.size, 0);
+    assert.equal((await enter())?.pathname, '/site/en.html');
+    assert.equal(store.get(api.UI_LOCALE_STORAGE_KEY), undefined);
+    assert.equal(requests.length, options.online === false ? 0 : 1);
   }
 });

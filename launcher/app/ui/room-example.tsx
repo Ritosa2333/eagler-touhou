@@ -70,6 +70,7 @@ function initial(): DemoState {
     connected: true,
     directorySupported: true,
     controlModesSupported: true,
+    roomNames: true,
     seat: 0,
     ready: false,
     spectatorRequested: false,
@@ -104,6 +105,7 @@ export function RoomExample({
   renderRegion?(id: string, children: ReactNode): ReactNode;
 }) {
   const [state, setState] = useState(initial);
+  const [nameReview, setNameReview] = useState<{name: string} | null>(null);
   const [chatSerial, setChatSerial] = useState(0);
   const [chatMember,setChatMember]=useState(chatDemo);
   const [networkState, setNetworkState] = useState<'connected' | 'checking' | 'unavailable'>('connected');
@@ -111,6 +113,14 @@ export function RoomExample({
   const [personalOpen, setPersonalOpen] = useState(false),
     [chat, setChat] = useState<MultiplayerQuickChatModel | null>(null);
   const trigger = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!nameReview) return;
+    const timer = window.setTimeout(() => {
+      setState(previous => ({...previous, roomNameStatus: 'approved', room: {...previous.room, roomName: nameReview.name}}));
+      setNameReview(null);
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [nameReview]);
   useEffect(() => {
     let messageId=1;
     const pending = new Set<number>();
@@ -219,7 +229,11 @@ export function RoomExample({
       setState((previous) => ({ ...previous, ready: false, spectatorRequested: false }));
     },
     setRoomSettings: updateRoom,
-    setRoomName: (roomName: Room['roomName']) => updateRoom({ roomName }),
+    setRoomName: (name: string | null) => {
+      setNameReview(name ? {name} : null);
+      setState(previous => name ? {...previous, roomNameStatus: 'reviewing'} :
+        {...previous, roomNameStatus: 'saved', room: {...previous.room, roomName: null}});
+    },
     timingRecommendation: () => ({ inputDelay: 0, targetRollbackFrames: 12, networkFrames: 0, mobileSeats: 0 }),
     setRollbackEnabled: (value: boolean) => setState((previous) => ({ ...previous, rollbackEnabled: value })),
     setTimingChoice: (value: 'auto' | number) => setState((previous) => ({ ...previous, timingChoice: value })),

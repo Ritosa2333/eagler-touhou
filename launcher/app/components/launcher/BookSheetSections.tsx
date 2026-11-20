@@ -1,7 +1,8 @@
-import {useId, useState, type ReactNode} from 'react';
+import {type ReactNode} from 'react';
 import {ChartNoAxesColumn, ChevronDown, Settings2} from 'lucide-react';
 import {useLocale} from '../../i18n';
 import {Button} from '../../ui/controls';
+import {Disclosure, DisclosurePanel} from '../../ui/disclosure';
 
 export function BookSheetSections({children, statistics}: {
   children: ReactNode;
@@ -19,21 +20,17 @@ function BookSheetSection({name, title, children}: {
   title: string;
   children?: ReactNode;
 }) {
-  const id = useId();
-  const [open, setOpen] = useState(false);
   const Icon = name === 'statistics' ? ChartNoAxesColumn : Settings2;
-  return <section className="book-sheet-section" data-book-sheet-section={name}>
+  return <Disclosure>{({trigger, panel}) => <section className="book-sheet-section" data-book-sheet-section={name}>
     <h4>
-      <Button variant="unstyled" className="book-sheet-toggle" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
+      <Button variant="unstyled" className="book-sheet-toggle" {...trigger}>
         <Icon className="book-sheet-section-icon" aria-hidden="true"/>
         <span>{title}</span>
         <ChevronDown className="book-sheet-chevron" aria-hidden="true"/>
       </Button>
     </h4>
-    <div className="book-sheet-fold" id={id} data-open={open} inert={!open}>
-      <div className="book-sheet-fold-clip">
-        {children != null && <div className="book-sheet-section-content">{children}</div>}
-      </div>
-    </div>
-  </section>;
+    <DisclosurePanel {...panel} className="book-sheet-fold">
+      {children != null && <div className="book-sheet-section-content">{children}</div>}
+    </DisclosurePanel>
+  </section>}</Disclosure>;
 }

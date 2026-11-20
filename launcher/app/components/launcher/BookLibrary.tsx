@@ -17,8 +17,10 @@ import {
 import { Button } from '../../ui/button';
 import { Skeleton } from '../../ui/skeleton';
 import { ChoiceGroup, ChoiceItem } from '../../ui/choice-group';
+import { Disclosure, DisclosurePanel } from '../../ui/disclosure';
 import { InputGroup, InputGroupInput } from '../../ui/input-group';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../ui/select';
+import { animateSurface } from '../../ui/surface-motion';
 import { useLocale } from '../../i18n';
 import { useOptionsTarget } from './options-ownership';
 import type { LibraryCardsProps } from './LibraryCards';
@@ -64,7 +66,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   const previousDetail = useRef(displayedDetailId);
   const previousCompact = useRef(compact);
   const [category, setCategory] = useState<BookCategory>('all');
-  // Keep a visited list mounted while its height animates back to zero.
+  // Navigation opens the current game's category and keeps visited entries available for close animation.
   const [disclosures, setDisclosures] = useState<ReadonlyMap<BookCategory, boolean>>(() => new Map());
   const [sidebarOrigin, setSidebarOrigin] = useState<BookCategory | null>(null);
   const [query, setQuery] = useState(''),
@@ -86,16 +88,14 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     if (showDetail || compact || !displayedDetailId) return;
     const finish = () => {setRetainedDetail(null); onDetailExit?.();};
     const panel = content.current?.firstElementChild;
-    if (!panel?.animate || panel.closest('.less-motion') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const animation = panel instanceof HTMLElement ? animateSurface(panel, 'exit', {kind: 'inline'}) : null;
+    if (!animation) {
       finish();
       return;
     }
-    const animation = panel.animate(
-      [{opacity: 1, translate: '0 0'}, {opacity: 0, translate: '0 6px'}],
-      {id: 'book-detail-exit', duration: 170, easing: 'ease-in', fill: 'forwards'},
-    );
-    animation.onfinish = finish;
-    return () => {animation.onfinish = null; animation.cancel();};
+    let current = true;
+    void animation.finished.then(() => {if (current) finish();});
+    return () => {current = false; animation.cancel();};
   }, [showDetail, displayedDetailId, compact, onDetailExit]);
   useLayoutEffect(() => {
     const previous = previousDetail.current;
@@ -109,12 +109,9 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
       (target ?? input.current)?.focus({ preventScroll: true });
     }
     const panel = content.current?.firstElementChild;
-    if (resized || !panel?.animate || panel.closest('.less-motion') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const animation = panel.animate(
-      [{opacity: 0, translate: '0 8px'}, {opacity: 1, translate: '0 0'}],
-      {id: displayedDetailId ? 'book-detail-enter' : 'book-grid-enter', duration: 240, easing: 'cubic-bezier(.22,.7,.2,1)'},
-    );
-    return () => animation.cancel();
+    if (resized || !(panel instanceof HTMLElement)) return;
+    const animation = animateSurface(panel, 'enter', {kind: 'inline'});
+    return () => animation?.cancel();
   }, [displayedDetailId, showDetail, compact, cancelLibraryMotion]);
   function reserveResultsSpace() {
     if (!results.current) return;
@@ -272,10 +269,9 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
           <nav>
             {categories.map(({ id, Icon }) => {
               const entries = categoryProducts.get(id) ?? [];
-              const open = entries.length > 0 && disclosures.get(id) === true;
-              const listId = `bookCategory-${id}`;
-              const DisclosureIcon = open ? Minus : Plus;
-              return <div key={id} className="book-category" data-book-category-group={id} data-selected={id === category}>
+              return <Disclosure key={id} id={`bookCategory-${id}`} open={disclosures.get(id) === true}
+                onOpenChange={open => setDisclosures(previous => new Map(previous).set(id, open))}>{({open, trigger, panel}) =>
+                <div className="book-category" data-book-category-group={id} data-selected={id === category}>
                 <div className="book-category-row">
                   <ChoiceItem
                     value={id}
@@ -298,14 +294,10 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                     data-book-category-disclosure={id}
                     disabled={!interactive}
                     aria-label={t('library.categoryContents', {category:labels[id]})}
-                    aria-controls={listId}
-                    aria-expanded={open}
-                    onClick={() => setDisclosures(previous =>
-                      new Map(previous).set(id, !previous.get(id)))}
-                  ><DisclosureIcon aria-hidden="true" /></Button>}
+                    {...trigger}
+                  >{open ? <Minus aria-hidden="true" /> : <Plus aria-hidden="true" />}</Button>}
                 </div>
-                {entries.length > 0 && <div className="book-category-fold" id={listId} data-open={open} inert={!open} aria-hidden={!open}>
-                  <div className="book-category-fold-clip">
+                {entries.length > 0 && <DisclosurePanel {...panel} className="book-category-fold" clipClassName="book-category-fold-clip">
                     <ul className="book-category-games">
                       {disclosures.has(id) && entries.map(product => <li key={product.id}><a
                         ref={selectedSidebar === id && openedProduct === product.id ? selectedCard : undefined}
@@ -320,9 +312,8 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                         <BookWorkNumber gameId={product.gameId} number={product.number} />
                       </a></li>)}
                     </ul>
-                  </div>
-                </div>}
-              </div>;
+                </DisclosurePanel>}
+              </div>}</Disclosure>;
             })}
           </nav>
         </ChoiceGroup>

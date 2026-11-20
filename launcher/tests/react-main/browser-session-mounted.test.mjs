@@ -1319,7 +1319,7 @@ test('desktop book opens one inline game detail and keeps the library controls m
   const search = node('#librarySearch');
   node('.book-view-covers .book-card[data-book-card="th06"] .book-art');
   node('.book-view-covers .book-card[data-book-card="th06"] .book-identity');
-  await click('[data-book-category-disclosure="windows"]');
+  assert.equal(node('[data-book-category-disclosure="windows"]').getAttribute('aria-expanded'), 'false');
   await click('.book-grid [data-book-product="th06"]');
   await until(() => !!env.document.querySelector('[data-game-detail="th06"] #launch'), 'TH06 has a start action');
   const detail = '[data-game-detail="th06"]';
@@ -1337,6 +1337,7 @@ test('desktop book opens one inline game detail and keeps the library controls m
   assert.equal(env.document.querySelector('#libraryBackdrop'), null);
   assert.equal(node('#librarySearch'), search);
   assert.equal(node('.game-library').hasAttribute('inert'), false);
+  assert.equal(node('[data-book-category-disclosure="windows"]').getAttribute('aria-expanded'), 'true');
   assert.equal(node('[data-book-sidebar-product="th06"]').getAttribute('aria-current'), 'page');
   await click('[data-book-sidebar-product="th07"]');
   await until(() => !!env.document.querySelector('[data-game-detail="th07"] #launch'), 'TH07 has a start action');
@@ -1376,8 +1377,15 @@ test('mobile book opens a bottom sheet with an unfilled progress table and the o
   const trigger = name => `${section(name)} button[aria-expanded]`;
   const fold = name => node(`${section(name)} .book-sheet-fold`);
   const actions = '[data-book-sheet] > .launch-actions';
+  for (const name of ['statistics', 'settings']) {
+    assert.equal(node(trigger(name)).getAttribute('aria-controls'), fold(name).id);
+    assert.ok(fold(name).classList.contains('ui-disclosure-panel'));
+    assert.equal(fold(name).getAttribute('aria-hidden'), 'true');
+  }
   assert.equal(fold('statistics').hasAttribute('inert'), true);
   await click(trigger('statistics'));
+  assert.equal(fold('statistics').hasAttribute('aria-hidden'), false);
+  assert.equal(fold('settings').hasAttribute('inert'), true);
   const emptyCells = fold('statistics').querySelectorAll('.profile-clear-shot [data-status="unread"]');
   assert.equal(emptyCells.length, 20);
   await click(trigger('statistics'));

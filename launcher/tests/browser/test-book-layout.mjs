@@ -57,6 +57,7 @@ try {
     const toggle = `${settings} .book-sheet-toggle`;
     const fold = `${settings} .book-sheet-fold`;
     await page.waitForSelector(toggle, {visible: true});
+    assert.equal(await page.$eval('.book-sidebar .book-category-fold', el => getComputedStyle(el).display), 'none', 'Mobile keeps the category list collapsed');
     await page.waitForFunction(selector => {
       const node = document.querySelector(selector);
       return node && Math.abs(node.getBoundingClientRect().bottom - innerHeight) < 1;
@@ -96,6 +97,10 @@ try {
     assert.ok(hierarchy.actionOrder, 'Mobile Start must be above Import');
     await page.tap(toggle);
     assert.equal(await page.$eval(fold, el => el.inert), true);
+    await page.waitForFunction(selector => document.querySelector(selector)?.clientHeight === 0, {}, fold);
+    await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
+    await page.tap(toggle);
+    assert.deepEqual(await page.$eval(fold, el => [el.inert, el.getAnimations().length]), [false, 0]);
     await page.tap(`${sheet} #libraryBack`);
     await page.waitForSelector(sheet, {hidden: true});
     await page.close();
@@ -110,6 +115,21 @@ try {
   const detail = '[data-game-detail="th01"]';
   const sheet = '.tools[data-book-sheet][data-state="open"]';
   await resize.waitForSelector(card, {visible: true});
+  const categoryToggle = '[data-book-category-disclosure="pc98"]';
+  const categoryPanel = '#bookCategory-pc98';
+  await resize.focus(categoryToggle);
+  await resize.keyboard.press('Enter');
+  await resize.waitForFunction(selector => {
+    const node = document.querySelector(selector);
+    return node?.dataset.open === 'true' && node.clientHeight > 0 && !node.getAnimations().length;
+  }, {}, categoryPanel);
+  assert.equal(await resize.$eval(categoryToggle, el => el.getAttribute('aria-controls')), categoryPanel.slice(1));
+  assert.equal(await resize.$eval(categoryPanel, el => el.inert), false);
+  await resize.keyboard.press('Space');
+  await resize.waitForFunction(selector => {
+    const node = document.querySelector(selector);
+    return node?.inert && node.clientHeight === 0 && getComputedStyle(node).visibility === 'hidden';
+  }, {}, categoryPanel);
   await resize.click(card);
   await resize.waitForSelector(`${detail} #launch`, {visible: true});
   const desktopLayout = await resize.$eval(detail, node => {
@@ -165,7 +185,28 @@ try {
     document.body.classList.contains('library-tools-closing') ||
     !!document.querySelector('[data-game-detail]')), false, 'Resize must retire an exiting mobile sheet');
   await resize.close();
-  console.log('PASS: room action alignment, mobile settings hierarchy, and desktop/mobile detail handoff');
+
+  const handbook = await browser.newPage();
+  await handbook.setViewport({width: 1280, height: 800});
+  await handbook.goto(new URL('ui-review.html#page-room-settings', origin), {waitUntil: 'domcontentloaded'});
+  const sample = '#page-room-settings #mpRoomSettings';
+  const name = `${sample} #mpRoomName`;
+  const save = `${sample} div:has(> #mpRoomName) + button`;
+  const nameStatus = `${save} + [role="status"]`;
+  await handbook.waitForSelector(name, {visible: true});
+  assert.equal(await handbook.$eval(name, el => el.placeholder), '常规');
+  await handbook.$eval(name, el => {el.focus();});
+  await handbook.keyboard.sendCharacter('初见练习');
+  await handbook.click(save);
+  await handbook.waitForFunction(selector => document.querySelector(selector)?.textContent === '审核中', {}, nameStatus);
+  await handbook.waitForFunction(selector => document.querySelector(selector)?.textContent === '房间名已通过审核', {}, nameStatus);
+  assert.equal(await handbook.$eval(name, el => el.value), '初见练习');
+  await handbook.$eval(name, el => {el.focus(); el.select();});
+  await handbook.keyboard.press('Backspace');
+  await handbook.click(save);
+  await handbook.waitForFunction(selector => document.querySelector(selector)?.textContent === '房间名已保存', {}, nameStatus);
+  await handbook.close();
+  console.log('PASS: room action alignment, shared disclosure, desktop/mobile detail handoff, and room name specimen');
 } finally {
   await browser.close();
 }

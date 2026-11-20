@@ -1,7 +1,7 @@
 import {animate} from 'motion/mini';
 
 export type SurfacePhase = 'enter' | 'exit';
-export type SurfaceKind = 'panel' | 'sheet' | 'dialog' | 'menu' | 'backdrop' | 'content' | 'toast';
+export type SurfaceKind = 'panel' | 'sheet' | 'dialog' | 'menu' | 'backdrop' | 'content' | 'toast' | 'inline';
 export interface SurfaceAnimation {
   finished: Promise<void>;
   cancel(): void;
@@ -20,15 +20,19 @@ const windowTiming = {
   enter: {duration: 245, ease: [.258, 1, .491, 1] as Easing},
   exit: {duration: 150, ease: [1 / 3, 0, 2 / 3, 0] as Easing},
 };
-const distances: Record<SurfaceKind, number> = {panel: 0, sheet: 0, dialog: 6, menu: 4, backdrop: 0, content: 0, toast: 6};
+const inlineTiming = {
+  enter: {duration: 240, ease: [.22, .7, .2, 1] as Easing, distance: 8},
+  exit: {duration: 170, ease: [.42, 0, 1, 1] as Easing, distance: 6},
+};
+const distances: Record<SurfaceKind, number> = {panel: 0, sheet: 0, dialog: 6, menu: 4, backdrop: 0, content: 0, toast: 6, inline: 0};
 const active = new WeakMap<HTMLElement, Map<string, SurfaceAnimation>>();
 
 export function surfaceMotionTokens(element: HTMLElement, kind: SurfaceKind = 'panel', phase: SurfacePhase = 'enter') {
   const style = element.ownerDocument.defaultView!.getComputedStyle(element);
   const windowSurface = kind === 'dialog' || kind === 'backdrop';
   const timing = kind === 'sheet' ? {duration: phase === 'enter' ? 320 : 220, ease: windowTiming[phase].ease}
-    : windowSurface ? windowTiming[phase] : {duration: 180, ease: defaultEase};
-  const timingPrefix = kind === 'sheet' ? `--ui-sheet-${phase}` : windowSurface ? `--ui-window-${phase}` : '--ui-surface';
+    : kind === 'inline' ? inlineTiming[phase] : windowSurface ? windowTiming[phase] : {duration: 180, ease: defaultEase};
+  const timingPrefix = kind === 'sheet' || kind === 'inline' ? `--ui-${kind}-${phase}` : windowSurface ? `--ui-window-${phase}` : '--ui-surface';
   const rawDuration = style.getPropertyValue(`${timingPrefix}-duration`).trim();
   const parsedDuration = Number.parseFloat(rawDuration);
   const duration = Number.isFinite(parsedDuration)
@@ -38,9 +42,10 @@ export function surfaceMotionTokens(element: HTMLElement, kind: SurfaceKind = 'p
   const curve = rawEase?.[1]?.split(',').map(Number);
   const ease = curve?.length === 4 && curve.every(Number.isFinite) && curve[0]! >= 0 && curve[0]! <= 1 && curve[2]! >= 0 && curve[2]! <= 1
     ? curve as Easing : timing.ease;
-  const rawDistance = Number.parseFloat(style.getPropertyValue(kind === 'dialog' ? '--ui-window-offset' : `--ui-surface-distance-${kind}`));
+  const offsetProperty = kind === 'dialog' ? '--ui-window-offset' : kind === 'inline' ? `${timingPrefix}-offset` : `--ui-surface-distance-${kind}`;
+  const rawDistance = Number.parseFloat(style.getPropertyValue(offsetProperty));
   const scale = kind === 'dialog' ? style.getPropertyValue('--ui-window-scale').trim() || '.965' : undefined;
-  return {duration, ease, distance: Number.isFinite(rawDistance) ? rawDistance : distances[kind], scale};
+  return {duration, ease, distance: Number.isFinite(rawDistance) ? rawDistance : kind === 'inline' ? inlineTiming[phase].distance : distances[kind], scale};
 }
 
 /** One short-lived preference observer per document, regardless of surface count. */

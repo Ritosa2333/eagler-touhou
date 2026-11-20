@@ -8,7 +8,7 @@ async function start() {
   let storage: Storage | null = null;
   try {storage = window.localStorage;} catch {}
   const target = await initialUiLocaleAddress({
-    href, base: import.meta.env.BASE_URL, storage, online: navigator.onLine,
+    href, base: import.meta.env.BASE_URL, storage, document, online: navigator.onLine,
     fetchCountry: (url, options) => window.fetch(url, options),
   });
   if (target && window.location.href === href) {

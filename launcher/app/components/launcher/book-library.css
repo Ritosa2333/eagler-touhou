@@ -96,19 +96,11 @@
     grid-template-columns: minmax(0, 1fr) 36px;
   }
   .book-category-fold {
-    display: grid;
-    grid-template-rows: 0fr;
-    visibility: hidden;
-    transition: grid-template-rows 240ms cubic-bezier(.22,.7,.2,1), visibility 0s 240ms;
-  }
-  .book-category-fold[data-open="true"] {
-    grid-template-rows: 1fr;
-    visibility: visible;
-    transition-delay: 0s;
+    --ui-disclosure-duration: 240ms;
+    --ui-disclosure-easing: cubic-bezier(.22,.7,.2,1);
+    --ui-disclosure-overflow: hidden;
   }
   .book-category-fold-clip {
-    min-block-size: 0;
-    overflow: hidden;
     background-color: var(--book-surface);
   }
   .book-category-games {
@@ -557,7 +549,7 @@
       margin-top: 0;
     }
     .book-category-row {display: block}
-    .book-category-fold {display: none}
+    .book-sidebar .book-category-fold {display: none}
     .book-recent {
       margin-bottom: 26px;
     }
@@ -626,8 +618,6 @@
 .book-category-row > :is([data-book-category], .book-category-disclosure):is(:hover, :focus-visible):not(:disabled) {
   background-color: color-mix(in srgb, var(--kit-foreground) 8%, transparent);
 }
-.less-motion .book-category-fold {transition:none}
-@media (prefers-reduced-motion:reduce) {.book-category-fold {transition:none}}
 .book-sidebar [data-book-category] > :is(svg,span) {transition:translate 380ms cubic-bezier(.22,.7,.2,1)}
 .book-sidebar [data-book-category]:is(:hover,:focus-visible):not(:disabled) > :is(svg,span) {translate:4px 0}
 @media(prefers-reduced-motion:reduce) {.book-sidebar [data-book-category],.book-sidebar [data-book-category] > :is(svg,span) {transition:none;translate:none!important}}

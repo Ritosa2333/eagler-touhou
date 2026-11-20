@@ -460,13 +460,6 @@
       transition: rotate 200ms var(--ui-surface-easing);
     }
     .book-sheet-toggle[aria-expanded="true"] .book-sheet-chevron { rotate: 180deg; }
-    .book-sheet-fold {
-      display: grid;
-      grid-template-rows: 0fr;
-      transition: grid-template-rows 220ms var(--ui-surface-easing);
-    }
-    .book-sheet-fold[data-open="true"] { grid-template-rows: 1fr; }
-    .book-sheet-fold-clip { min-height: 0; overflow: clip; }
     .book-sheet-section-content {
       margin-block: 8px 12px;
       margin-inline: max(18px, env(safe-area-inset-left)) max(18px, env(safe-area-inset-right));
@@ -476,9 +469,9 @@
       background: var(--kit-background);
     }
     .tools[data-book-sheet] > .launch-actions .launch { min-height: 44px; }
-    .less-motion :is(.book-sheet-fold, .book-sheet-chevron) { transition: none; }
+    .less-motion .book-sheet-chevron { transition: none; }
     @media (prefers-reduced-motion: reduce) {
-      :is(.book-sheet-fold, .book-sheet-chevron) { transition: none; }
+      .book-sheet-chevron { transition: none; }
     }
   }
   @media (max-width: 780px) and (max-height: 520px) {

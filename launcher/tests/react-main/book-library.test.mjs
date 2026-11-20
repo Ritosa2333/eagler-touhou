@@ -214,6 +214,8 @@ test('sidebar disclosures list playable single-player entries without changing t
   assert.equal(node(disclosure('windows')).getAttribute('aria-expanded'), 'false');
   assert.ok(node(`${disclosure('windows')} .lucide-plus`));
   const windows = () => node('#bookCategory-windows');
+  assert.equal(node(disclosure('windows')).getAttribute('aria-controls'), windows().id);
+  assert.ok(windows().classList.contains('ui-disclosure-panel'));
   assert.equal(windows().hasAttribute('inert'), true);
   assert.deepEqual(members('windows'), []);
 
