@@ -94,13 +94,13 @@ test('announcement icon marks the three latest localized announcements as read',
   ];
   await render(entries, 'first-visit');
   assert.equal(node(announcementTrigger).getAttribute('aria-haspopup'), 'dialog');
-  assert.equal(node(announcementTrigger).getAttribute('aria-label'), 'Unread announcements');
+  assert.equal(node(announcementTrigger).getAttribute('aria-label'), 'New announcements');
   node(announcementDot);
   assert.equal(env.document.querySelector('.library-announcements-dialog'), null);
   await click(announcementTrigger);
   assert.equal(env.document.querySelector(announcementDot), null);
   const dialog = node('.library-announcements-dialog');
-  assert.equal(env.document.getElementById(dialog.getAttribute('aria-labelledby')).textContent, 'Notice');
+  assert.equal(env.document.getElementById(dialog.getAttribute('aria-labelledby')).textContent, 'Announcements');
   const items = [...dialog.querySelectorAll('.library-announcement')];
   assert.deepEqual(items.map(item => item.querySelector('time').dateTime), ['2026-11-20', '2026-11-20', '2026-11-19']);
   assert.deepEqual(items.map(item => item.querySelector('header h3 + time').dateTime), ['2026-11-20', '2026-11-20', '2026-11-19']);
@@ -350,9 +350,9 @@ test('sort is keyboard reachable and selection reorders the rendered cards', asy
   await mount(products);
   const trigger = node('[aria-label="Sort games"]');
   await React.act(async () => trigger.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
-  const option = [...env.document.querySelectorAll('[role="option"]')].find(element=>element.textContent==='Number, descending');
+  const option = [...env.document.querySelectorAll('[role="option"]')].find(element=>element.textContent==='Number (descending)');
   assert.ok(option,'the menu exposes actual option semantics');
   await React.act(async () => option.click());
   assert.deepEqual(ids(),['th10','th07','th06']);
-  assert.ok(trigger.textContent.includes('Number, descending'));
+  assert.ok(trigger.textContent.includes('Number (descending)'));
 });

@@ -136,7 +136,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const preferTouchSettings = () => mobile || primaryTouchPointer.matches;
   const audio = 'AudioContext' in window || 'webkitAudioContext' in window;
   const listeners = new Set<() => void>();
-  let snapshot: BrowserSessionSnapshot = Object.freeze({locale: window.location.pathname.endsWith('/en.html') ? 'en' : detectUiLocale(), runtime: null, playerOpen: false, touchHelpOpen: false, activity: 0, metadataRevision: 0, startupError: null, roomLaunchStage: null, replayViewer: false, th09NetworkOverlayOpen: false, bootTouchPreview: null, bootTouchPreviewImage: undefined});
+  let snapshot: BrowserSessionSnapshot = Object.freeze({locale: detectUiLocale(), runtime: null, playerOpen: false, touchHelpOpen: false, activity: 0, metadataRevision: 0, startupError: null, roomLaunchStage: null, replayViewer: false, th09NetworkOverlayOpen: false, bootTouchPreview: null, bootTouchPreviewImage: undefined});
   let helpSeen = false; try {helpSeen = storage?.getItem('eagler-touch-help-seen-v8') === '1';} catch {}
   let externalInputConfirmed = false;
   try {externalInputConfirmed = storage?.getItem('eagler-external-input-confirmed-v1') === '1';} catch {}
@@ -1582,7 +1582,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     },
     importFile: (kind: ImportFileKind, file: File, product: ProductId) => kind === 'replay' ? importReplayFile(file, product) :
       activity(async () => {if (!files) throw new Error('File service is not attached'); await files.importFile(kind, file, product);}),
-    setLocale(locale: UiLocale) {try {storage?.setItem(UI_LOCALE_STORAGE_KEY, locale);} catch {} requiredNavigation().setLocaleAddress(locale); if (!runtime?.getSnapshot().launched) settings.restoreLocalePreferences(settingsContext(settings.getSnapshot()!.context.productId, locale)); publish({locale}); feedback.refreshLocale(); externalMidi.refreshLocale(t); document.documentElement.lang = locale; document.documentElement.dataset.uiLocale = locale; window.dispatchEvent(new CustomEvent('eagler-ui-locale-change', {detail: {locale}})); appShellOwner.refreshLocale(); diagnostics?.refresh(); gameplayNetwork?.refresh(); const canonical = document.querySelector<HTMLLinkElement>('link[rel=canonical]'); if (canonical) canonical.href = new URL(locale === 'en' ? 'en.html' : './', canonical.href).href;},
+    setLocale(locale: UiLocale) {try {storage?.setItem(UI_LOCALE_STORAGE_KEY, locale);} catch {} requiredNavigation().setLocaleAddress(locale); if (!runtime?.getSnapshot().launched) settings.restoreLocalePreferences(settingsContext(settings.getSnapshot()!.context.productId, locale)); publish({locale}); feedback.refreshLocale(); externalMidi.refreshLocale(t); document.documentElement.lang = locale; document.documentElement.dataset.uiLocale = locale; window.dispatchEvent(new CustomEvent('eagler-ui-locale-change', {detail: {locale}})); appShellOwner.refreshLocale(); diagnostics?.refresh(); gameplayNetwork?.refresh(); const canonical = document.querySelector<HTMLLinkElement>('link[rel=canonical]'); if (canonical) canonical.href = new URL(localeHome(locale), canonical.href).href;},
     reportError,
     async dispose() {
       singleLaunch?.controller.abort(new RuntimeSessionSupersededError());
