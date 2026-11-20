@@ -65,7 +65,7 @@ before(async () => {
     export {getAcquisitionOptions} from 'captured-acquisition';
     export {setPackageReadGate} from 'gated-package-read';
     export {setCloudRunProbe, setCloudBeforeStartProbe, getCloudSaveStartedProducts, getCloudSaveEvents} from 'captured-cloud-save-sync';
-    export {setAccountSessionResult, setReplayAccountRequest} from 'captured-account-client';
+    export {setAccountSessionResult, setReplayAccountRequest, setBookStatisticsEnabled} from 'captured-account-client';
     export {accountSession as testAccountSession} from './app/services/account-session.ts';
     export {validateSiteManifest} from './src/contracts/site-manifest.mts';
     export {PRODUCT_GAMES, multiplayerConfigForProduct} from './src/contracts/product-catalog.mts';
@@ -85,9 +85,14 @@ before(async () => {
     plugins: [{name: 'native-acquisition-scheduling', setup(ctx) {
       // Test-only references and a storage-read scheduling edge. Both wrappers
       // delegate to the authored owners; no preparation/queue policy is replaced.
-      ctx.onResolve({filter: /^(captured-browser-session|gated-package-read|captured-acquisition|captured-cloud-save-sync|captured-account-client|cloud-sync-release-features)$/}, args => ({path: args.path, namespace: 'session-edge'}));
-      ctx.onResolve({filter: /release-features$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/session/browser-session.ts') ? {path:'cloud-sync-release-features',namespace:'session-edge'} : undefined);
-      ctx.onResolve({filter: /account-client$/}, args => /\/(account-session\.ts|browser-session\.ts|Th09ReplayArchive\.tsx|DuelReplayGroup\.tsx)$/.test(args.importer.replaceAll('\\', '/')) ? {path:'captured-account-client',namespace:'session-edge'} : undefined);
+      ctx.onResolve({filter: /^(captured-browser-session|gated-package-read|captured-acquisition|captured-cloud-save-sync|captured-account-client|cloud-sync-release-features|book-statistics-release-features)$/}, args => ({path: args.path, namespace: 'session-edge'}));
+      ctx.onResolve({filter: /release-features$/}, args => {
+        const importer = args.importer.replaceAll('\\', '/');
+        const path = importer.endsWith('/app/session/browser-session.ts') ? 'cloud-sync-release-features'
+          : importer.endsWith('/BookGameStatistics.tsx') ? 'book-statistics-release-features' : undefined;
+        return path ? {path, namespace:'session-edge'} : undefined;
+      });
+      ctx.onResolve({filter: /account-client$/}, args => /\/(account-session\.ts|cloud-saves\.ts|browser-session\.ts|Th09ReplayArchive\.tsx|DuelReplayGroup\.tsx)$/.test(args.importer.replaceAll('\\', '/')) ? {path:'captured-account-client',namespace:'session-edge'} : undefined);
       ctx.onResolve({filter: /services\/cloud-save-sync$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/session/browser-session.ts') ? {path:'captured-cloud-save-sync',namespace:'session-edge'} : undefined);
       ctx.onResolve({filter: /session\/browser-session$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/BrowserLauncher.tsx') ? {path: 'captured-browser-session', namespace: 'session-edge'} : undefined);
       ctx.onResolve({filter: /package-store\.mjs$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/services/package-acquisition.ts') ? {path: 'gated-package-read', namespace: 'session-edge'} : undefined);
@@ -99,6 +104,8 @@ before(async () => {
       ` : args.path === 'captured-account-client' ? `
         let sessionResult=new Error('account service offline');
         let replayRequest;
+        export let bookStatisticsEnabled=false;
+        export function setBookStatisticsEnabled(value){bookStatisticsEnabled=value;}
         export function setAccountSessionResult(value){sessionResult=value;}
         export function setReplayAccountRequest(value){replayRequest=value;}
         export async function accountRequest(path, body, options){
@@ -125,6 +132,8 @@ before(async () => {
       ` : args.path === 'cloud-sync-release-features' ? `
         import {cloudSaveEnabled} from 'captured-cloud-save-sync';
         export {cloudSaveEnabled as accountsEnabled};
+      ` : args.path === 'book-statistics-release-features' ? `
+        export {bookStatisticsEnabled as accountsEnabled} from 'captured-account-client';
       ` : `
         import {readCurrentPackageGeneration as readCurrent, readPackageObject} from './package/package-store.mjs';
         export {readPackageObject};
@@ -149,6 +158,8 @@ before(async () => {
 afterEach(async () => {
   api?.setPackageReadGate(null);
   api?.setCloudRunProbe(null);
+  api?.setBookStatisticsEnabled(false);
+  api?.setReplayAccountRequest(undefined);
   api?.setAccountSessionResult(new Error('account service offline'));
   if (mounted?.root) {
     const current = mounted;
@@ -1316,7 +1327,9 @@ test('desktop book opens one inline game detail and keeps the library controls m
   node(`${detail} .book-game-detail-hero #gamePackageImport`);
   const [statistics, gameSettings] = node(`${detail} .book-game-detail-content`).children;
   assert.equal(statistics.getAttribute('aria-labelledby'), 'bookGameStatistics');
-  assert.deepEqual(Array.from(statistics.children, child => child.id), ['bookGameStatistics']);
+  const emptyRows = [...statistics.querySelectorAll('tbody tr')];
+  assert.deepEqual(emptyRows.map(row => row.dataset.difficulty), ['easy', 'normal', 'hard', 'lunatic', 'extra']);
+  assert.ok(emptyRows.every(row => row.querySelector('[data-clear="unread"]')), 'no account backend still displays grey cells');
   assert.equal(gameSettings.getAttribute('aria-labelledby'), 'bookGameSettings');
   assert.ok(gameSettings.querySelector('.options-settings'));
   assert.equal(env.document.querySelector(`${detail} #libraryBack`), null);
@@ -1343,7 +1356,7 @@ test('desktop book opens one inline game detail and keeps the library controls m
   await until(() => env.document.querySelector('.book-view-covers .book-card[data-book-card="th06"]'), 'desktop can switch back to covers');
 });
 
-test('mobile book opens a bottom sheet with empty statistics and the original settings and launch actions', async t => {
+test('mobile book opens a bottom sheet with an unfilled progress table and the original settings and launch actions', async t => {
   const matchMedia = env.window.matchMedia;
   t.onTestFinished(() => {env.window.matchMedia = matchMedia;});
   env.window.matchMedia = query => {
@@ -1362,7 +1375,11 @@ test('mobile book opens a bottom sheet with empty statistics and the original se
   const trigger = name => `${section(name)} button[aria-expanded]`;
   const fold = name => node(`${section(name)} .book-sheet-fold`);
   const actions = '[data-book-sheet] > .launch-actions';
-  assert.equal(fold('statistics').textContent, '');
+  assert.equal(fold('statistics').hasAttribute('inert'), true);
+  await click(trigger('statistics'));
+  const emptyCells = fold('statistics').querySelectorAll('[data-clear="unread"]');
+  assert.equal(emptyCells.length, 5);
+  await click(trigger('statistics'));
   assert.equal(fold('settings').hasAttribute('inert'), true);
   assert.equal(sheet.querySelector(section('launch')), null);
   const start = node(`${actions} #launch`);
@@ -1386,6 +1403,79 @@ test('mobile book opens a bottom sheet with empty statistics and the original se
   await click(`${actions} #launch`);
   await until(() => node('#decisionDialog').open, 'mobile sheet starts the existing touch confirmation flow');
   assert.match(node('#decisionTitle').textContent, /touch controls/i);
+});
+
+test('book details read only current single-player cloud statistics and keep them across resize', async t => {
+  const previousMedia = env.window.matchMedia;
+  const media = new env.window.EventTarget();
+  let compact = false;
+  Object.defineProperty(media, 'matches', {get: () => compact});
+  env.window.matchMedia = query => query === '(max-width: 780px)' ? media : previousMedia.call(env.window, query);
+  t.onTestFinished(() => {env.window.matchMedia = previousMedia;});
+  api.setBookStatisticsEnabled(true);
+  api.setAccountSessionResult({user: {username: 'alice', name: 'Alice'}});
+  let requests = 0, fail = false, selectedRevision = 2;
+  const save = (product, game, revision, bestScore, playtimeSeconds = 3660) => ({
+    product, revision, uploadedAt: '2026-11-05T00:00:00.000Z', files: [],
+    statistics: {game, parserVersion: 1, format: 'classic', complete: true, playtimeSeconds, applicationTimeSeconds: null,
+      playCount: 0, clearCount: 1, loadouts: [], warnings: [],
+      progress: [{character: 0, shot: null, difficulty: 'normal', cleared: true, oneCreditClear: true, clearCount: 1,
+        playCount: 1, bestScore, playtimeSeconds: null}]},
+  });
+  api.setReplayAccountRequest(async path => {
+    assert.equal(path, 'v1/me/cloud-saves');
+    requests++;
+    if (fail) throw new Error('temporary cloud save outage');
+    return {
+      products: [{id: 'th06', game: 'th06', multiplayer: false, files: [], requiredFiles: [], revision: selectedRevision},
+        {id: 'th07', game: 'th07', multiplayer: false, files: [], requiredFiles: [], revision: 1}],
+      saves: [save('th06', 'th06', 1, 111), save('th06mp', 'th06', 2, 222), save('th06', 'th06', 2, 4567),
+        save('th07', 'th06', 1, 333), save('th07', 'th07', 1, 89, null)],
+      limits: {fileBytes: 1024, totalBytes: 2048, files: 6},
+    };
+  });
+  await mountBrowser({initial: '/', host: subsetHost(['th06', 'th07'])});
+  assert.equal(requests, 0, 'the game grid does not fetch private statistics');
+  await click('.book-grid [data-book-product="th06"]');
+  const th06 = '[data-statistics-game="th06"][data-cloud-record="true"]', th07 = '[data-statistics-game="th07"][data-cloud-record="true"]';
+  await until(() => !!env.document.querySelector(th06), 'active TH06 revision appears');
+  assert.equal(node(`${th06} [data-stat="best-score"]`).textContent, '4,567');
+  assert.equal(node(`${th06} [data-stat="duration"]`).textContent, '1h 1m');
+  assert.equal(node(`${th06} [data-stat="play-count"]`).textContent, '0');
+  assert.equal(node(`${th06} [data-stat="clears"]`).textContent, 'Normal');
+  node(`${th06} [data-difficulty="normal"] [data-clear="one-credit"]`);
+  node(`${th06} [data-difficulty="easy"] [data-clear="unread"]`);
+  await click('[data-book-sidebar-product="th07"]');
+  await until(() => !!env.document.querySelector(th07), 'TH07 shows its own cloud record');
+  assert.equal(node(`${th07} [data-stat="best-score"]`).textContent, '89');
+  assert.equal(node(`${th07} [data-stat="duration"]`).textContent, api.translate('en', 'cloudSave.unknownValue'));
+  node(`${th07} [data-difficulty="phantasm"] [data-clear="unread"]`);
+  assert.equal(env.document.querySelector(th06), null);
+  const url = currentUrl();
+  await React.act(async () => {compact = true; media.dispatchEvent(new env.window.Event('change'));});
+  await click('[data-book-sheet-section="statistics"] button');
+  node(`[data-book-sheet] ${th07}`);
+  assert.equal(currentUrl(), url);
+  assert.equal(requests, 1, 'game and viewport switches reuse the same cloud-save list');
+  fail = true;
+  await React.act(async () => {env.window.dispatchEvent(new env.window.Event('cloud-save-change'));});
+  assert.match(node('[data-book-sheet] .book-game-stats-message').textContent, /temporarily unavailable/);
+  fail = false;
+  await click('[data-book-sheet] .book-game-stats-message button');
+  node(`[data-book-sheet] ${th07}`);
+  await React.act(async () => {compact = false; media.dispatchEvent(new env.window.Event('change'));});
+  await click('[data-book-sidebar-product="th06"]');
+  selectedRevision = 3;
+  await React.act(async () => {env.window.dispatchEvent(new env.window.Event('cloud-save-change'));});
+  assert.equal(node('.book-game-detail .book-game-stats-message').textContent, api.translate('en', 'cloudSave.noSave'));
+  node('[data-statistics-game="th06"][data-cloud-record="false"] [data-difficulty="normal"] [data-clear="unread"]');
+  api.setAccountSessionResult(null);
+  await React.act(async () => env.window.dispatchEvent(new env.window.StorageEvent('storage', {key: 'account-session-changed'})));
+  const login = node('.book-game-detail .book-game-stats-message a');
+  assert.equal(new URL(login.href, 'https://example.test').searchParams.get('next'), currentUrl());
+  assert.equal(env.document.querySelector('[data-cloud-record="true"]'), null);
+  node('[data-statistics-game="th06"] .book-game-progress');
+  assert.equal(requests, 4, 'the guest view never reads private statistics');
 });
 
 for (const preview of ['touch', 'touch-hud']) test(`actual BrowserLauncher: boot ${preview} is a one-time preference override before Host, with no native or history side effects`, async () => {

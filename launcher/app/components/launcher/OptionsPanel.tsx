@@ -23,13 +23,14 @@ export interface OptionsPanelProps {
   lobbyHref?: string;
   embeddedInLobby?: boolean;
   bookSheet?: boolean;
+  statistics?: ReactNode;
   /** Existing room settings carrier receives the same header and MP fold. */
   roomDrawer?: boolean;
   multiplayerOnline?: ReactNode;
   multiplayerDiagnostics?: ReactNode;
 }
 /** Main index.html354–365 shell; body is the shared SettingsBody, never a copy. */
-export function OptionsPanel({product, coverArtwork, open, closing=false, onBack, children, actions, lobbyHref, embeddedInLobby = false, bookSheet = false, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics}: OptionsPanelProps) {
+export function OptionsPanel({product, coverArtwork, open, closing=false, onBack, children, actions, lobbyHref, embeddedInLobby = false, bookSheet = false, statistics, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics}: OptionsPanelProps) {
   const {t} = useLocale();
   const panel = useRef<HTMLElement>(null);
   useOptionsViewport(panel, open && !roomDrawer);
@@ -66,7 +67,7 @@ export function OptionsPanel({product, coverArtwork, open, closing=false, onBack
           mode. Keep that DOM contract and one probe presentation owner while
           the one active shared settings body changes its product context. */}
       <section className="mp-shell" id="mpShell" hidden={!product.multiplayer}>{multiplayerOnline}{inRoomDrawer ? drawerTargets && createPortal(fold, drawerTargets.content) : fold}{multiplayerDiagnostics}</section>
-      {bookSheet ? <BookSheetSections key={product.id}>{children}</BookSheetSections> : !product.multiplayer && children}
+      {bookSheet ? <BookSheetSections key={product.id} statistics={statistics}>{children}</BookSheetSections> : !product.multiplayer && children}
     </div>
     {actions}
   </aside>;

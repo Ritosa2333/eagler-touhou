@@ -20,6 +20,7 @@ import { LocaleProvider, translate } from './i18n';
 import { PlayerSurface } from './components/player/PlayerSurface';
 import { LibrarySurface } from './components/launcher/LibrarySurface';
 import { BookGameDetail } from './components/launcher/BookGameDetail';
+import { BookGameStatistics, useBookGameStatistics } from './components/launcher/BookGameStatistics';
 import { LobbySurface, type LobbySurfaceProps } from './components/launcher/LobbySurface';
 import { ProfileLoading } from './components/launcher/ProfileLoading';
 import { OptionsPanel } from './components/launcher/OptionsPanel';
@@ -151,7 +152,9 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const contextRevision = useRef<number | undefined>(undefined);
   const [playerElement, setPlayerElement] = useState<HTMLElement | null>(null);
   const browseIssuedFor = useRef<string | null>(null);
-  useLayoutEffect(() => { browseIssuedFor.current = null; }, [locationKey]);
+  useLayoutEffect(() => {
+    if (browseIssuedFor.current !== locationKey) browseIssuedFor.current = null;
+  }, [locationKey]);
   const roomOpen =
     navigation.roomCode !== null && navigation.productId !== null && isMultiplayerProductId(navigation.productId);
   const roomWorkspace = roomOpen && host.roomWorkspace === true && navigation.surface !== 'touch';
@@ -172,6 +175,10 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
     else if (!inlineLibrary) onDetailExit();
   }, [inlineLibrary, inlineProduct, onDetailExit]);
   const bookSheet = !!(host.desktopLibraryDetails && compact && navigation.context === 'library' && !accountPage && !profilePage);
+  const detailProduct = inlineProduct ?? (bookSheet && optionsOpen && selectedProduct?.id === navigation.productId &&
+    !selectedProduct.multiplayer ? selectedProduct : undefined);
+  const gameStatistics = useBookGameStatistics(detailProduct?.gameId);
+  const statistics = detailProduct && <BookGameStatistics game={detailProduct.gameId} view={gameStatistics} />;
   const presence = useLibraryOptionsPresence({
     open: optionsOpen && !inlineProduct,
     context: navigation.context,
@@ -277,6 +284,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       lobbyHref={host.lobbyHref}
       embeddedInLobby={navigation.context === 'lobby'}
       bookSheet={bookSheet && !presence.product.multiplayer}
+      statistics={presence.product.id === detailProduct?.id ? statistics : undefined}
       actions={host.optionsActions}
     >
       {settingsBody}
@@ -355,6 +363,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
                 product={inlineProduct}
                 active={navigation.surface === 'options' && !host.runtimeOpen && !host.runtimeLaunched && !host.replayWorkspace}
                 actions={settings?.context.productId === inlineProduct.id ? host.optionsActions : undefined}
+                statistics={statistics}
               >
                 {settings?.context.productId === inlineProduct.id && settingsBody}
               </BookGameDetail>

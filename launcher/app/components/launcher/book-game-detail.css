@@ -69,25 +69,28 @@
   }
   .book-game-detail-intro p { margin: 0; color: var(--kit-muted-foreground); }
   .book-game-detail .launch-actions {
-    flex-wrap: wrap;
     justify-self: start;
+    width: min(100%, 204px);
     padding: 0;
     margin-block-start: 12px;
     border: 0;
     background: transparent;
   }
-  .book-game-detail .launch-actions > .launch {
-    flex: 0 1 auto;
-    width: auto;
-    min-height: 40px;
-    white-space: normal;
+  .book-game-detail .launch-actions > .launch { min-height: 40px; }
+  :is(.book-game-detail, .tools[data-book-sheet]) .launch-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
   }
-  .book-game-detail .launch-actions > .launch:not(.launch-secondary) {
-    min-width: min(128px, 100%);
+  :is(.book-game-detail, .tools[data-book-sheet]) .launch-actions > .launch {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    white-space: normal;
+    line-height: 1.3;
   }
   .book-game-detail-content {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-columns: minmax(0, 1fr) clamp(248px, 37%, 350px);
     align-items: start;
     gap: 18px;
   }
@@ -102,7 +105,75 @@
     margin: 0 0 8px;
     font: 650 16px / 1.45 var(--kit-font);
   }
+  .book-game-detail-content > .book-game-detail-settings { padding-inline: clamp(12px, 2vw, 20px); }
   .book-game-detail-statistics { min-height: 144px; }
+  .book-game-stats { padding-block: 4px 0; }
+  .book-game-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+  }
+  .book-game-stats-grid > div {
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--kit-border);
+    border-radius: 8px;
+    background: var(--kit-background);
+  }
+  .book-game-stats-grid dt,
+  .book-game-stats-source,
+  .book-game-stats-message {
+    color: var(--kit-muted-foreground);
+    font-size: 12px;
+  }
+  .book-game-stats-grid dd {
+    margin: 4px 0 0;
+    font: 650 clamp(13px, 1.6vw, 20px) / 1.3 var(--kit-font);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .book-game-stats-grid dd[data-stat="clears"] { font-size: 13px; }
+  .book-game-progress {
+    width: 100%;
+    margin-block-start: 14px;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .book-game-progress th, .book-game-progress td {
+    padding: 7px 4px;
+    border-bottom: 1px solid var(--kit-border);
+    text-align: start;
+  }
+  .book-game-progress thead th { color: var(--kit-muted-foreground); }
+  .book-game-progress th:last-child, .book-game-progress td:last-child { text-align: end; }
+  .book-game-clear-cell {
+    display: inline-block;
+    box-sizing: border-box;
+    width: 12px;
+    height: 12px;
+    margin-inline-end: 5px;
+    border: 1px solid var(--kit-border);
+    border-radius: 3px;
+    background: var(--kit-muted);
+    vertical-align: -1px;
+  }
+  .book-game-clear-cell[data-clear="cleared"] {
+    background: color-mix(in srgb, var(--kit-success, #3a9b71) 42%, var(--kit-background));
+    border-color: var(--kit-success, #3a9b71);
+  }
+  .book-game-clear-cell[data-clear="one-credit"] {
+    background: var(--kit-success, #3a9b71);
+    border-color: transparent;
+  }
+  .book-game-stats-source { margin: 10px 0 0; }
+  .book-game-stats-source time { margin-inline-start: 4px; }
+  .book-game-stats-message { margin: 0; padding-block: 10px; }
+  .book-game-stats-message p { margin: 0 0 6px; }
+  .book-sheet-section-content > .book-game-stats { padding-block: 10px; }
   @container (max-width: 620px) {
     .book-game-detail-content { grid-template-columns: minmax(0, 1fr); }
   }

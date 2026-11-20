@@ -72,6 +72,8 @@ try {
       const button = section.querySelector('.book-sheet-toggle');
       const detail = section.querySelector('.book-sheet-section-content');
       const main = button.getBoundingClientRect(), nested = detail.getBoundingClientRect();
+      const start = section.closest('aside').querySelector('#launch').getBoundingClientRect();
+      const importButton = section.closest('aside').querySelector('#gamePackageImport').getBoundingClientRect();
       return {
         selectedBackground: getComputedStyle(button).backgroundColor,
         inset: Math.min(nested.left - main.left, main.right - nested.right),
@@ -82,12 +84,16 @@ try {
           const bounds = action?.getBoundingClientRect();
           return bounds && bounds.width > 0 && bounds.top >= 0 && bounds.bottom <= innerHeight + 1 && !action.closest('[inert]');
         }),
+        actionWidthDifference: Math.abs(start.width - importButton.width),
+        actionOrder: start.bottom <= importButton.top,
       };
     });
     assert.notEqual(hierarchy.selectedBackground, closedBackground);
     assert.ok(hierarchy.inset >= 16 && hierarchy.separateSurface, 'Nested settings need a visibly separate inset surface');
     assert.ok(hierarchy.fits, 'Nested settings must fit without horizontal scrolling');
     assert.ok(hierarchy.actionsVisible, 'Start and Import must remain visible outside the fold');
+    assert.ok(hierarchy.actionWidthDifference < 1, 'Mobile Start and Import buttons must have equal width');
+    assert.ok(hierarchy.actionOrder, 'Mobile Start must be above Import');
     await page.tap(toggle);
     assert.equal(await page.$eval(fold, el => el.inert), true);
     await page.tap(`${sheet} #libraryBack`);
@@ -99,12 +105,27 @@ try {
   await resize.setViewport({width: 1440, height: 540});
   await resize.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
   await resize.goto(origin, {waitUntil: 'domcontentloaded'});
+  await resize.waitForFunction(() => window.__eaglerBoot?.done);
   const card = '#bookGameGrid [data-book-product="th01"]';
   const detail = '[data-game-detail="th01"]';
   const sheet = '.tools[data-book-sheet][data-state="open"]';
   await resize.waitForSelector(card, {visible: true});
   await resize.click(card);
   await resize.waitForSelector(`${detail} #launch`, {visible: true});
+  const desktopLayout = await resize.$eval(detail, node => {
+    const bounds = selector => node.querySelector(selector).getBoundingClientRect();
+    return {
+      statistics: bounds('.book-game-detail-statistics').width,
+      settings: bounds('.book-game-detail-settings').width,
+      launch: bounds('#launch').width,
+      import: bounds('#gamePackageImport').width,
+      actionOrder: bounds('#launch').bottom <= bounds('#gamePackageImport').top,
+    };
+  });
+  assert.ok(desktopLayout.statistics > desktopLayout.settings, 'Desktop gives the statistics column more space');
+  assert.ok(Math.abs(desktopLayout.launch - desktopLayout.import) < 1, 'Desktop Start and Import buttons must have equal width');
+  assert.ok(desktopLayout.actionOrder, 'Desktop Start must be above Import');
+  await resize.waitForSelector(`${detail} .book-game-progress [data-clear="unread"]`, {visible: true});
   const selectedUrl = resize.url(), historyLength = await resize.evaluate(() => history.length);
   await resize.$eval(`${detail} .book-game-detail-settings`, node => node.scrollIntoView({block:'end'}));
   for (const width of [390, 1440, 390, 1440, 390]) {
