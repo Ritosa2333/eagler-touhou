@@ -1,0 +1,54 @@
+{
+  "wasmSha256": "410c964c9ee7cfd6d686fb870612101a7684abef8e3fbac50272fdca2fb9f3c8",
+  "nativeTraceSha256": "6781495920055cb0a1abaabc564199305eeca45f0c93b853c730b31215b1c5d2",
+  "pairs": [
+    {
+      "frame": 33501,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-33501.png",
+      "webImageSha256": "0f5770eeecde04da9865b811c722740dc8c35be10d1eb2018e10ad2593947665",
+      "nativeImageSha256": "4b8d093c5fefcad73137a5780d212e6a16f09e31aa0bb10cbf6ccbc3dc698820"
+    },
+    {
+      "frame": 33502,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-33502.png",
+      "webImageSha256": "9019dfe33f6f55d152466d437d7a334e31e68c3d1e498f6f7425f5db44b4fe46",
+      "nativeImageSha256": "09b737c57de55c2b8d9388e61ca6538e274bcc6012fe27e7a61cd0dd0fa1c56b"
+    },
+    {
+      "frame": 33503,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-33503.png",
+      "webImageSha256": "cd185f349267320b7aa80013a6bcd7958ea9e8ec49eee7c42486f24db7bc6c61",
+      "nativeImageSha256": "0e96116ca3aef0b3ccea1ccc9bce8030a76ff7580db398ce49da43a3cfecae66"
+    },
+    {
+      "frame": 34804,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-34804.png",
+      "webImageSha256": "e78755aff0fbdf4448b5cac010f2bad310b7081b0cdc17aea214535431db8624",
+      "nativeImageSha256": "16981c068cf08632d75d1e9972bb47c6dd9f7ad0647338c6d19d6ccc0eedf4ef"
+    },
+    {
+      "frame": 34805,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-34805.png",
+      "webImageSha256": "a4426c8833148e924c3f6acfe1442f532483129821fff9593a89142aeee174fd",
+      "nativeImageSha256": "47abcab424afed3b86051539a5329acaad4822ada08b007fda27fd38c1acdc63"
+    },
+    {
+      "frame": 34806,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-34806.png",
+      "webImageSha256": "c74835ac8bd3748a4ae96abbfeb812ca152791f3cd12f715c14028dacbbbbf85",
+      "nativeImageSha256": "b771ce4cc24e10329b696860c52079afe08e8c1bc4065da52762943af55c6b24"
+    }
+  ]
+}

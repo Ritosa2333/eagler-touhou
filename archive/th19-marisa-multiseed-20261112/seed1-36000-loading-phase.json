@@ -1,0 +1,22 @@
+{
+  "build": "5f2addd4467e978e14dbfb392de881ab693bec1bb3e66a87f795599b394df939",
+  "run": "th19-web-ymR94E",
+  "frames": 36000,
+  "bothRng": "PASS",
+  "CPU": "PASS",
+  "playerPosition": "PASS",
+  "bulletPosition": "PASS",
+  "frameRollback": {
+    "frames": [
+      34050,
+      34065
+    ],
+    "differences": [],
+    "image": true
+  },
+  "loadingTicks": 8,
+  "roundSeedCopy": "After first ascii1280.anm16 burst, before subsequent loading ticks",
+  "nativeLoadingReference": "present-shim4gqx; 8 presents at round frame0",
+  "completeSeeds": 2,
+  "push": false
+}

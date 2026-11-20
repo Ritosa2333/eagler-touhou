@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdio>
 namespace th19 {
+extern bool traceOpeningRng;
 void EclVm::rebind_tree(EclVm* root,GameWorld* world){
  tree_root_=root;world_=world;
  for(auto&child:children)child->rebind_tree(root,world);
@@ -139,7 +140,9 @@ float EclVm::var_float(i32 addr) const {
     // 0x4fc58e / 0x4fc5c6 / 0x4fc5aa use the same RNG at 0x5c6620 for both fields.
     if(addr==-9999)return AnmVm::rand_unit(true);
     if(addr==-9998)return AnmVm::rand_signed_unit(3.14159274101257324219f,true);
-    if(addr==-9987)return AnmVm::rand_signed_unit(1.f,true);
+    if(addr==-9987){
+        return AnmVm::rand_signed_unit(1.f,true);
+    }
     if(world_&&addr==-9896)return world_->boss_escape_result;
     if(world_&&addr==-9887)return world_->story_boss_phase;
     if(world_&&addr==-9886)return world_->story_final_boss;

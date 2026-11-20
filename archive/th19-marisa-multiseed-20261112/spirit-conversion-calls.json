@@ -1,0 +1,78 @@
+{
+  "capture": "present-qtg5xmb_",
+  "exeSha256": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "calls": [
+    {
+      "frame": 20548,
+      "id": 2245,
+      "caller": "0xa39264",
+      "time": -19,
+      "sub": 70,
+      "ip": 1016
+    },
+    {
+      "frame": 20548,
+      "id": 2245,
+      "caller": "0xa39264",
+      "time": -20,
+      "sub": 68,
+      "ip": 1396
+    },
+    {
+      "frame": 20549,
+      "id": 2245,
+      "caller": "0xa39264",
+      "time": -18,
+      "sub": 70,
+      "ip": 1016
+    },
+    {
+      "frame": 20549,
+      "id": 2245,
+      "caller": "0xa39264",
+      "time": -19,
+      "sub": 68,
+      "ip": 1396
+    },
+    {
+      "frame": 20550,
+      "id": 2245,
+      "caller": "0xa3920f",
+      "time": 0,
+      "sub": 69,
+      "ip": 0
+    },
+    {
+      "frame": 20550,
+      "id": 2245,
+      "caller": "0xa39264",
+      "time": -99,
+      "sub": 38,
+      "ip": 96
+    },
+    {
+      "frame": 20551,
+      "id": 2245,
+      "caller": "0xa39264",
+      "time": -98,
+      "sub": 38,
+      "ip": 96
+    },
+    {
+      "frame": 20552,
+      "id": 2245,
+      "caller": "0xa39264",
+      "time": -97,
+      "sub": 38,
+      "ip": 96
+    },
+    {
+      "frame": 20553,
+      "id": 2245,
+      "caller": "0xa39264",
+      "time": -96,
+      "sub": 38,
+      "ip": 96
+    }
+  ]
+}

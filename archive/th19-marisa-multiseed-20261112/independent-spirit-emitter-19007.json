@@ -1,0 +1,44 @@
+{
+  "build": "8af2bacfe5b7965f850a0971cb6a352f7ef03fadcf32d4c40a8d6abeb6954d67",
+  "seed": 1,
+  "report": "th19-web-cEcsMM",
+  "rngMatchingThrough": 19006,
+  "firstSecondaryDifference": 19007,
+  "primaryCpuPlayerBulletsMatchingThrough": 19007,
+  "nativeCaptures": [
+    "present-e5ll1r68",
+    "present-7yx56jqs"
+  ],
+  "fixes": [
+    "VS laser cancellation newest-first (through18733)",
+    "Converted spirit child108 ticks independently by registration, with repeated-render guard",
+    "Immediate constructors for spirit conversion268..270",
+    "Early-converted arriving wolf advances its script again after its first displacement, preserving the existing hold frame"
+  ],
+  "originalComplete": 1,
+  "targetSeeds": 5,
+  "targetFramesEach": 36000,
+  "verification": {
+    "seed1": {
+      "report": "th19-web-7ChHaE",
+      "through": 36000,
+      "firstPrimary": 33861,
+      "firstCpu": 33852,
+      "firstPlayer": 33901,
+      "firstBullet": 34088,
+      "rollback": {
+        "frames": [
+          14110,
+          14120
+        ],
+        "differences": [],
+        "image": true
+      }
+    },
+    "seed42": {
+      "report": "th19-web-THvoO5",
+      "through": 36000,
+      "primaryCpuPlayerBullets": "PASS"
+    }
+  }
+}

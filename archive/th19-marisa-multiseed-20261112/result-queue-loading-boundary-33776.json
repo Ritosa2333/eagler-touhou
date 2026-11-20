@@ -1,0 +1,46 @@
+{
+  "build": "639974c4fc4587764e898e972f70d93945ca8f48319df2d1f96ddcb797b20ba0",
+  "seed1": {
+    "firstStop": "th19-web-MRNJ7A",
+    "full": "th19-web-2ZTFxf",
+    "bothRngThrough": 33775,
+    "firstSecondary": 33776,
+    "firstCPU": 33852,
+    "firstPrimary": 33861,
+    "firstPosition": 33901,
+    "firstBullet": 34046,
+    "rollbackFrames": [
+      33455,
+      33470
+    ],
+    "rollbackDifferences": []
+  },
+  "seed42": {
+    "run": "th19-web-TWCpQD",
+    "gameplay": "PASS36000"
+  },
+  "seed20261112": {
+    "run": "th19-web-hbuIuP",
+    "firstCPU": 28053
+  },
+  "nativeLoading": {
+    "capture": "present-mfweludc",
+    "resource": "ascii1280.anm",
+    "script": 16,
+    "firstSeed": 913891751,
+    "drawsPerEmission": 10,
+    "emissionIntervalPresents": 4,
+    "firstResult": 468994369,
+    "secondResult": 104401648,
+    "baselineLoadingPresents": 8,
+    "newCaptureLoadingPresents": 134,
+    "newCaptureDraws": 340,
+    "webBoundaryDraws": 70,
+    "webOwners": "Previous-round effect107 children104/105/106",
+    "next": "Implement native loading phase and completion timing. No seed override used."
+  },
+  "images": "screenshots/seed1-34083-result-queue",
+  "completeSeeds": 1,
+  "targetSeeds": 5,
+  "pushed": false
+}

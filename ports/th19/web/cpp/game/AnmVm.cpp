@@ -6,9 +6,9 @@
 #include <cstdio>
 namespace th19 {
 bool traceOpeningRng = false;
-u32 openingRngRows[4096][7]{}, openingRngCount=0;
+u32 openingRngRows[65536][7]{}, openingRngCount=0;
 void traceOpeningDraw(u32 kind, const AnmVm* vm=nullptr, bool primary=false) {
-    if(!traceOpeningRng||openingRngCount>=4096)return;
+    if(!traceOpeningRng||openingRngCount>=65536)return;
     auto& row=openingRngRows[openingRngCount++];
     row[0]=kind;row[1]=AnmVm::random_checkpoint(primary);
     row[2]=vm?vm->time:0;
@@ -186,10 +186,20 @@ void AnmVm::advance_interp(){
     }
 }
 
+void AnmVm::initialize_constructor(){
+    constructor_initializing_=true;clock_after_execution=false;time=-1;
+    tick();constructor_initializing_=false;finish_registration();
+}
 void AnmVm::tick(const AnmVm* parent,bool advance_children){
+    if(traceOpeningRng&&global_scripts){
+        int sid=-1;for(const auto& sc:*global_scripts)if(sc.second.stream==stream){sid=sc.first;break;}
+        if((sid>=136&&sid<=140)||sid==107||sid==268||sid==108||sid==233||sid==232||sid==224||sid==41||sid==138||sid==135||sid==203||sid==201||sid==202||sid==93||sid==89||sid==265)
+            std::printf("ENEMYDBG {\"event\":\"queue-tick\",\"script\":%d,\"registration\":%u,\"parent\":%u,\"time\":%d,\"seed\":%u}\n",sid,registration,parent?parent->registration:0,time,random_checkpoint());
+    }
+
     execution_parent_=parent;
     if(!deleted){
-    ++time;
+    if(!clock_after_execution)++time;
     advance_interp();                       // interp advances even while halted
     rot_x += angle_vel_x;                    // opcode 415 angle velocity (per frame)
     rot_y += angle_vel_y;
@@ -226,10 +236,17 @@ void AnmVm::tick(const AnmVm* parent,bool advance_children){
     // Child animations have independent native lifetimes (including children
     // of an emitter that has already executed delete).
     if(advance_children){
-        for(auto& c:children)c.tick(this);
+        for(auto& c:children){
+            if(c.independent_tick)continue;
+            if(c.initialized_this_tick_)c.initialized_this_tick_=false;
+            else c.tick(this);
+        }
         children.erase(std::remove_if(children.begin(),children.end(),[](const AnmVm& c){return c.deleted&&c.children.empty();}),children.end());
     }
+    // 0x4c0ee8 advances standalone script clocks after executing instructions.
+    if(!deleted&&clock_after_execution)++time;
     creation_registers_=false;
+    defer_child_initialization=false;
     execution_parent_=nullptr;
 }
 
@@ -454,6 +471,13 @@ void AnmVm::run_instruction(u16 op,u32 instr_start,i16 instruction_time){
             write_var_f(dest,cur);
             break;
         }
+        case 122: {
+            const i32 destination=i32(next_u32());
+            const i32 maximum=read_i(1);
+            traceOpeningDraw(122,this);
+            write_var_i(destination,i32(animation_random.bounded(u32(maximum))));
+            break;
+        }
         // 3-param int: 112=+ 114=- 116=* 118=/ 120=%
         case 112: case 114: case 116: case 118: case 120: {
             i32 dest=i32(next_u32());
@@ -506,9 +530,10 @@ void AnmVm::run_instruction(u16 op,u32 instr_start,i16 instruction_time){
                     AnmVm child;
                     child.global_scripts=global_scripts;
                     child.bind(it->second.stream, it->second.len);
-                    // A native child's initial instructions run at creation.
-                    // Our children tick after the parent's instruction batch;
-                    // preserve the creation-time registers for their first 509.
+                    child.clock_after_execution=clock_after_execution;
+                    if(constructor_initializing_){child.time=-1;child.constructor_initializing_=true;}
+                    // 0x4cb960 initializes the child synchronously before
+                    // the parent reads its next random delay.
                     std::copy(std::begin(fvar),std::end(fvar),std::begin(child.fvar));
                     std::copy(std::begin(ivar),std::end(ivar),std::begin(child.ivar));
                     std::copy(std::begin(extra_ivar),std::end(extra_ivar),std::begin(child.extra_ivar));
@@ -517,11 +542,14 @@ void AnmVm::run_instruction(u16 op,u32 instr_start,i16 instruction_time){
                     if(op==504){child.detached_spawn=true;child.spawn_x=x+child_x;child.spawn_y=y+child_y;
                         child.spawn_rot_x=rot_x;child.spawn_rot_y=rot_y;child.spawn_rot_z=rot_z;}
                     if(op==505||op==510){child.child_x=cx;child.child_y=cy;}
-                    if(traceOpeningRng&&sid==104){
+                    if(traceOpeningRng&&((sid>=136&&sid<=140)||sid==135||sid==77||sid==99||sid==107||sid==108||sid==232||sid==62||sid==104||sid==171||sid==207||sid==195||sid==196||sid==204||sid==205||sid==93||sid==89)){
                         int parentScript=-1;
                         for(const auto& script:*global_scripts)if(script.second.stream==stream){parentScript=script.first;break;}
                         std::printf("ENEMYDBG {\"event\":\"anm-child\",\"script\":%u,\"registration\":%u,\"parent\":%u,\"parentScript\":%d,\"parentTime\":%d}\n",sid,child.registration,registration,parentScript,time);
                     }
+                    if(!defer_child_initialization)child.tick(this);
+                    child.constructor_initializing_=false;
+                    child.initialized_this_tick_=true;
                     if(op==502||op==510) children.insert(children.begin(), std::move(child));
                     else children.push_back(std::move(child));
                 }
@@ -542,7 +570,7 @@ void AnmVm::interrupt(i32 case_id){
         if(type==0xffff||length<8)break;
         if(type==5){   // case 标签
             const u32 label=u32(h[8])|(u32(h[9])<<8)|(u32(h[10])<<16)|(u32(h[11])<<24);
-            if(i32(label)==case_id){return_ip=ip;return_time=time;return_halted=halted;has_return=true;ip=q;time=i16(u16(h[4])|(u16(h[5])<<8))-1;halted=false;return;}
+            if(i32(label)==case_id){return_ip=ip;return_time=time;return_halted=halted;has_return=true;ip=q;time=i16(u16(h[4])|(u16(h[5])<<8))-(clock_after_execution?0:1);halted=false;return;}
         }
         q+=length;
     }

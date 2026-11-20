@@ -1,0 +1,15 @@
+{
+  "wasmSha256": "bdeeb1bcd3276b192e24979b3ebdaf66449e515d8854965d3954214efe0657d2",
+  "nativeTraceSha256": "1907b1e8dbd1957b8488faca4bf1d45938cc1ee7cec569480aaabd4045ce950f",
+  "diagnosticRoundWaveSeed": null,
+  "pairs": [
+    {
+      "frame": 24018,
+      "status": "CPU 输入不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 85,
+      "image": "frame-24018.png",
+      "webImageSha256": "c5c48c5311b18eb84c4088477ceb83f46c80f633717952e9656b1461fa35e3f5",
+      "nativeImageSha256": "65973dd129a499890708fd7d2e1f97a42b7934b9c04328315fef904ed86067d6"
+    }
+  ]
+}

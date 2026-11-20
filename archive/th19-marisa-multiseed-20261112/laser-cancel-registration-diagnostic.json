@@ -1,0 +1,111 @@
+{
+  "nativeTrace": "present-xls4vm1s",
+  "frame": 3114,
+  "present": 4190,
+  "nativeSecondaryDraws": 26,
+  "webSecondaryDraws": 15,
+  "nativeLeadingInitializationDraws": 10,
+  "nativeLoopRootScript": 224,
+  "nativeLoopChildScripts": [
+    222,
+    223
+  ],
+  "observation": "Laser contact cancellations enqueue uninitialized animation roots in Web. Native initializes roots before the enemy animation pass, then executes their first manager update in the same frame.",
+  "candidate": "Prepare uninitialized laser cancel roots (scripts >=212) before field animation passes, then retain the normal cancellation manager update.",
+  "integerTrace": "present-qb5hi_4x",
+  "nativeLeadingInitializationScripts": [
+    23,
+    24,
+    23,
+    24,
+    23,
+    24,
+    23,
+    24,
+    224,
+    224
+  ],
+  "correctedObservation": "First eight draws belong to global aura20 attack announcement children23/24. Web updates announcement after field animations; native updates it first. Two laser cancel roots224 then initialize, one emits222/223 before an enemy99 child.",
+  "laserPrepareCandidate": "No result change; removed.",
+  "announcementCandidate": {
+    "report": "th19-web-eNn8SS",
+    "matchingRngThrough": 3114,
+    "nextDifference": 3115,
+    "gameplayThrough": 3140
+  },
+  "remainingOrder": "Native eight announcement draws, two new224 root initial draws, 224 manager loop11 draws, enemy99 five draws. Web announcement8, enemy99 five, then224 initial/loop13. Same frame final state hides different loop wait.",
+  "laserOrderCandidate": {
+    "report": "th19-web-sAWXVY",
+    "frame3114ExactCallOrder": true,
+    "matchingRngThrough": 3114,
+    "nextDifference": 3115
+  },
+  "freezeObservation": {
+    "secondaryStart": 1967149686,
+    "nativeNextGameplayState": 1176481469,
+    "nativeDrawsToNextGameplay": 873,
+    "webNextGameplayState": 394423608,
+    "webDrawsToNextGameplay": 1012,
+    "extraWebDraws": 139,
+    "nativeDuringFreeze": "Only global aura23/24 announcement particles advance; field animation roots remain frozen."
+  },
+  "mistRootTrace": "present-ps_3vdeb",
+  "mistRoots": [
+    153,
+    154,
+    152,
+    151
+  ],
+  "webMistHost": {
+    "enemy": 424,
+    "side": 0,
+    "bodySprite": -1,
+    "slots": {
+      "8": 151,
+      "9": 152,
+      "10": 154,
+      "11": 153
+    },
+    "life": 60
+  },
+  "mistFix": "Update auxiliary slots of invisible hosts. Run charge-mist callbacks in reverse slot registration order; each of four roots emits four particles using shared random geometry and effect143/144 scripts.",
+  "mistWindowReport": "th19-web-MKZrmb",
+  "remainingAfterMist": {
+    "nativeDraws": 873,
+    "webDraws": 913,
+    "announcementExcess": 48,
+    "cancelLoopDifference": -8
+  },
+  "clockCandidate": {
+    "report": "th19-web-y2TPVe",
+    "matchingRngThrough": 3115,
+    "gameplayThrough": 3140
+  },
+  "nextRegistrationOrder": {
+    "frame": 3116,
+    "nativeNew224Seed": 8371257,
+    "webNew224Seed": 1481657480,
+    "nativeOrder": [
+      "announcement global update",
+      "new224 registration",
+      "mist particle scripts143/144 x4",
+      "mist geometry six draws per particle",
+      "field managers"
+    ],
+    "webMistCreationOrderCorrected": "Register four particle scripts before calculating their four geometry paths."
+  },
+  "secondCurve": {
+    "trace": "present-zxa0vnm9",
+    "frame": 3175,
+    "draws": 64,
+    "particles": 16,
+    "callsPerParticle": 4,
+    "callers": [
+      "0xda5cc",
+      "0xda625",
+      "0xda6ed",
+      "0xda746"
+    ],
+    "phase": "At particle age60, choose endpoint and ending tangent for the second Hermite segment. Continue callbacks after host becomes visible."
+  }
+}

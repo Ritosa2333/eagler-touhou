@@ -1,0 +1,40 @@
+{
+  "wasmSha256": "7ccfcd204226267beee125c177f028633d1e3795ecd36304bd517968071a37ef",
+  "previousAcceptedBatch": "../th19-marisa-new-five-b25-20261118/five-seed-gameplay.json",
+  "newSeeds": [
+    [
+      987450218,
+      865127664
+    ],
+    [
+      213927170,
+      1300782066
+    ],
+    [
+      1761660084,
+      2082427414
+    ],
+    [
+      1947437859,
+      1319879470
+    ],
+    [
+      4599481,
+      966889228
+    ]
+  ],
+  "targetPerSeed": 36000,
+  "comparison": {
+    "primaryRng": "exact",
+    "cpuInputs": "exact",
+    "playerPositions": "exact",
+    "bulletKindColorCount": "exact",
+    "bulletCoordinateTolerance": 0.0001,
+    "pureAnimation": "recorded separately"
+  },
+  "pushed": false,
+  "initialWasmSha256": "3720320390e4f81c33fe4eaf8dbd47c983756343b8ce0597ce5880d9a07d468a",
+  "sameBuildSeeds": 5,
+  "sameBuildBattleFrames": 180000,
+  "mechanismFixes": "mechanism-fixes.md"
+}

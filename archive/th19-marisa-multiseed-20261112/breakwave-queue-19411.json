@@ -1,0 +1,11 @@
+{
+  "build": "a576cf6e669830ca75fce52148c0e25e6e2d00799401d47efb12fa962fcacfe2",
+  "report": "th19-web-3PNSKW",
+  "seed": 1,
+  "rngMatchingThrough": 19410,
+  "firstSecondary": 19411,
+  "primaryCpuPlayerBulletsMatchingThrough": 19411,
+  "fix": "tick_independent_visuals_before merges due effect136..140 break-wave child emitters by their own registration, then advances them once before the parent pass. Native19048 first135 constructor precedes old203 root.",
+  "originalComplete": 1,
+  "target": 36000
+}

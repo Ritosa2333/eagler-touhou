@@ -1,0 +1,30 @@
+{
+  "wasmSha256": "a14cfbef03ae6428cd5eea9dad016889e0f8f0f1009f6235b9038c64b8ad437a",
+  "nativeTraceSha256": "f325187f08ec5edaccbd1c65552d366500fe904b1c0f7a0c56608e655d230f15",
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-gfuqefp5\\native-present.jsonl",
+  "continuous": true,
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": {
+      "frame": 832,
+      "web": 260091410,
+      "original": 1364699115
+    }
+  },
+  "firstDifferentPlayerControls": null,
+  "firstDifferentPlayerPosition": null,
+  "firstDifferentBulletPosition": null,
+  "firstDifferentBulletCount": null,
+  "firstDifferentRoundClock": null,
+  "bulletPositionCoverage": {
+    "frames": 36000,
+    "first": 1,
+    "last": 36000,
+    "nonemptyFrames": 35708,
+    "originalBulletSamples": 4615478,
+    "webBulletSamples": 4615478,
+    "missingFrames": [
+      0
+    ]
+  }
+}

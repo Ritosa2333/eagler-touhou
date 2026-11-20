@@ -1,0 +1,38 @@
+{
+  "build": "39e4aaa332b980d2c5f97f16a70bd6f72655ecbc3898a98c0f4541dab84258a4",
+  "seed1": "th19-web-GDm7DI",
+  "seed42": "th19-web-KoWKwv",
+  "matchingRngThrough": 22715,
+  "seed1PrimaryThrough": 33860,
+  "seed1CpuAndSelfThrough": 33900,
+  "seed1BulletThrough": 34077,
+  "seed42FullGameplay": "PASS36000",
+  "rollback": {
+    "frames": [
+      22578,
+      22583
+    ],
+    "differences": [],
+    "image": true
+  },
+  "eagleFix": "Keep birth movement, defer Eagle Aura conversion to following guarded pre-CPU visit, then initialize and advance ECL before next hold. Native22580 ctor267/103,22581 ctor270/108 and two ECL calls,22582 hold -98.",
+  "nativeProof": "present-z43wom5d",
+  "serverCompatibility": "State-only observer skips menu draws and Present. Native RNG/player positions/controls match baseline all22685 samples through22684.",
+  "nativeWide": "present-573rczy0 through33899; secondary SQLite expanded3220..33775,2477085calls",
+  "reverted": "Adding spawn_hold to Eagle arrivals regresses seed42 primary20290 by skipping birth displacement. Fully reverted.",
+  "nextDifference": "22716 native52 laser232 effects, Web45. Missing7 belong to offscreen moving fixed-laser remnant, native straight-circle before[-122.847656,491.958374,120]. Web straight dispatcher incorrectly fell through to fixed-laser clipped path for descriptor38 remnants. Candidate now routes all straight lasers through straight mask path.",
+  "candidateBuild": "472fc31d08d88506a176cf4c09ae110abfd170dfe97371e0f2250670a457795f",
+  "originalCompleted": "1/5",
+  "serverCompatibilityBulletComparison": "22685 native samples including enemy bullet arrays match baseline through22684",
+  "laserRemnantFix": {
+    "build": "472fc31d08d88506a176cf4c09ae110abfd170dfe97371e0f2250670a457795f",
+    "report": "th19-web-ZeqK7v",
+    "traceReport": "th19-web-9zSLCi",
+    "rngThrough": 22949,
+    "gameplayThrough": 22950,
+    "seed42Full": "th19-web-EUaKr1 PASS36000",
+    "native232Proof": "present-tffmny5g",
+    "nativeOffscreenRemnantEffects": 7,
+    "next": "22950 native interleaves per-bullet graze offsets and invulnerable physical contact cancellation. Web canceled all contacts before graze pass, so new203 ctor drew2reads early."
+  }
+}

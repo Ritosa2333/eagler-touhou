@@ -1,0 +1,16 @@
+{
+  "wasmSha256": "a7e38c1673e5e33d01a924bbf053243f93091178e7002c624208ea852550c612",
+  "report": "web-captures-marisa-seed-fixes/th19-web-Qzpcdk/report.json",
+  "matchingRngThrough": 8849,
+  "firstDifferentRngFrame": 8850,
+  "playerControlsThrough": 8850,
+  "playerPositionsThrough": 8850,
+  "bulletPositionsThrough": 8850,
+  "fixes": [
+    "Bomb exit registers shake duration15 from6 to6. VS shake uses shared secondary RNG.",
+    "Aura15 emits on bomb controller retirement tick, matching twenty native draws."
+  ],
+  "originalCompletedSeeds": [
+    42
+  ]
+}

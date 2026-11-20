@@ -1,0 +1,28 @@
+{
+  "frames": 36000,
+  "seeds": [
+    [
+      1193601596,
+      1108880612
+    ],
+    [
+      665982791,
+      221820871
+    ],
+    [
+      1504457712,
+      1485358101
+    ],
+    [
+      15867748,
+      1282578646
+    ],
+    [
+      1869345750,
+      675054366
+    ]
+  ],
+  "wasmSha256": "ed2ddabb8acaad7fe2a6f84a70d3539b899b53136c38f20b148120d2b1fc63d2",
+  "bulletCoordinateTolerance": 0,
+  "scope": "Gameplay exact equality; visual-only animation excluded as previously requested"
+}

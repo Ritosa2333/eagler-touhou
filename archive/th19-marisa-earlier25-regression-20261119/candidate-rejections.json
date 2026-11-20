@@ -1,0 +1,26 @@
+{
+  "broadArrival": {
+    "sha256": "551fe50ad4e677958a6df5e9fc164885fb0fec818487d806d7e66af5a08cb777",
+    "regressions": {
+      "65537": 31351,
+      "536870911": 28055
+    }
+  },
+  "registrationPhase": {
+    "sha256": "3570d69ec7d5da90008b6407bd829f49a733e29d7b252bbdff2236b5616f7a80",
+    "passed": [
+      424242
+    ],
+    "regressions": {
+      "65537": 31351,
+      "536870911": 28055
+    }
+  },
+  "laserChild": {
+    "sha256": "97f356f08f888d93d1982c346ebb40e6972595338c2858d704efaaba3ca30dde",
+    "passed": [
+      1000003
+    ],
+    "through": 36000
+  }
+}

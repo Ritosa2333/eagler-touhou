@@ -1,0 +1,145 @@
+{
+  "wasmSha256": "d23c0b2d774535baaff0d3840dafea4ffe23968482cffcdd356a1da8c80bcf78",
+  "results": [
+    {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-next-five\\th19-web-7uSlHr\\report.json",
+      "wasmSha256": "d23c0b2d774535baaff0d3840dafea4ffe23968482cffcdd356a1da8c80bcf78",
+      "nativeMissingStateFrames": [],
+      "verifiedTransitionGaps": [],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 36000,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 0.0,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "seed": 314159265
+    },
+    {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-next-five\\th19-web-nJOSHg\\report.json",
+      "wasmSha256": "d23c0b2d774535baaff0d3840dafea4ffe23968482cffcdd356a1da8c80bcf78",
+      "nativeMissingStateFrames": [],
+      "verifiedTransitionGaps": [],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 36000,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 3.0517578125e-05,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "seed": 20261116
+    },
+    {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-next-five\\th19-web-OUCgVV\\report.json",
+      "wasmSha256": "d23c0b2d774535baaff0d3840dafea4ffe23968482cffcdd356a1da8c80bcf78",
+      "nativeMissingStateFrames": [],
+      "verifiedTransitionGaps": [],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 36000,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 0.0,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "seed": 2147483646
+    },
+    {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-next-five\\th19-web-B58hBi\\report.json",
+      "wasmSha256": "d23c0b2d774535baaff0d3840dafea4ffe23968482cffcdd356a1da8c80bcf78",
+      "nativeMissingStateFrames": [
+        28448
+      ],
+      "verifiedTransitionGaps": [
+        28448
+      ],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 35999,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 3.0517578125e-05,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "seed": 8675309
+    },
+    {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-next-five\\th19-web-6NeIeo\\report.json",
+      "wasmSha256": "d23c0b2d774535baaff0d3840dafea4ffe23968482cffcdd356a1da8c80bcf78",
+      "nativeMissingStateFrames": [
+        31266
+      ],
+      "verifiedTransitionGaps": [
+        31266
+      ],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 35999,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 0.0,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "seed": 65537
+    },
+    {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-next-five\\th19-web-gYIeTY\\report.json",
+      "wasmSha256": "d23c0b2d774535baaff0d3840dafea4ffe23968482cffcdd356a1da8c80bcf78",
+      "nativeMissingStateFrames": [],
+      "verifiedTransitionGaps": [],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 36000,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 3.0517578125e-05,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "seed": 161803398
+    },
+    {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-next-five\\th19-web-NxMCGR\\report.json",
+      "wasmSha256": "d23c0b2d774535baaff0d3840dafea4ffe23968482cffcdd356a1da8c80bcf78",
+      "nativeMissingStateFrames": [
+        26401
+      ],
+      "verifiedTransitionGaps": [
+        26401
+      ],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 35999,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 0.0,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "seed": 7
+    },
+    {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-next-five\\th19-web-VZsYen\\report.json",
+      "wasmSha256": "d23c0b2d774535baaff0d3840dafea4ffe23968482cffcdd356a1da8c80bcf78",
+      "nativeMissingStateFrames": [],
+      "verifiedTransitionGaps": [],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 36000,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 0.0,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "seed": 2000000011
+    }
+  ]
+}

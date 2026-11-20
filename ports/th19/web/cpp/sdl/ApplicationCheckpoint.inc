@@ -46,6 +46,8 @@ struct ApplicationCheckpoint {
  decltype(g_touch_motion_y) saved_g_touch_motion_y;
  decltype(g_touch_unlimited) saved_g_touch_unlimited;
  decltype(g_game_load_frames) saved_g_game_load_frames;
+ decltype(g_vs_round_loading) saved_g_vs_round_loading;
+ decltype(g_loading_vms) saved_g_loading_vms;
  decltype(g_player_vm) saved_g_player_vm;
  decltype(g_p1_dir) saved_g_p1_dir;
  decltype(g_opp_vm) saved_g_opp_vm;
@@ -57,6 +59,7 @@ struct ApplicationCheckpoint {
  decltype(g_battle_reports) saved_g_battle_reports;
  decltype(g_attack_warning) saved_g_attack_warning;
  decltype(g_attack_warning_vm) saved_g_attack_warning_vm;
+ decltype(g_retiring_attack_warnings) saved_g_retiring_attack_warnings;
  decltype(g_attack_warning_frame) saved_g_attack_warning_frame;
  decltype(g_game_seed) saved_g_game_seed;
  decltype(g_ecl_ready) saved_g_ecl_ready;
@@ -121,6 +124,8 @@ struct ApplicationCheckpoint {
  decltype(g_region_vm) saved_g_region_vm;
  decltype(g_gauge_markers) saved_g_gauge_markers;
  decltype(g_gauge_particles) saved_g_gauge_particles;
+ decltype(g_gauge_particles_frame) saved_g_gauge_particles_frame;
+ decltype(g_gauge_contact_frame) saved_g_gauge_contact_frame;
  decltype(rb_draw_field_hud_heart_labels) saved_rb_draw_field_hud_heart_labels;
  decltype(rb_draw_field_hud_hearts) saved_rb_draw_field_hud_hearts;
  decltype(g_gauge_warning_active) saved_g_gauge_warning_active;
@@ -174,6 +179,7 @@ struct ApplicationCheckpoint {
  decltype(rb_draw_combat_items_deaths) saved_rb_draw_combat_items_deaths;
  decltype(rb_draw_combat_items_cancels) saved_rb_draw_combat_items_cancels;
  decltype(rb_draw_combat_items_generation) saved_rb_draw_combat_items_generation;
+ decltype(rb_graze_animation_frame) saved_rb_graze_animation_frame;
  decltype(rb_frame_oldEsc) saved_rb_frame_oldEsc;
  decltype(rb_frame_oldUp) saved_rb_frame_oldUp;
  decltype(rb_frame_oldDown) saved_rb_frame_oldDown;
@@ -234,6 +240,8 @@ struct ApplicationCheckpoint {
   rb_assign(saved_g_touch_motion_y,g_touch_motion_y);
   rb_assign(saved_g_touch_unlimited,g_touch_unlimited);
   rb_assign(saved_g_game_load_frames,g_game_load_frames);
+  rb_assign(saved_g_vs_round_loading,g_vs_round_loading);
+  rb_assign(saved_g_loading_vms,g_loading_vms);
   rb_assign(saved_g_player_vm,g_player_vm);
   rb_assign(saved_g_p1_dir,g_p1_dir);
   rb_assign(saved_g_opp_vm,g_opp_vm);
@@ -245,6 +253,7 @@ struct ApplicationCheckpoint {
   rb_assign(saved_g_battle_reports,g_battle_reports);
   rb_assign(saved_g_attack_warning,g_attack_warning);
   rb_assign(saved_g_attack_warning_vm,g_attack_warning_vm);
+  rb_assign(saved_g_retiring_attack_warnings,g_retiring_attack_warnings);
   rb_assign(saved_g_attack_warning_frame,g_attack_warning_frame);
   rb_assign(saved_g_game_seed,g_game_seed);
   rb_assign(saved_g_ecl_ready,g_ecl_ready);
@@ -309,6 +318,8 @@ struct ApplicationCheckpoint {
   rb_assign(saved_g_region_vm,g_region_vm);
   rb_assign(saved_g_gauge_markers,g_gauge_markers);
   rb_assign(saved_g_gauge_particles,g_gauge_particles);
+  rb_assign(saved_g_gauge_particles_frame,g_gauge_particles_frame);
+  rb_assign(saved_g_gauge_contact_frame,g_gauge_contact_frame);
   rb_assign(saved_rb_draw_field_hud_heart_labels,rb_draw_field_hud_heart_labels);
   rb_assign(saved_rb_draw_field_hud_hearts,rb_draw_field_hud_hearts);
   rb_assign(saved_g_gauge_warning_active,g_gauge_warning_active);
@@ -362,6 +373,7 @@ struct ApplicationCheckpoint {
   rb_assign(saved_rb_draw_combat_items_deaths,rb_draw_combat_items_deaths);
   rb_assign(saved_rb_draw_combat_items_cancels,rb_draw_combat_items_cancels);
   rb_assign(saved_rb_draw_combat_items_generation,rb_draw_combat_items_generation);
+  rb_assign(saved_rb_graze_animation_frame,rb_graze_animation_frame);
   rb_assign(saved_rb_frame_oldEsc,rb_frame_oldEsc);
   rb_assign(saved_rb_frame_oldUp,rb_frame_oldUp);
   rb_assign(saved_rb_frame_oldDown,rb_frame_oldDown);
@@ -422,6 +434,8 @@ struct ApplicationCheckpoint {
   rb_assign(g_touch_motion_y,saved_g_touch_motion_y);
   rb_assign(g_touch_unlimited,saved_g_touch_unlimited);
   rb_assign(g_game_load_frames,saved_g_game_load_frames);
+  rb_assign(g_vs_round_loading,saved_g_vs_round_loading);
+  rb_assign(g_loading_vms,saved_g_loading_vms);
   rb_assign(g_player_vm,saved_g_player_vm);
   rb_assign(g_p1_dir,saved_g_p1_dir);
   rb_assign(g_opp_vm,saved_g_opp_vm);
@@ -433,6 +447,7 @@ struct ApplicationCheckpoint {
   rb_assign(g_battle_reports,saved_g_battle_reports);
   rb_assign(g_attack_warning,saved_g_attack_warning);
   rb_assign(g_attack_warning_vm,saved_g_attack_warning_vm);
+  rb_assign(g_retiring_attack_warnings,saved_g_retiring_attack_warnings);
   rb_assign(g_attack_warning_frame,saved_g_attack_warning_frame);
   rb_assign(g_game_seed,saved_g_game_seed);
   rb_assign(g_ecl_ready,saved_g_ecl_ready);
@@ -497,6 +512,8 @@ struct ApplicationCheckpoint {
   rb_assign(g_region_vm,saved_g_region_vm);
   rb_assign(g_gauge_markers,saved_g_gauge_markers);
   rb_assign(g_gauge_particles,saved_g_gauge_particles);
+  rb_assign(g_gauge_particles_frame,saved_g_gauge_particles_frame);
+  rb_assign(g_gauge_contact_frame,saved_g_gauge_contact_frame);
   rb_assign(rb_draw_field_hud_heart_labels,saved_rb_draw_field_hud_heart_labels);
   rb_assign(rb_draw_field_hud_hearts,saved_rb_draw_field_hud_hearts);
   rb_assign(g_gauge_warning_active,saved_g_gauge_warning_active);
@@ -550,6 +567,7 @@ struct ApplicationCheckpoint {
   rb_assign(rb_draw_combat_items_deaths,saved_rb_draw_combat_items_deaths);
   rb_assign(rb_draw_combat_items_cancels,saved_rb_draw_combat_items_cancels);
   rb_assign(rb_draw_combat_items_generation,saved_rb_draw_combat_items_generation);
+  rb_assign(rb_graze_animation_frame,saved_rb_graze_animation_frame);
   rb_assign(rb_frame_oldEsc,saved_rb_frame_oldEsc);
   rb_assign(rb_frame_oldUp,saved_rb_frame_oldUp);
   rb_assign(rb_frame_oldDown,saved_rb_frame_oldDown);

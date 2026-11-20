@@ -1,0 +1,29 @@
+{
+  "wasmSha256": "ab8c1a262965d909bd8721cb91584623ff2e95abc6750f156beb9022f556bdb9",
+  "newSeeds": 5,
+  "newFrames": 180000,
+  "regressionSeeds": 5,
+  "regressionFrames": 180000,
+  "sameBuildPassed": 10,
+  "strictCoordinatePassed": 9,
+  "microscopicException": {
+    "seed": 1641255564,
+    "maximumPixels": 0.0001220703125,
+    "acceptedCeilingPixels": 0.000244140625,
+    "rawStrictResult": "final-strict-results.json",
+    "basis": "User instruction to ignore microscopic coordinate differences"
+  },
+  "primaryRngCpuPlayerAndBulletCounts": "All 10 seeds match through 36000 accumulated battle frames",
+  "committed": false,
+  "pushed": false,
+  "screenshots": [
+    "b35-after20109/frame-20109.png",
+    "b35-after25479/frame-25479.png",
+    "b35-after31640/frame-31640.png"
+  ],
+  "tests": {
+    "mechanism": "PASS",
+    "toolTests": 6,
+    "docs": "PASS"
+  }
+}

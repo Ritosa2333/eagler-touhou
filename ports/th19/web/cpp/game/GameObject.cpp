@@ -53,7 +53,7 @@ bool EclVm::game_object(const EclInstruction& ins){
         case 613: { // 0x502dbd -> 0x4edf90 / 0x530bd0, without lock filtering.
             if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"global-clear\",\"id\":%u}\n",world_->battle_frame,host_id);
             world_->cancel_all_bullets();
-            for(auto& laser:world_->lasers)laser.active=false;
+            world_->cancel_all_lasers();
             return true;
         }
         case 601: {
@@ -119,11 +119,18 @@ bool EclVm::game_object(const EclInstruction& ins){
                     // Only this descriptor has been verified against the EXE.
                     // Other laser types remain in the unsupported-opcode audit.
                     if(s.type!=38||s.color<0||s.color>=16||s.flags!=0)return false;
-                    InfiniteLaser l;l.id=world_->next_id++;l.source=s;l.angle=s.angle;
+                    InfiniteLaser l;l.id=world_->next_id++;l.owner_id=host_id;l.source=s;l.angle=s.angle;
                     // 50345a selects the origin. 52b8e0 adds the ECL619 muzzle radius.
-                    l.x=(s.absolute_origin?s.absolute_x:e.x)+s.x+std::cos(l.angle)*s.muzzle_radius;
-                    l.y=(s.absolute_origin?s.absolute_y:e.y)+s.y+std::sin(l.angle)*s.muzzle_radius;
+                    l.x=(s.absolute_origin?s.absolute_x:e.x)+s.x;
+                    l.y=(s.absolute_origin?s.absolute_y:e.y)+s.y;
+                    if(world_->reward_mode==2&&(e.flags&0x20)){
+                        l.x=std::floor(l.x*100.f)/100.f;
+                        l.y=std::floor(l.y*100.f)/100.f;
+                    }
+                    l.x+=std::cos(l.angle)*s.muzzle_radius;
+                    l.y+=std::sin(l.angle)*s.muzzle_radius;
                     l.length=s.length;
+                    if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"fixed-laser-birth\",\"host\":%u,\"id\":%u,\"resultPause\":[%u,%d],\"position\":[%.9g,%.9g]}\n",world_->battle_frame,host_id,l.id,world_->result_pause_id,world_->result_pause_frame,l.x,l.y);
                     // VS 0x530df0 links the laser without advancing it. The
                     // laser-manager pass follows enemy ECL clears this tick.
                     if(world_->reward_mode==2)l.clock=-1;
@@ -136,7 +143,8 @@ bool EclVm::game_object(const EclInstruction& ins){
             return false;
         }
         case 569: { // 4fecc0 case 6d -> 4d3140: forward intersection with 296x448 field.
-            const float x=param_f32(ins,2),y=param_f32(ins,3),a=param_f32(ins,4);
+            // 0x404530 normalizes the single-precision angle before the ray.
+            const float x=param_f32(ins,2),y=param_f32(ins,3),a=std::remainder(param_f32(ins,4),6.283185482f);
             if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"ray-input\",\"id\":%u,\"position\":[%.9g,%.9g],\"angle\":%.9g}\n",world_->battle_frame,host_id,x,y,a);
             const float dx=float(std::cos(double(a))),dy=float(std::sin(double(a)));
             // 0x4d3140 constructs a 2000-unit segment. 0x4d38f0 derives
@@ -145,12 +153,15 @@ bool EclVm::game_object(const EclInstruction& ins){
             const float bx=x+dx*1000.f,by=y+dy*1000.f;
             const float width=bx-ax,height=by-ay;
             float outX=x,outY=y,t=1e30f;
-            const auto candidate=[&](float distance,float px,float py){
-                if(distance<0||distance>=t||px< -148.001f||px>148.001f||py< -.001f||py>448.001f)return;
+            const auto candidate=[&](float distance,float px,float py,bool horizontalEdge=false){
+                // The intersected edge fixes its own coordinate. The native
+                // slope reconstruction can round a bottom-edge y above 448.
+                if(distance<0||distance>=t||px< -148.001f||px>148.001f||
+                   (!horizontalEdge&&(py< -.001f||py>448.001f)))return;
                 t=distance;outX=px;outY=py;
             };
             if(std::abs(width)<.01f){
-                if(std::abs(dy)>1e-7f)for(float edge:{0.f,448.f})candidate((edge-y)/dy,ax,edge);
+                if(std::abs(dy)>1e-7f)for(float edge:{0.f,448.f})candidate((edge-y)/dy,ax,edge,true);
             }else{
                 const float slope=height/width;
                 const float intercept=ay-(height*ax)/width;
@@ -158,7 +169,7 @@ bool EclVm::game_object(const EclInstruction& ins){
                     candidate((edge-x)/dx,edge,slope*edge+intercept);
                 if(std::abs(slope)>1e-7f)for(float edge:{0.f,448.f}){
                     const float difference=edge-intercept;
-                    candidate((edge-y)/dy,difference/slope,(difference*slope)/slope+intercept);
+                    candidate((edge-y)/dy,difference/slope,(difference*slope)/slope+intercept,true);
                 }
             }
             if(param_stack_ref(ins,0))set_var_float(i32(read_f32(param_off(0))),outX);
@@ -179,7 +190,19 @@ bool EclVm::game_object(const EclInstruction& ins){
             if(has_host)for(const auto&e:world_->enemies)if(e.id==host_id){
                 if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"ecl-clear\",\"id\":%u,\"position\":[%.9g,%.9g],\"radius\":%.9g,\"sub\":\"%s\"}\n",world_->battle_frame,e.id,e.x,e.y,radius,current_sub_name());
                 world_->cancel_bullets_circle(e.x,e.y,radius,99999,false);
-                world_->cancel_lasers_circle(e.x,e.y,radius,true);break;}
+                const auto firstLaserCancel=world_->bullet_cancels.size();
+                const bool firstDischarge=e.age==1&&std::string(current_sub_name()).rfind("Ecl_EtBreakLv",0)==0;
+                world_->cancel_lasers_circle(e.x,e.y,radius,true,false,firstDischarge?host_id:0);
+                // 503d9e -> 5303f0 initializes each clear ANM before ECL
+                // returns to the enemy and player animation callbacks.
+                if(world_->bullet_scripts)for(size_t i=firstLaserCancel;i<world_->bullet_cancels.size();++i){
+                    auto& event=world_->bullet_cancels[i];
+                    const auto script=world_->bullet_scripts->find(event.script);
+                    if(event.animation.stream||script==world_->bullet_scripts->end())continue;
+                    event.animation.bind_entry(script->second.stream,script->second.len,world_->bullet_scripts);
+                    event.animation.clock_after_execution=true;event.animation.tick();
+                }
+                break;}
             return true;
         }
         case 515: // 0x501b6f: damage protection.
@@ -221,6 +244,11 @@ bool EclVm::game_object(const EclInstruction& ins){
                     // 0x50cb96 calls death directly, including animationless birth
                     // controllers. Damage-target protection is checked by other callers.
                     e.item=0;
+                    // ECL525 can retire a registered flight arrival before its
+                    // first manager displacement (0x50ca70 newest-first clear).
+                    if(e.arrival_motion==Enemy::ArrivalMotion::Hold&&e.age==1){
+                        e.x=e.previous_x;e.y=e.previous_y;
+                    }
                     if(world_->dispatch_enemy_death(e))continue;
                 }
                 e.active=false;e.status_flags|=0x200;
@@ -317,6 +345,10 @@ bool EclVm::game_object(const EclInstruction& ins){
             EclVm* initial=child.vm.get();if(initial)initial->step();
             // 0x50d5e8 prepends this actor after its initial ECL can register descendants.
             auto& enemies=world_->enemies;
+            // The protected constructor still consumes pellets and shortens beams
+            // before an older actor can read those same registered damage areas.
+            if(world_->constructor_contacts&&*world_->constructor_contacts)
+                (*world_->constructor_contacts)(enemies[first]);
             if(world_->reward_mode==2&&enemies.size()>first+1)
                 std::rotate(enemies.begin()+first,enemies.begin()+first+1,enemies.end());
             return true;
@@ -325,6 +357,7 @@ bool EclVm::game_object(const EclInstruction& ins){
             const int file=param_i32(ins,0),script=param_i32(ins,1);
             // Shared effect bank. Keep other banks reported as unsupported.
             if(file!=1)return false;
+            if(traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"independent-effect-request\",\"frame\":%d,\"host\":%u,\"script\":%d}\n",world_->battle_frame,host_id,script);
             if(has_host)for(const auto&e:world_->enemies)if(e.id==host_id){
                 world_->deaths.push_back({e.x,e.y,0,script,-1,file,true});break;
             }
@@ -343,7 +376,21 @@ bool EclVm::game_object(const EclInstruction& ins){
             i32 slot=param_i32(ins,0),sid=param_i32(ins,1);
             if(slot<0||slot>=16)return false;
             if(has_host)for(auto& e:world_->enemies)if(e.id==host_id){
+                if(traceOpeningRng&&sid>=260&&sid<=271)std::printf("ENEMYDBG {\"event\":\"spirit-anm-request\",\"frame\":%d,\"host\":%u,\"slot\":%d,\"script\":%d,\"previous\":%d,\"op\":%u,\"sub\":\"%s\"}\n",world_->battle_frame,host_id,slot,sid,e.animations[slot].script,ins.id,current_sub_name());
                 auto&a=e.animations[slot];a.script=sid;a.file=e.anm_slot;a.rotation=0;a.rotation_set=false;++a.generation;a.interrupt_generation=0;
+                // GhostWolf/GhostWolfEnable can bind the same body twice in
+                // one ECL visit. Each native constructor initializes its child
+                // emitter, even when the following binding replaces that root.
+                const auto* constructorScripts=e.anm_slot==1&&sid==107?world_->effect_scripts:
+                    e.anm_slot==2&&sid>=265&&sid<=270?world_->enemy_scripts:nullptr;
+                if(world_->reward_mode==2&&constructorScripts){
+                    const auto script=constructorScripts->find(sid);
+                    if(script!=constructorScripts->end()){
+                        AnmVm vm;vm.bind_entry(script->second.stream,script->second.len,constructorScripts);
+                        vm.initialize_constructor();
+                        world_->initialized_enemy_animations[(u64(host_id)<<4)|u32(slot)]=std::move(vm);
+                    }
+                }
                 if(slot==0){e.sprite=sid;e.directional_file=e.anm_slot;
                     // 4fe980 (303) writes current pose +27c and file +278,
                     // preserving base +280, direction +284 and status bit10.
@@ -454,8 +501,8 @@ bool EclVm::game_object(const EclInstruction& ins){
                 e.orbit=true;e.ellipse=false;e.polar=false;
                 // The dispatcher resolves the initial position immediately;
                 // the frame update then advances radius and phase once.
-                e.set_absolute_position(e.orbit_x+std::cos(e.angle)*e.radius,
-                    e.orbit_y+std::sin(e.angle)*e.radius);
+                e.set_absolute_position(e.orbit_x+float(std::cos(double(e.angle))*e.radius),
+                    e.orbit_y+float(std::sin(double(e.angle))*e.radius));
                 break;
             }return true;
         }
@@ -523,8 +570,12 @@ bool EclVm::game_object(const EclInstruction& ins){
             if(has_host)for(auto&e:world_->enemies)if(e.id==host_id){
                 auto& m=ins.id==441?e.turn:e.accelerate;
                 m.duration=std::max(0,param_i32(ins,0));m.elapsed=0;m.mode=param_i32(ins,1);
-                m.from=ins.id==441?e.angle:e.speed;m.to=param_f32(ins,2);
-                if(ins.id==441&&e.mirrored)m.to=3.14159265358979323846f-m.to;
+                m.from=ins.id==441?std::remainder(e.angle,6.28318530717958647692f):e.speed;m.to=param_f32(ins,2);
+                if(ins.id==441){
+                    if(e.mirrored)m.to=3.14159265358979323846f-m.to;
+                    // Retail interpolates from the normalized current heading.
+                    m.to=m.from+std::remainder(m.to-e.angle,6.28318530717958647692f);
+                }
                 e.polar=true;break;
             }return true;
         }

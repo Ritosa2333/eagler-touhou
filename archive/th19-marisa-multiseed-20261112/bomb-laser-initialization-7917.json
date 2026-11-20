@@ -1,0 +1,15 @@
+{
+  "build": "d66c49c2aace8e942d9298023ea167384cdab420ad3308458dd69e080923fa9d",
+  "report": "web-captures-marisa-seed-fixes\\th19-web-FlZDcC\\report.json",
+  "matchingRngThrough": 7916,
+  "firstDifferentRngFrame": 7917,
+  "playerControlsThrough": 7917,
+  "playerPositionsThrough": 7917,
+  "bulletPositionsThrough": 7917,
+  "cause7789": "Bomb laser cancellation root initializes before next SHT callback.",
+  "next7917": "Native bomb exit calls 0x4b9f00(mode1,duration15,from6,to6). Native shake consumes shared secondary stream at0xba2b4/0xba397. Web previously omitted bomb exit shake and used private shake RNG.",
+  "originalCompletedSeeds": [
+    42
+  ],
+  "originalCompletion": "1/5"
+}

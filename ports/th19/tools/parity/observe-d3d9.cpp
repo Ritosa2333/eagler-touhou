@@ -4,6 +4,7 @@
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <intrin.h>
+#include <algorithm>
 #include <climits>
 #include <cstdint>
 #include <cstdio>
@@ -98,11 +99,12 @@ std::uintptr_t priorOwner;
 constexpr unsigned imageFrames[] = {80, 83, 84, 85, 86, 87, 88, 90, 100, 105, 111, 112, 113, 114, 120, 124, 125, 126, 127, 130, 140, 180, 300, 600, 1200};
 bool savedImage[sizeof(imageFrames) / sizeof(imageFrames[0])];
 std::vector<unsigned> extraImageFrames;
+bool renderImagesOnly;
 unsigned imageSegment = UINT_MAX;
 void* originalRng;
 DWORD captureThread;
 FILE* rngTrace;
-unsigned rngCallCount, rngCallsFlushed;
+unsigned rngCallCount, rngCallsFlushed, rngRecordedCount;
 unsigned traceFirst, traceLast;
 bool hasTraceWindow;
 volatile LONG skippedRngThreads;
@@ -114,7 +116,7 @@ struct RngCall {
     unsigned counterManagerIndex, counterSlot, counterSlotFlags;
     char subName[64];
 };
-RngCall rngCalls[8192];
+RngCall rngCalls[32768];
 
 bool detailedFrame(unsigned frame,unsigned first,unsigned last) {
     return hasTraceWindow ? frame>=traceFirst && frame<=traceLast : frame>=first && frame<=last;
@@ -144,11 +146,29 @@ void __cdecl recordRngCall(unsigned object, const unsigned* stack, unsigned bp, 
     const auto owner = read<unsigned>(gameBase + 0x1d1a54);
     if (!owner) return;
     const auto frame = read<unsigned>(owner + 0x14);
+    if(cpuDebugActive&&object==gameBase+0x1c6620&&stack[0]==gameBase+0xfa716&&(frame%60==0||detailedFrame(frame,0,0))){
+        static unsigned lastExtraFrame=UINT_MAX;
+        if(lastExtraFrame!=frame){
+            lastExtraFrame=frame;
+            const auto get=[](unsigned address){unsigned v=0;ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<const void*>(address),&v,4,nullptr);return v;};
+            if(FILE* out=std::fopen("native-extra-budget.jsonl","ab")){
+                for(unsigned side=0;side<2;++side){
+                    const unsigned manager=get(gameBase+0x1d1a98+side*60);
+                    std::fprintf(out,"{\"frame\":%u,\"side\":%u,\"manager\":%u,\"credit\":%d,\"capacity\":%u,\"reserved\":%u,\"duration\":%u,\"timers\":[",frame,side,manager,int(get(manager+0x1c)),get(manager+0x38),get(manager+0x3c),get(manager+0x40));
+                    for(unsigned i=0;i<100;++i)std::fprintf(out,"%s%d",i?",":"",int(get(manager+0x44+4*i)));
+                    std::fputs("]}\n",out);
+                }
+                std::fclose(out);
+            }
+        }
+    }
     if (hasTraceWindow) {
         if (!detailedFrame(frame,0,0)) return;
     } else if (frame > 10 && (frame < 80 || frame > 90) && (frame < 110 || frame > 114) && (frame < 122 || frame > 130)) return;
     if (rngCallCount >= _countof(rngCalls)) return;
     auto& sample = rngCalls[rngCallCount++];
+    sample = {};
+    ++rngRecordedCount;
     sample.present = presentIndex + 1;
     sample.frame = frame;
     sample.flags = read<unsigned>(owner + 0x140);
@@ -186,8 +206,8 @@ void __cdecl recordRngCall(unsigned object, const unsigned* stack, unsigned bp, 
     const auto top = __readfsdword(4);
     for (unsigned i = 0; i < _countof(sample.stack) && unsigned(stack + 1 + i) < top; ++i)
         sample.stack[i] = stack[1 + i];
-    if (detailedFrame(frame,110,130) && (sample.caller==0x4be1||sample.caller==0x4ca1)) {
-        const auto vm=sample.stack[0];
+    if (detailedFrame(frame,110,130) && (sample.caller==0x4be1||sample.caller==0x4ca1||sample.caller==0x263e||sample.caller==0xd9dfb)) {
+        const auto vm=(sample.caller==0x263e||sample.caller==0xd9dfb)?si:sample.stack[0];
         auto get=[](unsigned address){
             unsigned value=0;
             ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<const void*>(address),&value,sizeof(value),nullptr);
@@ -199,6 +219,24 @@ void __cdecl recordRngCall(unsigned object, const unsigned* stack, unsigned bp, 
         sample.animation[5]=get(di);sample.animation[6]=get(di+4);sample.animation[7]=get(di+12);
         sample.animation[8]=get(vm+0x4cc);sample.animation[9]=get(vm+0x4e4);
         sample.animation[10]=get(vm+0x508);sample.animation[11]=get(vm+0x564);
+        if(cpuDebugActive){
+            static unsigned queueFrame=~0u;static std::vector<unsigned> seenManagers;
+            if(queueFrame!=frame){queueFrame=frame;seenManagers.clear();}
+            const auto manager=get(vm+0x508);
+            if(manager&&std::find(seenManagers.begin(),seenManagers.end(),manager)==seenManagers.end()){
+                seenManagers.push_back(manager);
+                if(FILE* queue=std::fopen("native-rng-queue.jsonl","ab")){
+                    unsigned index=0;
+                    for(auto node=get(manager);node&&index<10000;node=get(node+4),++index){
+                        const auto v=get(node);const int sid=int(get(v+0x28));
+                        if(sid==135||sid==138||sid==41||sid==203||sid==201||sid==202||sid==191||sid==13)
+                            std::fprintf(queue,"{\"frame\":%u,\"manager\":%u,\"index\":%u,\"vm\":%u,\"script\":%d,\"time\":%d,\"registration\":%u,\"parent\":%u}\n",frame,manager,index,v,sid,int(get(v+0x4e4)),get(v+0x4d8),get(v+0x564));
+                    }
+                    std::fclose(queue);
+                }
+            }
+        }
+
     }
     if (frame >= 85 && frame <= 86 && (sample.caller == 0x4c48 || sample.caller == 0x4ca1)) {
         ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<const void*>(bp),
@@ -334,7 +372,7 @@ unsigned __fastcall observeAnmDetached(void* file,void*,unsigned output,int scri
                 for(auto node=manager?read<unsigned>(manager):0;node&&index<10000;node=read<unsigned>(node+4),++index){
                     const auto vm=read<unsigned>(node);
                     const int sid=read<int>(vm+0x28);
-                    if(sid==106||sid==170)
+                    if(sid==106||sid==170||sid==103||sid==13||sid==180||sid==200||sid==197||sid==135||sid==138||sid==41||sid==203||sid==201||sid==202||sid==191)
                         std::fprintf(queue,"{\"frame\":%u,\"manager\":%u,\"index\":%u,\"vm\":%u,\"script\":%d,\"time\":%d,\"registration\":%u,\"flags\":%u,\"position\":[%.9g,%.9g]}\n",frame,manager,index,vm,sid,read<int>(vm+0x4e4),read<unsigned>(vm+0x4d8),read<unsigned>(vm+0x57c),read<float>(vm+0x30),read<float>(vm+0x34));
                 }
                 std::fclose(queue);
@@ -364,6 +402,85 @@ bool installAnmDetachedObserver(){
     FlushInstructionCache(GetCurrentProcess(),entry,5);VirtualProtect(entry,5,protection,&ignored);return true;
 }
 
+using PickupSpawnCall=unsigned(__thiscall*)(unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned);
+PickupSpawnCall originalPickupSpawn;
+unsigned __fastcall observePickupSpawn(unsigned self,unsigned,unsigned type,unsigned point,unsigned a,unsigned b,unsigned c,unsigned d,unsigned e,unsigned f){
+    const unsigned result=originalPickupSpawn(self,type,point,a,b,c,d,e,f);
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(cpuDebugActive&&GetCurrentThreadId()==captureThread&&detailedFrame(frame,0,0)&&result)
+        if(FILE* output=std::fopen("native-pickup-spawn.jsonl","ab")){
+            std::fprintf(output,"{\"frame\":%u,\"manager\":%u,\"type\":%u,\"position\":[%.9g,%.9g],\"serial\":%u,\"delay\":%d,\"caller\":%u}\n",frame,self,type,read<float>(point),read<float>(point+4),read<unsigned>(self+0xff8d8),read<int>(result+0xcd8),unsigned(__builtin_return_address(0))-gameBase);
+            std::fclose(output);
+        }
+    return result;
+}
+bool installPickupSpawnObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0x121d60);
+    const unsigned char signature[]={0x55,0x8b,0xec,0x51,0x53,0x8b,0x5d,0x08};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,13,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,8);relativeJump(relay+8,reinterpret_cast<unsigned>(entry+8));
+    DWORD protection,ignored;
+    if(!VirtualProtect(entry,8,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalPickupSpawn=reinterpret_cast<PickupSpawnCall>(relay);
+    relativeJump(entry,reinterpret_cast<unsigned>(observePickupSpawn));for(int i=5;i<8;++i)entry[i]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,8);VirtualProtect(entry,8,protection,&ignored);return true;
+}
+
+using MarisaBombCall=unsigned(__thiscall*)(unsigned);
+MarisaBombCall originalMarisaBomb;
+unsigned __fastcall observeMarisaBomb(unsigned self,unsigned){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(cpuDebugActive&&GetCurrentThreadId()==captureThread&&detailedFrame(frame,0,0))
+        if(FILE* output=std::fopen("native-marisa-bomb.jsonl","ab")){
+            std::fprintf(output,"{\"frame\":%u,\"side\":%u,\"duration\":%u,\"time\":%u,\"radius\":[%.9g,%.9g],\"energy\":%u}\n",frame,read<unsigned>(self+0xc0),read<unsigned>(self+4),read<unsigned>(self+0xc),read<float>(self+0xc8),read<float>(self+0xcc),read<unsigned>(read<unsigned>(self+0xc4)+0x2c)?read<unsigned>(read<unsigned>(read<unsigned>(self+0xc4)+0x2c)+0x24):0);
+            std::fclose(output);
+        }
+    return originalMarisaBomb(self);
+}
+bool installMarisaBombObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0x13d9b0);
+    const unsigned char signature[]={0x55,0x8b,0xec,0x83,0xec,0x28};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,11,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,6);relativeJump(relay+6,reinterpret_cast<unsigned>(entry+6));
+    DWORD protection,ignored;
+    if(!VirtualProtect(entry,6,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalMarisaBomb=reinterpret_cast<MarisaBombCall>(relay);
+    relativeJump(entry,reinterpret_cast<unsigned>(observeMarisaBomb));entry[5]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,6);VirtualProtect(entry,6,protection,&ignored);return true;
+}
+
+using RectangleCancelCall=unsigned(__thiscall*)(unsigned,unsigned,unsigned,float,unsigned,unsigned);
+RectangleCancelCall originalRectangleCancel;
+unsigned __fastcall observeRectangleCancel(unsigned self,unsigned,unsigned point,unsigned size,float angle,unsigned argument,unsigned effect){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(cpuDebugActive&&GetCurrentThreadId()==captureThread&&detailedFrame(frame,0,0))
+        if(FILE* output=std::fopen("native-rectangle-cancel.jsonl","ab")){
+            std::fprintf(output,"{\"frame\":%u,\"manager\":%u,\"position\":[%.9g,%.9g],\"size\":[%.9g,%.9g],\"angle\":%.9g}\n",frame,self,read<float>(point),read<float>(point+4),read<float>(size),read<float>(size+4),angle);
+            std::fclose(output);
+        }
+    return originalRectangleCancel(self,point,size,angle,argument,effect);
+}
+bool installRectangleCancelObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0xee0d0);
+    const unsigned char signature[]={0x53,0x8b,0xdc,0x83,0xec,0x08,0x83,0xe4,0xf8};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,14,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,9);relativeJump(relay+9,reinterpret_cast<unsigned>(entry+9));
+    DWORD protection,ignored;
+    if(!VirtualProtect(entry,9,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalRectangleCancel=reinterpret_cast<RectangleCancelCall>(relay);
+    relativeJump(entry,reinterpret_cast<unsigned>(observeRectangleCancel));for(int i=5;i<9;++i)entry[i]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,9);VirtualProtect(entry,9,protection,&ignored);return true;
+}
+
 using BulletCancelCall=unsigned(__thiscall*)(unsigned,unsigned);
 BulletCancelCall originalBulletCancel;
 unsigned __fastcall observeBulletCancel(unsigned self,unsigned,unsigned argument){
@@ -390,6 +507,198 @@ bool installBulletCancelObserver(){
     FlushInstructionCache(GetCurrentProcess(),entry,6);VirtualProtect(entry,6,protection,&ignored);return true;
 }
 
+
+void* originalComboTick;
+void __cdecl recordComboTick(unsigned manager){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(!cpuDebugActive)return;
+    if(FILE* output=std::fopen("native-combo-attack.jsonl","ab")){
+        std::fprintf(output,"{\"frame\":%u,\"side\":%u,\"comboAttack\":[%d,%d,%d,%d,%d,%u]}\n",frame,read<unsigned>(manager+0x1f4),read<int>(manager+0x20),read<int>(manager+0x24),read<int>(manager+0x28),read<int>(manager+0x34),read<int>(manager+0x30),read<unsigned>(manager+0x1e4));
+        std::fclose(output);
+    }
+}
+__declspec(naked) void observeComboTick(){
+    __asm {
+        pushfd
+        pushad
+        mov ebx, esp
+        and esp, -16
+        sub esp, 512
+        fxsave [esp]
+        push ecx
+        call recordComboTick
+        add esp, 4
+        fxrstor [esp]
+        mov esp, ebx
+        popad
+        popfd
+        jmp dword ptr [originalComboTick]
+    }
+}
+bool installComboTickObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0x10df40);
+    const unsigned char signature[]={0x55,0x8b,0xec,0xa1};
+    if(std::memcmp(entry,signature,sizeof(signature))||read<unsigned>(reinterpret_cast<unsigned>(entry+4))!=gameBase+0x1d19bc)return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,13,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,8);relativeJump(relay+8,reinterpret_cast<unsigned>(entry+8));
+    DWORD protection,ignored;
+    if(!VirtualProtect(entry,8,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalComboTick=relay;
+    relativeJump(entry,reinterpret_cast<unsigned>(observeComboTick));for(int i=5;i<8;++i)entry[i]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,8);VirtualProtect(entry,8,protection,&ignored);return true;
+}
+void* originalEclStep;
+void __cdecl recordEclStep(unsigned context,unsigned caller,unsigned parentFrame){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    if(!cpuDebugActive||!detailedFrame(frame,0,0))return;
+    const auto host=read<unsigned>(context+0x1018);
+    if(FILE* output=std::fopen("native-ecl-step.jsonl","ab")){
+        std::fprintf(output,"{\"frame\":%u,\"id\":%u,\"caller\":%u,\"time\":%.9g,\"sub\":%d,\"ip\":%d}\n",frame,host?read<unsigned>(host+0x6858):0,read<unsigned>(parentFrame+4),read<float>(context),read<int>(context+4),read<int>(context+8));
+        std::fclose(output);
+    }
+}
+__declspec(naked) void observeEclStep(){
+    __asm {
+        pushfd
+        pushad
+        mov ebx, esp
+        and esp, -16
+        sub esp, 512
+        fxsave [esp]
+        push dword ptr [ebx+8]
+        push dword ptr [ebx+36]
+        push ecx
+        call recordEclStep
+        add esp, 12
+        fxrstor [esp]
+        mov esp, ebx
+        popad
+        popfd
+        jmp dword ptr [originalEclStep]
+    }
+}
+bool installEclStepObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0x1687d0);
+    const unsigned char signature[]={0x55,0x8b,0xec,0x83,0xe4,0xf8};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,11,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,6);relativeJump(relay+6,reinterpret_cast<unsigned>(entry+6));
+    DWORD protection,ignored;
+    if(!VirtualProtect(entry,6,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalEclStep=relay;
+    relativeJump(entry,reinterpret_cast<unsigned>(observeEclStep));entry[5]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,6);VirtualProtect(entry,6,protection,&ignored);return true;
+}
+// Trace the gameplay lifetime of the shared Marisa EX/C2 flight.
+using MarisaFlightCall=unsigned(__thiscall*)(unsigned);
+MarisaFlightCall originalMarisaFlight;
+unsigned __fastcall observeMarisaFlight(unsigned self,unsigned){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    const auto age=read<int>(self+0x5c),duration=read<int>(self+0x6c);
+    const auto result=originalMarisaFlight(self);
+    if(cpuDebugActive&&detailedFrame(frame,0,0))if(FILE* output=std::fopen("native-marisa-flight.jsonl","ab")){
+        std::fprintf(output,"{\"frame\":%u,\"self\":%u,\"side\":%u,\"age\":%d,\"duration\":%d,\"target\":[%.9g,%.9g],\"result\":%u}\n",frame,self,read<unsigned>(self+0x774),age,duration,read<float>(self+0x10),read<float>(self+0x14),result);
+        std::fclose(output);
+    }
+    return result;
+}
+bool installMarisaFlightObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0x13d150);
+    const unsigned char signature[]={0x55,0x8b,0xec,0x83,0xec,0x60};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,11,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,6);relativeJump(relay+6,reinterpret_cast<unsigned>(entry+6));
+    DWORD protection,ignored;
+    if(!VirtualProtect(entry,6,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalMarisaFlight=reinterpret_cast<MarisaFlightCall>(relay);
+    relativeJump(entry,reinterpret_cast<unsigned>(observeMarisaFlight));entry[5]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,6);VirtualProtect(entry,6,protection,&ignored);return true;
+}
+using AnmTickCall=unsigned(__thiscall*)(unsigned);
+AnmTickCall originalAnmTick;
+unsigned __fastcall observeAnmTick(unsigned self,unsigned){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    const bool selected=cpuDebugActive&&detailedFrame(frame,0,0)&&(read<int>(self+0x28)==106||read<int>(self+0x28)==209);
+    const auto before=read<int>(self+0x2c);
+    const auto result=originalAnmTick(self);
+    if(selected)if(FILE* output=std::fopen("native-anm106-tick.jsonl","ab")){
+        std::fprintf(output,"{\"frame\":%u,\"vm\":%u,\"file\":%d,\"script\":%d,\"beforeIp\":%d,\"afterIp\":%d,\"clock\":[%d,%u,%u],\"position\":[%.9g,%.9g],\"result\":%u}\n",frame,self,read<int>(self+0x1c),read<int>(self+0x28),before,read<int>(self+0x2c),read<int>(self+0x4e4),read<unsigned>(self+0x4e8),read<unsigned>(self+0x56c),read<float>(self+0x50),read<float>(self+0x54),result);
+        std::fclose(output);
+    }
+    return result;
+}
+bool installAnmTickObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0xbd660);
+    const unsigned char signature[]={0x55,0x8b,0xec,0x83,0xe4,0xf8};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,11,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,6);relativeJump(relay+6,reinterpret_cast<unsigned>(entry+6));
+    DWORD protection,ignored;
+    if(!VirtualProtect(entry,6,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalAnmTick=reinterpret_cast<AnmTickCall>(relay);
+    relativeJump(entry,reinterpret_cast<unsigned>(observeAnmTick));entry[5]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,6);VirtualProtect(entry,6,protection,&ignored);return true;
+}
+using ChainTickCall=unsigned(__thiscall*)(unsigned);
+ChainTickCall originalChainTick;
+unsigned __fastcall observeChainTick(unsigned self,unsigned){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    const int age=read<int>(self+4);
+    const auto result=originalChainTick(self);
+    if(cpuDebugActive&&detailedFrame(frame,0,0))if(FILE* output=std::fopen("native-chain-region.jsonl","ab")){
+        std::fprintf(output,"{\"frame\":%u,\"chain\":%u,\"side\":%u,\"position\":[%.9g,%.9g],\"radius\":%.9g,\"age\":%d,\"duration\":%d,\"target\":%.9g}\n",frame,self,read<unsigned>(self+0x70),read<float>(self+0x14),read<float>(self+0x18),read<float>(self+0x30),age,read<int>(self+0x68),read<float>(self+0x24));
+        std::fclose(output);
+    }
+    return result;
+}
+bool installChainTickObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0x11c8c0);
+    const unsigned char signature[]={0x55,0x8b,0xec,0x83,0xec,0x14};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,11,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,6);relativeJump(relay+6,reinterpret_cast<unsigned>(entry+6));
+    DWORD protection,ignored;
+    if(!VirtualProtect(entry,6,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalChainTick=reinterpret_cast<ChainTickCall>(relay);
+    relativeJump(entry,reinterpret_cast<unsigned>(observeChainTick));entry[5]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,6);VirtualProtect(entry,6,protection,&ignored);return true;
+}
+using ShotBeamCall=unsigned(__thiscall*)(unsigned,unsigned,unsigned,unsigned,float);
+ShotBeamCall originalShotBeam;
+unsigned __fastcall observeShotBeam(unsigned self,unsigned,unsigned point,unsigned shape,unsigned argument,float radius){
+    const auto game=read<unsigned>(gameBase+0x1d1a54);
+    const auto frame=game?read<unsigned>(game+0x14):0;
+    const float before=read<float>(self+0xb0);
+    const auto result=originalShotBeam(self,point,shape,argument,radius);
+    if(cpuDebugActive&&detailedFrame(frame,0,0))if(FILE* output=std::fopen("native-shot-beam-contact.jsonl","ab")){
+        std::fprintf(output,"{\"frame\":%u,\"shot\":%u,\"point\":[%.9g,%.9g],\"shape\":%u,\"radius\":%.9g,\"origin\":[%.9g,%.9g,%.9g],\"before\":%.9g,\"after\":%.9g,\"result\":%u}\n",frame,self,read<float>(point),read<float>(point+4),shape,radius,read<float>(self+0x54),read<float>(self+0x58),read<float>(self+0x70),before,read<float>(self+0xb0),result);
+        std::fclose(output);
+    }
+    return result;
+}
+bool installShotBeamObserver(){
+    auto* entry=reinterpret_cast<unsigned char*>(gameBase+0x14cd70);
+    const unsigned char signature[]={0x55,0x8b,0xec,0x83,0xe4,0xc0,0x83,0xec,0x74};
+    if(std::memcmp(entry,signature,sizeof(signature)))return false;
+    auto* relay=static_cast<unsigned char*>(VirtualAlloc(nullptr,14,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
+    if(!relay)return false;
+    std::memcpy(relay,entry,9);relativeJump(relay+9,reinterpret_cast<unsigned>(entry+9));
+    DWORD protection,ignored;
+    if(!VirtualProtect(entry,9,PAGE_EXECUTE_READWRITE,&protection))return false;
+    originalShotBeam=reinterpret_cast<ShotBeamCall>(relay);
+    relativeJump(entry,reinterpret_cast<unsigned>(observeShotBeam));for(int i=5;i<9;++i)entry[i]=0x90;
+    FlushInstructionCache(GetCurrentProcess(),entry,9);VirtualProtect(entry,9,protection,&ignored);return true;
+}
 using StraightCircleCall=unsigned(__thiscall*)(unsigned,unsigned,float,unsigned,unsigned);
 StraightCircleCall originalStraightCircle;
 unsigned __fastcall observeStraightCircle(unsigned self,unsigned,unsigned point,float radius,unsigned argument,unsigned lock){
@@ -650,7 +959,14 @@ void __cdecl recordShotGate(unsigned shot) {
             for(unsigned i=0;node&&i<1024;++i){
                 const auto enemy=read<unsigned>(node);
                 if(!enemy)break;
-                std::fprintf(output,"{\"frame\":%u,\"seat\":%u,\"id\":%u,\"position\":[%u,%u],\"spawn\":[%u,%u],\"hp\":%d,\"viewport\":[%d,%d],\"motion\":[",timer,seat,read<unsigned>(enemy+0x6858),read<unsigned>(enemy+0x1278),read<unsigned>(enemy+0x127c),read<unsigned>(enemy+0x6880),read<unsigned>(enemy+0x6884),read<int>(enemy+0x6238),read<int>(gameBase+0x22ce48),read<int>(gameBase+0x22ce4c));
+                std::fprintf(output,"{\"frame\":%u,\"seat\":%u,\"id\":%u,\"position\":[%u,%u],\"spawn\":[%u,%u],\"hp\":%d,\"viewport\":[%d,%d]",timer,seat,read<unsigned>(enemy+0x6858),read<unsigned>(enemy+0x1278),read<unsigned>(enemy+0x127c),read<unsigned>(enemy+0x6880),read<unsigned>(enemy+0x6884),read<int>(enemy+0x6238),read<int>(gameBase+0x22ce48),read<int>(gameBase+0x22ce4c));
+                std::fprintf(output,",\"body\":[%.9g,%.9g],\"flags\":[%u,%u]",read<float>(enemy+0x621c),read<float>(enemy+0x6220),read<unsigned>(enemy+0x639c),read<unsigned>(enemy+0x63a0));
+                std::fprintf(output,",\"waveCursor\":%u,\"wavePoolSize\":%u,\"roundRng\":%u,\"waveDraws\":[%u,%u,%u]",read<unsigned>(manager+0x42ac),read<unsigned>(gameBase+0x22b0c0+0x9b4),read<unsigned>(game+0x17c),read<unsigned>(gameBase+0x22b674),read<unsigned>(gameBase+0x22b678),read<unsigned>(gameBase+0x22b67c));
+                std::fprintf(output,",\"combinedDisplacement\":[%.9g,%.9g]",read<float>(enemy+0x12b0),read<float>(enemy+0x12b4));
+                const auto context=read<unsigned>(enemy+0x121c);
+                std::fprintf(output,",\"ecl\":[%.9g,%d,%d]",context?read<float>(context):0.f,context?read<int>(context+4):-1,context?read<int>(context+8):-1);
+                // Native protection timers and their clock bindings, before update.
+                std::fprintf(output,",\"protection\":[%d,%.9g,%u,%d,%.9g,%u],\"motion\":[",read<int>(enemy+0x635c),read<float>(enemy+0x6360),read<unsigned>(enemy+0x6364),read<int>(enemy+0x6370),read<float>(enemy+0x6374),read<unsigned>(enemy+0x6378));
                 // Enemy::update receives the gameplay record at allocation +0x1230.
                 for(unsigned word=0;word<20;++word)std::fprintf(output,"%s%u",word?",":"",read<unsigned>(enemy+0x12c0+word*4));
                 std::fputs("]}\n",output);
@@ -694,7 +1010,7 @@ void __cdecl recordShotGate(unsigned shot) {
                     reinterpret_cast<Quad>(gameBase+0xca2e0)(reinterpret_cast<void*>(vm),vertices);
                     std::fprintf(output,"{\"frame\":%u,\"seat\":%u,\"shot\":%u,\"age\":%u,\"position\":[%.9g,%.9g],\"viewport\":[%d,%d],\"vertices\":[",timer,seat,projectile,read<unsigned>(projectile+0x1c),read<float>(projectile+0x54),read<float>(projectile+0x58),read<int>(gameBase+0x22ce48),read<int>(gameBase+0x22ce4c));
                     for(unsigned j=0;j<12;++j)std::fprintf(output,"%s%.9g",j?",":"",vertices[j]);
-                    std::fputs("]}\n",output);std::fclose(output);
+                    std::fprintf(output,"],\"physics\":[%.9g,%u,%u,%u,%u,%u]}\n",read<float>(projectile+0xb0),read<unsigned>(projectile+0x9c),read<unsigned>(projectile+0xa4),read<unsigned>(projectile+0xa8),read<unsigned>(projectile+0xac),read<unsigned>(projectile+0xdc));std::fclose(output);
                 }
             }
             projectileSamples[projectileCount++]={timer,sample.seat,projectile,read<unsigned>(projectile+0x14),
@@ -929,6 +1245,7 @@ void flushRngCalls() {
         std::fputs("}\n", rngTrace);
     }
     std::fflush(rngTrace);
+    rngCallCount = rngCallsFlushed = 0;
 }
 
 bool saveBackbuffer(IDirect3DDevice9* device, const char* path) {
@@ -1118,22 +1435,22 @@ void capture(IDirect3DDevice9* device) {
         std::fputc(']',trace);
     }
     if (rngTrace && frame == 11) std::fprintf(trace, ",\"rngCalls\":%u,\"rngCallsOnOtherThreads\":%ld",
-        rngCallCount, InterlockedCompareExchange(&skippedRngThreads, 0, 0));
-    if (rngTrace && frame <= 2 && frame != read<unsigned>(owner + 0x10)) {
+        rngRecordedCount, InterlockedCompareExchange(&skippedRngThreads, 0, 0));
+    if (!renderImagesOnly && rngTrace && frame <= 2 && frame != read<unsigned>(owner + 0x10)) {
         char name[80]{};
         sprintf_s(name, "native-segment-%u-frame-%u.bmp", generation, frame);
         if (GetFileAttributesA(name) == INVALID_FILE_ATTRIBUTES && saveBackbuffer(device, name))
             std::fprintf(trace, ",\"image\":\"%s\"", name);
     }
     for (unsigned i = 0; i < sizeof(imageFrames) / sizeof(imageFrames[0]); ++i) {
-        if (frame != imageFrames[i] || savedImage[i]) continue;
+        if (renderImagesOnly || frame != imageFrames[i] || savedImage[i]) continue;
         char name[80]{};
         sprintf_s(name, "native-segment-%u-frame-%u.bmp", generation, frame);
         savedImage[i] = saveBackbuffer(device, name);
         if (savedImage[i]) std::fprintf(trace, ",\"image\":\"%s\"", name);
     }
     for (unsigned wanted : extraImageFrames) {
-        if(frame!=wanted)continue;
+        if(frame!=wanted||(renderImagesOnly&&stateOnlyDrawActive))continue;
         char name[80]{};
         sprintf_s(name,"native-segment-%u-frame-%u.bmp",generation,frame);
         if(GetFileAttributesA(name)==INVALID_FILE_ATTRIBUTES&&saveBackbuffer(device,name))
@@ -1187,8 +1504,12 @@ HRESULT STDMETHODCALLTYPE observePresent(IDirect3DDevice9* self, const RECT* sou
     const auto owner=read<unsigned>(gameBase+0x1d1a54);
     static const bool stateOnly=GetEnvironmentVariableA("TH19_CAPTURE_STATE_ONLY",nullptr,0)>0;
     static const unsigned renderFrom=[](){char value[32]{};GetEnvironmentVariableA("TH19_CAPTURE_RENDER_FROM",value,sizeof(value));return unsigned(std::strtoul(value,nullptr,10));}();
-    stateOnlyDrawActive=owner&&(read<unsigned>(owner+0x140)&0x4000000u)&&
-        (stateOnly||(renderFrom&&read<unsigned>(owner+0x14)+1<renderFrom));
+    const unsigned nextFrame=owner?read<unsigned>(owner+0x14)+1:0;
+    const bool requestedImage=std::find(extraImageFrames.begin(),extraImageFrames.end(),nextFrame)!=extraImageFrames.end();
+    // State capture also skips menu rendering and presentation. Server sessions
+    // can block Present before the fixture has entered its first battle.
+    stateOnlyDrawActive=stateOnly||(owner&&(read<unsigned>(owner+0x140)&0x4000000u)&&
+        (renderImagesOnly?!requestedImage:(renderFrom&&nextFrame<renderFrom)));
     static const bool requested=GetEnvironmentVariableA("TH19_CAPTURE_FAST_STATE",nullptr,0)>0;
     if(requested){
         const auto owner=read<unsigned>(gameBase+0x1d1a54);
@@ -1202,6 +1523,7 @@ HRESULT STDMETHODCALLTYPE observePresent(IDirect3DDevice9* self, const RECT* sou
             if(active&&(stateOnlyDrawActive||read<unsigned>(owner+0x14)%60!=0))return D3D_OK;
         }
     }
+    if(stateOnly)return D3D_OK;
     return originalPresent(self, source, dest, window, dirty);
 }
 
@@ -1280,6 +1602,18 @@ unsigned __fastcall observeCpuControl(unsigned self,unsigned unused){
     const auto game=read<unsigned>(gameBase+0x1d1a54);
     const auto frame=game?read<unsigned>(game+0x14):0;
     if(detailedFrame(frame,0,0))if(FILE* output=std::fopen("native-cpu-control.jsonl","ab")){
+        const auto holder=read<unsigned>(self+0x36eec8);
+        const auto damageManager=read<unsigned>(holder+0x30);
+        auto areaNode=read<unsigned>(damageManager+0x6418);
+        if(FILE* areas=std::fopen("native-damage-areas.jsonl","ab")){
+            for(unsigned index=0;areaNode&&index<4096;++index){
+                const auto area=read<unsigned>(areaNode);
+                std::fprintf(areas,"{\"frame\":%u,\"cpu\":%u,\"area\":%u,\"flags\":%u,\"position\":[%.9g,%.9g],\"radius\":%.9g,\"damage\":%d,\"group\":%u,\"lastEnemy\":%u,\"interval\":%u,\"cooldown\":%u,\"clock\":[%d,%d]}\n",frame,self,area,read<unsigned>(area+0x14),read<float>(area+0x34),read<float>(area+0x38),read<float>(area+0x18),read<int>(area+0x98),read<unsigned>(area+0xb0),read<unsigned>(area+0xa8),read<unsigned>(area+0xa4),read<unsigned>(area+0xac),read<int>(area+0x7c),read<int>(area+0x80));
+                std::fprintf(areas,"{\"frame\":%u,\"areaShape\":%u,\"size\":[%.9g,%.9g],\"angle\":%.9g}\n",frame,area,read<float>(area+0x2c),read<float>(area+0x30),read<float>(area+0x24));
+                areaNode=read<unsigned>(areaNode+4);
+            }
+            std::fclose(areas);
+        }
         const auto count=read<unsigned>(self+0x36ee84);
         const auto player=read<unsigned>(read<unsigned>(self+0x36eec8)+4);
         std::fprintf(output,"{\"frame\":%u,\"cpu\":%u,\"bits\":%u,\"player\":[%u,%u,%u,%u],\"position\":[%u,%u],\"radius\":%u,\"steps\":[%u,%u,%u,%u],\"state\":[",frame,self,result,
@@ -1287,7 +1621,9 @@ unsigned __fastcall observeCpuControl(unsigned self,unsigned unused){
             read<unsigned>(self+0x36ee88),read<unsigned>(self+0x36ee8c),read<unsigned>(player+0x20c8),
             read<unsigned>(player+0x20e4),read<unsigned>(player+0x20e8),read<unsigned>(player+0x20ec),read<unsigned>(player+0x20f0));
         for(unsigned offset=0x36ee94;offset<0x36eec8;offset+=4)std::fprintf(output,"%s%u",offset==0x36ee94?"":",",read<unsigned>(self+offset));
-        std::fputs("],\"objects\":[",output);
+        const auto attackManager=read<unsigned>(holder+0x2c);
+        const auto aura=read<unsigned>(holder+0x18);
+        std::fprintf(output,"],\"gauge\":[%u,%u,%u,%u,%u,%u],\"objects\":[",read<unsigned>(attackManager+0x24),read<unsigned>(aura+0x94),read<unsigned>(attackManager+0x28),read<unsigned>(attackManager+0x2c),read<unsigned>(attackManager+0x30),read<unsigned>(attackManager+0x34));
         for(unsigned i=0;i<count&&i<30000;++i){
             std::fputs(i?",[":"[",output);
             for(unsigned word=0;word<15;++word)std::fprintf(output,"%s%u",word?",":"",read<unsigned>(self+4+i*60+word*4));
@@ -1298,7 +1634,7 @@ unsigned __fastcall observeCpuControl(unsigned self,unsigned unused){
         auto node=manager?read<unsigned>(manager+0xff85c):0;
         for(unsigned index=0;node&&index<4096;++index){
             const auto item=read<unsigned>(node);
-            std::fprintf(output,"%s[%u,%u,%.9g,%.9g]",index?",":"",item,read<unsigned>(item+0xcc8),read<float>(item+0xc80),read<float>(item+0xc84));
+            std::fprintf(output,"%s[%u,%u,%.9g,%.9g,%d,%u]",index?",":"",item,read<unsigned>(item+0xcc8),read<float>(item+0xc80),read<float>(item+0xc84),read<int>(item+0xcd8),read<unsigned>(manager+0xff8d8));
             node=read<unsigned>(node+4);
         }
         std::fputs("]}\n",output);std::fclose(output);
@@ -1323,6 +1659,21 @@ HRESULT STDMETHODCALLTYPE observeDevice(IDirect3D9* self, UINT adapter, D3DDEVTY
                                          DWORD behavior, D3DPRESENT_PARAMETERS* parameters,
                                          IDirect3DDevice9** device) {
     HRESULT result = originalCreateDevice(self, adapter, type, window, behavior, parameters, device);
+    if(FAILED(result)&&parameters&&parameters->Windowed&&
+       GetEnvironmentVariableA("TH19_CAPTURE_SOFTWARE_D3D9",nullptr,0)>0){
+        auto compatible=*parameters;
+        compatible.hDeviceWindow=window;
+        compatible.BackBufferFormat=D3DFMT_UNKNOWN;
+        compatible.MultiSampleType=D3DMULTISAMPLE_NONE;
+        compatible.MultiSampleQuality=0;
+        compatible.Flags=0;
+        compatible.FullScreen_RefreshRateInHz=0;
+        compatible.PresentationInterval=D3DPRESENT_INTERVAL_IMMEDIATE;
+        result=originalCreateDevice(self,adapter,D3DDEVTYPE_HAL,window,
+            D3DCREATE_SOFTWARE_VERTEXPROCESSING,&compatible,device);
+        backendEvent("windowed-device-retry",result);
+        if(SUCCEEDED(result))*parameters=compatible;
+    }
     if (trace && parameters) {
         std::fprintf(trace, "{\"deviceCreated\":%s,\"result\":%ld,\"width\":%u,\"height\":%u,\"windowed\":%s,\"arguments\":[%u,%u,%lu,%u,%u,%u,%lu,%d,%u,%lu,%u,%d,%d]}\n",
             SUCCEEDED(result) ? "true" : "false", long(result),
@@ -1337,7 +1688,7 @@ HRESULT STDMETHODCALLTYPE observeDevice(IDirect3D9* self, UINT adapter, D3DDEVTY
     if (SUCCEEDED(result) && device && *device && !originalPresent)
         patch(*reinterpret_cast<void***>(*device) + 17, observePresent, originalPresent);
     if(SUCCEEDED(result)&&device&&*device&&!originalDrawPrimitive&&
-       (GetEnvironmentVariableA("TH19_CAPTURE_STATE_ONLY",nullptr,0)>0||GetEnvironmentVariableA("TH19_CAPTURE_RENDER_FROM",nullptr,0)>0)){
+       (GetEnvironmentVariableA("TH19_CAPTURE_STATE_ONLY",nullptr,0)>0||GetEnvironmentVariableA("TH19_CAPTURE_RENDER_FROM",nullptr,0)>0||GetEnvironmentVariableA("TH19_CAPTURE_RENDER_IMAGES_ONLY",nullptr,0)>0)){
         auto** table=*reinterpret_cast<void***>(*device);
         const bool active=patch(table+81,observeDrawPrimitive,originalDrawPrimitive)&&
             patch(table+82,observeDrawIndexedPrimitive,originalDrawIndexedPrimitive)&&
@@ -1445,8 +1796,15 @@ extern "C" IDirect3D9* WINAPI observeCreate9(UINT sdkVersion) {
         if (rngTrace&&cpuDebugActive) std::fprintf(trace,"{\"anmDetachedObserverInstalled\":%s}\n",installAnmDetachedObserver()?"true":"false");
         if(rngTrace&&cpuDebugActive)std::fprintf(trace,"{\"straightGrazeObserverInstalled\":%s}\n",installStraightGrazeObserver()?"true":"false");
         if(rngTrace&&cpuDebugActive)std::fprintf(trace,"{\"straightCircleObserverInstalled\":%s}\n",installStraightCircleObserver()?"true":"false");
+        if(rngTrace&&cpuDebugActive)installShotBeamObserver();
+        if(rngTrace&&cpuDebugActive){installEclStepObserver();installMarisaFlightObserver();installAnmTickObserver();installChainTickObserver();}
+        if(rngTrace&&cpuDebugActive)installComboTickObserver();
         if(rngTrace&&cpuDebugActive)std::fprintf(trace,"{\"bulletCancelObserverInstalled\":%s}\n",installBulletCancelObserver()?"true":"false");
+        if(rngTrace&&cpuDebugActive)std::fprintf(trace,"{\"rectangleCancelObserverInstalled\":%s}\n",installRectangleCancelObserver()?"true":"false");
+        if(rngTrace&&cpuDebugActive)std::fprintf(trace,"{\"marisaBombObserverInstalled\":%s}\n",installMarisaBombObserver()?"true":"false");
+        if(rngTrace&&cpuDebugActive)std::fprintf(trace,"{\"pickupSpawnObserverInstalled\":%s}\n",installPickupSpawnObserver()?"true":"false");
         captureBulletPositions=GetEnvironmentVariableA("TH19_CAPTURE_BULLET_POSITIONS",nullptr,0)>0;
+        renderImagesOnly=GetEnvironmentVariableA("TH19_CAPTURE_RENDER_IMAGES_ONLY",nullptr,0)>0;
         if(const char* frames=std::getenv("TH19_CAPTURE_IMAGE_FRAMES")){
             while(*frames){
                 char* end=nullptr;

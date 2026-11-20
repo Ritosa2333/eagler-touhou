@@ -1,0 +1,23 @@
+{
+  "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-final-fifteen-20261118\\th19-web-MR4tTS\\report.json",
+  "wasmSha256": "8c5e586168602a5912e60c7b3da91e2ffcb3f9e86e39e216906c2ce0898cc2a8",
+  "nativeMissingStateFrames": [],
+  "verifiedTransitionGaps": [],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 36000,
+  "bulletCoordinateTolerance": 0.0001,
+  "maximumBulletCoordinateDifference": 3.0517578125e-05,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS",
+  "seed": 20261118,
+  "nativeTraceSha256": "9eb3b994e12c36fde58e8f143e4beb7a586fea3d33abb0be561ae935f5b5a403",
+  "firstAnimationRngDifference": {
+    "frame": 17627,
+    "web": 1103616917,
+    "original": 472111941
+  },
+  "secondarySeed": 18112026
+}

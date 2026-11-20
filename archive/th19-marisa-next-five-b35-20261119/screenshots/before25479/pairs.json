@@ -1,0 +1,15 @@
+{
+  "wasmSha256": "bdeeb1bcd3276b192e24979b3ebdaf66449e515d8854965d3954214efe0657d2",
+  "nativeTraceSha256": "19d38af02633e9e27f7cfe297cacc0cd64ba7d3bfb09bdefb82f1777f89236f0",
+  "diagnosticRoundWaveSeed": null,
+  "pairs": [
+    {
+      "frame": 25479,
+      "status": "敌弹状态不一致",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-25479.png",
+      "webImageSha256": "7be54f96d11f0f1af605bb9450524cead59dace614ac7a57f2ae6e8eca5e467c",
+      "nativeImageSha256": "79092f506b178816fc1a2f80e4e12d8a39d79f0aa65e87637391153d14a26059"
+    }
+  ]
+}

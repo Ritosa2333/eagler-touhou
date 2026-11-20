@@ -1,0 +1,287 @@
+{
+  "native": "present-0_dbjs6b",
+  "frame": 33461,
+  "rows": [
+    {
+      "frame": 33461,
+      "manager": 114710324,
+      "index": 484,
+      "vm": 209038180,
+      "script": 182,
+      "time": 0,
+      "registration": 2821252244,
+      "parent": 0
+    },
+    {
+      "frame": 33461,
+      "manager": 114710324,
+      "index": 505,
+      "vm": 215392684,
+      "script": 242,
+      "time": 0,
+      "registration": 2822632442,
+      "parent": 0
+    },
+    {
+      "frame": 33461,
+      "manager": 114710324,
+      "index": 506,
+      "vm": 209976364,
+      "script": 182,
+      "time": -3,
+      "registration": 2822694618,
+      "parent": 0
+    },
+    {
+      "frame": 33461,
+      "manager": 114710324,
+      "index": 585,
+      "vm": 217053044,
+      "script": 182,
+      "time": 0,
+      "registration": 2827876352,
+      "parent": 0
+    },
+    {
+      "frame": 33461,
+      "manager": 114710324,
+      "index": 1225,
+      "vm": 217921912,
+      "script": 140,
+      "time": 7,
+      "registration": 2869819931,
+      "parent": 218112128
+    },
+    {
+      "frame": 33461,
+      "manager": 114710324,
+      "index": 1238,
+      "vm": 217385116,
+      "script": 139,
+      "time": 7,
+      "registration": 2870868174,
+      "parent": 213455060
+    },
+    {
+      "frame": 33461,
+      "manager": 114710324,
+      "index": 1246,
+      "vm": 213455060,
+      "script": 37,
+      "time": 7,
+      "registration": 2871390024,
+      "parent": 0
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 470,
+      "vm": 216382452,
+      "script": 139,
+      "time": 7,
+      "registration": 2805724768,
+      "parent": 217422192
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 478,
+      "vm": 217422192,
+      "script": 37,
+      "time": 7,
+      "registration": 2806249701,
+      "parent": 0
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 486,
+      "vm": 210853292,
+      "script": 140,
+      "time": 7,
+      "registration": 2806769914,
+      "parent": 213940272
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 502,
+      "vm": 208807664,
+      "script": 137,
+      "time": 7,
+      "registration": 2807817221,
+      "parent": 212416932
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 515,
+      "vm": 213364788,
+      "script": 137,
+      "time": 7,
+      "registration": 2808672016,
+      "parent": 219068044
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 528,
+      "vm": 217859044,
+      "script": 137,
+      "time": 7,
+      "registration": 2809526772,
+      "parent": 214067620
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 541,
+      "vm": 217406072,
+      "script": 140,
+      "time": 7,
+      "registration": 2810378459,
+      "parent": 211704428
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 557,
+      "vm": 216201908,
+      "script": 137,
+      "time": 7,
+      "registration": 2811426288,
+      "parent": 214261060
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 570,
+      "vm": 212373408,
+      "script": 137,
+      "time": 7,
+      "registration": 2812275881,
+      "parent": 212998864
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 583,
+      "vm": 213305144,
+      "script": 140,
+      "time": 7,
+      "registration": 2813128427,
+      "parent": 216588788
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 599,
+      "vm": 210305212,
+      "script": 137,
+      "time": 7,
+      "registration": 2814175142,
+      "parent": 208822172
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 612,
+      "vm": 218945532,
+      "script": 140,
+      "time": 7,
+      "registration": 2815032470,
+      "parent": 218644088
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 628,
+      "vm": 212950504,
+      "script": 137,
+      "time": 7,
+      "registration": 2816077327,
+      "parent": 212399200
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 641,
+      "vm": 211631888,
+      "script": 140,
+      "time": 7,
+      "registration": 2816928477,
+      "parent": 213056896
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 657,
+      "vm": 217992840,
+      "script": 140,
+      "time": 7,
+      "registration": 2817980999,
+      "parent": 213213260
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 673,
+      "vm": 215631260,
+      "script": 139,
+      "time": 7,
+      "registration": 2819028110,
+      "parent": 215835984
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 681,
+      "vm": 215835984,
+      "script": 37,
+      "time": 7,
+      "registration": 2819552525,
+      "parent": 0
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 689,
+      "vm": 211946228,
+      "script": 139,
+      "time": 7,
+      "registration": 2820074400,
+      "parent": 211222440
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 697,
+      "vm": 211222440,
+      "script": 37,
+      "time": 7,
+      "registration": 2820598239,
+      "parent": 0
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 739,
+      "vm": 208670644,
+      "script": 242,
+      "time": 0,
+      "registration": 2873746352,
+      "parent": 0
+    },
+    {
+      "frame": 33461,
+      "manager": 114710356,
+      "index": 789,
+      "vm": 214378736,
+      "script": 242,
+      "time": -6,
+      "registration": 2877026693,
+      "parent": 0
+    }
+  ],
+  "observation": "Firstmanager hasold182/242 beforetwoemitter139/140. Secondmanager hassixteenearlyemitter136..140 beforelatercancels. Webglobalresultdeath effects previouslykeptsamequeueasbulletworld, contrarytoNativefile1resource-ownerqueue."
+}

@@ -1,0 +1,751 @@
+{
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-shim4gqx\\native-present.jsonl",
+  "nativeExe": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "nativeTraceSha256": "22834596f3a41730e4ea61319537711d0dde380b35a022b45ce84e76fc214770",
+  "wasmPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\eagler-touhou-marisa\\ports\\th19\\runtime\\th19.wasm",
+  "wasmSha256": "03c3b5c71c799462488530ee82330c66089195cf35ff17fa5bbfb713d7d36192",
+  "incompleteNativeTail": false,
+  "fixture": {
+    "difficulty": 3,
+    "characters": [
+      1,
+      1
+    ],
+    "cardMode": 0,
+    "cards": [
+      0,
+      0
+    ],
+    "lives": 2,
+    "timeRule": 4
+  },
+  "continuous": true,
+  "initialAnimationRng": [
+    1,
+    7
+  ],
+  "bulletPositionCoverage": {
+    "frames": 35999,
+    "first": 1,
+    "last": 36000,
+    "nonemptyFrames": 35014,
+    "originalBulletSamples": 4085458,
+    "webBulletSamples": 4089853,
+    "missingFrames": [
+      0,
+      33776
+    ]
+  },
+  "differentBulletPositionFrames": 1965,
+  "firstDifferentBulletPosition": {
+    "frame": 34036,
+    "side": 0,
+    "kind": 1,
+    "color": 15,
+    "original": [],
+    "web": [
+      [
+        -92.30745697021484,
+        17.42761993408203
+      ]
+    ]
+  },
+  "firstDifferentBulletCount": {
+    "frame": 34036,
+    "side": 0,
+    "original": 0,
+    "web": 1
+  },
+  "firstDifferentRoundClock": null,
+  "playerPositionCoverage": 35999,
+  "firstDifferentPlayerPosition": {
+    "frame": 33901,
+    "web": [
+      0,
+      400,
+      0,
+      400
+    ],
+    "original": [
+      5,
+      400,
+      0,
+      400
+    ]
+  },
+  "playerControlCoverage": 35999,
+  "firstDifferentPlayerControls": {
+    "frame": 33901,
+    "web": [
+      1,
+      1
+    ],
+    "original": [
+      129,
+      1
+    ]
+  },
+  "firstDifferentRngSample": {
+    "frame": 2353,
+    "openingDraws": [
+      {
+        "kind": 3,
+        "seed": 515334345,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1401084294,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 1,
+        "seed": 2013438425,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": true,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 2018800896,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": true,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1037460703,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 2094430120,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 1,
+        "seed": 1001189054,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10012,
+        "seed": 1424833546,
+        "time": 1,
+        "ip": 68,
+        "sprite": 146,
+        "primary": false,
+        "registration": 17226
+      },
+      {
+        "kind": 10011,
+        "seed": 681336497,
+        "time": 1,
+        "ip": 88,
+        "sprite": 146,
+        "primary": false,
+        "registration": 17226
+      },
+      {
+        "kind": 10012,
+        "seed": 81992882,
+        "time": 1,
+        "ip": 144,
+        "sprite": 146,
+        "primary": false,
+        "registration": 17226
+      },
+      {
+        "kind": 10011,
+        "seed": 66045601,
+        "time": 1,
+        "ip": 164,
+        "sprite": 146,
+        "primary": false,
+        "registration": 17226
+      },
+      {
+        "kind": 1,
+        "seed": 1221473723,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10012,
+        "seed": 447070901,
+        "time": 1,
+        "ip": 68,
+        "sprite": 149,
+        "primary": false,
+        "registration": 17227
+      },
+      {
+        "kind": 10011,
+        "seed": 496293468,
+        "time": 1,
+        "ip": 88,
+        "sprite": 149,
+        "primary": false,
+        "registration": 17227
+      },
+      {
+        "kind": 10012,
+        "seed": 1401911543,
+        "time": 1,
+        "ip": 144,
+        "sprite": 149,
+        "primary": false,
+        "registration": 17227
+      },
+      {
+        "kind": 10011,
+        "seed": 167407889,
+        "time": 1,
+        "ip": 164,
+        "sprite": 149,
+        "primary": false,
+        "registration": 17227
+      },
+      {
+        "kind": 2,
+        "seed": 2112729905,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1734331872,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10010,
+        "seed": 431298664,
+        "time": 1,
+        "ip": 164,
+        "sprite": 41,
+        "primary": false,
+        "registration": 17229
+      },
+      {
+        "kind": 10010,
+        "seed": 1511335926,
+        "time": 1,
+        "ip": 172,
+        "sprite": 41,
+        "primary": false,
+        "registration": 17229
+      },
+      {
+        "kind": 110022,
+        "seed": 1529511709,
+        "time": 1,
+        "ip": 188,
+        "sprite": 41,
+        "primary": false,
+        "registration": 17229
+      },
+      {
+        "kind": 10011,
+        "seed": 571921279,
+        "time": 1,
+        "ip": 60,
+        "sprite": -1,
+        "primary": false,
+        "registration": 17230
+      },
+      {
+        "kind": 10012,
+        "seed": 1309776424,
+        "time": 1,
+        "ip": 80,
+        "sprite": -1,
+        "primary": false,
+        "registration": 17230
+      },
+      {
+        "kind": 10011,
+        "seed": 151711577,
+        "time": 1,
+        "ip": 60,
+        "sprite": -1,
+        "primary": false,
+        "registration": 17231
+      },
+      {
+        "kind": 10012,
+        "seed": 350297097,
+        "time": 1,
+        "ip": 80,
+        "sprite": -1,
+        "primary": false,
+        "registration": 17231
+      },
+      {
+        "kind": 10011,
+        "seed": 2052416456,
+        "time": 1,
+        "ip": 60,
+        "sprite": -1,
+        "primary": false,
+        "registration": 17232
+      },
+      {
+        "kind": 10012,
+        "seed": 184176878,
+        "time": 1,
+        "ip": 80,
+        "sprite": -1,
+        "primary": false,
+        "registration": 17232
+      },
+      {
+        "kind": 10011,
+        "seed": 1967263005,
+        "time": 1,
+        "ip": 60,
+        "sprite": -1,
+        "primary": false,
+        "registration": 17233
+      },
+      {
+        "kind": 10012,
+        "seed": 25644015,
+        "time": 1,
+        "ip": 80,
+        "sprite": -1,
+        "primary": false,
+        "registration": 17233
+      },
+      {
+        "kind": 10011,
+        "seed": 911667393,
+        "time": 1,
+        "ip": 60,
+        "sprite": -1,
+        "primary": false,
+        "registration": 17234
+      },
+      {
+        "kind": 10012,
+        "seed": 861833179,
+        "time": 1,
+        "ip": 80,
+        "sprite": -1,
+        "primary": false,
+        "registration": 17234
+      },
+      {
+        "kind": 10011,
+        "seed": 496173825,
+        "time": 1,
+        "ip": 60,
+        "sprite": -1,
+        "primary": false,
+        "registration": 17235
+      },
+      {
+        "kind": 10012,
+        "seed": 2069075231,
+        "time": 1,
+        "ip": 80,
+        "sprite": -1,
+        "primary": false,
+        "registration": 17235
+      },
+      {
+        "kind": 3,
+        "seed": 1161020925,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 2,
+        "seed": 760334916,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1631203006,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 1,
+        "seed": 164901724,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10012,
+        "seed": 1396723422,
+        "time": 1,
+        "ip": 68,
+        "sprite": 150,
+        "primary": false,
+        "registration": 17236
+      },
+      {
+        "kind": 10011,
+        "seed": 987205797,
+        "time": 1,
+        "ip": 88,
+        "sprite": 150,
+        "primary": false,
+        "registration": 17236
+      },
+      {
+        "kind": 10012,
+        "seed": 748900057,
+        "time": 1,
+        "ip": 144,
+        "sprite": 150,
+        "primary": false,
+        "registration": 17236
+      },
+      {
+        "kind": 10011,
+        "seed": 1562421496,
+        "time": 1,
+        "ip": 164,
+        "sprite": 150,
+        "primary": false,
+        "registration": 17236
+      },
+      {
+        "kind": 1,
+        "seed": 22350776,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10012,
+        "seed": 857517502,
+        "time": 1,
+        "ip": 68,
+        "sprite": 150,
+        "primary": false,
+        "registration": 17237
+      },
+      {
+        "kind": 10011,
+        "seed": 480043117,
+        "time": 1,
+        "ip": 88,
+        "sprite": 150,
+        "primary": false,
+        "registration": 17237
+      },
+      {
+        "kind": 10012,
+        "seed": 812749577,
+        "time": 1,
+        "ip": 144,
+        "sprite": 150,
+        "primary": false,
+        "registration": 17237
+      },
+      {
+        "kind": 10011,
+        "seed": 2003567971,
+        "time": 1,
+        "ip": 164,
+        "sprite": 150,
+        "primary": false,
+        "registration": 17237
+      },
+      {
+        "kind": 1,
+        "seed": 156001849,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10012,
+        "seed": 1287586697,
+        "time": 1,
+        "ip": 68,
+        "sprite": 145,
+        "primary": false,
+        "registration": 17238
+      },
+      {
+        "kind": 10011,
+        "seed": 625739413,
+        "time": 1,
+        "ip": 88,
+        "sprite": 145,
+        "primary": false,
+        "registration": 17238
+      },
+      {
+        "kind": 10012,
+        "seed": 709709868,
+        "time": 1,
+        "ip": 144,
+        "sprite": 145,
+        "primary": false,
+        "registration": 17238
+      },
+      {
+        "kind": 10011,
+        "seed": 1745901284,
+        "time": 1,
+        "ip": 164,
+        "sprite": 145,
+        "primary": false,
+        "registration": 17238
+      },
+      {
+        "kind": 2,
+        "seed": 552637096,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 303397982,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      }
+    ],
+    "homingContacts": [],
+    "playerDamage": [
+      1,
+      2248,
+      2,
+      0,
+      256890,
+      1,
+      1,
+      2248,
+      2,
+      0,
+      432000,
+      1
+    ],
+    "playedFrames": 2248,
+    "round": 1,
+    "lives": [
+      2,
+      2
+    ],
+    "controls": [
+      27,
+      73
+    ],
+    "enemies": [
+      15,
+      3
+    ],
+    "bullets": [
+      15,
+      15
+    ],
+    "cards": [
+      0,
+      0
+    ],
+    "positionBits": [
+      1110771712,
+      1132491264,
+      3267627008,
+      1138229248
+    ],
+    "animationRng": [
+      1025117250,
+      1633000229
+    ],
+    "world": 0,
+    "strips": 0,
+    "stripFrame": 0,
+    "side": 1,
+    "waves": [
+      5,
+      5
+    ],
+    "waveFinalState": 951632182,
+    "shotClock": [
+      9,
+      3
+    ],
+    "shots": [
+      24,
+      6
+    ],
+    "elapsed": 2353,
+    "remaining": 33647,
+    "announcement": false,
+    "originalRng": [
+      1025117250,
+      113773162
+    ],
+    "originalPositionBits": [
+      1110771712,
+      1132491264,
+      3267627008,
+      1138229248
+    ],
+    "originalControls": [
+      27,
+      73
+    ],
+    "originalRound": 1,
+    "originalRoundFrame": 2353,
+    "seconds": 561
+  },
+  "firstDifferentRngByStream": {
+    "primary": {
+      "frame": 33861,
+      "web": 1416254148,
+      "original": 2135924849
+    },
+    "animation": {
+      "frame": 2353,
+      "web": 1633000229,
+      "original": 113773162
+    }
+  },
+  "nativeFramesWithMultipleRngStates": [
+    3114,
+    3680,
+    4677,
+    5107,
+    5484,
+    5988,
+    6507,
+    6972,
+    7390,
+    10296,
+    10421,
+    11380,
+    11704,
+    12139,
+    12472,
+    13215,
+    14197,
+    14342,
+    15282,
+    15635,
+    15979,
+    16327,
+    16358,
+    16877,
+    17068,
+    17363,
+    18012,
+    19003,
+    19378,
+    19405,
+    19725,
+    19943,
+    20383,
+    20455,
+    20824,
+    20868,
+    21214,
+    21355,
+    21755,
+    21930,
+    22700,
+    22911,
+    23281,
+    23340,
+    24396,
+    24502,
+    24804,
+    24920,
+    25279,
+    25456,
+    26138,
+    26231,
+    27793,
+    27869,
+    28712,
+    28874,
+    29058,
+    29833,
+    29985,
+    30175,
+    30639,
+    30952,
+    31200,
+    31345,
+    31506,
+    31722,
+    31770,
+    32217,
+    32535,
+    33211,
+    33239,
+    33776
+  ],
+  "missingNativeOpeningFrames": [],
+  "firstConsecutiveMatchingFrames": 2353,
+  "frameRollback": {
+    "frames": [
+      5395,
+      5420
+    ],
+    "differences": [],
+    "image": true
+  },
+  "browserErrors": []
+}

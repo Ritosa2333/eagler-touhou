@@ -1,0 +1,14 @@
+✔ timer model matches 120 original x86 instruction results (3.0889ms)
+✔ RNG model matches 156 original x86 instruction results (2.522ms)
+✔ fractional clock may retain or skip integer indices; a network tick is not a native frame (0.4054ms)
+✔ native trace streams large UTF-8 rows without changing order or source hash (31.2789ms)
+✔ native trace accepts complete final JSON and marks only an incomplete final row (9.6647ms)
+✔ native trace rejects malformed rows before the final unterminated tail (5.1855ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 302.4167

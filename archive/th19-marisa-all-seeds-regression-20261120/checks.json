@@ -1,0 +1,17 @@
+{
+  "diff": {
+    "exitCode": 0
+  },
+  "docs-index": {
+    "status": "TIMEOUT",
+    "seconds": 25
+  },
+  "docs-check": {
+    "status": "TIMEOUT",
+    "seconds": 25
+  },
+  "site": {
+    "passed": 55,
+    "total": 55
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "nativeCapture": "present-9otr6395",
+  "rows": [
+    {
+      "frame": 25990,
+      "chain": 657998640,
+      "side": 0,
+      "position": [
+        -60.2299995,
+        250.470001
+      ],
+      "radius": 29.7679996,
+      "age": 23,
+      "duration": 30,
+      "target": 30
+    },
+    {
+      "frame": 25991,
+      "chain": 657998640,
+      "side": 0,
+      "position": [
+        -60.2299995,
+        250.470001
+      ],
+      "radius": 29.8657417,
+      "age": 24,
+      "duration": 30,
+      "target": 30
+    },
+    {
+      "frame": 25992,
+      "chain": 657998640,
+      "side": 0,
+      "position": [
+        -60.2299995,
+        250.470001
+      ],
+      "radius": 29.9312592,
+      "age": 25,
+      "duration": 30,
+      "target": 30
+    }
+  ],
+  "webCenter": [
+    -60.2400017,
+    250.470001
+  ],
+  "missingBulletAt25991": [
+    -82.1542739868164,
+    228.7382354736328
+  ],
+  "webBoundaryDistance": 30.862679467559246,
+  "cutoff": 30.8657417
+}

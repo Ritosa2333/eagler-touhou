@@ -1,0 +1,268 @@
+[
+  {
+    "frame": 33775,
+    "round": 1,
+    "playedFrames": 33670,
+    "animationRng": [
+      42915601,
+      237918214
+    ],
+    "originalRng": [
+      42915601,
+      913891751
+    ],
+    "waveFinalState": 951632182,
+    "waves": [
+      16,
+      10
+    ],
+    "controls": [
+      9,
+      65
+    ],
+    "originalControls": [
+      9,
+      65
+    ],
+    "positionBits": [
+      1112428544,
+      1136516608,
+      0,
+      1148829696
+    ],
+    "originalPositionBits": [
+      1112428544,
+      1136516608,
+      0,
+      1148829696
+    ]
+  },
+  {
+    "frame": 33777,
+    "round": 2,
+    "playedFrames": 33670,
+    "animationRng": [
+      42915601,
+      2133098368
+    ],
+    "originalRng": [
+      42915601,
+      104401648
+    ],
+    "waveFinalState": 776211277,
+    "waves": [
+      0,
+      0
+    ],
+    "controls": [
+      0,
+      0
+    ],
+    "originalControls": [
+      0,
+      0
+    ],
+    "positionBits": [
+      0,
+      1137180672,
+      0,
+      1137180672
+    ],
+    "originalPositionBits": [
+      0,
+      1137180672,
+      0,
+      1137180672
+    ]
+  },
+  {
+    "frame": 33850,
+    "round": 2,
+    "playedFrames": 33693,
+    "animationRng": [
+      42915601,
+      2133098368
+    ],
+    "originalRng": [
+      42915601,
+      104401648
+    ],
+    "waveFinalState": 776211277,
+    "waves": [
+      6,
+      7
+    ],
+    "controls": [
+      0,
+      0
+    ],
+    "originalControls": [
+      0,
+      0
+    ],
+    "positionBits": [
+      0,
+      1137180672,
+      0,
+      1137180672
+    ],
+    "originalPositionBits": [
+      0,
+      1137180672,
+      0,
+      1137180672
+    ]
+  },
+  {
+    "frame": 33860,
+    "round": 2,
+    "playedFrames": 33703,
+    "animationRng": [
+      42915601,
+      2133098368
+    ],
+    "originalRng": [
+      42915601,
+      104401648
+    ],
+    "waveFinalState": 776211277,
+    "waves": [
+      6,
+      7
+    ],
+    "controls": [
+      0,
+      0
+    ],
+    "originalControls": [
+      0,
+      0
+    ],
+    "positionBits": [
+      0,
+      1137180672,
+      0,
+      1137180672
+    ],
+    "originalPositionBits": [
+      0,
+      1137180672,
+      0,
+      1137180672
+    ]
+  },
+  {
+    "frame": 33861,
+    "round": 2,
+    "playedFrames": 33704,
+    "animationRng": [
+      1416254148,
+      2133098368
+    ],
+    "originalRng": [
+      2135924849,
+      104401648
+    ],
+    "waveFinalState": 776211277,
+    "waves": [
+      6,
+      7
+    ],
+    "controls": [
+      0,
+      0
+    ],
+    "originalControls": [
+      0,
+      0
+    ],
+    "positionBits": [
+      0,
+      1137180672,
+      0,
+      1137180672
+    ],
+    "originalPositionBits": [
+      0,
+      1137180672,
+      0,
+      1137180672
+    ]
+  },
+  {
+    "frame": 33900,
+    "round": 2,
+    "playedFrames": 33743,
+    "animationRng": [
+      1416254148,
+      42360096
+    ],
+    "originalRng": [
+      1521196330,
+      1507632934
+    ],
+    "waveFinalState": 776211277,
+    "waves": [
+      6,
+      7
+    ],
+    "controls": [
+      1,
+      65
+    ],
+    "originalControls": [
+      1,
+      1
+    ],
+    "positionBits": [
+      0,
+      1137180672,
+      3231711232,
+      1137180672
+    ],
+    "originalPositionBits": [
+      0,
+      1137180672,
+      0,
+      1137180672
+    ]
+  },
+  {
+    "frame": 34054,
+    "round": 2,
+    "playedFrames": 33897,
+    "animationRng": [
+      1508769695,
+      1237340295
+    ],
+    "originalRng": [
+      1570178022,
+      1348808807
+    ],
+    "waveFinalState": 776211277,
+    "waves": [
+      6,
+      7
+    ],
+    "controls": [
+      145,
+      9
+    ],
+    "originalControls": [
+      65,
+      1
+    ],
+    "positionBits": [
+      1117540352,
+      1134168576,
+      3262816256,
+      1137049600
+    ],
+    "originalPositionBits": [
+      3247964160,
+      1137180672,
+      1108869120,
+      1137180672
+    ]
+  }
+]

@@ -1,0 +1,110 @@
+{
+  "nativeCapture": "present-ie8fgrhf",
+  "webCapture": "th19-web-vqpZwS",
+  "firstDifferentBySide": [
+    {
+      "native": {
+        "frame": 530,
+        "side": 0,
+        "comboAttack": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          529
+        ]
+      },
+      "web": {
+        "frame": 530,
+        "side": 0,
+        "comboAttack": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          509
+        ]
+      }
+    },
+    {
+      "native": {
+        "frame": 459,
+        "side": 1,
+        "comboAttack": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          458
+        ]
+      },
+      "web": {
+        "frame": 459,
+        "side": 1,
+        "comboAttack": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          438
+        ]
+      }
+    }
+  ],
+  "nativeAutomaticAt24797": [
+    {
+      "frame": 24797,
+      "side": 1,
+      "comboAttack": [
+        110,
+        110,
+        0,
+        0,
+        0,
+        24796
+      ]
+    },
+    {
+      "frame": 24797,
+      "side": 0,
+      "comboAttack": [
+        62,
+        62,
+        0,
+        0,
+        0,
+        24796
+      ]
+    }
+  ],
+  "webAutomaticAt24840": [
+    {
+      "frame": 24840,
+      "side": 0,
+      "comboAttack": [
+        30,
+        30,
+        0,
+        0,
+        0,
+        24819
+      ]
+    },
+    {
+      "frame": 24840,
+      "side": 1,
+      "comboAttack": [
+        0,
+        102,
+        99,
+        59,
+        0,
+        24819
+      ]
+    }
+  ]
+}

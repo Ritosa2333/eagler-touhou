@@ -1,0 +1,146 @@
+{
+  "scope": "native seed1 manager queue before frame4714 update",
+  "source": "present-qqivpjtb",
+  "rows": [
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 556,
+      "vm": 205802076,
+      "script": 135,
+      "time": 9,
+      "registration": 2757491870,
+      "parent": 205661832
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 557,
+      "vm": 207094900,
+      "script": 138,
+      "time": 2,
+      "registration": 2757558208,
+      "parent": 205661832
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 565,
+      "vm": 205661832,
+      "script": 41,
+      "time": 9,
+      "registration": 2758081607,
+      "parent": 0
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 574,
+      "vm": 204375456,
+      "script": 203,
+      "time": -12,
+      "registration": 2758867241,
+      "parent": 0
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 582,
+      "vm": 204821980,
+      "script": 203,
+      "time": 0,
+      "registration": 2759588414,
+      "parent": 0
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 586,
+      "vm": 204831652,
+      "script": 135,
+      "time": 7,
+      "registration": 2759850564,
+      "parent": 205616696
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 587,
+      "vm": 204262616,
+      "script": 138,
+      "time": 7,
+      "registration": 2759915747,
+      "parent": 205616696
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 595,
+      "vm": 205616696,
+      "script": 41,
+      "time": 7,
+      "registration": 2760440875,
+      "parent": 0
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 599,
+      "vm": 205266892,
+      "script": 201,
+      "time": 6,
+      "registration": 2760833874,
+      "parent": 204375456
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 600,
+      "vm": 204256168,
+      "script": 201,
+      "time": 6,
+      "registration": 2760898783,
+      "parent": 204375456
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 601,
+      "vm": 204414144,
+      "script": 202,
+      "time": 6,
+      "registration": 2760964417,
+      "parent": 204375456
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 602,
+      "vm": 205505468,
+      "script": 201,
+      "time": 6,
+      "registration": 2761030630,
+      "parent": 204375456
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 603,
+      "vm": 204847772,
+      "script": 202,
+      "time": 6,
+      "registration": 2761095758,
+      "parent": 204375456
+    },
+    {
+      "frame": 4714,
+      "manager": 101553972,
+      "index": 619,
+      "vm": 204673676,
+      "script": 135,
+      "time": 3,
+      "registration": 2762471906,
+      "parent": 205661832
+    }
+  ]
+}

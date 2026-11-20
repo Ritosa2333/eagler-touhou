@@ -1,0 +1,58 @@
+{
+  "status": "reverted",
+  "webCapture": "th19-web-MMgRRl",
+  "transitionDraws": 0,
+  "nativeTransitionDraws": 10,
+  "wasmSha256": "9e3d8f298afdb86455e0e6cc61c3709c7e97d929bb358e8c2caccad7560978fe",
+  "firstDifferentRngByStream": {
+    "primary": {
+      "frame": 33861,
+      "web": 1219740317,
+      "original": 2135924849
+    },
+    "animation": {
+      "frame": 2263,
+      "web": 848416955,
+      "original": 49404565
+    }
+  },
+  "firstDifferentPlayerControls": {
+    "frame": 33901,
+    "web": [
+      1,
+      1
+    ],
+    "original": [
+      129,
+      1
+    ]
+  },
+  "firstDifferentPlayerPosition": {
+    "frame": 33901,
+    "web": [
+      0,
+      400,
+      0,
+      400
+    ],
+    "original": [
+      5,
+      400,
+      0,
+      400
+    ]
+  },
+  "firstDifferentBulletPosition": {
+    "frame": 34100,
+    "side": 1,
+    "kind": 1,
+    "color": 1,
+    "original": [
+      [
+        -119.73941040039062,
+        15.332763671875
+      ]
+    ],
+    "web": []
+  }
+}

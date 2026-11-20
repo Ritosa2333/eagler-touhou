@@ -1,0 +1,119 @@
+{
+  "1": {
+    "report": "th19-web-kRxpMT",
+    "build": "e3898e16a74af7b052086da9e860d99258b0bc6b7b8ae7a4be7d8f991ca0c8de",
+    "through": 36000,
+    "rng": {
+      "primary": null,
+      "animation": null
+    },
+    "firstControls": null,
+    "firstPosition": null,
+    "firstBullet": null,
+    "differentBulletFrames": 0,
+    "rollback": {
+      "frames": [
+        20100,
+        20110
+      ],
+      "differences": [],
+      "image": true
+    }
+  },
+  "42": {
+    "report": "th19-web-3ZxhES",
+    "build": "e3898e16a74af7b052086da9e860d99258b0bc6b7b8ae7a4be7d8f991ca0c8de",
+    "through": 36000,
+    "rng": {
+      "primary": null,
+      "animation": {
+        "frame": 9157,
+        "web": 2080127861,
+        "original": 1369692032
+      }
+    },
+    "firstControls": null,
+    "firstPosition": null,
+    "firstBullet": null,
+    "differentBulletFrames": 0,
+    "rollback": null
+  },
+  "20261112": {
+    "report": "th19-web-IcKxLQ",
+    "build": "e3898e16a74af7b052086da9e860d99258b0bc6b7b8ae7a4be7d8f991ca0c8de",
+    "through": 36000,
+    "rng": {
+      "primary": null,
+      "animation": null
+    },
+    "firstControls": null,
+    "firstPosition": null,
+    "firstBullet": null,
+    "differentBulletFrames": 0,
+    "rollback": null
+  },
+  "123456789": {
+    "report": "th19-web-lzkGVY",
+    "build": "e3898e16a74af7b052086da9e860d99258b0bc6b7b8ae7a4be7d8f991ca0c8de",
+    "through": 36000,
+    "rng": {
+      "primary": null,
+      "animation": {
+        "frame": 20965,
+        "web": 1979994558,
+        "original": 1710182705
+      }
+    },
+    "firstControls": null,
+    "firstPosition": null,
+    "firstBullet": null,
+    "differentBulletFrames": 0,
+    "rollback": null
+  },
+  "987654321": {
+    "report": "th19-web-5wWiuM",
+    "build": "e3898e16a74af7b052086da9e860d99258b0bc6b7b8ae7a4be7d8f991ca0c8de",
+    "through": 36000,
+    "rng": {
+      "primary": {
+        "frame": 35554,
+        "web": 142312444,
+        "original": 497735480
+      },
+      "animation": {
+        "frame": 16037,
+        "web": 487500622,
+        "original": 1622840230
+      }
+    },
+    "firstControls": {
+      "frame": 26026,
+      "web": [
+        83,
+        139
+      ],
+      "original": [
+        147,
+        139
+      ]
+    },
+    "firstPosition": {
+      "frame": 35988,
+      "web": [
+        0,
+        400,
+        0,
+        400
+      ],
+      "original": [
+        -5,
+        400,
+        -5,
+        400
+      ]
+    },
+    "firstBullet": null,
+    "differentBulletFrames": 0,
+    "rollback": null
+  }
+}

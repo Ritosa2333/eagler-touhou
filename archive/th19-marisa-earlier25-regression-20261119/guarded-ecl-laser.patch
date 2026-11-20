@@ -1,0 +1,35 @@
+--- a/ports/th19/web/cpp/game/GameWorld.cpp
++++ b/ports/th19/web/cpp/game/GameWorld.cpp
+@@ -798,7 +798,9 @@
+                     // Its child first contacts on the following manager visit.
+                     const bool beforeWorldTick=rectangleSample&&base.motion_frame>battle_frame;
+                     part.split_registration_frame=beforeWorldTick?base.motion_frame:-1;
+-                    if(beforeWorldTick)part.motion_frame=part.split_registration_frame;
++                    // Player-contact callbacks register after this manager visit.
++                    // Bomb clears still admit the new controller to the late pass.
++                    if(beforeWorldTick&&laser_id)part.motion_frame=part.split_registration_frame;
+                     part.straight_changes={};part.straight_bounds_grace=3;part.change_sounds=0;
+                     lasers.push_back(part);
+                 }
+@@ -1624,7 +1626,9 @@
+         // current geometry. Retain the held registration visit only while the
+         // arriving wolf is still inside after the player's update.
+         if(first_arrival_update&&spirit.arrival_aura_registered&&in_aura){
+-            spirit.arrival_aura_registered=false;
++            // Registration already consumed the first arrival visit. Keep its
++            // guard for the following Aura callback without scheduling it twice.
++            spirit.arrival_motion=Enemy::ArrivalMotion::Hold;
+             apply_damage(enemies[i]);
+             continue;
+         }
+@@ -1663,6 +1667,10 @@
+             if(!first_arrival_update&&!script_updated&&!move_before_script)step_enemy_script(timed);
+         }
+         if(hold_motion){
++            // The conversion callback precedes the guarded manager visit.
++            // Its normal ECL step still runs while displacement and HP hold.
++            if(script_updated&&!guarded_script_updated&&converted_wolf)
++                step_enemy_script(enemies[i]);
+             // The arrival guard protects HP while registered shots are still
+             // consumed and hit feedback is published for every spirit type.
+             const auto savedFlags=enemies[i].flags;

@@ -1,0 +1,37 @@
+{
+  "wasmSha256": "316f5617160f7271092e7aea88c0584d7de0c0bcaf18ecec92c316ee56c2f6be",
+  "nativeTraceSha256": "30ceb92ec7c33a260d4c8bcef4252b65823fa773a5804ffe9ad2a36d0ed50226",
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-b9p87tif\\native-present.jsonl",
+  "fixture": {
+    "difficulty": 3,
+    "characters": [
+      1,
+      1
+    ],
+    "cardMode": 0,
+    "cards": [
+      0,
+      0
+    ],
+    "lives": 2,
+    "timeRule": 4
+  },
+  "continuous": true,
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": {
+      "frame": 374,
+      "web": 130420130,
+      "original": 854744046
+    }
+  },
+  "firstDifferentPlayerControls": null,
+  "firstDifferentPlayerPosition": null,
+  "firstDifferentBulletCount": null,
+  "firstDifferentBulletPosition": null,
+  "differentBulletPositionFrames": 0,
+  "browserErrors": [],
+  "failure": null,
+  "webCapture": "th19-web-ltLPib",
+  "lastFrame": 25260
+}

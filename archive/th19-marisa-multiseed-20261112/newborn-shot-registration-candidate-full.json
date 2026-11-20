@@ -1,0 +1,52 @@
+{
+  "nativeTraceSha256": "4883fdd461639848abbc8f8421d00ca42b86429ddde94efc6ad58f7545e268e7",
+  "wasmSha256": "8e3d2a1e4a48ff63fb73ecec127ece1e63c374211485755630f9766317188903",
+  "differentBulletPositionFrames": 3470,
+  "firstDifferentBulletCount": {
+    "frame": 32603,
+    "side": 1,
+    "original": 90,
+    "web": 89
+  },
+  "firstDifferentPlayerPosition": {
+    "frame": 32752,
+    "web": [
+      -33.2421875,
+      381.1484375,
+      122.34375,
+      414.34375
+    ],
+    "original": [
+      -34.65625,
+      382.5625,
+      122.34375,
+      414.34375
+    ]
+  },
+  "firstDifferentPlayerControls": {
+    "frame": 32752,
+    "web": [
+      153,
+      81
+    ],
+    "original": [
+      9,
+      81
+    ]
+  },
+  "firstDifferentRngByStream": {
+    "primary": {
+      "frame": 32529,
+      "web": 575743337,
+      "original": 556513610
+    },
+    "animation": {
+      "frame": 533,
+      "web": 1271274206,
+      "original": 1446384371
+    }
+  },
+  "webCapture": "th19-web-fTUE0b",
+  "candidateAlignedThrough": 32528,
+  "note": "The broad newborn registration guard removes 32510 but preserves another pellet that native consumes. Investigating actual area shape before accepting the guard."
+}

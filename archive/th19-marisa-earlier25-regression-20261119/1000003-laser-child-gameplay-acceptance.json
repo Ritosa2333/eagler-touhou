@@ -1,0 +1,23 @@
+{
+  "report": "web-captures-earlier25-laser-child\\th19-web-gUbm4U\\report.json",
+  "wasmSha256": "97f356f08f888d93d1982c346ebb40e6972595338c2858d704efaaba3ca30dde",
+  "nativeMissingStateFrames": [
+    27132
+  ],
+  "verifiedTransitionGaps": [
+    27132
+  ],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 35999,
+  "bulletCoordinateTolerance": 0.0001,
+  "maximumBulletCoordinateDifference": 6.103515625e-05,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS",
+  "strictStatus": "PASS",
+  "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+  "acceptedCoordinateCeiling": 0.000244140625,
+  "microscopicCoordinateFrames": []
+}

@@ -1,0 +1,21 @@
+{
+  "seed": 42,
+  "firstDifferentPrimaryRngFrame": 36000,
+  "nativeCapture": "present-jmzxp2mi",
+  "beforeWeb": "th19-web-7EULRl",
+  "boundaryPresent": 41075,
+  "nativeDraws": 568,
+  "webDraws": 910,
+  "sameEnemyDeaths": 32,
+  "nativeProvisionalExPairs": 85,
+  "nativeEntry": "0x53cc7a increments attack slot count before virtual dispatch; 0x53cdd7 dispatches and loops without refund on result rejection",
+  "candidate": "Use the pending timeout result state for native flight/arrival rejection, retaining provisional EX sampling and attack-slot reservation.",
+  "validation": "pending full regression",
+  "extraDrawBreakdown": {
+    "extraFlightInitializations": 85,
+    "drawsPerFlight": 4,
+    "extraCounterArrivalDraws": 2,
+    "total": 342
+  },
+  "cause": "EX and counter-arrival result rejection tested the report animation flag, which is set after the timeout clear tick. Native game result rejection is already active before that tick."
+}

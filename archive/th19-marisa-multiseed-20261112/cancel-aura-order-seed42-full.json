@@ -1,0 +1,238 @@
+{
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-jmzxp2mi\\native-present.jsonl",
+  "nativeExe": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "nativeTraceSha256": "7a80f012ab0a26f2a8f45a7504dbf880bd264977f76dcea69a6facc29122fcb1",
+  "wasmPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\eagler-touhou-marisa\\ports\\th19\\runtime\\th19.wasm",
+  "wasmSha256": "03c3b5c71c799462488530ee82330c66089195cf35ff17fa5bbfb713d7d36192",
+  "incompleteNativeTail": false,
+  "fixture": {
+    "difficulty": 3,
+    "characters": [
+      1,
+      1
+    ],
+    "cardMode": 0,
+    "cards": [
+      0,
+      0
+    ],
+    "lives": 2,
+    "timeRule": 4
+  },
+  "continuous": true,
+  "initialAnimationRng": [
+    42,
+    2026
+  ],
+  "bulletPositionCoverage": {
+    "frames": 36000,
+    "first": 1,
+    "last": 36000,
+    "nonemptyFrames": 35593,
+    "originalBulletSamples": 5072425,
+    "webBulletSamples": 5072425,
+    "missingFrames": [
+      0
+    ]
+  },
+  "differentBulletPositionFrames": 0,
+  "firstDifferentBulletPosition": null,
+  "firstDifferentBulletCount": null,
+  "firstDifferentRoundClock": null,
+  "playerPositionCoverage": 36000,
+  "firstDifferentPlayerPosition": null,
+  "playerControlCoverage": 36000,
+  "firstDifferentPlayerControls": null,
+  "firstDifferentRngSample": {
+    "frame": 533,
+    "homingContacts": [],
+    "playedFrames": 428,
+    "round": 1,
+    "lives": [
+      2,
+      2
+    ],
+    "controls": [
+      131,
+      144
+    ],
+    "enemies": [
+      5,
+      0
+    ],
+    "bullets": [
+      13,
+      7
+    ],
+    "cards": [
+      0,
+      0
+    ],
+    "positionBits": [
+      3246608384,
+      1137030400,
+      3259441152,
+      1134519296
+    ],
+    "animationRng": [
+      66255052,
+      1271274206
+    ],
+    "world": 0,
+    "strips": 0,
+    "stripFrame": 0,
+    "side": 0,
+    "waves": [
+      21,
+      21
+    ],
+    "waveFinalState": 1165202902,
+    "shotClock": [
+      14,
+      4294967295
+    ],
+    "shots": [
+      16,
+      0
+    ],
+    "elapsed": 533,
+    "remaining": 35467,
+    "announcement": false,
+    "originalRng": [
+      66255052,
+      1446384371
+    ],
+    "originalPositionBits": [
+      3246608384,
+      1137030400,
+      3259441152,
+      1134519296
+    ],
+    "originalControls": [
+      131,
+      144
+    ],
+    "originalRound": 1,
+    "originalRoundFrame": 533,
+    "seconds": 592
+  },
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": {
+      "frame": 533,
+      "web": 1271274206,
+      "original": 1446384371
+    }
+  },
+  "nativeFramesWithMultipleRngStates": [
+    4601,
+    5102,
+    6102,
+    6128,
+    6911,
+    7787,
+    8069,
+    9043,
+    9602,
+    9962,
+    10075,
+    10418,
+    10581,
+    10960,
+    11592,
+    12008,
+    13112,
+    13709,
+    13859,
+    14076,
+    14190,
+    14667,
+    15121,
+    15146,
+    15879,
+    16198,
+    16984,
+    17249,
+    17724,
+    18507,
+    18855,
+    19507,
+    19594,
+    19847,
+    19948,
+    20536,
+    20781,
+    21174,
+    21245,
+    21561,
+    21717,
+    22029,
+    22423,
+    22788,
+    23511,
+    23832,
+    23992,
+    24283,
+    24450,
+    24694,
+    24797,
+    24799,
+    25053,
+    25096,
+    25295,
+    25370,
+    25412,
+    25413,
+    25769,
+    25867,
+    26163,
+    26360,
+    26693,
+    26872,
+    27264,
+    27394,
+    27639,
+    28021,
+    28244,
+    28470,
+    28528,
+    28557,
+    29035,
+    29099,
+    29431,
+    29817,
+    30203,
+    30412,
+    30596,
+    30926,
+    31167,
+    31367,
+    31869,
+    31913,
+    32335,
+    32717,
+    33200,
+    33633,
+    34295,
+    34444,
+    34804,
+    34845,
+    34848,
+    35181,
+    35183,
+    35528,
+    35552,
+    35887
+  ],
+  "missingNativeOpeningFrames": [],
+  "firstConsecutiveMatchingFrames": 533,
+  "frameRollback": {
+    "frames": [
+      5395,
+      5420
+    ],
+    "differences": [],
+    "image": true
+  },
+  "browserErrors": []
+}

@@ -1,0 +1,15 @@
+{
+  "wasmSha256": "ab8c1a262965d909bd8721cb91584623ff2e95abc6750f156beb9022f556bdb9",
+  "nativeTraceSha256": "5d641d9a62182823e9f26bcaf58ec8ee120308aeec9aeb68c965c9bbcbe3967e",
+  "diagnosticRoundWaveSeed": null,
+  "pairs": [
+    {
+      "frame": 13344,
+      "status": "主 RNG、敌弹状态不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-13344.png",
+      "webImageSha256": "cfe2cdc7cdaa73fdd81176e4e3ad08727073e20c0436b3845d642589321d0aa4",
+      "nativeImageSha256": "fe35ec78548090dc1fe03c593349d3ec533f9fe8b0b0601f413dddce35e0e144"
+    }
+  ]
+}

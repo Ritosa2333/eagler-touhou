@@ -1,0 +1,78 @@
+{
+  "webCapture": "th19-web-DghR8h",
+  "wasmSha256": "2d8759838d5e15462c3f6cddb8ae32b38a47251fa8e750d507895a1abddfd05d",
+  "nativeTraceSha256": "56bee148cc5f09ebca87bfd8447e837f9fae1646a476b8fc28e834af34d2e142",
+  "firstDifferentRngByStream": {
+    "primary": {
+      "frame": 33861,
+      "web": 1404740163,
+      "original": 2135924849
+    },
+    "animation": {
+      "frame": 2263,
+      "web": 848416955,
+      "original": 49404565
+    }
+  },
+  "firstDifferentPlayerControls": {
+    "frame": 33900,
+    "web": [
+      1,
+      129
+    ],
+    "original": [
+      1,
+      1
+    ]
+  },
+  "firstDifferentPlayerPosition": {
+    "frame": 33900,
+    "web": [
+      0,
+      400,
+      5,
+      400
+    ],
+    "original": [
+      0,
+      400,
+      0,
+      400
+    ]
+  },
+  "firstDifferentBulletPosition": {
+    "frame": 34032,
+    "side": 0,
+    "kind": 1,
+    "color": 2,
+    "original": [],
+    "web": [
+      [
+        38.694061279296875,
+        5.165113925933838
+      ]
+    ]
+  },
+  "differentBulletPositionFrames": 1969,
+  "bulletPositionCoverage": {
+    "frames": 35999,
+    "first": 1,
+    "last": 36000,
+    "nonemptyFrames": 35018,
+    "originalBulletSamples": 4085458,
+    "webBulletSamples": 4099069,
+    "missingFrames": [
+      0,
+      33776
+    ]
+  },
+  "frameRollback": {
+    "frames": [
+      5395,
+      5420
+    ],
+    "differences": [],
+    "image": true
+  },
+  "browserErrors": []
+}

@@ -15,32 +15,71 @@ def main():
     parser.add_argument("output", type=Path)
     parser.add_argument("--frames", nargs="+", type=int, required=True)
     parser.add_argument("--font", type=Path)
+    parser.add_argument("--bullet-coordinate-tolerance", type=float, default=0.)
     args = parser.parse_args()
     report = json.loads((args.web_capture / "report.json").read_text(encoding="utf8"))
     native_trace = args.native_capture / "native-present.jsonl"
-    if hashlib.sha256(native_trace.read_bytes()).hexdigest() != report["nativeTraceSha256"]:
+    with native_trace.open("rb") as source:
+        native_hash = hashlib.file_digest(source, "sha256").hexdigest()
+    if native_hash != report["nativeTraceSha256"]:
         parser.error("Web report and original capture have different trace hashes")
     samples = {row["frame"]: row for row in report["samples"]}
     # Slot identities and vector order differ between the engines. Compare the
     # complete kind/color/coordinate multiset for each field, as check-web does.
-    native_bullets = {}
-    native_index = {(row.get("originalRound", 1) - 1, row.get("originalRoundFrame", frame)): frame
-                    for frame, row in samples.items()}
-    for line in native_trace.open(encoding="utf8"):
-        original = json.loads(line)
-        key = (original.get("segment"), original.get("frame"))
-        if key in native_index and "bulletPositions" in original:
-            native_bullets[native_index[key]] = original["bulletPositions"]
     bullet_differences = set()
     positions_path = args.web_capture / "web-bullet-positions.jsonl"
-    if positions_path.is_file():
-        normalize = lambda fields: [sorted(tuple(value & 0xffffffff for value in bullet) for bullet in field)
-                                    for field in fields]
-        for line in positions_path.open(encoding="utf8"):
-            web = json.loads(line)
-            frame = web["frame"]
-            if frame in native_bullets and normalize(web["bulletPositions"]) != normalize(native_bullets[frame]):
-                bullet_differences.add(frame)
+    if report.get("differentBulletPositionFrames") != 0 and positions_path.is_file():
+        native_index = {(row.get("originalRound", 1) - 1, row.get("originalRoundFrame", frame)): frame
+                        for frame, row in samples.items()}
+
+        def native_bullet_rows():
+            previous_frame = None
+            previous_positions = None
+            with native_trace.open(encoding="utf8") as source:
+                for line in source:
+                    try:
+                        original = json.loads(line)
+                    except json.JSONDecodeError:
+                        if not line.endswith("\n"):
+                            break
+                        raise
+                    frame = native_index.get((original.get("segment"), original.get("frame")))
+                    if frame is None or "bulletPositions" not in original:
+                        continue
+                    if previous_frame is not None and frame != previous_frame:
+                        yield previous_frame, previous_positions
+                    previous_frame = frame
+                    previous_positions = original["bulletPositions"]
+            if previous_frame is not None:
+                yield previous_frame, previous_positions
+
+        def normalize(fields):
+            return [sorted((bullet[0], bullet[1],
+                            *[struct.unpack("<f", struct.pack("<I", v & 0xffffffff))[0] for v in bullet[2:]])
+                           for bullet in field) for field in fields]
+
+        def same_bullets(a, b):
+            for left, right in zip(normalize(a), normalize(b)):
+                if len(left) != len(right):
+                    return False
+                for p, q in zip(left, right):
+                    if p[:2] != q[:2] or any(abs(x-y) > args.bullet_coordinate_tolerance for x, y in zip(p[2:], q[2:])):
+                        return False
+            return True
+        # Stream both traces together. Duplicate native presents retain the last
+        # state at that frame, without holding an entire ten-minute trace in RAM.
+        native_rows = native_bullet_rows()
+        original = next(native_rows, None)
+        with positions_path.open(encoding="utf8") as source:
+            for line in source:
+                web = json.loads(line)
+                frame = web["frame"]
+                while original is not None and original[0] < frame:
+                    original = next(native_rows, None)
+                if original is not None and original[0] == frame:
+                    if not same_bullets(web["bulletPositions"], original[1]):
+                        bullet_differences.add(frame)
+        native_rows.close()
     font_path = args.font or next((path for path in [
         Path("C:/Windows/Fonts/msyh.ttc"),
         Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
@@ -60,7 +99,7 @@ def main():
         if not left.is_file() or not right.is_file():
             parser.error(f"Missing frame {frame} image; recapture with --image-frames {frame}")
         errors = []
-        for index, label in enumerate(["主 RNG", "动画 RNG"]):
+        for index, label in enumerate(["主 RNG"]):
             if row["animationRng"][index] != row["originalRng"][index]:
                 errors.append(label)
         if row.get("controls") != row.get("originalControls"):
@@ -69,7 +108,9 @@ def main():
             errors.append("自机位置")
         if frame in bullet_differences:
             errors.append("敌弹状态")
-        status = "、".join(errors) + "不一致" if errors else "所列状态一致"
+        status = "、".join(errors) + "不一致" if errors else "玩法状态一致"
+        if row["animationRng"][1] != row["originalRng"][1]:
+            status += " · 动画 RNG 单列"
         canvas = Image.new("RGB", (1944, 920), "#131925")
         draw = ImageDraw.Draw(canvas)
         frame_label = f"累计 {frame} 帧 · 第 {native_round} 轮 {native_frame} 帧" if report.get("continuous") else f"第 {frame} 帧"
@@ -92,13 +133,14 @@ def main():
                     parser.error(f"Expected a 4:3 game image: {source}")
                 canvas.paste(image.convert("RGB").resize((960, 720), Image.Resampling.LANCZOS), (x, 168))
         different_frames = sum(
-            sample["animationRng"] != sample["originalRng"]
+            sample["animationRng"][0] != sample["originalRng"][0]
             or (sample.get("originalControls") is not None and sample.get("controls") != sample["originalControls"])
             or (sample.get("originalPositionBits") is not None and sample.get("positionBits") != sample["originalPositionBits"])
             or sample["frame"] in bullet_differences
             for sample in report["samples"] if sample["frame"] <= frame
         )
-        draw.text((16, 892), f"同一模拟帧 · 截至本帧累计状态差异 {different_frames} 帧 · 原始截图按 4:3 等比例显示", font=font, fill="#b2bfce")
+        condition = f"受控出怪表诊断 seed={report['diagnosticRoundWaveSeed']} · " if report.get("diagnosticRoundWaveSeed") else ""
+        draw.text((16, 892), f"{condition}同一模拟帧 · 截至本帧累计玩法差异 {different_frames} 帧 · 原始截图按 4:3 等比例显示", font=font, fill="#b2bfce")
         destination = args.output / f"frame-{frame}.png"
         canvas.save(destination)
         evidence.append({"frame": frame, "status": status, "differentFramesThroughCurrent": different_frames, "image": destination.name,
@@ -106,6 +148,7 @@ def main():
                          "nativeImageSha256": hashlib.sha256(right.read_bytes()).hexdigest()})
     (args.output / "pairs.json").write_text(json.dumps({
         "wasmSha256": report["wasmSha256"], "nativeTraceSha256": report["nativeTraceSha256"],
+        "diagnosticRoundWaveSeed": report.get("diagnosticRoundWaveSeed"),
         "pairs": evidence,
     }, indent=2, ensure_ascii=False) + "\n", encoding="utf8")
 

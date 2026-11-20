@@ -1,0 +1,56 @@
+{
+  "build": "6760edfb5d95124ed1fd6770105237d29bc2c423ca616c3b9db6d66fb767d315",
+  "completeSeeds": 2,
+  "seed1": {
+    "run": "th19-web-8yHgK0",
+    "frames": 36000,
+    "bothRng": "PASS",
+    "gameplay": "PASS",
+    "rollback": [
+      34050,
+      34065
+    ]
+  },
+  "seed42": {
+    "run": "th19-web-ojtrf3",
+    "frames": 36000,
+    "gameplay": "PASS",
+    "secondaryFirst": 9157
+  },
+  "seed20261112": {
+    "run": "th19-web-ez7Km4",
+    "bothRngThrough": 17648,
+    "firstSecondary": 17649,
+    "firstCPU": 27976,
+    "firstPrimary": 27985,
+    "firstPosition": 28060,
+    "firstBullet": 28147
+  },
+  "seed123": {
+    "run": "th19-web-dHGylc",
+    "bothRngThrough": 15411,
+    "firstCPU": 26898,
+    "firstPrimary": 26907,
+    "firstPosition": 26982,
+    "firstBullet": 27053
+  },
+  "newFixes": [
+    "LoadingInf uses actual ascii1280.anm17/16 and eight fast-native loading ticks, stage RNG copy after first burst",
+    "Replaced attack-warning VMs continue independently, with per-instance tick guard",
+    "Contact frame retains the last registered charge-gauge callback",
+    "Bomb callbacks run in creation order after persistent charge callbacks",
+    "New discharge actors initialize after player movement before either field manager"
+  ],
+  "remaining": "20261112 secondary17649, 123 secondary15412, 987 full current build pending",
+  "images": "screenshots/seed1-34083-loading-aligned",
+  "storage": {
+    "webBulletLogsGzipSha256Verified": 82,
+    "nativeLogs": "NTFS compact, contents and paths preserved",
+    "failedENOSPCRuns": [
+      "th19-web-mu4vgb",
+      "th19-web-JQ4pmX"
+    ],
+    "freeGBObserved": 120
+  },
+  "pushed": false
+}

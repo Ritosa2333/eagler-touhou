@@ -1,0 +1,17 @@
+{
+  "build": "9c813ac551d41cfb8213ce5acae9a4424b4ce5cc6bd9374ee7962757e87cb208",
+  "seed": 1,
+  "report": "th19-web-JcIvyI",
+  "rngMatchingThrough": 18733,
+  "firstSecondaryDifference": 18734,
+  "primaryCpuPlayerBulletsMatchingThrough": 18734,
+  "fix": "VS laser circle/region cancellation visits controllers newest first. At17070 new laser9754 emits four232 effects before old9680 constructs two224 roots. Native constructor draw order restored.",
+  "originalComplete": 1,
+  "targetSeeds": 5,
+  "targetFramesEach": 36000,
+  "seed42Full": {
+    "report": "th19-web-oCHC0j",
+    "frames": 36000,
+    "primaryCpuPlayerBullets": "PASS"
+  }
+}

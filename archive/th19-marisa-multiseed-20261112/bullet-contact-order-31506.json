@@ -1,0 +1,163 @@
+{
+  "build": "b104aba28e97de1ba8114064de8aafd643a7e173e1af1e88067d31e0eed14efa",
+  "fix": "Invulnerable physical cancellation is handled inside newest-first ordinary bullet graze traversal. Per-bullet graze offsets before the contacting bullet now precede its separate cancellation constructor.",
+  "firstStop": "th19-web-j63oFs",
+  "fullSeed1": "th19-web-E736qx",
+  "fullSeed42": "th19-web-OxHz3g",
+  "matchingRngThrough": 31505,
+  "seed1FirstPrimary": 33861,
+  "seed1FirstCpuAndPlayer": 33901,
+  "seed1FirstEnemyBullet": 34100,
+  "seed42Gameplay": "36000PASS",
+  "rollback": {
+    "frames": [
+      22947,
+      22953
+    ],
+    "differences": [],
+    "image": true
+  },
+  "nextFix": {
+    "build": "41db2a8d9bffb740083c85614f1c9943d68ef73941130d1df10cbbcc7cd63317",
+    "firstStop": "th19-web-ywwusw",
+    "matchingRngThrough": 31750,
+    "nextSecondary": 31751,
+    "gameplayThrough": 31751,
+    "source": "Automatic attack warning initializes before shared flight chain circles. Existing manual release initializer retained.",
+    "fullRechecks": "running",
+    "fullSeed1": "th19-web-IYMxYR",
+    "fullSeed42": "th19-web-EJUQeC",
+    "fullSeed42Gameplay": "PASS36000",
+    "rollback": {
+      "frames": [
+        31500,
+        31510
+      ],
+      "differences": [],
+      "image": true
+    }
+  },
+  "originalCompleted": "1/5",
+  "pairedScreenshots": "screenshots/seed1-34083-bullet-contact-order",
+  "pairedBuild": "41db2a8d",
+  "pairedWeb": "th19-web-BU85es",
+  "tests": [
+    "234 native floats and ANM lifetime PASS",
+    "10 Node tests PASS",
+    "docs:index/docs:check567/21 PASS",
+    "git diff --check PASS"
+  ],
+  "fiveOriginalFull": {
+    "build": "41db2a8d9bffb740083c85614f1c9943d68ef73941130d1df10cbbcc7cd63317",
+    "seed1": "th19-web-IYMxYR",
+    "seed42": "th19-web-EJUQeC",
+    "seed20261112": "th19-web-ZV9bzz",
+    "seed123456789": "th19-web-3y3HWU",
+    "seed987654321": "th19-web-7mRZT8",
+    "completed": 1
+  },
+  "native31751": {
+    "capture": "present-8llb3qep",
+    "earlierCapture": "present-wng18xde",
+    "proof": "Otter269 emitter at world131.78,271.85 exists31750 parenttime23, stops31751. Eagle270/Wolf268 remain. Native enemy manager still lists Otter31751 pre-ECL but Web host23554 retires during ECL that tick. Helper ran cached independent emitter before stale host cache cleanup.",
+    "candidate": "Exclude inactive-host independent emitters from early helper registry merge."
+  },
+  "compressedCandidateBulletLogs": {
+    "losslessGzip": true,
+    "verifiedByteEquality": true,
+    "bytesSaved": 400800474,
+    "runs": [
+      "H15idI",
+      "KwP5b6",
+      "x0h3Ld",
+      "Sb8Wmi",
+      "gczX7u",
+      "4ROqAS",
+      "Hiw9AA",
+      "qpbSeQ",
+      "CI7Ngp",
+      "KwhFkj",
+      "n4RbkE",
+      "mMesCU",
+      "Jbvu7E",
+      "RvQZ5O",
+      "YcsfXr"
+    ]
+  },
+  "inactiveHostFix": {
+    "build": "8f972586dde411153df220696f27d667be8f2a3dd73c330edac873049f4bc115",
+    "firstStop": "th19-web-bA1qzw",
+    "fullSeed1": "th19-web-kemOF9",
+    "fullSeed42": "th19-web-kzQx2Y",
+    "matchingRngThrough": 31906,
+    "nextSecondary": 31907,
+    "seed42Gameplay": "PASS36000",
+    "rollback": {
+      "frames": [
+        31747,
+        31753
+      ],
+      "differences": [],
+      "image": true
+    }
+  },
+  "next31907": "Native31906 effect77 nine reads precede old209 root bound. Web effect79 persistent emitter not included in current even64..76 helper range. Extending both persistent scheduler conditions to also include79, verified actual effect79 script emits77 each tick.",
+  "persistent89Fix": {
+    "build": "4f6f4814ec713d44142dae917995e9dd4a1c4dad350768b83633b599b902503d",
+    "firstStop": "th19-web-T3GAq8",
+    "rngThrough": 31924,
+    "nextSecondary": 31925,
+    "gameplayThrough": 31925,
+    "nativeProof": "present-vc_vjp9b native-anm-child script77 parent89",
+    "fix": "Persistent death visuals effect89 now merged with existing even64..76 before enemy callbacks and independent queue crossings. Wrong79 candidate fully reverted.",
+    "failedDiagnosticCapture": "Web31907 report write ENOSPC, use earlierkemOF9 and newerT3GAq8",
+    "nativeStateOnlyCompatibility": "production observe-d3d9.cpp compiled successfully as d3d9-state-only-production.dll",
+    "fullSeed1": "th19-web-Ix90vE",
+    "fullSeed42": "th19-web-Fj6ohl",
+    "seed42Gameplay": "PASS36000",
+    "rollback": {
+      "frames": [
+        31903,
+        31910
+      ],
+      "differences": [],
+      "image": true
+    }
+  },
+  "storage": "100oldgeneratedweb-bullet-positions.jsonl losslessgzipsha256verified; saved3577253195bytes. Earlier15candidatefiles saved400800474bytes. Native573rczy0/3i79af2vrngJSONLs NTFScompressedinplace. Removed generatedcopiesofth19replayplayer_hook.dll in8completed/failedruns; originals work/native-build retained.",
+  "candidate31925": "beea94d0 helper adopts all already-initialized ordinary cancel roots alongside lasers, with existingregistrationthreshold andframeguards. Old170516354 must tickbeforeEagle103516357. Nativebound892788048,Webprevious1528704161fiveRNGreads late.",
+  "initializedOrdinaryCancelQueue": {
+    "build": "beea94d0907ca3b4e16b0b032e97a4d9232d38c7b55255e867d52cb1568f52e3",
+    "firstStop": "th19-web-fPivHh",
+    "fullSeed1": "th19-web-hkR3hE",
+    "fullSeed42": "th19-web-FEH3uW",
+    "rngThrough": 32779,
+    "nextSecondary": 32780,
+    "seed42Gameplay": "PASS36000",
+    "rollback": {
+      "frames": [
+        31922,
+        31928
+      ],
+      "differences": [],
+      "image": true
+    }
+  },
+  "otterCandidate": {
+    "build": "827e73adc3bb59ab11e1692521c67f57d3a1d4b7f5edf0d689ee61b4c825bf94",
+    "fix": [
+      "GameObject constructors265..270 includes266",
+      "Application marks root266 child93 independent_tick, reused queue and frameguard"
+    ],
+    "source": "32779 native new266/94constructor5draws beforeSHT; Weboldlate266two94spawns afterSHT; constructor266alone retains prefix32779 butmanager93stilllate5draws changing old182bound. Now separate93callback."
+  },
+  "otter98Fix": {
+    "build": "21775f534e2ef043e3731cd7b4d7292a7cfdc317d88d8e0f667206606987a835",
+    "firstStop": "th19-web-Mr50Xq",
+    "rngThrough": 32879,
+    "nextSecondary": 32880,
+    "gameplayThrough": 32880,
+    "source": "enemy266 haschild98 (not93), stream98 emits94. Immediate266 constructor plus independent98 queue givesnativeconstructorbeforeSHT andmanagerafteroldercancelroots. Constructoralone/noop93candidateallreproduced32780andhavebeencorrected.",
+    "fullRechecks": "running"
+  }
+}

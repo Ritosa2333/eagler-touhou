@@ -1,0 +1,10 @@
+{
+  "total": 5,
+  "passed": 5,
+  "sameBuildPassed": 5,
+  "framesPerSeed": 36000,
+  "totalFrames": 180000,
+  "bulletCoordinateTolerance": 0,
+  "maximumBulletCoordinateDifference": 0,
+  "wasmSha256": "504a685602c8a8edd571771d5fae775dffda9c7db6ec40aa85ae754468b0693f"
+}

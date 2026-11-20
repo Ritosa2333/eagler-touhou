@@ -1,0 +1,68 @@
+{
+  "nativeTrace": "present-l82ev2_a",
+  "upstreamFrame": 2519,
+  "firstDifferentSecondaryFrame": 2520,
+  "nativeCancelParent": 286274468,
+  "script": 200,
+  "webRootRegistration": 18992,
+  "nativeBoundedSeeds": [
+    918085251,
+    1695928335
+  ],
+  "webBoundedSeeds": [
+    1287608400,
+    2136668588
+  ],
+  "observation": "Native standalone enemy99, graze trail and cancellation roots are interleaved by registration. Web updates all enemy roots before the independent visual pass, causing cancellation to sample a different loop delay.",
+  "candidate": "Use a shared registration sequence for delayed graze roots; advance older independent roots before the next enemy animation root, guarded against duplicate updates.",
+  "candidateResult": {
+    "report": "th19-web-1x5uDj",
+    "firstSecondaryDifference": 1686,
+    "gameplayMatchingThrough": 2550,
+    "action": "Reverted broad root interleaving. Native enemy99/104 are created through detached paths, so root-level registration does not express child creation order."
+  },
+  "earlyNativeTrace": "present-y_ih1uie",
+  "early1686": {
+    "lastEnemyChildRandomBefore": 7444730,
+    "grazeRandomBefore": [
+      734792781,
+      1342417799
+    ],
+    "cancelBoundedBefore": [
+      1678010951,
+      973397527
+    ],
+    "scripts": [
+      177,
+      178
+    ],
+    "observation": "Native existing attached enemy roots finish before the cancellation emitter. Sorting parent root registrations is insufficient because script99/104 children use detached initialization paths."
+  },
+  "queueTrace": "present-bm4yskm3",
+  "nativeRightQueue2519": [
+    {
+      "script": 103,
+      "index": 378,
+      "vm": 276212716
+    },
+    {
+      "script": 200,
+      "index": 435,
+      "vm": 275841956
+    },
+    {
+      "script": 103,
+      "index": 442,
+      "vm": 276196596
+    }
+  ],
+  "queueObservation": "106 roots have native flags2 and early manager indices. 103 roots have flags0 and are interleaved with independent cancellation roots. Restrict candidate interleaving to enemy103 roots.",
+  "web103Owner": {
+    "parentScript": 267,
+    "opcode": 500,
+    "offset": 0,
+    "childScript": 103,
+    "childDetachedOpcode": 504,
+    "detachedScript": 99
+  }
+}

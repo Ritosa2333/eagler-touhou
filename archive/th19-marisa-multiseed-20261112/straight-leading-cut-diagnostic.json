@@ -1,0 +1,29 @@
+{
+  "seed": 42,
+  "firstGameplayDifference": 34805,
+  "nativeCapture": "present-q1k63qvi",
+  "webCapture": "th19-web-KHi8Ap",
+  "nativeLaser": 378054848,
+  "webLaserBefore": 31720,
+  "webReplacement": 31852,
+  "nativeOldClock": 72,
+  "nativeNewClock": 73,
+  "webNewClock": 0,
+  "nativeLengthBefore": 141.440002,
+  "nativeLengthAfter": 109.440002,
+  "removedLength": 32,
+  "nativeShiftedOrigin": [
+    162.376724,
+    434.479034
+  ],
+  "webReplacementOrigin": [
+    164.577179,
+    440.510162
+  ],
+  "nativeGrazeReward": [
+    156.256607,
+    417.70462
+  ],
+  "candidate": "Reuse the first surviving straight-laser controller even when its head is cut; preserve the fractional tail and registered contact span.",
+  "validation": "pending full regression"
+}

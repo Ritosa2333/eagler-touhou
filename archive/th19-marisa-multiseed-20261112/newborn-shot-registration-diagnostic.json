@@ -1,0 +1,86 @@
+{
+  "seed": 42,
+  "firstGameplayDifference": 32510,
+  "nativeCapture": "present-wtnda1tl",
+  "webCapture": "th19-web-6Big1s",
+  "missedHitFrame": 32483,
+  "nativeTarget": 4984,
+  "webTarget": 29753,
+  "healthDifference": 9,
+  "prematureConsumer": {
+    "webId": 29760,
+    "nativeId": 4985,
+    "position": [
+      -157,
+      134.92
+    ],
+    "webBodyHalfSize": [
+      0,
+      0
+    ],
+    "nativeProtectionAt32483": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "projectile": {
+    "positionAtPrematureContact": [
+      -137.509995,
+      145.089996
+    ],
+    "age": 10,
+    "damage": 9
+  },
+  "nativeEntry": "0x509980 returns if body VM cannot be resolved at 0x5099a0",
+  "candidate": "Use the constructor pre-displacement coordinates for first-pass shot contacts instead of suppressing all contacts.",
+  "validation": "pending full regression",
+  "broadGuardCandidate": "th19-web-fTUE0b: continuous gameplay prefix 32528; another pellet is incorrectly preserved and target 29765 dies early at32529",
+  "nativeAreaShapeCapture": "present-2b181t09",
+  "nativePelletShape": {
+    "size": [
+      48,
+      18
+    ],
+    "angle": -1.57079637
+  },
+  "contactCases": [
+    {
+      "nativeBirthFrame": 32482,
+      "webTarget": 29760,
+      "beforePosition": [
+        -160,
+        134.93
+      ],
+      "afterPosition": [
+        -157,
+        134.92
+      ],
+      "shot": [
+        -137.509995,
+        145.089996
+      ],
+      "nativeHit": false
+    },
+    {
+      "nativeBirthFrame": 32498,
+      "webTarget": 29770,
+      "beforePosition": [
+        -160,
+        154.82
+      ],
+      "afterPosition": [
+        -157,
+        154.81
+      ],
+      "shot": [
+        -150,
+        182.5
+      ],
+      "nativeHit": true
+    }
+  ]
+}

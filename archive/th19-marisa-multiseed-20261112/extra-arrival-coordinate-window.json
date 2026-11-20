@@ -1,0 +1,17 @@
+{
+  "wasmSha256": "0acff0ee97997e0a8bc315a8639269420d7ebf1cf74733b2670592fc71212be4",
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-i76wew_2\\native-present.jsonl",
+  "nativeTraceSha256": "ed22175887ee27bd7d5b540be206f90c168b1ff91bf29118096e610a0ef32d57",
+  "firstDifferentPlayerControls": null,
+  "firstDifferentPlayerPosition": null,
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": {
+      "frame": 362,
+      "web": 749524945,
+      "original": 569634120
+    }
+  },
+  "differentBulletPositionFrames": 0,
+  "failure": null
+}

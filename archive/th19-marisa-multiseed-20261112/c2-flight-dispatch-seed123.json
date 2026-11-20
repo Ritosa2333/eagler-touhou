@@ -1,0 +1,86 @@
+{
+  "wasmSha256": "4c6ad54aaf314e75929bed5312ec74bad23cbfcc70229696ecf9b42aed8e1075",
+  "nativeTraceSha256": "150f3fedffa8209e164b9e8b741f391a9b7634da849346d34a4479edad53f665",
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-n5uaa1rq\\native-present.jsonl",
+  "continuous": true,
+  "firstDifferentRngByStream": {
+    "primary": {
+      "frame": 26501,
+      "web": 2050832968,
+      "original": 484052417
+    },
+    "animation": {
+      "frame": 321,
+      "web": 1646528914,
+      "original": 352438177
+    }
+  },
+  "firstDifferentPlayerControls": {
+    "frame": 26501,
+    "web": [
+      0,
+      0
+    ],
+    "original": [
+      83,
+      163
+    ]
+  },
+  "firstDifferentPlayerPosition": {
+    "frame": 26501,
+    "web": [
+      0,
+      400,
+      0,
+      400
+    ],
+    "original": [
+      0,
+      999,
+      -123.7109375,
+      384.4453125
+    ]
+  },
+  "firstDifferentBulletPosition": {
+    "frame": 26764,
+    "side": 0,
+    "kind": 1,
+    "color": 3,
+    "original": [],
+    "web": [
+      [
+        -137.14599609375,
+        5.080542087554932
+      ]
+    ]
+  },
+  "firstDifferentBulletCount": {
+    "frame": 26764,
+    "side": 0,
+    "original": 0,
+    "web": 1
+  },
+  "firstDifferentRoundClock": {
+    "frame": 26501,
+    "web": [
+      2,
+      0
+    ],
+    "original": [
+      1,
+      26501
+    ]
+  },
+  "bulletPositionCoverage": {
+    "frames": 35999,
+    "first": 1,
+    "last": 36000,
+    "nonemptyFrames": 35455,
+    "originalBulletSamples": 3856839,
+    "webBulletSamples": 3943570,
+    "missingFrames": [
+      0,
+      26822
+    ]
+  }
+}

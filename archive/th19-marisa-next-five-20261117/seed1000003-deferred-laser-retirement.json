@@ -1,0 +1,12 @@
+{
+  "build": "4aadb17b9319872c416088785cd33fc30ce6c20020544a02a174b832224edf74",
+  "native": "present-xn82f85q",
+  "webPrefix": "th19-web-Yn0zKQ",
+  "webFull": "th19-web-t8boH8",
+  "verifiedRngThrough": 18781,
+  "nextSecondaryDifference": 18782,
+  "firstCpuDifference": 27208,
+  "capturedThrough": 36000,
+  "comparisonImage": "screenshots/seed1000003-retirement-after/frame-18707.png",
+  "mechanism": "Fully canceled straight laser retires on its next manager update; later same-tick cancellation callbacks still sample its original span."
+}

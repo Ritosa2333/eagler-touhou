@@ -1,0 +1,37 @@
+{
+  "stableBuild": "c01efeecd8f60c19d008b35cd732de89f328a179f6e0b56f78ec83405b39fa0a",
+  "seed1": "th19-web-ZNC40q PASS36000",
+  "seed2026": "th19-web-svHYAS both RNG through23425; first CPU27976",
+  "native": "present-8nh5fbpy",
+  "firstMetadataMismatch": {
+    "frame": 23419,
+    "webFirst": "aura16 gauge particle random floats",
+    "nativeFirst": "aura21/22 announcement constructor eight bounded draws",
+    "later": {
+      "nativeEmbedded38Seed": 419381078,
+      "native203BoundedSeed": 1763159516,
+      "webEmbedded38Seed": 1475855936,
+      "web203BoundedSeed": 419381078
+    }
+  },
+  "rejected": [
+    "1a6709cb flat queue advances cancels ahead of other callbacks; regress seed1 at2520",
+    "e0fd6d76 interleaved flat queue preserves prefix but does not fix source constructor order",
+    "2aa978d3 warning constructor before retirees has no effect",
+    "989ff036 deferred BombInf aura preparation alone has no effect",
+    "352b6a7d early automatic announcement dispatch leaves identical prefix23425; restored original phase"
+  ],
+  "pending": "Stable c01efeec implementation restored. Native23419 ownership already differs despite identical totals: identify source dispatch ordering before modifying the cancellation manager.",
+  "screenshots": {
+    "native": "present-90ln8hxc",
+    "web": "th19-web-RltODz",
+    "frames": [
+      27976,
+      28060,
+      28175
+    ],
+    "directory": "screenshots/seed2026-28175-current",
+    "gameplayDifferenceCountAt28175": 200
+  },
+  "pushed": false
+}

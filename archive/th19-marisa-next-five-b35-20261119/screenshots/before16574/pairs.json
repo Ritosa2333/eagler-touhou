@@ -1,0 +1,15 @@
+{
+  "wasmSha256": "bdeeb1bcd3276b192e24979b3ebdaf66449e515d8854965d3954214efe0657d2",
+  "nativeTraceSha256": "d47e6dbc7616db2ca48a72a2632eecd6c7d3b7b92a940db192630c6fe5e520c9",
+  "diagnosticRoundWaveSeed": null,
+  "pairs": [
+    {
+      "frame": 16574,
+      "status": "主 RNG不一致",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-16574.png",
+      "webImageSha256": "8f825b0a52a7658f15e776b264c117f31ed16f305a58f8cba7a93d1e73d61931",
+      "nativeImageSha256": "52767a18ddd57ccc55a0dcd0ef59f7044d9938a3d6dcd4c47bb9dcf300bf0826"
+    }
+  ]
+}

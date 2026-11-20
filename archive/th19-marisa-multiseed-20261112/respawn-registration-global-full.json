@@ -1,0 +1,82 @@
+{
+  "wasmSha256": "d6d7a26e213e890db307a88e435e1471039b10afa7e5578e91f78353cf5115cf",
+  "nativeTraceSha256": "d82f12a75221fb89db80fc7cf196fbedd92ec23b0b9a6aee1946d828cc3d9dc1",
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-52phuhbu\\native-present.jsonl",
+  "fixture": {
+    "difficulty": 3,
+    "characters": [
+      1,
+      1
+    ],
+    "cardMode": 0,
+    "cards": [
+      0,
+      0
+    ],
+    "lives": 2,
+    "timeRule": 4
+  },
+  "continuous": true,
+  "firstDifferentRngByStream": {
+    "primary": {
+      "frame": 33455,
+      "web": 949987293,
+      "original": 42915601
+    },
+    "animation": {
+      "frame": 406,
+      "web": 1391184678,
+      "original": 393706518
+    }
+  },
+  "firstDifferentPlayerControls": {
+    "frame": 33455,
+    "web": [
+      0,
+      0
+    ],
+    "original": [
+      1,
+      89
+    ]
+  },
+  "firstDifferentPlayerPosition": {
+    "frame": 33455,
+    "web": [
+      0,
+      400,
+      0,
+      400
+    ],
+    "original": [
+      52.296875,
+      425.640625,
+      0,
+      999
+    ]
+  },
+  "firstDifferentBulletCount": {
+    "frame": 32960,
+    "side": 1,
+    "original": 11,
+    "web": 10
+  },
+  "firstDifferentBulletPosition": {
+    "frame": 32960,
+    "side": 1,
+    "kind": 4,
+    "color": 12,
+    "original": [
+      [
+        -101.964111328125,
+        8.051004409790039
+      ]
+    ],
+    "web": []
+  },
+  "differentBulletPositionFrames": 2260,
+  "browserErrors": [],
+  "failure": null,
+  "webCapture": "th19-web-95zjoW",
+  "lastFrame": 36000
+}

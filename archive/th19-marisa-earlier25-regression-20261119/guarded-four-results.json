@@ -1,0 +1,105 @@
+{
+  "wasmSha256": "bfb038833c731897f8bdfae36a527ff2a2c917c97ac57c577eb1cf74316633f1",
+  "results": [
+    {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-guarded-four-20261119\\th19-web-zu7Ien\\report.json",
+      "wasmSha256": "bfb038833c731897f8bdfae36a527ff2a2c917c97ac57c577eb1cf74316633f1",
+      "nativeMissingStateFrames": [],
+      "verifiedTransitionGaps": [],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 36000,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 0.0,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "strictStatus": "PASS",
+      "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+      "acceptedCoordinateCeiling": 0.000244140625,
+      "microscopicCoordinateFrames": [],
+      "seed": 424242,
+      "secondary": 131071,
+      "sourceBatch": "historical20"
+    },
+    {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-guarded-four-20261119\\th19-web-owDDoc\\report.json",
+      "wasmSha256": "bfb038833c731897f8bdfae36a527ff2a2c917c97ac57c577eb1cf74316633f1",
+      "nativeMissingStateFrames": [
+        31266
+      ],
+      "verifiedTransitionGaps": [
+        31266
+      ],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 35999,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 0.0,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "strictStatus": "PASS",
+      "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+      "acceptedCoordinateCeiling": 0.000244140625,
+      "microscopicCoordinateFrames": [],
+      "seed": 65537,
+      "secondary": 104729,
+      "sourceBatch": "historical20"
+    },
+    {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-guarded-four-20261119\\th19-web-mxyZty\\report.json",
+      "wasmSha256": "bfb038833c731897f8bdfae36a527ff2a2c917c97ac57c577eb1cf74316633f1",
+      "nativeMissingStateFrames": [
+        27132
+      ],
+      "verifiedTransitionGaps": [
+        27132
+      ],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 35999,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 6.103515625e-05,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "strictStatus": "PASS",
+      "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+      "acceptedCoordinateCeiling": 0.000244140625,
+      "microscopicCoordinateFrames": [],
+      "seed": 1000003,
+      "secondary": 999983,
+      "sourceBatch": "historical20"
+    },
+    {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-guarded-four-20261119\\th19-web-40WDoJ\\report.json",
+      "wasmSha256": "bfb038833c731897f8bdfae36a527ff2a2c917c97ac57c577eb1cf74316633f1",
+      "nativeMissingStateFrames": [
+        27970
+      ],
+      "verifiedTransitionGaps": [
+        27970
+      ],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 35999,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 0.0,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "strictStatus": "PASS",
+      "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+      "acceptedCoordinateCeiling": 0.000244140625,
+      "microscopicCoordinateFrames": [],
+      "seed": 536870911,
+      "secondary": 1000000007,
+      "sourceBatch": "historical20"
+    }
+  ]
+}

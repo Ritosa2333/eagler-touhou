@@ -1,0 +1,23 @@
+{
+  "wasmSha256": "12afbfaaf69f43c9b81879b90218b9cb1e7b372134518c5f158820198ec3a806",
+  "nativeTraceSha256": "ba0456c7a055135c3d2940b524961152fea41fae18da62dcc28e5a150425a674",
+  "diagnosticRoundWaveSeed": null,
+  "pairs": [
+    {
+      "frame": 19937,
+      "status": "主 RNG、自机位置不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-19937.png",
+      "webImageSha256": "9c0e0a5a7903307cce1f63e7547ba2f6c586a5de74a25c99091645fe18bc817a",
+      "nativeImageSha256": "a5e13c3621738e11fd059e3e15c5ef0bbdaf86492815b9fe6b79b8212cdd13c1"
+    },
+    {
+      "frame": 19943,
+      "status": "主 RNG、CPU 输入、自机位置、敌弹状态不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 7,
+      "image": "frame-19943.png",
+      "webImageSha256": "f6ec166c2d94cfa512875ed35c5c9e2fefc321647066124a88140589504f122d",
+      "nativeImageSha256": "a4b28448a7cc776850980d48028fff3df12b588d27cf99fa1b98e47cf4743bc3"
+    }
+  ]
+}

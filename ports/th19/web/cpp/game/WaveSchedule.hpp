@@ -8,13 +8,13 @@ namespace th19 {
 // Reproducing a native run requires its RNG state at table generation time.
 class WaveSchedule {
 public:
-    void seed(u32 state){
+    void seed(u32 state,u32 cursor=0){
         state%=2147483647u;if(!state)state=1;
         for(auto& draw:draws_){
             state=u32(u64(state)*48271u%2147483647u);
             draw=u8((state%0xffff00u)&255u);
         }
-        ready_=true;cursor_=0;last_state_=state;
+        ready_=true;cursor_=cursor&255u;last_state_=state;
     }
     void set_draws(const std::array<u8,256>& draws){draws_=draws;ready_=true;cursor_=0;}
     void clear_pool(){pool_.clear();} // opcode 1010 does NOT reset the cursor

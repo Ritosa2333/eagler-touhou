@@ -1,0 +1,46 @@
+{
+  "native": "present-p1n606vw",
+  "failedPointProbe": "present-iolbill_ used overwritten constructor argument, excluded",
+  "frame": 11242,
+  "firstLaserPoints": [
+    [
+      9,
+      440
+    ],
+    [
+      -22.25,
+      440
+    ],
+    [
+      22.25,
+      440
+    ]
+  ],
+  "nativeBombRectangles": [
+    {
+      "manager": 366985248,
+      "center": [
+        14.6171875,
+        224
+      ],
+      "size": [
+        59.3176994,
+        448
+      ]
+    },
+    {
+      "manager": 352288800,
+      "center": [
+        -15.359375,
+        224
+      ],
+      "size": [
+        2.64656472,
+        448
+      ]
+    }
+  ],
+  "web": "th19-web-M7cMgq",
+  "finding": "Older right-seat BombInf runs before newer left-seat BombInf in native. Web fixed seat order ran the new left bomb first. Reorder bomb callbacks by construction registration after persistent charge callbacks.",
+  "status": "candidate building"
+}

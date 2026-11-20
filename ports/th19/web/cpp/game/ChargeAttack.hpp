@@ -7,7 +7,7 @@ namespace th19 {
 // These clocks drive SHT group 10, independently of the ordinary Z-shot clock.
 // Character 10/12 use native area effects instead of this SHT path.
 struct ChargeAttack {
-    int character=0,frame=-1,emitted=0,group=10;
+    int character=0,frame=-1,emitted=0,group=10,release_tier=1;
     // Shared Skill entry 0x423f80, followed by each controller's update.
     // Other characters have independent Skill objects/state, not group 11.
     static int skill_fire_frames(int ch){return ch==2?60:ch==4?90:ch==6?200:ch==7?10:ch==11?60:ch==13?180:ch==14?80:ch==15?60:ch==17?200:0;}

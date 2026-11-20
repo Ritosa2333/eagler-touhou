@@ -1,0 +1,12 @@
+{
+  "nativeTrace": "present-o5in9cyp",
+  "firstDifferentSecondaryFrame": 2363,
+  "upstreamFrame": 2362,
+  "nativeCancel201FirstRandom": 592066870,
+  "webCancel201FirstRandom": 27529068,
+  "nativeCancel201FinalDelaySeed": 2110901387,
+  "webCancel201FinalDelaySeed": 1797435520,
+  "cause": "A delayed graze trail retains the order assigned at reward time. Native registers it only after its start delay, so older cancellation roots update first.",
+  "headingObservation": "Native 0x4dc08c samples heading during actual object registration before the field ANM pass.",
+  "candidate": "Prepare heading and assign visual order once delay expires; do not insert waiting requests into the active visual queue."
+}

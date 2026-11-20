@@ -1,0 +1,21 @@
+{
+  "rewardFix": {
+    "wasm": "d66cf4b3e23dbd827059b54c83f6c0bd39d93cf1627cb6d1dff739abbf56ed5b",
+    "seed214Report": "web-captures-marisa-five-more/th19-web-wr3c8R/report.json",
+    "primaryFirstDifference": 27113,
+    "bulletFirstDifference": 27067,
+    "oldSeed1Regression": "web-captures-marisa-five-more/th19-web-Wb6bDQ/report.json"
+  },
+  "pelletFix": {
+    "seed": 314159265,
+    "native": "work/marisa-five-more-20261116/native/present-57a56n53",
+    "nativeImpactFrame": 12936,
+    "nativeShotPosition": [
+      6.150000095367432,
+      -64.93000030517578
+    ],
+    "nativeShotAge": 11,
+    "reason": "Generic center -64 cull ran before native normal-pellet age15 ANM viewport check. Native retained and hit offscreen enemy for9 damage. Web prematurely removed it.",
+    "webTrace": "web-captures-marisa-five-more/th19-web-8Hef63/web-enemy-debug.jsonl"
+  }
+}

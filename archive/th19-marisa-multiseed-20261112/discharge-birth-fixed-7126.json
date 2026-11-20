@@ -1,0 +1,2331 @@
+{
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-shim4gqx\\native-present.jsonl",
+  "nativeExe": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "nativeTraceSha256": "22834596f3a41730e4ea61319537711d0dde380b35a022b45ce84e76fc214770",
+  "wasmPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\eagler-touhou-marisa\\ports\\th19\\runtime\\th19.wasm",
+  "wasmSha256": "b00f0d37aa32f2828a376ab36c3a21736c98b5e27708174f753a0ef15f9f3e11",
+  "incompleteNativeTail": false,
+  "fixture": {
+    "difficulty": 3,
+    "characters": [
+      1,
+      1
+    ],
+    "cardMode": 0,
+    "cards": [
+      0,
+      0
+    ],
+    "lives": 2,
+    "timeRule": 4
+  },
+  "continuous": true,
+  "diagnosticRoundWaveSeed": null,
+  "initialAnimationRng": [
+    1,
+    7
+  ],
+  "requestedThrough": 36000,
+  "capturedThrough": 7126,
+  "stoppedOnRngDifference": true,
+  "bulletPositionCoverage": {
+    "frames": 7126,
+    "first": 1,
+    "last": 7126,
+    "nonemptyFrames": 6813,
+    "originalBulletSamples": 443750,
+    "webBulletSamples": 443750,
+    "missingFrames": [
+      0
+    ]
+  },
+  "differentBulletPositionFrames": 0,
+  "firstDifferentBulletPosition": null,
+  "firstDifferentBulletCount": null,
+  "firstDifferentRoundClock": null,
+  "playerPositionCoverage": 7126,
+  "firstDifferentPlayerPosition": null,
+  "playerControlCoverage": 7126,
+  "firstDifferentPlayerControls": null,
+  "firstDifferentRngSample": {
+    "frame": 7126,
+    "openingDraws": [
+      {
+        "kind": 2,
+        "seed": 36195652,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": true,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1296112681,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": true,
+        "registration": 0
+      },
+      {
+        "kind": 2,
+        "seed": 2014136500,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": true,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1355840869,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": true,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1082961527,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": true,
+        "registration": 0
+      },
+      {
+        "kind": 2,
+        "seed": 1588934543,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": true,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 2080872548,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": true,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 695096548,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 720967780,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1863208745,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 186709888,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1831620836,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 120143919,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1261267149,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1465156929,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1511173108,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 112574972,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 972846502,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1248589093,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1515555148,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1184630406,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 99775710,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1614960836,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 2118128456,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 334782259,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 459980514,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 885964961,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 1,
+        "seed": 1425286073,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10012,
+        "seed": 1050430844,
+        "time": 1,
+        "ip": 68,
+        "sprite": 148,
+        "primary": false,
+        "registration": 78997
+      },
+      {
+        "kind": 10011,
+        "seed": 1110881407,
+        "time": 1,
+        "ip": 88,
+        "sprite": 148,
+        "primary": false,
+        "registration": 78997
+      },
+      {
+        "kind": 10012,
+        "seed": 689731707,
+        "time": 1,
+        "ip": 144,
+        "sprite": 148,
+        "primary": false,
+        "registration": 78997
+      },
+      {
+        "kind": 10011,
+        "seed": 1600249156,
+        "time": 1,
+        "ip": 164,
+        "sprite": 148,
+        "primary": false,
+        "registration": 78997
+      },
+      {
+        "kind": 1,
+        "seed": 640226686,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10012,
+        "seed": 2092679576,
+        "time": 1,
+        "ip": 68,
+        "sprite": 144,
+        "primary": false,
+        "registration": 78998
+      },
+      {
+        "kind": 10011,
+        "seed": 252541863,
+        "time": 1,
+        "ip": 88,
+        "sprite": 144,
+        "primary": false,
+        "registration": 78998
+      },
+      {
+        "kind": 10012,
+        "seed": 1331088501,
+        "time": 1,
+        "ip": 144,
+        "sprite": 144,
+        "primary": false,
+        "registration": 78998
+      },
+      {
+        "kind": 10011,
+        "seed": 262313531,
+        "time": 1,
+        "ip": 164,
+        "sprite": 144,
+        "primary": false,
+        "registration": 78998
+      },
+      {
+        "kind": 1,
+        "seed": 572872189,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10012,
+        "seed": 2113996447,
+        "time": 1,
+        "ip": 68,
+        "sprite": 151,
+        "primary": false,
+        "registration": 78999
+      },
+      {
+        "kind": 10011,
+        "seed": 594554991,
+        "time": 1,
+        "ip": 88,
+        "sprite": 151,
+        "primary": false,
+        "registration": 78999
+      },
+      {
+        "kind": 10012,
+        "seed": 792512053,
+        "time": 1,
+        "ip": 144,
+        "sprite": 151,
+        "primary": false,
+        "registration": 78999
+      },
+      {
+        "kind": 10011,
+        "seed": 75622705,
+        "time": 1,
+        "ip": 164,
+        "sprite": 151,
+        "primary": false,
+        "registration": 78999
+      },
+      {
+        "kind": 1,
+        "seed": 1808876802,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10012,
+        "seed": 1754505969,
+        "time": 1,
+        "ip": 68,
+        "sprite": 145,
+        "primary": false,
+        "registration": 79000
+      },
+      {
+        "kind": 10011,
+        "seed": 1445042860,
+        "time": 1,
+        "ip": 88,
+        "sprite": 145,
+        "primary": false,
+        "registration": 79000
+      },
+      {
+        "kind": 10012,
+        "seed": 1247556853,
+        "time": 1,
+        "ip": 144,
+        "sprite": 145,
+        "primary": false,
+        "registration": 79000
+      },
+      {
+        "kind": 10011,
+        "seed": 1080421989,
+        "time": 1,
+        "ip": 164,
+        "sprite": 145,
+        "primary": false,
+        "registration": 79000
+      },
+      {
+        "kind": 1,
+        "seed": 1409463624,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10012,
+        "seed": 1789173497,
+        "time": 1,
+        "ip": 68,
+        "sprite": 145,
+        "primary": false,
+        "registration": 79001
+      },
+      {
+        "kind": 10011,
+        "seed": 1991525935,
+        "time": 1,
+        "ip": 88,
+        "sprite": 145,
+        "primary": false,
+        "registration": 79001
+      },
+      {
+        "kind": 10012,
+        "seed": 842950430,
+        "time": 1,
+        "ip": 144,
+        "sprite": 145,
+        "primary": false,
+        "registration": 79001
+      },
+      {
+        "kind": 10011,
+        "seed": 1687546821,
+        "time": 1,
+        "ip": 164,
+        "sprite": 145,
+        "primary": false,
+        "registration": 79001
+      },
+      {
+        "kind": 1,
+        "seed": 1222898487,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10012,
+        "seed": 502377241,
+        "time": 1,
+        "ip": 68,
+        "sprite": 121,
+        "primary": false,
+        "registration": 79004
+      },
+      {
+        "kind": 10011,
+        "seed": 866458387,
+        "time": 1,
+        "ip": 88,
+        "sprite": 121,
+        "primary": false,
+        "registration": 79004
+      },
+      {
+        "kind": 10012,
+        "seed": 421289905,
+        "time": 1,
+        "ip": 144,
+        "sprite": 121,
+        "primary": false,
+        "registration": 79004
+      },
+      {
+        "kind": 10011,
+        "seed": 1562350812,
+        "time": 1,
+        "ip": 164,
+        "sprite": 121,
+        "primary": false,
+        "registration": 79004
+      },
+      {
+        "kind": 1,
+        "seed": 905330706,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10012,
+        "seed": 2073776523,
+        "time": 1,
+        "ip": 68,
+        "sprite": 123,
+        "primary": false,
+        "registration": 79005
+      },
+      {
+        "kind": 10011,
+        "seed": 463820475,
+        "time": 1,
+        "ip": 88,
+        "sprite": 123,
+        "primary": false,
+        "registration": 79005
+      },
+      {
+        "kind": 10012,
+        "seed": 1561128750,
+        "time": 1,
+        "ip": 144,
+        "sprite": 123,
+        "primary": false,
+        "registration": 79005
+      },
+      {
+        "kind": 10011,
+        "seed": 2044718020,
+        "time": 1,
+        "ip": 164,
+        "sprite": 123,
+        "primary": false,
+        "registration": 79005
+      },
+      {
+        "kind": 2,
+        "seed": 87643653,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 103989373,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10010,
+        "seed": 1001741044,
+        "time": 1,
+        "ip": 164,
+        "sprite": 41,
+        "primary": false,
+        "registration": 79013
+      },
+      {
+        "kind": 10010,
+        "seed": 152655425,
+        "time": 1,
+        "ip": 172,
+        "sprite": 41,
+        "primary": false,
+        "registration": 79013
+      },
+      {
+        "kind": 110022,
+        "seed": 813627318,
+        "time": 1,
+        "ip": 188,
+        "sprite": 41,
+        "primary": false,
+        "registration": 79013
+      },
+      {
+        "kind": 10010,
+        "seed": 1423330842,
+        "time": 1,
+        "ip": 96,
+        "sprite": 25,
+        "primary": false,
+        "registration": 79014
+      },
+      {
+        "kind": 10011,
+        "seed": 1158755711,
+        "time": 1,
+        "ip": 108,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79015
+      },
+      {
+        "kind": 10010,
+        "seed": 937855919,
+        "time": 1,
+        "ip": 156,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79015
+      },
+      {
+        "kind": 10010,
+        "seed": 140303642,
+        "time": 1,
+        "ip": 160,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79015
+      },
+      {
+        "kind": 10010,
+        "seed": 1581163991,
+        "time": 1,
+        "ip": 164,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79015
+      },
+      {
+        "kind": 10010,
+        "seed": 650711534,
+        "time": 1,
+        "ip": 180,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79015
+      },
+      {
+        "kind": 10010,
+        "seed": 1400636692,
+        "time": 1,
+        "ip": 200,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79015
+      },
+      {
+        "kind": 10010,
+        "seed": 906101031,
+        "time": 1,
+        "ip": 220,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79015
+      },
+      {
+        "kind": 10010,
+        "seed": 603428952,
+        "time": 1,
+        "ip": 260,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79015
+      },
+      {
+        "kind": 10011,
+        "seed": 1798237731,
+        "time": 1,
+        "ip": 328,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79015
+      },
+      {
+        "kind": 110022,
+        "seed": 1444501361,
+        "time": 1,
+        "ip": 396,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79015
+      },
+      {
+        "kind": 10012,
+        "seed": 878662388,
+        "time": 1,
+        "ip": 432,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79015
+      },
+      {
+        "kind": 10011,
+        "seed": 1110102898,
+        "time": 1,
+        "ip": 108,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79016
+      },
+      {
+        "kind": 10010,
+        "seed": 1765029414,
+        "time": 1,
+        "ip": 156,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79016
+      },
+      {
+        "kind": 10010,
+        "seed": 468632116,
+        "time": 1,
+        "ip": 160,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79016
+      },
+      {
+        "kind": 10010,
+        "seed": 1895617585,
+        "time": 1,
+        "ip": 164,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79016
+      },
+      {
+        "kind": 10010,
+        "seed": 1225730512,
+        "time": 1,
+        "ip": 180,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79016
+      },
+      {
+        "kind": 10010,
+        "seed": 1915586255,
+        "time": 1,
+        "ip": 200,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79016
+      },
+      {
+        "kind": 10010,
+        "seed": 913242579,
+        "time": 1,
+        "ip": 220,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79016
+      },
+      {
+        "kind": 10010,
+        "seed": 1735708940,
+        "time": 1,
+        "ip": 260,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79016
+      },
+      {
+        "kind": 10011,
+        "seed": 331755035,
+        "time": 1,
+        "ip": 328,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79016
+      },
+      {
+        "kind": 110022,
+        "seed": 361738806,
+        "time": 1,
+        "ip": 396,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79016
+      },
+      {
+        "kind": 10012,
+        "seed": 304370669,
+        "time": 1,
+        "ip": 432,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79016
+      },
+      {
+        "kind": 10011,
+        "seed": 1340934172,
+        "time": 1,
+        "ip": 108,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79017
+      },
+      {
+        "kind": 10010,
+        "seed": 928812385,
+        "time": 1,
+        "ip": 156,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79017
+      },
+      {
+        "kind": 10010,
+        "seed": 1686537916,
+        "time": 1,
+        "ip": 160,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79017
+      },
+      {
+        "kind": 10010,
+        "seed": 1914169113,
+        "time": 1,
+        "ip": 164,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79017
+      },
+      {
+        "kind": 10010,
+        "seed": 1225857801,
+        "time": 1,
+        "ip": 180,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79017
+      },
+      {
+        "kind": 10010,
+        "seed": 1617502633,
+        "time": 1,
+        "ip": 200,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79017
+      },
+      {
+        "kind": 10010,
+        "seed": 259159917,
+        "time": 1,
+        "ip": 220,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79017
+      },
+      {
+        "kind": 10010,
+        "seed": 816109732,
+        "time": 1,
+        "ip": 260,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79017
+      },
+      {
+        "kind": 10011,
+        "seed": 992852804,
+        "time": 1,
+        "ip": 328,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79017
+      },
+      {
+        "kind": 110022,
+        "seed": 605151785,
+        "time": 1,
+        "ip": 396,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79017
+      },
+      {
+        "kind": 10012,
+        "seed": 1209247241,
+        "time": 1,
+        "ip": 432,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79017
+      },
+      {
+        "kind": 10011,
+        "seed": 820561204,
+        "time": 1,
+        "ip": 108,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79018
+      },
+      {
+        "kind": 10010,
+        "seed": 1121493016,
+        "time": 1,
+        "ip": 156,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79018
+      },
+      {
+        "kind": 10010,
+        "seed": 1821601760,
+        "time": 1,
+        "ip": 160,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79018
+      },
+      {
+        "kind": 10010,
+        "seed": 1820630545,
+        "time": 1,
+        "ip": 164,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79018
+      },
+      {
+        "kind": 10010,
+        "seed": 36267867,
+        "time": 1,
+        "ip": 180,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79018
+      },
+      {
+        "kind": 10010,
+        "seed": 487035652,
+        "time": 1,
+        "ip": 200,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79018
+      },
+      {
+        "kind": 10010,
+        "seed": 1194473983,
+        "time": 1,
+        "ip": 220,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79018
+      },
+      {
+        "kind": 10010,
+        "seed": 665195090,
+        "time": 1,
+        "ip": 260,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79018
+      },
+      {
+        "kind": 10011,
+        "seed": 456699446,
+        "time": 1,
+        "ip": 328,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79018
+      },
+      {
+        "kind": 110022,
+        "seed": 1419321411,
+        "time": 1,
+        "ip": 396,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79018
+      },
+      {
+        "kind": 10012,
+        "seed": 893040140,
+        "time": 1,
+        "ip": 432,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79018
+      },
+      {
+        "kind": 10011,
+        "seed": 1501351709,
+        "time": 1,
+        "ip": 128,
+        "sprite": -1,
+        "primary": false,
+        "registration": 79019
+      },
+      {
+        "kind": 10010,
+        "seed": 617709830,
+        "time": 1,
+        "ip": 188,
+        "sprite": -1,
+        "primary": false,
+        "registration": 79019
+      },
+      {
+        "kind": 10011,
+        "seed": 1808248982,
+        "time": 1,
+        "ip": 128,
+        "sprite": -1,
+        "primary": false,
+        "registration": 79020
+      },
+      {
+        "kind": 10010,
+        "seed": 1513777807,
+        "time": 1,
+        "ip": 188,
+        "sprite": -1,
+        "primary": false,
+        "registration": 79020
+      },
+      {
+        "kind": 2,
+        "seed": 1289948875,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 833800360,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10010,
+        "seed": 238665486,
+        "time": 1,
+        "ip": 164,
+        "sprite": 41,
+        "primary": false,
+        "registration": 79023
+      },
+      {
+        "kind": 10010,
+        "seed": 1519392198,
+        "time": 1,
+        "ip": 172,
+        "sprite": 41,
+        "primary": false,
+        "registration": 79023
+      },
+      {
+        "kind": 110022,
+        "seed": 1719277314,
+        "time": 1,
+        "ip": 188,
+        "sprite": 41,
+        "primary": false,
+        "registration": 79023
+      },
+      {
+        "kind": 10010,
+        "seed": 1729685779,
+        "time": 1,
+        "ip": 96,
+        "sprite": 28,
+        "primary": false,
+        "registration": 79024
+      },
+      {
+        "kind": 10011,
+        "seed": 1645526396,
+        "time": 1,
+        "ip": 108,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79025
+      },
+      {
+        "kind": 10010,
+        "seed": 79526080,
+        "time": 1,
+        "ip": 156,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79025
+      },
+      {
+        "kind": 10010,
+        "seed": 1250130491,
+        "time": 1,
+        "ip": 160,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79025
+      },
+      {
+        "kind": 10010,
+        "seed": 758450361,
+        "time": 1,
+        "ip": 164,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79025
+      },
+      {
+        "kind": 10010,
+        "seed": 856161775,
+        "time": 1,
+        "ip": 180,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79025
+      },
+      {
+        "kind": 10010,
+        "seed": 1609738157,
+        "time": 1,
+        "ip": 200,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79025
+      },
+      {
+        "kind": 10010,
+        "seed": 1269777146,
+        "time": 1,
+        "ip": 220,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79025
+      },
+      {
+        "kind": 10010,
+        "seed": 2081845539,
+        "time": 1,
+        "ip": 260,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79025
+      },
+      {
+        "kind": 10011,
+        "seed": 1268751704,
+        "time": 1,
+        "ip": 328,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79025
+      },
+      {
+        "kind": 110022,
+        "seed": 1974858638,
+        "time": 1,
+        "ip": 396,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79025
+      },
+      {
+        "kind": 10012,
+        "seed": 1602224568,
+        "time": 1,
+        "ip": 432,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79025
+      },
+      {
+        "kind": 10011,
+        "seed": 1506058870,
+        "time": 1,
+        "ip": 108,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79026
+      },
+      {
+        "kind": 10010,
+        "seed": 203811879,
+        "time": 1,
+        "ip": 156,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79026
+      },
+      {
+        "kind": 10010,
+        "seed": 580624302,
+        "time": 1,
+        "ip": 160,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79026
+      },
+      {
+        "kind": 10010,
+        "seed": 506604845,
+        "time": 1,
+        "ip": 164,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79026
+      },
+      {
+        "kind": 10010,
+        "seed": 926184606,
+        "time": 1,
+        "ip": 180,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79026
+      },
+      {
+        "kind": 10010,
+        "seed": 1542552980,
+        "time": 1,
+        "ip": 200,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79026
+      },
+      {
+        "kind": 10010,
+        "seed": 874405149,
+        "time": 1,
+        "ip": 220,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79026
+      },
+      {
+        "kind": 10010,
+        "seed": 1767349241,
+        "time": 1,
+        "ip": 260,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79026
+      },
+      {
+        "kind": 10011,
+        "seed": 779851589,
+        "time": 1,
+        "ip": 328,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79026
+      },
+      {
+        "kind": 110022,
+        "seed": 975204356,
+        "time": 1,
+        "ip": 396,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79026
+      },
+      {
+        "kind": 10012,
+        "seed": 1247926236,
+        "time": 1,
+        "ip": 432,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79026
+      },
+      {
+        "kind": 10011,
+        "seed": 1731039606,
+        "time": 1,
+        "ip": 108,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79027
+      },
+      {
+        "kind": 10010,
+        "seed": 424116456,
+        "time": 1,
+        "ip": 156,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79027
+      },
+      {
+        "kind": 10010,
+        "seed": 563840725,
+        "time": 1,
+        "ip": 160,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79027
+      },
+      {
+        "kind": 10010,
+        "seed": 2095378044,
+        "time": 1,
+        "ip": 164,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79027
+      },
+      {
+        "kind": 10010,
+        "seed": 1661271871,
+        "time": 1,
+        "ip": 180,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79027
+      },
+      {
+        "kind": 10010,
+        "seed": 2067622414,
+        "time": 1,
+        "ip": 200,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79027
+      },
+      {
+        "kind": 10010,
+        "seed": 1899051869,
+        "time": 1,
+        "ip": 220,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79027
+      },
+      {
+        "kind": 10010,
+        "seed": 1645812657,
+        "time": 1,
+        "ip": 260,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79027
+      },
+      {
+        "kind": 10011,
+        "seed": 1012728929,
+        "time": 1,
+        "ip": 328,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79027
+      },
+      {
+        "kind": 110022,
+        "seed": 120391451,
+        "time": 1,
+        "ip": 396,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79027
+      },
+      {
+        "kind": 10012,
+        "seed": 324982439,
+        "time": 1,
+        "ip": 432,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79027
+      },
+      {
+        "kind": 10011,
+        "seed": 2006755281,
+        "time": 1,
+        "ip": 108,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79028
+      },
+      {
+        "kind": 10010,
+        "seed": 1539303922,
+        "time": 1,
+        "ip": 156,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79028
+      },
+      {
+        "kind": 10010,
+        "seed": 805432662,
+        "time": 1,
+        "ip": 160,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79028
+      },
+      {
+        "kind": 10010,
+        "seed": 996082114,
+        "time": 1,
+        "ip": 164,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79028
+      },
+      {
+        "kind": 10010,
+        "seed": 1868352211,
+        "time": 1,
+        "ip": 180,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79028
+      },
+      {
+        "kind": 10010,
+        "seed": 1506337769,
+        "time": 1,
+        "ip": 200,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79028
+      },
+      {
+        "kind": 10010,
+        "seed": 781643626,
+        "time": 1,
+        "ip": 220,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79028
+      },
+      {
+        "kind": 10010,
+        "seed": 1579276503,
+        "time": 1,
+        "ip": 260,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79028
+      },
+      {
+        "kind": 10011,
+        "seed": 1881575107,
+        "time": 1,
+        "ip": 328,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79028
+      },
+      {
+        "kind": 110022,
+        "seed": 1986107426,
+        "time": 1,
+        "ip": 396,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79028
+      },
+      {
+        "kind": 10012,
+        "seed": 1279107425,
+        "time": 1,
+        "ip": 432,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79028
+      },
+      {
+        "kind": 10011,
+        "seed": 1492177278,
+        "time": 1,
+        "ip": 128,
+        "sprite": -1,
+        "primary": false,
+        "registration": 79029
+      },
+      {
+        "kind": 10010,
+        "seed": 140382311,
+        "time": 1,
+        "ip": 188,
+        "sprite": -1,
+        "primary": false,
+        "registration": 79029
+      },
+      {
+        "kind": 10011,
+        "seed": 1083627996,
+        "time": 1,
+        "ip": 128,
+        "sprite": -1,
+        "primary": false,
+        "registration": 79030
+      },
+      {
+        "kind": 10010,
+        "seed": 1547804937,
+        "time": 1,
+        "ip": 188,
+        "sprite": -1,
+        "primary": false,
+        "registration": 79030
+      },
+      {
+        "kind": 2,
+        "seed": 988551150,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 1265925310,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 10010,
+        "seed": 833463625,
+        "time": 1,
+        "ip": 164,
+        "sprite": 41,
+        "primary": false,
+        "registration": 79033
+      },
+      {
+        "kind": 10010,
+        "seed": 1163999477,
+        "time": 1,
+        "ip": 172,
+        "sprite": 41,
+        "primary": false,
+        "registration": 79033
+      },
+      {
+        "kind": 110022,
+        "seed": 656614159,
+        "time": 1,
+        "ip": 188,
+        "sprite": 41,
+        "primary": false,
+        "registration": 79033
+      },
+      {
+        "kind": 10010,
+        "seed": 710923016,
+        "time": 1,
+        "ip": 96,
+        "sprite": 27,
+        "primary": false,
+        "registration": 79034
+      },
+      {
+        "kind": 10011,
+        "seed": 176226276,
+        "time": 1,
+        "ip": 108,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79035
+      },
+      {
+        "kind": 10010,
+        "seed": 435843029,
+        "time": 1,
+        "ip": 156,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79035
+      },
+      {
+        "kind": 10010,
+        "seed": 1829046847,
+        "time": 1,
+        "ip": 160,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79035
+      },
+      {
+        "kind": 10010,
+        "seed": 425172426,
+        "time": 1,
+        "ip": 164,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79035
+      },
+      {
+        "kind": 10010,
+        "seed": 2144444714,
+        "time": 1,
+        "ip": 180,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79035
+      },
+      {
+        "kind": 10010,
+        "seed": 1484036800,
+        "time": 1,
+        "ip": 200,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79035
+      },
+      {
+        "kind": 10010,
+        "seed": 180876174,
+        "time": 1,
+        "ip": 220,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79035
+      },
+      {
+        "kind": 10010,
+        "seed": 1552770099,
+        "time": 1,
+        "ip": 260,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79035
+      },
+      {
+        "kind": 10011,
+        "seed": 143717588,
+        "time": 1,
+        "ip": 328,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79035
+      },
+      {
+        "kind": 110022,
+        "seed": 1019510538,
+        "time": 1,
+        "ip": 396,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79035
+      },
+      {
+        "kind": 10012,
+        "seed": 1057925146,
+        "time": 1,
+        "ip": 432,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79035
+      },
+      {
+        "kind": 10011,
+        "seed": 2091080553,
+        "time": 1,
+        "ip": 108,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79036
+      },
+      {
+        "kind": 10010,
+        "seed": 375513922,
+        "time": 1,
+        "ip": 156,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79036
+      },
+      {
+        "kind": 10010,
+        "seed": 1670548182,
+        "time": 1,
+        "ip": 160,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79036
+      },
+      {
+        "kind": 10010,
+        "seed": 1020348472,
+        "time": 1,
+        "ip": 164,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79036
+      },
+      {
+        "kind": 10010,
+        "seed": 703647967,
+        "time": 1,
+        "ip": 180,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79036
+      },
+      {
+        "kind": 10010,
+        "seed": 1189654105,
+        "time": 1,
+        "ip": 200,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79036
+      },
+      {
+        "kind": 10010,
+        "seed": 2080581675,
+        "time": 1,
+        "ip": 220,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79036
+      },
+      {
+        "kind": 10010,
+        "seed": 390314676,
+        "time": 1,
+        "ip": 260,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79036
+      },
+      {
+        "kind": 10011,
+        "seed": 1005690065,
+        "time": 1,
+        "ip": 328,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79036
+      },
+      {
+        "kind": 110022,
+        "seed": 1797287180,
+        "time": 1,
+        "ip": 396,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79036
+      },
+      {
+        "kind": 10012,
+        "seed": 657610627,
+        "time": 1,
+        "ip": 432,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79036
+      },
+      {
+        "kind": 10011,
+        "seed": 1566789610,
+        "time": 1,
+        "ip": 108,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79037
+      },
+      {
+        "kind": 10010,
+        "seed": 422184264,
+        "time": 1,
+        "ip": 156,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79037
+      },
+      {
+        "kind": 10010,
+        "seed": 1784281161,
+        "time": 1,
+        "ip": 160,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79037
+      },
+      {
+        "kind": 10010,
+        "seed": 2056776049,
+        "time": 1,
+        "ip": 164,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79037
+      },
+      {
+        "kind": 10010,
+        "seed": 172693175,
+        "time": 1,
+        "ip": 180,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79037
+      },
+      {
+        "kind": 10010,
+        "seed": 1688216418,
+        "time": 1,
+        "ip": 200,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79037
+      },
+      {
+        "kind": 10010,
+        "seed": 1332760569,
+        "time": 1,
+        "ip": 220,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79037
+      },
+      {
+        "kind": 10010,
+        "seed": 1517813020,
+        "time": 1,
+        "ip": 260,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79037
+      },
+      {
+        "kind": 10011,
+        "seed": 652703721,
+        "time": 1,
+        "ip": 328,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79037
+      },
+      {
+        "kind": 110022,
+        "seed": 928731254,
+        "time": 1,
+        "ip": 396,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79037
+      },
+      {
+        "kind": 10012,
+        "seed": 2065230709,
+        "time": 1,
+        "ip": 432,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79037
+      },
+      {
+        "kind": 10011,
+        "seed": 265693105,
+        "time": 1,
+        "ip": 108,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79038
+      },
+      {
+        "kind": 10010,
+        "seed": 499531571,
+        "time": 1,
+        "ip": 156,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79038
+      },
+      {
+        "kind": 10010,
+        "seed": 942075225,
+        "time": 1,
+        "ip": 160,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79038
+      },
+      {
+        "kind": 10010,
+        "seed": 1946960750,
+        "time": 1,
+        "ip": 164,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79038
+      },
+      {
+        "kind": 10010,
+        "seed": 1415519589,
+        "time": 1,
+        "ip": 180,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79038
+      },
+      {
+        "kind": 10010,
+        "seed": 2058884020,
+        "time": 1,
+        "ip": 200,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79038
+      },
+      {
+        "kind": 10010,
+        "seed": 994829907,
+        "time": 1,
+        "ip": 220,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79038
+      },
+      {
+        "kind": 10010,
+        "seed": 1552610230,
+        "time": 1,
+        "ip": 260,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79038
+      },
+      {
+        "kind": 10011,
+        "seed": 1016615677,
+        "time": 1,
+        "ip": 328,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79038
+      },
+      {
+        "kind": 110022,
+        "seed": 906526870,
+        "time": 1,
+        "ip": 396,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79038
+      },
+      {
+        "kind": 10012,
+        "seed": 1831750498,
+        "time": 1,
+        "ip": 432,
+        "sprite": 30,
+        "primary": false,
+        "registration": 79038
+      },
+      {
+        "kind": 10011,
+        "seed": 2084091027,
+        "time": 1,
+        "ip": 128,
+        "sprite": -1,
+        "primary": false,
+        "registration": 79039
+      },
+      {
+        "kind": 10010,
+        "seed": 139036955,
+        "time": 1,
+        "ip": 188,
+        "sprite": -1,
+        "primary": false,
+        "registration": 79039
+      },
+      {
+        "kind": 10011,
+        "seed": 566457930,
+        "time": 1,
+        "ip": 128,
+        "sprite": -1,
+        "primary": false,
+        "registration": 79040
+      },
+      {
+        "kind": 10010,
+        "seed": 1728945426,
+        "time": 1,
+        "ip": 188,
+        "sprite": -1,
+        "primary": false,
+        "registration": 79040
+      },
+      {
+        "kind": 2,
+        "seed": 267685085,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 17634036,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 2,
+        "seed": 809027544,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 578455729,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 2,
+        "seed": 1054116265,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 768695797,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 2,
+        "seed": 1492364121,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 569546176,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 2,
+        "seed": 477812802,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      },
+      {
+        "kind": 3,
+        "seed": 527396562,
+        "time": 0,
+        "ip": 0,
+        "sprite": 0,
+        "primary": false,
+        "registration": 0
+      }
+    ],
+    "homingContacts": [],
+    "playerDamage": [
+      1,
+      7021,
+      2,
+      0,
+      390195,
+      1,
+      1,
+      7021,
+      2,
+      0,
+      432000,
+      1
+    ],
+    "playedFrames": 7021,
+    "round": 1,
+    "lives": [
+      2,
+      2
+    ],
+    "controls": [
+      81,
+      97
+    ],
+    "enemies": [
+      14,
+      17
+    ],
+    "bullets": [
+      32,
+      46
+    ],
+    "cards": [
+      0,
+      0
+    ],
+    "positionBits": [
+      1115792384,
+      1136859392,
+      3243966464,
+      1138229248
+    ],
+    "animationRng": [
+      1546143377,
+      1688292764
+    ],
+    "world": 0,
+    "strips": 0,
+    "stripFrame": 0,
+    "side": 1,
+    "waves": [
+      11,
+      10
+    ],
+    "waveFinalState": 951632182,
+    "shotClock": [
+      8,
+      9
+    ],
+    "shots": [
+      6,
+      28
+    ],
+    "elapsed": 7126,
+    "remaining": 28874,
+    "announcement": false,
+    "originalRng": [
+      1546143377,
+      1090321595
+    ],
+    "originalPositionBits": [
+      1115792384,
+      1136859392,
+      3243966464,
+      1138229248
+    ],
+    "originalControls": [
+      81,
+      97
+    ],
+    "originalRound": 1,
+    "originalRoundFrame": 7126,
+    "seconds": 482
+  },
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": {
+      "frame": 7126,
+      "web": 1688292764,
+      "original": 1090321595
+    }
+  },
+  "nativeFramesWithMultipleRngStates": [
+    3114,
+    3680,
+    4677,
+    5107,
+    5484,
+    5988,
+    6507,
+    6972,
+    7390,
+    10296,
+    10421,
+    11380,
+    11704,
+    12139,
+    12472,
+    13215,
+    14197,
+    14342,
+    15282,
+    15635,
+    15979,
+    16327,
+    16358,
+    16877,
+    17068,
+    17363,
+    18012,
+    19003,
+    19378,
+    19405,
+    19725,
+    19943,
+    20383,
+    20455,
+    20824,
+    20868,
+    21214,
+    21355,
+    21755,
+    21930,
+    22700,
+    22911,
+    23281,
+    23340,
+    24396,
+    24502,
+    24804,
+    24920,
+    25279,
+    25456,
+    26138,
+    26231,
+    27793,
+    27869,
+    28712,
+    28874,
+    29058,
+    29833,
+    29985,
+    30175,
+    30639,
+    30952,
+    31200,
+    31345,
+    31506,
+    31722,
+    31770,
+    32217,
+    32535,
+    33211,
+    33239,
+    33776
+  ],
+  "missingNativeOpeningFrames": [],
+  "firstConsecutiveMatchingFrames": 7126,
+  "browserErrors": [],
+  "webCapture": "th19-web-gHvISw"
+}

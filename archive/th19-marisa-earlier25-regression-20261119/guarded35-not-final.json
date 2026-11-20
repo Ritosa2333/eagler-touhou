@@ -1,0 +1,10 @@
+{
+  "wasmSha256": "bfb038833c731897f8bdfae36a527ff2a2c917c97ac57c577eb1cf74316633f1",
+  "passed": 34,
+  "total": 35,
+  "failure": {
+    "seed": 4599481,
+    "frame": 26391,
+    "reason": "Player-contact straight laser child moved on its registration tick; missed one native graze."
+  }
+}

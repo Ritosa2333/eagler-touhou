@@ -1,0 +1,19 @@
+{
+  "report": "web-captures-earlier25-converted-arrival\\th19-web-UHeWqK\\report.json",
+  "wasmSha256": "551fe50ad4e677958a6df5e9fc164885fb0fec818487d806d7e66af5a08cb777",
+  "nativeMissingStateFrames": [],
+  "verifiedTransitionGaps": [],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 36000,
+  "bulletCoordinateTolerance": 0.0001,
+  "maximumBulletCoordinateDifference": 0.0,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS",
+  "strictStatus": "PASS",
+  "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+  "acceptedCoordinateCeiling": 0.000244140625,
+  "microscopicCoordinateFrames": []
+}

@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "passed": 5,
+  "total": 5,
+  "framesPerSeed": 36000,
+  "totalContinuousFrames": 180000,
+  "bulletCoordinateTolerance": 0,
+  "maximumBulletCoordinateDifference": 0,
+  "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+  "sameBuildPassed": 5,
+  "verifiedTransitionGaps": [
+    {
+      "seed": 1893703640,
+      "frames": [
+        14791
+      ]
+    },
+    {
+      "seed": 1354966619,
+      "frames": [
+        30541
+      ]
+    }
+  ],
+  "comparison": "primary RNG, CPU input, player position and enemy bullets; animation excluded by established user scope",
+  "completedAt": "2026-11-20T05:57:08.940157+00:00",
+  "committed": false,
+  "pushed": false
+}

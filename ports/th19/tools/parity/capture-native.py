@@ -70,7 +70,7 @@ def start_cpu_fixture(process, fixture, timeout, pipe_name):
     get_owner = kernel.GetNamedPipeServerProcessId
     get_owner.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.ULONG)]
     get_owner.restype = wintypes.BOOL
-    until = time.monotonic() + min(15, timeout)
+    until = time.monotonic() + max(0, timeout)
     while time.monotonic() < until and process.poll() is None:
         try:
             fd = os.open(f"\\\\.\\pipe\\{pipe_name}", os.O_WRONLY | os.O_BINARY)
@@ -88,7 +88,9 @@ def start_cpu_fixture(process, fixture, timeout, pipe_name):
             if pipe.write(packet) != len(packet):
                 raise OSError("Incomplete CPU fixture request")
             return
-    raise RuntimeError("Isolated CPU driver did not open its pipe")
+    exit_code = process.poll()
+    detail = f"process exited with code {exit_code} (0x{exit_code & 0xffffffff:08x})" if exit_code is not None else f"process remained alive for {timeout:.1f}s"
+    raise RuntimeError(f"Isolated CPU driver did not open its pipe; {detail}")
 
 
 def main():
@@ -121,6 +123,7 @@ def main():
                         help="additional simulated frames to save as original screenshots")
     parser.add_argument("--fast-state", action="store_true", help="run CPU battle capture without a frame-rate cap, for state comparisons only")
     parser.add_argument("--state-only", action="store_true", help="omit GPU draw submissions during CPU battles and save state samples")
+    parser.add_argument("--render-image-frames-only", action="store_true", help="submit GPU draws only for explicitly requested image frames in each round")
     parser.add_argument("--render-from-frame", type=int, help="resume GPU draw submissions at this opening-round frame")
     parser.add_argument("--minimized", action="store_true", help="start the isolated game minimized without taking focus")
     parser.add_argument("--no-activate", action="store_true", help="show the capture window without taking focus")
@@ -175,6 +178,8 @@ def main():
         parser.error("state-only requires a CPU fixture")
     if args.render_from_frame is not None and (not args.cpu_fixture or args.render_from_frame < 1 or args.state_only):
         parser.error("render-from-frame requires a CPU fixture, a positive frame and rendering enabled")
+    if args.render_image_frames_only and (not args.image_frames or args.state_only):
+        parser.error("render-image-frames-only requires image-frames and GPU image capture")
     if args.cpu_no_input_reset and not args.cpu_fixture:
         parser.error("cpu-no-input-reset requires a CPU fixture")
     if args.trace_window and (not args.rng_calls or not 0 <= args.trace_window[0] <= args.trace_window[1] <= 36000):
@@ -265,6 +270,7 @@ def main():
         "inputResetSkipRequested": args.cpu_no_input_reset,
         "stateOnlyRequested": args.state_only,
         "renderFromFrame": args.render_from_frame,
+        "renderImageFramesOnly": args.render_image_frames_only,
         "stopAfterTicks": args.stop_after_ticks,
         "imageFrames": sorted(set(args.image_frames)),
         "cpuStartDelay": args.cpu_start_delay,
@@ -291,6 +297,8 @@ def main():
         env["TH19_CAPTURE_STATE_ONLY"] = "1"
     if args.render_from_frame is not None:
         env["TH19_CAPTURE_RENDER_FROM"] = str(args.render_from_frame)
+    if args.render_image_frames_only:
+        env["TH19_CAPTURE_RENDER_IMAGES_ONLY"] = "1"
     if args.display_mode_fallback:
         env["TH19_CAPTURE_DISPLAY_FALLBACK"] = "1"
     if args.software_d3d9:

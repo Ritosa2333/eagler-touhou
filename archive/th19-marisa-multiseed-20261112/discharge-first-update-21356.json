@@ -1,0 +1,53 @@
+{
+  "build": "4d67a31f3f7992c3412e96d8e8e47bdf68da916cd0d915d4f75e2e396a1ca2dc",
+  "fix": "advance_discharge_scripts runs only first post-birth update(age1); subsequent clear radii execute in normal enemy update after shared chain flight manager.",
+  "matchingRngThrough": 21355,
+  "firstSecondaryDifference": 21356,
+  "fullSeed1": "th19-web-23f2Mo",
+  "fullSeed42": "th19-web-feQvoN",
+  "seed42Gameplay36000": "PASS",
+  "seed1FirstPrimary": 33861,
+  "seed1FirstCpu": 33901,
+  "seed1FirstPlayer": 33901,
+  "seed1FirstBullet": 34067,
+  "rollback": {
+    "frames": [
+      20450,
+      20460
+    ],
+    "differences": [],
+    "image": true
+  },
+  "currentCandidate": "Per-seat left-to-right normal SHT emission followed by that seats first-update discharge; check native21356 left clear before right SHT7 initializers.",
+  "originalCompleted": "1/5",
+  "perSeatFix": {
+    "build": "ffae26bf26c9a04aa7002548e34c88fc0a3287e27d9aefaaac0a62e1561fd118",
+    "firstStop": "th19-web-CI7Ngp",
+    "fullSeed1": "th19-web-obFK2M",
+    "fullSeed42": "th19-web-wg0ULi",
+    "matchingRngThrough": 21978,
+    "nextSecondary": 21979,
+    "fullSeed42Gameplay36000": "PASS",
+    "fullSeed1FirstPrimary": 33861,
+    "fullSeed1FirstCpu": 33901,
+    "fullSeed1FirstSelf": 33901,
+    "fullSeed1FirstBullet": 34067,
+    "rollback": {
+      "frames": [
+        21348,
+        21360
+      ],
+      "differences": [],
+      "image": true
+    }
+  },
+  "nextEvidence": "21975 native independent enemy108 child104 consumes5draws before old170 root. Web existing helper omitted independent108 queue nodes, so old170 waits drew5reads early. Currently adding existing independent children to helper registration merge.",
+  "independent108HelperMerge": {
+    "build": "9173424be1d44b6724617cf609e010e3931788d25580209277581207d122b9b5",
+    "report": "th19-web-KwhFkj",
+    "matchingRngThrough": 22579,
+    "nextSecondary": 22580,
+    "allGameplayThrough": 22580,
+    "source": "helper now merges existing independent108 children into old-cancel/persistent/death-emitter/graze registration queue. Frameguard updated when advanced early."
+  }
+}

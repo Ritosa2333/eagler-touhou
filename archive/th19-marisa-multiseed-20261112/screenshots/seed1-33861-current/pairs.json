@@ -1,0 +1,54 @@
+{
+  "wasmSha256": "2d8759838d5e15462c3f6cddb8ae32b38a47251fa8e750d507895a1abddfd05d",
+  "nativeTraceSha256": "22834596f3a41730e4ea61319537711d0dde380b35a022b45ce84e76fc214770",
+  "pairs": [
+    {
+      "frame": 33860,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-33860.png",
+      "webImageSha256": "449fb0005489327df5212634cccc87eb7c1b0fbdd40ff8e978118d38a3330e67",
+      "nativeImageSha256": "6d6eabbb8ff6633fd7f6e3865a0fbddfcf21700338094ad081c8cd82c35bcf60"
+    },
+    {
+      "frame": 33861,
+      "status": "主 RNG不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-33861.png",
+      "webImageSha256": "084dbf0d6823e7d25b477f9471bea0859664d6595fac196b540d4da6e3c338a4",
+      "nativeImageSha256": "a3ccfafbf99c811946596389fbca2b0b34b58cccd90ba5f24f7c9324d4777ecf"
+    },
+    {
+      "frame": 33862,
+      "status": "主 RNG不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 2,
+      "image": "frame-33862.png",
+      "webImageSha256": "c55e8ec652b3f8806494d661b584eece376ff17bdd82b52b6f6173a7e58c31c4",
+      "nativeImageSha256": "d2824ddcfc7e06982e76f0743eaaf2231e4b9df052fc41a4ddb7eedf1471e4a9"
+    },
+    {
+      "frame": 33899,
+      "status": "主 RNG不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 39,
+      "image": "frame-33899.png",
+      "webImageSha256": "739635866900c08099215b67002d947f186b64fa24016b31ac8ae6f157a52a4e",
+      "nativeImageSha256": "0041927684dbf7f3caead601445076fe164c4d976f751bd66ca0a7113479d190"
+    },
+    {
+      "frame": 33900,
+      "status": "主 RNG、CPU 输入、自机位置不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 40,
+      "image": "frame-33900.png",
+      "webImageSha256": "a4938fcecef916685df1da04941a49a8d12da62ebdfbbc5e2cf0e525466d2cb3",
+      "nativeImageSha256": "6e81e096b17b637f8fbb89e4e326e07f24c7ae7e8df782ec99db9f14472a7c44"
+    },
+    {
+      "frame": 33901,
+      "status": "主 RNG、CPU 输入、自机位置不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 41,
+      "image": "frame-33901.png",
+      "webImageSha256": "d2214603fb1cdd794849542e3d62849e0872c2b5476deca4e0329ba4ffa41944",
+      "nativeImageSha256": "8417701c96689cd400b1a8eee2ad920ca9c38b45cd683d4441597a29e9eb433e"
+    }
+  ]
+}

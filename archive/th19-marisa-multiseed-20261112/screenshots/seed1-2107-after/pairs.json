@@ -1,0 +1,30 @@
+{
+  "wasmSha256": "7843eec5a48b01864b8d45e928a0c87bc7196e5d1ed503299a8dae5cf6c6be8c",
+  "nativeTraceSha256": "dbb853f9dde92f105bf5b50eec0f31fc81e21612347df66e323ee9e619b3f0f2",
+  "pairs": [
+    {
+      "frame": 2106,
+      "status": "玩法状态一致",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-2106.png",
+      "webImageSha256": "952c8945a46ebbde28b1c7f6534dfb4ccd32a945d8d8ce4d62e1bc8d0277c889",
+      "nativeImageSha256": "011d47c411db467e2093c2213cf3f7fcf19ce457ea365d4e337fc9e5dd047182"
+    },
+    {
+      "frame": 2107,
+      "status": "玩法状态一致",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-2107.png",
+      "webImageSha256": "e9d8bf9e0c6309d29267be76f87642133a6213fc3deef143e7d736901591e58b",
+      "nativeImageSha256": "80bad71ada63962e25bf5ee34736a39b06359789ab67b08e536607bbec594701"
+    },
+    {
+      "frame": 2108,
+      "status": "玩法状态一致",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-2108.png",
+      "webImageSha256": "d95407355703710b693e21c34e924e3cc14daf95b596809938eae2479cac5ff7",
+      "nativeImageSha256": "69ad1be1e1aa7e69e84f090629dcee160cd45bf155009c7a318ec037ad5ccdcb"
+    }
+  ]
+}

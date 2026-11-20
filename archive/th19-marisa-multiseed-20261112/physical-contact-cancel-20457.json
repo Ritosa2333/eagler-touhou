@@ -1,0 +1,2566 @@
+{
+  "build": "0e514628cc955079d4aeb21d5e31cc0c8eff21a6f7824dc4c52fb9393cbc4e0d",
+  "nativeCapture": "present-v_tghko9",
+  "frame": 19411,
+  "nativeSecondarySeed": 1748944706,
+  "nativeCallStackRva": [
+    "0xc16e5",
+    "0xbe029",
+    "0xcbb11",
+    "0xf53da",
+    "0xf4d7c"
+  ],
+  "source": "0x4f5379 physical bullet contact constructs separate cancellation root through0x4f53d5. Existing Web contact branch entered Canceling without constructing this root.",
+  "fix": "GameWorld.cancel_contact_bullet uses existing record_bullet_cancel constructor without cancellation sound.",
+  "firstStopReport": "th19-web-Hiw9AA",
+  "matchingRngThrough": 20456,
+  "nextSecondaryDifference": 20457,
+  "gameplayThrough": 20457,
+  "originalSeedsCompleted": "1/5",
+  "fullRechecksRunning": [
+    "seed1",
+    "seed42"
+  ],
+  "fullSeed1": {
+    "report": "th19-web-3xpqnX",
+    "through": 36000,
+    "firstPrimary": 33861,
+    "firstCpu": 33901,
+    "firstPlayer": 33901,
+    "firstBullet": 34067
+  },
+  "fullSeed42": {
+    "report": "th19-web-YRMoZE",
+    "through": 36000,
+    "primaryCpuPlayerBullet": "PASS"
+  },
+  "revertedCandidate": "Calling tick_vs_death_chain_cancels before discharge regresses seed1 primary493 and bullet491. Fully reverted to Application-stable-20456.cpp.",
+  "nextDifference": "20457 native first new draws script38 and cancel170 before two224 ctor bounds. Web ECLclear eager two224 roots occur before chain38, changing root wait counts. Need preserve native flight/death-chain/ECL registration order.",
+  "fiveOriginalFull": {
+    "build": "0e514628cc955079d4aeb21d5e31cc0c8eff21a6f7824dc4c52fb9393cbc4e0d",
+    "originalCompleted": 1,
+    "targetPerSeed": 36000,
+    "results": [
+      {
+        "seed": 1,
+        "report": "th19-web-3xpqnX",
+        "capturedThrough": 36000,
+        "differentBulletPositionFrames": 1934,
+        "firstDifferentBulletPosition": {
+          "frame": 34067,
+          "side": 1,
+          "kind": 1,
+          "color": 7,
+          "original": [],
+          "web": [
+            [
+              -28.263565063476562,
+              12.365415573120117
+            ]
+          ]
+        },
+        "firstDifferentBulletCount": {
+          "frame": 34067,
+          "side": 1,
+          "original": 0,
+          "web": 1
+        },
+        "firstDifferentRoundClock": null,
+        "firstDifferentPlayerPosition": {
+          "frame": 33901,
+          "web": [
+            0,
+            400,
+            0,
+            400
+          ],
+          "original": [
+            5,
+            400,
+            0,
+            400
+          ]
+        },
+        "firstDifferentPlayerControls": {
+          "frame": 33901,
+          "web": [
+            1,
+            1
+          ],
+          "original": [
+            129,
+            1
+          ]
+        },
+        "firstDifferentRngSample": {
+          "frame": 20457,
+          "openingDraws": [
+            {
+              "kind": 10010,
+              "seed": 777783685,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303863
+            },
+            {
+              "kind": 10012,
+              "seed": 2087141781,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303863
+            },
+            {
+              "kind": 10011,
+              "seed": 1373095293,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303863
+            },
+            {
+              "kind": 10010,
+              "seed": 747607395,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303862
+            },
+            {
+              "kind": 10012,
+              "seed": 1441359857,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303862
+            },
+            {
+              "kind": 10011,
+              "seed": 1706461741,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303862
+            },
+            {
+              "kind": 10010,
+              "seed": 1584451832,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303861
+            },
+            {
+              "kind": 10012,
+              "seed": 444294567,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303861
+            },
+            {
+              "kind": 10011,
+              "seed": 1771344715,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303861
+            },
+            {
+              "kind": 10010,
+              "seed": 371848813,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303860
+            },
+            {
+              "kind": 10012,
+              "seed": 845730697,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303860
+            },
+            {
+              "kind": 10011,
+              "seed": 602345417,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303860
+            },
+            {
+              "kind": 10010,
+              "seed": 1034527274,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303859
+            },
+            {
+              "kind": 10012,
+              "seed": 81315916,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303859
+            },
+            {
+              "kind": 10011,
+              "seed": 1747958167,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303859
+            },
+            {
+              "kind": 10010,
+              "seed": 1056188627,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303858
+            },
+            {
+              "kind": 10012,
+              "seed": 2019434137,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303858
+            },
+            {
+              "kind": 10011,
+              "seed": 1527522503,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303858
+            },
+            {
+              "kind": 10010,
+              "seed": 1187722568,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303857
+            },
+            {
+              "kind": 10012,
+              "seed": 1185155969,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303857
+            },
+            {
+              "kind": 10011,
+              "seed": 1846907166,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303857
+            },
+            {
+              "kind": 10010,
+              "seed": 1419688428,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303856
+            },
+            {
+              "kind": 10012,
+              "seed": 1429448571,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303856
+            },
+            {
+              "kind": 10011,
+              "seed": 114908984,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303856
+            },
+            {
+              "kind": 10010,
+              "seed": 1968790110,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303855
+            },
+            {
+              "kind": 10012,
+              "seed": 726085472,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303855
+            },
+            {
+              "kind": 10011,
+              "seed": 1938699872,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303855
+            },
+            {
+              "kind": 10010,
+              "seed": 2086635993,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303854
+            },
+            {
+              "kind": 10012,
+              "seed": 580522862,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303854
+            },
+            {
+              "kind": 10011,
+              "seed": 2052445546,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303854
+            },
+            {
+              "kind": 10010,
+              "seed": 1588380268,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303853
+            },
+            {
+              "kind": 10012,
+              "seed": 1095267787,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303853
+            },
+            {
+              "kind": 10011,
+              "seed": 771440784,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303853
+            },
+            {
+              "kind": 10010,
+              "seed": 851645484,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303852
+            },
+            {
+              "kind": 10012,
+              "seed": 499703643,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303852
+            },
+            {
+              "kind": 10011,
+              "seed": 658228149,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303852
+            },
+            {
+              "kind": 10010,
+              "seed": 1310423014,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303851
+            },
+            {
+              "kind": 10012,
+              "seed": 1298486409,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303851
+            },
+            {
+              "kind": 10011,
+              "seed": 632243850,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303851
+            },
+            {
+              "kind": 10010,
+              "seed": 1152775833,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303850
+            },
+            {
+              "kind": 10012,
+              "seed": 45973679,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303850
+            },
+            {
+              "kind": 10011,
+              "seed": 844851658,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303850
+            },
+            {
+              "kind": 10010,
+              "seed": 1119926788,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303849
+            },
+            {
+              "kind": 10012,
+              "seed": 1380137617,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303849
+            },
+            {
+              "kind": 10011,
+              "seed": 1385212973,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303849
+            },
+            {
+              "kind": 10010,
+              "seed": 1564586691,
+              "time": 30,
+              "ip": 312,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303848
+            },
+            {
+              "kind": 10012,
+              "seed": 1459263565,
+              "time": 30,
+              "ip": 352,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303848
+            },
+            {
+              "kind": 10011,
+              "seed": 500440868,
+              "time": 30,
+              "ip": 372,
+              "sprite": -1,
+              "primary": false,
+              "registration": 303848
+            },
+            {
+              "kind": 110022,
+              "seed": 1885077772,
+              "time": 0,
+              "ip": 44,
+              "sprite": -1,
+              "primary": false,
+              "registration": 304075
+            },
+            {
+              "kind": 10012,
+              "seed": 1412041528,
+              "time": 0,
+              "ip": 84,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304076
+            },
+            {
+              "kind": 10012,
+              "seed": 1673125955,
+              "time": 0,
+              "ip": 104,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304076
+            },
+            {
+              "kind": 10010,
+              "seed": 897977429,
+              "time": 0,
+              "ip": 188,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304076
+            },
+            {
+              "kind": 110022,
+              "seed": 1458544211,
+              "time": 0,
+              "ip": 88,
+              "sprite": -1,
+              "primary": false,
+              "registration": 304075
+            },
+            {
+              "kind": 10012,
+              "seed": 136242286,
+              "time": 0,
+              "ip": 84,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304077
+            },
+            {
+              "kind": 10012,
+              "seed": 956460392,
+              "time": 0,
+              "ip": 104,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304077
+            },
+            {
+              "kind": 10010,
+              "seed": 548655379,
+              "time": 0,
+              "ip": 188,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304077
+            },
+            {
+              "kind": 10012,
+              "seed": 1375464905,
+              "time": 0,
+              "ip": 96,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304078
+            },
+            {
+              "kind": 10012,
+              "seed": 1314514956,
+              "time": 0,
+              "ip": 116,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304078
+            },
+            {
+              "kind": 10010,
+              "seed": 1252123167,
+              "time": 0,
+              "ip": 200,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304078
+            },
+            {
+              "kind": 110022,
+              "seed": 310149442,
+              "time": 0,
+              "ip": 204,
+              "sprite": -1,
+              "primary": false,
+              "registration": 304075
+            },
+            {
+              "kind": 110022,
+              "seed": 1115211545,
+              "time": 0,
+              "ip": 44,
+              "sprite": -1,
+              "primary": false,
+              "registration": 304079
+            },
+            {
+              "kind": 10010,
+              "seed": 1403909346,
+              "time": 78,
+              "ip": 592,
+              "sprite": 0,
+              "primary": false,
+              "registration": 299851
+            },
+            {
+              "kind": 3,
+              "seed": 1033171421,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": true,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1204928810,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": true,
+              "registration": 0
+            },
+            {
+              "kind": 1,
+              "seed": 671492162,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": true,
+              "registration": 0
+            },
+            {
+              "kind": 1,
+              "seed": 1627467731,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": true,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 248068547,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": true,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 148016565,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": true,
+              "registration": 0
+            },
+            {
+              "kind": 110022,
+              "seed": 2114076034,
+              "time": 0,
+              "ip": 44,
+              "sprite": -1,
+              "primary": false,
+              "registration": 304080
+            },
+            {
+              "kind": 3,
+              "seed": 141331774,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1817999882,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 10012,
+              "seed": 1900553014,
+              "time": 1,
+              "ip": 64,
+              "sprite": 34,
+              "primary": false,
+              "registration": 304083
+            },
+            {
+              "kind": 10011,
+              "seed": 1093138954,
+              "time": 1,
+              "ip": 124,
+              "sprite": 34,
+              "primary": false,
+              "registration": 304083
+            },
+            {
+              "kind": 10011,
+              "seed": 1089758097,
+              "time": 1,
+              "ip": 176,
+              "sprite": 34,
+              "primary": false,
+              "registration": 304083
+            },
+            {
+              "kind": 10010,
+              "seed": 1101167022,
+              "time": 0,
+              "ip": 92,
+              "sprite": 30,
+              "primary": false,
+              "registration": 304084
+            },
+            {
+              "kind": 10010,
+              "seed": 2065572065,
+              "time": 0,
+              "ip": 96,
+              "sprite": 30,
+              "primary": false,
+              "registration": 304084
+            },
+            {
+              "kind": 10010,
+              "seed": 1710903052,
+              "time": 0,
+              "ip": 100,
+              "sprite": 30,
+              "primary": false,
+              "registration": 304084
+            },
+            {
+              "kind": 10010,
+              "seed": 1222610413,
+              "time": 0,
+              "ip": 116,
+              "sprite": 30,
+              "primary": false,
+              "registration": 304084
+            },
+            {
+              "kind": 10010,
+              "seed": 1629142716,
+              "time": 0,
+              "ip": 136,
+              "sprite": 30,
+              "primary": false,
+              "registration": 304084
+            },
+            {
+              "kind": 10010,
+              "seed": 1644374543,
+              "time": 0,
+              "ip": 156,
+              "sprite": 30,
+              "primary": false,
+              "registration": 304084
+            },
+            {
+              "kind": 10011,
+              "seed": 313004739,
+              "time": 0,
+              "ip": 196,
+              "sprite": 30,
+              "primary": false,
+              "registration": 304084
+            },
+            {
+              "kind": 10010,
+              "seed": 1504299624,
+              "time": 0,
+              "ip": 248,
+              "sprite": 30,
+              "primary": false,
+              "registration": 304084
+            },
+            {
+              "kind": 10012,
+              "seed": 1182594093,
+              "time": 0,
+              "ip": 336,
+              "sprite": 30,
+              "primary": false,
+              "registration": 304084
+            },
+            {
+              "kind": 2,
+              "seed": 589158649,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 151208658,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1843697812,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1119784078,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 933834148,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1426407578,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1499507524,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1791368869,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 590145397,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 537881132,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 982830542,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 4363358,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 170256612,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 37000783,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1505885536,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 426740953,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 549400239,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 823379966,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1894483757,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 181810299,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1546761387,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 7472981,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 2098496802,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1882983999,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1275256454,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 285549779,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1223335663,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 130463467,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1179962553,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 263626482,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1673304147,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 909548873,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1677969315,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 616090466,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 949340630,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 468007397,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1804577794,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 395520913,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1060369593,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1975381105,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1052425361,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 751447399,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 2118599299,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1588008242,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 317069917,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 166011338,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1271809641,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1408163922,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1328284018,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 178584399,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 448165071,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1773366010,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1305015643,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 124802155,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 633194170,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1928515966,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 125580983,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1720778559,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1181839176,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 655782141,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1350771431,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1189255587,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 23588473,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 472847273,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1354514667,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1490374195,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1150592345,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 2021006781,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 131209735,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 695843182,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 254515595,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 2115825405,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 833357082,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 316029618,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1489345837,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 902847208,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 304445150,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 641239229,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1577018848,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 276492952,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 2127903534,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1888653704,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 79679693,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 75249026,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 950886969,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 2096893268,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1788205577,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 366216202,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1684388285,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1228546168,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 391163623,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1183021409,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 1888776462,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1710363817,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 963001492,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 613997370,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 845235023,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 297985880,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 230945874,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 400672277,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 10012,
+              "seed": 613758185,
+              "time": 0,
+              "ip": 84,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304088
+            },
+            {
+              "kind": 10012,
+              "seed": 36954123,
+              "time": 0,
+              "ip": 104,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304088
+            },
+            {
+              "kind": 10010,
+              "seed": 1401044323,
+              "time": 0,
+              "ip": 188,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304088
+            },
+            {
+              "kind": 110022,
+              "seed": 1255504209,
+              "time": 0,
+              "ip": 88,
+              "sprite": -1,
+              "primary": false,
+              "registration": 304050
+            },
+            {
+              "kind": 10012,
+              "seed": 307670652,
+              "time": 0,
+              "ip": 84,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304089
+            },
+            {
+              "kind": 10012,
+              "seed": 1720623687,
+              "time": 0,
+              "ip": 104,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304089
+            },
+            {
+              "kind": 10010,
+              "seed": 148463805,
+              "time": 0,
+              "ip": 188,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304089
+            },
+            {
+              "kind": 10012,
+              "seed": 343401116,
+              "time": 0,
+              "ip": 96,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304090
+            },
+            {
+              "kind": 10012,
+              "seed": 2036482890,
+              "time": 0,
+              "ip": 116,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304090
+            },
+            {
+              "kind": 10010,
+              "seed": 2001641765,
+              "time": 0,
+              "ip": 200,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304090
+            },
+            {
+              "kind": 110022,
+              "seed": 1665392491,
+              "time": 0,
+              "ip": 204,
+              "sprite": -1,
+              "primary": false,
+              "registration": 304050
+            },
+            {
+              "kind": 2,
+              "seed": 1258091263,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 633302760,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 2,
+              "seed": 727812915,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 3,
+              "seed": 1572238692,
+              "time": 0,
+              "ip": 0,
+              "sprite": 0,
+              "primary": false,
+              "registration": 0
+            },
+            {
+              "kind": 110022,
+              "seed": 1461816552,
+              "time": 0,
+              "ip": 88,
+              "sprite": -1,
+              "primary": false,
+              "registration": 304075
+            },
+            {
+              "kind": 10012,
+              "seed": 1329108466,
+              "time": 0,
+              "ip": 84,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304091
+            },
+            {
+              "kind": 10012,
+              "seed": 1320808161,
+              "time": 0,
+              "ip": 104,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304091
+            },
+            {
+              "kind": 10010,
+              "seed": 88743848,
+              "time": 0,
+              "ip": 188,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304091
+            },
+            {
+              "kind": 10012,
+              "seed": 1671894690,
+              "time": 0,
+              "ip": 96,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304092
+            },
+            {
+              "kind": 10012,
+              "seed": 1593126730,
+              "time": 0,
+              "ip": 116,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304092
+            },
+            {
+              "kind": 10010,
+              "seed": 430984760,
+              "time": 0,
+              "ip": 200,
+              "sprite": 540,
+              "primary": false,
+              "registration": 304092
+            },
+            {
+              "kind": 110022,
+              "seed": 1391261471,
+              "time": 0,
+              "ip": 204,
+              "sprite": -1,
+              "primary": false,
+              "registration": 304075
+            }
+          ],
+          "homingContacts": [],
+          "playerDamage": [
+            1,
+            1038,
+            2,
+            0,
+            216718,
+            1,
+            1,
+            262,
+            2,
+            0,
+            432000,
+            1
+          ],
+          "playedFrames": 20352,
+          "round": 1,
+          "lives": [
+            2,
+            2
+          ],
+          "controls": [
+            97,
+            97
+          ],
+          "enemies": [
+            19,
+            4
+          ],
+          "bullets": [
+            34,
+            123
+          ],
+          "cards": [
+            0,
+            0
+          ],
+          "positionBits": [
+            3272012288,
+            1129887744,
+            3264335872,
+            1138229248
+          ],
+          "animationRng": [
+            229515546,
+            1473857657
+          ],
+          "world": 0,
+          "strips": 0,
+          "stripFrame": 0,
+          "side": 1,
+          "waves": [
+            16,
+            16
+          ],
+          "waveFinalState": 951632182,
+          "shotClock": [
+            11,
+            3
+          ],
+          "shots": [
+            26,
+            1
+          ],
+          "elapsed": 20457,
+          "remaining": 15543,
+          "announcement": false,
+          "originalRng": [
+            229515546,
+            307670652
+          ],
+          "originalPositionBits": [
+            3272012288,
+            1129887744,
+            3264335872,
+            1138229248
+          ],
+          "originalControls": [
+            97,
+            97
+          ],
+          "originalRound": 1,
+          "originalRoundFrame": 20457,
+          "seconds": 260
+        },
+        "firstDifferentRngByStream": {
+          "primary": {
+            "frame": 33861,
+            "web": 42915601,
+            "original": 2135924849
+          },
+          "animation": {
+            "frame": 20457,
+            "web": 1473857657,
+            "original": 307670652
+          }
+        }
+      },
+      {
+        "seed": 42,
+        "report": "th19-web-YRMoZE",
+        "capturedThrough": 36000,
+        "differentBulletPositionFrames": 0,
+        "firstDifferentBulletPosition": null,
+        "firstDifferentBulletCount": null,
+        "firstDifferentRoundClock": null,
+        "firstDifferentPlayerPosition": null,
+        "firstDifferentPlayerControls": null,
+        "firstDifferentRngSample": {
+          "frame": 4506,
+          "homingContacts": [],
+          "playedFrames": 4401,
+          "round": 1,
+          "lives": [
+            2,
+            2
+          ],
+          "controls": [
+            83,
+            43
+          ],
+          "enemies": [
+            5,
+            18
+          ],
+          "bullets": [
+            8,
+            17
+          ],
+          "cards": [
+            0,
+            0
+          ],
+          "positionBits": [
+            1095229440,
+            1136030720,
+            1108963328,
+            1130031616
+          ],
+          "animationRng": [
+            987001837,
+            1587294591
+          ],
+          "world": 0,
+          "strips": 0,
+          "stripFrame": 0,
+          "side": 0,
+          "waves": [
+            7,
+            4
+          ],
+          "waveFinalState": 1165202902,
+          "shotClock": [
+            3,
+            2
+          ],
+          "shots": [
+            5,
+            0
+          ],
+          "elapsed": 4506,
+          "remaining": 31494,
+          "announcement": false,
+          "originalRng": [
+            987001837,
+            872282683
+          ],
+          "originalPositionBits": [
+            1095229440,
+            1136030720,
+            1108963328,
+            1130031616
+          ],
+          "originalControls": [
+            83,
+            43
+          ],
+          "originalRound": 1,
+          "originalRoundFrame": 4506,
+          "seconds": 525
+        },
+        "firstDifferentRngByStream": {
+          "primary": null,
+          "animation": {
+            "frame": 4506,
+            "web": 1587294591,
+            "original": 872282683
+          }
+        }
+      },
+      {
+        "seed": 20261112,
+        "report": "th19-web-Nn6hPY",
+        "capturedThrough": 36000,
+        "differentBulletPositionFrames": 7765,
+        "firstDifferentBulletPosition": {
+          "frame": 28221,
+          "side": 1,
+          "kind": 1,
+          "color": 0,
+          "original": [
+            [
+              -121.2325439453125,
+              7.40059757232666
+            ]
+          ],
+          "web": []
+        },
+        "firstDifferentBulletCount": {
+          "frame": 28221,
+          "side": 1,
+          "original": 1,
+          "web": 0
+        },
+        "firstDifferentRoundClock": null,
+        "firstDifferentPlayerPosition": {
+          "frame": 28038,
+          "web": [
+            0,
+            400,
+            2,
+            400
+          ],
+          "original": [
+            0,
+            400,
+            0,
+            400
+          ]
+        },
+        "firstDifferentPlayerControls": {
+          "frame": 27976,
+          "web": [
+            0,
+            0
+          ],
+          "original": [
+            1,
+            1
+          ]
+        },
+        "firstDifferentRngSample": {
+          "frame": 5997,
+          "homingContacts": [],
+          "playedFrames": 5892,
+          "round": 1,
+          "lives": [
+            2,
+            2
+          ],
+          "controls": [
+            1,
+            1
+          ],
+          "enemies": [
+            4,
+            5
+          ],
+          "bullets": [
+            45,
+            117
+          ],
+          "cards": [
+            0,
+            0
+          ],
+          "positionBits": [
+            1108103168,
+            1137194496,
+            1116155904,
+            1138229248
+          ],
+          "animationRng": [
+            977787817,
+            1467908644
+          ],
+          "world": 0,
+          "strips": 0,
+          "stripFrame": 0,
+          "side": 0,
+          "waves": [
+            18,
+            18
+          ],
+          "waveFinalState": 684602615,
+          "shotClock": [
+            11,
+            8
+          ],
+          "shots": [
+            1,
+            1
+          ],
+          "elapsed": 5997,
+          "remaining": 30003,
+          "announcement": false,
+          "originalRng": [
+            977787817,
+            1180224707
+          ],
+          "originalPositionBits": [
+            1108103168,
+            1137194496,
+            1116155904,
+            1138229248
+          ],
+          "originalControls": [
+            1,
+            1
+          ],
+          "originalRound": 1,
+          "originalRoundFrame": 5997,
+          "seconds": 501
+        },
+        "firstDifferentRngByStream": {
+          "primary": {
+            "frame": 27985,
+            "web": 787661422,
+            "original": 879555430
+          },
+          "animation": {
+            "frame": 5997,
+            "web": 1467908644,
+            "original": 1180224707
+          }
+        }
+      },
+      {
+        "seed": 123456789,
+        "report": "th19-web-zsKYVb",
+        "capturedThrough": 36000,
+        "differentBulletPositionFrames": 8945,
+        "firstDifferentBulletPosition": {
+          "frame": 27055,
+          "side": 1,
+          "kind": 1,
+          "color": 0,
+          "original": [
+            [
+              24.996246337890625,
+              13.018268585205078
+            ]
+          ],
+          "web": []
+        },
+        "firstDifferentBulletCount": {
+          "frame": 27055,
+          "side": 1,
+          "original": 1,
+          "web": 0
+        },
+        "firstDifferentRoundClock": null,
+        "firstDifferentPlayerPosition": {
+          "frame": 26946,
+          "web": [
+            5,
+            400,
+            0,
+            400
+          ],
+          "original": [
+            0,
+            400,
+            0,
+            400
+          ]
+        },
+        "firstDifferentPlayerControls": {
+          "frame": 26946,
+          "web": [
+            129,
+            1
+          ],
+          "original": [
+            1,
+            1
+          ]
+        },
+        "firstDifferentRngSample": {
+          "frame": 9861,
+          "homingContacts": [],
+          "playedFrames": 9756,
+          "round": 1,
+          "lives": [
+            2,
+            2
+          ],
+          "controls": [
+            129,
+            27
+          ],
+          "enemies": [
+            15,
+            15
+          ],
+          "bullets": [
+            12,
+            84
+          ],
+          "cards": [
+            0,
+            0
+          ],
+          "positionBits": [
+            3261188096,
+            1137072128,
+            1069219840,
+            1137008896
+          ],
+          "animationRng": [
+            208038011,
+            1306747903
+          ],
+          "world": 0,
+          "strips": 0,
+          "stripFrame": 0,
+          "side": 1,
+          "waves": [
+            10,
+            7
+          ],
+          "waveFinalState": 98620442,
+          "shotClock": [
+            5,
+            7
+          ],
+          "shots": [
+            24,
+            0
+          ],
+          "elapsed": 9861,
+          "remaining": 26139,
+          "announcement": false,
+          "originalRng": [
+            208038011,
+            1477400060
+          ],
+          "originalPositionBits": [
+            3261188096,
+            1137072128,
+            1069219840,
+            1137008896
+          ],
+          "originalControls": [
+            129,
+            27
+          ],
+          "originalRound": 1,
+          "originalRoundFrame": 9861,
+          "seconds": 436
+        },
+        "firstDifferentRngByStream": {
+          "primary": {
+            "frame": 26946,
+            "web": 661534633,
+            "original": 2003922300
+          },
+          "animation": {
+            "frame": 9861,
+            "web": 1306747903,
+            "original": 1477400060
+          }
+        }
+      },
+      {
+        "seed": 987654321,
+        "report": "th19-web-yipPqD",
+        "capturedThrough": 36000,
+        "differentBulletPositionFrames": 0,
+        "firstDifferentBulletPosition": null,
+        "firstDifferentBulletCount": null,
+        "firstDifferentRoundClock": null,
+        "firstDifferentPlayerPosition": {
+          "frame": 35988,
+          "web": [
+            -5,
+            400,
+            0,
+            400
+          ],
+          "original": [
+            -5,
+            400,
+            -5,
+            400
+          ]
+        },
+        "firstDifferentPlayerControls": {
+          "frame": 26026,
+          "web": [
+            83,
+            139
+          ],
+          "original": [
+            147,
+            139
+          ]
+        },
+        "firstDifferentRngSample": {
+          "frame": 4371,
+          "homingContacts": [],
+          "playedFrames": 4266,
+          "round": 1,
+          "lives": [
+            2,
+            2
+          ],
+          "controls": [
+            67,
+            1
+          ],
+          "enemies": [
+            16,
+            11
+          ],
+          "bullets": [
+            6,
+            20
+          ],
+          "cards": [
+            0,
+            0
+          ],
+          "positionBits": [
+            1119876096,
+            1138229248,
+            3255830528,
+            1138229248
+          ],
+          "animationRng": [
+            735008530,
+            1227617743
+          ],
+          "world": 0,
+          "strips": 0,
+          "stripFrame": 0,
+          "side": 1,
+          "waves": [
+            7,
+            7
+          ],
+          "waveFinalState": 100454104,
+          "shotClock": [
+            0,
+            2
+          ],
+          "shots": [
+            14,
+            28
+          ],
+          "elapsed": 4371,
+          "remaining": 31629,
+          "announcement": false,
+          "originalRng": [
+            735008530,
+            144260456
+          ],
+          "originalPositionBits": [
+            1119876096,
+            1138229248,
+            3255830528,
+            1138229248
+          ],
+          "originalControls": [
+            67,
+            1
+          ],
+          "originalRound": 1,
+          "originalRoundFrame": 4371,
+          "seconds": 528
+        },
+        "firstDifferentRngByStream": {
+          "primary": {
+            "frame": 18542,
+            "web": 1528206023,
+            "original": 2000423562
+          },
+          "animation": {
+            "frame": 4371,
+            "web": 1227617743,
+            "original": 144260456
+          }
+        }
+      }
+    ]
+  },
+  "pairedScreenshots": "screenshots/seed1-34083-contact-cancel",
+  "native20457Stack": "present-gead2akb/native-cancel224-stack.jsonl confirms224 via0x503df4 ECL615, chain38/170 via0x51c9bc",
+  "revertedCandidates": [
+    "tick_vs_death_chain_cancels before discharge regresses primary493 bullet491",
+    "moving original global chainVisits to same early phase also regresses primary493 bullet491",
+    "advance_discharge_scripts after tick_spirit_transits retains5485 but secondary6508, report4ROqAS, allgameplay6508PASS"
+  ],
+  "native20457Capture": "present-gead2akb completed through20508, observerd3d9-cancel224-stack.dll",
+  "currentCode": "stable Application-stable-20456.cpp restored, contact cancel root retained",
+  "rollback19405to19415": {
+    "report": "th19-web-WuzWcC",
+    "frameRollback": {
+      "frames": [
+        19405,
+        19415
+      ],
+      "differences": [],
+      "image": true
+    }
+  },
+  "tests": [
+    "234 native float bit patterns PASS",
+    "ANM lifetime PASS",
+    "10 Node tests PASS",
+    "docs index/check 567documents21sourceDirs PASS",
+    "git diff --check PASS"
+  ]
+}

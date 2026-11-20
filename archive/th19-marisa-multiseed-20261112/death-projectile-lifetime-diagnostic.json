@@ -1,0 +1,32 @@
+{
+  "seed": 42,
+  "firstGameplayDifference": 30847,
+  "nativeCapture": "present-zzm_6x3e",
+  "beforeWeb": "th19-web-MnU3Cy",
+  "healthWeb": "th19-web-sw9soq",
+  "nativeEnemy": 70322,
+  "webEnemy": 26436,
+  "position": [
+    24.9,
+    104.3
+  ],
+  "nativeHealth": {
+    "30835": 26,
+    "30846": 4,
+    "30847": 2
+  },
+  "webHealth": 60,
+  "nativeShot": {
+    "position": [
+      15.43,
+      275.67
+    ],
+    "ageAt30847": 37,
+    "lengthAt30847": 522,
+    "damage": 10
+  },
+  "cause": "VS player death erased all registered Web projectiles. Native fixed charged beam survives death, dealing 2 damage per tick after death reduction.",
+  "candidate": "Preserve fired VS projectiles on player death and retain their own lifetime callbacks.",
+  "validation": "pending full regression",
+  "screenshots": "screenshots/seed42-30847-before"
+}

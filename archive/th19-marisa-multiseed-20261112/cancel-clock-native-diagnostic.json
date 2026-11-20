@@ -1,0 +1,178 @@
+{
+  "nativeCapture": "present-1wkm9e1j",
+  "webBaseline": "th19-web-76DeCm",
+  "creationFrameCandidate": "th19-web-f5RVvK",
+  "zeroInitializationCandidate": "th19-web-JD40ZM",
+  "native209Ticks": [
+    {
+      "frame": 401,
+      "vm": 208571900,
+      "file": 7,
+      "script": 209,
+      "beforeIp": 28,
+      "afterIp": 60,
+      "clock": [
+        0,
+        0,
+        0
+      ],
+      "position": [
+        0,
+        1
+      ],
+      "result": 0
+    },
+    {
+      "frame": 401,
+      "vm": 208571900,
+      "file": 7,
+      "script": 209,
+      "beforeIp": 60,
+      "afterIp": 220,
+      "clock": [
+        -5,
+        3231711232,
+        0
+      ],
+      "position": [
+        0,
+        -1
+      ],
+      "result": 0
+    },
+    {
+      "frame": 402,
+      "vm": 208571900,
+      "file": 7,
+      "script": 209,
+      "beforeIp": 220,
+      "afterIp": 220,
+      "clock": [
+        -4,
+        3229614080,
+        0
+      ],
+      "position": [
+        0,
+        -1
+      ],
+      "result": 0
+    },
+    {
+      "frame": 403,
+      "vm": 208571900,
+      "file": 7,
+      "script": 209,
+      "beforeIp": 220,
+      "afterIp": 220,
+      "clock": [
+        -3,
+        3225419776,
+        0
+      ],
+      "position": [
+        0,
+        -1
+      ],
+      "result": 0
+    },
+    {
+      "frame": 404,
+      "vm": 208571900,
+      "file": 7,
+      "script": 209,
+      "beforeIp": 220,
+      "afterIp": 220,
+      "clock": [
+        -2,
+        3221225472,
+        0
+      ],
+      "position": [
+        0,
+        -1
+      ],
+      "result": 0
+    },
+    {
+      "frame": 405,
+      "vm": 208571900,
+      "file": 7,
+      "script": 209,
+      "beforeIp": 220,
+      "afterIp": 220,
+      "clock": [
+        -1,
+        3212836864,
+        0
+      ],
+      "position": [
+        0,
+        -1
+      ],
+      "result": 0
+    },
+    {
+      "frame": 406,
+      "vm": 208571900,
+      "file": 7,
+      "script": 209,
+      "beforeIp": 220,
+      "afterIp": 220,
+      "clock": [
+        0,
+        0,
+        0
+      ],
+      "position": [
+        0,
+        -1
+      ],
+      "result": 0
+    },
+    {
+      "frame": 407,
+      "vm": 208571900,
+      "file": 7,
+      "script": 209,
+      "beforeIp": 220,
+      "afterIp": 220,
+      "clock": [
+        0,
+        0,
+        0
+      ],
+      "position": [
+        0,
+        1
+      ],
+      "result": 0
+    },
+    {
+      "frame": 408,
+      "vm": 208571900,
+      "file": 7,
+      "script": 209,
+      "beforeIp": 220,
+      "afterIp": 252,
+      "clock": [
+        -15,
+        3245342720,
+        0
+      ],
+      "position": [
+        0,
+        1
+      ],
+      "result": 0
+    }
+  ],
+  "firstAnimationDifferences": {
+    "baseline": 407,
+    "creationFrameCandidate": 405,
+    "zeroInitializationCandidate": 407
+  },
+  "candidateStatus": "Clock candidates reverted. Per-field cancellation order advances secondary RNG agreement to frame 620.",
+  "fieldOrderReport": "th19-web-HgpZj9",
+  "fieldOrderWasm": "8f29ab4c0519f8c0355c07006a198beca9aa47d0fcf9583a8dac84310ed712f1"
+}

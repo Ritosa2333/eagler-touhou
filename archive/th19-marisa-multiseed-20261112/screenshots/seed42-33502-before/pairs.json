@@ -1,0 +1,54 @@
+{
+  "wasmSha256": "fa3b0fdd7a8d39e61f2bc247c770e75b1bc31031046db57cf9cb1a38358839f9",
+  "nativeTraceSha256": "46cc1f40fabf938aee504a05d07879f869d1b4db4bc89f0ebfe283414a051ea3",
+  "pairs": [
+    {
+      "frame": 33501,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-33501.png",
+      "webImageSha256": "8a5d2e3f24c0ebd4c1c37f50a9f6e57c6eb57270507c48a989deb15806de9da3",
+      "nativeImageSha256": "4b8d093c5fefcad73137a5780d212e6a16f09e31aa0bb10cbf6ccbc3dc698820"
+    },
+    {
+      "frame": 33502,
+      "status": "CPU 输入不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-33502.png",
+      "webImageSha256": "4d01e9fd903f95c1e5dd8f786f939e76141f18f231f40c04516ce54adefc2587",
+      "nativeImageSha256": "09b737c57de55c2b8d9388e61ca6538e274bcc6012fe27e7a61cd0dd0fa1c56b"
+    },
+    {
+      "frame": 33503,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-33503.png",
+      "webImageSha256": "df56ea475ca8207030a319c7d04dfd83558a6b86eea27074930661e1e2385d25",
+      "nativeImageSha256": "0e96116ca3aef0b3ccea1ccc9bce8030a76ff7580db398ce49da43a3cfecae66"
+    },
+    {
+      "frame": 34804,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-34804.png",
+      "webImageSha256": "472ae17500385deb9e1f21f0fcf27419f7ce04bdddf05c141449d121c19cd8f3",
+      "nativeImageSha256": "16981c068cf08632d75d1e9972bb47c6dd9f7ad0647338c6d19d6ccc0eedf4ef"
+    },
+    {
+      "frame": 34805,
+      "status": "主 RNG不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 2,
+      "image": "frame-34805.png",
+      "webImageSha256": "55bbabb723b97a90533b518384620c3e807866a64d5c091def32691a76bce80e",
+      "nativeImageSha256": "47abcab424afed3b86051539a5329acaad4822ada08b007fda27fd38c1acdc63"
+    },
+    {
+      "frame": 34806,
+      "status": "主 RNG不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 3,
+      "image": "frame-34806.png",
+      "webImageSha256": "701d91f4190444efb240b85b40dad87b0f008fd575edbe1ebea1e0804e6e588e",
+      "nativeImageSha256": "b771ce4cc24e10329b696860c52079afe08e8c1bc4065da52762943af55c6b24"
+    }
+  ]
+}

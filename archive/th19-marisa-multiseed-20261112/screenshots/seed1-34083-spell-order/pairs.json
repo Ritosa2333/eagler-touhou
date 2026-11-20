@@ -1,0 +1,31 @@
+{
+  "wasmSha256": "e5d431c21951108321a3737da1f242345fcb3aa7d4e67c0d42ccee6eaf688c45",
+  "nativeTraceSha256": "fbbf910e259fddc398f42c32dc911fb50676dd60f80bd4472730805cb9368aca",
+  "diagnosticRoundWaveSeed": null,
+  "pairs": [
+    {
+      "frame": 34083,
+      "status": "主 RNG、CPU 输入、自机位置、敌弹状态不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 232,
+      "image": "frame-34083.png",
+      "webImageSha256": "52301f32b8b1393bcd4d75bd6f48450f7ddcd5e0ba4856e93f2d04060344cd95",
+      "nativeImageSha256": "2eb5ab24764774b16446f5cf29c45c568c5d51a90d13a947ba1b86c3e581980d"
+    },
+    {
+      "frame": 34084,
+      "status": "主 RNG、CPU 输入、自机位置、敌弹状态不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 233,
+      "image": "frame-34084.png",
+      "webImageSha256": "a2c548436c0e66feea0ac387d2603743bc8cd48741c4996410d16ab57fab08b9",
+      "nativeImageSha256": "e42aa197e3fb71fc939c05b550a1e8580fbd4a54dc53372ddeb31d0f893d3df3"
+    },
+    {
+      "frame": 34085,
+      "status": "主 RNG、CPU 输入、自机位置、敌弹状态不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 234,
+      "image": "frame-34085.png",
+      "webImageSha256": "5262ec41e6733b805906c3107cf9ffba250d22b9279f0ab7a619f084371aba82",
+      "nativeImageSha256": "660791caa0087d7cdf384a04bc403d6017112933aaf3e4dc7f4db7fc850e9a55"
+    }
+  ]
+}

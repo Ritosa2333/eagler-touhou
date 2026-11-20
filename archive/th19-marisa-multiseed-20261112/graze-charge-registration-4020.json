@@ -1,0 +1,34 @@
+{
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-shim4gqx\\native-present.jsonl",
+  "nativeTraceSha256": "22834596f3a41730e4ea61319537711d0dde380b35a022b45ce84e76fc214770",
+  "wasmSha256": "78b5277653aaf93706f1d90e134a87657012261d69d92c780d0214e0eadf5d39",
+  "diagnosticRoundWaveSeed": null,
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": null
+  },
+  "firstDifferentPlayerControls": null,
+  "firstDifferentPlayerPosition": null,
+  "bulletPositionCoverage": {
+    "frames": 4020,
+    "first": 1,
+    "last": 4020,
+    "nonemptyFrames": 3707,
+    "originalBulletSamples": 108636,
+    "webBulletSamples": 108636,
+    "missingFrames": [
+      0
+    ]
+  },
+  "differentBulletPositionFrames": 0,
+  "firstDifferentBulletPosition": null,
+  "frameRollback": {
+    "frames": [
+      2200,
+      2225
+    ],
+    "differences": [],
+    "image": true
+  },
+  "scope": "original seed1 through4020, charge root interleaved with graze by registration"
+}

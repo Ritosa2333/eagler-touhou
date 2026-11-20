@@ -1,0 +1,36 @@
+{
+  "base": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b3-20261120\\rng14454-diagnostics\\present-usl46t79",
+  "scope": "Derived screenshot index over one native trace; imported real BMP frames checked for identical gameplay state.",
+  "frames": [
+    {
+      "frame": 13961,
+      "source": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b3-20261120\\diagnostics\\present-p2v_cmyi",
+      "verifiedFields": [
+        "primaryRng",
+        "playerPositionBits",
+        "playerControls",
+        "bulletPositions"
+      ]
+    },
+    {
+      "frame": 14325,
+      "source": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b3-20261120\\repel-diagnostics\\present-qvj338y1",
+      "verifiedFields": [
+        "primaryRng",
+        "playerPositionBits",
+        "playerControls",
+        "bulletPositions"
+      ]
+    },
+    {
+      "frame": 14454,
+      "source": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b3-20261120\\rng14454-diagnostics\\present-usl46t79",
+      "verifiedFields": [
+        "primaryRng",
+        "playerPositionBits",
+        "playerControls",
+        "bulletPositions"
+      ]
+    }
+  ]
+}

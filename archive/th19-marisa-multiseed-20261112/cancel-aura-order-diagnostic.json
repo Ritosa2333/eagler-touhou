@@ -1,0 +1,48 @@
+{
+  "frame": 2323,
+  "firstDifferentSecondaryFrame": 2327,
+  "webCancelParent": 16699,
+  "nativeCancelParent": 281974748,
+  "script": 197,
+  "nativeRandomBeforeBounded": [
+    2004602997,
+    1092350757
+  ],
+  "webRandomBeforeBounded": [
+    1694143516,
+    880648485
+  ],
+  "nativeNextLoop": 2327,
+  "webNextLoop": 2329,
+  "observation": "Native cancellation children and parent bounded draws precede aura14 initialization; Web aura14 initialization precedes cancellation. Same per-frame RNG final state through2326 masks different per-object delay values.",
+  "screenshots": "screenshots/seed1-2327-rng-before",
+  "candidate": "Move gauge particle pass after cancellation/graze pending pass; requires short and complete regression validation.",
+  "validatedCandidate": "Cancellation roots run before charge particles until the first pending graze; charge precedes graze trail updates.",
+  "seed1SecondaryMatchingThrough": 2352,
+  "seed1GameplayMatchingThrough": 33860,
+  "seed42GameplayMatchingThrough": 36000,
+  "seed42DifferentBulletFrames": 0,
+  "nextRoot": {
+    "nativeParent": 279667300,
+    "webRegistration": 17199,
+    "script": 185,
+    "firstChildrenFrame": 2351,
+    "nativeNextLoop": 2353,
+    "webNextLoop": 2355,
+    "nativeBoundedSeeds": [
+      1214082846,
+      486284048
+    ],
+    "webBoundedSeeds": [
+      292283789,
+      281465034
+    ],
+    "observation": "Native2351 aura14 initialization precedes script185 children; Native2323 script197 children precede aura14. Ordering must follow root registration, not a fixed category pass."
+  },
+  "rejectedGrazeStartCandidate": {
+    "wasm": "22152641919a7564484fce9733759ea00e804cebb6174e3eb9d5513c143933b8",
+    "secondaryFirstDifference": 477,
+    "gameplayThrough": 2380,
+    "reason": "Native creation occurs after a queued delay; moving random to award-time is too early. Reverted."
+  }
+}

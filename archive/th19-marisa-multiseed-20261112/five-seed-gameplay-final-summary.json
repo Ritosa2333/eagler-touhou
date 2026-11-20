@@ -1,0 +1,138 @@
+{
+  "target": 36000,
+  "scope": "Positions and exact hostile bullet coordinates; four explicitly controlled second-round tables. Original full-trajectory completion remains1/5.",
+  "results": [
+    {
+      "seed": 42,
+      "reportDirectory": "th19-web-COa36n",
+      "wasmSha256": "25944ca01b64764bce928f4cc9ec6b7586c031d9cbfd9d3b7e15f76c4255c597",
+      "diagnosticRoundWaveSeed": null,
+      "playerPositionCoverage": 36000,
+      "firstDifferentPlayerPosition": null,
+      "bulletPositionCoverage": {
+        "frames": 36000,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35593,
+        "originalBulletSamples": 5072425,
+        "webBulletSamples": 5072425,
+        "missingFrames": [
+          0
+        ]
+      },
+      "differentBulletPositionFrames": 0,
+      "firstDifferentPlayerControls": null,
+      "firstDifferentPrimaryRng": null
+    },
+    {
+      "seed": 1,
+      "reportDirectory": "th19-web-MYOi0i",
+      "wasmSha256": "25944ca01b64764bce928f4cc9ec6b7586c031d9cbfd9d3b7e15f76c4255c597",
+      "diagnosticRoundWaveSeed": 468994369,
+      "playerPositionCoverage": 35999,
+      "firstDifferentPlayerPosition": null,
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 34950,
+        "originalBulletSamples": 4085458,
+        "webBulletSamples": 4085458,
+        "missingFrames": [
+          0,
+          33776
+        ]
+      },
+      "differentBulletPositionFrames": 0,
+      "firstDifferentPlayerControls": null,
+      "firstDifferentPrimaryRng": null
+    },
+    {
+      "seed": 20261112,
+      "reportDirectory": "th19-web-bOi9WY",
+      "wasmSha256": "25944ca01b64764bce928f4cc9ec6b7586c031d9cbfd9d3b7e15f76c4255c597",
+      "diagnosticRoundWaveSeed": 985282850,
+      "playerPositionCoverage": 35999,
+      "firstDifferentPlayerPosition": null,
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 34957,
+        "originalBulletSamples": 3725652,
+        "webBulletSamples": 3725652,
+        "missingFrames": [
+          0,
+          27900
+        ]
+      },
+      "differentBulletPositionFrames": 0,
+      "firstDifferentPlayerControls": null,
+      "firstDifferentPrimaryRng": null
+    },
+    {
+      "seed": 123456789,
+      "reportDirectory": "th19-web-lwnOp5",
+      "wasmSha256": "25944ca01b64764bce928f4cc9ec6b7586c031d9cbfd9d3b7e15f76c4255c597",
+      "diagnosticRoundWaveSeed": 268227792,
+      "playerPositionCoverage": 35999,
+      "firstDifferentPlayerPosition": null,
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35164,
+        "originalBulletSamples": 3856839,
+        "webBulletSamples": 3856839,
+        "missingFrames": [
+          0,
+          26822
+        ]
+      },
+      "differentBulletPositionFrames": 0,
+      "firstDifferentPlayerControls": null,
+      "firstDifferentPrimaryRng": null
+    },
+    {
+      "seed": 987654321,
+      "reportDirectory": "th19-web-Tw3e56",
+      "wasmSha256": "25944ca01b64764bce928f4cc9ec6b7586c031d9cbfd9d3b7e15f76c4255c597",
+      "diagnosticRoundWaveSeed": 2125168245,
+      "playerPositionCoverage": 35999,
+      "firstDifferentPlayerPosition": null,
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35247,
+        "originalBulletSamples": 4449999,
+        "webBulletSamples": 4449999,
+        "missingFrames": [
+          0,
+          35835
+        ]
+      },
+      "differentBulletPositionFrames": 0,
+      "firstDifferentPlayerControls": {
+        "frame": 26026,
+        "web": [
+          83,
+          139
+        ],
+        "original": [
+          147,
+          139
+        ]
+      },
+      "firstDifferentPrimaryRng": {
+        "frame": 18542,
+        "web": 1528206023,
+        "original": 2000423562
+      }
+    }
+  ],
+  "tests": {
+    "passed": 56,
+    "failed": 0
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "build": "eccc742adde67ddda3d8d88002872a88d31b2ae7df7bfd34bc5396abd3d3c802",
+  "seed": 1,
+  "report": "th19-web-RzdIyt",
+  "rngMatchingThrough": 17071,
+  "firstSecondaryDifference": 17072,
+  "primaryCpuPlayerBulletsMatchingThrough": 17072,
+  "originalSeedsComplete": 1,
+  "fix": "Persistent effect64..76 even spell-line emitters execute before enemy106/107 independent spawners, without advancing cancellation or gauge nodes. Fix14530.",
+  "fullVerification": {
+    "seed": 42,
+    "report": "th19-web-z0rwU3",
+    "frames": 36000,
+    "primaryRng": "PASS",
+    "cpu": "PASS",
+    "player": "PASS",
+    "enemyBullets": "PASS"
+  },
+  "push": false,
+  "seed1Full": {
+    "report": "th19-web-Fm2zXQ",
+    "frames": 36000,
+    "rngMatchingThrough": 17071,
+    "firstPrimary": 33861,
+    "firstCpu": 33852,
+    "firstPlayer": 33901,
+    "firstBullet": 34050
+  }
+}

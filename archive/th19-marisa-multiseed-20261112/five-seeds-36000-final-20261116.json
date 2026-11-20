@@ -1,0 +1,224 @@
+{
+  "updatedAt": "2026-11-16T17:24:41.636340+08:00",
+  "status": "PASS",
+  "completedSeeds": 5,
+  "totalSeeds": 5,
+  "framesPerSeed": 36000,
+  "totalCumulativeFrames": 180000,
+  "simulationFps": 60,
+  "match": "Marisa vs Marisa Lunatic CPU vs CPU, original seeds, continuous across rounds",
+  "wasmSha256": "3d622d3ffcb5acec2c35f3e8a93d20ea0545a8c006ddd0b9f9f7d11a08a4ce0d",
+  "nativeExecutableSha256": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "criteria": [
+    "primary RNG",
+    "CPU input",
+    "player position",
+    "enemy bullet count and position"
+  ],
+  "rows": [
+    {
+      "seed": 1,
+      "secondSeed": 7,
+      "capturedThrough": 36000,
+      "gameplayDifferenceFrames": 0,
+      "primaryRngDifference": null,
+      "cpuInputDifference": null,
+      "playerPositionDifference": null,
+      "bulletPositionDifferenceFrames": 0,
+      "cpuInputCoverage": 35999,
+      "playerPositionCoverage": 35999,
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 34950,
+        "originalBulletSamples": 4085458,
+        "webBulletSamples": 4085458,
+        "missingFrames": [
+          0,
+          33776
+        ]
+      },
+      "firstAnimationRngDifference": null,
+      "rounds": 2,
+      "report": "web-captures-marisa-seed-fixes\\th19-web-YNIRVR\\report.json",
+      "reportSha256": "8fcc50bc1982f3be3e581979de400dae6ead86a83708dd7fa793da997fae52f1",
+      "nativeTrace": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-shim4gqx\\native-present.jsonl",
+      "nativeTraceSha256": "22834596f3a41730e4ea61319537711d0dde380b35a022b45ce84e76fc214770",
+      "frameRollback": null
+    },
+    {
+      "seed": 42,
+      "secondSeed": 2026,
+      "capturedThrough": 36000,
+      "gameplayDifferenceFrames": 0,
+      "primaryRngDifference": null,
+      "cpuInputDifference": null,
+      "playerPositionDifference": null,
+      "bulletPositionDifferenceFrames": 0,
+      "cpuInputCoverage": 36000,
+      "playerPositionCoverage": 36000,
+      "bulletPositionCoverage": {
+        "frames": 36000,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35593,
+        "originalBulletSamples": 5072425,
+        "webBulletSamples": 5072425,
+        "missingFrames": [
+          0
+        ]
+      },
+      "firstAnimationRngDifference": {
+        "frame": 23565,
+        "web": 2070036129,
+        "original": 1248071864
+      },
+      "rounds": 1,
+      "report": "web-captures-marisa-seed-fixes\\th19-web-4Cm726\\report.json",
+      "reportSha256": "21edd6a3c41ed20fb155e5b715f31107436424c3643ae757ccd667fa093a919b",
+      "nativeTrace": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-jmzxp2mi\\native-present.jsonl",
+      "nativeTraceSha256": "7a80f012ab0a26f2a8f45a7504dbf880bd264977f76dcea69a6facc29122fcb1",
+      "frameRollback": null
+    },
+    {
+      "seed": 20261112,
+      "secondSeed": 424182232,
+      "capturedThrough": 36000,
+      "gameplayDifferenceFrames": 0,
+      "primaryRngDifference": null,
+      "cpuInputDifference": null,
+      "playerPositionDifference": null,
+      "bulletPositionDifferenceFrames": 0,
+      "cpuInputCoverage": 35999,
+      "playerPositionCoverage": 35999,
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 34957,
+        "originalBulletSamples": 3725652,
+        "webBulletSamples": 3725652,
+        "missingFrames": [
+          0,
+          27900
+        ]
+      },
+      "firstAnimationRngDifference": null,
+      "rounds": 2,
+      "report": "web-captures-marisa-seed-fixes\\th19-web-ou5HHo\\report.json",
+      "reportSha256": "a24ab8035a24a4349ea1cfa2388b593986b0547f70b269ac5305685e81a758c4",
+      "nativeTrace": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-yxxfs6du\\native-present.jsonl",
+      "nativeTraceSha256": "85c9a07b42246c7535114d1748aedb42a33fc4798e7f0027eea74fe509340444",
+      "frameRollback": null
+    },
+    {
+      "seed": 123456789,
+      "secondSeed": 987654321,
+      "capturedThrough": 36000,
+      "gameplayDifferenceFrames": 0,
+      "primaryRngDifference": null,
+      "cpuInputDifference": null,
+      "playerPositionDifference": null,
+      "bulletPositionDifferenceFrames": 0,
+      "cpuInputCoverage": 35999,
+      "playerPositionCoverage": 35999,
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35164,
+        "originalBulletSamples": 3856839,
+        "webBulletSamples": 3856839,
+        "missingFrames": [
+          0,
+          26822
+        ]
+      },
+      "firstAnimationRngDifference": {
+        "frame": 21943,
+        "web": 550557488,
+        "original": 44838348
+      },
+      "rounds": 2,
+      "report": "web-captures-marisa-seed-fixes\\th19-web-LQ6dIC\\report.json",
+      "reportSha256": "580b2dafb4b5e40313dd570bdb8c3d5de24ce5fd3bbbefba0877f5789ffcd048",
+      "nativeTrace": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-n5uaa1rq\\native-present.jsonl",
+      "nativeTraceSha256": "150f3fedffa8209e164b9e8b741f391a9b7634da849346d34a4479edad53f665",
+      "frameRollback": null
+    },
+    {
+      "seed": 987654321,
+      "secondSeed": 1357911,
+      "capturedThrough": 36000,
+      "gameplayDifferenceFrames": 0,
+      "primaryRngDifference": null,
+      "cpuInputDifference": null,
+      "playerPositionDifference": null,
+      "bulletPositionDifferenceFrames": 0,
+      "cpuInputCoverage": 35999,
+      "playerPositionCoverage": 35999,
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35247,
+        "originalBulletSamples": 4449999,
+        "webBulletSamples": 4449999,
+        "missingFrames": [
+          0,
+          35835
+        ]
+      },
+      "firstAnimationRngDifference": {
+        "frame": 33266,
+        "web": 1318334388,
+        "original": 1811244276
+      },
+      "rounds": 2,
+      "report": "web-captures-marisa-seed-fixes\\th19-web-xXJoPr\\report.json",
+      "reportSha256": "602df723b4ec9808c0d92bc9caa53e482c87003b6dab445bd7fc11691c956357",
+      "nativeTrace": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-yhq0lh3m\\native-present.jsonl",
+      "nativeTraceSha256": "e3ae0b0bd1244083e9afcee03daa12faa80fa969e141c014dd27f0204ce02fd1",
+      "frameRollback": {
+        "frames": [
+          35510,
+          35565
+        ],
+        "differences": [],
+        "image": true
+      }
+    }
+  ],
+  "validation": {
+    "anmLifetime": "PASS",
+    "nativeFloatBitPatterns": 234,
+    "nativeFloatBitPatternsPass": true,
+    "worldLimits": {
+      "bulletSlots": 2000,
+      "retiredEnemies": 15000,
+      "checkpointRestore": "PASS"
+    },
+    "nodeTests": {
+      "passed": 48,
+      "failed": 0
+    },
+    "rollback": {
+      "seed": 987654321,
+      "frames": [
+        35510,
+        35565
+      ],
+      "scope": "same ECL resource generation",
+      "stateDifferences": [],
+      "identicalImage": true
+    },
+    "crossGenerationCheckpointProbe": "ApplicationCheckpoint rejects restoration after ECL resource-generation transition; cross-round gameplay was checked continuously.",
+    "docsIndex": "PASS, 568 documents and 21 source directories",
+    "docsCheck": "PASS",
+    "gitDiffCheck": "PASS"
+  },
+  "screenshots": "screenshots/seed987-36000-final/pairs.json",
+  "comparisonSource": "Saved original-game trace fixtures with recorded executable and trace hashes",
+  "animationRng": "Recorded separately. Gameplay acceptance uses the four criteria above."
+}

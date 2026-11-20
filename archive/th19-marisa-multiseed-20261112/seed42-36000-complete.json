@@ -1,0 +1,54 @@
+{
+  "wasmSha256": "a9901ca6332f6ea2032a7692b1895e0bcad6d6a95dc89f9ac6c94252682648d7",
+  "nativeTraceSha256": "7a80f012ab0a26f2a8f45a7504dbf880bd264977f76dcea69a6facc29122fcb1",
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-jmzxp2mi\\native-present.jsonl",
+  "nativeExe": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "fixture": {
+    "difficulty": 3,
+    "characters": [
+      1,
+      1
+    ],
+    "cardMode": 0,
+    "cards": [
+      0,
+      0
+    ],
+    "lives": 2,
+    "timeRule": 4
+  },
+  "continuous": true,
+  "incompleteNativeTail": false,
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": {
+      "frame": 533,
+      "web": 1271274206,
+      "original": 1446384371
+    }
+  },
+  "firstDifferentPlayerControls": null,
+  "firstDifferentPlayerPosition": null,
+  "playerControlCoverage": 36000,
+  "playerPositionCoverage": 36000,
+  "bulletPositionCoverage": {
+    "frames": 36000,
+    "first": 1,
+    "last": 36000,
+    "nonemptyFrames": 35593,
+    "originalBulletSamples": 5072425,
+    "webBulletSamples": 5072425,
+    "missingFrames": [
+      0
+    ]
+  },
+  "differentBulletPositionFrames": 0,
+  "firstDifferentBulletCount": null,
+  "firstDifferentBulletPosition": null,
+  "browserErrors": [],
+  "seed": 42,
+  "webCapture": "th19-web-tO0GhG",
+  "gameplayAlignedThrough": 36000,
+  "animationRngTrackedSeparately": true,
+  "screenshots": "screenshots/seed42-36000-aligned"
+}

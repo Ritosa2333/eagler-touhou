@@ -1,0 +1,203 @@
+{
+  "1": {
+    "report": "th19-web-phePS2",
+    "build": "3623883b0be68c874ebd0f14248343e24cf5623914cf25eacb45589441866e03",
+    "through": 36000,
+    "rng": {
+      "primary": null,
+      "animation": null
+    },
+    "firstControls": null,
+    "firstPosition": null,
+    "firstBullet": null,
+    "differentBulletFrames": 0,
+    "rollback": {
+      "frames": [
+        25520,
+        25530
+      ],
+      "differences": [],
+      "image": true
+    }
+  },
+  "42": {
+    "report": "th19-web-psgIAa",
+    "build": "3623883b0be68c874ebd0f14248343e24cf5623914cf25eacb45589441866e03",
+    "through": 36000,
+    "rng": {
+      "primary": null,
+      "animation": {
+        "frame": 9157,
+        "web": 2080127861,
+        "original": 1369692032
+      }
+    },
+    "firstControls": null,
+    "firstPosition": null,
+    "firstBullet": null,
+    "differentBulletFrames": 0,
+    "rollback": null
+  },
+  "20261112": {
+    "report": "th19-web-oobhCf",
+    "build": "3623883b0be68c874ebd0f14248343e24cf5623914cf25eacb45589441866e03",
+    "through": 36000,
+    "rng": {
+      "primary": {
+        "frame": 27985,
+        "web": 795328876,
+        "original": 879555430
+      },
+      "animation": {
+        "frame": 27580,
+        "web": 772404842,
+        "original": 1395861993
+      }
+    },
+    "firstControls": {
+      "frame": 27976,
+      "web": [
+        0,
+        0
+      ],
+      "original": [
+        1,
+        1
+      ]
+    },
+    "firstPosition": {
+      "frame": 28025,
+      "web": [
+        -5,
+        400,
+        -5,
+        400
+      ],
+      "original": [
+        0,
+        400,
+        0,
+        400
+      ]
+    },
+    "firstBullet": {
+      "frame": 28175,
+      "side": 1,
+      "kind": 1,
+      "color": 5,
+      "original": [],
+      "web": [
+        [
+          84.83614349365234,
+          6.702239990234375
+        ]
+      ]
+    },
+    "differentBulletFrames": 7826,
+    "rollback": null
+  },
+  "123456789": {
+    "report": "th19-web-FreY9L",
+    "build": "3623883b0be68c874ebd0f14248343e24cf5623914cf25eacb45589441866e03",
+    "through": 36000,
+    "rng": {
+      "primary": {
+        "frame": 26908,
+        "web": 2003922300,
+        "original": 661534633
+      },
+      "animation": {
+        "frame": 15412,
+        "web": 2097369218,
+        "original": 1908700063
+      }
+    },
+    "firstControls": {
+      "frame": 26947,
+      "web": [
+        129,
+        1
+      ],
+      "original": [
+        1,
+        1
+      ]
+    },
+    "firstPosition": {
+      "frame": 26947,
+      "web": [
+        5,
+        400,
+        0,
+        400
+      ],
+      "original": [
+        0,
+        400,
+        0,
+        400
+      ]
+    },
+    "firstBullet": {
+      "frame": 27055,
+      "side": 1,
+      "kind": 1,
+      "color": 0,
+      "original": [
+        [
+          24.996246337890625,
+          13.018268585205078
+        ]
+      ],
+      "web": []
+    },
+    "differentBulletFrames": 8946,
+    "rollback": null
+  },
+  "987654321": {
+    "report": "th19-web-FEZUUD",
+    "build": "3623883b0be68c874ebd0f14248343e24cf5623914cf25eacb45589441866e03",
+    "through": 36000,
+    "rng": {
+      "primary": {
+        "frame": 35554,
+        "web": 142312444,
+        "original": 497735480
+      },
+      "animation": {
+        "frame": 16037,
+        "web": 487500622,
+        "original": 1622840230
+      }
+    },
+    "firstControls": {
+      "frame": 26026,
+      "web": [
+        83,
+        139
+      ],
+      "original": [
+        147,
+        139
+      ]
+    },
+    "firstPosition": {
+      "frame": 35988,
+      "web": [
+        5,
+        400,
+        0,
+        400
+      ],
+      "original": [
+        -5,
+        400,
+        -5,
+        400
+      ]
+    },
+    "firstBullet": null,
+    "differentBulletFrames": 0,
+    "rollback": null
+  }
+}

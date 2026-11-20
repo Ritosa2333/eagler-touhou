@@ -1,0 +1,549 @@
+[
+  {
+    "primarySeed": 1,
+    "animationSeed": 7,
+    "nativeCapture": "present-52phuhbu",
+    "webCapture": "th19-web-Dra4Rn",
+    "nativeEvidencePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-52phuhbu\\native-present.jsonl",
+    "wasmSha256": "62fc7379a4f29b32693387031bf50bfaebc96fa9851d038d6863ae6a928b9b7c",
+    "nativeTraceSha256": "d82f12a75221fb89db80fc7cf196fbedd92ec23b0b9a6aee1946d828cc3d9dc1",
+    "fixture": {
+      "difficulty": 3,
+      "characters": [
+        1,
+        1
+      ],
+      "cardMode": 0,
+      "cards": [
+        0,
+        0
+      ],
+      "lives": 2,
+      "timeRule": 4
+    },
+    "continuous": true,
+    "playerControlCoverage": 35999,
+    "playerPositionCoverage": 35999,
+    "bulletPositionCoverage": {
+      "frames": 35999,
+      "first": 1,
+      "last": 36000,
+      "nonemptyFrames": 35000,
+      "originalBulletSamples": 4085458,
+      "webBulletSamples": 4085918,
+      "missingFrames": [
+        0,
+        33776
+      ]
+    },
+    "differentBulletPositionFrames": 1953,
+    "firstDifferentPlayerControls": {
+      "frame": 33646,
+      "web": [
+        9,
+        97
+      ],
+      "original": [
+        9,
+        65
+      ]
+    },
+    "firstDifferentPlayerPosition": {
+      "frame": 33901,
+      "web": [
+        0,
+        400,
+        0,
+        400
+      ],
+      "original": [
+        5,
+        400,
+        0,
+        400
+      ]
+    },
+    "firstDifferentBulletCount": {
+      "frame": 32960,
+      "side": 1,
+      "original": 11,
+      "web": 10
+    },
+    "firstDifferentBulletPosition": {
+      "frame": 32960,
+      "side": 1,
+      "kind": 4,
+      "color": 12,
+      "original": [
+        [
+          -101.964111328125,
+          8.051004409790039
+        ]
+      ],
+      "web": []
+    },
+    "firstDifferentRngByStream": {
+      "primary": {
+        "frame": 33861,
+        "web": 42915601,
+        "original": 2135924849
+      },
+      "animation": {
+        "frame": 407,
+        "web": 1391184678,
+        "original": 775165753
+      }
+    },
+    "frameRollback": {
+      "frames": [
+        5395,
+        5420
+      ],
+      "differences": [],
+      "image": true
+    },
+    "browserErrors": [],
+    "failure": null,
+    "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check."
+  },
+  {
+    "primarySeed": 42,
+    "animationSeed": 2026,
+    "nativeCapture": "present-ypkh2_50",
+    "webCapture": "th19-web-bjYZfd",
+    "nativeEvidencePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-ypkh2_50\\native-present.jsonl",
+    "wasmSha256": "62fc7379a4f29b32693387031bf50bfaebc96fa9851d038d6863ae6a928b9b7c",
+    "nativeTraceSha256": "a46391466d2e94c320811f886b5b17ecbcb88cd1d99f78a79c220f4809266334",
+    "fixture": {
+      "difficulty": 3,
+      "characters": [
+        1,
+        1
+      ],
+      "cardMode": 0,
+      "cards": [
+        0,
+        0
+      ],
+      "lives": 2,
+      "timeRule": 4
+    },
+    "continuous": true,
+    "playerControlCoverage": 36000,
+    "playerPositionCoverage": 36000,
+    "bulletPositionCoverage": {
+      "frames": 36000,
+      "first": 1,
+      "last": 36000,
+      "nonemptyFrames": 35593,
+      "originalBulletSamples": 5072425,
+      "webBulletSamples": 4994155,
+      "missingFrames": [
+        0
+      ]
+    },
+    "differentBulletPositionFrames": 6276,
+    "firstDifferentPlayerControls": {
+      "frame": 29596,
+      "web": [
+        27,
+        91
+      ],
+      "original": [
+        3,
+        91
+      ]
+    },
+    "firstDifferentPlayerPosition": {
+      "frame": 29596,
+      "web": [
+        61.9375,
+        400.34375,
+        -101.5234375,
+        402.3046875
+      ],
+      "original": [
+        61.9375,
+        402.34375,
+        -101.5234375,
+        402.3046875
+      ]
+    },
+    "firstDifferentBulletCount": {
+      "frame": 29740,
+      "side": 0,
+      "original": 168,
+      "web": 169
+    },
+    "firstDifferentBulletPosition": {
+      "frame": 29724,
+      "side": 0,
+      "kind": 4,
+      "color": 2,
+      "original": [
+        [
+          75.79562377929688,
+          282.5796813964844
+        ],
+        [
+          122.44525909423828,
+          323.704833984375
+        ]
+      ],
+      "web": [
+        [
+          75.79562377929688,
+          282.5796813964844
+        ],
+        [
+          122.00775146484375,
+          322.4820251464844
+        ]
+      ]
+    },
+    "firstDifferentRngByStream": {
+      "primary": {
+        "frame": 29668,
+        "web": 1439601380,
+        "original": 407068537
+      },
+      "animation": {
+        "frame": 362,
+        "web": 749524945,
+        "original": 569634120
+      }
+    },
+    "frameRollback": {
+      "frames": [
+        5395,
+        5420
+      ],
+      "differences": [],
+      "image": true
+    },
+    "browserErrors": [],
+    "failure": null,
+    "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check."
+  },
+  {
+    "primarySeed": 20261112,
+    "animationSeed": 424182232,
+    "nativeCapture": "present-yxxfs6du",
+    "webCapture": "th19-web-VLvkoX",
+    "nativeEvidencePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-yxxfs6du\\native-present.jsonl",
+    "wasmSha256": "62fc7379a4f29b32693387031bf50bfaebc96fa9851d038d6863ae6a928b9b7c",
+    "nativeTraceSha256": "85c9a07b42246c7535114d1748aedb42a33fc4798e7f0027eea74fe509340444",
+    "fixture": {
+      "difficulty": 3,
+      "characters": [
+        1,
+        1
+      ],
+      "cardMode": 0,
+      "cards": [
+        0,
+        0
+      ],
+      "lives": 2,
+      "timeRule": 4
+    },
+    "continuous": true,
+    "playerControlCoverage": 35999,
+    "playerPositionCoverage": 35999,
+    "bulletPositionCoverage": {
+      "frames": 35999,
+      "first": 1,
+      "last": 36000,
+      "nonemptyFrames": 35079,
+      "originalBulletSamples": 3725652,
+      "webBulletSamples": 3745916,
+      "missingFrames": [
+        0,
+        27900
+      ]
+    },
+    "differentBulletPositionFrames": 7802,
+    "firstDifferentPlayerControls": {
+      "frame": 27611,
+      "web": [
+        129,
+        17
+      ],
+      "original": [
+        145,
+        17
+      ]
+    },
+    "firstDifferentPlayerPosition": {
+      "frame": 27611,
+      "web": [
+        -120.359375,
+        354.3125,
+        0,
+        999
+      ],
+      "original": [
+        -121.828125,
+        350.78125,
+        0,
+        999
+      ]
+    },
+    "firstDifferentBulletCount": {
+      "frame": 28199,
+      "side": 0,
+      "original": 0,
+      "web": 1
+    },
+    "firstDifferentBulletPosition": {
+      "frame": 28199,
+      "side": 0,
+      "kind": 1,
+      "color": 11,
+      "original": [],
+      "web": [
+        [
+          94.67332458496094,
+          6.096230983734131
+        ]
+      ]
+    },
+    "firstDifferentRngByStream": {
+      "primary": {
+        "frame": 27735,
+        "web": 1915436724,
+        "original": 137682619
+      },
+      "animation": {
+        "frame": 867,
+        "web": 997301437,
+        "original": 1023830646
+      }
+    },
+    "frameRollback": {
+      "frames": [
+        5395,
+        5420
+      ],
+      "differences": [],
+      "image": true
+    },
+    "browserErrors": [],
+    "failure": null,
+    "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check."
+  },
+  {
+    "primarySeed": 123456789,
+    "animationSeed": 987654321,
+    "nativeCapture": "present-n5uaa1rq",
+    "webCapture": "th19-web-3TRTfA",
+    "nativeEvidencePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-n5uaa1rq\\native-present.jsonl",
+    "wasmSha256": "62fc7379a4f29b32693387031bf50bfaebc96fa9851d038d6863ae6a928b9b7c",
+    "nativeTraceSha256": "150f3fedffa8209e164b9e8b741f391a9b7634da849346d34a4479edad53f665",
+    "fixture": {
+      "difficulty": 3,
+      "characters": [
+        1,
+        1
+      ],
+      "cardMode": 0,
+      "cards": [
+        0,
+        0
+      ],
+      "lives": 2,
+      "timeRule": 4
+    },
+    "continuous": true,
+    "playerControlCoverage": 35999,
+    "playerPositionCoverage": 35999,
+    "bulletPositionCoverage": {
+      "frames": 35999,
+      "first": 1,
+      "last": 36000,
+      "nonemptyFrames": 35165,
+      "originalBulletSamples": 3856839,
+      "webBulletSamples": 4007101,
+      "missingFrames": [
+        0,
+        26822
+      ]
+    },
+    "differentBulletPositionFrames": 8946,
+    "firstDifferentPlayerControls": {
+      "frame": 26898,
+      "web": [
+        1,
+        1
+      ],
+      "original": [
+        0,
+        1
+      ]
+    },
+    "firstDifferentPlayerPosition": {
+      "frame": 26975,
+      "web": [
+        -5,
+        400,
+        -5,
+        400
+      ],
+      "original": [
+        0,
+        400,
+        0,
+        400
+      ]
+    },
+    "firstDifferentBulletCount": {
+      "frame": 27055,
+      "side": 1,
+      "original": 1,
+      "web": 0
+    },
+    "firstDifferentBulletPosition": {
+      "frame": 27055,
+      "side": 1,
+      "kind": 1,
+      "color": 0,
+      "original": [
+        [
+          24.996246337890625,
+          13.018268585205078
+        ]
+      ],
+      "web": []
+    },
+    "firstDifferentRngByStream": {
+      "primary": {
+        "frame": 26907,
+        "web": 1935467208,
+        "original": 661534633
+      },
+      "animation": {
+        "frame": 498,
+        "web": 2086671438,
+        "original": 1483741007
+      }
+    },
+    "frameRollback": {
+      "frames": [
+        5395,
+        5420
+      ],
+      "differences": [],
+      "image": true
+    },
+    "browserErrors": [],
+    "failure": null,
+    "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check."
+  },
+  {
+    "primarySeed": 987654321,
+    "animationSeed": 1357911,
+    "nativeCapture": "present-bbw08eh8",
+    "webCapture": "th19-web-H2HU5A",
+    "nativeEvidencePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-bbw08eh8\\native-present.jsonl",
+    "wasmSha256": "62fc7379a4f29b32693387031bf50bfaebc96fa9851d038d6863ae6a928b9b7c",
+    "nativeTraceSha256": "9e312a3a0bf602897e3d31da8ba91fff77ae94578d4bd2f3bea32a48b811bc4e",
+    "fixture": {
+      "difficulty": 3,
+      "characters": [
+        1,
+        1
+      ],
+      "cardMode": 0,
+      "cards": [
+        0,
+        0
+      ],
+      "lives": 2,
+      "timeRule": 4
+    },
+    "continuous": true,
+    "playerControlCoverage": 35999,
+    "playerPositionCoverage": 35999,
+    "bulletPositionCoverage": {
+      "frames": 35999,
+      "first": 1,
+      "last": 36000,
+      "nonemptyFrames": 35247,
+      "originalBulletSamples": 4449999,
+      "webBulletSamples": 4449990,
+      "missingFrames": [
+        0,
+        35835
+      ]
+    },
+    "differentBulletPositionFrames": 7,
+    "firstDifferentPlayerControls": {
+      "frame": 26026,
+      "web": [
+        83,
+        139
+      ],
+      "original": [
+        147,
+        139
+      ]
+    },
+    "firstDifferentPlayerPosition": {
+      "frame": 35626,
+      "web": [
+        11.0390625,
+        384.28125,
+        0,
+        999
+      ],
+      "original": [
+        11.0390625,
+        382.28125,
+        0,
+        999
+      ]
+    },
+    "firstDifferentBulletCount": {
+      "frame": 26649,
+      "side": 1,
+      "original": 1,
+      "web": 0
+    },
+    "firstDifferentBulletPosition": {
+      "frame": 26649,
+      "side": 1,
+      "kind": 1,
+      "color": 1,
+      "original": [
+        [
+          -129.3157196044922,
+          14.050948143005371
+        ]
+      ],
+      "web": []
+    },
+    "firstDifferentRngByStream": {
+      "primary": {
+        "frame": 35554,
+        "web": 142312444,
+        "original": 497735480
+      },
+      "animation": {
+        "frame": 535,
+        "web": 1552345191,
+        "original": 814871126
+      }
+    },
+    "frameRollback": {
+      "frames": [
+        5395,
+        5420
+      ],
+      "differences": [],
+      "image": true
+    },
+    "browserErrors": [],
+    "failure": null,
+    "nativeDiagnosticNote": "Trace window 1..1 contained no RNG calls; capture identity, CPU fixture, rules and >=36000 continuous frames verified before that diagnostic check."
+  }
+]

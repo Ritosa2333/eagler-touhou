@@ -1,0 +1,33 @@
+{
+  "status": "validated-prefix-improvement",
+  "nativeCapture": "present-03ibvcbs",
+  "nativeEvidence": "native-shot-death-construction.jsonl",
+  "frame": 27580,
+  "nativeCalls": [
+    {
+      "seed": 972288660,
+      "chargeGroup": 10,
+      "returnAddress": "0x53ce0a"
+    },
+    {
+      "seed": 90801675,
+      "chargeGroup": 11,
+      "returnAddress": "0x53ce2d"
+    },
+    {
+      "seed": 73530398,
+      "chargeGroup": 11,
+      "returnAddress": "0x53ce2d"
+    }
+  ],
+  "webEvidence": "th19-web-0R18Gc",
+  "previousWebChargeEmissionFrame": 27581,
+  "change": "Advance a newly accepted late result-entry charge controller on its release tick, matching the native player callback.",
+  "build": "136ee50e4fd2a29512538edf78f72e3bc1105c2136b7c9f4f0fe36ee1356dbc4",
+  "reports": {
+    "1": "th19-web-QZd1TQ",
+    "20261112": "th19-web-B9BVdg"
+  },
+  "matchingRngThrough": 27604,
+  "nextDifference": 27605
+}

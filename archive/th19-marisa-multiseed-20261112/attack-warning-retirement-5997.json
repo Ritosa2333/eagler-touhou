@@ -1,0 +1,15 @@
+{
+  "native": "present-3p6orh8x",
+  "web": "th19-web-DNLbYr",
+  "firstMismatch": 5997,
+  "nativeDrawsAfterState927162411": 1096,
+  "webDraws": 784,
+  "missing": 312,
+  "nativeAura21Draws": 524,
+  "nativeAura22Draws": 524,
+  "webAura21Draws": 368,
+  "webAura22Draws": 368,
+  "candidate": "Preserve replaced attack-warning VM and children, update each retired VM once per actual animation tick.",
+  "regressionSeed1": "th19-web-yIXbe9 PASS36000 both RNG and gameplay under initial retirement candidate 168544b1",
+  "pending": "Per-retired-VM clock candidate building; rerun seed20261112 and seed42."
+}

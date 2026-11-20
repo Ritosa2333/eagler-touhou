@@ -1,0 +1,65 @@
+{
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-xls4vm1s\\native-present.jsonl",
+  "nativeExe": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "nativeTraceSha256": "dc27508c0679e3c1af9e985001dcd5b808a90ce869b30a1ad60f94b0888b7355",
+  "wasmPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\eagler-touhou-marisa\\ports\\th19\\runtime\\th19.wasm",
+  "wasmSha256": "6ef67206de62fc5fe71a9c8caf8341d7108b48dff14e64e4f5385853c5225aae",
+  "incompleteNativeTail": false,
+  "fixture": {
+    "difficulty": 3,
+    "characters": [
+      1,
+      1
+    ],
+    "cardMode": 0,
+    "cards": [
+      0,
+      0
+    ],
+    "lives": 2,
+    "timeRule": 4
+  },
+  "continuous": true,
+  "initialAnimationRng": [
+    1,
+    7
+  ],
+  "bulletPositionCoverage": {
+    "frames": 3140,
+    "first": 1,
+    "last": 3140,
+    "nonemptyFrames": 2827,
+    "originalBulletSamples": 44146,
+    "webBulletSamples": 44146,
+    "missingFrames": [
+      0
+    ]
+  },
+  "differentBulletPositionFrames": 0,
+  "firstDifferentBulletPosition": null,
+  "firstDifferentBulletCount": null,
+  "firstDifferentRoundClock": null,
+  "playerPositionCoverage": 3140,
+  "firstDifferentPlayerPosition": null,
+  "playerControlCoverage": 3140,
+  "firstDifferentPlayerControls": null,
+  "firstDifferentRngSample": null,
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": null
+  },
+  "nativeFramesWithMultipleRngStates": [
+    3114
+  ],
+  "missingNativeOpeningFrames": [],
+  "firstConsecutiveMatchingFrames": 3141,
+  "frameRollback": {
+    "frames": [
+      2200,
+      2225
+    ],
+    "differences": [],
+    "image": true
+  },
+  "browserErrors": []
+}

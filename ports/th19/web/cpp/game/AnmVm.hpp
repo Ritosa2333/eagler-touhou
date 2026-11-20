@@ -58,6 +58,11 @@ struct AnmVm {
     u16  cur_mask=0;               // param mask of the executing instruction
     // script state
     const u8* stream=nullptr;u32 stream_len=0;u32 ip=0;i32 time=0;
+    // Standalone cancellation roots use the native manager's end-of-tick clock.
+    bool clock_after_execution=false;
+    bool independent_tick=false;
+    u32 independent_frame=~u32(0);
+    bool defer_child_initialization=false;
     std::vector<AnmVm> children;
     // ANM504 / 0x4d09b0: independent instance, captured before its first tick.
     bool detached_spawn=false;
@@ -77,6 +82,7 @@ struct AnmVm {
     inline static u32 next_registration=1;
     u32 registration=0;
     void tick(const AnmVm* parent=nullptr,bool advance_children=true);
+    void tick_before_parent(const AnmVm* parent){tick(parent);initialized_this_tick_=true;}
     void bind(const u8* s,u32 len){registration=next_registration++;stream=s;stream_len=len;ip=0;time=0;deleted=false;}
     void bind_entry(const u8* s,u32 len,const std::unordered_map<i32,AnmScriptLoc>* table){
         bind(s,len);global_scripts=table;
@@ -90,6 +96,9 @@ struct AnmVm {
     void  write_var_f(i32 id, float v);
     i32   read_var_i(i32 id) const;
     void  write_var_i(i32 id, i32 v);
+    // Constructor execution and the manager pass are separate native phases.
+    void initialize_constructor();
+    void finish_registration(){for(auto& child:children){child.initialized_this_tick_=false;child.finish_registration();}}
     static float rand_unit(bool primary = false);
     static float rand_signed_unit(float scale, bool primary = false);
     static u32 rand_integer(bool primary=false);
@@ -99,6 +108,8 @@ struct AnmVm {
 private:
     const AnmVm* execution_parent_=nullptr; // valid only while tick() executes; never retained across moves
     bool creation_registers_=false;
+    bool constructor_initializing_=false;
+    bool initialized_this_tick_=false;
     void run_instruction(u16 op,u32 instr_start,i16 instruction_time);
     void jump_to(i32 offset,i32 new_time);
     void advance_interp();

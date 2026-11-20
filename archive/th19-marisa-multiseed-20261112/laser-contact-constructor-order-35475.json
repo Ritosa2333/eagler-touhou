@@ -1,0 +1,36 @@
+{
+  "seed": 987654321,
+  "frame": 35475,
+  "baselineBuild": "98af4a3b162c95f747cbc47d3a20fc59968dea2123572bf48850117046765c76",
+  "webReport": "th19-web-T1nMy0",
+  "native": "present-xbwp8tfk",
+  "nativeCalls": 276,
+  "webCalls": 310,
+  "nativeFirstCalls": "7 bullet.anm224 constructors, then effect.anm23/23/24",
+  "webFirstCalls": "effect.anm23/23/24 constructors, then bullet.anm224",
+  "baselineAnimationMismatchRanges": [
+    [
+      33266,
+      33266
+    ],
+    [
+      35475,
+      36000
+    ]
+  ],
+  "candidate": "Moveexistingage1dischargeprepassbeforeadvance_vs_projectiles;retainalloriginalagefilters.",
+  "nativeProbe": "present-b5pi3y2r/native-cancel224-stack.jsonl",
+  "nativeCallStack": [
+    "4c16e5",
+    "4be029",
+    "4cbb11",
+    "52a335",
+    "530cd9",
+    "503df4",
+    "56af23",
+    "56b526",
+    "509264"
+  ],
+  "finding": "First7native224constructorscomeECL615/616circleclearbeforelasercontact. Webage1clearprepassintick_player_shotsistoolateforworld.advance_vs_projectilescollision.",
+  "candidateBuild": "181258ce4d95e5a30128ea3fb736dae548f1b7fbd3c993636a3a1b3d18d3979b"
+}

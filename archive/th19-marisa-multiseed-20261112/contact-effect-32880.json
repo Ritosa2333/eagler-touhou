@@ -1,0 +1,178 @@
+{
+  "previousBuild": "21775f534e2ef043e3731cd7b4d7292a7cfdc317d88d8e0f667206606987a835",
+  "screenshots": {
+    "web": "th19-web-tU7NBD",
+    "native": "present-ur15184y",
+    "frames": [
+      34083,
+      34084,
+      34085
+    ],
+    "directory": "screenshots/seed1-34083-otter98",
+    "gameplayDifferentFramesThrough34083": 223
+  },
+  "seed1Full": "th19-web-iM5ONY",
+  "seed42Full": "th19-web-LVxzbn",
+  "seed42Gameplay": "PASS36000",
+  "rngThrough": 32884,
+  "candidate": "Contact effect22 initialize_constructor synchronously before SHT and new224. Plain tick candidate8ZAaJr still differs32880, constructor required for bounded ANM initialization.",
+  "opcode122": {
+    "native": "effect23/24 ip60 bound15, first seed2049653797 ->2119334050",
+    "test": "anm-native-random opcode122 checks output and both RNG streams",
+    "status": "PASS"
+  },
+  "contactConstructor": "effect22 initialized synchronously at contact",
+  "laserCandidate": "676a972bb5d8733d7068e9856121bbb3a072fd804226e2833e1a7887baae5f0b",
+  "validation": "running first-stop from initial seed1",
+  "firstStop": "th19-web-xZTxAF",
+  "nextDifference": 32885,
+  "nextCause": "Native oldeffect22 spawns23/24 at draw98 before224manager. Web early helper omitted effect22, delaying12draws until after cancels. Added21/22 only to registration-sorted independent helper.",
+  "storage": "8oldbulletjsonl losslessgzipSHA256verified, saved300717061bytes",
+  "latestScreenshots": {
+    "build": "0ad1ff11",
+    "web": "th19-web-WFPF7H",
+    "frames": [
+      34083,
+      34084,
+      34085
+    ],
+    "directory": "screenshots/seed1-34083-contact122",
+    "gameplayDifferentFramesThrough34083": 232,
+    "bulletDifferencesThrough34085": 0,
+    "cpuFirstDifference": 33852,
+    "positionFirstDifference": 33901,
+    "rollback": {
+      "frames": [
+        32875,
+        32890
+      ],
+      "differences": [],
+      "image": true
+    }
+  },
+  "respawnClearOrder": {
+    "build": "5341cff42666136062a4f6f4db8765701baa6442db8c572b316b94ec8c251dd3",
+    "seed1": "th19-web-WGTmow",
+    "rngThrough": 32948,
+    "seed42": "th19-web-cApe0n",
+    "seed42Gameplay": "PASS36000",
+    "next32949": "Native first embeddedbullet41 then221,38then203 etc, Weblaser224constructors first. Fullrespawn bulletclear must precedelasers."
+  },
+  "respawnCenterFix": {
+    "build": "3672115a",
+    "seed1": "th19-web-QV31LT",
+    "rngThrough": 33454,
+    "seed42": "th19-web-y4B7VV",
+    "seed42Gameplay": "PASS36000",
+    "nativeRepeat": "present-zx_f3670",
+    "nativeAllStateThrough32955": "PASS",
+    "nativeCircle32949": [
+      0,
+      440,
+      640
+    ],
+    "fix": "Use next PlayerDamage.respawnY at early VS fullclear, rather than previous frame playerY."
+  },
+  "respawnImages": {
+    "web": "th19-web-vuru5w",
+    "directory": "screenshots/seed1-34083-respawn-clear",
+    "frames": [
+      34083,
+      34084,
+      34085
+    ],
+    "gameplayDifferentFramesThrough34083": 232,
+    "rollback": {
+      "frames": [
+        32940,
+        32955
+      ],
+      "differences": [],
+      "image": true
+    }
+  },
+  "timeoutCandidate": {
+    "build": "608588ec7f7af609868d9aac9c2e317d92c2c0c234371b96124e1200bb2a9db0",
+    "fix": "Timeout calls existing cancel_all_bullets, reinterrupting occupied script-cancel slots instead of circleclear excludingthem",
+    "validation": "seed1 firststop and seed42full running"
+  },
+  "endRoundClear": {
+    "frame": 33455,
+    "native": "present-rvcpj415",
+    "webPoolProof": "th19-web-kopGOH",
+    "nativeCancelCount": 161,
+    "webCancelCount": 161,
+    "differentPositionsInOrder": 0,
+    "poolFix": "Track descending fresh slots plus LIFO recycledslots. BeforeCPU mergecanceled/scripted/counter updates newestfirst, keepingretirement order. Allclear sortedphysicalslot. Checkpoint copies andhashes slotstate.",
+    "nativeLaserFactoryCounts": {
+      "fixed529379": 512,
+      "straight52be96": 102
+    },
+    "nativeGlobalCall": "515560 ->enemydeaths ->4edf90(0) ->530bd0(1) ->virtual44",
+    "boundsCandidateBuild": "031325971c4e2f6a434bda4f0ba230ee2f8244ed39cd7c588be4080f026da468",
+    "bounds": "Fixedgloballaser margin16, straightglobalunbounded, bothstrictd+8<length; regionalstraight<= preserved."
+  },
+  "globalPointProbe": {
+    "native": "present-g9qd94ad",
+    "evidence": "native-global-laser-cancel-33455.jsonl",
+    "count": 614,
+    "webBefore": "th19-web-AonpdT",
+    "webCount": 613,
+    "mismatchingGroup": {
+      "nativeStraightPoints": [
+        [
+          8.99999905,
+          96
+        ],
+        [
+          8.99999809,
+          80
+        ],
+        [
+          8.99999714,
+          64
+        ],
+        [
+          8.99999619,
+          48
+        ],
+        [
+          8.99999523,
+          32
+        ],
+        [
+          8.99999428,
+          16
+        ],
+        [
+          8.99999332,
+          0
+        ],
+        [
+          8.99999237,
+          -16
+        ],
+        [
+          8.99999142,
+          -32
+        ],
+        [
+          8.99999046,
+          -48
+        ]
+      ],
+      "webId": 23881,
+      "webFirst": [
+        8.99999905,
+        88
+      ],
+      "webLast": [
+        8.99999332,
+        -40
+      ],
+      "webCount": 9
+    },
+    "candidateBuild": "d34208701fc8654ad8e4da90b89a6f796206970d87d03641e521f57acf99e98f",
+    "candidate": "FinalDeadframe30/lives0 marks movingstraight motion_frame beforeCPUadvance, matching nativeglobalcleargeometry. Seed1firststop andseed42fullrunning."
+  }
+}

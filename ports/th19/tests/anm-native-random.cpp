@@ -48,5 +48,12 @@ int main(){
     vm.tick();
     assert(vm.sprite==96&&AnmVm::random_checkpoint()==282310622);
     assert(AnmVm::random_checkpoint(true)==456);
+    // Original effect.anm23 at frame 32880 uses opcode122 with bound15.
+    const u8 randomInteger[]={122,0,16,0,0,0,0,0,16,39,0,0,15,0,0,0};
+    vm={};vm.bind(randomInteger,sizeof(randomInteger));
+    AnmVm::restore_random(2049653797);
+    vm.tick();
+    assert(vm.ivar[0]==10&&AnmVm::random_checkpoint()==2119334050u);
+    assert(AnmVm::random_checkpoint(true)==456);
     std::cout<<"PASS: 234 native float bit patterns through RNG and ANM; rollback and bounded draws\n";
 }

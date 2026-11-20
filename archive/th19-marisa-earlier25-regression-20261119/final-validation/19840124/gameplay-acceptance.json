@@ -1,0 +1,23 @@
+{
+  "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-contact-regression35-20261119\\th19-web-3vq84M\\report.json",
+  "wasmSha256": "ed2ddabb8acaad7fe2a6f84a70d3539b899b53136c38f20b148120d2b1fc63d2",
+  "nativeMissingStateFrames": [
+    29918
+  ],
+  "verifiedTransitionGaps": [
+    29918
+  ],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 35999,
+  "bulletCoordinateTolerance": 0.0001,
+  "maximumBulletCoordinateDifference": 0.0,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS",
+  "strictStatus": "PASS",
+  "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+  "acceptedCoordinateCeiling": 0.000244140625,
+  "microscopicCoordinateFrames": []
+}

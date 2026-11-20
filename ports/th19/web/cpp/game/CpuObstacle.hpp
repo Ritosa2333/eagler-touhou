@@ -25,7 +25,7 @@ struct CpuObstacle {
    }else{
     float dx=x-px,dy=y-py,d=dx*dx+dy*dy-h.radius*h.radius*o.speed;
     if(d>=128*128)continue;
-    float delta=std::abs(wrap(o.heading-std::atan2(dy,dx)));
+    float delta=std::abs(wrap(o.heading-float(std::atan2(double(dy),double(dx)))));
     if(d>32*32){
      // 4d3720: forward ray / circle intersection, radius +16.
      float along=dx*std::cos(o.heading)+dy*std::sin(o.heading);
@@ -39,7 +39,8 @@ struct CpuObstacle {
    selected=&o;closestX=px;closestY=py;
   }
   if(!selected)return original;
-  float a=std::atan2(y-selected->shape.y,x-selected->shape.x);
+  // 0x407490 promotes the rounded differences before atan2.
+  float a=float(std::atan2(double(y-selected->shape.y),double(x-selected->shape.x)));
   float dx=x-closestX,dy=y-closestY,r=selected->shape.radius;
   if(dx*dx+dy*dy>=r*r+32*32){float delta=wrap(selected->heading-a);
    // 0x4facab forces neutral and skips the boundary adjustment.

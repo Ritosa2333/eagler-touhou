@@ -42,6 +42,7 @@ public:
     i32 current_sub() const noexcept {return sub_;}
     const char* current_sub_name() const noexcept {return prog_>=0&&sub_>=0?programs_[prog_]->subs[sub_].name.c_str():"";}
     u32 instruction_offset() const noexcept {return ip_;}
+    double current_time() const noexcept {return time_;}
 
 private:
     void rebind_tree(EclVm* root,GameWorld* world);

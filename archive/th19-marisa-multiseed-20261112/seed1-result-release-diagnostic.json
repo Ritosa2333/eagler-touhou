@@ -1,0 +1,30 @@
+{
+  "nativeCapture": "present-do_le_5k",
+  "webBefore": "th19-web-FyOCi4",
+  "frame": 33646,
+  "nativeCpuBlocked": 0,
+  "webCpuBlocked": 24,
+  "extraHost": 23905,
+  "extraSub": "ExtraAttack",
+  "registrationFrame": 33453,
+  "resultPauseId": 23904,
+  "resultPauseFrame": 33454,
+  "laserBirthFrames": [
+    33453,
+    33472,
+    33490,
+    33508,
+    33526,
+    33544,
+    33562,
+    33580,
+    33598,
+    33616
+  ],
+  "candidate": "Reject opponent charge attacks in GameWorld::receive_charge_attack when result_pause_id is set, covering automatic combo dispatch",
+  "callerOnlyCandidate": {
+    "webCapture": "th19-web-E3Va5E",
+    "firstCpuDifference": 33646,
+    "status": "reverted"
+  }
+}

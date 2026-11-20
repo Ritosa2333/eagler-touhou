@@ -9,6 +9,9 @@ struct PlayerDamage {
  enum State {Respawning=0,Playing=1,Dead=2,Finished=3,Pending=4,Repelled=5};
  enum Event {None,Death,Respawn,Recovered,Defeat};
  State state=Playing;int frame=0;float angle=0;
+ float respawn_origin_x=0,respawn_origin_y=480;
+ bool respawn_damage_final_tick=false;float respawn_damage_final_x=0;
+ bool respawnDamageActive()const{return (state==Respawning&&frame>=30)||respawn_damage_final_tick;}
  bool controllable()const{return state==Playing;}
  bool finishingRepel()const{return state==Repelled&&frame>=40;}
  // 0x5469e4 restores Playing before the shot manager, after movement.
@@ -24,6 +27,9 @@ struct PlayerDamage {
   --lives;state=Dead;frame=0;invulnerable=180;return Death;
  }
  Event tick(int& lives,int& invulnerable,bool deathPrevented=false){
+  // 0x5464c9 publishes the last area before recovery restores Playing.
+  respawn_damage_final_tick=(state==Respawning&&frame>=60)||
+      (respawn_damage_final_tick&&state==Playing&&frame==0);
   if(state==Pending&&frame>=8&&!deathPrevented){
    die(lives,invulnerable);
    // The player update advances the newly reset timer on the death tick.

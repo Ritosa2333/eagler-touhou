@@ -15,6 +15,13 @@ struct ComboAttack {
         if (bossCooldown == 0) bossCredit += 15;
     }
 
+    // 0x51cbdb counts reflected ordinary bullets after the chain increments.
+    void on_bullet_cancel(int combo) {
+        if (combo < 10) return;
+        if (extraCooldown == 0) ++extraCredit;
+        if (bossCooldown == 0) ++bossCredit;
+    }
+
     // Bits 0/1 request EX/Boss. Boss occupancy is evaluated at dispatch.
     unsigned tick() {
         unsigned attacks = 0;

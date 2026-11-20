@@ -1,0 +1,28 @@
+{
+  "nativeTraceSha256": "e7dcf7daf36e6d8a174950914d98b09fb837a5dbb8117272cfd9902403344557",
+  "wasmSha256": "859852127726af86c97c45202d4cc46d80a76693cd2fce73fc5d0f62ba149602",
+  "bulletPositionCoverage": {
+    "frames": 2280,
+    "first": 1,
+    "last": 2280,
+    "nonemptyFrames": 1967,
+    "originalBulletSamples": 27355,
+    "webBulletSamples": 27355,
+    "missingFrames": [
+      0
+    ]
+  },
+  "differentBulletPositionFrames": 0,
+  "firstDifferentBulletPosition": null,
+  "firstDifferentPlayerPosition": null,
+  "firstDifferentPlayerControls": null,
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": null
+  },
+  "browserErrors": [],
+  "webCapture": "th19-web-gEs3Qk",
+  "alignedBothRngThrough": 2280,
+  "nativeCapture": "present-0mx3g3jg",
+  "status": "full regression running"
+}

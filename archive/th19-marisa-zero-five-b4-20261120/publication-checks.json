@@ -1,0 +1,32 @@
+{
+  "javascriptTests": {
+    "passed": 56,
+    "failed": 0
+  },
+  "cppTests": [
+    {
+      "test": "world-limits",
+      "exitCode": 0
+    },
+    {
+      "test": "anm-native-random",
+      "exitCode": 0
+    }
+  ],
+  "fiveSeedGameplay": {
+    "passed": 5,
+    "framesPerSeed": 36000,
+    "coordinateTolerance": 0
+  },
+  "diffCheck": 0,
+  "documentationChecks": [
+    {
+      "task": "docs:index",
+      "exitCode": 0
+    },
+    {
+      "task": "docs:check",
+      "exitCode": 0
+    }
+  ]
+}

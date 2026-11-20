@@ -1,0 +1,35 @@
+{
+  "status": "validated-prefix-improvement",
+  "previousBuild": "804b5d6f0b3816fc9238c6e70a638a2cc00252e3bdb67d5bdc5985e39709d33d",
+  "reports": {
+    "1": "th19-web-phePS2",
+    "20261112": "th19-web-oobhCf"
+  },
+  "evidence": {
+    "native": "present-und5jqy4",
+    "frame": 25527,
+    "nativeCenter": [
+      39.25,
+      377.299988
+    ],
+    "webCenter": [
+      39.25,
+      377.304688
+    ],
+    "nativeFirstCutSample": 14,
+    "webFirstCutSample": 15,
+    "radius": 16
+  },
+  "change": "Snap predicted discharge birth position to the existing enemy hundredth-unit grid before synchronous ECL execution.",
+  "build": "3623883b0be68c874ebd0f14248343e24cf5623914cf25eacb45589441866e03",
+  "matchingRngThrough": 27579,
+  "nextAnimationDifference": 27580,
+  "seed1Complete": true,
+  "rollback": {
+    "frames": [
+      25520,
+      25530
+    ],
+    "differences": []
+  }
+}

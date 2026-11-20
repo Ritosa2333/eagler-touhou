@@ -1,0 +1,77 @@
+{
+  "wasmSha256": "62fc7379a4f29b32693387031bf50bfaebc96fa9851d038d6863ae6a928b9b7c",
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-ypkh2_50\\native-present.jsonl",
+  "nativeTraceSha256": "a46391466d2e94c320811f886b5b17ecbcb88cd1d99f78a79c220f4809266334",
+  "firstDifferentPlayerControls": {
+    "frame": 29596,
+    "web": [
+      27,
+      91
+    ],
+    "original": [
+      3,
+      91
+    ]
+  },
+  "firstDifferentPlayerPosition": {
+    "frame": 29596,
+    "web": [
+      61.9375,
+      400.34375,
+      -101.5234375,
+      402.3046875
+    ],
+    "original": [
+      61.9375,
+      402.34375,
+      -101.5234375,
+      402.3046875
+    ]
+  },
+  "firstDifferentRngByStream": {
+    "primary": {
+      "frame": 29668,
+      "web": 1439601380,
+      "original": 407068537
+    },
+    "animation": {
+      "frame": 362,
+      "web": 749524945,
+      "original": 569634120
+    }
+  },
+  "differentBulletPositionFrames": 6276,
+  "firstDifferentBulletPosition": {
+    "frame": 29724,
+    "side": 0,
+    "kind": 4,
+    "color": 2,
+    "original": [
+      [
+        75.79562377929688,
+        282.5796813964844
+      ],
+      [
+        122.44525909423828,
+        323.704833984375
+      ]
+    ],
+    "web": [
+      [
+        75.79562377929688,
+        282.5796813964844
+      ],
+      [
+        122.00775146484375,
+        322.4820251464844
+      ]
+    ]
+  },
+  "firstDifferentBulletCount": {
+    "frame": 29740,
+    "side": 0,
+    "original": 168,
+    "web": 169
+  },
+  "failure": null
+}

@@ -1,0 +1,34 @@
+{
+  "native": "present-wyffgnc7",
+  "frame": 23419,
+  "seed": 1856107171,
+  "parentScript": 18,
+  "parentTime": 0,
+  "callChain": [
+    "4e8184 return4e81c3",
+    "50e840 return50e869",
+    "50d934",
+    "50dbd9",
+    "4cb960"
+  ],
+  "constructionDraws": 8,
+  "fix": "Construct the accepted charge-release announcement synchronously inside tick_charge_release, before deferred BombInf aura.",
+  "status": "building and regression pending",
+  "warningCandidate": "8f5707eb th19-web-O5Qzgr: warning constructors now seed1856107171 matching native; next native224 bounded draw seed927042074 still before gauge constructor, Web gauge takes it first",
+  "secondFix": "Execute the newly created C3/C4 clear ECL constructor synchronously after the accepted warning and mark its world update reused. Preserve later moved-position update.",
+  "rejectedPremovementClear": {
+    "build": "147574c2",
+    "seed1": "th19-web-OSAzL7 RNG15635, first bullet6507",
+    "seed2026": "th19-web-h2xWid first bullet5615",
+    "reason": "Clear constructor must retain the moved player origin while taking its RNG before gauge construction."
+  },
+  "currentCandidate": "Predict the same input movement and place the clear constructor at that origin before gauge creation; regression pending.",
+  "validatedCandidate": {
+    "build": "2edcff00057363da65e50143e41501a4c7a2d8a809f52f6600ed9b0e60b01d96",
+    "seed1": "th19-web-WNCi4P PASS36000 both RNG and gameplay",
+    "seed2026": "th19-web-XCQT7N RNG25526; CPU27976; primary27985; position28025; bullet28175",
+    "scope": "Simultaneous CPU bomb start and forced C3/C4 release only",
+    "origin": "Predicted same fixed-point CPU movement before constructor, later movement path unchanged",
+    "next": "CPU-only scope cleanup building; seed123 full and seed2026 next window queued"
+  }
+}

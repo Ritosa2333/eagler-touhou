@@ -1,0 +1,24 @@
+{
+  "status": "full-validation-running",
+  "nativeExecutable": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "ordinaryPool": {
+    "capacity": 16,
+    "initializer": "0x413567"
+  },
+  "chargePool": {
+    "capacity": 300,
+    "initializer": "0x4135cf",
+    "emptyCheck": "0x521fa1"
+  },
+  "serialAdvance": "0x521d75 before slot allocation",
+  "observation": {
+    "frame": 35540,
+    "nativeItems": 295,
+    "oldWebItems": 353,
+    "extraWebItems": 58,
+    "extraState": 2,
+    "nativeEnergyAt35554": 2450,
+    "oldWebEnergyAt35554": 2500
+  },
+  "implementation": "Preserve the existing serial and RNG calls when saturation suppresses a new pickup."
+}

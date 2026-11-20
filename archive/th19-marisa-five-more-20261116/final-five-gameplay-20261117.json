@@ -1,0 +1,62 @@
+{
+  "bulletCoordinateTolerance": 0.0001,
+  "results": [
+    {
+      "seed": 314159265,
+      "status": "PASS",
+      "capturedThrough": 36000,
+      "comparedFrames": 36000,
+      "nativeMissingStateFrames": [],
+      "webCapture": "web-captures-marisa-five-more\\th19-web-32qNBD",
+      "wasmSha256": "a06608bb49419f1be85316c481a07c38c6c54ef21d840a8a39fedcabd183c7fd",
+      "nativeTraceSha256": "070995b438e0ce72e02522e12e99f5582a2d7a731b09b4ebb899ab63715d81fe",
+      "maximumBulletCoordinateDifference": 0
+    },
+    {
+      "seed": 65537,
+      "status": "PASS",
+      "capturedThrough": 36000,
+      "comparedFrames": 35999,
+      "nativeMissingStateFrames": [
+        31266
+      ],
+      "webCapture": "web-captures-marisa-five-more\\th19-web-2QGiCP",
+      "wasmSha256": "a06608bb49419f1be85316c481a07c38c6c54ef21d840a8a39fedcabd183c7fd",
+      "nativeTraceSha256": "367b3c7807afa375fafca8061a53a936eb8f1044019a0038172605e6fabce5df",
+      "maximumBulletCoordinateDifference": 0
+    },
+    {
+      "seed": 20261116,
+      "status": "PASS",
+      "capturedThrough": 36000,
+      "comparedFrames": 36000,
+      "nativeMissingStateFrames": [],
+      "webCapture": "web-captures-marisa-five-more\\th19-web-rSbX2n",
+      "wasmSha256": "a06608bb49419f1be85316c481a07c38c6c54ef21d840a8a39fedcabd183c7fd",
+      "nativeTraceSha256": "62c41dd7cc338b16a7f9b5f88921c45a1e98cd0ee8df708d1350e1538fc20c45",
+      "maximumBulletCoordinateDifference": 3.0517578125e-05
+    },
+    {
+      "seed": 161803398,
+      "status": "PASS",
+      "capturedThrough": 36000,
+      "comparedFrames": 36000,
+      "nativeMissingStateFrames": [],
+      "webCapture": "web-captures-marisa-five-more\\th19-web-VSwSh2",
+      "wasmSha256": "a06608bb49419f1be85316c481a07c38c6c54ef21d840a8a39fedcabd183c7fd",
+      "nativeTraceSha256": "fbebd336533bdc7aa6c89f052edc7ea2d8d4c276ba99b190179dae2c156a08a1",
+      "maximumBulletCoordinateDifference": 3.0517578125e-05
+    },
+    {
+      "seed": 2147483646,
+      "status": "PASS",
+      "capturedThrough": 36000,
+      "comparedFrames": 36000,
+      "nativeMissingStateFrames": [],
+      "webCapture": "web-captures-marisa-five-more\\th19-web-biU5XL",
+      "wasmSha256": "a06608bb49419f1be85316c481a07c38c6c54ef21d840a8a39fedcabd183c7fd",
+      "nativeTraceSha256": "02cf179d6233c310130a71674a5165d7016523a135034168f5e6d5b4dc842e9e",
+      "maximumBulletCoordinateDifference": 0
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-next-five\\th19-web-yPmwCZ\\report.json",
+  "wasmSha256": "fdbbcb85203fba2d5cc205aedcc468b6090ce11e0685303eafdc8d2b44378446",
+  "nativeMissingStateFrames": [
+    27132
+  ],
+  "verifiedTransitionGaps": [
+    27132
+  ],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 35999,
+  "bulletCoordinateTolerance": 0.0001,
+  "maximumBulletCoordinateDifference": 6.103515625e-05,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS",
+  "seed": 1000003,
+  "secondarySeed": 999983,
+  "nativeTraceSha256": "5911d90331bac0e67e566dd26920fe07cc0c393f924a0aff37668a9d1d541e79",
+  "animationRngFirstDifference": {
+    "frame": 19896,
+    "web": 281960767,
+    "original": 1351798021
+  }
+}

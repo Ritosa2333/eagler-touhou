@@ -1,0 +1,164 @@
+{
+  "status": "PASS",
+  "passed": 55,
+  "total": 55,
+  "framesPerSeed": 36000,
+  "totalContinuousFrames": 1980000,
+  "bulletComparedFrames": 1979979,
+  "verifiedTransitionGaps": [
+    {
+      "seed": 1,
+      "secondary": 7,
+      "frames": [
+        33776
+      ]
+    },
+    {
+      "seed": 7,
+      "secondary": 7654321,
+      "frames": [
+        26401
+      ]
+    },
+    {
+      "seed": 65537,
+      "secondary": 104729,
+      "frames": [
+        31266
+      ]
+    },
+    {
+      "seed": 1000003,
+      "secondary": 999983,
+      "frames": [
+        27132
+      ]
+    },
+    {
+      "seed": 4599481,
+      "secondary": 966889228,
+      "frames": [
+        26750
+      ]
+    },
+    {
+      "seed": 8675309,
+      "secondary": 42424243,
+      "frames": [
+        28448
+      ]
+    },
+    {
+      "seed": 15485863,
+      "secondary": 49979687,
+      "frames": [
+        26722
+      ]
+    },
+    {
+      "seed": 19840124,
+      "secondary": 20010401,
+      "frames": [
+        29918
+      ]
+    },
+    {
+      "seed": 20261112,
+      "secondary": 424182232,
+      "frames": [
+        27900
+      ]
+    },
+    {
+      "seed": 123456789,
+      "secondary": 987654321,
+      "frames": [
+        26822
+      ]
+    },
+    {
+      "seed": 179424673,
+      "secondary": 433494437,
+      "frames": [
+        28872
+      ]
+    },
+    {
+      "seed": 470311227,
+      "secondary": 1736728499,
+      "frames": [
+        35398
+      ]
+    },
+    {
+      "seed": 536487702,
+      "secondary": 1476276067,
+      "frames": [
+        22150
+      ]
+    },
+    {
+      "seed": 536870911,
+      "secondary": 1000000007,
+      "frames": [
+        27970
+      ]
+    },
+    {
+      "seed": 987450218,
+      "secondary": 865127664,
+      "frames": [
+        34536
+      ]
+    },
+    {
+      "seed": 987654321,
+      "secondary": 1357911,
+      "frames": [
+        35835
+      ]
+    },
+    {
+      "seed": 1293760327,
+      "secondary": 152317181,
+      "frames": [
+        35788
+      ]
+    },
+    {
+      "seed": 1354966619,
+      "secondary": 39499591,
+      "frames": [
+        30541
+      ]
+    },
+    {
+      "seed": 1641255564,
+      "secondary": 487793392,
+      "frames": [
+        23933
+      ]
+    },
+    {
+      "seed": 1893703640,
+      "secondary": 328577206,
+      "frames": [
+        14791
+      ]
+    },
+    {
+      "seed": 1936728471,
+      "secondary": 2071842433,
+      "frames": [
+        33264
+      ]
+    }
+  ],
+  "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+  "sameBuildPassed": 55,
+  "bulletCoordinateTolerance": 0,
+  "maximumBulletCoordinateDifference": 0,
+  "committed": false,
+  "pushed": false,
+  "completedAt": "2026-11-20T08:11:24.467658+00:00"
+}

@@ -1,0 +1,76 @@
+{
+  "wasmSha256": "a14cfbef03ae6428cd5eea9dad016889e0f8f0f1009f6235b9038c64b8ad437a",
+  "nativeTraceSha256": "bf7b00a9da8d2073f1bbcf644e7e3e4f50b50d0b48aa0a9ed63c68fde702394e",
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\seed123-36000-result-images\\native-present.jsonl",
+  "continuous": true,
+  "firstDifferentRngByStream": {
+    "primary": {
+      "frame": 26907,
+      "web": 2034064193,
+      "original": 661534633
+    },
+    "animation": {
+      "frame": 321,
+      "web": 1646528914,
+      "original": 352438177
+    }
+  },
+  "firstDifferentPlayerControls": {
+    "frame": 26898,
+    "web": [
+      0,
+      0
+    ],
+    "original": [
+      0,
+      1
+    ]
+  },
+  "firstDifferentPlayerPosition": {
+    "frame": 26964,
+    "web": [
+      -2,
+      400,
+      0,
+      400
+    ],
+    "original": [
+      0,
+      400,
+      0,
+      400
+    ]
+  },
+  "firstDifferentBulletPosition": {
+    "frame": 27055,
+    "side": 1,
+    "kind": 1,
+    "color": 0,
+    "original": [
+      [
+        24.996246337890625,
+        13.018268585205078
+      ]
+    ],
+    "web": []
+  },
+  "firstDifferentBulletCount": {
+    "frame": 27055,
+    "side": 1,
+    "original": 1,
+    "web": 0
+  },
+  "firstDifferentRoundClock": null,
+  "bulletPositionCoverage": {
+    "frames": 35999,
+    "first": 1,
+    "last": 36000,
+    "nonemptyFrames": 35165,
+    "originalBulletSamples": 3856839,
+    "webBulletSamples": 3864633,
+    "missingFrames": [
+      0,
+      26822
+    ]
+  }
+}

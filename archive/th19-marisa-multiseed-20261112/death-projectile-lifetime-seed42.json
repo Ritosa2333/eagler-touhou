@@ -1,0 +1,63 @@
+{
+  "nativeTraceSha256": "3b37907cd8e3fd225d01b3bc673a5919d9867d6992bec6ff9d4f0e72c81afd2b",
+  "wasmSha256": "a942aa2e02b1f7eef0d229eb7105d9e5c8bf3ad69bf0f292268dd07d6267e56c",
+  "bulletPositionCoverage": {
+    "frames": 36000,
+    "first": 1,
+    "last": 36000,
+    "nonemptyFrames": 35594,
+    "originalBulletSamples": 5072425,
+    "webBulletSamples": 5013248,
+    "missingFrames": [
+      0
+    ]
+  },
+  "differentBulletPositionFrames": 3491,
+  "firstDifferentBulletCount": {
+    "frame": 32545,
+    "side": 0,
+    "original": 107,
+    "web": 108
+  },
+  "firstDifferentPlayerPosition": {
+    "frame": 32647,
+    "web": [
+      -97.65625,
+      396.6875,
+      -77.625,
+      393.15625
+    ],
+    "original": [
+      -97.65625,
+      396.6875,
+      -77.625,
+      400.21875
+    ]
+  },
+  "firstDifferentPlayerControls": {
+    "frame": 32647,
+    "web": [
+      145,
+      147
+    ],
+    "original": [
+      145,
+      163
+    ]
+  },
+  "firstDifferentRngByStream": {
+    "primary": {
+      "frame": 32510,
+      "web": 1976617026,
+      "original": 643957730
+    },
+    "animation": {
+      "frame": 533,
+      "web": 1271274206,
+      "original": 1446384371
+    }
+  },
+  "webCapture": "th19-web-OGLnKT",
+  "alignedThrough": 32509,
+  "firstDifferentBulletPositionFrame": 32510
+}

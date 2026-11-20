@@ -1,0 +1,445 @@
+[
+  {
+    "seed": 179424673,
+    "secondary": 433494437,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-nwa9txs4",
+    "phase": "PASS",
+    "sourceBatch": "marisa-final-earlier25-20261119",
+    "attempt": 1,
+    "updatedAt": "2026-11-19T12:16:22.159488+00:00",
+    "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-8bgHKc",
+    "validation": {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-8bgHKc\\report.json",
+      "wasmSha256": "551fe50ad4e677958a6df5e9fc164885fb0fec818487d806d7e66af5a08cb777",
+      "nativeMissingStateFrames": [
+        28872
+      ],
+      "verifiedTransitionGaps": [
+        28872
+      ],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 35999,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 3.0517578125e-05,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "strictStatus": "PASS",
+      "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+      "acceptedCoordinateCeiling": 0.000244140625,
+      "microscopicCoordinateFrames": []
+    }
+  },
+  {
+    "seed": 982451653,
+    "secondary": 961748941,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-ncr_ilw9",
+    "phase": "PASS",
+    "sourceBatch": "marisa-final-earlier25-20261119",
+    "attempt": 2,
+    "updatedAt": "2026-11-19T12:17:26.128123+00:00",
+    "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-Aq08Ep",
+    "validation": {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-Aq08Ep\\report.json",
+      "wasmSha256": "551fe50ad4e677958a6df5e9fc164885fb0fec818487d806d7e66af5a08cb777",
+      "nativeMissingStateFrames": [],
+      "verifiedTransitionGaps": [],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 36000,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 3.0517578125e-05,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "strictStatus": "PASS",
+      "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+      "acceptedCoordinateCeiling": 0.000244140625,
+      "microscopicCoordinateFrames": []
+    }
+  },
+  {
+    "seed": 15485863,
+    "secondary": 49979687,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-dj4d0ebv",
+    "phase": "PASS",
+    "sourceBatch": "marisa-final-earlier25-20261119",
+    "attempt": 1,
+    "updatedAt": "2026-11-19T12:19:53.955018+00:00",
+    "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-xG3487",
+    "validation": {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-xG3487\\report.json",
+      "wasmSha256": "551fe50ad4e677958a6df5e9fc164885fb0fec818487d806d7e66af5a08cb777",
+      "nativeMissingStateFrames": [
+        26722
+      ],
+      "verifiedTransitionGaps": [
+        26722
+      ],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 35999,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 3.0517578125e-05,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "strictStatus": "PASS",
+      "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+      "acceptedCoordinateCeiling": 0.000244140625,
+      "microscopicCoordinateFrames": []
+    }
+  },
+  {
+    "seed": 32452843,
+    "secondary": 67867967,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-si6a9gfh",
+    "phase": "PASS",
+    "sourceBatch": "marisa-final-earlier25-20261119",
+    "attempt": 1,
+    "updatedAt": "2026-11-19T12:33:50.012687+00:00",
+    "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-JjYOUv",
+    "validation": {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-JjYOUv\\report.json",
+      "wasmSha256": "551fe50ad4e677958a6df5e9fc164885fb0fec818487d806d7e66af5a08cb777",
+      "nativeMissingStateFrames": [],
+      "verifiedTransitionGaps": [],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 36000,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 6.103515625e-05,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "strictStatus": "PASS",
+      "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+      "acceptedCoordinateCeiling": 0.000244140625,
+      "microscopicCoordinateFrames": []
+    }
+  },
+  {
+    "seed": 2038074743,
+    "secondary": 122949823,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-l667s58v",
+    "phase": "PASS",
+    "sourceBatch": "marisa-final-earlier25-20261119",
+    "attempt": 1,
+    "updatedAt": "2026-11-19T12:23:57.652192+00:00",
+    "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-rLwxyt",
+    "validation": {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-rLwxyt\\report.json",
+      "wasmSha256": "551fe50ad4e677958a6df5e9fc164885fb0fec818487d806d7e66af5a08cb777",
+      "nativeMissingStateFrames": [],
+      "verifiedTransitionGaps": [],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 36000,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 0.0,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "strictStatus": "PASS",
+      "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+      "acceptedCoordinateCeiling": 0.000244140625,
+      "microscopicCoordinateFrames": []
+    }
+  },
+  {
+    "seed": 161803398,
+    "secondary": 141421356,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-b6y1yfbw",
+    "phase": "PASS",
+    "sourceBatch": "marisa-final-earlier25-20261119",
+    "attempt": 1,
+    "updatedAt": "2026-11-19T12:39:43.937388+00:00",
+    "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-yAiloC",
+    "validation": {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-yAiloC\\report.json",
+      "wasmSha256": "551fe50ad4e677958a6df5e9fc164885fb0fec818487d806d7e66af5a08cb777",
+      "nativeMissingStateFrames": [],
+      "verifiedTransitionGaps": [],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 36000,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 3.0517578125e-05,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "strictStatus": "PASS",
+      "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+      "acceptedCoordinateCeiling": 0.000244140625,
+      "microscopicCoordinateFrames": []
+    }
+  },
+  {
+    "seed": 7,
+    "secondary": 7654321,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-36hq6293",
+    "phase": "PASS",
+    "sourceBatch": "marisa-final-earlier25-20261119",
+    "attempt": 1,
+    "updatedAt": "2026-11-19T12:33:26.699158+00:00",
+    "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-io82g1",
+    "validation": {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-io82g1\\report.json",
+      "wasmSha256": "551fe50ad4e677958a6df5e9fc164885fb0fec818487d806d7e66af5a08cb777",
+      "nativeMissingStateFrames": [
+        26401
+      ],
+      "verifiedTransitionGaps": [
+        26401
+      ],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 35999,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 0.0,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "strictStatus": "PASS",
+      "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+      "acceptedCoordinateCeiling": 0.000244140625,
+      "microscopicCoordinateFrames": []
+    }
+  },
+  {
+    "seed": 424242,
+    "secondary": 131071,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-yol16k1w",
+    "phase": "validation",
+    "sourceBatch": "marisa-final-earlier25-20261119",
+    "attempt": 2,
+    "updatedAt": "2026-11-19T12:49:02.055199+00:00",
+    "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-7mzjnX"
+  },
+  {
+    "seed": 8675309,
+    "secondary": 42424243,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-9_fjv4_x",
+    "phase": "PASS",
+    "sourceBatch": "marisa-final-earlier25-20261119",
+    "attempt": 1,
+    "updatedAt": "2026-11-19T12:39:36.262694+00:00",
+    "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-JmeOAt",
+    "validation": {
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-JmeOAt\\report.json",
+      "wasmSha256": "551fe50ad4e677958a6df5e9fc164885fb0fec818487d806d7e66af5a08cb777",
+      "nativeMissingStateFrames": [
+        28448
+      ],
+      "verifiedTransitionGaps": [
+        28448
+      ],
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "bulletComparedFrames": 35999,
+      "bulletCoordinateTolerance": 0.0001,
+      "maximumBulletCoordinateDifference": 3.0517578125e-05,
+      "substantiveBulletDifferenceFrames": [],
+      "status": "PASS",
+      "strictStatus": "PASS",
+      "acceptancePolicy": "Gameplay parity; user excludes microscopic coordinate drift. Raw strict result retained in gameplay-validation.json.",
+      "acceptedCoordinateCeiling": 0.000244140625,
+      "microscopicCoordinateFrames": []
+    }
+  },
+  {
+    "seed": 20261116,
+    "secondary": 998244353,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-om5a6cov",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 123456789,
+    "secondary": 987654321,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-a04kfbhg",
+    "phase": "validation",
+    "sourceBatch": "marisa-final-earlier25-20261119",
+    "attempt": 2,
+    "updatedAt": "2026-11-19T12:49:02.539596+00:00",
+    "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-arrival-regression35-20261119\\th19-web-TwCPhf"
+  },
+  {
+    "seed": 314159265,
+    "secondary": 271828182,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-ohyqn2f2",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 839207153,
+    "secondary": 619412363,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-dg0i7ohi",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 1293760327,
+    "secondary": 152317181,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-h_bxpcm8",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 2000000011,
+    "secondary": 31415926,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-u5vldbav",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 536870911,
+    "secondary": 1000000007,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-bnms_9dk",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 65537,
+    "secondary": 104729,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-e7ahc2bz",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 1000003,
+    "secondary": 999983,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-p2itheqo",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 19840124,
+    "secondary": 20010401,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-bp809o_h",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 20261118,
+    "secondary": 18112026,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-e6gb95vl",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 185362831,
+    "secondary": 93017621,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-giqaj_gn",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 470311227,
+    "secondary": 1736728499,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-et9o0kht",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 1073741823,
+    "secondary": 524287,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-f9p3jjsi",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 1936728471,
+    "secondary": 2071842433,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-frlipl3m",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 2147483646,
+    "secondary": 1234567,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-eqn2dfk5",
+    "phase": "pending",
+    "sourceBatch": "marisa-final-earlier25-20261119"
+  },
+  {
+    "seed": 987450218,
+    "secondary": 865127664,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261118-b30\\native\\present-sh9f4qr_",
+    "phase": "pending",
+    "sourceBatch": "marisa-b35-final-regression-b30"
+  },
+  {
+    "seed": 213927170,
+    "secondary": 1300782066,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261118-b30\\native\\present-wf8ppf66",
+    "phase": "pending",
+    "sourceBatch": "marisa-b35-final-regression-b30"
+  },
+  {
+    "seed": 1761660084,
+    "secondary": 2082427414,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261118-b30\\native\\present-2cfbz5a2",
+    "phase": "pending",
+    "sourceBatch": "marisa-b35-final-regression-b30"
+  },
+  {
+    "seed": 1947437859,
+    "secondary": 1319879470,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261118-b30\\native\\present-64uq0qvi",
+    "phase": "pending",
+    "sourceBatch": "marisa-b35-final-regression-b30"
+  },
+  {
+    "seed": 4599481,
+    "secondary": 966889228,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261118-b30\\native\\present-jhpryh85",
+    "phase": "pending",
+    "sourceBatch": "marisa-b35-final-regression-b30"
+  },
+  {
+    "seed": 536487702,
+    "secondary": 1476276067,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261119-b35\\native\\present-2j3ykhi_",
+    "phase": "pending",
+    "sourceBatch": "marisa-next-five-20261119-b35-final"
+  },
+  {
+    "seed": 1641255564,
+    "secondary": 487793392,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261119-b35\\native\\present-6koju2fj",
+    "phase": "pending",
+    "sourceBatch": "marisa-next-five-20261119-b35-final"
+  },
+  {
+    "seed": 2064620443,
+    "secondary": 1958715403,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261119-b35\\native\\present-y6e1591u",
+    "phase": "pending",
+    "sourceBatch": "marisa-next-five-20261119-b35-final"
+  },
+  {
+    "seed": 471872317,
+    "secondary": 633158572,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261119-b35\\native\\present-7y_cuars",
+    "phase": "pending",
+    "sourceBatch": "marisa-next-five-20261119-b35-final"
+  },
+  {
+    "seed": 935616930,
+    "secondary": 1914315768,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261119-b35-r1\\native\\present-4tdxcj3_",
+    "phase": "pending",
+    "sourceBatch": "marisa-next-five-20261119-b35-final"
+  }
+]

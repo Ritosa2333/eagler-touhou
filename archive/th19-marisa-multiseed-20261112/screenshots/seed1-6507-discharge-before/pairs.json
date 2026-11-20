@@ -1,0 +1,31 @@
+{
+  "wasmSha256": "128969fc6e106614acc5b151dd9f66d18a2d65c36b58b6883b1c20fc30b999a4",
+  "nativeTraceSha256": "30cdfb8573b08b11430df147be1952eb570604d1a8328a8438e391fe484c52ae",
+  "diagnosticRoundWaveSeed": null,
+  "pairs": [
+    {
+      "frame": 6506,
+      "status": "玩法状态一致",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-6506.png",
+      "webImageSha256": "369388da38e252cab623dd365fd983b99b3793b162d96b204e0df87147118a36",
+      "nativeImageSha256": "087b00386105940f49ef059f664cbf8a68d8a315b21bd81a4e03a1e8f26e65b9"
+    },
+    {
+      "frame": 6507,
+      "status": "敌弹状态不一致",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-6507.png",
+      "webImageSha256": "f559585ed6862a3da6188bd3c06e603fc014a25779763f05056c0f83263396be",
+      "nativeImageSha256": "a2288da9f60c61d9eff16606988b994d8c992bb93dc18c7a86c0896c4833ee0e"
+    },
+    {
+      "frame": 6508,
+      "status": "玩法状态一致",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-6508.png",
+      "webImageSha256": "94664eb435f3acc4a04580b200af7a6cdae4813ca40c687896b8d771308e2bb2",
+      "nativeImageSha256": "5ca31f52190b29be8e7da812b39ea14d04fdcef875d4aa4cf84bec1f1a845763"
+    }
+  ]
+}

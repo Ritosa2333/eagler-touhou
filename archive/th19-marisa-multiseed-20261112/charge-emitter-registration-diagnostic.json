@@ -1,0 +1,36 @@
+{
+  "nativeTrace": "present-ufhz7oha",
+  "upstreamFrame": 2389,
+  "firstDifferentSecondaryFrame": 2390,
+  "native197Parent": 276219472,
+  "native197WaitSeeds": [
+    1297890342,
+    1182095306
+  ],
+  "web197WaitSeeds": [
+    189515461,
+    1548236861
+  ],
+  "nativeAura14ParentSequence": [
+    276201740,
+    276201740,
+    276201740,
+    276201740,
+    276201740,
+    276201740,
+    276451600,
+    276451600,
+    276451600,
+    276451600,
+    276451600,
+    276451600,
+    276201740,
+    276201740,
+    276201740,
+    276201740,
+    276201740,
+    276201740
+  ],
+  "observation": "The same new charge emitter creates children during registration and again during its manager update. The initial group occurs before the other field manager pass; Web initializes both groups inside one field pass.",
+  "candidate": "Prepare both new charge emitters before the per-field animation passes; retain one normal tick per field."
+}

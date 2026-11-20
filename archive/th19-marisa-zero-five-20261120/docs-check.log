@@ -1,0 +1,3 @@
+
+> docs:check
+> node tools/docs/check.mjs

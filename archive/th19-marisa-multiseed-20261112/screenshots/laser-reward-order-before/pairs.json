@@ -1,0 +1,30 @@
+{
+  "wasmSha256": "4e38d946db827bd9c4c4ac710fbca27f306594638861b911bdb8f1e6a6af32e5",
+  "nativeTraceSha256": "b7e557ee00abb5198501ecb57f2f2c89e9c0d035f908d69607dfbcddff12b6d7",
+  "pairs": [
+    {
+      "frame": 14475,
+      "status": "动画 RNG不一致",
+      "differentFramesThroughCurrent": 12276,
+      "image": "frame-14475.png",
+      "webImageSha256": "7ceb1879045d2b0ce4dfeace9541e2a70e29c403e4d187e94b5e1c4e9b161c97",
+      "nativeImageSha256": "ab6f2c4e25a3234a81d4c8a97f8b70bfcd44c7820e4300482a7fc9036d693aba"
+    },
+    {
+      "frame": 14476,
+      "status": "动画 RNG、敌弹状态不一致",
+      "differentFramesThroughCurrent": 12277,
+      "image": "frame-14476.png",
+      "webImageSha256": "b969710463da26d815dacb914a2a02d191e60be3dd3f3b1e30f2cf238e58ff5c",
+      "nativeImageSha256": "9a82e874abc62b2160e355a7fde0a76367dd360ec0cbdd5f6b570bc35a6b5365"
+    },
+    {
+      "frame": 14480,
+      "status": "动画 RNG不一致",
+      "differentFramesThroughCurrent": 12281,
+      "image": "frame-14480.png",
+      "webImageSha256": "f88b090ea48c93a44e7a4cc68b181c733ff9fed4f6a7f6d67256428326cc1e84",
+      "nativeImageSha256": "1b9e4abcb61aeb5341850bb20efefb43d34f249ab093af8b753a5e97372c3c65"
+    }
+  ]
+}

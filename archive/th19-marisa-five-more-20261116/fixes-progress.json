@@ -1,0 +1,24 @@
+{
+  "latestGameplayBuild": "1c02f048e8af40be5fd9f9bc0032750ec5fbb896b59342d5c01c68e9a65d2235",
+  "complete": false,
+  "framesPerSeed": 36000,
+  "gameplayAlignedPrefix": {
+    "314159265": 19936,
+    "65537": 26220,
+    "20261116": 27816,
+    "161803398": 12661,
+    "2147483646": 30693
+  },
+  "fixes": [
+    "VS reward bands current manager tick",
+    "Normal pellet native viewport age gate",
+    "Option emitters resume after repel recovery tick",
+    "Repeated straight cuts retain registered contact rectangle",
+    "Fixed laser CPU origin native grid",
+    "Arrival registration after stage controllers",
+    "Eagle Aura conversion before first displacement"
+  ],
+  "oldSeed1Regression": "web-captures-marisa-five-more/th19-web-cRDaHG/report.json",
+  "currentWork": "Physical contact during spawning bullet state2 candidate build2d7e8f17, currently validating314. Native boss HP diagnostic found214 boss3717/19878 first diverges30100 by27HP before earlyphaseclear30694 vs30703.",
+  "noPush": true
+}

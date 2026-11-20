@@ -1,0 +1,159 @@
+{
+  "1": {
+    "report": "th19-web-Ey0gIM",
+    "build": "bd1f0c75c4a2e10e0bbb58d55692aa58f74a3df8c91e0c7b206d7a4dca494b65",
+    "through": 36000,
+    "rng": {
+      "primary": null,
+      "animation": null
+    },
+    "firstControls": null,
+    "firstPosition": null,
+    "firstBullet": null,
+    "differentBulletFrames": 0,
+    "rollback": {
+      "frames": [
+        27595,
+        27615
+      ],
+      "differences": [],
+      "image": true
+    }
+  },
+  "42": {
+    "report": "th19-web-M79qVn",
+    "build": "bd1f0c75c4a2e10e0bbb58d55692aa58f74a3df8c91e0c7b206d7a4dca494b65",
+    "through": 36000,
+    "rng": {
+      "primary": null,
+      "animation": {
+        "frame": 9157,
+        "web": 2080127861,
+        "original": 1369692032
+      }
+    },
+    "firstControls": null,
+    "firstPosition": null,
+    "firstBullet": null,
+    "differentBulletFrames": 0,
+    "rollback": null
+  },
+  "20261112": {
+    "report": "th19-web-f5uf1i",
+    "build": "bd1f0c75c4a2e10e0bbb58d55692aa58f74a3df8c91e0c7b206d7a4dca494b65",
+    "through": 36000,
+    "rng": {
+      "primary": null,
+      "animation": null
+    },
+    "firstControls": null,
+    "firstPosition": null,
+    "firstBullet": null,
+    "differentBulletFrames": 0,
+    "rollback": null
+  },
+  "123456789": {
+    "report": "th19-web-0RTLYc",
+    "build": "bd1f0c75c4a2e10e0bbb58d55692aa58f74a3df8c91e0c7b206d7a4dca494b65",
+    "through": 36000,
+    "rng": {
+      "primary": {
+        "frame": 26908,
+        "web": 2003922300,
+        "original": 661534633
+      },
+      "animation": {
+        "frame": 15412,
+        "web": 2097369218,
+        "original": 1908700063
+      }
+    },
+    "firstControls": {
+      "frame": 26898,
+      "web": [
+        0,
+        0
+      ],
+      "original": [
+        0,
+        1
+      ]
+    },
+    "firstPosition": {
+      "frame": 26982,
+      "web": [
+        0,
+        400,
+        0,
+        400
+      ],
+      "original": [
+        0,
+        400,
+        5,
+        400
+      ]
+    },
+    "firstBullet": {
+      "frame": 27055,
+      "side": 1,
+      "kind": 1,
+      "color": 0,
+      "original": [
+        [
+          24.996246337890625,
+          13.018268585205078
+        ]
+      ],
+      "web": []
+    },
+    "differentBulletFrames": 8946,
+    "rollback": null
+  },
+  "987654321": {
+    "report": "th19-web-2QQ5T5",
+    "build": "bd1f0c75c4a2e10e0bbb58d55692aa58f74a3df8c91e0c7b206d7a4dca494b65",
+    "through": 36000,
+    "rng": {
+      "primary": {
+        "frame": 35554,
+        "web": 142312444,
+        "original": 497735480
+      },
+      "animation": {
+        "frame": 16037,
+        "web": 487500622,
+        "original": 1622840230
+      }
+    },
+    "firstControls": {
+      "frame": 26026,
+      "web": [
+        83,
+        139
+      ],
+      "original": [
+        147,
+        139
+      ]
+    },
+    "firstPosition": {
+      "frame": 35973,
+      "web": [
+        2,
+        400,
+        0,
+        400
+      ],
+      "original": [
+        0,
+        400,
+        0,
+        400
+      ]
+    },
+    "firstBullet": null,
+    "differentBulletFrames": 0,
+    "rollback": null
+  }
+}

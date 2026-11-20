@@ -1,0 +1,15 @@
+{
+  "wasmSha256": "faac087eb530f25fd42d92f78b0814fa340ace9d3f52c5f49410f9372f96c70c",
+  "nativeTraceSha256": "2c044659aaf92f9daab29fcd62c81dd82b756c3e050f945f105086d11aae17ce",
+  "diagnosticRoundWaveSeed": null,
+  "pairs": [
+    {
+      "frame": 21803,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-21803.png",
+      "webImageSha256": "8f61a73ec7535ebaabf53464e763052f19b71f2931001688e9096428acfc973d",
+      "nativeImageSha256": "cd2b2203d93423bbbcd9b7decd3f1db8b4767c077c58db44c825a6fcf01f8b1c"
+    }
+  ]
+}

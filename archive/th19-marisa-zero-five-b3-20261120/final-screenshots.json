@@ -1,0 +1,38 @@
+[
+  {
+    "title": "FINAL cumulative frame 13961: Web LEFT / native RIGHT; zero gameplay difference",
+    "url": "/images/zero-b3-final/frame-13961.png"
+  },
+  {
+    "title": "FINAL cumulative frame 14325: Web LEFT / native RIGHT; zero gameplay difference",
+    "url": "/images/zero-b3-final/frame-14325.png"
+  },
+  {
+    "title": "FINAL cumulative frame 14454: Web LEFT / native RIGHT; zero gameplay difference",
+    "url": "/images/zero-b3-final/frame-14454.png"
+  },
+  {
+    "title": "Seed 1893703640 cumulative frame 13961: Web LEFT / native RIGHT",
+    "url": "/images/zero-b3-1893703640-before/frame-13961.png"
+  },
+  {
+    "title": "Seed 1893703640 cumulative frame 13962: Web LEFT / native RIGHT",
+    "url": "/images/zero-b3-1893703640-before/frame-13962.png"
+  },
+  {
+    "title": "Repel difference at cumulative frame 14325: Web LEFT / native RIGHT",
+    "url": "/images/zero-b3-repel-before/frame-14325.png"
+  },
+  {
+    "title": "Repel difference at cumulative frame 14326: Web LEFT / native RIGHT",
+    "url": "/images/zero-b3-repel-before/frame-14326.png"
+  },
+  {
+    "title": "Fixed-laser graze at cumulative frame 14454: Web LEFT / native RIGHT",
+    "url": "/images/zero-b3-fixed-before/frame-14454.png"
+  },
+  {
+    "title": "Fixed-laser graze at cumulative frame 14455: Web LEFT / native RIGHT",
+    "url": "/images/zero-b3-fixed-before/frame-14455.png"
+  }
+]

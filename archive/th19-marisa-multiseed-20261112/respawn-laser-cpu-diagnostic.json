@@ -1,0 +1,83 @@
+{
+  "nativeCapture": "present-pp0yvwu2",
+  "webCapture": "th19-web-DLRs4J",
+  "frame": 28782,
+  "nativeCpuBlocked": 8,
+  "webCpuBlocked": 504,
+  "nativeObjects": 304,
+  "webObjects": 308,
+  "webExtraFixedLasers": [
+    [
+      9,
+      436,
+      22.8,
+      7
+    ],
+    [
+      -9,
+      436,
+      22.8,
+      7
+    ],
+    [
+      -36.944,
+      436.009,
+      22.8,
+      7
+    ],
+    [
+      -45.448,
+      436.015,
+      22.8,
+      7
+    ]
+  ],
+  "nextInvestigation": "respawn laser cancellation versus CPU geometry collection ordering",
+  "rootCause": {
+    "nativeLengths": [
+      {
+        "frame": 28780,
+        "length": 0
+      },
+      {
+        "frame": 28781,
+        "length": 8
+      },
+      {
+        "frame": 28782,
+        "length": 16
+      },
+      {
+        "frame": 28783,
+        "length": 24
+      }
+    ],
+    "webCpuLengths": [
+      {
+        "frame": 28780,
+        "length": 8
+      },
+      {
+        "frame": 28781,
+        "length": 16
+      },
+      {
+        "frame": 28782,
+        "length": 24
+      },
+      {
+        "frame": 28783,
+        "length": 8
+      }
+    ],
+    "nativeStateSwitch": "0x546374 dispatches old player state",
+    "nativeDeathToRespawn": "0x5467fe..0x54684d initializes Respawning and exits through 0x5469eb",
+    "nativeRespawnClear": "0x5464f1 is reached on the following player update",
+    "candidate": "skip respawn laser cancellation on the Respawn event tick"
+  },
+  "growthCandidate": {
+    "status": "reverted-no-progress",
+    "webCapture": "th19-web-uYhtyF",
+    "firstCpuDifference": 28782
+  }
+}

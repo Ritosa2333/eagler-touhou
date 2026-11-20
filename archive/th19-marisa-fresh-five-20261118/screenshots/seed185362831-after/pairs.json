@@ -1,0 +1,15 @@
+{
+  "wasmSha256": "a6cd69a71fb3ce0d258d099cffc2c9d39970dbd6b0233a1539b3bc1df834b270",
+  "nativeTraceSha256": "4b7bf4e2847cb61fe53f16adb3a0aa1cb427f725ca13d4f60f231bb60c60347b",
+  "diagnosticRoundWaveSeed": null,
+  "pairs": [
+    {
+      "frame": 7286,
+      "status": "玩法状态一致",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-7286.png",
+      "webImageSha256": "0ca17149cb7b79221cb8fdebec0c398d639fe78ffc09ef287e6003b9696dcc76",
+      "nativeImageSha256": "d16f2488512b3c3b8e1a0a1b67cfacb8f11f9c16a655b0a5c96ea4ccd2ec7189"
+    }
+  ]
+}

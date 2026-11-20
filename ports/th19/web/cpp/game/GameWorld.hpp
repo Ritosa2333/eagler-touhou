@@ -39,16 +39,18 @@ struct LaserShooter {
     int warning=0,grow=0,hold=0,shrink=0,flags=0;
 };
 struct InfiniteLaser {
-    u32 id=0;float x=0,y=0,angle=0,length=0,width=2;
+    u32 id=0,owner_id=0;float x=0,y=0,angle=0,length=0,width=2;
     bool curved=false;CurveLaserPath curve;std::string curve_file;
     bool straight=false,aura_slowed=false;float straight_target=0;int offscreen_grace=30,straight_bounds_grace=3,change_sounds=0;StraightLaserChanges straight_changes;
-    bool fragment=false;float travelled=0,travel_cap=0;int cancel_lock=0;
+    bool fragment=false,contact_fragment=false;float travelled=0,travel_cap=0;int cancel_lock=0;
     LaserShooter source;int phase=3,clock=0,age=0;bool active=true;
     unsigned graze_clock=0;
     struct ContactSpan {float x,y,length;};
     std::optional<ContactSpan> cut_contact;
     ContactSpan contact_span()const{return cut_contact.value_or(ContactSpan{x,y,length});}
     int motion_frame=-1;
+    int split_registration_frame=-1;
+    bool cancel_pending=false;
     bool fixed()const{return !straight&&!curved&&!fragment;}
     // 0x52b0e0 supplies the native hit rectangle only in phases 4 and 2.
     float collisionWidth()const{return width>=32?width-(width+16)/(straight?2.f:3.f):width*.5f;}
@@ -65,8 +67,11 @@ struct InfiniteLaser {
         if(curved)return active&&curve.hits(px,py,radius,width,source.type,angle);
         const auto span=contact_span();
         if(!active||(phase!=4&&phase!=2)||span.length<=16||width<=(straight?3.f:0.f))return false;
-        float dx=px-span.x,dy=py-span.y,c=std::cos(angle),s=std::sin(angle);
-        float a=std::abs(dx*c+dy*s-span.length*.5f),b=std::abs(-dx*s+dy*c);
+        const float c=float(std::cos(double(angle))),s=float(std::sin(double(angle)));
+        // The registered rectangle stores its midpoint before contact rotation.
+        const float cx=span.x+c*span.length*.5f,cy=span.y+s*span.length*.5f;
+        const float dx=px-cx,dy=py-cy;
+        const float a=std::abs(dx*c+dy*s),b=std::abs(-dx*s+dy*c);
         float hx=span.length*(straight?.8f:.95f)*.5f,hy=collisionWidth()*.5f;
         if((a<=hx+radius&&b<=hy)||(a<=hx&&b<=hy+radius))return true;
         return (a-hx)*(a-hx)+(b-hy)*(b-hy)<radius*radius;
@@ -143,6 +148,7 @@ struct Enemy {
     float x=0,y=0;
     float vx=0,vy=0,angle=0,speed=0;
     float previous_x=0,previous_y=0;
+    std::optional<std::array<float,7>> result_contact; // registered CPU geometry at result entry
     float combined_dx=0,combined_dy=0; // Native +0x80/+0x84, before combined-position rounding.
     bool script_advanced_before_cpu=false;
     bool mirrored=false,polar=false;
@@ -176,6 +182,7 @@ struct Enemy {
     float sx=1,sy=1;
     float bound_x=0,bound_y=0,bound_w=0,bound_h=0;
     float body_half_width=0,body_half_height=0;
+    float cpu_body_half_width=-1,cpu_body_half_height=-1;
     int native_update_callback=0;
     // Set by the retail 0x509030 aura-disable dispatch.  This is kept
     // separately because pure spirits use several different kind bits.
@@ -244,7 +251,7 @@ struct Enemy {
     bool script_initialized_this_tick=false;
     enum class ArrivalMotion : u8 { Normal, FirstUpdate, Hold, HoldScriptUpdated };
     ArrivalMotion arrival_motion=ArrivalMotion::Normal;
-    bool arrival_slow_motion=false;
+    bool arrival_slow_motion=false,arrival_aura_registered=false;
     u8 spawn_hold=0;
     enum class AttackEntry : u8 { None, StepScript, RetireController };
     AttackEntry attack_entry=AttackEntry::None;
@@ -267,7 +274,7 @@ struct Enemy {
 };
 struct Bullet {
     static constexpr int Canceling=3;
-    u32 id=0;
+    u32 id=0,native_slot=0;
     float x=0,y=0,vx=0,vy=0;
     float launch_speed=0;
     i32 sprite=0,kind=0;
@@ -277,6 +284,7 @@ struct Bullet {
     BulletGraze graze;float graze_x=0,graze_y=0;u32 graze_tint=0;
     AnmVm animation,attached_effect;float visual_heading=0;int native_timer=0;
     int state=1,cancel_lock=0,cancel_script=-1;float hit_width=0;u32 flags=0;
+    bool contact_interrupt_pending=false;
     bool contact_cancel=false; // Native state 3 drifts; script cancellation uses state 4.
 };
 struct Spirit {
@@ -298,10 +306,12 @@ struct ChainBulletTransit {
     float targetX=0,targetY=0,startTangentX=0,endTangentX=0;
     int duration=0;
 };
-struct BulletCancel {float x=0,y=0;int script=-1;AnmVm animation;};
+struct BulletCancel {float x=0,y=0;int script=-1;AnmVm animation;u32 order=0;};
 struct EnemyDeath {
     float x=0,y=0,angle=0;int script=37,sound=3,file=1;
     bool initialize_animation=false;
+    bool opponent_animation_queue=false;
+    AnmVm animation;
 };
 
 class GameWorld {
@@ -324,8 +334,12 @@ public:
     void retire_bullet(Bullet& bullet);
     void discard_retired_bullets();
     void clear_bullets();
+    const std::vector<i32>& reusable_bullet_release() const {return reusable_bullet_release_;}
+    const std::vector<bool>& reusable_bullet_interrupt() const {return reusable_bullet_interrupt_;}
     const std::vector<bool>& reusable_bullet_motion() const {return reusable_bullet_motion_;}
-    void tick_graze(float px,float py,float player_radius=3,bool defer_rewards=false);
+    const std::vector<u32>& reusable_bullet_slots() const {return reusable_bullet_slots_;}
+    u32 unused_bullet_slots() const {return unused_bullet_slots_;}
+    void tick_graze(float px,float py,float player_radius=3,bool defer_rewards=false,bool invulnerable=false);
     struct ExtraFlight {
         u32 id=0;int character=-1,age=0,duration=0,life=200,script=-1;
         float x=0,y=0,source_x=0,source_y=0,tangent_start=0,tangent_end=0;
@@ -335,7 +349,7 @@ public:
     ReflectionRng extra_rng;
     int extra_arrivals=0;
     bool queue_extra_attack(int character,float x,float y,int variant,const std::vector<const EclProgram*>& source);
-    bool receive_spirit(const SpiritArrival& arrival,float x,float y);
+    bool receive_spirit(const SpiritArrival& arrival,float x,float y,bool current_aura_held=true);
     void set_spirit_kind(Enemy& enemy,int kind,bool purified);
     int counted_spirits() const;
     ChargeRegion::Point nazrin_seek_target(float x,float y,float fallback_x,float fallback_y) const;
@@ -353,11 +367,15 @@ public:
     // Explicit native configuration; unknown (-1) retains only verified
     // mode-independent rewards rather than guessing story progression.
     int reward_mode=-1,reward_stage=0,battle_frame=0;
+    u32 result_pause_id=0; // pre-result controllers stop; newly registered clears continue
+    int result_pause_frame=-1;
+    bool timeout_result_clear=false;
     int pending_native_attack_credit=0;
     float attack_credit_x=0,attack_credit_y=0;
-    std::vector<int> native_extra_reservations;
+    std::vector<int> native_extra_reservations; // active post-arrival release timers
+    int native_extra_reserved_count=0; // signed: C2 arrivals can release unreserved slots
     unsigned native_extra_sequence=0; // Sanae 53df80 alternates left/right arrivals.
-    int send_native_extra_credit(GameWorld& target,const std::vector<const EclProgram*>& source,int character=5,int versus_frame=0);
+    int send_native_extra_credit(GameWorld& target,const std::vector<const EclProgram*>& source,int character=5,int versus_frame=0,bool result_phase=false);
     int pending_story_credit=0,story_boss_phase=0,story_final_boss=0;
     int boss_escape_result=0; // ECL1020 / native player enemy-manager +0x4acc
     bool opponent_defeat_requested=false; // ECL1036, consumed by player lifecycle
@@ -366,12 +384,14 @@ public:
     std::vector<Enemy> enemies;
     std::vector<Bullet> bullets;
     const std::unordered_map<i32,AnmScriptLoc>* bullet_scripts=nullptr;
+    const std::unordered_map<i32,AnmScriptLoc>* effect_scripts=nullptr;
     const std::unordered_map<i32,std::array<float,2>>* bullet_sprite_sizes=nullptr;
     std::vector<InfiniteLaser> lasers;
     std::vector<Spirit> spirits;
     std::vector<Pickup> pickups;
     std::vector<EnemyDeath> deaths;
     unsigned pickup_serial=0;
+    std::array<unsigned,2> retiring_pickup_slots{};
     int defeated=0,collected=0,combo=0,combo_timer=0,combo_peak=0,pickup_rate=100,pickup_fraction=0;
     float pickup_speed=5,pickup_range=70;
     int combo_display=0,combo_display_timer=0;
@@ -390,40 +410,47 @@ public:
     struct Spell {u32 host_id=0;bool active=false;int number=0,timeout=0,flags=0;u32 generation=0;std::string name_bytes,animation_file;} spell;
     i64 earned_score=0;
     bool card_near_damage=false;
+    bool player_damage_reduced=false;
     int player_damage_cap=0; // SHT+0x28; zero for worlds without a player SHT.
     bool damage_enemy(Enemy& enemy,int damage,bool forced=false){
         return damage_enemy(enemy,damage,forced,battle_frame);
     }
     bool damage_enemy(Enemy& enemy,int damage,bool forced,u32 damage_frame);
-    bool dispatch_enemy_death(Enemy& enemy);
+    bool dispatch_enemy_death(Enemy& enemy,bool opponent_animation_queue=false);
     void launch_animal_spirit(const Enemy& enemy);
     void finish_enemy_deaths();
     void finish_hit_feedback(u32 native_mode_flags=0);
-    int cancel_bullets_circle(float x,float y,float radius,int limit=99999,bool respect_lock=true);
+    void advance_enemy_protection(Enemy& enemy);
+    int cancel_bullets_circle(float x,float y,float radius,int limit=99999,bool respect_lock=true,bool preserve_new_counters=false);
     int cancel_lasers_region(const std::function<bool(float,float)>& inside,bool respect_lock=true,
-        const std::function<bool(float,float,float)>& rectangleSample={});
+        const std::function<bool(float,float,float)>& rectangleSample={},u32 laser_id=0,bool registered_only=false,bool global_clear=false,u32 before_owner=0);
     void cancel_enoko_trap(float x,float y,float angle);
     void cancel_all_bullets();
+    void cancel_all_lasers();
     int cancel_bullets_shape(const std::function<bool(float,float,float)>& contact);
     int cancel_bullets_polygon(float x,float y,float radius,float angle,int sides);
     int cancel_bullets_rect(float x,float y,float width,float height,float angle=0);
-    int cancel_lasers_rect(float x,float y,float width,float height,float angle);
-    int cancel_lasers_circle(float x,float y,float radius,bool respect_lock=true);
+    int cancel_lasers_rect(float x,float y,float width,float height,float angle,u32 laser_id=0);
+    int cancel_lasers_circle(float x,float y,float radius,bool respect_lock=true,bool registered_only=false,u32 before_owner=0);
     void tick_death_chains();
     void tick_vs_death_chain_cancels();
     void cancel_death_chain_bullets(const DeathChain& chain,float radius,int frame);
     void finish_laser_graze(bool player_contacts,float player_radius);
-    void finish_bullet_graze(bool player_contacts,float player_radius);
+    void finish_bullet_graze(bool player_contacts,float player_radius,bool cancel_contacts=false,u32 shield_contact=0);
+    void cancel_contact_bullet(Bullet& bullet);
     std::vector<DeathChain> death_chains,death_chain_visuals; // one-shot ANM creation events
     std::vector<BulletCancel> bullet_cancels;
+    u32 next_visual_order=1;
     int cancelled_bullets=0;
     int grazed_bullets=0;
+    const std::unordered_map<i32,AnmScriptLoc>* enemy_scripts=nullptr;
+    std::unordered_map<u64,AnmVm> initialized_enemy_animations;
     std::vector<GrazeParticle> graze_particles;
     int purify_orin(float x,float y,float radius);
     int convert_zanmu(float x,float y,float radius,int& ordinary_count);
     void spawn_pickup(int type,float x,float y,float vx,float vy);
     void scatter_charge_pickup(float x,float y);
-    void tick_pickups(float player_x,float player_y,bool bomb_collect=false,bool can_collect=true);
+    void tick_pickups(float player_x,float player_y,bool bomb_collect=false,bool can_collect=true,bool hit_pending=false);
     void advance_vs_projectiles();
     ReflectionRng bullet_rng; // Native algorithm; shared replay seed is not wired yet.
     u32 next_id=1;
@@ -447,11 +474,16 @@ public:
     ChargeRegion charge_region;
     void strengthen_tsukasa_bullets(const Enemy& e);
     void apply_bullet_changes(Bullet& bullet);
+    // Active only while the enemy manager dispatches constructor contact callbacks.
+    const std::function<int(Enemy&)>* constructor_contacts=nullptr;
     void tick_wave(bool tickSpiritMeter=true,
-        const std::function<int(Enemy&)>& collect_shot_damage={});
+        const std::function<int(Enemy&)>& collect_shot_damage={},bool defer_new_lasers=false);
+    void finish_new_lasers();
     void tick_spirit_meter();
-    void advance_guarded_enemy_scripts();
-    void resolve_marisa_extra_arrivals();
+    void advance_guarded_enemy_scripts(bool first_async_only=false);
+    void advance_discharge_scripts(bool birth_only=false);
+    void resolve_marisa_extra_arrivals(u32 newer_than=0,bool result_phase=false,GameWorld* sender=nullptr);
+    void register_native_extra_release();
     void register_marisa_extra_arrival(const std::string& sub,float x,float y,int life,
                                        const std::vector<const EclProgram*>& source);
 
@@ -461,11 +493,15 @@ private:
     void advance_bullet(Bullet& bullet);
     void advance_canceling_bullet(Bullet& bullet);
     void cancel_bullet(Bullet& bullet,bool inlineAnimation);
-    void record_bullet_cancel(Bullet& bullet,float x,float y,bool initialize);
+    void record_bullet_cancel(Bullet& bullet,float x,float y,bool initialize,bool play_sound=true);
     void cull_vs_bullet(Bullet& bullet);
     void step_enemy_script(Enemy& enemy);
+    std::vector<i32> reusable_bullet_release_;
+    std::vector<bool> reusable_bullet_interrupt_;
     std::vector<bool> reusable_bullet_motion_;
-    struct GrazeReward {float x,y;u32 color;};
+    std::vector<u32> reusable_bullet_slots_;
+    u32 unused_bullet_slots_=bullet_capacity;
+    struct GrazeReward {float x,y;u32 color,laser_id;};
     std::vector<GrazeReward> laser_graze_rewards_;
     bool bullet_graze_pending_=false;
     void tick_bullet_graze(Bullet& bullet,float px,float py,float player_radius);

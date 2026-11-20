@@ -1,0 +1,17 @@
+{
+  "seed": 42,
+  "firstDifferentBulletFrame": 35764,
+  "nativeCapture": "present-jmzxp2mi",
+  "beforeWeb": "th19-web-7EULRl",
+  "nativeBullet": 178994560,
+  "webBullet": 32379,
+  "position": [
+    -10.680953,
+    396.599823
+  ],
+  "nativeState": 3,
+  "webState": 1,
+  "playerState": "Repelled frame0, triggered by laser earlier in tick",
+  "candidate": "Invulnerable ordinary-bullet contact is active when the laser/enemy manager has already triggered the barrier. Preserve first-pass grace only when the ordinary-bullet manager itself triggers repel.",
+  "validation": "pending full regression"
+}

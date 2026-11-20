@@ -1,6 +1,6 @@
 # 文档总表
 
-共 534 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 595 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -385,13 +385,74 @@
 | 历史记录 | [archive/th19-gameplay-20261105/story-rank-and-replay-audit.md](../archive/th19-gameplay-20261105/story-rank-and-replay-audit.md) | Story difficulty ranks and replay audit |
 | 历史记录 | [archive/th19-integration-20261105/README.md](../archive/th19-integration-20261105/README.md) | TH19 接入验收 |
 | 历史记录 | [archive/th19-junowen-interop-20261106/README.md](../archive/th19-junowen-interop-20261106/README.md) | Ju.N.Owen static interoperability audit |
+| 历史记录 | [archive/th19-marisa-all-seeds-regression-20261120/README.md](../archive/th19-marisa-all-seeds-regression-20261120/README.md) | All historical Marisa seeds: same-build regression |
+| 历史记录 | [archive/th19-marisa-earlier25-regression-20261119/README.md](../archive/th19-marisa-earlier25-regression-20261119/README.md) | Marisa historical seed regression |
+| 历史记录 | [archive/th19-marisa-earlier25-regression-20261119/arrival-fix.md](../archive/th19-marisa-earlier25-regression-20261119/arrival-fix.md) | Wolf arrival guard regression |
+| 历史记录 | [archive/th19-marisa-earlier25-regression-20261119/contact-split.md](../archive/th19-marisa-earlier25-regression-20261119/contact-split.md) | Player-contact and bomb split registration |
+| 历史记录 | [archive/th19-marisa-earlier25-regression-20261119/guarded-ecl.md](../archive/th19-marisa-earlier25-regression-20261119/guarded-ecl.md) | Conversion callback and guarded ECL visit |
+| 历史记录 | [archive/th19-marisa-earlier25-regression-20261119/laser-child.md](../archive/th19-marisa-earlier25-regression-20261119/laser-child.md) | Straight laser split controller |
+| 历史记录 | [archive/th19-marisa-earlier25-regression-20261119/scope.md](../archive/th19-marisa-earlier25-regression-20261119/scope.md) | 更早二十五种子的同构建回归 |
+| 历史记录 | [archive/th19-marisa-extra-five-20261118/final-five-gameplay-20261118.md](../archive/th19-marisa-extra-five-20261118/final-five-gameplay-20261118.md) | 魔理沙新增五种子验证 |
+| 历史记录 | [archive/th19-marisa-five-more-20261116/final-five-gameplay-20261117.md](../archive/th19-marisa-five-more-20261116/final-five-gameplay-20261117.md) | 魔理沙五种子连续玩法验证 |
+| 历史记录 | [archive/th19-marisa-five-more-20261116/respawn-recovery.md](../archive/th19-marisa-five-more-20261116/respawn-recovery.md) | 复活结束伤害区域 |
+| 历史记录 | [archive/th19-marisa-five-more-20261116/three-seeds-gameplay-20261117.md](../archive/th19-marisa-five-more-20261116/three-seeds-gameplay-20261117.md) | 魔理沙新增种子验证 |
+| 历史记录 | [archive/th19-marisa-fresh-five-20261118/five-seed-gameplay.md](../archive/th19-marisa-fresh-five-20261118/five-seed-gameplay.md) | 魔理沙新增五种子及二十种子回归 |
 | 历史记录 | [archive/th19-marisa-multiseed-20261112/README.md](../archive/th19-marisa-multiseed-20261112/README.md) | 魔理沙镜像五种子长程验证 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/beam-birth.md](../archive/th19-marisa-multiseed-20261112/beam-birth.md) | 普通激光出生帧接触 |
 | 历史记录 | [archive/th19-marisa-multiseed-20261112/birth-snap-fix.md](../archive/th19-marisa-multiseed-20261112/birth-snap-fix.md) | 普通弹出生帧坐标网格 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/bomb-gauge-order.md](../archive/th19-marisa-multiseed-20261112/bomb-gauge-order.md) | Bomb 插值能量发布顺序 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/bomb-magnet.md](../archive/th19-marisa-multiseed-20261112/bomb-magnet.md) | Bomb 与磁吸充能点 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/c2-flight-dispatch.md](../archive/th19-marisa-multiseed-20261112/c2-flight-dispatch.md) | C2 飞行派发顺序 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/c2-release.md](../archive/th19-marisa-multiseed-20261112/c2-release.md) | C2 释放等级保留 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/cancel-graze-registration.md](../archive/th19-marisa-multiseed-20261112/cancel-graze-registration.md) | 魔理沙消弹与延迟擦弹登记顺序 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/cancel-manager-order.md](../archive/th19-marisa-multiseed-20261112/cancel-manager-order.md) | 消弹管理器调用顺序 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/death-projectile-lifetime.md](../archive/th19-marisa-multiseed-20261112/death-projectile-lifetime.md) | 死亡后已发射激光的生命周期 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/extra-arrival-coordinate.md](../archive/th19-marisa-multiseed-20261112/extra-arrival-coordinate.md) | EX 到达坐标的双阶段量化 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/five-seeds-36000-final-20261116.md](../archive/th19-marisa-multiseed-20261112/five-seeds-36000-final-20261116.md) | 魔理沙五种子跨轮 36000 帧验收 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/fixed-player-contact.md](../archive/th19-marisa-multiseed-20261112/fixed-player-contact.md) | 固定激光命中切段 |
 | 历史记录 | [archive/th19-marisa-multiseed-20261112/global-clear-lifetime.md](../archive/th19-marisa-multiseed-20261112/global-clear-lifetime.md) | 全局消弹槽位退出计时 |
 | 历史记录 | [archive/th19-marisa-multiseed-20261112/growth-respawn-fixes.md](../archive/th19-marisa-multiseed-20261112/growth-respawn-fixes.md) | 激光残段伸长与复活状态 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/heading-normalization.md](../archive/th19-marisa-multiseed-20261112/heading-normalization.md) | 魔理沙转向插值初始化 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/laser-contact.md](../archive/th19-marisa-multiseed-20261112/laser-contact.md) | 激光接触优先级 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/laser-reward-order.md](../archive/th19-marisa-multiseed-20261112/laser-reward-order.md) | 魔理沙激光擦弹奖励顺序 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/local-progress.md](../archive/th19-marisa-multiseed-20261112/local-progress.md) | 魔理沙五种子本地对齐进度 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/long-run-gameplay-scope.md](../archive/th19-marisa-multiseed-20261112/long-run-gameplay-scope.md) | 魔理沙五种子长程玩法验证 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/mixed-flight.md](../archive/th19-marisa-multiseed-20261112/mixed-flight.md) | 魔理沙飞行攻击到达顺序 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/new-counter-respawn.md](../archive/th19-marisa-multiseed-20261112/new-counter-respawn.md) | 复活清场与新到达反击弹 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/protection-timer.md](../archive/th19-marisa-multiseed-20261112/protection-timer.md) | VS 出生保护计时 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/repel-contact.md](../archive/th19-marisa-multiseed-20261112/repel-contact.md) | 护盾弹开首帧敌弹取消 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/repel-emitter.md](../archive/th19-marisa-multiseed-20261112/repel-emitter.md) | 弹开期间保留子机发射点 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/repel-option-first.md](../archive/th19-marisa-multiseed-20261112/repel-option-first.md) | 弹开首帧子机更新 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/respawn-entry.md](../archive/th19-marisa-multiseed-20261112/respawn-entry.md) | 复活进入帧的激光消弹 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/respawn-laser.md](../archive/th19-marisa-multiseed-20261112/respawn-laser.md) | 复活阶段激光清除 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/respawn-registration.md](../archive/th19-marisa-multiseed-20261112/respawn-registration.md) | 复活清除与固定激光登记顺序 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/result-phase.md](../archive/th19-marisa-multiseed-20261112/result-phase.md) | VS 结果阶段连续模拟 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/rng-dispatch-order.md](../archive/th19-marisa-multiseed-20261112/rng-dispatch-order.md) | 魔理沙共享随机调度 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/seed1-result-dispatch.md](../archive/th19-marisa-multiseed-20261112/seed1-result-dispatch.md) | VS 结果阶段的自动攻击接收 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/seed42-36000.md](../archive/th19-marisa-multiseed-20261112/seed42-36000.md) | 魔理沙种子 42 累计 36000 帧玩法对齐 |
 | 历史记录 | [archive/th19-marisa-multiseed-20261112/shared-chain-order.md](../archive/th19-marisa-multiseed-20261112/shared-chain-order.md) | 跨场死亡圈反击弹顺序 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/spirit-arrival-conversion.md](../archive/th19-marisa-multiseed-20261112/spirit-arrival-conversion.md) | 灵体到达保护与转化入口 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/spirit-bounds.md](../archive/th19-marisa-multiseed-20261112/spirit-bounds.md) | 转换灵体的当前身体边界 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/spirit-update.md](../archive/th19-marisa-multiseed-20261112/spirit-update.md) | 转换灵体更新顺序 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/split-head.md](../archive/th19-marisa-multiseed-20261112/split-head.md) | 直激光头部切除后的控制器生命周期 |
 | 历史记录 | [archive/th19-marisa-multiseed-20261112/straight-split-fix.md](../archive/th19-marisa-multiseed-20261112/straight-split-fix.md) | 直激光分裂的新控制器 |
+| 历史记录 | [archive/th19-marisa-multiseed-20261112/synchronous-child.md](../archive/th19-marisa-multiseed-20261112/synchronous-child.md) | 子 VM 同步初始化 |
+| 历史记录 | [archive/th19-marisa-new-five-b25-20261118/five-seed-gameplay.md](../archive/th19-marisa-new-five-b25-20261118/five-seed-gameplay.md) | 魔理沙新增第 21–25 组逐帧验证 |
+| 历史记录 | [archive/th19-marisa-next-five-20261117/final-ten-gameplay-20261117.md](../archive/th19-marisa-next-five-20261117/final-ten-gameplay-20261117.md) | 魔理沙 CPU 对战十种子验证 |
+| 历史记录 | [archive/th19-marisa-next-five-20261117/progress.md](../archive/th19-marisa-next-five-20261117/progress.md) | 魔理沙新增五种子验证 |
+| 历史记录 | [archive/th19-marisa-next-five-b30-20261118/five-seed-gameplay.md](../archive/th19-marisa-next-five-b30-20261118/five-seed-gameplay.md) | 魔理沙新增第 26–30 组逐帧验证 |
+| 历史记录 | [archive/th19-marisa-next-five-b30-20261118/mechanism-fixes.md](../archive/th19-marisa-next-five-b30-20261118/mechanism-fixes.md) | 本批玩法时序修正 |
+| 历史记录 | [archive/th19-marisa-next-five-b35-20261119/cross-field-laser-registration.md](../archive/th19-marisa-next-five-b35-20261119/cross-field-laser-registration.md) | 双场敌人更新与新生激光首次访问 |
+| 历史记录 | [archive/th19-marisa-next-five-b35-20261119/final-results.md](../archive/th19-marisa-next-five-b35-20261119/final-results.md) | 魔理沙五种子连续对齐验收 |
+| 历史记录 | [archive/th19-marisa-next-five-b35-20261119/laser-tail-retirement.md](../archive/th19-marisa-next-five-b35-20261119/laser-tail-retirement.md) | 激光尾段的独立生命周期 |
+| 历史记录 | [archive/th19-marisa-next-five-b35-20261119/progress.md](../archive/th19-marisa-next-five-b35-20261119/progress.md) | 魔理沙第31–35组验证进度 |
+| 历史记录 | [archive/th19-marisa-next-five-b35-20261119/recycled-contact-slot.md](../archive/th19-marisa-next-five-b35-20261119/recycled-contact-slot.md) | 接触消除子弹的槽位复用 |
+| 历史记录 | [archive/th19-marisa-next-five-b35-20261119/wolf-aura-registration.md](../archive/th19-marisa-next-five-b35-20261119/wolf-aura-registration.md) | 狼灵出生登记与 Aura 转换 |
 | 历史记录 | [archive/th19-marisa-parity-20261111/README.md](../archive/th19-marisa-parity-20261111/README.md) | 魔理沙镜像本地对拍 |
+| 历史记录 | [archive/th19-marisa-zero-five-20261120/README.md](../archive/th19-marisa-zero-five-20261120/README.md) | Five fresh seeds: exact gameplay validation |
+| 历史记录 | [archive/th19-marisa-zero-five-b2-20261120/README.md](../archive/th19-marisa-zero-five-b2-20261120/README.md) | Second fresh five-seed zero-error batch |
+| 历史记录 | [archive/th19-marisa-zero-five-b3-20261120/README.md](../archive/th19-marisa-zero-five-b3-20261120/README.md) | Marisa CPU versus CPU: third fresh five-seed batch |
+| 历史记录 | [archive/th19-marisa-zero-five-b4-20261120/README.md](../archive/th19-marisa-zero-five-b4-20261120/README.md) | Marisa CPU parity: five fresh seeds, 2026-11-20 |
 | 历史记录 | [archive/th19-match-policy-20261105/README.md](../archive/th19-match-policy-20261105/README.md) | TH19 统一生命与固定对局规则 |
 | 历史记录 | [archive/th19-menu-20261106/README.md](../archive/th19-menu-20261106/README.md) | TH19 menu navigation parity |
 | 历史记录 | [archive/th19-network-selection-20261106/README.md](../archive/th19-network-selection-20261106/README.md) | TH19 network character selection |

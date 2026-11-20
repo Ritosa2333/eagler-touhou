@@ -1,0 +1,140 @@
+{
+  "atRoundStart": [
+    {
+      "frame": 74,
+      "seat": 1,
+      "id": 65540,
+      "waveCursor": 1,
+      "roundRng": 951632182,
+      "waveDraws": [
+        46,
+        238,
+        113
+      ],
+      "ecl": [
+        -1,
+        89,
+        80
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 1,
+      "id": 3,
+      "waveCursor": 1,
+      "roundRng": 951632182,
+      "waveDraws": [
+        46,
+        238,
+        113
+      ],
+      "ecl": [
+        0,
+        216,
+        1264
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 0,
+      "id": 65541,
+      "waveCursor": 1,
+      "roundRng": 951632182,
+      "waveDraws": [
+        46,
+        238,
+        113
+      ],
+      "ecl": [
+        -1,
+        89,
+        80
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 0,
+      "id": 2,
+      "waveCursor": 1,
+      "roundRng": 951632182,
+      "waveDraws": [
+        46,
+        238,
+        113
+      ],
+      "ecl": [
+        0,
+        216,
+        1264
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 1,
+      "id": 69809,
+      "waveCursor": 64,
+      "roundRng": 1952276144,
+      "waveDraws": [
+        125,
+        157,
+        79
+      ],
+      "ecl": [
+        -1,
+        203,
+        80
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 1,
+      "id": 4272,
+      "waveCursor": 64,
+      "roundRng": 1952276144,
+      "waveDraws": [
+        125,
+        157,
+        79
+      ],
+      "ecl": [
+        0,
+        216,
+        1264
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 0,
+      "id": 69810,
+      "waveCursor": 65,
+      "roundRng": 1952276144,
+      "waveDraws": [
+        125,
+        157,
+        79
+      ],
+      "ecl": [
+        -1,
+        141,
+        80
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 0,
+      "id": 4271,
+      "waveCursor": 65,
+      "roundRng": 1952276144,
+      "waveDraws": [
+        125,
+        157,
+        79
+      ],
+      "ecl": [
+        0,
+        216,
+        1264
+      ]
+    }
+  ]
+}

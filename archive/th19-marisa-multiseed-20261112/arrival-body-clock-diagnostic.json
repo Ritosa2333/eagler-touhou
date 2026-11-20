@@ -1,0 +1,21 @@
+{
+  "seed": 1,
+  "firstSecondaryDifferenceBefore": 2263,
+  "extraWebDraws": 5,
+  "webParentRegistration": 15582,
+  "webChildRegistration": 15830,
+  "nativeParentVm": 283323500,
+  "webBodyScript": 106,
+  "childScript": 104,
+  "nativeClockAt2263": 12,
+  "nativeIpBeforeAfterAt2263": [
+    148,
+    148
+  ],
+  "nativeFirstChildAt2264": true,
+  "nativeCapture": "present-0mx3g3jg",
+  "webBaseline": "th19-web-XU3Uls",
+  "candidate": "The converted arrival body executes its registration frame before the first manager clock advance; retain ECL movement and apply this clock origin only to the first converted-arrival body binding.",
+  "windowWeb": "th19-web-gEs3Qk",
+  "fullRegression": "running"
+}

@@ -1,0 +1,563 @@
+{
+  "nativeCapture": "present-v205q1kv",
+  "firstRound": [
+    {
+      "frame": 74,
+      "seat": 1,
+      "id": 65540,
+      "position": [
+        0,
+        0
+      ],
+      "spawn": [
+        0,
+        0
+      ],
+      "hp": 10,
+      "viewport": [
+        480,
+        136
+      ],
+      "body": [
+        0,
+        0
+      ],
+      "flags": [
+        32,
+        1
+      ],
+      "waveCursor": 1,
+      "wavePoolSize": 22,
+      "roundRng": 951632182,
+      "waveDraws": [
+        46,
+        238,
+        113
+      ],
+      "ecl": [
+        -1,
+        89,
+        80
+      ],
+      "protection": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "motion": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 1,
+      "id": 3,
+      "position": [
+        0,
+        0
+      ],
+      "spawn": [
+        0,
+        0
+      ],
+      "hp": 0,
+      "viewport": [
+        480,
+        136
+      ],
+      "body": [
+        0,
+        0
+      ],
+      "flags": [
+        32,
+        1
+      ],
+      "waveCursor": 1,
+      "wavePoolSize": 22,
+      "roundRng": 951632182,
+      "waveDraws": [
+        46,
+        238,
+        113
+      ],
+      "ecl": [
+        0,
+        216,
+        1264
+      ],
+      "protection": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "motion": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 0,
+      "id": 65541,
+      "position": [
+        0,
+        0
+      ],
+      "spawn": [
+        0,
+        0
+      ],
+      "hp": 10,
+      "viewport": [
+        480,
+        136
+      ],
+      "body": [
+        0,
+        0
+      ],
+      "flags": [
+        32,
+        1
+      ],
+      "waveCursor": 1,
+      "wavePoolSize": 22,
+      "roundRng": 951632182,
+      "waveDraws": [
+        46,
+        238,
+        113
+      ],
+      "ecl": [
+        -1,
+        89,
+        80
+      ],
+      "protection": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "motion": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 0,
+      "id": 2,
+      "position": [
+        0,
+        0
+      ],
+      "spawn": [
+        0,
+        0
+      ],
+      "hp": 0,
+      "viewport": [
+        480,
+        136
+      ],
+      "body": [
+        0,
+        0
+      ],
+      "flags": [
+        32,
+        1
+      ],
+      "waveCursor": 1,
+      "wavePoolSize": 22,
+      "roundRng": 951632182,
+      "waveDraws": [
+        46,
+        238,
+        113
+      ],
+      "ecl": [
+        0,
+        216,
+        1264
+      ],
+      "protection": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "motion": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "secondRound": [
+    {
+      "frame": 74,
+      "seat": 1,
+      "id": 69809,
+      "position": [
+        0,
+        0
+      ],
+      "spawn": [
+        0,
+        0
+      ],
+      "hp": 10,
+      "viewport": [
+        480,
+        136
+      ],
+      "body": [
+        0,
+        0
+      ],
+      "flags": [
+        32,
+        1
+      ],
+      "waveCursor": 64,
+      "wavePoolSize": 22,
+      "roundRng": 1952276144,
+      "waveDraws": [
+        125,
+        157,
+        79
+      ],
+      "ecl": [
+        -1,
+        203,
+        80
+      ],
+      "protection": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "motion": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 1,
+      "id": 4272,
+      "position": [
+        0,
+        0
+      ],
+      "spawn": [
+        0,
+        0
+      ],
+      "hp": 0,
+      "viewport": [
+        480,
+        136
+      ],
+      "body": [
+        0,
+        0
+      ],
+      "flags": [
+        32,
+        1
+      ],
+      "waveCursor": 64,
+      "wavePoolSize": 22,
+      "roundRng": 1952276144,
+      "waveDraws": [
+        125,
+        157,
+        79
+      ],
+      "ecl": [
+        0,
+        216,
+        1264
+      ],
+      "protection": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "motion": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 0,
+      "id": 69810,
+      "position": [
+        0,
+        0
+      ],
+      "spawn": [
+        0,
+        0
+      ],
+      "hp": 10,
+      "viewport": [
+        480,
+        136
+      ],
+      "body": [
+        0,
+        0
+      ],
+      "flags": [
+        32,
+        1
+      ],
+      "waveCursor": 65,
+      "wavePoolSize": 22,
+      "roundRng": 1952276144,
+      "waveDraws": [
+        125,
+        157,
+        79
+      ],
+      "ecl": [
+        -1,
+        141,
+        80
+      ],
+      "protection": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "motion": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "frame": 74,
+      "seat": 0,
+      "id": 4271,
+      "position": [
+        0,
+        0
+      ],
+      "spawn": [
+        0,
+        0
+      ],
+      "hp": 0,
+      "viewport": [
+        480,
+        136
+      ],
+      "body": [
+        0,
+        0
+      ],
+      "flags": [
+        32,
+        1
+      ],
+      "waveCursor": 65,
+      "wavePoolSize": 22,
+      "roundRng": 1952276144,
+      "waveDraws": [
+        125,
+        157,
+        79
+      ],
+      "ecl": [
+        0,
+        216,
+        1264
+      ],
+      "protection": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "motion": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "nativeSelectionRva": "0x5048ad",
+  "nativeCursorOffset": "manager+0x42ac",
+  "webPreviousBehavior": "New GameWorld and WaveSchedule::seed reset each field cursor to zero",
+  "candidate": "Carry each field wave cursor through VS round rebuild"
+}

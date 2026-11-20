@@ -1,0 +1,15 @@
+{
+  "wasmSha256": "468b66ec53dcc68a44827949526ae03130694fe3aef7189ecc7cb358eb04a898",
+  "nativeTraceSha256": "00f49caca43663168ffeb36ee81a6708bfdaa468b83c4575f555ff503f2196ac",
+  "diagnosticRoundWaveSeed": null,
+  "pairs": [
+    {
+      "frame": 31615,
+      "status": "主 RNG不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-31615.png",
+      "webImageSha256": "9ece96b0baaf61deb9bf2658d5621c968bc106575c34c0b66d1cb3d9332e7859",
+      "nativeImageSha256": "80e7a37a4539a60c5dfae9ee02dffa4d7dc641d3264223acc33fb7cae3d12de4"
+    }
+  ]
+}

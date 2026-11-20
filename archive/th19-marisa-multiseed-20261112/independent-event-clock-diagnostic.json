@@ -1,0 +1,14 @@
+{
+  "purpose": "Correct the shared state passed into the second-round wave table at the 33861 gameplay divergence.",
+  "nativeTrace": "present-d_dlosn8",
+  "nativeEventFrame": 3226,
+  "nativeSecondaryCalls": 39,
+  "webSecondaryCalls": 48,
+  "eventScript": 72,
+  "loopChildScript": 62,
+  "requestHost": 424,
+  "requestCount": 1,
+  "cause": "ECL307 registers one event, but its initialization advances the clock before executing. Script72 reaches its time1 loop during initialization and time2 branch during manager update, producing two children where native produces one.",
+  "change": "Independent initialized event roots execute before advancing their clock.",
+  "validation": "Full36000-frame run in progress."
+}

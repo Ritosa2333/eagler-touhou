@@ -1,0 +1,29 @@
+{
+  "build": "d7d8a9d6d883dc02f97533c5b3736c86d48342f0facadca2dd65735aa5ae54ad",
+  "seed1": {
+    "run": "th19-web-Tf7kJk",
+    "bothRngAndGameplay": "PASS36000",
+    "rollback": [
+      34050,
+      34065
+    ]
+  },
+  "seed20261112": {
+    "run": "th19-web-89DYxy",
+    "bothRngThrough": 23425,
+    "nextSecondary": 23426,
+    "firstCPU": 27976,
+    "firstPrimary": 27985,
+    "firstPosition": 28025,
+    "firstBullet": 28175
+  },
+  "fix": "Circle-cut head <=24 retires in its original controller and forces surviving trailing run into a fresh controller. Do not keep short head active. Rectangle minimum span unchanged.",
+  "native": "present-m0g08uj7 native-straight-circle frame17648 original head remains16; next frame tail is a distinct controller at94.7332382,452.083557",
+  "rejectedCandidates": [
+    "abd77bd7 short active head regresses early both seeds",
+    "a269ffc2 circle-only active head still regresses seed20261112 at10736"
+  ],
+  "currentPending": "Rectangle cancellation targets sorted by native_slot ascending, per 4ee203 stride1088. Building; validate seed123, seed1, then others.",
+  "completeSeeds": 2,
+  "push": false
+}

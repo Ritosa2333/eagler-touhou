@@ -1,0 +1,185 @@
+{
+  "native": "present-n3718cve",
+  "web": "yo3gd1",
+  "frame": 35514,
+  "nativeSecondaryCalls": 20714,
+  "webSecondaryCalls": 20784,
+  "remnants": [
+    {
+      "webId": 27323,
+      "nativeLength": 168,
+      "webLength": 176,
+      "nativePosition": [
+        76.2872772,
+        107.735641
+      ],
+      "webPosition": [
+        75.1115265,
+        115.648773
+      ]
+    },
+    {
+      "webId": 27322,
+      "nativeLength": 168,
+      "webLength": 168,
+      "nativePosition": [
+        6.63629246,
+        106.79248
+      ],
+      "webPosition": [
+        6.63629246,
+        106.79248
+      ]
+    },
+    {
+      "webId": 27321,
+      "nativeLength": 168,
+      "webLength": 168,
+      "nativePosition": [
+        60.3041153,
+        104.000351
+      ],
+      "webPosition": [
+        60.3041153,
+        104.000351
+      ]
+    },
+    {
+      "webId": 27314,
+      "nativeLength": 176,
+      "webLength": 176,
+      "nativePosition": [
+        63.7767715,
+        112.027206
+      ],
+      "webPosition": [
+        63.7767715,
+        112.027206
+      ]
+    },
+    {
+      "webId": 27302,
+      "nativeLength": 168,
+      "webLength": 176,
+      "nativePosition": [
+        42.4937859,
+        104.2136
+      ],
+      "webPosition": [
+        42.7755585,
+        112.208633
+      ]
+    },
+    {
+      "webId": 27301,
+      "nativeLength": 168,
+      "webLength": 176,
+      "nativePosition": [
+        79.9069443,
+        106.981796
+      ],
+      "webPosition": [
+        78.8558502,
+        114.912445
+      ]
+    },
+    {
+      "webId": 27298,
+      "nativeLength": 160,
+      "webLength": 168,
+      "nativePosition": [
+        46.25,
+        96
+      ],
+      "webPosition": [
+        46.25,
+        104
+      ]
+    },
+    {
+      "webId": 27297,
+      "nativeLength": 160,
+      "webLength": 168,
+      "nativePosition": [
+        -16.3984852,
+        101.283508
+      ],
+      "webPosition": [
+        -15.0176096,
+        109.163429
+      ]
+    },
+    {
+      "webId": 27296,
+      "nativeLength": 160,
+      "webLength": 168,
+      "nativePosition": [
+        53.6323662,
+        96.2631836
+      ],
+      "webPosition": [
+        53.3229942,
+        104.257202
+      ]
+    },
+    {
+      "webId": 27295,
+      "nativeLength": 160,
+      "webLength": 168,
+      "nativePosition": [
+        46.25,
+        96
+      ],
+      "webPosition": [
+        46.25,
+        104
+      ]
+    },
+    {
+      "webId": 27294,
+      "nativeLength": 160,
+      "webLength": 168,
+      "nativePosition": [
+        28.6162262,
+        96.2493896
+      ],
+      "webPosition": [
+        28.9172211,
+        104.243729
+      ]
+    },
+    {
+      "webId": 27293,
+      "nativeLength": 160,
+      "webLength": 168,
+      "nativePosition": [
+        69.4405136,
+        96.9610596
+      ],
+      "webPosition": [
+        68.849823,
+        104.939224
+      ]
+    },
+    {
+      "webId": 27292,
+      "nativeLength": 160,
+      "webLength": 168,
+      "nativePosition": [
+        -2.96302128,
+        99.1538086
+      ],
+      "webPosition": [
+        -1.89454317,
+        107.082138
+      ]
+    }
+  ],
+  "acceptedFix": {
+    "targetedContactCutConstructor": "Contact and circle cuts execute constructor updates. contact_fragment records targeted player-contact ownership.",
+    "managerFrame": "Preserve existing early-update stamp and mark current late manager frame consumed using max(existing,battle_frame).",
+    "defeat": "Final defeat skips only player-contact-owned remnants. Circle-cut remnants retain their normal pre-CPU updates.",
+    "clearBirth": "Newly released clearing ECL executes after player movement and pickup collection, before collision.",
+    "retiredPickups": "Network hash includes current-frame retired pickup slot counts."
+  }
+}

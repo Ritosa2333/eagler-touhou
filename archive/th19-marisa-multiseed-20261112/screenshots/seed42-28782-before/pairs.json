@@ -1,0 +1,30 @@
+{
+  "wasmSha256": "db85a59a6f3194053899ee9ccd9e047b5760ed31855db6524e35dab072ddc83d",
+  "nativeTraceSha256": "145cfae2efb35376ae3d669579136633a7dd71d47902cda225c397c92503da22",
+  "pairs": [
+    {
+      "frame": 28781,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 0,
+      "image": "frame-28781.png",
+      "webImageSha256": "17f8ad2c2b7d44c4ae7f1090dd6b9a3aeea05f930552a9e664ff714b85d8dc41",
+      "nativeImageSha256": "a60cbb2475452d8286403501810758fbe6cf315f19345ccfd610347b851b627a"
+    },
+    {
+      "frame": 28782,
+      "status": "CPU 输入不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-28782.png",
+      "webImageSha256": "6db77e9cbaa941f76c4a009eaec523eb6515710d83c878eb3489d0593ef6c34e",
+      "nativeImageSha256": "c28a0424215bd8932ca3022d5984f4507a832618e031bf28e0b52500c7a155f6"
+    },
+    {
+      "frame": 28783,
+      "status": "玩法状态一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-28783.png",
+      "webImageSha256": "2255256ea23817ca659050600be8170c828ad6d9eee02bf53805a33372f53740",
+      "nativeImageSha256": "b69aabf17b028462dfd66d54a1adac6691c1e8de5ce48f187340522bd03d56a2"
+    }
+  ]
+}

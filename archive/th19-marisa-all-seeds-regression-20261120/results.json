@@ -1,0 +1,1464 @@
+{
+  "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+  "results": [
+    {
+      "seed": 1,
+      "secondary": 7,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-52phuhbu",
+      "sourceBatch": "work\\marisa-multiseed\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:12:51.456476+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-y49idC",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-y49idC\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          33776
+        ],
+        "verifiedTransitionGaps": [
+          33776
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 7,
+      "secondary": 7654321,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-36hq6293",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:12:50.109985+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-dwpabq",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-dwpabq\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          26401
+        ],
+        "verifiedTransitionGaps": [
+          26401
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 42,
+      "secondary": 2026,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-ypkh2_50",
+      "sourceBatch": "work\\marisa-multiseed\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:17:38.112822+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-04Mzbo",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-04Mzbo\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 65537,
+      "secondary": 104729,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-e7ahc2bz",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:17:27.565871+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-aE4L3A",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-aE4L3A\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          31266
+        ],
+        "verifiedTransitionGaps": [
+          31266
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 424242,
+      "secondary": 131071,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-yol16k1w",
+      "sourceBatch": "work\\earlier25-bisect\\targets.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:21:40.449566+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-SoLE7n",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-SoLE7n\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1000003,
+      "secondary": 999983,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-p2itheqo",
+      "sourceBatch": "work\\earlier25-bisect\\targets.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:21:33.107142+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-EOTHJR",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-EOTHJR\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          27132
+        ],
+        "verifiedTransitionGaps": [
+          27132
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 4599481,
+      "secondary": 966889228,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261118-b30\\native\\present-jhpryh85",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:29:42.182460+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-bCPonD",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-bCPonD\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          26750
+        ],
+        "verifiedTransitionGaps": [
+          26750
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 8675309,
+      "secondary": 42424243,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-9_fjv4_x",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:30:50.905574+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-8qvi04",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-8qvi04\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          28448
+        ],
+        "verifiedTransitionGaps": [
+          28448
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 15485863,
+      "secondary": 49979687,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-dj4d0ebv",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:32:57.476296+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-0BfEyZ",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-0BfEyZ\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          26722
+        ],
+        "verifiedTransitionGaps": [
+          26722
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 15867748,
+      "secondary": 1282578646,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-20261120\\native\\present-4qsgwos5",
+      "sourceBatch": "work\\marisa-zero-five-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:33:06.069288+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-YQMh5h",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-YQMh5h\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 19840124,
+      "secondary": 20010401,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-bp809o_h",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:37:12.942052+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-KswwhG",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-KswwhG\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          29918
+        ],
+        "verifiedTransitionGaps": [
+          29918
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 20261112,
+      "secondary": 424182232,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-yxxfs6du",
+      "sourceBatch": "work\\marisa-multiseed\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:37:09.638423+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-KLkx3f",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-KLkx3f\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          27900
+        ],
+        "verifiedTransitionGaps": [
+          27900
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 20261116,
+      "secondary": 998244353,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-om5a6cov",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:42:34.990379+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-QQjt6K",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-QQjt6K\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 20261118,
+      "secondary": 18112026,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-e6gb95vl",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:42:33.960118+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-FsSaZ0",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-FsSaZ0\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 32452843,
+      "secondary": 67867967,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-si6a9gfh",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:48:20.936484+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-dbi0GK",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-dbi0GK\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 123456789,
+      "secondary": 987654321,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-n5uaa1rq",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:48:12.485217+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-4DOZfB",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-4DOZfB\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          26822
+        ],
+        "verifiedTransitionGaps": [
+          26822
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 161803398,
+      "secondary": 141421356,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-b6y1yfbw",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:50:26.632354+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-KeMJz3",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-KeMJz3\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 179424673,
+      "secondary": 433494437,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-nwa9txs4",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:49:58.063669+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-AGfJrM",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-AGfJrM\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          28872
+        ],
+        "verifiedTransitionGaps": [
+          28872
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 185362831,
+      "secondary": 93017621,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-giqaj_gn",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:52:22.371142+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-5AFQp0",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-5AFQp0\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 213927170,
+      "secondary": 1300782066,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261118-b30\\native\\present-wf8ppf66",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:51:54.998130+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-6EWE9C",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-6EWE9C\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 300941098,
+      "secondary": 383613775,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b2-20261120\\native\\present-a9ca4cxc",
+      "sourceBatch": "work\\marisa-zero-five-b2-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:54:11.997798+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-y4yLyq",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-y4yLyq\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 314159265,
+      "secondary": 271828182,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-ohyqn2f2",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:53:56.674154+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-V67SvC",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-V67SvC\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 357622458,
+      "secondary": 506629354,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b3-20261120\\native\\present-9p_nlqdj",
+      "sourceBatch": "work\\marisa-zero-five-b3-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:58:46.958541+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-VGLiiB",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-VGLiiB\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 470311227,
+      "secondary": 1736728499,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-et9o0kht",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:58:44.357264+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-Haummp",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-Haummp\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          35398
+        ],
+        "verifiedTransitionGaps": [
+          35398
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 471872317,
+      "secondary": 633158572,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261119-b35\\native\\present-7y_cuars",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:01:26.201142+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-jGD83K",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-jGD83K\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 536487702,
+      "secondary": 1476276067,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261119-b35\\native\\present-2j3ykhi_",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:01:03.694623+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-stgu1L",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-stgu1L\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          22150
+        ],
+        "verifiedTransitionGaps": [
+          22150
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 536870911,
+      "secondary": 1000000007,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-bnms_9dk",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:03:06.012121+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-Fb8wFh",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-Fb8wFh\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          27970
+        ],
+        "verifiedTransitionGaps": [
+          27970
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 554623781,
+      "secondary": 287782238,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b3-20261120\\native\\present-shf13ta_",
+      "sourceBatch": "work\\marisa-zero-five-b3-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:02:56.053750+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-2nnXO1",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-2nnXO1\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 665982791,
+      "secondary": 221820871,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-20261120\\native\\present-9pve2028",
+      "sourceBatch": "work\\marisa-zero-five-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:05:06.449696+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-q3UBFY",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-q3UBFY\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 778338950,
+      "secondary": 471267855,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b2-20261120\\native\\present-fod5uawd",
+      "sourceBatch": "work\\marisa-zero-five-b2-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:04:38.391847+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-sZnBGJ",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-sZnBGJ\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 839207153,
+      "secondary": 619412363,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-dg0i7ohi",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:06:50.564128+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-GeCfUl",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-GeCfUl\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 935616930,
+      "secondary": 1914315768,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261119-b35-r1\\native\\present-4tdxcj3_",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:06:47.741719+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-f4cVI0",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-f4cVI0\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 982451653,
+      "secondary": 961748941,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-ncr_ilw9",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:08:53.154977+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-YV3HDe",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-YV3HDe\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 987450218,
+      "secondary": 865127664,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261118-b30\\native\\present-sh9f4qr_",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:08:40.795858+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-yGbdU3",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-yGbdU3\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          34536
+        ],
+        "verifiedTransitionGaps": [
+          34536
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 987654321,
+      "secondary": 1357911,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-multiseed\\native\\present-bbw08eh8",
+      "sourceBatch": "work\\marisa-multiseed\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:13:32.805490+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-cFsxpD",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-cFsxpD\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          35835
+        ],
+        "verifiedTransitionGaps": [
+          35835
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1073741823,
+      "secondary": 524287,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-f9p3jjsi",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:14:03.416925+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-GuCsVU",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-GuCsVU\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1099740237,
+      "secondary": 1764822807,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b3-20261120\\native\\present-adune3ht",
+      "sourceBatch": "work\\marisa-zero-five-b3-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:15:34.010753+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-iSYqKT",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-iSYqKT\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1193601596,
+      "secondary": 1108880612,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-20261120\\native\\present-pk5jwx9l",
+      "sourceBatch": "work\\marisa-zero-five-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:16:19.085277+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-JRS7EV",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-JRS7EV\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1293760327,
+      "secondary": 152317181,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-h_bxpcm8",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:17:23.944917+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-6NfqcX",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-6NfqcX\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          35788
+        ],
+        "verifiedTransitionGaps": [
+          35788
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1354966619,
+      "secondary": 39499591,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b3-20261120\\native\\present-3bkjllbc",
+      "sourceBatch": "work\\marisa-zero-five-b3-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:17:50.552572+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-r9EFpj",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-r9EFpj\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          30541
+        ],
+        "verifiedTransitionGaps": [
+          30541
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1504457712,
+      "secondary": 1485358101,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-20261120\\native\\present-mb5zl1e1",
+      "sourceBatch": "work\\marisa-zero-five-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:19:22.097189+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-nsospx",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-nsospx\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1641255564,
+      "secondary": 487793392,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261119-b35\\native\\present-6koju2fj",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:19:48.676472+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-dSXpai",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-dSXpai\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          23933
+        ],
+        "verifiedTransitionGaps": [
+          23933
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1689226635,
+      "secondary": 1374292823,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b2-20261120\\native\\present-xgkux3l8",
+      "sourceBatch": "work\\marisa-zero-five-b2-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:21:20.266227+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-vbI6FC",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-vbI6FC\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1761660084,
+      "secondary": 2082427414,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261118-b30\\native\\present-2cfbz5a2",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:21:35.753273+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-BrZK5t",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-BrZK5t\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1778698539,
+      "secondary": 1328397942,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b2-20261120\\native\\present-ew0kzmtv",
+      "sourceBatch": "work\\marisa-zero-five-b2-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:23:06.180500+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-KUbRtT",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-KUbRtT\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1869345750,
+      "secondary": 675054366,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-20261120\\native\\present-40620krr",
+      "sourceBatch": "work\\marisa-zero-five-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:23:27.423282+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-HWYTtk",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-HWYTtk\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1893703640,
+      "secondary": 328577206,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b3-20261120\\native\\present-poimmhyn",
+      "sourceBatch": "work\\marisa-zero-five-b3-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:24:46.326519+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-Kl7GrY",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-Kl7GrY\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          14791
+        ],
+        "verifiedTransitionGaps": [
+          14791
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1936728471,
+      "secondary": 2071842433,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-frlipl3m",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:25:13.504633+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-BzDnfC",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-BzDnfC\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [
+          33264
+        ],
+        "verifiedTransitionGaps": [
+          33264
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1947437859,
+      "secondary": 1319879470,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261118-b30\\native\\present-64uq0qvi",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:27:13.720456+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-a04pkh",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-a04pkh\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1966888597,
+      "secondary": 233691784,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b2-20261120\\native\\present-8zyxkw8u",
+      "sourceBatch": "work\\marisa-zero-five-b2-20261120\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:27:15.280814+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-K3EMO3",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-K3EMO3\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 2000000011,
+      "secondary": 31415926,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-u5vldbav",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:31:34.947096+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-yLFKkf",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-yLFKkf\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 2038074743,
+      "secondary": 122949823,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-l667s58v",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:31:32.812315+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-W8KvLc",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-W8KvLc\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 2064620443,
+      "secondary": 1958715403,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261119-b35\\native\\present-y6e1591u",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:37:27.635001+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-sg5Cvv",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-sg5Cvv\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 2147483646,
+      "secondary": 1234567,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-eqn2dfk5",
+      "sourceBatch": "work\\marisa-arrival-regression35-20261119\\plan.json",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T07:37:26.395313+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-Shz8yK",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-regression-20261120\\th19-web-Shz8yK\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 3058262,
+      "secondary": 424182232,
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-otswbkm1",
+      "sourceBatch": "earliest-default-seed",
+      "phase": "PASS",
+      "attempt": 1,
+      "updatedAt": "2026-11-20T06:29:38.689019+00:00",
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-extra-20261120\\th19-web-5CZ3LW",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-all-seeds-extra-20261120\\th19-web-5CZ3LW\\report.json",
+        "wasmSha256": "4e37d7915b5568db998ce32b5d009c9298df4b92715b6535a0c3191237b821fb",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    }
+  ]
+}

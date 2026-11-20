@@ -1,0 +1,37 @@
+{
+  "seed": 42,
+  "firstMovementDifference": 30122,
+  "webContactFrame": 30106,
+  "webContact": {
+    "player": [
+      -140,
+      432
+    ],
+    "source": [
+      -136.498428,
+      428.472656
+    ],
+    "bulletKind": 4,
+    "bulletColor": 7,
+    "playerRadius": 3,
+    "bulletRadius": 4
+  },
+  "nativePlayerStateAt30119": [
+    1,
+    256,
+    2684,
+    0
+  ],
+  "webPlayerDamageAt30119": [
+    5,
+    13,
+    2,
+    86,
+    432000,
+    2
+  ],
+  "webBefore": "th19-web-IMxjhD",
+  "nativeBefore": "present-_vxj6nnx",
+  "clearScript": "Ecl_EtBreakLv2",
+  "candidate": "VS ordinary bullet contact after ECL clearing, preserving the earlier laser pass"
+}

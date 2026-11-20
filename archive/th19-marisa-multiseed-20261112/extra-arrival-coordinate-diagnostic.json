@@ -1,0 +1,29 @@
+{
+  "nativeCapture": "present-wx2g24w_",
+  "nativeLaterCapture": "present-i76wew_2",
+  "webBefore": "th19-web-2PzugA",
+  "frame": 29596,
+  "nativeCpuBlocked": 173394,
+  "webCpuBlocked": 172370,
+  "nativeLaserSources": [
+    -4.80999994,
+    76.4400024
+  ],
+  "webLaserSources": [
+    -4.80000019,
+    76.4499969
+  ],
+  "quantization": [
+    {
+      "input": 76.45387268066406,
+      "absolute": 76.44999694824219,
+      "combined": 76.44000244140625
+    },
+    {
+      "input": -4.800000190734863,
+      "absolute": -4.809999942779541,
+      "combined": -4.809999942779541
+    }
+  ],
+  "candidateWasmSha256": "0acff0ee97997e0a8bc315a8639269420d7ebf1cf74733b2670592fc71212be4"
+}

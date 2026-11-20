@@ -1,0 +1,23 @@
+{
+  "wasmSha256": "8505ed9813122c6ae6a01bf75311f5cb5e94b748d10979a8d8f8f2a13663cff9",
+  "nativeTraceSha256": "b1c138a82fa239a1df23addafae89fa86ae815cdb171eda5553100edd4c74535",
+  "diagnosticRoundWaveSeed": null,
+  "pairs": [
+    {
+      "frame": 14325,
+      "status": "自机位置不一致",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-14325.png",
+      "webImageSha256": "cb29f20e0130583286a628bf78f89455c40cf0be6ed92f44bd34e1a69cc6010d",
+      "nativeImageSha256": "4d9297cd8ae78013b3d48d35c476f462601659cbd30a680431f17aa1425aa6c8"
+    },
+    {
+      "frame": 14326,
+      "status": "自机位置不一致 · 动画 RNG 单列",
+      "differentFramesThroughCurrent": 2,
+      "image": "frame-14326.png",
+      "webImageSha256": "ec54c64e82bb0176faed6bd4a6fc4b369bad58a4d2bca217482f9936f7352adc",
+      "nativeImageSha256": "6aea45051d03a7f9816b925bb1d2cd0342535a27e10665109e1000a3aeba674b"
+    }
+  ]
+}

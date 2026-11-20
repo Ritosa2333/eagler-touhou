@@ -1,0 +1,23 @@
+{
+  "build": "0a6adc72110eb63469145840c6fa07d546249f29c55603ac37622208937f7a20",
+  "seed1Report": "th19-web-foVL6M",
+  "rngMatchingThrough": 19047,
+  "firstSecondary": 19048,
+  "fullFrames": 36000,
+  "firstPrimary": 33861,
+  "firstCpu": 33852,
+  "firstPlayer": 33901,
+  "firstBullet": 34083,
+  "rollback": {
+    "frames": [
+      18443,
+      18450
+    ],
+    "differences": [],
+    "image": true
+  },
+  "seed42Report": "th19-web-pzHrPH",
+  "seed42PrimaryCpuPlayerBullets36000": "PASS",
+  "originalComplete": "1/5",
+  "change": "ECL303 eagle267 constructor initializes child103/99 before ANM manager ordering crosses older cancellation roots. Independent scheduling experiments for103 reverted after first-round regressions."
+}

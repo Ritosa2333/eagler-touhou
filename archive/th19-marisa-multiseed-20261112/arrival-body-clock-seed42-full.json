@@ -1,0 +1,133 @@
+{
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-jmzxp2mi\\native-present.jsonl",
+  "nativeExe": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "nativeTraceSha256": "7a80f012ab0a26f2a8f45a7504dbf880bd264977f76dcea69a6facc29122fcb1",
+  "wasmPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\eagler-touhou-marisa\\ports\\th19\\runtime\\th19.wasm",
+  "wasmSha256": "859852127726af86c97c45202d4cc46d80a76693cd2fce73fc5d0f62ba149602",
+  "incompleteNativeTail": false,
+  "fixture": {
+    "difficulty": 3,
+    "characters": [
+      1,
+      1
+    ],
+    "cardMode": 0,
+    "cards": [
+      0,
+      0
+    ],
+    "lives": 2,
+    "timeRule": 4
+  },
+  "continuous": true,
+  "bulletPositionCoverage": {
+    "frames": 36000,
+    "first": 1,
+    "last": 36000,
+    "nonemptyFrames": 35593,
+    "originalBulletSamples": 5072425,
+    "webBulletSamples": 5072425,
+    "missingFrames": [
+      0
+    ]
+  },
+  "differentBulletPositionFrames": 0,
+  "firstDifferentBulletPosition": null,
+  "firstDifferentBulletCount": null,
+  "firstDifferentRoundClock": null,
+  "playerPositionCoverage": 36000,
+  "firstDifferentPlayerPosition": null,
+  "playerControlCoverage": 36000,
+  "firstDifferentPlayerControls": null,
+  "firstDifferentRngSample": {
+    "frame": 533,
+    "homingContacts": [],
+    "playedFrames": 428,
+    "round": 1,
+    "lives": [
+      2,
+      2
+    ],
+    "controls": [
+      131,
+      144
+    ],
+    "enemies": [
+      5,
+      0
+    ],
+    "bullets": [
+      13,
+      7
+    ],
+    "cards": [
+      0,
+      0
+    ],
+    "positionBits": [
+      3246608384,
+      1137030400,
+      3259441152,
+      1134519296
+    ],
+    "animationRng": [
+      66255052,
+      1271274206
+    ],
+    "world": 0,
+    "strips": 0,
+    "stripFrame": 0,
+    "side": 0,
+    "waves": [
+      21,
+      21
+    ],
+    "waveFinalState": 1165202902,
+    "shotClock": [
+      14,
+      4294967295
+    ],
+    "shots": [
+      16,
+      0
+    ],
+    "elapsed": 533,
+    "remaining": 35467,
+    "announcement": false,
+    "originalRng": [
+      66255052,
+      1446384371
+    ],
+    "originalPositionBits": [
+      3246608384,
+      1137030400,
+      3259441152,
+      1134519296
+    ],
+    "originalControls": [
+      131,
+      144
+    ],
+    "originalRound": 1,
+    "originalRoundFrame": 533,
+    "seconds": 592
+  },
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": {
+      "frame": 533,
+      "web": 1271274206,
+      "original": 1446384371
+    }
+  },
+  "firstConsecutiveMatchingFrames": 533,
+  "frameRollback": {
+    "frames": [
+      5395,
+      5420
+    ],
+    "differences": [],
+    "image": true
+  },
+  "reportDirectory": "th19-web-ZAEaA0"
+}

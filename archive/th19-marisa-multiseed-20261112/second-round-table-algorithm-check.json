@@ -1,0 +1,20 @@
+{
+  "nativeRound2Seed": 468994369,
+  "nativeObservedFirstBytes": [
+    125,
+    157,
+    79
+  ],
+  "calculatedFirstBytes": [
+    125,
+    157,
+    79
+  ],
+  "nativeObservedFinalState": 1952276144,
+  "calculatedFinalState": 1952276144,
+  "nativeCursors": [
+    65,
+    64
+  ],
+  "result": "Original round2 seed reproduces the observed native table. Current disagreement is at the seed supplied to the table constructor."
+}

@@ -1,0 +1,300 @@
+{
+  "build": "0a6adc72110eb63469145840c6fa07d546249f29c55603ac37622208937f7a20",
+  "originalComplete": 1,
+  "targetEach": 36000,
+  "seeds": [
+    {
+      "seed": 1,
+      "report": "th19-web-foVL6M",
+      "matchingRngThrough": null,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 33861,
+          "web": 1205759933,
+          "original": 2135924849
+        },
+        "animation": {
+          "frame": 19048,
+          "web": 1698238857,
+          "original": 2070764183
+        }
+      },
+      "playerControlCoverage": 35999,
+      "firstDifferentPlayerControls": {
+        "frame": 33852,
+        "web": [
+          1,
+          0
+        ],
+        "original": [
+          0,
+          0
+        ]
+      },
+      "playerPositionCoverage": 35999,
+      "firstDifferentPlayerPosition": {
+        "frame": 33901,
+        "web": [
+          0,
+          400,
+          0,
+          400
+        ],
+        "original": [
+          5,
+          400,
+          0,
+          400
+        ]
+      },
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 34967,
+        "originalBulletSamples": 4085458,
+        "webBulletSamples": 4093757,
+        "missingFrames": [
+          0,
+          33776
+        ]
+      },
+      "differentBulletPositionFrames": 1918,
+      "firstDifferentBulletCount": {
+        "frame": 34083,
+        "side": 0,
+        "original": 0,
+        "web": 1
+      },
+      "frameRollback": {
+        "frames": [
+          18443,
+          18450
+        ],
+        "differences": [],
+        "image": true
+      }
+    },
+    {
+      "seed": 42,
+      "report": "th19-web-pzHrPH",
+      "matchingRngThrough": null,
+      "firstDifferentRngByStream": {
+        "primary": null,
+        "animation": {
+          "frame": 4506,
+          "web": 1587294591,
+          "original": 872282683
+        }
+      },
+      "playerControlCoverage": 36000,
+      "firstDifferentPlayerControls": null,
+      "playerPositionCoverage": 36000,
+      "firstDifferentPlayerPosition": null,
+      "bulletPositionCoverage": {
+        "frames": 36000,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35593,
+        "originalBulletSamples": 5072425,
+        "webBulletSamples": 5072425,
+        "missingFrames": [
+          0
+        ]
+      },
+      "differentBulletPositionFrames": 0,
+      "firstDifferentBulletCount": null,
+      "frameRollback": null
+    },
+    {
+      "seed": 20261112,
+      "report": "th19-web-ZdVKsm",
+      "matchingRngThrough": null,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 28107,
+          "web": 795328876,
+          "original": 879555430
+        },
+        "animation": {
+          "frame": 5997,
+          "web": 1467908644,
+          "original": 1180224707
+        }
+      },
+      "playerControlCoverage": 35999,
+      "firstDifferentPlayerControls": {
+        "frame": 28053,
+        "web": [
+          65,
+          65
+        ],
+        "original": [
+          1,
+          1
+        ]
+      },
+      "playerPositionCoverage": 35999,
+      "firstDifferentPlayerPosition": {
+        "frame": 28053,
+        "web": [
+          -5,
+          400,
+          -5,
+          400
+        ],
+        "original": [
+          0,
+          400,
+          0,
+          400
+        ]
+      },
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35057,
+        "originalBulletSamples": 3725652,
+        "webBulletSamples": 3716324,
+        "missingFrames": [
+          0,
+          27900
+        ]
+      },
+      "differentBulletPositionFrames": 7780,
+      "firstDifferentBulletCount": {
+        "frame": 28221,
+        "side": 1,
+        "original": 1,
+        "web": 0
+      },
+      "frameRollback": null
+    },
+    {
+      "seed": 123456789,
+      "report": "th19-web-0G0M0a",
+      "matchingRngThrough": null,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 26907,
+          "web": 2003922300,
+          "original": 661534633
+        },
+        "animation": {
+          "frame": 9861,
+          "web": 1306747903,
+          "original": 1477400060
+        }
+      },
+      "playerControlCoverage": 35999,
+      "firstDifferentPlayerControls": {
+        "frame": 26898,
+        "web": [
+          0,
+          0
+        ],
+        "original": [
+          0,
+          1
+        ]
+      },
+      "playerPositionCoverage": 35999,
+      "firstDifferentPlayerPosition": {
+        "frame": 26946,
+        "web": [
+          0,
+          400,
+          -5,
+          400
+        ],
+        "original": [
+          0,
+          400,
+          0,
+          400
+        ]
+      },
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35167,
+        "originalBulletSamples": 3856839,
+        "webBulletSamples": 3914026,
+        "missingFrames": [
+          0,
+          26822
+        ]
+      },
+      "differentBulletPositionFrames": 8948,
+      "firstDifferentBulletCount": {
+        "frame": 27053,
+        "side": 1,
+        "original": 0,
+        "web": 1
+      },
+      "frameRollback": null
+    },
+    {
+      "seed": 987654321,
+      "report": "th19-web-O7xtxo",
+      "matchingRngThrough": null,
+      "firstDifferentRngByStream": {
+        "primary": {
+          "frame": 18542,
+          "web": 1528206023,
+          "original": 2000423562
+        },
+        "animation": {
+          "frame": 4371,
+          "web": 1227617743,
+          "original": 144260456
+        }
+      },
+      "playerControlCoverage": 35999,
+      "firstDifferentPlayerControls": {
+        "frame": 26026,
+        "web": [
+          83,
+          139
+        ],
+        "original": [
+          147,
+          139
+        ]
+      },
+      "playerPositionCoverage": 35999,
+      "firstDifferentPlayerPosition": {
+        "frame": 35988,
+        "web": [
+          -5,
+          400,
+          0,
+          400
+        ],
+        "original": [
+          -5,
+          400,
+          -5,
+          400
+        ]
+      },
+      "bulletPositionCoverage": {
+        "frames": 35999,
+        "first": 1,
+        "last": 36000,
+        "nonemptyFrames": 35247,
+        "originalBulletSamples": 4449999,
+        "webBulletSamples": 4449999,
+        "missingFrames": [
+          0,
+          35835
+        ]
+      },
+      "differentBulletPositionFrames": 0,
+      "firstDifferentBulletCount": null,
+      "frameRollback": null
+    }
+  ]
+}

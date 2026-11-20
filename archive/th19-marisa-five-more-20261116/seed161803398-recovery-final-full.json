@@ -1,0 +1,14 @@
+{
+  "report": "web-captures-marisa-five-more\\th19-web-QzZNU7\\report.json",
+  "wasmSha256": "2c3e0a5060baa2b2bb17351778ed9fbc144157deecee21d2ebc8adad4e6ab81e",
+  "seed": 161803398,
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 36000,
+  "bulletCoordinateTolerance": 0.0001,
+  "maximumBulletCoordinateDifference": 3.0517578125e-05,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS"
+}

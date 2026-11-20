@@ -1,0 +1,43 @@
+{
+  "wasmSha256": "3720320390e4f81c33fe4eaf8dbd47c983756343b8ce0597ce5880d9a07d468a",
+  "nativeEvidence": [
+    {
+      "frame": 12420,
+      "reserved": -6,
+      "releaseTimers": 0,
+      "source": "r10/diagnostics/present-vqm0eqf1/native-extra-budget.jsonl"
+    },
+    {
+      "frame": 26366,
+      "reservedBeforeDispatch": 984,
+      "capacity": 999,
+      "credit": 1582,
+      "source": "r10/diagnostics/present-we033v4g/native-extra-budget.jsonl"
+    },
+    {
+      "arrivalFrame": 26355,
+      "nextFrame": 26356,
+      "nextFrameTimer": 239,
+      "source": "r10/diagnostics/present-we033v4g/native-marisa-flight.jsonl + native-extra-budget.jsonl"
+    }
+  ],
+  "nativeFunctions": {
+    "allocateReleaseSlot": "0x50d6a3–0x50d6c1,100slots",
+    "releaseCount": "0x50e037–0x50e059",
+    "capacity": "0x54036e–0x540382",
+    "protectionAfterDamage": "0x5089d0→0x509980, timers0x508ea3–0x508ec8"
+  },
+  "behavior": [
+    "Wolf deferred async first visit beforeCPU",
+    "Held spirit protectsHP but consumesregisteredshots",
+    "VS protection clock afterdamage independentoffeedbackorder",
+    "Signed EX reservation count distinctfromreleasequeue",
+    "Credit EX and C2 share100release slots",
+    "Arrival frame advances240to239"
+  ],
+  "tolerance": {
+    "bulletCoordinate": 0.0001,
+    "animationOnly": "separate,excludedfromgameplayacceptance"
+  },
+  "noPush": true
+}

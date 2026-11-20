@@ -1,0 +1,177 @@
+[
+  {
+    "seed": 179424673,
+    "secondary": 433494437,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-nwa9txs4",
+    "phase": "web-queued",
+    "sourceBatch": "b25"
+  },
+  {
+    "seed": 982451653,
+    "secondary": 961748941,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-ncr_ilw9",
+    "phase": "web-queued",
+    "sourceBatch": "b25"
+  },
+  {
+    "seed": 15485863,
+    "secondary": 49979687,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-dj4d0ebv",
+    "phase": "web-queued",
+    "sourceBatch": "b25"
+  },
+  {
+    "seed": 32452843,
+    "secondary": 67867967,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-si6a9gfh",
+    "phase": "web-queued",
+    "sourceBatch": "b25"
+  },
+  {
+    "seed": 2038074743,
+    "secondary": 122949823,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-new-five-20261118-b25\\native\\present-l667s58v",
+    "phase": "web-queued",
+    "sourceBatch": "b25"
+  },
+  {
+    "seed": 161803398,
+    "secondary": 141421356,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-b6y1yfbw",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 7,
+    "secondary": 7654321,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-36hq6293",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 424242,
+    "secondary": 131071,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-yol16k1w",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 8675309,
+    "secondary": 42424243,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-9_fjv4_x",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 20261116,
+    "secondary": 998244353,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-om5a6cov",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 123456789,
+    "secondary": 987654321,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-a04kfbhg",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 314159265,
+    "secondary": 271828182,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-ohyqn2f2",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 839207153,
+    "secondary": 619412363,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-dg0i7ohi",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 1293760327,
+    "secondary": 152317181,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-h_bxpcm8",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 2000000011,
+    "secondary": 31415926,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-u5vldbav",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 536870911,
+    "secondary": 1000000007,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-bnms_9dk",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 65537,
+    "secondary": 104729,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-e7ahc2bz",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 1000003,
+    "secondary": 999983,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-next-five-20261117\\native\\present-p2itheqo",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 19840124,
+    "secondary": 20010401,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-bp809o_h",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 20261118,
+    "secondary": 18112026,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-e6gb95vl",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 185362831,
+    "secondary": 93017621,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-giqaj_gn",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 470311227,
+    "secondary": 1736728499,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-et9o0kht",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 1073741823,
+    "secondary": 524287,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-extra-five-20261118\\native\\present-f9p3jjsi",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 1936728471,
+    "secondary": 2071842433,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-fresh-five-20261118\\native\\present-frlipl3m",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  },
+  {
+    "seed": 2147483646,
+    "secondary": 1234567,
+    "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-five-more-20261116\\native\\present-eqn2dfk5",
+    "phase": "web-queued",
+    "sourceBatch": "historical20"
+  }
+]

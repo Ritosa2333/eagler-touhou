@@ -16,8 +16,8 @@ struct AutoBarrier {
   if((tier!=3&&tier!=4)||state!=2)return false;
   state=1;elapsed=0;recovery+=increase;return true;
  }
- bool tick(bool timedRecovery=true){
-  if(invulnerable>0)--invulnerable;
+ bool tick(bool timedRecovery=true,bool advanceInvulnerability=true){
+  if(advanceInvulnerability&&invulnerable>0)--invulnerable;
 
   // 544dd0 checks elapsed before advancing; increases the next wait only
   // after restoration. 40b420 applies the same increase on charge recovery.

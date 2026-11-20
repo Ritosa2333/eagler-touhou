@@ -534,6 +534,7 @@ float g_p1_x = 0.0f, g_p1_y = 400.0f;   // 1P 位置（场坐标，出生底部�
 float g_touch_motion_x = 0.0f, g_touch_motion_y = 0.0f;
 bool g_touch_unlimited = false;
 float g_p2_x = 0.0f, g_p2_y = 400.0f;   // 2P/CPU 位置（场坐标，出生底部居中）
+bool g_vs_round_loading = false;
 i32 g_game_load_frames = 0;             // 进入游戏加载页剩余帧（>0 显示少女祈祷中）
 // 游戏资源：world01.anm 背景 + 选中角色 plXX.anm 本体
 std::vector<u8> g_world_bytes; std::vector<th19::AnmEntry> g_world;
@@ -565,7 +566,23 @@ struct EclField {
 EclField g_ecl_fields[2];
 th19::ScreenShake g_screen_shake;
 int g_battle_report_frame=-1,g_battle_winner=0;int g_stage_deaths[2]{};int g_vs_attack_counts[2][2]{};th19::AnmVm g_battle_reports[2];
+bool g_freeze_field_animation=false;
 th19::AttackWarning g_attack_warning;th19::AnmVm g_attack_warning_vm;int g_attack_warning_frame=-1;
+struct RetiringAttackWarning {th19::AnmVm vm;int frame=-1;};
+std::vector<RetiringAttackWarning> g_retiring_attack_warnings;
+void retire_attack_warning_animation(){
+    if(g_attack_warning_vm.stream&&(!g_attack_warning_vm.deleted||!g_attack_warning_vm.children.empty()))
+        g_retiring_attack_warnings.push_back({std::move(g_attack_warning_vm),g_attack_warning_frame});
+    g_attack_warning_vm={};
+}
+void tick_attack_warning_animations(int frame){
+    for(auto& animation:g_retiring_attack_warnings)if(animation.frame!=frame){
+        animation.vm.tick();animation.frame=frame;
+    }
+    g_retiring_attack_warnings.erase(std::remove_if(g_retiring_attack_warnings.begin(),g_retiring_attack_warnings.end(),[](const auto& animation){return animation.vm.deleted&&animation.vm.children.empty();}),g_retiring_attack_warnings.end());
+    g_attack_warning_vm.tick();
+}
+
 // Existing diagnostics expose the left field; simulation owns two independent fields.
 th19::GameWorld& g_ecl_world=g_ecl_fields[0].world;
 th19::EclVm& g_ecl_vm=g_ecl_fields[0].vm;
@@ -645,7 +662,7 @@ th19::PlayerShotTable g_opp_shot_table;
 
 struct ReimuSkillVisual {th19::ReimuSkill state;std::array<th19::AnmVm,3> animations;std::array<th19::ReimuSkill::Point,3> positions;};
 
-struct MarisaSkillVisual {th19::MarisaSkill state;th19::AnmVm vm;float target_x=0;};
+struct MarisaSkillVisual {th19::MarisaSkill state;th19::AnmVm vm;float target_x=0;u32 flight_id=0;};
 
 
 struct ReflectedVisual {th19::ReflectedBulletFlight state;float target_x=0,target_y=0;int target_side=1;};
@@ -663,7 +680,7 @@ th19::GlobalRank g_global_rank;
 struct ChiyariSkillVisual {int frame=-1;th19::AnmVm vm;float x=0,y=0;};
 
 
-std::unordered_map<i32,th19::AnmScriptLoc> g_bullet_scripts;
+std::unordered_map<i32,th19::AnmScriptLoc> g_bullet_scripts,g_enemy_scripts;
 std::unordered_map<i32,std::array<float,2>> g_bullet_sprite_sizes;
 struct SkillDamageCircle {float x,y,radius,growth;int remaining,damage;int interval=1;float vx=0,vy=0;};
 
@@ -737,6 +754,8 @@ th19::AnmVm g_focus_vm[2];
 th19::AnmVm g_barrier_vm[2],g_charge_pattern[2],g_region_vm[2];
 th19::AnmVm g_gauge_markers[2][8];
 th19::AnmVm g_gauge_particles[2];
+u32 g_gauge_particles_frame[2]={~0u,~0u};
+u32 g_gauge_contact_frame[2]={~0u,~0u};
 th19::AnmVm g_gauge_warning[2];
 bool g_gauge_warning_active[2]{};
 int g_gauge_marker_state[2][4]={};
@@ -2895,7 +2914,7 @@ void dispatch_world_events(){
     for(const auto&e:g_stage.animationEvents){if(e.script<0){g_stage_overlays.erase(e.slot);continue;}auto s=g_world_scripts.find(e.script);if(s!=g_world_scripts.end()){auto&o=g_stage_overlays[e.slot];o.layer=e.layer;o.vm={};o.vm.bind_entry(s->second.stream,s->second.len,&g_world_scripts);o.vm.tick();}}
     for(int label:g_stage.interrupts){for(auto&e:g_stage_anms)e.second.interrupt_all(label);for(auto&e:g_stage_overlays)e.second.vm.interrupt_all(label);}
 }
-void tick_world(){g_screen_shake.tick();for(auto&e:g_stage_strips)e.second.tick();for(auto&e:g_stage_anms)e.second.tick();g_stage.tick();dispatch_world_events();for(auto&e:g_stage_overlays)e.second.vm.tick();}
+void tick_world(){g_screen_shake.tick(g_vs_mode);for(auto&e:g_stage_strips)e.second.tick();for(auto&e:g_stage_anms)e.second.tick();g_stage.tick();dispatch_world_events();for(auto&e:g_stage_overlays)e.second.vm.tick();}
 void load_world_std() {
     g_stage_anms.clear();g_stage_strips.clear();g_stage_sprites.clear();g_stage_overlays.clear();g_world_scripts.clear();
     char path[40];std::snprintf(path,sizeof path,"/world%02d.std",g_world_id+1);
@@ -3135,7 +3154,7 @@ void retry_story_stage(){
 }
 
 // 517790: VS stage and music share a random choice of participating character.
-void start_vs_match(bool newMatch=true) {
+void start_vs_match(bool newMatch=true, bool advanceRound=true) {
     g_vs_rules[0]=g_network_active?0:g_local_vs_time;
     g_vs_rules[4]=g_vs_rules[3];g_vs_rules[5]=g_vs_rules[6]=1;
     g_story_challenge_run=false;
@@ -3143,6 +3162,7 @@ void start_vs_match(bool newMatch=true) {
     // private stream. 0x5181a6 advances it only when choosing a new stage.
     g_vs_scene_rng.state=th19::AnmVm::random_checkpoint();
     if(newMatch){
+        g_vs_round_loading=false;
         g_vs_match.begin(g_vs_rules[0],g_vs_rules[1]);
         // 0x517790: subsequent rounds reuse the participating side already chosen.
         g_vs_scene_side=g_vs_scene_rng.next()&1;
@@ -3155,7 +3175,7 @@ void start_vs_match(bool newMatch=true) {
             const int card=mode==0?0:mode==1?1+int(cardRng.next()%38):g_vs_cards[side].card(character,mode==3);
             if(card>0&&card<=38)(side?g_opponent_cards:g_owned_cards).push_back(card);
         }
-    }else g_vs_match.next();
+    }else if(advanceRound)g_vs_match.next();
     g_vs_mode=1;
     // Difficulty must come from the difficulty selector, never the VS menu index.
     g_story_session.begin(th19::STORY_ROUTES[g_char_sel]);
@@ -3293,10 +3313,12 @@ void start_dialogue() {
 // may enter post-battle dialogue; ending a wave never advances the route.
 // The timeout flag is part of the result state from the first report frame;
 // native 515540 selects a different ANM pair before the result animation starts.
-void clear_timeout_playfields(){
+void clear_result_playfields(bool timeout){
     // 0x515560 dispatches eligible enemy deaths before the timeout CPU update.
     for(auto& field:g_ecl_fields){
         auto& world=field.world;
+        // Timeout destruction unregisters cleared spirits before meter dispatch.
+        world.timeout_result_clear=timeout;
         for(size_t i=world.enemies.size();i>0;--i){
             auto& enemy=world.enemies[i-1];
             if(!enemy.active)continue;
@@ -3305,12 +3327,21 @@ void clear_timeout_playfields(){
             enemy.score=0;
             std::fill_n(enemy.spirit_params,5,0);
             enemy.death_callback.clear();
-            world.dispatch_enemy_death(enemy);
+            world.dispatch_enemy_death(enemy,true);
             enemy.active=false;
             enemy.status_flags|=0x200u;
         }
-        world.cancel_bullets_circle(0,224,1e20f,99999,false);
-        for(auto& laser:world.lasers)laser.active=false;
+        world.cancel_all_bullets();
+        world.cancel_all_lasers();
+        // Timeout raises the native result flag before the CPU/field passes.
+        // Existing controllers must not execute one final firing script.
+        if(g_vs_mode&&g_vs_match.limit>0&&g_vs_match.remaining<=1&&!world.result_pause_id){
+            world.result_pause_id=world.next_id-1;
+            world.result_pause_frame=world.battle_frame;
+            for(auto& enemy:world.enemies)if(enemy.active)
+                enemy.result_contact=std::array<float,7>{enemy.x,enemy.y,enemy.x-enemy.previous_x,
+                    enemy.y-enemy.previous_y,enemy.contact_w,enemy.contact_h,enemy.contact_angle};
+        }
     }
 }
 bool begin_battle_report(int winner, bool timeout) {
@@ -3320,7 +3351,29 @@ bool begin_battle_report(int winner, bool timeout) {
     // A completed round clears the active playfield before the result card is
     // shown.  Leaving ECL objects alive caused bullets/enemies to remain
     // visible through the victory announcement and looked like a freeze.
-    if(!timeout){
+    if(g_vs_mode){
+        const std::array<u32,2> firstClearIds={g_ecl_fields[0].world.next_id,g_ecl_fields[1].world.next_id};
+        clear_result_playfields(timeout);
+        if(!timeout)for(int side=0;side<2;++side){
+            // Round-end clearing follows the native item manager's update.
+            // These drops enter its launch countdown on the following tick.
+            for(auto& pickup:g_ecl_fields[side].world.pickups){
+                if(pickup.id<firstClearIds[side]||pickup.type<9)continue;
+                ++pickup.delay;pickup.state=5;
+            }
+        }
+        // Remaining pre-result controllers stop their gameplay updates.
+        // The subsequent charge release can register a new, updating clear.
+        for(auto& field:g_ecl_fields){
+            if(field.world.result_pause_id)continue;
+            field.world.result_pause_id=field.world.next_id-1;
+            field.world.result_pause_frame=field.world.battle_frame;
+            for(auto& enemy:field.world.enemies)if(enemy.active)
+                enemy.result_contact=std::array<float,7>{enemy.x,enemy.y,enemy.x-enemy.previous_x,
+                    enemy.y-enemy.previous_y,enemy.contact_w,enemy.contact_h,enemy.contact_angle};
+        }
+    }
+    if(!timeout&&!g_vs_mode){
         for(auto&field:g_ecl_fields){field.world.clear_bullets();field.world.lasers.clear();field.world.enemies.clear();field.world.pickups.clear();field.world.bullet_cancels.clear();}
         g_player_projectiles.clear();g_player_hit_effects.clear();
     }
@@ -3340,12 +3393,20 @@ void tick_battle_report(){
     }
     for(auto&v:g_battle_reports)if(v.stream)v.tick();
     if(g_battle_report_frame==320)for(auto&v:g_battle_reports)v.interrupt_all(1);
-    if(++g_battle_report_frame>328){
+    if(++g_battle_report_frame>(g_vs_mode?321:328)){
         g_battle_report_frame=-1;
         if(g_vs_mode){
             if(g_vs_match.wins[0]<g_vs_match.target&&g_vs_match.wins[1]<g_vs_match.target){
-                g_story_switch.vs_match=true;g_story_switch.vs_next_round=true;
-                if(bind_story_switch(3))g_story_switch.phase=1;else start_vs_match(false);
+                // LoadingInf owns the inter-round interval. Field ANMs stop
+                // while ascii1280.anm17 emits script16 on its four-tick clock.
+                // Stage creation copies the RNG after the first loading burst.
+                // Loading continues on its own clock before battle frame one.
+                g_vs_match.next();
+                start_loading();
+                for(auto& animation:g_loading_vms)animation.tick();
+                start_vs_match(false,false);
+                g_vs_round_loading=true;
+                g_game_load_frames=7;
                 return;
             }
             // Native 0x50f320/0x515050 selects and opens the winner's VS MSG
@@ -3623,6 +3684,8 @@ void load_ecl_engine() {
                     g_enemy_sprites[g_enemy[ei].sprites[si].id] = {ei, si};
         }
     }
+    if(g_enemy_scripts.empty())for(const auto& entry:g_enemy)for(const auto& script:entry.scripts)
+        g_enemy_scripts[script.id]={g_enemy_bytes.data()+entry.base+script.offset,u32(g_enemy_bytes.size()-entry.base-script.offset),&entry.scripts};
     if (g_bullet.empty()) {
         if (load_anm("/bullet.anm", g_bullet_bytes, g_bullet)) {
             decode_textures(g_bullet, g_bullet_bytes, g_bullet_tex);
@@ -3634,17 +3697,19 @@ void load_ecl_engine() {
     }
     for(int side=0;side<2;++side){g_bombs[side]={};g_bomb_area[side]={};g_bomb_back[side]={};g_bomb_visual_tail[side]=0;for(auto&v:g_bomb_extra[side])v={};}
     g_battle_report_frame=-1;g_stage_deaths[0]=g_stage_deaths[1]=0;for(auto&counts:g_vs_attack_counts)counts[0]=counts[1]=0;
-    ++g_ecl_generation;g_attack_warning={};g_attack_warning_vm={};
+    ++g_ecl_generation;g_attack_warning={};g_attack_warning_vm={};g_retiring_attack_warnings.clear();
     g_global_rank.begin(g_story_difficulty,g_vs_mode,g_story_session.stage_index()+1);
     for(int side=0;side<2;++side){
         auto& field=g_ecl_fields[side];
+        // 0x5048bb reads the field manager's cursor, which survives VS rounds.
+        const u32 waveCursor=g_vs_mode&&g_vs_match.round>1?field.world.wave_schedule.cursor():0;
         field.vm=th19::EclVm{};field.world=th19::GameWorld{};
         field.programs.clear();field.loaded.clear();
         // VS fills the shared 256-draw table after stage selection (0x518b7c).
-        field.world.wave_schedule.seed(g_vs_mode?g_vs_scene_rng.state:g_game_seed);
+        field.world.wave_schedule.seed(g_vs_mode?g_vs_scene_rng.state:g_game_seed,waveCursor);
         field.world.extra_rng.state=g_game_seed?g_game_seed:1;
         field.world.spirit_rank=g_global_rank.value;field.world.spirit_rank_cap=g_global_rank.cap;
-        field.world.difficulty=g_story_difficulty;field.world.bullet_scripts=&g_bullet_scripts;field.world.bullet_sprite_sizes=&g_bullet_sprite_sizes;
+        field.world.difficulty=g_story_difficulty;field.world.enemy_scripts=&g_enemy_scripts;field.world.effect_scripts=&g_focus_scripts;field.world.bullet_scripts=&g_bullet_scripts;field.world.bullet_sprite_sizes=&g_bullet_sprite_sizes;
         // Native 0x558419 initializes story progress to 1; 0x553c47 increments
         // it between stages. 0x51d4e0 uses this one-based value for rewards.
         field.world.reward_mode=g_vs_mode?2:0;
@@ -3665,7 +3730,12 @@ void load_ecl_engine() {
 // textured root draws, unresolved slots. Reset on each collection pass.
 std::array<i32,4> g_actor_visual_counts[2]{};
 // ECL positions are local to each player field, never relative to the full screen.
-struct EnemyAnimation {i32 script=-1,frame=-1;u32 generation=0,interrupt_generation=0;th19::AnmVm vm;};
+void tick_persistent_visuals_before(int side,u32 registration);
+void tick_independent_visuals_before(int side,u32 registration,bool initialize_lasers=true);
+void tick_player_bombs(int firstSide,int lastSide);
+void tick_charge_gauge_particles(int side);
+std::vector<u32> g_early_graze_orders[2];
+struct EnemyAnimation {i32 script=-1,frame=-1,mist_frame=-1;u32 generation=0,interrupt_generation=0;th19::AnmVm vm;th19::ChargePoint mist;};
 std::unordered_map<th19::u64,EnemyAnimation> rb_draw_ecl_objects_animations[2];
 std::unordered_map<u32,th19::LaserVisual> rb_draw_ecl_objects_laserHeads[2];
 std::unordered_map<u32,EnemyAnimation> rb_draw_ecl_objects_curveVisuals[2],rb_draw_ecl_objects_curveOrigins[2];
@@ -3692,15 +3762,11 @@ void draw_textured_anm_ring(const th19::AnmVm& v,const TextureAllocation& textur
     }
     g_draw.push_back(std::move(cmd));
 }
-void draw_ecl_objects() {
+void draw_ecl_objects(int firstSide=0,int lastSide=2) {
     if (!g_ecl_ready) return;
 
 
-    static std::unordered_map<i32,th19::AnmScriptLoc> scripts;
-
-
-
-
+    auto& scripts=g_enemy_scripts;
 
     static std::unordered_map<i32,th19::AnmScriptLoc> spellAsciiScripts;
     struct AttackAsset {std::vector<u8> bytes;std::vector<th19::AnmEntry> entries;std::map<i32,TextureAllocation> textures;std::map<u32,std::pair<i32,i32>> sprites;std::unordered_map<i32,th19::AnmScriptLoc> scripts;bool attempted=false;};
@@ -3710,11 +3776,42 @@ void draw_ecl_objects() {
     if(spellAsciiScripts.empty())for(const auto&e:g_ascii)for(const auto&sc:e.scripts)
         spellAsciiScripts[sc.id]={g_ascii_bytes.data()+e.base+sc.offset,u32(g_ascii_bytes.size()-e.base-sc.offset),&e.scripts};
     if(scripts.empty())for(const auto&e:g_enemy)for(const auto&sc:e.scripts)scripts[sc.id]={g_enemy_bytes.data()+e.base+sc.offset,u32(g_enemy_bytes.size()-e.base-sc.offset),&e.scripts};
-    for(int side=0;side<2;++side){
+    for(int side=firstSide;side<lastSide;++side){
     g_actor_clip=side;
     g_actor_visual_counts[side]={};
     auto& world=g_ecl_fields[side].world;
     const float cx=side?GAME_F2_CX:GAME_F1_CX;
+    // Charge effects keep their callbacks when the host becomes visible. Register slots before
+    // the field pass, then update their callbacks in native prepend order.
+    if(g_vs_mode&&!g_paused){
+        for(auto& enemy:world.enemies){
+            if(!enemy.active)continue;
+            for(int slot=0;slot<16;++slot){
+                const auto& binding=enemy.animations[slot];
+                if(binding.file!=1||binding.script<151||binding.script>154)continue;
+                const auto script=g_focus_scripts.find(binding.script);
+                if(script==g_focus_scripts.end())continue;
+                auto& animation=rb_draw_ecl_objects_animations[side][(th19::u64(enemy.id)<<4)|slot];
+                if(animation.script!=binding.script||animation.generation!=binding.generation){
+                    animation={};animation.script=binding.script;animation.generation=binding.generation;
+                    animation.vm.bind_entry(script->second.stream,script->second.len,&g_focus_scripts);
+                }
+                if(animation.frame!=g_frame){animation.vm.tick();animation.frame=g_frame;}
+            }
+        }
+        for(auto enemy=world.enemies.rbegin();enemy!=world.enemies.rend();++enemy){
+            if(!enemy->active)continue;
+            for(int slot=15;slot>=0;--slot){
+                const auto& binding=enemy->animations[slot];
+                if(binding.file!=1||binding.script<151||binding.script>154)continue;
+                auto& animation=rb_draw_ecl_objects_animations[side][(th19::u64(enemy->id)<<4)|slot];
+                if(animation.vm.special_effect==1&&animation.mist_frame!=g_frame){
+                    animation.mist.tick(binding.rotation,animation.vm.effect_angle,animation.vm.ivar[0],true,&g_focus_scripts);
+                    animation.mist_frame=g_frame;
+                }
+            }
+        }
+    }
     if(world.spell.active){
         auto&asset=attackAssets[world.spell.animation_file];if(!asset.attempted){asset.attempted=true;
             if(load_anm(("/"+world.spell.animation_file).c_str(),asset.bytes,asset.entries)){
@@ -3832,7 +3929,7 @@ void draw_ecl_objects() {
         };draw(draw,v.vm,pos.x,pos.y);g_actor_clip=side;
     }
     for (auto& e : world.enemies) {
-        if(!e.active||e.sprite<0)continue;
+        if(!e.active)continue;
         for(int slot=0;slot<16;++slot){const auto&definition=e.animations[slot];
         // Wave ECL ANIM slot 2 resolves to enemy.anm. Never reinterpret another file's IDs.
         if(definition.script<0)continue;
@@ -3842,7 +3939,9 @@ void draw_ecl_objects() {
         // 50d380: slot1 is the shared effect.anm resource, not a user ANIM index.
         if(definition.file!=1&&(fileIndex<0||fileIndex>=int(e.animation_files.size()))){if(slot==0)++g_actor_visual_counts[side][3];continue;}
         const std::string file=definition.file==1?"effect.anm":e.animation_files[fileIndex];
-        if(file!="enemy.anm"){
+        if(file=="effect.anm"){
+            scriptMap=&g_focus_scripts;spriteMap=&g_focus_sprites;textures=&g_focus_tex;entries=&g_focus_entries;
+        }else if(file!="enemy.anm"){
             auto&asset=attackAssets[file];if(!asset.attempted){asset.attempted=true;
                 if(load_anm(("/"+file).c_str(),asset.bytes,asset.entries)){
                     decode_textures(asset.entries,asset.bytes,asset.textures);
@@ -3856,23 +3955,61 @@ void draw_ecl_objects() {
         int ordinal=definition.script;
         if(anim.script!=ordinal||anim.generation!=definition.generation){int id=-1,index=0;
             for(const auto&entry:*entries)for(const auto&sc:entry.scripts)if(index++==ordinal)id=sc.id;
-            auto it=scriptMap->find(id);if(it==scriptMap->end()){if(slot==0)++g_actor_visual_counts[side][3];continue;}anim={};anim.script=ordinal;anim.generation=definition.generation;anim.vm.bind_entry(it->second.stream,it->second.len,scriptMap);}
+            auto it=scriptMap->find(id);if(it==scriptMap->end()){if(slot==0)++g_actor_visual_counts[side][3];continue;}anim={};anim.script=ordinal;anim.generation=definition.generation;
+            const auto initialized=world.initialized_enemy_animations.find((th19::u64(e.id)<<4)|slot);
+            const bool preinitialized=initialized!=world.initialized_enemy_animations.end()&&initialized->second.stream==it->second.stream;
+            if(preinitialized){
+                anim.vm=std::move(initialized->second);world.initialized_enemy_animations.erase(initialized);
+                if(file=="effect.anm"&&id==107){anim.vm.time=1;anim.frame=g_frame;}
+            }
+            else anim.vm.bind_entry(it->second.stream,it->second.len,scriptMap);
+            // The wolf trail emitter registers independently of its body.
+            if(g_vs_mode&&file=="enemy.anm"&&id==265&&scripts.count(93))
+                for(auto& child:anim.vm.children)
+                    if(child.stream==scripts.at(93).stream)child.independent_tick=true;
+            // Spirit conversion registers its emitter as a separate ANM manager node.
+            if(g_vs_mode&&file=="enemy.anm"&&id>=268&&id<=270&&scripts.count(108))
+                for(auto& child:anim.vm.children)
+                    if(child.stream==scripts.at(108).stream){
+                        child.independent_tick=true;
+                        // Arrivals publish new emitter children on the next ANM pass.
+                        if(e.age<=1)child.defer_child_initialization=true;
+                    }
+            if(g_vs_mode&&file=="enemy.anm"&&id==266&&scripts.count(98))
+                for(auto& child:anim.vm.children)
+                    if(child.stream==scripts.at(98).stream)child.independent_tick=true;
+            // Arrival conversion registers the replacement body before its
+            // first manager clock advance, while the ECL motion is already live.
+            if(!preinitialized&&g_vs_mode&&slot==0&&e.arrival_motion==th19::Enemy::ArrivalMotion::Hold&&(e.status_flags&0x80000u))
+                anim.vm.time=-1;
+            if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
+                std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"anm-bind\",\"enemy\":%u,\"side\":%d,\"script\":%d,\"registration\":%u}\n",g_vs_match.elapsed,e.id,side,id,anim.vm.registration);
+        }
         if(slot==0)++g_actor_visual_counts[side][1];
+        const auto cacheBodyExtent=[&](bool cpuOnly=false){
+            if(slot!=0)return;
+            const auto body=spriteMap->find(anim.vm.sprite);
+            if(body==spriteMap->end())return;
+            const auto& sprite=(*entries)[body->second.first].sprites[body->second.second];
+            // The native field cull at 0x50a831 uses the opposite ANM axis.
+            const float width=std::abs(e.sy*anim.vm.sy)*sprite.h*.5f;
+            const float height=std::abs(e.sx*anim.vm.sx)*sprite.w*.5f;
+            if(cpuOnly){e.cpu_body_half_width=width;e.cpu_body_half_height=height;}
+            else{e.body_half_width=width;e.body_half_height=height;}
+        };
+        // CPU visibility keeps the preceding bounds of converted wolves/otters/eagles;
+        // the field retirement pass uses their current animation bounds.
+        const u32 spiritState=e.status_flags&0x780000u;
+        const bool convertedSpirit=g_vs_mode&&(spiritState==0x280000u||spiritState==0x380000u||spiritState==0x480000u);
+        if(convertedSpirit)cacheBodyExtent(true);
         if(!g_paused&&anim.frame!=g_frame){
             if(anim.interrupt_generation!=definition.interrupt_generation){anim.vm.interrupt_all(definition.interrupt_label);anim.interrupt_generation=definition.interrupt_generation;}
+            if(g_vs_mode&&file=="enemy.anm"&&scripts.count(267)&&anim.vm.stream==scripts.at(267).stream)tick_independent_visuals_before(side,anim.vm.registration);
+            if(g_vs_mode&&((scriptMap->count(106)&&anim.vm.stream==scriptMap->at(106).stream)||(scriptMap->count(107)&&anim.vm.stream==scriptMap->at(107).stream)))tick_persistent_visuals_before(side,~u32(0));
             anim.vm.tick();anim.frame=g_frame;
+
         }
-        // The animation pass also runs during rollback catch-up. Cache the
-        // main sprite extent for the next enemy update.
-        if(slot==0){
-            const auto body=spriteMap->find(anim.vm.sprite);
-            if(body!=spriteMap->end()){
-                const auto& sprite=(*entries)[body->second.first].sprites[body->second.second];
-                // The native field cull at 0x50a831 uses the opposite ANM axis.
-                e.body_half_width=std::abs(e.sy*anim.vm.sy)*sprite.h*.5f;
-                e.body_half_height=std::abs(e.sx*anim.vm.sx)*sprite.w*.5f;
-            }
-        }
+        cacheBodyExtent();
         auto draw=[&](auto&&self,const th19::AnmVm&v,float x,float y,float sx,float sy)->void{
             if(!v.visible)return;x+=(v.x+v.child_x)*sx;y+=(v.y+v.child_y)*sy;
             // Enemy update 0x5089d0 applies ANM424 to the host motion angle.
@@ -4247,7 +4384,7 @@ void init_charge_visuals(){
     }
     for(int side=0;side<2;++side){
         g_charge_visual_held[side]=false;g_charge_visual_level[side]=0;g_charge_pattern[side]={};g_region_vm[side]={};g_barrier_vm[side]={};
-        g_gauge_particles[side]={};
+        g_gauge_particles[side]={};g_gauge_contact_frame[side]=~0u;
         g_gauge_warning[side] = {};
         g_gauge_warning_active[side] = false;
         auto warningScript = g_aura_scripts.find(3);
@@ -4265,6 +4402,38 @@ void init_charge_visuals(){
         g_player_damage[side]={};
     }
 }
+void prepare_charge_gauge_particles(int side){
+    if(g_paused)return;
+    auto& particles=g_gauge_particles[side];
+    const int scriptId=g_vs_mode&&(g_bombs[side].occupied()||g_bomb_visual_tail[side]==10)?15:(g_charge[side].charge>0||(g_vs_mode&&g_gauge_contact_frame[side]==g_frame))?13:-1;
+    if(scriptId<0){particles={};return;}
+    const auto script=g_aura_scripts.find(scriptId);
+    if(script==g_aura_scripts.end()||particles.stream==script->second.stream)return;
+    particles.bind_entry(script->second.stream,script->second.len,&g_aura_scripts);
+    if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)std::printf("ENEMYDBG {\"event\":\"gauge-construct\",\"side\":%d,\"registration\":%u,\"seed\":%u}\n",side,particles.registration,th19::AnmVm::random_checkpoint());
+    particles.time=-1;particles.tick(nullptr,false);
+}
+void tick_charge_gauge_particles(int side){
+    if(g_paused||g_gauge_particles_frame[side]==g_frame)return;
+    g_gauge_particles_frame[side]=g_frame;
+    const int scriptId=g_vs_mode&&(g_bombs[side].occupied()||g_bomb_visual_tail[side]==10)?15:(g_charge[side].charge>0||(g_vs_mode&&g_gauge_contact_frame[side]==g_frame))?13:-1;
+    auto& particles=g_gauge_particles[side];
+    if(scriptId<0){particles={};return;}
+    const auto script=g_aura_scripts.find(scriptId);
+    if(script==g_aura_scripts.end())return;
+    const bool starting=particles.stream!=script->second.stream;
+    if(starting){
+        particles.bind_entry(script->second.stream,script->second.len,&g_aura_scripts);
+        particles.time=-1;
+    }
+    // BombInf uses aura15/16; ordinary charging uses aura13/14.
+    // Both construct their emitter before the subsequent manager update.
+    if(starting&&g_vs_mode)particles.tick(nullptr,false);
+    if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)std::printf("ENEMYDBG {\"event\":\"gauge-manager\",\"side\":%d,\"registration\":%u,\"time\":%d,\"seed\":%u}\n",side,particles.registration,particles.time,th19::AnmVm::random_checkpoint());
+    particles.tick(nullptr,g_vs_mode||!starting);
+    particles.children.erase(std::remove_if(particles.children.begin(),particles.children.end(),[](const auto&v){return !v.visible&&v.halted;}),particles.children.end());
+}
+
 void tick_charge_visuals(){
     for(int side=0;side<2;++side){
         const auto&g=g_charge[side];
@@ -4276,23 +4445,7 @@ void tick_charge_visuals(){
             g_gauge_warning_active[side] = needsBarrier;
         }
         warning.tick();
-        auto&particles=g_gauge_particles[side];
-        if(g.charge<1)particles={};
-        else{
-            const bool starting=!particles.stream;
-            if(starting){
-                auto it=g_aura_scripts.find(13);
-                if(it!=g_aura_scripts.end()){
-                    particles.bind_entry(it->second.stream,it->second.len,&g_aura_scripts);
-                    particles.time=-1;
-                }
-            }
-            // VS registers the emitter at 0x4e8c20 before the frame's
-            // animation pass. Children run only on the subsequent pass.
-            if(starting&&g_vs_mode)particles.tick(nullptr,false);
-            particles.tick(nullptr,g_vs_mode||!starting);
-            particles.children.erase(std::remove_if(particles.children.begin(),particles.children.end(),[](const auto&v){return !v.visible&&v.halted;}),particles.children.end());
-        }
+        if(!g_vs_mode||g_screen!=SCR_GAME)tick_charge_gauge_particles(side);
         for(int i=0;i<4;++i){int state=g.charge>=g.thresholds[i]?3:g.energy>=g.thresholds[i]?2:1;
             if(state!=g_gauge_marker_state[side][i]){g_gauge_marker_state[side][i]=state;for(int j=0;j<2;++j)g_gauge_markers[side][i*2+j].interrupt(state==3?2:state==2?3:5);}
             for(int j=0;j<2;++j)g_gauge_markers[side][i*2+j].tick();
@@ -4302,7 +4455,7 @@ void tick_charge_visuals(){
         }
         g_barrier_vm[side].tick();
         if(g_barrier_vm[side].stream&&!g_barrier_vm[side].visible)g_barrier_vm[side]={};
-        g_barrier[side].tick(!g_vs_mode||g_vs_rules[5+side]!=1); // 544dd0 creates the ring on the next ready-state tick.
+        g_barrier[side].tick(!g_vs_mode||g_vs_rules[5+side]!=1,!g_vs_mode||g_screen!=SCR_GAME); // 544dd0 creates the ring on the next ready-state tick.
         auto&pattern=g_charge_pattern[side];auto&region=g_region_vm[side];
         const bool held=g_screen==SCR_GAME&&g_charge[side].held;
         const int level=g_charge[side].level(),ch=side?g_opp_sel:g_char_sel;
@@ -4415,6 +4568,18 @@ void tick_player_options(bool focused){
         const auto&table=side?g_opp_shot_table:g_shot_table;
         const int power=ch==3?g_attacks[side].ran_skill.power(g_player_power):g_player_power;
         auto&options=g_player_options[side];
+        // Native options retain their fixed-point emitters while the barrier
+        // repels the player; existing Marisa beams keep using those emitters.
+        const auto& damage=g_player_damage[side];
+        const bool recovering=damage.state==th19::PlayerDamage::Playing&&damage.frame==0;
+        if(damage.state==th19::PlayerDamage::Repelled||recovering){
+            // Retail resumes emitters on the tick after Playing is restored.
+            if(damage.frame!=0||recovering){
+                for(auto& o:options)o.vm.tick();
+                continue;
+            }
+            // The contact tick still publishes options before repel movement.
+        }
         if(int(options.size())>power)options.resize(power);
         while(int(options.size())<power){PlayerOption o;o.x=px;o.y=py;o.phase=options.size()*3.14159265359f;
             if(!bind_player_animation(o.vm,table.option_script,side?g_opp:g_player,side?g_opp_scripts:g_player_scripts))break;
@@ -4461,6 +4626,11 @@ void draw_player_options(){
 }
 // SHT groups 0..4 are power levels, 5..9 their focused counterparts.
 void bind_warning_portrait(int ch,int sender);
+// Native result rejection is already active on the timeout clear tick,
+// before the result animation/controller is created later in the frame.
+bool battle_result_pending(){
+    return g_battle_report_frame>=0||(g_vs_mode&&g_vs_match.limit>0&&g_vs_match.remaining<=1);
+}
 void emit_counter_bullets(int side,th19::GameWorld& world){
     auto unit=[](){return g_vs_mode?th19::AnmVm::rand_unit(true):g_reflection_rng.unit();};
     auto signedUnit=[](float scale){return g_vs_mode?th19::AnmVm::rand_signed_unit(scale,true):g_reflection_rng.signedUnit()*scale;};
@@ -4481,11 +4651,11 @@ void emit_counter_bullets(int side,th19::GameWorld& world){
         auto& state=v.state;
         // 0x545420 reads the global attack controller's +0x28 clock.
         // It advances during round banners as well as flight updates.
-        const int typeClock=g_vs_mode?g_global_rank.clock+1:g_spirit_clock;
+        const int typeClock=g_vs_mode?g_global_rank.clock:g_spirit_clock;
         state.type=th19::counterBulletType(typeClock,typeClock>=3600?raw():0);
         state.color=raw()&15;state.base_speed=1.f;
         // 0x51c250 rejects result-state initialization after emitter sampling.
-        if(g_vs_mode&&g_vs_match.limit>0&&g_vs_match.remaining<=1)continue;
+        if(g_vs_mode&&battle_result_pending())continue;
         state.duration=state.flightDuration(raw());
         state.from={(side?GAME_F2_CX:GAME_F1_CX)+GAME_SCALE*sourceX,GAME_FY0+GAME_SCALE*sourceY};
         state.to={(side?GAME_F1_CX:GAME_F2_CX)+GAME_SCALE*v.target_x,GAME_FY0+GAME_SCALE*v.target_y};
@@ -4559,7 +4729,7 @@ void emit_spirit_requests(int side,th19::GameWorld& w,int clock){
         const float rx=nativePure?th19::AnmVm::rand_signed_unit(148.f,true):g_spirit_rng.unit();
         const float ry=nativePure?th19::AnmVm::rand_unit(true):g_spirit_rng.unit();
         // 0x51bb00 checks the result flag after drawing the destination.
-        if(g_vs_mode&&g_vs_match.limit>0&&g_vs_match.remaining<=1)continue;
+        if(g_vs_mode&&battle_result_pending())continue;
         unsigned delay;
         if(nativePure){
             th19::AnmVm::rand_integer(true);
@@ -4580,12 +4750,10 @@ void emit_spirit_requests(int side,th19::GameWorld& w,int clock){
 }
 void resolve_counter_arrivals();
 void tick_marisa_skills(int side);
-void tick_spirit_transits(){
-    std::vector<const th19::EclProgram*> sources[2];
-    for(int side=0;side<2;++side){
-        auto&field=g_ecl_fields[side];auto& source=sources[side];
-        for(const auto&p:field.programs)source.push_back(p.get());
-        if(!g_vs_mode)field.world.send_native_extra_credit(g_ecl_fields[1-side].world,source,side?g_opp_sel:g_char_sel);
+void initialize_pending_marisa_skills(int side);
+extern th19::AnmVm g_warning_portrait;
+void dispatch_automatic_attack(int side,const std::vector<const th19::EclProgram*>& source){
+    auto& field=g_ecl_fields[side];
         const unsigned automatic = field.world.combo_attack.tick();
         for (unsigned bit = 1; bit <= 2; bit <<= 1) {
             if (!(automatic & bit)) continue;
@@ -4595,25 +4763,44 @@ void tick_spirit_transits(){
             auto& count = g_vs_attack_counts[side][tier == 4 ? 1 : 0];
             count = std::min(999, count + 1);
             g_attack_warning.start(side, tier, g_charge[side].ex_level, g_charge[side].boss_level);
-            g_attack_warning_vm = {};
+            retire_attack_warning_animation();
             auto script = g_aura_scripts.find(g_attack_warning.aura_script());
             if (script != g_aura_scripts.end()) {
-                g_attack_warning_vm.bind_entry(script->second.stream, script->second.len, &g_aura_scripts);
+                g_attack_warning_vm.bind_entry(script->second.stream, script->second.len, &g_aura_scripts);g_attack_warning_vm.clock_after_execution=true;
             }
             g_attack_warning_frame = -1;
             bind_warning_portrait(side ? g_opp_sel : g_char_sel, side);
             play_sfx(77);
         }
+}
+void tick_spirit_transits(){
+    std::vector<const th19::EclProgram*> sources[2];
+    for(int side=0;side<2;++side){
+        auto&field=g_ecl_fields[side];auto& source=sources[side];
+        for(const auto&p:field.programs)source.push_back(p.get());
+        if(!g_vs_mode)field.world.send_native_extra_credit(g_ecl_fields[1-side].world,source,side?g_opp_sel:g_char_sel);
+        if(g_capture_cpu_last>=g_capture_cpu_first){
+            const auto& credit=field.world.combo_attack;
+            std::printf("COMBODBG {\"frame\":%d,\"side\":%d,\"comboAttack\":[%d,%d,%d,%d,%d,%u]}\n",g_vs_match.elapsed+1,side,credit.extraCredit,credit.bossCredit,credit.extraRecovery,credit.extraCooldown,credit.bossCooldown,credit.frame);
+        }
+        if(!g_vs_mode)dispatch_automatic_attack(side,source);
+    }
+
+    if(g_vs_mode&&g_attack_warning.visible()&&g_attack_warning_frame<0){
+        tick_attack_warning_animations(g_frame+1);g_warning_portrait.tick();g_attack_warning_frame=g_frame+1;
     }
 
     if(g_vs_mode){
         // Each sender spends attack credit before advancing its arrival list.
         // Both managers consume the shared primary RNG, right sender first.
         for(int side=1;side>=0;--side){
-            g_ecl_fields[side].world.send_native_extra_credit(g_ecl_fields[1-side].world,sources[side],side?g_opp_sel:g_char_sel,g_spirit_clock);
+            g_ecl_fields[side].world.send_native_extra_credit(g_ecl_fields[1-side].world,sources[side],side?g_opp_sel:g_char_sel,g_spirit_clock,battle_result_pending());
             tick_marisa_skills(side);
-            g_ecl_fields[1-side].world.resolve_marisa_extra_arrivals();
+            g_ecl_fields[1-side].world.resolve_marisa_extra_arrivals(0,battle_result_pending(),&g_ecl_fields[side].world);
         }
+        // Both fields' existing arrivals finish their ECL callbacks before
+        // newly registered C2 flights consume duration and tangent draws.
+        for(int side=1;side>=0;--side)initialize_pending_marisa_skills(side);
         // The flight manager runs chain circles, counter arrivals, then spirit arrivals.
         struct ChainVisit {int side;const th19::DeathChain* chain;};
         std::vector<ChainVisit> chainVisits;
@@ -4630,7 +4817,15 @@ void tick_spirit_transits(){
             if(age>chain.duration)continue;
             auto& world=g_ecl_fields[visit.side].world;
             const float radius=1+(chain.target-1)*th19::nativeEase(5,float(age)/chain.duration);
-            world.cancel_death_chain_bullets(chain,radius,world.battle_frame+1);
+            // This callback precedes the world clock update; 0x51ca93
+            // reads the already advanced battle-manager frame.
+            // This early manager observes the attack controller's advanced rank,
+            // before the later world pass publishes it to both fields.
+            auto currentRank=g_global_rank;currentRank.tick();
+            const int savedRank=world.spirit_rank,savedCap=world.spirit_rank_cap;
+            world.spirit_rank=currentRank.value;world.spirit_rank_cap=currentRank.cap;
+            world.cancel_death_chain_bullets(chain,radius,world.battle_frame+2);
+            world.spirit_rank=savedRank;world.spirit_rank_cap=savedCap;
             collect_chain_bullet_transits(visit.side);
         }
         resolve_counter_arrivals();
@@ -4644,7 +4839,9 @@ void tick_spirit_transits(){
         const auto&r=v.state.request;const int k=r.kind-2,target=1-v.sender;
         const auto a=th19::spiritArrival(v.sender,r.kind,r.inherited,v.state.targetX,
             k>=0&&k<3&&(g_spirit_enhanced[v.sender][k]||th19::cardEnhancesSpirit(player_cards(v.sender),r.kind)),k>=0&&k<3&&(g_spirit_suppressed[target][k]||th19::cardSuppressesSpirit(player_cards(target),r.kind)));
-        if(g_ecl_fields[target].world.receive_spirit(a,v.state.targetX,v.state.targetY))++g_spirit_arrivals;
+        // 0x51b4a5 rejects the result flag before constructing the spirit enemy.
+        if((!g_vs_mode||!battle_result_pending())&&
+           g_ecl_fields[target].world.receive_spirit(a,v.state.targetX,v.state.targetY,g_charge[target].held))++g_spirit_arrivals;
     }else{v.curve.frame=std::max(0,v.state.age);if(v.vm.stream)v.vm.tick();}}
     g_spirit_flights.erase(std::remove_if(g_spirit_flights.begin(),g_spirit_flights.end(),[](const auto&v){return v.state.age>v.state.duration;}),g_spirit_flights.end());
     for(int side=0;side<2;++side){auto&w=g_ecl_fields[side].world;
@@ -4761,7 +4958,9 @@ struct DeferredShotContacts {
                 }
             }
             if(shot.update==9){shot.target_id=0;continue;}
-            if(shot.hit_callback!=2||!shot.age)continue;
+            // Native ordinary beams register contact on their birth update.
+            // The age gate suppresses damage, while contact can shorten them.
+            if(shot.hit_callback!=2)continue;
             const auto& options=g_player_options[side];
             if(shot.option>0&&shot.option<=int(options.size())){
                 shot.x=options[shot.option-1].x+shot.offset_x;shot.y=options[shot.option-1].y+shot.offset_y;
@@ -4776,11 +4975,24 @@ struct DeferredShotContacts {
         // The constructor update checks contact while its HP timer still
         // protects the newborn. The following registration guard skips it.
         if(!enemy.active||enemy.spawn_hold==1||enemy.sprite<0||(enemy.flags&0x21)||enemy.hitbox_w<=0)return 0;
+        // Constructor contacts precede the first displacement; registered
+        // enemies use the ordinary post-motion damage pass.
+        const bool registering=(enemy.spawn_hold==2||enemy.age==1)&&enemy.body_half_width==0&&enemy.body_half_height==0;
+        const float targetX=registering?enemy.previous_x:enemy.x;
+        const float targetY=registering?enemy.previous_y:enemy.y;
         int damage=0;
+        const auto& playerDamage=g_player_damage[side];
+        if(g_vs_mode&&playerDamage.respawnDamageActive()){
+            const auto& current=playerDamage;
+            const float centerX=current.respawn_damage_final_tick?current.respawn_damage_final_x:(side?g_p2_x:g_p1_x);
+            const float dx=targetX-centerX,dy=targetY-(current.respawn_damage_final_tick?400.f:current.respawnY());
+            const float radius=120.f+enemy.hitbox_w*.5f;
+            if(dx*dx+dy*dy<=radius*radius)damage+=10;
+        }
         if(defer_marisa_bomb_contact(side)){
             // 0x53dc1b registers a one-tick rectangle in the player damage manager.
             const auto& bomb=g_bombs[side];
-            const float dx=enemy.x-bomb.x,dy=enemy.y-224.f,width=bomb.radius*2;
+            const float dx=targetX-bomb.x,dy=targetY-224.f,width=bomb.radius*2;
             const bool hit=(enemy.flags&0x1000)
                 ? th19::shotRectanglesOverlap(dx,dy,0,width,448,enemy.contact_angle,enemy.hitbox_w,enemy.hitbox_h)
                 : th19::nativeEnemyRectangleContact(dx,dy,0,width,448,enemy.hitbox_w*.5f);
@@ -4790,7 +5002,7 @@ struct DeferredShotContacts {
             // Normal pellets and fixed beams register damage areas on their birth tick.
             const bool fixedBeam=shot->update==9;
             if(shot->side!=side||!defer_marisa_contact(*shot)||shot->ending||shot->damage<=0||
-               (!shot->age&&!fixedBeam&&!normalPellet(*shot)))continue;
+               (!shot->age&&!fixedBeam&&!normalPellet(*shot)&&shot->hit_callback!=2))continue;
             const bool beam=shot->hit_callback==2;
             const auto area=beam?std::find_if(beams.begin(),beams.end(),[&](auto& b){return b.shot==&*shot;}):beams.end();
             if(beam&&area==beams.end())continue;
@@ -4798,29 +5010,29 @@ struct DeferredShotContacts {
             // with the other areas after enemy movement, before writing HP.
             const float centerX=beam?area->x:fixedBeam?shot->x+std::cos(shot->angle)*shot->length*.5f:shot->x;
             const float centerY=beam?area->y:fixedBeam?shot->y+std::sin(shot->angle)*shot->length*.5f:shot->y;
-            const float dx=enemy.x-centerX,dy=enemy.y-centerY;
+            const float dx=targetX-centerX,dy=targetY-centerY;
             const float width=beam||fixedBeam?shot->length:shot->hit_width;
-            if(beam&&g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"beam-area\",\"enemy\":%u,\"position\":[%.9g,%.9g],\"center\":[%.9g,%.9g],\"size\":[%.9g,%.9g],\"origin\":[%.9g,%.9g],\"age\":%d,\"option\":%d}\n",g_vs_match.elapsed,enemy.id,enemy.x,enemy.y,centerX,centerY,width,shot->hit_height,shot->x,shot->y,shot->age,shot->option);
+            if(beam&&g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"beam-area\",\"enemy\":%u,\"position\":[%.9g,%.9g],\"center\":[%.9g,%.9g],\"size\":[%.9g,%.9g],\"origin\":[%.9g,%.9g],\"age\":%d,\"option\":%d}\n",g_vs_match.elapsed,enemy.id,targetX,targetY,centerX,centerY,width,shot->hit_height,shot->x,shot->y,shot->age,shot->option);
             const bool hit=(enemy.flags&0x1000)
                 ? th19::shotRectanglesOverlap(dx,dy,shot->angle,width,shot->hit_height,enemy.contact_angle,enemy.hitbox_w,enemy.hitbox_h)
                 : th19::nativeEnemyRectangleContact(dx,dy,shot->angle,width,shot->hit_height,enemy.hitbox_w*.5f);
             if(!beam&&!fixedBeam&&g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last&&std::abs(dx)<40&&std::abs(dy)<60)
-                std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"pellet-contact\",\"id\":%u,\"position\":[%.9g,%.9g],\"shot\":[%.9g,%.9g],\"shape\":[%.9g,%.9g,%.9g,%.9g],\"age\":%d,\"hit\":%d}\n",g_vs_match.elapsed,enemy.id,enemy.x,enemy.y,shot->x,shot->y,shot->angle,width,shot->hit_height,enemy.hitbox_w*.5f,shot->age,int(hit));
+                std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"pellet-contact\",\"id\":%u,\"position\":[%.9g,%.9g],\"shot\":[%.9g,%.9g],\"shape\":[%.9g,%.9g,%.9g,%.9g],\"age\":%d,\"hit\":%d}\n",g_vs_match.elapsed,enemy.id,targetX,targetY,shot->x,shot->y,shot->angle,width,shot->hit_height,enemy.hitbox_w*.5f,shot->age,int(hit));
             if(!hit)continue;
             if(fixedBeam){
-                if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"fixed-hit\",\"side\":%d,\"id\":%u,\"position\":[%.9g,%.9g],\"shot\":[%.9g,%.9g,%.9g,%.9g],\"damage\":%d}\n",g_vs_match.elapsed,side,enemy.id,enemy.x,enemy.y,shot->x,shot->y,shot->length,shot->hit_height,shot->damage);
+                if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"fixed-hit\",\"side\":%d,\"id\":%u,\"position\":[%.9g,%.9g],\"shot\":[%.9g,%.9g,%.9g,%.9g],\"damage\":%d}\n",g_vs_match.elapsed,side,enemy.id,targetX,targetY,shot->x,shot->y,shot->length,shot->hit_height,shot->damage);
                 shot->target_id=enemy.id;
                 // 0x54c7c0 returns the area's damage at every age, including length zero.
                 damage+=shot->damage;
             }else if(beam){
                 const float radius=(enemy.hitbox_w+shot->hit_height)*.5f;
                 if(enemy.flags&0x1000){
-                    const float dx=enemy.x-shot->x,dy=enemy.y-shot->y;
+                    const float dx=targetX-shot->x,dy=targetY-shot->y;
                     const float c=std::cos(shot->angle),s=std::sin(shot->angle);
                     const float along=dx*c+dy*s,across=dy*c-dx*s;
                     shot->length=std::max(0.f,along-std::sqrt(std::max(0.f,radius*radius-across*across))+8.f);
                 }else{
-                    shot->length=th19::nativeOptionBeamCircleLength(shot->x,shot->y,shot->angle,enemy.x,enemy.y,radius);
+                    shot->length=th19::nativeOptionBeamCircleLength(shot->x,shot->y,shot->angle,targetX,targetY,radius);
                 }
                 shot->target_id=enemy.id;
                 spawn_marisa_laser_hit(*shot,shot->age+1);
@@ -4829,7 +5041,7 @@ struct DeferredShotContacts {
                     damage+=shot->damage;
             }else{
                 if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
-                    std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"shot-hit\",\"id\":%u,\"shot\":[%.9g,%.9g,%d,%d,%d],\"position\":[%.9g,%.9g]}\n",g_vs_match.elapsed,enemy.id,shot->x,shot->y,shot->type,shot->age,shot->damage,enemy.x,enemy.y);
+                    std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"shot-hit\",\"id\":%u,\"shot\":[%.9g,%.9g,%d,%d,%d],\"position\":[%.9g,%.9g]}\n",g_vs_match.elapsed,enemy.id,shot->x,shot->y,shot->type,shot->age,shot->damage,targetX,targetY);
                 damage+=shot->damage;
                 shot->speed/=8.f;
                 end_player_shot_on_impact(*shot);
@@ -4837,12 +5049,14 @@ struct DeferredShotContacts {
         }
         for(auto shot=g_player_projectiles.rbegin();shot!=g_player_projectiles.rend();++shot){
             if(shot->side!=side||!defer_homing_shot(*shot)||shot->ending||shot->damage<=0)continue;
-            const float dx=enemy.x-shot->x,dy=enemy.y-shot->y;
+            const float dx=targetX-shot->x,dy=targetY-shot->y;
             const bool hit=(enemy.flags&0x1000)
                 ? th19::shotRectanglesOverlap(dx,dy,shot->angle,shot->hit_width,shot->hit_height,
                                               enemy.contact_angle,enemy.hitbox_w,enemy.hitbox_h)
                 : th19::nativeEnemyRectangleContact(dx,dy,shot->angle,shot->hit_width,shot->hit_height,enemy.hitbox_w*.5f);
             if(hit){
+                if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
+                    std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"homing-hit\",\"side\":%d,\"id\":%u,\"shot\":[%.9g,%.9g,%d,%d,%d],\"position\":[%.9g,%.9g]}\n",g_vs_match.elapsed,side,enemy.id,shot->x,shot->y,shot->type,shot->age,shot->damage,targetX,targetY);
                 if(capturedHomingContacts.count<std::size(capturedHomingContacts.rows))
                     capturedHomingContacts.rows[capturedHomingContacts.count++]={u32(side),shot->x,shot->y};
                 damage+=shot->damage;
@@ -4881,8 +5095,33 @@ void tick_player_pickups(){
         world.pickup_range=collectCard?110:70;
         const auto& bomb=g_bombs[side];
         const bool bombCollect=g_vs_mode&&bomb.active()&&bomb.frame<60;
-        world.tick_pickups(side?g_p2_x:g_p1_x,side?g_p2_y:g_p1_y,bombCollect,
-            g_player_damage[side].state!=th19::PlayerDamage::Dead);
+        auto damage=g_player_damage[side];
+        int lives=side?g_p2_lives:g_p1_lives;
+        int invulnerable=g_barrier[side].invulnerable;
+        float playerX=side?g_p2_x:g_p1_x,playerY=side?g_p2_y:g_p1_y;
+        // The item manager sees the position after this player's repel update.
+        if(damage.state==th19::PlayerDamage::Repelled){
+            damage.moveRepelled(playerX,playerY);
+            playerX=std::clamp(playerX,-140.f,140.f);
+            playerY=std::clamp(playerY,32.f,432.f);
+        }
+        const auto event=damage.tick(lives,invulnerable);
+        if(event==th19::PlayerDamage::Respawn)playerX=0;
+        if(damage.state==th19::PlayerDamage::Respawning)playerY=damage.respawnY();
+        // A hit from the preceding late contact pass resets existing magnets
+        // before this item update. Reacquisition starts at one-third pull speed.
+        if(g_player_damage[side].state==th19::PlayerDamage::Pending&&g_player_damage[side].frame==0){
+            for(auto& pickup:world.pickups){
+                if(pickup.state!=3&&pickup.state!=4)continue;
+                pickup.state=1;pickup.vx=pickup.vy=0;
+                if(std::hypot(playerX-pickup.x,playerY-pickup.y)<world.pickup_range){
+                    pickup.state=4;pickup.speed=world.pickup_speed/3.f;
+                }
+            }
+        }
+        // The native pickup manager observes the player's current state update.
+        world.tick_pickups(playerX,playerY,bombCollect,
+            damage.state!=th19::PlayerDamage::Dead,damage.state==th19::PlayerDamage::Pending);
         g_charge[side].energy=std::clamp(g_charge[side].energy+world.pending_energy,0,2500);
         world.pending_energy=0;
     }
@@ -4895,7 +5134,11 @@ void resolve_counter_arrivals(){
     const auto arriveCounter=[&rank](const ReflectedVisual& v){
         const auto& s=v.state;
         if(s.arrived()){
+            // 0x51bd80 rejects result-state arrivals before random sampling.
+            if(g_vs_mode&&battle_result_pending())return;
             // 0x51be8e and 0x51bf70 share the VS battle's primary stream.
+            if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
+                std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"counter-rng\",\"seed\":%u}\n",g_vs_match.elapsed,th19::AnmVm::random_checkpoint(true));
             const float angle=g_vs_mode
                 ? s.nativeArrivalAngle(v.target_x,th19::AnmVm::rand_integer(true))
                 : s.arrivalAngle(v.target_x,g_reflection_rng.unit());
@@ -4919,14 +5162,35 @@ void resolve_counter_arrivals(){
     }else for(const auto& v:g_reflected_flights)arriveCounter(v);
     g_reflected_flights.erase(std::remove_if(g_reflected_flights.begin(),g_reflected_flights.end(),[](const auto&v){return v.state.arrived();}),g_reflected_flights.end());
 }
+void initialize_pending_marisa_skills(int side){
+    for(auto& skill:g_attacks[side].marisa_skills){
+        auto& s=skill.state;
+        if(s.duration>=0)continue;
+        th19::AnmVm::rand_integer(true);
+        s.duration=th19::MarisaSkill::flightDuration(th19::AnmVm::random_checkpoint(true));
+        th19::AnmVm::rand_signed_unit(100.f,true);
+        th19::AnmVm::rand_signed_unit(100.f,true);
+        s.frame=0;
+    }
+}
 void tick_marisa_skills(int side){
-    for(auto&skill:g_attacks[side].marisa_skills){
+    auto& skills=g_attacks[side].marisa_skills;
+    for(size_t i=0;i<skills.size();++i){
+        auto& skill=skills[g_vs_mode?skills.size()-1-i:i];
         auto&s=skill.state;
+        if(s.duration<0)continue;
         if(s.frame<0){++s.frame;continue;}
         if(s.arrived()){
             std::vector<const th19::EclProgram*> source;for(const auto&p:g_ecl_fields[side].programs)source.push_back(p.get());
             auto& target=g_ecl_fields[1-side].world;
-            if(g_vs_mode)target.register_marisa_extra_arrival("ExtraAttack00",skill.target_x,448,200,source);
+            if(g_vs_mode){
+                // Both Marisa flight sources share the native newest-first list.
+                target.resolve_marisa_extra_arrivals(skill.flight_id,battle_result_pending(),&g_ecl_fields[side].world);
+                g_ecl_fields[side].world.register_native_extra_release();
+                if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
+                    std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"c2-flight-arrival\",\"side\":%d,\"flight\":%u,\"target\":%.9g,\"deleted\":%d}\n",g_vs_match.elapsed,side,skill.flight_id,skill.target_x,skill.vm.deleted);
+                if(!battle_result_pending())target.register_marisa_extra_arrival("ExtraAttack00",skill.target_x,448,200,source);
+            }
             else target.spawn_enemy("ExtraAttack00",skill.target_x,448,200,0,0,&source);
             ++g_attacks[side].marisa_skill_arrivals;skill.vm.alpha=0;
         }else{skill.vm.tick();skill.vm.sx=skill.vm.sy=.8f*GAME_SCALE;skill.vm.alpha=192;++s.frame;}
@@ -4937,6 +5201,9 @@ unsigned tick_player_shots(bool firing,bool focused){
     // 0x54e742 skips ordinary fire while the charge timer is nonzero,
     // including the release cooldown. The emitter clocks stay at their last tick.
     const auto shotBlocked=[](int side){
+        // Result entry freezes ordinary emitter clocks while accepted charge
+        // controllers and existing projectiles finish their callbacks.
+        if(g_vs_mode&&g_battle_report_frame>=0)return true;
         // 0x54e735 freezes the emitter clocks until the player can fire.
         if(!g_player_damage[side].canUseWeapons())return true;
         if(!g_vs_mode)return g_charge[side].held;
@@ -4953,6 +5220,8 @@ unsigned tick_player_shots(bool firing,bool focused){
         auto& world=g_ecl_fields[side].world;
         world.card_near_damage=th19::ownsCard(player_cards(side),28);
         world.player_damage_cap=(side?g_opp_shot_table:g_shot_table).damage_cap;
+        world.player_damage_reduced=g_player_damage[side].state==th19::PlayerDamage::Dead||
+            g_player_damage[side].state==th19::PlayerDamage::Respawning;
     }
     for(auto& v:g_reflected_flights)++v.state.frame;
     if(!g_vs_mode)resolve_counter_arrivals();
@@ -4982,7 +5251,11 @@ unsigned tick_player_shots(bool firing,bool focused){
     // radial growth, independently of the visible spell and bullet-clear area.
     for(auto&c:g_attacks[side].skill_damage_circles){c.radius+=c.growth;c.x+=c.vx;c.y+=c.vy;auto&w=g_ecl_fields[side].world;
         for(auto&e:w.enemies){float dx=std::max(0.f,std::abs(e.x-c.x)-e.hitbox_w*.5f),dy=std::max(0.f,std::abs(e.y-c.y)-e.hitbox_h*.5f);
-            if(c.remaining%c.interval==0&&dx*dx+dy*dy<=c.radius*c.radius)w.damage_enemy(e,c.damage);}
+            if(c.remaining%c.interval==0&&dx*dx+dy*dy<=c.radius*c.radius){
+                if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
+                    std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"circle-damage\",\"id\":%u,\"damage\":%d,\"circle\":[%.9g,%.9g,%.9g]}\n",g_vs_match.elapsed,e.id,c.damage,c.x,c.y,c.radius);
+                w.damage_enemy(e,c.damage);
+            }}
         --c.remaining;
     }
     g_attacks[side].skill_damage_circles.erase(std::remove_if(g_attacks[side].skill_damage_circles.begin(),g_attacks[side].skill_damage_circles.end(),[](const auto&c){return c.remaining<=0;}),g_attacks[side].skill_damage_circles.end());
@@ -5018,7 +5291,11 @@ unsigned tick_player_shots(bool firing,bool focused){
                 if(dx*dx+dy*dy<=r*r)w.damage_enemy(e,0,true);
             }
         }else{
-            for(auto&e:w.enemies)if(g_attacks[side].charge_area.contains(e.x,e.y))w.damage_enemy(e,g_attacks[side].charge_area.damage());
+            for(auto&e:w.enemies)if(g_attacks[side].charge_area.contains(e.x,e.y)){
+                if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
+                    std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"charge-area-damage\",\"id\":%u,\"damage\":%d}\n",g_vs_match.elapsed,e.id,g_attacks[side].charge_area.damage());
+                w.damage_enemy(e,g_attacks[side].charge_area.damage());
+            }
             for(auto&b:w.bullets)if(b.state<th19::Bullet::Canceling&&g_attacks[side].charge_area.contains(b.x,b.y))w.retire_bullet(b);
             w.discard_retired_bullets();
         }
@@ -5050,160 +5327,180 @@ unsigned tick_player_shots(bool firing,bool focused){
                             }
                         }
     };
-    for(auto& b:g_player_projectiles){
-        const float old_x=b.x,old_y=b.y;const int side=b.side;
-        const bool sideFiring=side?rightFiring:firing;
-        if(b.lifetime>0&&b.age>=b.lifetime&&!b.ending){b.vm.interrupt_all(1);b.ending=true;b.damage=0;}
-        const bool beam=b.type==2||b.update==9;
-        const bool fixedBeam=g_vs_mode&&b.update==9;
-        if(beam){float x=side?g_p2_x:g_p1_x,y=side?g_p2_y:g_p1_y;if(b.option>0&&b.option<=int(g_player_options[side].size())){x=g_player_options[side][b.option-1].x;y=g_player_options[side][b.option-1].y;}
-            if(b.ability_bank){auto card=std::find_if(g_card_options.begin(),g_card_options.end(),[&](const auto&o){return o.side==b.side&&o.card_id==b.card_id;});if(card!=g_card_options.end()){x=card->x;y=card->y;}else b.ending=true;}
-            // 0x54c830 extends the beam from its registered origin.
-            if(b.update==9){x=b.x-b.offset_x;y=b.y-b.offset_y;}
-            b.x=x+b.offset_x;b.y=y+b.offset_y;
-            if(fixedBeam&&b.age==0)move_player_shot(b);
-            // 0x54c830 / 0x54d370: add18 only below512; last step may reach522.
-            if(!b.ending&&b.length<512.f)b.length+=18.f;
-            bool endOrdinaryBeam=!sideFiring;
-            if(g_vs_mode&&b.update==2&&b.hit_callback==2){
-                // 0x54d871 reads the emitter cycle. A released fire button
-                // leaves the existing option beam active until that cycle ends.
-                const int clock=side?g_opp_shoot_frame:g_shoot_frame;
-                // 0x54d887 ends for Dead/Pending, while Repelled keeps the
-                // existing beam and its damage area until the emitter ends.
-                const bool blocked=(side?rightBlocked:leftBlocked)&&
-                    g_player_damage[side].state!=th19::PlayerDamage::Repelled;
-                endOrdinaryBeam=clock<0||blocked;
-            }
-            const bool expired=b.update==9?b.age>=120:(b.laser_duration>0?b.age>=b.laser_duration:endOrdinaryBeam);
-            if(expired&&!b.ending){b.vm.interrupt_all(1);b.ending=true;}
-        }else{
-            if(!b.ending&&b.update==1)steer_homing_shot(b,b.age+1);
-            if(b.update==10)advance_wandering_shot(b);
-            if(b.update==6&&!b.ending)b.speed+=.1f; //54b780
-            if(!b.ending&&b.update==8)th19::advanceChargeTalisman(b.age,b.speed);
-            if(b.update==11){b.speed+=.1f;b.length+=b.speed;
-                if(!b.vm.children.empty())b.vm.children[0].sx=b.length;
-                if(b.age>129)b.consumed=true;
-            }
-            // 0x54c080: Sanae's radial shots stop for four frames, then
-            // turn towards the enemy that crossed their horizontal band.
-            if(!b.ending&&b.update==4&&b.turn_wait<0){
-                for(const auto&e:g_ecl_fields[side].world.enemies)if(e.active&&e.sprite>=0&&!(e.flags&0x21)&&std::abs(e.y-b.y)<=16&&std::abs(e.x-b.x)>=16){b.offset_x=e.x;b.offset_y=e.y;b.speed=0;b.turn_wait=0;b.vm.interrupt_all(2);break;}
-            }
-            if(!b.ending&&b.update==4&&b.turn_wait>=0&&b.turn_wait<=4){if(b.turn_wait==4){b.angle=std::atan2(b.offset_y-b.y,b.offset_x-b.x);b.speed=14;}++b.turn_wait;}
-            if(b.update==13){
-                if(b.age==b.transition_frame){b.speed=0;b.vm.interrupt_all(2);play_sfx(27);}
-                else {const float step=th19::enokoChargeStep(b.age,b.transition_frame);b.x+=std::cos(b.angle)*step;b.y+=std::sin(b.angle)*step;}
-                if(th19::enokoChargeCancels(b.age,b.transition_frame))g_ecl_fields[side].world.cancel_enoko_trap(b.x,b.y,b.angle);
-            }
-            if(!b.ending&&(b.update==3||b.update==12||b.update==14)){th19::advanceSpecialShot(b.update,b.angle,b.speed);b.vx=std::cos(b.angle)*b.speed;b.vy=std::sin(b.angle)*b.speed;}
-            // Native 0x54d... adds SHT +0x18/+0x20 after the callback.
-            if(!b.ending){b.angle=std::remainder(b.angle+b.table_turn,6.28318530718f);b.speed+=b.table_acceleration;}
-            b.vx=std::cos(b.angle)*b.speed;b.vy=std::sin(b.angle)*b.speed;
-            if(b.update!=13||!th19::enokoChargeFrozen(b.age,b.transition_frame))move_player_shot(b);
-        }
-        if(!defer_homing_shot(b)&&!defer_marisa_contact(b)&&!b.ending&&b.damage>0){
-            auto&world=g_ecl_fields[side].world;
-            const bool previousLaserHit=beam&&b.target_id!=0;if(beam)b.target_id=0;
-            th19::Enemy* nearest=nullptr;float distance=1e30f;
-            const bool blockingLaser=beam&&b.hit_callback==2;
-            for(auto&e:world.enemies){
-                if(!e.active||e.sprite<0||(e.flags&0x21)||e.hitbox_w<=0)continue;
-                if(blockingLaser){
-                    float d=th19::laserContactDistance(b.x,b.y,b.angle,b.length,b.hit_height,e.x,e.y,e.hitbox_w,e.hitbox_h);
-                    if(d>=0&&d<distance){distance=d;nearest=&e;}continue;
+    const size_t existingShotCount=g_player_projectiles.size();
+    const std::array<int,2> previousShotClocks{g_shoot_frame,g_opp_shoot_frame};
+    size_t firstNewShot=existingShotCount;
+    const auto updateExistingShots=[&](){
+        for(size_t shotIndex=0;shotIndex<existingShotCount;++shotIndex){
+            auto& b=g_player_projectiles[shotIndex];
+            const float old_x=b.x,old_y=b.y;const int side=b.side;
+            const bool sideFiring=side?rightFiring:firing;
+            if(b.lifetime>0&&b.age>=b.lifetime&&!b.ending){b.vm.interrupt_all(1);b.ending=true;b.damage=0;}
+            const bool beam=b.type==2||b.update==9;
+            const bool fixedBeam=g_vs_mode&&b.update==9;
+            if(beam){float x=side?g_p2_x:g_p1_x,y=side?g_p2_y:g_p1_y;if(b.option>0&&b.option<=int(g_player_options[side].size())){x=g_player_options[side][b.option-1].x;y=g_player_options[side][b.option-1].y;}
+                if(b.ability_bank){auto card=std::find_if(g_card_options.begin(),g_card_options.end(),[&](const auto&o){return o.side==b.side&&o.card_id==b.card_id;});if(card!=g_card_options.end()){x=card->x;y=card->y;}else b.ending=true;}
+                // 0x54c830 extends the beam from its registered origin.
+                if(b.update==9){x=b.x-b.offset_x;y=b.y-b.offset_y;}
+                b.x=x+b.offset_x;b.y=y+b.offset_y;
+                if(fixedBeam){
+                    if(b.age==0)move_player_shot(b);
+                    else{
+                        b.x=std::floor(b.x*100.f)/100.f;
+                        b.y=std::floor(b.y*100.f)/100.f;
+                    }
                 }
-                float x0=old_x,y0=old_y,x1=b.x,y1=b.y;if(beam){x1+=std::cos(b.angle)*b.length;y1+=std::sin(b.angle)*b.length;}
-                if(b.update==11){x0=b.x-std::cos(b.angle)*b.length;y0=b.y-std::sin(b.angle)*b.length;}
-                const bool hit=b.update==1&&!(e.flags&0x1000)
-                    ? th19::nativeEnemyRectangleContact(e.x-b.x,e.y-b.y,b.angle,b.hit_width,b.hit_height,e.hitbox_w*.5f)
-                    : th19::sweptShotHit(x0,y0,x1,y1,b.angle,b.hit_width,b.update==11?28.f:b.hit_height,e.x,e.y,e.hitbox_w,e.hitbox_h);
-                if(hit){
-                    if(beam){b.target_id=e.id;if(th19::laserDamageTick(b.hit_callback,b.age,b.init_callback))world.damage_enemy(e,b.damage);}
-                    else if(b.update==11||b.piercing){world.damage_enemy(e,b.damage);spawnImpactEffect(b);}
-                    else {float d=(e.x-old_x)*(e.x-old_x)+(e.y-old_y)*(e.y-old_y);if(d<distance){distance=d;nearest=&e;}}
+                // 0x54c830 / 0x54d370: add18 only below512; last step may reach522.
+                if(!b.ending&&b.length<512.f)b.length+=18.f;
+                bool endOrdinaryBeam=!sideFiring;
+                if(g_vs_mode&&b.update==2&&b.hit_callback==2){
+                    // 0x54d871 reads the emitter cycle. A released fire button
+                    // leaves the existing option beam active until that cycle ends.
+                    const int clock=side?g_opp_shoot_frame:g_shoot_frame;
+                    // 0x54d887 ends for Dead/Pending, while Repelled keeps the
+                    // existing beam and its damage area until the emitter ends.
+                    const bool blocked=(side?rightBlocked:leftBlocked)&&
+                        g_player_damage[side].state!=th19::PlayerDamage::Repelled;
+                    endOrdinaryBeam=clock<0||blocked;
+                }
+                const bool expired=b.update==9?b.age>=120:(b.laser_duration>0?b.age>=b.laser_duration:endOrdinaryBeam);
+                if(expired&&!b.ending){b.vm.interrupt_all(1);b.ending=true;}
+            }else{
+                if(!b.ending&&b.update==1)steer_homing_shot(b,b.age+1);
+                if(b.update==10)advance_wandering_shot(b);
+                if(b.update==6&&!b.ending)b.speed+=.1f; //54b780
+                if(!b.ending&&b.update==8)th19::advanceChargeTalisman(b.age,b.speed);
+                if(b.update==11){b.speed+=.1f;b.length+=b.speed;
+                    if(!b.vm.children.empty())b.vm.children[0].sx=b.length;
+                    if(b.age>129)b.consumed=true;
+                }
+                // 0x54c080: Sanae's radial shots stop for four frames, then
+                // turn towards the enemy that crossed their horizontal band.
+                if(!b.ending&&b.update==4&&b.turn_wait<0){
+                    for(const auto&e:g_ecl_fields[side].world.enemies)if(e.active&&e.sprite>=0&&!(e.flags&0x21)&&std::abs(e.y-b.y)<=16&&std::abs(e.x-b.x)>=16){b.offset_x=e.x;b.offset_y=e.y;b.speed=0;b.turn_wait=0;b.vm.interrupt_all(2);break;}
+                }
+                if(!b.ending&&b.update==4&&b.turn_wait>=0&&b.turn_wait<=4){if(b.turn_wait==4){b.angle=std::atan2(b.offset_y-b.y,b.offset_x-b.x);b.speed=14;}++b.turn_wait;}
+                if(b.update==13){
+                    if(b.age==b.transition_frame){b.speed=0;b.vm.interrupt_all(2);play_sfx(27);}
+                    else {const float step=th19::enokoChargeStep(b.age,b.transition_frame);b.x+=std::cos(b.angle)*step;b.y+=std::sin(b.angle)*step;}
+                    if(th19::enokoChargeCancels(b.age,b.transition_frame))g_ecl_fields[side].world.cancel_enoko_trap(b.x,b.y,b.angle);
+                }
+                if(!b.ending&&(b.update==3||b.update==12||b.update==14)){th19::advanceSpecialShot(b.update,b.angle,b.speed);b.vx=std::cos(b.angle)*b.speed;b.vy=std::sin(b.angle)*b.speed;}
+                // Native 0x54d... adds SHT +0x18/+0x20 after the callback.
+                if(!b.ending){b.angle=std::remainder(b.angle+b.table_turn,6.28318530718f);b.speed+=b.table_acceleration;}
+                b.vx=std::cos(b.angle)*b.speed;b.vy=std::sin(b.angle)*b.speed;
+                if(b.update!=13||!th19::enokoChargeFrozen(b.age,b.transition_frame))move_player_shot(b);
+            }
+            if(!defer_homing_shot(b)&&!defer_marisa_contact(b)&&!b.ending&&b.damage>0){
+                auto&world=g_ecl_fields[side].world;
+                const bool previousLaserHit=beam&&b.target_id!=0;if(beam)b.target_id=0;
+                th19::Enemy* nearest=nullptr;float distance=1e30f;
+                const bool blockingLaser=beam&&b.hit_callback==2;
+                for(auto&e:world.enemies){
+                    if(!e.active||e.sprite<0||(e.flags&0x21)||e.hitbox_w<=0)continue;
+                    if(blockingLaser){
+                        float d=th19::laserContactDistance(b.x,b.y,b.angle,b.length,b.hit_height,e.x,e.y,e.hitbox_w,e.hitbox_h);
+                        if(d>=0&&d<distance){distance=d;nearest=&e;}continue;
+                    }
+                    float x0=old_x,y0=old_y,x1=b.x,y1=b.y;if(beam){x1+=std::cos(b.angle)*b.length;y1+=std::sin(b.angle)*b.length;}
+                    if(b.update==11){x0=b.x-std::cos(b.angle)*b.length;y0=b.y-std::sin(b.angle)*b.length;}
+                    const bool hit=b.update==1&&!(e.flags&0x1000)
+                        ? th19::nativeEnemyRectangleContact(e.x-b.x,e.y-b.y,b.angle,b.hit_width,b.hit_height,e.hitbox_w*.5f)
+                        : th19::sweptShotHit(x0,y0,x1,y1,b.angle,b.hit_width,b.update==11?28.f:b.hit_height,e.x,e.y,e.hitbox_w,e.hitbox_h);
+                    if(hit){
+                        if(beam){b.target_id=e.id;if(th19::laserDamageTick(b.hit_callback,b.age,b.init_callback))world.damage_enemy(e,b.damage);}
+                        else if(b.update==11||b.piercing){world.damage_enemy(e,b.damage);spawnImpactEffect(b);}
+                        else {float d=(e.x-old_x)*(e.x-old_x)+(e.y-old_y)*(e.y-old_y);if(d<distance){distance=d;nearest=&e;}}
 
+                    }
                 }
+                if(nearest){
+                    if(blockingLaser){b.target_id=nearest->id;b.length=std::max(0.f,distance+8.f);
+                        if(th19::laserDamageTick(b.hit_callback,b.age,b.init_callback))world.damage_enemy(*nearest,b.damage);
+                        spawn_marisa_laser_hit(b,b.age);
+                    }
+                    else {
+                        const bool flameHit=b.hit_callback==3||b.hit_callback==9;
+                        const bool frog=b.hit_callback==4; // 54c2f0, also used by pl02.sht group 11
+                        if(flameHit||frog){
+                            const float speed=frog?2.f:.3f,angle=frog?b.angle:-1.57079632679f;
+                            g_attacks[side].skill_damage_circles.push_back({b.x,b.y,24,frog?b.hit_growth:1.f,frog?20:16,b.damage,frog?4:2,std::cos(angle)*speed,std::sin(angle)*speed});
+                            // All three callbacks return +ac for the initial contact.
+                            world.damage_enemy(*nearest,b.damage);
+                            b.speed=speed;play_sfx(65);
+                        }else{world.damage_enemy(*nearest,b.damage);
+                            spawnImpactEffect(b);
+                            b.speed/=8.f;}
+                        // 0x54fba0: preserve the character's own ANM and interrupt1;
+                        // remove its damage area immediately, retire with the ANM.
+                        end_player_shot_on_impact(b);
+                    }}
+                // Native hit callbacks enter ANM label 2; update returns to 3
+                // when contact ends. Keep the beam alive throughout contact.
+                if(beam&&previousLaserHit!=(b.target_id!=0))b.vm.interrupt_all(b.target_id?2:3);
             }
-            if(nearest){
-                if(blockingLaser){b.target_id=nearest->id;b.length=std::max(0.f,distance+8.f);
-                    if(th19::laserDamageTick(b.hit_callback,b.age,b.init_callback))world.damage_enemy(*nearest,b.damage);
-                    spawn_marisa_laser_hit(b,b.age);
-                }
-                else {
-                    const bool flameHit=b.hit_callback==3||b.hit_callback==9;
-                    const bool frog=b.hit_callback==4; // 54c2f0, also used by pl02.sht group 11
-                    if(flameHit||frog){
-                        const float speed=frog?2.f:.3f,angle=frog?b.angle:-1.57079632679f;
-                        g_attacks[side].skill_damage_circles.push_back({b.x,b.y,24,frog?b.hit_growth:1.f,frog?20:16,b.damage,frog?4:2,std::cos(angle)*speed,std::sin(angle)*speed});
-                        // All three callbacks return +ac for the initial contact.
-                        world.damage_enemy(*nearest,b.damage);
-                        b.speed=speed;play_sfx(65);
-                    }else{world.damage_enemy(*nearest,b.damage);
-                        spawnImpactEffect(b);
-                        b.speed/=8.f;}
-                    // 0x54fba0: preserve the character's own ANM and interrupt1;
-                    // remove its damage area immediately, retire with the ANM.
-                    end_player_shot_on_impact(b);
-                }}
-            // Native hit callbacks enter ANM label 2; update returns to 3
-            // when contact ends. Keep the beam alive throughout contact.
-            if(beam&&previousLaserHit!=(b.target_id!=0))b.vm.interrupt_all(b.target_id?2:3);
-        }
-        if(b.vm.rotation_mode==1)b.vm.rot_z=b.angle;
-        ++b.age;
-        if(!defer_homing_shot(b)){
-            b.vm.tick();
-            collect_shot_detached_anms(b);
-        }
-    }
-    if(!g_vs_mode)tick_player_pickups();
-    g_player_projectiles.erase(std::remove_if(g_player_projectiles.begin(),g_player_projectiles.end(),[](const auto& b){
-        // 0x54df10 skips viewport culling for SHT types 2 and 8. In
-        // particular Orin's tail remains visible after its head leaves.
-        bool outside=b.type!=2&&b.type!=8&&(b.y < -64||b.y>512||std::abs(b.x)>220);
-        if(DeferredShotContacts::normalPellet(b)&&!b.ending&&b.age>=15){
-            const auto& sprites=b.effect_bank?g_focus_sprites:b.ability_bank?g_ability_sprites:(b.side?g_opp_sprites:g_player_sprites);
-            const auto& entries=b.effect_bank?g_focus_entries:b.ability_bank?g_ability_entries:(b.side?g_opp:g_player);
-            const auto sprite=sprites.find(b.vm.sprite);
-            if(sprite!=sprites.end()){
-                // 0x54e0d4 checks the preceding ANM position before 0x54e27b
-                // publishes the newly moved shot position.
-                const auto& sp=entries[sprite->second.first].sprites[sprite->second.second];
-                const auto& vm=b.vm;
-                const float width=sp.w*sp.scale_x*vm.sx,height=sp.h*sp.scale_y*vm.sy;
-                const float left=vm.anchor_x==2?-width:vm.anchor_x==1?0:-width*.5f;
-                const float top=vm.anchor_y==2?-height:vm.anchor_y==1?0:-height*.5f;
-                float rotation=vm.rot_z;
-                if(vm.rotation_mode==1||vm.rotation_mode==2)rotation=b.angle;
-                else if(vm.rotation_mode==3)rotation=b.angle+3.14159265359f;
-                else if(vm.rotation_mode==4)rotation=b.angle+1.57079632679f;
-                else if(vm.rotation_mode==5)rotation=b.angle-1.57079632679f;
-                const float c=std::cos(rotation),s=std::sin(rotation);
-                outside=true;
-                for(float x:{left,left+width})for(float y:{top,top+height}){
-                    const float localX=x+sp.offset_x*sp.scale_x*vm.sx;
-                    const float localY=y+sp.offset_y*sp.scale_y*vm.sy;
-                    const float px=b.x-b.vx+vm.x+vm.child_x+localX*c-localY*s;
-                    const float py=b.y-b.vy+vm.y+vm.child_y+localX*s+localY*c;
-                    if(px>-148&&px<148&&py>0&&py<448)outside=false;
-                }
+            if(b.vm.rotation_mode==1)b.vm.rot_z=b.angle;
+            ++b.age;
+            if(!defer_homing_shot(b)){
+                b.vm.tick();
+                collect_shot_detached_anms(b);
             }
         }
-        // The normal VS option beam remains active as long as its emitter cycle runs.
-        const bool continuousOptionBeam=g_vs_mode&&b.update==2&&b.hit_callback==2;
-        const bool tooOld=!continuousOptionBeam&&b.age>std::max(1200,b.lifetime+120);
-        return b.consumed||(b.vm.deleted&&b.vm.children.empty())||outside||tooOld;
-    }),g_player_projectiles.end());
-    const size_t firstNewShot=g_player_projectiles.size();
-    auto emit=[&](int side,int group,int clock,int secondary,bool charged,const PlayerProjectile*card=nullptr){
+        if(!g_vs_mode)tick_player_pickups();
+        const auto retainedEnd=std::remove_if(g_player_projectiles.begin(),g_player_projectiles.begin()+existingShotCount,[](const auto& b){
+            // 0x54df10 skips viewport culling for SHT types 2 and 8. In
+            // particular Orin's tail remains visible after its head leaves.
+            // Normal pellets start native ANM viewport checks at age 15.
+            // Their damage areas remain active above the field before then.
+            bool outside=!DeferredShotContacts::normalPellet(b)&&b.type!=2&&b.type!=8&&
+                         (b.y < -64||b.y>512||std::abs(b.x)>220);
+            if((DeferredShotContacts::normalPellet(b)||b.update==9)&&!b.ending&&b.age>=15){
+                const auto& sprites=b.effect_bank?g_focus_sprites:b.ability_bank?g_ability_sprites:(b.side?g_opp_sprites:g_player_sprites);
+                const auto& entries=b.effect_bank?g_focus_entries:b.ability_bank?g_ability_entries:(b.side?g_opp:g_player);
+                const auto sprite=sprites.find(b.vm.sprite);
+                if(sprite!=sprites.end()){
+                    // 0x54e0d4 checks the preceding ANM position before 0x54e27b
+                    // publishes the newly moved shot position.
+                    const auto& sp=entries[sprite->second.first].sprites[sprite->second.second];
+                    const auto& vm=b.vm;
+                    const float width=sp.w*sp.scale_x*vm.sx,height=sp.h*sp.scale_y*vm.sy;
+                    const float left=vm.anchor_x==2?-width:vm.anchor_x==1?0:-width*.5f;
+                    const float top=vm.anchor_y==2?-height:vm.anchor_y==1?0:-height*.5f;
+                    float rotation=vm.rot_z;
+                    if(vm.rotation_mode==1||vm.rotation_mode==2)rotation=b.angle;
+                    else if(vm.rotation_mode==3)rotation=b.angle+3.14159265359f;
+                    else if(vm.rotation_mode==4)rotation=b.angle+1.57079632679f;
+                    else if(vm.rotation_mode==5)rotation=b.angle-1.57079632679f;
+                    const float c=std::cos(rotation),s=std::sin(rotation);
+                    outside=true;
+                    for(float x:{left,left+width})for(float y:{top,top+height}){
+                        const float localX=x+sp.offset_x*sp.scale_x*vm.sx;
+                        const float localY=y+sp.offset_y*sp.scale_y*vm.sy;
+                        const float px=b.x-b.vx+vm.x+vm.child_x+localX*c-localY*s;
+                        const float py=b.y-b.vy+vm.y+vm.child_y+localX*s+localY*c;
+                        if(px>-148&&px<148&&py>0&&py<448)outside=false;
+                    }
+                }
+            }
+            // The normal VS option beam remains active as long as its emitter cycle runs.
+            const bool continuousOptionBeam=g_vs_mode&&b.update==2&&b.hit_callback==2;
+            const bool tooOld=!continuousOptionBeam&&b.age>std::max(1200,b.lifetime+120);
+            return b.consumed||(b.vm.deleted&&b.vm.children.empty())||outside||tooOld;
+        });
+        firstNewShot=size_t(retainedEnd-g_player_projectiles.begin());
+        g_player_projectiles.erase(retainedEnd,g_player_projectiles.begin()+existingShotCount);
+    };
+    enum class NormalShotPhase { All, OptionBeams, Remaining };
+    auto emit=[&](int side,int group,int clock,int secondary,bool charged,const PlayerProjectile*card=nullptr,NormalShotPhase phase=NormalShotPhase::All){
     const auto&table=side?g_opp_shot_table:g_shot_table;
     if(group<int(table.groups.size()))for(const auto& d:table.groups[group]){
+        const bool optionBeam=(side?g_opp_sel:g_char_sel)==1&&d.init==2&&d.update==2&&d.hit==2;
+        if(phase==NormalShotPhase::OptionBeams&&!optionBeam)continue;
+        if(phase==NormalShotPhase::Remaining&&optionBeam)continue;
         if(d.option>0&&d.option<5&&d.option>int(g_player_options[side].size()))continue;
         if(d.option>6)continue;
         if(!d.due(clock,secondary))continue;
-        if(d.type==2&&std::any_of(g_player_projectiles.begin(),g_player_projectiles.end(),[&](const auto&b){return b.side==side&&b.type==2&&!b.ending&&b.laser_id==d.laser_id&&b.card_id==(card?card->card_id:0);}))continue;
+        if(d.type==2&&std::any_of(g_player_projectiles.begin(),g_player_projectiles.end(),[&](const auto&b){return b.side==side&&b.type==2&&!b.ending&&!(phase==NormalShotPhase::OptionBeams&&b.update==2&&b.hit_callback==2&&previousShotClocks[side]<0)&&b.laser_id==d.laser_id&&b.card_id==(card?card->card_id:0);}))continue;
         float x=side?g_p2_x:g_p1_x,y=side?g_p2_y:g_p1_y;
         if(d.option>0&&d.option<5){const auto&o=g_player_options[side][d.option-1];x=o.x;y=o.y;}
         else if(d.option==5){x=g_attacks[side].skill_origin_x;y=g_attacks[side].skill_origin_y;} // player +0xc18/+0xc1c
@@ -5260,9 +5557,18 @@ unsigned tick_player_shots(bool firing,bool focused){
         if(delayedBeam&&attack.frame==1)emit(side,10,0,0,true);
         if(attack.firing()&&!delayedBeam)
             emit(side,attack.group+(side==0&&character==3&&state.ran_skill.active()?1:0),attack.frame,attack.secondary_clock(),true);
-        if(character==1&&g_charge[side].last_release==2&&
+        if(character==1&&(delayedBeam?attack.release_tier:g_charge[side].last_release)==2&&
            (delayedBeam?attack.frame==1:attack.frame==0&&(side==1||attack.firing())))
             emit(side,11,0,0,true);
+    };
+    struct NormalShotRequest {
+        int side,group,clock,secondary;
+        const PlayerProjectile* card;
+    };
+    std::vector<NormalShotRequest> normalRequests;
+    const auto queueNormal=[&](int side,int group,int clock,int secondary,const PlayerProjectile* card=nullptr){
+        if(g_vs_mode)normalRequests.push_back({side,group,clock,secondary,card});
+        else emit(side,group,clock,secondary,false,card);
     };
     const auto emitNormal=[&](int side,int group,bool held,bool blocked,int& clock){
         int frame=clock,secondary=clock;
@@ -5283,17 +5589,40 @@ unsigned tick_player_shots(bool firing,bool focused){
             ++clock;
         }
         if(frame<0)return;
-        if(!side&&!g_test_card_shoot_only)emit(0,group,frame,secondary,false);
+        if(!side&&!g_test_card_shoot_only)queueNormal(0,group,frame,secondary);
         for(const auto&o:g_card_options)if(o.side==side)
-            emit(side,th19::cardOption(o.card_id)->group,frame,secondary,false,&o);
-        if(side)emit(side,group,frame,secondary,false);
+            queueNormal(side,th19::cardOption(o.card_id)->group,frame,secondary,&o);
+        if(side)queueNormal(side,group,frame,secondary);
     };
+    if(!g_vs_mode)updateExistingShots();
     const int power=g_char_sel==3?g_attacks[0].ran_skill.power(g_player_power):g_player_power;
     emitNormal(0,power+(focused?5:0),firing,leftBlocked,g_shoot_frame);
-    emitCharge(0,g_char_sel);
+    if(!g_vs_mode)emitCharge(0,g_char_sel);
     const int opponentPower=g_opp_sel==3?g_attacks[1].ran_skill.power(g_player_power):g_player_power;
     emitNormal(1,opponentPower+((g_opponent_controls&8)?5:0),rightFiring,rightBlocked,g_opp_shoot_frame);
+    if(g_vs_mode){
+        for(int side=0;side<2;++side)g_ecl_fields[side].world.advance_discharge_scripts();
+        for(int side=0;side<2;++side){
+            if(g_bombs[side].occupied()||g_bomb_visual_tail[side]==10)prepare_charge_gauge_particles(side);
+            for(const auto phase:{NormalShotPhase::OptionBeams,NormalShotPhase::Remaining})
+                for(const auto& request:normalRequests)
+                    if(request.side==side)
+                        emit(request.side,request.group,request.clock,request.secondary,false,request.card,phase);
+        }
+        updateExistingShots();
+        // Persistent charge callbacks precede subsequently created BombInf
+        // callbacks. Simultaneous bomb callbacks visit the newest registration first.
+        emitCharge(0,g_char_sel);
+        prepare_charge_gauge_particles(0);
+    }
     emitCharge(1,g_opp_sel);
+    if(g_vs_mode)prepare_charge_gauge_particles(1);
+    if(g_vs_mode){
+        const int first=g_bomb_area[1].registration>g_bomb_area[0].registration?1:0;
+        const int second=1-first;
+        tick_player_bombs(first,first+1);
+        tick_player_bombs(second,second+1);
+    }
     for(auto&a:g_attacks)a.charge_attack.tick(g_vs_mode);
     // The native 0x54b270 initializers run before the first 0x54b0c0 updates.
     if(g_vs_mode)for(size_t i=g_player_projectiles.size();i>firstNewShot;--i){
@@ -5308,6 +5637,9 @@ unsigned tick_player_shots(bool firing,bool focused){
         ++shot.age;
     }
     unsigned deferredShotSides=0;
+    if(g_vs_mode)for(int side=0;side<2;++side)
+        if(g_player_damage[side].respawnDamageActive())
+            deferredShotSides|=1u<<side;
     for(const auto& shot:g_player_projectiles)if(defer_homing_shot(shot)||defer_marisa_contact(shot))deferredShotSides|=1u<<shot.side;
     for(int side=0;side<2;++side)if(defer_marisa_bomb_contact(side))deferredShotSides|=1u<<side;
     return deferredShotSides;
@@ -5334,8 +5666,8 @@ void tick_cpu_opponent(int side=1){
   std::vector<const th19::EclProgram*> source;for(const auto&p:g_ecl_fields[1].programs)source.push_back(p.get());
   if(left.receive_charge_attack(event.tier,0,0,source)){
    ++g_cpu_story_events;g_attack_warning.start(1,event.tier,g_charge[1].ex_level,g_charge[1].boss_level);
-   g_attack_warning_vm={};auto it=g_aura_scripts.find(g_attack_warning.aura_script());
-   if(it!=g_aura_scripts.end())g_attack_warning_vm.bind_entry(it->second.stream,it->second.len,&g_aura_scripts);
+   retire_attack_warning_animation();auto it=g_aura_scripts.find(g_attack_warning.aura_script());
+   if(it!=g_aura_scripts.end()){g_attack_warning_vm.bind_entry(it->second.stream,it->second.len,&g_aura_scripts);g_attack_warning_vm.clock_after_execution=true;}
    g_attack_warning_frame=-1;bind_warning_portrait(g_opp_sel,1);play_sfx(77);
   }
  }
@@ -5355,8 +5687,9 @@ void tick_cpu_opponent(int side=1){
  }
  // 0x52b1ef exports zero steering speed for a fixed laser.
  const auto addLaser=[&](const th19::InfiniteLaser& l){
-  if(l.active&&(l.phase==2||l.phase==4)&&l.length>16&&l.width>(l.straight?3.f:0.f))
+  if(l.active&&(l.phase==2||l.phase==4)&&l.length>16&&l.width>(l.straight?3.f:0.f)){
    add({l.x+std::cos(l.angle)*l.length*.5f,l.y+std::sin(l.angle)*l.length*.5f,l.length*(l.straight?.8f:.95f),l.collisionWidth(),l.angle,0,false},l.angle,l.straight?l.source.speed:0.f,true);
+  }
  };
  // The VS CPU receives laser hazards newest first, ahead of enemy hazards.
  if(g_vs_mode)for(auto it=w.lasers.rbegin();it!=w.lasers.rend();++it)addLaser(*it);
@@ -5368,15 +5701,24 @@ void tick_cpu_opponent(int side=1){
   if(!e.active||(e.status_flags&0x600)||(e.flags&0x22)||protection>=1||e.contact_w<=0)continue;
   const bool rect=e.flags&0x1000;
   // 0x4f9e6d reads the displacement of the combined position.
-  const float vx=g_vs_mode?e.x-e.previous_x:e.vx,vy=g_vs_mode?e.y-e.previous_y:e.vy;
-  add({e.x,e.y,e.contact_w*1.5f,e.contact_h*1.5f,e.contact_angle,e.contact_w*.5f,!rect},std::atan2(vy,vx),std::hypot(vx,vy));
+  const auto contact=e.result_contact.value_or(std::array<float,7>{e.x,e.y,
+      g_vs_mode?e.x-e.previous_x:e.vx,g_vs_mode?e.y-e.previous_y:e.vy,
+      e.contact_w,e.contact_h,e.contact_angle});
+  add({contact[0],contact[1],contact[4]*1.5f,contact[5]*1.5f,contact[6],contact[4]*.5f,!rect},
+      std::atan2(contact[3],contact[2]),std::hypot(contact[2],contact[3]));
  }
  if(!g_vs_mode)for(const auto& l:w.lasers)addLaser(l);
+ const auto&m=g_charge[side];auto positions=th19::CpuAvoidance::positions(px,py,m.movement_units(false,false),m.movement_units(false,true),
+     m.movement_units(true,false),m.movement_units(true,true));
+ auto perception=th19::CpuAvoidance::perceive(positions,hazards,3);
  std::vector<th19::CpuTarget::Enemy> targets;std::vector<th19::Enemy*> actors;
  for(auto&e:w.enemies)if(e.active&&!(e.status_flags&0x200)&&!(e.flags&0x31)){
-  targets.push_back({e.id,e.x,e.y,e.status_flags,e.cpu_target_cooldown});actors.push_back(&e);
+  const float targetX=e.result_contact?(*e.result_contact)[0]:e.x;
+  const float targetY=e.result_contact?(*e.result_contact)[1]:e.y;
+  targets.push_back({e.id,targetX,targetY,e.status_flags,e.cpu_target_cooldown});actors.push_back(&e);
  }
- int selected=th19::CpuTarget::select(px,py,targets,character);
+ // 0x4fa477 returns emergency bomb before target selection/cooldown updates.
+ int selected=perception.allBlocked?-1:th19::CpuTarget::select(px,py,targets,character);
  for(size_t i=0;i<actors.size();++i)actors[i]->cpu_target_cooldown=targets[i].cooldown;
  th19::CpuTarget::Pursuit pursuit;int direction=th19::CpuAvoidance::idleDirection(px,py);bool slow=false;
  if(selected>=0){pursuit=th19::CpuTarget::pursue(character,px,py,targets[selected]);direction=pursuit.direction;slow=pursuit.slow;}
@@ -5393,15 +5735,14 @@ void tick_cpu_opponent(int side=1){
  const auto resolved=th19::CpuObstacle::steer(px,py,direction,obstacles);
  if(resolved.value_or(0)!=direction)++g_cpu_steers;
  const auto boundary=resolved?th19::CpuAvoidance::boundaryDirection(*resolved,px,py):th19::CpuAvoidance::Choice{};
- const auto&m=g_charge[side];auto positions=th19::CpuAvoidance::positions(px,py,m.movement_units(false,false),m.movement_units(false,true),
-     m.movement_units(true,false),m.movement_units(true,true));
- auto perception=th19::CpuAvoidance::perceive(positions,hazards,3);
  th19::CpuControl::Frame frame;frame.energy=m.energy;frame.currentCharge=m.charge;frame.thresholds=m.thresholds;
  frame.blocked=perception.blocked;frame.allBlocked=perception.allBlocked;frame.ignoreDangerPercent=g_cpu_difficulty.ignoreDangerPercent;frame.storyController=!g_vs_mode;
  frame.eligibleTargetCount=int(targets.size());frame.pursuit=selected>=0?&pursuit:nullptr;
  frame.activeSpecialTarget=selected>=0&&(targets[selected].status&0x700000)&&!(targets[selected].status&0x80000);
  frame.resolvedDirection=boundary.index;frame.resolvedSlow=slow;frame.boundaryHold=boundary.holdFrames;
  // VS CPU branches at 0x4fa711 and 0x4fb0c4 take a raw draw from the main stream.
+ if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
+  std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"cpu-charge\",\"side\":%d,\"gauge\":[%d,%d,%d,%d,%d,%d],\"control\":[%d,%d,%d]}\n",g_vs_match.elapsed,side,m.energy,m.charge,m.thresholds[0],m.thresholds[1],m.thresholds[2],m.thresholds[3],control.charge.preferred,control.chargeTail,control.specialCounter);
  auto result=control.tick(frame,[]{return g_vs_mode?th19::AnmVm::rand_integer(true):unsigned(th19::AnmVm::rand_unit()*65536);});
  if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last){
   std::printf("CPUDBG {\"frame\":%d,\"side\":%d,\"position\":[%.9g,%.9g],\"direction\":%d,\"resolved\":%d,\"boundary\":%d,\"blocked\":%u,\"pass\":%d,\"choice\":%d,\"hold\":%d,\"bits\":%u,\"target\":[%u,%.9g,%.9g],\"objects\":[",g_vs_match.elapsed,side,px,py,direction,resolved.value_or(-1),boundary.index,perception.blocked,perception.pass,control.savedChoice,control.holdFrames,unsigned(result.bits),selected>=0?targets[selected].id:0,selected>=0?targets[selected].x:0,selected>=0?targets[selected].y:0);
@@ -5412,15 +5753,24 @@ void tick_cpu_opponent(int side=1){
    std::printf("%s[%u,%.9g,%.9g,%d,%u,%u,%d,%.9g,%d,%d,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g]",firstEnemy?"":",",enemy.id,enemy.x,enemy.y,enemy.life,enemy.status_flags,enemy.flags,enemy.spawn_hold,enemy.invulnerability_time,enemy.recoil_pending,enemy.age,enemy.absolute_base_x,enemy.absolute_base_y,enemy.angle,enemy.speed,enemy.vx,enemy.vy,enemy.turn.elapsed,enemy.accelerate.elapsed);
    firstEnemy=false;
   }
+  std::printf("],\"scripts\":[");
+  bool firstScript=true;
+  for(const auto& enemy:w.enemies)if(enemy.active&&enemy.vm){
+   std::printf("%s[%u,\"%s\",%u,%d,%.9g]",firstScript?"":",",enemy.id,enemy.vm->current_sub_name(),enemy.vm->instruction_offset(),enemy.vm->finished(),enemy.vm->current_time());
+   firstScript=false;
+  }
   std::printf("],\"pickups\":[");
-  for(size_t i=0;i<w.pickups.size();++i){const auto&p=w.pickups[i];std::printf("%s[%u,%d,%.9g,%.9g]",i?",":"",p.id,p.state,p.x,p.y);}
+  for(size_t i=0;i<w.pickups.size();++i){const auto&p=w.pickups[i];std::printf("%s[%u,%d,%.9g,%.9g,%d,%u]",i?",":"",p.id,p.state,p.x,p.y,p.delay,w.pickup_serial);}
   std::printf("],\"lasers\":[");
   bool firstLaser=true;
   for(const auto& laser:w.lasers)if(laser.active){
-   std::printf("%s[%u,%.9g,%.9g,%.9g,%.9g,%.9g,%d,%d,%d,%d,%d]",firstLaser?"":",",laser.id,laser.x,laser.y,laser.angle,laser.length,laser.width,laser.phase,laser.clock,laser.age,laser.straight,laser.fragment);
+   std::printf("%s[%u,%.9g,%.9g,%.9g,%.9g,%.9g,%d,%d,%d,%d,%d,%.9g,%.9g,%.9g]",firstLaser?"":",",laser.id,laser.x,laser.y,laser.angle,laser.length,laser.width,laser.phase,laser.clock,laser.age,laser.straight,laser.fragment,laser.source.speed,laser.source.speed2,laser.source.offset);
    firstLaser=false;
   }
-  std::printf("]}\n");
+  const auto& comboAttack=w.combo_attack;
+  std::printf("],\"comboAttack\":[%d,%d,%d,%d,%d,%u],\"resultPause\":[%d,%u,%d,%d]}\n",comboAttack.extraCredit,comboAttack.bossCredit,comboAttack.extraRecovery,comboAttack.extraCooldown,comboAttack.bossCooldown,comboAttack.frame,g_battle_report_frame,w.result_pause_id,w.result_pause_frame,w.battle_frame);
+  for(const auto& enemy:w.enemies)if(enemy.active&&enemy.y>440)
+   std::printf("ENEMYDBG {\"frame\":%d,\"side\":%d,\"event\":\"cpu-bounds\",\"id\":%u,\"position\":[%.9g,%.9g],\"body\":[%.9g,%.9g],\"flags\":[%u,%u]}\n",g_vs_match.elapsed,side,enemy.id,enemy.x,enemy.y,enemy.body_half_width*2,enemy.body_half_height*2,enemy.flags,enemy.status_flags);
   for(const auto& bullet:w.bullets)if(bullet.state==1||bullet.state==2||bullet.state==th19::Bullet::Canceling){
    std::printf("BULLETDBG {\"frame\":%d,\"side\":%d,\"event\":\"cpu-bullet\",\"id\":%u,\"position\":[%.9g,%.9g],\"velocity\":[%.9g,%.9g],\"state\":%d,\"kind\":%d,\"color\":%d,\"age\":%d,\"animation\":[%d,%u,%d],\"contactCancel\":%d}\n",g_vs_match.elapsed,side,bullet.id,bullet.x,bullet.y,bullet.vx,bullet.vy,bullet.state,bullet.kind,bullet.color,bullet.age,bullet.animation.time,bullet.animation.ip,bullet.animation.sprite,bullet.contact_cancel);
   }
@@ -5464,15 +5814,12 @@ bool held=g_charge[side].held;int level=g_charge[side].level();g_charge[side].ch
                                 float angle=-1.57079632679f;
                                 for(int i=0;i<6;++i){
                                     MarisaSkillVisual v;
+                                    if(g_vs_mode)v.flight_id=g_ecl_fields[1-side].world.next_id++;
                                     auto& s=v.state;
                                     if(g_vs_mode){
-                                        // The flight manager first checks the clock on the next tick.
-                                        s.frame=-1;
-                                        th19::AnmVm::rand_integer(true);
-                                        s.duration=th19::MarisaSkill::flightDuration(th19::AnmVm::random_checkpoint(true));
-                                        // 0x53d415 and 0x53d48b build fallback tangents before reading the supplied pair.
-                                        th19::AnmVm::rand_signed_unit(100.f,true);
-                                        th19::AnmVm::rand_signed_unit(100.f,true);
+                                        // The shared flight manager dispatches the new C2 after
+                                        // existing EX arrivals have consumed their ECL random draws.
+                                        s.frame=-1;s.duration=-1;
                                     }else s.duration=th19::MarisaSkill::flightDuration(unsigned(th19::AnmVm::rand_unit()*65536));
                                     s.from_x=cx+GAME_SCALE*px;s.from_y=GAME_FY0+GAME_SCALE*py;
                                     v.target_x=opx;s.to_x=ocx+GAME_SCALE*v.target_x;s.to_y=GAME_FY0+448*GAME_SCALE;
@@ -5524,33 +5871,73 @@ bool held=g_charge[side].held;int level=g_charge[side].level();g_charge[side].ch
                         if(g_barrier[side].restore_from_charge(tier))g_barrier_vm[side]={};
                         if(side==0)g_cpu_story.add(tier==4?350:300,g_ecl_fields[0].world.boss_occupied()||g_ecl_fields[1].world.boss_occupied());
                         std::vector<const th19::EclProgram*> source;for(const auto&p:g_ecl_fields[side].programs)source.push_back(p.get());
-                        if(target.receive_charge_attack(tier,0,0,source)){
-                            auto&count=g_vs_attack_counts[side][tier==4?1:0];count=std::min(999,count+1);
+                        // 0x50e820 counts the release before destination dispatch;
+                        // 0x4e81c3 spends gauge even when the result field rejects it.
+                        auto&count=g_vs_attack_counts[side][tier==4?1:0];count=std::min(999,count+1);
+                        const bool dispatched=target.receive_charge_attack(tier,0,0,source);
+                        if(dispatched){
                             g_attack_warning.start(side,tier,g_charge[side].ex_level,g_charge[side].boss_level);
-                            g_attack_warning_vm={};auto it=g_aura_scripts.find(g_attack_warning.aura_script());
-                            if(it!=g_aura_scripts.end())g_attack_warning_vm.bind_entry(it->second.stream,it->second.len,&g_aura_scripts);
-                            g_attack_warning_frame=-1;bind_warning_portrait(ch,side);play_sfx(77);g_charge[side].spend_attack(tier);
+                            retire_attack_warning_animation();auto it=g_aura_scripts.find(g_attack_warning.aura_script());
+                            if(it!=g_aura_scripts.end()){g_attack_warning_vm.bind_entry(it->second.stream,it->second.len,&g_aura_scripts);g_attack_warning_vm.clock_after_execution=true;}
+                            bind_warning_portrait(ch,side);
+                            // 0x4e81c3 -> 0x50d934 constructs the announcement
+                            // before BombInf registers its gauge particles.
+                            if(g_vs_mode&&g_vs_entry==2&&(g_bombs[side].frame==0||g_bombs[1-side].occupied())){
+                                g_attack_warning_vm.tick();g_warning_portrait.tick();
+                                g_attack_warning_frame=g_frame+1;
+                            }else g_attack_warning_frame=-1;
+                            play_sfx(77);
                             // Native4e7b2a/4e8184 ->537b90: one fragment per accepted EX/Boss.
                             if(th19::ownsCard(player_cards(side),38)&&th19::mamizouSkillFragment(bombs,fragments))play_sfx(46);
                         }
+                        g_charge[side].spend_attack(tier);
                     }
                     // 0x4e83b9..0x4e8440 gates the ordinary release on the
                     // charge value. Marisa Skill sets +d4 for a later C1;
                     // it must not create the group 10/11 beams immediately.
-                    if(th19::ChargeAttack::ordinary_after_release(ch,g_charge[side].last_release,accepted))g_attacks[side].charge_attack.release(ch);
+                    if(th19::ChargeAttack::ordinary_after_release(ch,g_charge[side].last_release,accepted)&&g_attacks[side].charge_attack.release(ch))
+                        g_attacks[side].charge_attack.release_tier=g_charge[side].last_release;
                     if(areaStarted||g_attacks[side].charge_area.release(ch,px,py)){g_attacks[side].charge_area_x=px;g_attacks[side].charge_area_y=py;bind_player_animation(g_attacks[side].charge_area_vm,g_attacks[side].charge_area.script(),entries,scripts);if(ch==8)bind_player_animation(g_attacks[side].tsukasa_skill_back,13,entries,scripts);if(ch!=7&&ch!=8&&ch!=18)play_sfx(ch==5?29:ch==9?46:g_attacks[side].charge_area.enhanced?(ch==10?41:45):(ch==10?41:44));}
                 }}
 
+ if(g_vs_mode&&g_vs_entry==2&&clearActor&&g_charge[side].last_release>=2&&(g_bombs[side].frame==0||g_bombs[1-side].occupied())){
+    // The charge dispatcher constructs its clear before BombInf's aura.
+    auto& world=g_ecl_fields[side].world;
+    const unsigned bits=side?g_opponent_controls:g_cpu_left_bits;
+    const int dx=int((bits&128)!=0)-int((bits&64)!=0);
+    const int dy=int((bits&32)!=0)-int((bits&16)!=0);
+    const float speed=g_charge[side].movement_units(dx&&dy,slow)/128.f;
+    float clearX=px,clearY=py;
+    if(g_player_damage[side].controllable()){
+        clearX=std::clamp(px+dx*speed,-140.f,140.f);
+        clearY=std::clamp(py+dy*speed,32.f,432.f);
+    }
+    // The enemy manager snaps absolute motion before the birth ECL callback.
+    clearX=std::floor(clearX*100.f)/100.f;
+    clearY=std::floor(clearY*100.f)/100.f;
+    world.enemies[*clearActor].set_absolute_position(clearX,clearY);
+    world.enemies[*clearActor].vm->step();
+    world.enemies[*clearActor].script_advanced_before_cpu=true;
+ }
  return clearActor;
 }
 bool start_player_bomb(int side){
     auto&b=g_bombs[side];const int ch=side?g_opp_sel:g_char_sel;
-    if(!th19::PlayerBomb::supported(ch)||!g_player_damage[side].controllable())return false;
+    auto& damage=g_player_damage[side];
+    // 0x546756 permits BombInf during the hit-grace window, then restores
+    // Playing with timer 60 at 0x5467d4 after successful activation.
+    const bool deathbomb=damage.state==th19::PlayerDamage::Pending&&damage.frame<8;
+    if(!th19::PlayerBomb::supported(ch)||(!damage.controllable()&&!deathbomb))return false;
     auto&scripts=side?g_opp_scripts:g_player_scripts;
     int area=th19::PlayerBomb::areas[ch],back=th19::PlayerBomb::backs[ch];
     if(!scripts.count(area)||!scripts.count(back))return false;
     auto&stock=side?g_p2_bombs:g_p1_bombs;
     if(!b.start(ch,g_charge[side].energy,stock,side?g_p2_x:g_p1_x,side?g_p2_y:g_p1_y,side?g_opp_direction:g_p1_dir))return false;
+    if(deathbomb)damage.rescue();
+    // CPU bomb activation also forces the held charge to release.
+    // Construct its aura after that dispatch and before the SHT callbacks.
+    if(g_vs_mode&&g_vs_entry!=2)prepare_charge_gauge_particles(side);
+
     // VS starts BombInf before resolving the released charge on this tick.
     if(!g_vs_mode){
         g_charge[side].charge=0;
@@ -5567,12 +5954,14 @@ bool start_player_bomb(int side){
     for(int i=0;i<2;++i){g_bomb_extra[side][i]={};if(i+1<b.count)bind(g_bomb_extra[side][i],area); }
     play_sfx(49);return true;
 }
-void tick_player_bombs(){
-    for(int side=0;side<2;++side){auto&b=g_bombs[side];if(b.frame<0){
+void tick_player_bombs(int firstSide,int lastSide){
+    for(int side=firstSide;side<lastSide;++side){auto&b=g_bombs[side];if(b.frame<0){
             if(g_bomb_visual_tail[side]>0){--g_bomb_visual_tail[side];g_bomb_area[side].tick();g_bomb_back[side].tick();for(auto&v:g_bomb_extra[side])v.tick();}
             continue;
         }
         auto&area=g_bomb_area[side];auto&back=g_bomb_back[side];
+        if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
+            std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"bomb-state\",\"side\":%d,\"time\":%d,\"duration\":%d,\"energy\":%d,\"target\":%.9g}\n",g_vs_match.elapsed,side,b.frame,b.duration,b.initial_energy,b.target_radius);
         // 0x53d9bf increments Marisa's timer before the duration gate at 0x53da08.
         // The terminal tick interrupts the ANM without registering a clearing area.
         const bool marisaEnding=b.character==1&&b.frame+1==b.duration;
@@ -5606,8 +5995,18 @@ void tick_player_bombs(){
                 auto rectangle=[&](float x,float y,float width,float height,float angle=0.f){
                     w.cancel_bullets_rect(x,y,width,height,angle);
                     auto inside=[=](float px,float py){float dx=px-x,dy=py-y;return std::abs(dx*std::cos(angle)+dy*std::sin(angle))<=width*.5f&&std::abs(-dx*std::sin(angle)+dy*std::cos(angle))<=height*.5f;};
-                    if(g_vs_mode&&b.character==1)w.cancel_lasers_rect(x,y,width,height,angle);
-                    else w.cancel_lasers_region(inside);
+                    if(g_vs_mode&&b.character==1){
+                        const auto firstCancel=w.bullet_cancels.size();
+                        w.cancel_lasers_rect(x,y,width,height,angle);
+                        for(size_t i=firstCancel;i<w.bullet_cancels.size();++i){
+                            auto& event=w.bullet_cancels[i];
+                            const auto script=g_bullet_scripts.find(event.script);
+                            if(event.animation.stream||script==g_bullet_scripts.end())continue;
+                            event.animation.bind_entry(script->second.stream,script->second.len,&g_bullet_scripts);
+                            event.animation.clock_after_execution=true;
+                            event.animation.tick();
+                        }
+                    }else w.cancel_lasers_region(inside);
                     if(!g_vs_mode||b.character!=1)
                         for(auto&e:w.enemies)if(inside(e.x,e.y))w.damage_enemy(e,20);
                 };
@@ -5623,7 +6022,11 @@ void tick_player_bombs(){
             }
         }else{
             if((b.character==1?b.frame+1:b.frame)==b.duration){area.interrupt_all(1);back.interrupt_all(1);for(int i=1;i<b.count;++i)g_bomb_extra[side][i-1].interrupt_all(1);play_sfx(44);}
-            if(marisaEnding)++b.frame;
+            if(marisaEnding){
+                // 0x53da27 registers the fifteen-tick, six-pixel exit shake.
+                g_screen_shake.start({15,6,6});
+                ++b.frame;
+            }
             else b.advance(0,0);
         }
         // Native ticks write PlayerStat+24 throughout the bomb, then restore
@@ -5717,12 +6120,126 @@ void draw_player_shots(){
 }
 
 // Native item script table 0x59afc0 resolves to bullet.anm 115..128.
-struct Visual {th19::AnmVm vm;float x=0,y=0;int side=0,script=-1;u32 frame=0;bool effect=false;};
+struct Visual {th19::AnmVm vm;float x=0,y=0;int side=0,script=-1,update_side=-1;u32 frame=0;bool effect=false;u32 order=0;};
 struct ChainVisual {th19::AnmVm vm;float x=0,y=0;int side=0,age=0,duration=0;u32 frame=0;};
 std::vector<ChainVisual> rb_draw_combat_items_chainVisuals;
 std::unordered_map<u32,Visual> rb_draw_combat_items_items[2];std::vector<Visual> rb_draw_combat_items_deaths,rb_draw_combat_items_cancels;
 u32 rb_draw_combat_items_generation=0;
-void draw_combat_items(){
+void collect_death_visuals(int firstSide,int lastSide,bool opposite_only=false){
+    if(rb_draw_combat_items_generation!=g_ecl_generation){
+        rb_draw_combat_items_items[0].clear();
+        rb_draw_combat_items_items[1].clear();
+        rb_draw_combat_items_deaths.clear();
+        rb_draw_combat_items_cancels.clear();
+        rb_draw_combat_items_chainVisuals.clear();
+        rb_draw_combat_items_generation=g_ecl_generation;
+    }
+    for(int side=firstSide;side<lastSide;++side){
+        auto& events=g_ecl_fields[side].world.deaths;
+        for(auto event=events.begin();event!=events.end();){
+            if(opposite_only&&!event->opponent_animation_queue){++event;continue;}
+            auto& effect=*event;
+            Visual visual;
+            visual.x=effect.x;visual.y=effect.y;visual.side=side;
+            visual.script=effect.script;visual.effect=effect.file==1;
+            visual.update_side=effect.opponent_animation_queue?1-side:side;
+            auto& bank=visual.effect?g_focus_scripts:g_bullet_scripts;
+            const auto script=bank.find(effect.script);
+            if((effect.file==0||effect.file==1)&&script!=bank.end()){
+                if(effect.animation.stream)visual.vm=std::move(effect.animation);
+                else{
+                    visual.vm.bind_entry(script->second.stream,script->second.len,&bank);
+                    visual.vm.rot_z=effect.angle;
+                    if(effect.initialize_animation){visual.vm.clock_after_execution=true;visual.vm.tick();}
+                }
+                rb_draw_combat_items_deaths.push_back(std::move(visual));
+            }
+            play_sfx(effect.sound);
+            event=events.erase(event);
+        }
+    }
+}
+u32 rb_graze_animation_frame[2]={~0u,~0u};
+void tick_persistent_visuals_before(int side,u32 registration){
+    for(auto& visual:rb_draw_combat_items_deaths){
+        if((visual.update_side<0?visual.side:visual.update_side)==side&&visual.effect&&((visual.script>=64&&visual.script<=76&&visual.script%2==0)||visual.script==89)&&visual.frame!=g_frame&&visual.vm.registration<registration){
+            visual.vm.tick();visual.frame=g_frame;
+        }
+    }
+}
+void tick_independent_visuals_before(int side,u32 registration,bool initialize_lasers){
+    if(g_paused)return;
+    auto& world=g_ecl_fields[side].world;
+    for(auto event=world.bullet_cancels.begin();event!=world.bullet_cancels.end();){
+        if(!event->animation.stream&&(!initialize_lasers||event->script<212)){++event;continue;}
+        Visual visual;
+        visual.x=event->x;visual.y=event->y;visual.side=side;visual.order=event->order;
+        if(event->animation.stream)visual.vm=std::move(event->animation);
+        else{
+            const auto script=g_bullet_scripts.find(event->script);
+            if(script==g_bullet_scripts.end()){++event;continue;}
+            visual.vm.bind_entry(script->second.stream,script->second.len,&g_bullet_scripts);
+            visual.vm.clock_after_execution=true;
+            visual.vm.tick();
+        }
+        rb_draw_combat_items_cancels.push_back(std::move(visual));
+        event=world.bullet_cancels.erase(event);
+    }
+    struct Entry{u32 order;Visual* visual;th19::GrazeParticle* graze;th19::AnmVm* emitter=nullptr;const th19::AnmVm* parent=nullptr;};
+    std::vector<Entry> entries;
+    for(auto& visual:rb_draw_combat_items_cancels)
+        if(visual.side==side&&visual.frame!=g_frame&&visual.vm.registration<registration)
+            entries.push_back({visual.vm.registration,&visual,nullptr});
+    // Persistent spell-line emitters retain their own manager registration.
+    // Advance older emitters before a later independent callback crosses them.
+    for(auto& visual:rb_draw_combat_items_deaths)
+        if((visual.update_side<0?visual.side:visual.update_side)==side&&visual.effect&&((visual.script>=64&&visual.script<=76&&visual.script%2==0)||visual.script==89||visual.script==21||visual.script==22)&&visual.frame!=g_frame&&visual.vm.registration<registration)
+            entries.push_back({visual.vm.registration,&visual,nullptr});
+    auto collectEmitters=[&](auto&& self,th19::AnmVm& vm,const th19::AnmVm* parent)->void{
+        if(!vm.deleted&&vm.time==6&&parent&&vm.registration<registration){
+            for(int scriptId=136;scriptId<=140;++scriptId){
+                const auto script=g_focus_scripts.find(scriptId);
+                if(script!=g_focus_scripts.end()&&vm.stream==script->second.stream){
+                    entries.push_back({vm.registration,nullptr,nullptr,&vm,parent});
+                    break;
+                }
+            }
+        }
+        for(auto& child:vm.children)self(self,child,&vm);
+    };
+    for(auto& visual:rb_draw_combat_items_deaths)
+        if((visual.update_side<0?visual.side:visual.update_side)==side&&visual.frame!=g_frame)collectEmitters(collectEmitters,visual.vm,nullptr);
+    for(auto& pair:rb_draw_ecl_objects_animations[side]){
+        const u32 host=u32(pair.first>>4);
+        if(std::none_of(world.enemies.begin(),world.enemies.end(),[&](const auto& enemy){return enemy.id==host&&enemy.active;}))continue;
+        auto& root=pair.second.vm;
+        for(auto& child:root.children)
+            if(child.independent_tick&&child.independent_frame!=g_frame&&child.registration<registration)
+                entries.push_back({child.registration,nullptr,nullptr,&child,&root});
+    }
+    for(auto& particle:world.graze_particles)
+        if(particle.heading_ready&&particle.order<registration&&std::find(g_early_graze_orders[side].begin(),g_early_graze_orders[side].end(),particle.order)==g_early_graze_orders[side].end())
+            entries.push_back({particle.order,nullptr,&particle});
+    std::stable_sort(entries.begin(),entries.end(),[](const auto&a,const auto&b){return a.order<b.order;});
+    for(auto& entry:entries){
+        if(entry.emitter){
+            if(g_gauge_particles[side].stream&&g_gauge_particles[side].registration<entry.order)
+                tick_charge_gauge_particles(side);
+            if(entry.emitter->independent_tick){
+                entry.emitter->tick(entry.parent);
+                entry.emitter->independent_frame=g_frame;
+            }else entry.emitter->tick_before_parent(entry.parent);
+        }else if(entry.visual){
+            if(g_gauge_particles[side].stream&&g_gauge_particles[side].registration<entry.order)tick_charge_gauge_particles(side);
+            entry.visual->vm.tick();entry.visual->frame=g_frame;
+        }else{
+            if(g_gauge_particles[side].stream&&g_gauge_particles[side].registration<entry.order)tick_charge_gauge_particles(side);
+            entry.graze->tick();g_early_graze_orders[side].push_back(entry.order);
+        }
+    }
+}
+void draw_combat_items(int firstSide=0,int lastSide=2){
+    collect_death_visuals(firstSide,lastSide);
 
 
 
@@ -5749,12 +6266,12 @@ void draw_combat_items(){
             if(t!=ghostTextures.end())emit_quad(34,t->second,ghostEntries[s->second.first].sprites[s->second.second],x*2,y*2,sx*v.sx*2,sy*v.sy*2,v.anchor_x,v.anchor_y,v.color(),v.rot_z,v.blend_mode==1,v.blend_mode);}
         for(const auto&child:v.children)self(self,child,x,y,sx*v.sx,sy*v.sy);
     };
-    for(auto&v:g_spirit_flights){if(!v.vm.stream){auto s=ghostScripts.find(v.state.script);if(s!=ghostScripts.end()){v.vm.bind_entry(s->second.stream,s->second.len,&ghostScripts);v.vm.tick();}}
+    if(firstSide==0)for(auto&v:g_spirit_flights){if(!v.vm.stream){auto s=ghostScripts.find(v.state.script);if(s!=ghostScripts.end()){v.vm.bind_entry(s->second.stream,s->second.len,&ghostScripts);v.vm.tick();}}
         auto p=v.curve.position();drawSpirit(drawSpirit,v.vm,p.x,p.y,1,1);}
 
     static std::unordered_map<i32,th19::AnmScriptLoc> itemScripts;
 
-    if(rb_draw_combat_items_generation!=g_ecl_generation){rb_draw_combat_items_items[0].clear();rb_draw_combat_items_items[1].clear();rb_draw_combat_items_deaths.clear();rb_draw_combat_items_cancels.clear();rb_draw_combat_items_chainVisuals.clear();rb_draw_combat_items_generation=g_ecl_generation;}
+
     if(itemScripts.empty())for(const auto&e:g_bullet)for(const auto&sc:e.scripts)itemScripts[sc.id]={g_bullet_bytes.data()+e.base+sc.offset,u32(g_bullet_bytes.size()-e.base-sc.offset),&e.scripts};
     auto draw=[&](auto&&self,const th19::AnmVm&v,float x,float y,int side,bool effect,float sx,float sy,int layer=-1)->void{
         if(!v.visible)return;x+=(v.x+v.child_x)*sx;y+=(v.y+v.child_y)*sy;
@@ -5771,29 +6288,19 @@ void draw_combat_items(){
         }}
         for(const auto&c:v.children)self(self,c,x,y,side,effect,sx*v.sx,sy*v.sy,layer);
     };
-    for(int side=0;side<2;++side){auto&w=g_ecl_fields[side].world;g_actor_clip=side;
+    for(int side=firstSide;side<lastSide;++side){auto&w=g_ecl_fields[side].world;g_actor_clip=side;
         for(const auto&c:w.death_chain_visuals){auto it=ghostScripts.find(16);if(it==ghostScripts.end())continue;
             ChainVisual v;v.x=c.x;v.y=c.y;v.side=side;v.duration=c.duration;v.frame=g_frame;
             v.vm.bind_entry(it->second.stream,it->second.len,&ghostScripts);v.vm.tick();
             auto&i=v.vm.ip_scale;i.active=true;i.dur=c.duration;i.mode=5;i.v0=i.v1=1;i.t0=i.t1=c.target;
             rb_draw_combat_items_chainVisuals.push_back(std::move(v));}w.death_chain_visuals.clear();
-        for(const auto&e:w.deaths){Visual v;v.x=e.x;v.y=e.y;v.side=side;v.script=e.script;v.effect=e.file==1;
-            // 0x50d380: file 0 is bullet.anm, file 1 is effect.anm.
-            // Orin's BossGirl uses ECL323(0,262) for its death flash.
-            auto&bank=v.effect?g_focus_scripts:itemScripts;auto it=bank.find(e.script);
-            if((e.file==0||e.file==1)&&it!=bank.end()){
-                v.vm.bind_entry(it->second.stream,it->second.len,&bank);v.vm.rot_z=e.angle;
-                // 0x4cb960 initializes independent effects before the ANM update.
-                if(e.initialize_animation)v.vm.tick();
-                rb_draw_combat_items_deaths.push_back(std::move(v));
-            }play_sfx(e.sound);}w.deaths.clear();
-        for(auto&e:w.bullet_cancels){Visual v;v.x=e.x;v.y=e.y;v.side=side;
+        for(auto&e:w.bullet_cancels){Visual v;v.x=e.x;v.y=e.y;v.side=side;v.order=e.order;
             if(e.animation.stream){
                 v.vm=std::move(e.animation);
-                v.frame=g_frame;
             }else{
                 const auto it=itemScripts.find(e.script);
                 if(it!=itemScripts.end())v.vm.bind_entry(it->second.stream,it->second.len,&itemScripts);
+                v.vm.clock_after_execution=true;
             }
             if(v.vm.stream)rb_draw_combat_items_cancels.push_back(std::move(v));}
         w.bullet_cancels.clear();
@@ -5812,37 +6319,87 @@ void draw_combat_items(){
             }
         }
         for(auto it=rb_draw_combat_items_items[side].begin();it!=rb_draw_combat_items_items[side].end();)if(!live.count(it->first))it=rb_draw_combat_items_items[side].erase(it);else ++it;
+        // The break-wave emitter is an independent manager node. Its periodic
+        // child creation runs after earlier cancellation and graze nodes.
+        auto prepareBreakWave=[&](auto&& self,const th19::AnmVm& vm)->void{
+            if(!vm.deleted&&vm.time==6){
+                for(int scriptId=136;scriptId<=140;++scriptId){
+                    const auto emitter=g_focus_scripts.find(scriptId);
+                    if(emitter!=g_focus_scripts.end()&&vm.stream==emitter->second.stream){
+                        tick_independent_visuals_before(side,vm.registration,false);
+                        break;
+                    }
+                }
+            }
+            for(const auto& child:vm.children)self(self,child);
+        };
+        for(auto&v:rb_draw_combat_items_deaths){if((v.update_side<0?v.side:v.update_side)!=side)continue;g_actor_clip=v.side;if(!g_paused&&v.frame!=g_frame){
+            if(g_vs_mode)prepareBreakWave(prepareBreakWave,v.vm);v.vm.tick();v.frame=g_frame;}
+            if(v.effect&&(v.script==21||v.script==22||v.script==25)){
+                // Player hit/death roots 22/21 use default child transforms.
+                // 0x4d0770: +564 is the root anchor, +568 the immediate parent.
+                // 0x404050: offsets do NOT inherit scale without flag 0x40000.
+                auto visit=[&](auto&&self,const th19::AnmVm&n,bool root)->void{
+                    if(!n.visible)return;
+                    float sx=root?1.f:v.vm.sx,sy=root?1.f:v.vm.sy;
+                    float x=v.x+(root?0.f:v.vm.x+v.vm.child_x)+n.x+n.child_x;
+                    float y=v.y+(root?0.f:v.vm.y+v.vm.child_y)+n.y+n.child_y;
+                    auto a=g_focus_sprites.find(n.sprite);if(a!=g_focus_sprites.end()){
+                        auto t=g_focus_tex.find(a->second.first);if(t!=g_focus_tex.end())
+                        emit_quad(33,t->second,g_focus_entries[a->second.first].sprites[a->second.second],
+                            (v.side?GAME_F2_CX:GAME_F1_CX)+GAME_SCALE*x,GAME_FY0+GAME_SCALE*y,
+                            GAME_SCALE*sx*n.sx,GAME_SCALE*sy*n.sy,n.anchor_x,n.anchor_y,n.color(),n.rot_z,n.blend_mode==1,n.blend_mode);
+                    }
+                    draw_procedural_node(n,v.side,x-(n.x+n.child_x)*sx,y-(n.y+n.child_y)*sy,sx,sy,34,false);
+                    for(const auto&c:n.children)self(self,c,false);
+                };visit(visit,v.vm,true);
+            }else if(v.effect&&v.script==13)draw(draw,v.vm,v.x,v.y,v.side,true,1,1,29);
+            else{draw(draw,v.vm,v.x,v.y,v.side,v.effect,1,1);draw_procedural_node(v.vm,v.side,v.x,v.y);}
+        }
+        // Native field updates finish their cancellation roots before the
+        // other field initializes its pickups, preserving shared ANM RNG order.
+        struct Pending {u32 order;Visual* visual;th19::GrazeParticle* graze;th19::AnmVm* independent=nullptr;const th19::AnmVm* parent=nullptr;};
+        std::vector<Pending> pending;
+        if(g_vs_mode&&!g_paused)for(auto& pair:rb_draw_ecl_objects_animations[side]){
+            auto& root=pair.second.vm;
+            for(auto& child:root.children)
+                if(child.independent_tick&&child.independent_frame!=g_frame)pending.push_back({child.registration,nullptr,nullptr,&child,&root});
+        }
+        for(auto& visual:rb_draw_combat_items_cancels)
+            if(visual.side==side)pending.push_back({visual.vm.registration,&visual,nullptr});
+        if(g_vs_mode&&rb_graze_animation_frame[side]!=g_frame)for(auto& particle:w.graze_particles){
+            if(particle.delay>0){if(!g_paused)particle.tick();}
+            else if(std::find(g_early_graze_orders[side].begin(),g_early_graze_orders[side].end(),particle.order)==g_early_graze_orders[side].end())pending.push_back({particle.order,nullptr,&particle});
+        }
+        std::stable_sort(pending.begin(),pending.end(),[](const auto& a,const auto& b){return a.order<b.order;});
+        for(auto& entry:pending){
+            if(entry.independent){
+                if(g_gauge_particles[side].stream&&g_gauge_particles[side].registration<entry.order)
+                    tick_charge_gauge_particles(side);
+                entry.independent->tick(entry.parent);
+                entry.independent->independent_frame=g_frame;
+            }else if(entry.visual){
+                auto& visual=*entry.visual;
+                if(g_vs_mode&&!g_paused&&(!g_gauge_particles[side].stream||g_gauge_particles[side].registration<visual.vm.registration))tick_charge_gauge_particles(side);
+                if(!g_paused&&visual.frame!=g_frame){visual.vm.tick();visual.frame=g_frame;}
+                draw(draw,visual.vm,visual.x,visual.y,side,visual.effect,1,1);
+            }else if(!g_paused){
+                if(g_vs_mode&&g_gauge_particles[side].stream&&g_gauge_particles[side].registration<entry.order)tick_charge_gauge_particles(side);
+                entry.graze->tick();
+            }
+        }
+        if(g_vs_mode&&!g_paused)tick_charge_gauge_particles(side);
+        if(g_vs_mode&&!g_paused)rb_graze_animation_frame[side]=g_frame;
+        if(g_vs_mode&&!g_paused)w.graze_particles.erase(std::remove_if(w.graze_particles.begin(),w.graze_particles.end(),
+            [](const auto& particle){return !particle.active;}),w.graze_particles.end());
     }
-    for(auto&v:rb_draw_combat_items_chainVisuals){g_actor_clip=v.side;
+    for(auto&v:rb_draw_combat_items_chainVisuals){if(v.side<firstSide||v.side>=lastSide)continue;g_actor_clip=v.side;
         if(!g_paused&&v.frame!=g_frame){
             // 0x51c8c0 interrupts case 1 exactly ten ticks before region expiry.
             if(v.age==v.duration-10)v.vm.interrupt_all(1);
             v.vm.tick();++v.age;v.frame=g_frame;}
         draw_procedural_node(v.vm,v.side,v.x,v.y);}
     rb_draw_combat_items_chainVisuals.erase(std::remove_if(rb_draw_combat_items_chainVisuals.begin(),rb_draw_combat_items_chainVisuals.end(),[](const auto&v){return !v.vm.visible;}),rb_draw_combat_items_chainVisuals.end());
-    for(auto&v:rb_draw_combat_items_deaths){g_actor_clip=v.side;if(!g_paused&&v.frame!=g_frame){v.vm.tick();v.frame=g_frame;}
-        if(v.effect&&(v.script==21||v.script==22||v.script==25)){
-            // Player hit/death roots 22/21 use default child transforms.
-            // 0x4d0770: +564 is the root anchor, +568 the immediate parent.
-            // 0x404050: offsets do NOT inherit scale without flag 0x40000.
-            auto visit=[&](auto&&self,const th19::AnmVm&n,bool root)->void{
-                if(!n.visible)return;
-                float sx=root?1.f:v.vm.sx,sy=root?1.f:v.vm.sy;
-                float x=v.x+(root?0.f:v.vm.x+v.vm.child_x)+n.x+n.child_x;
-                float y=v.y+(root?0.f:v.vm.y+v.vm.child_y)+n.y+n.child_y;
-                auto a=g_focus_sprites.find(n.sprite);if(a!=g_focus_sprites.end()){
-                    auto t=g_focus_tex.find(a->second.first);if(t!=g_focus_tex.end())
-                    emit_quad(33,t->second,g_focus_entries[a->second.first].sprites[a->second.second],
-                        (v.side?GAME_F2_CX:GAME_F1_CX)+GAME_SCALE*x,GAME_FY0+GAME_SCALE*y,
-                        GAME_SCALE*sx*n.sx,GAME_SCALE*sy*n.sy,n.anchor_x,n.anchor_y,n.color(),n.rot_z,n.blend_mode==1,n.blend_mode);
-                }
-                draw_procedural_node(n,v.side,x-(n.x+n.child_x)*sx,y-(n.y+n.child_y)*sy,sx,sy,34,false);
-                for(const auto&c:n.children)self(self,c,false);
-            };visit(visit,v.vm,true);
-        }else if(v.effect&&v.script==13)draw(draw,v.vm,v.x,v.y,v.side,true,1,1,29);
-        else{draw(draw,v.vm,v.x,v.y,v.side,v.effect,1,1);draw_procedural_node(v.vm,v.side,v.x,v.y);}
-    }
-    for(auto&v:rb_draw_combat_items_cancels){g_actor_clip=v.side;if(!g_paused&&v.frame!=g_frame){v.vm.tick();v.frame=g_frame;}draw(draw,v.vm,v.x,v.y,v.side,v.effect,1,1);}
     rb_draw_combat_items_cancels.erase(std::remove_if(rb_draw_combat_items_cancels.begin(),rb_draw_combat_items_cancels.end(),[](const auto&v){return !v.vm.visible;}),rb_draw_combat_items_cancels.end());
     rb_draw_combat_items_deaths.erase(std::remove_if(rb_draw_combat_items_deaths.begin(),rb_draw_combat_items_deaths.end(),[](const auto&v){return !v.vm.visible;}),rb_draw_combat_items_deaths.end());g_actor_clip=-1;
 }
@@ -5888,8 +6445,8 @@ void draw_vs_countdown(){
     }
 }
 void draw_attack_warning(){
-    if(!g_attack_warning.visible()&&(!g_attack_warning_vm.stream||!g_attack_warning_vm.visible)&&(!g_warning_portrait.stream||!g_warning_portrait.visible))return;
-    if(!g_paused&&g_attack_warning_frame!=g_frame){g_attack_warning_vm.tick();g_warning_portrait.tick();g_attack_warning_frame=g_frame;}
+    if(g_retiring_attack_warnings.empty()&&!g_attack_warning.visible()&&(!g_attack_warning_vm.stream||!g_attack_warning_vm.visible)&&(!g_warning_portrait.stream||!g_warning_portrait.visible))return;
+    if(!g_paused&&g_attack_warning_frame!=g_frame){tick_attack_warning_animations(g_frame);g_warning_portrait.tick();g_attack_warning_frame=g_frame;}
     auto draw=[&](auto&&self,const th19::AnmVm&v,float x,float y,float sx,float sy)->void{
         if(!v.visible)return;const float unit=(v.coordinate_mode==2||v.coordinate_mode==4||v.coordinate_mode==6)?1.f:2.f;
         x+=(v.x+v.child_x)*unit;y+=(v.y+v.child_y)*unit;
@@ -5898,7 +6455,8 @@ void draw_attack_warning(){
             for(const auto&p:mesh)cmd.mesh.push_back(SpriteVertex{{x+p.x,y+p.y,0},1,p.color,{.5f,.5f}});
             g_draw.push_back(std::move(cmd));}
         for(const auto&c:v.children)self(self,c,x,y,sx*v.sx,sy*v.sy);
-    };draw(draw,g_attack_warning_vm,0,0,1,1);
+    };for(const auto& animation:g_retiring_attack_warnings)draw(draw,animation.vm,0,0,1,1);
+    draw(draw,g_attack_warning_vm,0,0,1,1);
     const auto&v=g_warning_portrait;const int ch=g_warning_portrait_character;
     if(ch>=0&&v.visible&&v.alpha>0)for(int ei=0;ei<int(g_plf[ch].size());++ei)for(const auto&sp:g_plf[ch][ei].sprites)if(int(sp.id)==v.sprite){
         auto t=g_plf_tex[ch].find(ei);if(t!=g_plf_tex[ch].end())emit_quad(41,t->second,sp,v.x,v.y,v.sx,v.sy,v.anchor_x,v.anchor_y,v.color(),v.rot_z);
@@ -5913,9 +6471,10 @@ void draw_attack_warning(){
 
 // Base native collision/death path. Character-specific rescue callbacks and
 // transformed hitboxes remain separate from the verified ordinary contacts.
-void tick_player_damage(){
+void tick_player_damage(unsigned skipSides=0){
     if(g_screen!=SCR_GAME||g_big_sprite>=0)return;
     for(int side=0;side<2;++side){
+        if(skipSides&(1u<<side))continue;
         auto&d=g_player_damage[side];auto&barrier=g_barrier[side];
         auto&w=g_ecl_fields[side].world;auto&lives=side?g_p2_lives:g_p1_lives;
         auto&px=side?g_p2_x:g_p1_x;auto&py=side?g_p2_y:g_p1_y;
@@ -5938,18 +6497,31 @@ void tick_player_damage(){
             // 0x549830 resets the automatic barrier and grants 180 invulnerability.
             barrier.reset(barrier.recovery,barrier.increase);barrier.invulnerable=180;g_barrier_vm[side]={};
             g_charge[side].held=false;g_charge[side].charge=0;
-            g_player_projectiles.erase(std::remove_if(g_player_projectiles.begin(),g_player_projectiles.end(),[side](const auto&b){return b.side==side;}),g_player_projectiles.end());
+            // 0x549830 leaves registered VS shots alive. Their own update
+            // callbacks end ordinary beams; charged fixed beams keep dealing damage.
+            if(!g_vs_mode)g_player_projectiles.erase(std::remove_if(g_player_projectiles.begin(),g_player_projectiles.end(),[side](const auto&b){return b.side==side;}),g_player_projectiles.end());
             g_attacks[side].charge_attack={};g_attacks[side].charge_area={};
         }
         if(event==th19::PlayerDamage::Respawn){
+            d.respawn_origin_x=px;d.respawn_origin_y=py;
             px=0;py=480;
             barrier.invulnerable=280; // 0x546843 renews protection on respawn.
         }
         if(d.state==th19::PlayerDamage::Respawning)py=d.respawnY();
+        if(d.state==th19::PlayerDamage::Respawning&&d.frame<30&&event!=th19::PlayerDamage::Respawn){
+            // 0x5464f1 grows two laser clears around the saved death position.
+            const float radius=64.f+float(d.frame)*512.f/30.f;
+            if(!g_vs_mode){
+                w.cancel_lasers_circle(d.respawn_origin_x,d.respawn_origin_y,radius,true,true);
+                w.cancel_lasers_circle(d.respawn_origin_x,d.respawn_origin_y,radius/4.f,false,true);
+            }
+        }
         if(d.state==th19::PlayerDamage::Respawning&&d.frame>=30){
             // 0x546464 clears the field from the current respawn position.
-            w.cancel_bullets_circle(px,py,640.f,99999,false);
-            w.cancel_lasers_circle(px,py,640.f);
+            if(!g_vs_mode){
+                w.cancel_bullets_circle(px,py,640.f,99999,false,true);
+                w.cancel_lasers_circle(px,py,640.f,true,true);
+            }
         }
         if(d.state==th19::PlayerDamage::Repelled&&g_vs_mode){
             px=std::clamp(px,-140.f,140.f);py=std::clamp(py,32.f,432.f);
@@ -5959,20 +6531,44 @@ void tick_player_damage(){
             if(sp!=sprites.end()){const auto&s=entries[sp->second.first].sprites[sp->second.second];mx=s.w*.5f;my=s.h*.5f;}
             px=std::clamp(px,-GAME_FIELD_W*.5f+mx,GAME_FIELD_W*.5f-mx);py=std::clamp(py,my,GAME_FIELD_H-my);
         }
+        // Death and respawn initialize protection on this player visit.
+        if(g_vs_mode&&(event==th19::PlayerDamage::Death||event==th19::PlayerDamage::Respawn)&&barrier.invulnerable>0)--barrier.invulnerable;
         if(event==th19::PlayerDamage::Death)++g_stage_deaths[side];
-        if(event==th19::PlayerDamage::Defeat){resolve_story_battle(side==1);return;}
+        if(event==th19::PlayerDamage::Defeat){
+            if(g_vs_mode){
+                // 0x546734 starts the result while the player remains Dead.
+                // Both CPU and battle clocks continue through the result phase.
+                d.state=th19::PlayerDamage::Dead;++d.frame;px=0;py=999;
+            }
+            resolve_story_battle(side==1);return;
+        }
     }
 }
-void contact_player(int side,float px,float py,float sx,float sy){
+void contact_player(int side,float px,float py,float sx,float sy,bool currentFrame=false){
+    if(g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
+        std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"player-contact\",\"side\":%d,\"player\":[%.9g,%.9g],\"source\":[%.9g,%.9g]}\n",g_vs_match.elapsed,side,px,py,sx,sy);
     auto& barrier=g_barrier[side];
     const bool shield=trigger_player_barrier(side);
     g_player_damage[side].contact(shield,px,py,sx,sy,barrier.invulnerable);
-    g_charge[side].held=false;g_charge[side].charge=0;g_charge[side].last_release=0;
+    // Player contact clears the logical charge before the final AuraInf
+    // callback of this tick. Its already-registered emitter still runs once.
+    if(g_vs_mode&&g_charge[side].charge>0)g_gauge_contact_frame[side]=g_frame+(currentFrame?0:1);
+    // VS CPU samples the pre-contact gauge before the charge manager
+    // clears it for the non-Playing player later in this tick.
+    if(!g_vs_mode){g_charge[side].held=false;g_charge[side].charge=0;g_charge[side].last_release=0;}
     stop_sfx(84);stop_sfx(88);
     if(shield)play_sfx(27);
     else{
         play_sfx(2);
-        g_ecl_fields[side].world.deaths.push_back({px,py,0,22,-1,1});
+        auto& effects=g_ecl_fields[side].world.deaths;
+        effects.push_back({px,py,0,22,-1,1});
+        const auto script=g_focus_scripts.find(22);
+        if(g_vs_mode&&script!=g_focus_scripts.end()){
+            // Contact constructs the effect before the ordinary SHT callbacks.
+            auto& animation=effects.back().animation;
+            animation.bind_entry(script->second.stream,script->second.len,&g_focus_scripts);
+            animation.initialize_constructor();
+        }
     }
 }
 const th19::Enemy* find_enemy_contact(int side,float px,float py,float radius){
@@ -5994,30 +6590,27 @@ void check_vs_enemy_contacts(int side){
     if(!g_player_collision_enabled||g_big_sprite>=0||!g_player_damage[side].vulnerable(g_barrier[side].invulnerable))return;
     const float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
     const float radius=th19::ownsCard(player_cards(side),2)?1.5f:3.f;
-    if(const auto* e=find_enemy_contact(side,px,py,radius))contact_player(side,px,py,e->x,e->y);
+    if(const auto* e=find_enemy_contact(side,px,py,radius))contact_player(side,px,py,e->x,e->y,true);
 }
-void check_player_contacts(){
+void check_player_contacts(bool includeBullets=true,bool includeLasers=true,bool currentFrame=false,std::array<u32,2>* shield_contacts=nullptr){
     if(!g_player_collision_enabled||g_screen!=SCR_GAME||g_big_sprite>=0)return;
     for(int i=0;i<2;++i){
         const int side=g_vs_mode?1-i:i;
         auto&d=g_player_damage[side];auto&barrier=g_barrier[side];
         auto&w=g_ecl_fields[side].world;float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
         const float cardRadius=th19::ownsCard(player_cards(side),2)?1.5f:3.f;
-        w.tick_graze(px,py,cardRadius,g_vs_mode);
+        // The fixed-laser contact that breaks a ready shield returns zero,
+        // so the same callback can count Aura graze on that first repel tick.
+        if(includeLasers)w.tick_graze(px,py,cardRadius,g_vs_mode,
+            barrier.invulnerable>0||(g_vs_mode&&barrier.ready()&&d.vulnerable(0)));
         if(!d.vulnerable(barrier.invulnerable))continue;
-        bool hit=false;float sx=0,sy=0;
-        for(auto&b:w.bullets){
-            // Native ordinary bullets use the table radius, never sprite size.
-            if(b.state!=1)continue;
-            if(th19::nativeOrdinaryBulletContact(b.kind,px-b.x,py-b.y,th19::nativeBulletContactRadius(b.kind),cardRadius)==1){hit=true;sx=b.x;sy=b.y;break;}
-        }
-        if(!hit&&!g_vs_mode)if(const auto* e=find_enemy_contact(side,px,py,cardRadius)){
-            hit=true;sx=e->x;sy=e->y;
-        }
-        if(!hit)for(size_t index=0;index<w.lasers.size();++index){
+        bool hit=false;float sx=0,sy=0;u32 contactLaser=0;th19::Bullet* contactBullet=nullptr;
+        const auto checkLasers=[&]{
+            for(size_t index=0;index<w.lasers.size();++index){
             const auto& laser=w.lasers[g_vs_mode?w.lasers.size()-1-index:index];
             if(laser.hitsPlayer(px,py,cardRadius)){
                 hit=true;
+                if(laser.fixed()||laser.straight)contactLaser=laser.id;
                 const auto span=laser.contact_span();
                 // 0x54971c computes repel direction from the hit rectangle's
                 // midpoint, supplied by the newest-first laser manager.
@@ -6026,8 +6619,32 @@ void check_player_contacts(){
                 break;
             }
         }
+        };
+        // VS laser controllers publish contact before the ordinary bullet list.
+        // The first contact determines the barrier's repel direction.
+        if(g_vs_mode&&includeLasers)checkLasers();
+        if(includeBullets&&!hit)for(size_t index=0;index<w.bullets.size();++index){
+            auto& b=w.bullets[g_vs_mode?w.bullets.size()-1-index:index];
+            // Native ordinary bullets use the table radius, never sprite size.
+            // VS spawn controllers also test physical contact on their birth tick.
+            if(b.state!=1&&!(g_vs_mode&&b.state==2))continue;
+            if(th19::nativeOrdinaryBulletContact(b.kind,px-b.x,py-b.y,th19::nativeBulletContactRadius(b.kind),cardRadius)==1){hit=true;sx=b.x;sy=b.y;contactBullet=&b;break;}
+        }
+        if(!hit&&!g_vs_mode)if(const auto* e=find_enemy_contact(side,px,py,cardRadius)){
+            hit=true;sx=e->x;sy=e->y;
+        }
+        if(!hit&&!g_vs_mode&&includeLasers)checkLasers();
         if(!hit)continue;
-        contact_player(side,px,py,sx,sy);
+        contact_player(side,px,py,sx,sy,currentFrame);
+        if(shield_contacts&&contactBullet&&d.state==th19::PlayerDamage::Repelled&&d.frame==0)
+            (*shield_contacts)[side]=contactBullet->id;
+        // 0x549754 returns contact 1 after entering Pending. Shield
+        // deflection and invulnerable contact return 0, so preserve the beam.
+        // 0x4f5379 cancels the ordinary bullet that enters hit grace too.
+        if(g_vs_mode&&contactBullet&&d.state==th19::PlayerDamage::Pending)
+            w.cancel_contact_bullet(*contactBullet);
+        if(contactLaser&&d.state==th19::PlayerDamage::Pending)
+            w.cancel_lasers_rect(px,py,32,32,0,contactLaser);
     }
 }
 
@@ -6040,14 +6657,52 @@ void draw_game() {
     // 对手右场（CPU 输入驱动）
     if (g_opp_vm.sprite >= 0&&(g_screen==SCR_DIALOG||g_player_damage[1].visible()))
         draw_field_player(g_opp_vm, g_opp_sprites, g_opp, g_opp_tex, g_p2_x, g_p2_y, GAME_F2_CX);
+    // The global attack announcement registers its particles before field ANMs.
+    if(g_vs_mode&&g_attack_warning.visible()&&!g_paused&&g_attack_warning_frame!=g_frame){
+        tick_attack_warning_animations(g_frame);g_warning_portrait.tick();g_attack_warning_frame=g_frame;
+    }
+    // Contact managers initialize new laser cancellation roots before charge
+    // callbacks and field animation updates.
+    if(g_vs_mode&&!g_paused&&!g_freeze_field_animation){
+        for(auto& field:g_ecl_fields)for(auto& event:field.world.bullet_cancels){
+            if(event.script<212||event.animation.stream)continue;
+            const auto script=g_bullet_scripts.find(event.script);
+            if(script==g_bullet_scripts.end())continue;
+            event.animation.bind_entry(script->second.stream,script->second.len,&g_bullet_scripts);
+            event.animation.clock_after_execution=true;event.animation.tick();
+        }
+    }
+    const bool savedPause=g_paused;
+    if(g_freeze_field_animation)g_paused=true;
     // ECL 出怪/弹幕对象（动物灵敌人 + 释放动物灵 + 弹幕）
-    draw_ecl_objects();
+    if(g_vs_mode){
+        // Result enemy effects retain their native resource-owner queue.
+        collect_death_visuals(0,2,true);
+        // Register both charge emitters before either field animation pass.
+        for(int side=0;side<2;++side)prepare_charge_gauge_particles(side);
+        // Delayed graze requests register in both fields before either ANM list
+        // advances (4dc08c); subsequent trajectory updates remain per-field.
+        for(int side=0;side<2;++side){
+            g_early_graze_orders[side].clear();
+            if(!g_paused){auto& world=g_ecl_fields[side].world;
+                for(auto& particle:world.graze_particles)if(!particle.heading_ready&&particle.delay==0){
+                    particle.prepare_heading();particle.order=th19::AnmVm::next_registration++;
+                }
+            }
+        }
+        // 0x4ccdb3 / 0x4ccdbe finish the left ANM list before the right.
+        for(int side=0;side<2;++side){
+            draw_ecl_objects(side,side+1);
+            draw_combat_items(side,side+1);
+
+        }
+    }else draw_ecl_objects();
     draw_charge_regions();
     draw_story_actor();
     draw_player_options();
     draw_player_bombs();
     draw_player_shots();
-    draw_combat_items();
+    if(!g_vs_mode)draw_combat_items();
     draw_focus();
     // front.anm 对战场边框（layer 27）
     draw_field_frame();
@@ -6059,6 +6714,7 @@ void draw_game() {
     draw_vs_countdown();
     // 符卡名横幅
     draw_spell_name();
+    g_paused=savedPause;
     draw_attack_warning();
     // 能力卡菜单（A 键切换）
 }
@@ -6131,6 +6787,9 @@ bool rb_frame_oldEsc=false,rb_frame_oldUp=false,rb_frame_oldDown=false,rb_frame_
 bool rb_frame_oldLeft=false,rb_frame_oldRight=false;
 void frame(bool worldAdvanced,unsigned deferredShotSides,bool attackFrozen) {
     ++g_frame;
+    // 0x4e8c20 creates the charge emitter before field animation callbacks.
+    // The contact frame is published for this newly advanced frame.
+    if(g_vs_mode&&g_screen==SCR_GAME&&!g_paused){prepare_charge_gauge_particles(0);prepare_charge_gauge_particles(1);}
     ++g_sfx_tick;
     const bool* pauseKeys=game_keyboard_state();
     auto pressed=[&](int code){return pauseKeys[code]||g_injected_keys[code];};
@@ -6197,8 +6856,13 @@ void frame(bool worldAdvanced,unsigned deferredShotSides,bool attackFrozen) {
         g_audio.pump();render();return;
     }
     if(g_audio.music)ma_sound_set_volume(&g_audio.music->sound,g_bgm_vol/100.0f);
-    if(g_battle_report_frame>=0){tick_battle_report();g_audio.pump();render();return;}
-    if(attackFrozen){g_audio.pump();render();return;}
+    if(g_battle_report_frame>=0){
+        tick_battle_report();
+        if(!g_vs_mode||g_vs_round_loading||g_story_switch.phase||g_screen!=SCR_GAME){g_audio.pump();render();return;}
+    }
+    if(attackFrozen){
+        g_audio.pump();g_freeze_field_animation=true;render();g_freeze_field_animation=false;return;
+    }
     if(g_story_switch.phase){tick_story_switch();g_audio.pump();render();return;}
     if(g_screen==SCR_GAME){
         for(auto&v:g_vs_round_announcements)if(v.stream){
@@ -6206,7 +6870,7 @@ void frame(bool worldAdvanced,unsigned deferredShotSides,bool attackFrozen) {
             if(v.deleted&&v.children.empty())v={};
         }
     }
-    if(g_vs_mode&&g_screen==SCR_GAME&&g_vs_match.tick()){
+    if(g_vs_mode&&g_screen==SCR_GAME&&!g_game_load_frames&&g_vs_match.tick()){
         const int winner=th19::VsMatch::timeout(g_stage_deaths[0],g_stage_deaths[1],g_vs_attack_counts[0][0]+g_vs_attack_counts[0][1],g_vs_attack_counts[1][0]+g_vs_attack_counts[1][1],g_charge[0].energy,g_charge[1].energy);
         begin_battle_report(winner,true);
     }
@@ -6266,8 +6930,13 @@ void frame(bool worldAdvanced,unsigned deferredShotSides,bool attackFrozen) {
         --g_game_load_frames;
         for (auto& vm : g_loading_vms) vm.tick();
         if (g_game_load_frames == 0) {
-            g_screen = g_vs_mode ? SCR_GAME : SCR_DIALOG;
-            if(g_vs_mode)show_big_text(175);
+            if(g_vs_round_loading){
+                g_vs_round_loading=false;
+                g_loading_vms.clear();
+            }else{
+                g_screen = g_vs_mode ? SCR_GAME : SCR_DIALOG;
+                if(g_vs_mode)show_big_text(175);
+            }
         }
         g_audio.pump();
         render();
@@ -6292,6 +6961,12 @@ void frame(bool worldAdvanced,unsigned deferredShotSides,bool attackFrozen) {
     }
     // The native VS stage's ECL advances under the round banner, from tick 2.
     if(g_ecl_ready&&g_screen==SCR_GAME&&(g_vs_mode?g_vs_match.elapsed>1:playing)){
+        if(g_vs_mode)for(int side=0;side<2;++side){
+            auto& world=g_ecl_fields[side].world;
+            world.player_x=side?g_p2_x:g_p1_x;
+            world.player_y=side?g_p2_y:g_p1_y;
+            world.advance_discharge_scripts(true);
+        }
         for(int i=0;i<2;++i){
             // Native VS enemy managers run right first. Simultaneous kills
             // assign successive shared RNG values to each seat's own drops.
@@ -6302,19 +6977,21 @@ void frame(bool worldAdvanced,unsigned deferredShotSides,bool attackFrozen) {
             world.spirit_rank_cap=g_global_rank.cap;
             world.player_x=side?g_p2_x:g_p1_x;
             world.player_y=side?g_p2_y:g_p1_y;
+            world.player_damage_reduced=g_player_damage[side].state==th19::PlayerDamage::Dead||
+                g_player_damage[side].state==th19::PlayerDamage::Respawning;
             world.opponent_x=side?g_p1_x:g_p2_x;
             world.opponent_y=side?g_p1_y:g_p2_y;
             world.opponent_controls=side?((pressed(SDL_SCANCODE_LEFT)?64:0)|(pressed(SDL_SCANCODE_RIGHT)?128:0)|g_cpu_left_bits):g_opponent_controls;
             world.incoming_extra_level=g_charge[1-side].ex_level;
             world.incoming_boss_level=g_charge[1-side].boss_level;
-            field.vm.step();
+            if(!g_vs_mode||!battle_result_pending()||world.battle_frame<world.result_pause_frame)field.vm.step();
             if(deferredShotSides&(1u<<side)){
                 DeferredShotContacts contacts(side);
-                world.tick_wave(!g_vs_mode,[&](const th19::Enemy& enemy){return contacts.damage_to(enemy);});
+                world.tick_wave(!g_vs_mode,[&](const th19::Enemy& enemy){return contacts.damage_to(enemy);},g_vs_mode);
                 contacts.finish();
                 advance_homing_shot_animations(side);
                 world.finish_hit_feedback(world.spell.active?1u:0u);
-            }else world.tick_wave(!g_vs_mode);
+            }else world.tick_wave(!g_vs_mode,{},g_vs_mode);
             // 0x50a1a5 tests the actor after updating its position.
             if(g_vs_mode)check_vs_enemy_contacts(side);
             for(const auto& request:world.screen_shake_events)g_screen_shake.start(request);
@@ -6324,28 +7001,27 @@ void frame(bool worldAdvanced,unsigned deferredShotSides,bool attackFrozen) {
             world.sound_events.clear();
         }
         if(g_vs_mode){
+            // Both enemy managers can clear the opponent's newborn lasers.
+            // Native visits the laser managers after both fields finish ECL.
+            for(int side=1;side>=0;--side)g_ecl_fields[side].world.finish_new_lasers();
             const bool playerContacts=g_player_collision_enabled&&g_big_sprite<0;
             const auto radius=[](int side){return th19::ownsCard(player_cards(side),2)?1.5f:3.f;};
             // Both laser managers award graze before either ordinary bullet
             // manager (0x52b3cd / 0x52df32 before 0x4f54d5).
             for(int side=1;side>=0;--side)
                 g_ecl_fields[side].world.finish_laser_graze(playerContacts,radius(side));
+            // Ordinary bullets contact the player after ECL clearing scripts.
+            // Laser contact remains in its earlier manager pass.
+            std::array<u32,2> shieldContacts{};
+            check_player_contacts(true,false,true,&shieldContacts);
             for(int side=1;side>=0;--side){
                 auto& world=g_ecl_fields[side].world;
                 const auto& damage=g_player_damage[side];
                 // 0x549f33 returns a physical contact during invulnerability.
                 // 0x4f5379 then cancels the bullet even while the player repels.
-                if(playerContacts&&g_barrier[side].invulnerable>0&&
-                   (damage.state==th19::PlayerDamage::Playing||damage.state==th19::PlayerDamage::Repelled||damage.state==th19::PlayerDamage::Respawning)){
-                    for(auto& bullet:world.bullets){
-                        if(bullet.state!=1||bullet.cancel_lock||bullet.flags&0x200)continue;
-                        if(th19::nativeOrdinaryBulletContact(bullet.kind,world.player_x-bullet.x,world.player_y-bullet.y,th19::nativeBulletContactRadius(bullet.kind),radius(side))!=1)continue;
-                        bullet.state=th19::Bullet::Canceling;
-                        bullet.contact_cancel=true;
-                        bullet.animation.interrupt(1);
-                    }
-                }
-                world.finish_bullet_graze(playerContacts,radius(side));
+                const bool cancelContacts=playerContacts&&g_barrier[side].invulnerable>0&&
+                   (damage.state==th19::PlayerDamage::Playing||damage.state==th19::PlayerDamage::Repelled||damage.state==th19::PlayerDamage::Respawning);
+                world.finish_bullet_graze(playerContacts,radius(side),cancelContacts,shieldContacts[side]);
                 for(int sound:world.sound_events)play_sfx(sound);
                 world.sound_events.clear();
             }
@@ -6528,7 +7204,12 @@ void game_tick() {
     // freezes subsequent ticks, after this tick's enemy and shot updates.
     const bool attackFrozen=(g_screen==SCR_GAME||g_screen==SCR_DIALOG)&&g_battle_report_frame<0&&
         !g_paused&&!keys[SDL_SCANCODE_ESCAPE]&&!g_injected_keys[SDL_SCANCODE_ESCAPE]&&g_attack_warning.advance_freeze();
-    const bool gameInputBlocked=titleIntroBlocked||(g_screen==SCR_CHARSEL&&g_charsel_frame<31)||noticeBlocked||g_charsel_cancel_frame>=0||g_difficulty_confirm_frame>=0||g_menu_cancel_frame>=0||g_vs_entry_transition>=0||g_battle_report_frame>=0||attackFrozen||g_final_exit>=0||g_story_switch.phase!=0||(g_screen==SCR_GAME||g_screen==SCR_DIALOG)&&(g_paused||keys[SDL_SCANCODE_ESCAPE]||g_injected_keys[SDL_SCANCODE_ESCAPE]);
+    // Existing global announcements advance before this tick's field callbacks.
+    if(g_vs_mode&&g_screen==SCR_GAME&&!g_paused&&g_attack_warning_vm.stream&&
+       g_attack_warning_frame!=int(g_frame+1)){
+        tick_attack_warning_animations(g_frame+1);g_warning_portrait.tick();g_attack_warning_frame=g_frame+1;
+    }
+    const bool gameInputBlocked=titleIntroBlocked||(g_screen==SCR_CHARSEL&&g_charsel_frame<31)||noticeBlocked||g_charsel_cancel_frame>=0||g_difficulty_confirm_frame>=0||g_menu_cancel_frame>=0||g_vs_entry_transition>=0||(g_battle_report_frame>=0&&!g_vs_mode)||(g_vs_mode&&g_battle_report_frame>=321)||attackFrozen||g_final_exit>=0||g_story_switch.phase!=0||(g_screen==SCR_GAME||g_screen==SCR_DIALOG)&&(g_paused||keys[SDL_SCANCODE_ESCAPE]||g_injected_keys[SDL_SCANCODE_ESCAPE]);
     if(g_final_exit>=0&&++g_final_exit>=240){g_final_exit=-1;g_screen=SCR_ENDING;g_trans=TRANS_NONE;start_sub_screen(SCR_ENDING);}
     if(g_screen==SCR_STAFF&&g_trans==TRANS_NONE){
         //507a90 returns6 until every12th update when replay is permitted.
@@ -6784,12 +7465,24 @@ void game_tick() {
             // Gameplay movement; acquired cards use the native HUD path.
             const bool combatOpen=g_vs_mode?g_vs_match.weaponsReady():g_big_sprite<0;
             const bool cpuLeft=g_vs_mode&&g_vs_entry==2;
-            if(g_vs_mode&&g_vs_match.remaining==1)clear_timeout_playfields();
+            if(g_vs_mode&&g_vs_match.remaining==1)clear_result_playfields(true);
             // VS stage ANM consumes the shared stream before the shot emitters.
             if(g_vs_mode&&combatOpen&&g_vs_match.remaining!=1){
                 tick_world();
                 // 0x4f55d8 advances bullets before 0x4f5660 checks graze.
-                for(auto& field:g_ecl_fields)field.world.advance_vs_projectiles();
+                for(int side=0;side<2;++side){
+                    auto& world=g_ecl_fields[side].world;
+                    const auto& damage=g_player_damage[side];
+                    const int lives=side?g_p2_lives:g_p1_lives;
+                    if(damage.state==th19::PlayerDamage::Dead&&damage.frame==30&&lives<=0){
+                        // Player-contact remnants retire with their owner before
+                        // the final defeat clear. Circle-cut remnants still move.
+                        for(auto& laser:world.lasers)
+                            if(laser.contact_fragment)laser.motion_frame=world.battle_frame+1;
+                    }
+                    world.advance_vs_projectiles();
+                }
+                if(cpuLeft)g_ecl_fields[0].world.advance_guarded_enemy_scripts(true);
                 g_ecl_fields[1].world.advance_guarded_enemy_scripts();
                 if(!cpuLeft)g_ecl_fields[0].world.advance_guarded_enemy_scripts();
                 worldAdvanced=true;
@@ -6802,6 +7495,9 @@ void game_tick() {
                 if(worldAdvanced)g_ecl_fields[0].world.advance_guarded_enemy_scripts();
                 tick_cpu_opponent(0);
             }
+            // The player callback expires protection before later BombInf refreshes.
+            // Lasers then observe the refreshed counter in their contact phase.
+            if(g_vs_mode)for(auto& barrier:g_barrier)if(barrier.invulnerable>0)--barrier.invulnerable;
             const auto recoverRespawn=[&](int side){
                 auto& damage=g_player_damage[side];
                 if(damage.state!=th19::PlayerDamage::Respawning||damage.frame+1<60)return;
@@ -6811,8 +7507,10 @@ void game_tick() {
                 auto& py=side?g_p2_y:g_p1_y;
                 py=400.f;
                 auto& world=g_ecl_fields[side].world;
-                world.cancel_bullets_circle(px,py,640.f,99999,false);
-                world.cancel_lasers_circle(px,py,640.f);
+                world.cancel_bullets_circle(px,py,640.f,99999,false,true);
+                world.cancel_lasers_circle(px,py,640.f,true,true);
+                damage.respawn_damage_final_tick=true;
+                damage.respawn_damage_final_x=px;
                 damage.state=th19::PlayerDamage::Playing;
                 damage.frame=0;
             };
@@ -6827,6 +7525,7 @@ void game_tick() {
             const bool diagonal=(moveLeft!=moveRight)&&(moveUp!=moveDown);
             const auto& movement=g_charge[0];
             const float spd=g_player_damage[0].controllable()?movement.movement_units(diagonal,slow)/128.f:0.f;
+            unsigned resultEntrySides=0;
             std::optional<size_t> chargeClears[2];
             if(combatOpen){
                 if(g_vs_mode&&g_vs_entry==0){
@@ -6841,18 +7540,73 @@ void game_tick() {
                 if(g_vs_mode)for(auto& field:g_ecl_fields)
                     field.world.spirit_flight_limit=th19::spiritCapacity(g_spirit_clock+1);
                 if(!cpuLeft&&c&&!rb_game_tick_prev_c)start_player_bomb(0);
+                if(g_vs_mode)for(int side=0;side<2;++side){
+                    auto& damage=g_player_damage[side];
+                    const int lives=side?g_p2_lives:g_p1_lives;
+                    if(damage.state!=th19::PlayerDamage::Dead||damage.frame!=30||lives>0)continue;
+                    // 0x546734 clears before this player's meter dispatch.
+                    resultEntrySides|=1u<<side;
+                }
                 // The VS charge manager still sees a bomb on its retirement tick.
                 const bool bombOccupied[2]={g_bombs[0].occupied(),g_bombs[1].occupied()};
-                tick_player_bombs();
-                const bool leftChargeAllowed=!(g_vs_mode?bombOccupied[0]:g_bombs[0].occupied());
-                const bool rightChargeAllowed=!(g_vs_mode?bombOccupied[1]:g_bombs[1].occupied());
+                if(!g_vs_mode)tick_player_bombs(0,2);
+                const int bombEnergy[2]={g_charge[0].energy,g_charge[1].energy};
+                const bool leftChargeAllowed=!(g_vs_mode?bombOccupied[0]:g_bombs[0].occupied())&&(!g_vs_mode||!battle_result_pending());
+                const bool rightChargeAllowed=!(g_vs_mode?bombOccupied[1]:g_bombs[1].occupied())&&(!g_vs_mode||!battle_result_pending());
+                // Respawn clears construct laser effects before the charge emitters.
+                if(g_vs_mode)for(int side=1;side>=0;--side){
+                    const auto& damage=g_player_damage[side];
+                    if(damage.state!=th19::PlayerDamage::Respawning)continue;
+                    auto& world=g_ecl_fields[side].world;
+                    const int frame=damage.frame+1;
+                    if(frame<30){
+                        const float radius=64.f+float(frame)*512.f/30.f;
+                        world.cancel_lasers_circle(damage.respawn_origin_x,damage.respawn_origin_y,radius,true,true);
+                        world.cancel_lasers_circle(damage.respawn_origin_x,damage.respawn_origin_y,radius/4.f,false,true);
+                    }else{
+                        auto nextDamage=damage;
+                        nextDamage.frame=frame;
+                        const float x=side?g_p2_x:g_p1_x,y=nextDamage.respawnY();
+                        world.cancel_bullets_circle(x,y,640.f,99999,false,true);
+                        world.cancel_lasers_circle(x,y,640.f,true,true);
+                    }
+                }
                 chargeClears[0]=tick_charge_release(0,leftChargeAllowed&&(cpuLeft?(g_cpu_left_bits&2)!=0:keys[SDL_SCANCODE_X]||g_injected_keys[SDL_SCANCODE_X]),slow);
                 chargeClears[1]=tick_charge_release(1,rightChargeAllowed&&(g_opponent_controls&2)!=0,(g_opponent_controls&8)!=0);
+                // Native BombInf publishes its interpolated gauge after the
+                // player's simultaneous release, before pickup collection.
+                if(g_vs_mode)for(int side=0;side<2;++side)
+                    if(bombOccupied[side])g_charge[side].energy=bombEnergy[side];
+                if(g_vs_mode)for(int side=0;side<2;++side){
+                    std::vector<const th19::EclProgram*> source;
+                    for(const auto& program:g_ecl_fields[side].programs)source.push_back(program.get());
+                    dispatch_automatic_attack(side,source);
+                }
+                // New announcement roots initialize at attack dispatch, before
+                // the discharge actors and the ordinary SHT callbacks.
+                if(g_vs_mode&&g_attack_warning.visible()&&g_attack_warning_frame<0){
+                    tick_attack_warning_animations(g_frame+1);g_warning_portrait.tick();g_attack_warning_frame=g_frame+1;
+                }
                 deferredShotSides=tick_player_shots(cpuLeft?(g_cpu_left_bits&1)!=0:z,slow);
                 // 0x546cd6 -> 0x5450e0: each VS seat launches counters
                 // and then pure spirits before the next seat updates its meter.
                 if(g_vs_mode)for(int side=1;side>=0;--side){
                     auto& world=g_ecl_fields[side].world;
+                    if(resultEntrySides&(1u<<side)){
+                        g_player_damage[side].frame=31;
+                        (side?g_p2_x:g_p1_x)=0;(side?g_p2_y:g_p1_y)=999;
+                        resolve_story_battle(side==1);
+                        // The result flag suppresses charge input on the other
+                        // player's update and releases its armed skill.
+                        const int other=1-side;
+                        if(g_charge[other].held){
+                            chargeClears[other]=tick_charge_release(other,false,other?(g_opponent_controls&8)!=0:slow);
+                            // The native player callback also advances a release
+                            // accepted after the ordinary SHT dispatch this tick.
+                            auto& attack=g_attacks[other].charge_attack;
+                            if(attack.frame==0)attack.tick(g_vs_mode);
+                        }
+                    }
                     world.tick_spirit_meter();
                     world.tick_combo_timer();
                     g_ecl_fields[1-side].world.opponent_field_rank=world.field_rank;
@@ -6883,7 +7637,7 @@ void game_tick() {
             if(g_vs_mode){
                 // 0x42fce0 clamps both seats' fixed-point movement.
                 g_p1_x=std::clamp(g_p1_x,-140.f,140.f);
-                if(g_player_damage[0].state!=th19::PlayerDamage::Respawning)g_p1_y=std::clamp(g_p1_y,32.f,432.f);
+                if(g_player_damage[0].state!=th19::PlayerDamage::Respawning&&g_player_damage[0].state!=th19::PlayerDamage::Dead&&g_player_damage[0].state!=th19::PlayerDamage::Finished)g_p1_y=std::clamp(g_p1_y,32.f,432.f);
             }else{
                 float marginX=16,marginY=24;
                 auto sprite=g_player_sprites.find(g_player_vm.sprite);
@@ -6906,8 +7660,10 @@ void game_tick() {
                 // 0x4e7bed reads the moved position before the clear ECL starts.
                 if(g_vs_mode&&chargeClears[side]){
                     auto& clear=w.enemies[*chargeClears[side]];
-                    clear.set_absolute_position(px,py);
-                    clear.previous_x=px;clear.previous_y=py;
+                    if(!clear.script_advanced_before_cpu){
+                        clear.set_absolute_position(px,py);
+                        clear.previous_x=px;clear.previous_y=py;
+                    }
                 }
                 // 0x417d51 samples both players after movement for newly launched C2 flights.
                 if(g_vs_mode)for(auto& skill:g_attacks[side].marisa_skills){
@@ -6929,7 +7685,27 @@ void game_tick() {
                 if(r.character==13)for(int i=1;i<3;++i){const auto&o=g_player_options[side];r.centers[i]=i<=int(o.size())?th19::ChargeRegion::Point{o[i-1].x,o[i-1].y}:th19::ChargeRegion::Point{px,py};}
             }
             if(g_vs_mode&&combatOpen)tick_player_pickups();
-            tick_player_damage();check_player_contacts();
+            if(g_vs_mode&&combatOpen)for(int side=0;side<2;++side){
+                auto& world=g_ecl_fields[side].world;
+                world.player_x=side?g_p2_x:g_p1_x;
+                world.player_y=side?g_p2_y:g_p1_y;
+                world.advance_discharge_scripts(true);
+            }
+            tick_player_damage(resultEntrySides);check_player_contacts(!g_vs_mode);
+            if(g_vs_mode&&combatOpen)for(int side=0;side<2;++side){
+                const auto& damage=g_player_damage[side];
+                if(damage.state!=th19::PlayerDamage::Pending||damage.frame!=0)continue;
+                auto& world=g_ecl_fields[side].world;
+                const float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
+                // A fresh laser hit also resets magnets on this item update.
+                for(auto& pickup:world.pickups){
+                    if(pickup.state!=3&&pickup.state!=4)continue;
+                    pickup.state=1;pickup.vx=pickup.vy=0;
+                    if(std::hypot(px-pickup.x,py-pickup.y)<world.pickup_range){
+                        pickup.state=4;pickup.speed=world.pickup_speed/3.f;
+                    }
+                }
+            }
             // Esc is handled by the pause controller before gameplay updates.
         } else {
             // 子界面内：上下/左右选择 + X 返回（边界停止，不循环）
@@ -7176,27 +7952,38 @@ __attribute__((export_name("th19_network_hash"))) u32 th19_network_hash(){
     integer(g_vs_match.wins[0]);integer(g_vs_match.wins[1]);integer(g_vs_match.remaining);integer(g_vs_match.elapsed);
     integer(g_global_rank.value);integer(g_global_rank.cap);integer(g_global_rank.interval);integer(g_global_rank.clock);
     integer(g_paused);integer(g_battle_report_frame);integer(g_battle_winner);
+    integer(g_vs_round_loading);integer(g_game_load_frames);
     number(g_p1_x);number(g_p1_y);number(g_p2_x);number(g_p2_y);
     integer(g_p1_lives);integer(g_p2_lives);integer(g_p1_bombs);integer(g_p2_bombs);
     for(int side=0;side<2;++side){
+        integer(g_gauge_contact_frame[side]);
         integer(g_charge[side].charge);integer(g_charge[side].energy);integer(g_charge[side].input_primed);
+        number(g_player_damage[side].respawn_origin_x);number(g_player_damage[side].respawn_origin_y);
         const auto&w=g_ecl_fields[side].world;
         integer(w.combo);integer(w.combo_timer);integer(w.field_rank);integer(w.opponent_field_rank);
+        integer(w.result_pause_id);integer(w.result_pause_frame);
+        for(unsigned count:w.retiring_pickup_slots)integer(count);
         integer(w.bullets.size());integer(w.enemies.size());integer(w.lasers.size());
         integer(w.reusable_bullet_motion().size());
         for(bool advanced:w.reusable_bullet_motion())integer(advanced);
-        for(const auto&b:w.bullets){number(b.x);number(b.y);number(b.vx);number(b.vy);number(b.launch_speed);integer(b.kind);integer(b.contact_cancel);}
+        for(i32 release:w.reusable_bullet_release())integer(release);
+        for(bool pending:w.reusable_bullet_interrupt())integer(pending);
+        integer(w.unused_bullet_slots());
+        for(u32 slot:w.reusable_bullet_slots())integer(slot);
+        for(const auto&b:w.bullets){number(b.x);number(b.y);number(b.vx);number(b.vy);number(b.launch_speed);integer(b.kind);integer(b.contact_cancel);integer(b.contact_interrupt_pending);integer(b.animation.ivar[0]);integer(b.native_slot);}
         for(const auto&e:w.enemies){
             number(e.x);number(e.y);integer(e.life);integer(e.active);
             number(e.previous_x);number(e.previous_y);
             number(e.combined_dx);number(e.combined_dy);
+            integer(bool(e.result_contact));
+            if(e.result_contact)for(float value:*e.result_contact)number(value);
             integer(e.script_advanced_before_cpu);
-            integer(e.spawn_hold|(u32(e.arrival_motion)<<8)|(u32(e.arrival_slow_motion)<<16));
+            integer(e.spawn_hold|(u32(e.arrival_motion)<<8)|(u32(e.arrival_slow_motion)<<16)|(u32(e.arrival_aura_registered)<<24));
             integer(u32(e.attack_entry));
             number(e.absolute_x());number(e.absolute_y());
         }
         for(const auto&l:w.lasers){number(l.x);number(l.y);number(l.angle);number(l.length);number(l.width);
-            integer(l.graze_clock);integer(l.aura_slowed);integer(l.motion_frame);
+            integer(l.graze_clock);integer(l.aura_slowed);integer(l.motion_frame);integer(l.contact_fragment);
             for(const auto&node:l.curve.nodes){number(node.x);number(node.y);}}
     }
     return hash;
@@ -7403,7 +8190,7 @@ __attribute__((export_name("th19_test_wave"))) i32 th19_test_wave(i32 wave){
     ++g_ecl_generation;
     for(auto&field:g_ecl_fields){
         field.world=th19::GameWorld{};field.world.spirit_rank=g_global_rank.value;field.world.spirit_rank_cap=g_global_rank.cap;
-        field.world.difficulty=g_story_difficulty;field.world.bullet_scripts=&g_bullet_scripts;field.world.bullet_sprite_sizes=&g_bullet_sprite_sizes;
+        field.world.difficulty=g_story_difficulty;field.world.enemy_scripts=&g_enemy_scripts;field.world.effect_scripts=&g_focus_scripts;field.world.bullet_scripts=&g_bullet_scripts;field.world.bullet_sprite_sizes=&g_bullet_sprite_sizes;
         for(const auto&p:field.programs)field.world.attach_program(*p);
         field.vm.start("DebugSkipFunc");
         char name[32];std::snprintf(name,sizeof name,"Wave%02d%s",(wave+1)/2,wave%2?"":"f");
@@ -7450,7 +8237,7 @@ __attribute__((export_name("th19_test_spell_phase"))) i32 th19_test_spell_phase(
         std::vector<const th19::EclProgram*> programs;const th19::EclProgram* source=nullptr;
         for(const auto&p:g_ecl_fields[0].programs){programs.push_back(p.get());for(const auto&s:p->subs)if(s.name=="BossAttack")source=p.get();}
         if(!source||subIndex<0||subIndex>=int(source->subs.size()))return 0;
-        w.enemies.clear();w.boss_slots.fill(0);w.spell={};w.bullets.clear();w.lasers.clear();w.extra_flights.clear();
+        w.enemies.clear();w.boss_slots.fill(0);w.spell={};w.clear_bullets();w.lasers.clear();w.extra_flights.clear();
         if(rank==-2){ // Diagnostic: exercise credit -> flight -> original ECL, not direct actor spawn.
             auto&sender=g_ecl_fields[0].world;sender.native_extra_reservations.clear();sender.native_extra_sequence=0;
             sender.attack_credit_x=0;sender.attack_credit_y=220;sender.pending_native_attack_credit=300;
@@ -7466,7 +8253,7 @@ __attribute__((export_name("th19_test_spell_phase"))) i32 th19_test_spell_phase(
         if(subIndex<0||subIndex>=int(p.subs.size()))return 0;
         e.attack_rank=rank;e.pending_phase.clear();e.phases={};
         e.vm->start(p.subs[subIndex].name.c_str());
-        w.bullets.clear();w.lasers.clear();w.unhandled_opcodes.clear();w.spell.active=false;
+        w.clear_bullets();w.lasers.clear();w.unhandled_opcodes.clear();w.spell.active=false;
         g_player_collision_enabled=false;g_player_projectiles.clear();return 1;
     }return 0;
 }
@@ -7495,7 +8282,7 @@ __attribute__((export_name("th19_charge_attack_status"))) u32 th19_charge_attack
 __attribute__((export_name("th19_test_cpu_runtime"))) u32 th19_test_cpu_runtime(i32 action,i32 value){
  if(action==6||action==7){
     auto&w=g_ecl_fields[0].world;
-    if(action==6){w.bullets.clear();w.grazed_bullets=0;th19::LaserShooter shooter;shooter.type=0;shooter.speed=0;shooter.aim_mode=1;
+    if(action==6){w.clear_bullets();w.grazed_bullets=0;th19::LaserShooter shooter;shooter.type=0;shooter.speed=0;shooter.aim_mode=1;
       w.fire_bullets(shooter,g_p1_x+20,g_p1_y);}
     static i32 grazeStatus[4];grazeStatus[0]=w.grazed_bullets;
     grazeStatus[1]=w.bullets.empty()?-1:w.bullets[0].graze.contactFrames;
@@ -7505,7 +8292,7 @@ __attribute__((export_name("th19_test_cpu_runtime"))) u32 th19_test_cpu_runtime(
  }
  if(action==8){ // Diagnostic repeat-aura fixture: preserve inactive first target in the vector.
     auto&w=g_ecl_fields[0].world;g_player_collision_enabled=false;
-    if(value==0){g_ecl_fields[0].vm.start("DebugSkipFunc");w.enemies.clear();w.bullets.clear();w.lasers.clear();}
+    if(value==0){g_ecl_fields[0].vm.start("DebugSkipFunc");w.enemies.clear();w.clear_bullets();w.lasers.clear();}
     else for(auto&e:w.enemies)e.active=false;
     auto&e=w.spawn_enemy("",value==0?-90.f:90.f,220,1000,0,0);e.vm.reset();e.status_flags=0x100000;e.sprite=0;
  }
@@ -7513,7 +8300,7 @@ __attribute__((export_name("th19_test_cpu_runtime"))) u32 th19_test_cpu_runtime(
  if(action==1){g_story_difficulty=std::clamp(value,0,3);g_cpu_difficulty.reset(g_story_difficulty,0);g_cpu_story.reset(1,g_story_difficulty);for(auto&f:g_ecl_fields)f.world.difficulty=g_story_difficulty;}
  if(action==2){g_charge[1].energy=2500;g_charge[1].cooldown=0;}
  if(action==3){g_ecl_fields[0].world.pending_story_credit+=value;}
- if(action==4){auto&w=g_ecl_fields[1].world;w.bullets.clear();auto&b=w.spawn_bullet();b.x=g_p2_x;b.y=g_p2_y-60;b.vy=2;b.kind=1;}
+ if(action==4){auto&w=g_ecl_fields[1].world;w.clear_bullets();auto&b=w.spawn_bullet();b.x=g_p2_x;b.y=g_p2_y-60;b.vy=2;b.kind=1;}
  if(action==5){g_cpu_story.reset(value,g_story_difficulty);g_ecl_fields[0].world.boss_slots={};g_ecl_fields[1].world.boss_slots={};}
  static i32 out[24];out[0]=g_cpu_automatic;out[1]=g_opponent_controls;out[2]=g_cpu_frames;out[3]=g_cpu_steers;
  out[4]=g_cpu_story.state;out[5]=g_cpu_story.credit;out[6]=g_cpu_story_events;out[7]=g_charge[1].charge;out[8]=g_charge[1].last_release;out[9]=g_charge[1].energy;
@@ -7523,7 +8310,7 @@ __attribute__((export_name("th19_test_cpu_runtime"))) u32 th19_test_cpu_runtime(
 }
 __attribute__((export_name("th19_test_charge_region_graze"))) u32 th19_test_charge_region_graze(i32 setup){
     static i32 out[8];auto&w=g_ecl_fields[0].world;
-    if(setup){g_player_collision_enabled=false;g_ecl_fields[0].vm.start("DebugSkipFunc");w.enemies.clear();w.bullets.clear();w.pickups.clear();w.pending_energy=0;
+    if(setup){g_player_collision_enabled=false;g_ecl_fields[0].vm.start("DebugSkipFunc");w.enemies.clear();w.clear_bullets();w.pickups.clear();w.pending_energy=0;
         g_charge[0].energy=500;g_charge[0].charge=0;g_charge[0].held=true;w.charge_region={};w.charge_region.character=0;w.charge_region.held=true;w.charge_region.age=30;w.charge_region.x=g_p1_x;w.charge_region.y=g_p1_y;w.charge_region.radius=64;
         auto&b=w.spawn_bullet();b.x=g_p1_x+60;b.y=g_p1_y;b.kind=0;b.state=1;b.vx=b.vy=0;}
     w.tick_graze(g_p1_x,g_p1_y);out[0]=w.grazed_bullets;out[1]=w.pending_energy;out[2]=int(w.pickups.size());out[3]=w.bullets.empty()?0:w.bullets.front().graze.stock;out[4]=w.bullets.empty()?0:w.bullets.front().graze.contactFrames;out[5]=g_charge[0].energy;
@@ -7539,15 +8326,15 @@ __attribute__((export_name("th19_test_player_damage"))) u32 th19_test_player_dam
     static i32 out[12];
     if(action==1){g_player_collision_enabled=true;g_p1_lives=g_p2_lives=5;
         for(int side=0;side<2;++side){auto&f=g_ecl_fields[side];f.vm.start("DebugSkipFunc");
-            f.world.enemies.clear();f.world.bullets.clear();f.world.lasers.clear();f.world.death_chains.clear();
+            f.world.enemies.clear();f.world.clear_bullets();f.world.lasers.clear();f.world.death_chains.clear();
             g_player_damage[side]={};g_barrier[side].reset();}
     }
-    if(action==2||action==3){auto&w=g_ecl_fields[0].world;w.bullets.clear();
+    if(action==2||action==3){auto&w=g_ecl_fields[0].world;w.clear_bullets();
         if(action==3){g_barrier[0].state=2;g_barrier[0].elapsed=0;g_barrier[0].invulnerable=0;g_player_damage[0]={};}
         auto&b=w.spawn_bullet();b.x=g_p1_x;b.y=g_p1_y;b.kind=1;b.sprite=th19::nativeBulletSprite(1,0);
     }
-    if(action==4){g_ecl_fields[0].world.bullets.clear();g_ecl_fields[1].world.bullets.clear();g_ecl_fields[0].world.lasers.clear();}
-    if(action==5||action==6){auto&w=g_ecl_fields[0].world;w.lasers.clear();w.bullets.clear();
+    if(action==4){g_ecl_fields[0].world.clear_bullets();g_ecl_fields[1].world.clear_bullets();g_ecl_fields[0].world.lasers.clear();}
+    if(action==5||action==6){auto&w=g_ecl_fields[0].world;w.lasers.clear();w.clear_bullets();
         th19::InfiniteLaser l;l.x=g_p1_x-50;l.y=g_p1_y;l.length=100;l.width=12;l.phase=action==5?3:2;
         l.source.max_length=100;l.source.width=12;l.source.warning=l.source.hold=1000;l.source.type=38;l.source.color=6;
         w.lasers.push_back(l);g_barrier[0].state=2;g_barrier[0].elapsed=0;g_barrier[0].invulnerable=0;g_player_damage[0]={};
@@ -7559,7 +8346,7 @@ __attribute__((export_name("th19_test_player_damage"))) u32 th19_test_player_dam
 }
 __attribute__((export_name("th19_test_tsukasa_reflection"))) u32 th19_test_tsukasa_reflection(i32 action){
     auto&w=g_ecl_fields[0].world;static i32 out[5];
-    if(action==1){w.bullets.clear();g_ecl_fields[1].world.bullets.clear();g_reflected_flights.clear();g_reflection_arrivals=0;
+    if(action==1){w.clear_bullets();g_ecl_fields[1].world.clear_bullets();g_reflected_flights.clear();g_reflection_arrivals=0;
         for(int k=0;k<6;++k){auto&b=w.spawn_bullet();b.x=g_p1_x;b.y=g_p1_y-20-k*4;b.kind=k;b.color=k;b.sprite=96+k;b.vy=2;}}
     out[0]=int(g_reflected_flights.size());out[1]=g_reflection_arrivals;out[2]=0;out[3]=0;out[4]=0;
     for(const auto&b:w.bullets)if(b.state==1)++out[2];
@@ -7569,16 +8356,16 @@ __attribute__((export_name("th19_test_tsukasa_reflection"))) u32 th19_test_tsuka
 __attribute__((export_name("th19_test_spirit_routes"))) u32 th19_test_spirit_routes(i32 action){
     static i32 out[18];
     if(action==4){g_reflected_flights.clear();g_reflection_arrivals=0;g_spirit_clock=10800;
-        for(auto&f:g_ecl_fields){f.vm.start("DebugSkipFunc");auto&w=f.world;w.enemies.clear();w.bullets.clear();w.counter_bullet_requests.clear();w.pure_spirit_meter={};
+        for(auto&f:g_ecl_fields){f.vm.start("DebugSkipFunc");auto&w=f.world;w.enemies.clear();w.clear_bullets();w.counter_bullet_requests.clear();w.pure_spirit_meter={};
             w.pure_spirit_meter.add_bullets(1400,1,0,200);}}
     if(action==3||action==5){g_spirit_flights.clear();g_spirit_arrivals=0;
         if(action==5){g_reflected_flights.clear();g_reflection_arrivals=0;g_spirit_clock=0;}
-        for(auto&f:g_ecl_fields){f.vm.start("DebugSkipFunc");auto&w=f.world;w.enemies.clear();w.bullets.clear();w.spirit_requests.clear();w.pure_spirit_meter={};w.combo=0;w.difficulty=1;
+        for(auto&f:g_ecl_fields){f.vm.start("DebugSkipFunc");auto&w=f.world;w.enemies.clear();w.clear_bullets();w.spirit_requests.clear();w.pure_spirit_meter={};w.combo=0;w.difficulty=1;
             w.reward_mode=action==5?0:-1;w.reward_stage=1;w.battle_frame=0;
             for(int n=0;n<14;++n){auto&e=w.spawn_enemy("",0,200,1,0,0);e.sprite=0;w.damage_enemy(e,1);}
         }}
     if(action==2){g_spirit_flights.clear();
-        for(int side=0;side<2;++side){auto&f=g_ecl_fields[side];auto&w=f.world;f.vm.start("DebugSkipFunc");w.enemies.clear();w.bullets.clear();w.spirit_requests.clear();
+        for(int side=0;side<2;++side){auto&f=g_ecl_fields[side];auto&w=f.world;f.vm.start("DebugSkipFunc");w.enemies.clear();w.clear_bullets();w.spirit_requests.clear();
             const char*names[]={"GhostWolf","GhostOtterL","GhostEagle"};
             for(int n=0;n<3;++n){auto&e=w.spawn_enemy(names[n],w.player_x+(n-1)*32,w.player_y-32,200,0,0);e.ecl_ints={1,0,1,0};}
         }}
@@ -7599,7 +8386,7 @@ __attribute__((export_name("th19_test_spirit_routes"))) u32 th19_test_spirit_rou
 }
 __attribute__((export_name("th19_test_shared_cancel"))) u32 th19_test_shared_cancel(i32 action){
     auto&w=g_ecl_fields[0].world;static i32 state[6];
-    if(action==1){w.enemies.clear();w.lasers.clear();w.bullets.clear();w.death_chains.clear();
+    if(action==1){w.enemies.clear();w.lasers.clear();w.clear_bullets();w.death_chains.clear();
         th19::InfiniteLaser l;l.id=w.next_id++;l.x=-64;l.y=200;l.angle=0;l.length=128;l.width=14;l.phase=2;
         l.source.type=38;l.source.color=6;l.source.max_length=128;l.source.speed=0;l.source.hold=1000;w.lasers.push_back(l);
     }
@@ -7623,12 +8410,12 @@ __attribute__((export_name("th19_test_character"))) i32 th19_test_character(i32 
     memset(g_injected_keys,0,sizeof(g_injected_keys));g_paused=false;g_phase=PHASE_TITLE;g_screen=SCR_GAME;
     g_story_switch.phase=0;g_trans=TRANS_NONE;g_confirm_delay=g_cancel_delay=g_game_load_frames=0;
     g_char_sel=ch;g_story_session.begin(th19::STORY_ROUTES[ch]);g_opp_sel=g_story_session.opponent();g_story_session.skip_scene();start_game();
-    for(auto&field:g_ecl_fields){field.vm.start("DebugSkipFunc");field.world.enemies.clear();field.world.bullets.clear();}
+    for(auto&field:g_ecl_fields){field.vm.start("DebugSkipFunc");field.world.enemies.clear();field.world.clear_bullets();}
     g_cpu_automatic=false;g_opponent_controls=0;g_p1_bombs=g_p2_bombs=3;g_p1_fragments=g_p2_fragments=0;g_charge[0].energy=2500;game_tick();render();return 1;
 }
 __attribute__((export_name("th19_test_cpu_character"))) i32 th19_test_cpu_character(i32 ch){
     if(ch<0||ch>=19)return 0;g_opp_sel=ch;start_game();
-    for(auto&field:g_ecl_fields){field.vm.start("DebugSkipFunc");field.world.enemies.clear();field.world.bullets.clear();}
+    for(auto&field:g_ecl_fields){field.vm.start("DebugSkipFunc");field.world.enemies.clear();field.world.clear_bullets();}
     game_tick();render();return 1;
 }
 __attribute__((export_name("th19_test_story_start"))) i32 th19_test_story_start(i32 ch){
@@ -7655,7 +8442,7 @@ __attribute__((export_name("th19_test_shot_trails"))) u32 th19_test_shot_trails(
 // Real ordinary SHT shots against one durable target; inspect flame aftermath.
 __attribute__((export_name("th19_test_flame_hit"))) u32 th19_test_flame_hit(i32 mode){
     auto&w=g_ecl_fields[0].world;
-    if(mode==1){w.enemies.clear();w.bullets.clear();g_player_projectiles.clear();g_player_hit_effects.clear();g_attacks[0].skill_damage_circles.clear();
+    if(mode==1){w.enemies.clear();w.clear_bullets();g_player_projectiles.clear();g_player_hit_effects.clear();g_attacks[0].skill_damage_circles.clear();
         g_cpu_automatic=false;g_opponent_controls=0;g_test_card_shoot_only=false;
         auto&e=w.spawn_enemy("",g_p1_x,g_p1_y-48,100000,0,0);e.sprite=0;e.hitbox_w=240;e.hitbox_h=24;e.vm.reset();
     }
@@ -7681,7 +8468,7 @@ __attribute__((export_name("th19_test_shot_impact"))) u32 th19_test_shot_impact(
 __attribute__((export_name("th19_test_biten_contact"))) u32 th19_test_biten_contact(i32 side,i32 setup){
     side=std::clamp(side,0,1);auto&w=g_ecl_fields[side].world;static i32 out[1+32*12];
     if(setup){g_player_collision_enabled=false;g_cpu_automatic=false;g_opponent_controls=0;
-        for(auto&f:g_ecl_fields){f.vm.start("DebugSkipFunc");f.world.enemies.clear();f.world.bullets.clear();}
+        for(auto&f:g_ecl_fields){f.vm.start("DebugSkipFunc");f.world.enemies.clear();f.world.clear_bullets();}
         g_player_projectiles.clear();std::vector<const th19::EclProgram*> source;
         for(const auto&p:g_ecl_fields[1-side].programs)source.push_back(p.get());
         w.receive_charge_attack(3,0,128,source);
@@ -7701,7 +8488,7 @@ __attribute__((export_name("th19_test_biten_contact"))) u32 th19_test_biten_cont
 __attribute__((export_name("th19_test_aura_damage"))) u32 th19_test_aura_damage(i32 side,i32 setup){
     static i32 out[8];side=std::clamp(side,0,1);auto&w=g_ecl_fields[side].world;
     if(setup){g_player_collision_enabled=false;g_cpu_automatic=false;g_opponent_controls=0;
-        g_ecl_fields[side].vm.start("DebugSkipFunc");w.enemies.clear();w.bullets.clear();
+        g_ecl_fields[side].vm.start("DebugSkipFunc");w.enemies.clear();w.clear_bullets();
         g_player_projectiles.clear();g_player_hit_effects.clear();g_attacks[side]={};w.charge_region={};
         auto&q=g_charge[side];q.energy=2500;q.charge=0;q.held=false;q.cooldown=0;
         const float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
@@ -7715,7 +8502,7 @@ __attribute__((export_name("th19_test_aura_damage"))) u32 th19_test_aura_damage(
 // Place stationary probes at a real SHT trap; production update handles cancellation.
 __attribute__((export_name("th19_test_enoko_cancel"))) u32 th19_test_enoko_cancel(i32 setup){
     auto&w=g_ecl_fields[0].world;static i32 out[8];std::fill(std::begin(out),std::end(out),0);
-    if(setup){g_player_collision_enabled=false;w.bullets.clear();w.cancelled_bullets=0;
+    if(setup){g_player_collision_enabled=false;w.clear_bullets();w.cancelled_bullets=0;
         for(const auto&t:g_player_projectiles)if(t.init_callback==21&&t.age==t.transition_frame+10){
             // The update's ten-tick advance is complete; these share its bite area.
             for(int lock=0;lock<2;++lock){auto&b=w.spawn_bullet();b.state=1;b.kind=0;b.color=lock?1:3;b.hit_width=2;
@@ -7776,7 +8563,7 @@ __attribute__((export_name("th19_test_gameplay_parity"))) u32 th19_test_gameplay
         for (auto& field : g_ecl_fields) {
             field.vm.start("DebugSkipFunc");
             field.world.enemies.clear();
-            field.world.bullets.clear();
+            field.world.clear_bullets();
             field.world.combo_attack = {};
         }
         g_cpu_automatic = false;
@@ -7925,7 +8712,7 @@ __attribute__((export_name("th19_test_final_boss"))) i32 th19_test_final_boss(i3
     auto&w=g_ecl_fields[0].world;
     if(action==0||action==2||action==3){
         g_cpu_automatic=false;g_opponent_controls=0;g_player_collision_enabled=false;
-        w.enemies.clear();w.bullets.clear();w.lasers.clear();w.boss_slots={};
+        w.enemies.clear();w.clear_bullets();w.lasers.clear();w.boss_slots={};
         g_ecl_fields[0].vm.start("DebugSkipFunc");
         w.story_final_boss=action==0;w.story_boss_phase=action==3?3:2;
         std::vector<const th19::EclProgram*> source;
@@ -7966,7 +8753,7 @@ __attribute__((export_name("th19_card_status"))) u32 th19_card_status(){
 }
 __attribute__((export_name("th19_test_bomb"))) u32 th19_test_bomb(i32 action) {
     auto&w=g_ecl_fields[0].world;
-    if(action==1){w.bullets.clear();for(float offset:{20.f,100.f,300.f})for(float dy:{0.f,-96.f,96.f}){
+    if(action==1){w.clear_bullets();for(float offset:{20.f,100.f,300.f})for(float dy:{0.f,-96.f,96.f}){
         auto&b=w.spawn_bullet();b.x=g_p1_x+offset;b.y=g_p1_y+dy;b.hit_width=4;b.state=1;
     }}
     if(action==2)g_p1_bombs=0;
@@ -8071,7 +8858,7 @@ void th19_capture_step(bool present){
     g_skip_present=false;
     g_loop_paused=paused;
 }
-namespace th19 {extern bool traceOpeningRng; extern u32 openingRngRows[4096][7], openingRngCount;}
+namespace th19 {extern bool traceOpeningRng; extern u32 openingRngRows[65536][7], openingRngCount;}
 __attribute__((export_name("th19_capture_cpu_trace")))
 void th19_capture_cpu_trace(int first,int last){
     g_capture_cpu_first=first;g_capture_cpu_last=last;
@@ -8118,6 +8905,18 @@ u32 th19_capture_cpu_begin(u32 seed, u32 secondSeed, i32 difficulty, i32 left, i
     start_vs_match();
     render();
     return g_cpu_automatic;
+}
+
+// Controlled parity diagnosis: replace only the next round's wave table.
+// Reports using this hook must identify the supplied external table seed.
+__attribute__((export_name("th19_capture_round_wave_seed")))
+u32 th19_capture_round_wave_seed(u32 seed){
+    if(!seed||!g_vs_mode||g_vs_match.round<2||g_vs_match.elapsed>1)return 0;
+    for(auto& field:g_ecl_fields){
+        auto& schedule=field.world.wave_schedule;
+        schedule.seed(seed,schedule.cursor());
+    }
+    return 1;
 }
 
 __attribute__((export_name("th19_capture_cpu_state")))

@@ -1,0 +1,90 @@
+{
+  "wasmSha256": "cfc417c65f6b92903bc784f530d67531118893bc4f7ce9b2f07b637e3e89f022",
+  "nativeTraceSha256": "4a41473e62c1893233241a56afc847dabd4874012b8601fe521eac2b8318f926",
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-marisa-native\\present-fa028fk5\\native-present.jsonl",
+  "fixture": {
+    "difficulty": 3,
+    "characters": [
+      1,
+      1
+    ],
+    "cardMode": 0,
+    "cards": [
+      0,
+      0
+    ],
+    "lives": 2,
+    "timeRule": 4
+  },
+  "continuous": true,
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": {
+      "frame": 406,
+      "web": 1391184678,
+      "original": 393706518
+    }
+  },
+  "firstDifferentPlayerControls": null,
+  "firstDifferentPlayerPosition": null,
+  "firstDifferentBulletCount": {
+    "frame": 32953,
+    "side": 1,
+    "original": 0,
+    "web": 10
+  },
+  "firstDifferentBulletPosition": {
+    "frame": 32953,
+    "side": 1,
+    "kind": 12,
+    "color": 6,
+    "original": [],
+    "web": [
+      [
+        95.79158020019531,
+        303.2232360839844
+      ],
+      [
+        95.84855651855469,
+        303.6521301269531
+      ],
+      [
+        95.99755096435547,
+        302.8428039550781
+      ],
+      [
+        96.146728515625,
+        303.965576171875
+      ],
+      [
+        96.38780975341797,
+        302.6560974121094
+      ],
+      [
+        96.57219696044922,
+        304.0439147949219
+      ],
+      [
+        96.81327819824219,
+        302.73443603515625
+      ],
+      [
+        96.96245574951172,
+        303.8572082519531
+      ],
+      [
+        97.1114501953125,
+        303.0478820800781
+      ],
+      [
+        97.16842651367188,
+        303.4767761230469
+      ]
+    ]
+  },
+  "differentBulletPositionFrames": 27,
+  "browserErrors": [],
+  "failure": null,
+  "webCapture": "th19-web-Ne7FDU",
+  "lastFrame": 33000
+}

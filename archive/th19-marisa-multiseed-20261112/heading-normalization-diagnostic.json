@@ -1,0 +1,57 @@
+{
+  "nativeCapture": "present-8nukwv4u",
+  "webCapture": "th19-web-wRn19g",
+  "firstPositionDifference": 25888,
+  "deathFrame": 25966,
+  "chainDifference": 25991,
+  "nativeSetter": "0x40fdf0",
+  "nativeTurnUpdate": "0x50a4cc..0x50a4df",
+  "samples": [
+    {
+      "elapsed": 73,
+      "webUnnormalized": 2.11849045753479,
+      "nativeNormalized": 2.118490695953369
+    },
+    {
+      "elapsed": 75,
+      "webUnnormalized": 2.0180370807647705,
+      "nativeNormalized": 2.0180373191833496
+    },
+    {
+      "elapsed": 76,
+      "webUnnormalized": 1.9667922258377075,
+      "nativeNormalized": 1.966792106628418
+    },
+    {
+      "elapsed": 79,
+      "webUnnormalized": 1.8089854717254639,
+      "nativeNormalized": 1.8089852333068848
+    },
+    {
+      "elapsed": 80,
+      "webUnnormalized": 1.7550256252288818,
+      "nativeNormalized": 1.7550253868103027
+    }
+  ],
+  "candidateHistory": [
+    {
+      "webCapture": "th19-web-G4vy89",
+      "firstPrimaryDifference": 4637,
+      "status": "rejected-regression"
+    },
+    {
+      "wasmSha256": "db85a59a6f3194053899ee9ccd9e047b5760ed31855db6524e35dab072ddc83d",
+      "status": "running",
+      "scope": "441 interpolation endpoint initialization"
+    }
+  ],
+  "successfulWindow": {
+    "webCapture": "th19-web-6ATTcc",
+    "through": 25995,
+    "firstDifferentPrimaryRng": null,
+    "firstDifferentCpu": null,
+    "firstDifferentPlayerPosition": null,
+    "differentBulletPositionFrames": 0,
+    "wasmSha256": "db85a59a6f3194053899ee9ccd9e047b5760ed31855db6524e35dab072ddc83d"
+  }
+}

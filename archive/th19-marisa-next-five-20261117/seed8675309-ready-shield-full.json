@@ -1,0 +1,19 @@
+{
+  "report": "web-captures-marisa-next-five\\th19-web-ITn1Y2\\report.json",
+  "wasmSha256": "12ae99ed4901f496b93fa73e79e6186cb1111c2845406e3d5cdbfbfbdb1d3c54",
+  "nativeMissingStateFrames": [
+    28448
+  ],
+  "verifiedTransitionGaps": [
+    28448
+  ],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 35999,
+  "bulletCoordinateTolerance": 0.0001,
+  "maximumBulletCoordinateDifference": 3.0517578125e-05,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS"
+}

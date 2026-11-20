@@ -1,0 +1,15 @@
+{
+  "wasmSha256": "747d0e641da37b4308ddfce01d241ab8af49f241324b7ddc431c747f7cf26a6b",
+  "nativeTraceSha256": "edd4196b63957f816b085eff373da8d4889cb19aad1ecea5d18e2e3ed93369fc",
+  "diagnosticRoundWaveSeed": null,
+  "pairs": [
+    {
+      "frame": 9129,
+      "status": "主 RNG、CPU 输入、自机位置不一致",
+      "differentFramesThroughCurrent": 1,
+      "image": "frame-9129.png",
+      "webImageSha256": "7386c18939cfda8593c704088e0f28b9cac15a3dcc44efffd7dc815b365e4b36",
+      "nativeImageSha256": "285ea441bf31c93c3fc50f40e33fc0527382ec4f0d1d2bd2d94f38168b508822"
+    }
+  ]
+}
