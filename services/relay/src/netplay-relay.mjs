@@ -1962,7 +1962,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       if (seatChanged || spectatorChanged) broadcastLobby(room);
       if (room.lobby.phase !== 'lobby') {
         const run = room.runs.get(String(room.lobby.startSerial));
-        if (run?.spectatorTimeline && (!(run.spectatorStages||run.spectatorPc98?.matchInitializers) || run.spectatorAdmissionOpen) && !run.ended && !run.spectatorStopped) {
+        if (run?.spectatorTimeline && (!(run.spectatorStages||run.spectatorPc98) || run.spectatorAdmissionOpen) && !run.ended && !run.spectatorStopped) {
           run.admittedSpectators.add(clientId);
           run.memberIds.set(clientId, roomDirectory.memberIdFor(roomId, clientId));
           sendLobby(socket, {
@@ -2705,7 +2705,8 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
     if(run.spectatorPc98){socket.spectatorQueuedPc98=[];socket.spectatorQueuedPc98Bytes=0;}
     let index = 0,
       blockedAt = 0,
-      history = run.spectatorPc98?.pendingMatch ? null : run.spectatorPc98 ? [...run.spectatorHistory] : run.spectatorHistory;
+      history = run.spectatorPc98?.pendingMatch ? null : run.spectatorPc98 ? [...run.spectatorHistory] : run.spectatorHistory,
+      pc98Bootstrap = history !== null ? run.spectatorPc98?.bootstrap() : null;
     socket.spectatorSnapshotPending=history===null;
     const replay = () => {
       if (
@@ -2717,7 +2718,7 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
         return;
       if(history===null){
         if(run.spectatorPc98?.pendingMatch){socket.spectatorReplayTimer=setTimeout(replay,50);return;}
-        history=[...run.spectatorHistory];socket.spectatorSnapshotPending=false;
+        history=[...run.spectatorHistory];pc98Bootstrap=run.spectatorPc98?.bootstrap();socket.spectatorSnapshotPending=false;
       }
       if (socket.bufferedAmount > 64 * 1024) {
         blockedAt ||= Date.now();
@@ -2729,6 +2730,12 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
         return;
       }
       blockedAt = 0;
+      // Mark the end of the fixed snapshot before draining the live queue.
+      // The viewer can now start even while the host keeps appending packets.
+      if (index >= history.length && pc98Bootstrap) {
+        if (!sendSpectatorPayload(socket, pc98Bootstrap, roomId, runId, spectatorId)) return;
+        pc98Bootstrap = null;
+      }
       if (index >= history.length && run.spectatorPc98 && socket.spectatorQueuedPc98?.length){
         history=socket.spectatorQueuedPc98.splice(0);socket.spectatorQueuedPc98Bytes=0;index=0;
       } else if (index >= history.length && history !== run.spectatorHistory && !run.spectatorPc98) {
@@ -2739,13 +2746,12 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
       const first = history[index];
       if (!first) {
         if (run.spectatorStages && !sendSpectatorPayload(socket, run.spectatorStages.bootstrap(), roomId, runId, spectatorId)) return;
-        if (run.spectatorPc98 && !sendSpectatorPayload(socket, run.spectatorPc98.bootstrap(), roomId, runId, spectatorId)) return;
         socket.spectatorReplaying = false;
         return;
       }
-      if (run.spectatorStages) {
-        // Keep legacy input packets individually decodable by native peers.
-        // Yield after a bounded burst instead of one timer per logical frame.
+      if (run.spectatorStages || run.spectatorPc98) {
+        // Keep packets individually decodable and yield after a bounded burst,
+        // rather than waiting for a timer between every checkpoint chunk.
         for (let sent = 0; sent < 64 && history[index] && socket.bufferedAmount <= 64 * 1024; ++sent)
           if (!sendSpectatorPayload(socket, history[index++], roomId, runId, spectatorId)) return;
         socket.spectatorReplayTimer = setTimeout(replay, 0);
@@ -3075,12 +3081,12 @@ server.on('connection', (socket, request) => {
             if(sendSpectatorPayload(target,payload,roomId,runId,id)&&first)sendSpectatorPayload(target,stream.bootstrap(),roomId,runId,id);
           }
           if(first||kind===3||kind===6||kind===7){broadcastLobby(room);roomDirectory.changed();}
-          if(kind===6&&!stream.pendingMatch)for(const id of room.lobby.spectators.keys())if(!run.admittedSpectators.has(id)){
+          if((first||kind===6)&&run.spectatorAdmissionOpen&&room.lobby.phase!=='lobby'&&String(room.lobby.startSerial)===runId)for(const id of room.lobby.spectators.keys()){
             const lobby=room.lobbyClients.get(id);if(!lobby)continue;
+            if(!first&&run.admittedSpectators.has(id))continue;
             run.admittedSpectators.add(id);run.memberIds.set(id,roomDirectory.memberIdFor(roomId,id));
             sendLobby(lobby,{type:'spectator-start',serial:room.lobby.startSerial,room:lobbySnapshot(room)});
           }
-          if(first)for(const id of room.lobby.spectators.keys()){const lobby=room.lobbyClients.get(id);if(lobby)sendLobby(lobby,{type:'spectator-start',serial:room.lobby.startSerial,room:lobbySnapshot(room)});}
         }catch(error){console.log(`PC98 SPECTATOR STOP room=${roomId} run=${runId} ${error.message}`);stopSpectatorStream(run);delete run.spectatorPc98;}
         return;
       }
