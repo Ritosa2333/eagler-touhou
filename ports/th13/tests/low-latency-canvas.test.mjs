@@ -56,6 +56,23 @@ test('SP/MP 共享模块逐字节相同', () => {
   assert.ok(sp.equals(mp), 'low-latency-canvas.mjs 两份必须逐字节相同');
 });
 
+function listedRuntimeNames(source) {
+  const match = /const runtimeNames = \[([\s\S]*?)\];/.exec(source);
+  assert.ok(match, '打包清单缺 runtimeNames');
+  return [...match[1].matchAll(/'([^']+)'/g)].map(item => item[1]);
+}
+
+test('两份打包清单与产品目录都包含共享模块', () => {
+  const moduleName = 'low-latency-canvas.mjs';
+  for (const rel of ['../portable/package-eagler.mjs', '../../th13-mp/portable/package-eagler.mjs']) {
+    assert.ok(listedRuntimeNames(read(rel)).includes(moduleName), `${rel} 未打包 ${moduleName}`);
+  }
+  const catalog = read('../../../common/contracts/product-catalog.mjs');
+  const th13 = /th13: Object\.freeze\(\{([\s\S]*?)\n    \}\),\n    th14:/.exec(catalog);
+  assert.ok(th13, '产品目录缺 th13');
+  assert.match(th13[1], /"low-latency-canvas\.mjs"/, 'th13 runtimeAssets 必须包含共享模块');
+});
+
 // 把注释与字符串字面量内容替换为空白（保留换行与代码字符），再扫描所有
 // if 语句的条件括号组：出现 desynchronized 即视为授予状态分支。
 function codeOnly(source) {

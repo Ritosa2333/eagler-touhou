@@ -36,6 +36,7 @@ const runtimeNames = [
   'keyboard.mjs',
   'directory-keyboard.mjs',
   'runtime-assets.mjs',
+  'low-latency-canvas.mjs',
   ...(multiplayer ? ['multiplayer.mjs'] : []),
 ];
 const names = [
