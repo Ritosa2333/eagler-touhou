@@ -5,7 +5,8 @@ import {createNativeMatch} from './native-match.mjs';
 import {createRollbackMatch} from './native-match-rollback.mjs';
 import {packTouch,MAX_INPUT} from './touch-input.js';
 import {drawHitPoint,showHitPoint} from './native-hit-point.mjs';
-import {encodeReplay,decodeReplay} from './native-replay.mjs';
+import {decodeReplay} from './native-replay.mjs';
+import {createRoomRecorder} from './native-room-recorder.mjs';
 import {createNativeReplayPlayer} from './native-replay-player.mjs';
 import {createConfirmedDriver} from './native-confirmed-driver.mjs';
 import {validChargeSample} from './native-charge-history.mjs';
@@ -14,7 +15,7 @@ import {createPc98SpectatorChannel} from './pc98-spectator-channel.mjs';
 import {createLocalSpectator} from './pc98-local-spectator.mjs';
 
 let roomRules,engine, transport, match, timer, animation, publisher, viewer, reportTimer, replayPlayer, bgm, run, revision=0, frames=0, audio, audioTime=0, stopped=true, localSeat=0, localPoint=false, roomHitboxes=false, lastPlaying=false, menuChoice=0, language='ja',musicMode='ogg';
-let spectatorGestures;
+let spectatorGestures,roomRecorder;
 const canvas = () => document.querySelector('#canvas');
 let frameImage,frameBuffer,framePointer,drawnEngine,drawnFrame,drawnRollbacks,drawnCanvas;
 function report(error){if(!stopped){stop();globalThis.__eaglerPC98Emit({event:'error',message:String(error?.message||error)});}}
@@ -46,7 +47,7 @@ function play(saved){
  if(audioTime<audio.currentTime||audioTime>audio.currentTime+.3)audioTime=audio.currentTime+.04;
  const node=audio.createBufferSource();node.buffer=buf;node.connect(audio.destination);node.start(audioTime);audioTime+=n/48000;
 }
-function stop(){spectatorGestures?.abort();spectatorGestures=undefined;bgm?.stop();bgm=undefined;replayPlayer?.stop();replayPlayer=undefined;stopped=true;clearInterval(reportTimer);publisher?.stop();publisher=undefined;viewer?.stop();viewer=undefined;clearInterval(timer);cancelAnimationFrame(animation);match?.stop();match=undefined;transport?.close();transport=undefined;engine?._th03_classic_destroy();engine=drawnEngine=drawnCanvas=frameImage=frameBuffer=undefined;canvas()?.removeEventListener('pointerdown',clickMenu);canvas()?.removeEventListener('pointerdown',unlock);removeEventListener('keydown',unlock);delete globalThis.__eaglerPC98Input.menuPointer;void audio?.close();audio=undefined;audioTime=0;}
+function stop(){spectatorGestures?.abort();spectatorGestures=undefined;bgm?.stop();bgm=undefined;replayPlayer?.stop();replayPlayer=undefined;roomRecorder?.stop();roomRecorder=undefined;stopped=true;clearInterval(reportTimer);publisher?.stop();publisher=undefined;viewer?.stop();viewer=undefined;clearInterval(timer);cancelAnimationFrame(animation);match?.stop();match=undefined;transport?.close();transport=undefined;engine?._th03_classic_destroy();engine=drawnEngine=drawnCanvas=frameImage=frameBuffer=undefined;canvas()?.removeEventListener('pointerdown',clickMenu);canvas()?.removeEventListener('pointerdown',unlock);removeEventListener('keydown',unlock);delete globalThis.__eaglerPC98Input.menuPointer;void audio?.close();audio=undefined;audioTime=0;}
 function menuPointer(message){const state=match?.pause.state;if(!state||state.owner===null)return false;if(state.owner===localSeat&&message.type==='down'){const r=canvas().getBoundingClientRect(),scale=Math.min(r.width/640,r.height/400),x=(message.x*r.width-(r.width-640*scale)/2)/scale,y=(message.y*r.height-(r.height-400*scale)/2)/scale,left=16+localSeat*320,row=Math.floor((y-100)/46);if(x>=left&&x<left+288&&row>=0&&row<3&&(y-100)%46<40&&(row===0||state.allowed))menuChoice=row+1;}return true;}
 function clickMenu(event){unlock();if(event.pointerType==='touch')return;const r=canvas().getBoundingClientRect(),scale=Math.min(r.width/640,r.height/400),left=r.left+(r.width-640*scale)/2,top=r.top+(r.height-400*scale)/2;menuPointer({type:'down',x:(event.clientX-left)/(640*scale),y:(event.clientY-top)/(400*scale)});}
 async function loadContent(){
@@ -120,10 +121,18 @@ export const managedAPI={
   const channel=transport.channelFor(roles[1-seat]);
   const input=globalThis.__eaglerPC98Input;
   input.menuPointer=menuPointer;
+  const recorder=roomRecorder=createRoomRecorder({focus:options.netplayDisableFocus!==true,...roomRules,memory:__eaglerPC98Files.memory,onError:error=>console.warn('TH03 replay:',error)});
   const rows=[];let replaySerial=0,reportedSerial=0,matchStart=0;const tape={get length(){return rows.length;},slice(a,b){return rows.slice(a,b);},row(i){return rows[i];}};
   if(seat===0)publisher=createPc98SpectatorPublisher({game:'03',players:2,version:1,spectatorInputOnly:true,tickMs:1000*9328/526315,focus:options.netplayDisableFocus!==true,showHitboxes:roomHitboxes,difficulty:options.netplayDifficulty??1,seed:options.netplaySeed??0},tape,()=>globalThis.__th03PeerTransport?.relay,report);
   const factory=options.netplayAdonisMode===0?createRollbackMatch:createNativeMatch;
-  match=factory({seat,channel,engine,sample:()=>{const playing=engine._th03_classic_scene()===9&&match?.pause.state.owner===null;if(playing!==lastPlaying){input.discardMotion();lastPlaying=playing;}let bits=input.sample({play:playing});if(menuChoice){bits=2048|menuChoice;menuChoice=0;}const motion=options.touchEnabled&&playing?input.motion():{};localPoint=playing&&roomHitboxes;return packTouch(bits,{...motion});},options:{rapid:options.th03RapidFire!==false,focus:options.netplayDisableFocus!==true},onConfirmedInput:(frame,inputs,meta)=>{if(rows.length<216000&&frame!==rows.length)throw Error('确认历史无效');if(rows.length<216000){rows.push({inputs,...(meta?.charge?{charge:meta.charge}:{}),scene:meta?.scene===3?2:meta?.scene===9?1:0,round:meta?.scene===9?meta.round:-1});publisher?.kick();if(seat===0&&meta?.serial>reportedSerial){reportedSerial=meta.serial;if(meta.winner===0||meta.winner===1)globalThis.__eaglerPC98Emit({event:'runtime-info',th03Match:{start:matchStart,frames:frame+1-matchStart,winner:meta.winner}});matchStart=frame+1;}}else{publisher?.stop();publisher=undefined;}},onFrame:(_frame,pcm,commands)=>{bgm?.commands(commands);play(pcm);const serial=engine._th03_classic_replay_serial();if(serial>replaySerial){replaySerial=serial;if(rows.length>=216000)return;const size=engine._th03_classic_replay_size(),ptr=engine._th03_classic_replay_data(),native=engine.HEAPU8.slice(ptr,ptr+size),saved=rows.map(row=>row.charge?[...row.inputs,...row.charge]:row.inputs);void (async()=>{const bytes=await encodeReplay(saved,options.netplayDisableFocus!==true,native,{difficulty:options.netplayDifficulty??1,seed:options.netplaySeed??0});let path;do{path='replay/native-'+Date.now()+'-'+crypto.getRandomValues(new Uint32Array(1))[0].toString(16)+'.th03r';}while(__eaglerPC98Files.memory.has(path));await __eaglerPC98Files.write(path,bytes);})().catch(report);}},onError:report});
+  match=factory({seat,channel,engine,sample:()=>{const playing=engine._th03_classic_scene()===9&&match?.pause.state.owner===null;if(playing!==lastPlaying){input.discardMotion();lastPlaying=playing;}let bits=input.sample({play:playing});if(menuChoice){bits=2048|menuChoice;menuChoice=0;}const motion=options.touchEnabled&&playing?input.motion():{};localPoint=playing&&roomHitboxes;return packTouch(bits,{...motion});},options:{rapid:options.th03RapidFire!==false,focus:options.netplayDisableFocus!==true},
+   onConfirmedInput(frame,inputs,meta){
+    recorder.append(inputs,meta?.charge);
+    if(seat!==0)return;
+    if(rows.length<216000&&frame!==rows.length)throw Error('确认历史无效');
+    if(rows.length<216000){rows.push({inputs,...(meta?.charge?{charge:meta.charge}:{}),scene:meta?.scene===3?2:meta?.scene===9?1:0,round:meta?.scene===9?meta.round:-1});publisher?.kick();if(meta?.serial>reportedSerial){reportedSerial=meta.serial;if(meta.winner===0||meta.winner===1)globalThis.__eaglerPC98Emit({event:'runtime-info',th03Match:{start:matchStart,frames:frame+1-matchStart,winner:meta.winner}});matchStart=frame+1;}}else{publisher?.stop();publisher=undefined;}
+   },
+   onFrame(_frame,pcm,commands){bgm?.commands(commands);play(pcm);const serial=engine._th03_classic_replay_serial();if(serial>replaySerial){replaySerial=serial;recorder.save(engine);}},onError:report});
   const connected=new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error('连接玩家超时')),45000);channel.onopen=()=>{clearTimeout(timeout);resolve();};});
   transport.connect();await connected;if(stopped)throw Error('连接已关闭');
   document.querySelector('#cover').hidden=true;
