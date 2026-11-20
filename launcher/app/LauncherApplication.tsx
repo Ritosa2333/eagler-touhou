@@ -2,6 +2,7 @@ import type {CloudSaveSync} from './services/cloud-save-sync';
 import { useLocation } from 'react-router';
 import { bookArtwork } from './components/launcher/book-artwork';
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -161,9 +162,15 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
     retainedProduct.current = navigation.productId;
   // Main keeps the selected panel in the DOM during its closing transition.
   const selectedProduct = catalog.find((product) => product.id === retainedProduct.current);
-  const inlineProduct = host.desktopLibraryDetails && !compact && !accountPage && !profilePage &&
-    optionsOpen && navigation.context === 'library' && selectedProduct?.id === navigation.productId &&
+  const inlineLibrary = host.desktopLibraryDetails && !compact && !accountPage && !profilePage && navigation.context === 'library';
+  const inlineProduct = inlineLibrary && optionsOpen && selectedProduct?.id === navigation.productId &&
     !selectedProduct.multiplayer ? selectedProduct : undefined;
+  const [inlineDetailPresent, setInlineDetailPresent] = useState(!!inlineProduct);
+  const onDetailExit = useCallback(() => setInlineDetailPresent(false), []);
+  useLayoutEffect(() => {
+    if (inlineProduct) setInlineDetailPresent(true);
+    else if (!inlineLibrary) onDetailExit();
+  }, [inlineLibrary, inlineProduct, onDetailExit]);
   const bookSheet = !!(host.desktopLibraryDetails && compact && navigation.context === 'library' && !accountPage && !profilePage);
   const presence = useLibraryOptionsPresence({
     open: optionsOpen && !inlineProduct,
@@ -256,7 +263,8 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       preferences={host.preferences}
     />
   );
-  const settingsPanel = !inlineProduct && presence.product && (
+  // The fading detail still owns the settings DOM until its exit completes.
+  const settingsPanel = !inlineProduct && !(inlineLibrary && inlineDetailPresent && !roomOpen) && presence.product && (
     <OptionsPanel
       product={presence.product}
       coverArtwork={roomOpen ? undefined : bookArtwork(presence.product)}
@@ -340,12 +348,12 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
             masthead={null}
             optionsOpen={!inlineProduct && presence.open}
             onBrowse={browseLibrary}
+            onDetailExit={onDetailExit}
             detail={inlineProduct && (
               <BookGameDetail
                 product={inlineProduct}
                 active={navigation.surface === 'options' && !host.runtimeOpen && !host.runtimeLaunched && !host.replayWorkspace}
                 actions={settings?.context.productId === inlineProduct.id ? host.optionsActions : undefined}
-                onBack={browseLibrary}
               >
                 {settings?.context.productId === inlineProduct.id && settingsBody}
               </BookGameDetail>

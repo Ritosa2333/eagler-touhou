@@ -31,6 +31,7 @@
     padding: 0;
   }
   html[data-ui-home] .book-library {
+    --book-top-clearance: calc(var(--site-header-height, 61px) + 12px);
     display: grid;
     grid-template-columns: 250px minmax(0, 1fr);
     gap: 24px;
@@ -44,12 +45,12 @@
   }
   .book-sidebar {
     position: sticky;
-    top: 100px;
+    top: var(--book-top-clearance);
     align-self: start;
     min-width: 0;
     display: flex;
     flex-direction: column;
-    max-block-size: calc(100dvh - 112px);
+    max-block-size: calc(100dvh - var(--book-top-clearance) - 12px);
   }
   .book-search-slot {
     margin-bottom: 20px;

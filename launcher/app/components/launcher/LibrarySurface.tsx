@@ -9,6 +9,7 @@ export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' |
   optionsOpen: boolean;
   detail?: ReactNode;
   onBrowse?: () => void;
+  onDetailExit?: () => void;
   roomOpen?: boolean;
   roomDrawer?: ReactNode;
   children?: ReactNode;

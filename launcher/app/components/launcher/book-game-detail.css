@@ -3,11 +3,7 @@
     min-width: 0;
     display: grid;
     gap: 18px;
-    scroll-margin-top: calc(var(--site-header-height, 64px) + 12px);
-  }
-  .book-game-detail .book-game-detail-back {
-    justify-self: start;
-    padding-inline: 8px;
+    scroll-margin-top: var(--book-top-clearance);
   }
   .book-game-detail-hero {
     position: relative;
@@ -89,16 +85,26 @@
   .book-game-detail .launch-actions > .launch:not(.launch-secondary) {
     min-width: min(128px, 100%);
   }
-  .book-game-detail-settings {
+  .book-game-detail-content {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    align-items: start;
+    gap: 18px;
+  }
+  .book-game-detail-content > section {
     min-width: 0;
     padding: 16px clamp(16px, 3vw, 28px) 20px;
     background: var(--kit-card);
     border: 1px solid var(--kit-border);
     border-radius: 12px;
   }
-  .book-game-detail-settings > h3 {
+  .book-game-detail-content > section > h3 {
     margin: 0 0 8px;
     font: 650 16px / 1.45 var(--kit-font);
+  }
+  .book-game-detail-statistics { min-height: 144px; }
+  @container (max-width: 620px) {
+    .book-game-detail-content { grid-template-columns: minmax(0, 1fr); }
   }
   @container (max-width: 410px) {
     .book-game-detail-hero { grid-template-columns: minmax(0, 1fr); }

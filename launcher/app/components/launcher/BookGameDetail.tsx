@@ -1,18 +1,16 @@
 import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
-import { ArrowLeft, Gamepad2 } from 'lucide-react';
+import { Gamepad2 } from 'lucide-react';
 import { useLocale } from '../../i18n';
-import { Button } from '../../ui/button';
 import { bookArtwork } from './book-artwork';
 import type { LibraryProduct } from './products';
 import './book-game-detail.css';
 
-export function BookGameDetail({ product, actions, children, statistics, active, onBack }: {
+export function BookGameDetail({ product, actions, children, statistics, active }: {
   product: LibraryProduct;
   actions?: ReactNode;
   children?: ReactNode;
   statistics?: ReactNode;
   active: boolean;
-  onBack(): void;
 }) {
   const { t } = useLocale();
   const title = useRef<HTMLHeadingElement>(null);
@@ -35,9 +33,6 @@ export function BookGameDetail({ product, actions, children, statistics, active,
 
   return (
     <article className="book-game-detail" data-game-detail={product.id} aria-labelledby="gameTitle" inert={!active}>
-      <Button variant="ghost" size="sm" id="libraryBack" className="book-game-detail-back" onClick={onBack}>
-        <ArrowLeft aria-hidden="true" />{t('library.back')}
-      </Button>
       <div className="book-game-detail-hero" style={compositionStyle}>
         {cover && <div className="book-game-detail-art" aria-hidden="true">
           <img src={cover} alt="" decoding="async" />
@@ -52,11 +47,16 @@ export function BookGameDetail({ product, actions, children, statistics, active,
           {actions}
         </div>
       </div>
-      {children && <section className="book-game-detail-settings" aria-labelledby="bookGameSettings">
-        <h3 id="bookGameSettings">{t('settings.title')}</h3>
-        {children}
-      </section>}
-      {statistics}
+      <div className="book-game-detail-content">
+        <section className="book-game-detail-statistics" aria-labelledby="bookGameStatistics">
+          <h3 id="bookGameStatistics">{t('library.statistics')}</h3>
+          {statistics}
+        </section>
+        <section className="book-game-detail-settings" aria-labelledby="bookGameSettings">
+          <h3 id="bookGameSettings">{t('room.gameSettingsGroup')}</h3>
+          {children}
+        </section>
+      </div>
     </article>
   );
 }

@@ -41,6 +41,7 @@ import {useCompactNavigation} from '../../navigation/navigation-motion';
 type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & {
   detail?: ReactNode;
   onBrowse?: () => void;
+  onDetailExit?: () => void;
 };
 const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
   { id: 'all', Icon: LayoutGrid },
@@ -52,13 +53,16 @@ const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
 ];
 
 /** Product membership, settings activation and persistence stay with their existing owners. */
-export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, detail, onBrowse }: Props) {
+export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, detail, onBrowse, onDetailExit }: Props) {
   const { t } = useLocale(),
     [search] = useSearchParams();
   const compact = useCompactNavigation();
   const showDetail = detail != null;
   const detailId = showDetail ? openedProduct : undefined;
-  const previousDetail = useRef(detailId);
+  const [retainedDetail, setRetainedDetail] = useState<{id: string; node: ReactNode} | null>(null);
+  const displayedDetail = showDetail ? detail : compact ? null : retainedDetail?.node;
+  const displayedDetailId = showDetail ? detailId : compact ? undefined : retainedDetail?.id;
+  const previousDetail = useRef(displayedDetailId);
   const [category, setCategory] = useState<BookCategory>('all');
   // Keep a visited list mounted while its height animates back to zero.
   const [disclosures, setDisclosures] = useState<ReadonlyMap<BookCategory, boolean>>(() => new Map());
@@ -75,22 +79,41 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     selectedCard = useOptionsTarget('selectedCard');
   const {run: animateLibraryChange, cancel: cancelLibraryMotion} = useLibraryMotion(results);
   useLayoutEffect(() => {
+    if (detailId) setRetainedDetail({id: detailId, node: detail});
+    else if (compact) setRetainedDetail(null);
+  }, [detail, detailId, compact]);
+  useLayoutEffect(() => {
+    if (showDetail || compact || !displayedDetailId) return;
+    const finish = () => {setRetainedDetail(null); onDetailExit?.();};
+    const panel = content.current?.firstElementChild;
+    if (!panel?.animate || panel.closest('.less-motion') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      finish();
+      return;
+    }
+    const animation = panel.animate(
+      [{opacity: 1, translate: '0 0'}, {opacity: 0, translate: '0 6px'}],
+      {id: 'book-detail-exit', duration: 170, easing: 'ease-in', fill: 'forwards'},
+    );
+    animation.onfinish = finish;
+    return () => {animation.onfinish = null; animation.cancel();};
+  }, [showDetail, displayedDetailId, compact, onDetailExit]);
+  useLayoutEffect(() => {
     const previous = previousDetail.current;
-    previousDetail.current = detailId;
-    if (compact || previous === detailId) return;
-    if (detailId) cancelLibraryMotion();
-    if (!detailId && document.activeElement === document.body) {
+    previousDetail.current = displayedDetailId;
+    if (compact || previous === displayedDetailId) return;
+    if (displayedDetailId) cancelLibraryMotion();
+    if (!displayedDetailId && document.activeElement === document.body) {
       const target = results.current?.querySelector<HTMLElement>(`[data-book-product="${previous}"]`);
       (target ?? input.current)?.focus({ preventScroll: true });
     }
     const panel = content.current?.firstElementChild;
     if (!panel?.animate || panel.closest('.less-motion') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const animation = panel.animate(
-      [{opacity: .42, translate: '0 8px'}, {opacity: 1, translate: '0 0'}],
-      {id: 'book-content-enter', duration: 280, easing: 'cubic-bezier(.22,.7,.2,1)'},
+      [{opacity: 0, translate: '0 8px'}, {opacity: 1, translate: '0 0'}],
+      {id: displayedDetailId ? 'book-detail-enter' : 'book-grid-enter', duration: 240, easing: 'cubic-bezier(.22,.7,.2,1)'},
     );
     return () => animation.cancel();
-  }, [detailId, compact, cancelLibraryMotion]);
+  }, [displayedDetailId, showDetail, compact, cancelLibraryMotion]);
   function reserveResultsSpace() {
     if (!results.current) return;
     // Keep the exposed canvas in the same viewport when filtering shortens it.
@@ -303,7 +326,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
         </ChoiceGroup>
       </aside>
       <div ref={content} className="book-content">
-        {showDetail ? detail : <div className="book-content-main">
+        {displayedDetail ? <div inert={!showDetail} aria-hidden={!showDetail || undefined}>{displayedDetail}</div> : <div className="book-content-main">
           {history.length > 0 && (
             <section className="book-recent" aria-labelledby="bookRecentTitle">
               <div className="book-section-heading">

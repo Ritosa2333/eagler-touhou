@@ -824,7 +824,7 @@ test('actual BrowserLauncher: same-card reopen preserves session-only settings a
   await click('#focusHitboxToggle'); await click('#mobileOptionsToggle');
   assert.equal(node('#focusHitboxToggle').getAttribute('aria-checked'), 'true');
   assert.equal(node('#mobileOptionsToggle').getAttribute('aria-expanded'), 'true');
-  await click('#libraryBack'); await until(() => !visibleOptions(), 'options close');
+  await click('[data-book-category="all"]'); await until(() => !visibleOptions(), 'options close');
   await click('.book-game-link[data-game="th06"]');
   await until(() => !!visibleOptions(), 'same selected product reopens');
   assert.equal(node('#status').textContent, 'Selected 東方紅魔郷', 'main app1790/8652 uses the product title for selection status');
@@ -1297,6 +1297,15 @@ test('desktop book opens one inline game detail and keeps the library controls m
   await click('[data-book-category-disclosure="windows"]');
   await click('.book-grid [data-book-product="th06"]');
   await until(() => !!env.document.querySelector('[data-game-detail="th06"] #launch'), 'TH06 has a start action');
+  const detail = '[data-game-detail="th06"]';
+  node(`${detail} .book-game-detail-hero #launch`);
+  node(`${detail} .book-game-detail-hero #gamePackageImport`);
+  const [statistics, gameSettings] = node(`${detail} .book-game-detail-content`).children;
+  assert.equal(statistics.getAttribute('aria-labelledby'), 'bookGameStatistics');
+  assert.deepEqual(Array.from(statistics.children, child => child.id), ['bookGameStatistics']);
+  assert.equal(gameSettings.getAttribute('aria-labelledby'), 'bookGameSettings');
+  assert.ok(gameSettings.querySelector('.options-settings'));
+  assert.equal(env.document.querySelector(`${detail} #libraryBack`), null);
   assert.equal(env.document.querySelector('#libraryBackdrop'), null);
   assert.equal(node('#librarySearch'), search);
   assert.equal(node('.game-library').hasAttribute('inert'), false);
@@ -1305,7 +1314,7 @@ test('desktop book opens one inline game detail and keeps the library controls m
   await until(() => !!env.document.querySelector('[data-game-detail="th07"] #launch'), 'TH07 has a start action');
   assert.equal(new URLSearchParams(f.router.state.location.search).get('game'), 'th07');
   assert.equal(env.document.querySelectorAll('#launch').length, 1);
-  await click('#libraryBack');
+  await click('[data-book-category="all"]');
   await until(() => !visibleOptions(), 'book returns to the cover grid');
   assert.equal(node('#librarySearch'), search);
   node('.book-view-covers .book-card[data-book-card="th06"]');
@@ -1314,7 +1323,7 @@ test('desktop book opens one inline game detail and keeps the library controls m
   await until(() => env.document.querySelector('.book-view-list .book-card[data-book-card="th06"]'), 'desktop can switch to list view');
   await click('.book-grid [data-book-product="th06"]');
   await until(() => env.document.querySelector('[data-game-detail="th06"] #launch'), 'detail also opens from list view');
-  await click('#libraryBack');
+  await back();
   await until(() => env.document.querySelector('.book-view-list .book-card[data-book-card="th06"]'), 'returning preserves list view');
   await click('.book-view-switch [data-book-view="covers"]');
   await until(() => env.document.querySelector('.book-view-covers .book-card[data-book-card="th06"]'), 'desktop can switch back to covers');
@@ -1509,7 +1518,7 @@ for (const close of ['Exit', 'Back']) test(`actual BrowserLauncher: original tou
 
   // The retained settings owner remains available to programmatic editor entry
   // after returning home, without selecting another product.
-  await click('#libraryBack');
+  await click('[data-book-category="all"]');
   await until(() => !visibleOptions(), 'Back returns to home');
   const home = currentUrl(), homeKey = f.router.state.location.key, retainedButton = node('#touchLayoutEdit');
   assert.equal(visibleOptions(), null); assert.equal(currentUrl(), home);
@@ -2803,9 +2812,9 @@ test('Replay Options close during native preload cancels once and the next Back 
   assert.equal(f.router.state.location.state.launcherSurfaceEntry.parentKey, parentKey);
   assertReplayPreloadRetired(session, f);
 
-  await click('#libraryBack');
+  await click('[data-book-category="all"]');
   await until(() => f.router.state.location.key === parentKey && currentUrl() === '/?keep=a%20b',
-    'the Options Back button commits a real BrowserHistory POP to its parent');
+    'the sidebar commits a real BrowserHistory POP to its parent');
   assert.equal(f.router.state.location.state.launcherPageHistory.page, 'launcher');
   assert.equal(session.getSnapshot().playerOpen, false);
   assert.equal(env.errors.filter(message => !message.includes('not wrapped in act')).length, 0);
@@ -2849,7 +2858,7 @@ test('Replay Options close cancels an in-flight native configure before the next
   assert.equal(f.router.state.location.state.launcherSurfaceEntry.parentKey, parentKey);
   assertReplayPreloadRetired(session, f);
 
-  await click('#libraryBack');
+  await click('[data-book-category="all"]');
   await until(() => f.router.state.location.key === parentKey && currentUrl() === '/?keep=a%20b',
     'the next Options exit reaches its physical parent after configure cancellation');
   assert.equal(f.router.state.location.state.launcherPageHistory.page, 'launcher');
