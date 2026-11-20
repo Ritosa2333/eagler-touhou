@@ -16,8 +16,7 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
  try{const referrer=new URL(document?.referrer);if(!['https:','http:'].includes(referrer.protocol)||referrer.origin==='null')return null;parentOrigin=referrer.origin;}catch{return null;}
  const parent=window.parent,controller=new AbortController(),requests=new Map();
  let phase='booting',config=null,launchSerial=null,presented=false,closed=false,busy=false,resourcesBusy=false,fileBusy=false;
- const base={protocol:PROTOCOL,game:GAME,epoch};
- const post=body=>parent.postMessage({...body,...base},parentOrigin);
+ const post=body=>parent.postMessage({...body,protocol:PROTOCOL,game:GAME,epoch},parentOrigin);
  const reply=(request,ok,body={})=>{
   if(request===undefined)return;const response={...body,request,ok};
   requests.set(request,response);

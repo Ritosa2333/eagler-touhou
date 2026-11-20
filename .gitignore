@@ -32,6 +32,7 @@
 /real-live-checkpoints/
 /work/
 /build/local/
+/build-eagler/
 /site/runtime/builds/
 /site/runtime/build.json
 /site/runtime/status.json
