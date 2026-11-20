@@ -164,7 +164,7 @@ export class RollbackQueue {
     for(const at of this.used.keys())if(at>=frame)this.used.delete(at);
   }
   prune(acknowledgedPrefix=Math.min(this.frame,this.confirmed)){
-    const prefix=Math.min(this.frame,this.confirmed,acknowledgedPrefix);
+    const prefix=Math.min(this.frame,this.confirmed,acknowledgedPrefix,this.dirty??Infinity);
     this.core.discard(prefix);
     for(const at of this.used.keys())if(at<prefix)this.used.delete(at);
     for(const lane of this.inputs)for(const at of lane.keys())if(at<prefix-32)lane.delete(at);

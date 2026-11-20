@@ -81,6 +81,28 @@ test('selection continues at tick rate after a three-frame network delay',()=>{
  for(clock=0;clock<180;clock++){peers.forEach(p=>p.tick());for(let seat=0;seat<2;seat++)while(queues[seat].length&&queues[seat][0].due<=clock)channels[seat].onmessage({data:queues[seat].shift().data});}
  assert.deepEqual(errors,[]);assert.ok(peers.every(p=>p.frame>=175),`frames: ${peers.map(p=>p.frame)}`);
 });
+
+test('selection accepts the valid input backlog after asymmetric delivery',()=>{
+ const queues=[[],[]],channels=[{},{}],errors=[];
+ const makeEngine=()=>({HEAPU8:new Uint8Array(16),HEAP32:new Int32Array(4),
+  _th03_classic_scene:()=>3,_th03_classic_surrender_allowed:()=>0,_th03_classic_paused:()=>0,
+  _th03_classic_touch(){},_th03_classic_assist_pair(){},_th03_classic_step_pair:()=>0,
+  _th03_classic_audio:()=>0,_th03_classic_audio_frames:()=>0,_th03_classic_defer_audio(){},
+  _th03_classic_speculative(){},_th03_semantic_replay_samples:()=>0,_th03_classic_audio_commands:()=>0,
+  _th03_classic_audio_command_count:()=>0,_th03_classic_audio_commit:()=>0});
+ channels.forEach((channel,seat)=>channel.send=text=>queues[seat^1].push(text));
+ const frames=[[],[]];
+ const matches=channels.map((channel,seat)=>createRollbackMatch({seat,channel,engine:makeEngine(),
+  sample:()=>seat,onConfirmedInput:(frame,pair)=>frames[seat].push([frame,pair]),onError:error=>errors.push(error)}));
+ for(let i=0;i<24;i++)matches[0].tick();
+ channels[1].oninputbatch(queues[1].splice(0));
+ for(let i=0;i<48;i++)matches[1].tick();
+ assert.equal(matches[0].frame,0);assert.equal(matches[1].confirmed,24);
+ assert.equal(JSON.parse(queues[0].at(-1)).frame,47);
+ channels[0].oninputbatch(queues[0].splice(0));
+ assert.deepEqual(errors,[]);
+ assert.equal(matches[0].confirmed,24);assert.deepEqual(frames[0],frames[1]);
+});
 test('battle stalls do not queue a long history of stale local controls',()=>{
  const sent=[];let sampled=0;
  const engine={_th03_classic_scene:()=>9,_th03_classic_surrender_allowed:()=>1,_th03_classic_paused:()=>0,

@@ -10,20 +10,28 @@ export function createManagedTransport(options, roles, fail, environment = globa
   base.searchParams.set('player', String(local)); base.searchParams.set('players', String(count));
   let data, signal, route = null, closed = false, rtcFailed = false, rtcReported = false;
   let earlyBytes = 0, timeout, signalRetry;
+  const pendingSignals=[];
   let endTask,endResolve,endReject,endTimer,endGrace,localEnded=false;
   const endSeen=new Set(),endAck=new Set();
   const peers = new Map(), early = [], encoder = new TextEncoder(), decoder = new TextDecoder('utf-8', {fatal:true});
   const fatal = error => { if (!closed) {
     if(localEnded&&endSeen.size===peers.size&&endAck.size===peers.size){clearTimeout(endTimer);clearTimeout(endGrace);endReject=null;endResolve?.();return;}
-    status.failed=true;status.error=String(error.message||error);close(); fail(error instanceof Error ? error : Error(String(error)));
+    status.failed=true;status.error=String(error.message||error);close(false);fail(error instanceof Error ? error : Error(String(error)));
   } };
   const guard = fn => (...args) => { if (!closed) try { const result = fn(...args); result?.catch?.(fatal); } catch (error) { fatal(error); } };
-  const control = message => { if (!closed && signal?.readyState === 1) signal.send(JSON.stringify(message)); };
-  function close() {
+  function control(message){
+    if(closed)return;
+    const text=JSON.stringify(message);
+    if(signal?.readyState===1)signal.send(text);
+    else if(route==='rtc')pendingSignals.push(text);
+  }
+  function close(notifyPeers=true) {
     if (closed) return; closed = true;status.disconnected=true;clearTimeout(timeout);clearTimeout(signalRetry);
+    pendingSignals.length=0;
     clearTimeout(endTimer);clearTimeout(endGrace);endReject?.(Error('本局网络在结束确认前关闭'));endReject=null;
     for (const peer of peers.values()) {
-      peer.channel.readyState = 'closed'; peer.channel.onclose?.();
+      clearRecovery(peer);
+      peer.channel.readyState = 'closed'; if(notifyPeers)peer.channel.onclose?.();
       peer.rtc?.close(); peer.pc?.close();
     }
     early.length = 0; earlyBytes = 0;
@@ -61,11 +69,13 @@ export function createManagedTransport(options, roles, fail, environment = globa
     for(const peer of peers.values())peer.channel.send(JSON.stringify({type:'eagler-run-ended'}));
     checkEnd();return endTask;
   }
-  function selected(mode) {
+  function selected(mode,reason) {
+    if(mode==='failed')throw Error(reason||'WebRTC 连接失败');
     if (!['rtc','relay'].includes(mode) || (route && route !== mode)) throw Error('无效网络路由');
     if (route) return;
     if (mode === 'rtc' && [...peers.values()].some(peer => peer.rtc?.readyState !== 'open')) throw Error('直连通道未就绪');
     route = mode; clearTimeout(timeout);
+    if(mode==='rtc'&&!signal)signalRetry=setTimeout(connectSignal,1000);
     environment.__eaglerNetplayTransport=mode;environment.__eaglerNetplayPath=mode;
     for (const peer of peers.values()) {
       if (mode === 'relay') { peer.rtc?.close(); peer.pc?.close(); }
@@ -82,13 +92,59 @@ export function createManagedTransport(options, roles, fail, environment = globa
   function attach(peer, rtc) {
     if (peer.rtc) throw Error('重复直连通道'); peer.rtc = rtc;
     rtc.onopen = checkRtc;
-    rtc.onmessage = guard(event => { if (!route || route === 'rtc') deliver(peer,event.data); });
+    rtc.onmessage = guard(event => { rtcProgress(peer);if (!route || route === 'rtc') deliver(peer,event.data); });
     rtc.onerror = () => route === 'rtc' ? fatal(Error('直连通道失败')) : fallback();
-    rtc.onclose = () => { if (route === 'rtc') fatal(Error('直连通道已关闭')); else if (!route) fallback(); };
+    rtc.onclose = () => { if(peer.channel.readyState==='closed')return;if (route === 'rtc') fatal(Error('直连通道已关闭')); else if (!route) fallback(); };
+  }
+  async function addCandidate(pc,candidate) {
+    // A stale trickled candidate (for example, from the previous ICE
+    // generation) must not veto the other usable candidates.
+    try { await pc.addIceCandidate(candidate); }
+    catch (error) { if(error.name!=='OperationError')throw error; }
+  }
+  function clearRecovery(peer) {
+    clearTimeout(peer.disconnectTimer);clearTimeout(peer.restartTimer);
+    peer.disconnectTimer=peer.restartTimer=null;
+  }
+  function rtcHealthy(peer) {
+    const {connectionState,iceConnectionState}=peer.pc;
+    return connectionState==='connected'&&['connected','completed',undefined].includes(iceConnectionState);
+  }
+  function rtcProgress(peer) {
+    // An ICE restart can complete without a new connection-state event,
+    // especially when the old transport remained usable during negotiation.
+    if((peer.disconnectTimer||peer.restartTimer)&&rtcHealthy(peer))clearRecovery(peer);
+  }
+  function restart(peer) {
+    if(closed||route!=='rtc'||peer.channel.readyState!=='open'||peer.restartTimer)return;
+    clearTimeout(peer.disconnectTimer);peer.disconnectTimer=null;
+    // Restart the existing ICE session. DataChannel sequence numbers and
+    // the unacknowledged rollback inputs remain on the same SCTP association.
+    peer.restartTimer=setTimeout(()=>fatal(Error('玩家直连恢复超时')),6500);
+    if(local>peer.id){control({type:'ice-restart-request',to:peer.id});return;}
+    peer.chain=peer.chain.then(async()=>{
+      if(closed||peer.channel.readyState!=='open')return;
+      await peer.pc.setLocalDescription(await peer.pc.createOffer({iceRestart:true}));
+      control({type:'signal',to:peer.id,description:peer.pc.localDescription.toJSON()});
+    }).catch(error=>{if(peer.channel.readyState==='open')fatal(error);});
+  }
+  function rtcState(peer) {
+    if(closed||route==='relay'||peer.channel.readyState==='closed')return;
+    const {connectionState,iceConnectionState}=peer.pc;
+    if(connectionState==='closed'){
+      if(route==='rtc')fatal(Error('玩家直连断开'));else fallback();
+    }else if(connectionState==='failed'||iceConnectionState==='failed'){
+      if(route==='rtc')restart(peer);else fallback();
+    }else if(route==='rtc'){
+      if(rtcHealthy(peer))clearRecovery(peer);
+      else if((connectionState==='disconnected'||iceConnectionState==='disconnected')&&!peer.disconnectTimer&&!peer.restartTimer){
+        peer.disconnectTimer=setTimeout(()=>restart(peer),1500);
+      }
+    }
   }
   async function description(peer, value) {
     await peer.pc.setRemoteDescription(value);
-    for (const candidate of peer.candidates.splice(0)) await peer.pc.addIceCandidate(candidate);
+    for (const candidate of peer.candidates.splice(0)) await addCandidate(peer.pc,candidate);
     if (value.type === 'offer') {
       await peer.pc.setLocalDescription(await peer.pc.createAnswer());
       control({type:'signal',to:peer.id,description:peer.pc.localDescription.toJSON()});
@@ -97,14 +153,15 @@ export function createManagedTransport(options, roles, fail, environment = globa
   async function setupRtc(message) {
     if (!environment.RTCPeerConnection) { fallback(); return; }
     const iceServers = Array.isArray(message.iceServers) ? message.iceServers : [];
+    const relayOnly=message.initialIceRelayOnly===true||(message.turnMode!=='direct'&&options.netplayPreferTurn);
     for (const peer of peers.values()) {
-      const pc = peer.pc = new environment.RTCPeerConnection({iceServers, ...(options.netplayPreferTurn ? {iceTransportPolicy:'relay'} : {})});
+      const pc = peer.pc = new environment.RTCPeerConnection({iceServers, ...(relayOnly ? {iceTransportPolicy:'relay'} : {})});
       pc.onicecandidate = guard(event => { if (event.candidate) control({type:'signal',to:peer.id,candidate:event.candidate.toJSON()}); });
-      pc.onconnectionstatechange = () => { if (['failed','closed'].includes(pc.connectionState)) { if (route === 'rtc') fatal(Error('玩家直连断开')); else if (!route) fallback(); } };
+      pc.onconnectionstatechange=pc.oniceconnectionstatechange=()=>rtcState(peer);
       pc.ondatachannel = guard(event => acceptInputChannel(pc,event.channel,'th02-inputs',rtc => attach(peer,rtc)));
       if (local < peer.id && message.peers?.includes(peer.id)) offer(peer);
     }
-    if (message.route) selected(message.route);
+    if (message.route) selected(message.route,message.reason);
   }
   function offer(peer) {
     if (peer.rtc || !peer.pc || route) return;
@@ -127,7 +184,7 @@ export function createManagedTransport(options, roles, fail, environment = globa
         if (route === 'rtc') peer.rtc.send(text);
         else { const packet = new Uint8Array(bytes.length+2); packet.set([0xe7,id]); packet.set(bytes,2); data.send(packet); }
       },
-      close() { if (this.readyState === 'closed') return; this.readyState='closed'; peer.rtc?.close(); peer.pc?.close(); },
+      close() { if (this.readyState === 'closed') return; this.readyState='closed';clearRecovery(peer);peer.rtc?.close();peer.pc?.close(); },
     };
     peers.set(id,peer);
   }
@@ -136,31 +193,42 @@ export function createManagedTransport(options, roles, fail, environment = globa
     if(closed)return;
     const signalUrl=new URL(base);signalUrl.searchParams.set('signal','1');
     const socket=signal=new environment.WebSocket(signalUrl);
+    socket.onopen=guard(()=>{
+      if(socket!==signal)return;
+      for(const text of pendingSignals.splice(0))socket.send(text);
+    });
     socket.onmessage=guard(event=>{
       if(socket!==signal)return;
       const message=JSON.parse(event.data);
       if(message.type==='peers'){
-        // After a signaling reconnect, keep the existing RTC channels intact.
-        if(route)return;
+        if(route)return; // Existing RTC channels survive a signaling reconnect.
         return setupRtc(message).catch(fallback);
       }
       if(message.type==='peer-join'){const peer=peers.get(message.player);if(peer&&local<peer.id)offer(peer);return;}
-      if(message.type==='route')return selected(message.mode);
+      if(message.type==='route')return selected(message.mode,message.reason);
       if(message.type==='error')throw Error(message.error);
+      const peer=peers.get(message.from);
+      if(!peer?.pc||peer.channel.readyState==='closed'||route==='relay')return;
+      if(message.type==='ice-restart-request'){
+        if(local<peer.id)restart(peer);
+        return;
+      }
       if(message.type==='signal'){
-        const peer=peers.get(message.from);if(!peer||!peer.pc||route==='relay')return;
         peer.chain=peer.chain.then(async()=>{
-          if(closed||route==='relay')return;
+          if(closed||peer.channel.readyState==='closed'||route==='relay')return;
           if(message.description)await description(peer,message.description);
-          if(message.candidate){if(peer.pc.remoteDescription)await peer.pc.addIceCandidate(message.candidate);else peer.candidates.push(message.candidate);}
-        }).catch(fallback);
+          if(message.candidate){
+            if(peer.pc.remoteDescription)await addCandidate(peer.pc,message.candidate);
+            else peer.candidates.push(message.candidate);
+          }
+        }).catch(error=>route==='rtc'?fatal(error):fallback());
       }
     });
-    socket.onerror=()=>{if(!route)fallback();};
     socket.onclose=()=>{
       if(closed||socket!==signal)return;
-      if(route){signalRetry=setTimeout(connectSignal,1000);return;}
-      fatal(Error('本局网络连接已关闭'));
+      signal=null;
+      // The data socket also receives the opening route or failure barrier.
+      if(route==='rtc')signalRetry=setTimeout(connectSignal,1000);
     };
   }
   return {
@@ -170,15 +238,14 @@ export function createManagedTransport(options, roles, fail, environment = globa
       data = new environment.WebSocket(base); data.binaryType = 'arraybuffer';
       connectSignal();
       data.onmessage = guard(event => {
-        if (typeof event.data === 'string') { const message=JSON.parse(event.data); if (message.type==='route') selected(message.mode); else if(message.type==='error') throw Error(message.error); return; }
+        if (typeof event.data === 'string') { const message=JSON.parse(event.data); if (message.type==='route') selected(message.mode,message.reason); else if(message.type==='error') throw Error(message.error); return; }
         if (route === 'rtc') return;
         const packet = new Uint8Array(event.data), peer = peers.get(packet[1]);
         // 0xe6 is added by the authenticated main relay, never by the sender.
         if (packet.length<3 || packet[0]!==0xe6 || !peer) throw Error('同步消息来源无效');
         deliver(peer,decoder.decode(packet.subarray(2)));
       });
-      data.onerror=() => { if (!route) fallback(); };
-      data.onclose=() => { if (!closed && route !== 'rtc') fatal(Error('本局网络连接已关闭')); };
+      data.onclose=event=>{if(!closed&&route!=='rtc')fatal(Error(event?.reason||'本局网络连接已关闭'));};
       timeout=setTimeout(() => fatal(Error('等待主项目网络路由超时')),45000);
     }, close, finish,
   };

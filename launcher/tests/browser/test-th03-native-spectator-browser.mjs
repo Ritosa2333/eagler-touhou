@@ -9,6 +9,7 @@ import {spawn} from 'node:child_process';
 import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 import {PRODUCT_GAMES,multiplayerInputTimingPolicy} from '../../../common/contracts/product-catalog.mjs';
+import {verifyPc98IceRestart} from './verify-pc98-ice-restart.mjs';
 const game=process.env.ROOM_RUNTIME_GAME;
 assert(['th01','th02','th03','th04'].includes(game),'ROOM_RUNTIME_GAME must be a multiplayer title');
 const forceRelay=game==='th03'&&process.env.TH03_TEST_RELAY==='1';
@@ -155,6 +156,7 @@ try{
   }
   if(game==='th02'||game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
   await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
+  if(process.env.PC98_TEST_RTC_RESTART==='1')await verifyPc98IceRestart(game,frames().slice(0,2),playerFrame,wait);
   let spectatorStarted=false;
   // Exercise local input after a network delay has had time to fill the queue.
   if(game==='th03' && process.env.TH03_TEST_INPUT_LATENCY==='1'){

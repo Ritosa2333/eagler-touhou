@@ -136,12 +136,13 @@ export class InputTransport {
     }
     for(const [id,entry]of this.pending){if(id>packet.ack)break;this.pending.delete(id);this.pendingBytes-=entry.size;this.lastProgress=this.lastRepair=this.now();}
     if(fast)this.stats.fastReceived++;
-    let fresh=0;
     for(const entry of packet.entries){
       if(entry.id<=this.receivedInput||this.received.has(entry.id))this.stats.duplicates++;
-      else{this.incoming.set(entry.id,entry);this.received.add(entry.id);this.stats.received++;fresh++;}
+      else{this.incoming.set(entry.id,entry);this.received.add(entry.id);this.stats.received++;}
     }
-    if(packet.entries.length)this.ackRepair=fresh===0;
+    // A reliable repair needs a reliable return ACK. A subsequent fresh
+    // fast packet cannot prove that the reverse fast path is working.
+    if(packet.entries.length&&!fast)this.ackRepair=true;
     while(this.received.delete(this.receivedInput+1))this.receivedInput++;
     if(packet.entries.length)this.ackDirty=true;
     this.drain();
