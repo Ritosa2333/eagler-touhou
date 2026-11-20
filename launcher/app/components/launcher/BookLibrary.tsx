@@ -57,7 +57,8 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     [search] = useSearchParams();
   const compact = useCompactNavigation();
   const showDetail = detail != null;
-  const previousDetail = useRef<string | undefined>(undefined);
+  const detailId = showDetail ? openedProduct : undefined;
+  const previousDetail = useRef(detailId);
   const [category, setCategory] = useState<BookCategory>('all');
   // Keep a visited list mounted while its height animates back to zero.
   const [disclosures, setDisclosures] = useState<ReadonlyMap<BookCategory, boolean>>(() => new Map());
@@ -69,16 +70,27 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   const [favorites, setFavorites] = useState<string[]>([]),
     [recent, setRecent] = useState<string[]>([]);
   const input = useRef<HTMLInputElement>(null),
+    content = useRef<HTMLDivElement>(null),
     results = useRef<HTMLDivElement>(null),
     selectedCard = useOptionsTarget('selectedCard');
+  const {run: animateLibraryChange, cancel: cancelLibraryMotion} = useLibraryMotion(results);
   useLayoutEffect(() => {
     const previous = previousDetail.current;
-    previousDetail.current = showDetail ? openedProduct : undefined;
-    if (showDetail || !previous || compact || document.activeElement !== document.body) return;
-    const target = results.current?.querySelector<HTMLElement>(`[data-book-product="${previous}"]`);
-    (target ?? input.current)?.focus({ preventScroll: true });
-  }, [showDetail, openedProduct, compact]);
-  const {run: animateLibraryChange, cancel: cancelLibraryMotion} = useLibraryMotion(results);
+    previousDetail.current = detailId;
+    if (compact || previous === detailId) return;
+    if (detailId) cancelLibraryMotion();
+    if (!detailId && document.activeElement === document.body) {
+      const target = results.current?.querySelector<HTMLElement>(`[data-book-product="${previous}"]`);
+      (target ?? input.current)?.focus({ preventScroll: true });
+    }
+    const panel = content.current?.firstElementChild;
+    if (!panel?.animate || panel.closest('.less-motion') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const animation = panel.animate(
+      [{opacity: .42, translate: '0 8px'}, {opacity: 1, translate: '0 0'}],
+      {id: 'book-content-enter', duration: 280, easing: 'cubic-bezier(.22,.7,.2,1)'},
+    );
+    return () => animation.cancel();
+  }, [detailId, compact, cancelLibraryMotion]);
   function reserveResultsSpace() {
     if (!results.current) return;
     // Keep the exposed canvas in the same viewport when filtering shortens it.
@@ -290,7 +302,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
           </nav>
         </ChoiceGroup>
       </aside>
-      <div className="book-content">
+      <div ref={content} className="book-content">
         {showDetail ? detail : <div className="book-content-main">
           {history.length > 0 && (
             <section className="book-recent" aria-labelledby="bookRecentTitle">
