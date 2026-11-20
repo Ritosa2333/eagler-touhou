@@ -1,5 +1,5 @@
 import {isPc98StockProduct} from './pc98-initial-stock.mjs';
-import {normalizeRoomName} from '../../../common/contracts/room-name.mjs';
+import {normalizeRoomName} from './room-name.mjs';
 import {validTh19VersusRules} from './th19-versus-rules.mjs';
 import {validTh15ChapterThreshold} from "./th15-chapter-reward.mjs";
 import {validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
