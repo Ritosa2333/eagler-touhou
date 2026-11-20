@@ -422,9 +422,12 @@ test('favorite multiplayer rooms sort first, update immediately and retain order
   }
 });
 
-test('all games puts favorites first and PC-98 last within each priority', async () => {
-  const rooms = [room({product:'th03mp', code:'1111', capacity:2, seats:[{initial:'A',online:true},null]}), room({code:'2222'})];
-  const f = await fixture({selectedProduct:'', host:{games:['th03','th06']}}).live(rooms);
+test('all games preserves relay order across PC-98 and other games within each favorite priority', async () => {
+  const games = ['th01','th06','th02','th07','th03','th04'];
+  const rooms = games.map((game, index) => room({product:`${game}mp`, code:String(1111 + index),
+    capacity:2, players:1, seats:[{initial:'A',online:true},null]}));
+  const original = rooms.map(room => `${room.product}-${room.code}`);
+  const f = await fixture({selectedProduct:'', host:{games}}).live(rooms);
   const key = 'eagler.book.multiplayer-favorites';
   const saved = env.window.localStorage.getItem(key);
   const order = () => all('#roomList .lobby-room-row').map(el => el.dataset.key);
@@ -437,11 +440,11 @@ test('all games puts favorites first and PC-98 last within each priority', async
   try {
     await setFavorites([]);
     await mountLobby(f);
-    assert.deepEqual(order(), ['th06mp-2222','th03mp-1111']);
-    await setFavorites(['th03mp']);
-    assert.deepEqual(order(), ['th03mp-1111','th06mp-2222']);
-    await setFavorites(['th03mp','th06mp']);
-    assert.deepEqual(order(), ['th06mp-2222','th03mp-1111']);
+    assert.deepEqual(order(), original);
+    await setFavorites(['th07mp','th02mp']);
+    assert.deepEqual(order(), [original[2],original[3],original[0],original[1],original[4],original[5]]);
+    await f.receive([...rooms].reverse());
+    assert.deepEqual(order(), [original[3],original[2],original[5],original[4],original[1],original[0]]);
   } finally {
     if (saved === null) env.window.localStorage.removeItem(key);
     else env.window.localStorage.setItem(key,saved);
@@ -894,6 +897,24 @@ test('TH19 directory preserves and updates whole-match scores received from rela
     assert.equal(n('.book-room-score-value').textContent,wins.join(' : '));
   }
   await m.unmount();
+});
+
+test('TH03 lobby updates the same duel row from VS to live scores and retains spectating', async () => {
+  const seat = wins => ({initial:'A',online:true,stats:{wins,losses:0,minutes:0}});
+  const duel = patch => room({product:'th03mp',capacity:2,players:1,seats:[seat(0),null],...patch});
+  const f = await fixture({selectedProduct:'',host:{games:['th03','th06']}}).live([room(),duel({code:'4321'})]);
+  await mountLobby(f);
+  const row = n('[data-key="th03mp-4321"]');
+  assert.equal(n('.book-room-score-value',row).textContent,'VS');
+  await f.receive([duel({code:'4321',players:2,seats:[seat(0),seat(0)]}),room()]);
+  assert.equal(n('.book-room-score-value',row).textContent,'0 : 0');
+  await f.receive([room(),duel({code:'4321',players:2,phase:'running',joinable:false,spectatable:true,seats:[seat(1),seat(2)]})]);
+  assert.equal(n('[data-key="th03mp-4321"]'),row);
+  assert.equal(n('.book-room-score-value',row).textContent,'1 : 2');
+  assert.equal(row.querySelector('.book-room-duel-summary'),null);
+  assert.equal(n('.lobby-join',row).textContent,t('en','multiplayer.joinSpectator'));
+  await click('[data-key="th03mp-4321"] .lobby-join');
+  assert.equal(owners.decodeRoomInvite(new URL(f.navigations[0].url).searchParams.get('j')).s,true);
 });
 
 test('Flower View keeps Japanese identity, score, shared facts and one contextual entry', async () => {
