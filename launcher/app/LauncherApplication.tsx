@@ -86,6 +86,7 @@ export interface LauncherHost {
   runtimeOpen?: boolean;
   replayWorkspace?: boolean;
   roomWorkspace?: boolean;
+  roomGameplayKeyboard?: boolean;
   roomPlayerExpanded?: boolean;
   runtimeLaunched?: boolean;
   titleOverlayOpen?: boolean;
@@ -335,6 +336,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       )}
       <PlayerSurface
         roomWorkspace={roomWorkspace}
+        roomGameplayKeyboard={host.roomGameplayKeyboard}
         replayWorkspace={host.replayWorkspace}
         preview={host.bootTouchPreview}
         previewImage={host.bootTouchPreviewImage}

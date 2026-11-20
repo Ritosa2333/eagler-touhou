@@ -8,8 +8,8 @@ import './workspace-viewport.css';
 export const PlayerStage = createContext<HTMLDivElement | null>(null);
 /** Main's one direct player/iframe. It is never keyed by route or product, and
  * touch editing only composes its workbench into this already existing stage. */
-export function PlayerSurface({open, editing, replayWorkspace = false, roomWorkspace = false, preview = false, previewImage, onElement, onFrame, children}: {
-  open: boolean; editing: boolean; replayWorkspace?: boolean; roomWorkspace?: boolean; preview?: boolean; previewImage?: string; onElement: RefCallback<HTMLElement>;
+export function PlayerSurface({open, editing, replayWorkspace = false, roomWorkspace = false, roomGameplayKeyboard = false, preview = false, previewImage, onElement, onFrame, children}: {
+  open: boolean; editing: boolean; replayWorkspace?: boolean; roomWorkspace?: boolean; roomGameplayKeyboard?: boolean; preview?: boolean; previewImage?: string; onElement: RefCallback<HTMLElement>;
   onFrame?: RefCallback<HTMLIFrameElement>; children?: ReactNode;
 }) {
   const {t} = useLocale();
@@ -21,7 +21,8 @@ export function PlayerSurface({open, editing, replayWorkspace = false, roomWorks
   }, [stage, replayWorkspace]);
   useLayoutEffect(() => {
     const frame = stage?.querySelector('iframe');
-    if (!roomWorkspace || !frame) return;
+    // The room UI owns native focus during preview and spectating.
+    if (!roomWorkspace || roomGameplayKeyboard || !frame) return;
     let current: Window | null = null;
     const block = (event: KeyboardEvent) => {
       if (!event.isTrusted) return;
@@ -39,7 +40,7 @@ export function PlayerSurface({open, editing, replayWorkspace = false, roomWorks
     };
     frame.addEventListener('load', bind); bind();
     return () => {frame.removeEventListener('load', bind); unbind();};
-  }, [stage, roomWorkspace]);
+  }, [stage, roomWorkspace, roomGameplayKeyboard]);
   return <section ref={onElement} className={`player${open ? ' open' : ''}${replayWorkspace ? ' replay-workspace' : ''}${roomWorkspace ? ' room-workspace' : ''}${editing ? ' touch-preview touch-layout-edit touch-enabled' : preview ? ' touch-preview' : ''}`} style={previewImage ? {'--touch-preview-image': previewImage} as CSSProperties : undefined}
     id="player" data-launcher-document="" aria-hidden={!open}>
     <PlayerStage value={stage}>{children}</PlayerStage>
