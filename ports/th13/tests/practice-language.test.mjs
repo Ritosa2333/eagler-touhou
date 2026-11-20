@@ -37,4 +37,8 @@ test('single-player shell owns the practice panel and both shells install only z
     assert.match(source, /pack\.language !== 'lang_zh-hans'/);
     assert.match(source, /\\\.\(\?:ecl\|std\|sht\)/);
   }
+  const overlay = read('../web/cpp/sdl/LanguagePack.cpp');
+  assert.match(overlay, /suffix\(base, "\.png"\)/);
+  assert.doesNotMatch(overlay, /suffix\(base, "\.msg"\)/);
+  assert.equal(read('../web/cpp/sdl/LanguagePack.cpp'), read('../../th13-mp/web/cpp/sdl/LanguagePack.cpp'));
 });

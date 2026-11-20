@@ -20,8 +20,10 @@ bool safe_relative(std::string_view name) {
 }
 }
 bool language_asset_allowed(std::string_view base) {
-    return safe_relative(base) && (suffix(base, ".msg") || suffix(base, ".txt") ||
-                                   suffix(base, ".anm") || suffix(base, ".png"));
+    // Dialogue and comments are CP932. thcrap Simplified Chinese msg text is
+    // UTF-8, so applying those files would render as mojibake. Bitmap and
+    // animation replacements are the verified surface.
+    return safe_relative(base) && (suffix(base, ".anm") || suffix(base, ".png"));
 }
 bool language_texture_allowed(std::string_view name) {
     return language_asset_allowed(name) && suffix(name, ".png");

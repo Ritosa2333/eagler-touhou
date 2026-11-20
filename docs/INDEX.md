@@ -1,6 +1,6 @@
 # 文档总表
 
-共 663 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 666 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -260,7 +260,7 @@
 | 公共库 | [common/testkit/presentation-lab/README.md](../common/testkit/presentation-lab/README.md) | Presentation Lab |
 | 公共库 | [common/testkit/replay-verifier/README.md](../common/testkit/replay-verifier/README.md) | Replay Verifier |
 | 公共库 | [common/testkit/replay-verifier/windows-present-observer/README.md](../common/testkit/replay-verifier/windows-present-observer/README.md) | Windows D3D8 Present 观察器 |
-| 公共库 | [common/third_party/libdatachannel/README.md](../common/third_party/libdatachannel/README.md) | 原生 WebRTC 补丁 |
+| 公共库 | [common/third_party/libdatachannel/README.md](../common/third_party/libdatachannel/README.md) | 原生 WebRTC 依赖补丁 |
 | Launcher | [launcher/ASSETS.md](../launcher/ASSETS.md) | 资源来源与生成 |
 | Launcher | [launcher/README.en.md](../launcher/README.en.md) | launcher README |
 | Launcher | [launcher/README.md](../launcher/README.md) | launcher README |
@@ -294,7 +294,7 @@
 | Launcher | [launcher/docs/paraglide-i18n.md](../launcher/docs/paraglide-i18n.md) | 界面语言与消息编译 |
 | Launcher | [launcher/docs/ui-controls.md](../launcher/docs/ui-controls.md) | 启动器 UI ｜ 源码研究与扩展设计 |
 | Launcher | [launcher/examples/deployment/README.md](../launcher/examples/deployment/README.md) | HTTP 配置示例 |
-| Launcher | [launcher/examples/imgui-overlay/README.md](../launcher/examples/imgui-overlay/README.md) | ImGui 面板备选 |
+| Launcher | [launcher/examples/imgui-overlay/README.md](../launcher/examples/imgui-overlay/README.md) | th09 ImGui Overlay 原型 |
 | Launcher | [launcher/integrations/LOCALIZATION.md](../launcher/integrations/LOCALIZATION.md) | 语言包与字体 |
 | Launcher | [launcher/integrations/RUNTIME_CONTRACT.md](../launcher/integrations/RUNTIME_CONTRACT.md) | Runtime 语言包与 thprac 接口 |
 | Launcher | [launcher/lib/README.md](../launcher/lib/README.md) | lib/ 目录归属 |
@@ -641,6 +641,7 @@
 | 许可证与声明 | [ports/th13/LICENSE](../ports/th13/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th13/NOTICE.md](../ports/th13/NOTICE.md) | Source and asset notices |
 | 许可证与声明 | [ports/th13/portable/sdl/third_party/miniaudio.LICENSE](../ports/th13/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
+| 许可证与声明 | [ports/th13/web/cpp/game/THPRAC-LICENSE.txt](../ports/th13/web/cpp/game/THPRAC-LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th14-mp/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE](../ports/th14-mp/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th14/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE](../ports/th14/runtimes/th12/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th15-mp/LICENSE](../ports/th15-mp/LICENSE) | LICENSE |
