@@ -138,10 +138,14 @@ launcher=mountLauncherSession({window:parentWindow,document,location,hooks:{
  async configure(config){
   requireCurrent();if(!provider)throw new Error('Installed game resources are not ready');
   if(config.music!=='ogg'&&config.music!=='none')throw Object.assign(new Error('This page currently supports OGG or no BGM'),{errno:'unsupported-command'});
-  if(config.runtimePack!==undefined||!managedOwner&&[config.resources,config.runtimeResources,config.sharedResources].some(rows=>rows?.length))
+  if(config.runtimePack!=null||!managedOwner&&[config.resources,config.runtimeResources,config.sharedResources].some(rows=>rows?.length))
    throw Object.assign(new Error('External resource maps are not installed by this page'),{errno:'unavailable'});
   const options=config.options??{},booleanOptions=new Set(['limitPresentationTo60','touchEnabled','thpracEnabled','doubleTapBombEnabled','restartButtonEnabled','thpracTouchControlsEnabled']);
-  if(Object.entries(options).some(([key,value])=>booleanOptions.has(key)?typeof value!=='boolean':!['touchMovementMode','touchFocusMode','touchSensitivity','touchControlOpacity'].includes(key)))
+  if(options.alwaysHitbox!==undefined&&options.alwaysHitbox!==false)
+   throw Object.assign(new Error('TH128 does not support an always-visible hitbox'),{errno:'unsupported-command'});
+  if(options.oggDecodeMode!==undefined&&options.oggDecodeMode!=='full')
+   throw Object.assign(new Error('TH128 decodes the full OGG track'),{errno:'unsupported-command'});
+  if(Object.entries(options).some(([key,value])=>booleanOptions.has(key)?typeof value!=='boolean':!['touchMovementMode','touchFocusMode','touchSensitivity','touchControlOpacity','alwaysHitbox','oggDecodeMode','thpracLocale'].includes(key)))
    throw Object.assign(new Error('A requested page option is not implemented'),{errno:'unsupported-command'});
   if(config.language){
    const response=await provider.fetch(location.origin+'/assets/catalog.json',{signal:controller.signal}),catalog=await response.json();requireCurrent();

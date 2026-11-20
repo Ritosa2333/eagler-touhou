@@ -958,7 +958,7 @@ const state={module:null,renderer:null,manifest:null,base:'',catalog:null,stageC
 let practiceMenu=null,practiceLaunchOwner=null,thpracToolsPanel=null;
 const thpracLogicClock=new Thprac128LogicClock(clock),thpracOptionsStore=new Thprac128Settings();
 const thpracLaunch=thpracOptionsStore.launch(launcherContext?.config??(localConfig?.thprac==null?{}:{options:{thpracEnabled:localConfig.thprac}}));
-const thpracSettings={...thpracLaunch,locale:launcherContext?.config.language??localConfig?.language??thpracLaunch.locale};
+const thpracSettings={...thpracLaunch,locale:launcherContext?.config.options?.thpracLocale??launcherContext?.config.language??localConfig?.language??thpracLaunch.locale};
 state.thpracUIEnabled=thpracSettings.enabled;
 const thpracDraft={mask:0,speed:validateThprac128Speed()};
 const thpracDraftOwner=state.thpracDraftOwner=Object.freeze({pending:true,playback:false,snapshot:()=>({mask:thpracDraft.mask,frame:0}),speedFor:()=>thpracDraft.speed,setMask(mask){if(!Number.isInteger(mask)||mask<0||mask>127)throw new Error('Invalid practice mask');thpracDraft.mask=mask;},setSpeed(value){thpracDraft.speed=validateThprac128Speed(value);}});

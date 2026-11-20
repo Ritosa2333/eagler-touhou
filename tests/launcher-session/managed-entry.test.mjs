@@ -52,6 +52,37 @@ async function setup({query=search,referrer=origin+'/app',callback=null,blocked=
 async function finished(e){await e.pending;await flush();return e;}
 const reply=(e,id)=>e.messages.find(row=>row.data.request===id)?.data;
 const events=(e,type)=>e.messages.filter(row=>row.data.event===type);
+async function answered(e,id){
+ const deadline=Date.now()+1000;
+ while(!reply(e,id)&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,1));
+ return reply(e,id);
+}
+test('complete Launcher configure selects its mounted Chinese data, full OGG and independent practice locale',async()=>{
+ const e=await finished(await setup({query:storeSearch}));
+ const options={limitPresentationTo60:false,touchEnabled:true,touchMovementMode:'touch-unlimited',touchSensitivity:175,
+  touchFocusMode:'two-finger',doubleTapBombEnabled:true,alwaysHitbox:false,oggDecodeMode:'full',thpracEnabled:true,thpracLocale:'ja-JP'};
+ const config={music:'ogg',language:'zh',runtimePack:null,options};
+ try{
+  e.send(envelope('configure','cfg',config));
+  const configured=await answered(e,'cfg');assert.equal(configured?.ok,true,configured?.error);
+  e.send(envelope('launch','go'));await flush();
+  assert.equal(reply(e,'go')?.ok,true);assert.equal(e.calls.imports,1);assert.equal(events(e,'first-frame').length,0);
+  assert.deepEqual(e.context.config,{...config,options:{...options,thpracLocale:'ja'}});
+ }finally{e.local.pagehide();}
+});
+test('complete Launcher configure rejects unsupported or unavailable choices before game import',async()=>{
+ const e=await finished(await setup({query:storeSearch}));
+ try{
+  const failures=[{language:'ja'},{runtimePack:{id:'foreign'}},{options:{alwaysHitbox:true}},
+   {options:{oggDecodeMode:'stream'}},{options:{thpracLocale:'fr-FR'}}];
+  for(let i=0;i<failures.length;i++){
+   e.send(envelope('configure','bad-'+i,{music:'ogg',language:'zh',...failures[i]}));
+   assert.equal((await answered(e,'bad-'+i))?.ok,false);assert.equal(e.calls.imports,0);
+  }
+  e.send(envelope('configure','silent',{music:'none',language:'zh',runtimePack:null,options:{thpracLocale:'en-US'}}));
+  assert.equal((await answered(e,'silent'))?.ok,true);assert.equal(e.calls.imports,0);
+ }finally{e.local.pagehide();}
+});
 test('Package Store generation alone starts the current entry without opening or reopening a separate ZIP store',async()=>{
  const e=await finished(await setup({query:storeSearch}));
  try{

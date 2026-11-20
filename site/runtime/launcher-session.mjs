@@ -2,6 +2,7 @@
 // remain explicit; this module never loads a game or claims an absent capability.
 import{touchOptions}from'./touch-options.mjs';
 const PROTOCOL='eagler-touhou/1',GAME='th128';
+const THPRAC_LOCALES=new Map([['zh','zh'],['zh-CN','zh'],['ja','ja'],['ja-JP','ja'],['en','en'],['en-US','en']]);
 const KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','KeyR','Enter','Escape','ShiftLeft','ShiftRight','Tab','Backspace','F1','F2','F3','F4','F5','F6','F7','F12']);
 const own=(value,key)=>Object.hasOwn(value,key),record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)
  &&(Object.getPrototypeOf(value)===Object.prototype||Object.getPrototypeOf(value)===null);
@@ -41,7 +42,16 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
    if(!own(data,key))continue;if(!Array.isArray(data[key])||data[key].length>4096)throw invalid('configure.'+key+' must be a bounded array');value[key]=data[key];
   }
   if(own(data,'runtimePack'))value.runtimePack=data.runtimePack;
-  if(own(data,'options')){if(!record(data.options))throw invalid('configure.options must be an object');try{touchOptions(data.options);}catch(error){throw invalid(error.message);}value.options=data.options;}
+  if(own(data,'options')){
+   if(!record(data.options))throw invalid('configure.options must be an object');
+   try{touchOptions(data.options);}catch(error){throw invalid(error.message);}
+   value.options={...data.options};
+   if(own(value.options,'thpracLocale')){
+    const locale=THPRAC_LOCALES.get(value.options.thpracLocale);
+    if(!locale)throw invalid('configure.options.thpracLocale is unavailable');
+    value.options.thpracLocale=locale;
+   }
+  }
   return value;
  }
  async function execute(data){
