@@ -168,7 +168,7 @@ public:
         values.randomize_integrity();
 #endif
     }
-    void effect(i32 kind,const Vec3& p,i32 count,u32 color)override{world->effects.spawn(kind,p,count,color);failed|=world->effects.invalid;}
+    void effect(i32 kind,const Vec3& p,i32 count,u32 color)override{world->effects.spawn(kind,p,count,color,nullptr,kind==6?u32(seat+1):0);failed|=world->effects.invalid;}
     void effect(i32 kind,const Vec3& p)override{effect(kind,p,1,0xffffffff);}
     EffectState* fixed_effect(i32 kind,const Vec3& p,i32 slot,u32 color)override{
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)

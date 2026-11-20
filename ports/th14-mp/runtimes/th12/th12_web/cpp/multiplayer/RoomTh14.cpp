@@ -9,7 +9,7 @@ constexpr u8 marker='E';
 }
 bool RoomSetupTh14::valid()const{
     if(!id||seats<2||seats>3||local>=seats||delay>(prediction?8u:9u)||prediction>max_prediction||difficulty>4||seed>65535||
-       !(build[0]|build[1]|build[2]|build[3]))return false;
+       (keep_bullets_on_miss&&!challenge)||!(build[0]|build[1]|build[2]|build[3]))return false;
     for(u32 i=0;i<loadouts.size();++i){
         const auto p=loadouts[i];
         if(!player_selection_valid(p.character,p.subtype)||(i>=seats&&(p.character||p.subtype)))return false;
@@ -26,14 +26,14 @@ std::vector<u8> RoomSetupTh14::describe()const{
     bytes[0]=schema;bytes[1]=game;bytes[2]=u8(seats);bytes[3]=u8(difficulty);
     wire::Put(bytes,4,seed,2);bytes[6]=u8(delay);bytes[7]=u8(prediction);
     for(u32 i=0;i<3;++i){bytes[8+i*2]=loadouts[i].character;bytes[9+i*2]=loadouts[i].subtype;}
-    bytes[14]=u8(challenge);
+    bytes[14]=u8(challenge);bytes[15]=u8(keep_bullets_on_miss);
     for(u32 i=0;i<4;++i)wire::Put(bytes,16+i*4,build[i]);
     return bytes;
 }
 bool RoomSetupTh14::read(const Netplay::InputReplayInfo& info,const std::array<u32,4>& expected){
     const auto& config=info.config;const auto& b=config.description;
-    if(config.gameId!=game||b.size()!=32||b[0]!=schema||b[1]!=game||b[2]!=config.playerCount||b[14]>1||b[15])return false;
-    id=1;challenge=b[14]!=0;seats=b[2];difficulty=b[3];seed=u32(wire::Get(b.data(),4,2));delay=b[6];prediction=b[7];local=config.recordedPlayer;
+    if(config.gameId!=game||b.size()!=32||b[0]!=schema||b[1]!=game||b[2]!=config.playerCount||b[14]>1||b[15]>1)return false;
+    id=1;challenge=b[14]!=0;keep_bullets_on_miss=b[15]!=0;seats=b[2];difficulty=b[3];seed=u32(wire::Get(b.data(),4,2));delay=b[6];prediction=b[7];local=config.recordedPlayer;
     for(u32 i=0;i<3;++i)loadouts[i]={b[8+i*2],b[9+i*2]};
     for(u32 i=0;i<4;++i)build[i]=u32(wire::Get(b.data(),16+i*4));
     return valid()&&build==expected&&abi()==config.gameplayAbi;

@@ -7,8 +7,10 @@ bool PlayerLife::advance_state(u32 pressed,float& rate,bool hud_available,Player
     case 0:{
         const i32 y=wrapping_sub(0xf000,wrapping_mul(age.current,0x2800)/60);motion.position_fixed.y=y;motion.position.y=float(float(y)*.0078125f);snap();
         for(auto& p:motion.history)p=motion.position_fixed;
-        if(age.current<30){const float radius=float(float(float(float(age.current)*512.f)/30.f)+64.f);if(!host.cancel_lasers_near(last_death_position,radius,0,true)||!host.cancel_lasers_near(last_death_position,float(radius*.25f),0,false))return false;}
-        else{if((spell.flags&1)&&spell.id==100&&!host.cancel_bullets_near(motion.position,128.f,0,true))return false;if(!host.cancel_bullets_near(motion.position,640.f,0,false)||!host.cancel_lasers_near(motion.position,640.f,0,false))return false;}
+        if(!session.keep_bullets_on_miss){
+            if(age.current<30){const float radius=float(float(float(float(age.current)*512.f)/30.f)+64.f);if(!host.cancel_lasers_near(last_death_position,radius,0,true)||!host.cancel_lasers_near(last_death_position,float(radius*.25f),0,false))return false;}
+            else{if((spell.flags&1)&&spell.id==100&&!host.cancel_bullets_near(motion.position,128.f,0,true))return false;if(!host.cancel_bullets_near(motion.position,640.f,0,false)||!host.cancel_lasers_near(motion.position,640.f,0,false))return false;}
+        }
         if(age.current<60)return true;state=1;age.set(0);[[fallthrough]];
     }
     case 1:

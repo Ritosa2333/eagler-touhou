@@ -949,6 +949,7 @@ i32 UpdateMultiplayerDeath(Player *player)
         return 0;
 
     player->playerState = PLAYER_STATE_SPAWNING;
+    player->suppressRespawnClear = MultiplayerGameplay::KeepBulletsOnMiss();
     if (MultiplayerGameplay::GetPlayerCount() >= 3)
     {
         player->pos.x = g_GameManager.arcadeRegionSize.x / 2.0f +
@@ -2505,13 +2506,15 @@ void Player::Die()
     if (MultiplayerGameplay::IsMultiplayer() && this->teamBombProtectionTimer.GetCurrent() > 0) return;
 #endif
     g_GameManager.RegenerateGameIntegrityCsum();
+    u8 missOwner = 0;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer()) missOwner = initParam + 1;
     g_EffectManager.SpawnSpecialEffect(12, &this->pos,
-                                GetPlayerEffectSlot(this, 3), 1, 0xff4040ff);
+                                GetPlayerEffectSlot(this, 3), 1, 0xff4040ff, missOwner);
 #else
     g_EffectManager.SpawnSpecialEffect(12, &this->pos, 3, 1, 0xff4040ff);
 #endif
-    g_EffectManager.SpawnEffect(6, &this->pos, 16, 0xffffffff);
+    g_EffectManager.SpawnEffect(6, &this->pos, 16, 0xffffffff, missOwner);
     // Upstream THOverlay F1 (th07 mMuteki) patches only the immediate written
     // by Player::Die at 0x43EE14: DEAD(2) -> INVULNERABLE(3). Keep all other
     // hit feedback/timers exactly on the vanilla path.
@@ -3565,6 +3568,9 @@ i32 Player::UpdateDeath()
 void Player::Respawn()
 {
     this->bulletGracePeriod = 60;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (this->suppressRespawnClear) this->bulletGracePeriod = 0;
+#endif
     f32 invulnScale = 1.0f - this->invulnerabilityTimer.AsFloat() / 30.0f;
     this->playerSprite.scale.y = 2.0f * invulnScale + 1.0f;
     this->playerSprite.scale.x = 1.0f - 1.0f * invulnScale;
@@ -3583,6 +3589,9 @@ void Player::Respawn()
         this->playerSprite.blendMode = 0;
         this->invulnerabilityTimer = 240;
         this->respawnTimer = this->shooterData->initialRespawnTimer;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        this->suppressRespawnClear = false;
+#endif
     }
 }
 
@@ -4382,6 +4391,9 @@ ZunResult Player::AddedCallback(Player *arg)
     arg->grabItemSize.z = 5.0f;
     arg->playerDirection = MOVEMENT_NONE;
     arg->playerState = PLAYER_STATE_SPAWNING;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    arg->suppressRespawnClear = false;
+#endif
     arg->invulnerabilityTimer = 120;
     arg->optionState = OPTION_UNFOCUSED;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY

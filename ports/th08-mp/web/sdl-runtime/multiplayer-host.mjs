@@ -55,11 +55,12 @@ export async function configureMultiplayer(core,app,options,{crypto=globalThis.c
  const identity=new TextEncoder().encode(`th08mp:${o.room}:${o.run}`);
  const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
  const challenge=options.netplayChallengeMode===true;
+ if(options.netplayChallengeKeepBullets!==undefined&&(typeof options.netplayChallengeKeepBullets!=='boolean'||(options.netplayChallengeKeepBullets&&!challenge)))throw Error('Invalid TH08 challenge bullet clearing setting');
  const words=[challenge?7:o.adonisMode?6:4,o.count,o.seat,o.difficulty,o.seed,digest.getUint32(0,true),digest.getUint32(4,true)||1,...runtimeBuildWords];
  for(let seat=0;seat<3;++seat)words.push(o.loadouts[seat]?.character||0,0);
  words.push(o.inputDelay,o.predictionLimit);
  if(o.adonisMode||challenge)words.push(o.adonisMode,+o.automatic,o.reserve);
- if(challenge)words.push(1);
+ if(challenge)words.push(1+2*(options.netplayChallengeKeepBullets===true));
  const pointer=core.allocate(words.length*4);if(!pointer)throw Error('Multiplayer setup allocation failed');
  try{
   new Uint32Array(core.memory.buffer,pointer,words.length).set(words);

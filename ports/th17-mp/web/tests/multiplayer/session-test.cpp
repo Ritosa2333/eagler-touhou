@@ -1,4 +1,5 @@
 #include "Session.hpp"
+#include "ReplayArchive.hpp"
 #include "FrameState.hpp"
 #include <array>
 #include <cstdlib>
@@ -280,6 +281,28 @@ void incompatible_room(bool challenge_mismatch) {
     require(!p2.pump(2), "room rules or loadout mismatch fails HELLO");
 }
 
+void challenge_replay_rules() {
+    using namespace th17::multiplayer;
+    SessionSetup setup;
+    setup.room=19;
+    setup.build[0]=1;
+    const Netplay::FrameInput inputs[2]{};
+    std::uint32_t previous_abi=0;
+    for(unsigned rules:{0u,1u,3u}){
+        setup.challenge=(rules&1)!=0;
+        setup.keep_bullets_on_miss=(rules&2)!=0;
+        ReplayArchive original, decoded;
+        std::vector<std::uint8_t> replay;
+        require(original.begin(setup,0)&&original.append(0,1,inputs)&&original.encode(replay,"MISS",0,false),"write replay with challenge rules");
+        require(decoded.load(replay.data(),replay.size()),"load replay with challenge rules");
+        require(decoded.setup().challenge==setup.challenge&&decoded.setup().keep_bullets_on_miss==setup.keep_bullets_on_miss,"replay restores both challenge rules");
+        require(decoded.setup().gameplay_abi()!=previous_abi,"bullet rule distinguishes room compatibility");
+        previous_abi=decoded.setup().gameplay_abi();
+    }
+    setup.challenge=false;
+    require(!setup.valid(),"ordinary rooms cannot enable the challenge bullet rule");
+}
+
 void confirmed_input_pipeline() {
     Link a,b;
     a.links[1]=&b;b.links[0]=&a;
@@ -327,5 +350,6 @@ int main() {
     incompatible_room(false);
     incompatible_room(true);
     confirmed_input_pipeline();
+    challenge_replay_rules();
     std::cout << "TH17 session transport, late correction and confirmed output passed\n";
 }

@@ -17,6 +17,8 @@ struct PlayerLifecycleEnvironment {
     i32 replay_mode;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     u32 player_count=1;
+    u8 miss_effect_seat=0;
+    bool keep_bullets_on_miss=false;
     bool challenge_mode=false;
 #endif
 #ifdef TH_ENABLE_THPRAC

@@ -1575,6 +1575,14 @@
     "id": "room_challengeHint",
     "params": []
   },
+  "room.challengeKeepBullets": {
+    "id": "room_challengeKeepBullets",
+    "params": []
+  },
+  "room.challengeKeepBulletsHint": {
+    "id": "room_challengeKeepBulletsHint",
+    "params": []
+  },
   "room.modeOn": {
     "id": "room_modeOn",
     "params": []

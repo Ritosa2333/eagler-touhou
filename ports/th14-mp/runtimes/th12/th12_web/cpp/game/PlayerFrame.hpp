@@ -36,6 +36,7 @@ struct PlayerFrameWorld:ShotWorld {
 #if PORT_TITLE == 14
     virtual u32 player_focus(){return 0;}
     virtual bool th14_unlimited_lives()const{return false;}
+    virtual bool th14_keep_bullets_on_miss()const{return false;}
     virtual bool bombs_changed(i32,i32){return false;}
 #endif
 #if PORT_TITLE == 16

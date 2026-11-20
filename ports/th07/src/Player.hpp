@@ -361,6 +361,7 @@ struct Player
     i32 lifeGiveTimer;
     i32 lifeGiveTargetToken;
     ZunTimer teamBombProtectionTimer;
+    bool suppressRespawnClear;
 #else
     i32 unused_16a18;
     i32 unused_16a1c;

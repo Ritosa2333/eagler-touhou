@@ -175,7 +175,7 @@ export const PRODUCT_GAMES = Object.freeze({
         storage: Object.freeze({saveRoot: "/savesth05", scoreFile: "score.dat", configFiles: Object.freeze(["game.cfg", "thprac-uth05.ini"])}),
         multiplayerRuntime: "./runtime/th05/multiplayer/th05.html",
         multiplayer: Object.freeze({
-            titleKey: "game.title.th05mp", gameplay: "cooperative",
+            titleKey: "game.title.th05mp", gameplay: "cooperative", challengeKeepBullets: true,
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
             loadouts: Object.freeze(["reimu","marisa","mima","yuuka"].map((name,character)=>Object.freeze({labelKey:`multiplayer.loadout.th05_${name}`,glyph:["霊","魔","魅","幽"][character],character,shot:0}))),
             peerTransportGlobal: "__th05PeerTransport", relaySourceEnvelope: true, spectator: true, titleRoomEntry: false,
@@ -266,6 +266,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime: "./runtime/th06/multiplayer/th06.html",
         multiplayer: Object.freeze({
             titleKey: "game.title.th06mp",
+            challengeKeepBullets: true,
             gameplay: "cooperative",
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
             difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
@@ -311,6 +312,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime: "./runtime/th07/multiplayer/th07.html",
         multiplayer: Object.freeze({
             titleKey: "game.title.th07mp",
+            challengeKeepBullets: true,
             gameplay: "cooperative",
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
             difficulties: TH07_MULTIPLAYER_DIFFICULTIES,
@@ -405,6 +407,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime: "./runtime/th08/multiplayer/th08.html",
         multiplayer: Object.freeze({
             titleKey: "game.title.th08mp",
+            challengeKeepBullets: true,
             gameplay: "cooperative",
             inputTiming: Object.freeze({ rollbackLimit: 8, sendPredictionLimit: 8, measuredStartup: true }),
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
@@ -506,6 +509,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime: "./runtime/th10/multiplayer/th10.html",
         multiplayer: Object.freeze({
             titleKey: "game.title.th10mp",
+            challengeKeepBullets: true,
             gameplay: "cooperative",
             inputTiming: Object.freeze({ rollbackLimit: 12, measuredStartup: true }),
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
@@ -563,6 +567,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime: "./runtime/th11/multiplayer/th11.html",
         multiplayer: Object.freeze({
             titleKey: "game.title.th11mp",
+            challengeKeepBullets: true,
             gameplay: "cooperative",
             inputTiming: Object.freeze({ rollbackLimit: 12, sendPredictionLimit: 12, measuredStartup: true, manualDelayLimit: 9 }),
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
@@ -593,7 +598,7 @@ export const PRODUCT_GAMES = Object.freeze({
         replay: Object.freeze({prefix: "th12"}),
         multiplayerRuntime: "./runtime/th12/multiplayer/th12.html",
         multiplayer: Object.freeze({
-            titleKey: "game.title.th12mp", gameplay: "cooperative",
+            titleKey: "game.title.th12mp", gameplay: "cooperative", challengeKeepBullets: true,
             inputTiming: Object.freeze({ rollbackLimit: 12, sendPredictionLimit: 12, measuredStartup: true, manualDelayLimit: 9 }),
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
             loadouts: TH12_MULTIPLAYER_LOADOUTS, peerTransportGlobal: "__th12PeerTransport",
@@ -647,7 +652,7 @@ export const PRODUCT_GAMES = Object.freeze({
         replay: Object.freeze({ prefix: "th13" }),
         multiplayerRuntime: "./runtime/th13/multiplayer/th13.html",
         multiplayer: Object.freeze({
-            titleKey: "game.title.th13mp", gameplay: "cooperative",
+            titleKey: "game.title.th13mp", gameplay: "cooperative", challengeKeepBullets: true,
             inputTiming: Object.freeze({ rollbackLimit: 12, sendPredictionLimit: 12, measuredStartup: true, manualDelayLimit: 9 }),
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
             loadouts: TH13_MULTIPLAYER_LOADOUTS, peerTransportGlobal: "__th13PeerTransport",
@@ -694,7 +699,7 @@ export const PRODUCT_GAMES = Object.freeze({
         replay: Object.freeze({prefix: "th14"}),
         multiplayerRuntime: "./runtime/th14/multiplayer/th14.html",
         multiplayer: Object.freeze({
-            titleKey: "game.title.th14mp", gameplay: "cooperative",
+            titleKey: "game.title.th14mp", gameplay: "cooperative", challengeKeepBullets: true,
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
             loadouts: TH07_MULTIPLAYER_LOADOUTS, peerTransportGlobal: "__th14PeerTransport",
             spectator: true, titleRoomEntry: false,
@@ -749,6 +754,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime: "./runtime/th15/multiplayer/th15.html",
         multiplayer: Object.freeze({
             titleKey: "game.title.th15mp",
+            challengeKeepBullets: true,
             gameplay: "cooperative",
             inputTiming: Object.freeze({ rollbackLimit: 12, sendPredictionLimit: 12, measuredStartup: true, manualDelayLimit: 9 }),
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
@@ -779,7 +785,7 @@ export const PRODUCT_GAMES = Object.freeze({
         replay: Object.freeze({prefix: "th17"}),
         multiplayerRuntime: "./runtime/th17/multiplayer/th17.html",
         multiplayer: Object.freeze({
-            titleKey: "game.title.th17mp", gameplay: "cooperative",
+            titleKey: "game.title.th17mp", gameplay: "cooperative", challengeKeepBullets: true,
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
             loadouts: TH17_MULTIPLAYER_LOADOUTS, peerTransportGlobal: "__th17PeerTransport",
             loadoutFields: Object.freeze([

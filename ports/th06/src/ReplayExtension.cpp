@@ -118,7 +118,8 @@ constexpr std::size_t MP_SESSION_FLAGS_OFFSET = 124;
 constexpr std::size_t MP_COUNTS_OFFSET = 128;
 constexpr u32 MP_SESSION_HIDE_CONTRIBUTION_STATS = 1u;
 constexpr u32 MP_SESSION_CHALLENGE = 2u;
-constexpr u32 MP_SESSION_FLAGS_MASK = MP_SESSION_CHALLENGE | MP_SESSION_HIDE_CONTRIBUTION_STATS;
+constexpr u32 MP_SESSION_KEEP_BULLETS_ON_MISS = 4u;
+constexpr u32 MP_SESSION_FLAGS_MASK = MP_SESSION_KEEP_BULLETS_ON_MISS | MP_SESSION_CHALLENGE | MP_SESSION_HIDE_CONTRIBUTION_STATS;
 constexpr std::size_t MP_STAGE_RESOURCE_BYTES_PER_STAGE = 4 + 3 * 4 * 4;
 constexpr std::size_t MP_STAGE_RESOURCE_BYTES = 7 * MP_STAGE_RESOURCE_BYTES_PER_STAGE;
 constexpr std::size_t MP_STAGE_CONTRIBUTION_BYTES_PER_STAGE = 4 + 3 * 2 * 4;
@@ -204,7 +205,8 @@ bool FindTrailer(const u8 *bytes, std::size_t size, std::size_t &payloadOffset, 
         const u32 localPlayer = ReadLe32(bytes + payloadOffset + MP_LOCAL_PLAYER_OFFSET);
         const u32 sessionFlags = ReadLe32(bytes + payloadOffset + MP_SESSION_FLAGS_OFFSET);
         if (playerCount < 2 || playerCount > 3 || difficulty > 4 ||
-            localPlayer >= playerCount || (sessionFlags & ~MP_SESSION_FLAGS_MASK) != 0)
+            localPlayer >= playerCount || (sessionFlags & ~MP_SESSION_FLAGS_MASK) != 0 ||
+            ((sessionFlags & MP_SESSION_KEEP_BULLETS_ON_MISS) && !(sessionFlags & MP_SESSION_CHALLENGE)))
             return false;
         for (u32 player = 0; player < playerCount; ++player)
         {
@@ -675,9 +677,9 @@ static bool AppendInputEvents(const char *path,
         WriteLe32(bytes.data() + payloadOffset + MP_LOCAL_PLAYER_OFFSET,
                   g_RecordMultiplayerConfig.localPlayer);
         WriteLe32(bytes.data() + payloadOffset + MP_SESSION_FLAGS_OFFSET,
-                  g_RecordMultiplayerConfig.showContributionStats
-                      ? (g_RecordMultiplayerConfig.challengeMode ? MP_SESSION_CHALLENGE : 0u)
-                      : MP_SESSION_HIDE_CONTRIBUTION_STATS | (g_RecordMultiplayerConfig.challengeMode ? MP_SESSION_CHALLENGE : 0u));
+                  (g_RecordMultiplayerConfig.showContributionStats ? 0u : MP_SESSION_HIDE_CONTRIBUTION_STATS) |
+                  (g_RecordMultiplayerConfig.challengeMode ? MP_SESSION_CHALLENGE : 0u) |
+                  (g_RecordMultiplayerConfig.keepBulletsOnMiss ? MP_SESSION_KEEP_BULLETS_ON_MISS : 0u));
         for (u32 player = 0; player < 3; ++player)
         {
             const u32 loadout = static_cast<u32>(g_RecordMultiplayerConfig.characters[player]) |
@@ -850,6 +852,7 @@ bool LoadPlayback(const u8 *bytes, std::size_t size)
         const u32 sessionFlags =
             ReadLe32(bytes + payloadOffset + MP_SESSION_FLAGS_OFFSET);
         g_PlaybackMultiplayerConfig.challengeMode = (sessionFlags & MP_SESSION_CHALLENGE) != 0;
+        g_PlaybackMultiplayerConfig.keepBulletsOnMiss = (sessionFlags & MP_SESSION_KEEP_BULLETS_ON_MISS) != 0;
         g_PlaybackMultiplayerConfig.showContributionStats =
             (sessionFlags & MP_SESSION_HIDE_CONTRIBUTION_STATS) == 0;
         for (u32 player = 0; player < 3; ++player)

@@ -434,7 +434,7 @@ void CChara::Step()
 					m_pStage->SetDream(m_pStage->GetDream()-2);
 			m_missExplodeRadius+=7.0f*16.0f;
 			m_missExplodeBaseAngle+=8.0f;
-			if (m_nextLifeComeTimeLeft<4)
+			if (m_nextLifeComeTimeLeft<4 && !m_pStage->Cooperative())
 				m_pStage->m_curScrFade=100+m_nextLifeComeTimeLeft%2*50;
 			if (m_nextLifeComeTimeLeft==0)
 			{
@@ -453,7 +453,8 @@ void CChara::Step()
 				{
 					if (!coop::Run().challenge && practice::ConsumeLife(m_pStage->m_nCurLife)) m_pStage->m_nCurLife--;
 					m_pStage->m_nCurBomb=m_pStage->m_nBombOnMiss;
-					m_pStage->m_pEnemyBullet->SetClearBulletTimeLeft(32);
+					if (!coop::Run().keepBulletsOnMiss)
+						m_pStage->m_pEnemyBullet->SetClearBulletTimeLeft(32);
 				}
 			}
 		}

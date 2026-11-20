@@ -421,9 +421,9 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,std::uint64_t sessionId
     const u32 words[]{setup.version>=5?5u:setup.version>=4?4u:3u,setup.playerCount,setup.localPlayer,setup.difficulty,setup.seed,
         u32(sessionId),u32(sessionId>>32),setup.input_delay_auto?0u:setup.input_delay,setup.loadouts[0].character,setup.loadouts[0].shot,
         setup.loadouts[1].character,setup.loadouts[1].shot,setup.loadouts[2].character,setup.loadouts[2].shot,
-        setup.adonis_mode,setup.input_delay_auto,setup.prediction_reserve,setup.build[0],setup.build[1],setup.build[2],setup.build[3],setup.challenge_mode};
+        setup.adonis_mode,setup.input_delay_auto,setup.prediction_reserve,setup.build[0],setup.build[1],setup.build[2],setup.build[3],u32(setup.challenge_mode)+2*u32(setup.keep_bullets_on_miss)};
     SessionSetup checked{};if(!DecodeSessionSetup(checked,words,setup.version>=5?22:setup.version>=4?21:14))return false;
-    if(setup.input_delay>9||setup.measured_prediction>2||checked.challenge_mode!=setup.challenge_mode)return false;
+    if(setup.input_delay>9||setup.measured_prediction>2||checked.challenge_mode!=setup.challenge_mode||checked.keep_bullets_on_miss!=setup.keep_bullets_on_miss)return false;
 
     Netplay::SessionConfig session{};
     session.sessionId = sessionId;

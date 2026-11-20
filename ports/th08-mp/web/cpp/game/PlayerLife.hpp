@@ -14,7 +14,7 @@ struct PlayerLifeContext {
     Vec2 extent{384,448};u16 replay_flags=0;u8 character=0,focused=0,time_spell=0,game_over=0,miss_control=0,cheats=0;
     i16 gauge=0,padding=0;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    bool challenge_mode=false;
+    bool challenge_mode=false,keep_bullets_on_miss=false;
 #endif
 };
 struct PlayerLifeActions {

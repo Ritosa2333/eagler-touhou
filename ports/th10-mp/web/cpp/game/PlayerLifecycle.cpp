@@ -23,6 +23,9 @@ void Player::hit(PlayerLifecycleEnvironment& env){
     for(i32 i=0;i<33;++i){
         const u32 id=env.manager->create(*env.effect_file,i?0x163:0x162,0,AnimationPlacement::WorldBack,*env.animations,*env.allocation);
         env.manager->registry.set_position(id,effect_position,false);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(auto* effect=env.manager->registry.find(id))effect->miss_effect_seat=env.miss_effect_seat;
+#endif
     }
     reset(state_timer,state_timer_flags,0,env.default_rate);
     if(env.death_sound_enabled)env.play_death_sound();

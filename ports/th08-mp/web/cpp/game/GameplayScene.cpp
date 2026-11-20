@@ -64,9 +64,11 @@ GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,An
         // Native focus kind 22 retains its fixed-pool owner during fade-out.
         return scene.session.netplay.ReadOnly()||effect.kind!=22||seat<0||seat==i32(scene.session.local_player);
     };
-    effect_system.player_view_alpha=[](void* owner,i32 seat)->u8{
+    effect_system.player_view_alpha=[](void* owner,i32 seat,bool miss)->u8{
         auto& scene=*static_cast<GameplayScene*>(owner);const auto local=scene.session.local_player;
-        if(scene.session.netplay.ReadOnly()||seat==i32(local)||!scene.roster.eligible(local)||!scene.roster.eligible(seat))return 255;
+        if(scene.session.netplay.ReadOnly()||seat==i32(local))return 255;
+        if(miss)return 64;
+        if(!scene.roster.eligible(local)||!scene.roster.eligible(seat))return 255;
         const auto& a=scene.pilot(seat).status().motion.movement.position;
         const auto& b=scene.pilot(local).status().motion.movement.position;
         return multiplayer::player_proximity_alpha(a.x-b.x,a.y-b.y);
@@ -273,6 +275,7 @@ JobResult GameplayScene::update_player(){
         // worlds before any network input differed.
         simulation.status().input.always_hitbox=1;
         session.pilot_resources[seat].challenge_mode=session.multiplayer_session.challenge_mode;
+        session.pilot_resources[seat].keep_bullets_on_miss=session.multiplayer_session.keep_bullets_on_miss;
         if(!services.prepare())return JobResult::Error;
         const bool updated=cooperation.seats[seat].spirit
             ?simulation.update_spirit(cooperation.seats[seat].drift_x,cooperation.seats[seat].drift_y)
@@ -495,6 +498,7 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
             auto& bank=session.pilot_resources[seat];
             if(fresh){bank.reset();multiplayer::begin_base_life(bank,session.numbers.lives,session.numbers.power,pilot(seat).profile(false).initial_bombs);}
             bank.challenge_mode=session.multiplayer_session.challenge_mode;
+            bank.keep_bullets_on_miss=session.multiplayer_session.keep_bullets_on_miss;
             if(bank.challenge_mode)bank.bombs=0;
             bank.deaths_stage=bank.bombs_used_stage=0;bank.gauge_copy=bank.gauge;
             pilot_services(seat).sync_values();

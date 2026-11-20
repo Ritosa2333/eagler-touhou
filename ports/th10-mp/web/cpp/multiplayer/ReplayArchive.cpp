@@ -112,7 +112,7 @@ std::vector<u8> encode(const ReplayDescription& info,const ReplayCheckpoint* che
         put(out,info.setup.adonis_mode);put(out,info.setup.input_delay);put(out,info.setup.input_delay_auto);
         put(out,info.setup.prediction_reserve);put(out,info.setup.measured_prediction);put(out,info.setup.version);
         for(auto build:info.setup.build)put(out,build);
-        if(version>=6)put(out,info.setup.challenge_mode);
+        if(version>=6)put(out,u32(info.setup.challenge_mode)+2*u32(info.setup.keep_bullets_on_miss));
     }
     for(u32 i=0;i<checkpointCount;++i){
         const auto& cp=checkpoints[i];if(frameCount!=Netplay::INVALID_FRAME&&cp.firstFrame>=frameCount)continue;
@@ -168,7 +168,7 @@ bool decode(const Netplay::InputReplayInfo& tape,ReplayDescription& out,
             auto& s=next.setup;s.adonis_mode=word(p+128);s.input_delay=word(p+132);s.input_delay_auto=word(p+136)!=0;
             s.prediction_reserve=word(p+140);s.measured_prediction=word(p+144);s.version=word(p+148);
             for(unsigned i=0;i<4;++i)s.build[i]=word(p+152+i*4);
-            if(version>=6){if(word(p+168)>1)return false;s.challenge_mode=word(p+168)!=0;}
+            if(version>=6){const auto rules=word(p+168);if(rules>3||rules==2)return false;s.challenge_mode=(rules&1)!=0;s.keep_bullets_on_miss=(rules&2)!=0;}
             if(s.adonis_mode>2||s.input_delay>9||word(p+136)>1||s.prediction_reserve<1||s.prediction_reserve>2||s.measured_prediction>2||
                (s.adonis_mode==1&&s.measured_prediction)||(s.version>=4&&((s.version==4&&!s.adonis_mode)||!(s.build[0]|s.build[1]|s.build[2]|s.build[3]))))return false;
         }
@@ -212,7 +212,7 @@ bool decode(const Netplay::InputReplayInfo& tape,ReplayDescription& out,
 
 void ReplayArchive::Clear(){tape_.Clear();description_={};stamps_={};checkpoints_={};save={};base_=next_=generation_=cursor_=0;saved_=Netplay::INVALID_FRAME;checkpoint_count_=0;selected_checkpoint_=0xff;format_version_=DescriptionVersion;}
 bool ReplayArchive::Begin(const SessionSetup& setup,const ApplicationConfig& configuration){
-    if(setup.challenge_mode&&setup.version<5)return false;
+    if((setup.challenge_mode&&setup.version<5)||(setup.keep_bullets_on_miss&&!setup.challenge_mode))return false;
     const u32 words[]{1,setup.playerCount,setup.localPlayer,setup.difficulty,setup.seed,
         setup.loadouts[0].character,setup.loadouts[0].shot,setup.loadouts[1].character,
         setup.loadouts[1].shot,setup.loadouts[2].character,setup.loadouts[2].shot};

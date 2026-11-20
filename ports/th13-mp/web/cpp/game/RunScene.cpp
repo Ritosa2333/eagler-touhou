@@ -143,7 +143,7 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
         return presentation->bullet_cancel(script,pos,{},false);
     };
     battle.sim.player_effect = [this](i32 script,const Vec3& pos,i32 layer) {
-        const u32 h= presentation->player_effect(script,pos,layer);
+        const u32 h= presentation->player_effect(script,pos,layer,battle.seat_count>=2?u8(battle.active_seat+1):0);
         return h!=0;
     };
     // 0x445900 擦弹/得分特效：effect.anm script100 主链尾插（内联相位）。

@@ -9,6 +9,7 @@ struct Options {
   unsigned count = 2, local = 0, seed = 1, stage = 1;
   int difficulty = 1;
   bool challenge = false;
+  bool keepBulletsOnMiss = false;
   std::array<int, MaxPlayers> selections{};
   bool valid() const;
 };

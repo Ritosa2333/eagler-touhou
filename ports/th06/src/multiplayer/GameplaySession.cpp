@@ -71,6 +71,7 @@ bool IsMultiplayer()
 }
 
 bool IsChallengeMode() { return IsMultiplayer() && g_State.challengeMode; }
+bool KeepBulletsOnMiss() { return IsChallengeMode() && g_State.keepBulletsOnMiss; }
 
 u8 GetPlayerCount()
 {

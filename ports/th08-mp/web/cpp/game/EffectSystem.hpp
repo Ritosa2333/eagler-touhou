@@ -60,7 +60,7 @@ class EffectSystem {
 public:
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
     void* player_view=nullptr;
-    u8 (*player_view_alpha)(void*,i32)=nullptr;
+    u8 (*player_view_alpha)(void*,i32,bool)=nullptr;
     bool (*player_effect_visible)(void*,const EffectState&,i32)=nullptr;
     i32 (*familiar_view_form)(void*)=nullptr;
     i32 initialize_geometry(EffectState&,EffectDraw callback,bool alternative=false);
@@ -80,7 +80,7 @@ public:
     // Custom owner callbacks do not pass through draw_list(), but they still
     // need the same lifecycle-gated presentation endpoint as ordinary effects.
     EffectState presentation_copy(const EffectState&)const;
-    EffectState* spawn(i32 kind,Vec3 position,i32 count,u32 color,const Vec3* parameters=nullptr);
+    EffectState* spawn(i32 kind,Vec3 position,i32 count,u32 color,const Vec3* parameters=nullptr,u32 miss_effect_seat=0);
     EffectState* fixed(i32 kind,Vec3 position,i32 slot,u32 color,const Vec3* parameters=nullptr);
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
     EffectState* fixed_player(i32 seat,i32 local_slot,i32 kind,Vec3 position,u32 color,const Vec3* parameters=nullptr);

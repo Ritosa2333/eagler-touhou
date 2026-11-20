@@ -105,6 +105,8 @@ async function openRoom(){
  const delay=o.netplayInputDelay??0,mode=o.netplayAdonisMode??0;
  if(o.netplayMode!=='lan'||![0,1].includes(mode)||o.netplayInputDelayAuto||
     (o.netplayChallengeMode!==undefined&&typeof o.netplayChallengeMode!=='boolean')||
+    (o.netplayChallengeKeepBullets!==undefined&&typeof o.netplayChallengeKeepBullets!=='boolean')||
+    (o.netplayChallengeKeepBullets===true&&o.netplayChallengeMode!==true)||
     o.replayPath||o.thpracEnabled||!['ws:','wss:'].includes(relay.protocol)||relay.username||relay.password||
     relay.hash||!room?.startsWith('th17mp-')||!/^[1-9]\d*$/.test(run??'')||
     ![2,3].includes(count)||!Number.isInteger(seat)||seat<0||seat>=count||
@@ -124,7 +126,7 @@ async function openRoom(){
  const words=[3,count,seat,o.netplayDifficulty,o.netplaySeed,digest.getUint32(0,true),digest.getUint32(4,true)||1,delay];
  for(let i=0;i<3;i++)words.push(loadouts[i]?.character??0,loadouts[i]?.shot??0);
  for(let i=0;i<4;i++)words.push(parseInt(build.slice(i*8,i*8+8),16));
- words.push(+(mode===0),+(o.netplayChallengeMode===true));
+ words.push(+(mode===0),+(o.netplayChallengeMode===true)+2*(o.netplayChallengeKeepBullets===true));
  const url=new TextEncoder().encode(relay.href+'\0'),identity=new TextEncoder().encode((spectator?o.netplaySpectatorId:'')+'\0');
  const params=core._malloc(words.length*4),address=core._malloc(url.length),viewer=spectator?core._malloc(identity.length):0;
  try{

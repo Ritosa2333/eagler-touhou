@@ -24,6 +24,7 @@ struct MultiplayerReplayConfig
     bool stage4BossChain = false;
     bool showContributionStats = true;
     bool challengeMode = false;
+    bool keepBulletsOnMiss = false;
     bool showStagePlayerNames = true;
     u8 characters[3] = {};
     u8 shots[3] = {};

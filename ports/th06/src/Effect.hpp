@@ -36,6 +36,9 @@ struct Effect
     i8 effectId;
     i8 unk_17a;
     i8 unk_17b;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    u8 missOwner;
+#endif
 #ifdef TH_ENABLE_NETPLAY
     Netplay::SideEffects::MissFrameTag missConfirmation;
 #endif

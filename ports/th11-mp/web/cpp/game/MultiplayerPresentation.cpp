@@ -49,6 +49,8 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& renderer){
     if(stage)stage->multiplayer_frozen_draw=mp_paused||mp_finished;
     if(outgoing_stage)outgoing_stage->multiplayer_frozen_draw=mp_paused||mp_finished;
     renderer.multiplayer_animations=&animations;renderer.multiplayer_opacity.fill(255);
+    renderer.multiplayer_miss_resource=&resources.core.bullet;
+    renderer.multiplayer_miss_viewer=mp_options.spectator?0:mp_options.local_seat+1;
     renderer.multiplayer_hud_background=nullptr;
     if(auto* frame=animations.find(hud.frame_animation))for(auto* node=frame->child.next;node;node=node->next)if(node->value->script_index==2)renderer.multiplayer_hud_background=node->value;
     const auto& local=*pilots[mp_options.local_seat];
