@@ -464,6 +464,7 @@ bool mp_restore_history_root(const multiplayer::SessionSetup& setup, unsigned st
     }
     app->mp_history_playback = true;
     app->mp_challenge = setup.challenge;
+    app->mp_keep_bullets_on_miss = setup.keep_bullets_on_miss;
     app->mp_legacy_pickup_rewards = legacy_pickup_rewards;
     app->progress = th13::SessionState{};
     app->pending_load = 0;
@@ -2173,6 +2174,7 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_start() {
         return 0;
     }
     app->mp_challenge = setup.challenge;
+    app->mp_keep_bullets_on_miss = setup.keep_bullets_on_miss;
     // 新局状态：清练习/符卡残位（start_game 的 mode 分支读 run_mode_flags）。
     app->progress.run_mode_flags = 0;
     app->progress.practice_mode = 0;

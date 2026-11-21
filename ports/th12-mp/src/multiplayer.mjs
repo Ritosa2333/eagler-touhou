@@ -44,7 +44,8 @@ export function validateMultiplayerOptions(options={}) {
     !Number.isInteger(v.shot)||v.shot<0||v.shot>1))throw Error('TH12 多人机体配置无效');
  if(spectator&&(typeof options.netplaySpectatorId!=='string'||!options.netplaySpectatorId))
   throw Error('TH12 观战身份缺失');
- return {replay:false,url,room,run,count,seat,spectator,delay,automatic,reserve,timingMode,prediction,loadouts,challenge:options.netplayChallengeMode===true};
+ if(options.netplayChallengeKeepBullets!==undefined&&(typeof options.netplayChallengeKeepBullets!=='boolean'||(options.netplayChallengeKeepBullets&&!options.netplayChallengeMode)))throw Error('Invalid challenge bullet clearing setting');
+ return {replay:false,url,room,run,count,seat,spectator,delay,automatic,reserve,timingMode,prediction,loadouts,challenge:options.netplayChallengeMode===true,keepBulletsOnMiss:options.netplayChallengeKeepBullets===true};
 }
 export async function multiplayerSetupWords(options,buildWords,cryptoProvider=globalThis.crypto) {
  const config=validateMultiplayerOptions(options);
@@ -54,7 +55,7 @@ export async function multiplayerSetupWords(options,buildWords,cryptoProvider=gl
  const digest=new DataView(await cryptoProvider.subtle.digest('SHA-256',identity));
  const words=[6,config.count,config.seat,options.netplayDifficulty,options.netplaySeed,digest.getUint32(0,true),digest.getUint32(4,true)||1,config.delay];
  for(let i=0;i<3;i++){const value=config.loadouts[i]||{character:0,shot:0};words.push(value.character,value.shot);}
- words.push(config.timingMode,+config.automatic,config.reserve,...buildWords,+config.challenge);
+ words.push(config.timingMode,+config.automatic,config.reserve,...buildWords,+config.challenge+2*config.keepBulletsOnMiss);
  return {config,words};
 }
 export function rollbackDiagnostics(core,status){

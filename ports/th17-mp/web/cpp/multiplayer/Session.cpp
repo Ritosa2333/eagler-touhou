@@ -7,7 +7,7 @@ constexpr unsigned touch_forecast_frames = 6;
 constexpr unsigned lagging_capture_lead = 3;
 }
 bool SessionSetup::valid() const {
-    if (!room || seats < 2 || seats > Netplay::MAX_PLAYERS || local >= seats ||
+    if ((keep_bullets_on_miss&&!challenge) || !room || seats < 2 || seats > Netplay::MAX_PLAYERS || local >= seats ||
         difficulty > 4 || delay > 9 || !(build[0] | build[1] | build[2] | build[3])) return false;
     for (unsigned seat = 0; seat < loadouts.size(); ++seat) {
         const auto [character, animal] = loadouts[seat];
@@ -35,7 +35,7 @@ std::uint32_t SessionSetup::gameplay_abi() const {
         word(loadout.animal);
     }
     for (const auto value : build) word(value);
-    if (challenge) word(1);
+    if (challenge) word(keep_bullets_on_miss?3:1);
     return hash ? hash : 1u;
 }
 

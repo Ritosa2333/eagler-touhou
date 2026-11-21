@@ -4,11 +4,11 @@ namespace th17 {
 void PlayerLife::invalidate_spell()noexcept{if(!(spell.flags&1))return;if(spell.frame<60){if(session.bomb_state==1)spell.flags|=32;}else{spell.bonus=0;spell.flags&=~34u;}}
 bool PlayerLife::hit(){
     if(!(motion.behavior_flags&8)){if(!sound||!sound(2)){error="Player hit sound unavailable";return false;}}
-    if(!effects.create(29,motion.position)){error=effects.error;return false;}invalidate_spell();age.set(0);state=4;invulnerability.set(6);
+    if(!effects.create(29,motion.position,0,visuals.presentation_seat)){error=effects.error;return false;}invalidate_spell();age.set(0);state=4;invulnerability.set(6);
     if(!visuals.pose(0)){error="Player hit animation failed";return false;}return true;
 }
 bool PlayerLife::commit_death(){
-    effects.tracked(28,motion.position);if(!effects.error.empty()){error=effects.error;return false;}
+    effects.tracked(28,motion.position,0,visuals.presentation_seat);if(!effects.error.empty()){error=effects.error;return false;}
     if(!session.challenge&&!(session.practice_tools&PracticeInfiniteLives))session.extra_lives=wrapping_sub(session.extra_lives,1);
     session.bombs=std::clamp(session.initial_bombs,0,8);
     if(!bomb_hud||!bomb_hud(session.bombs,session.bomb_pieces)){error="Player bomb display unavailable";return false;}

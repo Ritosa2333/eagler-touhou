@@ -68,7 +68,7 @@ constexpr std::uint32_t GAME_ID_TH07 = 7;
 // Gameplay ABI also guards the supported input semantics. ABI 5 accepts
 // once-only touch deltas and keeps their remainder in rewindable state.
 // Refuse older live peers before they could misinterpret those new modes.
-static std::uint32_t GameplayAbi() { return TH07_MULTI_NETPLAY_ABI | (MultiplayerGameplay::IsChallengeMode() ? 0x10000u : 0u); }
+static std::uint32_t GameplayAbi() { return TH07_MULTI_NETPLAY_ABI | (MultiplayerGameplay::IsChallengeMode() ? 0x10000u : 0u) | (MultiplayerGameplay::KeepBulletsOnMiss() ? 0x20000u : 0u); }
 constexpr std::uint32_t DEFAULT_TEST_FRAMES = 300;
 
 WebSocketTransport g_Transport;

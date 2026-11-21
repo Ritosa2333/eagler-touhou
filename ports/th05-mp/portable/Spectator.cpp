@@ -26,7 +26,9 @@ void Wire(Codec& c,State& s){
  c.Value(magic);
  if(magic<LegacyStageMagic||magic>LegacyStageMagic+int(th5w::original::OriginalBombAndRage))throw std::runtime_error("Unsupported TH05 stage state");
  s.run.combatRevision=unsigned(magic-LegacyStageMagic);
- c.Value(s.run.count);c.Value(s.stage);c.Value(s.run.seed);c.Value(s.run.difficulty);c.Value(s.run.initialSpares);c.Value(s.run.initialBombs);for(auto& n:s.run.characters)c.Value(n);c.Flag(s.run.challenge);c.Flag(s.run.continuing);
+ c.Value(s.run.count);c.Value(s.stage);c.Value(s.run.seed);c.Value(s.run.difficulty);c.Value(s.run.initialSpares);c.Value(s.run.initialBombs);for(auto& n:s.run.characters)c.Value(n);int challengeRules=int(s.run.challenge)+2*int(s.run.keepBulletsOnMiss);c.Value(challengeRules);
+ if(challengeRules<0||challengeRules>3||challengeRules==2)throw std::runtime_error("Invalid TH05 challenge rules");
+ s.run.challenge=(challengeRules&1)!=0;s.run.keepBulletsOnMiss=(challengeRules&2)!=0;c.Flag(s.run.continuing);
  for(auto& stock:s.run.carry){c.Value(stock.lives);c.Value(stock.bombs);c.Value(stock.power);c.Value(stock.overflow);c.Value(stock.fraction);c.Value(stock.deaths);c.Flag(stock.ghost);c.Flag(stock.offline);}
  for(auto& n:s.game)c.Value(n);for(auto& n:s.seeds)c.Value(n);
  #define STAT(name) c.Scalar(s.stats.name);
@@ -45,6 +47,13 @@ void CaptureSpectatorStage(){if(Run().count<2)return;State s;s.run=Run();s.stage
 }
 }
 extern "C" {
+EMSCRIPTEN_KEEPALIVE int th05_coop_start_rules(int count,int local,int difficulty,int seed,int c0,int c1,int c2,int rules,int localVisibility,int spares,int bombs){
+ if(rules<0||rules>3||rules==2)return 0;
+ if(!th05_coop_start_stock(count,local,difficulty,seed,c0,c1,c2,rules&1,localVisibility,spares,bombs))return 0;
+ using namespace th5w;
+ if(rules&2){coop::Run().keepBulletsOnMiss=true;coop::CaptureSpectatorStage();}
+ return 1;
+}
 EMSCRIPTEN_KEEPALIVE unsigned th05_spectator_serial(){return serial;}
 EMSCRIPTEN_KEEPALIVE const void* th05_spectator_state(){return entry.data();}
 EMSCRIPTEN_KEEPALIVE unsigned th05_spectator_size(){return entry.size();}
@@ -57,7 +66,7 @@ EMSCRIPTEN_KEEPALIVE int th05_spectator_load(const unsigned char* data,unsigned 
  if(s.run.seed<0||s.run.seed>65535||s.game[0]<0||s.game[0]>99||s.game[1]<0||s.game[1]>99||
     s.game[2]<0||s.game[2]>128||s.game[3]<0||s.game[3]>42||s.game[4]<0||s.game[4]>128||
     s.game[10]<0||s.game[10]>99||s.game[11]<0||s.game[11]>9||s.game[14]<0||s.game[15]>64||s.game[14]>s.game[15])return 0;
- if(!th05_coop_start_stock(s.run.count,0,s.run.difficulty,s.run.seed,s.run.characters[0],s.run.characters[1],s.run.characters[2],s.run.challenge,0,s.run.initialSpares,s.run.initialBombs))return 0;
+ if(!th05_coop_start_rules(s.run.count,0,s.run.difficulty,s.run.seed,s.run.characters[0],s.run.characters[1],s.run.characters[2],int(s.run.challenge)+2*int(s.run.keepBulletsOnMiss),0,s.run.initialSpares,s.run.initialBombs))return 0;
  using namespace th5w;auto* game=CGame::s_pCurGame;delete game->m_pCurScheme;game->m_pCurScheme=nullptr;coop::Run()=s.run;coop::Run().local=0;auto& g=CGame::GVar();g.m_playStage=s.stage;g.m_itemRankProgress=s.itemRankProgress;int at=0;
  #define LOAD(name) g.name=s.game[at++];
  GAME_FIELDS(LOAD)

@@ -7,6 +7,7 @@ enum class Membership { Embedded, Primary, Secondary };
 struct Node {
   uint32_t id = 0, owner = 0, parent = 0;
   unsigned seat = 0;
+  bool missEffect = false;
   uint64_t key = 0;
   Membership membership = Membership::Primary;
   VM vm;
@@ -67,7 +68,7 @@ public:
              Membership membership = Membership::Primary, float x = 0, float y = 0,
              std::function<int(int)> remap = {}, bool head = false,
              const std::array<float, 3>* scriptPosition = nullptr, float viewportX = 224,
-             float viewportY = 16, int layer = 0, bool withoutReset = false, float engineZ = 0);
+             float viewportY = 16, int layer = 0, bool withoutReset = false, float engineZ = 0, bool missEffect = false);
   void interrupt(uint64_t key, int code, bool immediate = false);
   void interruptNode(uint32_t id, int code, bool immediate = false);
   void position(uint64_t key, float x, float y);

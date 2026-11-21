@@ -15,6 +15,7 @@ struct MultiplayerReplayConfig
     u8 localPlayer = 0;
     bool showContributionStats = true;
     bool challengeMode = false;
+    bool keepBulletsOnMiss = false;
     u8 characters[3] = {};
     u8 shots[3] = {};
     u32 gameplayAbi = 0;

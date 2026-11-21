@@ -27,7 +27,7 @@ bool DecodeSessionSetup(SessionSetup& current,const std::uint32_t* words,
         if(character>1||shot>2||(seat>=next.playerCount&&(character||shot)))return false;
         next.loadouts[seat]={character,shot};
     }
-    if(words[0]==5){if(words[21]>1)return false;next.challenge_mode=words[21]!=0;}
+    if(words[0]==5){if(words[21]>3||words[21]==2)return false;next.challenge_mode=(words[21]&1)!=0;next.keep_bullets_on_miss=(words[21]&2)!=0;}
     next.configured=true;current=next;return true;
 }
 namespace {
@@ -36,7 +36,7 @@ std::uint32_t gameplay_contract(const SessionSetup& setup,std::uint32_t version)
     // identity is deliberately excluded; all peers must compute the same ABI.
     std::uint32_t hash=2166136261u;
     const auto word=[&](std::uint32_t value){for(int i=0;i<4;++i){hash^=(value>>(i*8))&255u;hash*=16777619u;}};
-    word(version);if(version>=0x1000000au)word(setup.challenge_mode);word(setup.playerCount);word(setup.difficulty);word(setup.seed);
+    word(version);if(version>=0x1000000au)word(std::uint32_t(setup.challenge_mode)+2*std::uint32_t(setup.keep_bullets_on_miss));word(setup.playerCount);word(setup.difficulty);word(setup.seed);
     for(const auto& loadout:setup.loadouts){word(loadout.character);word(loadout.shot);}
     return hash;
 }

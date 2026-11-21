@@ -132,10 +132,13 @@ int AnmRenderer::draw(AnmVm& vm){
     if(std::find(multiplayer_hidden_pause.begin(),multiplayer_hidden_pause.end(),&vm)!=multiplayer_hidden_pause.end())return 0;
     if(std::find(multiplayer_hidden_hud.begin(),multiplayer_hidden_hud.end(),&vm)!=multiplayer_hidden_hud.end())return 0;
     if(std::find(multiplayer_hidden_hitboxes.begin(),multiplayer_hidden_hitboxes.end(),&vm)!=multiplayer_hidden_hitboxes.end())return 0;
-    if(const auto found=multiplayer_player_opacity.find(&vm);found!=multiplayer_player_opacity.end()){
+    const auto found=multiplayer_player_opacity.find(&vm);
+    const bool teammate_miss=miss_effect_viewer&&vm.miss_effect_seat&&vm.miss_effect_seat!=miss_effect_viewer;
+    if(teammate_miss||found!=multiplayer_player_opacity.end()){
         // Opacity draws a private copy, leaving the authoritative VM intact.
         if(graphics.logical_frame())return 0;
-        auto copy=vm;const auto alpha=found->second;
+        auto copy=vm;const auto alpha=teammate_miss?64:found->second;
+        copy.miss_effect_seat=0;
         const auto fade=[&](u32 color){return (color&0xffffffu)|(((color>>24)*alpha/255)<<24);};
         copy.visual.color=fade(copy.visual.color);copy.visual.secondary_color=fade(copy.visual.secondary_color);
         // Match TH11: retain additive blending, normalize other blends so

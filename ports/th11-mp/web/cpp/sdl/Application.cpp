@@ -220,7 +220,7 @@ struct Application:StageResourceEffects {
         if(!netplay.Configured()||!initialize())return false;
         const auto& setup=netplay.Setup();MultiplayerOptions opts;
         opts.seat_count=setup.player_count;opts.local_seat=setup.local_player;opts.spectator=netplay.Spectator();
-        opts.stage=stage_override?stage_override:setup.initial_stage();opts.difficulty=int(setup.difficulty);opts.seed=setup.seed;opts.challenge=setup.challenge;
+        opts.stage=stage_override?stage_override:setup.initial_stage();opts.difficulty=int(setup.difficulty);opts.seed=setup.seed;opts.challenge=setup.challenge;opts.keep_bullets_on_miss=setup.keep_bullets_on_miss;
         for(unsigned s=0;s<3;++s)opts.selections[s]=int(setup.selections[s]);
         renderer.invalidate();
         auto& core=session.resources.core;

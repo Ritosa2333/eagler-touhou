@@ -274,6 +274,7 @@ struct Player
     i32 powerGiveTaps;
     i32 powerGiveWindow;
     ZunTimer teamBombProtectionTimer;
+    bool suppressRespawnClear;
 #endif
     ChainElem *chainCalc;
     ChainElem *chainDraw1;

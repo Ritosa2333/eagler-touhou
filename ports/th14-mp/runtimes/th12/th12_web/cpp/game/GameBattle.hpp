@@ -126,7 +126,8 @@ public:
     std::array<u32,3> coop_held{};
     Th14CoopFrame coop_input{};
     u32 coop_seats=1,coop_viewer=0,coop_actor=0,coop_skip=0,coop_grazer=0;
-    bool coop_observer=false,coop_challenge=false;
+    bool coop_observer=false,coop_challenge=false,coop_keep_bullets_on_miss=false;
+    static constexpr u32 coop_miss_draw_tag=32;
     Timer coop_bomb_invincibility;
     bool coop_bomb_sakuya_b=false;
     std::array<Timer,3> coop_marisa_b_cooldown{};
@@ -137,7 +138,7 @@ public:
         CoopActor(GameBattle& b,u32 seat):battle(b),previous(b.coop_actor){b.coop_actor=seat;}
         ~CoopActor(){battle.coop_actor=previous;}
     };
-    bool setup_coop(const std::array<Th14CoopLoadout,3>&,u32 seats,u32 viewer,bool challenge,bool observer);
+    bool setup_coop(const std::array<Th14CoopLoadout,3>&,u32 seats,u32 viewer,bool challenge,bool observer,bool keep_bullets_on_miss);
     bool update_coop();
     bool start_coop_stage();
     bool reset_coop_player_scales();
@@ -575,13 +576,14 @@ public:
 #endif
 #if PORT_TITLE == 14
     // 44f60d/44f7df retain the effect27/28 template layer (18).
-    bool player_effect(Vec3 p,i32 script)override{return animations.create(resources.core.effect,script,8,u32(-1),false,false,&p)!=nullptr;}
+    bool player_effect(Vec3 p,i32 script)override;
     u32 player_focus()override{
         auto* vm=animations.create(resources.core.effect,26,8,14,false,false,nullptr,nullptr,nullptr,true);
         if(vm&&coop_seats>1)vm->reserved_3a0=24+coop_actor;
         return vm?vm->id:0;
     }
     bool th14_unlimited_lives()const override{return coop_challenge;}
+    bool th14_keep_bullets_on_miss()const override{return coop_keep_bullets_on_miss;}
 #endif
     bool attract_items() override { items.attract_all(); return true; }
     bool cancel_bullets(const Vec3*,float,bool) override;

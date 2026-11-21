@@ -1025,6 +1025,7 @@ bool ApplicationState::begin_run() {
     // M2：多人会话席位启用（宿主在对局前 configure_multiplayer；单席
     // mp_seat_count==0 时零变化）。
     run->battle.challenge = mp_challenge;
+    run->battle.keep_bullets_on_miss = mp_keep_bullets_on_miss;
     run->battle.item_manager.challenge = mp_challenge;
     run->hud.challenge = mp_challenge;
     if (mp_seat_count >= 2 && !run->enable_multiplayer(mp_seat_count, mp_characters))

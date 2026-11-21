@@ -21,6 +21,7 @@ bool ReplayArchive::Metadata(const Netplay::InputReplayInfo& info,SessionSetup& 
     std::array<std::uint32_t,SessionSetup::Words> words{};for(unsigned i=0;i<words.size();++i)words[i]=get(d.data()+40+i*4);
     SessionSetup next;if(!DecodeSessionSetup(next,words.data(),words.size()))return false;next.input_delay=get(d.data()+12);
     const bool old=get(d.data()+8)==20;
+    if(old&&next.keep_bullets_on_miss)return false;
     if(c.playerCount!=next.player_count||c.recordedPlayer!=next.local_player||
        c.gameplayAbi!=(old?ReplayAbiBeforeStageFlowFix(next):GameplayAbi(next)))return false;
     for(unsigned i=0;i<info.chapterCount;++i)if(info.chapters[i].label<1||info.chapters[i].label>7||

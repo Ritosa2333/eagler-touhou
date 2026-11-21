@@ -83,8 +83,8 @@ public:
     bool enemy_death(i32 file,i32 script,const Vec3& position,float angle);
     bool enemy_fog(StageEnemy&,bool reset);
     void retire_enemy_fog(u32 serial);
-    u32 player_effect(i32 script,const Vec3& position,i32 layer = -1) {
-        return create_player_effect(banks.effect,script,layer,0,position);
+    u32 player_effect(i32 script,const Vec3& position,i32 layer = -1, u8 owner = 0) {
+        return create_player_effect(banks.effect,script,layer,0,position,owner);
     }
     bool beam_hit_effect(const Vec3& position, const Vec3& displacement, float angle, i32 seat = 0);
     // 非 const：死亡演出第 3 帧消费 StageBattle::death_option_rebuild（一次性

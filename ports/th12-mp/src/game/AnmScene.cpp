@@ -84,6 +84,7 @@ Runtime Scene::runtimeFor(Node& node) {
     auto child = std::make_shared<Node>();
     child->id = nextId_++;
     child->seat=node.seat;
+    child->missEffect=node.missEffect;
     child->owner = request.detached ? 0 : node.owner;
     child->parent = request.detached ? 0 : node.id;
     child->detached = request.detached;
@@ -242,7 +243,7 @@ std::vector<const Node*> Scene::children(uint32_t id) const {
 Node* Scene::bind(uint64_t key, uint32_t owner, int bank, int script, Membership membership,
                   float x, float y, std::function<int(int)> remap, bool head,
                   const std::array<float, 3>* scriptPosition, float viewportX, float viewportY,
-                  int layer, bool withoutReset, float engineZ) {
+                  int layer, bool withoutReset, float engineZ, bool missEffect) {
   if (!registry.bank(bank))
     return nullptr;
   if (owner) presentation::discontinuity(owner);
@@ -254,6 +255,7 @@ Node* Scene::bind(uint64_t key, uint32_t owner, int bank, int script, Membership
   node->owner = owner;
   node->membership = membership;
   node->seat = multiplayer::currentSeat;
+  node->missEffect = missEffect;
   node->spriteRemap = std::move(remap);
   node->viewportX = viewportX;
   node->viewportY = viewportY;

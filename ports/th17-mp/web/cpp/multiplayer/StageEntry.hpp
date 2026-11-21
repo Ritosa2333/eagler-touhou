@@ -10,8 +10,8 @@ namespace th17::multiplayer {
 struct StageEntry {
     // The relay uses schema 3 to retain the input tape across stages.
     static constexpr u32 transport_schema=3;
-    // Payload version 4 adds the challenge rule. Older checkpoints use ordinary rules.
-    static constexpr u32 schema=4;
+    // Version 4 adds challenge mode; version 5 adds its bullet clearing rule.
+    static constexpr u32 challenge_schema=4, schema=5;
     static constexpr bool supports(u32 version){return version>=1&&version<=schema;}
     SessionSetup setup;
     ReplayStageState stage;

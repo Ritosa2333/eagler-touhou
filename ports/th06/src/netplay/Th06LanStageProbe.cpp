@@ -76,7 +76,7 @@ constexpr std::uint32_t GAME_ID_TH06 = 6;
 // ABI 5 removes multiplayer Continue: total team wipe keeps the deterministic
 // 180-logical-frame grace, then requests Result directly. Retry/Continue is a
 // forbidden fallback path rather than part of the synchronized run lifecycle.
-static std::uint32_t GameplayAbi() { return TH06_MULTI_GAMEPLAY_ABI | (MultiplayerGameplay::IsChallengeMode() ? 0x10000u : 0u); }
+static std::uint32_t GameplayAbi() { return TH06_MULTI_GAMEPLAY_ABI | (MultiplayerGameplay::IsChallengeMode() ? 0x10000u : 0u) | (MultiplayerGameplay::KeepBulletsOnMiss() ? 0x20000u : 0u); }
 constexpr std::uint32_t DEFAULT_TEST_FRAMES = 300;
 
 WebSocketTransport g_Transport;

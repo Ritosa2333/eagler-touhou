@@ -26,7 +26,7 @@ const commonRoot=path.resolve(root,'../../common');
 function sharedInputs(folder){for(const entry of fs.readdirSync(path.join(commonRoot,folder),{withFileTypes:true})){const name=folder+'/'+entry.name;if(entry.isDirectory())sharedInputs(name);else sharedSourceFiles[name]=createHash('sha256').update(fs.readFileSync(path.join(commonRoot,name))).digest('hex');}}
 for(const folder of ['include/eagler/netplay','src/netplay','include/eagler/gameplay','browser'])sharedInputs(folder);
 buildFlags.push('-DTH12_MULTIPLAYER=1','-I'+path.join(commonRoot,'include'),'-I'+path.join(root,'src/multiplayer'));
-for(const name of fs.readdirSync(path.join(commonRoot,'src/netplay')).filter(n=>n.endsWith('.cpp')))sharedSources.push(path.join(commonRoot,'src/netplay',name));
+for(const name of fs.readdirSync(path.join(commonRoot,'src/netplay')).filter(n=>n.endsWith('.cpp')&&!/^(Desktop|Native)/.test(n)))sharedSources.push(path.join(commonRoot,'src/netplay',name));
 buildFlags.push('-DTH12_DIAGNOSTIC='+(diagnostic?'1':'0'));
 if(thprac){
   const pin=JSON.parse(fs.readFileSync(path.join(root,'integration/common-dependency.json'),'utf8'));

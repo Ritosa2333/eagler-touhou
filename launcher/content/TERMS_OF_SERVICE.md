@@ -2,7 +2,7 @@
 
 This site is completely free and accepts no ads or commercial content. Maintenance and outages can happen without warning. Keep a copy of important saves and replays somewhere else.
 
-[Donations](https://touhouonline.com/assets/donation.webp) help keep the site running.
+[Donations](/assets/donation.webp) help keep the site running.
 
 ## What we may remove
 

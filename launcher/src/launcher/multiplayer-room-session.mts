@@ -21,6 +21,7 @@ export interface MultiplayerRoomSessionSnapshot {
     showHitboxes?: boolean;
   ballCount?: number;
     challengeMode?:boolean;
+    challengeKeepBullets?:boolean;
   chapterThreshold?: number;
     th19Rules?: number[];
   initialSpares?: number;
@@ -78,7 +79,7 @@ export function createMultiplayerRoomSessionStore({
           disableFocus: snapshot.room.disableFocus,
           showHitboxes: snapshot.room.showHitboxes,
           ballCount: snapshot.room.ballCount,
-          chapterThreshold:snapshot.room.chapterThreshold,challengeMode:snapshot.room.challengeMode,prankMode:snapshot.room.prankMode,
+          chapterThreshold:snapshot.room.chapterThreshold,challengeMode:snapshot.room.challengeMode,challengeKeepBullets:snapshot.room.challengeKeepBullets,prankMode:snapshot.room.prankMode,
           th19Rules:product==='th19mp'?snapshot.room.th19Rules:undefined,
           initialSpares:snapshot.room.initialSpares,initialBombs:snapshot.room.initialBombs,
           playerCount: snapshot.room.playerCount,
@@ -134,6 +135,7 @@ export function createMultiplayerRoomSessionStore({
         ...((product==='th05mp'||isPc98StockProduct(product))&&validTh05InitialSpares(room.initialSpares)?{initialSpares:room.initialSpares as number}:{}),
         ...((product==='th05mp'||isPc98StockProduct(product))&&validTh05InitialBombs(room.initialBombs)?{initialBombs:room.initialBombs as number}:{}),
         ...(room.challengeMode!==undefined?{challengeMode:room.challengeMode===true}:{}),
+        ...(typeof room.challengeKeepBullets==="boolean"?{challengeKeepBullets:room.challengeMode===true&&room.challengeKeepBullets}:{}),
         ...(room.prankMode!==undefined?{prankMode:room.prankMode===true}:{}),
         playerCount,
         difficulty,

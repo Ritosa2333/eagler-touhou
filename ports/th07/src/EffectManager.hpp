@@ -28,7 +28,7 @@ struct Effect
     u8 isFadingOut;
     i8 fadeOutTime;
     i8 drawType;
-    // pad 3
+    u8 missOwner; // One-based seat for player hit and death effects.
     Effect *next;
 };
 
@@ -83,8 +83,8 @@ struct EffectManager
     static void ModifyEffect1eAcceleration();
     static i32 UpdateNoOp(Effect *effect);
 
-    Effect *SpawnEffect(i32 effectId, ZunVec3 *pos, i32 numParticles, u32 color);
-    Effect *SpawnSpecialEffect(i32 effectId, ZunVec3 *pos, i32 param_3, i32 param_4, u32 color);
+    Effect *SpawnEffect(i32 effectId, ZunVec3 *pos, i32 numParticles, u32 color, u8 missOwner = 0);
+    Effect *SpawnSpecialEffect(i32 effectId, ZunVec3 *pos, i32 param_3, i32 param_4, u32 color, u8 missOwner = 0);
     Effect *SpawnMovingParticles(i32 effectId, ZunVec3 *pos, ZunVec3 *velocity, i32 numParticles,
                                  u32 color);
     i32 DrawLayer1Effects();

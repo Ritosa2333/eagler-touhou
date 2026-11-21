@@ -4,6 +4,7 @@
 namespace th13::multiplayer {
 
 bool SessionSetup::valid() const {
+    if (keep_bullets_on_miss && (!challenge || version == LegacyVersion)) return false;
     // 线格式：v1 纯延迟 / v2 预测；v1 不允许预测模式字段。
     if ((version != LegacyVersion && version != Version) || mode > 2 ||
         (version == LegacyVersion && mode != 1) ||
@@ -29,7 +30,7 @@ bool DecodeSessionSetup(SessionSetup& out, const std::uint32_t* words, std::size
     if (!words || count != SessionSetup::Words ||
         (words[0] != SessionSetup::LegacyVersion && words[0] != SessionSetup::Version) ||
         words[14] > 2 || (words[0] == SessionSetup::LegacyVersion && words[14] != 1) ||
-        words[15] > 1 || words[21] > 1)
+        words[15] > 1 || words[21] > 3 || words[21] == 2)
         return false;
     SessionSetup setup;
     setup.version = words[0];
@@ -44,7 +45,8 @@ bool DecodeSessionSetup(SessionSetup& out, const std::uint32_t* words, std::size
     setup.automatic = words[15];
     setup.prediction_reserve = words[16];
     for (unsigned i = 0; i < 4; ++i) setup.build[i] = words[17 + i];
-    setup.challenge = words[21];
+    setup.challenge = (words[21] & 1) != 0;
+    setup.keep_bullets_on_miss = (words[21] & 2) != 0;
     if (!setup.valid()) return false;
     out = setup;
     return true;
@@ -65,7 +67,7 @@ std::array<std::uint32_t, SessionSetup::Words> EncodeSessionSetup(const SessionS
     words[15] = setup.automatic;
     words[16] = setup.prediction_reserve;
     for (unsigned i = 0; i < 4; ++i) words[17 + i] = setup.build[i];
-    words[21] = setup.challenge;
+    words[21] = std::uint32_t(setup.challenge) + 2 * std::uint32_t(setup.keep_bullets_on_miss);
     return words;
 }
 
@@ -84,7 +86,7 @@ std::uint32_t GameplayAbi(const SessionSetup& setup) {
     word(setup.player_count);
     word(setup.difficulty);
     for (auto selection : setup.selections) word(selection);
-    word(setup.challenge);
+    word(std::uint32_t(setup.challenge) + 2 * std::uint32_t(setup.keep_bullets_on_miss));
     word(setup.automatic);
     word(setup.requested_delay);
     word(setup.input_delay);

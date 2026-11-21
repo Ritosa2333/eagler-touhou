@@ -10,7 +10,7 @@ struct PlayerFrameInput {
     bool special_available=true,special_active=false,shooting_blocked=false;
     bool replay=false,hit_sound=true;
 #ifdef TH11_MULTIPLAYER
-    bool challenge=false;
+    bool challenge=false,keep_bullets_on_miss=false;
 #endif
 };
 struct PlayerSpellState {u32 flags=0;i32 elapsed=0,bonus=0;};

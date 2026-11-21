@@ -541,6 +541,7 @@ function newRoom(id, chatScope = 'room-' + randomUUID()) {
           }
         : {}),
       challengeMode: false,
+      challengeKeepBullets: false,
       prankMode: false,
       inputDelay: 0,
       timingChoice: 'auto',
@@ -1544,6 +1545,7 @@ function lobbySnapshot(room) {
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
     ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
     challengeMode: room.lobby.challengeMode,
+    ...(room.multiplayer?.challengeKeepBullets ? {challengeKeepBullets: room.lobby.challengeKeepBullets} : {}),
     prankMode: room.lobby.prankMode,
     inputDelay: room.lobby.inputDelay,
     timingChoice: room.lobby.timingChoice,
@@ -1696,7 +1698,8 @@ function switchLobbyProduct(room, product) {
   next.lobby.visibility = previous.visibility;
   next.lobby.disableCheatMovement = previous.disableCheatMovement;
   next.lobby.unrated = previous.unrated;
-  next.lobby.challengeMode = previous.challengeMode && next.multiplayer.gameplay === 'cooperative';
+  next.lobby.challengeMode = previous.challengeMode && next.multiplayer.gameplay === 'cooperative' && next.multiplayer.challengeMode !== false;
+  next.lobby.challengeKeepBullets = next.lobby.challengeMode && next.multiplayer.challengeKeepBullets === true && previous.challengeKeepBullets;
   next.lobby.startSerial = previous.startSerial;
   if (validPlayerCount(next.multiplayer, previous.playerCount)) next.lobby.playerCount = previous.playerCount;
   if (next.th15) next.lobby.chapterThreshold = defaultTh15ChapterThreshold(next.lobby.playerCount);
@@ -1803,6 +1806,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     if(pc98StockRoom(room.id)&&validPc98InitialSpares(initialPolicy?.initialSpares)&&validPc98InitialBombs(initialPolicy?.initialBombs)){room.lobby.initialSpares=initialPolicy.initialSpares;room.lobby.initialBombs=initialPolicy.initialBombs;}
     const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
     room.lobby.challengeMode = modesSupported && initialPolicy?.challengeMode === true;
+    room.lobby.challengeKeepBullets = room.lobby.challengeMode && room.multiplayer.challengeKeepBullets === true && initialPolicy?.challengeKeepBullets === true;
     room.lobby.prankMode = false;
     if (validPlayerCount(room.multiplayer, initialPolicy?.playerCount))
       room.lobby.playerCount = initialPolicy.playerCount;
@@ -2499,6 +2503,12 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         (typeof message.challengeMode === 'boolean'
           ? message.challengeMode
           : room.lobby.challengeMode);
+      if (message.challengeKeepBullets !== undefined &&
+          (typeof message.challengeKeepBullets !== 'boolean' || room.multiplayer?.challengeKeepBullets !== true)) {
+        sendLobby(socket, {type:'error', error:'invalid challenge bullet clearing setting'});
+        return;
+      }
+      const challengeKeepBullets = challengeMode && (message.challengeKeepBullets ?? room.lobby.challengeKeepBullets);
       // Prank mode is temporarily unavailable for every product.
       const prankMode = false;
       room.lobby.visibility = visibility;
@@ -2513,6 +2523,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.showHitboxes !== showHitboxes ||
         room.lobby.ballCount !== ballCount ||
         room.lobby.challengeMode !== challengeMode ||
+        room.lobby.challengeKeepBullets !== challengeKeepBullets ||
         room.lobby.prankMode !== prankMode ||
         room.lobby.initialSpares !== initialSpares || room.lobby.initialBombs !== initialBombs ||
         (room.th15 && room.lobby.chapterThreshold !== chapterThreshold)
@@ -2527,6 +2538,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         if(room.id.startsWith('th01mp-'))room.lobby.ballCount=ballCount;
         if(pc98StockRoom(room.id)){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
         room.lobby.challengeMode = challengeMode;
+        room.lobby.challengeKeepBullets = challengeKeepBullets;
         room.lobby.prankMode = prankMode;
         if(room.id.startsWith('th05mp-')){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
         if (room.th15) room.lobby.chapterThreshold = chapterThreshold;
@@ -2979,6 +2991,7 @@ server.on('connection', (socket, request) => {
         ? Number(url.searchParams.get('chapterThreshold'))
         : undefined,
       challengeMode: url.searchParams.get('challengeMode') === '1',
+      challengeKeepBullets: url.searchParams.get('challengeKeepBullets') === '1',
       prankMode: url.searchParams.get('prankMode') === '1',
       playerCount: Number(url.searchParams.get('players')),
       difficulty: url.searchParams.has('difficulty')
