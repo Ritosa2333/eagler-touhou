@@ -146,6 +146,7 @@
 | MP-01 | [独立 MP 产品变体](../../docs/adaptation/multiplayer.md#mp-01) | 不适用 | 已实现 | normal：单人模式；product-catalog 声明 `bro` + 自动派生 `bromp`。 |
 | MP-02 | [房间人数、难度与机体](../../docs/adaptation/multiplayer.md#mp-02) | 不适用 | 已实现 | normal：单人模式；首期 `playerCounts:[2,3]`（官方标准常量），4 角色 loadouts；引擎内部 4 槽暂不开第 4 席。难度只开放 Hard/Lunatic 两档（BRO 本体无难度选项）。 |
 | MP-CUSTOM-01 | BRO 专属房间选项 | 不适用 | 已实现 | 房主选全队携带系统（1..11）+ 章节游玩队列（1..19 有序），照 `th19Rules` 全链路按 `bromp-` 前缀隔离；UI 新 `BroRoomSettings`，共享合约 `bro-room-options.mjs`，切关继承中弹/收卡、不进 replay。队列末章走 `ReturnToTitle(false,0)` 跳过全作评分界面（公式分母是全作常量，部分关卡必失真），每关小结算保留（PROBE_3AQ）。 |
+| MP-CUSTOM-02 | legacy 符卡/弹幕模式 | 不适用 | 已实现（联机驱动） | 房间难度 0=Hard（5.x 弹幕+符卡名）/ 1=Lunatic（4.0 legacy 弹幕+4.0 符卡名）。复用现有 `netplayDifficulty`，adapter 白名单映射为 `legacy=`，web 层 hook `lstg.DoFile` 加载 `mod/GAME_L/` 并对新增符卡沿用当前版、去重。单人默认 Hard，游戏内无切换 UI。WASM `0fd414b6`（PROBE_3AR）。 |
 | MP-03 | [所有席位准备并同步开局](../../docs/adaptation/multiplayer.md#mp-03) | 不适用 | 已实现 | normal：单人模式；GATE 开局栅栏（PROBE_3J）。 |
 | MP-04 | [确定性输入与状态检查](../../docs/adaptation/multiplayer.md#mp-04) | 不适用 | 已实现 | normal：单人模式；同种子同输入 360 帧逐帧指纹一致（PROBE_1F）；DIGEST 摘要（3I）。 |
 | MP-05 | [各席位输入归属](../../docs/adaptation/multiplayer.md#mp-05) | 不适用 | 已实现 | normal：单人模式；per-instance `p.key` + Byte2KeyState（3R/3AC）。 |

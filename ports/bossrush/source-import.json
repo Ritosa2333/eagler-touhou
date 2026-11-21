@@ -3,8 +3,8 @@
   "game": "bro",
   "repository": "https://github.com/TSake/TouHou-BossRushOnline",
   "branch": "web/multiplayer-port",
-  "commit": "本地工作区（X键卡键+符卡实时间+多人数据统一P1+boss伤害减免+新/原生弹型贴图切换+3AQ房间选项/系统/游玩队列+末章跳过失真评分界面；WASM build_id=67a3c8a0）",
-  "buildId": "67a3c8a0",
+  "commit": "本地工作区（X键卡键+符卡实时间+多人数据统一P1+boss伤害减免+新/原生弹型贴图切换+3AQ房间选项/系统/游玩队列+末章跳过失真评分+3AR legacy 符卡/弹幕模式：Lunatic=4.0弹幕/符卡名，Hard=5.x；WASM build_id=0fd414b6）",
+  "buildId": "0fd414b6",
   "credit": {
     "author": "吃药图书 (Cyoltose)",
     "webMaintainer": "清酒 (Tidew)",
@@ -24,8 +24,8 @@
     },
     {
       "path": "bro.wasm",
-      "bytes": 3472781,
-      "sha256": "67a3c8a0e52430c4011387bf720fa82ba8ed03797b707a11ea93064f4e4df8c4"
+      "bytes": 4953538,
+      "sha256": "0fd414b657a3e0783b47d9ac4b45eef5091e2c2f49b099a4e374911f7d8a1ceb"
     },
     {
       "path": "dist/app-shell.json",
@@ -40,7 +40,7 @@
     {
       "path": "dist/runtime.json",
       "bytes": 578,
-      "sha256": "6fd398ac80fc07a7fd9b0dc04a04cb89dad4d3330aba297708e5f16bd1c43f25"
+      "sha256": "8fe48fd5928f34080e69dbb501ddc15c7fdcdb8e4e49316daa2ec8e4fe68bbbe"
     },
     {
       "path": "managed-shell.mjs",
