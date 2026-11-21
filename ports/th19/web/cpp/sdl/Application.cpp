@@ -5197,7 +5197,7 @@ void tick_marisa_skills(int side){
     }
     g_attacks[side].marisa_skills.erase(std::remove_if(g_attacks[side].marisa_skills.begin(),g_attacks[side].marisa_skills.end(),[](const auto&s){return s.state.arrived()&&s.vm.alpha==0;}),g_attacks[side].marisa_skills.end());
 }
-unsigned tick_player_shots(bool firing,bool focused){
+unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& priorCharge){
     // 0x54e742 skips ordinary fire while the charge timer is nonzero,
     // including the release cooldown. The emitter clocks stay at their last tick.
     const auto shotBlocked=[](int side){
@@ -5341,8 +5341,9 @@ unsigned tick_player_shots(bool firing,bool focused){
             if(beam){float x=side?g_p2_x:g_p1_x,y=side?g_p2_y:g_p1_y;if(b.option>0&&b.option<=int(g_player_options[side].size())){x=g_player_options[side][b.option-1].x;y=g_player_options[side][b.option-1].y;}
                 if(b.ability_bank){auto card=std::find_if(g_card_options.begin(),g_card_options.end(),[&](const auto&o){return o.side==b.side&&o.card_id==b.card_id;});if(card!=g_card_options.end()){x=card->x;y=card->y;}else b.ending=true;}
                 // 0x54c830 extends the beam from its registered origin.
-                if(b.update==9){x=b.x-b.offset_x;y=b.y-b.offset_y;}
-                b.x=x+b.offset_x;b.y=y+b.offset_y;
+                // Fixed beams retain their registered origin. Subtracting and
+                // re-adding the emitter offset can cross the next 1/100 floor.
+                if(b.update!=9){b.x=x+b.offset_x;b.y=y+b.offset_y;}
                 if(fixedBeam){
                     if(b.age==0)move_player_shot(b);
                     else{
@@ -5361,7 +5362,8 @@ unsigned tick_player_shots(bool firing,bool focused){
                     // existing beam and its damage area until the emitter ends.
                     const bool blocked=(side?rightBlocked:leftBlocked)&&
                         g_player_damage[side].state!=th19::PlayerDamage::Repelled;
-                    endOrdinaryBeam=clock<0||blocked;
+                    // 0x54d8d8 retires an unlimited beam while the charge meter is active.
+                    endOrdinaryBeam=clock<0||blocked||priorCharge[side]>0;
                 }
                 const bool expired=b.update==9?b.age>=120:(b.laser_duration>0?b.age>=b.laser_duration:endOrdinaryBeam);
                 if(expired&&!b.ending){b.vm.interrupt_all(1);b.ending=true;}
@@ -5638,7 +5640,10 @@ unsigned tick_player_shots(bool firing,bool focused){
     }
     unsigned deferredShotSides=0;
     if(g_vs_mode)for(int side=0;side<2;++side)
-        if(g_player_damage[side].respawnDamageActive())
+        // The late player visit advances respawn before area contacts. Include
+        // its first active tick even though this mask is prepared beforehand.
+        if(g_player_damage[side].respawnDamageActive()||
+           (g_player_damage[side].state==th19::PlayerDamage::Respawning&&g_player_damage[side].frame+1>=30))
             deferredShotSides|=1u<<side;
     for(const auto& shot:g_player_projectiles)if(defer_homing_shot(shot)||defer_marisa_contact(shot))deferredShotSides|=1u<<shot.side;
     for(int side=0;side<2;++side)if(defer_marisa_bomb_contact(side))deferredShotSides|=1u<<side;
@@ -7527,6 +7532,7 @@ void game_tick() {
             const float spd=g_player_damage[0].controllable()?movement.movement_units(diagonal,slow)/128.f:0.f;
             unsigned resultEntrySides=0;
             std::optional<size_t> chargeClears[2];
+            const std::array<int,2> priorShotCharge{g_charge[0].charge,g_charge[1].charge};
             if(combatOpen){
                 if(g_vs_mode&&g_vs_entry==0){
                     // Web local-player2 binding; independent from the CPU controller.
@@ -7587,7 +7593,7 @@ void game_tick() {
                 if(g_vs_mode&&g_attack_warning.visible()&&g_attack_warning_frame<0){
                     tick_attack_warning_animations(g_frame+1);g_warning_portrait.tick();g_attack_warning_frame=g_frame+1;
                 }
-                deferredShotSides=tick_player_shots(cpuLeft?(g_cpu_left_bits&1)!=0:z,slow);
+                deferredShotSides=tick_player_shots(cpuLeft?(g_cpu_left_bits&1)!=0:z,slow,priorShotCharge);
                 // 0x546cd6 -> 0x5450e0: each VS seat launches counters
                 // and then pure spirits before the next seat updates its meter.
                 if(g_vs_mode)for(int side=1;side>=0;--side){

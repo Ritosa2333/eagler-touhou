@@ -1,0 +1,5 @@
+{
+  "ports/th19/web/cpp/game/GameWorld.hpp": "3b91b260eb10dc6802ef77183da15de145de8e51b1dbbea1eb3c784844abda40",
+  "ports/th19/web/cpp/game/GameObject.cpp": "e066455e2c371ada3a202c1479a0f3cccb1c8215fb5f39a5319a2f085536dc4c",
+  "ports/th19/tests/world-limits.cpp": "c375857bb1833d30cecab7aec59cf59887b17fdb2ee09f2f4b16ac528c793a90"
+}

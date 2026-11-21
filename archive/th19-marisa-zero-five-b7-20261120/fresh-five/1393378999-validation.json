@@ -1,0 +1,45 @@
+{
+  "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-b7-repaired\\th19-web-CrBDOm\\report.json",
+  "wasmSha256": "599d6f3deba6968e551b1c21c6ad75924b7763f8c738c8c905f4ac959bce7104",
+  "nativeMissingStateFrames": [],
+  "verifiedTransitionGaps": [],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 36000,
+  "bulletCoordinateTolerance": 0,
+  "maximumBulletCoordinateDifference": 0.0,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS",
+  "strictBulletDifferenceFrames": [
+    3532
+  ],
+  "ignoredMinorDifferences": [
+    {
+      "frame": 3532,
+      "unmatchedBullets": 2,
+      "details": [
+        {
+          "side": 1,
+          "webOnly": [
+            [
+              12,
+              6,
+              -163.2729034423828,
+              268.5591125488281
+            ],
+            [
+              12,
+              6,
+              -163.11135864257812,
+              268.441162109375
+            ]
+          ]
+        }
+      ],
+      "reason": "Isolated one-frame bullet retirement difference; exact bullet convergence on adjacent frames and no primary RNG, CPU or player divergence through 36000. Accepted under user instruction to ignore minor differences."
+    }
+  ],
+  "acceptancePolicy": "User: ignore animation-only and tiny differences without later gameplay effects"
+}

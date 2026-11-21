@@ -1,0 +1,218 @@
+{
+  "nativePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b5-20261120\\native\\present-h_8gvg26\\native-present.jsonl",
+  "nativeExe": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "nativeTraceSha256": "1448230378f6ba5b22ee7a8ee3bac91f9010453eb8e2695b5d7b51a711b6931e",
+  "wasmPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b5-20261120\\runtime-fixed\\th19.wasm",
+  "wasmSha256": "d6f73d06e44871021957673c7bd3e2f888b58766b5b8c0f6be28d29d43f78e90",
+  "incompleteNativeTail": false,
+  "fixture": {
+    "difficulty": 3,
+    "characters": [
+      1,
+      1
+    ],
+    "cardMode": 0,
+    "cards": [
+      0,
+      0
+    ],
+    "lives": 2,
+    "timeRule": 4
+  },
+  "continuous": true,
+  "diagnosticRoundWaveSeed": null,
+  "initialAnimationRng": [
+    2068616002,
+    852982080
+  ],
+  "requestedThrough": 36000,
+  "stopOnPrimaryRngDifference": true,
+  "capturedThrough": 36000,
+  "stoppedOnRngDifference": false,
+  "bulletPositionCoverage": {
+    "frames": 35999,
+    "first": 1,
+    "last": 36000,
+    "nonemptyFrames": 34753,
+    "originalBulletSamples": 3906369,
+    "webBulletSamples": 3906369,
+    "missingFrames": [
+      0,
+      30651
+    ]
+  },
+  "differentBulletPositionFrames": 0,
+  "firstDifferentBulletPosition": null,
+  "firstDifferentBulletCount": null,
+  "firstDifferentRoundClock": null,
+  "playerPositionCoverage": 35999,
+  "firstDifferentPlayerPosition": null,
+  "playerControlCoverage": 35999,
+  "firstDifferentPlayerControls": null,
+  "firstDifferentRngSample": {
+    "frame": 12206,
+    "homingContacts": [],
+    "playedFrames": 12101,
+    "round": 1,
+    "lives": [
+      2,
+      2
+    ],
+    "controls": [
+      65,
+      24
+    ],
+    "enemies": [
+      4,
+      4
+    ],
+    "bullets": [
+      132,
+      42
+    ],
+    "cards": [
+      0,
+      0
+    ],
+    "positionBits": [
+      3265326080,
+      1136012800,
+      1050148864,
+      1136862208
+    ],
+    "animationRng": [
+      2123238120,
+      499975709
+    ],
+    "world": 0,
+    "strips": 0,
+    "stripFrame": 0,
+    "side": 1,
+    "waves": [
+      4,
+      9
+    ],
+    "waveFinalState": 556985601,
+    "shotClock": [
+      3,
+      4294967295
+    ],
+    "shots": [
+      10,
+      27
+    ],
+    "elapsed": 12206,
+    "remaining": 23794,
+    "announcement": false,
+    "originalRng": [
+      2123238120,
+      440779434
+    ],
+    "originalPositionBits": [
+      3265326080,
+      1136012800,
+      1050148864,
+      1136862208
+    ],
+    "originalControls": [
+      65,
+      24
+    ],
+    "originalRound": 1,
+    "originalRoundFrame": 12206,
+    "seconds": 397
+  },
+  "firstDifferentRngByStream": {
+    "primary": null,
+    "animation": {
+      "frame": 12206,
+      "web": 499975709,
+      "original": 440779434
+    }
+  },
+  "nativeFramesWithMultipleRngStates": [
+    4387,
+    4469,
+    6008,
+    6481,
+    7224,
+    7615,
+    8860,
+    9263,
+    10322,
+    10746,
+    10813,
+    11184,
+    11403,
+    11587,
+    11984,
+    12778,
+    13526,
+    14454,
+    14814,
+    14972,
+    15501,
+    15609,
+    15844,
+    16052,
+    16400,
+    16537,
+    17904,
+    18767,
+    19689,
+    20545,
+    20601,
+    20983,
+    21004,
+    21310,
+    21368,
+    21768,
+    21804,
+    22158,
+    22451,
+    22480,
+    22751,
+    23454,
+    23498,
+    24190,
+    24355,
+    24736,
+    25056,
+    25088,
+    25521,
+    25809,
+    25944,
+    26464,
+    26505,
+    26515,
+    26678,
+    27112,
+    27352,
+    27377,
+    27395,
+    27703,
+    27710,
+    27862,
+    27882,
+    27986,
+    28023,
+    28052,
+    28136,
+    28409,
+    28706,
+    29091,
+    29156,
+    29583,
+    29626,
+    29936,
+    29968,
+    30000,
+    30148,
+    30651,
+    35045,
+    35209
+  ],
+  "missingNativeOpeningFrames": [],
+  "firstConsecutiveMatchingFrames": 12206,
+  "browserErrors": []
+}

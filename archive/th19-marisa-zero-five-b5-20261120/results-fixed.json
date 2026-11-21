@@ -1,0 +1,137 @@
+{
+  "wasmSha256": "d6f73d06e44871021957673c7bd3e2f888b58766b5b8c0f6be28d29d43f78e90",
+  "results": [
+    {
+      "seed": 2068616002,
+      "secondary": 852982080,
+      "phase": "PASS",
+      "sourceBatch": "marisa-zero-five-b5-20261120",
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b5-20261120\\native\\present-h_8gvg26",
+      "nativeExitCode": 1,
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-AI85ki",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-AI85ki\\report.json",
+        "wasmSha256": "d6f73d06e44871021957673c7bd3e2f888b58766b5b8c0f6be28d29d43f78e90",
+        "nativeMissingStateFrames": [
+          30651
+        ],
+        "verifiedTransitionGaps": [
+          30651
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 164848027,
+      "secondary": 1933381659,
+      "phase": "PASS",
+      "sourceBatch": "marisa-zero-five-b5-20261120",
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b5-20261120\\native\\present-ik904q62",
+      "nativeExitCode": 1,
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-9FFQCv",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-9FFQCv\\report.json",
+        "wasmSha256": "d6f73d06e44871021957673c7bd3e2f888b58766b5b8c0f6be28d29d43f78e90",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1080846151,
+      "secondary": 961363864,
+      "phase": "PASS",
+      "sourceBatch": "marisa-zero-five-b5-20261120",
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b5-20261120\\native\\present-4g86bpqp",
+      "nativeExitCode": 1,
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-kCYSbo",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-kCYSbo\\report.json",
+        "wasmSha256": "d6f73d06e44871021957673c7bd3e2f888b58766b5b8c0f6be28d29d43f78e90",
+        "nativeMissingStateFrames": [
+          35263
+        ],
+        "verifiedTransitionGaps": [
+          35263
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 139269535,
+      "secondary": 1381408274,
+      "phase": "PASS",
+      "sourceBatch": "marisa-zero-five-b5-20261120",
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b5-20261120\\native\\present-v7bro4gr",
+      "nativeExitCode": 1,
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-ChotRE",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-ChotRE\\report.json",
+        "wasmSha256": "d6f73d06e44871021957673c7bd3e2f888b58766b5b8c0f6be28d29d43f78e90",
+        "nativeMissingStateFrames": [
+          21408
+        ],
+        "verifiedTransitionGaps": [
+          21408
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1670654752,
+      "secondary": 1232417122,
+      "phase": "PASS",
+      "sourceBatch": "marisa-zero-five-b5-20261120",
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\marisa-zero-five-b5-20261120\\native\\present-29jplrmp",
+      "nativeExitCode": 1,
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-m36s9E",
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-m36s9E\\report.json",
+        "wasmSha256": "d6f73d06e44871021957673c7bd3e2f888b58766b5b8c0f6be28d29d43f78e90",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    }
+  ]
+}

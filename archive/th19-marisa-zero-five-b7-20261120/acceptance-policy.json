@@ -1,0 +1,6 @@
+{
+  "ignoreAnimationOnly": true,
+  "ignoreMinorNonGameplayDifferences": true,
+  "requireNoDownstreamGameplayImpact": true,
+  "userInstruction": "2026-11-20: ignore animation and tiny differences; fix substantive gameplay differences"
+}

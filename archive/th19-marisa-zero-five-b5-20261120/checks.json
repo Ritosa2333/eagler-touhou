@@ -1,0 +1,23 @@
+{
+  "cpp": [
+    {
+      "test": "world-limits",
+      "exitCode": 0
+    },
+    {
+      "test": "anm-native-random",
+      "exitCode": 0
+    }
+  ],
+  "documentation": [
+    {
+      "task": "docs:index",
+      "exitCode": 0
+    },
+    {
+      "task": "docs:check",
+      "exitCode": 0
+    }
+  ],
+  "sourceDiffCheck": 0
+}

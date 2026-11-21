@@ -1,0 +1,109 @@
+{
+  "wasmSha256": "0fdafbb2211bb7311413e8bee554f71251c650c92330115c357a51efe38108f0",
+  "results": [
+    {
+      "seed": 1065733957,
+      "secondary": 267368346,
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-b6-repaired\\th19-web-94X3V1\\report.json",
+        "wasmSha256": "0fdafbb2211bb7311413e8bee554f71251c650c92330115c357a51efe38108f0",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      },
+      "nativeTraceSha256": "752bb71f4b4ef2b6d5464e514a2cb3cd5d87a825b13cbc1fe9ba3727ff098b23"
+    },
+    {
+      "seed": 1766797787,
+      "secondary": 2131122726,
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-b6-repaired\\th19-web-kWkLaG\\report.json",
+        "wasmSha256": "0fdafbb2211bb7311413e8bee554f71251c650c92330115c357a51efe38108f0",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      },
+      "nativeTraceSha256": "67dc76fdbd3f5ef04b2800cf32a922ce2484f9bfa41d966846b67aecb4835a54"
+    },
+    {
+      "seed": 1833594954,
+      "secondary": 1478809317,
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-b6-repaired\\th19-web-9j8hLy\\report.json",
+        "wasmSha256": "0fdafbb2211bb7311413e8bee554f71251c650c92330115c357a51efe38108f0",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      },
+      "nativeTraceSha256": "21c5842ce09fd530c54341a425fbea9789dd1fb8658b7bb859d94b5b12ef8c30"
+    },
+    {
+      "seed": 1233334686,
+      "secondary": 381609119,
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-b6-repaired\\th19-web-vZ1wjr\\report.json",
+        "wasmSha256": "0fdafbb2211bb7311413e8bee554f71251c650c92330115c357a51efe38108f0",
+        "nativeMissingStateFrames": [
+          27789
+        ],
+        "verifiedTransitionGaps": [
+          27789
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35999,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      },
+      "nativeTraceSha256": "ef5de6f7ec5d6e33813899dde4e8ba68fb9cc8d9022843518bfe968e597d8472"
+    },
+    {
+      "seed": 1729599178,
+      "secondary": 1148959835,
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-b6-repaired\\th19-web-Uyd2Mr\\report.json",
+        "wasmSha256": "0fdafbb2211bb7311413e8bee554f71251c650c92330115c357a51efe38108f0",
+        "nativeMissingStateFrames": [],
+        "verifiedTransitionGaps": [],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 36000,
+        "bulletCoordinateTolerance": 0,
+        "maximumBulletCoordinateDifference": 0.0,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      },
+      "nativeTraceSha256": "48b48478f3a09db2d06f97c8fe9a2e481ad1a88a53ab54442d6c4ca62746e150"
+    }
+  ]
+}

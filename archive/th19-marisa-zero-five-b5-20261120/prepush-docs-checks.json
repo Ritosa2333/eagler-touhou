@@ -1,0 +1,10 @@
+[
+  {
+    "task": "docs:index",
+    "exitCode": 0
+  },
+  {
+    "task": "docs:check",
+    "exitCode": 0
+  }
+]

@@ -1,0 +1,69 @@
+{
+  "wasmSha256": "d6f73d06e44871021957673c7bd3e2f888b58766b5b8c0f6be28d29d43f78e90",
+  "passed": 5,
+  "total": 5,
+  "cumulativeFrames": 180000,
+  "comparedBattleStates": 179997,
+  "verifiedTransitionFrames": 3,
+  "bulletCoordinateTolerance": 0,
+  "pureAnimationExcluded": true,
+  "results": [
+    {
+      "seed": 2068616002,
+      "secondary": 852982080,
+      "frames": 36000,
+      "status": "PASS",
+      "reportPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-AI85ki\\report.json",
+      "reportSha256": "073cb079ca13522aa9f83d948d1509035033787c1e80c8f56e2943d0f3abd96e",
+      "transitionGaps": [
+        30651
+      ]
+    },
+    {
+      "seed": 164848027,
+      "secondary": 1933381659,
+      "frames": 36000,
+      "status": "PASS",
+      "reportPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-9FFQCv\\report.json",
+      "reportSha256": "d92e3bd4cfa2976362a8dc8ef20b87d9a4f0294d3093294c1edaeebe9053be86",
+      "transitionGaps": []
+    },
+    {
+      "seed": 1080846151,
+      "secondary": 961363864,
+      "frames": 36000,
+      "status": "PASS",
+      "reportPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-kCYSbo\\report.json",
+      "reportSha256": "49920f742cee9789cbb8c62f61424b099372ef6f5d614374c0480a97ca81ebac",
+      "transitionGaps": [
+        35263
+      ]
+    },
+    {
+      "seed": 139269535,
+      "secondary": 1381408274,
+      "frames": 36000,
+      "status": "PASS",
+      "reportPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-ChotRE\\report.json",
+      "reportSha256": "186f2706e15164b7da7579d84039284135fe63714ee10e3b48e27b0534c6bfe5",
+      "transitionGaps": [
+        21408
+      ]
+    },
+    {
+      "seed": 1670654752,
+      "secondary": 1232417122,
+      "frames": 36000,
+      "status": "PASS",
+      "reportPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-marisa-zero-five-b5-20261120\\th19-web-m36s9E\\report.json",
+      "reportSha256": "14c4dc7045f41c4b7e74f0fa827748cce690494b4d635912064e1ffdaf4fc7c8",
+      "transitionGaps": []
+    }
+  ],
+  "previousFiveRegression": {
+    "passed": 5,
+    "total": 5,
+    "framesPerSeed": 36000,
+    "wasmSha256": "d6f73d06e44871021957673c7bd3e2f888b58766b5b8c0f6be28d29d43f78e90"
+  }
+}

@@ -805,9 +805,9 @@ int GameWorld::cancel_lasers_region(const std::function<bool(float,float)>& insi
                     part.graze_clock=0;part.aura_slowed=false;part.motion_frame=-1;
                     // A rectangular player clear runs after the native laser
                     // visit, before battle_frame advances in the VS world.
-                    // Its child first contacts on the following manager visit.
+                    // Contact cuts defer children; bomb children contact in the late pass.
                     const bool beforeWorldTick=rectangleSample&&base.motion_frame>battle_frame;
-                    part.split_registration_frame=beforeWorldTick?base.motion_frame:-1;
+                    part.split_registration_frame=beforeWorldTick&&laser_id?base.motion_frame:-1;
                     // Player-contact callbacks register after this manager visit.
                     // Bomb clears still admit the new controller to the late pass.
                     if(beforeWorldTick&&laser_id)part.motion_frame=part.split_registration_frame;
@@ -1309,7 +1309,13 @@ void GameWorld::advance_discharge_scripts(bool birth_only){
         if(result_pause_id&&enemy.id<=result_pause_id&&battle_frame>=result_pause_frame)continue;
         if(std::string(enemy.vm->current_sub_name()).rfind("Ecl_EtBreakLv",0)!=0)continue;
         // This early callback precedes the normal enemy motion-grid update.
-        if(birth_only)enemy.set_absolute_position(snapEnemyCoordinate(enemy.x),snapEnemyCoordinate(enemy.y));
+        if(birth_only){
+            // Creation and the first body visit each apply the native 1/100 grid.
+            // Repeating the float operation matters at boundaries such as
+            // 132.9375 -> 132.93 -> 132.92 before the first 16-unit clear.
+            const float x=snapEnemyCoordinate(enemy.x),y=snapEnemyCoordinate(enemy.y);
+            enemy.set_absolute_position(snapEnemyCoordinate(x),snapEnemyCoordinate(y));
+        }
         step_enemy_script(enemy);
         enemies[i-1].script_advanced_before_cpu=true;
     }

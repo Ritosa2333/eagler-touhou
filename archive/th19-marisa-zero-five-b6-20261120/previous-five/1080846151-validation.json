@@ -1,0 +1,19 @@
+{
+  "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-b6-regression-b5\\th19-web-wOPEfo\\report.json",
+  "wasmSha256": "0fdafbb2211bb7311413e8bee554f71251c650c92330115c357a51efe38108f0",
+  "nativeMissingStateFrames": [
+    35263
+  ],
+  "verifiedTransitionGaps": [
+    35263
+  ],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 35999,
+  "bulletCoordinateTolerance": 0,
+  "maximumBulletCoordinateDifference": 0.0,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS"
+}

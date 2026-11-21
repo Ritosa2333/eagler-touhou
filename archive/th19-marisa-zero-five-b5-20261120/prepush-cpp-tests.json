@@ -1,0 +1,10 @@
+[
+  {
+    "test": "world-limits",
+    "exitCode": 0
+  },
+  {
+    "test": "anm-native-random",
+    "exitCode": 0
+  }
+]

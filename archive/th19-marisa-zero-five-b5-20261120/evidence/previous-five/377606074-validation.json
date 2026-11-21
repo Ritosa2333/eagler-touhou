@@ -1,0 +1,15 @@
+{
+  "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-b5-regression-previous-five\\th19-web-coxJ7K\\report.json",
+  "wasmSha256": "d6f73d06e44871021957673c7bd3e2f888b58766b5b8c0f6be28d29d43f78e90",
+  "nativeMissingStateFrames": [],
+  "verifiedTransitionGaps": [],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 36000,
+  "bulletCoordinateTolerance": 0,
+  "maximumBulletCoordinateDifference": 0.0,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS"
+}

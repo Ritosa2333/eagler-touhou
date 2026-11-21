@@ -1,0 +1,19 @@
+{
+  "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-b8-regression-b7\\th19-web-zyo0lc\\report.json",
+  "wasmSha256": "d38eda254e4188948c359e123ff97b6d4ec4e9991b85a07dee7b2f533ba2f7ca",
+  "nativeMissingStateFrames": [
+    19906
+  ],
+  "verifiedTransitionGaps": [
+    19906
+  ],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 35999,
+  "bulletCoordinateTolerance": 0,
+  "maximumBulletCoordinateDifference": 0.0,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS"
+}

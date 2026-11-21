@@ -1,0 +1,105 @@
+diff --git a/ports/th19/tests/world-limits.cpp b/ports/th19/tests/world-limits.cpp
+index 604ffe985..587cc3a80 100644
+--- a/ports/th19/tests/world-limits.cpp
++++ b/ports/th19/tests/world-limits.cpp
+@@ -5,22 +5,22 @@
+ #include <cassert>
+ #include <iostream>
+ int main(){
+- // Rectangular cuts after the early laser pass register child contacts next visit;
+- // ECL circle cuts retain their same-tick contact registration.
+- for(int phase:{0,1,2}){
+-  const bool rectangle=phase!=0,beforeWorldTick=phase==1;
++ // Player-contact cuts defer child contacts; bomb rectangles and ECL circles
++ // register their children for same-tick contacts.
++ for(int phase:{0,1,2,3}){
++  const bool rectangle=phase!=0,beforeWorldTick=phase==1||phase==3,contactCut=phase==3;
+   th19::GameWorld world;world.reward_mode=2;world.battle_frame=10;
+   world.player_x=120;world.player_y=25;
+   th19::InfiniteLaser laser;laser.id=1;laser.straight=true;laser.phase=2;
+   laser.length=laser.straight_target=160;laser.width=8;laser.age=5;laser.motion_frame=beforeWorldTick?11:10;
+   world.next_id=2;world.lasers.push_back(laser);
+   auto cut=[](float x,float){return x>=48&&x<80;};
+-  if(rectangle)world.cancel_lasers_region(cut,true,[](float x,float,float){return x>=48&&x<80;});
++  if(rectangle)world.cancel_lasers_region(cut,true,[](float x,float,float){return x>=48&&x<80;},contactCut?1u:0u);
+   else world.cancel_lasers_region(cut);
+   assert(world.lasers.size()==2);
+   world.battle_frame=11;world.finish_laser_graze(true,3);
+-  assert(world.lasers[1].graze_clock==(beforeWorldTick?0u:1u));
+-  if(beforeWorldTick){world.battle_frame=12;world.finish_laser_graze(true,3);assert(world.lasers[1].graze_clock==1);}
++  assert(world.lasers[1].graze_clock==(contactCut?0u:1u));
++  if(contactCut){world.battle_frame=12;world.finish_laser_graze(true,3);assert(world.lasers[1].graze_clock==1);}
+ 
+  }
+  // Two clears may touch the same retiring controller before its next visit.
+@@ -148,5 +148,27 @@ int main(){
+   assert(consumed==2);
+   assert(arrival.enemies[0].life==760);
+  }
++ // Native ECL525 visits hosts retired by an earlier clear until the next
++ // enemy-list visit. Two clears dispatch twice; a later-frame clear cannot revive them.
++ {th19::GameWorld world;world.reward_mode=2;world.battle_frame=10;
++  auto& enemy=world.enemies.emplace_back();enemy.id=1;enemy.sprite=2;enemy.life=10;
++  th19::EclProgram program;program.subs.push_back({"Clear",0,32});
++  program.bytecode.resize(32);
++  for(int offset:{0,16}){program.bytecode[offset+4]=13;program.bytecode[offset+5]=2;
++   program.bytecode[offset+6]=16;program.bytecode[offset+10]=255;}
++  th19::AnmVm::seed_random(31);
++  th19::EclVm first;first.attach_program(program);first.attach_world(&world);
++  assert(first.start("Clear"));first.step();
++  assert(!first.error()&&world.defeated==2&&world.deaths.size()==2);
++  assert(!world.enemies[0].active&&(world.enemies[0].status_flags&0x200));
++  const auto rng=th19::AnmVm::random_checkpoint(true);
++  th19::EclVm leftRoot,rightRoot;th19::GameWorld right;
++  th19::WorldCheckpoint saved(world,leftRoot,right,rightRoot);
++  world.enemies[0].clear_retirement_frame=-1;saved.restore(world,leftRoot,right,rightRoot);
++  assert(world.enemies[0].clear_retirement_frame==10);
++  ++world.battle_frame;th19::EclVm later;later.attach_program(program);later.attach_world(&world);
++  assert(later.start("Clear"));later.step();
++  assert(!later.error()&&world.defeated==2&&th19::AnmVm::random_checkpoint(true)==rng);
++ }
+  std::cout<<"2000 bullet slots, recycling, 15000 retired enemies, checkpoint, held-arrival HP/contact, feedback order and signed EX 100-slot release: PASS\n";
+ }
+diff --git a/ports/th19/web/cpp/game/GameObject.cpp b/ports/th19/web/cpp/game/GameObject.cpp
+index 680cc26a9..b45a4c460 100644
+--- a/ports/th19/web/cpp/game/GameObject.cpp
++++ b/ports/th19/web/cpp/game/GameObject.cpp
+@@ -239,8 +239,12 @@ bool EclVm::game_object(const EclInstruction& ins){
+             for(size_t i=world_->enemies.size();i>0;--i){
+                 auto& e=world_->enemies[i-1];
+                 const bool remove=(!(e.flags&0xa0)&&!(e.status_flags&0xc0)&&!(e.flags&0x400))||(e.flags&0x100);
+-                if(!e.active||!remove)continue;
++                const bool retainedClear=world_->reward_mode==2&&e.clear_retirement_frame==world_->battle_frame;
++                if((!e.active&&!retainedClear)||!remove)continue;
+                 if(world_->reward_mode==2){
++                    // 0x50ca70 still walks hosts retired by a preceding clear
++                    // before their next enemy-manager visit.
++                    if(retainedClear&&!e.active)e.active=true;
+                     // 0x50cb96 calls death directly, including animationless birth
+                     // controllers. Damage-target protection is checked by other callers.
+                     e.item=0;
+@@ -249,7 +253,11 @@ bool EclVm::game_object(const EclInstruction& ins){
+                     if(e.arrival_motion==Enemy::ArrivalMotion::Hold&&e.age==1){
+                         e.x=e.previous_x;e.y=e.previous_y;
+                     }
+-                    if(world_->dispatch_enemy_death(e))continue;
++                    if(world_->dispatch_enemy_death(e)){
++                        e.status_flags|=0x200;
++                        if(!e.active)e.clear_retirement_frame=world_->battle_frame;
++                        continue;
++                    }
+                 }
+                 e.active=false;e.status_flags|=0x200;
+                 for(auto&animation:e.animations)animation.script=-1;
+diff --git a/ports/th19/web/cpp/game/GameWorld.hpp b/ports/th19/web/cpp/game/GameWorld.hpp
+index 18549309d..4f0d6c35c 100644
+--- a/ports/th19/web/cpp/game/GameWorld.hpp
++++ b/ports/th19/web/cpp/game/GameWorld.hpp
+@@ -232,6 +232,7 @@ struct Enemy {
+     i32 death_script=0,death_file=1;bool death_initialized=false;
+     std::string death_callback; // ECL550, outer Enemy+0x6818 (one-shot).
+     bool death_pending=false;
++    int clear_retirement_frame=-1; // ECL525 hosts remain in the list until its next visit.
+     BossPhaseTriggers phases;std::string pending_phase;
+     int boss_slot=0; // EnemyInf +0x5180; valid while status_flags bit 0x80 is set.
+     i32 age=0;

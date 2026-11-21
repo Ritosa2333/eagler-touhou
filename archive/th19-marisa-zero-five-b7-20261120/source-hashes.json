@@ -1,0 +1,5 @@
+{
+  "ports/th19/web/cpp/sdl/Application.cpp": "922d282682cf1c44446ee6955b2e853016a97054bd32ff930742328683a37a8f",
+  "ports/th19/web/cpp/game/GameWorld.cpp": "ec33cd37b75c88658bbc40caa0dd79964252f9efb69712034a111af9b286e8fc",
+  "ports/th19/tests/world-limits.cpp": "9e9fb1040ad91cac32e1b0fed4bbda4c55cb17bc6e62762fd35141e544358c9f"
+}

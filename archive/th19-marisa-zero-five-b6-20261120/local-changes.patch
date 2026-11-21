@@ -1,0 +1,102 @@
+diff --git a/ports/th19/tests/world-limits.cpp b/ports/th19/tests/world-limits.cpp
+index 604ffe985..c2daa9ee9 100644
+--- a/ports/th19/tests/world-limits.cpp
++++ b/ports/th19/tests/world-limits.cpp
+@@ -5,22 +5,22 @@
+ #include <cassert>
+ #include <iostream>
+ int main(){
+- // Rectangular cuts after the early laser pass register child contacts next visit;
+- // ECL circle cuts retain their same-tick contact registration.
+- for(int phase:{0,1,2}){
+-  const bool rectangle=phase!=0,beforeWorldTick=phase==1;
++ // Player-contact cuts defer child contacts; bomb rectangles and ECL circles
++ // register their children for same-tick contacts.
++ for(int phase:{0,1,2,3}){
++  const bool rectangle=phase!=0,beforeWorldTick=phase==1||phase==3,contactCut=phase==3;
+   th19::GameWorld world;world.reward_mode=2;world.battle_frame=10;
+   world.player_x=120;world.player_y=25;
+   th19::InfiniteLaser laser;laser.id=1;laser.straight=true;laser.phase=2;
+   laser.length=laser.straight_target=160;laser.width=8;laser.age=5;laser.motion_frame=beforeWorldTick?11:10;
+   world.next_id=2;world.lasers.push_back(laser);
+   auto cut=[](float x,float){return x>=48&&x<80;};
+-  if(rectangle)world.cancel_lasers_region(cut,true,[](float x,float,float){return x>=48&&x<80;});
++  if(rectangle)world.cancel_lasers_region(cut,true,[](float x,float,float){return x>=48&&x<80;},contactCut?1u:0u);
+   else world.cancel_lasers_region(cut);
+   assert(world.lasers.size()==2);
+   world.battle_frame=11;world.finish_laser_graze(true,3);
+-  assert(world.lasers[1].graze_clock==(beforeWorldTick?0u:1u));
+-  if(beforeWorldTick){world.battle_frame=12;world.finish_laser_graze(true,3);assert(world.lasers[1].graze_clock==1);}
++  assert(world.lasers[1].graze_clock==(contactCut?0u:1u));
++  if(contactCut){world.battle_frame=12;world.finish_laser_graze(true,3);assert(world.lasers[1].graze_clock==1);}
+ 
+  }
+  // Two clears may touch the same retiring controller before its next visit.
+diff --git a/ports/th19/web/cpp/game/GameWorld.cpp b/ports/th19/web/cpp/game/GameWorld.cpp
+index 6cc42455e..8e0d9d92e 100644
+--- a/ports/th19/web/cpp/game/GameWorld.cpp
++++ b/ports/th19/web/cpp/game/GameWorld.cpp
+@@ -805,9 +805,9 @@ int GameWorld::cancel_lasers_region(const std::function<bool(float,float)>& insi
+                     part.graze_clock=0;part.aura_slowed=false;part.motion_frame=-1;
+                     // A rectangular player clear runs after the native laser
+                     // visit, before battle_frame advances in the VS world.
+-                    // Its child first contacts on the following manager visit.
++                    // Contact cuts defer children; bomb children contact in the late pass.
+                     const bool beforeWorldTick=rectangleSample&&base.motion_frame>battle_frame;
+-                    part.split_registration_frame=beforeWorldTick?base.motion_frame:-1;
++                    part.split_registration_frame=beforeWorldTick&&laser_id?base.motion_frame:-1;
+                     // Player-contact callbacks register after this manager visit.
+                     // Bomb clears still admit the new controller to the late pass.
+                     if(beforeWorldTick&&laser_id)part.motion_frame=part.split_registration_frame;
+diff --git a/ports/th19/web/cpp/sdl/Application.cpp b/ports/th19/web/cpp/sdl/Application.cpp
+index 0aab0a03b..9aeb9b77d 100644
+--- a/ports/th19/web/cpp/sdl/Application.cpp
++++ b/ports/th19/web/cpp/sdl/Application.cpp
+@@ -5197,7 +5197,7 @@ void tick_marisa_skills(int side){
+     }
+     g_attacks[side].marisa_skills.erase(std::remove_if(g_attacks[side].marisa_skills.begin(),g_attacks[side].marisa_skills.end(),[](const auto&s){return s.state.arrived()&&s.vm.alpha==0;}),g_attacks[side].marisa_skills.end());
+ }
+-unsigned tick_player_shots(bool firing,bool focused){
++unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& priorCharge){
+     // 0x54e742 skips ordinary fire while the charge timer is nonzero,
+     // including the release cooldown. The emitter clocks stay at their last tick.
+     const auto shotBlocked=[](int side){
+@@ -5361,7 +5361,8 @@ unsigned tick_player_shots(bool firing,bool focused){
+                     // existing beam and its damage area until the emitter ends.
+                     const bool blocked=(side?rightBlocked:leftBlocked)&&
+                         g_player_damage[side].state!=th19::PlayerDamage::Repelled;
+-                    endOrdinaryBeam=clock<0||blocked;
++                    // 0x54d8d8 retires an unlimited beam while the charge meter is active.
++                    endOrdinaryBeam=clock<0||blocked||priorCharge[side]>0;
+                 }
+                 const bool expired=b.update==9?b.age>=120:(b.laser_duration>0?b.age>=b.laser_duration:endOrdinaryBeam);
+                 if(expired&&!b.ending){b.vm.interrupt_all(1);b.ending=true;}
+@@ -5638,7 +5639,10 @@ unsigned tick_player_shots(bool firing,bool focused){
+     }
+     unsigned deferredShotSides=0;
+     if(g_vs_mode)for(int side=0;side<2;++side)
+-        if(g_player_damage[side].respawnDamageActive())
++        // The late player visit advances respawn before area contacts. Include
++        // its first active tick even though this mask is prepared beforehand.
++        if(g_player_damage[side].respawnDamageActive()||
++           (g_player_damage[side].state==th19::PlayerDamage::Respawning&&g_player_damage[side].frame+1>=30))
+             deferredShotSides|=1u<<side;
+     for(const auto& shot:g_player_projectiles)if(defer_homing_shot(shot)||defer_marisa_contact(shot))deferredShotSides|=1u<<shot.side;
+     for(int side=0;side<2;++side)if(defer_marisa_bomb_contact(side))deferredShotSides|=1u<<side;
+@@ -7527,6 +7531,7 @@ void game_tick() {
+             const float spd=g_player_damage[0].controllable()?movement.movement_units(diagonal,slow)/128.f:0.f;
+             unsigned resultEntrySides=0;
+             std::optional<size_t> chargeClears[2];
++            const std::array<int,2> priorShotCharge{g_charge[0].charge,g_charge[1].charge};
+             if(combatOpen){
+                 if(g_vs_mode&&g_vs_entry==0){
+                     // Web local-player2 binding; independent from the CPU controller.
+@@ -7587,7 +7592,7 @@ void game_tick() {
+                 if(g_vs_mode&&g_attack_warning.visible()&&g_attack_warning_frame<0){
+                     tick_attack_warning_animations(g_frame+1);g_warning_portrait.tick();g_attack_warning_frame=g_frame+1;
+                 }
+-                deferredShotSides=tick_player_shots(cpuLeft?(g_cpu_left_bits&1)!=0:z,slow);
++                deferredShotSides=tick_player_shots(cpuLeft?(g_cpu_left_bits&1)!=0:z,slow,priorShotCharge);
+                 // 0x546cd6 -> 0x5450e0: each VS seat launches counters
+                 // and then pure spirits before the next seat updates its meter.
+                 if(g_vs_mode)for(int side=1;side>=0;--side){

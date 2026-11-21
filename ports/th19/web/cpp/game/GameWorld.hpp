@@ -232,6 +232,7 @@ struct Enemy {
     i32 death_script=0,death_file=1;bool death_initialized=false;
     std::string death_callback; // ECL550, outer Enemy+0x6818 (one-shot).
     bool death_pending=false;
+    int clear_retirement_frame=-1; // ECL525 hosts remain in the list until its next visit.
     BossPhaseTriggers phases;std::string pending_phase;
     int boss_slot=0; // EnemyInf +0x5180; valid while status_flags bit 0x80 is set.
     i32 age=0;

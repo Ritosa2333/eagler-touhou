@@ -239,8 +239,12 @@ bool EclVm::game_object(const EclInstruction& ins){
             for(size_t i=world_->enemies.size();i>0;--i){
                 auto& e=world_->enemies[i-1];
                 const bool remove=(!(e.flags&0xa0)&&!(e.status_flags&0xc0)&&!(e.flags&0x400))||(e.flags&0x100);
-                if(!e.active||!remove)continue;
+                const bool retainedClear=world_->reward_mode==2&&e.clear_retirement_frame==world_->battle_frame;
+                if((!e.active&&!retainedClear)||!remove)continue;
                 if(world_->reward_mode==2){
+                    // 0x50ca70 still walks hosts retired by a preceding clear
+                    // before their next enemy-manager visit.
+                    if(retainedClear&&!e.active)e.active=true;
                     // 0x50cb96 calls death directly, including animationless birth
                     // controllers. Damage-target protection is checked by other callers.
                     e.item=0;
@@ -249,7 +253,11 @@ bool EclVm::game_object(const EclInstruction& ins){
                     if(e.arrival_motion==Enemy::ArrivalMotion::Hold&&e.age==1){
                         e.x=e.previous_x;e.y=e.previous_y;
                     }
-                    if(world_->dispatch_enemy_death(e))continue;
+                    if(world_->dispatch_enemy_death(e)){
+                        e.status_flags|=0x200;
+                        if(!e.active)e.clear_retirement_frame=world_->battle_frame;
+                        continue;
+                    }
                 }
                 e.active=false;e.status_flags|=0x200;
                 for(auto&animation:e.animations)animation.script=-1;

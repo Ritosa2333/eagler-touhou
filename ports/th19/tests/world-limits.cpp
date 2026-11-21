@@ -5,22 +5,22 @@
 #include <cassert>
 #include <iostream>
 int main(){
- // Rectangular cuts after the early laser pass register child contacts next visit;
- // ECL circle cuts retain their same-tick contact registration.
- for(int phase:{0,1,2}){
-  const bool rectangle=phase!=0,beforeWorldTick=phase==1;
+ // Player-contact cuts defer child contacts; bomb rectangles and ECL circles
+ // register their children for same-tick contacts.
+ for(int phase:{0,1,2,3}){
+  const bool rectangle=phase!=0,beforeWorldTick=phase==1||phase==3,contactCut=phase==3;
   th19::GameWorld world;world.reward_mode=2;world.battle_frame=10;
   world.player_x=120;world.player_y=25;
   th19::InfiniteLaser laser;laser.id=1;laser.straight=true;laser.phase=2;
   laser.length=laser.straight_target=160;laser.width=8;laser.age=5;laser.motion_frame=beforeWorldTick?11:10;
   world.next_id=2;world.lasers.push_back(laser);
   auto cut=[](float x,float){return x>=48&&x<80;};
-  if(rectangle)world.cancel_lasers_region(cut,true,[](float x,float,float){return x>=48&&x<80;});
+  if(rectangle)world.cancel_lasers_region(cut,true,[](float x,float,float){return x>=48&&x<80;},contactCut?1u:0u);
   else world.cancel_lasers_region(cut);
   assert(world.lasers.size()==2);
   world.battle_frame=11;world.finish_laser_graze(true,3);
-  assert(world.lasers[1].graze_clock==(beforeWorldTick?0u:1u));
-  if(beforeWorldTick){world.battle_frame=12;world.finish_laser_graze(true,3);assert(world.lasers[1].graze_clock==1);}
+  assert(world.lasers[1].graze_clock==(contactCut?0u:1u));
+  if(contactCut){world.battle_frame=12;world.finish_laser_graze(true,3);assert(world.lasers[1].graze_clock==1);}
 
  }
  // Two clears may touch the same retiring controller before its next visit.
@@ -147,6 +147,28 @@ int main(){
   arrival.tick_wave(false,contact);
   assert(consumed==2);
   assert(arrival.enemies[0].life==760);
+ }
+ // Native ECL525 visits hosts retired by an earlier clear until the next
+ // enemy-list visit. Two clears dispatch twice; a later-frame clear cannot revive them.
+ {th19::GameWorld world;world.reward_mode=2;world.battle_frame=10;
+  auto& enemy=world.enemies.emplace_back();enemy.id=1;enemy.sprite=2;enemy.life=10;
+  th19::EclProgram program;program.subs.push_back({"Clear",0,32});
+  program.bytecode.resize(32);
+  for(int offset:{0,16}){program.bytecode[offset+4]=13;program.bytecode[offset+5]=2;
+   program.bytecode[offset+6]=16;program.bytecode[offset+10]=255;}
+  th19::AnmVm::seed_random(31);
+  th19::EclVm first;first.attach_program(program);first.attach_world(&world);
+  assert(first.start("Clear"));first.step();
+  assert(!first.error()&&world.defeated==2&&world.deaths.size()==2);
+  assert(!world.enemies[0].active&&(world.enemies[0].status_flags&0x200));
+  const auto rng=th19::AnmVm::random_checkpoint(true);
+  th19::EclVm leftRoot,rightRoot;th19::GameWorld right;
+  th19::WorldCheckpoint saved(world,leftRoot,right,rightRoot);
+  world.enemies[0].clear_retirement_frame=-1;saved.restore(world,leftRoot,right,rightRoot);
+  assert(world.enemies[0].clear_retirement_frame==10);
+  ++world.battle_frame;th19::EclVm later;later.attach_program(program);later.attach_world(&world);
+  assert(later.start("Clear"));later.step();
+  assert(!later.error()&&world.defeated==2&&th19::AnmVm::random_checkpoint(true)==rng);
  }
  std::cout<<"2000 bullet slots, recycling, 15000 retired enemies, checkpoint, held-arrival HP/contact, feedback order and signed EX 100-slot release: PASS\n";
 }
