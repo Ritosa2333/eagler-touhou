@@ -894,6 +894,8 @@
   "file_exportDownloadStarted": "原作形式の{kind}のダウンロードを開始しました",
   "file_exported": "原作形式の{kind}を書き出しました",
   "file_missingSavePrompt": "score.datがまだありません。今すぐセーブデータをインポートしますか？",
+  "file_noScoreToExport": "書き出せるスコアファイルはまだありません。",
+  "file_scoreReadOnly": "このスコアファイルは読み取り専用のため、インポートできません。",
   "file_missingReplayPrompt": "リプレイがまだありません。今すぐインポートしますか？",
   "file_selectImport": "インポートするファイルを選択",
   "file_exportFailed": "{kind}の書き出しに失敗しました：{reason}",

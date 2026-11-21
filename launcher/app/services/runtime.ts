@@ -28,6 +28,7 @@ import {runtimeOggFileIds} from './game-music-selection';
 import { createRuntimeSessionOwner, type RuntimeSessionToken } from '../../src/launcher/runtime-session.mts';
 import { createManagedRuntimeGenerationLease } from '../../src/launcher/runtime-generation-lease.mts';
 import { managedRuntimeUrl, readManagedRuntimeData, readManagedRuntimeResource } from '../../src/launcher/runtime-preparation.mts';
+import {TH128_PACKAGE_VERSION, provideTh128ManagedPackage, requireCompleteTh128Package, type Th128ManagedPackage} from '../../src/launcher/th128-managed-package.mts';
 import { prepareRuntimeLaunch } from '../../src/launcher/runtime-launch.mts';
 import type {RuntimeDownloadProgress} from '../../src/contracts/runtime-generations.mts';
 import {packageNetworkMetadata} from './preparation-network';
@@ -70,12 +71,13 @@ export interface RuntimeFrame {
   addEventListener(type: 'load', listener: EventListener): void;
   removeEventListener(type: 'load', listener: EventListener): void;
 }
-export interface ManagedDataRequest { game: string; generation: string; epoch: number; preferBlob?: boolean }
+export interface ManagedDataRequest { game: string; generation: string; epoch: number; preferBlob?: boolean; packageVersion?: string }
+type ManagedDataReceipt = Awaited<ReturnType<typeof readManagedRuntimeData>> & {managedPackage?: Th128ManagedPackage};
 export interface RuntimeHost {
   location: { href: string; origin: string };
   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
   removeEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
-  __eaglerPrepareManagedRuntimeDataV1?: (request: ManagedDataRequest) => ReturnType<typeof readManagedRuntimeData>;
+  __eaglerPrepareManagedRuntimeDataV1?: (request: ManagedDataRequest) => Promise<ManagedDataReceipt>;
   __eaglerUploadTh09ReplayV1?: typeof uploadTh09Replay;
 }
 export interface RuntimeLauncherControls {
@@ -550,12 +552,25 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (!token || request?.epoch !== token.id) throw new RuntimeSessionSupersededError();
     const generation = generations.resolve(request);
     const before = runtimeIdentity(token);
+    const packageRequested = request.packageVersion !== undefined;
+    if (packageRequested && (request.packageVersion !== TH128_PACKAGE_VERSION || String(token.game) !== 'th128' ||
+        token.runtimeVariant !== 'normal' || new URL(before.runtime.location.href).searchParams.get('managedPackage') !== '1')) {
+      throw new RuntimeSessionSupersededError();
+    }
+    const checkPackageOwner = () => {
+      const after = runtimeIdentity(token);
+      if (after.runtime !== before.runtime || after.document !== before.document ||
+          generations.resolve({game: token.game, generation: generation.id}) !== generation) throw new RuntimeSessionSupersededError();
+    };
     try {
+      if (packageRequested) return await provideTh128ManagedPackage({generation, epoch: token.id, checkCurrent: checkPackageOwner,
+        readData: deps.readData, readResource: deps.readResource});
       const result = await deps.readData(generation, {preferBlob: token.game === 'th14' && request.preferBlob === true});
       const after = runtimeIdentity(token);
       if (after.runtime !== before.runtime || after.document !== before.document) throw new RuntimeSessionSupersededError();
       return result;
     } catch (error) {
+      if (packageRequested) checkPackageOwner();
       assertCurrent(token);
       // Surface failures directly to readiness; older shells only log rejection.
       const failure = new GameDataAcquisitionError(errorText(error), {cause: error});
@@ -887,6 +902,11 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (input.generation && !input.publishedRuntime && !liveRuntimeEntryAuthorized(input, baseUrl)) throw new Error('Live Runtime requires canonical catalog or validated Host authority');
     // Isolate asynchronous preparation from caller mutation of the plan/config.
     let plan = structuredClone(input);
+    const completeTh128Package = String(plan.game) === 'th128';
+    if (completeTh128Package) {
+      if (plan.runtimeVariant !== 'normal') throw new Error('TH128 package launch supports single-player');
+      requireCompleteTh128Package(plan.generation);
+    }
     const ticket = ++operation;
     const assertOperation = () => { if (disposed || ticket !== operation) throw new RuntimeSessionSupersededError(); };
     const product = PRODUCT_GAMES[plan.game];
@@ -950,6 +970,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
           }
           if (url.origin !== origin) throw new Error('Runtime must share the Launcher origin');
           if (plan.game === 'hsob' && plan.fileOnly) url.searchParams.set('fileOnly', '1');
+          if (completeTh128Package) url.searchParams.set('managedPackage', '1');
           url.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(token.id));
           update({ source: url.href, codeGeneration });
           const ready = waitFor('ready', token, options.timeouts?.ready ?? 120_000);
@@ -1008,6 +1029,13 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
             if (!sessions.isCurrent(owned)) return deps.releaseGeneration(id);
           }).catch(warn);
         }, options.timeouts?.lease ?? 300_000)};
+      }
+      if (completeTh128Package) {
+        if (plan.resourceGeneration && plan.resourceGeneration.id !== plan.generation?.id) {
+          throw new Error('TH128 resources must stay with the loaded Package generation');
+        }
+        // The Runtime has already mounted every file from this generation.
+        plan = {...plan, resourceFileIds: [], localOgg: undefined};
       }
       oggIds = localOggIds(plan);
       // A Back decision must finish before a late resource result configures

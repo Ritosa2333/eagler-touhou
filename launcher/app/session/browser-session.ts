@@ -44,6 +44,8 @@ import {relocateReplayPlayback} from '../services/replay-relocation';
 import {createMetadataService} from '../services/metadata';
 import {createPackageAcquisition} from '../services/package-acquisition';
 import {prepareFilePlan, prepareGame, prepareGameCheck, prepareRoomResourcePlan, type MultiplayerPreparation, type GamePreparationInput, type PreparedGame} from '../services/game-preparation';
+import type {InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
+import {th128InstalledMusic} from '../../src/launcher/th128-installed-config.mts';
 import {musicModeLabel} from '../services/game-resources';
 import {createPreparationNetwork} from '../services/preparation-network';
 import {createRoomPreparation} from '../services/room-preparation';
@@ -810,9 +812,16 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     try {storage?.setItem('eagler-external-input-confirmed-v1', '1');} catch {}
     return true;
   }
-  async function confirmMusicWarnings() {
-    const state = settings.getSnapshot(); if (!state) return false;
-    const music = state.music;
+  async function confirmMusicWarnings(installed?: InstalledPackageGeneration | null) {
+    let state = settings.getSnapshot(); if (!state) return false;
+    let music = state.music;
+    if (state.gameId === 'th128') {
+      if (installed?.game !== 'th128') {
+        installed = (await acquisition.readCurrent('th128')).generation;
+        state = settings.getSnapshot(); if (disposed || state?.gameId !== 'th128') return false;
+      }
+      music = th128InstalledMusic(installed, state.musicPreference, state.context.musicAvailability.audio);
+    }
     if (music === 'none' || music === 'midi') return decisions.askConfirmation({message: t(music === 'none' ? 'music.noneLaunchWarning' : 'music.midiLaunchWarning'), confirmText: t('music.startAnyway')});
     return true;
   }
@@ -1092,10 +1101,12 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (isMultiplayerProductId(product)) {await roomSession!.service.launch(); return;}
       cloudSync?.prepareLocalLaunch();
       const game = gameIdForProduct(product);
-      if ((productRequiresImport(game) || metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import') && !(await acquisition.readCurrent(game)).generation) {
+      const requiresImport = productRequiresImport(game) || metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import';
+      const installed = requiresImport ? (await acquisition.readCurrent(game)).generation : null;
+      if (requiresImport && !installed) {
         publish({startupError: null}); feedback.status(t('package.needImport')); gameData.beginImportRequired(); return;
       }
-      if (!await confirmTouchInput('singleplayer') || !await confirmMusicWarnings()) return;
+      if (!await confirmTouchInput('singleplayer') || !await confirmMusicWarnings(installed)) return;
       // Main9560–9569 reads business selection again after each awaited UI
       // boundary. A first Host may have replaced the provisional game while
       // its warning/fullscreen request was pending; the raw URL stays intact.

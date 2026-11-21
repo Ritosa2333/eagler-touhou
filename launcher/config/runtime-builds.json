@@ -434,6 +434,18 @@
         }
       }
     },
+    "th128": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th128",
+      "sourceBuild": {
+        "kind": "managed-import",
+        "build": ["tools/package-launcher-runtime.mjs"],
+        "commonMarker": "contracts/product-catalog.mjs"
+      },
+      "variants": {
+        "normal": {"features": {"thcrap": false, "thprac": true}, "cache": {}}
+      }
+    },
     "th13": {
       "builder": "prebuilt",
       "sourceBuild": {

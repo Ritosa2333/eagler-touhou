@@ -138,14 +138,18 @@ export function createMetadataService(options: MetadataServiceOptions) {
   }
   function settingsContext(productId: ProductId, locale: string): SettingsContext {
     const gameId = gameIdForProduct(productId);
+    const product = PRODUCT_GAMES[gameId];
     const hostGame = snapshot.siteManifest?.games[gameId];
     const game = hostGame ?? local.games[gameId];
     const generation = snapshot.installed.get(gameId) ?? null;
     const music = hostGame?.music;
+    const importServer = productRequiresImport(gameId);
+    // A product with a fixed import catalog mounts its own game language.
+    const packagedLanguages = importServer && 'localLanguageOptions' in product ? product.localLanguageOptions : null;
     return {
       productId, uiLocale: locale, hostFeatures: hostGame?.features,
       beautyInstalled: snapshot.beautyInstalled.has(gameId),
-      languages: buildLanguageCatalog({
+      languages: packagedLanguages?.map(entry => ({...entry})) ?? buildLanguageCatalog({
         languageOptions: game?.languageOptions, legacyLanguages: hostGame?.languages,
         offlineEntries: loadOfflineLanguageIndex(options.storage, gameId), generation,
         translate: key => options.translate(locale, key), priority: languagePriority,
@@ -154,7 +158,7 @@ export function createMetadataService(options: MetadataServiceOptions) {
         audio: options.webAudioAvailable,
         embeddedOgg: 'embeddedOgg' in PRODUCT_GAMES[gameId].musicRuntime && PRODUCT_GAMES[gameId].musicRuntime.embeddedOgg === true,
         midiAvailable: PRODUCT_GAMES[gameId].musicCapabilities.midi && music?.midi?.supported !== false,
-        importServer: productRequiresImport(gameId) || snapshot.siteManifest?.shared.resourceMode === 'import',
+        importServer: importServer || snapshot.siteManifest?.shared.resourceMode === 'import',
         publishedOggCapable: Boolean(music?.ogg || music?.wav),
         remoteOggAdvertised: Boolean(music?.ogg),
         remoteRevision: snapshot.releaseCatalog?.games?.[gameId]?.revision ?? null,

@@ -207,8 +207,11 @@ function createNativeEndpoint(frame) {
       native.envelope = {protocol: 'eagler-touhou/1', game, epoch: Number(parsed.searchParams.get(api.RUNTIME_EPOCH_QUERY_PARAMETER))};
       if (owner.autoReady) queueMicrotask(async () => {
         if (parsed.searchParams.get('managedData') === '1') {
-          const data = await env.window.__eaglerPrepareManagedRuntimeDataV1({game: native.envelope.game, generation: parsed.searchParams.get('gameGeneration'), epoch: native.envelope.epoch});
+          const managed = parsed.searchParams.get('managedPackage') === '1';
+          const data = await env.window.__eaglerPrepareManagedRuntimeDataV1({game: native.envelope.game, generation: parsed.searchParams.get('gameGeneration'), epoch: native.envelope.epoch,
+            ...(managed ? {packageVersion: 'th128-dat-ogg/1'} : {})});
           owner.dataReads.push([...new Uint8Array(data.buffer)]);
+          if (managed) owner.th128MusicRead = [...new Uint8Array((await data.managedPackage.readFile('music-00')).buffer)];
         }
         native.emit('ready');
       });
@@ -1231,6 +1234,49 @@ function importPackageFile(game = 'th06') {
   const archive = zipSync({'package.json': strToU8(JSON.stringify(descriptor)), [dataSource]: data, 'msgothic.ttc': data, 'unifont.otf': data}, {level: 0});
   return new NativeFile([archive], `${game}.zip`, {type: 'application/zip'});
 }
+function th128MusicPackage(host) {
+  const body = Uint8Array.of(1, 2, 3), sha256 = createHash('sha256').update(body).digest('hex');
+  const files = {}, archive = {};
+  function add(id, target) {
+    const source = `fixture/${id}`;
+    files[id] = {source, target, sha256, bytes: body.length, revision: `${id}-music-test`};
+    archive[source] = body;
+  }
+  add('game-data', '/th128.dat');add('language-zh', '/__eagler/language/lang_zh-hans.zip');
+  const tracks = ['00', '01', '02', '05', '06', '07', '08', '09', '10', '11'];
+  for (const id of tracks) add(`music-${id}`, `/music/th128_${id}.ogg`);
+  archive['package.json'] = strToU8(JSON.stringify({schema: 'eagler-touhou/package/1', game: 'th128', revision: 'th128-music-test',
+    runtimeRequirement: {protocol: host.protocol, target: 'th128', dataFile: 'game-data', dataLayout: host.games.th128.gameData.layout},
+    files, base: {files: ['game-data']}, components: {ogg: {type: 'ogg', files: tracks.map(id => `music-${id}`)},
+      language: {type: 'language', entries: [{id: 'lang_zh-hans', file: 'language-zh'}]}}}));
+  return new NativeFile([zipSync(archive, {level: 0})], 'th128-test.zip', {type: 'application/zip'});
+}
+for (const choice of ['ogg-full', 'none']) test(`TH128 startup consults installed music when the settings hint is stale (${choice})`, async () => {
+  env.window.AudioContext = class {};
+  try {
+    const host = JSON.parse(await readFile(resolve(project,'config/th128-local-preview-practice-name.json'),'utf8'));
+    host.games.th128.runtime = 'runtime/th128/th128.html';
+    const f = await mountBrowser({initial: '/?game=th128&test', host, seedStorage(storage) {
+      storage.values.set(api.gamePreferenceStorageKey('th128'), JSON.stringify({music: choice, musicPreferenceExplicit: true}));
+    }});
+    const settings = api.getTestSession().settings;
+    assert.equal(settings.getSnapshot().gameId, 'th128');
+    assert.equal(settings.getSnapshot().musicPreference, choice);
+    await React.act(async () => {await api.installParsedPackageZip(await api.parsePackageZip(th128MusicPackage(host)));});
+    assert.equal(settings.getSnapshot().music, 'none', 'the display hint has not seen the installed package');
+    await click('#launch');
+    if (choice === 'none') {
+      assert.equal(node('#decisionDialog').open, true);
+      assert.equal(commands().includes('launch'), false);
+      await click('#decisionConfirm');
+    } else {
+      assert.equal(node('#decisionDialog').open, false, 'installed OGG must not show the no-music warning');
+    }
+    await until(() => commands().includes('launch'), 'TH128 starts with the chosen mode');
+    assert.equal(f.outbound.find(message => message.command === 'configure').music, choice === 'none' ? 'none' : 'ogg');
+    assert.deepEqual(f.th128MusicRead, [1, 2, 3]);
+  } finally {delete env.window.AudioContext;}
+});
 async function selectImport(file) {
   await click('#transferImport');
   const input = node('#fileInput'); assert.equal(input.accept, '.zip,.dat,application/zip');
