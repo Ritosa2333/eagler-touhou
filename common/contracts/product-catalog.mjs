@@ -84,6 +84,20 @@ const TH075_MULTIPLAYER_LOADOUTS = Object.freeze(TH075_MULTIPLAYER_GLYPHS.flatMa
         ]),
     }))));
 const STANDARD_MULTIPLAYER_PLAYER_COUNTS = Object.freeze([2, 3]);
+// Third-party derivative Touhou BossRush (BRO). Loadout glyphs follow the four
+// playable shot types in the upstream game; shot=0 for each character because
+// BRO has no per-character shot variants. Only [2,3] is open in phase one; the
+// engine itself keeps four internal slots but the shared platform currently
+// only supports declared 2P/3P subsets.
+const BRO_MULTIPLAYER_LOADOUTS = Object.freeze([
+    Object.freeze({ labelKey: "multiplayer.loadout.bro.reimu", glyph: "霊", character: 0, shot: 0 }),
+    Object.freeze({ labelKey: "multiplayer.loadout.bro.marisa", glyph: "魔", character: 1, shot: 0 }),
+    Object.freeze({ labelKey: "multiplayer.loadout.bro.chiruno", glyph: "妖", character: 2, shot: 0 }),
+    Object.freeze({ labelKey: "multiplayer.loadout.bro.aya", glyph: "文", character: 3, shot: 0 }),
+]);
+// BRO has no authored difficulty setting; the room keeps Hard/Lunatic as the
+// two selectable slots so the shared room UI can carry a per-room tier later.
+const BRO_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Hard", "Lunatic"]);
 const TOGGLE_TOUCH_FIRE = Object.freeze({ mode: "toggle", labelKey: "touch.tapToggle" });
 const CHARGE_TOUCH_FIRE = Object.freeze({
     mode: "held-key",
@@ -236,6 +250,85 @@ export const PRODUCT_GAMES = Object.freeze({
             musicMounts: Object.freeze({ ogg: "/game/script/th_hsob/music" }),
         }),
         replay: Object.freeze({ prefix: "Main_replay", extensions: Object.freeze(["dat"]) }),
+        features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
+    }),
+    // Third-party derivative Touhou BossRush. Registered as an import-only,
+    // test-build opt-in product following the hsob precedent so it stays out
+    // of default publication and the native-title content/adapter gates.
+    // Runtime artifacts live in the BRO web repo (TSake/TouHou-BossRushOnline,
+    // branch web/multiplayer-port); see ports/bossrush/ for the adaptation
+    // tables and the proposal config patches.
+    bro: Object.freeze({
+        testOnly: true,
+        buildOptIn: true,
+        importOnly: true,
+        number: "BRO",
+        title: "東方 BossRush",
+        subtitle: "Touhou BossRush",
+        cardArtwork: "bro-card.webp",
+        storage: Object.freeze({
+            saveRoot: "/bro",
+            scoreFile: "Score.dat",
+            configFiles: Object.freeze(["setting", "Spellcard.dat"]),
+        }),
+        runtime: "./runtime/bro/bro.html",
+        runtimeFileLayout: "directory",
+        runtimeAssets: Object.freeze([
+            // Runtime 入口与协议壳（源码树相对路径；部署时按目录型 runtime 摆位）
+            "bro.html", "shell.mjs", "managed-shell.mjs", "manifest.json",
+            "bro.mjs", "bro.wasm",
+            "dist/package-manifest.json", "dist/app-shell.json", "dist/runtime.json",
+            // JS 模块
+            "src/eagler_adapter.mjs", "src/storage.mjs", "src/resource_cache.mjs",
+            "src/save_files.mjs", "src/runtime_entry.mjs", "src/audio.mjs", "src/input.mjs",
+            "src/input_buffer.mjs", "src/output_queue.mjs", "src/postfx.mjs",
+            "src/text.mjs", "src/logger.mjs", "src/replay_archive.mjs",
+            "src/multiplayer.mjs", "src/netcode.mjs", "src/netmesh.mjs",
+            "src/rollback.mjs", "src/route_handoff.mjs", "src/route_monitor.mjs",
+            "src/route_selector.mjs",
+        ]),
+        requiredShared: Object.freeze([]),
+        // directory 布局的 Emscripten 作品统一用 retail-memory（hsob/th08~th20 先例）。
+        // 原草案占位值 emscripten-preload 只允许 flat，与 directory 冲突会被
+        // runtimeAdapterProfile 直接拒绝。BRO 数据走 scripts.json 分片，与 hsob 同构。
+        dataProvider: "retail-memory",
+        runtimeResourceTransport: "resources",
+        package: Object.freeze({
+            dataFileId: "game-data",
+            dataTarget: "/bro.data",
+            musicSourceDirectories: Object.freeze({ ogg: "music" }),
+            musicMounts: Object.freeze({ ogg: "/music" }),
+        }),
+        musicCapabilities: Object.freeze({ midi: false }),
+        musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
+        touchFire: TOGGLE_TOUCH_FIRE,
+        support: Object.freeze({
+            highRefreshRate: true,
+            sourceRepository: "https://github.com/TSake/TouHou-BossRushOnline",
+            credit: Object.freeze({
+                name: "游戏作者: 吃药图书 (Cyoltose) / 网页端维护: 清酒 (Tidew) / eagler 开发者",
+                url: "https://github.com/Cyoltose509/boss-rush",
+            }),
+        }),
+        replay: Object.freeze({ prefix: "bro", extensions: Object.freeze(["rep", "multi"]) }),
+        multiplayerRuntime: "./runtime/bro/multiplayer/bro.html",
+        multiplayer: Object.freeze({
+            titleKey: "game.title.bromp",
+            gameplay: "cooperative",
+            playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
+            difficulties: BRO_MULTIPLAYER_DIFFICULTIES,
+            loadouts: BRO_MULTIPLAYER_LOADOUTS,
+            peerTransportGlobal: "__broPeerTransport",
+            relaySourceEnvelope: true,
+            spectator: false,
+            titleRoomEntry: false,
+            inputTiming: Object.freeze({
+                rollbackLimit: 12,
+                sendPredictionLimit: 12,
+                rollbackDefault: true,
+                runtimeTiming: true,
+            }),
+        }),
         features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
     }),
     th06: Object.freeze({

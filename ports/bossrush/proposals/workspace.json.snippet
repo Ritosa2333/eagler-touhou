@@ -1,0 +1,15 @@
+// 草案：eagler-touhou 主库 `launcher/config/workspace.json` 的 BRO 登记片段
+// ⚠️ 不是真实文件。格式来自官方 main 分支原文（schema: eagler-touhou/workspace-layout/1，
+// repositories 是 ID → 目录 的扁平映射）。把下面两行加进 repositories 对象即可。
+
+// normal 变体：
+"bro": "ports/bossrush",
+
+// multiplayer 变体（官方惯例：<id>mp → ports/<id>-mp）：
+"bromp": "ports/bossrush-mp",
+
+// 说明：
+// 1. 若 BRO 的 MP 与 normal 共用同一源码目录（像 th06/th07 那样），则 bromp 不单独登记，
+//    或在 runtime-builds.json 的 multiplayer 变体里省略 workspaceRepository。
+// 2. BRO 当前联机逻辑都在同一套 Lua/JS 补丁里（web/src/system_multiplayer.lua 等），
+//    共用源码目录更贴近现实 → 建议先只登记 "bro"，MP 变体复用它。

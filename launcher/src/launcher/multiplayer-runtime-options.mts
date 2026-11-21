@@ -10,6 +10,7 @@ import {
   multiplayerInputTimingPolicy,
   type MultiplayerInputTimingConfig,
 } from '../contracts/product-catalog.mjs';
+import {validBroSystems,validBroStageQueue} from './bro-room-options.mjs';
 
 export interface MultiplayerRuntimeLoadout {
   character: number;
@@ -27,6 +28,8 @@ export interface MultiplayerRuntimeOptionConstraints {
 
 export interface MultiplayerRuntimeOptionInput {
   th19Rules?: number[];
+  broSystems?: number[];
+  broStageQueue?: number[];
   initialSpares?: number;
   initialBombs?: number;
   url: string;
@@ -60,6 +63,8 @@ export interface MultiplayerRuntimeOptionInput {
 
 export interface MultiplayerRuntimeOptions {
   netplayTh19Rules?: number[];
+  netplayBroSystems?: number[];
+  netplayBroStageQueue?: number[];
   netplayInitialSpares?: number;
   netplayInitialBombs?: number;
   netplayMode: 'lan';
@@ -109,6 +114,8 @@ export function buildMultiplayerRuntimeOptions(
 
   const roomProduct = (url.searchParams.get('room') || '').split('-')[0];
   if(input.th19Rules!==undefined&&(roomProduct!=='th19mp'||!validTh19VersusRules(input.th19Rules)))throw new Error('TH19 versus rules are invalid');
+  if(input.broSystems!==undefined&&(roomProduct!=='bromp'||!validBroSystems(input.broSystems)))throw new Error('BRO systems are invalid');
+  if(input.broStageQueue!==undefined&&(roomProduct!=='bromp'||!validBroStageQueue(input.broStageQueue)))throw new Error('BRO stage queue is invalid');
   if(input.initialSpares!==undefined&&(isPc98StockProduct(roomProduct)?!validPc98InitialSpares(input.initialSpares):(roomProduct!=='th05mp'||!validTh05InitialSpares(input.initialSpares)))||input.initialBombs!==undefined&&(isPc98StockProduct(roomProduct)?!validPc98InitialBombs(input.initialBombs):(roomProduct!=='th05mp'||!validTh05InitialBombs(input.initialBombs))))throw new Error('TH05 initial stocks are invalid');
   if (input.allowWebsocketFallback !== undefined && typeof input.allowWebsocketFallback !== 'boolean')
     throw new Error('WebSocket 回退开关必须为布尔值');
@@ -223,6 +230,7 @@ export function buildMultiplayerRuntimeOptions(
   return {
     netplayMode: 'lan',
     ...(roomProduct==='th19mp'?{netplayTh19Rules:[...(input.th19Rules??TH19_VERSUS_RULES)]}:{}),
+    ...(roomProduct==='bromp'?{netplayBroSystems:[...(input.broSystems??[])],netplayBroStageQueue:[...(input.broStageQueue??[])]}:{}),
     ...((roomProduct==='th05mp'||isPc98StockProduct(roomProduct))?{netplayInitialSpares:input.initialSpares??(isPc98StockProduct(roomProduct)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,netplayInitialBombs:input.initialBombs??(isPc98StockProduct(roomProduct)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
     ...(product.inGameSelection ? { netplayInGameSelection: true } : {}),
     ...(roomProduct === "th15mp"

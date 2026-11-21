@@ -9,6 +9,7 @@ import {resolveEffectiveMusicMode} from '../../src/launcher/music-availability.m
 import type {MusicMode} from '../../src/launcher/game-preferences.mts';
 import type {MultiplayerRuntimeOptions} from '../../src/launcher/multiplayer-runtime-options.mts';
 import type {TouchLayout} from '../../src/launcher/touch-layout-model.mts';
+import type {BroKeyBindings} from '../../src/launcher/bro-key-bindings.mts';
 import type {Translate} from '../i18n';
 import type {SettingsSnapshot} from '../models/game-settings';
 import {prepareLanguagePack, type PreparedLanguagePack} from './language-pack';
@@ -41,6 +42,8 @@ export interface FilePreparationInput {
 export interface GamePreparationInput extends FilePreparationInput {
   replayPath?: string;
   replayWorkspace?: boolean;
+  /** BRO：网页键盘改键（已折算成游戏 VK），由 configure 下发到本体。 */
+  broKeyBindings?: BroKeyBindings;
   /** Click-time Launcher controls. Root owns gameplay, input and navigation. */
   touchLayout: TouchLayout | null;
   updateSignal?: AbortSignal;
@@ -152,6 +155,21 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
     ...('display' in product && product.display.faithBar ? {faithBarEnabled: options.faithBarEnabled} : {}),
     ...(game === 'th05' && isMultiplayer ? {th05MultiplayerDisplay: options.th05MultiplayerDisplay} : {}),
     ...('renderScales' in product && options.renderScale != null ? {renderScale: options.renderScale} : {}),
+    // BRO：网页设置是权威（localStorage 缓存），经 configure 下发到游戏本体应用。
+    // 音量/锁帧复用 launcher 通用字段，其余为 BRO 专属；其他作品不带这些键。
+    ...(game === 'bro' ? {
+      broResolution: options.broResolution,
+      broDisplayBG: options.broDisplayBG,
+      broAuraDistortion: options.broAuraDistortion,
+      broEasyRender: options.broEasyRender,
+      broDisplayKey: options.broDisplayKey,
+      broBgmVolume: options.bgmVolume,
+      broSfxVolume: options.sfxVolume,
+      broLock60: options.frameLimit60Enabled,
+      broFrameskip: options.broFrameskip,
+      broBulletTexture: options.broBulletTexture,
+      ...(input.broKeyBindings ? {broKeys: input.broKeyBindings} : {}),
+    } : {}),
     ...(input.productId === 'th075mp' && options.th075NativeResolution ? {renderScale: 1 as const} : {}),
     ...(isMultiplayer ? {multiplayerLocalPlayerVisibility: options.multiplayerLocalPlayerVisibility,
       ...(multiplayer?.kind === 'replay' ? {replayViewer: true} : {}),

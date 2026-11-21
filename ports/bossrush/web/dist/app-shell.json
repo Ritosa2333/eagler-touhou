@@ -1,0 +1,286 @@
+{
+  "schema": "bro/app-shell/1",
+  "version": "sha256-ac7f1d1afc92529fd399ace7a6ac1bde27020a16f503a927b9c74e7cf7fc3051",
+  "files": [
+    {
+      "p": "bro.html",
+      "n": 1173,
+      "h": "fb35b33f1c628a4dac5a6ba2bd1d259572bf4eeaa90adde887ddf3f81d547e03"
+    },
+    {
+      "p": "managed-shell.mjs",
+      "n": 5083,
+      "h": "c905fa8597e0b3892dcbdeb74ce813a341031d6faecd6ec8c6a78595a8176299"
+    },
+    {
+      "p": "shell.mjs",
+      "n": 3618,
+      "h": "5a0c8ccfdbc8fdcdc64e5dbd6491e695bbf4efbf1be42b57f94b63232148591d"
+    },
+    {
+      "p": "src/audio.mjs",
+      "n": 27702,
+      "h": "53f957b70377f8a03135ea13301bfb2d58f7c22d7c1f55e9c639167b3c117382"
+    },
+    {
+      "p": "src/eagler_adapter.mjs",
+      "n": 42144,
+      "h": "a864eccc9ef5d434baa8dff54db2cf8b14283850f1b4e44015e78c536bf2c572"
+    },
+    {
+      "p": "src/input.mjs",
+      "n": 62791,
+      "h": "b973dddda3f8abfec6d3430943830531e46e5ded1e5a099dbcfeb2faa23e8b16"
+    },
+    {
+      "p": "src/input_buffer.mjs",
+      "n": 12143,
+      "h": "e97695bf91912e1b02595477521368ca8d4dd7ee78aa8da10c7544db47c7e2fe"
+    },
+    {
+      "p": "src/logger.mjs",
+      "n": 16891,
+      "h": "4d97821b26ab6895695bc510cb0112870fd23367ebcf8d33eb974c0be7e045c2"
+    },
+    {
+      "p": "src/multiplayer.mjs",
+      "n": 64749,
+      "h": "5c7946b0550fe3984156697a4fe2264416e8d50f2459de56837d20ddfb6c4047"
+    },
+    {
+      "p": "src/netcode.mjs",
+      "n": 45926,
+      "h": "444b535cf0dd116a621afe93df1c521a8d155f597874e77f12389787552dc493"
+    },
+    {
+      "p": "src/netmesh.mjs",
+      "n": 15889,
+      "h": "a781ee588f00b0335e8e3ce475e41b5b5266f116c02385bd103cbfc7ed3725d8"
+    },
+    {
+      "p": "src/output_queue.mjs",
+      "n": 3159,
+      "h": "0fcc2a50719f1e0c6a43bd7ea5ce082f7a330cd12e2be240036ad8e2076ef996"
+    },
+    {
+      "p": "src/postfx.mjs",
+      "n": 16748,
+      "h": "cd0ba578ec45f44b4c64fa7d97a34571591131fa54ef8fe33aac8fae6398c7d5"
+    },
+    {
+      "p": "src/renderer.mjs",
+      "n": 112287,
+      "h": "47c9d39833d44b2ff2ea0abe44ae5c17b8e2af36ee9aaf31769952cec88fcc4b"
+    },
+    {
+      "p": "src/replay_archive.mjs",
+      "n": 5287,
+      "h": "67ec2c98ec83d907c559e28d555456ee78f3f4a3321292ff596041d86b5ddf76"
+    },
+    {
+      "p": "src/resource_cache.mjs",
+      "n": 16842,
+      "h": "6fc03ad4c45aaa656add66c11f4b65588c2ea5aaa8d825669cabc9f979b40027"
+    },
+    {
+      "p": "src/rollback.mjs",
+      "n": 4189,
+      "h": "99ae76c8c7d2f13f1ce11053cdcc72d5c4ba353d21e462be0647a787c006ed1e"
+    },
+    {
+      "p": "src/route_handoff.mjs",
+      "n": 5560,
+      "h": "d9c88dd3e816ecb6fd91fc0009cd1998f154ab3a32f760476b0217761b3c574e"
+    },
+    {
+      "p": "src/route_monitor.mjs",
+      "n": 7946,
+      "h": "b1cd0a9ff6efb63c0f210a42826b11810752ad37727f365a31c6626aaf767844"
+    },
+    {
+      "p": "src/route_selector.mjs",
+      "n": 7205,
+      "h": "89f44d6a2c32b22925c11459b2a31424dec374901da23d5f29f2401a7fe6db5d"
+    },
+    {
+      "p": "src/runtime_entry.mjs",
+      "n": 8964,
+      "h": "35c6ade6786fb917e66db5087b8deb9336ea1cba69fa1e71d600a01b2e431aba"
+    },
+    {
+      "p": "src/save_files.mjs",
+      "n": 5603,
+      "h": "1368c421c3887255df068de6b6aedb9f159b0b860ecbcad3a60195e956dbbcde"
+    },
+    {
+      "p": "src/storage.mjs",
+      "n": 11829,
+      "h": "377bf2e252e4efee838561395301fc6e6fb039b90bf99ec93ab19207f340b368"
+    },
+    {
+      "p": "src/text.mjs",
+      "n": 26283,
+      "h": "a98be98b266b2e2c71d7e6f03dbaffc28982710f030eb9da88fc0267753538c1"
+    },
+    {
+      "p": "test/browser/audio_check.mjs",
+      "n": 4752,
+      "h": "bbf621457927db9d1799fe0a5f54f6f3ba4a6fd7d0f375d85c8139bdbdab0765"
+    },
+    {
+      "p": "test/browser/aura_real_diag.mjs",
+      "n": 4420,
+      "h": "883d6a292892dc686ae390711d6f1003708c4fd33ebd5d436949e3e7024796ef"
+    },
+    {
+      "p": "test/browser/aura_shot_diag.mjs",
+      "n": 3959,
+      "h": "c313b5b4c4fb2764398919756f70c2bec8fdd735d3edbddc5e98dbd28709bd95"
+    },
+    {
+      "p": "test/browser/blackframe_diag.mjs",
+      "n": 4800,
+      "h": "5ea0ce83306f90536e320d084990912793a125dc84a4222eaa8776378f6061d1"
+    },
+    {
+      "p": "test/browser/bosskill_diag.mjs",
+      "n": 5964,
+      "h": "fab55bf917e747d270c4d3b6c8a3f89d26ef7164f715c4b8daeee631ab428ff7"
+    },
+    {
+      "p": "test/browser/check.mjs",
+      "n": 3869,
+      "h": "a20a0d3195be968c96c553d7aa1a7f0b38b551a6a4926d00ee09fd2dff49b373"
+    },
+    {
+      "p": "test/browser/devsep_check.mjs",
+      "n": 5501,
+      "h": "34cdf254740db6d58f5d3dc861d8245a8737b51bad9bc998cd3d97173e8aa0ea"
+    },
+    {
+      "p": "test/browser/diag.mjs",
+      "n": 3383,
+      "h": "5d1bad1123e9a6778d72c0e4bbb1762f143fa5d2f6be7064f4dc26ad840df484"
+    },
+    {
+      "p": "test/browser/eagler.html",
+      "n": 1788,
+      "h": "0c25a1407255e13a7a5a8da83353b21b180a89c6e27305cfc1888d7daec0f889"
+    },
+    {
+      "p": "test/browser/fog_move_diag.mjs",
+      "n": 7328,
+      "h": "36c6710fda040031dbdc1784be8fc025bccee7a9d0f2cbd7d9899450dd265ddc"
+    },
+    {
+      "p": "test/browser/gameplay_check.mjs",
+      "n": 6383,
+      "h": "8cd6ebc7cd986a0cfa963bcd36f780edaf04030f3cff2200746d0cc83c49ed61"
+    },
+    {
+      "p": "test/browser/hit_circle_diag.mjs",
+      "n": 4453,
+      "h": "d17a45d3ffd70542b028c0fbe0451e489dd1acea6ff10d0ebb1075401cb8e1b7"
+    },
+    {
+      "p": "test/browser/hit_real_diag.mjs",
+      "n": 5035,
+      "h": "66d27f0a46d6cfb68198d3972e055eaeaac26f9d0116a86d02f68e0d0b7e6e67"
+    },
+    {
+      "p": "test/browser/hud_e2e.mjs",
+      "n": 6476,
+      "h": "8d1b20c1737994ed5d09cf7752b6f92a2990b211193adac572d18846ee92d7eb"
+    },
+    {
+      "p": "test/browser/hud_screen_e2e.mjs",
+      "n": 7858,
+      "h": "09a0c9db8ddcb81fbb6e86426f58820e726a27e9c7299e9a2a2cdadfd8b9ef23"
+    },
+    {
+      "p": "test/browser/index.html",
+      "n": 5389,
+      "h": "f71b36c9bb8c301d12c91bccdf9eea97fdb0721c756470b098d32e0c9f5bb181"
+    },
+    {
+      "p": "test/browser/lobby.html",
+      "n": 26287,
+      "h": "6a5f0e46c1b64f234f8d4919b7c940045cc7b582360095ea98736711caedfdc3"
+    },
+    {
+      "p": "test/browser/menu_enter_stage_check.mjs",
+      "n": 5418,
+      "h": "5eaf205079a7b0091d930e60998b2027466c687db9f3e1df1babe1bde66a505d"
+    },
+    {
+      "p": "test/browser/menu_flow_check.mjs",
+      "n": 6727,
+      "h": "2dd51bdcd4c6cd7801cc2ccadef0a65f2d9cfd879a8605a1719d4e3b3f73c921"
+    },
+    {
+      "p": "test/browser/mesh.html",
+      "n": 2746,
+      "h": "4b809b56eea78ad03ffd1ba0cbda77f2ac8e7e345327290713da289253dbf3ca"
+    },
+    {
+      "p": "test/browser/mre_e2e.mjs",
+      "n": 5521,
+      "h": "dbf3ea5fc5fafa413e31c502f6365511b44299cbff2bb3342486b86474508683"
+    },
+    {
+      "p": "test/browser/net.html",
+      "n": 2501,
+      "h": "227699fbf92773bd4c4ab4cd33d4e5b65c3f872a12d854610b3855286fc4c895"
+    },
+    {
+      "p": "test/browser/p1_check.mjs",
+      "n": 10921,
+      "h": "d055c736502066cadbe96e176538b2dac3a620397bcb602334b90017592fd905"
+    },
+    {
+      "p": "test/browser/p3_diag.mjs",
+      "n": 6360,
+      "h": "f3b2733186dc46c498ec4a4d9df2a03e3510d1f68fef6fc219b28d722763a9d2"
+    },
+    {
+      "p": "test/browser/persist.html",
+      "n": 3042,
+      "h": "a0a2dd61721d356ef3b961f7587ad0d720dbafc27e234c8497741045e8c70c25"
+    },
+    {
+      "p": "test/browser/persist_check.mjs",
+      "n": 4992,
+      "h": "c0b11622efd0eecaaf94fa3c7aa94f73c016c4584d436827258c49d1fa7c6892"
+    },
+    {
+      "p": "test/browser/play.html",
+      "n": 20354,
+      "h": "ccb2977a319e828529bf9bc32ed172695c6ed5a249d87eeb2bdb15d54d0927e1"
+    },
+    {
+      "p": "test/browser/play_check.mjs",
+      "n": 2953,
+      "h": "756d6db393fe569e95f9ac54ef277d5ee818cd5e313ddbb1155745c59e98a066"
+    },
+    {
+      "p": "test/browser/serve.mjs",
+      "n": 2148,
+      "h": "9819b5c38867c48a3e282ef100e50bc371dfbc4e9ff725b6e5fd1e23e034ebcf"
+    },
+    {
+      "p": "test/browser/storage_bridge.html",
+      "n": 3411,
+      "h": "a3133d693f1c988b01ff541df55907271fe1047555cc373757aa00aef5a342ba"
+    },
+    {
+      "p": "test/browser/storage_bridge_check.mjs",
+      "n": 5443,
+      "h": "3746c6d472eed66280373ac7336962edd7afdd6c355e285b821b8140cb7f2215"
+    },
+    {
+      "p": "test/browser/sysicon_check.mjs",
+      "n": 5727,
+      "h": "b24e2125538b92cea8e529c1341d2fe7dc793a9777947571e57de13bfcc537ba"
+    }
+  ]
+}

@@ -1,8 +1,18 @@
 import {PRODUCT_GAMES} from "../contracts/product-catalog.mjs";
-const replayExtensions = new Set(['rpy', 'rpyx', ...Object.values(PRODUCT_GAMES).flatMap(game => 'extensions' in game.replay && !('importOnly' in game && game.importOnly) ? [...game.replay.extensions] : [])]);
+// BRO is importOnly (game assets are user-imported), but its replays still need
+// to be listed/downloaded/imported. Its extensions are admitted explicitly so
+// other importOnly products (e.g. hsob's generic `.dat`) stay unaffected.
+const broReplayExtensions = (() => {
+  const bro = (PRODUCT_GAMES as Record<string, any>).bro;
+  return bro && bro.replay && Array.isArray(bro.replay.extensions) ? [...bro.replay.extensions] as string[] : [];
+})();
+const replayExtensions = new Set(['rpy', 'rpyx', ...broReplayExtensions,
+  ...Object.values(PRODUCT_GAMES).flatMap(game => 'extensions' in game.replay && !('importOnly' in game && game.importOnly) ? [...game.replay.extensions] : [])]);
 export const replayImportAccept = ['zip', ...replayExtensions].map(extension => '.' + extension).join(',');
 const hsobReplayName = /^Main_replay(\d{2}|ud[0-9a-z]{4})\.dat$/i;
 const hsobReplayPrefix = "Main_replay";
+const broReplayName = /^slot\d+\.(rep|multi)$/i;
+const broReplayPrefix = "bro";
 export function replayImportAcceptFor(product: string): string {return product === 'hsob' ? '.zip,.dat' : replayImportAccept;}
 export function isHsobReplayPath(path: string): boolean {return path.startsWith('replay/') && hsobReplayName.test(path.slice(7));}
 
@@ -132,6 +142,7 @@ export function selectReplayExportPaths(paths: Iterable<string>): string[] {
 export function isValidReplayName(prefix: string, name: unknown): name is string {
   if (typeof name !== "string" || !prefix) return false;
   if (prefix === hsobReplayPrefix) return hsobReplayName.test(name);
+  if (prefix === broReplayPrefix) return broReplayName.test(name);
   const product=Object.values(PRODUCT_GAMES).find(game=>game.replay.prefix===prefix);
   if (product && 'slotPrefix' in product.replay) return new RegExp(`^${escapeRegExp(product.replay.slotPrefix)}[0-9]{2}\\.rpy$`, 'i').test(name);
   if(product && 'naming' in product.replay && product.replay.naming==='filename') {

@@ -21,6 +21,7 @@ import {translate, type Translate} from '../i18n';
 import {createGameSettingsModel, settingsChangeResetsRuntime, type SettingsSnapshot} from '../models/game-settings';
 import {createGamepadMappingModel} from '../../src/launcher/gamepad-mapping.mts';
 import {createKeyboardPreferences} from '../../src/launcher/keyboard-preferences.mts';
+import {broKeyBindingsFromAliases} from '../../src/launcher/bro-key-bindings.mts';
 import {createTh09LocalInput} from '../../src/launcher/th09-local-input.mts';
 import {createTouchLayoutModel, type TouchLayoutOrientation} from '../models/touch-layout';
 import {createDecisionStore, type DecisionOptions} from '../models/decisions';
@@ -834,6 +835,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       prepareMidi: music => midi!.prepare(music), decideUpdate: value => decisions.askDecision(value),
       onProgress: transfer.preparationProgress, onWarning: feedback.toast, onStatus: feedback.playerStatus,
       onUpdateReady: epoch => gameUpdates?.ready({product, gameVersion:clickSettings.gameVersion, epoch}),
+      // BRO：网页键盘改键是权威。把 launcher 当前生效的别名折算成游戏本体键位，
+      // 经 configure → BRO_web_apply_settings 落到 setting.keys / keysys。
+      ...(gameIdForProduct(product) === 'bro'
+        ? {broKeyBindings: broKeyBindingsFromAliases(keyboardPreferences.getSnapshot())} : {}),
       onBackgroundError: (error, message) => {if (message) console.warn(message, error); else console.warn(error);}};
     return {owner, clickSettings, controller, input,
       recoverDirectPreloadTimeout(error: unknown) {

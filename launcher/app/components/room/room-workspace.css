@@ -328,3 +328,18 @@ body:has(#player.room-workspace) :is(.ui-kit-select-content,.ui-menu)[data-ui-su
 .room-chat-desktop-history>.mp-room-chat-log::-webkit-scrollbar {display:none}
 .room-chat-history-viewport {scrollbar-width:none}
 .room-chat-history-viewport::-webkit-scrollbar {display:none}
+/* BossRush-only room options: shared system loadout + ordered chapter queue. */
+.mp-room-settings .bro-room-settings{display:grid;gap:14px}
+.mp-room-settings .bro-room-systems .mp-room-setting-title,
+.mp-room-settings .bro-room-queue .mp-room-setting-title{margin:0}
+.mp-room-settings .bro-system-choices{display:flex;justify-content:flex-start}
+.mp-room-settings .bro-system-choices .ui-kit-choice{font-size:12px}
+.mp-room-settings .bro-queue-add .settings-field{min-width:0;flex:1}
+.mp-room-settings .bro-queue-list{display:grid;gap:6px;margin:8px 0;padding:0;list-style:none}
+.mp-room-settings .bro-queue-item{display:flex;align-items:center;gap:8px;min-height:40px;padding:4px 8px;border-radius:6px;background:var(--kit-muted)}
+.mp-room-settings .bro-queue-index{flex:none;min-width:22px;color:var(--kit-muted-foreground);font-size:12px;font-weight:700;text-align:center}
+.mp-room-settings .bro-queue-name{flex:1;min-width:0;color:var(--kit-foreground);font-size:13px;font-weight:600}
+.mp-room-settings .bro-queue-actions{display:flex;flex:none;gap:2px}
+.mp-room-settings .bro-queue-actions button{min-width:32px}
+.mp-room-settings .bro-queue-note{margin-top:4px}
+.mp-room-settings .bro-room-systems .bro-system-choices{margin-top:8px}

@@ -25,12 +25,12 @@ WebRTC 建立失败时，服务向两端发送 `{"type":"route","mode":"failed"}
 | 消息 | 字段 |
 | --- | --- |
 | `set-ready` | `ready`、`runtimeGeneration`、`movementMode`、`touchEnabled`、`mobileDevice` |
-| `settings` | `playerCount`、`difficulty`、`visibility`、`disableCheatMovement`、`challengeMode`，th09 可带 `disableLocalChargePriority`，th15 可带 `chapterThreshold` |
+| `settings` | `playerCount`、`difficulty`、`visibility`、`disableCheatMovement`、`challengeMode`，th09 可带 `disableLocalChargePriority`，th15 可带 `chapterThreshold`，th19 可带 `th19Rules`，bromp 可带 `broSystems` 与 `broStageQueue` |
 | `start` | `inputDelay`、`adonisMode`、`inputDelayAuto`、`predictionReserve`、可选 `predictionLimit` |
 | `quick-chat` | 当前 `serial` 与 `phrase` |
 | `resource-progress` | 资源准备进度和可选的 `nativeRuntime` 席位标记 |
 | `relay-preference` | `swarm` 布尔值，更新当前席位下一局的 Swarm 偏好 |
-| `state` 的 `room` | `playerCount`、`difficulty`、`visibility`、`disableCheatMovement`、`disableLocalChargePriority`（th09）、`chapterThreshold`（th15）、`challengeMode`、`prankMode`、`inputDelay`、`adonisMode`、`inputDelayAuto`、`predictionReserve`、`timing`、`predictionLimit`、`settingsVersion`、`phase`、`runtimeGeneration`（版本化 run）、`startSerial`、`spectators`、`spectatorCount`、`seats` |
+| `state` 的 `room` | `playerCount`、`difficulty`、`visibility`、`disableCheatMovement`、`disableLocalChargePriority`（th09）、`chapterThreshold`（th15）、`th19Rules`（th19）、`broSystems` 与 `broStageQueue`（bromp）、`challengeMode`、`prankMode`、`inputDelay`、`adonisMode`、`inputDelayAuto`、`predictionReserve`、`timing`、`predictionLimit`、`settingsVersion`、`phase`、`runtimeGeneration`（版本化 run）、`startSerial`、`spectators`、`spectatorCount`、`seats` |
 
 `disableLocalChargePriority` 是 th09mp 的布尔规则，默认 `false`，对应启用本地优先蓄力。创建房间时，查询参数使用 `disableLocalChargePriority=0` 或 `1`。修改权限属于等待室中的 P1，`settings` 消息使用布尔值，并携带有效的 `playerCount` 与 `difficulty`。修改会清除双方准备状态、更新 `settingsVersion`，并通过 `state.room` 同步当前值。开局后规则固定。参数映射、蓄力行为和录像格式见 [th09 开发指南](../../../ports/th09/docs/DEVELOPMENT.md#回滚蓄力与-replay)。
 

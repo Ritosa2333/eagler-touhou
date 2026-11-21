@@ -1,0 +1,105 @@
+{
+  "id": "bro",
+  "title": "Touhou BossRush",
+  "note": "字段名与 eagler-touhou 的 product-catalog / runtime-builds 契约同构；并入时补 workspace.json / runtime-builds.json / product-catalog.mjs 三处配置即可，不改 runtime。",
+  "runtime": {
+    "type": "wasm",
+    "entry": "shell.mjs",
+    "module": "bro.mjs",
+    "wasm": "bro.wasm",
+    "exportName": "createBROModule",
+    "vm": "Lua 5.1.5 (pure C, embedded)",
+    "exports": ["bro_boot", "bro_frame", "bro_render", "bro_scan", "bro_stats", "bro_version"]
+  },
+  "runtimeAssets": ["bro.html", "shell.mjs", "managed-shell.mjs", "bro.mjs", "bro.wasm", "manifest.json"],
+  "runtimeEntry": {
+    "html": "bro.html",
+    "shell": "shell.mjs",
+    "managedShell": "managed-shell.mjs",
+    "entry": "src/runtime_entry.mjs",
+    "resourceCache": "src/resource_cache.mjs",
+    "note": "bro.html 是 eagler 目录型 runtime 入口；shell.mjs 安装协议壳并等 launch；runtime_entry.mjs 合并 loadAll/boot/渲染/存档 tick；resource_cache.mjs 提供内容寻址缓存与增量更新。"
+  },
+  "updates": {
+    "manifest": "dist/package-manifest.json",
+    "schema": "bro/package-manifest/1",
+    "strategy": "manifest-version + per-file sha256 cache",
+    "note": "版本真相是全体 (path,sha256) 摘要；更新时对比新旧 manifest，只下载 hash 变化的文件。WASM/代码/素材各自独立版本；导入包 resources 命令也按 sha256 写同一缓存。"
+  },
+  "package": {
+    "dataTarget": "scripts.json",
+    "manifestSchema": "bro/scripts/1",
+    "files": "scripts/**",
+    "vfsRoot": "/bro",
+    "contents": "game/ 下的 .lua 与无扩展 launch 入口，逐文件分发",
+    "note": "加载契约：先取 scripts.json，再并行取 scripts/<相对路径>?h=<sha256前12>，写入 MEMFS 后调 bro_boot",
+    "packageManifest": {
+      "path": "dist/package-manifest.json",
+      "schema": "bro/package-manifest/1",
+      "note": "逐文件 sha256 + bytes 清单，9 个组件可按 revision 差量;由 web/tools/gen_package_manifest.py 生成；不改运行时加载，供 eagler launcher 消费"
+    },
+    "components": {
+      "source": "dist/package-manifest.json",
+      "note": "eagler components 同构：scripts / images-boss / images-bg / images-ui / music / se / fonts / shader / misc；玩家按需下载，revision=组内(p,h)摘要",
+      "groups": ["scripts", "images-boss", "images-bg", "images-ui", "music", "se", "fonts", "shader", "misc"]
+    },
+    "musicMounts": {
+      "source": "package://music",
+      "note": "47 首 BGM 独立组件；loopStart/loopEnd 由 C 侧 LoadMusic 提供，WebAudio 按字节区间循环；音频原件已于 2026-11-19 就地压成 96kbps ogg"
+    }
+  },
+  "storage": {
+    "type": "indexeddb",
+    "dbName": "BossRush-save",
+    "prefix": "BossRush",
+    "vfsRoots": ["/User", "/replay", "/bro/data"],
+    "nativePaths": ["User/setting", "User/Score.dat", "User/Spellcard.dat", "User/saving1.file", "replay/slotN.rep"],
+    "module": "src/storage.mjs",
+    "api": ["loadAll", "tick", "flush", "inspect", "exportData", "importData", "wipe"],
+    "fallback": "setting 另写 localStorage 镜像 BossRush.save.setting；IndexedDB 不可用时降级 localStorage-only / memory-only",
+    "timing": "loadAll() 必须在 bro_boot() 之前 await；每 30 帧 tick 一次，pagehide/visibilitychange 强制 flush",
+    "note": "原生以相对路径写入 User\\ 与 replay\\，Web 映射到 MEMFS 根的同名目录，由 storage.mjs 签名差分同步进 IndexedDB"
+  },
+  "rollback": {
+    "ready": false,
+    "note": "状态放 WASM 线性内存，预留字节快照边界；联机阶段对接 RollbackJournal::Touch/UndoTo"
+  },
+
+  "_eaglerContract": {
+    "note": "阶段 3V：逐字段对齐 eagler-touhou main 分支权威契约（launcher/src/contracts/runtime-protocol.mts、common/contracts/product-catalog.mjs、common/contracts/netplay-timing.mjs）。BRO 尚未注册进 PRODUCT_GAMES，接入时由网站分配正式 GameId；此处用占位 id 'bro'。",
+    "hostProtocol": "eagler-touhou/1",
+    "epochQueryParameter": "runtimeEpoch",
+    "adapter": "src/eagler_adapter.mjs",
+    "export": "createEaglerRuntimeAdapter",
+    "commands": ["configure", "resources", "keyboard", "keyboard-clear", "touch-controls", "touch-cancel", "direct-touch", "launch", "list", "read", "write", "remove", "sync"],
+    "events": ["ready", "transfer", "first-frame", "runtime-info", "frame-health", "audio-health", "exit", "error"],
+    "envelope": {
+      "command": "{protocol, game, epoch, command, request?, ...payload}",
+      "response": "{protocol, game, epoch, request, ok, ...}",
+      "event": "{protocol, game, epoch, event, ...payload}",
+      "epochRule": "safe integer 且 > 0；由 URL runtimeEpoch 参数注入，入站须与实例 epoch 相等"
+    },
+    "netplayOptions": ["netplayMode", "netplayUrl", "netplayPlayer", "netplayPlayerCount", "netplaySeed", "netplayDifficulty", "netplayLoadouts", "netplayIceServers", "netplayPreferTurn", "netplaySpectator", "netplayInputDelay", "netplayInputDelayAuto", "netplayPredictionReserve", "netplayAdonisMode", "netplayPredictionLimit"],
+    "timingContract": "parseMeasuredNetplayTiming 严格形状：phase=ready / adonisMode 1|2 / rttP95Us 整数微秒 1..1e6 / samples 96..120 / route rtc|relay|spectator / fullDelay 由 rttP95Us 公式派生；转换见 toNetplayTiming，已用官方原文 oracle 验证"
+  },
+
+  "multiplayer": {
+    "gameId": "bro",
+    "titleKey": "game.title.bromp",
+    "gameplay": "cooperative",
+    "playerCounts": [2, 3, 4],
+    "peerTransportGlobal": "__broPeerTransport",
+    "relaySourceEnvelope": true,
+    "spectator": false,
+    "titleRoomEntry": false,
+    "inputTiming": {
+      "rollbackLimit": 12,
+      "sendPredictionLimit": 12,
+      "rollbackDefault": true,
+      "runtimeTiming": true
+    },
+    "note": "playerCounts 含 4 是 BRO 相对 eagler 官方 [2,3] 的扩展（清酒要求网页端试四人）；官方 STANDARD_MULTIPLAYER_PLAYER_COUNTS=[2,3]，接入时需为 bro product 单独声明 [2,3,4]。inputTiming 值参照 th11/th15 同档。"
+  },
+
+  "display": { "width": 1280, "height": 720, "fps": 60 }
+}

@@ -2502,6 +2502,10 @@
     "id": "nav_migrationPart2",
     "params": []
   },
+  "game.title.bromp": {
+    "id": "game_title_bromp",
+    "params": []
+  },
   "game.title.th06mp": {
     "id": "game_title_th06mp",
     "params": []
@@ -2702,6 +2706,22 @@
     "id": "settings_language",
     "params": []
   },
+  "settings.broBulletTexture": {
+    "id": "settings_broBulletTexture",
+    "params": []
+  },
+  "settings.broBulletTextureHint": {
+    "id": "settings_broBulletTextureHint",
+    "params": []
+  },
+  "settings.broBulletTextureNew": {
+    "id": "settings_broBulletTextureNew",
+    "params": []
+  },
+  "settings.broBulletTextureLegacy": {
+    "id": "settings_broBulletTextureLegacy",
+    "params": []
+  },
   "settings.gameVersion": {
     "id": "settings_gameVersion",
     "params": []
@@ -2728,6 +2748,46 @@
   },
   "options.volume": {
     "id": "options_volume",
+    "params": []
+  },
+  "settings.broFrameskip": {
+    "id": "settings_broFrameskip",
+    "params": []
+  },
+  "settings.broFrameskipHint": {
+    "id": "settings_broFrameskipHint",
+    "params": []
+  },
+  "settings.broResolution": {
+    "id": "settings_broResolution",
+    "params": []
+  },
+  "settings.broResolutionHint": {
+    "id": "settings_broResolutionHint",
+    "params": []
+  },
+  "settings.broDisplayBG": {
+    "id": "settings_broDisplayBG",
+    "params": []
+  },
+  "settings.broDisplayBGHint": {
+    "id": "settings_broDisplayBGHint",
+    "params": []
+  },
+  "settings.broAuraDistortion": {
+    "id": "settings_broAuraDistortion",
+    "params": []
+  },
+  "settings.broDisplayKey": {
+    "id": "settings_broDisplayKey",
+    "params": []
+  },
+  "settings.broEasyRender": {
+    "id": "settings_broEasyRender",
+    "params": []
+  },
+  "settings.broEasyRenderHint": {
+    "id": "settings_broEasyRenderHint",
     "params": []
   },
   "settings.bgmVolume": {
@@ -4480,6 +4540,22 @@
     "params": [
       "reason"
     ]
+  },
+  "multiplayer.loadout.bro.reimu": {
+    "id": "multiplayer_loadout_bro_reimu",
+    "params": []
+  },
+  "multiplayer.loadout.bro.marisa": {
+    "id": "multiplayer_loadout_bro_marisa",
+    "params": []
+  },
+  "multiplayer.loadout.bro.chiruno": {
+    "id": "multiplayer_loadout_bro_chiruno",
+    "params": []
+  },
+  "multiplayer.loadout.bro.aya": {
+    "id": "multiplayer_loadout_bro_aya",
+    "params": []
   },
   "multiplayer.loadout.reimuA": {
     "id": "multiplayer_loadout_reimuA",
@@ -10733,6 +10809,54 @@
   },
   "content.terms": {
     "id": "content_terms",
+    "params": []
+  },
+  "room.broSystems": {
+    "id": "room_broSystems",
+    "params": []
+  },
+  "room.broSystemsHint": {
+    "id": "room_broSystemsHint",
+    "params": []
+  },
+  "room.broStageQueue": {
+    "id": "room_broStageQueue",
+    "params": []
+  },
+  "room.broStageQueueHint": {
+    "id": "room_broStageQueueHint",
+    "params": []
+  },
+  "room.broQueueAdd": {
+    "id": "room_broQueueAdd",
+    "params": []
+  },
+  "room.broQueueAddButton": {
+    "id": "room_broQueueAddButton",
+    "params": []
+  },
+  "room.broQueueEmpty": {
+    "id": "room_broQueueEmpty",
+    "params": []
+  },
+  "room.broQueueUp": {
+    "id": "room_broQueueUp",
+    "params": []
+  },
+  "room.broQueueDown": {
+    "id": "room_broQueueDown",
+    "params": []
+  },
+  "room.broQueueRemove": {
+    "id": "room_broQueueRemove",
+    "params": []
+  },
+  "room.broQueueClear": {
+    "id": "room_broQueueClear",
+    "params": []
+  },
+  "room.broQueueNote": {
+    "id": "room_broQueueNote",
     "params": []
   }
 }
