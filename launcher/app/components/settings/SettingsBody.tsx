@@ -478,9 +478,25 @@ export function SettingsBody({
         onOpenChange={(open) => model.setDisclosure('advanced', open)}
         bodyClassName="options-advanced-body"
       >
-        <div id={id('gameVersionOption')} hidden={state.gameId === 'bro'}>
+        <div id={id('gameVersionOption')} hidden={state.gameId !== 'bro'}>
           <SettingsSelect
             id={id('gameVersionSelect')}
+            label={t('settings.broBulletTexture')}
+            description={t('settings.broBulletTextureHint')}
+            aria-label={t('settings.broBulletTexture')}
+            value={options.broBulletTexture}
+            onChange={(event) => {
+              if (event.target.value === 'new' || event.target.value === 'legacy')
+                model.setOption('broBulletTexture', event.target.value);
+            }}
+          >
+            <option value="new">{t('settings.broBulletTextureNew')}</option>
+            <option value="legacy">{t('settings.broBulletTextureLegacy')}</option>
+          </SettingsSelect>
+        </div>
+        <div id={id('gameVersionOptionLegacy')} hidden={state.gameId === 'bro'}>
+          <SettingsSelect
+            id={id('gameVersionSelectLegacy')}
             label={t('settings.gameVersion')}
             description={t('settings.version.hint')}
             aria-label={t('settings.gameVersion')}

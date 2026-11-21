@@ -208,3 +208,25 @@ WASM 重编 build_id=`7bc47a91`，replay_playback_unit 7/7（新增 pause/play�
 4. **多人 boss 伤害减免**：新 `web/src/boss_damage_scale.lua`（编进 WASM）。hook
    `boss.take_damage`/`take_damage2`，按在线人数缩放：2人0.75、3人2/3、4人0.5（4人值
    用户未指定、暂定可改），单人恒1。`boss_damage_scale_unit.mjs` 5/5。
+
+## 14. 新旧弹型贴图切换（2026-11-21，阶段 3AO）
+
+网页设置新增「弹幕贴图：新贴图 / 原生贴图」，替换原对 BRO 隐藏的「游戏版本 / 原版 / 美化版」
+位置（其他作品不受影响）。BRO 5.x 用柔光渐变弹幕，原生贴图是早期 v4.1.3 的硬边像素风经典弹幕。
+
+- **素材来源**：图书提供 v4.0.0 发布包 + 口令 `zs235711131719`，从 ZipCrypto 加密的 `core.dat`
+  解出 9 张旧弹幕图，SHA256 与 2023 年 git 删除时的 LFS oid 逐位吻合。落
+  `game/THlib/bullet/img/legacy/`，走现有 manifest 差量下发（新增 9 项，约 500KB）。
+- **判定隔离**：判定是对象字段 a/b，与弹型贴图无关（全局无 SetCollider）；切换只改渲染
+  用的 image 名，a/b/size/逻辑一概不碰。
+- **实现**：BRO 侧新 `web/src/bullet_texture.lua`（编进 WASM），用旧坐标注册独立 `*_lg`
+  纹理/image（避开 WebGL 按名缓存 + 旧图 16px 格子保持 scale=1），hook 34 个弹型类 init
+  按 `BRO_WEB_SETTINGS.bulletTexture` 改写 self.img。3 个新版独有弹型（arrow_big_c/diamond/
+  money_big）旧图无对应，混合方案保持新图。
+- **eagler 侧本仓改动**：`launcher/src/launcher/game-preferences.mts` 加
+  `broBulletTexture: 'new'|'legacy'` + normalize/持久化；`game-preparation.ts` configure.options
+  下发；`SettingsBody.tsx` 把版本位对 BRO 改成贴图选择器；中/英/日 + keys.json 加 4 键；
+  `ports/bossrush/web/src/eagler_adapter.mjs` 加字符串白名单映射。零新协议命令。
+- **验证**：BRO 单测 7/7 + 纯 Node 全量 58/58；真机 e2e 9 张旧图 HTTP 200、两态画面不同、
+  判定不变、零错误；本仓 `bun run typecheck` exit=0。BRO WASM build_id=`041646ef`。
+- 边界：只切敌方弹型贴图；ball_light 新旧皆柔光球截图差异不显，硬边弹型在对应符卡显现。

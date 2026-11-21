@@ -167,6 +167,7 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
       broSfxVolume: options.sfxVolume,
       broLock60: options.frameLimit60Enabled,
       broFrameskip: options.broFrameskip,
+      broBulletTexture: options.broBulletTexture,
       ...(input.broKeyBindings ? {broKeys: input.broKeyBindings} : {}),
     } : {}),
     ...(input.productId === 'th075mp' && options.th075NativeResolution ? {renderScale: 1 as const} : {}),

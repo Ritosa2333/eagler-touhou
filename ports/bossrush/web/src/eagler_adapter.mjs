@@ -161,6 +161,9 @@ export function broWebSettingsExpression(options) {
   const numeric = (v, min, max) => typeof v === 'number' && Number.isFinite(v)
     ? String(Math.max(min, Math.min(max, Math.round(v)))) : null;
   const flag = (v) => typeof v === 'boolean' ? (v ? 'true' : 'false') : null;
+  // 3AO：弹型贴图风格，白名单枚举，输出带引号的 Lua 字符串。
+  const texture = (v) => (v === 'legacy' || v === 'original') ? "'legacy'"
+    : (v === 'new' || v === 'beauty') ? "'new'" : null;
   // 网页键盘改键：launcher 的 code 别名 → VK 数字，按 BRO 游戏的字段名下发。
   // 只输出白名单字段；游戏侧只改 setting.keys[name]，不替换整表。
   const keyGroups = {
@@ -193,6 +196,7 @@ export function broWebSettingsExpression(options) {
     ['broEasyRender', 'easyRender', flag],
     ['broDisplayKey', 'displayKey', flag],
     ['broFrameskip', 'frameskip', flag],
+    ['broBulletTexture', 'bulletTexture', texture],
     ['broKeys', 'keys', keys],
   ];
   const parts = [];

@@ -56,6 +56,7 @@ export interface GameOptions {
   broEasyRender: boolean;      // reduced dynamic UI rendering
   broDisplayKey: boolean;      // show key-state overlay
   broFrameskip: boolean;       // frame-skip mode (gameplay timing assist)
+  broBulletTexture: 'new' | 'legacy'; // bullet sprite style (new glow / original pixel)
   // Opaque `MIDIPort.id` of the selected external MIDI output. Empty means
   // "first available". The on/off switch itself is deliberately NOT a
   // GameOptions field: external MIDI playback is session-only and must be
@@ -95,6 +96,7 @@ export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   broEasyRender: false,
   broDisplayKey: true,
   broFrameskip: false,
+  broBulletTexture: 'new',
   externalMidiDeviceId: "",
 });
 
@@ -109,6 +111,11 @@ export function normalizeGameVolume(value: unknown): number {
 export function normalizeBroResolution(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return DEFAULT_GAME_OPTIONS.broResolution;
   return Math.max(360, Math.min(1440, Math.round(value / 30) * 30));
+}
+/** BRO bullet sprite style: only 'new' (glow) / 'legacy' (original pixel). */
+export function normalizeBroBulletTexture(value: unknown): 'new' | 'legacy' {
+  if (value === 'legacy' || value === 'original') return 'legacy';
+  return 'new';
 }
 export const TOUCH_FOCUS_MODES = new Set<TouchFocusMode>([
   "two-finger", "hold-button", "toggle-button",
@@ -329,6 +336,7 @@ export function normalizeStoredGamePreferences(
     broEasyRender: booleanOption(rawOptions, "broEasyRender", DEFAULT_GAME_OPTIONS.broEasyRender),
     broDisplayKey: booleanOption(rawOptions, "broDisplayKey", DEFAULT_GAME_OPTIONS.broDisplayKey),
     broFrameskip: booleanOption(rawOptions, "broFrameskip", DEFAULT_GAME_OPTIONS.broFrameskip),
+    broBulletTexture: normalizeBroBulletTexture(rawOptions?.broBulletTexture),
     externalMidiDeviceId: context.externalMidiAvailable !== false
       ? stringOption(rawOptions, "externalMidiDeviceId", DEFAULT_GAME_OPTIONS.externalMidiDeviceId)
       : "",

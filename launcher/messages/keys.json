@@ -2694,6 +2694,22 @@
     "id": "settings_language",
     "params": []
   },
+  "settings.broBulletTexture": {
+    "id": "settings_broBulletTexture",
+    "params": []
+  },
+  "settings.broBulletTextureHint": {
+    "id": "settings_broBulletTextureHint",
+    "params": []
+  },
+  "settings.broBulletTextureNew": {
+    "id": "settings_broBulletTextureNew",
+    "params": []
+  },
+  "settings.broBulletTextureLegacy": {
+    "id": "settings_broBulletTextureLegacy",
+    "params": []
+  },
   "settings.gameVersion": {
     "id": "settings_gameVersion",
     "params": []
