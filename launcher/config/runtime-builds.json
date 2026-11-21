@@ -452,15 +452,15 @@
       "variants": {
         "normal": {
           "features": {
-            "thcrap": false,
-            "thprac": false
+            "thcrap": true,
+            "thprac": true
           },
           "cache": {}
         },
         "multiplayer": {
           "workspaceRepository": "th13mp",
           "features": {
-            "thcrap": false,
+            "thcrap": true,
             "thprac": false
           },
           "sourceBuild": {

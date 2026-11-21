@@ -297,8 +297,11 @@ async function main() {
     // 共用网络栈（M7）：common/src/netplay 直接编译（共用不 fork）。
     // BrowserPeerTransport 的 JS 桥在非 Emscripten 下为空实现——native
     // 测试用 stub transport（PeerTransport 接口）驱动纯逻辑。
+    // Native*/DesktopSwarmTurn 是桌面 WebRTC 线（common/CMakeLists.txt 的
+    // EAGLER_COMMON_NATIVE_WEBRTC 可选目标，依赖 libdatachannel），浏览器
+    // 作品的 wasm 与本测试都不链接。
     ...fs.readdirSync(path.join(REPO, "common/src/netplay"))
-      .filter((name) => name.endsWith(".cpp")).sort()
+      .filter((name) => name.endsWith(".cpp") && !/^(Native|DesktopSwarmTurn)/.test(name)).sort()
       .map((name) => path.join(REPO, "common/src/netplay", name)),
     ...SDL_SOURCES,
     STUB_SOURCE,
