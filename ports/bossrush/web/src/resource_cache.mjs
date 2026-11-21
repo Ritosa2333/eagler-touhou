@@ -128,7 +128,8 @@ async function defaultHash(bytes) {
  */
 export function createResourceCache(opts = {}) {
   const assetBase = String(opts.assetBase || '/game/');
-  const manifestUrl = String(opts.manifestUrl || '/dist/package-manifest.json');
+  // manifestUrl 可变：宿主可在 configure 阶段下发线上清单地址，运行时切到线上增量更新。
+  let manifestUrl = String(opts.manifestUrl || '/dist/package-manifest.json');
   const cacheName = String(opts.cacheName || 'BossRush-assets-v1');
   const store = opts.storage !== undefined ? opts.storage : globalThis.localStorage;
   const cacheApi = opts.caches !== undefined ? opts.caches : globalThis.caches;
@@ -260,12 +261,54 @@ export function createResourceCache(opts = {}) {
     return fetchImpl(joinUrl(assetBase, path));
   }
 
-  async function refreshManifest() {
-    const urlWithCacheBust = `${manifestUrl}${manifestUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+  async function refreshManifest(options = {}) {
+    const target = String(options.manifestUrl || manifestUrl);
+    const urlWithCacheBust = `${target}${target.includes('?') ? '&' : '?'}t=${Date.now()}`;
     const res = await fetchImpl(urlWithCacheBust, { cache: 'no-store' });
     if (!res || !res.ok) throw new Error(`manifest fetch failed: ${res?.status ?? 'no response'}`);
     const manifest = validatePackageManifest(await res.json());
+    // 保持纯语义：只算差集、不提交；提交由 syncOnline / commitManifest 显式完成。
     return { manifest, plan: planManifestUpdate(manifest, active) };
+  }
+
+  /** 设置线上清单地址（configure 阶段下发）。返回当前生效地址。 */
+  function setManifestUrl(url) {
+    if (typeof url === 'string' && url.trim()) manifestUrl = url.trim();
+    return manifestUrl;
+  }
+
+  /**
+   * 一站式线上增量同步：拉清单 → 算差集 → 只下载变化文件 → 提交新清单。
+   * 语义：
+   *   - 线上清单不可达（导入包形态 / 离线）：返回 {status:'offline'}，绝不抛出，
+   *     调用方据此静默降级到导入包缓存或本地 HTTP 资源，不阻塞游戏启动。
+   *   - 清单一致：{status:'current'}，零下载。
+   *   - 有变化：{status:'updated'}，prefetch 只取 downloads，未变文件复用缓存。
+   */
+  async function syncOnline(options = {}) {
+    let refreshed;
+    try {
+      refreshed = await refreshManifest({ manifestUrl: options.manifestUrl, commit: false });
+    } catch (error) {
+      return { status: 'offline', error: String(error && error.message || error), manifestUrl };
+    }
+    const { manifest, plan } = refreshed;
+    if (!plan.downloads.length) {
+      commitManifest(manifest);
+      return { status: 'current', version: manifest.version, previousVersion: plan.previousVersion,
+        files: manifest.files.length, downloads: 0, downloadBytes: 0, manifestUrl };
+    }
+    let fetched = { downloaded: 0, bytes: 0 };
+    try {
+      fetched = await prefetch(plan, { manifest, onProgress: options.onProgress });
+    } catch (error) {
+      // 清单拿到了但资源拉取失败：保留旧 active，不提交半更新状态。
+      return { status: 'offline', version: manifest.version,
+        error: String(error && error.message || error), manifestUrl };
+    }
+    return { status: 'updated', version: manifest.version, previousVersion: plan.previousVersion,
+      files: manifest.files.length, downloads: plan.downloads.length,
+      downloadBytes: plan.downloadBytes, ...fetched, manifestUrl };
   }
 
   function commitManifest(manifest) {
@@ -356,6 +399,8 @@ export function createResourceCache(opts = {}) {
     describePath: (path) => `cache:${normalizeAssetPath(path)}`,
     hasPack: () => true,
     refreshManifest,
+    setManifestUrl,
+    syncOnline,
     commitManifest,
     prefetch,
     installResources,

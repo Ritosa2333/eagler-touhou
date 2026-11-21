@@ -1,6 +1,6 @@
 {
   "schema": "bro/runtime/1",
-  "version": "sha256-b6f232a5b02b371b9820f3b3276c285eee48c1d90786807cde82bdd2652d95ef",
+  "version": "sha256-c6c5f779e37f2b8042443858dae177fa17c3d319f2b2123838c9183160cbeac1",
   "files": [
     {
       "p": "build/bro.mjs",
@@ -9,8 +9,8 @@
     },
     {
       "p": "build/bro.wasm",
-      "n": 3434606,
-      "h": "dbd2ba79c76a95cb049bba0439e159841f87588a9831ec6ad434c682e51c79ff"
+      "n": 3435541,
+      "h": "7bc47a91adc6740a043def894a6aaa251eff72a0492f8aecfac98e6e05a57637"
     },
     {
       "p": "build/script_count.txt",

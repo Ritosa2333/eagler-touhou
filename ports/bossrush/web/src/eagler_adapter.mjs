@@ -516,6 +516,12 @@ export class EaglerRuntimeAdapter {
       options: (p.options && typeof p.options === 'object') ? { ...p.options } : {},
     };
     this.phase = 'prelaunch';
+    // 线上增量资源：宿主可经 configure.options.resourceManifestUrl 下发清单地址。
+    // 只登记地址（同步、零网络）；真正的 refresh+prefetch 在 launch 前由 shell 执行。
+    const manifestUrl = this.config.options.resourceManifestUrl || p.resourceManifestUrl;
+    if (typeof manifestUrl === 'string' && manifestUrl && this.resourceCache?.setManifestUrl) {
+      try { this.resourceCache.setManifestUrl(manifestUrl); } catch { /* 非致命 */ }
+    }
     // netplay* → BRO 门面参数：只记录，建链由 startNet 时按此配置。
     const o = this.config.options;
     this.netplay = {
@@ -552,6 +558,7 @@ export class EaglerRuntimeAdapter {
       renderer: 'webgl2', architecture: 'wasm32-lua515',
       version: 'bro-5.1.2+3v', epoch: this.epoch,
       webSettingsApplied,
+      resourceManifestUrl: this.resourceCache?.status?.().manifestUrl || null,
     });
     return { response: { ok: true, netplay: this.netplay, webSettingsApplied } };
   }

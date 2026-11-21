@@ -141,3 +141,51 @@ BadApple!! 视频分卷 20.7 MB（Web 端视频解码非当前范围，不可玩
 - 验证：`replay_playback_unit.mjs` 6/6（真 WASM）、`eagler_adapter_unit.mjs` 22/22、
   replay-files 策略独立校验 4/4、BRO 全量纯 Node 43/43 PASS；boot 后回放桥全局函数就绪。
   真浏览器端到端留待 eagler 完整部署环境（BRO 源树无 `web/game/` 素材）。
+
+### 10.1 真机回放视觉确认（2026-11-21，已完成）
+
+新增 `web/test/browser/replay_playback_e2e.mjs`（Edge headless + CDP，零依赖，测试服 8767）：
+play.html 起真 WASM → `BRO_enable_replay_io()` + `CreateDirectory('replay')` → 生成 120 帧真 STGR
+→ `BRO_replay_inspect` → `BRO_replay_open` → 确认画面出画且像素随时间变化 → 截图
+`web/build/bro_replay_screen.png`（TH06 关卡 + Boss + HUD + Stage Clear 面板，paintedPct 29.5%）、零运行时错误。
+**过程中发现并修复两个真 bug**（此前单测 mock 未暴露）：
+1. `replay_playback.lua` 的 `M.open()` 从不写 `state`，`BRO_replay_status()` 的 path/stage/playing
+   恒空/idle → open 后写 `state.path/stageName/action/playing`，control 的 pause/play 同步 playing，
+   status 从 `ext.replay.IsReplay()` 兜底推断 playing。
+2. `M.status().frames` 误用 `GetCurrentReplayIdx()`（返回**关卡序号** replayStageIdx，非帧号，恒 1）。
+   字段保留但语义明确为关卡序号；回放推进改由 E2E 的画面像素变化验证。
+WASM 重编 build_id=`7bc47a91`，replay_playback_unit 7/7（新增 pause/play→status），
+真机 E2E PASS。runtime.json / source-import 30/30 / app-shell 56/56 哈希已刷新。
+
+## 11. 线上 manifestUrl 增量接入（2026-11-21）
+
+用户硬要求延续（§8.2）：BRO 修 bug 频繁，资源必须增量更新，不能每次重下 138MB。
+§8.2 已把 `resource_cache.mjs` 的 manifest+sha256 内容寻址能力做好，但此前**启动链从未调用
+`refreshManifest`**，`manifestUrl` 也写死为本地 `./dist/package-manifest.json`——线上分发时
+无法真正增量。本轮把这条链路接通：
+
+- `resource_cache.mjs` 新增 `setManifestUrl(url)` 与 `syncOnline(options)`：
+  - `syncOnline` = 拉清单 → `planManifestUpdate` 算差集 → `prefetch` 只下变化文件 → 提交新版本；
+  - **不可达返回 `{status:'offline'}` 而非抛出**：导入包形态下本地清单不存在时静默降级到导入包缓存，
+    不阻塞启动；清单一致返回 `current`（零下载）；有变化返回 `updated`（含 downloads/downloadBytes）。
+  - `refreshManifest` 保持纯语义（只算差集不提交），提交由 `syncOnline`/`commitManifest` 显式完成。
+- 配置入口（三选一，优先级从高到低）：`configure.options.resourceManifestUrl`（宿主下发）>
+  URL `?manifestUrl=` > `<meta name="eagler-bro-manifest" content="...">`（`bro.html` 已留注释示例）
+  > 默认本地 `./dist/package-manifest.json`。`assetBase` 亦可 `?assetBase=` 覆盖。
+- `shell.mjs` 在 `launch` 前（WASM boot 前）执行 `syncOnline`，进度与结果以 `transfer` 事件
+  （`phase=manifest` / `manifest-progress`）上报宿主；adapter 在 `configure` 阶段只登记地址、
+  零网络，`runtime-info` 回传当前 manifestUrl。**未新增协议命令**（`runtime-protocol.mts` 的 13
+  必需命令不变，复用开放的 `configure.options` 字段）。
+- 验证：`resource_cache_unit.mjs` 8/8（新增 offline 降级 / current 零下载 / updated 增量 / setManifestUrl）、
+  `eagler_adapter_unit.mjs` 23/23（新增 configure 下发地址）、BRO 全量纯 Node 44/44 PASS。
+  source-import 30/30、app-shell 56/56 哈希一致（按 BRO 源树算）。本轮不改 WASM（build_id 仍 `dbd2ba79`）。
+- 边界：线上清单仍需部署方提供（CDN/静态站），本仓库只保证"给了地址就能增量"；清单 sha256
+  按路径逐文件校验，缓存只放游戏资源，不碰 `/User` `/replay` `/bro/data`（延续 RGO 防护）。
+
+## 12. 决定不实现：原版存档整包导入
+
+用户 2026-11-21 明确："原版存档我想了想不打算支持了"。故阶段3（导入 `boss-rush.exe` 原版存档）
+**正式放弃**，不是暂缓：
+- `storage.importData()` 整包导入保持禁用（它曾导致 RGO 难度表被覆盖掉回 Tutorial）。
+- 存档只保留网页单文件白名单读写（`Score.dat`/`Spellcard.dat`/`.bak`/`savingN.file`），
+  与 §9 一致。此决定已同步 BRO 侧 README/记忆与本文档，后续不再 re-evaluate。

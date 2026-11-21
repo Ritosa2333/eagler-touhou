@@ -114,9 +114,10 @@ game/ 源码零改动，靠 `web/src/prelude.lua:66-92` 把 `User\xxx`、`replay
 
 1. **阶段1 运行时持久化接线（前置）**：补 runtime 入口接 `createStorage.loadAll(boot 前)/tick(主循环)/flush(卸载)`；修 `list` 返回形状、`sync` 等待异步 flush、`saveRoot` 对齐。此步与遗留缺口「卡片点启动不出画」是同一块 runtime 入口工作。
 2. **阶段2 存档下载/上传**：复用网页通用 UI，只需验证阶段1 的对齐结果。
-3. **阶段3 导入原版存档**：单文件白名单 `Score.dat`/`Spellcard.dat`，明确禁用整包 `importData`。
+3. ~~阶段3 导入原版存档~~ **已决定不实现**（2026-11-21）：用户放弃原版存档支持，整包 `importData()` 保持禁用，不再评估。
 4. **阶段4 Replay 下载**：放开 `.rep/.multi` 策略。
 5. **阶段5 Replay 管理/播放**：`playback.inspect`→暴露 `ReadReplayInfo` 元数据；`open`→`stage.Set("load",...)`；`runtime-info.playback` 状态上报；强制走 `list` 文件会话。
+6. **阶段6 线上 manifestUrl 增量接入**：接通 `resource_cache.syncOnline()`（启动链此前从未调用 refreshManifest），配置入口 `configure.options.resourceManifestUrl` / `?manifestUrl=` / meta；offline 降级，不阻塞启动。详见 RUNTIME_ARTIFACTS.md §11。
 
 > 阶段1 之前需先确认 runtime 入口形态：eagler 期望 `bro.html`/`shell.mjs`，当前 `ports/bossrush/web/` 只有 `bro.mjs`/`bro.wasm`/`storage.mjs`/`eagler_adapter.mjs` 等，入口尚未落地。
 
@@ -166,8 +167,8 @@ game/ 源码零改动，靠 `web/src/prelude.lua:66-92` 把 `User\xxx`、`replay
    `setting`（网页权威）与 `/bro/data`（Lua 补丁）拒写，`..` 段级穿越拒写。
 
 验证：`web/test/save_files_unit.mjs` 7/7；BRO 纯 Node 全量 42/42 PASS。
-阶段3（原版存档整包导入）仍**不启用** `storage.importData()` —— 游戏本体后续还会改，
-导入可行性届时需重新评估，本阶段不碰。
+阶段3（原版存档整包导入）**已决定不实现**（用户 2026-11-21："原版存档我想了想不打算支持了"）：
+`storage.importData()` 保持禁用，不是暂缓、不再 re-evaluate。存档只保留本节的单文件白名单读写。
 
 ## 11. 阶段4/5：Replay 下载 / 管理 / 播放（2026-11-21，已完成）
 

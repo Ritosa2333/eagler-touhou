@@ -1,11 +1,11 @@
 {
   "schema": "bro/app-shell/1",
-  "version": "sha256-e1fb8d09a3ef297ac9b3040250e232b3b94c213003d290cd3f1880a44f6e4fa7",
+  "version": "sha256-2d2683a5e801b78d707ebac416ff74bdb50da25f1e57b31df3465c65cfce9b66",
   "files": [
     {
       "p": "bro.html",
-      "n": 930,
-      "h": "811a9b1fabf69cf6b938c5adc18ccff48bbd2f191c4073fbb2f7ddc39fac6679"
+      "n": 1173,
+      "h": "fb35b33f1c628a4dac5a6ba2bd1d259572bf4eeaa90adde887ddf3f81d547e03"
     },
     {
       "p": "managed-shell.mjs",
@@ -14,8 +14,8 @@
     },
     {
       "p": "shell.mjs",
-      "n": 2518,
-      "h": "9ae761ddf7e7ca683f963441644a85a29ef261baa1bf10aff6865e594d07328a"
+      "n": 3618,
+      "h": "5a0c8ccfdbc8fdcdc64e5dbd6491e695bbf4efbf1be42b57f94b63232148591d"
     },
     {
       "p": "src/audio.mjs",
@@ -24,8 +24,8 @@
     },
     {
       "p": "src/eagler_adapter.mjs",
-      "n": 41574,
-      "h": "f22ed8bf885d8ed7cdf9448148754dfc5369399fa7e998e4d46e8e312134243d"
+      "n": 42144,
+      "h": "a864eccc9ef5d434baa8dff54db2cf8b14283850f1b4e44015e78c536bf2c572"
     },
     {
       "p": "src/input.mjs",
@@ -79,8 +79,8 @@
     },
     {
       "p": "src/resource_cache.mjs",
-      "n": 14562,
-      "h": "52d5d3c43133a2c3bf13385ba1e554703449f5b798b0e13b5004143f94ecd9ac"
+      "n": 16842,
+      "h": "6fc03ad4c45aaa656add66c11f4b65588c2ea5aaa8d825669cabc9f979b40027"
     },
     {
       "p": "src/rollback.mjs",
