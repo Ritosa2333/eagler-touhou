@@ -145,7 +145,7 @@
 | MP-RULE-05 | [自机可见性与多人HUD](../../docs/adaptation/multiplayer.md#mp-rule-05) | 不适用 | 已实现 | normal：单人模式；右侧安全区多玩家并排比例条 + 11 项系统显示逐槽（PROBE_3Y/3AE）。 |
 | MP-01 | [独立 MP 产品变体](../../docs/adaptation/multiplayer.md#mp-01) | 不适用 | 已实现 | normal：单人模式；product-catalog 声明 `bro` + 自动派生 `bromp`。 |
 | MP-02 | [房间人数、难度与机体](../../docs/adaptation/multiplayer.md#mp-02) | 不适用 | 已实现 | normal：单人模式；首期 `playerCounts:[2,3]`（官方标准常量），4 角色 loadouts；引擎内部 4 槽暂不开第 4 席。难度只开放 Hard/Lunatic 两档（BRO 本体无难度选项）。 |
-| MP-CUSTOM-01 | BRO 专属房间选项 | 不适用 | 已实现 | 房主选全队携带系统（1..11）+ 章节游玩队列（1..19 有序），照 `th19Rules` 全链路按 `bromp-` 前缀隔离；UI 新 `BroRoomSettings`，共享合约 `bro-room-options.mjs`，切关继承中弹/收卡、不进 replay（PROBE_3AQ）。 |
+| MP-CUSTOM-01 | BRO 专属房间选项 | 不适用 | 已实现 | 房主选全队携带系统（1..11）+ 章节游玩队列（1..19 有序），照 `th19Rules` 全链路按 `bromp-` 前缀隔离；UI 新 `BroRoomSettings`，共享合约 `bro-room-options.mjs`，切关继承中弹/收卡、不进 replay。队列末章走 `ReturnToTitle(false,0)` 跳过全作评分界面（公式分母是全作常量，部分关卡必失真），每关小结算保留（PROBE_3AQ）。 |
 | MP-03 | [所有席位准备并同步开局](../../docs/adaptation/multiplayer.md#mp-03) | 不适用 | 已实现 | normal：单人模式；GATE 开局栅栏（PROBE_3J）。 |
 | MP-04 | [确定性输入与状态检查](../../docs/adaptation/multiplayer.md#mp-04) | 不适用 | 已实现 | normal：单人模式；同种子同输入 360 帧逐帧指纹一致（PROBE_1F）；DIGEST 摘要（3I）。 |
 | MP-05 | [各席位输入归属](../../docs/adaptation/multiplayer.md#mp-05) | 不适用 | 已实现 | normal：单人模式；per-instance `p.key` + Byte2KeyState（3R/3AC）。 |
