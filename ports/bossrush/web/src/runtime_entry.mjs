@@ -38,21 +38,10 @@ function httpAssets(assetBase) {
   };
 }
 
-export async function startBRO(options = {}) {
-  const canvas = options.canvas;
-  if (!canvas) throw new Error('BRO runtime requires a canvas');
-  const adapter = options.adapter || null;
-  const resourceCache = options.resourceCache || null;
-  const assetBase = String(options.assetBase || '/game/').replace(/\/?$/, '/');
-  const assets = resourceCache || httpAssets(assetBase);
-  const params = options.params || new URLSearchParams(
-    typeof location !== 'undefined' ? location.search : '',
-  );
-  const status = options.status || null;
-  const note = (message) => {
-    if (status) status.textContent = `${status.textContent || ''}\n${message}`.trim();
-  };
-
+/** 创建 Module 与 storage 但不 boot。eagler 的 file session 在 launch 之前
+ *  就要读写存档，因此这段必须与 startBRO 解耦；loadAll 仍在 boot 之前。 */
+export async function createBROEnvironment(options = {}) {
+  const note = typeof options.note === 'function' ? options.note : () => {};
   note('loading wasm...');
   // BRO 源树中 glue 在 ../build/bro.mjs；eagler 部署后与 runtime 模块同目录。
   // 用成功 import 的 URL 推导 wasm 基址，不能用 HTML 目录（源树下 wasm 在 build/）。
@@ -73,10 +62,6 @@ export async function startBRO(options = {}) {
   const Module = await createBROModule({ locateFile: (p) => new URL(p, moduleBase).href });
   const ccall = Module.ccall;
   const ev = (code) => ccall('bro_eval', 'string', ['string'], [code]);
-  if (adapter) {
-    adapter.ccall = ccall;
-    adapter.Module = Module;
-  }
   globalThis.__broModule = Module;
   globalThis.__broEval = ev;
 
@@ -84,7 +69,31 @@ export async function startBRO(options = {}) {
   const storage = createStorage(Module);
   // B2 铁律：launch.lua 在 bro_boot() 当场读 User/setting，loadAll 必须先行。
   const loadStats = await storage.loadAll();
-  if (adapter) adapter.storage = storage;
+  return { Module, ccall, ev, storage, loadStats, moduleBase };
+}
+
+export async function startBRO(options = {}) {
+  const canvas = options.canvas;
+  if (!canvas) throw new Error('BRO runtime requires a canvas');
+  const adapter = options.adapter || null;
+  const resourceCache = options.resourceCache || null;
+  const assetBase = String(options.assetBase || '/game/').replace(/\/?$/, '/');
+  const assets = resourceCache || httpAssets(assetBase);
+  const params = options.params || new URLSearchParams(
+    typeof location !== 'undefined' ? location.search : '',
+  );
+  const status = options.status || null;
+  const note = (message) => {
+    if (status) status.textContent = `${status.textContent || ''}\n${message}`.trim();
+  };
+
+  const env = options.environment || await createBROEnvironment({ moduleBase: options.moduleBase, note });
+  const { Module, ccall, ev, storage, loadStats } = env;
+  if (adapter) {
+    adapter.ccall = ccall;
+    adapter.Module = Module;
+    adapter.storage = storage;
+  }
 
   note('booting lua...');
   const boot = ccall('bro_boot', 'number', [], []);

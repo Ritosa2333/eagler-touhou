@@ -67,6 +67,9 @@ export function installManagedShell(options = {}) {
     messageTarget: inFrame ? parentWindow : null,
     allowedOrigin: navigation.origin,
     saveRoot: '/bro',
+    // 阶段2：file session 在 launch 之前读写存档，必须走 JS FS 桥，
+    // 不能等 Lua 的 BRO_fs_*（bro_boot 之后才存在）。
+    fs: options.saveFS || null,
     periodicMs: 1000,
   });
 

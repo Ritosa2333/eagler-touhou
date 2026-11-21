@@ -148,3 +148,22 @@ game/ 源码零改动，靠 `web/src/prelude.lua:66-92` 把 `User\xxx`、`replay
 - `resources` 命令由“空实现”改成“按 sha256 落地导入包 blob 并延迟回包”，避免宿主 revoke blob URL 后资源丢失。
 - 该缓存与 BRO 私有存档 IndexedDB 分离：缓存只放游戏资源，不放 `/User`、`/replay`、`/bro/data`，
   因此不会出现 RGO 那种整包导入覆盖网页设置/补丁表的问题。
+
+## 10. 阶段2：存档下载 / 上传（2026-11-21，已完成）
+
+复用网页通用 UI（`files.ts` 的 `exportFiles('save')` / `importFile('save')`，只读写 `storage.scoreFile`
+即 `Score.dat`），但真实缺口在 runtime 侧，已由 `web/src/save_files.mjs` 补齐：
+
+1. **路径不对**：eagler 给的是相对名 `Score.dat`，BRO 游戏本体写 `/User/Score.dat`；
+   直接透传会读写 `/Score.dat`（空档）。现在双向映射 eagler 视图 ↔ BRO MEMFS。
+2. **时序不对**：`withFileSession()` 要求 `phase=prepared && !launched`，即下载/上传发生在
+   `launch` 之前，此时 Lua `BRO_fs_*` 未 boot。现在由 `createLazySaveFS()` 直接用 `Module.FS`，
+   首次文件命令才建 Module 并 `storage.loadAll()`，`startBRO()` 复用同一环境。
+3. **restart 校验**：import 后 launcher 调 `restart({sync:false})` 再逐字节 `read` 校验。
+   `write()` 现立即 `storage.flush()`，新实例 `loadAll()` 读到的就是新字节。
+   `remove()` 改走新增的 `storage.removeFile()`，避免 IDB 旧 key 让删除文件复活。
+4. **RGO 防护落地**：白名单只放 `Score.dat` / `Spellcard.dat` / `.bak` / `savingN.file` / `replay/*`；
+   `setting`（网页权威）与 `/bro/data`（Lua 补丁）拒写，`..` 段级穿越拒写。
+
+验证：`web/test/save_files_unit.mjs` 7/7；BRO 纯 Node 全量 42/42 PASS。
+阶段3（原版存档整包导入）仍**不启用** `storage.importData()`；阶段4/5 的 Replay 下载与管理播放未开始。

@@ -3,13 +3,13 @@
 > 更新：2026-11-21 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（设置对齐后 build_id `14a7b16b`）
 > 本目录 `ports/bossrush/web/` 是 **BRO Web runtime 的实际构建产物**，由 BRO 侧 `web/build.sh` 产出后入库。
 
-## 1. 产物清单（29 文件 / 4.2 MB）
+## 1. 产物清单（30 文件 / 4.2 MB）
 
 | 文件 | 体积 | 说明 |
 |---|---|---|
 | `web/bro.wasm` | 3.3 MB | 自包含 WASM：纯 C Lua 5.1.5 + `lstg.*` C 绑定 + WebGL2/WebAudio，内嵌 144 个游戏脚本 + Update.txt/manual |
 | `web/bro.mjs` | 111 KB | Emscripten ES6 glue（`createBROModule`） |
-| `web/src/*.mjs` | ~450 KB | 18 个模块：renderer/postfx/audio/input/storage/netcode/netmesh/input_buffer/rollback/route_*/eagler_adapter/multiplayer 等 |
+| `web/src/*.mjs` | ~455 KB | 19 个模块：renderer/postfx/audio/input/storage/save_files/netcode/netmesh/input_buffer/rollback/route_*/eagler_adapter/multiplayer 等 |
 | `web/dist/*.json` | 257 KB | `package-manifest.json`（972 文件/138.5 MB 清单）/ `app-shell.json` / `runtime.json` |
 | `web/manifest.json` | 5 KB | BRO 产品契约（components / musicMounts / packageManifest） |
 
@@ -108,3 +108,17 @@ BadApple!! 视频分卷 20.7 MB（Web 端视频解码非当前范围，不可玩
   后续接线上分发只需让 manifest URL 指向线上地址，`prefetch()` 已留好按需更新接口。
 - 验证：`resource_cache_unit.mjs` 4/4（hash 差异、缓存命中、版本切换、导入包路径覆盖）；
   eagler 协议壳/数据 provider 契约扫描通过，`tools/docs/check.mjs` 673 文档通过。
+
+## 9. 存档下载 / 上传桥接（阶段2，2026-11-21）
+
+- 新增 `web/src/save_files.mjs`：eagler 相对路径 `Score.dat` ↔ BRO MEMFS `/User/Score.dat` 双向映射；
+  `replay/slotN.rep` ↔ `/replay/slotN.rep`。此前直接透传会落到 `/Score.dat`（空档），
+  且 launcher 的 file session 在 `launch` 之前发生，Lua `BRO_fs_*` 尚未 boot。
+- 现在走 `Module.FS` + `createLazySaveFS()`：首次文件命令才建 Module 并 `storage.loadAll()`，
+  `startBRO()` 复用同一环境（不重复加载 WASM / 不破坏 boot 前时序）。
+- 写入立即 `storage.flush()`：`restart({sync:false})` 重建实例后，新 `loadAll()` 读到的就是刚导入的字节，
+  通过 launcher 的逐字节校验。删除走新增的 `storage.removeFile()`，否则 IDB 旧 key 会让文件"复活"。
+- RGO 坑防护：单文件白名单只放行 `Score.dat` / `Spellcard.dat` / `.bak` / `savingN.file` / `replay/*`；
+  `/User/setting`（网页权威源）与 `/bro/data`（Lua 补丁表）永不接受宿主写入，段级 `..` 穿越直接拒绝。
+- `eagler_adapter.mjs` 的 `list/read/write/remove` 支持异步 fs 并通过 `deferred` 等真实结果才回包。
+- 验证：`save_files_unit.mjs` 7/7；BRO 全量纯 Node 回归 42/42 PASS。

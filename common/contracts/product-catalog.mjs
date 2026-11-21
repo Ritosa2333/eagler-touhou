@@ -278,7 +278,7 @@ export const PRODUCT_GAMES = Object.freeze({
             "dist/package-manifest.json", "dist/app-shell.json", "dist/runtime.json",
             // JS 模块
             "src/eagler_adapter.mjs", "src/storage.mjs", "src/resource_cache.mjs",
-            "src/runtime_entry.mjs", "src/audio.mjs", "src/input.mjs",
+            "src/save_files.mjs", "src/runtime_entry.mjs", "src/audio.mjs", "src/input.mjs",
             "src/input_buffer.mjs", "src/output_queue.mjs", "src/postfx.mjs",
             "src/text.mjs", "src/logger.mjs", "src/replay_archive.mjs",
             "src/multiplayer.mjs", "src/netcode.mjs", "src/netmesh.mjs",

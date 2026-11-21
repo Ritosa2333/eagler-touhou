@@ -618,7 +618,11 @@ export class EaglerRuntimeAdapter {
       return { path, size };
     }).filter(Boolean);
     if (this.fs && typeof this.fs.list === 'function') {
-      return { response: { ok: true, files: norm(this.fs.list()) } };
+      const r = this.fs.list();
+      if (r && typeof r.then === 'function') {
+        return { deferred: r.then((files) => ({ ok: true, files: norm(files) })), response: { ok: true, files: [] } };
+      }
+      return { response: { ok: true, files: norm(r) } };
     }
     if (this.storage && typeof this.storage.inspect === 'function') {
       return { response: { ok: true, files: norm(this.storage.inspect()) } };
@@ -630,7 +634,11 @@ export class EaglerRuntimeAdapter {
     const path = String(p.path || '');
     try {
       if (this.fs && typeof this.fs.read === 'function') {
-        return { response: { ok: true, bytes: this.fs.read(path) } };
+        const r = this.fs.read(path);
+        if (r && typeof r.then === 'function') {
+          return { deferred: r.then((bytes) => ({ ok: true, bytes })), response: { ok: true, bytes: [] } };
+        }
+        return { response: { ok: true, bytes: r } };
       }
       if (this.ccall) {
         const s = this.ccall('bro_eval', 'string', ['string'],
@@ -648,7 +656,10 @@ export class EaglerRuntimeAdapter {
     const bytes = Array.isArray(p.bytes) ? p.bytes : [];
     try {
       if (this.fs && typeof this.fs.write === 'function') {
-        this.fs.write(path, bytes);
+        const r = this.fs.write(path, bytes);
+        if (r && typeof r.then === 'function') {
+          return { deferred: r.then(() => ({ ok: true })), response: { ok: true } };
+        }
         return { response: { ok: true } };
       }
       if (this.ccall) {
@@ -664,7 +675,10 @@ export class EaglerRuntimeAdapter {
     const path = String(p.path || '');
     try {
       if (this.fs && typeof this.fs.remove === 'function') {
-        this.fs.remove(path);
+        const r = this.fs.remove(path);
+        if (r && typeof r.then === 'function') {
+          return { deferred: r.then(() => ({ ok: true })), response: { ok: true } };
+        }
         return { response: { ok: true } };
       }
       if (this.ccall) {

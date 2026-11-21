@@ -3,7 +3,7 @@
   "game": "bro",
   "repository": "https://github.com/TSake/TouHou-BossRushOnline",
   "branch": "web/multiplayer-port",
-  "commit": "本地工作区（runtime 入口 + 增量资源缓存；设置个性化已提交 6932526）",
+  "commit": "本地工作区（阶段2 存档下载/上传桥接；runtime 入口已提交 7b29680）",
   "buildId": "14a7b16b",
   "credit": {
     "author": "吃药图书 (Cyoltose)",
@@ -29,8 +29,8 @@
     },
     {
       "path": "dist/app-shell.json",
-      "bytes": 7876,
-      "sha256": "f538d0d539d982e6cee37824f5ee40d47619b615786ace74f2a28428a5760887"
+      "bytes": 8616,
+      "sha256": "bb5a7ce51fa32597ef2adf1f6dc104585347550dc1455397c9d4f5ee5b37ed15"
     },
     {
       "path": "dist/package-manifest.json",
@@ -40,12 +40,12 @@
     {
       "path": "dist/runtime.json",
       "bytes": 576,
-      "sha256": "9e96f8e881068cbdb4eecac9cafa2b44c37d319152e33bbf3ea2b3b6a0936623"
+      "sha256": "273ff81b7d8082b07390fce4531eedc93811572a624fcf073efc11749a28ff9c"
     },
     {
       "path": "managed-shell.mjs",
-      "bytes": 4899,
-      "sha256": "fc56ef40599bb5c3fb473f58c1129a55bce6fca7a9cc5dd69ce908a94d03567e"
+      "bytes": 5083,
+      "sha256": "c905fa8597e0b3892dcbdeb74ce813a341031d6faecd6ec8c6a78595a8176299"
     },
     {
       "path": "manifest.json",
@@ -54,8 +54,8 @@
     },
     {
       "path": "shell.mjs",
-      "bytes": 1915,
-      "sha256": "62999fab1bef00b6c4d0b808290163b567ccd7a99173872cc3dc87fb6aee2e3e"
+      "bytes": 2518,
+      "sha256": "9ae761ddf7e7ca683f963441644a85a29ef261baa1bf10aff6865e594d07328a"
     },
     {
       "path": "src/audio.mjs",
@@ -64,8 +64,8 @@
     },
     {
       "path": "src/eagler_adapter.mjs",
-      "bytes": 36311,
-      "sha256": "7d8dba180065f4708388762701dca9d466e8def30005ad5de82aea005761966a"
+      "bytes": 37000,
+      "sha256": "435a3a3f20bc29be6a48a0838c44fb2f143fb4d607767ac8f49e2cf0be0c9f6a"
     },
     {
       "path": "src/input_buffer.mjs",
@@ -123,6 +123,11 @@
       "sha256": "52d5d3c43133a2c3bf13385ba1e554703449f5b798b0e13b5004143f94ecd9ac"
     },
     {
+      "path": "src/save_files.mjs",
+      "bytes": 5603,
+      "sha256": "1368c421c3887255df068de6b6aedb9f159b0b860ecbcad3a60195e956dbbcde"
+    },
+    {
       "path": "src/rollback.mjs",
       "bytes": 4189,
       "sha256": "99ae76c8c7d2f13f1ce11053cdcc72d5c4ba353d21e462be0647a787c006ed1e"
@@ -144,13 +149,13 @@
     },
     {
       "path": "src/runtime_entry.mjs",
-      "bytes": 8424,
-      "sha256": "dd98d47469f693653909d8ffe32ed166e3eee0b02b2f666eac453c20ae61ad30"
+      "bytes": 8964,
+      "sha256": "35c6ade6786fb917e66db5087b8deb9336ea1cba69fa1e71d600a01b2e431aba"
     },
     {
       "path": "src/storage.mjs",
-      "bytes": 11022,
-      "sha256": "b814d29d450efcfe73ad6bc1714749c976c70642672eef489953f5942c6531b0"
+      "bytes": 11829,
+      "sha256": "377bf2e252e4efee838561395301fc6e6fb039b90bf99ec93ab19207f340b368"
     },
     {
       "path": "src/text.mjs",

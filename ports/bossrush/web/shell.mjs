@@ -3,8 +3,10 @@
 // 兼容 BRO 源树（src/）与 eagler 扁平 runtime 目录。
 const { createResourceCache } = await import('./src/resource_cache.mjs')
   .catch(() => import('./resource_cache.mjs'));
-const { startBRO } = await import('./src/runtime_entry.mjs')
+const { startBRO, createBROEnvironment } = await import('./src/runtime_entry.mjs')
   .catch(() => import('./runtime_entry.mjs'));
+const { createLazySaveFS } = await import('./src/save_files.mjs')
+  .catch(() => import('./save_files.mjs'));
 const { installManagedShell, prepareManagedData } = await import('./managed-shell.mjs');
 
 const canvas = document.getElementById('screen');
@@ -15,6 +17,15 @@ const query = new URLSearchParams(location.search);
 const resourceCache = createResourceCache({
   assetBase: new URL('./game/', location.href).href,
   manifestUrl: new URL('./dist/package-manifest.json', location.href).href,
+});
+
+// 存档桥：file session（launcher 的存档下载/上传）发生在 launch 之前，
+// 此时 Lua 尚未 boot；直接用 Module.FS + storage.flush 才能读写真存档。
+const note = (message) => {
+  if (status) status.textContent = `${status.textContent || ''}\n${message}`.trim();
+};
+const saveFS = createLazySaveFS({
+  createEnvironment: () => createBROEnvironment({ note }),
 });
 
 let runtimePromise = null;
@@ -34,10 +45,12 @@ const prepareData = () => {
 shell = installManagedShell({
   game: 'bro',
   resourceCache,
+  saveFS,
   start: async () => {
     await prepareData();
     if (!runtimePromise) {
-      runtimePromise = startBRO({ canvas, status, adapter: shell.adapter, resourceCache, params: query })
+      const environment = await saveFS.environment();
+      runtimePromise = startBRO({ canvas, status, adapter: shell.adapter, resourceCache, params: query, environment })
         .catch((error) => {
           shell.emit({ event: 'error', message: 'boot', error: String(error && error.message || error) });
           if (status) status.textContent = `ERROR: ${error && error.message || error}`;

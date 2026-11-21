@@ -285,6 +285,26 @@ export function createStorage(Module, opts = {}) {
       stats.loaded += n;
       return stats;
     },
+    /* 显式删除：sync(true) 只 put 现存文件，IDB 里的旧 key 不会消失，
+       loadAll 会把已删除文件复活。eagler 的 remove 命令必须走这里。 */
+    removeFile: async (path) => {
+      const p = String(path || '');
+      if (!roots.some((r) => p.startsWith(r + '/'))) return false;
+      try { FS.unlink(p); } catch { /* 已经不存在 */ }
+      known.delete(p);
+      if (db) {
+        await new Promise((res) => {
+          const tx = db.transaction(STORE, 'readwrite');
+          tx.objectStore(STORE).delete(p);
+          tx.oncomplete = res; tx.onerror = res; tx.onabort = res;
+        });
+      }
+      if (p === settingPath && lsApi) {
+        try { lsApi.removeItem(LS_KEY); } catch { /* 隐私模式 */ }
+      }
+      stats.saved++;
+      return true;
+    },
     wipe: async () => {
       if (db) {
         await new Promise((res) => {
