@@ -4,7 +4,7 @@ import {Th12ThcrapCompiler} from "./th12-thcrap-compiler.mjs";
 import { legacyAsciiPrintfSignature, validateAsciiContract } from "./thcrap-ascii-contract.mjs";
 import { validateStringContract } from "./thcrap-string-contract.mjs";
 
-const GAME_VERSION = Object.freeze({ th06: 6, th07: 7, th08: 8, th09: 9, th10: 10, th11: 11, th12: 12, th14: 14, th15: 15, th17: 17 });
+const GAME_VERSION = Object.freeze({ th06: 6, th07: 7, th08: 8, th09: 9, th10: 10, th11: 11, th12: 12, th13: 13, th14: 14, th15: 15, th17: 17 });
 export const THCRAP_RUNTIME_COMPILER_GAMES = Object.freeze([...Object.keys(GAME_VERSION), "th075"]);
 const GAME_PATTERN = `(?:${THCRAP_RUNTIME_COMPILER_GAMES.join("|")})`;
 const MESSAGE_DIFF = new RegExp(`^${GAME_PATTERN}\\/(msg[1-8][a-z]{0,2}\\.dat)\\.jdiff$`, "i");
@@ -16,8 +16,8 @@ const TH10_ENDING_DIFF = /^th10\/(e\d+\.msg)\.jdiff$/i;
 const TH11_DIALOGUE_DIFF = /^th11\/(st\d{2}_\d{2}[a-c]\.msg)\.jdiff$/i;
 const TH11_ENDING_DIFF = /^th11\/(e\d{2}\.msg)\.jdiff$/i;
 // These releases use thcrap's MSG_TH14 and END_TH10 formats.
-const LATE_DIALOGUE_DIFF = /^(th14|th15|th17)\/(st\d{2}([a-i])\.msg)\.jdiff$/i;
-const LATE_ENDING_DIFF = /^(th14|th15|th17)\/(e\d{2}\.msg)\.jdiff$/i;
+const LATE_DIALOGUE_DIFF = /^(th13|th14|th15|th17)\/(st\d{2}([a-i])\.msg)\.jdiff$/i;
+const LATE_ENDING_DIFF = /^(th13|th14|th15|th17)\/(e\d{2}\.msg)\.jdiff$/i;
 // TH09 uses the same encrypted MSG_TH09 command format for both story and
 // versus scripts. Ending scripts are the older .end format handled below.
 const TH09_DIALOGUE_DIFF = /^th09\/(pl\d{2}(?:_match)?\.msg)\.jdiff$/i;
@@ -356,7 +356,8 @@ const ENDING_LINE_FORMAT = Object.freeze({
 
 function msgLineFormat(version) {
   if (version === 14 || version === 15 || version === 17) return MSG_LINE_FORMAT[15];
-  if (version === 11) return MSG_LINE_FORMAT[11];
+  // thcrap MSG_TH128: TH13 dialogue is auto line 17, closed by 7/8/9/11.
+  if (version === 11 || version === 13) return MSG_LINE_FORMAT[11];
   if (version === 10) return MSG_LINE_FORMAT[10];
   if (version === 9) return MSG_LINE_FORMAT[9];
   if (version === 8) return MSG_LINE_FORMAT[8];
@@ -365,7 +366,7 @@ function msgLineFormat(version) {
 }
 
 function endingLineFormat(version) {
-  if (version === 14 || version === 15 || version === 17) return ENDING_LINE_FORMAT[15];
+  if (version === 13 || version === 14 || version === 15 || version === 17) return ENDING_LINE_FORMAT[15];
   if (version === 11) return ENDING_LINE_FORMAT[11];
   if (version === 10) return ENDING_LINE_FORMAT[10];
   throw new TypeError(`unsupported ending version: ${version}`);

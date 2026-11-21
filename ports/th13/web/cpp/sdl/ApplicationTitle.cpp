@@ -79,8 +79,26 @@ bool ApplicationState::begin_transition(u32& animation) {
     return true;
 }
 
+void ApplicationState::set_practice(bool enabled, i32 section, i32 life, i32 bomb, i32 power, i32 trance) {
+    practice.enabled = enabled;
+    practice.section = section;
+    practice.life = life;
+    practice.bomb = bomb;
+    practice.power = power;
+    practice.trance = trance;
+}
+i32 ApplicationState::practice_stage() const {
+    if (practice.enabled) return th13::resolve_practice(practice, selected_stage).stage;
+    return active_practice.applied ? active_practice.stage : 0;
+}
+
 bool ApplicationState::start_game(i32 stage) {
-    selected_stage = stage;
+    active_practice = th13::begin_thprac(practice, progress, stage);
+    return queue_run(stage);
+}
+
+bool ApplicationState::queue_run(i32 stage) {
+    selected_stage = active_practice.applied ? active_practice.stage : stage;
     // 新局/Retry 不能沿用上一局的零残机、灵力、得分；换关则不经过此入口。
     selection_player = HudPlayerState{};
     selection_player.extra_lives = std::max(0, progress.configured_lives - 1);
@@ -100,7 +118,8 @@ bool ApplicationState::start_game(i32 stage) {
     // cold_entry 块（那是 0x42b990 同段的 replay 冷启动副本），power 停在
     // HudPlayerState 默认 100——EX/stage2+ 练习与 Retry 应为 4.00 而未达。
     // 换关 0xc 延续（dcc30==0）不经此入口，跨关 power 保留。
-    const i32 entry_steps = (stage > 1 || (progress.run_mode_flags & 0x30u) == 0x20u) ? 4 : 1;
+    const i32 entry_steps =
+        (selected_stage > 1 || (progress.run_mode_flags & 0x30u) == 0x20u) ? 4 : 1;
     selection_player.power =
         std::min(entry_steps * selection_player.power_step, selection_player.max_power);
     selection_score = HudScoreState{};
@@ -113,6 +132,12 @@ bool ApplicationState::start_game(i32 stage) {
     // 0x42d404 写 [esi+0x50]=0xc8 → DAT_004be808=200；符卡练习 mode==2
     // 随后 0x42bbfd 清零。helper 按 run_mode_flags bit4-5 分流（0x20→0，其余→200）。
     trance_reset_fresh_entry(progress);
+    if (active_practice.applied) {
+        if (active_practice.life >= 0) selection_player.extra_lives = active_practice.life;
+        if (active_practice.bomb >= 0) selection_player.bombs = active_practice.bomb;
+        if (active_practice.power >= 0) selection_player.power = active_practice.power;
+        if (active_practice.trance >= 0) progress.ending_points = active_practice.trance;
+    }
     progress.run_mode_flags &= ~kTranceActiveFlag;
     progress.stage_clear_bonus = 0;
     progress.good_endings = 0;

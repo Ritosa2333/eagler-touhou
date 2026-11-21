@@ -362,6 +362,7 @@
   "th09_quickChat": "快捷发言",
   "room_matchStats": "{wins} 胜 {losses} 负 | {minutes} 分钟",
   "room_th09SpectatorHint": "中途加入从当前局开头观看。已接收的内容可暂停、快进或倒退，离开后清除本地历史。",
+  "room_th075SpectatorHint": "中途加入后会自动追上直播。可暂停或拖动时间轴，回看已接收的对局。",
   "room_spectatorJoined": "已加入旁观",
   "room_loadingSpectator": "正在加载观战",
   "room_versus": "{count} 人对战",

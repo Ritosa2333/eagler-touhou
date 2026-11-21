@@ -849,8 +849,8 @@ export declare const PRODUCT_GAMES: Readonly<{
             titleRoomEntry: false;
         }>;
         features: Readonly<{
-            thprac: false;
-            languages: false;
+            thprac: true;
+            languages: true;
             focusHitbox: false;
         }>;
     }>;

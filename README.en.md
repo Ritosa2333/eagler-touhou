@@ -5,7 +5,7 @@
 <div align="center">
   <p>A project to bring official Touhou Project games, fan games, community tools, and multiplayer mods to <strong>every platform</strong>, aiming to <strong>greatly lower the barrier to entry for players</strong>.</p>
   <p>
-    <a href="https://touhouonline.com/"><img src="https://img.shields.io/badge/Play%20Online-touhouonline.com-E5322D?style=flat-square" alt="Play online at touhouonline.com"></a>
+    <a href="launcher/README.en.md"><img src="https://img.shields.io/badge/Play-Online-E5322D?style=flat-square" alt="Play online"></a>
     <a href="https://discord.gg/HwVz9ZTSF"><img src="https://img.shields.io/badge/Discord-5865F2?style=flat-square&amp;logo=discord&amp;logoColor=white" alt="Discord"></a>
     <a href="https://qm.qq.com/q/eeUrxIltug?from=tim"><img src="https://img.shields.io/badge/QQ%20Group-1124121427-12B7F5?style=flat-square&amp;logo=tencentqq&amp;logoColor=white" alt="QQ Group 1124121427"></a>
     <img src="https://img.shields.io/badge/Chromium-%E2%89%A5108-4285F4?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Chromium >=108">
@@ -40,7 +40,7 @@ While preserving the original game experience, including some original bugs:
 
 ## Available Titles
 
-These nine titles are playable at [touhouonline.com](https://touhouonline.com/).
+These nine titles are available through the [online launcher](launcher/README.en.md).
 
 | Title | High refresh rate | thprac | Languages | Multiplayer |
 | :--- | :---: | :---: | :---: | :---: |
@@ -188,6 +188,8 @@ See the [FAQ](launcher/docs/FAQ.md). The website page is generated from this Mar
 ## License
 
 The Launcher is licensed under the [GNU General Public License v3.0 or later](launcher/LICENSE).
+
+This project distributes GNU Unifont 15.1.05, including the site's WOFF2 subset, under the **SIL Open Font License 1.1 (OFL-1.1)**. Copyright © 1998–2024 Roman Czyborra, Paul Hardy, Qianqian Fang, Andrew Miller, Johnnie Weaver, David Corbett, Nils Moskopp, Rebecca Bettencourt, Ho-Seok Ee, et al. Upstream also offers the font under GNU GPL v2 or later with the GNU Font Embedding Exception. [Upstream release](https://unifoundry.com/pub/unifont/unifont-15.1.05/) · [Full license and copyright notice](launcher/public/assets/fonts/OFL-Unifont.txt)
 
 Complete third-party source, asset attribution, and licensing information is available in [THIRD_PARTY.md](launcher/THIRD_PARTY.md) and [ASSETS.md](launcher/ASSETS.md).
 

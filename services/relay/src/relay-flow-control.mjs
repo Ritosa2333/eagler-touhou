@@ -216,8 +216,8 @@ export function restrictInitialIce(signal, route) {
 }
 
 export function clearSpectatorHistory(run) {
-  // Experimental TH09 viewers may join later; their prefix must remain exact.
-  if (run.spectatorTimeline && !run.spectatorStopped) return;
+  // TH075 retains timing from publisher opt-in, before frame zero opens admission.
+  if ((run.spectatorTimeline || run.th075Spectator) && !run.spectatorStopped) return;
   run.spectatorHistory.length = 0;
   run.spectatorHistoryBytes = 0;
 }
