@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import {lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync} from 'node:fs';
 import {dirname, isAbsolute, join, relative, resolve, sep} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
+import {describeCoreInputs, matchesBuiltCore} from './build-runtime.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const coreReceipts=new Map([
@@ -36,17 +37,28 @@ const legal=new Map([
  ['licenses/ecl-upstream.txt','src/ecl/UPSTREAM_LICENSE.txt'],
 ]);
 
-/** Assemble source and the reviewed, precompiled Web core. Does not build or run the game. */
+export function launcherRuntimeInputs() {
+ const {translationUnits,compilerFlags,sourceFiles}=describeCoreInputs();
+ const front=JSON.parse(decoder.decode(read(root,'tools/launcher-runtime-files.json')));
+ const paths=['tools/build-runtime.mjs','tools/package-launcher-runtime.mjs','tools/launcher-runtime-files.json',
+   'tools/sound-identity-library.js', ...front.map(name=>'site/'+name), ...legal.values()];
+ const inputs={...sourceFiles};
+ for(const name of paths)inputs[name]=sha(read(root,name));
+ return {schema:'eagler-touhou/runtime-inputs/1',translationUnits,compilerFlags,inputs};
+}
+
+/** Assemble a reviewed build or one compiled from this exact source tree. */
 export async function packageLauncherRuntime({coreSite,out}) {
  const core=realpathSync(coreSite), site=realpathSync(join(root,'site'));
  const output=join(realpathSync(dirname(resolve(out))),resolve(out).split(sep).at(-1));
  if(output===core||output===site||below(core,output)||below(site,output))throw new Error('Use a new Runtime output outside both input roots');
  const receiptBytes=read(core,'runtime/build.json');
- const approved=coreReceipts.get(sha(receiptBytes));if(!approved)throw new Error('Expected an accepted TH128 core receipt');
+ const approved=coreReceipts.get(sha(receiptBytes));
  const receipt=JSON.parse(decoder.decode(receiptBytes));
- const coreGeneration=approved.generation;
+ if(!approved&&!matchesBuiltCore(receipt))throw new Error('TH128 core receipt does not match the current sources');
+ const coreGeneration=approved?.generation??receipt.generation;
  const coreDir=`runtime/builds/${coreGeneration}`;
- if(receipt.game!=='th128'||receipt.privateCore!==approved.number||receipt.generation!==coreGeneration||receipt.entry!==`${coreDir}/core.mjs`)
+ if(receipt.game!=='th128'||(approved&&receipt.privateCore!==approved.number)||receipt.generation!==coreGeneration||receipt.entry!==`${coreDir}/core.mjs`)
   throw new Error('Unexpected TH128 core identity');
  const payload=new Map([['runtime/build.json',receiptBytes]]);
  for(const name of ['core.mjs','core.wasm']){
@@ -66,11 +78,7 @@ export async function packageLauncherRuntime({coreSite,out}) {
    if(!html.includes('<head>')||html.includes('eagler-data-provider'))throw new Error('Unexpected TH128 page header');
    bytes=Buffer.from(html.replace('<head>','<head>\n  <meta name="eagler-data-provider" content="retail-memory">'));
   }
-  if(name==='runtime/launcher-shell.css'){
-   const css=decoder.decode(bytes), cover="url('./th128-cover.png')";
-   if(css.split(cover).length!==2)throw new Error('Unexpected standalone cover reference');
-   bytes=Buffer.from(css.replace(cover,'none'));
-  }
+
   const target=name==='play.html'?'th128.html':name;
   if(payload.has(target))throw new Error(`Duplicate Runtime output: ${target}`);
   payload.set(target,bytes);
@@ -97,13 +105,16 @@ export async function packageLauncherRuntime({coreSite,out}) {
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
  try{
   const args=new Map();
+  if(process.argv.slice(2).length===1&&process.argv[2]==='--print-inputs'){
+   console.log(JSON.stringify(launcherRuntimeInputs()));
+   process.exit(0);
+  }
   for(const arg of process.argv.slice(2)){
    const match=arg.match(/^--(assets|output)=(.+)$/);
    if(!match||args.has(match[1]))throw new Error(`Unknown or duplicate Runtime argument: ${arg}`);
    args.set(match[1],match[2]);
   }
-  const coreSite=args.get('assets')??process.env.TH128_CORE_SITE;
-  if(!coreSite)throw new Error('Pass --assets=<Runtime122 v17 site folder> or set TH128_CORE_SITE');
+  const coreSite=args.get('assets')??process.env.TH128_CORE_SITE??join(root,'site');
   const out=args.get('output')??process.env.EAGLER_RUNTIME_OUTPUT??join(root,'build-eagler');
   console.log(JSON.stringify(await packageLauncherRuntime({coreSite,out})));
  }catch(error){console.error(error.message);process.exitCode=1;}

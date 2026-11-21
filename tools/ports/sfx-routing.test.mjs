@@ -2,12 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
+import {execFileSync} from 'node:child_process';
 import {targets,inspectInputs,root} from './inputs.mjs';
 
 // Source/build wiring complements the shared service's rendered PCM tests.
 const selected=process.env.EAGLER_PORT_CHECK_GAMES?JSON.parse(process.env.EAGLER_PORT_CHECK_GAMES):null;
 for(const target of targets().filter(target=>(!selected||selected.includes(target.game))&&! ["th01","th02","th03","th04"].includes(target.game)))test(`${target.game} ${target.variant} compiles its SFX output route`,()=>{
  const inputs=inspectInputs(target),owner=resolve(root,target.directory);
+ if(target.game==='th128'){
+  const native='src/runtime/WorldExports.cpp';
+  assert(inputs.translationUnits.includes(native));
+  const world=readFileSync(resolve(owner,native),'utf8'),play=readFileSync(resolve(owner,'site/play.mjs'),'utf8');
+  for(const endpoint of ['th128_world_sound_begin_window','th128_world_sound_ack_window']){
+   assert(world.includes(endpoint));assert(play.includes('_'+endpoint));
+  }
+  execFileSync(process.execPath,['--test','tests/sound.test.mjs'],{cwd:owner,windowsHide:true});return;
+ }
  if(target.game==='th05'){
   assert(inputs.translationUnits.includes('portable/Platform.cpp'));
   const platform=readFileSync(resolve(owner,'portable/Platform.cpp'),'utf8');

@@ -1,0 +1,19 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "repository": "https://github.com/momoiio224/th128",
+  "branch": "main",
+  "commit": "5b59d3b2a9ef37bc19f75157826bc39b5d3608fe",
+  "destination": "ports/th128",
+  "monorepoBase": "816de496686ced0e4bab0141dafbf26060974591",
+  "importedFiles": 1337,
+  "mode": "git-subtree",
+  "currentMode": "git-subtree",
+  "subtree": {
+    "upstreamCommit": "5b59d3b2a9ef37bc19f75157826bc39b5d3608fe",
+    "initialJoin": "362fbec04c1165ffa9a5e65fdcbb829a1dba14a5",
+    "initialSplit": "f079ad6680aac2d3b1183c88e3f94b5ef0bbb00a",
+    "latestJoin": "362fbec04c1165ffa9a5e65fdcbb829a1dba14a5",
+    "currentSplit": "f079ad6680aac2d3b1183c88e3f94b5ef0bbb00a",
+    "aheadCommits": 8
+  }
+}

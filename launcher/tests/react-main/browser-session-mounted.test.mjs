@@ -1254,8 +1254,16 @@ function th128MusicPackage(host) {
 for (const choice of ['ogg-full', 'none']) test(`TH128 startup consults installed music when the settings hint is stale (${choice})`, async () => {
   env.window.AudioContext = class {};
   try {
-    const host = JSON.parse(await readFile(resolve(project,'config/th128-local-preview-practice-name.json'),'utf8'));
-    host.games.th128.runtime = 'runtime/th128/th128.html';
+    const layout = 'sha256-58cd45fe7cac9af281d9de993a527ccfbbe6f27b89bcd0ca98a7031333fce200';
+    const sha256 = createHash('sha256').update(Uint8Array.of(1, 2, 3)).digest('hex');
+    const languageOptions = [{id: 'lang_zh-hans', title: '简体中文', pack: null}];
+    const host = {schema: 'eagler-touhou/site-manifest/1', protocol: 'eagler-touhou/1', profile: 'web-development', shared: {resourceMode: 'import', testBuild: true}, games: {th128: {
+      runtime: 'runtime/th128/th128.html', gameData: {path: 'th128.dat', bytes: 3, sha256, version: 'sha256-'+sha256, layout},
+      languageOptions, languages: [], features: {thprac: true}, music: {midi: {files: [], supported: false}, ogg: null},
+      offlineCompatibility: {schema: 'eagler-touhou/offline-game-pack/1',
+        runtimeCompatibility: {protocol: 'eagler-touhou/1', dataLayout: layout, versionSource: 'offline-pack'},
+        requiredShared: [], languages: {source: 'offline-pack', baseline: ['lang_zh-hans']}},
+    }}};
     const f = await mountBrowser({initial: '/?game=th128&test', host, seedStorage(storage) {
       storage.values.set(api.gamePreferenceStorageKey('th128'), JSON.stringify({music: choice, musicPreferenceExplicit: true}));
     }});
@@ -1266,7 +1274,7 @@ for (const choice of ['ogg-full', 'none']) test(`TH128 startup consults installe
     assert.equal(settings.getSnapshot().music, 'none', 'the display hint has not seen the installed package');
     await click('#launch');
     if (choice === 'none') {
-      assert.equal(node('#decisionDialog').open, true);
+      await until(() => node('#decisionDialog').open, 'the explicit no-music choice opens confirmation');
       assert.equal(commands().includes('launch'), false);
       await click('#decisionConfirm');
     } else {

@@ -61,7 +61,7 @@ body[data-local-runtime] .web-input-full .touch-utility-row{top:calc(max(8px,env
 .player-help h3{font-size:15px;margin:16px 0 7px}.player-help p{margin:7px 0 13px}.player-help ul{padding-left:1.1em}
 #resource-loader.local-launch{position:fixed;display:flex;flex-direction:column;z-index:60;inset:12px 12px auto auto;width:min(422px,calc(100% - 24px));max-height:calc(100dvh - 24px);padding:0;margin:0;overflow:hidden;border-color:var(--launcher-line);border-radius:var(--launcher-radius);background:var(--launcher-surface);color:var(--launcher-text);font:14px/1.5 "Segoe UI","Microsoft YaHei",sans-serif;box-shadow:0 16px 44px #0005}
 body:has(#resource-loader.local-launch){background:#141416}
-.launch-sheet-hero{height:114px;position:relative;flex:none;margin:0;background:#334a68 url('./th128-cover.png') center 43%/cover no-repeat;color:inherit}
+.launch-sheet-hero{height:114px;position:relative;flex:none;margin:0;background:#334a68 none center 43%/cover no-repeat;color:inherit}
 .launch-sheet-hero::after{content:'';position:absolute;inset:50% 0 0;background:linear-gradient(transparent,var(--launcher-surface));pointer-events:none}
 #resource-loader .launch-sheet-hero button{position:absolute;right:9px;top:9px;z-index:1;background:#222328c7;color:var(--launcher-text);padding:4px 12px;font-size:20px;border:1px solid var(--launcher-line);border-radius:7px}
 .launch-sheet-body{overflow:auto;overscroll-behavior:contain;min-height:0;padding:0 15px;color:inherit}

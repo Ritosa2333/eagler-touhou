@@ -21,7 +21,6 @@
 *.ogg
 *.mp3
 *.png
-!/site/runtime/th128-cover.png
 *.jpg
 *.jpeg
 *.bmp

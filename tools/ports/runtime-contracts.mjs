@@ -16,6 +16,8 @@ export function runtimeSourceFiles(game, product) {
   if (game === 'th12') return ['src/managed-shell.mjs', 'src/managed-input.mjs', 'site/game-sdl.mjs'];
   if (product.runtimeFileLayout !== 'directory') return ['resources/shell.html'];
   if (game === 'th09') return ['web/sdl-runtime/managed.mjs'];
+  if (game === 'th128') return ['site/import-entry.mjs','site/play.mjs','site/runtime/launcher-session.mjs',
+    'site/runtime/gamepad-input.mjs','site/runtime/web-input.mjs','site/runtime/managed-dat-owner.mjs'];
   // TH13 owns its Host protocol and shared keyboard/gamepad bridge in these two
   // modules; it does not ship the older eagler-host.mjs split.
   if (game === 'th13') return ['web/sdl-runtime/shell.mjs', 'web/sdl-runtime/directory-keyboard.mjs'];
@@ -72,6 +74,16 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
     ].map(([id,checks,pattern])=>result(id,checks,[...files,testFile],()=>{
       execFileSync(process.execPath,['--test','--test-name-pattern='+pattern,resolve(root,directory,testFile)],
         {cwd:resolve(root,directory),encoding:'utf8',windowsHide:true});
+    }));
+  }
+  if (game === 'th128') {
+    return [
+      ['runtime-protocol',['RUNTIME-01','RUNTIME-02','RUNTIME-03'],['tests/launcher-session/managed-entry.test.mjs','tests/launcher-session/runtime-mount.test.mjs']],
+      ['native-gamepad',['INPUT-04'],['tests/web-input/gamepad-stage.test.mjs','tests/web-input/gamepad-eight-way.test.mjs']],
+      ['touch-sensitivity',['TOUCH-14'],['tests/thprac128/upstream-touch.test.mjs','tests/thprac128/full-touch-page.test.mjs']],
+    ].map(([id,checks,tests])=>result(id,checks,[...files,...tests],()=>{
+      if (id === 'native-gamepad') assert.ok(native.includes('int th128_world_input('));
+      execFileSync(process.execPath,['--test',...tests],{cwd:resolve(root,directory),encoding:'utf8',windowsHide:true});
     }));
   }
   const th13ManagedShellTest = 'tests/managed-shell.test.mjs';

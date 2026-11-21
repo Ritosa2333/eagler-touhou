@@ -8,6 +8,7 @@
 
 - Eagler Touhou / Tweet-META：参考 `Ritosa2333/eagler-touhou` 固定提交 `654717ac6d7b0f9e28239e230d5c965025493434` 的 `ports/th12`。通用 ANM VM/Scene、ECL 格式/栈/调度与部分渲染方式有适配或参考。原 MIT 许可保留在 `src/animation/UPSTREAM_LICENSE.txt`、`src/ecl/UPSTREAM_LICENSE.txt` 及 `licenses/Tweet-META-MIT.txt`。本归属也覆盖参考上游 renderer 的相应部分。TH12 的注释或已知行为不自动成为 TH128 行为证明。
 - TH128 replay fixer：参考 `kikones34/th128-replay-fixer` 固定提交 `595d1451edbf4a55e121d45174b877f6eb0446d5`。录像编解码研究说明位于 `docs/research/replay.md` 和 `docs/research/replay-browser.md`，MIT 许可保留在 `docs/research/replay-license.txt` 与 `licenses/kikones34-MIT.txt`。
+- THPRAC 练习参数与练习 Replay 封装参考上游实现，保留 [MIT 与归属](licenses/THPRAC-MIT.txt)。借用的 Eagler Touhou 触控设置与布局保留 [改编说明](licenses/EAGLER-TOUCH-NOTICE.md)、[GPL-3.0 许可](licenses/eagler-touhou-launcher-GPL-3.0.txt)及对应源码。
 
 ## 外部研究工具
 
