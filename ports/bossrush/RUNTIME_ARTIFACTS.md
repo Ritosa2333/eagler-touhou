@@ -189,3 +189,22 @@ WASM 重编 build_id=`7bc47a91`，replay_playback_unit 7/7（新增 pause/play�
 - `storage.importData()` 整包导入保持禁用（它曾导致 RGO 难度表被覆盖掉回 Tutorial）。
 - 存档只保留网页单文件白名单读写（`Score.dat`/`Spellcard.dat`/`.bak`/`savingN.file`），
   与 §9 一致。此决定已同步 BRO 侧 README/记忆与本文档，后续不再 re-evaluate。
+
+## 13. 4 项游戏本体 bug / 多人规则修复（2026-11-21，阶段 3AN）
+
+用户交代并全部完成，WASM build_id=`7fa07d9b`（BRO 纯 Node 57/57 + 真机端到端零错误）：
+
+1. **X 键按一次后持续按下**（按键显示可见）：根因是中文输入法驻留时 keyup 被吞成 IME
+   形状 → `clearAll` 把 X 记进 clearRecent 收养表 → 残留 repeat 接回 → 字母键不自愈。
+   修 `web/src/input.mjs`（BRO 与 fork 同步）：keyup 优先用 `e.code` 精确释放；`clearAll`
+   加 `noAdopt` 参数，IME/unmapped keyup 清表不收养。方向键走位自愈不受影响。
+2. **符卡实时间计时异常**：`web/src/bro_runtime.c` 的 StopWatch 用全局帧数且 `Reset()`
+   空操作 → real_timer 从游戏启动累计。改为每实例起点帧 + Reset 真归零；ext.lua 差值
+   与 Lstage 关卡耗时语义保持。新单测 `stopwatch_unit.mjs` 6/6。
+3. **多人数据统一 P1**：新 `web/src/p1_data.lua`（编进 WASM）。收卡率 X/Y（startSpellHist
+   的 player key）与随自机变化的符卡（seasonid、th08/th11 读 player_name）此前按各客户端
+   localSlot 取、不一致。hook `stage.Option` 尾部，自机实体按本机角色生成后把全局
+   `player_name`/`seasonid` 钉到 P1(slot0)；单人零变化。`p1_data_unit.mjs` 5/5。
+4. **多人 boss 伤害减免**：新 `web/src/boss_damage_scale.lua`（编进 WASM）。hook
+   `boss.take_damage`/`take_damage2`，按在线人数缩放：2人0.75、3人2/3、4人0.5（4人值
+   用户未指定、暂定可改），单人恒1。`boss_damage_scale_unit.mjs` 5/5。

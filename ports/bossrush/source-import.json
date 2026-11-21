@@ -3,7 +3,7 @@
   "game": "bro",
   "repository": "https://github.com/TSake/TouHou-BossRushOnline",
   "branch": "web/multiplayer-port",
-  "commit": "本地工作区（线上 manifestUrl 接入 + replay 真机回放验证；WASM build_id=7bc47a91）",
+  "commit": "本地工作区（X键卡键修复 + 符卡实时间 + 多人数据统一P1 + boss伤害减免；WASM build_id=7fa07d9b）",
   "buildId": "14a7b16b",
   "credit": {
     "author": "吃药图书 (Cyoltose)",
@@ -24,8 +24,8 @@
     },
     {
       "path": "bro.wasm",
-      "bytes": 3435541,
-      "sha256": "7bc47a91adc6740a043def894a6aaa251eff72a0492f8aecfac98e6e05a57637"
+      "bytes": 3444547,
+      "sha256": "7fa07d9b2b57f094220dfb41bc0cc072bd454453970e6408ce105cabaca05c45"
     },
     {
       "path": "dist/app-shell.json",
@@ -74,8 +74,8 @@
     },
     {
       "path": "src/input.mjs",
-      "bytes": 60827,
-      "sha256": "43f1d06c9c9cb5151d1e0d6c6127a5a8ec6d53ab851cda4a9ce2c57b530223d3"
+      "bytes": 62791,
+      "sha256": "b973dddda3f8abfec6d3430943830531e46e5ded1e5a099dbcfeb2faa23e8b16"
     },
     {
       "path": "src/logger.mjs",

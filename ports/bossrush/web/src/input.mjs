@@ -855,16 +855,33 @@ export function attachInput({ ccall, canvas, preventDefault = true }) {
        却能立刻断掉 held 里的幽灵方向键。以前这里只 return，于是丢一次
        keyup 就永久漂移（verify_drift.js 实测 30 帧滑 134px）。
        这是**事件驱动**，不是 1c-25 明令禁止的静默超时。 */
+    /* 1e-XX（X 键卡住根因）：IME / 无法映射的 keyup 优先用 **e.code（物理键码，
+       输入法不改它）** 精确释放那一个键，再走整表清空且**不收养**。
+
+       旧逻辑无条件 clearAll('imeKeyUp')（收养所有 held），于是中文输入法驻留时
+       按 X：keydown 干净进了 held，keyup 被吞成 Process/229 → clearAll 把 X 记进
+       clearRecent → 紧随的残留 repeat 命中收养通道把 X 接回 → X 是字母键、不在
+       GHOST_SAFE 且 ghostPrune 默认关 → 永不自愈。真机复现：DOWN=true →
+       IME-KEYUP=false → ORPHAN-REPEAT=true → +600ms 仍 true。表现即用户所见
+       「按一次 X 后按键显示里 X 一直亮」。
+
+       修法两步（缺一不可）：① 能从 code 定位到 vk 就 releaseKey(vk) —— 该键此刻
+       已明确松开，必须处于释放态；② clearAll 用 noAdopt=true —— 这次清表身份
+       不可信，不能被残留 repeat 复活任何键。方向键走位自愈（1d-28/29）不受影响：
+       那条路径由 blur/focus/imeComposing 触发，仍照常收养。 */
+    const codeVk = (e.code && CODE_TO_VK[e.code] !== undefined) ? CODE_TO_VK[e.code] : 0;
     if (isImeEvent(e)) {
       imeNoise++;
-      clearAll('imeKeyUp');
-      logPush({ k: 'imeUp', code: e.code, key: e.key, kc: e.keyCode });
+      if (codeVk) releaseKey(codeVk, 'imeKeyUp');
+      clearAll('imeKeyUp', true);
+      logPush({ k: 'imeUp', code: e.code, key: e.key, kc: e.keyCode,
+        exactVk: codeVk || undefined });
       return;
     }
     const vk = vkFromEvent(e);
     if (!vk) {
       logPush({ k: 'unomap', code: e.code, key: e.key, kc: e.keyCode });
-      clearAll('unomapKeyUp');
+      clearAll('unomapKeyUp', true);
       return;
     }
     logPush({ k: 'u', vk, code: e.code });
@@ -923,20 +940,29 @@ export function attachInput({ ccall, canvas, preventDefault = true }) {
 
   on(canvas, 'contextmenu', (e) => { if (preventDefault) e.preventDefault(); });
 
-  const clearAll = (why = 'blur') => {
+  const clearAll = (why = 'blur', noAdopt = false) => {
     const n = held.size;
     const now = performance.now();
     /* 1d-28/1d-29：清空前把**所有仍按着的键**记进收养表。清空后它们只可能
        收到 repeat，没有这条通道就要松开重按才能恢复（真机「走位突然停住、
        按什么键都没用」）。1d-29 去掉了「st.rep 才登记」的限制 —— 交替按键
        时非最后按下的键根本收不到 repeat，正是「只能往一个方向」的来源。
-       manual 是探针注入的按住，不收养。 */
+       manual 是探针注入的按住，不收养。
+
+       1e-XX（X 键卡住）：noAdopt=true 用于「某个键已明确松开、但事件被
+       输入法吞成 IME 形状」的 clearAll。此刻 held 里的键身份不可信，若照常
+       登记收养，紧随其后的残留 repeat 会把刚松开的键（如 X=spell）接回；
+       字母键不属 GHOST_SAFE、ghostPrune 默认关，接回后永不自愈 —— 现象就是
+       「按一次 X 后按键显示里 X 一直亮」。这种 clearAll 一律不收养：玩家若
+       真还按着别的键，输入法退出后会有新 DOWN 重新建立。 */
     const adopt = [];
     /* 顺手清掉过期条目：clearAll 一次最多写几个键，但一局能触发几十次，
        不回收的话这张表会跟着会话无限长（虽然判据本身不会复活幽灵）。 */
     for (const [vk, t] of clearRecent) if (now - t >= CLEAR_ADOPT_TTL_MS) clearRecent.delete(vk);
-    for (const [vk, st] of held) {
-      if (!st.manual) { clearRecent.set(vk, now); adopt.push(vk); }
+    if (!noAdopt) {
+      for (const [vk, st] of held) {
+        if (!st.manual) { clearRecent.set(vk, now); adopt.push(vk); }
+      }
     }
     held.clear();
     mouseButtons = 0;
