@@ -46,17 +46,10 @@ bool Application::step(const GameInput& input, float fps, bool focus) {
 }
 const std::string& Application::error() const { return state->failure; }
 void Application::set_practice(bool enabled, i32 section, i32 life, i32 bomb, i32 power, i32 trance) {
-    if (!state) return;
-    state->practice.enabled = enabled;
-    state->practice.section = section;
-    state->practice.life = life;
-    state->practice.bomb = bomb;
-    state->practice.power = power;
-    state->practice.trance = trance;
+    if (state) state->set_practice(enabled, section, life, bomb, power, trance);
 }
 i32 Application::practice_stage() const {
-    if (!state || !state->practice.enabled) return 0;
-    return th13::resolve_practice(state->practice, state->selected_stage).stage;
+    return state ? state->practice_stage() : 0;
 }
 const i32* Application::projection() const { return state->projection(); }
 
@@ -701,7 +694,8 @@ bool ApplicationState::begin_title(i32 reason) {
     if (replay_active && reason == 1) reason = 2;
     // Only a real Practice quit/reselect gets original dc670==4 semantics.
     // Capture replay status before release_run; never repurpose a replay return.
-    if (returns_to_practice_selection(progress, reason, replay_active)) reason = 4;
+    if (!active_practice.applied && returns_to_practice_selection(progress, reason, replay_active))
+        reason = 4;
     // Spell-practice runs return through the DAT_004bb4c4/c8/cc cascade
     // (0x4561bf/0x45673a) straight to the difficulty level with the launch
     // selection restored — original dc670 stays 5 there, never 4.
@@ -722,6 +716,7 @@ bool ApplicationState::begin_title(i32 reason) {
     pending_replay_stage_index = 0;
     title.reset();
     release_run();
+    active_practice = {};
     replay_active = false;
     replay_finished = false;
     replay_cursor.reset();
@@ -832,7 +827,7 @@ bool ApplicationState::begin_run() {
     for (auto& callback : animation_updates) callback.enabled = true;
     if (new_run) {
         static constexpr i32 continues_by_difficulty[] = {3,3,6,9,0,0};
-        progress.continue_stock = continues_by_difficulty[difficulty];
+        progress.continue_stock = active_practice.applied ? 0 : continues_by_difficulty[difficulty];
         progress.stage = selected_stage;
         progress.starting_stage = selected_stage;
     }
@@ -940,7 +935,9 @@ bool ApplicationState::begin_run() {
         run->preserve_presentation_from(*previous_run);
         previous_run.reset();
     }
-    if (!replay_session) {
+    const bool record_session = !replay_session && !active_practice.applied;
+    if (active_practice.applied) recorder.clear();
+    if (record_session) {
         if (new_run && !recorder.start(ReplayRecorder::top_snapshot(progress)))
             return fail("Replay recording initialization failed");
         // B' 端到端注入缝（默认关闭 = 生产 top_snapshot 语义）：顶层头未映射
@@ -963,7 +960,7 @@ bool ApplicationState::begin_run() {
     // that rebinds panels 3..6 to effect scripts 7..10; it must run on every
     // stage activation, first launch and 0xc continuation alike.
     if (!stage_start_run_transition()) return false;
-    if (!replay_session) run->record_input = [this](const GameInput& input) {
+    if (record_session) run->record_input = [this](const GameInput& input) {
         // 录像 slow 事件字节（0x4484d0；回放 FPS 显示直读该流）：取最近
         // 1s 采样窗的整数 fps，正常 60 → 恒 60 字节（slow rate 0%）。
         const u8 slow = u8(std::min(255.0f, std::max(0.0f, slow_window_fps_ + 0.5f)));
@@ -1219,6 +1216,7 @@ bool ApplicationState::begin_replay_run(const u8* data, size_t size, u32 stage_i
     if (!replay_file.decode(data, size)) return fail("Replay decode: " + replay_file.error());
     if (stage_index >= replay_file.stages.size())
         return fail("Replay stage index out of range");
+    active_practice = {};
     return begin_replay_stage(stage_index);
 }
 
@@ -1461,8 +1459,8 @@ bool ApplicationState::update_scene_pass(const GameInput& input) {
         run->controls(input);  // 战斗输入（Z 射击/X 炸弹/方向）：唯一实例直通 StageBattle
         if (scheduler.update() < 0)
             return fail(run->error.empty() ? animations.error : run->error);
-        // 0042c550: every active non-Replay simulation tick, any play mode.
-        if (!replay_active && progress.stage_frame != previous_stage_frame) {
+        // Count native play time while leaving thprac runs out of the save.
+        if (!replay_active && !active_practice.applied && progress.stage_frame != previous_stage_frame) {
             if (!files.record_play_frame(progress.character))
                 return fail("Invalid play time record");
             ordinary_records_dirty = true;

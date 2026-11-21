@@ -3,6 +3,7 @@
 // section changes the stage the existing run start already owns.
 #pragma once
 #include "PracticeSections.gen.hpp"
+#include "SessionState.hpp"
 namespace th13 {
 struct PracticeRequest {
     bool enabled = false;
@@ -33,6 +34,20 @@ inline PracticeEffect resolve_practice(const PracticeRequest& request, int curre
     if (request.section > 0 && request.section <= practice_section_count) {
         effect.section = request.section;
         effect.stage = practice_sections[request.section].stage;
+    }
+    return effect;
+}
+
+inline PracticeEffect begin_thprac(PracticeRequest& request, SessionState& session,
+                                               int starting_stage) noexcept {
+    if (session.practice_mode != 0 || (session.run_mode_flags & 0x70u) != 0)
+        return resolve_practice({}, starting_stage);
+
+    const auto effect = resolve_practice(request, starting_stage);
+    if (effect.applied) {
+        request = {};
+        session.practice_mode = 1;
+        session.run_mode_flags |= 0x10u;
     }
     return effect;
 }
