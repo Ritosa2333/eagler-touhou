@@ -95,7 +95,9 @@ const BRO_MULTIPLAYER_LOADOUTS = Object.freeze([
     Object.freeze({ labelKey: "multiplayer.loadout.bro.chiruno", glyph: "妖", character: 2, shot: 0 }),
     Object.freeze({ labelKey: "multiplayer.loadout.bro.aya", glyph: "文", character: 3, shot: 0 }),
 ]);
-const BRO_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Normal", "Hard", "Lunatic"]);
+// BRO has no authored difficulty setting; the room keeps Hard/Lunatic as the
+// two selectable slots so the shared room UI can carry a per-room tier later.
+const BRO_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Hard", "Lunatic"]);
 const TOGGLE_TOUCH_FIRE = Object.freeze({ mode: "toggle", labelKey: "touch.tapToggle" });
 const CHARGE_TOUCH_FIRE = Object.freeze({
     mode: "held-key",

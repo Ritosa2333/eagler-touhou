@@ -10798,5 +10798,53 @@
   "content.terms": {
     "id": "content_terms",
     "params": []
+  },
+  "room.broSystems": {
+    "id": "room_broSystems",
+    "params": []
+  },
+  "room.broSystemsHint": {
+    "id": "room_broSystemsHint",
+    "params": []
+  },
+  "room.broStageQueue": {
+    "id": "room_broStageQueue",
+    "params": []
+  },
+  "room.broStageQueueHint": {
+    "id": "room_broStageQueueHint",
+    "params": []
+  },
+  "room.broQueueAdd": {
+    "id": "room_broQueueAdd",
+    "params": []
+  },
+  "room.broQueueAddButton": {
+    "id": "room_broQueueAddButton",
+    "params": []
+  },
+  "room.broQueueEmpty": {
+    "id": "room_broQueueEmpty",
+    "params": []
+  },
+  "room.broQueueUp": {
+    "id": "room_broQueueUp",
+    "params": []
+  },
+  "room.broQueueDown": {
+    "id": "room_broQueueDown",
+    "params": []
+  },
+  "room.broQueueRemove": {
+    "id": "room_broQueueRemove",
+    "params": []
+  },
+  "room.broQueueClear": {
+    "id": "room_broQueueClear",
+    "params": []
+  },
+  "room.broQueueNote": {
+    "id": "room_broQueueNote",
+    "params": []
   }
 }

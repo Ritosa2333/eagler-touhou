@@ -209,6 +209,32 @@ export function broWebSettingsExpression(options) {
 }
 
 /**
+ * 把房间选项（房主选定的全队系统 + 章节游玩队列）映射成 Lua 表构造表达式。
+ * 纯函数便于单测；只输出合法整数组，缺省交给 Lua 侧回落。
+ * 这些字段由 launcher 经 configure.options 下发（netplayBro*），其他作品不会带上。
+ */
+export function broRoomOptionsExpression(options) {
+  const o = options && typeof options === 'object' ? options : {};
+  const arr = (v, max, dedupe) => {
+    if (!Array.isArray(v)) return null;
+    const seen = new Set(), out = [];
+    for (const n of v) {
+      if (!Number.isInteger(n) || n < 1 || n > max) continue;
+      if (dedupe && seen.has(n)) continue;
+      seen.add(n);
+      out.push(String(n));
+    }
+    return '{' + out.join(',') + '}';
+  };
+  const systems = arr(o.netplayBroSystems, 11, true);
+  const queue = arr(o.netplayBroStageQueue, 19, false);
+  const parts = [];
+  if (systems !== null) parts.push('systems=' + systems);
+  if (queue !== null) parts.push('queue=' + queue);
+  return '{' + parts.join(',') + '}';
+}
+
+/**
  * 把 BRO 的 survey 报告（rtt50 毫秒、route direct/turn）转成 eagler 严格时序对象。
  *
  * 对齐要点：
@@ -493,6 +519,21 @@ export class EaglerRuntimeAdapter {
     } catch { return false; }
   }
 
+  /** 把房主选定的系统/章节队列下发到游戏本体（configure 与 launch 各调一次，
+   *  与 applyWebSettings 同样的双调用兜底）。房间选项只在联机 configure 里出现；
+   *  WASM 尚未 boot 时 bro_eval 失败不致命，launch 时会重放。 */
+  applyRoomOptions() {
+    if (!this.ccall || typeof this.ccall !== 'function') return false;
+    const options = (this.config && this.config.options) || {};
+    const expr = broRoomOptionsExpression(options);
+    if (expr === '{}') return false;
+    try {
+      this.ccall('bro_eval', 'string', ['string'],
+        [`return tostring(BRO_room_setup(${expr}))`]);
+      return true;
+    } catch { return false; }
+  }
+
   _dispatch(command, p) {
     switch (command) {
       case 'configure':    return this._cmdConfigure(p);
@@ -536,6 +577,8 @@ export class EaglerRuntimeAdapter {
       seed: Number.isFinite(o.netplaySeed) ? o.netplaySeed : null,
       difficulty: o.netplayDifficulty,
       loadouts: Array.isArray(o.netplayLoadouts) ? o.netplayLoadouts : [],
+      systems: Array.isArray(o.netplayBroSystems) ? o.netplayBroSystems : [],
+      stageQueue: Array.isArray(o.netplayBroStageQueue) ? o.netplayBroStageQueue : [],
       iceServers: Array.isArray(o.netplayIceServers) ? o.netplayIceServers : [],
       preferTurn: o.netplayPreferTurn === true,
       spectator: o.netplaySpectator === true,
@@ -558,13 +601,14 @@ export class EaglerRuntimeAdapter {
     }
     // 网站设置对齐：把网页设置为权威下发到游戏本体（音量/分辨率/3D背景/锁帧等）。
     const webSettingsApplied = this.applyWebSettings();
+    const roomOptionsApplied = this.applyRoomOptions();
     this._emit('runtime-info', {
       renderer: 'webgl2', architecture: 'wasm32-lua515',
       version: 'bro-5.1.2+3v', epoch: this.epoch,
-      webSettingsApplied,
+      webSettingsApplied, roomOptionsApplied,
       resourceManifestUrl: this.resourceCache?.status?.().manifestUrl || null,
     });
-    return { response: { ok: true, netplay: this.netplay, webSettingsApplied } };
+    return { response: { ok: true, netplay: this.netplay, webSettingsApplied, roomOptionsApplied } };
   }
 
   _cmdResources(p) {
@@ -602,8 +646,9 @@ export class EaglerRuntimeAdapter {
     this.launchSerial = Number.isFinite(p.launchSerial) ? p.launchSerial | 0 : (this.launchSerial + 1);
     this.firstFrameSent = false;
     this.phase = 'prelaunch';
-    // 兜底：若 configure 时 WASM 尚未 boot，这里 setting 表应已就绪，重放网页设置。
+    // 兜底：若 configure 时 WASM 尚未 boot，这里 setting 表应已就绪，重放网页设置与房间选项。
     this.applyWebSettings();
+    this.applyRoomOptions();
     if (this.multi && typeof this.multi.startMatch === 'function') {
       // 由宿主先 setSlot/setCharacter/setSystems/setSeed；这里只发起 match。
       this.multi.startMatch();

@@ -11,6 +11,7 @@ import {RoomTiming, type RoomTimingActions} from './RoomTiming';
 import {OptionSwitch} from '../settings/TouchSettingsFields';
 import {Th19VersusSettings} from './Th19VersusSettings';
 import {SettingsSelect} from '../settings/SettingsSelect';
+import {BroRoomSettings} from './BroRoomSettings';
 export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnapshot; service: Pick<MultiplayerRoomService, 'setRoomSettings' | 'takeSeat'> & RoomTimingActions; hidden: boolean}) {
   const {t} = useLocale(), {room, ready, owner, config} = roomPresentation(state, t)!;
   const disabled = !ready || !owner || room.phase !== 'lobby';
@@ -52,6 +53,10 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
         <SettingsSelect id="mpPc98InitialBombs" label={t('room.th05InitialBombs')} value={room.initialBombs ?? 2} disabled={disabled || !!room.challengeMode} onChange={event=>service.setRoomSettings({initialBombs:Number(event.target.value)})}>{[0,1,2].map(value=><option key={value} value={value}>{value}</option>)}</SettingsSelect>
       </fieldset>}
       {state.product === 'th19mp' && <Th19VersusSettings rules={room.th19Rules} disabled={disabled} onChange={th19Rules=>service.setRoomSettings({th19Rules})}/>}
+      {state.product === 'bromp' && <BroRoomSettings
+        systems={room.broSystems ?? []} queue={room.broStageQueue ?? []} disabled={disabled}
+        onSystems={broSystems=>service.setRoomSettings({broSystems})}
+        onQueue={broStageQueue=>service.setRoomSettings({broStageQueue})}/>}
       {state.product === 'th05mp' &&
         <fieldset className="room-basic-fields" aria-describedby="mpTh05InitialStockHint">
           <SettingsSelect id="mpTh05InitialSpares" label={t('room.th05InitialSpares')} value={room.initialSpares ?? TH05_INITIAL_STOCK.spares}

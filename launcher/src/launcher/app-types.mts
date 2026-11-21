@@ -40,6 +40,8 @@ export interface LauncherNetplayState {
   challengeMode?: boolean;
   chapterThreshold?: number;
   th19Rules?: number[];
+  broSystems?: number[];
+  broStageQueue?: number[];
   initialSpares?: number;
   initialBombs?: number;
   prankMode?: boolean;
@@ -70,6 +72,8 @@ export interface LauncherState {
 export interface MultiplayerRoomState {
   unrated?: boolean;
   th19Rules?: number[];
+  broSystems?: number[];
+  broStageQueue?: number[];
   initialSpares?: number;
   initialBombs?: number;
   runtimeGeneration?: string;
