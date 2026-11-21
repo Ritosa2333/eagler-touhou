@@ -60,6 +60,13 @@ export interface ReplayModelOptions {
 }
 export const formatReplayBytes = (bytes: number) => bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KiB` : `${(bytes / 1024 / 1024).toFixed(2)} MiB`;
 
+/** Replays persisted in a runtime-owned private store (not Emscripten IDBFS)
+ * cannot be cold-read by ReplayStorageReader; those products must list/read via
+ * the runtime file session. BRO keeps `/replay` in its own IndexedDB. */
+function replayUsesColdStorage(product: ProductId): boolean {
+  return gameIdForProduct(product) !== 'bro';
+}
+
 /** Original Replay manager state. The dialog view owns only presentation and
  * calls close after its original exit animation/native-dialog close completes. */
 export function createReplayModel(options: ReplayModelOptions) {
@@ -150,7 +157,7 @@ export function createReplayModel(options: ReplayModelOptions) {
     const ownerAtStart = runtimeOwner;
     // Import's committed writer still owns the mutation queue while requesting
     // this read. Waiting for that same queue here would wait on ourselves.
-    const promise = options.storage ? (afterMutation ? Promise.resolve() : mutations.idle()).then(async () =>
+    const promise = options.storage && replayUsesColdStorage(product) ? (afterMutation ? Promise.resolve() : mutations.idle()).then(async () =>
       (await options.storage!.read(product)).map(({bytes: _bytes, ...file}) => ({...file, name: file.path.split('/').pop() || file.path}))) : withFiles(product, async access => {
       if (ownerAtStart && ownerAtStart.epoch === null) ownerAtStart.epoch = access.epoch;
       await access.sync();
@@ -257,7 +264,7 @@ export function createReplayModel(options: ReplayModelOptions) {
     const product = snapshot.productId, token = generation;
     if (!product || !valid(token, product)) return;
     try {
-      if (options.storage) {
+      if (options.storage && replayUsesColdStorage(product)) {
         const files = await mutations.run(() => options.storage!.read(product, {path}));
         if (!valid(token, product)) return;
         const file = files.find(file => file.path === path);

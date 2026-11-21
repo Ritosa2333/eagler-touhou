@@ -166,4 +166,39 @@ game/ 源码零改动，靠 `web/src/prelude.lua:66-92` 把 `User\xxx`、`replay
    `setting`（网页权威）与 `/bro/data`（Lua 补丁）拒写，`..` 段级穿越拒写。
 
 验证：`web/test/save_files_unit.mjs` 7/7；BRO 纯 Node 全量 42/42 PASS。
-阶段3（原版存档整包导入）仍**不启用** `storage.importData()`；阶段4/5 的 Replay 下载与管理播放未开始。
+阶段3（原版存档整包导入）仍**不启用** `storage.importData()` —— 游戏本体后续还会改，
+导入可行性届时需重新评估，本阶段不碰。
+
+## 11. 阶段4/5：Replay 下载 / 管理 / 播放（2026-11-21，已完成）
+
+三处真缺口，不是单纯"放开策略"：
+
+1. **扩展名被 importOnly 排除**：`replay-files.mts` 的 `replayExtensions` 对
+   `importOnly:true` 产品跳过扩展名，导致 `.rep/.multi` 不进白名单，`isReplayFilePath()`
+   拒绝、文件选择器 accept 也没有。现在显式收录 bro 的 extensions（不动其他 importOnly
+   产品，hsob 的 `.dat` 仍走专用路径），并给 `isValidReplayName('bro', ...)` 加
+   `slotN.rep/.multi` 特例（仿 hsob 先例）。
+2. **列表来源不对**：BRO replay 存在自己的 `BossRush-save` IndexedDB，不在 Emscripten
+   IDBFS v21 库。`replayStorage.read()` 冷读拿不到。现在 `replays.ts` 加
+   `replayUsesColdStorage()`，BRO 强制走 runtime `list` 文件会话（阶段2 已打通）。
+3. **playback 空实现**：adapter 原本把 `playback` 落到 `default:{ok:true,ignored:true}`。
+   现在新增：
+   - `web/src/replay_playback.lua`（编进 VFS）：`BRO_replay_inspect()` 把
+     `plus.ReplayManager.ReadReplayInfo()` 的 STGR 元数据映射成 eagler
+     `ReplayDescription`（name/character=0/difficulty=0/stages[{id,score,frames,label}]）；
+     `BRO_replay_open()` 复刻 `title.lua` 的 `stage.IsReplay=true; stage.Set('load',...)`；
+     `BRO_replay_control()` 对 STGR 无法 O(1) 定位的 `seek` 明确返回不支持；
+     `BRO_replay_status()` 供 `runtime-info.playback` 上报。
+   - `eagler_adapter.mjs` 加 `playback` case 与 `_cmdPlayback()`：inspect 经
+     `bro_eval` 取 description 并原样回包；open 调用 Lua 回放入口后上报
+     `runtime-info.playback`；file-session 阶段 Module 未挂 ccall 时主动从
+     `fs.environment()` 取一次。
+   - 多人 `.multi` 旁路 inspect 给最小合法 description，`open` 时喂 `BRO_mre_load`
+     复原远端输入流。
+
+RGO 防护延续：replay 读写仍走单文件白名单 `replay/*`，不启用整包 `importData()`。
+
+验证：`replay_playback_unit.mjs` 6/6（真 WASM，STGR 解析/多关卡/多人/control/status）、
+`eagler_adapter_unit.mjs` 22/22（playback 三命令）、replay-files 策略独立校验 4/4、
+BRO 纯 Node 全量 43/43 PASS；WASM 重建 build_id=`dbd2ba79`，boot 后回放桥全局函数就绪。
+真浏览器端到端冒烟因 BRO 源树缺 `web/game/` 素材目录未能跑通，留待 eagler 完整部署环境验证。

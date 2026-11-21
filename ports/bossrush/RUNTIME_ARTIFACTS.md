@@ -1,6 +1,6 @@
 # BRO Runtime 产物落地说明（eagler fork `bro-integration`）
 
-> 更新：2026-11-21 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（设置对齐后 build_id `14a7b16b`）
+> 更新：2026-11-21 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（Replay 回放桥重建后 build_id `dbd2ba79`）
 > 本目录 `ports/bossrush/web/` 是 **BRO Web runtime 的实际构建产物**，由 BRO 侧 `web/build.sh` 产出后入库。
 
 ## 1. 产物清单（30 文件 / 4.2 MB）
@@ -122,3 +122,22 @@ BadApple!! 视频分卷 20.7 MB（Web 端视频解码非当前范围，不可玩
   `/User/setting`（网页权威源）与 `/bro/data`（Lua 补丁表）永不接受宿主写入，段级 `..` 穿越直接拒绝。
 - `eagler_adapter.mjs` 的 `list/read/write/remove` 支持异步 fs 并通过 `deferred` 等真实结果才回包。
 - 验证：`save_files_unit.mjs` 7/7；BRO 全量纯 Node 回归 42/42 PASS。
+
+## 10. Replay 下载 / 管理 / 播放（阶段4/5，2026-11-21）
+
+- eagler 侧策略：`replay-files.mts` 显式收录 bro 的 `rep/multi` 扩展（不影响 hsob 等其它
+  importOnly 产品），`isValidReplayName('bro',...)` 认 `slotN.rep/.multi`；`replays.ts`
+  的 `replayUsesColdStorage()` 让 BRO 跳过 IDBFS 冷读、强制走 runtime `list` 文件会话
+  （BRO replay 在自己的 `BossRush-save` IndexedDB，IDBFS v21 库里没有）。
+- BRO 侧回放桥：新增 `web/src/replay_playback.lua`（编进 VFS），`BRO_replay_inspect()` 把
+  STGR `ReadReplayInfo` 元数据映射成 eagler description；`BRO_replay_open()` 复刻原生
+  `stage.IsReplay=true; stage.Set('load',...)`；`BRO_replay_control()` 对 `seek` 明确
+  返回不支持；`BRO_replay_status()` 供 `runtime-info.playback`。多人 `.multi` 旁路
+  inspect 给最小 description，open 喂 `BRO_mre_load` 复原远端输入。
+- `eagler_adapter.mjs` 补 `playback` 命令分派与 `_cmdPlayback()`：inspect/open/控制/relocate
+  全实现，file-session 阶段主动从 `fs.environment()` 取 ccall，open 后上报 runtime-info。
+- WASM 重建（build_id `dbd2ba79`）把 boot.lua 新 step 与回放桥编进 VFS；source-import 30 项
+  哈希刷新，bro.wasm 同步。
+- 验证：`replay_playback_unit.mjs` 6/6（真 WASM）、`eagler_adapter_unit.mjs` 22/22、
+  replay-files 策略独立校验 4/4、BRO 全量纯 Node 43/43 PASS；boot 后回放桥全局函数就绪。
+  真浏览器端到端留待 eagler 完整部署环境（BRO 源树无 `web/game/` 素材）。

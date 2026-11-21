@@ -3,7 +3,7 @@
   "game": "bro",
   "repository": "https://github.com/TSake/TouHou-BossRushOnline",
   "branch": "web/multiplayer-port",
-  "commit": "本地工作区（阶段2 存档下载/上传桥接；runtime 入口已提交 7b29680）",
+  "commit": "本地工作区（阶段4/5 replay 下载/管理/播放；build_id=dbd2ba79）",
   "buildId": "14a7b16b",
   "credit": {
     "author": "吃药图书 (Cyoltose)",
@@ -24,13 +24,13 @@
     },
     {
       "path": "bro.wasm",
-      "bytes": 3425157,
-      "sha256": "14a7b16b90e852c185cc8a9c7b0eda9e33beb9ddc4acb2db876b1857183284e6"
+      "bytes": 3434606,
+      "sha256": "dbd2ba79c76a95cb049bba0439e159841f87588a9831ec6ad434c682e51c79ff"
     },
     {
       "path": "dist/app-shell.json",
       "bytes": 8616,
-      "sha256": "bb5a7ce51fa32597ef2adf1f6dc104585347550dc1455397c9d4f5ee5b37ed15"
+      "sha256": "963aee2a6e5b06ef2e375c5c9131ab066802fd27d3ee40794d7b987d0e1c4f9d"
     },
     {
       "path": "dist/package-manifest.json",
@@ -40,7 +40,7 @@
     {
       "path": "dist/runtime.json",
       "bytes": 576,
-      "sha256": "273ff81b7d8082b07390fce4531eedc93811572a624fcf073efc11749a28ff9c"
+      "sha256": "61b1ec04d636b6693c2402f0526375dc97ff3411c34e2ea199d4b4b5c1072b48"
     },
     {
       "path": "managed-shell.mjs",
@@ -64,8 +64,8 @@
     },
     {
       "path": "src/eagler_adapter.mjs",
-      "bytes": 37000,
-      "sha256": "435a3a3f20bc29be6a48a0838c44fb2f143fb4d607767ac8f49e2cf0be0c9f6a"
+      "bytes": 41574,
+      "sha256": "f22ed8bf885d8ed7cdf9448148754dfc5369399fa7e998e4d46e8e312134243d"
     },
     {
       "path": "src/input_buffer.mjs",

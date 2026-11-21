@@ -504,6 +504,7 @@ export class EaglerRuntimeAdapter {
       case 'write':        return this._cmdWrite(p);
       case 'remove':       return this._cmdRemove(p);
       case 'sync':         return this._cmdSync();
+      case 'playback':     return this._cmdPlayback(p);
       default:             return { ok: true, ignored: true };  // 可选命令未实现：ok，不破坏宿主流程
     }
   }
@@ -698,6 +699,98 @@ export class EaglerRuntimeAdapter {
       if (r && typeof r.then === 'function') return { deferred: r, response: { ok: true } };
     }
     return { response: { ok: true } };
+  }
+
+  /** 调用 Lua 侧回放桥，返回已解析的对象（Lua Serialize JSON）。 */
+  _replayCall(fn, args = []) {
+    if (!this.ccall || typeof this.ccall !== 'function') {
+      throw new Error('replay bridge unavailable before boot');
+    }
+    const expr = `return tostring(${fn}(${args.map((a) => JSON.stringify(a)).join(',')}))`;
+    const raw = this.ccall('bro_eval', 'string', ['string'], [expr]);
+    if (typeof raw !== 'string') return null;
+    try { return JSON.parse(raw); } catch { return raw; }
+  }
+
+  /** 上报 runtime-info.playback；Eagler ReplayWorkspace 据此驱动控制条。 */
+  _emitPlaybackInfo(extra = {}) {
+    let playback = {};
+    try { playback = this._replayCall('BRO_replay_status') || {}; } catch { /* 未 boot 时留空 */ }
+    if (!playback || typeof playback !== 'object' || Array.isArray(playback)) playback = {};
+    // 错误对象（Lua Serialize({error=...})）不上报成播放状态。
+    if (typeof playback.error === 'string') playback = {};
+    this._emit('runtime-info', {
+      renderer: 'webgl2', architecture: 'wasm32-lua515',
+      version: 'bro-5.1.2+3v', epoch: this.epoch,
+      playback: { ...playback, ...extra },
+    });
+  }
+
+  /** eagler playback 条件命令：inspect / open / pause / play / seek / rate / relocate。
+   *  inspect 需要 Lua 已 boot（ReadReplayInfo 真身）；file session 发生在 launch
+   *  前，Module 此时可能尚未建。用 fs 后端触发 createEnvironment 兜底。 */
+  _cmdPlayback(p) {
+    const action = String(p.action || '');
+    const path = String(p.path || '');
+    const boot = async () => {
+      if (!this.ccall && this.fs && typeof this.fs.environment === 'function') {
+        // saveFS.environment() 返回 {Module,ccall,ev,storage}；launch 前已就绪但
+        // adapter.ccall 要等 startBRO 才挂上，这里主动取一次。
+        try {
+          const env = await this.fs.environment();
+          if (env && env.ccall) {
+            this.ccall = env.ccall;
+            this.Module = env.Module;
+            if (!this.storage && env.storage) this.storage = env.storage;
+          }
+        } catch { /* 交由下面兜底 */ }
+      }
+      return !!this.ccall;
+    };
+    const run = async () => {
+      const ready = await boot();
+      if (!ready) return { ok: false, error: 'replay bridge unavailable' };
+      if (action === 'inspect') {
+        const desc = this._replayCall('BRO_replay_inspect', [path]);
+        if (!desc || typeof desc !== 'object' || Array.isArray(desc) || typeof desc.error === 'string') {
+          return { ok: false, error: (desc && desc.error) || 'invalid replay' };
+        }
+        return { ok: true, description: desc };
+      }
+      if (action === 'open') {
+        const stageName = p.stage === undefined ? null : String(p.stage);
+        const result = this._replayCall('BRO_replay_open', [path, stageName]);
+        // Lua 回 JSON：{ok:false,error} / {ok:true,path,stage}。
+        if (result && typeof result === 'object' && result.ok === false) {
+          return { ok: false, error: result.error || 'replay open failed' };
+        }
+        if (result === false) return { ok: false, error: 'replay open failed' };
+        this.playbackPath = path;
+        this._emitPlaybackInfo({ path, stage: stageName || '', playing: true });
+        return { ok: true };
+      }
+      if (action === 'relocate') {
+        // 宿主在文件会话里已 write 目标路径，这里只切换当前播放引用。
+        const target = String(p.target || p.path || '');
+        this.playbackPath = target;
+        this._emitPlaybackInfo({ path: target });
+        return { ok: true };
+      }
+      if (action === 'pause' || action === 'play' || action === 'seek' || action === 'rate') {
+        const value = Number.isFinite(Number(p.value)) ? Number(p.value) : 0;
+        const result = this._replayCall('BRO_replay_control', [action, value]);
+        const failed = result === false || (result && typeof result === 'object' && (result.ok === false || result.error));
+        if (failed) {
+          // seek 在 STGR 上明确不支持：ok:false 让 UI 显示 unsupported，不静默成功。
+          return { ok: false, reason: 'unsupported', action };
+        }
+        this._emitPlaybackInfo({ playing: action !== 'pause' });
+        return { ok: true, action };
+      }
+      return { ok: false, reason: 'unknown-action', action };
+    };
+    const deferred = Promise.resolve().then(run);
+    return { deferred, response: { ok: true } };
   }
 
   // ---- peerTransportGlobal 桥 ---------------------------------------------
