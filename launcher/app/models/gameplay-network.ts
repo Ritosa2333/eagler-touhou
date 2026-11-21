@@ -146,6 +146,11 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
       const finish = (error?: Error) => {if (wait.timer !== null) timers.clearTimeout(wait.timer); waits.delete(wait); if (error) reject(error); else resolve();};
       const poll = () => {
         if (disposed || !context.isCurrent() || !runtime.getSnapshot().launched || !token || runtime.getSnapshot().epoch !== token.epoch || runtime.getMidiEventContext()?.document !== token.document) {finish(new RuntimeSessionSupersededError()); return;}
+        // A runtime 'error' event is terminal and already carries the cause the
+        // native side reported. Surface it before the deadline, otherwise this
+        // wait replaces it with a timeout that only describes the symptom.
+        const failure = runtime.getSnapshot().error;
+        if (failure) {finish(new Error(failure)); return;}
         if (now() >= deadline) {finish(new Error(options.translate('room.gameplayPathTimeout'))); return;}
         const net = read(), state = options.context();
         if (net?.failed) {finish(new Error(net.error || options.translate('room.unavailable'))); return;}
