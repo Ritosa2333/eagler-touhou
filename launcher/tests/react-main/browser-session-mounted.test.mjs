@@ -3189,6 +3189,84 @@ for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,fa
  }
 });
 
+for (const device of [
+  {name: 'iPhone', agent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15', standalone: true},
+  {name: 'iPad desktop user agent', agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15', standalone: false},
+]) test(`Apple PWA on ${device.name} keeps multiplayer playable in viewport fullscreen`, async t => {
+  const {navigator, HTMLElement, matchMedia} = env.window;
+  const agent = Object.getOwnPropertyDescriptor(navigator, 'userAgent');
+  const requestFullscreen = HTMLElement.prototype.requestFullscreen;
+  let fullscreenRequests = 0;
+  t.onTestFinished(() => {
+    if (agent) Object.defineProperty(navigator, 'userAgent', agent); else delete navigator.userAgent;
+    delete navigator.standalone;
+    env.window.matchMedia = matchMedia;
+    HTMLElement.prototype.requestFullscreen = requestFullscreen;
+  });
+  Object.defineProperty(navigator, 'userAgent', {configurable: true, value: device.agent});
+  if (device.standalone) Object.defineProperty(navigator, 'standalone', {configurable: true, value: true});
+  else env.window.matchMedia = query => query === '(display-mode: standalone)'
+    ? {...matchMedia(query), matches: true}
+    : matchMedia(query);
+  HTMLElement.prototype.requestFullscreen = device.standalone ? undefined : async () => {
+    fullscreenRequests++;
+    throw new env.window.DOMException('Fullscreen unavailable', 'NotSupportedError');
+  };
+
+  const host = developmentAcquisitionHost(['th06']);
+  host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const invite = api.encodeRoomInvite({g: 'th06mp', r: '1234', f: true, a: 'join'});
+  const f = await mountBrowser({initial: '/?j=' + invite, host, socketBoundary: true, seedPackages: ['th06'], touchDevice: true, actualHistory: true, seedStorage(storage) {
+    const settings = JSON.stringify({music: 'none', options: {touchEnabled: true, thpracEnabled: false}});
+    for (const product of ['th06', 'th06mp']) storage.values.set(api.gamePreferenceStorageKey(product), settings);
+  }});
+  const session = api.getTestSession();
+  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'native room title prepared', 15_000);
+  const socket = f.sockets[0];
+  const localId = new URL(socket.url).searchParams.get('lobby');
+  const room = {code: '1234', playerCount: 2, difficulty: 1, phase: 'running', inputDelay: 0, predictionLimit: 8, startSerial: 2,
+    seats: [{clientId: localId, name: 'A', loadout: 0, ready: true}, {clientId: 'peer', name: 'B', loadout: 1, ready: true}], spectators: []};
+  const frame = node('#gameFrame');
+  const epoch = session.getRuntime().getSnapshot().epoch;
+  await React.act(async () => {socket.open(); socket.message({type: 'state', room}); socket.message({type: 'start', serial: 2, room});});
+  await until(() => node('#decisionDialog').open || session.getRuntime().getSnapshot().launched, 'room launch music choice');
+  if (node('#decisionDialog').open) await click('#decisionConfirm');
+  await until(() => session.getRuntime().getSnapshot().launched, 'room player launched', 15_000);
+  f.native.Module = {eaglerOptions: {netplayMode: 'lan'}};
+  f.native.__eaglerNetplayTransport = 'relay';
+  f.native[api.multiplayerConfigForProduct('th06mp').peerTransportGlobal] = {peers: new Map(), relay: {readyState: 1}};
+  await React.act(async () => f.native.emit('first-frame'));
+  await until(() => session.getSnapshot().roomLaunchStage === null, 'room first frame and gameplay path settled');
+
+  const assertExpanded = () => {
+    assert.ok(node('#player').classList.contains('open'));
+    assert.equal(node('#player').classList.contains('room-workspace'), false);
+    assert.equal(node('#fullscreenToggle').dataset.fullscreen, 'true');
+    assert.ok(node('#touchHud'));
+    assert.ok(node('#touchEscape'));
+    assert.equal(frame.tabIndex, 0);
+  };
+  assertExpanded();
+  const ownsFullscreenEntry = () => Boolean(f.router.state.location.state?.launcherRoomFullscreen);
+  await until(ownsFullscreenEntry, 'match start adds the fullscreen history entry');
+  await React.act(async () => env.document.dispatchEvent(new env.window.Event('webkitfullscreenchange')));
+  assertExpanded();
+  await click('#fullscreenToggle');
+  await until(() => !ownsFullscreenEntry(), 'leaving fullscreen settles room navigation');
+  assert.ok(node('#player').classList.contains('room-workspace'));
+  assert.equal(frame.tabIndex, -1);
+  await click('.room-workspace-fullscreen');
+  assertExpanded();
+  await until(ownsFullscreenEntry, 'manual fullscreen adds its own history entry');
+  await browserBack();
+  await until(() => node('#player').classList.contains('room-workspace'), 'Back returns to the live room');
+  assert.equal(node('#gameFrame'), frame);
+  assert.equal(session.getRuntime().getSnapshot().epoch, epoch);
+  assert.equal(session.getRuntime().getSnapshot().launched, true);
+  assert.equal(f.outbound.filter(m => m.command === 'return-room').length, 0);
+  assert.equal(fullscreenRequests, 0);
+});
+
 for(const presented of [true,false])test(`room ready requires native game menu presentation (${presented?'presented':'rejected'})`,async()=>{
  const host=developmentAcquisitionHost(['th09']);host.shared.netplayRelay='wss://relay.invalid/socket';
  const invite=api.encodeRoomInvite({g:'th09mp',r:'1234',f:true,a:'join',s:true});
