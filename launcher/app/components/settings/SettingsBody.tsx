@@ -65,7 +65,12 @@ export function SettingsBody({
         | 'thpracEnabled'
         | 'multiplayerLocalPlayerVisibility'
         | 'th075NativeResolution'
-        | 'pixelPerfectEnabled',
+        | 'pixelPerfectEnabled'
+        | 'broDisplayBG'
+        | 'broAuraDistortion'
+        | 'broEasyRender'
+        | 'broDisplayKey'
+        | 'broFrameskip',
     ) =>
     () =>
       model.setOption(name, !options[name]);
@@ -178,7 +183,7 @@ export function SettingsBody({
   return (
     <div className={multiplayer ? 'mp-settings-body options-settings' : 'options-singleplayer options-settings'}>
       {multiplayer && multiplayerControls}
-      {context.mobile && touch}
+      {context.mobile && state.gameId !== 'bro' && touch}
       <OptionsGroup
         id={id('fileOptions')}
         title={t('options.files')}
@@ -266,6 +271,90 @@ export function SettingsBody({
               <option key={scale} value={scale}>{640 * scale}×{480 * scale}</option>
             ))}
           </SettingsSelect>
+        )}
+        {state.gameId === 'bro' && (
+          <>
+            <SettingsSelect
+              id={id('broResolution')}
+              label={t('settings.broResolution')}
+              description={t('settings.broResolutionHint')}
+              value={String(options.broResolution)}
+              onChange={(event) => model.setOption('broResolution', Number(event.target.value))}
+            >
+              {[360, 480, 600, 720, 900, 1080, 1200, 1440].map((h) => (
+                <option key={h} value={h}>{Math.round(h * 16 / 9 / 2) * 2}×{h}</option>
+              ))}
+            </SettingsSelect>
+            <OptionRow
+              className={item('option-bro-display-bg')}
+              label={t('settings.broDisplayBG')}
+              hint={t('settings.broDisplayBGHint')}
+              hintId={id('broDisplayBGHint')}
+              control={
+                <OptionSwitch
+                  id={id('broDisplayBGToggle')}
+                  describedBy={id('broDisplayBGHint')}
+                  label={t('settings.broDisplayBG')}
+                  checked={options.broDisplayBG}
+                  onChange={switchOption('broDisplayBG')}
+                />
+              }
+            />
+            <OptionRow
+              className={item('option-bro-aura')}
+              label={t('settings.broAuraDistortion')}
+              control={
+                <OptionSwitch
+                  id={id('broAuraToggle')}
+                  label={t('settings.broAuraDistortion')}
+                  checked={options.broAuraDistortion}
+                  onChange={switchOption('broAuraDistortion')}
+                />
+              }
+            />
+            <OptionRow
+              className={item('option-bro-display-key')}
+              label={t('settings.broDisplayKey')}
+              control={
+                <OptionSwitch
+                  id={id('broDisplayKeyToggle')}
+                  label={t('settings.broDisplayKey')}
+                  checked={options.broDisplayKey}
+                  onChange={switchOption('broDisplayKey')}
+                />
+              }
+            />
+            <OptionRow
+              className={item('option-bro-frameskip')}
+              label={t('settings.broFrameskip')}
+              hint={t('settings.broFrameskipHint')}
+              hintId={id('broFrameskipHint')}
+              control={
+                <OptionSwitch
+                  id={id('broFrameskipToggle')}
+                  describedBy={id('broFrameskipHint')}
+                  label={t('settings.broFrameskip')}
+                  checked={options.broFrameskip}
+                  onChange={switchOption('broFrameskip')}
+                />
+              }
+            />
+            <OptionRow
+              className={item('option-bro-easy-render')}
+              label={t('settings.broEasyRender')}
+              hint={t('settings.broEasyRenderHint')}
+              hintId={id('broEasyRenderHint')}
+              control={
+                <OptionSwitch
+                  id={id('broEasyRenderToggle')}
+                  describedBy={id('broEasyRenderHint')}
+                  label={t('settings.broEasyRender')}
+                  checked={options.broEasyRender}
+                  onChange={switchOption('broEasyRender')}
+                />
+              }
+            />
+          </>
         )}
         {context.productId === 'th075mp' && (
           <OptionRow
@@ -366,7 +455,7 @@ export function SettingsBody({
       {(actions.keyboard || actions.gamepad) && (
         <InputSettings
           keyboard={state.gameId === 'th075' ? actions.th075Keyboard : state.gameId === 'th19' ? actions.th19Keyboard : actions.keyboard}
-          gamepad={state.gameId === 'th19' ? actions.th19Gamepad : actions.gamepad}
+          gamepad={state.gameId === 'bro' ? undefined : state.gameId === 'th19' ? actions.th19Gamepad : actions.gamepad}
           th19={state.gameId === 'th19'}
           th075={state.gameId === 'th075'}
           th09Local={state.gameId === 'th09' && !multiplayer ? actions.th09Local : undefined}
@@ -389,7 +478,7 @@ export function SettingsBody({
         onOpenChange={(open) => model.setDisclosure('advanced', open)}
         bodyClassName="options-advanced-body"
       >
-        <div id={id('gameVersionOption')}>
+        <div id={id('gameVersionOption')} hidden={state.gameId === 'bro'}>
           <SettingsSelect
             id={id('gameVersionSelect')}
             label={t('settings.gameVersion')}

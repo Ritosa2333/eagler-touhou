@@ -106,6 +106,18 @@ export interface RuntimeConfigureOptions {
   multiplayerLocalPlayerVisibility?: boolean;
   focusHitboxEnabled?: boolean;
   faithBarEnabled?: boolean;
+  /** BossRush-only settings; applied by the runtime via BRO_web_apply_settings. */
+  broResolution?: number;
+  broDisplayBG?: boolean;
+  broAuraDistortion?: boolean;
+  broEasyRender?: boolean;
+  broDisplayKey?: boolean;
+  broBgmVolume?: number;
+  broSfxVolume?: number;
+  broLock60?: boolean;
+  broFrameskip?: boolean;
+  /** Web keyboard remap resolved to the game's VK codes (keys / keysys). */
+  broKeys?: {keys?: Record<string, number>; keysys?: Record<string, number>};
   replayViewer?: boolean;
   /** Direct selection from the TH09 file manager, including archive folders. */
   replayPath?: string;
@@ -173,6 +185,16 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   multiplayerLocalPlayerVisibility: Object.freeze({ requirement: "profile-required", capability: "multiplayer-local-player-visibility", when: "multiplayer" }),
   focusHitboxEnabled: Object.freeze({ requirement: "optional", capability: "focus-hitbox", when: "product declares focus-hitbox" }),
   faithBarEnabled: Object.freeze({ requirement: "optional", capability: "faith-bar", when: "product declares display.faithBar" }),
+  broResolution: Object.freeze({ requirement: "optional", capability: "game-volume-control", when: "BRO web settings; output height 360-1440" }),
+  broDisplayBG: Object.freeze({ requirement: "optional", capability: "game-volume-control", when: "BRO web settings; 3D background" }),
+  broAuraDistortion: Object.freeze({ requirement: "optional", capability: "game-volume-control", when: "BRO web settings; Boss aura effect" }),
+  broEasyRender: Object.freeze({ requirement: "optional", capability: "game-volume-control", when: "BRO web settings; reduced UI rendering" }),
+  broDisplayKey: Object.freeze({ requirement: "optional", capability: "game-volume-control", when: "BRO web settings; key overlay" }),
+  broBgmVolume: Object.freeze({ requirement: "optional", capability: "game-volume-control", when: "BRO web settings; BGM volume 0-100" }),
+  broSfxVolume: Object.freeze({ requirement: "optional", capability: "game-volume-control", when: "BRO web settings; SFX volume 0-100" }),
+  broLock60: Object.freeze({ requirement: "optional", capability: "presentation-cadence", when: "BRO web settings; lock to 60fps" }),
+  broFrameskip: Object.freeze({ requirement: "optional", capability: "presentation-cadence", when: "BRO web settings; frame-skip mode" }),
+  broKeys: Object.freeze({ requirement: "optional", capability: "game-volume-control", when: "BRO web settings; keyboard remap as VK codes" }),
   replayPath: Object.freeze({ requirement: "required", capability: "replay-file-management", when: "selected-file Replay playback" }),
   replayViewer: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer Replay viewer is launched" }),
   multiplayerPreflight: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer room checks its Runtime before joining gameplay" }),

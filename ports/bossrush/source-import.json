@@ -3,8 +3,8 @@
   "game": "bro",
   "repository": "https://github.com/TSake/TouHou-BossRushOnline",
   "branch": "web/multiplayer-port",
-  "commit": "848f8f76749bee3607fd38df74a550117a912b21",
-  "buildId": "eb0494bb",
+  "commit": "本地工作区（设置完整个性化：跳帧/改键，尚未提交）",
+  "buildId": "14a7b16b",
   "credit": {
     "author": "吃药图书 (Cyoltose)",
     "webMaintainer": "清酒 (Tidew)",
@@ -14,13 +14,13 @@
   "inputs": [
     {
       "path": "bro.mjs",
-      "bytes": 113013,
-      "sha256": "5723d31fcc9da1a412278b93649816123ea8423107f5b75ebf3925e26c43b9e9"
+      "bytes": 113267,
+      "sha256": "ddb4909f0d2989aa10e49b0743a6f19bf1f70656dd94ab87564a9466eeda5297"
     },
     {
       "path": "bro.wasm",
-      "bytes": 3405056,
-      "sha256": "eb0494bb47660ea4f7e8042977980f7030bb675a2b351f62d70ef9ba7346e575"
+      "bytes": 3425157,
+      "sha256": "14a7b16b90e852c185cc8a9c7b0eda9e33beb9ddc4acb2db876b1857183284e6"
     },
     {
       "path": "dist/app-shell.json",

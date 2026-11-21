@@ -152,6 +152,59 @@ const clampInt = (n, lo, hi, fallback) => {
 };
 
 /**
+ * 把网页 configure 的 BRO 专属设置映射成 Lua 表构造表达式（纯函数，便于单测）。
+ * 只输出实际下发的字段；缺省项交给游戏侧 web_settings.lua 的 normalize 回落。
+ * 这些字段由 launcher 在 game==='bro' 时填入 configure.options，其他作品不会带上。
+ */
+export function broWebSettingsExpression(options) {
+  const o = options && typeof options === 'object' ? options : {};
+  const numeric = (v, min, max) => typeof v === 'number' && Number.isFinite(v)
+    ? String(Math.max(min, Math.min(max, Math.round(v)))) : null;
+  const flag = (v) => typeof v === 'boolean' ? (v ? 'true' : 'false') : null;
+  // 网页键盘改键：launcher 的 code 别名 → VK 数字，按 BRO 游戏的字段名下发。
+  // 只输出白名单字段；游戏侧只改 setting.keys[name]，不替换整表。
+  const keyGroups = {
+    keys: ['up', 'down', 'left', 'right', 'slow', 'shoot', 'spell', 'special'],
+    keysys: ['repfast', 'repslow', 'menu', 'snapshot', 'retry'],
+  };
+  const keys = (v) => {
+    if (!v || typeof v !== 'object') return null;
+    const groups = [];
+    for (const group of Object.keys(keyGroups)) {
+      const sub = v[group];
+      if (!sub || typeof sub !== 'object') continue;
+      const items = [];
+      for (const name of keyGroups[group]) {
+        if (!Object.prototype.hasOwnProperty.call(sub, name)) continue;
+        const vk = numeric(sub[name], 1, 255);
+        if (vk != null) items.push(`${name}=${vk}`);
+      }
+      if (items.length) groups.push(`${group}={${items.join(',')}}`);
+    }
+    return groups.length ? '{' + groups.join(',') + '}' : null;
+  };
+  const map = [
+    ['broResolution', 'resolution', (v) => numeric(v, 360, 1440)],
+    ['broBgmVolume', 'bgmVolume', (v) => numeric(v, 0, 100)],
+    ['broSfxVolume', 'sfxVolume', (v) => numeric(v, 0, 100)],
+    ['broLock60', 'lock60', flag],
+    ['broDisplayBG', 'displayBG', flag],
+    ['broAuraDistortion', 'auraDistortion', flag],
+    ['broEasyRender', 'easyRender', flag],
+    ['broDisplayKey', 'displayKey', flag],
+    ['broFrameskip', 'frameskip', flag],
+    ['broKeys', 'keys', keys],
+  ];
+  const parts = [];
+  for (const [src, dst, conv] of map) {
+    if (!Object.prototype.hasOwnProperty.call(o, src)) continue;
+    const val = conv(o[src]);
+    if (val != null) parts.push(`${dst}=${val}`);
+  }
+  return '{' + parts.join(',') + '}';
+}
+
+/**
  * 把 BRO 的 survey 报告（rtt50 毫秒、route direct/turn）转成 eagler 严格时序对象。
  *
  * 对齐要点：
@@ -251,6 +304,9 @@ export function codeToVk(code) { return CODE_VK[String(code)] ?? null; }
 export class EaglerRuntimeAdapter {
   constructor(opts = {}) {
     this.game = String(opts.game || 'bro');
+    // eagler 的 ready.saveRoot 必须与 product-catalog 的 storage.saveRoot 对齐。
+    // BRO 目录声明 '/bro'（见 product-catalog.mjs）；用构造参数可覆盖。
+    this.saveRoot = String(opts.saveRoot || '/bro');
     this.epoch = isRuntimeProtocolEpoch(opts.epoch) ? opts.epoch
       : (readRuntimeEpoch() ?? (typeof Date !== 'undefined' ? Date.now() : 1));
     // Date.now() 是毫秒正整数，天然 > 0 且 safe integer；极端fallback保底 1。
@@ -294,7 +350,7 @@ export class EaglerRuntimeAdapter {
       this._onMessage = (e) => this._handleMessage(e && e.data);
       if (typeof addEventListener === 'function') addEventListener('message', this._onMessage);
     }
-    this._emit('ready', { saveRoot: '/User' });
+    this._emit('ready', { saveRoot: this.saveRoot });
     if (typeof setInterval === 'function' && !this.frameTimer) {
       this.frameTimer = setInterval(() => this._emitPeriodic(), this._periodicMs);
     }
@@ -375,6 +431,15 @@ export class EaglerRuntimeAdapter {
     const payload = data || {};
     try {
       const result = this._dispatch(command, payload);
+      // 异步命令（当前仅 sync）：flush 落盘完成后才回包，使 launcher 的
+      // `await sync()` 真正等到数据落 IndexedDB，而不是拿到 ok 就走。
+      if (result && result.deferred && typeof result.deferred.then === 'function') {
+        result.deferred.then(
+          () => { if (request !== undefined) this._reply(request, true, { ok: true }); },
+          (e) => { if (request !== undefined) this._reply(request, false, { error: String(e && e.message || e) }); },
+        );
+        return result;
+      }
       if (request !== undefined) {
         this._reply(request, true, result && result.response);
       }
@@ -388,6 +453,22 @@ export class EaglerRuntimeAdapter {
 
   _reply(request, ok, extra) {
     this.post(makeRuntimeResponse(this.game, this.epoch, request, ok, extra || {}));
+  }
+
+  /** 把 configure.options 里的 BRO 专属设置下发到游戏本体。
+   *  configure（prelaunch）与 launch 各调一次：前者覆盖「先配置后进关」，
+   *  后者兜底「setting 表在 boot 之后才就绪」。expr 为 '{}' 时无专属项，跳过。
+   *  bro_eval 失败（WASM 尚未 boot）不打断协议，complete_load 会再 flush。 */
+  applyWebSettings() {
+    if (!this.ccall || typeof this.ccall !== 'function') return false;
+    const options = (this.config && this.config.options) || {};
+    const expr = broWebSettingsExpression(options);
+    if (expr === '{}') return false;
+    try {
+      this.ccall('bro_eval', 'string', ['string'],
+        [`return tostring(BRO_web_apply_settings(${expr}))`]);
+      return true;
+    } catch { return false; }
   }
 
   _dispatch(command, p) {
@@ -446,11 +527,14 @@ export class EaglerRuntimeAdapter {
         preferTurn: this.netplay.preferTurn,
       });
     }
+    // 网站设置对齐：把网页设置为权威下发到游戏本体（音量/分辨率/3D背景/锁帧等）。
+    const webSettingsApplied = this.applyWebSettings();
     this._emit('runtime-info', {
       renderer: 'webgl2', architecture: 'wasm32-lua515',
       version: 'bro-5.1.2+3v', epoch: this.epoch,
+      webSettingsApplied,
     });
-    return { response: { ok: true, netplay: this.netplay } };
+    return { response: { ok: true, netplay: this.netplay, webSettingsApplied } };
   }
 
   _cmdResources() {
@@ -477,6 +561,8 @@ export class EaglerRuntimeAdapter {
     this.launchSerial = Number.isFinite(p.launchSerial) ? p.launchSerial | 0 : (this.launchSerial + 1);
     this.firstFrameSent = false;
     this.phase = 'prelaunch';
+    // 兜底：若 configure 时 WASM 尚未 boot，这里 setting 表应已就绪，重放网页设置。
+    this.applyWebSettings();
     if (this.multi && typeof this.multi.startMatch === 'function') {
       // 由宿主先 setSlot/setCharacter/setSystems/setSeed；这里只发起 match。
       this.multi.startMatch();
@@ -484,12 +570,21 @@ export class EaglerRuntimeAdapter {
     return { response: { ok: true, launchSerial: this.launchSerial } };
   }
 
+  /** eagler 的 listing()（files.ts）要求 files 为 {path,size} 对象数组；
+   *  fs.list()/storage.inspect() 可能给字符串或带 size/sig 的对象，统一归一化。 */
   _cmdList() {
+    const norm = (entries) => (Array.isArray(entries) ? entries : []).map((e) => {
+      if (typeof e === 'string') return { path: e, size: 0 };
+      const path = e && typeof e.path === 'string' ? e.path : null;
+      if (!path) return null;
+      const size = e && Number.isFinite(Number(e.size)) ? Math.max(0, Math.round(Number(e.size))) : 0;
+      return { path, size };
+    }).filter(Boolean);
     if (this.fs && typeof this.fs.list === 'function') {
-      return { response: { ok: true, files: this.fs.list() } };
+      return { response: { ok: true, files: norm(this.fs.list()) } };
     }
     if (this.storage && typeof this.storage.inspect === 'function') {
-      return { response: { ok: true, files: this.storage.inspect().map((f) => f.path) } };
+      return { response: { ok: true, files: norm(this.storage.inspect()) } };
     }
     return { response: { ok: false, reason: 'no-storage' } };
   }
@@ -547,7 +642,9 @@ export class EaglerRuntimeAdapter {
   _cmdSync() {
     if (this.storage && typeof this.storage.flush === 'function') {
       const r = this.storage.flush();
-      if (r && typeof r.then === 'function') return { response: { ok: true, async: true, promise: r } };
+      // 用 deferred 让 _handleMessage 等落盘完成再回包；不再把不可序列化的
+      // Promise 塞进 response 字段（launcher 的 listing/bytes 都不认它）。
+      if (r && typeof r.then === 'function') return { deferred: r, response: { ok: true } };
     }
     return { response: { ok: true } };
   }

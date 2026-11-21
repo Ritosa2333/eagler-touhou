@@ -421,6 +421,47 @@ for (const productId of ['th17', 'th17mp']) test(`${productId} forwards both ren
   assert.equal(configure().renderScale, 2);
 });
 
+for (const productId of ['bro', 'bromp']) test(`${productId} forwards authoritative BRO web settings through runtime configure`, () => {
+  const {model} = settingsFixture({productId});
+  const multiplayer = productId === 'bromp' ? {kind: 'room-preload'} : undefined;
+  const keyBindings = {keys: {up: 87, shoot: 74}, keysys: {menu: 27}};
+  const configure = () => api.gameRuntimeOptions({productId, settings: model.getSnapshot(), multiplayer, broKeyBindings: keyBindings}, 'ja', 'none', null);
+  // 默认：桌面缓存默认项即 BRO 游戏默认值。
+  let options = configure();
+  assert.equal(options.broResolution, 720);
+  assert.equal(options.broDisplayBG, true);
+  assert.equal(options.broBgmVolume, 100);
+  assert.equal(options.broSfxVolume, 100);
+  assert.equal(options.broLock60, true);
+  assert.equal(options.broFrameskip, false);
+  assert.deepEqual(options.broKeys, keyBindings);
+  // 改设置后进入 wire（音量复用 launcher 通用字段，锁帧复用 frameLimit60Enabled）。
+  model.setOption('broResolution', 1080);
+  model.setOption('broDisplayBG', false);
+  model.setOption('broAuraDistortion', false);
+  model.setOption('broEasyRender', true);
+  model.setOption('broDisplayKey', false);
+  model.setOption('bgmVolume', 65);
+  model.setOption('sfxVolume', 40);
+  model.setOption('frameLimit60Enabled', false);
+  model.setOption('broFrameskip', true);
+  options = configure();
+  assert.equal(options.broResolution, 1080);
+  assert.equal(options.broDisplayBG, false);
+  assert.equal(options.broAuraDistortion, false);
+  assert.equal(options.broEasyRender, true);
+  assert.equal(options.broDisplayKey, false);
+  assert.equal(options.broBgmVolume, 65);
+  assert.equal(options.broSfxVolume, 40);
+  assert.equal(options.broLock60, false);
+  assert.equal(options.broFrameskip, true);
+  // 其他作品不携带任何 BRO 专属键。
+  const th06 = settingsFixture({productId: 'th06'}).model;
+  const th06Options = api.gameRuntimeOptions({productId: 'th06', settings: th06.getSnapshot()}, 'ja', 'none', null);
+  assert.equal(th06Options.broResolution, undefined);
+  assert.equal(th06Options.broBgmVolume, undefined);
+});
+
 for (const kind of ['room', 'room-preload']) test(`${kind} program version policy reaches code preparation before native ready and configure`, async () => {
   const calls=[],f=acquisitionFixture(),state=settingsFixture({productId:'th06mp'});
   const r=runtimeFixture([],{prepareCode:async(entry,options)=>{calls.push(options);return {url:new URL(entry,baseUrl).href,generation:hash,cached:true};}});

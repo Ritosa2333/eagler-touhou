@@ -2722,6 +2722,46 @@
     "id": "options_volume",
     "params": []
   },
+  "settings.broFrameskip": {
+    "id": "settings_broFrameskip",
+    "params": []
+  },
+  "settings.broFrameskipHint": {
+    "id": "settings_broFrameskipHint",
+    "params": []
+  },
+  "settings.broResolution": {
+    "id": "settings_broResolution",
+    "params": []
+  },
+  "settings.broResolutionHint": {
+    "id": "settings_broResolutionHint",
+    "params": []
+  },
+  "settings.broDisplayBG": {
+    "id": "settings_broDisplayBG",
+    "params": []
+  },
+  "settings.broDisplayBGHint": {
+    "id": "settings_broDisplayBGHint",
+    "params": []
+  },
+  "settings.broAuraDistortion": {
+    "id": "settings_broAuraDistortion",
+    "params": []
+  },
+  "settings.broDisplayKey": {
+    "id": "settings_broDisplayKey",
+    "params": []
+  },
+  "settings.broEasyRender": {
+    "id": "settings_broEasyRender",
+    "params": []
+  },
+  "settings.broEasyRenderHint": {
+    "id": "settings_broEasyRenderHint",
+    "params": []
+  },
   "settings.bgmVolume": {
     "id": "settings_bgmVolume",
     "params": []

@@ -273,10 +273,17 @@ export const PRODUCT_GAMES = Object.freeze({
         runtimeFileLayout: "directory",
         runtimeAssets: Object.freeze([
             "bro.html", "bro.mjs", "bro.wasm", "manifest.json",
-            "shell.mjs", "eagler-adapter.mjs", "storage.mjs", "directory-keyboard.mjs",
+            "shell.mjs", "eagler_adapter.mjs", "storage.mjs",
+            "audio.mjs", "input.mjs", "input_buffer.mjs", "output_queue.mjs",
+            "postfx.mjs", "text.mjs", "logger.mjs", "replay_archive.mjs",
+            "multiplayer.mjs", "netcode.mjs", "netmesh.mjs", "rollback.mjs",
+            "route_handoff.mjs", "route_monitor.mjs", "route_selector.mjs",
         ]),
         requiredShared: Object.freeze([]),
-        dataProvider: "emscripten-preload",
+        // directory 布局的 Emscripten 作品统一用 retail-memory（hsob/th08~th20 先例）。
+        // 原草案占位值 emscripten-preload 只允许 flat，与 directory 冲突会被
+        // runtimeAdapterProfile 直接拒绝。BRO 数据走 scripts.json 分片，与 hsob 同构。
+        dataProvider: "retail-memory",
         runtimeResourceTransport: "resources",
         package: Object.freeze({
             dataFileId: "game-data",
