@@ -362,6 +362,7 @@
   "th09_quickChat": "定型チャット",
   "room_matchStats": "{wins}勝 {losses}敗 | {minutes}分",
   "room_th09SpectatorHint": "対戦の途中から参加した場合も、その対戦の開始位置から観戦します。受信済みの内容は一時停止・早送り・巻き戻しができます。観戦終了時に履歴は消去されます。",
+  "room_th075SpectatorHint": "対戦の途中から観戦すると自動で現在の対戦に追いつきます。一時停止やタイムラインの操作で、受信済みの対戦を見返せます。",
   "room_spectatorJoined": "観戦席に参加しました",
   "room_loadingSpectator": "観戦データを読み込み中",
   "room_versus": "{count}人対戦",

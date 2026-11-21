@@ -18,6 +18,9 @@ export function RoomSpectators({
   const { t } = useLocale(),
     { room, ready, owner } = roomPresentation(state, t)!,
     entries = room.spectators || [];
+  const hint = room.spectatorTimeline && state.product === 'th075mp' ? 'room.th075SpectatorHint'
+    : room.spectatorTimeline && state.product === 'th09mp' ? 'room.th09SpectatorHint'
+    : 'room.spectatorHint';
   return (
     <div
       id="mpSpectatorContent"
@@ -26,11 +29,7 @@ export function RoomSpectators({
       hidden={hidden}
     >
       <p className="mp-spectator-intro">
-        {t(
-          state.product === 'th09mp' && room.spectatorTimeline
-            ? 'room.th09SpectatorHint'
-            : 'room.spectatorHint',
-        )}
+        {t(hint)}
       </p>
       <div className="mp-spectator-list" id="mpSpectatorList">
         {entries.length ? (

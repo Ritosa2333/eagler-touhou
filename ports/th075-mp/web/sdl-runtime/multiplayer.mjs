@@ -50,6 +50,8 @@ export class Multiplayer {
     const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(identity)),abi=new DataView(hash).getUint32(0,true)||1;
     const run=(BigInt(url.searchParams.get('run'))<<16n|BigInt(o.netplaySeed))+1n;
     if(run>0xffffffffffffffffn)throw Error('TH075 run identity overflow');
+    this.playbackRun='th075_'+run;
+    this.playbackRevision=0;
     const args=[url.href,spectator?o.netplaySpectatorId:'',spectator?2:o.netplayPlayer,Number(run&0xffffffffn),Number(run>>32n),abi,
       o.netplaySeed,a.character,b.character,a.shot,b.shot,o.netplayDifficulty,o.netplayInputDelay??0,+o.netplayInputDelayAuto];
     if(!core.ccall('th075_mp_begin','number',['string','string',...Array(12).fill('number')],args))throw Error('TH075 peer transport initialization failed');
@@ -70,6 +72,24 @@ export class Multiplayer {
     this.markLocalPlayer();this.timer=setInterval(()=>this.pump(),16);
   }
   state(){const at=this.core._th075_mp_status();return Array.from(this.core.HEAPU32.subarray(at/4,at/4+64));}
+  reportPlayback(){
+    const at=this.core._th075_mp_playback_state();
+    if(!at)return;
+    const values=this.core.HEAPU32.subarray(at/4,at/4+7);
+    const signature=values.join(',');
+    if(signature===this.lastPlayback)return;
+    this.lastPlayback=signature;
+    const [min,position,received,target,paused,seeking,flags]=values;
+    this.emit('runtime-info',{spectatorPlayback:{version:1,run:this.playbackRun,
+      revision:++this.playbackRevision,min,position,received,edge:received,target,
+      paused:!!paused,seeking:!!seeking,following:!!(flags&1),ended:!!(flags&2),nodes:[]}});
+  }
+  playback({run,action,frame}){
+    const operation=['pause','play','seek','live'].indexOf(action);
+    if(run!==this.playbackRun||operation<0||(action==='seek'&&!integer(frame,0,0xfffffffe))||
+       !this.core._th075_mp_playback(operation,action==='seek'?frame:0))throw Error('Invalid TH075 spectator playback command');
+    this.reportPlayback();return {};
+  }
   pump(){
     if(this.closed||this.failed||this.isBusy())return;
     try{if(!this.core._th075_mp_poll(performance.now()*1000))throw Error(this.core.UTF8ToString(this.core._th075_error()));this.frame();}
@@ -81,9 +101,12 @@ export class Multiplayer {
     if(this.spectator&&!this.timingReported){const at=this.core._th075_mp_timing();if(at){const p=new DataView(this.core.HEAPU8.buffer,at,40),timing={phase:'ready',automatic:!!p.getUint32(32,true),adonisMode:p.getUint8(5),inputDelay:p.getUint8(6),predictionReserve:0,fullDelay:p.getUint32(8,true),rttP95Us:p.getUint32(24,true),lost:p.getUint32(28,true),samples:p.getUint32(36,true),route:'spectator'};this.timingReported=true;globalThis.__eaglerNetplayTiming=timing;this.emit('runtime-info',{netplayTiming:timing});}}
     globalThis.__eaglerNetplayLanRollback=s[48];globalThis.__eaglerNetplayLanResimulated=s[49];
     globalThis.__eaglerNetplayLanFrame=s[2];globalThis.__eaglerNetplayLanConfirmed=s[3];
-    globalThis.__eaglerNetplayLanActive=s[1]===3;
+    globalThis.__eaglerNetplayLanActive=s[1]===3||(this.spectator&&s[1]===5);
     globalThis.__eaglerNetplayInputDelayFrames=s[6];
-    if(s[1]===5&&!this.finished){this.finished=true;globalThis.__eaglerNetplayLanActive=false;this.onFinished();}
+    if(this.spectator){
+      const now=performance.now();
+      if(now>=(this.nextPlaybackReport??0)){this.nextPlaybackReport=now+200;this.reportPlayback();}
+    }else if(s[1]===5&&!this.finished){this.finished=true;globalThis.__eaglerNetplayLanActive=false;this.onFinished();}
   }
   markLocalPlayer(){
     if(this.spectator||!this.options.multiplayerLocalPlayerVisibility)return;
