@@ -94,6 +94,7 @@
 | 作品适配表 | [ports/th20/ADAPTATION.md](../ports/th20/ADAPTATION.md) | th20 适配检查 |
 | 作品源码文档 | [ports/bossrush/RUNTIME_ARTIFACTS.md](../ports/bossrush/RUNTIME_ARTIFACTS.md) | BRO Runtime 产物落地说明（eagler fork bro-integration） |
 | 作品源码文档 | [ports/bossrush/docs/DEVELOPMENT.md](../ports/bossrush/docs/DEVELOPMENT.md) | BossRush 开发指南 |
+| 作品源码文档 | [ports/bossrush/docs/STORAGE_REPLAY.md](../ports/bossrush/docs/STORAGE_REPLAY.md) | BRO 存档 / Replay 与网页端对接现状 |
 | 作品源码文档 | [ports/bossrush/proposals/ISSUE_DRAFT.md](../ports/bossrush/proposals/ISSUE_DRAFT.md) | Issue 草案：认领并接入 Touhou BossRush（第三方衍生作）到 eagler-touhou |
 | 作品源码文档 | [ports/bossrush/proposals/MANIFEST_DIFF.md](../ports/bossrush/proposals/MANIFEST_DIFF.md) | BRO manifest ↔ eagler product-catalog 字段差集 |
 | 作品源码文档 | [ports/bossrush/proposals/README.md](../ports/bossrush/proposals/README.md) | BRO 接入提案（待维护者确认） |

@@ -1,7 +1,22 @@
 {
   "schema": "bro/app-shell/1",
-  "version": "sha256-f886789079569e00997740d24d76dc5cff1227bd27a27b38476697c0bb20419a",
+  "version": "sha256-5ea6fcf4454846bb950bc17f344c9d18101deb594034135defae7674b6101702",
   "files": [
+    {
+      "p": "bro.html",
+      "n": 930,
+      "h": "811a9b1fabf69cf6b938c5adc18ccff48bbd2f191c4073fbb2f7ddc39fac6679"
+    },
+    {
+      "p": "managed-shell.mjs",
+      "n": 4899,
+      "h": "fc56ef40599bb5c3fb473f58c1129a55bce6fca7a9cc5dd69ce908a94d03567e"
+    },
+    {
+      "p": "shell.mjs",
+      "n": 1915,
+      "h": "62999fab1bef00b6c4d0b808290163b567ccd7a99173872cc3dc87fb6aee2e3e"
+    },
     {
       "p": "src/audio.mjs",
       "n": 27702,
@@ -9,18 +24,18 @@
     },
     {
       "p": "src/eagler_adapter.mjs",
-      "n": 28658,
-      "h": "d1084404f543cef10c16effcc92acd770a220e69f7d9e763fe2d7d6a1385976d"
-    },
-    {
-      "p": "src/input.mjs",
-      "n": 60827,
-      "h": "43f1d06c9c9cb5151d1e0d6c6127a5a8ec6d53ab851cda4a9ce2c57b530223d3"
+      "n": 36311,
+      "h": "7d8dba180065f4708388762701dca9d466e8def30005ad5de82aea005761966a"
     },
     {
       "p": "src/input_buffer.mjs",
       "n": 12143,
       "h": "e97695bf91912e1b02595477521368ca8d4dd7ee78aa8da10c7544db47c7e2fe"
+    },
+    {
+      "p": "src/input.mjs",
+      "n": 60827,
+      "h": "43f1d06c9c9cb5151d1e0d6c6127a5a8ec6d53ab851cda4a9ce2c57b530223d3"
     },
     {
       "p": "src/logger.mjs",
@@ -63,6 +78,11 @@
       "h": "67ec2c98ec83d907c559e28d555456ee78f3f4a3321292ff596041d86b5ddf76"
     },
     {
+      "p": "src/resource_cache.mjs",
+      "n": 14562,
+      "h": "52d5d3c43133a2c3bf13385ba1e554703449f5b798b0e13b5004143f94ecd9ac"
+    },
+    {
       "p": "src/rollback.mjs",
       "n": 4189,
       "h": "99ae76c8c7d2f13f1ce11053cdcc72d5c4ba353d21e462be0647a787c006ed1e"
@@ -81,6 +101,11 @@
       "p": "src/route_selector.mjs",
       "n": 7205,
       "h": "89f44d6a2c32b22925c11459b2a31424dec374901da23d5f29f2401a7fe6db5d"
+    },
+    {
+      "p": "src/runtime_entry.mjs",
+      "n": 8424,
+      "h": "dd98d47469f693653909d8ffe32ed166e3eee0b02b2f666eac453c20ae61ad30"
     },
     {
       "p": "src/storage.mjs",
@@ -213,24 +238,24 @@
       "h": "f3b2733186dc46c498ec4a4d9df2a03e3510d1f68fef6fc219b28d722763a9d2"
     },
     {
-      "p": "test/browser/persist.html",
-      "n": 3042,
-      "h": "a0a2dd61721d356ef3b961f7587ad0d720dbafc27e234c8497741045e8c70c25"
-    },
-    {
       "p": "test/browser/persist_check.mjs",
       "n": 4992,
       "h": "c0b11622efd0eecaaf94fa3c7aa94f73c016c4584d436827258c49d1fa7c6892"
     },
     {
-      "p": "test/browser/play.html",
-      "n": 20354,
-      "h": "ccb2977a319e828529bf9bc32ed172695c6ed5a249d87eeb2bdb15d54d0927e1"
+      "p": "test/browser/persist.html",
+      "n": 3042,
+      "h": "a0a2dd61721d356ef3b961f7587ad0d720dbafc27e234c8497741045e8c70c25"
     },
     {
       "p": "test/browser/play_check.mjs",
       "n": 2953,
       "h": "756d6db393fe569e95f9ac54ef277d5ee818cd5e313ddbb1155745c59e98a066"
+    },
+    {
+      "p": "test/browser/play.html",
+      "n": 20354,
+      "h": "ccb2977a319e828529bf9bc32ed172695c6ed5a249d87eeb2bdb15d54d0927e1"
     },
     {
       "p": "test/browser/serve.mjs",

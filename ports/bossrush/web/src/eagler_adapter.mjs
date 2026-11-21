@@ -296,6 +296,10 @@ export function codeToVk(code) { return CODE_VK[String(code)] ?? null; }
  * @property {object}   multi         BROMultiplayer 实例（可选；configure 时也可注入工厂）
  * @property {object}   input         attachInput() 返回值（可选）
  * @property {object}   storage       createStorage() 返回值（可选，供 list/read/write/sync）
+ * @property {object}   resourceCache createResourceCache() 返回值（可选，resources 命令按 hash 缓存导入包）
+ * @property {function} launchHook    launch 前 await 的启动函数（可选，runtime 入口用）
+ * @property {object}   messageTarget 仅接受来自该 window 的消息（可选，协议壳用）
+ * @property {string}   allowedOrigin 仅接受该 origin 的消息（可选，协议壳用）
  * @property {function} getFrameHealth   () => {fps,maxGapMs,frameMs}（可选）
  * @property {function} getAudioHealth   () => {queuedMs,backend,underruns}（可选）
  * @property {object}   transport     peerTransportGlobal 桥接对象（可选，见下）
@@ -316,6 +320,14 @@ export class EaglerRuntimeAdapter {
     this.multi = opts.multi || null;
     this.input = opts.input || null;
     this.storage = opts.storage || null;
+    this.resourceCache = opts.resourceCache || null;
+    this.launchHook = typeof opts.launchHook === 'function' ? opts.launchHook : null;
+    this.messageTarget = opts.messageTarget || (typeof parent !== 'undefined' ? parent : null);
+    this.allowedOrigin = String(opts.allowedOrigin || (typeof location !== 'undefined' ? location.origin : '*'));
+    this.addEventListenerImpl = typeof opts.addEventListener === 'function' ? opts.addEventListener
+      : ((type, fn) => { if (typeof addEventListener === 'function') addEventListener(type, fn); });
+    this.removeEventListenerImpl = typeof opts.removeEventListener === 'function' ? opts.removeEventListener
+      : ((type, fn) => { if (typeof removeEventListener === 'function') removeEventListener(type, fn); });
     this.getFrameHealth = typeof opts.getFrameHealth === 'function' ? opts.getFrameHealth : null;
     this.getAudioHealth = typeof opts.getAudioHealth === 'function' ? opts.getAudioHealth : null;
     this.ccall = typeof opts.ccall === 'function' ? opts.ccall
@@ -347,8 +359,12 @@ export class EaglerRuntimeAdapter {
   /** 开始收 postMessage；立即上报 ready 事件。 */
   attach() {
     if (!this._onMessage) {
-      this._onMessage = (e) => this._handleMessage(e && e.data);
-      if (typeof addEventListener === 'function') addEventListener('message', this._onMessage);
+      this._onMessage = (event) => {
+        if (event && this.messageTarget && event.source && event.source !== this.messageTarget) return;
+        if (event && this.allowedOrigin !== '*' && event.origin && event.origin !== this.allowedOrigin) return;
+        return this._handleMessage(event && event.data);
+      };
+      this.addEventListenerImpl('message', this._onMessage);
     }
     this._emit('ready', { saveRoot: this.saveRoot });
     if (typeof setInterval === 'function' && !this.frameTimer) {
@@ -359,9 +375,7 @@ export class EaglerRuntimeAdapter {
   }
 
   detach() {
-    if (this._onMessage && typeof removeEventListener === 'function') {
-      removeEventListener('message', this._onMessage);
-    }
+    if (this._onMessage) this.removeEventListenerImpl('message', this._onMessage);
     this._onMessage = null;
     if (this.frameTimer && typeof clearInterval === 'function') clearInterval(this.frameTimer);
     this.frameTimer = null;
@@ -435,7 +449,11 @@ export class EaglerRuntimeAdapter {
       // `await sync()` 真正等到数据落 IndexedDB，而不是拿到 ok 就走。
       if (result && result.deferred && typeof result.deferred.then === 'function') {
         result.deferred.then(
-          () => { if (request !== undefined) this._reply(request, true, { ok: true }); },
+          (value) => {
+            if (request === undefined) return;
+            const extra = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            this._reply(request, true, { ...(result.response || {}), ...extra });
+          },
           (e) => { if (request !== undefined) this._reply(request, false, { error: String(e && e.message || e) }); },
         );
         return result;
@@ -537,9 +555,20 @@ export class EaglerRuntimeAdapter {
     return { response: { ok: true, netplay: this.netplay, webSettingsApplied } };
   }
 
-  _cmdResources() {
-    // BRO 资源走 scripts.json + HTTP，不经 eagler resources 传输；声明为已就绪。
-    return { response: { ok: true, mode: 'hosted', loaded: 0, total: 0 } };
+  _cmdResources(p) {
+    const items = Array.isArray(p.resources) ? p.resources : [];
+    if (!this.resourceCache || !items.length) {
+      // 老版本地页没有资源缓存：保留原 hosted 语义，不阻塞启动。
+      return { response: { ok: true, mode: 'hosted', loaded: 0, total: items.length } };
+    }
+    const total = items.length;
+    const deferred = Promise.resolve(this.resourceCache.installResources(items)).then((stats) => {
+      this._emit('transfer', { phase: 'resources', ...stats, total });
+      return { ok: !stats.errors.length, mode: 'cache', ...stats, total };
+    });
+    // 宿主 installResource() 会对每条命令等回复；必须等 blob 真的落缓存，
+    // 否则 launcher revoke objectURL 后资源就再也取不到。
+    return { deferred, response: { ok: true, mode: 'cache', loaded: 0, total } };
   }
 
   _cmdKeyboard(p) {
@@ -567,7 +596,15 @@ export class EaglerRuntimeAdapter {
       // 由宿主先 setSlot/setCharacter/setSystems/setSeed；这里只发起 match。
       this.multi.startMatch();
     }
-    return { response: { ok: true, launchSerial: this.launchSerial } };
+    const serial = this.launchSerial;
+    if (this.launchHook) {
+      // runtime 入口在这里才真正 boot/接主循环；必须等启动完再回 launch 响应。
+      const deferred = Promise.resolve()
+        .then(() => this.launchHook())
+        .then(() => ({ ok: true, launchSerial: serial }));
+      return { deferred, response: { ok: true, launchSerial: serial } };
+    }
+    return { response: { ok: true, launchSerial: serial } };
   }
 
   /** eagler 的 listing()（files.ts）要求 files 为 {path,size} 对象数组；

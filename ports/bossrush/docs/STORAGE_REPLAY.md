@@ -135,10 +135,16 @@ game/ 源码零改动，靠 `web/src/prelude.lua:66-92` 把 `User\xxx`、`replay
 - 基线 `persist_check.mjs` 跨刷新闭环仍 ALL PASS。
 
 ### 未完成（阶段1 余下 / 后续阶段）
-- runtime 入口（`bro.html`/`shell.mjs`）落地：需把 `persist.html` 的 loadAll 时序、`play.html` 的渲染主循环、`eagler.html` 的 adapter 三者合流。**落地前必须先解 5 个契约缺口**：
-  1. catalog 写 `eagler-adapter.mjs`，实际文件是 `eagler_adapter.mjs`（连字符 vs 下划线）。
-  2. catalog 声明 `directory-keyboard.mjs`，BRO 目录缺该文件（共享版在 `common/browser/directory-keyboard.mjs`）。
-  3. `dataProvider:'emscripten-preload'` 只允许 flat layout，与 `runtimeFileLayout:'directory'` 冲突。
-  4. 目录型 HTML 必须含 `<meta name="eagler-data-provider" content="...">`，且协议壳要 `__eaglerPrepareManagedRuntimeDataV1` 桥。
-  5. 主循环里尚未接 `storage.tick(frame)`（30 帧节流），尾帧 `flush` 待入口落地后接。
+- runtime 入口（`bro.html`/`shell.mjs`）**已落地**，见 `../RUNTIME_ARTIFACTS.md` §8：已含 meta provider、
+  数据身份桥、epoch 门禁、`storage.loadAll()` boot 前时序、主循环 `storage.tick(frame)` 与 pagehide/visibilitychange `flush()`。
+  旧的 5 个契约缺口（adapter 文件名、缺失目录键盘模块、dataProvider、meta、tick）已由产物摆位与 catalog 声明消解。
 - 阶段2~5 见上节，均未开始。
+
+## 9. 阶段1b：Runtime 入口 + 增量资源缓存（2026-11-21，已完成）
+
+- 入口三件套：`web/bro.html` → `web/shell.mjs` → `web/managed-shell.mjs` + `web/src/runtime_entry.mjs`。
+- 资源层 `web/src/resource_cache.mjs`：manifest（逐文件 sha256）驱动的内容寻址缓存；
+  更新时只拉 hash 变化的资源，未变文件复用缓存，WASM/代码/素材各自独立版本。
+- `resources` 命令由“空实现”改成“按 sha256 落地导入包 blob 并延迟回包”，避免宿主 revoke blob URL 后资源丢失。
+- 该缓存与 BRO 私有存档 IndexedDB 分离：缓存只放游戏资源，不放 `/User`、`/replay`、`/bro/data`，
+  因此不会出现 RGO 那种整包导入覆盖网页设置/补丁表的问题。

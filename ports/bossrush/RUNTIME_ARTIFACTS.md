@@ -3,7 +3,7 @@
 > 更新：2026-11-21 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（设置对齐后 build_id `14a7b16b`）
 > 本目录 `ports/bossrush/web/` 是 **BRO Web runtime 的实际构建产物**，由 BRO 侧 `web/build.sh` 产出后入库。
 
-## 1. 产物清单（24 文件 / 4.2 MB）
+## 1. 产物清单（29 文件 / 4.2 MB）
 
 | 文件 | 体积 | 说明 |
 |---|---|---|
@@ -55,7 +55,7 @@ BadApple!! 视频分卷 20.7 MB（Web 端视频解码非当前范围，不可玩
 
 - `node tools/docs/check.mjs`：672 文档 / 27 源码目录通过（含新增文档索引）。
 - `ports:check --game=bro`：本机缺 `fs-native-extensions` 依赖无法运行（与既有状态一致，非本次回归）。
-- BRO 侧全套纯 Node 回归 42 项文件全绿；适配层单测 16/16、设置桥接单测 9/9；新 WASM build_id `14a7b16b`，两处署名确认为 `@Tidew`。
+- BRO 侧全套纯 Node 回归 42 项文件全绿；适配层单测 19/19、设置桥接单测 9/9、资源缓存单测 4/4；新 WASM build_id `14a7b16b`，两处署名确认为 `@Tidew`。
 - 联机/流畅度评估与剩余缺口见 BRO 仓库 `web/PROBE_3AK.md`。
 
 ## 7. 网页设置对齐（2026-11-21）
@@ -81,5 +81,30 @@ BadApple!! 视频分卷 20.7 MB（Web 端视频解码非当前范围，不可玩
 - 键盘改键打通：launcher 的 `KeyboardEvent.code` 别名经 `bro-key-bindings.mts` 折算成 BRO 的
   Windows VK 数字，随 `broKeys` 下发；游戏侧只写 `setting.keys[name]` / `setting.keysys[name]`
   （不替换整表，避免 `Linput.lua` 的缓存引用失效），不映射到网页动作的键位保持 BRO 默认值。
-- 两端测试：BRO `web/test/web_settings_unit.mjs`（9/9）+ `web/test/eagler_adapter_unit.mjs`（16/16）；
+- 两端测试：BRO `web/test/web_settings_unit.mjs`（9/9）+ `web/test/eagler_adapter_unit.mjs`（19/19）；
   eagler `game-preparation.test.mjs` 的 `bro`/`bromp` 下发断言 + `bro-key-bindings.test.mjs`（3/3）。
+
+## 8. Runtime 入口与增量更新（2026-11-21）
+
+### 8.1 入口形态
+
+- `web/bro.html`：eagler 目录型 runtime 入口；`<meta name="eagler-data-provider" content="retail-memory">`
+  与 `window.parent.__eaglerPrepareManagedRuntimeDataV1` 身份桥已按契约接入。
+- `web/managed-shell.mjs`：`eagler-touhou/1` 协议壳，做 epoch / origin / source 门禁；`resources` 与 `launch`
+  均为异步命令，等资源落缓存/游戏 boot 完成才回包。
+- `web/src/runtime_entry.mjs`：把 `storage.loadAll()`（boot 前）→ `bro_boot()` → renderer/audio/input →
+  固定 60Hz 逻辑帧 + rAF 呈现 → `storage.tick(frame)` / `flush()` 合流，补上原先 play.html 没接的存档时序。
+- `web/src/eagler_adapter.mjs`：`resources` 不再空实现；launcher 送来的 blob URL 当场读取并按 sha256 缓存。
+
+### 8.2 可更新性设计（用户硬要求：不重下 138MB）
+
+- 版本真相是 `dist/package-manifest.json` 的全体 `(path, sha256)` 摘要，不是手写“整包版本号”。
+- 浏览器缓存按 **内容寻址**：`https://bro.invalid/blob/<sha256>` 对应一个 Cache API 条目；
+  文件名只是 manifest 里的索引。
+- 更新流程：拉新 manifest → 与本地 manifest 逐文件对比 → 只下载 `added/changed` → 原子切换 active manifest；
+  未变文件命中同一 hash，零下载；旧 manifest 留一代用于回滚/GC。
+- WASM（3.3MB）/ App Shell / 素材包各自独立版本：改一行 Lua 只重编并下载 WASM，不碰 138MB 资源。
+- 当前分发仍是导入包（catalog `importOnly: true`）：resources 命令把导入文件按同一 hash 空间落地；
+  后续接线上分发只需让 manifest URL 指向线上地址，`prefetch()` 已留好按需更新接口。
+- 验证：`resource_cache_unit.mjs` 4/4（hash 差异、缓存命中、版本切换、导入包路径覆盖）；
+  eagler 协议壳/数据 provider 契约扫描通过，`tools/docs/check.mjs` 673 文档通过。

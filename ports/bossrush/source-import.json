@@ -3,15 +3,20 @@
   "game": "bro",
   "repository": "https://github.com/TSake/TouHou-BossRushOnline",
   "branch": "web/multiplayer-port",
-  "commit": "本地工作区（设置完整个性化：跳帧/改键，尚未提交）",
+  "commit": "本地工作区（runtime 入口 + 增量资源缓存；设置个性化已提交 6932526）",
   "buildId": "14a7b16b",
   "credit": {
     "author": "吃药图书 (Cyoltose)",
     "webMaintainer": "清酒 (Tidew)",
     "eagler": "eagler 开发者"
   },
-  "note": "自包含 WASM：纯 C Lua 5.1.5 + lstg 绑定 + WebGL2/WebAudio，由 BRO web/build.sh（Emscripten）构建。资源包(138MB)走 importOnly 玩家导入，不在本目录。",
+  "note": "自包含 WASM：纯 C Lua 5.1.5 + lstg 绑定 + WebGL2/WebAudio，由 BRO web/build.sh 构建。资源包(138MB)走 importOnly 玩家导入或内容寻址缓存增量更新，不在本目录。",
   "inputs": [
+    {
+      "path": "bro.html",
+      "bytes": 930,
+      "sha256": "811a9b1fabf69cf6b938c5adc18ccff48bbd2f191c4073fbb2f7ddc39fac6679"
+    },
     {
       "path": "bro.mjs",
       "bytes": 113267,
@@ -24,8 +29,8 @@
     },
     {
       "path": "dist/app-shell.json",
-      "bytes": 7428,
-      "sha256": "51c943600d02c0893301da136c2c3f81c85c14d62b1b4a0a99b70654983ba2a1"
+      "bytes": 7876,
+      "sha256": "f538d0d539d982e6cee37824f5ee40d47619b615786ace74f2a28428a5760887"
     },
     {
       "path": "dist/package-manifest.json",
@@ -38,9 +43,19 @@
       "sha256": "9e96f8e881068cbdb4eecac9cafa2b44c37d319152e33bbf3ea2b3b6a0936623"
     },
     {
+      "path": "managed-shell.mjs",
+      "bytes": 4899,
+      "sha256": "fc56ef40599bb5c3fb473f58c1129a55bce6fca7a9cc5dd69ce908a94d03567e"
+    },
+    {
       "path": "manifest.json",
-      "bytes": 5301,
-      "sha256": "344ac906f39a11d4c2879841c5b14c04d09624d893dc84beaffa04748369dd4e"
+      "bytes": 6177,
+      "sha256": "eead159029ba4e15a859bab1ad213aa399af4dafeccb8a71b9c690f9d7ed992b"
+    },
+    {
+      "path": "shell.mjs",
+      "bytes": 1915,
+      "sha256": "62999fab1bef00b6c4d0b808290163b567ccd7a99173872cc3dc87fb6aee2e3e"
     },
     {
       "path": "src/audio.mjs",
@@ -49,18 +64,18 @@
     },
     {
       "path": "src/eagler_adapter.mjs",
-      "bytes": 28658,
-      "sha256": "d1084404f543cef10c16effcc92acd770a220e69f7d9e763fe2d7d6a1385976d"
-    },
-    {
-      "path": "src/input.mjs",
-      "bytes": 60827,
-      "sha256": "43f1d06c9c9cb5151d1e0d6c6127a5a8ec6d53ab851cda4a9ce2c57b530223d3"
+      "bytes": 36311,
+      "sha256": "7d8dba180065f4708388762701dca9d466e8def30005ad5de82aea005761966a"
     },
     {
       "path": "src/input_buffer.mjs",
       "bytes": 12143,
       "sha256": "e97695bf91912e1b02595477521368ca8d4dd7ee78aa8da10c7544db47c7e2fe"
+    },
+    {
+      "path": "src/input.mjs",
+      "bytes": 60827,
+      "sha256": "43f1d06c9c9cb5151d1e0d6c6127a5a8ec6d53ab851cda4a9ce2c57b530223d3"
     },
     {
       "path": "src/logger.mjs",
@@ -103,6 +118,11 @@
       "sha256": "67ec2c98ec83d907c559e28d555456ee78f3f4a3321292ff596041d86b5ddf76"
     },
     {
+      "path": "src/resource_cache.mjs",
+      "bytes": 14562,
+      "sha256": "52d5d3c43133a2c3bf13385ba1e554703449f5b798b0e13b5004143f94ecd9ac"
+    },
+    {
       "path": "src/rollback.mjs",
       "bytes": 4189,
       "sha256": "99ae76c8c7d2f13f1ce11053cdcc72d5c4ba353d21e462be0647a787c006ed1e"
@@ -121,6 +141,11 @@
       "path": "src/route_selector.mjs",
       "bytes": 7205,
       "sha256": "89f44d6a2c32b22925c11459b2a31424dec374901da23d5f29f2401a7fe6db5d"
+    },
+    {
+      "path": "src/runtime_entry.mjs",
+      "bytes": 8424,
+      "sha256": "dd98d47469f693653909d8ffe32ed166e3eee0b02b2f666eac453c20ae61ad30"
     },
     {
       "path": "src/storage.mjs",

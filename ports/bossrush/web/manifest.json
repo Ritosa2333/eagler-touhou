@@ -11,7 +11,21 @@
     "vm": "Lua 5.1.5 (pure C, embedded)",
     "exports": ["bro_boot", "bro_frame", "bro_render", "bro_scan", "bro_stats", "bro_version"]
   },
-  "runtimeAssets": ["bro.mjs", "bro.wasm"],
+  "runtimeAssets": ["bro.html", "shell.mjs", "managed-shell.mjs", "bro.mjs", "bro.wasm", "manifest.json"],
+  "runtimeEntry": {
+    "html": "bro.html",
+    "shell": "shell.mjs",
+    "managedShell": "managed-shell.mjs",
+    "entry": "src/runtime_entry.mjs",
+    "resourceCache": "src/resource_cache.mjs",
+    "note": "bro.html 是 eagler 目录型 runtime 入口；shell.mjs 安装协议壳并等 launch；runtime_entry.mjs 合并 loadAll/boot/渲染/存档 tick；resource_cache.mjs 提供内容寻址缓存与增量更新。"
+  },
+  "updates": {
+    "manifest": "dist/package-manifest.json",
+    "schema": "bro/package-manifest/1",
+    "strategy": "manifest-version + per-file sha256 cache",
+    "note": "版本真相是全体 (path,sha256) 摘要；更新时对比新旧 manifest，只下载 hash 变化的文件。WASM/代码/素材各自独立版本；导入包 resources 命令也按 sha256 写同一缓存。"
+  },
   "package": {
     "dataTarget": "scripts.json",
     "manifestSchema": "bro/scripts/1",

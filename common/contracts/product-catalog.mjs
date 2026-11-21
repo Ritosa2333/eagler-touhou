@@ -272,12 +272,18 @@ export const PRODUCT_GAMES = Object.freeze({
         runtime: "./runtime/bro/bro.html",
         runtimeFileLayout: "directory",
         runtimeAssets: Object.freeze([
-            "bro.html", "bro.mjs", "bro.wasm", "manifest.json",
-            "shell.mjs", "eagler_adapter.mjs", "storage.mjs",
-            "audio.mjs", "input.mjs", "input_buffer.mjs", "output_queue.mjs",
-            "postfx.mjs", "text.mjs", "logger.mjs", "replay_archive.mjs",
-            "multiplayer.mjs", "netcode.mjs", "netmesh.mjs", "rollback.mjs",
-            "route_handoff.mjs", "route_monitor.mjs", "route_selector.mjs",
+            // Runtime 入口与协议壳（源码树相对路径；部署时按目录型 runtime 摆位）
+            "bro.html", "shell.mjs", "managed-shell.mjs", "manifest.json",
+            "bro.mjs", "bro.wasm",
+            "dist/package-manifest.json", "dist/app-shell.json", "dist/runtime.json",
+            // JS 模块
+            "src/eagler_adapter.mjs", "src/storage.mjs", "src/resource_cache.mjs",
+            "src/runtime_entry.mjs", "src/audio.mjs", "src/input.mjs",
+            "src/input_buffer.mjs", "src/output_queue.mjs", "src/postfx.mjs",
+            "src/text.mjs", "src/logger.mjs", "src/replay_archive.mjs",
+            "src/multiplayer.mjs", "src/netcode.mjs", "src/netmesh.mjs",
+            "src/rollback.mjs", "src/route_handoff.mjs", "src/route_monitor.mjs",
+            "src/route_selector.mjs",
         ]),
         requiredShared: Object.freeze([]),
         // directory 布局的 Emscripten 作品统一用 retail-memory（hsob/th08~th20 先例）。
