@@ -47,9 +47,13 @@ void EmitMissFeedback(Player *player)
 #ifdef TH_ENABLE_NETPLAY
     Netplay::SideEffects::MissScope missScope;
 #endif
+    u8 missOwner = 0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer()) missOwner = player->initParam + 1;
+#endif
     if (!PracticeRuntime::OverlayInvincible())
-        g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_12, &player->positionCenter, 1, COLOR_NEONBLUE);
-    g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_6, &player->positionCenter, 16, COLOR_WHITE);
+        g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_12, &player->positionCenter, 1, COLOR_NEONBLUE, missOwner);
+    g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_6, &player->positionCenter, 16, COLOR_WHITE, missOwner);
 #ifdef TH_ENABLE_NETPLAY
     if (Netplay::SideEffects::RecordCommittedMiss(player->initParam)) return;
 #endif
@@ -1396,6 +1400,9 @@ ChainCallbackResult Player::OnUpdate(Player *p)
             if (p->invulnerabilityTimer.AsFrames() >= 30)
             {
                 p->playerState = PLAYER_STATE_SPAWNING;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                p->suppressRespawnClear = MultiplayerGameplay::KeepBulletsOnMiss();
+#endif
                 p->positionCenter.x =
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                     PlayerSpawnX(p);
@@ -1496,6 +1503,9 @@ ChainCallbackResult Player::OnUpdate(Player *p)
     {
     spawning:
         p->bulletGracePeriod = 90;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (p->suppressRespawnClear) p->bulletGracePeriod = 0;
+#endif
         scaleFactor2 = 1.0f - p->invulnerabilityTimer.AsFramesFloat() / 30.0f;
         p->playerSprite.scaleY = 2.0f * scaleFactor2 + 1.0f;
         p->playerSprite.scaleX = 1.0f - 1.0f * scaleFactor2;
@@ -1513,6 +1523,9 @@ ChainCallbackResult Player::OnUpdate(Player *p)
             p->playerSprite.flags.blendMode = AnmVmBlendMode_InvSrcAlpha;
             p->invulnerabilityTimer.SetCurrent(240);
             p->respawnTimer = 6;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            p->suppressRespawnClear = false;
+#endif
         }
     }
     if (p->bulletGracePeriod != 0)

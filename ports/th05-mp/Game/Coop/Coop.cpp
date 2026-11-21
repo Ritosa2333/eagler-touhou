@@ -301,7 +301,10 @@ void CStage::DrawPlayers(int layer){
   for(int n=0;n<m_seatCount;n++){
    const int i=n==m_seatCount-1?coop::Run().local:(n>=coop::Run().local?n+1:n);
    BindSeat(i);if(m_seats[i].stock.ghost)continue;
-   m_pStageRes->m_playerOpacity=PlayerOpacity(i);m_pChara->Draw();m_pStageRes->m_playerOpacity=1;
+   const int respawn=m_pChara->m_nextLifeComeTimeLeft;
+   const bool teammateMiss=i!=coop::Run().local&&respawn>0&&respawn<=32;
+   m_pStageRes->m_playerOpacity=PlayerOpacity(i)*(teammateMiss?.25f:1.f);
+   m_pChara->Draw();m_pStageRes->m_playerOpacity=1;
   }
  }else{
   BindSeat(coop::Run().local);if(!m_seats[m_boundSeat].stock.ghost)m_pChara->DrawCollisionArea();
@@ -383,7 +386,7 @@ void CStage::DrawCoopStatistics(){
    }
   }
  }
- // Use the original ZUN.COM difficulty artwork and its native color table.
+ // Use the original difficulty artwork and its native color table.
  const unsigned char difficultyGlyphs[][8]={
   {0xae,0xaa,0xbc,0xc2,2,2,2,0},
   {0xb7,0xb8,0xbb,0xb6,0xaa,0xb5,2,0},

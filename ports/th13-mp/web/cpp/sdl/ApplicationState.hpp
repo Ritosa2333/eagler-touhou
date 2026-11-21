@@ -665,6 +665,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     i32 mp_local_seat = 0;
     bool mp_history_playback = false;
     bool mp_challenge = false;
+    bool mp_keep_bullets_on_miss = false;
     bool mp_legacy_stage_positions = false;
     bool mp_legacy_boss_mitigation = false;
     bool mp_legacy_pickup_rewards = false;
@@ -690,6 +691,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
         mp_local_seat = local_seat;
         mp_history_playback = false;
         mp_challenge = false;
+        mp_keep_bullets_on_miss = false;
         mp_legacy_stage_positions = false;
         mp_legacy_boss_mitigation = false;
         mp_legacy_pickup_rewards = false;

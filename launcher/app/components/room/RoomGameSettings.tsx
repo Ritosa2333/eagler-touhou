@@ -92,6 +92,16 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
           <OptionSwitch id={id} label={label} describedBy={hint} checked={cheat ? !!room.disableCheatMovement : !!room.challengeMode} disabled={disabled} onChange={() => service.setRoomSettings(cheat ? {disableCheatMovement:!room.disableCheatMovement} : {challengeMode:!room.challengeMode})}/>
         </div>;
       })}
+      {config.challengeKeepBullets && room.challengeKeepBullets !== undefined && room.challengeMode &&
+        <div className="room-rule-field">
+          <div className="flex items-center gap-1">
+            <label htmlFor="mpChallengeKeepBullets">{t('room.challengeKeepBullets')}</label>
+            <FieldHelp id="mpChallengeKeepBulletsHint" label={t('room.challengeKeepBullets')}>{t('room.challengeKeepBulletsHint')}</FieldHelp>
+          </div>
+          <OptionSwitch id="mpChallengeKeepBullets" label={t('room.challengeKeepBullets')} describedBy="mpChallengeKeepBulletsHint"
+            checked={room.challengeKeepBullets} disabled={disabled}
+            onChange={()=>service.setRoomSettings({challengeKeepBullets:!room.challengeKeepBullets})}/>
+        </div>}
       {state.product === 'th09mp' &&
         <div className="room-rule-field">
           <div className="flex items-center gap-1">

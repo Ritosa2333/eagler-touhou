@@ -2281,13 +2281,15 @@ bool StageBattle::update_player(const GameInput& input, bool deathbomb_prepared)
         //44331c: first30 updates clear lasers around the saved death point,
         // with distinct protected/unprotected radii.4432f6 thereafter clears
         // bullets around the returning player and fully cancels all lasers.
-        if(player_phase_frame<30) {
-            const float radius=float(double(player_phase_frame)*512.0/30.0+64.0);
-            sim.cancel_lasers_radius(respawn_origin,radius,true);
-            sim.cancel_lasers_radius(respawn_origin,float(radius*.25f),false);
-        } else {
-            if(!sim.cancel_respawn_bullets({player_x,player_y,0},640.f))return false;
-            sim.cancel_lasers(false);
+        if (!keep_bullets_on_miss) {
+            if (player_phase_frame < 30) {
+                const float radius = float(double(player_phase_frame) * 512.0 / 30.0 + 64.0);
+                sim.cancel_lasers_radius(respawn_origin, radius, true);
+                sim.cancel_lasers_radius(respawn_origin, float(radius * .25f), false);
+            } else {
+                if (!sim.cancel_respawn_bullets({player_x,player_y,0}, 640.f)) return false;
+                sim.cancel_lasers(false);
+            }
         }
         if(!sim.error().empty())return false;
         if (player_phase_frame >= 60) {

@@ -37,7 +37,7 @@ namespace th13::sdl {
 
 bool ApplicationState::record_spell_event(const SpellEvent& event) {
     // 00413270/00413a60 exclude replay sessions, for both columns and aggregate.
-    if (replay_active || !event.emitted()) return true;
+    if (replay_active || active_practice.applied || !event.emitted()) return true;
     const bool practice = (progress.run_mode_flags & 0x30u) == 0x20u;
     bool changed = false;
     if (event.kind == SpellEventKind::Begin)
@@ -243,7 +243,7 @@ bool ApplicationState::request_game_over() {
 bool ApplicationState::request_player_game_over() {
     // 00443240: exhausted lives in Replay (manager+10 == 1) call43e5a0;
     // ordinary deaths call43f570. Spell timeout calls43f570 separately.
-    return replay_active ? request_practice_end() : request_game_over();
+    return replay_active || active_practice.applied ? request_practice_end() : request_game_over();
 }
 
 bool ApplicationState::hud_sound(i32 id) { return sound(id); }
@@ -309,7 +309,7 @@ bool ApplicationState::restart_run() {
     // dcc30!=0 复位分支（0x42bb5a→0x42d3c0→0x42d404 写 200）——
     // start_game 内部的 trance_reset_fresh_entry 已覆盖，不再重复调用。
     // 关间 0xc 延续（dcc30=0）不经过 start_game，灵界计跨关保留。
-    return start_game(progress.starting_stage);
+    return queue_run(progress.starting_stage);
 }
 
 bool ApplicationState::return_to_title() {

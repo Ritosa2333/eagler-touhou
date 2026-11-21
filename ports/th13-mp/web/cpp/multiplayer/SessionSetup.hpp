@@ -31,7 +31,7 @@ struct SessionSetup {
     std::uint32_t player_count = 2, local_player = 0, difficulty = 0, seed = 1;
     std::uint32_t requested_delay = 0, input_delay = 0, prediction_reserve = 2;
     std::uint32_t prediction_limit = MaxRollbackFrames, measured_prediction = 0;
-    bool automatic = true, challenge = false;
+    bool automatic = true, challenge = false, keep_bullets_on_miss = false;
     std::array<std::uint32_t, 3> selections{};
     std::array<std::uint32_t, 4> build{};
     bool valid() const;

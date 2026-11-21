@@ -64,6 +64,25 @@ try{
  assert.deepEqual(report.resources.teamRevive,[[4,0],[4,0],[1,0]]);assert.deepEqual(report.resources.rescue,[[2,2,0],[3,3,0],[1,1,0]]);
  assert.deepEqual(report.resources.allGhostMenu,0);assert.deepEqual(report.resources.allGhostRestart,[3,3,0,0]);
  assert.deepEqual(report.resources.challenge,[3,3,1]);
+ report.challengeMiss=await page.evaluate(()=>{
+  const modules=[...document.querySelectorAll('iframe')].map(frame=>frame.contentWindow.Module);
+  return [2,3].flatMap(count=>[false,true].map(keepBullets=>modules.slice(0,count).map((m,local)=>{
+   if(!m._th05_coop_start_rules(count,local,1,739,0,1,count===2?0:2,keepBullets?3:1,0,2,3)||!m._th05_native_coop_stage(0,0))throw Error('challenge start');
+   m._th05_native_coop_probe(6,1,0);
+   m._th05_native_coop_probe(8,1,0);
+   let maxClear=0;
+   for(let n=0;n<50;n++){
+    if(!m._th05_tick(0))throw Error('challenge step');
+    maxClear=Math.max(maxClear,m._th05_native_coop_probe(39,1,0));
+   }
+   return {misses:m._th05_coop_value(1,10),maxClear,hash:m._th05_coop_checksum()>>>0};
+  })));
+ });
+ for(const [index,peers] of report.challengeMiss.entries()){
+  assert.ok(peers.every(peer=>peer.misses===1));
+  assert.ok(peers.every(peer=>peer.hash===peers[0].hash));
+  assert.ok(peers.every(peer=>index%2===1?peer.maxClear===0:peer.maxClear>0));
+ }
  report.cases=[];
  for(const count of [2,3])for(let stage=0;stage<7;stage++)for(const warp of [0,2]){
   const result=await page.evaluate(({count,stage,warp})=>{

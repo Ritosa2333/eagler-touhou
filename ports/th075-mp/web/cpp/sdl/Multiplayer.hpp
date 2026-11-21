@@ -4,6 +4,9 @@ namespace th075::sdl::multiplayer {
 bool active();
 bool pump(double nowUs);
 bool step(double nowUs,bool drawForward,bool& advanced);
+bool spectator_fast_forward();
+bool advance_spectator(double startedMs);
+void update_spectator_audio();
 double pace(double elapsedMs);
 void render();
 }

@@ -68,6 +68,12 @@ node --experimental-wasi-unstable-preview1 tools/run-harness.mjs stage1   # stag
 node --experimental-wasi-unstable-preview1 tools/run-harness.mjs replay games/replays/th13_udSr01.rpy   # 录像解码 + 逐帧输入注入（格式见 docs/plans/replay.md）
 ```
 
+### 网页 thprac
+
+在启动器开启单机 thprac 后，按 P 打开面板并应用参数。设置用于下一次从标题开始的普通对局，选定节点会从所属关卡的开头开始。关内重试沿用同一组参数，返回标题后可直接开始普通对局。
+
+thprac 对局使用关卡练习的结算流程，普通通关、最高分、符卡记录和游玩统计均不计入存档，也不生成普通录像。
+
 ## 同帧取像（golden 对拍）
 
 ```sh

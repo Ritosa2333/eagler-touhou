@@ -164,7 +164,13 @@ test('challenge admission retains v7 rules with the effective timing mode',async
   const c=fake();await configureMultiplayer(c,42,{...base,netplayChallengeMode:true,netplayAdonisMode:mode},deps);
   assert.equal(c.words[0],7);assert.equal(c.words.length,23);
   assert.deepEqual(c.words.slice(17),[mode===1?4:0,2,mode===1?1:0,0,2,1]);
+  const noClear=fake();await configureMultiplayer(noClear,42,{...base,netplayChallengeMode:true,netplayChallengeKeepBullets:true,netplayAdonisMode:mode},deps);
+  assert.deepEqual(noClear.words, [...c.words.slice(0,22),3]);
  }
+});
+
+test('keep bullets requires challenge mode before native admission',async()=>{
+ await assert.rejects(configureMultiplayer(fake(),42,{...base,netplayChallengeKeepBullets:true},deps),/challenge bullet clearing/);
 });
 
 test('read-only spectator completion no longer advertises an active session',()=>{

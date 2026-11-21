@@ -18,6 +18,7 @@ void PlayerScene::Patterns::before_objects_write(){
 void PlayerScene::sync_values(){auto& c=state.context;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     c.challenge_mode=numbers.pilot.challenge_mode;
+    c.keep_bullets_on_miss=numbers.pilot.keep_bullets_on_miss;
     if(c.challenge_mode)numbers.bombs=0;
 #endif
 c.bombs=Scalar::truncate(numbers.bombs);c.lives=Scalar::truncate(numbers.lives);c.power=Scalar::truncate(numbers.power);c.time_orbs=numbers.time_orbs;c.last_spell_requirement=numbers.last_spell_requirement;c.gauge=numbers.gauge;}

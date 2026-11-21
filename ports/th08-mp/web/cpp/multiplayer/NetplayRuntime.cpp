@@ -25,11 +25,11 @@ bool NetplayRuntime::configure(const SessionSetup& setup) noexcept {
         setup.build[0],setup.build[1],setup.build[2],setup.build[3],
         setup.characters[0],0,setup.characters[1],0,setup.characters[2],0,
         setup.version>=6&&setup.input_delay_auto?0:setup.input_delay,setup.prediction_limit,setup.adonis_mode,
-        setup.input_delay_auto,setup.prediction_reserve,setup.challenge_mode};
+        setup.input_delay_auto,setup.prediction_reserve,std::uint32_t(setup.challenge_mode)+2*std::uint32_t(setup.keep_bullets_on_miss)};
     SessionSetup validated;
     if(!setup.configured||!decode_session_setup(validated,words,setup.version>=7?23:setup.version>=6?22:setup.version==5?20:setup.version==4?19:17)||
        (validated.input_delay!=setup.input_delay&&!(setup.version>=6&&setup.input_delay_auto))||validated.prediction_limit!=setup.prediction_limit||
-       validated.adonis_mode!=setup.adonis_mode||validated.challenge_mode!=setup.challenge_mode)return false;
+       validated.adonis_mode!=setup.adonis_mode||validated.challenge_mode!=setup.challenge_mode||validated.keep_bullets_on_miss!=setup.keep_bullets_on_miss)return false;
     validated.input_delay=setup.input_delay;validated.measured_prediction=setup.measured_prediction;
     Netplay::SessionConfig session;
     session.sessionId=setup.session_id;session.seed=setup.seed;

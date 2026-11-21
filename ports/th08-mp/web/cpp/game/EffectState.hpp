@@ -9,7 +9,7 @@ using EffectDraw=void(*)(EffectState&,EffectSystem&);
 struct EffectState:AnmVm {
     Vec3 position,parameters,velocity,acceleration,world_position,center,direction,up;
     float quaternion[4],radius,angle;u32 reserved31c;float width;
-    i32 segments,slot;float height,angle_y,frequency;Timer age;u32 reserved344;
+    i32 segments,slot;float height,angle_y,frequency;Timer age;u32 miss_effect_seat;
     EffectUpdate update;EffectDraw draw;
     u8 active,kind,dying;i8 fade_frames;u8 layer,alternative,geometry_dirty,ignore_pause;
     SpriteVertex* vertices;EffectState* next;

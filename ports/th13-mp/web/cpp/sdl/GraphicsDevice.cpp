@@ -1,4 +1,5 @@
 #include "GraphicsDevice.hpp"
+#include "LanguagePack.hpp"
 
 #include "../../../portable/sdl/StartupBranding.hpp"
 
@@ -109,13 +110,22 @@ bool GraphicsDevice::preload(AnmResource& file, bool low_color) {
     if (resources.find(&file) != resources.end()) return true;
     std::vector<u32> handles;
     handles.reserve(file.textures.size());
+    const bool localized = language_pack_active();
     for (u32 index = 0; index < file.textures.size(); index++) {
         const auto& source = file.textures[index];
+        AnmTexture replaced;
+        const AnmTexture* used = &source;
+        std::vector<u8> png;
+        if (localized && language_texture_allowed(source.name) &&
+            read_language_file(language_texture_path(source.name), png)) {
+            replaced = source;
+            if (apply_language_png(replaced, png.data(), u32(png.size()))) used = &replaced;
+        }
         Texture texture;
         texture.renderScale = source.kind == AnmTexture::Kind::RenderTarget ? render_scale : 1;
         texture.identity = "anm:" + source.name + ":entry:" + std::to_string(index);
         texture.gpu_content = source.kind == AnmTexture::Kind::RenderTarget;
-        if (!texture.image.load(source, low_color)) {
+        if (!texture.image.load(*used, low_color)) {
             error = "Unable to prepare ANM texture: " + source.name;
             for (const auto id : handles) {
                 RenderSubmission c{RenderSubmission::Kind::Release, backend.state};

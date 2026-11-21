@@ -23,6 +23,8 @@ bool MultiplayerPilot::initialize(const ShtResource& sht,int bank){
         owned_collection=std::make_unique<ItemCollection>(session,score,player->motion,*this,character,&owned_life_piece_tier);collection=owned_collection.get();
     }else{player=world.player.get();bomb=world.bomb.get();collection=world.collection.get();}
     session.challenge=world.mp_options.challenge&&!world.mp_options.replay_legacy_stage_flow;
+    session.keep_bullets_on_miss=world.mp_options.keep_bullets_on_miss;
+    player->life.presentation_seat=u8(seat+1);
     player->life.base_bombs=world.mp_options.challenge?0:2;session.bombs=player->life.base_bombs;
     if(session.challenge)session.bomb_pieces=0;
     const float x=(float(seat)-float(world.mp_options.seat_count-1)*.5f)*48.f;
@@ -258,6 +260,7 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& r){
     // Tag the current native VMs on every draw, including registered focus/
     // option/shot trees. The renderer scales draw copies, never simulation VMs.
     r.multiplayer_player_opacity.clear();
+    r.miss_effect_viewer=mp_options.spectator?0:u8(mp_options.local_seat+1);
     r.multiplayer_hidden_hitboxes.clear();
     for(auto it=r.multiplayer_hitbox_owners.begin();it!=r.multiplayer_hitbox_owners.end();)
         if(!animations.registry.find(it->first))it=r.multiplayer_hitbox_owners.erase(it);else ++it;

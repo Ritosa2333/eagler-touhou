@@ -30,7 +30,7 @@ std::vector<u8> metadata(const ReplayDescription& d){
     for(auto score:d.stage_scores)put(out,score);
     if(adonis)put(out,d.setup.adonis_mode);
     if(d.setup.version>=6){put(out,d.setup.input_delay_auto);put(out,d.setup.prediction_reserve);put(out,d.setup.measured_prediction);}
-    if(d.setup.version>=7)put(out,d.setup.challenge_mode);
+    if(d.setup.version>=7)put(out,u32(d.setup.challenge_mode)+2*u32(d.setup.keep_bullets_on_miss));
     return out;
 }
 bool decode_description(const Netplay::InputReplayInfo& info,ReplayDescription& d){
@@ -50,7 +50,7 @@ bool decode_description(const Netplay::InputReplayInfo& info,ReplayDescription& 
     if(!decode_session_setup(next.setup,fields,version==6?23:version==5?22:version==4?20:version==3?19:17))return false;
     next.setup.input_delay=input_delay;next.setup.measured_prediction=prediction;
     if(c.gameplayAbi!=gameplay_contract(next.setup)){
-        if(c.gameplayAbi!=replay_contract_before_stage_bomb_fix(next.setup))return false;
+        if(next.setup.keep_bullets_on_miss||c.gameplayAbi!=replay_contract_before_stage_bomb_fix(next.setup))return false;
         next.legacy_stage_bombs=true;
     }
     next.score=word(v.data()+40);next.last_stage=word(v.data()+44);

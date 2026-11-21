@@ -162,7 +162,7 @@ export function createGameSettingsModel({storage, onChange}: {
       music: resolveEffectiveMusicMode({...musicAvailabilityForContext(context), requested: normalized.musicPreference, explicit: normalized.musicPreferenceExplicit}),
       musicPreference: normalized.musicPreference, musicPreferenceExplicit: normalized.musicPreferenceExplicit,
       gameVersion: gameId === 'th075' ? 'original' : loadGameVersion(storage, gameId),
-      language: resolvePreferredGameLanguage(context.languages, savedLanguage, context.uiLocale)}, reason);
+      language: resolvePreferredGameLanguage(context.languages, savedLanguage, gameId === 'th13' && !savedLanguage ? 'zh-CN' : context.uiLocale)}, reason);
   }
   return Object.freeze({
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};},

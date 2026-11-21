@@ -131,7 +131,7 @@ public:
 #if PORT_TITLE == 14
     std::array<Th14CoopLoadout,3> coop_loadouts{};
     u32 coop_seats=1,coop_viewer=0;
-    bool coop_challenge=false,coop_observer=false;
+    bool coop_challenge=false,coop_observer=false,coop_keep_bullets_on_miss=false;
 #endif
     SpellRecords spell_records;
     ClearRecords clear_records;

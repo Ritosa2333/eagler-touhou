@@ -30,9 +30,12 @@ inline Stage prepared;
 inline bool applying=false,applied=false;
 template<class C> bool Values(C& c,Stage& s){
     auto& n=s.native;auto& setup=s.setup;
+    u8 challengeRules=u8(setup.challengeMode)+2*u8(setup.keepBulletsOnMiss);
     if(!c.Values(s.number,s.difficulty,s.lifeCount,s.bombCount,n.score,n.randomSeed,n.pointItemsCollected,n.power,n.livesRemaining,n.bombsRemaining,n.rank,n.powerItemCountForScore)||
-       !c.Values(setup.playerCount,setup.localPlayer,setup.showStagePlayerNames,setup.challengeMode,
+       !c.Values(setup.playerCount,setup.localPlayer,setup.showStagePlayerNames,challengeRules,
                  setup.showContributionStats))return false;
+    if(challengeRules>3||challengeRules==2)return false;
+    setup.challengeMode=(challengeRules&1)!=0;setup.keepBulletsOnMiss=(challengeRules&2)!=0;
     for(auto& p:setup.players)if(!c.Values(p.active,p.temporarilyAbsent,p.permanentlyDeparted,p.character,p.shot))return false;
     for(auto& r:s.resources)if(!c.Values(r.lives,r.bombs,r.power,r.challengeDeaths))return false;
     for(auto& r:s.contributions)if(!c.Values(r.enemiesDefeated,r.damageDealt))return false;

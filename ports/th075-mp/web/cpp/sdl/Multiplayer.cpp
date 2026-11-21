@@ -16,7 +16,11 @@ namespace {
 Netplay::BrowserPeerTransport transport;
 std::unique_ptr<th075::multiplayer::DelaySession> session;
 Netplay::SessionConfig contract;
-std::deque<Netplay::SpectatorFramePacket> spectatorFrames;
+std::deque<std::array<u16,2>> spectatorFrames;
+constexpr u32 spectatorHistoryLimit=216000;
+constexpr u32 noSeek=Netplay::INVALID_FRAME;
+u32 spectatorFirst=0,spectatorTarget=noSeek;
+bool spectatorPaused=false,spectatorFollowing=true,spectatorCatching=true,spectatorEnded=false,spectatorEndSent=false;
 std::array<ControlCounts,2> counts;
 std::array<i32,2> cancel{};
 std::array<u32,64> status{};
@@ -98,7 +102,9 @@ void publish_timing(){
     put(timingBytes,std::max(a.p95Us,b.p95Us),4);put(timingBytes,a.lost+b.lost,4);
     put(timingBytes,EM_ASM_INT({return !!Module.eaglerOptions?.netplayInputDelayAuto;}),4);
     put(timingBytes,std::min(a.received,b.received),4);
-    timingSent=true;spectatorOutput.push_back(timingBytes);
+    timingSent=true;
+    spectatorOutput.push_back({'E','P','T','S',1,1});
+    spectatorOutput.push_back(timingBytes);
 }
 void upload(){
     if(spectator||contract.localPlayer||spectatorStopped)return;
@@ -109,10 +115,17 @@ void upload(){
         spectatorOutput.pop_front();
     }
     if(spectatorOutput.size()>4096)stop_spectators();
+    if(finishing&&!spectatorStopped&&!spectatorEndSent&&spectatorOutput.empty()){
+        constexpr u8 end[]{'E','P','T','S',1,2};
+        spectatorEndSent=transport.SendSpectator(end,sizeof(end));
+    }
 }
 bool receive_spectator(){
     std::vector<u8> bytes;
     for(unsigned n=0;n<256&&transport.Poll(&bytes);++n){
+        if(bytes.size()==6&&bytes[0]=='E'&&bytes[1]=='P'&&bytes[2]=='T'&&bytes[3]=='S'&&bytes[4]==1&&bytes[5]==2){
+            spectatorEnded=true;continue;
+        }
         if(bytes.size()==40&&bytes[0]=='E'&&bytes[1]=='P'&&bytes[2]=='T'&&bytes[3]=='M'){
             if(bytes[4]!=1||(bytes[5]>1)||bytes[6]>9||(bytes[5]==1?bytes[7]!=0:bytes[7]<1||bytes[7]>8||bytes[6]!=0)||integer(bytes.data()+12,4)!=seed||integer(bytes.data()+16,8)!=contract.sessionId)
                 return fail("Invalid TH075 spectator timing contract");
@@ -129,8 +142,14 @@ bool receive_spectator(){
         if(p.frame<receivedFrame)continue;
         if(p.frame!=receivedFrame||!th075::multiplayer::DelaySession::Valid(p.inputs[0])||!th075::multiplayer::DelaySession::Valid(p.inputs[1]))
             return fail("TH075 spectator input gap");
-        if(spectatorFrames.size()>=8192)return fail("TH075 spectator fell behind");
-        spectatorFrames.push_back(p);++receivedFrame;
+        if(spectatorFrames.size()>=spectatorHistoryLimit){
+            // Continuous playback can outlive the rewind window. Once frame
+            // zero is discarded, do not offer a rewind we cannot reconstruct.
+            if(frame==spectatorFirst)return fail("TH075 spectator history limit reached");
+            spectatorFrames.pop_front();++spectatorFirst;
+        }
+        spectatorFrames.push_back({p.inputs[0].buttons,p.inputs[1].buttons});++receivedFrame;
+        if(spectatorFollowing&&receivedFrame-frame>120)spectatorCatching=true;
     }
     return true;
 }
@@ -160,7 +179,7 @@ bool pump(double us){
         if(!receive_spectator())return false;
         // Drain an already received terminal backlog; an exhausted broken
         // spectator stream must fail explicitly instead of freezing forever.
-        if(transport.Failed()&&spectatorFrames.empty()&&!finished)return fail(transport.LastError().c_str());
+        if(transport.Failed()&&frame>=receivedFrame&&!finished&&!spectatorEnded)return fail(transport.LastError().c_str());
     }
     else{
         if(!session->Pump(u64(us))){
@@ -195,7 +214,11 @@ bool advance_one(double us,bool resimulation,bool drawForward,bool& advanced){
     advanced=false;
     std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> inputs{};Netplay::FrameDecision decision;
     bool speculative=false;
-    if(spectator){if(spectatorFrames.empty())return true;inputs=spectatorFrames.front().inputs;}
+    if(spectator){
+        if(frame>=receivedFrame)return true;
+        const auto& buttons=spectatorFrames[frame-spectatorFirst];
+        inputs[0].buttons=buttons[0];inputs[1].buttons=buttons[1];
+    }
     else{
         if(!session->Ready())return true;
         if(session->NeedsCapture())return fail("TH075 simulation attempted uncaptured physical input");
@@ -206,13 +229,13 @@ bool advance_one(double us,bool resimulation,bool drawForward,bool& advanced){
     }
     History h{frame,digest,digest,counts,cancel,nullptr,{}};
     if(speculative){h.state=app->capture_rollback();if(!h.state)return fail("TH075 rollback capture unavailable");}
-    app->rollbackSounds.clear();app->collectRollbackSound=!spectator&&session->Rollback();
+    app->rollbackSounds.clear();app->collectRollbackSound=spectator?resimulation:session->Rollback();
     // Keep the render-side battle state advancing on catch-up ticks without
     // issuing GPU commands for frames the browser cannot present. Confirmed
     // lifecycle actions still need the framebuffer for transitions.
-    const bool skipDraw=!drawForward&&!spectator&&session->Rollback()&&
+    const bool skipDraw=!drawForward&&(spectator||session->Rollback())&&
         app->rollback_predictable()&&!((inputs[0].buttons|inputs[1].buttons)&0x700);
-    app->rollbackResimulating=resimulation;app->graphics.suppress(resimulation||skipDraw);
+    app->rollbackResimulating=resimulation;app->graphics.suppress((resimulation&&!spectator)||skipDraw);
     const bool played=play(inputs);
     app->graphics.suppress(false);app->rollbackResimulating=false;app->collectRollbackSound=false;
     if(!played)return false;
@@ -222,7 +245,7 @@ bool advance_one(double us,bool resimulation,bool drawForward,bool& advanced){
         if(!app->restore_rollback(*h.state))return fail("TH075 lifecycle restore failed");
         counts=h.counts;cancel=h.cancel;digest=h.digestBefore;app->rollbackSounds.clear();return true;
     }
-    if(spectator){spectatorFrames.pop_front();if(frame%60==0){confirmedCheckpoint=frame;confirmedDigest=digest;}}
+    if(spectator){if(frame%60==0){confirmedCheckpoint=frame;confirmedDigest=digest;}}
     else{
         h.digestAfter=digest;h.replayFrame=app->battle->timing.replayFrame;
         for(unsigned side=0;side<2;++side){const auto& a=app->battle->simulation.characters[side]->actor;std::memcpy(&h.actors[side*4],&a.motion.x,4);std::memcpy(&h.actors[side*4+1],&a.motion.y,4);h.actors[side*4+2]=u32(a.combat.health);h.actors[side*4+3]=u32(a.animation.cursor.action);}
@@ -230,17 +253,18 @@ bool advance_one(double us,bool resimulation,bool drawForward,bool& advanced){
         if(session->Rollback())rollbackAudio.Submit(frame,history.back().sounds,play_sound);
         if(!session->Complete(decision))return fail(session->Error());
     }
-    ++frame;advanced=true;if(resimulation)++resimulated;
+    ++frame;advanced=true;if(resimulation&&!spectator)++resimulated;
     if(!spectator&&!retire())return false;
     if(app->multiplayer_complete()){
         if(!history.empty())return fail("TH075 terminal frame is not confirmed");
-        finishing=true;if(spectator)finished=true;
+        finishing=true;if(spectator){finished=true;spectatorEnded=true;}
         if(!spectator&&!saved){saved=true;if(!app->save_multiplayer_replay())return false;}
     }
     return true;
 }
 bool step(double us,bool drawForward,bool& forwardAdvanced){
     forwardAdvanced=false;
+    if(spectator&&spectatorPaused)return true;
     if(!enabled||finished||finishing||connectionEnded||transport.Disconnected())return true;
     // Send the current physical sample before historical work. Reconciliation
     // must never postpone the peer's fresh input behind our snapshot/replay cost.
@@ -269,6 +293,42 @@ bool step(double us,bool drawForward,bool& forwardAdvanced){
     if(!advance_one(us,false,drawForward,forwardAdvanced))return false;
     remember_state();return true;
 }
+
+bool spectator_fast_forward(){
+    return spectator&&(spectatorTarget!=noSeek||(!spectatorPaused&&!finished&&spectatorFollowing&&spectatorCatching&&receivedFrame-frame>3));
+}
+
+bool advance_spectator(double started){
+    if(spectatorTarget!=noSeek&&spectatorTarget<frame){
+        if(!app->prepare_multiplayer(seed,u8(first),u8(other),u8(firstCards),u8(otherCards),u8(difficulty)))return false;
+        frame=restarts=digest=0;counts={};cancel={};finished=finishing=false;
+        confirmedCheckpoint=Netplay::INVALID_FRAME;confirmedDigest=0;
+        if(spectatorTarget==0){
+            // A seek to the opening frame has no simulation tick to draw it.
+            // Preserve render-side state so viewing it cannot change later ticks.
+            const auto opening=app->capture_rollback();
+            if(!opening)return fail("TH075 spectator opening state unavailable");
+            app->render_scene();app->present_scene();
+            if(!app->restore_rollback(*opening))return fail("TH075 spectator opening restore failed");
+        }
+    }
+    const u32 target=spectatorTarget==noSeek?receivedFrame:spectatorTarget;
+    for(unsigned n=0;n<24&&!finished&&frame<target;++n){
+        if(n&&emscripten_get_now()-started>=6.)break;
+        bool advanced=false;
+        if(!advance_one(started*1000,true,n==0||frame+1==target,advanced))return false;
+        if(!advanced)break;
+    }
+    if(frame>=target||finished)spectatorTarget=noSeek;
+    if(receivedFrame-frame<=3)spectatorCatching=false;
+    remember_state();return true;
+}
+
+void update_spectator_audio(){
+    if(!spectator)return;
+    const bool mute=spectatorPaused||spectator_fast_forward();
+    if(bool(app->audio.statistics()[3])!=mute)app->audio.suspend(mute);
+}
 void render(){} // A missing peer frame must not re-run BattleScene::render's camera update.
 }
 extern "C" {
@@ -286,11 +346,12 @@ EMSCRIPTEN_KEEPALIVE int th075_mp_begin(const char* url,const char* spectatorId,
     contract={};contract.sessionId=std::uint64_t(low)|(std::uint64_t(high)<<32);contract.seed=seed;contract.gameplayAbi=abi;contract.gameId=75;contract.playerCount=2;contract.localPlayer=th075::u8(side==2?0:side);
     if(!contract.sessionId)return 0;
     spectator=side==2;
-    if(!(spectator?transport.ConnectSpectator(url,spectatorId,2):transport.Connect(url,th075::u8(side),2)))return 0;
+    if(!(spectator?transport.ConnectSpectator(url,spectatorId,2,true):transport.Connect(url,th075::u8(side),2,true)))return 0;
     th075::sdl::multiplayer::seed=seed;th075::sdl::multiplayer::first=first;th075::sdl::multiplayer::other=other;
     firstCards=a;otherCards=b;th075::sdl::multiplayer::difficulty=difficulty;
     frame=restarts=receivedFrame=digest=rollbackCount=resimulated=resimTarget=0;history.clear();rollbackAudio.Reset();confirmedCheckpoint=Netplay::INVALID_FRAME;confirmedDigest=confirmedReplayFrame=0;confirmedActors={};finishAt=0;enabled=true;restartPending=finishing=finished=saved=timingSent=timingReceived=spectatorStopped=connectionEnded=false;
     failure.clear();counts={};cancel={};spectatorFrames.clear();spectatorOutput.clear();timingBytes.clear();
+    spectatorFirst=0;spectatorTarget=noSeek;spectatorPaused=spectatorEnded=spectatorEndSent=false;spectatorFollowing=spectatorCatching=true;
     if(!spectator){session=std::make_unique<th075::multiplayer::DelaySession>(transport);if(!session->Begin(contract,std::uint64_t(emscripten_get_now()*1000),automatic?Netplay::AdonisStartup::Automatic:delay,mode,limit))return 0;}
     remember_state();return 1;
 }
@@ -326,6 +387,29 @@ EMSCRIPTEN_KEEPALIVE int th075_probe_rollback(unsigned span){
 EMSCRIPTEN_KEEPALIVE int th075_mp_poll(double nowUs){return th075::sdl::multiplayer::pump(nowUs);}
 EMSCRIPTEN_KEEPALIVE const unsigned* th075_mp_status(){th075::sdl::multiplayer::remember_state();return th075::sdl::multiplayer::status.data();}
 EMSCRIPTEN_KEEPALIVE const unsigned char* th075_mp_timing(){using namespace th075::sdl::multiplayer;return timingReceived?timingBytes.data():nullptr;}
+EMSCRIPTEN_KEEPALIVE const unsigned* th075_mp_playback_state(){
+    using namespace th075::sdl::multiplayer;
+    static unsigned report[7];
+    if(!enabled||!spectator||!timingReceived)return nullptr;
+    report[0]=spectatorFirst?frame:0;report[1]=frame;report[2]=receivedFrame;
+    report[3]=spectatorTarget==noSeek?(spectatorFollowing?receivedFrame:frame):spectatorTarget;
+    report[4]=spectatorPaused;report[5]=spectator_fast_forward();
+    report[6]=unsigned(spectatorFollowing)|(unsigned(spectatorEnded)<<1);
+    return report;
+}
+EMSCRIPTEN_KEEPALIVE int th075_mp_playback(unsigned action,unsigned target){
+    using namespace th075::sdl::multiplayer;
+    if(!enabled||!spectator||!timingReceived)return 0;
+    switch(action){
+    case 0:spectatorPaused=true;spectatorFollowing=false;return 1;
+    case 1:spectatorPaused=false;return 1;
+    case 2:
+        if(target>receivedFrame||(spectatorFirst&&target<frame))return 0;
+        spectatorFollowing=false;spectatorTarget=target;return 1;
+    case 3:spectatorFollowing=spectatorCatching=true;spectatorPaused=false;spectatorTarget=noSeek;return 1;
+    default:return 0;
+    }
+}
 EMSCRIPTEN_KEEPALIVE const unsigned* th075_mp_calibration(){
     using namespace th075::sdl::multiplayer;calibration.fill(0);calibration[0]=1;if(!session)return calibration.data();
     const auto& s=session->Startup();constexpr unsigned phases[]{0,1,3,4,5,6,7,8};calibration[1]=phases[unsigned(s.State())];

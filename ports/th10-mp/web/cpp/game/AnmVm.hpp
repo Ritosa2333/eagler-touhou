@@ -59,7 +59,7 @@ struct AnmVm {
     i32 sprite_frame;                      // 380
     std::int16_t sprite_index;              // 384
     u16 file_index;
-    u16 reserved_388;
+    u16 miss_effect_seat;
     std::int16_t script_index;
     AnmInstruction* script_begin;          // 38c
     AnmInstruction* instruction;           // 390

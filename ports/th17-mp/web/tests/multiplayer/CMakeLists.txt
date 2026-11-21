@@ -6,9 +6,10 @@ add_subdirectory(../../../../../common common)
 add_executable(th17-multiplayer-session session-test.cpp
     ../../cpp/game/FrameScheduler.cpp
     ../../cpp/multiplayer/FrameState.cpp
-    ../../cpp/multiplayer/Session.cpp)
+    ../../cpp/multiplayer/Session.cpp
+    ../../cpp/multiplayer/ReplayArchive.cpp)
 target_include_directories(th17-multiplayer-session PRIVATE ../../cpp/multiplayer)
-target_link_libraries(th17-multiplayer-session PRIVATE eagler::session_channel)
+target_link_libraries(th17-multiplayer-session PRIVATE eagler::session_channel eagler::input_replay)
 add_test(NAME th17-multiplayer-session COMMAND th17-multiplayer-session)
 
 

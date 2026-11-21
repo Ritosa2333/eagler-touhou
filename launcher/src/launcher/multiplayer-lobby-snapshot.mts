@@ -71,6 +71,7 @@ export interface NormalizedMultiplayerLobbySnapshot {
   showHitboxes?: boolean;
   ballCount?: number;
   challengeMode?: boolean;
+  challengeKeepBullets?: boolean;
   chapterThreshold?: number;
   prankMode?: boolean;
   playerCount: 2 | 3;
@@ -259,6 +260,7 @@ export function normalizeMultiplayerLobbySnapshot(
     ...(typeof source.unrated === 'boolean' ? {unrated: source.unrated} : {}),
     ...(source.disableLocalChargePriority !== undefined ? {disableLocalChargePriority: source.disableLocalChargePriority === true} : {}),
     ...(source.challengeMode !== undefined ? { challengeMode: source.challengeMode === true } : {}),
+    ...(typeof source.challengeKeepBullets === "boolean" ? { challengeKeepBullets: source.challengeMode === true && source.challengeKeepBullets } : {}),
     ...(source.ballCount !== undefined ? {ballCount:source.ballCount as number} : {}),
     ...(source.disableFocus !== undefined ? {disableFocus:source.disableFocus===true} : {}),
     ...(source.showHitboxes !== undefined ? {showHitboxes:source.showHitboxes===true} : {}),

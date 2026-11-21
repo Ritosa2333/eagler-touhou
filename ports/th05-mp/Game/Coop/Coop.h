@@ -17,7 +17,7 @@ struct Session {
  Input input[3]{};
  Stock carry[3]{};
  unsigned int combatRevision=original::OriginalBombAndRage;
- bool continuing=false,finished=false,challenge=false,localVisibility=false;
+ bool continuing=false,finished=false,challenge=false,keepBulletsOnMiss=false,localVisibility=false;
 };
 inline constexpr int MenuLeft=123,MenuTop=178,MenuWidth=215,MenuRowHeight=35,MenuRowStep=39,MenuRows=3;
 Session& Run();

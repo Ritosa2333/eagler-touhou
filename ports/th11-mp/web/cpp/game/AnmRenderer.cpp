@@ -57,7 +57,8 @@ u32 AnmRenderer::color(const AnmVm& vm)const noexcept {u32 original=vm.flags&0x8
 unsigned AnmRenderer::multiplayer_owner(const AnmVm& vm)const noexcept{
     return &vm==presentation_copy?presentation_owner:multiplayer_animations?multiplayer_animations->multiplayer_tag(vm):0;
 }
-u32 AnmRenderer::multiplayer_color(const AnmVm& vm,u32 color)const noexcept{const auto owner=multiplayer_owner(vm);if(!owner||owner>=multiplayer_opacity.size())return color;return (color&0xffffff)|(((color>>24)*multiplayer_opacity[owner]/255)<<24);}
+u32 AnmRenderer::multiplayer_color(const AnmVm& vm,u32 color)const noexcept{const auto owner=multiplayer_owner(vm);if(!owner||owner>=multiplayer_opacity.size())return color;const auto opacity=multiplayer_miss_viewer&&owner!=multiplayer_miss_viewer&&vm.resource==multiplayer_miss_resource&&
+    (vm.script_index==76||vm.script_index==77)?std::min<unsigned>(multiplayer_opacity[owner],64):multiplayer_opacity[owner];return (color&0xffffff)|(((color>>24)*opacity/255)<<24);}
 u32 AnmRenderer::multiplayer_tint(u32 value,unsigned owner)const noexcept{
     if(!owner||owner>=multiplayer_opacity.size())return value;
     const unsigned opacity=multiplayer_opacity[owner];if(opacity==255)return value;

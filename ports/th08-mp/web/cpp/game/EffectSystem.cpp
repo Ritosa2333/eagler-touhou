@@ -122,7 +122,7 @@ void EffectSystem::begin(EffectState& e,i32 kind,u32 color,bool depth){
     anm.start(*file,e,file->scripts[d.script]);if(depth)e.zWriteDisabled=1;e.color1.d3dColor=i32(color);e.pos2={};e.update=d.update;
 }
 void EffectSystem::initialize(EffectState& e,i32 kind){const auto callback=definition(kind).initialize;if(callback&&callback(e,*this)!=0)e.active=0;}
-EffectState* EffectSystem::spawn(i32 kind,Vec3 position,i32 count,u32 color,const Vec3* parameters){
+EffectState* EffectSystem::spawn(i32 kind,Vec3 position,i32 count,u32 color,const Vec3* parameters,u32 miss_effect_seat){
     if(u32(kind)>=66){invalid=true;return &state.objects[effect_pool_layout::dummy_index];}
     for(i32 attempt=0;attempt<effect_pool_layout::active_pool_end-effect_pool_layout::active_pool_begin;++attempt){auto& e=state.objects[state.cursor];state.cursor=(state.cursor+1)%effect_pool_layout::active_pool_end;if(e.active)continue;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -131,7 +131,7 @@ EffectState* EffectSystem::spawn(i32 kind,Vec3 position,i32 count,u32 color,cons
 #else
         EffectGeometry::release(e);
 #endif
-        std::memset(&e,0,sizeof(e));e.position=position;if(parameters)e.parameters=*parameters;begin(e,kind,color,!parameters);initialize(e,kind);
+        std::memset(&e,0,sizeof(e));e.miss_effect_seat=miss_effect_seat;e.position=position;if(parameters)e.parameters=*parameters;begin(e,kind,color,!parameters);initialize(e,kind);
         if(--count==0){replay_flags|=0x400;return &e;}
     }replay_flags|=0x400;return &state.objects[effect_pool_layout::dummy_index];
 }
@@ -291,9 +291,10 @@ void EffectSystem::draw_list(u32 index,float depth,bool offset_before_depth){
         u8 alpha=255;
         bool local_familiar=false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        const i32 seat=effect_seat(*e);
+        const bool miss=e->miss_effect_seat||e->kind==12||e->kind==59;
+        const i32 seat=e->miss_effect_seat?i32(e->miss_effect_seat-1):effect_seat(*e);
         if(player_effect_visible&&!player_effect_visible(player_view,*e,seat))continue;
-        if(seat>=0&&player_view_alpha)alpha=player_view_alpha(player_view,seat);
+        if(seat>=0&&player_view_alpha)alpha=player_view_alpha(player_view,seat,miss);
         local_familiar=familiar_effect_view.contains(*e);
 #endif
         const auto fade=[alpha](EffectState& vm){vm.color1.a=std::min(vm.color1.a,alpha);vm.color2.a=std::min(vm.color2.a,alpha);};
@@ -317,7 +318,11 @@ void EffectSystem::draw_list(u32 index,float depth,bool offset_before_depth){
         if(offset_before_depth){add(draw->pos,draw->pos2);draw->pos.z=depth;}else{draw->pos.z=depth;add(draw->pos,draw->pos2);}renderer.draw_2d(*draw);
     }
 }
-JobResult EffectSystem::draw(){draw_list(0,.07f,false);for(auto* e=state.sentinels[2].next;e;e=e->next){TH08_AUDIT_SCOPE(Effect,e,e->age.current,u32(e->kind));EffectState copy;EffectState* draw=e;if(presentation::render_only){copy=*e;copy.position=presentation_position(*e);presentation_visual(*e,copy);draw=&copy;}draw->pos=draw->position;renderer.draw_facing_camera(*draw);}draw_list(4,.07f,false);return JobResult::Continue;}
+JobResult EffectSystem::draw(){draw_list(0,.07f,false);for(auto* e=state.sentinels[2].next;e;e=e->next){TH08_AUDIT_SCOPE(Effect,e,e->age.current,u32(e->kind));EffectState copy;EffectState* draw=e;u8 alpha=255;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(e->miss_effect_seat&&player_view_alpha)alpha=player_view_alpha(player_view,i32(e->miss_effect_seat-1),true);
+#endif
+        if(presentation::render_only||e->miss_effect_seat){copy=*e;copy.position=presentation_position(*e);presentation_visual(*e,copy);copy.color1.a=std::min(copy.color1.a,alpha);copy.color2.a=std::min(copy.color2.a,alpha);draw=&copy;}draw->pos=draw->position;renderer.draw_facing_camera(*draw);}draw_list(4,.07f,false);return JobResult::Continue;}
 JobResult EffectSystem::draw_alternative(){draw_list(3,.04f,true);return JobResult::Continue;}
 void EffectSystem::projected(AnmVm& vm,Vec3& position,void* p){
     // The authoritative Draw has already integrated this attraction once.

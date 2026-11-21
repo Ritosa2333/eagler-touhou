@@ -158,16 +158,34 @@ async function verifyModes(port, product) {
     const changed = await sendAndMatch(host, {type:'settings',playerCount:2,difficulty:1,challengeMode:true,prankMode:true}, r =>
       r.room?.challengeMode === challengeSupported);
     assert.equal(changed.room.prankMode, false, 'settings cannot enable the withdrawn prank mode');
-    if (changed.room.seats.some(seat => seat && !seat.ready)) {
+    const keepBulletsSupported = capability.challengeKeepBullets === true;
+    assert.equal(changed.room.challengeKeepBullets, keepBulletsSupported ? false : undefined);
+    const changeRules = {type:'settings',playerCount:2,difficulty:1};
+    await sendAndMatch(guest, {...changeRules,challengeKeepBullets:true}, r => r.type==='error');
+    await sendAndMatch(host, {...changeRules,challengeKeepBullets:'true'}, r => r.type==='error');
+    if (keepBulletsSupported) {
+      const enabled = await sendAndMatch(host, {...changeRules,challengeKeepBullets:true}, r => r.room?.challengeKeepBullets===true);
+      assert.ok(enabled.room.settingsVersion>changed.room.settingsVersion);
+      assert.equal(enabled.room.seats.every(seat => !seat?.ready), true);
+      await sendAndMatch(host, {...changeRules,challengeMode:false}, r => r.room?.challengeMode===false && r.room.challengeKeepBullets===false);
+      await sendAndMatch(host, {...changeRules,challengeMode:true}, r => r.room?.challengeMode===true && r.room.challengeKeepBullets===false);
+      await sendAndMatch(host, {...changeRules,challengeKeepBullets:true}, r => r.room?.challengeKeepBullets===true);
+    } else {
+      await sendAndMatch(host, {...changeRules,challengeKeepBullets:true}, r => r.type==='error');
+    }
+    if (keepBulletsSupported || changed.room.seats.some(seat => seat && !seat.ready)) {
       assert.equal(changed.room.seats.every(seat => !seat?.ready), true);
       await sendAndMatch(host, {type:'set-ready',ready:true}, r => r.room?.seats[0]?.ready);
       await sendAndMatch(guest, {type:'set-ready',ready:true}, r => r.room?.seats[1]?.ready);
     }
     const started = await sendAndMatch(host, {type:'start', ...(!timingPolicy.rollback ? {adonisMode:1,predictionLimit:0} : {})}, r => r.type==='start');
     assert.equal(started.room.challengeMode, challengeSupported);
+    assert.equal(started.room.challengeKeepBullets, keepBulletsSupported ? true : undefined);
+    if (keepBulletsSupported) await sendAndMatch(host, {...changeRules,challengeKeepBullets:false}, r => r.type==='error');
     await sendAndMatch(host, {type:'settings',challengeMode:false,prankMode:false}, r => r.type==='error');
     const locked = await sendAndMatch(host, {type:'start'}, r => r.type==='state');
     assert.equal(locked.room.challengeMode, started.room.challengeMode);
+    assert.equal(locked.room.challengeKeepBullets, started.room.challengeKeepBullets);
     assert.equal(locked.room.prankMode, started.room.prankMode);
   } finally { host.close(1000); guest.close(1000); }
 }

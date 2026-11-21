@@ -35,14 +35,14 @@ bool decode_session_setup(SessionSetup& current,const std::uint32_t* words,std::
         if(words[20]>1||words[21]<1||words[21]>2||(words[20]&&(next.input_delay||!next.adonis_mode)))return false;
         next.input_delay_auto=words[20];next.prediction_reserve=words[21];
     }
-    if(rules){if(words[22]>1)return false;next.challenge_mode=words[22]!=0;}
+    if(rules){if(words[22]>3||words[22]==2)return false;next.challenge_mode=(words[22]&1)!=0;next.keep_bullets_on_miss=(words[22]&2)!=0;}
     next.configured=true;current=next;return true;
 }
 namespace {
 std::uint32_t contract(const SessionSetup& setup,std::uint32_t revision) noexcept {
     std::uint32_t hash=2166136261u;
     const auto word=[&](std::uint32_t value){for(int i=0;i<4;++i){hash^=(value>>(i*8))&255u;hash*=16777619u;}};
-    word(revision);word(setup.challenge_mode);
+    word(revision);word(std::uint32_t(setup.challenge_mode)+2*std::uint32_t(setup.keep_bullets_on_miss));
     // Fresh combined revisions bind the cooperation rules and each timing
     // envelope. Neither previous topic's recordings may run under this world.
     word(setup.version>=6?0x0800000fu:setup.version==5?0x0800000eu:setup.version==4?0x0800000du:0x0800000cu);

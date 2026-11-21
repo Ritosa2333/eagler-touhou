@@ -36,16 +36,22 @@ i32 Player::update(PlayerFrameEnvironment& env){
     if(env.practice&&env.practice->enabled&&env.practice->show_keyboard_monitor&&env.practice->record_keys)env.practice->record_keys(*env.input_keys);
 #endif
     auto& economy=*env.economy;
+    bool clear_after_miss=true;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    clear_after_miss=!env.lifecycle->keep_bullets_on_miss||death_position.y==0;
+#endif
     if(state==0){
         const i32 distance=static_cast<i32>(static_cast<u32>(state_timer.current)*8000u)/60;
         fixed_position.y=wrapping_add(48000,static_cast<i32>(0u-static_cast<u32>(distance)));
         position.y=(Extended::from_int(fixed_position.y)*number(.01f)).to_float();for(auto& option:options)option.snap_next=1;
         update_position_history();position_history[0]=fixed_position;
-        if(state_timer.current<30){
-            const float radius=(Extended::from_int(state_timer.current)*number(17.066668f)+number(64.f)).to_float();
-            env.cancel_bullet_circle(death_position,radius,true);env.cancel_bullet_circle(death_position,Scalar::mul(radius,.25f),false);
-            env.cancel_laser_circle(death_position,radius);
-        }else{env.clear_bullets(false);env.clear_lasers(false);}
+        if(clear_after_miss){
+            if(state_timer.current<30){
+                const float radius=(Extended::from_int(state_timer.current)*number(17.066668f)+number(64.f)).to_float();
+                env.cancel_bullet_circle(death_position,radius,true);env.cancel_bullet_circle(death_position,Scalar::mul(radius,.25f),false);
+                env.cancel_laser_circle(death_position,radius);
+            }else{env.clear_bullets(false);env.clear_lasers(false);}
+        }
         if(state_timer.current>=60){state=1;set_timer(state_timer,state_timer_flags,0,env.default_rate);}
     }
     if(state==1){
@@ -53,7 +59,7 @@ i32 Player::update(PlayerFrameEnvironment& env){
             set_timer(invulnerability,invulnerability_flags,270,env.default_rate);consume_bomb(*this,env);
             economy.item_value=wrapping_add(economy.item_value,-300);if(economy.item_value<5000)economy.item_value=5000;
         }
-        if(state_timer.current<30){env.clear_bullets(false);env.clear_lasers(false);}move(*env.movement);
+        if(clear_after_miss&&state_timer.current<30){env.clear_bullets(false);env.clear_lasers(false);}move(*env.movement);
     }else if(state==4){
         const i32 deathbomb_frames =
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY

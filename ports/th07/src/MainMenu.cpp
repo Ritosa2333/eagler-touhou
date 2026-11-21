@@ -2201,6 +2201,7 @@ u32 MainMenu::OnUpdateSelectReplay()
                 session.stage4BossChain = replayConfig.stage4BossChain;
                 session.showContributionStats = replayConfig.showContributionStats;
                 session.challengeMode = replayConfig.challengeMode;
+                session.keepBulletsOnMiss = replayConfig.keepBulletsOnMiss;
                 session.showStagePlayerNames = replayConfig.showStagePlayerNames;
                 for (u8 playerId = 0; playerId < replayConfig.playerCount; ++playerId)
                 {

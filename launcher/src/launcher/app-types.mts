@@ -38,6 +38,7 @@ export interface LauncherNetplayState {
   spectatorId: string;
   spectatorCount: number;
   challengeMode?: boolean;
+  challengeKeepBullets?: boolean;
   chapterThreshold?: number;
   th19Rules?: number[];
   broSystems?: number[];
@@ -84,6 +85,7 @@ export interface MultiplayerRoomState {
   showHitboxes?: boolean;
   ballCount?: number;
   challengeMode?: boolean;
+  challengeKeepBullets?: boolean;
   chapterThreshold?: number;
   prankMode?: boolean;
   code: string;

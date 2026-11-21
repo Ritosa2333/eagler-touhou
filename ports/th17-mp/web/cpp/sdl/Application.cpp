@@ -169,7 +169,7 @@ bool ApplicationState::begin_game(bool playback){
    for(u32 seat=1;seat<room_seats;++seat)
     if(!run->add_coop_player(room_loadouts[seat][0],room_loadouts[seat][1]))return fail(run->error);
    if(room_challenge)
-    for(u32 seat=0;seat<room_seats;++seat)scene()->battle.pilot(seat).session.enable_challenge();
+    for(u32 seat=0;seat<room_seats;++seat)scene()->battle.pilot(seat).session.enable_challenge(room_keep_bullets_on_miss);
   }
 #endif
   if(practice.active){

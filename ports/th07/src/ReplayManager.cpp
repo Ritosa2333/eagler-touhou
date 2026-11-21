@@ -427,6 +427,7 @@ ZunResult ReplayManager::AddedCallback(ReplayManager *arg)
         config.localPlayer = MultiplayerGameplay::GetLocalPlayerSlot();
         config.stage4BossChain = MultiplayerGameplay::IsStage4BossChainEnabled();
         config.challengeMode = MultiplayerGameplay::IsChallengeMode();
+        config.keepBulletsOnMiss = MultiplayerGameplay::KeepBulletsOnMiss();
         config.showContributionStats = MultiplayerGameplay::ShouldShowContributionStats();
         config.showStagePlayerNames = MultiplayerGameplay::ShouldShowStagePlayerNames();
         config.gameplayAbi = TH07_MULTI_GAMEPLAY_ABI;

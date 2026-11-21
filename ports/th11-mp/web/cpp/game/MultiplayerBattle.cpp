@@ -18,7 +18,7 @@ MultiplayerPilot::MultiplayerPilot(GameBattle& w,unsigned index):world(w),seat(i
 bool MultiplayerPilot::alive()const noexcept{return player&&!ghost&&player->state.life_state!=2&&player->state.life_state!=4;}
 bool MultiplayerPilot::initialize(int selection){
     EffectOwner effect(world,seat);
-    input={};input.challenge=world.mp_options.challenge;input.movement.character=selection/3;input.movement.subtype=selection%3;input.movement.enemy_manager=true;
+    input={};input.challenge=world.mp_options.challenge;input.keep_bullets_on_miss=world.mp_options.keep_bullets_on_miss;input.movement.character=selection/3;input.movement.subtype=selection%3;input.movement.enemy_manager=true;
     communication.reset(&world.animations.rate);
     if(seat){owned_player=std::make_unique<PlayerFrame>(world.resources.core.shots[selection],world.resources.core.players[selection/3],world.resources.core.bullet,world.animations,economy,*this,7,6);player=owned_player.get();player->input=input;
         world.animations.multiplayer_tags[&player->motion.body]=seat+1;
@@ -27,6 +27,7 @@ bool MultiplayerPilot::initialize(int selection){
         owned_bomb=std::make_unique<BombController>(world.animations,world.resources.core.players[selection/3],*player,*this,7,&world.resources.core.text);bomb=owned_bomb.get();bomb->selection=selection;
     }else{player=world.player.get();bomb=world.bomb.get();}
     player->input.challenge=world.mp_options.challenge;
+    player->input.keep_bullets_on_miss=input.keep_bullets_on_miss;
     world.animations.multiplayer_tags[&player->motion.body]=seat+1;
     constexpr i32 minimum[]={2500000,5000000,10000000,20000000,20000000};player->state.minimum_point_value=minimum[economy.difficulty];
     const float spacing=world.mp_options.seat_count==2?48.f:56.f;
@@ -291,7 +292,7 @@ u32 GameBattle::mp_hash()const noexcept{
     u32 hash=2166136261u;auto word=[&](u32 v){for(unsigned i=0;i<4;++i){hash^=(v>>(i*8))&255;hash*=16777619u;}};auto flt=[&](float v){u32 bits;std::memcpy(&bits,&v,4);word(bits);};
     auto timer=[&](const Timer& t){word(t.previous);word(t.current);flt(t.fractional);};
     auto pc=[&](const EclOwner& owner,const EclInstruction* instruction){if(!instruction){word(0);return;}const auto address=reinterpret_cast<uintptr_t>(instruction);unsigned index=0;for(const auto& file:owner.program->files){++index;const auto begin=reinterpret_cast<uintptr_t>(file->bytes.data());if(address>=begin&&address<begin+file->bytes.size()){word(index);word(u32(address-begin));return;}}word(~0u);};
-    word(mp_options.challenge);for(unsigned i=0;i<mp_options.seat_count;++i)word(pilots[i]->challenge_misses);
+    word(unsigned(mp_options.challenge)+2*unsigned(mp_options.keep_bullets_on_miss));for(unsigned i=0;i<mp_options.seat_count;++i)word(pilots[i]->challenge_misses);
     word(mp_tick);word(mp_fragments);word(mp_wipe_frames);word(mp_rank);word(economy.score_units);word(frame);word(resources.stage_number);word(animations.script_rng.seed);word(animations.script_rng.calls);word(spell_flags);word(spell_id);word(spell_bonus);word(spell_elapsed);
     for(auto value:enemy_environment.shared_integers)word(value);flt(animations.rate);word(transitioning);word(transition_started);word(stage_active);timer(transition_timer);
     if(stage){const auto& s=stage->state;word(s.instruction_offset);timer(s.script_timer);timer(s.fade_timer);word(s.frame_count);word(s.draw_flags);word(s.effects_enabled);}

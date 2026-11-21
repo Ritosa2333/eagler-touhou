@@ -556,6 +556,7 @@ ZunResult ReplayManager::AddedCallback(ReplayManager *mgr)
         config.difficulty = static_cast<u8>(g_GameManager.difficulty);
         config.localPlayer = MultiplayerGameplay::GetLocalPlayerSlot();
         config.challengeMode = MultiplayerGameplay::IsChallengeMode();
+        config.keepBulletsOnMiss = MultiplayerGameplay::KeepBulletsOnMiss();
         config.showContributionStats = MultiplayerGameplay::ShouldShowContributionStats();
         config.gameplayAbi = TH06_MULTI_GAMEPLAY_ABI;
         for (u8 playerId = 0; playerId < config.playerCount; ++playerId)

@@ -23,6 +23,7 @@ export interface MultiplayerRuntimeOptionConstraints {
   loadouts: readonly MultiplayerRuntimeLoadout[];
   inputTiming?: Readonly<MultiplayerInputTimingConfig>;
   inGameSelection?: boolean;
+  challengeKeepBullets?: boolean;
 }
 
 export interface MultiplayerRuntimeOptionInput {
@@ -48,6 +49,7 @@ export interface MultiplayerRuntimeOptionInput {
   replayAutoSave?: boolean;
   replayNames?: string[];
   challengeMode?: boolean;
+  challengeKeepBullets?: boolean;
   disableLocalChargePriority?: boolean;
   disableFocus?: boolean;
   showHitboxes?: boolean;
@@ -84,6 +86,7 @@ export interface MultiplayerRuntimeOptions {
   netplayReplayAutoSave?: boolean;
   netplayReplayNames?: string[];
   netplayChallengeMode?: boolean;
+  netplayChallengeKeepBullets?: boolean;
   netplayDisableLocalChargePriority?: boolean;
   netplayDisableFocus?: boolean;
   netplayShowHitboxes?: boolean;
@@ -119,6 +122,10 @@ export function buildMultiplayerRuntimeOptions(
   if (input.preferTurn !== undefined && typeof input.preferTurn !== 'boolean')
     throw new Error('TURN 偏好必须为布尔值');
   const product = multiplayerConfigForProduct(roomProduct) ?? constraints;
+  if (input.challengeKeepBullets !== undefined &&
+      (typeof input.challengeKeepBullets !== "boolean" ||
+        (input.challengeKeepBullets && (input.challengeMode !== true || product.challengeKeepBullets !== true))))
+    throw new TypeError("Invalid challenge bullet clearing setting");
   if (input.challengeMode !== undefined && typeof input.challengeMode !== 'boolean')
     throw new Error('挑战模式参数无效');
   if(input.disableLocalChargePriority !== undefined && (roomProduct !== 'th09mp' || typeof input.disableLocalChargePriority !== 'boolean'))
@@ -232,6 +239,7 @@ export function buildMultiplayerRuntimeOptions(
             input.chapterThreshold ?? defaultTh15ChapterThreshold(playerCount),
         } : {}),
     ...(input.challengeMode !== undefined ? { netplayChallengeMode: input.challengeMode } : {}),
+    ...(input.challengeKeepBullets ? { netplayChallengeKeepBullets: true } : {}),
     ...(roomProduct === 'th09mp' ? {netplayDisableLocalChargePriority:input.disableLocalChargePriority===true} : {}),
     ...(roomProduct === 'th01mp' ? {netplayBallCount:input.ballCount ?? 2} : {}),
     ...(roomProduct === 'th03mp' ? {netplayDisableFocus:input.disableFocus!==false,netplayShowHitboxes:input.showHitboxes===true} : roomProduct === 'th02mp' ? {netplayDisableFocus:input.disableFocus===true} : {}),

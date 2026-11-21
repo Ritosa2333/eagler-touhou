@@ -125,7 +125,7 @@ function loop(){
       const now=performance.now();
       if(now-last>=1000){const current=core._th075_frame(),pointer=core._th075_audio_statistics();
         if(pointer){const a=core.HEAPU32.subarray(pointer>>>2,(pointer>>>2)+5);emit('audio-health',{ready:!!a[0],queuedFrames:a[1],queuedMs:a[1]*1000/44100,track:a[2],suspended:!!a[3],musicEnabled:!!a[4],backend:'SDL3'});}
-        emit('frame-health',{fps:presents*1000/(now-last),simulationFps:(current-ticks)*1000/(now-last),maxGapMs:maximum});last=now;ticks=current;presents=0;maximum=0;}
+        emit('frame-health',{fps:presents*1000/(now-last),simulationFps:Math.max(0,current-ticks)*1000/(now-last),maxGapMs:maximum});last=now;ticks=current;presents=0;maximum=0;}
     }catch(e){fatal(e);return;}finally{busy=false;}
     requestAnimationFrame(frame);
   };requestAnimationFrame(frame);
@@ -172,6 +172,10 @@ async function command(m){if(dispatchInput(m))return {};switch(m.command){
     for(const r of [...(m.sharedResources||[]),...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);
     core._th075_music_enabled(+(music==='ogg'));cancelTouch();clearKeyboard();updateDisplay();return {};
   case 'resources':for(const r of m.resources||[])await resource(r);return {};
+  case 'spectator-playback':
+    await idle();
+    if(!launched||!net?.spectator)throw Error('Spectator playback is not active');
+    return net.playback(m);
   case 'prepare-room':
     if(!build.multiplayer||launched)throw Error('Invalid room preview owner');
     if(!roomPreview){

@@ -292,6 +292,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         ballCount: room.ballCount,
         chapterThreshold: room.chapterThreshold,
         challengeMode: room.challengeMode,
+        challengeKeepBullets: room.challengeKeepBullets,
         prankMode: false,
       },
       seat: state.seat,
@@ -487,6 +488,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           }
         : {}),
       challengeMode: !!room.challengeMode,
+      ...(room.challengeKeepBullets !== undefined ? {challengeKeepBullets: room.challengeKeepBullets} : {}),
       prankMode: false,
     });
   }
@@ -510,6 +512,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       synced: true,
       connection: 'connected',
       challengeMode: normalized.challengeMode ?? false,
+      challengeKeepBullets: normalized.challengeKeepBullets,
       ...(product==='th19mp'?{th19Rules:[...(normalized.th19Rules??TH19_VERSUS_RULES)]}:{}),
       ...(product==='bromp'?{broSystems:[...(normalized.broSystems??BRO_DEFAULT_SYSTEMS)],broStageQueue:[...(normalized.broStageQueue??BRO_DEFAULT_STAGE_QUEUE)]}:{}),
       ...((product==='th05mp'||isPc98StockProduct(product))?{initialSpares:normalized.initialSpares??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,initialBombs:normalized.initialBombs??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
@@ -574,6 +577,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         ...(product==='th19mp'?{th19Rules:room.th19Rules}:{}),
         ...(product==='bromp'?{broSystems:room.broSystems,broStageQueue:room.broStageQueue}:{}),
         challengeMode: room.challengeMode,
+        challengeKeepBullets: room.challengeKeepBullets,
         prankMode: false,
         playerCount: room.playerCount,
         difficulty: room.difficulty,
@@ -917,6 +921,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(product==='bromp'?{broSystems:[...(saved?.room.broSystems??BRO_DEFAULT_SYSTEMS)],broStageQueue:[...(saved?.room.broStageQueue??BRO_DEFAULT_STAGE_QUEUE)]}:{}),
       ...((product==='th05mp'||isPc98StockProduct(product))?{initialSpares:saved?.room.initialSpares??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,initialBombs:saved?.room.initialBombs??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
       challengeMode: saved?.room.challengeMode ?? false,
+      challengeKeepBullets: saved?.room.challengeKeepBullets,
       prankMode: false,
       seats: null,
       synced: false,
@@ -1146,7 +1151,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     patch: Partial<
       Pick<
         MultiplayerRoomState,
-        | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'disableLocalChargePriority' | 'unrated'
+        | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'challengeKeepBullets' | 'disableLocalChargePriority' | 'unrated'
         | 'disableFocus' | 'showHitboxes' | 'ballCount'
         | "chapterThreshold"
         | 'initialSpares' | 'initialBombs' | 'th19Rules'
@@ -1167,6 +1172,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         patch.ballCount !== undefined ||
         patch.unrated !== undefined ||
         patch.challengeMode !== undefined ||
+        patch.challengeKeepBullets !== undefined ||
         patch.broSystems !== undefined ||
         patch.broStageQueue !== undefined)
     )
@@ -1189,6 +1195,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       return;
     const config = policy()!;
     if(patch.challengeMode === true && config.challengeMode === false)return;
+    if (patch.challengeKeepBullets !== undefined &&
+        (!config.challengeKeepBullets || room.challengeKeepBullets === undefined || !(patch.challengeMode ?? room.challengeMode))) return;
     const chapterThreshold =
       product === "th15mp"
         ? (patch.chapterThreshold ??
@@ -1230,6 +1238,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(product === 'th03mp' ? {disableFocus:patch.disableFocus ?? (room.disableFocus !== false),showHitboxes:patch.showHitboxes ?? (room.showHitboxes===true)} : product === 'th02mp' ? {disableFocus:patch.disableFocus ?? (room.disableFocus === true)} : {}),
       ...(product === 'th01mp' ? {ballCount:patch.ballCount ?? room.ballCount ?? 2} : {}),
       challengeMode: patch.challengeMode ?? !!room.challengeMode,
+      ...(patch.challengeKeepBullets !== undefined ? {challengeKeepBullets: patch.challengeKeepBullets} : {}),
       prankMode: false,
     });
     publish();
@@ -1398,6 +1407,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         } : {}),
         ...(config.gameplay === 'cooperative' && config.challengeMode !== false
           ? { challengeMode: room.challengeMode === true }
+          : {}),
+        ...(config.challengeKeepBullets && room.challengeMode && room.challengeKeepBullets
+          ? { challengeKeepBullets: true }
           : {}),
         iceServers: ports.settings().iceServers,
         preferTurn: !room.startupRoutes?.length && state.preferTurn,

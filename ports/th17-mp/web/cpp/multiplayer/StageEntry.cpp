@@ -30,7 +30,7 @@ template<class Codec> bool visit(Codec& c,StageEntry& e,u32 schema){
     for(auto* input:{&e.menu,&e.input})
         if(!c.Values(input->held,input->previous,input->pressed,input->released,input->repeated,input->long_held)||
            !c.Array(input->duration)||!c.Array(input->repeat_age))return false;
-    return c.Array(e.piece_tiers)&&(schema==1||c.Value(e.ghost_mask))&&(schema<4||c.Value(s.challenge));
+    return c.Array(e.piece_tiers)&&(schema==1||c.Value(e.ghost_mask))&&(schema<StageEntry::challenge_schema||c.Value(s.challenge))&&(schema<StageEntry::schema||c.Value(s.keep_bullets_on_miss));
 }
 }
 bool decode_stage_entry(const std::vector<u8>& bytes,StageEntry& out){
@@ -63,8 +63,9 @@ bool capture_stage_entry(sdl::ApplicationState& app,const SessionSetup& setup,co
         e.piece_tiers[n]=stage->battle.life_piece_tier(n);
         if(stage->battle.pilot_ghost(n))e.ghost_mask|=u8(1u<<n);
     }
-    Netplay::SpectatorScalars::Writer writer;writer.Value(StageEntry::schema);
-    if(!visit(writer,e,StageEntry::schema)||!writer.Good())return false;
+    const u32 schema=setup.keep_bullets_on_miss?StageEntry::schema:StageEntry::challenge_schema;
+    Netplay::SpectatorScalars::Writer writer;writer.Value(schema);
+    if(!visit(writer,e,schema)||!writer.Good())return false;
     bytes=writer.Bytes();return true;
 }
 bool restore_stage_entry(sdl::ApplicationState& app,const SessionSetup& setup,GameInput& menu,u32 frame,const std::vector<u8>& bytes){
@@ -79,7 +80,7 @@ bool restore_stage_entry(sdl::ApplicationState& app,const SessionSetup& setup,Ga
 namespace th17::sdl {
 bool ApplicationState::restore_room_stage(const multiplayer::StageEntry& entry){
     if(!initialized||!entry.setup.valid())return false;
-    room_seats=entry.setup.seats;room_challenge=entry.setup.challenge;
+    room_seats=entry.setup.seats;room_challenge=entry.setup.challenge;room_keep_bullets_on_miss=entry.setup.keep_bullets_on_miss;
     for(u32 n=0;n<room_seats;++n)room_loadouts[n]={entry.setup.loadouts[n].character,entry.setup.loadouts[n].animal};
     flow.pending=AppScene::Title;
     release_ending();release_game();release_title();
@@ -101,7 +102,7 @@ bool ApplicationState::restore_room_stage(const multiplayer::StageEntry& entry){
     for(u32 seat=0;seat<room_seats;++seat){
         auto& pilot=scene()->battle.pilot(seat);
         pilot.session=entry.pilots[seat];
-        if(room_challenge)pilot.session.enable_challenge();
+        if(room_challenge)pilot.session.enable_challenge(room_keep_bullets_on_miss);
         auto state=entry.stage;state.player=entry.positions[seat];state.focus=entry.focus[seat];
         state.restore_player(pilot.motion);
         if(!pilot.configure_options())return fail(pilot.options.error);

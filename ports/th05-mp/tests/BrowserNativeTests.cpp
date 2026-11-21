@@ -64,6 +64,7 @@ struct PracticeTests {
   if(op==36){Stage3FairyVolley(s);return 1;}
   if(op==37)return StageEnemyWaves(s,CGame::GVar().m_playStage);
   if(op==38)return s->m_itemRankProgress;
+  if(op==39)return s->m_pEnemyBullet->GetClearBulletTimeLeft();
   s->BindSeat(seat);auto* p=s->m_pChara;
   if(op==32){
    auto* bullets=s->m_pEnemyBullet;bullets->Initialize();auto& bullet=bullets->m_bullets[ENEMY_BULLET_N_RECORD_DOT];

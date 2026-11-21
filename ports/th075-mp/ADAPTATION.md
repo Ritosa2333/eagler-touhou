@@ -172,6 +172,10 @@
 
 ## 运行验收记录
 
+### 中途观战 | Relay 回归
+
+MP-06、MP-07、MP-09：[本地 Relay 测试](../../services/relay/tests/test-th075-spectator-history-relay.mjs) 验证开局前登记的观众先后接入后，等待中的观众和中途入场的观众仍收到完整的时序、连续输入和结束标记。浏览器时间轴验收见[多人开发指南](docs/DEVELOPMENT.md)。
+
 ### 2026-10-20 生产语言路径准入
 
 LANG-03：MP shell 同步接收 Base replay.dat 汉化变体的确定路径，configure

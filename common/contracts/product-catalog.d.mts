@@ -175,6 +175,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         multiplayerRuntime: "./runtime/th06/multiplayer/th06.html";
         multiplayer: Readonly<{
             titleKey: "game.title.th06mp";
+            challengeKeepBullets: true;
             gameplay: "cooperative";
             playerCounts: readonly [2, 3];
             difficulties: readonly string[];
@@ -260,6 +261,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         multiplayerRuntime: "./runtime/th07/multiplayer/th07.html";
         multiplayer: Readonly<{
             titleKey: "game.title.th07mp";
+            challengeKeepBullets: true;
             gameplay: "cooperative";
             playerCounts: readonly [2, 3];
             difficulties: readonly string[];
@@ -375,6 +377,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         multiplayerRuntime: "./runtime/th08/multiplayer/th08.html";
         multiplayer: Readonly<{
             titleKey: "game.title.th08mp";
+            challengeKeepBullets: true;
             gameplay: "cooperative";
             inputTiming: Readonly<{
                 rollbackLimit: 8;
@@ -583,6 +586,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         multiplayerRuntime: "./runtime/th10/multiplayer/th10.html";
         multiplayer: Readonly<{
             titleKey: "game.title.th10mp";
+            challengeKeepBullets: true;
             gameplay: "cooperative";
             inputTiming: Readonly<{
                 rollbackLimit: 12;
@@ -679,6 +683,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         multiplayerRuntime: "./runtime/th11/multiplayer/th11.html";
         multiplayer: Readonly<{
             titleKey: "game.title.th11mp";
+            challengeKeepBullets: true;
             gameplay: "cooperative";
             inputTiming: Readonly<{
                 rollbackLimit: 12;
@@ -776,6 +781,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         multiplayerRuntime: "./runtime/th12/multiplayer/th12.html";
         multiplayer: Readonly<{
             titleKey: "game.title.th12mp";
+            challengeKeepBullets: true;
             gameplay: "cooperative";
             inputTiming: Readonly<{rollbackLimit: 12; sendPredictionLimit: 12; measuredStartup: true; manualDelayLimit: 9}>;
             playerCounts: readonly [2, 3];
@@ -841,6 +847,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         multiplayerRuntime: "./runtime/th13/multiplayer/th13.html";
         multiplayer: Readonly<{
             titleKey: "game.title.th13mp";
+            challengeKeepBullets: true;
             gameplay: "cooperative";
             inputTiming: Readonly<{
                 rollbackLimit: 12;
@@ -861,8 +868,8 @@ export declare const PRODUCT_GAMES: Readonly<{
             titleRoomEntry: false;
         }>;
         features: Readonly<{
-            thprac: false;
-            languages: false;
+            thprac: true;
+            languages: true;
             focusHitbox: false;
         }>;
     }>;
@@ -881,7 +888,7 @@ export declare const PRODUCT_GAMES: Readonly<{
             musicSourceDirectories:Readonly<{ogg:"music"}>;musicMounts:Readonly<{ogg:"/music"}>}>;
         replay: Readonly<{prefix: "th14"}>;
         multiplayerRuntime: "./runtime/th14/multiplayer/th14.html";
-        multiplayer: Readonly<{titleKey:"game.title.th14mp";gameplay:"cooperative";
+        multiplayer: Readonly<{titleKey:"game.title.th14mp";gameplay:"cooperative";challengeKeepBullets:true;
             playerCounts:readonly [2,3];difficulties:readonly ["Easy","Normal","Hard","Lunatic","Extra"];
             loadouts:ReadonlyArray<Readonly<{labelKey:string;glyph:string;character:number;shot:number}>>;
             peerTransportGlobal:"__th14PeerTransport";spectator:true;titleRoomEntry:false;
@@ -939,6 +946,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         multiplayerRuntime: "./runtime/th15/multiplayer/th15.html";
         multiplayer: Readonly<{
             titleKey: "game.title.th15mp";
+            challengeKeepBullets: true;
             gameplay: "cooperative";
             inputTiming: Readonly<{
                 rollbackLimit: 12;
@@ -1119,6 +1127,7 @@ export interface MultiplayerInputTimingConfig {
 }
 export interface MultiplayerProductConfig {
     challengeMode?: boolean;
+    challengeKeepBullets?: boolean;
     relaySourceEnvelope?: boolean;
     spectator?: boolean;
     titleRoomEntry?: boolean;
@@ -1204,6 +1213,7 @@ export declare function createLocalProductManifest(): {
             multiplayerRuntime: "./runtime/th06/multiplayer/th06.html";
             multiplayer: Readonly<{
                 titleKey: "game.title.th06mp";
+                challengeKeepBullets: true;
                 gameplay: "cooperative";
                 playerCounts: readonly [2, 3];
                 difficulties: readonly string[];
@@ -1302,6 +1312,7 @@ export declare function createLocalProductManifest(): {
             multiplayerRuntime: "./runtime/th07/multiplayer/th07.html";
             multiplayer: Readonly<{
                 titleKey: "game.title.th07mp";
+                challengeKeepBullets: true;
                 gameplay: "cooperative";
                 playerCounts: readonly [2, 3];
                 difficulties: readonly string[];
@@ -1408,6 +1419,7 @@ export declare function createLocalProductManifest(): {
             multiplayerRuntime: "./runtime/th08/multiplayer/th08.html";
             multiplayer: Readonly<{
                 titleKey: "game.title.th08mp";
+                challengeKeepBullets: true;
                 gameplay: "cooperative";
                 inputTiming: Readonly<{
                     rollbackLimit: 8;
@@ -1642,6 +1654,7 @@ export declare function createLocalProductManifest(): {
             multiplayerRuntime: "./runtime/th10/multiplayer/th10.html";
             multiplayer: Readonly<{
                 titleKey: "game.title.th10mp";
+                challengeKeepBullets: true;
                 gameplay: "cooperative";
                 inputTiming: Readonly<{
                     rollbackLimit: 12;
@@ -1751,6 +1764,7 @@ export declare function createLocalProductManifest(): {
             multiplayerRuntime: "./runtime/th11/multiplayer/th11.html";
             multiplayer: Readonly<{
                 titleKey: "game.title.th11mp";
+                challengeKeepBullets: true;
                 gameplay: "cooperative";
                 inputTiming: Readonly<{
                     rollbackLimit: 12;
@@ -1863,6 +1877,7 @@ export declare function createLocalProductManifest(): {
             multiplayerRuntime: "./runtime/th15/multiplayer/th15.html";
             multiplayer: Readonly<{
                 titleKey: "game.title.th15mp";
+                challengeKeepBullets: true;
                 gameplay: "cooperative";
                 inputTiming: Readonly<{
                     rollbackLimit: 12;
