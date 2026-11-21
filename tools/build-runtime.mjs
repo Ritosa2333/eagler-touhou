@@ -3,21 +3,10 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import {tmpdir} from 'node:os';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const workspace=path.resolve(root,'../..');
-const compiler=path.resolve(process.env.TH128_EMCC ?? path.join(workspace,'work/tools/emsdk-package/emsdk-main/upstream/emscripten/emcc.py'));
-const sdk=path.resolve(path.dirname(compiler),'../..');
-const bundledPython=path.join(sdk,'python/3.13.3_64bit/python.exe');
-const python=process.env.TH128_PYTHON ?? (fs.existsSync(bundledPython)?bundledPython:'python');
-const temporary=path.join(workspace,'work/emscripten-temp');
-const cache=path.join(workspace,'work/emscripten-cache-4.0.22');
-fs.mkdirSync(temporary,{recursive:true});
-const environment={...process.env,EM_CONFIG:path.join(sdk,'.emscripten').replaceAll('\\','/'),
-  EM_CACHE:cache.replaceAll('\\','/'),EMSDK_PYTHON:python,PYTHONUTF8:'1',EMCC_TEMP_DIR:temporary,
-  TMP:temporary,TEMP:temporary,TMPDIR:temporary,EMCC_CORES:'2',BINARYEN_CORES:'2'};
-const version=spawnSync(python,[compiler,'--version'],{cwd:root,encoding:'utf8',env:environment});
-if(version.status!==0 || !version.stdout.includes('4.0.22')) throw new Error('TH128 requires the isolated Emscripten 4.0.22 toolchain.\n'+version.stdout+version.stderr);
+// This inventory is also used by the Launcher source inspection.
 const sources=['src/runtime/Exports.cpp','src/runtime/EclExports.cpp','src/animation/AnmLogic.cpp',
   'src/animation/AnmScene.cpp','src/game/FreezeRules.cpp','src/ecl/EclProgram.cpp','src/ecl/EclVm.cpp',
   'src/runtime/WorldExports.cpp','src/game/StageWorld.cpp','src/game/StageIntroLogos.cpp','src/game/EnemyRules.cpp','src/game/EnemyPhaseRules.cpp','src/game/BulletRules.cpp','src/game/BulletManager.cpp','src/game/EnemyBulletCallbackRules.cpp',
@@ -38,10 +27,7 @@ sources.push('src/game/PlayerFireHost.cpp','src/game/PlayerFireRules.cpp','src/g
   'src/game/PerfectFreezeHost.cpp');
 sources.push('src/game/LaserLineHost.cpp');
 sources.push('src/game/ending/EndingSceneHost.cpp','src/game/ending/host-text-vm-bridge/HostTextVmBridge.cpp');
-for(const source of sources) if(!fs.existsSync(path.join(root,source))) throw new Error(`Missing runtime implementation ${source}`);
-const output=path.join(root,'site/runtime');
-fs.mkdirSync(output,{recursive:true});
-const buildOutput=fs.mkdtempSync(path.join(temporary,'runtime-'));
+
 // The Title, World and Ending consumers must share the complete game ABI.
 const exports=[
   'malloc','free','th128_load_anm',
@@ -123,9 +109,9 @@ const exports=[
 ];
 const flags=['-Isrc','-std=c++20','-O2','-fno-fast-math','-ffp-contract=off','-fexceptions','-sDISABLE_EXCEPTION_CATCHING=0','--no-entry','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,node',
   '-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=67108864','-sMAXIMUM_MEMORY=268435456','-sASSERTIONS=1',
-  '--js-library',path.join(root,'tools/sound-identity-library.js'),
+  '--js-library','tools/sound-identity-library.js',
   '-sEXPORTED_FUNCTIONS='+JSON.stringify(exports.map(name=>'_'+name)),
-  '-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPU8','UTF8ToString']),'-o',path.join(buildOutput,'core.mjs')];
+  '-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPU8','UTF8ToString'])];
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 function captureSources(){
   const names=fs.readdirSync(path.join(root,'src'),{recursive:true,withFileTypes:true})
@@ -133,30 +119,74 @@ function captureSources(){
     .map(entry=>path.relative(root,path.join(entry.parentPath,entry.name)).replaceAll('\\','/')).sort();
   return Object.fromEntries(names.map(name=>[name,hash(fs.readFileSync(path.join(root,name)))]));
 }
-const sourceFiles=captureSources();
-const sourceSnapshot=JSON.stringify(sourceFiles);
-const built=spawnSync(python,[compiler,...sources,...flags],{cwd:root,stdio:'inherit',env:environment});
-if(built.status!==0) process.exit(built.status??1);
-if(JSON.stringify(captureSources())!==sourceSnapshot)throw new Error('Runtime source changed during compilation; the last good generation remains published. Rebuild with stable sources.');
-const artifacts=Object.fromEntries(['core.mjs','core.wasm'].map(name=>{
-  const bytes=fs.readFileSync(path.join(buildOutput,name));return [name,{bytes:bytes.length,sha256:hash(bytes)}];
-}));
-const generation=hash(Buffer.from(JSON.stringify({sourceFiles,artifacts})));
-const builds=path.join(output,'builds');fs.mkdirSync(builds,{recursive:true});
-if(fs.realpathSync(builds).toLowerCase()!==path.resolve(builds).toLowerCase())throw new Error('Runtime builds directory must not be redirected');
-const destination=path.join(builds,generation);
-if(!fs.existsSync(destination)){
-  const stage=fs.mkdtempSync(path.join(builds,'.staging-'));
-  for(const name of Object.keys(artifacts))fs.copyFileSync(path.join(buildOutput,name),path.join(stage,name));
-  fs.renameSync(stage,destination);
+export function describeCoreInputs() {
+  const hostInputs={'tools/sound-identity-library.js':hash(fs.readFileSync(path.join(root,'tools/sound-identity-library.js')))};
+  return {translationUnits:[...sources],compilerFlags:[...flags],sourceFiles:captureSources(),hostInputs};
 }
-for(const [name,record] of Object.entries(artifacts)){
-  if(hash(fs.readFileSync(path.join(destination,name)))!==record.sha256)throw new Error('Runtime generation hash mismatch');
-  fs.copyFileSync(path.join(buildOutput,name),path.join(output,name));
+
+export const packageDataLayout='sha256-58cd45fe7cac9af281d9de993a527ccfbbe6f27b89bcd0ca98a7031333fce200';
+const receiptSchema='th128-web-core/1';
+function coreGeneration(sourceFiles,hostInputs,artifacts) {
+  return hash(Buffer.from(JSON.stringify({sourceFiles,hostInputs,artifacts})));
 }
-const manifest={game:'th128',compiler:'emscripten4.0.22',generation,entry:`runtime/builds/${generation}/core.mjs`,
-  milestone:'M1-in-progress',gameplayImplemented:false,sourceFiles,artifacts};
-const manifestStage=path.join(output,`.build-${process.pid}.json`);
-fs.writeFileSync(manifestStage,JSON.stringify(manifest,null,2)+'\n');
-fs.renameSync(manifestStage,path.join(output,'build.json'));
-console.log('Compiled TH128 animation runtime. This is not yet a complete playable game.');
+
+export function matchesBuiltCore(receipt) {
+  if(receipt?.schema!==receiptSchema||receipt.game!=='th128'||receipt.compiler!=='emscripten4.0.22'
+      ||receipt.packageDataLayout!==packageDataLayout||!receipt.artifacts||!receipt.sourceFiles)return false;
+  const inputs=describeCoreInputs();
+  if(JSON.stringify(receipt.sourceFiles)!==JSON.stringify(inputs.sourceFiles)
+      ||JSON.stringify(receipt.hostInputs)!==JSON.stringify(inputs.hostInputs)
+      ||JSON.stringify(receipt.compilerFlags)!==JSON.stringify(inputs.compilerFlags))return false;
+  const {artifacts}=receipt;
+  if(JSON.stringify(Object.keys(artifacts))!==JSON.stringify(['core.mjs','core.wasm'])||!Object.values(artifacts).every(file=>
+      file&&Number.isSafeInteger(file.bytes)&&file.bytes>0&&/^[a-f0-9]{64}$/.test(file.sha256)))return false;
+  const generation=coreGeneration(inputs.sourceFiles,inputs.hostInputs,artifacts);
+  return receipt.generation===generation&&receipt.entry===`runtime/builds/${generation}/core.mjs`;
+}
+
+function build() {
+  for(const source of sources)if(!fs.existsSync(path.join(root,source)))throw new Error(`Missing runtime implementation ${source}`);
+  const requested=process.env.TH128_EMCC ?? (process.env.EMSDK && path.join(process.env.EMSDK,'upstream','emscripten','emcc.py'));
+  if(!requested)throw new Error('Set EMSDK or TH128_EMCC to an activated Emscripten 4.0.22 SDK.');
+  const compiler=path.resolve(requested), sdk=path.resolve(path.dirname(compiler),'../..');
+  const bundledPython=path.join(sdk,'python/3.13.3_64bit/python.exe');
+  const python=process.env.TH128_PYTHON ?? process.env.EMSDK_PYTHON ?? (fs.existsSync(bundledPython)?bundledPython:process.platform==='win32'?'python':'python3');
+  const target=path.resolve(process.env.TH128_CORE_OUTPUT ?? path.join(root,'site'));
+  const output=path.join(target,'runtime');
+  fs.mkdirSync(output,{recursive:true});
+  const buildOutput=fs.mkdtempSync(path.join(tmpdir(),'th128-web-core-'));
+  const environment={...process.env, EM_CONFIG:process.env.EM_CONFIG ?? path.join(sdk,'.emscripten'),
+    EMSDK_PYTHON:python, PYTHONUTF8:'1', EMCC_CORES:process.env.EMCC_CORES ?? '2', BINARYEN_CORES:process.env.BINARYEN_CORES ?? '2'};
+  const version=spawnSync(python,[compiler,'--version'],{cwd:root,encoding:'utf8',env:environment});
+  if(version.status!==0||!version.stdout.includes('4.0.22'))throw new Error('TH128 requires Emscripten 4.0.22. '+(version.error?.message??version.stderr??''));
+  const input=describeCoreInputs(),{sourceFiles,hostInputs,compilerFlags}=input;
+  const built=spawnSync(python,[compiler,...sources,...compilerFlags,'-o',path.join(buildOutput,'core.mjs')],{cwd:root,stdio:'inherit',env:environment});
+  if(built.status!==0){process.exitCode=built.status??1;return;}
+  if(JSON.stringify(describeCoreInputs())!==JSON.stringify(input))throw new Error('TH128 sources changed during compilation.');
+  const artifacts=Object.fromEntries(['core.mjs','core.wasm'].map(name=>{
+    const bytes=fs.readFileSync(path.join(buildOutput,name));return [name,{bytes:bytes.length,sha256:hash(bytes)}];
+  }));
+  const generation=coreGeneration(sourceFiles,hostInputs,artifacts);
+  const builds=path.join(output,'builds');fs.mkdirSync(builds,{recursive:true});
+  if(path.relative(path.resolve(builds),fs.realpathSync(builds)))throw new Error('Runtime builds directory must not be redirected');
+  const destination=path.join(builds,generation);
+  if(!fs.existsSync(destination)){
+    const stage=fs.mkdtempSync(path.join(builds,'.staging-'));
+    for(const name of Object.keys(artifacts))fs.copyFileSync(path.join(buildOutput,name),path.join(stage,name));
+    fs.renameSync(stage,destination);
+  }
+  for(const [name,record] of Object.entries(artifacts)){
+    if(hash(fs.readFileSync(path.join(destination,name)))!==record.sha256)throw new Error('Runtime generation hash mismatch');
+    if(target===path.join(root,'site'))fs.copyFileSync(path.join(buildOutput,name),path.join(output,name));
+    fs.unlinkSync(path.join(buildOutput,name));
+  }
+  fs.rmdirSync(buildOutput);
+  const manifest={schema:receiptSchema,game:'th128',compiler:'emscripten4.0.22',generation,
+    entry:`runtime/builds/${generation}/core.mjs`,packageDataLayout,sourceFiles,hostInputs,compilerFlags,artifacts};
+  const manifestStage=path.join(output,`.build-${process.pid}.json`);
+  fs.writeFileSync(manifestStage,JSON.stringify(manifest,null,2)+'\n',{flag:'wx'});
+  fs.renameSync(manifestStage,path.join(output,'build.json'));
+  console.log(JSON.stringify({output:target,generation,artifacts}));
+}
+
+if(process.argv[1]&&path.resolve(process.argv[1])===path.resolve(fileURLToPath(import.meta.url)))build();

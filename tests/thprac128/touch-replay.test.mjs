@@ -19,8 +19,8 @@ test('legacy replay needs no touch API while duplicate and truncated touch trail
  const{raw,stage}=sample(),b=nativeTouchReplayBlock(raw,[stage]);assert.throws(()=>readTouchReplay({userBlocks:[b,b],stages:[stage]}));assert.throws(()=>nativeTouchReplayBlock(raw.subarray(0,raw.length-1),[stage]));
  assert.equal(validTouchMotion(2,-23552,4096),true);assert.equal(validTouchMotion(3,-32767,32767),true);assert.equal(validTouchMotion(1,0,0),false);
 });
-test('actual native touch RPY preserves original payload and both ordinary USER blocks before touch and PRAC',()=>{
- const source=new Uint8Array(readFileSync('D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1069-actual-native-touch-record-play-green/run/touch.rpy')),decoded=decodeReplay(source),original=decoded.rawPayload.slice();
+test('actual native touch RPY preserves original payload and both ordinary USER blocks before touch and PRAC',{skip:!process.env.TH128_TOUCH_REPLAY_SAMPLE&&'Set TH128_TOUCH_REPLAY_SAMPLE to run the archived native recording check'},()=>{
+ const source=new Uint8Array(readFileSync(process.env.TH128_TOUCH_REPLAY_SAMPLE)),decoded=decodeReplay(source),original=decoded.rawPayload.slice();
  const block=(kind,data)=>{const raw=new Uint8Array(12),v=new DataView(raw.buffer);v.setUint32(0,0x52455355,true);v.setUint32(4,12+data.length,true);v.setUint32(8,kind,true);return{kind,headerRaw:raw,data:Uint8Array.from(data)};};
  const pair=[block(0,[1,2,3,0]),block(1,[255,7,0,0])];decoded.userBlocks.unshift(...pair);const read=decodeReplay(encodeReplay(decoded));
  assert.deepEqual(read.rawPayload,original);assert.deepEqual(read.userBlocks.map(b=>b.kind),[0,1,0x31484354,0x43415250]);for(let i=0;i<2;++i){assert.deepEqual(read.userBlocks[i].headerRaw,pair[i].headerRaw);assert.deepEqual(read.userBlocks[i].data,pair[i].data);}assert.equal(readTouchReplay(read)[0].worldFrames,11);

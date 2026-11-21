@@ -1,16 +1,12 @@
-# TH128 — 妖精大战争行为还原与 Web 移植
+# TH128 — 妖精大战争单机 Web 版
 
-《妖精大戦争 ～ 東方三月精》独立行为还原工程，使用 C++/WebAssembly 核心与 JavaScript 浏览器宿主。
+[适配检查](ADAPTATION.md) · [开发指南](docs/DEVELOPMENT.md) · [还原基线](docs/RESTORATION.md) · [来源与许可](NOTICE.md)
 
-当前以 **Runtime122 v17** 对应的源码为基线。先建立可核对的[单机行为还原](docs/RESTORATION.md)与独立移植构建，再向上游接共用 Web 启动器。六条普通路线和 EX 的已验收单机功能范围保持。协议、高刷、触控、多语言、thprac 和 Replay 保留现有实现与验收边界。
+《妖精大戦争 ～ 東方三月精》的独立 C++ 行为还原，使用 WebAssembly 和浏览器宿主，接入共用 Launcher。原 DAT、简中资源和 OGG 由玩家本机导入；原版资源和存档不随源码提供。
 
-## 当前进度
+单机预览保留原标题、结局、练习和原生 Replay。游戏逻辑 60 Hz，画面按 1280×960 呈现；高刷、键盘、手柄与触控由交互层接管。练习结局保留姓名登记和录像保存，播完录像进入原版重放完毕菜单。
 
-已有 Web 证据与兼容性边界见[功能范围](docs/WEB_FUNCTIONAL_SCOPE.md)及 [TH128 练习验收记录](docs/THPRAC128_ACCEPTANCE.md)。这些记录的验证范围和所用版本不同，不代表所有练习功能、整套原版还原或上游启动器接入已完成。
-
-用户已明确要求按 eagler-touhou 和上游 TH128 专用 thprac 实现对接，见[纠正与计划](docs/THPRAC_CORRECTION.md)。
-
-多人部分已有[规则握手](docs/MULTIPLAYER_RULES.md)、[有界输入账本](docs/MULTIPLAYER_INPUT.md)和[双方确认重开](docs/MULTIPLAYER_RESTART.md)的真实协议组件，尚未交付可玩的网络对局、完整Replay/旁观或native World回滚。旧核心与已通过路线不因阶段推进而重复构建或验收。
+本次接入是单机预览。还原和桌面移植见[还原基线](docs/RESTORATION.md)，已确认的 Web 功能与版本见[适配检查](ADAPTATION.md)。
 
 下列v5/v4内容是历史性能交付记录，当前源码、核心与阶段以本节和链接中的最新记录为准。
 
