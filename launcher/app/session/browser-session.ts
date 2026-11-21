@@ -132,7 +132,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const th075Keyboard = createKeyboardPreferences(storage,'th075');
   const th19Gamepad = createGamepadMappingModel({storage,scope:'th19',getGamepads:typeof window.navigator.getGamepads==='function'?()=>window.navigator.getGamepads():undefined});
   const th09LocalInput = createTh09LocalInput(storage);
-  const mobile = (window.navigator as Navigator & {userAgentData?: {mobile?: boolean}}).userAgentData?.mobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(window.navigator.userAgent) || window.navigator.maxTouchPoints > 1 && /Macintosh/i.test(window.navigator.userAgent);
+  const iosWebKitTouch = /iPad|iPhone|iPod/i.test(window.navigator.userAgent) || /Macintosh/i.test(window.navigator.userAgent) && window.navigator.maxTouchPoints > 1;
+  const mobile = iosWebKitTouch || (window.navigator as Navigator & {userAgentData?: {mobile?: boolean}}).userAgentData?.mobile === true || /Android|Mobile/i.test(window.navigator.userAgent);
+  const roomFullscreenUsesViewport = iosWebKitTouch && ((window.navigator as Navigator & {standalone?: boolean}).standalone === true || window.matchMedia('(display-mode: standalone)').matches);
   const primaryTouchPointer = window.matchMedia('(pointer: coarse)');
   const preferTouchSettings = () => mobile || primaryTouchPointer.matches;
   const audio = 'AudioContext' in window || 'webkitAudioContext' in window;
@@ -276,8 +278,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     preloadLabel: context => t(context === 'lobby' ? 'lobby.loading' : 'preload.aria')});
   const startupError = createStartupErrorModel({translate: t, launched: () => runtime?.getSnapshot().launched === true, copyText: ports.copyText, toast: feedback.toast});
   const transfer = createTransferModel({translate: t,
-    context: () => ({epoch: runtime?.getSnapshot().epoch ?? null, launched: runtime?.getSnapshot().launched === true,
-      iosWebKitTouch: /iPad|iPhone|iPod/i.test(window.navigator.userAgent) || /Macintosh/i.test(window.navigator.userAgent) && window.navigator.maxTouchPoints > 1}),
+    context: () => ({epoch: runtime?.getSnapshot().epoch ?? null, launched: runtime?.getSnapshot().launched === true, iosWebKitTouch}),
     frames: {request: callback => window.requestAnimationFrame(callback), cancel: id => window.cancelAnimationFrame(id)},
     ports: {retryMusic: timeout => requiredRuntime().send('retry-music', {}, timeout),
       cancelDownload: async () => {if (fileDownload?.ownsPresentation()) fileDownload.controller.abort(new DOMException('已取消下载', 'AbortError')); else if (updating) updateAbort?.abort(); else if (downloadingMusic) musicAbort?.abort(); else if (downloadingPackage || downloadingLanguage) launchAbort?.abort(new DOMException('已取消下载', 'AbortError')); else if (blockingDownload) await blockingDownload.cancel(); else launchAbort?.abort(new DOMException('已取消下载', 'AbortError'));},
@@ -604,12 +605,20 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     leaveRoom() {const game = runtime?.getSnapshot().game; roomSession?.service.resetRoomWithoutNavigation(); if (game) requiredNavigation().leaveTitleRoomRoute(game);},
   });
   const unsubscribeTitle = titleNetwork.subscribe(() => {const state = titleNetwork.getSnapshot(); document.getElementById('player')?.classList.toggle('th09-network-open', state.open); publish({th09NetworkOverlayOpen: state.open}); roomSession?.sync();});
+  const isRoomViewportFullscreen = () => roomFullscreenUsesViewport && snapshot.roomPlayerExpanded === true && !!roomSession?.service.getSnapshot().room;
   const fullscreenChanged = () => {
     const fullscreen = nativeTouch.isFullscreen(), expanded = snapshot.roomPlayerExpanded;
+    if (!fullscreen && isRoomViewportFullscreen()) return;
     publish({roomPlayerExpanded: fullscreen});
     if (fullscreen) void nativeTouch.probeOrientation().then(() => publish({}));
     else if (expanded && roomSession?.service.getSnapshot().room) navigation?.closeRoomFullscreen?.();
   };
+  async function enterRoomPlayerFullscreen(player: HTMLElement) {
+    navigation?.openRoomFullscreen?.();
+    publish({roomPlayerExpanded: true});
+    // An installed Apple web app can use the fixed Player even when WebKit cannot fullscreen HTML elements.
+    if (!roomFullscreenUsesViewport) await nativeTouch.enterFullscreen(player);
+  }
   async function exitRoomPlayerFullscreen() {
     try {await nativeTouch.exitPlayerFullscreen();} catch (error) {reportError(error);}
     publish({roomPlayerExpanded: false});
@@ -883,7 +892,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     const player = document.querySelector<HTMLElement>('#player');
     if (!player) throw new Error('Launcher Player is not mounted');
     player.classList.add('open'); player.setAttribute('aria-hidden', 'false'); document.body.classList.add('player-active');
-      if (fullscreen) {navigation?.openRoomFullscreen?.(); publish({roomPlayerExpanded: true}); try {await nativeTouch.enterFullscreen(player);} catch (error) {navigation?.closeRoomFullscreen?.(); publish({roomPlayerExpanded: false}); feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error, t)}));}}
+    if (fullscreen) {
+      try {await enterRoomPlayerFullscreen(player);}
+      catch (error) {navigation?.closeRoomFullscreen?.(); publish({roomPlayerExpanded: false}); feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error, t)}));}
+    }
     if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
   }
   async function launchRoom(context: RoomLaunchContext) {
@@ -1559,17 +1571,19 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       catch {if (!disposed) feedback.toast(t('touch.orientationFailed'));}
       finally {playerOrientationPending = false; publish({});}
     },
+    isPlayerFullscreen: () => nativeTouch.isFullscreen() || isRoomViewportFullscreen(),
     async togglePlayerFullscreen() {
-      if (nativeTouch.isFullscreen()) {
+      const roomPlayer = !!roomSession?.service.getSnapshot().room && !snapshot.replayViewer && !replays?.getSnapshot().open && !snapshot.th09NetworkOverlayOpen;
+      if (nativeTouch.isFullscreen() || (roomPlayer && isRoomViewportFullscreen())) {
         await exitRoomPlayerFullscreen();
         navigation?.closeRoomFullscreen?.();
         return;
       }
-      const roomPlayer = !!roomSession?.service.getSnapshot().room && !snapshot.replayViewer && !replays?.getSnapshot().open && !snapshot.th09NetworkOverlayOpen;
-      if (roomPlayer) {navigation?.openRoomFullscreen?.(); publish({roomPlayerExpanded: true});}
+      const target = document.querySelector<HTMLElement>('#player.replay-workspace #gameViewport') ?? document.querySelector<HTMLElement>('#player');
+      if (!target) return;
       try {
-        const target = document.querySelector<HTMLElement>('#player.replay-workspace #gameViewport') ?? document.querySelector<HTMLElement>('#player');
-        if (target) await nativeTouch.enterFullscreen(target);
+        if (roomPlayer) await enterRoomPlayerFullscreen(target);
+        else await nativeTouch.enterFullscreen(target);
       } catch (error) {if (roomPlayer) {navigation?.closeRoomFullscreen?.(); publish({roomPlayerExpanded: false});} feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}
     },
     getRuntime: () => runtime, getReplays: () => replays, getDiagnostics: () => diagnostics, getGameplayNetwork: () => gameplayNetwork,

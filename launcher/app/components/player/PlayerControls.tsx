@@ -386,6 +386,7 @@ function PlayerUtilities({
   const [, updateOrientation] = useState(0);
   const spectating = session.getPlayerMode() === 'spectator';
   const inRoom = navigation.roomCode !== null;
+  const fullscreen = session.isPlayerFullscreen();
   const canReturnToRoom = state.runtime?.runtimeVariant === 'multiplayer' && state.runtime.roomReturnSupported;
   const portrait =
     (window.visualViewport?.height || window.innerHeight) > (window.visualViewport?.width || window.innerWidth);
@@ -435,9 +436,9 @@ function PlayerUtilities({
             className="fullscreen-toggle"
             id="fullscreenToggle"
             type="button"
-            data-fullscreen={session.nativeTouch.isFullscreen()}
-            aria-label={t(session.nativeTouch.isFullscreen() ? 'player.exitFullscreen' : 'player.enterFullscreen')}
-            title={t(session.nativeTouch.isFullscreen() ? 'player.exitFullscreenTitle' : 'player.enterFullscreenTitle')}
+            data-fullscreen={fullscreen}
+            aria-label={t(fullscreen ? 'player.exitFullscreen' : 'player.enterFullscreen')}
+            title={t(fullscreen ? 'player.exitFullscreenTitle' : 'player.enterFullscreenTitle')}
             onClick={() => {
               void session.togglePlayerFullscreen();
             }}
