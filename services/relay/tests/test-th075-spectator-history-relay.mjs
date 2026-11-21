@@ -72,21 +72,31 @@ try {
   await waitFor(() => snapshot(host)?.seats.slice(0, 2).every(Boolean), 'player seats');
   for (const client of [host, guest]) send(client, {type: 'set-ready', ready: true, movementMode: 'joystick'});
   await waitFor(() => snapshot(host)?.seats.slice(0, 2).every(seat => seat?.ready), 'player ready');
+  const opening = await lobby('opening'), early = await lobby('early');
+  send(opening, {type: 'spectate'});
+  send(early, {type: 'spectate'});
+  await waitFor(() => snapshot(host)?.spectatorCount === 2, 'opening viewers registered');
   send(host, {type: 'start', adonisMode: 1, inputDelay: 2, inputDelayAuto: false});
   await waitFor(() => host.messages.some(message => message.type === 'start'), 'room start');
-  assert.equal(snapshot(host).spectatorCount, 0);
+  assert.equal(snapshot(host).spectatorCount, 2);
   const hostRuntime = await runtime('player=0', 'host');
   await runtime('player=1', 'guest');
 
+  const openingViewer = await runtime('spectator=th075_opening', 'opening');
   const waiting = await lobby('waiting');
   send(waiting, {type: 'spectate'});
   await waitFor(() => waiting.messages.some(message => message.type === 'spectator-waiting'), 'waiting without a stream');
   upload(hostRuntime, control(1));
   upload(hostRuntime, timing);
+  await waitFor(() => openingViewer.packets[0]?.equals(timing), 'live opening timing');
+  const earlyViewer = await runtime('spectator=th075_early', 'early');
+  await waitFor(() => earlyViewer.packets[0]?.equals(timing), 'buffered opening timing');
   for (let i = 0; i < 160; ++i) upload(hostRuntime, frame(i));
   await waitFor(() => waiting.messages.some(message => message.type === 'spectator-start'), 'admission after the first input');
   const firstViewer = await runtime('spectator=th075_waiting', 'waiting');
-  await waitFor(() => firstViewer.packets.length === 161, 'queued viewer history');
+  await waitFor(() => firstViewer.packets.length >= 160, 'queued viewer history');
+  assert.ok(firstViewer.packets[0]?.equals(timing), 'late history starts with timing');
+  await waitFor(() => firstViewer.packets.length === 161, 'complete queued viewer history');
 
   const late = await lobby('late');
   send(late, {type: 'spectate'});
@@ -94,10 +104,10 @@ try {
   const lateViewer = await runtime('spectator=th075_late', 'late');
   for (let i = 160; i < 200; ++i) upload(hostRuntime, frame(i));
   upload(hostRuntime, control(2));
-  await waitFor(() => lateViewer.packets.length === 202 && firstViewer.packets.length === 202, 'history to live handoff');
+  const viewers = [openingViewer, earlyViewer, firstViewer, lateViewer];
+  await waitFor(() => viewers.every(viewer => viewer.packets.length === 202), 'history to live handoff');
   const expected = [timing, ...Array.from({length: 200}, (_, i) => frame(i)), control(2)];
-  assert.deepEqual(lateViewer.packets, expected);
-  assert.deepEqual(firstViewer.packets, expected);
+  for (const viewer of viewers) assert.deepEqual(viewer.packets, expected);
   const afterEnd = await lobby('after_end');
   send(afterEnd, {type: 'spectate'});
   await waitFor(() => afterEnd.messages.some(message => message.type === 'spectator-waiting'), 'admission closed at the end');
