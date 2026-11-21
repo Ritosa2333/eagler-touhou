@@ -227,8 +227,10 @@ export function createManagedTransport(options, roles, fail, environment = globa
     socket.onclose=()=>{
       if(closed||socket!==signal)return;
       signal=null;
-      // The data socket also receives the opening route or failure barrier.
-      if(route==='rtc')signalRetry=setTimeout(connectSignal,1000);
+      // Before a route is chosen, the data socket can still deliver the
+      // opening barrier, so a signaling close is not fatal. After rtc or
+      // relay is selected, reconnect signaling without touching gameplay.
+      if(route)signalRetry=setTimeout(connectSignal,1000);
     };
   }
   return {

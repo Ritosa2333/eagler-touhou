@@ -177,13 +177,20 @@ TEST(owner_protection_and_spell_damage_gates_precede_boss_cooperation) {
         // P1 is protected, but its observation window must not reduce P2.
         f.battle.seats[0].invulnerable=120;
         f.battle.seats[1].invulnerable=protected_owner?120:0;
-        f.arm(1,20);CHECK_EQ(f.collide(),protected_owner?3.f:15.f);
+        // Owner gates precede boss cooperation: unprotected P2 keeps 20
+        // through owner_reduction, then absorb keeps 3/5 -> 12; protected
+        // P2 divides by 5 first (4), then 3/5 -> 2. (Legacy /4 mitigation
+        // before the 2026-11-16 ruling computed 15 and 3; 77ce24210 raised
+        // the mitigation to 40%/60% and recomputed five tests, missing this
+        // one until now.)
+        f.arm(1,20);CHECK_EQ(f.collide(),protected_owner?2.f:12.f);
     }
     Fixture reduced;CHECK(reduced.boot());reduced.enemy().flags|=0x1000000u;
     SpellSnapshot spell;spell.id=1;spell.flags=kSpellActive|kSpellBombProtection;
     reduced.battle.sim.spell.restore(spell);
     reduced.arm(0,60);reduced.arm(1,60);
-    CHECK_EQ(reduced.collide(),3.f);CHECK_EQ(reduced.enemy().spirit_accum,3.f);
+    // Bomb-protection divides the summed 120 by 30 -> 4, absorb keeps 3/5 -> 2.
+    CHECK_EQ(reduced.collide(),2.f);CHECK_EQ(reduced.enemy().spirit_accum,2.f);
     Fixture immune;CHECK(immune.boot());immune.enemy().flags|=0x1000000u;
     spell.id=109;spell.flags=kSpellActive;immune.battle.sim.spell.restore(spell);
     immune.battle.sim.bomb_active=true;immune.arm(1,60);

@@ -5,7 +5,7 @@
 <div align="center">
   <p>一个旨在<strong>极大降低玩家入门门槛</strong>的，东方 Project 官方游戏、同人游戏及其工具、联机 Mod 的<strong>全平台适配计划</strong>。</p>
   <p>
-    <a href="https://touhouonline.com/"><img src="https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E6%B8%B8%E7%8E%A9-touhouonline.com-E5322D?style=flat-square" alt="在线游玩 touhouonline.com"></a>
+    <a href="launcher/README.md"><img src="https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E6%B8%B8%E7%8E%A9-%E5%85%A5%E5%8F%A3-E5322D?style=flat-square" alt="在线游玩入口"></a>
     <a href="https://discord.gg/HwVz9ZTSF"><img src="https://img.shields.io/badge/Discord-5865F2?style=flat-square&amp;logo=discord&amp;logoColor=white" alt="Discord"></a>
     <a href="https://qm.qq.com/q/eeUrxIltug?from=tim"><img src="https://img.shields.io/badge/QQ%20Group-1124121427-12B7F5?style=flat-square&amp;logo=tencentqq&amp;logoColor=white" alt="QQ Group 1124121427"></a>
     <img src="https://img.shields.io/badge/Chromium-%E2%89%A5108-4285F4?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Chromium >=108">
@@ -60,7 +60,7 @@
 
 ## 已上线作品
 
-下面 9 部作品可以在 [touhouonline.com](https://touhouonline.com/) 直接玩。
+下面 9 部作品可通过[启动器的在线游玩入口](launcher/README.md)游玩。
 
 | 作品 | 高刷新率 | thprac | 多语言 | 多人联机 |
 | :--- | :---: | :---: | :---: | :---: |
@@ -203,6 +203,8 @@ WASD 布局保留原键位：方向键 / WASD 移动，Z / K 射击，X / J 使�
 ## 许可证
 
 启动器采用 [GNU General Public License v3.0 or later](launcher/LICENSE)。各游戏 Runtime 的许可证见 `ports/` 下对应源码目录。
+
+项目分发的 GNU Unifont 15.1.05（含站点使用的 WOFF2 子集）采用 **SIL Open Font License 1.1（OFL-1.1）**。Copyright © 1998–2024 Roman Czyborra、Paul Hardy、Qianqian Fang、Andrew Miller、Johnnie Weaver、David Corbett、Nils Moskopp、Rebecca Bettencourt、Ho-Seok Ee 等。上游还提供附 GNU 字体嵌入例外的 GNU GPL v2 或更高版本授权。[上游版本](https://unifoundry.com/pub/unifont/unifont-15.1.05/) · [完整许可证与版权声明](launcher/public/assets/fonts/OFL-Unifont.txt)
 
 完整的第三方来源、素材归属和许可信息见 [THIRD_PARTY.md](launcher/THIRD_PARTY.md) 与 [ASSETS.md](launcher/ASSETS.md)。
 

@@ -70,6 +70,8 @@ export function createRoomSession(options: RoomSessionOptions) {
   }
   const music = musicEndpoint ? createRoomMusic({
     provider: createMetingProvider(musicEndpoint.href, fetch, () => {
+      const configured = import.meta.env?.VITE_NETEASE_PLAYLIST_URL;
+      if (configured) return new URL(configured, window.location.href).href;
       const relay = options.publicRelayUrl?.();
       if (!relay) return undefined;
       const url = new URL('/_eagler/netease-playlist', relay);
