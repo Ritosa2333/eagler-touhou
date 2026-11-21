@@ -2,6 +2,17 @@
 main,header,.controls,.warning,details{min-width:0}.controls label{max-width:100%;min-width:0}select{max-width:100%;min-width:0}#ecl-result{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;font:11px Consolas,monospace;line-height:1.7}details p{overflow-wrap:anywhere}
 #world-result,#emission-result,#segment-result,#shots-result{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;font:11px Consolas,monospace;line-height:1.7}
 main{max-width:1328px}.screen{max-width:1280px}
+/* The Launcher owns the frame controls, as in the TH12 managed player. */
+html[data-managed="true"],html[data-managed="true"] body{overflow:hidden;background:#000}
+html[data-managed="true"] body{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh}
+html[data-managed="true"] body>main{position:relative;width:min(100vw,calc(100vh * 4 / 3));width:min(100vw,calc(100dvh * 4 / 3));max-width:none;margin:0;padding:0}
+html[data-managed="true"] body>main>.screen{max-width:none;aspect-ratio:4/3;border:0;box-shadow:none}
+html[data-managed="true"] body>main>:not(.screen,#error){display:none!important}
+html[data-managed="true"] body>main>#error:not([hidden]){position:absolute;inset:auto 0 0;z-index:5;margin:0;max-height:40%;overflow:auto}
+html[data-managed="true"] #loading{background:#000}
+html[data-managed="true"] #loading>*{visibility:hidden}
+.screen[data-scene-loading="true"] #loading{background:#000}
+.screen[data-scene-loading="true"] :is(#loading>*,#game-menu,#dialogue-text,#runtime-overlay){visibility:hidden}
 .runtime-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;background:#08131cde;text-align:center;z-index:2}.runtime-overlay strong{font-size:24px;color:#e8f5fc}.runtime-overlay p{max-width:560px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.8;color:#c1d2df}.runtime-overlay div{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 #dialogue-text{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
 #debug-respawn-indicator{position:absolute;left:50%;bottom:5px;transform:translateX(-50%);z-index:1;padding:2px 7px;border:1px solid #9a8048;background:#1d1811d9;color:#f0d58f;font:10px/1.35 Consolas,monospace;white-space:nowrap;pointer-events:none}

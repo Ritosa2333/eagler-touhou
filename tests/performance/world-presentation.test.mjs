@@ -21,7 +21,7 @@ function json9(value){return Number.isInteger(value)?value:Number(value.toPrecis
 const expected=Object.fromEntries(Object.entries(row).map(([k,v])=>[k,typeof v==='number'?json9(v):v]));
 test('typed World record preserves original general9 floats and every sprite field',()=>{assert.deepEqual(read(encoded([row]).module),[expected]);});
 test('malformed header bounds version stride and nonfinite values are rejected',()=>{
- for(const [index,value]of [[0,0],[1,2],[2,65537],[3,8],[4,67108864],[5,-1],[6,67108864]]){
+ for(const [index,value]of [[0,0],[1,3],[2,65537],[3,8],[4,67108864],[5,-1],[6,67108864]]){
   const h=encoded([row]);h.header[index]=value;assert.throws(()=>read(h.module),/packet|bounds|schema|stride|budget/i);
  }
  const h=encoded([row]);h.rows[20]=NaN;assert.throws(()=>read(h.module),/finite|packet/i);
@@ -33,6 +33,28 @@ test('invalid sidecar references and enum values stop presentation',()=>{
 test('legacy runtime uses unchanged JSON path and propagates its native draw error',()=>{
  const m={_th128_world_bullet_draws:()=>JSON.stringify([expected]),UTF8ToString:x=>x,_th128_world_bullet_draw_error:()=>''};assert.deepEqual(read(m),[expected]);
  m._th128_world_bullet_draw_error=()=>'native error';assert.throws(()=>read(m),/native error/);
+});
+function encodedRing(){
+ const h=encoded([{...row,mode:9}]), rowsStart=160,start=rowsStart+39*8;
+ const vertices=Array.from({length:4},(_,i)=>[345.5078125+i,-12.543210983276367,0,1,.125,.75,0xff8012ff]);
+ const text=Buffer.from('[[0,2,0,4,0,0]]'),side=start+vertices.length*7*8;
+ new Float64Array(h.heap.buffer,rowsStart,39).set(h.rows.slice());
+ new Float64Array(h.heap.buffer,start,vertices.length*7).set(vertices.flat());
+ new Float64Array(h.heap.buffer,64,10).set([0x54483131,2,1,39,rowsStart,side,text.length,0,start,vertices.length]);
+ h.heap.set(text,side);return h;
+}
+test('packed ANM ring vertices preserve the original scalar values and do not alias native memory',()=>{
+ const h=encodedRing(),[record]=product.readWorldDrawRecords(h.module,{fastNumbers:true});
+ assert.deepEqual(record.geometry,{kind:'anm-ring',vertices:[345.507812,346.507812,347.507812,348.507812].map(x=>
+   ({x,y:-12.543211,z:0,rhw:1,u:.125,v:.75,color:0xff8012ff}))});
+ h.heap.fill(0);assert.equal(record.geometry.vertices[0].color,0xff8012ff);
+});
+test('packed draw vertices reject bad bounds, ownership and non-finite input',()=>{
+ const h=encodedRing(),extended=new Float64Array(h.heap.buffer,64,10);extended[9]=65537;
+ assert.throws(()=>read(h.module),/vertices|vertex/);
+ const j=encodedRing();j.heap[j.header[5]+6]=49;assert.throws(()=>read(j.module),/vertices|vertex/);
+ const k=encodedRing();new Float64Array(k.heap.buffer,160+39*8,1)[0]=NaN;
+ assert.throws(()=>read(k.module),/vertices|vertex/);
 });
 test('returned records detach from mutable native memory and preserve unsigned identity',()=>{
  const h=encoded([{...row,id:0x80000007}]),records=read(h.module);h.rows.fill(0);assert.equal(records[0].id,0x80000007);assert.equal(records[0].x,expected.x);

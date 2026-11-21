@@ -1,10 +1,16 @@
 import {fetchResource} from '../resource-fetch.mjs';
-import {argbColor, quadVertices, nativeRecordPriority,applyWorldShake,triangleStripVertices,circleFanVertices,circleLineVertices,ringStripVertices,decodeDrawBuffer,nativeQuadColors,selector3QuadVertices} from './draw.mjs';
+import {argbColor, quadVertices, nativeRecordPriority,applyWorldShake,triangleStripVertices,triangleStripCorners,circleFanVertices,circleLineVertices,ringStripVertices,ringStripCorners,decodeDrawBuffer,nativeQuadColors,selector3QuadVertices} from './draw.mjs';
 import {safeAssetUrl} from '../inspector.mjs';
 const scalar=Math.fround;
 const finite=value=>Number.isFinite(value)&&Math.abs(value)<=1048576;
 const unboundedSpriteClamp=Object.freeze([-1048576,-1048576,1048576,1048576]);
 const unboundedVerticalClamp=Object.freeze([-1048576,1048576]);
+const maxIndexedVertices=65535; // 0xffff is WebGL 2's fixed primitive restart index.
+function writeQuadIndices(indices,offset,first){
+  indices[offset]=first;indices[offset+1]=first+1;indices[offset+2]=first+2;
+  indices[offset+3]=first;indices[offset+4]=first+2;indices[offset+5]=first+3;
+}
+function roundQuadEdge(value){const lower=Math.floor(value);return value-lower===.5?lower+(Math.abs(lower%2)===1?1:0):Math.round(value);}
 function appendQuad(renderer,record,texture,colors){
   const positions=renderer.quadPositions??=new Float64Array(8),mode=record.mode;
   if(mode!==0&&mode!==1){
@@ -21,8 +27,7 @@ function appendQuad(renderer,record,texture,colors){
       if(!interpolated){if(record.anchorX!==1&&record.anchorX!==2)left=Math.floor(left);if(record.anchorY!==1&&record.anchorY!==2)top=Math.floor(top);}
       let right=record.anchorX===2?x:Math.fround(left+width),bottom=record.anchorY===2?y:Math.fround(top+height);
       if(!interpolated){
-        const round=value=>{const lower=Math.floor(value);return value-lower===.5?lower+(Math.abs(lower%2)===1?1:0):Math.round(value);};
-        left=round(left);top=round(top);right=round(right);bottom=round(bottom);
+        left=roundQuadEdge(left);top=roundQuadEdge(top);right=roundQuadEdge(right);bottom=roundQuadEdge(bottom);
       }
       positions[0]=left;positions[1]=top;positions[2]=right;positions[3]=top;
       positions[4]=right;positions[5]=bottom;positions[6]=left;positions[7]=bottom;
@@ -41,10 +46,12 @@ function appendQuad(renderer,record,texture,colors){
   const left=record.u0+record.u,right=record.u0+(record.u1-record.u0)*record.uvScaleX+record.u;
   const top=record.v0+record.v,bottom=record.v0+(record.v1-record.v0)*record.uvScaleY+record.v;
   let vertices,at;
-  if(renderer.spriteStream){at=renderer.spriteStream.length;vertices=renderer.extendSpriteStream(48);}
+  const indexed=renderer.spriteStream?.indexed;
+  if(indexed){at=renderer.reserveIndexedVertices(4);vertices=renderer.extendSpriteStream(32);renderer.appendQuadIndices(at/8);}
+  else if(renderer.spriteStream){at=renderer.spriteStream.length;vertices=renderer.extendSpriteStream(48);}
   else{vertices=renderer.vertices;at=vertices.length;vertices.length=at+48;}
-  for(let n=0;n<6;n++){
-    const i=n<3?n:n===3?0:n===4?2:3,color=colors[i];
+  for(let n=0;n<(indexed?4:6);n++){
+    const i=indexed||n<3?n:n===3?0:n===4?2:3,color=colors[i];
     vertices[at++]=positions[i*2];vertices[at++]=positions[i*2+1];
     vertices[at++]=i===0||i===3?left:right;
     const v=i<2?top:bottom;vertices[at++]=texture.flipY?1-v:v;
@@ -287,6 +294,7 @@ export class WebGlRenderer {
     this.program = program;
     for (const shader of graphics.getAttachedShaders(program)) graphics.deleteShader(shader);
     this.buffer = graphics.createBuffer();
+    this.indexedSprites=true;
     this.array = graphics.createVertexArray();
     graphics.bindVertexArray(this.array);
     graphics.bindBuffer(graphics.ARRAY_BUFFER, this.buffer);
@@ -509,6 +517,8 @@ export class WebGlRenderer {
       if(this.solidTexture)graphics.deleteTexture(this.solidTexture);
       this.solidTexture=null;
     graphics.deleteBuffer(this.buffer);
+    if(this.staticQuadBuffer)graphics.deleteBuffer(this.staticQuadBuffer);
+    if(this.mixedIndexBuffer)graphics.deleteBuffer(this.mixedIndexBuffer);
     graphics.deleteVertexArray(this.array);
     graphics.deleteProgram(this.program);
     if(this.stageProgram){graphics.deleteProgram(this.stageProgram);graphics.deleteBuffer(this.stageBuffer);graphics.deleteVertexArray(this.stageArray);}
@@ -573,11 +583,11 @@ export class WebGlRenderer {
   flush() {
     const stream=this.spriteStream;
     if(stream){
-      const count=stream.length-stream.first;
+      const length=stream.indexed?stream.indexLength:stream.length/8,count=length-stream.first;
       if(count){
-        stream.ranges.push({first:stream.first/8,count:count/8,texture:this.current,point:this.point,
+        stream.ranges.push({first:stream.first,count,texture:this.current,point:this.point,
           vertical:this.verticalClamp,sprite:this.spriteClamp,blend:this.blend});
-        stream.first=stream.length;
+        stream.first=length;
       }
       return;
     }
@@ -604,6 +614,42 @@ export class WebGlRenderer {
     }
     stream.length=end;return this.spriteStreamUpload;
   }
+  reserveIndexedVertices(count){
+    const stream=this.spriteStream;
+    if(stream.length/8+count>maxIndexedVertices){this.flush();this.submitSpriteStream();}
+    return stream.length;
+  }
+  quadIndexTable(count){
+    if(!this.quadIndices||this.quadIndices.length<count){
+      const quads=Math.min(maxIndexedVertices>>2,Math.max(count/6,(this.quadIndices?.length??0)/3,256));
+      this.quadIndices=new Uint16Array(quads*6);
+      for(let i=0;i<quads;++i)writeQuadIndices(this.quadIndices,i*6,i*4);
+    }
+    return this.quadIndices;
+  }
+  mixedIndices(count){
+    if(!this.spriteMixedIndices||this.spriteMixedIndices.length<count){
+      const old=this.spriteMixedIndices;
+      this.spriteMixedIndices=new Uint16Array(Math.max(count,(old?.length??0)*2,1024));
+      if(old&&this.spriteStream.mixed)this.spriteMixedIndices.set(old.subarray(0,this.spriteStream.indexLength));
+    }
+    return this.spriteMixedIndices;
+  }
+  appendQuadIndices(first){
+    const stream=this.spriteStream,offset=stream.indexLength;
+    if(stream.mixed)writeQuadIndices(this.mixedIndices(offset+6),offset,first);
+    stream.indexLength+=6;
+  }
+  appendIndexedStrip(corners){
+    const count=corners.length/8,at=this.reserveIndexedVertices(count),first=at/8;
+    this.extendSpriteStream(corners.length).set(corners,at);
+    const stream=this.spriteStream,offset=stream.indexLength,length=offset+(count-2)*3;
+    const indices=this.mixedIndices(length);
+    if(!stream.mixed&&offset)indices.set(this.quadIndexTable(offset).subarray(0,offset));
+    stream.mixed=true;stream.indexLength=length;
+    let out=offset;
+    for(let i=2;i<count;++i){indices[out++]=first+(i&1?i-1:i-2);indices[out++]=first+(i&1?i-2:i-1);indices[out++]=first+i;}
+  }
 
   // Submit one upload for each consecutive stretch of textured draws. Draws
   // retain their authored order and separate WebGL blend/depth settings.
@@ -611,6 +657,18 @@ export class WebGlRenderer {
     const stream=this.spriteStream;if(!stream?.ranges.length)return;
     const graphics=this.gl;
     graphics.bufferData(graphics.ARRAY_BUFFER,this.spriteStreamUpload.subarray(0,stream.length),graphics.STREAM_DRAW);
+    if(stream.indexed){
+      if(stream.mixed){
+        const buf=this.mixedIndexBuffer??=graphics.createBuffer();if(!buf)throw new Error('Cannot allocate sprite indices');
+        graphics.bindBuffer(graphics.ELEMENT_ARRAY_BUFFER,buf);
+        graphics.bufferData(graphics.ELEMENT_ARRAY_BUFFER,this.spriteMixedIndices.subarray(0,stream.indexLength),graphics.STREAM_DRAW);
+      }else{
+        const buf=this.staticQuadBuffer??=graphics.createBuffer();if(!buf)throw new Error('Cannot allocate quad indices');
+        graphics.bindBuffer(graphics.ELEMENT_ARRAY_BUFFER,buf);
+        const table=this.quadIndexTable(stream.indexLength);
+        if(this.uploadedQuadIndices!==table){graphics.bufferData(graphics.ELEMENT_ARRAY_BUFFER,table,graphics.STATIC_DRAW);this.uploadedQuadIndices=table;}
+      }
+    }
     let texture=null,point=null,vertical=null,sprite=null;
     const filterByTexture=new Map();
     for(const draw of stream.ranges){
@@ -624,9 +682,10 @@ export class WebGlRenderer {
       }
       if(vertical!==draw.vertical){vertical=draw.vertical;graphics.uniform2fv(this.verticalClampUniform,vertical);}
       if(sprite!==draw.sprite){sprite=draw.sprite;graphics.uniform4fv(this.spriteClampUniform,sprite);}
-      graphics.drawArrays(graphics.TRIANGLES,draw.first,draw.count);
+      if(stream.indexed)graphics.drawElements(graphics.TRIANGLES,draw.count,graphics.UNSIGNED_SHORT,draw.first*2);
+      else graphics.drawArrays(graphics.TRIANGLES,draw.first,draw.count);
     }
-    stream.ranges.length=0;stream.length=0;stream.first=0;
+    stream.ranges.length=0;stream.length=0;stream.first=0;stream.indexLength=0;stream.mixed=false;
   }
 
   material(mode) {
@@ -830,6 +889,7 @@ export class WebGlRenderer {
     if(!Array.isArray(records)||records.length>65536)throw new Error('Invalid draw-record budget');
     if(nativeMenu&&(world||background||overlay||this.canvas.width!==1280||this.canvas.height!==960))throw new Error('Invalid native menu raster context');
     if(world&&!(Array.isArray(shake)&&shake.length===2&&shake[0]===0&&shake[1]===0))records=records.map(record=>applyWorldShake(record,shake));
+    const streamSprites=world&&records.length>=128,indexed=streamSprites&&this.indexedSprites===true;
     const meshes=new Map(),fans=new Map(),lines=new Map(),laserDepths=new Map();
     let meshPoints=0,mainCount=0,priority=-1,mainSeen=false;
     for(const record of records){
@@ -847,7 +907,7 @@ export class WebGlRenderer {
         if(record.geometry.kind==='triangle-strip'){
           if(!world||!mainSeen||record.bank!==6||record.entry!==2||record.layer!==29||record.blend!==0)
             throw new Error('Original526 rows require the actual preceding Main82 stage compositor');
-          meshes.set(record,triangleStripVertices(record,{flipY:true}));
+          meshes.set(record,indexed?triangleStripCorners(record,{flipY:true}):triangleStripVertices(record,{flipY:true}));
         }else if(record.geometry.kind==='circle-fan'){
           if(!world||record.mode!==16||![6,16].includes(record.layer)||record.width<=0||record.height<=0)throw new Error('Invalid original mode16 geometry context');
           fans.set(record,circleFanVertices(record));
@@ -855,7 +915,7 @@ export class WebGlRenderer {
           if(!world||record.mode!==17||record.layer!==6)throw new Error('Invalid original level-up circle-line context');lines.set(record,circleLineVertices(record));
         }else if(record.geometry.kind==='anm-ring'){
           if(!world||!((record.bank===5&&record.layer===17&&(record.mode===9||record.mode===14))||(record.bank===0&&record.layer===4&&record.mode===9)))throw new Error('Invalid original Boss/spell ring context');
-          meshes.set(record,ringStripVertices(record));
+          meshes.set(record,indexed?ringStripCorners(record):ringStripVertices(record));
         }else if(record.geometry.kind==='laser-selector3-quad'){
           if(!world)throw new Error('Original selector3 quad requires its actual World draw pass');
           fans.set(record,selector3QuadVertices(record));
@@ -881,6 +941,7 @@ export class WebGlRenderer {
     };
     try{
     const renderWidth=nativeMenu?640:this.canvas.width,renderHeight=nativeMenu?480:this.canvas.height;
+    const nativeScale=renderWidth/640,integerHudScale=nativeScale>1&&Number.isInteger(nativeScale)&&this.canvas.height/480===nativeScale;
     graphics.bindVertexArray(this.array);
     graphics.bindBuffer(graphics.ARRAY_BUFFER,this.buffer);
     graphics.viewport(0,0,renderWidth,renderHeight);
@@ -893,19 +954,22 @@ export class WebGlRenderer {
     this.blend = -1;
     this.vertices.length = 0;
     if(background&&!overlay)this.drawBackground(background);
-    if(world&&records.length>=128)this.spriteStream={ranges:[],length:0,first:0,gpuBlend:-1};
+    if(streamSprites)this.spriteStream={ranges:[],length:0,first:0,gpuBlend:-1,indexed,indexLength:0,mixed:false};
     let captured=false,previousBank=-1,previousEntry=-1,previousTexture=null;
+    let lastColors=null,lastFlags,lastColor,lastSecondary;
     const quadColors=this.quadColors??={first:[0,0,0,0],second:[0,0,0,0],corners:new Array(4)};
     for (const record of records) {
       if(mainCount&&!captured&&nativeRecordPriority(record)>=12){this.captureStage();captured=true;}
-      const z=laserDepths.get(record);
-      if(z===undefined)leaveLaserDepth();
+      const geometry=record.geometry,z=geometry?laserDepths.get(record):undefined;
+      if(z===undefined){if(laserDepth!==null)leaveLaserDepth();}
       else if(z!==laserDepth){
         this.flush();this.submitSpriteStream();graphics.enable(graphics.DEPTH_TEST);graphics.depthMask(true);graphics.depthFunc(graphics.LESS);
         graphics.depthRange(z,z);laserDepth=z;
       }
-      if(fans.has(record)||lines.has(record)){
-        const fan=fans.get(record)??lines.get(record);if(record.geometry.vertices.every(vertex=>(vertex.color>>>24)===0))continue;
+      const line=geometry?lines.get(record):undefined;
+      const fan=line??(geometry?fans.get(record):undefined);
+      if(fan){
+        if(geometry.vertices.every(vertex=>(vertex.color>>>24)===0))continue;
         this.material(record.blend);this.flush();this.submitSpriteStream();
         if(this.spriteStream&&this.spriteStream.gpuBlend!==record.blend){this.applyBlend(record.blend);this.spriteStream.gpuBlend=record.blend;}
         if(!this.solidTexture){
@@ -919,10 +983,18 @@ export class WebGlRenderer {
         }
         graphics.bindVertexArray(this.array);graphics.bindBuffer(graphics.ARRAY_BUFFER,this.buffer);graphics.bindTexture(graphics.TEXTURE_2D,this.solidTexture);
         graphics.texParameteri(graphics.TEXTURE_2D,graphics.TEXTURE_MIN_FILTER,graphics.NEAREST);graphics.texParameteri(graphics.TEXTURE_2D,graphics.TEXTURE_MAG_FILTER,graphics.NEAREST);
-        graphics.bufferData(graphics.ARRAY_BUFFER,fan,graphics.STREAM_DRAW);if(lines.has(record))graphics.lineWidth(this.canvas.width/640);graphics.drawArrays(lines.has(record)?graphics.LINE_STRIP:graphics.TRIANGLES,0,fan.length/8);
+        graphics.bufferData(graphics.ARRAY_BUFFER,fan,graphics.STREAM_DRAW);if(line)graphics.lineWidth(this.canvas.width/640);graphics.drawArrays(line?graphics.LINE_STRIP:graphics.TRIANGLES,0,fan.length/8);
         this.current=null;this.point=null;continue;
       }
-      const colors=meshes.has(record)?null:nativeQuadColors(record,quadColors);
+      const mesh=geometry?meshes.get(record):undefined;
+      let colors=null;
+      if(!mesh){
+        if(!lastColors||record.flags!==lastFlags||record.color!==lastColor||record.secondary!==lastSecondary){
+          lastColors=nativeQuadColors(record,quadColors);
+          lastFlags=record.flags;lastColor=record.color;lastSecondary=record.secondary;
+        }
+        colors=lastColors;
+      }
       if ((colors?colors[0][3]===0&&colors[1][3]===0&&colors[2][3]===0&&colors[3][3]===0:(record.color>>>24)===0) || record.width === 0 || record.height === 0) continue;
       if (!Number.isFinite(record.u)||!Number.isFinite(record.v)||!Number.isFinite(record.uvScaleX)||!Number.isFinite(record.uvScaleY)
           ||!Number.isFinite(record.u0)||!Number.isFinite(record.v0)||!Number.isFinite(record.u1)||!Number.isFinite(record.v1)) {
@@ -936,15 +1008,13 @@ export class WebGlRenderer {
       if(texture.dynamic&&(!texture.initialized||record.bank!==6||record.entry!==2&&!(record.entry===1&&texture.originalPauseCapture&&this.pauseRenderingEpoch===texture.pauseEpoch)))throw new Error('Dynamic texture has no established current-frame capture');
       this.material(record.blend);
       // Original static HUD texels are replicated at integer display scale (case212).
-      const nativeScale=renderWidth/640;
-      const unitHudTexels=(record.bank===5||record.bank===11)&&!record.geometry&&record.mode===0
-        &&nativeScale>1&&Number.isInteger(nativeScale)&&this.canvas.height/480===nativeScale
+      const unitHudTexels=integerHudScale&&(record.bank===5||record.bank===11)&&!geometry&&record.mode===0
         &&record.sx===1&&record.sy===1&&record.rotation===0&&(record.rx??0)===0&&(record.ry??0)===0
         &&record.u===0&&record.v===0&&record.uvScaleX===1&&record.uvScaleY===1&&!texture.dynamic
         &&Math.abs(Math.abs(record.u1-record.u0)*texture.width-record.width)<1e-5
         &&Math.abs(Math.abs(record.v1-record.v0)*texture.height-record.height)<1e-5;
       const point = Boolean(record.flags2 & 4)||unitHudTexels;
-      const staticAtlas=!record.geometry&&((record.bank===5&&record.entry===0&&record.sprite>=0&&record.sprite<=56)||(record.bank===11&&record.entry===0))
+      const staticAtlas=!geometry&&((record.bank===5&&record.entry===0&&record.sprite>=0&&record.sprite<=56)||(record.bank===11&&record.entry===0))
         &&record.u===0&&record.v===0&&record.uvScaleX===1&&record.uvScaleY===1;
       const spriteClamp=staticAtlas
         ?[Math.min(record.u0,record.u1)+.5/texture.width,Math.min(record.v0,record.v1)+.5/texture.height,Math.max(record.u0,record.u1)-.5/texture.width,Math.max(record.v0,record.v1)-.5/texture.height]
@@ -964,9 +1034,9 @@ export class WebGlRenderer {
           graphics.texParameteri(graphics.TEXTURE_2D,graphics.TEXTURE_MAG_FILTER,point?graphics.NEAREST:graphics.LINEAR);
         }
       }
-      if(meshes.has(record)){
-        const mesh=meshes.get(record);
-        if(this.spriteStream){const first=this.spriteStream.length;this.extendSpriteStream(mesh.length).set(mesh,first);}
+      if(mesh){
+        if(indexed)this.appendIndexedStrip(mesh);
+        else if(this.spriteStream){const first=this.spriteStream.length;this.extendSpriteStream(mesh.length).set(mesh,first);}
         else this.vertices.push(...mesh);
         continue;
       }

@@ -1,9 +1,9 @@
 import test from'node:test';import assert from'node:assert/strict';
 import{mountWebInput}from'../../site/runtime/web-input.mjs';import{environment}from'../web-input/surface.mjs';
-function fixture(options={},useDefaultMode=false){
+function fixture(options={},useDefaultMode=false,hostedControls=false){
  const e=environment(),data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)},commands=[],keys=new Set();
  let context={key:'game1',kind:'game',instance:1,gestureScope:1,ready:true,generation:7,x:0,y:51200,fast:576,slow:256};
- const input=mountWebInput({...e,getContext:()=>1,getGameContext:()=>context,onTouchMotion:motion=>commands.push(motion),storage,options:{touchEnabled:true,...(useDefaultMode?{}:{touchMovementMode:'touch-unlimited'}),touchSensitivity:100,...options}});
+ const input=mountWebInput({...e,getContext:()=>1,getGameContext:()=>context,onTouchMotion:motion=>commands.push(motion),storage,hostedControls,options:{touchEnabled:true,...(useDefaultMode?{}:{touchMovementMode:'touch-unlimited'}),touchSensitivity:100,...options}});
  assert.equal(typeof input.sampleTouch,'function','full upstream touch must have fixed-tick page consumer');
  e.window.addEventListener('keydown',event=>{if(input.acceptKeyDown(event))keys.add(event.code);});e.window.addEventListener('keyup',event=>{if(input.acceptKeyUp(event))keys.delete(event.code);});
  return{...e,input,commands,keys,storage,data,setContext:next=>context={...context,...next},node:name=>e.find(e.container,'id',name)};
@@ -15,6 +15,21 @@ test('a fresh touch layout uses limited direct motion while an explicit unlimite
  e.input.sampleTouch();assert.equal(e.commands.at(-1).mode,1);
  e.input.configureTouch({touchMovementMode:'touch-unlimited'},true);
  assert.equal(e.input.touchSnapshot().options.touchMovementMode,'touch-unlimited');e.input.dispose();
+});
+test('hosted TH128 owns no on-canvas controls but still consumes parent direct movement and keyboard',()=>{
+ const e=fixture({},true,true);
+ try{
+  assert.equal(e.input.layer.parentElement,null,'managed play must not mount an in-game duplicate controller');
+  assert.equal(e.node('touchDirectSurface'),undefined,'only the parent captures touch');
+  e.input.touchControls({fireEnabled:true,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:0,joystickY:0});
+  e.input.directTouch({id:-1000000,type:'down',x:.5,y:.5});
+  e.input.directTouch({id:-1000000,type:'move',x:.54,y:.5});
+  e.input.sampleTouch();assert.equal(e.commands.at(-1).mode,1);assert(e.keys.has('KeyC'));
+  const hosted=Symbol('parent');e.input.setKeySource(hosted,['KeyZ']);e.input.sampleTouch();
+  assert(e.keys.has('KeyZ'));assert(e.keys.has('KeyC'));
+  e.input.clearKeySource(hosted);assert(!e.keys.has('KeyZ'));assert(e.keys.has('KeyC'));
+  e.input.cancelTouch();assert.deepEqual(e.commands.at(-1),{mode:0,x:0,y:0,generation:7});
+ }finally{e.input.dispose();}
 });
 test('whole page direct touch samples native command only on fixed tick with TH128 rapid fire and focus ownership',()=>{
  const e=fixture(),surface=e.node('touchDirectSurface');assert(surface);e.emit(surface,'pointerdown',1,640,480);e.emit(surface,'pointermove',1,660,480);assert.equal(e.commands.length,0);

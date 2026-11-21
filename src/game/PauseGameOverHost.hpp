@@ -13,7 +13,7 @@
 #include <vector>
 
 namespace th128::pause {
-enum class Kind {Pause,GameOver,Replay};
+enum class Kind {Pause,GameOver,Replay,ReplayFinished};
 enum class Action {None,Resume,Continue,Title,ReplaySave,Manual,Restart};
 struct Input {std::uint32_t held=0,pressed=0;};
 struct Resources {int score=0,motivation=0,motivationFlag=0,perfect=0,continues=0;};
@@ -61,7 +61,9 @@ class Host {
     }
     void sound(int identifier){sounds_.push_back(identifier);}
     void signal(int code){scene_.interrupt(Root,code);checked();}
+    int selectionSignal() const{return state_.kind==Kind::ReplayFinished?8+2*state_.selection:7+state_.selection;}
     Action selectedAction() const{
+        if(state_.kind==Kind::ReplayFinished)return state_.selection==0?Action::Title:Action::Restart;
         if(state_.selection==0)return state_.kind==Kind::GameOver?(practiceRetry_?Action::Restart:Action::Continue):Action::Resume;
         if(state_.selection==1)return Action::Title;
         if(state_.selection==2)return state_.kind==Kind::Replay?Action::Restart:Action::ReplaySave;
@@ -75,7 +77,7 @@ class Host {
             state_.selection=(state_.selection+delta+state_.rows)%state_.rows;
             if(!state_.disabled[std::size_t(state_.selection)])break;
         }
-        if(before!=state_.selection){signal(7+state_.selection);sound(10);}
+        if(before!=state_.selection){signal(selectionSignal());sound(10);}
     }
     void beginClose(Action action){
         if(backdropLoaded_&&backdrop_.active()&&!backdrop_.closing()&&action!=Action::ReplaySave)backdrop_.close();
@@ -139,21 +141,21 @@ public:
     void loadBackdrop(std::span<const std::uint8_t> bytes){if(state_.active||executing_||backdropLoaded_)fail("backdrop resource requires fresh pause owner");backdrop_.load(bytes);backdropLoaded_=true;}
     bool backdropLoaded()const{return backdropLoaded_;}
     const OriginalPauseBackdrop& backdrop()const{return backdrop_;}
-    void open(bool gameOver,int continues,bool replayAvailable,std::uint64_t sourceFrame=0,bool playback=false,bool practiceRetry=false){
-        if(!state_.loaded||state_.active||executing_||continues<0||continues>9)fail("invalid original pause entry");
+    void open(bool gameOver,int continues,bool replayAvailable,std::uint64_t sourceFrame=0,bool playback=false,bool practiceRetry=false,bool playbackFinished=false){
+        if(!state_.loaded||state_.active||executing_||continues<0||continues>9||(playbackFinished&&!playback))fail("invalid original pause entry");
         const auto serial=state_.serial+1;state_={};state_.loaded=true;state_.active=true;state_.serial=serial;
-        state_.kind=playback?Kind::Replay:gameOver?Kind::GameOver:Kind::Pause;
-        state_.rows=playback?3:5;
+        state_.kind=playbackFinished?Kind::ReplayFinished:playback?Kind::Replay:gameOver?Kind::GameOver:Kind::Pause;
+        state_.rows=playbackFinished?2:playback?3:5;
         practiceRetry_=gameOver&&!playback&&practiceRetry;
         state_.disabled[0]=gameOver&&!practiceRetry_&&continues>=5;
         state_.disabled[2]=!playback&&(!replayAvailable||continues>0);
         state_.selection=state_.disabled[0]?1:0;
         age_=0;requested_=Action::None;confirmationLeaving_=false;confirmationAccepted_=false;helpEntering_=false;sounds_.clear();scene_.reset();
         if(backdropLoaded_)backdrop_.open(serial,sourceFrame);
-        if(!gameOver){
-            if(!scene_.bind(Root,1,5,playback?100:99,anm::Membership::Primary,0,0,{},false,nullptr,0,0,25))
+        if(!gameOver||playbackFinished){
+            if(!scene_.bind(Root,1,5,playbackFinished?101:playback?100:99,anm::Membership::Primary,0,0,{},false,nullptr,0,0,25))
                 fail("original pause constructor rejected");
-            signal(3);sound(14);
+            signal(3);if(!playbackFinished)sound(14);
         }
         checked();
     }
@@ -185,7 +187,7 @@ public:
                         if(action==Action::ReplaySave){
                             requested_=action;state_.closing=true;state_.action=action;age_=0;scene_.drawEnabled(Root,false);
                         }else beginClose(action);
-                    }else{signal(7+state_.selection);state_.ready=true;age_=0;}
+                    }else{signal(selectionSignal());state_.ready=true;age_=0;}
                 }
             }else if(state_.confirm&&!state_.ready){
                 if(age_==20)signal(14);
@@ -197,12 +199,12 @@ public:
                             fail("original GameOver constructor rejected");
                         signal(3);
                     }
-                    signal(7+state_.selection);state_.ready=true;
+                    signal(selectionSignal());state_.ready=true;
                 }
             }else if(state_.confirm){
                 if(navigation&0x30u){state_.confirmSelection^=1;signal(15+state_.confirmSelection);sound(10);}
-                if(input.pressed&0x100u){sound(9);beginClose(Action::Resume);}
-                else if(input.pressed&2u){
+                if((input.pressed&0x100u)&&state_.kind!=Kind::ReplayFinished){sound(9);beginClose(Action::Resume);}
+                else if(input.pressed&(state_.kind==Kind::ReplayFinished?0x102u:2u)){
                     sound(9);
                     if(state_.confirmSelection==0){state_.confirmSelection=1;signal(16);}
                     else leaveConfirm(false);
@@ -212,7 +214,7 @@ public:
             }else{
                 if(navigation&0x10u)select(-1);
                 else if(navigation&0x20u)select(1);
-                if((input.pressed&0x102u)&&state_.kind!=Kind::GameOver){sound(7);beginClose(Action::Resume);}
+                if((input.pressed&0x102u)&&state_.kind!=Kind::GameOver&&state_.kind!=Kind::ReplayFinished){sound(7);beginClose(Action::Resume);}
                 else if(input.pressed&0x80201u){
                     if(state_.disabled[std::size_t(state_.selection)])sound(9);
                     else{

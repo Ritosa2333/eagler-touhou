@@ -13,11 +13,12 @@ const source=fs.readFileSync(new URL('../../site/import-entry.mjs',import.meta.u
 function element(){return{hidden:false,disabled:true,textContent:'',events:{},addEventListener(type,fn){this.events[type]=fn;},remove(){this.removed=true;}};}
 const search='?runtimeEpoch=41&managedData=1&gameGeneration=package-generation-17';
 const storeSearch=search+'&managedPackage=1';
-async function setup({query=search,referrer=origin+'/app',callback=null,blocked=null,resourceFetch=null,holdRuntime=false,packageFile=null,packageGeneration=null}={}){
+async function setup({query=search,referrer=origin+'/app',callback=null,blocked=null,resourceFetch=null,holdRuntime=false,packageFile=null,packageGeneration=null,embedded=true}={}){
  const fromStore=new URLSearchParams(query).has('managedPackage');
  const f=fixture(),provider=fromStore?null:await createDatOggProviderFromFiles(f.descriptorBytes,f.files,{origin}),env=fakeWindow({search:query,referrer});
  env.win.location={origin,href:origin+'/'+query,search:query};
- const main=element(),loader=element(),file=element(),start=element(),status=element(),retry=element(),hint=element(),meter=element(),local={},calls={data:[],packageFiles:[],storeOpen:0,storeReopen:0,deployment:0,imports:0,keys:[],dispose:0,close:0,installed:null};
+ if(!embedded)env.win.parent=env.win;
+ const main=element(),loader=element(),file=element(),start=element(),status=element(),retry=element(),hint=element(),meter=element(),local={},calls={data:[],packageFiles:[],storeOpen:0,storeReopen:0,deployment:0,imports:0,keys:[],dispose:0,close:0,gameExit:0,installed:null};
  const originalDispose=provider?.dispose.bind(provider);
  // The real provider is frozen; count disposal in a forwarding boundary, not by replacing its methods.
  const wrapped=provider?{...provider,dispose(){calls.dispose++;originalDispose();}}:null;
@@ -35,28 +36,89 @@ async function setup({query=search,referrer=origin+'/app',callback=null,blocked=
    }}};
  };
  loader.querySelector=selector=>selector==='input'?file:selector==='button'?start:selector==='[data-retry]'?retry:selector==='[data-hint]'?hint:selector==='progress'?meter:status;
- const document={referrer,querySelector:()=>main,createElement:()=>loader,body:{prepend(){}}};env.win.document=document;
+ const document={referrer,documentElement:{dataset:{}},querySelector:()=>main,createElement:()=>loader,body:{prepend(){}}};env.win.document=document;
  class Store{constructor(){calls.storeOpen++;}close(){calls.close++;}}
  let context=null;
- const runtime={keyboard:value=>calls.keys.push(value),clearInput(){},exit(){}};
+ const runtime={keyboard:value=>calls.keys.push(value),clearInput(){},exit(){calls.gameExit++;}};
  const body=source.replace(/^import .*;\r?\n/gm,'').replace("await import('./play.mjs')","await importPlay()");
- const run=new Function('document','globalThis','location','window','addEventListener','DatPackageArchiveStore','installDatPackage','reopenDatPackage','installResourceFetchProvider','readOnlineDeployment','loadOnlineResources','mountLauncherSession','createPageLaunchContext','installPageLaunchContext','importPlay','bindManagedDatProvider','openManagedDatPackage','return(async()=>{'+body+'})();');
+ const run=new Function('document','globalThis','location','window','addEventListener','DatPackageArchiveStore','installDatPackage','reopenDatPackage','installResourceFetchProvider','readOnlineDeployment','loadOnlineResources','mountLauncherSession','createPageLaunchContext','installPageLaunchContext','importPlay','bindManagedDatProvider','openManagedDatPackage','mountLocalLaunchPanel','return(async()=>{'+body+'})();');
  const bind=async(next,options)=>{
   assert.equal(typeof owner.bindManagedDatProvider,'function','Managed DATA caller module is missing');
   return owner.bindManagedDatProvider(next,{...options,fetchImpl:resourceFetch??(async()=>{throw new Error('Unexpected resource fetch');})});
  };
  const pending=run(document,{indexedDB:{open(){}}},env.win.location,env.win,(type,fn)=>local[type]=fn,Store,async()=>wrapped,async()=>{calls.storeReopen++;return wrapped;},p=>{calls.installed=p;},async()=>{calls.deployment++;return null;},async()=>({provider:wrapped,cached:true}),mountLauncherSession,
- options=>{context=createPageLaunchContext(options);return context;},()=>{},async()=>{calls.imports++;if(!holdRuntime){context.bindRuntime(runtime);context.finish();}return{};},bind,owner.openManagedDatPackage);
- return{...env,f,provider,wrapped,calls,main,status,local,pending,send(data){env.send(data,{origin:new URL(referrer).origin});},get context(){return context;},runtime};
+ options=>{context=createPageLaunchContext(options);return context;},()=>{},async()=>{calls.imports++;if(!holdRuntime){context.bindRuntime(runtime);context.finish();}return{};},bind,owner.openManagedDatPackage,()=>({ready(){},dispose(){}}));
+ return{...env,f,provider,wrapped,calls,main,loader,document,status,local,pending,send(data){env.send(data,{origin:new URL(referrer).origin});},get context(){return context;},runtime};
 }
 async function finished(e){await e.pending;await flush();return e;}
 const reply=(e,id)=>e.messages.find(row=>row.data.request===id)?.data;
 const events=(e,type)=>e.messages.filter(row=>row.data.event===type);
+
+test('managed player layout is selected only for the Launcher document',async()=>{
+ const hosted=await finished(await setup({query:storeSearch}));
+ const local=await finished(await setup({query:'?runtimeEpoch=41',embedded:false}));
+ try{
+  assert.equal(events(hosted,'ready').length,1);
+  assert.equal(hosted.document.documentElement.dataset.managed,'true');
+  assert.equal(hosted.loader.hidden,true,'the Launcher does not show the duplicate website-preparation card');
+  assert.equal(local.document.documentElement.dataset.managed,undefined);
+  assert.equal(local.loader.hidden,false,'the standalone import page must remain usable');
+  assert.equal(local.calls.data.length,0);
+  assert.equal(local.calls.imports,0);
+ }finally{hosted.local.pagehide();local.local.pagehide();}
+});
 async function answered(e,id){
  const deadline=Date.now()+1000;
  while(!reply(e,id)&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,1));
  return reply(e,id);
 }
+test('the hosted session advertises the author controller port and samples only its current mapping',async()=>{
+ const e=await finished(await setup({query:storeSearch}));
+ try{
+  const bridge=e.win.__eaglerGamepadInputBridge;
+  assert.equal(bridge?.schema,'eagler-touhou/gamepad-input/1');
+  assert.equal(bridge.epoch,41);
+  const mapping={schema:bridge.schema,game:'th128',epoch:41,protocol:'eagler-touhou/1',origin,enabled:()=>true,clear(){},sample:()=>129};
+  e.win.__eaglerGamepadMapping=mapping;
+  assert.equal(bridge.sample(0),0,'cold session does not consume controls');
+  e.send(envelope('configure','cfg',{music:'ogg'}));assert.equal((await answered(e,'cfg')).ok,true);
+  e.send(envelope('launch','go'));assert.equal((await answered(e,'go')).ok,true);
+  assert.equal(bridge.sample(0),129);
+  e.win.__eaglerGamepadMapping={...mapping,epoch:40};assert.equal(bridge.sample(0),-1);
+  e.send(envelope('exit','stop'));assert.equal((await answered(e,'stop')).ok,true);
+  assert.equal(e.win.__eaglerGamepadInputBridge,undefined);
+  e.win.__eaglerGamepadMapping=mapping;assert.equal(bridge.sample(0),0);
+ }finally{e.local.pagehide();}
+});
+test('a drawn original startup frame appears before Title readiness without enabling input early',async()=>{
+ const e=await finished(await setup({query:storeSearch,holdRuntime:true}));
+ try{
+  e.send(envelope('configure','cfg',{music:'ogg',language:'zh'}));assert.equal((await answered(e,'cfg')).ok,true);
+  e.send(envelope('launch','play',{launchSerial:17}));await flush();
+  assert.equal(e.main.hidden,false);
+  assert.equal(e.loader.hidden,true);
+  e.context.bindRuntime(e.runtime);
+  e.context.noteStartupPresented(true);e.context.noteStartupPresented(true);await flush();
+  assert.equal(events(e,'first-frame').length,1);
+  assert.equal(events(e,'first-frame')[0].data.launchSerial,17);
+  assert.equal(reply(e,'play'),undefined);
+  e.send(envelope('keyboard','early',{code:'KeyZ',down:true}));await flush();assert.equal(reply(e,'early').ok,false);
+  e.context.finish();assert.equal((await answered(e,'play')).ok,true);
+  e.context.notePresented(true);assert.equal(events(e,'first-frame').length,1);
+ }finally{e.local.pagehide();}
+});
+test('native Quit retires the running child once and reports a successful exit to the owning Launcher',async()=>{
+ const e=await finished(await setup({query:storeSearch}));
+ try{
+  e.send(envelope('configure','cfg',{music:'ogg',language:'zh'}));assert.equal((await answered(e,'cfg')).ok,true);
+  e.send(envelope('launch','play'));assert.equal((await answered(e,'play')).ok,true);
+  assert.equal(await e.context.requestExit(),true);
+  assert.equal(await e.context.requestExit(),false);
+  assert.equal(e.calls.gameExit,1);
+  assert.deepEqual(events(e,'exit').map(row=>row.data),[{event:'exit',code:0,status:'success',protocol:'eagler-touhou/1',game:'th128',epoch:41}]);
+  e.send(envelope('keyboard','late',{code:'KeyZ',down:true}));await flush();assert.equal(e.calls.keys.length,0);
+ }finally{e.local.pagehide();}
+});
 test('complete Launcher configure selects its mounted Chinese data, full OGG and independent practice locale',async()=>{
  const e=await finished(await setup({query:storeSearch}));
  const options={limitPresentationTo60:false,touchEnabled:true,touchMovementMode:'touch-unlimited',touchSensitivity:175,

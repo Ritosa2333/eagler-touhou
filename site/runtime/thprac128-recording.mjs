@@ -20,6 +20,18 @@ export function createThprac128Recorder(module,input,identity,{seconds,isCurrent
   clock(seconds,fps){native();if(module._th128_world_thprac_replay_clock(seconds,fps)!==1)throw new Error(module.UTF8ToString(module._th128_world_error())||'practice pre-tick clock rejected');},
   snapshot(){return Object.freeze(native());},
   capture(timestamp,name){const{raw,before}=packet(timestamp,name);verifyPrefix(raw);return attachThprac128Replay(nativeReplayToFile(raw),origin,{...firstIdentity,stages:[...prior,plan(raw,before)]});},
+  sealForEnding(){
+    const {raw:expected,before}=packet(0n,new Uint8Array(8).fill(32));verifyPrefix(expected);
+    const metadata={...firstIdentity,stages:[...prior,plan(expected,before)]};
+    return Object.freeze({generation:receipt.generation,encode(raw,file){
+      current();
+      // The native name input may only change the eight name bytes and the
+      // timestamp. Everything else, including carried input, stays sealed.
+      if(!(raw instanceof Uint8Array)||raw.length!==expected.length||!raw.every((byte,i)=>
+        i>=36&&i<44||i>=48&&i<56||byte===expected[i]))throw new Error('Practice replay differs from the completed native input history');
+      return attachThprac128Replay(file,origin,metadata);
+    }});
+  },
   continuation(){const{raw,before}=packet(0n,new TextEncoder().encode('        '));verifyPrefix(raw);if(prior.length>=2)throw new Error('Practice history cannot carry beyond three recorded stages');const token=Object.freeze({schema:'th128-practice-record-continuation/1'}),prefix=decodeReplay(nativeReplayToFile(raw)).stages.map(s=>Object.fromEntries(['rawHeader','inputRaw','fpsRaw'].map(k=>[k,s[k].slice()])));continuationOwners.set(token,{module,generation:receipt.generation,session:origin,identity:firstIdentity,prefix,stages:Object.freeze([...prior,plan(raw,before)])});return token;},
   close(){closed=true;}
  });

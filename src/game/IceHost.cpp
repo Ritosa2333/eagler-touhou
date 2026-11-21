@@ -10,15 +10,18 @@ namespace {
 struct Guard {bool& value;explicit Guard(bool& flag):value(flag){value=true;}~Guard(){value=false;}};
 constexpr std::array<std::size_t,5> MaskOffsets{0,84,184,316,708};
 constexpr std::uint64_t OverlayBase=0x100000000ull;
+bool contactCoordinate(float value){return std::isfinite(value)&&std::abs(value)<=65536.f;}
+bool contactRadius(float value){return contactCoordinate(value)&&value>=0;}
 void decrement(Timer& timer){timer.previous=timer.current;--timer.current;timer.time=float(timer.current);}
 }
 bool Host::fail(std::string reason,std::string& error){if(failure_.empty())failure_=std::move(reason);error=failure_;return false;}
 bool Host::checked(std::string& error){
     if(!failure_.empty())return fail(failure_,error);
+    const auto bank=scene_.registry.bank(36);
     for(const auto& [identifier,node]:scene_.nodes()){
         if(node->vm.faulted()||node->customGeometry||node->beforeTick||node->onInterrupt)
             return fail("unimplemented original ice ANM callback/geometry",error);
-        const auto& state=node->vm.state();const auto bank=scene_.registry.bank(36);
+        const auto& state=node->vm.state();
         if(state.sprite>=0&&(state.spriteBank!=36||!bank||std::size_t(state.sprite)>=bank->sprites.size()))return fail("ice sprite bank mismatch",error);
         if(state.ended||state.deleteRequested)node->alive=false;
     }
@@ -75,6 +78,7 @@ bool Host::charge(int held,Position position,std::string& error){
     if(!configured_||executing_||!failure_.empty()||held< -1000000||held>=1000000
         ||!std::isfinite(position.x)||!std::isfinite(position.y)||!std::isfinite(position.z))
         return fail(failure_.empty()?"invalid original held-charge animation state":failure_,error);
+    if(held<=0&&!charge_)return true;
     Guard guard(executing_);
     if(held>0){
         if(!charge_){charge_=nextAnimation_++;if(!charge_||!bind(charge_,30,position,error))return false;}
@@ -83,18 +87,20 @@ bool Host::charge(int held,Position position,std::string& error){
     }else if(charge_){scene_.interrupt(charge_,1);charge_=0;}
     return checked(error);
 }
-bool Host::contact(const bullet::Birth& bullet,std::string& error) const {
+bool Host::contact(const bullet::Birth& bullet,const BucketHeads& heads,std::string& error) const {
     const auto position=bullet.state.position;
     if(!std::isfinite(position.x)||!std::isfinite(position.y)||!std::isfinite(bullet.state.hitboxSize)){error="nonfinite ice contact";return false;}
     const auto cell=iceCell({position.x,position.y,position.z});if(!cell){error="ice contact bucket overflow";return false;}
     const int column=(*cell)[0],row=(*cell)[1];
     if(column<0||column>=8||row<0||row>=10)return false;
+    const bool validPoint=contactCoordinate(position.x)&&contactCoordinate(position.y)&&contactRadius(bullet.state.hitboxSize);
     constexpr std::array<std::array<int,2>,9> order{{{0,0},{-1,-1},{0,-1},{1,-1},{-1,0},{1,0},{-1,1},{0,1},{1,1}}};
     for(const auto& offset:order){
         const int horizontal=column+offset[0],vertical=row+offset[1];
         if(horizontal<0||horizontal>=8||vertical<0||vertical>=10)continue;
-        for(const auto index:buckets_[std::size_t(horizontal*10+vertical)]){
-            const auto& ice=slots_[index].state;
+        const auto bucket=std::size_t(horizontal*10+vertical);const auto& slots=buckets_[bucket];
+        for(auto it=validPoint?heads[bucket]:slots.cbegin();it!=slots.cend();++it){
+            const auto& ice=slots_[*it].state;
             const auto overlap=contacts(ice.position,ice.value,ice.lifetime.current,ice.delay.current,
                 {position.x,position.y,position.z},bullet.state.hitboxSize);
             if(!overlap){error="unsupported original ice overlap context";return false;}
@@ -103,12 +109,16 @@ bool Host::contact(const bullet::Birth& bullet,std::string& error) const {
     }
     return false;
 }
-bool Host::convert(const bullet::Birth& bullet,std::span<std::uint8_t> mask,std::string& error){
+bool Host::convert(const bullet::Birth& bullet,std::span<std::uint8_t> mask,BucketHeads& heads,std::string& error){
     const auto* source=services_.visual(bullet.id);
     if(!source||source->faulted())return fail("live bullet VM missing before original freeze clone",error);
     const auto& position=bullet.state.position;
     const auto index=birth({{position.x,position.y,position.z},bullet.state.auxiliarySize,200,0},error);
     if(!index)return false;auto& slot=slots_[*index];slot.visual=*source;slot.visual->hasSecondary=false;
+    // contacts() validates before checking the delay. Keep any out-of-domain
+    // insertion in the scan so the original failure remains observable.
+    if(slot.state.delay.current<=0||!contactCoordinate(slot.state.position.x)||!contactCoordinate(slot.state.position.y)||!contactRadius(slot.state.value))
+        heads[slot.bucket]=buckets_[slot.bucket].cbegin();
     const auto rotation=bullet::directionalDrawAngle(bullet.angle,source->primary.state().rotation,source->primary.state().flags);
     if(!rotation)return fail("unsupported frozen bullet directional draw pose",error);
     slot.visual->primary.control().rotation=*rotation;
@@ -125,16 +135,6 @@ bool Host::convert(const bullet::Birth& bullet,std::span<std::uint8_t> mask,std:
     slot.state.maskSelector=selector;slot.state.animation54=nextAnimation_++;
     if(!bind(OverlayBase+slot.state.animation54,selector<=3?1:0,slot.state.position,error))return false;
     ++stats_.converted;return true;
-}
-bool Host::scratchMask(IceMaskOperation operation,const Position& position,std::string& error){
-    if(scratchMask_.size()!=IceMaskBytes)scratchMask_.assign(IceMaskBytes,0);
-    const auto selection=selectIceMask(1);if(selection.disposition!=IceMaskDisposition::Known)
-        return fail("perfect freeze selector1 mask is unavailable",error);
-    const auto count=selection.height*selection.wordsPerRow*4;
-    if(count==0||bitmaps_.size()<count)return fail("perfect freeze selector1 bitmap is truncated",error);
-    if(!updateIceMask(scratchMask_,{std::span<const std::uint8_t>(bitmaps_).subspan(0,count),selection.height,selection.wordsPerRow},
-        {position.x,position.y,position.z},operation))return fail("perfect freeze selector1 mask update rejected",error);
-    return true;
 }
 bool Host::freezePerfect(std::span<const bullet::Birth> bullets,PerfectFreezeResult& result,std::string& error){
     error.clear();result=PerfectFreezeResult{};
@@ -177,10 +177,9 @@ bool Host::freezePerfect(std::span<const bullet::Birth> bullets,PerfectFreezeRes
             return fail("perfect freeze selector1 mask is unavailable",error);
         const auto maskBytes=maskSelection.height*maskSelection.wordsPerRow*4;
         if(maskBytes==0||bitmaps_.size()<maskBytes)return fail("perfect freeze selector1 bitmap is truncated",error);
-        auto candidateMask=scratchMask_;
         for(const auto& entry:eligible){
             const auto& bullet=*entry.bullet;
-            if(!updateIceMask(candidateMask,{std::span<const std::uint8_t>(bitmaps_).subspan(0,maskBytes),
+            if(!updateIceMask(scratchMask_,{std::span<const std::uint8_t>(bitmaps_).subspan(0,maskBytes),
                 maskSelection.height,maskSelection.wordsPerRow},{bullet.state.position.x,bullet.state.position.y,bullet.state.position.z},IceMaskOperation::Merge))
                 return fail("perfect freeze selector1 mask preflight rejected",error);
         }
@@ -196,7 +195,6 @@ bool Host::freezePerfect(std::span<const bullet::Birth> bullets,PerfectFreezeRes
             slot.visual=*source;slot.visual->hasSecondary=false;
             slot.visual->primary.control().rotation=entry.rotation;
             slot.visual->primary.control().flags|=0x80000u;slot.visual->primary.control().layer=13;
-            if(!scratchMask(IceMaskOperation::Merge,slot.state.position,error))return false;
             slot.state.maskSelector=1;slot.state.animation54=nextAnimation_++;
             if(!bind(OverlayBase+slot.state.animation54,1,slot.state.position,error))return false;
             if(!services_.consume(bullet,error)||!error.empty())
@@ -253,11 +251,16 @@ bool Host::tick(std::span<const bullet::Birth> bullets,std::string& error){
             }
             stats_.elapsed=++activation.elapsed;
         }
-        if(!triggered)for(const auto& bullet:bullets){
-            if(!canFreezeBullet(bullet.state.flags,bullet.state.freezePolicy,bullet.lifeClock))continue;
-            const bool overlap=contact(bullet,error);if(!error.empty())return fail(error,error);
-            if(overlap){
-                if(!convert(bullet,mask_,error))return false;
+        if(!triggered&&!bullets.empty()){
+            // All conversions push to the front with a three-tick delay.
+            // List iterators stay valid: a bullet need only see ice that can
+            // already contact it, not ice just born earlier in this pass.
+            BucketHeads heads;
+            for(std::size_t i=0;i<buckets_.size();++i)heads[i]=buckets_[i].cbegin();
+            for(const auto& bullet:bullets){
+                if(!canFreezeBullet(bullet.state.flags,bullet.state.freezePolicy,bullet.lifeClock))continue;
+                const bool overlap=contact(bullet,heads,error);if(!error.empty())return fail(error,error);
+                if(overlap&&!convert(bullet,mask_,heads,error))return false;
             }
         }
         for(auto& bucket:buckets_)for(auto cursor=bucket.begin();cursor!=bucket.end();){

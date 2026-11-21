@@ -1,3 +1,5 @@
+import {takeOwnedDrawValidation} from './world-presentation.mjs';
+
 export class FrameStepper {
   constructor() {
     this.previous = null;
@@ -33,6 +35,7 @@ export class FrameStepper {
 // Display-only history. Native game/input clocks never enter this data helper.
 const presentationScalars=['x','y','z','sx','sy'];
 const presentationAngles=['rotation','rx','ry'];
+const motionFields=[...presentationScalars,...presentationAngles];
 const presentationIdentityFields=['id','parent','drawPass','bank','sprite','entry','script','layer','mode','anchorX','anchorY','blend','flags','flags2','effectSystem','stageSurface'];
 const presentationNumberFields=[...presentationScalars,...presentationAngles,'width','height','u','v','u0','v0','u1','v1','uvScaleX','uvScaleY','clock','visualTicks'];
 const continuousWorldPasses=new Set(['hostile-bullets','hostile-lasers','player','playerShotGroup','items','frozen-bullets']);
@@ -55,32 +58,49 @@ function continuousWorldRecord(record){
   return continuousWorldPasses.has(pass)||record.effectSystem==='unified-primary'
     ||pass===undefined&&(id>=2000000&&id<7000000||id>=8000000&&id<9000000||id>=13000000&&id<15000000||id>=30000000&&id<31000000);
 }
-function uniquePresentationRecords(records){
-  const index=new Map();
-  for(const record of records){const key=presentationKey(record);if(key!==null)index.set(key,index.has(key)?null:record);}
-  return index;
-}
 function displayRecordIndex(records){
-  const ids=new Map();let ambiguous=false;
+  const ids=new Map();let duplicates=null;
   for(const record of records){
-    if(!Number.isSafeInteger(record.id)||record.id<0||record.id>0xffffffff)continue;
-    if(ids.has(record.id)){ambiguous=true;ids.set(record.id,null);}else ids.set(record.id,record);
+    const id=record.id;
+    if(!Number.isSafeInteger(id)||id<0||id>0xffffffff)continue;
+    const first=ids.get(id);
+    if(!first){ids.set(id,record);continue;}
+    duplicates??=new Map();
+    let keys=duplicates.get(id);
+    if(!keys){keys=new Map([[presentationKey(first),first]]);duplicates.set(id,keys);}
+    const key=presentationKey(record);keys.set(key,keys.has(key)?null:record);
   }
-  return {ids,keys:ambiguous?uniquePresentationRecords(records):null};
+  return {ids,duplicates};
 }
-function samePresentationIdentity(first,last){
-  for(const key of presentationIdentityFields)if(first[key]!==last[key])return presentationKey(first)===presentationKey(last);
-  return first.geometry?.kind===last.geometry?.kind&&first.geometry?.owner===last.geometry?.owner&&first.geometry?.column===last.geometry?.column;
+function samePresentationIdentity(first,last,compareGeometryKey){
+  // Keep the hot comparison on concrete fields; the rarely needed key path
+  // still handles absent/null metadata exactly like the generic index.
+  if(first.parent!==last.parent||first.drawPass!==last.drawPass||first.bank!==last.bank||first.sprite!==last.sprite
+    ||first.entry!==last.entry||first.script!==last.script||first.layer!==last.layer||first.mode!==last.mode
+    ||first.anchorX!==last.anchorX||first.anchorY!==last.anchorY||first.blend!==last.blend||first.flags!==last.flags
+    ||first.flags2!==last.flags2||first.effectSystem!==last.effectSystem||first.stageSurface!==last.stageSurface)
+      return presentationKey(first)===presentationKey(last);
+  return first.geometry?.kind===last.geometry?.kind&&first.geometry?.owner===last.geometry?.owner&&first.geometry?.column===last.geometry?.column
+    ||compareGeometryKey&&presentationKey(first)===presentationKey(last);
+}
+function previousDisplayRecord(before,now,record){
+  const first=before.ids.get(record.id);if(!first)return null;
+  const earlier=before.duplicates?.get(record.id),later=now.duplicates?.get(record.id);
+  if(!earlier&&!later)return samePresentationIdentity(first,record,before.duplicates||now.duplicates)?first:null;
+  const key=presentationKey(record);
+  if(later&&!later.get(key))return null;
+  return earlier?(earlier.get(key)??null):presentationKey(first)===key?first:null;
 }
 function detachedPresentation(snapshot,owned=false){
   if(!snapshot||!Number.isSafeInteger(snapshot.generation)||snapshot.generation<1||!Number.isInteger(snapshot.stage)||snapshot.stage<1||snapshot.stage>16
     ||!Number.isSafeInteger(snapshot.frame)||snapshot.frame<0||!Array.isArray(snapshot.records)||snapshot.records.length>65536)
     throw new Error('Invalid display presentation snapshot');
-  const records=owned?snapshot.records:snapshot.records.map(cloneDisplayRecord);let vertices=0;
-  for(const record of records){
+  const records=owned?snapshot.records:snapshot.records.map(cloneDisplayRecord),validated=owned?takeOwnedDrawValidation(records):null;
+  let vertices=validated?.vertices??0;
+  for(const record of validated?.unchecked??records){
     if(!record||typeof record!=='object'||Array.isArray(record))
       throw new Error('Invalid display presentation record');
-    for(const key of presentationNumberFields)if(Object.hasOwn(record,key)&&!Number.isFinite(record[key]))throw new Error('Invalid display presentation record');
+    for(const key of presentationNumberFields)if(!Number.isFinite(record[key])&&Object.hasOwn(record,key))throw new Error('Invalid display presentation record');
     if(record.geometry!==undefined){
       const geometry=record.geometry;
       if(!geometry||!Array.isArray(geometry.vertices)||geometry.vertices.length>65536||(vertices+=geometry.vertices.length)>65536)
@@ -96,30 +116,47 @@ function detachedPresentation(snapshot,owned=false){
   return detached;
 }
 function jumpedPosition(first,last){
-  let squared=0;
-  for(const key of ['x','y','z'])if(Number.isFinite(first[key])&&Number.isFinite(last[key]))squared+=(last[key]-first[key])**2;
-  return squared>128**2;
+  const x=Number.isFinite(first.x)&&Number.isFinite(last.x)?last.x-first.x:0,
+    y=Number.isFinite(first.y)&&Number.isFinite(last.y)?last.y-first.y:0,
+    z=Number.isFinite(first.z)&&Number.isFinite(last.z)?last.z-first.z:0;
+  return x*x+y*y+z*z>128**2;
 }
 function sameVertexMetadata(first,last){
   const a=Object.keys(first).filter(key=>!['x','y','z'].includes(key)),b=Object.keys(last).filter(key=>!['x','y','z'].includes(key));
   return a.length===b.length&&a.every(key=>Object.hasOwn(last,key)&&first[key]===last[key])
     &&Object.hasOwn(first,'z')===Object.hasOwn(last,'z');
 }
-function blendDisplayRecord(first,last,alpha){
-  if(!continuousWorldRecord(last)||jumpedPosition(first,last)
-    ||['clock','visualTicks'].some(key=>Number.isFinite(first[key])&&Number.isFinite(last[key])&&last[key]<first[key]))return;
-  last.presentationInterpolated=true;
-  for(const key of presentationScalars)if(Number.isFinite(first[key])&&Number.isFinite(last[key]))last[key]=first[key]+(last[key]-first[key])*alpha;
-  for(const key of presentationAngles)if(Number.isFinite(first[key])&&Number.isFinite(last[key])){
-    const distance=last[key]-first[key];last[key]=first[key]+(distance===0?distance:Math.atan2(Math.sin(distance),Math.cos(distance)))*alpha;
+function canBlendGeometry(a,b){
+  return a&&b&&continuousGeometryKinds.has(b.kind)&&a.kind===b.kind&&a.owner===b.owner&&a.column===b.column&&a.vertices.length===b.vertices.length
+    &&!a.vertices.some((vertex,index)=>!sameVertexMetadata(vertex,b.vertices[index])||jumpedPosition(vertex,b.vertices[index]));
+}
+function displayMotionMask(first,last){
+  let mask=0;
+  for(let i=0;i<motionFields.length;++i){
+    const key=motionFields[i],a=first[key],b=last[key];
+    if((a!==b||Object.is(b,-0))&&Number.isFinite(a)&&Number.isFinite(b))mask|=1<<i;
   }
+  return mask;
+}
+function blendDisplayRecord({first,last,mask,geometry},output,alpha){
+  for(let bits=mask;bits;bits&=bits-1){
+    const i=31-Math.clz32(bits&-bits),key=motionFields[i],a=first[key],delta=last[key]-a;
+    const angle=i>=presentationScalars.length&&delta!==0?Math.atan2(Math.sin(delta),Math.cos(delta)):delta;
+    output[key]=a+angle*alpha;
+  }
+  if(!geometry)return;
   const a=first.geometry,b=last.geometry;
-  if(!a||!b||!continuousGeometryKinds.has(b.kind)||a.kind!==b.kind||a.owner!==b.owner||a.column!==b.column||a.vertices.length!==b.vertices.length
-    ||a.vertices.some((vertex,index)=>!sameVertexMetadata(vertex,b.vertices[index])||jumpedPosition(vertex,b.vertices[index])))return;
   for(let index=0;index<b.vertices.length;++index)for(const key of ['x','y','z']){
     if(Number.isFinite(a.vertices[index][key])&&Number.isFinite(b.vertices[index][key]))
-      b.vertices[index][key]=a.vertices[index][key]+(b.vertices[index][key]-a.vertices[index][key])*alpha;
+      output.geometry.vertices[index][key]=a.vertices[index][key]+(b.vertices[index][key]-a.vertices[index][key])*alpha;
   }
+}
+function checkDisplayPhase(alpha){
+  if(!Number.isFinite(alpha)||alpha<0||alpha>1)throw new Error('Invalid display interpolation phase');
+}
+function copyDisplaySample(record){
+  for(const key in record)if(record[key]!==null&&typeof record[key]==='object')return structuredClone(record);
+  return {...record};
 }
 
 export class WorldPresentationInterpolator {
@@ -127,8 +164,8 @@ export class WorldPresentationInterpolator {
   #current=null;
   #index=null;
   #pairs=null;
-  #deep=null;
-  reset(){this.#previous=null;this.#current=null;this.#index=null;this.#pairs=null;this.#deep=null;}
+  #draw=null;
+  reset(){this.#previous=null;this.#current=null;this.#index=null;this.#pairs=null;this.#draw=null;}
   capture(snapshot){return this.#capture(snapshot,false);}
   captureOwned(snapshot){return this.#capture(snapshot,true);}
   #capture(snapshot,owned){
@@ -136,29 +173,49 @@ export class WorldPresentationInterpolator {
     if(current&&current.generation===next.generation&&current.stage===next.stage&&current.frame===next.frame)return false;
     const consecutive=current&&current.generation===next.generation&&current.stage===next.stage&&next.frame===current.frame+1;
     const index=displayRecordIndex(next.records);
-    let pairs=null;
+    const pairs=[];
     if(consecutive){
-      if(index.keys||this.#index.keys){
-        const now=index.keys??uniquePresentationRecords(next.records),before=this.#index.keys??uniquePresentationRecords(current.records);
-        pairs=next.records.map(record=>{const key=presentationKey(record);return key!==null&&now.get(key)?before.get(key)??null:null;});
-      }else pairs=next.records.map(record=>{const before=this.#index.ids.get(record.id);return before&&samePresentationIdentity(before,record)?before:null;});
+      for(let i=0;i<next.records.length;++i){
+        const last=next.records[i];if(!continuousWorldRecord(last))continue;
+        const first=previousDisplayRecord(this.#index,index,last);
+        if(!first||jumpedPosition(first,last)
+          ||(Number.isFinite(first.clock)&&Number.isFinite(last.clock)&&last.clock<first.clock)
+          ||(Number.isFinite(first.visualTicks)&&Number.isFinite(last.visualTicks)&&last.visualTicks<first.visualTicks))continue;
+        pairs.push({index:i,first,last,mask:displayMotionMask(first,last),geometry:canBlendGeometry(first.geometry,last.geometry)});
+      }
     }
-    const deep=next.records.map(record=>{for(const key in record)if(record[key]!==null&&typeof record[key]==='object')return true;return false;});
-    this.#previous=consecutive?current:null;this.#pairs=pairs;this.#deep=deep;this.#index=index;
+    this.#previous=consecutive?current:null;this.#pairs=pairs;this.#index=index;this.#draw=null;
     this.#current=next;return true;
   }
+  // The renderer borrows this view synchronously. Only records that move need
+  // writable copies, and their storage is reused until the next World frame.
   sampleForDraw(alpha){
-    if(alpha===1)return this.#current;
-    return this.sample(alpha);
+    checkDisplayPhase(alpha);
+    if(alpha===1||!this.#previous)return this.#current;
+    if(!this.#draw){
+      const records=this.#current.records.slice();
+      for(const {index,last,geometry} of this.#pairs){
+        const copy={...last,presentationInterpolated:true};
+        if(geometry)copy.geometry={...last.geometry,vertices:last.geometry.vertices.map(vertex=>({...vertex}))};
+        records[index]=copy;
+      }
+      this.#draw={...this.#current,records};
+    }
+    return this.#blend(this.#draw,alpha);
   }
   sample(alpha){
-    if(!Number.isFinite(alpha)||alpha<0||alpha>1)throw new Error('Invalid display interpolation phase');
+    checkDisplayPhase(alpha);
     if(!this.#current)return null;
-    const output={...this.#current,records:this.#current.records.map((record,index)=>this.#deep[index]?structuredClone(record):{...record})};
-    if(this.#current.background)output.background=structuredClone(this.#current.background);
-    if(!this.#previous||alpha===1)return output;
-    if(this.#previous.background&&output.background)blendDisplayBackground(this.#previous.background,output.background,alpha);
-    for(let index=0;index<output.records.length;++index){const before=this.#pairs[index];if(before)blendDisplayRecord(before,output.records[index],alpha);}
+    const output={...this.#current,records:this.#current.records.map(copyDisplaySample)};
+    if(alpha!==1)for(const {index} of this.#pairs)output.records[index].presentationInterpolated=true;
+    return this.#blend(output,alpha);
+  }
+  #blend(output,alpha){
+    if(this.#current.background){
+      output.background=structuredClone(this.#current.background);
+      if(alpha!==1&&this.#previous?.background)blendDisplayBackground(this.#previous.background,output.background,alpha);
+    }
+    if(alpha!==1)for(const pair of this.#pairs)if(pair.mask||pair.geometry)blendDisplayRecord(pair,output.records[pair.index],alpha);
     return output;
   }
 }

@@ -28,9 +28,9 @@ export class OwnedEndingReceipts{
     }
     async commit(key,metadata,payload=encoded(metadata)){return this.#commitBounded(key,metadata,payload,4*1024*1024);}
     async commitOrdinaryReplay(key,metadata,payload){
-        if(!['ordinary-full-variable-replay-save','extra-full-variable-replay-save'].includes(metadata?.domain)||!Number.isSafeInteger(metadata.generation)||metadata.generation<1
+        if(!['ordinary-full-variable-replay-save','extra-full-variable-replay-save','practice-full-variable-replay-save'].includes(metadata?.domain)||!Number.isSafeInteger(metadata.generation)||metadata.generation<1
             ||!Number.isSafeInteger(metadata.serial)||metadata.serial<1||!Number.isSafeInteger(metadata.logicalTick)||metadata.logicalTick<1
-            ||!Number.isSafeInteger(metadata.index)||metadata.index<0||metadata.index>=25||!Number.isSafeInteger(metadata.rawBytes)||metadata.rawBytes<(metadata.domain==='extra-full-variable-replay-save'?299:580)||metadata.rawBytes>32*1024*1024
+            ||!Number.isSafeInteger(metadata.index)||metadata.index<0||metadata.index>=25||!Number.isSafeInteger(metadata.rawBytes)||metadata.rawBytes<(metadata.domain==='practice-full-variable-replay-save'?298:metadata.domain==='extra-full-variable-replay-save'?299:580)||metadata.rawBytes>32*1024*1024
             ||!(payload instanceof Uint8Array)||payload.length!==metadata.rawBytes+128+32+3412)
             throw new Error('Ordinary complete replay receipt bounded domain rejected');
         return this.#commitBounded(key,metadata,payload,32*1024*1024+128+32+3412);

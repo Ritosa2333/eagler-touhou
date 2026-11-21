@@ -8,17 +8,31 @@ export function circleLineVertices(record){
   return output;
 }
 export function ringStripVertices(record){
+  return expandTriangleStrip(ringStripCorners(record));
+}
+export function ringStripCorners(record){
   const vertices=record?.geometry?.vertices;
   if((record?.mode!==9&&record?.mode!==14)||record?.geometry?.kind!=='anm-ring'||!Array.isArray(vertices)||vertices.length<4||vertices.length>8192||vertices.length%2){
     throw new Error('Invalid original Boss ring geometry');
   }
+  return packTriangleStrip(vertices,false,false,'Invalid original Boss ring vertex');
+}
+const finiteStripValue=value=>Number.isFinite(value)&&Math.abs(value)<=65536;
+function packTriangleStrip(vertices,flipY,flat,error){
+  const output=new Float32Array(vertices.length*8);let offset=0;
   for(const vertex of vertices){
-    if(!vertex||![vertex.x,vertex.y,vertex.z,vertex.rhw,vertex.u,vertex.v].every(value=>Number.isFinite(value)&&Math.abs(value)<=65536)||vertex.rhw!==1
-      ||!Number.isInteger(vertex.color)||vertex.color<0||vertex.color>0xffffffff)throw new Error('Invalid original Boss ring vertex');
+    if(!vertex||!finiteStripValue(vertex.x)||!finiteStripValue(vertex.y)||!finiteStripValue(vertex.z)||vertex.rhw!==1
+      ||flat&&vertex.z!==0||!finiteStripValue(vertex.u)||!finiteStripValue(vertex.v)||!validColorWord(vertex.color))throw new Error(error);
+    const {x,y,u,v,color}=vertex;
+    output[offset++]=x;output[offset++]=y;output[offset++]=u;output[offset++]=flipY?1-v:v;
+    output[offset++]=(color>>>16&255)/255;output[offset++]=(color>>>8&255)/255;output[offset++]=(color&255)/255;output[offset++]=(color>>>24)/255;
   }
-  const output=new Float32Array((vertices.length-2)*3*8);let offset=0;
-  const emit=vertex=>{output.set([vertex.x,vertex.y,vertex.u,vertex.v,...argbColor(vertex.color)],offset);offset+=8;};
-  for(let index=2;index<vertices.length;++index){emit(vertices[index&1?index-1:index-2]);emit(vertices[index&1?index-2:index-1]);emit(vertices[index]);}
+  return output;
+}
+function expandTriangleStrip(corners){
+  const count=corners.length/8,output=new Float32Array((count-2)*24);let offset=0;
+  const emit=vertex=>{const at=vertex*8;output.set(corners.subarray(at,at+8),offset);offset+=8;};
+  for(let i=2;i<count;++i){emit(i&1?i-1:i-2);emit(i&1?i-2:i-1);emit(i);}
   return output;
 }
 export function messageTextLayout(state,variant,{nativeRasters=false}={}){
@@ -123,26 +137,14 @@ export function selector3QuadVertices(record){
 }
 
 export function triangleStripVertices(record,{flipY=false}={}) {
+  return expandTriangleStrip(triangleStripCorners(record,{flipY}));
+}
+export function triangleStripCorners(record,{flipY=false}={}) {
   const vertices=record?.geometry?.vertices;
   if(record?.mode!==12||record.geometry?.kind!=='triangle-strip'||!Array.isArray(vertices)||vertices.length!==34){
     throw new Error('Invalid original526 triangle-strip geometry');
   }
-  for(const vertex of vertices){
-    if(!vertex||![vertex.x,vertex.y,vertex.z,vertex.rhw,vertex.u,vertex.v].every(value=>Number.isFinite(value)&&Math.abs(value)<=65536)
-      ||vertex.rhw!==1||vertex.z!==0||!Number.isInteger(vertex.color)||vertex.color<0||vertex.color>0xffffffff){
-      throw new Error('Invalid bounded original526 vertex');
-    }
-  }
-  const output=new Float32Array((vertices.length-2)*3*8);
-  let offset=0;
-  const emit=index=>{
-    const vertex=vertices[index];
-    output.set([vertex.x,vertex.y,vertex.u,flipY?1-vertex.v:vertex.v,...argbColor(vertex.color)],offset);offset+=8;
-  };
-  for(let index=2;index<vertices.length;++index){
-    emit(index&1?index-1:index-2);emit(index&1?index-2:index-1);emit(index);
-  }
-  return output;
+  return packTriangleStrip(vertices,flipY,true,'Invalid bounded original526 vertex');
 }
 
 export function circleFanVertices(record){

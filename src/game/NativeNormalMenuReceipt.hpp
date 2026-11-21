@@ -19,7 +19,7 @@ public:
     int prepare(const Menu& menu,std::string& error){
         error.clear();if(!generation_||generation_!=menu.normalGeneration()||!menu.sealedPostrun()||pending()){
             error="ordinary menu receipt generation or pending boundary changed";return -1;}
-        const auto& profile=menu.profile();if(profile==acknowledged_&&menu.normalNameConfirmationSerial()==acknowledgedConfirmation_)return 0;
+        const auto& profile=menu.profile();if(menu.normalNameConfirmationSerial()==acknowledgedConfirmation_&&(menu.practiceSealed()||profile==acknowledged_))return 0;
         pendingConfirmation_=menu.normalNameConfirmationSerial();
         if(profile.size()!=52232){error="ordinary full menu profile size changed";return -1;}
         const auto name=std::span<const std::uint8_t>(profile).subspan(record::NativeScoreProfile::StatsOffset+12,9);
@@ -34,7 +34,7 @@ public:
         word(0x31504d4eu);word(1);word(80+52232+9);word(generation_);word(serial_);word(tick_);
         word(route);word(rank);word(unsigned(position+1));word(unsigned(menu.normalScore()));word(menu.normalContinues());
         word(52232);word(digest(profile));word(9);word(menu.normalPhase());word(menu.normalSubphase()|(menu.normalNameCommitted()?0x100u:0u)|(menu.normalReplayNameCommitted()?0x200u:0u));
-        word(menu.normalFrames());word(record::NativeScoreProfile::StatsOffset+12);word(rowName);word(menu.extraSealed()?1:0);
+        word(menu.normalFrames());word(record::NativeScoreProfile::StatsOffset+12);word(rowName);word(menu.practiceSealed()?2:menu.extraSealed()?1:0);
         pending_.insert(pending_.end(),profile.begin(),profile.end());pending_.insert(pending_.end(),name.begin(),name.end());return 1;
     }
     bool acknowledge(const Menu& menu,std::span<const std::uint8_t> bytes,std::string& error){

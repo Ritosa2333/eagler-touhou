@@ -53,12 +53,15 @@ async function launch(config=null){
  launchAttempted=true;busy=true;start.disabled=true;file.disabled=true;retry.hidden=true;status.textContent='正在进入游戏…';
  try{
   requireCurrent();installResourceFetchProvider(provider);
-  if(config){pageLaunch=createPageLaunchContext({config,onPresented:actual=>launcher?.notePresented(actual)});installPageLaunchContext(pageLaunch);}
+  if(config){pageLaunch=createPageLaunchContext({config,onPresented:actual=>launcher?.notePresented(actual),
+    onStartupPresented:actual=>launcher?.noteStartupPresented(actual),onExit:()=>launcher?.requestExit()});installPageLaunchContext(pageLaunch);}
   else if(localLaunchPanel){const settings=localLaunchPanel.settings();configureLocalPlayerLaunch(settings);if(settings.openLayout)writeLocalPlayerSettings(window,{openLayout:false});}
+  // The original startup ANM is drawn before the game reports Title ready.
+  if(main){main.hidden=false;loader.hidden=true;}
   await import('./play.mjs');requireCurrent();
   if(pageLaunch)await pageLaunch.waitRuntime();requireCurrent();
   launched=true;loader.remove();if(main)main.hidden=false;store?.close();
- }catch(error){if(isCurrent())status.textContent='启动失败，请重新打开页面：'+error.message;throw error;}
+ }catch(error){if(isCurrent()){if(main)main.hidden=true;loader.hidden=false;status.textContent='启动失败，请重新打开页面：'+error.message;}throw error;}
 }
 async function runOnline(){
  if(launched||launchAttempted||!isCurrent())return;
@@ -71,7 +74,7 @@ async function runOnline(){
   if(launcher)hostedReady();else if(new URLSearchParams(location.search).has('settings'))start.hidden=false;else await launch();
  }catch(error){
   next?.dispose();
-  if(isCurrent()&&!launchAttempted){status.textContent='游戏资源加载失败：'+error.message;retry.hidden=false;retry.disabled=false;}
+  if(isCurrent()&&!launchAttempted){loader.hidden=false;status.textContent='游戏资源加载失败：'+error.message;retry.hidden=false;retry.disabled=false;}
  }finally{if(!launchAttempted)busy=false;}
 }
 file.addEventListener('change',async()=>{
@@ -89,6 +92,7 @@ file.addEventListener('change',async()=>{
 start.addEventListener('click',()=>{if(!busy)return launch().catch(()=>{});});
 retry.addEventListener('click',()=>{if(!busy)return deployment?runOnline():discover();});
 function closeEntry(){
+ if(pageGone)return;
  pageGone=true;controller.abort();
  try{replayFiles?.dispose();}finally{try{managedOwner?.dispose();}finally{try{pageLaunch?.abort();}finally{try{provider?.dispose();}finally{store?.close();status.textContent='游戏已退出。';}}}}
 }
@@ -115,11 +119,12 @@ async function discover(){
   }else{
    hint.textContent='选择 TH128 资源包，导入后即可开始游戏。';meter.hidden=true;
    if(!store)throw storeError??new Error('浏览器未启用本地资源存储，请允许此页面使用存储后重试。');
-   next=await reopenDatPackage(options());requireCurrent();await ready(next);next=null;file.disabled=false;if(launcher)hostedReady();
+   next=await reopenDatPackage(options());requireCurrent();await ready(next);next=null;file.disabled=false;if(launcher){if(!provider)loader.hidden=false;hostedReady();}
   }
  }catch(error){
   nextOwner?.dispose();next?.dispose();
   if(isCurrent()){
+   loader.hidden=false;
    status.textContent='游戏准备失败：'+error.message;
    if(managedPackage)launcher?.reportError(error);
    else{retry.textContent='重试加载';retry.hidden=false;retry.disabled=false;}
@@ -176,5 +181,8 @@ launcher=mountLauncherSession({window:parentWindow,document,location,hooks:{
  },
  exit(){closeEntry();}
 }});
-if(!launcher)localLaunchPanel=mountLocalLaunchPanel({window,loader,file,start,retry,hint,meter,status,signal:controller.signal});
+if(launcher){
+ loader.hidden=true;
+ if(document.documentElement)document.documentElement.dataset.managed='true';
+}else localLaunchPanel=mountLocalLaunchPanel({window,loader,file,start,retry,hint,meter,status,signal:controller.signal});
 await discover();

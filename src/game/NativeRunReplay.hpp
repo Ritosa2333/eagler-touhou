@@ -48,6 +48,8 @@ public:
     unsigned stage()const{return lastStage_;}
     unsigned route()const{return route_;}
     unsigned rank()const{return rank_;}
+    double elapsedSeconds()const{return seconds_;}
+    double activeSeconds()const{return activeSeconds_;}
     bool configuredFor(unsigned id)const{return !stages_.empty()&&lastStage_==id;}
     void begin(unsigned stage,unsigned rank,unsigned seed,unsigned shot,unsigned continues,std::int32_t score,
                std::int32_t pointValue,std::int32_t motivation,std::int32_t perfect,float frozenArea,

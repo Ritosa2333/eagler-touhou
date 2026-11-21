@@ -1,7 +1,9 @@
 import {fetchResource,isImportedResourceMode} from './resource-fetch.mjs';
 import {readWorldDrawRecords} from './runtime/world-presentation.mjs';
 import {mountWebInput} from './runtime/web-input.mjs';
+import {mountStageGamepad,mappedGamepadCodes,rawGamepadDirections,readBrowserGamepad} from './runtime/gamepad-input.mjs';
 import {getPageLaunchContext} from './runtime/page-launch-context.mjs';
+import {OriginalTitleDemoClock,originalTitleDemoInputs,originalTitleDemoLimit,originalStartupSignatureBank,showOriginalStartup,showOriginalTransition,bindOriginalDemoPlay,duckOriginalDemoMusic} from './runtime/original-title-scenes.mjs';
 import {musicOutput,musicOutputEnabled} from './runtime/music-output.mjs';
 import {localPlayerLaunch,writeLocalPlayerSettings} from './runtime/local-player-settings.mjs';
 import {bindGameAudioMix,applyGameAudioMix} from './runtime/game-audio-mix.mjs';
@@ -10,7 +12,7 @@ import {mountLocalBindings} from './runtime/local-input-bindings.mjs';
 import {mountThprac128Menu} from './runtime/thprac128-menu.mjs';
 import {createThprac128Tools,Thprac128LogicClock,Thprac128Settings,mountThprac128ToolsPanel,validateThprac128Speed} from './runtime/thprac128-tools.mjs';
 import {createThprac128Recorder} from './runtime/thprac128-recording.mjs';
-import {readThprac128Replay,Thprac128ReplayPlayback} from './runtime/thprac128-replay.mjs';
+import {readThprac128Replay,Thprac128ReplayPlayback,practiceReplayMatchesRuntime} from './runtime/thprac128-replay.mjs';
 
 import {createThprac128Session,prepareThprac128Native,readThprac128Native,thprac128RuntimeSupported,thprac128Presentation} from './runtime/thprac128.mjs';
 import {QualificationOwner,evaluateOwnedQualification,EX_QUALIFICATION_SCHEMA} from './runtime/ex-qualification.mjs';
@@ -964,7 +966,7 @@ const thpracDraft={mask:0,speed:validateThprac128Speed()};
 const thpracDraftOwner=state.thpracDraftOwner=Object.freeze({pending:true,playback:false,snapshot:()=>({mask:thpracDraft.mask,frame:0}),speedFor:()=>thpracDraft.speed,setMask(mask){if(!Number.isInteger(mask)||mask<0||mask>127)throw new Error('Invalid practice mask');thpracDraft.mask=mask;},setSpeed(value){thpracDraft.speed=validateThprac128Speed(value);}});
 let thpracRouteShown=false;
 function syncThpracRouteMenu(snapshot){
- if(snapshot.page!==2){thpracRouteShown=false;state.thpracRouteTarget=null;return;}
+  if(snapshot.page!==2){practiceMenu?.dismissTitleRoute?.();thpracRouteShown=false;state.thpracRouteTarget=null;return;}
  if(!snapshot.ready||snapshot.transitioning||state.launcherExited||!state.stageCatalog||!thprac128RuntimeSupported(state.module)||find('#variant')?.disabled===true)return;
  if(!thpracRouteShown&&thpracSettings.enabled&&practiceMenu&&!menu.launching&&!state.handoff&&!state.pendingCarryToken&&!state.nativePausePending&&!state.replayPlayback){thpracRouteShown=true;void practiceMenu.open({route:true});}
  if(practiceMenu?.isOpen){if(Number.isInteger(state.thpracRouteTarget)&&state.thpracRouteTarget!==snapshot.selection){const code=(state.thpracRouteTarget-snapshot.selection+4)%4===1?'ArrowRight':'ArrowLeft';handleNativeTitleKey(code);state.mainController?.keyUp(code);}else{state.thpracRouteTarget=null;practiceMenu.syncRoute(snapshot.selection,menu.difficulty);}}
@@ -1017,7 +1019,7 @@ function resetHighFrameratePresentation(){
 }
 function highFramerateEligible(){
   return highFramerateEnabled&&!highFramerateCatchup&&state.worldMode&&state.shotMode&&state.active&&!state.paused&&!state.handoff
-    &&!state.endingHost&&!state.endingLoading&&!menu.pauseOpen&&!menu.fault&&!document.hidden;
+    &&!state.endingHost&&!state.endingLoading&&!state.normalPostrun&&!menu.pauseOpen&&!menu.fault&&!document.hidden;
 }
 function highFramerateOwnerMatches(){
   return highFramerateOwner?.module===state.module&&highFramerateOwner?.selection===state.stageSelection
@@ -1436,7 +1438,7 @@ async function watchThpracReplayFromMenu(slotOverride=null){
  const metadata=readThprac128Replay(row.bytes);if(!metadata)throw new Error('所选录像不是带TH128 thprac参数的练习录像');
  if(module!==state.module||action!==state.action||state.launcherExited)throw new DOMException('Practice replay page changed','AbortError');
  const owner=new Thprac128ReplayPlayback(row.bytes,slot),next=owner.firstSelection(),selection=thpracStageSelection(next.thprac).selection;
- selection.seed=next.seed;selection.thpracReplayIdentity=owner.identity;state.replayPlayback=owner;state.replayFinished=false;state.thpracRecorder?.close();state.thpracRecorder=null;practiceMenu?.close({focus:false});
+ selection.seed=next.seed;selection.thpracReplayIdentity=owner.identity;state.replayPlayback=owner;state.thpracRecorder?.close();state.thpracRecorder=null;practiceMenu?.close({focus:false});
  try{await startLaunch(selection,'route');if(state.replayPlayback!==owner||lastCheckWorldError||state.stageSelection!==selection||!state.worldMode)throw new Error(lastCheckWorldError||'Practice replay did not adopt its recorded stage');return owner;}
  catch(error){if(state.replayPlayback===owner){try{owner.cancel();}catch{}state.replayPlayback=null;state.active=false;state.paused=true;}throw error;}
 }
@@ -1578,6 +1580,7 @@ function enterFaultMenu(reason){
   status('运行停止；↑↓ 选择 RESTART/TITLE，Z/ENTER 执行，X/ESC 返回标题。');
 }
 function restartFaultWorld(){
+  if(state.replayPlayback){void restartOwnedReplay().catch(error);return;}
   if(!state.stageSelection){status('没有可重建的 stage selection');faultOverlay();return;}
   const prior=state.stageSelection;
   const selection=prior.thprac?inheritThpracTools(thpracStageSelection(prior.thpracOrigin??prior.thprac).selection):prior;
@@ -1591,10 +1594,11 @@ function handleFaultKey(code){
     menu.pause=code==='ArrowDown'||code==='ArrowRight'?2:1;faultOverlay();return true;
   }
   if(code==='KeyZ'||code==='Enter'){
-    if(menu.pause===2)returnToTitle();else restartFaultWorld();
+    if(menu.pause===2){if(state.replayPlayback)returnOwnedReplayToTitle();else returnToTitle();}
+    else restartFaultWorld();
     return true;
   }
-  if(code==='KeyX'||code==='Escape'){returnToTitle();return true;}
+  if(code==='KeyX'||code==='Escape'){if(state.replayPlayback)returnOwnedReplayToTitle();else returnToTitle();return true;}
   return true;
 }
 function error(problem){state.active=false;state.paused=true;
@@ -1855,7 +1859,7 @@ function syncOriginalFPSPresentation(rate,draws){
   find('#game').dataset.originalFpsPresentation=JSON.stringify({rate,text:originalFPSText(rate),glyphCount:draws.length,measured:rate!==null});
 }
 function draw(interpolation=1){
-  if(!state.module||!state.renderer)return false;
+  if(!state.module||!state.renderer||state.sceneLoading)return false;
   if(state.normalPostrun){state.normalPostrun.redraw();syncOriginalFPSPresentation(null,[]);return false;}
   if(state.endingHost){state.endingHost.redraw();syncOriginalFPSPresentation(null,[]);return false;}
   if(state.worldMode){window.th128Debug.redrawEmission({interpolation});return !!state.shotMode;}
@@ -1875,11 +1879,11 @@ function draw(interpolation=1){
   return false;
 }
 
-function stopAudio({keepContext=false,keepPracticeMusic=null}={}){
+function stopAudio({keepContext=false,keepPracticeMusic=null,keepTitleMusic=false}={}){
   const kept=keepPracticeMusic&&keepPracticeMusic===state.stageMusic&&!keepPracticeMusic.disposed?keepPracticeMusic:null;
   state.extraRun?.close();state.extraRun=null;state.extraPresentation=null;
   closeOrdinaryWorldAudio();
-  disposeOriginalMain();
+  disposeOriginalMain({keepTitleMusic});
   state.thpracRecorder?.close();state.thpracRecorder=null;state.thpracReplayRows=null;state.thpracTools?.close();state.thpracTools=null;thpracLogicClock.reset();thpracToolsPanel?.close();
   state.replayStore?.close();state.replayStore=null;state.replaySlots=null;state.replayNativeBound=false;state.replayClockLast=null;
   const retiredPause=state.nativePause;state.nativePause=null;state.nativePausePending=null;
@@ -1888,9 +1892,9 @@ function stopAudio({keepContext=false,keepPracticeMusic=null}={}){
   ++menu.musicRequestId;stopMenuMusic();menuMusic.cache.clear();if(!kept)state.stageMusic?.dispose();state.stageMusic=null;
   state.gameSounds?.dispose();state.gameSounds=null;state.soundCursor=0;state.soundWindow=null;
   disposeOriginalStageTextRasters(state.stageTextRasters);state.stageTextRasters=null;
-  if(state.source){state.source.stop();state.source.disconnect();state.source=null;}
+  if(!keepTitleMusic&&state.source){state.source.stop();state.source.disconnect();state.source=null;}
   menu.audioUnlocked=false;menu.audioUnlockPromise=null;
-  if(!keepContext&&!kept&&state.audio){state.audio.close().catch(()=>{});state.audio=null;state.gain=null;}
+  if(!keepContext&&!keepTitleMusic&&!kept&&state.audio){state.audio.close().catch(()=>{});state.audio=null;state.gain=null;}
 }
 function stopTitleSource(){
   if(!state.source)return;
@@ -2022,7 +2026,7 @@ function drainGameSoundsLegacy(){
     state.soundWindow=readWindow;
   }
   let presentedThisDrain=0;
-  const present=!window.__TH128_FAST_REPLAY__;
+  const present=!window.__TH128_FAST_REPLAY__&&(!state.titleDemoRun||state.audio?.state==='running');
   if(typeof state.gameSounds?.consumeNativeRequest!=='function')throw new Error('Original sound identity consumer API is unavailable');
   while(readWindow.cursor<readWindow.count){
     const identifier=module._th128_world_sound_id(readWindow.cursor);
@@ -2079,29 +2083,51 @@ function assertSynchronousWorldDrainAllowed(){
 }
 function drainWorld(){assertSynchronousWorldDrainAllowed();drainGameSoundsLegacy();drainMusicControlLegacy();}
 async function prepareGameSounds(base,signal,tracks,selection=null){
+  const demo=state.titleDemoRun;
+  if(demo){
+    const audio=ensureTitleAudioContext(),gain=state.gain,queue=new GameSoundQueue(audio,gain);
+    try{
+      await queue.load(await readJson('/assets/runtime/sound-bindings.json',signal),base,safeAssetUrl,{signal});
+      return {audio,gain,queue,music:null,retainedTitle:demo};
+    }catch(problem){queue.dispose();throw problem;}
+  }
   const retained=selection?.thpracRetainFrom&&state.audio?.state!=='closed'&&state.stageMusic?.retainPracticeOwner(selection.thpracRetainFrom,selection,tracks[0]);
   const audio=retained?state.audio:new AudioContext(),gain=retained?state.gain:audio.createGain();
   if(!retained){gain.gain.value=Number(find('#volume').value)/100;gain.connect(audio.destination);if(localVolumes)bindGameAudioMix(audio,gain,localVolumes);}
   const queue=new GameSoundQueue(audio,gain),music=retained?state.stageMusic:new StageMusic(audio,gain);
   try{
-    await audio.resume();const bindings=await readJson('/assets/runtime/sound-bindings.json',signal);
+    await audio.resume();
+    const bindings=await readJson('/assets/runtime/sound-bindings.json',signal);
     await Promise.all([queue.load(bindings,base,safeAssetUrl,{signal}),retained?Promise.resolve():music.load(state.manifest.music,base,safeAssetUrl,{signal,tracks})]);
     return {audio,gain,queue,music,retained};
   }catch(problem){queue.dispose();music.dispose();await audio.close().catch(()=>{});throw problem;}
 }
 
-async function startAudio(){
-  if(!state.buffer||!state.track)return false;
+function installPreparedStageAudio(prepared){
+  stopAudio({keepContext:prepared?.retained===true,keepPracticeMusic:prepared?.retained?prepared.music:null,
+    keepTitleMusic:!!prepared?.retainedTitle});
+  if(!prepared)return;
+  state.audio=prepared.audio;state.gain=prepared.gain;state.gameSounds=prepared.queue;state.stageMusic=prepared.music;
+  if(prepared.retainedTitle)startTitleDemoMusic(prepared.retainedTitle,state.audio);
+  else{if(!state.stageMusic.source)state.stageMusic.start();recordOwnedHeardTrack(state.stageMusic.track.name).catch(error);}
+  state.soundCursor=0;state.soundWindow=null;
+}
+
+function ensureTitleAudioContext(){
   if(!state.audio||state.audio.state==='closed'){
-    state.audio=new AudioContext({sampleRate:state.track.sampleRate});
+    state.audio=new AudioContext({sampleRate:state.track?.sampleRate??44100});
     state.gain=state.audio.createGain();state.gain.gain.value=Number(find('#volume').value)/100;
     state.gain.connect(state.audio.destination);
     if(localVolumes)bindGameAudioMix(state.audio,state.gain,localVolumes);
   }
-  const audio=state.audio;
+  return state.audio;
+}
+async function startAudio(){
+  if(!state.buffer||!state.track)return false;
+  const audio=ensureTitleAudioContext();
   await audio.resume();
   if(state.audio!==audio||audio.state!=='running')return false;
-  if(!menu.suppressTitleAudio&&menu.page!=='music'&&!state.mainQuit){
+  if(!state.titleDemoRun&&!state.worldMode&&!menu.suppressTitleAudio&&menu.page!=='music'&&!state.mainQuit){
     if(!state.source)startTitleSource();
     else recordOwnedHeardTrack(state.track.name).catch(error);
   }
@@ -2283,11 +2309,53 @@ async function prepareFreshWorldModule(selection,bytesAt,signal){
   startedWorldModules.add(module);return module;
 }
 
+function beginOriginalSceneLoading(){
+  const {renderer,base,controller,manifest}=state;
+  if(!renderer||!controller||!manifest?.files?.some(row=>row.name==='ascii.anm')||window.__TH128_FAST_REPLAY__)return null;
+  state.sceneLoading?.close();
+  const signal=controller.signal,screen=find('.screen'),cover=find('#loading');
+  const cancel=new AbortController();let animation=null,closed=false;
+  const owner={ready:null,close(){
+    if(closed)return;closed=true;cancel.abort();animation?.close();signal.removeEventListener('abort',owner.close);
+    if(state.sceneLoading!==owner)return;
+    state.sceneLoading=null;delete screen.dataset.sceneLoading;cover.hidden=true;
+    clock.reset();originalMenuClock.reset();resetHighFrameratePresentation();
+  }};
+  if(signal.aborted)return null;
+  state.sceneLoading=owner;signal.addEventListener('abort',owner.close,{once:true});
+  screen.dataset.sceneLoading='true';cover.hidden=false;
+  let resource=state.transitionSceneResource;
+  if(resource?.controller!==controller||resource.renderer!==renderer){
+    resource={controller,renderer,module:(async()=>{
+      const [factory,response]=await Promise.all([runtimeFactory(signal),checkpointFetch(safeAssetUrl(base,'runtime/ascii.anm'),{signal})]);
+      if(!response.ok)throw new Error('原版载入动画资源不可用');
+      const bytes=new Uint8Array(await response.arrayBuffer());signal.throwIfAborted();
+      const native=await factory({print:()=>{},printErr:message=>console.warn(message)});
+      signal.throwIfAborted();const pointer=native._malloc(bytes.length);
+      if(!pointer)throw new Error('原版载入动画内存不可用');
+      try{native.HEAPU8.set(bytes,pointer);if(!native._th128_load_anm(11,pointer,bytes.length))throw new Error(native.UTF8ToString(native._th128_error()));}
+      finally{native._free(pointer);}
+      return native;
+    })()};
+    state.transitionSceneResource=resource;
+    resource.module.catch(()=>{if(state.transitionSceneResource===resource)state.transitionSceneResource=null;});
+  }
+  owner.ready=(async()=>{
+    const module=await resource.module;if(closed)return;
+    animation=showOriginalTransition({module,renderer,document,window,signal:cancel.signal,onPresent(){cover.hidden=true;}});
+    await animation.ready;
+  })();
+  owner.ready.catch(()=>{});
+  return owner;
+}
+
 async function loadVariant(variant){
   state.replayPlayback?.cancel();state.replayPlayback=null;state.replayReturnSlot=null;
   cancelOriginalEnding();
   try{discardPendingCarry();}catch(problem){error(problem);return;}
   const ticket=++state.loading;
+  state.titleDemoRun?.restoreMusic?.();state.titleDemoRun=null;
+  titleDemoClock.reset();state.titleDemoUnavailable=false;
   ++menu.launchId;menu.launching=false;menu.audioUnlocked=false;menu.audioUnlockPromise=null;
   menu.suppressTitleAudio=false;menu.optionsInitialized=false;menu.infoMode='text';menu.page='main';
   ++menu.musicRequestId;stopMenuMusic();
@@ -2311,6 +2379,7 @@ async function loadVariant(variant){
     ++state.loading;state.controller.abort();
     error(new Error(`原版资源加载超时：${find('#loading-text').textContent}`));
   },15000);
+  let startup=null;
   try{
     const record=state.catalog.variants[variant];
     const manifestUrl=safeAssetUrl(new URL('/assets/',location.href).href,record.manifest);
@@ -2329,7 +2398,7 @@ async function loadVariant(variant){
     renderer.setResolution(1280,960);
     if(ticket!==state.loading){renderer.dispose();return;}
     state.renderer=renderer;
-    for(const [bank,name] of [[24,'title'],[25,'title_v'],[11,'ascii']]){
+    const loadTitleBank=async(bank,name)=>{
       find('#loading-text').textContent=`读取原版动画：${name}.anm`;
       const metadata=await readJson(safeAssetUrl(base,`animations/${name}.json`),signal);
       const response=await checkpointFetch(safeAssetUrl(base,`runtime/${name}.anm`),{signal});
@@ -2339,7 +2408,15 @@ async function loadVariant(variant){
       const loaded=module._th128_load_anm(bank,pointer,bytes.length);module._free(pointer);
       if(!loaded)throw new Error(module.UTF8ToString(module._th128_error()));
       await renderer.loadBank(bank,metadata,base,{signal});
+    };
+    await loadTitleBank(11,'ascii');
+    if(manifest.files?.some(row=>row.name==='sig.anm')){
+      await loadTitleBank(originalStartupSignatureBank,'sig');signal.throwIfAborted();
+      startup=showOriginalStartup({module,renderer,document,window,signal,onPresent(){
+        find('#loading').hidden=true;launcherContext?.noteStartupPresented(true);
+      }});
     }
+    for(const [bank,name] of [[24,'title'],[25,'title_v']])await loadTitleBank(bank,name);
     find('#loading-text').textContent='解码原版标题音乐…';
     const track=manifest.music.find(track=>track.name==='th128_07.wav');
     if(track){
@@ -2349,7 +2426,8 @@ async function loadVariant(variant){
       if(ticket!==state.loading)return;
       state.buffer=buffer;state.track=track;
     }
-    if(ticket!==state.loading)return;
+    if(startup){await startup.ready;startup.close();}
+    if(ticket!==state.loading||signal.aborted)return;
     state.module=module;state.manifest=manifest;state.base=base;
     syncDebugRespawnControl();
     if(!module._th128_boot_title(0x1234))throw new Error(coreError());
@@ -2364,17 +2442,18 @@ async function loadVariant(variant){
     enterTitleMenu();
     syncDebugStageJumpControls();
   }catch(problem){if(ticket===state.loading&&problem.name!=='AbortError')error(problem);}
-  finally{clearTimeout(deadline);}
+  finally{startup?.close();clearTimeout(deadline);}
 }
 
 function cancelOriginalEnding(){
+  state.endingSceneLoading?.close();state.endingSceneLoading=null;
   ++state.endingTicket;
   const normalOwner=state.normalPostrun;state.normalPostrun=null;
   state.normalPostrunPausePromise=state.normalPostrunResumePromise=null;
   state.normalPostrunPauseBinding=state.normalPostrunResumeBinding=null;normalOwner?.close();
   const host=state.endingHost;
   state.endingHost=null;state.endingResources=null;state.endingLoading=false;state.endingBusy=false;
-  state.endingPromise=null;state.endingStepPromise=null;
+  state.endingPromise=null;state.endingStepPromise=null;state.focusPausedAnimation=null;
   if(host)host.close();
 }
 async function prepareOriginalEndingResources(stage,base,signal){
@@ -2412,6 +2491,7 @@ function maybeStartOriginalEnding(){
   const current=()=>ticket===state.endingTicket&&module===state.module&&action===state.action&&loading===state.loading;
   state.endingLoading=true;state.autoFlow=false;clock.reset();resetHighFrameratePresentation();
   const overlay=find('#dialogue-text');if(overlay)overlay.hidden=true;
+  const sceneLoading=state.endingSceneLoading=beginOriginalSceneLoading();
   state.endingPromise=(async()=>{
     let host=null;
     try{
@@ -2431,13 +2511,14 @@ function maybeStartOriginalEnding(){
       if(!current()){host.close();return;}
       state.endingHost=host;host.owner.input.adoptHeld(state.pressed);
       await host.owner.start();
+      if(sceneLoading)await sceneLoading.ready;
       if(!current()){host.close();return;}
       state.endingLoading=false;
       status('原结局已按实际 runtime15 请求启动；Z/ENTER 使用原确认输入，不自动确认。');
     }catch(problem){
       if(host&&(!current()||host.owner.phase==='failed'))host.close();
       if(current()){state.endingLoading=false;error(problem);throw problem;}
-    }finally{if(current())state.endingPromise=null;}
+    }finally{sceneLoading?.close();if(state.endingSceneLoading===sceneLoading)state.endingSceneLoading=null;if(current())state.endingPromise=null;}
   })();
   return true;
 }
@@ -2459,9 +2540,11 @@ async function finishExtraPostrun(snapshot){
     state.autoFlow=false;clock.reset();resetHighFrameratePresentation();status('EX 按真实终局交接姓名、录像与主菜单；辅助开启。');
   }catch(e){controller?.close();if(current())throw e;}
 }
-async function finishOrdinaryEndingReturn(host,snapshot){
+async function finishEndingPostrunReturn(host,snapshot){
   const ticket=state.endingTicket,module=state.module,action=state.action,selection=state.stageSelection;
   const current=()=>ticket===state.endingTicket&&module===state.module&&action===state.action&&selection===state.stageSelection;
+  const practice=snapshot.ownerKind==='practice';
+  if(practice&&!selection?.thprac)throw new Error('Practice registration lost its live chapter owner');
   const {createNormalPostrunController}=await import('./runtime/native-normal-postrun.mjs');if(!current())return;
   const assets=[[0,'front'],[24,'title'],[25,'title_v'],[11,'ascii']].map(([bank,name])=>{
     const record=state.manifest.files?.find(row=>row.name===name+'.anm');if(!record)throw new Error('Original normal postrun asset pin unavailable');
@@ -2469,7 +2552,7 @@ async function finishOrdinaryEndingReturn(host,snapshot){
   });
   let controller;
   try{
-    controller=await createNormalPostrunController({module,renderer:state.renderer,generation:snapshot.generation,assets,
+    controller=await createNormalPostrunController({module,renderer:state.renderer,generation:snapshot.generation,assets,practice,practiceRecorder:practice?state.thpracRecorder:null,
       audio:state.audio,gain:state.gain,soundQueue:state.gameSounds,tracks:state.manifest.music,base:state.base,signal:state.controller.signal,resolveUrl:safeAssetUrl,isCurrent:current,
       readAsset:async asset=>{const response=await checkpointFetch(safeAssetUrl(state.base,asset.file),{signal:state.controller.signal});if(!response.ok)throw new Error('Original postrun asset unavailable');return new Uint8Array(await response.arrayBuffer());},
       loadBank:async(bank,asset)=>state.renderer.loadBank(bank,await readJson(safeAssetUrl(state.base,asset.metadata),state.controller.signal),state.base,{signal:state.controller.signal})});
@@ -2480,7 +2563,7 @@ async function finishOrdinaryEndingReturn(host,snapshot){
     state.normalPostrunPausePromise=state.normalPostrunResumePromise=null;
     state.normalPostrunPauseBinding=state.normalPostrunResumeBinding=null;
     closeOrdinaryWorldAudio();state.autoFlow=false;clock.reset();resetHighFrameratePresentation();
-    status('原结局按原生封存凭据返回普通菜单，姓名与录像保存按原流程处理。');
+    status(practice?'练习结局结束，登记之后可保存本局录像。':'原结局按原生封存凭据返回普通菜单，姓名与录像保存按原流程处理。');
   }catch(problem){controller?.close();throw problem;}
 }
 function pauseNormalPostrun(){
@@ -2513,6 +2596,7 @@ async function finishNormalPostrunMain(controller,snapshot){
   await state.normalPostrunPausePromise;await state.normalPostrunResumePromise;if(!current())return;
   const committed=await controller.finishMain();if(!current())return;
   if(committed?.nativeCommitted!==true||committed.generation!==snapshot.generation)throw new Error('Ordinary sealed Main commit receipt unavailable');
+  if(controller.practice){if(!returnToTitle())throw new Error('Practice registration Title return failed');return;}
   state.worldMode=false;state.shotMode=false;state.autoFlow=false;state.worldAdvancePromise=null;state.worldSnapshot=null;
   const next=originalMainController();
   const audio=await ensureOriginalTitleAudio();if(!current())return;if(!audio)throw new Error('Ordinary Main requires actual current Title audio');
@@ -2544,11 +2628,7 @@ async function advanceOriginalEnding(){
       const snapshot=await host.owner.step();
       if(ticket!==state.endingTicket||host!==state.endingHost)return;
       if(snapshot.phase==='return-requested'){
-        if(snapshot.ownerKind==='ordinary')await finishOrdinaryEndingReturn(host,snapshot);
-        else if(snapshot.ownerKind==='practice'){
-          if(!state.stageSelection?.thprac||typeof state.module._th128_world_finish_thprac_ending!=='function'||state.module._th128_world_finish_thprac_ending(snapshot.generation)!==1)throw new Error(state.module.UTF8ToString(state.module._th128_world_error())||'Practice Ending16 return rejected');
-          host.owner.input.release();if(!returnToTitle())throw new Error('Practice original Title return failed');
-        }
+        if(snapshot.ownerKind==='ordinary'||snapshot.ownerKind==='practice')await finishEndingPostrunReturn(host,snapshot);
         else{state.active=false;state.paused=true;clock.reset();resetHighFrameratePresentation();host.owner.input.release();
           status('原结局已请求 scene16；此诊断路线没有普通返回凭据。');}
       }
@@ -2559,7 +2639,7 @@ async function advanceOriginalEnding(){
 }
 function pauseOriginalEnding(){
   const ticket=state.endingTicket,module=state.module;
-  state.endingHost?.owner.input.release();state.paused=true;clock.reset();resetHighFrameratePresentation();titlePauseOverlay();
+  state.endingHost?.owner.input.release();state.paused=true;clock.reset();resetHighFrameratePresentation();
   const pending=state.endingStepPromise??state.endingPromise??Promise.resolve();
   state.endingPausePromise=pending.then(async()=>{
     if(ticket!==state.endingTicket||module!==state.module||!state.paused)return;
@@ -2602,6 +2682,8 @@ async function advanceSerial(){
   state.webInput?.sampleTouch?.();
   if(state.worldMode&&(!state.active||state.paused||state.handoff))return;
   if(state.worldMode){
+    const demo=state.titleDemoRun;
+    if(demo?.exitRequested||(demo&&((actualMainControllerButtons().held&0x80303)!==0))){leaveTitleDemo(demo);return;}
     if(state.extraRun)return advanceExtraRun();
     const endingRequest=pendingOriginalEndingRequest();
     if(endingRequest){
@@ -2618,16 +2700,29 @@ async function advanceSerial(){
       state.replayClockLast=seconds;
     }
     if(state.replayPlayback?.snapshot().complete){
-      if(!state.replayPlayback.hasNext())finishOwnedReplay();
-      else if(!state.worldSnapshot?.stageTransition?.requested)finishOwnedReplay('录像段已结束，但实际关卡未请求下一段；已停止');
+      if(demo)leaveTitleDemo(demo);
+      else if(!state.replayPlayback.hasNext())await finishOwnedReplay();
+      else if(!state.worldSnapshot?.stageTransition?.requested)throw new Error('录像段已结束，但实际关卡未请求下一段；已停止');
       return;
     }
     const advanced=state.module._th128_world_tick();
     if(advanced===1&&state.thpracRecorder&&!state.replayPlayback)saveEarnedPracticeMedals(state.module);
-    if(advanced===2){await drainGameSounds();if(state.replayPlayback)finishOwnedReplay('实际游戏进入结束状态，回放已停止');else await openOriginalNativePause(true);return;}
+    if(advanced===2){
+      await drainGameSounds();
+      if(demo)leaveTitleDemo(demo);
+      else if(state.replayPlayback)await finishOwnedReplay(true);
+      else await openOriginalNativePause(true);
+      return;
+    }
     await drainGameSounds();
-    if(advanced){await drainMusicControl();state.background?.tick();if(state.replayPlayback){const replay=state.replayPlayback.snapshot();if(replay.complete&&!state.replayPlayback.hasNext())finishOwnedReplay();}}
+    if(advanced){
+      await drainMusicControl();state.background?.tick();
+      if(demo&&++demo.frames>=originalTitleDemoLimit){leaveTitleDemo(demo);return;}
+      demo?.overlay?.step();
+      if(state.replayPlayback){const replay=state.replayPlayback.snapshot();if(replay.complete&&!state.replayPlayback.hasNext())await finishOwnedReplay();}
+    }
     if(!advanced){
+      if(demo){const reason=state.module.UTF8ToString(state.module._th128_world_error());leaveTitleDemo(demo,new Error(reason||'原版演示推进失败'));return;}
       state.active=false;state.paused=true;clock.reset();resetHighFrameratePresentation();
       if(state.audio?.state==='running')state.audio.suspend().catch(()=>{});
       const reason=state.module.UTF8ToString(state.module._th128_world_error());
@@ -2642,8 +2737,18 @@ async function advanceSerial(){
     return;
   }
   if(state.mainSaveDebugBusy)return;
-  await originalMainController().step();
+  const owner=originalMainController(),frame=owner.module._th128_frame();
+  const snapshot=await owner.step();
   syncNativeMenuState();
+  const canDemo=!!snapshot&&!owner.disposed&&snapshot.page===0&&snapshot.ready===1&&snapshot.transitioning===0
+    &&!snapshot.mainAction&&owner.prepared&&state.active&&!state.paused&&!state.worldMode&&!state.launcherExited
+    &&!state.mainQuit&&!menu.launching&&!document.hidden&&!practiceMenu?.isOpen&&!thpracToolsPanel?.isOpen
+    &&state.module===owner.module&&isImportedResourceMode()&&!state.titleDemoUnavailable;
+  if(!canDemo)titleDemoClock.reset();
+  else if(owner.module._th128_frame()===frame+1){
+    const demo=titleDemoClock.tick(true,owner.lastInput||state.pressed.size);
+    if(demo)await startTitleDemo(demo);
+  }
 }
 
 async function advanceExtraRun(){
@@ -2697,7 +2802,7 @@ function updateOwnedMainSettings(change){
 }
 function recordOwnedHeardTrack(name){
   const row=['07','00','02','01','05','06','10','11','09','08'].findIndex(value=>name==='th128_'+value+'.wav');
-  if(!musicOutputEnabled()||state.replayPlayback||row<0||state.audio?.state!=='running')return Promise.resolve();
+  if(!musicOutputEnabled()||state.titleDemoRun||state.replayPlayback||row<0||state.audio?.state!=='running')return Promise.resolve();
   return updateOwnedMainSettings(observed=>(observed.seenMask&(1<<row))?null:{seenMask:observed.seenMask|(1<<row)}).then(saved=>{
     if(!state.worldMode){const snapshot=nativeMenuSnapshot();if(snapshot.page===0&&snapshot.ready&&!snapshot.transitioning)state.module._th128_title_music_prepare(saved.seenMask);}
     return saved;
@@ -2754,21 +2859,20 @@ function nativeMainMemory(bytes,operation){
   try{state.module.HEAPU8.set(bytes,pointer);return operation(pointer,bytes.byteLength);}finally{state.module._free(pointer);}
 }
 function actualMainControllerButtons(){
-  let buttons=0,held=0;
-  const pads=navigator.getGamepads?.()??[];
-  const pad=Array.from(pads).find(value=>value?.connected);
-  if(!pad)return{buttons,held};
-  for(let index=0;index<Math.min(31,pad.buttons.length);++index)if(pad.buttons[index].pressed||pad.buttons[index].value>=0.5)buttons=(buttons|(1<<index))>>>0;
-  if((pad.axes[1]??0)< -0.5||pad.buttons[12]?.pressed)held|=0x10;
-  if((pad.axes[1]??0)>0.5||pad.buttons[13]?.pressed)held|=0x20;
-  if((pad.axes[0]??0)< -0.5||pad.buttons[14]?.pressed)held|=0x40;
-  if((pad.axes[0]??0)>0.5||pad.buttons[15]?.pressed)held|=0x80;
+  const pad=readBrowserGamepad(navigator),nativeKeyConfig=nativeMenuSnapshot().page===4;
+  const mapped=nativeKeyConfig?null:mappedGamepadCodes(window);
+  if(mapped){
+    const bits={ArrowUp:16,ArrowDown:32,ArrowLeft:64,ArrowRight:128,KeyZ:1,KeyX:2,Escape:256};
+    return{buttons:0,held:mapped.reduce((held,code)=>held|(bits[code]??0),0)};
+  }
+  let buttons=0,held=rawGamepadDirections(pad);
+  for(let index=0;index<Math.min(31,pad?.buttons?.length??0);++index)if(pad.buttons[index]?.pressed||pad.buttons[index]?.value>=0.5)buttons|=1<<index;
   const mapping=state.mainSavedSettings?.mapping??[0,1,3,2,4];
   if(buttons&(1<<mapping[0]))held|=1;
   if(buttons&(1<<mapping[1]))held|=2;
   if(buttons&(1<<mapping[2]))held|=0x80000;
   if(buttons&(1<<mapping[4]))held|=0x100;
-  if(nativeMenuSnapshot().page===4)held&=0xf0;
+  if(nativeKeyConfig)held&=0xf0;
   return{buttons,held};
 }
 async function loadOriginalMainRasters(){
@@ -2867,7 +2971,13 @@ async function prepareOriginalMain(){
   state.mainTextCache=new Map();state.mainHelpPage=-1;
 }
 async function ensureOriginalTitleAudio(){
-  if(state.titleAudio)return state.titleAudio;
+  if(state.titleAudio){
+    if(!state.titleSoundConsumer){
+      const ledger=new OwnedMenuSoundLedger();state.mainSoundLedger=ledger;
+      state.titleSoundConsumer=new TitleSoundWindowConsumer(state.module,state.titleAudio.sounds,ledger,{present:true});
+    }
+    return state.titleAudio;
+  }
   if(!menu.audioUnlocked||state.audio?.state!=='running')return null;
   if(state.mainAudioLoading)return state.mainAudioLoading;
   const module=state.module,signal=state.controller.signal,ticket=state.mainAudioTicket??0;
@@ -2999,7 +3109,7 @@ async function startOwnedReplayFromMain(snapshot){
   const owner=state.mainReplayChoice;if(!owner)throw new Error('尚未选择实际录像');
   const selection=owner.chooseStage(snapshot.selection),module=state.module;
   if(module._th128_title_main_action_ack(snapshot.mainActionSerial,4)!==1)throw new Error('Replay selected-stage action rejected');
-  state.replayPlayback=owner;state.replayFinished=false;state.replayReturnSlot=null;
+  state.replayPlayback=owner;state.replayReturnSlot=null;
   find('#export-owned-replay').hidden=true;find('#import-original-replay').hidden=true;
   try{
     await startStage(selection.stage,selection);
@@ -3016,7 +3126,7 @@ async function startOwnedReplayFromMain(snapshot){
 async function restartOwnedReplay(){
   const prior=state.replayPlayback;if(!prior)throw new Error('Replay Again lacks its owned file');
   const next=prior.restartSelected(),selection=next.firstSelection();prior.cancel();
-  state.replayPlayback=next;state.replayFinished=false;menu.pauseOpen=false;
+  state.replayPlayback=next;menu.pauseOpen=false;
   const prepared=prepareStage(selection.stage,selection);
   return startLaunch(prepared,'route');
 }
@@ -3034,19 +3144,65 @@ async function exportSelectedOwnedReplay(){
   }finally{setTimeout(()=>URL.revokeObjectURL(url),1000);}
   status('已按独立导出操作下载录像；Z/Enter 是进入游戏观看。');
 }
-function stopOwnedReplayToList(){
-  const owner=state.replayPlayback;if(!owner)return;
-  const slot=owner.slot;owner.cancel();state.replayPlayback=null;state.replayFinished=false;state.replayReturnSlot=slot;
-  state.replayReturning=true;
-  try{returnToTitle();}finally{state.replayReturning=false;}
+async function finishOwnedReplay(alreadyOpened=false){
+  if(!state.replayPlayback||state.titleDemoRun)return;
+  state.stageGamepad?.suppressHeldActions();
+  await openOriginalNativePause(alreadyOpened,true);
 }
-function finishOwnedReplay(message='录像播放结束'){
-  state.replayFinished=true;state.paused=true;clock.reset();resetHighFrameratePresentation();state.pressed.clear();
-  state.audio?.suspend().catch(()=>{});
-  find('#runtime-overlay-title').textContent=message;
-  find('#runtime-overlay-message').textContent='Z/Enter 或 Esc 返回录像列表。没有继续生成录像之外的输入。';
-  find('#resume-session').hidden=true;find('#restart-stage').hidden=true;find('#runtime-overlay').hidden=false;
-  status(message);
+
+const titleDemoClock=new OriginalTitleDemoClock();
+function startTitleDemoMusic(run,context){
+  if(!state.source&&state.track&&state.buffer)startTitleSource();
+  const source=state.source;
+  if(!source)return;
+  if(state.titleAudio){run.restoreMusic=duckOriginalDemoMusic(state.titleAudio.bgmGain);return;}
+  const destination=musicOutput(context,state.gain),attenuation=context.createGain();attenuation.connect(destination);
+  source.disconnect();source.connect(attenuation);
+  const restore=duckOriginalDemoMusic(attenuation);
+  run.restoreMusic=()=>{restore();if(state.source===source&&state.audio===context&&context.state!=='closed'){
+    source.disconnect(attenuation);source.connect(destination);
+  }attenuation.disconnect();};
+}
+async function startTitleDemo(demo){
+  const title=state.module,signal=state.controller.signal;
+  const run={demo,title,playback:null,overlay:null,frames:0,exitRequested:false,loading:true};
+  state.titleDemoRun=run;
+  try{
+    const response=await checkpointFetch(safeAssetUrl(state.base,'runtime/'+demo.name),{signal});
+    if(!response.ok)throw new Error('内置演示录像读取失败：'+demo.name);
+    const bytes=new Uint8Array(await response.arrayBuffer());
+    if(state.titleDemoRun!==run||signal.aborted||state.module!==title||state.launcherExited)return;
+    if(run.exitRequested||document.hidden){state.titleDemoRun=null;clock.reset();return;}
+    run.playback=OwnedReplayPlayback.fromOriginalDemo(bytes,demo);
+    state.replayPlayback=run.playback;state.replayReturnSlot=null;
+    const selection=run.playback.firstSelection();
+    await startStage(selection.stage,{...selection,autoFlow:false});
+    if(state.titleDemoRun!==run||signal.aborted||state.launcherExited)return;
+    run.loading=false;
+    if(run.exitRequested||document.hidden){leaveTitleDemo(run);return;}
+    status('正在播放原版演示。按 Z、X、Enter 或 Esc 返回标题。');
+  }catch(problem){
+    if(state.titleDemoRun!==run||signal.aborted||state.launcherExited)return;
+    leaveTitleDemo(run,problem);
+  }
+}
+function leaveTitleDemo(run,problem=null){
+  if(!run||state.titleDemoRun!==run)return;
+  if(problem)state.titleDemoUnavailable=true;
+  run.playback?.cancel();run.restoreMusic?.();state.titleDemoRun=null;titleDemoClock.reset();
+  if(run.playback&&state.replayPlayback===run.playback){
+    state.replayPlayback=null;state.replayReturnSlot=null;
+    state.replayReturning=true;
+    try{returnToTitle({keepTitleMusic:true});}finally{state.replayReturning=false;}
+  }else clock.reset();
+  if(problem)status('原版演示已停止：'+(problem.message??problem));
+}
+function requestTitleDemoExit(code){
+  const run=state.titleDemoRun;
+  if(!run||!originalTitleDemoInputs.has(code))return false;
+  run.exitRequested=true;suppressedKeys.add(code);
+  if(!run.loading&&!state.worldAdvancePromise)leaveTitleDemo(run);
+  return true;
 }
 
 async function handleOriginalMainAction(snapshot){
@@ -3054,14 +3210,17 @@ async function handleOriginalMainAction(snapshot){
   if(snapshot.mainAction===1){
     if(module._th128_title_sound_count()!==0)return;
     if(module._th128_title_main_action_ack(snapshot.mainActionSerial,1)!==1)throw new Error('Title launch action ownership rejected');
-    launchNativeRoute(snapshot.selection);return;
+    if(!practiceMenu?.confirmTitleRoute())launchNativeRoute(snapshot.selection);
+    return;
   }
   if(snapshot.mainAction===2){
-    stopTitleSource();state.titleAudio?.music.stopSource();
     if(module._th128_title_main_action_ack(snapshot.mainActionSerial,2)!==1)throw new Error('Title Quit action ownership rejected');
+    if(launcherContext){await launcherContext.requestExit();return;}
+    stopTitleSource();state.titleAudio?.music.stopSource();
     state.mainQuit=true;state.paused=true;clock.reset();resetHighFrameratePresentation();state.mainController.release();
-    titlePauseOverlay();find('#runtime-overlay-title').textContent='已退出游戏';
+    find('#runtime-overlay-title').textContent='已退出游戏';
     find('#runtime-overlay-message').textContent='Z/Enter 返回标题；网页不会强制关闭浏览器。';
+    find('#resume-session').hidden=true;find('#restart-stage').hidden=true;find('#runtime-overlay').hidden=false;
     status('已退出游戏，音频已停止。');return;
   }
   if(snapshot.mainAction===3)await showOwnedReplayStages(snapshot);
@@ -3078,10 +3237,11 @@ function originalMainController(){
     syncText:syncOriginalMainPresentation,onState:syncOriginalMainSettings,onAction:handleOriginalMainAction});
   state.mainController=owner;return owner;
 }
-function disposeOriginalMain(){
+function disposeOriginalMain({keepTitleMusic=false}={}){
   state.mainAudioTicket=(state.mainAudioTicket??0)+1;state.mainAudioLoading=null;
-  state.mainController?.dispose();state.mainController=null;state.titleAudio?.dispose();state.titleAudio=null;state.ordinaryMainMusic=null;
-  state.mainSoundLedger?.close();state.mainBgmLedger?.close();state.mainSoundLedger=null;state.mainBgmLedger=null;state.titleSoundConsumer=null;
+  state.mainController?.dispose();state.mainController=null;
+  if(!keepTitleMusic){state.titleAudio?.dispose();state.titleAudio=null;state.ordinaryMainMusic=null;state.mainBgmLedger?.close();state.mainBgmLedger=null;}
+  state.mainSoundLedger?.close();state.mainSoundLedger=null;state.titleSoundConsumer=null;
   disposeOriginalMainMusicRasters(state.mainRasters);state.mainRasters=null;state.mainReplayStore?.close();state.mainReplayStore=null;
   state.mainResultGlyphs=null;state.mainResultTextCache?.clear();
 }
@@ -3213,14 +3373,8 @@ function select(delta){
   status(`原版标题动画 · 逻辑帧 ${state.module._th128_frame()} · 原生选择 ${state.module._th128_selection()+1}/7`);
 }
 
-function titlePauseOverlay(){
-  find('#runtime-overlay-title').textContent='动画已暂停';
-  find('#runtime-overlay-message').textContent='Z/ENTER/X/ESC 继续动画。';
-  find('#resume-session').hidden=true;find('#restart-stage').hidden=true;
-  find('#runtime-overlay').hidden=false;
-}
 function resumeTitlePause(){
-  state.focusPausedTitle=null;
+  state.focusPausedTitle=null;state.focusPausedAnimation=null;
   if(state.normalPostrun){resumeNormalPostrun();return;}
   if(state.endingHost||state.endingLoading){resumeOriginalEnding();return;}
   state.paused=false;clock.reset();resetHighFrameratePresentation();find('#runtime-overlay').hidden=true;
@@ -3229,7 +3383,8 @@ function resumeTitlePause(){
   status('动画继续。');
 }
 function pause(){
-  state.focusPausedTitle=null;state.focusPausedWorld=null;
+  if(state.titleDemoRun){requestTitleDemoExit('Escape');return;}
+  state.focusPausedTitle=null;state.focusPausedWorld=null;state.focusPausedAnimation=null;
   if(state.normalPostrun){if(state.paused)resumeNormalPostrun();else pauseNormalPostrun();return;}
   if(state.endingHost||state.endingLoading){if(state.paused)resumeTitlePause();else pauseOriginalEnding();return;}
   if(state.worldMode){if(state.paused)resumeGame();else openPauseMenu();return;}
@@ -3237,7 +3392,7 @@ function pause(){
   state.paused=!state.paused;clock.reset();resetHighFrameratePresentation();find('#pause').textContent=state.paused?'继续动画':'暂停动画';
   if(state.gameSounds){const operation=state.paused?state.audio.suspend():state.audio.resume();operation.catch(error);}
   if(state.paused){
-    if(!state.worldMode){titlePauseOverlay();if(state.audio?.state==='running')state.audio.suspend().catch(error);}
+    if(!state.worldMode&&state.audio?.state==='running')state.audio.suspend().catch(error);
   }else{
     find('#runtime-overlay').hidden=true;
     if(!state.worldMode&&state.audio?.state==='suspended')state.audio.resume().catch(error);
@@ -3386,7 +3541,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
     if(stale()||!observedExtra.qualification?.eligible||observedExtra.qualification.record.sha256!==selection.ownedExtraProfileSHA256)
       throw new Error('EX owned six-route profile changed before original World start');
   }
-  let pendingAudio=null,preparedEnding=null,preparedTextRasters=null;
+  let pendingAudio=null,preparedEnding=null,preparedTextRasters=null,sceneLoading=null;
   const resultTarget=shots?'#shots-result':updates?'#segment-result':emission?'#emission-result':'#world-result';
   find('#world').disabled=true;
   find('#emission').disabled=true;
@@ -3411,6 +3566,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
   const memory=bytes=>{const pointer=module._malloc(bytes.length);module.HEAPU8.set(bytes,pointer);return pointer;};
   try{
     if(!stage)throw new Error('关卡选择不可用');
+    if(shots)sceneLoading=beginOriginalSceneLoading();
     const carryRoute=incomingCarryRoute(stage.id,carryToken,flowCapabilities());
     if(carryToken){
       if(carryToken!==state.pendingCarryToken)throw new Error('stage carry token is stale or does not belong to this handoff');
@@ -3629,7 +3785,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
     if(shots&&!carryToken)module=await prepareFreshWorldModule(selection,bytesAt,signal);
     if(stale())return;
     mutated=true;
-    if(emission){state.active=false;state.paused=true;state.worldMode=false;state.shotMode=false;find('#emit-shot').disabled=true;clock.reset();resetHighFrameratePresentation();stopAudio({keepPracticeMusic:pendingAudio?.retained?pendingAudio.music:null});syncDebugRespawnUI(null);}
+    if(emission){state.active=false;state.paused=true;state.worldMode=false;state.shotMode=false;find('#emit-shot').disabled=true;clock.reset();resetHighFrameratePresentation();stopAudio({keepPracticeMusic:pendingAudio?.retained?pendingAudio.music:null,keepTitleMusic:!!pendingAudio?.retainedTitle});syncDebugRespawnUI(null);}
     find('#runtime-overlay').hidden=true;find('#error').hidden=true;state.pressed.clear();
     state.worldSnapshot=null;
     state.stageIntroLoaded=false;state.stageIntroStage=0;state.stageIntroCaptionKey='';
@@ -3862,7 +4018,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         if(thprac){
           readThprac128Native(module,thprac);selection.thpracIdentity=await thpracReplayResourceIdentity(module,byteCache);
           if(stale())return;
-          const expected=selection.thpracReplayIdentity;if(expected&&(expected.coreSHA256!==selection.thpracIdentity.coreSHA256||expected.resourceSHA256!==selection.thpracIdentity.resourceSHA256))throw new Error('Practice replay core/resource identity differs from loaded bytes');
+          const expected=selection.thpracReplayIdentity;if(expected&&!practiceReplayMatchesRuntime(expected,selection.thpracIdentity))throw new Error('Practice replay core/resource identity differs from loaded bytes');
         }
         else verifyFreshExtraOwner(JSON.parse(module.UTF8ToString(module._th128_world_state())),selection);
         if((thprac||state.replayPlayback)&&typeof module._th128_world_spell_medals_restore==='function'){
@@ -3875,15 +4031,16 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         const recordOrdinary=!state.replayPlayback&&!extraRun&&!selection.debugJump&&!thprac&&!find('#debug-infinite-respawn').checked;
         // The native profile and recorder must be installed before World frame 1.
         const observed=recordOrdinary&&!carryToken?await (state.nativeScoreStore??=new OwnedNativeTitleRecordStore()).observe():null;
+        if(sceneLoading)await sceneLoading.ready;
         if(stale()||signal.aborted||module!==state.module)return;
-        stopAudio({keepContext:pendingAudio?.retained===true,keepPracticeMusic:pendingAudio?.retained?pendingAudio.music:null});
-        if(pendingAudio){state.audio=pendingAudio.audio;state.gain=pendingAudio.gain;state.gameSounds=pendingAudio.queue;
-          state.stageMusic=pendingAudio.music;if(!state.stageMusic.source)state.stageMusic.start();recordOwnedHeardTrack(state.stageMusic.track.name).catch(error);pendingAudio=null;state.soundCursor=0;state.soundWindow=null;}
+        installPreparedStageAudio(pendingAudio);pendingAudio=null;
         state.stageSelection=selection;state.endingResources=preparedEnding;thpracLogicClock.reset();
         if(extraRun){state.extraRun=extraRun;extraRun=null;}
         disposeOriginalStageTextRasters(state.stageTextRasters);state.stageTextRasters=preparedTextRasters;preparedTextRasters=null;
         if(state.replayPlayback){
           state.replayNativeBound=false;state.replayPlayback.bindNativeStage(module);
+          if(state.titleDemoRun?.playback&&state.titleDemoRun.playback===state.replayPlayback)
+            state.titleDemoRun.overlay=bindOriginalDemoPlay(module,frontBytes);
           if(terminalStageIds.has(stage.id)&&!thprac){
             const pointer=memory(frontBytes);
             try{
@@ -3913,6 +4070,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
           state.replayClockLast=clockSeconds;state.replayNativeBound=true;
         }
         state.shotMode=shots;find('#emit-shot').disabled=!shots;
+        practiceMenu?.dismissTitleRoute();stageGamepadOwner()?.suppressHeldActions();
         state.worldMode=true;state.active=true;state.paused=window.__TH128_DIAGNOSTIC_PAUSED__===true;clock.reset();resetHighFrameratePresentation();
         find('#game-menu').hidden=true;
         if(state.stageIntroLoaded&&state.stageMusic)stageIntroCaption(stage.music?.[0],0);
@@ -3923,7 +4081,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         find(resultTarget).textContent=shots?'方向键移动；点按 Z 射击，按住 Z 蓄力，至少 45 帧且头顶 ≥30% 时松开 Z 冻结附近弹幕；C 连射、Shift 低速。使用该关原曲与原始动态 STD 背景。局部子弹、冻结、伤害与分数链路仍按此前证据，未证明整关或全路线可玩；缺失分支明确停止。':
           '方向键使用原版速度/边界与转向ANM移动琪露诺。初始位置(0,400)，碰撞上下文显式给定state1/flags0/保护120/系统门控0，这是局部集成而非完整原版初始化。首次命中执行受击特效与8tick窗口；死亡提交、射击、低速与冻结未完成时会明确停止。';
         status('真实首段运行中：原始ECL、子弹池、运动与ANM；不是完整可玩关卡。');
-        draw();return;
+        sceneLoading?.close();draw();return;
       }
     }
     for(let step=0;step<600;step++)if(!module._th128_world_tick())break;
@@ -3947,7 +4105,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
     find(resultTarget).textContent=problem.message;
     if(mutated){state.active=false;state.paused=true;state.worldMode=false;state.shotMode=false;find('#emit-shot').disabled=true;clock.reset();resetHighFrameratePresentation();find('#pause').disabled=true;status('关卡配置失败，已停止；旧局已不可继续，不能假装回退。');}
   }}
-  finally{extraRun?.close();disposeOriginalStageTextRasters(preparedTextRasters);if(pendingAudio){pendingAudio.queue.dispose();pendingAudio.music.dispose();pendingAudio.audio.close().catch(()=>{});}if(ticket===state.loading){find('#world').disabled=false;find('#emission').disabled=!module._th128_world_enable_bullets;find('#segment').disabled=!module._th128_world_enable_bullet_updates;find('#shots').disabled=!module._th128_world_enable_player_shots;find('#play-stage').disabled=!module._th128_world_enable_z_fire;}}
+  finally{sceneLoading?.close();extraRun?.close();disposeOriginalStageTextRasters(preparedTextRasters);if(pendingAudio){pendingAudio.queue.dispose();pendingAudio.music?.dispose();if(!pendingAudio.retainedTitle)pendingAudio.audio.close().catch(()=>{});}if(ticket===state.loading){find('#world').disabled=false;find('#emission').disabled=!module._th128_world_enable_bullets;find('#segment').disabled=!module._th128_world_enable_bullet_updates;find('#shots').disabled=!module._th128_world_enable_player_shots;find('#play-stage').disabled=!module._th128_world_enable_z_fire;}}
 }
 function prepareStage(stageId,{difficulty=1,seed=34772,progress=0,debugExtra=false,thprac=null,thpracReplayIdentity=null}={}){
   assertStageStartAllowed(stageId,difficulty,{debugExtra});
@@ -4047,7 +4205,7 @@ function enterTitleMenu(){
   ++menu.musicRequestId;stopMenuMusic();
   state.autoFlow=false;state.handoff=false;state.handoffFailed=false;
   state.worldMode=false;state.shotMode=false;state.active=true;state.paused=false;state.pressed.clear();clock.reset();resetHighFrameratePresentation();
-  find('#loading').hidden=true;find('#runtime-overlay').hidden=true;find('#error').hidden=true;
+  find('#loading').hidden=!state.sceneLoading;find('#runtime-overlay').hidden=true;find('#error').hidden=true;
   find('#pause').disabled=false;find('#emit-shot').disabled=true;
   nativeMainRows();showMenuPage('main');setMenuIndex('main',Math.min(menu.main,6));
   find('#game-menu').hidden=true;find('#game-menu').setAttribute('aria-hidden','true');
@@ -4055,23 +4213,30 @@ function enterTitleMenu(){
   unlockMenuAudio();
   status('原版标题动画运行中。方向键选择，Z/Enter 确认；音频自动恢复，受浏览器限制时首次按键或点击启用。');
 }
-function returnToTitle(){
+function returnToTitle({keepTitleMusic=false}={}){
+  if(state.titleDemoRun){requestTitleDemoExit('Escape');return false;}
   try{recordOwnedMainSession();}catch(problem){error(problem);return false;}
-  cancelOriginalEnding();
+  const cameFromScene=state.worldMode||!!state.endingHost;
+  cancelOriginalEnding();state.sceneLoading?.close();
   try{discardPendingCarry();}catch(problem){error(problem);return false;}
   ++state.action;++state.handoffGeneration;
   state.autoFlow=false;state.handoff=false;state.handoffFailed=false;
   state.worldMode=false;state.shotMode=false;state.active=false;state.paused=true;state.pressed.clear();clock.reset();resetHighFrameratePresentation();
   ++menu.launchId;menu.launching=false;menu.suppressTitleAudio=false;
-  stopMenuMusic();stopAudio({keepContext:true});state.background=null;state.worldSnapshot=null;
+  stopMenuMusic();stopAudio({keepContext:true,keepTitleMusic});state.background=null;state.worldSnapshot=null;
   syncGameplayFrameUI();
   if(!state.module?._th128_boot_title||!state.module._th128_boot_title(0x1234)){error(new Error(coreError()||'无法重新启动标题场景'));return false;}
-  enterTitleMenu();return true;
+  const loading=cameFromScene?beginOriginalSceneLoading():null;
+  enterTitleMenu();
+  if(loading)void loading.ready.then(()=>loading.close(),problem=>{
+    if(state.sceneLoading===loading){loading.close();error(problem);}
+  });
+  return true;
 }
 function releaseOriginalPauseInput(){
   for(const key of state.pressed)suppressedKeys.add(key);
   state.pressed.clear();
-  if(state.worldMode&&state.module?._th128_world_input
+  if(state.worldMode&&!state.replayPlayback&&state.module?._th128_world_input
     &&!state.module._th128_world_input(0,0,763))
     throw new Error(state.module.UTF8ToString(state.module._th128_world_error())||'原版暂停输入释放失败');
 }
@@ -4134,6 +4299,7 @@ function originalPauseConsumer(){
     }),
     onResume:()=>{
       if(!current())return;
+      state.stageGamepad?.suppressHeldActions();
       menu.pauseOpen=false;menu.fault=false;menu.page='main';
       state.paused=false;clock.reset();resetHighFrameratePresentation();originalMenuClock.reset();state.pressed.clear();
       find('#runtime-overlay').hidden=true;find('#game-menu').hidden=true;
@@ -4192,9 +4358,10 @@ function originalPauseConsumer(){
   });
   state.nativePause=controller;return controller;
 }
-async function openOriginalNativePause(alreadyOpened=false){
+async function openOriginalNativePause(alreadyOpened=false,replayFinished=false){
   const module=state.module,action=state.action,selection=state.stageSelection;
-  if(!alreadyOpened&&state.worldAdvancePromise)await state.worldAdvancePromise;
+  // Replay completion enters from the current advance, after the final native tick.
+  if(!alreadyOpened&&!replayFinished&&state.worldAdvancePromise)await state.worldAdvancePromise;
   if(module!==state.module||action!==state.action||selection!==state.stageSelection||state.endingLoading||state.endingHost)return;
   if(!state.worldMode||!state.active||menu.fault)return;
   if(!alreadyOpened&&pendingOriginalEndingRequest())return;
@@ -4202,15 +4369,16 @@ async function openOriginalNativePause(alreadyOpened=false){
   menu.pauseOpen=true;menu.page='pause';state.paused=true;clock.reset();resetHighFrameratePresentation();originalMenuClock.reset();
   find('#runtime-overlay').hidden=true;find('#game-menu').hidden=true;
   const controller=originalPauseConsumer();
-  const pending=controller.open({alreadyOpened});
+  const pending=controller.open({alreadyOpened,replayFinished});
   state.nativePausePending=pending;
   const current=()=>module===state.module&&action===state.action&&selection===state.stageSelection&&controller===state.nativePause&&!controller.closed;
-  try{await pending;if(current())status(alreadyOpened?'满身疮痍 · 选择再挑战或返回标题。':'游戏暂停 · 方向键选择，Z/Enter 确认，X/Esc 返回。');}
+  try{await pending;if(current())status(replayFinished?'重放完毕 · 方向键选择，Z/Enter 确认。':alreadyOpened?'满身疮痍 · 选择再挑战或返回标题。':'游戏暂停 · 方向键选择，Z/Enter 确认，X/Esc 返回。');}
   catch(problem){if(current())throw problem;}
   finally{if(state.nativePausePending===pending)state.nativePausePending=null;}
 }
 function handlePauseKey(code){state.nativePause?.keyDown(code);return true;}
 function openPauseMenu(){
+  state.stageGamepad?.suppressHeldActions();
   if(!state.worldMode||!state.active||menu.pauseOpen||menu.fault)return;
   openOriginalNativePause().catch(error);
 }
@@ -4278,6 +4446,7 @@ function startLaunch(selection,returnPage='route'){
 function cancelLaunch(){
   if(!menu.launching)return;
   ++menu.launchId;menu.launching=false;++state.action;state.autoFlow=menu.launchPreviousAutoFlow;state.pressed.clear();
+  state.sceneLoading?.close();
   if(menu.launchReturn==='fault'){enterFaultMenu('已取消重启；原 world 仍停止。');return;}
   if(state.worldMode){state.active=true;state.paused=true;showMenuPage('pause');}
   else if(!state.mainController?.prepared||state.mainController.disposed)returnToTitle();
@@ -4438,12 +4607,19 @@ find('#emit-shot').addEventListener('click',async()=>{
   }catch(problem){if(module===state.module&&action===state.action&&selection===state.stageSelection)error(problem);}
 });
 find('#game').addEventListener('pointerdown',()=>{
+  titleDemoClock.reset();
   if(state.active&&!state.worldMode&&!menu.launching)unlockMenuAudio();
 });
 find('#high-framerate-mode').addEventListener('change',event=>{
   setHighFramerateMode(event.target.checked);find('#game').focus();
 });
 window.addEventListener('keydown',event=>{
+  if(state.titleDemoRun){
+    if(state.webInput&&!state.webInput.acceptKeyDown(event))return;
+    if(requestTitleDemoExit(event.code))event.preventDefault();
+    return;
+  }
+  if(!state.worldMode)titleDemoClock.reset();
   if(!document.hidden&&(state.focusPausedWorld||state.focusPausedTitle)&&event.isTrusted)regainRuntimeFocus();
   if(state.restartSealing){event.preventDefault();return;}
   if(practiceMenu?.isOpen&&practiceMenu.keyDown(event))return;
@@ -4476,8 +4652,7 @@ window.addEventListener('keydown',event=>{
     if(menu.page==='launch'){handleMenuKey(event.code);return;}
     if(!state.active||state.handoff)return;
     if(state.replayPlayback){
-      if(state.replayFinished&&['Escape','Enter','KeyZ'].includes(event.code))stopOwnedReplayToList();
-      else if(event.code==='Escape')openPauseMenu();
+      if(event.code==='Escape')openPauseMenu();
       else if(['Enter','KeyZ'].includes(event.code))worldMovementInput(1,0);
       return;
     }
@@ -4505,6 +4680,7 @@ window.addEventListener('keydown',event=>{
   }
 });
 window.addEventListener('keyup',event=>{
+  if(state.titleDemoRun){state.webInput?.acceptKeyUp(event);suppressedKeys.delete(event.code);return;}
   if(practiceMenu?.isOpen&&state.worldMode)return;
   if(state.launcherExited)return;
   if(state.webInput&&!state.webInput.acceptKeyUp(event))return;
@@ -4533,9 +4709,16 @@ function releaseGameInput(){
   worldMovementInput(0,released);
 }
 function loseFocus(){
+  titleDemoClock.reset();
   if(menu.pauseOpen&&state.nativePause){state.pressed.clear();state.nativePause.suspend().catch(error);return;}
-  if(state.normalPostrun){state.pressed.clear();pauseNormalPostrun();return;}
-  if(state.endingHost||state.endingLoading){state.pressed.clear();pauseOriginalEnding();return;}
+  if(state.normalPostrun||state.endingHost||state.endingLoading){
+    state.pressed.clear();
+    if(!state.paused){
+      state.focusPausedAnimation={module:state.module,action:state.action,ticket:state.endingTicket};
+      if(state.normalPostrun)pauseNormalPostrun();else pauseOriginalEnding();
+    }
+    return;
+  }
   releaseGameInput();
   if(menu.launching){cancelLaunch();return;}
   if(state.worldMode&&state.active&&!state.paused&&!menu.fault&&!state.handoff&&!state.nativePausePending){
@@ -4551,6 +4734,12 @@ function loseFocus(){
 }
 function regainRuntimeFocus(){
   if(document.hidden)return;
+  const animation=state.focusPausedAnimation;state.focusPausedAnimation=null;
+  if(animation&&state.paused&&state.active&&!state.launcherExited&&!menu.fault
+    &&animation.module===state.module&&animation.action===state.action&&animation.ticket===state.endingTicket){
+    if(state.normalPostrun){resumeNormalPostrun();return;}
+    if(state.endingHost||state.endingLoading){resumeOriginalEnding();return;}
+  }
   const world=state.focusPausedWorld;state.focusPausedWorld=null;
   if(world){
     const current=()=>state.worldMode&&state.active&&!state.handoff&&!state.launcherExited&&!state.endingHost
@@ -4571,7 +4760,7 @@ function regainRuntimeFocus(){
 }
 window.addEventListener('blur',loseFocus);
 window.addEventListener('focus',regainRuntimeFocus);
-document.addEventListener('pointerdown',event=>{if(event.isTrusted&&(state.focusPausedWorld||state.focusPausedTitle))regainRuntimeFocus();},true);
+document.addEventListener('pointerdown',event=>{if(event.isTrusted&&(state.focusPausedWorld||state.focusPausedTitle||state.focusPausedAnimation))regainRuntimeFocus();},true);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)loseFocus();else regainRuntimeFocus();});
 window.addEventListener('pagehide',()=>{state.webInput?.dispose();cancelOriginalEnding();state.controller?.abort();state.renderer?.dispose();stopAudio();});
 
@@ -4600,6 +4789,7 @@ function installWebInput(){
   const canvas=find('#game');let previous=[],owner=0;
   let touchStorage=null;try{touchStorage=window.localStorage;}catch{}
   const launchOptions=getPageLaunchContext()?.config.options??localConfig?.touch??{};
+  const battleTouchOwner=()=>state.worldMode&&!state.endingLoading&&!state.endingHost&&!state.normalPostrun;
   state.webInput=mountWebInput({canvas,container:canvas.closest('.screen'),
     getContext:()=>{
       const next=[state.module,state.action,state.stageSelection,state.worldMode,state.normalPostrun,state.endingHost,state.endingLoading,
@@ -4607,15 +4797,16 @@ function installWebInput(){
       if(next.some((value,index)=>value!==previous[index])){previous=next;owner++;}
       return owner;
     },
-    isEnabled:()=>Boolean(state.active||menu.launching||state.normalPostrun||state.endingHost||menu.fault),
-    storage:touchStorage,options:{...launchOptions,thpracEnabled:state.thpracUIEnabled!==false,touchUtilityShortcuts:!localConfig},zoomEnabled:localConfig?.layoutZoom??true,viewport:find('#gameViewport'),
+    isEnabled:()=>Boolean(state.active||menu.launching||state.normalPostrun||state.endingHost||state.titleDemoRun||menu.fault),
+    hostedControls:!!launcherContext,storage:launcherContext?null:touchStorage,
+    options:{...launchOptions,thpracEnabled:state.thpracUIEnabled!==false,touchUtilityShortcuts:!localConfig&&!launcherContext},zoomEnabled:!launcherContext&&(localConfig?.layoutZoom??true),viewport:find('#gameViewport'),
     getGameContext:()=>{
-      const module=state.module;
-      const t=state.worldMode&&module?._th128_world_touch_state?JSON.parse(module.UTF8ToString(module._th128_world_touch_state())):null;
-      const s=!t&&state.worldMode&&module?._th128_world_state?JSON.parse(module.UTF8ToString(module._th128_world_state())):null;
+      const module=battleTouchOwner()?state.module:null;
+      const t=module?._th128_world_touch_state?JSON.parse(module.UTF8ToString(module._th128_world_touch_state())):null;
+      const s=!t&&module?._th128_world_state?JSON.parse(module.UTF8ToString(module._th128_world_state())):null;
       const blocked=state.paused||menu.pauseOpen||state.handoff||state.endingLoading||state.endingHost||state.normalPostrun||thpracToolsPanel?.isOpen;
       const choosingRoute=t?.route??(s?.message?.active===true&&['intro','select','confirm','releasing'].includes(s.message.routeChoice?.phase));
-      const kind=state.replayPlayback?'replay':state.worldMode&&!blocked&&!choosingRoute?((t?.dialogue??s?.message?.active)?'dialogue':'game'):'menu';
+      const kind=state.replayPlayback&&!menu.pauseOpen?'replay':state.worldMode&&!blocked&&!choosingRoute?((t?.dialogue??s?.message?.active)?'dialogue':'game'):'menu';
       const generation=t?.generation??s?.flow?.worldGeneration??0,playerState=t?.state??s?.playerState??0;
       return{key:[state.action,menu.launchId,menu.page,generation,playerState,kind].join(':'),kind,
         instance:[state.action,generation,playerState].join(':'),gestureScope:state.action,
@@ -4625,7 +4816,7 @@ function installWebInput(){
         x:Math.trunc((t?.x??s?.playerX??0)*128),y:Math.trunc((t?.y??s?.playerY??400)*128),fast:576,slow:256,trackerAvailable:false};
     },
     onTouchMotion:motion=>{
-      if(!state.worldMode||state.paused||state.replayPlayback)return;
+      if(!battleTouchOwner()||state.paused||state.replayPlayback)return;
       if(typeof state.module?._th128_world_touch_motion!=='function'){
         if(motion.mode!==0)throw new Error('当前核心缺少真实原生触控接口，需要配套 Runtime。');
         return;
@@ -4672,6 +4863,7 @@ function installLauncherRuntime(){
     exit(){
       if(state.launcherExited)return;
       state.launcherExited=true;state.active=false;state.paused=true;state.loading=(state.loading??0)+1;++menu.launchId;
+      if(state.titleDemoRun){state.titleDemoRun.playback?.cancel();state.titleDemoRun.restoreMusic?.();state.titleDemoRun=null;state.replayPlayback=null;}
       practiceMenu?.dispose();
       state.controller?.abort();
       try{cancelOriginalEnding();}finally{
@@ -4697,10 +4889,21 @@ function noteLauncherPresentation(before){
 }
 installLauncherRuntime();
 
+function stageGamepadOwner(){
+  if(localConfig||!state.webInput)return null;
+  return state.stageGamepad??=mountStageGamepad({window,document,input:state.webInput});
+}
+function pollStageGamepad(){
+  if(state.worldMode&&state.active&&!state.handoff&&!menu.launching&&!state.nativePausePending&&!state.focusPausedWorld&&!state.endingLoading)
+    stageGamepadOwner()?.poll();
+  else state.stageGamepad?.clear();
+}
+
 async function present(timestamp){
   if(state.launcherExited)return;
+  if(state.sceneLoading){requestAnimationFrame(present);return;}
   try{
-    state.webInput?.syncContext();pollLocalBindings?.();
+    state.webInput?.syncContext();pollLocalBindings?.();pollStageGamepad();
     let interpolation=1,presentationSteps=0;
     const nativeMenu=state.active&&state.worldMode&&menu.pauseOpen&&!menu.fault?state.nativePause:null;
     if(nativeMenu){
@@ -4722,9 +4925,11 @@ async function present(timestamp){
       const timing=practiceWorld?thpracLogicClock.advance(timestamp,active,practiceLogicRate()):clock.advance(timestamp,active);presentationSteps=timing.steps;
       highFramerateCatchup=timing.steps>1;
       if(highFramerateCatchup)resetHighFrameratePresentation();
-      if(timing.stalled&&state.active&&!state.paused){pause();status('浏览器帧调度停顿，已暂停而不是跳过游戏逻辑帧。');}
+      if(timing.stalled&&state.active&&!state.paused&&!state.endingHost&&!state.normalPostrun){pause();status('浏览器帧调度停顿，已暂停而不是跳过游戏逻辑帧。');}
       for(let count=0;count<timing.steps&&state.active&&!state.paused;count++){
+        const demoBefore=state.titleDemoRun;
         if(state.normalPostrun)await advanceNormalPostrun();else if(state.endingHost)await advanceOriginalEnding();else await advance();
+        if(state.titleDemoRun!==demoBefore)break;
         if(!highFramerateCatchup)captureHighFramerateWorld();
         if(state.endingPromise)await state.endingPromise;
         if(practiceWorld&&(state.endingHost||state.endingLoading||state.normalPostrun||!state.worldMode)){
@@ -4813,6 +5018,7 @@ window.th128Debug={
     const presentation=highFramerateWorldView(world,records,interpolation);records=presentation.records;
     const displayedPlayer=records.find(record=>record.id===4000000&&record.drawPass==='player');
     const fpsRate=state.shotMode?originalPresentationFPS.value:null,fpsDraws=originalFPSDraws(fpsRate),canvas=find('#game');
+    if(state.titleDemoRun?.overlay)records=records.concat(state.titleDemoRun.overlay.draws());
     if(fpsDraws.length)records=records.concat(fpsDraws);
     syncDebugRespawnUI(world);
     syncGameplayFrameUI(world);

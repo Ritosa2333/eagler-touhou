@@ -47,14 +47,19 @@ public:
             std::copy(digest.begin(),digest.end(),digests_[slot].begin());}
         previews_.assign(preview.begin(),preview.end());generation_=generation;
     }
-    void prepare(unsigned generation,unsigned tick,unsigned slot,unsigned route,unsigned rank,unsigned score,unsigned frames,unsigned finishSerial,std::span<const std::uint8_t> raw){
+    void prepare(unsigned generation,unsigned tick,unsigned slot,unsigned route,unsigned rank,unsigned score,unsigned frames,unsigned finishSerial,
+            std::span<const std::uint8_t> raw,unsigned practiceStage=0){
+        const bool practice=practiceStage!=0;
+        constexpr std::array<unsigned,6> terminalStages{3,5,8,10,13,15};
+        const unsigned last=practice?practiceStage:route+17,stages=route==6?1u:3u;
         if(!bound()||pending()||generation!=generation_||!tick||slot>=25||!((route<6&&rank<4)||(route==6&&rank==4))||!frames||!finishSerial||serial_==UINT32_MAX
-            ||raw.size()<(route==6?299u:580u)||raw.size()>32u*1024u*1024u||word(raw,0)!=0x72383231||word(raw,4)!=2||word(raw,56)!=score||word(raw,124)!=(route==6?1u:3u)
-            ||word(raw,128)!=route||word(raw,136)!=rank||word(raw,140)!=route+17||word(raw,144)!=0)
+            ||raw.size()<(practice?298u:route==6?299u:580u)||raw.size()>32u*1024u*1024u||word(raw,0)!=0x72383231||word(raw,4)!=2||word(raw,56)!=score
+            ||(practice?(route>=6||last!=terminalStages[route]||word(raw,124)<1||word(raw,124)>3):word(raw,124)!=stages)
+            ||word(raw,128)!=route||word(raw,136)!=rank||word(raw,140)!=last||word(raw,144)!=0)
             throw std::runtime_error("ordinary full variable replay save producer identity rejected");
         ++serial_;tick_=tick;slot_=slot;const auto put=[this](unsigned v){for(unsigned i=0;i<4;++i)packet_.push_back(std::uint8_t(v>>(8*i)));};
         put(0x3153524eu);put(1);put(128+unsigned(raw.size()));put(generation);put(serial_);put(tick);put(slot);put(word(previews_,12+136*slot));
-        put(unsigned(raw.size()));put(checksum(raw));put(route);put(rank);put(score);put(route+17);put(frames);put(finishSerial);
+        put(unsigned(raw.size()));put(checksum(raw));put(route);put(rank);put(score);put(last);put(frames);put(finishSerial);
         packet_.insert(packet_.end(),digests_[slot].begin(),digests_[slot].end());const auto sha=ordinaryReplaySHA256(raw);
         packet_.insert(packet_.end(),sha.begin(),sha.end());packet_.insert(packet_.end(),raw.begin(),raw.end());
     }

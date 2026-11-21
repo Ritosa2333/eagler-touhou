@@ -92,6 +92,12 @@ export function mountThprac128Menu({root,controls=root,opener=null,getAvailabili
  for(const key of resourceNames)listen(node[key],'input',()=>{const output=root.querySelector('[data-thprac-value="'+key+'"]');if(output)output.textContent=thprac128ResourceText(key,Number(node[key].value));});
  for(const key of ['locale','difficulty','enabled'])if(node[key])listen(node[key],'change',()=>{if(key!=='difficulty')onSettings({enabled:isEnabled(),locale:language()});refresh();});
  function back(){close();onCancel();}
+ function dismissTitleRoute(){if(routeOpen&&!root.hidden&&!pending)close({focus:false});}
+ function confirmTitleRoute(){
+  if(disposed||!routeOpen||root.hidden)return false;
+  if(index('mode')!==0){void begin();return true;}
+  dismissTitleRoute();return false;
+ }
  function syncRoute(selection,difficulty){
   if(!routeOpen||root.hidden||!Number.isInteger(selection)||selection<0||selection>3)return;
   const point=String(selection),rank=String(selection===3?4:difficulty);
@@ -113,5 +119,5 @@ export function mountThprac128Menu({root,controls=root,opener=null,getAvailabili
  }
  listen(root,'keydown',event=>keyDown(event,true));
  listen(root,'keyup',event=>event.stopPropagation());refresh();
- return Object.freeze({get isOpen(){return !disposed&&!root.hidden;},refresh,open,close,keyDown,back,syncRoute,dispose(){if(disposed)return;disposed=true;close({focus:false});for(const remove of listeners)remove();if(opener)opener.disabled=true;}});
+ return Object.freeze({get isOpen(){return !disposed&&!root.hidden;},refresh,open,close,keyDown,back,syncRoute,confirmTitleRoute,dismissTitleRoute,dispose(){if(disposed)return;disposed=true;close({focus:false});for(const remove of listeners)remove();if(opener)opener.disabled=true;}});
 }

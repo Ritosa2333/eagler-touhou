@@ -49,7 +49,7 @@ test('non-World and replay audio scopes do not inspect ordinary state',()=>{
 });
 const hfrSource=span('// BEGIN HIGH_FRAMERATE_PRESENTATION','// END HIGH_FRAMERATE_PRESENTATION');
 const presentSource=span('async function present(timestamp){','\nrequestAnimationFrame(present);');
-function presentationHarness(){
+function presentationHarness({endWithPostrun=false}={}){
  const calls={states:0,draws:0,captures:0,samples:0,ticks:0,presentations:[],inputs:[]};
  const state={worldMode:true,shotMode:true,active:true,paused:false,handoff:false,endingHost:null,endingLoading:false,normalPostrun:null,
   stageSelection:{stage:{id:1}},background:{tick(){},geometry:()=>[]},frame:0,autoFlow:false,extraPresentation:null};
@@ -62,13 +62,15 @@ function presentationHarness(){
   sample(alpha){calls.samples++;return super.sample(alpha);}
  }
  const menu={pauseOpen:false,fault:false},clock=new FrameStepper(),fps={reset(){},observe(){}};
- const drawSource='function draw(alpha){const raw=worldPresentationForDraw(),view=highFramerateWorldView(raw.world,raw.records,alpha);calls.presentations.push({frame:raw.world.frame,x:view.records[0].x,interpolated:view.interpolated});return true;}return {present,setHighFramerateMode};';
+ const drawSource='function draw(alpha){if(state.normalPostrun){state.normalPostrun.redraw();return false;}const raw=worldPresentationForDraw(),view=highFramerateWorldView(raw.world,raw.records,alpha);calls.presentations.push({frame:raw.world.frame,x:view.records[0].x,interpolated:view.interpolated});return true;}return {present,setHighFramerateMode};';
  const construct=new Function('state','menu','document','WorldPresentationInterpolator','clock','originalMenuClock','originalPresentationFPS',
  'renderInterpolationPhase','stageIntroDrawFailure','advance','advanceNormalPostrun','advanceOriginalEnding','maybeAutoHandoff',
- 'syncGameplayFrameUI','requestAnimationFrame','performance','pause','status','error','calls','pollLocalBindings','practiceMenu','thpracToolsPanel',
+ 'syncGameplayFrameUI','requestAnimationFrame','performance','pause','status','error','calls','pollLocalBindings','practiceMenu','thpracToolsPanel','pollStageGamepad',
  hfrSource+'\n'+presentSource+'\n'+drawSource);
  const tick=async()=>{calls.inputs.push(state.frame);calls.ticks++;state.frame++;};
- const h=construct(state,menu,{hidden:false},CountedHistory,clock,new FrameStepper(),fps,renderInterpolationPhase,()=>'',tick,tick,tick,()=>{},()=>{},()=>{},performance,()=>{},()=>{},e=>{throw e;},calls,()=>{},null,null);
+ const ending=async()=>{state.endingHost=null;state.normalPostrun={redraw(){calls.presentations.push('postrun');}};
+  state.module._th128_world_bullet_draw_error=()=> 'geometry526 requires a loaded, non-reentrant text host';};
+ const h=construct(state,menu,{hidden:false},CountedHistory,clock,new FrameStepper(),fps,renderInterpolationPhase,()=>'',tick,tick,endWithPostrun?ending:tick,()=>{},()=>{},()=>{},performance,()=>{},()=>{},e=>{throw e;},calls,()=>{},null,null,()=>{});
  return {calls,state,...h};
 }
 test('four catch-up logic ticks export only the final display and keep all four inputs',async()=>{
@@ -97,4 +99,12 @@ test('live direct touch draws ahead of the old player frame without advancing Wo
  assert.equal(h.calls.ticks,1);assert.equal(Math.round(h.calls.presentations.at(-1).x*1000),4000);
  const prior=reads;h.state.replayPlayback={};await h.present(1000/36);
  assert.equal(reads,prior);assert(h.calls.presentations.at(-1).x<2,'Replay uses normal display interpolation');
+});
+test('high refresh never exports battle draws in the same tick that Ending retires the World for name registration',async()=>{
+ const h=presentationHarness({endWithPostrun:true});h.setHighFramerateMode(true);await h.present(0);
+ const previousDraws=h.calls.draws;h.state.endingHost={};
+ await h.present(1000/60);
+ assert.equal(h.calls.draws,previousDraws);assert.equal(h.calls.presentations.at(-1),'postrun');
+ await h.present(2000/60);
+ assert.equal(h.calls.draws,previousDraws);assert.equal(h.calls.presentations.at(-1),'postrun');
 });

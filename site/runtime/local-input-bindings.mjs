@@ -1,3 +1,5 @@
+import {analogGamepadDirections} from './gamepad-input.mjs';
+
 export const localInputActions=Object.freeze([
  ['ArrowUp','上',12],['ArrowDown','下',13],['ArrowLeft','左',14],['ArrowRight','右',15],['KeyZ','射击／确认',0],['KeyX','完美冻结／返回',1],['KeyC','连射',2],['ShiftLeft','低速',4],['Escape','暂停',9],['KeyR','重开',3]
 ]);
@@ -33,7 +35,8 @@ export function mountLocalBindings({window,document,input,bindings,getActive}){
   const pads=window.navigator?.getGamepads?.()??[];
   for(const pad of pads){if(!pad?.connected||pad.mapping!=='standard')continue;
    for(const [logical,button]of Object.entries(bindings.pad))if(pad.buttons[button]?.pressed)codes.add(logical);
-   const [x=0,y=0]=pad.axes;if(x<-.35)codes.add('ArrowLeft');else if(x>.35)codes.add('ArrowRight');if(y<-.35)codes.add('ArrowUp');else if(y>.35)codes.add('ArrowDown');
+   const [x=0,y=0]=pad.axes,directions=analogGamepadDirections(x,y);
+   for(let i=0;i<4;i++)if(directions&(16<<i))codes.add(localInputActions[i][0]);
   }
   if(codes.size)input.setKeySource(padId,[...codes]);else input.clearKeySource(padId);
  };

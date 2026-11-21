@@ -4,8 +4,13 @@ import {dirname, isAbsolute, join, relative, resolve, sep} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const coreReceiptSha='849ed768f4a3438e327ce2580db647a9c9c3e2a751af4b0d21e4fc1db37dd9da';
-const coreGeneration='d491ae9dda125966ef873df62779bcbf6aeddd09dc2c09d04eb8afe435aa6f63';
+const coreReceipts=new Map([
+ ['849ed768f4a3438e327ce2580db647a9c9c3e2a751af4b0d21e4fc1db37dd9da',{number:122,generation:'d491ae9dda125966ef873df62779bcbf6aeddd09dc2c09d04eb8afe435aa6f63'}],
+ ['acb0336924255e66c976ac4a3e6708fa580adf00a0dfaeb025d2eb6c6ba32be4',{number:123,generation:'071361a3203c099c72b512ad533a0d2920b381f9d38fb9e4c0382ec3a95a0ed1'}],
+ ['2756d30105f04e652f99ecab9e56d996112a9817b4354a5e68abb4c6a91d5ff0',{number:124,generation:'c4e97977f1d0c394dc481ffa2dcede13847ea18b9e57973d9fd54e95c40afec1'}],
+ ['75d50815689e3f76821cd03c9253adb7397e54ae8a007263a22370adb64a1a62',{number:126,generation:'c5df9dab12659071816382294fd9ce1f3850ea384f49b99021f317b5e0afcefc'}],
+ ['f4bc1f5c926c31f6a763bfafa51f55e7590f458f4d9ddf2c16e0e1cda500b028',{number:127,generation:'242292f417b20db60234b7f21604d6e5a0e06d6dca25fc885835844d459491ba'}],
+]);
 const decoder=new TextDecoder('utf-8',{fatal:true});
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const json=value=>Buffer.from(JSON.stringify(value,null,2)+'\n');
@@ -37,15 +42,16 @@ export async function packageLauncherRuntime({coreSite,out}) {
  const output=join(realpathSync(dirname(resolve(out))),resolve(out).split(sep).at(-1));
  if(output===core||output===site||below(core,output)||below(site,output))throw new Error('Use a new Runtime output outside both input roots');
  const receiptBytes=read(core,'runtime/build.json');
- if(sha(receiptBytes)!==coreReceiptSha)throw new Error('Expected the accepted Runtime122 v17 core receipt');
+ const approved=coreReceipts.get(sha(receiptBytes));if(!approved)throw new Error('Expected an accepted TH128 core receipt');
  const receipt=JSON.parse(decoder.decode(receiptBytes));
+ const coreGeneration=approved.generation;
  const coreDir=`runtime/builds/${coreGeneration}`;
- if(receipt.game!=='th128'||receipt.privateCore!==122||receipt.generation!==coreGeneration||receipt.entry!==`${coreDir}/core.mjs`)
-  throw new Error('Unexpected Core122 identity');
+ if(receipt.game!=='th128'||receipt.privateCore!==approved.number||receipt.generation!==coreGeneration||receipt.entry!==`${coreDir}/core.mjs`)
+  throw new Error('Unexpected TH128 core identity');
  const payload=new Map([['runtime/build.json',receiptBytes]]);
  for(const name of ['core.mjs','core.wasm']){
   const path=`${coreDir}/${name}`, bytes=read(core,path), expected=receipt.artifacts[name];
-  if(bytes.length!==expected.bytes||sha(bytes)!==expected.sha256)throw new Error(`Core122 file differs: ${name}`);
+  if(bytes.length!==expected.bytes||sha(bytes)!==expected.sha256)throw new Error(`TH128 core file differs: ${name}`);
   payload.set(path,bytes);
  }
  const frontend=JSON.parse(decoder.decode(read(root,'tools/launcher-runtime-files.json')));

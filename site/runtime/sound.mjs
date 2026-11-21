@@ -327,15 +327,16 @@ export class OriginalPauseController{
     if(result!==1)throw new Error(this.module.UTF8ToString(this.module._th128_world_error())||'Original menu operation rejected');
   }
   snapshot(){return JSON.parse(this.module.UTF8ToString(this.module._th128_world_pause_state()));}
-  async open({alreadyOpened=false}={}){
+  async open({alreadyOpened=false,replayFinished=false}={}){
     if(this.active||this.busy||!this.current())throw new Error('Original menu is already owned');
     this.busy=true;
     try{
       this.releaseInput();this.held=0;this.pressed=0;
       await this.audio.enter();
       if(!this.current())return;
-      if(!alreadyOpened)this.checked(this.module._th128_world_pause_open(0));
-      if(!this.snapshot().active)throw new Error('Original menu owner was not created');
+      if(!alreadyOpened)this.checked(this.module._th128_world_pause_open(replayFinished?2:0));
+      const snapshot=this.snapshot();
+      if(!snapshot.active||(replayFinished&&snapshot.kind!==3))throw new Error('Original menu owner was not created');
       await this.consumeSound();if(!this.current())return;this.active=true;this.suspended=false;
     }catch(problem){if(this.current())throw problem;}finally{this.busy=false;}
   }
@@ -933,7 +934,7 @@ export class OriginalMainMenuController{
     for(const name of ['_th128_tick','_th128_title_menu_state','_th128_title_main_input'])if(typeof module?.[name]!=='function')throw new Error('Original complete Title API unavailable');
     if([prepare,consumeSound,consumeMusic,syncText,onState,onAction,getButtons].some(callback=>typeof callback!=='function'))throw new Error('Original complete Title consumers unavailable');
     Object.assign(this,{module,prepare,consumeSound,consumeMusic,syncText,onState,onAction,getButtons});
-    this.held=0;this.pressed=0;this.busy=false;this.prepared=false;this.disposed=false;this.controllerHeld=0;this.controllerAdopted=false;
+    this.held=0;this.pressed=0;this.busy=false;this.prepared=false;this.disposed=false;this.controllerHeld=0;this.controllerAdopted=false;this.lastInput=0;
     this.musicTask=null;this.musicFailure=null;
   }
   snapshot(){return JSON.parse(this.module.UTF8ToString(this.module._th128_title_menu_state()));}
@@ -972,6 +973,7 @@ export class OriginalMainMenuController{
       if(!controller||!Number.isInteger(controller.buttons)||controller.buttons<0||controller.buttons>0x7fffffff
         ||!Number.isInteger(controller.held)||(controller.held&~0x803ff))throw new Error('Actual controller snapshot rejected');
       const controllerPressed=this.controllerAdopted?controller.held&~this.controllerHeld:0;
+      this.lastInput=this.held|pressed|controller.held|controllerPressed|controller.buttons;
       this.controllerHeld=controller.held;this.controllerAdopted=true;
       if(before.ready===1&&before.transitioning===0&&!this.prepared){await this.prepare(before);this.prepared=true;}
       if(this.disposed)return null;
@@ -1050,6 +1052,7 @@ export class OriginalTitleAudio{
   dispose(){if(this.disposed)return;this.disposed=true;this.sounds.dispose();this.music.dispose();this.bgmGain.disconnect();}
 }
 
+const demoPlaybackToken=Symbol('Original DAT Demo');
 export class OwnedReplayPlayback{
   #stages;
   #touch;
@@ -1061,10 +1064,12 @@ export class OwnedReplayPlayback{
   #pendingIndex=0;
   #module=null;
   #closed=false;
-  constructor(bytes,slot){
-    if(!(bytes instanceof Uint8Array)||!Number.isInteger(slot)||slot<0||slot>24)throw new Error('Owned replay file and slot identity rejected');
+  constructor(bytes,slot,demoToken){
+    const demo=demoToken===demoPlaybackToken;
+    if(!(bytes instanceof Uint8Array)||(demo?slot!==null:!Number.isInteger(slot)||slot<0||slot>24))throw new Error('Owned replay file and slot identity rejected');
     this.#file=bytes.slice();
     const decoded=decodeReplay(this.#file);this.#touch=readTouchReplay(decoded);
+    if(demo&&(decoded.stages.length!==1||this.#touch))throw new Error('Original Demo must contain only its unassisted starting stage');
     this.#route=decoded.metadata.route;this.#metadata={scoreRaw:decoded.metadata.scoreRaw,slowdown:decoded.metadata.slowdown};
     if(!Number.isInteger(decoded.metadata.rank)||decoded.metadata.rank<0||decoded.metadata.rank>3)
       throw new Error('当前回放仅接受已保存的普通关卡录像；没有伪造其它回放分支。');
@@ -1078,6 +1083,11 @@ export class OwnedReplayPlayback{
     for(let index=1;index<this.#stages.length;++index)if(!nextIds[this.#stages[index-1].stage]?.includes(this.#stages[index].stage))
       throw new Error('Owned replay natural stage order rejected');
     this.#rank=decoded.metadata.rank;this.slot=slot;this.totalFrames=this.#stages.reduce((sum,stage)=>sum+stage.numFrames,0);
+  }
+  static fromOriginalDemo(bytes,{stage,frames}){
+    const owner=new OwnedReplayPlayback(bytes,null,demoPlaybackToken);
+    if(owner.firstSelection().stage!==stage||owner.totalFrames!==frames)throw new Error('Original DAT Demo stage or extent differs');
+    return owner;
   }
   static async fromStore(store,slot){
     if(!(store instanceof OwnedReplayStore))throw new Error('Replay playback requires the actual owned web replay store');
@@ -1096,6 +1106,7 @@ export class OwnedReplayPlayback{
     });
   }
   stageChoicePacket(){
+    if(this.slot===null)throw new Error('Original DAT Demo has no player replay slot');
     const packet=new Uint8Array(72),view=new DataView(packet.buffer);
     view.setUint32(0,0x31545352,true);view.setUint32(4,this.slot,true);view.setUint32(8,this.#route,true);view.setUint32(12,this.#rank,true);
     this.stageChoices().forEach((row,index)=>[Number(row.available),row.stage,row.scoreRaw,row.frames].forEach((value,field)=>view.setUint32(24+index*16+field*4,value,true)));
@@ -1115,6 +1126,7 @@ export class OwnedReplayPlayback{
   }
   firstSelection(){const stage=this.#stages[this.#pendingIndex];return{stage:stage.stage,difficulty:this.#rank,seed:stage.seed,progress:0,autoFlow:true};}
   restartSelected(){
+    if(this.slot===null)throw new Error('Original DAT Demo cannot restart through the player replay menu');
     const next=new OwnedReplayPlayback(this.#file,this.slot);next.chooseStage(this.selectedChoice??0);return next;
   }
   stagePacket(index=this.#pendingIndex){
@@ -1272,10 +1284,13 @@ export function nativeRouteScorePacket(profile){
   }
   return packet;
 }
-export async function validatedOwnedNativeTitleRecord(record){
+export async function validatedOwnedNativeTitleRecord(record){return checkedStoredScoreProfile(record,false);}
+async function checkedStoredScoreProfile(record,practice){
   if(record===null||record===undefined)return null;
   if(record.schema!=='th128-owned-native-title-record/1'||!Number.isSafeInteger(record.revision)||record.revision<1
-    ||!((record.provenance==='ordinary-native-postrun'&&record.tainted===false)||(record.provenance==='extra-native-postrun'&&record.tainted===true))||typeof record.sha256!=='string'||!(/^[a-f0-9]{64}$/).test(record.sha256))
+    ||!(practice?record.provenance==='practice-native-postrun'&&record.tainted===true:
+      (record.provenance==='ordinary-native-postrun'&&record.tainted===false)||(record.provenance==='extra-native-postrun'&&record.tainted===true))
+    ||typeof record.sha256!=='string'||!(/^[a-f0-9]{64}$/).test(record.sha256))
     throw new Error('Owned native title record provenance differs');
   nativeRouteScorePacket(record.profile);
   const profile=record.profile.slice(),digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',profile)),b=>b.toString(16).padStart(2,'0')).join('');
@@ -1288,7 +1303,12 @@ function sameNativeRecordMetadata(first,second){
   return Object.keys(first).length===keys.length&&keys.every(key=>Object.hasOwn(first,key)&&JSON.stringify(first[key])===JSON.stringify(second[key]));
 }
 export class OwnedNativeTitleRecordStore{
-  constructor(indexedDB=globalThis.indexedDB){if(!indexedDB||typeof indexedDB.databases!=='function')throw new Error('Owned native title record observation unavailable');this.indexedDB=indexedDB;}
+  #practice;
+  #key;
+  constructor(indexedDB=globalThis.indexedDB,{practice=false}={}){
+    if(!indexedDB||typeof indexedDB.databases!=='function')throw new Error('Owned native title record observation unavailable');
+    this.indexedDB=indexedDB;this.#practice=practice===true;this.#key=this.#practice?'practice-profile':KEY;
+  }
   async observe(){
     const databases=await this.indexedDB.databases();
     if(!databases.some(row=>row.name===DATABASE))return null;
@@ -1303,15 +1323,15 @@ export class OwnedNativeTitleRecordStore{
       if(!database.objectStoreNames.contains(STORE))throw new Error('Owned native title record store absent');
       const transaction=database.transaction(STORE,'readonly');
       const completed=new Promise((resolve,reject)=>{transaction.oncomplete=()=>resolve();transaction.onabort=()=>reject(transaction.error||new Error('Owned native title record observation aborted'));transaction.onerror=()=>reject(transaction.error||new Error('Owned native title record observation failed'));});
-      const value=new Promise((resolve,reject)=>{const request=transaction.objectStore(STORE).get(KEY);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
-      const [record]=await Promise.all([value,completed]);return await validatedOwnedNativeTitleRecord(record);
+      const value=new Promise((resolve,reject)=>{const request=transaction.objectStore(STORE).get(this.#key);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+      const [record]=await Promise.all([value,completed]);return await checkedStoredScoreProfile(record,this.#practice);
     }finally{database.close();}
   }
   async commit(expectedRevision,capture){
     if(!Number.isSafeInteger(expectedRevision)||expectedRevision<0||expectedRevision>=Number.MAX_SAFE_INTEGER)throw new Error('Owned native record revision rejected');
-    const source=checkedNativeScoreCapture(capture),sha256=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',source.profile)),b=>b.toString(16).padStart(2,'0')).join('');
+    const source=checkedNativeScoreCapture(capture,this.#practice),sha256=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',source.profile)),b=>b.toString(16).padStart(2,'0')).join('');
     const record={schema:'th128-owned-native-title-record/1',revision:expectedRevision+1,provenance:source.native.provenance,tainted:source.native.tainted,profile:source.profile,sha256,native:source.native,runId:source.runId};
-    await validatedOwnedNativeTitleRecord(record);
+    await checkedStoredScoreProfile(record,this.#practice);
     const database=await new Promise((resolve,reject)=>{const request=this.indexedDB.open(DATABASE,1);request.onupgradeneeded=()=>request.result.createObjectStore(STORE);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||new Error('Owned native record write open failed'));request.onblocked=()=>reject(new Error('Owned native record write blocked'));});
     try{
       const transaction=database.transaction(STORE,'readwrite',{durability:'strict'});let issue=null;
@@ -1320,13 +1340,13 @@ export class OwnedNativeTitleRecordStore{
         transaction.abort();try{await done;}catch{}
         throw new Error('Owned native record strict transaction durability was not granted');
       }
-      const request=transaction.objectStore(STORE).get(KEY);
+      const request=transaction.objectStore(STORE).get(this.#key);
       request.onerror=()=>{issue=request.error;transaction.abort();};
       request.onsuccess=()=>{
         const previous=request.result;
         if(previous?.runId===source.runId&&previous.sha256===sha256)return;
         if((previous?.revision??0)!==expectedRevision){issue=new Error('Owned native record revision changed before commit');transaction.abort();return;}
-        transaction.objectStore(STORE).put(record,KEY);
+        transaction.objectStore(STORE).put(record,this.#key);
       };
       await done;
     }finally{database.close();}
@@ -1419,10 +1439,11 @@ export function originalResultPacket(model){
 }
 
 function nativeScoreDigest(profile){let value=2166136261;for(const byte of profile)value=Math.imul(value^byte,16777619)>>>0;return value;}
-function checkedNativeScoreCapture(capture){
+function checkedNativeScoreCapture(capture,practice=false){
   const native=capture?.native;
   if(!native||native.bound!==true||native.started!==true||native.prepared!==true||native.acknowledged!==false
-    ||native.normalClear!==false||!((native.provenance==='ordinary-native-postrun'&&native.tainted===false&&native.route<6&&native.rank<4)||(native.provenance==='extra-native-postrun'&&native.tainted===true&&native.route===6&&native.rank===4))
+    ||native.normalClear!==false||!(practice?native.provenance==='practice-native-postrun'&&native.tainted===true&&native.nameCommitted===true&&native.route<6&&native.rank<4:
+      (native.provenance==='ordinary-native-postrun'&&native.tainted===false&&native.route<6&&native.rank<4)||(native.provenance==='extra-native-postrun'&&native.tainted===true&&native.route===6&&native.rank===4))
     ||native.serial!==1||native.bytes!==PROFILE_BYTES||!Number.isSafeInteger(native.frames)||native.frames<1
     ||!Number.isSafeInteger(native.generation)||native.generation<1||!Number.isInteger(native.route)||native.route<0||native.route>6
     ||!Number.isInteger(native.rank)||native.rank<0||native.rank>4||!Number.isInteger(native.digest)||native.digest<0||native.digest>0xffffffff

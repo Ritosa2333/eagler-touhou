@@ -224,7 +224,7 @@ ReplayTerminalRuntime replayTerminal;
 th128::anm::Runtime ordinaryGlobalTaskRuntime;
 struct NormalPostrunRuntime {
     unsigned generation=0,serial=0;
-    bool awaitingPresent=false,failed=false,extra=false;
+    bool awaitingPresent=false,failed=false,extra=false,practice=false;
     std::unique_ptr<th128::postrun::Menu> menu;
     std::unique_ptr<th128::postrun::Media> media;
     std::array<std::vector<std::uint8_t>,4> assets;
@@ -1240,7 +1240,17 @@ bool tickReplayTerminal(std::string& error){
 }
 bool worldPacketCapturing=false;
 std::vector<std::array<double,39>> worldPacketRows;
-std::array<double,8> worldPacketHeader{};
+// Packet v2 keeps the same sprite row layout. Fixed width vertex rows replace
+// the text encoding for the original distortion strips and boss/spell rings.
+std::vector<std::array<double,7>> worldPacketVertices;
+std::array<double,10> worldPacketHeader{};
+template<class Vertices>
+unsigned appendWorldPacketVertices(const Vertices& vertices){
+    if(vertices.size()>65536-worldPacketVertices.size())throw std::runtime_error("World draw packet vertex budget exceeded");
+    const unsigned first=unsigned(worldPacketVertices.size());
+    for(const auto& vertex:vertices)worldPacketVertices.push_back({vertex.x,vertex.y,vertex.z,vertex.rhw,vertex.u,vertex.v,double(vertex.color)});
+    return first;
+}
 std::optional<unsigned> appendWorldPacket(std::uint32_t identifier,int bank,const th128::anm::State& state,
  const th128::anm::SpriteInfo& sprite,float x,float y,float z,bool unified,const char* surface,const char* pass,bool primary=false){
  if(!worldPacketCapturing)return std::nullopt;
@@ -1281,8 +1291,12 @@ bool writeVisualRecord(Writer& text,bool& comma,std::uint32_t identifier,int ban
             }
         }
     }
-    if(!mesh&&!fan&&!ring)if(const auto packed=appendWorldPacket(identifier,bank,state,sprite,pixelX,pixelY,pixelZ,unifiedEffect,surface,drawPass)){
-        if(comma)text<<',';comma=true;text<<*packed;return true;
+    if(!fan&&!(mesh&&ring))if(const auto packed=appendWorldPacket(identifier,bank,state,sprite,pixelX,pixelY,pixelZ,unifiedEffect,surface,drawPass)){
+        if(comma)text<<',';comma=true;
+        if(mesh)text<<'['<<*packed<<",1,"<<appendWorldPacketVertices(mesh->vertices)<<','<<mesh->vertices.size()<<','<<mesh->owner<<','<<mesh->column<<']';
+        else if(ring)text<<'['<<*packed<<",2,"<<appendWorldPacketVertices(*ring)<<','<<ring->size()<<",0,0]";
+        else text<<*packed;
+        return true;
     }
     if(comma)text<<',';comma=true;
     text<<"{\"id\":"<<identifier<<",\"parent\":0,\"bank\":"<<bank<<",\"sprite\":"<<state.sprite
@@ -3840,17 +3854,30 @@ int th128_world_pause_load_manual(const void* bytes,unsigned size){
 }
 int th128_world_pause_active(){return originalPauseMenu&&originalPauseMenu->state().active?1:0;}
 int th128_world_pause_action(){if(normalReplaySave&&normalReplaySave->finished()&&!normalReplaySave->gameOver())return int(th128::pause::Action::Title);return originalPauseMenu?int(originalPauseMenu->state().action):0;}
-int th128_world_pause_open(int gameOver){
+int th128_world_pause_open(int reason){
     operationError.clear();
-    if(!originalPauseMenu||world->faulted()||worldTickExecuting||normalTerminal.requested||th128_world_pause_active()||gameOver<0||gameOver>1){
+    if(!originalPauseMenu||world->faulted()||worldTickExecuting||normalTerminal.requested||th128_world_pause_active()||reason<0||reason>2){
         operationError="original pause entry has no exclusive active World owner";return 0;
     }
+    const bool gameOver=reason==1,playback=replayPlayback.active();
     if(gameOver&&(motivationRaw>=0||playerHit->snapshot().gate.stateF78!=2)){
         operationError="Game Over requires the actual negative-motivation death gate";return 0;
     }
+    if(reason==2){
+        const auto frame=world->frame();
+        if(!playback||normalReplay||normalRecord||replayPlayback.generation()!=worldGeneration||replayPlayback.pending()
+            ||replayPlayback.stage()!=unsigned(stageIdForEcl(worldStartedName))||replayPlayback.rank()!=unsigned(worldStartDifficulty)
+            ||replayPlayback.consumed()!=replayPlayback.frames()||frame<replayPlayback.frames()
+            ||(thpracReplay.playback&&(thpracReplay.generation!=worldGeneration||frame!=thpracReplay.playbackWorldFrames||thpracReplay.auxiliaryCursor!=thpracReplay.auxiliary.size()))
+            ||(ordinaryReplayAuxiliary.active&&(ordinaryReplayAuxiliary.generation!=worldGeneration||frame!=ordinaryReplayAuxiliary.worldFrames||ordinaryReplayAuxiliary.cursor!=ordinaryReplayAuxiliary.inputs.size()))
+            ||(nativeTouch.playback&&(nativeTouch.generation!=worldGeneration||frame!=nativeTouch.worldFrames||nativeTouch.cursor!=nativeTouch.events.size()))){
+            operationError="Replay Complete requires the current final native input frame";return 0;
+        }
+    }
     try{
-        const bool playback=replayPlayback.active()||thpracReplay.playback;
-        originalPauseMenu->open(gameOver!=0,originalContinueCount,normalReplay&&normalReplay->frames()>0&&!debugRunTainted,world->frame(),replayPlayback.active(),world->thpracChapter().has_value()&&!playback);
+        const bool playbackFinished=reason==2||(gameOver&&playback);
+        originalPauseMenu->open(gameOver&&!playbackFinished,originalContinueCount,normalReplay&&normalReplay->frames()>0&&!debugRunTainted,
+            world->frame(),playback,world->thpracChapter().has_value()&&!playback,playbackFinished);
         originalMenuInput.reset();
         originalPauseSoundCursor=0;
         for(const auto identifier:originalPauseMenu->sounds())grazeSounds.push_back({identifier,0});
@@ -5582,13 +5609,14 @@ const char* th128_world_debug_record_presentation(unsigned epoch) {
 const void* th128_world_draw_packet(){
     if(worldPacketCapturing){presentationError="World draw packet reentered";return nullptr;}
     struct Guard{Guard(){worldPacketCapturing=true;}~Guard(){worldPacketCapturing=false;}} guard;
-    worldPacketRows.clear();worldPacketHeader.fill(0);
+    worldPacketRows.clear();worldPacketVertices.clear();worldPacketHeader.fill(0);
     try{
         th128_world_bullet_draws();
         if(!presentationError.empty())return nullptr;
-        worldPacketHeader={double(0x54483131u),1,double(worldPacketRows.size()),39,
+        worldPacketHeader={double(0x54483131u),2,double(worldPacketRows.size()),39,
             double(reinterpret_cast<std::uintptr_t>(worldPacketRows.data())),
-            double(reinterpret_cast<std::uintptr_t>(bulletDraws.data())),double(bulletDraws.size()),0};
+            double(reinterpret_cast<std::uintptr_t>(bulletDraws.data())),double(bulletDraws.size()),0,
+            double(reinterpret_cast<std::uintptr_t>(worldPacketVertices.data())),double(worldPacketVertices.size())};
         return worldPacketHeader.data();
     }catch(const std::exception& failure){presentationError=failure.what();return nullptr;}
 }
@@ -5814,13 +5842,17 @@ int th128_world_ending_set_pause(unsigned paused){
     }
     return 1;
 }
-int th128_world_finish_thprac_ending(unsigned generation){
-    operationError.clear();const auto owner=world->thpracChapter();const auto* ending=activeEndingRuntime();
-    if(generation!=worldGeneration||generation!=debugTerminal.generation||!owner||!owner->nonNormal||!debugRunTainted
+static bool practiceEndingReturnReady(unsigned generation){
+    if(!world||world->faulted())return false;
+    const auto owner=world->thpracChapter();const auto* ending=activeEndingRuntime();
+    return !(generation!=worldGeneration||generation!=debugTerminal.generation||!owner||!owner->nonNormal||!debugRunTainted
         ||!debugTerminal.practice||!debugTerminal.endingStarted||debugTerminal.practiceReturned||!ending
         ||!ending->returned()||ending->returnScene()!=16||!ending->cleaned()||ending->loaded()||ending->visualFadeActive()
-        ||worldTickExecuting||normalRecord||normalReplay||replayPlayback.active()||!grazeSounds.empty()||soundJournalWindowSerial
-        ||stageControl.current()!=15||stageControl.pending()!=15||stageControl.gateSet()){
+        ||worldTickExecuting||normalRecord||normalReplay||replayPlayback.active()||thpracReplay.playback||!grazeSounds.empty()||soundJournalWindowSerial
+        ||stageControl.current()!=15||stageControl.pending()!=15||stageControl.gateSet());
+}
+int th128_world_finish_thprac_ending(unsigned generation){
+    operationError.clear();if(!practiceEndingReturnReady(generation)){
         operationError="practice return requires its real cleaned Ending16 and drained media owner";return 0;
     }
     const auto requested=stageControl.request(16);if(requested.status!=th128::stage::RequestStatus::Written||requested.pending!=16){operationError="practice Ending16 request rejected";return 0;}
@@ -5842,13 +5874,51 @@ int th128_world_ending_return_ack(const void* data,unsigned bytes){
 }
 int th128_world_normal_postrun_asset(unsigned generation,int bank,const void* data,unsigned bytes){
     operationError.clear();
+    const bool ordinary=normalTerminal.endingStarted&&ordinaryDetachedEnding&&!debugRunTainted&&!replayPlayback.active();
     if(worldTickExecuting||generation!=worldGeneration||normalPostrun.generation||normalPostrun.menu
-        ||!normalTerminal.endingStarted||!ordinaryDetachedEnding||debugRunTainted||replayPlayback.active()
+        ||(!ordinary&&!practiceEndingReturnReady(generation))
         ||bank!=0&&bank!=24&&bank!=25&&bank!=11||!bytes||bytes>16u*1024u*1024u||!th128::runtime::inputRange(data,bytes)){
         operationError="ordinary postrun assets require the same actual ending owner";return 0;}
     const unsigned slot=bank==0?0:bank==24?1:bank==25?2:3;if(!normalPostrun.assets[slot].empty()){
         operationError="ordinary postrun asset replacement rejected";return 0;}
     const auto* source=static_cast<const std::uint8_t*>(data);normalPostrun.assets[slot].assign(source,source+bytes);return 1;
+}
+int th128_world_practice_postrun_begin(unsigned generation,const void* data,unsigned bytes){
+    operationError.clear();const auto& replay=thpracReplay.record;
+    if(!practiceEndingReturnReady(generation)||normalPostrun.failed||normalPostrun.generation||normalPostrun.menu
+        ||!replay||thpracReplay.clockPending||thpracReplay.generation!=generation||!replay->frames()
+        ||replay->stage()!=unsigned(debugTerminal.stage)||replay->route()!=unsigned(debugTerminal.index)||replay->rank()!=unsigned(worldStartDifficulty)
+        ||(bytes!=0&&(bytes!=th128::record::NativeScoreProfile::Bytes||!th128::runtime::inputRange(data,bytes)))
+        ||!std::all_of(normalPostrun.assets.begin(),normalPostrun.assets.end(),[](const auto& asset){return !asset.empty();})){
+        operationError="practice name registration requires the real cleaned Ending16 and its live recorded chapter";return 0;}
+    try{
+        th128::postrun::Context context;
+        if(bytes){const auto* source=static_cast<const std::uint8_t*>(data);context.profile.assign(source,source+bytes);}
+        else context.profile=th128::record::NativeNormalRecord::defaultProfile();
+        context.route=replay->route();context.rank=replay->rank();context.stage=17+context.route;context.score=scoreRaw;
+        context.continues=unsigned(originalContinueCount);context.epoch=generation;
+        context.denominator=replay->elapsedSeconds()>0?replay->elapsedSeconds():1;
+        context.numerator=replay->elapsedSeconds()>0?replay->activeSeconds():1;
+        context.musicSink=[](int operation,int track,int argument){normalPostrun.media->music(operation,track,argument);};
+        context.soundSink=[](int identifier){normalPostrun.media->sound(identifier,0,0);};
+        auto menu=th128::postrun::Menu::practiceName(std::move(context),replay);
+        for(unsigned i=0;i<3;++i)menu->load(i==0?0:i==1?24:25,normalPostrun.assets[i]);
+        menu->loadNameFont(normalPostrun.assets[3]);
+        if(!th128_world_finish_thprac_ending(generation))throw std::runtime_error(operationError);
+        const auto committed=stageControl.consumeEnding16([&]{
+            endingRuntimeSnapshot=activeEndingRuntime()->json();retiredWorldSnapshot=th128_world_state();
+            return ownedBattle.retire(operationError);
+        },[&](unsigned mode){
+            if(mode!=3)return false;
+            normalPostrun.media=std::make_unique<th128::postrun::Media>(generation);
+            normalPostrun.menu=std::move(menu);return true;
+        });
+        if(committed.status!=th128::stage::CommitStatus::Applied||stageControl.current()!=4||stageControl.pending()!=4)
+            throw std::runtime_error("practice registration could not consume its Ending16");
+        normalPostrun.generation=generation;normalPostrun.practice=true;normalPostrun.profile=normalPostrun.menu->profile();
+        if(!normalPostrun.receipt.bind(*normalPostrun.menu,operationError))throw std::runtime_error(operationError);
+        return 1;
+    }catch(const std::exception& failure){normalPostrun.failed=true;operationError=failure.what();return 0;}
 }
 int th128_world_normal_postrun_begin(unsigned generation){
     operationError.clear();
@@ -5904,7 +5974,10 @@ int th128_world_normal_postrun_input(unsigned generation,unsigned serial,unsigne
         normalPostrun.menu->tick({repeated,pressed},serial,(std::uint64_t(filetimeHigh)<<32)|filetimeLow,generation);
         normalPostrun.serial=serial;normalPostrun.awaitingPresent=true;
         if(normalPostrun.extra&&!normalPostrun.menu->replayPresent()){debugExtraReplay.reset();debugFreshReplay.reset();retainedPostrunReplay.reset();extraReturnOwner={};}
-        if(normalPostrun.receipt.prepare(*normalPostrun.menu,operationError)<0)throw std::runtime_error(operationError);return 1;
+        const int receipt=normalPostrun.receipt.prepare(*normalPostrun.menu,operationError);
+        if(receipt<0)throw std::runtime_error(operationError);
+        if(normalPostrun.practice&&receipt==0)normalPostrun.profile=normalPostrun.menu->profile();
+        return 1;
     }catch(const std::exception& failure){normalPostrun.failed=true;operationError=failure.what();return 0;}
 }
 unsigned th128_world_normal_postrun_profile_size(){return unsigned(normalPostrun.receipt.packet().size());}
@@ -5971,7 +6044,16 @@ int th128_world_normal_postrun_main_ack(unsigned generation,const void* data,uns
     return normalPostrun.mainOwner.acknowledge(*normalPostrun.menu,*normalPostrun.media,normalPostrun.receipt,stageControl,normalPostrun.serial,normalPostrun.awaitingPresent,actual,{static_cast<const std::uint8_t*>(data),bytes},operationError)?1:0;
 }
 int th128_world_normal_postrun_main_commit(unsigned generation){
-    operationError.clear();if(worldTickExecuting||!world||!ownedBattle.retired()||!normalPostrun.menu||!normalPostrun.media||normalPostrun.failed
+    operationError.clear();
+    if(normalPostrun.practice){
+        if(worldTickExecuting||!ownedBattle.retired()||!normalPostrun.menu||!normalPostrun.media||normalPostrun.failed
+            ||generation!=worldGeneration||generation!=normalPostrun.generation||stageControl.current()!=4||stageControl.pending()!=4
+            ||normalPostrun.awaitingPresent||!normalPostrun.media->empty()||!normalPostrun.menu->mainHandoffReady()
+            ||!normalPostrun.receipt.settled(*normalPostrun.menu)){
+            operationError="practice Title return requires completed name registration and any durable score receipt";return 0;}
+        normalPostrun={};return 1;
+    }
+    if(worldTickExecuting||!world||!ownedBattle.retired()||!normalPostrun.menu||!normalPostrun.media||normalPostrun.failed
         ||generation!=worldGeneration||generation!=normalPostrun.generation||normalMainAdoptedGeneration||normalRecord||normalReplay||normalTerminal.owner
         ||ordinaryDetachedEnding||normalTerminal.transition.fade().active||normalPostrun.profile!=normalPostrun.menu->profile()
         ||normalPostrun.extra&&(debugExtraReplay||debugFreshReplay||retainedPostrunReplay)){
@@ -5984,11 +6066,13 @@ int th128_world_normal_postrun_main_commit(unsigned generation){
     normalMainAdoptedGeneration=generation;return 1;
 }
 const char* th128_world_normal_postrun_state(){
+    const char* kind=normalPostrun.practice?"practice":normalPostrun.extra?"extra":"ordinary";
+    const char* origin=normalPostrun.practice?"practice-ending16-name":normalPostrun.extra?"sealed-extra-terminal23-return":"sealed-ordinary-ending16-return";
     std::ostringstream out;out<<"{\"generation\":"<<normalPostrun.generation<<",\"serial\":"<<normalPostrun.serial
         <<",\"present\":"<<(normalPostrun.menu?"true":"false")<<",\"failed\":"<<(normalPostrun.failed?"true":"false")
         <<",\"current\":"<<stageControl.current()<<",\"pending\":"<<stageControl.pending()<<",\"mode\":"<<stageControl.menuMode()
-        <<",\"mainAdoptedGeneration\":"<<normalMainAdoptedGeneration<<",\"normalClear\":false,\"provenance\":\""<<(normalPostrun.extra?"sealed-extra-terminal23-return":"sealed-ordinary-ending16-return")<<"\"";
-    out<<",\"extraSealed\":"<<(normalPostrun.extra?"true":"false")<<",\"ownerKind\":\""<<(normalPostrun.extra?"extra":"ordinary")<<"\",\"postrunProvenance\":\""<<(normalPostrun.extra?"sealed-extra-terminal23-return":"sealed-ordinary-ending16-return")<<"\"";
+        <<",\"mainAdoptedGeneration\":"<<normalMainAdoptedGeneration<<",\"normalClear\":false,\"provenance\":\""<<origin<<"\"";
+    out<<",\"extraSealed\":"<<(normalPostrun.extra?"true":"false")<<",\"ownerKind\":\""<<kind<<"\",\"postrunProvenance\":\""<<origin<<"\"";
     if(normalPostrun.menu)out<<",\"menu\":"<<normalPostrun.menu->snapshot();out<<'}';normalPostrun.text=out.str();return normalPostrun.text.c_str();
 }
 const char* th128_world_ending_state(){if(activeEndingRuntime())endingRuntimeSnapshot=activeEndingRuntime()->json();return endingRuntimeSnapshot.c_str();}

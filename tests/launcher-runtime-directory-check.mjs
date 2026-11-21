@@ -4,14 +4,14 @@ import {existsSync, readFileSync, readdirSync} from 'node:fs';
 import {join, posix, resolve} from 'node:path';
 import test from 'node:test';
 
-const [coreSite, out, upstreamShell, upstreamWire] = process.argv.slice(2);
-assert.ok(coreSite && out && upstreamShell && upstreamWire, 'Need fixed Core122, fresh output and the pinned upstream protocol files');
+const [coreSite, out, upstreamShell, upstreamWire, expectedGeneration='d491ae9dda125966ef873df62779bcbf6aeddd09dc2c09d04eb8afe435aa6f63'] = process.argv.slice(2);
+assert.ok(coreSite && out && upstreamShell && upstreamWire, 'Need a fixed TH128 core, fresh output and the pinned upstream protocol files');
 const script = new URL('../tools/package-launcher-runtime.mjs', import.meta.url);
 const read = (root, path) => readFileSync(join(root, path));
 const text = (root, path) => new TextDecoder('utf-8', {fatal: true}).decode(read(root, path));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 
-test('the new directory carries the current page, unchanged Core122 and no original-content files', async () => {
+test('the new directory carries the current page, the pinned compiled core and no original-content files', async () => {
   assert.ok(existsSync(script), 'the Launcher directory packager is missing');
   const {packageLauncherRuntime} = await import(script);
   await packageLauncherRuntime({coreSite, out});
@@ -33,7 +33,7 @@ test('the new directory carries the current page, unchanged Core122 and no origi
   assert.ok(existsSync(join(out, 'licenses/thprac-mit.txt')));
   assert.ok(!existsSync(join(out, 'runtime/th128-cover.png')));
   const build = JSON.parse(text(out, 'runtime/build.json'));
-  assert.equal(build.generation, 'd491ae9dda125966ef873df62779bcbf6aeddd09dc2c09d04eb8afe435aa6f63');
+  assert.equal(build.generation, expectedGeneration);
   assert.deepEqual(read(out, build.entry), read(coreSite, build.entry));
   assert.deepEqual(read(out, build.entry.replace('core.mjs','core.wasm')), read(coreSite, build.entry.replace('core.mjs','core.wasm')));
   const sources = actual.filter(file => file.endsWith('.mjs') && file !== build.entry);

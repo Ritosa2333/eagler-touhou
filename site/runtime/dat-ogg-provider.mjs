@@ -1,6 +1,7 @@
 import {parseEclIncludes} from './ecl-includes.mjs';
 import {readZipDirectory,readEntryData} from './zip-reader.mjs';
 import {openTh128Dat} from './th128-dat.mjs';
+import {originalTitleDemos} from './original-title-scenes.mjs';
 const LAYOUT='sha256-58cd45fe7cac9af281d9de993a527ccfbbe6f27b89bcd0ca98a7031333fce200';
 const MAX_ENTRY=128*1024*1024,MAX_PACKAGE=256*1024*1024;
 const HASH=/^[0-9a-f]{64}$/,ID=/^[a-z0-9][a-z0-9._:-]{0,127}$/i;
@@ -140,6 +141,12 @@ async function createProvider(source,{origin=globalThis.location?.origin,signal,
   }else need(false,'unsupported resource binding');
  }
  const eclTargets=new Map();
+ const demoTargets=new Map();
+ for(const [target,row] of Object.entries(index.resources)){
+  if(row.kind!=='raw'||row.name!=='sig.anm'||!target.endsWith('/runtime/sig.anm'))continue;
+  const prefix=target.slice(0,-'sig.anm'.length);
+  for(const {name} of originalTitleDemos)if(index.raw[name]&&!index.raw[name].patch)demoTargets.set(prefix+name,name);
+ }
  for(const[target,row]of Object.entries(index.resources)){
   if(row.kind!=='raw'||!row.name.endsWith('.ecl'))continue;
   const suffix='/runtime/'+row.name;
@@ -156,6 +163,7 @@ async function createProvider(source,{origin=globalThis.location?.origin,signal,
   const body=await rawCache.get(name);current(localSignal);return body;
  }
  async function load(target,localSignal){
+  if(demoTargets.has(target))return raw(demoTargets.get(target),localSignal);
   if(eclTargets.has(target)&&!index.resources[target]){
    if(!resourceCache.has(target)){
     const name=eclTargets.get(target),pending=(async()=>{
@@ -177,7 +185,7 @@ async function createProvider(source,{origin=globalThis.location?.origin,signal,
   }
   const body=await resourceCache.get(target);current(localSignal);return body;
  }
- const targets=Object.freeze([...new Set([...Object.keys(index.resources),...eclTargets.keys()])].sort());
+ const targets=Object.freeze([...new Set([...Object.keys(index.resources),...eclTargets.keys(),...demoTargets.keys()])].sort());
  return Object.freeze({
   revision:d.revision,descriptor:structuredClone(d),targets,
   async adoptManagedData(input){

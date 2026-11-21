@@ -20,11 +20,11 @@ export function bootPlay({worldMode=true,capability=true,practiceMenu=null}={}){
  const state={worldMode,shotMode:true,active:true,paused:false,handoff:false,pressed:new Set(),action:1,stageSelection:{stage:1},controller:null,
   module:{_th128_world_input(held,pressed,released){receipts.push([held,pressed,released]);return 1;},UTF8ToString:x=>x},audio:null};
  const menu={page:'main',launchId:1,pauseOpen:false,fault:false,launching:false,audioUnlocked:true},suppressedKeys=new Set();
- const movementKeys=new Map([['ArrowUp',16],['ArrowDown',32],['ArrowLeft',64],['ArrowRight',128],['KeyZ',1],['ShiftLeft',8],['ShiftRight',8]]);
+ const movementKeys=new Map([['ArrowUp',16],['ArrowDown',32],['ArrowLeft',64],['ArrowRight',128],['KeyZ',1],['KeyC',512],['ShiftLeft',8],['ShiftRight',8]]);
  const find=s=>s==='#game'||s==='#gameViewport'?env.canvas:{hidden:true,style:{}};
- const openPauseMenu=()=>{pause.push('pause');menu.pauseOpen=true;state.paused=true;state.nativePause={held:0,pressed:0,keyUp:code=>pause.push(['up',code]),suspend:async()=>{}};};
+ const openPauseMenu=()=>{pause.push('pause');menu.pauseOpen=true;state.paused=true;state.nativePause={held:0,pressed:0,keyUp:code=>pause.push(['up',code]),suspend:async()=>{},canStepPresentation:()=>false};};
  const context={...env,state,menu,practiceMenu,thpracToolsPanel:null,suppressedKeys,movementKeys,perfectFreezeXBit:2,mountWebInput,find,HTMLSelectElement:class {},HTMLInputElement:class {},
-  getPageLaunchContext:()=>null,localConfig:null,flowCapabilities:()=>({perfectFreezeNormalEmptyLasers:capability}),status(){},clock:{reset(){}},resetHighFrameratePresentation(){},openPauseMenu,
+  getPageLaunchContext:()=>null,launcherContext:null,localConfig:null,titleDemoClock:{reset(){}},flowCapabilities:()=>({perfectFreezeNormalEmptyLasers:capability}),status(){},clock:{reset(){}},resetHighFrameratePresentation(){},openPauseMenu,
   error(){},handleFaultKey:code=>menus.push(['fault',code]),handlePauseKey:code=>menus.push(['pause',code]),handleMenuKey:code=>menus.push(['menu',code]),
   unlockMenuAudio(){},nativePageNames:['main','difficulty','route','replay','options'],handleNativeTitleKey:code=>menus.push(['native',code]),
   resumeTitlePause(){state.paused=false;},resumeNormalPostrun(){},pauseNormalPostrun(){},pauseOriginalEnding(){},cancelLaunch(){},

@@ -3,7 +3,7 @@ import{mountFullTouch}from'./full-touch.mjs';
 const INPUT_KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','KeyR','Enter','Escape','ShiftLeft','ShiftRight','Tab','Backspace','F1','F2','F3','F4','F5','F6','F7','F12']);
 export function mountWebInput({canvas,container=canvas?.parentElement,document=canvas?.ownerDocument??globalThis.document,
  window=document?.defaultView??globalThis.window,getContext=()=>null,isEnabled=()=>true,
- getGameContext=null,onTouchMotion=null,storage=null,options={},onSettingsOpen,viewport,zoomEnabled}={}){
+ getGameContext=null,onTouchMotion=null,storage=null,options={},onSettingsOpen,viewport,zoomEnabled,hostedControls=false}={}){
  if(!canvas||!container||!document||!window)throw new Error('Web input needs a canvas container');
  const layer=document.createElement('div');layer.className='web-input';layer.setAttribute('aria-label','触控游戏操作');
  const pad=document.createElement('div');pad.className='web-input-pad';pad.setAttribute('data-web-drag','1');pad.setAttribute('aria-label','拖动方向');
@@ -13,7 +13,9 @@ export function mountWebInput({canvas,container=canvas?.parentElement,document=c
  const targets=[pad];
  for(const [action,label,code]of specs){const node=document.createElement('button');node.type='button';node.textContent=label;node.className='web-input-button';
   node.setAttribute('data-web-action',action);node.setAttribute('aria-label',label);node.setAttribute('data-web-code',code);actions.appendChild(node);targets.push(node);}
- layer.appendChild(pad);layer.appendChild(actions);container.appendChild(layer);
+ // The Launcher owns the visible controls and pointer capture. Keep the
+ // fixed-tick input consumer for its messages without mounting a second UI.
+ layer.appendChild(pad);layer.appendChild(actions);if(!hostedControls)container.appendChild(layer);
  const listeners=[],pointers=new Map(),sources=new Map(),counts=new Map(),physical=new Set(),activeCodes=new Map(),synthetic=new WeakSet();let context=getContext(),disposed=false,muted=false;
  const listen=(node,type,fn)=>{node.addEventListener(type,fn,{passive:false});listeners.push([node,type,fn]);};
  const send=(type,code)=>{const event=new window.KeyboardEvent(type,{code,bubbles:true,cancelable:true});synthetic.add(event);window.dispatchEvent(event);};

@@ -22,6 +22,8 @@ test('title touch navigation follows actual title menu dispatch and never calls 
 });
 test('postrun touch confirmation is owned by the actual normal postrun input route',()=>{
  const e=bootPlay(),events=[];e.state.normalPostrun={input:{down:code=>events.push(['down',code]),up:code=>events.push(['up',code])}};
+ e.state.module._th128_world_touch_state=()=>{throw new Error('retired battle touch context was read');};
+ e.input.syncContext();
  e.emit(e.button('shot'),'pointerdown',1);e.emit(e.button('shot'),'pointerup',1);
  assert.deepEqual(events,[['down','KeyZ'],['up','KeyZ']]);assert.deepEqual(e.receipts,[]);assert.equal(e.state.pressed.size,0);e.input.dispose();
 });
@@ -48,10 +50,20 @@ test('changed game action cancels touches while physical keyboard input is prese
 });
 test('ending touch confirm and key release use its existing owner and no game input',()=>{
  const e=bootPlay(),events=[];e.state.endingHost={owner:{input:{down:code=>events.push(['down',code]),up:code=>events.push(['up',code])}}};
+ e.state.module._th128_world_touch_state=()=>{throw new Error('ending accessed the battle touch context');};
+ e.input.syncContext();
  e.emit(e.button('shot'),'pointerdown',1);e.emit(e.button('shot'),'pointerup',1);
  assert.deepEqual(events,[['down','KeyZ'],['up','KeyZ']]);assert.deepEqual(e.receipts,[]);e.input.dispose();
 });
 test('pagehide disposes the production touch layer with no held key or remaining element',()=>{
  const e=bootPlay();e.emit(e.button('shot'),'pointerdown',1);e.window.dispatchEvent({type:'pagehide'});
  assert.equal(e.state.pressed.size,0);assert(!e.container.children.includes(e.input.layer));e.input.dispose();
+});
+test('finished replay surface sends touch selection and confirmation only to the pause menu',()=>{
+ const e=bootPlay();e.state.replayPlayback={snapshot:()=>({complete:true,auxiliaryKnown:true,auxiliaryLive:false})};
+ e.state.paused=true;e.menu.pauseOpen=true;e.menu.page='pause';e.input.syncContext();
+ e.emit(e.pad,'pointerdown',1,100,800);e.emit(e.pad,'pointermove',1,100,860);e.input.sampleTouch();
+ e.emit(e.pad,'pointerup',1,100,860);e.input.sampleTouch();
+ e.emit(e.button('shot'),'pointerdown',2);e.emit(e.button('shot'),'pointerup',2);
+ assert.deepEqual(e.menus,[['pause','ArrowDown'],['pause','KeyZ']]);assert.deepEqual(e.receipts,[]);e.input.dispose();
 });

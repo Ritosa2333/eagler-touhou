@@ -105,7 +105,7 @@ const exports=[
   'th128_world_records_prepare','th128_world_records_data','th128_world_records_size',
   'th128_world_records_ack','th128_world_terminal_preupdate','th128_world_ending_set_pause',
   'th128_world_ending_return_prepare','th128_world_ending_return_packet_size','th128_world_ending_return_packet_data',
-  'th128_world_ending_return_ack','th128_world_normal_postrun_asset','th128_world_normal_postrun_begin',
+  'th128_world_ending_return_ack','th128_world_normal_postrun_asset','th128_world_normal_postrun_begin','th128_world_practice_postrun_begin',
   'th128_world_normal_postrun_input','th128_world_normal_postrun_profile_size','th128_world_normal_postrun_profile_data',
   'th128_world_normal_postrun_profile_ack','th128_world_normal_postrun_replay_observe','th128_world_normal_postrun_replay_size',
   'th128_world_normal_postrun_replay_data','th128_world_normal_postrun_replay_ack','th128_world_normal_postrun_media',

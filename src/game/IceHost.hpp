@@ -40,6 +40,7 @@ private:
     struct Slot {IceObjectState state;std::uint32_t bucket=0;std::optional<bullet::BulletVisuals::Visual> visual;std::list<std::uint32_t>::iterator globalLink;};
     std::vector<Slot> slots_=std::vector<Slot>(SlotCount);
     std::array<std::list<std::uint32_t>,80> buckets_;
+    using BucketHeads=std::array<std::list<std::uint32_t>::const_iterator,80>;
     std::list<std::uint32_t> global_;
     std::array<std::int32_t,SlotCount> occupancy_{};
     std::array<std::uint8_t,IceMaskBytes> mask_{};
@@ -60,11 +61,10 @@ private:
     bool checked(std::string& error);
     std::optional<std::uint32_t> birth(IceBirthInput input,std::string& error);
     bool bind(std::uint64_t key,int script,Position position,std::string& error);
-    bool contact(const bullet::Birth& bullet,std::string& error) const;
-    bool convert(const bullet::Birth& bullet,std::span<std::uint8_t> mask,std::string& error);
+    bool contact(const bullet::Birth& bullet,const BucketHeads& heads,std::string& error) const;
+    bool convert(const bullet::Birth& bullet,std::span<std::uint8_t> mask,BucketHeads& heads,std::string& error);
     bool shatter(std::uint64_t animation,std::string& error);
     bool shatterBatch(std::string& error);
     bool pose(const anm::Node& node,Draw& draw,std::size_t depth=0) const;
-    bool scratchMask(IceMaskOperation operation,const Position& position,std::string& error);
 };
 }

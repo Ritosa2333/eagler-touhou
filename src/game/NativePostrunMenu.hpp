@@ -29,6 +29,7 @@ struct Context {
     std::shared_ptr<record::NativeNormalRecord> normalRecord;
     std::shared_ptr<record::NativeRunReplay> normalReplay;
     std::shared_ptr<record::NativeRunReplay> extraReplay;
+    std::shared_ptr<const record::NativeRunReplay> practiceReplay;
     std::shared_ptr<record::NativePostrunRecord> extraRecord;
     std::function<void(int,int,int)> musicSink;
     std::function<void(int)> soundSink;
@@ -41,7 +42,7 @@ struct Context {
 class NativeNormalMainOwner;
 class Menu {
     friend class NativeNormalMainOwner;
-    struct Admission {Context context;bool sealed=false,extra=false;};
+    struct Admission {Context context;bool sealed=false,extra=false;unsigned practiceFrames=0;};
     static Admission admit(Context context,std::unique_ptr<record::NativeOrdinaryReturn> permit){
         if(!permit||!permit->ready()||context.normalRecord!=permit->record_||context.normalReplay!=permit->replay_
             ||context.replay||context.ordinaryDiagnostic||context.epoch!=permit->identity_.generation
@@ -61,6 +62,7 @@ class Menu {
     }
     Context context_;
     bool normalSealed_=false,extraSealed_=false,nameFontReady_=false;
+    unsigned practiceFrames_=0;
     unsigned extraNativeFrames_=0;
     std::unique_ptr<anm::Scene> sceneOwner_=std::make_unique<anm::Scene>();
     anm::Scene& scene_=*sceneOwner_;
@@ -108,7 +110,7 @@ class Menu {
     void setSubphase(unsigned value){subphase_=value;timer_=0;}
     void setPhase(unsigned value){phase_=value;subphase_=0;timer_=0;}
     void music(int operation,int track,int argument=0){
-        if(operation==2){
+        if(operation==2&&!practiceSealed()){
             if(argument<0||argument>15)throw std::runtime_error("unbound native music-room flag index");
             context_.profile[record::NativeScoreProfile::StatsOffset+0x26+unsigned(argument)]=1;
         }
@@ -179,7 +181,9 @@ class Menu {
         }
     }
     void beginReplay(std::uint64_t timestamp,unsigned serial){
-        if((!context_.replay&&!context_.normalReplay&&!context_.extraReplay)||!previewsKnown_)throw std::runtime_error("real replay or owned preview observations unavailable");
+        if(!replayPresent()||!previewsKnown_)throw std::runtime_error("real replay or owned preview observations unavailable");
+        // Practice retains its input until the player chooses a slot.
+        if(context_.practiceReplay){bind(24,112);selected_=0;choiceCount_=25;setSubphase(1);return;}
         if(context_.extraReplay){
             std::array<std::uint8_t,8> name{};std::copy_n(name_.begin(),8,name.begin());
             finishedNormalReplay_=context_.extraReplay->finishExtra(timestamp,context_.score,name,context_.numerator,context_.denominator);
@@ -203,7 +207,8 @@ class Menu {
         else if(subphase_==3&&timer_>=6){
             interrupt(24,111,1);interrupt(24,132+int(context_.route),1);interrupt(24,141+int(context_.rank),1);
             if(context_.normalRecord&&context_.continues){
-                setPhase(1);selected_=0;choiceCount_=999;context_.normalReplay.reset();music(1,7);music(2,7);
+                setPhase(1);selected_=0;choiceCount_=999;context_.normalReplay.reset();
+                music(1,7);music(2,7);
             }else setPhase(15);
         }else if(subphase_!=3)throw std::runtime_error("unowned name phase");
     }
@@ -214,7 +219,8 @@ class Menu {
         replayLength_=8;while(replayLength_&&replayName_[replayLength_-1]==32)--replayLength_;
         if(replayName_!=DefaultName)replaySelection_=90;
         std::array<std::uint8_t,8> name{};std::copy_n(replayName_.begin(),8,name.begin());
-        finishedNormalReplay_=context_.extraReplay?context_.extraReplay->finishExtra(timestamp,context_.score,name,context_.numerator,context_.denominator):context_.normalReplay->finishOrdinary(timestamp,context_.score,name,context_.numerator,context_.denominator);
+        if(context_.practiceReplay)finishedNormalReplay_=context_.practiceReplay->snapshot(timestamp,context_.score,context_.practiceReplay->stage(),0,name);
+        else finishedNormalReplay_=context_.extraReplay?context_.extraReplay->finishExtra(timestamp,context_.score,name,context_.numerator,context_.denominator):context_.normalReplay->finishOrdinary(timestamp,context_.score,name,context_.numerator,context_.denominator);
         finishSerial_=serial;++replaySnapshots_;setSubphase(3);sound(7);
     }
     void replayNameInput(Input input,unsigned serial){
@@ -226,10 +232,14 @@ class Menu {
             if(replaySelection_<88||replaySelection_==88){replayName_[std::min(replayLength_,7u)]=replaySelection_==88?32:std::uint8_t(Characters[replaySelection_]);if(replayLength_<8)++replayLength_;if(replayLength_==8)replaySelection_=90;}
             else if(replaySelection_==89){if(!replayLength_)return;replayName_[--replayLength_]=32;}
             else{
-                if(nameConfirmationSerial_==UINT32_MAX)throw std::runtime_error("ordinary replay name confirmation serial exhausted");++nameConfirmationSerial_;
-                replayName_[8]=0;std::copy_n(replayName_.begin(),8,finishedNormalReplay_.begin()+36);
-                std::copy(replayName_.begin(),replayName_.end(),context_.profile.begin()+record::NativeScoreProfile::StatsOffset+12);
-                replaySave_.prepare(context_.epoch,ticks_+1,replaySlot_,context_.route,context_.rank,unsigned(context_.score),normalFrames(),finishSerial_,finishedNormalReplay_);
+                replayName_[8]=0;
+                if(!practiceSealed()){
+                    if(nameConfirmationSerial_==UINT32_MAX)throw std::runtime_error("ordinary replay name confirmation serial exhausted");++nameConfirmationSerial_;
+                    std::copy(replayName_.begin(),replayName_.end(),context_.profile.begin()+record::NativeScoreProfile::StatsOffset+12);
+                }
+                std::copy_n(replayName_.begin(),8,finishedNormalReplay_.begin()+36);
+                replaySave_.prepare(context_.epoch,ticks_+1,replaySlot_,context_.route,context_.rank,unsigned(context_.score),normalFrames(),finishSerial_,finishedNormalReplay_,
+                    context_.practiceReplay?context_.practiceReplay->stage():0);
                 replayConfirmed_=true;sound(18);
             }
             sound(7);
@@ -244,13 +254,14 @@ class Menu {
             if(keys&0x10)move(-1);if(keys&0x20)move(1);if(previous!=selected_)sound(10);
             if(input.pressed&0x102u){setSubphase(4);sound(9);}
             else if(input.pressed&0x80201u){
-                if(!sealedPostrun()||!replaySave_.bound()||(!context_.normalReplay&&!context_.extraReplay))throw std::runtime_error("replay save branch requires its real durable replay writer");
+                if(!sealedPostrun()||!replaySave_.bound()||(!context_.normalReplay&&!context_.extraReplay&&!context_.practiceReplay))throw std::runtime_error("replay save branch requires its real durable replay writer");
                 beginReplayName(timestamp,serial);
             }
         }else if(subphase_==3)replayNameInput(input,serial);
         else if(subphase_==4&&timer_>=6){
             interrupt(24,112,1);setPhase(1);selected_=0;choiceCount_=999;
-            context_.replay.reset();context_.normalReplay.reset();context_.extraReplay.reset();finishedNormalReplay_.clear();replaySave_={};replayPreviews_={};previewsKnown_=false;music(1,7);music(2,7);
+            context_.replay.reset();context_.normalReplay.reset();context_.extraReplay.reset();context_.practiceReplay.reset();finishedNormalReplay_.clear();replaySave_={};replayPreviews_={};previewsKnown_=false;
+            if(!practiceSealed()){music(1,7);music(2,7);}
         }else if(subphase_!=4)throw std::runtime_error("unowned replay phase");
     }
     void mainTick(Input input){
@@ -269,9 +280,20 @@ public:
     explicit Menu(Context context):Menu(Admission{std::move(context),false}){}
     Menu(Context context,std::unique_ptr<record::NativeOrdinaryReturn> permit):Menu(admit(std::move(context),std::move(permit))){}
     Menu(Context context,std::unique_ptr<record::NativeExReturn> permit):Menu(admitExtra(std::move(context),std::move(permit))){}
-private:
-    explicit Menu(Admission admission):context_(std::move(admission.context)),normalSealed_(admission.sealed),extraSealed_(admission.extra){
+    static std::unique_ptr<Menu> practiceName(Context context,std::shared_ptr<const record::NativeRunReplay> replay){
         static constexpr std::array<unsigned,6> terminalStages{3,5,8,10,13,15};
+        if(!replay||!replay->frames()||context.replay||context.normalReplay||context.normalRecord||context.extraRecord||context.extraReplay||context.practiceReplay
+            ||context.ordinaryDiagnostic||context.route>=6||context.rank>=4||context.stage!=17+context.route
+            ||context.score<0||context.score>999999999||context.continues>9||replay->route()!=context.route||replay->rank()!=context.rank||replay->stage()!=terminalStages[context.route])
+            throw std::runtime_error("practice name screen requires a completed live route and its own score");
+        record::NativeScoreProfile::assemble(context.profile);
+        const auto frames=replay->frames();context.practiceReplay=std::move(replay);
+        return std::unique_ptr<Menu>(new Menu(Admission{std::move(context),false,false,frames}));
+    }
+private:
+    explicit Menu(Admission admission):context_(std::move(admission.context)),normalSealed_(admission.sealed),extraSealed_(admission.extra),practiceFrames_(admission.practiceFrames){
+        static constexpr std::array<unsigned,6> terminalStages{3,5,8,10,13,15};
+        if(context_.practiceReplay&&!admission.practiceFrames)throw std::runtime_error("practice replay has no live Ending16 owner");
         if((context_.extraReplay||context_.extraRecord)&&!admission.extra)throw std::runtime_error("EX Context has no sealed native terminal return credential");
         const bool ordinary=bool(context_.normalRecord)||bool(context_.normalReplay);
         if(admission.extra&&(!context_.extraRecord||!context_.extraRecord->acknowledged()||!context_.extraReplay
@@ -296,7 +318,7 @@ private:
                 &&context_.replay->stage()==terminalStages[context_.route]
                 &&context_.replay->physicalRoute()==context_.route
             :context_.route==6&&context_.rank==4&&context_.stage==23;
-        if(context_.profile.size()!=52232||(!ordinary&&(!context_.replay||!domain||context_.continues!=0))||!context_.epoch
+        if(context_.profile.size()!=52232||(!ordinary&&!practiceSealed()&&(!context_.replay||!domain||context_.continues!=0))||!context_.epoch
             ||!std::isfinite(context_.numerator)||context_.numerator<0
             ||!std::isfinite(context_.denominator)||context_.denominator<=0)
             throw std::runtime_error("original postrun menu context outside owned EX domain");
@@ -338,7 +360,7 @@ public:
         previewsKnown_=true;
     }
     void bindOrdinaryReplayObservations(std::span<const std::uint8_t> packet){
-        if(!sealedPostrun()||context_.continues||phase_!=15||subphase_!=0||replaySave_.bound()||executing_)
+        if(!sealedPostrun()||(!practiceSealed()&&context_.continues)||phase_!=15||subphase_!=0||replaySave_.bound()||executing_)
             throw std::runtime_error("ordinary replay observations require the exact phase15 entry owner");
         replaySave_.bind(context_.epoch,ticks_,packet);replayPreviews_=record::NativeReplaySlotPreview::decode(replaySave_.previews());previewsKnown_=true;
     }
@@ -379,7 +401,7 @@ public:
         output<<"{\"phase\":"<<phase_<<",\"subphase\":"<<subphase_<<",\"timer\":"<<timer_
             <<",\"ticks\":"<<ticks_<<",\"selected\":"<<selected_<<",\"choiceCount\":"<<choiceCount_
             <<",\"position\":"<<position_<<",\"award211\":"<<(phase_==14&&subphase_==4)
-            <<",\"replayPresent\":"<<bool(context_.replay||context_.normalReplay||context_.extraReplay)<<",\"replayFinished\":"<<bool(finishSerial_)
+            <<",\"replayPresent\":"<<replayPresent()<<",\"replayFinished\":"<<bool(finishSerial_)
             <<",\"finishSerial\":"<<finishSerial_<<",\"failed\":"<<!failure_.empty()
             <<",\"mainHandoffReady\":"<<mainHandoffReady()<<",\"mainReady\":"<<mainReady_<<",\"title0\":"<<title0_<<",\"titleV0\":"<<titleV0_
             <<",\"nodeCount\":"<<scene_.nodes().size()<<",\"drawNodes\":"<<drawable<<",\"musicCommands\":[";
@@ -419,12 +441,13 @@ public:
     }
     bool normalSealed()const{return normalSealed_&&bool(context_.normalRecord);}
     bool extraSealed()const{return extraSealed_&&context_.extraRecord&&context_.extraRecord->acknowledged();}
-    bool sealedPostrun()const{return normalSealed()||extraSealed();}
+    bool practiceSealed()const{return practiceFrames_!=0;}
+    bool sealedPostrun()const{return normalSealed()||extraSealed()||practiceSealed();}
     unsigned normalGeneration()const{return context_.epoch;}
     unsigned normalRoute()const{return context_.route;}unsigned normalRank()const{return context_.rank;}
     int normalScorePosition()const{return position_;}std::int32_t normalScore()const{return context_.score;}
     unsigned normalContinues()const{return context_.continues;}
-    unsigned normalFrames()const{return context_.normalRecord?context_.normalRecord->frames():context_.extraReplay?context_.extraReplay->frames():extraNativeFrames_;}
+    unsigned normalFrames()const{return practiceSealed()?practiceFrames_:context_.normalRecord?context_.normalRecord->frames():context_.extraReplay?context_.extraReplay->frames():extraNativeFrames_;}
     unsigned normalPhase()const{return phase_;}unsigned normalSubphase()const{return subphase_;}
     bool normalNameCommitted()const{return phase_==14&&subphase_==3;}
     bool needsNormalNameOwner()const{return sealedPostrun()&&phase_==14&&!nameFontReady_;}
@@ -437,7 +460,7 @@ public:
         if(phase_!=14||subphase_!=2)return {};if(!nameFontReady_)throw std::runtime_error("original normal name font owner unavailable");
         return originalScoreNameGlyphs(context_.profile,context_.route,context_.rank,position_,name_,nameLength_,unsigned(selected_),Characters);
     }
-    bool replayPresent()const{return bool(context_.replay||context_.normalReplay||context_.extraReplay);}
+    bool replayPresent()const{return bool(context_.replay||context_.normalReplay||context_.extraReplay||context_.practiceReplay);}
     const std::vector<std::uint8_t>& finishedNormalReplay()const{return finishedNormalReplay_;}
     unsigned ticks()const{return ticks_;}
     bool mainReady()const{return mainReady_;}

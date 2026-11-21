@@ -50,14 +50,16 @@ class NativeNormalRecord {
         terminalClearRecorded_=true;
     }
 public:
+    static std::vector<std::uint8_t> defaultProfile(){
+        std::array<std::uint8_t,250> ranks{};for(unsigned i=0;i<250;++i)ranks[i]=i<240?i%4:4;
+        constexpr std::array<std::uint8_t,9> routeName{45,45,45,45,45,45,45,45,0};
+        constexpr std::array<std::uint8_t,9> lastName{32,32,32,32,32,32,32,32,0};
+        Random metadataRandom{};
+        return NativeRecordBootstrap::create(metadataRandom,ranks,routeName,lastName);
+    }
     explicit NativeNormalRecord(std::span<const std::uint8_t> profile){
-        if(profile.empty()){
-            std::array<std::uint8_t,250> ranks{};for(unsigned i=0;i<250;++i)ranks[i]=i<240?i%4:4;
-            constexpr std::array<std::uint8_t,9> routeName{45,45,45,45,45,45,45,45,0};
-            constexpr std::array<std::uint8_t,9> lastName{32,32,32,32,32,32,32,32,0};
-            Random metadataRandom{};
-            profile_=NativeRecordBootstrap::create(metadataRandom,ranks,routeName,lastName);
-        }else{
+        if(profile.empty())profile_=defaultProfile();
+        else{
             NativeScoreProfile::assemble(profile);profile_.assign(profile.begin(),profile.end());
         }
         originalProfile_=profile_;

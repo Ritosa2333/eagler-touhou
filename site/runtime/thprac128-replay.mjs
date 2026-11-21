@@ -6,6 +6,22 @@ import {createThprac128Session,readThprac128Native} from './thprac128.mjs';
 import {validateThprac128ToolHistory,installThprac128ToolPlayback} from './thprac128-tools.mjs';
 const PRAC=0x43415250,SCHEMA='th128-thprac-web-replay/1',encoder=new TextEncoder();
 function identity(input){if(!input||typeof input!=='object'||typeof input.coreSHA256!=='string'||typeof input.resourceSHA256!=='string'||!['coreSHA256','resourceSHA256'].every(k=>/^[a-f0-9]{64}$/.test(input[k])))throw new Error('practice core/resource SHA identity required');return Object.freeze({coreSHA256:input.coreSHA256,resourceSHA256:input.resourceSHA256});}
+// Exact known builds, in input-compatible order. Keep the resource identity
+// check even when an older build used the same native replay format.
+const practiceReplayCoreHistory=[
+ 'b3c05ff0b1e1016887fd73335ee6fa1443b2cdd6781a470bdf5f0487f39976a3',
+ '54e68d7320a9966feba767e18e481fb0f4f116bcfabeb63da71da68afce59ee1',
+ '1bd134af624d261fb8adeab60c9811cbdbdd8afc030a4b9e851ea60810cc7c33',
+ '08d50846e7cf67a89076c56653cbf6676dc48956ddf61c94b877559054ee5e04',
+ '0ac44b48f08ca6afac2ad9d7cbd52424ec4b04da6d402931137df11e41397621',
+];
+export function practiceReplayMatchesRuntime(recorded,current){
+ const previous=identity(recorded),runtime=identity(current);
+ if(previous.resourceSHA256!==runtime.resourceSHA256)return false;
+ if(previous.coreSHA256===runtime.coreSHA256)return true;
+ const old=practiceReplayCoreHistory.indexOf(previous.coreSHA256);
+ return old>=0&&practiceReplayCoreHistory.indexOf(runtime.coreSHA256)>old;
+}
 export function validateThprac128ReplayInitial(value){
  if(value==null)return null;if(!value||typeof value!=='object'||Array.isArray(value)||typeof value.header!=='string'||!/^[0-9a-f]{288}$/.test(value.header)||Object.keys(value).some(k=>!['header','power','gameCalls','displaySeed','displayCalls'].includes(k)))throw new Error('Invalid practice carried Replay initial block');
  for(const [key,max]of [['power',10000],['gameCalls',0xffffffff],['displaySeed',65535],['displayCalls',0xffffffff]])if(!Number.isSafeInteger(value[key])||value[key]<0||value[key]>max)throw new Error('Invalid practice carried Replay initial '+key);return Object.freeze({...value});
