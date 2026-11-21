@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const project=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const source=fs.readFileSync(path.join(project,'src/runtime/WorldExports.cpp'),'utf8');
+const marker='candidateItems->setCollectHost(',start=source.indexOf(marker)+marker.length,end=source.indexOf('\n    });',start);
+if(start<marker.length||end<=start||source.indexOf(marker,start)>=0)throw new Error('Expected one complete production item collection callback');
+const output=process.argv[2];if(!output)throw new Error('Provide an isolated test output directory');
+fs.mkdirSync(output,{recursive:true});
+fs.writeFileSync(path.join(output,'collect-callback.inc'),'static auto actualCollect = '+source.slice(start,end)+'\n    };\n');
+fs.copyFileSync(path.join(project,'tests/native/ice-item-motivation-notice.cpp'),path.join(output,'ice-item-motivation-notice.cpp'));
+console.log('Extracted the complete current production callback for the native regression.');

@@ -1,0 +1,292 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-17",
+  "baseCommit": "8e7686c7baecccd3b69054e1f64b25c78db16e5b",
+  "scope": "Cached document return requests a new owner; actual history fallback retains cached resources",
+  "cases": {
+    "842": {
+      "pass": 9,
+      "fail": 3,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 12,
+      "passed": false,
+      "inputs": 10,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case842-current-entry-cached-return-red\\result.json",
+        "bytes": 293,
+        "sha256": "007d5bad5adedc23096ad78128bf93a379c8ba4a9bdc6cb029187036bac79aab"
+      }
+    },
+    "843": {
+      "pass": 12,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 12,
+      "passed": true,
+      "inputs": 11,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case843-current-entry-cached-return-green\\result.json",
+        "bytes": 293,
+        "sha256": "bffc698514bccf9aa28d9a932d18df3aa6a54104ad3b25cf9fbe1c9138f3c48f"
+      }
+    },
+    "844": {
+      "checks": 12,
+      "passed": true,
+      "inputs": 32,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case844-browser-cached-history-return\\result.json",
+        "bytes": 700,
+        "sha256": "05e7ef2679c0075131168170d58ad95befc9a7658a8f0f6179cb8a80a3a29677"
+      }
+    },
+    "845": {
+      "pass": 110,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 110,
+      "passed": true,
+      "inputs": 44,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case845-cached-return-affected-regressions\\result.json",
+        "bytes": 295,
+        "sha256": "4ffa3b7e8548cbb906836e44673e8ff3a63618c1298a8f7b08444c218fc767c3"
+      }
+    }
+  },
+  "fix": {
+    "product": "site/import-entry.mjs",
+    "condition": "pageshow.persisted===true && pageGone && !reloadAfterRestore",
+    "action": "set guard then location.reload()",
+    "existingPagehideCleanupUnchanged": true,
+    "reviveRetiredOwner": false,
+    "clearOrRewriteIDB": false,
+    "preserveUnsavedWorld": false,
+    "reloadInitialOrNonPersisted": false
+  },
+  "actual844": {
+    "final": {
+      "passed": true,
+      "checks": [
+        {
+          "name": "test began on a fresh isolated origin",
+          "passed": true
+        },
+        {
+          "name": "current returned context retains the requested none mode",
+          "passed": true
+        },
+        {
+          "name": "current DAT consumer returns the original authored bytes",
+          "passed": true
+        },
+        {
+          "name": "history back created a fresh child runtime owner",
+          "passed": true
+        },
+        {
+          "name": "prior runtime owner was actually retired on pagehide",
+          "passed": true
+        },
+        {
+          "name": "browser navigation really visited the separate away document",
+          "passed": true
+        },
+        {
+          "name": "return required no second resource ZIP download",
+          "passed": true
+        },
+        {
+          "name": "actual resource IDB keeps the exact accepted archive",
+          "passed": true
+        },
+        {
+          "name": "return has one fresh child and no reload loop",
+          "passed": true
+        },
+        {
+          "name": "browser lifecycle observations are trusted actual events",
+          "passed": true
+        },
+        {
+          "name": "no first game frame is fabricated",
+          "passed": true
+        },
+        {
+          "name": "returned current runtime exits with exact acknowledgement",
+          "passed": true
+        }
+      ],
+      "lifecycle": {
+        "token": "c169a206-8163-42d5-b75a-cdac3a24069b",
+        "initialNoDB": true,
+        "events": [
+          {
+            "kind": "parent-created",
+            "id": "48ba6e56-5087-42c7-91ce-fe6148ad1da3",
+            "persisted": null,
+            "trusted": null
+          },
+          {
+            "kind": "child-created",
+            "id": "98f6fb4a-add9-4e9e-a466-b02ed16608cc",
+            "persisted": null,
+            "trusted": null
+          },
+          {
+            "kind": "child-pageshow",
+            "id": "98f6fb4a-add9-4e9e-a466-b02ed16608cc",
+            "persisted": false,
+            "trusted": true
+          },
+          {
+            "kind": "parent-pagehide",
+            "id": "48ba6e56-5087-42c7-91ce-fe6148ad1da3",
+            "persisted": false,
+            "trusted": true
+          },
+          {
+            "kind": "child-pagehide",
+            "id": "98f6fb4a-add9-4e9e-a466-b02ed16608cc",
+            "persisted": false,
+            "trusted": true
+          },
+          {
+            "kind": "runtime-exit",
+            "id": "98f6fb4a-add9-4e9e-a466-b02ed16608cc",
+            "persisted": null,
+            "trusted": null
+          },
+          {
+            "kind": "away-created"
+          },
+          {
+            "kind": "parent-created",
+            "id": "19a041c9-b873-474c-ac9b-b78c0381f377",
+            "persisted": null,
+            "trusted": null
+          },
+          {
+            "kind": "child-created",
+            "id": "37ea6fc7-fcd9-45f7-8d54-db2fa9dbbef7",
+            "persisted": null,
+            "trusted": null
+          },
+          {
+            "kind": "child-pageshow",
+            "id": "37ea6fc7-fcd9-45f7-8d54-db2fa9dbbef7",
+            "persisted": false,
+            "trusted": true
+          },
+          {
+            "kind": "runtime-exit",
+            "id": "37ea6fc7-fcd9-45f7-8d54-db2fa9dbbef7",
+            "persisted": null,
+            "trusted": null
+          }
+        ],
+        "away": true,
+        "initialChild": "98f6fb4a-add9-4e9e-a466-b02ed16608cc",
+        "initialParent": "48ba6e56-5087-42c7-91ce-fe6148ad1da3",
+        "initialRaw": [
+          11,
+          22,
+          33,
+          44,
+          55,
+          66,
+          77,
+          88
+        ]
+      },
+      "scope": {
+        "realBrowser": true,
+        "realHistoryBack": true,
+        "actualChildBFCacheRestore": false,
+        "actualParentBFCacheRestore": false,
+        "freshHistoryFallback": true,
+        "realIDB": true,
+        "currentEntry": true,
+        "gameplayRenderAudioSeams": true,
+        "Worlds": 0,
+        "GPU": false,
+        "gameFrame": false
+      },
+      "archive": {
+        "bytes": 5285,
+        "sha256": "8fb6d3ee5d205761f9b49621954202bda555ed7ff6f6a70955fbe9d0b80c08b4"
+      },
+      "stats": {
+        "downloads": 1
+      }
+    },
+    "console": [],
+    "screenshot": {
+      "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case844-browser-cached-history-return/result.jpg",
+      "bytes": 55975,
+      "sha256": "05e1dd47960d63ab4b9032cbfd6a393657d6fe47b87f900098bf28240f329d79"
+    },
+    "windowMs": 29850,
+    "ownRuntimePausedOrClosed": true
+  },
+  "actualBrowserCachedBranchAccepted": false,
+  "persistedTrueBranch": {
+    "evidence": "842RED→843GREEN actual current-entry/context/session source",
+    "eventBoundary": "synthetic PageTransitionEvent equivalent",
+    "reloadBoundary": "counted seam,not navigation"
+  },
+  "review": {
+    "worker": "th128-normal-routes",
+    "seq": 6929,
+    "status": "idle",
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/dsh-web-completion-20261115/protocol-build/cached-return843-review-20261117/REVIEW.md",
+    "bytes": 3114,
+    "sha256": "18db90c97e8097856223932a16daf9314efd140234e1d301fc6e64ed1244a111",
+    "sourceOnly": true,
+    "noScopedCodeBlocker": true,
+    "MAINCorrections": [
+      "Report checked tests/online-launch/entry.test.mjs rather than changed tests/launcher-session/current-entry.test.mjs. CPU zero-coverage claim is wrong: actual8423RED/84312GREEN contains four new persisted/initial/throwing-cleanup cases.",
+      "844actualtrustedpageshow/pagehide persistedfalse is fresh history fallback;report correct on no realBFCachepositiveproof.",
+      "Navigation-cancel/pagehide deadstate is not reproduced or established here;retain as unproven lead,not current product bug."
+    ],
+    "deferredMinors": [
+      "Reload failure leaves once guard set;no retry UI implemented. Runtime source/error loop risk avoided."
+    ]
+  },
+  "history": {
+    "range": "770..845",
+    "total": 1622,
+    "liveExact": 1345,
+    "archivedExact": 277,
+    "unresolved": 0,
+    "report": "cached-return842-845-historical-pin-readback-v2-20261117.json",
+    "firstUnresolvedReportPreserved": true,
+    "oldDoc773ExactArchived": true
+  },
+  "stage3": {
+    "complete": false,
+    "remainingRequiredFeature": "Visible bounded practice UI. Existing underlying debug controls are hidden/inert and do not count as delivered user flow.",
+    "finiteFunctionalScope": "docs/WEB_FUNCTIONAL_SCOPE.md"
+  },
+  "stage4": {
+    "implemented": false,
+    "authorizedAfterStage3": true
+  },
+  "boundaries": {
+    "browser": 1,
+    "Worlds": 0,
+    "Factories": 0,
+    "nativeCompiles": 0,
+    "GPU": false,
+    "physicalAudio": false,
+    "gameplayRenderAudioSeams": true,
+    "authoredZIPBytes": 5285,
+    "actualBFCachePersistedTrue": false,
+    "deviceCrashDurability": false,
+    "publicURL": null,
+    "localRuntimePackagingPaused": true
+  }
+}

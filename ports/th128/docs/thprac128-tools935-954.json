@@ -1,0 +1,1274 @@
+{
+  "authority": "MAIN",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "date": "2026-11-17",
+  "baseCommit": "d51dcd2d526332a16c71a4c0f5960f9b4372ec30",
+  "scope": "TH128actualnativeassistgroup and officialBackspace/F12/practicemenuhumanUIcorrection; fullthprac/phase3 remain false",
+  "native937": {
+    "checks": 677,
+    "WorldExportsStartCalls": 11,
+    "wholeWorldExportsCpp": true,
+    "resourceHosts": "actual",
+    "entryHitConsumer": "actual confirmedOverlap directly called, not independent collision geometry proof",
+    "F1selector3": "sourceonly integration, no separate runtime case",
+    "result": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case937-thprac128-whole-tools-native-ready-respawn\\result.json",
+      "bytes": 683,
+      "sha256": "fd82be51f4845d7e00fccf9594f06e20d16b99f9b7490c141fa7460a12dd1569"
+    }
+  },
+  "nativeAffected": {
+    "deathFire946": "compiler/runtime0;overall946false dueobsoletePerfectfixture",
+    "Perfect947": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case947-thprac128-affected-current-Perfect-native\\result.json",
+      "bytes": 602,
+      "sha256": "29a728d8c55d05c351c8b4683cb569e7c66f207677dfd377bd7ebfbbbc7918e0"
+    },
+    "nativeProduct936ToNowUnchanged": true
+  },
+  "core115": {
+    "authority": "MAIN",
+    "ordinal": 948,
+    "coreOrdinal": 115,
+    "passed": true,
+    "compilerCalls": 1,
+    "compiler": {
+      "status": 0,
+      "error": null,
+      "signal": null
+    },
+    "artifacts": {
+      "core.mjs": {
+        "bytes": 139581,
+        "sha256": "59d84acd49810199f85b7851a77896209aeb410f89f04c4579d3b9ca6908615d"
+      },
+      "core.wasm": {
+        "bytes": 2432877,
+        "sha256": "2c0f9179951f095ed1b3afdc4574905e9775fcceab2eebe21c7bd1f6739ca983"
+      }
+    },
+    "generation": "27be78ada34e1f3d266b923e91d283bf113be118a78d6fd37c554133dc73155e",
+    "sourceCount": 231,
+    "translationUnits": 83,
+    "exports": 217,
+    "changedSources": [
+      "src/game/PerfectFreezeHost.cpp",
+      "src/game/PerfectFreezeHost.hpp",
+      "src/game/PlayerDeathHost.cpp",
+      "src/game/PlayerDeathHost.hpp",
+      "src/game/PlayerFireHost.cpp",
+      "src/game/PlayerFireHost.hpp",
+      "src/game/PlayerHitHost.cpp",
+      "src/game/PlayerHitHost.hpp",
+      "src/game/StageWorld.cpp",
+      "src/game/StageWorld.hpp",
+      "src/runtime/WorldExports.cpp"
+    ],
+    "Factories": 0,
+    "Worlds": 0,
+    "browser": false,
+    "publication": false,
+    "at": "2026-11-17T10:43:58.547Z"
+  },
+  "actual115949": {
+    "passed": true,
+    "checks": 301,
+    "Factories": 2,
+    "WorldStarts": 2,
+    "actualTicks": 6,
+    "fullCoreCompilations": 0,
+    "browser": 0,
+    "GPU": 0,
+    "storage": "synthetic-strict-IDB",
+    "physicalAudio": false,
+    "scope": "Actual115toolsnativeABI/currentJSadapter+framebasedmask/speedPRACtimeline/strictsyntheticstore/actualnativeplayback3frameprojection;notallF1F6actual115effects orfullgame",
+    "originalDAT": {
+      "bytes": 32336111,
+      "sha256": "38be25a5f1b0bf5e88dd7f66e34e295338d6bb968794a1ff587337f46b3db045"
+    },
+    "evidence": [
+      {
+        "mode": "record",
+        "receipt": {
+          "schema": "th128-thprac-native-state/1",
+          "active": true,
+          "generation": 2,
+          "frame": 0,
+          "stage": 2,
+          "chapter": 2,
+          "section": 0,
+          "phase": 0,
+          "dlg": false,
+          "difficulty": 1,
+          "nonNormal": true,
+          "contexts": 15,
+          "initial": {
+            "score": 1234567890,
+            "motivation": 54321,
+            "perfect_freeze": 12345,
+            "ice_power": 6789,
+            "ice_area": 800
+          },
+          "actual": {
+            "score": 1234567890,
+            "motivation": 54321,
+            "perfect_freeze": 12345,
+            "ice_power": 6789,
+            "ice_area": 800
+          }
+        },
+        "projection": {
+          "frame": 3,
+          "spawns": 0,
+          "rngCalls": 0,
+          "playerX": 0,
+          "playerY": 391,
+          "scoreRaw": 123456789,
+          "motivationRaw": 54321,
+          "perfectCharge": 12345,
+          "powerRaw": 6804,
+          "cumulativeFrozenArea": 800,
+          "playerAnimation": 0,
+          "playerWindow": 3
+        },
+        "recordFrames": 3,
+        "fileBytes": 854,
+        "fileSHA256": "5c017604efa3739bcf5212e5835c900d2059062770baca7fc738cda5563af1ca",
+        "metadata": {
+          "session": {
+            "schema": "eagler-touhou/thprac-session/1",
+            "game": "th128",
+            "params": {
+              "mode": 1,
+              "stage": 2,
+              "section": 10302,
+              "phase": 0,
+              "dlg": false,
+              "score": 1234567890,
+              "motivation": 54321,
+              "perfect_freeze": 12345,
+              "ice_power": 6789,
+              "ice_area": 800
+            },
+            "difficulty": 1
+          },
+          "tools": {
+            "events": [
+              [
+                0,
+                65
+              ],
+              [
+                1,
+                16
+              ],
+              [
+                2,
+                0
+              ]
+            ],
+            "speed": [
+              [
+                0,
+                {
+                  "fps": 120,
+                  "slow": 15,
+                  "fast": 2,
+                  "free": false
+                }
+              ]
+            ]
+          },
+          "identity": {
+            "coreSHA256": "2c0f9179951f095ed1b3afdc4574905e9775fcceab2eebe21c7bd1f6739ca983",
+            "resourceSHA256": "38be25a5f1b0bf5e88dd7f66e34e295338d6bb968794a1ff587337f46b3db045"
+          },
+          "playLock": true,
+          "sourceAuthentication": false,
+          "version": "2.3.1.1",
+          "stage": 3,
+          "seed": 34772,
+          "frames": 3
+        }
+      },
+      {
+        "mode": "playback",
+        "receipt": {
+          "schema": "th128-thprac-native-state/1",
+          "active": true,
+          "generation": 2,
+          "frame": 0,
+          "stage": 2,
+          "chapter": 2,
+          "section": 0,
+          "phase": 0,
+          "dlg": false,
+          "difficulty": 1,
+          "nonNormal": true,
+          "contexts": 15,
+          "initial": {
+            "score": 1234567890,
+            "motivation": 54321,
+            "perfect_freeze": 12345,
+            "ice_power": 6789,
+            "ice_area": 800
+          },
+          "actual": {
+            "score": 1234567890,
+            "motivation": 54321,
+            "perfect_freeze": 12345,
+            "ice_power": 6789,
+            "ice_area": 800
+          }
+        },
+        "projection": {
+          "frame": 3,
+          "spawns": 0,
+          "rngCalls": 0,
+          "playerX": 0,
+          "playerY": 391,
+          "scoreRaw": 123456789,
+          "motivationRaw": 54321,
+          "perfectCharge": 12345,
+          "powerRaw": 6804,
+          "cumulativeFrozenArea": 800,
+          "playerAnimation": 0,
+          "playerWindow": 3
+        },
+        "playback": {
+          "active": true,
+          "stage": 3,
+          "rank": 1,
+          "generation": 2,
+          "consumed": 3,
+          "frames": 3,
+          "complete": true,
+          "auxiliaryKnown": true,
+          "auxiliaryLive": false,
+          "slot": 7,
+          "stageIndex": 0,
+          "totalStages": 1,
+          "totalFrames": 3,
+          "consumedTotal": 3,
+          "playLock": true
+        },
+        "sameProjection": true
+      }
+    ]
+  },
+  "browser954": {
+    "checks": 14,
+    "windowMs": 37598,
+    "console": [],
+    "screenshots": [
+      {
+        "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case954-browser-official-UI-stable-visible-state/official-practice.jpg",
+        "bytes": 91387,
+        "sha256": "35e458500d2f7bb7733379acaf3195759bf9f44def4132d9485c46947c8dad5d"
+      },
+      {
+        "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case954-browser-official-UI-stable-visible-state/official-normal.jpg",
+        "bytes": 71737,
+        "sha256": "56d1d32811f1456a5da7c21ba18e40c2c0b58207cfac73c272ed5d52241633ec"
+      },
+      {
+        "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case954-browser-official-UI-stable-visible-state/official-backspace.jpg",
+        "bytes": 73425,
+        "sha256": "f76ed85e029e499cb234489b69ebe46d6ef5a5ed3241f403e382f6376e011773"
+      },
+      {
+        "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case954-browser-official-UI-stable-visible-state/official-f12.jpg",
+        "bytes": 76769,
+        "sha256": "e3f6dc81fe7485e897580a6b0e1bf2d22d5aaee09d209dcecc6315fa1596f32f"
+      }
+    ],
+    "result": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case954-browser-official-UI-stable-visible-state\\result.json",
+      "bytes": 635,
+      "sha256": "553ca68d32d7a2cfeaecf4cf88533ee66e47d3000558dc182bf68ef0b4a212d5"
+    },
+    "evidence": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case954-browser-official-UI-stable-visible-state\\evidence.json",
+      "bytes": 4058,
+      "sha256": "1c3eada2548e39529a9f5214512faae8094093720ed19fc8a61403ca1ab39819"
+    },
+    "realLocalStorage": true,
+    "nativeRouteBackground": "explicit authored seams",
+    "F12EscapeClose": true,
+    "F12ClickClose": "953observation inconclusive"
+  },
+  "affected951": {
+    "tests": 259,
+    "pass": 259,
+    "skip": 0,
+    "result": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case951-TH128-official-UI-affected-Web\\result.json",
+      "bytes": 296,
+      "sha256": "03103703a4778b72d976455c69724f5979f1873c28249c212317da690154519f"
+    }
+  },
+  "cases": [
+    {
+      "ordinal": 935,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case935-thprac128-whole-tools-consumer-red",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case935-thprac128-whole-tools-consumer-red\\result.json",
+        "bytes": 1838,
+        "sha256": "812b8a6f084cb3b091362b9bc0b2d0d5ab954b08f8c9bf1c85469c1b99acdf10"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case935-thprac128-whole-tools-consumer-red\\request.json",
+        "bytes": 70996,
+        "sha256": "774cae0b3bb60451130e896b9cdd22f68600da2be9d2d81620ab80df79bc62c0"
+      },
+      "passed": false,
+      "steps": [
+        {
+          "name": "prepare-original",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "compiler",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-recording",
+          "status": 1,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case935-thprac128-whole-tools-consumer-red\\actual-manifest.json",
+        "bytes": 167242,
+        "sha256": "e572872da22ebe1ea10ac8f3e02c2e9aa0743042ff587295e77d5c09392f43d0"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case935-thprac128-whole-tools-consumer-red\\sourcecheck.json",
+        "bytes": 70,
+        "sha256": "2d3adf4d24648e25bc91f0e4a5836ec21393f4bf7b9104982b636c1fd93d388d"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case935-thprac128-whole-tools-consumer-red\\MAIN-APPROVAL.json",
+        "bytes": 556,
+        "sha256": "4bc0fa019d3abbad23bba215c279f2e26d2540b82960d194c18f79afba727319"
+      }
+    },
+    {
+      "ordinal": 936,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case936-thprac128-whole-tools-native-group-green",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case936-thprac128-whole-tools-native-group-green\\result.json",
+        "bytes": 2114,
+        "sha256": "27244b91a33bea18a77857c8c76c0e324ee3e557493eec9b1769f389bae22416"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case936-thprac128-whole-tools-native-group-green\\request.json",
+        "bytes": 70930,
+        "sha256": "cb5501db1696fa82375673a78ae353f806ebeb061ff26c4897edf8ae686fa2d4"
+      },
+      "passed": false,
+      "steps": [
+        {
+          "name": "prepare-original",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "compiler",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-recording",
+          "status": 1,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case936-thprac128-whole-tools-native-group-green\\actual-manifest.json",
+        "bytes": 167207,
+        "sha256": "84ab01bbd64580e58fae2e708a7c44cb9f1f9194be4012f5870ec3730d58ff9b"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case936-thprac128-whole-tools-native-group-green\\sourcecheck.json",
+        "bytes": 70,
+        "sha256": "05eec51ad7ebd3b5eedbfee340248929e717c1b12dd62272b07ad6ba5433e5bb"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case936-thprac128-whole-tools-native-group-green\\MAIN-APPROVAL.json",
+        "bytes": 553,
+        "sha256": "a1f491b7cba52d6d58d0b1aa9ca184d836e35054653111cd4b6bea5379077ccb"
+      }
+    },
+    {
+      "ordinal": 937,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case937-thprac128-whole-tools-native-ready-respawn",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case937-thprac128-whole-tools-native-ready-respawn\\result.json",
+        "bytes": 683,
+        "sha256": "fd82be51f4845d7e00fccf9594f06e20d16b99f9b7490c141fa7460a12dd1569"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case937-thprac128-whole-tools-native-ready-respawn\\request.json",
+        "bytes": 71459,
+        "sha256": "47bc36390bfe1aaaeb6006688a7a50b4a1828a349f405ea4a56e7f01771f2fd7"
+      },
+      "passed": true,
+      "steps": [
+        {
+          "name": "prepare-original",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "compiler",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-recording",
+          "status": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case937-thprac128-whole-tools-native-ready-respawn\\actual-manifest.json",
+        "bytes": 167770,
+        "sha256": "94f9f5f321b7ceb1ccdf38523a47ee634d781d4eb7a8499807c4d3f14f992a3d"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case937-thprac128-whole-tools-native-ready-respawn\\sourcecheck.json",
+        "bytes": 70,
+        "sha256": "b27e02356c3892819083ab0c263b71157013bc2debcf607655df72833ed665df"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case937-thprac128-whole-tools-native-ready-respawn\\MAIN-APPROVAL.json",
+        "bytes": 532,
+        "sha256": "b2e78e1488824797f29f8fd8fb78c55308fe56ee77df3c575d7a23c7867d16aa"
+      }
+    },
+    {
+      "ordinal": 938,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case938-thprac128-tools-speed-Web-currentcaller-red",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case938-thprac128-tools-speed-Web-currentcaller-red\\result.json",
+        "bytes": 292,
+        "sha256": "9d68673f48b7325b7c43935cb85a7286307938d20d027316e2e970d6c6bc3217"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case938-thprac128-tools-speed-Web-currentcaller-red\\request.json",
+        "bytes": 4343,
+        "sha256": "ab8af43c0e9a72c670f7147f09690d172d3d2288a41e863ae651980484183d5b"
+      },
+      "passed": false,
+      "summary": {
+        "pass": 0,
+        "fail": 6,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 6
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case938-thprac128-tools-speed-Web-currentcaller-red\\actual-manifest.json",
+        "bytes": 5401,
+        "sha256": "7f36195b4180d5c5e3b886ff57485b2412c386ac5f4157a33697eeba7216bb80"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case938-thprac128-tools-speed-Web-currentcaller-red\\sourcecheck.json",
+        "bytes": 86,
+        "sha256": "dd0955dadcba5a3d56399c899d3f3675dd92a54cc2faf5c26c67dedb257dd423"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case938-thprac128-tools-speed-Web-currentcaller-red\\MAIN-APPROVAL.json",
+        "bytes": 478,
+        "sha256": "71a658361946731ef880b9e1eb886b5552d268b59fbaf2796a6f4dddb21d2d0d"
+      }
+    },
+    {
+      "ordinal": 939,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case939-thprac128-complete-tools-Web-group-green",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case939-thprac128-complete-tools-Web-group-green\\result.json",
+        "bytes": 291,
+        "sha256": "78c00aa803bea9f3ff65180dd6415ad6874244c3dadf7e3c2c81f553623822ba"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case939-thprac128-complete-tools-Web-group-green\\request.json",
+        "bytes": 7370,
+        "sha256": "3a333ab96034c22467f9459a1db2b93a7c5198f853f924a55bc9b2b2fb545a95"
+      },
+      "passed": true,
+      "summary": {
+        "pass": 6,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 6
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case939-thprac128-complete-tools-Web-group-green\\actual-manifest.json",
+        "bytes": 8552,
+        "sha256": "ad7d9e0b5ff0b25cb9655a01fc50d2f9aac30dcebcb1b388060d02088ba9273d"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case939-thprac128-complete-tools-Web-group-green\\sourcecheck.json",
+        "bytes": 86,
+        "sha256": "457d38374a6dbd13414b5bea8a0b6b65aa671bf17d839882058f12335638d13f"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case939-thprac128-complete-tools-Web-group-green\\MAIN-APPROVAL.json",
+        "bytes": 548,
+        "sha256": "32ccf5a60f3ab42aa91cd4b6ead5da5bc64b103182fff5379ab907a693c80db2"
+      }
+    },
+    {
+      "ordinal": 940,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case940-thprac128-tools-complete-affected-Web",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case940-thprac128-tools-complete-affected-Web\\result.json",
+        "bytes": 298,
+        "sha256": "f1b9fa2f190ff15a17d449566117d247d3c21a8382c23fa37f17a1eface71e9b"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case940-thprac128-tools-complete-affected-Web\\request.json",
+        "bytes": 29102,
+        "sha256": "20a92ffe8d4072c5a07c82cf22487c88095e51cf6d82b2b5bcb626b8b251c6d2"
+      },
+      "passed": false,
+      "summary": {
+        "pass": 235,
+        "fail": 18,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 253
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case940-thprac128-tools-complete-affected-Web\\actual-manifest.json",
+        "bytes": 34428,
+        "sha256": "a67c473eb4da8ea543829819197ef860a261bd381e1393919e97781d98cc15cf"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case940-thprac128-tools-complete-affected-Web\\sourcecheck.json",
+        "bytes": 87,
+        "sha256": "62dc746281490eea06c3c6dfd9a13e84bc53c3966b3d7156ae1cced8c14e6169"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case940-thprac128-tools-complete-affected-Web\\MAIN-APPROVAL.json",
+        "bytes": 529,
+        "sha256": "f80365b8783f5daa5e739763ebf4f545e52d40ee8b0cdb32e33f2fc67aa497b7"
+      }
+    },
+    {
+      "ordinal": 941,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case941-thprac128-tools-affected-full-fixture-closure",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case941-thprac128-tools-affected-full-fixture-closure\\result.json",
+        "bytes": 296,
+        "sha256": "cf2e27a8d39b7d4241bf57e34ff1297d6c9a11ee5a950d1cc5b1b55db7b5f2a6"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case941-thprac128-tools-affected-full-fixture-closure\\request.json",
+        "bytes": 29917,
+        "sha256": "5abc790606eb7f869a1e8700896c0f279442dc64f5a7fe63dffa86b45d5f3e35"
+      },
+      "passed": true,
+      "summary": {
+        "pass": 253,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 253
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case941-thprac128-tools-affected-full-fixture-closure\\actual-manifest.json",
+        "bytes": 35289,
+        "sha256": "d1f21a68266e960e4c9bdc51c008e0df9fc04e19dc3574be168f4e49b0f08da0"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case941-thprac128-tools-affected-full-fixture-closure\\sourcecheck.json",
+        "bytes": 87,
+        "sha256": "f786896abf97e5cb3456bea9469db4dbd84ec4e6606da0e2a3b0729cfdbdd89f"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case941-thprac128-tools-affected-full-fixture-closure\\MAIN-APPROVAL.json",
+        "bytes": 509,
+        "sha256": "ac3fc2dcea87ae544728eab43cc2508deeec45fd14316b5e04d5187e9f1cedfd"
+      }
+    },
+    {
+      "ordinal": 942,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case942-thprac128-lifecycle-review-regressions-red",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case942-thprac128-lifecycle-review-regressions-red\\result.json",
+        "bytes": 292,
+        "sha256": "8dbafc5fbc73c2188994cfe819f855028603bc171f79c7cc85b3ea5285514a56"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case942-thprac128-lifecycle-review-regressions-red\\request.json",
+        "bytes": 7622,
+        "sha256": "ac90a059777c39fbccc1da39012fd0f1c860b6ee7e82e2663d1772536142c5ac"
+      },
+      "passed": false,
+      "summary": {
+        "pass": 6,
+        "fail": 3,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 9
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case942-thprac128-lifecycle-review-regressions-red\\actual-manifest.json",
+        "bytes": 8818,
+        "sha256": "29d0be8a9dd5e3392ab2bb377c201682e9f35da63495e58ca0049731f2c1e643"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case942-thprac128-lifecycle-review-regressions-red\\sourcecheck.json",
+        "bytes": 86,
+        "sha256": "4db93484d14d344ceb25afa210ef4e29818185b4e27fc4f591a1869941e6a1b6"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case942-thprac128-lifecycle-review-regressions-red\\MAIN-APPROVAL.json",
+        "bytes": 465,
+        "sha256": "50fadcde369a96c44a94d0a27caf2b029a83fa6c9f419d76a77a9f2da65e7db0"
+      }
+    },
+    {
+      "ordinal": 943,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case943-thprac128-complete-tools-affected-after-review",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case943-thprac128-complete-tools-affected-after-review\\result.json",
+        "bytes": 297,
+        "sha256": "c9f45a3d0a3553bb4e61876334e772776eda6458b0ee62d90a7aedc402016e61"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case943-thprac128-complete-tools-affected-after-review\\request.json",
+        "bytes": 30664,
+        "sha256": "9292c5b4cb9409b48721855f58476ea34fb4a3ef4202bb7a1bd25f921e44fae5"
+      },
+      "passed": false,
+      "summary": {
+        "pass": 253,
+        "fail": 3,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 256
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case943-thprac128-complete-tools-affected-after-review\\actual-manifest.json",
+        "bytes": 36068,
+        "sha256": "eb6764a8f92883f58fbcd9ae7dcc2068f5074aba96fc3be7b62399fc76eca89d"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case943-thprac128-complete-tools-affected-after-review\\sourcecheck.json",
+        "bytes": 87,
+        "sha256": "ecc5bddfcf5d9239ac56ae2a43a67fc9e296300cdd537a676b053c33759bd61b"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case943-thprac128-complete-tools-affected-after-review\\MAIN-APPROVAL.json",
+        "bytes": 476,
+        "sha256": "eeb7f22accf792c52ac2142432edebf521a36bc21e7bfbfa984db3133fb2fd83"
+      }
+    },
+    {
+      "ordinal": 944,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case944-thprac128-affected-extracted-restart-closure",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case944-thprac128-affected-extracted-restart-closure\\result.json",
+        "bytes": 296,
+        "sha256": "60847b3984d1106cdf8b961600ff8282d264863d52b93d0bfd10c8fb594deadc"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case944-thprac128-affected-extracted-restart-closure\\request.json",
+        "bytes": 31188,
+        "sha256": "f151f3ed17def3fc335861437e4f97b7de55ae259db4f4d23fdf8b05fe691299"
+      },
+      "passed": true,
+      "summary": {
+        "pass": 256,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 256
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case944-thprac128-affected-extracted-restart-closure\\actual-manifest.json",
+        "bytes": 36608,
+        "sha256": "43005cf8c0ced6ca08d8164bac69b7c2d37d775b207ef0254f2d6e1a442d5c52"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case944-thprac128-affected-extracted-restart-closure\\sourcecheck.json",
+        "bytes": 87,
+        "sha256": "f332ecc1c001e6749c1289377338acc365090cd46542b5fd49b320850c820124"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case944-thprac128-affected-extracted-restart-closure\\MAIN-APPROVAL.json",
+        "bytes": 511,
+        "sha256": "7de78bbf506e071a419f2f86eecddf1c5399f0997783af062a9b79b5ded50020"
+      }
+    },
+    {
+      "ordinal": 945,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case945-thprac128-affected-native-default-hosts",
+      "result": null,
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case945-thprac128-affected-native-default-hosts\\request.json",
+        "bytes": 18428,
+        "sha256": "45e6df51d7e73dcd42f3f03d6d73518590b2aaafbdbb293eafef67bfecacf449"
+      },
+      "passed": null,
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case945-thprac128-affected-native-default-hosts\\actual-manifest.json",
+        "bytes": 28952,
+        "sha256": "f14cc7e028a7826656666b9142799f459f08e5c8c58c03a5220c7c8ad23df324"
+      },
+      "sourcecheck": null,
+      "grant": null
+    },
+    {
+      "ordinal": 946,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case946-thprac128-affected-native-canonical-command",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case946-thprac128-affected-native-canonical-command\\result.json",
+        "bytes": 5758,
+        "sha256": "b2eab47235a44d350b390846805053243c85a97101b07accc6da5384177356d7"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case946-thprac128-affected-native-canonical-command\\request.json",
+        "bytes": 18479,
+        "sha256": "e6ddac2bfcf12f9dc15fb765355cba892ae04489abf238a3c0aa52146494b7c0"
+      },
+      "passed": false,
+      "steps": [
+        {
+          "name": "compiler-death",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-death",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "compiler-fire",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-fire",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "compiler-perfect",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-perfect",
+          "status": 1,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case946-thprac128-affected-native-canonical-command\\actual-manifest.json",
+        "bytes": 29039,
+        "sha256": "473fccd3c624a090e5deea8593f7b2001a9ce502960d4de479c94ef0af92be3b"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case946-thprac128-affected-native-canonical-command\\sourcecheck.json",
+        "bytes": 70,
+        "sha256": "349aee04d2f49fdd24bc5ff002236717f46242ac8dc5625179e772f0ba095920"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case946-thprac128-affected-native-canonical-command\\MAIN-APPROVAL.json",
+        "bytes": 533,
+        "sha256": "8d72a7d539940f6b9e7aa3f31ffb40e4e7e66cf431be9cce21f1af3a8ecc7e1d"
+      }
+    },
+    {
+      "ordinal": 947,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case947-thprac128-affected-current-Perfect-native",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case947-thprac128-affected-current-Perfect-native\\result.json",
+        "bytes": 602,
+        "sha256": "29a728d8c55d05c351c8b4683cb569e7c66f207677dfd377bd7ebfbbbc7918e0"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case947-thprac128-affected-current-Perfect-native\\request.json",
+        "bytes": 12255,
+        "sha256": "08180e11c53d0376c5e1429db649284a5f6d543b9552d49e8a078074c3d4645c"
+      },
+      "passed": true,
+      "steps": [
+        {
+          "name": "compiler-perfect",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-perfect",
+          "status": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case947-thprac128-affected-current-Perfect-native\\actual-manifest.json",
+        "bytes": 16943,
+        "sha256": "d9a435e5b5a4a901073b790cf3ecb5099cf8543b43f1659474767d8bcc3418b7"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case947-thprac128-affected-current-Perfect-native\\sourcecheck.json",
+        "bytes": 70,
+        "sha256": "910102c56487a07e5c04b97f3bc1b5afce09cced2862909a96302d45a9f72a9e"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case947-thprac128-affected-current-Perfect-native\\MAIN-APPROVAL.json",
+        "bytes": 519,
+        "sha256": "c159182cf1cdb47b0d82e1bd1d25bd9097700187973a80e85952fa06f096b9a0"
+      }
+    },
+    {
+      "ordinal": 948,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case948-private-core115-thprac-tools",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case948-private-core115-thprac-tools\\result.json",
+        "bytes": 25452,
+        "sha256": "0d8c02729d88ba3e80b275189155d2b57406402ea0d218541bb13b297af7b377"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case948-private-core115-thprac-tools\\request.json",
+        "bytes": 207319,
+        "sha256": "13a335e08687959d789b23b4a4d934c4011a6e5519561182817ac2e5b93be04d"
+      },
+      "passed": true,
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case948-private-core115-thprac-tools\\actual-manifest.json",
+        "bytes": 219412,
+        "sha256": "17e34f8c1cd72532a96c65ac4e1471ce753ca957fae38b05870a57a7811683a0"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case948-private-core115-thprac-tools\\sourcecheck.json",
+        "bytes": 70,
+        "sha256": "730fdd5a70cebe65590e35b2a7a09bfd31e7d998a4a49eaa8eb98ca52f253bb8"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case948-private-core115-thprac-tools\\MAIN-APPROVAL.json",
+        "bytes": 592,
+        "sha256": "61e318b6e64e6e6735aac587112dc168c47c4b20c3abfbcc590f6cdc60ed4c19"
+      }
+    },
+    {
+      "ordinal": 949,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case949-actual115-tools-record-PRAC-native-playback",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case949-actual115-tools-record-PRAC-native-playback\\result.json",
+        "bytes": 489,
+        "sha256": "63939b65964cfcdc07da5dfb4e3922298a106cde4a456548d51443279cd0e6b6"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case949-actual115-tools-record-PRAC-native-playback\\request.json",
+        "bytes": 7352,
+        "sha256": "b16e4e3cd5432c0b1847b8e029ce103492fb71aba9e04c80582cfce4c45730e0"
+      },
+      "passed": true,
+      "steps": [
+        {
+          "name": "actual-tools",
+          "status": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case949-actual115-tools-record-PRAC-native-playback\\actual-manifest.json",
+        "bytes": 8781,
+        "sha256": "276079f22d82eaacc439e9c09bcbdf67247aa6a9627e309e1fdec320c0bce7f9"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case949-actual115-tools-record-PRAC-native-playback\\sourcecheck.json",
+        "bytes": 70,
+        "sha256": "8a51776d8b0b6eb97e2a8c722812203d9a23df15852969f5a782fbd886f2422a"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case949-actual115-tools-record-PRAC-native-playback\\MAIN-APPROVAL.json",
+        "bytes": 561,
+        "sha256": "9f38f1498c23984c8669a2ab5569d1d348aa0735dcf60bb7389588e6421cc9ba"
+      }
+    },
+    {
+      "ordinal": 950,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case950-official-TH128-UI-behavior-red",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case950-official-TH128-UI-behavior-red\\result.json",
+        "bytes": 292,
+        "sha256": "aa928904d072ef69c23c30a3e5bb926ad77040626778324a5fc471a1189a4f92"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case950-official-TH128-UI-behavior-red\\request.json",
+        "bytes": 3439,
+        "sha256": "fd464ac0be0411b97c2d6e98e6dda962b46140c6839f7b79b75df607b7453769"
+      },
+      "passed": false,
+      "summary": {
+        "pass": 0,
+        "fail": 3,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 3
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case950-official-TH128-UI-behavior-red\\actual-manifest.json",
+        "bytes": 4433,
+        "sha256": "321e7478872fd63a3ef6b0f43584fefa1af473152aa31f42449beced1a8dfd56"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case950-official-TH128-UI-behavior-red\\sourcecheck.json",
+        "bytes": 86,
+        "sha256": "a4dede61fd089fc6bc70a064bed60221eefb1ec9cd61e5776dc6f5bfea67c58a"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case950-official-TH128-UI-behavior-red\\MAIN-APPROVAL.json",
+        "bytes": 481,
+        "sha256": "bb6cd4bd2d38dabdd084cf199daf9bcf5ba729670f5a7ecc27a09a688fec4356"
+      }
+    },
+    {
+      "ordinal": 951,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case951-TH128-official-UI-affected-Web",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case951-TH128-official-UI-affected-Web\\result.json",
+        "bytes": 296,
+        "sha256": "03103703a4778b72d976455c69724f5979f1873c28249c212317da690154519f"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case951-TH128-official-UI-affected-Web\\request.json",
+        "bytes": 31727,
+        "sha256": "74087dd5356e04ea74646a75ef44104fbb4ff7a66127ccc2a61e7091097df1fe"
+      },
+      "passed": true,
+      "summary": {
+        "pass": 259,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 259
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case951-TH128-official-UI-affected-Web\\actual-manifest.json",
+        "bytes": 37247,
+        "sha256": "8644d1c9835e470ece792346fb1e7d9475207f32ec30e2eb7188dbde9395186b"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case951-TH128-official-UI-affected-Web\\sourcecheck.json",
+        "bytes": 87,
+        "sha256": "11f40e40130e8bb1468d9ae33f040acc2c166c21e872bbaec0998b8e88a76ea5"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case951-TH128-official-UI-affected-Web\\MAIN-APPROVAL.json",
+        "bytes": 495,
+        "sha256": "ed7426c22ab4a072b2acbcb55333a826ec53c01a28064c07ff5640795945f4b9"
+      }
+    },
+    {
+      "ordinal": 952,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case952-browser-official-TH128-three-panels",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case952-browser-official-TH128-three-panels\\result.json",
+        "bytes": 2946,
+        "sha256": "8293ac7a12a6d2166aa448c4dcc4919911a0834a7a3c5d187c031a4155b1edf9"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case952-browser-official-TH128-three-panels\\request.json",
+        "bytes": 7814,
+        "sha256": "7ec6ac6eac10bc4a066c49a725bdb1493339509f1638f581cd4ed63066680a8f"
+      },
+      "passed": false,
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case952-browser-official-TH128-three-panels\\actual-manifest.json",
+        "bytes": 8842,
+        "sha256": "010909b1b07bb3c55f829ab862e755a4ff6f6d840f551e8a50120e027dac77d6"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case952-browser-official-TH128-three-panels\\sourcecheck.json",
+        "bytes": 50,
+        "sha256": "b86dd73acba48ae9db7a55b7bbcda24e5d96c9b07df445082dfe070594721504"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case952-browser-official-TH128-three-panels\\MAIN-APPROVAL.json",
+        "bytes": 649,
+        "sha256": "c05090eb6c626a40a4f4f673474eae31bdacee8ccdd4d431212f6af5a319fbaa"
+      }
+    },
+    {
+      "ordinal": 953,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case953-browser-official-UI-complete-page-closure",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case953-browser-official-UI-complete-page-closure\\result.json",
+        "bytes": 1254,
+        "sha256": "98b428a009b58a2fd6be33dc909d685aa0edff6de65c5e2d4bd0634e2026fa74"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case953-browser-official-UI-complete-page-closure\\request.json",
+        "bytes": 7892,
+        "sha256": "65b4a4f0a9b4bd905bc18a31cd081545b5447ac1b80fde3fcc3fcdeaded28ec6"
+      },
+      "passed": false,
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case953-browser-official-UI-complete-page-closure\\actual-manifest.json",
+        "bytes": 8944,
+        "sha256": "b11ea32b3167c3bb4c4cde0c83e0f474b0fba6a36df1702cf4204675e0b6470d"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case953-browser-official-UI-complete-page-closure\\sourcecheck.json",
+        "bytes": 50,
+        "sha256": "1109da1976b493ad005acfa5db73013d1df58e231615f68e8a4e2085acf1e2ba"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case953-browser-official-UI-complete-page-closure\\MAIN-APPROVAL.json",
+        "bytes": 589,
+        "sha256": "e2364e4cfaced1fafaf4e935efe3bb631372460150611fc6262a420c32a47550"
+      }
+    },
+    {
+      "ordinal": 954,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case954-browser-official-UI-stable-visible-state",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case954-browser-official-UI-stable-visible-state\\result.json",
+        "bytes": 635,
+        "sha256": "553ca68d32d7a2cfeaecf4cf88533ee66e47d3000558dc182bf68ef0b4a212d5"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case954-browser-official-UI-stable-visible-state\\request.json",
+        "bytes": 7879,
+        "sha256": "855dc974459f9177808341e5b034a5692228398f862089d56b7beb032102e6da"
+      },
+      "passed": true,
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case954-browser-official-UI-stable-visible-state\\actual-manifest.json",
+        "bytes": 8927,
+        "sha256": "1b41930e166dccad982e5d1e6257fdf7e14ffc9f91f1b42ee5bea363dd1f9b88"
+      },
+      "sourcecheck": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case954-browser-official-UI-stable-visible-state\\sourcecheck.json",
+        "bytes": 50,
+        "sha256": "0581fcc814ba6b5fcccd4809e40587cea77b14d92b5962283a743a06b652887c"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case954-browser-official-UI-stable-visible-state\\MAIN-APPROVAL.json",
+        "bytes": 602,
+        "sha256": "d4b35147d0e8ed170dbfda9367e1a7c48ef313eb444bc5ae3e124bfbd3af407c"
+      }
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\import-entry.mjs",
+      "bytes": 10827,
+      "sha256": "045c797c6ff602b6d9821edbc8292a9e0b486338a8ad74be79196b6dd9aa9919"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\play.css",
+      "bytes": 21155,
+      "sha256": "3fafac7d73302f78c54ef47e49aeee27c374e5e8d878dfc1e091b28f8eac136f"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\play.html",
+      "bytes": 28493,
+      "sha256": "e0ecb242e2d6325dba24a1c3eb18dc89de4a6282fd8857772254afafe6071f36"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\play.mjs",
+      "bytes": 332959,
+      "sha256": "c03993e19300f4ec996159071429df8cd3c051026f0f0cc60ba362bb1e86dba1"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\sound.mjs",
+      "bytes": 91559,
+      "sha256": "f0e9d0f6bc5174c8ecfdd1b1d48ed3739198093d516dd4d7da73bb33503ee930"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\thprac128-menu.mjs",
+      "bytes": 13353,
+      "sha256": "5f91eda72c430dcbd0660999638da33396c469bff4dc49e7d7001fbe9f91b777"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\thprac128-recording.mjs",
+      "bytes": 2784,
+      "sha256": "b2310c76adb878c29b24bd971707e333ffad520751721aa90f5b9c91f8ddca9d"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\thprac128-replay.mjs",
+      "bytes": 8733,
+      "sha256": "4b52644a430972e237069d8b6a5caf70bc2a982a099b4bbc6030e4768513dd85"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\thprac128-tools.mjs",
+      "bytes": 11799,
+      "sha256": "be7b8f2b26cead66f93e2f3dc5f5f053ff0796e97fc255e093a54acad54c5322"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\runtime\\WorldExports.cpp",
+      "bytes": 381643,
+      "sha256": "a79b7daf66988286a2d826d22a429a7b9075f13e6170a29ce10b9a4457eb8bc8"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\StageWorld.cpp",
+      "bytes": 111951,
+      "sha256": "6a98347d5897c1751e70c673185c8da91957601d63edc57b8c5802a2c5d45b3f"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\StageWorld.hpp",
+      "bytes": 13706,
+      "sha256": "6e446075414a66731ceb8466f539dbce95d8a7687c665ceac39f1dcc9302e794"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\PlayerHitHost.cpp",
+      "bytes": 24972,
+      "sha256": "5861d3da2cde209f7eafbb9ad9de89d19d21688fdb6341671b46fe9e82a7e3cb"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\PlayerHitHost.hpp",
+      "bytes": 4404,
+      "sha256": "140265a60da2cd73c7adabe43bbffdf2b4d07ad43935d6abd7037ef699218258"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\PlayerDeathHost.cpp",
+      "bytes": 3893,
+      "sha256": "7a2a33fca934f9f5080285c0e055bd13f3a0cc6ab5f76fdc6004580429912923"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\PlayerDeathHost.hpp",
+      "bytes": 1328,
+      "sha256": "7eaf7f8a07c96c2670ef087e2e6b6120780824bce2d33ca87d8d79cc53a7a30b"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\PlayerFireHost.cpp",
+      "bytes": 4876,
+      "sha256": "5f5d17b5634e0948a9693e60969b22a02dc9785ce90b8c0b9f4272977f76a382"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\PlayerFireHost.hpp",
+      "bytes": 1113,
+      "sha256": "9afda295506b0915fe83b2862b6a68b06cc13f857c63e9c47bc33fa6b179df7b"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\PerfectFreezeHost.cpp",
+      "bytes": 11589,
+      "sha256": "7a862d135c3663449edf576e6c04cc88fbba7abf7a06d9dc34e1564c1c123405"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\PerfectFreezeHost.hpp",
+      "bytes": 4069,
+      "sha256": "09245d4158e33d214b61e8a83f2edad70e96c19c178dc64ba0838f69bcd146e4"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tools\\build-runtime.mjs",
+      "bytes": 10768,
+      "sha256": "39198af6242d05c251a404dc92a60001d5a23470dff2c3432074dd7f8f5dded9"
+    }
+  ],
+  "reference": {
+    "authority": "MAIN",
+    "fixedCommit": "b5beb37a91e322d985c8f89bb6377d55bcf07734",
+    "fontFamilyOrder": {
+      "zh": [
+        "Microsoft YaHei UI Light",
+        "Microsoft YaHei Light",
+        "Microsoft YaHei",
+        "SimHei",
+        "SimSun"
+      ],
+      "en": [
+        "Segoe UI",
+        "Tahoma"
+      ],
+      "ja": [
+        "Yu Gothic UI",
+        "Meiryo UI",
+        "MS UI Gothic",
+        "MS Mincho"
+      ]
+    },
+    "fontSource": {
+      "path": "thprac/src/thprac_gui_locale.cpp",
+      "gitBlob": "0637f0df398595af35100704a4c24fe4f665268f",
+      "bytes": 28989,
+      "sha256": "10724966154409ba78d3112fbc7eca11332bd3210ccd855cba38c349d23ffbdc"
+    },
+    "rasterizer": {
+      "multiply": 1.25,
+      "oversampleH": 5,
+      "oversampleV": 5,
+      "webUsesBrowserRasterizer": true
+    },
+    "images": [
+      {
+        "path": "C:\\Users\\wang\\AppData\\Local\\Temp\\codex-clipboard-7c7d5d25-2808-4238-8b8d-93dfc3ec7bc0.png",
+        "bytes": 754022,
+        "sha256": "e4afa4cc6961f3162ac5a0c0ee7253a5dfa47f753d364ea642b34d54131f48ba"
+      },
+      {
+        "path": "C:\\Users\\wang\\AppData\\Local\\Temp\\codex-clipboard-2c325554-10c6-4665-add1-5e1188befe8f.png",
+        "bytes": 517190,
+        "sha256": "80f2800df60951bf4c5b353f751dd78590a110cb722f0973a4e0255737690ae1"
+      },
+      {
+        "path": "C:\\Users\\wang\\AppData\\Local\\Temp\\codex-clipboard-c3dfa27f-4d36-46a3-a0c3-c105b53396fa.png",
+        "bytes": 1114994,
+        "sha256": "0d9c3441218454bc4742d2afd77cf1b51d10261b589f340dfe17087d370ac948"
+      },
+      {
+        "path": "C:\\Users\\wang\\AppData\\Local\\Temp\\codex-clipboard-3aaeda7a-07da-498e-b473-a041390c2bee.png",
+        "bytes": 799486,
+        "sha256": "288e9d15dfa88e351a1ca158b3f8097674ab04ee4f777f9783e4440be0164576"
+      },
+      {
+        "path": "C:\\Users\\wang\\AppData\\Local\\Temp\\codex-clipboard-4ffe825b-bf21-48e3-b35d-6fac79836be7.png",
+        "bytes": 733682,
+        "sha256": "03165fe8b6778b1e2b9796069da0e1ab46158c615f08ef7169b9fbd0b25db9db"
+      }
+    ]
+  },
+  "review": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\MAIN-thprac-tools935-954-self-review-20261117.md",
+    "bytes": 3450,
+    "sha256": "93b5700b1f974ed117db0c2fcbaef303b1fa16aab0031b9afec2d124b969ebf6"
+  },
+  "history": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\thprac128-tools935-954-historical-pin-final-20261117.json",
+    "bytes": 697846,
+    "sha256": "47b6876b813ba1e2c1af50a7e8bb5a36ea560981237e4a652a353c49efb3a492"
+  },
+  "limitations": [
+    "currentwholecheckWorld+actualoriginalgamebrowsernotexecuted",
+    "F7matchingmusicowner/sourcecontractWebAudioseamtested;currentfullrestart/nativeACKcombinationpending",
+    "speedactualFrameStepperstepsproved, currentcompletegame/speed/replaycombinedpending",
+    "source-shapedUI actualbrowseroriginalfontfamilies, browserglyphrasterdiffersImGui",
+    "noRuntimepackage/publicURL/userpagehotpatch",
+    "oldcase772externalPython1unresolved unchanged",
+    "threebrowserownedtabs952/953/954allclosedfinally",
+    "legacyrawmetadata952realIndexedDBwrong,actualrealLocalStorageonly;oldrawpreserved",
+    "947preparerstdout3compilers13TUwrong;actualmanifest/grant1compiler5TU",
+    "authorreviewnotindependentworker"
+  ]
+}

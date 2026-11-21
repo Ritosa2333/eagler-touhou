@@ -1,0 +1,699 @@
+{
+  "authority": "MAIN",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "date": "2026-11-17",
+  "status": "actual-native-initial-5field-consumers;Web-thprac-incomplete",
+  "stage3FunctionalComplete": false,
+  "sourcePins": [
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/src/game/StageWorld.hpp",
+      "bytes": 13308,
+      "sha256": "3db8f78491db6018bd55de175b9cb33c8f2cf67a989a5415105f7a89595207d6"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/src/game/StageWorld.cpp",
+      "bytes": 109780,
+      "sha256": "86657bba9bffb1dbacac00426d0dab294122f50ff7776b0b2fcc4b3d40dc9f5a"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/src/runtime/WorldExports.cpp",
+      "bytes": 366301,
+      "sha256": "e468f89ff4c359a702dbfbaa48bc521a3115bcbc2577e045a90f484449e47bda"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/initial-resources.cpp",
+      "bytes": 8031,
+      "sha256": "6747cc7e2f342dd7221b1ded2253504bbd0b7b65a2141d46602e2f398b2bf040"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/thprac128/export-initial-resources.mjs",
+      "bytes": 1608,
+      "sha256": "d2f4d282b8a7b65278b630e97a78f76281fb73178b012dd8ef75e93db70b67dd"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/docs/THPRAC128_CONSUMER_MATRIX.md",
+      "bytes": 8504,
+      "sha256": "98cb08e493242d876f5d40447c1517e93bdde63936d6f59b45e764f5aebc31a0"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/docs/THPRAC128_INITIAL_RESOURCES.md",
+      "bytes": 1476,
+      "sha256": "9957ed8aad5d73406e94274600850fd42de424e2db4a2c9b830fdd8016ca37b3"
+    }
+  ],
+  "cases": [
+    {
+      "ordinal": 884,
+      "passed": false,
+      "inputPins": 251,
+      "TUs": 80,
+      "steps": [
+        {
+          "name": "prepare-original",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "compiler",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime",
+          "status": 1,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "runs": [],
+      "stderr": [
+        {
+          "name": "compiler.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "prepare-original.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime.stderr.txt",
+          "bytes": 103
+        }
+      ],
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case884-thprac-actual-native-initial-resources-red/request.json",
+          "bytes": 70148,
+          "sha256": "1ef23eadeb00154e68c9d7edf872d13ee7a0010605af9f2fa03c0c8f19a0bb56"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case884-thprac-actual-native-initial-resources-red/actual-manifest.json",
+          "bytes": 165612,
+          "sha256": "a18ed202552a56103e5dd5c64776d6e90feffc0f0bb995ffd2ac4b5c07658f4f"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case884-thprac-actual-native-initial-resources-red/MAIN-APPROVAL.json",
+          "bytes": 772,
+          "sha256": "df69f0b8dac30189af939bf59955ce99dc7172dcbde9a2054c4dacde4cd2f28a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case884-thprac-actual-native-initial-resources-red/sourcecheck.json",
+          "bytes": 70,
+          "sha256": "3a86a6b9ecf3e8e4f8723d1a392dca0d0e2a51d828c563ed072c183b7441883e"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case884-thprac-actual-native-initial-resources-red/result.json",
+          "bytes": 1958,
+          "sha256": "0999478e81423197e205066f07cf99b6cf0662ab1c61f031da9493b4bb411ba2"
+        }
+      ]
+    },
+    {
+      "ordinal": 885,
+      "passed": false,
+      "inputPins": 250,
+      "TUs": 80,
+      "steps": [
+        {
+          "name": "prepare-original",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "compiler",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime",
+          "status": 1,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "runs": [],
+      "stderr": [
+        {
+          "name": "compiler.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "prepare-original.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime.stderr.txt",
+          "bytes": 101
+        }
+      ],
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case885-thprac-actual-native-initial-resources-green/request.json",
+          "bytes": 69893,
+          "sha256": "5b11b4b1d33ce3190cfbb4e72665bef3ec724d65a2f6da4c0e723a433830e2c8"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case885-thprac-actual-native-initial-resources-green/actual-manifest.json",
+          "bytes": 165359,
+          "sha256": "5fa6cd8a29202852fffc38efcec41c6e547ca1a55d86a317d4dbab0e37a58058"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case885-thprac-actual-native-initial-resources-green/MAIN-APPROVAL.json",
+          "bytes": 696,
+          "sha256": "1ab7ea39f480d3f39c5531aaeb95ea444a8c1a4e93ac57c3aad68d1d755b3710"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case885-thprac-actual-native-initial-resources-green/sourcecheck.json",
+          "bytes": 70,
+          "sha256": "27896d0af9eee5ace1c8055d214f88293b40f15ded4b9efe455cf884f782b20e"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case885-thprac-actual-native-initial-resources-green/result.json",
+          "bytes": 1928,
+          "sha256": "4b91a2d19916185c466fa0e1fd79732074da0064992cccc1788c551507d00c78"
+        }
+      ]
+    },
+    {
+      "ordinal": 886,
+      "passed": true,
+      "inputPins": 251,
+      "TUs": 80,
+      "steps": [
+        {
+          "name": "prepare-original",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "compiler",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-default",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-zero",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-max-ex",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-intermediate",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-bounds",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-natural-ex",
+          "status": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "runs": [
+        {
+          "name": "runtime-bounds.stdout.txt",
+          "result": {
+            "passed": true,
+            "checks": 48,
+            "actualWorldExportsStartCalls": 1,
+            "wholeWorldExportsCpp": true,
+            "actualSHTANM": true,
+            "Factories": 0,
+            "browser": 0
+          }
+        },
+        {
+          "name": "runtime-default.stdout.txt",
+          "result": {
+            "passed": true,
+            "checks": 93,
+            "actualWorldExportsStartCalls": 2,
+            "wholeWorldExportsCpp": true,
+            "actualSHTANM": true,
+            "Factories": 0,
+            "browser": 0
+          }
+        },
+        {
+          "name": "runtime-intermediate.stdout.txt",
+          "result": {
+            "passed": true,
+            "checks": 93,
+            "actualWorldExportsStartCalls": 2,
+            "wholeWorldExportsCpp": true,
+            "actualSHTANM": true,
+            "Factories": 0,
+            "browser": 0
+          }
+        },
+        {
+          "name": "runtime-max-ex.stdout.txt",
+          "result": {
+            "passed": true,
+            "checks": 93,
+            "actualWorldExportsStartCalls": 2,
+            "wholeWorldExportsCpp": true,
+            "actualSHTANM": true,
+            "Factories": 0,
+            "browser": 0
+          }
+        },
+        {
+          "name": "runtime-natural-ex.stdout.txt",
+          "result": {
+            "passed": true,
+            "checks": 42,
+            "actualWorldExportsStartCalls": 1,
+            "wholeWorldExportsCpp": true,
+            "actualSHTANM": true,
+            "Factories": 0,
+            "browser": 0
+          }
+        },
+        {
+          "name": "runtime-zero.stdout.txt",
+          "result": {
+            "passed": true,
+            "checks": 93,
+            "actualWorldExportsStartCalls": 2,
+            "wholeWorldExportsCpp": true,
+            "actualSHTANM": true,
+            "Factories": 0,
+            "browser": 0
+          }
+        }
+      ],
+      "stderr": [
+        {
+          "name": "compiler.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "prepare-original.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-bounds.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-default.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-intermediate.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-max-ex.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-natural-ex.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-zero.stderr.txt",
+          "bytes": 0
+        }
+      ],
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case886-thprac-actual-native-initial-resources-green/request.json",
+          "bytes": 72499,
+          "sha256": "7bdaf04a5ff1c6f11d1682d5b1fb459280afdc706edf5583fd535c8deab5739a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case886-thprac-actual-native-initial-resources-green/actual-manifest.json",
+          "bytes": 169763,
+          "sha256": "9cc9e12954eb03120c063084615c0caf76bceac5a5751d70244a577857298455"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case886-thprac-actual-native-initial-resources-green/MAIN-APPROVAL.json",
+          "bytes": 700,
+          "sha256": "a54d4972d52b234da238deea52a0ddc68e0b4d017afce796ba269b436b8cefad"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case886-thprac-actual-native-initial-resources-green/sourcecheck.json",
+          "bytes": 70,
+          "sha256": "5c55e490b15785d106d7dfdd17913644842642d57c0468cdc06a8d52d2c586d5"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case886-thprac-actual-native-initial-resources-green/result.json",
+          "bytes": 1327,
+          "sha256": "da76f46ec755f2fc18472bab6fe37d9db729f9841b8eedd7793ea86c9aa5b0bd"
+        }
+      ]
+    },
+    {
+      "ordinal": 887,
+      "passed": false,
+      "inputPins": 251,
+      "TUs": 80,
+      "steps": [
+        {
+          "name": "prepare-original",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "compiler",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-default",
+          "status": 1,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "runs": [],
+      "stderr": [
+        {
+          "name": "compiler.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "prepare-original.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-default.stderr.txt",
+          "bytes": 114
+        }
+      ],
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case887-thprac-actual-practice-shot-rank-red/request.json",
+          "bytes": 70048,
+          "sha256": "b1caaf949b39b8fb6ee21585c739054ba45187e24cd10e74c92dd5d426d9670d"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case887-thprac-actual-practice-shot-rank-red/actual-manifest.json",
+          "bytes": 165484,
+          "sha256": "d38ca8605ec66b5176dd870778bda2135a695401b47d7a7305375ecd837f7f43"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case887-thprac-actual-practice-shot-rank-red/MAIN-APPROVAL.json",
+          "bytes": 641,
+          "sha256": "52018e1b9c024d5ab70c8be73f373f5d304301dc34a809362c0ab2466d8e2f1b"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case887-thprac-actual-practice-shot-rank-red/sourcecheck.json",
+          "bytes": 70,
+          "sha256": "056675b25ba041ba8d911f28b345bc885ab2dae9b513d4cdcaab596b17d50183"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case887-thprac-actual-practice-shot-rank-red/result.json",
+          "bytes": 1942,
+          "sha256": "119dff7a55c3e0eb76f287e7d5a2aab84942a43fa053d54ba837002e9f37284b"
+        }
+      ]
+    },
+    {
+      "ordinal": 888,
+      "passed": true,
+      "inputPins": 251,
+      "TUs": 80,
+      "steps": [
+        {
+          "name": "prepare-original",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "compiler",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-default",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-zero",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-max-ex",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-intermediate",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-bounds",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-natural-ex",
+          "status": 0,
+          "signal": null,
+          "error": null
+        }
+      ],
+      "runs": [
+        {
+          "name": "runtime-bounds.stdout.txt",
+          "result": {
+            "passed": true,
+            "checks": 48,
+            "actualWorldExportsStartCalls": 1,
+            "wholeWorldExportsCpp": true,
+            "actualSHTANM": true,
+            "Factories": 0,
+            "browser": 0
+          }
+        },
+        {
+          "name": "runtime-default.stdout.txt",
+          "result": {
+            "passed": true,
+            "checks": 94,
+            "actualWorldExportsStartCalls": 2,
+            "wholeWorldExportsCpp": true,
+            "actualSHTANM": true,
+            "Factories": 0,
+            "browser": 0
+          }
+        },
+        {
+          "name": "runtime-intermediate.stdout.txt",
+          "result": {
+            "passed": true,
+            "checks": 94,
+            "actualWorldExportsStartCalls": 2,
+            "wholeWorldExportsCpp": true,
+            "actualSHTANM": true,
+            "Factories": 0,
+            "browser": 0
+          }
+        },
+        {
+          "name": "runtime-max-ex.stdout.txt",
+          "result": {
+            "passed": true,
+            "checks": 94,
+            "actualWorldExportsStartCalls": 2,
+            "wholeWorldExportsCpp": true,
+            "actualSHTANM": true,
+            "Factories": 0,
+            "browser": 0
+          }
+        },
+        {
+          "name": "runtime-natural-ex.stdout.txt",
+          "result": {
+            "passed": true,
+            "checks": 42,
+            "actualWorldExportsStartCalls": 1,
+            "wholeWorldExportsCpp": true,
+            "actualSHTANM": true,
+            "Factories": 0,
+            "browser": 0
+          }
+        },
+        {
+          "name": "runtime-zero.stdout.txt",
+          "result": {
+            "passed": true,
+            "checks": 94,
+            "actualWorldExportsStartCalls": 2,
+            "wholeWorldExportsCpp": true,
+            "actualSHTANM": true,
+            "Factories": 0,
+            "browser": 0
+          }
+        }
+      ],
+      "stderr": [
+        {
+          "name": "compiler.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "prepare-original.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-bounds.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-default.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-intermediate.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-max-ex.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-natural-ex.stderr.txt",
+          "bytes": 0
+        },
+        {
+          "name": "runtime-zero.stderr.txt",
+          "bytes": 0
+        }
+      ],
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case888-thprac-actual-native-initial-resources-and-rank-green/request.json",
+          "bytes": 72668,
+          "sha256": "acc437069ef90753caa77ca36259f626c866c78601096f8f5810398762933803"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case888-thprac-actual-native-initial-resources-and-rank-green/actual-manifest.json",
+          "bytes": 170076,
+          "sha256": "af093cbf5eb48840a3da68edf6bf0f5659822a67dd5f65521197acbe1b85dc38"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case888-thprac-actual-native-initial-resources-and-rank-green/MAIN-APPROVAL.json",
+          "bytes": 663,
+          "sha256": "25b29d5accc0a8dee7cb17bfeea3ecebf514fd6bbbe5066aff242e90d04270de"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case888-thprac-actual-native-initial-resources-and-rank-green/sourcecheck.json",
+          "bytes": 70,
+          "sha256": "d0898b92ec9319b9df4995a4d745899e9cc356f5eda48ccdc86768516781ec43"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case888-thprac-actual-native-initial-resources-and-rank-green/result.json",
+          "bytes": 1309,
+          "sha256": "a32868c52c36a4b8f01a6b99dd0d001fce258c323de59b700eb83cafcd69f238"
+        }
+      ]
+    }
+  ],
+  "acceptance": {
+    "case": 888,
+    "processes": 6,
+    "checks": 466,
+    "actualWorldExportsStarts": 10,
+    "entireWorldExportsCppIncluded": true,
+    "translationUnits": 80,
+    "compilerCalls": 1,
+    "componentWASMProcesses": true,
+    "gameCoreFactory": 0,
+    "fullCoreBuild": 0,
+    "originalECLSHTANM": true,
+    "actualPlayerHitHost": true,
+    "actualPlayerShotGroups": true,
+    "nativeGroups": [
+      0,
+      6,
+      15
+    ],
+    "initialFields": [
+      "score64bit-floor10",
+      "motivation",
+      "perfect_freeze",
+      "ice_power",
+      "ice_area"
+    ],
+    "boundsAndDefaults": true,
+    "immutableOwnedCopy": true,
+    "mismatchedResourceOrRankBeforeContextInstallRejected": true,
+    "naturalEXArea0GuardPreserved": true,
+    "actualOrdinaryRecordRestoreRejectsPractice": true,
+    "actualGameplayResetClearsPracticeOwnerAndTaint": true,
+    "WebMenu": false,
+    "browser": 0,
+    "GPU": 0,
+    "physicalAudio": false,
+    "durableStore": false
+  },
+  "failures": {
+    "884": "actualmissingtypedinitialownerRED",
+    "885": "fixturegameplayresetisnotfreshapplicationsession7",
+    "887": "actualNormalpracticeallowedEasyshotrankRED"
+  },
+  "compilerInvocationsRound": 5,
+  "Factories": 0,
+  "fullCoreCompilations": 0,
+  "oldSuccessfulCoresUnchanged": true,
+  "oldRawRequestsGrantsUnchanged": true,
+  "successesNotRerunForPass": true,
+  "review": {
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/MAIN-thprac-initial884-888-self-review-20261117.md",
+    "bytes": 2179,
+    "sha256": "1ad865c60c83ba5e0accf0b3841c4b3a5bf92b7e7f582b01f1a6795dec7e2ba2"
+  },
+  "independentApprovalClaimed": false,
+  "historicalReadback": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113/thprac128-initial884-888-historical-pin-readback-20261117.json",
+    "bytes": 334671,
+    "sha256": "e1604de616bba973ff1a1edbfac25941ab87f141db9b5cb9523e3da367c721a7"
+  },
+  "nextPlan": {
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/next889-thprac128-section-Boss-phase-after888-20261117.md",
+    "bytes": 5522,
+    "sha256": "80237c99505485b9b3093f775ec193d174e56f42788ec785fb1292bbf76c7dd6"
+  },
+  "directUserWorkflowCorrection": "Reuse-existing-TH128-thprac-complete-rules-and-menu;batch-functional-Web-delivery;reduce-fragmented-audits",
+  "fullThpracImplemented": false
+}

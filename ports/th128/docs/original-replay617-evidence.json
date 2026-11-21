@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "date": "2026-11-16",
+  "purpose": "Original recorded A1 stage2/rank3 complete23707-frame compatibility; new purpose beyond historical32-frame prefix.",
+  "runtimeCore": 100,
+  "currentSourceCore": 101,
+  "productSourceChanged": false,
+  "originalReplay": {
+    "bytes": 76403,
+    "sha256": "a0d59717d3ca9e7be7d3a3cbbe717ae026935a007e23f73d3e31141d7f3cc9a0",
+    "stage": 2,
+    "rank": 3,
+    "seed": 41297,
+    "expectedFrames": 23707
+  },
+  "cases": {
+    "case616": {
+      "passed": false,
+      "classification": "fixture mask marshalling",
+      "Factories": 1,
+      "WorldStarts": 1,
+      "worldTickCalls": 0,
+      "playbackBound": false,
+      "rawBytes": 10344,
+      "rawSHA256": "857bd36c1683c464fcbbd9386a9b10760f4eeda4a6d292e658512a303dc410c8"
+    },
+    "case617": {
+      "passed": false,
+      "classification": "early GameOver in actual playback; remaining setup versus product behavior cause under review",
+      "Factories": 1,
+      "WorldStarts": 1,
+      "worldTickCalls": 4907,
+      "completedWorldFrames": 4906,
+      "recordedInputsConsumed": 4906,
+      "expectedFrames": 23707,
+      "nativeReturn": 2,
+      "nativeError": "",
+      "motivationRaw": -5031,
+      "deaths": 5,
+      "respawns": 4,
+      "gameRNG": {
+        "seed": 59496,
+        "calls": 389078
+      },
+      "debugTainted": false,
+      "infiniteRespawn": false,
+      "normalRecordBound": false,
+      "audio": {
+        "windows": 4045,
+        "requests": 15656,
+        "musicOperations": 0,
+        "syntheticOutput": true
+      },
+      "rawBytes": 313929,
+      "rawSHA256": "322376120c689e082271d98a13e5ce6d7ffb5904544b8ec0c742dbe24d4e10b5",
+      "resultSHA256": "b5ab85e1c2363363f6c05e722bc5f2c685cff876d9eacd9025213889715117ca",
+      "runnerBytes": 40375,
+      "runnerSHA256": "ddfaec23836e940313874c23663a78a945bdf9828dfed69ed90f71090fa0c8bd"
+    }
+  },
+  "admission": {
+    "MAINThreadVerified": true,
+    "pinnedInputsPerCase": 61,
+    "sourcecheckExit": 0,
+    "freshGrantPerCase": true,
+    "exclusiveOnceROOT": true,
+    "ROOTReleased": true
+  },
+  "limits": {
+    "full23707Passed": false,
+    "RNGEquivalenceProven": false,
+    "rootCauseEstablished": false,
+    "browser": 0,
+    "GPU": 0,
+    "physicalAudio": 0,
+    "realDurableACK": false,
+    "nativeCompiles": 0,
+    "successfulCoreRebuilds": 0,
+    "normalClearClaimed": false,
+    "acceptedRouteReruns": 0,
+    "overallComplete": false
+  }
+}

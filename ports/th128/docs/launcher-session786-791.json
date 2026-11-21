@@ -1,0 +1,94 @@
+{
+  "schema": "th128-launcher-component/1",
+  "date": "2026-11-17",
+  "core": 112,
+  "actualPageWired": false,
+  "existingEntryUnchanged": true,
+  "stage3Complete": false,
+  "features": [
+    "strictparentorigin/epoch",
+    "wirearrayresources/stringrequest",
+    "asyncACKafterhook",
+    "launchfirstframeboundary",
+    "latecompletioncancellation",
+    "separateinputsourcelease"
+  ],
+  "cases": {
+    "786": {
+      "pass": 0,
+      "fail": 18
+    },
+    "787": {
+      "pass": 18,
+      "fail": 0,
+      "inputs": 10
+    },
+    "788": {
+      "pass": 20,
+      "fail": 6
+    },
+    "789": {
+      "pass": 37,
+      "fail": 0,
+      "inputs": 10
+    },
+    "790": {
+      "pass": 57,
+      "fail": 0,
+      "inputs": 14
+    },
+    "791": {
+      "pass": 112,
+      "fail": 0,
+      "inputs": 34
+    },
+    "792": {
+      "pass": 18,
+      "fail": 4,
+      "inputs": 10
+    },
+    "793": {
+      "pass": 22,
+      "fail": 0,
+      "inputs": 10
+    },
+    "794": {
+      "pass": 116,
+      "fail": 0,
+      "inputs": 34
+    }
+  },
+  "boundaries": {
+    "parentWindow": "seam",
+    "DOM": "seam",
+    "nativeInputExport": "seam",
+    "configureResourceHook": "seam",
+    "firstFrameNotification": "seam",
+    "Worlds": 0,
+    "browser": 0,
+    "nativeCompile": 0
+  },
+  "pending": [
+    "entry bootstrap integration",
+    "real DATA/file bridge",
+    "applied configure options/music modes",
+    "real presentation hook",
+    "isolated iframe browser purpose"
+  ],
+  "nativeCoreUnchanged": true,
+  "localV7Unchanged": true,
+  "resourceV2Unchanged": true,
+  "old772SiteUnchanged": true,
+  "replyCache": {
+    "completedWindow": 256,
+    "pendingLimit": 64,
+    "exitBypassesPendingLimit": true,
+    "permanentExactlyOnce": false
+  },
+  "reviewFixes": [
+    "longsessionsrequestbudget",
+    "failedduplicateACK",
+    "pinnedeventidentity",
+    "requiredcleanExitHook"
+  ]
+}

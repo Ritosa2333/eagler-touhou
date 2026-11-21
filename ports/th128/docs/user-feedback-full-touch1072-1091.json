@@ -1,0 +1,1390 @@
+{
+  "authority": "MAIN",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "date": "2026-11-18",
+  "base": "f2eabb726af2746c438d16dd511fdf42b288ea3f",
+  "stage3Complete": false,
+  "percent": null,
+  "implementation": {
+    "exactPortableTouchController": true,
+    "upstreamLauncherModelsAndCSSReused": true,
+    "currentProductionPageWired": true,
+    "fixedTickSampling": true,
+    "keyboardSourceOwnershipPreserved": true,
+    "TH128RapidC512FocusAndFreeze": true,
+    "ownedTouchSettings": true,
+    "landscapePortraitModelStorage": true,
+    "layoutMoveScaleSaveCancel": true,
+    "GameZoomControllerTypeErasedUpstream": true,
+    "directControlsCancelProtocol": true,
+    "F12PointerFence": true,
+    "reentrantInputSourceFixed": true,
+    "touchPauseRestartStopsBeforeWorld": true,
+    "missingNativeAPINotFakeACK": true
+  },
+  "actualBrowser1087": {
+    "passed": true,
+    "checks": 11,
+    "windowMs": 31955,
+    "Factories": 1,
+    "Worlds": 2,
+    "ticks": 20,
+    "sourceFrames": 10,
+    "playbackFrames": 10,
+    "projectionWordsEach": 15,
+    "RPYBytes": 1393,
+    "RPYSHA256": "488f30e4eb1a649b30c11a774f63e745fae8a5ae13c812903d2fd7850031bf31",
+    "realIDB": true,
+    "realOwnedLocalStorage": true,
+    "currentProductionHTMLCSS": true,
+    "entryReplacedByExplicitWorldDriver": true,
+    "wholeProductionPlayEvaluated": false,
+    "GameGPU": false,
+    "TitleAdoption": false,
+    "originalResourcesNative": true,
+    "syntheticDOMPointerEvents": true,
+    "physicalTouch": false,
+    "physicalAudioGraph": false,
+    "EndingPlayback": false,
+    "landscapeDOMLayoutSaveReopen300Percent": true,
+    "BackspaceOriginalToolsAndF12RealClose": true,
+    "checksDetail": [
+      {
+        "name": "actualoriginalWorldandfourfocuswarmup",
+        "passed": true
+      },
+      {
+        "name": "realfixedstepLimitedtouchTH128raw1152",
+        "passed": true
+      },
+      {
+        "name": "unlimitedDOMgestureusesactualnativeposition",
+        "passed": true
+      },
+      {
+        "name": "freejoystickfocusactualnative256diagonal",
+        "passed": true
+      },
+      {
+        "name": "actualDOMlayoutdragand300percentscale",
+        "passed": true
+      },
+      {
+        "name": "layoutsaveandreopenkeepssameplacement",
+        "passed": true
+      },
+      {
+        "name": "mobileBackspaceactualoriginalsevenlinepanel",
+        "passed": true
+      },
+      {
+        "name": "mobileF12actualadvancedpanelopens",
+        "passed": true
+      },
+      {
+        "name": "F12closebuttonreallyclosesandresumes",
+        "passed": true
+      },
+      {
+        "name": "realIDBfulltouchRPYcloseandreopen",
+        "passed": true
+      },
+      {
+        "name": "actualnativeplayLockall15projections",
+        "passed": true
+      }
+    ],
+    "console": [],
+    "ownedTab": "16",
+    "ownTabClosed": true,
+    "serverClosed": true,
+    "ROOTReleased": true
+  },
+  "affected1091": {
+    "suites": 46,
+    "tests": 284,
+    "PASS": 284,
+    "FAIL": 0,
+    "SKIP": 0,
+    "Worlds": 0,
+    "Factories": 0,
+    "compilers": 0,
+    "browser": 0,
+    "result": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1091-full-touch-final-affected-Web\\result.json",
+      "bytes": 297,
+      "sha256": "18d88f2eabfbe72b3029c5cbc567ea0e6ce6d92f08ce51c34ce67fb262496b96"
+    }
+  },
+  "nativeCompilationsThisBatch": 0,
+  "fullCore117Prepared": false,
+  "priorComponent1067ReusedUnmodified": {
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1067-actual-native-touch-record-play-green/run",
+    "translationUnits": 80,
+    "WorldAPI": 165,
+    "noTitleExports": true,
+    "notCore117": true,
+    "mjs": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1067-actual-native-touch-record-play-green\\run\\world.mjs",
+      "bytes": 91891,
+      "sha256": "b0f0f90d51024607fd4a0297503e33d5f2e0eaca028573b6191db584d8709099"
+    },
+    "wasm": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1067-actual-native-touch-record-play-green\\run\\world.wasm",
+      "bytes": 2827867,
+      "sha256": "66c5acc8935dfadb9772f112a195ef3b634a1f22268e2a356449fb4850451444"
+    }
+  },
+  "sourcePins": [
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\import-entry.mjs",
+      "bytes": 11479,
+      "sha256": "8dc44d8d4be16c6062fd82903b9e3efcd0159b92222ed4809e99a33fafc6ee6c"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\play.html",
+      "bytes": 29016,
+      "sha256": "9a31731bef67a495e529eabc160cbe8c011a8a0a14c59d7bbb67acef4c6f999c"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\play.mjs",
+      "bytes": 339613,
+      "sha256": "c065406d2245bb5622413f321c465f0bff298bc82bfc214acf6e7199fe89dda4"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\launcher-session.mjs",
+      "bytes": 10792,
+      "sha256": "733c168b135f9748168bf3a1d2aa895f79477be97267dfa59c6be6bf185f8634"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\web-input.mjs",
+      "bytes": 7698,
+      "sha256": "5793e11bcb10b50be0c5819cd1de5b47c46fa8b512a842e219c2c716937a4f6a"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\launcher-session\\play-page.test.mjs",
+      "bytes": 4527,
+      "sha256": "391e3d05fb8974def71b30e0da5d6bcf8960392cc0d922c6527673f6a4ee26ed"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\launcher-session\\session.test.mjs",
+      "bytes": 11709,
+      "sha256": "a3efcc50d93fce6c4a75d8ba74136ebe2e9be3f74ccfadfc15d328f3238ce81e"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\practice-menu\\input-route.test.mjs",
+      "bytes": 796,
+      "sha256": "65065059a54977a93fb8e89c47f130f023a53aa84b925d932b8034dcf7ef041e"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\web-input\\owners.test.mjs",
+      "bytes": 12179,
+      "sha256": "66623dde3a3817404e9a45a538993eea19e97be1cf5eeed6fcf3e7ab1e4432b3"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\web-input\\play-caller.test.mjs",
+      "bytes": 4532,
+      "sha256": "c3c90e4fd89678893f24f59662d7de1a06182f93f364b343a92dc132d7545960"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\web-input\\play-harness.mjs",
+      "bytes": 4072,
+      "sha256": "9cfb0067017deb31677d6912f722725cfc52cbb9bd6b043ac84b1ad4c49db081"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\web-input\\surface.mjs",
+      "bytes": 2950,
+      "sha256": "ac35174d341e49cb51a3544354278bd8aa4e4e0a87c6c9a9c8d4c22154cf75f4"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tools\\package-online-site.mjs",
+      "bytes": 23402,
+      "sha256": "358cb50cd73e74fd8d35e1f1bc6b007e532b23f044367612ae9eff7f04253ece"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\touch-layout-model.mjs",
+      "bytes": 8035,
+      "sha256": "04bb7a99d8957b73a2028a680ca70bcdec23425ba9be0dc8ad648aa44b9f59b0"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\touch-layout-editor-state.mjs",
+      "bytes": 3735,
+      "sha256": "78d17f13a2c70e589fbe9d2554d45dd8c7f8bce623aff90d5064c94972067ee9"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\touch-layout.mjs",
+      "bytes": 7125,
+      "sha256": "8aa3d1eebf3cc69f2793f909074f19c823e75904a32f62b7f7362666a3a423d4"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\game-zoom.mjs",
+      "bytes": 6574,
+      "sha256": "2134a25e15bfcabc98cd203ee9d196607ec07e3fa000122d12866f5f1dbe9b18"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\touch-joystick.mjs",
+      "bytes": 2299,
+      "sha256": "8512d25a1115c366a6ff761d1efd7b05ea12d3072388d016bab679dad5590ce0"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\full-touch.mjs",
+      "bytes": 18894,
+      "sha256": "d20833b88f4ba0e7c1280f0f211ea945c21e052fa389e95a171273ec7df9fef4"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\full-touch.css",
+      "bytes": 60678,
+      "sha256": "015af80643804a2801b2e07f074cea033e5a1743143fee9085b1c64397c4b354"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\touch-options.mjs",
+      "bytes": 1455,
+      "sha256": "42e01e14171e3c4bd0d666b79de090e909df95b5eb91cadb9c2954775dcf1c03"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\full-touch-page.test.mjs",
+      "bytes": 5453,
+      "sha256": "015c1a95efbde92370d81522ba36527f98b563363f417c65015171da5f7dc858"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\fixed-touch-step.test.mjs",
+      "bytes": 820,
+      "sha256": "4d242570c97ca963b7575d45df95e5ae587c6ca79a73e7d754509b94ea7dea53"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\touch-runtime-availability.test.mjs",
+      "bytes": 586,
+      "sha256": "ef66cf04ee8dfc916644fc4d2fcf03f9b401bbe1e69f77aae220a2578e5ad8d7"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\launcher-session\\touch-protocol.test.mjs",
+      "bytes": 2481,
+      "sha256": "ce4b3e85f9313f398ce4c6e25105d959e84c766c5731da840b1231ac10e3bb40"
+    }
+  ],
+  "upstreamReuse": {
+    "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\docs\\TOUCH_UPSTREAM_REUSE.json",
+    "bytes": 14208,
+    "sha256": "20037f67e7224cf08e8c6f3676fc1af77d652135d6b7b4044ed5d7c9ead20139"
+  },
+  "licenses": [
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\licenses\\EAGLER-TOUCH-NOTICE.md",
+      "bytes": 1400,
+      "sha256": "57a24327126df819c68b6dd1ad8cad27b4ddec69ec8b0ac36dd018c6470d02fa"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\licenses\\eagler-touhou-th12-MIT.txt",
+      "bytes": 1067,
+      "sha256": "bbb03aab0b0998c7fb644ef3992c623cdcdd3709d74f03c731bd27d3acd64a4b"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\licenses\\eagler-touhou-launcher-GPL-3.0.txt",
+      "bytes": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    }
+  ],
+  "artifacts": [
+    {
+      "ordinal": 1072,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1072-full-upstream-touch-page-consumer-RED",
+      "result": {
+        "passed": false,
+        "summary": {
+          "pass": 0,
+          "fail": 4,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 4
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1072-full-upstream-touch-page-consumer-RED\\request.json",
+          "bytes": 2543,
+          "sha256": "b9c7f7ef6206ae1bc07f4c2c7aa7e7ca56b2af729258f6d03a1c1c1854cfef70"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1072-full-upstream-touch-page-consumer-RED\\actual-manifest.json",
+          "bytes": 3517,
+          "sha256": "344f5a582343f31ace5403d42580e91450f567240391b55aa907addeacf508ea"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1072-full-upstream-touch-page-consumer-RED\\sourcecheck.json",
+          "bytes": 86,
+          "sha256": "0cda81e139af548d09070e5e4a0de6579c4ee7448df15761f88da0f5285b167b"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1072-full-upstream-touch-page-consumer-RED\\result.json",
+          "bytes": 292,
+          "sha256": "a0a01e61d6f47959e3a4623c9ef0c62d2078c9461a6df5d05f57780ca8e902f2"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1072-full-upstream-touch-page-consumer-RED\\first-failure.json",
+          "bytes": 5778,
+          "sha256": "87fe4991eeb783dce488743b146a191ef563e1839026483c53162e66c75a065f"
+        }
+      ]
+    },
+    {
+      "ordinal": 1073,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1073-full-upstream-touch-page-consumer-green",
+      "result": {
+        "passed": false,
+        "summary": {
+          "pass": 3,
+          "fail": 1,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 4
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1073-full-upstream-touch-page-consumer-green\\request.json",
+          "bytes": 4441,
+          "sha256": "734727433372b8b8b1a049c20eb9ca1ba32b3f8cb680da3c80e7a9b1ed3cfba4"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1073-full-upstream-touch-page-consumer-green\\actual-manifest.json",
+          "bytes": 5499,
+          "sha256": "417045cbd53d341b87ccd823e0775fb882e65e76dd216eed9ec66e7728ddd464"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1073-full-upstream-touch-page-consumer-green\\sourcecheck.json",
+          "bytes": 87,
+          "sha256": "ef518bdb3a74b159814b3a24b28f0e417c96f868e6cc5499a46932aef8684947"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1073-full-upstream-touch-page-consumer-green\\result.json",
+          "bytes": 293,
+          "sha256": "6b9ae56f9469ac71ba9fc0ec4d87875dd3f5a8f59ba38f42a4e4d0beab48789f"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1073-full-upstream-touch-page-consumer-green\\first-failure.json",
+          "bytes": 2283,
+          "sha256": "3932abacbefc64a1c07c8d9ef8755d4321bbc16ee6529db6ff5ee610820c8d41"
+        }
+      ]
+    },
+    {
+      "ordinal": 1074,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1074-upstream-touch-launcher-protocol-RED",
+      "result": {
+        "passed": false,
+        "summary": {
+          "pass": 0,
+          "fail": 2,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 2
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1074-upstream-touch-launcher-protocol-RED\\request.json",
+          "bytes": 2536,
+          "sha256": "41acaa09801f8b3ce5d84b5a6b555c82d675459c481ea74459c006df866a2af6"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1074-upstream-touch-launcher-protocol-RED\\actual-manifest.json",
+          "bytes": 3514,
+          "sha256": "c955e3d04eb898c27eab889f40c242d378e4b573581e71d9994960d80bdd4c6d"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1074-upstream-touch-launcher-protocol-RED\\sourcecheck.json",
+          "bytes": 86,
+          "sha256": "5cc518661cfa993920f58ae83b3867f2b3b70ca9bf0e094bcc266a15b2e37a54"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1074-upstream-touch-launcher-protocol-RED\\result.json",
+          "bytes": 292,
+          "sha256": "2a64c7cdb5d861521bb3b5ebbc238d02b0a6e7dac0ef846f3575e59f53f343c8"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1074-upstream-touch-launcher-protocol-RED\\first-failure.json",
+          "bytes": 2343,
+          "sha256": "f5dabb1bf45074f94bdba57b821ca455a105dfc9b2172576c78a9269eae744ab"
+        }
+      ]
+    },
+    {
+      "ordinal": 1075,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1075-full-touch-page-protocol-affected-Web",
+      "result": {
+        "passed": false,
+        "summary": {
+          "pass": 256,
+          "fail": 23,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 279
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1075-full-touch-page-protocol-affected-Web\\request.json",
+          "bytes": 30852,
+          "sha256": "96f81598564cb5d3944a3a4ad76b7dc50a8d8ff3b1b2bea02ac685d970a03469"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1075-full-touch-page-protocol-affected-Web\\actual-manifest.json",
+          "bytes": 37673,
+          "sha256": "6d5a371d10afb6c0c3c1aab45efc048c26cd8d080754076805606baa81824f86"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1075-full-touch-page-protocol-affected-Web\\sourcecheck.json",
+          "bytes": 88,
+          "sha256": "cb9ebf45ffce0fdededf26c619bd51159ce5909b4f6b7d0558b7c9f70e9d389a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1075-full-touch-page-protocol-affected-Web\\result.json",
+          "bytes": 299,
+          "sha256": "b06ddaba2fe5b4dfadd72d38222e77eab862d59fe30544a351009abd87643fb3"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1075-full-touch-page-protocol-affected-Web\\first-failure.json",
+          "bytes": 102620,
+          "sha256": "b9fe69479ed53d9cdd41b75c894db59159157e5de91a850d9fb24c910a51a8e7"
+        }
+      ]
+    },
+    {
+      "ordinal": 1076,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1076-full-touch-page-protocol-affected-Web",
+      "result": {
+        "passed": false,
+        "summary": {
+          "pass": 278,
+          "fail": 1,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 279
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1076-full-touch-page-protocol-affected-Web\\request.json",
+          "bytes": 30991,
+          "sha256": "35b1f9cd93fb14c1fdb8851a8885206cf8e3ec1988a354e0f7bed9a823da4fe5"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1076-full-touch-page-protocol-affected-Web\\actual-manifest.json",
+          "bytes": 37812,
+          "sha256": "f46addfc6ca569cc72c0a02b7e88e28948ef9a5e4759f4ea067a7e671d2c79fc"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1076-full-touch-page-protocol-affected-Web\\sourcecheck.json",
+          "bytes": 88,
+          "sha256": "1cfdd2f598c77c61f19069ae9c5c66d0dff3d08779b8f157d830bf52f13446a8"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1076-full-touch-page-protocol-affected-Web\\result.json",
+          "bytes": 298,
+          "sha256": "0df7941e61ed956a7196d16a8169f0a15e118cad4b9a37d3a2977a7a25db81e0"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1076-full-touch-page-protocol-affected-Web\\first-failure.json",
+          "bytes": 68356,
+          "sha256": "bb5f29473b4fea022ecde15553aba9996343abfc61fdeb5436e9eebb60eb3290"
+        }
+      ]
+    },
+    {
+      "ordinal": 1077,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1077-full-touch-page-protocol-affected-Web",
+      "result": {
+        "passed": true,
+        "summary": {
+          "pass": 279,
+          "fail": 0,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 279
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1077-full-touch-page-protocol-affected-Web\\request.json",
+          "bytes": 31104,
+          "sha256": "d0fd7cbb8efa926b1166c33cc365b791be04130703e5d27226c89c3710b354ab"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1077-full-touch-page-protocol-affected-Web\\actual-manifest.json",
+          "bytes": 37925,
+          "sha256": "f77d2e5193808a71eadfaaa5d2b26ba2c243d2800af30104269943e0c8666018"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1077-full-touch-page-protocol-affected-Web\\sourcecheck.json",
+          "bytes": 88,
+          "sha256": "90a899c5f64664a772694e64bb88cc6344057e9b9a799fe986c76cf9f8490124"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1077-full-touch-page-protocol-affected-Web\\result.json",
+          "bytes": 297,
+          "sha256": "e6c46e411c183a3508811610968eea3d618df3f50a805bd68967f3d93ac7c0ec"
+        }
+      ]
+    },
+    {
+      "ordinal": 1078,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1078-browser-full-touch-native-layout-Replay",
+      "result": null,
+      "pregrantOnly": true,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1078-browser-full-touch-native-layout-Replay\\request.json",
+          "bytes": 106939,
+          "sha256": "99cf2166fac9e1179d1f087221cd65f18d7d2e78a4718ae216635b9cd3a7d634"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1078-browser-full-touch-native-layout-Replay\\actual-manifest.json",
+          "bytes": 112201,
+          "sha256": "589055a825b0dcba92f7a4aa7d193a8b988eecc9b40b1762614dd5f00d269eaf"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1078-browser-full-touch-native-layout-Replay\\sourcecheck.json",
+          "bytes": 52,
+          "sha256": "4a762e63fa212cb736085e8821c941935e7134f16ae1bda48c11a3b95990671b"
+        }
+      ]
+    },
+    {
+      "ordinal": 1079,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1079-browser-full-touch-native-layout-Replay",
+      "result": {
+        "passed": false,
+        "checks": 9
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1079-browser-full-touch-native-layout-Replay\\request.json",
+          "bytes": 106939,
+          "sha256": "7828a42c74ec8cfcac428a405a8167ffa646d226200188ab15b680c3a2736ebc"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1079-browser-full-touch-native-layout-Replay\\actual-manifest.json",
+          "bytes": 112201,
+          "sha256": "374fdd811760f0c1cb4671bbf1fb33fff7b5f3c1d853ddd4d6ac9425a6b23af2"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1079-browser-full-touch-native-layout-Replay\\sourcecheck.json",
+          "bytes": 52,
+          "sha256": "084dbc227593b069fc52f510478db6858a9be18601ab2f077b894a154bdc4084"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1079-browser-full-touch-native-layout-Replay\\result.json",
+          "bytes": 1731,
+          "sha256": "43e196041d0ccda61d7c3fd4fc04a351cf0c74fb87a9fdc4e388a2fc705d2496"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1079-browser-full-touch-native-layout-Replay\\evidence.json",
+          "bytes": 13792,
+          "sha256": "a3d797a7b32f0a835bc1741d8afd8aa84712bda9c2a8e0b27edc2955a867d284"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1079-browser-full-touch-native-layout-Replay\\first-failure.json",
+          "bytes": 744,
+          "sha256": "0ccb9df8a603221eaa26bd67cc5808dae1cc481ba98d5dc2ba4e9831e9f48973"
+        }
+      ]
+    },
+    {
+      "ordinal": 1080,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1080-touch-panel-reentrant-input-owner-RED",
+      "result": {
+        "passed": false,
+        "summary": {
+          "pass": 26,
+          "fail": 1,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 27
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1080-touch-panel-reentrant-input-owner-RED\\request.json",
+          "bytes": 4634,
+          "sha256": "fd4faa0e04998d82d70bbdd2b11b9fdea62c788e3217f0b7b0373bc7c4e93759"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1080-touch-panel-reentrant-input-owner-RED\\actual-manifest.json",
+          "bytes": 5689,
+          "sha256": "826c12da11bf838f2ffcecb3f958db6640084055e63641903dc0d060ec54517e"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1080-touch-panel-reentrant-input-owner-RED\\sourcecheck.json",
+          "bytes": 87,
+          "sha256": "b2e7c67d4a110a455135f145a37046ec874dd62319215c5373ffc0312e49ccf7"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1080-touch-panel-reentrant-input-owner-RED\\result.json",
+          "bytes": 295,
+          "sha256": "b19337c515a730f28f577e67f4ed21f8b1cc2ad9c86676e2822732ff26a3b28a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1080-touch-panel-reentrant-input-owner-RED\\first-failure.json",
+          "bytes": 7555,
+          "sha256": "c9c6129921d014e38891b005ea92298a5e15a0f9fba7d76eccaebaae9d6306c0"
+        }
+      ]
+    },
+    {
+      "ordinal": 1081,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1081-touch-panel-reentrant-input-owner-RED",
+      "result": {
+        "passed": false,
+        "summary": {
+          "pass": 26,
+          "fail": 1,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 27
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1081-touch-panel-reentrant-input-owner-RED\\request.json",
+          "bytes": 4729,
+          "sha256": "698157ee551c261bd919b3ea11e71c8eeddf457a2043b0820d759e98a1da4585"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1081-touch-panel-reentrant-input-owner-RED\\actual-manifest.json",
+          "bytes": 5784,
+          "sha256": "501eb659dc1882f18f328c9669943775e4fe1285a6a46060179d61371f494a11"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1081-touch-panel-reentrant-input-owner-RED\\sourcecheck.json",
+          "bytes": 87,
+          "sha256": "a830e099cab9e713917021bbb795ee14a0962662ad30f684c99f24d86216a959"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1081-touch-panel-reentrant-input-owner-RED\\result.json",
+          "bytes": 295,
+          "sha256": "28f4c3b4dd92b1c9d5daa8a8122305017c068cd7045db7188204eb287c67341a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1081-touch-panel-reentrant-input-owner-RED\\first-failure.json",
+          "bytes": 7199,
+          "sha256": "42aad115adf80ecc531879744a3dbeccc182efd87a4c2dc2b2c93c44b73c3da3"
+        }
+      ]
+    },
+    {
+      "ordinal": 1082,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1082-full-touch-reentrant-affected-Web",
+      "result": {
+        "passed": true,
+        "summary": {
+          "pass": 280,
+          "fail": 0,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 280
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1082-full-touch-reentrant-affected-Web\\request.json",
+          "bytes": 31191,
+          "sha256": "a8813ed174b3b269a31119ac4f4161111e2f061b27afed46837d498317ae332c"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1082-full-touch-reentrant-affected-Web\\actual-manifest.json",
+          "bytes": 38004,
+          "sha256": "cd44c1ffdabd039fc00005b2db2e4a05b2f42617e9b588fad4f48787c5a6ca20"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1082-full-touch-reentrant-affected-Web\\sourcecheck.json",
+          "bytes": 88,
+          "sha256": "e49ae1c27f1816677781977848ebb06f6a897f02ef6d83657ae3f66b31c7d6c9"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1082-full-touch-reentrant-affected-Web\\result.json",
+          "bytes": 297,
+          "sha256": "716246a44ff46fddbd284bdb476c4197b99e977d0226e1c331f7a15e98852b25"
+        }
+      ]
+    },
+    {
+      "ordinal": 1083,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1083-browser-full-touch-native-layout-Replay",
+      "result": {
+        "passed": false,
+        "checks": 8
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1083-browser-full-touch-native-layout-Replay\\request.json",
+          "bytes": 106939,
+          "sha256": "980d96385104dd0d6caef4379daf5cbad51af364e72b746474efbdb9ef8c4588"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1083-browser-full-touch-native-layout-Replay\\actual-manifest.json",
+          "bytes": 112201,
+          "sha256": "3c0edfffc90a3f4c3d86110071b6aa12ed2de6784919a6dca3948212204802a5"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1083-browser-full-touch-native-layout-Replay\\sourcecheck.json",
+          "bytes": 52,
+          "sha256": "323195836846c0166c2f6bccc9d6977fb4dfa29398c2b237a23220a7f6165c4b"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1083-browser-full-touch-native-layout-Replay\\result.json",
+          "bytes": 3179,
+          "sha256": "9ddc1914eaab401d38ff6053aba8a66a56d8423940065a1bccc4e35d6ed825b4"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1083-browser-full-touch-native-layout-Replay\\evidence.json",
+          "bytes": 6900,
+          "sha256": "223e7ba5c7f11c9749bbe7049ae2f9e0de29030cedb380a2de7f6a826f51ccb3"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1083-browser-full-touch-native-layout-Replay\\first-failure.json",
+          "bytes": 2194,
+          "sha256": "923c9b455050698ce8af0bdcdda951c729acf9ab99c6d839c1fd64f837c44c45"
+        }
+      ]
+    },
+    {
+      "ordinal": 1084,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1084-browser-full-touch-native-layout-Replay",
+      "result": {
+        "passed": false,
+        "checks": 8
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1084-browser-full-touch-native-layout-Replay\\request.json",
+          "bytes": 106939,
+          "sha256": "27481029a6ed1194a7b12c2d7af06203946c8780a0febe6fb4c03e678569d77e"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1084-browser-full-touch-native-layout-Replay\\actual-manifest.json",
+          "bytes": 112201,
+          "sha256": "b2fc59c0216c5cb7d9c1bf17ec3951e5a7d167d80423dec502bf328a9cffbd2a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1084-browser-full-touch-native-layout-Replay\\sourcecheck.json",
+          "bytes": 52,
+          "sha256": "874c6da09412075e3f8814a5e9ac1cf4b3229667c4ac20b59805f4ccb8ba7570"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1084-browser-full-touch-native-layout-Replay\\result.json",
+          "bytes": 3180,
+          "sha256": "120abc9670095e47ba54cd7f799d083dd2cec6aa7415b8f2a61ba3427a0c1faa"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1084-browser-full-touch-native-layout-Replay\\evidence.json",
+          "bytes": 17043,
+          "sha256": "f3cbeefe72b19b544acc3c6a44f62fa400c00afad533ea995458e53587581ef4"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1084-browser-full-touch-native-layout-Replay\\first-failure.json",
+          "bytes": 2194,
+          "sha256": "94e106d88360d772def7b7f9d5499b112c757565fcb7a57579cbaf7f78088aa8"
+        }
+      ]
+    },
+    {
+      "ordinal": 1085,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1085-full-touch-overlay-affected-Web",
+      "result": {
+        "passed": true,
+        "summary": {
+          "pass": 281,
+          "fail": 0,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 281
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1085-full-touch-overlay-affected-Web\\request.json",
+          "bytes": 31316,
+          "sha256": "1d43a0b255d04c6cebf313fd8b1f18bc5a8848f0275ef0c7a3347f2a279f7048"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1085-full-touch-overlay-affected-Web\\actual-manifest.json",
+          "bytes": 38125,
+          "sha256": "d7a0dea53dfed3e2016e36e243508a1ef8be7cc449edd923634e5681ac86dab0"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1085-full-touch-overlay-affected-Web\\sourcecheck.json",
+          "bytes": 88,
+          "sha256": "f4b6941f88a43fe29081aa8146aafd29332d1d9e8bd897ba58f391fd717aa2cf"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1085-full-touch-overlay-affected-Web\\result.json",
+          "bytes": 297,
+          "sha256": "6785163e2a68f4afbfebf37b46e74b49b877c187aef579029ad52261ecf8d637"
+        }
+      ]
+    },
+    {
+      "ordinal": 1086,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1086-browser-full-touch-native-layout-Replay",
+      "result": {
+        "passed": false,
+        "checks": 11
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1086-browser-full-touch-native-layout-Replay\\request.json",
+          "bytes": 106939,
+          "sha256": "f3527bd68e864f6fa42a776baa6075c316b522cc7dbd6da38a8d0645e89279a6"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1086-browser-full-touch-native-layout-Replay\\actual-manifest.json",
+          "bytes": 112201,
+          "sha256": "5291b1d4df82c52dfc5856e3752cdcfcb0187db21a092b2c17e2eda730cc38cc"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1086-browser-full-touch-native-layout-Replay\\sourcecheck.json",
+          "bytes": 52,
+          "sha256": "2c16bc5d6105025f7d3f27ef0dbcfcfdf5058d2ad514f2cb2751bb972443e7a1"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1086-browser-full-touch-native-layout-Replay\\result.json",
+          "bytes": 1731,
+          "sha256": "f0a6ca5304a6d5455c65a14c02b28ab98a78b6f898863fe841840afcb6ca366c"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1086-browser-full-touch-native-layout-Replay\\evidence.json",
+          "bytes": 31296,
+          "sha256": "eca514b0bf9b076dec7e49e59d6f5319538887b781947fa82a906f55ffd14071"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1086-browser-full-touch-native-layout-Replay\\first-failure.json",
+          "bytes": 743,
+          "sha256": "986489714c398b96ed49afede5d6cb0c9163b0c04a9255688902a15d9813389d"
+        }
+      ]
+    },
+    {
+      "ordinal": 1087,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1087-browser-full-touch-native-layout-Replay",
+      "result": {
+        "passed": true,
+        "checks": 11
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1087-browser-full-touch-native-layout-Replay\\request.json",
+          "bytes": 106939,
+          "sha256": "1317720fac74a7f5335d36cf5f56bc045cd9901a86d363574c8e6f301003395f"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1087-browser-full-touch-native-layout-Replay\\actual-manifest.json",
+          "bytes": 112201,
+          "sha256": "0277684cf0a34a49f4dc9a1c0ceb48921a5ee466abb0bd48903b41f44f0e470c"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1087-browser-full-touch-native-layout-Replay\\sourcecheck.json",
+          "bytes": 52,
+          "sha256": "7e46d6be17b33f14c6bc04f3cdcc5e79fae0d6306ac38e67e294d998e0daf300"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1087-browser-full-touch-native-layout-Replay\\result.json",
+          "bytes": 979,
+          "sha256": "eb7a6cbd996028c4714cb5ef11abf47af97cf51745dad2b97a087f807ca1d220"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1087-browser-full-touch-native-layout-Replay\\evidence.json",
+          "bytes": 24213,
+          "sha256": "faf1dda5595681c87915083efdca4fb754956933b24736cb5835fe251d812055"
+        }
+      ]
+    },
+    {
+      "ordinal": 1088,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1088-fixed-touch-step-pause-owner-RED",
+      "result": {
+        "passed": false,
+        "summary": {
+          "pass": 0,
+          "fail": 2,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 2
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1088-fixed-touch-step-pause-owner-RED\\request.json",
+          "bytes": 26079,
+          "sha256": "e7a9b73836bda384b5245c74a4a58ec5d2b79d422bb58821c8e727bdb9191a69"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1088-fixed-touch-step-pause-owner-RED\\actual-manifest.json",
+          "bytes": 28034,
+          "sha256": "427461f7c54e680d4fe094dccbe0f29fb49350242e3f4a4e48f12135354ddf86"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1088-fixed-touch-step-pause-owner-RED\\sourcecheck.json",
+          "bytes": 88,
+          "sha256": "6726961b536c4400656c9e64b6daf1e2679a99e27cb423c1532a5c94b90f6de2"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1088-fixed-touch-step-pause-owner-RED\\result.json",
+          "bytes": 294,
+          "sha256": "0ef20ce0b3af1b0e6bc66c93de8fc813988d5d33cd1c4cc01f6cd77090f5233a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1088-fixed-touch-step-pause-owner-RED\\first-failure.json",
+          "bytes": 2864,
+          "sha256": "068ac8566bd5a424e6ed7442983300baefc9083ca9eba7011e148bb353edb196"
+        }
+      ]
+    },
+    {
+      "ordinal": 1089,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1089-full-touch-final-affected-Web",
+      "result": {
+        "passed": true,
+        "summary": {
+          "pass": 283,
+          "fail": 0,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 283
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1089-full-touch-final-affected-Web\\request.json",
+          "bytes": 31776,
+          "sha256": "f6c375e8d084be6fd9ae66da0e1fd6ed1dda2ce3a8da4b2177e5f1898c712f66"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1089-full-touch-final-affected-Web\\actual-manifest.json",
+          "bytes": 38704,
+          "sha256": "8b92e478aaab30fcff9d93f9f458a441255b1ba9086a48e7332c30e21f83f108"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1089-full-touch-final-affected-Web\\sourcecheck.json",
+          "bytes": 88,
+          "sha256": "c54c17958824c817cbd496e7b4c11700ccfe44449345b8bfa7ca12f2b113a91e"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1089-full-touch-final-affected-Web\\result.json",
+          "bytes": 297,
+          "sha256": "689ce75d8df78e55bfe7980f94a181cb6c01a13464ba9e4bbdc6c8529c8b4332"
+        }
+      ]
+    },
+    {
+      "ordinal": 1090,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1090-current-touch-missing-native-RED",
+      "result": {
+        "passed": false,
+        "summary": {
+          "pass": 0,
+          "fail": 1,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 1
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1090-current-touch-missing-native-RED\\request.json",
+          "bytes": 26329,
+          "sha256": "b9da2b25e747b9a296b5f7be2976678da87b0dd64665beec2f863270cf51e335"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1090-current-touch-missing-native-RED\\actual-manifest.json",
+          "bytes": 28304,
+          "sha256": "9b2cfa7320bb0a001a4e70da0985e1682550931256c8ea058663fec0a0c0c61d"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1090-current-touch-missing-native-RED\\sourcecheck.json",
+          "bytes": 88,
+          "sha256": "b021ee1eda1becb88760c6830a6ea22571210ce418d9b0fca6c48af0404ec36a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1090-current-touch-missing-native-RED\\result.json",
+          "bytes": 294,
+          "sha256": "74acd343fa03eb7b651c57d342296c208eb426f9629317cce921c10d02476e6a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1090-current-touch-missing-native-RED\\first-failure.json",
+          "bytes": 1322,
+          "sha256": "2f5e91bf20d65d755479780e28f20c9f48286a929206b79625d96c6a2945cdea"
+        }
+      ]
+    },
+    {
+      "ordinal": 1091,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1091-full-touch-final-affected-Web",
+      "result": {
+        "passed": true,
+        "summary": {
+          "pass": 284,
+          "fail": 0,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 284
+        }
+      },
+      "pregrantOnly": false,
+      "pins": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1091-full-touch-final-affected-Web\\request.json",
+          "bytes": 32250,
+          "sha256": "067a4ef169d79fc928967e1779fc0c4166be647646ff3f60b5de4b3e5a59cf97"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1091-full-touch-final-affected-Web\\actual-manifest.json",
+          "bytes": 39311,
+          "sha256": "9185a21b331cc6edcc553e93a79e44555581ab2a8bafce38ce52b05acd391ec1"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1091-full-touch-final-affected-Web\\sourcecheck.json",
+          "bytes": 88,
+          "sha256": "15cb2e321ba17fa35e169e85df450cc7c8aae17d66d71a18f6064de0a0c04689"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1091-full-touch-final-affected-Web\\result.json",
+          "bytes": 297,
+          "sha256": "18d88f2eabfbe72b3029c5cbc567ea0e6ce6d92f08ce51c34ce67fb262496b96"
+        }
+      ]
+    }
+  ],
+  "newBatchHistoricalRSourceOnly": {
+    "uniqueRefs": 118,
+    "live": 96,
+    "exactArchives": 22,
+    "newUnresolved": 0,
+    "map": [
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\full-touch-page.test.mjs",
+          "bytes": 4614,
+          "sha256": "35bad8c2dcbdfe4947a093091c5d4539def1d344846a1811bba6be093a5cd1b1"
+        },
+        "label": "capturedFirst4",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/full-touch-page.test.mjs-35bad8c2dcbdfe49.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\web-input.mjs",
+          "bytes": 6767,
+          "sha256": "0080bdcc409d233271a72e62ab7e425dc433a68eadff31acb09133c26abd61dd"
+        },
+        "label": "exactGitbasef2eabb7",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/web-input.mjs-0080bdcc409d2332.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\web-input\\surface.mjs",
+          "bytes": 2544,
+          "sha256": "3ac30f3a6b249cbda4617ea17ed44a0f7c1304d0be7535c52d88dbe49818e348"
+        },
+        "label": "exactGitbasef2eabb7",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/surface.mjs-3ac30f3a6b249cbd.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\web-input.mjs",
+          "bytes": 7480,
+          "sha256": "618594197d97cc57847418f256dbed4eb28fad1923f609e5ba33defe0cda186e"
+        },
+        "label": "inverseContextOnlyFromCaptured",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/web-input.mjs-618594197d97cc57.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\full-touch.mjs",
+          "bytes": 17795,
+          "sha256": "d15f077c3a09973254c1f9b83e0f73f7d87033874d0fe4f27e6a58829ebeb1b7"
+        },
+        "label": "fullMid",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/full-touch.mjs-d15f077c3a099732.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\launcher-session.mjs",
+          "bytes": 8784,
+          "sha256": "f9250d8f7666ded2652d85a063fcc769790a96e8bb40caf06272aa7d0004594f"
+        },
+        "label": "exactGitbasef2eabb7",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/launcher-session.mjs-f9250d8f7666ded2.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\practice-menu\\input-route.test.mjs",
+          "bytes": 888,
+          "sha256": "b02909582990868f2d0e8c5deee9c4688485dcc619d9d9a9b40676eaefe0782b"
+        },
+        "label": "exactGitbasef2eabb7",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/input-route.test.mjs-b02909582990868f.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\web-input\\owners.test.mjs",
+          "bytes": 11520,
+          "sha256": "9a7ed926ee1f06396c0f8a07e02c5666612b0fd0cb6503cd0410a837b69f4bd4"
+        },
+        "label": "exactGitbasef2eabb7",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/owners.test.mjs-9a7ed926ee1f0639.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\web-input\\play-caller.test.mjs",
+          "bytes": 4480,
+          "sha256": "c225a0da5450a12ce4e53c021b4a55f922078eeb9aca97bda75e4c3828c15adc"
+        },
+        "label": "exactGitbasef2eabb7",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play-caller.test.mjs-c225a0da5450a12c.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\launcher-session\\play-page.test.mjs",
+          "bytes": 4453,
+          "sha256": "2d999d85692e74a1c3252cdc9756018613618388f10792b73b712333c65c7396"
+        },
+        "label": "exactGitbasef2eabb7",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play-page.test.mjs-2d999d85692e74a1.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\launcher-session\\session.test.mjs",
+          "bytes": 11587,
+          "sha256": "cdb75fe4a93ab83829a83c5ead5008294c1f8b2e234b645771c92d1a7f400609"
+        },
+        "label": "exactGitbasef2eabb7",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/session.test.mjs-cdb75fe4a93ab838.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\full-touch-page.test.mjs",
+          "bytes": 4727,
+          "sha256": "07fa4fa77c860cca8f9dedf6835b67ee18088231de6241c96d26e7deb35d1893"
+        },
+        "label": "capturedShiftCorrection",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/full-touch-page.test.mjs-07fa4fa77c860cca.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\play.mjs",
+          "bytes": 339237,
+          "sha256": "fce8641247a0a3bdb65b1b62119fbd8f99849306cf5ba18d8ec891030c66cf39"
+        },
+        "label": "inverseOverlayGateFromCurrent",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-fce8641247a0a3bd.part001",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-fce8641247a0a3bd.part002",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-fce8641247a0a3bd.part003",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-fce8641247a0a3bd.part004",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-fce8641247a0a3bd.part005",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-fce8641247a0a3bd.part006"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\web-input\\play-harness.mjs",
+          "bytes": 3820,
+          "sha256": "4440615e2be812047af42b57ae6caf5ea3695c13e951d4784cf803d8665b21c2"
+        },
+        "label": "exactGitbasef2eabb7",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play-harness.mjs-4440615e2be81204.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\full-touch.mjs",
+          "bytes": 18290,
+          "sha256": "98c3268967baab38b8e36207612c281a4750ff7596946a32f213c0292de7ca42"
+        },
+        "label": "fullChange",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/full-touch.mjs-98c3268967baab38.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\web-input\\owners.test.mjs",
+          "bytes": 11519,
+          "sha256": "386057be96f02dcc8079c805fa23cd0fd6c3de11751aa3988d00fafcdda6d154"
+        },
+        "label": "prefixBeforeNewOwnerTest",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/owners.test.mjs-386057be96f02dcc.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\web-input.mjs",
+          "bytes": 7528,
+          "sha256": "8b1a3aa3773f3ebed38f14a90b57dfc369d325716e0289a50bdf73ea770affe7"
+        },
+        "label": "capturedBeforeAtomicInput",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/web-input.mjs-8b1a3aa3773f3ebe.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\full-touch.mjs",
+          "bytes": 18559,
+          "sha256": "86f8ba6d3a89fcbf0f5c2ec7644abe339d54c19909a689d51f65fb03f34f96cc"
+        },
+        "label": "fullCtxAfter",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/full-touch.mjs-86f8ba6d3a89fcbf.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\play.mjs",
+          "bytes": 339429,
+          "sha256": "dc3d14bf5f859f169234b3ed7dc4db092c216b9d57ff32a4a2813f091db30826"
+        },
+        "label": "inverseStepOwnerGuard",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-dc3d14bf5f859f16.part001",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-dc3d14bf5f859f16.part002",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-dc3d14bf5f859f16.part003",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-dc3d14bf5f859f16.part004",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-dc3d14bf5f859f16.part005",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-dc3d14bf5f859f16.part006"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\play.mjs",
+          "bytes": 339444,
+          "sha256": "19481ae10dbe05ea13fa10ae9fcbff86ad8e62381262c85c1d45b52d23e582e7"
+        },
+        "label": "inverseAvailabilityGuardFromCurrent",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-19481ae10dbe05ea.part001",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-19481ae10dbe05ea.part002",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-19481ae10dbe05ea.part003",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-19481ae10dbe05ea.part004",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-19481ae10dbe05ea.part005",
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play.mjs-19481ae10dbe05ea.part006"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\web-input\\play-caller.test.mjs",
+          "bytes": 4524,
+          "sha256": "69c513cbcb78b66ed1323926f21aba230a8bce76f081966fca537baeb1089b99"
+        },
+        "label": "inverseOnlyPauseExpectation",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/play-caller.test.mjs-69c513cbcb78b66e.part001"
+        ],
+        "wholeSHAExact": true
+      },
+      {
+        "original": {
+          "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\web-input\\owners.test.mjs",
+          "bytes": 12095,
+          "sha256": "e12065dc4bf8e4dd94a5f0c7146e51d9bc457e8f808051f383ecef83c83f6ec6"
+        },
+        "label": "inverseOnlyNewTestEdgeNames",
+        "parts": [
+          "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/full-touch-page-source-history-20261118/owners.test.mjs-e12065dc4bf8e4dd.part001"
+        ],
+        "wholeSHAExact": true
+      }
+    ],
+    "wholeOldHistoryScanned": false,
+    "old772ExternalPythonUnresolved": 1
+  },
+  "failedRunNotes": {
+    "1072": "4actualconsumerRED missingwholefixedtouch",
+    "1073": "3PASS1fixtureexpectedShiftRight insteadactualco-ownedShift;effectivefocusguardkept",
+    "1074": "2actuallauncherprotocolRED unsupported",
+    "1075": "256PASS23FAIL legacyviewport/controlstructure andobsoletecapabilitytests;allrawpreserved",
+    "1076": "278PASS1oldpauseedgeexpectation;actualreleasebeforepausecorrect",
+    "1078": "pregrantonly pendingReplayobserver identified beforeexecution",
+    "1079": "9checksPASS,wrongfixturecreateTools-before-nativebind plusoldtoolobservermasksfailure;120swork overshoot1710ms,cleanup under240s",
+    "1080": "realreentrantkeybug andfixtureedgenamesmismatch;rawpreserved",
+    "1081": "properheldsize2vs0trueRED",
+    "1083": "8checksPASS trueF12closeblockedbytransparenttouchsurface",
+    "1084": "sameproductfault plusdiagnosticactualonOpen/onCloseandDOMrootstates/0console",
+    "1086": "all11checksPASS butoverallFAIL:fixtureaftercancelcontinuedqueryingretiredtool/replay,workovershoot251ms;notgreen",
+    "1088": "2wholeactualadvanceSerialRED passedpauseOpen/restartboundarytoWorld",
+    "1090": "actualwholepageconsumerRED silentlydroppedmissingnativecommand"
+  },
+  "remaining": [
+    "ordinarylimited/free/unlimited actualnativeReplay+naturalflow andqualification policy; mode2 stillrejectsnonpractice",
+    "actualportraitresize/iOSgestures/pinchviewport proof; floatingwindow/editorpositionoriginalUI binding unfinished",
+    "actualRrestart/parenttouchprotocol→fullproductioncaller/newnative core acceptance",
+    "Tracker requires actualTH128consumer;currentlyhiddenlikeupstreamnoavailabilitynotfake",
+    "MarisaEXoriginalpinkpurpletransparentdistortion versuswhitebars",
+    "onecombinedfresh117/gameexports/fullproductionTitleadoption/legibleoriginalgamevisual/audio acceptance",
+    "localreplacementRuntime afterallfeedback;publishHostingmultiplayerpaused"
+  ],
+  "authorReviewOnly": true
+}
