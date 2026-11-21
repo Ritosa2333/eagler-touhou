@@ -1,0 +1,29 @@
+{
+  "frames": 36000,
+  "seeds": [
+    [
+      1111888692,
+      1942808069
+    ],
+    [
+      778927144,
+      1832312959
+    ],
+    [
+      1559918373,
+      876156128
+    ],
+    [
+      1301224571,
+      1236112832
+    ],
+    [
+      429629600,
+      391328776
+    ]
+  ],
+  "wasmSha256": "d38eda254e4188948c359e123ff97b6d4ec4e9991b85a07dee7b2f533ba2f7ca",
+  "bulletCoordinateTolerance": 0,
+  "historicalUniqueSeedsExcluded": 80,
+  "firstPass": true
+}
