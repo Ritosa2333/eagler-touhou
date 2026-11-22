@@ -1,11 +1,11 @@
-// Playfield pixels drained at BaseMyPlane's own speed. A drag is queued and
-// spent one step per logic frame, so the finger path is kept while held.
+// Playfield pixels drained at BaseMyPlane's own speed. A drag is queued in
+// high-speed units; each logic frame consumes only the step that Move can walk
+// (th06-style euclid clamp + focus remapping of the remainder).
 export const PLAYFIELD = Object.freeze({
   width: 640,
   height: 480,
   highSpeed: 4.5,
   lowSpeed: 2,
-  diagonal: 0.71,
 });
 
 const EMPTY = Object.freeze({ shiftX: 0, shiftY: 0 });
@@ -25,6 +25,11 @@ export function createTouchMovement(field = PLAYFIELD) {
     queuedY = 0;
   }
 
+  function restore(x, y) {
+    queuedX = x;
+    queuedY = y;
+  }
+
   function drain({ focus = false, unlimited = false } = {}) {
     if (Math.abs(queuedX) < 0.05 && Math.abs(queuedY) < 0.05) {
       queuedX = 0;
@@ -38,23 +43,33 @@ export function createTouchMovement(field = PLAYFIELD) {
       queuedY = 0;
       return { shiftX, shiftY };
     }
-    const speed = focus ? field.lowSpeed : field.highSpeed;
-    let stepX = queuedX > 0 ? speed : queuedX < 0 ? -speed : 0;
-    let stepY = queuedY > 0 ? speed : queuedY < 0 ? -speed : 0;
-    if (stepX !== 0 && stepY !== 0) {
-      stepX *= field.diagonal;
-      stepY *= field.diagonal;
+    const focusRatio = focus && field.highSpeed !== 0 ? field.lowSpeed / field.highSpeed : 1;
+    const reqX = queuedX * focusRatio;
+    const reqY = queuedY * focusRatio;
+    const reqMag = Math.hypot(reqX, reqY);
+    const maxSpeed = focus ? field.lowSpeed : field.highSpeed;
+    if (reqMag > maxSpeed && reqMag > 0) {
+      const scale = maxSpeed / reqMag;
+      const shiftX = reqX * scale;
+      const shiftY = reqY * scale;
+      if (focusRatio !== 0) {
+        queuedX -= shiftX / focusRatio;
+        queuedY -= shiftY / focusRatio;
+      } else {
+        queuedX = 0;
+        queuedY = 0;
+      }
+      return { shiftX, shiftY };
     }
-    const shiftX = Math.sign(queuedX) * Math.min(Math.abs(queuedX), Math.abs(stepX));
-    const shiftY = Math.sign(queuedY) * Math.min(Math.abs(queuedY), Math.abs(stepY));
-    queuedX -= shiftX;
-    queuedY -= shiftY;
-    return { shiftX, shiftY };
+    queuedX = 0;
+    queuedY = 0;
+    return { shiftX: reqX, shiftY: reqY };
   }
 
   return {
     add,
     clear,
+    restore,
     drain,
     queued: () => ({ x: queuedX, y: queuedY }),
   };
