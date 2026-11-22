@@ -999,7 +999,7 @@ function syncThpracToolMusic(){
 }
 function practiceLogicRate(){
  if(!state.thpracTools)return 60;const tools=state.thpracTools,s=tools.snapshot(),speed=tools.speedFor(s.frame);
- if(state.replayPlayback){if(state.pressed.has('ControlLeft')||state.pressed.has('ControlRight'))return speed.fast===21?15360:speed.fast*60;if(state.pressed.has('ShiftLeft')||state.pressed.has('ShiftRight'))return speed.slow;}
+ if(state.replayPlayback){if(state.pressed.has('ControlLeft'))return speed.fast===21?15360:speed.fast*60;if(state.pressed.has('ShiftLeft')||state.pressed.has('ShiftRight'))return speed.slow;}
  return speed.fps;
 }
 function installThpracToolPanel(){
@@ -1153,7 +1153,7 @@ const type21ProfileFields=new Set(['schema','type','sourceExeSha256','sourceAddr
   'script','secondaryScript','hitboxSize','auxiliarySize','appearance','selector','freezePolicy','opaque114',
   'identitySpriteRemap','colorRemaps','cancellationScripts','callback','supportedTypes']);
 const stageTransitionContext={gate74:0,message78:0,sessionPresent:1,sessionField74:0};
-const movementKeys=new Map([['ArrowUp',16],['ArrowDown',32],['ArrowLeft',64],['ArrowRight',128],['KeyZ',1],['KeyC',512],['ControlLeft',512],['ControlRight',512],['ShiftLeft',8],['ShiftRight',8]]);
+const movementKeys=new Map([['ArrowUp',16],['ArrowDown',32],['ArrowLeft',64],['ArrowRight',128],['KeyZ',1],['KeyC',512],['ControlLeft',512],['ShiftLeft',8],['ShiftRight',8]]);
 const perfectFreezeXBit=2;
 const menu={
   page:'main',main:0,difficulty:1,route:0,option:0,music:0,pause:0,
@@ -1171,7 +1171,7 @@ let nativeMainOrderReady=false;
 const menuMusic={source:null,track:null,cache:new Map()};
 const suppressedKeys=new Set();
 function suppressHeldConfirmKeys(){
-  for(const key of ['KeyZ','Enter','KeyC','ControlLeft','ControlRight'])if(state.pressed.has(key))suppressedKeys.add(key);
+  for(const key of ['KeyZ','Enter','KeyC','ControlLeft'])if(state.pressed.has(key))suppressedKeys.add(key);
 }
 function preferenceNumber(key,min,max,fallback){
   try{
@@ -2258,7 +2258,7 @@ function showMusicPage(){
   showMenuPage('info');
 }
 function showManual(){
-  find('#menu-manual-body').textContent='方向键选择，Z／Ctrl／C／Enter 确认，X/ESC 返回。游戏中方向键移动，Z 射击（按住蓄力，松开冻结），Ctrl／C 连射，Shift 低速，Esc 打开暂停菜单。\n\nX 的“完美冻结”尚未接通，不会伪造。REPLAY/RESULT 尚未实现；EX 使用页面顶部调试入口，仍有未完成分支，不计正常通关。\n\n返回标题会释放音频和当前世界输入；网页版本不会关闭浏览器。';
+  find('#menu-manual-body').textContent='方向键选择，Z／左 Ctrl／C／Enter 确认，X/ESC 返回。游戏中方向键移动，Z 射击（按住蓄力，松开冻结），左 Ctrl／C 连射，Shift 低速，Esc 打开暂停菜单。\n\nX 的“完美冻结”尚未接通，不会伪造。REPLAY/RESULT 尚未实现；EX 使用页面顶部调试入口，仍有未完成分支，不计正常通关。\n\n返回标题会释放音频和当前世界输入；网页版本不会关闭浏览器。';
   showMenuPage('manual');
 }
 
@@ -4079,7 +4079,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         refreshDebugRespawnUIFromWorld();
         if(!state.replayPlayback)worldMovementInput();
         find('#loading').hidden=true;find('#pause').disabled=false;find('#game').focus();
-        find(resultTarget).textContent=shots?'方向键移动；点按 Z 射击，按住 Z 蓄力，至少 45 帧且头顶 ≥30% 时松开 Z 冻结附近弹幕；Ctrl／C 连射、Shift 低速。使用该关原曲与原始动态 STD 背景。局部子弹、冻结、伤害与分数链路仍按此前证据，未证明整关或全路线可玩；缺失分支明确停止。':
+        find(resultTarget).textContent=shots?'方向键移动；点按 Z 射击，按住 Z 蓄力，至少 45 帧且头顶 ≥30% 时松开 Z 冻结附近弹幕；左 Ctrl／C 连射、Shift 低速。使用该关原曲与原始动态 STD 背景。局部子弹、冻结、伤害与分数链路仍按此前证据，未证明整关或全路线可玩；缺失分支明确停止。':
           '方向键使用原版速度/边界与转向ANM移动琪露诺。初始位置(0,400)，碰撞上下文显式给定state1/flags0/保护120/系统门控0，这是局部集成而非完整原版初始化。首次命中执行受击特效与8tick窗口；死亡提交、射击、低速与冻结未完成时会明确停止。';
         status('真实首段运行中：原始ECL、子弹池、运动与ANM；不是完整可玩关卡。');
         sceneLoading?.close();draw();return;
@@ -4615,6 +4615,7 @@ find('#high-framerate-mode').addEventListener('change',event=>{
   setHighFramerateMode(event.target.checked);find('#game').focus();
 });
 window.addEventListener('keydown',event=>{
+  if(event.code==='ControlRight')return;
   if(state.titleDemoRun){
     if(state.webInput&&!state.webInput.acceptKeyDown(event))return;
     if(requestTitleDemoExit(event.code))event.preventDefault();
@@ -4660,7 +4661,7 @@ window.addEventListener('keydown',event=>{
     }
     if(movementKeys.has(event.code)){
       const bit=movementKeys.get(event.code);
-      // C and either Ctrl are separate sources for the same held action.
+      // C and left Ctrl are separate sources for the same held action.
       if(bit!==512||![...state.pressed].some(code=>code!==event.code&&movementKeys.get(code)===bit))worldMovementInput(bit,0);
     }
     else if(event.code==='Escape')openPauseMenu();
@@ -4686,6 +4687,7 @@ window.addEventListener('keydown',event=>{
   }
 });
 window.addEventListener('keyup',event=>{
+  if(event.code==='ControlRight')return;
   if(state.titleDemoRun){state.webInput?.acceptKeyUp(event);suppressedKeys.delete(event.code);return;}
   if(practiceMenu?.isOpen&&state.worldMode)return;
   if(state.launcherExited)return;

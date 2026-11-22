@@ -311,7 +311,7 @@ export class GameSoundQueue {
   }
 }
 
-const keyBits=new Map([['ArrowUp',0x10],['ArrowDown',0x20],['ArrowLeft',0x40],['ArrowRight',0x80],['KeyZ',1],['Enter',0x200],['KeyC',0x200],['ControlLeft',0x200],['ControlRight',0x200],['KeyX',2],['Escape',0x100]]);
+const keyBits=new Map([['ArrowUp',0x10],['ArrowDown',0x20],['ArrowLeft',0x40],['ArrowRight',0x80],['KeyZ',1],['Enter',0x200],['KeyC',0x200],['ControlLeft',0x200],['KeyX',2],['Escape',0x100]]);
 // Rapid-fire aliases share the native confirm bit with Enter, but each source owns its hold.
 function pressMenuKey(owner,code){
   const bit=keyBits.get(code);if(bit===undefined)return false;

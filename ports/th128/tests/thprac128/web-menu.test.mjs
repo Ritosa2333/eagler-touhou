@@ -99,11 +99,15 @@ test('cancel/dispose aborts only the pending owner and cannot adopt a late succe
 test('restart uses actual owned params instead of edited form, and Escape isolates gameplay input',async()=>{
  const h=harness();h.availability.inRun=true;h.availability.practiceSession=create({stage:15,section:156,phase:2},4);await open(h);h.nodes.replace.checked=true;h.nodes.restart.emit('click');await flush();assert.equal(h.calls[0].s.params.section,156);assert.equal(h.calls[0].s.params.phase,2);await open(h);assert.equal(h.root.emit('keydown',{code:'KeyZ'}).propagationStopped,true);h.root.emit('keydown',{code:'Escape'});assert.equal(h.root.hidden,true);h.controller.dispose();
 });
-test('C and either Ctrl confirm from inside the practice options panel',async()=>{
- for(const code of ['KeyC','ControlLeft','ControlRight']){
+test('C and left Ctrl confirm from inside the practice options panel',async()=>{
+ for(const code of ['KeyC','ControlLeft']){
   const h=harness();await open(h);h.root.emit('keydown',{code});await flush();
   assert.equal(h.calls.length,1,code);h.controller.dispose();
  }
+});
+test('right Ctrl does not confirm practice options',async()=>{
+ const h=harness();await open(h);h.root.emit('keydown',{code:'ControlRight'});await flush();
+ assert.equal(h.calls.length,0);h.controller.dispose();
 });
 const source=fs.readFileSync(new URL('../../site/play.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 function productionCaller(){const a=source.indexOf('function thpracStageSelection('),b=source.indexOf('function installPracticeMenu(',a);assert(a>=0&&b>a,'actual current page TH128 thprac caller is missing');return source.slice(a,b);}

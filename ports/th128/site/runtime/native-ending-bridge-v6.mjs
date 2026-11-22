@@ -1,5 +1,5 @@
 import {OriginalEndingPixels,decodeEndingGlyph} from './native-ending-pixels.mjs';
-const keyBits=Object.freeze({KeyZ:1,Enter:0x200,KeyC:0x200,ControlLeft:0x200,ControlRight:0x200,KeyX:2,Escape:0x100,ArrowUp:0x10,ArrowDown:0x20,ArrowLeft:0x40,ArrowRight:0x80});
+const keyBits=Object.freeze({KeyZ:1,Enter:0x200,KeyC:0x200,ControlLeft:0x200,KeyX:2,Escape:0x100,ArrowUp:0x10,ArrowDown:0x20,ArrowLeft:0x40,ArrowRight:0x80});
 const terminalStages=Object.freeze([3,5,8,10,13,15]);
 async function digest(input){
     const bytes=input instanceof Uint8Array?input:new TextEncoder().encode(JSON.stringify(input));
