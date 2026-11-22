@@ -1153,7 +1153,7 @@ const type21ProfileFields=new Set(['schema','type','sourceExeSha256','sourceAddr
   'script','secondaryScript','hitboxSize','auxiliarySize','appearance','selector','freezePolicy','opaque114',
   'identitySpriteRemap','colorRemaps','cancellationScripts','callback','supportedTypes']);
 const stageTransitionContext={gate74:0,message78:0,sessionPresent:1,sessionField74:0};
-const movementKeys=new Map([['ArrowUp',16],['ArrowDown',32],['ArrowLeft',64],['ArrowRight',128],['KeyZ',1],['KeyC',512],['ShiftLeft',8],['ShiftRight',8]]);
+const movementKeys=new Map([['ArrowUp',16],['ArrowDown',32],['ArrowLeft',64],['ArrowRight',128],['KeyZ',1],['KeyC',512],['ControlLeft',512],['ControlRight',512],['ShiftLeft',8],['ShiftRight',8]]);
 const perfectFreezeXBit=2;
 const menu={
   page:'main',main:0,difficulty:1,route:0,option:0,music:0,pause:0,
@@ -1171,7 +1171,7 @@ let nativeMainOrderReady=false;
 const menuMusic={source:null,track:null,cache:new Map()};
 const suppressedKeys=new Set();
 function suppressHeldConfirmKeys(){
-  for(const key of ['KeyZ','Enter'])if(state.pressed.has(key))suppressedKeys.add(key);
+  for(const key of ['KeyZ','Enter','KeyC','ControlLeft','ControlRight'])if(state.pressed.has(key))suppressedKeys.add(key);
 }
 function preferenceNumber(key,min,max,fallback){
   try{
@@ -2258,7 +2258,7 @@ function showMusicPage(){
   showMenuPage('info');
 }
 function showManual(){
-  find('#menu-manual-body').textContent='方向键选择，Z/ENTER 确认，X/ESC 返回。游戏中方向键移动，Z 射击（按住蓄力，松开冻结），C 连射，Shift 低速，Esc 打开暂停菜单。\n\nX 的“完美冻结”尚未接通，不会伪造。REPLAY/RESULT 尚未实现；EX 使用页面顶部调试入口，仍有未完成分支，不计正常通关。\n\n返回标题会释放音频和当前世界输入；网页版本不会关闭浏览器。';
+  find('#menu-manual-body').textContent='方向键选择，Z／Ctrl／C／Enter 确认，X/ESC 返回。游戏中方向键移动，Z 射击（按住蓄力，松开冻结），Ctrl／C 连射，Shift 低速，Esc 打开暂停菜单。\n\nX 的“完美冻结”尚未接通，不会伪造。REPLAY/RESULT 尚未实现；EX 使用页面顶部调试入口，仍有未完成分支，不计正常通关。\n\n返回标题会释放音频和当前世界输入；网页版本不会关闭浏览器。';
   showMenuPage('manual');
 }
 
@@ -2359,8 +2359,7 @@ async function loadVariant(variant){
   ++menu.launchId;menu.launching=false;menu.audioUnlocked=false;menu.audioUnlockPromise=null;
   menu.suppressTitleAudio=false;menu.optionsInitialized=false;menu.infoMode='text';menu.page='main';
   ++menu.musicRequestId;stopMenuMusic();
-  if(state.pressed.has('KeyZ'))suppressedKeys.add('KeyZ');
-  if(state.pressed.has('Enter'))suppressedKeys.add('Enter');
+  suppressHeldConfirmKeys();
   find('#game-menu').hidden=true;
   state.autoFlow=false;state.handoff=false;state.handoffFailed=false;state.worldSnapshot=null;++state.handoffGeneration;
   state.active=false;state.paused=true;state.pressed.clear();clock.reset();resetHighFrameratePresentation();
@@ -2599,7 +2598,7 @@ async function finishNormalPostrunMain(controller,snapshot){
   if(controller.practice){if(!returnToTitle())throw new Error('Practice registration Title return failed');return;}
   state.worldMode=false;state.shotMode=false;state.autoFlow=false;state.worldAdvancePromise=null;state.worldSnapshot=null;
   const next=originalMainController();
-  const audio=await ensureOriginalTitleAudio();if(!current())return;if(!audio)throw new Error('Ordinary Main requires actual current Title audio');
+  const audio=await ensureOriginalTitleAudio({forPostrunHandoff:true});if(!current())return;if(!audio)throw new Error('Ordinary Main requires actual current Title audio');
   const music=controller.detachMainMusic(),playing=audio.adoptOrdinaryTitleMusic(music);
   state.ordinaryMainMusic=music;state.source=playing.source;state.track=playing.track;state.buffer=playing.buffer;
   next.adoptHeld(state.paused?new Set():state.pressed);
@@ -2970,7 +2969,7 @@ async function prepareOriginalMain(){
   if(signal.aborted||state.module!==module)throw new DOMException('Original RESULT load replaced','AbortError');
   state.mainTextCache=new Map();state.mainHelpPage=-1;
 }
-async function ensureOriginalTitleAudio(){
+async function ensureOriginalTitleAudio({forPostrunHandoff=false}={}){
   if(state.titleAudio){
     if(!state.titleSoundConsumer){
       const ledger=new OwnedMenuSoundLedger();state.mainSoundLedger=ledger;
@@ -2978,7 +2977,9 @@ async function ensureOriginalTitleAudio(){
     }
     return state.titleAudio;
   }
-  if(!menu.audioUnlocked||state.audio?.state!=='running')return null;
+  // A sealed postrun already owns the real Music7 source. Load the title's
+  // audio owner for the transfer without waiting for, or forcing, playback.
+  if(!state.audio||state.audio.state==='closed'||(!forPostrunHandoff&&(!menu.audioUnlocked||state.audio.state!=='running')))return null;
   if(state.mainAudioLoading)return state.mainAudioLoading;
   const module=state.module,signal=state.controller.signal,ticket=state.mainAudioTicket??0;
   state.mainAudioLoading=(async()=>{
@@ -4078,7 +4079,7 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
         refreshDebugRespawnUIFromWorld();
         if(!state.replayPlayback)worldMovementInput();
         find('#loading').hidden=true;find('#pause').disabled=false;find('#game').focus();
-        find(resultTarget).textContent=shots?'方向键移动；点按 Z 射击，按住 Z 蓄力，至少 45 帧且头顶 ≥30% 时松开 Z 冻结附近弹幕；C 连射、Shift 低速。使用该关原曲与原始动态 STD 背景。局部子弹、冻结、伤害与分数链路仍按此前证据，未证明整关或全路线可玩；缺失分支明确停止。':
+        find(resultTarget).textContent=shots?'方向键移动；点按 Z 射击，按住 Z 蓄力，至少 45 帧且头顶 ≥30% 时松开 Z 冻结附近弹幕；Ctrl／C 连射、Shift 低速。使用该关原曲与原始动态 STD 背景。局部子弹、冻结、伤害与分数链路仍按此前证据，未证明整关或全路线可玩；缺失分支明确停止。':
           '方向键使用原版速度/边界与转向ANM移动琪露诺。初始位置(0,400)，碰撞上下文显式给定state1/flags0/保护120/系统门控0，这是局部集成而非完整原版初始化。首次命中执行受击特效与8tick窗口；死亡提交、射击、低速与冻结未完成时会明确停止。';
         status('真实首段运行中：原始ECL、子弹池、运动与ANM；不是完整可玩关卡。');
         sceneLoading?.close();draw();return;
@@ -4629,8 +4630,9 @@ window.addEventListener('keydown',event=>{
   if(state.launcherExited)return;
   if(event.target instanceof HTMLSelectElement||event.target instanceof HTMLInputElement)return;
   const menuKeys=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','Enter','Escape'];
-  if(menuKeys.includes(event.code))event.preventDefault();
-  if(event.code==='KeyZ'||event.code==='Enter')event.preventDefault();
+  // Browser-only menus use a Z alias; native menus get their original input bit.
+  const menuCode=movementKeys.get(event.code)===512?'KeyZ':event.code;
+  if(menuKeys.includes(menuCode))event.preventDefault();
   if(state.webInput&&!state.webInput.acceptKeyDown(event))return;
   if(state.pressed.has(event.code)||suppressedKeys.has(event.code))return;
   state.pressed.add(event.code);
@@ -4638,45 +4640,49 @@ window.addEventListener('keydown',event=>{
     event.preventDefault();void restartTouchRun().catch(error);return;
   }
   if(state.normalPostrun){
-    if(state.paused){if(['Escape','Enter','KeyZ','KeyX'].includes(event.code))resumeNormalPostrun();return;}
+    if(state.paused){if(['Escape','Enter','KeyZ','KeyX'].includes(menuCode))resumeNormalPostrun();return;}
     if(event.code==='Escape')pauseNormalPostrun();else state.normalPostrun.input.down(event.code);return;
   }
   if(state.endingHost){
-    if(state.paused){if(['KeyZ','Enter','KeyX','Escape'].includes(event.code))resumeTitlePause();return;}
+    if(state.paused){if(['KeyZ','Enter','KeyX','Escape'].includes(menuCode))resumeTitlePause();return;}
     state.endingHost.owner.input.down(event.code);return;
   }
   if(state.endingLoading)return;
   if(state.worldMode){
-    if(menu.fault){handleFaultKey(event.code);return;}
+    if(menu.fault){handleFaultKey(menuCode);return;}
     if(menu.pauseOpen){handlePauseKey(event.code);return;}
-    if(menu.page==='launch'){handleMenuKey(event.code);return;}
+    if(menu.page==='launch'){handleMenuKey(menuCode);return;}
     if(!state.active||state.handoff)return;
     if(state.replayPlayback){
       if(event.code==='Escape')openPauseMenu();
       else if(['Enter','KeyZ'].includes(event.code))worldMovementInput(1,0);
       return;
     }
-    if(movementKeys.has(event.code))worldMovementInput(movementKeys.get(event.code),0);
+    if(movementKeys.has(event.code)){
+      const bit=movementKeys.get(event.code);
+      // C and either Ctrl are separate sources for the same held action.
+      if(bit!==512||![...state.pressed].some(code=>code!==event.code&&movementKeys.get(code)===bit))worldMovementInput(bit,0);
+    }
     else if(event.code==='Escape')openPauseMenu();
     else if(event.code==='KeyX'){
       if(!gameplayXPress())status('X 完美冻结需要新 core 的 perfectFreezeNormalEmptyLasers 能力，且仅在玩家射击关卡可用；当前未发送。');
     }
     return;
   }
-  if(menu.page==='launch'){handleMenuKey(event.code);return;}
+  if(menu.page==='launch'){handleMenuKey(menuCode);return;}
   if(state.active){
     if(state.paused&&!find('#runtime-overlay').hidden){
-      if(event.code==='KeyZ'||event.code==='Enter'||event.code==='KeyX'||event.code==='Escape')resumeTitlePause();
+      if(['KeyZ','Enter','KeyX','Escape'].includes(menuCode))resumeTitlePause();
       return;
     }
     if(nativePageNames.includes(menu.page)){
       if(state.paused){state.paused=false;clock.reset();resetHighFrameratePresentation();}
-      if(menuKeys.includes(event.code))unlockMenuAudio();
+      if(menuKeys.includes(menuCode))unlockMenuAudio();
       if(menu.audioUnlocked&&state.audio?.state==='suspended')state.audio.resume().catch(error);
       handleNativeTitleKey(event.code);
       return;
     }
-    handleMenuKey(event.code);return;
+    handleMenuKey(menuCode);return;
   }
 });
 window.addEventListener('keyup',event=>{
@@ -4691,16 +4697,18 @@ window.addEventListener('keyup',event=>{
   if(state.endingLoading){state.pressed.delete(event.code);suppressedKeys.delete(event.code);return;}
   if(state.replayPlayback){state.pressed.delete(event.code);if(['KeyZ','Enter'].includes(event.code))worldMovementInput(0,1);return;}
   const wasGameplayX=event.code==='KeyX'&&state.pressed.has('KeyX');
-  state.pressed.delete(event.code);suppressedKeys.delete(event.code);
-  if(!state.handoff&&movementKeys.has(event.code))worldMovementInput(0,movementKeys.get(event.code));
-  else if(wasGameplayX)gameplayXRelease();
+  const wasPressed=state.pressed.delete(event.code);suppressedKeys.delete(event.code);
+  if(!state.handoff&&movementKeys.has(event.code)){
+    const bit=movementKeys.get(event.code);
+    if(bit!==512||(wasPressed&&![...state.pressed].some(code=>movementKeys.get(code)===bit)))worldMovementInput(0,bit);
+  }else if(wasGameplayX)gameplayXRelease();
 });
 function releaseGameInput(){
   state.webInput?.cancelTouch?.();
   state.mainController?.release();
   if(state.normalPostrun){state.normalPostrun.input.release();state.pressed.clear();return;}
   if(state.replayPlayback){state.pressed.clear();return;}
-  if(menu.pauseOpen&&state.nativePause){state.pressed.clear();state.nativePause.held=0;state.nativePause.pressed=0;return;}
+  if(menu.pauseOpen&&state.nativePause){state.pressed.clear();state.nativePause.releaseKeys();return;}
   if(state.endingHost||state.endingLoading){state.pressed.clear();state.endingHost?.owner.input.release();return;}
   const hadGameplayX=gameplayXHeld();
   state.pressed.clear();

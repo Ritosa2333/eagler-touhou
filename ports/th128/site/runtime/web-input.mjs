@@ -1,6 +1,6 @@
 // All virtual keys share source ownership with physical keyboard input.
 import{mountFullTouch}from'./full-touch.mjs';
-const INPUT_KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','KeyR','Enter','Escape','ShiftLeft','ShiftRight','Tab','Backspace','F1','F2','F3','F4','F5','F6','F7','F12']);
+const INPUT_KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','ControlLeft','ControlRight','KeyR','Enter','Escape','ShiftLeft','ShiftRight','Tab','Backspace','F1','F2','F3','F4','F5','F6','F7','F12']);
 export function mountWebInput({canvas,container=canvas?.parentElement,document=canvas?.ownerDocument??globalThis.document,
  window=document?.defaultView??globalThis.window,getContext=()=>null,isEnabled=()=>true,
  getGameContext=null,onTouchMotion=null,storage=null,options={},onSettingsOpen,viewport,zoomEnabled,hostedControls=false}={}){

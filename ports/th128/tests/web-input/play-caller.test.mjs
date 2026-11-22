@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {bootPlay} from './play-harness.mjs';
+test('C and both Ctrl keys share one rapid-fire press and release',()=>{
+ for(const code of ['KeyC','ControlLeft','ControlRight']){
+  const e=bootPlay();e.key('keydown',code);e.key('keyup',code);
+  assert.deepEqual(e.receipts,[[512,512,0],[0,0,512]],code);e.input.dispose();
+ }
+ const e=bootPlay();e.key('keydown','ControlLeft');e.key('keydown','KeyC');e.key('keydown','ControlRight');
+ e.key('keyup','ControlLeft');e.key('keyup','KeyC');assert.deepEqual(e.receipts,[[512,512,0]]);
+ e.key('keyup','ControlRight');assert.deepEqual(e.receipts,[[512,512,0],[0,0,512]]);e.input.dispose();
+});
 test('production touch shot reaches real input caller with held and press then release',()=>{
  const e=bootPlay();e.emit(e.button('shot'),'pointerdown',1);e.emit(e.button('shot'),'pointerup',1);
  assert.deepEqual(e.receipts,[[1,1,0],[0,0,1]]);assert.equal(e.state.pressed.size,0);e.input.dispose();
