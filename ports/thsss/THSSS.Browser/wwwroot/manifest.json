@@ -1,0 +1,10 @@
+{
+  "entry": "thsss.html",
+  "protocol": "eagler-touhou/1",
+  "game": "thsss",
+  "features": {
+    "thprac": true,
+    "languages": false,
+    "focusHitbox": false
+  }
+}

@@ -1,0 +1,126 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ProjectGuid>{4F0AD515-EFC1-4416-9C7F-46DF5C3CEC39}</ProjectGuid>
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <Platforms>AnyCPU</Platforms>
+    <OutputType>Library</OutputType>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <PublishTrimmed>true</PublishTrimmed>
+    <SelfContained>true</SelfContained>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseAppHost>false</UseAppHost>
+    <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
+    <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <RootNamespace>Thsss.Browser</RootNamespace>
+    <AssemblyName>THSSS.Browser</AssemblyName>
+    <DefineConstants>$(DefineConstants);BROWSER</DefineConstants>
+    <!-- SYSLIB*: BinaryFormatter/DES APIs. CS0169/0649/0414: unused fields left by ILSpy decompile. -->
+    <NoWarn>$(NoWarn);SYSLIB0011;SYSLIB0021;CS0169;CS0649;CS0414</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup>
+    <_DotNetInstallRoot>$([System.IO.Path]::GetFullPath($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName('$(MSBuildSDKsPath)'))))))))</_DotNetInstallRoot>
+    <_EmscriptenPackVersion>10.0.15</_EmscriptenPackVersion>
+    <_EmscriptenHostRid Condition="'$(OS)' == 'Windows_NT'">win-x64</_EmscriptenHostRid>
+    <_EmscriptenHostRid Condition="'$(_EmscriptenHostRid)' == ''">linux-x64</_EmscriptenHostRid>
+    <_EmscriptenSdkRoot>$(_DotNetInstallRoot)/packs/Microsoft.NET.Runtime.Emscripten.3.1.56.Sdk.$(_EmscriptenHostRid)/$(_EmscriptenPackVersion)/tools</_EmscriptenSdkRoot>
+    <EmscriptenSdkToolsPath Condition="'$(EmscriptenSdkToolsPath)' == '' and '$(EMSDK)' == ''">$(_EmscriptenSdkRoot)</EmscriptenSdkToolsPath>
+    <!-- Windows packs ship an embedded CPython; Linux wasm-tools uses the host python3. -->
+    <_EmscriptenPython Condition="'$(OS)' == 'Windows_NT'">$(_DotNetInstallRoot)/packs/Microsoft.NET.Runtime.Emscripten.3.1.56.Python.win-x64/$(_EmscriptenPackVersion)/tools/python.exe</_EmscriptenPython>
+    <_EmscriptenPython Condition="'$(_EmscriptenPython)' == ''">/usr/bin/python3</_EmscriptenPython>
+    <_EmscriptenNode Condition="'$(OS)' == 'Windows_NT'">$(_DotNetInstallRoot)/packs/Microsoft.NET.Runtime.Emscripten.3.1.56.Node.win-x64/$(_EmscriptenPackVersion)/tools/bin/node.exe</_EmscriptenNode>
+    <_EmscriptenNode Condition="'$(_EmscriptenNode)' == ''">$(_DotNetInstallRoot)/packs/Microsoft.NET.Runtime.Emscripten.3.1.56.Node.linux-x64/$(_EmscriptenPackVersion)/tools/bin/node</_EmscriptenNode>
+    <_EmscriptenCache>$(_DotNetInstallRoot)/packs/Microsoft.NET.Runtime.Emscripten.3.1.56.Cache.$(_EmscriptenHostRid)/$(_EmscriptenPackVersion)/tools/emscripten/cache</_EmscriptenCache>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmscriptenEnvVars Include="EMSDK_PYTHON=$(_EmscriptenPython)" Visible="false" />
+    <EmscriptenEnvVars Include="DOTNET_EMSCRIPTEN_LLVM_ROOT=$(_EmscriptenSdkRoot)/bin" Visible="false" />
+    <EmscriptenEnvVars Include="DOTNET_EMSCRIPTEN_NODE_JS=$(_EmscriptenNode)" Visible="false" />
+    <EmscriptenEnvVars Include="DOTNET_EMSCRIPTEN_BINARYEN_ROOT=$(_EmscriptenSdkRoot)" Visible="false" />
+    <EmscriptenEnvVars Include="EM_CACHE=$(_EmscriptenCache)" Visible="false" />
+    <EmscriptenEnvVars Include="EM_FROZEN_CACHE=1" Visible="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.ILCompiler.LLVM" Version="10.0.0-rc.1.26357.1" />
+    <PackageReference Include="runtime.win-x64.Microsoft.DotNet.ILCompiler.LLVM" Version="10.0.0-rc.1.26357.1" />
+    <PackageReference Include="runtime.linux-x64.Microsoft.DotNet.ILCompiler.LLVM" Version="10.0.0-rc.1.26357.1" />
+    <TrimmerRootAssembly Include="THSSS.Browser" />
+    <TrimmerRootAssembly Include="SlimDX" />
+    <TrimmerRootAssembly Include="THSSS.Platform" />
+    <LinkerArg Include="-sMODULARIZE=1" Visible="false" />
+    <LinkerArg Include="-sEXPORT_ES6=1" Visible="false" />
+    <LinkerArg Include="-sEXPORT_NAME=createThsssModule" Visible="false" />
+    <LinkerArg Include="-sENVIRONMENT=web,webview,worker" Visible="false" />
+    <LinkerArg Include="-sALLOW_MEMORY_GROWTH=1" Visible="false" />
+    <LinkerArg Include="-sEXPORTED_RUNTIME_METHODS=UTF8ToString,stringToUTF8,lengthBytesUTF8,stringToNewUTF8" Visible="false" />
+    <LinkerArg Include="--js-library=native/thsss-lib.js" Visible="false" />
+    <DirectPInvoke Include="System.IO.Compression.Native" Visible="false" />
+    <ProjectReference Include="..\THSSS.SlimDX\THSSS.SlimDX.csproj" />
+    <ProjectReference Include="..\THSSS.Platform\THSSS.Platform.csproj" />
+    <EmbeddedResource Include="Shooting.RenderForm_Main.resources">
+      <LogicalName>Shooting.RenderForm_Main.resources</LogicalName>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Shooting.Properties.Resources.resources">
+      <LogicalName>Shooting.Properties.Resources.resources</LogicalName>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+  <PropertyGroup>
+    <CoreCompileDependsOn>TransformGameSources;$(CoreCompileDependsOn)</CoreCompileDependsOn>
+    <!-- Packs gitignored game content from ../Assets, including Sound, into wwwroot/assets/thsss.dat and copies BGM beside it.
+         Pass -p:StageGameAssets=false to compile without those files. Delete thsss.dat to restage. -->
+    <StageGameAssets Condition="'$(StageGameAssets)' == ''">true</StageGameAssets>
+  </PropertyGroup>
+  <Target Name="StageGameContent" BeforeTargets="Build">
+    <Message Importance="high" Condition="'$(StageGameAssets)' != 'true'" Text="StageGameAssets is false; skipping game asset copy and validation." />
+    <PropertyGroup Condition="'$(StageGameAssets)' == 'true'">
+      <_RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</_RepoRoot>
+      <_StageContentProj>$(_RepoRoot)/tools/StageContent/StageContent.csproj</_StageContentProj>
+      <_StageContentDll>$(MSBuildThisFileDirectory)obj/stage-content/StageContent.dll</_StageContentDll>
+      <_StageSkipArg Condition="Exists('$(MSBuildThisFileDirectory)wwwroot/assets/thsss.dat')">--skip-copy</_StageSkipArg>
+    </PropertyGroup>
+    <MSBuild Condition="'$(StageGameAssets)' == 'true'" Projects="$(_StageContentProj)" Targets="Restore;Build" RemoveProperties="RuntimeIdentifier;SelfContained;PublishTrimmed;PublishAot;UseAppHost" Properties="Configuration=Release" />
+    <Exec Condition="'$(StageGameAssets)' == 'true'" Command="dotnet exec &quot;$(_StageContentDll)&quot; --repo &quot;$(MSBuildThisFileDirectory)../Assets&quot; --dest &quot;$(MSBuildThisFileDirectory)wwwroot/assets&quot; $(_StageSkipArg)" />
+  </Target>
+  <Target Name="IncludeCompressionNative" BeforeTargets="LinkNativeLlvm">
+    <ItemGroup>
+      <NativeLibrary Include="$(IlcFrameworkNativePath)libSystem.IO.Compression.Native.a" />
+      <NativeLibrary Include="$(IlcFrameworkNativePath)libz.a" />
+    </ItemGroup>
+  </Target>
+  <Target Name="CopyBrowserHostFiles" AfterTargets="Publish" DependsOnTargets="StageGameContent">
+    <ItemGroup>
+      <_HostFile Include="$(MSBuildProjectDirectory)\wwwroot\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_HostFile)" DestinationFiles="@(_HostFile->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="PrepareGameSources">
+    <PropertyGroup>
+      <_RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</_RepoRoot>
+      <_PrepareProj>$(_RepoRoot)/tools/PrepareGameSources/PrepareGameSources.csproj</_PrepareProj>
+      <_PrepareDll>$(MSBuildThisFileDirectory)obj/prepare-game-sources/PrepareGameSources.dll</_PrepareDll>
+    </PropertyGroup>
+    <MSBuild Projects="$(_PrepareProj)" Targets="Restore;Build" RemoveProperties="RuntimeIdentifier;SelfContained;PublishTrimmed;PublishAot;UseAppHost" Properties="Configuration=Release" />
+    <Exec Command="dotnet exec &quot;$(_PrepareDll)&quot; prepare --repo &quot;$(_RepoRoot)&quot;" WorkingDirectory="$(_RepoRoot)" />
+  </Target>
+  <Target Name="TransformGameSources" DependsOnTargets="PrepareGameSources">
+    <PropertyGroup>
+      <_RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</_RepoRoot>
+      <_GameSrc>$(IntermediateOutputPath)game-src</_GameSrc>
+      <_TransformProj>$(_RepoRoot)/tools/TransformSources/TransformSources.csproj</_TransformProj>
+      <_TransformDll>$(MSBuildThisFileDirectory)obj/transform-sources/TransformSources.dll</_TransformDll>
+    </PropertyGroup>
+    <MSBuild Projects="$(_TransformProj)" Targets="Restore;Build" RemoveProperties="RuntimeIdentifier;SelfContained;PublishTrimmed;PublishAot;UseAppHost" Properties="Configuration=Release" />
+    <Exec Command="dotnet exec &quot;$(_TransformDll)&quot; --source &quot;$(MSBuildThisFileDirectory)../THSSS&quot; --dest &quot;$(_GameSrc)&quot;" />
+    <ItemGroup>
+      <Compile Include="$(_GameSrc)/**/*.cs" />
+    </ItemGroup>
+  </Target>
+</Project>
+

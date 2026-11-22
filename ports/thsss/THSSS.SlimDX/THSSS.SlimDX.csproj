@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ProjectGuid>{9F1C80BB-A858-4DF8-91BA-180609AB459C}</ProjectGuid>
+    <TargetFramework>net10.0</TargetFramework>
+    <Platforms>AnyCPU</Platforms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>SlimDX</RootNamespace>
+    <AssemblyName>SlimDX</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>SlimDX stand-in. Direct3D calls draw through a WebGL2 bridge.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\THSSS.Platform\THSSS.Platform.csproj" />
+  </ItemGroup>
+</Project>

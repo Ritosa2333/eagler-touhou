@@ -1,0 +1,662 @@
+From: PrepareGameSources
+Subject: 003-frame-touch-host.patch
+---
+
+diff --git a/Shooting/BaseGameState.cs b/Shooting/BaseGameState.cs
+index df0b301..8a90bd3 100644
+--- a/Shooting/BaseGameState.cs
++++ b/Shooting/BaseGameState.cs
+@@ -259,7 +259,7 @@ internal class BaseGameState : UserControl, IGameState
+ 
+ 	private long TimeCount { get; set; }
+ 
+-	public Font DXFont { get; set; }
++	public SlimDX.Direct3D9.Font DXFont { get; set; }
+ 
+ 	public BaseGameState()
+ 	{
+@@ -279,7 +279,10 @@ internal class BaseGameState : UserControl, IGameState
+ 		if (TimeMain % 30 == 0)
+ 		{
+ 			long timestamp = Stopwatch.GetTimestamp();
+-			FPS = 30f * (float)Stopwatch.Frequency / (float)(timestamp - TimeCount);
++			if (!Game_Main.RefreshUnlocked)
++			{
++				FPS = 30f * (float)Stopwatch.Frequency / (float)(timestamp - TimeCount);
++			}
+ 			if (TimeMain != 0)
+ 			{
+ 				StageData.RealTimeTotal += timestamp - TimeCount;
+@@ -330,7 +333,7 @@ internal class BaseGameState : UserControl, IGameState
+ 		GlobalData.BGM_Pause();
+ 	}
+ 
+-	public void Dispose()
++	public new void Dispose()
+ 	{
+ 		if (StageData != null)
+ 		{
+@@ -338,7 +341,7 @@ internal class BaseGameState : UserControl, IGameState
+ 		}
+ 		if (DXFont != null)
+ 		{
+-			((ComObject)DXFont).Dispose();
++			DXFont.Dispose();
+ 		}
+ 	}
+ }
+
+diff --git a/Shooting/BaseMyPlane.cs b/Shooting/BaseMyPlane.cs
+index a96264f..1eb847a 100644
+--- a/Shooting/BaseMyPlane.cs
++++ b/Shooting/BaseMyPlane.cs
+@@ -631,6 +631,74 @@ public class BaseMyPlane : BaseObject
+ 		SpellEnabled = true;
+ 	}
+ 
++	private float touchDx;
++
++	private float touchDy;
++
++	private bool hasTouch;
++
++	private bool touchUnlimited;
++
++	private float lastTouchDx;
++
++	private float lastTouchDy;
++
++	public bool TouchReplayUsed { get; private set; }
++
++	public bool TouchCheatMovementUsed { get; private set; }
++
++	public bool CanAcceptTouchMovement()
++	{
++		if (!Enabled)
++		{
++			return false;
++		}
++		return Time > DeadTime && Time > 70;
++	}
++
++	public void ApplyTouch(float dx, float dy)
++	{
++		ApplyTouch(dx, dy, unlimited: false);
++	}
++
++	public void ApplyTouch(float dx, float dy, bool unlimited)
++	{
++		touchDx = dx;
++		touchDy = dy;
++		touchUnlimited = unlimited;
++		hasTouch = true;
++	}
++
++	public void ClearTouch()
++	{
++		hasTouch = false;
++		touchDx = 0f;
++		touchDy = 0f;
++		touchUnlimited = false;
++	}
++
++	public void PeekPendingTouch(out float dx, out float dy)
++	{
++		if (hasTouch)
++		{
++			dx = touchDx;
++			dy = touchDy;
++		}
++		else
++		{
++			dx = 0f;
++			dy = 0f;
++		}
++	}
++
++	public void PeekLastTouch(out float dx, out float dy)
++	{
++		dx = lastTouchDx;
++		dy = lastTouchDy;
++		lastTouchDx = 0f;
++		lastTouchDy = 0f;
++	}
++
+ 	public override void Move()
+ 	{
+ 		Vx = 0f;
+@@ -638,6 +706,37 @@ public class BaseMyPlane : BaseObject
+ 		float x = OriginalPosition.X;
+ 		float y = OriginalPosition.Y;
+ 		SlowMove = KClass.Key_Shift;
++		if (hasTouch)
++		{
++			float dx = touchDx;
++			float dy = touchDy;
++			bool unlimited = touchUnlimited;
++			hasTouch = false;
++			touchDx = 0f;
++			touchDy = 0f;
++			touchUnlimited = false;
++			Vx = dx;
++			Vy = 0f - dy;
++			float originX = x;
++			float originY = y;
++			x += dx;
++			y += dy;
++			OriginalPosition = ClampPosition(x, y);
++			float appliedX = OriginalPosition.X - originX;
++			float appliedY = OriginalPosition.Y - originY;
++			lastTouchDx = dx;
++			lastTouchDy = dy;
++			Thsss.Browser.GameHost.StoreTouchResidual(dx - appliedX, dy - appliedY);
++			if (dx != 0f || dy != 0f)
++			{
++				TouchReplayUsed = true;
++				if (unlimited)
++				{
++					TouchCheatMovementUsed = true;
++				}
++			}
++			return;
++		}
+ 		if (!SlowMove)
+ 		{
+ 			if (KClass.ArrowRight)
+@@ -683,6 +782,18 @@ public class BaseMyPlane : BaseObject
+ 		}
+ 		x += Vx;
+ 		y -= Vy;
++		OriginalPosition = ClampPosition(x, y);
++		lastTouchDx = 0f;
++		lastTouchDy = 0f;
++	}
++
++	public void ShiftBy(float dx, float dy)
++	{
++		ApplyTouch(dx, dy);
++	}
++
++	private PointF ClampPosition(float x, float y)
++	{
+ 		if (x < (float)(TxtureObject.Width / 2 - 6))
+ 		{
+ 			x = TxtureObject.Width / 2 - 6;
+@@ -699,7 +810,7 @@ public class BaseMyPlane : BaseObject
+ 		{
+ 			y = BoundRect.Height - TxtureObject.Height / 2 + 8;
+ 		}
+-		OriginalPosition = new PointF(x, y);
++		return new PointF(x, y);
+ 	}
+ 
+ 	public virtual void SubPlaneCtrl()
+@@ -948,6 +1059,9 @@ public class BaseMyPlane : BaseObject
+ 			}
+ 			else
+ 			{
++				// Keep the move finger / JS queue across the spawn and miss
++				// windows (TOUCH-09). Pending ApplyTouch is rejected in
++				// TouchShift until CanAcceptTouchMovement is true again.
+ 				DestPoint = new PointF(BoundRect.Width / 2, BoundRect.Height - 30);
+ 				Velocity = 2f;
+ 				base.Move();
+
+diff --git a/Shooting/Game_Main.cs b/Shooting/Game_Main.cs
+index c4e4893..cf0338a 100644
+--- a/Shooting/Game_Main.cs
++++ b/Shooting/Game_Main.cs
+@@ -2,7 +2,6 @@ using System;
+ using System.Collections.Generic;
+ using System.Drawing;
+ using System.IO;
+-using System.Threading;
+ using System.Windows.Forms;
+ using SlimDX;
+ using SlimDX.Direct3D9;
+@@ -20,10 +19,12 @@ public class Game_Main
+ 
+ 	private Dictionary<string, IGameState> GameStatesDictionary;
+ 
+-	private Thread LoadingThread;
+-
+ 	private Watch fpsTimer = new Watch();
+ 
++	private int refreshCount;
++
++	private long refreshStamp;
++
+ 	private KeyboardCapture KCapture;
+ 
+ 	private JoystickCapture JCapture;
+@@ -68,6 +69,10 @@ public class Game_Main
+ 
+ 	private bool InitFlag;
+ 
++	private bool browserAwaitLoad;
++
++	public static bool RefreshUnlocked;
++
+ 	public GlobalDataPackage GlobalData
+ 	{
+ 		get
+@@ -146,7 +151,6 @@ public class Game_Main
+ 		((Form)Form_Main).Deactivate += Form_Main_Deactivate;
+ 		((Form)Form_Main).Activated += Form_Main_Activated;
+ 		MouseCtrl.DrawCursor(!fullWindow);
+-		GlobalData.TestFontScale();
+ 		if (windowSize == 1)
+ 		{
+ 			((Form)Form_Main).ClientSize = new Size(800, 600);
+@@ -180,8 +184,7 @@ public class Game_Main
+ 		PresentState.Init();
+ 		PresentState.BGM_ON();
+ 		GlobalData.LoadResources1();
+-		LoadingThread = new Thread(AddState);
+-		LoadingThread.Start();
++		browserAwaitLoad = true;
+ 	}
+ 
+ 	public bool Direct3DInit()
+@@ -215,8 +218,11 @@ public class Game_Main
+ 		{
+ 			Direct3D val = new Direct3D();
+ 			AdapterInformation defaultAdapter = val.Adapters.DefaultAdapter;
+-			CreateFlags val2 = (((val.GetDeviceCaps(defaultAdapter.Adapter, (DeviceType)1).DeviceCaps & 0x10000) != 65536) ? ((CreateFlags)32) : ((CreateFlags)64));
+-			IntPtr intPtr = (useUnrealFullScreen ? ((Control)Form_Main.panel1).Handle : ((Control)Form_Main).Handle);
++			var deviceCaps = val.GetDeviceCaps(defaultAdapter.Adapter, DeviceType.Hardware);
++			CreateFlags val2 = ((deviceCaps.DeviceCaps & DeviceCaps.HWTransformAndLight) == DeviceCaps.HWTransformAndLight)
++				? CreateFlags.HardwareVertexProcessing
++				: CreateFlags.SoftwareVertexProcessing;
++			IntPtr intPtr = (useUnrealFullScreen ? Form_Main.panel1.Handle : Form_Main.Handle);
+ 			GlobalDataPackage globalData = GlobalData;
+ 			PresentParameters val3 = new PresentParameters
+ 			{
+@@ -404,19 +410,60 @@ public class Game_Main
+ 
+ 	public void MainProcess()
+ 	{
+-		//IL_03b9: Expected Obj, but got Unknown
+-		//IL_03bb: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_03c0: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_03ff: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0404: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0419: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_02a2: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_02a7: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0357: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0362: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_036e: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0385: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0392: Unknown result type (might be due to invalid IL or missing references)
++		if (!BeginFrame() || deviceLost)
++		{
++			return;
++		}
++		SimulateFrame();
++		if (!deviceLost)
++		{
++			DrawFrame();
++			PaceFrame();
++		}
++	}
++
++	public void SimulateOnly()
++	{
++		if (BeginFrame() && !deviceLost)
++		{
++			SimulateFrame();
++		}
++	}
++
++	public void DrawOnly(float alpha)
++	{
++		if (deviceLost || PresentState == null)
++		{
++			return;
++		}
++		if (alpha < 0f)
++		{
++			alpha = 0f;
++		}
++		else if (alpha > 1f)
++		{
++			alpha = 1f;
++		}
++		BaseObject.PresentLerp = alpha;
++		try
++		{
++			DrawFrame();
++			NoteRefresh();
++		}
++		finally
++		{
++			BaseObject.PresentLerp = 1f;
++		}
++	}
++
++	private bool BeginFrame()
++	{
++		if (browserAwaitLoad && GlobalData.LoadingList != null && GlobalData.LoadingList.Count == 0 && Thsss.Browser.ContentLoader.BackgroundIdle)
++		{
++			browserAwaitLoad = false;
++			AddState();
++		}
++		QueuePracticeWarp();
+ 		if (firstFrame)
+ 		{
+ 			fpsTimer.Start();
+@@ -433,7 +480,7 @@ public class Game_Main
+ 				fpsTimer.IncreaseOneFrame();
+ 			}
+ 		}
+-		if (InitFlag && GlobalData.LoadingList.Count == 0)
++		if (InitFlag && GlobalData.LoadingList.Count == 0 && Thsss.Browser.ContentLoader.BackgroundIdle)
+ 		{
+ 			GlobalData.LoadModelDictionary();
+ 			InitFlag = false;
+@@ -450,7 +497,7 @@ public class Game_Main
+ 			if (stateSwitchData.NextState == "GameExit")
+ 			{
+ 				((Form)Form_Main).Close();
+-				return;
++				return false;
+ 			}
+ 			if (stateSwitchData.NextState != null)
+ 			{
+@@ -476,6 +523,7 @@ public class Game_Main
+ 				}
+ 			}
+ 		}
++		ApplyPractice();
+ 		if (useDirectInput)
+ 		{
+ 			KeyClass KClass = new KeyClass();
+@@ -500,7 +548,7 @@ public class Game_Main
+ 				if (KCapture.currentKeyboardState.IsPressed((Key)77) && KCapture.currentKeyboardState.IsPressed((Key)57))
+ 				{
+ 					((Form)Form_Main).Close();
+-					return;
++					return false;
+ 				}
+ 				if (KCapture.currentKeyboardState.IsPressed((Key)61) && KCapture.lastKeyboardState.IsReleased((Key)61))
+ 				{
+@@ -514,15 +562,19 @@ public class Game_Main
+ 		}
+ 		if (deviceLost)
+ 		{
+-			Thread.Sleep(15);
+ 			if (DeviceMain.TestCooperativeLevel() == ResultCode.DeviceNotReset)
+ 			{
+ 				GlobalData.OnResetDevice();
+ 				deviceLost = false;
+ 				firstFrame = true;
+ 			}
+-			return;
++			return false;
+ 		}
++		return true;
++	}
++
++	private void SimulateFrame()
++	{
+ 		try
+ 		{
+ 			if (OnPause && PresentState is BaseStage)
+@@ -530,7 +582,7 @@ public class Game_Main
+ 				GlobalData.KClass.Key_ESC = true;
+ 			}
+ 			PresentState.UpdateData();
+-			for (int j = 1; j < presentInterval; j++)
++			for (int i = 1; i < presentInterval; i++)
+ 			{
+ 				if (PresentState.StateSwitchData != null)
+ 				{
+@@ -544,7 +596,18 @@ public class Game_Main
+ 					PresentState.UpdateData();
+ 				}
+ 			}
+-			DeviceMain.Clear((ClearFlags)3, Color4.op_Implicit(Color.Black), 1f, 0);
++		}
++		catch (Direct3D9Exception ex)
++		{
++			OnDeviceException(ex);
++		}
++	}
++
++	private void DrawFrame()
++	{
++		try
++		{
++			DeviceMain.Clear((ClearFlags)3, Color.Black, 1f, 0);
+ 			DeviceMain.BeginScene();
+ 			PresentState.Render();
+ 			DeviceMain.EndScene();
+@@ -556,42 +619,68 @@ public class Game_Main
+ 		}
+ 		catch (Direct3D9Exception ex)
+ 		{
+-			Direct3D9Exception ex2 = ex;
+-			if (((SlimDXException)ex2).ResultCode == ResultCode.DeviceLost)
+-			{
+-				GlobalData.OnLostDevice();
+-				deviceLost = true;
+-			}
+-			else
+-			{
+-				string message = "SlimDX错误: " + ((Exception)(object)ex2).Message + "\n堆栈:\n" + ((Exception)(object)ex2).StackTrace;
+-				Result resultCode = ((SlimDXException)ex2).ResultCode;
+-				ErrorLog.SaveErrorLog(message, resultCode.Description);
+-				MessageBox.Show(((Exception)(object)ex2).Message);
+-				((Form)Form_Main).Close();
+-			}
++			OnDeviceException(ex);
+ 		}
++	}
++
++	private void PaceFrame()
++	{
+ 		if (verticalSync && (presentInterval == 1 || fullWindow))
+ 		{
+ 			return;
+ 		}
+ 		float num = 16f * (float)presentInterval - fpsTimer.GetDuration();
+-		if (num > 0f)
+-		{
+-			Thread.Sleep((int)num);
+-		}
+-		while (16.62f * (float)presentInterval - fpsTimer.GetDuration() > 0f)
+-		{
+-		}
+ 		if (fixedFPS && num < -16.66667f * (float)delayTolerance)
+ 		{
+-			for (int k = 0; (float)k < (0f - num) / 16.66667f - (float)delayTolerance; k++)
++			for (int i = 0; (float)i < (0f - num) / 16.66667f - (float)delayTolerance; i++)
+ 			{
+ 				fpsTimer.IncreaseOneFrame();
+ 			}
+ 		}
+ 	}
+ 
++	private void OnDeviceException(Direct3D9Exception ex)
++	{
++		if (ex.ResultCode == ResultCode.DeviceLost)
++		{
++			GlobalData.OnLostDevice();
++			deviceLost = true;
++			return;
++		}
++		string message = "SlimDX错误: " + ex.Message + "\n堆栈:\n" + ex.StackTrace;
++		Result resultCode = ex.ResultCode;
++		ErrorLog.SaveErrorLog(message, resultCode.Description);
++		MessageBox.Show(ex.Message);
++		((Form)Form_Main).Close();
++	}
++
++	private void NoteRefresh()
++	{
++		if (!RefreshUnlocked)
++		{
++			return;
++		}
++		BaseGameState baseGameState = PresentState as BaseGameState;
++		if (baseGameState == null)
++		{
++			return;
++		}
++		refreshCount++;
++		long timestamp = System.Diagnostics.Stopwatch.GetTimestamp();
++		if (refreshStamp == 0L)
++		{
++			refreshStamp = timestamp;
++			return;
++		}
++		long num = timestamp - refreshStamp;
++		if (num >= System.Diagnostics.Stopwatch.Frequency / 2)
++		{
++			baseGameState.FPS = (double)refreshCount * (double)System.Diagnostics.Stopwatch.Frequency / (double)num;
++			refreshCount = 0;
++			refreshStamp = timestamp;
++		}
++	}
++
+ 	private void ToggleFullScreen()
+ 	{
+ 		fullWindow = !fullWindow;
+@@ -670,12 +759,69 @@ public class Game_Main
+ 
+ 	private void Form_Main_Deactivate(object sender, EventArgs e)
+ 	{
+-		if (initSuccess)
++		if (initSuccess && !Thsss.Browser.PracticeSession.IgnoreFocusLoss)
+ 		{
+ 			OnPause = true;
+ 		}
+ 	}
+ 
++	private void QueuePracticeWarp()
++	{
++		string warp = Thsss.Browser.PracticeSession.TakeWarp();
++		if (warp.Length == 0)
++		{
++			return;
++		}
++		if (GameStatesDictionary != null && GameStatesDictionary.ContainsKey(warp) && PresentState != null && PresentState.StageData != null)
++		{
++			PresentState.StageData.SetReplayInfo(warp);
++			PresentState.StateSwitchData = new StateSwitchDataPackage
++			{
++				NextState = warp,
++				NeedInit = true,
++				SDPswitch = PresentState.StageData
++			};
++			Thsss.Browser.PracticeSession.ResourcesPending = true;
++		}
++		else
++		{
++			Thsss.Browser.PracticeSession.RequestWarp(warp);
++		}
++	}
++
++	private void ApplyPractice()
++	{
++		if (PresentState == null || PresentState.StageData == null || PresentState.StageData.MyPlane == null)
++		{
++			return;
++		}
++		BaseMyPlane plane = PresentState.StageData.MyPlane;
++		if (Thsss.Browser.PracticeSession.ResourcesPending)
++		{
++			if (Thsss.Browser.PracticeSession.Life >= 0)
++			{
++				plane.Life = Thsss.Browser.PracticeSession.Life;
++			}
++			if (Thsss.Browser.PracticeSession.Spell >= 0)
++			{
++				plane.Spell = Thsss.Browser.PracticeSession.Spell;
++			}
++			if (Thsss.Browser.PracticeSession.Power >= 0)
++			{
++				plane.Power = Thsss.Browser.PracticeSession.Power;
++			}
++			Thsss.Browser.PracticeSession.ResourcesPending = false;
++		}
++		if (Thsss.Browser.PracticeSession.Invulnerable)
++		{
++			plane.Time = plane.UnmatchedTime;
++		}
++		if (Thsss.Browser.PracticeSession.DisableBomb)
++		{
++			plane.SpellEnabled = false;
++		}
++	}
++
+ 	private void Form_Main_Activated(object sender, EventArgs e)
+ 	{
+ 		if (initSuccess)
+@@ -687,10 +833,7 @@ public class Game_Main
+ 
+ 	private void Form_Main_FormClosing(object sender, FormClosingEventArgs e)
+ 	{
+-		if (LoadingThread != null && LoadingThread.IsAlive)
+-		{
+-			LoadingThread.Abort();
+-		}
++		Thsss.Browser.GameHost.MarkExited();
+ 		GlobalData.PData.SaveData();
+ 		GlobalData.Dispose();
+ 		if (!useDirectInput)
+@@ -717,6 +860,7 @@ public class Game_Main
+ 		catch
+ 		{
+ 		}
++		Thsss.Browser.GameHost.NotifyClosed();
+ 	}
+ 
+ 	private void Form_Main_KeyDown(object sender, KeyEventArgs e)
+@@ -860,4 +1004,44 @@ public class Game_Main
+ 		}
+ 		MouseCtrl.DrawCursor(!fullWindow);
+ 	}
++
++	public int TouchSurface()
++	{
++		if (PresentState is BaseMenu)
++		{
++			return 0;
++		}
++		if (PresentState is BaseGameState baseGameState)
++		{
++			if (baseGameState.StageData != null && baseGameState.StageData.Story != null)
++			{
++				return 2;
++			}
++			return 1;
++		}
++		return 0;
++	}
++
++	public int TouchShift(float dx, float dy, int unlimited)
++	{
++		if (PresentState is BaseMenu)
++		{
++			return 0;
++		}
++		BaseGameState baseGameState = PresentState as BaseGameState;
++		if (baseGameState != null && baseGameState.StageData != null && baseGameState.StageData.Story == null)
++		{
++			if (baseGameState.StageData.OnReplay)
++			{
++				return 0;
++			}
++			BaseMyPlane myPlane = baseGameState.StageData.MyPlane;
++			if (myPlane != null && myPlane.CanAcceptTouchMovement())
++			{
++				myPlane.ApplyTouch(dx, dy, unlimited != 0);
++				return 1;
++			}
++		}
++		return 0;
++	}
+ }
+

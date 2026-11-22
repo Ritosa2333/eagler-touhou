@@ -1,0 +1,554 @@
+From: PrepareGameSources
+Subject: 004-textures-draw.patch
+---
+
+diff --git a/Shooting/BaseObject.cs b/Shooting/BaseObject.cs
+index 75ad82c..8dcb27a 100644
+--- a/Shooting/BaseObject.cs
++++ b/Shooting/BaseObject.cs
+@@ -1,8 +1,6 @@
+ using System;
+ using System.Collections.Generic;
+ using System.Drawing;
+-using System.IO;
+-using System.Runtime.Serialization.Formatters.Binary;
+ 
+ namespace Shooting;
+ 
+@@ -11,6 +9,15 @@ public class BaseObject
+ {
+ 	public delegate void CtrlActionCallBack(string s);
+ 
++	[NonSerialized]
++	private float prevX;
++
++	[NonSerialized]
++	private float prevY;
++
++	[NonSerialized]
++	private bool hasPrev;
++
+ 	private float velocity;
+ 
+ 	private float maxVelocity = 100f;
+@@ -19,6 +26,12 @@ public class BaseObject
+ 
+ 	private double direction;
+ 
++	private float dirCos = 1f;
++
++	private float dirSin;
++
++	private bool dirReady;
++
+ 	private bool enabled = true;
+ 
+ 	private bool shootEnabled = true;
+@@ -89,11 +102,21 @@ public class BaseObject
+ 
+ 	public PointF OriginalPosition { get; set; }
+ 
++	public static float PresentLerp = 1f;
++
+ 	public PointF Position
+ 	{
+ 		get
+ 		{
+-			return new PointF(OriginalPosition.X + (float)BoundRect.Left, OriginalPosition.Y + (float)BoundRect.Top);
++			float x = OriginalPosition.X;
++			float y = OriginalPosition.Y;
++			if (PresentLerp < 1f && hasPrev)
++			{
++				float presentLerp = PresentLerp;
++				x = prevX + (x - prevX) * presentLerp;
++				y = prevY + (y - prevY) * presentLerp;
++			}
++			return new PointF(x + (float)BoundRect.Left, y + (float)BoundRect.Top);
+ 		}
+ 		set
+ 		{
+@@ -228,7 +251,13 @@ public class BaseObject
+ 			{
+ 				value += Math.PI * 2.0;
+ 			}
+-			direction = value;
++			if (!dirReady || value != direction)
++			{
++				direction = value;
++				dirCos = MathF.Cos((float)value);
++				dirSin = MathF.Sin((float)value);
++				dirReady = true;
++			}
+ 		}
+ 	}
+ 
+@@ -860,12 +889,17 @@ public class BaseObject
+ 
+ 	public virtual void Move()
+ 	{
+-		if (DestPoint != new PointF(0f, 0f))
++		if (DestPoint.X != 0f || DestPoint.Y != 0f)
+ 		{
+-			_ = DestPoint;
+ 			MovePoint();
+ 		}
+-		Position = new PointF((float)((double)Position.X + (double)Velocity * Math.Cos(Direction) * (double)scaleX), (float)((double)Position.Y + (double)Velocity * Math.Sin(Direction) * (double)scaleY));
++		if (!dirReady)
++		{
++			dirCos = MathF.Cos((float)direction);
++			dirSin = MathF.Sin((float)direction);
++			dirReady = true;
++		}
++		OriginalPosition = new PointF(OriginalPosition.X + Velocity * dirCos * scaleX, OriginalPosition.Y + Velocity * dirSin * scaleY);
+ 	}
+ 
+ 	public void MovePoint()
+@@ -952,8 +986,21 @@ public class BaseObject
+ 	{
+ 	}
+ 
++	protected void PlaceAt(float x, float y)
++	{
++		if (hasPrev)
++		{
++			prevX += x - OriginalPosition.X;
++			prevY += y - OriginalPosition.Y;
++		}
++		OriginalPosition = new PointF(x, y);
++	}
++
+ 	public virtual void Ctrl()
+ 	{
++		prevX = OriginalPosition.X;
++		prevY = OriginalPosition.Y;
++		hasPrev = true;
+ 		if (!Enabled)
+ 		{
+ 			return;
+@@ -1140,17 +1187,7 @@ public class BaseObject
+ 
+ 	public object Clone(object Obj)
+ 	{
+-		if (Obj == null)
+-		{
+-			return null;
+-		}
+-		MemoryStream memoryStream = new MemoryStream();
+-		BinaryFormatter binaryFormatter = new BinaryFormatter();
+-		binaryFormatter.Serialize(memoryStream, Obj);
+-		memoryStream.Seek(0L, SeekOrigin.Begin);
+-		object result = binaryFormatter.Deserialize(memoryStream);
+-		memoryStream.Close();
+-		return result;
++		throw new NotSupportedException("BinaryFormatter clone is not available in the browser host.");
+ 	}
+ 
+ 	public virtual object Clone()
+
+diff --git a/Shooting/GameState_MusicLoading.cs b/Shooting/GameState_MusicLoading.cs
+index eb561eb..4d56a63 100644
+--- a/Shooting/GameState_MusicLoading.cs
++++ b/Shooting/GameState_MusicLoading.cs
+@@ -1,6 +1,5 @@
+ using System;
+ using System.Drawing;
+-using System.Threading;
+ using SlimDX.Direct3D9;
+ 
+ namespace Shooting;
+@@ -9,8 +8,6 @@ internal class GameState_MusicLoading : BaseMenu, IGameState
+ {
+ 	private bool LoadFlag;
+ 
+-	private Thread LoadingThread;
+-
+ 	public GameState_MusicLoading(GlobalDataPackage GlobalData)
+ 		: base(GlobalData)
+ 	{
+@@ -31,8 +28,7 @@ internal class GameState_MusicLoading : BaseMenu, IGameState
+ 		base.UpdateData();
+ 		if (TimeMain == 1)
+ 		{
+-			LoadingThread = new Thread(PreloadMusic);
+-			LoadingThread.Start();
++			PreloadMusic();
+ 		}
+ 		if (LoadFlag && TimeMain > 0)
+ 		{
+@@ -42,7 +38,6 @@ internal class GameState_MusicLoading : BaseMenu, IGameState
+ 				NeedInit = false
+ 			};
+ 			((BaseGameState)StageData.GlobalData.LastState).TimeSycn();
+-			LoadingThread.Abort();
+ 		}
+ 		if (TimeMain < 50)
+ 		{
+
+diff --git a/Shooting/GameState_SplashScreen.cs b/Shooting/GameState_SplashScreen.cs
+index d66e6ab..2a1db36 100644
+--- a/Shooting/GameState_SplashScreen.cs
++++ b/Shooting/GameState_SplashScreen.cs
+@@ -158,10 +158,13 @@ internal class GameState_SplashScreen : IGameState
+ 			Scale = (float)StageData.Ran.Next(25, 70) / 100f,
+ 			LifeTime = 70
+ 		};
++		for (int num = StageData.EffectList.Count - 1; num >= 0; num--)
++		{
++			StageData.EffectList[num].Ctrl();
++		}
+ 		if (GlobalData.LoadingList.Count > 0)
+ 		{
+-			GlobalData.TextureObjectLoader(GlobalData.LoadingList[0]);
+-			GlobalData.LoadingList.RemoveAt(0);
++			Thsss.Browser.TexturePump.Advance(GlobalData);
+ 		}
+ 	}
+ 
+@@ -169,10 +172,6 @@ internal class GameState_SplashScreen : IGameState
+ 	{
+ 		//IL_009c: Unknown result type (might be due to invalid IL or missing references)
+ 		//IL_00ab: Unknown result type (might be due to invalid IL or missing references)
+-		for (int num = StageData.EffectList.Count - 1; num >= 0; num--)
+-		{
+-			StageData.EffectList[num].Ctrl();
+-		}
+ 		SpriteMain.Begin((SpriteFlags)16);
+ 		Background.Show(Active: false);
+ 		StageData.EffectList.ForEach((BaseEffect x) =>
+
+diff --git a/Shooting/GlobalDataPackage.cs b/Shooting/GlobalDataPackage.cs
+index ef6e512..67d774a 100644
+--- a/Shooting/GlobalDataPackage.cs
++++ b/Shooting/GlobalDataPackage.cs
+@@ -110,7 +110,8 @@ public class GlobalDataPackage
+ 
+ 	public void LoadFolderTextureList(string Path)
+ 	{
+-		if (!(Path == ".\\Image\\NowLoading"))
++		string text = Path.Replace('\\', '/');
++		if (!text.EndsWith("/Image/NowLoading"))
+ 		{
+ 			string[] files = Directory.GetFiles(Path, "*.png");
+ 			for (int i = 0; i < files.Length; i++)
+@@ -295,25 +296,27 @@ public class GlobalDataPackage
+ 
+ 	public void TextureObjectLoader(string imageFileName, int colorKey)
+ 	{
+-		//IL_000f: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0015: Expected Obj, but got Unknown
+-		//IL_005d: Unknown result type (might be due to invalid IL or missing references)
+-		if (!File.Exists(imageFileName))
++		if (File.Exists(imageFileName))
+ 		{
+-			return;
+-		}
+-		Bitmap val = (Bitmap)Image.FromFile(imageFileName);
+-		Rectangle rect = new Rectangle(0, 0, ((Image)val).Width, ((Image)val).Height);
+-		((Image)val).Dispose();
+-		int num = 0;
+-		Texture texture;
+-		while (!SetTexture(imageFileName, colorKey, rect, out texture) && num++ < 20)
+-		{
+-		}
+-		if (num >= 20)
+-		{
+-			MessageBox.Show(imageFileName + "纹理读取错误", "LoadTexture Error");
++			int num = 0;
++			Texture texture;
++			while (!SetTexture(imageFileName, colorKey, new Rectangle(0, 0, 1, 1), out texture) && num++ < 20)
++			{
++			}
++			if (texture == null)
++			{
++				MessageBox.Show(imageFileName + "纹理读取错误", "LoadTexture Error");
++			}
++			else
++			{
++				RegisterLoadedTexture(imageFileName, texture);
++			}
+ 		}
++	}
++
++	public void RegisterLoadedTexture(string imageFileName, Texture texture)
++	{
++		Rectangle rectangle = new Rectangle(0, 0, texture.Width, texture.Height);
+ 		FileInfo fileInfo = new FileInfo(imageFileName);
+ 		string path = fileInfo.FullName.Replace(fileInfo.Extension, ".txt");
+ 		if (File.Exists(path))
+@@ -328,8 +331,8 @@ public class GlobalDataPackage
+ 				textureObject.PosRect = new Rectangle(Convert.ToInt32(array2[1]), Convert.ToInt32(array2[2]), Convert.ToInt32(array2[3]), Convert.ToInt32(array2[4]));
+ 				textureObject.OffsetX = Convert.ToInt32(array2[5]);
+ 				textureObject.OffsetY = Convert.ToInt32(array2[6]);
+-				textureObject.SrcWidth = rect.Width;
+-				textureObject.SrcHeight = rect.Height;
++				textureObject.SrcWidth = rectangle.Width;
++				textureObject.SrcHeight = rectangle.Height;
+ 				TextureObjectDictionary.Add(array2[0], textureObject);
+ 			}
+ 		}
+@@ -337,9 +340,9 @@ public class GlobalDataPackage
+ 		{
+ 			TextureObject textureObject2 = new TextureObject();
+ 			textureObject2.TXTure = texture;
+-			textureObject2.PosRect = new Rectangle(0, 0, rect.Width, rect.Height);
+-			textureObject2.SrcWidth = rect.Width;
+-			textureObject2.SrcHeight = rect.Height;
++			textureObject2.PosRect = new Rectangle(0, 0, rectangle.Width, rectangle.Height);
++			textureObject2.SrcWidth = rectangle.Width;
++			textureObject2.SrcHeight = rectangle.Height;
+ 			TextureObjectDictionary.Add(fileInfo.Name.Replace(".png", ""), textureObject2);
+ 		}
+ 	}
+@@ -478,17 +481,4 @@ public class GlobalDataPackage
+ 			((ComObject)DeviceXaudio2).Dispose();
+ 		}
+ 	}
+-
+-	public void TestFontScale()
+-	{
+-		//IL_000c: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0012: Expected Obj, but got Unknown
+-		//IL_0014: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_001e: Expected Obj, but got Unknown
+-		Font val = new Font(FontType, 15f, (FontStyle)1);
+-		Graphics val2 = Graphics.FromImage((Image)new Bitmap(1, 1));
+-		float fontScale = 832.4413f / val2.MeasureString("国国国国国国国国国国国国国国国国国国国国国国国国国国国国国国国国国国国国国国国国", val).Width;
+-		val.Dispose();
+-		FontScale = fontScale;
+-	}
+ }
+
+diff --git a/Shooting/MySprite.cs b/Shooting/MySprite.cs
+index fd8c5ce..6a9089a 100644
+--- a/Shooting/MySprite.cs
++++ b/Shooting/MySprite.cs
+@@ -1,4 +1,3 @@
+-using System;
+ using System.Drawing;
+ using SlimDX;
+ using SlimDX.Direct3D9;
+@@ -11,103 +10,52 @@ public class MySprite
+ 
+ 	public MySprite(Device device)
+ 	{
+-		//IL_0008: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0012: Expected Obj, but got Unknown
+ 		sprite = new Sprite(device);
+ 	}
+ 
+ 	public void Begin(SpriteFlags flags)
+ 	{
+-		//IL_0006: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0007: Unknown result type (might be due to invalid IL or missing references)
+ 		sprite.Begin(flags);
+ 	}
+ 
+ 	public void End()
+ 	{
+-		//IL_0006: Unknown result type (might be due to invalid IL or missing references)
+ 		sprite.End();
+ 	}
+ 
+ 	public void Draw2D(Texture srcTexture, PointF rotationCenter, float rotationAngle, PointF position, Color color)
+ 	{
+-		//IL_0015: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_002f: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0038: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_004d: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0058: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0068: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_006d: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0079: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_007e: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_008f: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0095: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_009b: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_009c: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00a8: Unknown result type (might be due to invalid IL or missing references)
+-		Vector3 value = new Vector3(rotationCenter.X, rotationCenter.Y, 0f);
+-		Vector3 value2 = new Vector3(position.X, position.Y, 0f);
+-		Color4 val = new Color4(color);
+-		Vector2 val2 = new Vector2(position.X, position.Y);
+-		sprite.Transform = Matrix.Transformation2D(val2, 0f, new Vector2(1f, 1f), val2, rotationAngle, new Vector2(0f, 0f));
+-		sprite.Draw(srcTexture, (Nullable)value, (Nullable)value2, val);
++		Vector3 vector = new Vector3(rotationCenter.X, rotationCenter.Y, 0f);
++		Vector3 vector2 = new Vector3(position.X, position.Y, 0f);
++		Color4 color2 = new Color4(color);
++		Vector2 vector3 = new Vector2(position.X, position.Y);
++		sprite.Transform = Matrix.Transformation2D(vector3, 0f, new Vector2(1f, 1f), vector3, rotationAngle, new Vector2(0f, 0f));
++		sprite.Draw(srcTexture, new Vector3?(vector), new Vector3?(vector2), color2);
+ 		sprite.Transform = Matrix.Identity;
+ 	}
+ 
+ 	public void Draw2D(Texture srcTexture, Rectangle srcRectangle, SizeF destinationSize, PointF position, Color color)
+ 	{
+-		//IL_0015: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_001e: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0033: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_005a: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0065: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_006b: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_006c: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_007c: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0081: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00a7: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00b1: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00b7: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00b8: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00c4: Unknown result type (might be due to invalid IL or missing references)
+-		Vector3 value = new Vector3(position.X, position.Y, 0f);
+-		Color4 val = new Color4(color);
+-		Vector2 val2 = new Vector2(position.X, position.Y);
+-		Vector2 val3 = new Vector2(destinationSize.Width / (float)srcRectangle.Width, destinationSize.Height / (float)srcRectangle.Height);
+-		sprite.Transform = Matrix.Transformation2D(val2, 0f, val3, val2, 0f, new Vector2(0f, 0f));
+-		sprite.Draw(srcTexture, (Rectangle?)srcRectangle, (Nullable)new Vector3(0f, 0f, 0f), (Nullable)value, val);
++		Vector3 vector = new Vector3(position.X, position.Y, 0f);
++		Color4 color2 = new Color4(color);
++		Vector2 vector2 = new Vector2(position.X, position.Y);
++		Vector2 vector3 = new Vector2(destinationSize.Width / (float)srcRectangle.Width, destinationSize.Height / (float)srcRectangle.Height);
++		sprite.Transform = Matrix.Transformation2D(vector2, 0f, vector3, vector2, 0f, new Vector2(0f, 0f));
++		sprite.Draw(srcTexture, new Rectangle?(srcRectangle), new Vector3?(new Vector3(0f, 0f, 0f)), new Vector3?(vector), color2);
+ 		sprite.Transform = Matrix.Identity;
+ 	}
+ 
+ 	public void Draw2D(Texture srcTexture, Rectangle srcRectangle, SizeF destinationSize, PointF rotationCenter, float rotationAngle, PointF position, Color color)
+ 	{
+-		//IL_0015: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_002f: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0038: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_004b: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0060: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0065: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0066: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_008e: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0099: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_009f: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00a1: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00ae: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00b3: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00ca: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00d0: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00d6: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00d7: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00e3: Unknown result type (might be due to invalid IL or missing references)
+-		Vector3 value = new Vector3(rotationCenter.X, rotationCenter.Y, 0f);
+-		Vector3 value2 = new Vector3(position.X, position.Y, 0f);
+-		Color4 val = new Color4(color);
+-		Vector2 val2 = new Vector2(rotationCenter.X, rotationCenter.Y);
+-		Vector2 val3 = new Vector2(position.X, position.Y);
+-		_ = val2 + val3;
+-		Vector2 val4 = new Vector2(destinationSize.Width / (float)srcRectangle.Width, destinationSize.Height / (float)srcRectangle.Height);
+-		sprite.Transform = Matrix.Transformation2D(val3, 0f, val4, val3, rotationAngle, new Vector2(0f, 0f));
+-		sprite.Draw(srcTexture, (Rectangle?)srcRectangle, (Nullable)value, (Nullable)value2, val);
++		Vector3 vector = new Vector3(rotationCenter.X, rotationCenter.Y, 0f);
++		Vector3 vector2 = new Vector3(position.X, position.Y, 0f);
++		Color4 color2 = new Color4(color);
++		Vector2 vector3 = new Vector2(rotationCenter.X, rotationCenter.Y);
++		Vector2 vector4 = new Vector2(position.X, position.Y);
++		_ = vector3 + vector4;
++		Vector2 vector6 = new Vector2(destinationSize.Width / (float)srcRectangle.Width, destinationSize.Height / (float)srcRectangle.Height);
++		sprite.Transform = Matrix.Transformation2D(vector4, 0f, vector6, vector4, rotationAngle, new Vector2(0f, 0f));
++		sprite.Draw(srcTexture, new Rectangle?(srcRectangle), new Vector3?(vector), new Vector3?(vector2), color2);
+ 		sprite.Transform = Matrix.Identity;
+ 	}
+ 
+@@ -138,40 +86,15 @@ public class MySprite
+ 
+ 	public void Draw2D(TextureObject txtureObject, float scaleX, float scaleY, float rotationAngle, PointF position, PointF rotationCenter, Color color, bool mirrored)
+ 	{
+-		//IL_0015: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_002f: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0038: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_004b: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0060: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0065: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0066: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_007c: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0072: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0081: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0089: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_008f: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0091: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_009e: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00a3: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00c4: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00ca: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00d0: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00d1: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00dd: Unknown result type (might be due to invalid IL or missing references)
+-		Vector3 value = new Vector3(rotationCenter.X, rotationCenter.Y, 0f);
+-		Vector3 value2 = new Vector3(position.X, position.Y, 0f);
+-		Color4 val = new Color4(color);
+-		Vector2 val2 = new Vector2(rotationCenter.X, rotationCenter.Y);
+-		Vector2 val3 = new Vector2(position.X, position.Y);
+-		_ = val2 + val3;
+-		Vector2 val4 = (mirrored ? new Vector2(0f - scaleX, scaleY) : new Vector2(scaleX, scaleY));
+-		sprite.Transform = Matrix.Transformation2D(val3, 0f, val4, val3, rotationAngle, new Vector2(0f, 0f));
+-		sprite.Draw(txtureObject.TXTure, (Rectangle?)txtureObject.PosRect, (Nullable)value, (Nullable)value2, val);
+-		sprite.Transform = Matrix.Identity;
++		if (txtureObject != null)
++		{
++			float scaleX2 = (mirrored ? (0f - scaleX) : scaleX);
++			sprite.DrawSpriteQuad(txtureObject.TXTure, txtureObject.PosRect, rotationCenter.X, rotationCenter.Y, position.X, position.Y, scaleX2, scaleY, rotationAngle, (float)(int)color.R / 255f, (float)(int)color.G / 255f, (float)(int)color.B / 255f, (float)(int)color.A / 255f);
++		}
+ 	}
+ 
+ 	public void Dispose()
+ 	{
+-		((ComObject)sprite).Dispose();
++		sprite.Dispose();
+ 	}
+ }
+
+diff --git a/Shooting/StageDataPackage.cs b/Shooting/StageDataPackage.cs
+index 8381f7f..249c7ac 100644
+--- a/Shooting/StageDataPackage.cs
++++ b/Shooting/StageDataPackage.cs
+@@ -144,6 +144,10 @@ public class StageDataPackage
+ 	{
+ 		get
+ 		{
++			if (MyPlane != null && MyPlane.TouchCheatMovementUsed)
++			{
++				return "100.0%";
++			}
+ 			float num = 60f * (float)RealTimeTotal / (float)Stopwatch.Frequency;
+ 			num = (num - (float)TimeTotal) * 100f / num;
+ 			return ((num < 0f) ? 0f : num).ToString("F1") + "%";
+@@ -366,33 +370,9 @@ public class StageDataPackage
+ 		return cS_Data;
+ 	}
+ 
+-	public Texture DrawString(string text, Font font, Brush brush, int width, int height)
++	public Texture DrawString(string text, System.Drawing.Font font, Brush brush, int width, int height)
+ 	{
+-		//IL_0009: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_000f: Expected Obj, but got Unknown
+-		//IL_0043: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0048: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_004a: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0050: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0075: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00a9: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00ab: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00b8: Expected Obj, but got Unknown
+-		Bitmap val = new Bitmap(width, height, (PixelFormat)2498570);
+-		Graphics val2 = Graphics.FromImage((Image)(object)val);
+-		val2.TextRenderingHint = (TextRenderingHint)4;
+-		val2.DrawString(text, font, brush, 0f, 0f);
+-		val2.Dispose();
+-		Texture val3 = new Texture(DeviceMain, width, height, 1, (Usage)0, (Format)21, (Pool)1);
+-		val3.GetLevelDescription(0);
+-		DataRectangle val4 = val3.LockRectangle(0, new Rectangle(0, 0, width, height), (LockFlags)8192);
+-		BitmapData val5 = val.LockBits(new Rectangle(0, 0, width, height), (ImageLockMode)1, ((Image)val).PixelFormat);
+-		IntPtr scan = val5.Scan0;
+-		val4.Data.WriteRange(scan, (long)(val5.Width * val5.Height * 4));
+-		val.UnlockBits(val5);
+-		val3.UnlockRectangle(0);
+-		((Image)val).Dispose();
+-		return val3;
++		return TextTextures.Get(text, font, brush, width, height);
+ 	}
+ 
+ 	public void Dispose()
+

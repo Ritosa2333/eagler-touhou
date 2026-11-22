@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ProjectGuid>{88AE5F1F-3307-4EF3-809F-DD27D51B001C}</ProjectGuid>
+    <TargetFramework>net10.0</TargetFramework>
+    <Platforms>AnyCPU</Platforms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>THSSS.Platform</RootNamespace>
+    <AssemblyName>THSSS.Platform</AssemblyName>
+    <Description>WinForms, GDI+, and WMI stubs for the browser shared framework.</Description>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,455 @@
+From: PrepareGameSources
+Subject: 005-polish-batch.patch
+---
+
+diff --git a/Shooting/BackgroundManager3D.cs b/Shooting/BackgroundManager3D.cs
+index 6b2afd7..1942160 100644
+--- a/Shooting/BackgroundManager3D.cs
++++ b/Shooting/BackgroundManager3D.cs
+@@ -10,6 +10,8 @@ public class BackgroundManager3D
+ {
+ 	private Light light;
+ 
++	private static readonly CompareDepth depthComparer = new CompareDepth();
++
+ 	public bool Enabled3D { get; set; }
+ 
+ 	public bool WarpEnabled { get; set; }
+@@ -61,31 +63,33 @@ public class BackgroundManager3D
+ 		{
+ 			Envi.Ctrl();
+ 		}
+-		BackgroundList.ForEach((BaseObject x) =>
++		for (int num = BackgroundList.Count - 1; num >= 0; num--)
+ 		{
+-			if (x.OutBoundary())
++			BaseObject baseObject = BackgroundList[num];
++			if (baseObject.OutBoundary())
+ 			{
+-				x.Dispose();
+-				BackgroundList.Remove(x);
++				baseObject.Dispose();
++				BackgroundList.RemoveAt(num);
+ 			}
+-		});
+-		BackgroundList.ForEach((BaseObject x) =>
++		}
++		for (int i = 0; i < BackgroundList.Count; i++)
+ 		{
+-			x.Ctrl();
+-		});
+-		BackgroundParticleList.ForEach((BaseParticle3D x) =>
++			BackgroundList[i].Ctrl();
++		}
++		for (int num2 = BackgroundParticleList.Count - 1; num2 >= 0; num2--)
+ 		{
+-			if (x.OutBoundary())
++			BaseParticle3D baseParticle3D = BackgroundParticleList[num2];
++			if (baseParticle3D.OutBoundary())
+ 			{
+-				x.Dispose();
+-				BackgroundParticleList.Remove(x);
++				baseParticle3D.Dispose();
++				BackgroundParticleList.RemoveAt(num2);
+ 			}
+-		});
+-		BackgroundParticleList.ForEach((BaseParticle3D x) =>
++		}
++		for (int j = 0; j < BackgroundParticleList.Count; j++)
+ 		{
+-			x.Ctrl();
+-		});
+-		BackgroundParticleList.Sort(new CompareDepth());
++			BackgroundParticleList[j].Ctrl();
++		}
++		BackgroundParticleList.Sort(depthComparer);
+ 		if (WarpEnabled)
+ 		{
+ 			if (WarpRadius < 128f)
+@@ -191,25 +195,26 @@ public class BackgroundManager3D
+ 		}
+ 		if (Enabled3D)
+ 		{
+-			BackgroundList.ForEach((BaseObject x) =>
++			for (int i = 0; i < BackgroundList.Count; i++)
+ 			{
+-				x.Show();
+-			});
++				BackgroundList[i].Show();
++			}
+ 		}
+ 		SetParticleRenderPara();
+ 		string ModelName = null;
+-		BackgroundParticleList.ForEach((BaseParticle3D x) =>
++		for (int j = 0; j < BackgroundParticleList.Count; j++)
+ 		{
+-			if (x.model != null)
++			BaseParticle3D baseParticle3D = BackgroundParticleList[j];
++			if (baseParticle3D.model != null)
+ 			{
+-				if (ModelName != x.model.Name)
++				if (ModelName != baseParticle3D.model.Name)
+ 				{
+-					x.model.SetModel();
++					baseParticle3D.model.SetModel();
+ 				}
+-				x.Show();
+-				ModelName = x.model.Name;
++				baseParticle3D.Show();
++				ModelName = baseParticle3D.model.Name;
+ 			}
+-		});
++		}
+ 		DeviceMain.Viewport = viewport;
+ 		StageData.SpriteMain.Begin((SpriteFlags)16);
+ 		StageData.Background.Show(Active: false);
+
+diff --git a/Shooting/BackgroundMove.cs b/Shooting/BackgroundMove.cs
+index 97046de..ecddaba 100644
+--- a/Shooting/BackgroundMove.cs
++++ b/Shooting/BackgroundMove.cs
+@@ -37,7 +37,7 @@ public class BackgroundMove : BaseObject_CS
+ 		{
+ 			y = OriginalPosition.Y - (float)BoundRect.Height;
+ 		}
+-		OriginalPosition = new PointF(x, y);
++		PlaceAt(x, y);
+ 	}
+ 
+ 	public override void Show()
+@@ -46,15 +46,15 @@ public class BackgroundMove : BaseObject_CS
+ 		float y = OriginalPosition.Y;
+ 		base.Show();
+ 		x += (float)BoundRect.Height;
+-		OriginalPosition = new PointF(x, y);
++		PlaceAt(x, y);
+ 		base.Show();
+ 		y += (float)BoundRect.Height;
+-		OriginalPosition = new PointF(x, y);
++		PlaceAt(x, y);
+ 		base.Show();
+ 		x -= (float)BoundRect.Height;
+-		OriginalPosition = new PointF(x, y);
++		PlaceAt(x, y);
+ 		base.Show();
+ 		y -= (float)BoundRect.Height;
+-		OriginalPosition = new PointF(x, y);
++		PlaceAt(x, y);
+ 	}
+ }
+
+diff --git a/Shooting/BackgroundMove2.cs b/Shooting/BackgroundMove2.cs
+index 189bceb..2056c62 100644
+--- a/Shooting/BackgroundMove2.cs
++++ b/Shooting/BackgroundMove2.cs
+@@ -43,7 +43,7 @@ public class BackgroundMove2 : BaseObject_CS
+ 		{
+ 			y = OriginalPosition.Y - (float)Length;
+ 		}
+-		OriginalPosition = new PointF(x, y);
++		PlaceAt(x, y);
+ 	}
+ 
+ 	public override void Show()
+@@ -52,15 +52,15 @@ public class BackgroundMove2 : BaseObject_CS
+ 		float y = OriginalPosition.Y;
+ 		base.Show();
+ 		x += Width;
+-		OriginalPosition = new PointF(x, y);
++		PlaceAt(x, y);
+ 		base.Show();
+ 		y += (float)Length;
+-		OriginalPosition = new PointF(x, y);
++		PlaceAt(x, y);
+ 		base.Show();
+ 		x -= Width;
+-		OriginalPosition = new PointF(x, y);
++		PlaceAt(x, y);
+ 		base.Show();
+ 		y -= (float)Length;
+-		OriginalPosition = new PointF(x, y);
++		PlaceAt(x, y);
+ 	}
+ }
+
+diff --git a/Shooting/BackgroundTransitionIn.cs b/Shooting/BackgroundTransitionIn.cs
+index 73634e5..48d8104 100644
+--- a/Shooting/BackgroundTransitionIn.cs
++++ b/Shooting/BackgroundTransitionIn.cs
+@@ -1,9 +1,15 @@
++using System;
++using System.Collections.Generic;
+ using System.Drawing;
+ 
+ namespace Shooting;
+ 
+ internal class BackgroundTransitionIn : BaseObject
+ {
++	private readonly List<Particle> stars = new List<Particle>();
++
++	private int loadingLight;
++
+ 	public int Delay { get; set; }
+ 
+ 	public BackgroundTransitionIn(StageDataPackage StageData)
+@@ -21,9 +27,65 @@ internal class BackgroundTransitionIn : BaseObject
+ 	public override void Ctrl()
+ 	{
+ 		Time++;
++		if (Time <= Delay)
++		{
++			if (Time < 50)
++			{
++				loadingLight += 5;
++			}
++			else if (Time > 60)
++			{
++				if (Time % 60 >= 30)
++				{
++					loadingLight += 4;
++				}
++				else
++				{
++					loadingLight -= 4;
++				}
++			}
++			if (loadingLight < 0)
++			{
++				loadingLight = 0;
++			}
++			else if (loadingLight > 255)
++			{
++				loadingLight = 255;
++			}
++			Particle particle = new Particle(StageData, "Star", new PointF(StageData.Ran.Next(400, 640), StageData.Ran.Next(440, 580)), StageData.Ran.Next(10, 20) / 10, -Math.PI / 2.0 - (double)((float)StageData.Ran.Next(1, 5) / 10f));
++			particle.Active = true;
++			particle.Scale = (float)StageData.Ran.Next(25, 70) / 100f;
++			particle.LifeTime = 70;
++			EffectList.Remove(particle);
++			stars.Add(particle);
++			for (int num = stars.Count - 1; num >= 0; num--)
++			{
++				stars[num].Ctrl();
++				if (stars[num].Time > stars[num].LifeTime)
++				{
++					stars.RemoveAt(num);
++				}
++			}
++		}
++		else if (stars.Count > 0)
++		{
++			stars.Clear();
++		}
+ 		if (Time > Delay)
+ 		{
+ 			TransparentValueF -= 255 / (LifeTime - Delay) + 1;
+ 		}
+ 	}
++
++	public void ShowLoading()
++	{
++		if (Time <= Delay)
++		{
++			for (int i = 0; i < stars.Count; i++)
++			{
++				stars[i].Show();
++			}
++			SpriteMain.Draw2D(TextureObjectDictionary["NowLoading-0"], 1f, 0f, new Point(520, 440), loadingLight);
++		}
++	}
+ }
+
+diff --git a/Shooting/BaseStage.cs b/Shooting/BaseStage.cs
+index aa29337..3d4b217 100644
+--- a/Shooting/BaseStage.cs
++++ b/Shooting/BaseStage.cs
+@@ -261,11 +261,35 @@ internal class BaseStage : BaseGameState, IGameState
+ 				else
+ 				{
+ 					StageData.KClass.Hex2Key(num);
++					if (StageData.Rep.TouchStream)
++					{
++						float dx;
++						float dy;
++						StageData.Rep.ReadTouch(out dx, out dy);
++						if (StageData.MyPlane != null)
++						{
++							StageData.MyPlane.ApplyTouch(dx, dy);
++						}
++					}
+ 				}
+ 			}
+ 			else
+ 			{
++				float dx = 0f;
++				float dy = 0f;
++				if (StageData.MyPlane != null)
++				{
++					StageData.MyPlane.PeekPendingTouch(out dx, out dy);
++				}
++				if (dx != 0f || dy != 0f)
++				{
++					StageData.RepInfo.TouchDelta = true;
++				}
+ 				StageData.Rep.WriteKey(StageData.KClass.Key2Hex());
++				if (StageData.Rep.TouchStream)
++				{
++					StageData.Rep.WriteTouch(dx, dy);
++				}
+ 			}
+ 		}
+ 		Background3D.Ctrl();
+@@ -366,7 +390,13 @@ internal class BaseStage : BaseGameState, IGameState
+ 			MyPlane.ShowCenter();
+ 		}
+ 		SpriteMain.Draw2D(TextureObjectDictionary["TotalBackground"], 1f, 0f, new PointF(320f, 240f), 255);
+-		DrawText(FPS.ToString("F1"), new Point(580, 460));
++		string text = FPS.ToString("F1");
++		int num = 0;
++		for (int i = 0; i < text.Length; i++)
++		{
++			num += ((text[i] == '.') ? 10 : 16);
++		}
++		DrawText(text, new Point(638 - num, 460));
+ 	}
+ 
+ 	public virtual void Drama()
+@@ -531,6 +561,14 @@ internal class BaseStage : BaseGameState, IGameState
+ 		{
+ 			x.Show();
+ 		});
++		for (int j = 0; j < Background.BackgroundList.Count; j++)
++		{
++			BackgroundTransitionIn backgroundTransitionIn = Background.BackgroundList[j] as BackgroundTransitionIn;
++			if (backgroundTransitionIn != null)
++			{
++				backgroundTransitionIn.ShowLoading();
++			}
++		}
+ 		SpriteMain.End();
+ 		GlobalData.ScreenTexMan.End();
+ 		SpriteMain.Begin((SpriteFlags)16);
+
+diff --git a/Shooting/ParticleEndBullet.cs b/Shooting/ParticleEndBullet.cs
+index 66a521b..fbcf15a 100644
+--- a/Shooting/ParticleEndBullet.cs
++++ b/Shooting/ParticleEndBullet.cs
+@@ -5,6 +5,8 @@ namespace Shooting;
+ 
+ public class ParticleEndBullet : BaseEffect
+ {
++	private static TextureObject[] sharedFrames;
++
+ 	public TextureObject[] TxtureObjects { get; set; }
+ 
+ 	public int IndexX { get; set; }
+@@ -81,17 +83,22 @@ public class ParticleEndBullet : BaseEffect
+ 	{
+ 		base.OriginalPosition = OriginalPosition;
+ 		Direction = (double)((float)Ran.Next(360) / 180f) * Math.PI;
+-		TxtureObjects = new TextureObject[8]
++		TextureObject textureObject = TextureObjectDictionary["EndBullet00"];
++		if (sharedFrames == null || sharedFrames[0] != textureObject)
+ 		{
+-			TextureObjectDictionary["EndBullet00"],
+-			TextureObjectDictionary["EndBullet01"],
+-			TextureObjectDictionary["EndBullet02"],
+-			TextureObjectDictionary["EndBullet03"],
+-			TextureObjectDictionary["EndBullet04"],
+-			TextureObjectDictionary["EndBullet05"],
+-			TextureObjectDictionary["EndBullet06"],
+-			TextureObjectDictionary["EndBullet07"]
+-		};
++			sharedFrames = new TextureObject[8]
++			{
++				textureObject,
++				TextureObjectDictionary["EndBullet01"],
++				TextureObjectDictionary["EndBullet02"],
++				TextureObjectDictionary["EndBullet03"],
++				TextureObjectDictionary["EndBullet04"],
++				TextureObjectDictionary["EndBullet05"],
++				TextureObjectDictionary["EndBullet06"],
++				TextureObjectDictionary["EndBullet07"]
++			};
++		}
++		TxtureObjects = sharedFrames;
+ 		TxtureObject = TxtureObjects[0];
+ 		LifeTime = 31;
+ 		AngularVelocityDegree = Ran.Next(-3, 3);
+
+diff --git a/Shooting/ParticleManager3D.cs b/Shooting/ParticleManager3D.cs
+index fdd88bd..bfc1799 100644
+--- a/Shooting/ParticleManager3D.cs
++++ b/Shooting/ParticleManager3D.cs
+@@ -10,6 +10,8 @@ public class ParticleManager3D
+ {
+ 	private Light light;
+ 
++	private static readonly CompareDepth depthComparer = new CompareDepth();
++
+ 	public List<BaseParticle3D> ParticleList { get; set; }
+ 
+ 	public VertexDeclaration vertexDecl { get; set; }
+@@ -43,19 +45,20 @@ public class ParticleManager3D
+ 
+ 	public void Ctrl()
+ 	{
+-		ParticleList.ForEach((BaseParticle3D x) =>
++		for (int num = ParticleList.Count - 1; num >= 0; num--)
+ 		{
+-			if (x.OutBoundary())
++			BaseParticle3D baseParticle3D = ParticleList[num];
++			if (baseParticle3D.OutBoundary())
+ 			{
+-				x.Dispose();
+-				ParticleList.Remove(x);
++				baseParticle3D.Dispose();
++				ParticleList.RemoveAt(num);
+ 			}
+-		});
+-		ParticleList.ForEach((BaseParticle3D x) =>
+-		{
+-			x.Ctrl();
+-		});
+-		ParticleList.Sort(new CompareDepth());
++			else
++			{
++				baseParticle3D.Ctrl();
++			}
++		}
++		ParticleList.Sort(depthComparer);
+ 	}
+ 
+ 	private void SetParticleRenderPara()
+@@ -129,22 +132,23 @@ public class ParticleManager3D
+ 		deviceMain.Viewport = viewport2;
+ 		SetParticleRenderPara();
+ 		string ModelName = null;
+-		ParticleList.ForEach((BaseParticle3D x) =>
++		for (int i = 0; i < ParticleList.Count; i++)
+ 		{
+-			if (x.model != null)
++			BaseParticle3D baseParticle3D = ParticleList[i];
++			if (baseParticle3D.model != null)
+ 			{
+-				if (ModelName != x.model.Name)
++				if (ModelName != baseParticle3D.model.Name)
+ 				{
+-					x.model.SetModel();
++					baseParticle3D.model.SetModel();
+ 				}
+-				ModelName = x.model.Name;
++				ModelName = baseParticle3D.model.Name;
+ 			}
+ 			else
+ 			{
+ 				ModelName = null;
+ 			}
+-			x.Show();
+-		});
++			baseParticle3D.Show();
++		}
+ 		StageData.ScreenTexMan.End();
+ 		DeviceMain.Viewport = viewport;
+ 		StageData.SpriteMain.Begin((SpriteFlags)16);
+
