@@ -16,7 +16,7 @@
 extern "C" { extern int th03_assist_focus, th03_assist_focus_p2, th03_assist_x, th03_assist_y, th03_assist_x2, th03_assist_y2, th03_netplay_paused; extern unsigned th03_assist_seen; }
 extern "C" { extern int th03_touch_active[2], th03_touch_unlimited[2], th03_touch_x[2], th03_touch_y[2]; }
 extern "C" { extern int th03_surrender_request, th03_surrender_allowed; }
-extern "C" { extern int th03_semantic_speculative, th03_semantic_boundary, th03_match_winner, th03_assist_charge; extern unsigned th03_match_serial; }
+extern "C" { extern int th03_semantic_speculative, th03_semantic_boundary, th03_match_winner, th03_assist_charge, th03_room_replay; extern unsigned th03_match_serial; }
 extern "C" { int th03_room_rank = -1; }
 static std::uint32_t th03_room_seed = 0;
 extern "C" { int th03_semantic_capture(int); int th03_semantic_restore(int); }
@@ -63,6 +63,7 @@ unsigned th03_classic_master_volume() { return master_volume; }
 unsigned th03_classic_music_volume() { return music_volume; }
 void th03_classic_external_music(int enabled) { music_external = enabled != 0; }
 int th03_classic_create_mode(bool versus) {
+	th03_room_replay = versus;
 	runner.reset(); audio.reset(); if(!versus) th03_room_rank = -1; master_volume = music_volume = effect_volume = 100; th03_charge_enabled = 0; th03_charge_mode[0] = th03_charge_mode[1] = 0; th03_match_winner = -1; th03_match_serial = 0; tick = 0; samples.clear(); replay_bytes.clear(); replay_serial = 0; deferred_audio = false; frame_command_count = 0; point_age = 99; scene = 0; th03_netplay_paused = 0; th03_assist_focus = 0; th03_assist_x = -1; th03_assist_y = -1;
 	for(int seat = 0; seat < 2; ++seat) th03_touch_active[seat] = th03_touch_unlimited[seat] = th03_touch_x[seat] = th03_touch_y[seat] = 0;
 	th03_surrender_request = th03_surrender_allowed = 0;
@@ -115,8 +116,8 @@ int th03_classic_step_pair(std::uint16_t input, std::uint16_t second, std::uint1
 	if(auto volume = runner->take_new_classic_master_volume_update()) master_volume = *volume;
 	if(!th03_semantic_speculative) if(auto replay = runner->take_completed_replay()) {
 		auto encoded = th03::formats::write_v14_replay(*replay);
-		if(!encoded) return -31;
-		replay_bytes = std::move(*encoded); ++replay_serial;
+		if(encoded) { replay_bytes = std::move(*encoded); ++replay_serial; }
+		else if(!th03_room_replay) return -31;
 	}
 	point_age = th03_assist_seen != previous_seen ? 0 : (point_age < 99 ? point_age + 1 : 99);
 	if(drain() != 0) return -30;

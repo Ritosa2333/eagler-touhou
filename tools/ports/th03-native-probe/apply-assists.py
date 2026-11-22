@@ -486,7 +486,54 @@ replace('src/app/main/main_process_driver.cpp',
         "\tif(th03_semantic_speculative && stepped->status != StepStatus::running && (stepped->status != StepStatus::phase_transition || context_before == InputContext::pause || (operations_.deferred_frame_pending && operations_.deferred_frame_pending(operations_.context)))) { th03_semantic_boundary = 1; return MainProcessDriverTick{}; }\n\tconst bool deferred = operations_.deferred_frame_pending &&\n\t\toperations_.deferred_frame_pending(operations_.context);")
 replace('src/app/classic/op/classic_op_session_backend.cpp',
         'struct ClassicOpSessionBackend final {',
-        'extern "C" { int th03_match_winner = -1; unsigned th03_match_serial = 0; }\nstruct ClassicOpSessionBackend final {')
+        'extern "C" { int th03_match_winner = -1, th03_room_replay = 0; unsigned th03_match_serial = 0; }\nstruct ClassicOpSessionBackend final {')
+replace('include/th03/app/new_classic/replay/new_classic_replay.hpp',
+        '\t\tformats::ReplayEndReason reason,\n\t\tconst GameInit &resident\n\t);',
+        '\t\tformats::ReplayEndReason reason,\n\t\tconst GameInit &resident,\n\t\tbool encode_in_host = false\n\t);')
+replace('src/app/new_classic/replay/new_classic_replay.cpp',
+        '\tformats::ReplayEndReason reason,\n\tconst GameInit &resident\n)',
+        '\tformats::ReplayEndReason reason,\n\tconst GameInit &resident,\n\tbool encode_in_host\n)')
+replace('src/app/new_classic/replay/new_classic_replay.cpp',
+        '\tauto candidate = *document_;',
+        '\tconst bool handoff = encode_in_host && !extension_provider_.finish;\n\tauto candidate = handoff ? std::move(*document_) : *document_;')
+replace('src/app/new_classic/replay/new_classic_replay.cpp',
+        '\t\t\t*last_terminal_, document_->practice',
+        '\t\t\t*last_terminal_, candidate.practice')
+replace('src/app/new_classic/replay/new_classic_replay.cpp',
+        '\tauto encoded = formats::write_v14_replay(candidate);',
+        '''\t// The web room bridge serializes the completed document once when it
+\t// exports it. There is no native Replay extension to finalize here.
+\tif(handoff) {
+\t\tcompleted_ = std::move(candidate);
+\t\tclear_memory();
+\t\treturn {};
+\t}
+\tauto encoded = formats::write_v14_replay(candidate);''')
+replace('src/app/classic/op/classic_op_session_backend.cpp',
+        '''\t\t\t\t\tformats::ReplayEndReason::menu_return,
+\t\t\t\t\tvs_terminal->transition.resident
+\t\t\t\t); !finished) {
+\t\t\t\t\treturn std::unexpected(detail::replay_capture_error());''',
+        '''\t\t\t\t\tformats::ReplayEndReason::menu_return,
+\t\t\t\t\tvs_terminal->transition.resident, th03_room_replay
+\t\t\t\t); !finished) {
+\t\t\t\t\tif(!th03_room_replay) return std::unexpected(detail::replay_capture_error());
+\t\t\t\t\treplay_recorder->discard();''')
+replace('src/app/classic/op/classic_op_session_backend.cpp',
+        '''\t\t\tif(!vs_terminal || !replay_recorder->finish(
+\t\t\t\tformats::ReplayEndReason::game_over,
+\t\t\t\tvs_terminal->transition.resident
+\t\t\t)) {
+\t\t\t\treturn std::unexpected(detail::replay_capture_error());
+\t\t\t}''',
+        '''\t\t\tif(!vs_terminal) return std::unexpected(detail::replay_capture_error());
+\t\t\tif(!replay_recorder->finish(
+\t\t\t\tformats::ReplayEndReason::game_over,
+\t\t\t\tvs_terminal->transition.resident, th03_room_replay
+\t\t\t)) {
+\t\t\t\tif(!th03_room_replay) return std::unexpected(detail::replay_capture_error());
+\t\t\t\treplay_recorder->discard();
+\t\t\t}''')
 replace('src/app/classic/op/classic_op_session_backend.cpp',
         'struct ClassicOpSessionBackend final {',
         '''struct ClassicOpSessionBackend;

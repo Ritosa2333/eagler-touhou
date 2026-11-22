@@ -1,0 +1,81 @@
+@layer components {
+  .library-announcements-trigger {
+    position: relative;
+  }
+  .library-announcements-unread {
+    position: absolute;
+    inset-block-start: 8px;
+    inset-inline-end: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--kit-success);
+    box-shadow: 0 0 0 2px var(--kit-card);
+    pointer-events: none;
+  }
+  .library-announcements-wave {
+    opacity: 0;
+    transform: translateX(-3px);
+    transition: opacity 160ms ease, transform 240ms ease-out;
+  }
+  .library-announcements-trigger:focus-visible .library-announcements-wave {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .library-announcements-trigger:not(:disabled):hover .library-announcements-wave {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  .library-announcements-wave-outer {
+    transition-delay: 80ms;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .library-announcements-trigger .library-announcements-wave {
+      transform: none !important;
+      transition: none;
+    }
+  }
+  .less-motion .library-announcements-trigger .library-announcements-wave {
+    transform: none !important;
+    transition: none;
+  }
+  .ui-kit-dialog.library-announcements-dialog {
+    width: min(640px, calc(100vw - 32px));
+    padding: clamp(16px, 4vw, 28px);
+  }
+  .library-announcements-list {
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .library-announcement {
+    padding-block: 16px;
+    border-block-start: 1px solid var(--kit-border);
+    overflow-wrap: anywhere;
+  }
+  .library-announcement-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .library-announcement:last-child {
+    padding-block-end: 0;
+  }
+  .library-announcement time {
+    color: var(--kit-muted-foreground);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .library-announcement h3 {
+    margin: 0;
+    font: 600 16px / 1.45 var(--kit-font);
+  }
+  .library-announcement p {
+    margin: 8px 0 0;
+    font: 400 14px / 1.7 var(--kit-font);
+    white-space: pre-line;
+  }
+}

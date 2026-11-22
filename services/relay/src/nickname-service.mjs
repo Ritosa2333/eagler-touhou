@@ -48,6 +48,7 @@ export async function createNicknameService(env = process.env) {
     });
   }
   return {current: member => call('current', member), submit: (member, address, name) => call('submit', member, address, name),
+    reviewRoomName: (address, text) => call('room-name', undefined, address, text),
     onUpdate(listener) {listeners.add(listener);return()=>listeners.delete(listener);},
     close() {failPending(); return worker.terminate();}};
 }

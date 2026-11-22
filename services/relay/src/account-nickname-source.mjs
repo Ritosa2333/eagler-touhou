@@ -32,6 +32,7 @@ export function createRemoteNicknameService() {
   }
   return {async current(member) {return track(member,await call('/current',{member}));},
     async submit(member,address,name) {return track(member,await call('/submit',{member,address,name}));},
+    reviewRoomName: (address, name) => call('/room-name',{address,name}),
     onUpdate(listener) {listeners.add(listener);return () => listeners.delete(listener);},
     close() {closed=true;for (const timer of pending.values()) clearTimeout(timer);pending.clear();listeners.clear();}};
 }

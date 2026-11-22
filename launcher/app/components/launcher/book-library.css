@@ -31,6 +31,7 @@
     padding: 0;
   }
   html[data-ui-home] .book-library {
+    --book-top-clearance: calc(var(--site-header-height, 61px) + 12px);
     display: grid;
     grid-template-columns: 250px minmax(0, 1fr);
     gap: 24px;
@@ -44,29 +45,116 @@
   }
   .book-sidebar {
     position: sticky;
-    top: 100px;
+    top: var(--book-top-clearance);
     align-self: start;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    max-block-size: calc(100dvh - var(--book-top-clearance) - 12px);
   }
-  .book-search {
+  .book-search-slot {
     margin-bottom: 20px;
+    flex-shrink: 0;
   }
   .book-search input::-webkit-search-cancel-button {
     display: none;
   }
+  .book-search-slot,
+  .book-sidebar nav {
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+  }
+  .book-search-slot {
+    overflow: hidden;
+  }
   .book-sidebar nav {
     display: grid;
     gap: 4px;
+    min-block-size: 0;
+    overflow-y: auto;
   }
-  .book-sidebar nav small {
+  .book-category-row small {
     justify-self: end;
     text-align: right;
     font: 500 11px / 1.2 var(--kit-font);
     color: var(--kit-muted-foreground);
     font-variant-numeric: tabular-nums;
   }
-  .book-sidebar nav [data-book-category="windows"] {
+  .book-category {
+    overflow: clip;
+    border-radius: 6px;
+    background-color: var(--book-category-surface, transparent);
+  }
+  .book-category[data-selected="true"] {
+    background-color: var(--book-category-selected, var(--kit-secondary));
+  }
+  .book-category[data-book-category-group="windows"] {
     margin-top: 16px;
+  }
+  .book-category-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 36px;
+  }
+  .book-category-fold {
+    --ui-disclosure-duration: 240ms;
+    --ui-disclosure-easing: cubic-bezier(.22,.7,.2,1);
+    --ui-disclosure-overflow: hidden;
+  }
+  .book-category-fold-clip {
+    background-color: var(--book-surface);
+  }
+  .book-category-games {
+    margin: 3px 4px 5px 20px;
+    padding: 0 0 0 9px;
+    border-inline-start: 1px solid var(--kit-border);
+    list-style: none;
+  }
+  .book-category-games a {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px;
+    min-block-size: 34px;
+    padding: 3px 7px;
+    border-radius: 6px;
+    color: var(--kit-muted-foreground);
+    font-size: 12px;
+    text-decoration: none;
+  }
+  .book-category-game-cover {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    overflow: hidden;
+    border-radius: 4px;
+    background: var(--kit-muted);
+  }
+  .book-category-game-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .book-category-game-cover svg {
+    width: 13px;
+    height: 13px;
+  }
+  .book-category-game-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .book-category-games a:is(:hover, :focus-visible, [aria-current="page"]) {
+    background: var(--kit-accent);
+    color: var(--kit-foreground);
+  }
+  .book-category-games a:focus-visible {
+    outline: 2px solid var(--kit-ring);
+    outline-offset: -2px;
+  }
+  @media (pointer: coarse) and (min-width: 781px) {
+    .book-category-row {grid-template-columns: minmax(0, 1fr) 44px}
+    .book-category-games a {min-block-size: 44px}
   }
   .book-content {
     min-width: 0;
@@ -429,10 +517,15 @@
     .book-sidebar {
       position: static;
       margin-bottom: 12px;
+      max-block-size: none;
+    }
+    .book-search-slot {
+      margin-bottom: 8px;
+      overflow: visible;
+      scrollbar-gutter: auto;
     }
     .book-search {
       height: 44px;
-      margin-bottom: 8px;
     }
     .book-search .ui-kit-button {
       margin-right: -8px;
@@ -441,18 +534,22 @@
       display: flex;
       gap: 4px;
       overflow-x: auto;
+      overflow-y: hidden;
       scrollbar-width: none;
+      scrollbar-gutter: auto;
       padding-bottom: 2px;
     }
-    .book-sidebar nav small {
+    .book-category-row small {
       display: none;
     }
-    .book-sidebar nav [data-state="on"] small {
+    .book-category-row [data-state="on"] small {
       display: inline;
     }
-    .book-sidebar nav [data-book-category="windows"] {
+    .book-category[data-book-category-group="windows"] {
       margin-top: 0;
     }
+    .book-category-row {display: block}
+    .book-sidebar .book-category-fold {display: none}
     .book-recent {
       margin-bottom: 26px;
     }
@@ -514,6 +611,13 @@
 .book-favorite.ui-kit-button[aria-pressed="true"] {color:var(--kit-warning)}
 .book-view-switch .ui-kit-choice:is([data-state="on"],:hover) {background:transparent;box-shadow:none}
 .book-sidebar [data-book-category] {transition:background-color 320ms cubic-bezier(.22,.7,.2,1),color 320ms cubic-bezier(.22,.7,.2,1)}
+.book-category-row > :is([data-book-category], .book-category-disclosure) {
+  border-radius: 0;
+  background-color: transparent;
+}
+.book-category-row > :is([data-book-category], .book-category-disclosure):is(:hover, :focus-visible):not(:disabled) {
+  background-color: color-mix(in srgb, var(--kit-foreground) 8%, transparent);
+}
 .book-sidebar [data-book-category] > :is(svg,span) {transition:translate 380ms cubic-bezier(.22,.7,.2,1)}
 .book-sidebar [data-book-category]:is(:hover,:focus-visible):not(:disabled) > :is(svg,span) {translate:4px 0}
 @media(prefers-reduced-motion:reduce) {.book-sidebar [data-book-category],.book-sidebar [data-book-category] > :is(svg,span) {transition:none;translate:none!important}}
