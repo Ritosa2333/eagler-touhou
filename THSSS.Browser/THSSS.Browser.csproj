@@ -25,16 +25,21 @@
   </PropertyGroup>
   <PropertyGroup>
     <_DotNetInstallRoot>$([System.IO.Path]::GetFullPath($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName('$(MSBuildSDKsPath)'))))))))</_DotNetInstallRoot>
-    <_EmscriptenPackVersion>10.0.12</_EmscriptenPackVersion>
-    <_EmscriptenSdkRoot>$(_DotNetInstallRoot)\packs\Microsoft.NET.Runtime.Emscripten.3.1.56.Sdk.win-x64\$(_EmscriptenPackVersion)\tools</_EmscriptenSdkRoot>
+    <_EmscriptenPackVersion>10.0.15</_EmscriptenPackVersion>
+    <_EmscriptenHostRid Condition="'$(OS)' == 'Windows_NT'">win-x64</_EmscriptenHostRid>
+    <_EmscriptenHostRid Condition="'$(_EmscriptenHostRid)' == ''">linux-x64</_EmscriptenHostRid>
+    <_EmscriptenSdkRoot>$(_DotNetInstallRoot)/packs/Microsoft.NET.Runtime.Emscripten.3.1.56.Sdk.$(_EmscriptenHostRid)/$(_EmscriptenPackVersion)/tools</_EmscriptenSdkRoot>
     <EmscriptenSdkToolsPath Condition="'$(EmscriptenSdkToolsPath)' == '' and '$(EMSDK)' == ''">$(_EmscriptenSdkRoot)</EmscriptenSdkToolsPath>
-    <_EmscriptenPython>$(_DotNetInstallRoot)\packs\Microsoft.NET.Runtime.Emscripten.3.1.56.Python.win-x64\$(_EmscriptenPackVersion)\tools\python.exe</_EmscriptenPython>
-    <_EmscriptenNode>$(_DotNetInstallRoot)\packs\Microsoft.NET.Runtime.Emscripten.3.1.56.Node.win-x64\$(_EmscriptenPackVersion)\tools\bin\node.exe</_EmscriptenNode>
-    <_EmscriptenCache>$(_DotNetInstallRoot)\packs\Microsoft.NET.Runtime.Emscripten.3.1.56.Cache.win-x64\$(_EmscriptenPackVersion)\tools\emscripten\cache</_EmscriptenCache>
+    <!-- Windows packs ship an embedded CPython; Linux wasm-tools uses the host python3. -->
+    <_EmscriptenPython Condition="'$(OS)' == 'Windows_NT'">$(_DotNetInstallRoot)/packs/Microsoft.NET.Runtime.Emscripten.3.1.56.Python.win-x64/$(_EmscriptenPackVersion)/tools/python.exe</_EmscriptenPython>
+    <_EmscriptenPython Condition="'$(_EmscriptenPython)' == ''">/usr/bin/python3</_EmscriptenPython>
+    <_EmscriptenNode Condition="'$(OS)' == 'Windows_NT'">$(_DotNetInstallRoot)/packs/Microsoft.NET.Runtime.Emscripten.3.1.56.Node.win-x64/$(_EmscriptenPackVersion)/tools/bin/node.exe</_EmscriptenNode>
+    <_EmscriptenNode Condition="'$(_EmscriptenNode)' == ''">$(_DotNetInstallRoot)/packs/Microsoft.NET.Runtime.Emscripten.3.1.56.Node.linux-x64/$(_EmscriptenPackVersion)/tools/bin/node</_EmscriptenNode>
+    <_EmscriptenCache>$(_DotNetInstallRoot)/packs/Microsoft.NET.Runtime.Emscripten.3.1.56.Cache.$(_EmscriptenHostRid)/$(_EmscriptenPackVersion)/tools/emscripten/cache</_EmscriptenCache>
   </PropertyGroup>
   <ItemGroup>
     <EmscriptenEnvVars Include="EMSDK_PYTHON=$(_EmscriptenPython)" Visible="false" />
-    <EmscriptenEnvVars Include="DOTNET_EMSCRIPTEN_LLVM_ROOT=$(_EmscriptenSdkRoot)\bin" Visible="false" />
+    <EmscriptenEnvVars Include="DOTNET_EMSCRIPTEN_LLVM_ROOT=$(_EmscriptenSdkRoot)/bin" Visible="false" />
     <EmscriptenEnvVars Include="DOTNET_EMSCRIPTEN_NODE_JS=$(_EmscriptenNode)" Visible="false" />
     <EmscriptenEnvVars Include="DOTNET_EMSCRIPTEN_BINARYEN_ROOT=$(_EmscriptenSdkRoot)" Visible="false" />
     <EmscriptenEnvVars Include="EM_CACHE=$(_EmscriptenCache)" Visible="false" />
@@ -45,6 +50,7 @@
     <Compile Remove="TransformSources/**" />
     <PackageReference Include="Microsoft.DotNet.ILCompiler.LLVM" Version="10.0.0-rc.1.26357.1" />
     <PackageReference Include="runtime.win-x64.Microsoft.DotNet.ILCompiler.LLVM" Version="10.0.0-rc.1.26357.1" />
+    <PackageReference Include="runtime.linux-x64.Microsoft.DotNet.ILCompiler.LLVM" Version="10.0.0-rc.1.26357.1" />
     <TrimmerRootAssembly Include="THSSS.Browser" />
     <TrimmerRootAssembly Include="SlimDX" />
     <TrimmerRootAssembly Include="THSSS.Platform" />
