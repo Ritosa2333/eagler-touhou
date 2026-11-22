@@ -2,21 +2,14 @@ import { createMenuGestures } from "./menu-gestures.mjs";
 import { createTouchMovement, PLAYFIELD } from "./touch-movement.mjs";
 
 const ARROWS = ["Left", "Right", "Up", "Down"];
+const STICK_MIDPOINT = 16384;
 
 function joystickMode(mode) {
   return mode === "joystick" || mode === "joystick-free";
 }
 
-function quantizeStick(nx, ny) {
-  if (nx === 0 && ny === 0) return { x: 0, y: 0 };
-  const angle = Math.atan2(ny, nx);
-  const step = Math.PI / 4;
-  const snapped = Math.round(angle / step) * step;
-  return { x: Math.cos(snapped), y: Math.sin(snapped) };
-}
-
-// Launcher touch-controls and direct-touch. Play movement goes through shift
-// (ApplyTouch); shooting follows fireEnabled until that latch is cleared.
+// Launcher touch-controls and direct-touch. Direct drag and free stick go
+// through shift (ApplyTouch); 8-way stick synthesizes arrow keys like th06.
 export function createTouchBridge({ keys, surface, options, shift, now = () => performance.now() }) {
   const movement = createTouchMovement();
   const gestures = createMenuGestures();
@@ -77,30 +70,22 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
     return focus ? PLAYFIELD.lowSpeed : PLAYFIELD.highSpeed;
   }
 
-  function applyStickShift() {
+  function applyStickKeys() {
+    keys.setKey("Right", stickX > STICK_MIDPOINT, "joy");
+    keys.setKey("Left", stickX < -STICK_MIDPOINT, "joy");
+    keys.setKey("Down", stickY > STICK_MIDPOINT, "joy");
+    keys.setKey("Up", stickY < -STICK_MIDPOINT, "joy");
+  }
+
+  function applyFreeStickShift() {
     if (typeof shift !== "function") return;
     const nx = stickX / 32767;
     const ny = stickY / 32767;
-    const mag = Math.hypot(nx, ny);
-    if (mag < 1e-6) return;
-    const modeName = settings().touchMovementMode;
-    let ux = nx;
-    let uy = ny;
-    let scale = mag;
-    if (modeName === "joystick") {
-      const q = quantizeStick(nx, ny);
-      ux = q.x;
-      uy = q.y;
-      scale = 1;
-      if (ux !== 0 && uy !== 0) scale = PLAYFIELD.diagonal;
-    } else {
-      ux = nx / mag;
-      uy = ny / mag;
-    }
-    const speed = playSpeed() * (modeName === "joystick-free" ? mag : scale);
-    const dx = ux * speed;
-    const dy = uy * speed;
-    if (dx !== 0 || dy !== 0) shift(dx, dy);
+    if (Math.abs(nx) < 1e-6 && Math.abs(ny) < 1e-6) return;
+    const speed = playSpeed();
+    const dx = nx * speed;
+    const dy = ny * speed;
+    if (dx !== 0 || dy !== 0) shift(dx, dy, false);
   }
 
   function controls(message) {
@@ -194,16 +179,24 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
       movement.clear();
       return;
     }
-    if (joystickMode(settings().touchMovementMode)) {
+    const modeName = settings().touchMovementMode;
+    if (modeName === "joystick") {
       movement.clear();
-      applyStickShift();
+      applyStickKeys();
       return;
     }
-    const unlimited = settings().touchMovementMode === "touch-unlimited";
-    const step = movement.drain({ focus, unlimited });
-    if ((step.shiftX !== 0 || step.shiftY !== 0) && typeof shift === "function") {
-      shift(step.shiftX, step.shiftY);
+    if (modeName === "joystick-free") {
+      movement.clear();
+      applyFreeStickShift();
+      return;
     }
+    const unlimited = modeName === "touch-unlimited";
+    const before = movement.queued();
+    const step = movement.drain({ focus, unlimited });
+    if (step.shiftX === 0 && step.shiftY === 0) return;
+    if (typeof shift !== "function") return;
+    const ok = shift(step.shiftX, step.shiftY, unlimited);
+    if (ok === false) movement.restore(before.x, before.y);
   }
 
   function cancel() {

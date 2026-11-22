@@ -9,13 +9,14 @@ function harness(options = {}, surface = "play") {
   const shifts = [];
   const scene = { value: surface };
   let clock = 0;
+  let acceptShift = true;
   const bridge = createTouchBridge({
     keys,
     surface: () => scene.value,
     options: () => options,
-    shift(x, y) {
-      shifts.push([x, y]);
-      return true;
+    shift(x, y, unlimited) {
+      shifts.push([x, y, !!unlimited]);
+      return acceptShift;
     },
     now: () => clock,
   });
@@ -26,6 +27,7 @@ function harness(options = {}, surface = "play") {
     bridge,
     at(value) { clock = value; },
     scene,
+    setAcceptShift(value) { acceptShift = value; },
   };
 }
 
@@ -84,13 +86,13 @@ test("touch sensitivity stays inside the shared 100-300 contract", () => {
   assert.equal(low.shifts[0][0], fallback.shifts[0][0]);
 });
 
-test("a directional stick and free stick shift without arrow keys", () => {
+test("a directional stick synthesizes arrow keys and free stick shifts at plane speed", () => {
   const stick = harness({ touchMovementMode: "joystick" });
   stick.bridge.controls({ fireEnabled: false, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 32767, joystickY: 0 });
   stick.bridge.presented();
-  assert.equal(stick.shifts.length, 1);
-  assert.ok(Math.abs(stick.shifts[0][0] - 4.5) < 0.001);
-  assert.equal(stick.keys.isDown("Right"), false);
+  assert.equal(stick.shifts.length, 0);
+  assert.equal(stick.keys.isDown("Right"), true);
+  assert.equal(stick.keys.isDown("Left"), false);
 
   const free = harness({ touchMovementMode: "joystick-free" });
   free.bridge.controls({ fireEnabled: false, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 23170, joystickY: 23170 });
@@ -98,8 +100,22 @@ test("a directional stick and free stick shift without arrow keys", () => {
   assert.equal(free.shifts.length, 1);
   assert.ok(free.shifts[0][0] > 0);
   assert.ok(free.shifts[0][1] > 0);
+  assert.equal(free.shifts[0][2], false);
   assert.equal(free.keys.isDown("Right"), false);
   assert.equal(free.keys.isDown("Down"), false);
+});
+
+test("a rejected shift keeps the queued drag for the next movable frame", () => {
+  const play = harness({ touchMovementMode: "touch", touchSensitivity: 100 });
+  play.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });
+  play.bridge.direct({ type: "move", id: 1, x: 0.22, y: 0.5 });
+  play.setAcceptShift(false);
+  play.bridge.presented();
+  assert.equal(play.shifts.length, 1);
+  play.setAcceptShift(true);
+  play.bridge.presented();
+  assert.equal(play.shifts.length, 2);
+  assert.ok(play.shifts[1][0] > 0);
 });
 
 test("a screen tap confirms once and does not hold Z", () => {
@@ -166,5 +182,6 @@ test("unlimited touch places the ship when the host accepts the shift", () => {
   assert.equal(shifts.length, 1);
   assert.ok(Math.abs(shifts[0][0] - 64) < 0.001);
   assert.equal(shifts[0][1], 0);
+  assert.equal(shifts[0][2], true);
   assert.equal(keys.isDown("Right"), false);
 });
