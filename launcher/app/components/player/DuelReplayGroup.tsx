@@ -6,12 +6,20 @@ import {th09PublicUsername, type WatchTh09Replay} from '../../models/th09-replay
 import {accountRequest} from '../../services/account-client';
 import {useAccountSession} from '../../services/account-session';
 import {Button} from '../../ui/button';
+import {AccountAvatar} from '../launcher/AccountAvatar';
+import {ParticipantAvatar} from '../room/ParticipantAvatar';
 import './duel-replay-group.css';
 
 const character = z.number().refine(id => th09CharacterIds.includes(id));
 const seatUsername = th09PublicUsername.nullable().catch(null);
+const seatProfile = z.object({
+  username: th09PublicUsername,
+  displayName: z.string().optional(),
+  avatar: z.string().regex(/^[a-f0-9]{16}$/).optional().catch(undefined),
+}).nullable().catch(null);
 const duelReplayFiles = z.object({
   playerUsernames: z.tuple([seatUsername, seatUsername]).optional().catch(undefined),
+  playerProfiles: z.tuple([seatProfile, seatProfile]).optional().catch(undefined),
   files: z.array(z.object({
     roundId: z.string().regex(/^\d{1,16}:\d{1,16}$/),
     name: z.string().min(1).max(160).regex(/^[^<>:"/\\|?*\p{Cc}\p{Cf}]+$/u).optional(),
@@ -54,11 +62,18 @@ export function DuelReplayGroup({username, duelId, count, watch, summary, classN
       .catch(() => setActionError(true)).finally(() => setBusy(false));
   }
   function renderSide(file: ReplayFile, side: 0 | 1) {
-    const id = replays?.playerUsernames?.[side];
-    const self = !!id && id.toLowerCase() === viewer;
-    return <span className="th09-replay-side" data-self={self || undefined}>
-      {th09CharacterName(file.characters[side], t)}{id && <> <bdi className="th09-replay-id">@{id}</bdi></>}
-    </span>;
+    const oldId = replays?.playerUsernames?.[side];
+    const profile: z.infer<typeof seatProfile> = replays?.playerProfiles ? replays.playerProfiles[side] : oldId ? {username: oldId} : null;
+    const self = !!profile && profile.username.toLowerCase() === viewer;
+    return <>
+      <span className="th09-replay-side" data-seat={side} data-self={self || undefined}>
+        {th09CharacterName(file.characters[side], t)}
+      </span>
+      {profile && <ParticipantAvatar className="th09-replay-avatar" data-seat={side} data-self={self || undefined}
+          profile={profile} name={profile.displayName || profile.username} navigateOnClick>
+        <AccountAvatar/>
+      </ParticipantAvatar>}
+    </>;
   }
   return <details className={className} onToggle={event => setRequest(event.currentTarget.open ? {endpoint} : null)}>
     <summary>{summary ?? <>{t('replay.ui.heading')} | {t('replay.fileCount', {count})}</>}</summary>
@@ -68,8 +83,10 @@ export function DuelReplayGroup({username, duelId, count, watch, summary, classN
     {replays && <ol>
       {replays.files.map(file => <li key={file.roundId}>
         <div className="th09-replay-row">
-          <span>{renderSide(file, 0)}{' vs '}{renderSide(file, 1)}
-            {file.frames != null && <> <span className="th09-replay-duration">| {formatDuelDuration(file.frames, locale)}</span></>}</span>
+          <div className="th09-replay-matchup">
+            {renderSide(file, 0)}<span className="th09-replay-vs">vs</span>{renderSide(file, 1)}
+          </div>
+          {file.frames != null && <span className="th09-replay-duration">{formatDuelDuration(file.frames, locale)}</span>}
           <div className="th09-replay-actions">
             {watch && <Button type="button" variant="ghost" disabled={busy || disabled} aria-current={currentRoundId === file.roundId || undefined} onClick={() => access(file, 'play')}>{t('replay.ui.play')}</Button>}
             {watch ? <Button type="button" variant="ghost" disabled={busy || disabled} onClick={() => access(file, 'download')}>{t('action.download')}</Button>
