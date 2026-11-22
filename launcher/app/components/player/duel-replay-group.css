@@ -1,0 +1,37 @@
+.th09-replay-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.profile-th09-replays .th09-replay-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.profile-th09-replays .th09-replay-actions > button {
+  min-inline-size: 44px;
+  padding-inline: 6px;
+}
+
+.th09-replay-id {
+  color: var(--kit-muted-foreground);
+  font-size: .92em;
+  overflow-wrap: anywhere;
+}
+
+.th09-replay-duration {
+  white-space: nowrap;
+}
+
+.th09-replay-side[data-self] {
+  color: var(--kit-brand);
+  font-weight: 700;
+}
+
+.th09-replay-side[data-self] .th09-replay-id {
+  color: inherit;
+}

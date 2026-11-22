@@ -281,9 +281,8 @@
 }
 .profile-th09-replays {grid-column:1/-1;min-width:0}
 .profile-th09-replays summary {cursor:pointer;color:var(--book-muted)}
-.profile-th09-replays ol {margin:6px 0 0;padding-inline-start:2em}
+.profile-th09-replays ol {margin:6px 0 0;padding-inline-start:1.5em}
 .profile-th09-replays ol li {padding-block:2px}
-.profile-th09-replays ol li > :not(:first-child) {margin-inline-start:.5em}
 .profile-th09-opponent {display:flex;align-items:center;gap:8px;min-width:0}
 .profile-th09-opponent-name {min-width:0;overflow-wrap:anywhere}
 .profile-th09-opponent .account-avatar {--account-avatar-size:28px}
