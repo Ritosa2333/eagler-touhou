@@ -70,11 +70,10 @@ const touch = createTouchBridge({
   keys,
   surface,
   options: () => (runtime && runtime.options) || {},
-  shift(dx, dy) {
+  shift(dx, dy, unlimited) {
     const host = runtime && runtime.host;
     if (!host || typeof host.TouchShift !== "function") return false;
-    host.TouchShift(dx, dy);
-    return true;
+    return host.TouchShift(dx, dy, !!unlimited) !== 0;
   },
 });
 

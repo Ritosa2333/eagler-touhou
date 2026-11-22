@@ -47,10 +47,10 @@ index df0b301..8a90bd3 100644
  }
 
 diff --git a/Shooting/BaseMyPlane.cs b/Shooting/BaseMyPlane.cs
-index a96264f..88b62f2 100644
+index a96264f..7f21752 100644
 --- a/Shooting/BaseMyPlane.cs
 +++ b/Shooting/BaseMyPlane.cs
-@@ -631,6 +631,54 @@ public class BaseMyPlane : BaseObject
+@@ -631,6 +631,74 @@ public class BaseMyPlane : BaseObject
  		SpellEnabled = true;
  	}
  
@@ -60,16 +60,35 @@ index a96264f..88b62f2 100644
 +
 +	private bool hasTouch;
 +
++	private bool touchUnlimited;
++
 +	private float lastTouchDx;
 +
 +	private float lastTouchDy;
 +
 +	public bool TouchReplayUsed { get; private set; }
 +
++	public bool TouchCheatMovementUsed { get; private set; }
++
++	public bool CanAcceptTouchMovement()
++	{
++		if (!Enabled)
++		{
++			return false;
++		}
++		return Time > DeadTime && Time > 70;
++	}
++
 +	public void ApplyTouch(float dx, float dy)
++	{
++		ApplyTouch(dx, dy, unlimited: false);
++	}
++
++	public void ApplyTouch(float dx, float dy, bool unlimited)
 +	{
 +		touchDx = dx;
 +		touchDy = dy;
++		touchUnlimited = unlimited;
 +		hasTouch = true;
 +	}
 +
@@ -78,6 +97,7 @@ index a96264f..88b62f2 100644
 +		hasTouch = false;
 +		touchDx = 0f;
 +		touchDy = 0f;
++		touchUnlimited = false;
 +	}
 +
 +	public void PeekPendingTouch(out float dx, out float dy)
@@ -105,7 +125,7 @@ index a96264f..88b62f2 100644
  	public override void Move()
  	{
  		Vx = 0f;
-@@ -638,6 +686,26 @@ public class BaseMyPlane : BaseObject
+@@ -638,6 +706,32 @@ public class BaseMyPlane : BaseObject
  		float x = OriginalPosition.X;
  		float y = OriginalPosition.Y;
  		SlowMove = KClass.Key_Shift;
@@ -113,9 +133,11 @@ index a96264f..88b62f2 100644
 +		{
 +			float dx = touchDx;
 +			float dy = touchDy;
++			bool unlimited = touchUnlimited;
 +			hasTouch = false;
 +			touchDx = 0f;
 +			touchDy = 0f;
++			touchUnlimited = false;
 +			Vx = dx;
 +			Vy = 0f - dy;
 +			x += dx;
@@ -126,13 +148,17 @@ index a96264f..88b62f2 100644
 +			if (dx != 0f || dy != 0f)
 +			{
 +				TouchReplayUsed = true;
++				if (unlimited)
++				{
++					TouchCheatMovementUsed = true;
++				}
 +			}
 +			return;
 +		}
  		if (!SlowMove)
  		{
  			if (KClass.ArrowRight)
-@@ -683,6 +751,18 @@ public class BaseMyPlane : BaseObject
+@@ -683,6 +777,18 @@ public class BaseMyPlane : BaseObject
  		}
  		x += Vx;
  		y -= Vy;
@@ -151,7 +177,7 @@ index a96264f..88b62f2 100644
  		if (x < (float)(TxtureObject.Width / 2 - 6))
  		{
  			x = TxtureObject.Width / 2 - 6;
-@@ -699,7 +779,7 @@ public class BaseMyPlane : BaseObject
+@@ -699,7 +805,7 @@ public class BaseMyPlane : BaseObject
  		{
  			y = BoundRect.Height - TxtureObject.Height / 2 + 8;
  		}
@@ -160,17 +186,19 @@ index a96264f..88b62f2 100644
  	}
  
  	public virtual void SubPlaneCtrl()
-@@ -948,6 +1028,7 @@ public class BaseMyPlane : BaseObject
+@@ -948,6 +1054,9 @@ public class BaseMyPlane : BaseObject
  			}
  			else
  			{
-+				ClearTouch();
++				// Keep the move finger / JS queue across the spawn and miss
++				// windows (TOUCH-09). Pending ApplyTouch is rejected in
++				// TouchShift until CanAcceptTouchMovement is true again.
  				DestPoint = new PointF(BoundRect.Width / 2, BoundRect.Height - 30);
  				Velocity = 2f;
  				base.Move();
 
 diff --git a/Shooting/Game_Main.cs b/Shooting/Game_Main.cs
-index c4e4893..69ebbfc 100644
+index c4e4893..84e624e 100644
 --- a/Shooting/Game_Main.cs
 +++ b/Shooting/Game_Main.cs
 @@ -2,7 +2,6 @@ using System;
@@ -501,7 +529,7 @@ index c4e4893..69ebbfc 100644
  	}
  
  	private void Form_Main_KeyDown(object sender, KeyEventArgs e)
-@@ -860,4 +945,42 @@ public class Game_Main
+@@ -860,4 +945,44 @@ public class Game_Main
  		}
  		MouseCtrl.DrawCursor(!fullWindow);
  	}
@@ -523,25 +551,27 @@ index c4e4893..69ebbfc 100644
 +		return 0;
 +	}
 +
-+	public void TouchShift(float dx, float dy)
++	public int TouchShift(float dx, float dy, int unlimited)
 +	{
 +		if (PresentState is BaseMenu)
 +		{
-+			return;
++			return 0;
 +		}
 +		BaseGameState baseGameState = PresentState as BaseGameState;
 +		if (baseGameState != null && baseGameState.StageData != null && baseGameState.StageData.Story == null)
 +		{
 +			if (baseGameState.StageData.OnReplay)
 +			{
-+				return;
++				return 0;
 +			}
 +			BaseMyPlane myPlane = baseGameState.StageData.MyPlane;
-+			if (myPlane != null)
++			if (myPlane != null && myPlane.CanAcceptTouchMovement())
 +			{
-+				myPlane.ApplyTouch(dx, dy);
++				myPlane.ApplyTouch(dx, dy, unlimited != 0);
++				return 1;
 +			}
 +		}
++		return 0;
 +	}
  }
 

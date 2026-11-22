@@ -501,10 +501,21 @@ index fd8c5ce..6a9089a 100644
  }
 
 diff --git a/Shooting/StageDataPackage.cs b/Shooting/StageDataPackage.cs
-index 8381f7f..5628467 100644
+index 8381f7f..249c7ac 100644
 --- a/Shooting/StageDataPackage.cs
 +++ b/Shooting/StageDataPackage.cs
-@@ -366,33 +366,9 @@ public class StageDataPackage
+@@ -144,6 +144,10 @@ public class StageDataPackage
+ 	{
+ 		get
+ 		{
++			if (MyPlane != null && MyPlane.TouchCheatMovementUsed)
++			{
++				return "100.0%";
++			}
+ 			float num = 60f * (float)RealTimeTotal / (float)Stopwatch.Frequency;
+ 			num = (num - (float)TimeTotal) * 100f / num;
+ 			return ((num < 0f) ? 0f : num).ToString("F1") + "%";
+@@ -366,33 +370,9 @@ public class StageDataPackage
  		return cS_Data;
  	}
  

@@ -94,15 +94,16 @@ namespace Thsss.Browser
 		}
 
 		[UnmanagedCallersOnly(EntryPoint = "thsss_touch_shift")]
-		public static void TouchShift(float dx, float dy)
+		public static int TouchShift(float dx, float dy, int unlimited)
 		{
 			try
 			{
-				GameHost.TouchShift(dx, dy);
+				return GameHost.TouchShift(dx, dy, unlimited);
 			}
 			catch (Exception ex)
 			{
 				Report(ex);
+				return 0;
 			}
 		}
 

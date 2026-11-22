@@ -167,13 +167,13 @@ namespace Thsss.Browser
 			return game.TouchSurface();
 		}
 
-		public static void TouchShift(float dx, float dy)
+		public static int TouchShift(float dx, float dy, int unlimited)
 		{
 			if (game == null)
 			{
-				return;
+				return 0;
 			}
-			game.TouchShift(dx, dy);
+			return game.TouchShift(dx, dy, unlimited);
 		}
 
 		public static void OnKey(string name, int down)
