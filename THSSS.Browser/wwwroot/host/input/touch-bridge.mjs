@@ -1,5 +1,5 @@
 import { createMenuGestures } from "./menu-gestures.mjs";
-import { createTouchMovement } from "./touch-movement.mjs";
+import { createTouchMovement, PLAYFIELD } from "./touch-movement.mjs";
 
 const ARROWS = ["Left", "Right", "Up", "Down"];
 
@@ -7,8 +7,16 @@ function joystickMode(mode) {
   return mode === "joystick" || mode === "joystick-free";
 }
 
-// Launcher touch-controls and direct-touch, translated into the game's keys.
-// Shooting follows fireEnabled and stays down until that latch is cleared.
+function quantizeStick(nx, ny) {
+  if (nx === 0 && ny === 0) return { x: 0, y: 0 };
+  const angle = Math.atan2(ny, nx);
+  const step = Math.PI / 4;
+  const snapped = Math.round(angle / step) * step;
+  return { x: Math.cos(snapped), y: Math.sin(snapped) };
+}
+
+// Launcher touch-controls and direct-touch. Play movement goes through shift
+// (ApplyTouch); shooting follows fireEnabled until that latch is cleared.
 export function createTouchBridge({ keys, surface, options, shift, now = () => performance.now() }) {
   const movement = createTouchMovement();
   const gestures = createMenuGestures();
@@ -16,6 +24,9 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
   let previous = null;
   let focus = false;
   let fire = false;
+  let stickX = 0;
+  let stickY = 0;
+  let primaryId = null;
 
   function settings() {
     return options() || {};
@@ -36,11 +47,14 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
 
   function sensitivity() {
     const value = Number(settings().touchSensitivity);
-    return value > 0 ? value : 100;
+    return value > 0 ? value : 150;
   }
 
   function releaseArrows() {
-    for (const name of ARROWS) keys.setKey(name, false, "direct");
+    for (const name of ARROWS) {
+      keys.setKey(name, false, "direct");
+      keys.setKey(name, false, "joy");
+    }
   }
 
   function applyMenuHold(scene) {
@@ -58,13 +72,34 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
     pulses.length = 0;
   }
 
-  function applyJoystick(x, y) {
-    const axisX = Number(x) || 0;
-    const axisY = Number(y) || 0;
-    keys.setKey("Left", axisX <= -1, "joy");
-    keys.setKey("Right", axisX >= 1, "joy");
-    keys.setKey("Up", axisY <= -1, "joy");
-    keys.setKey("Down", axisY >= 1, "joy");
+  function playSpeed() {
+    return focus ? PLAYFIELD.lowSpeed : PLAYFIELD.highSpeed;
+  }
+
+  function applyStickShift() {
+    if (typeof shift !== "function") return;
+    const nx = stickX / 32767;
+    const ny = stickY / 32767;
+    const mag = Math.hypot(nx, ny);
+    if (mag < 1e-6) return;
+    const modeName = settings().touchMovementMode;
+    let ux = nx;
+    let uy = ny;
+    let scale = mag;
+    if (modeName === "joystick") {
+      const q = quantizeStick(nx, ny);
+      ux = q.x;
+      uy = q.y;
+      scale = 1;
+      if (ux !== 0 && uy !== 0) scale = PLAYFIELD.diagonal;
+    } else {
+      ux = nx / mag;
+      uy = ny / mag;
+    }
+    const speed = playSpeed() * (modeName === "joystick-free" ? mag : scale);
+    const dx = ux * speed;
+    const dy = uy * speed;
+    if (dx !== 0 || dy !== 0) shift(dx, dy);
   }
 
   function controls(message) {
@@ -75,8 +110,14 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
     focus = !!next.focusEnabled;
     if (previous && next.bombSerial !== previous.bombSerial) pulse("X");
     if (previous && next.escapeSerial !== previous.escapeSerial) pulse("Escape");
-    if (joystickMode(settings().touchMovementMode)) applyJoystick(next.joystickX, next.joystickY);
-    else applyJoystick(0, 0);
+    if (joystickMode(settings().touchMovementMode)) {
+      stickX = Number(next.joystickX) || 0;
+      stickY = Number(next.joystickY) || 0;
+    } else {
+      stickX = 0;
+      stickY = 0;
+    }
+    releaseArrows();
     previous = {
       bombSerial: next.bombSerial,
       escapeSerial: next.escapeSerial,
@@ -93,6 +134,7 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
     if (message.type === "up" && message.id == null) {
       gestures.cancel();
       movement.clear();
+      primaryId = null;
       releaseArrows();
       applyMenuHold(reported());
       keys.setKey("ShiftKey", false, "touch-second");
@@ -104,6 +146,7 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
     const scene = reported();
     const current = scene || "play";
     if (message.type === "down" && Number.isFinite(x) && Number.isFinite(y)) {
+      if (primaryId == null) primaryId = message.id;
       gestures.down(message.id, x, y, now());
       syncSecondFinger();
       return;
@@ -118,6 +161,7 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
       return;
     }
     if (message.type === "up") {
+      const wasPrimary = message.id === primaryId;
       const names = gestures.up(
         message.id,
         Number.isFinite(x) ? x : 0,
@@ -127,6 +171,10 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
         settings().doubleTapBombEnabled === true,
       );
       for (const name of names) pulse(name);
+      if (wasPrimary) {
+        movement.clear();
+        primaryId = null;
+      }
       applyMenuHold(scene);
       if (!gestures.skipping(now(), scene)) keys.setKey("ControlKey", false, "dialogue-skip");
       syncSecondFinger();
@@ -140,24 +188,21 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
     applyMenuHold(scene);
     const current = scene || "play";
     keys.setKey("ControlKey", gestures.skipping(now(), scene), "dialogue-skip");
-    if (current !== "play" || joystickMode(settings().touchMovementMode)) {
+    releaseArrows();
+    if (current !== "play") {
       movement.clear();
-      releaseArrows();
       return;
     }
-    if (settings().touchMovementMode === "touch-unlimited" && typeof shift === "function") {
-      const ahead = movement.queued();
-      if ((ahead.x !== 0 || ahead.y !== 0) && shift(ahead.x, ahead.y) === true) {
-        movement.clear();
-        releaseArrows();
-        return;
-      }
+    if (joystickMode(settings().touchMovementMode)) {
+      movement.clear();
+      applyStickShift();
+      return;
     }
-    const step = movement.drain({ focus });
-    keys.setKey("Left", step.left, "direct");
-    keys.setKey("Right", step.right, "direct");
-    keys.setKey("Up", step.up, "direct");
-    keys.setKey("Down", step.down, "direct");
+    const unlimited = settings().touchMovementMode === "touch-unlimited";
+    const step = movement.drain({ focus, unlimited });
+    if ((step.shiftX !== 0 || step.shiftY !== 0) && typeof shift === "function") {
+      shift(step.shiftX, step.shiftY);
+    }
   }
 
   function cancel() {
@@ -172,6 +217,7 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
     });
     gestures.cancel();
     movement.clear();
+    primaryId = null;
     releaseArrows();
     applyMenuHold(null);
     keys.setKey("ShiftKey", false, "touch-second");

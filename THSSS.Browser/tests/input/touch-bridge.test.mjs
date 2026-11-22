@@ -57,30 +57,35 @@ test("shooting stays on until the fire latch is cleared", () => {
   assert.equal(resumed.keys.isDown("Z"), true);
 });
 
-test("a play drag moves along the path and a joystick uses the launcher axis", () => {
+test("a play drag shifts along the path and clears on lift", () => {
   const play = harness({ touchMovementMode: "touch", touchSensitivity: 100 });
   play.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });
   play.bridge.direct({ type: "move", id: 1, x: 0.22, y: 0.5 });
   play.bridge.presented();
-  assert.equal(play.keys.isDown("Right"), true);
-  play.bridge.direct({ type: "up", id: 1, x: 0.22, y: 0.5 });
-  play.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });
-  play.bridge.direct({ type: "move", id: 1, x: 0.3, y: 0.5 });
-  play.bridge.direct({ type: "up", id: 1, x: 0.3, y: 0.5 });
-  play.bridge.presented();
-  assert.equal(play.keys.isDown("Right"), true);
-  let guard = 0;
-  while (play.keys.isDown("Right") && guard < 40) {
-    play.bridge.presented();
-    guard += 1;
-  }
+  assert.equal(play.shifts.length, 1);
+  assert.ok(play.shifts[0][0] > 0);
   assert.equal(play.keys.isDown("Right"), false);
+  play.bridge.direct({ type: "up", id: 1, x: 0.22, y: 0.5 });
+  play.bridge.presented();
+  assert.equal(play.shifts.length, 1);
+});
 
+test("a directional stick and free stick shift without arrow keys", () => {
   const stick = harness({ touchMovementMode: "joystick" });
-  stick.bridge.controls({ fireEnabled: false, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 100, joystickY: 0 });
-  assert.equal(stick.keys.isDown("Right"), true);
-  stick.bridge.controls({ fireEnabled: false, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0 });
+  stick.bridge.controls({ fireEnabled: false, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 32767, joystickY: 0 });
+  stick.bridge.presented();
+  assert.equal(stick.shifts.length, 1);
+  assert.ok(Math.abs(stick.shifts[0][0] - 4.5) < 0.001);
   assert.equal(stick.keys.isDown("Right"), false);
+
+  const free = harness({ touchMovementMode: "joystick-free" });
+  free.bridge.controls({ fireEnabled: false, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 23170, joystickY: 23170 });
+  free.bridge.presented();
+  assert.equal(free.shifts.length, 1);
+  assert.ok(free.shifts[0][0] > 0);
+  assert.ok(free.shifts[0][1] > 0);
+  assert.equal(free.keys.isDown("Right"), false);
+  assert.equal(free.keys.isDown("Down"), false);
 });
 
 test("a screen tap confirms once and does not hold Z", () => {
