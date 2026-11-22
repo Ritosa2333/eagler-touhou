@@ -2,39 +2,41 @@
 
 [开发入口](README.md) · [练习说明](PRACTICE.md) · [检查方法](../../docs/adaptation/README.md) · [全部作品](../README.md)
 
-源码目录是 `ports/thsss`，来自 THSSS-WASM 子树。本目录是单人接线，产品仍为 `testOnly`。
+源码目录是 `ports/thsss`，来自 THSSS-WASM 子树。本目录是单人接线，产品仍为 `testOnly`。构建模式：`normal`。
 
 实现情况与实际验收分别记录。源码接口和模块检查通过后记为“已实现”；完成对应操作并附执行记录后记为“已验证”。
 
 状态：`待核对`、`进行中`、`待验证`、`已实现`、`已验证`、`检查失败`、`不适用`。
 
+[自动检查结果与源码身份](../../docs/adaptation/status.json) · `npm run ports:check -- --game=thsss --variant=both`
+
 ## 源码与构建
 
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
-| BUILD-01 | [源码目录与普通版／MP归属](../../docs/adaptation/build.md#build-01) | 待验证 | 普通版源码在 `ports/thsss`，无 MP 目录。`runtime-builds` 已声明 `sourceBuild`。来源子树见 [thsss-eagler-20261122.json](../../docs/migration/thsss-eagler-20261122.json)。 |
-| BUILD-02 | [工具链与外部依赖](../../docs/adaptation/build.md#build-02) | 待核对 | 浏览器不能检查 SDK。本机 Release 发布已通过，补上打包模块表后 stage 也已通过，没有单独的执行报告。 |
-| BUILD-03 | [对应模式独立构建](../../docs/adaptation/build.md#build-03) | 待核对 | 未适配多人构建。单人 Runtime 已跑到首帧。 |
-| BUILD-04 | [Runtime 文件与来源记录](../../docs/adaptation/build.md#build-04) | 待验证 | build-eagler 已有 runtime-files.json。首帧来自这次打包结果，清单哈希还没逐项对照。见[运行验收记录](#运行验收记录)。 |
-| BUILD-05 | [前端搭配单个游戏运行](../../docs/adaptation/build.md#build-05) | 已验证 | `EAGLER_DEVELOPMENT_GAMES=thsss` 下启动器加载当前 Runtime 并进入首帧。见[运行验收记录](#运行验收记录)。 |
-| BUILD-06 | [源码与素材来源](../../docs/adaptation/build.md#build-06) | 待验证 | 来源为 [THSSS-WASM](https://github.com/sblzdddd/THSSS-WASM) `main` `c08d073`。登记见 [thsss-subtree-20261122.md](../../docs/migration/thsss-subtree-20261122.md)。游戏素材仍在外部 `Assets/`。 |
+| BUILD-01 | [源码目录与普通版／MP归属](../../docs/adaptation/build.md#build-01) | 已验证 | normal：[source-inputs](../../docs/adaptation/status.json) |
+| BUILD-02 | [工具链与外部依赖](../../docs/adaptation/build.md#build-02) | 已验证 | normal：[dotnet-publish](../../docs/adaptation/status.json) |
+| BUILD-03 | [对应模式独立构建](../../docs/adaptation/build.md#build-03) | 已验证 | normal：[dotnet-publish](../../docs/adaptation/status.json) |
+| BUILD-04 | [Runtime 文件与来源记录](../../docs/adaptation/build.md#build-04) | 已验证 | normal：[staged-runtime](../../docs/adaptation/status.json) |
+| BUILD-05 | [前端搭配单个游戏运行](../../docs/adaptation/build.md#build-05) | 待验证 | 先前一次 `EAGLER_DEVELOPMENT_GAMES=thsss` 启动器进入首帧。这次 stage 的 wasm 没有再开启动器。见[运行验收记录](#运行验收记录)。 |
+| BUILD-06 | [源码与素材来源](../../docs/adaptation/build.md#build-06) | 已验证 | `LICENSE` 为 MIT，Copyright (c) 2026 LC_022。上游 `main` `c08d073` 见 [thsss-subtree-20261122.md](../../docs/migration/thsss-subtree-20261122.md)。素材目录写在 [README-UPSTREAM.md](README-UPSTREAM.md)，不入库。 |
 
 ## 启动与资源
 
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
-| RUNTIME-01 | [协议身份与会话代次](../../docs/adaptation/runtime.md#runtime-01) | 待验证 | 本次会话的消息是 `eagler-touhou/1`，`game` 为 thsss。还没做退出后再启动的代次隔离。见[运行验收记录](#运行验收记录)。 |
+| RUNTIME-01 | [协议身份与会话代次](../../docs/adaptation/runtime.md#runtime-01) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
 | RUNTIME-02 | [就绪、配置、启动、首帧](../../docs/adaptation/runtime.md#runtime-02) | 已验证 | `ready` 之后是成功回复，2623 ms 时收到 `first-frame`，画面已经画出。见[运行验收记录](#运行验收记录)。 |
-| RUNTIME-03 | [命令响应与错误信息](../../docs/adaptation/runtime.md#runtime-03) | 待验证 | 文件命令和按键回复成功。`retry-music` 回复 Command is not available for this title。未知命令没有回复，无效参数的界面提示没做。见[运行验收记录](#运行验收记录)。 |
+| RUNTIME-03 | [命令响应与错误信息](../../docs/adaptation/runtime.md#runtime-03) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
 | RUNTIME-04 | [后台、恢复与退出清理](../../docs/adaptation/runtime.md#runtime-04) | 待验证 | 可见时 `frame-health` 为 60。把 iframe 的 `document.hidden` 改成 true 后，下一笔是 15，不是 0。恢复和退出清理没做。见[运行验收记录](#运行验收记录)。 |
 | RUNTIME-05 | [Runtime 与资源管理分工](../../docs/adaptation/runtime.md#runtime-05) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
 | RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| PACKAGE-04 | [本地导入与在线安装一致](../../docs/adaptation/runtime.md#package-04) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
+| PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
+| PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
+| PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
+| PACKAGE-04 | [本地导入与在线安装一致](../../docs/adaptation/runtime.md#package-04) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-05 | [已安装游戏离线启动](../../docs/adaptation/runtime.md#package-05) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| PACKAGE-06 | [统一安装和更新入口](../../docs/adaptation/runtime.md#package-06) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
+| PACKAGE-06 | [统一安装和更新入口](../../docs/adaptation/runtime.md#package-06) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
 
 ## 键盘、手柄与触控
 
@@ -44,7 +46,7 @@
 | INPUT-02 | [启动器键盘改键](../../docs/adaptation/input.md#input-02) | 已验证 | WASD 布局下 `KeyS` 经 `__eaglerKeyboardInputBridge.submit` 映射为 `ArrowDown`；标题菜单从 Game Start 逐项移到 Replay。见[运行验收记录](#运行验收记录)。 |
 | INPUT-03 | [启动器手柄映射](../../docs/adaptation/input.md#input-03) | 已验证 | 手动：启动器手柄改键保存后进局，映射立即生效。见[运行验收记录](#运行验收记录)。 |
 | INPUT-04 | [手柄方向与按钮](../../docs/adaptation/input.md#input-04) | 已验证 | 手动：摇杆移动、按钮射击／Bomb／低速／菜单与键盘同路径。见[运行验收记录](#运行验收记录)。 |
-| INPUT-05 | [多种输入独立持有](../../docs/adaptation/input.md#input-05) | 待验证 | 键盘与触控同时按住射击再分别松开，这一项没做。见[运行验收记录](#运行验收记录)。 |
+| INPUT-05 | [多种输入独立持有](../../docs/adaptation/input.md#input-05) | 已实现 | normal：[launcher-input-owners](../../docs/adaptation/status.json) |
 | INPUT-06 | [失焦与断开释放](../../docs/adaptation/input.md#input-06) | 待验证 | `keyboard-clear` 回复成功。按住移动时切后台、断手柄没有单独测。见[运行验收记录](#运行验收记录)。 |
 | INPUT-07 | [原作菜单与对话输入](../../docs/adaptation/input.md#input-07) | 待验证 | 键盘完成标题、难度、选人确认，Esc 打开暂停“继续游戏”。手柄菜单和对话快进没做。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-01 | [限速滑动移动](../../docs/adaptation/input.md#touch-01) | 已验证 | `touchMovementMode=touch`，`InputSurface=play`。自右向左 `direct-touch` 拖动后，画面亮点从右侧集中区移到左侧。见[运行验收记录](#运行验收记录)。 |
@@ -60,20 +62,20 @@
 | TOUCH-11 | [双击 Bomb](../../docs/adaptation/input.md#touch-11) | 已验证 | `doubleTapBombEnabled` 开启后，play 表面双击触发 Bomb（手动确认可见）。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 待验证 | 标题静止点按播出 `se_ok00.wav`；摇杆模式下画布滑动可选菜单项。对话短按／长按没做。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-13 | [确认键的新按下边沿](../../docs/adaptation/input.md#touch-13) | 待验证 | 菜单点按产生确认音并前进。射击保持进入对话后再触控确认没做。见[运行验收记录](#运行验收记录)。 |
-| TOUCH-14 | [100–300% 灵敏度](../../docs/adaptation/input.md#touch-14) | 待验证 | 布局编辑器可见 100／150／200% 与自定义；本地单测覆盖灵敏度缩放。三档同滑位移对照没做成。见[运行验收记录](#运行验收记录)。 |
+| TOUCH-14 | [100–300% 灵敏度](../../docs/adaptation/input.md#touch-14) | 已实现 | normal：[touch-sensitivity](../../docs/adaptation/status.json) |
 | TOUCH-15 | [触控与其他输入隔离](../../docs/adaptation/input.md#touch-15) | 待验证 | 键盘按住时发过 `touch-cancel`，未对照射击是否继续。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-16 | [触控取消与生命周期](../../docs/adaptation/input.md#touch-16) | 已验证 | `touch-cancel` 经 `__eaglerDirectInputBridge.submit` 成功。隐藏页面后的残留触点没单独测。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-17 | [共用布局编辑器](../../docs/adaptation/input.md#touch-17) | 已验证 | 未开局打开“按键布局与触控设置”，出现移动方式（八向／自由等）与灵敏度面板，可保存布局。见[运行验收记录](#运行验收记录)。 |
-| TOUCH-18 | [共用重开按钮](../../docs/adaptation/input.md#touch-18) | 待验证 | `restartButtonEnabled` 后左侧出现 R；局内点过 R，与暂停菜单重开流程的对照没做成。见[运行验收记录](#运行验收记录)。 |
-| TOUCH-19 | [共用双指放大镜](../../docs/adaptation/input.md#touch-19) | 待验证 | 放大镜开关已开。双指缩放没做。见[运行验收记录](#运行验收记录)。 |
+| TOUCH-18 | [共用重开按钮](../../docs/adaptation/input.md#touch-18) | 已实现 | normal：[shared-touch-controls](../../docs/adaptation/status.json) |
+| TOUCH-19 | [共用双指放大镜](../../docs/adaptation/input.md#touch-19) | 已实现 | normal：[shared-touch-controls](../../docs/adaptation/status.json) |
 
 ## 画面与声音
 
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
-| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
+| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
+| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
+| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
 | DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
 | DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
 | DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 已验证 | Esc 后出现“游戏暂停 / Pause Menu”，关卡画面留在菜单后面，并播出 `se_pause.wav`。见[运行验收记录](#运行验收记录)。 |
@@ -180,4 +182,6 @@
 
 INPUT／TOUCH：开启触摸后左侧出现开火／低速／BOMB／ESC／R。`InputSurface` 与 `TouchShift` 已绑定；标题为 menu，关卡为 play。方向键改变自机附近亮点；Z 连续 `se_plst00.wav`；X 与 BOMB 放出炸弹（现场可见）。标题静止点按 `direct-touch` 播出 `se_ok00.wav`。`touchMovementMode=touch` 时自右向左拖动，亮点从右侧移到左侧。`joystick` 推下标题菜单从 Game Start 移到 Replay，进局后左右推杆移动自机。`hold-button`／`toggle-button` 低速文案与切换正确；`doubleTapBombEnabled` 双击放出炸弹（手动确认）。`touch-controls` 开火锁住后有射击音；`escapeSerial` 进入暂停；`touch-cancel` 成功。布局编辑器可打开并保存。键位面板 WASD 改键生效；手柄映射与摇杆／按钮手动通过。无限速拖动、自由摇杆绕圈、双指、对话手势、灵敏度三档对照和放大镜没做完。
 
-这次核对覆盖 BUILD-05、RUNTIME-02、DISPLAY-06、DISPLAY-07、AUDIO-01、AUDIO-07、SAVE-02、SAVE-03、SAVE-04、INPUT-01、INPUT-02、INPUT-03、INPUT-04、TOUCH-01、TOUCH-03、TOUCH-05、TOUCH-06、TOUCH-08、TOUCH-11、TOUCH-16、TOUCH-17。练习开关、无 BGM、音量、离线启动和其余 TOUCH 项没有做完。联机、MIDI、语言包按产品声明记为不适用。源码归属、来源登记、音乐重试命令和原版逐帧基准没有适配。
+这次核对覆盖 BUILD-05、RUNTIME-02、DISPLAY-06、DISPLAY-07、AUDIO-01、AUDIO-07、SAVE-02、SAVE-03、SAVE-04、INPUT-01、INPUT-02、INPUT-03、INPUT-04、TOUCH-01、TOUCH-03、TOUCH-05、TOUCH-06、TOUCH-08、TOUCH-11、TOUCH-16、TOUCH-17。练习开关、无 BGM、音量、离线启动和其余 TOUCH 项没有做完。联机、MIDI、语言包按产品声明记为不适用。音乐重试命令和原版逐帧基准没有适配。
+
+BUILD：`node tools/workspace.mjs select thsss --variant=normal` 列出 launcher、common、tools、docs、ports/thsss。本机 .NET SDK 10.0.404、wasm-tools 10.0.115、Bun 1.4.4。`dotnet publish THSSS.Browser/THSSS.Browser.csproj -c Release -p:StageGameAssets=false` 退出码 0，`THSSS.Browser.wasm` sha256 `4e719e4cdbf9c07162c31aa82e6e7ad0365129470e2ca4ef12fcf8997fa5f6c3`。帧步进拆出后重新 `npm run stage:eagler`，`shell.mjs` 171717 字节，wasm 哈希未变，`runtime-files.json` 与 5 个运行文件一致。这次产物没有再开启动器。`node tools/ports/check.mjs --game=thsss --variant=normal` 为 10/10。
