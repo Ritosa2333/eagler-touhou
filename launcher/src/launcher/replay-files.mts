@@ -139,7 +139,10 @@ export function isValidReplayName(prefix: string, name: unknown): name is string
     const extensions = 'extensions' in product.replay ? product.replay.extensions as readonly string[] : [];
     return extension !== null && extensions.includes(extension.slice(1)) && /^[a-zA-Z0-9_(). -]+$/.test(name) && !name.includes('..') && name.length <= 200;
   }
-  return new RegExp(`^${escapeRegExp(prefix)}_(?:\\d{2}|ud[0-9a-f]{4})\\.rpyx?$`, "i").test(name);
+  const extensions = product && 'extensions' in product.replay
+    ? [...product.replay.extensions]
+    : ['rpy', 'rpyx'];
+  return new RegExp(`^${escapeRegExp(prefix)}_(?:\\d{2}|ud[0-9a-f]{4})\\.(?:${extensions.map(escapeRegExp).join('|')})$`, "i").test(name);
 }
 
 export function sanitizeReplayImportName(name: string): string {
