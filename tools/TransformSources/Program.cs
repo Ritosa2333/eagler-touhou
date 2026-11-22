@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Thsss.Browser.TransformSources
+namespace Thsss.Tools.TransformSources
 {
 	internal static class Program
 	{

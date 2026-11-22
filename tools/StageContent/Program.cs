@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Thsss.Browser.StageContent
+namespace Thsss.Tools.StageContent
 {
 	internal static class Program
 	{

@@ -46,8 +46,6 @@
     <EmscriptenEnvVars Include="EM_FROZEN_CACHE=1" Visible="false" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="StageContent/**" />
-    <Compile Remove="TransformSources/**" />
     <PackageReference Include="Microsoft.DotNet.ILCompiler.LLVM" Version="10.0.0-rc.1.26357.1" />
     <PackageReference Include="runtime.win-x64.Microsoft.DotNet.ILCompiler.LLVM" Version="10.0.0-rc.1.26357.1" />
     <PackageReference Include="runtime.linux-x64.Microsoft.DotNet.ILCompiler.LLVM" Version="10.0.0-rc.1.26357.1" />
@@ -82,7 +80,8 @@
   <Target Name="StageGameContent" BeforeTargets="Build">
     <Message Importance="high" Condition="'$(StageGameAssets)' != 'true'" Text="StageGameAssets is false; skipping game asset copy and validation." />
     <PropertyGroup Condition="'$(StageGameAssets)' == 'true'">
-      <_StageContentProj>$(MSBuildThisFileDirectory)StageContent/StageContent.csproj</_StageContentProj>
+      <_RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</_RepoRoot>
+      <_StageContentProj>$(_RepoRoot)/tools/StageContent/StageContent.csproj</_StageContentProj>
       <_StageContentDll>$(MSBuildThisFileDirectory)obj/stage-content/StageContent.dll</_StageContentDll>
       <_StageSkipArg Condition="Exists('$(MSBuildThisFileDirectory)wwwroot/assets/thsss.dat')">--skip-copy</_StageSkipArg>
     </PropertyGroup>
@@ -112,8 +111,9 @@
   </Target>
   <Target Name="TransformGameSources" DependsOnTargets="PrepareGameSources">
     <PropertyGroup>
+      <_RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</_RepoRoot>
       <_GameSrc>$(IntermediateOutputPath)game-src</_GameSrc>
-      <_TransformProj>$(MSBuildThisFileDirectory)TransformSources/TransformSources.csproj</_TransformProj>
+      <_TransformProj>$(_RepoRoot)/tools/TransformSources/TransformSources.csproj</_TransformProj>
       <_TransformDll>$(MSBuildThisFileDirectory)obj/transform-sources/TransformSources.dll</_TransformDll>
     </PropertyGroup>
     <MSBuild Projects="$(_TransformProj)" Targets="Restore;Build" RemoveProperties="RuntimeIdentifier;SelfContained;PublishTrimmed;PublishAot;UseAppHost" Properties="Configuration=Release" />

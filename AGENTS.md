@@ -23,7 +23,7 @@ npm install
 npm run stage:eagler
 ```
 
-`dotnet publish` compiles the NativeAOT browser host. Before that compile, `THSSS.Browser/THSSS.Browser.csproj` runs `tools/PrepareGameSources` and `THSSS.Browser/TransformSources`, then `THSSS.Browser/StageContent`.
+`dotnet publish` compiles the NativeAOT browser host. Before that compile, `THSSS.Browser/THSSS.Browser.csproj` runs `tools/PrepareGameSources`, `tools/TransformSources`, then `tools/StageContent`.
 
 ### Game SSOT
 

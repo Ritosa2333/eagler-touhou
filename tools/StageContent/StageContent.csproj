@@ -4,15 +4,15 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <AssemblyName>TransformSources</AssemblyName>
-    <RootNamespace>Thsss.Browser.TransformSources</RootNamespace>
+    <AssemblyName>StageContent</AssemblyName>
+    <RootNamespace>Thsss.Tools.StageContent</RootNamespace>
     <RuntimeIdentifier></RuntimeIdentifier>
     <SelfContained>false</SelfContained>
     <PublishTrimmed>false</PublishTrimmed>
     <UseAppHost>false</UseAppHost>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <OutputPath>$(MSBuildThisFileDirectory)../obj/transform-sources/</OutputPath>
-    <IntermediateOutputPath>$(MSBuildThisFileDirectory)../obj/transform-sources/i/</IntermediateOutputPath>
+    <OutputPath>$(MSBuildThisFileDirectory)../../THSSS.Browser/obj/stage-content/</OutputPath>
+    <IntermediateOutputPath>$(MSBuildThisFileDirectory)../../THSSS.Browser/obj/stage-content/i/</IntermediateOutputPath>
   </PropertyGroup>
 </Project>
