@@ -152,3 +152,6 @@ THSSS.Browser/wwwroot/assets/
 # esbuild, used only to bundle the directory runtime.
 /node_modules/
 
+
+# Launcher content directory (local links, not source)
+/content

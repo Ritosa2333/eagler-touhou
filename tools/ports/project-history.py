@@ -119,7 +119,7 @@ def project(git, head, game, write_refs=False, track_normal=False):
     layout = load("launcher/config/workspace.json")["repositories"]
     subtree_sources = {}
     for name in git.run("ls-tree", "--name-only", head + ":docs/migration").splitlines():
-        if not re.fullmatch(r"th[0-9]+(?:mp|-mp)?-eagler-[0-9]+\.json", name):
+        if not re.fullmatch(r"th(?:[0-9]+(?:mp|-mp)?|sss)-eagler-[0-9]+\.json", name):
             continue
         record = load("docs/migration/" + name)
         if record.get("currentMode") == "git-subtree":

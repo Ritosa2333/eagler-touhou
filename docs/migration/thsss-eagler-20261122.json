@@ -1,0 +1,17 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "repository": "https://github.com/sblzdddd/THSSS-WASM",
+  "branch": "main",
+  "commit": "c08d073a6c0e789773879da8f1272c7afd96fe3a",
+  "destination": "ports/thsss",
+  "mode": "git-subtree",
+  "currentMode": "git-subtree",
+  "subtree": {
+    "upstreamCommit": "c08d073a6c0e789773879da8f1272c7afd96fe3a",
+    "initialJoin": "630b0316e13e604fc15f52c712038766c0d78dcb",
+    "initialSplit": "c08d073a6c0e789773879da8f1272c7afd96fe3a",
+    "latestJoin": "630b0316e13e604fc15f52c712038766c0d78dcb",
+    "currentSplit": "c08d073a6c0e789773879da8f1272c7afd96fe3a",
+    "aheadCommits": 1
+  }
+}

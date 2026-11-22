@@ -651,6 +651,25 @@
         ],
         "commonMarker": "browser/directory-keyboard.mjs"
       }
+    },
+    "thsss": {
+      "builder": "prebuilt",
+      "workspaceRepository": "thsss",
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "scripts/build-eagler.mjs"
+        ]
+      },
+      "variants": {
+        "normal": {
+          "features": {
+            "thcrap": false,
+            "thprac": true
+          },
+          "cache": {}
+        }
+      }
     }
   }
 }
