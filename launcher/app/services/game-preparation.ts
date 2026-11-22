@@ -19,6 +19,7 @@ import {ensureOggStartup, ensurePC98Disks, ensureRequiredSharedResources, musicT
 import {startPreparedGameBackground} from './game-preparation-background';
 import {runtimeOggFileIds} from './game-music-selection';
 import {TH128_INSTALLED_LANGUAGE, th128InstalledConfigure, th128InstalledMusic, th128LanguageAvailable} from '../../src/launcher/th128-installed-config.mts';
+import {th128MountedLanguage} from '../../src/launcher/th128-managed-package.mts';
 import type {RuntimePlan, RuntimeService, RuntimeSnapshot} from './runtime';
 
 export type MultiplayerPreparation =
@@ -149,7 +150,8 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
     oggDecodeMode: music === 'ogg-full' ? 'full' : 'stream',
     ...('sources' in product.musicRuntime ? {musicSource: (game === 'th03' ? settings.musicPreference === 'ogg-akyu' : music === 'ogg-akyu') ? 'akyu' as const : 'original' as const} : {}),
     ...(!isMultiplayer && productFeatureAvailable(game, 'thprac', features)
-      ? {thpracEnabled: options.thpracEnabled, thpracLocale: game === 'th128' ? settings.context.uiLocale : thpracLocaleForLanguage(language)} : {}),
+      ? {thpracEnabled: options.thpracEnabled, thpracLocale: game === 'th128' && language !== 'lang_en'
+        ? settings.context.uiLocale : thpracLocaleForLanguage(language)} : {}),
     ...(game === 'th03' ? {focusHitboxEnabled: options.th03FocusPointEnabled} : productFeatureAvailable(game, 'focusHitbox', features) ? {focusHitboxEnabled: options.focusHitboxEnabled} : {}),
     ...('display' in product && product.display.faithBar ? {faithBarEnabled: options.faithBarEnabled} : {}),
     ...(game === 'th05' && isMultiplayer ? {th05MultiplayerDisplay: options.th05MultiplayerDisplay} : {}),
@@ -172,10 +174,11 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   if (String(initial.game) === 'th128') {
     const music = th128InstalledMusic(generation, settings.musicPreference, settings.context.musicAvailability.audio);
     const practiceLanguage = th128LanguageAvailable(language) ? TH128_INSTALLED_LANGUAGE : language;
-    const mounted = th128InstalledConfigure(language, music, gameRuntimeOptions(input, practiceLanguage, music, host));
+    const installedLanguage = th128MountedLanguage(generation);
+    const mounted = th128InstalledConfigure(language, music, gameRuntimeOptions(input, practiceLanguage, music, host), installedLanguage);
     guard();
     if (mounted.languageFallback) input.onWarning?.(t('language.launchFallback',
-      {language, reason: 'The installed TH128 package contains only Simplified Chinese game resources'}));
+      {language, reason: mounted.language === 'lang_en' ? 'English' : mounted.language === 'ja' ? '日本語' : '简体中文'}));
     input.onStatus?.(t('runtime.preparingResources', {resource: musicModeLabel(mounted.music, t)}));
     return {plan: {...initial, configure: mounted.configure, launcherControls: launcherControls()},
       language: mounted.language, music: mounted.music};

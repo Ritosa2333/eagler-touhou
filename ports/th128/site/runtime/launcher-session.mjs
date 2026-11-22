@@ -8,13 +8,23 @@ const KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX'
 const own=(value,key)=>Object.hasOwn(value,key),record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)
  &&(Object.getPrototypeOf(value)===Object.prototype||Object.getPrototypeOf(value)===null);
 const invalid=message=>Object.assign(new Error(message),{errno:'invalid-field'});
+export function launcherParentOrigin(window,document,location){
+ try{
+  // Some iframe navigations omit the referrer. Reading the parent location
+  // in that case succeeds only when the browser verifies a shared origin.
+  const referrer=document?.referrer;
+  const url=new URL(referrer||window.parent.location.href);
+  if(!['https:','http:'].includes(url.protocol))return null;
+  if(!referrer&&url.origin!==location.origin)return null;
+  return url.origin;
+ }catch{return null;}
+}
 export function mountLauncherSession({window=globalThis.window,document=window?.document,location=window?.location,hooks={}}={}){
  if(!window||!location||!window.parent||window.parent===window)return null;
  const values=new URLSearchParams(location.search??'').getAll('runtimeEpoch');
  if(values.length!==1||!(/^[1-9][0-9]*$/).test(values[0]))return null;
  const epoch=Number(values[0]);if(!Number.isSafeInteger(epoch))return null;
- let parentOrigin;
- try{const referrer=new URL(document?.referrer);if(!['https:','http:'].includes(referrer.protocol)||referrer.origin==='null')return null;parentOrigin=referrer.origin;}catch{return null;}
+ const parentOrigin=launcherParentOrigin(window,document,location);if(!parentOrigin)return null;
  const parent=window.parent,controller=new AbortController(),requests=new Map();
  let phase='booting',config=null,launchSerial=null,presented=false,closed=false,busy=false,resourcesBusy=false,fileBusy=false;
  const detachGamepad=parentOrigin===location.origin?installLauncherGamepadInput({target:window,protocol:PROTOCOL,game:GAME,epoch,origin:location.origin,isReady:()=>phase==='running'}):null;

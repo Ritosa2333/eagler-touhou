@@ -818,7 +818,7 @@ export class TitleSoundWindowConsumer{
   constructor(module,queue,ledger,{present=true}={}){
     for(const name of ['epoch','count','begin_window','window_state','id','x','operation','ack_window'])
       if(typeof module?.['_th128_title_sound_'+name]!=='function')throw new Error('Original Title sound journal API is unavailable');
-    if(typeof module.UTF8ToString!=='function'||!(queue instanceof GameSoundQueue)
+    if(typeof module.UTF8ToString!=='function'||!(queue instanceof GameSoundQueue||queue===null&&present===false)
       ||typeof ledger?.commit!=='function'||typeof present!=='boolean')throw new Error('Original Title sound consumer requires its real queue and durable ledger');
     this.module=module;this.queue=queue;this.ledger=ledger;this.present=present;this.pending=null;this.busy=false;
   }
@@ -847,11 +847,11 @@ export class TitleSoundWindowConsumer{
         const index=pending.cursor,id=module._th128_title_sound_id(index),pan=module._th128_title_sound_x(index),operation=module._th128_title_sound_operation(index);
         if(!Number.isInteger(id)||id<0||id>=76||!Number.isFinite(pan)||![0,1,2].includes(operation))
           throw new Error('Original Title sound request is invalid');
-        const accepted=this.queue.consumeNativeRequest(id,pan,operation,{present:this.present});
+        const accepted=this.queue?.consumeNativeRequest(id,pan,operation,{present:this.present})??false;
         if(typeof accepted!=='boolean')throw new Error('Original Title sound queue acceptance is not explicit');
         pending.requests.push({id,pan,operation,accepted});++pending.cursor;
       }
-      if(!pending.flushed){this.queue.flush({present:this.present});pending.flushed=true;}
+      if(!pending.flushed){this.queue?.flush({present:this.present});pending.flushed=true;}
       if(!pending.receipt)pending.receipt={serial:pending.serial,epoch:pending.epoch,baseLow:pending.baseLow,baseHigh:pending.baseHigh,count:pending.count,requests:pending.requests,present:this.present};
       const receipt=pending.receipt,committed=await this.ledger.commit(receipt);
       if(committed?.strictReadback!==true||committed.payload!==JSON.stringify(receipt)

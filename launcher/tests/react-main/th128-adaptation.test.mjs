@@ -10,7 +10,8 @@ import {SITE_MANIFEST_SCHEMA, validateSiteManifest} from '../../src/contracts/si
 import {createManagedRuntimeGenerationLease} from '../../src/launcher/runtime-generation-lease.mts';
 import {gamePreferenceStorageKey} from '../../src/launcher/game-preferences.mts';
 import {th128InstalledConfigure, th128InstalledMusic} from '../../src/launcher/th128-installed-config.mts';
-import {provideTh128ManagedPackage} from '../../src/launcher/th128-managed-package.mts';
+import {provideTh128ManagedPackage, th128MountedLanguage} from '../../src/launcher/th128-managed-package.mts';
+import {publishedLanguageSelection} from '../../package/package-launcher.mjs';
 
 // The DATA layout is a public format identifier. Bodies and installation
 // references below are synthetic; no DAT, OGG, ZIP, service or browser is used.
@@ -57,6 +58,28 @@ function packageFixture() {
     async readResource(selected, id) {return read(selected, id);},
   }};
 }
+
+test('TH128 publishes three choices and mounts only the installed edition', async () => {
+  const {generation, ports} = packageFixture();
+  const {descriptor} = generation;
+  descriptor.components.language.entries.unshift({id: 'ja', file: 'language-ja'});
+  descriptor.files['language-ja'] = {...descriptor.files['language-zh'],
+    source: 'fixture/language-ja', target: '/__eagler/language/lang_ja.zip'};
+  descriptor.components.language.entries.push({id: 'lang_en', file: 'language-en'});
+  descriptor.files['language-en'] = {...descriptor.files['language-zh'],
+    source: 'fixture/language-en', target: '/__eagler/language/lang_en.zip'};
+  assert.deepEqual(publishedLanguageSelection(descriptor, 'ja'), {language: ['ja']});
+  assert.deepEqual(publishedLanguageSelection(descriptor, 'lang_zh-hans'), {language: ['lang_zh-hans']});
+  assert.deepEqual(publishedLanguageSelection(descriptor, 'lang_en'), {language: ['lang_en']});
+  assert.equal(th128InstalledConfigure('lang_en', 'ogg-full', {}, 'lang_en').configure.language, 'en');
+  assert.equal(th128MountedLanguage(generation), 'lang_zh-hans');
+  const {managedPackage} = await provideTh128ManagedPackage(ports);
+  const mounted = JSON.parse(new TextDecoder().decode(managedPackage.descriptor));
+  assert.deepEqual(mounted.components.language.entries, [{id: 'lang_zh-hans', file: 'language-zh'}]);
+  assert.ok(!Object.hasOwn(mounted.files, 'language-ja'));
+  assert.ok(!Object.hasOwn(mounted.files, 'language-en'));
+  await assert.rejects(managedPackage.readFile('language-ja'), /not declared/);
+});
 
 function hostFixture() {
   const {bytes, sha256} = packageFixture().generation.descriptor.files['game-data'];

@@ -44,8 +44,7 @@ import {relocateReplayPlayback} from '../services/replay-relocation';
 import {createMetadataService} from '../services/metadata';
 import {createPackageAcquisition} from '../services/package-acquisition';
 import {prepareFilePlan, prepareGame, prepareGameCheck, prepareRoomResourcePlan, type MultiplayerPreparation, type GamePreparationInput, type PreparedGame} from '../services/game-preparation';
-import type {InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
-import {th128InstalledMusic} from '../../src/launcher/th128-installed-config.mts';
+import {th128RequestedMusic} from '../../src/launcher/th128-installed-config.mts';
 import {musicModeLabel} from '../services/game-resources';
 import {createPreparationNetwork} from '../services/preparation-network';
 import {createRoomPreparation} from '../services/room-preparation';
@@ -547,6 +546,15 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       return context.isCurrent();
     } catch(error) {reportError(error);return false;}
   }
+  function requiresManualImport(game: GameId) {
+    const {siteManifest, releaseCatalog} = metadata.getSnapshot();
+    if (siteManifest?.shared.resourceMode === 'import') return true;
+    if (!productRequiresImport(game)) return false;
+    const published = releaseCatalog?.games.th128;
+    const pointer = siteManifest?.games.th128?.package;
+    return game !== 'th128' || !published || !pointer || typeof pointer !== 'object' ||
+      !('revision' in pointer) || pointer.revision !== published.revision;
+  }
   const gameData = createGameDataImportModel({acquisition: testBuild ? acquisition : {
     importPackage: acquisition.importPackage,
     importFiles: acquisition.importFiles,
@@ -556,7 +564,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,
       runtimeEpoch: runtime?.getSnapshot().epoch ?? null,
       runtimeReady: runtime?.getSnapshot().ready === true && !roomPreload, launched: runtime?.getSnapshot().launched === true,
-      playerOpen: snapshot.playerOpen, importServer: productRequiresImport(gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID)) || metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import',
+      playerOpen: snapshot.playerOpen, importServer: requiresManualImport(gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID)),
       fallback: metadata.getSnapshot().siteManifest?.shared.gameDataFallback ?? null}),
     ports: {
       pickFile: ({accept}) => ports.pickFile(accept), pickFiles: ({accept}) => ports.pickFiles(accept), feedback, showGameDataTransfer: transfer.revealGameData,
@@ -812,16 +820,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     try {storage?.setItem('eagler-external-input-confirmed-v1', '1');} catch {}
     return true;
   }
-  async function confirmMusicWarnings(installed?: InstalledPackageGeneration | null) {
-    let state = settings.getSnapshot(); if (!state) return false;
+  async function confirmMusicWarnings() {
+    const state = settings.getSnapshot(); if (!state) return false;
     let music = state.music;
-    if (state.gameId === 'th128') {
-      if (installed?.game !== 'th128') {
-        installed = (await acquisition.readCurrent('th128')).generation;
-        state = settings.getSnapshot(); if (disposed || state?.gameId !== 'th128') return false;
-      }
-      music = th128InstalledMusic(installed, state.musicPreference, state.context.musicAvailability.audio);
-    }
+    if (state.gameId === 'th128') music = th128RequestedMusic(state.musicPreference, state.context.musicAvailability.audio);
     if (music === 'none' || music === 'midi') return decisions.askConfirmation({message: t(music === 'none' ? 'music.noneLaunchWarning' : 'music.midiLaunchWarning'), confirmText: t('music.startAnyway')});
     return true;
   }
@@ -1101,12 +1103,12 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (isMultiplayerProductId(product)) {await roomSession!.service.launch(); return;}
       cloudSync?.prepareLocalLaunch();
       const game = gameIdForProduct(product);
-      const requiresImport = productRequiresImport(game) || metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import';
+      const requiresImport = requiresManualImport(game);
       const installed = requiresImport ? (await acquisition.readCurrent(game)).generation : null;
       if (requiresImport && !installed) {
         publish({startupError: null}); feedback.status(t('package.needImport')); gameData.beginImportRequired(); return;
       }
-      if (!await confirmTouchInput('singleplayer') || !await confirmMusicWarnings(installed)) return;
+      if (!await confirmTouchInput('singleplayer') || !await confirmMusicWarnings()) return;
       // Main9560–9569 reads business selection again after each awaited UI
       // boundary. A first Host may have replaced the provisional game while
       // its warning/fullscreen request was pending; the raw URL stays intact.
