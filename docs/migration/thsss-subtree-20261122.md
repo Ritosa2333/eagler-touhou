@@ -33,4 +33,10 @@ git rev-parse HEAD:ports/thsss export/thsss^{tree}
 python tools/ports/check-history.py --subtree ports/thsss
 ```
 
-向独立仓回推使用导出的端口分支。更新连接点时同步机器登记。
+`ports/thsss` 有新提交后，用同一条命令把目录历史快进到 THSSS-WASM 的 `main`：
+
+```sh
+python tools/ports/sync-thsss-upstream.py
+```
+
+该命令导出子树、核对 `c08d073a6c0e789773879da8f1272c7afd96fe3a` 仍是祖先、目录树与导出树一致，然后非强制推送。当前导出提交是 `91e6b3d17da5a57ea12786e4ed91edcfd1a4aea0`，比连接基点多 12 个提交。monorepo 的 `tools/ports/`、`launcher/tests/` 和 `docs/adaptation/status.json` 留在 eagler-touhou。更新连接提交时再改机器登记里的 `latestJoin` 与 `currentSplit`。
