@@ -6,10 +6,26 @@
 }
 
 .profile-th09-replays .th09-replay-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  column-gap: 4px;
+}
+
+.profile-th09-replays .th09-replay-row > span {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.profile-th09-replays .th09-replay-actions {
+  flex: none;
+  margin-inline-start: auto;
+}
+
+.th09-replay-side {
+  display: inline-block;
+  max-inline-size: 100%;
 }
 
 .profile-th09-replays .th09-replay-actions > button {

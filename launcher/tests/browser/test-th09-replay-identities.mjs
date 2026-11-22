@@ -4,6 +4,7 @@ import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 
 const origin = new URL(process.argv[2] || 'http://127.0.0.1:5173/');
 const screenshot = process.argv[3];
+const narrowScreenshot = process.argv[4];
 const duelIds = [
   '72aeaea1-dd24-43cb-ad47-68ced29d8881',
   '72aeaea1-dd24-43cb-ad47-68ced29d8882',
@@ -81,6 +82,15 @@ const sides = set => set.$$eval('ol > li:first-child .th09-replay-side', nodes =
   text:node.textContent.trim(), self:node.hasAttribute('data-self'),
 })));
 
+const actionsBelow = set => set.$eval('.th09-replay-row', node =>
+  node.lastElementChild.getBoundingClientRect().top >= node.firstElementChild.getBoundingClientRect().bottom);
+
+async function captureCard(page, set, path) {
+  await page.evaluate(() => document.fonts.ready);
+  const card = await set.evaluateHandle(node => node.closest('.profile-th09-history > li'));
+  await card.asElement().screenshot({path});
+}
+
 try {
   const desktop = await openProfile({width:1440, member:true, scale:2});
   const first = await expand(desktop, 0);
@@ -91,19 +101,18 @@ try {
     ['播放','下载']);
   assert.equal(await first.$$eval('.th09-replay-actions', rows => rows.every(row =>
     row.firstElementChild.getBoundingClientRect().top === row.lastElementChild.getBoundingClientRect().top)), true);
-  if (screenshot) {
-    await desktop.evaluate(() => document.fonts.ready);
-    const card = await first.evaluateHandle(node => node.closest('.profile-th09-history > li'));
-    await card.asElement().screenshot({path:screenshot});
-  }
+  assert.equal(await actionsBelow(first), false, 'Short desktop labels leave the action group on the same line');
+  if (screenshot) await captureCard(desktop, first, screenshot);
   await desktop.close();
 
-  const narrow = await openProfile({width:390, member:true});
+  const narrow = await openProfile({width:390, member:true, scale:2});
   const second = await expand(narrow, 1);
   assert.deepEqual(await sides(second), [
     {text:'灵梦 @' + longId,self:false}, {text:'琪露诺 @Alice',self:true},
   ]);
   assert.equal(await second.$eval('ol', list => list.scrollWidth <= list.clientWidth + 1), true);
+  assert.equal(await actionsBelow(second), true, 'A long ID keeps the entire action group below the matchup');
+  if (narrowScreenshot) await captureCard(narrow, second, narrowScreenshot);
   const legacy = await expand(narrow, 2);
   assert.deepEqual(await sides(legacy), [{text:'灵梦',self:false}, {text:'琪露诺',self:false}]);
   await narrow.close();
