@@ -195,8 +195,10 @@ async function startGame() {
       phase = "exited";
       emit("exit", { status: "success", code: 0 });
     },
-    onPresented() {
+    onBeforeFrame() {
       touch.presented();
+    },
+    onPresented() {
       const now = performance.now();
       if (lastFrameAt) frameStats.gaps.push(now - lastFrameAt);
       lastFrameAt = now;

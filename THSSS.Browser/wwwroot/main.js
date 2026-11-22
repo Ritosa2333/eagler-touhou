@@ -492,15 +492,17 @@ export async function launchRuntime(runtime, hooks = {}) {
       if (fast) {
         acc += delta;
         if (acc >= step) {
+          if (hooks.onBeforeFrame) hooks.onBeforeFrame();
           host.Simulate();
           acc -= step;
           if (acc > step) acc = step;
+          presented = true;
         }
         host.Draw(acc / step);
-        presented = true;
       } else {
         acc += delta;
         if (acc >= step) {
+          if (hooks.onBeforeFrame) hooks.onBeforeFrame();
           host.Frame();
           acc -= step;
           if (acc > step * 2) acc = 0;

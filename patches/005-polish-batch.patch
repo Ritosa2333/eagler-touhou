@@ -260,10 +260,46 @@ index 73634e5..48d8104 100644
  }
 
 diff --git a/Shooting/BaseStage.cs b/Shooting/BaseStage.cs
-index aa29337..d1558c6 100644
+index aa29337..3d4b217 100644
 --- a/Shooting/BaseStage.cs
 +++ b/Shooting/BaseStage.cs
-@@ -366,7 +366,13 @@ internal class BaseStage : BaseGameState, IGameState
+@@ -261,11 +261,35 @@ internal class BaseStage : BaseGameState, IGameState
+ 				else
+ 				{
+ 					StageData.KClass.Hex2Key(num);
++					if (StageData.Rep.TouchStream)
++					{
++						float dx;
++						float dy;
++						StageData.Rep.ReadTouch(out dx, out dy);
++						if (StageData.MyPlane != null)
++						{
++							StageData.MyPlane.ApplyTouch(dx, dy);
++						}
++					}
+ 				}
+ 			}
+ 			else
+ 			{
++				float dx = 0f;
++				float dy = 0f;
++				if (StageData.MyPlane != null)
++				{
++					StageData.MyPlane.PeekPendingTouch(out dx, out dy);
++				}
++				if (dx != 0f || dy != 0f)
++				{
++					StageData.RepInfo.TouchDelta = true;
++				}
+ 				StageData.Rep.WriteKey(StageData.KClass.Key2Hex());
++				if (StageData.Rep.TouchStream)
++				{
++					StageData.Rep.WriteTouch(dx, dy);
++				}
+ 			}
+ 		}
+ 		Background3D.Ctrl();
+@@ -366,7 +390,13 @@ internal class BaseStage : BaseGameState, IGameState
  			MyPlane.ShowCenter();
  		}
  		SpriteMain.Draw2D(TextureObjectDictionary["TotalBackground"], 1f, 0f, new PointF(320f, 240f), 255);
@@ -278,7 +314,7 @@ index aa29337..d1558c6 100644
  	}
  
  	public virtual void Drama()
-@@ -531,6 +537,14 @@ internal class BaseStage : BaseGameState, IGameState
+@@ -531,6 +561,14 @@ internal class BaseStage : BaseGameState, IGameState
  		{
  			x.Show();
  		});

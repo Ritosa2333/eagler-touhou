@@ -47,22 +47,103 @@ index df0b301..8a90bd3 100644
  }
 
 diff --git a/Shooting/BaseMyPlane.cs b/Shooting/BaseMyPlane.cs
-index a96264f..a604f7d 100644
+index a96264f..88b62f2 100644
 --- a/Shooting/BaseMyPlane.cs
 +++ b/Shooting/BaseMyPlane.cs
-@@ -683,6 +683,19 @@ public class BaseMyPlane : BaseObject
+@@ -631,6 +631,54 @@ public class BaseMyPlane : BaseObject
+ 		SpellEnabled = true;
+ 	}
+ 
++	private float touchDx;
++
++	private float touchDy;
++
++	private bool hasTouch;
++
++	private float lastTouchDx;
++
++	private float lastTouchDy;
++
++	public bool TouchReplayUsed { get; private set; }
++
++	public void ApplyTouch(float dx, float dy)
++	{
++		touchDx = dx;
++		touchDy = dy;
++		hasTouch = true;
++	}
++
++	public void ClearTouch()
++	{
++		hasTouch = false;
++		touchDx = 0f;
++		touchDy = 0f;
++	}
++
++	public void PeekPendingTouch(out float dx, out float dy)
++	{
++		if (hasTouch)
++		{
++			dx = touchDx;
++			dy = touchDy;
++		}
++		else
++		{
++			dx = 0f;
++			dy = 0f;
++		}
++	}
++
++	public void PeekLastTouch(out float dx, out float dy)
++	{
++		dx = lastTouchDx;
++		dy = lastTouchDy;
++		lastTouchDx = 0f;
++		lastTouchDy = 0f;
++	}
++
+ 	public override void Move()
+ 	{
+ 		Vx = 0f;
+@@ -638,6 +686,26 @@ public class BaseMyPlane : BaseObject
+ 		float x = OriginalPosition.X;
+ 		float y = OriginalPosition.Y;
+ 		SlowMove = KClass.Key_Shift;
++		if (hasTouch)
++		{
++			float dx = touchDx;
++			float dy = touchDy;
++			hasTouch = false;
++			touchDx = 0f;
++			touchDy = 0f;
++			Vx = dx;
++			Vy = 0f - dy;
++			x += dx;
++			y += dy;
++			OriginalPosition = ClampPosition(x, y);
++			lastTouchDx = dx;
++			lastTouchDy = dy;
++			if (dx != 0f || dy != 0f)
++			{
++				TouchReplayUsed = true;
++			}
++			return;
++		}
+ 		if (!SlowMove)
+ 		{
+ 			if (KClass.ArrowRight)
+@@ -683,6 +751,18 @@ public class BaseMyPlane : BaseObject
  		}
  		x += Vx;
  		y -= Vy;
 +		OriginalPosition = ClampPosition(x, y);
++		lastTouchDx = 0f;
++		lastTouchDy = 0f;
 +	}
 +
 +	public void ShiftBy(float dx, float dy)
 +	{
-+		if (TxtureObject != null)
-+		{
-+			OriginalPosition = ClampPosition(OriginalPosition.X + dx, OriginalPosition.Y + dy);
-+		}
++		ApplyTouch(dx, dy);
 +	}
 +
 +	private PointF ClampPosition(float x, float y)
@@ -70,7 +151,7 @@ index a96264f..a604f7d 100644
  		if (x < (float)(TxtureObject.Width / 2 - 6))
  		{
  			x = TxtureObject.Width / 2 - 6;
-@@ -699,7 +712,7 @@ public class BaseMyPlane : BaseObject
+@@ -699,7 +779,7 @@ public class BaseMyPlane : BaseObject
  		{
  			y = BoundRect.Height - TxtureObject.Height / 2 + 8;
  		}
@@ -79,9 +160,17 @@ index a96264f..a604f7d 100644
  	}
  
  	public virtual void SubPlaneCtrl()
+@@ -948,6 +1028,7 @@ public class BaseMyPlane : BaseObject
+ 			}
+ 			else
+ 			{
++				ClearTouch();
+ 				DestPoint = new PointF(BoundRect.Width / 2, BoundRect.Height - 30);
+ 				Velocity = 2f;
+ 				base.Move();
 
 diff --git a/Shooting/Game_Main.cs b/Shooting/Game_Main.cs
-index c4e4893..66be949 100644
+index c4e4893..69ebbfc 100644
 --- a/Shooting/Game_Main.cs
 +++ b/Shooting/Game_Main.cs
 @@ -2,7 +2,6 @@ using System;
@@ -412,7 +501,7 @@ index c4e4893..66be949 100644
  	}
  
  	private void Form_Main_KeyDown(object sender, KeyEventArgs e)
-@@ -860,4 +945,38 @@ public class Game_Main
+@@ -860,4 +945,42 @@ public class Game_Main
  		}
  		MouseCtrl.DrawCursor(!fullWindow);
  	}
@@ -443,10 +532,14 @@ index c4e4893..66be949 100644
 +		BaseGameState baseGameState = PresentState as BaseGameState;
 +		if (baseGameState != null && baseGameState.StageData != null && baseGameState.StageData.Story == null)
 +		{
++			if (baseGameState.StageData.OnReplay)
++			{
++				return;
++			}
 +			BaseMyPlane myPlane = baseGameState.StageData.MyPlane;
 +			if (myPlane != null)
 +			{
-+				myPlane.ShiftBy(dx, dy);
++				myPlane.ApplyTouch(dx, dy);
 +			}
 +		}
 +	}
