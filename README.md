@@ -15,7 +15,7 @@
 | `vendor/THSSS.exe` | 原版游戏程序集。 | 仅在重生 `THSSS-src` 时用锁定的 `ilspycmd` 反编译。 |
 | `patches/` | 有序的浏览器移植补丁（`series` + `ownership.json`）。 | 打到 `THSSS-src` 上，生成 gitignored 的 `THSSS/`。 |
 | `THSSS` | 生成的工作树（不入库）。 | 在此改逻辑，再 refresh 补丁。仅浏览器目标，无桌面双构建。 |
-| `THSSS-Config` | dnSpy 导出的配置器，独立解决方案，目标 `net20` WinForms，读写 `Setting.INI`。 | 不参与浏览器构建。网页版若没有 `Setting.INI`，会自行写入一份默认配置。 |
+| `vendor/THSSS-Config` | dnSpy 导出的配置器，独立解决方案，目标 `net20` WinForms，读写 `Setting.INI`。 | 不参与浏览器构建。网页版若没有 `Setting.INI`，会自行写入一份默认配置。 |
 | `THSSS.Platform` | `net10.0` 上的 WinForms、GDI+、WMI 替身。 | 能解码 PNG / BMP，并用画布光栅化文字。其余 API 只保留游戏能编译、能跑主循环所需的部分。 |
 | `THSSS.SlimDX` | SlimDX API 替身，程序集名仍是 `SlimDX`。 | 设备、Sprite、纹理、固定功能管线、渲染目标、雾和光照已接到 WebGL2。文本 `.x` 网格会读入，套用帧变换后按材质绘制。`FX` 里的 Blur、Warp、Filter 用 `wwwroot/shaders` 下手工改写的 `.vert` / `.frag` 画整屏贴图。XAudio2 接到 Web Audio；游戏仍可写 `.wav` 路径，运行时在存在 `.ogg` 时自动改映。键盘状态由页面按键写入；手柄是空实现。 |
 | `THSSS.Browser` | `net10.0` / `browser-wasm` 宿主，NativeAOT-LLVM。 | 从 `THSSS-src` + 补丁准备游戏源码，再变换并编译，把运行时和游戏链成一个 `THSSS.Browser.wasm`。页面用旁边的 `THSSS.Browser.js` 启动它，资源进入虚拟文件系统，由宿主驱动帧循环。按键来自页面，存档写入 IndexedDB。 |
@@ -58,7 +58,7 @@ dotnet exec THSSS.Browser/obj/prepare-game-sources/PrepareGameSources.dll refres
 
 浏览器工程在编译前还会：跳过 `Program.cs` 和 `AssemblyInfo.cs`；把 `\\` 换成 `/`；把 `Encoding.Default` 换成 GBK；把 `List.ForEach` 换成 `ForEachNet48`；并规范化 ILSpy 的运算符调用与多余转型。图形、音频、输入的缺口改 `THSSS.SlimDX` 和 `THSSS.Browser/wwwroot` 下的 `gl.js`、`audio.js`。
 
-`THSSS.sln` 是浏览器解决方案（Platform、SlimDX、Browser）。配置器用 `THSSS-Config/Config.sln`。
+`THSSS.sln` 是浏览器解决方案（Platform、SlimDX、Browser）。配置器用 `vendor/THSSS-Config/Config.sln`。
 
 GitHub Actions（`.github/workflows/browser-build.yml`）在不含资源的检出上执行 `-p:StageGameAssets=false` 编译。
 

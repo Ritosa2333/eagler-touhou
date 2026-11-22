@@ -15,7 +15,7 @@ A browser port of the Windows game (.NET Framework 4.8, SlimDX, WinForms). Game 
 | `vendor/THSSS.exe` | Original game assembly. | Decompiled with pinned `ilspycmd` only when regenerating `THSSS-src`. |
 | `patches/` | Ordered browser port diffs (`series` + `ownership.json`). | Applied onto `THSSS-src` into gitignored `THSSS/`. |
 | `THSSS` | Generated working tree (not in git). | Edit here, then refresh patches. Browser-only; no desktop dual-build. |
-| `THSSS-Config` | dnSpy export of the config tool. Separate solution, `net20` WinForms, reads and writes `Setting.INI`. | Not part of the browser build. The web build writes a default `Setting.INI` when none exists. |
+| `vendor/THSSS-Config` | dnSpy export of the config tool. Separate solution, `net20` WinForms, reads and writes `Setting.INI`. | Not part of the browser build. The web build writes a default `Setting.INI` when none exists. |
 | `THSSS.Platform` | WinForms, GDI+, and WMI stand-ins on `net10.0`. | Decodes PNG and BMP, and rasters text through the canvas. Other APIs exist only so the game can compile and run its main loop. |
 | `THSSS.SlimDX` | SlimDX stand-in. The assembly name is still `SlimDX`. | Device, sprites, textures, the fixed-function pipeline, render targets, fog, and lighting go through WebGL2. Text `.x` meshes are loaded, transformed by their frames, and drawn per material. Blur, Warp, and Filter in `FX` run as hand-written `.vert` / `.frag` files in `wwwroot/shaders` on the full-screen blit. XAudio2 plays browser-decodable audio; `.wav` requests remap to `.ogg` when packed. Key state is filled from the page; the joystick API is empty. |
 | `THSSS.Browser` | `net10.0` / `browser-wasm` host, NativeAOT-LLVM. | Prepares game sources from `THSSS-src` + patches, transforms them, and links the runtime and game into one `THSSS.Browser.wasm`. The page starts it through `THSSS.Browser.js`, loads assets into the virtual file system, and drives the frame loop. Keys come from the page. Saves go to IndexedDB. |
@@ -58,7 +58,7 @@ dotnet exec THSSS.Browser/obj/prepare-game-sources/PrepareGameSources.dll refres
 
 Before compile, TransformSources skips `Program.cs` and `AssemblyInfo.cs`, rewrites `\\` to `/`, replaces `Encoding.Default` with GBK, replaces `List.ForEach` with `ForEachNet48`, and normalizes ILSpy operator/cast artifacts. Graphics, audio, and input gaps belong in `THSSS.SlimDX` and in `gl.js` / `audio.js` under `THSSS.Browser/wwwroot`.
 
-`THSSS.sln` is the browser solution (Platform, SlimDX, Browser). The config tool remains `THSSS-Config/Config.sln`.
+`THSSS.sln` is the browser solution (Platform, SlimDX, Browser). The config tool remains `vendor/THSSS-Config/Config.sln`.
 
 GitHub Actions (`.github/workflows/browser-build.yml`) compiles a checkout that has no assets, with `-p:StageGameAssets=false`.
 
