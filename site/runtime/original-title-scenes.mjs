@@ -9,7 +9,7 @@ export const originalTitleDemos=Object.freeze([
   Object.freeze({name:'demo2.rpy',stage:11,frames:6094}),
 ]);
 export const originalTitleDemoLimit=3600;
-export const originalTitleDemoInputs=new Set(['KeyZ','KeyX','KeyC','ControlLeft','ControlRight','Enter','Escape']);
+export const originalTitleDemoInputs=new Set(['KeyZ','KeyX','KeyC','ControlLeft','Enter','Escape']);
 export class OriginalTitleDemoClock {
   #idle=0;
   #next=0;
