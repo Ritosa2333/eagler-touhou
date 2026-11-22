@@ -1,41 +1,14 @@
 ---
 name: THSSS touch th01 parity
-overview: 把 thsss 限速直触改成与 th01 同构的相对像素位移 + 原速上限，接入 Move；触控局用独立 .trpy（非 .rpy）录放位移；再挂进 eagler-touhou 本地验收，启动器侧存档桥接为 addon。
-todos:
-  - id: movement-delta
-    content: touch-movement.mjs：drain 改为限速/无限速像素步进
-    status: pending
-  - id: bridge-shift-only
-    content: touch-bridge：直触只用 shift；抬手 clear；默认灵敏度 150
-    status: pending
-  - id: stick-analog
-    content: joystick / joystick-free 经 ApplyTouch；free 连续方向，8 向仅 quantize
-    status: pending
-  - id: preframe-apply
-    content: 帧前调用 presented；patch ApplyTouch 进 Move + 禁移忽略
-    status: pending
-  - id: replay-trpy
-    content: 触控局写 .trpy（6 字节帧）；纯键位仍 .rpy；菜单列两边
-    status: pending
-  - id: four-finger
-    content: menu-gestures：四指 pause Escape
-    status: pending
-  - id: tests-patches
-    content: 更新 input 测试并 refresh-patches
-    status: pending
-  - id: eagler-local-wire
-    content: eagler-touhou 最小接入 ports/thsss + testOnly 清单与 CONTENT_DIR
-    status: pending
-  - id: eagler-trpy-addon
-    content: addon：启动器/存档桥允许 .trpy（files 白名单等）
-    status: pending
-  - id: local-touch-accept
-    content: 本地 npm start 抽测 TOUCH 与 .trpy 回放
-    status: pending
+overview: 历史记录。触控基准已改为 docs/touch-th06.plan.md，本文件不再作为待办。
+status: historical
+todos: []
 isProject: false
 ---
 
 # THSSS 触控对标 th01
+
+本文件是历史实现记录。当前触控基准是 [touch-th06.plan.md](touch-th06.plan.md)，下面的条目不再作为待办。
 
 ## 目标行为（对标 th01）
 

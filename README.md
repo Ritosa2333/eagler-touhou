@@ -64,8 +64,13 @@ GitHub Actions（`.github/workflows/browser-build.yml`）在不含资源的检�
 
 ## 路线图
 
+本轮：
+
 - 完成游戏配置接入（Config）
-- 完整适配触摸屏
+- 完整适配触摸屏（基准见 `docs/touch-th06.plan.md`）
 - 优化资源加载和大小
 - 增加 THSSS-Prac
+
+以后：
+
 - 支持联机

@@ -64,8 +64,13 @@ GitHub Actions (`.github/workflows/browser-build.yml`) compiles a checkout that 
 
 ## Roadmap
 
+This round:
+
 - Wire up game configuration (Config)
-- Full touchscreen support
+- Full touchscreen support (baseline: `docs/touch-th06.plan.md`)
 - Smaller and faster asset loading
 - Add THSSS-Prac
+
+Later:
+
 - Online play
