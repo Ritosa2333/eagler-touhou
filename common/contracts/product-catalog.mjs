@@ -242,6 +242,7 @@ export const PRODUCT_GAMES = Object.freeze({
         testOnly: true,
         buildOptIn: true,
         runtimeResourceTransport: "resources",
+        cardArtwork: "thsss-card.webp",
         number: "SSS",
         title: "東方夏夜祭",
         subtitle: "Shining Shooting Star",

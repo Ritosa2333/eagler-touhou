@@ -113,7 +113,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         features: Readonly<{thprac: false; languages: false; focusHitbox: false}>;
     }>;
     thsss: Readonly<{
-        testOnly: true; buildOptIn: true; number: "SSS"; title: "東方夏夜祭"; subtitle: "Shining Shooting Star";
+        testOnly: true; buildOptIn: true; number: "SSS"; title: "東方夏夜祭"; subtitle: "Shining Shooting Star"; cardArtwork: "thsss-card.webp";
         storage: Readonly<{saveRoot: "/savesthsss"; scoreFile: "Score.dat"; configFiles: readonly string[]}>;
         runtime: "./runtime/thsss/thsss.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
         requiredShared: readonly string[]; runtimeAssets: readonly string[];

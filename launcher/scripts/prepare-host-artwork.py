@@ -30,6 +30,9 @@ ARTWORK_BY_GAME = {
     "th03": ("th03-card.webp",),
     "th04": ("th04-card.webp",),
     "th05": ("th05-card.webp",),
+    # Pre-converted WebP from THSSS-WASM README/thsss-card.webp, staged under
+    # assets/artwork and passed through --prepared-artwork-dir.
+    "thsss": ("thsss-card.webp",),
     "th06": (
         "th06-card.webp",
         "favicon.ico",
@@ -412,6 +415,13 @@ def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = 
         return _extract_th17_title(root, thdat, thanm)
     if name in ("th11-card.webp", "th20-card.webp"):
         raise FileNotFoundError(f"{game}: supply {name} through --override-dir; no retail artwork reader is available")
+    if name == "thsss-card.webp":
+        for candidate in (root / "artwork" / name, root / "assets/artwork" / name):
+            if candidate.is_file():
+                return candidate.read_bytes()
+        raise FileNotFoundError(
+            f"{game}: supply {name} through prepared content (assets/artwork) or --override-dir"
+        )
     raise AssertionError(name)
 
 

@@ -65,7 +65,7 @@ export const PRODUCT_CONTENT = Object.freeze({
       files: Object.freeze(["thsss.dat"]),
       preparedAlternative: Object.freeze({
         directory: "assets",
-        markerFiles: Object.freeze(["thsss.dat", "BGM/OP.ogg"]),
+        markerFiles: Object.freeze(["thsss.dat", "BGM/OP.ogg", "artwork/thsss-card.webp"]),
       }),
     }),
     // sha256(JSON.stringify({files:[{filename:"/thsss.dat"}]}))
@@ -77,10 +77,10 @@ export const PRODUCT_CONTENT = Object.freeze({
       }),
     }),
     hostPreparation: Object.freeze({
-      artwork: Object.freeze({ kind: "retail-memory-title-no-reader" }),
+      artwork: Object.freeze({ kind: "prepared-content", directory: "artwork" }),
       preparedContent: Object.freeze({
         directory: "assets",
-        markerFiles: Object.freeze(["thsss.dat", "BGM/OP.ogg"]),
+        markerFiles: Object.freeze(["thsss.dat", "BGM/OP.ogg", "artwork/thsss-card.webp"]),
       }),
       ogg: Object.freeze({ kind: "prepared-content" }),
       dataAssets: Object.freeze({ kind: "prepared-content" }),
