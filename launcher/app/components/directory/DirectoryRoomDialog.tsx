@@ -11,8 +11,6 @@ import {LobbyDialogHeader} from './LobbyDialogHeader';
 import {useLocale} from '../../i18n';
 import {accountsEnabled} from '../../release-features';
 import {OptionSwitch} from '../settings/TouchSettingsFields';
-import {RoomNameField} from '../room/RoomNameField';
-import {normalizeRoomName} from '../../../../common/contracts/room-name.mjs';
 import '../room/room-presentation.css';
 
 export interface DirectoryRoomDialogProps {
@@ -33,7 +31,6 @@ export function DirectoryRoomDialog({service, assetUrl, open, onCloseRequest, co
   const inGameHelp = created && inGameDifficulty;
   const privateHelp = created && form.visibility === 'private';
   const disabled = state.connection !== 'live' || !!state.mine || state.leaving || !state.products.length;
-  const invalidName = created && !!form.roomName?.trim() && !normalizeRoomName(form.roomName);
   useLayoutEffect(() => {
     const node = dialog.current; if (!node) return;
     if (open) {
@@ -92,8 +89,6 @@ export function DirectoryRoomDialog({service, assetUrl, open, onCloseRequest, co
         </MainSelect>
       </div>
       <div id="createFields" className="lobby-form-pair" hidden={!created}><label className="lobby-field"><span>{t('lobby.capacity')}</span><MainSelect id="capacitySelect" aria-label={t('lobby.capacity')} value={form.capacity} onChange={event => service.updateForm({capacity: Number(event.target.value) as 2 | 3})}>{policy?.playerCounts.map(count => <option key={count} value={count}>{t('lobby.playersCount', {count})}</option>)}</MainSelect></label><label className="lobby-field" hidden={inGameDifficulty}><span>{t('lobby.difficulty')}</span><MainSelect id="difficultySelect" aria-label={t('lobby.difficulty')} className="difficulty-label" data-difficulty={(policy?.difficulties[form.difficulty] || '').toLowerCase()} disabled={inGameDifficulty} value={form.difficulty} onChange={event => service.updateForm({difficulty: Number(event.target.value)})}>{policy?.difficulties.map((name, index) => <option key={name} value={index} className="difficulty-label" data-difficulty={name.toLowerCase()}>{name}</option>)}</MainSelect></label></div>
-      {created && state.roomNames && <RoomNameField id="createRoomName" text={form.roomName ?? ''}
-        onText={roomName=>service.updateForm({roomName})}/>}
       {created && accountsEnabled && form.product === 'th09mp' && <div className="flex min-h-9 items-center justify-between gap-3">
         <label className="text-sm font-semibold text-foreground" htmlFor="createRoomUnrated">{t('room.unrated')}</label>
         <OptionSwitch id="createRoomUnrated" label={t('room.unrated')} checked={form.unrated === true}
@@ -113,7 +108,7 @@ export function DirectoryRoomDialog({service, assetUrl, open, onCloseRequest, co
           <label className="lobby-field"><span>{t('room.cheatMovement')}</span><MainSelect id="cheatSelect" aria-label={t('room.cheatMovement')} value={form.disableCheatMovement ? '1' : '0'} onChange={event => service.updateForm({disableCheatMovement: event.target.value === '1'})}><option value="0">{t('room.cheatAllowed')}</option><option value="1">{t('room.cheatDisabled')}</option></MainSelect></label>
         </div>
       <p className="lobby-form-error" id="formError" role="alert" hidden/>
-      <BookButton variant="primary" className="lobby-button lobby-primary lobby-submit" id="submitRoom" type="submit" disabled={disabled || invalidName}>{t(created ? 'lobby.create' : 'lobby.joinRoom')}</BookButton>
+      <BookButton variant="primary" className="lobby-button lobby-primary lobby-submit" id="submitRoom" type="submit" disabled={disabled}>{t(created ? 'lobby.create' : 'lobby.joinRoom')}</BookButton>
     </form>
   </dialog>;
 }

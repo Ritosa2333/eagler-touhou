@@ -190,23 +190,10 @@ try {
   await handbook.setViewport({width: 1280, height: 800});
   await handbook.goto(new URL('ui-review.html#page-room-settings', origin), {waitUntil: 'domcontentloaded'});
   const sample = '#page-room-settings #mpRoomSettings';
-  const name = `${sample} #mpRoomName`;
-  const save = `${sample} div:has(> #mpRoomName) + button`;
-  const nameStatus = `${save} + [role="status"]`;
-  await handbook.waitForSelector(name, {visible: true});
-  assert.equal(await handbook.$eval(name, el => el.placeholder), '常规');
-  await handbook.$eval(name, el => {el.focus();});
-  await handbook.keyboard.sendCharacter('初见练习');
-  await handbook.click(save);
-  await handbook.waitForFunction(selector => document.querySelector(selector)?.textContent === '审核中', {}, nameStatus);
-  await handbook.waitForFunction(selector => document.querySelector(selector)?.textContent === '房间名已通过审核', {}, nameStatus);
-  assert.equal(await handbook.$eval(name, el => el.value), '初见练习');
-  await handbook.$eval(name, el => {el.focus(); el.select();});
-  await handbook.keyboard.press('Backspace');
-  await handbook.click(save);
-  await handbook.waitForFunction(selector => document.querySelector(selector)?.textContent === '房间名已保存', {}, nameStatus);
+  await handbook.waitForSelector(`${sample} #mpRoomVisibility-trigger`, {visible: true});
+  assert.equal(await handbook.$eval(sample, el => !!el.querySelector('#mpRoomName')), false);
   await handbook.close();
-  console.log('PASS: room action alignment, shared disclosure, desktop/mobile detail handoff, and room name specimen');
+  console.log('PASS: room action alignment, shared disclosure, desktop/mobile detail handoff, and room settings specimen');
 } finally {
   await browser.close();
 }
