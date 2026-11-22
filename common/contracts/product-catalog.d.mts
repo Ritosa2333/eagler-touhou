@@ -122,7 +122,8 @@ export declare const PRODUCT_GAMES: Readonly<{
         support: Readonly<{highRefreshRate: true; sourceRepository: "https://github.com/sblzdddd/THSSS-WASM"}>;
         package: Readonly<{dataFileId: "game-data"; dataTarget: "/thsss.dat"; musicSourceDirectories: Readonly<{ogg: "BGM"}>; musicMounts: Readonly<{ogg: "/BGM"}>}>;
         replay: Readonly<{prefix: "thSSS"; extensions: readonly ["rpy", "trpy"]}>;
-        features: Readonly<{thprac: false; languages: false; focusHitbox: false}>;
+        thpracRuntime: Readonly<{session: "native"}>;
+        features: Readonly<{thprac: true; languages: false; focusHitbox: false}>;
     }>;
     th06: Readonly<{
         cardArtwork: "th06-card.webp";

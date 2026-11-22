@@ -276,7 +276,8 @@ export const PRODUCT_GAMES = Object.freeze({
             musicMounts: Object.freeze({ ogg: "/BGM" }),
         }),
         replay: Object.freeze({ prefix: "thSSS", extensions: Object.freeze(["rpy", "trpy"]) }),
-        features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
+        thpracRuntime: Object.freeze({ session: "native" }),
+        features: Object.freeze({ thprac: true, languages: false, focusHitbox: false }),
     }),
     th06: Object.freeze({
         cardArtwork: "th06-card.webp",
