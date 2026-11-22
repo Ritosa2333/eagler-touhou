@@ -73,7 +73,7 @@ def check_directory(rows, rooms):
         assert all(field["visible"] for key in ["controls", "watchers", "state"] for field in row[key]), row
         expected_rules = []
         if room["disableCheatMovement"]:
-            expected_rules.append("禁用作弊移动")
+            expected_rules.append("禁用不限速移动")
         if room["challengeMode"]:
             expected_rules.append("挑战模式")
         expected_rules = "".join(expected_rules) or "常规"

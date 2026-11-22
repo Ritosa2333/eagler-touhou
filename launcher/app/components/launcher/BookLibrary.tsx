@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router';
 import {
   Search,
@@ -9,14 +9,18 @@ import {
   Disc3,
   Gamepad2,
   Shapes,
+  Plus,
+  Minus,
   History,
   X,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Skeleton } from '../../ui/skeleton';
 import { ChoiceGroup, ChoiceItem } from '../../ui/choice-group';
+import { Disclosure, DisclosurePanel } from '../../ui/disclosure';
 import { InputGroup, InputGroupInput } from '../../ui/input-group';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../ui/select';
+import { animateSurface } from '../../ui/surface-motion';
 import { useLocale } from '../../i18n';
 import { useOptionsTarget } from './options-ownership';
 import type { LibraryCardsProps } from './LibraryCards';
@@ -35,7 +39,12 @@ import {impressFavorite} from './ink-feedback';
 import { BookWorkNumber } from './BookWorkNumber';
 import {useLibraryMotion} from './use-library-motion';
 
-type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'>;
+type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & {
+  compact?: boolean;
+  detail?: ReactNode;
+  onBrowse?: () => void;
+  onDetailExit?: () => void;
+};
 const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
   { id: 'all', Icon: LayoutGrid },
   { id: 'favorites', Icon: Star },
@@ -46,10 +55,20 @@ const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
 ];
 
 /** Product membership, settings activation and persistence stay with their existing owners. */
-export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true }: Props) {
+export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, compact = false, detail, onBrowse, onDetailExit }: Props) {
   const { t } = useLocale(),
     [search] = useSearchParams();
+  const showDetail = !compact && detail != null;
+  const detailId = showDetail ? openedProduct : undefined;
+  const [retainedDetail, setRetainedDetail] = useState<{id: string; node: ReactNode} | null>(null);
+  const displayedDetail = showDetail ? detail : compact ? null : retainedDetail?.node;
+  const displayedDetailId = showDetail ? detailId : compact ? undefined : retainedDetail?.id;
+  const previousDetail = useRef(displayedDetailId);
+  const previousCompact = useRef(compact);
   const [category, setCategory] = useState<BookCategory>('all');
+  // Navigation opens the current game's category and keeps visited entries available for close animation.
+  const [disclosures, setDisclosures] = useState<ReadonlyMap<BookCategory, boolean>>(() => new Map());
+  const [sidebarOrigin, setSidebarOrigin] = useState<BookCategory | null>(null);
   const [query, setQuery] = useState(''),
     [sort, setSort] = useState('number');
   const [view, setView] = useState<'covers' | 'list'>('covers');
@@ -57,9 +76,44 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   const [favorites, setFavorites] = useState<string[]>([]),
     [recent, setRecent] = useState<string[]>([]);
   const input = useRef<HTMLInputElement>(null),
+    content = useRef<HTMLDivElement>(null),
     results = useRef<HTMLDivElement>(null),
     selectedCard = useOptionsTarget('selectedCard');
   const {run: animateLibraryChange, cancel: cancelLibraryMotion} = useLibraryMotion(results);
+  useLayoutEffect(() => {
+    if (detailId) setRetainedDetail({id: detailId, node: detail});
+    else if (compact) setRetainedDetail(null);
+  }, [detail, detailId, compact]);
+  useLayoutEffect(() => {
+    if (showDetail || compact || !displayedDetailId) return;
+    const finish = () => {setRetainedDetail(null); onDetailExit?.();};
+    const panel = content.current?.firstElementChild;
+    const animation = panel instanceof HTMLElement ? animateSurface(panel, 'exit', {kind: 'inline'}) : null;
+    if (!animation) {
+      finish();
+      return;
+    }
+    let current = true;
+    void animation.finished.then(() => {if (current) finish();});
+    return () => {current = false; animation.cancel();};
+  }, [showDetail, displayedDetailId, compact, onDetailExit]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Switching between open and retained detail must cancel the old animation even when the displayed ID stays the same.
+  useLayoutEffect(() => {
+    const previous = previousDetail.current;
+    const resized = previousCompact.current !== compact;
+    previousCompact.current = compact;
+    previousDetail.current = displayedDetailId;
+    if (compact || previous === displayedDetailId) return;
+    if (displayedDetailId) cancelLibraryMotion();
+    if (!displayedDetailId && document.activeElement === document.body) {
+      const target = results.current?.querySelector<HTMLElement>(`[data-book-product="${previous}"]`);
+      (target ?? input.current)?.focus({ preventScroll: true });
+    }
+    const panel = content.current?.firstElementChild;
+    if (resized || !(panel instanceof HTMLElement)) return;
+    const animation = animateSurface(panel, 'enter', {kind: 'inline'});
+    return () => animation?.cancel();
+  }, [displayedDetailId, showDetail, compact, cancelLibraryMotion]);
   function reserveResultsSpace() {
     if (!results.current) return;
     // Keep the exposed canvas in the same viewport when filtering shortens it.
@@ -81,6 +135,12 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     { value: 'name', label: t('library.sort.name') },
   ];
   const available = products.filter((product) => !product.multiplayer && !product.hidden);
+  const detailProduct = showDetail ? available.find((product) => product.id === openedProduct) : undefined;
+  const detailCategory = detailProduct ? sidebarOrigin ?? bookCategory(detailProduct) : undefined;
+  useLayoutEffect(() => {
+    if (!detailCategory || !openedProduct) return;
+    setDisclosures(previous => previous.get(detailCategory) ? previous : new Map(previous).set(detailCategory, true));
+  }, [detailCategory, openedProduct]);
   useEffect(() => {
     if (!interactive) return;
     const refresh = () => {
@@ -103,20 +163,27 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     };
   }, [interactive]);
   const list = filterBookProducts(products, category, favorites, query, sort);
+  const categoryProducts = new Map(categories.map(({id}) =>
+    [id, filterBookProducts(available, id, favorites, '', sort)] as const));
+  const selectedSidebar = sidebarOrigin && disclosures.get(sidebarOrigin) &&
+    categoryProducts.get(sidebarOrigin)?.some(product => product.id === openedProduct) ? sidebarOrigin : null;
   const toggleFavorite = (id: string) => {
     reserveResultsSpace();
     const next = favorites.includes(id) ? favorites.filter((item) => item !== id) : [...favorites, id];
     setFavorites(next);
     writeBookPreference('favorites', next);
   };
-  const activate = (product: LibraryProduct) => {
+  const activate = (event: MouseEvent<HTMLAnchorElement>, product: LibraryProduct, origin: BookCategory | null = null) => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    setSidebarOrigin(origin);
     onSelect(product.id);
     onActivate(product.id);
   };
   const gameLink = (product: LibraryProduct, recentLink = false, priority = false) => (
     <a
       ref={
-        openedProduct === product.id && (!recentLink || !list.some((item) => item.id === product.id))
+        openedProduct === product.id && !selectedSidebar && (!recentLink || !list.some((item) => item.id === product.id))
           ? selectedCard
           : undefined
       }
@@ -125,15 +192,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
       data-book-product={product.id}
       data-game={product.gameId}
       aria-current={openedProduct === product.id ? 'page' : 'false'}
-      onClick={
-        interactive
-          ? (event) => {
-              if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-              event.preventDefault();
-              activate(product);
-            }
-          : undefined
-      }
+      onClick={interactive ? event => activate(event, product) : undefined}
     >
       <span className="book-art">
         <BookCover key={bookArtwork(product)} product={product} priority={priority} />
@@ -156,38 +215,42 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   return (
     <div className={`book-library book-view-${view}`} data-ui-kit="home">
       <aside className="book-sidebar" aria-label={t('library.categories')}>
-        <InputGroup className="book-search">
-          <Search aria-hidden="true" />
-          <InputGroupInput
-            ref={input}
-            id="librarySearch"
-            type="search"
-            value={query}
-            onChange={(event) => {
-              reserveResultsSpace();
-              setQuery(event.target.value);
-            }}
-            disabled={!interactive}
-            placeholder={t('library.searchPlaceholder')}
-            aria-label={t('library.search')}
-            aria-controls="bookGameGrid"
-          />
-          {query && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="max-[780px]:size-11"
-              aria-label={t('library.clearSearch')}
-              onClick={() => {
+        <div className="book-search-slot">
+          <InputGroup className="book-search min-[781px]:focus-within:ring-inset">
+            <Search aria-hidden="true" />
+            <InputGroupInput
+              ref={input}
+              id="librarySearch"
+              type="search"
+              value={query}
+              onChange={(event) => {
                 reserveResultsSpace();
-                setQuery('');
-                input.current?.focus();
+                setQuery(event.target.value);
+                if (showDetail) onBrowse?.();
               }}
-            >
-              <X />
-            </Button>
-          )}
-        </InputGroup>
+              disabled={!interactive}
+              placeholder={t('library.searchPlaceholder')}
+              aria-label={t('library.search')}
+            aria-controls={showDetail ? undefined : 'bookGameGrid'}
+            />
+            {query && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="max-[780px]:size-11"
+                aria-label={t('library.clearSearch')}
+                onClick={() => {
+                  reserveResultsSpace();
+                  setQuery('');
+                  if (showDetail) onBrowse?.();
+                  input.current?.focus();
+                }}
+              >
+                <X />
+              </Button>
+            )}
+          </InputGroup>
+        </div>
         <ChoiceGroup
           asChild
           type="single"
@@ -198,38 +261,66 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
               const next = value as BookCategory;
               const nextIds = new Set(filterBookProducts(products, next, favorites, query, sort).map(product => product.id));
               animateLibraryChange(() => setCategory(next), view === 'covers' ? nextIds : undefined);
+              if (showDetail) onBrowse?.();
             }
           }}
           disabled={!interactive}
           aria-label={t('library.category')}
         >
           <nav>
-            {categories.map(({ id, Icon }) => (
-              <ChoiceItem
-                key={id}
-                value={id}
-                data-book-category={id}
-                onClick={() => {if (id === category) cancelLibraryMotion();}}
-                className="grid min-h-10 w-full shrink-0 pointer-coarse:min-h-11 grid-cols-[18px_minmax(0,1fr)_auto] justify-start gap-2.5 px-2.5 text-left text-[13px] max-[780px]:inline-flex max-[780px]:min-h-11 max-[780px]:w-auto max-[780px]:min-w-max max-[780px]:text-xs"
-              >
-                <Icon aria-hidden="true" />
-                <span>{labels[id]}</span>
-                <small>
-                  {
-                    available.filter(
-                      (product) =>
-                        id === 'all' ||
-                        (id === 'favorites' ? favorites.includes(product.id) : bookCategory(product) === id),
-                    ).length
-                  }
-                </small>
-              </ChoiceItem>
-            ))}
+            {categories.map(({ id, Icon }) => {
+              const entries = categoryProducts.get(id) ?? [];
+              return <Disclosure key={id} id={`bookCategory-${id}`} open={disclosures.get(id) === true}
+                onOpenChange={open => setDisclosures(previous => new Map(previous).set(id, open))}>{({open, trigger, panel}) =>
+                <div className="book-category" data-book-category-group={id} data-selected={id === category}>
+                <div className="book-category-row">
+                  <ChoiceItem
+                    value={id}
+                    data-book-category={id}
+                    onClick={() => {
+                      if (id !== category) return;
+                      cancelLibraryMotion();
+                      if (showDetail) onBrowse?.();
+                    }}
+                    className="grid min-h-10 w-full shrink-0 pointer-coarse:min-h-11 grid-cols-[18px_minmax(0,1fr)_auto] justify-start gap-2.5 px-2.5 text-left text-[13px] max-[780px]:inline-flex max-[780px]:min-h-11 max-[780px]:w-auto max-[780px]:min-w-max max-[780px]:text-xs"
+                  >
+                    <Icon aria-hidden="true" />
+                    <span>{labels[id]}</span>
+                    <small>{entries.length}</small>
+                  </ChoiceItem>
+                  {entries.length > 0 && <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="book-category-disclosure hidden size-full focus-visible:ring-inset focus-visible:ring-offset-0 min-[781px]:inline-flex"
+                    data-book-category-disclosure={id}
+                    disabled={!interactive}
+                    aria-label={t('library.categoryContents', {category:labels[id]})}
+                    {...trigger}
+                  >{open ? <Minus aria-hidden="true" /> : <Plus aria-hidden="true" />}</Button>}
+                </div>
+                {entries.length > 0 && <DisclosurePanel {...panel} className="book-category-fold" clipClassName="book-category-fold-clip">
+                    <ul className="book-category-games">
+                      {disclosures.has(id) && entries.map(product => <li key={product.id}><a
+                        ref={selectedSidebar === id && openedProduct === product.id ? selectedCard : undefined}
+                        href={product.href}
+                        data-book-sidebar-product={product.id}
+                        aria-current={openedProduct === product.id ? 'page' : undefined}
+                        title={product.title}
+                        onClick={interactive ? event => activate(event, product, id) : undefined}
+                      >
+                        <BookSidebarCover key={bookArtwork(product)} product={product} />
+                        <span className="book-category-game-title">{product.title}</span>
+                        <BookWorkNumber gameId={product.gameId} number={product.number} />
+                      </a></li>)}
+                    </ul>
+                </DisclosurePanel>}
+              </div>}</Disclosure>;
+            })}
           </nav>
         </ChoiceGroup>
       </aside>
-      <div className="book-content">
-        <div className="book-content-main">
+      <div ref={content} className="book-content">
+        {displayedDetail ? <div inert={!showDetail} aria-hidden={!showDetail || undefined}>{displayedDetail}</div> : <div className="book-content-main">
           {history.length > 0 && (
             <section className="book-recent" aria-labelledby="bookRecentTitle">
               <div className="book-section-heading">
@@ -348,10 +439,20 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
               </div>
             )}
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );
+}
+
+function BookSidebarCover({product}: {product: LibraryProduct}) {
+  const [failed, setFailed] = useState(false);
+  const source = bookArtwork(product);
+  return <span className="book-category-game-cover" aria-hidden="true">
+    {source && !failed
+      ? <img src={source} alt="" loading="lazy" decoding="async" onError={()=>setFailed(true)} />
+      : <Gamepad2 />}
+  </span>;
 }
 
 function BookCover({ product, priority }: { product: LibraryProduct; priority: boolean }) {

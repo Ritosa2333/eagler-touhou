@@ -65,3 +65,37 @@ test('a player without bombs cannot spend a teammate inventory',async()=>{
     assert.deepEqual(bombs(sim),before);assert.equal(sim.state().bombActive,false);
   }
 });
+
+test('an active bomb protects every seat, including after replaying a rollback',async()=>{
+  for(const players of [2,3])for(let owner=0;owner<players;owner++){
+    const {core,sim}=await game(players);
+    const idle=inputs(players,[]);
+    sim.step(idle.map((value,slot)=>slot===0?4:value));
+    for(let i=0;i<180;i++)sim.step(idle);
+    assert.equal(sim.state().phase,1);
+    for(let slot=0;slot<players;slot++)core.th_debug_position(slot,120+slot*160);
+    const team=()=>sim.state().players.map(p=>({lives:p.lives,ghost:p.ghost}));
+    const before=team();
+    sim.step(inputs(players,[owner]));sim.step(inputs(players,[owner]));
+    assert(sim.state().bombActive);
+    const memory=new Uint8Array(core.memory.buffer),snapshot=memory.slice();
+    const frame=sim.frame,previous=sim.previous.slice(),resultFrames=sim.resultFrames;
+    const hitAll=()=>{
+      for(let slot=0;slot<players;slot++)core.th_debug_hit(slot,0);
+      sim.step(idle);
+      for(let slot=0;slot<players;slot++)core.th_debug_hit(slot,1);
+      sim.step(idle);
+      return team();
+    };
+    assert.deepEqual(hitAll(),before,`${players} seats, bomb by ${owner}`);
+    const checksum=sim.checksum();
+    memory.set(snapshot);sim.frame=frame;sim.previous=previous;sim.resultFrames=resultFrames;
+    assert.deepEqual(hitAll(),before);
+    assert.deepEqual(sim.checksum(),checksum);
+    for(let i=0;i<300&&sim.state().bombActive;i++)sim.step(idle);
+    assert.equal(sim.state().bombActive,false);
+    const teammate=(owner+1)%players;
+    core.th_debug_hit(teammate,1);sim.step(idle);
+    assert.equal(sim.state().players[teammate].ghost,true,'damage returns when the bomb ends');
+  }
+});

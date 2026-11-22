@@ -8,8 +8,8 @@ import {PlayerAvatarCard} from '../launcher/PlayerProfileCard';
 import './participant-avatar.css';
 
 export function ParticipantAvatar({
-  profile, name, className, children, role, ...props
-}: ComponentPropsWithoutRef<'span'> & {profile?: RoomAccountProfile; name: string}) {
+  profile, name, className, children, role, navigateOnClick, ...props
+}: ComponentPropsWithoutRef<'span'> & {profile?: RoomAccountProfile; name: string; navigateOnClick?: boolean}) {
   const {locale, t} = useLocale();
   const cards = useContext(Th09RatingCardsContext);
   const [failed, setFailed] = useState('');
@@ -19,7 +19,8 @@ export function ParticipantAvatar({
   const label = t('room.viewProfile', {name: name || profile.username});
   const description = props['aria-label'] ? label + ' | ' + props['aria-label'] : label;
   const ratingCard = cards && (cards[profile.username.toLowerCase()] ?? null);
-  return <PlayerAvatarCard username={profile.username} name={name || profile.username} avatar={url || undefined} ratingCard={ratingCard}>
+  return <PlayerAvatarCard username={profile.username} name={name || profile.username} avatar={url || undefined} ratingCard={ratingCard}
+    navigateOnClick={navigateOnClick}>
   <a {...props} className={className ? className + ' participant-avatar' : 'participant-avatar'} data-registered="true"
     href={withUiLanguage('/u/' + username, locale)} target="_blank" rel="noopener"
     aria-label={description} title={label}>

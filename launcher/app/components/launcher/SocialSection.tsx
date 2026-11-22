@@ -1,7 +1,8 @@
-import {createContext, useContext, useEffect, useState, type Dispatch, type ReactNode, type SetStateAction} from 'react';
+import {createContext, useContext, useEffect, useRef, useState, type Dispatch, type ReactNode, type SetStateAction} from 'react';
 import {Link, useLocation} from 'react-router';
 import {ArrowLeft, UserRound} from 'lucide-react';
 import {accountRequest} from '../../services/account-client';
+import {AccountAvatar} from './AccountAvatar';
 import {BookButton} from './BookButton';
 import {ProfilePanelLoading} from './ProfileLoading';
 import {AppLink} from './AppLink';
@@ -79,6 +80,36 @@ function socialSearch(search: string, tab?: SocialTab) {
   return query.size ? '?' + query : '';
 }
 
+function SocialAvatar({username}: {username: string}) {
+  const element = useRef<HTMLSpanElement>(null);
+  const [src, setSrc] = useState<string>();
+  useEffect(() => {
+    const controller = new AbortController();
+    const load = () => {
+      void accountRequest<{media?: {avatar?: string}; details?: {avatar?: string} | null}>(
+        'v1/profiles/' + encodeURIComponent(username), undefined,
+        {query: new URLSearchParams({media: 'urls'}), anonymous: true, signal: controller.signal}
+      ).then(profile => {
+        if (!controller.signal.aborted) setSrc(profile?.media?.avatar || profile?.details?.avatar || undefined);
+      }).catch(() => {});
+    };
+    // Older account deployments return inline profile images. Fetch only near-visible rows.
+    let observer: IntersectionObserver | undefined;
+    if (element.current && typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(([entry], current) => {
+        if (!entry?.isIntersecting || controller.signal.aborted) return;
+        current.disconnect();
+        load();
+      }, {rootMargin: '120px'});
+      observer.observe(element.current);
+    } else load();
+    return () => {observer?.disconnect(); controller.abort();};
+  }, [username]);
+  return <span ref={element} className="profile-social-avatar" aria-hidden="true">
+    <AccountAvatar src={src} loading="lazy" fallback={<UserRound strokeWidth={1.5}/>}/>
+  </span>;
+}
+
 export function SocialSection({username, tab}: {username: string; tab: SocialTab}) {
   const {t} = useLocale();
   const location = useLocation();
@@ -99,7 +130,7 @@ export function SocialSection({username, tab}: {username: string; tab: SocialTab
     {ready && !ready.visible && <div className="profile-empty"><p>{t('profile.socialPrivate')}</p></div>}
     {ready && ready.visible && !rows.length && <div className="profile-empty"><p>{t(socialEmpty[tab])}</p></div>}
     {ready && ready.visible && rows.length > 0 && <div className="profile-social-users">{rows.map(user => <div className="profile-social-user" key={user.username}>
-      <span className="profile-social-avatar"><UserRound aria-hidden="true" strokeWidth={1.5}/></span>
+      <SocialAvatar username={user.username}/>
       <div><Link to={{pathname:'/u/' + encodeURIComponent(user.username), search:socialSearch(location.search)}}><strong>{user.nickname}</strong></Link><small>@{user.username}</small></div>
     </div>)}</div>}
   </section>;
