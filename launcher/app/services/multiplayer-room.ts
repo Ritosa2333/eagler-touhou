@@ -957,6 +957,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(nextProduct === 'th03mp' ? {disableFocus:true,showHitboxes:false} : nextProduct === 'th02mp' ? {disableFocus:false} : {}),
       created,
       ...(created && nextProduct === 'th09mp' ? {disableLocalChargePriority: true} : {}),
+      // BRO 房主进房即看到与后续 settings/relay 一致的全选系统 + 空队列，
+      // 避免首帧 UI "零系统" 与 relay 实际收到全 11 系统的短暂不一致。
+      ...(nextProduct === 'bromp'
+        ? {broSystems:[...BRO_DEFAULT_SYSTEMS],broStageQueue:[...BRO_DEFAULT_STAGE_QUEUE]}
+        : {}),
       seats: null,
       synced: false,
       connection: 'connecting',

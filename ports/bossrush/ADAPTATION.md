@@ -12,7 +12,7 @@
 
 > 注：BRO 为第三方衍生作，以 `importOnly + testOnly + buildOptIn` 登记，未在 `runtime-builds.json` 中声明原生源码配方，故 `ports:check` 的源码/运行时契约门不适用；本表按适配清单如实记录实现与验证状态。
 >
-> **Runtime 产物已入库**：`ports/bossrush/web/`（24 文件 / 4.2 MB，`bro.wasm` 3.3 MB + glue + 清单），来源 commit `848f8f7` / build_id `eb0494bb`，详见 [RUNTIME_ARTIFACTS.md](RUNTIME_ARTIFACTS.md)。资源包（138.5 MB）按 importOnly 由玩家导入，不入库。署名：游戏作者吃药图书（Cyoltose）、网页端维护清酒（Tidew）、eagler 开发者。原作者已出具网页版分发授权声明，见 [DISTRIBUTION-PERMISSION.md](DISTRIBUTION-PERMISSION.md)（源码非开放、需许可查看；ZUN/上海爱丽丝素材权利保留）。
+> **Runtime 产物已入库**：`ports/bossrush/web/`（31 文件 / 48 MB，`bro.wasm` 46.3 MB + glue + 清单，HTTP gzip 传输约 3.5 MB），当前 build_id `544898ba`，详见 [RUNTIME_ARTIFACTS.md](RUNTIME_ARTIFACTS.md)。资源包（140.3 MB / 1004 文件）按 importOnly 由玩家导入，不入库。署名：游戏作者吃药图书（Cyoltose）、网页端维护清酒（Tidew）、eagler 开发者。原作者已出具网页版分发授权声明，见 [DISTRIBUTION-PERMISSION.md](DISTRIBUTION-PERMISSION.md)（源码非开放、需许可查看；ZUN/上海爱丽丝素材权利保留）。
 
 ## 源码与构建
 
@@ -144,11 +144,12 @@
 | MP-RULE-04 | [对话、结算与全灭](../../docs/adaptation/multiplayer.md#mp-rule-04) | 不适用 | 待核对 | normal：单人模式；结算入 summary 未做完整版。 |
 | MP-RULE-05 | [自机可见性与多人HUD](../../docs/adaptation/multiplayer.md#mp-rule-05) | 不适用 | 已实现 | normal：单人模式；右侧安全区多玩家并排比例条 + 11 项系统显示逐槽（PROBE_3Y/3AE）。 |
 | MP-01 | [独立 MP 产品变体](../../docs/adaptation/multiplayer.md#mp-01) | 不适用 | 已实现 | normal：单人模式；product-catalog 声明 `bro` + 自动派生 `bromp`。 |
-| MP-02 | [房间人数、难度与机体](../../docs/adaptation/multiplayer.md#mp-02) | 不适用 | 已实现 | normal：单人模式；首期 `playerCounts:[2,3]`（官方标准常量），4 角色 loadouts；引擎内部 4 槽暂不开第 4 席。难度只开放 Hard/Lunatic 两档（BRO 本体无难度选项）。 |
+| MP-02 | [房间人数、难度与机体](../../docs/adaptation/multiplayer.md#mp-02) | 不适用 | 已实现 | normal：单人模式；首期 `playerCounts:[2,3]`（官方标准常量），4 角色 loadouts；引擎内部已具备 4 槽但首期不开第 4 席。难度 0=Hard / 1=Lunatic(legacy) / 2=天空璋AEX / 3=Bad Apple!，后两项是独立章节入口（见 MP-CUSTOM-04）。 |
 | MP-CUSTOM-01 | BRO 专属房间选项 | 不适用 | 已实现 | 房主选全队携带系统（1..11）+ 章节游玩队列（1..19 有序），照 `th19Rules` 全链路按 `bromp-` 前缀隔离；UI 新 `BroRoomSettings`，共享合约 `bro-room-options.mjs`，切关继承中弹/收卡、不进 replay。队列末章走 `ReturnToTitle(false,0)` 跳过全作评分界面（公式分母是全作常量，部分关卡必失真），每关小结算保留（PROBE_3AQ）。 |
 | MP-CUSTOM-02 | legacy 符卡/弹幕模式 | 不适用 | 已实现（联机驱动） | 房间难度 0=Hard（5.x 弹幕+符卡名）/ 1=Lunatic（4.0 legacy 弹幕+4.0 符卡名）。复用现有 `netplayDifficulty`，adapter 白名单映射为 `legacy=`，web 层 hook `lstg.DoFile` 加载 `mod/GAME_L/` 并对新增符卡沿用当前版、去重。单人默认 Hard，游戏内无切换 UI。WASM `0fd414b6`（PROBE_3AR）。 |
 | MP-CUSTOM-03 | A/B 类绑定玩家符卡机制多人适配 | 不适用 | 已实现 | 逐卡特殊化（不整体重跑含弹幕/音效/成就的 card 方法）：th06 全员换到 boss 原位且 boss 只换 P1（pin task resume 边界广播 + hscale/vscale 同步）；th07 樱花/th10/th11_2 全员传送固定点；th095 圆周推动各自独立；th08 境界の彼方虚影与判定钉 P1；th125 天花板按各自 x 压 y；th143 布内无敌逐人 + 旋转世界按 P1 推进、隙间**传送门逐玩家独立**（两门共享 per-slot 闩锁，弹幕穿门原逻辑）、blackhole 推动全员、异界送行提灯幽灵点位钉 P1+全员可碰共同收集+全员无敌+收缩圆看本机、替身地藏进圈需全员进过才破解；th185 扫码框钉 P1。`web/src/spell_player_mp.lua`，game/ 零改动，单人零行为变化，按 card_id 覆盖 GAME(5.0)+GAME_L(4.0 legacy)。WASM `00266e98`（PROBE_3AS/3AT；收尾加固 th06 del 全员缩放复位不依赖原脚本 + 清 swap_prev 闩锁防重打误判）。 |
 | MP-CUSTOM-04 | 独立章节入口 + 随角色内容对齐 P1 | 不适用 | 已实现 | 房间难度扩为 0=Hard / 1=Lunatic / 2=天空璋AEX / 3=Bad Apple!（复用 netplayDifficulty 零新协议，adapter 把 2/3 映射为 chapter）。AEX(HSiFS AfterExtra) 与 BadApple(Bad Apple!!) 是独立 stage group、不走 19 关队列，作为整局独立章节入口、全队 4 实体共斗（spawn 由 JS 驱动不依赖 stage:Option）。TH16 与 AEX 的随角色内容（季节顺序/boss group/无敌色/Unlock 门控）在多人下对齐 P1（房主）选角——协程 resume 期钉 P1 视图，各端内容一致但自机实体/输入仍归本机。BadApple 光点判定补判其余 3 实体（团队扣分），lock/nextshoot 广播全员。BadApple file1..7+lyrics 恢复（实证为逐帧光点坐标文本非视频，旧视频剔除是误判），embed 进 MEMFS /BadApple，gzip 传输约 3.5MB。web/src/chapter_content_p1.lua，game/ 零改动。WASM c91ac7a2（PROBE_3AV）。 |
+| MP-CUSTOM-05 | 联机适配审计修复 | 不适用 | 已实现 | 审计发现并修复四类真问题：① configure/launch 两次下发都早于 `bro_boot`，网页设置与房间选项从未落 Lua → 新增 `applyAfterBoot()`，由 runtime_entry 在 boot 后、进关前调用（真机 E2E `boot_options_e2e` 验证 BGM=80/chapter=badapple/系统[1,2] 均落游戏）；② BadApple 其余实体扣分忽略 `colli()` 返回值，无敌/死亡仍误扣 → 与原版同语义按返回值扣分；③ AEX 的 `lock/hide` 只作用全局 player → hook `player_lib.system.lock` 与 `_editor_class.TH16_AEX.summary.init` 广播全员；④ 独立章节沿用上一局 legacy、card_credit 模块级状态残留、新房间 UI 默认零系统 → 均修正。WASM `544898ba`。 |
 | MP-03 | [所有席位准备并同步开局](../../docs/adaptation/multiplayer.md#mp-03) | 不适用 | 已实现 | normal：单人模式；GATE 开局栅栏（PROBE_3J）。 |
 | MP-04 | [确定性输入与状态检查](../../docs/adaptation/multiplayer.md#mp-04) | 不适用 | 已实现 | normal：单人模式；同种子同输入 360 帧逐帧指纹一致（PROBE_1F）；DIGEST 摘要（3I）。 |
 | MP-05 | [各席位输入归属](../../docs/adaptation/multiplayer.md#mp-05) | 不适用 | 已实现 | normal：单人模式；per-instance `p.key` + Byte2KeyState（3R/3AC）。 |

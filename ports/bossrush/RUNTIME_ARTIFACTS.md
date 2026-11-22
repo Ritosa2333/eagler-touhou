@@ -1,19 +1,19 @@
 # BRO Runtime 产物落地说明（eagler fork `bro-integration`）
 
-> 更新：2026-11-21 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（Replay 回放桥重建后 build_id `dbd2ba79`）
+> 更新：2026-11-22 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（联机适配审计修复后 build_id `544898ba`）
 > 本目录 `ports/bossrush/web/` 是 **BRO Web runtime 的实际构建产物**，由 BRO 侧 `web/build.sh` 产出后入库。
 
-## 1. 产物清单（30 文件 / 4.2 MB）
+## 1. 产物清单（31 文件 / 48 MB）
 
 | 文件 | 体积 | 说明 |
 |---|---|---|
-| `web/bro.wasm` | 3.3 MB | 自包含 WASM：纯 C Lua 5.1.5 + `lstg.*` C 绑定 + WebGL2/WebAudio，内嵌 144 个游戏脚本 + Update.txt/manual |
+| `web/bro.wasm` | 46.3 MB | 自包含 WASM：纯 C Lua 5.1.5 + `lstg.*` C 绑定 + WebGL2/WebAudio，内嵌 167 个游戏脚本 + BadApple 逐帧数据 + Update.txt/manual（HTTP gzip 传输约 3.5 MB，初始内存 80 MB） |
 | `web/bro.mjs` | 111 KB | Emscripten ES6 glue（`createBROModule`） |
-| `web/src/*.mjs` | ~455 KB | 19 个模块：renderer/postfx/audio/input/storage/save_files/netcode/netmesh/input_buffer/rollback/route_*/eagler_adapter/multiplayer 等 |
-| `web/dist/*.json` | 257 KB | `package-manifest.json`（972 文件/138.5 MB 清单）/ `app-shell.json` / `runtime.json` |
+| `web/src/*.mjs` | ~490 KB | 21 个模块：renderer/postfx/audio/input/storage/save_files/netcode/netmesh/input_buffer/rollback/route_*/eagler_adapter/multiplayer 等 |
+| `web/dist/*.json` | 268 KB | `package-manifest.json`（1004 文件/140.3 MB 清单）/ `app-shell.json` / `runtime.json` |
 | `web/manifest.json` | 5 KB | BRO 产品契约（components / musicMounts / packageManifest） |
 
-来源与可复现性记在 `source-import.json`（逐文件 sha256；首次落地 commit `848f8f7`，设置对齐重编 build_id `14a7b16b`）。
+来源与可复现性记在 `source-import.json`（30 项逐文件 sha256；首次落地 commit `848f8f7`，当前 build_id `544898ba`）。
 重编：`cd <BRO repo> && bash web/build.sh`，产出后同步 `web/` 目录即可。
 
 ## 2. 游戏资源包（138.5 MB）——不入库，importOnly
@@ -70,8 +70,10 @@ BadApple!! 视频分卷 20.7 MB（Web 端视频解码非当前范围，不可玩
 - 音量必须走这条链路：网页 WebAudio 劫持只 wrap `createScriptProcessor/createChannelMerger`，
   而 BRO 的 `audio.mjs` 用 `createGain` 直连 destination —— 网页音量原本对 BRO **完全无效**。
   现由游戏本体 `BRO_web_apply_settings` 写 `setting.bgmvolume/sevolume` 并调 `SetBGMVolume/SetSEVolume` 生效。
-- 适配层 `applyWebSettings()` 在 `configure` 与 `launch` 各下发一次（应对 WASM boot 时序）；
-  游戏侧 `web_settings.lua` 缓存到 `BRO_WEB_SETTINGS`，`BRO_complete_load` 再 `flush()` 重放（幂等）。
+- 适配层 `configure` 与 `launch` 各尝试一次下发，但两者都早于 `bro_boot`（`ccall` 未注入、
+  Lua VM 未建立），实际是 no-op。审计后新增 `applyAfterBoot()`：由 `runtime_entry.startBRO()`
+  在 `bro_boot` 成功后、进关前调用，才是网页设置与房间选项的真正下发点；
+  游戏侧 `web_settings.lua` 缓存到 `BRO_WEB_SETTINGS`，`BRO_complete_load` 再 `flush()`（幂等）。
 - 游戏内设置菜单中 Web/WASM 无效的「全屏模式」(windowed)、「垂直同步」(vsync) 已在补丁层移除，
   `game/` 源码保持原样；分辨率/锁定60帧保留。
 - 网页端只对 BRO 显示/隐藏的设置（`state.gameId === 'bro'`，不影响其他作品）：
@@ -178,7 +180,7 @@ WASM 重编 build_id=`7bc47a91`，replay_playback_unit 7/7（新增 pause/play�
   必需命令不变，复用开放的 `configure.options` 字段）。
 - 验证：`resource_cache_unit.mjs` 8/8（新增 offline 降级 / current 零下载 / updated 增量 / setManifestUrl）、
   `eagler_adapter_unit.mjs` 23/23（新增 configure 下发地址）、BRO 全量纯 Node 44/44 PASS。
-  source-import 30/30、app-shell 56/56 哈希一致（按 BRO 源树算）。本轮不改 WASM（build_id 仍 `dbd2ba79`）。
+  source-import 30/30、app-shell 56/56 哈希一致（按 BRO 源树算）。本轮审计修复重编 WASM，build_id `544898ba`。
 - 边界：线上清单仍需部署方提供（CDN/静态站），本仓库只保证"给了地址就能增量"；清单 sha256
   按路径逐文件校验，缓存只放游戏资源，不碰 `/User` `/replay` `/bro/data`（延续 RGO 防护）。
 

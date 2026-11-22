@@ -1,7 +1,7 @@
 {
   "schema": "bro/package-manifest/1",
   "version": "sha256-05fd0275ca3a19121b162bb99aebff01a7747fb4fb36ebf5edba7bd96ae8f665",
-  "generated": "2026-11-22T12:14:50+0800",
+  "generated": "2026-11-22T12:57:06+0800",
   "base": "./game/",
   "counts": {
     "total": 1004,

@@ -118,7 +118,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         storage: Readonly<{saveRoot: "/bro"; scoreFile: "Score.dat"; configFiles: readonly string[]}>;
         runtime: "./runtime/bro/bro.html"; runtimeFileLayout: "directory";
         runtimeAssets: readonly string[]; requiredShared: readonly string[];
-        dataProvider: "emscripten-preload"; runtimeResourceTransport: "resources";
+        dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
         package: Readonly<{dataFileId: "game-data"; dataTarget: "/bro.data"; musicSourceDirectories: Readonly<{ogg: "music"}>; musicMounts: Readonly<{ogg: "/music"}>}>;
         musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"}>;
         touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;

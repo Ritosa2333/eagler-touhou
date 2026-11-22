@@ -1,6 +1,6 @@
 {
   "schema": "bro/app-shell/1",
-  "version": "sha256-6a51c0ab0b8de349f2d745595f360799d3e77841fac38157b9f5e1ae403e37c1",
+  "version": "sha256-7f7e1e41a6c2cd54ca29db7254aeea1253b759be00f6ab4bc7de07c4d919840e",
   "files": [
     {
       "p": "bro.html",
@@ -24,8 +24,8 @@
     },
     {
       "p": "src/eagler_adapter.mjs",
-      "n": 45209,
-      "h": "deb56a024daa0c9423587f051d8ce41800f8c6c9b9a8055b49e033af3be00cbb"
+      "n": 45956,
+      "h": "079f7aca9133620006763a9310f55fb17153372b6b951fbd7d4c9df3a3702edc"
     },
     {
       "p": "src/input.mjs",
@@ -104,8 +104,8 @@
     },
     {
       "p": "src/runtime_entry.mjs",
-      "n": 8964,
-      "h": "35c6ade6786fb917e66db5087b8deb9336ea1cba69fa1e71d600a01b2e431aba"
+      "n": 9324,
+      "h": "ab9ee6bd8d580cbdff956b7790c2fd91215da16a70819b854cea68b29e18565b"
     },
     {
       "p": "src/save_files.mjs",
@@ -143,6 +143,11 @@
       "h": "5ea0ce83306f90536e320d084990912793a125dc84a4222eaa8776378f6061d1"
     },
     {
+      "p": "test/browser/boot_options_e2e.mjs",
+      "n": 5712,
+      "h": "2d7a720edc631bf4548be5d8c5e48fbaff551d076930b1f049d2772274bc610c"
+    },
+    {
       "p": "test/browser/bosskill_diag.mjs",
       "n": 5964,
       "h": "fab55bf917e747d270c4d3b6c8a3f89d26ef7164f715c4b8daeee631ab428ff7"
@@ -154,8 +159,8 @@
     },
     {
       "p": "test/browser/chapter_entry_e2e.mjs",
-      "n": 5753,
-      "h": "42f8454508c49270b030e1d4a8aca11e2dee160b65cca8e04e65d04e22483ffa"
+      "n": 5871,
+      "h": "7ebc218885f134c8264cef62743aa666ccacdcac0b787288a0fd678752aca0b1"
     },
     {
       "p": "test/browser/check.mjs",

@@ -98,6 +98,10 @@ export async function startBRO(options = {}) {
   note('booting lua...');
   const boot = ccall('bro_boot', 'number', [], []);
   if (boot !== 0) throw new Error(`bro_boot failed: ${boot} ${ccall('bro_stats', 'string', [], [])}`);
+  // configure/launch 阶段 ccall 尚未注入、Lua VM 尚未建立，两次 apply 都是 no-op。
+  // 这里是唯一真正的下发点：必须在 complete_load（BRO_start_normal/BRO_enter_stage）
+  // 之前完成，legacy 模式与 chapter 首关才能生效。
+  if (adapter && typeof adapter.applyAfterBoot === 'function') adapter.applyAfterBoot();
 
   const renderer = createRenderer(Module, canvas, {
     assetBase,

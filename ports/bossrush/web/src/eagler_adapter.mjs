@@ -544,6 +544,21 @@ export class EaglerRuntimeAdapter {
     } catch { return false; }
   }
 
+  /** Lua VM 建立后的唯一真正下发点。
+   *  configure/launch 里的两次 apply 都早于 bro_boot：那时 ccall 尚未注入、
+   *  Lua 状态 L 也不存在，调用只会静默返回 false。runtime_entry 在 bro_boot
+   *  成功之后、进关之前调用本方法，网页设置与房间选项才真正落到游戏里。 */
+  applyAfterBoot() {
+    const webSettingsApplied = this.applyWebSettings();
+    const roomOptionsApplied = this.applyRoomOptions();
+    this._emit('runtime-info', {
+      renderer: 'webgl2', architecture: 'wasm32-lua515',
+      version: 'bro-5.1.2+3v', epoch: this.epoch, phase: 'boot',
+      webSettingsApplied, roomOptionsApplied,
+    });
+    return { webSettingsApplied, roomOptionsApplied };
+  }
+
   _dispatch(command, p) {
     switch (command) {
       case 'configure':    return this._cmdConfigure(p);
