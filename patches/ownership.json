@@ -32,5 +32,13 @@
     "Shooting/BackgroundManager3D.cs",
     "Shooting/ParticleManager3D.cs",
     "Shooting/ParticleEndBullet.cs"
+  ],
+  "006-touch-replay.patch": [
+    "Shooting/Replay.cs",
+    "Shooting/ReplayInfo.cs",
+    "Shooting/GameState_ED.cs",
+    "Shooting/MenuGroup_ReplaySaver.cs",
+    "Shooting/MenuGroup_ReplayNamer.cs",
+    "Shooting/MenuGroup_ReplayStageSelect.cs"
   ]
 }

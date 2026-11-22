@@ -3,7 +3,10 @@ function normalizeUserPath(path) {
   if (text === "Score.dat" || text === "Setting.INI" || text === "Log.txt") return text;
   const replay = text.match(/^(?:replay|Replay)\/([^/]+)$/);
   if (!replay) return null;
-  if (/^thSSS_(?:\d{2}|ud[0-9a-f]{4})\.rpy$/i.test(replay[1]) || /^AutoSave\.rpy$/i.test(replay[1])) {
+  if (
+    /^thSSS_(?:\d{2}|ud[0-9a-f]{4})\.(?:rpy|trpy)$/i.test(replay[1])
+    || /^AutoSave\.(?:rpy|trpy)$/i.test(replay[1])
+  ) {
     return "Replay/" + replay[1];
   }
   return null;

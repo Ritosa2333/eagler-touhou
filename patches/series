@@ -4,3 +4,4 @@
 003-frame-touch-host.patch
 004-textures-draw.patch
 005-polish-batch.patch
+006-touch-replay.patch

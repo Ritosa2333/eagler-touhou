@@ -1,0 +1,399 @@
+From: PrepareGameSources
+Subject: 006-touch-replay.patch
+---
+
+diff --git a/Shooting/GameState_ED.cs b/Shooting/GameState_ED.cs
+index ba6f077..1524140 100644
+--- a/Shooting/GameState_ED.cs
++++ b/Shooting/GameState_ED.cs
+@@ -51,6 +51,16 @@ internal class GameState_ED : BaseGameState, IGameState
+ 			else
+ 			{
+ 				StageData.KClass.Hex2Key(num);
++				if (StageData.Rep.TouchStream)
++				{
++					float dx;
++					float dy;
++					StageData.Rep.ReadTouch(out dx, out dy);
++					if (StageData.MyPlane != null)
++					{
++						StageData.MyPlane.ApplyTouch(dx, dy);
++					}
++				}
+ 			}
+ 		}
+ 		Background3D.Ctrl();
+
+diff --git a/Shooting/MenuGroup_ReplayNamer.cs b/Shooting/MenuGroup_ReplayNamer.cs
+index 1c8d95b..0109211 100644
+--- a/Shooting/MenuGroup_ReplayNamer.cs
++++ b/Shooting/MenuGroup_ReplayNamer.cs
+@@ -180,7 +180,15 @@ internal class MenuGroup_ReplayNamer : BaseMenuGroup
+ 			{
+ 				repInfo.PlayerName += PlayerName[i];
+ 			}
+-			StageData.Rep.SaveRpy(".\\Replay\\thSSS_" + RepMenuItem.Name + ".rpy", repInfo);
++			if (StageData.GlobalData.LastState != null && StageData.GlobalData.LastState.StageData != null)
++			{
++				repInfo.TouchDelta = StageData.GlobalData.LastState.StageData.RepInfo.TouchDelta;
++				if (StageData.GlobalData.LastState.StageData.MyPlane != null && StageData.GlobalData.LastState.StageData.MyPlane.TouchReplayUsed)
++				{
++					repInfo.TouchDelta = true;
++				}
++			}
++			StageData.Rep.SaveRpy(Replay.SlotPath(RepMenuItem.Name, repInfo.TouchDelta), repInfo);
+ 			RepMenuItem.Description = ((DescriptionMenuItem)MenuTilte).Description;
+ 			OnRemoveMenu = TimeMain + 20;
+ 			TransparentVelocity = -15f;
+
+diff --git a/Shooting/MenuGroup_ReplaySaver.cs b/Shooting/MenuGroup_ReplaySaver.cs
+index fad3566..23beb23 100644
+--- a/Shooting/MenuGroup_ReplaySaver.cs
++++ b/Shooting/MenuGroup_ReplaySaver.cs
+@@ -23,7 +23,7 @@ internal class MenuGroup_ReplaySaver : BaseMenuGroup
+ 			menuItem.Position = new PointF(x, BoundRect.Top + 10);
+ 			menuItem.DestPoint = new PointF(x, num);
+ 			num += 17f;
+-			((DescriptionMenuItem)menuItem).Description = SetDescroption(".\\Replay\\thSSS_" + menuItem.Name + ".rpy");
++			((DescriptionMenuItem)menuItem).Description = SetDescroption(Replay.ResolveSlotPath(menuItem.Name));
+ 		}
+ 		MenuItemList[MenuSelectIndex].Selected = true;
+ 	}
+@@ -99,7 +99,15 @@ internal class MenuGroup_ReplaySaver : BaseMenuGroup
+ 			{
+ 				ReplayInfo repInfo = StageData.GlobalData.LastState.StageData.RepInfo;
+ 				repInfo.PlayerName = "autosave";
+-				StageData.Rep.SaveRpy(".\\Replay\\AutoSave.rpy", repInfo);
++				if (StageData.GlobalData.LastState != null && StageData.GlobalData.LastState.StageData != null)
++				{
++					repInfo.TouchDelta = StageData.GlobalData.LastState.StageData.RepInfo.TouchDelta;
++					if (StageData.GlobalData.LastState.StageData.MyPlane != null && StageData.GlobalData.LastState.StageData.MyPlane.TouchReplayUsed)
++					{
++						repInfo.TouchDelta = true;
++					}
++				}
++				StageData.Rep.SaveRpy(Replay.AutoSavePath(repInfo.TouchDelta), repInfo);
+ 			}
+ 			StageData.StateSwitchData = new StateSwitchDataPackage
+ 			{
+
+diff --git a/Shooting/MenuGroup_ReplayStageSelect.cs b/Shooting/MenuGroup_ReplayStageSelect.cs
+index 5a53011..7832876 100644
+--- a/Shooting/MenuGroup_ReplayStageSelect.cs
++++ b/Shooting/MenuGroup_ReplayStageSelect.cs
+@@ -36,7 +36,7 @@ internal class MenuGroup_ReplayStageSelect : BaseMenuGroup
+ 			menuItem.DestPoint = new PointF(x, num);
+ 			num += 17f;
+ 		}
+-		string text = ".\\Replay\\thSSS_" + RepIndex + ".rpy";
++		string text = Replay.ResolveSlotPath(RepIndex);
+ 		if (File.Exists(text))
+ 		{
+ 			ReplayInfo replayInfo = Replay.ReadTitle(text);
+@@ -98,7 +98,7 @@ internal class MenuGroup_ReplayStageSelect : BaseMenuGroup
+ 		if (((DescriptionMenuItem)MenuItemList[MenuSelectIndex]).Description != "----------")
+ 		{
+ 			StageData.SoundPlay("se_ok00.wav");
+-			string fileName = ".\\Replay\\thSSS_" + RepIndex + ".rpy";
++			string fileName = Replay.ResolveSlotPath(RepIndex);
+ 			StageData.Rep.LoadRpy(fileName);
+ 			ReplayInfo replayInfo = Replay.ReadTitle(fileName);
+ 			StageData.RepInfo = replayInfo;
+
+diff --git a/Shooting/Replay.cs b/Shooting/Replay.cs
+index 375a193..022addf 100644
+--- a/Shooting/Replay.cs
++++ b/Shooting/Replay.cs
+@@ -10,6 +10,8 @@ public class Replay
+ 
+ 	private string FileName { get; set; }
+ 
++	public bool TouchStream { get; set; }
++
+ 	public long DataPosition
+ 	{
+ 		get
+@@ -22,7 +24,32 @@ public class Replay
+ 		}
+ 	}
+ 
+-	public bool CanRead => ReplayData.CanRead;
++	public bool CanRead => ReplayData != null && ReplayData.CanRead;
++
++	public static bool IsTouchReplayPath(string fileName)
++	{
++		return fileName != null && fileName.EndsWith(".trpy", StringComparison.OrdinalIgnoreCase);
++	}
++
++	public static string SlotPath(string index, bool touch)
++	{
++		return ".\\Replay\\thSSS_" + index + (touch ? ".trpy" : ".rpy");
++	}
++
++	public static string ResolveSlotPath(string index)
++	{
++		string trpy = SlotPath(index, touch: true);
++		if (File.Exists(trpy))
++		{
++			return trpy;
++		}
++		return SlotPath(index, touch: false);
++	}
++
++	public static string AutoSavePath(bool touch)
++	{
++		return touch ? ".\\Replay\\AutoSave.trpy" : ".\\Replay\\AutoSave.rpy";
++	}
+ 
+ 	public static ReplayInfo ReadTitle(string fileName)
+ 	{
+@@ -44,12 +71,23 @@ public class Replay
+ 				Rank = (DifficultLevel)Convert.ToInt32(array[num + 7]),
+ 				StartStage = array[num + 8],
+ 				LastStage = array[num + 9],
+-				SlowRate = array[num + 10]
++				SlowRate = array[num + 10],
++				TouchDelta = IsTouchReplayPath(fileName)
+ 			};
+-			for (int i = num + 11; i < array.Length; i++)
++			int i = num + 11;
++			if (i < array.Length && array[i] == "TouchDelta=1")
++			{
++				replayInfo.TouchDelta = true;
++				i++;
++			}
++			for (; i < array.Length; i++)
+ 			{
+ 				char[] separator = new char[1] { '\t' };
+ 				string[] array2 = array[i].Split(separator);
++				if (array2.Length < 15)
++				{
++					continue;
++				}
+ 				MyPlaneInfo item = new MyPlaneInfo
+ 				{
+ 					Life = Convert.ToInt32(array2[0]),
+@@ -87,28 +125,50 @@ public class Replay
+ 		ReplayData.WriteByte(value);
+ 	}
+ 
++	public void WriteTouch(float dx, float dy)
++	{
++		short sx = (short)Math.Max(-32767, Math.Min(32767, Math.Round(dx)));
++		short sy = (short)Math.Max(-32767, Math.Min(32767, Math.Round(dy)));
++		ReplayData.WriteByte((byte)(sx & 0xFF));
++		ReplayData.WriteByte((byte)((sx >> 8) & 0xFF));
++		ReplayData.WriteByte((byte)(sy & 0xFF));
++		ReplayData.WriteByte((byte)((sy >> 8) & 0xFF));
++	}
++
+ 	public int ReadKey()
+ 	{
+ 		return ReplayData.ReadByte() + (ReplayData.ReadByte() << 8);
+ 	}
+ 
++	public void ReadTouch(out float dx, out float dy)
++	{
++		int lo = ReplayData.ReadByte();
++		int hi = ReplayData.ReadByte();
++		short sx = (short)(lo + (hi << 8));
++		lo = ReplayData.ReadByte();
++		hi = ReplayData.ReadByte();
++		short sy = (short)(lo + (hi << 8));
++		dx = sx;
++		dy = sy;
++	}
++
+ 	public void CreatRpy()
+ 	{
+-		ReplayData = new FileStream(".\\Replay\\AutoSave.rpy", FileMode.Create);
++		TouchStream = true;
++		Directory.CreateDirectory(".\\Replay");
++		ReplayData = new FileStream(AutoSavePath(touch: true), FileMode.Create);
+ 	}
+ 
+ 	public void SaveRpy(string fileName, ReplayInfo repInfo)
+ 	{
+-		if (ReplayData.CanRead)
++		bool touch = repInfo.TouchDelta;
++		string autoTouch = AutoSavePath(touch: true);
++		string autoClassic = AutoSavePath(touch: false);
++		if (ReplayData != null && ReplayData.CanWrite)
+ 		{
+ 			ReplayData.WriteByte(240);
+ 			ReplayData.WriteByte(15);
+-			string tmp = null;
+-			tmp += "\r\n";
+-			tmp += "ReplayInformation";
+-			tmp += "\r\n";
+-			tmp += "ver 1.00";
+-			tmp += "\r\n";
++			string tmp = "\r\nReplayInformation\r\nver 1.00\r\n";
+ 			tmp += repInfo.PlayerName;
+ 			tmp += "\r\n";
+ 			tmp += DateTime.Now.Date.ToString("yy'/'MM'/'dd");
+@@ -119,71 +179,105 @@ public class Replay
+ 			tmp += "\r\n";
+ 			tmp += repInfo.WeaponType.ToString();
+ 			tmp += "\r\n";
+-			string text = tmp;
+-			int rank = (int)repInfo.Rank;
+-			tmp = text + rank;
++			tmp += ((int)repInfo.Rank).ToString();
+ 			tmp += "\r\n";
+ 			tmp += repInfo.StartStage;
+ 			tmp += "\r\n";
+ 			tmp += repInfo.LastStage;
+ 			tmp += "\r\n";
+ 			tmp += repInfo.SlowRate;
+-			repInfo.MyPlaneData.ForEach((MyPlaneInfo x) =>
++			if (TouchStream)
++			{
++				tmp += "\r\nTouchDelta=1";
++			}
++			foreach (MyPlaneInfo x in repInfo.MyPlaneData)
+ 			{
+ 				tmp += "\r\n";
+-				string[] array = new string[30]
+-				{
+-					tmp,
+-					x.Life.ToString(),
+-					"\t",
+-					x.Spell.ToString(),
+-					"\t",
+-					x.Power.ToString(),
+-					"\t",
+-					x.Score.ToString(),
+-					"\t",
+-					x.Graze.ToString(),
+-					"\t",
+-					x.PosX.ToString(),
+-					"\t",
+-					x.PosY.ToString(),
+-					"\t",
+-					x.LifeChip.ToString(),
+-					"\t",
+-					x.SpellChip.ToString(),
+-					"\t",
+-					x.LifeUpCount.ToString(),
+-					"\t",
+-					x.StarPoint.ToString(),
+-					"\t",
+-					x.HighItemScore.ToString(),
+-					"\t",
+-					x.Rate.ToString(),
+-					"\t",
+-					null,
+-					null,
+-					null
+-				};
+-				int lastColor = (int)x.LastColor;
+-				array[27] = lastColor.ToString();
+-				array[28] = "\t";
+-				array[29] = x.DataPosition.ToString();
+-				tmp = string.Concat(array);
+-			});
++				tmp += x.Life + "\t" + x.Spell + "\t" + x.Power + "\t" + x.Score + "\t" + x.Graze + "\t";
++				tmp += x.PosX + "\t" + x.PosY + "\t" + x.LifeChip + "\t" + x.SpellChip + "\t" + x.LifeUpCount + "\t";
++				tmp += x.StarPoint + "\t" + x.HighItemScore + "\t" + x.Rate + "\t" + (int)x.LastColor + "\t" + x.DataPosition;
++			}
+ 			StreamWriter streamWriter = new StreamWriter(ReplayData);
+ 			streamWriter.Write(tmp);
+ 			streamWriter.Close();
+ 			ReplayData.Close();
++			ReplayData = null;
+ 		}
+-		if (fileName != ".\\Replay\\AutoSave.rpy")
++		string source = autoTouch;
++		string target = fileName;
++		if (touch)
+ 		{
+-			File.Copy(".\\Replay\\AutoSave.rpy", fileName, overwrite: true);
++			if (!IsTouchReplayPath(target))
++			{
++				target = Path.ChangeExtension(target, ".trpy");
++			}
++		}
++		else
++		{
++			if (File.Exists(autoTouch))
++			{
++				StripTouchStreamToClassic(autoTouch, autoClassic);
++			}
++			source = autoClassic;
++			if (IsTouchReplayPath(target))
++			{
++				target = Path.ChangeExtension(target, ".rpy");
++			}
++		}
++		if (!string.Equals(Path.GetFullPath(source), Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase) && File.Exists(source))
++		{
++			File.Copy(source, target, overwrite: true);
+ 		}
+ 	}
+ 
++	private static void StripTouchStreamToClassic(string touchPath, string classicPath)
++	{
++		using FileStream input = new FileStream(touchPath, FileMode.Open, FileAccess.Read);
++		using FileStream output = new FileStream(classicPath, FileMode.Create, FileAccess.Write);
++		while (true)
++		{
++			int b0 = input.ReadByte();
++			if (b0 < 0)
++			{
++				break;
++			}
++			int b1 = input.ReadByte();
++			if (b1 < 0)
++			{
++				break;
++			}
++			int key = b0 + (b1 << 8);
++			output.WriteByte((byte)b0);
++			output.WriteByte((byte)b1);
++			if (key == 4080)
++			{
++				byte[] buffer = new byte[4096];
++				int read;
++				while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
++				{
++					output.Write(buffer, 0, read);
++				}
++				break;
++			}
++			if (key != 57358 && input.Position + 4 <= input.Length)
++			{
++				input.Position += 4;
++			}
++		}
++		string text = File.ReadAllText(classicPath, Encoding.Default);
++		text = text.Replace("\r\nTouchDelta=1", "");
++		File.WriteAllText(classicPath, text, Encoding.Default);
++	}
++
+ 	public void LoadRpy(string fileName)
+ 	{
+ 		FileName = fileName;
++		TouchStream = IsTouchReplayPath(fileName);
++		ReplayInfo info = ReadTitle(fileName);
++		if (info.TouchDelta)
++		{
++			TouchStream = true;
++		}
+ 		FileInfo fileInfo = new FileInfo(fileName);
+ 		ReplayData = fileInfo.OpenRead();
+ 	}
+
+diff --git a/Shooting/ReplayInfo.cs b/Shooting/ReplayInfo.cs
+index 2a762a1..ca8fa8e 100644
+--- a/Shooting/ReplayInfo.cs
++++ b/Shooting/ReplayInfo.cs
+@@ -24,5 +24,7 @@ public class ReplayInfo
+ 
+ 	public string SlowRate;
+ 
++	public bool TouchDelta;
++
+ 	public List<MyPlaneInfo> MyPlaneData = new List<MyPlaneInfo>();
+ }
+
