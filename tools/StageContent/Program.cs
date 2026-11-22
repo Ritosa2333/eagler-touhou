@@ -74,7 +74,7 @@ namespace Thsss.Tools.StageContent
 				foreach (var file in Directory.EnumerateFiles(from, "*", SearchOption.AllDirectories))
 				{
 					var rel = RelativePath(repo, file);
-					if (IsLooseAudio(rel))
+					if (IsLooseAudio(rel) || OmitSoundWav(rel, file))
 					{
 						continue;
 					}
@@ -201,6 +201,13 @@ namespace Thsss.Tools.StageContent
 				throw new InvalidDataException("Archive path is not allowed: " + full);
 			}
 			return rel;
+		}
+
+		private static bool OmitSoundWav(string rel, string full)
+		{
+			if (!rel.StartsWith("Sound/", StringComparison.OrdinalIgnoreCase)) return false;
+			if (!rel.EndsWith(".wav", StringComparison.OrdinalIgnoreCase)) return false;
+			return File.Exists(Path.ChangeExtension(full, ".ogg"));
 		}
 
 		private static bool IsLooseAudio(string rel)

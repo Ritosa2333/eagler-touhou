@@ -67,8 +67,16 @@ namespace Thsss.Browser
 				{
 					continue;
 				}
+				if (!ContentLoader.IsFileReady(path))
+				{
+					continue;
+				}
 				if (!File.Exists(path))
 				{
+					if (!ContentLoader.BackgroundIdle)
+					{
+						continue;
+					}
 					data.LoadingList.RemoveAt(n);
 					n--;
 					continue;
