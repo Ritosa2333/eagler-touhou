@@ -318,11 +318,12 @@ namespace Thsss.Tools.PrepareGameSources
 
 		private static void RunGitApply(string repo, string workTree, string patchFile)
 		{
-			var relDir = Path.GetRelativePath(repo, workTree).Replace('\\', '/');
+			var top = GitTopLevel(repo);
+			var relDir = Path.GetRelativePath(top, workTree).Replace('\\', '/');
 			var psi = new ProcessStartInfo
 			{
 				FileName = "git",
-				WorkingDirectory = repo,
+				WorkingDirectory = top,
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
 				UseShellExecute = false,
@@ -341,6 +342,30 @@ namespace Thsss.Tools.PrepareGameSources
 				{
 					throw new InvalidOperationException("git apply failed for " + patchFile + ":\n" + stderr + stdout);
 				}
+			}
+		}
+
+		private static string GitTopLevel(string start)
+		{
+			var psi = new ProcessStartInfo
+			{
+				FileName = "git",
+				WorkingDirectory = start,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+				UseShellExecute = false,
+			};
+			psi.ArgumentList.Add("rev-parse");
+			psi.ArgumentList.Add("--show-toplevel");
+			using (var p = Process.Start(psi))
+			{
+				var top = p.StandardOutput.ReadToEnd().Trim();
+				p.WaitForExit();
+				if (p.ExitCode != 0 || top.Length == 0)
+				{
+					return start;
+				}
+				return top;
 			}
 		}
 
