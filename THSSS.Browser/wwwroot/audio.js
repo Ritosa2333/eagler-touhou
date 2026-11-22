@@ -1,6 +1,8 @@
 export function createAudio() {
   let ctx = null;
   let nextId = 1;
+  let musicLevel = 1;
+  let effectsLevel = 1;
   const buffers = new Map();
   const voices = new Map();
   const plays = [];
@@ -145,11 +147,26 @@ export function createAudio() {
     return null;
   }
 
+  function busOf(voice) {
+    const rec = bufferOf(voice.bufferId);
+    const url = rec && rec.url ? rec.url : "";
+    return /(?:^|\/)BGM\//i.test(url) ? "music" : "effects";
+  }
+
+  function outputGain(voice) {
+    const mid = (voice.left + voice.right) * 0.5;
+    const bus = busOf(voice) === "music" ? musicLevel : effectsLevel;
+    return Math.max(0, voice.volume * mid * bus);
+  }
+
+  function applyGain(voice) {
+    if (voice && voice.gain) voice.gain.gain.value = outputGain(voice);
+  }
+
   function connect(voice, source) {
     const audio = context();
     const gain = audio.createGain();
-    const mid = (voice.left + voice.right) * 0.5;
-    gain.gain.value = Math.max(0, voice.volume * mid);
+    gain.gain.value = outputGain(voice);
     const filter = audio.createBiquadFilter();
     filter.type = "highpass";
     filter.frequency.value = voice.highpass && voice.frequency > 0 ? voice.frequency * (audio.sampleRate * 0.5) : 10;
@@ -307,6 +324,7 @@ export function createAudio() {
       const voice = voiceOf(voiceId);
       if (!voice) return;
       voice.bufferId = bufferId | 0;
+      applyGain(voice);
       voice.playBegin = playBegin | 0;
       voice.playLength = playLength | 0;
       voice.loopCount = loopCount | 0;
@@ -338,18 +356,14 @@ export function createAudio() {
       const voice = voiceOf(id);
       if (!voice) return;
       voice.volume = volume;
-      if (voice.gain) {
-        voice.gain.gain.value = Math.max(0, volume * (voice.left + voice.right) * 0.5);
-      }
+      applyGain(voice);
     },
     setPan(id, left, right) {
       const voice = voiceOf(id);
       if (!voice) return;
       voice.left = left;
       voice.right = right;
-      if (voice.gain) {
-        voice.gain.gain.value = Math.max(0, voice.volume * (left + right) * 0.5);
-      }
+      applyGain(voice);
       if (voice.panner) {
         const span = left + right;
         voice.panner.pan.value = span <= 0.0001 ? 0 : Math.max(-1, Math.min(1, (right - left) / span));
@@ -374,6 +388,11 @@ export function createAudio() {
     channels(bufferId) {
       const rec = bufferOf(bufferId);
       return rec && rec.audio ? rec.audio.numberOfChannels : 0;
+    },
+    setLevels(music, effects) {
+      musicLevel = Number.isFinite(music) ? Math.max(0, Math.min(1, music)) : 1;
+      effectsLevel = Number.isFinite(effects) ? Math.max(0, Math.min(1, effects)) : 1;
+      for (const voice of voices.values()) applyGain(voice);
     }
   };
 }
