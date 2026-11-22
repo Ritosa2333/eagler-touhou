@@ -82,5 +82,8 @@ jobs:
             throw "Checkout contains excluded asset paths: $($found -join ', ')"
           }
 
+      - name: Restore local tools (ilspycmd)
+        run: dotnet tool restore
+
       - name: Build browser host
         run: dotnet build THSSS.Browser/THSSS.Browser.csproj -c Release -p:StageGameAssets=false --nologo
