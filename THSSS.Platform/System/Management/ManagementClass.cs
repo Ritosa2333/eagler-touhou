@@ -35,11 +35,43 @@ namespace System.Management
 		}
 	}
 
+	public class ManagementObjectEnumerator : IEnumerator, IDisposable
+	{
+		private readonly IEnumerator inner = new object[0].GetEnumerator();
+
+		public object Current
+		{
+			get
+			{
+				return this.inner.Current;
+			}
+		}
+
+		public bool MoveNext()
+		{
+			return this.inner.MoveNext();
+		}
+
+		public void Reset()
+		{
+			this.inner.Reset();
+		}
+
+		public void Dispose()
+		{
+		}
+	}
+
 	public class ManagementObjectCollection : IEnumerable, IDisposable
 	{
-		public IEnumerator GetEnumerator()
+		public ManagementObjectEnumerator GetEnumerator()
 		{
-			return new object[0].GetEnumerator();
+			return new ManagementObjectEnumerator();
+		}
+
+		IEnumerator IEnumerable.GetEnumerator()
+		{
+			return this.GetEnumerator();
 		}
 
 		public void Dispose()

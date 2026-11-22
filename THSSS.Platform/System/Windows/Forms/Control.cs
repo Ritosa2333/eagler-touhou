@@ -68,7 +68,20 @@ namespace System.Windows.Forms
 
 		public AutoScaleMode AutoScaleMode { get; set; }
 
+		public ImeMode ImeMode { get; set; }
+
 		public object Tag { get; set; }
+
+		public event EventHandler DoubleClick;
+
+		public void RaiseDoubleClick()
+		{
+			var eventHandler = this.DoubleClick;
+			if (eventHandler != null)
+			{
+				eventHandler(this, EventArgs.Empty);
+			}
+		}
 
 		public int Width
 		{

@@ -14,8 +14,6 @@ namespace System.Windows.Forms
 
 		public bool KeyPreview { get; set; }
 
-		public ImeMode ImeMode { get; set; }
-
 		public SizeF AutoScaleDimensions { get; set; }
 
 		public event EventHandler Load;

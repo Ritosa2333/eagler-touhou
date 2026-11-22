@@ -59,7 +59,30 @@ namespace System.Windows.Forms
 		}
 	}
 
-	public class NumericUpDown : Control, System.ComponentModel.ISupportInitialize
+	public class CommonDialog
+	{
+		public DialogResult ShowDialog()
+		{
+			return DialogResult.Cancel;
+		}
+	}
+
+	public class ButtonBase : Control
+	{
+		public bool UseVisualStyleBackColor { get; set; }
+	}
+
+	public class ListControl : Control
+	{
+		public int SelectedIndex { get; set; }
+	}
+
+	public class UpDownBase : Control
+	{
+		public HorizontalAlignment TextAlign { get; set; }
+	}
+
+	public class NumericUpDown : UpDownBase, System.ComponentModel.ISupportInitialize
 	{
 		public decimal Value { get; set; }
 
@@ -70,8 +93,6 @@ namespace System.Windows.Forms
 		public decimal Increment { get; set; }
 
 		public int DecimalPlaces { get; set; }
-
-		public HorizontalAlignment TextAlign { get; set; }
 
 		public void BeginInit()
 		{
@@ -86,33 +107,22 @@ namespace System.Windows.Forms
 	{
 	}
 
-	public class CheckBox : Control
+	public class CheckBox : ButtonBase
 	{
 		public bool Checked { get; set; }
-
-		public bool UseVisualStyleBackColor { get; set; }
 	}
 
-	public class ListBox : Control
+	public class Button : ButtonBase
+	{
+	}
+
+	public class ListBox : ListControl
 	{
 		public bool FormattingEnabled { get; set; }
 
 		public bool HorizontalScrollbar { get; set; }
 
 		public int ItemHeight { get; set; }
-
-		public int SelectedIndex { get; set; }
-
-		public event EventHandler DoubleClick;
-
-		public void RaiseDoubleClick()
-		{
-			var eventHandler = this.DoubleClick;
-			if (eventHandler != null)
-			{
-				eventHandler(this, EventArgs.Empty);
-			}
-		}
 
 		public ObjectCollection Items { get; private set; }
 
