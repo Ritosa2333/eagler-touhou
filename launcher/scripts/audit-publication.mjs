@@ -68,7 +68,9 @@ function isHostGeneratedOriginalAsset(path) {
   // Card artwork is host-generated from retail content for every formal title.
   // Keep this rule product-neutral so adding a title does not require teaching
   // the publication safety audit another game id.
-  return /^assets\/th\d{2}-card\.webp$/i.test(path) || legacyHostGeneratedOriginalAssets.has(path);
+  // BRO is a supplied third-party derivative card (ports/bossrush/artwork),
+  // not extracted from a retail title, but it is still host-generated artwork.
+  return /^assets\/(?:th\d{2}|bro)-card\.webp$/i.test(path) || legacyHostGeneratedOriginalAssets.has(path);
 }
 const failures = [];
 let workspaceChecked = null;

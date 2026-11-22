@@ -185,3 +185,8 @@
 - 多人 replay 真浏览器手点 PASS（BRO 仓库 PROBE_3AD mre_e2e）。
 - 待补：官方 Host 流程「选游戏→启动→首帧→退出」记录；触控/手柄实测；官方基准对照。
 - 注意：引擎基线帧 ~182 自身非确定性分叉（另案），回滚摘要校验在 <180 帧可靠，`inputTiming` 已如实反映。
+
+## 分发与封面（2026-11-22）
+
+- BRO 为 `importOnly`：Runtime（WASM/glue/JS）随本站部署，1004 个游戏资源由玩家在 GAME DATA 导入窗口选择 ZIP 提供。`launcher/scripts/package-bro-import.mjs <broRepoRoot> <out.zip>` 读 BRO 源库 `web/dist/package-manifest.json` + `game/` 生成可导入包（`eagler-touhou/package/1`：descriptor + 1 字节 bro.data + `game/...` 资源，target `/game/<p>` 经 `resource_cache` 归一化匹配）。已用 `parsePackageZip` 验证 1005 文件、哈希全匹配。
+- 启动器卡片封面 `assets/bro-card.webp`：源图 `ports/bossrush/artwork/bro-card.webp`（被 git 跟踪），`prepare-host-artwork.py` 已登记 `bro` 适配器，构建时生成并随站点发布；`audit-publication.mjs` 白名单已放行 `assets/bro-card.webp`。
