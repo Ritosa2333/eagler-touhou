@@ -126,6 +126,9 @@ test("a screen tap confirms once and does not hold Z", () => {
   unknown.at(40);
   unknown.bridge.direct({ type: "up", id: 1, x: 0.4, y: 0.4 });
   assert.equal(unknown.keys.isDown("Z"), true);
+  // First presented keeps the edge for the game frame; the next clears it.
+  unknown.bridge.presented();
+  assert.equal(unknown.keys.isDown("Z"), true);
   unknown.bridge.presented();
   assert.equal(unknown.keys.isDown("Z"), false);
 
@@ -160,6 +163,8 @@ test("menu tap, swipe, and play double-tap use one edge each", () => {
   menu.bridge.direct({ type: "up", id: 2, x: 0.2, y: 0.2 });
   assert.equal(menu.keys.isDown("Z"), true);
   menu.bridge.presented();
+  assert.equal(menu.keys.isDown("Z"), true);
+  menu.bridge.presented();
   assert.equal(menu.keys.isDown("Z"), false);
 
   const play = harness({ doubleTapBombEnabled: true, touchMovementMode: "touch" }, "play");
@@ -172,6 +177,10 @@ test("menu tap, swipe, and play double-tap use one edge each", () => {
   play.bridge.direct({ type: "up", id: 2, x: 0.41, y: 0.4 });
   assert.equal(play.keys.isDown("X"), true);
   assert.equal(play.keys.isDown("Z"), false);
+  play.bridge.presented();
+  assert.equal(play.keys.isDown("X"), true);
+  play.bridge.presented();
+  assert.equal(play.keys.isDown("X"), false);
 });
 
 test("unlimited touch places the ship when the host accepts the shift", () => {

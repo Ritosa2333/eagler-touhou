@@ -13,7 +13,12 @@ function joystickMode(mode) {
 export function createTouchBridge({ keys, surface, options, shift, now = () => performance.now() }) {
   const movement = createTouchMovement();
   const gestures = createMenuGestures();
+  // Gesture edges stay down through the next presented frame (onBeforeFrame →
+  // Frame), then release. Releasing at the start of that same presented call
+  // cleared Z/X/Escape before the game sampled them, so menu taps never
+  // confirmed. th06 keeps pendingButton until the frame OR's it in.
   const pulses = [];
+  let heldPulses = [];
   let previous = null;
   let focus = false;
   let fire = false;
@@ -62,8 +67,8 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
   }
 
   function releasePulses() {
-    for (const name of pulses) keys.setKey(name, false, "gesture");
-    pulses.length = 0;
+    for (const name of heldPulses) keys.setKey(name, false, "gesture");
+    heldPulses = pulses.splice(0);
   }
 
   function playSpeed() {
@@ -212,6 +217,10 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
     gestures.cancel();
     movement.clear();
     primaryId = null;
+    for (const name of heldPulses) keys.setKey(name, false, "gesture");
+    heldPulses = [];
+    for (const name of pulses) keys.setKey(name, false, "gesture");
+    pulses.length = 0;
     releaseArrows();
     applyMenuHold(null);
     keys.setKey("ShiftKey", false, "touch-second");
