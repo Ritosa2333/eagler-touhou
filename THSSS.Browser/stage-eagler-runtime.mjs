@@ -8,7 +8,7 @@
 
 import * as esbuild from "esbuild";
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, symlinkSync } from "node:fs";
+import { copyFileSync, existsSync, lstatSync, symlinkSync } from "node:fs";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
@@ -19,6 +19,9 @@ const repo = resolve(browser, "..");
 const publish = resolve(browser, "bin/Release/net10.0/browser-wasm/publish");
 const wwwroot = resolve(browser, "wwwroot");
 const output = resolve(repo, "build-eagler");
+// Pre-converted Launcher card (README/card-artwork.png → README/thsss-card.webp).
+const cardArtwork = resolve(repo, "README", "thsss-card.webp");
+const cardName = "thsss-card.webp";
 
 const allowed = name =>
   name === "thsss.html" || name === "manifest.json" ||
@@ -197,6 +200,21 @@ if (existsSync(resolve(assetRoot, "thsss.dat"))) {
   }
 }
 
+// Host Launcher card: copy the checked-in WebP into the staged artwork tree and
+// into the local assets tree used as EAGLER_THSSS_CONTENT_DIR / content markers.
+if (!existsSync(cardArtwork)) {
+  throw new Error(`missing pre-converted card artwork: ${cardArtwork}`);
+}
+const stagedArtworkDir = resolve(output, "artwork");
+await mkdir(stagedArtworkDir, { recursive: true });
+copyFileSync(cardArtwork, resolve(stagedArtworkDir, cardName));
+if (existsSync(assetRoot)) {
+  const assetArtworkDir = resolve(assetRoot, "artwork");
+  await mkdir(assetArtworkDir, { recursive: true });
+  copyFileSync(cardArtwork, resolve(assetArtworkDir, cardName));
+}
+
 console.log(`staged ${Object.keys(ordered).length} files in ${output}`);
 console.log(counts);
 console.log(`shell.mjs ${files["shell.mjs"].bytes} bytes`);
+console.log(`artwork ${cardName}`);
