@@ -1,4 +1,5 @@
 import {createDatOggProviderFromFiles,readDatOggDescriptor} from './dat-ogg-provider.mjs';
+import {launcherParentOrigin} from './launcher-session.mjs';
 
 const PACKAGE_VERSION='th128-dat-ogg/1';
 function need(value,message){if(!value)throw Object.assign(new Error('Managed DAT owner: '+message),{errno:'invalid-field'});}
@@ -27,8 +28,8 @@ function managedLease({window=globalThis.window,document=window?.document,locati
  need(/^[A-Za-z0-9_.:-]{1,128}$/.test(generation),'invalid package generation');
  need(/^[1-9][0-9]*$/.test(epochText)&&Number.isSafeInteger(epoch),'invalid runtime epoch');
  need(window&&window.parent&&window.parent!==window,'managed DATA needs a parent');
- const parent=window.parent,page=new URL(location.href),referrer=new URL(document.referrer),href=location.href,search=location.search;
- need(['http:','https:'].includes(page.protocol)&&page.origin===location.origin&&referrer.origin===page.origin,'parent DATA must share the runtime origin');
+ const parent=window.parent,page=new URL(location.href),referrer=document.referrer,href=location.href,search=location.search;
+ need(['http:','https:'].includes(page.protocol)&&page.origin===location.origin&&launcherParentOrigin(window,document,location)===page.origin,'parent DATA must share the runtime origin');
  const callback=parent.__eaglerPrepareManagedRuntimeDataV1;
  need(typeof callback==='function','parent DATA callback is unavailable');
  const controller=new AbortController(),onAbort=()=>controller.abort();let disposed=false;
@@ -36,7 +37,8 @@ function managedLease({window=globalThis.window,document=window?.document,locati
  signal?.addEventListener('abort',onAbort,{once:true});
  function current(){
   if(disposed||signal?.aborted||controller.signal.aborted||!isCurrent()||window.parent!==parent||window.document!==document
-   ||location.href!==href||location.search!==search||location.origin!==page.origin||document.referrer!==referrer.href
+   ||location.href!==href||location.search!==search||location.origin!==page.origin||document.referrer!==referrer
+   ||launcherParentOrigin(window,document,location)!==page.origin
    ||parent.__eaglerPrepareManagedRuntimeDataV1!==callback)throw abort();
  }
  function dispose(){if(disposed)return;disposed=true;controller.abort();signal?.removeEventListener('abort',onAbort);}

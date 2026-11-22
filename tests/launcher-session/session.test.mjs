@@ -28,6 +28,15 @@ test('malformed unsafe or repeated runtime epochs cannot create a channel',()=>{
 test('a launcher frame without an HTTP referrer origin fails closed without wildcard replies',()=>{
  for(const referrer of ['', 'file:///C:/index.html','null']){const e=setup({referrer});assert.equal(e.session,null);assert.equal(e.messages.length,0);}
 });
+test('an empty referrer can use a browser-verified same-origin parent',()=>{
+ const {win,parent,messages}=fakeWindow({referrer:''});
+ parent.location={href:'https://game.example/launcher'};
+ const session=product.mountLauncherSession({window:win});
+ assert.equal(session.markReady(),true);
+ assert.equal(messages[0].origin,'https://game.example');
+ parent.location={href:'https://other.example/launcher'};
+ assert.equal(product.mountLauncherSession({window:win}),null);
+});
 test('ready is explicit once and carries no unimplemented room or save root',()=>{
  const e=setup();assert.equal(e.messages.length,0);assert.equal(e.session.markReady(),true);assert.equal(e.session.markReady(),false);
  assert.equal(e.events('ready').length,1);assert.equal(e.messages[0].origin,'https://launcher.example');

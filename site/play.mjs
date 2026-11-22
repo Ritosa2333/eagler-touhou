@@ -2083,6 +2083,7 @@ function assertSynchronousWorldDrainAllowed(){
 }
 function drainWorld(){assertSynchronousWorldDrainAllowed();drainGameSoundsLegacy();drainMusicControlLegacy();}
 async function prepareGameSounds(base,signal,tracks,selection=null){
+  if(typeof globalThis.AudioContext!=='function')return null;
   const demo=state.titleDemoRun;
   if(demo){
     const audio=ensureTitleAudioContext(),gain=state.gain,queue=new GameSoundQueue(audio,gain);
@@ -2418,7 +2419,7 @@ async function loadVariant(variant){
     for(const [bank,name] of [[24,'title'],[25,'title_v']])await loadTitleBank(bank,name);
     find('#loading-text').textContent='解码原版标题音乐…';
     const track=manifest.music.find(track=>track.name==='th128_07.wav');
-    if(track){
+    if(track&&typeof globalThis.AudioContext==='function'&&typeof globalThis.OfflineAudioContext==='function'){
       const response=await checkpointFetch(safeAssetUrl(base,track.file),{signal});if(!response.ok)throw new Error('标题音乐读取失败');
       const audio=new OfflineAudioContext(track.channels,1,track.sampleRate);
       const buffer=await audio.decodeAudioData(await response.arrayBuffer());
@@ -2455,10 +2456,19 @@ function cancelOriginalEnding(){
   state.endingPromise=null;state.endingStepPromise=null;state.focusPausedAnimation=null;
   if(host)host.close();
 }
+function thcrapLocalization(){
+  const patch=state.manifest?.localization;
+  return ['lang_zh-hans','lang_en'].includes(patch?.id)&&/^[a-f0-9]{64}$/.test(patch.patchSHA256)?patch:null;
+}
+function helpPageRecord(page){
+  return thcrapLocalization()?.helpPages?.[page]??originalHelpPagePins[find('#variant').value]?.[page];
+}
 async function prepareOriginalEndingResources(stage,base,signal){
   if(!terminalStageIds.has(stage.id))return null;
   const expected=state.manifest?.nativeEndingAssets;
-  if(!expected||expected.variant!==find('#variant').value||expected.schema!=='th128-original-recorded-native-ending-resources/1'
+  const variant=find('#variant').value,schema=variant==='ja'||thcrapLocalization()
+    ?'th128-original-rendered-native-ending-resources/1':'th128-original-recorded-native-ending-resources/1';
+  if(!expected||expected.variant!==variant||expected.schema!==schema
       ||!Number.isSafeInteger(expected.bytes)||expected.bytes<1||expected.bytes>1024*1024||!/^[0-9a-f]{64}$/.test(expected.sha256))
     throw new Error('Original ending resource manifest pin is unavailable; no fake ending fallback');
   const response=await checkpointFetch(safeAssetUrl(base,expected.file),{signal});
@@ -2468,8 +2478,10 @@ async function prepareOriginalEndingResources(stage,base,signal){
   if(bytes.length!==expected.bytes||digest!==expected.sha256)throw new Error('Original ending resource manifest full-byte pin rejected');
   const pack=JSON.parse(new TextDecoder('utf8',{fatal:true}).decode(bytes));
   const resources=pack.routes?.find(row=>row.stage===stage.id);
+  const textContexts=variant==='en'?expected.textContexts:variant==='ja'?119:118;
   if(pack.schema!==expected.schema||pack.variant!==expected.variant||pack.sourceExecutableSHA256!==type25SourceExeSha256
-      ||pack.routeCount!==6||pack.textContexts!==118||!resources||!Array.isArray(resources.glyphs)
+      ||pack.routeCount!==6||!Number.isSafeInteger(textContexts)||textContexts<1||textContexts>256
+      ||pack.textContexts!==textContexts||!resources||!Array.isArray(resources.glyphs)
       ||resources.index!==[3,5,8,10,13,15].indexOf(stage.id))
     throw new Error('Original ending route resource identity rejected');
   const module=await import('./runtime/native-ending-browser-host-v4.mjs');
@@ -2879,7 +2891,7 @@ async function loadOriginalMainRasters(){
   const response=await checkpointFetch(url,{signal});if(!response.ok)throw new Error('Original Music raster catalogue unavailable');
   const bytes=new Uint8Array(await response.arrayBuffer());
   const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),value=>value.toString(16).padStart(2,'0')).join('');
-  if(digest!==ORIGINAL_MAIN_MUSIC_PACK_SHA256)throw new Error('Original Music catalogue full-byte pin differs');
+  if(digest!==(thcrapLocalization()?.musicSHA256??ORIGINAL_MAIN_MUSIC_PACK_SHA256))throw new Error('Music catalogue full-byte pin differs');
   const metadata=JSON.parse(new TextDecoder('utf8',{fatal:true}).decode(bytes));
   const bank=await loadOriginalMainMusicRasters(metadata,async(file,expected)=>{
     const response=await checkpointFetch(safeAssetUrl(state.base,file),{signal});if(!response.ok)throw new Error('Original Music glyph PNG unavailable');
@@ -2891,7 +2903,7 @@ async function loadOriginalMainRasters(){
 }
 const ORIGINAL_RESULT_GLYPH_PACK_SHA256='137f7e9b1a49036504d0ed620306d153dfbb4bdfafe82cc065bfca85b93501b6';
 async function loadOriginalResultRasters(){
-  const signal=state.controller.signal,glyphBase=new URL('/assets/'+state.catalog.variants.zh.manifest.replace(/manifest\.json$/,''),state.base).href;
+  const signal=state.controller.signal,glyphBase=state.base;
   const response=await checkpointFetch(safeAssetUrl(glyphBase,'animations/original-result-glyphs.json'),{signal});if(!response.ok)throw new Error('Original RESULT glyph catalogue unavailable');
   const bytes=new Uint8Array(await response.arrayBuffer()),digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');if(digest!==ORIGINAL_RESULT_GLYPH_PACK_SHA256)throw new Error('Original RESULT glyph catalogue whole bytes differ');
   const metadata=JSON.parse(new TextDecoder('utf8',{fatal:true}).decode(bytes));return await loadOriginalResultFont(metadata,async(file,expected)=>{const response=await checkpointFetch(safeAssetUrl(glyphBase,file),{signal});if(!response.ok)throw new Error('Original RESULT glyph page unavailable');const page=new Uint8Array(await response.arrayBuffer()),actual=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',page)),b=>b.toString(16).padStart(2,'0')).join('');if(actual!==expected)throw new Error('Original RESULT glyph page whole bytes differ');return await decodeOriginalMainMusicPNG(page);},{signal});
@@ -3017,7 +3029,7 @@ async function syncOriginalMainPresentation(){
     for(let index=0;index<count;index++){const raw=module.UTF8ToString(module._th128_title_music_text_request(index));if(!raw||state.mainResultTextCache.get(index)===raw)continue;await uploadOriginalResultTextRequest(state.renderer,state.mainResultGlyphs,JSON.parse(raw),{signal:state.controller.signal});state.mainResultTextCache.set(index,raw);}
   }else state.mainResultTextCache?.clear();
   if(snapshot.page===8&&snapshot.helpPage>=0&&state.mainHelpPage!==snapshot.helpPage){
-    const reference=originalHelpPagePins[find('#variant').value]?.[snapshot.helpPage];if(!reference)throw new Error('Original main Help page unavailable');
+    const reference=helpPageRecord(snapshot.helpPage);if(!reference)throw new Error('Original main Help page unavailable');
     await loadOriginalHelpPage(state.renderer,{...reference,url:safeAssetUrl(state.base,reference.file)},{signal:state.controller.signal});state.mainHelpPage=snapshot.helpPage;
   }
 }
@@ -3230,7 +3242,17 @@ function originalMainController(){
   if(state.mainController)return state.mainController;
   const module=state.module,current=()=>state.mainController===owner&&module===state.module&&!owner.disposed;
   const owner=new OriginalMainMenuController({module,prepare:prepareOriginalMain,getButtons:actualMainControllerButtons,
-    consumeSound:async()=>{if(!state.module._th128_title_sound_count())return;const audio=await ensureOriginalTitleAudio();if(audio)await state.titleSoundConsumer.consume();},
+    consumeSound:async()=>{
+      if(!module._th128_title_sound_count())return;
+      if(typeof globalThis.AudioContext==='function'){
+        if(!await ensureOriginalTitleAudio())return;
+      }else if(!state.titleSoundConsumer){
+        const ledger=new OwnedMenuSoundLedger();
+        state.mainSoundLedger=ledger;
+        state.titleSoundConsumer=new TitleSoundWindowConsumer(module,null,ledger,{present:false});
+      }
+      await state.titleSoundConsumer.consume();
+    },
     consumeMusic:async()=>{const hasRequest=()=>JSON.parse(module.UTF8ToString(module._th128_title_music_bgm_request())).serial;
       if(!current()||!hasRequest())return;
       const audio=await ensureOriginalTitleAudio();
@@ -3455,16 +3477,18 @@ find('#ecl').addEventListener('click',async()=>{
 });
 const originalStageFontLoads=new Map();
 async function ensureOriginalStageTextFont(variant){
+  if(variant==='en')return;
   if(!['zh','ja'].includes(variant))throw new Error('Unsupported original text font variant');
   if(!originalStageFontLoads.has(variant))originalStageFontLoads.set(variant,(async()=>{
     const source=variant==='zh'?'local("SimHei"), local("黑体")':'local("MS Gothic"), local("ＭＳ ゴシック")';
     const face=new FontFace(variant==='zh'?'TH128OriginalHeiti':'TH128OriginalGothic',source,{style:'normal',weight:'400'});
-    await face.load();document.fonts.add(face);return face.family;
+    try{await face.load();document.fonts.add(face);return face.family;}
+    catch(problem){if(!thcrapLocalization())throw problem;return null;}
   })());
   return originalStageFontLoads.get(variant);
 }
 async function prepareOriginalStageTextRasters(base,variant,signal){
-  if(variant!=='zh')return null;
+  if(variant!=='zh'||thcrapLocalization())return null;
   const response=await checkpointFetch(safeAssetUrl(base,'animations/original-stage-text-full42.json'),{signal});
   if(!response.ok)throw new Error('原版对话/符卡字形资源缺失');
   const metadata=await response.json();
@@ -3480,8 +3504,9 @@ function disposeOriginalStageTextRasters(bank){
   if(bank)for(const page of bank.pages){page.image.close();page.outlineImage.close();}
 }
 function originalStageTextFamily(variant){
+  if(variant==='en')return 'Arial, sans-serif';
   if(!originalStageFontLoads.has(variant))throw new Error('Original stage text font is not ready');
-  return variant==='zh'?'"TH128OriginalHeiti"':'"TH128OriginalGothic"';
+  return variant==='zh'?'"TH128OriginalHeiti", "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif':'"TH128OriginalGothic"';
 }
 function enemyAnimationBankLimit(selection,names){
   const expected=['enemy.anm','enemy_ll.anm','boss04.anm','enemy_bf.anm'];
@@ -4348,7 +4373,7 @@ function originalPauseConsumer(){
       }
       if(snapshot.manual&&snapshot.helpPage>=0&&snapshot.helpPage!==state.manualPageLoaded){
         const renderer=state.renderer,host=state.controller,base=state.base;
-        const reference=originalHelpPagePins[find('#variant').value]?.[snapshot.helpPage];
+        const reference=helpPageRecord(snapshot.helpPage);
         if(!reference)throw new Error('原版操作说明页缺失');
         const helpCurrent=()=>current()&&state.renderer===renderer&&state.controller===host&&state.base===base;
         await loadOriginalHelpPage(renderer,{...reference,url:safeAssetUrl(base,reference.file)},{signal:host.signal,isCurrent:helpCurrent});
@@ -4935,7 +4960,11 @@ async function present(timestamp){
       const timing=practiceWorld?thpracLogicClock.advance(timestamp,active,practiceLogicRate()):clock.advance(timestamp,active);presentationSteps=timing.steps;
       highFramerateCatchup=timing.steps>1;
       if(highFramerateCatchup)resetHighFrameratePresentation();
-      if(timing.stalled&&state.active&&!state.paused&&!state.endingHost&&!state.normalPostrun){pause();status('浏览器帧调度停顿，已暂停而不是跳过游戏逻辑帧。');}
+      // The title may await assets or saves across animation frames. Its clock
+      // has already re-anchored, so leave the menu available for the next input.
+      if(timing.stalled&&active&&(state.worldMode||state.titleDemoRun)&&!state.endingHost&&!state.normalPostrun){
+        pause();status('浏览器帧调度停顿，已暂停而不是跳过游戏逻辑帧。');
+      }
       for(let count=0;count<timing.steps&&state.active&&!state.paused;count++){
         const demoBefore=state.titleDemoRun;
         if(state.normalPostrun)await advanceNormalPostrun();else if(state.endingHost)await advanceOriginalEnding();else await advance();
@@ -5055,17 +5084,38 @@ window.th128Debug={
     canvas.dataset.nativePresentation=JSON.stringify({frame:world.frame,highFramerate:highFramerateEnabled,interpolation:presentation.interpolated?interpolation:1,nativePlayerX:nativePlayer?.x??null,displayedPlayerX:displayedPlayer?.x??null,stage:world.flow?.currentId??null,playerHit,spellId:world.spell?.active?world.spell.id:null,hud:raw.hud,spellResult:world.spell?.resultFrames>0?{frames:world.spell.resultFrames,captured:world.spell.captured}:null,messageActive:!!message?.active,messageClock:message?.clock??null,routeChoice:message?.routeChoice?.started?{phase:message.routeChoice.phase,selection:message.routeChoice.message78}:null,dialogueText:message?.active?messageTextLayout(message,find('#variant').value).map(line=>line.text).join('\n'):'',bossAnimations:records.filter(record=>record.bank===3&&record.entry===0).slice(0,16).map(record=>({id:record.id,script:record.script??null,sprite:record.sprite,clock:record.clock??null,visualTicks:record.visualTicks??null,x:record.x,y:record.y,flags:record.flags,flags2:record.flags2}))});
     if(!overlay){overlay=document.createElement('canvas');overlay.id='dialogue-text';overlay.setAttribute('aria-label','原版剧情对话');canvas.parentElement.append(overlay);}
     if(overlay.width!==canvas.width||overlay.height!==canvas.height){overlay.width=canvas.width;overlay.height=canvas.height;}
-    const spell=world.spell,locale=find('#variant').value;
+    const spell=world.spell,locale=find('#variant').value,patch=thcrapLocalization();
+    const nativeRasters=locale==='zh'&&!patch;
     const needsText=!!(message?.active&&message.lines?.length||spell?.pose&&spell.title?.length);
     if(overlay.hidden===needsText)overlay.hidden=!needsText;
     const context=needsText?overlay.getContext('2d'):null,previousText=state.stageTextPresentation;
     const reuseText=needsText&&!world.normalTerminal?.begun&&previousText?.world===world&&previousText.canvas===overlay
       &&previousText.width===overlay.width&&previousText.height===overlay.height&&previousText.locale===locale&&previousText.rasters===state.stageTextRasters;
     if(needsText&&!reuseText){context.clearRect(0,0,overlay.width,overlay.height);context.setTransform(overlay.width/640,0,0,overlay.height/480,0,0);context.lineJoin='round';context.textBaseline='top';
-      for(const line of messageTextLayout(message,locale,{nativeRasters:locale==='zh'})){if(locale==='zh'){drawOriginalStageText(context,state.stageTextRasters,{...line,kind:line.rasterKind,rawHex:line.rawHex});}else{context.save();context.translate(line.x,line.y);context.scale(line.sx,line.sy);context.textAlign=line.align;context.font=`400 ${line.font}px ${originalStageTextFamily(locale)}`;context.lineWidth=3;context.strokeStyle='#101018';context.fillStyle='#fff';context.globalAlpha=line.outlineAlpha;if(line.outlineAlpha>0)context.strokeText(line.text,0,0);context.globalAlpha=line.alpha;if(line.alpha>0)context.fillText(line.text,0,0);context.restore();}}
+      for(const line of messageTextLayout(message,locale,{nativeRasters})){
+        if(nativeRasters){
+          drawOriginalStageText(context,state.stageTextRasters,{...line,kind:line.rasterKind,rawHex:line.rawHex});
+        }else{
+          context.save();context.translate(line.x,line.y);context.scale(line.sx,line.sy);context.textAlign=line.align;
+          const size=locale==='en'?Math.max(15,line.font-2):line.font;
+          context.font=`400 ${size}px ${originalStageTextFamily(locale)}`;
+          context.lineWidth=3;context.strokeStyle='#101018';context.fillStyle='#fff';
+          context.globalAlpha=line.outlineAlpha;if(line.outlineAlpha>0)context.strokeText(line.text,0,0);
+          context.globalAlpha=line.alpha;if(line.alpha>0)context.fillText(line.text,0,0);context.restore();
+        }
+      }
       if(spell?.pose&&spell.title?.length){
         const pose=spell.pose;
-        if(locale==='zh'){drawOriginalStageText(context,state.stageTextRasters,{kind:'spell',rawHex:spell.title.map(value=>value.toString(16).padStart(2,'0')).join(''),x:pose.x,y:pose.y,sx:pose.sx,sy:pose.sy,alpha:(pose.color>>>24)/255,outlineAlpha:(pose.color>>>24)/255,align:'right'});}else{const title=new TextDecoder(locale==='ja'?'shift_jis':'gbk',{fatal:true}).decode(Uint8Array.from(spell.title));context.save();context.translate(pose.x,pose.y);context.scale(pose.sx,pose.sy);context.globalAlpha=(pose.color>>>24)/255;context.font='18px "Microsoft YaHei","Yu Gothic",sans-serif';context.textAlign='right';context.lineWidth=3;context.strokeStyle='#101018';context.fillStyle='#fff';context.strokeText(title,0,0);context.fillText(title,0,0);context.restore();}
+        if(nativeRasters){
+          drawOriginalStageText(context,state.stageTextRasters,{kind:'spell',rawHex:spell.title.map(value=>value.toString(16).padStart(2,'0')).join(''),x:pose.x,y:pose.y,sx:pose.sx,sy:pose.sy,alpha:(pose.color>>>24)/255,outlineAlpha:(pose.color>>>24)/255,align:'right'});
+        }else{
+          const title=patch?.spells?.[spell.id]??patch?.spells?.[spell.id-(spell.id%4)]
+            ??new TextDecoder('shift_jis',{fatal:true}).decode(Uint8Array.from(spell.title));
+          context.save();context.translate(pose.x,pose.y);context.scale(pose.sx,pose.sy);context.globalAlpha=(pose.color>>>24)/255;
+          context.font=locale==='en'?'18px Arial, sans-serif':'18px "Microsoft YaHei","Yu Gothic",sans-serif';
+          context.textAlign='right';context.lineWidth=3;context.strokeStyle='#101018';context.fillStyle='#fff';
+          context.strokeText(title,0,0);context.fillText(title,0,0);context.restore();
+        }
       }
       context.resetTransform();
       state.stageTextPresentation=world.normalTerminal?.begun?null:{world,canvas:overlay,width:overlay.width,height:overlay.height,locale,rasters:state.stageTextRasters};

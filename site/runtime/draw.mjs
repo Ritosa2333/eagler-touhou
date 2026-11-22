@@ -38,7 +38,8 @@ function expandTriangleStrip(corners){
 export function messageTextLayout(state,variant,{nativeRasters=false}={}){
   if(!state?.active)return [];
   if(![state.x,state.y].every(value=>Number.isFinite(value)&&Math.abs(value)<=65536)||!Array.isArray(state.lines)||state.lines.length>8||![0,1].includes(state.speaker))throw new Error('Invalid original message text layout');
-  const decoder=new TextDecoder(variant==='ja'?'shift_jis':'gbk',{fatal:true});const output=[];let row=0;
+  const encoding=variant==='en'?'utf-8':variant==='zh'?'gbk':'shift_jis';
+  const decoder=new TextDecoder(encoding,{fatal:true});const output=[];let row=0;
   for(const bytes of state.lines){
     if(!Array.isArray(bytes)||bytes.length>252||bytes.some(value=>!Number.isInteger(value)||value<0||value>255))throw new Error('Invalid original message text bytes');
     const raw=decoder.decode(Uint8Array.from(bytes)),match=/^\|(\d+),(\d+),(.*)$/s.exec(raw);
@@ -348,7 +349,7 @@ export async function loadOriginalMainMusicRasters(metadata,loadPage,{signal}={}
   const rows=new Map(),pages=[];
   const checked=()=>{if(signal?.aborted)throw signal.reason??new DOMException('Aborted','AbortError');};
   for(const row of metadata.rows){
-    if(!row||!['zh','ja'].includes(row.variant)||typeof row.rawHex!=='string'||!/^(?:[a-f0-9]{2}){0,252}$/.test(row.rawHex)
+    if(!row||!['zh','ja','en'].includes(row.variant)||typeof row.rawHex!=='string'||!/^(?:[a-f0-9]{2}){0,252}$/.test(row.rawHex)
       ||row.key!==row.variant+':'+row.rawHex||rows.has(row.key)||!Number.isInteger(row.page)||row.page<0||row.page>=metadata.pages.length
       ||![row.x,row.y].every(Number.isInteger)||row.x<0||row.x+512>1024||row.y<0||row.y+18>2048||row.width!==512||row.height!==18
       ||!/^([a-f0-9]{64})$/.test(row.sha256)||!/^([a-f0-9]{64})$/.test(row.sha256Height17))throw new Error('Original main raster row rejected');
@@ -365,7 +366,7 @@ export async function loadOriginalMainMusicRasters(metadata,loadPage,{signal}={}
 }
 export function disposeOriginalMainMusicRasters(bank){if(bank?.pages)for(const page of bank.pages)page.close();}
 export async function uploadOriginalMainMusicRequest(renderer,bank,request,variant,{signal}={}){
-  if(!bank||bank.schema!=='th128-original-main-music-raster/1'||!['zh','ja'].includes(variant)||request?.encoding!==(variant==='zh'?'gbk':'shift_jis'))
+  if(!bank||bank.schema!=='th128-original-main-music-raster/1'||!['zh','ja','en'].includes(variant)||request?.encoding!==(variant==='zh'?'gbk':'shift_jis'))
     throw new Error('Original Music variant/raster ownership rejected');
   const row=bank.rows.get(variant+':'+request.textHex);
   if(!row||![17,18].includes(request.rect?.[3]))throw new Error('Original Music raw byte raster unavailable');

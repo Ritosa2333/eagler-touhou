@@ -27,8 +27,8 @@ export function readDatOggDescriptor(bytes){
   if(id==='game-data')need(row.source==='games/th128/th128.dat'&&row.target==='/th128.dat','missing original DAT mount'),kind.set(id,'data');
   else if(/^games\/th128\/music\/ogg\/th128_\d\d\.ogg$/.test(row.source)){
    need(row.target==='/music/'+row.source.split('/').at(-1),'invalid OGG mount');kind.set(id,'ogg');
-  }else if(row.source==='games/th128/language/lang_zh-hans.zip'){
-   need(row.target==='/__eagler/language/lang_zh-hans.zip','invalid language mount');kind.set(id,'language');
+  }else if(/^games\/th128\/language\/lang_(?:zh-hans|ja|en)\.zip$/.test(row.source)){
+   need(row.target==='/__eagler/language/'+row.source.split('/').at(-1),'invalid language mount');kind.set(id,'language');
   }else if(/^shared\/[A-Za-z0-9_.-]+\.(?:ttc|otf|ttf)$/.test(row.source)){
    need(row.target==='/'+row.source.split('/').at(-1),'invalid shared font mount');kind.set(id,'font');
   }else need(false,'unsupported file layout');
@@ -40,9 +40,10 @@ export function readDatOggDescriptor(bytes){
  need(ogg?.type==='ogg'&&Array.isArray(ogg.files)&&new Set(ogg.files).size===ogg.files.length,'invalid OGG component');
  need(ogg.files.length===10&&ogg.files.length===[...kind.values()].filter(k=>k==='ogg').length&&ogg.files.every(id=>kind.get(id)==='ogg'),'OGG component is incomplete');
  const language=d.components?.language;
- need(language?.type==='language'&&Array.isArray(language.entries)&&language.entries.length===1,'missing Chinese component');
+ need(language?.type==='language'&&Array.isArray(language.entries)&&language.entries.length===1,'missing language component');
  const entry=language.entries[0];
- need(entry.id==='lang_zh-hans'&&kind.get(entry.file)==='language'&&[...kind.values()].filter(k=>k==='language').length===1,'invalid Chinese component');
+ const expected=entry.id==='ja'?'lang_ja.zip':['lang_zh-hans','lang_en'].includes(entry.id)?entry.id+'.zip':null;
+ need(expected&&kind.get(entry.file)==='language'&&d.files[entry.file].source.endsWith('/'+expected)&&[...kind.values()].filter(k=>k==='language').length===1,'invalid language component');
  return d;
 }
 function mime(target){
@@ -125,11 +126,13 @@ async function createProvider(source,{origin=globalThis.location?.origin,signal,
  for(const entry of readZipDirectory(language).entries){need(safeName(entry.name),'unsafe language ZIP path');inner.set(entry.name,entry);}
  need(inner.has('runtime-assets.json'),'runtime resource index is missing');
  try{index=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(await read(inner.get('runtime-assets.json'))));}catch(error){current();throw new Error('TH128 DAT package: runtime resource index is invalid: '+error.message);}
- need(index.schema==='th128-dat-resource-map/1'&&index.variant==='zh'&&index.dataFile==='game-data'&&index.dataLayout===LAYOUT,'incompatible runtime resource index');
+ const locale=d.components.language.entries[0].id;
+ const variant=locale==='lang_en'?'en':locale==='ja'?'ja':'zh';
+ need(index.schema==='th128-dat-resource-map/1'&&index.variant===variant&&index.dataFile==='game-data'&&index.dataLayout===LAYOUT,'incompatible runtime resource index');
  need(plain(index.raw)&&Object.keys(index.raw).length<=4096&&plain(index.resources)&&Object.keys(index.resources).length<=20000,'runtime resource map exceeds budget');
  for(const[name,row]of Object.entries(index.raw)){
   need(/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(name)&&archive.names.includes(name),'unknown DAT resource');recordBytes(row);
-  if(row.patch)need(row.patch==='raw/'+name&&inner.has(row.patch),'missing translated raw resource');
+  if(row.patch)need(variant!=='ja'&&row.patch==='raw/'+name&&inner.has(row.patch),'missing translated raw resource');
  }
  for(const[target,row]of Object.entries(index.resources)){
   need(target.startsWith('/assets/')&&safeName(target.slice(1))&&plain(row),'unsafe runtime target');recordBytes(row);

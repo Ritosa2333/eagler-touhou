@@ -8,3 +8,11 @@ test('MSG subtitle layout decodes actual bytes and preserves speaker positions a
  assert.equal(controlled[0].text,'....');assert.equal(controlled[0].x,188);assert.equal(controlled[0].y,274);assert.equal(controlled[1].y,283);
  assert.deepEqual(draws.messageTextLayout({...state,active:false},'ja'),[]);assert.throws(()=>draws.messageTextLayout({...state,x:Infinity},'ja'));
 });
+
+test('English dialogue retains accented letters and punctuation from UTF-8',()=>{
+ const text='A cup of saké — just one.';
+ const state={active:true,x:480,y:256,speaker:1,font:4,lines:[[...new TextEncoder().encode(text)]]};
+ const [line]=draws.messageTextLayout(state,'en');
+ assert.equal(line.text,text);
+ assert.equal(line.align,'right');
+});
