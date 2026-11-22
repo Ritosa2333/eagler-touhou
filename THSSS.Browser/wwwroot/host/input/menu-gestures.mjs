@@ -84,7 +84,10 @@ export function createMenuGestures({
     const anchor = fingers.get(primary) || finger;
     const stationary = direction(anchor.x - anchor.originX, anchor.y - anchor.originY) == null;
     const pulses = [];
-    if (!resolved && maxFingers >= 2 && stationary && surface !== "play") {
+    if (!resolved && maxFingers >= 4 && surface === "play") {
+      pulses.push("Escape");
+      resolved = true;
+    } else if (!resolved && maxFingers >= 2 && stationary && surface !== "play") {
       pulses.push("X");
       resolved = true;
     } else if (!resolved && wasPrimary && maxFingers < 2 && stationary) {

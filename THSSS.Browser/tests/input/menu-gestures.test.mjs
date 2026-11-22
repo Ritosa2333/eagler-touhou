@@ -54,3 +54,12 @@ test("dialogue uses a short tap to advance and a hold to skip", () => {
   assert.equal(gestures.skipping(500, "dialogue"), true);
   assert.deepEqual(gestures.up(2, 0.5, 0.5, 700, "dialogue", false), []);
 });
+
+test("four fingers pause in play", () => {
+  const gestures = createMenuGestures();
+  gestures.down(1, 0.2, 0.2, 0);
+  gestures.down(2, 0.3, 0.2, 10);
+  gestures.down(3, 0.4, 0.2, 20);
+  gestures.down(4, 0.5, 0.2, 30);
+  assert.deepEqual(gestures.up(4, 0.5, 0.2, 40, "play", false), ["Escape"]);
+});
