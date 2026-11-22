@@ -51,6 +51,21 @@ function safeStorage(): Storage | null { try { return globalThis.localStorage; }
 export function isUiLocale(value: unknown): value is UiLocale {
   return value === "zh-CN" || value === "en" || value === "ja";
 }
+export function readUiLocalePreference(document: Pick<Document, 'cookie'> | undefined, storage: Pick<Storage, 'getItem'> | null): UiLocale | undefined {
+  const prefix = `${UI_LOCALE_STORAGE_KEY}=`;
+  try {
+    const saved = document?.cookie.split(';').map(cookie => cookie.trim()).find(cookie => cookie.startsWith(prefix))?.slice(prefix.length);
+    if (isUiLocale(saved)) return saved;
+  } catch {}
+  try {
+    const saved = storage?.getItem(UI_LOCALE_STORAGE_KEY);
+    if (isUiLocale(saved)) return saved;
+  } catch {}
+}
+export function saveUiLocalePreference(document: Pick<Document, 'cookie'>, storage: Pick<Storage, 'setItem'> | null, mount: URL, locale: UiLocale) {
+  try {document.cookie = `${UI_LOCALE_STORAGE_KEY}=${locale}; Path=${mount.pathname}; Max-Age=31536000; SameSite=Lax${mount.protocol === 'https:' ? '; Secure' : ''}`;} catch {}
+  try {storage?.setItem(UI_LOCALE_STORAGE_KEY, locale);} catch {}
+}
 export function isUiMessageKey(value: unknown): value is UiMessageKey {
   return typeof value === "string" && entryKeys.has(value as UiMessageKey);
 }
@@ -63,12 +78,14 @@ export function detectUiLocale(): UiLocale {
     if (isUiLocale(explicit)) return explicit;
     if (/\/(?:en|ja)\.html\/?$/.test(location.pathname)) return localeFromPath(location.pathname);
     if (/\/(?:lobby(?:\.html)?|profile\.html|login\.html)\/?$/.test(location.pathname)) {
-      try {const saved = safeStorage()?.getItem(UI_LOCALE_STORAGE_KEY); if (isUiLocale(saved)) return saved;} catch {}
+      const saved = readUiLocalePreference(globalThis.document, safeStorage());
+      if (saved) return saved;
     }
   }
   const documentLocale = globalThis.document?.documentElement?.dataset.uiLocale;
   if (isUiLocale(documentLocale)) return documentLocale;
-  try { const saved = safeStorage()?.getItem(UI_LOCALE_STORAGE_KEY); if (isUiLocale(saved)) return saved; } catch {}
+  const saved = readUiLocalePreference(globalThis.document, safeStorage());
+  if (saved) return saved;
   for (const value of globalThis.navigator?.languages || [globalThis.navigator?.language]) if (value) return resolveUiLocale(value);
   return "zh-CN";
 }

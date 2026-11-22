@@ -1,0 +1,9 @@
+[
+  {
+    "id": "ui-refresh-2026-11-20",
+    "date": "2026-11-20",
+    "zh-CN": { "title": "界面翻新", "summary": "单机书库换了新布局，桌面侧栏支持展开分类查看作品，公告也可以从顶栏直接打开。" },
+    "en": { "title": "UI refresh", "summary": "The single-player library has a new layout. Expand categories in the desktop sidebar to browse games, or open announcements from the top bar." },
+    "ja": { "title": "UIリニューアル", "summary": "シングルプレイのライブラリを刷新しました。デスクトップではサイドバーのカテゴリを展開して作品を確認でき、お知らせはトップバーから開けます。" }
+  }
+]

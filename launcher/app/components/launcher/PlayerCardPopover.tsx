@@ -27,7 +27,9 @@ function openCard(trigger: Element, mode: OpenCard['mode']): OpenCard {
   return {mode, side, maxHeight: Math.max(0, Math.floor(side === 'bottom' ? below : above))};
 }
 
-export function PlayerCardPopover({trigger, label, children}: {trigger: PlayerCardTrigger; label: string; children: ReactNode}) {
+export function PlayerCardPopover({trigger, label, navigateOnClick, children}: {
+  trigger: PlayerCardTrigger; label: string; navigateOnClick?: boolean; children: ReactNode;
+}) {
   const [card,setCard] = useState<OpenCard>();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const clear = () => clearTimeout(timer.current);
@@ -48,6 +50,10 @@ export function PlayerCardPopover({trigger, label, children}: {trigger: PlayerCa
       },
       onPointerLeave:leave,
       onClick(event) {
+        if (navigateOnClick) {
+          close();
+          return;
+        }
         event.preventDefault();
         event.stopPropagation();
         clear();

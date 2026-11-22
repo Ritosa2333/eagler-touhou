@@ -1,13 +1,19 @@
 import {parentPort, workerData} from 'node:worker_threads';
 import {createPublicNicknames} from './public-nicknames.mjs';
 import {createDeepSeekNicknameReviewer} from './nickname-review.mjs';
+import {createRoomNameReviewer} from './room-name-review.mjs';
 
 const members = new Map();
+const reviewRoomName = createRoomNameReviewer(workerData);
 const names = createPublicNicknames({...workerData,
   review: createDeepSeekNicknameReviewer({apiKey: workerData.apiKey, apiBase: workerData.apiBase, model: workerData.model}),
   onUpdate(key,profile) {const member=members.get(key);if(member)parentPort.postMessage({update:true,member,profile});}});
 parentPort.on('message', async ({id, operation, member, address, name}) => {
   try {
+    if (operation === 'room-name') {
+      parentPort.postMessage({id, value:await reviewRoomName(address, name)});
+      return;
+    }
     const key=names.memberKey(member);
     if(members.size>=10000&&!members.has(key))members.delete(members.keys().next().value);
     members.set(key,member);
