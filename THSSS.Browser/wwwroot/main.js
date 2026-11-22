@@ -394,7 +394,17 @@ export async function prepareRuntime(options = {}) {
     }
   });
   finishWasm("THSSS.Browser.wasm");
+  window.Module = window.Module || {};
+  window.Module.eaglerSetAudioLevels = (music, effects) => audioApi.setLevels(music, effects);
   const keyPtr = (name) => module.stringToNewUTF8(name);
+  const withText = (name, call) => {
+    const ptr = keyPtr(name);
+    try {
+      call(ptr);
+    } finally {
+      module._thsss_free(ptr);
+    }
+  };
   const host = {
     Frame: () => module._thsss_frame(),
     Simulate: () => module._thsss_simulate(),
@@ -412,6 +422,26 @@ export async function prepareRuntime(options = {}) {
     InputSurface: typeof module._thsss_input_surface === "function" ? () => module._thsss_input_surface() : null,
     TouchShift: typeof module._thsss_touch_shift === "function"
       ? (dx, dy, unlimited) => module._thsss_touch_shift(dx, dy, unlimited ? 1 : 0)
+      : null,
+    TakeTouchResidual: typeof module._thsss_touch_residual_x === "function" && typeof module._thsss_touch_residual_y === "function"
+      ? () => ({ x: module._thsss_touch_residual_x(), y: module._thsss_touch_residual_y() })
+      : null,
+    PracticeConfigure: typeof module._thsss_practice_configure === "function"
+      ? (flags) => module._thsss_practice_configure(
+        flags.enabled ? 1 : 0,
+        flags.invulnerable ? 1 : 0,
+        flags.disableBomb ? 1 : 0,
+        flags.ignoreFocusLoss ? 1 : 0,
+        flags.life | 0,
+        flags.spell | 0,
+        flags.power | 0,
+      )
+      : null,
+    PracticeWarp: typeof module._thsss_practice_warp === "function"
+      ? (stage) => withText(stage, (ptr) => module._thsss_practice_warp(ptr))
+      : null,
+    PracticeResources: typeof module._thsss_practice_resources === "function"
+      ? () => module._thsss_practice_resources()
       : null
   };
   return {

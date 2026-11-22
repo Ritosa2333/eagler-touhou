@@ -10,7 +10,7 @@ function joystickMode(mode) {
 
 // Launcher touch-controls and direct-touch. Direct drag and free stick go
 // through shift (ApplyTouch); 8-way stick synthesizes arrow keys like th06.
-export function createTouchBridge({ keys, surface, options, shift, now = () => performance.now() }) {
+export function createTouchBridge({ keys, surface, options, shift, residual, now = () => performance.now() }) {
   const movement = createTouchMovement();
   const gestures = createMenuGestures();
   // Gesture edges stay down through the next presented frame (onBeforeFrame →
@@ -25,6 +25,7 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
   let stickX = 0;
   let stickY = 0;
   let primaryId = null;
+  let stepRatio = 1;
 
   function settings() {
     return options() || {};
@@ -198,10 +199,16 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
       return;
     }
     const unlimited = modeName === "touch-unlimited";
+    if (typeof residual === "function") {
+      const left = residual();
+      if (left && (left.x || left.y)) movement.credit(left.x, left.y, stepRatio);
+    }
     const before = movement.queued();
+    const ratio = focus ? PLAYFIELD.lowSpeed / PLAYFIELD.highSpeed : 1;
     const step = movement.drain({ focus, unlimited });
     if (step.shiftX === 0 && step.shiftY === 0) return;
     if (typeof shift !== "function") return;
+    stepRatio = ratio;
     const ok = shift(step.shiftX, step.shiftY, unlimited);
     if (ok === false) movement.restore(before.x, before.y);
   }

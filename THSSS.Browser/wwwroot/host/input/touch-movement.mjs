@@ -30,6 +30,12 @@ export function createTouchMovement(field = PLAYFIELD) {
     queuedY = y;
   }
 
+  function credit(dx, dy, ratio) {
+    const scale = ratio > 0 ? ratio : 1;
+    queuedX += dx / scale;
+    queuedY += dy / scale;
+  }
+
   function drain({ focus = false, unlimited = false } = {}) {
     if (Math.abs(queuedX) < 0.05 && Math.abs(queuedY) < 0.05) {
       queuedX = 0;
@@ -70,6 +76,7 @@ export function createTouchMovement(field = PLAYFIELD) {
     add,
     clear,
     restore,
+    credit,
     drain,
     queued: () => ({ x: queuedX, y: queuedY }),
   };

@@ -10,6 +10,10 @@ const codes = {
   AltLeft: "Menu",
   AltRight: "Menu",
   Escape: "Escape",
+  Backspace: "Back",
+  F1: "F1",
+  F2: "F2",
+  F3: "F3",
   Enter: "Return",
   NumpadEnter: "Return",
   Space: "Space",
@@ -58,6 +62,8 @@ export function keyNameFromEvent(message) {
   if (key === "Control") return "ControlKey";
   if (key === "Alt") return "Menu";
   if (key === "Escape") return "Escape";
+  if (key === "Backspace") return "Back";
+  if (key === "F1" || key === "F2" || key === "F3") return key;
   if (key === "Enter") return "Return";
   if (key === " ") return "Space";
   if (key === "ArrowLeft") return "Left";

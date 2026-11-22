@@ -3,7 +3,7 @@
   "protocol": "eagler-touhou/1",
   "game": "thsss",
   "features": {
-    "thprac": false,
+    "thprac": true,
     "languages": false,
     "focusHitbox": false
   }

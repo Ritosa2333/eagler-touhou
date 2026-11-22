@@ -72,6 +72,36 @@ test("a play drag shifts along the path and clears on lift", () => {
   assert.equal(play.shifts.length, 1);
 });
 
+test("a wall returns the unapplied step to the next drain", () => {
+  const sent = [];
+  const keys = createKeyOwners(() => {});
+  let pending = null;
+  const bridge = createTouchBridge({
+    keys,
+    surface: () => "play",
+    options: () => ({ touchMovementMode: "touch", touchSensitivity: 100 }),
+    shift(x) {
+      sent.push(x);
+      pending = { x, y: 0 };
+      return true;
+    },
+    residual() {
+      const value = pending;
+      pending = null;
+      return value;
+    },
+    now: () => 0,
+  });
+  bridge.direct({ type: "down", id: 1, x: 0.5, y: 0.5 });
+  bridge.direct({ type: "move", id: 1, x: 0.501, y: 0.5 });
+  bridge.presented();
+  assert.equal(sent.length, 1);
+  assert.ok(sent[0] > 0 && sent[0] < 4.5);
+  bridge.presented();
+  assert.equal(sent.length, 2);
+  assert.ok(Math.abs(sent[1] - sent[0]) < 0.001);
+});
+
 test("touch sensitivity stays inside the shared 100-300 contract", () => {
   const low = harness({ touchMovementMode: "touch", touchSensitivity: 50 });
   low.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });

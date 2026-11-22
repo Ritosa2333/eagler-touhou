@@ -47,7 +47,7 @@ index df0b301..8a90bd3 100644
  }
 
 diff --git a/Shooting/BaseMyPlane.cs b/Shooting/BaseMyPlane.cs
-index a96264f..7f21752 100644
+index a96264f..1eb847a 100644
 --- a/Shooting/BaseMyPlane.cs
 +++ b/Shooting/BaseMyPlane.cs
 @@ -631,6 +631,74 @@ public class BaseMyPlane : BaseObject
@@ -125,7 +125,7 @@ index a96264f..7f21752 100644
  	public override void Move()
  	{
  		Vx = 0f;
-@@ -638,6 +706,32 @@ public class BaseMyPlane : BaseObject
+@@ -638,6 +706,37 @@ public class BaseMyPlane : BaseObject
  		float x = OriginalPosition.X;
  		float y = OriginalPosition.Y;
  		SlowMove = KClass.Key_Shift;
@@ -140,11 +140,16 @@ index a96264f..7f21752 100644
 +			touchUnlimited = false;
 +			Vx = dx;
 +			Vy = 0f - dy;
++			float originX = x;
++			float originY = y;
 +			x += dx;
 +			y += dy;
 +			OriginalPosition = ClampPosition(x, y);
++			float appliedX = OriginalPosition.X - originX;
++			float appliedY = OriginalPosition.Y - originY;
 +			lastTouchDx = dx;
 +			lastTouchDy = dy;
++			Thsss.Browser.GameHost.StoreTouchResidual(dx - appliedX, dy - appliedY);
 +			if (dx != 0f || dy != 0f)
 +			{
 +				TouchReplayUsed = true;
@@ -158,7 +163,7 @@ index a96264f..7f21752 100644
  		if (!SlowMove)
  		{
  			if (KClass.ArrowRight)
-@@ -683,6 +777,18 @@ public class BaseMyPlane : BaseObject
+@@ -683,6 +782,18 @@ public class BaseMyPlane : BaseObject
  		}
  		x += Vx;
  		y -= Vy;
@@ -177,7 +182,7 @@ index a96264f..7f21752 100644
  		if (x < (float)(TxtureObject.Width / 2 - 6))
  		{
  			x = TxtureObject.Width / 2 - 6;
-@@ -699,7 +805,7 @@ public class BaseMyPlane : BaseObject
+@@ -699,7 +810,7 @@ public class BaseMyPlane : BaseObject
  		{
  			y = BoundRect.Height - TxtureObject.Height / 2 + 8;
  		}
@@ -186,7 +191,7 @@ index a96264f..7f21752 100644
  	}
  
  	public virtual void SubPlaneCtrl()
-@@ -948,6 +1054,9 @@ public class BaseMyPlane : BaseObject
+@@ -948,6 +1059,9 @@ public class BaseMyPlane : BaseObject
  			}
  			else
  			{
@@ -198,7 +203,7 @@ index a96264f..7f21752 100644
  				base.Move();
 
 diff --git a/Shooting/Game_Main.cs b/Shooting/Game_Main.cs
-index c4e4893..84e624e 100644
+index c4e4893..cf0338a 100644
 --- a/Shooting/Game_Main.cs
 +++ b/Shooting/Game_Main.cs
 @@ -2,7 +2,6 @@ using System;
@@ -267,7 +272,7 @@ index c4e4893..84e624e 100644
  			GlobalDataPackage globalData = GlobalData;
  			PresentParameters val3 = new PresentParameters
  			{
-@@ -404,19 +410,59 @@ public class Game_Main
+@@ -404,19 +410,60 @@ public class Game_Main
  
  	public void MainProcess()
  	{
@@ -337,10 +342,11 @@ index c4e4893..84e624e 100644
 +			browserAwaitLoad = false;
 +			AddState();
 +		}
++		QueuePracticeWarp();
  		if (firstFrame)
  		{
  			fpsTimer.Start();
-@@ -433,7 +479,7 @@ public class Game_Main
+@@ -433,7 +480,7 @@ public class Game_Main
  				fpsTimer.IncreaseOneFrame();
  			}
  		}
@@ -349,7 +355,7 @@ index c4e4893..84e624e 100644
  		{
  			GlobalData.LoadModelDictionary();
  			InitFlag = false;
-@@ -450,7 +496,7 @@ public class Game_Main
+@@ -450,7 +497,7 @@ public class Game_Main
  			if (stateSwitchData.NextState == "GameExit")
  			{
  				((Form)Form_Main).Close();
@@ -358,7 +364,15 @@ index c4e4893..84e624e 100644
  			}
  			if (stateSwitchData.NextState != null)
  			{
-@@ -500,7 +546,7 @@ public class Game_Main
+@@ -476,6 +523,7 @@ public class Game_Main
+ 				}
+ 			}
+ 		}
++		ApplyPractice();
+ 		if (useDirectInput)
+ 		{
+ 			KeyClass KClass = new KeyClass();
+@@ -500,7 +548,7 @@ public class Game_Main
  				if (KCapture.currentKeyboardState.IsPressed((Key)77) && KCapture.currentKeyboardState.IsPressed((Key)57))
  				{
  					((Form)Form_Main).Close();
@@ -367,7 +381,7 @@ index c4e4893..84e624e 100644
  				}
  				if (KCapture.currentKeyboardState.IsPressed((Key)61) && KCapture.lastKeyboardState.IsReleased((Key)61))
  				{
-@@ -514,15 +560,19 @@ public class Game_Main
+@@ -514,15 +562,19 @@ public class Game_Main
  		}
  		if (deviceLost)
  		{
@@ -389,7 +403,7 @@ index c4e4893..84e624e 100644
  		try
  		{
  			if (OnPause && PresentState is BaseStage)
-@@ -530,7 +580,7 @@ public class Game_Main
+@@ -530,7 +582,7 @@ public class Game_Main
  				GlobalData.KClass.Key_ESC = true;
  			}
  			PresentState.UpdateData();
@@ -398,7 +412,7 @@ index c4e4893..84e624e 100644
  			{
  				if (PresentState.StateSwitchData != null)
  				{
-@@ -544,7 +594,18 @@ public class Game_Main
+@@ -544,7 +596,18 @@ public class Game_Main
  					PresentState.UpdateData();
  				}
  			}
@@ -418,7 +432,7 @@ index c4e4893..84e624e 100644
  			DeviceMain.BeginScene();
  			PresentState.Render();
  			DeviceMain.EndScene();
-@@ -556,42 +617,68 @@ public class Game_Main
+@@ -556,42 +619,68 @@ public class Game_Main
  		}
  		catch (Direct3D9Exception ex)
  		{
@@ -509,7 +523,78 @@ index c4e4893..84e624e 100644
  	private void ToggleFullScreen()
  	{
  		fullWindow = !fullWindow;
-@@ -687,10 +774,7 @@ public class Game_Main
+@@ -670,12 +759,69 @@ public class Game_Main
+ 
+ 	private void Form_Main_Deactivate(object sender, EventArgs e)
+ 	{
+-		if (initSuccess)
++		if (initSuccess && !Thsss.Browser.PracticeSession.IgnoreFocusLoss)
+ 		{
+ 			OnPause = true;
+ 		}
+ 	}
+ 
++	private void QueuePracticeWarp()
++	{
++		string warp = Thsss.Browser.PracticeSession.TakeWarp();
++		if (warp.Length == 0)
++		{
++			return;
++		}
++		if (GameStatesDictionary != null && GameStatesDictionary.ContainsKey(warp) && PresentState != null && PresentState.StageData != null)
++		{
++			PresentState.StageData.SetReplayInfo(warp);
++			PresentState.StateSwitchData = new StateSwitchDataPackage
++			{
++				NextState = warp,
++				NeedInit = true,
++				SDPswitch = PresentState.StageData
++			};
++			Thsss.Browser.PracticeSession.ResourcesPending = true;
++		}
++		else
++		{
++			Thsss.Browser.PracticeSession.RequestWarp(warp);
++		}
++	}
++
++	private void ApplyPractice()
++	{
++		if (PresentState == null || PresentState.StageData == null || PresentState.StageData.MyPlane == null)
++		{
++			return;
++		}
++		BaseMyPlane plane = PresentState.StageData.MyPlane;
++		if (Thsss.Browser.PracticeSession.ResourcesPending)
++		{
++			if (Thsss.Browser.PracticeSession.Life >= 0)
++			{
++				plane.Life = Thsss.Browser.PracticeSession.Life;
++			}
++			if (Thsss.Browser.PracticeSession.Spell >= 0)
++			{
++				plane.Spell = Thsss.Browser.PracticeSession.Spell;
++			}
++			if (Thsss.Browser.PracticeSession.Power >= 0)
++			{
++				plane.Power = Thsss.Browser.PracticeSession.Power;
++			}
++			Thsss.Browser.PracticeSession.ResourcesPending = false;
++		}
++		if (Thsss.Browser.PracticeSession.Invulnerable)
++		{
++			plane.Time = plane.UnmatchedTime;
++		}
++		if (Thsss.Browser.PracticeSession.DisableBomb)
++		{
++			plane.SpellEnabled = false;
++		}
++	}
++
+ 	private void Form_Main_Activated(object sender, EventArgs e)
+ 	{
+ 		if (initSuccess)
+@@ -687,10 +833,7 @@ public class Game_Main
  
  	private void Form_Main_FormClosing(object sender, FormClosingEventArgs e)
  	{
@@ -521,7 +606,7 @@ index c4e4893..84e624e 100644
  		GlobalData.PData.SaveData();
  		GlobalData.Dispose();
  		if (!useDirectInput)
-@@ -717,6 +801,7 @@ public class Game_Main
+@@ -717,6 +860,7 @@ public class Game_Main
  		catch
  		{
  		}
@@ -529,7 +614,7 @@ index c4e4893..84e624e 100644
  	}
  
  	private void Form_Main_KeyDown(object sender, KeyEventArgs e)
-@@ -860,4 +945,44 @@ public class Game_Main
+@@ -860,4 +1004,44 @@ public class Game_Main
  		}
  		MouseCtrl.DrawCursor(!fullWindow);
  	}

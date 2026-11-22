@@ -93,6 +93,73 @@ namespace Thsss.Browser
 			}
 		}
 
+		[UnmanagedCallersOnly(EntryPoint = "thsss_touch_residual_x")]
+		public static float TouchResidualX()
+		{
+			try
+			{
+				return GameHost.TakeTouchResidualX();
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+				return 0f;
+			}
+		}
+
+		[UnmanagedCallersOnly(EntryPoint = "thsss_touch_residual_y")]
+		public static float TouchResidualY()
+		{
+			try
+			{
+				return GameHost.TakeTouchResidualY();
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+				return 0f;
+			}
+		}
+
+		[UnmanagedCallersOnly(EntryPoint = "thsss_practice_configure")]
+		public static void PracticeConfigure(int enabled, int invulnerable, int disableBomb, int ignoreFocusLoss, int life, int spell, int power)
+		{
+			try
+			{
+				PracticeSession.Configure(enabled, invulnerable, disableBomb, ignoreFocusLoss, life, spell, power);
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+			}
+		}
+
+		[UnmanagedCallersOnly(EntryPoint = "thsss_practice_warp")]
+		public static unsafe void PracticeWarp(byte* stage)
+		{
+			try
+			{
+				PracticeSession.RequestWarp(WasmText.Read(stage));
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+			}
+		}
+
+		[UnmanagedCallersOnly(EntryPoint = "thsss_practice_resources")]
+		public static void PracticeResources()
+		{
+			try
+			{
+				PracticeSession.RequestResources();
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+			}
+		}
+
 		[UnmanagedCallersOnly(EntryPoint = "thsss_touch_shift")]
 		public static int TouchShift(float dx, float dy, int unlimited)
 		{

@@ -98,6 +98,7 @@ namespace Thsss.Browser
 			{
 				return;
 			}
+			ContentLoader.Pump(2);
 			try
 			{
 				game.MainProcess();
@@ -122,6 +123,7 @@ namespace Thsss.Browser
 			{
 				return;
 			}
+			ContentLoader.Pump(2);
 			try
 			{
 				game.SimulateOnly();
@@ -165,6 +167,29 @@ namespace Thsss.Browser
 				return 0;
 			}
 			return game.TouchSurface();
+		}
+
+		private static float touchResidualX;
+
+		private static float touchResidualY;
+
+		public static void StoreTouchResidual(float x, float y)
+		{
+			touchResidualX = x;
+			touchResidualY = y;
+		}
+
+		public static float TakeTouchResidualX()
+		{
+			return touchResidualX;
+		}
+
+		public static float TakeTouchResidualY()
+		{
+			var y = touchResidualY;
+			touchResidualX = 0f;
+			touchResidualY = 0f;
+			return y;
 		}
 
 		public static int TouchShift(float dx, float dy, int unlimited)

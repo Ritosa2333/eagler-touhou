@@ -101,7 +101,7 @@ index 5a53011..7832876 100644
  			StageData.RepInfo = replayInfo;
 
 diff --git a/Shooting/Replay.cs b/Shooting/Replay.cs
-index 375a193..022addf 100644
+index 375a193..25e5967 100644
 --- a/Shooting/Replay.cs
 +++ b/Shooting/Replay.cs
 @@ -10,6 +10,8 @@ public class Replay
@@ -147,7 +147,7 @@ index 375a193..022addf 100644
  
  	public static ReplayInfo ReadTitle(string fileName)
  	{
-@@ -44,12 +71,23 @@ public class Replay
+@@ -44,12 +71,28 @@ public class Replay
  				Rank = (DifficultLevel)Convert.ToInt32(array[num + 7]),
  				StartStage = array[num + 8],
  				LastStage = array[num + 9],
@@ -162,6 +162,11 @@ index 375a193..022addf 100644
 +				replayInfo.TouchDelta = true;
 +				i++;
 +			}
++			if (i < array.Length && array[i].StartsWith("Prac=", StringComparison.Ordinal))
++			{
++				Thsss.Browser.PracticeSession.RestoreTrailer(array[i]);
++				i++;
++			}
 +			for (; i < array.Length; i++)
  			{
  				char[] separator = new char[1] { '\t' };
@@ -173,7 +178,7 @@ index 375a193..022addf 100644
  				MyPlaneInfo item = new MyPlaneInfo
  				{
  					Life = Convert.ToInt32(array2[0]),
-@@ -87,28 +125,50 @@ public class Replay
+@@ -87,28 +130,50 @@ public class Replay
  		ReplayData.WriteByte(value);
  	}
  
@@ -232,7 +237,7 @@ index 375a193..022addf 100644
  			tmp += repInfo.PlayerName;
  			tmp += "\r\n";
  			tmp += DateTime.Now.Date.ToString("yy'/'MM'/'dd");
-@@ -119,71 +179,105 @@ public class Replay
+@@ -119,71 +184,110 @@ public class Replay
  			tmp += "\r\n";
  			tmp += repInfo.WeaponType.ToString();
  			tmp += "\r\n";
@@ -250,6 +255,11 @@ index 375a193..022addf 100644
 +			if (TouchStream)
 +			{
 +				tmp += "\r\nTouchDelta=1";
++			}
++			string prac = Thsss.Browser.PracticeSession.Trailer();
++			if (prac.Length > 0)
++			{
++				tmp += "\r\n" + prac;
 +			}
 +			foreach (MyPlaneInfo x in repInfo.MyPlaneData)
  			{
@@ -302,13 +312,11 @@ index 375a193..022addf 100644
  			streamWriter.Close();
  			ReplayData.Close();
 +			ReplayData = null;
- 		}
--		if (fileName != ".\\Replay\\AutoSave.rpy")
++		}
 +		string source = autoTouch;
 +		string target = fileName;
 +		if (touch)
- 		{
--			File.Copy(".\\Replay\\AutoSave.rpy", fileName, overwrite: true);
++		{
 +			if (!IsTouchReplayPath(target))
 +			{
 +				target = Path.ChangeExtension(target, ".trpy");
@@ -325,9 +333,11 @@ index 375a193..022addf 100644
 +			{
 +				target = Path.ChangeExtension(target, ".rpy");
 +			}
-+		}
+ 		}
+-		if (fileName != ".\\Replay\\AutoSave.rpy")
 +		if (!string.Equals(Path.GetFullPath(source), Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase) && File.Exists(source))
-+		{
+ 		{
+-			File.Copy(".\\Replay\\AutoSave.rpy", fileName, overwrite: true);
 +			File.Copy(source, target, overwrite: true);
  		}
  	}
