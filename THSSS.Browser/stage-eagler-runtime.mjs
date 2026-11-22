@@ -152,7 +152,7 @@ try {
   await rm(temp, { recursive: true, force: true });
 }
 
-for (const name of ["thsss.html", "manifest.json"]) {
+for (const name of ["thsss.html", "manifest.json", "directory-keyboard.mjs"]) {
   await put(name, Buffer.from(await text(resolve(wwwroot, name)), "utf8"));
 }
 
