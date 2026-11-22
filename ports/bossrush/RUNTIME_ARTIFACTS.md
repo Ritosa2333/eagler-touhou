@@ -10,13 +10,13 @@
 | `web/bro.wasm` | 46.3 MB | 自包含 WASM：纯 C Lua 5.1.5 + `lstg.*` C 绑定 + WebGL2/WebAudio，内嵌 167 个游戏脚本 + BadApple 逐帧数据 + Update.txt/manual（HTTP gzip 传输约 3.5 MB，初始内存 80 MB） |
 | `web/bro.mjs` | 111 KB | Emscripten ES6 glue（`createBROModule`） |
 | `web/src/*.mjs` | ~490 KB | 21 个模块：renderer/postfx/audio/input/storage/save_files/netcode/netmesh/input_buffer/rollback/route_*/eagler_adapter/multiplayer 等 |
-| `web/dist/*.json` | 268 KB | `package-manifest.json`（1004 文件/140.3 MB 清单）/ `app-shell.json` / `runtime.json` |
+| `web/dist/*.json` | 272 KB | `package-manifest.json`（1004 文件/162.2 MiB 清单，SE 已恢复原生 PCM）/ `app-shell.json` / `runtime.json` |
 | `web/manifest.json` | 5 KB | BRO 产品契约（components / musicMounts / packageManifest） |
 
 来源与可复现性记在 `source-import.json`（30 项逐文件 sha256；首次落地 commit `848f8f7`，当前 build_id `544898ba`）。
 重编：`cd <BRO repo> && bash web/build.sh`，产出后同步 `web/` 目录即可。
 
-## 2. 游戏资源包（138.5 MB）——不入库，importOnly
+## 2. 游戏资源包（162.2 MiB 资源 / 约 170.7 MB ZIP）——不入库，importOnly
 
 `package-manifest.json` 描述的是 `game/` 下逐文件资源（BGM 96k ogg / 立绘 / 背景 / 字体 / 脚本）。
 按 catalog 的 `importOnly: true`，这部分由**玩家导入原始游戏包**或 eagler package-store 分发，
@@ -27,7 +27,12 @@ BadApple!! 视频分卷 20.7 MB（Web 端视频解码非当前范围，不可玩
 
 - 音频：158 MB → 55 MB（96 kbps 单声道 ogg，逐文件就地压缩，`.wav` 扩展名保留、内容嗅探解码）。
   **不再降码率**——96k 是清晰度与体积的平衡点。
-- BadApple 20.7 MB：从分发清单排除（运行时不加载），总分发 159.2 → 138.5 MB（-13%）。
+- **2026-11-22 修订**：音效（SE）恢复原生 PCM 不再压缩（178 文件 / 24.4 MB，其中 `THlib/se/` 175 个），
+  只有 BGM 保持 96 kbps mono。分包体积 138.5 → 169.8 MB。若玩家想要原始 BGM，
+  导入**可选音乐包**覆盖即可（路径指针覆写，不重建 generation）——见
+  [`docs/MUSIC_PACK.md`](docs/MUSIC_PACK.md)。
+- BadApple 20.7 MB：从分发清单排除（运行时不加载）。
+- 2026-11-22 起 SE 恢复原生 PCM，清单 138.5 → 162.2 MiB（+23.7）。
 - 字体子集化 **未做**：收益仅约 7 MB，但有动态文本缺字风险，且破坏 LFS 可回滚性，稳妥优先。
 - 图片未降分辨率：用户要求保证清晰度。
 - WASM 3.3 MB：主体是内嵌脚本，去调试导出仅省 KB 级且会破坏回归断言，保留。

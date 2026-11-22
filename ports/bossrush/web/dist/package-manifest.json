@@ -1,7 +1,7 @@
 {
   "schema": "bro/package-manifest/1",
-  "version": "sha256-05fd0275ca3a19121b162bb99aebff01a7747fb4fb36ebf5edba7bd96ae8f665",
-  "generated": "2026-11-22T12:57:06+0800",
+  "version": "sha256-340ee6dc708a4c60e3ca0a8cac3a58228248b828f2be61f5176088512be16ca1",
+  "generated": "2026-11-22T21:26:18+0800",
   "base": "./game/",
   "counts": {
     "total": 1004,
@@ -9,7 +9,7 @@
     "incomplete": 0
   },
   "bytes": {
-    "total": 147160870
+    "total": 170117092
   },
   "components": {
     "fonts": {
@@ -63,17 +63,17 @@
       ]
     },
     "scripts": {
-      "revision": "sha256-b39cd2fd2f8891da5804c5ef",
+      "revision": "sha256-40073f90ee4b189339efdf60",
       "files": 167,
-      "bytes": 4295107,
+      "bytes": 4295817,
       "tags": [
         "script"
       ]
     },
     "se": {
-      "revision": "sha256-6fe4fbaf5b6e6381fea1dc2b",
+      "revision": "sha256-b090ab1063abad0ec62ebc93",
       "files": 178,
-      "bytes": 2659744,
+      "bytes": 25615256,
       "tags": [
         "audio",
         "se"
@@ -4189,9 +4189,9 @@
       ]
     },
     {
-      "p": "Resources/System/se_sakura.wav",
-      "n": 27665,
-      "h": "c41039d5b04a6e825bc727a6e976bd7a76ef558226ce416c65996f2c84a5070a",
+      "p": "Resources/System/se_Sakura.wav",
+      "n": 132428,
+      "h": "fbc1cc70acbbd562068c7860082fb425bb126b0de1e5f71331e9f096d8df620c",
       "d": "package",
       "m": "se",
       "t": [
@@ -4544,8 +4544,8 @@
     },
     {
       "p": "THlib/UI/se_notice.wav",
-      "n": 13168,
-      "h": "88a26269eedecf46b1de7e8d224267767201d759c013fd6d710fbb7a6d15899b",
+      "n": 176570,
+      "h": "39c316873d216b38a33e47de98593a35279849a423f960c49662ca9a76c5f307",
       "d": "package",
       "m": "se",
       "t": [
@@ -4555,8 +4555,8 @@
     },
     {
       "p": "THlib/UI/se_trophy.wav",
-      "n": 18621,
-      "h": "f08e835ad51a2cf9170317b3f3c1df6396deb643a548952140998d4cab574766",
+      "n": 114052,
+      "h": "d38b66e0e87dff8680c740f88ea414abcd97d0eda221206b18650443d5ee34a0",
       "d": "package",
       "m": "se",
       "t": [
@@ -5874,9 +5874,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/a#3.ogg",
-      "n": 12257,
-      "h": "1ac9bf794764091d20e05976564b8ffaf8685f8e2cf1e14f14166a3d10ef1f5c",
+      "p": "THlib/se/Piano/A#3.ogg",
+      "n": 26602,
+      "h": "4c640186bf853f19e6c23104b48fe3df912f9bdc9bcc5b047cf51534224b6c1d",
       "d": "package",
       "m": "se",
       "t": [
@@ -5885,9 +5885,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/a#4.ogg",
-      "n": 11620,
-      "h": "738c9933b8db09f0490c98330cb3c61617c2f82d4785aec53258a6a66c89e8fd",
+      "p": "THlib/se/Piano/A#4.ogg",
+      "n": 27492,
+      "h": "7e72460762796d42d97e53d48c5b2738c93a8b8319da3cf3fa9e243ccb1807a3",
       "d": "package",
       "m": "se",
       "t": [
@@ -5896,9 +5896,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/a#5.ogg",
-      "n": 12696,
-      "h": "625fac5fa72b958ab1ec708a86acd01b46ee31c1760368d205efb25942129440",
+      "p": "THlib/se/Piano/A#5.ogg",
+      "n": 26101,
+      "h": "ab1fc2e579f304fdd7c781cdb042ddf8bc1278aa7faf14771439fc44c591c633",
       "d": "package",
       "m": "se",
       "t": [
@@ -5907,9 +5907,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/a#6.ogg",
-      "n": 11964,
-      "h": "77a18a451fe19fd6119e72d905c43da701fd7ab8b493ffdbabf2060c42336d58",
+      "p": "THlib/se/Piano/A#6.ogg",
+      "n": 25369,
+      "h": "e7c0502d021944e1faf89530b5a83f100a3b07d55a10351f96d373eb34470eb4",
       "d": "package",
       "m": "se",
       "t": [
@@ -5918,9 +5918,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/a#7.ogg",
-      "n": 10951,
-      "h": "d51067c336494bdeea37f8ed1cbd3122f1ed63dd6ac5c390ea1c32fee10b9a13",
+      "p": "THlib/se/Piano/A#7.ogg",
+      "n": 23357,
+      "h": "287df47bf0c67f32649563fde63b2510757479845ba91e86add0aa21970fc5a8",
       "d": "package",
       "m": "se",
       "t": [
@@ -5929,9 +5929,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/a3.ogg",
-      "n": 12260,
-      "h": "dd0d8e484ac10b3bb759df98e25d524c336a5f7254eaabb81f53ba904d8d17a3",
+      "p": "THlib/se/Piano/A3.ogg",
+      "n": 26314,
+      "h": "2b4b3def2c8a30b56d43a9396d8470d55dbce3894ac9c10ec221d825f41227a0",
       "d": "package",
       "m": "se",
       "t": [
@@ -5940,9 +5940,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/a4.ogg",
-      "n": 12415,
-      "h": "105ae37bbd8717651ccaefbd1685249f3af6fef15aef5820af0ac1f4065b1288",
+      "p": "THlib/se/Piano/A4.ogg",
+      "n": 28208,
+      "h": "d04eca4d2a92be88ab8cdca4be838c3961fb18a7738baf1030839aa30cb2df24",
       "d": "package",
       "m": "se",
       "t": [
@@ -5951,9 +5951,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/a5.ogg",
-      "n": 12433,
-      "h": "6370eb285e95cee1eaeedc5aa13fd7e9188e8654731e09397d5903feea23bbcb",
+      "p": "THlib/se/Piano/A5.ogg",
+      "n": 27972,
+      "h": "62f6a30a8e759834cfed34e21ac4673333d22b2477df69ece731cc93f8483f93",
       "d": "package",
       "m": "se",
       "t": [
@@ -5962,9 +5962,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/a6.ogg",
-      "n": 11928,
-      "h": "ac4afe67b0a2fd0abb765f8d179ff3e52fdc2591a9ba1fb9482361c10c738202",
+      "p": "THlib/se/Piano/A6.ogg",
+      "n": 25222,
+      "h": "ec0ffad8d9cbf320328fcfae303a52e4ef3e93052772af2af22d80ac479f9d6e",
       "d": "package",
       "m": "se",
       "t": [
@@ -5973,9 +5973,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/a7.ogg",
-      "n": 11387,
-      "h": "80236302111a911b3498bac9fb4887bff20430dc6e2f68401426698eed184f56",
+      "p": "THlib/se/Piano/A7.ogg",
+      "n": 25025,
+      "h": "30133ba9613cd48969a57dfbe15f42a76f81ac1f74d5c70bdae9fa1058892c77",
       "d": "package",
       "m": "se",
       "t": [
@@ -5984,9 +5984,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/b3.ogg",
-      "n": 11924,
-      "h": "fb351d37bd89409af7d6d3689ed5bd3e0770e3ab6615204c4fdbedcb508462ed",
+      "p": "THlib/se/Piano/B3.ogg",
+      "n": 25965,
+      "h": "2feb59aed43df36540d75142e0718d6d183eb2d47b2a3070e137976660d15c88",
       "d": "package",
       "m": "se",
       "t": [
@@ -5995,9 +5995,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/b4.ogg",
-      "n": 11996,
-      "h": "c35757c800eae5551817d4bae94beeb0b8b2cac09707e65e2c160d35e5ece2ad",
+      "p": "THlib/se/Piano/B4.ogg",
+      "n": 27775,
+      "h": "7770eb2fed4de4a2626ac9b8b340400e930aa5e0c84046c9a024425bb1372393",
       "d": "package",
       "m": "se",
       "t": [
@@ -6006,9 +6006,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/b5.ogg",
-      "n": 12696,
-      "h": "5ade76a17348f7f8349bfd44d3cba9bc6be247b709468bb9337884d967c32710",
+      "p": "THlib/se/Piano/B5.ogg",
+      "n": 25727,
+      "h": "85f31b9a492860d781b8215036651ad7bed7715cc3a8e50f902f56d75b911013",
       "d": "package",
       "m": "se",
       "t": [
@@ -6017,9 +6017,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/b6.ogg",
-      "n": 11841,
-      "h": "9f4e69a9b0c0fd7f0994d2d059602be42f740cd93ba96bd3032b9e33cae10592",
+      "p": "THlib/se/Piano/B6.ogg",
+      "n": 24969,
+      "h": "829d1d9d8c826bf854a8969adc6d2366a4aa473bf8c14ff8f0e4df6832132707",
       "d": "package",
       "m": "se",
       "t": [
@@ -6028,9 +6028,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/b7.ogg",
-      "n": 10935,
-      "h": "e3409065a8703c17d1014578f455da5e49541574f06a225de1a5467997b6227e",
+      "p": "THlib/se/Piano/B7.ogg",
+      "n": 24123,
+      "h": "22b0e328b5f29570736a1f55422b87377f55ba41afc29f27798bb37a6dccb0a8",
       "d": "package",
       "m": "se",
       "t": [
@@ -6039,9 +6039,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/c#3.ogg",
-      "n": 11381,
-      "h": "fe753889d940c48245e8db42d629810400f1e34447f3a83a5ba7b52d91b59fa9",
+      "p": "THlib/se/Piano/C#3.ogg",
+      "n": 25582,
+      "h": "1746254f2660de040631e13950109cbaa79731c5c6d598a3024f06408b6e346c",
       "d": "package",
       "m": "se",
       "t": [
@@ -6050,9 +6050,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/c#4.ogg",
-      "n": 13425,
-      "h": "c09395e82c72c894990151a715e2e872e699fb14a30dcafb35d894fe5043fae3",
+      "p": "THlib/se/Piano/C#4.ogg",
+      "n": 29665,
+      "h": "83489bec712db85c6216388899c6f74bd11ae6e156248bf4185c7ae8cf0e1bdc",
       "d": "package",
       "m": "se",
       "t": [
@@ -6061,9 +6061,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/c#5.ogg",
-      "n": 12025,
-      "h": "878bf944d09d8ee4672606a6ce9e8536274921ebce57adc6ce9eab71e0b6c153",
+      "p": "THlib/se/Piano/C#5.ogg",
+      "n": 28621,
+      "h": "e3357576ed678b330078195020d059d4ea4f3d6946b782254cee5052503d17a3",
       "d": "package",
       "m": "se",
       "t": [
@@ -6072,9 +6072,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/c#6.ogg",
-      "n": 12818,
-      "h": "dbd954a07239e2d410d508cd991f49efbb381403cf543243ecf11061f5ba6c3b",
+      "p": "THlib/se/Piano/C#6.ogg",
+      "n": 26207,
+      "h": "eedff5f95b6dd7ebf7a90e99dd8de8391ac94bcf4a0df1b3566e19123db8e28c",
       "d": "package",
       "m": "se",
       "t": [
@@ -6083,9 +6083,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/c#7.ogg",
-      "n": 11435,
-      "h": "b94744efedd4b0ed54cb000f4c4ef9161931f8d46363618db1cdf875d983150c",
+      "p": "THlib/se/Piano/C#7.ogg",
+      "n": 24164,
+      "h": "192583ca87be96d1154590456e755a7d777f222f7ed004b9a5f03883794e41ab",
       "d": "package",
       "m": "se",
       "t": [
@@ -6094,9 +6094,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/c3.ogg",
-      "n": 11236,
-      "h": "2268a55437618bf1ff579a68e78079bcbd896efd24724ca9210d08a0540956e4",
+      "p": "THlib/se/Piano/C3.ogg",
+      "n": 24678,
+      "h": "e247c51d66effae6a8647511f1d63bd09acc979210e7ea4d3014271cc1181dcf",
       "d": "package",
       "m": "se",
       "t": [
@@ -6105,9 +6105,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/c4.ogg",
-      "n": 12463,
-      "h": "46604ffb74cada346b200ab18ed5e40f8ae070582420de49f7b2ddc309ae5d9d",
+      "p": "THlib/se/Piano/C4.ogg",
+      "n": 29141,
+      "h": "d511ee97e0a9b4c39f94fd2d5c4c71df8849602f4a0f5f49b1a95655eaffb803",
       "d": "package",
       "m": "se",
       "t": [
@@ -6116,9 +6116,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/c5.ogg",
-      "n": 11981,
-      "h": "58cbdc97bb07e2006f63557b26db6015009320f96785a1bdf6f1052aeb3aea07",
+      "p": "THlib/se/Piano/C5.ogg",
+      "n": 28075,
+      "h": "dd3cee99ee017bea9b9b7ab16e110360cbdcfb06e0a5f08982d361bcf927b96a",
       "d": "package",
       "m": "se",
       "t": [
@@ -6127,9 +6127,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/c6.ogg",
-      "n": 12730,
-      "h": "92ed7e7e98cf1e795238d572edfa4b7b6be3873cffb31c325c4bc08c3840fc7a",
+      "p": "THlib/se/Piano/C6.ogg",
+      "n": 26419,
+      "h": "48fbc9a5a0e1eb4be5d9737195c211f001d24ce99b62cd3df6d0554458f7df3d",
       "d": "package",
       "m": "se",
       "t": [
@@ -6138,9 +6138,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/c7.ogg",
-      "n": 11489,
-      "h": "423d688bf1ae055b241767362d7adbfc7a5a08b0266e758f3ea0af1b0d5a8af0",
+      "p": "THlib/se/Piano/C7.ogg",
+      "n": 23821,
+      "h": "c433e6b8806fdd077d55a56d9477fba0d23b0e5162f0a33ee6e8f510cf7422a8",
       "d": "package",
       "m": "se",
       "t": [
@@ -6149,9 +6149,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/d#3.ogg",
-      "n": 11601,
-      "h": "c4777fe9d1e1d56011616c105c624e4aa8f22d41f0d1fb111e28de00adfda668",
+      "p": "THlib/se/Piano/D#3.ogg",
+      "n": 26231,
+      "h": "8a5a10caaf3cf9b9db07aa8be5e8026a89ee9b261faceade7f7673f6a9512950",
       "d": "package",
       "m": "se",
       "t": [
@@ -6160,9 +6160,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/d#4.ogg",
-      "n": 12808,
-      "h": "cb89c4bee77e5e485d78b59504a569d1579697a5dd4630b9a0c5fcc4fb49602c",
+      "p": "THlib/se/Piano/D#4.ogg",
+      "n": 30320,
+      "h": "702431532c034cb29bc9fc52e55a823533aeeef9b7f74715bed84d534244dc2d",
       "d": "package",
       "m": "se",
       "t": [
@@ -6171,9 +6171,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/d#5.ogg",
-      "n": 11459,
-      "h": "185dd035638997125dee4a7d1e9e579ac2b10ef0fdcac981d2c2dbb5aa3fbc05",
+      "p": "THlib/se/Piano/D#5.ogg",
+      "n": 26542,
+      "h": "6fddf3525e101ced6d5689f23956a4e07e536ab4f0e0a6d11e44c5308a2c936e",
       "d": "package",
       "m": "se",
       "t": [
@@ -6182,9 +6182,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/d#6.ogg",
-      "n": 12523,
-      "h": "0d72136620f43d9717ce20795930400ac95e0bc760359b21f1994b1916e6aea5",
+      "p": "THlib/se/Piano/D#6.ogg",
+      "n": 27008,
+      "h": "cc9302dc85c15d1f3798ca0b571ce9fa7ead691337622bfb1468e6f8e8efba49",
       "d": "package",
       "m": "se",
       "t": [
@@ -6193,9 +6193,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/d#7.ogg",
-      "n": 11187,
-      "h": "465db10dda00b301bc17e3229b60f997cd7b8c60c2f76ef1657563419daa827e",
+      "p": "THlib/se/Piano/D#7.ogg",
+      "n": 23031,
+      "h": "bca7f5e6f89973e07ef5661ff6b7174af47c300e5636fb8bd9af4108f974b172",
       "d": "package",
       "m": "se",
       "t": [
@@ -6204,9 +6204,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/d3.ogg",
-      "n": 11664,
-      "h": "25b834339426df8b66eb8dfb5d4dce7b82e0646e62c41d8a12561ed04b88226e",
+      "p": "THlib/se/Piano/D3.ogg",
+      "n": 25310,
+      "h": "ec357bbd620dfc4faaf2aa5216f485ac655257263ba93a29014f474f1e3c8e41",
       "d": "package",
       "m": "se",
       "t": [
@@ -6215,9 +6215,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/d4.ogg",
-      "n": 12775,
-      "h": "a6048b25ffb08886f9f99f0bfde0d1f847b837cc3725b7ef907ed228eff42ecf",
+      "p": "THlib/se/Piano/D4.ogg",
+      "n": 29691,
+      "h": "a54d5945bec8fbf8193c75aa947a60a8de4f91a83f374fdb516188b8bf68806e",
       "d": "package",
       "m": "se",
       "t": [
@@ -6226,9 +6226,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/d5.ogg",
-      "n": 11364,
-      "h": "726b64d56e6d159b2a83122702f5a7dd234936ae985c694791ce0a182514a403",
+      "p": "THlib/se/Piano/D5.ogg",
+      "n": 26310,
+      "h": "ebe7846bbfaa748ed482d68f742027db995b168cc30fb552a271ae5f955622f7",
       "d": "package",
       "m": "se",
       "t": [
@@ -6237,9 +6237,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/d6.ogg",
-      "n": 12398,
-      "h": "3be26589829093a905ef21e9d975848568cb78d95f28b917f41d565dd08bce98",
+      "p": "THlib/se/Piano/D6.ogg",
+      "n": 26339,
+      "h": "e19c3fcc96691f6b6d4ab3ea9c25c7c6ab44a919998ae209acd2c1ed5eaf0f23",
       "d": "package",
       "m": "se",
       "t": [
@@ -6248,9 +6248,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/d7.ogg",
-      "n": 11200,
-      "h": "f992951aec8a0f29a1d552aa3affe00c44c827157b13e46d5956891ddff1fca4",
+      "p": "THlib/se/Piano/D7.ogg",
+      "n": 23297,
+      "h": "1bc2fbd9cb50174888c1d6eec05cd71bdd282fff908d95a1a5df8f4f827bdc25",
       "d": "package",
       "m": "se",
       "t": [
@@ -6259,9 +6259,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/e3.ogg",
-      "n": 11811,
-      "h": "f32bd7de5aa54d41b5c9f41e21a3f5c52ea86f91a1f3a272a5997289d8d95451",
+      "p": "THlib/se/Piano/E3.ogg",
+      "n": 25901,
+      "h": "1d8a3b085f046417a0f571e24e907aad95279510b5be485350ee18d4cd9e959c",
       "d": "package",
       "m": "se",
       "t": [
@@ -6270,9 +6270,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/e4.ogg",
-      "n": 12210,
-      "h": "a51c34cdd499d477604a0cf374cbde6ca1e317ac4ac6339d1a8a4ea03d412e0c",
+      "p": "THlib/se/Piano/E4.ogg",
+      "n": 28421,
+      "h": "eb0e9f47d114a8e98f10eaeb7acc63a826fde9804bb42f87186a4b335ce45f0d",
       "d": "package",
       "m": "se",
       "t": [
@@ -6281,9 +6281,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/e5.ogg",
-      "n": 12471,
-      "h": "f80ac99101ab75fd32f02395bfcf68701de270d642bc9c3d7fb350fc97e5204c",
+      "p": "THlib/se/Piano/E5.ogg",
+      "n": 26818,
+      "h": "0467a3f45afd4433224874df4470b81e2983ed6347243a638a1f07f95489ef5a",
       "d": "package",
       "m": "se",
       "t": [
@@ -6292,9 +6292,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/e6.ogg",
-      "n": 12171,
-      "h": "3451e538f2de183e42f3462db9f6f8f1de1c37ff65e68081cf9517b61b5073c0",
+      "p": "THlib/se/Piano/E6.ogg",
+      "n": 25744,
+      "h": "8dcaf93f363f97e98e8918de96768f8b4d15fc8b2909e6d6b3943977db0c962f",
       "d": "package",
       "m": "se",
       "t": [
@@ -6303,9 +6303,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/e7.ogg",
-      "n": 11172,
-      "h": "b757219f3b31bdff7fd6cc5d511f5bc57a6fb9693f834f1b4f61552e7d0ab851",
+      "p": "THlib/se/Piano/E7.ogg",
+      "n": 23457,
+      "h": "ba9064e51bf9c950bced0889b5b2b98a084c244f7321afc9afa2ed9cb92d8c9e",
       "d": "package",
       "m": "se",
       "t": [
@@ -6314,9 +6314,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/f#3.ogg",
-      "n": 10368,
-      "h": "11f6e2d6333ecd0f2b9b15e741098722b4c899b74ce519cc408925814e4a7bb3",
+      "p": "THlib/se/Piano/F#3.ogg",
+      "n": 23041,
+      "h": "52c63bde0ad9598fc75ffb8257bb4ad049dca12f6e8474bd08f75d711172499a",
       "d": "package",
       "m": "se",
       "t": [
@@ -6325,9 +6325,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/f#4.ogg",
-      "n": 12309,
-      "h": "f1f30d8b188363eef8961bb0ab4fc69ae9b23f9e5f3450e698b3c2407c2fec62",
+      "p": "THlib/se/Piano/F#4.ogg",
+      "n": 28776,
+      "h": "eb34cf8f9798ade933ffb25cf9883659286c9453ef29961bc475289354bce437",
       "d": "package",
       "m": "se",
       "t": [
@@ -6336,9 +6336,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/f#5.ogg",
-      "n": 12453,
-      "h": "512f8215a2f1894723ba252bde0e86770516057aa8c1511e4aed0cfee2829aec",
+      "p": "THlib/se/Piano/F#5.ogg",
+      "n": 28469,
+      "h": "0877aad75d89d93a8caa93401d6b5abab699ae0d24ce988abaee026be3046de0",
       "d": "package",
       "m": "se",
       "t": [
@@ -6347,9 +6347,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/f#6.ogg",
-      "n": 12353,
-      "h": "f4133a9f4deddf8b62db92f4109e739d080ae16acfcd263269f923b2721bb220",
+      "p": "THlib/se/Piano/F#6.ogg",
+      "n": 25683,
+      "h": "8fefc3e18bbff9b711b559dc15ec0b25f3dc85ad03d4370f31a58042826c89a4",
       "d": "package",
       "m": "se",
       "t": [
@@ -6358,9 +6358,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/f#7.ogg",
-      "n": 11866,
-      "h": "a7d2e360f70ca0a1fcd4029344459f6546baa73f07e0a448269ed222c058b259",
+      "p": "THlib/se/Piano/F#7.ogg",
+      "n": 25866,
+      "h": "a103ae9c988528e4f1e1fe3b067c0f9a0ffc93c44b2f4945de822c8c85c00750",
       "d": "package",
       "m": "se",
       "t": [
@@ -6369,9 +6369,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/f3.ogg",
-      "n": 11845,
-      "h": "4f5fef6dd3bcbf5f541539eb72e18e75ee47b5c2c2bfdcef15044c75f46511c6",
+      "p": "THlib/se/Piano/F3.ogg",
+      "n": 26828,
+      "h": "324272a5a1251e785abd951e7ff107b9766906ac44fd907ead34783c3ad327d9",
       "d": "package",
       "m": "se",
       "t": [
@@ -6380,9 +6380,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/f4.ogg",
-      "n": 12147,
-      "h": "352a01152ba11f300fc2cfd2b0b6629f9070c4214ae13bcd96175f21b5523a45",
+      "p": "THlib/se/Piano/F4.ogg",
+      "n": 28882,
+      "h": "ad35e6ff7d0a73d103ef5d52376b3bacd7390749ff583c4da87da752d42fd00d",
       "d": "package",
       "m": "se",
       "t": [
@@ -6391,9 +6391,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/f5.ogg",
-      "n": 11396,
-      "h": "3e098bb9a4d21af5a20df005afa1b6b8165c322c741f24fea697ea116c894abf",
+      "p": "THlib/se/Piano/F5.ogg",
+      "n": 26326,
+      "h": "34f00a7934befc55d275afdf0e4723004777a84cdf9ccbadb61f190c73617ea3",
       "d": "package",
       "m": "se",
       "t": [
@@ -6402,9 +6402,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/f6.ogg",
-      "n": 12831,
-      "h": "628f94ca77b91030671df0a31e2fd443ba3210860721771ee532f9b2ca7d37f0",
+      "p": "THlib/se/Piano/F6.ogg",
+      "n": 25923,
+      "h": "a973bf678aa58ccd7b56b54b5a3753bee99ca298c0d05769593aee35159e5278",
       "d": "package",
       "m": "se",
       "t": [
@@ -6413,9 +6413,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/f7.ogg",
-      "n": 10798,
-      "h": "37e8cdfc6c5d3e51a6b776479ef07f9cdd3791bc36b9a16d182f903283a739c5",
+      "p": "THlib/se/Piano/F7.ogg",
+      "n": 22626,
+      "h": "43647a04892264bbefabdf4600c6295879b4454eba37232a61a30caf0550e918",
       "d": "package",
       "m": "se",
       "t": [
@@ -6424,9 +6424,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/g#3.ogg",
-      "n": 11273,
-      "h": "30a829005789e29324e084dae9ba7a89f2ef07ee5990f9b3f03a2d56758f2c2c",
+      "p": "THlib/se/Piano/G#3.ogg",
+      "n": 25323,
+      "h": "c964922088b4dd69537181a898afe778abb99374e50874cb34324eff73772e9a",
       "d": "package",
       "m": "se",
       "t": [
@@ -6435,9 +6435,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/g#4.ogg",
-      "n": 11875,
-      "h": "38ee185e0394401cdabc15cac3cbe2b2a55c7cfc0ed1fbb392bbf911c8b3ac10",
+      "p": "THlib/se/Piano/G#4.ogg",
+      "n": 28041,
+      "h": "f52e3a488dc6dae39b662395bfb8ddefa3a5ac34f2fbfb75fe24794a0d6bda09",
       "d": "package",
       "m": "se",
       "t": [
@@ -6446,9 +6446,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/g#5.ogg",
-      "n": 12671,
-      "h": "31b6db881f66554d343b41af247a5a9fdb5a1aa0d963c5099b131dce35d9d42d",
+      "p": "THlib/se/Piano/G#5.ogg",
+      "n": 28889,
+      "h": "b623579d7c7951a5377c6e5a3b1c70a525f79dcc0d8d2ba4c7f2846cae177b5a",
       "d": "package",
       "m": "se",
       "t": [
@@ -6457,9 +6457,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/g#6.ogg",
-      "n": 11944,
-      "h": "ea631dff26d27a34c9e85d7ad4842ef9dce2aa37fe035cb644836aeb52f0a0cb",
+      "p": "THlib/se/Piano/G#6.ogg",
+      "n": 25017,
+      "h": "98992ed6d94cfa278324139bc361293c990780a6087ff1ee79dc65894156c53e",
       "d": "package",
       "m": "se",
       "t": [
@@ -6468,9 +6468,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/g#7.ogg",
-      "n": 11323,
-      "h": "158aa157d53593e49730b5761953a1721931ffd37e22236b53d4a68ad77cb37f",
+      "p": "THlib/se/Piano/G#7.ogg",
+      "n": 24770,
+      "h": "ee2e5501fbe2504030d76ddf472fed78354b3cb5b805ca2afc4e45ec694b4d77",
       "d": "package",
       "m": "se",
       "t": [
@@ -6479,9 +6479,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/g3.ogg",
-      "n": 11772,
-      "h": "68999ab21884f76ab10723ba023e0cdc420a9527d65f81e9929780c0315a3c2a",
+      "p": "THlib/se/Piano/G3.ogg",
+      "n": 26509,
+      "h": "d0df42b496105a3b19b481022bf3e72d9dc8c55a55706bddff7e73cebe3dff62",
       "d": "package",
       "m": "se",
       "t": [
@@ -6490,9 +6490,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/g4.ogg",
-      "n": 12681,
-      "h": "356958c8e1acd287e818573e17b6abc9c5e01b7ebfc0572336ae29ebe401b7d4",
+      "p": "THlib/se/Piano/G4.ogg",
+      "n": 29327,
+      "h": "ae255322f846ea18ab1bae1e7a04c4dc8d7cf042be60fa95d325253b8eed065e",
       "d": "package",
       "m": "se",
       "t": [
@@ -6501,9 +6501,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/g5.ogg",
-      "n": 12241,
-      "h": "7cadbcdcfbb95eb700021b5d7620decd4832b523b71fbc9fabd764d6d7a01475",
+      "p": "THlib/se/Piano/G5.ogg",
+      "n": 28006,
+      "h": "fe136c1cb546a99dc3030d4f2422353d5b1057ccbbae5b8bf188295ace7bc6fb",
       "d": "package",
       "m": "se",
       "t": [
@@ -6512,9 +6512,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/g6.ogg",
-      "n": 12206,
-      "h": "e5d20d51b7648350551110bd55e3f1a2bdcb78d4a4ee21118c2d29399273078c",
+      "p": "THlib/se/Piano/G6.ogg",
+      "n": 25441,
+      "h": "31cc58e938df42c74112b870c3e60eea665b9f5260d1f79d46e81441cee696e2",
       "d": "package",
       "m": "se",
       "t": [
@@ -6523,9 +6523,9 @@
       ]
     },
     {
-      "p": "THlib/se/Piano/g7.ogg",
-      "n": 11583,
-      "h": "d70b95b674db74f8647f4e60ff22d5fc4abd13818acd695d20448db988d68c19",
+      "p": "THlib/se/Piano/G7.ogg",
+      "n": 25203,
+      "h": "cbda31c0e448591d868de893a767564832ccd3a7bae7fa659fb33ec36c07a7e3",
       "d": "package",
       "m": "se",
       "t": [
@@ -6544,9 +6544,20 @@
       ]
     },
     {
+      "p": "THlib/se/se_Lightning.wav",
+      "n": 290044,
+      "h": "e3f4490832effdc652a559d6ad1cf153d050c4d7333dc04e75989196ed4e8256",
+      "d": "package",
+      "m": "se",
+      "t": [
+        "audio",
+        "se"
+      ]
+    },
+    {
       "p": "THlib/se/se_alert.wav",
-      "n": 28908,
-      "h": "1093853b8ab57196b0c8ae1991e7b5e9e5fe1952ff9fe7cbd7b49366d4c25779",
+      "n": 529180,
+      "h": "b8e54fc5fc094776067c2b41a5f9830bec01513ecab18fbdeeb906ed4f48bc01",
       "d": "package",
       "m": "se",
       "t": [
@@ -6556,8 +6567,8 @@
     },
     {
       "p": "THlib/se/se_astralup.wav",
-      "n": 7668,
-      "h": "bbcf6e4f82c7abf0eafe4fbc02a0dabfea5a832331b9f09500f3f63f56227422",
+      "n": 18746,
+      "h": "2ee2d972e77df5baa20e75c317a8381a035bb902a2377b6057c14c97964667cb",
       "d": "package",
       "m": "se",
       "t": [
@@ -6567,8 +6578,8 @@
     },
     {
       "p": "THlib/se/se_big.wav",
-      "n": 17680,
-      "h": "ece344344c573c5ee9e34d894367fcbdaa008194a7711a97b770cee9cbc19a8e",
+      "n": 114858,
+      "h": "9b37fd1306892d43cb36082877964e9476bea9aa08a318b940ea40bd7b367b6d",
       "d": "package",
       "m": "se",
       "t": [
@@ -6578,8 +6589,8 @@
     },
     {
       "p": "THlib/se/se_bonus.wav",
-      "n": 12967,
-      "h": "d8a7ce4854ae257e16288647d5917497ba29a037601ca8456b7c7599857bbdf4",
+      "n": 180812,
+      "h": "e896f3d47258acdc0448569715f135d9cd349c38faee312bc2cfe645ca95b207",
       "d": "package",
       "m": "se",
       "t": [
@@ -6589,8 +6600,8 @@
     },
     {
       "p": "THlib/se/se_bonus2.wav",
-      "n": 11908,
-      "h": "5fcd0983fcbcf14f282a29d7fdd44ca10442317d1e2fa3615355d75f74a9c36d",
+      "n": 180812,
+      "h": "813c0903b4188774cc338f7ac61825ab5d3844f93bf5f6992690f2a65e3c6516",
       "d": "package",
       "m": "se",
       "t": [
@@ -6600,8 +6611,8 @@
     },
     {
       "p": "THlib/se/se_bonus3.wav",
-      "n": 9657,
-      "h": "e302f2825fdae0b948baa7dba5b3f2a0b48258ad061b2d9967a8e0f2ae46e08a",
+      "n": 118126,
+      "h": "1b97763fbbdc96c5f660c4a9e53ddfc982641347eca51120a6752494776c66f6",
       "d": "package",
       "m": "se",
       "t": [
@@ -6611,8 +6622,8 @@
     },
     {
       "p": "THlib/se/se_boon00.wav",
-      "n": 8392,
-      "h": "85f55815e2b21a111c75ec2962bdb946e034c4435e00b76bb2e223bbd5c41c46",
+      "n": 70672,
+      "h": "bbd0aa81f96ced4f7adfdfeed5a8bdb84a33931b0f18ad43a0d1ef2fae95de7f",
       "d": "package",
       "m": "se",
       "t": [
@@ -6622,8 +6633,8 @@
     },
     {
       "p": "THlib/se/se_boon01.wav",
-      "n": 22684,
-      "h": "dfce362af5b039111ec1a3527f77d00f34834c2e99532ddf04e9a9e9600251a3",
+      "n": 284468,
+      "h": "b7ee917d48298b1a8362f269cea08e1809c259adeb1b57fee650b3a7246c90cf",
       "d": "package",
       "m": "se",
       "t": [
@@ -6633,8 +6644,8 @@
     },
     {
       "p": "THlib/se/se_border.wav",
-      "n": 27692,
-      "h": "3fb260dc7f0d168a5653b8333759e31e33382cf7e984e7eb3e4ad4ddfe4e551b",
+      "n": 529312,
+      "h": "905f66e9a9ec22c27ebac7fc8cbf32fa5e42bb6fe7bcfa268250c6618e7dd98e",
       "d": "package",
       "m": "se",
       "t": [
@@ -6644,8 +6655,8 @@
     },
     {
       "p": "THlib/se/se_cancel00.wav",
-      "n": 10196,
-      "h": "7c1ab968be201174ef49c8d5a3d15f1407c5ca4fdd0672fd29baabb3ea7cdbc1",
+      "n": 108844,
+      "h": "26443e032ee2186ad7a90c70a312504d94fee0dffd8bb351ddcd3a4d9eba2a6c",
       "d": "package",
       "m": "se",
       "t": [
@@ -6655,8 +6666,8 @@
     },
     {
       "p": "THlib/se/se_cardget.wav",
-      "n": 26192,
-      "h": "97e88b88da20a32fcc1002956f8dccb9abb6df671daef5ea7d7341fbfee67f8a",
+      "n": 445620,
+      "h": "190ea7a4674e7bcdc68192fb27efb0f64e76ed5c0bed60351aac18215eda83ce",
       "d": "package",
       "m": "se",
       "t": [
@@ -6666,8 +6677,8 @@
     },
     {
       "p": "THlib/se/se_cat00.wav",
-      "n": 20349,
-      "h": "0406b07233fccbdb24b7f9a4962dce6bb1d0db309dbbd8782806f6a986d664b9",
+      "n": 336396,
+      "h": "9595cbda25ede495a3906d25e476ba78044cdbf2a3154c0f25cdeb580dd5657b",
       "d": "package",
       "m": "se",
       "t": [
@@ -6677,8 +6688,8 @@
     },
     {
       "p": "THlib/se/se_cat01.wav",
-      "n": 15729,
-      "h": "a09fc26f2d14f6c088f498e0cb132647177a0abf8783860df98bbc8d75c8edc5",
+      "n": 188944,
+      "h": "40c39a558804e35334b7b5a75ad1d8d3696a22800f82df35e38aa279c4929727",
       "d": "package",
       "m": "se",
       "t": [
@@ -6688,8 +6699,8 @@
     },
     {
       "p": "THlib/se/se_ch00.wav",
-      "n": 18518,
-      "h": "3a74c646b02a8d196b40c5199e7a08e7f07ca7687fe1729a617559cc51bfa1eb",
+      "n": 349806,
+      "h": "8b4b2aa77e868cfc93257ae302e992ddcb0db82791646f56b75bc8bb7ca2793e",
       "d": "package",
       "m": "se",
       "t": [
@@ -6699,8 +6710,8 @@
     },
     {
       "p": "THlib/se/se_ch01.wav",
-      "n": 11362,
-      "h": "e81972b3dbf8ca3a6b03130fbf9fa9c6d46f8fc002519d4b929e10e2848aa2c7",
+      "n": 120376,
+      "h": "d35cbf033e610b1a6c668c8cdd3c91898b2e6bcd7a1086de66bcbb36e8e3c472",
       "d": "package",
       "m": "se",
       "t": [
@@ -6710,8 +6721,8 @@
     },
     {
       "p": "THlib/se/se_ch02.wav",
-      "n": 11787,
-      "h": "a0e6d400213b8fc701b3315285fbe3e6aa256f973d651c65d03b9f86236b1d3b",
+      "n": 176758,
+      "h": "e4d01dc45f4d53f7b611a3a898b3e315fdccf84d039a72701f3e2c06b5a7ed96",
       "d": "package",
       "m": "se",
       "t": [
@@ -6721,8 +6732,8 @@
     },
     {
       "p": "THlib/se/se_changeitem.wav",
-      "n": 9556,
-      "h": "a4aeb10c6cab53002d4c77237027ef889963c8801d0e2dac19e83e9c960eab13",
+      "n": 88312,
+      "h": "d19d18ebb5a17436696c1455d8b8865fd12d30debf9d64108eadbbb0da88c931",
       "d": "package",
       "m": "se",
       "t": [
@@ -6732,8 +6743,8 @@
     },
     {
       "p": "THlib/se/se_damage00.wav",
-      "n": 5506,
-      "h": "5c88069f31b8ec2e4722a897b17dbb18e25bfe90581d2c381c68baa5ec6c08f4",
+      "n": 26436,
+      "h": "18d1cc6bca66ef3d96773954565af8d5d4e0bfb60adb4ea2b3a22f0e82502a02",
       "d": "package",
       "m": "se",
       "t": [
@@ -6743,8 +6754,8 @@
     },
     {
       "p": "THlib/se/se_damage01.wav",
-      "n": 8954,
-      "h": "25d6307e148e78467e17d8787eb9ca5a886ffa2d7d2fa1cc3a340b7786301d58",
+      "n": 107468,
+      "h": "56a358ee607943a888ba5e76a8c39cdc5d3562f5a73c47c96d9d9a03664dee43",
       "d": "package",
       "m": "se",
       "t": [
@@ -6754,8 +6765,8 @@
     },
     {
       "p": "THlib/se/se_don00.wav",
-      "n": 20989,
-      "h": "313d1ca38c7680d703b3821d5775c659bad7a28b5851819bfd12df89de5bb18e",
+      "n": 284468,
+      "h": "d7af53ac75092b31d99ec4f9878cb7b64d991b808cc2fe4a10de0129185f0bc5",
       "d": "package",
       "m": "se",
       "t": [
@@ -6765,8 +6776,8 @@
     },
     {
       "p": "THlib/se/se_down.wav",
-      "n": 11434,
-      "h": "f8066195c522cde8644079735ba17d972cd5878b363ef3cc1f1c67eed6729137",
+      "n": 129578,
+      "h": "381175658c2ff2d83334a92f4cf3fdf096fbe6708691642cb9e05738d95e7551",
       "d": "package",
       "m": "se",
       "t": [
@@ -6776,8 +6787,8 @@
     },
     {
       "p": "THlib/se/se_enep00.wav",
-      "n": 11095,
-      "h": "3d1a2d5e4d81bec18d7aa8fcd78567a72b8cc67442870ea837d19e65d089e451",
+      "n": 115500,
+      "h": "97249322ced2efa6c5c636de3268e505b4b694ec7fe3ab16e7c26acb55ae42a9",
       "d": "package",
       "m": "se",
       "t": [
@@ -6787,8 +6798,8 @@
     },
     {
       "p": "THlib/se/se_enep01.wav",
-      "n": 30726,
-      "h": "3cf0ab8f708096e6dc27791fa405910f28586f6e329f751716242783200bc711",
+      "n": 460268,
+      "h": "1d24a00a25c07f085dce603aae58b403ce888711f28f941cc81fea62b63d1d79",
       "d": "package",
       "m": "se",
       "t": [
@@ -6798,8 +6809,8 @@
     },
     {
       "p": "THlib/se/se_enep02.wav",
-      "n": 17931,
-      "h": "ce7007223a7e975e7f51a7dce47af93b379fdba39f4a9f076c9f16ba9af98cf2",
+      "n": 232624,
+      "h": "f276f8ac630ee0f3d30783e0ca9b9f1be8c36b971ff10e724df753ecc039ad4a",
       "d": "package",
       "m": "se",
       "t": [
@@ -6809,8 +6820,8 @@
     },
     {
       "p": "THlib/se/se_explode.wav",
-      "n": 11069,
-      "h": "8445186f4b3601a8c52a6bd6ef6ce9e3ecab623f871ed1d945e9e1d2663be353",
+      "n": 120428,
+      "h": "889a1b0114f7d6cfa89bcd5bde2161b4883ca2b2cb71fda78e73563800b3a505",
       "d": "package",
       "m": "se",
       "t": [
@@ -6820,8 +6831,8 @@
     },
     {
       "p": "THlib/se/se_extend.wav",
-      "n": 18731,
-      "h": "f5ba8b23aa9f48d2d1a5929578541756d77d88e6353e011969bc3c8332a83c18",
+      "n": 280556,
+      "h": "9e385e10818fa76b9b85ade3e87dd34de6273c757ede33da667c549f59c0f8a8",
       "d": "package",
       "m": "se",
       "t": [
@@ -6831,8 +6842,8 @@
     },
     {
       "p": "THlib/se/se_extend2.wav",
-      "n": 10433,
-      "h": "6d2dd90aeeef82fd0e52e3e8fca35348a37d4c55df63ed27d53d4bd9fee6a1d9",
+      "n": 110598,
+      "h": "7c9becc2d44d8f1308adaf33e5883a02aecbc1efa0b6e62a163fefd32180634e",
       "d": "package",
       "m": "se",
       "t": [
@@ -6842,8 +6853,8 @@
     },
     {
       "p": "THlib/se/se_fault.wav",
-      "n": 23325,
-      "h": "4514f1749085f5155a01311698f4a656f51bc0741c32930a102c4ca4fa05585b",
+      "n": 405114,
+      "h": "8bca1312c51eb9064108a2da5360cbce0cd1812edb2633419e116522db05741b",
       "d": "package",
       "m": "se",
       "t": [
@@ -6853,8 +6864,8 @@
     },
     {
       "p": "THlib/se/se_focus.wav",
-      "n": 17867,
-      "h": "33a417ffaac51de7a5e2de1cf12dede16df119aca71149faa723e2613e3ae515",
+      "n": 148338,
+      "h": "1db04fd7fc5879ccd34bd128a8dd026c3942ac2cf9fc3812222af8c86ddf9d75",
       "d": "package",
       "m": "se",
       "t": [
@@ -6864,8 +6875,8 @@
     },
     {
       "p": "THlib/se/se_focusfix.wav",
-      "n": 13596,
-      "h": "9b213d97742ae4f81625a0fd84068c512917b20eea65dbee4387865362167324",
+      "n": 155226,
+      "h": "8b614e1686c1f65ba2c79ecb067eba21a03ca8d7a995926f941d0b93104b487f",
       "d": "package",
       "m": "se",
       "t": [
@@ -6875,8 +6886,8 @@
     },
     {
       "p": "THlib/se/se_focusfix2.wav",
-      "n": 8740,
-      "h": "c330741adb4e356d340d1c05bc194d3afd92dd11c15483527fc99fbbbd27da12",
+      "n": 69118,
+      "h": "55b0e852a2000daa140a934a3541b2fb9579d4bbfe64e1afdedecf01cb9c5f1e",
       "d": "package",
       "m": "se",
       "t": [
@@ -6886,8 +6897,8 @@
     },
     {
       "p": "THlib/se/se_focusin.wav",
-      "n": 4923,
-      "h": "be4123cf865832b867516911fe17f98b6ae0a6ec896195d421f597f344f9d28f",
+      "n": 16470,
+      "h": "12ec2b9fe19d1f84554bd9a7f2e1dc47620480d8ca0a6520510f879a31e00f22",
       "d": "package",
       "m": "se",
       "t": [
@@ -6897,8 +6908,8 @@
     },
     {
       "p": "THlib/se/se_goast1.wav",
-      "n": 151109,
-      "h": "8c5625fca9a48ae782956dfba73055426a02edb649016ff6c5aaa994203bc988",
+      "n": 1208982,
+      "h": "096b7fe264d0d86b8da6809537fe37369ccef4fccf78876d12c740423f748cc6",
       "d": "package",
       "m": "se",
       "t": [
@@ -6908,8 +6919,8 @@
     },
     {
       "p": "THlib/se/se_goast2.wav",
-      "n": 8624,
-      "h": "faffe2d509b7cb604c322e1b6ccc394525345c712338533a46726ec8a22f08c9",
+      "n": 37566,
+      "h": "a470776f389655d87999abc671e123a6a19506b3ab107aa00c253e0f2b738be0",
       "d": "package",
       "m": "se",
       "t": [
@@ -6919,8 +6930,8 @@
     },
     {
       "p": "THlib/se/se_graze.wav",
-      "n": 5076,
-      "h": "14512df94c2ce1688eb36a448f5db2407e209d8ea9a0ca96a25794473e92551c",
+      "n": 17620,
+      "h": "b5f612062eac70d7aef10c31239617391cc01a763bcc3f08fe359713d155fed8",
       "d": "package",
       "m": "se",
       "t": [
@@ -6930,8 +6941,8 @@
     },
     {
       "p": "THlib/se/se_gun00.wav",
-      "n": 33186,
-      "h": "16c63a6edec552619ccccf3b448a5e0b6efe1bc75090f831370270d190e71202",
+      "n": 538124,
+      "h": "abe4348954926e418b90e46d56ec52570be923b0bdb5ff93dde53d67eb07f8a6",
       "d": "package",
       "m": "se",
       "t": [
@@ -6941,8 +6952,8 @@
     },
     {
       "p": "THlib/se/se_heal.wav",
-      "n": 13982,
-      "h": "55f6da98fd686bd2f7b45df78422f8fb732ba30e1569518f56d621a5bca9eb6f",
+      "n": 169822,
+      "h": "3a9a47113517ff4e1086d3caaf9eec0a8643fd732e5f7bf62e0df3e690037568",
       "d": "package",
       "m": "se",
       "t": [
@@ -6952,8 +6963,8 @@
     },
     {
       "p": "THlib/se/se_hint00.wav",
-      "n": 5272,
-      "h": "38bf49e65bf8210f7b8f7a8c0d07cf8e1f80c8a1d7250337a2d1d154b6fd53a7",
+      "n": 42988,
+      "h": "61002b6fbf0807a7684721e03e2cdfcb35e329846c052ac0203f580dde69f97d",
       "d": "package",
       "m": "se",
       "t": [
@@ -6963,8 +6974,8 @@
     },
     {
       "p": "THlib/se/se_hyz_charge00.wav",
-      "n": 12113,
-      "h": "e0ef475f3d33e00a98e80e38a8c6b61f5c2c3a3b322b4becb9b6a98336c9b9bd",
+      "n": 172604,
+      "h": "1cc6336cac1f74dfbf683269d02e4470d67a52b8795009448fbe7220aef9a337",
       "d": "package",
       "m": "se",
       "t": [
@@ -6974,8 +6985,8 @@
     },
     {
       "p": "THlib/se/se_hyz_charge01b.wav",
-      "n": 6185,
-      "h": "5784eff39bafb11885233cfc8b8b7017b8bd30dc46eb95f88c0879ceb2bddbd0",
+      "n": 42930,
+      "h": "0d455415841469a8da89cd49ee88a040670df81e210e590aafeb53c8bbe6ddc0",
       "d": "package",
       "m": "se",
       "t": [
@@ -6985,8 +6996,8 @@
     },
     {
       "p": "THlib/se/se_hyz_chargeup.wav",
-      "n": 16103,
-      "h": "fd4a982db1bee858f32213ca0aa6734bc8980e2201266eff447cbb3fdb9720c2",
+      "n": 188500,
+      "h": "70078417a5d727ed3cc65eaa521b8ff99b2fda1f1d753790e7ac72057005662c",
       "d": "package",
       "m": "se",
       "t": [
@@ -6996,8 +7007,8 @@
     },
     {
       "p": "THlib/se/se_hyz_eterase.wav",
-      "n": 6606,
-      "h": "cc8258f8af5c6b9ec8fd84bb43e95fdac80dfc84740552c577e843a79f42e06f",
+      "n": 45186,
+      "h": "801c201740203f8c489c707027f9bb24015b55867e83bc3bacb51190ec9ecc32",
       "d": "package",
       "m": "se",
       "t": [
@@ -7007,8 +7018,8 @@
     },
     {
       "p": "THlib/se/se_hyz_exattack.wav",
-      "n": 7698,
-      "h": "04ad54c956800c8145e9bc0deec0486faeddb3c1884b1aa1a20bff38b57f0ce2",
+      "n": 77308,
+      "h": "96adb2ba9947fa6f4ec836e1e1dfec0ced333815ae0dda60138d7300b3b13b64",
       "d": "package",
       "m": "se",
       "t": [
@@ -7018,8 +7029,8 @@
     },
     {
       "p": "THlib/se/se_hyz_gosp.wav",
-      "n": 12096,
-      "h": "f3df3353ed86cc9d18098234f239052df318713d3c5d262bb71f15937ca023a0",
+      "n": 103838,
+      "h": "f6a64e1043ff6b5b268220f9b77d4f9795d4611780b9d3987333c5f0bc117ac3",
       "d": "package",
       "m": "se",
       "t": [
@@ -7029,8 +7040,8 @@
     },
     {
       "p": "THlib/se/se_hyz_life1.wav",
-      "n": 17084,
-      "h": "d16be83a71c0bf77247a49f07525833449eb7f52237685bc0f52f409297a41bc",
+      "n": 187582,
+      "h": "4618922b1154709003976021f9c7e79ce7412e3bd49f406f9dc8f4453cd30a4c",
       "d": "package",
       "m": "se",
       "t": [
@@ -7040,8 +7051,8 @@
     },
     {
       "p": "THlib/se/se_hyz_playerdead.wav",
-      "n": 28335,
-      "h": "18e005ef987df67b8774c1ac1258d07c7897e5047a5a055a1daba63b53fa2abe",
+      "n": 532942,
+      "h": "4fcdb23f729014b645dc3ea7e69bee50ec40474e0ccea2e9be3a4bfed79e098a",
       "d": "package",
       "m": "se",
       "t": [
@@ -7051,8 +7062,8 @@
     },
     {
       "p": "THlib/se/se_hyz_timestop0.wav",
-      "n": 16717,
-      "h": "29c818233cb57070a4b0ea8b232487d53ffe8a4d52a2663002b95284985d0ff0",
+      "n": 230268,
+      "h": "a5e272af45d44ca78d8542098b2097ec8468d2451199124e8623a1910bc30afc",
       "d": "package",
       "m": "se",
       "t": [
@@ -7062,8 +7073,8 @@
     },
     {
       "p": "THlib/se/se_hyz_warning.wav",
-      "n": 32898,
-      "h": "22f19e057e17cc5449dbea0b3d78579ab2ce0f1eb512243e8fd5c20e5e12a05f",
+      "n": 503730,
+      "h": "63eaa48d891dee33929ab62e930cabec1b1dff030f185eaaa26a55f0c692cfac",
       "d": "package",
       "m": "se",
       "t": [
@@ -7073,8 +7084,8 @@
     },
     {
       "p": "THlib/se/se_ice.wav",
-      "n": 7428,
-      "h": "b8d47a34b6ade30540f7ca5552a6eceabb85e356550413a66812aaaf39156d8d",
+      "n": 53034,
+      "h": "79ee8391a7f86e01a6450d6f984cf0c21fc3f1d1d804a7ee13fb6bd6d170fe9a",
       "d": "package",
       "m": "se",
       "t": [
@@ -7084,8 +7095,8 @@
     },
     {
       "p": "THlib/se/se_ice2.wav",
-      "n": 9362,
-      "h": "452fbb67d5d2e98ba5a4a0cab8942d8957fab6c553d2fb07f8e4195cb89226a1",
+      "n": 87794,
+      "h": "085e6fbd01bb75d46d2eeab595862ef13b181244898fd8f1dec21fb9024a9a1b",
       "d": "package",
       "m": "se",
       "t": [
@@ -7095,8 +7106,8 @@
     },
     {
       "p": "THlib/se/se_invalid.wav",
-      "n": 10120,
-      "h": "5f5b26d047aa6fb4cdb8db70509e5607a761470730b6bfac0ad355c5379c2dca",
+      "n": 125628,
+      "h": "1c57c022cee8dcfb849fa19d47bc899fed3b23ba55584be56c57d51797af4794",
       "d": "package",
       "m": "se",
       "t": [
@@ -7106,8 +7117,8 @@
     },
     {
       "p": "THlib/se/se_item00.wav",
-      "n": 5630,
-      "h": "bd2432a4219308955c30492d0e10a5744c82dcc0b25f330e6622a4aea4782d0e",
+      "n": 28964,
+      "h": "3c35f976aaeb64e4a9a8b71b8aaa4082e08865b92ef86a364420dd4354bc099a",
       "d": "package",
       "m": "se",
       "t": [
@@ -7117,8 +7128,8 @@
     },
     {
       "p": "THlib/se/se_item01.wav",
-      "n": 17183,
-      "h": "c7b8a8ff2bd883f505680e31d2ed99243f54aedceaf37ed3300c70a1a50f421e",
+      "n": 257078,
+      "h": "640214970dfb6dfd847251d53d576d8115b2f00295345060e2dca2aa978613c3",
       "d": "package",
       "m": "se",
       "t": [
@@ -7128,8 +7139,8 @@
     },
     {
       "p": "THlib/se/se_kira00.wav",
-      "n": 17908,
-      "h": "f4e9dee51689d60ef0b915e0db9bb7e7c632d108447e47a3b460cb9e41c5cb2f",
+      "n": 280508,
+      "h": "5380a975cec5ae7dda485fee633686effd2f70c70685089a21e565d2bc1ca5e8",
       "d": "package",
       "m": "se",
       "t": [
@@ -7139,8 +7150,8 @@
     },
     {
       "p": "THlib/se/se_kira01.wav",
-      "n": 13891,
-      "h": "a772e3c04894f2f1579d7d942f5977fc93048d157f58a8a0d54870c72995925b",
+      "n": 174252,
+      "h": "c51dc2bb783dbe5a367a0caf1d7e30e56793e18de2dc441c158ddbb16970d224",
       "d": "package",
       "m": "se",
       "t": [
@@ -7150,8 +7161,8 @@
     },
     {
       "p": "THlib/se/se_kira02.wav",
-      "n": 10103,
-      "h": "fd997bcdc703e05071b63159b7ba63c098dec763a3123df4704fa69051a8db0f",
+      "n": 102476,
+      "h": "bb8325cd873c4afc0df136b05504328d2e7f65ff979ee56e3a726cfbd471fba6",
       "d": "package",
       "m": "se",
       "t": [
@@ -7161,8 +7172,8 @@
     },
     {
       "p": "THlib/se/se_lazer00.wav",
-      "n": 13416,
-      "h": "3cef44542f82c100810087a11295c875eb2e291f12bd4a3a529f0ebc0da2bd92",
+      "n": 176380,
+      "h": "f03cac80210619b6b217f99038cfb8a11bf278bec46e4f3f81c4081c4ce1dd6d",
       "d": "package",
       "m": "se",
       "t": [
@@ -7172,8 +7183,8 @@
     },
     {
       "p": "THlib/se/se_lazer01.wav",
-      "n": 14031,
-      "h": "0a2d1c0a31529b35b7781b7690e84c2272a11b63f895c28a2e5efb0b89334eb9",
+      "n": 192164,
+      "h": "ba27f6ead137e4474d25fff7ec23d4adda3153ef9c5a9e32e6e0bb91a39968c3",
       "d": "package",
       "m": "se",
       "t": [
@@ -7183,8 +7194,8 @@
     },
     {
       "p": "THlib/se/se_lazer02.wav",
-      "n": 6605,
-      "h": "994a01aeb020e44aa6ca2d0c15fd45e26aee5ff13acae280484df3024be8fe51",
+      "n": 17768,
+      "h": "f1b20302842b7ecd31d1094d65d73a1686386a37e102ae09aeb5b4079c206a07",
       "d": "package",
       "m": "se",
       "t": [
@@ -7194,8 +7205,8 @@
     },
     {
       "p": "THlib/se/se_lgods1.wav",
-      "n": 19924,
-      "h": "d8379b7b7ccf0c6b028cf904a90af31d76205e072ac28c07b03002fc67744c53",
+      "n": 332292,
+      "h": "ee04983deb9c6e4b3c11cbb01f0fcc73f7323f27216287b8f4de1545a62cbc94",
       "d": "package",
       "m": "se",
       "t": [
@@ -7205,8 +7216,8 @@
     },
     {
       "p": "THlib/se/se_lgods2.wav",
-      "n": 16158,
-      "h": "1d52d8cfdb5d6772f162e1f2c05bb8653a2cad373bb9d600a40650ba58fe24a7",
+      "n": 248996,
+      "h": "c515f545bea16717ef426389c1b0bfd97bc62fabcd21ea2e989919012bbe9f6b",
       "d": "package",
       "m": "se",
       "t": [
@@ -7216,8 +7227,8 @@
     },
     {
       "p": "THlib/se/se_lgods3.wav",
-      "n": 12419,
-      "h": "7eff49cd7ddc9ee7e7086f84583af6d440c1c85f89c4e030809306635fbe722d",
+      "n": 166188,
+      "h": "ca99c61b61591922704afaa2452231a3455b237c0ddfd4902b5f932b3598c6a1",
       "d": "package",
       "m": "se",
       "t": [
@@ -7227,8 +7238,8 @@
     },
     {
       "p": "THlib/se/se_lgods4.wav",
-      "n": 10430,
-      "h": "d2f7dcb1a091af92fa274a053a8d007f3f61dd038ccd746ba3cf1780139acfc4",
+      "n": 124812,
+      "h": "b9f645db75b0a63a2a241ee30b2b7b6110c43a37f46cdde3024c398741c33b96",
       "d": "package",
       "m": "se",
       "t": [
@@ -7238,19 +7249,8 @@
     },
     {
       "p": "THlib/se/se_lgodsget.wav",
-      "n": 9946,
-      "h": "e5e2091bf0d83797daa6ef69ca67e3e267d5a92e6e25bfeb233e12d334917354",
-      "d": "package",
-      "m": "se",
-      "t": [
-        "audio",
-        "se"
-      ]
-    },
-    {
-      "p": "THlib/se/se_lightning.wav",
-      "n": 35849,
-      "h": "f3d030244dfe4858ec8393bdeebfdbf5e6e20bc5846872e670caa78a44fbb7f0",
+      "n": 44300,
+      "h": "d3bccd38c3aa40fed7954ecd46dd68f54c518053b8f8e8bee21c03ed2dc2b209",
       "d": "package",
       "m": "se",
       "t": [
@@ -7260,8 +7260,8 @@
     },
     {
       "p": "THlib/se/se_msl.wav",
-      "n": 5195,
-      "h": "050e13ca07779aa97158f205cb96fa7ff808e40822f707f90dccd2be3ad79acc",
+      "n": 21884,
+      "h": "5eb5acfcdde5a24d3a95dabc5e878313b543bda78e009be87b487742cfd67b33",
       "d": "package",
       "m": "se",
       "t": [
@@ -7271,8 +7271,8 @@
     },
     {
       "p": "THlib/se/se_msl2.wav",
-      "n": 15706,
-      "h": "fdf2eb2b00772227df862474b3eac914130aef19bc3e1aea372c2b76f9d6d1e8",
+      "n": 93220,
+      "h": "ed72ab58e7cd763f993240d986b4ace83afddb0f1278ca6e42cff348e673c67c",
       "d": "package",
       "m": "se",
       "t": [
@@ -7282,8 +7282,8 @@
     },
     {
       "p": "THlib/se/se_nep00.wav",
-      "n": 48940,
-      "h": "7538b5898a9d9f0d0ce557c96d3a2e70be2d55609db6adc92db3e8f5d2faee9a",
+      "n": 899052,
+      "h": "fb9677e02f1b341f6d5be17e5cfb51c6296640bffb6f3b9612fca6f52bf01aa0",
       "d": "package",
       "m": "se",
       "t": [
@@ -7293,8 +7293,8 @@
     },
     {
       "p": "THlib/se/se_nice.wav",
-      "n": 11348,
-      "h": "8c8be32969d0b1aacbf4ccdaf271b01d90553fab1630729b2e88ae2507de51f4",
+      "n": 123902,
+      "h": "0d2a63f1dcd57dcf9ea391c804d0c09aaf76875a29dff563131b844b045a9407",
       "d": "package",
       "m": "se",
       "t": [
@@ -7304,8 +7304,8 @@
     },
     {
       "p": "THlib/se/se_nodamage.wav",
-      "n": 5794,
-      "h": "f4e6c94ef392d4cd2c341f488d5826c76eb626d91d3460d18a334c459a2edc56",
+      "n": 26572,
+      "h": "5934932df9bb0935157d297ea6df83727df618f135c9bc482f5ec98bf46edfcb",
       "d": "package",
       "m": "se",
       "t": [
@@ -7315,8 +7315,8 @@
     },
     {
       "p": "THlib/se/se_noise.wav",
-      "n": 16005,
-      "h": "cf690cd6fe700f1ad36695973408ce0fdacb44bb6a3b8358847a7dac05f16e75",
+      "n": 66270,
+      "h": "9536d49fca50abc33e6fc02e6e183bed512cc33f71a1b39760a6559cb1a12871",
       "d": "package",
       "m": "se",
       "t": [
@@ -7326,8 +7326,8 @@
     },
     {
       "p": "THlib/se/se_ok00.wav",
-      "n": 8660,
-      "h": "43894d705db7ec88aaeaf0db443798e5ffa7a6ae96d657b0dc4e21f7ffe9f102",
+      "n": 86636,
+      "h": "7d404db82061579929b30712aa433d30ef9267edd70b197b06c8cf87c1d4100a",
       "d": "package",
       "m": "se",
       "t": [
@@ -7337,8 +7337,8 @@
     },
     {
       "p": "THlib/se/se_old_cat00.wav",
-      "n": 16325,
-      "h": "ffdf8a47b28893fd8f5a00e53c45f288639585e24dc02715e906de87a9baae8f",
+      "n": 257548,
+      "h": "ae4861293fd77f8e478d0d263c57606a501ca155d5cf4d56512a27e041c173c4",
       "d": "package",
       "m": "se",
       "t": [
@@ -7348,8 +7348,8 @@
     },
     {
       "p": "THlib/se/se_old_enep00.wav",
-      "n": 8323,
-      "h": "14de033dd9e6de6ebbd143658f60332f3726211b72276182a98820074d963409",
+      "n": 89902,
+      "h": "c9e45ef29369852afc4d5b4eee370939c789c739a67b5d9544499fbdb6685b81",
       "d": "package",
       "m": "se",
       "t": [
@@ -7359,8 +7359,8 @@
     },
     {
       "p": "THlib/se/se_old_enep01.wav",
-      "n": 21679,
-      "h": "1a70928e2d1195db0a0e7034d362534a9c71bdacdd9ac9c2683dc46e2592c599",
+      "n": 379732,
+      "h": "b73691ae0031ae6533ab3216b2f6607f53fac2332ba730313ba1114fcf725cb2",
       "d": "package",
       "m": "se",
       "t": [
@@ -7370,8 +7370,8 @@
     },
     {
       "p": "THlib/se/se_old_extend.wav",
-      "n": 17466,
-      "h": "eb7b4fd4927594df68df684f1bd2f5ddbdc45928c450a130c0fe1fe67b6d898a",
+      "n": 270070,
+      "h": "749e509939fdc4fcfc8ac12154829dc0fb9ed3caae17d1411b6c9c5d50440c24",
       "d": "package",
       "m": "se",
       "t": [
@@ -7381,8 +7381,8 @@
     },
     {
       "p": "THlib/se/se_old_gun00.wav",
-      "n": 25513,
-      "h": "214622b5abdcff964fb62af3fb7717a7bc857b9e4408587f060b77b15d6d19d4",
+      "n": 457844,
+      "h": "b67fd95e59ac25312a0b8205df7d2251ab22b3dac0354b9c9c1d704b66bd4d70",
       "d": "package",
       "m": "se",
       "t": [
@@ -7392,8 +7392,8 @@
     },
     {
       "p": "THlib/se/se_old_kira00.wav",
-      "n": 15592,
-      "h": "ce79e4c65424a81a4b26466cb11e1148037317f114d737bfe35c605a40f94f37",
+      "n": 222836,
+      "h": "79449780ee5c12df6dab985d35074546318e87c5222c2fc5c4afb05329a2a27d",
       "d": "package",
       "m": "se",
       "t": [
@@ -7403,8 +7403,8 @@
     },
     {
       "p": "THlib/se/se_old_kira01.wav",
-      "n": 13847,
-      "h": "7a669cab8c415f0a48512fcd068d1189686d6916a38aaa6dd54a3575dfa20c60",
+      "n": 193588,
+      "h": "00187b2fab34a46d53d4b7bd8a718149abeccb144b1192eb88951f1955d4d8c1",
       "d": "package",
       "m": "se",
       "t": [
@@ -7414,8 +7414,8 @@
     },
     {
       "p": "THlib/se/se_old_lazer01.wav",
-      "n": 12717,
-      "h": "63c7beaad9c1c2a8a0fc22299c30bb2270e69ba53dea2b49e863e34a02bffa29",
+      "n": 111268,
+      "h": "cf2f88685ccdae14595ff5dbb74bd3e725b5263b5b93a592a8eb147600d0ebda",
       "d": "package",
       "m": "se",
       "t": [
@@ -7425,8 +7425,8 @@
     },
     {
       "p": "THlib/se/se_old_nep00.wav",
-      "n": 46761,
-      "h": "95367c5e72ac2074f5052a952b7143d1ac4a0819d63d879aa762b9900d6c9de1",
+      "n": 880364,
+      "h": "de57c383494d1cf93e27149b8b0389fb33cfecaef5c5b78a0bece1930129f99a",
       "d": "package",
       "m": "se",
       "t": [
@@ -7436,8 +7436,8 @@
     },
     {
       "p": "THlib/se/se_old_pldead00.wav",
-      "n": 13471,
-      "h": "a2bdb76f6d414515720254ee0f169ff1acaaa29ac7a6f964c039614a0b29a8fa",
+      "n": 162894,
+      "h": "41bd5d7679eb91cc90e54bdaf006cc7596b6ad2f7b1625ab53d7a4fab6e4d1cb",
       "d": "package",
       "m": "se",
       "t": [
@@ -7447,8 +7447,8 @@
     },
     {
       "p": "THlib/se/se_old_power0.wav",
-      "n": 27436,
-      "h": "61164d4952aa919e27ff861bd267785a825878f4ea8b4762ccaa8c24f7c6dd81",
+      "n": 529278,
+      "h": "8ccf42cf7617dee33c90bc08565b60b6bb71b9405873b725e7e0976e8fedb1f9",
       "d": "package",
       "m": "se",
       "t": [
@@ -7458,8 +7458,8 @@
     },
     {
       "p": "THlib/se/se_old_power1.wav",
-      "n": 19303,
-      "h": "f3c62c836bc814f0f01326cbbb1bbd48e25f7065f61eff8029379779555b4192",
+      "n": 317598,
+      "h": "f67adde09acca8e08c538bc2fb38474d96f00f618a35cad692874d533b480549",
       "d": "package",
       "m": "se",
       "t": [
@@ -7469,8 +7469,8 @@
     },
     {
       "p": "THlib/se/se_old_powerup.wav",
-      "n": 7811,
-      "h": "e0ec9ce534aca2c333ce57841b1cbea658338e51a4902b320efc665336d118dc",
+      "n": 70676,
+      "h": "ee1bd6bc40860cfe009d765893bb4c7a2477a5aff6779a481d5e6195b4bb34db",
       "d": "package",
       "m": "se",
       "t": [
@@ -7480,8 +7480,8 @@
     },
     {
       "p": "THlib/se/se_ophide.wav",
-      "n": 7029,
-      "h": "a936dc74ccdd630f1ed745dcae795dadcfbf89dd28ebce1b520d2fdf35e2a2fa",
+      "n": 61450,
+      "h": "68c06613b059ca06d7f53a1be5eecc8eac5a33295011dbd886e9ab757950544e",
       "d": "package",
       "m": "se",
       "t": [
@@ -7491,8 +7491,8 @@
     },
     {
       "p": "THlib/se/se_opshow.wav",
-      "n": 7706,
-      "h": "cfb72475e4c9162282395b1056cd4ec6a7327dcbfa0e874c9a688c669a36ee56",
+      "n": 74916,
+      "h": "455b5f9435251b047d8c7365c4d5ad06a4b9888cfd436466123fc8dd27e7f88e",
       "d": "package",
       "m": "se",
       "t": [
@@ -7502,8 +7502,8 @@
     },
     {
       "p": "THlib/se/se_option.wav",
-      "n": 9321,
-      "h": "4d8057c903a5bc3f2624168eae020500bc4dced5b55628c12064c5db528b43bd",
+      "n": 105820,
+      "h": "24b25815396d678e1acbe65093bf42390ba92006809844456b7c159839e4a73e",
       "d": "package",
       "m": "se",
       "t": [
@@ -7513,8 +7513,8 @@
     },
     {
       "p": "THlib/se/se_pause.wav",
-      "n": 18902,
-      "h": "9492712d81603f7d2d37183468a1f0fc7032eb76d590666cd55382202f3139c0",
+      "n": 267244,
+      "h": "c9805541e0b5461b36f7a04f61f2651df9815f6d851c5e003b3c7b08766c5fda",
       "d": "package",
       "m": "se",
       "t": [
@@ -7524,8 +7524,8 @@
     },
     {
       "p": "THlib/se/se_pin00.wav",
-      "n": 8865,
-      "h": "8548b46f712cb60e9695782be1643d4cdc61aa887d90c44ceccce0bf70b98647",
+      "n": 35410,
+      "h": "99ddb5329f5f825a8a32dfff743274ca20cc851cd904cb2f36f4ec0b1e18b8ff",
       "d": "package",
       "m": "se",
       "t": [
@@ -7535,8 +7535,8 @@
     },
     {
       "p": "THlib/se/se_piyo.wav",
-      "n": 11124,
-      "h": "be1ea9b343fb2cd3cd11f95a7530c18f54a138dbc84a85030c9881d5d09f1e6f",
+      "n": 55590,
+      "h": "e1a293ccc48c6ad696c4cdeb82a36746b681afb79751a23400f0047026382ebf",
       "d": "package",
       "m": "se",
       "t": [
@@ -7546,8 +7546,8 @@
     },
     {
       "p": "THlib/se/se_pldead00.wav",
-      "n": 19489,
-      "h": "43f281c109b6443f51e7992a7284980141d174b7970128f390bd3f1bb730dbec",
+      "n": 243212,
+      "h": "670a9d4e16f76a7bf92c4807b8435fa1746937baa946bbe9b9218216a36e9501",
       "d": "package",
       "m": "se",
       "t": [
@@ -7557,8 +7557,8 @@
     },
     {
       "p": "THlib/se/se_pldead01.wav",
-      "n": 21783,
-      "h": "84967d7e43a8238a1a09c17f1fd71f9a7a9814c5a5b3d6d31b2eb2527461ac35",
+      "n": 150900,
+      "h": "c6d0234aaf8e9ddc7e4dce892aed0f4c67387b33585514036aad534b8375f453",
       "d": "package",
       "m": "se",
       "t": [
@@ -7568,8 +7568,8 @@
     },
     {
       "p": "THlib/se/se_plst00.wav",
-      "n": 5602,
-      "h": "3291e14314a7b7847aa1069e35f9168d0ad7cce798029eba9d9ea667d7037ed2",
+      "n": 28396,
+      "h": "e2fc6f79f19b045618e37c34e4ad89cddac0c86a938d1bc506cb519418e93562",
       "d": "package",
       "m": "se",
       "t": [
@@ -7579,8 +7579,8 @@
     },
     {
       "p": "THlib/se/se_power0.wav",
-      "n": 18459,
-      "h": "b8f62a3c98cbb32b4956ce751df6af275c74521e1d731722bdb1b76ec64482e2",
+      "n": 349668,
+      "h": "12505a5d8358cfab79b4d3f8a5531281d6427494ed51a1d674565a13f3dccb2d",
       "d": "package",
       "m": "se",
       "t": [
@@ -7590,8 +7590,8 @@
     },
     {
       "p": "THlib/se/se_power02.wav",
-      "n": 24629,
-      "h": "ce8253a759e87f93621a3ebc66248a567866bad1426eac553005225cad9518fe",
+      "n": 425964,
+      "h": "c02e595e8c1b30abc1ace7e876337b5f2a020ba878c56c849879b408f4b55124",
       "d": "package",
       "m": "se",
       "t": [
@@ -7601,8 +7601,8 @@
     },
     {
       "p": "THlib/se/se_power1.wav",
-      "n": 18628,
-      "h": "fcdee039a7c8dcd8f03b24236194b320e441f015288eb3197cfb53517b70b772",
+      "n": 242916,
+      "h": "f83b1dd8b40f6a3612aa49c5fbcdbdb2120acadaa059fc0a7861bf513ad0f290",
       "d": "package",
       "m": "se",
       "t": [
@@ -7612,8 +7612,8 @@
     },
     {
       "p": "THlib/se/se_power2.wav",
-      "n": 24629,
-      "h": "bbf0a0073b7d2e1e6fddb70ed3347a3218cc1d401e467497f16b1b3b4b284b8d",
+      "n": 425998,
+      "h": "58f770605273708c47ad632ebf5cf42dba5eef357718b076fece028fc815f48d",
       "d": "package",
       "m": "se",
       "t": [
@@ -7623,8 +7623,8 @@
     },
     {
       "p": "THlib/se/se_powerup.wav",
-      "n": 11963,
-      "h": "a1f54add7c18478eabe2deba8529e2d6c39cf8d1e30acf2b09dd7badf42eef82",
+      "n": 154220,
+      "h": "dd95e2e9bdb79870e355804e4b996a7ace06b00acefc799a5e3a7c9d2bbe2d10",
       "d": "package",
       "m": "se",
       "t": [
@@ -7634,8 +7634,8 @@
     },
     {
       "p": "THlib/se/se_powerup1.wav",
-      "n": 27297,
-      "h": "880002b0cc9dbbd187c56420a7e6da16277ded30681cfb196461171ccf382b2d",
+      "n": 367106,
+      "h": "8f371aa483160793834df66f54e978d6ff4812b619b72f4eb9e6f94b4abe2016",
       "d": "package",
       "m": "se",
       "t": [
@@ -7645,8 +7645,8 @@
     },
     {
       "p": "THlib/se/se_release.wav",
-      "n": 29486,
-      "h": "db186f3c231ff4318371dd7c49bf8b9e65b97889a59c9ab644980b1400f1a82c",
+      "n": 352924,
+      "h": "20617d84ce5a46817df55154e9672878cdef977d1d9e7f5ac04d46be65f50dcb",
       "d": "package",
       "m": "se",
       "t": [
@@ -7656,8 +7656,8 @@
     },
     {
       "p": "THlib/se/se_select00.wav",
-      "n": 4779,
-      "h": "a43fe06293d25a7eeb1e947bdafa65943997f71cd63c37626c7aedb984e00b18",
+      "n": 8796,
+      "h": "7fa55a605ae9566bf112229a014521dadf94e4e89ccf5dc6dbb8bdc8499455da",
       "d": "package",
       "m": "se",
       "t": [
@@ -7667,8 +7667,8 @@
     },
     {
       "p": "THlib/se/se_shutter.wav",
-      "n": 8879,
-      "h": "06fa45869374ea57c0c33f8813a7eaa49ffd297860d8ea24156d765af727b1af",
+      "n": 23248,
+      "h": "7a8642c9b439916d49eb38f55cb7af20abc003f78291ba94d51f077bc99b8f5c",
       "d": "package",
       "m": "se",
       "t": [
@@ -7678,8 +7678,8 @@
     },
     {
       "p": "THlib/se/se_slash.wav",
-      "n": 14922,
-      "h": "da68deef86e40562c75ded40987e8315c10a25c52d911e89275cf1f639f4c543",
+      "n": 218932,
+      "h": "0aec527e1d94489c2504e2a284c4e6b362fff057501b4b160520f5c069f8007e",
       "d": "package",
       "m": "se",
       "t": [
@@ -7689,8 +7689,8 @@
     },
     {
       "p": "THlib/se/se_tan00.wav",
-      "n": 11069,
-      "h": "43e47eda023c09f1225c2d2112d146e2e63fba1ebb15486118bb66b090410768",
+      "n": 120428,
+      "h": "889a1b0114f7d6cfa89bcd5bde2161b4883ca2b2cb71fda78e73563800b3a505",
       "d": "package",
       "m": "se",
       "t": [
@@ -7700,8 +7700,8 @@
     },
     {
       "p": "THlib/se/se_tan01.wav",
-      "n": 10246,
-      "h": "9de5d8dc638818ae2e56204adec469a50f139bec38d0d3f24d77e95916634f7e",
+      "n": 120428,
+      "h": "21031e7d805db1161756ab5c770c763953e548449258bcf4cd2e636453d3f5e4",
       "d": "package",
       "m": "se",
       "t": [
@@ -7711,8 +7711,8 @@
     },
     {
       "p": "THlib/se/se_tan02.wav",
-      "n": 9386,
-      "h": "12e086f0cce6d65da240eebb641beb53eb9c2e10f1515c42b359b8eb63b0ccaa",
+      "n": 93284,
+      "h": "d3ba7c99d927ba4d49b4709e4701a6d05354a8f77654a33b5fa1c250fc40cd5f",
       "d": "package",
       "m": "se",
       "t": [
@@ -7722,8 +7722,8 @@
     },
     {
       "p": "THlib/se/se_timeout.wav",
-      "n": 8959,
-      "h": "cd87451c01dbec90791926b732a06ad29210c62e4fc25a328aa6e09fedaf1669",
+      "n": 76908,
+      "h": "31df3a7cbfd53521f16077b78fe8ebf7b9ae072a716da456cddf18732bcad678",
       "d": "package",
       "m": "se",
       "t": [
@@ -7733,8 +7733,8 @@
     },
     {
       "p": "THlib/se/se_timeout2.wav",
-      "n": 9013,
-      "h": "d51ca8aaa74fb7e765836abcd555c80e6855b7112ec889d48edf76ee482a69a3",
+      "n": 76908,
+      "h": "a1ead3facfc8c99ae3168b155aab02986fbc2cf5385a41ea715c68261382a28c",
       "d": "package",
       "m": "se",
       "t": [
@@ -7744,8 +7744,8 @@
     },
     {
       "p": "THlib/se/se_ufo.wav",
-      "n": 27577,
-      "h": "8cb99c9ceddeb74f9260429bc986407fea92ea6b06b993c80494f5026f28207b",
+      "n": 176528,
+      "h": "aa928a4e1bd29b6dd02ebbfe6c6f87c7b41dc7dc2d72acb08a841d07e3462e5e",
       "d": "package",
       "m": "se",
       "t": [
@@ -7755,8 +7755,8 @@
     },
     {
       "p": "THlib/se/se_ufoalert.wav",
-      "n": 9253,
-      "h": "f7af51d2ea102d09bc272c2839d1b0b5e5363fd50c0766262b4ce0ba690f4532",
+      "n": 44228,
+      "h": "d7449a8d02f6075b8def89b02383bc1fc5101015555c883ba669c14c3e407049",
       "d": "package",
       "m": "se",
       "t": [
@@ -7766,8 +7766,8 @@
     },
     {
       "p": "THlib/se/se_warpl.wav",
-      "n": 9098,
-      "h": "16c3040558b39a0820f6775a16bdc91f2607a85dd07b2cb0dc081f8ab3fa62ad",
+      "n": 88244,
+      "h": "f2bbd628b2997f1e2296cb8b006abca3faf44e7e55152610f3108c4673bb6354",
       "d": "package",
       "m": "se",
       "t": [
@@ -7777,8 +7777,8 @@
     },
     {
       "p": "THlib/se/se_warpr.wav",
-      "n": 9098,
-      "h": "c9cc1bf00dac56409c36e794b26a00f51ae595efa58c00041558d2e3aeb08d64",
+      "n": 88244,
+      "h": "ff6df5c3b64b0f96998744c56f59a741f56947d22ee061143659777a60f56244",
       "d": "package",
       "m": "se",
       "t": [
@@ -7788,8 +7788,8 @@
     },
     {
       "p": "THlib/se/se_water.wav",
-      "n": 10652,
-      "h": "ea3ab9530ae2a6c4c9a2a28e33fe91a80f90a7433b2ef83a57ed5307ec6b9c79",
+      "n": 119196,
+      "h": "cbbb7aca0cbf6238bc9d0803d444cf92eb78ff43c0eb0b824212c51f688bb1a9",
       "d": "package",
       "m": "se",
       "t": [
@@ -7799,8 +7799,8 @@
     },
     {
       "p": "THlib/se/se_wolf.wav",
-      "n": 27469,
-      "h": "eb88fe44ecd89431225c3e9c8f7c7fc4b758d7d399c75cf63c367338a7797c13",
+      "n": 447106,
+      "h": "2ef04cd3a99970e98f301c8d0588ef63600708c063cefc1cfb19463f5b2ae97a",
       "d": "package",
       "m": "se",
       "t": [
@@ -9866,8 +9866,8 @@
     },
     {
       "p": "mod/GAME_L/th06.lua",
-      "n": 44660,
-      "h": "136a04dc181b58283664eb02b8194bd4bb2a775537fac71067565982adc9f320",
+      "n": 45370,
+      "h": "48c0e913241e3b9eb475bd8e0d0718dd29b705f20edfc2c2893bc5dddfbb3437",
       "d": "scripts",
       "m": "scripts",
       "t": [

@@ -45,7 +45,7 @@
     },
     "musicMounts": {
       "source": "package://music",
-      "note": "47 首 BGM 独立组件；loopStart/loopEnd 由 C 侧 LoadMusic 提供，WebAudio 按字节区间循环；音频原件已于 2026-11-19 就地压成 96kbps ogg"
+      "note": "47 首 BGM 独立组件；loopStart/loopEnd 由 C 侧 LoadMusic 提供，WebAudio 按字节区间循环；BGM 默认仍为 96kbps mono 压缩（SE 自 2026-11-22 起为原生 PCM 不压缩）。玩家可选导入「未压缩音乐包」，经 resources 命令写路径指针覆写同路径（优先级高于本清单），不重建 generation；格式见 docs/MUSIC_PACK.md"
     }
   },
   "storage": {
