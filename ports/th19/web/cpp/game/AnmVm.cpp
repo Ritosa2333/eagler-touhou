@@ -46,7 +46,9 @@ float AnmVm::rand_unit(bool primary){
     traceOpeningDraw(2,nullptr,primary); return (primary?primary_animation_random:animation_random).unit();
 }
 float AnmVm::rand_signed_unit(float scale,bool primary){
-    traceOpeningDraw(3,nullptr,primary); return (primary?primary_animation_random:animation_random).signedUnit(scale);
+    traceOpeningDraw(3,nullptr,primary);
+    if(traceOpeningRng&&openingRngCount){u32 bits=0;std::memcpy(&bits,&scale,4);openingRngRows[openingRngCount-1][2]=bits;}
+    return (primary?primary_animation_random:animation_random).signedUnit(scale);
 }
 float AnmVm::read_var_f(i32 id) const{
     if(id==10010||id==10011||id==10012||id==10022)traceOpeningDraw(id,this);
@@ -193,7 +195,7 @@ void AnmVm::initialize_constructor(){
 void AnmVm::tick(const AnmVm* parent,bool advance_children){
     if(traceOpeningRng&&global_scripts){
         int sid=-1;for(const auto& sc:*global_scripts)if(sc.second.stream==stream){sid=sc.first;break;}
-        if((sid>=136&&sid<=140)||sid==107||sid==268||sid==108||sid==233||sid==232||sid==224||sid==41||sid==138||sid==135||sid==203||sid==201||sid==202||sid==93||sid==89||sid==265)
+        if(true)
             std::printf("ENEMYDBG {\"event\":\"queue-tick\",\"script\":%d,\"registration\":%u,\"parent\":%u,\"time\":%d,\"seed\":%u}\n",sid,registration,parent?parent->registration:0,time,random_checkpoint());
     }
 

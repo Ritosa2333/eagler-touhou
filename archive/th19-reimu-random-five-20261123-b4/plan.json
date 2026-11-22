@@ -1,0 +1,34 @@
+{
+  "frames": 36000,
+  "seeds": [
+    [
+      1902381735,
+      2035507924
+    ],
+    [
+      532509054,
+      1821033990
+    ],
+    [
+      425419481,
+      222538040
+    ],
+    [
+      1270624006,
+      8188724
+    ],
+    [
+      1912461113,
+      1907770971
+    ]
+  ],
+  "wasmSha256": "e8aabda62bd5aa6829c3fea82fb3d520ecc6c05d7a9b91e0518787bf4fe176b7",
+  "runtime": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\reimu-rebaseline-20261121\\runtime-reimu-phase-specific-circle-center",
+  "matchup": "Reimu vs Reimu CPU vs CPU",
+  "roundTarget": 3,
+  "selection": "fresh secrets random; exclude all previous Reimu plan primary and secondary values",
+  "attempt": 1,
+  "sourceChangeDuringBatch": false,
+  "previousBatch": "reimu-random-five-20261123-b3",
+  "criterion": "Five fresh seeds each36000 frames on unchanged build, no mechanism repair during batch; reviewed animation and minute neutral drift accepted."
+}

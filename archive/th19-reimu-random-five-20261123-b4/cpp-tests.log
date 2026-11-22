@@ -1,0 +1,4 @@
+2000 bullet slots, recycling, 15000 retired enemies, checkpoint, held-arrival HP/contact, feedback order and signed EX 100-slot release: PASS
+{'test': 'world-limits', 'exitCode': 0}
+PASS: 234 native float bit patterns through RNG and ANM; rollback and bounded draws
+{'test': 'anm-native-random', 'exitCode': 0}

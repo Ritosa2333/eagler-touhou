@@ -1,0 +1,21 @@
+{
+  "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-random-five-20261123-b4\\th19-web-1KcCfa\\report.json",
+  "wasmSha256": "e8aabda62bd5aa6829c3fea82fb3d520ecc6c05d7a9b91e0518787bf4fe176b7",
+  "nativeMissingStateFrames": [
+    17888
+  ],
+  "verifiedTransitionGaps": [
+    17888
+  ],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 35999,
+  "bulletCoordinateTolerance": 0.001,
+  "maximumBulletCoordinateDifference": 2.8671722412109375,
+  "substantiveBulletDifferenceFrames": [
+    15771
+  ],
+  "status": "FAIL"
+}

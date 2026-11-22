@@ -1,0 +1,5 @@
+
+> docs:index
+> node tools/docs/check.mjs --write-index
+
+文档检查通过：扫描 601 份文档、21 个源码目录。

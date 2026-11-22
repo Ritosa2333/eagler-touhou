@@ -1,0 +1,42 @@
+{
+  "frames": 36000,
+  "seeds": [
+    [
+      1947031916,
+      1822106927
+    ],
+    [
+      934847293,
+      642019938
+    ],
+    [
+      29843503,
+      1680220473
+    ],
+    [
+      1842098775,
+      887253737
+    ],
+    [
+      1441054109,
+      479892208
+    ]
+  ],
+  "wasmSha256": "7e569098cf0e7b49b1eea21e4dcdd182dea945ffc20bccee5f87c7833101ac5f",
+  "bulletCoordinateTolerance": 0.001,
+  "matchup": "Reimu vs Reimu CPU vs CPU",
+  "selection": "secrets random primary and secondary; new batch",
+  "baselineWasmSha256": "b2ba8a58688a260845b1372e6eda9ef72c3035dfe57655a2ee062c14c457a559",
+  "roundTarget": 3,
+  "completionCriterion": {
+    "framesPerSeed": 36000,
+    "currentBatch": "Repair and validate these five fixed seeds.",
+    "afterCurrentBatch": "Test five fresh random seeds; repeat after fixes until a whole fresh batch passes on the first attempt using one unchanged build.",
+    "ignore": "Animation-only differences and reviewed mechanism-neutral minute coordinate drift.",
+    "evidence": "Keep strict reports and cumulative-frame left-web/right-native screenshots.",
+    "push": "Only on explicit user request.",
+    "workspace": "D drive only."
+  },
+  "fixedBatchPassed": true,
+  "freshFirstPass": false
+}

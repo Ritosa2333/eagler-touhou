@@ -36,9 +36,9 @@ struct ChargeAttack {
     // Marisa updates the controller after ordinary fire checks 0x417210.
     // The charge manager sees the idle controller on that final update.
     bool busy_for_charge(bool versus)const{
-        return frame>=0&&!(delayed_versus_beam(versus)&&frame==end_frame());
+        return frame>=0&&!((delayed_versus_beam(versus)||(versus&&character==0&&group==10))&&frame==end_frame());
     }
-    void tick(bool versus=false){if(frame>=0&&++frame>=end_frame()+int(delayed_versus_beam(versus)))frame=-1;}
+    void tick(bool versus=false){if(frame>=0&&++frame>=end_frame()+int(delayed_versus_beam(versus)||(versus&&character==0&&group==10)))frame=-1;}
 };
 // Ran 0x419ae0 / 0x419c00: timed power state, independent of shot clock.
 struct RanSkill {

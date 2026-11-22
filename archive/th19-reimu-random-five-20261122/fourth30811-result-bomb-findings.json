@@ -1,0 +1,56 @@
+{
+  "seed": 1842098775,
+  "continuousFrame": 30811,
+  "round": 2,
+  "roundFrame": 13177,
+  "lastMatchingSecondary": 30810,
+  "nativeCapture": "work/reimu-rebaseline-20261121/diagnostics-rng-round2-seed1842098775-local13177/present-3wjiukko",
+  "webCapture": "web-captures-reimu-fourth30811-gauge-player-registration/th19-web-h2D6yO",
+  "drawCounts": {
+    "nativeSecondary": 2581,
+    "webSecondary": 2486,
+    "delta": -95
+  },
+  "bullet": {
+    "webId": 5164,
+    "kind": 11,
+    "color": 2,
+    "position": [
+      -84.4385757,
+      233.783005
+    ],
+    "webCancels": [
+      {
+        "state": 1,
+        "source": "existing Reimu Bomb circle, radius150.212555"
+      },
+      {
+        "state": 3,
+        "source": "result clear"
+      }
+    ],
+    "nativeCancels": [
+      {
+        "state": 1,
+        "caller": "0x4ee0bc",
+        "source": "result clear"
+      }
+    ]
+  },
+  "firstExtraWebCancellationRoot": {
+    "script": 218,
+    "registration": 683967,
+    "beforeSeed": 1022504068
+  },
+  "roundBoundaryEvidence": {
+    "firstRoundFinalSecondaryWeb": 1331641500,
+    "firstRoundFinalSecondaryNative": 1331641500,
+    "round2InitialSecondaryWeb": 479151208,
+    "round2InitialSecondaryNative": 479151208,
+    "round3InitialSecondaryWeb": 674827422,
+    "round3InitialSecondaryNative": 94370742
+  },
+  "repair": "Suppress Bomb gameplay area registration at result entry; preserve existing visual updates.",
+  "scope": "Fix only the divergence that persists into the round3 wave table; first-round animation-only divergences resynchronize before round2.",
+  "sourceCorrection": "Radius150.212555 identifies BombInf; Reimu C2 uses integral clear radii. Unrelated C2-stop candidate was rejected."
+}

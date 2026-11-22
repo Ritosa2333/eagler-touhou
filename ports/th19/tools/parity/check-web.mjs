@@ -44,6 +44,18 @@ const nativePath = resolve(capture, "native-present.jsonl");
 const port = Number(process.env.TH19_CAPTURE_PORT ?? 18439);
 const {rows: nativeRows, sha256: nativeTraceSha256, incompleteTail: incompleteNativeTail} =
   await readNativeTrace(nativePath);
+// Loading advances presentation animations while the round battle clock stays zero.
+// Preserve that recorded cadence rather than injecting checkpoint RNG states.
+const roundLoadingTicks = {};
+for (const row of nativeRows) {
+  if (!continuous || !Number.isInteger(row.segment) || row.segment < 1 || row.frame !== 0) continue;
+  const key = row.segment + 1;
+  const span = roundLoadingTicks[key] ?? {first:row.present,last:row.present};
+  span.last = row.present;
+  roundLoadingTicks[key] = span;
+}
+for (const [round, span] of Object.entries(roundLoadingTicks))
+  roundLoadingTicks[round] = span.last - span.first;
 const nativeFrames = new Map();
 const nativeFramesWithMultipleRngStates = new Set();
 let previousNativeFrame;
@@ -89,7 +101,7 @@ assert.equal(leftRules, rightRules, "Different per-side match rules are unsuppor
 const cardMode = (common >> 6) & 3;
 assert.ok(cardMode === 0 || (cardMode === 3 && selection.cards?.length === 2), "Missing verified card selection");
 const fixture = {difficulty: selection.difficulty, characters: selection.characters,
-  cardMode, cards: cardMode ? selection.cards : [0, 0], lives: (leftRules & 7) + 1, timeRule: common & 7};
+  roundTarget: ((common >> 4) & 3) + 1, cardMode, cards: cardMode ? selection.cards : [0, 0], lives: (leftRules & 7) + 1, timeRule: common & 7};
 const reverse = fixture.characters[0] === 1 && fixture.characters[1] === 0;
 if (process.argv.includes("--reverse")) assert.ok(reverse, "Expected Marisa on the left and Reimu on the right");
 const runtime = resolve(process.env.TH19_CPU_RUNTIME ?? fileURLToPath(new URL("../../runtime/", import.meta.url)));
@@ -141,7 +153,15 @@ async function inGame(action, payload) {
     page.on("console", message => {const line=message.text();if(line.startsWith("ENEMYDBG "))enemyDebug.push(JSON.parse(line.slice(9)));});
     page.on("pageerror", error => errors.push(error.message));
     await page.setViewport({width: 1280, height: 960});
-    await page.goto(`http://127.0.0.1:${port}/tests/harness.html?autolaunch=0`, {waitUntil: "domcontentloaded", timeout: 180000});
+    for (let navigationAttempt = 0; ; navigationAttempt++) {
+      try {
+        await page.goto(`http://127.0.0.1:${port}/tests/harness.html?autolaunch=0`, {waitUntil: "domcontentloaded", timeout: 180000});
+        break;
+      } catch (error) {
+        if (navigationAttempt >= 2 || !String(error).includes("net::ERR_ABORTED")) throw error;
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
+    }
     await page.waitForFunction(() => window.__TH19_HARNESS.configured, {timeout: 60000});
     await page.evaluate(captureSeed => window.__TH19_HARNESS.command("launch", {captureSeed}), nativeRng[0]);
     await page.evaluate(() => {
@@ -160,20 +180,37 @@ async function inGame(action, payload) {
         return copy.toDataURL();
       };
     });
+    if (action === runCapture && (continuous || through > 18000)) {
+      // Keep the full battle in the renderer; transfer bounded chunks through CDP.
+      // A single multi-million-bullet response can time out after the last tick.
+      const value = await page.evaluateHandle(action, payload);
+      try {
+        const {resultCount, ...metadata} = await value.evaluate(({results, ...rest}) =>
+          ({...rest, resultCount: results.length}));
+        const results = [];
+        for (let offset = 0; offset < resultCount; offset += 128) {
+          results.push(...await value.evaluate(data => data.results.splice(0, 128)));
+        }
+        return {results, ...metadata};
+      } finally { await value.dispose(); }
+    }
     return await page.evaluate(action, payload);
   } finally {
-    await context.close();
+    let timer;
+    await Promise.race([context.close(), new Promise(resolve => {
+      timer = setTimeout(resolve, 10000);
+    })]).finally(() => clearTimeout(timer));
   }
 }
 
-function runCapture({diagnosticRoundSeed, seed, otherSeed, frames, visualFrames, fixture, rollbackWindow, traceWindow, cpuTraceWindow, fastCapture, bulletFrames, continuous, stopOnRngDifference, primaryRngOnly, expectedRng}) {
+function runCapture({captureAttackRanks, roundLoadingTicks, diagnosticRoundSeed, seed, otherSeed, frames, visualFrames, fixture, rollbackWindow, traceWindow, cpuTraceWindow, fastCapture, bulletFrames, continuous, stopOnRngDifference, primaryRngOnly, expectedRng}) {
   const win = window.__TH19_HARNESS.frame.contentWindow;
   const c = win.__th19Runtime.core;
   c._th19_loop_stop();
   c._th19_loop_pause(1);
   c._th19_test_ticks(180); // Complete the normal loading animation before reseeding.
   if (c._th19_capture_cpu_begin(seed, otherSeed, fixture.difficulty, ...fixture.characters,
-      fixture.lives, fixture.timeRule, fixture.cardMode, ...fixture.cards) !== 1) throw Error("CPU match failed to start");
+      fixture.lives, fixture.timeRule, fixture.cardMode, ...fixture.cards, fixture.roundTarget) !== 1) throw Error("CPU match failed to start");
   if (cpuTraceWindow && c._th19_capture_cpu_trace) c._th19_capture_cpu_trace(...cpuTraceWindow);
   const canvas = win.document.querySelector("canvas");
   const screenshots = new Set(visualFrames);
@@ -197,6 +234,10 @@ function runCapture({diagnosticRoundSeed, seed, otherSeed, frames, visualFrames,
       if (fast) c._th19_capture_step(present && elapsed === frame - 1);
       else c._th19_test_ticks(1);
       let state = readState();
+      if(continuous&&state[1]>previousWebState[1]&&roundLoadingTicks[state[1]]!==undefined){
+        if(!c._th19_capture_round_loading_ticks||!c._th19_capture_round_loading_ticks(roundLoadingTicks[state[1]]))
+          throw Error("Native loading presentation cadence rejected");
+      }
       if(diagnosticRoundSeed&&state[1]>previousWebState[1]){
         if(!c._th19_capture_round_wave_seed(diagnosticRoundSeed))throw Error("Diagnostic round table seed rejected");
         state=readState();
@@ -239,9 +280,11 @@ function runCapture({diagnosticRoundSeed, seed, otherSeed, frames, visualFrames,
     const row = readState();
     const damageOffset = traceRng ? c._th19_test_player_damage(0) / 4 : 0;
     const playerDamage = traceRng ? Array.from(c.HEAP32.subarray(damageOffset, damageOffset + 12)) : undefined;
+    const rankOffset = captureAttackRanks ? c._th19_test_gameplay_parity(0) / 4 : 0;
+    const attackRanks = captureAttackRanks ? Array.from(c.HEAP32.subarray(rankOffset, rankOffset + 4)) : undefined;
     const bulletPositions = sampleBullets.has(frame) ? [readBullets(0), readBullets(1)] : undefined;
     results.push({
-      frame, openingDraws, homingContacts, playerDamage, playedFrames: row[0], round: row[1], lives: row.slice(2, 4),
+      frame, openingDraws, homingContacts, playerDamage, attackRanks, playedFrames: row[0], round: row[1], lives: row.slice(2, 4),
       controls: row.slice(4, 6), enemies: row.slice(6, 8), bullets: row.slice(8, 10),
       cards: row.slice(30, 32), positionBits: row.slice(32, 36),
       bulletPositions,
@@ -433,6 +476,7 @@ const report = {
   fixture,
   continuous,
   diagnosticRoundWaveSeed:diagnosticRoundSeed,
+  nativeRoundLoadingTicks:roundLoadingTicks,
   initialAnimationRng: [nativeRng[0], nativeRng[2]]
 };
 try {
@@ -440,7 +484,8 @@ try {
   server = startServer({routes:[{prefix:"/runtime/",directory:runtime},{prefix:"/",directory:root}],host:"127.0.0.1",port});
   await once(server, "listening");
   const {results: seeded, impactRollback} = await inGame(runCapture, {
-    diagnosticRoundSeed, fixture, seed: nativeRng[0], otherSeed: nativeRng[2], frames, traceWindow, cpuTraceWindow, continuous,
+    captureAttackRanks: process.env.TH19_CAPTURE_ATTACK_RANKS === "1",
+    roundLoadingTicks, diagnosticRoundSeed, fixture, seed: nativeRng[0], otherSeed: nativeRng[2], frames, traceWindow, cpuTraceWindow, continuous,
     bulletFrames, stopOnRngDifference, primaryRngOnly: stopOnPrimaryRngDifference,
     expectedRng: stopOnRngDifference ? Object.fromEntries([...nativeFrames].map(([frame,row]) => [frame,[row.rng[0],row.rng[2]]])) : null,
     rollbackWindow: requestedRollback ?? (openingOnly ? null : [124, 128]), fastCapture: through !== null,

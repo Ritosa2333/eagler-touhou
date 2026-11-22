@@ -40,6 +40,13 @@ struct ChargeGauge {
         constexpr int opponentRanks[] = {0, 0, 4, 4};
         ex_level = boss_level = side == 1 ? opponentRanks[std::clamp(difficulty, 0, 3)] : 0;
     }
+    // 0x549940 / 0x5499aa: a miss raises only ranks below three.
+    void recover_low_ranks_on_death(){
+        ex_level=std::clamp(ex_level,0,7);
+        boss_level=std::clamp(boss_level,0,7);
+        if(ex_level<3)++ex_level;
+        if(boss_level<3)++boss_level;
+    }
     int level() const {int n=0;for(int v:thresholds)if(charge>=v)++n;return n;}
     void tick(bool down,bool attack_busy=false,bool versus=false){
         energy=std::clamp(energy,0,2500);

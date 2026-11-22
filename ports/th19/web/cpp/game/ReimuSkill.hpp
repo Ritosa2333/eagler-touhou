@@ -11,7 +11,7 @@ struct ReimuSkill {
     bool active()const{return frame<105;}
     float orbitRadius()const{
         // Native mode 1 is t^2; the second 22-frame interpolation starts at 22.
-        float t=std::clamp(float(frame<22?frame:frame-22)/22.f,0.f,1.f);
+        float t=std::clamp(float(frame<22?frame+1:frame-21)/22.f,0.f,1.f);
         return frame<22?64*t*t:64*(1-t*t);
     }
     std::array<Point,3> centers()const{

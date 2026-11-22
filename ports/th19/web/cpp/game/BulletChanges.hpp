@@ -35,7 +35,7 @@ struct BulletChanges {
     std::array<Action,10> actions{};
     float redirect_speed=0,redirect_angle=0;int redirects=0;
     int cursor=0;bool active=false;
-    int animation_interrupt=-1,native_timer=-1;
+    int animation_interrupt=-1,cancel_lock=-1;
     float speed=0,angle=0;
     int begin(float initialSpeed,float initialAngle,float x=0,float y=224,float player_x=0,float player_y=400){
         speed=initialSpeed;angle=initialAngle;cursor=0;actions={};immediate_events.clear();active=false;return advance(x,y,player_x,player_y);
@@ -51,7 +51,7 @@ struct BulletChanges {
             if(c.concurrent==0&&blocking)break;
             if(c.flags==0x400||c.flags==0x200||c.flags==0x800||c.flags==0x100000){immediate_events.push_back(c);++cursor;continue;}
             if(c.flags==2){animation_interrupt=static_cast<short>(c.integers[0])+7;++cursor;continue;}
-            if(c.flags==0x80){native_timer=c.integers[0];++cursor;continue;}
+            if(c.flags==0x80){cancel_lock=c.integers[0];++cursor;continue;}
             const int slot=c.flags==0x80000?9:c.flags==0x40000002u?8:c.flags==1?7:c.flags==4?0:c.flags==8?1:c.flags==0x40?3:c.flags==0x10?2:c.flags==0x200000?5:c.flags==0x100?6:4;
             // 0x4f1460 tests the low active-mask against the raw opcode.
             // High-bank wait can be replaced when concurrent is nonzero.

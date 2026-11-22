@@ -1,0 +1,77 @@
+{
+  "observerSha256": "6866b8cd28f9040901a04e2b317fa146d94e41c5467ccc0ff8c24b59a973e9e1",
+  "originalExecutableSha256": "804107d9033601f69c251a5e6e449bd88d9add36591129db394765295893bac6",
+  "testExecutableSha256": "c1babdf510467e3305f03944ecc6a98af37ffd3c40ab5ddf7cf9df7c24659229",
+  "testExecutableChange": "Private Win32 singleton mutex string",
+  "testConfigSha256": "04c7991dbddf2ab9cb097cb92b5e70f7cef1ce4ad982e4ae64ec4122be26feea",
+  "replayFixtureSha256": "f099b312863e0847b1626714c616e296f65036a5161f809818e6dd788848abd2",
+  "boundary": "D3D9 pre-Present",
+  "replayPlaybackVerified": false,
+  "cpuFixtureSubmitted": true,
+  "cpuDriverSha256": "999168f54b4b6ab8df60377d02f67a54a626af9ed8f90ec4f6f6b0300df08cab",
+  "cpuSecondRng": 137134495,
+  "bulletPositions": true,
+  "cpuDebug": false,
+  "displayModeFallbackRequested": true,
+  "softwareD3d9": true,
+  "silentAudioRequested": true,
+  "inputResetSkipRequested": true,
+  "stateOnlyRequested": false,
+  "renderFromFrame": null,
+  "renderImageFramesOnly": true,
+  "stopAfterTicks": 36025,
+  "imageFrames": [
+    35999,
+    36000
+  ],
+  "cpuStartDelay": 30,
+  "exitedBeforeDeadline": false,
+  "processExitCode": 1,
+  "battlePresentSamples": 36772,
+  "lastOpeningFrame": 15978,
+  "lastContinuousFrame": 36040,
+  "rules": [
+    36,
+    9,
+    9
+  ],
+  "displayModeFallbackUsed": false,
+  "silentAudioActive": true,
+  "inputResetSkipped": true,
+  "backendStages": [
+    {
+      "backend": "warp-d3d9on12",
+      "stage": "factory",
+      "result": 0
+    },
+    {
+      "backend": "warp-d3d9on12",
+      "stage": "warp-adapter",
+      "result": 0
+    },
+    {
+      "backend": "warp-d3d9on12",
+      "stage": "warp-device",
+      "result": 0
+    },
+    {
+      "backend": "warp-d3d9on12",
+      "stage": "d3d9",
+      "result": 0
+    }
+  ],
+  "fastStateActive": true,
+  "cpuSelection": {
+    "mode": 2,
+    "matchup": 2,
+    "difficulty": 3,
+    "characters": [
+      0,
+      0
+    ],
+    "cards": [
+      0,
+      0
+    ]
+  }
+}

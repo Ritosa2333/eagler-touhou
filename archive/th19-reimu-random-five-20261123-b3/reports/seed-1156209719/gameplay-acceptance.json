@@ -1,0 +1,34 @@
+{
+  "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-regression-1156209719\\th19-web-F0bsXA\\report.json",
+  "wasmSha256": "e8aabda62bd5aa6829c3fea82fb3d520ecc6c05d7a9b91e0518787bf4fe176b7",
+  "nativeMissingStateFrames": [
+    18465
+  ],
+  "verifiedTransitionGaps": [
+    18465
+  ],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 35999,
+  "bulletCoordinateTolerance": 0.001,
+  "maximumBulletCoordinateDifference": 0.00115966796875,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS",
+  "strictStatus": "FAIL",
+  "strictSubstantiveBulletDifferenceFrames": [
+    15151,
+    15152,
+    15153,
+    15154,
+    15155,
+    15156,
+    15157,
+    15158,
+    15159,
+    15160
+  ],
+  "acceptedMinorCoordinateDrift": true,
+  "acceptanceNote": "User-authorized mechanism-neutral drift under0.002 pixels. Strict result preserved; full gameplay and counts agree."
+}

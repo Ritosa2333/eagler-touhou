@@ -1,0 +1,18 @@
+{
+  "nodeTests": {
+    "passed": 56,
+    "failed": 0
+  },
+  "cppWorldLimits": "PASS",
+  "nativeRandomFloatVectors": {
+    "passed": 234
+  },
+  "runtimeSha256": "e8aabda62bd5aa6829c3fea82fb3d520ecc6c05d7a9b91e0518787bf4fe176b7",
+  "normalAndMultiplayer": "Shared C++ inputs and identical packaged wasm; full36000 CPU comparison covers normal VS mode",
+  "documentationChecks": {
+    "index": "PASS:601 documents,21 source directories",
+    "links": "PASS:601 documents,21 source directories"
+  },
+  "observerSourceSha256": "5c0c7321c232a4897317d5e118b2b77f72f7b773f45b549f1e4cf4c418132dbc",
+  "verifierSourceSha256": "9dc9b7effea5033f4d782a0fba8bf861b0a6212330e8b4d6a6ee2b1e840e83a5"
+}

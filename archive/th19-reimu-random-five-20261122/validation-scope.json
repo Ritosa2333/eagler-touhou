@@ -1,0 +1,17 @@
+{
+  "status": "fixed batch5/5 gameplay accepted",
+  "framesPerSeed": 36000,
+  "wasmSha256": "7e569098cf0e7b49b1eea21e4dcdd182dea945ffc20bccee5f87c7833101ac5f",
+  "freshFirstPass": false,
+  "nextBatch": "reimu-random-five-20261122-b2",
+  "ignore": "Animation-only differences and reviewed mechanism-neutral minute coordinate drift; strict reports preserved.",
+  "repairs": [
+    "Per-seat and per-bullet contact/graze ordering",
+    "Player death-root synchronous construction",
+    "Result-forced Reimu C2 visual rejection",
+    "ECL independent-effect registration before enemy ANM updates",
+    "New Bomb gauge registration after early-circle root registration in the player callback",
+    "Suppress Bomb clearing/damage area registration on result entry"
+  ],
+  "githubPushed": false
+}

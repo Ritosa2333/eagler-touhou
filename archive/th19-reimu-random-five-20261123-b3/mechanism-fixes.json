@@ -1,0 +1,31 @@
+{
+  "wasmSha256": "e8aabda62bd5aa6829c3fea82fb3d520ecc6c05d7a9b91e0518787bf4fe176b7",
+  "runtime": "runtime-reimu-phase-specific-circle-center",
+  "oneShotFreshBatch": false,
+  "fixedBatchResult": "5/5 each cumulative36000",
+  "fixes": [
+    {
+      "mechanism": "Low attack rank recovery on death",
+      "native": "549940/5499aa clamp EX/Boss0..7 then increment only below3",
+      "evidence": "first seed30388 low EX rank recovery; fixed first36000"
+    },
+    {
+      "mechanism": "Reimu skill circle center precision by phase",
+      "orbit": "Before45: retain original floating centers; second30634 needs4HP hit",
+      "expanded": "At45and later: preserve centi-grid center; earlier934 seed34415 needs1HP hit to die34431",
+      "validation": "Both targeted seeds strict36000 PASS on e8aabda6; current5/5samebuild complete"
+    },
+    {
+      "mechanism": "Flight and attack callbacks per sender",
+      "native": "right sender before left; within sender existing EX arrivals before automatic and pending player charge initialization",
+      "evidence": "third8927,third29031,b2fourth25194"
+    },
+    {
+      "mechanism": "Reimu shot birth arithmetic order",
+      "native": "54ece5: subtract velocity from row offset, add emitter; birth update then translates/grid floors",
+      "evidence": "third31668 native shotX17.92 vsweb17.93 changed collision,14da9b5 RNG draws; strict36000 fixed"
+    }
+  ],
+  "screenshots": "../th19-reimu-rebaseline-20261121/screenshots/",
+  "regression": "Same e8aa build current5/5complete; oldb2five and earlierfive revalidation running, earlier934 targetedsameSHA alreadyPASS."
+}

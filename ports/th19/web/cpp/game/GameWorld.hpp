@@ -278,8 +278,9 @@ struct Bullet {
     u32 id=0,native_slot=0;
     float x=0,y=0,vx=0,vy=0;
     float launch_speed=0;
+    std::optional<std::array<float,2>> cancel_halfstep_origin;
     i32 sprite=0,kind=0;
-    int color=0;bool reflected=false,scripted=false,motion_advanced=false;
+    int color=0;bool reflected=false,scripted=false,motion_advanced=false,defer_animation_update=false;
     int age=0;u32 last_tsukasa_id=0; // Bullet+104c / +1070; preserved across morphs.
     BulletChanges changes;int change_sound=-1;
     BulletGraze graze;float graze_x=0,graze_y=0;u32 graze_tint=0;
@@ -326,8 +327,14 @@ public:
     Enemy& spawn_enemy(const std::string& sub_name,float x,float y,i32 life,i32 item,i32 score,
                       const std::vector<const EclProgram*>* source_programs=nullptr);
     // 0x50d8a0/0x50d800: receiving world, sender program set, life200.
-    bool receive_charge_attack(int tier,float x,float y,const std::vector<const EclProgram*>& source);
+    bool receive_charge_attack(int tier,float x,float y,const std::vector<const EclProgram*>& source,bool defer_initial=false);
+    void initialize_pending_charge_attacks();
+    struct PendingChargeInitialization {u32 id;bool late_registration;};
+    std::vector<PendingChargeInitialization> pending_charge_initializations;
     bool fire_bullets(const LaserShooter& shooter,float origin_x,float origin_y);
+    bool late_attack_registration=false;
+    std::vector<std::array<float,3>> registered_bomb_circles;
+
     // Retail 1.10c BulletInf clamps its pool to 0x7d0 (0x4edfd3 / 0x4ee194).
     static constexpr size_t bullet_capacity=2000;
     u32 dropped_bullets=0;
@@ -437,7 +444,7 @@ public:
     void tick_vs_death_chain_cancels();
     void cancel_death_chain_bullets(const DeathChain& chain,float radius,int frame);
     void finish_laser_graze(bool player_contacts,float player_radius);
-    void finish_bullet_graze(bool player_contacts,float player_radius,bool cancel_contacts=false,u32 shield_contact=0);
+    void finish_bullet_graze(bool player_contacts,float player_radius,bool cancel_contacts=false,u32 shield_contact=0,const std::function<bool(Bullet&)>& contact={});
     void cancel_contact_bullet(Bullet& bullet);
     std::vector<DeathChain> death_chains,death_chain_visuals; // one-shot ANM creation events
     std::vector<BulletCancel> bullet_cancels;

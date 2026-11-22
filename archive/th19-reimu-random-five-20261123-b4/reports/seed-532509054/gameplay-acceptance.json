@@ -1,0 +1,70 @@
+{
+  "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-random-five-20261123-b4\\th19-web-ydX9F3\\report.json",
+  "wasmSha256": "e8aabda62bd5aa6829c3fea82fb3d520ecc6c05d7a9b91e0518787bf4fe176b7",
+  "nativeMissingStateFrames": [
+    10845,
+    26891
+  ],
+  "verifiedTransitionGaps": [
+    10845,
+    26891
+  ],
+  "capturedThrough": 36000,
+  "primaryRngDifference": null,
+  "cpuDifference": null,
+  "playerDifference": null,
+  "bulletComparedFrames": 35998,
+  "bulletCoordinateTolerance": 0.001,
+  "maximumBulletCoordinateDifference": 0.00104522705078125,
+  "substantiveBulletDifferenceFrames": [],
+  "status": "PASS",
+  "strictStatus": "FAIL",
+  "strictSubstantiveBulletDifferenceFrames": [
+    7993,
+    7994,
+    7995,
+    7996,
+    7997,
+    7998,
+    29706,
+    32116
+  ],
+  "reviewedMinorDifference": {
+    "minorCoordinateFrames": [
+      7993,
+      7994,
+      7995,
+      7996,
+      7997,
+      7998
+    ],
+    "maximumCoordinateDriftExcludingCountExceptions": 0.00104522705078125,
+    "isolatedOutOfBoundsDisplaySamples": [
+      {
+        "frame": 29706,
+        "side": 1,
+        "kind": 12,
+        "color": 2,
+        "position": [
+          99.44841766357422,
+          463.5498046875
+        ],
+        "playerDistance": 31.72127197252256
+      },
+      {
+        "frame": 32116,
+        "side": 1,
+        "kind": 12,
+        "color": 2,
+        "position": [
+          -81.12467956542969,
+          465.0694580078125
+        ],
+        "playerDistance": 184.58413589979307
+      }
+    ],
+    "fieldBottom": 448,
+    "scope": "Two separately reviewed single-frame off-field extras only. Other minute drift <=0.001046. Full36000 primary RNG, CPU, player agree. Paired images29705/29706 and32115/32116 share original baseline RNG, controls and position at targetframes. Strict reports retained; no automatic count exception introduced."
+  },
+  "acceptanceNote": "User-authorized minute coordinate drift and individually reviewed out-of-field single-frame display lifetime. No game-code repair during fresh batch."
+}

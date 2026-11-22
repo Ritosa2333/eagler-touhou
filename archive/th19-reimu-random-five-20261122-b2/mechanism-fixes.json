@@ -1,0 +1,21 @@
+{
+  "runtime": "runtime-reimu-late-birth-slot-flag",
+  "wasmSha256": "1f29adf2ff0a55e91a7e3b2031e95544ffef883830afb1111d8a4b45501febb7",
+  "fixes": [
+    "VS CPU heading uses double atan2 of actual velocity; perceived speed retains descriptor value.",
+    "VS equal-distance CPU targets select newest enemy first.",
+    "Bullet aim uses double atan2 after float coordinate subtraction.",
+    "Existing Reimu C2 rejects result entry before interrupt, cancellation and damage, matching0x53b3b8.",
+    "Both CPU seats defer initial charge attack ECL until counter emission has drawn.",
+    "Late-registered bullets decide constructor animation and half-step from each recycled slot motion flag; late registration only defers manager visit."
+  ],
+  "repairedBatchComplete": true,
+  "freshOnePassAchieved": false,
+  "scope": "Five repaired seeds each36000 continuous frames. Coordinate-only drift under0.002 accepted only with full primary RNG, CPU, player and bullet-count agreement. Seed2086865480 has separately reviewed single-frame birth/cancel display exception2732. Strict reports retained.",
+  "screenshotsIndex": "../../../reimu-random-five-20261122-b2/screenshots.json",
+  "harness": [
+    "Chunk result transfer through CDP in128-frame batches.",
+    "Bound browser/context shutdown.",
+    "Retry only pre-game ERR_ABORTED navigation; mechanical failures remain failures."
+  ]
+}

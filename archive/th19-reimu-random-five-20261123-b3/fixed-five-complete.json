@@ -1,0 +1,167 @@
+{
+  "wasmSha256": "e8aabda62bd5aa6829c3fea82fb3d520ecc6c05d7a9b91e0518787bf4fe176b7",
+  "oneShotFreshBatch": false,
+  "results": [
+    {
+      "seed": 1807534175,
+      "secondary": 137134495,
+      "phase": "PASS",
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\reimu-random-five-20261123-b3\\native\\present-i3bcy3vq",
+      "nativeExitCode": 0,
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1807534175\\th19-web-zR5Tf4",
+      "strictValidationPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1807534175\\th19-web-zR5Tf4\\zero-gameplay-validation.json",
+      "attempt": 1,
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1807534175\\th19-web-zR5Tf4\\report.json",
+        "wasmSha256": "e8aabda62bd5aa6829c3fea82fb3d520ecc6c05d7a9b91e0518787bf4fe176b7",
+        "nativeMissingStateFrames": [
+          15979,
+          32526
+        ],
+        "verifiedTransitionGaps": [
+          15979,
+          32526
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35998,
+        "bulletCoordinateTolerance": 0.001,
+        "maximumBulletCoordinateDifference": 0.000946044921875,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1622985411,
+      "secondary": 1022879523,
+      "phase": "PASS",
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\reimu-random-five-20261123-b3\\native\\present-fou07a8y",
+      "nativeExitCode": 0,
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1622985411\\th19-web-MxaKrd",
+      "strictValidationPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1622985411\\th19-web-MxaKrd\\zero-gameplay-validation.json",
+      "attempt": 1,
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1622985411\\th19-web-MxaKrd\\report.json",
+        "wasmSha256": "e8aabda62bd5aa6829c3fea82fb3d520ecc6c05d7a9b91e0518787bf4fe176b7",
+        "nativeMissingStateFrames": [
+          16111,
+          31655
+        ],
+        "verifiedTransitionGaps": [
+          16111,
+          31655
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35998,
+        "bulletCoordinateTolerance": 0.001,
+        "maximumBulletCoordinateDifference": 0.000732421875,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 90338442,
+      "secondary": 977769830,
+      "phase": "PASS",
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\reimu-random-five-20261123-b3\\native\\present-hjxu20qn",
+      "nativeExitCode": 0,
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-90338442\\th19-web-GlpHDv",
+      "strictValidationPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-90338442\\th19-web-GlpHDv\\zero-gameplay-validation.json",
+      "attempt": 1,
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-90338442\\th19-web-GlpHDv\\report.json",
+        "wasmSha256": "e8aabda62bd5aa6829c3fea82fb3d520ecc6c05d7a9b91e0518787bf4fe176b7",
+        "nativeMissingStateFrames": [
+          18286,
+          31497
+        ],
+        "verifiedTransitionGaps": [
+          18286,
+          31497
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35998,
+        "bulletCoordinateTolerance": 0.001,
+        "maximumBulletCoordinateDifference": 0.00079345703125,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    },
+    {
+      "seed": 1471847639,
+      "secondary": 1389531705,
+      "phase": "PASS",
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\reimu-random-five-20261123-b3\\native\\present-e3_d2u40",
+      "nativeExitCode": 0,
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1471847639\\th19-web-YDtO23",
+      "strictValidationPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1471847639\\th19-web-YDtO23\\zero-gameplay-validation.json",
+      "gameplayAcceptancePath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1471847639\\th19-web-YDtO23\\gameplay-acceptance.json",
+      "attempt": 1,
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1471847639\\th19-web-YDtO23\\report.json",
+        "wasmSha256": "e8aabda62bd5aa6829c3fea82fb3d520ecc6c05d7a9b91e0518787bf4fe176b7",
+        "nativeMissingStateFrames": [
+          12953,
+          29061
+        ],
+        "verifiedTransitionGaps": [
+          12953,
+          29061
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35998,
+        "bulletCoordinateTolerance": 0.001,
+        "maximumBulletCoordinateDifference": 0.000946044921875,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS",
+        "strictStatus": "FAIL",
+        "strictSubstantiveBulletDifferenceFrames": [
+          15424
+        ],
+        "acceptanceNote": "User-authorized reviewed single-frame display exception15424."
+      }
+    },
+    {
+      "seed": 1586374916,
+      "secondary": 748067006,
+      "phase": "PASS",
+      "nativeCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\reimu-random-five-20261123-b3\\native\\present-74zdsic7",
+      "nativeExitCode": 0,
+      "webCapture": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1586374916\\th19-web-4LQc16",
+      "strictValidationPath": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1586374916\\th19-web-4LQc16\\zero-gameplay-validation.json",
+      "attempt": 1,
+      "validation": {
+        "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-reimu-b2-phase-specific-circle-center-1586374916\\th19-web-4LQc16\\report.json",
+        "wasmSha256": "e8aabda62bd5aa6829c3fea82fb3d520ecc6c05d7a9b91e0518787bf4fe176b7",
+        "nativeMissingStateFrames": [
+          20794,
+          32057
+        ],
+        "verifiedTransitionGaps": [
+          20794,
+          32057
+        ],
+        "capturedThrough": 36000,
+        "primaryRngDifference": null,
+        "cpuDifference": null,
+        "playerDifference": null,
+        "bulletComparedFrames": 35998,
+        "bulletCoordinateTolerance": 0.001,
+        "maximumBulletCoordinateDifference": 0.0007929801940917969,
+        "substantiveBulletDifferenceFrames": [],
+        "status": "PASS"
+      }
+    }
+  ]
+}

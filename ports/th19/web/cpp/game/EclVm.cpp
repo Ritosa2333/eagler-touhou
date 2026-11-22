@@ -139,7 +139,7 @@ float EclVm::var_float(i32 addr) const {
     if(addr==-9942)return float(var_int(addr)); // same alias in 0x4fc530
     // 0x4fc58e / 0x4fc5c6 / 0x4fc5aa use the same RNG at 0x5c6620 for both fields.
     if(addr==-9999)return AnmVm::rand_unit(true);
-    if(addr==-9998)return AnmVm::rand_signed_unit(3.14159274101257324219f,true);
+    if(addr==-9998){const auto before=AnmVm::random_checkpoint(true);const float value=AnmVm::rand_signed_unit(3.14159274101257324219f,true);if(world_&&traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"ecl-random-angle\",\"frame\":%d,\"host\":%u,\"ip\":%u,\"before\":%u,\"after\":%u,\"value\":%.9g}\n",world_->battle_frame,host_id,unsigned(ip_),before,AnmVm::random_checkpoint(true),value);return value;}
     if(addr==-9987){
         return AnmVm::rand_signed_unit(1.f,true);
     }

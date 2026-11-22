@@ -1,0 +1,29 @@
+{
+  "wasmSha256": "4bbc88743da8e1e233714b45717f22a6db30af42e7c501e09021c95cf47a2111",
+  "runtime": "runtime-reimu-sender-arrival-before-auto",
+  "oneShotFreshBatch": false,
+  "fixedBatchResult": "5/5 each cumulative36000",
+  "fixes": [
+    {
+      "mechanism": "Low attack rank recovery on death",
+      "native": "549940/5499aa clamp EX/Boss0..7 then increment only below3",
+      "evidence": "first seed30388 low EX rank recovery; fixed first36000"
+    },
+    {
+      "mechanism": "Reimu skill circle center retains full float",
+      "evidence": "second30634, native center(-106.06337,381.403259) within76; centi-floor puts it outside, missing4HP; fixed36000"
+    },
+    {
+      "mechanism": "Flight and attack callbacks per sender",
+      "native": "right sender before left; within sender existing EX arrivals before automatic and pending player charge initialization",
+      "evidence": "third8927,third29031,b2fourth25194"
+    },
+    {
+      "mechanism": "Reimu shot birth arithmetic order",
+      "native": "54ece5: subtract velocity from row offset, add emitter; birth update then translates/grid floors",
+      "evidence": "third31668 native shotX17.92 vsweb17.93 changed collision,14da9b5 RNG draws; strict36000 fixed"
+    }
+  ],
+  "screenshots": "../th19-reimu-rebaseline-20261121/screenshots/",
+  "regression": "Old b2 five and earlier five running on same fixed build; freshb4 gated after all pass"
+}
