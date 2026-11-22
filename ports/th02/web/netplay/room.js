@@ -914,7 +914,7 @@ async function simulate(pair,replay){
   if(runtime.asyncExecution)await runtime.execute(pair,{frame,replay,offlineMask:queue.offlineMask(frame),capture,hash:(frame+1)%120===0});
   else runtime.step(pair,{frame,replay,offlineMask:queue.offlineMask(frame)});
   if(stopped||ownedEpoch!==runEpoch)return;
-  replayRecorder.stage(frame,{inputs:pair,offlineMask:queue.offlineMask(frame),proof:runtime.replayProof(),hash:(frame+1)%120===0?runtime.checksum():null});
+  if(replayRecorder.active)replayRecorder.stage(frame,{inputs:pair,offlineMask:queue.offlineMask(frame),proof:runtime.replayProof(),hash:(frame+1)%120===0?runtime.checksum():null});
   queue.commit(pair);
   // Inputs can arrive while a Worker owns this step. Include its actual
   // completed inputs in the history before checking every changed prediction.
@@ -1064,7 +1064,7 @@ async function pump(now){
         for(let index=0;index<outcome.applied;index++){
           const plan=plans[index],record=outcome.records[index];
           if(record.frame!==plan.frame)throw Error('Worker 回滚补算记录帧异常');
-          replayRecorder.stage(plan.frame,{inputs:plan.inputs,offlineMask:plan.offlineMask,proof:record.proof,hash:record.hash});
+          if(replayRecorder.active)replayRecorder.stage(plan.frame,{inputs:plan.inputs,offlineMask:plan.offlineMask,proof:record.proof,hash:record.hash});
           queue.commit(plan.inputs);resimulated++;count++;
           if(record.hash)pendingHashes.set(plan.frame+1,{...record.hash,boot:record.ready});
           maxCost=Math.max(maxCost,record.stepMs);

@@ -55,7 +55,6 @@ export function filterBookProducts(products: readonly LibraryProduct[], category
     .filter(product => category === 'all' || (category === 'favorites' ? favorites.includes(product.id) : bookCategory(product) === category))
     .filter(product => `${product.id} th${product.number} ${product.title} ${product.subtitle}`.toLocaleLowerCase().includes(term))
     .sort((a, b) =>
-      (category === 'all' ? Number(favorites.includes(b.id)) - Number(favorites.includes(a.id)) ||
-        Number(isPc98Product(a)) - Number(isPc98Product(b)) : 0) ||
+      (category === 'all' ? Number(favorites.includes(b.id)) - Number(favorites.includes(a.id)) : 0) ||
       (sort === 'name' ? a.title.localeCompare(b.title, 'zh-CN') : compareBookNumbers(a, b, sort === 'reverse')));
 }

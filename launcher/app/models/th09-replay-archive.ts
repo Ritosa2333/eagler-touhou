@@ -1,6 +1,8 @@
 import {z} from 'zod';
 
 const count = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
+export const th09PublicUsername = z.string().regex(/^[a-z0-9_.-]{1,32}$/i).refine(value => value !== '.' && value !== '..');
+
 export const th09Duel = z.object({
   duelId: z.string().uuid(),
   wins: count,
@@ -9,7 +11,7 @@ export const th09Duel = z.object({
   replayCount: count.optional(),
   playedAt: count.max(8.64e15),
   opponent: z.object({
-    username: z.string().regex(/^[a-z0-9_.-]{1,32}$/).refine(value => value !== '.' && value !== '..'),
+    username: th09PublicUsername,
     displayName: z.string().min(1).max(128),
     avatar: z.string().regex(/^[a-f0-9]{16}$/).optional(),
   }).nullable(),

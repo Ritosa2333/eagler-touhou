@@ -88,10 +88,10 @@ async function openLanguages() {
 
 test('language list supports keyboard entry and dispatches the selected locale',async()=>{
  await mount(el(Masthead));await openMasthead();await openLanguages();const language=n('.masthead-menu-language');assert.equal(language.getAttribute('aria-label'),owners.translate('en','ui.language'));
- const options=[...env.document.querySelectorAll('[role=menuitemradio]')];assert.equal(options.length,3);assert.deepEqual(options.map(item=>item.textContent),['Simplified Chinese','English','Japanese']);assert.equal(options.find(item=>item.getAttribute('aria-checked')==='true').textContent,'English');
+ const options=[...env.document.querySelectorAll('[role=menuitemradio]')];assert.equal(options.length,3);assert.deepEqual(options.map(item=>item.textContent),['简体中文','English','日本語']);assert.equal(options.find(item=>item.getAttribute('aria-checked')==='true').textContent,'English');
  const selected=[];n('#uiLanguageSelect').addEventListener('change',event=>selected.push(event.target.value));
  await React.act(async()=>options.find(item=>item.getAttribute('data-state')!=='checked').click());assert.deepEqual(selected,['zh-CN']);
- await vi.waitFor(async()=>{await React.act(async()=>{await new Promise(resolve=>env.window.requestAnimationFrame(resolve));});assert.equal(env.document.querySelector('#mastheadMenuPanel'),null);assert.equal(env.document.activeElement.id,'mastheadMenuToggle');});await openMasthead();await openLanguages();await React.act(async()=>[...env.document.querySelectorAll('[role=menuitemradio]')].find(item=>item.textContent==='Japanese').click());assert.deepEqual(selected,['zh-CN','ja']);
+ await vi.waitFor(async()=>{await React.act(async()=>{await new Promise(resolve=>env.window.requestAnimationFrame(resolve));});assert.equal(env.document.querySelector('#mastheadMenuPanel'),null);assert.equal(env.document.activeElement.id,'mastheadMenuToggle');});await openMasthead();await openLanguages();await React.act(async()=>[...env.document.querySelectorAll('[role=menuitemradio]')].find(item=>item.textContent==='日本語').click());assert.deepEqual(selected,['zh-CN','ja']);
 });
 
 test('language list returns to its entry before Escape closes the menu',async()=>{

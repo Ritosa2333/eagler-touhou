@@ -5,6 +5,7 @@ const TH075_SPECTATOR_CONTROL = Buffer.from([69, 80, 84, 83, 1]);
 import {Th19SpectatorHistory} from './th19-spectator.mjs';
 import {createRemoteNicknameService} from './account-nickname-source.mjs';
 import {createNicknameService} from './nickname-service.mjs';
+import {normalizeRoomName} from '../../../common/contracts/room-name.mjs';
 import {roomAccount} from '../../../common/contracts/account-nickname-ticket.mjs';
 import {createAccountChatSource} from './account-chat-source.mjs';
 import {createTh09RoundOutbox} from './th09-round-outbox.mjs';
@@ -1531,6 +1532,7 @@ function lobbySnapshot(room) {
     .filter(([clientId]) => room.lobbyClients.has(clientId))
     .map(([clientId, name]) => ({ clientId, name, profile: publicRoomProfile(room, clientId) }));
   return {
+    roomName: room.lobby.roomName ?? null,
     playerCount: room.lobby.playerCount,
     difficulty: room.lobby.difficulty,
     visibility: room.lobby.visibility,
@@ -1696,6 +1698,7 @@ function switchLobbyProduct(room, product) {
   const next = newRoom(targetId, room.chatScope);
   const previous = room.lobby;
   next.lobby.visibility = previous.visibility;
+  next.lobby.roomName = previous.roomName;
   next.lobby.disableCheatMovement = previous.disableCheatMovement;
   next.lobby.unrated = previous.unrated;
   next.lobby.challengeMode = previous.challengeMode && next.multiplayer.gameplay === 'cooperative' && next.multiplayer.challengeMode !== false;
@@ -1837,6 +1840,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     room: lobbySnapshot(room),
     roomDirectory: { version: 1, controlModes: true, runtimeVersions: true, runReturn: true, globalRoomCodes: !!code },
     roomActions: 1,
+    roomNames: !!nicknameService,
     accountChallenge: socket.accountChallenge,
     ...(listenTogether ? { listenTogether: 2 } : {}),
     roomProbe: {
@@ -1879,6 +1883,37 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     }
     if (!validRelayControlMessage(message)) {
       socket.close(1008, 'invalid lobby message');
+      return;
+    }
+    if (message.type === 'set-room-name') {
+      if (lobbySeatOf(room, clientId) !== 0 || room.lobby.phase !== 'lobby') return;
+      const name = normalizeRoomName(message.roomName);
+      const status = value => sendLobby(socket, {type:'room-name-status', status:value});
+      if (message.roomName !== null && !name) { status('invalid'); return; }
+      if (name === null) {
+        room.lobby.roomNameReview = null;
+        room.lobby.roomName = null;
+        broadcastLobby(room);
+        status('saved');
+        return;
+      }
+      if (!nicknameService) { status('unavailable'); return; }
+      if (room.lobby.roomNameReview?.clientId === clientId) { status('reviewing'); return; }
+      const review = {clientId};
+      room.lobby.roomNameReview = review;
+      status('reviewing');
+      const finish = result => {
+        if (rooms.get(roomId) !== room || room.lobby.roomNameReview !== review) return;
+        room.lobby.roomNameReview = null;
+        if (lobbySeatOf(room, clientId) !== 0 || roomDirectory.memberIdFor(roomId, clientId) !== memberId) return;
+        if (result === 'approved') {
+          room.lobby.roomName = name;
+          broadcastLobby(room);
+        }
+        const currentSocket = room.lobbyClients.get(clientId);
+        if (currentSocket) sendLobby(currentSocket, {type:'room-name-status', status:result});
+      };
+      void nicknameService.reviewRoomName(socket.relayAddress, name).then(finish, () => finish('unavailable'));
       return;
     }
     if (listenTogether && message.type === 'listen-together') {
@@ -1982,7 +2017,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
           type: 'error',
           code: 'movement-policy',
           seat,
-          error: '必须调整你的作弊移动方式',
+          error: '必须调整你的不限速移动方式',
         });
         return;
       }
@@ -2419,7 +2454,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
           type: 'error',
           code: 'movement-policy',
           seat,
-          error: '必须调整你的作弊移动方式',
+          error: '必须调整你的不限速移动方式',
         });
         return;
       }
@@ -2608,7 +2643,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
           (entry) => entry && !['touch', 'joystick', 'joystick-free'].includes(entry.movementMode),
         )
       ) {
-        sendLobby(socket, { type: 'error', error: '仍有玩家需要调整作弊移动方式' });
+        sendLobby(socket, { type: 'error', error: '仍有玩家需要调整不限速移动方式' });
         return;
       }
       if (
@@ -2924,6 +2959,7 @@ const server = new WebSocketServer({
 const abuseMaintenance = setInterval(() => abuseGuard.sweep(), 60_000);
 abuseMaintenance.unref();
 const roomDirectory = createRoomDirectory({
+  roomNames: !!nicknameService,
   publicNames: !!nicknameService,
   publicTrack: listenTogether?.publicTrack,
   publicProfile: publicRoomProfile,
