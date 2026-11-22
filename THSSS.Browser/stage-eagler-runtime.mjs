@@ -108,6 +108,7 @@ try {
     "host/input/touch-movement.mjs": await text(resolve(wwwroot, "host/input/touch-movement.mjs")),
     "host/input/menu-gestures.mjs": await text(resolve(wwwroot, "host/input/menu-gestures.mjs")),
     "host/input/touch-bridge.mjs": await text(resolve(wwwroot, "host/input/touch-bridge.mjs")),
+    "host/input/canvas-direct-touch.mjs": await text(resolve(wwwroot, "host/input/canvas-direct-touch.mjs")),
     "host/storage/files.mjs": await text(resolve(wwwroot, "host/storage/files.mjs")),
     "directory-keyboard.mjs": await text(resolve(wwwroot, "directory-keyboard.mjs")),
     "eagler-host.mjs": await text(resolve(wwwroot, "eagler-host.mjs")),

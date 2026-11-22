@@ -3,6 +3,7 @@ import { mountManagedData } from "./eagler-host.mjs";
 import { createFileBridge } from "./host/storage/files.mjs";
 import { createKeyOwners } from "./host/input/key-owners.mjs";
 import { prepareRuntime, launchRuntime } from "./main.js";
+import { bindCanvasDirectTouch } from "./host/input/canvas-direct-touch.mjs";
 import { createTouchBridge } from "./host/input/touch-bridge.mjs";
 import { installRuntimeFileSystem } from "./runtime-files.mjs";
 
@@ -76,6 +77,12 @@ const touch = createTouchBridge({
     return host.TouchShift(dx, dy, !!unlimited) !== 0;
   },
 });
+// Joystick modes hide the launcher direct surface; capture on the canvas instead.
+const canvasTouch = bindCanvasDirectTouch({
+  canvas: document.getElementById("game"),
+  direct: (message) => touch.direct(message),
+  options: () => (runtime && runtime.options) || {},
+});
 
 function rejectInapplicable(message) {
   reply(message, false, { error: "Command is not available for this title" });
@@ -141,6 +148,7 @@ async function handle(message) {
     return;
   }
   if (command === "touch-cancel") {
+    canvasTouch.cancel();
     touch.cancel();
     reply(message, true, {});
     return;
@@ -266,11 +274,13 @@ async function boot() {
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
+    canvasTouch.cancel();
     touch.cancel();
     keys.releaseAll();
   }
 });
 window.addEventListener("pagehide", () => {
+  canvasTouch.cancel();
   keys.releaseAll();
   if (runtime && runtime.flushSaves) runtime.flushSaves();
 });

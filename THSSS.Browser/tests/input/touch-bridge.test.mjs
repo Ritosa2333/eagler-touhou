@@ -123,6 +123,36 @@ test("menu and dialogue surfaces keep stick arrows for UI navigation", () => {
   }
 });
 
+test("joystick modes keep menu direct-touch and never shift the ship from a play drag", () => {
+  for (const mode of ["joystick", "joystick-free"]) {
+    const menu = harness({ touchMovementMode: mode }, "menu");
+    menu.bridge.controls({ fireEnabled: false, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0 });
+    menu.bridge.direct({ type: "down", id: 1, x: 0.5, y: 0.5 });
+    menu.bridge.direct({ type: "move", id: 1, x: 0.5, y: 0.7 });
+    menu.bridge.presented();
+    assert.equal(menu.keys.isDown("Down"), true);
+    assert.equal(menu.shifts.length, 0);
+    menu.bridge.direct({ type: "up", id: 1, x: 0.5, y: 0.7 });
+    assert.equal(menu.keys.isDown("Down"), false);
+
+    menu.at(1000);
+    menu.bridge.direct({ type: "down", id: 2, x: 0.2, y: 0.2 });
+    menu.at(1100);
+    menu.bridge.direct({ type: "up", id: 2, x: 0.2, y: 0.2 });
+    assert.equal(menu.keys.isDown("Z"), true);
+    menu.bridge.presented();
+    menu.bridge.presented();
+    assert.equal(menu.keys.isDown("Z"), false);
+
+    const play = harness({ touchMovementMode: mode }, "play");
+    play.bridge.controls({ fireEnabled: false, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0 });
+    play.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });
+    play.bridge.direct({ type: "move", id: 1, x: 0.6, y: 0.5 });
+    play.bridge.presented();
+    assert.equal(play.shifts.length, 0);
+  }
+});
+
 test("a rejected shift keeps the queued drag for the next movable frame", () => {
   const play = harness({ touchMovementMode: "touch", touchSensitivity: 100 });
   play.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });
