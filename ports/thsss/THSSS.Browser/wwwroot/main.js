@@ -2,6 +2,7 @@ import createThsssModule from "./THSSS.Browser.js";
 import { createGl } from "./gl.js";
 import { createAudio } from "./audio.js";
 import { putRuntimeFile } from "./runtime-files.mjs";
+import { advanceFrame, LOGIC_STEP_MS } from "./host/presentation/frame-step.mjs";
 
 const canvas = document.getElementById("game");
 let lastStatus = "";
@@ -504,7 +505,6 @@ export async function launchRuntime(runtime, hooks = {}) {
   }
   let last = performance.now();
   let acc = 0;
-  const step = 1000 / 60;
   let failed = false;
   let running = true;
   const frame = (now) => {
@@ -515,32 +515,21 @@ export async function launchRuntime(runtime, hooks = {}) {
       requestAnimationFrame(frame);
       return;
     }
-    const delta = Math.min(100, now - last);
+    const delta = now - last;
     last = now;
     let presented = false;
     try {
       const unlocked = unlimited || !!(fpsToggle && fpsToggle.checked);
       const fast = unlocked && host.Simulate && host.Draw;
-      if (fast) {
-        acc += delta;
-        if (acc >= step) {
-          if (hooks.onBeforeFrame) hooks.onBeforeFrame();
-          host.Simulate();
-          acc -= step;
-          if (acc > step) acc = step;
-          presented = true;
-        }
-        host.Draw(acc / step);
-      } else {
-        acc += delta;
-        if (acc >= step) {
-          if (hooks.onBeforeFrame) hooks.onBeforeFrame();
-          host.Frame();
-          acc -= step;
-          if (acc > step * 2) acc = 0;
-          presented = true;
-        }
+      const stepped = advanceFrame({ acc, deltaMs: delta, unlocked: fast });
+      acc = stepped.acc;
+      if (stepped.logic) {
+        if (hooks.onBeforeFrame) hooks.onBeforeFrame();
+        if (fast) host.Simulate();
+        else host.Frame();
+        presented = true;
       }
+      if (fast) host.Draw(acc / LOGIC_STEP_MS);
     } catch (err) {
       failed = true;
       window.__thsssFrameError = String(err && err.stack || err);

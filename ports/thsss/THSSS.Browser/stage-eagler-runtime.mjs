@@ -115,6 +115,7 @@ try {
     "host/storage/setting-ini.mjs": await text(resolve(wwwroot, "host/storage/setting-ini.mjs")),
     "host/practice/practice-state.mjs": await text(resolve(wwwroot, "host/practice/practice-state.mjs")),
     "host/practice/practice-panel.mjs": await text(resolve(wwwroot, "host/practice/practice-panel.mjs")),
+    "host/presentation/frame-step.mjs": await text(resolve(wwwroot, "host/presentation/frame-step.mjs")),
     "directory-keyboard.mjs": await text(resolve(wwwroot, "directory-keyboard.mjs")),
     "eagler-host.mjs": await text(resolve(wwwroot, "eagler-host.mjs")),
     "runtime-files.mjs": await text(resolve(wwwroot, "runtime-files.mjs")),
