@@ -105,6 +105,24 @@ test("a directional stick synthesizes arrow keys and free stick shifts at plane 
   assert.equal(free.keys.isDown("Down"), false);
 });
 
+test("menu and dialogue surfaces keep stick arrows for UI navigation", () => {
+  for (const mode of ["joystick", "joystick-free"]) {
+    const menu = harness({ touchMovementMode: mode }, "menu");
+    menu.bridge.controls({ fireEnabled: false, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 32767, joystickY: 0 });
+    menu.bridge.presented();
+    assert.equal(menu.shifts.length, 0);
+    assert.equal(menu.keys.isDown("Right"), true);
+    assert.equal(menu.keys.isDown("Left"), false);
+
+    const dialogue = harness({ touchMovementMode: mode }, "dialogue");
+    dialogue.bridge.controls({ fireEnabled: false, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: -32767 });
+    dialogue.bridge.presented();
+    assert.equal(dialogue.shifts.length, 0);
+    assert.equal(dialogue.keys.isDown("Up"), true);
+    assert.equal(dialogue.keys.isDown("Down"), false);
+  }
+});
+
 test("a rejected shift keeps the queued drag for the next movable frame", () => {
   const play = harness({ touchMovementMode: "touch", touchSensitivity: 100 });
   play.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });
