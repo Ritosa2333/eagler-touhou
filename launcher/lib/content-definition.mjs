@@ -83,7 +83,7 @@ export const PRODUCT_CONTENT = Object.freeze({
         markerFiles: Object.freeze(["thsss.dat", "BGM/OP.ogg", "artwork/thsss-card.webp"]),
       }),
       ogg: Object.freeze({ kind: "prepared-content" }),
-      dataAssets: Object.freeze({ kind: "prepared-content" }),
+      dataAssets: Object.freeze({ kind: "original-file", source: "thsss.dat" }),
     }),
   }),
   th06: Object.freeze({

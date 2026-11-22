@@ -119,7 +119,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         requiredShared: readonly string[]; runtimeAssets: readonly string[];
         musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"}>;
         touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
-        support: Readonly<{highRefreshRate: false; sourceRepository: "https://github.com/sblzdddd/THSSS-WASM"}>;
+        support: Readonly<{highRefreshRate: true; sourceRepository: "https://github.com/sblzdddd/THSSS-WASM"}>;
         package: Readonly<{dataFileId: "game-data"; dataTarget: "/thsss.dat"; musicSourceDirectories: Readonly<{ogg: "BGM"}>; musicMounts: Readonly<{ogg: "/BGM"}>}>;
         replay: Readonly<{prefix: "thSSS"; extensions: readonly ["rpy", "trpy"]}>;
         features: Readonly<{thprac: false; languages: false; focusHitbox: false}>;

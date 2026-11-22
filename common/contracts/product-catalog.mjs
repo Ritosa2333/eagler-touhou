@@ -256,7 +256,7 @@ export const PRODUCT_GAMES = Object.freeze({
         musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
         touchFire: TOGGLE_TOUCH_FIRE,
         support: Object.freeze({
-            highRefreshRate: false,
+            highRefreshRate: true,
             sourceRepository: "https://github.com/sblzdddd/THSSS-WASM",
         }),
         runtimeFileLayout: "directory",
@@ -266,7 +266,6 @@ export const PRODUCT_GAMES = Object.freeze({
             "shell.mjs",
             "manifest.json",
             "THSSS.Browser.wasm",
-            "runtime-files.json",
             "directory-keyboard.mjs",
         ]),
         dataProvider: "retail-memory",
