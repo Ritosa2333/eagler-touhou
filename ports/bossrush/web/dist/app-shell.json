@@ -1,6 +1,6 @@
 {
   "schema": "bro/app-shell/1",
-  "version": "sha256-f12977e972e3fb109cc9e1864f8cb7830c193d5c848b6851c77366ffcd227dba",
+  "version": "sha256-6a51c0ab0b8de349f2d745595f360799d3e77841fac38157b9f5e1ae403e37c1",
   "files": [
     {
       "p": "bro.html",
@@ -24,8 +24,8 @@
     },
     {
       "p": "src/eagler_adapter.mjs",
-      "n": 44787,
-      "h": "360b0c360a5a10c877ee89c35cda09e53064e73a1b908bf6e7b9f770bdc95c43"
+      "n": 45209,
+      "h": "deb56a024daa0c9423587f051d8ce41800f8c6c9b9a8055b49e033af3be00cbb"
     },
     {
       "p": "src/input.mjs",
@@ -151,6 +151,11 @@
       "p": "test/browser/bullet_texture_e2e.mjs",
       "n": 7391,
       "h": "d48380b443d67d61a7a4a5dbf18f84505076f4b6b1f598feb3376e7ef9bcd7bd"
+    },
+    {
+      "p": "test/browser/chapter_entry_e2e.mjs",
+      "n": 5753,
+      "h": "42f8454508c49270b030e1d4a8aca11e2dee160b65cca8e04e65d04e22483ffa"
     },
     {
       "p": "test/browser/check.mjs",

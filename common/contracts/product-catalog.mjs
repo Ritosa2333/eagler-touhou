@@ -95,9 +95,12 @@ const BRO_MULTIPLAYER_LOADOUTS = Object.freeze([
     Object.freeze({ labelKey: "multiplayer.loadout.bro.chiruno", glyph: "妖", character: 2, shot: 0 }),
     Object.freeze({ labelKey: "multiplayer.loadout.bro.aya", glyph: "文", character: 3, shot: 0 }),
 ]);
-// BRO has no authored difficulty setting; the room keeps Hard/Lunatic as the
-// two selectable slots so the shared room UI can carry a per-room tier later.
-const BRO_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Hard", "Lunatic"]);
+// BRO room "difficulty" row doubles as the entry picker. Slots 0/1 pick the
+// tier of the native 19-chapter run (Hard = current bullets, Lunatic = legacy
+// 4.0 bullets); slots 2/3 are standalone chapter entries (HSiFS AfterExtra and
+// Bad Apple!!) that are not part of the native queue. The values are plain
+// labels because the shared room UI renders config.difficulties verbatim.
+const BRO_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Hard", "Lunatic", "天空璋AEX", "Bad Apple!"]);
 const TOGGLE_TOUCH_FIRE = Object.freeze({ mode: "toggle", labelKey: "touch.tapToggle" });
 const CHARGE_TOUCH_FIRE = Object.freeze({
     mode: "held-key",

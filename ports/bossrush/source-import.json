@@ -3,8 +3,8 @@
   "game": "bro",
   "repository": "https://github.com/TSake/TouHou-BossRushOnline",
   "branch": "web/multiplayer-port",
-  "commit": "本地工作区（X键卡键+符卡实时间+多人数据统一P1+boss伤害减免+新/原生弹型贴图切换+3AQ房间选项/系统/游玩队列+末章跳过失真评分+3AR legacy 符卡/弹幕模式+3AS A类绑定玩家符卡多人适配+3AT 纠错与B类：隙间传送门逐玩家独立/ th06换位列传task-resume+缩放全体同步/提灯幽灵钉P1+全员收集无敌+收缩圆看本机/地藏进圈全员破解；+3AT收尾 th06 del 缩放复位不依赖原脚本 + 清 swap_prev 闩锁防重打误判；覆盖GAME+GAME_L，WASM build_id=00266e98）",
-  "buildId": "00266e98",
+  "commit": "本地工作区（X键卡键+符卡实时间+多人数据统一P1+boss伤害减免+新/原生弹型贴图切换+3AQ房间选项/系统/游玩队列+末章跳过失真评分+3AR legacy 符卡/弹幕模式+3AS A类绑定玩家符卡多人适配+3AT 纠错与B类（隙间传送门/提灯/地藏/th06缩放）+3AU 房间设置豁免存档解锁确认+3AV 独立章节入口(AEX/BadApple难度2/3)+TH16/AEX随角色内容对齐P1+BadApple数据恢复(逐帧光点文本非视频)；WASM build_id=c91ac7a2）",
+  "buildId": "c91ac7a2",
   "credit": {
     "author": "吃药图书 (Cyoltose)",
     "webMaintainer": "清酒 (Tidew)",
@@ -24,8 +24,8 @@
     },
     {
       "path": "bro.wasm",
-      "bytes": 4986402,
-      "sha256": "00266e9866b48c09cc61d475e65663e06cba8efa3cf4206db6282e1dd5d931a2"
+      "bytes": 48504579,
+      "sha256": "c91ac7a268686b26400d60df52c4de619ea0b5472ccb988ad9f2f11487ab8fb0"
     },
     {
       "path": "dist/app-shell.json",

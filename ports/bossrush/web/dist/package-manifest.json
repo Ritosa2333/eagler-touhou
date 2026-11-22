@@ -1,7 +1,7 @@
 {
   "schema": "bro/package-manifest/1",
   "version": "sha256-05fd0275ca3a19121b162bb99aebff01a7747fb4fb36ebf5edba7bd96ae8f665",
-  "generated": "2026-11-22T11:37:18+0800",
+  "generated": "2026-11-22T12:14:50+0800",
   "base": "./game/",
   "counts": {
     "total": 1004,
@@ -10867,42 +10867,42 @@
     {
       "p": "BadApple/file1",
       "n": 3312119,
-      "why": "BadApple!! 视频 stage 分卷：Web 端视频解码非当前范围，build.sh 不 embed，不可玩，不分发"
+      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
     },
     {
       "p": "BadApple/file2",
       "n": 2647421,
-      "why": "BadApple!! 视频 stage 分卷：Web 端视频解码非当前范围，build.sh 不 embed，不可玩，不分发"
+      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
     },
     {
       "p": "BadApple/file3",
       "n": 2973788,
-      "why": "BadApple!! 视频 stage 分卷：Web 端视频解码非当前范围，build.sh 不 embed，不可玩，不分发"
+      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
     },
     {
       "p": "BadApple/file4",
       "n": 4586540,
-      "why": "BadApple!! 视频 stage 分卷：Web 端视频解码非当前范围，build.sh 不 embed，不可玩，不分发"
+      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
     },
     {
       "p": "BadApple/file5",
       "n": 3658970,
-      "why": "BadApple!! 视频 stage 分卷：Web 端视频解码非当前范围，build.sh 不 embed，不可玩，不分发"
+      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
     },
     {
       "p": "BadApple/file6",
       "n": 2984349,
-      "why": "BadApple!! 视频 stage 分卷：Web 端视频解码非当前范围，build.sh 不 embed，不可玩，不分发"
+      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
     },
     {
       "p": "BadApple/file7",
       "n": 1582147,
-      "why": "BadApple!! 视频 stage 分卷：Web 端视频解码非当前范围，build.sh 不 embed，不可玩，不分发"
+      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
     },
     {
       "p": "BadApple/lyrics",
       "n": 4040,
-      "why": "BadApple!! 视频 stage 分卷：Web 端视频解码非当前范围，build.sh 不 embed，不可玩，不分发"
+      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
     }
   ],
   "note": "内容是真实分发字节的哈希（音频已就地压缩为 ogg）；运行时仍从 base 逐文件 fetch，本清单供 eagler launcher 差量更新使用，不改游戏加载逻辑。devExcluded 为隔离的开发人员内容，game/ 保留但不分发。distExcluded 为 Web 端不可玩/不需要的分发资源，game/ 保留但不列入下载清单。"

@@ -236,6 +236,11 @@ export function broRoomOptionsExpression(options) {
   if (o.netplayDifficulty === 0 || o.netplayDifficulty === 1) {
     parts.push('legacy=' + (o.netplayDifficulty === 1 ? 'true' : 'false'));
   }
+  // 3AV：难度 2/3 是独立章节入口（非 19 关队列）。legacy 保持 Hard(缺省)，
+  // 额外下发 chapter 让 Lua 把首关指向独立 stage group；静态 label 映射，
+  // 不信任外部字符串，零新协议字段（仍走 configure.options.netplayDifficulty）。
+  if (o.netplayDifficulty === 2) parts.push("chapter='aex'");
+  if (o.netplayDifficulty === 3) parts.push("chapter='badapple'");
   return '{' + parts.join(',') + '}';
 }
 
