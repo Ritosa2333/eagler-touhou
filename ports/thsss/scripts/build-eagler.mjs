@@ -35,13 +35,14 @@ if (process.argv.includes("--print-inputs")) {
     const bytes = readFileSync(resolve(port, name));
     return [name, { bytes: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") }];
   }));
-  process.stdout.write(`${JSON.stringify({
+  const output = `${JSON.stringify({
     schema: "eagler-touhou/runtime-inputs/1",
     directory: "thsss",
     translationUnits: names.filter((name) => name.endsWith(".cs")),
     inputs,
     compilerFlags: [],
-  }, null, 2)}\n`);
+  }, null, 2)}\n`;
+  await new Promise((accept, reject) => process.stdout.write(output, (error) => error ? reject(error) : accept()));
   process.exit(0);
 }
 
