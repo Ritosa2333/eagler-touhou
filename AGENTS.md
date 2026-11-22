@@ -17,13 +17,24 @@ The browser entry bundles these modules into one `shell.mjs` with esbuild.
 Build on Windows with the .NET 10 SDK and its `wasm-tools` workload. From the repository root:
 
 ```powershell
-dotnet workload install wasm-tools
+dotnet tool restore
 dotnet publish THSSS.Browser/THSSS.Browser.csproj -c Release
 npm install
 npm run stage:eagler
 ```
 
-`dotnet publish` compiles the NativeAOT browser host. Before that compile, `THSSS.Browser/THSSS.Browser.csproj` runs `THSSS.Browser/stage-content.ps1`. The script reads the gitignored asset folders at the repository root. `Image`, `CS`, `FX`, `Model`, `Story`, and `Sound` are packed into `THSSS.Browser/wwwroot/assets/thsss.dat`. `BGM` is copied beside that archive as loose files. `Replay` is optional and is not packed. When `thsss.dat` already exists, the build validates the folders and keeps the archive; delete `thsss.dat` to pack again. A checkout without those folders builds with `-p:StageGameAssets=false`.
+`dotnet publish` compiles the NativeAOT browser host. Before that compile, `THSSS.Browser/THSSS.Browser.csproj` runs `tools/PrepareGameSources` and `THSSS.Browser/TransformSources`, then `THSSS.Browser/StageContent`.
+
+### Game SSOT
+
+- `vendor/THSSS.exe` is the game assembly SSOT.
+- `patches/` holds an ordered series of browser port diffs (`series` + `ownership.json`).
+- `PrepareGameSources` decompiles the exe with pinned `ilspycmd` (`-p --nested-directories --disable-updatecheck`) into `.decompile/`, copies it to gitignored `THSSS/`, and applies patches.
+- Day-to-day: edit `THSSS/`, then `dotnet exec THSSS.Browser/obj/prepare-game-sources/PrepareGameSources.dll refresh-patches --repo .` and commit patch updates. Do not commit `THSSS/` or `.decompile/`.
+- `TransformSources` then copies `THSSS` into the intermediate directory, skips `Program.cs` and `AssemblyInfo.cs`, rewrites `\\` to `/`, replaces `Encoding.Default` with `Shooting.Ansi.GBK`, replaces `.ForEach(` with `.ForEachNet48(`, and rewrites common ILSpy artifacts (`Color4.op_Implicit`, `EffectHandle.op_Implicit`, redundant casts, Font disambiguation).
+- Audio: game code may keep `.wav` paths; `THSSS.SlimDX` `SourceVoice.Bind` remaps to `.ogg` when that file exists (or when `.wav` is missing).
+
+`StageContent` reads the gitignored asset folders under `Assets/`. `Image`, `CS`, `FX`, `Model`, `Story`, and `Sound` are packed into `THSSS.Browser/wwwroot/assets/thsss.dat`. `BGM` is copied beside that archive as loose files. `Replay` is optional and is not packed. When `thsss.dat` already exists, the build validates the folders and keeps the archive; delete `thsss.dat` to pack again. A checkout without those folders builds with `-p:StageGameAssets=false`.
 
 `npm run stage:eagler` bundles the browser host into `build-eagler/` (`thsss.html`, `shell.mjs`, `manifest.json`, and `THSSS.Browser.wasm`). The eagler-touhou launcher loads that directory from `ports/thsss/build-eagler/`.
 
