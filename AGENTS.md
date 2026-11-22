@@ -27,10 +27,11 @@ npm run stage:eagler
 
 ### Game SSOT
 
-- `vendor/THSSS.exe` is the game assembly SSOT.
+- `vendor/THSSS-src/` is the committed unmodified game source (ILSpy decompile of `vendor/THSSS.exe`).
 - `patches/` holds an ordered series of browser port diffs (`series` + `ownership.json`).
-- `PrepareGameSources` decompiles the exe with pinned `ilspycmd` (`-p --nested-directories --disable-updatecheck`) into `.decompile/`, copies it to gitignored `THSSS/`, and applies patches.
-- Day-to-day: edit `THSSS/`, then `dotnet exec THSSS.Browser/obj/prepare-game-sources/PrepareGameSources.dll refresh-patches --repo .` and commit patch updates. Do not commit `THSSS/` or `.decompile/`.
+- `PrepareGameSources prepare` copies `vendor/THSSS-src/` to gitignored `THSSS/` and applies patches. Builds do not run ilspycmd.
+- Day-to-day: edit `THSSS/`, then `dotnet exec THSSS.Browser/obj/prepare-game-sources/PrepareGameSources.dll refresh-patches --repo .` and commit patch updates. Do not commit `THSSS/`.
+- To regenerate pristine sources from the exe: `dotnet tool restore`, then `dotnet exec … PrepareGameSources.dll decompile --repo .`, and commit `vendor/THSSS-src/`.
 - `TransformSources` then copies `THSSS` into the intermediate directory, skips `Program.cs` and `AssemblyInfo.cs`, rewrites `\\` to `/`, replaces `Encoding.Default` with `Shooting.Ansi.GBK`, replaces `.ForEach(` with `.ForEachNet48(`, and rewrites common ILSpy artifacts (`Color4.op_Implicit`, `EffectHandle.op_Implicit`, redundant casts, Font disambiguation).
 - Audio: game code may keep `.wav` paths; `THSSS.SlimDX` `SourceVoice.Bind` remaps to `.ogg` when that file exists (or when `.wav` is missing).
 

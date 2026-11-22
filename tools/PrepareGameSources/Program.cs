@@ -52,10 +52,19 @@ namespace Thsss.Tools.PrepareGameSources
 			return "Usage: PrepareGameSources <prepare|refresh-patches|decompile> [--repo <root>]";
 		}
 
+		private static string PristineDir(Options options)
+		{
+			return Path.Combine(options.Repo, "vendor", "THSSS-src");
+		}
+
 		private static void Prepare(Options options)
 		{
-			Decompile(options, force: false);
-			var pristine = Path.Combine(options.Repo, ".decompile");
+			var pristine = PristineDir(options);
+			if (!Directory.Exists(pristine))
+			{
+				throw new DirectoryNotFoundException(
+					"Missing committed sources at " + pristine + "; run decompile to regenerate from vendor/THSSS.exe.");
+			}
 			var work = Path.Combine(options.Repo, "THSSS");
 			ResetDirectory(work, pristine);
 			ApplySeries(options.Repo, work);
@@ -64,13 +73,13 @@ namespace Thsss.Tools.PrepareGameSources
 
 		private static void RefreshPatches(Options options)
 		{
-			var pristine = Path.Combine(options.Repo, ".decompile");
+			var pristine = PristineDir(options);
 			var work = Path.Combine(options.Repo, "THSSS");
 			var patchesDir = Path.Combine(options.Repo, "patches");
 			var seriesPath = Path.Combine(patchesDir, "series");
 			if (!Directory.Exists(pristine))
 			{
-				throw new DirectoryNotFoundException("Missing pristine decompile at " + pristine + "; run prepare/decompile first.");
+				throw new DirectoryNotFoundException("Missing pristine sources at " + pristine + "; run decompile first.");
 			}
 			if (!Directory.Exists(work))
 			{
@@ -208,7 +217,7 @@ namespace Thsss.Tools.PrepareGameSources
 		private static void Decompile(Options options, bool force)
 		{
 			var exe = Path.Combine(options.Repo, "vendor", "THSSS.exe");
-			var dest = Path.Combine(options.Repo, ".decompile");
+			var dest = PristineDir(options);
 			var stampPath = Path.Combine(dest, ".stamp.json");
 			if (!File.Exists(exe))
 			{
@@ -226,7 +235,7 @@ namespace Thsss.Tools.PrepareGameSources
 						&& existing.flags != null
 						&& existing.flags.SequenceEqual(DecompileFlags))
 					{
-						Console.WriteLine("Decompile stamp matches; keeping " + dest);
+						Console.WriteLine("Source stamp matches; keeping " + dest);
 						return;
 					}
 				}

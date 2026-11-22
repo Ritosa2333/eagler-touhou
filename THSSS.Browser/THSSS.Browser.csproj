@@ -107,7 +107,6 @@
       <_PrepareProj>$(_RepoRoot)/tools/PrepareGameSources/PrepareGameSources.csproj</_PrepareProj>
       <_PrepareDll>$(MSBuildThisFileDirectory)obj/prepare-game-sources/PrepareGameSources.dll</_PrepareDll>
     </PropertyGroup>
-    <Exec Command="dotnet tool restore" WorkingDirectory="$(_RepoRoot)" />
     <MSBuild Projects="$(_PrepareProj)" Targets="Restore;Build" RemoveProperties="RuntimeIdentifier;SelfContained;PublishTrimmed;PublishAot;UseAppHost" Properties="Configuration=Release" />
     <Exec Command="dotnet exec &quot;$(_PrepareDll)&quot; prepare --repo &quot;$(_RepoRoot)&quot;" WorkingDirectory="$(_RepoRoot)" />
   </Target>

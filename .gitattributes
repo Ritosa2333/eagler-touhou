@@ -1,2 +1,11 @@
 # Auto detect text files and perform LF normalization
-* text=auto
+* text=auto eol=lf
+
+# Patches must stay LF so git apply matches on Windows CI.
+*.patch text eol=lf
+patches/series text eol=lf
+
+# Committed pristine game sources stay LF for the same reason.
+vendor/THSSS-src/** text eol=lf
+vendor/THSSS-src/**/*.ico binary
+vendor/THSSS.exe binary

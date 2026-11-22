@@ -137,7 +137,7 @@ _NCrunch*
 Score.dat
 /1.1Patch/
 
-# Game sources are regenerated from vendor/THSSS.exe + patches/
+# Patched working tree is regenerated from vendor/THSSS-src + patches/
 /THSSS/
 /.decompile/
 /.decompile-patch-base/

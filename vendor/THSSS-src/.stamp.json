@@ -1,0 +1,9 @@
+{
+  "exeSha256": "a418cdf9cc20f78ca7907615fd631b2ffd59a7a97b40ae6af40eea62eaeaa580",
+  "ilspycmd": "11.2.0.10050",
+  "flags": [
+    "-p",
+    "--nested-directories",
+    "--disable-updatecheck"
+  ]
+}

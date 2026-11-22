@@ -5,19 +5,20 @@
 
 本项目为 [eagler-touhou](https://github.com/YomotsuHisami/eagler-touhou) 项目的一部分。
 
-原 Windows 版（.NET Framework 4.8、SlimDX、WinForms）的浏览器移植。游戏逻辑以 `vendor/THSSS.exe` 为 SSOT，经 `ilspycmd` 反编译后用 `patches/` 打上浏览器改动。Direct3D、XAudio2 和 WinForms 由本仓库的替身接到 WebGL2 和 Web Audio。
+原 Windows 版（.NET Framework 4.8、SlimDX、WinForms）的浏览器移植。游戏逻辑以入库的 `vendor/THSSS-src/`（由 `vendor/THSSS.exe` 反编译）为基线，再用 `patches/` 打上浏览器改动。Direct3D、XAudio2 和 WinForms 由本仓库的替身接到 WebGL2 和 Web Audio。
 
 ## 模块
 
 | 目录 | 作用 | 现状 |
 | --- | --- | --- |
-| `vendor/THSSS.exe` | 原版游戏程序集（SSOT）。 | 构建时用锁定的 `ilspycmd` 反编译。 |
-| `patches/` | 有序的浏览器移植补丁（`series` + `ownership.json`）。 | 打到反编译结果上，生成 gitignored 的 `THSSS/`。 |
+| `vendor/THSSS-src/` | 未打补丁的游戏源码（入库）。 | 构建时复制并打补丁；可用 `decompile` 从 exe 重生。 |
+| `vendor/THSSS.exe` | 原版游戏程序集。 | 仅在重生 `THSSS-src` 时用锁定的 `ilspycmd` 反编译。 |
+| `patches/` | 有序的浏览器移植补丁（`series` + `ownership.json`）。 | 打到 `THSSS-src` 上，生成 gitignored 的 `THSSS/`。 |
 | `THSSS` | 生成的工作树（不入库）。 | 在此改逻辑，再 refresh 补丁。仅浏览器目标，无桌面双构建。 |
 | `THSSS-Config` | dnSpy 导出的配置器，独立解决方案，目标 `net20` WinForms，读写 `Setting.INI`。 | 不参与浏览器构建。网页版若没有 `Setting.INI`，会自行写入一份默认配置。 |
 | `THSSS.Platform` | `net10.0` 上的 WinForms、GDI+、WMI 替身。 | 能解码 PNG / BMP，并用画布光栅化文字。其余 API 只保留游戏能编译、能跑主循环所需的部分。 |
 | `THSSS.SlimDX` | SlimDX API 替身，程序集名仍是 `SlimDX`。 | 设备、Sprite、纹理、固定功能管线、渲染目标、雾和光照已接到 WebGL2。文本 `.x` 网格会读入，套用帧变换后按材质绘制。`FX` 里的 Blur、Warp、Filter 用 `wwwroot/shaders` 下手工改写的 `.vert` / `.frag` 画整屏贴图。XAudio2 接到 Web Audio；游戏仍可写 `.wav` 路径，运行时在存在 `.ogg` 时自动改映。键盘状态由页面按键写入；手柄是空实现。 |
-| `THSSS.Browser` | `net10.0` / `browser-wasm` 宿主，NativeAOT-LLVM。 | 从 exe + 补丁准备游戏源码，再变换并编译，把运行时和游戏链成一个 `THSSS.Browser.wasm`。页面用旁边的 `THSSS.Browser.js` 启动它，资源进入虚拟文件系统，由宿主驱动帧循环。按键来自页面，存档写入 IndexedDB。 |
+| `THSSS.Browser` | `net10.0` / `browser-wasm` 宿主，NativeAOT-LLVM。 | 从 `THSSS-src` + 补丁准备游戏源码，再变换并编译，把运行时和游戏链成一个 `THSSS.Browser.wasm`。页面用旁边的 `THSSS.Browser.js` 启动它，资源进入虚拟文件系统，由宿主驱动帧循环。按键来自页面，存档写入 IndexedDB。 |
 
 ## 资源
 
@@ -35,10 +36,9 @@ dotnet build THSSS.Browser/THSSS.Browser.csproj -p:StageGameAssets=false
 
 ## 开始开发
 
-需要 .NET SDK 10（`global.json` 把版本限制在 10.0 功能带）。先还原本地工具清单（锁定 `ilspycmd`），再编译。发布还需要该 SDK 的 `wasm-tools`，用来提供 Emscripten。编译器是实验性的 NativeAOT-LLVM（`Microsoft.DotNet.ILCompiler.LLVM`），包从 `nuget.config` 里的实验源还原。
+需要 .NET SDK 10（`global.json` 把版本限制在 10.0 功能带）。发布还需要该 SDK 的 `wasm-tools`，用来提供 Emscripten。编译器是实验性的 NativeAOT-LLVM（`Microsoft.DotNet.ILCompiler.LLVM`），包从 `nuget.config` 里的实验源还原。只有要从 `vendor/THSSS.exe` 重生 `vendor/THSSS-src/` 时才需要 `dotnet tool restore`（锁定 `ilspycmd`）。
 
 ```powershell
-dotnet tool restore
 dotnet workload install wasm-tools
 dotnet publish THSSS.Browser/THSSS.Browser.csproj -c Release
 ```
