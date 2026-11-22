@@ -89,6 +89,9 @@ namespace Thsss.Tools.TransformSources
 				text = text.Replace("new Font(StageData.GlobalData.FontType,", "new System.Drawing.Font(StageData.GlobalData.FontType,");
 				text = text.Replace("new Font(\"Arial\",", "new System.Drawing.Font(\"Arial\",");
 				text = text.Replace("Font val = new System.Drawing.Font", "System.Drawing.Font val = new System.Drawing.Font");
+				text = text.Replace("Font val = new Font(FontType,", "System.Drawing.Font val = new System.Drawing.Font(FontType,");
+				text = text.Replace("public Font DXFont", "public SlimDX.Direct3D9.Font DXFont");
+				text = text.Replace(", Font font,", ", System.Drawing.Font font,");
 				text = text.Replace("private Font sysfont", "private System.Drawing.Font sysfont");
 				text = text.Replace("private Font DXfont", "private SlimDX.Direct3D9.Font DXfont");
 				text = text.Replace("((Form)Form_Main).Close()", "Form_Main.Close()");
