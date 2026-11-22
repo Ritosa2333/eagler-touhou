@@ -109,7 +109,12 @@ try {
     "host/input/menu-gestures.mjs": await text(resolve(wwwroot, "host/input/menu-gestures.mjs")),
     "host/input/touch-bridge.mjs": await text(resolve(wwwroot, "host/input/touch-bridge.mjs")),
     "host/input/canvas-direct-touch.mjs": await text(resolve(wwwroot, "host/input/canvas-direct-touch.mjs")),
+    "host/input/keyboard-input-bridge.mjs": await text(resolve(wwwroot, "host/input/keyboard-input-bridge.mjs")),
+    "host/input/gamepad-keys.mjs": await text(resolve(wwwroot, "host/input/gamepad-keys.mjs")),
     "host/storage/files.mjs": await text(resolve(wwwroot, "host/storage/files.mjs")),
+    "host/storage/setting-ini.mjs": await text(resolve(wwwroot, "host/storage/setting-ini.mjs")),
+    "host/practice/practice-state.mjs": await text(resolve(wwwroot, "host/practice/practice-state.mjs")),
+    "host/practice/practice-panel.mjs": await text(resolve(wwwroot, "host/practice/practice-panel.mjs")),
     "directory-keyboard.mjs": await text(resolve(wwwroot, "directory-keyboard.mjs")),
     "eagler-host.mjs": await text(resolve(wwwroot, "eagler-host.mjs")),
     "runtime-files.mjs": await text(resolve(wwwroot, "runtime-files.mjs")),
@@ -165,7 +170,8 @@ const manifest = JSON.parse(await text(resolve(output, "manifest.json")));
 if (manifest.game !== "thsss" || manifest.protocol !== "eagler-touhou/1" || manifest.entry !== "thsss.html") {
   throw new Error("wwwroot/manifest.json is not the thsss directory manifest");
 }
-for (const feature of ["thprac", "languages", "focusHitbox"]) {
+if (manifest.features?.thprac !== true) throw new Error("manifest.features.thprac must be true");
+for (const feature of ["languages", "focusHitbox"]) {
   if (manifest.features?.[feature] !== false) throw new Error(`manifest.features.${feature} must be false`);
 }
 

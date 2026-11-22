@@ -2,10 +2,14 @@ import { keyNameFromEvent } from "./directory-keyboard.mjs";
 import { mountManagedData } from "./eagler-host.mjs";
 import { createFileBridge } from "./host/storage/files.mjs";
 import { createKeyOwners } from "./host/input/key-owners.mjs";
+import { createKeyboardInputBridge } from "./host/input/keyboard-input-bridge.mjs";
+import { createGamepadKeys } from "./host/input/gamepad-keys.mjs";
 import { prepareRuntime, launchRuntime } from "./main.js";
 import { bindCanvasDirectTouch } from "./host/input/canvas-direct-touch.mjs";
 import { createTouchBridge } from "./host/input/touch-bridge.mjs";
-import { installRuntimeFileSystem } from "./runtime-files.mjs";
+import { installRemoteResources, installRuntimeFileSystem } from "./runtime-files.mjs";
+import { seedSettingIni } from "./host/storage/setting-ini.mjs";
+import { mountPracticePanel } from "./host/practice/practice-panel.mjs";
 
 const protocol = "eagler-touhou/1";
 const game = "thsss";
@@ -76,7 +80,45 @@ const touch = createTouchBridge({
     if (!host || typeof host.TouchShift !== "function") return false;
     return host.TouchShift(dx, dy, !!unlimited) !== 0;
   },
+  residual() {
+    const host = runtime && runtime.host;
+    if (!host || typeof host.TakeTouchResidual !== "function") return null;
+    return host.TakeTouchResidual();
+  },
 });
+const gamepad = createGamepadKeys({ keys });
+const practice = mountPracticePanel({
+  parent: document.body,
+  sync(flags) {
+    const host = runtime && runtime.host;
+    if (host && typeof host.PracticeConfigure === "function") host.PracticeConfigure(flags);
+  },
+  warp(stage) {
+    const host = runtime && runtime.host;
+    if (host && typeof host.PracticeResources === "function") host.PracticeResources();
+    if (host && typeof host.PracticeWarp === "function") host.PracticeWarp(stage);
+  },
+});
+
+function applyCanonicalKey(event, down) {
+  const name = keyNameFromEvent(event);
+  if (!name) return;
+  practice.key(name, !!down);
+  keys.setKey(name, !!down, "key");
+}
+
+const keyboardBridge = hosted()
+  ? createKeyboardInputBridge({
+      target: window,
+      protocol,
+      game,
+      epoch,
+      origin: location.origin,
+      ready: () => phase === "launched",
+      dispatch: applyCanonicalKey,
+      reset: () => keys.releaseSource("key"),
+    })
+  : null;
 // Joystick modes hide the launcher direct surface; capture on the canvas instead.
 const canvasTouch = bindCanvasDirectTouch({
   canvas: document.getElementById("game"),
@@ -105,10 +147,13 @@ async function handle(message) {
     }
     if (window.Module) window.Module.touhouMusicMode = music === "ogg" ? "ogg" : "none";
     if (runtime) runtime.options = options;
+    practice.configure(options);
+    await installRemoteResources([message.resources, message.runtimeResources, message.sharedResources]);
     reply(message, true, {});
     return;
   }
   if (command === "resources") {
+    await installRemoteResources([message.resources]);
     reply(message, true, {});
     return;
   }
@@ -131,14 +176,15 @@ async function handle(message) {
     await files.handle(message);
     return;
   }
-  if (command === "keyboard") {
-    const name = keyNameFromEvent(message);
-    if (name) keys.setKey(name, !!message.down, "key");
-    reply(message, true, {});
-    return;
-  }
-  if (command === "keyboard-clear") {
-    keys.releaseSource("key");
+  if (command === "keyboard" || command === "keyboard-clear") {
+    // When the launcher mapping port is live, remap here. Otherwise keep the
+    // original raw keyboard path for standalone / pre-bridge sessions.
+    if (keyboardBridge && keyboardBridge.submit(message)) {
+      reply(message, true, {});
+      return;
+    }
+    if (command === "keyboard-clear") keys.releaseSource("key");
+    else applyCanonicalKey(message, !!message.down);
     reply(message, true, {});
     return;
   }
@@ -150,6 +196,7 @@ async function handle(message) {
   if (command === "touch-cancel") {
     canvasTouch.cancel();
     touch.cancel();
+    gamepad.cancel();
     reply(message, true, {});
     return;
   }
@@ -158,17 +205,29 @@ async function handle(message) {
     reply(message, true, {});
     return;
   }
-  if (command === "thprac-mouse" || command === "network-cancel" || command === "retry-music") {
+  if (command === "thprac-mouse") {
+    practice.pointer(message);
+    reply(message, true, {});
+    return;
+  }
+  if (command === "network-cancel" || command === "retry-music") {
     rejectInapplicable(message);
   }
 }
 
 function onLocalKey(event) {
   if (phase !== "launched") return;
+  // Bound launcher mapping owns accept and reject; do not fall through to a
+  // second raw owner after a rejected DOWN (its UP would never release).
+  if (keyboardBridge && keyboardBridge.active()) {
+    if (keyboardBridge.event(event, event.type === "keydown")) event.preventDefault();
+    return;
+  }
   const name = keyNameFromEvent(event);
   if (!name) return;
   event.preventDefault();
   if (event.repeat) return;
+  practice.key(name, event.type === "keydown");
   keys.setKey(name, event.type === "keydown", "local");
 }
 
@@ -194,6 +253,8 @@ function publishHealth() {
 async function startGame() {
   if (phase === "launched" || starting) return;
   starting = true;
+  await seedSettingIni(runtime);
+  practice.configure((runtime && runtime.options) || {});
   await launchRuntime(runtime, {
     onExit() {
       if (healthTimer) window.clearInterval(healthTimer);
@@ -203,6 +264,7 @@ async function startGame() {
       emit("exit", { status: "success", code: 0 });
     },
     onBeforeFrame() {
+      gamepad.presented();
       touch.presented();
     },
     onPresented() {
