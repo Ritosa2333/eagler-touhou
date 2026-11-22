@@ -80,7 +80,9 @@ export function LibraryAnnouncements({
       </MastheadTooltip>
       <DialogContent className="library-announcements-dialog" closeLabel={t('notice.close')} aria-describedby={undefined}>
         <DialogTitle>{label}</DialogTitle>
-        {latest.length > 0 && <ul className="library-announcements-list" role="list">
+        {latest.length > 0 &&
+          // biome-ignore lint/a11y/noRedundantRoles: Safari can omit list semantics when list-style is none.
+          <ul className="library-announcements-list" role="list">
           {latest.map((entry) => {
             const translation = entry[locale];
             const { title, summary } = translation ?? entry['zh-CN'];

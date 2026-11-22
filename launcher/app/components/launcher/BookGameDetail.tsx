@@ -24,8 +24,8 @@ export function BookGameDetail({ product, actions, children, statistics, active 
   useLayoutEffect(() => {
     if (!active) return;
     const node = title.current;
-    const article = node?.closest('article');
-    if (!node || !article) return;
+    const article = node?.closest('article[data-game-detail]');
+    if (!node || !article || article.getAttribute('data-game-detail') !== product.id) return;
     if (!article.contains(document.activeElement)) node.focus({ preventScroll: true });
     const top = getComputedStyle(article).scrollMarginTop;
     if (article.getBoundingClientRect().top < parseFloat(top)) article.scrollIntoView({ block: 'start' });

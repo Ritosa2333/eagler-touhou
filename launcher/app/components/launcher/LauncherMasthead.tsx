@@ -214,7 +214,8 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
         </a>
         <MastheadTooltip label={faqLink.label}>
           <Button asChild variant="ghost" size="icon" className="masthead-action book-top-faq">
-            <a href={faqLink.href} aria-label={faqLink.label}>
+            <a href={faqLink.href}>
+              <span className="sr-only">{faqLink.label}</span>
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <g className="book-faq-question">

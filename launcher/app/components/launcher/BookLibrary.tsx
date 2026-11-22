@@ -97,6 +97,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     void animation.finished.then(() => {if (current) finish();});
     return () => {current = false; animation.cancel();};
   }, [showDetail, displayedDetailId, compact, onDetailExit]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Switching between open and retained detail must cancel the old animation even when the displayed ID stays the same.
   useLayoutEffect(() => {
     const previous = previousDetail.current;
     const resized = previousCompact.current !== compact;
