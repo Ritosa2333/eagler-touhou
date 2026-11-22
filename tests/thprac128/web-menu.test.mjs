@@ -99,6 +99,12 @@ test('cancel/dispose aborts only the pending owner and cannot adopt a late succe
 test('restart uses actual owned params instead of edited form, and Escape isolates gameplay input',async()=>{
  const h=harness();h.availability.inRun=true;h.availability.practiceSession=create({stage:15,section:156,phase:2},4);await open(h);h.nodes.replace.checked=true;h.nodes.restart.emit('click');await flush();assert.equal(h.calls[0].s.params.section,156);assert.equal(h.calls[0].s.params.phase,2);await open(h);assert.equal(h.root.emit('keydown',{code:'KeyZ'}).propagationStopped,true);h.root.emit('keydown',{code:'Escape'});assert.equal(h.root.hidden,true);h.controller.dispose();
 });
+test('C and either Ctrl confirm from inside the practice options panel',async()=>{
+ for(const code of ['KeyC','ControlLeft','ControlRight']){
+  const h=harness();await open(h);h.root.emit('keydown',{code});await flush();
+  assert.equal(h.calls.length,1,code);h.controller.dispose();
+ }
+});
 const source=fs.readFileSync(new URL('../../site/play.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 function productionCaller(){const a=source.indexOf('function thpracStageSelection('),b=source.indexOf('function installPracticeMenu(',a);assert(a>=0&&b>a,'actual current page TH128 thprac caller is missing');return source.slice(a,b);}
 function callerHarness({held=null,badReceipt=false}={}){const calls=[],menu={launching:false,launchId:0},state={stageCatalog:{},handoff:false,pendingCarryToken:0,worldMode:false,active:false,paused:false},controller=new AbortController();const env={state,menu,DOMException,createThprac128Session:method('createThprac128Session'),thprac128RuntimeSupported:()=>true,readThprac128Native:(m,s)=>{if(badReceipt)throw Error('actual native practice receipt rejected');return{generation:1};},find:()=>({disabled:false}),prepareStage:(id,options)=>({stage:{id},...options}),lastCheckWorldError:'',clock:{reset(){}},resetHighFrameratePresentation(){},syncDebugStageJumpControls(){},

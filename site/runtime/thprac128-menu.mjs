@@ -105,7 +105,7 @@ export function mountThprac128Menu({root,controls=root,opener=null,getAvailabili
   node.startPoint.value=point;refresh({routeDifficulty:rank});
  }
  function keyDown(event,fromRoot=false){
-  if(disposed||root.hidden)return false;const code=event.code;
+  if(disposed||root.hidden)return false;const code=['KeyC','ControlLeft','ControlRight'].includes(event.code)?'KeyZ':event.code;
   if(fromRoot&&code==='Enter'&&event.target?.closest?.('button')){event.stopPropagation();return true;}
   if(routeOpen&&index('mode')===0&&['ArrowLeft','ArrowRight','KeyZ','Enter'].includes(code)){
    if(['KeyZ','Enter'].includes(code))close({focus:false});

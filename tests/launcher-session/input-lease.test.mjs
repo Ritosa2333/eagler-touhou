@@ -17,6 +17,22 @@ test('a parent keyboard lease clears without releasing a physical game key',asyn
  env.key('keydown','KeyZ');bridge.send(envelope('keyboard','down',{down:true,code:'KeyZ'}));await flush();bridge.send(envelope('keyboard-clear','clear'));await flush();
  assert(held.has('KeyZ'));env.key('keyup','KeyZ');assert.equal(held.size,0);await session.dispose();input.dispose();
 });
+test('the Launcher can hold and release both Ctrl codes through the web input owner',async()=>{
+ const env=environment(),bridge=fakeWindow(),held=new Set(),owner=Symbol('launcher');
+ const input=mountWebInput({...env});
+ env.window.addEventListener('keydown',event=>{if(input.acceptKeyDown(event))held.add(event.code);});
+ env.window.addEventListener('keyup',event=>{if(input.acceptKeyUp(event))held.delete(event.code);});
+ const session=mountLauncherSession({window:bridge.win,hooks:{configure(){},launch(){},keyboard({down,code}){
+  input.setKeySource(owner,down?[code]:[]);
+ },keyboardClear(){input.clearKeySource(owner);},exit(){input.clearKeySource(owner);}}});
+ session.markReady();bridge.send(envelope('configure','cfg',{music:'ogg'}));await flush();bridge.send(envelope('launch','launch'));await flush();
+ try{
+  for(const code of ['ControlLeft','ControlRight']){
+   bridge.send(envelope('keyboard',code+'-down',{down:true,code}));await flush();assert.deepEqual([...held],[code]);
+   bridge.send(envelope('keyboard',code+'-up',{down:false,code}));await flush();assert.deepEqual([...held],[]);
+  }
+ }finally{await session.dispose();input.dispose();}
+});
 test('parent exit cancels its own key without cancelling an independent touch pointer',async()=>{
  const env=environment(),bridge=fakeWindow(),held=new Set(),owner=Symbol('launcher');let input;
  env.window.addEventListener('keydown',event=>{if(input.acceptKeyDown(event))held.add(event.code);});

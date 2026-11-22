@@ -1,5 +1,5 @@
 import {OriginalEndingPixels,decodeEndingGlyph} from './native-ending-pixels.mjs';
-const keyBits=Object.freeze({KeyZ:1,Enter:0x200,KeyX:2,Escape:0x100,ArrowUp:0x10,ArrowDown:0x20,ArrowLeft:0x40,ArrowRight:0x80});
+const keyBits=Object.freeze({KeyZ:1,Enter:0x200,KeyC:0x200,ControlLeft:0x200,ControlRight:0x200,KeyX:2,Escape:0x100,ArrowUp:0x10,ArrowDown:0x20,ArrowLeft:0x40,ArrowRight:0x80});
 const terminalStages=Object.freeze([3,5,8,10,13,15]);
 async function digest(input){
     const bytes=input instanceof Uint8Array?input:new TextEncoder().encode(JSON.stringify(input));
@@ -59,11 +59,13 @@ export class OriginalEndingInput{
     constructor(){this.held=new Set();this.pressed=0;this.released=0;}
     down(code){
         const bit=keyBits[code];if(bit===undefined||this.held.has(code))return false;
-        this.held.add(code);this.pressed|=bit;return true;
+        if(![...this.held].some(key=>keyBits[key]===bit))this.pressed|=bit;
+        this.held.add(code);return true;
     }
     up(code){
         const bit=keyBits[code];if(bit===undefined||!this.held.delete(code))return false;
-        this.released|=bit;return true;
+        if(![...this.held].some(key=>keyBits[key]===bit))this.released|=bit;
+        return true;
     }
     adoptHeld(codes){
         if(this.held.size||this.pressed||this.released||!(codes instanceof Set))throw new Error('Original ending initial held-input ownership rejected');

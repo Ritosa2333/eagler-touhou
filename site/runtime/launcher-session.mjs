@@ -4,7 +4,7 @@ import{touchOptions}from'./touch-options.mjs';
 import{installLauncherGamepadInput}from'./gamepad-input.mjs';
 const PROTOCOL='eagler-touhou/1',GAME='th128';
 const THPRAC_LOCALES=new Map([['zh','zh'],['zh-CN','zh'],['ja','ja'],['ja-JP','ja'],['en','en'],['en-US','en']]);
-const KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','KeyR','Enter','Escape','ShiftLeft','ShiftRight','Tab','Backspace','F1','F2','F3','F4','F5','F6','F7','F12']);
+const KEYS=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','KeyC','ControlLeft','ControlRight','KeyR','Enter','Escape','ShiftLeft','ShiftRight','Tab','Backspace','F1','F2','F3','F4','F5','F6','F7','F12']);
 const own=(value,key)=>Object.hasOwn(value,key),record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)
  &&(Object.getPrototypeOf(value)===Object.prototype||Object.getPrototypeOf(value)===null);
 const invalid=message=>Object.assign(new Error(message),{errno:'invalid-field'});

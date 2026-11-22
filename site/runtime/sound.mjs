@@ -311,7 +311,16 @@ export class GameSoundQueue {
   }
 }
 
-const keyBits=new Map([['ArrowUp',0x10],['ArrowDown',0x20],['ArrowLeft',0x40],['ArrowRight',0x80],['KeyZ',1],['Enter',0x200],['KeyX',2],['Escape',0x100]]);
+const keyBits=new Map([['ArrowUp',0x10],['ArrowDown',0x20],['ArrowLeft',0x40],['ArrowRight',0x80],['KeyZ',1],['Enter',0x200],['KeyC',0x200],['ControlLeft',0x200],['ControlRight',0x200],['KeyX',2],['Escape',0x100]]);
+// Rapid-fire aliases share the native confirm bit with Enter, but each source owns its hold.
+function pressMenuKey(owner,code){
+  const bit=keyBits.get(code);if(bit===undefined)return false;
+  owner.heldKeys.add(code);if(!(owner.held&bit))owner.pressed|=bit;owner.held|=bit;return true;
+}
+function releaseMenuKey(owner,code){
+  const bit=keyBits.get(code);if(bit===undefined||!owner.heldKeys.delete(code))return;
+  if(![...owner.heldKeys].some(key=>keyBits.get(key)===bit))owner.held&=~bit;
+}
 export class OriginalPauseController{
   constructor({module,isCurrent=()=>true,releaseInput,consumeSound,audio,onResume,onTitle,onRestart,onPresentation=async()=>{},onReplayOpen=async()=>{throw new Error("Original replay save consumer is unavailable");}}){
     for(const name of ['_th128_world_pause_open','_th128_world_pause_tick','_th128_world_pause_commit','_th128_world_pause_state'])
@@ -320,7 +329,7 @@ export class OriginalPauseController{
       ||['enter','leave','suspend'].some(name=>typeof audio?.[name]!=='function'))throw new Error('Original menu consumer is incomplete');
     this.module=module;this.isCurrent=isCurrent;this.releaseInput=releaseInput;this.consumeSound=consumeSound;this.audio=audio;
     this.onResume=onResume;this.onTitle=onTitle;this.onRestart=onRestart;this.onPresentation=onPresentation;this.onReplayOpen=onReplayOpen;this.wake=null;
-    this.active=false;this.suspended=false;this.held=0;this.pressed=0;this.busy=false;this.closed=false;
+    this.active=false;this.suspended=false;this.heldKeys=new Set();this.releaseKeys();this.busy=false;this.closed=false;
   }
   current(){return !this.closed&&this.isCurrent();}
   checked(result){
@@ -331,7 +340,7 @@ export class OriginalPauseController{
     if(this.active||this.busy||!this.current())throw new Error('Original menu is already owned');
     this.busy=true;
     try{
-      this.releaseInput();this.held=0;this.pressed=0;
+      this.releaseInput();this.releaseKeys();
       await this.audio.enter();
       if(!this.current())return;
       if(!alreadyOpened)this.checked(this.module._th128_world_pause_open(replayFinished?2:0));
@@ -341,12 +350,11 @@ export class OriginalPauseController{
     }catch(problem){if(this.current())throw problem;}finally{this.busy=false;}
   }
   keyDown(code){
-    if(!this.active||!this.current())return;
-    const bit=keyBits.get(code);if(bit===undefined)return;
-    if(!(this.held&bit))this.pressed|=bit;this.held|=bit;
+    if(!this.active||!this.current()||!pressMenuKey(this,code))return;
     if(this.suspended){this.suspended=false;this.wake=this.audio.enter().catch(error=>{if(this.current())this.failure=error;});}
   }
-  keyUp(code){const bit=keyBits.get(code);if(bit!==undefined)this.held&=~bit;}
+  keyUp(code){releaseMenuKey(this,code);}
+  releaseKeys(){this.heldKeys.clear();this.held=0;this.pressed=0;}
   async step(){
     if(!this.active||this.suspended||!this.current())return;
     if(this.failure)throw this.failure;
@@ -363,7 +371,7 @@ export class OriginalPauseController{
       if(!action)return;
       if(![1,2,3,6].includes(action))throw new Error('Original menu action has no complete consumer');
       this.checked(this.module._th128_world_pause_commit(action));
-      this.active=false;this.held=0;this.pressed=0;this.releaseInput();await this.audio.leave();if(!this.current())return;
+      this.active=false;this.releaseKeys();this.releaseInput();await this.audio.leave();if(!this.current())return;
       if(action===1||action===2)await this.onResume();
       else if(action===3)await this.onTitle();
       else await this.onRestart();
@@ -388,11 +396,11 @@ export class OriginalPauseController{
   }
   async suspend(){
     if(!this.current())return;
-    this.held=0;this.pressed=0;this.suspended=true;
+    this.releaseKeys();this.suspended=true;
     await this.audio.suspend();
   }
   async dispose(){
-    this.closed=true;this.active=false;this.held=0;this.pressed=0;
+    this.closed=true;this.active=false;this.releaseKeys();
     await this.audio.leave();
   }
 }
@@ -934,17 +942,17 @@ export class OriginalMainMenuController{
     for(const name of ['_th128_tick','_th128_title_menu_state','_th128_title_main_input'])if(typeof module?.[name]!=='function')throw new Error('Original complete Title API unavailable');
     if([prepare,consumeSound,consumeMusic,syncText,onState,onAction,getButtons].some(callback=>typeof callback!=='function'))throw new Error('Original complete Title consumers unavailable');
     Object.assign(this,{module,prepare,consumeSound,consumeMusic,syncText,onState,onAction,getButtons});
-    this.held=0;this.pressed=0;this.busy=false;this.prepared=false;this.disposed=false;this.controllerHeld=0;this.controllerAdopted=false;this.lastInput=0;
+    this.heldKeys=new Set();this.held=0;this.pressed=0;this.busy=false;this.prepared=false;this.disposed=false;this.controllerHeld=0;this.controllerAdopted=false;this.lastInput=0;
     this.musicTask=null;this.musicFailure=null;
   }
   snapshot(){return JSON.parse(this.module.UTF8ToString(this.module._th128_title_menu_state()));}
   adoptHeld(keys){
     if(this.disposed||!(keys instanceof Set))throw new Error('Original Main held-key observation unavailable');
-    let held=0;for(const code of keys){const bit=keyBits.get(code);if(bit!==undefined)held|=bit;}this.held=held;this.pressed=0;this.controllerHeld=0;this.controllerAdopted=false;
+    this.release();for(const code of keys){const bit=keyBits.get(code);if(bit!==undefined){this.heldKeys.add(code);this.held|=bit;}}
   }
-  keyDown(code){const bit=keyBits.get(code);if(bit===undefined)return;if(!(this.held&bit))this.pressed|=bit;this.held|=bit;}
-  keyUp(code){const bit=keyBits.get(code);if(bit!==undefined)this.held&=~bit;}
-  release(){this.held=0;this.pressed=0;this.controllerHeld=0;this.controllerAdopted=false;}
+  keyDown(code){pressMenuKey(this,code);}
+  keyUp(code){releaseMenuKey(this,code);}
+  release(){this.heldKeys.clear();this.held=0;this.pressed=0;this.controllerHeld=0;this.controllerAdopted=false;}
   dispose(){this.disposed=true;this.release();}
   pumpMusicRoom(){
     if(this.musicTask)return true;
