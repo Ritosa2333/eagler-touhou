@@ -50,9 +50,22 @@ export function createAudio() {
     return files.get("/" + match.folder + "/" + match.name) || null;
   }
 
+  function hostedMusicBase() {
+    const params = new URLSearchParams(location.search);
+    if (params.get("hosted") === "1") return new URL("/games/thsss/music/ogg/", location.origin).href;
+    if (window.parent !== window && Number(params.get("runtimeEpoch")) > 0) {
+      return new URL("/games/thsss/music/ogg/", location.origin).href;
+    }
+    return "";
+  }
+
   function assetUrl(path) {
     const match = assetMatch(path);
     if (!match) return "";
+    if (match.folder === "BGM") {
+      const base = hostedMusicBase();
+      if (base) return new URL(match.name, base).href;
+    }
     return new URL("assets/" + match.folder + "/" + match.name, document.baseURI).href;
   }
 
