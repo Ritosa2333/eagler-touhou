@@ -6,7 +6,7 @@ using System.Text;
 
 namespace SlimDX.Direct3D9
 {
-	public class Mesh : ComObject
+	public class Mesh : BaseMesh
 	{
 		private sealed class Subset
 		{
@@ -60,7 +60,7 @@ namespace SlimDX.Direct3D9
 
 		private bool hasBound;
 
-		public VertexFormat VertexFormat { get; set; }
+		public override VertexFormat VertexFormat { get; set; }
 
 		public Vector3 BoundMin { get; private set; }
 
@@ -119,7 +119,7 @@ namespace SlimDX.Direct3D9
 			return array;
 		}
 
-		public Mesh Clone(Device device, MeshFlags flags, VertexFormat format)
+		public override Mesh Clone(Device device, MeshFlags flags, VertexFormat format)
 		{
 			var mesh = new Mesh();
 			mesh.device = device ?? this.device;
@@ -137,7 +137,7 @@ namespace SlimDX.Direct3D9
 		{
 		}
 
-		public void DrawSubset(int subset)
+		public override void DrawSubset(int subset)
 		{
 			if (subset < 0 || subset >= this.subsets.Count || this.device == null)
 			{

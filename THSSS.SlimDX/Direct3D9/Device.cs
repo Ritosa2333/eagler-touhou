@@ -272,6 +272,11 @@ namespace SlimDX.Direct3D9
 			this.boundTexture = texture;
 		}
 
+		public void SetTexture(int stage, BaseTexture texture)
+		{
+			this.boundTexture = texture as Texture;
+		}
+
 		public void SetStreamSource(int streamNumber, VertexBuffer buffer, int offset, int stride)
 		{
 			this.stream = buffer;

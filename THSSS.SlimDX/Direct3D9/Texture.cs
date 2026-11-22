@@ -5,7 +5,7 @@ using SlimDX.Imaging;
 
 namespace SlimDX.Direct3D9
 {
-	public class Texture : ComObject
+	public class Texture : BaseTexture
 	{
 		public int GlId { get; private set; }
 
