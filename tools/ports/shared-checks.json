@@ -3,7 +3,7 @@
   "gates": [
     {
       "id": "held-touch-continuity",
-      "excludeGames": ["th01", "th02", "th03", "th04"],
+      "excludeGames": ["th01", "th02", "th03", "th04", "thsss"],
       "level": "module",
       "complete": false,
       "checks": ["TOUCH-09"],
@@ -11,7 +11,7 @@
     },
     {
       "id": "immediate-sfx-routing",
-      "excludeGames": ["th01", "th02", "th03", "th04"],
+      "excludeGames": ["th01", "th02", "th03", "th04", "thsss"],
       "level": "source-contract",
       "complete": false,
       "checks": ["AUDIO-07"],
