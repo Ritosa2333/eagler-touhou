@@ -147,6 +147,8 @@ Score.dat
 THSSS.Browser/wwwroot/assets/
 
 # Directory runtime staged for eagler-touhou. Regenerate with stage-eagler-runtime.mjs.
+# The unsuffixed name also covers a symlink to a staged directory.
+/build-eagler
 /build-eagler/
 
 # esbuild, used only to bundle the directory runtime.
