@@ -25,7 +25,8 @@ test("runtime protocol contract", async () => {
 
 
 const shellSources = Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game, product]) => [game,
-  product.runtimeFileLayout === "directory"
+  game === "hsob" || game === "thsss" ? []
+    : product.runtimeFileLayout === "directory"
     ? game === "th09"
       ? [workspacePath(game, `web`, "sdl-runtime", "managed.mjs")]
       : ["th075", "th15"].includes(game) ? [workspacePath(game, `web`, "sdl-runtime", "shell.mjs")] : [
@@ -44,6 +45,10 @@ for (const [game, paths] of Object.entries(shellSources)) {
   if (game === 'th12') {
     execFileSync(nativeNodeExecutable(),['--test','--test-name-pattern=managed (protocol|touch):',workspacePath(game,'tests/managed-adapter.test.mjs')],
       {encoding:'utf8',windowsHide:true});
+    continue;
+  }
+  if (game === 'hsob' || game === 'thsss') {
+    // Import-only / sibling-host titles keep protocol owners outside this ports tree.
     continue;
   }
   const source = (await Promise.all(paths.map(path => readFile(path, "utf8")))).join("\n");

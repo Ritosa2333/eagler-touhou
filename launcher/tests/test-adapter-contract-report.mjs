@@ -6,6 +6,7 @@ import { ADAPTER_CONTRACT_REPORT_SCHEMA, createAdapterContractReport } from "../
 
 test("adapter contract report", async () => {
 for (const game of Object.keys(PRODUCT_GAMES)) {
+  if (PRODUCT_GAMES[game].importOnly) continue;
   const report = createAdapterContractReport(game);
   assert.equal(report.schema, ADAPTER_CONTRACT_REPORT_SCHEMA);
   assert.equal(report.game, game);
