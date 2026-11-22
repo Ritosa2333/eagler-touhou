@@ -105,12 +105,34 @@ namespace SlimDX.XAudio2
 
 		public void Bind(string path)
 		{
+			path = ResolveAudioPath(path);
 			this.ReadWavInfo(path);
 			if (AudioHost.Api == null)
 			{
 				return;
 			}
 			this.bufferId = AudioHost.Api.Prepare(path ?? "");
+		}
+
+		/// <summary>
+		/// Game code still requests .wav paths from the original assembly.
+		/// Packed browser assets ship as .ogg; prefer that when present.
+		/// </summary>
+		internal static string ResolveAudioPath(string path)
+		{
+			if (string.IsNullOrEmpty(path))
+			{
+				return path;
+			}
+			if (path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+			{
+				var ogg = path.Substring(0, path.Length - 4) + ".ogg";
+				if (File.Exists(ogg) || !File.Exists(path))
+				{
+					return ogg;
+				}
+			}
+			return path;
 		}
 
 		public void Start(PlayFlags flags)
