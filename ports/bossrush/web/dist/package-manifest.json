@@ -1,15 +1,15 @@
 {
   "schema": "bro/package-manifest/1",
-  "version": "sha256-b14ed7bdeedc41e225da157784c9081bbc3a340b99027bdc4b5c0fff29d77d81",
-  "generated": "2026-11-20T21:39:20+0800",
+  "version": "sha256-05fd0275ca3a19121b162bb99aebff01a7747fb4fb36ebf5edba7bd96ae8f665",
+  "generated": "2026-11-22T11:37:18+0800",
   "base": "./game/",
   "counts": {
-    "total": 972,
+    "total": 1004,
     "components": 9,
     "incomplete": 0
   },
   "bytes": {
-    "total": 145187360
+    "total": 147160870
   },
   "components": {
     "fonts": {
@@ -39,9 +39,9 @@
       ]
     },
     "images-ui": {
-      "revision": "sha256-6d86fa326b08fe81e808c5ac",
-      "files": 129,
-      "bytes": 6432164,
+      "revision": "sha256-62e7d93567c400a503e42dcb",
+      "files": 138,
+      "bytes": 6934353,
       "tags": [
         "image",
         "ui"
@@ -63,9 +63,9 @@
       ]
     },
     "scripts": {
-      "revision": "sha256-11bc61b8ea7314344d206080",
-      "files": 144,
-      "bytes": 2823786,
+      "revision": "sha256-b39cd2fd2f8891da5804c5ef",
+      "files": 167,
+      "bytes": 4295107,
       "tags": [
         "script"
       ]
@@ -4847,6 +4847,96 @@
       "p": "THlib/bullet/img/knife.png",
       "n": 34402,
       "h": "241f5554f1fe2faa8fbf5df3d3548d8a703d21cf320748a8655090f90cfe37b3",
+      "d": "package",
+      "m": "images-ui",
+      "t": [
+        "image"
+      ]
+    },
+    {
+      "p": "THlib/bullet/img/legacy/bullet1.png",
+      "n": 77402,
+      "h": "6d00e60a93b73ff5bc5a43d71dc1416bec9736b7e7e54a541c7bcb5d98e7a8a9",
+      "d": "package",
+      "m": "images-ui",
+      "t": [
+        "image"
+      ]
+    },
+    {
+      "p": "THlib/bullet/img/legacy/bullet2.png",
+      "n": 75221,
+      "h": "dd171066b3d86ecdc16671dc40cc53bca2d128ce9cdedd692c3983206d7bbf06",
+      "d": "package",
+      "m": "images-ui",
+      "t": [
+        "image"
+      ]
+    },
+    {
+      "p": "THlib/bullet/img/legacy/bullet3.png",
+      "n": 57203,
+      "h": "fc65a0cf0ef39d6368bf194c147a560e4dcd0f542ab36e24b9f66b6a743b11c9",
+      "d": "package",
+      "m": "images-ui",
+      "t": [
+        "image"
+      ]
+    },
+    {
+      "p": "THlib/bullet/img/legacy/bullet4.png",
+      "n": 72004,
+      "h": "0f50a21da1f791cf329e169343b266f86c6730d0982a3ee5e53521184bb3fea0",
+      "d": "package",
+      "m": "images-ui",
+      "t": [
+        "image"
+      ]
+    },
+    {
+      "p": "THlib/bullet/img/legacy/bullet5.png",
+      "n": 32976,
+      "h": "809fbe0f1c40c18710bd045e90452c6665712c5f2b72eb24359029a33b471c82",
+      "d": "package",
+      "m": "images-ui",
+      "t": [
+        "image"
+      ]
+    },
+    {
+      "p": "THlib/bullet/img/legacy/bullet6.png",
+      "n": 63901,
+      "h": "7b2bc49ac48dba52e776c98a8c55c6437380bb908ca9eb19186fd494eb9caac9",
+      "d": "package",
+      "m": "images-ui",
+      "t": [
+        "image"
+      ]
+    },
+    {
+      "p": "THlib/bullet/img/legacy/bullet_ball_huge.png",
+      "n": 28475,
+      "h": "ce497806b3c5106e27cc443a34dd7df3f1a71e165cc4dc966b38e0c7d85c3a2d",
+      "d": "package",
+      "m": "images-ui",
+      "t": [
+        "image"
+      ]
+    },
+    {
+      "p": "THlib/bullet/img/legacy/bullet_music.png",
+      "n": 26848,
+      "h": "720edf00b273408a21d321fa2039ecc873903a92c7453c8deb9c7ae16d017647",
+      "d": "package",
+      "m": "images-ui",
+      "t": [
+        "image"
+      ]
+    },
+    {
+      "p": "THlib/bullet/img/legacy/bullet_water_drop.png",
+      "n": 68159,
+      "h": "a9f8c7b7ad3770a11cf0af66cf696916cbbebd2915710b7a2c159600d088dbf4",
       "d": "package",
       "m": "images-ui",
       "t": [
@@ -9766,6 +9856,236 @@
     },
     {
       "p": "mod/GAME/th185.lua",
+      "n": 27529,
+      "h": "de99ee2a315d3f22fe01c280c41b6093a511b6c18937efa9e1a50f286dd56f28",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th06.lua",
+      "n": 44660,
+      "h": "136a04dc181b58283664eb02b8194bd4bb2a775537fac71067565982adc9f320",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th07.lua",
+      "n": 85170,
+      "h": "a982605b774a0a09d2343841e8d7b974ed4f3a7bfb8ae1f89f07b91727136290",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th08-boss1.lua",
+      "n": 64054,
+      "h": "f555cfc41fde673ba03cda18ef91d54a00d3245d80d29c6dbd7dbcb6241f91a7",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th08-boss_lastword.lua",
+      "n": 82949,
+      "h": "a275b4a330309310e08b729c1765e0c21dc7f5dcbd29505706814ed9ed66dd23",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th08.lua",
+      "n": 79148,
+      "h": "62912fce4e35865255daab0d8a605fb2c557a1a27541b984e9dd41b0b5f5b94b",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th09.lua",
+      "n": 94887,
+      "h": "85d44334c6b56b5603db888d77bd7b8bfb1e4d7aa0be01371bfd2cad774d0fe3",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th095.lua",
+      "n": 35021,
+      "h": "31bcf616cd6627b40c05231c85ba84d6878390de982339e98832d791cd809b71",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th10.lua",
+      "n": 67060,
+      "h": "7facd48902f8b1cf708585feee929fc43becb8e69643bac799847ec6d649840b",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th11.lua",
+      "n": 68651,
+      "h": "67e1ff87fb997d4e35916507efdadaa31f6b57e1036615dc4944beae2652e525",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th11_2.lua",
+      "n": 55637,
+      "h": "dd1ae42874e197b8a01d46f18cd63592ebd086f06de777cff1c360bccacafa49",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th12.lua",
+      "n": 57987,
+      "h": "a0fb55b0a79b89f90f374ad108d405b0fe7fd1d7baab4321f82e6c5bf0ed6246",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th125.lua",
+      "n": 64991,
+      "h": "ed477d0586adc184721e34b21bcc415931763d4ce283c2f9f0ddf7460276166c",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th128.lua",
+      "n": 26228,
+      "h": "af73fea8496841fb48ac668cac29c05b13f51a710cbfc0aa78b60b7914834a0f",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th13.lua",
+      "n": 91873,
+      "h": "c4216524013493c37971eaf833effe40346573b9df5f987fa9dd693f3cc2414c",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th14.lua",
+      "n": 74511,
+      "h": "a08665f8735f08aa6c3fc971e01ff89fbd6a0aabcbfd3298f4a93c19b096eacc",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th143.lua",
+      "n": 86290,
+      "h": "e6e3121dbfb6f07eed75a4c397cb1c4a24210fc2e92a9cf88aee6ff3dab1c818",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th14_2.lua",
+      "n": 48649,
+      "h": "085340d7fa2c8a6ab0404e268995dd18891004d780e0e45a4ff3362e8abc876e",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th15.lua",
+      "n": 78396,
+      "h": "e6d8673b940de13d7b8fb2817aac2e2424a915c16fe667f2068f3d97d203bbbc",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th16.lua",
+      "n": 92042,
+      "h": "887838e68825b8a4404e9fdfbf922c220c09184858f4ac671c85d2286b3b63bf",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th165.lua",
+      "n": 22770,
+      "h": "6d1ad8bf26cf478da27619d0b43bb655fb5e0dcbc26ad97d62504b8288b841f8",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th17.lua",
+      "n": 64482,
+      "h": "455ce4da61e84ccaf5af30479a63ca75cfa3eb06566adcbd519f9cc12bfb2a9d",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th18.lua",
+      "n": 58336,
+      "h": "88790e2e92f11cb00f29c0be98d698ce545ad94fb30ee70f5c45566507b5f40f",
+      "d": "scripts",
+      "m": "scripts",
+      "t": [
+        "script"
+      ]
+    },
+    {
+      "p": "mod/GAME_L/th185.lua",
       "n": 27529,
       "h": "de99ee2a315d3f22fe01c280c41b6093a511b6c18937efa9e1a50f286dd56f28",
       "d": "scripts",

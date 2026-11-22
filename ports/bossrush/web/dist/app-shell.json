@@ -1,6 +1,6 @@
 {
   "schema": "bro/app-shell/1",
-  "version": "sha256-ac7f1d1afc92529fd399ace7a6ac1bde27020a16f503a927b9c74e7cf7fc3051",
+  "version": "sha256-f12977e972e3fb109cc9e1864f8cb7830c193d5c848b6851c77366ffcd227dba",
   "files": [
     {
       "p": "bro.html",
@@ -24,8 +24,8 @@
     },
     {
       "p": "src/eagler_adapter.mjs",
-      "n": 42144,
-      "h": "a864eccc9ef5d434baa8dff54db2cf8b14283850f1b4e44015e78c536bf2c572"
+      "n": 44787,
+      "h": "360b0c360a5a10c877ee89c35cda09e53064e73a1b908bf6e7b9f770bdc95c43"
     },
     {
       "p": "src/input.mjs",
@@ -148,6 +148,11 @@
       "h": "fab55bf917e747d270c4d3b6c8a3f89d26ef7164f715c4b8daeee631ab428ff7"
     },
     {
+      "p": "test/browser/bullet_texture_e2e.mjs",
+      "n": 7391,
+      "h": "d48380b443d67d61a7a4a5dbf18f84505076f4b6b1f598feb3376e7ef9bcd7bd"
+    },
+    {
       "p": "test/browser/check.mjs",
       "n": 3869,
       "h": "a20a0d3195be968c96c553d7aa1a7f0b38b551a6a4926d00ee09fd2dff49b373"
@@ -254,8 +259,8 @@
     },
     {
       "p": "test/browser/play.html",
-      "n": 20354,
-      "h": "ccb2977a319e828529bf9bc32ed172695c6ed5a249d87eeb2bdb15d54d0927e1"
+      "n": 20646,
+      "h": "88d092174d496a29f00809094d04f8c11496d7dd1f452c4eb951cd127a4a492b"
     },
     {
       "p": "test/browser/play_check.mjs",
@@ -263,9 +268,24 @@
       "h": "756d6db393fe569e95f9ac54ef277d5ee818cd5e313ddbb1155745c59e98a066"
     },
     {
+      "p": "test/browser/replay_playback_e2e.mjs",
+      "n": 8136,
+      "h": "f24a903af04925c800ffb71bb65c43899f7777293110e5b54006a65ca313e65e"
+    },
+    {
       "p": "test/browser/serve.mjs",
       "n": 2148,
       "h": "9819b5c38867c48a3e282ef100e50bc371dfbc4e9ff725b6e5fd1e23e034ebcf"
+    },
+    {
+      "p": "test/browser/spell_legacy_e2e.mjs",
+      "n": 5914,
+      "h": "1557e3a4aee7a8bb8774cf25b73ac97bb292bd49b6d6f3920cbd38336260385d"
+    },
+    {
+      "p": "test/browser/spell_player_mp_e2e.mjs",
+      "n": 7008,
+      "h": "8f3516fbf2ef51e9521c92bba6a67d1726077725ac491657922507129993719d"
     },
     {
       "p": "test/browser/storage_bridge.html",
