@@ -133,20 +133,17 @@ $RECYCLE.BIN/
 .DS_Store
 
 _NCrunch*
-/BGM/
-/BPic/
-/CS/
-/FX/
-/Image/
-/Model/
-/Replay/
-/ScreenShot/
-/Sound/
-/Story/
+/Assets/
 Score.dat
 /1.1Patch/
 
-# Staged browser content (copied at build from the repo root)
+# Game sources are regenerated from vendor/THSSS.exe + patches/
+/THSSS/
+/.decompile/
+/.decompile-patch-base/
+/THSSS.legacy-dnspy/
+
+# Staged browser content (packed at build from Assets/)
 THSSS.Browser/wwwroot/assets/
 
 # Directory runtime staged for eagler-touhou. Regenerate with stage-eagler-runtime.mjs.
@@ -154,3 +151,4 @@ THSSS.Browser/wwwroot/assets/
 
 # esbuild, used only to bundle the directory runtime.
 /node_modules/
+

@@ -1,0 +1,36 @@
+{
+  "001-browser-stubs.patch": [
+    "Shooting/APIClass.cs",
+    "Shooting/Encryption.cs",
+    "Shooting/INI_RW.cs",
+    "Shooting/Watch.cs",
+    "Shooting/MouseCtrl.cs"
+  ],
+  "002-audio-bind.patch": [
+    "Shooting/XAudio2_Player.cs",
+    "Shooting/XAudio2_PlayerV2.cs",
+    "Shooting/xWMAStream.cs"
+  ],
+  "003-frame-touch-host.patch": [
+    "Shooting/Game_Main.cs",
+    "Shooting/BaseMyPlane.cs",
+    "Shooting/BaseGameState.cs"
+  ],
+  "004-textures-draw.patch": [
+    "Shooting/GlobalDataPackage.cs",
+    "Shooting/StageDataPackage.cs",
+    "Shooting/BaseObject.cs",
+    "Shooting/MySprite.cs",
+    "Shooting/GameState_SplashScreen.cs",
+    "Shooting/GameState_MusicLoading.cs"
+  ],
+  "005-polish-batch.patch": [
+    "Shooting/BackgroundTransitionIn.cs",
+    "Shooting/BackgroundMove.cs",
+    "Shooting/BackgroundMove2.cs",
+    "Shooting/BaseStage.cs",
+    "Shooting/BackgroundManager3D.cs",
+    "Shooting/ParticleManager3D.cs",
+    "Shooting/ParticleEndBullet.cs"
+  ]
+}

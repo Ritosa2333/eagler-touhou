@@ -1,0 +1,271 @@
+From: PrepareGameSources
+Subject: 001-browser-stubs.patch
+---
+
+diff --git a/Shooting/APIClass.cs b/Shooting/APIClass.cs
+index 0647f1b..df0acef 100644
+--- a/Shooting/APIClass.cs
++++ b/Shooting/APIClass.cs
+@@ -1,12 +1,14 @@
+-using System.Runtime.InteropServices;
+-
+ namespace Shooting;
+ 
+ public class APIClass
+ {
+-	[DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+-	public static extern int GetShortPathName(string lpszLongPath, string shortFile, int cchBuffer);
++	public static int GetShortPathName(string lpszLongPath, string shortFile, int cchBuffer)
++	{
++		return 0;
++	}
+ 
+-	[DllImport("winmm.dll", CharSet = CharSet.Auto)]
+-	public static extern int mciSendString(string lpstrCommand, string lpstrReturnString, int uReturnLength, int hwndCallback);
++	public static int mciSendString(string lpstrCommand, string lpstrReturnString, int uReturnLength, int hwndCallback)
++	{
++		return 0;
++	}
+ }
+
+diff --git a/Shooting/Encryption.cs b/Shooting/Encryption.cs
+index 8bb8e14..e171700 100644
+--- a/Shooting/Encryption.cs
++++ b/Shooting/Encryption.cs
+@@ -1,51 +1,14 @@
+-using System;
+-using System.IO;
+-using System.Security.Cryptography;
+-using System.Text;
+-
+ namespace Shooting;
+ 
+ internal class Encryption
+ {
+ 	public static string Encrypt(string pToEncrypt)
+ 	{
+-		string s = "SeiweLL0";
+-		string s2 = "0SeiweLL";
+-		DESCryptoServiceProvider dESCryptoServiceProvider = new DESCryptoServiceProvider();
+-		byte[] bytes = Encoding.Default.GetBytes(pToEncrypt);
+-		dESCryptoServiceProvider.Key = Encoding.ASCII.GetBytes(s);
+-		dESCryptoServiceProvider.IV = Encoding.ASCII.GetBytes(s2);
+-		MemoryStream memoryStream = new MemoryStream();
+-		CryptoStream cryptoStream = new CryptoStream(memoryStream, dESCryptoServiceProvider.CreateEncryptor(), CryptoStreamMode.Write);
+-		cryptoStream.Write(bytes, 0, bytes.Length);
+-		cryptoStream.FlushFinalBlock();
+-		StringBuilder stringBuilder = new StringBuilder();
+-		byte[] array = memoryStream.ToArray();
+-		foreach (byte b in array)
+-		{
+-			stringBuilder.AppendFormat("{0:X2}", b);
+-		}
+-		return stringBuilder.ToString();
++		return DesCbc.EncryptToHex(pToEncrypt, "SeiweLL0", "0SeiweLL");
+ 	}
+ 
+ 	public static string Decrypt(string pToDecrypt)
+ 	{
+-		string s = "SeiweLL0";
+-		string s2 = "0SeiweLL";
+-		DESCryptoServiceProvider dESCryptoServiceProvider = new DESCryptoServiceProvider();
+-		byte[] array = new byte[pToDecrypt.Length / 2];
+-		for (int i = 0; i < pToDecrypt.Length / 2; i++)
+-		{
+-			int num = Convert.ToInt32(pToDecrypt.Substring(i * 2, 2), 16);
+-			array[i] = (byte)num;
+-		}
+-		dESCryptoServiceProvider.Key = Encoding.ASCII.GetBytes(s);
+-		dESCryptoServiceProvider.IV = Encoding.ASCII.GetBytes(s2);
+-		MemoryStream memoryStream = new MemoryStream();
+-		CryptoStream cryptoStream = new CryptoStream(memoryStream, dESCryptoServiceProvider.CreateDecryptor(), CryptoStreamMode.Write);
+-		cryptoStream.Write(array, 0, array.Length);
+-		cryptoStream.FlushFinalBlock();
+-		new StringBuilder();
+-		return Encoding.Default.GetString(memoryStream.ToArray());
++		return DesCbc.DecryptFromHex(pToDecrypt, "SeiweLL0", "0SeiweLL");
+ 	}
+ }
+
+diff --git a/Shooting/INI_RW.cs b/Shooting/INI_RW.cs
+index 0b82cb6..df92630 100644
+--- a/Shooting/INI_RW.cs
++++ b/Shooting/INI_RW.cs
+@@ -1,6 +1,6 @@
++using System;
++using System.Collections.Generic;
+ using System.IO;
+-using System.Runtime.InteropServices;
+-using System.Text;
+ 
+ namespace Shooting;
+ 
+@@ -8,12 +8,6 @@ public class INI_RW
+ {
+ 	public string inipath;
+ 
+-	[DllImport("kernel32")]
+-	private static extern long WritePrivateProfileString(string section, string key, string val, string filePath);
+-
+-	[DllImport("kernel32")]
+-	private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
+-
+ 	public INI_RW(string INIPath)
+ 	{
+ 		inipath = INIPath;
+@@ -21,18 +15,97 @@ public class INI_RW
+ 
+ 	public void IniWriteValue(string Section, string Key, string Value)
+ 	{
+-		WritePrivateProfileString(Section, Key, Value, inipath);
++		WriteManaged(inipath, Section, Key, Value);
+ 	}
+ 
+ 	public string IniReadValue(string Section, string Key)
+ 	{
+-		StringBuilder stringBuilder = new StringBuilder(500);
+-		GetPrivateProfileString(Section, Key, "", stringBuilder, 500, inipath);
+-		return stringBuilder.ToString();
++		return ReadManaged(inipath, Section, Key);
+ 	}
+ 
+ 	public bool ExistINIFile()
+ 	{
+ 		return File.Exists(inipath);
+ 	}
++
++	private static void WriteManaged(string path, string section, string key, string value)
++	{
++		List<string> list = new List<string>();
++		if (File.Exists(path))
++		{
++			list.AddRange(File.ReadAllLines(path));
++		}
++		string text = "[" + section + "]";
++		int num = -1;
++		int num2 = -1;
++		for (int i = 0; i < list.Count; i++)
++		{
++			string text2 = list[i].Trim();
++			if (text2.StartsWith("[") && text2.EndsWith("]"))
++			{
++				if (num >= 0 && num2 < 0)
++				{
++					break;
++				}
++				num = (string.Equals(text2, text, StringComparison.OrdinalIgnoreCase) ? i : (-1));
++			}
++			else if (num >= 0 && text2.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase))
++			{
++				num2 = i;
++				break;
++			}
++		}
++		string text3 = key + "=" + value;
++		if (num2 >= 0)
++		{
++			list[num2] = text3;
++		}
++		else if (num >= 0)
++		{
++			list.Insert(num + 1, text3);
++		}
++		else
++		{
++			if (list.Count > 0)
++			{
++				list.Add("");
++			}
++			list.Add(text);
++			list.Add(text3);
++		}
++		string directoryName = Path.GetDirectoryName(path);
++		if (!string.IsNullOrEmpty(directoryName))
++		{
++			Directory.CreateDirectory(directoryName);
++		}
++		File.WriteAllLines(path, list.ToArray());
++	}
++
++	private static string ReadManaged(string path, string section, string key)
++	{
++		if (!File.Exists(path))
++		{
++			return "";
++		}
++		string[] array = File.ReadAllLines(path);
++		string text = "[" + section + "]";
++		bool flag = false;
++		for (int i = 0; i < array.Length; i++)
++		{
++			string text2 = array[i].Trim();
++			if (text2.StartsWith("[") && text2.EndsWith("]"))
++			{
++				flag = string.Equals(text2, text, StringComparison.OrdinalIgnoreCase);
++			}
++			else if (flag)
++			{
++				int num = text2.IndexOf('=');
++				if (num > 0 && string.Equals(text2.Substring(0, num).Trim(), key, StringComparison.OrdinalIgnoreCase))
++				{
++					return text2.Substring(num + 1).Trim();
++				}
++			}
++		}
++		return "";
++	}
+ }
+
+diff --git a/Shooting/MouseCtrl.cs b/Shooting/MouseCtrl.cs
+index 881cf52..665e1d7 100644
+--- a/Shooting/MouseCtrl.cs
++++ b/Shooting/MouseCtrl.cs
+@@ -1,25 +1,8 @@
+-using System.Runtime.InteropServices;
+-
+ namespace Shooting;
+ 
+ public class MouseCtrl
+ {
+-	[DllImport("user32.dll", CharSet = CharSet.Auto)]
+-	private static extern int ShowCursor(bool bShow);
+-
+ 	public static void DrawCursor(bool cursorShow)
+ 	{
+-		if (cursorShow)
+-		{
+-			while (ShowCursor(bShow: true) < 0)
+-			{
+-			}
+-		}
+-		else
+-		{
+-			while (ShowCursor(bShow: false) >= 0)
+-			{
+-			}
+-		}
+ 	}
+ }
+
+diff --git a/Shooting/Watch.cs b/Shooting/Watch.cs
+index 1a432a4..cf1573a 100644
+--- a/Shooting/Watch.cs
++++ b/Shooting/Watch.cs
+@@ -1,5 +1,4 @@
+ using System.Diagnostics;
+-using System.Threading;
+ 
+ namespace Shooting;
+ 
+@@ -29,9 +28,6 @@ public class Watch
+ 	public void SleepTo(float Time)
+ 	{
+ 		Time -= GetDuration();
+-		if (Time > 0f)
+-		{
+-			Thread.Sleep((int)Time);
+-		}
++		// Browser host paces frames; do not Thread.Sleep.
+ 	}
+ }
+

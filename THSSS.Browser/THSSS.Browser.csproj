@@ -20,7 +20,8 @@
     <RootNamespace>Thsss.Browser</RootNamespace>
     <AssemblyName>THSSS.Browser</AssemblyName>
     <DefineConstants>$(DefineConstants);BROWSER</DefineConstants>
-    <NoWarn>$(NoWarn);SYSLIB0011;SYSLIB0021</NoWarn>
+    <!-- SYSLIB*: BinaryFormatter/DES APIs. CS0169/0649/0414: unused fields left by ILSpy decompile. -->
+    <NoWarn>$(NoWarn);SYSLIB0011;SYSLIB0021;CS0169;CS0649;CS0414</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
     <_DotNetInstallRoot>$([System.IO.Path]::GetFullPath($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName('$(MSBuildSDKsPath)'))))))))</_DotNetInstallRoot>
@@ -40,6 +41,8 @@
     <EmscriptenEnvVars Include="EM_FROZEN_CACHE=1" Visible="false" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="StageContent/**" />
+    <Compile Remove="TransformSources/**" />
     <PackageReference Include="Microsoft.DotNet.ILCompiler.LLVM" Version="10.0.0-rc.1.26357.1" />
     <PackageReference Include="runtime.win-x64.Microsoft.DotNet.ILCompiler.LLVM" Version="10.0.0-rc.1.26357.1" />
     <TrimmerRootAssembly Include="THSSS.Browser" />
@@ -66,16 +69,19 @@
   </ItemGroup>
   <PropertyGroup>
     <CoreCompileDependsOn>TransformGameSources;$(CoreCompileDependsOn)</CoreCompileDependsOn>
-    <!-- Packs gitignored game content, including Sound, into wwwroot/assets/thsss.dat and copies BGM beside it.
+    <!-- Packs gitignored game content from ../Assets, including Sound, into wwwroot/assets/thsss.dat and copies BGM beside it.
          Pass -p:StageGameAssets=false to compile without those files. Delete thsss.dat to restage. -->
     <StageGameAssets Condition="'$(StageGameAssets)' == ''">true</StageGameAssets>
   </PropertyGroup>
   <Target Name="StageGameContent" BeforeTargets="Build">
     <Message Importance="high" Condition="'$(StageGameAssets)' != 'true'" Text="StageGameAssets is false; skipping game asset copy and validation." />
     <PropertyGroup Condition="'$(StageGameAssets)' == 'true'">
-      <_StageSkipCopy Condition="Exists('$(MSBuildProjectDirectory)\wwwroot\assets\thsss.dat')">-SkipCopy</_StageSkipCopy>
+      <_StageContentProj>$(MSBuildThisFileDirectory)StageContent/StageContent.csproj</_StageContentProj>
+      <_StageContentDll>$(MSBuildThisFileDirectory)obj/stage-content/StageContent.dll</_StageContentDll>
+      <_StageSkipArg Condition="Exists('$(MSBuildThisFileDirectory)wwwroot/assets/thsss.dat')">--skip-copy</_StageSkipArg>
     </PropertyGroup>
-    <Exec Condition="'$(StageGameAssets)' == 'true'" Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\stage-content.ps1&quot; -Repo &quot;$(MSBuildProjectDirectory)\..&quot; -Dest &quot;$(MSBuildProjectDirectory)\wwwroot\assets&quot; $(_StageSkipCopy)" />
+    <MSBuild Condition="'$(StageGameAssets)' == 'true'" Projects="$(_StageContentProj)" Targets="Restore;Build" RemoveProperties="RuntimeIdentifier;SelfContained;PublishTrimmed;PublishAot;UseAppHost" Properties="Configuration=Release" />
+    <Exec Condition="'$(StageGameAssets)' == 'true'" Command="dotnet exec &quot;$(_StageContentDll)&quot; --repo &quot;$(MSBuildThisFileDirectory)../Assets&quot; --dest &quot;$(MSBuildThisFileDirectory)wwwroot/assets&quot; $(_StageSkipArg)" />
   </Target>
   <Target Name="IncludeCompressionNative" BeforeTargets="LinkNativeLlvm">
     <ItemGroup>
@@ -89,13 +95,27 @@
     </ItemGroup>
     <Copy SourceFiles="@(_HostFile)" DestinationFiles="@(_HostFile->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
-  <Target Name="TransformGameSources">
+  <Target Name="PrepareGameSources">
+    <PropertyGroup>
+      <_RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</_RepoRoot>
+      <_PrepareProj>$(_RepoRoot)/tools/PrepareGameSources/PrepareGameSources.csproj</_PrepareProj>
+      <_PrepareDll>$(MSBuildThisFileDirectory)obj/prepare-game-sources/PrepareGameSources.dll</_PrepareDll>
+    </PropertyGroup>
+    <Exec Command="dotnet tool restore" WorkingDirectory="$(_RepoRoot)" />
+    <MSBuild Projects="$(_PrepareProj)" Targets="Restore;Build" RemoveProperties="RuntimeIdentifier;SelfContained;PublishTrimmed;PublishAot;UseAppHost" Properties="Configuration=Release" />
+    <Exec Command="dotnet exec &quot;$(_PrepareDll)&quot; prepare --repo &quot;$(_RepoRoot)&quot;" WorkingDirectory="$(_RepoRoot)" />
+  </Target>
+  <Target Name="TransformGameSources" DependsOnTargets="PrepareGameSources">
     <PropertyGroup>
       <_GameSrc>$(IntermediateOutputPath)game-src</_GameSrc>
+      <_TransformProj>$(MSBuildThisFileDirectory)TransformSources/TransformSources.csproj</_TransformProj>
+      <_TransformDll>$(MSBuildThisFileDirectory)obj/transform-sources/TransformSources.dll</_TransformDll>
     </PropertyGroup>
-    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\transform-sources.ps1&quot; -Source &quot;$(MSBuildProjectDirectory)\..\THSSS&quot; -Dest &quot;$(_GameSrc)&quot;" />
+    <MSBuild Projects="$(_TransformProj)" Targets="Restore;Build" RemoveProperties="RuntimeIdentifier;SelfContained;PublishTrimmed;PublishAot;UseAppHost" Properties="Configuration=Release" />
+    <Exec Command="dotnet exec &quot;$(_TransformDll)&quot; --source &quot;$(MSBuildThisFileDirectory)../THSSS&quot; --dest &quot;$(_GameSrc)&quot;" />
     <ItemGroup>
-      <Compile Include="$(_GameSrc)\**\*.cs" />
+      <Compile Include="$(_GameSrc)/**/*.cs" />
     </ItemGroup>
   </Target>
 </Project>
+
