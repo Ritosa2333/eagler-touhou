@@ -8,7 +8,7 @@ export async function buildNetplayRelay(output) {
   await mkdir(output, {recursive:true});
   await build({absWorkingDir:project, entryPoints:{'netplay-relay':'src/netplay-relay.mjs',
     'anonymous-api':'src/anonymous-api.mjs','nickname-worker':'src/nickname-worker.mjs','room-probe-policy':'src/room-probe-policy.mjs',
-    'spectator-frame':'src/spectator-frame.mjs'}, outdir:resolve(output), outExtension:{'.js':'.mjs'},
+    'spectator-frame':'src/spectator-frame.mjs','netease-playlist-server':'src/netease-playlist-server.mjs'}, outdir:resolve(output), outExtension:{'.js':'.mjs'},
     bundle:true, platform:'node', format:'esm', target:'node22', external:['ws'],
     logLevel:'silent'});
 }

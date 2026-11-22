@@ -53,7 +53,7 @@ struct EffectManager
 
     static ChainCallbackResult OnDraw(EffectManager *mgr);
     void Reset();
-    Effect *SpawnParticles(i32 effectIdx, const ZunVec3 *pos, i32 count, ZunColor color);
+    Effect *SpawnParticles(i32 effectIdx, const ZunVec3 *pos, i32 count, ZunColor color, u8 missOwner = 0);
 };
 
 extern EffectManager g_EffectManager;

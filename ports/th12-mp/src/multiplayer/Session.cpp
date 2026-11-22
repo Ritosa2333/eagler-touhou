@@ -18,7 +18,7 @@ bool Session::configure(const uint32_t* words,unsigned count){
 bool Session::start(){
   if(started_||!network.Configured())return fail("TH12 room was not configured");
   const auto& s=network.Setup(); Options o;o.count=s.player_count;o.local=s.local_player;o.seed=s.seed;
-  o.stage=s.initial_stage();o.difficulty=int(s.difficulty);o.challenge=s.challenge;
+  o.stage=s.initial_stage();o.difficulty=int(s.difficulty);o.challenge=s.challenge;o.keepBulletsOnMiss=s.keep_bullets_on_miss;
   for(unsigned p=0;p<3;++p)o.selections[p]=int(s.selections[p]);
   practice::setEnabled(false);
   if(!begin(o))return fail("TH12 room resources do not match the starting stage");

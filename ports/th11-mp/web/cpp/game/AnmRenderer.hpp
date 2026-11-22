@@ -24,6 +24,8 @@ public:
 #ifdef TH11_MULTIPLAYER
     const AnmManager* multiplayer_animations=nullptr;
     const AnmVm* multiplayer_hud_background=nullptr;
+    const AnmResource* multiplayer_miss_resource=nullptr;
+    unsigned multiplayer_miss_viewer=0;
     std::array<u8,4> multiplayer_opacity{{255,255,255,255}};
     std::vector<const AnmVm*> multiplayer_hidden_hitboxes;
     std::map<u32,unsigned> multiplayer_hitbox_owners;

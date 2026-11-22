@@ -54,7 +54,7 @@ void playerMissCollision() {
   const auto effect = [](int script) {
     const auto key = 0x100000000ull + nextDetachedAnimation++;
     animationScene.bind(key, 0, 0, script, anm_logic::Membership::Primary, pilot().px / 128.f + 224,
-                        pilot().py / 128.f + 16, {}, false, nullptr, 0, 0, 0);
+                        pilot().py / 128.f + 16, {}, false, nullptr, 0, 0, 0, false, 0, true);
   };
   effect(79);
   for (int i = 0; i < 32; ++i)
@@ -98,6 +98,8 @@ void clearPlayerField(int state, int age) {
   // Their explicit flag8 omits this separate entry-clear path too. Active
   // replay restores always start with flags0 and execute all native clears.
   if (oracleFixtureFlags & 8)
+    return;
+  if (multiplayer::active && multiplayer::options.keepBulletsOnMiss && pilot().respawnClearOrigin[1] != 0)
     return;
   for (const auto& operation : playerClearOperations(state, age)) {
     if (operation.kind == 0)

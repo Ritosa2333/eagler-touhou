@@ -102,7 +102,11 @@ bool PlayerFrame::active_frame(){
     if(!input.movement.bomb&&input.special_available&&!input.special_active&&economy.power_step&&economy.power/economy.power_step&&(input.movement.held&2)){
         if(!world.start_bomb())return false;input.special_active=true;if(!practice_power_locked())economy.power=wrapping_sub(economy.power,economy.power_step);if(!rebuild_options())return false;
     }
-    if(state.state_timer.current<30&&!cancel_all(true))return false;
+    if(state.state_timer.current<30
+#ifdef TH11_MULTIPLAYER
+       &&(!input.keep_bullets_on_miss||state.transition_timer.current<30)
+#endif
+       &&!cancel_all(true))return false;
     motion.state.transition_timer=state.transition_timer.current;
 #ifdef TH_ENABLE_THPRAC
     motion.practice_locked_formation=practice&&practice->enabled&&practice->lock_marisa_b?practice->locked_formation:-1;
@@ -153,8 +157,14 @@ bool PlayerFrame::update(){
     switch(state.life_state){
     case 0:{
         economy.communication=0;auto& s=motion.state;s.y=wrapping_sub(0xf000,signed_bits(u32(state.state_timer.current)*0x2800)/60);s.position.y=float(double(s.y)/128);for(auto& o:motion.options)o.snap=1;s.warp=s.warp_timer=0;
+#ifdef TH11_MULTIPLAYER
+        if(!input.keep_bullets_on_miss){
+#endif
         if(state.state_timer.current<30){const float r=float(double(state.state_timer.current)*512/30+64),small=float(double(r)*.25);if(!world.cancel_bullets(&state.death_position,r,true)||!world.cancel_bullets(&state.death_position,small,false)||!world.cancel_lasers(&state.death_position,r,false,true)||!world.cancel_lasers(&state.death_position,small,false,false))return false;}
         else if(!cancel_all(true))return false;
+#ifdef TH11_MULTIPLAYER
+        }
+#endif
         if(state.state_timer.current>=60){state.life_state=1;state.state_timer.set(0,&animations.rate);if(!active_frame())return false;}break;
     }
     case 1:if(!active_frame())return false;break;

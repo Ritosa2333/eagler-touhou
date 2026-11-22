@@ -12,6 +12,10 @@ bool drive_one_frame(double delta_seconds);
 // MP 手动泵导出入口：running/app 未就绪或 delta 非法返回 0。
 int mp_run_frame(double delta_ms);
 
+// E2 input kick 导出入口：keydown 边沿后的即时微拍（source=4）。守卫不满足
+// 返回 0；时钟态语义见 BrowserRuntime.cpp 实现处注释。
+int input_kick(double now_ms);
+
 // 会话 Configure 成功后清零 MP 时间同步累积。
 void reset_mp_accumulator();
 

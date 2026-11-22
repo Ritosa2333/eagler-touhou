@@ -337,6 +337,7 @@ async function configureNetplay(){
  const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
  const low=digest.getUint32(0,true),high=digest.getUint32(4,true)||1;
  const challenge=options.netplayChallengeMode===true;
+ if(options.netplayChallengeKeepBullets!==undefined&&(typeof options.netplayChallengeKeepBullets!=='boolean'||(options.netplayChallengeKeepBullets&&!challenge)))throw Error('Invalid TH10 challenge bullet clearing setting');
  const words=[challenge?5:mode?4:3,count,seat,options.netplayDifficulty,options.netplaySeed,low,high,inputDelay];
  for(let i=0;i<3;i++){
   const value=loadouts[i]||{character:0,shot:0};
@@ -345,7 +346,7 @@ async function configureNetplay(){
   words.push(value.character,value.shot);
  }
  if(mode||challenge){if(runtimeBuildWords.length!==4)throw Error('Missing TH10 immutable Runtime identity');words.push(mode,+automatic,reserve,...runtimeBuildWords);}
- if(challenge)words.push(1);
+ if(challenge)words.push(1+2*(options.netplayChallengeKeepBullets===true));
  const pointer=core.files_allocate(words.length*4);
  try{
   new Uint32Array(core.memory.buffer,pointer,words.length).set(words);

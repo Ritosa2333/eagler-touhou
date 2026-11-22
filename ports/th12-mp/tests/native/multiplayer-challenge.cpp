@@ -1,6 +1,8 @@
 #include "game/Multiplayer.hpp"
 #include "game/GameState.hpp"
 #include "game/GameSession.hpp"
+#include "game/HostilePool.hpp"
+#include "game/LaserWorld.hpp"
 #include "game/PlayerSystem.hpp"
 #include "game/StageFlow.hpp"
 #include "multiplayer/WorldState.hpp"
@@ -42,6 +44,24 @@ int main(){
     for(unsigned seat=0;seat<count;++seat)check(mp::pilots[seat].misses==12+seat,"chapter restore retains cumulative Miss");
     mp::pilots[0].misses=0xffffffffu;mp::recordStageEntry(mp::options.seed,nullptr);check(mp::decodeStageEntry(mp::encodeStageEntry(),entry)&&mp::restoreStageEntry(entry)&&mp::pilots[0].misses==0xffffffffu,"chapter codec retains full unsigned Miss range");mp::pilots[0].playerState=4;mp::pilots[0].playerStateTicks=int(mp::deathbombFrames());mp::tickPlayers();check(mp::pilots[0].misses==0xffffffffu,"Miss saturates");
     selectStage(1);check(mp::begin(o)&&mp::pilots[0].misses==0,"restart clears Miss");
+  }
+  for(unsigned count:{2u,3u})for(bool keep:{false,true}){
+    selectStage(1);mp::Options challenge;challenge.count=count;challenge.challenge=true;challenge.keepBulletsOnMiss=keep;
+    check(mp::begin(challenge),"challenge bullet policy start");
+    for(auto& p:mp::pilots)p.playerStateTicks=60;
+    auto& pilot=mp::pilots[count-1];pilot.playerState=4;pilot.playerStateTicks=int(mp::deathbombFrames());
+    pilot.playerStateTime=float(pilot.playerStateTicks);
+    Projectile bullet{};bullet.entityId=bullet.enemy.id=8765;bullet.physicalSlot=0;bullet.enemy.phase=eb::Phase::Alive;
+    bullet.x=bullet.enemy.x=25;bullet.y=bullet.enemy.y=280;bullets.push_back(bullet);refreshProjectilePointers();
+    laser::Parameters beam;
+    beam.position={50,200,0};beam.width=8;beam.initialLength=32;beam.maxLength=128;
+    const int laserId=laserManager.spawn(laser::Kind::Moving,beam,laserWorld);
+    check(laserId!=0,"create a hostile laser");
+    for(unsigned i=0;i<100;++i)mp::tickPlayers();
+    check(pilot.misses==1&&pilot.playerState==1,"remote miss is counted and respawns in both policies");
+    check((bullets.front().enemy.phase==eb::Phase::Alive)==keep,"the rule controls respawn bullet cancellation");
+    const auto* remaining=laserManager.find(laserId);
+    check((remaining&&remaining->state.phase!=laser::Phase::Retiring)==keep,"the rule controls respawn laser cancellation");
   }
   mp::options.challenge=false;selectStage(1);mp::Options o;o.selections={0,1,2};check(mp::begin(o),"ordinary begin");mp::pilots[0].resources.lives=0;mp::pilots[0].playerState=4;mp::pilots[0].playerStateTicks=int(mp::deathbombFrames());for(unsigned i=0;i<55;++i)mp::tickPlayers();check(mp::pilots[0].ghost&&mp::pilots[0].resources.lives<0,"ordinary final death still becomes ghost");
   std::puts("PASS TH12 challenge: six loadouts, no Bomb/deathbomb, >9 zero-stock deaths, hidden stock/Extends, stage entry, rollback, restart, saturation and ordinary control");

@@ -187,6 +187,8 @@ struct Lifecycle final:PlayerLifecycleEnvironment {
         economy=&pilot.game;
         player_count=world.player_count;
         challenge_mode=world.state.multiplayer_session.challenge_mode;
+        keep_bullets_on_miss=world.state.multiplayer_session.keep_bullets_on_miss;
+        miss_effect_seat=u8(pilot.seat+1);
         manager=&world.engine.manager;
         effect_file=world.actors.bullets->animation_file;
         animations=&world.engine;
@@ -756,6 +758,7 @@ u8 World::player_visual_alpha(const AnmVm& vm)const{
     const auto* root=&vm.child_node;
     for(u32 i=0;root->previous&&i<4096;++i)root=root->previous;
     const u32 id=root->value?root->value->id:vm.id;
+    if(const auto* root_vm=root->value;root_vm&&root_vm->miss_effect_seat&&root_vm->miss_effect_seat!=local_player+1)return 64;
     const auto& local=*pilots[local_player].player;
     for(u32 seat=0;seat<player_count;++seat){
         const auto* p=pilots[seat].player;if(!p||seat==local_player)continue;

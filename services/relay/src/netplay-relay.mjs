@@ -1,6 +1,7 @@
 import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../../common/contracts/th19-versus-rules.mjs';
 import {PC98_INITIAL_STOCK,validPc98InitialSpares,validPc98InitialBombs} from '../../../common/contracts/pc98-initial-stock.mjs';
 const pc98StockRoom=id=>/^th0[24]mp-/.test(id);
+const TH075_SPECTATOR_CONTROL = Buffer.from([69, 80, 84, 83, 1]);
 import {Th19SpectatorHistory} from './th19-spectator.mjs';
 import {createRemoteNicknameService} from './account-nickname-source.mjs';
 import {createNicknameService} from './nickname-service.mjs';
@@ -541,6 +542,7 @@ function newRoom(id, chatScope = 'room-' + randomUUID()) {
           }
         : {}),
       challengeMode: false,
+      challengeKeepBullets: false,
       prankMode: false,
       inputDelay: 0,
       timingChoice: 'auto',
@@ -662,6 +664,72 @@ function startSpectatorGrace(roomId, room, runId, run) {
   }, spectatorConnectGraceMs);
 }
 
+// TH075 publishers opt in before sending timing or frame zero. Older
+// runtimes keep the existing pre-start admission behavior.
+function acceptTh075SpectatorPayload(roomId, runId, room, run, payload) {
+  if (!roomId.startsWith('th075mp-') || run.playerCount !== 2) return false;
+  const control = payload.length === 6 && payload.subarray(0, 5).equals(TH075_SPECTATOR_CONTROL);
+  if (control && payload[5] === 1) {
+    if (!run.th075Spectator && !run.ended && run.memberIds && String(room.lobby.startSerial) === runId) {
+      clearTimeout(run.spectatorGraceTimer);
+      run.spectatorGraceTimer = null;
+      run.th075Spectator = {timing: null, nextFrame: 0, abi: null};
+      run.spectatorAdmissionOpen = true;
+      run.onSpectatorAvailabilityChange = () => {
+        if (String(room.lobby.startSerial) === runId) broadcastLobby(room);
+      };
+    }
+    return true;
+  }
+  const stream = run.th075Spectator;
+  if (!stream) return false;
+  if (run.spectatorComplete || run.ended) return true;
+  if (control && payload[5] === 2) {
+    if (!stream.nextFrame) return true;
+    run.spectatorComplete = true;
+    run.spectatorAdmissionOpen = false;
+  } else if (!isSpectatorFrameForRoom(roomId, payload, run.playerCount)) {
+    return true;
+  } else if (payload.length === 40) {
+    if (stream.timing) return true;
+    stream.timing = payload.readBigUInt64LE(16);
+  } else {
+    const frame = payload.readUInt32LE(16), abi = payload.readUInt32LE(20);
+    if (!stream.timing || payload.readBigUInt64LE(8) !== stream.timing ||
+        frame !== stream.nextFrame || !abi || (stream.abi !== null && abi !== stream.abi)) {
+      stopSpectatorStream(run);
+      return true;
+    }
+    stream.abi = abi;
+    ++stream.nextFrame;
+  }
+
+  if (!run.spectatorHistoryUnavailable) {
+    appendSpectatorHistory(run, payload, TH075_SPECTATOR_HISTORY_LIMITS, closeTh09HistoryAdmission);
+  }
+  for (const [id, socket] of run.spectatorClients) {
+    if (!socket.spectatorReplaying) sendSpectatorPayload(socket, payload, roomId, runId, id);
+  }
+  if (!control && stream.nextFrame === 1 && !run.spectatorTimeline) {
+    run.spectatorTimeline = true;
+    broadcastLobby(room);
+    for (const [id, socket] of room.lobbyClients) {
+      if (!room.lobby.spectators.has(id) || run.admittedSpectators.has(id)) continue;
+      run.admittedSpectators.add(id);
+      run.memberIds.set(id, roomDirectory.memberIdFor(roomId, id));
+      sendLobby(socket, {type: 'spectator-start', serial: room.lobby.startSerial, room: lobbySnapshot(room)});
+    }
+  } else if (control) {
+    run.onSpectatorAvailabilityChange?.();
+  }
+  return true;
+}
+
+const TH075_SPECTATOR_HISTORY_LIMITS = {
+  historyFrames: 108002, // Timing, 30 minutes at 60 Hz, and the terminal marker.
+  historyBytes: 6 * 1024 * 1024,
+};
+
 function acceptTh19SpectatorPayload(roomId,runId,room,run,payload){
  if(!roomId.startsWith('th19mp-'))return false;
  if(run.spectatorHistoryUnavailable)return true;
@@ -703,7 +771,7 @@ function stopHostSpectatorStream(roomId, runId, run, source) {
   console.log(`SPECTATOR STOP room=${roomId} run=${runId} source=${source} ended=${run.spectatorComplete === true} viewers=${run.spectatorClients.size}`);
   // A validated cooperative End already closes admission. Existing viewers
   // still own the continuous replay prefix and may be paused far behind it.
-  if (run.spectatorStages?.ended || run.spectatorPc98?.ended) return;
+  if (run.spectatorStages?.ended || run.spectatorPc98?.ended || (run.th075Spectator && run.spectatorComplete)) return;
   stopSpectatorStream(run);
 }
 
@@ -1479,6 +1547,7 @@ function lobbySnapshot(room) {
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
     ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
     challengeMode: room.lobby.challengeMode,
+    ...(room.multiplayer?.challengeKeepBullets ? {challengeKeepBullets: room.lobby.challengeKeepBullets} : {}),
     prankMode: room.lobby.prankMode,
     inputDelay: room.lobby.inputDelay,
     timingChoice: room.lobby.timingChoice,
@@ -1506,7 +1575,8 @@ function lobbySnapshot(room) {
     spectatorCount: spectators.length,
     ...((process.env.EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE === '1' && room.id.startsWith('th09mp-')) ||
         room.runs.get(String(room.lobby.startSerial))?.spectatorStages ||
-        room.runs.get(String(room.lobby.startSerial))?.spectatorPc98
+        room.runs.get(String(room.lobby.startSerial))?.spectatorPc98 ||
+        (room.id.startsWith('th075mp-') && room.runs.get(String(room.lobby.startSerial))?.spectatorTimeline)
       ? { spectatorTimeline: true }
       : {}),
     seats: room.lobby.seats.map((seat, index) =>
@@ -1631,7 +1701,8 @@ function switchLobbyProduct(room, product) {
   next.lobby.roomName = previous.roomName;
   next.lobby.disableCheatMovement = previous.disableCheatMovement;
   next.lobby.unrated = previous.unrated;
-  next.lobby.challengeMode = previous.challengeMode && next.multiplayer.gameplay === 'cooperative';
+  next.lobby.challengeMode = previous.challengeMode && next.multiplayer.gameplay === 'cooperative' && next.multiplayer.challengeMode !== false;
+  next.lobby.challengeKeepBullets = next.lobby.challengeMode && next.multiplayer.challengeKeepBullets === true && previous.challengeKeepBullets;
   next.lobby.startSerial = previous.startSerial;
   if (validPlayerCount(next.multiplayer, previous.playerCount)) next.lobby.playerCount = previous.playerCount;
   if (next.th15) next.lobby.chapterThreshold = defaultTh15ChapterThreshold(next.lobby.playerCount);
@@ -1738,6 +1809,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     if(pc98StockRoom(room.id)&&validPc98InitialSpares(initialPolicy?.initialSpares)&&validPc98InitialBombs(initialPolicy?.initialBombs)){room.lobby.initialSpares=initialPolicy.initialSpares;room.lobby.initialBombs=initialPolicy.initialBombs;}
     const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
     room.lobby.challengeMode = modesSupported && initialPolicy?.challengeMode === true;
+    room.lobby.challengeKeepBullets = room.lobby.challengeMode && room.multiplayer.challengeKeepBullets === true && initialPolicy?.challengeKeepBullets === true;
     room.lobby.prankMode = false;
     if (validPlayerCount(room.multiplayer, initialPolicy?.playerCount))
       room.lobby.playerCount = initialPolicy.playerCount;
@@ -2015,7 +2087,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       if (seatChanged || spectatorChanged) broadcastLobby(room);
       if (room.lobby.phase !== 'lobby') {
         const run = room.runs.get(String(room.lobby.startSerial));
-        if (run?.spectatorTimeline && (!(run.spectatorStages||run.spectatorPc98) || run.spectatorAdmissionOpen) && !run.ended && !run.spectatorStopped) {
+        if (run?.spectatorTimeline && (!(run.spectatorStages||run.spectatorPc98||run.th075Spectator) || run.spectatorAdmissionOpen) && !run.ended && !run.spectatorStopped) {
           run.admittedSpectators.add(clientId);
           run.memberIds.set(clientId, roomDirectory.memberIdFor(roomId, clientId));
           sendLobby(socket, {
@@ -2466,6 +2538,12 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         (typeof message.challengeMode === 'boolean'
           ? message.challengeMode
           : room.lobby.challengeMode);
+      if (message.challengeKeepBullets !== undefined &&
+          (typeof message.challengeKeepBullets !== 'boolean' || room.multiplayer?.challengeKeepBullets !== true)) {
+        sendLobby(socket, {type:'error', error:'invalid challenge bullet clearing setting'});
+        return;
+      }
+      const challengeKeepBullets = challengeMode && (message.challengeKeepBullets ?? room.lobby.challengeKeepBullets);
       // Prank mode is temporarily unavailable for every product.
       const prankMode = false;
       room.lobby.visibility = visibility;
@@ -2480,6 +2558,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.showHitboxes !== showHitboxes ||
         room.lobby.ballCount !== ballCount ||
         room.lobby.challengeMode !== challengeMode ||
+        room.lobby.challengeKeepBullets !== challengeKeepBullets ||
         room.lobby.prankMode !== prankMode ||
         room.lobby.initialSpares !== initialSpares || room.lobby.initialBombs !== initialBombs ||
         (room.th15 && room.lobby.chapterThreshold !== chapterThreshold)
@@ -2494,6 +2573,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         if(room.id.startsWith('th01mp-'))room.lobby.ballCount=ballCount;
         if(pc98StockRoom(room.id)){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
         room.lobby.challengeMode = challengeMode;
+        room.lobby.challengeKeepBullets = challengeKeepBullets;
         room.lobby.prankMode = prankMode;
         if(room.id.startsWith('th05mp-')){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
         if (room.th15) room.lobby.chapterThreshold = chapterThreshold;
@@ -2802,7 +2882,7 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
         socket.spectatorReplaying = false;
         return;
       }
-      if (run.spectatorStages || run.spectatorPc98) {
+      if (run.spectatorStages || run.spectatorPc98 || run.th075Spectator) {
         // Keep packets individually decodable and yield after a bounded burst,
         // rather than waiting for a timer between every checkpoint chunk.
         for (let sent = 0; sent < 64 && history[index] && socket.bufferedAmount <= 64 * 1024; ++sent)
@@ -2947,6 +3027,7 @@ server.on('connection', (socket, request) => {
         ? Number(url.searchParams.get('chapterThreshold'))
         : undefined,
       challengeMode: url.searchParams.get('challengeMode') === '1',
+      challengeKeepBullets: url.searchParams.get('challengeKeepBullets') === '1',
       prankMode: url.searchParams.get('prankMode') === '1',
       playerCount: Number(url.searchParams.get('players')),
       difficulty: url.searchParams.has('difficulty')
@@ -3123,6 +3204,7 @@ server.on('connection', (socket, request) => {
       if (run.spectatorStopped) return;
       if (player !== 0 || run.clients.get(player) !== socket) return;
       const payload = incoming.subarray(1);
+      if (acceptTh075SpectatorPayload(roomId, runId, room, run, payload)) return;
       if(pc98Lane&&payload.length>=4&&payload[0]===0x50&&payload[1]===0x39&&payload[2]===0x38&&payload[3]===0x53){
         try{
           const first=!run.spectatorPc98,stream=run.spectatorPc98||new Pc98SpectatorRelay(run.playerCount,{matchInitializers:/^th0[234]mp-/.test(roomId)}),kind=stream.accept(payload);

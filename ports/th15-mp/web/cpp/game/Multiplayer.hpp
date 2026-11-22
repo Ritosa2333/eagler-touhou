@@ -12,7 +12,9 @@ struct MultiplayerOptions {
     // Recorded rule 20 owns stage handoff, Reisen shields and shared stock rules.
     bool replay_legacy_stage_flow=false;
     bool spectator=false;
+    bool keep_bullets_on_miss=false;
     bool valid()const noexcept {
+        if(keep_bullets_on_miss&&!challenge)return false;
         if(chapter_threshold&&!valid_multiplayer_chapter_threshold(u32(chapter_threshold)))return false;
         if(seat_count<2||seat_count>3||local_seat>=seat_count||stage<1||stage>7||difficulty<0||difficulty>4)return false;
         if((stage==7)!=(difficulty==4))return false;

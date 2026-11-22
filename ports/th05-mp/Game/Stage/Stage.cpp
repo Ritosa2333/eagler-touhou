@@ -3,6 +3,7 @@
 #include "../Game.h"
 #include "../Practice/Practice.h"
 #include "../Practice/KeyMonitor.h"
+#include <algorithm>
 #include <stdexcept>
 #include "Chara/Chara.h"
 #include "CharaBullet/CharaBullet.h"
@@ -787,7 +788,12 @@ void CStage::Draw()
 	CCommonFunctionGraphic::DrawRectangle(0,0,(float)m_playAreaUpperLeftX-1,479,0,0,0);
 	CCommonFunctionGraphic::DrawRectangle((float)m_playAreaUpperLeftX+384,0,639,479,0,0,0);
 
-	PlayAreaFade((float)m_curScrFade);
+	int playAreaFade=m_curScrFade;
+	if(Cooperative()){
+		const int respawn=m_seats[coop::Run().local].player->m_nextLifeComeTimeLeft;
+		if(respawn>0&&respawn<4)playAreaFade=std::max(playAreaFade,100+respawn%2*50);
+	}
+	PlayAreaFade(float(playAreaFade));
 
 	m_pFloatingText->Draw();
 	m_pSummary->Draw();

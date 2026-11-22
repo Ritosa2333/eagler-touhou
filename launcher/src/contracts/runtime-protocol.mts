@@ -121,6 +121,7 @@ export interface RuntimeConfigureOptions {
   netplaySeed?: number;
   netplayDifficulty?: number;
   netplayChallengeMode?: boolean;
+  netplayChallengeKeepBullets?: boolean;
   netplayDisableLocalChargePriority?: boolean;
   netplayDisableFocus?: boolean;
   netplayShowHitboxes?: boolean;
@@ -186,6 +187,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplayPlayerCount: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplaySeed: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
   netplayChallengeMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "Cooperative multiplayer; fixed before start" }),
+  netplayChallengeKeepBullets: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "Supported cooperative challenge rooms with bullet clearing disabled" }),
   netplayDisableLocalChargePriority: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH09 multiplayer; true restores native charge progression and Replay; fixed before HELLO"}),
   netplayBallCount: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH01 multiplayer ball count"}),
   netplayShowHitboxes: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH03 multiplayer room display rule"}),

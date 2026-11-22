@@ -359,10 +359,12 @@ bool PlayerFrame::update(){
 #else
         economy.communication=0;auto& s=motion.state;s.y=wrapping_sub(0xf000,signed_bits(u32(state.state_timer.current)*0x2800)/60);s.position.y=float(double(s.y)/128);for(auto& o:motion.options)o.snap=1;s.warp=s.warp_timer=0;
 #if PORT_TITLE == 14
-        if(state.state_timer.current<30){
-            const float r=(float(state.state_timer.current)*512.f)/30.f+64.f;
-            if(!world.cancel_lasers(&state.death_position,r,false,true)||!world.cancel_lasers(&state.death_position,r*.25f,false,false))return false;
-        }else if(!world.cancel_bullets(&s.position,640.f,false)||!world.cancel_lasers(nullptr,0,false,true))return false;
+        if(!world.th14_keep_bullets_on_miss()){
+            if(state.state_timer.current<30){
+                const float r=(float(state.state_timer.current)*512.f)/30.f+64.f;
+                if(!world.cancel_lasers(&state.death_position,r,false,true)||!world.cancel_lasers(&state.death_position,r*.25f,false,false))return false;
+            }else if(!world.cancel_bullets(&s.position,640.f,false)||!world.cancel_lasers(nullptr,0,false,true))return false;
+        }
 #else
         if(state.state_timer.current<30){const float r=float(double(state.state_timer.current)*512/30+64),small=float(double(r)*.25);if(!world.cancel_bullets(&state.death_position,r,true)||!world.cancel_bullets(&state.death_position,small,false)||!world.cancel_lasers(&state.death_position,r,false,true)||!world.cancel_lasers(&state.death_position,small,false,false))return false;}
         else if(!cancel_all(true))return false;

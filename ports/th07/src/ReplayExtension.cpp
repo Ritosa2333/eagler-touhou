@@ -120,7 +120,8 @@ constexpr u32 MP_SESSION_HIDE_CONTRIBUTION_STATS = 2u;
 constexpr u32 MP_SESSION_HIDE_STAGE_PLAYER_NAMES = 4u;
 constexpr u32 MP_SESSION_INCREMENTAL_TOUCH = 8u;
 constexpr u32 MP_SESSION_CHALLENGE = 16u;
-constexpr u32 MP_SESSION_FLAGS_MASK = MP_SESSION_CHALLENGE | MP_SESSION_STAGE4_BOSS_CHAIN |
+constexpr u32 MP_SESSION_KEEP_BULLETS_ON_MISS = 32u;
+constexpr u32 MP_SESSION_FLAGS_MASK = MP_SESSION_KEEP_BULLETS_ON_MISS | MP_SESSION_CHALLENGE | MP_SESSION_STAGE4_BOSS_CHAIN |
                                       MP_SESSION_HIDE_CONTRIBUTION_STATS |
                                       MP_SESSION_HIDE_STAGE_PLAYER_NAMES |
                                       MP_SESSION_INCREMENTAL_TOUCH;
@@ -210,7 +211,8 @@ bool FindTrailer(const u8 *bytes, std::size_t size, std::size_t &payloadOffset, 
         const u32 localPlayer = ReadLe32(bytes + payloadOffset + MP_LOCAL_PLAYER_OFFSET);
         const u32 sessionFlags = ReadLe32(bytes + payloadOffset + MP_SESSION_FLAGS_OFFSET);
         if (playerCount < 2 || playerCount > 3 || difficulty > 5 ||
-            localPlayer >= playerCount || (sessionFlags & ~MP_SESSION_FLAGS_MASK) != 0)
+            localPlayer >= playerCount || (sessionFlags & ~MP_SESSION_FLAGS_MASK) != 0 ||
+            ((sessionFlags & MP_SESSION_KEEP_BULLETS_ON_MISS) && !(sessionFlags & MP_SESSION_CHALLENGE)))
             return false;
         for (u32 player = 0; player < playerCount; ++player)
         {
@@ -521,6 +523,7 @@ bool AppendInputEvents(const char *path, const std::vector<InputSample> (&inputs
         // Old readers reject unknown session flags instead of silently
         // interpreting fresh displacement as a legacy pending snapshot.
         if (multiplayerConfig.challengeMode) sessionFlags |= MP_SESSION_CHALLENGE;
+        if (multiplayerConfig.keepBulletsOnMiss) sessionFlags |= MP_SESSION_KEEP_BULLETS_ON_MISS;
         if (hasIncrementalTouch)
             sessionFlags |= MP_SESSION_INCREMENTAL_TOUCH;
         WriteLe32(bytes.data() + payloadOffset + MP_SESSION_FLAGS_OFFSET, sessionFlags);
@@ -907,6 +910,7 @@ bool LoadPlayback(const u8 *bytes, std::size_t size)
         g_PlaybackMultiplayerConfig.stage4BossChain =
             (sessionFlags & MP_SESSION_STAGE4_BOSS_CHAIN) != 0;
         g_PlaybackMultiplayerConfig.challengeMode = (sessionFlags & MP_SESSION_CHALLENGE) != 0;
+        g_PlaybackMultiplayerConfig.keepBulletsOnMiss = (sessionFlags & MP_SESSION_KEEP_BULLETS_ON_MISS) != 0;
         g_PlaybackMultiplayerConfig.showContributionStats =
             (sessionFlags & MP_SESSION_HIDE_CONTRIBUTION_STATS) == 0;
         g_PlaybackMultiplayerConfig.showStagePlayerNames =

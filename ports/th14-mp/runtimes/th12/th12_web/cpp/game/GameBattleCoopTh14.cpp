@@ -11,11 +11,12 @@ namespace {
 constexpr u32 skip=0x200;
 }
 
-bool GameBattle::setup_coop(const std::array<Th14CoopLoadout,3>& loadouts,u32 seats,u32 viewer,bool challenge,bool observer){
+bool GameBattle::setup_coop(const std::array<Th14CoopLoadout,3>& loadouts,u32 seats,u32 viewer,bool challenge,bool observer,bool keep_bullets_on_miss){
     if(seats<2||seats>3||viewer>=seats||!initialized||
        loadouts[0].character!=enemy_environment.character||loadouts[0].subtype!=enemy_environment.subtype)
         return unavailable("invalid TH14 co-op setup");
     coop_seats=seats;coop_viewer=viewer;coop_challenge=challenge;coop_observer=observer;
+    coop_keep_bullets_on_miss=keep_bullets_on_miss;
     if(!hud.layout_coop(seats,challenge))return unavailable("TH14 multiplayer HUD setup");
     player->shots.coop_draw_file=20;
     player->motion.th14_coop_draw_tag=20;
@@ -372,6 +373,11 @@ bool GameBattle::draw_coop_players(AnmRenderer& renderer){
     }
     return true;
 }
+bool GameBattle::player_effect(Vec3 p,i32 script){
+    auto* vm=animations.create(resources.core.effect,script,8,u32(-1),false,false,&p);
+    if(vm&&coop_seats>1&&(script==27||script==28))vm->reserved_3a0=coop_miss_draw_tag+coop_actor;
+    return vm!=nullptr;
+}
 u8 GameBattle::coop_sprite_opacity(const void* context,const AnmVm& vm){
     const auto& battle=*static_cast<const GameBattle*>(context);
     auto* root=&vm;
@@ -388,6 +394,8 @@ u8 GameBattle::coop_sprite_opacity(const void* context,const AnmVm& vm){
     };
     // The tags are set on the ANM roots, including effects retiring after Shift release.
     const auto tag=root->reserved_3a0;
+    if(tag>=coop_miss_draw_tag&&tag<coop_miss_draw_tag+battle.coop_seats)
+        return tag-coop_miss_draw_tag==battle.coop_viewer?255:64;
     if(tag>=24&&tag<24+battle.coop_seats)return tag==24+battle.coop_viewer?255:0;
     if(tag>=20&&tag<20+battle.coop_seats)return opacity(tag-20);
     for(u32 seat=0;seat<battle.coop_seats;++seat)

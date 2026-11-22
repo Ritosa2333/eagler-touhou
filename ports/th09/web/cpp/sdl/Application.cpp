@@ -2057,6 +2057,7 @@ int run_desktop() {
         th09_game_close();
         return 1;
     }
+#if defined(TH09_DESKTOP_MOTION_SMOOTHING)
     const auto* motion=SDL_getenv("EAGLER_TH09_MOTION_SMOOTHING");
     const auto* display=SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(SDL_GL_GetCurrentWindow()));
     const bool display_fast=display&&display->refresh_rate>=90.f;
@@ -2067,6 +2068,7 @@ int run_desktop() {
     probe->motion_netplay_enabled=probe->motionEnabled&&(!netplayMotion||std::string_view(netplayMotion)!="0");
     if(probe->motionEnabled)SDL_Log("th09 motion smoothing: enabled (fixed midpoint, netplay %s)",
         probe->motion_netplay_enabled?"on":"off");
+#endif
     th09_loop_start();
     auto epoch = loop_epoch;
 #if TH09_NATIVE_ROOM

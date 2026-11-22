@@ -5,8 +5,10 @@ bool PlayerLife::advance_state(u32 pressed,float& rate,bool hud_available,Player
     const auto bomb=[&](){if(!(pressed&2)&&!(state==4&&cheat(PracticeAutoBomb)))return 0;if(session.bombs<=0||!host.allow_bomb())return 0;return host.begin_bomb()?1:-1;};
     switch(state){
     case 0:{const i32 y=wrapping_sub(0xf000,wrapping_mul(age.current,0x2800)/60);motion.position_fixed.y=y;motion.position.y=float(float(y)*.0078125f);motion.snap_options();
-        if(age.current<30){const float radius=float(float(float(float(age.current)*512.f)/30.f)+64.f);if(!host.cancel_lasers_near(last_death_position,radius,0,true)||!host.cancel_lasers_near(last_death_position,float(radius*.25f),0,false))return false;}
-        else if(!host.cancel_bullets_near(motion.position,640.f,0)||!host.cancel_lasers(0,true))return false;
+        if(!session.keep_bullets_on_miss){
+            if(age.current<30){const float radius=float(float(float(float(age.current)*512.f)/30.f)+64.f);if(!host.cancel_lasers_near(last_death_position,radius,0,true)||!host.cancel_lasers_near(last_death_position,float(radius*.25f),0,false))return false;}
+            else if(!host.cancel_bullets_near(motion.position,640.f,0)||!host.cancel_lasers(0,true))return false;
+        }
         if(age.current<60)return true;state=1;age.set(0);[[fallthrough]];}
     case 1:if(bomb()<0)return false;return host.move();
     case 4:if(age.current<

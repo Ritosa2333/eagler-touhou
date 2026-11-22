@@ -56,10 +56,12 @@ export function validateMultiplayerOptions(options = {}) {
     throw Error('TH13 多人机体配置无效');
   if (spectator && (typeof options.netplaySpectatorId !== 'string' || !options.netplaySpectatorId))
     throw Error('观战身份缺失');
+  if (options.netplayChallengeKeepBullets !== undefined && (typeof options.netplayChallengeKeepBullets !== 'boolean' || (options.netplayChallengeKeepBullets && options.netplayChallengeMode !== true)))
+    throw Error('Invalid TH13 challenge bullet clearing setting');
   if (options.netplayChallengeMode !== undefined && typeof options.netplayChallengeMode !== 'boolean')
     throw Error('挑战模式配置无效');
   return {url, room, run, count, seat, spectator, mode, delay, automatic, reserve, loadouts,
-    challenge: options.netplayChallengeMode === true, replay: false};
+    challenge: options.netplayChallengeMode === true, keepBulletsOnMiss: options.netplayChallengeKeepBullets === true, replay: false};
 }
 
 export async function multiplayerSetupWords(options, buildWords, cryptoProvider = globalThis.crypto) {
@@ -89,7 +91,7 @@ export async function multiplayerSetupWords(options, buildWords, cryptoProvider 
   words[15] = +c.automatic;
   words[16] = c.reserve;
   for (let i = 0; i < BUILD_WORDS; i++) words[17 + i] = buildWords[i] >>> 0;
-  words[21] = +c.challenge;
+  words[21] = +c.challenge + 2 * c.keepBulletsOnMiss;
   return {config: c, words};
 }
 

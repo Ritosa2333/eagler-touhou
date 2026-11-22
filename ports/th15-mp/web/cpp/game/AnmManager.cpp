@@ -29,9 +29,10 @@ AnmVm* AnmManager::instantiate(AnmResource& resource,i32 script){
     error="Animation source resource not owned by manager";return nullptr;
 }
 bool AnmManager::initial_tick(AnmVm& vm){if(vm.tick(random,rate)<0){error=vm.error;registry.destroy_tree(vm);return false;}return true;}
-u32 AnmManager::create(i32 id,i32 script,i32 layer,u32 ordering,const Vec3& translation,float rotation_z){
+u32 AnmManager::create(i32 id,i32 script,i32 layer,u32 ordering,const Vec3& translation,float rotation_z,u8 miss_effect_seat){
     auto* source=resource(id);if(!source){error="Animation resource unavailable";return 0;}auto* vm=instantiate(*source,script);if(!vm)return 0;
     vm->visual.render_flags|=0x400;if(layer>=0){vm->visual.layer=layer;if(layer<24)vm->visual.render_flags=(vm->visual.render_flags&~0x80000u)|0x40400;}
+    vm->miss_effect_seat=miss_effect_seat;
     vm->visual.translation=translation;vm->variables.rotation.z=rotation_z;if(!initial_tick(*vm))return 0;vm->ordering=ordering;return registry.submit(*vm,ordering);
 }
 u32 AnmManager::create_overlay(i32 resource,i32 script){
@@ -39,12 +40,14 @@ u32 AnmManager::create_overlay(i32 resource,i32 script){
 }
 AnmVm* AnmManager::spawn_child(AnmVm& source,i32 script,u32 ordering){
     if(!source.resource){error="Child animation source has no resource";return nullptr;}auto* vm=instantiate(*source.resource,script);if(!vm)return nullptr;
+    vm->miss_effect_seat=source.miss_effect_seat;
     vm->visual.translation={};vm->creation_parent=&source;vm->rotation_parent=source.rotation_parent?source.rotation_parent:&source;
     vm->visual.render_flags^=(source.visual.render_flags^vm->visual.render_flags)&0x2000000;
     if(!initial_tick(*vm))return nullptr;vm->ordering=ordering;if(!registry.submit(*vm,ordering)||!registry.attach(*vm,source)){error=registry.error;registry.destroy_tree(*vm);return nullptr;}return vm;
 }
 AnmVm* AnmManager::spawn_detached(AnmVm& source,i32 script){
     if(!source.resource){error="Detached animation source has no resource";return nullptr;}auto* vm=instantiate(*source.resource,script);if(!vm)return nullptr;
+    vm->miss_effect_seat=source.miss_effect_seat;
     vm->visual.render_flags|=0x400;vm->visual.layer=source.visual.layer;vm->visual.render_flags^=(source.visual.render_flags^vm->visual.render_flags)&0x2000000;
     vm->visual.translation=source.visual.translation;vm->variables.rotation=source.variables.rotation;vm->visual.child_anchor=source.variables.position;
     if(!initial_tick(*vm))return nullptr;vm->ordering=0;if(!registry.submit(*vm)){error=registry.error;registry.destroy_tree(*vm);return nullptr;}return vm;
@@ -55,6 +58,7 @@ bool AnmManager::interrupt_effect(AnmVm& vm,i32 label,float rate){return !effect
 bool AnmManager::rebind(u32& handle,i32 script){
     auto* old=registry.find(handle);if(!old)return true;old->visual.flags&=~1u;old->visible=false;old->instruction_offset=-1;
     auto* vm=instantiate(*old->resource,script);if(!vm)return false;vm->visual.render_flags|=0x400;vm->visual.translation={};vm->variables.rotation.z=0;
+    vm->miss_effect_seat=old->miss_effect_seat;
     if(!initial_tick(*vm))return false;vm->ordering=0;handle=registry.submit(*vm);return handle!=0;
 }
 bool AnmManager::retire(u32& handle){auto* vm=registry.find(handle);if(vm&&!(vm->visual.render_flags&0x4000000)){vm->visual.render_flags=(vm->visual.render_flags&~64u)|32;if(!registry.retire_children(*vm))return false;}handle=0;return true;}

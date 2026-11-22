@@ -109,6 +109,10 @@ void captureAnimationDraw() {
       continue;
     const u32 id = node.id;
     const auto& s = node.vm.state();
+    const bool teammateMiss = node.missEffect && multiplayer::active && node.seat != multiplayer::options.local;
+    const auto missColor = [teammateMiss](u32 color) {
+      return teammateMiss ? (color & 0xffffffu) | (((color >> 24) / 4) << 24) : color;
+    };
     const int priority = drawPriority(node);
     u32 drawOrder = order++;
     const HostileDraw* hostile = nullptr;
@@ -151,8 +155,8 @@ void captureAnimationDraw() {
                                   s.uvScaleY,
                                   s.geometryRadius,
                                   s.geometryWidth,
-                                  s.primary,
-                                  s.secondary,
+                                  missColor(s.primary),
+                                  missColor(s.secondary),
                                   s.spriteBank,
                                   s.sprite,
                                   s.layer,

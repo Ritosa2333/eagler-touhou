@@ -566,6 +566,7 @@ public:
     }
     // 房间设置的挑战模式（SessionSetup.challenge）。单席不使用。
     bool challenge = false;
+    bool keep_bullets_on_miss = false;
     // 挑战：Bomb 库存与灵界槽恒为零，并清掉已经打开的灵界位（不走结束死亡）。
     void apply_challenge_locks();
     // 把 seats[seat] 的内容换入 player_state_ 窗口（当前窗口内容先写回

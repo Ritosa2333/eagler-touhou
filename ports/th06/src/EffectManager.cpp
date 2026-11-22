@@ -14,6 +14,10 @@
 #include "netplay/Th06RollbackState.hpp"
 #endif
 
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#endif
+
 EffectManager g_EffectManager;
 
 static ChainElem g_EffectManagerCalcChain;
@@ -202,7 +206,7 @@ i32 EffectManager::EffectCallbackAttractSlow(Effect *effect)
     return EFFECT_CALLBACK_RESULT_DONE;
 }
 
-Effect *EffectManager::SpawnParticles(i32 effectIdx, const ZunVec3 *pos, i32 count, ZunColor color)
+Effect *EffectManager::SpawnParticles(i32 effectIdx, const ZunVec3 *pos, i32 count, ZunColor color, [[maybe_unused]] u8 missOwner)
 {
     i32 idx;
     Effect *effect;
@@ -241,6 +245,9 @@ Effect *EffectManager::SpawnParticles(i32 effectIdx, const ZunVec3 *pos, i32 cou
 
         effect->inUseFlag = 1;
         effect->effectId = effectIdx;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        effect->missOwner = missOwner;
+#endif
 #ifdef TH_ENABLE_NETPLAY
         effect->missConfirmation = Netplay::SideEffects::CurrentMissFrameTag();
 #endif
@@ -327,7 +334,21 @@ ChainCallbackResult EffectManager::OnDraw(EffectManager *mgr)
         const ZunVec3 savedPrevPos = effect->vm.prevPos;
         effect->vm.pos = effect->prevPos.Lerp(effect->pos1, g_RenderAlpha);
         effect->vm.prevPos = effect->vm.pos;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        const ZunColor color = effect->vm.color;
+        const ZunColor prevColor = effect->vm.prevColor;
+        if (effect->missOwner && MultiplayerGameplay::IsMultiplayer() &&
+            !MultiplayerGameplay::GetState().spectator && effect->missOwner != MultiplayerGameplay::GetLocalPlayerSlot() + 1)
+        {
+            effect->vm.color = COLOR_SET_ALPHA3(color, (COLOR_ALPHA(color) / 4));
+            effect->vm.prevColor = COLOR_SET_ALPHA3(prevColor, (COLOR_ALPHA(prevColor) / 4));
+        }
+#endif
         g_AnmManager->Draw3(&effect->vm);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        effect->vm.color = color;
+        effect->vm.prevColor = prevColor;
+#endif
         effect->vm.pos = savedPos;
         effect->vm.prevPos = savedPrevPos;
     }

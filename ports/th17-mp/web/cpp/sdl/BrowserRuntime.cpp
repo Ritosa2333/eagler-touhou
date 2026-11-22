@@ -256,7 +256,7 @@ struct RoomRuntime final : multiplayer::World {
 #if TH17_ROOM_BENCHMARK
    if(benchmark_story_stage)initial_stage=benchmark_story_stage;
 #endif
-   if(!app->begin_room(setup.seed,setup.difficulty,setup.seats,loadouts,initial_stage,setup.challenge))return false;
+   if(!app->begin_room(setup.seed,setup.difficulty,setup.seats,loadouts,initial_stage,setup.challenge,setup.keep_bullets_on_miss))return false;
    app->renderer.hud_viewer=setup.local+1;
    entered=true;
   }
@@ -639,7 +639,7 @@ EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,con
  using namespace th17::sdl;
  if(!app||!app->title||running||room||!words||!url)return 0;
  const bool legacy=count==19&&words[0]==2;
- if((!legacy&&(count!=20||words[0]!=3||words[19]>1))||
+ if((!legacy&&(count!=20||words[0]!=3||(words[19]>3||words[19]==2)))||
     words[1]>3||words[2]>=words[1]||words[3]>4||words[4]>65535||words[7]>9||words[18]>1||
     (words[18]&&words[7]))return 0;
  auto candidate=std::make_unique<RoomRuntime>();
@@ -649,7 +649,8 @@ EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,con
  setup.difficulty=std::uint8_t(words[3]);setup.seed=th17::u16(words[4]);
  setup.room=words[5]|(std::uint64_t(words[6])<<32);
  setup.delay=std::uint8_t(words[7]);setup.rollback=words[18]!=0;
- setup.challenge=!legacy&&words[19]!=0;
+ setup.challenge=!legacy&&(words[19]&1);
+ setup.keep_bullets_on_miss=!legacy&&(words[19]&2);
  for(unsigned seat=0;seat<3;++seat){
   if(words[8+seat*2]>2||words[9+seat*2]>2)return 0;
   setup.loadouts[seat]={std::uint8_t(words[8+seat*2]),std::uint8_t(words[9+seat*2])};
@@ -676,7 +677,7 @@ EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,con
 EMSCRIPTEN_KEEPALIVE int th17_room_return(){
  using namespace th17::sdl;
  if(running||!app)return 0;
- room.reset();app->room_replay_save={};app->room_seats=0;app->room_challenge=false;app->room_partners={};
+ room.reset();app->room_replay_save={};app->room_seats=0;app->room_challenge=false;app->room_keep_bullets_on_miss=false;app->room_partners={};
  app->flow.pending=th17::AppScene::Title;
  if(!app->release_ending()||!app->release_game()||!app->release_title())return 0;
  app->recording.reset();app->room_description.reset();app->selected_replay.reset();

@@ -470,7 +470,7 @@ i32 EffectManager::UpdateNoOp(Effect *effect)
     return 1;
 }
 
-Effect *EffectManager::SpawnEffect(i32 effectId, ZunVec3 *pos, i32 numParticles, u32 color)
+Effect *EffectManager::SpawnEffect(i32 effectId, ZunVec3 *pos, i32 numParticles, u32 color, u8 missOwner)
 {
     i32 i;
     Effect *effect;
@@ -502,6 +502,7 @@ Effect *EffectManager::SpawnEffect(i32 effectId, ZunVec3 *pos, i32 numParticles,
         effect->drawType = 0;
         effect->inUseFlag = 1;
         effect->effectId = (u8)effectId;
+        effect->missOwner = missOwner;
         effect->pos = *pos;
         g_AnmManager->SetAnmIdxAndExecuteScript(&effect->vm, g_EffectMapping[effectId].anmId);
         effect->vm.zWriteDisable = 1;
@@ -570,6 +571,7 @@ Effect *EffectManager::SpawnMovingParticles(i32 effectId, ZunVec3 *pos, ZunVec3 
         effect->drawType = 0;
         effect->inUseFlag = 1;
         effect->effectId = effectId;
+        effect->missOwner = 0;
         effect->pos = *pos;
         g_AnmManager->SetAnmIdxAndExecuteScript(&effect->vm, g_EffectMapping[effectId].anmId);
         effect->vm.color.color = color;
@@ -604,7 +606,7 @@ Effect *EffectManager::SpawnMovingParticles(i32 effectId, ZunVec3 *pos, ZunVec3 
 }
 
 Effect *EffectManager::SpawnSpecialEffect(i32 effectId, ZunVec3 *pos, i32 param_3, i32 param_4,
-                                         u32 color)
+                                         u32 color, u8 missOwner)
 {
     (void)param_4;
 
@@ -617,6 +619,7 @@ Effect *EffectManager::SpawnSpecialEffect(i32 effectId, ZunVec3 *pos, i32 param_
     effect->drawType = 0;
     effect->inUseFlag = 1;
     effect->effectId = effectId;
+    effect->missOwner = missOwner;
     effect->pos = *pos;
     g_AnmManager->SetAnmIdxAndExecuteScript(&effect->vm, g_EffectMapping[effectId].anmId);
     effect->vm.zWriteDisable = 1;
@@ -758,6 +761,14 @@ u32 EffectManager::OnDraw(EffectManager *arg)
             const ZunColor originalPrevColor2 = active[i]->vm.prevColor2;
             if (MultiplayerGameplay::IsMultiplayer())
             {
+                const auto owner = active[i]->missOwner;
+                if (owner && !MultiplayerGameplay::GetState().spectator && owner != MultiplayerGameplay::GetLocalPlayerSlot() + 1)
+                {
+                    active[i]->vm.color.bytes.a /= 4;
+                    active[i]->vm.prevColor.bytes.a /= 4;
+                    active[i]->vm.color2.bytes.a /= 4;
+                    active[i]->vm.prevColor2.bytes.a /= 4;
+                }
                 for (u8 playerId = 0; playerId < TH07_MULTI_MAX_PLAYERS; ++playerId)
                 {
                     if (IsPlayerSlotActive(playerId) &&

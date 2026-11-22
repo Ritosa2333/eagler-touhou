@@ -108,7 +108,11 @@ bool PlayerLife::resolve_death(const ShotProfile& profile){
     return false;
 }
 void PlayerLife::respawn(const ShotProfile& profile){
-    state.clear_frames=60;const float fraction=(number(1)-state.timer.value()/number(30)).to_float();
+    state.clear_frames=60;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(context.keep_bullets_on_miss)state.clear_frames=0;
+#endif
+    const float fraction=(number(1)-state.timer.value()/number(30)).to_float();
     animation.scale.y=(number(fraction)*number(2)+number(1)).to_float();animation.scale.x=(number(1)-number(fraction)*number(1)).to_float();
     animation.blendMode=1;movement.multiplier={1,1};animation.color1.d3dColor=(u32(signed_bits(u32(state.timer.current)*255)/30)<<24)|0xffffff;state.predead_count=0;
     if(state.timer.current>=30){state.state=3;animation.scale={1,1};animation.color1.d3dColor=-1;animation.blendMode=0;if(!(context.game_flags&0x4000))state.timer.set(240);state.predead_count=profile.deathbomb_limit;}

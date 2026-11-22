@@ -3,7 +3,7 @@ import {allowedPath} from './storage.mjs';
 import {validateNativeProfile} from './native-profile.mjs';
 
 const boolOptions=['limitPresentationTo60','touchEnabled','doubleTapBombEnabled','alwaysHitbox','thpracEnabled','focusHitboxEnabled','replayViewer','netplayAllowWebsocketFallback'];
-const netplayOptions=['netplayMode','netplayUrl','netplayPlayer','netplayPlayerCount','netplaySeed','netplayDifficulty','netplayInputDelay','netplayInputDelayAuto','netplayAdonisMode','netplayPredictionLimit','netplayPredictionReserve','netplayChallengeMode','netplaySpectator','netplaySpectatorId','netplaySpectatorCount','netplaySpectatorTimeline','netplayIceServers','netplayPreferTurn','netplayLoadouts','multiplayerLocalPlayerVisibility','touchAlwaysHitbox'];
+const netplayOptions=['netplayMode','netplayUrl','netplayPlayer','netplayPlayerCount','netplaySeed','netplayDifficulty','netplayInputDelay','netplayInputDelayAuto','netplayAdonisMode','netplayPredictionLimit','netplayPredictionReserve','netplayChallengeMode','netplayChallengeKeepBullets','netplaySpectator','netplaySpectatorId','netplaySpectatorCount','netplaySpectatorTimeline','netplayIceServers','netplayPreferTurn','netplayLoadouts','multiplayerLocalPlayerVisibility','touchAlwaysHitbox'];
 const acceptedOptions=new Set([...netplayOptions,...boolOptions,'touchMovementMode','touchSensitivity','touchFocusMode','oggDecodeMode','replayPath','debugHarness','thpracLocale']);
 export function runtimeOptions(value={}){
   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('运行配置无效');

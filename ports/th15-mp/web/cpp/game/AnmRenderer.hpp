@@ -15,6 +15,7 @@ public:
 #if TH15_MULTIPLAYER
     std::vector<const AnmVm*> multiplayer_hidden_hud;
     std::unordered_map<const AnmVm*,u8> multiplayer_player_opacity;
+    u8 miss_effect_viewer=0;
     std::vector<const AnmVm*> multiplayer_hidden_hitboxes;
     std::vector<const AnmVm*> multiplayer_hidden_pause;
     std::unordered_map<u32,unsigned> multiplayer_hitbox_owners;

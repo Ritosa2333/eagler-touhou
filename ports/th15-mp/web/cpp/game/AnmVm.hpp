@@ -44,6 +44,7 @@ public:
     const AnmSpriteSource* sprite_source=nullptr;
     AnmResource* resource=nullptr;const AnmSprite* sprite=nullptr;AnmResource* sprite_resource=nullptr;
     i32 source_script=-1;
+    u8 miss_effect_seat=0;
     u32 ordering=0;
     u64 program_version=0;bool interpolation_idle=false;
 };

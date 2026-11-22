@@ -17,7 +17,7 @@ struct SessionSetup {
     // Fixed title history budget. Negotiated Hybrid allowance is phase advice,
     // never a smaller rollback window and never an additional local delay.
     std::uint32_t prediction_limit=MaxRollbackFrames,measured_prediction=0;
-    bool automatic=true,challenge=false;
+    bool automatic=true,challenge=false,keep_bullets_on_miss=false;
     std::array<std::uint32_t,3> selections{};
     std::array<std::uint32_t,4> build{};
     std::uint32_t initial_stage()const{return difficulty==4?7:1;}

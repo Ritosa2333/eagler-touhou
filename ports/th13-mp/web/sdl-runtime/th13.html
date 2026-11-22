@@ -29,6 +29,7 @@
 import {runtimeAssets} from './runtime-assets.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {bindTouchControls} from './touch-controls.mjs';
+import {installLowLatencyCanvas} from './low-latency-canvas.mjs';
 const status = text => document.getElementById('loading').textContent = text;
 const fail = text => { document.getElementById('loading').textContent = ''; document.getElementById('error').textContent = text; };
 window.__th13_log = [];
@@ -37,6 +38,11 @@ const note = (kind, text) => { window.__th13_log.push(kind + ' ' + text); if (wi
 try {
   const Module = await import('../artifacts/sdl3/th13-sdl.mjs');
   const canvas = document.getElementById('canvas');
+  // 低延迟画布：必须在模块创建 WebGL2 上下文之前装好（与 shell.mjs 同源共享模块）。
+  // 独立页不经 shell，缺失时本页拿不到 desynchronized/high-performance。
+  const lowLatency = installLowLatencyCanvas(canvas);
+  // 独立页无 runtime-info 通道：暴露实际授予属性供运维/探针读取。
+  window.__th13_canvas_presentation = () => lowLatency?.presentation() ?? null;
   const mod = await Module.default({
     canvas,
     print: t => { console.log('[th13]', t); note('out', t); },
@@ -121,13 +127,19 @@ try {
   // 绑 window 而非 canvas：焦点在 body/document 时 keydown 目标不是 canvas，
   // canvas-only 监听会吞掉全部按键（用户实测菜单无响应的根因）。
   canvas.addEventListener('click', () => canvas.focus());
+  // E2 input kick：keydown 锁存后立即请求一次微拍（?inputKick=0 关闭，默认开；
+  // 导出缺席的旧构建静默跳过，向后兼容）。
+  const inputKick = new URLSearchParams(location.search).get('inputKick') !== '0';
   for (const type of ['keydown', 'keyup'])
     window.addEventListener(type, e => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code))
         e.preventDefault();
       const scan = scanCodes[e.code];
-      if (scan !== undefined) mod._th13_key(scan, type === 'keydown' ? 1 : 0);
+      if (scan !== undefined) {
+        mod._th13_key(scan, type === 'keydown' ? 1 : 0);
+        if (inputKick && type === 'keydown') mod._th13_input_kick?.(performance.now());
+      }
     });
 
   // 启动序：装载挡板（sig+ascii）→ 启动品牌动画 → 初始化七 bank + 标题 → RAF 循环。

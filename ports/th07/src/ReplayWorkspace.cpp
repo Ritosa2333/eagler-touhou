@@ -57,7 +57,7 @@ EMSCRIPTEN_KEEPALIVE int eagler_replay_open(const char* path,unsigned stage){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     ReplayExtension::MultiplayerReplayConfig config;
     if(ReplayExtension::GetMultiplayerPlaybackConfig(&config)){
-        if(config.gameplayAbi!=TH07_MULTI_GAMEPLAY_ABI)return 0;MultiplayerGameplay::SessionState session;session.playerCount=config.playerCount;session.localPlayer=config.localPlayer;session.showStagePlayerNames=config.showStagePlayerNames;session.stage4BossChain=config.stage4BossChain;session.showContributionStats=config.showContributionStats;session.challengeMode=config.challengeMode;
+        if(config.gameplayAbi!=TH07_MULTI_GAMEPLAY_ABI)return 0;MultiplayerGameplay::SessionState session;session.playerCount=config.playerCount;session.localPlayer=config.localPlayer;session.showStagePlayerNames=config.showStagePlayerNames;session.stage4BossChain=config.stage4BossChain;session.showContributionStats=config.showContributionStats;session.challengeMode=config.challengeMode;session.keepBulletsOnMiss=config.keepBulletsOnMiss;
         for(unsigned n=0;n<config.playerCount;n++){session.players[n].active=true;session.players[n].character=config.characters[n];session.players[n].shot=config.shots[n];}
         if(!MultiplayerGameplay::Configure(session))return 0;
     }else MultiplayerGameplay::ResetToSinglePlayer(u8(g_GameManager.character),u8(g_GameManager.shotType));

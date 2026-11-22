@@ -1,3 +1,5 @@
+import { TH13_THPRAC } from "./th13-thprac.mjs";
+
 export const THPRAC_SCHEMA = "eagler-touhou/thprac-session/1";
 
 const GAME_SCHEMAS = Object.freeze({
@@ -74,6 +76,10 @@ const GAME_SCHEMAS = Object.freeze({
       life:[0,9],life_fragment:[0,3],bomb:[0,9],bomb_fragment:[0,2],power:[0,400],value:[0,999990],
       graze:[0,999999],ufo_side:[0,1],ventra_1:[0,3],ventra_2:[0,3],ventra_3:[0,3]})
   }),
+  th13: Object.freeze({
+    defaults: Object.freeze(TH13_THPRAC.defaults),
+    ranges: Object.freeze(Object.fromEntries(Object.entries(TH13_THPRAC.ranges).map(([key, range]) => [key, Object.freeze(range)]))),
+  }),
   th15: Object.freeze({
     defaults: Object.freeze({mode: 1, stage: 0, section: 0, phase: 0, dlg: false,
       score: 0, life: 8, life_fragment: 0, bomb: 8, bomb_fragment: 0,
@@ -95,6 +101,7 @@ export const THPRAC_FUNCTIONAL_FEATURES = Object.freeze({
   th10: Object.freeze(["coarse-stage-warp", "exact-section-warp", "multi-phase-spell-start", "section-dialogue", "initial-resources", "faith", "st6-boss9-speed", "practice-replay-metadata", "practice-assists"]),
   th11: Object.freeze(["coarse-stage-warp", "exact-section-warp", "multi-phase-spell-start", "section-dialogue", "initial-resources", "practice-replay-metadata", "practice-assists"]),
   th12: Object.freeze(["exact-section-warp", "multi-phase-spell-start", "section-dialogue", "initial-resources", "practice-replay-metadata", "practice-assists"]),
+  th13: Object.freeze(TH13_THPRAC.functional),
   th15: Object.freeze(["exact-section-warp", "multi-phase-spell-start", "section-dialogue", "initial-resources", "practice-replay-metadata", "practice-assists"])
 });
 
@@ -108,6 +115,7 @@ export const THPRAC_DEFERRED_FEATURES = Object.freeze({
   th10: Object.freeze(["direct-frame-warp", "real-bullet-sprite", "all-clear-bonus"]),
   th11: Object.freeze(["direct-frame-warp"]),
   th12: Object.freeze([]),
+  th13: Object.freeze(TH13_THPRAC.deferred),
   th15: Object.freeze([])
 });
 
@@ -142,6 +150,10 @@ export function normalizeThpracParams(game, input = {}) {
     }
   }
   if (game === "th15" && output.stage !== 6) output.life_fragment = Math.min(output.life_fragment, 3);
+  if (game === 'th13') {
+    output.score -= output.score % 10;
+    output.value -= output.value % 10;
+  }
   if (game === 'th12') {
     output.score -= output.score % 10; output.value -= output.value % 10;
     if (!output.ventra_1) output.ventra_2 = output.ventra_3 = 0;

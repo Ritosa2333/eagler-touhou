@@ -2,6 +2,7 @@
 // 帧序固定「装载完成 → 场景 controls+scheduler → 显示绘制 → 装载挡板 →
 // apply_destination」，docs/plans/ui-base.md §四）。
 #include "ApplicationState.hpp"
+#include "LanguagePack.hpp"
 #include "StageTransitionClock.hpp"
 #include "game/TitleFrame.hpp"
 #include "game/VisualBootstrap.hpp"
@@ -85,7 +86,18 @@ bool ApplicationState::read(const std::string& name, std::vector<u8>& bytes, boo
         return true;
     }
     size_t size = 0;
-    auto* data = static_cast<u8*>(SDL_LoadFile(("/assets/" + base).c_str(), &size));
+    auto* data = static_cast<u8*>(nullptr);
+    if (language_pack_active() && language_asset_allowed(base)) {
+        std::vector<u8> patched;
+        if (read_language_file(language_asset_path(base), patched)) {
+            bytes = std::move(patched);
+            if (bytes.size() <= 1024 * 1024 && base.size() >= 4 && base.substr(base.size() - 4) != ".wav" &&
+                base.substr(base.size() - 4) != ".anm")
+                resource_cache.emplace(base, bytes);
+            return true;
+        }
+    }
+    data = static_cast<u8*>(SDL_LoadFile(("/assets/" + base).c_str(), &size));
     if (!data) return required ? fail("Missing game asset: " + base) : false;
     bytes.assign(data, data + size);
     SDL_free(data);
@@ -1013,6 +1025,7 @@ bool ApplicationState::begin_run() {
     // M2：多人会话席位启用（宿主在对局前 configure_multiplayer；单席
     // mp_seat_count==0 时零变化）。
     run->battle.challenge = mp_challenge;
+    run->battle.keep_bullets_on_miss = mp_keep_bullets_on_miss;
     run->battle.item_manager.challenge = mp_challenge;
     run->hud.challenge = mp_challenge;
     if (mp_seat_count >= 2 && !run->enable_multiplayer(mp_seat_count, mp_characters))

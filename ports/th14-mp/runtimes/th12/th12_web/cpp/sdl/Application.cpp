@@ -247,7 +247,7 @@ struct Application:StageResourceEffects
     bool boot_room(){
         const auto& setup=room->setup;
         session.coop_seats=setup.seats;session.coop_viewer=setup.local;session.coop_loadouts=setup.loadouts;
-        session.coop_challenge=setup.challenge;session.coop_observer=room->spectator||room->playback;
+        session.coop_challenge=setup.challenge;session.coop_keep_bullets_on_miss=setup.keep_bullets_on_miss;session.coop_observer=room->spectator||room->playback;
         session.practice_enabled=false;
         session.menu_selection={};session.practice_request={};
         room_clock=0;session.stage_load_clock=[this](){return room_clock;};
@@ -2929,7 +2929,7 @@ EMSCRIPTEN_KEEPALIVE int th14_room_return(){
 EMSCRIPTEN_KEEPALIVE int th14_room_open(const unsigned* w,unsigned n,const char* url,const char* viewer){
     using namespace th11;
     auto& app=sdl::app;
-    if(!w||(n!=19&&n!=20)||w[0]!=2||app.room||(n==20&&w[19]>1))return 0;
+    if(!w||(n!=19&&n!=20)||w[0]!=2||app.room||(n==20&&(w[19]>3||w[19]==2)))return 0;
     auto room=std::make_unique<RoomTh14>();auto& s=room->setup;
     s.seats=w[1];s.local=w[2];s.difficulty=w[3];s.seed=w[4];s.id=u64(w[5])|(u64(w[6])<<32);s.delay=w[7];
     for(u32 i=0;i<3;++i){
@@ -2937,7 +2937,7 @@ EMSCRIPTEN_KEEPALIVE int th14_room_open(const unsigned* w,unsigned n,const char*
         s.loadouts[i]={u8(w[8+i*2]),u8(w[9+i*2])};
     }
     std::copy_n(w+14,4,s.build.begin());
-    s.prediction=w[18];s.challenge=n==20&&w[19]!=0;
+    s.prediction=w[18];s.challenge=n==20&&(w[19]&1);s.keep_bullets_on_miss=n==20&&(w[19]&2);
     if(!room->begin(url,viewer,u64(SDL_GetTicks())))return 0;
     app.room_preview=false;
     app.session.room_title_preview=false;

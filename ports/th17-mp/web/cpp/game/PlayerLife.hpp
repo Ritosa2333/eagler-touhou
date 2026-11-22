@@ -11,9 +11,10 @@ struct PlayerLifeSession {
     u32 roaring_flags=0;Timer roaring_countdown;bool bomb_available=true;
     i32 roaring_breaks=0;
     u32 practice_tools=0;
-    bool challenge=false;
-    void enable_challenge() noexcept {
+    bool challenge=false,keep_bullets_on_miss=false;
+    void enable_challenge(bool keep_bullets=false) noexcept {
         challenge=true;
+        keep_bullets_on_miss=keep_bullets;
         initial_bombs=bombs=bomb_pieces=0;
     }
     // thprac in-game info counters (thprac_th17.cpp TH17InGameInfo): whole run,

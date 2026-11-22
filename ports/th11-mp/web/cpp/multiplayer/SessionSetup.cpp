@@ -1,6 +1,7 @@
 #include "SessionSetup.hpp"
 namespace th11::multiplayer {
 bool SessionSetup::valid()const{
+    if(keep_bullets_on_miss&&(!challenge||version==LegacyVersion))return false;
     if((version!=LegacyVersion&&version!=Version)||mode>2||(version==LegacyVersion&&mode!=1)||
        prediction_limit!=MaxRollbackFrames||measured_prediction>2||
        (mode!=2&&measured_prediction)||(mode==0&&(automatic||requested_delay||input_delay)))return false;
@@ -12,11 +13,11 @@ bool SessionSetup::valid()const{
 }
 bool DecodeSessionSetup(SessionSetup& out,const std::uint32_t* w,std::size_t n){
     if(!w||n!=SessionSetup::Words||(w[0]!=SessionSetup::LegacyVersion&&w[0]!=SessionSetup::Version)||
-       w[14]>2||(w[0]==SessionSetup::LegacyVersion&&w[14]!=1)||w[15]>1||w[21]>1)return false;
+       w[14]>2||(w[0]==SessionSetup::LegacyVersion&&w[14]!=1)||w[15]>1||(w[21]>3||w[21]==2))return false;
     SessionSetup s;s.version=w[0];s.mode=w[14];s.player_count=w[1];s.local_player=w[2];s.difficulty=w[3];s.seed=w[4];
     s.session_id=w[5]|(std::uint64_t(w[6])<<32);s.requested_delay=s.input_delay=w[7];
     for(unsigned i=0;i<3;++i){if(w[8+i*2]>1||w[9+i*2]>2)return false;s.selections[i]=w[8+i*2]*3+w[9+i*2];}
-    s.automatic=w[15];s.prediction_reserve=w[16];for(unsigned i=0;i<4;++i)s.build[i]=w[17+i];s.challenge=w[21];
+    s.automatic=w[15];s.prediction_reserve=w[16];for(unsigned i=0;i<4;++i)s.build[i]=w[17+i];s.challenge=(w[21]&1)!=0;s.keep_bullets_on_miss=(w[21]&2)!=0;
     if(!s.valid())return false;out=s;return true;
 }
 std::array<std::uint32_t,SessionSetup::Words> EncodeSessionSetup(const SessionSetup& s){
@@ -24,12 +25,12 @@ std::array<std::uint32_t,SessionSetup::Words> EncodeSessionSetup(const SessionSe
     w[0]=s.version;w[1]=s.player_count;w[2]=s.local_player;w[3]=s.difficulty;w[4]=s.seed;
     w[5]=std::uint32_t(s.session_id);w[6]=std::uint32_t(s.session_id>>32);w[7]=s.requested_delay;
     for(unsigned i=0;i<3;++i){w[8+i*2]=s.selections[i]/3;w[9+i*2]=s.selections[i]%3;}
-    w[14]=s.mode;w[15]=s.automatic;w[16]=s.prediction_reserve;for(unsigned i=0;i<4;++i)w[17+i]=s.build[i];w[21]=s.challenge;return w;
+    w[14]=s.mode;w[15]=s.automatic;w[16]=s.prediction_reserve;for(unsigned i=0;i<4;++i)w[17+i]=s.build[i];w[21]=std::uint32_t(s.challenge)+2*std::uint32_t(s.keep_bullets_on_miss);return w;
 }
 std::uint32_t GameplayAbi(const SessionSetup& s){
     std::uint32_t h=2166136261u;const auto word=[&](std::uint32_t n){for(unsigned i=0;i<4;++i){h^=(n>>(i*8))&255;h*=16777619u;}};
     word(0x54483131u);word(SessionSetup::GameplayVersion);word(s.player_count);word(s.difficulty);
-    for(auto selection:s.selections)word(selection);word(s.challenge);word(s.automatic);word(s.requested_delay);
+    for(auto selection:s.selections)word(selection);word(std::uint32_t(s.challenge)+2*std::uint32_t(s.keep_bullets_on_miss));word(s.automatic);word(s.requested_delay);
     word(s.input_delay);word(s.prediction_reserve);for(auto build:s.build)word(build);
     // Pure-delay and prediction modes hash the same gameplay revision above.
     // Prediction modes also negotiate their semantic policy and history cap.

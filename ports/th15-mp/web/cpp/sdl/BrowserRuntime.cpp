@@ -523,6 +523,7 @@ EMSCRIPTEN_KEEPALIVE int th15_mp_spectator_result(const unsigned char* bytes,uns
 }
 EMSCRIPTEN_KEEPALIVE int th15_mp_spectator_control(const char* run,const char* action,unsigned frame){return th15::sdl::network.SpectatorControl(run,action,frame);}
 EMSCRIPTEN_KEEPALIVE int th15_mp_start(){using namespace th15::sdl;if(running||!app||!network.Configured())return 0;const auto& s=network.Setup();app->practice.enabled=false;app->multiplayer=true;app->mp_options={s.player_count,s.local_player,s.initial_stage(),s.seed,int(s.difficulty),s.challenge,{int(s.selections[0]),int(s.selections[1]),int(s.selections[2])},int(s.chapter_threshold)};
+ app->mp_options.keep_bullets_on_miss=s.keep_bullets_on_miss;
  app->mp_options.replay_legacy_stage_flow=network.Playback()&&mp_replay.LegacyStageFlow();
  app->mp_options.spectator=network.Spectator();mp_clear_frames();mp_menu_edges={};
  mp_stage=s.initial_stage();mp_spectator_stage=0;mp_spectator_error.clear();mp_saved_name="PLAYER";app->progress={};app->progress.character=s.selections[0];app->progress.difficulty=s.difficulty;app->selected_stage=s.initial_stage();app->selection_player={};app->selection_player.mode_flags=0;

@@ -40,7 +40,11 @@ if(TH09_PROFILE_OVERLAY)
 endif()
 target_compile_features(th09 PRIVATE cxx_std_17)
 target_compile_definitions(th09 PRIVATE
-    NOMINMAX WIN32_LEAN_AND_MEAN TH_NATIVE_PLATFORM=1 TH_ENABLE_THCRAP=1 TH09_DEVELOPMENT_HARNESS=0 TH09_DESKTOP_MOTION_SMOOTHING=1)
+    NOMINMAX WIN32_LEAN_AND_MEAN TH_NATIVE_PLATFORM=1 TH_ENABLE_THCRAP=1 TH09_DEVELOPMENT_HARNESS=0)
+option(TH09_DESKTOP_MOTION_SMOOTHING "Enable experimental native midpoint frames" OFF)
+if(TH09_DESKTOP_MOTION_SMOOTHING)
+    target_compile_definitions(th09 PRIVATE TH09_DESKTOP_MOTION_SMOOTHING=1)
+endif()
 target_include_directories(th09 PRIVATE
     web/cpp/sdl web/cpp/multiplayer "${EAGLER_COMMON_ROOT}/include" "${TH09_GLES_INCLUDE}")
 if(MSVC)

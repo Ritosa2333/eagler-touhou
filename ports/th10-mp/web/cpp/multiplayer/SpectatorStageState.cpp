@@ -24,10 +24,13 @@ template<class Codec> bool point(Codec& codec, PlayerOption::FixedPoint& value) 
 }
 
 template<class Codec> bool route(Codec& codec, SessionSetup& value) {
+    u8 challenge_rules=u8(value.challenge_mode)+2*u8(value.keep_bullets_on_miss);
     if (!codec.Values(value.sessionId, value.playerCount, value.localPlayer, value.difficulty,
             value.seed, value.input_delay, value.version, value.adonis_mode,
             value.prediction_reserve, value.measured_prediction, value.input_delay_auto,
-            value.challenge_mode)) return false;
+            challenge_rules)||challenge_rules>3||challenge_rules==2) return false;
+    value.challenge_mode=(challenge_rules&1)!=0;
+    value.keep_bullets_on_miss=(challenge_rules&2)!=0;
     for (auto& word : value.build) if (!codec.Value(word)) return false;
     for (auto& loadout : value.loadouts)
         if (!codec.Values(loadout.character, loadout.shot)) return false;
