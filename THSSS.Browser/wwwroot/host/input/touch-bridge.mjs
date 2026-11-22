@@ -47,7 +47,8 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
 
   function sensitivity() {
     const value = Number(settings().touchSensitivity);
-    return value > 0 ? value : 150;
+    if (!(value >= 100 && value <= 300)) return 150;
+    return Math.max(100, Math.min(300, value));
   }
 
   function releaseArrows() {

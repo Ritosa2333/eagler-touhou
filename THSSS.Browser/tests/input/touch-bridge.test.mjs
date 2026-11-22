@@ -70,6 +70,20 @@ test("a play drag shifts along the path and clears on lift", () => {
   assert.equal(play.shifts.length, 1);
 });
 
+test("touch sensitivity stays inside the shared 100-300 contract", () => {
+  const low = harness({ touchMovementMode: "touch", touchSensitivity: 50 });
+  low.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });
+  low.bridge.direct({ type: "move", id: 1, x: 0.3, y: 0.5 });
+  low.bridge.presented();
+  const fallback = harness({ touchMovementMode: "touch", touchSensitivity: 150 });
+  fallback.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });
+  fallback.bridge.direct({ type: "move", id: 1, x: 0.3, y: 0.5 });
+  fallback.bridge.presented();
+  assert.equal(low.shifts.length, 1);
+  assert.equal(fallback.shifts.length, 1);
+  assert.equal(low.shifts[0][0], fallback.shifts[0][0]);
+});
+
 test("a directional stick and free stick shift without arrow keys", () => {
   const stick = harness({ touchMovementMode: "joystick" });
   stick.bridge.controls({ fireEnabled: false, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 32767, joystickY: 0 });
