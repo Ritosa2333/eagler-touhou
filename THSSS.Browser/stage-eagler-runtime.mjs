@@ -8,6 +8,7 @@
 
 import * as esbuild from "esbuild";
 import { createHash } from "node:crypto";
+import { existsSync, lstatSync, symlinkSync } from "node:fs";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
@@ -178,6 +179,24 @@ for (const name of Object.keys(ordered)) {
   const kind = name.startsWith("fonts/") ? "fonts" : name.slice(name.lastIndexOf(".") + 1);
   counts[kind] = (counts[kind] || 0) + 1;
 }
+
+// Standalone thsss.html fetches assets/thsss.dat beside the runtime. Keep that
+// path available for local opens without putting game data into runtime-files.
+const assetRoot = resolve(wwwroot, "assets");
+const stagedAssets = resolve(output, "assets");
+if (existsSync(resolve(assetRoot, "thsss.dat"))) {
+  await mkdir(stagedAssets, { recursive: true });
+  for (const name of ["thsss.dat", "BGM"]) {
+    const target = resolve(assetRoot, name);
+    const link = resolve(stagedAssets, name);
+    if (!existsSync(target)) continue;
+    if (existsSync(link) || lstatSync(link, { throwIfNoEntry: false })?.isSymbolicLink()) {
+      await rm(link, { recursive: true, force: true });
+    }
+    symlinkSync(target, link, existsSync(target) && lstatSync(target).isDirectory() ? "dir" : "file");
+  }
+}
+
 console.log(`staged ${Object.keys(ordered).length} files in ${output}`);
 console.log(counts);
 console.log(`shell.mjs ${files["shell.mjs"].bytes} bytes`);
