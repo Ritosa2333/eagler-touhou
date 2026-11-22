@@ -1945,7 +1945,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
           type: 'error',
           code: 'movement-policy',
           seat,
-          error: '必须调整你的作弊移动方式',
+          error: '必须调整你的不限速移动方式',
         });
         return;
       }
@@ -2382,7 +2382,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
           type: 'error',
           code: 'movement-policy',
           seat,
-          error: '必须调整你的作弊移动方式',
+          error: '必须调整你的不限速移动方式',
         });
         return;
       }
@@ -2563,7 +2563,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
           (entry) => entry && !['touch', 'joystick', 'joystick-free'].includes(entry.movementMode),
         )
       ) {
-        sendLobby(socket, { type: 'error', error: '仍有玩家需要调整作弊移动方式' });
+        sendLobby(socket, { type: 'error', error: '仍有玩家需要调整不限速移动方式' });
         return;
       }
       if (
