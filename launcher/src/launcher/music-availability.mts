@@ -131,7 +131,9 @@ export function resolveEffectiveMusicMode({
 
   return resolveMusicMode({
     musicSources,
-    requested,
+    // Older saves can persist the effective no-audio fallback before metadata
+    // arrives. Honor a deliberate mute and recover auto-selected OGG.
+    requested: requested === "none" && !explicit && availability.ogg ? "ogg-stream" : requested,
     explicit,
     audio: availability.audio,
     midi: availability.midi,

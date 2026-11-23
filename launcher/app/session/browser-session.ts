@@ -811,7 +811,17 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     return true;
   }
   async function confirmMusicWarnings() {
-    const state = settings.getSnapshot(); if (!state) return false;
+    let state = settings.getSnapshot();
+    if (!state) return false;
+    if (state.music === 'none' && state.context.musicAvailability.audio &&
+        !(state.musicPreferenceExplicit && state.musicPreference === 'none')) {
+      if (metadata.getSnapshot().phase !== 'ready') await metadata.initialize();
+      state = settings.getSnapshot();
+      if (disposed || !state) return false;
+      settings.refreshContext(settingsContext(state.context.productId, snapshot.locale));
+      state = settings.getSnapshot();
+      if (!state) return false;
+    }
     const music = state.music;
     if (music === 'none' || music === 'midi') return decisions.askConfirmation({message: t(music === 'none' ? 'music.noneLaunchWarning' : 'music.midiLaunchWarning'), confirmText: t('music.startAnyway')});
     return true;

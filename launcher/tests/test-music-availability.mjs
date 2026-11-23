@@ -119,6 +119,8 @@ assert.equal(resolveEffectiveMusicMode({
 }), "midi", "one persisted startup track is not enough to claim local OGG launch readiness");
 
 assert.equal(effective({ requested: "none" }), "none");
+assert.equal(effective({ requested: "none", explicit: false }), "ogg-stream",
+  "a previously saved automatic fallback must recover when OGG is available");
 assert.equal(effective({ remoteRevision: "other", installed: { ...installed, files: {} } }), "midi");
 assert.equal(effective({
   requested: "ogg-stream",
