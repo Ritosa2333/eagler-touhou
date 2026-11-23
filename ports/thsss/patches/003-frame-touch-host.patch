@@ -47,10 +47,10 @@ index df0b301..8a90bd3 100644
  }
 
 diff --git a/Shooting/BaseMyPlane.cs b/Shooting/BaseMyPlane.cs
-index a96264f..ff51fef 100644
+index a96264f..49214a9 100644
 --- a/Shooting/BaseMyPlane.cs
 +++ b/Shooting/BaseMyPlane.cs
-@@ -631,6 +631,74 @@ public class BaseMyPlane : BaseObject
+@@ -631,6 +631,80 @@ public class BaseMyPlane : BaseObject
  		SpellEnabled = true;
  	}
  
@@ -86,6 +86,12 @@ index a96264f..ff51fef 100644
 +
 +	public void ApplyTouch(float dx, float dy, bool unlimited)
 +	{
++		// Zero shifts must not claim the move slot; .trpy frames still store
++		// dx/dy=0 beside keyboard bits, and stealing Move would drop arrows.
++		if (dx == 0f && dy == 0f)
++		{
++			return;
++		}
 +		touchDx = dx;
 +		touchDy = dy;
 +		touchUnlimited = unlimited;
@@ -125,7 +131,7 @@ index a96264f..ff51fef 100644
  	public override void Move()
  	{
  		Vx = 0f;
-@@ -638,6 +706,37 @@ public class BaseMyPlane : BaseObject
+@@ -638,6 +712,37 @@ public class BaseMyPlane : BaseObject
  		float x = OriginalPosition.X;
  		float y = OriginalPosition.Y;
  		SlowMove = KClass.Key_Shift;
@@ -138,32 +144,32 @@ index a96264f..ff51fef 100644
 +			touchDx = 0f;
 +			touchDy = 0f;
 +			touchUnlimited = false;
-+			Vx = dx;
-+			Vy = 0f - dy;
-+			float originX = x;
-+			float originY = y;
-+			x += dx;
-+			y += dy;
-+			OriginalPosition = ClampPosition(x, y);
-+			float appliedX = OriginalPosition.X - originX;
-+			float appliedY = OriginalPosition.Y - originY;
-+			lastTouchDx = dx;
-+			lastTouchDy = dy;
-+			Thsss.Browser.GameHost.StoreTouchResidual(dx - appliedX, dy - appliedY);
 +			if (dx != 0f || dy != 0f)
 +			{
++				Vx = dx;
++				Vy = 0f - dy;
++				float originX = x;
++				float originY = y;
++				x += dx;
++				y += dy;
++				OriginalPosition = ClampPosition(x, y);
++				float appliedX = OriginalPosition.X - originX;
++				float appliedY = OriginalPosition.Y - originY;
++				lastTouchDx = dx;
++				lastTouchDy = dy;
++				Thsss.Browser.GameHost.StoreTouchResidual(dx - appliedX, dy - appliedY);
 +				TouchReplayUsed = true;
 +				if (unlimited)
 +				{
 +					TouchCheatMovementUsed = true;
 +				}
++				return;
 +			}
-+			return;
 +		}
  		if (!SlowMove)
  		{
  			if (KClass.ArrowRight)
-@@ -683,6 +782,18 @@ public class BaseMyPlane : BaseObject
+@@ -683,6 +788,18 @@ public class BaseMyPlane : BaseObject
  		}
  		x += Vx;
  		y -= Vy;
@@ -182,7 +188,7 @@ index a96264f..ff51fef 100644
  		if (x < (float)(TxtureObject.Width / 2 - 6))
  		{
  			x = TxtureObject.Width / 2 - 6;
-@@ -699,7 +810,7 @@ public class BaseMyPlane : BaseObject
+@@ -699,7 +816,7 @@ public class BaseMyPlane : BaseObject
  		{
  			y = BoundRect.Height - TxtureObject.Height / 2 + 8;
  		}
@@ -191,7 +197,7 @@ index a96264f..ff51fef 100644
  	}
  
  	public virtual void SubPlaneCtrl()
-@@ -931,6 +1042,7 @@ public class BaseMyPlane : BaseObject
+@@ -931,6 +1048,7 @@ public class BaseMyPlane : BaseObject
  		{
  			return;
  		}
@@ -199,7 +205,7 @@ index a96264f..ff51fef 100644
  		Time++;
  		if (Time == DeadTime)
  		{
-@@ -948,6 +1060,9 @@ public class BaseMyPlane : BaseObject
+@@ -948,6 +1066,9 @@ public class BaseMyPlane : BaseObject
  			}
  			else
  			{
