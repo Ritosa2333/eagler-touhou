@@ -3,7 +3,7 @@ Subject: 004-textures-draw.patch
 ---
 
 diff --git a/Shooting/BaseObject.cs b/Shooting/BaseObject.cs
-index 75ad82c..8dcb27a 100644
+index 75ad82c..c5882ae 100644
 --- a/Shooting/BaseObject.cs
 +++ b/Shooting/BaseObject.cs
 @@ -1,8 +1,6 @@
@@ -35,9 +35,9 @@ index 75ad82c..8dcb27a 100644
  
  	private double direction;
  
-+	private float dirCos = 1f;
++	private double dirCos = 1.0;
 +
-+	private float dirSin;
++	private double dirSin;
 +
 +	private bool dirReady;
 +
@@ -75,14 +75,14 @@ index 75ad82c..8dcb27a 100644
 +			if (!dirReady || value != direction)
 +			{
 +				direction = value;
-+				dirCos = MathF.Cos((float)value);
-+				dirSin = MathF.Sin((float)value);
++				dirCos = Math.Cos(value);
++				dirSin = Math.Sin(value);
 +				dirReady = true;
 +			}
  		}
  	}
  
-@@ -860,12 +889,17 @@ public class BaseObject
+@@ -860,12 +889,19 @@ public class BaseObject
  
  	public virtual void Move()
  	{
@@ -95,15 +95,17 @@ index 75ad82c..8dcb27a 100644
 -		Position = new PointF((float)((double)Position.X + (double)Velocity * Math.Cos(Direction) * (double)scaleX), (float)((double)Position.Y + (double)Velocity * Math.Sin(Direction) * (double)scaleY));
 +		if (!dirReady)
 +		{
-+			dirCos = MathF.Cos((float)direction);
-+			dirSin = MathF.Sin((float)direction);
++			dirCos = Math.Cos(direction);
++			dirSin = Math.Sin(direction);
 +			dirReady = true;
 +		}
-+		OriginalPosition = new PointF(OriginalPosition.X + Velocity * dirCos * scaleX, OriginalPosition.Y + Velocity * dirSin * scaleY);
++		// The original rounds the screen position to float before subtracting the playfield offset.
++		PointF position = Position;
++		Position = new PointF((float)(position.X + Velocity * dirCos * scaleX), (float)(position.Y + Velocity * dirSin * scaleY));
  	}
  
  	public void MovePoint()
-@@ -952,8 +986,21 @@ public class BaseObject
+@@ -952,8 +988,26 @@ public class BaseObject
  	{
  	}
  
@@ -117,15 +119,20 @@ index 75ad82c..8dcb27a 100644
 +		OriginalPosition = new PointF(x, y);
 +	}
 +
- 	public virtual void Ctrl()
- 	{
++	protected void CapturePreviousPosition()
++	{
 +		prevX = OriginalPosition.X;
 +		prevY = OriginalPosition.Y;
 +		hasPrev = true;
++	}
++
+ 	public virtual void Ctrl()
+ 	{
++		CapturePreviousPosition();
  		if (!Enabled)
  		{
  			return;
-@@ -1140,17 +1187,7 @@ public class BaseObject
+@@ -1140,17 +1194,7 @@ public class BaseObject
  
  	public object Clone(object Obj)
  	{

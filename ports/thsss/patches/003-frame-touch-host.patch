@@ -47,7 +47,7 @@ index df0b301..8a90bd3 100644
  }
 
 diff --git a/Shooting/BaseMyPlane.cs b/Shooting/BaseMyPlane.cs
-index a96264f..1eb847a 100644
+index a96264f..ff51fef 100644
 --- a/Shooting/BaseMyPlane.cs
 +++ b/Shooting/BaseMyPlane.cs
 @@ -631,6 +631,74 @@ public class BaseMyPlane : BaseObject
@@ -191,7 +191,15 @@ index a96264f..1eb847a 100644
  	}
  
  	public virtual void SubPlaneCtrl()
-@@ -948,6 +1059,9 @@ public class BaseMyPlane : BaseObject
+@@ -931,6 +1042,7 @@ public class BaseMyPlane : BaseObject
+ 		{
+ 			return;
+ 		}
++		CapturePreviousPosition();
+ 		Time++;
+ 		if (Time == DeadTime)
+ 		{
+@@ -948,6 +1060,9 @@ public class BaseMyPlane : BaseObject
  			}
  			else
  			{
