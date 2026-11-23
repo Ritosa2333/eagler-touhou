@@ -218,6 +218,8 @@ bool FileStore::record_spell_practice_score(i32 character, i32 slot, i32 interna
     auto& record = spell_records[size_t(slot)];
     auto& personal = record.columns[size_t(character)].practice_best_score;
     personal = std::max(personal, score);
+    auto& aggregate = record.columns[size_t(kSaveCharacters)].practice_best_score;
+    aggregate = std::max(aggregate, score);
     return true;
 }
 
@@ -324,12 +326,9 @@ bool FileStore::initialize() {
                             .count();
     score_dat_seed = u16(u64(now_ms) & 0xFFFF);
     score_dat.set_defaults(score_dat_seed);
-    if (!load_v6()) return false;
-    // scoreth13.dat 原版格式通道（仅 web 激活；native 构建读侧恒缺档）。语义：
-    // v6 有效 ⇒ v6 是应用侧唯一权威，dat 导入仅限 (a) v6 缺失/无效、(b) dat
-    // 明显更新（全条目最大 u64 时间戳 > 榜表最大时间戳）；否则 dat 永不覆盖，
-    // 也不在装载期落盘（镜像只由 save_score() 写出）。parse 在局部副本上进行，
-    // 弃用的 dat 不污染 save_score 待写镜像。
+    if (!load_save()) return false;
+    // scoreth13.dat 通道仅 web 激活。应用档有效时导入只看时间戳是否更新；
+    // 未采纳的 dat 不进入待写镜像，装载期也不落盘。
     std::vector<u8> dat;
     ScoreDat candidate;
     if (read_score_dat(dat) && candidate.parse_file(dat.data(), dat.size()) &&
@@ -341,7 +340,7 @@ bool FileStore::initialize() {
     return true;
 }
 
-bool FileStore::load_v6() {
+bool FileStore::load_save() {
     // One extra byte detects overlong native saves instead of accepting a prefix.
     std::vector<u8> buffer(kSaveBytes + 1);
 #ifdef __EMSCRIPTEN__
@@ -511,9 +510,8 @@ bool FileStore::save() {
 }
 
 bool FileStore::save_score() {
-    // 原版保存点（0x42bfa0/0x4399e0 → 0x449e50）：v6 应用档与 scoreth13.dat
-    // 得分面镜像同一提交点。v6 档失败即失败；web 通道镜像写失败同如实报错；
-    // native 构建通道不激活（write_score_dat no-op），语义与旧版逐字节一致。
+    // 原版保存点（0x42bfa0/0x4399e0 → 0x449e50）：应用档与原版格式镜像同一
+    // 提交点。任一激活通道写失败都如实返回 false。
     if (!write_save(true)) return false;
     sync_score_face_to_dat();
     return write_score_dat();
@@ -638,63 +636,43 @@ bool FileStore::write_save(bool commit_ending) {
 #endif
 }
 
-bool FileStore::score_dat_file_ready() {
-    // ReplayFile::deflate（bit-exact 0x458c30）已交付并经黄金整文件逐字节
-    // 验证（tests/score/score_dat_test.cpp build_file_round_trip_golden），
-    // th13.scoredat 通道读写全线接通。
-    return true;
-}
-
-i32 FileStore::score_dat_chara(i32 character) {
-    switch (character) {
-    case 0: return 0;   // 霊夢 → ReimuA（IPhoneDia chara 0..5 惯例序）
-    case 1: return 2;   // 魔理沙 → MarisaA
-    case 2: return 4;   // 早苗 → SanaeA
-    default: return -1; // 妖夢：端口扩展角色，原版 6 chara 无对应，不写不覆盖
-    }
-}
-
 bool FileStore::read_score_dat(std::vector<u8>& out) {
     out.clear();
 #ifdef __EMSCRIPTEN__
-    std::vector<char> buffer(1 << 20);
-    const int length = th13_scoredat_read_js(buffer.data(), int(buffer.size()));
+    std::vector<u8> buffer(size_t(2) * ScoreDat::kImageSize);
+    const int length = th13_scoredat_read_js(reinterpret_cast<char*>(buffer.data()),
+                                             int(buffer.size()));
     if (length <= 0) return false;
-    out.assign(buffer.begin(), buffer.begin() + length);
+    buffer.resize(size_t(length));
+    out = std::move(buffer);
     return true;
 #else
-    // native/WASI 构建通道完全不激活：无 localStorage，也不做任何文件访问
-    // （native 仅单测/诊断用；历史上按 cwd 找 scoreth13.dat 曾把无关文件卷进
-    // 装载并互相改写）。恒缺档 = 走 v6/默认路径，行为与无此通道版本一致。
     return false;
 #endif
 }
 
 bool FileStore::write_score_dat() {
 #ifdef __EMSCRIPTEN__
-    if (!score_dat_file_ready()) return true;  // 阶段 B 门（见上）
-    // 0x458c30 LZ 压缩是保存点最重的一步（镜像 0x1B678 字节）。镜像体未变
-    // 时文件逐字节相同，压缩与存储写入都省去：关终门帧/关首激活帧只在
-    // 榜表真正变化时才付出压缩成本。
-    std::vector<u8> image(ScoreDat::kImageSize);
-    const size_t uncomp = score_dat.build_image(image.data(), image.size());
+    score_dat_image_build_.resize(ScoreDat::kImageSize);
+    const size_t uncomp = score_dat.build_image(score_dat_image_build_.data(),
+                                                score_dat_image_build_.size());
     if (uncomp == 0) {
         error = "ScoreDat build failed: " + score_dat.error;
         return false;
     }
-    image.resize(uncomp);
-    if (image == persisted_score_dat_image_) {
+    score_dat_image_build_.resize(uncomp);
+    if (score_dat_image_build_ == persisted_score_dat_image_) {
         pending_score_dat_image_.clear();
         score_dat_encoder_ = LzssEncoder{};
         return true;
     }
-    if (score_dat_encoder_.active() && image == pending_score_dat_image_) return true;
-    score_dat_encoder_.begin(image.data(), image.size());
-    pending_score_dat_image_ = std::move(image);
+    if (score_dat_encoder_.active() && score_dat_image_build_ == pending_score_dat_image_)
+        return true;
+    score_dat_encoder_.begin(score_dat_image_build_.data(), score_dat_image_build_.size());
+    pending_score_dat_image_.swap(score_dat_image_build_);
+    score_dat_image_build_.clear();
     return true;
 #else
-    // native/WASI 构建通道不激活：不落盘（save_score 语义 = 仅写 v6，与旧版
-    // 逐字节一致）。镜像仍由 sync_score_face_to_dat() 留在内存供测试检视。
     return true;
 #endif
 }
@@ -710,7 +688,8 @@ bool FileStore::advance_pending_writes(u32 tokens) {
         error = "ScoreDat storage write failed";
         return false;
     }
-    persisted_score_dat_image_ = std::move(pending_score_dat_image_);
+    persisted_score_dat_image_.swap(pending_score_dat_image_);
+    score_dat_image_build_.swap(pending_score_dat_image_);
     pending_score_dat_image_.clear();
     return true;
 #else
@@ -720,137 +699,164 @@ bool FileStore::advance_pending_writes(u32 tokens) {
 }
 
 void FileStore::sync_score_face_to_dat() {
-    // FileStore 字段 → ScoreDat 镜像。只写有原版写入点依据的字段；端口扩展
-    // （continues 位、per-char 练习最好成绩、total_frames、Extra 解禁位、
-    // spell 计数）无证据不入档，保持 parse/默认透传。字段映射详见
-    // docs/plans/scoredat.md。
-    for (int diff = 0; diff < kSaveDifficulties; ++diff) {
-        if (!score_dat.cr_present[size_t(diff)]) {
-            // 缺席块（剔除怪癖/未落档）：等价 0x449b00 boot 重建默认块再存。
-            score_dat.cr_present[size_t(diff)] = true;
-            score_dat.set_default_cr_block(u32(diff));
-        }
-        u8* block = score_dat.cr[size_t(diff)].data();
-        for (i32 character = 0; character < kSaveCharacters; ++character) {
-            const i32 chara = score_dat_chara(character);
-            if (chara < 0) continue;
-            const auto& records = ordinary_records[size_t(character)];
-            for (size_t rank = 0; rank < 10; ++rank) {
-                const auto& score = records.ranking[size_t(diff)][rank];
+    for (int column = 0; column < ScoreDat::kColumnCount; ++column) {
+        if (!score_dat.column_present[size_t(column)])
+            score_dat.set_default_column(u32(column));
+    }
+
+    for (i32 character = 0; character < kSaveCharacters; ++character) {
+        u8* column = score_dat.columns[size_t(character)].data();
+        const auto& records = ordinary_records[size_t(character)];
+        ScoreDat::set_play_count(column, u32(std::clamp(records.play_count, 0, 99999)));
+        ScoreDat::set_play_frames(column,
+                                  u32(std::clamp(records.total_frames, 0, 215999999)));
+        for (int difficulty = 0; difficulty < kSaveDifficulties; ++difficulty) {
+            for (size_t rank = 0; rank < ScoreDat::kRankCount; ++rank) {
+                const auto& score = records.ranking[size_t(difficulty)][rank];
                 ScoreDat::Entry entry;
                 entry.score = u32(std::max(score.score, 0));
                 entry.stage = u8(score.stage);
-                // v6 +5 存的是 continues，原版条目 +5 是通关旗（0x43d6b0 写
-                // DAT_004be7c8）：端口未跟踪 per-entry 通关旗，恒 0 不臆造。
-                entry.clear = 0;
+                entry.continues = u8(std::clamp(score.continues, 0, 9));
                 const size_t name_bytes = std::min(score.name.size(), size_t(8));
                 std::memcpy(entry.name.data(), score.name.data(), name_bytes);
                 std::fill(entry.name.begin() + ptrdiff_t(name_bytes), entry.name.end(), u8(0));
                 entry.time_lo = u32(u64(score.timestamp));
                 entry.time_hi = u32(u64(score.timestamp) >> 32);
                 entry.rate_bits = float_to_bits(score.progress_percent);
-                ScoreDat::write_entry(block, chara, i32(rank), entry);
+                ScoreDat::write_entry(column, difficulty, i32(rank), entry);
             }
-            // 进度计数：0x42cd40（通关/无续关通关，上限 99999）。原版寻址为
-            // “所玩难度块内 +0x7C0/+0x7DC”（0042cd40.c: (diff)*0x56dc+0x7c0/…，
-            // 结构常量 = 块内 +8），端口 clear_count 本就按难度分列，一一对应。
-            // 游戏回数（+0x7B8，0x42b990 同为难度块内）端口无难度维度——v6
-            // play_count 是全难度合计，写入每块会臆造 per-difficulty 计数，
-            // 故两侧都不映射（v6 自留、dat 保持 parse/默认）。
-            ScoreDat::set_progress_u32(block, 0x7C0, chara,
-                                       u32(std::min(records.clear_count[size_t(diff)], 99999)));
-            ScoreDat::set_progress_u32(
-                block, 0x7DC, chara,
-                u32(std::min(records.no_continue_clear_count[size_t(diff)], 99999)));
-            // 进度行 +5 游玩旗（0x42b990）← practice_played（diff 0..3）。
-            if (diff < 4) {
+            ScoreDat::set_clear_count(
+                column, difficulty,
+                u32(std::clamp(records.clear_count[size_t(difficulty)], 0, 99999)));
+            ScoreDat::set_no_continue_clear_count(
+                column, difficulty,
+                u32(std::clamp(records.no_continue_clear_count[size_t(difficulty)], 0, 99999)));
+            if (difficulty < 4) {
                 for (i32 stage = 1; stage <= 6; ++stage) {
-                    if (practice_stage_played(character, diff, stage))
-                        ScoreDat::set_progress_row_flag(block, chara, stage - 1, 1, 1);
+                    ScoreDat::set_progress_row_flag(
+                        column, difficulty, stage - 1, 1,
+                        practice_stage_played(character, difficulty, stage) ? 1 : 0);
                 }
             }
         }
-        // 练习记录最好成绩（0x42cd40 对 +0x98 的 max 写）：原版每难度每符单值，
-        // 端口 5 列（4 角色+合计）取 max 合流；已 parse 的更大历史值保留。
-        for (i32 slot = 0; slot < kSaveSpellSlots; ++slot) {
-            u32 best = 0;
-            for (i32 column = 0; column < kSaveSpellColumns; ++column) {
-                best = std::max(best,
-                                u32(std::max(spell_records[size_t(slot)]
-                                                 .columns[size_t(column)]
-                                                 .practice_best_score,
-                                             0)));
+    }
+
+    for (i32 slot = 0; slot < kSaveSpellSlots; ++slot) {
+        const auto& record = spell_records[size_t(slot)];
+        std::array<u8, ScoreDat::kPracticeNameSize> name{};
+        std::memcpy(name.data(), record.name.data(),
+                    std::min(record.name.size(), name.size() - 1));
+        for (i32 column_index = 0; column_index < kSaveSpellColumns; ++column_index) {
+            u8* column = score_dat.columns[size_t(column_index)].data();
+            const auto& counters = record.columns[size_t(column_index)];
+            ScoreDat::set_practice_name(column, slot, name);
+            for (size_t mode = 0; mode < 2; ++mode) {
+                ScoreDat::set_practice_u32(
+                    column, slot, ScoreDat::kPracticeCapturesOff + mode * 4,
+                    u32(std::clamp(counters.captures[mode], 0, 99999)));
+                ScoreDat::set_practice_u32(
+                    column, slot, ScoreDat::kPracticeAttemptsOff + mode * 4,
+                    u32(std::clamp(counters.attempts[mode], 0, 99999)));
             }
-            const u32 current = ScoreDat::practice_u32(block, slot, 0x98);
-            ScoreDat::set_practice_u32(block, slot, 0x98, std::max(current, best));
+            ScoreDat::set_practice_u32(column, slot, ScoreDat::kPracticeBestOff,
+                                       u32(std::max(counters.practice_best_score, 0)));
         }
     }
-    // ending seen 13 字节（0x416130 读写 score+0x1b26a..0x1b276 = ST+0x16..0x22）。
+
     u8 seen[ScoreDat::kEndingBytes];
     std::copy(ending_seen_bytes.begin(), ending_seen_bytes.end(), seen);
     ScoreDat::write_ending_bytes(score_dat.st.data(), seen);
-    // ST+0x0C 上次输入名（0x4544ee/0x44050e 等 END 回写点）：8 字节 + NUL。
     std::array<u8, 9> name{};
     std::memcpy(name.data(), last_name.data(), std::min(last_name.size(), size_t(8)));
     ScoreDat::set_st_name(score_dat.st.data(), name);
 }
 
 void FileStore::overlay_score_face_from_dat() {
-    // ScoreDat 镜像 → FileStore 得分字段（装载覆盖；v6 设置类字段不动）。
-    for (int diff = 0; diff < kSaveDifficulties; ++diff) {
-        if (!score_dat.cr_present[size_t(diff)]) continue;  // 缺席块：该难度保持 v6/默认
-        const u8* block = score_dat.cr[size_t(diff)].data();
-        for (i32 character = 0; character < kSaveCharacters; ++character) {
-            const i32 chara = score_dat_chara(character);
-            if (chara < 0) continue;
-            auto& records = ordinary_records[size_t(character)];
-            for (size_t rank = 0; rank < 10; ++rank) {
-                const ScoreDat::Entry entry = ScoreDat::read_entry(block, chara, i32(rank));
-                auto& score = records.ranking[size_t(diff)][rank];
+    for (i32 character = 0; character < kSaveCharacters; ++character) {
+        if (!score_dat.column_present[size_t(character)]) continue;
+        const u8* column = score_dat.columns[size_t(character)].data();
+        auto& records = ordinary_records[size_t(character)];
+        records.play_count = i32(std::min(ScoreDat::play_count(column), 99999u));
+        records.total_frames = i32(std::min(ScoreDat::play_frames(column), 215999999u));
+        records.history_complete = true;
+        for (int difficulty = 0; difficulty < kSaveDifficulties; ++difficulty) {
+            for (size_t rank = 0; rank < ScoreDat::kRankCount; ++rank) {
+                const ScoreDat::Entry entry =
+                    ScoreDat::read_entry(column, difficulty, i32(rank));
+                auto& score = records.ranking[size_t(difficulty)][rank];
                 score.score = i32(entry.score);
                 score.stage = entry.stage;
-                score.continues = 0;  // 原版条目无续关数字段（+5 是通关旗）
+                score.continues = entry.continues;
                 size_t length = 0;
                 while (length < 8 && entry.name[length] != 0) ++length;
                 score.name.assign(reinterpret_cast<const char*>(entry.name.data()), length);
-                score.timestamp =
-                    i64(u64(entry.time_lo) | u64(entry.time_hi) << 32);
+                score.timestamp = i64(u64(entry.time_lo) | u64(entry.time_hi) << 32);
                 score.progress_percent = float_from_bits(entry.rate_bits);
-                score.available = true;  // 原版全 60 行常在（默认行即 100000..10000）
+                score.available = true;
             }
-            // 游戏回数（+0x7B8）不映射（见 sync 侧说明）；通关计数按难度覆盖。
-            records.clear_count[size_t(diff)] =
-                i32(std::min(ScoreDat::progress_u32(block, 0x7C0, chara), 99999u));
+            records.clear_count[size_t(difficulty)] =
+                i32(std::min(ScoreDat::clear_count(column, difficulty), 99999u));
             const u32 no_continue =
-                std::min(ScoreDat::progress_u32(block, 0x7DC, chara), 99999u);
-            records.no_continue_clear_count[size_t(diff)] = i32(no_continue);
-            // cleared 位镜像 v6 写语义（record_run_clear 的 no-continue 置位）；
-            // 该位是派生得分面，随存档覆盖重算。
-            const u32 bit = 1u << u32(character * kSaveDifficulties + diff);
+                std::min(ScoreDat::no_continue_clear_count(column, difficulty), 99999u);
+            records.no_continue_clear_count[size_t(difficulty)] = i32(no_continue);
+            const u32 bit = 1u << u32(character * kSaveDifficulties + difficulty);
             cleared_mask &= ~bit;
             if (no_continue != 0) cleared_mask |= bit;
-            records.history_complete = true;  // 原版档即完整历史
-            if (diff < 4) {
-                u8& played = practice_played[size_t(character * 4 + diff)];
+            if (difficulty < 4) {
+                u8 played = 0;
                 for (i32 stage = 1; stage <= 6; ++stage) {
-                    if (ScoreDat::progress_row_flag(block, chara, stage - 1, 1) != 0)
+                    if (ScoreDat::progress_row_flag(column, difficulty, stage - 1, 1) != 0)
                         played |= u8(1u << (stage - 1));
                 }
+                practice_played[size_t(character * 4 + difficulty)] = played;
             }
         }
-        // 练习最好成绩：原版每难度每符单值 → 合计列（per-char 列为端口扩展，
-        // 保持 v6 值不臆造归属）。多难度块取 max（端口无 per-difficulty 维度）。
+    }
+
+    for (i32 column_index = 0; column_index < kSaveSpellColumns; ++column_index) {
+        if (!score_dat.column_present[size_t(column_index)]) continue;
+        const u8* column = score_dat.columns[size_t(column_index)].data();
         for (i32 slot = 0; slot < kSaveSpellSlots; ++slot) {
-            const u32 best = ScoreDat::practice_u32(block, slot, 0x98);
-            auto& aggregate =
-                spell_records[size_t(slot)].columns[size_t(kSaveCharacters)].practice_best_score;
-            aggregate = std::max(aggregate, i32(std::min(best, u32(INT32_MAX))));
+            auto& counters = spell_records[size_t(slot)].columns[size_t(column_index)];
+            for (size_t mode = 0; mode < 2; ++mode) {
+                counters.captures[mode] = i32(std::min(
+                    ScoreDat::practice_u32(column, slot,
+                                           ScoreDat::kPracticeCapturesOff + mode * 4),
+                    99999u));
+                counters.attempts[mode] = i32(std::min(
+                    ScoreDat::practice_u32(column, slot,
+                                           ScoreDat::kPracticeAttemptsOff + mode * 4),
+                    99999u));
+            }
+            counters.practice_best_score = i32(std::min(
+                ScoreDat::practice_u32(column, slot, ScoreDat::kPracticeBestOff),
+                u32(INT32_MAX)));
         }
     }
-    // ending seen 13 字节与完整历史旗。
+    for (i32 slot = 0; slot < kSaveSpellSlots; ++slot) {
+        int name_column = score_dat.column_present[size_t(kSaveCharacters)]
+                              ? kSaveCharacters
+                              : -1;
+        for (i32 character = 0; name_column < 0 && character < kSaveCharacters; ++character) {
+            if (score_dat.column_present[size_t(character)]) name_column = character;
+        }
+        if (name_column < 0) continue;
+        const auto name = ScoreDat::practice_name(
+            score_dat.columns[size_t(name_column)].data(), slot);
+        size_t length = 0;
+        while (length + 1 < name.size() && name[length] != 0) ++length;
+        spell_records[size_t(slot)].name.assign(
+            reinterpret_cast<const char*>(name.data()), length);
+    }
+
     u8 seen[ScoreDat::kEndingBytes];
     ScoreDat::read_ending_bytes(score_dat.st.data(), seen);
     std::copy(seen, seen + ScoreDat::kEndingBytes, ending_seen_bytes.begin());
+    extra_unlocked_mask = 0;
+    for (i32 character = 0; character < kSaveCharacters; ++character) {
+        if ((ending_seen_bytes[size_t(character * 2 + 1)] & 0x10u) != 0)
+            extra_unlocked_mask |= 1u << u32(character);
+    }
     ending_history_complete = true;
     const std::array<u8, 9> name = ScoreDat::st_name(score_dat.st.data());
     remember_name(std::string(reinterpret_cast<const char*>(name.data()),
