@@ -159,7 +159,7 @@ constexpr AddressAnchor kAnchors[] = {
     {"player-set-pos", 0x440E40, "game/Player.cpp Player::set_position"},
     {"player-reset", 0x441740, "game/Player.cpp Player::reset（0x42dc50 首帧）"},
     {"player-options-interrupt", 0x440DC0, "game/Player.cpp Player::interrupt_options"},
-    {"player-update", 0x442560, "game/Player.cpp Player::update（0x443720 更新链 0x16 入口；状态 0 入场 0x416d20 半径 640 消弹 / 1 正常 / 2 复活等待：第 3 帧 scatter_death_items、第 0x1e 帧 respawn 或 0x43f350 / 4 决死猶予 > 7 帧 → die）"},
+    {"player-update", 0x442560, "game/Player.cpp Player::update（0x443720 更新链 0x16 入口；状态 0 入场 0x416d20 半径 640 消弹，满 60 帧经 0x4426a9 当帧检查炸弹与季节解放 / 1 正常 / 2 复活等待：第 3 帧 scatter_death_items、第 0x1e 帧 respawn 或 0x43f350 / 4 决死猶予 > 7 帧 → die）"},
     {"player-move", 0x441CF0, "game/Player.cpp Player::move"},
     {"player-options-tick", 0x442380, "game/Player.cpp Player::update_options"},
     {"player-options-setup", 0x4440E0, "game/Player.cpp Player::setup_options"},

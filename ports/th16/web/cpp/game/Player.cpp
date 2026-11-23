@@ -547,12 +547,11 @@ void Player::update(AnmManager& manager, GameGlobals& globals, const InputState&
             if (bullet_manager != nullptr) bullet_manager->cancel_radius(pos, 640.0f, 0, true);   // 0x416d20
             if (laser_manager != nullptr) laser_manager->cancel_radius(pos, 640.0f, 0, false); // 0x431a70
         }
-        if (state_timer.current > 0x3b) {
-            state = kNormal;
-            state_timer.set(0);
-            move(manager, game_input, world, effect_anm, game_speed);
-        }
-        break;
+        if (state_timer.current < 0x3c) break;
+        state = kNormal;
+        state_timer.set(0);
+        // 0x4426a9：入场完成的当帧处理炸弹与季节解放的输入边沿。
+        [[fallthrough]];
     case kNormal:
         // 0x40dda0 / 0x40db20：炸弹（X 键）与季节解放（C 键）按边沿触发
         if (bomb != nullptr && bomb->usable() && (game_input.pressed & InputState::kBomb) != 0) bomb->start();

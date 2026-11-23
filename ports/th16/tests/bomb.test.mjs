@@ -16,7 +16,7 @@ const dat = process.env.TH16_DAT ?? resolve(monorepo, 'games/th16/original/th16.
 const needDat = {skip: !existsSync(dat) && 'original th16.dat not present'};
 const golden = JSON.parse(readFileSync(resolve(here, 'golden/bomb.json'), 'utf8'));
 
-const kNormal = 1, kRespawnWait = 2, kDying = 4;   // Player::State
+const kEnter = 0, kNormal = 1, kRespawnWait = 2, kDying = 4;   // Player::State
 const kOrbit = 2, kStraight = 0;                   // MotionState::mode
 
 function run(args) {
@@ -89,6 +89,19 @@ test('决死猶予：第 892 帧被弹进入状态 4，第 895 帧按 X 发动�
     assert.equal(frames[894].resources.bombs - frames[895].resources.bombs, 1, name);
     assert.equal(frames[895].bombs.main.in_spell, 0, name);
   }
+});
+
+test('复活入场结束的当帧可按 X 发动炸弹', needDat, () => {
+  const c = byName('st1-reimu-deathbomb-1000');
+  // 第一次被弹时不决死。在结束复活入场的第 991 帧点按炸弹。
+  const frames = gameRun({...c, input: '0:0x11,990:0x13,991:0x11'});
+  const entering = frames[989];
+  const resumed = frames[990];
+  assert.equal(entering.player.state, kEnter);
+  assert.equal(entering.bombs.main.active, 0);
+  assert.equal(resumed.player.state, kNormal);
+  assert.equal(resumed.bombs.main.active, 1);
+  assert.equal(resumed.resources.bombs, entering.resources.bombs - 1);
 });
 
 test('季节解放：量表过阈值 100 后等级 1，第 850 帧按 C 发动；结束后计时 -45 冷却（0x40e040）回到 0 才可再发；飘字 180 帧', needDat, () => {
