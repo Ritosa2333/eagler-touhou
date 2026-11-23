@@ -4817,7 +4817,23 @@ int th128_world_tick(){
     if(playerFireConfigured&&!freezeRewardPanel.tick(world->playerAimPosition().y)){
         world->reportRuntimeFault("original freeze reward panel tick rejected");return 0;
     }
+    const auto iceDamageBefore=world->damageStats()[0];
     const bool success=world->tick();
+    // Native enemy-manager pass (0x415954..0x415973): ice-tagged damage
+    // contributes half its value to motivation, capped per tick. StageWorld
+    // exposes cumulative counters, so use this tick's delta, not its total.
+    if(success&&shotHitsConfigured&&!motivationFlag){
+        const auto iceDamage=std::bit_cast<std::int32_t>(world->damageStats()[0]-iceDamageBefore);
+        if(iceDamage>0){
+            const int next=std::min(100000,motivationRaw+std::min(iceDamage,1700)/2);
+            if(next/10000>motivationRaw/10000){
+                if(!perfectHudConfigured||grazeSounds.size()>=65536){world->reportRuntimeFault("ice damage motivation notification unavailable");return 0;}
+                if(!perfectHud->motivationNotice(operationError)){world->reportRuntimeFault(operationError);return 0;}
+                grazeSounds.push_back({18,0});
+            }
+            motivationRaw=next;
+        }
+    }
     if(success&&perfectHudConfigured){
         if(!world->prepareBossHudPass(operationError)){world->reportRuntimeFault(operationError);return 0;}
         th128::hud::BossInput input;const auto countdown=world->phaseCountdown();
