@@ -1,0 +1,220 @@
+{
+  "note": "0x448e40 unicorn; 0x4482f0 color thresholds from decomp",
+  "fast_forward": [
+    {
+      "mode": 1,
+      "counter": -2,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": -1,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 0,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 1
+    },
+    {
+      "mode": 1,
+      "counter": 1,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 2,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 3,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 4,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 5,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 6,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 7,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 8,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 1
+    },
+    {
+      "mode": 1,
+      "counter": 9,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 10,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 11,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 12,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 13,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 14,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 15,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "mode": 1,
+      "counter": 16,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 1
+    },
+    {
+      "name": "no_gm",
+      "mode": 1,
+      "counter": 1,
+      "held": 513,
+      "gm": 0,
+      "loading": 0,
+      "eax": 1
+    },
+    {
+      "name": "loading",
+      "mode": 1,
+      "counter": 1,
+      "held": 513,
+      "gm": 1,
+      "loading": 1,
+      "eax": 1
+    },
+    {
+      "name": "mode0",
+      "mode": 0,
+      "counter": 1,
+      "held": 513,
+      "gm": 1,
+      "loading": 0,
+      "eax": 1
+    },
+    {
+      "name": "held0",
+      "mode": 1,
+      "counter": 1,
+      "held": 0,
+      "gm": 1,
+      "loading": 0,
+      "eax": 1
+    },
+    {
+      "name": "held_shot",
+      "mode": 1,
+      "counter": 1,
+      "held": 1,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    },
+    {
+      "name": "held_skip",
+      "mode": 1,
+      "counter": 1,
+      "held": 512,
+      "gm": 1,
+      "loading": 0,
+      "eax": 6
+    }
+  ],
+  "fps_colors": {
+    "0": 4283453695,
+    "29": 4283453695,
+    "30": 4288717055,
+    "49": 4288717055,
+    "50": 4294967295,
+    "60": 4294967295,
+    "255": 4294967295
+  }
+}

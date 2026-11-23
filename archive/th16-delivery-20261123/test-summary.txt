@@ -1,0 +1,8 @@
+TH16 final isolated test suite
+source commit: db2bafbbfd35c3a14d5dca66e2a7b2711d85e18a
+native harness: clang++ C++17 -O2 -ffp-contract=off
+non-draw test files: tests=799 pass=799 fail=0 skipped=0 cancelled=0
+draw.test.mjs (four shards plus early 2000-frame matrix): tests=56 pass=56 fail=0 skipped=0 cancelled=0
+total: tests=855 pass=855 fail=0 skipped=0 cancelled=0
+draw-long.test.mjs: 29 whole-run cases + 2 digest self-checks = 31 passed (included above)
+whole-run oracle comparison: 29 cases, 1594703 frames, all bit-identical

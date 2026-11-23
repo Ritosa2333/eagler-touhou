@@ -58,6 +58,7 @@ ARTWORK_BY_GAME = {
     "th14": ("th14-card.jpg",),
     "th17": ("th17-card.webp",),
     "th19": (),
+    "th16": (),
 }
 # Launcher cards are presentation derivatives, not archival copies of the
 # original title artwork.  The UI darkens/crops them heavily and Lighthouse's

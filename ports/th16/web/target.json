@@ -1,0 +1,24 @@
+{
+  "game": "th16",
+  "title": "東方天空璋 ～ Hidden Star in Four Seasons.",
+  "version": "1.00a",
+  "language": "Japanese",
+  "executable": "../../../games/th16/original/th16.exe",
+  "sha256": "c11776019f083978e66027e7394dafb1fb9543afca986f28049a49417e341929",
+  "bytes": 683520,
+  "peTimestamp": "2017-07-31T20:47:09Z",
+  "imageBase": "0x00400000",
+  "entryPoint": "0x0047537b",
+  "archive": {
+    "file": "th16.dat",
+    "sha256": "c84e04181c1c08c80fb0eaba641cec9eb27244ac372749314bd886e3e5a4b64f",
+    "bytes": 77693268,
+    "format": "THA1"
+  },
+  "music": {
+    "file": "thbgm.dat",
+    "sha256": "2904df926a97cd04c7c9d96abdcea802fab76b5432bc7359d4c3f4d11e055e4d",
+    "bytes": 388876780
+  },
+  "completeGame": true
+}

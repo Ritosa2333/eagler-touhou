@@ -1,0 +1,33 @@
+{
+  "game": "th16",
+  "protocol": "eagler-touhou/1",
+  "adapter": "sdl3-eagler",
+  "profile": "production",
+  "builtAt": "2026-11-23T02:22:49.105Z",
+  "version": "1.0.0-sdl3",
+  "features": {
+    "thprac": false,
+    "languages": false,
+    "focusHitbox": false
+  },
+  "music": [
+    "ogg-stream",
+    "ogg-full",
+    "none"
+  ],
+  "touchReplay": false,
+  "execution": {
+    "kind": "cpp-sdl3",
+    "sha256": "3f9502c4d00588ecb2bda3bae43bbb888c77164f10467ba9be247f3f05072367",
+    "loaderSha256": "213a7eeb9b44c1ee541868aa2f90e654dc048c21b61bbd2bc27085fbe3adf30c",
+    "architecture": {
+      "loop": "cpp-frameclock-60hz-catchup",
+      "audio": "miniaudio-sdl3",
+      "renderer": "cpp-gles-semantic-batched",
+      "files": "sdl-io-idbfs",
+      "fonts": "sdl3-ttf",
+      "input": "cpp-sdl-gamepad-hosted-keyboard",
+      "launcher": "eagler-touhou/1"
+    }
+  }
+}

@@ -954,6 +954,19 @@ export declare const PRODUCT_GAMES: Readonly<{
             focusHitbox: false;
         }>;
     }>;
+    th16: Readonly<{
+        testOnly: true; buildOptIn: true;
+        number: "16"; title: "東方天空璋"; subtitle: "Hidden Star in Four Seasons";
+        storage: Readonly<{saveRoot:"/savesth16";scoreFile:"scoreth16.dat";configFiles:readonly string[]}>;
+        runtime:"./runtime/th16/th16.html";runtimeFileLayout:"directory";dataProvider:"retail-memory";
+        requiredShared:readonly string[];runtimeAssets:readonly string[];
+        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:"runtime-selection"}>;
+        touchFire:Readonly<{mode:"toggle";labelKey:"touch.tapToggle"}>;
+        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:"early-test"}>;
+        package:Readonly<{dataFileId:"game-data";dataTarget:"/th16.dat";musicSourceDirectories:Readonly<{ogg:"bgm-ogg"}>;musicMounts:Readonly<{ogg:"/bgm-ogg"}>;rawDataImport:Readonly<{fileNames:readonly string[]}>}>;
+        replay:Readonly<{prefix:"th16"}>;
+        features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
+    }>;
     th17: Readonly<{
         number: "17";
         title: "東方鬼形獣";

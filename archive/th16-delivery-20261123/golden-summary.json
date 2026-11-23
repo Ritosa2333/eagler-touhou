@@ -1,0 +1,154 @@
+{
+  "schema": "th16/draw-long-summary/1",
+  "sha256": "b1ad188ead4176c693d62b22b2c3e285b5f0f4562940cb38af2fdf4dbaf078fa",
+  "caseCount": 29,
+  "frames": 1594703,
+  "segments": 2672,
+  "cases": [
+    {
+      "name": "st1-easy-reimu-spring-idle-23000",
+      "frames": 23000,
+      "segments": 39
+    },
+    {
+      "name": "st1-easy-reimu-spring-fire-23000",
+      "frames": 23000,
+      "segments": 39
+    },
+    {
+      "name": "st1-lunatic-aya-autumn-idle-21500",
+      "frames": 21500,
+      "segments": 36
+    },
+    {
+      "name": "st2-easy-reimu-spring-idle-29000",
+      "frames": 29000,
+      "segments": 49
+    },
+    {
+      "name": "st2-easy-reimu-spring-fire-29000",
+      "frames": 29000,
+      "segments": 49
+    },
+    {
+      "name": "st2-hard-cirno-winter-idle-29500",
+      "frames": 29500,
+      "segments": 50
+    },
+    {
+      "name": "st3-easy-reimu-spring-idle-40200",
+      "frames": 40200,
+      "segments": 67
+    },
+    {
+      "name": "st3-easy-reimu-spring-fire-40200",
+      "frames": 40200,
+      "segments": 67
+    },
+    {
+      "name": "st3-normal-marisa-summer-idle-39000",
+      "frames": 39000,
+      "segments": 65
+    },
+    {
+      "name": "st4-easy-reimu-spring-idle-42800",
+      "frames": 42800,
+      "segments": 72
+    },
+    {
+      "name": "st4-easy-reimu-spring-fire-42800",
+      "frames": 42800,
+      "segments": 72
+    },
+    {
+      "name": "st4-lunatic-marisa-doyou-idle-46400",
+      "frames": 46400,
+      "segments": 78
+    },
+    {
+      "name": "st5-easy-reimu-spring-idle-50600",
+      "frames": 50600,
+      "segments": 85
+    },
+    {
+      "name": "st5-easy-reimu-spring-fire-50600",
+      "frames": 50600,
+      "segments": 85
+    },
+    {
+      "name": "st5-hard-reimu-winter-idle-50600",
+      "frames": 50600,
+      "segments": 85
+    },
+    {
+      "name": "st6-easy-reimu-spring-idle-58248",
+      "frames": 58248,
+      "segments": 98
+    },
+    {
+      "name": "st6-easy-reimu-spring-fire-58248",
+      "frames": 58248,
+      "segments": 98
+    },
+    {
+      "name": "st6-normal-aya-summer-idle-57641",
+      "frames": 57641,
+      "segments": 97
+    },
+    {
+      "name": "extra-doyou-reimu-idle-153497",
+      "frames": 153497,
+      "segments": 256
+    },
+    {
+      "name": "extra-doyou-reimu-fire-107735",
+      "frames": 107735,
+      "segments": 180
+    },
+    {
+      "name": "extra-doyou-cirno-spring-idle-141968",
+      "frames": 141968,
+      "segments": 237
+    },
+    {
+      "name": "full-game-easy-reimu-spring-idle-to-ending-190600",
+      "frames": 190600,
+      "segments": 318
+    },
+    {
+      "name": "clear-st1-easy-reimu-spring-to-st2-24000",
+      "frames": 24000,
+      "segments": 40
+    },
+    {
+      "name": "clear-st2-normal-cirno-summer-to-st3-24000",
+      "frames": 24000,
+      "segments": 40
+    },
+    {
+      "name": "clear-st3-easy-reimu-spring-to-st4-45000",
+      "frames": 45000,
+      "segments": 75
+    },
+    {
+      "name": "clear-st4-easy-reimu-spring-to-st5-45000",
+      "frames": 45000,
+      "segments": 75
+    },
+    {
+      "name": "clear-st5-easy-reimu-spring-to-st6-50000",
+      "frames": 50000,
+      "segments": 84
+    },
+    {
+      "name": "clear-st6-easy-aya-winter-to-ending-40279",
+      "frames": 40279,
+      "segments": 68
+    },
+    {
+      "name": "clear-st6-easy-reimu-spring-tapfire-to-ending-40288",
+      "frames": 40287,
+      "segments": 68
+    }
+  ]
+}

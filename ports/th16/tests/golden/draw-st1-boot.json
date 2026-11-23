@@ -1,0 +1,21 @@
+{
+ "config": {
+  "difficulty": 1,
+  "input": "",
+  "lives": 8,
+  "season": 2,
+  "shot": 1,
+  "stage": 1
+ },
+ "frames": {
+  "1": "4644a496d92cfb128895a57ab509d0e8e8475da5",
+  "2": "cbbe9ca3360c10c2f0d2e6793481c313f9a24615",
+  "3": "cbbe9ca3360c10c2f0d2e6793481c313f9a24615",
+  "4": "cbbe9ca3360c10c2f0d2e6793481c313f9a24615",
+  "5": "cbbe9ca3360c10c2f0d2e6793481c313f9a24615",
+  "6": "cbbe9ca3360c10c2f0d2e6793481c313f9a24615",
+  "7": "cbbe9ca3360c10c2f0d2e6793481c313f9a24615",
+  "8": "cbbe9ca3360c10c2f0d2e6793481c313f9a24615"
+ },
+ "note": "每帧 = sha1(draw-compare.py structure_lines)：Clear / 绘制的目标、视口、图元、格式、纹理、状态（不含顶点与矩阵）。来源：game-oracle.py --draw 8 帧（关卡装载后首 8 帧）"
+}

@@ -1,0 +1,100 @@
+<!doctype html>
+<!-- th16 天空璋开发页（独立试玩 / 探针）：th16.dat 整档进 MEMFS /assets → th16_initialize → rAF 主循环。
+     启动器接入走 th16.html + shell.mjs（eagler-touhou/1 协议）。
+     原版从 th16.dat（THA1）按名取件，这里不预解包，档案由 C++ Archive 解密/LZSS 解码。 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>东方天空璋 th16 — 运行时</title>
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: #ddd; font: 14px system-ui, sans-serif; }
+  body { display: grid; place-items: center; }
+  canvas { display: block; width: min(100vw, 133.333333vh); height: min(100vh, 75vw); outline: none; touch-action: none; }
+  #loading { position: fixed; top: 40%; max-width: 90%; text-align: center; }
+  #error { position: fixed; top: 40%; max-width: 90%; text-align: center; color: #ffb7b7; }
+  #error:empty { display: none; }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="0"></canvas>
+<p id="loading" role="status">正在准备东方天空璋…</p>
+<p id="error" role="alert"></p>
+<script type="module">
+const status = text => document.getElementById('loading').textContent = text;
+const fail = text => { document.getElementById('loading').textContent = ''; document.getElementById('error').textContent = text; };
+window.__th16_log = [];
+const note = (kind, text) => { window.__th16_log.push(kind + ' ' + text); if (window.__th16_log.length > 400) window.__th16_log.shift(); };
+try {
+  const params = new URLSearchParams(location.search);
+  const artifact = params.get('artifact') || 'sdl3';
+  const Module = await import('../artifacts/' + artifact + '/th16-sdl.mjs');
+  const canvas = document.getElementById('canvas');
+  const mod = await Module.default({
+    canvas,
+    print: t => { console.log('[th16]', t); note('out', t); },
+    printErr: t => { console.warn('[th16]', t); note('err', t); },
+  });
+  window.mod = mod;
+  mod.FS.mkdirTree('/assets');
+  const response = await fetch('assets/th16.dat');
+  if (!response.ok) throw new Error('资源缺失：assets/th16.dat（把原版 th16.dat 放到 sdl-runtime/assets/，不入库）');
+  const total = Number(response.headers.get('content-length')) || 0;
+  const reader = response.body.getReader();
+  const chunks = [];
+  let received = 0;
+  for (;;) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    status('th16.dat 装载中… ' + (total ? Math.round(received / total * 100) + '%' : (received >> 20) + ' MiB'));
+  }
+  const bytes = new Uint8Array(received);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+  mod.FS.writeFile('/assets/th16.dat', bytes);
+  // 0x459240 文字：CP932 → Unicode 表按浏览器 Shift_JIS 解码生成；字体文件可选（不入库，放 sdl-runtime/assets/）
+  const decoder = new TextDecoder('shift_jis');
+  const mapping = new Uint16Array(65536);
+  for (let n = 0; n < 65536; ++n) {
+    const v = decoder.decode(n < 256 ? Uint8Array.of(n) : Uint8Array.of(n >> 8, n & 255));
+    mapping[n] = v.length === 1 && v !== '\ufffd' ? v.charCodeAt(0) : 0x30fb;
+  }
+  mod.FS.mkdirTree('/fonts');
+  mod.FS.writeFile('/fonts/cp932.bin', new Uint8Array(mapping.buffer));
+  for (const name of ['msgothic.ttc', 'msmincho.ttc', 'meiryo.ttc']) {
+    const font = await fetch('assets/' + name).catch(() => null);
+    if (font && font.ok) mod.FS.writeFile('/fonts/' + name, new Uint8Array(await font.arrayBuffer()));
+  }
+  // 乐曲：原版 thbgm.dat（388 MiB 原始 PCM）不进浏览器；按 thbgm.fmt 曲名放 assets/music/<曲名>.ogg（帧数须与原版 PCM 相同，
+  // 不入库），有则并行取进 MEMFS /assets/music，缺则该曲静音（AudioDevice 退路路径 = th16.dat 同目录 /music）
+  mod.FS.mkdirTree('/assets/music');
+  const tracks = ['th16_01', 'th16_02', 'th16_03', 'th16_04', 'th16_05', 'th16_06', 'th16_07', 'th16_08', 'th16_09',
+    'th16_10', 'th16_11', 'th16_12', 'th16_13', 'th16_14', 'th16_15', 'th16_16', 'th16_17', 'th128_08'];
+  await Promise.all(tracks.map(async name => {
+    const ogg = await fetch('assets/music/' + name + '.ogg').catch(() => null);
+    if (ogg && ogg.ok) mod.FS.writeFile('/assets/music/' + name + '.ogg', new Uint8Array(await ogg.arrayBuffer()));
+  }));
+  // scoreth16.dat / replay/*.rpy：/save 挂 IDBFS，启动前从 IndexedDB 灌入，C++ 每次写盘后回写（串行）
+  mod.FS.mkdirTree('/save');
+  mod.FS.mount(mod.IDBFS, {}, '/save');
+  const syncfs = populate => new Promise((resolve, reject) => mod.FS.syncfs(populate, e => e ? reject(e) : resolve()));
+  await syncfs(true).catch(e => note('err', 'save load: ' + e));
+  try { mod.FS.mkdir('/save/replay'); } catch (_) {}
+  let persisting = Promise.resolve();
+  mod.th16_persist = () => { persisting = persisting.then(() => syncfs(false)).catch(e => note('err', 'save flush: ' + e)); return persisting; };
+  window.th16_persisted = () => persisting;
+  status('初始化 SDL3 / GLES 3.0…');
+  if (!mod._th16_initialize()) throw new Error('初始化失败：' + mod.UTF8ToString(mod._th16_error()));
+  document.getElementById('loading').textContent = '';
+  canvas.focus();
+  window.addEventListener('keydown', e => { if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault(); });
+  mod._th16_loop_start();
+  window.__th16_ready = true;
+} catch (error) {
+  console.error(error);
+  fail(String(error.message || error));
+}
+</script>
+</body>
+</html>

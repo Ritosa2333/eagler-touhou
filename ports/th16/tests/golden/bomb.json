@@ -1,0 +1,512 @@
+{
+ "note": "tools/oracle/game-oracle.py --enemies --bullets --items --lasers --bombs（Unicorn 直跑 th16.exe 全游戏）的 Bomb / 季节解放快照 bomb_digest 与同场景 player / enemy / bullet / item / spell / laser digest 的 FNV-1a 64；harness game-digest 同口径（--lives 8 --refill-lives，replay_slot -1 = 普通模式）。输入位：0x1 射击 0x2 炸弹 0x8 低速 0x10 上 0x800 季节解放。四机体主炸弹在第 120 帧按下 X（0x40db20）；解放用例先按住上 + 射击把季节量表攒过阈值 100（第 835 帧起等级 1），第 850 帧按 C；决死用例在第 892 帧被弹后第 895 帧按 X（0x442560 决死猶予 ≤ 7 帧 → 0x444070 回到状态 1）。魔理沙用例同时覆盖 .sht 类型 2 激光（0x446200 / 0x446260 / 0x446870）与低速 / 移动下的朝向与截断。",
+ "cases": [
+  {
+   "name": "st1-reimu-bomb-400",
+   "stage": 1,
+   "shot": 0,
+   "season": 0,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 400,
+   "input": "0:0x1,120:0x3,125:0x1",
+   "player_digest": "47cb8701eec234bb",
+   "enemy_digest": "0a42651f5c33b0fb",
+   "bullet_digest": "d4eb11299bf1c13a",
+   "enemy_vm_digest": "8514b41a6e6b5bcc",
+   "item_digest": "006515885da6a05d",
+   "spell_digest": "ed3a6743c9a37e78",
+   "laser_digest": "d4eb11299bf1c13a",
+   "bomb_digest": "024173f4d76f3dbd",
+   "main_class": "ReimuA",
+   "sub_class": "ReimuSub",
+   "main_active_frames": [
+    121,
+    371,
+    251
+   ],
+   "sub_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_level": 0,
+   "last_resources": {
+    "score": 4229,
+    "lives": 8,
+    "bombs": 2
+   },
+   "last_season_gauge": 40
+  },
+  {
+   "name": "st1-cirno-bomb-500",
+   "stage": 1,
+   "shot": 1,
+   "season": 0,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 500,
+   "input": "0:0x1,120:0x3,125:0x1",
+   "player_digest": "73057c389124fe0f",
+   "enemy_digest": "5fba3e6670ab823c",
+   "bullet_digest": "f12c263b04d2ae42",
+   "enemy_vm_digest": "2f5f6890edf005f1",
+   "item_digest": "ea8a701337930942",
+   "spell_digest": "50d311bb312bb347",
+   "laser_digest": "f12c263b04d2ae42",
+   "bomb_digest": "440693c91a5441d3",
+   "main_class": "CirnoA",
+   "sub_class": "ReimuSub",
+   "main_active_frames": [
+    121,
+    460,
+    340
+   ],
+   "sub_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_level": 0,
+   "last_resources": {
+    "score": 2534,
+    "lives": 8,
+    "bombs": 2
+   },
+   "last_season_gauge": 51
+  },
+  {
+   "name": "st1-aya-bomb-500",
+   "stage": 1,
+   "shot": 2,
+   "season": 0,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 500,
+   "input": "0:0x1,120:0x3,125:0x1",
+   "player_digest": "d191044a3b72fd6d",
+   "enemy_digest": "ffcc39d9b0e6c7fa",
+   "bullet_digest": "f12c263b04d2ae42",
+   "enemy_vm_digest": "f7d1daf52b32c245",
+   "item_digest": "74b92415cd2abda8",
+   "spell_digest": "ebabd1f587ca06fc",
+   "laser_digest": "f12c263b04d2ae42",
+   "bomb_digest": "b0aa6f498ee7d02e",
+   "main_class": "AyaA",
+   "sub_class": "ReimuSub",
+   "main_active_frames": [
+    121,
+    451,
+    331
+   ],
+   "sub_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_level": 0,
+   "last_resources": {
+    "score": 6335,
+    "lives": 8,
+    "bombs": 2
+   },
+   "last_season_gauge": 107
+  },
+  {
+   "name": "st1-marisa-bomb-500",
+   "stage": 1,
+   "shot": 3,
+   "season": 0,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 500,
+   "input": "0:0x1,120:0x3,125:0x1",
+   "player_digest": "2eb4d07c454e16a4",
+   "enemy_digest": "6e303d82c55cd29b",
+   "bullet_digest": "f12c263b04d2ae42",
+   "enemy_vm_digest": "3f20b483821d2757",
+   "item_digest": "010e68c90731e80c",
+   "spell_digest": "b2bf7a94bb5264b7",
+   "laser_digest": "f12c263b04d2ae42",
+   "bomb_digest": "99bc1e2b8401d4d3",
+   "main_class": "MarisaA",
+   "sub_class": "ReimuSub",
+   "main_active_frames": [
+    121,
+    461,
+    341
+   ],
+   "sub_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_level": 0,
+   "last_resources": {
+    "score": 7345,
+    "lives": 8,
+    "bombs": 2
+   },
+   "last_season_gauge": 134
+  },
+  {
+   "name": "st1-marisa-move-focus-900",
+   "stage": 1,
+   "shot": 3,
+   "season": 0,
+   "difficulty": 2,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 900,
+   "input": "0:0x1,60:0x9,200:0x49,300:0x89,400:0x19,500:0x29,600:0x3,606:0x1,700:0x41",
+   "player_digest": "2e2ba9990590c6ab",
+   "enemy_digest": "ffe77e5676c589a2",
+   "bullet_digest": "e92f02fa97b2a961",
+   "enemy_vm_digest": "3aea5a4666cab0b5",
+   "item_digest": "e31a781767df5568",
+   "spell_digest": "d96501c0afb1eee9",
+   "laser_digest": "a531a93e47d70c5c",
+   "bomb_digest": "263273efb79d4c2a",
+   "main_class": "MarisaA",
+   "sub_class": "ReimuSub",
+   "main_active_frames": [
+    601,
+    900,
+    300
+   ],
+   "sub_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_level": 0,
+   "last_resources": {
+    "score": 12595,
+    "lives": 8,
+    "bombs": 2
+   },
+   "last_season_gauge": 164
+  },
+  {
+   "name": "st1-release-spring-1100",
+   "stage": 1,
+   "shot": 0,
+   "season": 0,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 1100,
+   "input": "0:0x11,850:0x811,855:0x11",
+   "player_digest": "c4ecd579272600c8",
+   "enemy_digest": "6aa9fa65d9173c2c",
+   "bullet_digest": "4afd47c2727c3a26",
+   "enemy_vm_digest": "c30938a60280d3cf",
+   "item_digest": "5cb95c2a24508e3b",
+   "spell_digest": "0b23fb79926ed7da",
+   "laser_digest": "7088cca8a3c48c8d",
+   "bomb_digest": "255c92fb0f2c6741",
+   "main_class": "ReimuA",
+   "sub_class": "ReimuSub",
+   "main_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_active_frames": [
+    851,
+    891,
+    41
+   ],
+   "sub_level": 1,
+   "last_resources": {
+    "score": 15885,
+    "lives": 8,
+    "bombs": 3
+   },
+   "last_season_gauge": 59
+  },
+  {
+   "name": "st1-release-summer-1100",
+   "stage": 1,
+   "shot": 0,
+   "season": 1,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 1100,
+   "input": "0:0x11,850:0x811,855:0x11",
+   "player_digest": "6fb41ceddda74bd7",
+   "enemy_digest": "7ced00d2ecd2b2b5",
+   "bullet_digest": "ee3afcc494b1eb77",
+   "enemy_vm_digest": "6b012446132d6274",
+   "item_digest": "f3d8162b4af2c145",
+   "spell_digest": "018fab2208142cdd",
+   "laser_digest": "7088cca8a3c48c8d",
+   "bomb_digest": "6d6cf8e8e62f93fd",
+   "main_class": "ReimuA",
+   "sub_class": "CirnoSub",
+   "main_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_active_frames": [
+    851,
+    911,
+    61
+   ],
+   "sub_level": 1,
+   "last_resources": {
+    "score": 12145,
+    "lives": 8,
+    "bombs": 3
+   },
+   "last_season_gauge": 38
+  },
+  {
+   "name": "st1-release-autumn-1100",
+   "stage": 1,
+   "shot": 0,
+   "season": 2,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 1100,
+   "input": "0:0x11,850:0x811,855:0x11",
+   "player_digest": "fa3051916b187e44",
+   "enemy_digest": "35500658bf52e93f",
+   "bullet_digest": "c7364656bb5b87bb",
+   "enemy_vm_digest": "b675661678307883",
+   "item_digest": "04a8cd5ee2f1c702",
+   "spell_digest": "4336583c3522d9a8",
+   "laser_digest": "7088cca8a3c48c8d",
+   "bomb_digest": "7b15dad1377b96d8",
+   "main_class": "ReimuA",
+   "sub_class": "AyaSub",
+   "main_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_active_frames": [
+    851,
+    921,
+    71
+   ],
+   "sub_level": 1,
+   "last_resources": {
+    "score": 11938,
+    "lives": 8,
+    "bombs": 3
+   },
+   "last_season_gauge": 40
+  },
+  {
+   "name": "st1-release-winter-1100",
+   "stage": 1,
+   "shot": 0,
+   "season": 3,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 1100,
+   "input": "0:0x11,850:0x811,855:0x11",
+   "player_digest": "9d6b8ef82bba26d5",
+   "enemy_digest": "7995a04ecc2e41a9",
+   "bullet_digest": "4acc725b2ba2f491",
+   "enemy_vm_digest": "c55b5acaa47b8c7f",
+   "item_digest": "f4c0ad5ad38d44e0",
+   "spell_digest": "7c69a3d475d56761",
+   "laser_digest": "7088cca8a3c48c8d",
+   "bomb_digest": "42735d2204400bca",
+   "main_class": "ReimuA",
+   "sub_class": "MarisaSub",
+   "main_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_active_frames": [
+    851,
+    911,
+    61
+   ],
+   "sub_level": 1,
+   "last_resources": {
+    "score": 18260,
+    "lives": 8,
+    "bombs": 3
+   },
+   "last_season_gauge": 56
+  },
+  {
+   "name": "st1-release-doyou-1100",
+   "stage": 1,
+   "shot": 0,
+   "season": 4,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 1100,
+   "input": "0:0x11,850:0x811,855:0x11",
+   "player_digest": "d1bb2e4c1af8a1bd",
+   "enemy_digest": "4fc6993ead9a3d5b",
+   "bullet_digest": "b0aae66064908d8b",
+   "enemy_vm_digest": "09ec12feaa4caba3",
+   "item_digest": "9d6a594d5e1557af",
+   "spell_digest": "f977fc0739b7110d",
+   "laser_digest": "7088cca8a3c48c8d",
+   "bomb_digest": "ad87a484124c67fc",
+   "main_class": "ReimuA",
+   "sub_class": "AllSub",
+   "main_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_active_frames": [
+    851,
+    921,
+    71
+   ],
+   "sub_level": 1,
+   "last_resources": {
+    "score": 14261,
+    "lives": 8,
+    "bombs": 3
+   },
+   "last_season_gauge": 30
+  },
+  {
+   "name": "st1-reimu-deathbomb-1000",
+   "stage": 1,
+   "shot": 0,
+   "season": 0,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 1000,
+   "input": "0:0x11,895:0x13,898:0x11",
+   "player_digest": "1cf160ecd0a4fc2c",
+   "enemy_digest": "a1d7da994fbef21c",
+   "bullet_digest": "a6116ed9a708bb3b",
+   "enemy_vm_digest": "c486c352c67ca518",
+   "item_digest": "e09c1b6e0a38a124",
+   "spell_digest": "d7c2a24269f45c2c",
+   "laser_digest": "8f60e4e832d7439c",
+   "bomb_digest": "43d2d1ae92b08366",
+   "main_class": "ReimuA",
+   "sub_class": "ReimuSub",
+   "main_active_frames": [
+    896,
+    1000,
+    105
+   ],
+   "sub_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_level": 0,
+   "last_resources": {
+    "score": 24716,
+    "lives": 8,
+    "bombs": 2
+   },
+   "last_season_gauge": 163
+  },
+  {
+   "name": "st1-aya-deathbomb-1000",
+   "stage": 1,
+   "shot": 2,
+   "season": 0,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 1000,
+   "input": "0:0x11,895:0x13,898:0x11",
+   "player_digest": "d9733aaa1a50197f",
+   "enemy_digest": "1ea3dc5f854e5900",
+   "bullet_digest": "57e6c827e731d316",
+   "enemy_vm_digest": "ae50e5e04530c098",
+   "item_digest": "81315f36592e807f",
+   "spell_digest": "92fb7420fc93e927",
+   "laser_digest": "8f60e4e832d7439c",
+   "bomb_digest": "0ab008dd4557f268",
+   "main_class": "AyaA",
+   "sub_class": "ReimuSub",
+   "main_active_frames": [
+    896,
+    1000,
+    105
+   ],
+   "sub_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_level": 0,
+   "last_resources": {
+    "score": 22685,
+    "lives": 8,
+    "bombs": 2
+   },
+   "last_season_gauge": 146
+  },
+  {
+   "name": "st1-marisa-deathbomb-1000",
+   "stage": 1,
+   "shot": 3,
+   "season": 0,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 1000,
+   "input": "0:0x11,895:0x13,898:0x11",
+   "player_digest": "119e01f87b71efec",
+   "enemy_digest": "22a6e6d96ae0138a",
+   "bullet_digest": "3730ccd8ae5011b1",
+   "enemy_vm_digest": "ef2c0075f10acb05",
+   "item_digest": "ad81e8a5fcd80773",
+   "spell_digest": "4f577ff80acd3622",
+   "laser_digest": "8f60e4e832d7439c",
+   "bomb_digest": "977ea9ec81af0bef",
+   "main_class": "MarisaA",
+   "sub_class": "ReimuSub",
+   "main_active_frames": [
+    896,
+    1000,
+    105
+   ],
+   "sub_active_frames": [
+    0,
+    0,
+    0
+   ],
+   "sub_level": 0,
+   "last_resources": {
+    "score": 18527,
+    "lives": 8,
+    "bombs": 2
+   },
+   "last_season_gauge": 142
+  }
+ ]
+}

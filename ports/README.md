@@ -23,6 +23,7 @@
 | th14 | [开发](../docs/adaptation/th14.md) | [开发](th14-mp/README.md) | [回滚验证](../archive/th14-rollback-20261114/README.md) |
 | th15 | [开发](th15/README.md) | [开发](th15-mp/README.md) | [普通版](th15/ADAPTATION.md) · [MP](th15-mp/ADAPTATION.md) |
 | th17 | [开发](th17/README.md) | [开发](th17-mp/README.md) | [普通版](th17/ADAPTATION.md) · [MP](th17-mp/ADAPTATION.md) |
+| th16 | [开发](th16/README.md) | — | [普通版](th16/ADAPTATION.md) |
 | th19 | [开发](th19/README.md) | 同一源码目录，双人对战 | [普通版／MP](th19/ADAPTATION.md) |
 | th20 | [开发](th20/README.md) | — | [普通版实验适配](th20/ADAPTATION.md) |
 

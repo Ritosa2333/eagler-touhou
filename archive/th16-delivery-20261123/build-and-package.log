@@ -1,0 +1,41 @@
+=== BUILD-02 构建计划
+plan rc=0
+=== BUILD-03 构建（launcher 构建入口）
+build rc=0 (12s)
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+{
+  "game": "th16",
+  "bytes": 2827674,
+  "sha256": "3f9502c4d00588ecb2bda3bae43bbb888c77164f10467ba9be247f3f05072367",
+  "output": "/tmp/th16-acc/ports/th16/web/artifacts/sdl3/th16-sdl.mjs"
+}
+Build source receipt: /tmp/th16-acc/artifacts/validation/source-builds/th16-normal.json
+=== WASI harness
+wasi build rc=0
+=== WASI 3600 帧计时
+logic #1: 0.363 s
+logic #2: 0.348 s
+logic #3: 0.334 s
+logic+draw #1: 8.230 s
+logic+draw #2: 8.451 s
+logic+draw #3: 8.239 s
+=== BUILD-04 打包
+package rc=0
+72e0b099698f8e0696a9b271a62262f141990e6b2ad7666e36be825ac848e56d 11600 directory-keyboard.mjs
+7f8750d5a1be59526f2e3e5e6c060c86dd6180a5f92f350e38ac0826d1a0e432 9821 eagler-host.mjs
+e528402b77f60d4f354a14f5d4bf9ad54fb36c9db7ee799b4836542396841313 868 manifest.json
+2a24b3a6e3b8eb3331d986e10b3a953cb25df32ff606faed3e7957e9ce246ed9 78 resources.json
+0660ebfd5ce033cb6b07ae628c77e91945c2625a899dde0cf4efe806b5a6532e 1166 runtime-files.json
+7d5495470ce1dcdef4fc9584c018d1fc1f89a291e69f185e1dd15b44557d6dc8 11512 shell.mjs
+213a7eeb9b44c1ee541868aa2f90e654dc048c21b61bbd2bc27085fbe3adf30c 230974 th16-sdl.mjs
+3f9502c4d00588ecb2bda3bae43bbb888c77164f10467ba9be247f3f05072367 2827674 th16-sdl.wasm
+cd2350df7ff547922fad154c8e211d4bc70901b7eba188e557cd25ed34aa9ae8 1002 th16.html
+=== 运行时产物
+3f9502c4d00588ecb2bda3bae43bbb888c77164f10467ba9be247f3f05072367 2827674 web/artifacts/sdl3/th16-sdl.wasm
+213a7eeb9b44c1ee541868aa2f90e654dc048c21b61bbd2bc27085fbe3adf30c 230974 web/artifacts/sdl3/th16-sdl.mjs
+c3dfb4c452a7d2202532b68e8d67dafdef6f4034dfe00459adbbe4bf899682f8 3935657 web/artifacts/wasi/th16-harness.wasm
+=== 验收构建完成

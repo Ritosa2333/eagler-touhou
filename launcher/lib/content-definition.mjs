@@ -7,6 +7,7 @@ import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
 import { TH15_MUSIC_FILES } from "./th15-content-layout.mjs";
 import { TH11_MUSIC_FILES } from "./th11-content-layout.mjs";
 import { TH20_MUSIC_FILES } from "./th20-content-layout.mjs";
+import { TH16_DATA_LAYOUT, TH16_MUSIC_FILES } from "./th16-content-layout.mjs";
 
 const numbered = (prefix, values, extension) => Object.freeze(values.map(value => `${prefix}_${value}.${extension}`));
 const TH06_ARCHIVES = Object.freeze([
@@ -420,6 +421,35 @@ export const PRODUCT_CONTENT = Object.freeze({
         developmentEnv: "EAGLER_TH15_ARCHIVES",
         developmentFiles: Object.freeze(["th15.dat"]),
       }),
+    }),
+  }),
+  th16: Object.freeze({
+    original: Object.freeze({
+      files: Object.freeze(["th16.dat"]),
+      oggSourceFiles: Object.freeze(["thbgm.dat"]),
+      preparedAlternative: Object.freeze({
+        directory: "assets-ogg",
+        markerFiles: Object.freeze(["th16.data", "bgm-ogg/th16_01.ogg"]),
+      }),
+    }),
+    // sha256(JSON.stringify({files:[{filename:"/game/th16.dat"}]})): the managed
+    // data mount is just the primary archive; BGM is the /bgm-ogg OGG set.
+    dataLayout: TH16_DATA_LAYOUT,
+    music: Object.freeze({
+      ogg: Object.freeze({
+        mount: PRODUCT_GAMES.th16.package.musicMounts.ogg,
+        files: TH16_MUSIC_FILES,
+      }),
+    }),
+    hostPreparation: Object.freeze({
+      artwork: Object.freeze({ kind: "retail-memory-title-no-reader" }),
+      preparedContent: Object.freeze({
+        directory: "assets-ogg",
+        markerFiles: Object.freeze(["th16.data", "bgm-ogg/th16_01.ogg"]),
+        script: "scripts/prepare-th16-content.mjs",
+      }),
+      ogg: Object.freeze({ kind: "prepared-content" }),
+      dataAssets: Object.freeze({ kind: "prepared-content" }),
     }),
   }),
   th17: Object.freeze({

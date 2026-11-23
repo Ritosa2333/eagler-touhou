@@ -1,0 +1,67 @@
+{
+  "schema": "th16/wasi-performance/1",
+  "frames": 3600,
+  "stage": 1,
+  "shot": 0,
+  "season": 0,
+  "difficulty": 0,
+  "input": "0:1",
+  "lives": 8,
+  "refillLives": true,
+  "environment": {
+    "node": "v24.22.3",
+    "platform": "Linux 7.3.5-2-cachyos x64",
+    "cpu": "AMD Ryzen 9 9955HX3D 16-Core Processor",
+    "logicalCpus": 32,
+    "totalMemoryBytes": 64960061440
+  },
+  "wasm": {
+    "path": "ports/th16/web/artifacts/wasi/th16-harness.wasm",
+    "bytes": 3935657,
+    "sha256": "c3dfb4c452a7d2202532b68e8d67dafdef6f4034dfe00459adbbe4bf899682f8"
+  },
+  "results": [
+    {
+      "kind": "logic",
+      "repeat": 1,
+      "elapsedMs": 363.119855,
+      "stdout": "stage=1 shot=0 season=0 frames=3600 scene_exit=-1 exit_frame=0 digest=afa1884c79aa8523 enemies=81793875ebb5ef6d bullets=7f89874def0657bb enemy_vms=a48d6dce62ca166d items=91e089c827883a55 spell=83c7e99e0634c38f lasers=4c83b9003d4334fb bombs=25e6365d518797a7 menu=1d302eebfbc59458 sound=71013be8429fe2f6 bgm=th16_02.wav",
+      "stderr": "(node:734) ExperimentalWarning: WASI is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)"
+    },
+    {
+      "kind": "logic",
+      "repeat": 2,
+      "elapsedMs": 347.746932,
+      "stdout": "stage=1 shot=0 season=0 frames=3600 scene_exit=-1 exit_frame=0 digest=afa1884c79aa8523 enemies=81793875ebb5ef6d bullets=7f89874def0657bb enemy_vms=a48d6dce62ca166d items=91e089c827883a55 spell=83c7e99e0634c38f lasers=4c83b9003d4334fb bombs=25e6365d518797a7 menu=1d302eebfbc59458 sound=71013be8429fe2f6 bgm=th16_02.wav",
+      "stderr": "(node:741) ExperimentalWarning: WASI is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)"
+    },
+    {
+      "kind": "logic",
+      "repeat": 3,
+      "elapsedMs": 333.820213,
+      "stdout": "stage=1 shot=0 season=0 frames=3600 scene_exit=-1 exit_frame=0 digest=afa1884c79aa8523 enemies=81793875ebb5ef6d bullets=7f89874def0657bb enemy_vms=a48d6dce62ca166d items=91e089c827883a55 spell=83c7e99e0634c38f lasers=4c83b9003d4334fb bombs=25e6365d518797a7 menu=1d302eebfbc59458 sound=71013be8429fe2f6 bgm=th16_02.wav",
+      "stderr": "(node:748) ExperimentalWarning: WASI is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)"
+    },
+    {
+      "kind": "logic+draw",
+      "repeat": 1,
+      "elapsedMs": 8230.161693,
+      "stdout": "",
+      "stderr": "(node:755) ExperimentalWarning: WASI is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)"
+    },
+    {
+      "kind": "logic+draw",
+      "repeat": 2,
+      "elapsedMs": 8450.955281,
+      "stdout": "",
+      "stderr": "(node:762) ExperimentalWarning: WASI is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)"
+    },
+    {
+      "kind": "logic+draw",
+      "repeat": 3,
+      "elapsedMs": 8239.448862,
+      "stdout": "",
+      "stderr": "(node:769) ExperimentalWarning: WASI is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)"
+    }
+  ]
+}
