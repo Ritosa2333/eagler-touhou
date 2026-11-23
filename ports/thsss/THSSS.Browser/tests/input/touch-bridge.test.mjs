@@ -59,6 +59,13 @@ test("shooting stays on until the fire latch is cleared", () => {
   assert.equal(resumed.keys.isDown("Z"), true);
 });
 
+test("a launcher fire toggle does not shoot with touch controls disabled", () => {
+  const { bridge, keys } = harness({ touchEnabled: false });
+  bridge.controls({ fireEnabled: true, bombSerial: 0, escapeSerial: 0 });
+  bridge.presented();
+  assert.equal(keys.isDown("Z"), false);
+});
+
 test("a play drag shifts along the path and clears on lift", () => {
   const play = harness({ touchMovementMode: "touch", touchSensitivity: 100 });
   play.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });

@@ -41,7 +41,7 @@ export function createTouchBridge({ keys, surface, options, shift, residual, now
   }
 
   function applyFire() {
-    keys.setKey("Z", fire && reported() === "play", "touch-fire");
+    keys.setKey("Z", settings().touchEnabled !== false && fire && reported() === "play", "touch-fire");
   }
 
   function sensitivity() {
