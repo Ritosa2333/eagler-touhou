@@ -52,21 +52,19 @@ export function createAudio() {
     return files.get("/" + match.folder + "/" + match.name) || null;
   }
 
-  function hostedMusicBase() {
+  function hostedSession() {
     const params = new URLSearchParams(location.search);
-    if (params.get("hosted") === "1") return new URL("/games/thsss/music/ogg/", location.origin).href;
-    if (window.parent !== window && Number(params.get("runtimeEpoch")) > 0) {
-      return new URL("/games/thsss/music/ogg/", location.origin).href;
-    }
-    return "";
+    return params.get("hosted") === "1" ||
+      (window.parent !== window && Number(params.get("runtimeEpoch")) > 0);
   }
 
   function assetUrl(path) {
     const match = assetMatch(path);
     if (!match) return "";
-    if (match.folder === "BGM") {
-      const base = hostedMusicBase();
-      if (base) return new URL(match.name, base).href;
+    // Packaged installs put tracks in __thsssFiles (hostedBytes). HTTP fallback
+    // uses the staged assets/BGM tree from stage:eagler — not launcher routes.
+    if (match.folder === "BGM" && hostedSession()) {
+      return new URL("assets/BGM/" + match.name, document.baseURI).href;
     }
     return new URL("assets/" + match.folder + "/" + match.name, document.baseURI).href;
   }
