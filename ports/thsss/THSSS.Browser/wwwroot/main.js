@@ -3,6 +3,7 @@ import { createGl } from "./gl.js";
 import { createAudio } from "./audio.js";
 import { putRuntimeFile } from "./runtime-files.mjs";
 import { advanceFrame, LOGIC_STEP_MS } from "./host/presentation/frame-step.mjs";
+import { createKeyOwners } from "./host/input/key-owners.mjs";
 
 const canvas = document.getElementById("game");
 let lastStatus = "";
@@ -294,25 +295,20 @@ const keyMap = {
   F8: "F8"
 };
 
-const held = new Set();
-
 function bootKeys(onKey) {
+  const keys = createKeyOwners((name, down) => onKey(name, down ? 1 : 0), { sampleTaps: true });
   const send = (ev, down) => {
     const name = keyMap[ev.code];
     if (!name) return;
     ev.preventDefault();
-    if (down) {
-      if (held.has(name)) return;
-      held.add(name);
-    } else {
-      held.delete(name);
-    }
-    onKey(name, down ? 1 : 0);
+    if (!ev.repeat) keys.setKey(name, down, ev.code);
   };
   window.addEventListener("keydown", (ev) => send(ev, true));
   window.addEventListener("keyup", (ev) => send(ev, false));
+  window.addEventListener("blur", keys.releaseAll);
   canvas.addEventListener("pointerdown", () => canvas.focus());
   canvas.focus();
+  return keys;
 }
 
 async function loadShader(path) {
@@ -494,7 +490,7 @@ export async function launchRuntime(runtime, hooks = {}) {
   const host = runtime.host;
   runtime.host = host;
   window.__thsssHost = true;
-  if (runtime.captureKeys) bootKeys((name, down) => host.OnKey(name, down));
+  const standaloneKeys = runtime.captureKeys ? bootKeys(host.OnKey) : null;
   const optionSet = !!(runtime.options && Object.prototype.hasOwnProperty.call(runtime.options, "limitPresentationTo60"));
   const fpsToggle = document.getElementById("unlock-fps");
   let unlocked = optionSet ? runtime.options.limitPresentationTo60 === false : host.FpsUnlocked() !== 0;
@@ -511,11 +507,12 @@ export async function launchRuntime(runtime, hooks = {}) {
   let failed = false;
   let running = true;
   const frame = (now) => {
-      acc = 0;
     if (!exitRequested) hideWasmLoad();
     if (exitRequested || !running || failed) return;
     if (document.hidden) {
       last = now;
+      acc = 0;
+      standaloneKeys?.releaseAll();
       requestAnimationFrame(frame);
       return;
     }
@@ -527,6 +524,8 @@ export async function launchRuntime(runtime, hooks = {}) {
       for (let step = 0; step < stepped.steps; step++) {
         if (hooks.onBeforeFrame) hooks.onBeforeFrame();
         host.Simulate();
+        standaloneKeys?.finishStep();
+        if (hooks.onAfterStep) hooks.onAfterStep();
       }
       if (stepped.draw) {
         host.Draw(unlocked ? acc / LOGIC_STEP_MS : 1);

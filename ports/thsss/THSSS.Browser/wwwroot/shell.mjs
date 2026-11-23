@@ -27,7 +27,7 @@ const keys = createKeyOwners((name, down) => {
   } catch (err) {
     emit("error", { message: String(err && err.message || err) });
   }
-});
+}, { sampleTaps: true });
 let phase = "booting";
 let starting = false;
 let runtime = null;
@@ -104,7 +104,7 @@ const practice = mountPracticePanel({
 function applyCanonicalKey(event, down) {
   const name = keyNameFromEvent(event);
   if (!name) return;
-  practice.key(name, !!down);
+  if (practice.key(name, !!down)) return;
   keys.setKey(name, !!down, "key");
 }
 
@@ -228,7 +228,7 @@ function onLocalKey(event) {
   if (!name) return;
   event.preventDefault();
   if (event.repeat) return;
-  practice.key(name, event.type === "keydown");
+  if (practice.key(name, event.type === "keydown")) return;
   keys.setKey(name, event.type === "keydown", "local");
 }
 
@@ -269,6 +269,7 @@ async function startGame() {
       gamepad.presented();
       touch.presented();
     },
+    onAfterStep: keys.finishStep,
     onPresented() {
       const now = performance.now();
       if (lastFrameAt) frameStats.maxGap = Math.max(frameStats.maxGap, now - lastFrameAt);
@@ -286,8 +287,8 @@ async function startGame() {
   });
   if (phase === "exited") return;
   phase = "launched";
-  healthTimer = window.setInterval(publishHealth, 1000);
   healthAt = performance.now();
+  healthTimer = window.setInterval(publishHealth, 1000);
 }
 
 async function loadManagedArchive() {
@@ -327,6 +328,11 @@ async function boot() {
   };
   window.addEventListener("keydown", onLocalKey);
   window.addEventListener("keyup", onLocalKey);
+  window.addEventListener("blur", () => {
+    keyboardBridge?.clear();
+    keys.releaseSource("key");
+    keys.releaseSource("local");
+  });
   try {
     runtime = await prepareRuntime({ captureKeys: false });
     await loadManagedArchive();
@@ -342,13 +348,13 @@ document.addEventListener("visibilitychange", () => {
     canvasTouch.cancel();
     touch.cancel();
     keys.releaseAll();
+    lastFrameAt = 0;
   }
 });
 window.addEventListener("pagehide", () => {
   canvasTouch.cancel();
   keys.releaseAll();
   if (runtime && runtime.flushSaves) runtime.flushSaves();
-    lastFrameAt = 0;
 });
 
 boot();

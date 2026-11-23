@@ -28,3 +28,16 @@ test("an existing clear flag and unmapped keys stay put", () => {
   assert.match(text, /Left=Left/);
   assert.match(text, /FontType=SimHei/);
 });
+
+test("hosted saves retain progress but use the launcher input and timing", () => {
+  const prior = mergeSettingIni("", { keys: { Shoot: "C", Left: "A" } })
+    .replace("UseDirectInput=0", "UseDirectInput=1")
+    .replace("PresentInterval=1", "PresentInterval=3")
+    .replace("Clear=no", "Clear=yes");
+  const text = mergeSettingIni(prior, { keys: { Shoot: "B" } }, true);
+  assert.match(text, /Clear=yes/);
+  assert.match(text, /UseDirectInput=0/);
+  assert.match(text, /PresentInterval=1/);
+  assert.match(text, /Left=Left/);
+  assert.match(text, /Shoot=Z/);
+});

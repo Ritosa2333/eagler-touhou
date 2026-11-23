@@ -4,7 +4,7 @@
 
 export const DEFAULT_INI = "[DirectX]\r\nFullWindow=0\r\nAntiAlias=0\r\nVerticalSync=0\r\n[DirectInput]\r\nUseDirectInput=0\r\n[Mode]\r\nClear=no\r\nSingleThreaded=1\r\nFixedFPS=0\r\nUnlockFPS=0\r\nDelayTolerance=10\r\nWindowSize=0\r\nPresentInterval=1\r\n[Key]\r\nLeft=Left\r\nRight=Right\r\nUp=Up\r\nDown=Down\r\nSlow=ShiftKey\r\nShoot=Z\r\nBomb=X\r\n[JoyStick]\r\nSkip=0\r\nPause=0\r\nSlow=0\r\nShoot=0\r\nBomb=0\r\nC=0\r\n[Volume]\r\nBGMVolume=80\r\nSEVolume=80\r\n[Game]\r\nFontType=Arial\r\n";
 
-const KEY_FIELDS = ["Left", "Right", "Up", "Down", "Slow", "Shoot", "Bomb"];
+const LAUNCHER_KEYS = { Left: "Left", Right: "Right", Up: "Up", Down: "Down", Slow: "ShiftKey", Shoot: "Z", Bomb: "X" };
 
 function linesOf(text) {
   return String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
@@ -58,19 +58,24 @@ function keyName(value) {
   return /^[A-Za-z][A-Za-z0-9]{0,31}$/.test(text) ? text : "";
 }
 
-export function mergeSettingIni(existing, options) {
+export function mergeSettingIni(existing, options, hosted = false) {
   const source = existing && String(existing).includes("[Mode]") ? String(existing) : DEFAULT_INI;
   const bag = options || {};
   let text = source;
+  if (hosted) {
+    // The launcher delivers remapped, canonical keys and owns frame pacing.
+    text = setIniValue(text, "DirectInput", "UseDirectInput", "0");
+    text = setIniValue(text, "Mode", "PresentInterval", "1");
+  }
   const bgm = volume(bag.bgmVolume);
   const se = volume(bag.sfxVolume);
   if (bgm != null) text = setIniValue(text, "Volume", "BGMVolume", String(bgm));
   if (se != null) text = setIniValue(text, "Volume", "SEVolume", String(se));
   if (bag.limitPresentationTo60 === false) text = setIniValue(text, "Mode", "UnlockFPS", "1");
   else if (bag.limitPresentationTo60 === true) text = setIniValue(text, "Mode", "UnlockFPS", "0");
-  const keys = bag.keys && typeof bag.keys === "object" ? bag.keys : null;
+  const keys = hosted ? LAUNCHER_KEYS : bag.keys && typeof bag.keys === "object" ? bag.keys : null;
   if (keys) {
-    for (const field of KEY_FIELDS) {
+    for (const field of Object.keys(LAUNCHER_KEYS)) {
       const name = keyName(keys[field]);
       if (name) text = setIniValue(text, "Key", field, name);
     }
@@ -93,7 +98,7 @@ export function decodeIni(value) {
 export async function seedSettingIni(runtime) {
   if (!runtime || typeof runtime.writeUserFile !== "function") return "";
   const existing = decodeIni(runtime.saves && runtime.saves["Setting.INI"]);
-  const text = mergeSettingIni(existing, runtime.options || {});
+  const text = mergeSettingIni(existing, runtime.options || {}, runtime.captureKeys === false);
   await runtime.writeUserFile("Setting.INI", new TextEncoder().encode(text));
   return text;
 }

@@ -40,5 +40,8 @@
     "Shooting/MenuGroup_ReplaySaver.cs",
     "Shooting/MenuGroup_ReplayNamer.cs",
     "Shooting/MenuGroup_ReplayStageSelect.cs"
+  ],
+  "007-keyboard-menu.patch": [
+    "Shooting/MenuOption.cs"
   ]
 }

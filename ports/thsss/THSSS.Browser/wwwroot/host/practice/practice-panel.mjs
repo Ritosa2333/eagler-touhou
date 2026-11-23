@@ -1,10 +1,12 @@
 import { PRACTICE_STAGES, createPracticeState } from "./practice-state.mjs";
+import { keyNameFromEvent } from "../../directory-keyboard.mjs";
 
 const STYLE = `
 .thsss-prac{position:fixed;left:12px;top:12px;z-index:4;width:220px;color:#f4f0e6;background:rgba(12,14,18,.92);font:13px/1.35 "Iowan Old Style","Palatino Linotype",Palatino,serif;padding:10px 12px}
 .thsss-prac[hidden]{display:none}
 .thsss-prac button,.thsss-prac label{display:block;width:100%;margin:4px 0;color:inherit;background:transparent;border:0;text-align:left;font:inherit}
 .thsss-prac button[aria-pressed="true"]{text-decoration:underline}
+.thsss-prac :focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .thsss-prac .row{display:flex;gap:6px;align-items:center}
 .thsss-prac input{width:4.5em;background:#111;color:inherit;border:1px solid #888}
 .thsss-prac .stages{display:flex;flex-wrap:wrap;gap:4px}
@@ -24,6 +26,7 @@ export function mountPracticePanel({ parent, sync, warp }) {
   root.className = "thsss-prac";
   root.hidden = true;
   parent.append(style, root);
+  const controls = () => [...root.querySelectorAll("button,input")];
 
   function push() {
     if (typeof sync !== "function") return;
@@ -42,6 +45,7 @@ export function mountPracticePanel({ parent, sync, warp }) {
   function render() {
     const copy = model.copy();
     const on = model.state;
+    const focused = controls().indexOf(document.activeElement);
     root.hidden = !(on.enabled && on.open);
     root.replaceChildren();
     const title = document.createElement("div");
@@ -73,13 +77,14 @@ export function mountPracticePanel({ parent, sync, warp }) {
       row.textContent = label;
       const input = document.createElement("input");
       input.type = "number";
+      input.name = field;
       input.min = "0";
       input.max = String(max);
       input.value = String(on[field]);
       input.addEventListener("change", () => {
         on[field] = Number(input.value);
         model.resources();
-        render();
+        input.value = String(on[field]);
       });
       row.append(input);
       root.append(row);
@@ -107,7 +112,66 @@ export function mountPracticePanel({ parent, sync, warp }) {
       stages.append(button);
     }
     root.append(stages);
+    if (!root.hidden && focused >= 0) controls()[focused]?.focus();
   }
+
+  function key(name, down, repeat = false) {
+    if (!down) return false;
+    const wasOpen = !root.hidden;
+    if (!repeat && model.toggle(name)) {
+      push();
+      render();
+      if (!wasOpen && !root.hidden) controls()[0]?.focus();
+      if (wasOpen && root.hidden) document.getElementById("game")?.focus();
+      return true;
+    }
+    if (!wasOpen) return false;
+    const items = controls();
+    const index = items.indexOf(document.activeElement);
+    const active = items[index];
+    switch (name) {
+      case "X":
+      case "Escape":
+        model.state.open = false;
+        render();
+        document.getElementById("game")?.focus();
+        return true;
+      case "Z":
+      case "Return":
+        if (!repeat && active?.localName === "button") active.click();
+        if (!repeat && active?.localName === "input") {
+          model.state[active.name] = Number(active.value);
+          model.resources();
+          active.value = String(model.state[active.name]);
+        }
+        return true;
+      case "Left":
+      case "Right":
+        if (active?.localName === "input") {
+          if (name === "Left") active.stepDown();
+          else active.stepUp();
+          active.dispatchEvent(new Event("change"));
+          return true;
+        }
+        break;
+      case "Up":
+      case "Down":
+        break;
+      default:
+        return false;
+    }
+    const direction = name === "Up" || name === "Left" ? -1 : 1;
+    const next = index < 0 ? 0 : (index + direction + items.length) % items.length;
+    items[next]?.focus();
+    return true;
+  }
+
+  root.addEventListener("keydown", (event) => {
+    if (key(keyNameFromEvent(event), true, event.repeat)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  });
 
   function pointer(message) {
     if (!model.state.enabled || !model.state.open || root.hidden) return;
@@ -131,12 +195,7 @@ export function mountPracticePanel({ parent, sync, warp }) {
       push();
       render();
     },
-    key(name, down) {
-      if (!down || !model.toggle(name)) return false;
-      push();
-      render();
-      return true;
-    },
+    key,
     pointer,
     push,
   };
