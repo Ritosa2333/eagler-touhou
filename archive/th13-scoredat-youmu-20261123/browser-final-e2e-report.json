@@ -1,0 +1,318 @@
+{
+  "mode": "full",
+  "bootSeed": 60189,
+  "stage1Seed": 60189,
+  "wasmSha256": "acd7f2dba448a2392f4456ddbdaf6104cc381e44f0910744d5c00e18398696c3",
+  "inputs": {
+    "source": "games/replays/th13_01.rpy",
+    "player_name": "ARINATEI",
+    "score": 16999054,
+    "character": 0,
+    "rank": 1,
+    "stages": [
+      {
+        "number": 1,
+        "seed": 60189,
+        "frames": 11675,
+        "start_score": 0
+      },
+      {
+        "number": 2,
+        "seed": 37781,
+        "frames": 16148,
+        "start_score": 647062
+      },
+      {
+        "number": 3,
+        "seed": 41773,
+        "frames": 19408,
+        "start_score": 1909357
+      },
+      {
+        "number": 4,
+        "seed": 56061,
+        "frames": 17825,
+        "start_score": 3189875
+      },
+      {
+        "number": 5,
+        "seed": 64193,
+        "frames": 20481,
+        "start_score": 5573799
+      },
+      {
+        "number": 6,
+        "seed": 9617,
+        "frames": 24171,
+        "start_score": 8683551
+      }
+    ]
+  },
+  "exportBytes": 92023,
+  "hintAfterSave": 0,
+  "persisted": true,
+  "timeline": [
+    {
+      "t": "2026-11-23T00:49:11.804Z",
+      "event": "boot-complete",
+      "bootSeed": 60189,
+      "seen": 60189
+    },
+    {
+      "t": "2026-11-23T00:49:11.804Z",
+      "event": "title-wait"
+    },
+    {
+      "t": "2026-11-23T00:49:13.398Z",
+      "event": "screenshot",
+      "name": "01-title"
+    },
+    {
+      "t": "2026-11-23T00:49:13.406Z",
+      "event": "difficulty-cursor",
+      "cursor": 1
+    },
+    {
+      "t": "2026-11-23T00:49:13.408Z",
+      "event": "difficulty-confirmed"
+    },
+    {
+      "t": "2026-11-23T00:49:13.411Z",
+      "event": "character-screen",
+      "cursor": 0,
+      "difficulty": 1,
+      "character": 0
+    },
+    {
+      "t": "2026-11-23T00:49:14.058Z",
+      "event": "screenshot",
+      "name": "02-character"
+    },
+    {
+      "t": "2026-11-23T00:49:14.060Z",
+      "event": "character-confirmed"
+    },
+    {
+      "t": "2026-11-23T00:49:18.434Z",
+      "event": "stage-entry",
+      "stage": 1,
+      "score": 0,
+      "expected": 0,
+      "match": true,
+      "hostPumped": 1304,
+      "stageFrame": 0,
+      "elapsedMin": 0.14
+    },
+    {
+      "t": "2026-11-23T00:49:33.468Z",
+      "event": "screenshot-failed",
+      "name": "stage1-entry",
+      "error": "TimeoutError: page.screenshot: Timeout 15000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to l"
+    },
+    {
+      "t": "2026-11-23T00:54:52.759Z",
+      "event": "stage-entry",
+      "stage": 2,
+      "score": 647062,
+      "expected": 647062,
+      "match": true,
+      "hostPumped": 12483,
+      "stageFrame": 1,
+      "elapsedMin": 5.71
+    },
+    {
+      "t": "2026-11-23T00:55:07.818Z",
+      "event": "screenshot-failed",
+      "name": "stage2-entry",
+      "error": "TimeoutError: page.screenshot: Timeout 15000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to l"
+    },
+    {
+      "t": "2026-11-23T01:04:46.482Z",
+      "event": "stage-entry",
+      "stage": 3,
+      "score": 1909357,
+      "expected": 1909357,
+      "match": true,
+      "hostPumped": 28153,
+      "stageFrame": 1,
+      "elapsedMin": 15.6
+    },
+    {
+      "t": "2026-11-23T01:04:57.794Z",
+      "event": "screenshot",
+      "name": "stage3-entry"
+    },
+    {
+      "t": "2026-11-23T01:15:04.619Z",
+      "event": "stage-entry",
+      "stage": 4,
+      "score": 3189875,
+      "expected": 3189875,
+      "match": true,
+      "hostPumped": 47884,
+      "stageFrame": 1,
+      "elapsedMin": 25.9
+    },
+    {
+      "t": "2026-11-23T01:15:19.265Z",
+      "event": "screenshot",
+      "name": "stage4-entry"
+    },
+    {
+      "t": "2026-11-23T01:24:42.530Z",
+      "event": "stage-entry",
+      "stage": 5,
+      "score": 5573799,
+      "expected": 5573799,
+      "match": true,
+      "hostPumped": 65651,
+      "stageFrame": 1,
+      "elapsedMin": 35.54
+    },
+    {
+      "t": "2026-11-23T01:24:57.589Z",
+      "event": "screenshot-failed",
+      "name": "stage5-entry",
+      "error": "TimeoutError: page.screenshot: Timeout 15000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to l"
+    },
+    {
+      "t": "2026-11-23T01:34:59.416Z",
+      "event": "stage-entry",
+      "stage": 6,
+      "score": 8683551,
+      "expected": 8683551,
+      "match": true,
+      "hostPumped": 86172,
+      "stageFrame": 1,
+      "elapsedMin": 45.82
+    },
+    {
+      "t": "2026-11-23T01:35:14.429Z",
+      "event": "screenshot-failed",
+      "name": "stage6-entry",
+      "error": "TimeoutError: page.screenshot: Timeout 15000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to l"
+    },
+    {
+      "t": "2026-11-23T01:51:38.324Z",
+      "event": "stage6-stream-exhausted",
+      "index": 24171
+    },
+    {
+      "t": "2026-11-23T01:51:46.376Z",
+      "event": "result-name-screen",
+      "endingPumps": 3956
+    },
+    {
+      "t": "2026-11-23T01:52:01.446Z",
+      "event": "screenshot-failed",
+      "name": "03-result-name",
+      "error": "TimeoutError: page.screenshot: Timeout 15000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to l"
+    },
+    {
+      "t": "2026-11-23T01:52:50.772Z",
+      "event": "replay-slot-screen"
+    },
+    {
+      "t": "2026-11-23T01:52:52.193Z",
+      "event": "screenshot",
+      "name": "04-replay-slot"
+    },
+    {
+      "t": "2026-11-23T01:52:52.344Z",
+      "event": "save-committed"
+    },
+    {
+      "t": "2026-11-23T01:52:52.348Z",
+      "event": "download-captured",
+      "suggested": "th13_01.rpy"
+    },
+    {
+      "t": "2026-11-23T01:52:56.760Z",
+      "event": "scoredat-mirror-drained"
+    },
+    {
+      "t": "2026-11-23T01:52:56.768Z",
+      "event": "export-captured",
+      "bytes": 92023,
+      "hint": 0,
+      "scoredatBytes": 18734,
+      "entry": {
+        "name": "th13_01.rpy",
+        "size": 92023,
+        "ts": 1795398772247
+      }
+    },
+    {
+      "t": "2026-11-23T01:52:58.602Z",
+      "event": "screenshot",
+      "name": "05-after-save"
+    },
+    {
+      "t": "2026-11-23T01:52:58.606Z",
+      "event": "back-to-main"
+    },
+    {
+      "t": "2026-11-23T01:52:59.303Z",
+      "event": "screenshot",
+      "name": "06-replay-menu"
+    },
+    {
+      "t": "2026-11-23T01:53:16.308Z",
+      "event": "replay-playback",
+      "active": true,
+      "finished": false,
+      "cursor_valid": true,
+      "slot_index": 0,
+      "slot_number": 1,
+      "slot_frame": 30,
+      "slot_frames": 11675,
+      "recorded_position": 30,
+      "consumed": 30,
+      "current_stage": 1,
+      "host_frame": 118685,
+      "loading": false,
+      "transition": false,
+      "startup_age": -1,
+      "overlay": 0,
+      "phase": 1,
+      "scene_flags": 0,
+      "environment_paused": false,
+      "stage_frame": 30
+    },
+    {
+      "t": "2026-11-23T01:53:30.149Z",
+      "event": "screenshot",
+      "name": "07-replay-playing"
+    },
+    {
+      "t": "2026-11-23T01:53:31.092Z",
+      "event": "reload-persistence",
+      "persisted": true,
+      "entryAfter": {
+        "name": "th13_01.rpy",
+        "size": 92023,
+        "ts": 1795398772247
+      },
+      "hint": 0,
+      "failures": []
+    }
+  ],
+  "consoleTail": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "[th13] R3-RESTORE stage=1 seed=60189 counter=0 block=0,0,0,1,0,0,0,-1,0,1000000,1000000,25000000,100,400,100,2,0,0,2,0,200,0",
+    "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "pageErrors": [],
+  "elapsedMin": 64.35
+}

@@ -1,6 +1,5 @@
 // m1.unit_native_harness —— M1/T1 基建探针（tests/multiplayer/run-native.sh
-// 全链：native-runner.mjs 按 workflow-cases.json 映射编译 game 全量 + e2e 同款
-// sdl 8 文件 + tests/e2e/native/native_stub.cpp + 本文件，注入
+// 全链：native-runner.mjs 按 workflow-cases.json 映射编译，注入
 // TH13_NATIVE_ASSET_ROOT/REPO_ROOT/FONT 后真实运行）。
 //
 // 消费真实生产符号（M1-plan T1 指定面）：

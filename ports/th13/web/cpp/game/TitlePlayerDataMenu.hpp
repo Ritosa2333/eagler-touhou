@@ -51,11 +51,10 @@ struct TitlePlayerDataRecord {
     bool character_flagged = false;  // score+char*0x56dc+0xa00+slot*0x9c != 0
 };
 
-// 宿主服务：scoreth13.dat 记录表读取。默认 open=false / 空表 = 未接线，
-// 不返回任何伪造记录；Application/FileStore 后续按真实存档实现。
+// 宿主服务：scoreth13.dat 记录表读取。默认 open=false / 空表 = 未接线。
 struct TitlePlayerDataPlatform {
     virtual ~TitlePlayerDataPlatform() = default;
-    // 载入 0x7f 槽记录表与 5 个角色块。false = 无存档/读取失败/未接线。
+    // 载入 0x7f 槽记录表。false = 无存档/读取失败/未接线。
     virtual bool open_player_data() { return false; }
     virtual void close_player_data() {}
     // Original exclusive counts: five ranks0..4, four characters0..3.
