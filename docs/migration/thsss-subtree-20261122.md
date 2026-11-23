@@ -39,4 +39,4 @@ python tools/ports/check-history.py --subtree ports/thsss
 python tools/ports/sync-thsss-upstream.py
 ```
 
-该命令导出子树、核对 `c08d073a6c0e789773879da8f1272c7afd96fe3a` 仍是祖先、目录树与导出树一致，然后非强制推送。当前导出提交是 `91e6b3d17da5a57ea12786e4ed91edcfd1a4aea0`，比连接基点多 12 个提交。monorepo 的 `tools/ports/`、`launcher/tests/` 和 `docs/adaptation/status.json` 留在 eagler-touhou。更新连接提交时再改机器登记里的 `latestJoin` 与 `currentSplit`。
+该命令导出子树、核对 `c08d073a6c0e789773879da8f1272c7afd96fe3a` 仍是祖先、目录树与导出树一致，然后非强制推送。当前导出提交是 `380cdc69ae894e7fc38701426b162d607dbf097d`，比连接基点多 16 个提交。monorepo 的 `tools/ports/`、`launcher/tests/` 和 `docs/adaptation/status.json` 留在 eagler-touhou。更新连接提交时再改机器登记里的 `latestJoin` 与 `currentSplit`。
