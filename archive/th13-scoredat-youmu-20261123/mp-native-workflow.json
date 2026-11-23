@@ -1,0 +1,703 @@
+{
+  "schema": "th13/mp-workflow-test/v1",
+  "layer": "native",
+  "through": "M9",
+  "sourceDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+  "skipped": 0,
+  "cases": [
+    {
+      "id": "m1.update_present_equivalence",
+      "passed": true,
+      "assertions": 11115,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m1_update_present_equivalence.out",
+        "exit=0 assertions=11115 blocks=6 elapsed_ms=6014",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m1_update_present_equivalence log=artifacts/mp-native-run/run-9DS7kM/logs/m1_update_present_equivalence.log",
+        "ok: update_present_equivalence_caption_window_f0_10 assertions=150",
+        "ok: update_present_equivalence_run_baffle_and_caption_live assertions=160",
+        "ok: update_present_equivalence_transition_gate assertions=313",
+        "ok: update_present_equivalence_transition_gate_present_coupling assertions=1446",
+        "ok: update_present_equivalence_pause_open_close assertions=632",
+        "ok: update_present_equivalence_long_windows_600_1200 assertions=8414"
+      ]
+    },
+    {
+      "id": "m1.draw_purity_rng",
+      "passed": true,
+      "assertions": 17197,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m1_draw_purity_rng.out",
+        "exit=0 assertions=17197 blocks=2 elapsed_ms=559",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m1_draw_purity_rng log=artifacts/mp-native-run/run-9DS7kM/logs/m1_draw_purity_rng.log",
+        "ok: draw_purity_rng_observer_windows_300_600_1200 assertions=14794",
+        "ok: draw_purity_rng_streams_cross_instance_present_x3_300 assertions=2403"
+      ]
+    },
+    {
+      "id": "m1.scheduler_order",
+      "passed": true,
+      "assertions": 1973,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m1_scheduler_order.out",
+        "exit=0 assertions=1973 blocks=3 elapsed_ms=196",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m1_scheduler_order log=artifacts/mp-native-run/run-9DS7kM/logs/m1_scheduler_order.log",
+        "ok: scheduler_order_pause_frames_bracket_stable assertions=1370",
+        "ok: scheduler_order_replay_fastforward_restart_loop assertions=438",
+        "ok: scheduler_order_fastforward_gate_paused_single_pass assertions=165"
+      ]
+    },
+    {
+      "id": "m1.side_effect_boundary",
+      "passed": true,
+      "assertions": 1750,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m1_side_effect_boundary.out",
+        "exit=0 assertions=1750 blocks=4 elapsed_ms=350",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m1_side_effect_boundary log=artifacts/mp-native-run/run-9DS7kM/logs/m1_side_effect_boundary.log",
+        "ok: side_effect_transition_probes_five_paths assertions=90",
+        "ok: side_effect_ending_clear_migration_trace assertions=374",
+        "ok: side_effect_reconcile_record_once assertions=1214",
+        "ok: side_effect_file_event_queue_full assertions=72"
+      ]
+    },
+    {
+      "id": "m1.focus_sync",
+      "passed": true,
+      "assertions": 2290,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m1_focus_sync.out",
+        "exit=0 assertions=2290 blocks=3 elapsed_ms=533",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m1_focus_sync log=artifacts/mp-native-run/run-9DS7kM/logs/m1_focus_sync.log",
+        "ok: focus_sync_three_states_replay assertions=1189",
+        "ok: focus_sync_unfocused_edges_sampled_once_live assertions=938",
+        "ok: focus_sync_edge_single_sample_under_restart assertions=163"
+      ]
+    },
+    {
+      "id": "m2.independent_inputs_2_3",
+      "passed": true,
+      "assertions": 133,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m2_independent_inputs_2_3.out",
+        "exit=0 assertions=133 blocks=1 elapsed_ms=5",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m2_independent_inputs_2_3 log=artifacts/mp-native-run/run-9DS7kM/logs/m2_independent_inputs_2_3.log",
+        "ok: independent_inputs_2_3 assertions=133"
+      ]
+    },
+    {
+      "id": "m2.world_tick_once",
+      "passed": true,
+      "assertions": 1085,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m2_world_tick_once.out",
+        "exit=0 assertions=1085 blocks=1 elapsed_ms=7",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m2_world_tick_once log=artifacts/mp-native-run/run-9DS7kM/logs/m2_world_tick_once.log",
+        "ok: world_tick_once assertions=1085"
+      ]
+    },
+    {
+      "id": "m2.four_characters_duplicates",
+      "passed": true,
+      "assertions": 1878,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m2_four_characters_duplicates.out",
+        "exit=0 assertions=1878 blocks=12 elapsed_ms=465",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m2_four_characters_duplicates log=artifacts/mp-native-run/run-9DS7kM/logs/m2_four_characters_duplicates.log",
+        "ok: four_characters_duplicates assertions=304",
+        "ok: reimu_bomb_orb_slots_are_owned_by_each_seat assertions=74",
+        "ok: overlapping_and_repeat_reimu_bombs_restore_exactly assertions=188",
+        "ok: all_four_duplicate_characters_keep_separate_bomb_families assertions=411",
+        "ok: mixed_character_options_focus_and_death_stay_with_their_seat assertions=41",
+        "ok: reimu_slow_time_zero_age_births_once_and_replays_exactly assertions=256",
+        "ok: teammate_presentation_fields_are_captured_and_hashed assertions=112",
+        "ok: equal_generation_shot_fades_are_independent_for_every_seat assertions=29",
+        "ok: shot_fade_snapshot_order_and_restore_boundaries assertions=12",
+        "ok: shot_fade_history_preserves_unknown_high_words_and_future_reuse assertions=96",
+        "ok: ghost_ship_bodies_remain_visible_with_draw_only_opacity assertions=264",
+        "ok: teammate_attacks_use_higher_draw_only_opacity assertions=91"
+      ]
+    },
+    {
+      "id": "m2.damage_owner_ids",
+      "passed": true,
+      "assertions": 201,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m2_damage_owner_ids.out",
+        "exit=0 assertions=201 blocks=11 elapsed_ms=9",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m2_damage_owner_ids log=artifacts/mp-native-run/run-9DS7kM/logs/m2_damage_owner_ids.log",
+        "ok: damage_owner_ids assertions=39",
+        "ok: second_seat_registered_shot_hits_ordinary_enemy assertions=7",
+        "ok: second_seat_registered_shot_hits_boss_at_cooperative_rate assertions=4",
+        "ok: all_seats_sum_hits_once_and_keep_their_registration_side_effects assertions=50",
+        "ok: owner_phase_reductions_and_ghosts_do_not_follow_observer_window assertions=5",
+        "ok: boss_fractional_damage_survives_dynamic_operable_counts assertions=25",
+        "ok: boss_remainder_is_authoritative_and_restores_before_replay assertions=44",
+        "ok: second_seat_bomb_cancels_bomb_sensitive_enemy assertions=3",
+        "ok: ship_callback_forwards_summed_damage_to_boss_once assertions=7",
+        "ok: hit_spirit_distance_uses_nearest_eligible_seat assertions=5",
+        "ok: owner_protection_and_spell_damage_gates_precede_boss_cooperation assertions=12"
+      ]
+    },
+    {
+      "id": "m2.single_seat_sp_equivalence",
+      "passed": true,
+      "assertions": 1182,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m2_single_seat_sp_equivalence.out",
+        "exit=0 assertions=1182 blocks=1 elapsed_ms=5",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m2_single_seat_sp_equivalence log=artifacts/mp-native-run/run-9DS7kM/logs/m2_single_seat_sp_equivalence.log",
+        "ok: single_seat_sp_equivalence assertions=1182"
+      ]
+    },
+    {
+      "id": "m3.target_all_consumers_ties",
+      "passed": true,
+      "assertions": 18,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m3_target_all_consumers_ties.out",
+        "exit=0 assertions=18 blocks=1 elapsed_ms=3",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m3_target_all_consumers_ties log=artifacts/mp-native-run/run-9DS7kM/logs/m3_target_all_consumers_ties.log",
+        "ok: target_all_consumers_ties assertions=18"
+      ]
+    },
+    {
+      "id": "m3.shared_pickup_once",
+      "passed": true,
+      "assertions": 647,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m3_shared_pickup_once.out",
+        "exit=0 assertions=647 blocks=1 elapsed_ms=11",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m3_shared_pickup_once log=artifacts/mp-native-run/run-9DS7kM/logs/m3_shared_pickup_once.log",
+        "ok: shared_pickup_once assertions=647"
+      ]
+    },
+    {
+      "id": "m3.resource_all_types_caps",
+      "passed": true,
+      "assertions": 145,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m3_resource_all_types_caps.out",
+        "exit=0 assertions=145 blocks=1 elapsed_ms=9",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m3_resource_all_types_caps log=artifacts/mp-native-run/run-9DS7kM/logs/m3_resource_all_types_caps.log",
+        "ok: resource_all_types_caps assertions=145"
+      ]
+    },
+    {
+      "id": "m3.spirit_role_and_trance_grant",
+      "passed": true,
+      "assertions": 212,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m3_spirit_role_and_trance_grant.out",
+        "exit=0 assertions=212 blocks=1 elapsed_ms=3",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m3_spirit_role_and_trance_grant log=artifacts/mp-native-run/run-9DS7kM/logs/m3_spirit_role_and_trance_grant.log",
+        "ok: spirit_role_and_trance_grant assertions=212"
+      ]
+    },
+    {
+      "id": "m3.drop_rng_unchanged",
+      "passed": true,
+      "assertions": 845,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m3_drop_rng_unchanged.out",
+        "exit=0 assertions=845 blocks=1 elapsed_ms=7",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m3_drop_rng_unchanged log=artifacts/mp-native-run/run-9DS7kM/logs/m3_drop_rng_unchanged.log",
+        "ok: drop_rng_unchanged assertions=845"
+      ]
+    },
+    {
+      "id": "m3.graze_owner_generation",
+      "passed": true,
+      "assertions": 18,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m3_graze_owner_generation.out",
+        "exit=0 assertions=18 blocks=1 elapsed_ms=3",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m3_graze_owner_generation log=artifacts/mp-native-run/run-9DS7kM/logs/m3_graze_owner_generation.log",
+        "ok: graze_owner_generation assertions=18"
+      ]
+    },
+    {
+      "id": "m3.boss_damage_remainders",
+      "passed": true,
+      "assertions": 5,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m3_boss_damage_remainders.out",
+        "exit=0 assertions=5 blocks=1 elapsed_ms=4",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m3_boss_damage_remainders log=artifacts/mp-native-run/run-9DS7kM/logs/m3_boss_damage_remainders.log",
+        "ok: boss_damage_remainders assertions=5"
+      ]
+    },
+    {
+      "id": "m3.gift_not_broadcast",
+      "passed": true,
+      "assertions": 671,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m3_gift_not_broadcast.out",
+        "exit=0 assertions=671 blocks=10 elapsed_ms=10",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m3_gift_not_broadcast log=artifacts/mp-native-run/run-9DS7kM/logs/m3_gift_not_broadcast.log",
+        "ok: gift_not_broadcast assertions=10",
+        "ok: life_five_edges_targeted_no_broadcast assertions=62",
+        "ok: life_hold_fire_timeout_distance_boundaries assertions=205",
+        "ok: life_three_seat_priority_and_fixed_donor_order assertions=38",
+        "ok: ghost_rescue_stock_power_bombs_protection_no_cancel assertions=80",
+        "ok: stage_clear_clamps_negative_stock_preserves_rewards assertions=28",
+        "ok: power_edges_threshold_priority_and_no_broadcast assertions=105",
+        "ok: targeted_gift_waits_for_ghost_and_pool_reuse_clears_target assertions=42",
+        "ok: power_timeout_range_full_and_ghost_reset assertions=72",
+        "ok: rollback_pending_gesture_and_inflight_gift_matches_forward assertions=29"
+      ]
+    },
+    {
+      "id": "m4.team_trance_shooting_four_roles",
+      "passed": true,
+      "assertions": 4981,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m4_team_trance_shooting_four_roles.out",
+        "exit=0 assertions=4981 blocks=1 elapsed_ms=41",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m4_team_trance_shooting_four_roles log=artifacts/mp-native-run/run-9DS7kM/logs/m4_team_trance_shooting_four_roles.log",
+        "ok: team_trance_shooting_four_roles assertions=4981"
+      ]
+    },
+    {
+      "id": "m4.protection_owner_only_death",
+      "passed": true,
+      "assertions": 4259,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m4_protection_owner_only_death.out",
+        "exit=0 assertions=4259 blocks=1 elapsed_ms=46",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m4_protection_owner_only_death log=artifacts/mp-native-run/run-9DS7kM/logs/m4_protection_owner_only_death.log",
+        "ok: protection_owner_only_death assertions=4259"
+      ]
+    },
+    {
+      "id": "m4.gauge_once_thresholds",
+      "passed": true,
+      "assertions": 348,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m4_gauge_once_thresholds.out",
+        "exit=0 assertions=348 blocks=1 elapsed_ms=6",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m4_gauge_once_thresholds log=artifacts/mp-native-run/run-9DS7kM/logs/m4_gauge_once_thresholds.log",
+        "ok: gauge_once_thresholds assertions=348"
+      ]
+    },
+    {
+      "id": "m4.all_collision_invulnerability",
+      "passed": true,
+      "assertions": 4946,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m4_all_collision_invulnerability.out",
+        "exit=0 assertions=4946 blocks=1 elapsed_ms=45",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m4_all_collision_invulnerability log=artifacts/mp-native-run/run-9DS7kM/logs/m4_all_collision_invulnerability.log",
+        "ok: all_collision_invulnerability assertions=4946"
+      ]
+    },
+    {
+      "id": "m4.simultaneous_requests",
+      "passed": true,
+      "assertions": 76,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m4_simultaneous_requests.out",
+        "exit=0 assertions=76 blocks=1 elapsed_ms=5",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m4_simultaneous_requests log=artifacts/mp-native-run/run-9DS7kM/logs/m4_simultaneous_requests.log",
+        "ok: simultaneous_requests assertions=76"
+      ]
+    },
+    {
+      "id": "m4.deathbomb_manual_c",
+      "passed": true,
+      "assertions": 627,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m4_deathbomb_manual_c.out",
+        "exit=0 assertions=627 blocks=1 elapsed_ms=7",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m4_deathbomb_manual_c log=artifacts/mp-native-run/run-9DS7kM/logs/m4_deathbomb_manual_c.log",
+        "ok: deathbomb_manual_c assertions=627"
+      ]
+    },
+    {
+      "id": "m4.generation_respawn_pause_stage",
+      "passed": true,
+      "assertions": 1381,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m4_generation_respawn_pause_stage.out",
+        "exit=0 assertions=1381 blocks=1 elapsed_ms=17",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m4_generation_respawn_pause_stage log=artifacts/mp-native-run/run-9DS7kM/logs/m4_generation_respawn_pause_stage.log",
+        "ok: generation_respawn_pause_stage assertions=1381"
+      ]
+    },
+    {
+      "id": "m4.peer_bomb_policy",
+      "passed": true,
+      "assertions": 277,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m4_peer_bomb_policy.out",
+        "exit=0 assertions=277 blocks=1 elapsed_ms=6",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m4_peer_bomb_policy log=artifacts/mp-native-run/run-9DS7kM/logs/m4_peer_bomb_policy.log",
+        "ok: peer_bomb_policy assertions=277"
+      ]
+    },
+    {
+      "id": "m5.ghost_rescue_resources",
+      "passed": true,
+      "assertions": 279,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m5_ghost_rescue_resources.out",
+        "exit=0 assertions=279 blocks=1 elapsed_ms=7",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m5_ghost_rescue_resources log=artifacts/mp-native-run/run-9DS7kM/logs/m5_ghost_rescue_resources.log",
+        "ok: ghost_rescue_resources assertions=279"
+      ]
+    },
+    {
+      "id": "m5.team_wipe_180",
+      "passed": true,
+      "assertions": 6069,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m5_team_wipe_180.out",
+        "exit=0 assertions=6069 blocks=6 elapsed_ms=1255",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m5_team_wipe_180 log=artifacts/mp-native-run/run-9DS7kM/logs/m5_team_wipe_180.log",
+        "ok: team_wipe_180 assertions=193",
+        "ok: team_wipe_production_180 assertions=1840",
+        "ok: team_wipe_pause_and_rescue assertions=780",
+        "ok: team_wipe_restore_replay assertions=341",
+        "ok: team_wipe_single_seat_unchanged assertions=188",
+        "ok: team_wipe_terminal_delayed_confirmation_requires_handoff assertions=2727"
+      ]
+    },
+    {
+      "id": "m5.menu_edges_pause_dialogue",
+      "passed": true,
+      "assertions": 278,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m5_menu_edges_pause_dialogue.out",
+        "exit=0 assertions=278 blocks=1 elapsed_ms=97",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m5_menu_edges_pause_dialogue log=artifacts/mp-native-run/run-9DS7kM/logs/m5_menu_edges_pause_dialogue.log",
+        "ok: menu_edges_pause_dialogue assertions=278"
+      ]
+    },
+    {
+      "id": "m5.hud_world_owner_visibility",
+      "passed": true,
+      "assertions": 39,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m5_hud_world_owner_visibility.out",
+        "exit=0 assertions=39 blocks=1 elapsed_ms=5",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m5_hud_world_owner_visibility log=artifacts/mp-native-run/run-9DS7kM/logs/m5_hud_world_owner_visibility.log",
+        "ok: hud_world_owner_visibility assertions=39"
+      ]
+    },
+    {
+      "id": "m5.no_sp_save_writes",
+      "passed": true,
+      "assertions": 171,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m5_no_sp_save_writes.out",
+        "exit=0 assertions=171 blocks=6 elapsed_ms=170",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m5_no_sp_save_writes log=artifacts/mp-native-run/run-9DS7kM/logs/m5_no_sp_save_writes.log",
+        "ok: no_sp_save_writes assertions=14",
+        "ok: mp_save_isolation_keeps_single_player_persistence_working assertions=10",
+        "ok: mp_save_isolation_still_persists_device_volume_options assertions=44",
+        "ok: mp_save_isolation_preserves_existing_sp_bytes_for_new_stale_and_terminal_events assertions=54",
+        "ok: mp_save_isolation_preserves_sp_data_through_real_begin_and_title_return assertions=35",
+        "ok: mp_save_isolation_never_falls_back_to_single_player_replay_slots assertions=14"
+      ]
+    },
+    {
+      "id": "m5.stage_revive",
+      "passed": true,
+      "assertions": 15,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m5_stage_revive.out",
+        "exit=0 assertions=15 blocks=1 elapsed_ms=3",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m5_stage_revive log=artifacts/mp-native-run/run-9DS7kM/logs/m5_stage_revive.log",
+        "ok: stage_revive assertions=15"
+      ]
+    },
+    {
+      "id": "m6.full_state_restore_replay",
+      "passed": true,
+      "assertions": 1051,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m6_full_state_restore_replay.out",
+        "exit=0 assertions=1051 blocks=10 elapsed_ms=511",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m6_full_state_restore_replay log=artifacts/mp-native-run/run-9DS7kM/logs/m6_full_state_restore_replay.log",
+        "ok: full_state_restore_replay assertions=235",
+        "ok: transfer_snapshot_and_digest assertions=21",
+        "ok: scene_digest_mutation_controls assertions=42",
+        "ok: anm_draw_layers_restore_and_digest assertions=88",
+        "ok: history_remote_menu_edges assertions=72",
+        "ok: v2_dead_slot_poison_and_negative_controls assertions=165",
+        "ok: host_digest_detects_control_state_mutations assertions=58",
+        "ok: host_digest_covers_application_capture_and_restore assertions=11",
+        "ok: host_and_world_restore_replay_future_frames_together assertions=153",
+        "ok: new_session_discards_local_startup_loader_history assertions=206"
+      ]
+    },
+    {
+      "id": "m6.snapshot_mutation_sensitivity",
+      "passed": true,
+      "assertions": 46,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m6_snapshot_mutation_sensitivity.out",
+        "exit=0 assertions=46 blocks=1 elapsed_ms=4",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m6_snapshot_mutation_sensitivity log=artifacts/mp-native-run/run-9DS7kM/logs/m6_snapshot_mutation_sensitivity.log",
+        "ok: snapshot_mutation_sensitivity assertions=46"
+      ]
+    },
+    {
+      "id": "m6.pools_ids_free_order",
+      "passed": true,
+      "assertions": 67,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m6_pools_ids_free_order.out",
+        "exit=0 assertions=67 blocks=1 elapsed_ms=4",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m6_pools_ids_free_order log=artifacts/mp-native-run/run-9DS7kM/logs/m6_pools_ids_free_order.log",
+        "ok: pools_ids_free_order assertions=67"
+      ]
+    },
+    {
+      "id": "m6.anm_borrowed_parent_chains",
+      "passed": true,
+      "assertions": 99,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m6_anm_borrowed_parent_chains.out",
+        "exit=0 assertions=99 blocks=6 elapsed_ms=7",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m6_anm_borrowed_parent_chains log=artifacts/mp-native-run/run-9DS7kM/logs/m6_anm_borrowed_parent_chains.log",
+        "ok: anm_borrowed_parent_chains assertions=31",
+        "ok: content_identity_is_address_independent_and_complete assertions=10",
+        "ok: resource_and_actual_sprite_bindings_change_the_vm_digest assertions=15",
+        "ok: actual_script_binding_and_raw_script_content_are_visible assertions=12",
+        "ok: append_order_and_packed_file_sprite_domains_are_visible assertions=14",
+        "ok: retired_resource_identity_and_registry_restore_keep_bindings assertions=17"
+      ]
+    },
+    {
+      "id": "m6.scheduler_callback_rebind",
+      "passed": true,
+      "assertions": 36,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m6_scheduler_callback_rebind.out",
+        "exit=0 assertions=36 blocks=1 elapsed_ms=3",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m6_scheduler_callback_rebind log=artifacts/mp-native-run/run-9DS7kM/logs/m6_scheduler_callback_rebind.log",
+        "ok: scheduler_callback_rebind assertions=36"
+      ]
+    },
+    {
+      "id": "m6.dual_rng_events_transition",
+      "passed": true,
+      "assertions": 235,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m6_dual_rng_events_transition.out",
+        "exit=0 assertions=235 blocks=6 elapsed_ms=10",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m6_dual_rng_events_transition log=artifacts/mp-native-run/run-9DS7kM/logs/m6_dual_rng_events_transition.log",
+        "ok: dual_rng_events_transition assertions=128",
+        "ok: same_targets_in_separate_program_allocations_have_equal_digests assertions=17",
+        "ok: distinct_offsets_and_routines_are_visible_even_with_identical_instructions assertions=14",
+        "ok: child_interpolation_targets_are_part_of_the_same_production_digest assertions=12",
+        "ok: null_valid_and_invalid_targets_have_separate_identities assertions=31",
+        "ok: restored_targets_write_the_original_destination_after_replay assertions=33"
+      ]
+    },
+    {
+      "id": "m7.contract_asset_mismatch",
+      "passed": true,
+      "assertions": 17,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m7_contract_asset_mismatch.out",
+        "exit=0 assertions=17 blocks=1 elapsed_ms=5",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m7_contract_asset_mismatch log=artifacts/mp-native-run/run-9DS7kM/logs/m7_contract_asset_mismatch.log",
+        "ok: contract_asset_mismatch assertions=17"
+      ]
+    },
+    {
+      "id": "m7.frame_zero_load_barrier",
+      "passed": true,
+      "assertions": 9,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m7_frame_zero_load_barrier.out",
+        "exit=0 assertions=9 blocks=1 elapsed_ms=3",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m7_frame_zero_load_barrier log=artifacts/mp-native-run/run-9DS7kM/logs/m7_frame_zero_load_barrier.log",
+        "ok: frame_zero_load_barrier assertions=9"
+      ]
+    },
+    {
+      "id": "m7.device_seat_isolation",
+      "passed": true,
+      "assertions": 19,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m7_device_seat_isolation.out",
+        "exit=0 assertions=19 blocks=1 elapsed_ms=4",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m7_device_seat_isolation log=artifacts/mp-native-run/run-9DS7kM/logs/m7_device_seat_isolation.log",
+        "ok: device_seat_isolation assertions=19"
+      ]
+    },
+    {
+      "id": "m7.confirmed_hash_lockstep",
+      "passed": true,
+      "assertions": 54,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m7_confirmed_hash_lockstep.out",
+        "exit=0 assertions=54 blocks=1 elapsed_ms=2",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m7_confirmed_hash_lockstep log=artifacts/mp-native-run/run-9DS7kM/logs/m7_confirmed_hash_lockstep.log",
+        "ok: confirmed_hash_lockstep assertions=54"
+      ]
+    },
+    {
+      "id": "m8.rollback_one_three_twelve",
+      "passed": true,
+      "assertions": 292,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m8_rollback_one_three_twelve.out",
+        "exit=0 assertions=292 blocks=1 elapsed_ms=9",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m8_rollback_one_three_twelve log=artifacts/mp-native-run/run-9DS7kM/logs/m8_rollback_one_three_twelve.log",
+        "ok: rollback_one_three_twelve assertions=292"
+      ]
+    },
+    {
+      "id": "m8.delay_zero_two_nine",
+      "passed": true,
+      "assertions": 141,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m8_delay_zero_two_nine.out",
+        "exit=0 assertions=141 blocks=1 elapsed_ms=2",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m8_delay_zero_two_nine log=artifacts/mp-native-run/run-9DS7kM/logs/m8_delay_zero_two_nine.log",
+        "ok: delay_zero_two_nine assertions=141"
+      ]
+    },
+    {
+      "id": "m8.jitter_loss_reorder_duplicate",
+      "passed": true,
+      "assertions": 26,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m8_jitter_loss_reorder_duplicate.out",
+        "exit=0 assertions=26 blocks=1 elapsed_ms=3",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m8_jitter_loss_reorder_duplicate log=artifacts/mp-native-run/run-9DS7kM/logs/m8_jitter_loss_reorder_duplicate.log",
+        "ok: jitter_loss_reorder_duplicate assertions=26"
+      ]
+    },
+    {
+      "id": "m8.window_stall_conflict",
+      "passed": true,
+      "assertions": 87,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m8_window_stall_conflict.out",
+        "exit=0 assertions=87 blocks=1 elapsed_ms=3",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m8_window_stall_conflict log=artifacts/mp-native-run/run-9DS7kM/logs/m8_window_stall_conflict.log",
+        "ok: window_stall_conflict assertions=87"
+      ]
+    },
+    {
+      "id": "m8.audio_bgm_once",
+      "passed": true,
+      "assertions": 188,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m8_audio_bgm_once.out",
+        "exit=0 assertions=188 blocks=1 elapsed_ms=54",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m8_audio_bgm_once log=artifacts/mp-native-run/run-9DS7kM/logs/m8_audio_bgm_once.log",
+        "ok: audio_bgm_once assertions=188"
+      ]
+    },
+    {
+      "id": "m8.trance_death_resimulation",
+      "passed": true,
+      "assertions": 144,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m8_trance_death_resimulation.out",
+        "exit=0 assertions=144 blocks=1 elapsed_ms=5",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m8_trance_death_resimulation log=artifacts/mp-native-run/run-9DS7kM/logs/m8_trance_death_resimulation.log",
+        "ok: trance_death_resimulation assertions=144"
+      ]
+    },
+    {
+      "id": "m8.resim_budget_new_progress",
+      "passed": true,
+      "assertions": 137,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m8_resim_budget_new_progress.out",
+        "exit=0 assertions=137 blocks=1 elapsed_ms=6",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m8_resim_budget_new_progress log=artifacts/mp-native-run/run-9DS7kM/logs/m8_resim_budget_new_progress.log",
+        "ok: resim_budget_new_progress assertions=137"
+      ]
+    },
+    {
+      "id": "m9.replay_roundtrip_seek",
+      "passed": true,
+      "assertions": 365,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m9_replay_roundtrip_seek.out",
+        "exit=0 assertions=365 blocks=1 elapsed_ms=2",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m9_replay_roundtrip_seek log=artifacts/mp-native-run/run-9DS7kM/logs/m9_replay_roundtrip_seek.log",
+        "ok: replay_roundtrip_seek assertions=365"
+      ]
+    },
+    {
+      "id": "m9.spectator_confirmed_latejoin",
+      "passed": true,
+      "assertions": 184,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m9_spectator_confirmed_latejoin.out",
+        "exit=0 assertions=184 blocks=1 elapsed_ms=4",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m9_spectator_confirmed_latejoin log=artifacts/mp-native-run/run-9DS7kM/logs/m9_spectator_confirmed_latejoin.log",
+        "ok: spectator_confirmed_latejoin assertions=184"
+      ]
+    },
+    {
+      "id": "m9.slow_spectator_isolation",
+      "passed": true,
+      "assertions": 460,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m9_slow_spectator_isolation.out",
+        "exit=0 assertions=460 blocks=1 elapsed_ms=2",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m9_slow_spectator_isolation log=artifacts/mp-native-run/run-9DS7kM/logs/m9_slow_spectator_isolation.log",
+        "ok: slow_spectator_isolation assertions=460"
+      ]
+    },
+    {
+      "id": "m9.stage_entry_carry",
+      "passed": true,
+      "assertions": 1313,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m9_stage_entry_carry.out",
+        "exit=0 assertions=1313 blocks=6 elapsed_ms=685",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m9_stage_entry_carry log=artifacts/mp-native-run/run-9DS7kM/logs/m9_stage_entry_carry.log",
+        "ok: stage_entry_carry assertions=149",
+        "ok: stage_clear_revives_first_seat_ghost_before_hud assertions=185",
+        "ok: stage_clear_revives_inflight_last_death_before_hud assertions=185",
+        "ok: stage_clear_revives_remote_ghost_preserving_survivors assertions=185",
+        "ok: stage_clear_revives_remote_inflight_last_death assertions=555",
+        "ok: marisa_beams_stop_after_stage_clear_reuses_shot_generations assertions=54"
+      ]
+    },
+    {
+      "id": "m9.run_generation_isolation",
+      "passed": true,
+      "assertions": 8401,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m9_run_generation_isolation.out",
+        "exit=0 assertions=8401 blocks=2 elapsed_ms=1144",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m9_run_generation_isolation log=artifacts/mp-native-run/run-9DS7kM/logs/m9_run_generation_isolation.log",
+        "ok: run_generation_isolation assertions=41",
+        "ok: retained_engine_three_runs_replace_scene_epoch_snapshots assertions=8360"
+      ]
+    },
+    {
+      "id": "m9.terminal_local_save",
+      "passed": true,
+      "assertions": 70,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m9_terminal_local_save.out",
+        "exit=0 assertions=70 blocks=1 elapsed_ms=4",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m9_terminal_local_save log=artifacts/mp-native-run/run-9DS7kM/logs/m9_terminal_local_save.log",
+        "ok: terminal_local_save assertions=70"
+      ]
+    },
+    {
+      "id": "m9.disconnect_confirmed_save_return",
+      "passed": true,
+      "assertions": 229,
+      "evidence": [
+        "binary=artifacts/mp-native-cache/633b0f36fb2507a8b977c387552152a8a501b4c5656abab3e5507b6734896921/bin/m9_disconnect_confirmed_save_return.out",
+        "exit=0 assertions=229 blocks=1 elapsed_ms=4",
+        "run_dir=artifacts/mp-native-run/run-9DS7kM/m9_disconnect_confirmed_save_return log=artifacts/mp-native-run/run-9DS7kM/logs/m9_disconnect_confirmed_save_return.log",
+        "ok: disconnect_confirmed_save_return assertions=229"
+      ]
+    }
+  ]
+}

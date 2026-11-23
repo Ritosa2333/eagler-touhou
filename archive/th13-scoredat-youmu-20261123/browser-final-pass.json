@@ -1,0 +1,58 @@
+{
+  "topic": "th13 浏览器全流程终验：scoreth13.dat 镜像含妖梦在内的完整得分面",
+  "date": "2026-11-23",
+  "runtime": {
+    "wasm_sha256": "acd7f2dba448a2392f4456ddbdaf6104cc381e44f0910744d5c00e18398696c3",
+    "driver": "ports/th13/web/tests/sdl/e2e-fullclear.driver.mjs",
+    "mode": "full",
+    "elapsed_min": 64.35,
+    "page_errors": []
+  },
+  "stage_gates": [
+    {"stage": 1, "score": 0, "match": true},
+    {"stage": 2, "score": 647062, "match": true},
+    {"stage": 3, "score": 1909357, "match": true},
+    {"stage": 4, "score": 3189875, "match": true},
+    {"stage": 5, "score": 5573799, "match": true},
+    {"stage": 6, "score": 8683551, "match": true}
+  ],
+  "final_score": 16999054,
+  "mirror_pipeline": {
+    "note": "save_score 登记待写镜像，LZSS 按帧分片（kScoreDatTokensPerFrame=400）编码完成后一次更新 th13.scoredat；driver 在保存点后按块泵帧至键值连续稳定再采样",
+    "drain_mark": "scoredat-mirror-drained",
+    "scoredat_bytes": 18734
+  },
+  "scored_at_face": {
+    "parser": "oracle.scorefmt（原版格式二进制孪生）",
+    "reimu_normal_rank1": {
+      "score": 16999054,
+      "name": "ARINATEI",
+      "stage": 8,
+      "continues": 0,
+      "timestamp": 1795398770
+    },
+    "st_last_name": "ARINATEI",
+    "play_count": 1,
+    "play_frames": 108958,
+    "clear_count_normal": 1,
+    "no_continue_clear_count_normal": 1
+  },
+  "verify_all": {
+    "verify_replay": "PASS（24171 输入帧逐字节相同，stage 头全等）",
+    "verify_replay_loader": "PASS（原版 0x448c40 装载链接受导出件）",
+    "verify_score": "PASS（TH31/版本4，霊夢 Normal 榜首 16999054/ARINATEI/stage8）",
+    "verify_score_loader": "PASS（原版 0x449be0 装载后 DAT_004c22cc 榜首同名同分）"
+  },
+  "c4_assert": {
+    "verdict": "PASS",
+    "restore": {"hint": 0, "failures": []},
+    "playback": {"active": true, "slot_number": 1, "slot_frames": 11675},
+    "reload": {"indexEqual": true, "blobEqual": true, "scoreEqual": true}
+  },
+  "artifacts": {
+    "browser-final-e2e-report.json": "driver 完整时间线",
+    "browser-final-c4-report.json": "C.4 断言报告",
+    "browser-final-export.rpy": "sha256 3669c9eb3aeb4b3b9298ac3bcb8bbadb7edd9834c02384021cb18c90a65504d8",
+    "browser-final-scoreth13.dat": "sha256 0d30c4f30add3c3aa728be88c7b1c18695f0f0903f3662c409484bf641d1f7e4"
+  }
+}

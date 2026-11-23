@@ -1,0 +1,102 @@
+{
+  "mode": "smoke",
+  "bootSeed": 60189,
+  "stage1Seed": 60189,
+  "limitStage": 2,
+  "wasmSha256": "597bcaac643431a70fa68bcdc709fa12e351125f1f9d51a7a039c09dc5a703aa",
+  "timeline": [
+    {
+      "t": "2026-11-22T21:53:46.544Z",
+      "event": "boot-complete",
+      "bootSeed": 60189,
+      "seen": 60189
+    },
+    {
+      "t": "2026-11-22T21:53:46.545Z",
+      "event": "title-wait"
+    },
+    {
+      "t": "2026-11-22T21:53:49.285Z",
+      "event": "screenshot",
+      "name": "01-title"
+    },
+    {
+      "t": "2026-11-22T21:53:49.299Z",
+      "event": "difficulty-cursor",
+      "cursor": 1
+    },
+    {
+      "t": "2026-11-22T21:53:49.300Z",
+      "event": "difficulty-confirmed"
+    },
+    {
+      "t": "2026-11-22T21:53:49.310Z",
+      "event": "character-screen",
+      "cursor": 0,
+      "difficulty": 1,
+      "character": 0
+    },
+    {
+      "t": "2026-11-22T21:53:50.183Z",
+      "event": "screenshot",
+      "name": "02-character"
+    },
+    {
+      "t": "2026-11-22T21:53:50.186Z",
+      "event": "character-confirmed"
+    },
+    {
+      "t": "2026-11-22T21:53:55.062Z",
+      "event": "stage-entry",
+      "stage": 1,
+      "score": 0,
+      "expected": 0,
+      "match": true,
+      "hostPumped": 1236,
+      "stageFrame": 0,
+      "elapsedMin": 0.17
+    },
+    {
+      "t": "2026-11-22T21:54:10.066Z",
+      "event": "screenshot-failed",
+      "name": "stage1-entry",
+      "error": "TimeoutError: page.screenshot: Timeout 15000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to l"
+    },
+    {
+      "t": "2026-11-22T22:00:20.555Z",
+      "event": "stage-entry",
+      "stage": 2,
+      "score": 647062,
+      "expected": 647062,
+      "match": true,
+      "hostPumped": 11896,
+      "stageFrame": 1,
+      "elapsedMin": 6.6
+    },
+    {
+      "t": "2026-11-22T22:00:24.898Z",
+      "event": "screenshot",
+      "name": "stage2-entry"
+    },
+    {
+      "t": "2026-11-22T22:00:24.899Z",
+      "event": "limit-stage-reached",
+      "stage": 2
+    },
+    {
+      "t": "2026-11-22T22:00:25.002Z",
+      "event": "screenshot",
+      "name": "smoke-stop"
+    }
+  ],
+  "consoleTail": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "pageErrors": []
+}
