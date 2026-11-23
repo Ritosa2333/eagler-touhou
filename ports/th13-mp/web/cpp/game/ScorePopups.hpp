@@ -46,8 +46,6 @@ private:
     AnmVm glyph;
     std::array<Entry, 10> pool{};
     u32 cursor = 0;
-    // 合成测试 harness 的 ascii.anm 可能缺 sprite 196-226；缺失时禁用弹出
-    // 池（生产 ascii.anm 恒有）。禁用不影响游戏状态/RNG。
     bool available_ = false;
 };
 }  // namespace th13

@@ -17,6 +17,8 @@ const profileNative=game==='th03'&&process.env.TH03_TEST_PROFILE==='1';
 const cpuThrottle=Number(process.env.TH03_TEST_CPU_THROTTLE??1);
 const lateJoin=process.env.PC98_TEST_INPUT_ONLY_LATE==='1'||process.env.PC98_TEST_LATE_JOIN==='1';
 const timing=multiplayerInputTimingPolicy(PRODUCT_GAMES[game].multiplayer);
+const spectatorCanvas=game==='th03'?'#canvas':'body > canvas:last-of-type';
+const replayRequests=[];
 for(const key of ['ROOM_RUNTIME_ROOT','ROOM_RUNTIME_DATA'])assert(process.env[key],key+' is required');
 const runtime=resolve(process.env.ROOM_RUNTIME_ROOT),out=resolve('.cache/native-room-retention',game);
 await mkdir(out,{recursive:true});
@@ -94,6 +96,7 @@ window.addRuntime=n=>{const f=document.createElement('iframe');f.id='p'+n;f.src=
 window.rpc=(n,command,fields={})=>new Promise((ok,no)=>{const f=document.querySelector('#p'+n),request=crypto.randomUUID(),timer=setTimeout(()=>{removeEventListener('message',recv);no(Error(command+' timeout'));},90000);function recv(e){if(e.source===f.contentWindow&&e.data?.event==='exit'){clearTimeout(timer);removeEventListener('message',recv);no(Error('Native exit: '+e.data.status));return;}if(e.source===f.contentWindow&&e.data?.request===request){clearTimeout(timer);removeEventListener('message',recv);e.data.ok?ok(e.data):no(Error(e.data.error));}}addEventListener('message',recv);f.contentWindow.postMessage({protocol:'eagler-touhou/1',game:'${game}',epoch:n+1,request,command,...fields},location.origin);});</script>`;
 const server=createServer(async(req,res)=>{try{
   const path=new URL(req.url,'http://localhost').pathname;
+  if(/\/api\/replay(?:\/|$)/.test(path))replayRequests.push(path);
   if(path==='/'){res.setHeader('content-type','text/html');res.end(html);return;}
   if(path==='/data'){res.end(data);return;}
   if(fonts.has(path)){res.end(fonts.get(path));return;}
@@ -156,6 +159,7 @@ try{
   }
   if(game==='th02'||game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
   await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
+  if(game!=='th03')assert.deepEqual(await Promise.all(frames().slice(0,2).map(f=>f.evaluate(game=>globalThis[game+'Replay']?.active,game))),[true,false],'only the host keeps the live viewer history');
   if(process.env.PC98_TEST_RTC_RESTART==='1')await verifyPc98IceRestart(game,frames().slice(0,2),playerFrame,wait);
   let spectatorStarted=false;
   // Exercise local input after a network delay has had time to fill the queue.
@@ -291,8 +295,13 @@ try{
     await page.evaluate(()=>rpc(1,'keyboard',{code:'Space',key:' ',keyCode:32,location:0,down:false}));
   }
   if(game==='th01'){
-    await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));await new Promise(r=>setTimeout(r,180));await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));
-    await new Promise(r=>setTimeout(r,1500));
+    for(let press=0;press<6&&!await frames()[0].evaluate(()=>th01Net.session.sawGameplay);press++){
+      for(const down of [true,false]){
+        await page.evaluate(down=>rpc(0,'keyboard',{code:'Enter',key:'Enter',keyCode:13,location:0,down}),down);
+        await new Promise(r=>setTimeout(r,250));
+      }
+    }
+    await wait(async()=>await frames()[0].evaluate(()=>th01Net.session.sawGameplay),'TH01 host enters gameplay',10000);
   }
   if(game==='th02'||game==='th04')await page.evaluate(game=>Promise.all((game==='th02'?[1]:[0,1]).map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}))),game);
   if((game==='th02'||game==='th04')&&process.env.PC98_NATIVE_MARKER==='1'){
@@ -330,20 +339,22 @@ try{
     await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:true}));
   if(game==='th03'){await frames()[2].waitForFunction(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().showHitboxes,{timeout:30000});assert.equal(await frames()[2].evaluate(async()=>(await import('./managed-native-room.mjs')).managedAPI.health().showHitboxes),true,'spectator follows the host rule even when its local option is false');}
   assert(await frames()[2].evaluate(game=>{const peer=globalThis['__'+game+'PeerTransport'];return peer?.relay?.readyState===WebSocket.OPEN&&peer.peers instanceof Map;},game),'launcher can observe the live spectator relay');
-  await frames()[2].waitForFunction(()=>{const c=document.querySelector('#canvas');if(!c)return false;const context=c.getContext('2d'),pixels=context.getImageData(0,0,c.width,c.height).data;for(let i=0;i<pixels.length;i+=4)if(pixels[i]||pixels[i+1]||pixels[i+2])return true;return false;},{timeout:90000});
+  await frames()[2].waitForFunction(selector=>{const c=document.querySelector(selector);if(!c)return false;const context=c.getContext('2d'),pixels=context.getImageData(0,0,c.width,c.height).data;for(let i=0;i<pixels.length;i+=4)if(pixels[i]||pixels[i+1]||pixels[i+2])return true;return false;},{timeout:90000},spectatorCanvas);
   if(process.env.PC98_SPECTATOR_PERF==='1'){
     await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&s.received-s.position<120;},{timeout:120000});
-    await frames()[2].evaluate(()=>{const c=document.querySelector('#canvas'),ctx=c.getContext('2d'),draw=ctx.drawImage.bind(ctx);globalThis.__spectatorDraws=0;ctx.drawImage=(...args)=>{globalThis.__spectatorDraws++;return draw(...args);};});
+    await frames()[2].evaluate(selector=>{const c=document.querySelector(selector),ctx=c.getContext('2d'),draw=ctx.drawImage.bind(ctx);globalThis.__spectatorDraws=0;ctx.drawImage=(...args)=>{globalThis.__spectatorDraws++;return draw(...args);};},spectatorCanvas);
     const start=await frames()[2].evaluate(()=>globalThis.__spectatorDraws),position=await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback?.position),at=performance.now();
     await measure('spectator active');const elapsed=(performance.now()-at)/1000,draws=await frames()[2].evaluate(()=>globalThis.__spectatorDraws),state=await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback);
     console.log('QA spectator rate',JSON.stringify({drawFps:(draws-start)/elapsed,simulationFps:(state.position-position)/elapsed,elapsed,state}));
   }
-  assert(await frames()[2].evaluate(()=>{const c=document.querySelector('#canvas'),r=c.getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)===c;}),'spectator canvas is visible above the room');
+  assert(await frames()[2].evaluate(selector=>{const c=document.querySelector(selector),r=c.getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)===c;},spectatorCanvas),'spectator canvas is visible above the room');
   if(game==='th01'){
-    const read=()=>frames()[2].evaluate(()=>{const c=document.querySelector('#canvas'),p=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let hash=2166136261;for(let i=0;i<p.length;i+=4)hash=Math.imul(hash^p[i]^p[i+1]<<8^p[i+2]<<16,16777619);return hash>>>0;});
-    const before=await read(),state=await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback);await new Promise(r=>setTimeout(r,3500));
-    const after=await read(),next=await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback);console.log('TH01 spectator picture',before,after,'position',state?.position,next?.position);
-    assert(next.position>state.position,'TH01 spectator receives new gameplay frames');assert.notEqual(after,before,'TH01 spectator picture keeps changing');
+    const read=()=>frames()[2].evaluate(selector=>{const c=document.querySelector(selector),p=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let hash=2166136261;for(let i=0;i<p.length;i+=4)hash=Math.imul(hash^p[i]^p[i+1]<<8^p[i+2]<<16,16777619);return hash>>>0;},spectatorCanvas);
+    const before=await read(),state=await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback);
+    await page.evaluate(()=>rpc(0,'keyboard',{code:'ArrowRight',key:'ArrowRight',keyCode:39,location:0,down:true}));
+    await wait(async()=>await read()!==before,'TH01 spectator picture changes during play',15000);
+    await page.evaluate(()=>rpc(0,'keyboard',{code:'ArrowRight',key:'ArrowRight',keyCode:39,location:0,down:false}));
+    await wait(()=>page.evaluate(position=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback.position>position,state.position),'TH01 spectator advances during play',10000);
   }
   await page.waitForFunction(()=>events.some(e=>e.epoch===3&&e.spectatorPlayback?.position>30),{timeout:120000});
   const control=async(action,frame)=>page.evaluate(async({action,frame})=>{const run=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback.run;await rpc(2,'spectator-playback',{run,action,...frame===undefined?{}:{frame}});},{action,frame});
@@ -366,6 +377,35 @@ try{
     await page.waitForFunction(()=>events.some(e=>e.epoch===3&&e.event==='audio-health'&&e.effects>0&&e.effectsPeak>0.001),{timeout:20000});
     await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));
   }
+  if(game==='th03'&&process.env.TH03_TEST_ROOM_REPLAY==='1'){
+    const press=async(code,key,keyCode)=>{
+      for(const down of [true,false]){
+        await page.evaluate(fields=>rpc(0,'keyboard',fields),{code,key,keyCode,down,location:0});
+        await new Promise(resolve=>setTimeout(resolve,200));
+      }
+    };
+    await press('Escape','Escape',27);
+    await wait(async()=>await frames()[0].evaluate(()=>globalThis.th03SyncState?.pauseSeat===0),'host pauses the match',10000);
+    await press('ArrowDown','ArrowDown',40);await press('ArrowDown','ArrowDown',40);await press('KeyZ','z',90);
+    const playerFrames=frames().slice(0,2);
+    const saved=async()=>(await Promise.all(playerFrames.map(f=>f.evaluate(()=>[...__eaglerPC98Files.memory.keys()].some(path=>path.endsWith('.th03r')))))).every(Boolean);
+    await wait(async()=>{
+      if(await saved())return true;
+      // The result scene accepts dismissal after its animation has played.
+      await press('KeyZ','z',90);
+      return false;
+    },'both players archive the completed native match',45000);
+    const archives=await Promise.all(playerFrames.map(f=>f.evaluate(async()=>{
+      const {decodeReplay}=await import('./native-replay.mjs');
+      const [,bytes]=[...__eaglerPC98Files.memory].find(([path])=>path.endsWith('.th03r'));
+      const {rows,native,seed,difficulty}=await decodeReplay(bytes);
+      return {rows,nativeSize:native.length,seed,difficulty};
+    })));
+    assert(archives.every(a=>a.nativeSize>0&&a.rows.length>420&&a.seed===1234&&a.difficulty===3));
+    assert.deepEqual(archives[0].rows,archives[1].rows,'both saved replays use the same confirmed inputs');
+    console.log('TH03 archived confirmed native match',archives.map(a=>({frames:a.rows.length,nativeBytes:a.nativeSize})));
+  }
+  if(game!=='th03')assert.deepEqual(replayRequests,[],'managed rooms do not upload to the legacy replay endpoint');
   assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
   console.log('PASS PC98 real managed players and spectator',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.epoch===3&&e.spectatorPlayback).at(-1))));
   }

@@ -62,7 +62,7 @@ mkdir -p "$out_dir"
 sources=()
 for source in "$port_dir"/web/cpp/game/*.cpp; do sources+=("$source"); done
 for name in Application ApplicationTitle ApplicationGame AudioDevice FileStore \
-            FontDevice GraphicsDevice SceneDisplay; do
+            FontDevice GraphicsDevice LanguagePack SceneDisplay; do
   sources+=("$port_dir/web/cpp/sdl/$name.cpp")
 done
 sources+=("$script_dir/native/native_stub.cpp")

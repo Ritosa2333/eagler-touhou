@@ -440,6 +440,37 @@ test('directory TH09 creation keeps original charging when the saved room is res
     directory.service.dispose();
   }
 });
+test('room creation ignores legacy room names from storage and the relay', async () => {
+  const directory = await liveDirectory();
+  const room = roomFixture({sessions:directory.sessions,identity:directory.identity});
+  try {
+    directory.sockets[0].message(directoryState({roomNames:true}));
+    assert.equal(directory.service.prepareForm('create'),true);
+    assert.equal(directory.service.submitForm(),'close');
+    directory.service.formDidClose();
+    const invite = directory.navigation[0];
+    const sessionKey = owner.multiplayerRoomSessionStorageKey('th06mp');
+    const draft = JSON.parse(directory.session.getItem(sessionKey));
+    assert.ok(draft.room.code);
+    directory.session.setItem(sessionKey,JSON.stringify({...draft,initialRoomName:'速通练习'}));
+    assert.equal(room.service.restoreInvite(invite),true);
+    const socket = room.sockets[0], id = directory.identity.lobbyClientId('th06mp');
+    socket.open();
+    const code = draft.room.code;
+    socket.message({type:'state',roomNames:true,room:roomState(id,{code,seats:[null,null]})});
+    socket.message({type:'state',room:roomState(id,{code,roomName:'速通练习'})});
+    const state = room.service.getSnapshot();
+    assert.equal(state.seat,0);
+    assert.equal(state.room.roomName,undefined);
+    assert.equal(JSON.parse(directory.session.getItem(sessionKey)).initialRoomName,undefined);
+    socket.message({type:'room-name-status',status:'approved'});
+    assert.equal(room.service.getSnapshot(),state);
+    assert.equal(socket.sent.some(message=>message.type==='set-room-name'),false);
+  } finally {
+    room.service.dispose();
+    directory.service.dispose();
+  }
+});
 test('rollback products default to D0 for both room creation and restored invites',async()=>{
   for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp']){
     const f=roomFixture();f.service.enterRoom(product,'1234',true);await flush();

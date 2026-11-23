@@ -128,10 +128,11 @@ function PlayerCardDetails({username,name,avatar,boardRating,ratingCard}: {
     showRating={visibility?.versus ?? true} showTotal={visibility?.records ?? !!(boardRating || ratingCard)}/>;
 }
 
-export function PlayerAvatarCard({username,name,avatar,boardRating,ratingCard,children}: {
-  username:string; name:string; avatar?:string; boardRating?:BoardRating; ratingCard?:Th09RatingCard | null; children: PlayerCardTrigger;
+export function PlayerAvatarCard({username,name,avatar,boardRating,ratingCard,navigateOnClick,children}: {
+  username:string; name:string; avatar?:string; boardRating?:BoardRating; ratingCard?:Th09RatingCard | null;
+  navigateOnClick?:boolean; children: PlayerCardTrigger;
 }) {
-  return <PlayerCardPopover trigger={children} label={name}>
+  return <PlayerCardPopover trigger={children} label={name} navigateOnClick={navigateOnClick}>
     <PlayerCardDetails key={username} username={username} name={name} avatar={avatar} boardRating={boardRating} ratingCard={ratingCard}/>
   </PlayerCardPopover>;
 }

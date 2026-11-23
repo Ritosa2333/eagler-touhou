@@ -64,7 +64,6 @@
 .replay-archive-set small{color:var(--kit-muted-foreground)}
 .replay-archive-set ol{margin:0;padding:4px 12px 8px 36px}
 .replay-archive-set li{padding-block:3px}
-.replay-archive-set li>span{display:block}
 .replay-archive-set button[aria-current=true]{background:var(--kit-accent);color:var(--kit-accent-foreground)}
 .replay-workspace-file{display:flex;align-items:center;gap:2px;min-height:48px;border-bottom:1px solid var(--kit-border);position:relative}
 .replay-workspace-file.selected{background:var(--kit-accent);border-radius:6px;border-color:transparent}

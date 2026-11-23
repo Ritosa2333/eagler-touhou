@@ -93,7 +93,7 @@ test('interrupted close and reopen continue from current opacity and retire stal
   finish(element); await reopen.finished;
 });
 
-test('a phone options panel fades without moving and reverses from its current opacity', async () => {
+test('an ordinary panel fades without moving and reverses from its current opacity', async () => {
   const element = surface();
   const enter = animate(element, 'enter', {kind: 'panel'});
   assert.equal(native.length, 1);
@@ -106,6 +106,19 @@ test('a phone options panel fades without moving and reverses from its current o
   assert.deepEqual(native[1].keyframes, {opacity: ['.6', '0']});
   finish(element); await exit.finished;
   assert.equal(element.style.opacity, '');
+});
+
+test('a book sheet slides up from below the viewport and reverses from its current offset', async () => {
+  const element = surface(), enter = animate(element, 'enter', {kind: 'sheet'});
+  assert.deepEqual(native[1].keyframes, {translate: ['0 100%', '0 0']});
+  assert.equal(native[1].options.duration, 320);
+  native[1].values.translate = '0px 86px';
+  const exit = animate(element, 'exit', {kind: 'sheet', fromCurrent: true});
+  await enter.finished;
+  assert.deepEqual(native.at(-1).keyframes, {translate: ['0px 86px', '0 100%']});
+  assert.equal(native.at(-1).options.duration, 220);
+  finish(element); await exit.finished;
+  assert.equal(element.style.translate, '');
 });
 
 test('cancellation restores owned inline properties and priorities', async () => {

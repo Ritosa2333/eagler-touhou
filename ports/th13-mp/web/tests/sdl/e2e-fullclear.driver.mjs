@@ -160,20 +160,9 @@ try {
       }});
   });
 
-  const boot = async () => {
-    await page.goto(`http://127.0.0.1:${server.address().port}/sdl-runtime/th13.html`,
-                    {waitUntil: 'domcontentloaded'});
-    await page.waitForFunction(
-      'window.mod && window.mod._th13_phase() === 0 && window.__e2e_loop_paused === true' +
-      ' && window.__th13_builtin_replays_done === true && window.__th13_replay_restore_done === true',
-      null, {timeout: Math.max(30000, Math.min(300000, left()))});
-  };
-  await boot();
-  const seedSeen = await page.evaluate(() => window.mod._th13_boot_seed());
-  mark('boot-complete', {bootSeed, seen: seedSeen});
-  if (seedSeen !== bootSeed) throw Error('boot seed override did not take effect');
-
-  await page.evaluate(() => {
+  // __e2e 句柄挂在页面 window 上，reload 会清空全部页面 JS 状态；
+  // 必须随每次 boot 重装，reload 持久化复查才能继续用 probe。
+  const installE2e = () => page.evaluate(() => {
     window.__e2e = {
       probe() {
         const ptr = window.mod._th13_probe_state() / 4;
@@ -197,6 +186,20 @@ try {
       },
     };
   });
+
+  const boot = async () => {
+    await page.goto(`http://127.0.0.1:${server.address().port}/sdl-runtime/th13.html`,
+                    {waitUntil: 'domcontentloaded'});
+    await page.waitForFunction(
+      'window.mod && window.mod._th13_phase() === 0 && window.__e2e_loop_paused === true' +
+      ' && window.__th13_builtin_replays_done === true && window.__th13_replay_restore_done === true',
+      null, {timeout: Math.max(30000, Math.min(300000, left()))});
+    await installE2e();
+  };
+  await boot();
+  const seedSeen = await page.evaluate(() => window.mod._th13_boot_seed());
+  mark('boot-complete', {bootSeed, seen: seedSeen});
+  if (seedSeen !== bootSeed) throw Error('boot seed override did not take effect');
 
   const probe = async () => page.evaluate(() => window.__e2e.probe());
   // 分块等待谓词：单块 4000 泵，块间可打日志/查截止时间。
@@ -402,8 +405,9 @@ try {
     }
     await shot('03-result-name');
 
-    // 名录入：逐字符光标导航 + Z；第 8 字后光标自动跳 90（END）。
-    let cursor = 90;
+    // 名录入：新档 ST 上次名为空，编辑器从字符表首位 0 起步；第 8 字后
+    // 光标自动跳 90（END）。
+    let cursor = 0;
     for (let k = 0; k < NAME.length; ++k) {
       const target = NAME_POS[NAME[k]];
       for (const mv of nameMoves(cursor, target)) await tap(mv);
@@ -418,6 +422,21 @@ try {
     await pumpUntil('p[8]===15 && p[9]===3', 800, 'replay name editor');
     await tap(SCAN.Z);  // END → save_replay_slot(1, ARINATEI) → encode+import+下载+持久化
     mark('save-committed');
+
+    // scoreth13.dat 镜像按帧分片压缩（FileStore kScoreDatTokensPerFrame=400）：
+    // END 落榜只登记待写镜像，localStorage 要等编码器整幅跑完才更新。保存点后
+    // 按块泵帧直到 'th13.scoredat' 连续两块稳定再采样——否则读到的是滞后镜像
+    //（榜表默认、ST 名空白），且 reload 前后不一致会误报存储漂移。
+    let drained = await page.evaluate(() => localStorage.getItem('th13.scoredat'));
+    let drainStable = 0;
+    for (let chunk = 0; chunk < 20 && drainStable < 2; ++chunk) {
+      await page.evaluate(n => window.__e2e.pump(n), 120);
+      const now = await page.evaluate(() => localStorage.getItem('th13.scoredat'));
+      if (now === drained) ++drainStable;
+      else { drainStable = 0; drained = now; }
+    }
+    if (drainStable < 2) throw Error('scoredat mirror did not drain after save');
+    mark('scoredat-mirror-drained');
 
     const saved = await page.evaluate(() => ({
       index: JSON.parse(localStorage.getItem('th13.replays') || '[]'),
@@ -451,18 +470,25 @@ try {
     await tap(SCAN.Z);
     await pumpUntil('p[8]===11', 1200, 'replay menu');
     await shot('06-replay-menu');
-    await tap(SCAN.Z);  // 高亮槽（hint=0 → th13_01）实播：catalog 内容即本次导出
-    const rp = await page.evaluate(cap => {
-      let j = null;
-      for (let i = 0; i < cap; ++i) {
-        if (!window.mod._th13_debug_frame()) break;
-        // progress 返回 char*（指针数字），必须 UTF8ToString 再 parse——
-        // 直接 JSON.parse(指针) 会得到纯数字，形如 80540432（两轮 E2E 实测踩坑）。
-        j = JSON.parse(window.mod.UTF8ToString(window.mod._th13_debug_replay_progress()));
-        if (j.active && j.slot_index === 0 && j.slot_number === 1) return j;
-      }
-      return j ?? JSON.parse(window.mod.UTF8ToString(window.mod._th13_debug_replay_progress()));
-    }, 4000);
+    // Replay 菜单入场有自己的 substate 时序：进入 11 屏后等一拍再 Z；
+    // 未激活则每轮 60 泵后重试（与 e2e-c4-assert.mjs 的收尾断言同款）。
+    let rp = null;
+    for (let attempt = 0; attempt < 8 && !(rp && rp.active); ++attempt) {
+      await page.evaluate(n => window.__e2e.pump(n), 60);
+      await tap(SCAN.Z);  // 高亮槽（hint=0 → th13_01）实播：catalog 内容即本次导出
+      rp = await page.evaluate(cap => {
+        let j = null;
+        for (let i = 0; i < cap; ++i) {
+          if (!window.mod._th13_debug_frame()) break;
+          // progress 返回 char*（指针数字），必须 UTF8ToString 再 parse——
+          // 直接 JSON.parse(指针)会得到纯数字，形如 80540432（两轮 E2E 实测踩坑）。
+          j = JSON.parse(window.mod.UTF8ToString(window.mod._th13_debug_replay_progress()));
+          if (j.active && j.slot_index === 0 && j.slot_number === 1 && j.consumed >= 30) return j;
+        }
+        return j ?? JSON.parse(window.mod.UTF8ToString(window.mod._th13_debug_replay_progress()));
+      }, 4000);
+      log('replay-playback-attempt', JSON.stringify({attempt, rp}));
+    }
     mark('replay-playback', rp);
     if (!rp || !rp.active || rp.slot_index !== 0 || rp.slot_number !== 1 ||
         rp.slot_frames !== inputs.stages[0].frames)

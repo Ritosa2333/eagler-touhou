@@ -18,5 +18,10 @@
 .profile-clear-plot[data-tilted=true] .profile-clear-character-name{margin-top:12px;transform:rotate(-35deg);transform-origin:50% 0}
 .profile-clear-cell[data-status=unavailable]{background:transparent;border-style:dashed}
 .profile-clear-cell[data-status=not-applicable]{visibility:hidden}
+.profile-clear-chart[data-fixed-game]{--clear-column:clamp(38px,8cqw,62px)}
+.profile-clear-chart[data-fixed-game] .profile-clear-plot{justify-content:flex-start}
+.profile-clear-chart[data-fixed-game] .profile-clear-axis{position:sticky;inset-inline-start:0;z-index:1;background:var(--kit-card)}
+.profile-clear-chart[data-fixed-game] .profile-clear-shot-name{max-width:100%;text-align:center;white-space:normal;overflow-wrap:anywhere}
+.profile-clear-chart[data-fixed-game] .profile-clear-character-name{max-width:100%;text-align:center;white-space:normal;overflow-wrap:anywhere}
 @media(max-width:480px){.profile-flight-total{font-size:10px;gap:5px}.profile-flight-total strong{font-size:13px}.profile-clear-axis{min-width:42px;font-size:9px}.profile-game-data .profile-section-title h2{font-size:15px}.profile-clear-legend{gap:8px}.profile-clear-back-label{display:none}}
 @supports not(container-type:inline-size){.profile-clear-chart{--clear-size:18px;--clear-step:28px;--clear-column:40px;--clear-gap:8px}}

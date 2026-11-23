@@ -2364,6 +2364,10 @@
     "id": "library_back",
     "params": []
   },
+  "library.statistics": {
+    "id": "library_statistics",
+    "params": []
+  },
   "library.quickNav": {
     "id": "library_quickNav",
     "params": []
@@ -7699,6 +7703,12 @@
     "id": "library_category_doujin",
     "params": []
   },
+  "library.categoryContents": {
+    "id": "library_categoryContents",
+    "params": [
+      "category"
+    ]
+  },
   "library.categories": {
     "id": "library_categories",
     "params": []
@@ -10633,6 +10643,10 @@
   },
   "notice.label": {
     "id": "notice_label",
+    "params": []
+  },
+  "notice.unread": {
+    "id": "notice_unread",
     "params": []
   },
   "account.demoCode": {

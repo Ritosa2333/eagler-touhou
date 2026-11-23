@@ -1,6 +1,6 @@
 # 文档总表
 
-共 675 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 667 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -206,7 +206,7 @@
 | 作品源码文档 | [ports/th13-mp/docs/plans/replay.md](../ports/th13-mp/docs/plans/replay.md) | 录像（.rpy）格式与回放注入 |
 | 作品源码文档 | [ports/th13-mp/docs/plans/results-flow.md](../ports/th13-mp/docs/plans/results-flow.md) | th13 Stage 终了 → 结算 → 下一关 / 标题 / 结局 场景链（反编译研究报告） |
 | 作品源码文档 | [ports/th13-mp/docs/plans/results-overlay-anatomy.md](../ports/th13-mp/docs/plans/results-overlay-anatomy.md) | 结算幕（对局内覆盖层）静态解剖（S3 关键前置研究报告） |
-| 作品源码文档 | [ports/th13-mp/docs/plans/scoredat.md](../ports/th13-mp/docs/plans/scoredat.md) | scoreth13.dat 原版格式落移植（ScoreDat + FileStore 集成） |
+| 作品源码文档 | [ports/th13-mp/docs/plans/scoredat.md](../ports/th13-mp/docs/plans/scoredat.md) | scoreth13.dat 原版格式与 TH13SAVE 镜像 |
 | 作品源码文档 | [ports/th13-mp/docs/plans/stage1-acceptance.md](../ports/th13-mp/docs/plans/stage1-acceptance.md) | Stage 1 全链路验收合同 |
 | 作品源码文档 | [ports/th13-mp/docs/plans/title-anm-blueprint.md](../ports/th13-mp/docs/plans/title-anm-blueprint.md) | th13 主菜单 ANM 蓝图（title.anm / titlev.anm 脚本号总表与重锚方案） |
 | 作品源码文档 | [ports/th13-mp/docs/plans/ui-base.md](../ports/th13-mp/docs/plans/ui-base.md) | TH13–15 同代引擎 UI 基座移植方案 |
@@ -236,7 +236,7 @@
 | 作品源码文档 | [ports/th13/docs/plans/replay.md](../ports/th13/docs/plans/replay.md) | 录像（.rpy）格式与回放注入 |
 | 作品源码文档 | [ports/th13/docs/plans/results-flow.md](../ports/th13/docs/plans/results-flow.md) | th13 Stage 终了 → 结算 → 下一关 / 标题 / 结局 场景链（反编译研究报告） |
 | 作品源码文档 | [ports/th13/docs/plans/results-overlay-anatomy.md](../ports/th13/docs/plans/results-overlay-anatomy.md) | 结算幕（对局内覆盖层）静态解剖（S3 关键前置研究报告） |
-| 作品源码文档 | [ports/th13/docs/plans/scoredat.md](../ports/th13/docs/plans/scoredat.md) | scoreth13.dat 原版格式落移植（ScoreDat + FileStore 集成） |
+| 作品源码文档 | [ports/th13/docs/plans/scoredat.md](../ports/th13/docs/plans/scoredat.md) | scoreth13.dat 原版格式与 TH13SAVE 镜像 |
 | 作品源码文档 | [ports/th13/docs/plans/stage1-acceptance.md](../ports/th13/docs/plans/stage1-acceptance.md) | Stage 1 全链路验收合同 |
 | 作品源码文档 | [ports/th13/docs/plans/title-anm-blueprint.md](../ports/th13/docs/plans/title-anm-blueprint.md) | th13 主菜单 ANM 蓝图（title.anm / titlev.anm 脚本号总表与重锚方案） |
 | 作品源码文档 | [ports/th13/docs/plans/ui-base.md](../ports/th13/docs/plans/ui-base.md) | TH13–15 同代引擎 UI 基座移植方案 |
@@ -420,6 +420,7 @@
 | 历史记录 | [archive/th12mp-public-20261028/README.md](../archive/th12mp-public-20261028/README.md) | 星莲船正式发布 |
 | 历史记录 | [archive/th12mp-public-20261028/cn129.md](../archive/th12mp-public-20261028/cn129.md) | 原主站入口同步 |
 | 历史记录 | [archive/th13-mp-sync-20261112/README.md](../archive/th13-mp-sync-20261112/README.md) | TH13 MP 同步修复与提交交接（2026-11-12） |
+| 历史记录 | [archive/th13-scoredat-youmu-20261123/README.md](../archive/th13-scoredat-youmu-20261123/README.md) | TH13 scoreth13.dat 四角色 + 合计列原版直调验证 |
 | 历史记录 | [archive/th14-rollback-20261114/README.md](../archive/th14-rollback-20261114/README.md) | TH14 多人延迟输入验证 |
 | 历史记录 | [archive/th15-bomb-snapshot-memory-20261028/README.md](../archive/th15-bomb-snapshot-memory-20261028/README.md) | TH15 多人放雷快照内存峰值 |
 | 历史记录 | [archive/th15-boss-transfer-20261027/README.md](../archive/th15-boss-transfer-20261027/README.md) | TH15 多人：共享碎片与 Boss 入场输入 |

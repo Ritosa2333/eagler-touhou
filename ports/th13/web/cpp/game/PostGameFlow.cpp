@@ -14,12 +14,10 @@ void PostGameFlow::enter(OverlayState next) {
 
 void PostGameFlow::apply_stage_clear_bonus() {
     // 0x42abf0：bonus = 当前关号 × 1,000,000（递增前的 DAT_004be81c）；
-    // +0x2ac 覆盖写、be7c0 += bonus/10 封顶；+0x180|=0x100（HUD 通关演出）
-    // 与 stagectx+0x110 fade VM 的视觉面留 TODO（结算窗 oracle 一起锚定）。
+    // +0x2ac 覆盖写、be7c0 += bonus/10 封顶。
     const i32 bonus = stage_clear_bonus(progress_.stage);
     progress_.stage_clear_bonus = bonus;
     score_.score = i32(add_bonus_capped(u32(score_.score), bonus));
-    // 通关 HUD 闪烁位（+0x180 bit8）——HUD 侧消费 TODO。
 }
 
 void PostGameFlow::on_stage_clear() {
@@ -41,8 +39,7 @@ void PostGameFlow::on_stage_clear() {
                                               player_.bombs);
             score_.score = i32(add_bonus_capped(u32(score_.score), bonus));
             progress_.stage_clear_bonus += bonus;  // +0x2ac 累计
-            // 通关次数 / 无续关通关计数（score 块 +0x7c8/+0x7e4，练习不记）
-            // —— ScoreFile 落档期 TODO。
+            // 通关次数 / 无续关通关计数（score 块 +0x7c8/+0x7e4，练习不记）。
             // 42cd40 checks GameInf+74 immediately after awarding the bonus.
             // Replay/practice opens43e5a0 here; its0x10 freeze also suspends
             // the0x4000 clear sequence. Only ordinary play waits for Ending.
@@ -69,12 +66,10 @@ void PostGameFlow::on_stage_clear() {
         }
         host_.request_destination(0xc);  // DAT_004dcc24 = 0xc
         if (progress_.stage < 7) progress_.stage++;
-        // stage 参数表指针（DAT_004c22dc = 0x4bb4f0+stage*0x7c）与下一关资产
-        // 装载——Application.begin_run 多关化接线 TODO（本类不直接装载）。
+        // stage 参数表指针（DAT_004c22dc = 0x4bb4f0+stage*0x7c）。
         return;
     }
-    // mode 1（Extra）/2（符卡练习）：小分落档（be7d4 槽，ScoreFile TODO）+
-    // 结算B；练习参数非 0 改走结算A（0x42cd40:110-125）。
+    // mode 1（Extra）/2（符卡练习）：结算B；练习参数非 0 改走结算A（0x42cd40:110-125）。
     if (practice) {
         on_practice_end();
     } else {
@@ -84,12 +79,12 @@ void PostGameFlow::on_stage_clear() {
 
 void PostGameFlow::on_game_over() {
     // 0x43f570 骨架：mode0 → 态 0xe（GameOver 展示）；mode≠0 → 0x18（结算B
-    // GameOver 变体）；置 0x10、BGM th128_08、slow rate 记录 TODO。
+    // GameOver 变体）。
     // Live production routing is host-owned: RunScene calls
     // RunSceneServices::request_game_over and Application opens
     // PauseEntrance::GameOver/BGameOver. This method only mirrors the overlay
     // state machine (tests/diagnostics) and does not drive the real menu.
-    host_.bgm(7);  // 「th128_08」（0x43f570:58；音频接线 TODO，先记号）
+    host_.bgm(7);  // 「th128_08」（0x43f570:58）
     const u32 mode = (progress_.run_mode_flags >> 4) & 3;
     if (mode == 0) {
         enter(OverlayState::GameOverShow);
@@ -97,11 +92,9 @@ void PostGameFlow::on_game_over() {
         // Keep the decision source in session state for the pause host.
         if (progress_.continue_stock < 0) progress_.continue_stock = 0;
         // 后续：0x43d650 落分 stage ctx+0x144/刷新 be810 → 0x43f8f0 排名门
-        // → +0x1f8==0 态 0x13 否则态 0xf+建脚本 142。菜单交互/续关执行
-        //（态 0x15：残2/灵2/灵力0/白点200 重置、be7c8++/be844--）TODO。
+        // → +0x1f8==0 态 0x13 否则态 0xf+建脚本 142。
     } else {
         enter(OverlayState::BGameOver);
-        // 0x440960 态 0x18 族菜单交互 TODO。
     }
 }
 
@@ -123,7 +116,7 @@ void PostGameFlow::on_extra_end() {
     if (mode == 2) {
         enter(OverlayState::BSpellVariant);
     } else if (mode == 0) {
-        enter(OverlayState::BShow);  // 0x43d650 落分/BGM th128_08/计速 TODO
+        enter(OverlayState::BShow);
     } else {
         enter(OverlayState::BClear);  // 0x1f：+0x50 后 0x441930 + 0x43d820
                                       // small score 落档 TODO
@@ -135,7 +128,7 @@ void PostGameFlow::update() {
     age_++;
     if (clear_sequence_) {
         // 0x42c550:20-57（GameInf 0x4000 路径）：覆盖层 0x10 激活时不推帧
-        //（返 3）；+0x78 计数 == 0xb4(180) 建淡出任务（视觉 TODO）；
+        //（返 3）；+0x78 计数 == 0xb4(180) 建淡出任务；
         // > 0x17b(379) 出口——练习 → 0x43e5a0，常规 → 请求 0xf 结局。
         if (frozen()) return;
         clear_frame_++;
@@ -157,8 +150,7 @@ void PostGameFlow::update() {
         }
         return;
     }
-    // 结算A/GameOver/结算B 各态的逐帧处理器（0x43e780/0x43fa90/0x440960）
-    // ——菜单导航、名前录入、回放保存：下一阶段随结算窗 oracle 落地。
+    // 结算A/GameOver/结算B 各态的逐帧处理器（0x43e780/0x43fa90/0x440960）。
 }
 
 }  // namespace th13

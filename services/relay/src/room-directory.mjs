@@ -14,6 +14,7 @@ export function publicControlMode(seat) {
 // it prevents accidental multi-tab seats, not multiple accounts/devices.
 export function createRoomDirectory({
   publicNames = false,
+  roomNames = false,
   publicTrack,
   publicProfile,
   rooms,
@@ -72,6 +73,7 @@ export function createRoomDirectory({
     return {
       ...(publicNames ? {publicNames:true} : {}),
       product: match[1],
+      ...(room.lobby.roomName ? {roomName:room.lobby.roomName} : {}),
       listeningTrack: publicTrack?.(room),
       code: match[2],
       phase: room.lobby.phase,
@@ -174,6 +176,7 @@ export function createRoomDirectory({
       version: 1,
       membershipRecovery: true,
       globalRoomCodes: true,
+      roomNames,
       product,
       rooms: page.rooms,
       total: page.total,

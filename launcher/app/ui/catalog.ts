@@ -9,6 +9,7 @@ export const catalogSections = [
   { id: 'feedback', title: '反馈与任务状态', group: '组合' },
   { id: 'replay', title: '列表与播放控制', group: '组合' },
   { id: 'navigation', title: '导航候选', group: '应用' },
+  { id: 'announcements', title: '站点公告', group: '应用' },
   { id: 'modules', title: '页面拆解', group: '应用' },
   { id: 'boundaries', title: '差异与扩展边界', group: '应用' },
   { id: 'checks', title: '验收方式', group: '应用' },
