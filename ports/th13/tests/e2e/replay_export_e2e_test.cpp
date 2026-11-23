@@ -23,7 +23,7 @@
 //         门 → ResultReplaySlot（0x4549d0）→ save_replay_slot(1, "ARINATEI",
 //         pinned)（B 项注入缝；date/slow 自原文件反解）；
 //   验收：读回 CWD 的 th13_01.rpy 与 games/replays/th13_01.rpy 整文件逐字节
-//         比对（首个分歧给偏移+两侧 hex+字段域）；断言 FileStore v6 榜表经
+//         比对（首个分歧给偏移+两侧 hex+字段域）；断言 FileStore 榜表经
 //         record_clear_result_name 落了本局成绩面。
 #include "../harness/test_framework.hpp"
 
@@ -488,7 +488,7 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
     std::printf("# total steps %u\n", steps);
     if (g_state_log) { std::fclose(g_state_log); g_state_log = nullptr; }
 
-    // ---- 4) v6 得分面断言（record_clear_result_name → FileStore 榜表）----
+    // ---- 4) 得分面断言（record_clear_result_name → FileStore 榜表）----
     {
         bool found = false;
         int stage_byte = -1;

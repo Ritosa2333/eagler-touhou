@@ -62,7 +62,7 @@ bool TitleMainMenu::show_menu() {
 }
 
 // Extra 行解锁门（0x44c570 case0：+0x5c40 bit1 非 0 = 解锁；写点 0x416130
-// 通关落档 0x1b26b+char*2 bit0x10，任一角色普通难度通关置位）。宿主未接 =
+// 通关落档 0x1b26b+char*2 bit0x10）。宿主未接 =
 // 禁用（原版无存档行为）。0x416150 无全角色判定——任一角色位即开。
 bool TitleMainMenu::extra_gate() {
     for (i32 character = 0; character < 4; ++character)

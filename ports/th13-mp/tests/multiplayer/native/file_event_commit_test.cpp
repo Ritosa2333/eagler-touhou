@@ -8,7 +8,7 @@
 //
 // 断言命题（工单步骤 (a)-(d) + 风险反例逐条落点）：
 //   F1(b) 吞错档 mark_heard：save 注入失败（TH13_SAVE_PATH 指向不存在目录，
-//     load_v6 缺档=新档、write_save fopen 失败——真实生产失败路径，非伪造
+//     write_save fopen 失败——真实生产失败路径，非伪造
 //     设备）下 commit 不失败、仅落 files.error、静默继续；update-only 段
 //     files 字段不变；双 commit 无重复结算。反例钉面：若被统一为 commit
 //     fail（帧失败档），commit 返回 false 即红——MusicRoom 由静默继续变帧
@@ -72,7 +72,7 @@ constexpr u16 kBootSeed = 0x1B2C;
 constexpr float kFps = 60.0f;
 
 // save 失败注入根：不存在目录下的路径（fopen 必败、对所有用户确定性失败；
-// load_v6 缺档返回 true=新档默认值，boot 不受影响）。测试顺序执行共享进程
+// 缺档返回新档默认值，boot 不受影响）。测试顺序执行共享进程
 // 环境，pin_boot 每次重设 TH13_SAVE_PATH，互不泄漏。
 constexpr const char* kFailDirA = "/nonexistent-t4fe-a/save.bin";
 constexpr const char* kFailDirB = "/nonexistent-t4fe-b/save.bin";

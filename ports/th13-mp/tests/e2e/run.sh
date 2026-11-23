@@ -18,7 +18,7 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-port_dir="$(cd "$script_dir/../.." && pwd)"      # eagler-touhou/ports/th13
+port_dir="$(cd "$script_dir/../.." && pwd)"      # eagler-touhou/ports/th13-mp
 outer_dir="$(cd "$port_dir/../../.." && pwd)"    # 外层仓（games/ artifacts/ 所在）
 cd "$outer_dir"
 [[ "${TH13_E2E_TRACE:-0}" == "1" ]] &&
@@ -58,13 +58,13 @@ fi
 out_dir="$port_dir/tests/e2e/build"
 mkdir -p "$out_dir"
 
-# 游戏源自动发现（game 全量 + sdl 设备层除 BrowserRuntime 外全量）。
+# 游戏源自动发现。
 sources=()
 for source in "$port_dir"/web/cpp/game/*.cpp "$port_dir"/web/cpp/multiplayer/*.cpp; do sources+=("$source"); done
 # 共用网络栈（M7）：Session/NetplayRuntime 链接 common/src/netplay。
 for source in "$port_dir"/../../common/src/netplay/*.cpp; do sources+=("$source"); done
 for name in Application ApplicationTitle ApplicationGame AudioDevice FileStore \
-            FontDevice GraphicsDevice SceneDisplay; do
+            FontDevice GraphicsDevice LanguagePack SceneDisplay; do
   sources+=("$port_dir/web/cpp/sdl/$name.cpp")
 done
 sources+=("$script_dir/native/native_stub.cpp")
