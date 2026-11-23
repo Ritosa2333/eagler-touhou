@@ -5,7 +5,7 @@ import {execFileSync} from 'node:child_process';
 
 // Extend the reviewed, out-of-tree author Relay. Existing deployments and
 // unrelated room products retain their previous settings and behavior.
-const owner='services/relay/src/netplay-relay.mjs',catalog='common/contracts/product-catalog.mjs',receipt='coop-receipt.json';
+const owner='services/relay/src/netplay-relay.mjs',catalog='common/contracts/product-catalog.mjs',spectator='services/relay/src/spectator-stages.mjs',receipt='coop-receipt.json';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 function localCatalog(source){
   const start=source.indexOf('const TH128_PREVIEW_ROOM ='),end=source.indexOf('export const PRODUCT_IDS',start);
@@ -18,6 +18,12 @@ function localCatalog(source){
     room=room.replace(before,after);
   }
   return Buffer.from(source.slice(0,start)+room+source.slice(end));
+}
+function addTh128Spectator(source){
+  const anchor='export const COOPERATIVE_SPECTATOR_MARKERS = Object.freeze({';
+  if(source.split(anchor).length!==2||/\bth128mp\s*:/.test(source)||/0x48\b/i.test(source))
+    throw Error('TH128 spectator marker is not available in the source Relay');
+  return Buffer.from(source.replace(anchor,anchor+'\n  th128mp: 0x48,'));
 }
 function addTh128RoomRules(source,checkout){
   const edits=[
@@ -63,9 +69,10 @@ for(const entry of files){
   if(typeof rel!=='string'||!/^(?:[\w.-]+\/)*[\w.-]+$/.test(rel)||rel.split('/').some(part=>part==='..'||part==='.')||contents.has(rel))throw Error('Invalid Relay fixture filename');
   const path=join(root,rel);if(!inside(root,await realpath(path))||!(await lstat(path)).isFile())throw Error('Relay fixture escapes its source');
   const data=await readFile(path);if(!checkout&&sha(data)!==sha256)throw Error('Relay fixture byte mismatch: '+rel);
-  contents.set(rel,rel===owner?addTh128RoomRules(data.toString('utf8'),checkout):checkout&&rel===catalog?localCatalog(data.toString('utf8')):data);
+  contents.set(rel,rel===owner?addTh128RoomRules(data.toString('utf8'),checkout):checkout&&rel===catalog?localCatalog(data.toString('utf8')):
+    checkout&&rel===spectator?addTh128Spectator(data.toString('utf8')):data);
 }
-if(!contents.has(owner)||!contents.has(catalog))throw Error('Missing author Relay lobby or catalog');
+if(!contents.has(owner)||!contents.has(catalog)||!contents.has(spectator))throw Error('Missing author Relay lobby or catalog');
 await mkdir(target);
 for(const [rel,data] of contents){const path=join(target,rel);await mkdir(dirname(path),{recursive:true});await writeFile(path,data,{flag:'wx'});}
 await writeFile(join(target,receipt),JSON.stringify([...contents].map(([rel,data])=>({rel,sha256:sha(data)})),null,2)+'\n',{flag:'wx'});
