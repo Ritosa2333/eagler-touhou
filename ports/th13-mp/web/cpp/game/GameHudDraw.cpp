@@ -68,8 +68,6 @@ void GameHud::update_score() {
     if (progress.high_score < displayed_score) {
         progress.run_mode_flags |= 4; // 0042a370:36 DAT_004be830 |= 4（原版依据，保留）
         progress.high_score_extra = progress.continues; // 0042a370:37 be814 = be7c8（原版依据，保留）
-        // 端口自认 legacy 投影镜像：0042a370 无 player.mode_flags 对应字段，
-        // 无独立原版依据；仅为兼容既有 HUD 投影保留，不参与 be810 写入。
         player.mode_flags |= 4;
         progress.high_score = displayed_score; // 0042a370:38 be810 = max(be810, ctx+0x144)
     }

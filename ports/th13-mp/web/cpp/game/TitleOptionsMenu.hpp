@@ -15,7 +15,7 @@
 //   百位仅 v≥100 显示、十位仅 v≥10 显示（+0x18 bit1，0x44f3e0/0x44f640
 //   实读；bit0 归脚本 op300/label 跳转，0044ed70 不触碰）。原版 root1 由
 //   标题初始化常驻；移植按 build_difficulty 重入惯例开屏建、离屏 label1 收
-//   （视觉等价，生命周期差异登记 integration.md）。
+//   （视觉等价）。
 // 音量语义（原版曲线）：BGM = DAT_004dc892 → DAT_004e476c（0x476234 门 +
 // (1-(v/100-1)²) 曲线，AudioDevice::music_volume 已实现）；SE = DAT_004dc893
 // → DAT_004e4770（0x4613f3 每 voice：se==0 静音 -10000，否则

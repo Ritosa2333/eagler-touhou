@@ -3,8 +3,8 @@
 // "TH13SAVE" | u32 version | u32 cleared_mask | i32 bgm | i32 effect | u32[3]
 // v2 appends 16 stage-played bytes (character*4+rank, bits0..5).
 // v3 appends 5*i16 pad bindings and 2 padding bytes.
-// v4 preserves offsets 0..63, separates Extra at +64, stores legacy ambiguity
-// at +68, then 127 records of name[128] + five columns of four i32 counters.
+// v4 preserves offsets 0..63, separates Extra at +64,
+// then 127 records of name[128] + five columns of four i32 counters.
 // v5 keeps the complete v4 prefix and appends four ordinary character columns
 // (six original ranking tables, play/time/clear counters) and an immutable full
 // archive of the imported v1-v4 file. Missing old ordinary history is explicit.

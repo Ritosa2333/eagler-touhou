@@ -512,8 +512,7 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     if (scheduler.add(score_popup_draw, FramePass::Draw, 45) < 0)
         return fail("Score popup draw callback registration failed");
     // S3：对话资产（st0Na-d.msg 按角色四份——stage 表 +0x14..+0x20 以
-    // be7bc+be7b8 选份，0x424fd0:27）。缺失时降级为对话缺席（519 即过、
-    // 事件契约行为不变）；浏览器侧资产清单补 st0N[a-d].msg 属接线 TODO。
+    // be7bc+be7b8 选份，0x424fd0:27）。缺失时降级为对话缺席（事件契约行为不变）。
     char msg_name[16];
     std::snprintf(msg_name, sizeof msg_name, "st%02d%c.msg", int(progress.stage),
                   'a' + (progress.character & 3));

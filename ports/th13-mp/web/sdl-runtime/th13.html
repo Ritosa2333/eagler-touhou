@@ -1,8 +1,6 @@
 <!doctype html>
 <!-- th13 神灵庙网页运行时：装载挡板 → 初始化 → RAF 主循环。
-     资源经 fetch 进 MEMFS /assets（七个常驻 bank + front + Stage1 的
-     enemy/st01enm/bullet/pl0X 与 st01.ecl/default.ecl/st01bs.ecl，
-     由 prepare-assets.mjs 从 raw 解包目录拷贝到 ./assets）。
+     资源经 fetch 进 MEMFS /assets，由 prepare-assets.mjs 生成。
      输入：SDL3 emscripten 端口收键盘（Z 射击/X 炸弹/Shift 低速/方向/Esc 暂停）。 -->
 <html lang="zh">
 <head>
@@ -56,7 +54,6 @@ try {
   });
   window.mod = mod;  // 调试面：控制台可直查运行时状态
   // ---- 资源进 MEMFS /assets（缺件即启动失败，不静默降级）----
-  // 与 sdl-runtime/prepare-assets.mjs 的 files 保持一致（单一事实源，改一处必改另一处）
   const assets = runtimeAssets;
   mod.FS.mkdirTree('/assets');
   for (const name of assets) {
