@@ -1,0 +1,2 @@
+# Unified diff context can contain a literal space on an empty line.
+native/world-coop.patch whitespace=-blank-at-eol

@@ -1,0 +1,8 @@
+// Reuse the private dependency install and React build cache, not a previous generation's policy.
+import {readFile,writeFile} from 'node:fs/promises';import {join,resolve,relative,isAbsolute,sep} from 'node:path';import {createHash} from 'node:crypto';
+const [dst,src]=process.argv.slice(2).map(p=>resolve(p)),get=async p=>JSON.parse(await readFile(p,'utf8')),sha=b=>createHash('sha256').update(b).digest('hex');const old=await get(join(dst,'coop-source.json')),next=await get(join(src,'coop-source.json'));
+if(old.schema!=='th128-local-coop-launcher-source/1'||next.schema!==old.schema||old.profile!==next.profile||dst===src)throw Error('Needs two distinct private staged launchers');
+if((await readFile(join(src,'launcher/bun.lock'))).compare(await readFile(join(dst,'launcher/bun.lock'))))throw Error('Private dependency locks differ');
+const edits=[];for(const [p,r] of Object.entries(next.policyEdits)){if(isAbsolute(p)||p.split(/[\\/]/).includes('..')||(old.policyEdits[p]&&r.source!==old.policyEdits[p].source))throw Error('Unexpected staged source: '+p);
+ const a=await readFile(join(dst,p)),b=await readFile(join(src,p));if(sha(a)!==(old.policyEdits[p]?.local??r.source)||sha(b)!==r.local)throw Error('Private build has an unrelated edit '+p);if(!a.equals(b))edits.push([p,b]);}
+if(Object.keys(old.policyEdits).some(p=>!Object.hasOwn(next.policyEdits,p)))throw Error('Overlay inventory changed');for(const [p,b] of edits)await writeFile(join(dst,p),b);await writeFile(join(dst,'coop-source.json'),await readFile(join(src,'coop-source.json')));console.log(JSON.stringify({retargeted:edits.map(([p])=>p),generation:next.generation}));

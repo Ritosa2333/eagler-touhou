@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TH128 多人原生验证</title>
+<link rel="stylesheet" href="/ports/th128-mp/tests/browser/preview.css">
+<main>
+  <h1>TH128 多人原生验证</h1>
+  <p id="status" role="status">准备浏览器资源</p>
+  <div id="menu" aria-label="验证面板">
+    <button id="join" disabled>加入席位</button>
+    <button id="left" disabled>方向：左</button>
+    <button id="neutral" disabled>方向：无</button>
+    <button id="right" disabled>方向：右</button>
+    <button id="defer" disabled>延迟下一包</button>
+    <button id="step" disabled>推进一帧</button>
+    <button id="release" disabled>送达延迟包</button>
+    <button id="restart" disabled>同意重开</button>
+    <button id="replay" disabled>验证上局录像</button>
+    <button id="close">退出验证</button>
+  </div>
+  <canvas id="game" width="1280" height="960" aria-label="本席原生游戏画面"></canvas>
+  <pre id="evidence" aria-label="原生状态"></pre>
+</main>
+<script type="module" src="/ports/th128-mp/tests/browser/preview-page.mjs"></script>
+</html>

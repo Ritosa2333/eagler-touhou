@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="eagler-data-provider" content="retail-memory">
+  <title>妖精大战争 · 多人</title>
+  <link rel="stylesheet" href="./managed.css">
+</head>
+<body>
+  <main aria-label="妖精大战争多人游戏">
+    <canvas id="game" width="1280" height="960" tabindex="0" aria-label="游戏画面"></canvas>
+    <canvas id="stage-text" width="1280" height="960" aria-hidden="true" hidden></canvas>
+    <p id="game-over" aria-label="当前画面玩家的已确认状态">Game Over</p>
+    <nav id="title-controls" aria-label="标题操作" hidden><button id="title-replay" type="button" aria-label="打开多人录像"></button></nav>
+    <section id="replay-menu" aria-label="多人录像" hidden>
+      <label id="replay-open">打开多人录像 <input id="replay-file" type="file" accept=".th128mp"></label>
+      <label id="replay-shelf" hidden>本机多人录像 <select id="replay-slots" aria-label="本机多人录像"></select><button id="replay-slot-open" type="button">播放</button><button id="replay-slot-download" type="button">下载文件</button></label>
+      <div id="replay-controls" hidden>
+        <button id="replay-toggle" type="button">播放</button>
+        <button id="replay-restart" type="button">从头播放</button>
+        <button id="replay-seat" type="button">切换到 P2</button>
+        <label>定位 <input id="replay-seek" type="range" min="0" max="0" step="1"></label>
+        <span id="replay-frame"></span>
+      </div>
+      <button id="replay-return" type="button" hidden>返回游戏标题</button>
+      <p id="replay-status" role="status" hidden></p>
+    </section>
+    <section id="coop-result" hidden aria-label="本局操作">
+      <strong id="coop-result-label" role="status"></strong>
+      <button id="save-replay" type="button" disabled>保存本局多人录像</button>
+      <button id="coop-download-replay" type="button" disabled>下载录像文件</button>
+      <button id="coop-review" type="button" disabled>回看本局</button>
+      <button id="coop-open-replay" type="button">打开录像</button>
+      <button id="coop-back-room" type="button">返回房间</button>
+    </section>
+    <output id="status" role="status">正在读取游戏资源…</output>
+  </main>
+  <script type="module" src="./managed-entry.mjs"></script>
+</body>
+</html>

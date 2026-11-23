@@ -1,0 +1,4 @@
+:root{color-scheme:dark;font:16px system-ui;background:#131820;color:#eff4f8}
+body{margin:10px}h1{font-size:1rem;margin:.25rem 0}p{margin:.25rem 0}
+main{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+iframe{display:block;width:100%;height:calc(100vh - 58px);border:1px solid #67768a}

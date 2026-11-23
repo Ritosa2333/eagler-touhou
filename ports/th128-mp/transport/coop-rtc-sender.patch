@@ -1,0 +1,54 @@
+--- a/common/src/netplay/BrowserPeerTransport.cpp
++++ b/common/src/netplay/BrowserPeerTransport.cpp
+@@ -946,10 +946,11 @@
+                     try { this.signal?.close(1000, 'relay route selected'); } catch {}
+                 }
+             },
+-            receiveBinary(data) {
++            receiveBinary(data, rtcSeat = null) {
+                 if (this.closed || this.failed || this.disconnected) return;
+-                const size = data instanceof Blob ? data.size : data?.byteLength;
+-                if (!Number.isSafeInteger(size) || size <= 0) return;
++                const payloadSize = data instanceof Blob ? data.size : data?.byteLength;
++                const size = payloadSize + (rtcSeat === null ? 0 : 2);
++                if (!Number.isSafeInteger(payloadSize) || payloadSize <= 0) return;
+                 // Include in-flight Blob conversions and check before copying.
+                 // A suspended simulation must not accumulate unlimited input.
+                 if (this.received.length - this.receivedHead + this.pendingReceivedPackets >= this.maxReceivedPackets ||
+@@ -963,6 +964,11 @@
+                 }
+                 const enqueue = packet => {
+                     if (this.closed || this.failed || this.disconnected) return;
++                    if (rtcSeat !== null) {
++                        const framed = new Uint8Array(packet.byteLength + 2);
++                        framed[0] = 0xec; framed[1] = rtcSeat; framed.set(packet, 2);
++                        packet = framed;
++                    }
+                     this.receivedBytes += packet.byteLength;
+                     this.received.push(packet);
+                     this.onReceive?.();
+@@ -1049,7 +1055,7 @@
+                     this.clearPeerRecovery(peer);
+                     peer.restartAttempts = 0;
+                 }
+-                if (!this.route || this.route === 'rtc') this.receiveBinary(data);
++                if (!this.route || this.route === 'rtc') this.receiveBinary(data, peer.coopSeat);
+             },
+             maybeReportRtcReady() {
+                 if (this.rtcReadySent || this.peers.size !== this.playerCount - 1) return;
+@@ -1319,6 +1325,7 @@
+                 } catch {}
+             },
+             async ensurePeer(peerId) {
++                if (!Number.isInteger(peerId) || peerId < 0 || peerId >= this.playerCount) return;
+                 if (peerId === this.localPlayer || this.peers.has(peerId) || typeof RTCPeerConnection !== 'function') return;
+                 if (this.preparedRtc && this.preparedRtc.iceServers !== this.iceServers) this.closePreparedRtc();
+                 const pc = this.preparedRtc?.pc ?? new RTCPeerConnection({iceServers: this.iceServers,
+@@ -1331,6 +1338,7 @@
+                     restartInFlight: false, restartAttempts: 0, recoveryPending: false,
+                     lastReceivedAt: Date.now(), lastInputSentAt: 0, restartObservedAt: 0
+                 };
++                Object.defineProperty(peer, 'coopSeat', {value: peerId});
+                 this.peers.set(peerId, peer);
+                 peer.primary = {pc: peer.pc, inputDc: null, controlDc: null, path: null};
+                 peer.adaptive = createAdaptivePeerRoute({

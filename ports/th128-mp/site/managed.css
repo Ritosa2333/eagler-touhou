@@ -1,0 +1,23 @@
+:root { color-scheme: dark; background: #000; font: 1rem system-ui, sans-serif; }
+html, body, main { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+main { position: relative; display: grid; place-items: center; }
+canvas { width: min(100vw, calc(100vh * 4 / 3)); height: min(100vh, calc(100vw * 3 / 4)); outline: 0; object-fit: contain; }
+#stage-text { position: absolute; pointer-events: none; }
+#stage-text[hidden] { display: none; }
+#game-over { display: none; position: absolute; inset: 3rem auto auto; margin: 0; padding: .4rem .75rem; background: #000d; color: #fff; pointer-events: none; }
+canvas[data-game-over] + #game-over { display: block; }
+#title-controls { position:absolute; width:min(100vw, calc(100vh * 4 / 3)); aspect-ratio:4/3; pointer-events:none; }
+#title-controls[hidden] { display:none; }
+#title-replay { position:absolute; left:61%; top:59%; width:20%; height:5.5%; background:none; padding:0; border:0; cursor:pointer; pointer-events:auto; }
+#title-replay:focus-visible { outline:2px solid #b2e7ff; outline-offset:2px; }
+#replay-menu { position: absolute; inset: .75rem auto auto .75rem; padding: .4rem .65rem; max-width: min(33rem, calc(100% - 2rem)); background: #000d; color: #fff; font-size: .875rem; }
+#replay-menu[hidden], #replay-menu [hidden] { display: none; }
+#replay-menu input[type="file"] { max-width: min(16rem, 46vw); }
+#replay-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .5rem; margin-top: .45rem; }
+#replay-controls label { display: flex; align-items: center; gap: .3rem; }
+#replay-controls input[type="range"] { max-width: 25vw; }
+#replay-status { margin: .35rem 0 0; overflow-wrap: anywhere; }
+output { position: absolute; inset: auto 1rem 1rem; text-align: center; color: #fff; background: #000d; padding: .5rem; }
+output[hidden] { display: none; }
+
+#coop-result{position:absolute;z-index:2;top:59%;display:flex;align-items:center;gap:.45rem;background:#141423ee;color:#fff;padding:.6rem .8rem;border-radius:.4rem}#coop-result[hidden],#coop-result [hidden]{display:none}#coop-result button{padding:.25rem .5rem}

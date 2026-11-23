@@ -1,0 +1,9 @@
+:root{color-scheme:dark;font:16px system-ui;background:#121820;color:#f1f4f8}
+body{margin:0}main{max-width:960px;margin:auto;padding:12px}
+h1{font-size:1.15rem;margin:.3em 0}p{margin:.4em 0}
+#menu{display:flex;gap:6px;flex-wrap:wrap;margin-block:8px}
+button{font:inherit;border:1px solid #60728a;border-radius:5px;padding:5px 9px;color:inherit;background:#243447}
+button:disabled{opacity:.55}canvas{display:block;width:min(100%,640px);height:auto;aspect-ratio:4/3;background:#000}
+pre{max-width:100%;overflow-wrap:anywhere;white-space:pre-wrap;font-size:.75rem}
+#touch-pad{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;touch-action:none}
+#touch-pad[hidden]{display:none}#touch-pad button{min-width:2.5rem;touch-action:none;user-select:none}
