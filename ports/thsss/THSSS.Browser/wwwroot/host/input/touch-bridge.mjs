@@ -181,6 +181,10 @@ export function createTouchBridge({ keys, surface, options, shift, residual, now
     const current = scene || "play";
     keys.setKey("ControlKey", gestures.skipping(now(), scene), "dialogue-skip");
     releaseArrows();
+    if (settings().touchEnabled === false) {
+      movement.clear();
+      return;
+    }
     const modeName = settings().touchMovementMode;
     // Menus need arrow keys; free-stick shifts stay play-only.
     if (current !== "play") {

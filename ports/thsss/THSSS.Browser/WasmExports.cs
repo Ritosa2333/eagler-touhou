@@ -160,6 +160,19 @@ namespace Thsss.Browser
 			}
 		}
 
+		[UnmanagedCallersOnly(EntryPoint = "thsss_set_touch_input_enabled")]
+		public static void SetTouchInputEnabled(int enabled)
+		{
+			try
+			{
+				GameHost.SetTouchInputEnabled(enabled != 0);
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+			}
+		}
+
 		[UnmanagedCallersOnly(EntryPoint = "thsss_touch_shift")]
 		public static int TouchShift(float dx, float dy, int unlimited)
 		{

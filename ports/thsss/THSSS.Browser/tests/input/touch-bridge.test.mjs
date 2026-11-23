@@ -66,6 +66,14 @@ test("a launcher fire toggle does not shoot with touch controls disabled", () =>
   assert.equal(keys.isDown("Z"), false);
 });
 
+test("disabled touch controls do not shift the ship from a play drag", () => {
+  const play = harness({ touchEnabled: false, touchMovementMode: "touch", touchSensitivity: 100 });
+  play.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });
+  play.bridge.direct({ type: "move", id: 1, x: 0.35, y: 0.5 });
+  play.bridge.presented();
+  assert.equal(play.shifts.length, 0);
+});
+
 test("a play drag shifts along the path and clears on lift", () => {
   const play = harness({ touchMovementMode: "touch", touchSensitivity: 100 });
   play.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });

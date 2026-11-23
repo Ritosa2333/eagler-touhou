@@ -25,29 +25,21 @@ index ba6f077..1524140 100644
  		Background3D.Ctrl();
 
 diff --git a/Shooting/MenuGroup_ReplayNamer.cs b/Shooting/MenuGroup_ReplayNamer.cs
-index 1c8d95b..0109211 100644
+index 1c8d95b..54171fa 100644
 --- a/Shooting/MenuGroup_ReplayNamer.cs
 +++ b/Shooting/MenuGroup_ReplayNamer.cs
-@@ -180,7 +180,15 @@ internal class MenuGroup_ReplayNamer : BaseMenuGroup
+@@ -180,7 +180,7 @@ internal class MenuGroup_ReplayNamer : BaseMenuGroup
  			{
  				repInfo.PlayerName += PlayerName[i];
  			}
 -			StageData.Rep.SaveRpy(".\\Replay\\thSSS_" + RepMenuItem.Name + ".rpy", repInfo);
-+			if (StageData.GlobalData.LastState != null && StageData.GlobalData.LastState.StageData != null)
-+			{
-+				repInfo.TouchDelta = StageData.GlobalData.LastState.StageData.RepInfo.TouchDelta;
-+				if (StageData.GlobalData.LastState.StageData.MyPlane != null && StageData.GlobalData.LastState.StageData.MyPlane.TouchReplayUsed)
-+				{
-+					repInfo.TouchDelta = true;
-+				}
-+			}
-+			StageData.Rep.SaveRpy(Replay.SlotPath(RepMenuItem.Name, repInfo.TouchDelta), repInfo);
++			StageData.Rep.SaveRpy(Replay.SlotPath(RepMenuItem.Name, StageData.Rep.TouchStream), repInfo);
  			RepMenuItem.Description = ((DescriptionMenuItem)MenuTilte).Description;
  			OnRemoveMenu = TimeMain + 20;
  			TransparentVelocity = -15f;
 
 diff --git a/Shooting/MenuGroup_ReplaySaver.cs b/Shooting/MenuGroup_ReplaySaver.cs
-index fad3566..23beb23 100644
+index fad3566..830209b 100644
 --- a/Shooting/MenuGroup_ReplaySaver.cs
 +++ b/Shooting/MenuGroup_ReplaySaver.cs
 @@ -23,7 +23,7 @@ internal class MenuGroup_ReplaySaver : BaseMenuGroup
@@ -59,20 +51,12 @@ index fad3566..23beb23 100644
  		}
  		MenuItemList[MenuSelectIndex].Selected = true;
  	}
-@@ -99,7 +99,15 @@ internal class MenuGroup_ReplaySaver : BaseMenuGroup
+@@ -99,7 +99,7 @@ internal class MenuGroup_ReplaySaver : BaseMenuGroup
  			{
  				ReplayInfo repInfo = StageData.GlobalData.LastState.StageData.RepInfo;
  				repInfo.PlayerName = "autosave";
 -				StageData.Rep.SaveRpy(".\\Replay\\AutoSave.rpy", repInfo);
-+				if (StageData.GlobalData.LastState != null && StageData.GlobalData.LastState.StageData != null)
-+				{
-+					repInfo.TouchDelta = StageData.GlobalData.LastState.StageData.RepInfo.TouchDelta;
-+					if (StageData.GlobalData.LastState.StageData.MyPlane != null && StageData.GlobalData.LastState.StageData.MyPlane.TouchReplayUsed)
-+					{
-+						repInfo.TouchDelta = true;
-+					}
-+				}
-+				StageData.Rep.SaveRpy(Replay.AutoSavePath(repInfo.TouchDelta), repInfo);
++				StageData.Rep.SaveRpy(Replay.AutoSavePath(StageData.Rep.TouchStream), repInfo);
  			}
  			StageData.StateSwitchData = new StateSwitchDataPackage
  			{
@@ -101,7 +85,7 @@ index 5a53011..7832876 100644
  			StageData.RepInfo = replayInfo;
 
 diff --git a/Shooting/Replay.cs b/Shooting/Replay.cs
-index 375a193..25e5967 100644
+index 375a193..b093be5 100644
 --- a/Shooting/Replay.cs
 +++ b/Shooting/Replay.cs
 @@ -10,6 +10,8 @@ public class Replay
@@ -147,7 +131,7 @@ index 375a193..25e5967 100644
  
  	public static ReplayInfo ReadTitle(string fileName)
  	{
-@@ -44,12 +71,28 @@ public class Replay
+@@ -44,12 +71,27 @@ public class Replay
  				Rank = (DifficultLevel)Convert.ToInt32(array[num + 7]),
  				StartStage = array[num + 8],
  				LastStage = array[num + 9],
@@ -159,7 +143,6 @@ index 375a193..25e5967 100644
 +			int i = num + 11;
 +			if (i < array.Length && array[i] == "TouchDelta=1")
 +			{
-+				replayInfo.TouchDelta = true;
 +				i++;
 +			}
 +			if (i < array.Length && array[i].StartsWith("Prac=", StringComparison.Ordinal))
@@ -178,7 +161,7 @@ index 375a193..25e5967 100644
  				MyPlaneInfo item = new MyPlaneInfo
  				{
  					Life = Convert.ToInt32(array2[0]),
-@@ -87,28 +130,50 @@ public class Replay
+@@ -87,28 +129,62 @@ public class Replay
  		ReplayData.WriteByte(value);
  	}
  
@@ -212,17 +195,29 @@ index 375a193..25e5967 100644
  	public void CreatRpy()
  	{
 -		ReplayData = new FileStream(".\\Replay\\AutoSave.rpy", FileMode.Create);
-+		TouchStream = true;
++		TouchStream = Thsss.Browser.GameHost.TouchInputEnabled;
 +		Directory.CreateDirectory(".\\Replay");
-+		ReplayData = new FileStream(AutoSavePath(touch: true), FileMode.Create);
++		ReplayData = new FileStream(AutoSavePath(TouchStream), FileMode.Create);
  	}
  
  	public void SaveRpy(string fileName, ReplayInfo repInfo)
  	{
 -		if (ReplayData.CanRead)
-+		bool touch = repInfo.TouchDelta;
-+		string autoTouch = AutoSavePath(touch: true);
-+		string autoClassic = AutoSavePath(touch: false);
++		bool touch = TouchStream;
++		repInfo.TouchDelta = touch;
++		string source = AutoSavePath(touch);
++		string target = fileName;
++		if (touch)
++		{
++			if (!IsTouchReplayPath(target))
++			{
++				target = Path.ChangeExtension(target, ".trpy");
++			}
++		}
++		else if (IsTouchReplayPath(target))
++		{
++			target = Path.ChangeExtension(target, ".rpy");
++		}
 +		if (ReplayData != null && ReplayData.CanWrite)
  		{
  			ReplayData.WriteByte(240);
@@ -237,7 +232,7 @@ index 375a193..25e5967 100644
  			tmp += repInfo.PlayerName;
  			tmp += "\r\n";
  			tmp += DateTime.Now.Date.ToString("yy'/'MM'/'dd");
-@@ -119,71 +184,110 @@ public class Replay
+@@ -119,71 +195,45 @@ public class Replay
  			tmp += "\r\n";
  			tmp += repInfo.WeaponType.ToString();
  			tmp += "\r\n";
@@ -252,7 +247,7 @@ index 375a193..25e5967 100644
  			tmp += "\r\n";
  			tmp += repInfo.SlowRate;
 -			repInfo.MyPlaneData.ForEach((MyPlaneInfo x) =>
-+			if (TouchStream)
++			if (touch)
 +			{
 +				tmp += "\r\nTouchDelta=1";
 +			}
@@ -312,27 +307,6 @@ index 375a193..25e5967 100644
  			streamWriter.Close();
  			ReplayData.Close();
 +			ReplayData = null;
-+		}
-+		string source = autoTouch;
-+		string target = fileName;
-+		if (touch)
-+		{
-+			if (!IsTouchReplayPath(target))
-+			{
-+				target = Path.ChangeExtension(target, ".trpy");
-+			}
-+		}
-+		else
-+		{
-+			if (File.Exists(autoTouch))
-+			{
-+				StripTouchStreamToClassic(autoTouch, autoClassic);
-+			}
-+			source = autoClassic;
-+			if (IsTouchReplayPath(target))
-+			{
-+				target = Path.ChangeExtension(target, ".rpy");
-+			}
  		}
 -		if (fileName != ".\\Replay\\AutoSave.rpy")
 +		if (!string.Equals(Path.GetFullPath(source), Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase) && File.Exists(source))
@@ -342,54 +316,10 @@ index 375a193..25e5967 100644
  		}
  	}
  
-+	private static void StripTouchStreamToClassic(string touchPath, string classicPath)
-+	{
-+		using FileStream input = new FileStream(touchPath, FileMode.Open, FileAccess.Read);
-+		using FileStream output = new FileStream(classicPath, FileMode.Create, FileAccess.Write);
-+		while (true)
-+		{
-+			int b0 = input.ReadByte();
-+			if (b0 < 0)
-+			{
-+				break;
-+			}
-+			int b1 = input.ReadByte();
-+			if (b1 < 0)
-+			{
-+				break;
-+			}
-+			int key = b0 + (b1 << 8);
-+			output.WriteByte((byte)b0);
-+			output.WriteByte((byte)b1);
-+			if (key == 4080)
-+			{
-+				byte[] buffer = new byte[4096];
-+				int read;
-+				while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
-+				{
-+					output.Write(buffer, 0, read);
-+				}
-+				break;
-+			}
-+			if (key != 57358 && input.Position + 4 <= input.Length)
-+			{
-+				input.Position += 4;
-+			}
-+		}
-+		string text = File.ReadAllText(classicPath, Encoding.Default);
-+		text = text.Replace("\r\nTouchDelta=1", "");
-+		File.WriteAllText(classicPath, text, Encoding.Default);
-+	}
-+
  	public void LoadRpy(string fileName)
  	{
  		FileName = fileName;
 +		TouchStream = IsTouchReplayPath(fileName);
-+		ReplayInfo info = ReadTitle(fileName);
-+		if (info.TouchDelta)
-+		{
-+			TouchStream = true;
-+		}
  		FileInfo fileInfo = new FileInfo(fileName);
  		ReplayData = fileInfo.OpenRead();
  	}

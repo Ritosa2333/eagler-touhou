@@ -173,6 +173,13 @@ namespace Thsss.Browser
 
 		private static float touchResidualY;
 
+		public static bool TouchInputEnabled { get; private set; }
+
+		public static void SetTouchInputEnabled(bool enabled)
+		{
+			TouchInputEnabled = enabled;
+		}
+
 		public static void StoreTouchResidual(float x, float y)
 		{
 			touchResidualX = x;
@@ -194,7 +201,7 @@ namespace Thsss.Browser
 
 		public static int TouchShift(float dx, float dy, int unlimited)
 		{
-			if (game == null)
+			if (!TouchInputEnabled || game == null)
 			{
 				return 0;
 			}

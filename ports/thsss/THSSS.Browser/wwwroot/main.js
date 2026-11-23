@@ -417,6 +417,9 @@ export async function prepareRuntime(options = {}) {
     FpsUnlocked: () => module._thsss_fps_unlocked(),
     SetFpsUnlocked: (value) => module._thsss_set_fps_unlocked(value),
     InputSurface: typeof module._thsss_input_surface === "function" ? () => module._thsss_input_surface() : null,
+    SetTouchInputEnabled: typeof module._thsss_set_touch_input_enabled === "function"
+      ? (enabled) => module._thsss_set_touch_input_enabled(enabled ? 1 : 0)
+      : null,
     TouchShift: typeof module._thsss_touch_shift === "function"
       ? (dx, dy, unlimited) => module._thsss_touch_shift(dx, dy, unlimited ? 1 : 0)
       : null,
@@ -490,6 +493,9 @@ export async function launchRuntime(runtime, hooks = {}) {
   const host = runtime.host;
   runtime.host = host;
   window.__thsssHost = true;
+  if (typeof host.SetTouchInputEnabled === "function") {
+    host.SetTouchInputEnabled(runtime.options && runtime.options.touchEnabled === true);
+  }
   const standaloneKeys = runtime.captureKeys ? bootKeys(host.OnKey) : null;
   const optionSet = !!(runtime.options && Object.prototype.hasOwnProperty.call(runtime.options, "limitPresentationTo60"));
   const fpsToggle = document.getElementById("unlock-fps");
