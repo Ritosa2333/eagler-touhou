@@ -46,6 +46,6 @@ export async function verifyBrowserResult({watcher,players,seats,invite,child,un
    await (await played.f.$('main')).screenshot({path:join(work,'original-dialogue.png')});proof.dialoguePixels=true;
    await frame.click('#replay-return');await waitChild(reviewer,v=>v.status.scene==='title','title after original dialogue replay');
  }
- for(const p of [reviewer,...party.filter(p=>p!==reviewer)]){await ui(p,'#coop-back-room');await waitChild(p,async v=>v.status.scene==='title'&&v.f.evaluate(()=>document.querySelector('#coop-result').hidden),'result released to original room title');await p.waitForFunction(()=>{const back=document.querySelector('#mpLeaveRoom');return !!back&&back.getBoundingClientRect().width>0&&document.body.innerText.includes('房间 / 难度设置');},{timeout:45000});}
+ for(const p of [reviewer,...party.filter(p=>p!==reviewer)]){await ui(p,'#coop-back-room');await waitChild(p,async v=>v.status.scene==='title'&&v.f.evaluate(()=>document.querySelector('#coop-result').hidden),'result released to original room title');await p.waitForFunction(()=>{const back=document.querySelector('#mpLeaveRoom');return !!back&&back.getBoundingClientRect().width>0&&!!document.querySelector('#mpSeatStage');},{timeout:45000});}
  await note('everyone returned independently through author room owner');return proof;
 }

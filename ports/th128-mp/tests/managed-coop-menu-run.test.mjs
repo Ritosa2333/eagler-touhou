@@ -9,7 +9,7 @@ test('two managed seats paint local selection only at the shared fence, restart,
   const build={coreSHA256:'a'.repeat(64),resourceSHA256:'b'.repeat(64)},rules=makeCoopRules({schema:'th128-coop/1',mode:'same-stage-coop',matchId:'menu-run',epoch:1,players:2,route:'A',difficulty:1,challengeMode:false,seed:421,inputDelay:0,rollbackWindow:0,...build});
   const window=new EventTarget(),document=Object.assign(new EventTarget(),{hidden:false,hasFocus:()=>false,body:{}});
   const frames=new Map(),timers=new Map(),life=new AbortController(),queues=[[],[]],packets=[],results=[[],[]],archives=[[],[]],saveMenus=[[],[]],errors=[],displays=[[],[]],inputs=[[],[]];
-  let id=0,time=0;
+  let id=0,time=0,peerReturned=false,pollAfterReturn=0;
   for(const [name,value] of Object.entries({window,document,requestAnimationFrame:fn=>(frames.set(++id,fn),id),cancelAnimationFrame:id=>frames.delete(id),setTimeout:fn=>(timers.set(++id,fn),id),clearTimeout:id=>timers.delete(id)})){
     const descriptor=Object.getOwnPropertyDescriptor(globalThis,name);Object.defineProperty(globalThis,name,{configurable:true,value});
     t.after(()=>{if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name];});
@@ -24,7 +24,7 @@ test('two managed seats paint local selection only at the shared fence, restart,
     openPauseArt:async()=>({frame:state=>state&&{revision:1,records:[],...state},reset(){},close(){}}),
     view:{openWorld:async({epoch})=>({checkpoint(){return 0;},release(){},restore(){},close(){},step(row){inputs[seat].push(row);},
       display(_s,frame,_rev,menu){displays[seat].push({epoch,frame,menu:menu??null});return true;}})},
-    openPeer:async(_room,receive)=>({send(p){packets.push(p);queues[1-seat].push(p);},sendSpectator(){},close(){},async pump(){for(const p of queues[seat].splice(0))await receive(p,1-seat);return {route:'rtc'};}}),
+    openPeer:async(_room,receive)=>({send(p){packets.push(p);queues[1-seat].push(p);},sendSpectator(){},close(){},async pump(){if(seat===1&&peerReturned){pollAfterReturn++;throw Error('RTC control channel closed after the host returned');}for(const p of queues[seat].splice(0))await receive(p,1-seat);return {route:'rtc'};}}),
     present:()=>true,onLocalResult:value=>results[seat].push(value),onReplay:bytes=>archives[seat].push(bytes),onError:e=>errors.push(e)})));
   function paint(){time+=1000/60;const batch=[...frames.values()];frames.clear();for(const fn of batch)fn(time);assert.deepEqual(errors,[]);}
   async function network(){const batch=[...timers.values()];timers.clear();for(const fn of batch)await fn();await turn();assert.deepEqual(errors,[]);}
@@ -49,6 +49,8 @@ test('two managed seats paint local selection only at the shared fence, restart,
     await until(()=>last(1).menu?.replaySave?.phase===1,'in-game save slot menu did not open for the requester');
     assert.equal(saveMenus[0].length,0);assert.equal(saveMenus[1].length,1);
     assert.equal(last(0).menu,null);assert.equal(last(1).frame,last(0).frame,'no new native frames are played in the save menu');
+    peerReturned=true;await network();paint();assert.equal(pollAfterReturn,1);
+    assert.equal(last(1).menu?.replaySave?.phase,1,'one player returning must not close a teammate’s sealed replay menu');
     tap(1,'Escape');await until(()=>!last(1).menu,'cancel returns to the sealed result without saving');
   }finally{for(const run of runs)run.close();}
   assert.equal(timers.size,0);assert.equal(frames.size,0);

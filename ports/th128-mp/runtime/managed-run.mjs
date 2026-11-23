@@ -237,9 +237,12 @@ export async function launchManagedRun({room,view,build,signal,openPeer,present,
         if(!status.startup.canStart&&performance.now()>deadline)throw new Error('联机双方未在时限内就绪');
         if(!live.aborted)networkTask=setTimeout(network,8);
       }catch(error){
-        // A peer can leave while this player is reading the ending or naming
-        // the replay. Its tape is already sealed; no further peer is needed.
-        if(!closed&&cooperative&&match.status().result==='cleared')return;
+        // After a confirmed result, peers can independently return to their
+        // rooms. A sealed tape is local and must survive the RTC lane closing.
+        if(!closed&&cooperative){
+          const state=match.status();
+          if(state.result&&state.history.end&&match.replayReceipt()?.epoch===state.epoch)return;
+        }
         fail(error);
       }
     }
