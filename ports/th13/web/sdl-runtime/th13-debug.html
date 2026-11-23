@@ -3,7 +3,7 @@
      启动序同 th13.html（装载挡板 → 启动品牌 → 初始化），但不启动 rAF 主循环；
      会话由 th13_debug_replay 直入对局（录像头决定难度/角色/关卡），此后每调用
      一次 th13_debug_frame 恰推进一个游戏帧（固定 1/60 步长，不经帧钟）。
-     资源供给（除 th13.html 同款 18 件外）：
+     资源供给（除 th13.html 同款清单外）：
        assets/<sht>   移速源 plXXa/b.sht（名字与 C++ 侧录像头推导规则一致）
        replays/<rpy>  原版录像本体（FS 写入 /assets 后交 th13_debug_replay）
      画面经 canvas.toDataURL 导出 PNG（同一 JS 任务内取像，WebGL 后备缓冲未合成
