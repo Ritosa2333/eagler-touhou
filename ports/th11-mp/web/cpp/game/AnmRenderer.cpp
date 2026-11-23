@@ -133,7 +133,19 @@ int AnmRenderer::draw(AnmVm& vm,bool preserve_subpixel){
         // separate text VM. Keep its original 16-pixel top/bottom borders and
         // fill only the interior from this same artwork's unlettered band.
         // Submitted copies leave the resource, VM and all world state intact.
+        //
+        // This is one static artwork cut into three abutting bands (top border,
+        // stretched interior, bottom border). Each copy carries a constant
+        // vertical placement offset. Interpolation matches copies to samples by
+        // the authored VM id and clock, so composing them with that identity
+        // would turn each fixed offset into movement scaled by the display
+        // weight: the interior slides against the borders on every presented
+        // frame. A placement is not motion. Give the copies a private clock so
+        // they cannot match the authored sample, and they are drawn exactly
+        // where composed. Nothing outside this branch changes.
+        float static_clock=1.f;
         auto strip=[&](float top,float height,float source_top,float source_height){auto copy=vm;
+            copy.timer.rate=&static_clock;
             const float v0=vm.uv[0].y,span=vm.uv[2].y-v0;
             copy.script_position.y+=top*vm.scale.y;copy.sprite_size.y=height;
             copy.uv[0].y=copy.uv[1].y=v0+span*(source_top/480);
