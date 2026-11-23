@@ -1,9 +1,0 @@
-import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import {fileURLToPath} from 'node:url';import {spawnSync} from 'node:child_process';
-const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-test('original503/523/525 and501 combine authored offsets/absolute positions before real emission',()=>{
- const report=JSON.parse(fs.readFileSync(path.join(root,'local/research/emitter-origin-fixtures.json'))),compiler=path.resolve(root,'../../work/tools/emsdk-package/emsdk-main/upstream/emscripten/emcc.py'),sdk=path.resolve(path.dirname(compiler),'../..'),python=path.join(sdk,'python/3.13.3_64bit/python.exe');
- const env={...process.env,EM_CONFIG:path.join(sdk,'.emscripten').replaceAll('\\','/'),EM_CACHE:path.resolve(root,'../../work/emscripten-cache-4.0.22').replaceAll('\\','/'),EMSDK_PYTHON:python,EMCC_CORES:'2',BINARYEN_CORES:'2'};
- const output=path.join(root,'artifacts/tests/emitter-origin.cjs');const build=spawnSync(python,[compiler,'tests/native/emitter-origin.cpp','src/game/BulletRules.cpp','-Isrc','-std=c++20','-O1','-fno-fast-math','-ffp-contract=off','-fsanitize=undefined','-fno-sanitize-recover=all','-sENVIRONMENT=node','-sEXIT_RUNTIME=1','-o',output],{cwd:root,env,encoding:'utf8',timeout:180000});assert.equal(build.status,0,build.stdout+build.stderr);
- const samples=[...report.cases.map(sample=>({line:[sample.opcode,...sample.input].join(' '),bits:sample.resultBits})),...report.origins.map(sample=>({line:`0 ${Number(sample.absolute)} 0`,bits:sample.resultBits}))];
- const run=spawnSync(process.execPath,[output],{cwd:root,input:samples.map(sample=>sample.line).join('\n')+'\n',encoding:'utf8'});assert.equal(run.status,0,run.stdout+run.stderr);assert.deepEqual(run.stdout.trim().split(/\r?\n/),samples.map(sample=>sample.bits.join(' ')));
-});

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TH128 本机联机房间验证</title>
+<link rel="stylesheet" href="/ports/th128-mp/tests/browser/preview.css">
+<main>
+  <h1 id="heading">TH128 本机联机房间验证</h1>
+  <p id="status" role="status">载入原版资源</p>
+  <div id="menu" aria-label="本机验证控件">
+    <button id="join" disabled>加入房间</button>
+    <button id="ready" hidden disabled>玩家准备</button>
+    <button id="start" hidden disabled>房主开始</button>
+    <button id="left" hidden disabled>方向：左</button>
+    <button id="neutral" hidden disabled>方向：无</button>
+    <button id="right" hidden disabled>方向：右</button>
+    <button id="step" hidden disabled>推进一帧</button>
+    <button id="run" hidden disabled>开始实时操作</button>
+    <button id="restart" hidden disabled>同意重开</button>
+    <button id="save-replay" hidden disabled>保存上局多人录像</button>
+    <button id="export-replay" hidden disabled>导出上局多人录像</button>
+    <button id="pause" hidden disabled>暂停旁观</button>
+    <button id="live" hidden disabled>回到直播</button>
+    <button id="load-replay" hidden disabled>打开本机多人录像</button>
+    <label id="import-replay-label" hidden>打开多人录像文件 <input id="import-replay" type="file" accept=".th128mp" disabled></label>
+    <button id="replay-play" hidden disabled>播放</button>
+    <button id="replay-again" hidden disabled>重播</button>
+    <button id="replay-seat" hidden disabled>切换到 P2</button>
+    <button id="close">退出验证</button>
+  </div>
+  <canvas id="game" tabindex="0" width="1280" height="960" aria-label="本页原生游戏画面"></canvas>
+  <div id="touch-pad" hidden aria-label="本席方向与射击">
+    <button data-key="ArrowUp">↑</button><button data-key="ArrowDown">↓</button>
+    <button data-key="ArrowLeft">←</button><button data-key="ArrowRight">→</button>
+    <button data-key="ShiftLeft">低速</button><button data-key="KeyZ">射击</button>
+    <button data-key="KeyX">冻结</button><button data-key="KeyC">连射</button>
+  </div>
+  <pre id="evidence" aria-label="联机原生状态"></pre>
+</main>
+<script type="module" src="/ports/th128-mp/tests/browser/room-preview.mjs"></script>
+</html>

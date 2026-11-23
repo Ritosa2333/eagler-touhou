@@ -1,0 +1,8 @@
+import {readFile,writeFile,mkdir,stat} from 'node:fs/promises';import {resolve,relative,join,isAbsolute,dirname} from 'node:path';import {createHash} from 'node:crypto';
+// Private test deployment, not a public registry edit. Copy verified author Relay sources and its local catalog policy only.
+const [src,dst]=process.argv.slice(2).map(p=>resolve(p)),sha=b=>createHash('sha256').update(b).digest('hex');if(await stat(dst).catch(()=>null))throw Error('Choose an unused Relay staging directory');
+const receipt=JSON.parse(await readFile(join(src,'staging-receipt.json')));let registered=false;const copied=[];
+for(const f of receipt.files){const rel=f.path,p=join(src,rel);if(!rel||isAbsolute(rel)||rel.split(/[\\/]/).includes('..'))throw Error('Unexpected fixture path');const bytes=await readFile(p);if(sha(bytes)!==f.sha256||bytes.length!==f.bytes)throw Error('Author Relay fixture drift: '+f.path);
+ let body=bytes;if(rel==='common/contracts/product-catalog.mjs'){const text=bytes.toString('utf8'),pat=/(titleKey:"game.title.th128mp", gameplay:)"parallel",(\s+playerCounts:Object.freeze\()\[2\](\), difficulties:)Object.freeze\(\["Normal"\]\)/g;if([...text.matchAll(pat)].length!==1)throw Error('Unexpected previous TH128 catalog');body=Buffer.from(text.replace(pat,'$1"cooperative",$2[2,3]$3STANDARD_MULTIPLAYER_DIFFICULTIES, challengeMode:true'));registered=true;}
+ const target=join(dst,rel);await mkdir(dirname(target),{recursive:true});await writeFile(target,body,{flag:'wx'});copied.push({rel,sha256:sha(body)});
+}if(!registered)throw Error('TH128 room policy not found');await writeFile(join(dst,'coop-receipt.json'),JSON.stringify(copied,null,2));console.log('isolated author Relay files',copied.length);
