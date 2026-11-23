@@ -18,6 +18,14 @@ import {
 
 export const SITE_MANIFEST_SCHEMA = "eagler-touhou/site-manifest/1";
 export const SITE_MANIFEST_FILE = "site-manifest.json";
+export const TH128_MULTIPLAYER_PREVIEW_PROFILE = "th128-multiplayer-local-preview";
+
+/** The unpublished TH128 preview has an immutable program separate from normal. */
+export function th128MultiplayerPreviewGeneration(entry: unknown): string | null {
+  if (typeof entry !== "string") return null;
+  const path = parseRuntimeGenerationPath(entry);
+  return path?.root === "runtime/th128/multiplayer/" && path.file === "th128.html" ? path.generation : null;
+}
 
 export interface SiteGameData {
   path: string;
@@ -219,7 +227,8 @@ function validHostRuntimeFeatures(value: unknown): value is HostRuntimeFeatures 
   return Object.entries(value).every(([key, item]) => isHostRuntimeFeatureId(key) && typeof item === "boolean");
 }
 
-function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): value is SiteGameManifest {
+function validGame(gameId: string, value: unknown, resourceMode: ResourceMode,
+  th128LocalPreview: boolean): value is SiteGameManifest {
   if (!isGameId(gameId) || !isRecord(value) || typeof value.runtime !== "string" || !value.runtime) return false;
   const music = value.music;
   const gameData = value.gameData;
@@ -232,7 +241,9 @@ function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): 
   // deliberately withhold one title's MP build while keeping the ordinary
   // game available; Launcher availability is derived from this Host field.
   if (value.multiplayerRuntime != null &&
-      (!("multiplayerRuntime" in product) || typeof value.multiplayerRuntime !== "string" || !value.multiplayerRuntime)) return false;
+      (typeof value.multiplayerRuntime !== "string" || !value.multiplayerRuntime ||
+       (!("multiplayerRuntime" in product) && !(gameId === "th128" && th128LocalPreview &&
+        th128MultiplayerPreviewGeneration(value.multiplayerRuntime))))) return false;
   const split = value.th075MultiplayerAssets;
   if (split !== undefined && (gameId !== "th075" || resourceMode === RESOURCE_MODE_IMPORT || !value.multiplayerRuntime ||
       !isRecord(split) || typeof split.path !== "string" || typeof split.sha256 !== "string" ||
@@ -326,8 +337,10 @@ export function validateSiteManifest(value: unknown): SiteManifest {
   }
   const games = value.games;
   const actualGames = Object.keys(games).sort();
+  const th128LocalPreview = value.profile === TH128_MULTIPLAYER_PREVIEW_PROFILE && value.shared.testBuild === true &&
+    resourceMode === RESOURCE_MODE_IMPORT && value.shared.runtimeManifest === RUNTIME_MANIFEST_FILE;
   if (!actualGames.length || actualGames.some(game => !isGameId(game)) ||
-      actualGames.some(game => !validGame(game, games[game], resourceMode))) {
+      actualGames.some(game => !validGame(game, games[game], resourceMode, th128LocalPreview))) {
     throw new Error("invalid Site Manifest games");
   }
   return {

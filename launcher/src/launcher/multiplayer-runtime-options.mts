@@ -1,3 +1,4 @@
+import {validTh128FreezeMotivationMultiplier,type Th128FreezeMotivationMultiplier} from './th128-freeze-motivation.mjs';
 import {PC98_INITIAL_STOCK,isPc98StockProduct,validPc98InitialSpares,validPc98InitialBombs} from './pc98-initial-stock.mjs';
 import {TH19_VERSUS_RULES,validTh19VersusRules} from './th19-versus-rules.mjs';
 import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
@@ -46,6 +47,8 @@ export interface MultiplayerRuntimeOptionInput {
   replayAutoSave?: boolean;
   replayNames?: string[];
   challengeMode?: boolean;
+  randomCirnoPalette?: boolean;
+  freezeMotivationMultiplier?: Th128FreezeMotivationMultiplier;
   challengeKeepBullets?: boolean;
   disableLocalChargePriority?: boolean;
   disableFocus?: boolean;
@@ -81,6 +84,8 @@ export interface MultiplayerRuntimeOptions {
   netplayReplayAutoSave?: boolean;
   netplayReplayNames?: string[];
   netplayChallengeMode?: boolean;
+  netplayRandomCirnoPalette?: boolean;
+  netplayFreezeMotivationMultiplier?: Th128FreezeMotivationMultiplier;
   netplayChallengeKeepBullets?: boolean;
   netplayDisableLocalChargePriority?: boolean;
   netplayDisableFocus?: boolean;
@@ -119,6 +124,8 @@ export function buildMultiplayerRuntimeOptions(
       (typeof input.challengeKeepBullets !== "boolean" ||
         (input.challengeKeepBullets && (input.challengeMode !== true || product.challengeKeepBullets !== true))))
     throw new TypeError("Invalid challenge bullet clearing setting");
+  if(input.randomCirnoPalette!==undefined&&(roomProduct!=='th128mp'||typeof input.randomCirnoPalette!=='boolean'))throw new Error('Invalid Cirno palette room option');
+  if(input.freezeMotivationMultiplier!==undefined&&(roomProduct!=='th128mp'||!validTh128FreezeMotivationMultiplier(input.freezeMotivationMultiplier)))throw new Error('Invalid TH128 freeze motivation multiplier');
   if (input.challengeMode !== undefined && typeof input.challengeMode !== 'boolean')
     throw new Error('挑战模式参数无效');
   if(input.disableLocalChargePriority !== undefined && (roomProduct !== 'th09mp' || typeof input.disableLocalChargePriority !== 'boolean'))
@@ -231,6 +238,8 @@ export function buildMultiplayerRuntimeOptions(
             input.chapterThreshold ?? defaultTh15ChapterThreshold(playerCount),
         } : {}),
     ...(input.challengeMode !== undefined ? { netplayChallengeMode: input.challengeMode } : {}),
+    ...(input.randomCirnoPalette!==undefined ? {netplayRandomCirnoPalette:input.randomCirnoPalette} : {}),
+    ...(input.freezeMotivationMultiplier!==undefined ? {netplayFreezeMotivationMultiplier:input.freezeMotivationMultiplier} : {}),
     ...(input.challengeKeepBullets ? { netplayChallengeKeepBullets: true } : {}),
     ...(roomProduct === 'th09mp' ? {netplayDisableLocalChargePriority:input.disableLocalChargePriority===true} : {}),
     ...(roomProduct === 'th01mp' ? {netplayBallCount:input.ballCount ?? 2} : {}),
@@ -239,7 +248,9 @@ export function buildMultiplayerRuntimeOptions(
     netplayPlayer: player,
     netplayPlayerCount: playerCount,
     netplaySeed: seed,
-    netplayDifficulty: difficulty,
+    // The local room's one selectable Normal option is index 0; Core127's
+    // native rank selector still uses the original game index 1.
+    netplayDifficulty: roomProduct === 'th128mp' ? 1 : difficulty,
     ...(rollback || input.inputDelay !== undefined
       ? {
           netplayInputDelay:

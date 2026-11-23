@@ -3,7 +3,7 @@
 // below. No candidate UI, core replacement or test oracle is imported.
 import type {Translate} from '../i18n';
 import {directPreloadRuntimeUrl} from './direct-preload-runtime';
-import {liveRuntimeEntryAuthorized, th075SplitAssetUrl} from './runtime-entry-authority';
+import {liveRuntimeEntryAuthorized, requireTh128MultiplayerPreview, requireTh128PreviewRoomGeneration, th075SplitAssetUrl} from './runtime-entry-authority';
 import {errorText} from './error-text';
 import {GameDataAcquisitionError} from './game-data-acquisition';
 import {isHsobReplayPath, isReplayFilePath} from '../../src/launcher/replay-files.mts';
@@ -167,6 +167,7 @@ export interface RuntimeSnapshot {
   readonly roomReturnSupported?: boolean;
   readonly roomPreview?: boolean;
   readonly firstFrame: boolean;
+  readonly th128RoomPath?: RuntimeEventPayloads['first-frame']['th128RoomPath'];
   /** Main's nonfatal diagnostic watchdog is separate from caller-requested waits. */
   readonly firstFrameTimedOut: boolean;
   /** Epoch-scoped engine dry run; never a gameplay/save session. */
@@ -547,14 +548,17 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       } catch (error) { timers.clearTimeout(item.timer); pending.delete(request); reject(error); }
     });
   }
+  const th128PreviewPrograms = new WeakMap<RuntimeSessionToken, string>();
   const provideData: NonNullable<RuntimeHost['__eaglerPrepareManagedRuntimeDataV1']> = async request => {
     const token = sessions.current();
     if (!token || request?.epoch !== token.id) throw new RuntimeSessionSupersededError();
     const generation = generations.resolve(request);
     const before = runtimeIdentity(token);
     const packageRequested = request.packageVersion !== undefined;
+    const previewProgram = th128PreviewPrograms.get(token);
     if (packageRequested && (request.packageVersion !== TH128_PACKAGE_VERSION || String(token.game) !== 'th128' ||
-        token.runtimeVariant !== 'normal' || new URL(before.runtime.location.href).searchParams.get('managedPackage') !== '1')) {
+        (token.runtimeVariant !== 'normal' && (!previewProgram || snapshot.codeGeneration !== previewProgram)) ||
+        new URL(before.runtime.location.href).searchParams.get('managedPackage') !== '1')) {
       throw new RuntimeSessionSupersededError();
     }
     const checkPackageOwner = () => {
@@ -619,8 +623,12 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       update({ ready: true, roomPreviewSupported: message.roomPreview === true, roomReturnSupported: message.roomReturn === true }); settle('ready');
     } else if (message.event === 'first-frame' && launchRequested &&
         (!snapshot.roomReturnSupported || message.launchSerial === roomLaunchSerial)) {
+      const preview = th128PreviewPrograms.has(token);
+      const path = message.th128RoomPath;
+      if (preview && (snapshot.firstFrame || !roomReturnContext || !snapshot.roomReturnSupported ||
+          (roomReturnContext.spectator ? path !== 'spectator-relay' : path !== 'rtc' && path !== 'relay'))) return;
       clearFirstFrameWatchdog();
-      update({ firstFrame: true, firstFrameTimedOut: false }); settle('first-frame');
+      update({ firstFrame: true, firstFrameTimedOut: false, ...(preview ? {th128RoomPath: path} : {}) }); settle('first-frame');
     } else if (message.event === 'runtime-info') {
       const { protocol: _protocol, game: _game, epoch: _epoch, event: _event, ...info } = message;
       // Reports are partial: an Adonis timing report must not erase renderer.
@@ -899,14 +907,19 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (input.runtimeVariant !== 'normal' && input.runtimeVariant !== 'multiplayer') throw new Error('Invalid Runtime variant');
     const source = new URL(input.entry, baseUrl);
     if (source.origin !== origin) throw new Error('Runtime must share the Launcher origin');
-    if (input.generation && !input.publishedRuntime && !liveRuntimeEntryAuthorized(input, baseUrl)) throw new Error('Live Runtime requires canonical catalog or validated Host authority');
     // Isolate asynchronous preparation from caller mutation of the plan/config.
     let plan = structuredClone(input);
     const completeTh128Package = String(plan.game) === 'th128';
-    if (completeTh128Package) {
-      if (plan.runtimeVariant !== 'normal') throw new Error('TH128 package launch supports single-player');
-      requireCompleteTh128Package(plan.generation);
+    const th128PreviewGeneration = completeTh128Package && plan.runtimeVariant === 'multiplayer'
+      ? requireTh128MultiplayerPreview(plan, baseUrl) : null;
+    if (th128PreviewGeneration) {
+      if (plan.multiplayerProgram?.generation !== undefined && plan.multiplayerProgram.generation !== th128PreviewGeneration)
+        throw new Error('TH128 multiplayer agreed Runtime generation does not match the preview');
+      if (plan.configure.options?.netplayMode === 'lan')
+        requireTh128PreviewRoomGeneration(plan.configure.options.netplayUrl, th128PreviewGeneration);
     }
+    if (plan.generation && !plan.publishedRuntime && !liveRuntimeEntryAuthorized(plan, baseUrl)) throw new Error('Live Runtime requires canonical catalog or validated Host authority');
+    if (completeTh128Package) requireCompleteTh128Package(plan.generation);
     const ticket = ++operation;
     const assertOperation = () => { if (disposed || ticket !== operation) throw new RuntimeSessionSupersededError(); };
     const product = PRODUCT_GAMES[plan.game];
@@ -950,7 +963,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
               exclude: excluded, worker: offlineWorker || options.worker,
               // Replay/file access remains usable offline. Room launches and
               // the short multiplayer check must finish current-code validation.
-              ...(plan.runtimeVariant === 'multiplayer' && !plan.fileOnly &&
+              ...(th128PreviewGeneration ? {requireCurrent: true, expectedGeneration: th128PreviewGeneration} :
+                plan.runtimeVariant === 'multiplayer' && !plan.fileOnly &&
                 (checkOwner || plan.multiplayerProgram || plan.configure.options?.netplayMode === 'lan') ? {
                   requireCurrent: true,
                   expectedGeneration: plan.multiplayerProgram?.generation ?? (plan.configure.options?.netplayMode === 'lan'
@@ -958,6 +972,11 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
                     : undefined),
                 } : {}) });
             assertOperation(); assertCurrent(token);
+            if (th128PreviewGeneration) {
+              if (prepared.generation !== th128PreviewGeneration || new URL(prepared.url, baseUrl).href !== source.href)
+                throw new Error('TH128 multiplayer prepared Runtime generation does not match the preview');
+              th128PreviewPrograms.set(token, th128PreviewGeneration);
+            }
             entry = prepared.url; codeGeneration = prepared.generation;
             codeUpdate = prepared.checkForUpdate ? {epoch:token.id,check:prepared.checkForUpdate} : null;
           }
@@ -980,7 +999,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
           break;
         } catch (error) {
           assertOperation(); assertCurrent(token);
-          if (!codeGeneration || attempt === 2) throw error;
+          if (th128PreviewGeneration || !codeGeneration || attempt === 2) throw error;
           excluded.push(codeGeneration);
           replaceFrameLocation('about:blank', token);
           finishProgramTransfers(token.id); sessions.clear(); generations.clear(); releaseLease(); rejectPending(error);
@@ -1003,6 +1022,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
             final.publishedRuntime !== plan.publishedRuntime || final.th075SplitAssets !== plan.th075SplitAssets ||
             JSON.stringify(final.multiplayerProgram) !== JSON.stringify(plan.multiplayerProgram)) throw new Error('Ready continuation changed the Runtime identity');
         if (final.configure.options?.multiplayerPreflight && !checkOwner) throw new Error('Multiplayer preflight requires the game-check owner');
+        if (th128PreviewGeneration && final.configure.options?.netplayMode === 'lan')
+          requireTh128PreviewRoomGeneration(final.configure.options.netplayUrl, th128PreviewGeneration);
         const loaded = plan.generation;
         if (!loaded && final.generation) throw new Error('Ready continuation changed preload DATA ownership');
         plan = {...final, generation: loaded, resourceGeneration: final.resourceGeneration ?? final.generation ?? undefined,
@@ -1121,6 +1142,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (!token || token.id !== epoch || !plan || plan.fileOnly || plan.runtimeVariant !== 'multiplayer' ||
         snapshot.phase !== 'prepared' || snapshot.launched || launchRequested || closing || fileSession || fileClosing ||
         (!checkGame && (roomOptions.netplayMode !== 'lan' || !roomOptions.netplayUrl))) throw new RuntimeSessionSupersededError();
+    const previewProgram = th128PreviewPrograms.get(token);
+    if (previewProgram && !checkGame) requireTh128PreviewRoomGeneration(roomOptions.netplayUrl, previewProgram);
     roomMenuConfigure ??= structuredClone(plan.configure);
     const product = PRODUCT_GAMES[plan.game];
     const configure = checkGame ? {...roomMenuConfigure, options: {...roomMenuConfigure.options,
@@ -1163,7 +1186,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     }
     const configure = roomMenuConfigure ?? {...plan.configure, options: Object.fromEntries(
       Object.entries(plan.configure.options ?? {}).filter(([name]) => !name.startsWith('netplay') && name !== 'multiplayerPreflight'))};
-    update({phase:'configuring',launched:false,spectator:false,roomPreview:true,firstFrame:false});
+    update({phase:'configuring',launched:false,spectator:false,roomPreview:true,firstFrame:false,th128RoomPath:undefined});
     try {
       await send('configure', {music: configure.music, language: configure.language, options: configure.options,
         resources: [], runtimeResources: [], sharedResources: []}, options.timeouts?.configure ?? 120_000);
@@ -1561,7 +1584,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     preflightEpoch = null;
     // Do not post input/sync or navigate a frame which its DOM owner destroyed.
     update({ phase: hadSession ? 'error' : snapshot.phase, ready: false, launched: false,
-      epoch: null, source: null, firstFrame: false, progress: null,
+      epoch: null, source: null, firstFrame: false, th128RoomPath: undefined, progress: null,
       saveUnavailable: hadSession || snapshot.saveUnavailable,
       error: snapshot.error ?? (hadSession ? failure.message : null),
       saveError: mayHaveUnsavedProgress ? failure.message : snapshot.saveError });

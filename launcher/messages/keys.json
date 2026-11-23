@@ -1561,6 +1561,26 @@
     "id": "room_challengeMode",
     "params": []
   },
+  "room.freezeMotivationMultiplier": {
+    "id": "room_freezeMotivationMultiplier",
+    "params": []
+  },
+  "room.freezeMotivationHint": {
+    "id": "room_freezeMotivationHint",
+    "params": []
+  },
+  "room.freezeMotivationDefault": {
+    "id": "room_freezeMotivationDefault",
+    "params": []
+  },
+  "room.randomCirnoPalette": {
+    "id": "room_randomCirnoPalette",
+    "params": []
+  },
+  "room.randomCirnoPaletteHint": {
+    "id": "room_randomCirnoPaletteHint",
+    "params": []
+  },
   "room.th15ChapterThreshold": {
     "id": "room_th15ChapterThreshold",
     "params": []
@@ -2331,6 +2351,18 @@
     "params": [
       "count"
     ]
+  },
+  "room.parallel": {
+    "id": "room_parallel",
+    "params": ["count"]
+  },
+  "game.title.th128mp": {
+    "id": "game_title_th128mp",
+    "params": []
+  },
+  "multiplayer.loadout.cirno": {
+    "id": "multiplayer_loadout_cirno",
+    "params": []
   },
   "room.watching": {
     "id": "room_watching",

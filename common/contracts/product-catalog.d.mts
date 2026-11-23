@@ -1103,7 +1103,7 @@ export type MultiplayerGameId = {
         readonly multiplayerRuntime: string;
     } ? K : never;
 }[GameId];
-export type MultiplayerProductId = `${MultiplayerGameId}mp`;
+export type MultiplayerProductId = `${MultiplayerGameId}mp` | 'th128mp';
 export type ProductId = GameId | MultiplayerProductId;
 export interface MultiplayerLoadoutConfig {
     labelKey: string;
@@ -1129,7 +1129,7 @@ export interface MultiplayerProductConfig {
     titleRoomEntry?: boolean;
     loadoutFields?: readonly Readonly<{labelKey: string; dependsOn?: readonly number[]}>[];
     titleKey: string;
-    gameplay: "cooperative" | "versus";
+    gameplay: "cooperative" | "versus" | "parallel";
     inGameSelection?: boolean;
     inGameCharacterSelection?: boolean;
     inputTiming?: Readonly<MultiplayerInputTimingConfig>;

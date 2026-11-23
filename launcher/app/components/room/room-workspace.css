@@ -97,6 +97,8 @@ body:has(#player.room-workspace) :is(.ui-kit-select-content,.ui-menu)[data-ui-su
 .room-workspace-viewport-tools{position:absolute;right:12px;bottom:12px;z-index:2;display:flex;gap:8px}
 .room-workspace-viewport-tools>button{display:grid;place-items:center;width:44px;height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--kit-card);color:var(--paper)}
 .room-workspace-viewport-tools>button svg{width:22px;height:22px}
+/* Fairy Wars' authored FPS meter sits on the bottom line of the right game panel. */
+.room-workspace-viewport-tools[data-th128-coop]{right:auto;left:clamp(6px,1.7%,12px);bottom:clamp(26px,7%,48px)}
 /* Grouped form reuses MainSelect, RoomTiming, RoomChoiceGroup and OptionSwitch. */
 #mpRoomView.room-workspace-view .room-grouped-settings{display:block!important;position:static!important;padding:0!important;background:none!important;border:0!important}
 #mpRoomView.room-workspace-view .mizuki-select{width:100%}

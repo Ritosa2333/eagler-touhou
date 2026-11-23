@@ -898,6 +898,12 @@ const productGameEntries = Object.entries(PRODUCT_GAMES);
 const multiplayerProductGames = Object.freeze(Object.fromEntries(productGameEntries
     .filter((entry) => "multiplayerRuntime" in entry[1] && "multiplayer" in entry[1])
     .map(([gameId]) => [`${gameId}mp`, gameId])));
+// A routable identity for the local Host opt-in, not a default build product.
+const TH128_PREVIEW_ROOM = Object.freeze({titleKey: 'game.title.th128mp', gameplay: 'parallel',
+    playerCounts: Object.freeze([2]), difficulties: Object.freeze(['Normal']),
+    loadouts: Object.freeze([Object.freeze({labelKey: 'multiplayer.loadout.cirno', glyph: '⑨', character: 0, shot: 0})]),
+    peerTransportGlobal: 'Th128PeerTransport', relaySourceEnvelope: true, spectator: true, titleRoomEntry: false,
+    challengeMode: false, inputTiming: Object.freeze({rollbackLimit: 2, sendPredictionLimit: 2, manualDelayLimit: 8})});
 export const PRODUCT_IDS = Object.freeze([
     ...Object.keys(PRODUCT_GAMES),
     ...Object.keys(multiplayerProductGames),
@@ -915,7 +921,7 @@ export function productRequiresImport(gameId) {
 }
 
 export function productEnabledForBuild(productId, testBuild = false) {
-    if (!isProductId(productId))
+    if (!PRODUCT_IDS.includes(productId))
         return false;
     const game = PRODUCT_GAMES[gameIdForProduct(productId)];
     if ("hidden" in game && game.hidden)
@@ -923,19 +929,20 @@ export function productEnabledForBuild(productId, testBuild = false) {
     return !("testOnly" in game && game.testOnly) || testBuild === true;
 }
 export function isProductId(value) {
-    return PRODUCT_IDS.includes(value);
+    return value === 'th128mp' || PRODUCT_IDS.includes(value);
 }
 export function isMultiplayerProductId(productId) {
-    return Object.hasOwn(multiplayerProductGames, productId);
+    return productId === 'th128mp' || Object.hasOwn(multiplayerProductGames, productId);
 }
 export function gameIdForProduct(productId) {
-    return isMultiplayerProductId(productId) ? multiplayerProductGames[productId] ?? productId : productId;
+    return productId === 'th128mp' ? 'th128' : isMultiplayerProductId(productId) ? multiplayerProductGames[productId] ?? productId : productId;
 }
 export function multiplayerProductIdForGame(gameId) {
     const productId = `${gameId}mp`;
-    return isMultiplayerProductId(productId) ? productId : null;
+    return Object.hasOwn(multiplayerProductGames, productId) ? productId : null;
 }
 export function multiplayerConfigForProduct(productId) {
+    if (productId === 'th128mp') return TH128_PREVIEW_ROOM;
     const gameId = gameIdForProduct(productId);
     if (!isGameId(gameId))
         return null;

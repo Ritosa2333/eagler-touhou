@@ -1,4 +1,5 @@
 import {relayFailureDetail} from './network-failure';
+import {th128LocalRoomAvailable} from './runtime-entry-authority';
 import type {RelayAttempt} from '../../src/launcher/relay-entry-routing.mts';
 import {normalizePublicNickname} from '../../src/contracts/public-nickname.mts';
 import {
@@ -483,7 +484,8 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   }
   function formDefaults(product: MultiplayerProductId | '') {
     const policy = product ? multiplayerConfigForProduct(product) : null;
-    return { product, capacity: policy?.playerCounts[0] ?? 2, difficulty: product === 'th03mp' ? 3 : 1 } as const;
+    return { product, capacity: policy?.playerCounts[0] ?? 2,
+      difficulty: product === 'th03mp' ? 3 : Math.min(1, (policy?.difficulties.length ?? 2) - 1) } as const;
   }
   async function initialize() {
     if (bootRunning || disposed || snapshot.leaving) return;
@@ -518,6 +520,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
           productEnabledForBuild(product, options.testBuild === true || manifest.shared.testBuild === true) &&
           !!manifest.games[gameIdForProduct(product)]?.multiplayerRuntime,
       );
+      if (th128LocalRoomAvailable(manifest, options.launcherUrl())) products.push('th128mp');
       const selectedProduct = !snapshot.selectedProduct ? '' : products.includes(snapshot.selectedProduct as MultiplayerProductId)
         ? snapshot.selectedProduct
         : products[0] || '';

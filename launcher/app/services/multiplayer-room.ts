@@ -1,4 +1,5 @@
 import {PC98_INITIAL_STOCK,isPc98StockProduct,validPc98InitialSpares,validPc98InitialBombs} from '../../src/launcher/pc98-initial-stock.mts';
+import {validTh128FreezeMotivationMultiplier} from '../../src/launcher/th128-freeze-motivation.mts';
 import {relayFailureDetail} from './network-failure';
 import {AccountRequestError, accountRequest} from './account-client';
 import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../src/launcher/th19-versus-rules.mts';
@@ -114,6 +115,8 @@ export interface MultiplayerRoomPorts {
   memberId(): string;
   createSocket(url: string): RoomSocket;
   relayUrl(product: MultiplayerProductId): string;
+  /** Local TH128 room availability must come from this document's validated Host. */
+  th128LocalRoomAvailable?(): boolean;
   settings(): RoomSettingsInput;
   setMovementMode(mode: 'touch' | 'joystick'): void;
   decisions: DecisionStore;
@@ -269,6 +272,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   };
   let snapshot: RoomOwnerSnapshot;
   const policy = () => (product ? multiplayerConfigForProduct(product) : null);
+  const productAuthorized = (value: MultiplayerProductId) => value !== 'th128mp' || ports.th128LocalRoomAvailable?.() === true;
   const ownerLocal = () => room?.synced === true && state.seat === 0;
   const current = (value: number) => !disposed && epoch === value && room !== null;
   function persist() {
@@ -499,7 +503,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       loadouts: config.loadouts,
       inputTiming: config.inputTiming,
     });
-    if (!normalized || product!=='th19mp'&&normalized.th19Rules!==undefined) return;
+    if (!normalized || product!=='th19mp'&&normalized.th19Rules!==undefined || product!=='th128mp'&&(normalized.randomCirnoPalette!==undefined||normalized.freezeMotivationMultiplier!==undefined)) return;
     const movementChanged = !room.disableCheatMovement && normalized.disableCheatMovement;
     if (normalized.timingChoice !== undefined) {
       state.timingChoice = normalized.timingChoice;
@@ -509,6 +513,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       synced: true,
       connection: 'connected',
       challengeMode: normalized.challengeMode ?? false,
+      ...(product==='th128mp'?{randomCirnoPalette:normalized.randomCirnoPalette,freezeMotivationMultiplier:normalized.freezeMotivationMultiplier}:{}),
       challengeKeepBullets: normalized.challengeKeepBullets,
       ...(product==='th19mp'?{th19Rules:[...(normalized.th19Rules??TH19_VERSUS_RULES)]}:{}),
       ...((product==='th05mp'||isPc98StockProduct(product))?{initialSpares:normalized.initialSpares??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,initialBombs:normalized.initialBombs??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
@@ -549,7 +554,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     if (movementChanged && state.seat != null) void ensureMovementAllowed();
   }
   function connect(reconnecting = false) {
-    if (!room || !product || stopped || disposed) return;
+    if (!room || !product || !productAuthorized(product) || stopped || disposed) return;
     const ownedRoom = room,
       ownedEpoch = epoch;
     clientId = ports.identity.lobbyClientId(product);
@@ -702,7 +707,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       }
       if (message.type === 'room-product' && ports.routes.switchProduct && room &&
           message.code === room.code && typeof message.product === 'string' &&
-          isMultiplayerProductId(message.product) && message.product !== product) {
+          isMultiplayerProductId(message.product) && productAuthorized(message.product) && message.product !== product) {
         ports.identity.retainLobbyClientId(message.product, clientId);
         preparation?.controller.abort();
         ports.releasePreparedResources?.();
@@ -873,7 +878,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const code = normalizeRoomCode(invite?.r);
     if (!invite || !code || (!selectedProduct && !isMultiplayerProductId(invite.g))) return false;
     const restoredProduct = selectedProduct ?? invite.g;
-    if (!isMultiplayerProductId(restoredProduct)) return false;
+    if (!isMultiplayerProductId(restoredProduct) || !productAuthorized(restoredProduct)) return false;
     if (room && product === restoredProduct && room.code === code) return true;
     // Read the saved room before retiring a previous lifetime.
     const config = multiplayerConfigForProduct(restoredProduct)!;
@@ -903,7 +908,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         saved?.room.difficulty ??
         (created
           ? Math.max(0, Math.min(config.difficulties.length - 1, Math.trunc(invite.d ?? (product === 'th03mp' ? 3 : 0))))
-          : product === 'th03mp' ? 3 : 1),
+          : product === 'th03mp' ? 3 : Math.min(1, config.difficulties.length - 1)),
       created: created || !!saved?.room.created,
       visibility: saved?.room.visibility ?? (invite.v === 'private' ? 'private' : 'public'),
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
@@ -935,7 +940,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   }
   function enterRoom(nextProduct: MultiplayerProductId, codeInput: string, created: boolean) {
     const code = normalizeRoomCode(codeInput);
-    if (!code || !isMultiplayerProductId(nextProduct)) return;
+    if (!code || !isMultiplayerProductId(nextProduct) || !productAuthorized(nextProduct)) return;
     resetRoom();
     hydrateProduct(nextProduct);
     stopped = false;
@@ -947,7 +952,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     room = {
       code,
       playerCount: policy()!.playerCounts[0],
-      difficulty: nextProduct === 'th03mp' ? 3 : 1,
+      difficulty: nextProduct === 'th03mp' ? 3 : Math.min(1, policy()!.difficulties.length - 1),
       ...(nextProduct === 'th03mp' ? {disableFocus:true,showHitboxes:false} : nextProduct === 'th02mp' ? {disableFocus:false} : {}),
       created,
       ...(created && nextProduct === 'th09mp' ? {disableLocalChargePriority: true} : {}),
@@ -1146,7 +1151,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       Pick<
         MultiplayerRoomState,
         | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'challengeKeepBullets' | 'disableLocalChargePriority' | 'unrated'
-        | 'disableFocus' | 'showHitboxes' | 'ballCount'
+        | 'disableFocus' | 'showHitboxes' | 'ballCount' | 'randomCirnoPalette' | 'freezeMotivationMultiplier'
         | "chapterThreshold"
         | 'initialSpares' | 'initialBombs' | 'th19Rules'
       >
@@ -1165,10 +1170,14 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         patch.ballCount !== undefined ||
         patch.unrated !== undefined ||
         patch.challengeMode !== undefined ||
+        patch.randomCirnoPalette !== undefined ||
+        patch.freezeMotivationMultiplier !== undefined ||
         patch.challengeKeepBullets !== undefined)
     )
       return;
     if(patch.disableLocalChargePriority !== undefined && product !== 'th09mp')return;
+    if(patch.randomCirnoPalette!==undefined&&(product!=='th128mp'||typeof room.randomCirnoPalette!=='boolean'||typeof patch.randomCirnoPalette!=='boolean'))return;
+    if(patch.freezeMotivationMultiplier!==undefined&&(product!=='th128mp'||room.freezeMotivationMultiplier===undefined||!validTh128FreezeMotivationMultiplier(patch.freezeMotivationMultiplier)))return;
     if(patch.ballCount !== undefined && (product !== 'th01mp' || ![1,2,3,4,6,8,9].includes(patch.ballCount)))return;
     if(patch.disableFocus !== undefined && ((product !== 'th02mp' && product !== 'th03mp')||typeof patch.disableFocus!=='boolean'))return;
     if(patch.showHitboxes !== undefined && (product !== 'th03mp'||typeof patch.showHitboxes!=='boolean'))return;
@@ -1226,6 +1235,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(product === 'th03mp' ? {disableFocus:patch.disableFocus ?? (room.disableFocus !== false),showHitboxes:patch.showHitboxes ?? (room.showHitboxes===true)} : product === 'th02mp' ? {disableFocus:patch.disableFocus ?? (room.disableFocus === true)} : {}),
       ...(product === 'th01mp' ? {ballCount:patch.ballCount ?? room.ballCount ?? 2} : {}),
       challengeMode: patch.challengeMode ?? !!room.challengeMode,
+      ...(patch.randomCirnoPalette!==undefined?{randomCirnoPalette:patch.randomCirnoPalette}:{}),
+      ...(patch.freezeMotivationMultiplier!==undefined?{freezeMotivationMultiplier:patch.freezeMotivationMultiplier}:{}),
       ...(patch.challengeKeepBullets !== undefined ? {challengeKeepBullets: patch.challengeKeepBullets} : {}),
       prankMode: false,
     });
@@ -1392,6 +1403,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         ...(product === 'th15mp' ? {
           chapterThreshold: room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount),
         } : {}),
+        ...(product==='th128mp'&&room.randomCirnoPalette!==undefined?{randomCirnoPalette:room.randomCirnoPalette}:{}),
+        ...(product==='th128mp'&&room.freezeMotivationMultiplier!==undefined?{freezeMotivationMultiplier:room.freezeMotivationMultiplier}:{}),
         ...(config.gameplay === 'cooperative' && config.challengeMode !== false
           ? { challengeMode: room.challengeMode === true }
           : {}),
@@ -1749,7 +1762,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     },
     switchProduct(nextProduct: MultiplayerProductId) {
       if (state.globalRoomCodes && state.seat === 0 && room?.synced && room.phase === 'lobby' &&
-          !state.launchBusy && !state.checkBusy && nextProduct !== product && isMultiplayerProductId(nextProduct))
+          !state.launchBusy && !state.checkBusy && nextProduct !== product && isMultiplayerProductId(nextProduct) && productAuthorized(nextProduct))
         send({type: 'switch-product', product: nextProduct});
     },
     setRoomSettings,

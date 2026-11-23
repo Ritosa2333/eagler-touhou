@@ -12,6 +12,7 @@ import {buildLanguageCatalog} from '../../src/launcher/language-catalog.mts';
 import {loadOfflineLanguageIndex} from '../../src/launcher/offline-language-index.mts';
 import type {SettingsContext} from '../models/game-settings';
 import {th128MountedLanguage} from '../../src/launcher/th128-managed-package.mts';
+import {th128LocalRoomAvailable} from './runtime-entry-authority';
 
 export interface MetadataSnapshot {
   phase: 'idle' | 'loading' | 'ready';
@@ -54,14 +55,16 @@ export function createMetadataService(options: MetadataServiceOptions) {
     releaseCatalog: null, installed: new Map(), beautyInstalled: new Set<GameId>(), products: availableProducts(null), metadataErrors: [], siteManifestError: null, releaseCatalogError: null});
 
   function availableProducts(host: SiteManifest | null): readonly ProductId[] {
-    return Object.freeze(PRODUCT_IDS.filter(product => {
+    const products = PRODUCT_IDS.filter(product => {
       if (!productEnabledForBuild(product, testBuild || host?.shared.testBuild === true)) return false;
       if (!host) return true;
       const game = host.games[gameIdForProduct(product)];
       if (!game) return false;
       return !isMultiplayerProductId(product) ||
         (typeof game.multiplayerRuntime === 'string' && game.multiplayerRuntime.length > 0);
-    }));
+    });
+    if (th128LocalRoomAvailable(host, base.href)) products.push('th128mp');
+    return Object.freeze(products);
   }
   function publish(patch: Partial<MetadataSnapshot>) {
     if (disposed) return;

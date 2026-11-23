@@ -21,6 +21,10 @@ function canonical(rules){
  if(!prepared.has(rules))throw Error('Canonical rules must come from createMultiplayerRules');
  return JSON.stringify(rules);
 }
+export function multiplayerRulesWire(rules){
+ if(!prepared.has(rules))throw Error('Wire rules must come from createMultiplayerRules');
+ return Object.freeze(Object.fromEntries(fields.map(key=>[key,rules[key]])));
+}
 export async function multiplayerRulesFingerprint(rules){
  const bytes=new TextEncoder().encode(canonical(rules)),digest=await globalThis.crypto.subtle.digest('SHA-256',bytes);
  return Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');

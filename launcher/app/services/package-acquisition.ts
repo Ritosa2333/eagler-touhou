@@ -1,4 +1,5 @@
 import {downloadFailureDetail} from './network-failure';
+import {th128LocalRoomAvailable} from './runtime-entry-authority';
 import {normalizeGameVersion} from "../../package/game-version.mjs";
 import {validateReleaseCatalog} from "../../release-catalog.mjs";
 import type {GameVersion} from "../../src/contracts/package-read-models.mts";
@@ -210,7 +211,8 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     const gameVersion = request.gameVersion ?? getGameVersion(game);
     request = {...request, gameVersion};
     let metadataSnapshot = metadata.getSnapshot();
-    if (!productEnabledForBuild(request.productId, testBuild || metadataSnapshot.siteManifest?.shared.testBuild === true)) throw new Error('该游戏仅在测试版开启');
+    if (request.productId === 'th128mp' ? !th128LocalRoomAvailable(metadataSnapshot.siteManifest, baseUrl)
+      : !productEnabledForBuild(request.productId, testBuild || metadataSnapshot.siteManifest?.shared.testBuild === true)) throw new Error('该游戏仅在测试版开启');
     if (gameVersion === 'beauty') {
       // Keep both committed installations. Cached beauty launches are offline
       // and never consult or install an original publication.

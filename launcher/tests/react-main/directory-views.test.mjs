@@ -75,8 +75,9 @@ function manifest({games = ['th06', 'th07', 'th08', 'th09', 'th10'], relay = tru
         schema: 'eagler-touhou/offline-game-pack/1',
         runtimeCompatibility: {protocol: 'eagler-touhou/1', dataLayout: `sha256-${hash}`, versionSource: 'offline-pack'},
         requiredShared: owners.PRODUCT_GAMES[id].requiredShared,
-        languages: {source: 'offline-pack', baseline: ['ja']},
+        languages: {source: 'offline-pack', baseline: id === 'th128' ? ['lang_zh-hans'] : ['ja']},
       }} : {}),
+      ...(id === 'th128' ? {languageOptions: [{id:'lang_zh-hans',pack:null}],languages:[]} : {}),
     }]))};
 }
 class Socket {
@@ -86,15 +87,16 @@ class Socket {
   close(...args) {this.closes.push(args); this.readyState = 3;}
   emit(type, data) {if (type === 'close') this.readyState = 3; for (const fn of this.listeners.get(type) || []) fn(type === 'message' ? {data: JSON.stringify(data)} : data);}
 }
-function fixture({locale = 'en', selectedProduct = 'th06mp', host = {}, loadError = false, clientSideFiltering = false} = {}) {
+function fixture({locale = 'en', selectedProduct = 'th06mp', host = {}, loadError = false, clientSideFiltering = false,
+  hostManifest, launcherUrl = 'https://launcher.invalid/index.html?keep=1#retained'} = {}) {
   const sockets = [], timers = new Map(), events = [], sessionWrites = [], navigations = []; let timerId = 0, closeCalls = 0;
   const real = owners.createLobbyDirectory({selectedProduct, clientSideFiltering,
-    loadSiteManifest: async () => {if (loadError) throw Error('synthetic manifest failure'); return manifest(host);},
+    loadSiteManifest: async () => {if (loadError) throw Error('synthetic manifest failure'); return hostManifest ?? manifest(host);},
     createSocket: url => {const socket = new Socket(); socket.url = url; sockets.push(socket); return socket;},
     memberId: () => 'fixture-member', identity: {lobbyClientId: product => {events.push(`identity:${product}`); return 'fixture-client';}},
     sessions: {save: (...args) => sessionWrites.push(['save', ...args]), clear: product => sessionWrites.push(['clear', product])},
     sessionStorage: {getItem: () => null, removeItem() {}}, translate: (key, params) => t(locale, key, params),
-    launcherUrl: () => 'https://launcher.invalid/index.html?keep=1#retained',
+    launcherUrl: () => launcherUrl,
     navigateToRoom: url => {events.push('navigate'); navigations.push({url, dialogOpen: env.document.querySelector('#roomDialog')?.open}); f.onNavigate?.(url);},
     randomWord: () => 23, setTimeout: (fn, delay) => {timers.set(++timerId, {fn, delay}); return timerId;}, clearTimeout: id => timers.delete(id),
   });
@@ -736,6 +738,22 @@ test('No multiplayer products disables create/code/submit while keeping the orig
   assert.equal(n('#submitRoom').disabled, true); assert.equal(all('#gameSelect option').length, 0);
   for (const select of all('#roomDialog select')) assert.equal(select.disabled, false, 'Main disables submit, not native form fields');
   await submit(); assert.equal(f.closeCalls, 0); assert.equal(f.navigations.length, 0);
+});
+
+test('the opted-in TH128 directory opens the existing two-seat Normal room form',async()=>{
+  const hostManifest=manifest({games:['th128']}),game=hostManifest.games.th128,hash='a'.repeat(64),lang='lang_zh-hans';
+  hostManifest.profile='th128-multiplayer-local-preview';hostManifest.shared={resourceMode:'import',testBuild:true,
+    runtimeManifest:'runtime-manifest.json',netplayRelay:'ws://127.0.0.1:49285/'};
+  Object.assign(game,{runtime:`runtime/th128/${hash}/th128.html`,multiplayerRuntime:`runtime/th128/multiplayer/${hash}/th128.html`,
+    languages:[],languageOptions:[{id:lang,pack:null}]});
+  game.offlineCompatibility.languages.baseline=[lang];
+  const f=await fixture({hostManifest,selectedProduct:'th128mp',launcherUrl:'http://127.0.0.1:49284/'}).live();
+  assert.deepEqual(f.service.getSnapshot().products,['th128mp']);
+  await mountDialog(f,'create');
+  assert.deepEqual(all('#capacitySelect option').map(option=>option.value),['2']);
+  assert.deepEqual(all('#difficultySelect option').map(option=>option.textContent),['Normal']);
+  assert.equal(n('#difficultySelect').value,'0');
+  assert.equal(f.service.getSnapshot().form.difficulty,0);
 });
 test('Repeated submit in one turn issues one actual Router pop and one room entry', async () => {
   const f = await fixture().live(); const h = await mountRouter(f, {strict: true}); const base = h.router.state.location;

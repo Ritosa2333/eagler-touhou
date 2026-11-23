@@ -19,14 +19,15 @@ export function launcherParentOrigin(window,document,location){
   return url.origin;
  }catch{return null;}
 }
-export function mountLauncherSession({window=globalThis.window,document=window?.document,location=window?.location,hooks={}}={}){
+export function mountLauncherSession({window=globalThis.window,document=window?.document,location=window?.location,hooks={},room=null}={}){
  if(!window||!location||!window.parent||window.parent===window)return null;
  const values=new URLSearchParams(location.search??'').getAll('runtimeEpoch');
  if(values.length!==1||!(/^[1-9][0-9]*$/).test(values[0]))return null;
  const epoch=Number(values[0]);if(!Number.isSafeInteger(epoch))return null;
  const parentOrigin=launcherParentOrigin(window,document,location);if(!parentOrigin)return null;
  const parent=window.parent,controller=new AbortController(),requests=new Map();
- let phase='booting',config=null,launchSerial=null,presented=false,closed=false,busy=false,resourcesBusy=false,fileBusy=false;
+ if(room&&(!['prepare','restore'].every(key=>typeof room[key]==='function')))throw new TypeError('Incomplete managed room hooks');
+ let phase='booting',config=null,launchSerial=null,presented=false,closed=false,busy=false,resourcesBusy=false,fileBusy=false,framePending=null;
  const detachGamepad=parentOrigin===location.origin?installLauncherGamepadInput({target:window,protocol:PROTOCOL,game:GAME,epoch,origin:location.origin,isReady:()=>phase==='running'}):null;
  const post=body=>parent.postMessage({...body,protocol:PROTOCOL,game:GAME,epoch},parentOrigin);
  const reply=(request,ok,body={})=>{
@@ -45,9 +46,29 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
   if(clean){reply(request,true);post({event:'exit',code:0,status:'success'});}
   return true;
  }
- function noteFrame(actual,phaseAllowed){
+ function noteFrame(actual,phaseAllowed,th128RoomPath){
   if(actual!==true||closed||presented||!phaseAllowed)return false;
-  presented=true;post({event:'first-frame',...(launchSerial===null?{}:{launchSerial})});return true;
+  presented=true;post({event:'first-frame',...(launchSerial===null?{}:{launchSerial}),...(th128RoomPath?{th128RoomPath}:{})});return true;
+ }
+ async function roomCommand(command,request){
+  const returning=command==='return-room',before=phase,serial=launchSerial;
+  if(!room||busy||fileBusy||phase!==(returning?'running':'configured')){
+   fail(request,'invalid-state','Invalid managed room phase for '+command);return false;
+  }
+  busy=true;
+  try{
+   if(returning)phase='returning';
+   const shown=await room[returning?'restore':'prepare']({config,launchSerial:serial,signal:controller.signal});
+   if(closed)return false;
+   if(shown!==true)throw Error('The native room title did not present');
+   if(returning){phase='configured';launchSerial=null;presented=false;framePending=null;}
+   reply(request,true,{presented:true});
+   if(returning)post({event:'room-menu',launchSerial:serial});
+   return true;
+  }catch(error){
+   if(!closed){phase=before;fail(request,error.errno??'internal-error',error.message??error);if(request===undefined)throw error;}
+   return false;
+  }finally{busy=false;}
  }
  const pagehide=()=>{void stop(undefined,false);};
  function configureValue(data){
@@ -74,6 +95,18 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
   const {command,request}=data;
   if(command==='exit'){await stop(request,true);return;}
   if(closed)return;
+  if(room&&['prepare-room','return-room'].includes(command)){await roomCommand(command,request);return;}
+  if(room&&command==='spectator-playback'){
+   if(phase!=='running'||busy||fileBusy){fail(request,'invalid-state','Spectator playback is not running');return;}
+   try{
+    if(typeof data.run!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(data.run)||!['pause','play','seek','live'].includes(data.action)||
+      (data.action==='seek'?(!Number.isInteger(data.frame)||data.frame<0||data.frame>0xfffffffe):own(data,'frame')))
+     throw invalid('Invalid spectator playback command');
+    await hook('spectatorPlayback',{run:data.run,action:data.action,...(data.action==='seek'?{frame:data.frame}:{})});
+    if(!closed)reply(request,true);
+   }catch(error){if(!closed)fail(request,error.errno??'internal-error',error.message??error);}
+   return;
+  }
   if(['list','read','write','remove','sync'].includes(command)){
    if(fileBusy||busy||!['ready','configured','running'].includes(phase)||(phase==='running'&&['write','remove'].includes(command))){
     fail(request,'invalid-state','Replay file command is unavailable in this phase');return;
@@ -141,12 +174,13 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
     await hook('resources',data.resources);if(closed)return;
    }else{
     if(own(data,'launchSerial')&&(!Number.isSafeInteger(data.launchSerial)||data.launchSerial<1))throw invalid('launchSerial is invalid');
-    phase='loading';launchSerial=data.launchSerial??null;
+    phase='loading';launchSerial=data.launchSerial??null;framePending=null;
     await hooks.keyboardClear?.();if(closed)return;
     await hook('launch',{config,launchSerial,signal:controller.signal});if(closed)return;phase='running';
    }
    reply(request,true,command==='launch'?{launchSerial}:{});
-  }catch(error){if(!closed){phase=before;fail(request,error.errno??'internal-error',error.message??error);}}
+   if(room&&command==='launch'&&framePending){const pending=framePending;framePending=null;noteFrame(true,phase==='running',pending.th128RoomPath);}
+  }catch(error){if(!closed){phase=before;framePending=null;fail(request,error.errno??'internal-error',error.message??error);}}
   finally{busy=false;}
  }
  function receive(event){
@@ -166,9 +200,14 @@ export function mountLauncherSession({window=globalThis.window,document=window?.
  window.addEventListener('message',receive);window.addEventListener('pagehide',pagehide);
  return {
   get epoch(){return epoch;},get phase(){return phase;},get signal(){return controller.signal;},
-  markReady(){if(closed||phase!=='booting')return false;phase='ready';post({event:'ready'});return true;},
+  markReady(){if(closed||phase!=='booting')return false;phase='ready';post({event:'ready',...(room?{roomPreview:true,roomReturn:true}:{})});return true;},
   noteStartupPresented(actual){return noteFrame(actual,phase==='loading');},
-  notePresented(actual){return noteFrame(actual,phase==='running');},
+  notePresented(actual,th128RoomPath){
+   const path=room&&['rtc','relay','spectator-relay'].includes(th128RoomPath)?th128RoomPath:undefined;
+   if(room&&!closed&&actual===true&&phase==='loading'){if(framePending)return false;framePending={th128RoomPath:path};return true;}
+   return noteFrame(actual,phase==='running',path);
+  },
+  ...(room?{requestRoomReturn:()=>roomCommand('return-room',undefined)}:{}),
   requestExit(){return phase==='running'?stop(undefined,true):false;},
   runtimeInfo(value){if(!closed)post({...value,event:'runtime-info'});},
   health(frame,audio){if(closed||!presented)return;post({...frame,event:'frame-health'});if(audio)post({...audio,event:'audio-health'});},

@@ -1,3 +1,4 @@
+import {validTh128FreezeMotivationMultiplier,type Th128FreezeMotivationMultiplier} from './th128-freeze-motivation.mjs';
 import {validTh19VersusRules} from './th19-versus-rules.mjs';
 import { validTh15ChapterThreshold } from "./th15-chapter-reward.mjs";
 import {validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
@@ -68,6 +69,8 @@ export interface NormalizedMultiplayerLobbySnapshot {
   showHitboxes?: boolean;
   ballCount?: number;
   challengeMode?: boolean;
+  randomCirnoPalette?: boolean;
+  freezeMotivationMultiplier?: Th128FreezeMotivationMultiplier;
   challengeKeepBullets?: boolean;
   chapterThreshold?: number;
   prankMode?: boolean;
@@ -122,6 +125,8 @@ export function normalizeMultiplayerLobbySnapshot(
   const source = record(value);
   if(source?.ballCount!==undefined && ![1,2,3,4,6,8,9].includes(source.ballCount as number))return null;
   if(source?.disableFocus!==undefined&&typeof source.disableFocus!=='boolean')return null;
+  if(source?.randomCirnoPalette!==undefined&&typeof source.randomCirnoPalette!=='boolean')return null;
+  if(source?.freezeMotivationMultiplier!==undefined&&!validTh128FreezeMotivationMultiplier(source.freezeMotivationMultiplier))return null;
   if(source?.showHitboxes!==undefined&&typeof source.showHitboxes!=='boolean')return null;
   if(source?.th19Rules!==undefined&&!validTh19VersusRules(source.th19Rules))return null;
   if(source&&(source.initialSpares!==undefined&&!validTh05InitialSpares(source.initialSpares)||source.initialBombs!==undefined&&!validTh05InitialBombs(source.initialBombs)))return null;
@@ -253,6 +258,8 @@ export function normalizeMultiplayerLobbySnapshot(
     ...(typeof source.unrated === 'boolean' ? {unrated: source.unrated} : {}),
     ...(source.disableLocalChargePriority !== undefined ? {disableLocalChargePriority: source.disableLocalChargePriority === true} : {}),
     ...(source.challengeMode !== undefined ? { challengeMode: source.challengeMode === true } : {}),
+    ...(typeof source.randomCirnoPalette === 'boolean' ? {randomCirnoPalette:source.randomCirnoPalette} : {}),
+    ...(validTh128FreezeMotivationMultiplier(source.freezeMotivationMultiplier)?{freezeMotivationMultiplier:source.freezeMotivationMultiplier}:{}),
     ...(typeof source.challengeKeepBullets === "boolean" ? { challengeKeepBullets: source.challengeMode === true && source.challengeKeepBullets } : {}),
     ...(source.ballCount !== undefined ? {ballCount:source.ballCount as number} : {}),
     ...(source.disableFocus !== undefined ? {disableFocus:source.disableFocus===true} : {}),
