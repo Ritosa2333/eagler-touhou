@@ -64,7 +64,7 @@ for source in "$port_dir"/web/cpp/game/*.cpp "$port_dir"/web/cpp/multiplayer/*.c
 # 共用网络栈（M7）：Session/NetplayRuntime 链接 common/src/netplay。
 for source in "$port_dir"/../../common/src/netplay/*.cpp; do sources+=("$source"); done
 for name in Application ApplicationTitle ApplicationGame AudioDevice FileStore \
-            FontDevice GraphicsDevice SceneDisplay; do
+            FontDevice GraphicsDevice LanguagePack SceneDisplay; do
   sources+=("$port_dir/web/cpp/sdl/$name.cpp")
 done
 sources+=("$script_dir/native/native_stub.cpp")

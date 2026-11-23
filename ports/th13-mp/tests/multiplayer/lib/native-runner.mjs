@@ -51,7 +51,7 @@ const OUTER = path.resolve(REPO, "..");                              // 外层�
 const MAPPING = path.join(MULTIPLAYER, "workflow-cases.json");
 
 const SDL_SOURCES = ["Application", "ApplicationTitle", "ApplicationGame", "AudioDevice",
-  "FileStore", "FontDevice", "GraphicsDevice", "SceneDisplay"]
+  "FileStore", "FontDevice", "GraphicsDevice", "LanguagePack", "SceneDisplay"]
   .map((name) => path.join(PORT, "web/cpp/sdl", `${name}.cpp`));
 const STUB_SOURCE = path.join(PORT, "tests/e2e/native/native_stub.cpp");
 

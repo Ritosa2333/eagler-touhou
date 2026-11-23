@@ -26,7 +26,13 @@
      无可见 UI 常驻；游戏内 Replay 列表末行「Import」为触发入口。 -->
 <input type="file" id="replay-file" accept=".rpy" multiple hidden>
 <script type="module">
-import {runtimeAssets} from './runtime-assets.mjs';
+import {
+  audioAssets,
+  musicFinalShardSize,
+  musicShardAssets,
+  musicShardSize,
+  runtimeAssets,
+} from './runtime-assets.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {bindTouchControls} from './touch-controls.mjs';
 import {installLowLatencyCanvas} from './low-latency-canvas.mjs';
@@ -61,21 +67,6 @@ try {
   }
   // TH13 original voice table (004bad90/004bb320). Shared samples are loaded
   // once; requests with different voice IDs retain their original gains.
-  const audioAssets = [
-    'thbgm.fmt',
-    'se_plst00.wav', 'se_enep00.wav', 'se_pldead00.wav', 'se_power0.wav', 'se_power1.wav',
-    'se_tan00.wav', 'se_tan01.wav', 'se_tan02.wav', 'se_ok00.wav', 'se_cancel00.wav',
-    'se_select00.wav', 'se_gun00.wav', 'se_cat00.wav', 'se_lazer00.wav', 'se_lazer01.wav',
-    'se_enep01.wav', 'se_damage00.wav', 'se_item00.wav', 'se_kira00.wav', 'se_kira01.wav',
-    'se_kira02.wav', 'se_timeout.wav', 'se_graze.wav', 'se_powerup.wav', 'se_pause.wav',
-    'se_cardget.wav', 'se_damage01.wav', 'se_timeout2.wav', 'se_invalid.wav', 'se_slash.wav',
-    'se_ch00.wav', 'se_ch01.wav', 'se_extend.wav', 'se_nep00.wav', 'se_bonus.wav',
-    'se_bonus2.wav', 'se_enep02.wav', 'se_lazer02.wav', 'se_nodamage.wav', 'se_boon00.wav',
-    'se_don00.wav', 'se_boon01.wav', 'se_ch02.wav', 'se_ch03.wav', 'se_extend2.wav',
-    'se_pin00.wav', 'se_pin01.wav', 'se_lgods1.wav', 'se_lgods2.wav', 'se_lgods3.wav',
-    'se_lgods4.wav', 'se_lgodsget.wav', 'se_msl.wav', 'se_msl2.wav', 'se_pldead01.wav',
-    'se_heal.wav', 'se_astralup.wav', 'se_fault.wav', 'se_noise.wav',
-  ];
   for (const name of audioAssets) {
     const response = await fetch('assets/' + name);
     if (!response.ok) throw new Error('原版音频资源缺失：' + name);
@@ -88,12 +79,11 @@ try {
   const musicStream = mod.FS.open('/assets/thbgm.ogg', 'w');
   let musicBytes = 0;
   try {
-    for (let n = 0; n < 30; ++n) {
-      const name = 'thbgm-' + String(n).padStart(2, '0') + '.part';
+    for (const [index, name] of musicShardAssets.entries()) {
       const response = await fetch('assets/' + name);
       if (!response.ok) throw new Error('原版音乐资源缺失：' + name);
       const bytes = new Uint8Array(await response.arrayBuffer());
-      const expected = n < 29 ? 1048576 : 150104;
+      const expected = index === musicShardAssets.length - 1 ? musicFinalShardSize : musicShardSize;
       if (bytes.length !== expected) throw new Error('原版音乐分片长度错误：' + name);
       mod.FS.write(musicStream, bytes, 0, bytes.length);
       musicBytes += bytes.length;

@@ -153,7 +153,7 @@ TEST(spell_modes_characters_aggregate_saturation_best_and_names_roundtrip) {
     CHECK_EQ(all->attempts[1], 2);
     CHECK_EQ(all->captures[0], 1);
     CHECK_EQ(all->captures[1], 1);
-    CHECK_EQ(all->practice_best_score, 0); // 0042cd40 writes only the chosen character
+    CHECK_EQ(all->practice_best_score, 12340); // 合计列与个人列同点维护
     CHECK_EQ(restored.spell_counters(0, 12)->attempts[0], 0);
     TitlePlayerDataRecord row;
     CHECK(restored.player_data_record(2, 1, 3, row)); // fourth Hard slot is id12
