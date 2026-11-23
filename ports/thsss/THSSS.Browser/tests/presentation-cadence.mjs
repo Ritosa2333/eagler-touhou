@@ -12,7 +12,7 @@ function run(hz, seconds, unlocked) {
   for (let i = 0; i < hz * seconds; i++) {
     const stepped = advanceFrame({ acc, deltaMs: delta, unlocked });
     acc = stepped.acc;
-    if (stepped.logic) logic += 1;
+    logic += stepped.steps;
     if (stepped.draw) draws += 1;
   }
   return { logic, draws };
@@ -28,11 +28,16 @@ for (const hz of rates) {
 }
 assert.equal(run(60, 10, true).logic, 600);
 assert.equal(run(60, 10, false).logic, 600);
+assert.deepEqual(run(30, 10, false), { logic: 600, draws: 300 });
+assert.deepEqual(run(30, 10, true), { logic: 600, draws: 300 });
+const stalled = advanceFrame({ acc: 4, deltaMs: 1000, unlocked: true });
+assert.equal(stalled.steps, 3);
+assert.equal(stalled.acc, 4);
 
 let acc = 4;
 for (let i = 0; i < 30; i++) {
   const stepped = advanceFrame({ acc, deltaMs: 0, unlocked: true });
-  assert.equal(stepped.logic, false);
+  assert.equal(stepped.steps, 0);
   assert.equal(stepped.draw, true);
   assert.equal(stepped.acc, acc);
   acc = stepped.acc;
@@ -42,5 +47,4 @@ const source = readFileSync(new URL("../wwwroot/main.js", import.meta.url), "utf
 const loop = source.slice(source.indexOf("const frame = (now)"));
 assert.match(loop, /advanceFrame\(/);
 assert.match(loop, /host\.Simulate\(\)/);
-assert.match(loop, /host\.Draw\(acc \/ LOGIC_STEP_MS\)/);
-assert.match(loop, /host\.Frame\(\)/);
+assert.match(loop, /host\.Draw\(unlocked \? acc \/ LOGIC_STEP_MS : 1\)/);

@@ -33,8 +33,9 @@ let starting = false;
 let runtime = null;
 let firstFrameSent = false;
 let runtimeInfoSent = false;
-let frameStats = { frames: 0, gaps: [] };
+const frameStats = { frames: 0, maxGap: 0 };
 let lastFrameAt = 0;
+let healthAt = 0;
 let healthTimer = 0;
 
 function hosted() {
@@ -238,10 +239,11 @@ function onMessage(event) {
 
 function publishHealth() {
   if (phase !== "launched") return;
-  const gaps = frameStats.gaps.splice(0);
-  const maxGap = gaps.length ? Math.max.apply(null, gaps) : 0;
-  emit("frame-health", { fps: frameStats.frames, maxGapMs: maxGap });
+  const now = performance.now();
+  emit("frame-health", { fps: frameStats.frames * 1000 / (now - healthAt), maxGapMs: frameStats.maxGap });
+  healthAt = now;
   frameStats.frames = 0;
+  frameStats.maxGap = 0;
   const audio = window.__thsssAudio || {};
   emit("audio-health", {
     backend: audio.backend || "script",
@@ -269,7 +271,7 @@ async function startGame() {
     },
     onPresented() {
       const now = performance.now();
-      if (lastFrameAt) frameStats.gaps.push(now - lastFrameAt);
+      if (lastFrameAt) frameStats.maxGap = Math.max(frameStats.maxGap, now - lastFrameAt);
       lastFrameAt = now;
       frameStats.frames += 1;
       if (!firstFrameSent) {
@@ -285,6 +287,7 @@ async function startGame() {
   if (phase === "exited") return;
   phase = "launched";
   healthTimer = window.setInterval(publishHealth, 1000);
+  healthAt = performance.now();
 }
 
 async function loadManagedArchive() {
@@ -345,6 +348,7 @@ window.addEventListener("pagehide", () => {
   canvasTouch.cancel();
   keys.releaseAll();
   if (runtime && runtime.flushSaves) runtime.flushSaves();
+    lastFrameAt = 0;
 });
 
 boot();

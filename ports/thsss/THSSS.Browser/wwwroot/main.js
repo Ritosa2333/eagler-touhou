@@ -496,18 +496,22 @@ export async function launchRuntime(runtime, hooks = {}) {
   window.__thsssHost = true;
   if (runtime.captureKeys) bootKeys((name, down) => host.OnKey(name, down));
   const optionSet = !!(runtime.options && Object.prototype.hasOwnProperty.call(runtime.options, "limitPresentationTo60"));
-  const unlimited = optionSet && runtime.options.limitPresentationTo60 === false && host.Simulate && host.Draw;
-  if ((runtime.captureKeys === false || optionSet) && host.SetFpsUnlocked) host.SetFpsUnlocked(unlimited ? 1 : 0);
   const fpsToggle = document.getElementById("unlock-fps");
-  if (!unlimited && host.FpsUnlocked && fpsToggle) fpsToggle.checked = host.FpsUnlocked() !== 0;
+  let unlocked = optionSet ? runtime.options.limitPresentationTo60 === false : host.FpsUnlocked() !== 0;
+  if (optionSet) host.SetFpsUnlocked(unlocked ? 1 : 0);
   if (fpsToggle && host.SetFpsUnlocked) {
-    fpsToggle.addEventListener("change", () => host.SetFpsUnlocked(fpsToggle.checked ? 1 : 0));
+    fpsToggle.checked = unlocked;
+    fpsToggle.addEventListener("change", () => {
+      unlocked = fpsToggle.checked;
+      host.SetFpsUnlocked(unlocked ? 1 : 0);
+    });
   }
   let last = performance.now();
   let acc = 0;
   let failed = false;
   let running = true;
   const frame = (now) => {
+      acc = 0;
     if (!exitRequested) hideWasmLoad();
     if (exitRequested || !running || failed) return;
     if (document.hidden) {
@@ -517,26 +521,23 @@ export async function launchRuntime(runtime, hooks = {}) {
     }
     const delta = now - last;
     last = now;
-    let presented = false;
     try {
-      const unlocked = unlimited || !!(fpsToggle && fpsToggle.checked);
-      const fast = unlocked && host.Simulate && host.Draw;
-      const stepped = advanceFrame({ acc, deltaMs: delta, unlocked: fast });
+      const stepped = advanceFrame({ acc, deltaMs: delta, unlocked });
       acc = stepped.acc;
-      if (stepped.logic) {
+      for (let step = 0; step < stepped.steps; step++) {
         if (hooks.onBeforeFrame) hooks.onBeforeFrame();
-        if (fast) host.Simulate();
-        else host.Frame();
-        presented = true;
+        host.Simulate();
       }
-      if (fast) host.Draw(acc / LOGIC_STEP_MS);
+      if (stepped.draw) {
+        host.Draw(unlocked ? acc / LOGIC_STEP_MS : 1);
+        if (hooks.onPresented) hooks.onPresented();
+      }
     } catch (err) {
       failed = true;
       window.__thsssFrameError = String(err && err.stack || err);
       setStatus(window.__thsssFrameError);
       return;
     }
-    if (presented && hooks.onPresented) hooks.onPresented();
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
