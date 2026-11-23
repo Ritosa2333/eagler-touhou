@@ -26,6 +26,11 @@ test('replay-ff 0x448e40 matches unicorn for counter/gates', () => {
   }
 });
 
+test('replay FPS reads the sample before advancing at frames 0, 30, and 60', () => {
+  const samples = run(['replay-fps-timing']).split('\n').map(Number);
+  assert.deepEqual(samples, [60, ...Array(30).fill(59), ...Array(31).fill(58)]);
+});
+
 test('replay-fps-color 0x4482f0 thresholds', () => {
   for (const [byte, color] of Object.entries(golden.fps_colors)) {
     assert.equal(Number(run(['replay-fps-color', byte])), color, `fps=${byte}`);

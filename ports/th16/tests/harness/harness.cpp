@@ -422,6 +422,21 @@ int main(int argc, char** argv) {
         std::printf("%d\n", i32(r));
         return 0;
     }
+    if (command == "replay-fps-timing") {
+        ReplayFile replay;
+        ReplayStageSegment& segment = replay.stages.emplace_back();
+        segment.frames = 62;
+        segment.inputs.resize(size_t(segment.frames) * 6);
+        segment.fps = {60, 59, 58};
+        ReplayPlaybackCursor cursor;
+        for (i32 frame = 0; frame < segment.frames; ++frame) {
+            u32 held = 0, pressed = 0, released = 0;
+            u8 fps = 0;
+            if (!replay_playback_step(replay, cursor, held, pressed, released, fps)) return fail("unexpected replay end");
+            std::printf("%u\n", u32(fps));
+        }
+        return 0;
+    }
     if (command == "replay-fps-color" && argc >= 3) {
         const u8 fps = u8(std::strtoul(argv[2], nullptr, 0));
         std::printf("%u\n", replay_fps_color(fps));
