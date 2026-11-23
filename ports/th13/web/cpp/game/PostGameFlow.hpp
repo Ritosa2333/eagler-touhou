@@ -12,9 +12,7 @@
 // 本阶段落地主干（anatomy §4 过关触发链）：监视态 → Boss 后对话 entry1 尾
 // opcode 21 → 0x42cd40 关终了 → 每关百万奖（0x42abf0）+ dcc24=0xc 无条件
 // 换关请求（stage<7 则关号+1）。六面通关演出（0x4000 路径 180f/379f）与
-// Extra/练习/全灭入口建骨架；续关数值、名前录入、回放保存、结算菜单交互、
-// fade/HUD 通关演出（stagectx+0x110 / +0x180|=0x100）留 TODO（下一阶段
-// 随结算窗 oracle 一起校准）。
+// Extra/练习/全灭入口建骨架。
 #pragma once
 
 #include <string>
@@ -71,7 +69,7 @@ struct PostGamePlatform {
     virtual bool request_stage6_fade() { return false; }
     virtual bool request_extra_results() { return false; }
     // GameOver/结算B 的 BGM「th128_08」（0x43f570:58）与音效族；id 先以
-    // 0x15030(菜单音)/7(暂停 BGM 位) 语义透传，音频接线属 TODO。
+    // 0x15030(菜单音)/7(暂停 BGM 位) 语义透传。
     virtual void bgm(i32 id) = 0;
 };
 

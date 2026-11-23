@@ -13,9 +13,6 @@
 //   - 无 --case 时 current/cumulative 必需固定 case 未登记即非零退出并打印清单。
 //   - 报告 schema th13/mp-workflow-test/v1；case 只在真实编译运行且断言通过后
 //     标 passed；任一失败整体非零退出。
-//   - 编译源集 = game 全量 + e2e 同款 sdl 8 文件 + tests/e2e/native/
-//     native_stub.cpp（复用不复制）+ case 套件；flags/宏与 tests/e2e/run.sh
-//     完全同款（-DTH13_AUDIO_MIXER_ONLY，freetype 真栅格）。
 //   - 缓存键 = 全部源/头/TU 宏/flags 的 sha256（含编译器标识与 freetype
 //     配置）；缓存与 SP 目录隔离（<outer>/artifacts/mp-native-cache）。
 //   - 运行注入 TH13_NATIVE_ASSET_ROOT / TH13_NATIVE_REPO_ROOT /
@@ -51,7 +48,7 @@ const OUTER = path.resolve(REPO, "..");                              // 外层�
 const MAPPING = path.join(MULTIPLAYER, "workflow-cases.json");
 
 const SDL_SOURCES = ["Application", "ApplicationTitle", "ApplicationGame", "AudioDevice",
-  "FileStore", "FontDevice", "GraphicsDevice", "SceneDisplay"]
+  "FileStore", "FontDevice", "GraphicsDevice", "LanguagePack", "SceneDisplay"]
   .map((name) => path.join(PORT, "web/cpp/sdl", `${name}.cpp`));
 const STUB_SOURCE = path.join(PORT, "tests/e2e/native/native_stub.cpp");
 

@@ -1,0 +1,16 @@
+{
+  "schema": "th13/native-e2e/1",
+  "date": "2026-11-23",
+  "command": "ports/th13/tests/e2e/run.sh",
+  "result": "PASS",
+  "input_replay": "games/replays/th13_01.rpy",
+  "total_steps": 113897,
+  "stage_frames": [11675, 16148, 19408, 17825, 20481, 24171],
+  "recorded_score": 16999054,
+  "recorded_stage": 8,
+  "export_bytes": 92149,
+  "original_bytes": 92149,
+  "first_diff": 92149,
+  "verdict": "BYTE-IDENTICAL",
+  "duration_seconds": 21
+}

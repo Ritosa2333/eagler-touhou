@@ -2550,15 +2550,6 @@ void StagePresentation::prepare_player_opacity() {
 bool StagePresentation::draw(u32 pass) {
     if (!error_.empty()) return false;
     if (!(debug_pass_mask >> pass & 1u)) return true;  // 调试过滤
-    // [2026-10-24 拔除 -96 平移 hack] 旧注释称「原版 stage 上下文视口原点
-    // X=+96、表现层渲染位置 = ECL+224（图像实证 f901 自机 ~178）」并据此对
-    // 四 pass 直绘统一 renderer.offset -= 96——该「实证」的参照系是**裁剪
-    // 错误的 golden**（速通视频缺游戏左侧 ~97px，2026-10-24 勘误，见
-    // scripts/video_golden_extract.py 头注）。oracle 数据反证：st01-draws
-    // -replay.jsonl f124 敌机 up 批 verts 屏幕坐标 x∈[411.5,443.5]（layer
-    // 56，ECL≈+107 → ECL+320 直出），[32,416] 视口假设下该敌机出界。原版
-    // 表现层 = ECL+320 直绘于 playfield [128,512]×[16,464]，无 -96 平移。
-    // 同步修正：ScreenViews 游戏相机视口 32→128。
     const auto one = [&](AnmVm& vm) {
         if (!vm.visible) return true;
         return renderer.draw(vm) != -2 || fail(renderer.error.empty() ? "Stage draw failed"
