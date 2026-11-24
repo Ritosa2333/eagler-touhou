@@ -15,7 +15,8 @@ bool TitlePlayerDataView::create(u32& handle, i32 bank, i32 script) {
     return true;
 }
 bool TitlePlayerDataView::leave() {
-    for (u32 handle : roots_) if (!manager_.interrupt(handle, 1)) return fail(manager_.error);
+    for (u32 handle : roots_)
+        if (!manager_.interrupt(handle, 1)) return fail(manager_.error);
     for (u32& handle : rows_) {
         if (handle && !manager_.interrupt(handle, 1)) return fail(manager_.error);
         handle = 0;
@@ -68,8 +69,8 @@ bool TitlePlayerDataView::update(const TitlePlayerDataMenu& menu, const Rasteriz
             roots_.push_back(handle);
         }
     }
-    const bool changed = old_character_ != menu.character() || old_difficulty_ != menu.difficulty() ||
-                         old_page_ != menu.page();
+    const bool changed =
+        old_character_ != menu.character() || old_difficulty_ != menu.difficulty() || old_page_ != menu.page();
     if (menu.page() == 0) {
         for (u32& handle : rows_) {
             if (handle && !manager_.interrupt(handle, 1)) return fail(manager_.error);
@@ -88,12 +89,12 @@ bool TitlePlayerDataView::update(const TitlePlayerDataMenu& menu, const Rasteriz
                 const auto& record = records[i];
                 char prefix[16], suffix[32];
                 std::snprintf(prefix, sizeof prefix, "No.%3d ", record.slot + 1);
-                std::snprintf(suffix, sizeof suffix, " %4d/%4d", record.normal_captures,
-                              record.normal_attempts);
+                std::snprintf(suffix, sizeof suffix, " %4d/%4d", record.normal_captures, record.normal_attempts);
                 std::string name = record.name;
                 if (!record.recorded) {
                     name.clear();
-                    for (i32 n = 0; n < 21; ++n) name += "\x81\x48";
+                    for (i32 n = 0; n < 21; ++n)
+                        name += "\x81\x48";
                 } else if (name.size() < 42) {
                     name.append(42 - name.size(), ' ');
                 }
@@ -131,48 +132,52 @@ bool TitlePlayerDataView::draw(const TitlePlayerDataMenu& menu, HudDrawServices&
             const u32 shade = 255u - u32(i) * 16u;
             style.color = 0xff0000ffu | (shade << 16) | (shade << 8);
             if (!summary.available || !record.available) {
-                std::snprintf(text, sizeof text, "%2d  --------  -----------  ----/--/-- --:--  Stage -  ---%%", i32(i) + 1);
+                std::snprintf(text, sizeof text, "%2d  --------  -----------  ----/--/-- --:--  Stage -  ---%%",
+                              i32(i) + 1);
             } else if (record.timestamp == 0) {
-                std::snprintf(text, sizeof text, "%2d  %s  %9d%d  ----/--/-- --:--  Stage -  ---%%",
-                              i32(i) + 1, record.name.c_str(), record.score, record.continues);
+                std::snprintf(text, sizeof text, "%2d  %s  %9d%d  ----/--/-- --:--  Stage -  ---%%", i32(i) + 1,
+                              record.name.c_str(), record.score, record.continues);
             } else {
                 const std::time_t clock = std::time_t(record.timestamp);
                 const std::tm* date = std::localtime(&clock);
                 if (!date) return fail("Player data score timestamp unavailable");
-                static constexpr const char* stages[] = {"test   ", "Stage 1", "Stage 2", "Stage 3",
-                    "Stage 4", "Stage 5", "Stage 6", "Extra  ", "Clear  ", "ExClear"};
+                static constexpr const char* stages[] = {"test   ", "Stage 1", "Stage 2", "Stage 3", "Stage 4",
+                                                         "Stage 5", "Stage 6", "Extra  ", "Clear  ", "ExClear"};
                 if (record.stage < 0 || record.stage >= 10) return fail("Player data score stage out of range");
-                std::snprintf(text, sizeof text, "%2d  %s  %9d%d  %.4d/%.2d/%.2d %.2d:%.2d  %s  %2.1f%%",
-                    i32(i) + 1, record.name.c_str(), record.score, record.continues,
-                    date->tm_year + 1900, date->tm_mon + 1, date->tm_mday, date->tm_hour, date->tm_min,
-                    stages[record.stage], double(record.progress_percent));
+                std::snprintf(text, sizeof text, "%2d  %s  %9d%d  %.4d/%.2d/%.2d %.2d:%.2d  %s  %2.1f%%", i32(i) + 1,
+                              record.name.c_str(), record.score, record.continues, date->tm_year + 1900,
+                              date->tm_mon + 1, date->tm_mday, date->tm_hour, date->tm_min, stages[record.stage],
+                              double(record.progress_percent));
             }
             if (!output(48, 160 + float(i) * 18, text)) return false;
         }
     }
     style.color = 0xffffffff;
     if (!summary.available || !summary.history_complete) {
-        if (!output(328,378,"    -----") || !output(328,396,"---:--:--") ||
-            !output(328,414,"    -----")) return false;
+        if (!output(328, 378, "    -----") || !output(328, 396, "---:--:--") || !output(328, 414, "    -----"))
+            return false;
     } else {
         std::snprintf(text, sizeof text, "    %5d", summary.play_count);
-        if (!output(328,378,text)) return false;
+        if (!output(328, 378, text)) return false;
         std::snprintf(text, sizeof text, "%3d:%.2d:%.2d", summary.total_frames / 216000,
                       (summary.total_frames / 3600) % 60, (summary.total_frames / 60) % 60);
-        if (!output(328,396,text)) return false;
+        if (!output(328, 396, text)) return false;
         std::snprintf(text, sizeof text, "    %5d", summary.clear_count);
-        if (!output(328,414,text)) return false;
+        if (!output(328, 414, text)) return false;
     }
     return true;
 }
 
 void TitlePlayerDataView::release() {
-    for (u32& handle : roots_) manager_.retire(handle);
-    for (u32& handle : rows_) manager_.retire(handle);
-    for (u32* handle : {&character_, &difficulty_}) manager_.retire(*handle);
+    for (u32& handle : roots_)
+        manager_.retire(handle);
+    for (u32& handle : rows_)
+        manager_.retire(handle);
+    for (u32* handle : {&character_, &difficulty_})
+        manager_.retire(*handle);
     roots_.clear();
     opened_ = closing_ = false;
     old_character_ = old_difficulty_ = old_page_ = -1;
 }
 
-} // namespace th13
+}  // namespace th13

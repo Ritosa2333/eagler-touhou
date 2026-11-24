@@ -26,7 +26,10 @@ namespace th13 {
 
 class AnmRegistry;
 
-namespace multiplayer { class WorldState; struct StageEntry; }
+namespace multiplayer {
+class WorldState;
+struct StageEntry;
+}  // namespace multiplayer
 
 // 诊断开关（不参与逻辑）：由 th13_debug_damage_probe() 打开，
 // 打印 0x446870/0x419a90 的每次注册项伤害贡献。打印窗口默认 7970..7985
@@ -55,10 +58,23 @@ struct StageBattleServices {
     // owns Replay mode; other callers of request_game_over keep their route.
     virtual bool request_player_game_over() { return request_game_over(); }
     virtual bool hud_sound(i32 id) = 0;
-    virtual bool hud_sound(i32 id, float x) { (void)x; return hud_sound(id); }
-    virtual bool stop_sound(i32 id) { (void)id; return true; }
-    virtual bool set_voice_pan(i32 id, float x) { (void)id; (void)x; return true; }
-    virtual bool trance_music(bool active) { (void)active; return true; }
+    virtual bool hud_sound(i32 id, float x) {
+        (void)x;
+        return hud_sound(id);
+    }
+    virtual bool stop_sound(i32 id) {
+        (void)id;
+        return true;
+    }
+    virtual bool set_voice_pan(i32 id, float x) {
+        (void)id;
+        (void)x;
+        return true;
+    }
+    virtual bool trance_music(bool active) {
+        (void)active;
+        return true;
+    }
     // 0x42b030 → HUD script172 标签无条件重写（Update pass 内调用）。
     // 默认空实现：无头/无 HUD 测试路径不失败。
     virtual bool trance_gauge_refresh() { return true; }
@@ -70,7 +86,10 @@ struct StageBattleServices {
     // case0/1 由符卡结算面处理；1UP（0x43d2f0）只 +1 命、无 0x11/横幅。
     // 参数 = front.anm 脚本号。
     // 默认返回 true：所有无头/单测夹具行为不变（纯改善前提）。
-    virtual bool hud_notice(i32 front_script) { (void)front_script; return true; }
+    virtual bool hud_notice(i32 front_script) {
+        (void)front_script;
+        return true;
+    }
     // 0x43d530：灵界值 be808 每跨 200 一整槽，level = be808/200 ∈ 1..3 →
     // FUN_0046f820(..., level+0x6b, ...) 建 front 108/109/110（×1/×2/×MAX）。
     // x/y/z = 自机世界坐标（0043d530.c:24-30 取 DAT_004c22c4+0x5b8/+0x5bc/
@@ -78,11 +97,18 @@ struct StageBattleServices {
     // ins_400 绝对坐标，位置必须由宿主传入。
     // 默认返回 true：无头/单测夹具行为不变（纯改善前提）。
     virtual bool hud_spirit_notice(i32 level, float x, float y, float z) {
-        (void)level; (void)x; (void)y; (void)z; return true;
+        (void)level;
+        (void)x;
+        (void)y;
+        (void)z;
+        return true;
     }
     // 0x44ad60：道具得分弹字入池（value/位置/颜色）。默认空实现。
     virtual bool score_popup(i32 value, float x, float y, u32 color) {
-        (void)value; (void)x; (void)y; (void)color;
+        (void)value;
+        (void)x;
+        (void)y;
+        (void)color;
         return true;
     }
     // 敌机死亡回收钩（0x418e00 销毁支路的 ANM 侧）：宿主回收该敌机全部
@@ -99,11 +125,11 @@ struct PlayerShot {
     bool alive = false;
     // 446bf0 generic hit sets +0x34=0.1f; 4474b0/4475b0/4471f0 do not.
     bool hit_fade = false;
-    i32 state = 1;              // 445c40 +70: 1 active, 2 hit fade, 0 retired.
-    bool animation_finished = false; // VM termination observed by presentation.
-    float speed = 12.0f;       // 无 SHT 的旧回退；生产弹从 SHT +0x18 取值。
+    i32 state = 1;                    // 445c40 +70: 1 active, 2 hit fade, 0 retired.
+    bool animation_finished = false;  // VM termination observed by presentation.
+    float speed = 12.0f;              // 无 SHT 的旧回退；生产弹从 SHT +0x18 取值。
     float width = 8.0f, height = 8.0f;
-    float beam_visual_width = 0; // 446f20 writes VM before enemy hit shrinks width.
+    float beam_visual_width = 0;  // 446f20 writes VM before enemy hit shrinks width.
     i32 age = 0, behavior = 0, type = 0;
     i32 anchor = 0, anchor_power = 0;
     float target_angle = 0, damage_x = 0, damage_y = 0;
@@ -114,7 +140,7 @@ struct PlayerShot {
     u32 generation = 0;
     i32 hit_behavior = 0;
     bool sine_moving = false;
-    StageMover sine_motion; // 447420 initializer; remains active after 4474b0 hit
+    StageMover sine_motion;  // 447420 initializer; remains active after 4474b0 hit
     // 445c40 installs one independent 4457e0 damage registration for every
     // live shot.  The slot is an implementation handle only; the pool owns
     // the geometry and timer, so vector compaction cannot retarget a hit.
@@ -134,7 +160,7 @@ struct PlayerShot {
 struct DamageRegistration {
     enum class Owner { Shot, Area };
     bool active = false;
-    u32 flags = 0; // bit0 = enabled; bit1 = circular (unused by shot pool)
+    u32 flags = 0;  // bit0 = enabled; bit1 = circular (unused by shot pool)
     Owner owner = Owner::Shot;
     i32 orb = -1;
     float radius = 0, radius_growth = 0;
@@ -175,13 +201,13 @@ struct PlayerBombOrb {
     float x = 0, y = 0, angle = 0;
     bool active = false, exploding = false;
     i32 explosion_frame = 0;
-    Timer explosion_damage_clock{10, 11, 11.f, 0, 1}; // 4456e0 registration lifetime
+    Timer explosion_damage_clock{10, 11, 11.f, 0, 1};  // 4456e0 registration lifetime
     float radius = 0, speed = 0;
     float velocity_x = 0, velocity_y = 0;
     float accumulated_damage = 0;
     i32 registration_slot = -1;
     // 40ae30 owns the trajectory; caller supplies the current target, if any.
-    void step(i32 age,i32 index,float player_x,float player_y,const StageEnemy* target);
+    void step(i32 age, i32 index, float player_x, float player_y, const StageEnemy* target);
 };
 
 // 命中扫描用的敌机快照（每帧 sim.step_frame 之前采集）：原版 0x419a90 的
@@ -210,7 +236,7 @@ struct ShtShotRecord {
     float speed = 0;
     float width = 0, height = 0;
     i32 behavior = 0, type = 0;
-    i32 sound = -1; // SHT record +0x24, 445c40 positional shot sound.
+    i32 sound = -1;  // SHT record +0x24, 445c40 positional shot sound.
     i32 initializer = 0, hit_behavior = 0;
     float motion_phase = 0;
 };
@@ -276,10 +302,10 @@ struct StagePlayerState {
     } respawn_damage;
     Vec3 respawn_origin{};  // player+644：入场激光清除用的死亡位置快照
     // Bomb 域（0x40a270 上下文；四角色共享布局，逐席独立库存/相位）。
-    i32 bomb_timer = 0;          // 炸弹作用剩余帧
+    i32 bomb_timer = 0;  // 炸弹作用剩余帧
     // Remaining protection supplied by this seat's Bomb, including its tail.
     i32 bomb_protection = 0;
-    i32 bomb_age = -1;           // ctx+0x1c；未施放=-1
+    i32 bomb_age = -1;  // ctx+0x1c；未施放=-1
     // 0040a270:292 `add esi,0x18` → 00401400 的 +0x20 浮点累加器。
     float bomb_age_accumulator = 0;
     u32 bomb_generation = 0;
@@ -287,7 +313,7 @@ struct StagePlayerState {
         Vec3 origin{}, center{};
         float angle = 0;
     };
-    std::array<BombRay, 5> bomb_rays{};   // 0040c2c0: ANM 原点与伤害中心
+    std::array<BombRay, 5> bomb_rays{};  // 0040c2c0: ANM 原点与伤害中心
     std::array<PlayerBombOrb, 8> bomb_orbs{};
     float bomb_angle = -1.5707964f;
     float bomb_center_x = 0, bomb_center_y = 0;
@@ -304,7 +330,7 @@ struct StagePlayerState {
         float x = 0, y = 0;
     } touch;
     // SHT 定标（移速/卫星偏移/弹型域；prepare_player 按角色装载，逐席）。
-    i32 speed_orth = 576, speed_diag = 407;          // 非聚焦（pl02a.sht ×128）
+    i32 speed_orth = 576, speed_diag = 407;  // 非聚焦（pl02a.sht ×128）
     i32 speed_orth_focus = 256, speed_diag_focus = 181;
     std::array<std::array<std::array<i32, 2>, 10>, 2> option_offsets{};
     std::array<std::vector<ShtShotRecord>, 11> sht_shots;
@@ -322,14 +348,15 @@ class StageBattle {
     std::unique_ptr<StagePlayerState> owned_player_state_;
     StagePlayerState& player_state_;
     void activate_stage_player();
+
 public:
     StageBattle() : StageBattle(nullptr) {}
     // 共享 game RNG 注入（R 模块 0x4dc324 位接线）：传入时 sim（ECL/弹幕/
     // etEx）与自机弹出膛共用同一实例；缺省 = 自持（tests 无头路径不破）。
     explicit StageBattle(GameRandom* shared_random, StagePlayerState* shared_player = nullptr)
         : owned_player_state_(shared_player ? nullptr : std::make_unique<StagePlayerState>()),
-          player_state_(shared_player ? *shared_player : *owned_player_state_),
-          sim(shared_random), item_manager(shared_random) {}
+          player_state_(shared_player ? *shared_player : *owned_player_state_), sim(shared_random),
+          item_manager(shared_random) {}
     StageSim sim;
     // 当帧敌机总受伤害统计（原版 0x418e00 mgr+0x28 每帧清零并累加，供 harness 对照）
     float frame_damage_total = 0.0f;
@@ -352,9 +379,7 @@ public:
     PlayerPhase& player_phase = player_state_.phase;
     i32& player_phase_frame = player_state_.phase_frame;
     i32& player_phase_frame_previous = player_state_.phase_frame_previous;
-    bool player_visible() const noexcept {
-        return !player_dead && player_phase != PlayerPhase::Dying;
-    }
+    bool player_visible() const noexcept { return !player_dead && player_phase != PlayerPhase::Dying; }
     i32& invulnerable = player_state_.invulnerable;
     // M2：Bomb/respawn/妖梦斩击池/输入/touch/SHT 域随席位交换（原 StageBattle
     // 成员迁移至 StagePlayerState，引用别名保持全部既有访问面不变）。
@@ -377,9 +402,7 @@ public:
     i32 power_level() const noexcept {
         return player_ && player_->power_step > 0 ? player_->power / player_->power_step : 0;
     }
-    bool full_power() const noexcept {
-        return player_ && player_->power >= player_->max_power;
-    }
+    bool full_power() const noexcept { return player_ && player_->power >= player_->max_power; }
     std::vector<PlayerShot>& shots = player_state_.shots;
     // 447230 creates the hit effect synchronously during enemy collision,
     // before later enemies/ANM instructions consume visual RNG.
@@ -408,8 +431,7 @@ public:
     std::function<bool()> reimu_explosion_shake;
     // 40b590 calls 40b1b0 per orb before the enemy/item update passes.
     std::function<bool(StageBattle&, i32)> reimu_bomb_orb_birth;
-    std::array<DamageRegistration, 256>& damage_registrations =
-        player_state_.damage_registrations;
+    std::array<DamageRegistration, 256>& damage_registrations = player_state_.damage_registrations;
     i32& damage_registration_cursor = player_state_.damage_registration_cursor;
 
     // 定点模型状态（§7.2）。
@@ -426,7 +448,7 @@ public:
         sim.player_y = y;
     }
     // 448ec0 ->447850: recorded fixed position and initial focus, before input0.
-    void restore_replay_player(i32 x,i32 y,bool initial_focus);
+    void restore_replay_player(i32 x, i32 y, bool initial_focus);
     i32& speed_orth = player_state_.speed_orth;
     i32& speed_diag = player_state_.speed_diag;
     i32& speed_orth_focus = player_state_.speed_orth_focus;
@@ -444,12 +466,12 @@ public:
     // 定标常量（.sht 弹型域以外的域：碰撞/无敌等，§7.2【待校准】）。
     // kFireInterval/kShotDamage/kShotOffset* 仅无 .sht 回退路径使用；
     // 弹型/伤害/弹速/间隔/相位全部出自 .sht 记录（0x446000/0x445c40）。
-    static constexpr i32 kFireInterval = 4;      // 回退：发射间隔帧（相位制）
-    static constexpr float kShotDamage = 12.0f;  // 回退：单发伤害（整值）
-    static constexpr float kShotSpeed = 12.0f;   // 仅无 SHT 的旧回退；生产用记录 +0x18。
-    static constexpr float kShotHalf = 4.0f;     // 弹体半宽高
-    static constexpr float kShotOffsetX = 8.0f;  // 无 .sht 回退：三发 x 偏移
-    static constexpr float kShotOffsetY = 12.0f; // 无 .sht 回退：出膛 y 偏移
+    static constexpr i32 kFireInterval = 4;       // 回退：发射间隔帧（相位制）
+    static constexpr float kShotDamage = 12.0f;   // 回退：单发伤害（整值）
+    static constexpr float kShotSpeed = 12.0f;    // 仅无 SHT 的旧回退；生产用记录 +0x18。
+    static constexpr float kShotHalf = 4.0f;      // 弹体半宽高
+    static constexpr float kShotOffsetX = 8.0f;   // 无 .sht 回退：三发 x 偏移
+    static constexpr float kShotOffsetY = 12.0f;  // 无 .sht 回退：出膛 y 偏移
     // 自机判定尺寸（0x441dd0:65 + .data 0x4c0ba8[be7b8]）：DAT_004be7b8 =
     // 选人光标 0..3；常规路径 be7bc=0，故下标 = character。值 = 2/3/3/3，
     // 原版存“全尺寸”：0x444140 弹幕圆形判定以 尺寸² 参与（port collide_player
@@ -468,18 +490,17 @@ public:
     static constexpr i32 kKillScore = 5000;
     static constexpr i32 kKillPower = 8;
     // 灵界（trance）：
-    static constexpr i32 kTranceActivateFrame = 30;   // 0x4057f0：任务计时 ≥0x1e
+    static constexpr i32 kTranceActivateFrame = 30;        // 0x4057f0：任务计时 ≥0x1e
     static constexpr i32 kTranceExitInvulnerability = 70;  // 0x405b80:0x405d29 push 0x46 → 0x405440
-    static constexpr float kTranceDrainPerFrame = 3.0f;  // 0x4aeca8=3.0【drain 点待 asm 复核】
+    static constexpr float kTranceDrainPerFrame = 3.0f;    // 0x4aeca8=3.0【drain 点待 asm 复核】
 
     // sht_name：移速 + 弹型来源（回放对拍 = plXXa/b.sht；缺文件时失败）。
-    bool load(EclResourceProvider& provider, const char* stage_file, i32 difficulty_rank,
-              StageBattleServices& host, SessionState& progress, HudPlayerState& player,
-              HudScoreState& score, const char* event_path = nullptr,
+    bool load(EclResourceProvider& provider, const char* stage_file, i32 difficulty_rank, StageBattleServices& host,
+              SessionState& progress, HudPlayerState& player, HudScoreState& score, const char* event_path = nullptr,
               const char* sht_name = nullptr);
     // 441dd0/444df0 occur before 447900 restores a cold replay.
-    bool prepare_player(EclResourceProvider& provider, SessionState& progress,
-                        HudPlayerState& player, const char* sht_name, bool cold_entry);
+    bool prepare_player(EclResourceProvider& provider, SessionState& progress, HudPlayerState& player,
+                        const char* sht_name, bool cold_entry);
     // 一帧逻辑：输入 → 自机/自机弹 → ECL 步进 → 碰撞 → 奖惩/HUD。
     // 事件落盘开启时：帧号自 1 起（0 = start() 装载趟），player 事件为本帧
     // 首条（§7.3）。
@@ -502,7 +523,7 @@ public:
     std::array<ItemCollector, 3> make_seat_collectors();
     bool continue_player();
     void on_bomb_key();  // X 边沿（经 step 内部处理，这里供测试直调）
-    bool end_trance(); // 405b80: depletion or428820 dialogue entry.
+    bool end_trance();   // 405b80: depletion or428820 dialogue entry.
     // 观察接口（r4/harness TH13_RUN_SCENE=1 路径）：装载后补挂事件落盘。
     // 与 battle.load(event_path) 的观察面等价（events_ 置位 → 逐帧
     // sink.set_frame + player 事件），只写 sink，不改变任何战斗机制/相位。
@@ -510,15 +531,14 @@ public:
     const std::string& error() const { return error_; }
 
     void begin_player_shot_geometry_snapshot(i32 seat = -1);
-    void set_player_shot_geometry(i32 slot, i32 age, i32 script, u32 generation,
-                                  const std::array<Vec3, 4>& quad, i32 seat = -1);
+    void set_player_shot_geometry(i32 slot, i32 age, i32 script, u32 generation, const std::array<Vec3, 4>& quad,
+                                  i32 seat = -1);
 
     // .sht 弹型域：5 能量档非聚焦（块 0-4）+ 5 能量档聚焦（块 5-9）+
     // 特殊块 10（类别 2，未接入）。M2：逐席域（每角色独立弹型表），经
     // 引用别名跟随当前活动席。
     static constexpr u32 kShtBlocks = 11;
-    std::array<std::vector<ShtShotRecord>, kShtBlocks>& sht_shots =
-        player_state_.sht_shots;
+    std::array<std::vector<ShtShotRecord>, kShtBlocks>& sht_shots = player_state_.sht_shots;
     bool& sht_shots_loaded = player_state_.sht_shots_loaded;
 
     // ---- M2：多席自机（一套共享世界 + 2..3 席独立玩家面） ----
@@ -547,23 +567,19 @@ public:
     //   bomb_allowed()        团队灵界对新 Bomb 的限制（R-T2）。
     enum class TranceMode : i32 { Idle = 0, Manual = 1, DeathProtection = 2 };
     TranceMode trance_mode = TranceMode::Idle;
-    i32 trance_owner_seat = 0;   // 发动者（仲裁序与死亡责任归属）
-    u32 trance_generation = 0;   // 代数（R-T9：owner 死亡重生只清当前代）
+    i32 trance_owner_seat = 0;  // 发动者（仲裁序与死亡责任归属）
+    u32 trance_generation = 0;  // 代数（R-T9：owner 死亡重生只清当前代）
     // 进入死亡演出时记录的灵界代数：重生第 30 帧清槽（0x443240:158）
     // 仅当期间未开启新代灵界——owner 保护灵界耗尽死亡的演出期间队友
     // 开启的新代不得被旧重生路径清掉（R-T9 的 generation 守卫）。
     u32 death_trance_generation = 0;
     // 团队全场查询（= SP trance_active；MP 下同式）。
-    bool team_trance_active() const {
-        return progress_ && trance_active(*progress_);
-    }
+    bool team_trance_active() const { return progress_ && trance_active(*progress_); }
     // 可操作席位的灵界射击查询：灵界期间全体可操作席（R-T2）。
     bool seat_trance_active() const { return team_trance_active(); }
     // R-T2：团队灵界激活期间，所有席位禁止发动新 Bomb。
     // R-C1：挑战模式整局禁雷，包括决死窗。
-    bool bomb_allowed() const {
-        return !challenge && !team_trance_active();
-    }
+    bool bomb_allowed() const { return !challenge && !team_trance_active(); }
     // 房间设置的挑战模式（SessionSetup.challenge）。单席不使用。
     bool challenge = false;
     bool keep_bullets_on_miss = false;
@@ -580,8 +596,7 @@ public:
     // 每席按角色装载 plXXa.sht 定标域（移速/卫星偏移/弹型表——provider
     // 供 .sht 读取；缺文件即失败，不静默降级）。hud 模板 = SP 起飞资源
     //（R-B：每席备用残机 2、Bomb 2、碎片 0、power 按开局档位）。
-    bool enable_seats(EclResourceProvider& provider, i32 count,
-                      const std::array<i32, 3>& characters);
+    bool enable_seats(EclResourceProvider& provider, i32 count, const std::array<i32, 3>& characters);
     // M7：本地席位号（宿主接线——联机会话的 LocalSeat）。step 的
     // effective_input（playback_input/物理输入接缝）写入本席的输入沿；
     // 默认 0 = 单席/本地多席测试零变化。远端席位由 Session::CanSimulate
@@ -607,14 +622,13 @@ public:
     // 重生语义复位（复活 Bomb = SP 初始 2）。跨席事务：不走拾取广播。
     bool rescue_seat(i32 donor, i32 recipient) {
         if (seat_count < 2 || donor == recipient) return false;
-        if (donor < 0 || donor >= seat_count || recipient < 0 || recipient >= seat_count)
-            return false;
+        if (donor < 0 || donor >= seat_count || recipient < 0 || recipient >= seat_count) return false;
         auto& donor_hud = seat_huds[size_t(donor)];
         auto& recipient_hud = seat_huds[size_t(recipient)];
         if (!seats[size_t(recipient)].ghost || seats[size_t(recipient)].ghost_just_entered)
-            return false;   // 非幽灵或刚进入幽灵的同一帧不可救
+            return false;  // 非幽灵或刚进入幽灵的同一帧不可救
         if (seats[size_t(donor)].ghost || seats[size_t(donor)].dead) return false;
-        if (donor_hud.extra_lives <= 0) return false;         // 无命可送
+        if (donor_hud.extra_lives <= 0) return false;  // 无命可送
         --donor_hud.extra_lives;
         seats[size_t(recipient)].ghost = false;
         seats[size_t(recipient)].dead = false;
@@ -685,17 +699,15 @@ private:
     void fire_shots(i32 frame);
     void step_shots();
     i32 reserve_damage_registration();
-    i32 register_circle(Vec3 center, float radius, float growth, i32 lifetime,
-                        i32 damage, i32 interval = 1, i32 threshold = 999999,
-                        i32 orb = -1);
+    i32 register_circle(Vec3 center, float radius, float growth, i32 lifetime, i32 damage, i32 interval = 1,
+                        i32 threshold = 999999, i32 orb = -1);
     i32 register_box(Vec3 center, float width, float height, float angle, i32 damage);
     i32 allocate_damage_registration(PlayerShot& shot);
     void sync_damage_registrations();
     void retire_damage_registration(PlayerShot& shot);
     void collide_shots(StageEnemy& enemy);
     bool enemy_body_collidable(const StageEnemy& enemy) const;
-    int enemy_body_contact(const StageEnemy& enemy, float px, float py,
-                           float hit_size) const;
+    int enemy_body_contact(const StageEnemy& enemy, float px, float py, float hit_size) const;
     static bool enemy_body_graze_awards(const StageEnemy& enemy);
     void collide_enemy_body(StageEnemy& enemy);
     void consume_player_shot_geometry();
@@ -704,9 +716,9 @@ private:
     static bool laser_graze_awards(const StageLaser&);
     i32 collide_laser(const StageLaser&);
     void reward_kill(StageEnemy& enemy);
-    void update_item_side();    // 0x42e380/0x438730 玩家只读面装配 + 步进
-    ItemCollector make_item_collector();  // 0x42e380/0x438730 共用只读面
-    void emit_item_events();              // 道具/神霊事件 → HUD/音/弹字
+    void update_item_side();                     // 0x42e380/0x438730 玩家只读面装配 + 步进
+    ItemCollector make_item_collector();         // 0x42e380/0x438730 共用只读面
+    void emit_item_events();                     // 道具/神霊事件 → HUD/音/弹字
     bool update_trance(const GameInput& input);  // 0x4057f0/0x405a20/0x405b80
     bool kill_player();
     bool commit_death();
@@ -719,8 +731,7 @@ private:
     HudScoreState* score_ = nullptr;
     Timer& player_phase_clock_ = player_state_.phase_clock;
     Timer& fire_clock_ = player_state_.fire_clock;
-    std::array<std::array<std::array<i32, 2>, 10>, 2>& option_offsets_ =
-        player_state_.option_offsets;
+    std::array<std::array<std::array<i32, 2>, 10>, 2>& option_offsets_ = player_state_.option_offsets;
     std::array<std::array<i32, 2>, 8>& option_fixed_ = player_state_.option_fixed;
     std::array<std::array<i32, 2>, 33>& movement_history_ = player_state_.movement_history;
     i32& option_power_ = player_state_.option_power;
@@ -733,9 +744,9 @@ private:
     float& bomb_visual_angle_ = player_state_.bomb_visual_angle;
     i32& bomb_duration_ = player_state_.bomb_duration;
     i32& character_ = player_state_.character;
-    bool life_probe_ = false;  // TH13_LIFE_PROBE=1：敌机生命轨迹对拍探针
-    bool events_ = false;  // 事件落盘（回放对拍）
-    bool sink_open_ = false;  // open_event_sink 已启（load 不清 events_ 的幂等位）
+    bool life_probe_ = false;                          // TH13_LIFE_PROBE=1：敌机生命轨迹对拍探针
+    bool events_ = false;                              // 事件落盘（回放对拍）
+    bool sink_open_ = false;                           // open_event_sink 已启（load 不清 events_ 的幂等位）
     float& player_hit_size_ = player_state_.hit_size;  // 0x660+4：0x441dd0 写入
     // 灵界（trance）状态：团队槽在 SessionState.ending_points（共享）；
     // 个人死亡保护标志逐席（StagePlayerState.trance_protection 引用别名）。

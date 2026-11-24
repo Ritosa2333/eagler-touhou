@@ -8,8 +8,8 @@
 
 #include "TitleState.hpp"
 
-#include <functional>
 #include <array>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -34,20 +34,20 @@ struct TitlePlayerDataSummary {
     std::array<TitlePlayerDataScore, 10> ranking{};
     i32 play_count = 0, total_frames = 0, clear_count = 0, no_continue_clear_count = 0;
     bool available = false;
-    bool history_complete = false; // a migrated port save omitted ordinary data
+    bool history_complete = false;  // a migrated port save omitted ordinary data
 };
 
 // 单条 scoreth13.dat 记录（字段身份以 00453b30/00456b50 实读为准）。
 struct TitlePlayerDataRecord {
-    i32 slot = -1;        // No.%3d：全局槽 0..126
-    std::string name;     // 0x164f0 + slot*0x9c
-    i32 score = 0;        // legacy DTO alias: aggregate ordinary attempts, not points
-    i32 number_a = 0;     // legacy DTO alias: aggregate ordinary captures
-    i32 number_b = 0;     // legacy DTO alias: aggregate practice captures
+    i32 slot = -1;     // No.%3d：全局槽 0..126
+    std::string name;  // 0x164f0 + slot*0x9c
+    i32 score = 0;     // legacy DTO alias: aggregate ordinary attempts, not points
+    i32 number_a = 0;  // legacy DTO alias: aggregate ordinary captures
+    i32 number_b = 0;  // legacy DTO alias: aggregate practice captures
     i32 normal_captures = 0, normal_attempts = 0;
     i32 practice_captures = 0, practice_attempts = 0;
-    i32 practice_best_score = 0; // internal units, displayed with a trailing zero
-    bool recorded = false; // aggregate ordinary attempts != 0 (00453b30)
+    i32 practice_best_score = 0;     // internal units, displayed with a trailing zero
+    bool recorded = false;           // aggregate ordinary attempts != 0 (00453b30)
     bool character_flagged = false;  // score+char*0x56dc+0xa00+slot*0x9c != 0
 };
 
@@ -67,8 +67,7 @@ struct TitlePlayerDataPlatform {
     }
     // 第 ordinal 条匹配记录的字段；character 用于填 character_flagged。
     // false = 数据缺失，不得以零值冒充记录。
-    virtual bool record(i32 difficulty, i32 character, i32 ordinal,
-                        TitlePlayerDataRecord& out) const {
+    virtual bool record(i32 difficulty, i32 character, i32 ordinal, TitlePlayerDataRecord& out) const {
         (void)difficulty;
         (void)character;
         (void)ordinal;
@@ -76,7 +75,9 @@ struct TitlePlayerDataPlatform {
         return false;
     }
     virtual bool summary(i32 difficulty, i32 character, TitlePlayerDataSummary& out) const {
-        (void)difficulty; (void)character; (void)out;
+        (void)difficulty;
+        (void)character;
+        (void)out;
         return false;
     }
 };
@@ -98,8 +99,7 @@ class TitlePlayerDataMenu {
 public:
     std::function<bool(i32)> play_sound;
     std::string error;
-    TitlePlayerDataMenu(TitleState& state_, TitlePlayerDataPlatform& host_)
-        : state(state_), host(host_) {}
+    TitlePlayerDataMenu(TitleState& state_, TitlePlayerDataPlatform& host_) : state(state_), host(host_) {}
 
     // case0：宿主开表 + 固定形状校验；成功进 substate1。
     bool open();

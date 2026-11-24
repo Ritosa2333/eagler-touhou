@@ -16,7 +16,9 @@ struct RecordedCall {
     u16 opcode;
     std::vector<i32> ints;
     std::vector<float> floats;
-    bool operator==(const RecordedCall& other) const { return opcode == other.opcode && ints == other.ints && floats == other.floats; }
+    bool operator==(const RecordedCall& other) const {
+        return opcode == other.opcode && ints == other.ints && floats == other.floats;
+    }
 };
 
 // 游戏指令桩：按 eclmap 记录每条指令按签名解析后的实参（int/float 各一路），
@@ -43,7 +45,10 @@ public:
         // ins_548 diffWait（0x41f2c4 ★）：thread.time -= 按难度选取的参数。
         // 桩必须实现它，否则依赖 548 停帧的脚本（GirlA02_at 等）会无 wait 死循环。
         if (opcode == 548) {
-            const i32 index = (context.difficulty & 8) ? 3 : (context.difficulty & 4) ? 2 : (context.difficulty & 2) ? 1 : 0;
+            const i32 index = (context.difficulty & 8)   ? 3
+                              : (context.difficulty & 4) ? 2
+                              : (context.difficulty & 2) ? 1
+                                                         : 0;
             i32 frames = 0;
             if (u32(index) < call.ints.size()) frames = call.ints[index];
             context.time -= float(frames);

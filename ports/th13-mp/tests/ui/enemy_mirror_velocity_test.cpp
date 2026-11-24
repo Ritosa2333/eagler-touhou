@@ -15,10 +15,10 @@
 // motion_delta[0] 快照进 mirror_velocity_x 并置 mirror_ready；306 在 ECL
 // 体内清 ready、以当帧位置作过渡基线。本测试覆盖主路径读快照、306 过渡帧
 // 抑制比较、以及三步号映射（含 0.03f 死区）。
-#include "ui_test_fixtures.hpp"
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
 #include "game/StagePresentation.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include <memory>
 

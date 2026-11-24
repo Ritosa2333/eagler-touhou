@@ -21,8 +21,7 @@ struct Rig {
     }
     int ellipse(u16 opcode, std::initializer_list<float> args) {
         std::vector<u8> data;
-        th13test::emit(data, 0, opcode, 0, 255, 0,
-                      {0, 0, 0, 0, 0, 0});
+        th13test::emit(data, 0, opcode, 0, 255, 0, {0, 0, 0, 0, 0, 0});
         size_t offset = 16;
         for (float value : args) {
             std::memcpy(data.data() + offset, &value, 4);
@@ -70,13 +69,12 @@ TEST(ellipse_keeps_circle_center_but_reanchors_an_existing_ellipse) {
     CHECK_EQ(mover.pos[1], 80.f);
     // 41c990's center-copy gate is != 2, not != 3. Keep sentinels
     // preserve the ellipse parameters but do not suppress that copy.
-    CHECK_EQ(r.ellipse(420, {-999999, -999999, -999999,
-                             -999999, -999999, -999999}), 0);
+    CHECK_EQ(r.ellipse(420, {-999999, -999999, -999999, -999999, -999999, -999999}), 0);
     CHECK_EQ(mover.pos[0], 80.f);
     CHECK_EQ(mover.pos[1], 80.f);
     CHECK_EQ(mover.radius, 60.f);
     CHECK_EQ(mover.ellipse_ratio, .5f);
 }
-}
+}  // namespace
 
 int main() { return th13test::run_all("ellipse-movement"); }

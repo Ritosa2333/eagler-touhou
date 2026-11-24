@@ -3,9 +3,9 @@
 // pause 是 run 内覆盖层：不动 destination，重开/回标题由平台请求。
 #pragma once
 
+#include "AnmManager.hpp"
 #include "PauseFrame.hpp"
 #include "SessionState.hpp"
-#include "AnmManager.hpp"
 #include "TitlePlayerDataMenu.hpp"
 
 namespace th13 {
@@ -21,8 +21,8 @@ struct RunPausePlatform {
     virtual bool sound(i32) = 0;
     virtual bool suspend_music() = 0;
     virtual bool resume_music() { return true; }
-    virtual bool restart_run() = 0;        // pending_destination = 13
-    virtual bool return_to_title() = 0;    // pending_destination = 4
+    virtual bool restart_run() = 0;      // pending_destination = 13
+    virtual bool return_to_title() = 0;  // pending_destination = 4
     virtual bool continue_run() { return false; }
     virtual bool save_replay() { return false; }
     virtual bool open_pause_options() { return false; }
@@ -66,8 +66,8 @@ public:
     PauseMenu menu;
     PauseFrame frame;
     std::string error;
-    RunPause(SessionState&, AnmManager&, AnmEnvironment&, RunPausePlatform&, FrameScheduler&,
-             i32 front_bank, i32 text_bank = 0);
+    RunPause(SessionState&, AnmManager&, AnmEnvironment&, RunPausePlatform&, FrameScheduler&, i32 front_bank,
+             i32 text_bank = 0);
     ~RunPause();
     RunPause(const RunPause&) = delete;
     RunPause& operator=(const RunPause&) = delete;

@@ -22,11 +22,10 @@ bool FontDevice::initialize() {
         return false;
     }
     if (!raster.initialize(mapping_.data(), mapping_.size())) {
-        error =
-            "TH13 dialogue font unavailable: original MS Gothic (/msgothic.ttc or "
-            "/fonts/msgothic.ttc) is absent from the VFS; Japanese dialogue text "
-            "rendering stays BLOCKED (no substitute font per asset red line; see "
-            "artifacts/verification/r4/dialogue/HANDOFF.md)";
+        error = "TH13 dialogue font unavailable: original MS Gothic (/msgothic.ttc or "
+                "/fonts/msgothic.ttc) is absent from the VFS; Japanese dialogue text "
+                "rendering stays BLOCKED (no substitute font per asset red line; see "
+                "artifacts/verification/r4/dialogue/HANDOFF.md)";
         return false;
     }
     ready_ = true;
@@ -52,8 +51,7 @@ void recolor_argb4444(TextureImage& target, u32 color) {
         for (u32 column = 0; column < target.width; column++, pixel += 2) {
             u16 value = 0;
             std::memcpy(&value, pixel, 2);
-            const u16 coverage = std::max(u16((value >> 8) & 0xF),
-                                          std::max(u16((value >> 4) & 0xF), u16(value & 0xF)));
+            const u16 coverage = std::max(u16((value >> 8) & 0xF), std::max(u16((value >> 4) & 0xF), u16(value & 0xF)));
             if (!coverage) continue;
             value = u16((coverage << 12) | (r4 << 8) | (g4 << 4) | b4);
             std::memcpy(pixel, &value, 2);
@@ -62,8 +60,7 @@ void recolor_argb4444(TextureImage& target, u32 color) {
 }
 }  // namespace
 
-bool FontDevice::draw_text(TextureImage& target, i32 x, i32 y, i32 profile, u32 color,
-                           const std::string& cp932_text) {
+bool FontDevice::draw_text(TextureImage& target, i32 x, i32 y, i32 profile, u32 color, const std::string& cp932_text) {
     if (!ready_ && !initialize()) return false;
     if (profile < 0) {
         error = "TH13 dialogue font profile out of range";
@@ -94,8 +91,7 @@ bool FontDevice::draw_dialogue(TextureImage& target, i32 x, i32 y, i32 profile, 
     // 五次 pass 同色，覆盖率为五次 pass 的并集；y 默认 2 时偏移即 ±2。
     static constexpr i32 kStrokeOffsets[4][2] = {{-2, -2}, {2, -2}, {-2, 2}, {2, 2}};
     for (const auto& offset : kStrokeOffsets) {
-        if (!raster.draw(target, x + offset[0], y + offset[1], u32(profile), 0xffffffu,
-                         cp932_text)) {
+        if (!raster.draw(target, x + offset[0], y + offset[1], u32(profile), 0xffffffu, cp932_text)) {
             error = "Failed to rasterize dialogue CP932 outline";
             return false;
         }
@@ -108,8 +104,7 @@ bool FontDevice::draw_dialogue(TextureImage& target, i32 x, i32 y, i32 profile, 
     return true;
 }
 
-bool FontDevice::render_dialogue_line(TextureImage& target, i32 x, i32 y, const MsgLine& line,
-                                      u32 color) {
+bool FontDevice::render_dialogue_line(TextureImage& target, i32 x, i32 y, const MsgLine& line, u32 color) {
     if (!line.text_cp932.empty() && !draw_text(target, x, y, 1, color, line.text_cp932)) return false;
     if (line.has_ruby && !line.ruby_cp932.empty()) {
         // 调试入口：生产 ruby 排版由 DialogueText 按原版第二参数（逐字步进）

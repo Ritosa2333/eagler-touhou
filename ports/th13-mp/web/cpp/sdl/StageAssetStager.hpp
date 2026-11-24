@@ -62,8 +62,7 @@ public:
         if (!ecl_.empty()) {
             std::vector<u8> bytes;
             EclResource head;
-            if (!reader_(ecl_, bytes) || !head.open(bytes.data(), u32(bytes.size())) ||
-                head.animations.empty())
+            if (!reader_(ecl_, bytes) || !head.open(bytes.data(), u32(bytes.size())) || head.animations.empty())
                 return abandon();
             entries_.front().files = head.animations;
             ecl_.clear();

@@ -54,8 +54,8 @@ TEST(front_script0_decode) {
     CHECK_EQ(resource.scripts.size(), 244u);
     const auto& script0 = resource.scripts[0];
     CHECK_EQ(script0.source_id, 0);
-    CHECK_EQ(script0.file_offset, 0xB90u);          // 脚本表 {0, 0xB90}
-    CHECK_EQ(script0.bytes.size(), 0x160u);         // 0xCF0 - 0xB90
+    CHECK_EQ(script0.file_offset, 0xB90u);   // 脚本表 {0, 0xB90}
+    CHECK_EQ(script0.bytes.size(), 0x160u);  // 0xCF0 - 0xB90
     // 前 7 条（本轮 python 复核）：op438 / op500×6。
     const th13::AnmInstruction* insns[7] = {};
     for (int i = 0; i < 7; i++)
@@ -91,16 +91,14 @@ TEST(front_global_numbering) {
         // 此处校验每 entry 段内 id 连续递增 + 段内偏移单调。
         for (u32 i = 0; i < scripts_per_entry[e]; i++) {
             const auto& entry_script = resource.scripts[script_base + i];
-            CHECK_EQ(entry_script.source_id,
-                     resource.scripts[script_base].source_id + th13::i32(i));
-            if (i)
-                CHECK(entry_script.file_offset > resource.scripts[script_base + i - 1].file_offset);
+            CHECK_EQ(entry_script.source_id, resource.scripts[script_base].source_id + th13::i32(i));
+            if (i) CHECK(entry_script.file_offset > resource.scripts[script_base + i - 1].file_offset);
         }
         CHECK(resource.sprites[sprite_base].texture == e);  // entry 边界换纹理
         sprite_base += sprites_per_entry[e];
         script_base += scripts_per_entry[e];
     }
-    CHECK_EQ(sprite_base, 153u);   // 全局 sprite 序号 0..152 连续
+    CHECK_EQ(sprite_base, 153u);  // 全局 sprite 序号 0..152 连续
     CHECK_EQ(script_base, 244u);
 }
 

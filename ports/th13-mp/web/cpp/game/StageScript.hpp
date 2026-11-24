@@ -50,6 +50,7 @@ public:
     explicit StageScript(const StageResource& file) : file_(file) {}
     bool step(float rate = 1);
     bool interrupt(i32 id);
+
 private:
     const StageResource& file_;
     void camera_effect(float rate) noexcept;

@@ -3,10 +3,10 @@
 // docs/plans/ui-base.md §四）。
 #pragma once
 
-#include "../game/TitlePlayerDataMenu.hpp"
-#include "../game/TitleSpellPracticeMenu.hpp"
 #include "../game/SpellCatalog.hpp"
 #include "../game/SpellElapsedTime.hpp"
+#include "../game/TitlePlayerDataMenu.hpp"
+#include "../game/TitleSpellPracticeMenu.hpp"
 #include "../multiplayer/HostState.hpp"
 
 namespace th13::sdl {
@@ -33,8 +33,7 @@ struct TitlePlayerDataHost : TitlePlayerDataPlatform {
         if (difficulty < 0 || difficulty >= kPlayerDataDifficulties) return 0;
         return count_records ? count_records(difficulty) : 0;
     }
-    bool record(i32 difficulty, i32 character, i32 ordinal,
-                TitlePlayerDataRecord& out) const override {
+    bool record(i32 difficulty, i32 character, i32 ordinal, TitlePlayerDataRecord& out) const override {
         return read_record && read_record(difficulty, character, ordinal, out);
     }
     bool summary(i32 difficulty, i32 character, TitlePlayerDataSummary& out) const override {
@@ -54,9 +53,8 @@ struct TitleSpellPracticeHost : TitleSpellPracticePlatform {
     }
     std::string stage_name(i32 stage) const override {
         // 0x4bb944 名字表（尾随空格是原版列对齐的一部分，原样保留）。
-        static constexpr const char* kNames[kSpellPracticeStages + 1] = {
-            nullptr, "Stage 1", "Stage 2", "Stage 3", "Stage 4",
-            "Stage 5", "Stage 6", "Extra  "};
+        static constexpr const char* kNames[kSpellPracticeStages + 1] = {nullptr,   "Stage 1", "Stage 2", "Stage 3",
+                                                                         "Stage 4", "Stage 5", "Stage 6", "Extra  "};
         if (stage < 1 || stage > kSpellPracticeStages) return {};
         return kNames[stage];
     }
@@ -80,19 +78,16 @@ struct TitleSpellPracticeHost : TitleSpellPracticePlatform {
         return entry ? entry->rank : -1;
     }
     bool spell_variant_available(i32 stage, i32 slot, i32 difficulty) const override {
-        return catalog && catalog->variant_available(stage, slot, difficulty,
-                                                     encountered, captured);
+        return catalog && catalog->variant_available(stage, slot, difficulty, encountered, captured);
     }
     std::string spell_variant_name(i32 stage, i32 slot, i32 difficulty) const override {
         const auto* entry = catalog ? catalog->variant(stage, slot, difficulty) : nullptr;
-        return entry && named && named(entry->id)
-                   ? entry->name : std::string{};
+        return entry && named && named(entry->id) ? entry->name : std::string{};
     }
     i32 character_count() const override { return kSpellPracticeCharacters; }
     std::string character_name(i32 character) const override {
         // 0x4bb904 名字表（同 TitleReplayMenu 的原版列对齐字符串）。
-        static constexpr const char* kNames[kSpellPracticeCharacters] = {
-            "Reimu  ", "Marisa ", "Sanae  ", "Youmu  "};
+        static constexpr const char* kNames[kSpellPracticeCharacters] = {"Reimu  ", "Marisa ", "Sanae  ", "Youmu  "};
         if (character < 0 || character >= kSpellPracticeCharacters) return {};
         return kNames[character];
     }
@@ -108,8 +103,7 @@ inline bool transition_gate_player_update_runs(bool paused, u32 scene_flags) noe
     return !paused && (scene_flags & 0x70u) == 0;
 }
 
-inline bool transition_gate_should_interrupt(u32 frames, bool paused,
-                                             u32 scene_flags) noexcept {
+inline bool transition_gate_should_interrupt(u32 frames, bool paused, u32 scene_flags) noexcept {
     return frames >= 29 && transition_gate_player_update_runs(paused, scene_flags);
 }
 
@@ -119,25 +113,25 @@ inline bool transition_gate_should_interrupt(u32 frames, bool paused,
 // 单测避开 SDL3 设备头；生产构建从不定义它（ApplicationState 仍完整编译）。
 #ifndef TH13_APPLICATION_PLATFORMS_ONLY
 
-#include "Application.hpp"
-#include "SceneDisplay.hpp"
-#include "FontDevice.hpp"
-#include "AudioDevice.hpp"
-#include "FileStore.hpp"
-#include "StageAssetStager.hpp"
+#include "../game/DialogueText.hpp"
 #include "../game/EndingScene.hpp"
-#include "../game/ReplayFile.hpp"
-#include "../game/ReplaySession.hpp"
-#include "../game/ReplayRecorder.hpp"
-#include "../game/TitleScene.hpp"
 #include "../game/ManualViewer.hpp"
+#include "../game/PlayfieldTargets.hpp"
+#include "../game/ReplayFile.hpp"
+#include "../game/ReplayRecorder.hpp"
+#include "../game/ReplaySession.hpp"
+#include "../game/RunPause.hpp"
+#include "../game/RunScene.hpp"
+#include "../game/RunTransitionEffect.hpp"
 #include "../game/TitleMusicRoomMenu.hpp"
 #include "../game/TitleOptionsMenu.hpp"
-#include "../game/DialogueText.hpp"
-#include "../game/RunScene.hpp"
-#include "../game/RunPause.hpp"
-#include "../game/PlayfieldTargets.hpp"
-#include "../game/RunTransitionEffect.hpp"
+#include "../game/TitleScene.hpp"
+#include "Application.hpp"
+#include "AudioDevice.hpp"
+#include "FileStore.hpp"
+#include "FontDevice.hpp"
+#include "SceneDisplay.hpp"
+#include "StageAssetStager.hpp"
 
 #include <chrono>
 #include <memory>
@@ -220,8 +214,7 @@ struct PendingReplayRecorder final {
     bool encode(std::vector<u8>& out, const std::string& name, i32 score) const {
         return stream.encode(out, name, score);
     }
-    bool encode(std::vector<u8>& out, const std::string& name, i32 score,
-                const ReplaySaveMeta& meta) const {
+    bool encode(std::vector<u8>& out, const std::string& name, i32 score, const ReplaySaveMeta& meta) const {
         return stream.encode(out, name, score, meta);
     }
 };
@@ -252,14 +245,14 @@ struct PendingReplayRecorder final {
 // capture_frame，全程单调）；M6 快照/M8 防重播登记消费该身份。
 struct PendingFileEvent {
     enum class Kind : i32 {
-        SpellEvent,         // 帧失败档（Begin→attempt / 其余 captured→capture）
-        SpellPracticeScore, // 帧失败档
-        StageClear,         // 帧失败档
-        PauseOption,        // 帧失败档（含设备音量写 apply_volumes 延至 commit）
-        ResultEntry,        // 帧失败档
-        MusicUnlocked,      // 帧失败档（Ending 曲目解锁）
-        MarkHeard,          // 吞错档（MusicRoom Z 落档）
-        PersistOptions,     // 菜单错误档（title options）
+        SpellEvent,          // 帧失败档（Begin→attempt / 其余 captured→capture）
+        SpellPracticeScore,  // 帧失败档
+        StageClear,          // 帧失败档
+        PauseOption,         // 帧失败档（含设备音量写 apply_volumes 延至 commit）
+        ResultEntry,         // 帧失败档
+        MusicUnlocked,       // 帧失败档（Ending 曲目解锁）
+        MarkHeard,           // 吞错档（MusicRoom Z 落档）
+        PersistOptions,      // 菜单错误档（title options）
     };
     Kind kind = Kind::MarkHeard;
     u32 capture_frame = 0;  // 捕获时逻辑帧身份（M6 快照/M8 防重播登记）
@@ -293,8 +286,7 @@ struct PendingVoicePan {
     float pan = 0;
 };
 
-struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePlatform,
-                                EndingPlatform {
+struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePlatform, EndingPlatform {
     GraphicsDevice graphics;
     FontDevice fonts;
     // 字体设备初始化失败的显式记录（原版 MS Gothic 启动资产缺席 → 对话日文
@@ -388,9 +380,12 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 末段关卡。save_replay_slot 默认 ReplaySaveMeta 的实时慢速率来源。
     double slow_num_ = 0.0, slow_den_ = 0.0;
     void reset_slow_rate() {
-        slow_actual_ = 0.0; slow_budget_ = 0.0;
-        slow_window_time_ = 0.0; slow_window_frames_ = 0;
-        slow_num_ = 0.0; slow_den_ = 0.0;
+        slow_actual_ = 0.0;
+        slow_budget_ = 0.0;
+        slow_window_time_ = 0.0;
+        slow_window_frames_ = 0;
+        slow_num_ = 0.0;
+        slow_den_ = 0.0;
     }
     unsigned pending_load = 0, loading_frames = 0;
     bool loading_startup = false;
@@ -486,7 +481,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool begin_record_stage();
     std::unique_ptr<ReplayInputCursor> replay_cursor;
     bool replay_active = false;
-    i32 replay_catalog_index = 0; // 4525b0 preserves DAT_004dc674 for the return
+    i32 replay_catalog_index = 0;  // 4525b0 preserves DAT_004dc674 for the return
     bool replay_finished = false;
     // 0x44c0d0 标题线程尾段已跑：TitleInf+0x5e4>=0xB4 或 DAT_004dcc5c&0x180
     // 时经 0x46e620 卸载 ANM 槽 1（sig.anm）。标题场景跑过即置位；加速直入
@@ -498,7 +493,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     const GameInput* physical_input = nullptr;
     u32 replay_pass_start = 0;
     bool restart_update = false;
-    GameInput replay_input; // recorded input history, frozen with the stage
+    GameInput replay_input;  // recorded input history, frozen with the stage
     // 回放恢复挂点：begin_replay_run 备好 stage 指针，begin_run 在关首表
     // 重置（0x42b990:103-110 等价）之后、场景构造/ECL 第 0 帧之前应用
     // 0x449070 恢复（种子 + 22 dword）。正常开局/换关为空。
@@ -640,7 +635,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     void wire_multiplayer_audio();
     bool step(const GameInput& input, float fps, bool lost_focus);
     bool apply_destination();
-    bool quit(); // original global score cleanup/save; reports storage failure
+    bool quit();  // original global score cleanup/save; reports storage failure
     bool begin_title(i32 reason);
     // 正常开局/换关由 pending stage / replay_session 设置 replay_active 与恢复状态
     bool begin_run();
@@ -674,8 +669,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool configure_multiplayer(i32 count, const std::array<i32, 3>& characters) {
         return configure_multiplayer(count, characters, 0);
     }
-    bool configure_multiplayer(i32 count, const std::array<i32, 3>& characters,
-                               i32 local_seat) {
+    bool configure_multiplayer(i32 count, const std::array<i32, 3>& characters, i32 local_seat) {
         if (count != 0 && (count < 2 || count > 3)) return false;
         if (local_seat < 0 || (count && local_seat >= count)) return false;
         for (i32 i = 0; i < count; ++i)
@@ -740,8 +734,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool update_manual(u32 pressed, u32 repeated) override;
     bool manual_finished() const override;
     void close_manual() override;
-    bool rasterize_title_text(AnmVm&, u32, const std::string&,
-                              AnmTextAlignment = AnmTextAlignment::Left) override;
+    bool rasterize_title_text(AnmVm&, u32, const std::string&, AnmTextAlignment = AnmTextAlignment::Left) override;
     bool request_destination(i32 raw) override;  // supervisor 0x4dcc24 真值 → destination
     bool hud_text(const HudTextDraw&) override;
     // TitleMenuServices：clear-tag 真实存档门（0x451450 case0 score 块
@@ -771,30 +764,19 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool open_player_data() override { return player_data_host.open_player_data(); }
     void close_player_data() override { player_data_host.close_player_data(); }
     i32 difficulty_count() const override { return player_data_host.difficulty_count(); }
-    i32 record_count(i32 difficulty) const override {
-        return player_data_host.record_count(difficulty);
-    }
-    bool record(i32 difficulty, i32 character, i32 ordinal,
-                TitlePlayerDataRecord& out) const override {
+    i32 record_count(i32 difficulty) const override { return player_data_host.record_count(difficulty); }
+    bool record(i32 difficulty, i32 character, i32 ordinal, TitlePlayerDataRecord& out) const override {
         return player_data_host.record(difficulty, character, ordinal, out);
     }
     bool summary(i32 difficulty, i32 character, TitlePlayerDataSummary& out) const override {
         return player_data_host.summary(difficulty, character, out);
     }
     i32 stage_count() const override { return spell_practice_host.stage_count(); }
-    bool stage_available(i32 stage) const override {
-        return spell_practice_host.stage_available(stage);
-    }
-    std::string stage_name(i32 stage) const override {
-        return spell_practice_host.stage_name(stage);
-    }
+    bool stage_available(i32 stage) const override { return spell_practice_host.stage_available(stage); }
+    std::string stage_name(i32 stage) const override { return spell_practice_host.stage_name(stage); }
     i32 spell_count(i32 stage) const override { return spell_practice_host.spell_count(stage); }
-    bool spell_unlocked(i32 stage, i32 slot) const override {
-        return spell_practice_host.spell_unlocked(stage, slot);
-    }
-    std::string spell_name(i32 stage, i32 slot) const override {
-        return spell_practice_host.spell_name(stage, slot);
-    }
+    bool spell_unlocked(i32 stage, i32 slot) const override { return spell_practice_host.spell_unlocked(stage, slot); }
+    std::string spell_name(i32 stage, i32 slot) const override { return spell_practice_host.spell_name(stage, slot); }
     i32 spell_id(i32 stage, i32 slot, i32 difficulty) const override {
         return spell_practice_host.spell_id(stage, slot, difficulty);
     }
@@ -826,18 +808,16 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 已知残留：Spell 浏览时 cycle 仍以 5 为模，会多出一个 phantom 角色；
     // 彻底修复需 game 层给两个接口分型适配（本卡不改 game 文件）。
     i32 character_count() const override { return kPlayerDataCharacters; }
-    std::string character_name(i32 character) const override {
-        return spell_practice_host.character_name(character);
-    }
+    std::string character_name(i32 character) const override { return spell_practice_host.character_name(character); }
     // TitleMusicRoomPlatform（musicroom-host.md 八回调；r4/menu-extras §六）
     i32 track_count() const override;
     std::string track_title(i32 track) override;
     std::string track_comment(i32 track, i32 line) override;
     bool track_heard(i32 track) const override;
-    void mark_heard(i32 track) override;      // 0x4554f0 Z 路径落档
-    bool play_track(i32 track) override;      // 0x43adc0(0,曲名)+0x461830(2,0)
-    bool play_locked_response() override;     // 0x461830(3/4,0)
-    bool resume_title_music() override;       // 0x43adc0(0,"th13_00")
+    void mark_heard(i32 track) override;   // 0x4554f0 Z 路径落档
+    bool play_track(i32 track) override;   // 0x43adc0(0,曲名)+0x461830(2,0)
+    bool play_locked_response() override;  // 0x461830(3/4,0)
+    bool resume_title_music() override;    // 0x43adc0(0,"th13_00")
     // MusicRoom 曲目目录（musiccmt.txt '@bgm/名' 块 = 播放名 + 曲名行 + 8
     // 注释行；cp932 字节原样，显示归菜单/字体通道，不在此转码）。空 = 资产
     // 缺席（菜单如实空目录，不伪造曲目）。
@@ -878,17 +858,13 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
         return read(name, bytes, required);
     }
     bool camera(DrawCamera index, bool refresh) override { return views.camera(index, refresh); }
-    bool camera_if_changed(DrawCamera index, bool refresh) override {
-        return views.camera_if_changed(index, refresh);
-    }
+    bool camera_if_changed(DrawCamera index, bool refresh) override { return views.camera_if_changed(index, refresh); }
     ZunGraphics& stage_graphics() override { return graphics; }
     bool preload_scenery_animation(i32 bank, const std::string& name) override;
     bool queue_music(i32 code, i32 value, const std::string& name) override {
         return audio_device.queue_music(code, value, name) || fail(audio_device.error);
     }
-    bool trance_music(bool active) override {
-        return audio_device.trance_music(active) || fail(audio_device.error);
-    }
+    bool trance_music(bool active) override { return audio_device.trance_music(active) || fail(audio_device.error); }
     // 0x42b030 的 HUD 侧：无条件重写 script172 标签（Update pass 内调用）。
     bool trance_gauge_refresh() override {
         if (!run) return true;
@@ -966,12 +942,10 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     struct EndingSaveMirror final : EndingSaveBytes {
         explicit EndingSaveMirror(std::array<u8, 13>* storage) : bytes(storage) {}
         u8 read(i32 index) const override {
-            return bytes && index >= 0 && index < i32(bytes->size())
-                       ? (*bytes)[u32(index)] : u8(0);
+            return bytes && index >= 0 && index < i32(bytes->size()) ? (*bytes)[u32(index)] : u8(0);
         }
         void write(i32 index, u8 value) override {
-            if (bytes && index >= 0 && index < i32(bytes->size()))
-                (*bytes)[u32(index)] = value;
+            if (bytes && index >= 0 && index < i32(bytes->size())) (*bytes)[u32(index)] = value;
         }
         std::array<u8, 13>* bytes;
     } ending_save_view{&files.ending_seen_bytes};

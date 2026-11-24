@@ -6,10 +6,10 @@
 // 作废）。角色菜单（窗B 解剖未覆盖）维持 script2/129 现实现待下轮解剖。
 #pragma once
 
+#include "HudDrawData.hpp"
+#include "SessionState.hpp"
 #include "TitleAnimations.hpp"
 #include "TitleMainMenu.hpp"
-#include "SessionState.hpp"
-#include "HudDrawData.hpp"
 
 #include <functional>
 
@@ -23,7 +23,9 @@ struct TitleMenuServices {
     // 0x451cb0: score + character*0x56dc + 0x7fd + (stage+rank*8)*8.
     // Missing progress is locked, not an invented Stage 1 unlock.
     virtual bool practice_stage_played(i32 character, i32 difficulty, i32 stage) {
-        (void)character; (void)difficulty; (void)stage;
+        (void)character;
+        (void)difficulty;
+        (void)stage;
         return false;
     }
     // [r4-M] 角色 clear-tag 可见门数据源（原版 0x451450 case0→1 一次性判定：
@@ -53,22 +55,22 @@ class TitleDifficultyMenu {
     i32 frames = -1;  // 屏龄（substate 切换会重置 state.age，独立计时；-1=未入屏）
     bool check(bool);
     bool sound(i32);
-    bool build_difficulty();      // [解剖] root123+badge101+徽记滚动（age0 = Z+21）
-    void finish_menu_hides();     // [解剖] 主菜单 Z+21 隐藏时间线（非选中隐/选中白化/白条闪）
-    void advance_choreography();  // [解剖] 每帧：光标缓动/徽记下滚/粒子/白条与选中衰减
+    bool build_difficulty();          // [解剖] root123+badge101+徽记滚动（age0 = Z+21）
+    void finish_menu_hides();         // [解剖] 主菜单 Z+21 隐藏时间线（非选中隐/选中白化/白条闪）
+    void advance_choreography();      // [解剖] 每帧：光标缓动/徽记下滚/粒子/白条与选中衰减
     void spawn_particles(i32 count);  // ascii18 克隆（脚本自算位置漂移，RNG 对拍）
     void reorder_difficulty_draws();  // [窗B] L22 桶序：背景 → 粒子 → 90 → 83/84
-    void retire_difficulty();     // 徽记101退场 + 背景右半层复位（root label1 已在 Esc 帧发）
+    void retire_difficulty();         // 徽记101退场 + 背景右半层复位（root label1 已在 Esc 帧发）
     void choose_character() noexcept;
     void return_main();
 
 public:
     std::function<bool(i32)> play_sound;
     std::string error;
-    TitleDifficultyMenu(TitleState& s, SessionState& p, TitleSelectionSettings& settings,
-                        AnmManager& a, TitleSceneResources resources)
-        : state(s), progress(p), settings(settings), visuals(s, a, resources.title),
-          resources(resources), animations(a) {}
+    TitleDifficultyMenu(TitleState& s, SessionState& p, TitleSelectionSettings& settings, AnmManager& a,
+                        TitleSceneResources resources)
+        : state(s), progress(p), settings(settings), visuals(s, a, resources.title), resources(resources),
+          animations(a) {}
     bool update(u32 pressed, u32 repeated);
 };
 
@@ -89,10 +91,10 @@ class TitleCharacterMenu {
 
 public:
     std::string error;
-    TitleCharacterMenu(TitleState& s, SessionState& p, TitleSelectionSettings& settings,
-                       AnmManager& a, TitleMenuServices& host, TitleSceneResources resources)
-        : state(s), progress(p), settings(settings), animations(a),
-          visuals(s, a, resources.title), resources(resources), host(host) {}
+    TitleCharacterMenu(TitleState& s, SessionState& p, TitleSelectionSettings& settings, AnmManager& a,
+                       TitleMenuServices& host, TitleSceneResources resources)
+        : state(s), progress(p), settings(settings), animations(a), visuals(s, a, resources.title),
+          resources(resources), host(host) {}
     bool update(u32 pressed, u32 repeated);
 };
 
@@ -109,10 +111,9 @@ class TitleStageMenu {
 
 public:
     std::string error;
-    TitleStageMenu(TitleState& s, SessionState& p, TitleSelectionSettings& choice,
-                   AnmManager& a, TitleMenuServices& h, TitleSceneResources resources)
-        : state(s), progress(p), settings(choice), animations(a),
-          visuals(s, a, resources.title), host(h) {}
+    TitleStageMenu(TitleState& s, SessionState& p, TitleSelectionSettings& choice, AnmManager& a, TitleMenuServices& h,
+                   TitleSceneResources resources)
+        : state(s), progress(p), settings(choice), animations(a), visuals(s, a, resources.title), host(h) {}
     bool update(u32 pressed, u32 repeated);
     bool draw_texts(HudDrawServices&);
 };

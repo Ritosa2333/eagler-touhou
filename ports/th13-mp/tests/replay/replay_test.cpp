@@ -21,10 +21,10 @@
 
 namespace {
 
-using th13::u8;
+using th13::i32;
 using th13::u16;
 using th13::u32;
-using th13::i32;
+using th13::u8;
 
 bool read_file(const std::string& relative, std::vector<u8>& out) {
     static const char* bases[] = {".", "../../../..", "../../../../.."};
@@ -64,8 +64,8 @@ TEST(xor_roundtrip_both_directions) {
     // 保存序加密 (0x7D,0x3A,0x100)+(0x5C,0xE1,0x400)，装载序解密反之；覆盖
     // 奇尺寸（末字节不动）、小余尾（<block/4 不变换）与大余尾（并入末块）分支。
     // 注：size=1 时原版变换为恒等（奇对齐+余尾合并后无变换区间），不在断言内。
-    for (size_t size : {size_t(255), size_t(256), size_t(257), size_t(1025),
-                        size_t(1026), size_t(2049), size_t(89681)}) {
+    for (size_t size :
+         {size_t(255), size_t(256), size_t(257), size_t(1025), size_t(1026), size_t(2049), size_t(89681)}) {
         const std::vector<u8> original = pattern_bytes(size, u32(size) + 7);
         std::vector<u8> saved = original;
         th13::ReplayFile::xor_encrypt(saved.data(), saved.size(), 0x7D, 0x3A, 0x100);
@@ -148,7 +148,10 @@ TEST(synthetic_replay_roundtrip) {
     std::vector<u8> events((frames + 29) / 30, 60);
     events[1] = 55;
     std::vector<u8> plain(0x74 + 0xC4);
-    plain[0] = 'T'; plain[1] = 'E'; plain[2] = 'S'; plain[3] = 'T';
+    plain[0] = 'T';
+    plain[1] = 'E';
+    plain[2] = 'S';
+    plain[3] = 'T';
     // 顶层头：+0x14 分数、+0x54 慢速率、+0x58 关卡数、+0x5C/60/64 角色/机体/难度。
     const u32 score = 1234567;
     std::memcpy(plain.data() + 0x14, &score, 4);
@@ -181,14 +184,14 @@ TEST(synthetic_replay_roundtrip) {
     const u32 user_offset = u32(0x24 + body.size()), hundred = 0x100;
     file.insert(file.end(), {0, 0, 0, 0});
     std::memcpy(file.data() + 4, &version, 2);
-    file.insert(file.end(), 4, 0);                                   // +0x08
+    file.insert(file.end(), 4, 0);                                                  // +0x08
     file.insert(file.end(), (const u8*)&user_offset, (const u8*)&user_offset + 4);  // +0x0C
     file.insert(file.end(), (const u8*)&hundred, (const u8*)&hundred + 4);          // +0x10
-    file.insert(file.end(), 8, 0);                                   // +0x14/+0x18
+    file.insert(file.end(), 8, 0);                                                  // +0x14/+0x18
     const u32 comp = u32(body.size());
-    file.insert(file.end(), (const u8*)&comp, (const u8*)&comp + 4);                // +0x1C
+    file.insert(file.end(), (const u8*)&comp, (const u8*)&comp + 4);  // +0x1C
     const u32 uncomp = u32(plain.size());
-    file.insert(file.end(), (const u8*)&uncomp, (const u8*)&uncomp + 4);            // +0x20
+    file.insert(file.end(), (const u8*)&uncomp, (const u8*)&uncomp + 4);  // +0x20
     file.insert(file.end(), body.begin(), body.end());
     const std::string text = "Version 1.00c\r\nName TEST\r\n";
     const u32 block = u32(12 + text.size() + 1);
@@ -235,8 +238,8 @@ TEST(real_replay_decode) {
     CHECK_EQ(replay.uncomp_size, 637666u);
     CHECK_EQ(replay.user_offset, 89717u);
     CHECK_EQ(replay.player_name, std::string("Kaz"));
-    CHECK_EQ(replay.rank, 1);        // Normal
-    CHECK_EQ(replay.character, 2);   // Sanae
+    CHECK_EQ(replay.rank, 1);       // Normal
+    CHECK_EQ(replay.character, 2);  // Sanae
     CHECK_EQ(replay.score, 24898353);
     CHECK_EQ(replay.stage_count, 6u);
     CHECK_EQ(replay.stages.size(), 6u);
@@ -354,7 +357,8 @@ TEST(replay_input_cursor) {
     // 慢速率随游标推进。
     th13::ReplayInputCursor rate(stage);
     CHECK_EQ(rate.current_slow_rate(), 60);
-    for (u32 i = 0; i < 30; ++i) rate.next();
+    for (u32 i = 0; i < 30; ++i)
+        rate.next();
     CHECK_EQ(rate.current_slow_rate(), 55);
 }
 
@@ -406,23 +410,21 @@ TEST(tampered_header_changes_the_restored_state_bytes) {
     }
     const auto& stage = replay.stages[0];
     std::vector<u8> tampered(stage.header);
-    tampered[0x20] = u8(tampered[0x20] ^ 1);   // 恢复区内单字节翻转
+    tampered[0x20] = u8(tampered[0x20] ^ 1);  // 恢复区内单字节翻转
     bool restored_differs = false;
     for (u32 i = 0; i < 0x58; ++i) {
         if (tampered[0x14 + i] != stage.header[0x14 + i]) restored_differs = true;
     }
-    CHECK(restored_differs);   // 篡改必然落入恢复字节序列（检出力）
+    CHECK(restored_differs);  // 篡改必然落入恢复字节序列（检出力）
     // 与已知恢复值对照：篡改前恢复序列 = 头[0x14,0x6c) 原样字节。
     const auto& untampered = stage.header;
     u32 same = 0;
     for (u32 i = 0; i < 0x58; ++i) {
         if (tampered[0x14 + i] == untampered[0x14 + i]) ++same;
     }
-    CHECK(same < 0x58);   // 篡改后逐位对照不再全等
+    CHECK(same < 0x58);  // 篡改后逐位对照不再全等
 }
 
 }  // namespace
 
-int main() {
-    return th13test::run_all("录像解码与输入流");
-}
+int main() { return th13test::run_all("录像解码与输入流"); }

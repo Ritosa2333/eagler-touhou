@@ -1,7 +1,7 @@
-#include "TitleScene.hpp"
 #include "TitleResultEntry.hpp"
-#include "TitleMainMenu.hpp"
 #include "PauseState.hpp"
+#include "TitleMainMenu.hpp"
+#include "TitleScene.hpp"
 
 #include <algorithm>
 #include <cstdarg>
@@ -21,12 +21,9 @@ constexpr i32 kResultNameCount = 91;
 // 光标语义复用为 SPACE/DEL/END）。
 constexpr char kTitleResultNameCharacters[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-=.,!?@:;[]()_/{}|~^#$%&*   ";
-static_assert(sizeof(kTitleResultNameCharacters) == 92,
-              "result name table must be 91 entries + NUL");
+static_assert(sizeof(kTitleResultNameCharacters) == 92, "result name table must be 91 entries + NUL");
 
-i32 read_i32(const u8* p) {
-    return i32(u32(p[0]) | u32(p[1]) << 8 | u32(p[2]) << 16 | u32(p[3]) << 24);
-}
+i32 read_i32(const u8* p) { return i32(u32(p[0]) | u32(p[1]) << 8 | u32(p[2]) << 16 | u32(p[3]) << 24); }
 
 std::string format(const char* pattern, ...) {
     char text[256];
@@ -39,24 +36,18 @@ std::string format(const char* pattern, ...) {
 
 // 0x4bb904/0x4bb914/0x4bb96c 指针表（与 TitleReplayMenu 同源实读）。
 constexpr const char* kCharacterNames[4] = {"Reimu  ", "Marisa ", "Sanae  ", "Youmu  "};
-constexpr const char* kDifficultyNames[6] = {"Easy   ", "Normal ", "Hard   ", "Lunatic",
-                                             "Extra  ", "O.D.   "};
-constexpr const char* kRouteNames[10] = {"tst", "St1", "St2", "St3", "St4",
-                                         "St5", "St6", "Ex ", "All", "ExA"};
+constexpr const char* kDifficultyNames[6] = {"Easy   ", "Normal ", "Hard   ", "Lunatic", "Extra  ", "O.D.   "};
+constexpr const char* kRouteNames[10] = {"tst", "St1", "St2", "St3", "St4", "St5", "St6", "Ex ", "All", "ExA"};
 // 0x453db0 同族 stage 名表（PlayerDataView 同源）。
-constexpr const char* kStageNames[10] = {"test   ", "Stage 1", "Stage 2", "Stage 3",
-                                         "Stage 4", "Stage 5", "Stage 6", "Extra  ",
-                                         "Clear  ", "ExClear"};
+constexpr const char* kStageNames[10] = {"test   ", "Stage 1", "Stage 2", "Stage 3", "Stage 4",
+                                         "Stage 5", "Stage 6", "Extra  ", "Clear  ", "ExClear"};
 // 0x4ac6d4 空槽格式串（exe 原文尾 "---%%"，printf 渲染为单个 %）。
-constexpr const char* kEmptySlotRow =
-    "No.%.2d -------- --/--/-- --:-- ------- ------- --- ---%%";
+constexpr const char* kEmptySlotRow = "No.%.2d -------- --/--/-- --:-- ------- ------- --- ---%%";
 
-bool replay_date(const ReplayFile& file, i32& year, i32& month, i32& day, i32& hour,
-                 i32& minute) {
+bool replay_date(const ReplayFile& file, i32& year, i32& month, i32& day, i32& hour, i32& minute) {
     if (file.top_header.size() < 0x14) return false;
     const std::time_t stamp = std::time_t(
-        i64(u64(read_i32(file.top_header.data() + 0x0C)) |
-            u64(read_i32(file.top_header.data() + 0x10)) << 32));
+        i64(u64(read_i32(file.top_header.data() + 0x0C)) | u64(read_i32(file.top_header.data() + 0x10)) << 32));
     std::tm broken{};
 #if defined(_WIN32)
     if (localtime_s(&broken, &stamp) != 0) return false;
@@ -74,17 +65,14 @@ bool replay_date(const ReplayFile& file, i32& year, i32& month, i32& day, i32& h
 }  // namespace
 
 bool TitleResultEntry::fail(const std::string& reason) {
-    if (error.empty())
-        error = reason.empty() ? "Title result screen operation failed" : reason;
+    if (error.empty()) error = reason.empty() ? "Title result screen operation failed" : reason;
     return false;
 }
 
 bool TitleResultEntry::create_visual(i32 script, u32& handle) {
     // 0x44bb80：按 EDI=脚本号新建并覆盖句柄；层/排序由脚本自身 ins_304 决定。
     handle = animations.create(title_bank, script, -1, 0);
-    return handle != 0 ||
-           fail(animations.error.empty() ? "Title result animation unavailable"
-                                         : animations.error);
+    return handle != 0 || fail(animations.error.empty() ? "Title result animation unavailable" : animations.error);
 }
 
 // 0x454050 case0：背景 +0x690（root89，仅缺位）/ script107 / script143+char /
@@ -108,10 +96,8 @@ bool TitleResultEntry::open_name_screen() {
     }
     state.result_character = std::clamp(state.result_character, 0, 3);
     state.result_difficulty = std::clamp(state.result_difficulty, 0, 4);
-    if (!create_visual(143 + state.result_character,
-                       state.handles[143 + state.result_character])) return false;
-    const i32 difficulty_script =
-        state.result_difficulty >= 4 ? 151 : 147 + state.result_difficulty;
+    if (!create_visual(143 + state.result_character, state.handles[143 + state.result_character])) return false;
+    const i32 difficulty_script = state.result_difficulty >= 4 ? 151 : 147 + state.result_difficulty;
     if (!create_visual(difficulty_script, state.handles[difficulty_script])) return false;
 
     // 0x454209..0x4542a0: the editor starts from the last confirmed name
@@ -163,8 +149,7 @@ void TitleResultEntry::retire_slot_visuals() {
 // 退场）。网页侧复用标题返回路径：flags bit1（原版 +0x5c40 bit1）令
 // TitleMainMenu 跳过 180 帧 intro、直接展开菜单；光标归主菜单首项。
 bool TitleResultEntry::return_main() {
-    if (!host.queue_title_music(2, -1, "th13_00.wav"))
-        return fail("Result return title music failed");
+    if (!host.queue_title_music(2, -1, "th13_00.wav")) return fail("Result return title music failed");
     state.flags |= 2u;
     state.return_reason = 1;
     state.menu.count = kTitleMainEntries;
@@ -182,20 +167,18 @@ bool TitleResultEntry::edit_name(u32 pressed, u32 repeated, bool save_to_replay)
     const i32 previous = state.result_name_cursor;
     if ((pressed | repeated) & 0x10)
         state.result_name_cursor = (state.result_name_cursor + kResultNameCount - 13) % kResultNameCount;
-    if ((pressed | repeated) & 0x20)
-        state.result_name_cursor = (state.result_name_cursor + 13) % kResultNameCount;
+    if ((pressed | repeated) & 0x20) state.result_name_cursor = (state.result_name_cursor + 13) % kResultNameCount;
     if ((pressed | repeated) & 0x40)
         state.result_name_cursor =
-            (state.result_name_cursor +
-             (state.result_name_cursor % 13 == 0 ? 12 : kResultNameCount - 1)) % kResultNameCount;
+            (state.result_name_cursor + (state.result_name_cursor % 13 == 0 ? 12 : kResultNameCount - 1)) %
+            kResultNameCount;
     if ((pressed | repeated) & 0x80)
         state.result_name_cursor =
-            (state.result_name_cursor +
-             (state.result_name_cursor % 13 == 12 ? kResultNameCount - 12 : 1)) % kResultNameCount;
-    if (previous != state.result_name_cursor && !host.sound(10))
-        return fail("Result name cursor sound failed");
+            (state.result_name_cursor + (state.result_name_cursor % 13 == 12 ? kResultNameCount - 12 : 1)) %
+            kResultNameCount;
+    if (previous != state.result_name_cursor && !host.sound(10)) return fail("Result name cursor sound failed");
 
-    if (pressed & 0x80001) {  // Z/Enter
+    if (pressed & 0x80001) {                   // Z/Enter
         if (state.result_name_cursor == 89) {  // 0x59：DEL（长度 0 时不动作）
             // 0x454483/0x454da8: both editors finish DEL on the shared
             // confirm tail 0x45451c/0x454e58, which plays sound 7.
@@ -207,8 +190,7 @@ bool TitleResultEntry::edit_name(u32 pressed, u32 repeated, bool save_to_replay)
             if (save_to_replay) {
                 // 00454d6e: END requests the award voice before writing.
                 if (!host.sound(0x11)) return fail("Replay save sound failed");
-                if (!host.save_replay_slot(state.result_slot + 1, state.result_name))
-                    return fail("Replay save failed");
+                if (!host.save_replay_slot(state.result_slot + 1, state.result_name)) return fail("Replay save failed");
                 if (!host.sound(7)) return fail("Replay slot confirm sound failed");
                 state.change_substate(2);
             } else {
@@ -222,9 +204,7 @@ bool TitleResultEntry::edit_name(u32 pressed, u32 repeated, bool save_to_replay)
             return true;
         } else {
             // 0..87 = 字符表；0x58 (=88) = SPACE。满 8 字后覆盖第 8 字符。
-            const char ch = state.result_name_cursor == 88
-                                ? ' '
-                                : kTitleResultNameCharacters[state.result_name_cursor];
+            const char ch = state.result_name_cursor == 88 ? ' ' : kTitleResultNameCharacters[state.result_name_cursor];
             if (state.result_name.size() < 8)
                 state.result_name += ch;
             else
@@ -268,12 +248,9 @@ bool TitleResultEntry::name_editor(u32 pressed, u32 repeated) {
 bool TitleResultEntry::slot_selector(u32 pressed, u32 repeated) {
     constexpr i32 slots = 25;
     const i32 previous = state.result_slot;
-    if ((pressed | repeated) & 0x10)
-        state.result_slot = (state.result_slot + slots - 1) % slots;
-    if ((pressed | repeated) & 0x20)
-        state.result_slot = (state.result_slot + 1) % slots;
-    if (previous != state.result_slot && !host.sound(10))
-        return fail("Replay slot cursor sound failed");
+    if ((pressed | repeated) & 0x10) state.result_slot = (state.result_slot + slots - 1) % slots;
+    if ((pressed | repeated) & 0x20) state.result_slot = (state.result_slot + 1) % slots;
+    if (previous != state.result_slot && !host.sound(10)) return fail("Replay slot cursor sound failed");
     if (pressed & 0x102) {  // X/Esc：case4 收面回主菜单
         if (!host.sound(9)) return fail("Replay slot cancel sound failed");
         state.change_substate(4);
@@ -291,9 +268,7 @@ bool TitleResultEntry::slot_selector(u32 pressed, u32 repeated) {
     return true;
 }
 
-bool TitleResultEntry::slot_name_editor(u32 pressed, u32 repeated) {
-    return edit_name(pressed, repeated, true);
-}
+bool TitleResultEntry::slot_name_editor(u32 pressed, u32 repeated) { return edit_name(pressed, repeated, true); }
 
 bool TitleResultEntry::update(u32 pressed, u32 repeated) {
     if (!error.empty()) return false;
@@ -365,34 +340,30 @@ std::string TitleResultEntry::score_row_text(const TitlePlayerDataScore& record,
     if (name.empty()) name = fallback_name;
     if (name.empty()) name = "--------";
     if (!record.available) {
-        return format("%2d  --------  -----------  ----/--/-- --:--  Stage -  ---%%",
-                      ordinal + 1);
+        return format("%2d  --------  -----------  ----/--/-- --:--  Stage -  ---%%", ordinal + 1);
     }
     if (record.timestamp == 0) {
-        return format("%2d  %s  %9d%d  ----/--/-- --:--  Stage -  ---%%",
-                      ordinal + 1, name.c_str(), record.score, record.continues);
+        return format("%2d  %s  %9d%d  ----/--/-- --:--  Stage -  ---%%", ordinal + 1, name.c_str(), record.score,
+                      record.continues);
     }
     const std::time_t clock = std::time_t(record.timestamp);
     const std::tm* date = std::localtime(&clock);
     if (!date || record.stage < 0 || record.stage >= 10) {
-        return format("%2d  %s  %9d%d  ----/--/-- --:--  Stage -  ---%%",
-                      ordinal + 1, name.c_str(), record.score, record.continues);
+        return format("%2d  %s  %9d%d  ----/--/-- --:--  Stage -  ---%%", ordinal + 1, name.c_str(), record.score,
+                      record.continues);
     }
-    return format("%2d  %s  %9d%d  %.4d/%.2d/%.2d %.2d:%.2d  %s  %2.1f%%",
-                  ordinal + 1, name.c_str(), record.score, record.continues,
-                  date->tm_year + 1900, date->tm_mon + 1, date->tm_mday, date->tm_hour,
-                  date->tm_min, kStageNames[record.stage], double(record.progress_percent));
+    return format("%2d  %s  %9d%d  %.4d/%.2d/%.2d %.2d:%.2d  %s  %2.1f%%", ordinal + 1, name.c_str(), record.score,
+                  record.continues, date->tm_year + 1900, date->tm_mon + 1, date->tm_mday, date->tm_hour, date->tm_min,
+                  kStageNames[record.stage], double(record.progress_percent));
 }
 
-bool TitleResultEntry::draw_score_rows(HudDrawServices& draw,
-                                       const TitleResultScreenData& data) {
+bool TitleResultEntry::draw_score_rows(HudDrawServices& draw, const TitleResultScreenData& data) {
     HudTextStyle style;
     style.font = 0;
     style.shadow = true;
     const auto put = [&](float x, float y, u32 color, const std::string& text) {
         style.color = color;
-        return draw.hud_text({{x, y, 0}, style, text}) ||
-               fail("Result screen text service failed");
+        return draw.hud_text({{x, y, 0}, style, text}) || fail("Result screen text service failed");
     };
     for (i32 i = 0; i < i32(data.records.size()); ++i) {
         u32 color;
@@ -407,8 +378,10 @@ bool TitleResultEntry::draw_score_rows(HudDrawServices& draw,
         // 00454690 queues the current editable name separately at x=84.
         // Reserve all eight columns here so that its date/score never shift
         // and an empty name does not draw dashes underneath the editor.
-        if (i == data.rank) record.name.assign(8, ' ');
-        else if (record.available) record.name.resize(8, ' ');
+        if (i == data.rank)
+            record.name.assign(8, ' ');
+        else if (record.available)
+            record.name.resize(8, ' ');
         const std::string text = score_row_text(record, i, {});
         if (!put(48, 160 + float(i) * 18, color, text)) return false;
     }
@@ -421,8 +394,7 @@ bool TitleResultEntry::draw_name_editor(HudDrawServices& draw, float name_x, flo
     style.shadow = true;
     const auto put = [&](float x, float y, u32 color, const std::string& text) {
         style.color = color;
-        return draw.hud_text({{x, y, 0}, style, text}) ||
-               fail("Result name text service failed");
+        return draw.hud_text({{x, y, 0}, style, text}) || fail("Result name text service failed");
     };
     if (!put(name_x, name_y, 0xffffffffu, state.result_name)) return false;
     // 0x454690 下划线：x = 84 + 9*len（满 8 字再 -9），黄色。
@@ -443,8 +415,7 @@ bool TitleResultEntry::draw_name_editor(HudDrawServices& draw, float name_x, flo
             glyph.assign(1, char(0x80));
         else
             glyph.assign(1, kTitleResultNameCharacters[i]);
-        const u32 color =
-            i == state.result_name_cursor ? kResultColorSelected : kResultColorUnselected;
+        const u32 color = i == state.result_name_cursor ? kResultColorSelected : kResultColorUnselected;
         if (!put(x, y, color, glyph)) return false;
         if (i % 13 == 12) {
             x = 212;
@@ -459,8 +430,7 @@ bool TitleResultEntry::draw_name_editor(HudDrawServices& draw, float name_x, flo
 std::string replay_save_slot_row(i32 slot, const ReplayFile* file, bool compact) {
     const char* empty = compact ? "No.%.2d -------- --/--/-- ------- -- St-" : kEmptySlotRow;
     i32 year = 0, month = 0, day = 0, hour = 0, minute = 0;
-    if (!file || file->top_header.size() < 0x6C ||
-        !replay_date(*file, year, month, day, hour, minute))
+    if (!file || file->top_header.size() < 0x6C || !replay_date(*file, year, month, day, hour, minute))
         return format(empty, slot);
     const u8* top = file->top_header.data();
     const i32 character = std::clamp(read_i32(top + 0x5C) + read_i32(top + 0x60), 0, 3);
@@ -468,17 +438,14 @@ std::string replay_save_slot_row(i32 slot, const ReplayFile* file, bool compact)
     const i32 route = std::clamp(read_i32(top + 0x68), 0, 9);
     if (compact) {
         if ((top[0xA] & 2) && file->top_header.size() >= 0x74)
-            return format("No.%.2d %s %.2d/%.2d/%.2d %s Sp %3d", slot,
-                          file->player_name.c_str(), year, month, day,
+            return format("No.%.2d %s %.2d/%.2d/%.2d %s Sp %3d", slot, file->player_name.c_str(), year, month, day,
                           kCharacterNames[character], wrapping_add(read_i32(top + 0x70), 1));
-        return format("No.%.2d %s %.2d/%.2d/%.2d %s %s %s", slot,
-                      file->player_name.c_str(), year, month, day,
+        return format("No.%.2d %s %.2d/%.2d/%.2d %s %s %s", slot, file->player_name.c_str(), year, month, day,
                       kCharacterNames[character], kDifficultyNames[difficulty], kRouteNames[route]);
     }
-    return format("No.%.2d %s %.2d/%.2d/%.2d %.2d:%.2d %s %s %s %2.1f%%",
-                  slot, file->player_name.c_str(), year, month, day, hour, minute,
-                  kCharacterNames[character], kDifficultyNames[difficulty],
-                  kRouteNames[route], double(file->slow_rate));
+    return format("No.%.2d %s %.2d/%.2d/%.2d %.2d:%.2d %s %s %s %2.1f%%", slot, file->player_name.c_str(), year, month,
+                  day, hour, minute, kCharacterNames[character], kDifficultyNames[difficulty], kRouteNames[route],
+                  double(file->slow_rate));
 }
 
 std::string TitleResultEntry::slot_row_text(i32 index) const {
@@ -491,12 +458,10 @@ bool TitleResultEntry::draw_slot_list(HudDrawServices& draw) {
     style.shadow = true;
     const auto put = [&](float x, float y, u32 color, const std::string& text) {
         style.color = color;
-        return draw.hud_text({{x, y, 0}, style, text}) ||
-               fail("Replay slot text service failed");
+        return draw.hud_text({{x, y, 0}, style, text}) || fail("Replay slot text service failed");
     };
     for (i32 i = 0; i < 25; ++i) {
-        const u32 color =
-            i == state.result_slot ? kResultColorSelected : kResultColorUnselected;
+        const u32 color = i == state.result_slot ? kResultColorSelected : kResultColorUnselected;
         if (!put(58, 80 + float(i) * 15, color, slot_row_text(i))) return false;
     }
     return true;
@@ -519,18 +484,15 @@ bool TitleResultEntry::draw_slot_selected(HudDrawServices& draw) {
         const std::time_t stamp = std::time_t(data_.current.timestamp);
         const std::tm* date = std::localtime(&stamp);
         if (!date) return fail("Recording timestamp unavailable");
-        text = format("No.%.2d %s %.2d/%.2d/%.2d %.2d:%.2d %s %s %s %2.1f%%",
-                      state.result_slot + 1, slot_name.c_str(), date->tm_year % 100,
-                      date->tm_mon + 1, date->tm_mday, date->tm_hour, date->tm_min,
-                      kCharacterNames[data_.character], kDifficultyNames[data_.difficulty],
-                      "All", double(data_.current.progress_percent));
+        text = format("No.%.2d %s %.2d/%.2d/%.2d %.2d:%.2d %s %s %s %2.1f%%", state.result_slot + 1, slot_name.c_str(),
+                      date->tm_year % 100, date->tm_mon + 1, date->tm_mday, date->tm_hour, date->tm_min,
+                      kCharacterNames[data_.character], kDifficultyNames[data_.difficulty], "All",
+                      double(data_.current.progress_percent));
     }
     const float age = std::min(10.f, state.age.fractional);
     // 00454ff2..00455005: 240 + (80 + slot*15 - 240)*(10-age)/10.
-    const float y = 240.f + (80.f + float(state.result_slot) * 15.f - 240.f) *
-                                (10.f - age) / 10.f;
-    return draw.hud_text({{58, y, 0}, style, text}) ||
-           fail("Replay slot text service failed");
+    const float y = 240.f + (80.f + float(state.result_slot) * 15.f - 240.f) * (10.f - age) / 10.f;
+    return draw.hud_text({{58, y, 0}, style, text}) || fail("Replay slot text service failed");
 }
 
 bool TitleResultEntry::draw_texts(HudDrawServices& draw) {

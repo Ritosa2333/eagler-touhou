@@ -3,8 +3,8 @@
 // 状态机断言不依赖脚本视觉效果。
 #pragma once
 
-#include "game/AnmManager.hpp"
 #include "game/AnmEnvironment.hpp"
+#include "game/AnmManager.hpp"
 #include "game/Rng.hpp"
 
 #include <cstring>
@@ -66,16 +66,17 @@ inline std::vector<u8> synthetic_anm(u32 sprites, const std::vector<std::vector<
     std::vector<u8> chunk(table_end + body.size() + sizeof name, 0);
     auto put16 = [&](u32 at, u16 value) { std::memcpy(chunk.data() + at, &value, 2); };
     auto put32 = [&](u32 at, u32 value) { std::memcpy(chunk.data() + at, &value, 4); };
-    put32(0, 8);      // version
+    put32(0, 8);  // version
     put16(4, u16(ns));
     put16(6, u16(nc));
-    put16(10, 64);    // width
-    put16(12, 64);    // height
-    put16(14, 5);     // format（外置时不用）
+    put16(10, 64);  // width
+    put16(12, 64);  // height
+    put16(14, 5);   // format（外置时不用）
     put32(16, name_at);
-    chunk[32] = 0;    // hasData=0 → External
-    put32(36, 0);     // stride=0（单 chunk）
-    for (u32 i = 0; i < ns; i++) put32(64 + i * 4, sprite_offsets[i]);
+    chunk[32] = 0;  // hasData=0 → External
+    put32(36, 0);   // stride=0（单 chunk）
+    for (u32 i = 0; i < ns; i++)
+        put32(64 + i * 4, sprite_offsets[i]);
     for (u32 i = 0; i < nc; i++) {
         put32(64 + ns * 4 + i * 8 + 0, 0);                  // source_id
         put32(64 + ns * 4 + i * 8 + 4, script_offsets[i]);  // offset
@@ -88,7 +89,8 @@ inline std::vector<u8> synthetic_anm(u32 sprites, const std::vector<std::vector<
 // n 个平凡脚本（park 即停）：供状态机全链路使用。
 inline std::vector<std::vector<AnmIns>> trivial_scripts(u32 n, u32 sprite_count = 8) {
     std::vector<std::vector<AnmIns>> scripts(n);
-    for (u32 i = 0; i < n; i++) scripts[i] = {wait(), stop()};
+    for (u32 i = 0; i < n; i++)
+        scripts[i] = {wait(), stop()};
     (void)sprite_count;
     return scripts;
 }

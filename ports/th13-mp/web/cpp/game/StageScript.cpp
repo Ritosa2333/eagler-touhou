@@ -8,18 +8,21 @@ void StageFog::set(u32 packed, float near_value, float far_value) noexcept {
     color = packed;
     near_distance = near_value;
     far_distance = far_value;
-    for (u32 i = 0; i < 4; ++i) channels[i] = float((packed >> (i * 8)) & 255);
+    for (u32 i = 0; i < 4; ++i)
+        channels[i] = float((packed >> (i * 8)) & 255);
 }
 void StageFog::pack() noexcept {
     color = 0;
-    for (u32 i = 0; i < 4; ++i) color |= (u32(truncate_int(channels[i])) & 255) << (i * 8);
+    for (u32 i = 0; i < 4; ++i)
+        color |= (u32(truncate_int(channels[i])) & 255) << (i * 8);
 }
 namespace {
 StageFog add(const StageFog& a, const StageFog& b) noexcept {
     StageFog out;
     out.near_distance = float(b.near_distance + a.near_distance);
     out.far_distance = float(b.far_distance + a.far_distance);
-    for (u32 i = 0; i < 4; ++i) out.channels[i] = float(b.channels[i] + a.channels[i]);
+    for (u32 i = 0; i < 4; ++i)
+        out.channels[i] = float(b.channels[i] + a.channels[i]);
     out.pack();
     return out;
 }
@@ -27,7 +30,8 @@ StageFog subtract(const StageFog& a, const StageFog& b) noexcept {
     StageFog out;
     out.near_distance = float(a.near_distance - b.near_distance);
     out.far_distance = float(a.far_distance - b.far_distance);
-    for (u32 i = 0; i < 4; ++i) out.channels[i] = float(a.channels[i] - b.channels[i]);
+    for (u32 i = 0; i < 4; ++i)
+        out.channels[i] = float(a.channels[i] - b.channels[i]);
     out.pack();
     return out;
 }
@@ -35,7 +39,8 @@ StageFog multiply(const StageFog& a, float t) noexcept {
     StageFog out;
     out.near_distance = float(a.near_distance * t);
     out.far_distance = float(a.far_distance * t);
-    for (u32 i = 0; i < 4; ++i) out.channels[i] = float(a.channels[i] * t);
+    for (u32 i = 0; i < 4; ++i)
+        out.channels[i] = float(a.channels[i] * t);
     out.pack();
     return out;
 }
@@ -77,12 +82,11 @@ StageFog StageFogInterpolation::step(float rate) noexcept {
         const float h11 = float(float(a * t) * t);
         const float h01 = float(float(3 - twice) * float(t * t));
         const float h10 = float(b * b * t);
-        current = add(add(add(multiply(start, h00), multiply(end, h01)), multiply(control1, h10)),
-                      multiply(control2, h11));
+        current =
+            add(add(add(multiply(start, h00), multiply(end, h01)), multiply(control1, h10)), multiply(control2, h11));
     } else {
-        current = add(multiply(subtract(end, start),
-                               interpolation_weight(mode, timer.fractional, float(duration))),
-                      start);
+        current =
+            add(multiply(subtract(end, start), interpolation_weight(mode, timer.fractional, float(duration))), start);
     }
     return current;
 }
@@ -115,7 +119,9 @@ bool StageScript::step(float rate) {
         const auto& command = *c;
         auto& s = state;
         switch (command.opcode) {
-        case 0: stopped = true; break;
+        case 0:
+            stopped = true;
+            break;
         case 1:
             s.timer.set(command.argument<i32>(1));
             s.instruction_offset = command.argument<u32>(0);
@@ -123,24 +129,31 @@ bool StageScript::step(float rate) {
         case 2: {
             const auto prior = s.camera.position;
             s.camera.position = vector(vector(command, 0));
-            s.camera.animation_delta = {float(s.camera.position.x - prior.x),
-                                        float(s.camera.position.y - prior.y),
+            s.camera.animation_delta = {float(s.camera.position.x - prior.x), float(s.camera.position.y - prior.y),
                                         float(s.camera.position.z - prior.z)};
             break;
         }
-        case 3: interpolate(s.position, s.camera.position, command); break;
-        case 4: s.camera.direction = vector(vector(command, 0)); break;
-        case 5: interpolate(s.direction, s.camera.direction, command); break;
-        case 6: s.camera.up = vector(vector(command, 0)); break;
-        case 7: s.camera.fov = command.argument<float>(0); break;
+        case 3:
+            interpolate(s.position, s.camera.position, command);
+            break;
+        case 4:
+            s.camera.direction = vector(vector(command, 0));
+            break;
+        case 5:
+            interpolate(s.direction, s.camera.direction, command);
+            break;
+        case 6:
+            s.camera.up = vector(vector(command, 0));
+            break;
+        case 7:
+            s.camera.fov = command.argument<float>(0);
+            break;
         case 8:
-            s.camera.fog.set(command.argument<u32>(0), command.argument<float>(1),
-                             command.argument<float>(2));
+            s.camera.fog.set(command.argument<u32>(0), command.argument<float>(1), command.argument<float>(2));
             break;
         case 9:
             s.fog.start = s.camera.fog;
-            s.fog.end.set(command.argument<u32>(2), command.argument<float>(3),
-                          command.argument<float>(4));
+            s.fog.end.set(command.argument<u32>(2), command.argument<float>(3), command.argument<float>(4));
             s.fog.duration = command.argument<i32>(0);
             s.fog.mode = command.argument<i32>(1);
             s.fog.timer.set(0);
@@ -172,7 +185,8 @@ bool StageScript::step(float rate) {
             }
             break;
         }
-        case 16: break;  // 中断标号（interrupt 扫描锚点，顺序执行无动作）
+        case 16:
+            break;  // 中断标号（interrupt 扫描锚点，顺序执行无动作）
         default:
             // 未定域指令：显式停机，不静默近似。
             error = "STD camera opcode not yet implemented: " + std::to_string(command.opcode);

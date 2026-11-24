@@ -41,8 +41,7 @@ struct Timer {
         rate_index = 0;
         previous = current;
         const float speed = rate ? *rate : 1.f;
-        fractional =
-            static_cast<float>(fractional - (speed > .99f && speed < 1.01f ? 1.f : speed));
+        fractional = static_cast<float>(fractional - (speed > .99f && speed < 1.01f ? 1.f : speed));
         current = truncate_int(fractional);
     }
 };

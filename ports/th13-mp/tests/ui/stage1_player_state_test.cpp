@@ -15,8 +15,7 @@ using namespace th13;
 
 namespace {
 
-constexpr const char* kEventPath =
-    "eagler-touhou/ports/th13/tests/ui/build/stage1_player_state.events.jsonl";
+constexpr const char* kEventPath = "eagler-touhou/ports/th13/tests/ui/build/stage1_player_state.events.jsonl";
 
 // 与 P2 snapshot 的 Resources::read/animation 同路径：按相对仓库根读取
 // artifacts/reference/raw/<name>，ANIM 名单由真实 st01.ecl 驱动并登记。
@@ -60,10 +59,7 @@ public:
             hash_ *= 1099511628211ull;
         }
     }
-    template <class T>
-    void field(const T& value) {
-        add(&value, sizeof value);
-    }
+    template <class T> void field(const T& value) { add(&value, sizeof value); }
     void text(const std::string& value) {
         const u32 size = u32(value.size());
         field(size);
@@ -75,14 +71,15 @@ private:
     u64 hash_ = 1469598103934665603ull;
 };
 
-template <class T>
-void hash_mover(Fingerprint& p, const T& mover) {
-    for (float v : mover.pos) p.field(v);
+template <class T> void hash_mover(Fingerprint& p, const T& mover) {
+    for (float v : mover.pos)
+        p.field(v);
     p.field(mover.speed);
     p.field(mover.angle);
     p.field(mover.radius);
     p.field(mover.growth);
-    for (float v : mover.aux) p.field(v);
+    for (float v : mover.aux)
+        p.field(v);
     p.field(mover.mode);
     p.field(mover.polar.from_a);
     p.field(mover.polar.from_b);
@@ -91,10 +88,14 @@ void hash_mover(Fingerprint& p, const T& mover) {
     p.field(mover.polar.duration);
     p.field(mover.polar.elapsed);
     p.field(mover.polar.mode);
-    for (float v : mover.postime.start) p.field(v);
-    for (float v : mover.postime.target) p.field(v);
-    for (float v : mover.postime.p1) p.field(v);
-    for (float v : mover.postime.p2) p.field(v);
+    for (float v : mover.postime.start)
+        p.field(v);
+    for (float v : mover.postime.target)
+        p.field(v);
+    for (float v : mover.postime.p1)
+        p.field(v);
+    for (float v : mover.postime.p2)
+        p.field(v);
     p.field(mover.postime.duration);
     p.field(mover.postime.elapsed);
     p.field(mover.postime.mode);
@@ -104,8 +105,8 @@ struct StateSections {
     u64 progress = 0, player = 0, score = 0, battle = 0, sim = 0;
 };
 
-StateSections production_state(const StageBattle& battle, const SessionState& progress,
-                               const HudPlayerState& player, const HudScoreState& score) {
+StateSections production_state(const StageBattle& battle, const SessionState& progress, const HudPlayerState& player,
+                               const HudScoreState& score) {
     StateSections out;
 
     Fingerprint p;
@@ -183,7 +184,8 @@ StateSections production_state(const StageBattle& battle, const SessionState& pr
     s.field(battle.sim.boss_nonspell_frame);
     s.field(battle.sim.random.seed());
     s.field(battle.sim.random.index());
-    for (i32 slot : battle.sim.boss_slot) s.field(slot);
+    for (i32 slot : battle.sim.boss_slot)
+        s.field(slot);
     s.field(battle.sim.boss_main_serial);
     s.field(battle.sim.spawn_count());
     const u32 enemy_count = u32(battle.sim.enemies.size());
@@ -196,16 +198,21 @@ StateSections production_state(const StageBattle& battle, const SessionState& pr
         s.field(enemy->life);
         hash_mover(s, enemy->vel);
         hash_mover(s, enemy->pos);
-        for (float v : enemy->position) s.field(v);
+        for (float v : enemy->position)
+            s.field(v);
         s.field(enemy->age);
         s.field(enemy->flags);
-        for (float v : enemy->hurtbox) s.field(v);
-        for (float v : enemy->limit_center) s.field(v);
-        for (float v : enemy->limit_half) s.field(v);
+        for (float v : enemy->hurtbox)
+            s.field(v);
+        for (float v : enemy->limit_center)
+            s.field(v);
+        for (float v : enemy->limit_half)
+            s.field(v);
         for (const auto& et : enemy->et) {
             s.field(et.sprite);
             s.field(et.subtype);
-            for (float v : et.spawn) s.field(v);
+            for (float v : et.spawn)
+                s.field(v);
             s.field(et.angle1);
             s.field(et.angle2);
             s.field(et.speed1);
@@ -214,23 +221,32 @@ StateSections production_state(const StageBattle& battle, const SessionState& pr
             s.field(et.count);
             s.field(et.ways);
             s.field(et.aim);
-            for (float v : et.offset) s.field(v);
-            for (float v : et.absolute) s.field(v);
+            for (float v : et.offset)
+                s.field(v);
+            for (float v : et.absolute)
+                s.field(v);
             for (const auto& ex : et.ex) {
                 s.field(ex.op);
-                for (float v : ex.args) s.field(v);
+                for (float v : ex.args)
+                    s.field(v);
             }
         }
-        for (i32 v : enemy->i_slots) s.field(v);
-        for (float v : enemy->f_slots) s.field(v);
+        for (i32 v : enemy->i_slots)
+            s.field(v);
+        for (float v : enemy->f_slots)
+            s.field(v);
         s.field(enemy->dead);
         s.field(enemy->tick_gate);
         s.text(enemy->interrupt_label);
         s.field(enemy->anm_file);
-        for (i32 v : enemy->anm_script) s.field(v);
-        for (u32 v : enemy->anm_slot_handle) s.field(v);
-        for (float v : enemy->anm_size_a) s.field(v);
-        for (float v : enemy->anm_size_b) s.field(v);
+        for (i32 v : enemy->anm_script)
+            s.field(v);
+        for (u32 v : enemy->anm_slot_handle)
+            s.field(v);
+        for (float v : enemy->anm_size_a)
+            s.field(v);
+        for (float v : enemy->anm_size_b)
+            s.field(v);
         s.field(enemy->mirror_dir);
         s.field(enemy->mirror_prev_x);
         s.field(enemy->mirror_script_base);
@@ -243,8 +259,10 @@ StateSections production_state(const StageBattle& battle, const SessionState& pr
         s.field(bullet.z);
         s.field(bullet.angle);
         s.field(bullet.speed);
-        for (float v : bullet.vel) s.field(v);
-        for (float v : bullet.steer) s.field(v);
+        for (float v : bullet.vel)
+            s.field(v);
+        for (float v : bullet.steer)
+            s.field(v);
         s.field(bullet.ex4_duration);
         s.field(bullet.ex4_timer);
         s.field(bullet.ex8_speed_delta);
@@ -253,7 +271,8 @@ StateSections production_state(const StageBattle& battle, const SessionState& pr
         s.field(bullet.ex8_timer);
         s.field(bullet.sprite);
         s.field(bullet.subtype);
-        for (float v : bullet.hit_size) s.field(v);
+        for (float v : bullet.hit_size)
+            s.field(v);
         s.field(bullet.flags);
         s.field(bullet.hit_scale);
         s.field(bullet.alive);
@@ -264,8 +283,8 @@ StateSections production_state(const StageBattle& battle, const SessionState& pr
 }
 
 bool same_state(const StateSections& a, const StateSections& b) {
-    return a.progress == b.progress && a.player == b.player && a.score == b.score &&
-           a.battle == b.battle && a.sim == b.sim;
+    return a.progress == b.progress && a.player == b.player && a.score == b.score && a.battle == b.battle &&
+           a.sim == b.sim;
 }
 
 struct Fixture {
@@ -277,9 +296,9 @@ struct Fixture {
     StageBattle battle;
     bool loaded = false;
 
-    explicit Fixture(const char* event_path = nullptr, i32 bombs = 2, i32 power = 100,
-                     bool trance = false, i32 extra_lives = 99, i32 power_step = 100,
-                     const char* sht_name = "pl02a.sht", i32 character = 0) {
+    explicit Fixture(const char* event_path = nullptr, i32 bombs = 2, i32 power = 100, bool trance = false,
+                     i32 extra_lives = 99, i32 power_step = 100, const char* sht_name = "pl02a.sht",
+                     i32 character = 0) {
         player.bombs = bombs;
         player.power = power;
         player.power_step = power_step;
@@ -292,8 +311,7 @@ struct Fixture {
         }
         provider.anim_list = &battle.sim.anim_list;
         battle.sim.anm_effects_noop = true;
-        loaded = battle.load(provider, "st01.ecl", 1 << 3, host, progress, player, score,
-                             event_path, sht_name);
+        loaded = battle.load(provider, "st01.ecl", 1 << 3, host, progress, player, score, event_path, sht_name);
         if (!loaded) std::printf("load failed: %s\n", battle.error().c_str());
     }
 
@@ -325,9 +343,7 @@ struct Fixture {
     StageEnemy* vulnerable_enemy() {
         for (int frame = 0; frame < 120; ++frame) {
             for (auto& e : battle.sim.enemies)
-                if (!e->dead && e->life > StageBattle::kBombDamagePerFrame &&
-                    (e->flags & 0x21u) == 0)
-                    return e.get();
+                if (!e->dead && e->life > StageBattle::kBombDamagePerFrame && (e->flags & 0x21u) == 0) return e.get();
             if (!step(0, 0)) {
                 CHECK(false);
                 return nullptr;
@@ -345,7 +361,8 @@ i32 death_power(i32 start, bool capture, i32 step = 100, StateSections* state = 
     CHECK(f.step(0, 0));
     // 00444ca0/00443240：碰撞先入 8 帧决死窗口（不 bomb 则死亡），Dying 第
     // 3 帧才扣 power（0x445a20）。推进到 Dying 第 4 帧，远离 30 帧复活点。
-    for (int frame = 0; frame < 12; ++frame) CHECK(f.step(0, 0));
+    for (int frame = 0; frame < 12; ++frame)
+        CHECK(f.step(0, 0));
     if (state) *state = production_state(f.battle, f.progress, f.player, f.score);
     CHECK_EQ(f.player.deaths, 1);
     return f.player.power;
@@ -361,29 +378,24 @@ TEST(death_power_deducts_step) {
 
 TEST(death_power_clamps_at_step) {
     const i32 starts[] = {100, 108, 150, 199, 200};
-    for (i32 start : starts) CHECK_EQ(death_power(start, false), 100);
+    for (i32 start : starts)
+        CHECK_EQ(death_power(start, false), 100);
     CHECK_EQ(death_power(40, false, 50), 50);
 }
 
 TEST(death_power_same_with_and_without_events) {
-    const std::array<std::array<i32, 2>, 4> cases = {{{100, 100}, {201, 100},
-                                                      {300, 100}, {49, 50}}};
+    const std::array<std::array<i32, 2>, 4> cases = {{{100, 100}, {201, 100}, {300, 100}, {49, 50}}};
     for (const auto& item : cases) {
         StateSections off, on;
-        CHECK_EQ(death_power(item[0], false, item[1], &off),
-                 death_power(item[0], true, item[1], &on));
+        CHECK_EQ(death_power(item[0], false, item[1], &off), death_power(item[0], true, item[1], &on));
         if (!same_state(off, on)) {
             std::printf("state differs start=%d off={%016llx,%016llx,%016llx,%016llx,%016llx} "
                         "on={%016llx,%016llx,%016llx,%016llx,%016llx}\n",
                         item[0], static_cast<unsigned long long>(off.progress),
-                        static_cast<unsigned long long>(off.player),
-                        static_cast<unsigned long long>(off.score),
-                        static_cast<unsigned long long>(off.battle),
-                        static_cast<unsigned long long>(off.sim),
-                        static_cast<unsigned long long>(on.progress),
-                        static_cast<unsigned long long>(on.player),
-                        static_cast<unsigned long long>(on.score),
-                        static_cast<unsigned long long>(on.battle),
+                        static_cast<unsigned long long>(off.player), static_cast<unsigned long long>(off.score),
+                        static_cast<unsigned long long>(off.battle), static_cast<unsigned long long>(off.sim),
+                        static_cast<unsigned long long>(on.progress), static_cast<unsigned long long>(on.player),
+                        static_cast<unsigned long long>(on.score), static_cast<unsigned long long>(on.battle),
                         static_cast<unsigned long long>(on.sim));
         }
         CHECK(same_state(off, on));
@@ -445,7 +457,8 @@ TEST(main_shot_uses_record_speed_damage_and_animation) {
         if (!f.loaded) continue;
         // 0x443240：射击控制器启动计时器 >19 才使能，且自机 60 帧入场期间
         //（Entering）不射。先空跑过入场与启动门，再按住射击键。
-        for (u32 frame = 0; frame < 65; ++frame) CHECK(f.step(0, 0));
+        for (u32 frame = 0; frame < 65; ++frame)
+            CHECK(f.step(0, 0));
         for (u32 frame = 1; frame <= 2; ++frame)
             CHECK(f.step(0x01u, frame == 1 ? 0x01u : 0u));
         // 出膛帧不移动（0x445c40 建伤害矩形于出身位，次帧才起步）。
@@ -498,7 +511,8 @@ TEST(marisa_bomb_slow_multiplier_starts_on_the_frame_after_the_press) {
     Fixture f(nullptr, 2, 100, false, 99, 100, "pl02a.sht", 1);
     CHECK(f.loaded);
     if (!f.loaded) return;
-    for (int i = 0; i < 70; ++i) CHECK(f.step(0, 0));  // 00443240 case0 入场 60 帧
+    for (int i = 0; i < 70; ++i)
+        CHECK(f.step(0, 0));  // 00443240 case0 入场 60 帧
     const i32 before_press = f.battle.pos_fx;
     CHECK(f.step(0x80u, 0x02u));  // 同一帧按下 Bomb 并向右
     const i32 press_frame = f.battle.pos_fx - before_press;
@@ -514,7 +528,8 @@ TEST(reimu_bomb_keeps_full_speed_on_the_frame_after_the_press) {
     Fixture f(nullptr, 2, 100, false, 99, 100, "pl02a.sht", 0);
     CHECK(f.loaded);
     if (!f.loaded) return;
-    for (int i = 0; i < 70; ++i) CHECK(f.step(0, 0));
+    for (int i = 0; i < 70; ++i)
+        CHECK(f.step(0, 0));
     const i32 before_press = f.battle.pos_fx;
     CHECK(f.step(0x80u, 0x02u));
     CHECK_EQ(f.battle.pos_fx - before_press, f.battle.speed_orth);

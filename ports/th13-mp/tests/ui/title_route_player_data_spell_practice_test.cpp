@@ -6,12 +6,12 @@
 //   - SpellPractice update 的 false（普通导航/禁用卡）不是帧错误；
 //   - Launch 只保留原版启动拍命令 + 显式未实现状态，不 start_game、不切屏、不 fatal；
 //   - 空 catalog / 未接 PlayerData 宿主如实失败，不伪造解锁、记录或分数。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
-#include "game/TitleScene.hpp"
-#include "game/TitleMainMenu.hpp"
 #include "game/FrameScheduler.hpp"
+#include "game/TitleMainMenu.hpp"
+#include "game/TitleScene.hpp"
 
 #include <memory>
 #include <string>
@@ -58,11 +58,8 @@ struct RouteHost final : TitleScenePlatform {
     i32 difficulty_count() const override { return kPlayerDataDifficulties; }
     // 同时满足 TitleSpellPracticePlatform 的同名虚函数；Spell 侧只做上限钳制。
     i32 character_count() const override { return kPlayerDataCharacters; }
-    i32 record_count(i32 difficulty) const override {
-        return difficulty == 0 ? player_record_count : 0;
-    }
-    bool record(i32 difficulty, i32 character, i32 ordinal,
-                TitlePlayerDataRecord& out) const override {
+    i32 record_count(i32 difficulty) const override { return difficulty == 0 ? player_record_count : 0; }
+    bool record(i32 difficulty, i32 character, i32 ordinal, TitlePlayerDataRecord& out) const override {
         if (difficulty != 0 || ordinal < 0 || ordinal >= player_record_count) return false;
         out.slot = ordinal;
         out.name = "route-record-" + std::to_string(ordinal);
@@ -75,39 +72,30 @@ struct RouteHost final : TitleScenePlatform {
 
     // TitleSpellPracticePlatform
     i32 stage_count() const override { return spell_stages; }
-    bool stage_available(i32 stage) const override {
-        return stage >= 1 && stage <= spell_stages;
-    }
-    std::string stage_name(i32 stage) const override {
-        return "stage " + std::to_string(stage);
-    }
+    bool stage_available(i32 stage) const override { return stage >= 1 && stage <= spell_stages; }
+    std::string stage_name(i32 stage) const override { return "stage " + std::to_string(stage); }
     i32 spell_count(i32 stage) const override {
         return stage >= 1 && stage <= spell_stages ? kSpellPracticeSlots[stage - 1] : 0;
     }
-    bool spell_unlocked(i32 stage, i32 slot) const override {
-        return stage == 1 && slot == 0;
-    }
+    bool spell_unlocked(i32 stage, i32 slot) const override { return stage == 1 && slot == 0; }
     std::string spell_name(i32 stage, i32 slot) const override {
         return "spell " + std::to_string(stage) + "-" + std::to_string(slot);
     }
-    i32 spell_id(i32 stage, i32 slot, i32 difficulty) const override {
-        return stage * 100 + slot * 10 + difficulty;
-    }
+    i32 spell_id(i32 stage, i32 slot, i32 difficulty) const override { return stage * 100 + slot * 10 + difficulty; }
     i32 spell_rank(i32 stage, i32 slot, i32 difficulty) const override {
         (void)stage;
         (void)slot;
         return difficulty;
     }
-    std::string character_name(i32 character) const override {
-        return "char " + std::to_string(character);
-    }
+    std::string character_name(i32 character) const override { return "char " + std::to_string(character); }
 };
 
 // title.anm 合成镜像（同 title_state_test）：root0 spaw 3-22、灰条 label 7+k、
 // 背景 89、LOGO 94/95。PlayerData/SpellPractice 路由不需要难度/角色树。
 std::vector<u8> title_anm_fixture() {
     std::vector<std::vector<AnmIns>> scripts(243);
-    for (auto& script : scripts) script = {wait(), stop()};
+    for (auto& script : scripts)
+        script = {wait(), stop()};
     auto spawn_range = [&](i32 root, i32 first, i32 last) {
         scripts[u32(root)].clear();
         for (i32 child = first; child <= last; child++)
@@ -144,12 +132,8 @@ struct RouteHarness {
     RouteHarness() {
         animation_updates[0].owner = animation_updates[1].owner = &manager;
         animation_updates[0].enabled = animation_updates[1].enabled = true;
-        animation_updates[0].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(true) ? 1 : 5;
-        };
-        animation_updates[1].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(false) ? 1 : 5;
-        };
+        animation_updates[0].run = [](void* p) { return static_cast<AnmManager*>(p)->update(true) ? 1 : 5; };
+        animation_updates[1].run = [](void* p) { return static_cast<AnmManager*>(p)->update(false) ? 1 : 5; };
         CHECK(scheduler.add(animation_updates[0], FramePass::Update, 9) >= 0);
         CHECK(scheduler.add(animation_updates[1], FramePass::Update, 34) >= 0);
         CHECK(load_bank(manager, 16, title_anm_fixture()));
@@ -157,8 +141,7 @@ struct RouteHarness {
         CHECK(load_bank(manager, 2, synthetic_anm(8, trivial_scripts(20))));
         CHECK(load_bank(manager, 19, synthetic_anm(4, trivial_scripts(4))));
         CHECK(load_bank(manager, 8, synthetic_anm(4, trivial_scripts(4))));
-        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler,
-                                             TitleSceneResources{});
+        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler, TitleSceneResources{});
         CHECK(scene->error.empty());
         scene->state.return_reason = 0;  // 冷启动
     }
@@ -168,7 +151,8 @@ struct RouteHarness {
         CHECK(scheduler.update() >= 0);
     }
     void advance(int frames, u32 pressed = 0, u32 repeated = 0) {
-        for (int i = 0; i < frames; i++) frame(pressed, repeated);
+        for (int i = 0; i < frames; i++)
+            frame(pressed, repeated);
     }
     void reach_menu() {
         advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
@@ -177,10 +161,11 @@ struct RouteHarness {
     }
     void open_entry(i32 entry) {
         reach_menu();
-        for (int i = 0; i < 12 && scene->state.menu.cursor != entry; i++) frame(0x20);
+        for (int i = 0; i < 12 && scene->state.menu.cursor != entry; i++)
+            frame(0x20);
         CHECK_EQ(scene->state.menu.cursor, entry);
-        frame(0x01);       // Z 确认
-        advance(30);       // 主菜单 Z 序 + enter() 转屏
+        frame(0x01);  // Z 确认
+        advance(30);  // 主菜单 Z 序 + enter() 转屏
     }
 };
 
@@ -196,20 +181,22 @@ TEST(player_data_entry_and_escape_restore_main_menu_stack) {
     CHECK(harness.scene->player_data_menu() != nullptr);
     CHECK(harness.scene->player_data_menu()->opened());
     CHECK_EQ(harness.scene->state.menu.depth, 1);
-    for (int i = 0; i < 10 && harness.scene->state.substate != 2; i++) harness.frame();
+    for (int i = 0; i < 10 && harness.scene->state.substate != 2; i++)
+        harness.frame();
     CHECK_EQ(harness.scene->state.substate, 2);
     CHECK(harness.scene->player_data_menu()->error.empty());
 
     harness.frame(0x100);  // X/Esc：case2 → case3
     CHECK_EQ(harness.scene->state.substate, 3);
-    for (int i = 0; i < 10 && int(harness.scene->state.screen) == 10; i++) harness.frame();
+    for (int i = 0; i < 10 && int(harness.scene->state.screen) == 10; i++)
+        harness.frame();
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Main));
     CHECK_EQ(harness.scene->state.menu.depth, 0);
     CHECK_EQ(harness.scene->state.menu.cursor, i32(TitleMainEntry::PlayerData));
     CHECK_EQ(harness.scene->state.menu.count, kTitleMainEntries);
     CHECK_EQ(harness.host.player_closes, 1);
     CHECK(harness.scene->player_data_menu() == nullptr);  // 下次进屏重新开表
-    harness.advance(15);  // 返回路径 11 帧菜单就绪
+    harness.advance(15);                                  // 返回路径 11 帧菜单就绪
     CHECK_EQ(harness.scene->state.substate, 2);
     CHECK(harness.scene->error.empty());
 }
@@ -251,29 +238,24 @@ TEST(spell_practice_launch_is_explicit_and_cancel_restores_menu_stack) {
     CHECK(!harness.scene->spell_practice_launch_pending());
 
     harness.frame(0x01);  // stage 1
-    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()),
-             i32(SpellPracticeLevel::Spell));
+    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()), i32(SpellPracticeLevel::Spell));
     harness.frame(0x01);  // unlocked spell 0
-    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()),
-             i32(SpellPracticeLevel::Difficulty));
-    harness.frame(0x01);  // variant confirm → Launch terminal event
+    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()), i32(SpellPracticeLevel::Difficulty));
+    harness.frame(0x01);                             // variant confirm → Launch terminal event
     CHECK_EQ(int(harness.scene->state.screen), 17);  // 不切屏
     CHECK(harness.scene->spell_practice_launch_pending());
     CHECK(!harness.scene->spell_practice_launch_status().empty());
     CHECK_EQ(harness.host.start_stage, -1);  // 不启动对局
-    CHECK_EQ(i32(harness.scene->spell_practice_menu()->command().action),
-             i32(SpellPracticeAction::Launch));
+    CHECK_EQ(i32(harness.scene->spell_practice_menu()->command().action), i32(SpellPracticeAction::Launch));
     CHECK_EQ(harness.scene->spell_practice_menu()->command().stage, 1);
     CHECK_EQ(harness.scene->spell_practice_menu()->command().spell_slot, 0);
     CHECK_EQ(harness.scene->spell_practice_menu()->command().character, 0);
     CHECK(harness.scene->error.empty());
 
     harness.frame(0x100);  // Difficulty → Spell
-    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()),
-             i32(SpellPracticeLevel::Spell));
+    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()), i32(SpellPracticeLevel::Spell));
     harness.frame(0x100);  // Spell → Stage
-    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()),
-             i32(SpellPracticeLevel::Stage));
+    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()), i32(SpellPracticeLevel::Stage));
     harness.frame(0x100);  // Stage Cancel → Main
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Main));
     CHECK_EQ(harness.scene->state.menu.depth, 0);
@@ -314,8 +296,7 @@ TEST(spell_practice_run_return_cascades_to_difficulty_level) {
     harness.progress.character = 2;
     harness.progress.stage = harness.progress.starting_stage = 1;
     harness.progress.selected_spell_id = 103;  // spell_id(1,0,3)
-    harness.progress.run_mode_flags =
-        (harness.progress.run_mode_flags & ~0x70u) | 0x20u;
+    harness.progress.run_mode_flags = (harness.progress.run_mode_flags & ~0x70u) | 0x20u;
     harness.progress.practice_mode = 0;
     harness.scene->state.return_reason = 5;
     harness.frame();
@@ -331,12 +312,10 @@ TEST(spell_practice_run_return_cascades_to_difficulty_level) {
     // 输入门（case1 age>10，spell_menu_delay_=11）后逐级退场。
     harness.advance(12);
     harness.frame(0x100);  // Difficulty → Spell（光标=启动槽位 0）
-    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()),
-             i32(SpellPracticeLevel::Spell));
+    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()), i32(SpellPracticeLevel::Spell));
     CHECK_EQ(harness.scene->spell_practice_menu()->cursor(), 0);
     harness.frame(0x100);  // Spell → Stage（光标=启动关卡 0）
-    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()),
-             i32(SpellPracticeLevel::Stage));
+    CHECK_EQ(i32(harness.scene->spell_practice_menu()->level()), i32(SpellPracticeLevel::Stage));
     CHECK_EQ(harness.scene->spell_practice_menu()->cursor(), 0);
     harness.frame(0x100);  // Stage Cancel → Main，光标栈 pop
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Main));
@@ -351,8 +330,7 @@ TEST(spell_practice_run_return_unknown_spell_is_explicit_failure) {
     harness.progress.character = 0;
     harness.progress.stage = harness.progress.starting_stage = 1;
     harness.progress.selected_spell_id = 999;  // 目录内无此 id
-    harness.progress.run_mode_flags =
-        (harness.progress.run_mode_flags & ~0x70u) | 0x20u;
+    harness.progress.run_mode_flags = (harness.progress.run_mode_flags & ~0x70u) | 0x20u;
     harness.scene->state.return_reason = 5;
     harness.scene->controls({0, 0, 0, 0});
     CHECK(harness.scheduler.update() < 0);  // 帧错误显式传播（不经 frame() 吞掉）

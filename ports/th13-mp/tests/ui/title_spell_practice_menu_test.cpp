@@ -18,16 +18,12 @@ struct SpellHost final : TitleSpellPracticePlatform {
     bool stage_available(i32 stage) const override {
         return stage >= 1 && stage <= stages && (stage != 1 || stage1_ok);
     }
-    std::string stage_name(i32 stage) const override {
-        return "stage " + std::to_string(stage);
-    }
+    std::string stage_name(i32 stage) const override { return "stage " + std::to_string(stage); }
     i32 spell_count(i32 stage) const override {
         if (overcount) return 99;
         return stage >= 1 && stage <= stages ? kSpellPracticeSlots[stage - 1] : 0;
     }
-    bool spell_unlocked(i32 stage, i32 slot) const override {
-        return stage == 1 && slot == 0;
-    }
+    bool spell_unlocked(i32 stage, i32 slot) const override { return stage == 1 && slot == 0; }
     std::string spell_name(i32 stage, i32 slot) const override {
         return "spell " + std::to_string(stage) + "-" + std::to_string(slot);
     }
@@ -36,13 +32,12 @@ struct SpellHost final : TitleSpellPracticePlatform {
         return stage * 100 + slot * 10 + difficulty;
     }
     i32 spell_rank(i32 stage, i32 slot, i32 difficulty) const override {
-        (void)stage; (void)slot;
+        (void)stage;
+        (void)slot;
         return difficulty;
     }
     i32 character_count() const override { return characters; }
-    std::string character_name(i32 character) const override {
-        return "char " + std::to_string(character);
-    }
+    std::string character_name(i32 character) const override { return "char " + std::to_string(character); }
 };
 
 SpellPracticeInput confirm_key() {
@@ -105,11 +100,11 @@ TEST(stage_spell_difficulty_confirm_emits_original_launch_fields) {
 
     CHECK(menu.update(confirm_key()));
     CHECK_EQ(i32(menu.command().action), i32(SpellPracticeAction::Launch));
-    CHECK_EQ(menu.command().stage, 1);          // DAT_004be81c = index+1
+    CHECK_EQ(menu.command().stage, 1);  // DAT_004be81c = index+1
     CHECK_EQ(menu.command().spell_slot, 0);
     CHECK_EQ(menu.command().difficulty, 0);
-    CHECK_EQ(menu.command().spell_id, 100);     // DAT_004be7d4
-    CHECK_EQ(menu.command().rank, 0);           // DAT_004bbd30[id]
+    CHECK_EQ(menu.command().spell_id, 100);  // DAT_004be7d4
+    CHECK_EQ(menu.command().rank, 0);        // DAT_004bbd30[id]
     CHECK_EQ(menu.command().character, 0);
 }
 
@@ -210,9 +205,9 @@ TEST(restore_selection_reenters_at_difficulty_with_launch_selection) {
     CHECK_EQ(menu.cursor(), 2);
 
     TitleSpellPracticeMenu bad(host);
-    CHECK(!bad.restore_selection(8, 0, 0));                    // stage 越界
+    CHECK(!bad.restore_selection(8, 0, 0));                       // stage 越界
     CHECK(!bad.restore_selection(1, kSpellPracticeSlots[0], 0));  // slot 越界
-    CHECK(!bad.restore_selection(1, 0, 5));                    // difficulty 越界
+    CHECK(!bad.restore_selection(1, 0, 5));                       // difficulty 越界
     CHECK_EQ(i32(bad.level()), i32(SpellPracticeLevel::Stage));
 }
 

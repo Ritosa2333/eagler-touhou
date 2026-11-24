@@ -13,9 +13,9 @@
 // 构成。行对脚本（title.anm 实读）：关卡行 b 层 189..195 / a 层 196..202，
 // 卡行 b 层 203..215 / a 层 216..228——选中行经 b 层显示、未选中行经 a 层
 // 显示；难度行 182..186、rank 229..235、徽记 109（关卡层）/103（卡表层起）。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 #include "game/TitleScene.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include <algorithm>
 #include <cstdio>
@@ -33,7 +33,10 @@ bool read_file(const std::string& path, std::vector<u8>& out) {
     std::fseek(file, 0, SEEK_END);
     const long size = std::ftell(file);
     std::fseek(file, 0, SEEK_SET);
-    if (size < 0) { std::fclose(file); return false; }
+    if (size < 0) {
+        std::fclose(file);
+        return false;
+    }
     out.resize(size_t(size));
     const bool ok = std::fread(out.data(), 1, out.size(), file) == out.size();
     std::fclose(file);
@@ -56,21 +59,16 @@ struct SpellFlowHost final : TitleScenePlatform {
     }
     bool start_game(i32) override { return true; }
     bool record_menu_views() const override { return true; }
-    bool rasterize_title_text(AnmVm&, u32, const std::string&,
-                              AnmTextAlignment) override { return true; }
+    bool rasterize_title_text(AnmVm&, u32, const std::string&, AnmTextAlignment) override { return true; }
     bool hud_text(const HudTextDraw&) override { return true; }
     // 符卡练习目录：stage1 slot0 解锁（真实门数据语义由 menu/view 套件覆盖）。
     i32 stage_count() const override { return kSpellPracticeStages; }
     bool stage_available(i32 stage) const override { return stage >= 1 && stage <= 7; }
     std::string stage_name(i32) const override { return "stage"; }
     i32 spell_count(i32 stage) const override { return kSpellPracticeSlots[stage - 1]; }
-    bool spell_unlocked(i32 stage, i32 slot) const override {
-        return stage == 1 && slot == 0;
-    }
+    bool spell_unlocked(i32 stage, i32 slot) const override { return stage == 1 && slot == 0; }
     std::string spell_name(i32, i32) const override { return "spell"; }
-    i32 spell_id(i32 stage, i32 slot, i32 difficulty) const override {
-        return stage * 100 + slot * 10 + difficulty;
-    }
+    i32 spell_id(i32 stage, i32 slot, i32 difficulty) const override { return stage * 100 + slot * 10 + difficulty; }
     i32 spell_rank(i32, i32, i32 difficulty) const override { return difficulty; }
     bool spell_variant_available(i32, i32, i32) const override { return true; }
     std::string spell_variant_name(i32, i32, i32) const override { return "variant"; }
@@ -98,11 +96,8 @@ struct SpellFlowHarness {
         for (i32 i = 0; i < 2; ++i) {
             updates[u32(i)].owner = &manager;
             updates[u32(i)].enabled = true;
-            updates[u32(i)].run = i == 0 ? +[](void* p) {
-                return static_cast<AnmManager*>(p)->update(true) ? 1 : 5;
-            } : +[](void* p) {
-                return static_cast<AnmManager*>(p)->update(false) ? 1 : 5;
-            };
+            updates[u32(i)].run = i == 0 ? +[](void* p) { return static_cast<AnmManager*>(p)->update(true) ? 1 : 5; }
+                                         : +[](void* p) { return static_cast<AnmManager*>(p)->update(false) ? 1 : 5; };
             CHECK(scheduler.add(updates[u32(i)], FramePass::Update, i == 0 ? 9 : 34) >= 0);
         }
         std::vector<u8> title_bytes, ascii_bytes;
@@ -120,7 +115,10 @@ struct SpellFlowHarness {
         CHECK(scheduler.update() >= 0);
         CHECK(scene->error.empty());
     }
-    void advance(i32 count) { for (i32 i = 0; i < count; ++i) frame(); }
+    void advance(i32 count) {
+        for (i32 i = 0; i < count; ++i)
+            frame();
+    }
     void ready_main() {
         advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
         CHECK_EQ(i32(scene->state.screen), i32(TitleScreen::Main));
@@ -134,8 +132,7 @@ struct SpellFlowHarness {
 // bit1 外部隐藏门）、render_flags 无 0x20（硬回收）、color/secondary_color
 // 至少一个 alpha>0。
 bool on_screen(const AnmVm* vm) {
-    return vm && (vm->visual.flags & 3u) == 3u &&
-           !(vm->visual.render_flags & 0x20u) &&
+    return vm && (vm->visual.flags & 3u) == 3u && !(vm->visual.render_flags & 0x20u) &&
            ((vm->visual.color >> 24) != 0u || (vm->visual.secondary_color >> 24) != 0u);
 }
 
@@ -158,8 +155,7 @@ u32 drawn_alpha(const AnmManager& manager, i32 script) {
     u32 alpha = 0;
     for (u32 bucket = 0; bucket < kLayerBuckets; ++bucket)
         for (const AnmVm* vm : manager.registry.layer(bucket))
-            if (on_screen(vm) && vm->source_script == script)
-                alpha = std::max(alpha, vm->visual.color >> 24);
+            if (on_screen(vm) && vm->source_script == script) alpha = std::max(alpha, vm->visual.color >> 24);
     return alpha;
 }
 
@@ -167,9 +163,11 @@ u32 drawn_alpha(const AnmManager& manager, i32 script) {
 bool same_scripts(const std::vector<i32>& actual, const std::vector<i32>& expected) {
     if (actual == expected) return true;
     std::printf("    上屏 {");
-    for (i32 script : actual) std::printf(" %d", script);
+    for (i32 script : actual)
+        std::printf(" %d", script);
     std::printf(" } 期望 {");
-    for (i32 script : expected) std::printf(" %d", script);
+    for (i32 script : expected)
+        std::printf(" %d", script);
     std::printf(" }\n");
     return false;
 }
@@ -180,28 +178,29 @@ TEST(spell_practice_esc_recedes_exactly_one_level_per_cancel) {
     SpellFlowHarness h;
     h.ready_main();
     // 缺省存档 Extra 行禁用：一次 ↓ 自 0 跳 2（practice flow 同款），再 ↓ 到 3。
-    h.frame(0x20); h.frame();
-    h.frame(0x20); h.frame();
+    h.frame(0x20);
+    h.frame();
+    h.frame(0x20);
+    h.frame();
     CHECK_EQ(h.scene->state.menu.cursor, 3);
-    h.frame(1);                       // 主菜单 Z → SpellPractice 屏
+    h.frame(1);  // 主菜单 Z → SpellPractice 屏
     h.advance(45);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::SpellPractice));
     CHECK(h.menu() != nullptr);
     CHECK_EQ(h.level(), i32(SpellPracticeLevel::Stage));
 
-    h.frame(1);                       // stage → spell（20+11 帧延迟链）
+    h.frame(1);  // stage → spell（20+11 帧延迟链）
     h.advance(45);
     CHECK_EQ(h.level(), i32(SpellPracticeLevel::Spell));
-    h.frame(1);                       // spell → difficulty（14+11 帧延迟链）
+    h.frame(1);  // spell → difficulty（14+11 帧延迟链）
     h.advance(45);
     CHECK_EQ(h.level(), i32(SpellPracticeLevel::Difficulty));
 
     // 一次 ESC：只退一级（难度→卡）。逐帧采样，不允许跳级。
-    h.frame(0x100);                   // Esc
+    h.frame(0x100);  // Esc
     for (i32 i = 0; i < 12; ++i) {
         h.frame();
-        CHECK(h.level() == i32(SpellPracticeLevel::Difficulty) ||
-              h.level() == i32(SpellPracticeLevel::Spell));
+        CHECK(h.level() == i32(SpellPracticeLevel::Difficulty) || h.level() == i32(SpellPracticeLevel::Spell));
     }
     h.advance(40);
     CHECK_EQ(h.level(), i32(SpellPracticeLevel::Spell));
@@ -279,7 +278,8 @@ TEST(spell_run_return_cascade_and_esc_chain_leave_no_stale_rows) {
     // label1，rank 随脚本的 label1 淡出约 25 帧，与入场的关卡表重叠）。
     h.frame(0x100);
     i32 settle = 79;
-    for (; settle > 0 && h.level() != i32(SpellPracticeLevel::Stage); --settle) h.frame();
+    for (; settle > 0 && h.level() != i32(SpellPracticeLevel::Stage); --settle)
+        h.frame();
     CHECK_EQ(h.level(), i32(SpellPracticeLevel::Stage));
     CHECK(same_scripts(drawn_scripts(h.manager, 229, 235), {}));
 
@@ -289,8 +289,7 @@ TEST(spell_run_return_cascade_and_esc_chain_leave_no_stale_rows) {
     CHECK(same_scripts(drawn_scripts(h.manager, 89, 93), {92, 93}));
     CHECK_EQ(drawn_alpha(h.manager, 92), 255u);
     CHECK_EQ(drawn_alpha(h.manager, 93), 255u);
-    CHECK(same_scripts(drawn_scripts(h.manager, 189, 202),
-                       {189, 197, 198, 199, 200, 201, 202}));
+    CHECK(same_scripts(drawn_scripts(h.manager, 189, 202), {189, 197, 198, 199, 200, 201, 202}));
     CHECK(same_scripts(drawn_scripts(h.manager, 203, 228), {}));
     CHECK(same_scripts(drawn_scripts(h.manager, 182, 186), {}));
     CHECK(same_scripts(drawn_scripts(h.manager, 229, 235), {}));

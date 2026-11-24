@@ -73,9 +73,7 @@ struct Fixture {
 
     bool init(const char* sht_name = nullptr) {
         provider.animations = &battle.sim.anim_list;
-        if (!battle.load(provider, "geometry.ecl", 2, host, progress, player, score,
-                         nullptr, sht_name))
-            return false;
+        if (!battle.load(provider, "geometry.ecl", 2, host, progress, player, score, nullptr, sht_name)) return false;
         if (!battle.error().empty()) return false;
         // 只保留本夹具目标：stage root（serial 0）既不是引导弹候选，
         // 也不参与本测试的伤害/碰撞观察。
@@ -166,40 +164,44 @@ void check_move_from(const PlayerShot& shot, float from_x, float from_y) {
 void fire_first_sht_shot(Fixture& fixture) {
     GameInput input;
     input.update(0x01);
-    for (int frame = 1; frame <= 20; ++frame) CHECK(fixture.battle.step(input));
+    for (int frame = 1; frame <= 20; ++frame)
+        CHECK(fixture.battle.step(input));
 }
 
-float initial_velocity_x(float angle, float speed) {
-    return float(std::cos(double(angle)) * double(speed));
-}
-float initial_velocity_y(float angle, float speed) {
-    return float(std::sin(double(angle)) * double(speed));
-}
+float initial_velocity_x(float angle, float speed) { return float(std::cos(double(angle)) * double(speed)); }
+float initial_velocity_y(float angle, float speed) { return float(std::sin(double(angle)) * double(speed)); }
 
 }  // namespace
 
 TEST(player_shot_polar_velocity_rounds_after_speed_multiplication) {
     // Retail474f00 outputs with32-bit inputs. These origins exercise the
     // subsequent473780 floor boundary; old float-rounded trig shifts0.01.
-    struct Case { float angle, x, y; u32 axis, expected; };
+    struct Case {
+        float angle, x, y;
+        u32 axis, expected;
+    };
     const Case cases[] = {
-        {-1.3f,-17.594993591308594f,200.f,0,3246391296u},
-        {-.83f,-31.949254989624023f,200.f,0,3252635566u},
-        {-.83f,0.f,-27.56241226196289f,1,3254774661u},
-        {2.3f,0.f,-127.89423370361328f,1,3270958121u},
+        {-1.3f, -17.594993591308594f, 200.f, 0, 3246391296u},
+        {-.83f, -31.949254989624023f, 200.f, 0, 3252635566u},
+        {-.83f, 0.f, -27.56241226196289f, 1, 3254774661u},
+        {2.3f, 0.f, -127.89423370361328f, 1, 3270958121u},
     };
     for (const auto& c : cases) {
         Fixture f;
         CHECK(f.init());
         PlayerShot shot;
-        shot.alive=true;shot.angle=c.angle;shot.speed=6;
-        shot.x=c.x;shot.y=c.y;shot.script=0;
+        shot.alive = true;
+        shot.angle = c.angle;
+        shot.speed = 6;
+        shot.x = c.x;
+        shot.y = c.y;
+        shot.script = 0;
         f.battle.shots.push_back(shot);
         CHECK(f.battle.step(f.idle));
-        CHECK_EQ(f.battle.shots.size(),size_t(1));
+        CHECK_EQ(f.battle.shots.size(), size_t(1));
         if (!f.battle.shots.empty()) {
-            const auto& after=f.battle.shots.front();
-            CHECK_EQ(th13test::bits_of(c.axis ? after.y : after.x),c.expected);
+            const auto& after = f.battle.shots.front();
+            CHECK_EQ(th13test::bits_of(c.axis ? after.y : after.x), c.expected);
         }
     }
 }
@@ -220,8 +222,8 @@ TEST(homing_behavior1_updates_on_age_zero) {
     CHECK(shot->alive);
     CHECK_EQ(shot->age, 1);
     CHECK_EQ(shot->target_serial, target->serial);
-    CHECK(shot->speed > 6.0f);       // 正前方目标：回调加速
-    CHECK(shot->y < 200.0f);         // age0 已 move
+    CHECK(shot->speed > 6.0f);  // 正前方目标：回调加速
+    CHECK(shot->y < 200.0f);    // age0 已 move
     check_move_from(*shot, 0.0f, 200.0f);
 }
 
@@ -243,9 +245,9 @@ TEST(straight_shot_moves_without_turning_or_speed_change_on_age_zero) {
     if (!shot) return;
     CHECK(shot->alive);
     CHECK_EQ(shot->age, 1);
-    CHECK_EQ(shot->angle, kUp);      // 不转向
-    CHECK_EQ(shot->speed, 6.0f);     // 不改速
-    CHECK(shot->y < 200.0f);         // 但 age0 会 move
+    CHECK_EQ(shot->angle, kUp);   // 不转向
+    CHECK_EQ(shot->speed, 6.0f);  // 不改速
+    CHECK(shot->y < 200.0f);      // 但 age0 会 move
     CHECK_EQ(shot->target_serial, u32(0));
     check_move_from(*shot, 0.0f, 200.0f);
 }
@@ -264,8 +266,8 @@ TEST(homing_behavior1_turns_toward_side_target_on_age_zero) {
     const PlayerShot* shot = only_shot(fixture);
     if (!shot) return;
     CHECK_EQ(shot->target_serial, target->serial);
-    CHECK(shot->speed < 6.0f);                       // 大角度误差减速
-    CHECK(shot->angle > kUp);                        // 朝右目标转过
+    CHECK(shot->speed < 6.0f);  // 大角度误差减速
+    CHECK(shot->angle > kUp);   // 朝右目标转过
     CHECK(shot->x > 0.0f);
     CHECK(shot->y < 200.0f);
     CHECK_EQ(shot->age, 1);
@@ -386,8 +388,7 @@ TEST(respawn_options_snap_on_first_active_move_then_resume_interpolation) {
     };
     for (int mode = 0; mode < 2; ++mode)
         for (int i = 0; i < 3; ++i)
-            std::memcpy(sht.data() + 0x28 + mode * 0x50 + (3 + i) * 8,
-                        offsets[mode][i], 8);
+            std::memcpy(sht.data() + 0x28 + mode * 0x50 + (3 + i) * 8, offsets[mode][i], 8);
     fixture.provider.set_sht(sht);
     fixture.player.power = 300;
     CHECK(fixture.init("test.sht"));
@@ -412,6 +413,4 @@ TEST(respawn_options_snap_on_first_active_move_then_resume_interpolation) {
     CHECK_EQ(fixture.battle.options[0].y, 52782.f / 128.f);
 }
 
-int main() {
-    return th13test::run_all("player homing");
-}
+int main() { return th13test::run_all("player homing"); }

@@ -80,36 +80,37 @@ bool build_cp932_font_mapping(std::vector<u8>& out);
 
 // 单行对话文本与元数据（原版 0x428ae0 case 0x11 实证：保留 CP932 原文字节与 ruby 注音）
 struct MsgLine {
-    std::string text_cp932;       // 原始 CP932 文本
-    std::string text_utf8;        // 派生 UTF-8 文本（用于展示/观察）
-    bool has_ruby = false;        // 是否有 ruby 读音注记（0x428ae0:455-467）
-    i32 ruby_x = 0;               // ruby 第一数值参数：x 偏移（0x428ae0:464/529 →
-                                  // 0x46e8f0 param_4 → 0x45aef0 param_4，scratch x*2）
-    i32 ruby_spacing = 0;         // ruby 第二数值参数：逐字步进（0x46e8f0 param_5 →
-                                  // 0x45aef0 param_9；0 = 连续排版，非 0 = 每字
-                                  // TextOut 后前进 param_9*2 scratch 像素）
-    std::string ruby_cp932;       // ruby CP932 读音注记
-    std::string ruby_utf8;        // 派生 UTF-8 读音注记
-    float bubble_width = 0.0f;    // 0x428ae0 原版气泡排版宽度 ((len*8)&~0xf) - 28.0（0x428eb7 直读：edx=start+1 扫至 NUL，差=len 前字节数）
-    u32 block = 0;                // 行块序号（0x428ae0 +0x5f/+0x60 配对周期）
-    i32 side = 0;                 // +0x184：0=左（文字 x=box_x）、1=右
-                                  // （文字 x=box_x-(bubble_width+30)，0x428ae0:499）
-    u32 text_attr = 0;            // 0x428ae0 +0x178 文字属性位（opcode 29）；
-                                  // 正文字体样式 = ((text_attr>>1)&1)+4
+    std::string text_cp932;  // 原始 CP932 文本
+    std::string text_utf8;   // 派生 UTF-8 文本（用于展示/观察）
+    bool has_ruby = false;   // 是否有 ruby 读音注记（0x428ae0:455-467）
+    i32 ruby_x = 0;          // ruby 第一数值参数：x 偏移（0x428ae0:464/529 →
+                             // 0x46e8f0 param_4 → 0x45aef0 param_4，scratch x*2）
+    i32 ruby_spacing = 0;    // ruby 第二数值参数：逐字步进（0x46e8f0 param_5 →
+                             // 0x45aef0 param_9；0 = 连续排版，非 0 = 每字
+                             // TextOut 后前进 param_9*2 scratch 像素）
+    std::string ruby_cp932;  // ruby CP932 读音注记
+    std::string ruby_utf8;   // 派生 UTF-8 读音注记
+    float bubble_width =
+        0.0f;  // 0x428ae0 原版气泡排版宽度 ((len*8)&~0xf) - 28.0（0x428eb7 直读：edx=start+1 扫至 NUL，差=len 前字节数）
+    u32 block = 0;      // 行块序号（0x428ae0 +0x5f/+0x60 配对周期）
+    i32 side = 0;       // +0x184：0=左（文字 x=box_x）、1=右
+                        // （文字 x=box_x-(bubble_width+30)，0x428ae0:499）
+    u32 text_attr = 0;  // 0x428ae0 +0x178 文字属性位（opcode 29）；
+                        // 正文字体样式 = ((text_attr>>1)&1)+4
 };
 
 // 对话可视状态（渲染侧消费；字段语义对应 0x1a8 对话对象）。
 struct MsgDialogState {
     bool active = false;
-    bool done = false;                  // entry 终止指令已命中
-    i32 entry = 0;                      // 对话对象 +0（0x428820 存 entry 号）
-    i32 side = 0;                       // +0x184：0=左 1=右（opcode 7/8）
+    bool done = false;                     // entry 终止指令已命中
+    i32 entry = 0;                         // 对话对象 +0（0x428820 存 entry 号）
+    i32 side = 0;                          // +0x184：0=左 1=右（opcode 7/8）
     float box_x = 192.0f, box_y = 320.0f;  // +0x194/+0x198（0x4282b0 尾默认）
-    bool auto_advance = false;          // +0x178 bit0（opcode 10）
-    u32 text_attr = 0;                  // +0x178：bit0 自动、bit1 状态、bit2-5 opcode29
-    bool skip_request = false;          // +0x178 bit 0x40（Ctrl/Z 按下置位，0x428ae0:125-127）
-    float bubble_width = 0.0f;          // 当前对话框气泡宽度（0x428ae0: unaff_EDI[0x68]）
-    u32 block = 0;                      // 行块序号：首行（+0x5f/+0x60 双零）起新块
+    bool auto_advance = false;             // +0x178 bit0（opcode 10）
+    u32 text_attr = 0;                     // +0x178：bit0 自动、bit1 状态、bit2-5 opcode29
+    bool skip_request = false;             // +0x178 bit 0x40（Ctrl/Z 按下置位，0x428ae0:125-127）
+    float bubble_width = 0.0f;             // 当前对话框气泡宽度（0x428ae0: unaff_EDI[0x68]）
+    u32 block = 0;                         // 行块序号：首行（+0x5f/+0x60 双零）起新块
     // 当前行块（≤2 行/块）。opcode 11 只清 +0x5f/+0x60，不擦文字；下一块首行
     // 才替换本块内容（0x428ae0:378-379/426-452）。
     std::vector<std::string> lines;
@@ -130,22 +131,28 @@ struct MsgAdvance {
 class MsgHost {
 public:
     virtual ~MsgHost() = default;
-    virtual void msg_bgm(i32 opcode) = 0;        // 2/19/20/31（案值透传；宿主按
-                                                 // 0x429c7c jump table 分派真实语义）
-    virtual void msg_portrait_load() = 0;        // 1（DAT_004c0aa0+角色*4）
+    virtual void msg_bgm(i32 opcode) = 0;  // 2/19/20/31（案值透传；宿主按
+                                           // 0x429c7c jump table 分派真实语义）
+    virtual void msg_portrait_load() = 0;  // 1（DAT_004c0aa0+角色*4）
     // 22/27 only call 0x43af70 (music fade); there is no separate battle setup.
-    virtual void msg_boss_battle() {}             // legacy compatibility hook
-    virtual void msg_stage_clear() = 0;          // 21 → 0x42cd40 ★
+    virtual void msg_boss_battle() {}    // legacy compatibility hook
+    virtual void msg_stage_clear() = 0;  // 21 → 0x42cd40 ★
     // ——可视化通知钩子（本阶段追加；默认空实现，既有宿主不受影响）——
     // 13/14：表情切换（label = arg+0x11，0x46fca0 立即中断；13=左 14=右）。
-    virtual void msg_portrait_interrupt(i32 opcode, i32 label) { (void)opcode; (void)label; }
+    virtual void msg_portrait_interrupt(i32 opcode, i32 label) {
+        (void)opcode;
+        (void)label;
+    }
     // 7/8：说话方切换（宿主按 0x429641/0x4296ee 做左2/右3、左3/右2 中断）。
     virtual void msg_speaker_switch(i32 opcode) { (void)opcode; }
     // 4/5/6/18/23/24：槽位释放（0x46fc30；宿主映射到立绘/名牌/文本槽）。
     virtual void msg_release(i32 opcode) { (void)opcode; }
     // 22/27 的音乐淡出半边（0x43af70 → 曲命令 5；常数 2.0s/关6 8.0s 宿主定）。
     virtual void msg_music_fade(i32 opcode) { (void)opcode; }
-    virtual void msg_music_fade(i32 opcode, float seconds) { (void)seconds; msg_music_fade(opcode); }
+    virtual void msg_music_fade(i32 opcode, float seconds) {
+        (void)seconds;
+        msg_music_fade(opcode);
+    }
     // opcode 25: signed i32 copied as float to the four text VM +0x4e4 fields.
     virtual void msg_text_anchor_y(float value) { (void)value; }
     // opcode 11 计声放行（Z/Enter 按下或超时路径的 0x460bc0(0) 提示音）。
@@ -206,9 +213,9 @@ private:
     const u8* cursor_ = nullptr;  // 指令流游标（entry 内）
     MsgDialogState state_;
     u32 clock_ = 0;
-    i32 line_index_ = 0;    // 对话对象 +0x17c（0x5f）
-    i32 block_open_ = 0;    // +0x180（0x60）
-    i32 wait_timeout_ = 0;  // opcode 11 arg 倒计时（0x4016c0 置 value-1 起步）
+    i32 line_index_ = 0;     // 对话对象 +0x17c（0x5f）
+    i32 block_open_ = 0;     // +0x180（0x60）
+    i32 wait_timeout_ = 0;   // opcode 11 arg 倒计时（0x4016c0 置 value-1 起步）
     i32 command_delay_ = 0;  // opcode 12（+0x174 置 1；下次解释器入口递减）
     // 0x428ae0 ruby 伴生前缀缓存（在同行正文之前到达）
     bool pending_ruby_ = false;

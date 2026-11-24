@@ -99,16 +99,16 @@ TEST(practice_clear_stage_chain_and_gates) {
     CHECK_EQ(harness.host.requests.size(), 1u);
     CHECK_EQ(harness.host.requests[0], 0xc);
     CHECK_EQ(harness.progress.stage, 4);
-    CHECK_EQ(harness.score.score, 300000);     // 0x42abf0 只被符卡练习门拦
+    CHECK_EQ(harness.score.score, 300000);              // 0x42abf0 只被符卡练习门拦
     CHECK_EQ(harness.progress.stage_cleared_bits, 0u);  // 练习不记通过位
-    CHECK(!harness.flow.frozen());             // 换关路径不进覆盖层
+    CHECK(!harness.flow.frozen());                      // 换关路径不进覆盖层
 }
 
 TEST(spell_practice_skips_stage_bonus) {
     FlowHarness harness;
     harness.progress.run_mode_flags = 0x20;  // be830&0x30 == 0x20（mode2）
     harness.flow.on_stage_clear();
-    CHECK_EQ(harness.score.score, 0);  // 0x42abf0 被 &0x30==0x20 门跳过
+    CHECK_EQ(harness.score.score, 0);                            // 0x42abf0 被 &0x30==0x20 门跳过
     CHECK(harness.flow.state() == OverlayState::BSpellVariant);  // 0x43f720→0x1e
     CHECK(harness.flow.frozen());
 }
@@ -116,17 +116,18 @@ TEST(spell_practice_skips_stage_bonus) {
 TEST(stage6_all_clear_and_ending_sequence) {
     FlowHarness harness;
     harness.progress.stage = 6;
-    harness.progress.difficulty = 1;  // Normal：(残+灵×3)×1,000,000
+    harness.progress.difficulty = 1;       // Normal：(残+灵×3)×1,000,000
     harness.progress.ending_points = 600;  // >599 → 好结局资格 +1
     harness.flow.on_stage_clear();
     // 6M（每关奖）+ (2+2*3)*1M=8M（六面全通）= 14M → 点值 1,400,000。
     CHECK_EQ(harness.score.score, 1400000);
     CHECK_EQ(harness.progress.stage_clear_bonus, 14000000);
     CHECK_EQ(harness.progress.good_endings, 1);
-    CHECK(harness.host.requests.empty());      // 0x4000 演出期间无请求
+    CHECK(harness.host.requests.empty());  // 0x4000 演出期间无请求
     CHECK(harness.flow.clear_sequence());
     // 180f 淡出 / >379f 出口（0x42c550:20-57）；覆盖层冻结会挂起演出。
-    for (u32 frame = 0; frame < 379; frame++) harness.flow.update();
+    for (u32 frame = 0; frame < 379; frame++)
+        harness.flow.update();
     CHECK(harness.host.requests.empty());
     harness.flow.update();  // 第 380 帧
     CHECK_EQ(harness.host.requests.size(), 1u);
@@ -156,7 +157,8 @@ TEST(stage6_practice_ending_exits_to_settlement_a) {
     harness.progress.practice_mode = 1;
     harness.flow.on_stage_clear();
     CHECK(harness.flow.clear_sequence());  // 练习六面同样走 0x4000 演出
-    for (u32 frame = 0; frame < 380; frame++) harness.flow.update();
+    for (u32 frame = 0; frame < 380; frame++)
+        harness.flow.update();
     CHECK(harness.flow.state() == OverlayState::PracticeEntry);  // 0x43e5a0
     CHECK(harness.host.requests.empty());
 }
@@ -205,16 +207,15 @@ TEST(stage6_clear_chain_runs_ending_scene_to_after_ending_request) {
     harness.progress.difficulty = 1;
     harness.progress.character = 0;
     harness.flow.on_stage_clear();
-    for (u32 frame = 0; frame < 380; frame++) harness.flow.update();
+    for (u32 frame = 0; frame < 380; frame++)
+        harness.flow.update();
     CHECK_EQ(harness.host.requests.size(), 1u);
     CHECK_EQ(harness.host.requests[0], 0xf);
 
     // Ending 侧（同一 SessionState）：结局索引 1（e01，char0 无续关）→ END → 0x10。
     struct Save final : EndingSaveBytes {
         std::array<u8, 13> bytes{};
-        u8 read(i32 index) const override {
-            return index >= 0 && index < 13 ? bytes[u32(index)] : u8(0);
-        }
+        u8 read(i32 index) const override { return index >= 0 && index < 13 ? bytes[u32(index)] : u8(0); }
         void write(i32 index, u8 value) override {
             if (index >= 0 && index < 13) bytes[u32(index)] = value;
         }
@@ -223,8 +224,7 @@ TEST(stage6_clear_chain_runs_ending_scene_to_after_ending_request) {
         Save* save;
         std::map<std::string, std::vector<u8>> assets;
         std::vector<i32> requests;
-        bool read_asset(const std::string& name, std::vector<u8>& bytes,
-                        bool) override {
+        bool read_asset(const std::string& name, std::vector<u8>& bytes, bool) override {
             const auto found = assets.find(name);
             if (found == assets.end()) return false;
             bytes = found->second;
@@ -254,10 +254,10 @@ TEST(stage6_clear_chain_runs_ending_scene_to_after_ending_request) {
     CHECK(ending.initialize());
     CHECK_EQ(ending.ending_index(), 1);
     GameInput input;
-    CHECK(ending.update(input));   // 行 0：op5 进入等待
-    input.pressed = 0x1;           // Z 按下放行
-    CHECK(ending.update(input));   // op5 放行 → 行推进到 1
-    CHECK(ending.update(input));   // 行 1：END
+    CHECK(ending.update(input));  // 行 0：op5 进入等待
+    input.pressed = 0x1;          // Z 按下放行
+    CHECK(ending.update(input));  // op5 放行 → 行推进到 1
+    CHECK(ending.update(input));  // 行 1：END
     CHECK(ending.finished());
     CHECK_EQ(host.requests.size(), 1u);
     CHECK_EQ(host.requests[0], 0x10);  // AfterEnding（拆卸 → 标题变体 3）

@@ -14,7 +14,10 @@ struct Host final : TitleScenePlatform {
     bool fade_out_title_music() override { return true; }
     bool sound(i32) override { return true; }
     i32 transitions = 0;
-    bool begin_transition(u32&) override { ++transitions; return true; }
+    bool begin_transition(u32&) override {
+        ++transitions;
+        return true;
+    }
     bool start_game(i32) override { return false; }
     bool title_exit(i32) override { return true; }
     bool hud_text(const HudTextDraw&) override { return true; }
@@ -32,7 +35,7 @@ struct Host final : TitleScenePlatform {
     i32 spell_rank(i32, i32, i32 row) const override { return row == 0 ? 2 : -1; }
     i32 character_count() const override { return 4; }
 };
-}
+}  // namespace
 
 TEST(selected_spell_is_delivered_to_the_production_launch_service) {
     GameRandom random;

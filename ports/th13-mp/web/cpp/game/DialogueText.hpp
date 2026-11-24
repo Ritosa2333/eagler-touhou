@@ -47,13 +47,12 @@ struct DialogueTextureSink {
 
 // 字形栅格回调：把 cp932 文本画进 image 的 (x,y)。ruby=false 为正文样式。
 using DialogueRasterizer =
-    std::function<bool(TextureImage& image, i32 x, i32 y, bool ruby, u32 color,
-                       const std::string& cp932_text)>;
+    std::function<bool(TextureImage& image, i32 x, i32 y, bool ruby, u32 color, const std::string& cp932_text)>;
 
 class DialogueText {
 public:
-    static constexpr i32 kLineCount = 2;   // 0x428ae0 正文两行
-    static constexpr i32 kVmCount = 4;     // 正文 2 + ruby 2（0x4282b0 四槽）
+    static constexpr i32 kLineCount = 2;  // 0x428ae0 正文两行
+    static constexpr i32 kVmCount = 4;    // 正文 2 + ruby 2（0x4282b0 四槽）
 
     // 0x4282b0 构造入口：对话 open 时立即建四条文本 VM（不等首行 submit）。
     bool begin(AnmManager& manager, DialogueTextureSink& sink, std::string& error) {
@@ -61,9 +60,8 @@ public:
     }
     // row ∈ [0,2)：0 → script0，1 → script1。box_x/box_y 是对话对象
     // +0x194/+0x198（0x4282b0 默认或 opcode 28 写入）。
-    bool submit(AnmManager& manager, DialogueTextureSink& sink, i32 row, const MsgLine& line,
-                float box_x, float box_y, const DialogueRasterizer& rasterizer,
-                std::string& error);
+    bool submit(AnmManager& manager, DialogueTextureSink& sink, i32 row, const MsgLine& line, float box_x, float box_y,
+                const DialogueRasterizer& rasterizer, std::string& error);
     // 行块清空（0x428ae0 opcode 11/6 路径）：四条纹理条带清零，保留 VM。
     bool clear(DialogueTextureSink& sink, std::string& error);
     // opcode 6/18（0x42960c/0x429250）：只释放对话框根 VM 并对四条文本 VM
@@ -101,8 +99,7 @@ public:
         std::shared_ptr<const std::vector<u8>> pixels;
     };
     RollbackState capture_rollback(AnmManager&, DialogueTextureSink&) const;
-    bool restore_rollback(const RollbackState&, AnmManager&, DialogueTextureSink&,
-                          std::string& error);
+    bool restore_rollback(const RollbackState&, AnmManager&, DialogueTextureSink&, std::string& error);
 
 private:
     bool ensure(AnmManager& manager, DialogueTextureSink& sink, std::string& error);
@@ -113,13 +110,11 @@ private:
     bool request_label(AnmManager& manager, u32 handle, i32 label, std::string& error);
     bool blank_all(DialogueTextureSink& sink, std::string& error, i32 label);
     bool copy_strip(DialogueTextureSink& sink, const Region& region, std::string& error);
-    bool rasterize_ruby(const MsgLine& line, const DialogueRasterizer& rasterizer,
-                        std::string& error);
+    bool rasterize_ruby(const MsgLine& line, const DialogueRasterizer& rasterizer, std::string& error);
     // 0x428ae0:485-553：每条正文行重建 front.anm 对话框（script 224+variant），
     // variant = side + 2*((text_attr>>2)&0xf)；子脚本 176+v/208+v 的
     // variables.floats[0] = 宽度（0x4bc = 10004 写槽）。
-    bool update_bubble(AnmManager& manager, i32 row, const MsgLine& line, float box_x, float box_y,
-                       std::string& error);
+    bool update_bubble(AnmManager& manager, i32 row, const MsgLine& line, float box_x, float box_y, std::string& error);
     bool retire_bubble(AnmManager& manager, std::string& error);
     void place_rows(AnmManager& manager, float box_x, float box_y);
     static float row_x(const MsgLine& line, float box_x) noexcept {

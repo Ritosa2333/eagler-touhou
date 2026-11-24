@@ -15,12 +15,12 @@
 //
 // 本测试只断言上述边界与字幕树的 RNG 贡献，不伪造视觉抽签：
 // script17 使用 artifacts/reference/raw/ascii.anm 真实脚本。
-#include "ui_test_fixtures.hpp"
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
-#include "game/RunScene.hpp"
 #include "game/FrameScheduler.hpp"
+#include "game/RunScene.hpp"
 
 #include <cstring>
 #include <fstream>
@@ -54,22 +54,38 @@ std::vector<u8> synthetic_std() {
     std::memcpy(out.data() + 0x10, name, std::strlen(name));
     put32(0x90, 0x94);
     put32(0x94, 0x00010000);
-    putf(0x98, 0.f); putf(0x9c, 0.f); putf(0xa0, 0.f);
-    putf(0xa4, 64.f); putf(0xa8, 64.f); putf(0xac, 64.f);
+    putf(0x98, 0.f);
+    putf(0x9c, 0.f);
+    putf(0xa0, 0.f);
+    putf(0xa4, 64.f);
+    putf(0xa8, 64.f);
+    putf(0xac, 64.f);
     put16(0xb0, 0);
     put16(0xb2, 28);
     put16(0xb4, 0);
     put16(0xb6, 0);
-    putf(0xb8, 0.f); putf(0xbc, 0.f); putf(0xc0, 0.f);
-    putf(0xc4, 64.f); putf(0xc8, 64.f);
+    putf(0xb8, 0.f);
+    putf(0xbc, 0.f);
+    putf(0xc0, 0.f);
+    putf(0xc4, 64.f);
+    putf(0xc8, 64.f);
     put32(0xcc, 0x0004ffff);
     put32(0xd0, 0);
-    putf(0xd4, 0.f); putf(0xd8, 0.f); putf(0xdc, 0.f);
+    putf(0xd4, 0.f);
+    putf(0xd8, 0.f);
+    putf(0xdc, 0.f);
     put32(0xe0, 0xffffffff);
-    put32(0xe4, 0); put16(0xe8, 2); put16(0xea, 20);
-    putf(0xec, 10.f); putf(0xf0, 20.f); putf(0xf4, 30.f);
-    put32(0xf8, 0); put16(0xfc, 0); put16(0xfe, 8);
-    for (u32 at = 0x100; at < 0x110; at += 4) put32(at, 0xffffffff);
+    put32(0xe4, 0);
+    put16(0xe8, 2);
+    put16(0xea, 20);
+    putf(0xec, 10.f);
+    putf(0xf0, 20.f);
+    putf(0xf4, 30.f);
+    put32(0xf8, 0);
+    put16(0xfc, 0);
+    put16(0xfe, 8);
+    for (u32 at = 0x100; at < 0x110; at += 4)
+        put32(at, 0xffffffff);
     return out;
 }
 
@@ -90,8 +106,7 @@ struct TransitionHost final : RunSceneServices {
     bool request_game_over() override { return true; }
     bool camera(DrawCamera, bool) override { return true; }
     bool hud_text(const HudTextDraw&) override { return true; }
-    bool read_asset(const std::string& name, std::vector<u8>& bytes,
-                    bool required = true) override {
+    bool read_asset(const std::string& name, std::vector<u8>& bytes, bool required = true) override {
         (void)required;
         const auto found = assets.find(name);
         if (found == assets.end()) return false;
@@ -144,7 +159,8 @@ struct TransitionHarness {
         CHECK(load_bank(manager, 5, synthetic_anm(8, trivial_scripts(1))));
         CHECK(load_bank(manager, 6, synthetic_anm(64, trivial_scripts(35))));
         CHECK(load_bank(manager, 26, synthetic_anm(8, trivial_scripts(3))));
-        CHECK(load_bank(manager, 8, synthetic_anm(8, trivial_scripts(57))));  // effect.anm（0x438ec0 出生同步建 script 0x38=56）
+        CHECK(load_bank(manager, 8,
+                        synthetic_anm(8, trivial_scripts(57))));  // effect.anm（0x438ec0 出生同步建 script 0x38=56）
         CHECK(load_bank(manager, 25, synthetic_anm(8, trivial_scripts(5))));  // astral spirit
         host.assets["st01.ecl"] = synthetic_stage_ecl("stage_a.anm", "stage_b.anm");
         host.assets["st02.ecl"] = synthetic_stage_ecl("stage2_a.anm", "stage2_b.anm");
@@ -157,9 +173,8 @@ struct TransitionHarness {
         host.assets["scenery.anm"] = synthetic_anm(8, trivial_scripts(1));
         host.graphics = &graphics;
         StagePresentation::Banks banks{4, 5, 6};
-        scene = std::make_unique<RunScene>(progress, player, score, manager, renderer,
-                                           environment, host, scheduler, banks, 3, 2, 7,
-                                           "st01.std");
+        scene = std::make_unique<RunScene>(progress, player, score, manager, renderer, environment, host, scheduler,
+                                           banks, 3, 2, 7, "st01.std");
         scene->hud.stage_logo_bank = 26;
         const bool initialized = scene->initialize();
         if (!initialized) std::printf("transition harness init error: %s\n", scene->error.c_str());
@@ -200,7 +215,8 @@ u32 transition_visual_delta(bool with_prayer, u32* game_delta = nullptr) {
     }
     const u32 visual_before = h.random.index();
     const u32 game_before = h.scene->battle.sim.random.index();
-    for (int tick = 0; tick < 150; ++tick) CHECK(h.scheduler.update() >= 0);
+    for (int tick = 0; tick < 150; ++tick)
+        CHECK(h.scheduler.update() >= 0);
     if (game_delta) *game_delta = h.scene->battle.sim.random.index() - game_before;
     if (prayer) {
         // 0x4172e0 -> 0x46fc30 在次关激活时回收整棵字幕树；retire 必须
@@ -243,7 +259,8 @@ TEST(transition_destroys_old_stage_managers_at_original_boundary) {
     CHECK(h.scene->presentation->debug_report().find("spirits=1") != std::string::npos);
     items.spawn_item(0.f, 0.f, 0.f, 1, 0.f, 1.f);
     bool any_item = false;
-    for (const auto& item : items.items()) any_item |= item.alive;
+    for (const auto& item : items.items())
+        any_item |= item.alive;
     CHECK(any_item);
 
     h.progress.stage = 2;
@@ -261,8 +278,10 @@ TEST(transition_destroys_old_stage_managers_at_original_boundary) {
         CHECK_EQ(retired[0], 11u);
         CHECK_EQ(retired[1], 22u);
     }
-    for (const auto& item : items.items()) CHECK(!item.alive);
-    for (const auto& spirit : items.spirits()) CHECK(!spirit.alive);
+    for (const auto& item : items.items())
+        CHECK(!item.alive);
+    for (const auto& spirit : items.spirits())
+        CHECK(!spirit.alive);
     // release_stage 已回收神霊/道具/弹体表现 VM；再 sync 也不能从旧槽位
     // 重建（0x438520 销毁的是 DAT_004c22a4 本体，含 +0x14 神霊池）。
     CHECK(h.scene->presentation->debug_report().find("spirits=0") != std::string::npos);
@@ -303,9 +322,8 @@ TEST(next_stage_activation_resets_frame_and_loads_stage_two_assets) {
     h.progress.scene_flags = 0;
     h.progress.rate = 1;
     StagePresentation::Banks banks{4, 5, 6};
-    auto next = std::make_unique<RunScene>(h.progress, h.player, h.score, h.manager,
-                                           h.renderer, h.environment, h.host, h.scheduler,
-                                           banks, 3, 2, 7, "st02.std");
+    auto next = std::make_unique<RunScene>(h.progress, h.player, h.score, h.manager, h.renderer, h.environment, h.host,
+                                           h.scheduler, banks, 3, 2, 7, "st02.std");
     next->preserve_presentation_from(*h.scene);
     const bool initialized = next->initialize();
     if (!initialized) std::printf("next stage init error: %s\n", next->error.c_str());
@@ -343,15 +361,15 @@ TEST(next_stage_activation_unlinks_every_outgoing_scene_callback) {
     h.progress.scene_flags = 0;
     h.progress.rate = 1;
     StagePresentation::Banks banks{4, 5, 6};
-    auto next = std::make_unique<RunScene>(h.progress, h.player, h.score, h.manager,
-                                           h.renderer, h.environment, h.host, h.scheduler,
-                                           banks, 3, 2, 7, "st02.std");
+    auto next = std::make_unique<RunScene>(h.progress, h.player, h.score, h.manager, h.renderer, h.environment, h.host,
+                                           h.scheduler, banks, 3, 2, 7, "st02.std");
     next->preserve_presentation_from(*h.scene);
     RunScene* outgoing = h.scene.release();
     outgoing->~RunScene();
     std::memset(static_cast<void*>(outgoing), 0xa5, sizeof(RunScene));
     CHECK(next->initialize());
-    for (int tick = 0; tick < 4; ++tick) CHECK(h.scheduler.update() >= 0);
+    for (int tick = 0; tick < 4; ++tick)
+        CHECK(h.scheduler.update() >= 0);
     CHECK(h.scheduler.draw() >= 0);
     next.reset();
     ::operator delete(static_cast<void*>(outgoing));

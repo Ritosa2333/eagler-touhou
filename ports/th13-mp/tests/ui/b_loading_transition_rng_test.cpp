@@ -14,10 +14,10 @@
 //    Stage 3's scenery ANM (st03wl.anm) is the only stage whose first
 //    primitive ticks consume visual RNG (scripts 11-16 read one value each),
 //    which is why S1->S2 never showed the shift and S2->S3 did.
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 #include "game/AnmManager.hpp"
 #include "game/StageScenery.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include <fstream>
 #include <iterator>
@@ -39,7 +39,8 @@ std::vector<u8> asset(const char* name) {
 // lineage, and the battle-side draws then land on 304/33690.
 TEST(loading_gate_boot_lineage_three_loader_frames_match_native_284_304) {
     GameRandom visual{0};
-    for (int i = 0; i < 256; ++i) (void)visual.step16();  // 0x45ac90 noise
+    for (int i = 0; i < 256; ++i)
+        (void)visual.step16();  // 0x45ac90 noise
     CHECK_EQ(visual.index(), 256u);
     CHECK_EQ(visual.seed(), 57045u);
     (void)visual.next32();
@@ -75,7 +76,8 @@ TEST(loading_gate_boot_lineage_three_loader_frames_match_native_284_304) {
     CHECK_EQ(visual.seed(), 40152u);
 
     // Battle frame 0 ANM side: 10 next32 (native trace f4).
-    for (int i = 0; i < 10; ++i) (void)visual.next32();
+    for (int i = 0; i < 10; ++i)
+        (void)visual.next32();
     CHECK_EQ(visual.index(), 304u);
     CHECK_EQ(visual.seed(), 33690u);
 }
@@ -93,12 +95,8 @@ TEST(stage_scenery_initial_tick_rng_is_stage3_only_and_12_units) {
         u32 expected_units;
     };
     const Case cases[] = {
-        {"st01.std", "st01wl.anm", 0},
-        {"st02.std", "st02wl.anm", 0},
-        {"st03.std", "st03wl.anm", 12},
-        {"st04.std", "st04wl.anm", 0},
-        {"st05.std", "st05wl.anm", 0},
-        {"st06.std", "st06wl.anm", 0},
+        {"st01.std", "st01wl.anm", 0}, {"st02.std", "st02wl.anm", 0}, {"st03.std", "st03wl.anm", 12},
+        {"st04.std", "st04wl.anm", 0}, {"st05.std", "st05wl.anm", 0}, {"st06.std", "st06wl.anm", 0},
     };
     for (const auto& item : cases) {
         GameRandom random;

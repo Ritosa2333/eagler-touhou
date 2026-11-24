@@ -22,9 +22,15 @@ TEST(scheduler_runs_by_priority) {
             return i32(FrameAction::Continue);
         }
     } a{&order, 'a'}, b{&order, 'b'}, c{&order, 'c'};
-    low.owner = &a; low.run = Owner::step; low.enabled = true;
-    middle.owner = &b; middle.run = Owner::step; middle.enabled = true;
-    high.owner = &c; high.run = Owner::step; high.enabled = true;
+    low.owner = &a;
+    low.run = Owner::step;
+    low.enabled = true;
+    middle.owner = &b;
+    middle.run = Owner::step;
+    middle.enabled = true;
+    high.owner = &c;
+    high.run = Owner::step;
+    high.enabled = true;
     CHECK(scheduler.add(low, FramePass::Update, 10) == 0);
     CHECK(scheduler.add(high, FramePass::Update, 1) == 0);
     CHECK(scheduler.add(middle, FramePass::Update, 5) == 0);
@@ -36,12 +42,22 @@ TEST(scheduler_remove_and_stop) {
     FrameScheduler scheduler;
     static int runs = 0;
     struct Owner {
-        static i32 counting(void*) { ++runs; return i32(FrameAction::Continue); }
-        static i32 stopping(void*) { ++runs; return i32(FrameAction::Stop); }
+        static i32 counting(void*) {
+            ++runs;
+            return i32(FrameAction::Continue);
+        }
+        static i32 stopping(void*) {
+            ++runs;
+            return i32(FrameAction::Stop);
+        }
     };
     FrameCallback counter, stopper;
-    counter.owner = nullptr; counter.run = Owner::counting; counter.enabled = true;
-    stopper.owner = nullptr; stopper.run = Owner::stopping; stopper.enabled = true;
+    counter.owner = nullptr;
+    counter.run = Owner::counting;
+    counter.enabled = true;
+    stopper.owner = nullptr;
+    stopper.run = Owner::stopping;
+    stopper.enabled = true;
     scheduler.add(counter, FramePass::Update, 1);
     scheduler.add(stopper, FramePass::Update, 2);
     runs = 0;

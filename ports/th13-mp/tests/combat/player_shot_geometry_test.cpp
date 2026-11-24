@@ -41,8 +41,7 @@ struct Host final : StageBattleServices {
     bool hud_sound(i32) override { return true; }
 };
 
-void check_hit(float ex, float ey, float ew, float eh,
-               float sw, float sh, float angle, bool expected) {
+void check_hit(float ex, float ey, float ew, float eh, float sw, float sh, float angle, bool expected) {
     Provider provider;
     Host host;
     SessionState progress;
@@ -57,11 +56,13 @@ void check_hit(float ex, float ey, float ew, float eh,
     target->serial = 1;
     target->position[0] = ex;
     target->position[1] = ey;
-    target->vel.pos[0] = ex; target->vel.pos[1] = ey;  // 0x419950：position := vel.pos+pos.pos，夹具坐标须写 vel 子位
+    target->vel.pos[0] = ex;
+    target->vel.pos[1] = ey;  // 0x419950：position := vel.pos+pos.pos，夹具坐标须写 vel 子位
     target->hurtbox[0] = ew;
     target->hurtbox[1] = eh;
     target->life = 100;
-    target->tick_gate = false;  // 已过出生空转帧（0x4183f0:31 置位、0x418e00:20 清位）；本帧须干活，否则 0x419a90:275-308 的本体碰撞/伤害不执行
+    target->tick_gate =
+        false;  // 已过出生空转帧（0x4183f0:31 置位、0x418e00:20 清位）；本帧须干活，否则 0x419a90:275-308 的本体碰撞/伤害不执行
     StageEnemy* enemy = target.get();
     battle.sim.enemies.push_back(std::move(target));
 
@@ -145,8 +146,9 @@ TEST(enemy_invulnerability_expires_after_the_collision_pass) {
     PlayerShot shot;
     shot.alive = true;
     shot.damage = 15;
-    shot.x = 0; shot.y = 100;  // 静态探针：与被测敌机同位，避开 root
-    shot.speed = 0;             // 停用默认 12 的每帧位移（0x4464d0）
+    shot.x = 0;
+    shot.y = 100;    // 静态探针：与被测敌机同位，避开 root
+    shot.speed = 0;  // 停用默认 12 的每帧位移（0x4464d0）
     battle.shots.push_back(shot);
     GameInput idle;
     CHECK(battle.step(idle));
@@ -159,6 +161,4 @@ TEST(enemy_invulnerability_expires_after_the_collision_pass) {
     CHECK_EQ(enemy->life, 85.0f);
 }
 
-int main() {
-    return th13test::run_all("player shot geometry");
-}
+int main() { return th13test::run_all("player shot geometry"); }

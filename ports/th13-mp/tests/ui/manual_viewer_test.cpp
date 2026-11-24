@@ -2,8 +2,8 @@
 //   8 页菜单创建；Z 装载页图（宿主 load_page）并进入页视图；页视图 ↑↓
 //   0..7 限位 + 音10；X 回菜单；菜单 X → 音9 → age>29 结束位；失败如实
 //   报错；close 回收 VM 后可重入。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/ManualViewer.hpp"
 
@@ -40,7 +40,8 @@ struct Harness {
         return synthetic_anm(1, scripts);
     }
     void advance(i32 frames, u32 pressed = 0, u32 repeated = 0) {
-        for (i32 i = 0; i < frames; ++i) CHECK(viewer.update(pressed, repeated));
+        for (i32 i = 0; i < frames; ++i)
+            CHECK(viewer.update(pressed, repeated));
     }
 };
 
@@ -70,20 +71,20 @@ TEST(manual_viewer_page_navigation_bounds) {
     CHECK(h.viewer.update(0x80001, 0));  // 页 0
     CHECK(h.viewer.reading_page());
     h.advance(19);
-    CHECK(h.viewer.update(0x10, 0));     // 页 0 ↑：限位不动
+    CHECK(h.viewer.update(0x10, 0));  // 页 0 ↑：限位不动
     CHECK_EQ(h.viewer.current_page(), 0);
     CHECK_EQ(h.loaded.size(), 1u);
     for (i32 page = 1; page < 8; ++page) {
-        h.advance(19);                   // case3/4 页切换后的 age>0x13 门
+        h.advance(19);                    // case3/4 页切换后的 age>0x13 门
         CHECK(h.viewer.update(0x20, 0));  // ↓ 1..7
         CHECK_EQ(h.viewer.current_page(), page);
         CHECK_EQ(h.loaded.back(), page);
     }
     h.advance(19);
-    CHECK(h.viewer.update(0x20, 0));     // 页 7 ↓：限位不动
+    CHECK(h.viewer.update(0x20, 0));  // 页 7 ↓：限位不动
     CHECK_EQ(h.viewer.current_page(), 7);
     CHECK_EQ(h.loaded.size(), 8u);
-    CHECK(h.viewer.update(0x10, 0));     // ↑ 回 6
+    CHECK(h.viewer.update(0x10, 0));  // ↑ 回 6
     CHECK_EQ(h.viewer.current_page(), 6);
     CHECK(!h.sounds.empty() && h.sounds.back() == 10);
     // X：回菜单（音9），不结束查看器（页切换后同样有 age>0x13 门）。
@@ -101,7 +102,7 @@ TEST(manual_viewer_menu_cancel_sets_finished_after_thirty_frames) {
     CHECK(h.viewer.update(0x102, 0));  // 菜单 X → state2
     CHECK(!h.viewer.finished());
     h.advance(29);
-    CHECK(!h.viewer.finished());       // age>0x1d 才置位
+    CHECK(!h.viewer.finished());  // age>0x1d 才置位
     CHECK(h.viewer.update(0, 0));
     CHECK(h.viewer.finished());
 }

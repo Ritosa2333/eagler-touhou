@@ -5,11 +5,11 @@
 //   (b) ins_410 旋入推进（rotation.y 从 -π/2 走向 0）
 //   (c) draw_layer(25/26) 提交 WorldUv 图元（mode8 世界四边形）
 // 资产：artifacts/reference/raw/staff.anm（ending/staff.png 名单位图条带）。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 #include "game/AnmManager.hpp"
 #include "game/AnmRenderer.hpp"
 #include "game/EndingScene.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include <cmath>
 #include <fstream>
@@ -144,7 +144,8 @@ TEST(ending_staff_real_msg_cues_all_credit_scripts_by_line) {
     // 不按键：op5(-1)@3600 应拦住 END——未完。
     CHECK(!scene.finished());
     std::string got;
-    for (auto& cue : host.cues) got += std::to_string(cue.second) + ",";
+    for (auto& cue : host.cues)
+        got += std::to_string(cue.second) + ",";
     // 0=背景,5..14=名单条带（除 14 在 3540 也应已 cue——3660 帧内）。
     for (i32 script : {0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14})
         CHECK(got.find(std::to_string(script) + ",") != std::string::npos);

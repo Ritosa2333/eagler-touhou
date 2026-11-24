@@ -82,9 +82,9 @@ public:
     // 521 overrides ONLY the timeout label (+0x5240), not the health label.
     // ECL thread time is not the timeout clock: wait/goto can rewind it forever.
     struct Interrupt {
-        i32 life = -1;  // +0x5234; negative = inactive
-        i32 timeout = 0;  // +0x5238; zero = no timeout
-        std::string health_label;  // +0x523c
+        i32 life = -1;              // +0x5234; negative = inactive
+        i32 timeout = 0;            // +0x5238; zero = no timeout
+        std::string health_label;   // +0x523c
         std::string timeout_label;  // +0x5240
     };
     std::string error;

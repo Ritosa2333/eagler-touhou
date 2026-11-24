@@ -9,15 +9,9 @@ constexpr u32 kTopSize = 0x74;
 constexpr u32 kStageHeaderSize = 0xC4;
 constexpr u32 kFrameBytes = 6;
 
-u16 read_u16(const u8* p) {
-    return u16(p[0]) | u16(p[1]) << 8;
-}
-u32 read_u32(const u8* p) {
-    return u32(p[0]) | u32(p[1]) << 8 | u32(p[2]) << 16 | u32(p[3]) << 24;
-}
-i32 read_i32(const u8* p) {
-    return i32(read_u32(p));
-}
+u16 read_u16(const u8* p) { return u16(p[0]) | u16(p[1]) << 8; }
+u32 read_u32(const u8* p) { return u32(p[0]) | u32(p[1]) << 8 | u32(p[2]) << 16 | u32(p[3]) << 24; }
+i32 read_i32(const u8* p) { return i32(read_u32(p)); }
 float read_f32(const u8* p) {
     const u32 bits = read_u32(p);
     float value;
@@ -126,7 +120,8 @@ bool ReplayFile::inflate(const u8* src, size_t src_size, std::vector<u8>& out, s
     };
     const auto read_bits = [&](u32 count) {
         u32 value = 0;
-        for (u32 i = 0; i < count; ++i) value = value << 1 | read_bit();
+        for (u32 i = 0; i < count; ++i)
+            value = value << 1 | read_bit();
         return value;
     };
     while (true) {
@@ -155,16 +150,15 @@ bool ReplayFile::inflate(const u8* src, size_t src_size, std::vector<u8>& out, s
 // 树/环布局与 0x458f30 解压侧严格镜像；与 oracle/replay_compress.py 完全同构
 // （该实现已过 8/8 真 .rpy 逐字节往返 + 35/35 Unicorn 直调向量）。
 namespace {
-constexpr u32 kDeflateRing = 0x2000;     // 文本环 0x4da2f8
-constexpr u32 kDeflateMask = 0x1FFF;     // 绝对环位掩码
-constexpr u32 kDeflateMaxMatch = 0x12;   // 18：窗口超前量 = 最大匹配长
+constexpr u32 kDeflateRing = 0x2000;    // 文本环 0x4da2f8
+constexpr u32 kDeflateMask = 0x1FFF;    // 绝对环位掩码
+constexpr u32 kDeflateMaxMatch = 0x12;  // 18：窗口超前量 = 最大匹配长
 constexpr u32 kDeflateMinMatch = 3;
-constexpr u32 kDeflateSentinel = 0x2000; // 下标 8192：rgt[8192]=根（0x4da2f0）
+constexpr u32 kDeflateSentinel = 0x2000;  // 下标 8192：rgt[8192]=根（0x4da2f0）
 
 // 0x4593a0/0x4593f0/0x459440/0x4594d0：BST 删除。单子顶替父槽先查 rgt；
 // 两子取左子树最右 v（先递归删 v，v 必无右子），再拼到 x 位（父槽先查 lft）。
-void deflate_tree_remove(std::vector<i32>& dad, std::vector<i32>& lft,
-                         std::vector<i32>& rgt, u32 x) {
+void deflate_tree_remove(std::vector<i32>& dad, std::vector<i32>& lft, std::vector<i32>& rgt, u32 x) {
     if (dad[x] == 0) return;
     u32 repl;
     if (rgt[x] == 0) {
@@ -172,11 +166,15 @@ void deflate_tree_remove(std::vector<i32>& dad, std::vector<i32>& lft,
     } else if (lft[x] == 0) {
         repl = u32(rgt[x]);
     } else {
-        u32 v = u32(lft[x]);                    // 0x4594d0：左子树最右
-        while (rgt[v] != 0) v = u32(rgt[v]);
+        u32 v = u32(lft[x]);  // 0x4594d0：左子树最右
+        while (rgt[v] != 0)
+            v = u32(rgt[v]);
         deflate_tree_remove(dad, lft, rgt, v);  // v 无右子 → 简单顶替摘除
         const i32 dd = dad[x];                  // 0x459440：v 拼到 x 位（先查 lft）
-        if (lft[dd] == i32(x)) lft[dd] = i32(v); else rgt[dd] = i32(v);
+        if (lft[dd] == i32(x))
+            lft[dd] = i32(v);
+        else
+            rgt[dd] = i32(v);
         dad[v] = dd;
         lft[v] = lft[x];
         rgt[v] = rgt[x];
@@ -185,9 +183,12 @@ void deflate_tree_remove(std::vector<i32>& dad, std::vector<i32>& lft,
         dad[x] = 0;
         return;
     }
-    const i32 dd = dad[x];                      // 0x4593f0：简单顶替（先查 rgt）
+    const i32 dd = dad[x];  // 0x4593f0：简单顶替（先查 rgt）
     dad[repl] = dd;
-    if (rgt[dd] == i32(x)) rgt[dd] = i32(repl); else lft[dd] = i32(repl);
+    if (rgt[dd] == i32(x))
+        rgt[dd] = i32(repl);
+    else
+        lft[dd] = i32(repl);
     dad[x] = 0;
 }
 }  // namespace
@@ -219,13 +220,13 @@ void LzssEncoder::begin(const u8* src, size_t size) {
     // 哨兵别名改根）、lft[1]=rgt[1]=0。每次调用自初始化，与调用历史无关。
     rgt_[kDeflateSentinel] = 1;
     dad_[1] = i32(kDeflateSentinel);
-    match_len_ = 0;   // 首个 token 前为 0 → 必为字面量
+    match_len_ = 0;  // 首个 token 前为 0 → 必为字面量
     match_pos_ = 0;
     active_ = true;
     finished_ = false;
 }
 
-void LzssEncoder::put_bit(u32 bit) {         // MSB 先行位流（0x458d0c 出位序）
+void LzssEncoder::put_bit(u32 bit) {  // MSB 先行位流（0x458d0c 出位序）
     if (bit) acc_ |= mask_;
     mask_ >>= 1;
     if (!mask_) {
@@ -253,8 +254,11 @@ u32 LzssEncoder::tree_insert(u32 p) {
             match_pos_ = node;
         }
         if (i >= kDeflateMaxMatch) {
-            const i32 dd = dad_[node];       // 0x4592df..0x459355
-            if (lft_[dd] == i32(node)) lft_[dd] = i32(p); else rgt_[dd] = i32(p);
+            const i32 dd = dad_[node];  // 0x4592df..0x459355
+            if (lft_[dd] == i32(node))
+                lft_[dd] = i32(p);
+            else
+                rgt_[dd] = i32(p);
             dad_[p] = dd;
             lft_[p] = lft_[node];
             rgt_[p] = rgt_[node];
@@ -264,8 +268,11 @@ u32 LzssEncoder::tree_insert(u32 p) {
             return kDeflateMaxMatch;
         }
         const u32 child = c < 0 ? u32(lft_[node]) : u32(rgt_[node]);
-        if (child == 0) {                   // 0x459369..0x459394：挂叶子
-            if (c < 0) lft_[node] = i32(p); else rgt_[node] = i32(p);
+        if (child == 0) {  // 0x459369..0x459394：挂叶子
+            if (c < 0)
+                lft_[node] = i32(p);
+            else
+                rgt_[node] = i32(p);
             dad_[p] = i32(node);
             lft_[p] = 0;
             rgt_[p] = 0;
@@ -279,7 +286,7 @@ void LzssEncoder::advance(u32 count) {
     for (u32 step = 0; step < count; ++step) {  // 0x458dd2..0x458ee6 前进
         const u32 r = (wp_ + kDeflateMaxMatch) & kDeflateMask;
         if (dad_[r] != 0) deflate_tree_remove(dad_, lft_, rgt_, r);
-        if (fill_ < src_.size()) {               // 超前 18 预填（fill 指针 ++）
+        if (fill_ < src_.size()) {  // 超前 18 预填（fill 指针 ++）
             const u8 byte = src_[fill_];
             ++fill_;
             ring_[r] = byte;
@@ -300,14 +307,17 @@ bool LzssEncoder::step(u32 tokens) {
         const u32 ml = match_len_ < lookahead_ ? match_len_ : lookahead_;
         u32 count;
         if (ml <= 2) {
-            put_bit(1);                          // 字面量：1 位标志 + 8 位 ring[wp]
+            put_bit(1);  // 字面量：1 位标志 + 8 位 ring[wp]
             const u8 byte = ring_[wp_];
-            for (int shift = 7; shift >= 0; --shift) put_bit(u32(byte >> shift) & 1);
+            for (int shift = 7; shift >= 0; --shift)
+                put_bit(u32(byte >> shift) & 1);
             count = 1;
         } else {
-            put_bit(0);                          // 拷贝：13 位绝对环址 + 4 位 (ml-3)
-            for (int shift = 12; shift >= 0; --shift) put_bit(match_pos_ >> shift & 1);
-            for (int shift = 3; shift >= 0; --shift) put_bit((ml - kDeflateMinMatch) >> shift & 1);
+            put_bit(0);  // 拷贝：13 位绝对环址 + 4 位 (ml-3)
+            for (int shift = 12; shift >= 0; --shift)
+                put_bit(match_pos_ >> shift & 1);
+            for (int shift = 3; shift >= 0; --shift)
+                put_bit((ml - kDeflateMinMatch) >> shift & 1);
             count = ml;
         }
         advance(count);
@@ -315,7 +325,8 @@ bool LzssEncoder::step(u32 tokens) {
     if (lookahead_ > 0) return false;
     // 终止（0x458ef2..0x458f15）：1+13 = 14 个 0 位（解压侧地址 0 即终止）。
     put_bit(0);
-    for (int i = 0; i < 13; ++i) put_bit(0);
+    for (int i = 0; i < 13; ++i)
+        put_bit(0);
     finished_ = true;
     return true;
 }
@@ -335,7 +346,8 @@ std::vector<u8> LzssEncoder::take() {
 std::vector<u8> ReplayFile::deflate(const u8* src, size_t size) {
     LzssEncoder encoder;
     encoder.begin(src, size);
-    while (!encoder.step(1u << 16)) {}
+    while (!encoder.step(1u << 16)) {
+    }
     return encoder.take();
 }
 
@@ -366,7 +378,8 @@ bool ReplayFile::decode(const u8* data, size_t size) {
     // 保存侧 0x20 填充至 ≥8 字符（0x4484d0:50-52）：按 NUL 或尾随空格裁剪。
     const auto cut = player_name.find('\0');
     if (cut != std::string::npos) player_name.resize(cut);
-    while (!player_name.empty() && player_name.back() == ' ') player_name.pop_back();
+    while (!player_name.empty() && player_name.back() == ' ')
+        player_name.pop_back();
     score = read_i32(plain.data() + 0x14);
     slow_rate = read_f32(plain.data() + 0x54);
     stage_count = plain[0x58];
@@ -382,8 +395,7 @@ bool ReplayFile::decode(const u8* data, size_t size) {
     for (u32 s = 0; s < stage_count; ++s) {
         if (pos + kStageHeaderSize > plain.size()) return fail("stage header out of range");
         ReplayStage stage;
-        stage.header.assign(plain.begin() + ptrdiff_t(pos),
-                            plain.begin() + ptrdiff_t(pos + kStageHeaderSize));
+        stage.header.assign(plain.begin() + ptrdiff_t(pos), plain.begin() + ptrdiff_t(pos + kStageHeaderSize));
         stage.number = read_u16(plain.data() + pos);
         stage.stamp = read_u16(plain.data() + pos + 2);
         stage.frame_count = read_u32(plain.data() + pos + 4);
@@ -402,8 +414,7 @@ bool ReplayFile::decode(const u8* data, size_t size) {
         // 无 EOF，基准不变。
         u32 recorded = stage.frame_count;
         if (recorded > 0 && stage.frame(recorded - 1).eof()) --recorded;
-        if (stage.events.size() != (recorded + 29) / 30)
-            return fail("stage event stream length mismatch");
+        if (stage.events.size() != (recorded + 29) / 30) return fail("stage event stream length mismatch");
         stages.push_back(std::move(stage));
         pos += kStageHeaderSize + stage.blob_size;
     }
@@ -414,8 +425,7 @@ bool ReplayFile::decode(const u8* data, size_t size) {
     while (user + 12 <= size && std::memcmp(data + user, "USER", 4) == 0) {
         const u32 block = read_u32(data + user + 4);
         if (block < 12 || user + block > size) return fail("user block out of range");
-        user_blocks.emplace_back(reinterpret_cast<const char*>(data + user + 12),
-                                 std::size_t(block - 12));
+        user_blocks.emplace_back(reinterpret_cast<const char*>(data + user + 12), std::size_t(block - 12));
         user += block;
     }
     return true;

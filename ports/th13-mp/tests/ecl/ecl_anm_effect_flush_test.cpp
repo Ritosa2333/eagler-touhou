@@ -73,29 +73,26 @@ struct PresentationRig {
     bool load_real_banks(th13test::TestFileReader& reader) {
         const auto load = [&](i32 bank, const char* name) {
             std::vector<u8> bytes;
-            if (!reader.read(std::string("artifacts/reference/raw/") + name, bytes))
-                return false;
+            if (!reader.read(std::string("artifacts/reference/raw/") + name, bytes)) return false;
             return manager.load(bank, bytes.data(), u32(bytes.size()));
         };
         std::vector<u8> bytes;
         AnmResource stage;
-        if (!reader.read("artifacts/reference/raw/enemy.anm", bytes) ||
-            !stage.append(bytes.data(), u32(bytes.size()))) return false;
+        if (!reader.read("artifacts/reference/raw/enemy.anm", bytes) || !stage.append(bytes.data(), u32(bytes.size())))
+            return false;
         stage_script_count = i32(stage.scripts.size());
         if (!reader.read("artifacts/reference/raw/st01enm.anm", bytes) ||
-            !stage.append(bytes.data(), u32(bytes.size())) ||
-            !manager.adopt(4, std::move(stage))) return false;
+            !stage.append(bytes.data(), u32(bytes.size())) || !manager.adopt(4, std::move(stage)))
+            return false;
         if (!load(5, "bullet.anm")) return false;
         if (!load(6, "pl00.anm")) return false;
-        presentation = std::make_unique<StagePresentation>(
-            manager, renderer, StagePresentation::Banks{4, 5, 6, 8}, 3);
+        presentation = std::make_unique<StagePresentation>(manager, renderer, StagePresentation::Banks{4, 5, 6, 8}, 3);
         return true;
     }
 };
 
 // 单条 ECL 指令执行夹具：mask=0（全部实参为常量）、rank=0xff。
-int execute_literal(StageSim& sim, EclContext& context, u16 opcode,
-                    std::initializer_list<u32> args) {
+int execute_literal(StageSim& sim, EclContext& context, u16 opcode, std::initializer_list<u32> args) {
     std::vector<u8> bytes;
     th13test::emit(bytes, 0, opcode, 0, 0xff, 0, args);
     context.instruction = reinterpret_cast<const EclInstruction*>(bytes.data());
@@ -139,10 +136,9 @@ TEST(slot_commands_flush_synchronously_at_the_ecl_instruction) {
             log.serial = request.serial;
         }
         // 表现层冲刷语义：kind=1 建 VM 后出队，kind=0 保留。
-        sim.anm_effects.erase(
-            std::remove_if(sim.anm_effects.begin(), sim.anm_effects.end(),
-                           [](const AnmEffectRequest& request) { return request.kind == 1; }),
-            sim.anm_effects.end());
+        sim.anm_effects.erase(std::remove_if(sim.anm_effects.begin(), sim.anm_effects.end(),
+                                             [](const AnmEffectRequest& request) { return request.kind == 1; }),
+                              sim.anm_effects.end());
         return true;
     };
 
@@ -208,10 +204,9 @@ TEST(effect_commands_stay_queued_for_the_stage_script_phase) {
     int flush_calls = 0;
     sim.flush_anm_slots = [&](StageEnemy*) {
         ++flush_calls;
-        sim.anm_effects.erase(
-            std::remove_if(sim.anm_effects.begin(), sim.anm_effects.end(),
-                           [](const AnmEffectRequest& request) { return request.kind == 1; }),
-            sim.anm_effects.end());
+        sim.anm_effects.erase(std::remove_if(sim.anm_effects.begin(), sim.anm_effects.end(),
+                                             [](const AnmEffectRequest& request) { return request.kind == 1; }),
+                              sim.anm_effects.end());
         return true;
     };
 
@@ -263,10 +258,8 @@ TEST(presentation_slots_only_flush_defers_effect_creation_to_sync) {
     StageEnemy enemy;
     enemy.serial = 9;
     enemy.mirror_script_base = 1;
-    battle.sim.anm_effects.push_back(
-        {3, 0, 0, 0, 0, 1, 306, 0, 9});              // 306 slot0 script0（stage 文件 3）
-    battle.sim.anm_effects.push_back(
-        {0, 0, 12.5f, 34.25f, 0.75f, 0});            // 307 特效（file 0 = bullet bank）
+    battle.sim.anm_effects.push_back({3, 0, 0, 0, 0, 1, 306, 0, 9});    // 306 slot0 script0（stage 文件 3）
+    battle.sim.anm_effects.push_back({0, 0, 12.5f, 34.25f, 0.75f, 0});  // 307 特效（file 0 = bullet bank）
     const u32 before = rig.manager.registry.ordered_count(false);
 
     // enemy_animation 路径（slots_only）：只建槽位 VM，kind=0 保留。
@@ -274,8 +267,7 @@ TEST(presentation_slots_only_flush_defers_effect_creation_to_sync) {
     CHECK(enemy.anm_slot_handle[0] != 0);
     CHECK_EQ(rig.manager.registry.ordered_count(false), before + 1);
     CHECK_EQ(battle.sim.anm_effects.size(), 1u);
-    if (!battle.sim.anm_effects.empty())
-        CHECK_EQ(battle.sim.anm_effects[0].kind, 0);
+    if (!battle.sim.anm_effects.empty()) CHECK_EQ(battle.sim.anm_effects[0].kind, 0);
     const u32 slot_handle = enemy.anm_slot_handle[0];
     {
         const AnmVm* vm = rig.manager.registry.find(slot_handle);

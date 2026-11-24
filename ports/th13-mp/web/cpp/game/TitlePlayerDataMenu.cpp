@@ -59,13 +59,12 @@ bool TitlePlayerDataMenu::open() {
         return fail("Title player data unavailable");
     }
     opened_ = true;
-    if (host.difficulty_count() != kPlayerDataDifficulties ||
-        host.character_count() != kPlayerDataCharacters) {
+    if (host.difficulty_count() != kPlayerDataDifficulties || host.character_count() != kPlayerDataCharacters) {
         host.close_player_data();
         opened_ = false;
         return fail("Title player data shape unavailable");
     }
-    difficulty_ = 1; // 004531a5..004531b7: FUN_00415030(1), initial Normal
+    difficulty_ = 1;  // 004531a5..004531b7: FUN_00415030(1), initial Normal
     character_ = 0;
     page_ = 0;
     frames_ = 0;
@@ -92,7 +91,7 @@ bool TitlePlayerDataMenu::update(u32 pressed, u32 repeated) {
         bool changed = false;
         if (navigation & kInputUp) {
             difficulty_ = (difficulty_ + kPlayerDataDifficulties - 1) % kPlayerDataDifficulties;
-            if (page_ > 0) page_ = 1; // 00453449: remain in the card-page category
+            if (page_ > 0) page_ = 1;  // 00453449: remain in the card-page category
             changed = true;
         }
         if (navigation & kInputDown) {
@@ -171,9 +170,9 @@ std::vector<TitlePlayerDataRecord> TitlePlayerDataMenu::visible_records() const 
     std::vector<TitlePlayerDataRecord> visible;
     if (page_ == 0) return visible;
     const i32 begin = (page_ - 1) * kPlayerDataPageSize;
-    const i32 end = std::min(begin + kPlayerDataPageSize,
-                             static_cast<i32>(records_.size()));
-    for (i32 i = begin; i < end; ++i) visible.push_back(records_[static_cast<std::size_t>(i)]);
+    const i32 end = std::min(begin + kPlayerDataPageSize, static_cast<i32>(records_.size()));
+    for (i32 i = begin; i < end; ++i)
+        visible.push_back(records_[static_cast<std::size_t>(i)]);
     return visible;
 }
 

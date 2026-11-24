@@ -25,8 +25,7 @@ struct Fixture {
     HudScoreState score;
     ItemCollector collector;
 
-    Fixture(float px = 0.0f, float py = 200.0f, float box = 5.0f,
-            float auto_box = 0.0f, float auto_focus = 0.0f) {
+    Fixture(float px = 0.0f, float py = 200.0f, float box = 5.0f, float auto_box = 0.0f, float auto_focus = 0.0f) {
         collector.x = px;
         collector.y = py;
         collector.state = 1;
@@ -34,12 +33,9 @@ struct Fixture {
         collector.dialog = false;
         collector.homing_speed = 3.0f;  // 原版 *(player+0x660 表+8) 取 3.0 定标
         collector.box = {px - box, py - box, px + box, py + box};
-        if (auto_box > 0.0f)
-            collector.box_auto = {px - auto_box, py - auto_box,
-                                  px + auto_box, py + auto_box};
+        if (auto_box > 0.0f) collector.box_auto = {px - auto_box, py - auto_box, px + auto_box, py + auto_box};
         if (auto_focus > 0.0f)
-            collector.box_auto_focus = {px - auto_focus, py - auto_focus,
-                                        px + auto_focus, py + auto_focus};
+            collector.box_auto_focus = {px - auto_focus, py - auto_focus, px + auto_focus, py + auto_focus};
         collector.progress = &progress;
         collector.player = &hud;
         collector.score = &score;
@@ -84,7 +80,7 @@ TEST(item_spawn_state_and_clamp) {
     CHECK_NEAR(it.x, 192.0f, 1e-6f);  // x 钳 [-192,192]
     CHECK_NEAR(it.vx, 0.0f, 1e-5f);   // polar(-π/2, 2.2)
     CHECK_NEAR(it.vy, -2.2f, 1e-5f);
-    CHECK_EQ(it.anm_frame, 0);      // +0xB7C 出生 0
+    CHECK_EQ(it.anm_frame, 0);        // +0xB7C 出生 0
     CHECK_EQ(it.anm_frame_prev, -1);  // +0xB78 出生 -1
 }
 
@@ -109,7 +105,7 @@ TEST(item_falling_physics_old_velocity_first) {
     mgr.update(fix.collector);
     const Item& it = mgr.items()[599];
     CHECK_EQ(it.state, 1);
-    CHECK_NEAR(it.y, 300.0f - 2.2f, 1e-4f);  // 旧速位移
+    CHECK_NEAR(it.y, 300.0f - 2.2f, 1e-4f);   // 旧速位移
     CHECK_NEAR(it.vy, -2.2f + 0.03f, 1e-5f);  // 后加减速
     mgr.update(fix.collector);
     CHECK_NEAR(it.y, 300.0f - 2.2f - 2.17f, 1e-4f);
@@ -206,7 +202,7 @@ TEST(item_full_power_small_p_score_raw) {
     ItemManager mgr;
     mgr.spawn_item(0.0f, 200.0f, 0.0f, 1, -1.5707964f, 2.2f);
     mgr.update(fix.collector);
-    CHECK_EQ(fix.score.score, 1000);  // 原值域 +1000
+    CHECK_EQ(fix.score.score, 1000);                            // 原值域 +1000
     CHECK(has_event(mgr, ItemEvent::Kind::ScorePopup, 10000));  // 显示值 10000
     CHECK_EQ(fix.hud.power, 400);
 }
@@ -235,7 +231,7 @@ TEST(item_big_power_variant_full_adds_two_max_point) {
     ItemManager mgr;
     mgr.spawn_item(0.0f, 200.0f, 0.0f, 8, -1.5707964f, 2.2f);
     mgr.update(fix.collector);
-        CHECK_EQ(fix.progress.max_point, 20000);  // 0x42f510: fmul 100.0 @4ae868 → 100×100
+    CHECK_EQ(fix.progress.max_point, 20000);  // 0x42f510: fmul 100.0 @4ae868 → 100×100
     CHECK(has_event(mgr, ItemEvent::Kind::ScorePopup, 100));
 }
 
@@ -266,7 +262,8 @@ TEST(item_point_value_high_and_low) {
         mgr.spawn_item(0.0f, 250.0f, 0.0f, 2, -1.5707964f, 2.2f);
         Item& it = mgr.items()[599];
         it.state = 3;  // 追踪态 → 高位公式
-        for (int i = 0; i < 100 && it.alive; ++i) mgr.update(fix.collector);
+        for (int i = 0; i < 100 && it.alive; ++i)
+            mgr.update(fix.collector);
         CHECK(!it.alive);
         CHECK_EQ(fix.score.score, 10);
     }
@@ -336,7 +333,7 @@ TEST(item_life_piece_thresholds) {
 
 TEST(item_bomb_piece_overflow_caps_nine) {
     Fixture fix;
-    fix.hud.bombs = 9;      // 已满：+1 后按 min(9+1,9) 钳 9
+    fix.hud.bombs = 9;  // 已满：+1 后按 min(9+1,9) 钳 9
     fix.hud.bomb_pieces = 7;
     ItemManager mgr;
     mgr.spawn_item(0.0f, 200.0f, 0.0f, 5, -1.5707964f, 2.2f);  // +2 → 9 > 7
@@ -389,7 +386,7 @@ TEST(item_cancel_spirit_collect) {
     it.state = 2;  // 越过 state5 计时直入上升态
     mgr.update(fix.collector);
     CHECK(!it.alive);
-    CHECK_EQ(fix.score.score, 1);          // 10/10 原值
+    CHECK_EQ(fix.score.score, 1);             // 10/10 原值
     CHECK_EQ(fix.progress.max_point, 10010);  // 0x42f510: fmul 100.0 → 0.1×100
 }
 
@@ -413,7 +410,7 @@ TEST(item_auto_collect_box_while_falling) {
     const Item& it = mgr.items()[599];
     CHECK_EQ(it.state, 4);
     CHECK_NEAR(it.homing_speed, 1.0f, 1e-5f);  // 3.0/3
-    CHECK(it.alive);  // 未收集（在收集盒外）
+    CHECK(it.alive);                           // 未收集（在收集盒外）
 }
 
 TEST(item_dialog_blocks_magnet_only) {
@@ -440,8 +437,8 @@ TEST(spirit_spawn_two_rng_draws_order) {
     // 每件两次抽取，先 signed_unit（角）后 unit（速）。
     const float su = twin.signed_unit();
     const float u = twin.unit();
-    CHECK_EQ(s.flags & 1u, 0u);  // 未绑会话 → bit0 = 0
-    CHECK_EQ(s.flags & 2u, 2u);  // bit1 反弹门
+    CHECK_EQ(s.flags & 1u, 0u);                                 // 未绑会话 → bit0 = 0
+    CHECK_EQ(s.flags & 2u, 2u);                                 // bit1 反弹门
     CHECK_NEAR(s.angle, su * kPi * 0.25f + 0.7853982f, 1e-6f);  // id=1 → 象限1
     CHECK_NEAR(s.move_speed, u * 3.5f + 0.5f, 1e-6f);
     CHECK_NEAR(s.speed, 0.0f, 1e-9f);
@@ -506,7 +503,8 @@ TEST(spirit_free_to_tracking) {
     Fixture fix(0.0f, 200.0f, 5.0f);
     mgr.spawn_value_item(0, 0.0f, 120.0f, 0.0f, 0.5f);
     Spirit& s = mgr.spirits()[0];
-    s.x = 0.0f; s.y = 120.0f;  // dist=80：6400 < 9216（入追踪）且 >= 400（不收集）
+    s.x = 0.0f;
+    s.y = 120.0f;  // dist=80：6400 < 9216（入追踪）且 >= 400（不收集）
     mgr.update_spirits(fix.collector);
     // 1→2 转态帧：case1 只改态，尾段仍按出生 move_speed（衰减后）位移。
     CHECK_EQ(s.state, 2);
@@ -520,10 +518,11 @@ TEST(spirit_free_to_tracking) {
 }
 
 TEST(spirit_motion_quantizes_after_float_velocity_like_original) {
-    struct Case { float x, y, speed, angle, expected_x, expected_y; };
+    struct Case {
+        float x, y, speed, angle, expected_x, expected_y;
+    };
     for (const auto value : {Case{-10.123f, 100.007f, 1.0f, 0.0f, -9.13f, 100.0f},
-                             Case{-10.123f, 100.007f, 1.0f, -1.5707963705062866f,
-                                  -10.13f, 99.0f},
+                             Case{-10.123f, 100.007f, 1.0f, -1.5707963705062866f, -10.13f, 99.0f},
                              Case{0.0f, 0.0f, 3.125f, 0.7853981852531433f, 2.2f, 2.2f}}) {
         GameRandom random(3);
         ItemManager mgr(&random);
@@ -552,14 +551,18 @@ TEST(spirit_right_edge_reflects_when_other_axis_is_outside) {
     Fixture fix(0.f, 300.f);
     mgr.spawn_value_item(3, 0.f, 0.f, 0.f, 0.5f);
     Spirit& spirit = mgr.spirits()[0];
-    spirit.x = 192.f; spirit.y = -0.59f;
-    spirit.angle = 0.f; spirit.move_speed = 0.1f;
+    spirit.x = 192.f;
+    spirit.y = -0.59f;
+    spirit.angle = 0.f;
+    spirit.move_speed = 0.1f;
     mgr.update_spirits(fix.collector);
     CHECK_EQ(spirit.x, 191.9f);
 
     // At the same right edge inside the box, 40bb70 keeps the branch shut.
-    spirit.x = 192.f; spirit.y = 100.f;
-    spirit.angle = 0.f; spirit.move_speed = 0.1f;
+    spirit.x = 192.f;
+    spirit.y = 100.f;
+    spirit.angle = 0.f;
+    spirit.move_speed = 0.1f;
     mgr.update_spirits(fix.collector);
     CHECK_EQ(spirit.x, 192.1f);
 }
@@ -570,11 +573,12 @@ TEST(spirit_collect_kind0_common_trance_and_piece) {
     Fixture fix(0.0f, 200.0f, 20.0f);
     mgr.spawn_value_item(0, 0.0f, 200.0f, 0.0f, 0.5f);
     Spirit& s = mgr.spirits()[0];
-    s.x = 5.0f; s.y = 205.0f;  // dist² = 50 < 400
+    s.x = 5.0f;
+    s.y = 205.0f;  // dist² = 50 < 400
     mgr.update_spirits(fix.collector);
     CHECK(!s.alive);
-    CHECK_EQ(fix.progress.ending_points, 2);   // 公共 trance +2
-    CHECK_EQ(fix.hud.life_pieces, 1);          // kind0 → 残机碎片
+    CHECK_EQ(fix.progress.ending_points, 2);  // 公共 trance +2
+    CHECK_EQ(fix.hud.life_pieces, 1);         // kind0 → 残机碎片
     CHECK(has_event(mgr, ItemEvent::Kind::Collected, 10));
 }
 
@@ -582,15 +586,19 @@ TEST(trance_born_life_spirit_adds_two_pieces_and_crosses_threshold_once) {
     // 438d09 passes EAX=2 to43d330; ordinary-born 438b5d passes1. The
     // decision follows the spirit's birth flag even after Trance has ended.
     GameRandom random(3);
-    SessionState session; trance_begin(session);
-    ItemManager mgr(&random); mgr.bind_session(session);
+    SessionState session;
+    trance_begin(session);
+    ItemManager mgr(&random);
+    mgr.bind_session(session);
     Fixture fix(0, 200, 20);
-    fix.hud.extra_lives = 2; fix.hud.life_pieces = 7;
+    fix.hud.extra_lives = 2;
+    fix.hud.life_pieces = 7;
     fix.score.score = 1234;
     mgr.spawn_value_item(0, 0, 200, 0, .5f);
     auto& spirit = mgr.spirits()[0];
     CHECK(spirit.flags & 1u);
-    spirit.x = 5; spirit.y = 205;
+    spirit.x = 5;
+    spirit.y = 205;
     trance_end(session, false);
     mgr.update_spirits(fix.collector);
     CHECK(!spirit.alive);
@@ -608,7 +616,8 @@ TEST(spirit_collect_kind3_score_and_trance) {
     fix.progress.max_point = 10000;
     mgr.spawn_value_item(3, 0.0f, 200.0f, 0.0f, 0.5f);
     Spirit& s = mgr.spirits()[0];
-    s.x = 5.0f; s.y = 205.0f;
+    s.x = 5.0f;
+    s.y = 205.0f;
     mgr.update_spirits(fix.collector);
     CHECK(!s.alive);
     CHECK_EQ(fix.progress.ending_points, 3);  // +2 公共 +1 kind3
@@ -625,7 +634,8 @@ TEST(spirit_collect_bit0_path_no_common_trance) {
     Fixture fix(0.0f, 200.0f, 20.0f);
     mgr.spawn_value_item(2, 0.0f, 200.0f, 0.0f, 0.5f);
     Spirit& s = mgr.spirits()[0];
-    s.x = 5.0f; s.y = 205.0f;
+    s.x = 5.0f;
+    s.y = 205.0f;
     mgr.update_spirits(fix.collector);
     CHECK(!s.alive);
     CHECK_EQ(fix.progress.ending_points, 0);  // bit0=1：无公共 +2
@@ -641,7 +651,8 @@ TEST(spirit_collect_kind1_max_point_and_char2_trance) {
     fix.progress.character = 2;  // DAT_004be7b8 == 2 → 再 +1 trance
     mgr.spawn_value_item(1, 0.0f, 200.0f, 0.0f, 0.5f);
     Spirit& s = mgr.spirits()[0];
-    s.x = 5.0f; s.y = 205.0f;
+    s.x = 5.0f;
+    s.y = 205.0f;
     mgr.update_spirits(fix.collector);
     // 0x438baf: fld 10.0 → 0x42f510 fmul 100.0 → +1000
     CHECK_EQ(fix.progress.max_point, 11000);
@@ -660,7 +671,7 @@ TEST(spirit_dying_player_no_collect_slow_home) {
     ItemCollector dying = fix.collector;
     dying.state = 2;  // player+0x65c dying
     mgr.update_spirits(dying);
-    CHECK(s.alive);      // 不收集
+    CHECK(s.alive);        // 不收集
     CHECK_EQ(s.state, 4);  // 角色门（be7b8==0 且 bit0）
     // 角色 1：同条件下保持游离。
     GameRandom random2(3);
@@ -683,7 +694,8 @@ TEST(spirit_cull_box_and_bit1_exemption) {
     Fixture fix(0.0f, 200.0f, 5.0f);
     mgr.spawn_value_item(0, 230.0f, 200.0f, 0.0f, 0.5f);
     Spirit& s = mgr.spirits()[0];
-    s.x = 230.0f; s.y = 200.0f;
+    s.x = 230.0f;
+    s.y = 200.0f;
     mgr.update_spirits(fix.collector);
     CHECK(!s.alive);  // x>224（0x40bb70(0,224,448,512) 外）→ 回收
     // trance 产件（bit0=1）无回收路径。
@@ -695,7 +707,8 @@ TEST(spirit_cull_box_and_bit1_exemption) {
     Fixture fix2(0.0f, 200.0f, 5.0f);
     mgr2.spawn_value_item(0, 230.0f, 200.0f, 0.0f, 0.5f);
     Spirit& s2 = mgr2.spirits()[0];
-    s2.x = 230.0f; s2.y = 200.0f;
+    s2.x = 230.0f;
+    s2.y = 200.0f;
     mgr2.update_spirits(fix2.collector);
     CHECK(s2.alive);
 }
@@ -707,7 +720,8 @@ TEST(spirit_frame_480_closes_bounce_gate) {
     fix.collector.x = -400.0f;  // 远离：永不追踪/收集
     mgr.spawn_value_item(0, 0.0f, 200.0f, 0.0f, 0.5f);
     Spirit& s = mgr.spirits()[0];
-    for (int i = 0; i < 481; ++i) mgr.update_spirits(fix.collector);
+    for (int i = 0; i < 481; ++i)
+        mgr.update_spirits(fix.collector);
     CHECK_EQ(s.flags & 2u, 0u);  // [0x18]==480 → 清 bit1
     CHECK(s.alive);
 }
@@ -724,16 +738,18 @@ TEST(spirit_trance_reset_keeps_lifetime_clock_aligned) {
     fix.collector.x = -400.0f;  // 远离：永不追踪/收集
     mgr.spawn_value_item(0, 0.0f, 200.0f, 0.0f, 0.5f);
     Spirit& s = mgr.spirits()[0];
-    for (int i = 0; i < 10; ++i) mgr.update_spirits(fix.collector);
+    for (int i = 0; i < 10; ++i)
+        mgr.update_spirits(fix.collector);
     CHECK_EQ(s.frame, 9);
     mgr.set_spirit_trance(false);  // 0x4393a0 等价重置
     CHECK_EQ(s.frame, -1);         // 暴露位 = Timer.previous
     CHECK_EQ(s.flags & 1u, 0u);
     mgr.update_spirits(fix.collector);  // 重置帧：检查 0，tick → current=1
     CHECK_EQ(s.frame, 0);
-    for (int i = 0; i < 479; ++i) mgr.update_spirits(fix.collector);
+    for (int i = 0; i < 479; ++i)
+        mgr.update_spirits(fix.collector);
     CHECK_EQ(s.frame, 479);
-    CHECK_EQ(s.flags & 2u, 2u);  // 479 帧仍开反弹门（不得提前关）
+    CHECK_EQ(s.flags & 2u, 2u);         // 479 帧仍开反弹门（不得提前关）
     mgr.update_spirits(fix.collector);  // 第 480 帧
     CHECK_EQ(s.frame, 480);
     CHECK_EQ(s.flags & 2u, 0u);  // [0x18]==480 → 清 bit1
@@ -771,13 +787,12 @@ TEST(trance_collect_events_cross_segment) {
     fix.progress.ending_points = 199;
     mgr.spawn_value_item(3, 0.0f, 200.0f, 0.0f, 0.5f);
     Spirit& s = mgr.spirits()[0];
-    s.x = 5.0f; s.y = 205.0f;
+    s.x = 5.0f;
+    s.y = 205.0f;
     mgr.update_spirits(fix.collector);
     // +2 公共跨 200 段、+1 kind3 → 202；段位演出事件存在。
     CHECK_EQ(fix.progress.ending_points, 202);
     CHECK(has_event(mgr, ItemEvent::Kind::SpiritGained, -1));
 }
 
-int main() {
-    return th13test::run_all("items") ? 1 : 0;
-}
+int main() { return th13test::run_all("items") ? 1 : 0; }

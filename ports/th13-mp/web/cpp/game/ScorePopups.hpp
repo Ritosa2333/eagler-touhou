@@ -38,8 +38,12 @@ public:
     };
     RollbackState capture_rollback() const { return {glyph, pool, cursor, available_}; }
     void restore_rollback(const RollbackState& state) {
-        glyph = state.glyph; pool = state.pool; cursor = state.cursor; available_ = state.available;
+        glyph = state.glyph;
+        pool = state.pool;
+        cursor = state.cursor;
+        available_ = state.available;
     }
+
 private:
     AnmManager& animations;
     AnmEnvironment& environment;

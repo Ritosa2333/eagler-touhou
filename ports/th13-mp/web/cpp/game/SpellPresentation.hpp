@@ -9,8 +9,8 @@
 #pragma once
 
 #include "AnmManager.hpp"
-#include "HudDrawData.hpp"
 #include "DialogueText.hpp"
+#include "HudDrawData.hpp"
 #include "SpellState.hpp"
 #include "Types.hpp"
 
@@ -24,8 +24,7 @@ public:
     // A real font rasterizer supplies white CP932 coverage at the original
     // style0 (32px/400). Layout, outline, scaling and texture submission stay
     // in this presentation path; synthetic tests provide an explicit mask.
-    using NameRasterizer = std::function<bool(TextureImage&, i32 x, i32 y, u32 color,
-                                               const std::string& cp932)>;
+    using NameRasterizer = std::function<bool(TextureImage&, i32 x, i32 y, u32 color, const std::string& cp932)>;
     // st01 合并 stage bank：enemy.anm（139 脚本）+ st01enm.anm（19 脚本）；
     // cardbg0 根 = st01enm 局部 11（spawn 12/13/14 子条带，dump 实证）。
     static constexpr i32 kStage1CardBgScript = 139 + 11;
@@ -47,15 +46,14 @@ public:
     // st03menm（cdbg02）、B 行 = 芳香 st03enm（cdbg03）；stage5 A 行装饰 =
     // st05menm script9（中Boss）；stage7 A 行 = EX 中Boss st07menm。
     struct CardBgRow {
-        i32 a_bank, a_script;               // +0x34/+0x38（章节<6 分支）
-        i32 b_bank, b_script;               // +0x3c/+0x40
-        i32 decor_a_bank, decor_a_script;   // +0x44/+0x48
-        i32 decor_b_bank, decor_b_script;   // +0x4c/+0x50
+        i32 a_bank, a_script;              // +0x34/+0x38（章节<6 分支）
+        i32 b_bank, b_script;              // +0x3c/+0x40
+        i32 decor_a_bank, decor_a_script;  // +0x44/+0x48
+        i32 decor_b_bank, decor_b_script;  // +0x4c/+0x50
     };
     static const CardBgRow kCardBgRows[7];
     explicit SpellPresentation(AnmManager& animations) : SpellPresentation(animations, Banks{}) {}
-    explicit SpellPresentation(AnmManager& animations, Banks banks)
-        : animations_(animations), banks_(banks) {}
+    explicit SpellPresentation(AnmManager& animations, Banks banks) : animations_(animations), banks_(banks) {}
 
     struct RollbackState {
         u32 flags_;
@@ -82,7 +80,31 @@ public:
         bool production_;
         std::vector<u32> retiring_displays_;
     };
-    RollbackState capture_rollback() const { return {flags_, spell_id_, name_, bonus_base_, bonus_cap_, duration_, background_, anchor_, snapshot_, displays_, stage_background_, decoration_, banner_, notice_, spirit_notice_, spirit_notices_, bonus_digits_, bonus_million_, bonus_thousand_, bonus_capture_effect_, capture_frames_, production_, retiring_displays_}; }
+    RollbackState capture_rollback() const {
+        return {flags_,
+                spell_id_,
+                name_,
+                bonus_base_,
+                bonus_cap_,
+                duration_,
+                background_,
+                anchor_,
+                snapshot_,
+                displays_,
+                stage_background_,
+                decoration_,
+                banner_,
+                notice_,
+                spirit_notice_,
+                spirit_notices_,
+                bonus_digits_,
+                bonus_million_,
+                bonus_thousand_,
+                bonus_capture_effect_,
+                capture_frames_,
+                production_,
+                retiring_displays_};
+    }
     void restore_rollback(const RollbackState& state) {
         flags_ = state.flags_;
         spell_id_ = state.spell_id_;
@@ -113,8 +135,7 @@ public:
     // timer and bonus. This consumes every actual begin/end instruction event;
     // it never adds score or writes a record. chapter = ECL 524 章节号
     //（原版 0x41381e 直读 DAT_004be824 同一变量；RunScene 传活值）。
-    bool consume(const SpellEvent&, const float boss_position[3],
-                 const std::function<bool(i32)>& sound, i32 chapter);
+    bool consume(const SpellEvent&, const float boss_position[3], const std::function<bool(i32)>& sound, i32 chapter);
     void sync(const SpellSnapshot&);
     // 00412dfe..00412eb1: Update26 smooths the effect13 root toward boss slot0.
     // State synchronization and draw callbacks never advance this position.
@@ -132,9 +153,7 @@ public:
     bool draw_capture_times(HudDrawServices&, i32 packed_time);
     bool rasterize_name(DialogueTextureSink&, const NameRasterizer&);
     const SpellSnapshot& snapshot() const noexcept { return snapshot_; }
-    u32 display_handle(i32 index) const noexcept {
-        return index >= 0 && index < 3 ? displays_[index] : 0;
-    }
+    u32 display_handle(i32 index) const noexcept { return index >= 0 && index < 3 ? displays_[index] : 0; }
     // 0x413a60 -> 0x42a430 case0/case1：front script59（Get Spell Card
     // Bonus!!）/ script60（Bonus Failed...）句柄（原版 stage+0xcc）。
     u32 banner_handle() const noexcept { return banner_; }
@@ -160,14 +179,10 @@ public:
     bool show_spirit_notice(i32 level, float x, float y, float z);
     u32 notice_handle() const noexcept { return notice_; }
     u32 spirit_notice_handle() const noexcept { return spirit_notice_; }
-    const std::vector<u32>& spirit_notice_handles() const noexcept {
-        return spirit_notices_;
-    }
+    const std::vector<u32>& spirit_notice_handles() const noexcept { return spirit_notices_; }
     // 0x42a4e2-0x42a876（case0）：结算数字（stage+0xa4 数组）、分隔符
     //（+0xc4/+0xc8）与捕获特效（+0x118）句柄。
-    u32 bonus_digit_handle(i32 index) const noexcept {
-        return index >= 0 && index < 8 ? bonus_digits_[index] : 0;
-    }
+    u32 bonus_digit_handle(i32 index) const noexcept { return index >= 0 && index < 8 ? bonus_digits_[index] : 0; }
     u32 bonus_separator_million_handle() const noexcept { return bonus_million_; }
     u32 bonus_separator_thousand_handle() const noexcept { return bonus_thousand_; }
     u32 bonus_capture_effect_handle() const noexcept { return bonus_capture_effect_; }
@@ -176,9 +191,8 @@ public:
 
     // Legacy isolated diagnostic adapter. Production uses consume/sync.
     // The historical duration_seconds accessor is an alias for frame units.
-    bool begin(i32 spell_id, const std::string& name, i32 duration_frames,
-               i32 stage_number, i32 difficulty, const float boss_position[3],
-               const std::function<bool(i32)>& sound);
+    bool begin(i32 spell_id, const std::string& name, i32 duration_frames, i32 stage_number, i32 difficulty,
+               const float boss_position[3], const std::function<bool(i32)>& sound);
     // 0x413a60：符卡结束。captured = bit1 仍置（未破坏）。score 服务把
     // bonus/10 计入对局分（0x413a60:33-45 的 +0x80/10 同式）。
     bool end(bool captured, bool last_spell, const std::function<bool(i32)>& sound,
@@ -190,9 +204,9 @@ public:
 
     bool active() const noexcept { return (flags_ & 0x1u) != 0; }
     bool captured() const noexcept { return (flags_ & 0x2u) != 0; }
-    i32 bonus_base() const noexcept { return bonus_base_; }    // +0x80
-    i32 bonus_display() const noexcept { return bonus_cap_; }  // +0x84
-    i32 duration_seconds() const noexcept { return duration_; } // legacy name, frames
+    i32 bonus_base() const noexcept { return bonus_base_; }      // +0x80
+    i32 bonus_display() const noexcept { return bonus_cap_; }    // +0x84
+    i32 duration_seconds() const noexcept { return duration_; }  // legacy name, frames
     i32 duration_frames() const noexcept { return duration_; }
     i32 spell_id() const noexcept { return spell_id_; }
     const std::string& name() const noexcept { return name_; }
@@ -203,13 +217,13 @@ public:
 private:
     AnmManager& animations_;
     Banks banks_;
-    u32 flags_ = 0;      // copied SpellState flags; bit0x20 = bomb protection
-    i32 spell_id_ = -1;  // +0x78
-    std::string name_;   // +0x38
+    u32 flags_ = 0;                       // copied SpellState flags; bit0x20 = bomb protection
+    i32 spell_id_ = -1;                   // +0x78
+    std::string name_;                    // +0x38
     i32 bonus_base_ = 0, bonus_cap_ = 0;  // +0x80/+0x84
     i32 duration_ = 0;                    // +0x88
     u32 background_ = 0;                  // +0x20 背景枚 VM
-    std::array<float, 3> anchor_{};         // +0xac.. 符卡环平滑跟随位置
+    std::array<float, 3> anchor_{};       // +0xac.. 符卡环平滑跟随位置
     SpellSnapshot snapshot_;
     std::array<u32, 3> displays_{};
     u32 stage_background_ = 0, decoration_ = 0;
@@ -228,7 +242,7 @@ private:
     std::array<u32, 8> bonus_digits_{};
     u32 bonus_million_ = 0, bonus_thousand_ = 0;
     u32 bonus_capture_effect_ = 0;
-    i32 capture_frames_ = 0; // manager+0x94 survives the next spell's +0x90 reset
+    i32 capture_frames_ = 0;  // manager+0x94 survives the next spell's +0x90 reset
     bool production_ = false;
     std::vector<u32> retiring_displays_;
     bool retire_production();

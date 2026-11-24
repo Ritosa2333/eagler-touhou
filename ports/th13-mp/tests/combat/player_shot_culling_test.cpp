@@ -15,8 +15,7 @@ namespace {
 using Quad = std::array<Vec3, 4>;
 
 Quad rectangle(float left, float top, float right, float bottom) {
-    return {{{left, top, 0}, {right, top, 0},
-             {left, bottom, 0}, {right, bottom, 0}}};
+    return {{{left, top, 0}, {right, top, 0}, {left, bottom, 0}, {right, bottom, 0}}};
 }
 
 class Provider final : public EclResourceProvider {
@@ -59,8 +58,7 @@ struct Fixture {
     bool init() {
         provider.animations = &battle.sim.anim_list;
         player.power = 0;
-        if (!battle.load(provider, "culling.ecl", 2, host, progress, player, score))
-            return false;
+        if (!battle.load(provider, "culling.ecl", 2, host, progress, player, score)) return false;
         battle.sim.enemies.clear();
         return true;
     }
@@ -78,8 +76,7 @@ struct Fixture {
     }
     void snapshot(size_t slot, const Quad& quad) {
         const auto& shot = battle.shots[slot];
-        battle.set_player_shot_geometry(i32(slot), shot.age, shot.script,
-                                        shot.generation, quad);
+        battle.set_player_shot_geometry(i32(slot), shot.age, shot.script, shot.generation, quad);
     }
 };
 
@@ -96,9 +93,12 @@ std::vector<u8> animated_shot_bank() {
     auto scripts = trivial_scripts(11);
     // Real plXX.anm shot scripts select layer 11 (op304) and draw mode 1;
     // the layer bucket is the production draw contract for registered shots.
-    scripts[10] = {AnmIns{304, 0, {11}}, sprite(0), AnmIns{302, 0, {1}},
+    scripts[10] = {AnmIns{304, 0, {11}},
+                   sprite(0),
+                   AnmIns{302, 0, {1}},
                    AnmIns{416, 0, {float_bits(0.25f), float_bits(0.0f)}},
-                   wait(), stop()};
+                   wait(),
+                   stop()};
     auto bytes = synthetic_anm(1, scripts);
     u32 sprite_offset = 0;
     std::memcpy(&sprite_offset, bytes.data() + 64, sizeof sprite_offset);
@@ -144,11 +144,8 @@ std::vector<u8> birth_op1_shot_bank() {
 std::vector<u8> rotation_bank() {
     using namespace th13::test;
     auto scripts = trivial_scripts(12);
-    scripts[10] = {AnmIns{304, 0, {11}},
-                   AnmIns{401, 0, {0, 0, float_bits(-1.f)}},
-                   AnmIns{424, 0, {1}}, wait(), stop()};
-    scripts[11] = {AnmIns{304, 0, {11}},
-                   AnmIns{401, 0, {0, 0, float_bits(-1.f)}}, wait(), stop()};
+    scripts[10] = {AnmIns{304, 0, {11}}, AnmIns{401, 0, {0, 0, float_bits(-1.f)}}, AnmIns{424, 0, {1}}, wait(), stop()};
+    scripts[11] = {AnmIns{304, 0, {11}}, AnmIns{401, 0, {0, 0, float_bits(-1.f)}}, wait(), stop()};
     return synthetic_anm(1, scripts);
 }
 
@@ -180,8 +177,7 @@ struct NullGraphics final : ZunGraphics {
     bool clear_depth(const GraphicsViewport*) override { return true; }
     void set_viewport(const GraphicsViewport&) override {}
     void presentation_range(const AnmVm& vm, u32, u32, u32) override {
-        if (vm.source_script == 10)
-            shots.push_back({vm.presentation_generation, vm.age.current, vm.visual.quad});
+        if (vm.source_script == 10) shots.push_back({vm.presentation_generation, vm.age.current, vm.visual.quad});
     }
 };
 
@@ -197,8 +193,7 @@ struct PresentationFixture : Fixture {
         if (!Fixture::init()) return false;
         battle.player_dead = true;  // isolate shot VMs from player/option visuals
         const auto empty = th13::test::synthetic_anm(1, th13::test::trivial_scripts(1));
-        return th13::test::load_bank(manager, 4, empty) &&
-               th13::test::load_bank(manager, 5, empty) &&
+        return th13::test::load_bank(manager, 4, empty) && th13::test::load_bank(manager, 5, empty) &&
                th13::test::load_bank(manager, 6, player_bank);
     }
     bool init() { return init(animated_shot_bank()); }
@@ -232,9 +227,7 @@ TEST(culling_age_gate_uses_pre_step_age_nine_and_ten) {
 }
 
 TEST(each_playfield_boundary_equality_is_outside) {
-    const Quad quads[] = {rectangle(120, 200, 128, 210),
-                          rectangle(200, 8, 210, 16),
-                          rectangle(512, 200, 520, 210),
+    const Quad quads[] = {rectangle(120, 200, 128, 210), rectangle(200, 8, 210, 16), rectangle(512, 200, 520, 210),
                           rectangle(200, 464, 210, 472)};
     for (const auto& quad : quads) {
         Fixture fixture;
@@ -250,15 +243,13 @@ TEST(all_corners_outside_on_different_sides_still_retires) {
     Fixture fixture;
     CHECK(fixture.init());
     fixture.battle.shots.push_back(Fixture::shot());
-    fixture.snapshot(0, {{{128, 200, 0}, {512, 200, 0},
-                          {200, 16, 0}, {200, 464, 0}}});
+    fixture.snapshot(0, {{{128, 200, 0}, {512, 200, 0}, {200, 16, 0}, {200, 464, 0}}});
     CHECK(fixture.battle.step(fixture.idle));
     CHECK(fixture.battle.shots.empty());
 }
 
 TEST(one_strictly_inside_corner_preserves_the_shot) {
-    const Vec3 inside[] = {{128.25f, 200, 0}, {511.75f, 200, 0},
-                           {200, 16.25f, 0}, {200, 463.75f, 0}};
+    const Vec3 inside[] = {{128.25f, 200, 0}, {511.75f, 200, 0}, {200, 16.25f, 0}, {200, 463.75f, 0}};
     for (const auto& point : inside) {
         Fixture fixture;
         CHECK(fixture.init());
@@ -289,11 +280,9 @@ TEST(stale_generation_script_or_age_cannot_retire_another_shot) {
         CHECK(fixture.init());
         const auto shot = Fixture::shot(41);
         fixture.battle.shots.push_back(shot);
-        fixture.battle.set_player_shot_geometry(0,
-            shot.age + (mismatch == 2 ? 1 : 0),
-            shot.script + (mismatch == 1 ? 1 : 0),
-            shot.generation + (mismatch == 0 ? 1u : 0u),
-            rectangle(200, 0, 210, 8));
+        fixture.battle.set_player_shot_geometry(0, shot.age + (mismatch == 2 ? 1 : 0),
+                                                shot.script + (mismatch == 1 ? 1 : 0),
+                                                shot.generation + (mismatch == 0 ? 1u : 0u), rectangle(200, 0, 210, 8));
         CHECK(fixture.battle.step(fixture.idle));
         CHECK_EQ(fixture.battle.shots.size(), size_t(1));
     }
@@ -308,7 +297,8 @@ TEST(sht_type_two_bypasses_quad_culling) {
     record.type = 2;
     fixture.battle.sht_shots_loaded = true;
     fixture.battle.sht_shots[0].push_back(record);
-    for (i32 frame = 0; frame < 19; ++frame) CHECK(fixture.battle.step(fixture.idle));
+    for (i32 frame = 0; frame < 19; ++frame)
+        CHECK(fixture.battle.step(fixture.idle));
     GameInput fire;
     fire.update(1);
     CHECK(fixture.battle.step(fire));
@@ -330,7 +320,8 @@ TEST(production_anm_quad_snapshot_is_consumed_without_post_step_translation) {
     CHECK(fixture.sync_and_draw());
     CHECK_EQ(fixture.graphics.shots.size(), size_t(1));
     if (fixture.graphics.shots.empty()) return;
-    for (const auto& point : fixture.graphics.shots[0].quad) CHECK(point.y < 16);
+    for (const auto& point : fixture.graphics.shots[0].quad)
+        CHECK(point.y < 16);
     // The next frame's new position is inside, but 004464d0 culls against the
     // preceding ANM quad before writing its new translation into the ANM VM.
     fixture.battle.shots[0].y = 200;
@@ -507,9 +498,9 @@ TEST(rotation_write_requires_render_flags_bit6) {
     auto* b = fixture.manager.registry.find(second);
     CHECK(a && b);
     if (!a || !b) return;
-    CHECK_NEAR(a->variables.rotation.z, 0.75, 1e-6);   // 0x446670 bit6 branch
+    CHECK_NEAR(a->variables.rotation.z, 0.75, 1e-6);  // 0x446670 bit6 branch
     CHECK(a->visual.flags & 4u);
-    CHECK_NEAR(b->variables.rotation.z, -1.0, 1e-6);   // op401 value preserved
+    CHECK_NEAR(b->variables.rotation.z, -1.0, 1e-6);  // op401 value preserved
 }
 
 // 钩子失败的具体原因必须上报 AnmManager（Application 只读 animations.error），
@@ -526,8 +517,7 @@ TEST(post_chain_geometry_failure_forwards_the_presentation_error) {
     // ax = flags>>21&3 = 3 → anm_quad_positions 拒绝（0x4464d0 四角几何不可用）。
     vm->visual.flags |= (3u << 21);
     CHECK(!fixture.manager.update(false));
-    CHECK(fixture.manager.error.find("Player shot geometry snapshot unavailable") !=
-          std::string::npos);
+    CHECK(fixture.manager.error.find("Player shot geometry snapshot unavailable") != std::string::npos);
 }
 
 // 没有上一帧四角时，中心已经离开 script<0 那只盒子的 SHT 弹必须退休。
@@ -573,8 +563,7 @@ TEST(center_bound_does_not_override_a_matching_inside_quad) {
     auto shot = Fixture::shot(94, 10);
     shot.x = 230;
     fixture.battle.shots.push_back(shot);
-    fixture.snapshot(0, {{{128.f, 200.f, 0}, {512.f, 200.f, 0},
-                          {200.f, 16.f, 0}, {200.f, 463.75f, 0}}});
+    fixture.snapshot(0, {{{128.f, 200.f, 0}, {512.f, 200.f, 0}, {200.f, 16.f, 0}, {200.f, 463.75f, 0}}});
     CHECK(fixture.battle.step(fixture.idle));
     CHECK_EQ(fixture.battle.shots.size(), size_t(1));
 }
@@ -597,7 +586,8 @@ TEST(sustained_fire_without_quads_stays_bounded) {
     fixture.battle.sht_shots[0].push_back(record);
     GameInput fire;
     fire.update(1);
-    for (int frame = 0; frame < 120; ++frame) CHECK(fixture.battle.step(fire));
+    for (int frame = 0; frame < 120; ++frame)
+        CHECK(fixture.battle.step(fire));
     CHECK(fixture.battle.shots.size() > 0u);
     CHECK(fixture.battle.shots.size() < 40u);
 }

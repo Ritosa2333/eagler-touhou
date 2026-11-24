@@ -55,8 +55,7 @@ bool TitleOptionsMenu::refresh_volumes() {
     host.apply_volumes(volumes.bgm, volumes.effect);
     auto* root = animations.registry.find(state.handles[kOptionRoot]);
     if (!root) return true;  // VM 未建（宿主开机预应用路径）：仅应用音量
-    const i32 values[2] = {std::clamp(volumes.bgm, 0, 100),
-                           std::clamp(volumes.effect, 0, 100)};
+    const i32 values[2] = {std::clamp(volumes.bgm, 0, 100), std::clamp(volumes.effect, 0, 100)};
     const i32 small_bases[2] = {kDigitBgmSmall, kDigitSeSmall};
     const i32 large_bases[2] = {kDigitBgmLarge, kDigitSeLarge};
     for (i32 which = 0; which < 2; ++which) {
@@ -67,9 +66,7 @@ bool TitleOptionsMenu::refresh_volumes() {
             for (const i32 base : {small_bases[which], large_bases[which]}) {
                 auto* vm = animations.registry.find_child_script(*root, base + place, 0);
                 if (!vm) continue;
-                if (!vm->select_sprite((base == kDigitBgmSmall || base == kDigitSeSmall
-                                            ? kSpriteSmall
-                                            : kSpriteLarge) +
+                if (!vm->select_sprite((base == kDigitBgmSmall || base == kDigitSeSmall ? kSpriteSmall : kSpriteLarge) +
                                        digits[place]))
                     return fail("Title option digit sprite select failed");
                 // 0044ed70 尾段（0x44f3e0/0x44f430/0x44f480 `and [vm+0x18],0xfffffffd`、
@@ -103,8 +100,7 @@ void TitleOptionsMenu::select_row(i32 label_base) {
 //（0x44dd00 case4 + 004731d0）。
 bool TitleOptionsMenu::leave(bool to_key_config) {
     if (to_key_config) {
-        if (!host.open_key_config())
-            return fail("Title option key config screen not wired");
+        if (!host.open_key_config()) return fail("Title option key config screen not wired");
         // 原版 case4 行2：0044bac0(...,4) + 00473190 push，root1 不显式收面；
         // 移植侧两屏字条同坐标（root1/root2 均 (70,312)），必须收 Option 面
         // 再切屏，避免与键配置 7 行重叠（视觉等价，生命周期差异登记）。
@@ -146,8 +142,10 @@ bool TitleOptionsMenu::update(u32 pressed, u32 repeated) {
         break;
     case 2: {
         const i32 previous = row_;
-        if (input & 0x10) row_ = (row_ + kOptionRows - 1) % kOptionRows;  // ↑
-        else if (input & 0x20) row_ = (row_ + 1) % kOptionRows;           // ↓
+        if (input & 0x10)
+            row_ = (row_ + kOptionRows - 1) % kOptionRows;  // ↑
+        else if (input & 0x20)
+            row_ = (row_ + 1) % kOptionRows;  // ↓
         if (row_ != previous) {
             if (!sound(10)) return false;
             select_row(7);

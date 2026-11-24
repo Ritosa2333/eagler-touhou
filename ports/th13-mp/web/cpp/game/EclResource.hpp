@@ -24,8 +24,7 @@ struct EclInstruction {
     u8 rank_mask, parameter_count;
     u32 stack_adjust;
 
-    template <class T = u32>
-    T argument(u32 index = 0) const noexcept {
+    template <class T = u32> T argument(u32 index = 0) const noexcept {
         T value;
         std::memcpy(&value, reinterpret_cast<const u8*>(this) + 16 + index * 4, sizeof value);
         return value;

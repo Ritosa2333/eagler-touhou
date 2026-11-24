@@ -24,37 +24,37 @@ namespace th13 {
 
 // 31 态全表（anatomy §1 状态机全表；案值 = 原版覆盖层 state(+4)）。
 enum class OverlayState : u8 {
-    Monitor = 0,             // 对局中监视
-    PauseEntry = 1,          // 结算A：暂停入场（ESC 来）
-    PracticeEntry = 2,       // 结算A：练习关终入场
-    PauseMenu = 3,           // 结算A：主菜单（5 项）
-    QuitConfirm = 4,         // 结算A：退出口确认
-    ReplaySaveConfirm = 5,   // 结算A：回放保存确认（7 同族）
-    ReplaySaveMenu = 6,      // 结算A：回放保存菜单
-    ReplaySlots = 8,         // 结算A：回放选槽（th13_%.2d.rpy 25 槽）
-    ReplayConfirm = 9,       // 结算A：选槽确认+排名门
-    NameEntry = 10,          // 结算A：名前录入（8 字）
-    Blank = 11,              // 空（break）
-    MessageWait = 12,        // 结算A：消息等待
-    GameOverEntry = 13,      // GameOver：入场
-    GameOverShow = 14,       // GameOver：GAME OVER 展示（0x43d650 落分）
-    ContinueMenu = 15,       // GameOver：续关菜单
-    GoReplaySave = 16,       // （预留：GameOver 族回放保存入口 0x11 前置）
-    GoNameEntry = 17,        // GameOver：名前录入（进榜）
-    GoPostName = 18,         // GameOver：录入后处理
-    GoNoRankWait = 19,       // GameOver：无榜等待
-    GoMessageWait = 20,      // GameOver：消息等待
-    ContinueExec = 21,       // GameOver：续关决策执行（0x15）
-    BEntry = 22,             // 结算B：入场（0x16）
-    BShow = 23,              // 结算B：展示（0x17）
-    BGameOver = 24,          // 结算B：GameOver 变体（0x18）
-    BMenu = 25,              // 结算B：主菜单（0x19）
-    BReplayConfirm = 26,     // 结算B：回放保存确认（0x1a）
-    BNameEntry = 27,         // 结算B：名前录入（0x1b）
-    BNoRank = 28,            // 结算B：无榜路径（0x1c）
-    BExitExec = 29,          // 结算B：退出执行（0x1d）
-    BSpellVariant = 30,      // 结算B：符卡练习变体（0x1e）
-    BClear = 31,             // 结算B：Extra/符卡通关（0x1f）
+    Monitor = 0,            // 对局中监视
+    PauseEntry = 1,         // 结算A：暂停入场（ESC 来）
+    PracticeEntry = 2,      // 结算A：练习关终入场
+    PauseMenu = 3,          // 结算A：主菜单（5 项）
+    QuitConfirm = 4,        // 结算A：退出口确认
+    ReplaySaveConfirm = 5,  // 结算A：回放保存确认（7 同族）
+    ReplaySaveMenu = 6,     // 结算A：回放保存菜单
+    ReplaySlots = 8,        // 结算A：回放选槽（th13_%.2d.rpy 25 槽）
+    ReplayConfirm = 9,      // 结算A：选槽确认+排名门
+    NameEntry = 10,         // 结算A：名前录入（8 字）
+    Blank = 11,             // 空（break）
+    MessageWait = 12,       // 结算A：消息等待
+    GameOverEntry = 13,     // GameOver：入场
+    GameOverShow = 14,      // GameOver：GAME OVER 展示（0x43d650 落分）
+    ContinueMenu = 15,      // GameOver：续关菜单
+    GoReplaySave = 16,      // （预留：GameOver 族回放保存入口 0x11 前置）
+    GoNameEntry = 17,       // GameOver：名前录入（进榜）
+    GoPostName = 18,        // GameOver：录入后处理
+    GoNoRankWait = 19,      // GameOver：无榜等待
+    GoMessageWait = 20,     // GameOver：消息等待
+    ContinueExec = 21,      // GameOver：续关决策执行（0x15）
+    BEntry = 22,            // 结算B：入场（0x16）
+    BShow = 23,             // 结算B：展示（0x17）
+    BGameOver = 24,         // 结算B：GameOver 变体（0x18）
+    BMenu = 25,             // 结算B：主菜单（0x19）
+    BReplayConfirm = 26,    // 结算B：回放保存确认（0x1a）
+    BNameEntry = 27,        // 结算B：名前录入（0x1b）
+    BNoRank = 28,           // 结算B：无榜路径（0x1c）
+    BExitExec = 29,         // 结算B：退出执行（0x1d）
+    BSpellVariant = 30,     // 结算B：符卡练习变体（0x1e）
+    BClear = 31,            // 结算B：Extra/符卡通关（0x1f）
 };
 
 // 覆盖层平台请求（Application 层接线；raw 案值 = DAT_004dcc24 真值，
@@ -75,8 +75,7 @@ struct PostGamePlatform {
 
 class PostGameFlow {
 public:
-    PostGameFlow(SessionState& progress, HudPlayerState& player, HudScoreState& score,
-                 PostGamePlatform& host)
+    PostGameFlow(SessionState& progress, HudPlayerState& player, HudScoreState& score, PostGamePlatform& host)
         : progress_(progress), player_(player), score_(score), host_(host) {}
 
     struct RollbackState {

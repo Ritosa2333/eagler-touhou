@@ -5,10 +5,10 @@
 namespace th13 {
 
 namespace {
-constexpr i32 kKeyConfigRoot = 2;       // title.anm script2：spawn 49-82
-constexpr i32 kGreyDigitFirst = 63;     // 5 行×2 位灰数字
-constexpr i32 kWhiteDigitFirst = 73;    // 同位白数字（00450020 同写灰 sprite）
-constexpr i32 kDigitSpriteBase = 50;    // 00461a60(+0x32)：0..9
+constexpr i32 kKeyConfigRoot = 2;               // title.anm script2：spawn 49-82
+constexpr i32 kGreyDigitFirst = 63;             // 5 行×2 位灰数字
+constexpr i32 kWhiteDigitFirst = 73;            // 同位白数字（00450020 同写灰 sprite）
+constexpr i32 kDigitSpriteBase = 50;            // 00461a60(+0x32)：0..9
 constexpr u32 kRawPadButtonMask = 0x7fffffffu;  // 0044fcc0 扫描 iVar3 < 0x1f
 }  // namespace
 
@@ -31,7 +31,8 @@ bool TitleKeyConfigMenu::open() {
     state.menu.count = kTitleKeyConfigRows;
     state.menu.select(0);
     bindings_ = host.pad_bindings();
-    for (i16& value : bindings_) value = i16(std::clamp<i32>(value, 0, 31));
+    for (i16& value : bindings_)
+        value = i16(std::clamp<i32>(value, 0, 31));
     if (state.handles[kKeyConfigRoot]) {
         if (!visuals.retire(kKeyConfigRoot)) return fail(visuals.error);
         state.handles[kKeyConfigRoot] = 0;
@@ -53,8 +54,7 @@ bool TitleKeyConfigMenu::refresh_digits() {
         const i32 digits[2] = {value / 10, value % 10};
         for (i32 place = 0; place < 2; ++place) {
             for (const i32 first : {kGreyDigitFirst, kWhiteDigitFirst}) {
-                auto* vm = animations.registry.find_child_script(
-                    *root, first + row * 2 + place, 0);
+                auto* vm = animations.registry.find_child_script(*root, first + row * 2 + place, 0);
                 if (!vm) continue;
                 if (!vm->select_sprite(kDigitSpriteBase + digits[place]))
                     return fail("Title key config digit sprite select failed");
@@ -66,7 +66,8 @@ bool TitleKeyConfigMenu::refresh_digits() {
 
 void TitleKeyConfigMenu::revert_bindings() {
     bindings_ = host.pad_bindings();
-    for (i16& value : bindings_) value = i16(std::clamp<i32>(value, 0, 31));
+    for (i16& value : bindings_)
+        value = i16(std::clamp<i32>(value, 0, 31));
     (void)refresh_digits();
 }
 
@@ -77,8 +78,7 @@ bool TitleKeyConfigMenu::learn(i32 button) {
     const i16 previous = bindings_[u32(row_)];
     if (previous == i16(button)) return true;
     for (i32 other = 0; other < kTitleKeyConfigBindings; ++other) {
-        if (other != row_ && bindings_[u32(other)] == i16(button))
-            bindings_[u32(other)] = previous;
+        if (other != row_ && bindings_[u32(other)] == i16(button)) bindings_[u32(other)] = previous;
     }
     bindings_[u32(row_)] = i16(button);
     if (!refresh_digits()) return false;
@@ -125,8 +125,10 @@ bool TitleKeyConfigMenu::update(u32 pressed, u32 repeated) {
         break;
     case 2: {
         const i32 previous = row_;
-        if (input & 0x10) row_ = (row_ + kTitleKeyConfigRows - 1) % kTitleKeyConfigRows;
-        else if (input & 0x20) row_ = (row_ + 1) % kTitleKeyConfigRows;
+        if (input & 0x10)
+            row_ = (row_ + kTitleKeyConfigRows - 1) % kTitleKeyConfigRows;
+        else if (input & 0x20)
+            row_ = (row_ + 1) % kTitleKeyConfigRows;
         if (row_ != previous) {
             if (!sound(10)) return false;
             select_row(7);
@@ -155,8 +157,7 @@ bool TitleKeyConfigMenu::update(u32 pressed, u32 repeated) {
                 revert_bindings();
                 if (!sound(7)) return false;
             } else if (row_ == 6) {  // Quit 行：保存 scratch + 音9 + 离屏
-                if (!host.persist_pad_bindings(bindings_))
-                    fail("Title key config pad persistence unavailable");
+                if (!host.persist_pad_bindings(bindings_)) fail("Title key config pad persistence unavailable");
                 if (!sound(9)) return false;
                 state.change_substate(4);
                 substate_frames_ = 0;

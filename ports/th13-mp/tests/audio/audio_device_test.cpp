@@ -77,22 +77,28 @@ TEST(request_observer_preserves_raw_order_and_does_not_change_queue) {
     CHECK(audio.queue_music(5, 3, "fade"));
     CHECK_EQ(observed.size(), size_t(4));
     CHECK(observed[0].kind == AudioDevice::RequestObservation::Kind::Voice);
-    CHECK_EQ(observed[0].id, 60); CHECK(observed[0].positional); CHECK_EQ(observed[0].x, -96.f);
-    CHECK_EQ(observed[1].id, 63); CHECK(!observed[1].positional);
+    CHECK_EQ(observed[0].id, 60);
+    CHECK(observed[0].positional);
+    CHECK_EQ(observed[0].x, -96.f);
+    CHECK_EQ(observed[1].id, 63);
+    CHECK(!observed[1].positional);
     CHECK(observed[2].kind == AudioDevice::RequestObservation::Kind::Stop);
     CHECK(observed[3].kind == AudioDevice::RequestObservation::Kind::Music);
-    CHECK_EQ(observed[3].id, 5); CHECK_EQ(observed[3].value, 3);
+    CHECK_EQ(observed[3].id, 5);
+    CHECK_EQ(observed[3].value, 3);
     CHECK_EQ(observed[3].text, std::string("fade"));
     audio.update();
-    CHECK_EQ(audio.statistics().started, u64(1)); // 60 stop marker wins
+    CHECK_EQ(audio.statistics().started, u64(1));  // 60 stop marker wins
 }
 
 TEST(direct_buffer_pan_preserves_playback_and_start_pan) {
     AudioDevice audio, reference;
     CHECK(audio.initialize_effects_for_test(kAssetRoot));
     CHECK(reference.initialize_effects_for_test(kAssetRoot));
-    CHECK(audio.enqueue(30, -96.f)); CHECK(reference.enqueue(30, -96.f));
-    audio.update(); reference.update();
+    CHECK(audio.enqueue(30, -96.f));
+    CHECK(reference.enqueue(30, -96.f));
+    audio.update();
+    reference.update();
     CHECK(render(audio, 128) == render(reference, 128));
     const auto before = audio.statistics();
     std::vector<AudioDevice::RequestObservation> events;
@@ -104,7 +110,8 @@ TEST(direct_buffer_pan_preserves_playback_and_start_pan) {
     CHECK_EQ(audio.statistics().pending_voices, before.pending_voices);
     CHECK_EQ(events.size(), size_t(1));
     CHECK(events[0].kind == AudioDevice::RequestObservation::Kind::Pan);
-    CHECK_EQ(events[0].id, 30); CHECK_EQ(events[0].x, 192.f);
+    CHECK_EQ(events[0].id, 30);
+    CHECK_EQ(events[0].x, 192.f);
     const auto changed = render(audio, 512);
     // Reference at -500 has half right gain. Doubling that channel checks
     // the same playback cursor while the direct setter mutes the left.
@@ -114,7 +121,8 @@ TEST(direct_buffer_pan_preserves_playback_and_start_pan) {
         CHECK_EQ(changed[i], 0.f);
         CHECK_EQ(changed[i + 1], expected[i + 1] * 2.f);
     }
-    CHECK(audio.enqueue(30, 0.f)); audio.update();
+    CHECK(audio.enqueue(30, 0.f));
+    audio.update();
     CHECK_EQ(audio.voice_pan(30), 0);
     CHECK(channel_nonzero(render(audio, 512), 0));
 }
@@ -183,15 +191,19 @@ TEST(audio_failure_paths_are_explicit_and_not_silent_devices) {
 
     AudioDevice full;
     CHECK(full.initialize_for_test(kAssetRoot, kMusicArchive));
-    for (int n = 0; n < 31; ++n) CHECK(full.queue_music(1, 0, "th13_01.wav"));
+    for (int n = 0; n < 31; ++n)
+        CHECK(full.queue_music(1, 0, "th13_01.wav"));
     CHECK(full.finish_music_requests());
-    for (int n = 0; n < 31; ++n) CHECK(full.queue_music(1, 0, "th13_01.wav"));
+    for (int n = 0; n < 31; ++n)
+        CHECK(full.queue_music(1, 0, "th13_01.wav"));
     CHECK(!full.queue_music(1, 0, "th13_01.wav"));
     CHECK(full.error.find("full") != std::string::npos);
 }
 
 TEST(se_volume_curve_matches_0x4613c0_cubic_truncation) {
-    struct Row { i32 volume, id, definition_volume, expected; };
+    struct Row {
+        i32 volume, id, definition_volume, expected;
+    };
     // Expected values from
     // artifacts/verification/codex-recovery-20261029/fixes/audio/curve_reference.py
     // (f32 store points:
@@ -199,11 +211,9 @@ TEST(se_volume_curve_matches_0x4613c0_cubic_truncation) {
     // id 0 = se_plst00.wav definition volume -1900.
     // id 20 = se_lazer02.wav definition volume -3000.
     const Row rows[] = {
-        {0, 0, -1900, -10000}, {20, 0, -1900, -3488}, {50, 0, -1900, -2288},
-        {80, 0, -1900, -1925}, {100, 0, -1900, -1900},
-        {0, 20, -3000, -10000}, {20, 20, -3000, -4025},
-        {50, 20, -3000, -3250}, {80, 20, -3000, -3017},
-        {100, 20, -3000, -3000},
+        {0, 0, -1900, -10000},  {20, 0, -1900, -3488},   {50, 0, -1900, -2288},  {80, 0, -1900, -1925},
+        {100, 0, -1900, -1900}, {0, 20, -3000, -10000},  {20, 20, -3000, -4025}, {50, 20, -3000, -3250},
+        {80, 20, -3000, -3017}, {100, 20, -3000, -3000},
     };
     for (const auto& row : rows) {
         const SoundDefinition* definition = find_definition(row.id);
@@ -288,10 +298,13 @@ TEST(se_volume_curve_reaches_pcm_gain) {
 }
 
 TEST(pan_entries_aggregate_like_0x460c50) {
-    struct Row { float pan; i32 expected; };
+    struct Row {
+        float pan;
+        i32 expected;
+    };
     const Row rows[] = {
         {192.0f, 1000}, {-192.0f, -1000}, {96.0f, 500}, {-96.0f, -500},
-        {1.0f, 5}, {-1.0f, -5}, {0.0f, 0}, {191.9f, 999},
+        {1.0f, 5},      {-1.0f, -5},      {0.0f, 0},    {191.9f, 999},
     };
     for (const auto& row : rows) {
         AudioDevice audio;
@@ -331,7 +344,8 @@ TEST(pan_entries_aggregate_like_0x460c50) {
     {
         AudioDevice audio;
         CHECK(audio.initialize_effects_for_test(kAssetRoot));
-        for (int n = 0; n < 61; ++n) CHECK(audio.enqueue(0, 192.0f));
+        for (int n = 0; n < 61; ++n)
+            CHECK(audio.enqueue(0, 192.0f));
         CHECK_EQ(audio.statistics().dropped_requests, u64(1));
         audio.update();
         CHECK_EQ(audio.statistics().started, u64(1));
@@ -344,14 +358,16 @@ TEST(pan_entries_aggregate_like_0x460c50) {
         AudioDevice audio;
         CHECK(audio.initialize_effects_for_test(kAssetRoot));
         for (i32 id = 0; id < 12; ++id)
-            for (int n = 0; n < 60; ++n) CHECK(audio.enqueue(id, 96.0f));
+            for (int n = 0; n < 60; ++n)
+                CHECK(audio.enqueue(id, 96.0f));
         CHECK(audio.enqueue(12));
         CHECK_EQ(audio.statistics().dropped_requests, u64(1));
         audio.update();
         const auto stats = audio.statistics();
         CHECK_EQ(stats.started, u64(12));
         CHECK_EQ(stats.active_voices, 12u);
-        for (i32 id = 0; id < 12; ++id) CHECK_EQ(audio.voice_pan(id), 500);
+        for (i32 id = 0; id < 12; ++id)
+            CHECK_EQ(audio.voice_pan(id), 500);
     }
 }
 
@@ -404,7 +420,8 @@ TEST(duplicate_voice_requests_coalesce_into_one_voice_per_update) {
     auto single = [](u32 requests) {
         AudioDevice audio;
         CHECK(audio.initialize_effects_for_test(kAssetRoot));
-        for (u32 n = 0; n < requests; ++n) CHECK(audio.enqueue(0));
+        for (u32 n = 0; n < requests; ++n)
+            CHECK(audio.enqueue(0));
         audio.update();
         const auto stats = audio.statistics();
         CHECK_EQ(stats.requests, u64(requests));
@@ -424,7 +441,8 @@ TEST(twelve_frame_channels_sixty_entries_and_stop_markers) {
     // 12 distinct IDs occupy all channels; the 13th distinct ID is discarded.
     AudioDevice audio;
     CHECK(audio.initialize_effects_for_test(kAssetRoot));
-    for (i32 id = 0; id < 12; ++id) CHECK(audio.enqueue(id));
+    for (i32 id = 0; id < 12; ++id)
+        CHECK(audio.enqueue(id));
     CHECK(audio.enqueue(12));
     auto stats = audio.statistics();
     CHECK_EQ(stats.dropped_requests, u64(1));
@@ -437,7 +455,8 @@ TEST(twelve_frame_channels_sixty_entries_and_stop_markers) {
     // A new frame gets a fresh channel table. The same ID accepts 60 queued
     // entries; the 61st is discarded (00460bc0: count >= 0x3c).
     const u64 started_before = stats.started;
-    for (int n = 0; n < 61; ++n) CHECK(audio.enqueue(0));
+    for (int n = 0; n < 61; ++n)
+        CHECK(audio.enqueue(0));
     stats = audio.statistics();
     CHECK_EQ(stats.dropped_requests, u64(2));
     audio.update();
@@ -483,7 +502,8 @@ TEST(twelve_frame_channels_sixty_entries_and_stop_markers) {
     // All 12 channels occupied: a stop for a 13th ID has no free slot.
     AudioDevice full;
     CHECK(full.initialize_effects_for_test(kAssetRoot));
-    for (i32 id = 0; id < 12; ++id) CHECK(full.enqueue(id));
+    for (i32 id = 0; id < 12; ++id)
+        CHECK(full.enqueue(id));
     CHECK(full.stop(12));
     CHECK_EQ(full.statistics().dropped_requests, u64(1));
     full.update();
@@ -522,7 +542,8 @@ TEST(real_asset_pcm_positive_and_negative_controls) {
     CHECK(has_nonzero(pcm));
     CHECK(channel_nonzero(pcm, 0));
     CHECK(channel_nonzero(pcm, 1));
-    for (float sample : pcm) CHECK(sample >= -1.0f && sample <= 1.0f);
+    for (float sample : pcm)
+        CHECK(sample >= -1.0f && sample <= 1.0f);
 
     // Negative control: volume 0 is exact silence (0x4613c0 -10000 path).
     AudioDevice muted;

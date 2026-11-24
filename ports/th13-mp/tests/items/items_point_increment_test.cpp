@@ -43,7 +43,7 @@ struct PointFixture {
         manager.update(collector);
     }
 };
-}
+}  // namespace
 
 TEST(ordinary_point_spirit_adds_ten_displayed_points_as_one_thousand_raw) {
     PointFixture fixture;

@@ -14,8 +14,8 @@
 //   (a) initialize_bullet/tick_bullet 后 registry 无该 VM，主链遍历不 tick 它；
 //   (b) 该 VM 的 op500 子 VM ordering=0 且位于主链尾部；
 //   (c) 子 VM 同帧可达性随 bullet-manager / 主链相位翻转（正负控）。
-#include "anm_test_fixtures.hpp"
 #include "../ui/ui_test_fixtures.hpp"
+#include "anm_test_fixtures.hpp"
 
 #include "game/AnmEnvironment.hpp"
 #include "game/AnmRenderer.hpp"
@@ -31,10 +31,14 @@ using namespace th13;
 namespace th13 {
 using AnmRandomObserver = void (*)(const AnmVm&, i32, i32, i32, u32, u32, u32, u32, bool);
 extern AnmRandomObserver anm_random_observer;
-}
+}  // namespace th13
 namespace {
 
-i32 bits(float value) { i32 result; std::memcpy(&result, &value, 4); return result; }
+i32 bits(float value) {
+    i32 result;
+    std::memcpy(&result, &value, 4);
+    return result;
+}
 
 // ZunGraphics 纯虚桩（同 ecl_anm_effect_flush_test：逻辑帧验证，不落 GPU）。
 struct NullGraphics final : ZunGraphics {
@@ -60,8 +64,7 @@ struct Draw {
     i32 variable = 0;
 };
 std::vector<Draw> draws;
-void observe(const AnmVm& vm, i32 opcode, i32 variable, i32, u32 before, u32, u32 after,
-             u32, bool) {
+void observe(const AnmVm& vm, i32 opcode, i32 variable, i32, u32 before, u32, u32 after, u32, bool) {
     if (opcode == 117 && before != after) draws.push_back({&vm, variable});
 }
 size_t draws_for(const AnmVm* vm) {
@@ -210,9 +213,9 @@ TEST(bullet_manager_tick_before_main_chain_reaches_child_same_frame) {
     const AnmVm* child = rig.first_child(embedded);
     CHECK(child != nullptr);
     if (!child) return;
-    CHECK_EQ(child->timer.current, -19);  // 仅 0x46f990 创建首 tick
-    CHECK(rig.manager.update());          // 同帧主链
-    CHECK_EQ(child->timer.current, -18);  // 尾插子 VM 当帧被 tick
+    CHECK_EQ(child->timer.current, -19);       // 仅 0x46f990 创建首 tick
+    CHECK(rig.manager.update());               // 同帧主链
+    CHECK_EQ(child->timer.current, -18);       // 尾插子 VM 当帧被 tick
     CHECK_EQ(draws_for(embedded), size_t(1));  // 嵌入 VM 自身未被主链 tick
     anm_random_observer = nullptr;
 }

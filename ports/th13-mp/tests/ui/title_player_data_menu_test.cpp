@@ -34,8 +34,7 @@ struct PlayerDataHost final : TitlePlayerDataPlatform {
         // 测试数据固定放在难度 1，其余难度如实返回 0。
         return difficulty == 1 ? count : 0;
     }
-    bool record(i32 difficulty, i32 character, i32 ordinal,
-                TitlePlayerDataRecord& out) const override {
+    bool record(i32 difficulty, i32 character, i32 ordinal, TitlePlayerDataRecord& out) const override {
         if (difficulty != 1 || ordinal < 0 || ordinal >= count) return false;
         out.slot = bad_record ? kPlayerDataRecordSlots : ordinal;
         out.name = "record-" + std::to_string(ordinal);
@@ -47,8 +46,7 @@ struct PlayerDataHost final : TitlePlayerDataPlatform {
     }
 };
 
-bool reach_interactive(TitleState& state, PlayerDataHost& host,
-                       TitlePlayerDataMenu& menu) {
+bool reach_interactive(TitleState& state, PlayerDataHost& host, TitlePlayerDataMenu& menu) {
     (void)host;
     if (!menu.open()) return false;
     for (i32 i = 0; i < 7; ++i) {
@@ -108,13 +106,17 @@ TEST(player_data_lifecycle_and_record_fields) {
     PlayerDataHost host;
     TitlePlayerDataMenu menu{state, host};
     std::vector<i32> sounds;
-    menu.play_sound = [&sounds](i32 id) { sounds.push_back(id); return true; };
+    menu.play_sound = [&sounds](i32 id) {
+        sounds.push_back(id);
+        return true;
+    };
 
     CHECK(menu.open());
     CHECK(menu.opened());
     CHECK_EQ(host.opens, 1);
     CHECK_EQ(state.substate, 1);
-    for (i32 i = 0; i < 6; ++i) CHECK(menu.update(0, 0));
+    for (i32 i = 0; i < 6; ++i)
+        CHECK(menu.update(0, 0));
     CHECK_EQ(state.substate, 1);
     CHECK(menu.update(0, 0));
     CHECK_EQ(state.substate, 2);
@@ -147,16 +149,19 @@ TEST(player_data_navigation_wraps_and_keeps_card_pages) {
     host.count = 23;
     TitlePlayerDataMenu menu{state, host};
     std::vector<i32> sounds;
-    menu.play_sound = [&sounds](i32 id) { sounds.push_back(id); return true; };
+    menu.play_sound = [&sounds](i32 id) {
+        sounds.push_back(id);
+        return true;
+    };
     CHECK(reach_interactive(state, host, menu));
 
     CHECK(menu.set_page(2));
     CHECK_EQ(menu.page(), 2);
-    CHECK(menu.update(0x20, 0));  // ↓ 难度 1→2；page>0 进卡片类页（00453449），
+    CHECK(menu.update(0x20, 0));     // ↓ 难度 1→2；page>0 进卡片类页（00453449），
     CHECK_EQ(menu.difficulty(), 2);  // 但该难度 0 记录 → 页数 1，clamp 回汇总页 0
     CHECK_EQ(menu.page(), 0);
     CHECK_EQ(menu.record_count(), 0);  // 难度 2 无夹具数据
-    CHECK(menu.update(0x10, 0));  // ↑ 回 Normal=1
+    CHECK(menu.update(0x10, 0));       // ↑ 回 Normal=1
     CHECK_EQ(menu.difficulty(), 1);
     CHECK(menu.update(0x10, 0));  // ↑ 环绕 1→0（Easy；+0x108=5 独占计数 0..4）
     CHECK_EQ(menu.difficulty(), 0);
@@ -170,7 +175,7 @@ TEST(player_data_navigation_wraps_and_keeps_card_pages) {
     const auto nav_visible = menu.visible_records();
     CHECK_EQ(int(nav_visible.size()), 10);
     CHECK(!nav_visible[0].character_flagged);  // 角色列改变标志
-    CHECK(menu.update(0x40, 0));  // ← 1→0
+    CHECK(menu.update(0x40, 0));               // ← 1→0
     CHECK_EQ(menu.character(), 0);
     CHECK(menu.update(0x40, 0));  // ← 环绕 0→4
     CHECK_EQ(menu.character(), kPlayerDataCharacters - 1);
@@ -221,13 +226,17 @@ TEST(player_data_back_closes_after_six_frames) {
     PlayerDataHost host;
     TitlePlayerDataMenu menu{state, host};
     std::vector<i32> sounds;
-    menu.play_sound = [&sounds](i32 id) { sounds.push_back(id); return true; };
+    menu.play_sound = [&sounds](i32 id) {
+        sounds.push_back(id);
+        return true;
+    };
     CHECK(reach_interactive(state, host, menu));
 
     CHECK(menu.back());
     CHECK_EQ(state.substate, 3);
     CHECK_EQ(sounds.back(), 9);
-    for (i32 i = 0; i < 5; ++i) CHECK(menu.update(0, 0));
+    for (i32 i = 0; i < 5; ++i)
+        CHECK(menu.update(0, 0));
     CHECK_EQ(state.substate, 3);
     CHECK_EQ(int(state.screen), kTitleScreenPlayerData);
     CHECK(menu.update(0, 0));

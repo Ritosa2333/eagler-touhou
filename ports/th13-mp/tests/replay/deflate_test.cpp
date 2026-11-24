@@ -7,16 +7,16 @@
 //    同一进程多次调用结果与首调一致（0x458c30 入口自初始化）。
 #include "../harness/test_framework.hpp"
 
-#include "game/ReplayFile.hpp"
 #include "deflate_golden.hpp"
+#include "game/ReplayFile.hpp"
 
 #include <cstdio>
 #include <string>
 #include <vector>
 
 namespace {
-using th13::u8;
 using th13::u32;
+using th13::u8;
 
 bool read_file(const std::string& relative, std::vector<u8>& out) {
     static const char* bases[] = {".", "../../../..", "../../../../.."};
@@ -48,22 +48,22 @@ std::vector<u8> pattern_bytes(size_t size, u32 seed) {
 TEST(deflate_matches_original_on_unicorn_golden_vectors) {
     for (std::size_t i = 0; i < deflate_golden::kCaseCount; ++i) {
         const auto& item = deflate_golden::kCases[i];
-        const std::vector<u8> packed =
-            th13::ReplayFile::deflate(item.plain, item.plain_size);
+        const std::vector<u8> packed = th13::ReplayFile::deflate(item.plain, item.plain_size);
         CHECK_EQ(packed.size(), item.packed_size);
         bool equal = packed.size() == item.packed_size;
         for (std::size_t b = 0; equal && b < item.packed_size; ++b) {
             if (packed[b] != item.packed[b]) equal = false;
         }
         if (!equal && item.packed_size > 0) {
-            std::printf("# first divergence in %s at byte %zu: got 0x%02X want 0x%02X\n",
-                        item.name, [&] {
-                            for (std::size_t b = 0; b < item.packed_size; ++b) {
-                                if (b >= packed.size() || packed[b] != item.packed[b]) return b;
-                            }
-                            return item.packed_size;
-                        }(),
-                        packed.size() > 0 ? packed[0] : 0, item.packed[0]);
+            std::printf(
+                "# first divergence in %s at byte %zu: got 0x%02X want 0x%02X\n", item.name,
+                [&] {
+                    for (std::size_t b = 0; b < item.packed_size; ++b) {
+                        if (b >= packed.size() || packed[b] != item.packed[b]) return b;
+                    }
+                    return item.packed_size;
+                }(),
+                packed.size() > 0 ? packed[0] : 0, item.packed[0]);
         }
         CHECK(equal);
     }
@@ -102,14 +102,9 @@ struct Sample {
 };
 
 const Sample kSamples[] = {
-    {"games/replays/th13_01.rpy"},
-    {"games/replays/th13_udMy25.rpy"},
-    {"games/replays/th13_udN01.rpy"},
-    {"games/replays/th13_udPn16.rpy"},
-    {"games/replays/th13_udSr01.rpy"},
-    {"games/replays/th13_udWi11.rpy"},
-    {"games/th13/replay/th13_01.rpy"},
-    {"games/th13/replay/th13_udSr01.rpy"},
+    {"games/replays/th13_01.rpy"},     {"games/replays/th13_udMy25.rpy"},     {"games/replays/th13_udN01.rpy"},
+    {"games/replays/th13_udPn16.rpy"}, {"games/replays/th13_udSr01.rpy"},     {"games/replays/th13_udWi11.rpy"},
+    {"games/th13/replay/th13_01.rpy"}, {"games/th13/replay/th13_udSr01.rpy"},
 };
 
 bool decode_sample(const Sample& sample, th13::ReplayFile& replay, std::vector<u8>& packed) {
@@ -117,8 +112,7 @@ bool decode_sample(const Sample& sample, th13::ReplayFile& replay, std::vector<u
     if (!read_file(sample.path, bytes)) return false;
     if (!replay.decode(bytes.data(), bytes.size())) return false;
     if (bytes.size() < size_t(replay.comp_size) + 0x24) return false;
-    packed.assign(bytes.begin() + ptrdiff_t(0x24),
-                  bytes.begin() + ptrdiff_t(0x24 + replay.comp_size));
+    packed.assign(bytes.begin() + ptrdiff_t(0x24), bytes.begin() + ptrdiff_t(0x24 + replay.comp_size));
     // 装载解密序（0x448d43/0x448d5d 两趟）还原压缩流。
     th13::ReplayFile::xor_decrypt(packed.data(), packed.size(), 0x5C, 0xE1, 0x400);
     th13::ReplayFile::xor_decrypt(packed.data(), packed.size(), 0x7D, 0x3A, 0x100);
@@ -159,14 +153,13 @@ TEST(deflate_reproduces_real_replay_packed_stream) {
             }
         }
         if (!equal) {
-            std::printf("# %s: packed %zu bytes, deflate %zu bytes, first divergence %zu\n",
-                        sample.path, packed.size(), compressed.size(), diverge);
+            std::printf("# %s: packed %zu bytes, deflate %zu bytes, first divergence %zu\n", sample.path, packed.size(),
+                        compressed.size(), diverge);
         }
         CHECK(equal);
         // 互逆：deflate 输出经 inflate 还原平流。
         std::vector<u8> restored;
-        CHECK(th13::ReplayFile::inflate(compressed.data(), compressed.size(), restored,
-                                        plain.size()));
+        CHECK(th13::ReplayFile::inflate(compressed.data(), compressed.size(), restored, plain.size()));
         CHECK(restored == plain);
     }
 }

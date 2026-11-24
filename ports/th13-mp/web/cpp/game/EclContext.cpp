@@ -259,7 +259,8 @@ bool EclContext::call_into(EclContext& target, u32 skipped_arguments) {
     }
     const u32 name_size = instruction->argument<u32>(0);
     const auto* bytes = reinterpret_cast<const u8*>(instruction);
-    if (name_size == 0 || name_size % 4 || name_size > u32(instruction->length - 20) || !std::memchr(bytes + 20, 0, name_size)) {
+    if (name_size == 0 || name_size % 4 || name_size > u32(instruction->length - 20) ||
+        !std::memchr(bytes + 20, 0, name_size)) {
         error = "Invalid ECL call name";
         return false;
     }
@@ -286,7 +287,8 @@ bool EclContext::call_into(EclContext& target, u32 skipped_arguments) {
         return false;
     }
     for (i32 n = 0; n < arguments; n++) {
-        const u32 offset = 20 + name_size + skipped_arguments * 4 + u32(n) * 8, reference = u32(n) + skipped_arguments + 1;
+        const u32 offset = 20 + name_size + skipped_arguments * 4 + u32(n) * 8,
+                  reference = u32(n) + skipped_arguments + 1;
         u32 raw;
         std::memcpy(&raw, bytes + offset + 4, 4);
         if (bytes[offset] == 'f' || bytes[offset] == 'g') {
@@ -351,8 +353,10 @@ bool EclContext::call_into(EclContext& target, u32 skipped_arguments) {
 int EclContext::return_from_call() noexcept {
     //4772ff calls479a60 even for a root with SP=FP=0. It restores SP
     // from FP, then477307 sees zero and terminates. No caller frame exists.
-    if (stack_pointer==0 && local_base==0) {
-        routine=instruction_offset=-1;instruction=nullptr;return -1;
+    if (stack_pointer == 0 && local_base == 0) {
+        routine = instruction_offset = -1;
+        instruction = nullptr;
+        return -1;
     }
     if (!leave_frame()) return -2;
     if (!stack_pointer) {

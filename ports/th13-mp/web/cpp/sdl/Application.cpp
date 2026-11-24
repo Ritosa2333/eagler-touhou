@@ -4,9 +4,9 @@
 #include "ApplicationState.hpp"
 #include "LanguagePack.hpp"
 #include "StageTransitionClock.hpp"
+#include "game/ReplayFastForward.hpp"
 #include "game/TitleFrame.hpp"
 #include "game/VisualBootstrap.hpp"
-#include "game/ReplayFastForward.hpp"
 #include "multiplayer/Session.hpp"  // M7：联机会话接缝（playback_input 延迟窗）
 #include "multiplayer/StageEntry.hpp"
 #include <eagler/input/LocalPlayerCue.hpp>  // M5：多人本地席位提示（Ctrl 长按）
@@ -22,13 +22,15 @@
 #include <cstdlib>
 #include <cstring>
 
-namespace th13 { extern bool damage_probe_enabled; }
+namespace th13 {
+extern bool damage_probe_enabled;
+}
 namespace th13::sdl {
 
 namespace {
 // 常驻 ANM bank 表（th13 与 th15 同名同布局，dumps/anm-list.txt 实证）。
 constexpr std::pair<const char*, i32> kBanks[7] = {
-    {"text.anm", 0}, {"sig.anm", 1}, {"ascii.anm", 2},  {"effect.anm", 8},
+    {"text.anm", 0},   {"sig.anm", 1},      {"ascii.anm", 2}, {"effect.anm", 8},
     {"title.anm", 16}, {"title_v.anm", 17}, {"help.anm", 19},
 };
 // front 面板在 begin_run 时由场景资产登记（残机/灵击脚本 30–45 已验证）。
@@ -38,7 +40,7 @@ constexpr i32 kFrontBank = 3;
 // scenery = STD 引用 ANM（st01.std → st01wl.anm）。
 constexpr i32 kStageBank = 4, kBulletBank = 5, kPlayerBank = 6, kSceneryBank = 7;
 constexpr std::array<i32, 2> kTeammateBanks{101, 102};
-constexpr i32 kSpiritBank = 25; // 00405530: astral.anm.
+constexpr i32 kSpiritBank = 25;  // 00405530: astral.anm.
 constexpr i32 kStageLogoBank = 27;
 
 // P3.3：确认帧门同步（Session::SetPredictionBarrier）。只在 MP 会话 Active
@@ -53,8 +55,7 @@ constexpr i32 kStageLogoBank = 27;
 // 转场同样命中，且可在装载门期间提前退休，与模拟推进不同拍，不作判据。
 void sync_mp_prediction_barrier(ApplicationState& app) {
     if (!multiplayer::session.Active()) return;
-    const bool transition = app.stage_transition_loading || app.stage_transition_active ||
-        app.pending_destination >= 0;
+    const bool transition = app.stage_transition_loading || app.stage_transition_active || app.pending_destination >= 0;
     const bool paused = app.pause && app.pause->active();
     // Dialogue cursor, portraits, text VMs and input edges share the world
     // snapshot. It remains predictable within this scene's resource lifetime.
@@ -65,9 +66,7 @@ void sync_mp_prediction_barrier(ApplicationState& app) {
 Application::Application() : state(std::make_unique<ApplicationState>()) {}
 Application::~Application() = default;
 bool Application::initialize(bool device) { return state->initialize(device); }
-bool Application::step(const GameInput& input, float fps, bool focus) {
-    return state->step(input, fps, focus);
-}
+bool Application::step(const GameInput& input, float fps, bool focus) { return state->step(input, fps, focus); }
 const std::string& Application::error() const { return state->failure; }
 const i32* Application::projection() const { return state->projection(); }
 
@@ -166,8 +165,7 @@ std::string ApplicationState::replay_import_error() const { return replay_import
 bool ApplicationState::start_replay(i32 file_index, i32 stage_index) {
     // 只排队 destination（0x4525b0 case3 写 DAT_004dcc24=0xd 的等价拍）：帧尾
     // apply_destination 消费，菜单 update 内不销毁自身。
-    if (file_index < 0 || file_index >= i32(replay_slots.size()) ||
-        !replay_slots[u32(file_index)].decoded)
+    if (file_index < 0 || file_index >= i32(replay_slots.size()) || !replay_slots[u32(file_index)].decoded)
         return fail("Replay start on empty slot: " + std::to_string(file_index));
     if (stage_index < 0) return fail("Replay start with negative stage index");
     // 0x452a43/0x452a55: the replay launch creates the effect.anm script0
@@ -191,10 +189,8 @@ bool ApplicationState::import_replay_bytes(const u8* data, size_t size, const st
     // 槽位（0x452300 语义）：th13_NN.rpy（01..25）→ 编号槽 NN-1（同名重导入
     // 覆盖）；其余 → 首个空闲用户槽（25..73；74 为网页导入行保留）。
     i32 slot = -1;
-    if (name.size() >= 11 && name.compare(0, 5, "th13_") == 0 &&
-        name.compare(7, 4, ".rpy") == 0 &&
-        std::all_of(name.begin() + 5, name.begin() + 7,
-                    [](char c) { return c >= '0' && c <= '9'; })) {
+    if (name.size() >= 11 && name.compare(0, 5, "th13_") == 0 && name.compare(7, 4, ".rpy") == 0 &&
+        std::all_of(name.begin() + 5, name.begin() + 7, [](char c) { return c >= '0' && c <= '9'; })) {
         const i32 number = (name[5] - '0') * 10 + (name[6] - '0');
         if (number >= 1 && number <= 25) slot = number - 1;
     }
@@ -224,12 +220,10 @@ bool ApplicationState::prepare_loading() {
     std::vector<u8> bytes;
     loading_environment.resolution_scale = 1;
     loading_environment.raster_scale = float(graphics.render_scale);
-    constexpr std::pair<const char*, i32> loading_banks[3] = {
-        {"sig.anm", 1}, {"ascii.anm", 2}, {"text.anm", 0}};
+    constexpr std::pair<const char*, i32> loading_banks[3] = {{"sig.anm", 1}, {"ascii.anm", 2}, {"text.anm", 0}};
     for (const auto& bank : loading_banks) {
         if (!loading_animations.resource(bank.second) &&
-            (!read(bank.first, bytes) ||
-             !loading_animations.load(bank.second, bytes.data(), u32(bytes.size())) ||
+            (!read(bank.first, bytes) || !loading_animations.load(bank.second, bytes.data(), u32(bytes.size())) ||
              !graphics.preload(*loading_animations.resource(bank.second))))
             return fail("Loading artwork: " + loading_animations.error + graphics.error);
     }
@@ -249,8 +243,7 @@ bool ApplicationState::draw_loading(bool signature) {
     // （g181 = 标题任务使能帧），两种 draw_loading 分支都必须建这棵树：
     // signature=true 是生产启动幕，signature=false 是菜单/回放换场挡板。
     graphics.presentation.reset();
-    if (!loading_animations.retire(loading_signature) ||
-        !loading_animations.retire(loading_prayer))
+    if (!loading_animations.retire(loading_signature) || !loading_animations.retire(loading_prayer))
         return fail(loading_animations.error);
     if (signature) {
         loading_signature = loading_animations.create(1, 0);
@@ -260,13 +253,12 @@ bool ApplicationState::draw_loading(bool signature) {
         // 直接落子 VM 层——注意 tests/harness/harness.cpp 的 prepare_loading
         // 镜像需同步此行（该文件非本轮所有权，已向协调方报告）。
         if (auto* boot = loading_animations.registry.find(loading_signature))
-            if (auto* right = loading_animations.registry.find_child_script(*boot, 1, 0))
-                right->visual.layer = 26;
+            if (auto* right = loading_animations.registry.find_child_script(*boot, 1, 0)) right->visual.layer = 26;
     }
     // 417370 /439ced create ASCII script17 at (480,392) while loading. The
     // create only primes the root (no RNG draws); the loader's ordinary
     // main+secondary passes drive the op501/op503/op200 loop from there.
-    loading_prayer = loading_animations.create(2, 17, -1, 0, {480,392,0});
+    loading_prayer = loading_animations.create(2, 17, -1, 0, {480, 392, 0});
     if (!loading_prayer) return fail(loading_animations.error);
     loading_startup = signature;
     loading_frames = 0;
@@ -280,8 +272,7 @@ bool ApplicationState::render_loading() {
     const auto factor_kept = graphics.backend.pipeline().textureFactor;
     graphics.backend.pipeline() = touhou::graphics::PipelineState{};
     graphics.backend.pipeline().textureFactor = factor_kept;
-    if (!graphics.select_target(nullptr, 0) || !graphics.clear_target(0xff000000, nullptr))
-        return fail(graphics.error);
+    if (!graphics.select_target(nullptr, 0) || !graphics.clear_target(0xff000000, nullptr)) return fail(graphics.error);
     ScreenViews loading_views{renderer, loading_environment};
     if (!loading_views.camera(DrawCamera::Fullscreen, false)) return fail("Loading camera unavailable");
     // [boot @R] 装载幕期同发 4 条边条（oracle raw f1 起每帧恒定；仅捕获态生效）。
@@ -307,8 +298,7 @@ bool ApplicationState::advance_loading_caption() {
     // production startup drives its 180-frame gate with this; the debug replay
     // entry uses the same primitive for the three loader frames the original
     // runs between the ASCII script17 create (f0) and battle frame 0 (f4).
-    if (!loading_animations.update(false) || !loading_animations.update(true))
-        return fail(loading_animations.error);
+    if (!loading_animations.update(false) || !loading_animations.update(true)) return fail(loading_animations.error);
     return true;
 }
 
@@ -324,8 +314,7 @@ bool ApplicationState::commit_loading_battle_caption() {
     if (battle_frame == 10) {
         // 0x4172e0 -> 0x46fc30: retire the whole caption tree. Retirement only
         // marks the tree; it draws nothing and consumes no RNG.
-        if (!loading_animations.retire(loading_prayer))
-            return fail(loading_animations.error);
+        if (!loading_animations.retire(loading_prayer)) return fail(loading_animations.error);
         return true;
     }
     // Battle frame 0: one fore-pool tick (layer 31/32 only) brings the caption
@@ -382,14 +371,20 @@ bool ApplicationState::draw_loading_battle() {
         saved.push_back({vm, vm->visual.color, vm->visual.secondary_color});
         u32 alpha;
         switch (vm->source_script) {
-        case 14: alpha = u32(u8(0x9Fu * fade / 30u)); break;
-        case 15: alpha = 0; break;
-        case 16: alpha = u32(u8(0x66u * (10u - u32(battle_frame)) / 10u)); break;
-        default: continue;
+        case 14:
+            alpha = u32(u8(0x9Fu * fade / 30u));
+            break;
+        case 15:
+            alpha = 0;
+            break;
+        case 16:
+            alpha = u32(u8(0x66u * (10u - u32(battle_frame)) / 10u));
+            break;
+        default:
+            continue;
         }
         vm->visual.color = (vm->visual.color & 0x00ffffffu) | (alpha << 24);
-        vm->visual.secondary_color = (vm->visual.secondary_color & 0x00ffffffu) |
-                                     (alpha << 24);
+        vm->visual.secondary_color = (vm->visual.secondary_color & 0x00ffffffu) | (alpha << 24);
     }
     // Same submission context as AnmDrawSchedule's layer31 entry
     // ({31,71,2,false,true,true,true,false}): full-screen camera, fog off,
@@ -407,8 +402,7 @@ bool ApplicationState::draw_loading_battle() {
         item.vm->visual.color = item.color;
         item.vm->visual.secondary_color = item.secondary;
     }
-    if (!drawn) return fail(renderer.error.empty() ? "Loading caption camera unavailable"
-                                                   : renderer.error);
+    if (!drawn) return fail(renderer.error.empty() ? "Loading caption camera unavailable" : renderer.error);
     return true;
 }
 
@@ -435,12 +429,10 @@ bool ApplicationState::draw_fps_text() {
         }
         HudTextStyle integer_style;
         integer_style.font = 0;
-        integer_style.color = integer_fps < 30 ? 0xff5050ffu
-                            : integer_fps < 50 ? 0xffa0a0ffu : 0xffffffffu;
+        integer_style.color = integer_fps < 30 ? 0xff5050ffu : integer_fps < 50 ? 0xffa0a0ffu : 0xffffffffu;
         char integer_text[16];
         std::snprintf(integer_text, sizeof integer_text, "%3d", integer_fps);
-        if (!captions.enqueue({{383.0f, 450.0f, 0}, integer_style, integer_text}))
-            return fail(captions.error);
+        if (!captions.enqueue({{383.0f, 450.0f, 0}, integer_style, integer_text})) return fail(captions.error);
     }
     // 原版 FPSInf 0x424a90：打印值 = fldz + [0x4aec18]=0.05 → 恒输出
     // "0.1fps"（原版自身的怪癖）；实测 fps（参数+0x34）只决定颜色
@@ -449,8 +441,7 @@ bool ApplicationState::draw_fps_text() {
     // 捕获 harness 的 th13_debug_fps 覆盖（≈0.1）仍复刻原版文本像素。
     HudTextStyle style;
     style.font = 1;
-    style.color = color_fps < 30 ? 0xff5050ffu
-                : color_fps < 40 ? 0xffa0a0ffu : 0xffffffffu;
+    style.color = color_fps < 30 ? 0xff5050ffu : color_fps < 40 ? 0xffa0a0ffu : 0xffffffffu;
     char text[32];
     std::snprintf(text, sizeof text, "%2.1ffps", color_fps);
     if (!captions.enqueue({{588, 470, 0}, style, text})) return fail(captions.error);
@@ -469,8 +460,8 @@ bool ApplicationState::flush_animation_captures() {
         // D3DXLoadSurfaceFromSurface 任一失败只跳过该槽、从不向上抛错
         //（0x4418b0 空槽也是 no-op）。端口同样静默跳过——黑幕缺一帧
         // 不应整帧 draw 失败（与 RunPause::open 端的容忍度对称）。
-        (void)graphics.capture_region_to_texture(*capture.resource, capture.texture,
-                                                 capture.source, capture.destination);
+        (void)graphics.capture_region_to_texture(*capture.resource, capture.texture, capture.source,
+                                                 capture.destination);
     }
     return true;
 }
@@ -489,8 +480,7 @@ bool ApplicationState::advance_loading(double delta) {
         // ends (native trace: last prayer spawn at frame 177, none during the
         // 181..480 title idle window). Retire both roots so no loading VM can
         // survive into the title or be ticked by a later scene.
-        if (!loading_animations.retire(loading_signature) ||
-            !loading_animations.retire(loading_prayer))
+        if (!loading_animations.retire(loading_signature) || !loading_animations.retire(loading_prayer))
             return fail(loading_animations.error);
         loading_startup = false;
         loading_debt = 0;
@@ -525,8 +515,7 @@ bool ApplicationState::initialize(bool device) {
     animations.resource_release = [this](const AnmResource& resource) { graphics.unload(resource); };
     std::vector<u8> bytes;
     for (const auto& bank : kBanks) {
-        if (!read(bank.first, bytes) ||
-            !animations.load(bank.second, bytes.data(), u32(bytes.size())))
+        if (!read(bank.first, bytes) || !animations.load(bank.second, bytes.data(), u32(bytes.size())))
             return fail("Application ANM load: " + std::string(bank.first) + ": " + animations.error);
         animations.name_resource(bank.second, bank.first);
         if (bank.second == 2) environment.fallback_sprite_resource = animations.resource(2);
@@ -536,16 +525,15 @@ bool ApplicationState::initialize(bool device) {
     // text.anm entry0 texture0 必须是 ARGB4444 Blank 且 scripts/sprites 0..3 齐全。
     if (fonts.ready()) {
         const AnmResource* text = animations.resource(0);
-        if (!text || text->scripts.size() < 4 || text->sprites.size() < 4 ||
-            text->textures.empty() || text->textures[0].format != 5 ||
-            text->textures[0].kind == AnmTexture::Kind::External ||
+        if (!text || text->scripts.size() < 4 || text->sprites.size() < 4 || text->textures.empty() ||
+            text->textures[0].format != 5 || text->textures[0].kind == AnmTexture::Kind::External ||
             text->textures[0].kind == AnmTexture::Kind::RenderTarget)
             fonts_failure = "TH13 text.anm texture0 dialogue layout unavailable";
         else
             fonts_failure.clear();
     }
-    display = std::make_unique<SceneDisplay>(scheduler, animations, environment, graphics, renderer,
-                                             views, captions, 2);
+    display =
+        std::make_unique<SceneDisplay>(scheduler, animations, environment, graphics, renderer, views, captions, 2);
     if (!display->initialize()) return fail(display->error);
     // 0x45d7d0 在 Present 前调用 0x45bf10 消费截取队列；port 在场景绘制
     // flush 之后、present 之前执行（SceneDisplay::before_present）。
@@ -554,15 +542,12 @@ bool ApplicationState::initialize(bool device) {
         auto& callback = animation_updates[index];
         callback.owner = this;
         callback.enabled = true;
-        callback.run = index == 0 ? [](void* p) -> i32 {
-                                 return static_cast<ApplicationState*>(p)->animations.update(true) ? 1 : 5;
-                             }
-                                  : [](void* p) -> i32 {
-                                 return static_cast<ApplicationState*>(p)->animations.update(false) ? 1 : 5;
-                             };
+        callback.run = index == 0
+            ? [](void* p) -> i32 { return static_cast<ApplicationState*>(p)->animations.update(true) ? 1 : 5; }
+        : [](void* p) -> i32 { return static_cast<ApplicationState*>(p)->animations.update(false) ? 1 : 5; };
         if (scheduler.add(callback, FramePass::Update, index == 0 ? 9 : 34) < 0)
             return fail("Application animation callback registration failed");
-    }    // Draw gate 2: the loader's ascii script17 fore-pool is still drawn by the
+    }  // Draw gate 2: the loader's ascii script17 fore-pool is still drawn by the
     // native manager for battle frames 0..9 (ascii/loading.png quad+UP with a
     // 10-frame alpha fade, then retired). The port's isolated loading manager
     // has no scene draw callbacks, so submit its layer31 at the layer31
@@ -577,19 +562,16 @@ bool ApplicationState::initialize(bool device) {
         return fail("Loading caption draw callback registration failed");
     fps_text_draw.owner = this;
     fps_text_draw.enabled = true;
-    fps_text_draw.run = [](void* p) -> i32 {
-        return static_cast<ApplicationState*>(p)->draw_fps_text() ? 1 : 5;
-    };
+    fps_text_draw.run = [](void* p) -> i32 { return static_cast<ApplicationState*>(p)->draw_fps_text() ? 1 : 5; };
     if (scheduler.add(fps_text_draw, FramePass::Draw, 77) < 0)
         return fail("FPS text draw callback registration failed");
     replay_fast_forward.owner = this;
     replay_fast_forward.enabled = true;
     replay_fast_forward.run = [](void* p) -> i32 {
         auto& app = *static_cast<ApplicationState*>(p);
-        if (!app.run || !app.replay_active || !app.physical_input ||
-            app.pending_destination >= 0) return 1;
-        app.restart_update = replay_fast_forward_restart(app.physical_input->held,
-            app.replay_consumed, app.replay_consumed != app.replay_pass_start,
+        if (!app.run || !app.replay_active || !app.physical_input || app.pending_destination >= 0) return 1;
+        app.restart_update = replay_fast_forward_restart(
+            app.physical_input->held, app.replay_consumed, app.replay_consumed != app.replay_pass_start,
             app.environment.paused, app.progress.scene_flags, app.replay_finished);
         // Stop before the late ANM chain (34). step() restarts the whole
         // Update pass, including the application-owned stage-transition clocks.
@@ -603,8 +585,7 @@ bool ApplicationState::initialize(bool device) {
         auto& app = *static_cast<ApplicationState*>(p);
         if (!app.ending || !app.physical_input) return 1;
         if (!app.ending->update(*app.physical_input)) return 5;
-        app.restart_update = app.pending_destination < 0 &&
-                             app.ending->should_restart(*app.physical_input);
+        app.restart_update = app.pending_destination < 0 && app.ending->should_restart(*app.physical_input);
         return app.restart_update ? 3 : 1;
     };
     // 00416190 sets EBX=0x1f before registering 004166b0 -> 00416610.
@@ -627,7 +608,8 @@ ApplicationState::~ApplicationState() {
     scheduler.remove(fps_text_draw);
     scheduler.remove(replay_fast_forward);
     scheduler.remove(ending_update);
-    for (auto& callback : animation_updates) scheduler.remove(callback);
+    for (auto& callback : animation_updates)
+        scheduler.remove(callback);
     display.reset();
     animations.resource_release = nullptr;
 }
@@ -680,7 +662,8 @@ void ApplicationState::release_run(bool preserve_hud) {
     transition_scenery_bank = -1;
     transition_scenery_std.clear();
     animations.collect_resources();
-    for (auto& callback : animation_updates) callback.enabled = true;
+    for (auto& callback : animation_updates)
+        callback.enabled = true;
     environment.paused = false;
     environment.screen_translation = {};
     environment.background_delta = {};
@@ -724,8 +707,7 @@ bool ApplicationState::adopt_staged_bank(i32 bank, const std::string& key) {
 }
 
 bool ApplicationState::begin_title(i32 reason) {
-    if (run && multiplayer::session.Simulating() &&
-        !multiplayer::session.FinishWorldSimulation())
+    if (run && multiplayer::session.Simulating() && !multiplayer::session.FinishWorldSimulation())
         return fail("Unconfirmed multiplayer title handoff");
     if (!release_run_transition()) return false;
     // 0042bfa0 saves before destroying a battle, including Replay. Ending
@@ -766,11 +748,9 @@ bool ApplicationState::begin_title(i32 reason) {
     // 0x454050 case0（0x45406f）：结算屏建面即选 Player's Score（th128_08，
     // 0x4abb2c）。reason==3（通关结算）只有结算屏一条消费路径；其余进标题
     // 都是主菜单面（th13_00）。
-    if (!audio_device.queue_music(2, -1, reason == 3 ? "th128_08.wav" : "th13_00.wav"))
-        return fail(audio_device.error);
+    if (!audio_device.queue_music(2, -1, reason == 3 ? "th128_08.wav" : "th13_00.wav")) return fail(audio_device.error);
     current_destination = i32(Destination::Title);
-    title = std::make_unique<TitleScene>(progress, selection, animations, *this, scheduler,
-                                         TitleSceneResources{});
+    title = std::make_unique<TitleScene>(progress, selection, animations, *this, scheduler, TitleSceneResources{});
     title->state.return_reason = reason;
     if (reason == 2) title->state.replay_index = replay_catalog_index;
     return title->error.empty() || fail(title->error);
@@ -783,13 +763,11 @@ bool ApplicationState::begin_run_transition() {
     // The handle is DAT_004dc86c, owned by the run, not by TitleScene.
     // 00417370 is unrelated: it creates ascii.anm script17 (the loading
     // prayer) and is modeled separately by transition_prayer/loading_prayer.
-    if (!animations.resource(8))
-        return fail("Run transition effect bank unavailable");
+    if (!animations.resource(8)) return fail("Run transition effect bank unavailable");
     // Native title launch has no astral bank yet (AstralInf is created during
     // battle load), so 0x402ff0 builds four effect panels only.
     if (!run_transition.create())
-        return fail(run_transition.error.empty() ? "Run transition effect create failed"
-                                                 : run_transition.error);
+        return fail(run_transition.error.empty() ? "Run transition effect create failed" : run_transition.error);
     return true;
 }
 
@@ -798,15 +776,13 @@ bool ApplicationState::stage_start_run_transition() {
     // launch overlay rebinds its panels to scripts 7..10; after its natural
     // completion the stale handle is a no-op, also on 0xc continuation.
     if (!run_transition.stage_start())
-        return fail(run_transition.error.empty() ? "Run transition stage start failed"
-                                                 : run_transition.error);
+        return fail(run_transition.error.empty() ? "Run transition stage start failed" : run_transition.error);
     return true;
 }
 
 bool ApplicationState::release_run_transition() {
     if (!run_transition.release())
-        return fail(run_transition.error.empty() ? "Run transition effect retire failed"
-                                                 : run_transition.error);
+        return fail(run_transition.error.empty() ? "Run transition effect retire failed" : run_transition.error);
     return true;
 }
 
@@ -821,8 +797,8 @@ bool ApplicationState::begin_run() {
     multiplayer::StageEntry carry;
     const u32 carry_death_generation = carry_multiplayer ? run->battle.death_trance_generation : 0;
     if (carry_multiplayer) {
-        carry.Capture(run->battle, progress, selection_score, game_random.seed(),
-            game_random.index(), visual.seed(), visual.index());
+        carry.Capture(run->battle, progress, selection_score, game_random.seed(), game_random.index(), visual.seed(),
+                      visual.index());
         selection_player = run->battle.seat_huds[0];
         carry.PrepareStageClear(selection_player, run->battle);
     }
@@ -841,21 +817,20 @@ bool ApplicationState::begin_run() {
         const u32 title_effect = title->state.start_effect;
         title->state.start_effect = 0;
         if (!run_transition.adopt(title_effect))
-            return fail(run_transition.error.empty() ? "Run transition adopt failed"
-                                                      : run_transition.error);
+            return fail(run_transition.error.empty() ? "Run transition adopt failed" : run_transition.error);
     }
     title.reset();
     if (continuing) {
         pause.reset();
         previous_run = std::move(run);
-        for (i32 bank : {kStageBank, kBulletBank, kSpiritBank, kStageLogoBank}) animations.unload(bank);
+        for (i32 bank : {kStageBank, kBulletBank, kSpiritBank, kStageLogoBank})
+            animations.unload(bank);
         animations.collect_resources();
     } else {
         release_run(preserve_hud);
         next_scenery_bank = 26;
     }
-    if (mp_seat_count >= 2 && multiplayer::session.Active() &&
-        multiplayer::session.SimFrame() == 0 && !continuing) {
+    if (mp_seat_count >= 2 && multiplayer::session.Active() && multiplayer::session.SimFrame() == 0 && !continuing) {
         // Room previews have different local lifetimes. Their allocation order
         // and retired VM values must not seed the shared battle's handle pool.
         if (!release_run_transition()) return false;
@@ -886,16 +861,17 @@ bool ApplicationState::begin_run() {
     // score/graze/max_point/封顶只在 !continuing（新局/Retry/回放冷启动）重置；
     // 0xc 换关（continuing=true）全部跨关保留（:54-78 仅 be810=max(be810,be7c0)）。
     if (!ecl_difficulty_mask(progress.difficulty)) return fail("Invalid run difficulty");
-    run_entry_reset_points(continuing, progress.difficulty, selection_score.score,
-                           progress.max_point, progress.max_point_cap, progress.graze);
+    run_entry_reset_points(continuing, progress.difficulty, selection_score.score, progress.max_point,
+                           progress.max_point_cap, progress.graze);
     const u32 difficulty = u32(progress.difficulty);
     spell_time_stage = progress.stage;
     spell_time_packed = 0;
     spell_time_clock.reset();
     progress.chapter = progress.chapter_frame = 0;
-    for (auto& callback : animation_updates) callback.enabled = true;
+    for (auto& callback : animation_updates)
+        callback.enabled = true;
     if (new_run) {
-        static constexpr i32 continues_by_difficulty[] = {3,3,6,9,0,0};
+        static constexpr i32 continues_by_difficulty[] = {3, 3, 6, 9, 0, 0};
         progress.continue_stock = continues_by_difficulty[difficulty];
         progress.stage = selected_stage;
         progress.starting_stage = selected_stage;
@@ -911,8 +887,7 @@ bool ApplicationState::begin_run() {
     const bool cold_replay = pending_replay_stage && !continuing;
     std::vector<u8> bytes;
     if (!animations.resource(kFrontBank) &&
-        (!read("front.anm", bytes) ||
-         !animations.load(kFrontBank, bytes.data(), u32(bytes.size())) ||
+        (!read("front.anm", bytes) || !animations.load(kFrontBank, bytes.data(), u32(bytes.size())) ||
          !graphics.preload(*animations.resource(kFrontBank))))
         return fail("Run front asset: " + animations.error + graphics.error);
     // Stage 场景资产（0x4bb4f0 表按 DAT_004be81c 行取 +0x4 std / +0x8 ecl）：
@@ -920,8 +895,7 @@ bool ApplicationState::begin_run() {
     // 全局序号（0x46e0b0/0x46e230 语义）。表行 Stage1-7 = 下标 stage-1
     //（strings 0x4ac28c-0x4ac508 成套 st0N.ecl/.std；表首两行 Extra 段未取）。
     if (progress.stage < 1 || progress.stage > 7)
-        return fail("Stage number out of 0x4bb4f0 table range: " +
-                     std::to_string(progress.stage));
+        return fail("Stage number out of 0x4bb4f0 table range: " + std::to_string(progress.stage));
     char stage_ecl[16];
     std::snprintf(stage_ecl, sizeof stage_ecl, "st%02d.ecl", progress.stage);
     std::vector<u8> ecl;
@@ -936,39 +910,33 @@ bool ApplicationState::begin_run() {
         AnmResource stage;
         for (const auto& name : head.animations) {
             if (!read(name, bytes)) return fail("Stage ANM missing: " + name);
-            if (!stage.append(bytes.data(), u32(bytes.size())))
-                return fail("Stage ANM invalid: " + name);
+            if (!stage.append(bytes.data(), u32(bytes.size()))) return fail("Stage ANM invalid: " + name);
         }
-        if (!animations.adopt(kStageBank, std::move(stage)) ||
-            !graphics.preload(*animations.resource(kStageBank)))
+        if (!animations.adopt(kStageBank, std::move(stage)) || !graphics.preload(*animations.resource(kStageBank)))
             return fail("Stage ANM bank: " + animations.error + graphics.error);
     }
     if (!adopt_staged_bank(kBulletBank, "bullet.anm") &&
-        (!read("bullet.anm", bytes) ||
-         !animations.load(kBulletBank, bytes.data(), u32(bytes.size())) ||
+        (!read("bullet.anm", bytes) || !animations.load(kBulletBank, bytes.data(), u32(bytes.size())) ||
          !graphics.preload(*animations.resource(kBulletBank))))
         return fail("Bullet ANM bank: " + animations.error + graphics.error);
     if (!adopt_staged_bank(kSpiritBank, "astral.anm") &&
-        (!read("astral.anm", bytes) ||
-         !animations.load(kSpiritBank, bytes.data(), u32(bytes.size())) ||
+        (!read("astral.anm", bytes) || !animations.load(kSpiritBank, bytes.data(), u32(bytes.size())) ||
          !graphics.preload(*animations.resource(kSpiritBank))))
         return fail("Spirit ANM bank: " + animations.error + graphics.error);
     animations.name_resource(kSpiritBank, "astral.anm");
     const char* player_files[4] = {"pl00.anm", "pl01.anm", "pl02.anm", "pl03.anm"};
     const i32 character = progress.character & 3;
-    if (!animations.resource(kPlayerBank) && (!read(player_files[character], bytes) ||
-        !animations.load(kPlayerBank, bytes.data(), u32(bytes.size())) ||
-        !graphics.preload(*animations.resource(kPlayerBank))))
+    if (!animations.resource(kPlayerBank) &&
+        (!read(player_files[character], bytes) || !animations.load(kPlayerBank, bytes.data(), u32(bytes.size())) ||
+         !graphics.preload(*animations.resource(kPlayerBank))))
         return fail("Player ANM bank: " + animations.error + graphics.error);
     // 第 4 员 effect=8（kBanks 表 effect.anm 同值）：ECL 307/308 特效 VM 创建源。
-    StagePresentation::Banks banks{kStageBank, kBulletBank, kPlayerBank, 8, kSpiritBank,
-                                   kFrontBank};
+    StagePresentation::Banks banks{kStageBank, kBulletBank, kPlayerBank, 8, kSpiritBank, kFrontBank};
     for (i32 seat = 1; seat < mp_seat_count && seat < 3; ++seat) {
         const auto teammate = mp_characters[seat] & 3;
         const auto bank = teammate == character ? kPlayerBank : kTeammateBanks[seat - 1];
         if (!animations.resource(bank) &&
-            (!read(player_files[teammate], bytes) ||
-             !animations.load(bank, bytes.data(), u32(bytes.size())) ||
+            (!read(player_files[teammate], bytes) || !animations.load(bank, bytes.data(), u32(bytes.size())) ||
              !graphics.preload(*animations.resource(bank))))
             return fail("Teammate ANM bank: " + animations.error + graphics.error);
         banks.teammate_player[seat - 1] = bank;
@@ -977,8 +945,7 @@ bool ApplicationState::begin_run() {
     char stage_std[16];
     std::snprintf(stage_std, sizeof stage_std, "st%02d.std", progress.stage);
     if (!run_hud)
-        run_hud = std::make_unique<GameHud>(animations, progress, selection_player,
-                                            selection_score, kFrontBank, 2);
+        run_hud = std::make_unique<GameHud>(animations, progress, selection_player, selection_score, kFrontBank, 2);
     // 42b990 loads stage-table +0x10's logo separately from ECL ANIM banks.
     // ECL554 creates its script0 at the script's actual trigger frame.
     char stage_logo[20];
@@ -986,10 +953,9 @@ bool ApplicationState::begin_run() {
     if (!preload_scenery_animation(kStageLogoBank, stage_logo)) return false;
     run_hud->stage_logo_bank = kStageLogoBank;
     if (!run_player) run_player = std::make_unique<StagePlayerState>();
-    run = std::make_unique<RunScene>(progress, selection_player, selection_score, animations,
-                                     renderer, environment, *this, scheduler, banks, kFrontBank,
-                                     2, kSceneryBank, stage_std, &game_random, run_hud.get(),
-                                     run_player.get());
+    run = std::make_unique<RunScene>(progress, selection_player, selection_score, animations, renderer, environment,
+                                     *this, scheduler, banks, kFrontBank, 2, kSceneryBank, stage_std, &game_random,
+                                     run_hud.get(), run_player.get());
     // 角色主副机体 SHT 选用（0x4abb48 表 + DAT_004be7d4 槽位）：正常开局按
     // 进位选择的原角色选档；th13 副机体不换 SHT（与 th15 shot_type 不同），
     // 只切 progress.character 的高位记录。无进位信息 = 主机体。
@@ -1001,10 +967,9 @@ bool ApplicationState::begin_run() {
         run->restore_after_player_prepare = [this] {
             ReplayRestoreLog log;
             std::string restore_error;
-            const ReplayRestoreTarget target{&progress, &selection_player, &selection_score,
-                                             &game_random, &visual};
-            if (!ReplaySession::restore_stage(replay_file, pending_replay_stage_index,
-                    target, log, restore_error, ReplayRestorePhase::Load))
+            const ReplayRestoreTarget target{&progress, &selection_player, &selection_score, &game_random, &visual};
+            if (!ReplaySession::restore_stage(replay_file, pending_replay_stage_index, target, log, restore_error,
+                                              ReplayRestorePhase::Load))
                 return fail(restore_error);
             ReplaySession::emit_log(log);
             return true;
@@ -1019,8 +984,7 @@ bool ApplicationState::begin_run() {
             return fail("Replay recording initialization failed");
         // B' 端到端注入缝（默认关闭 = 生产 top_snapshot 语义）：顶层头未映射
         // 域 verbatim 预置，encode 仍按生产语义覆写已名字段。
-        if (new_run && replay_top_pin_enabled_ && replay_top_pin_.size() == 0x74)
-            recorder.start(replay_top_pin_);
+        if (new_run && replay_top_pin_enabled_ && replay_top_pin_.size() == 0x74) recorder.start(replay_top_pin_);
         if (!begin_record_stage()) return false;
     }
     if (!run->initialize(HudEntryContext{0, new_run, title_flow_ran})) return fail(run->error);
@@ -1068,11 +1032,10 @@ bool ApplicationState::begin_run() {
         // transition_handle_ 指针，VM 本体在 AnmRegistry 域内恢复）。
         multiplayer::session.capture_host = [this] { return capture_multiplayer_host(); };
         multiplayer::session.digest_host = [this] { return digest_multiplayer_host(); };
-        multiplayer::session.BindWorld(&run->battle, &visual, run->presentation.get(),
-                                       run.get(), &mp_transition_handle_);
+        multiplayer::session.BindWorld(&run->battle, &visual, run->presentation.get(), run.get(),
+                                       &mp_transition_handle_);
         run->playback_input = [this]() -> const GameInput* {
-            return mp_history_playback ? &run->battle.seat_inputs[0]
-                                       : multiplayer::session.LocalDelayedInput();
+            return mp_history_playback ? &run->battle.seat_inputs[0] : multiplayer::session.LocalDelayedInput();
         };
         // P3.1：音频观察器链 + defer 冲账（幂等；Configure 后补接线共用
         // wire_multiplayer_audio 的同一安装点）。
@@ -1091,49 +1054,49 @@ bool ApplicationState::begin_run() {
     // that rebinds panels 3..6 to effect scripts 7..10; it must run on every
     // stage activation, first launch and 0xc continuation alike.
     if (!stage_start_run_transition()) return false;
-    if (!replay_session) run->record_input = [this](const GameInput& input) {
-        // 录像 slow 事件字节（0x4484d0；回放 FPS 显示直读该流）：取最近
-        // 1s 采样窗的整数 fps，正常 60 → 恒 60 字节（slow rate 0%）。
-        // M1/T3：捕获拍采样并随槽携带——源=上一 fps 窗 slow_window_fps_
-        // （该窗只在 commit 段结算，本拍读值与拆分前 Update 20 同源同拍；
-        // 移到 commit 重算会漂移）。
-        const u8 slow = u8(std::min(255.0f, std::max(0.0f, slow_window_fps_ + 0.5f)));
-        // D-fix（0x448ec0 关首输入沿复位）：关内首帧按复位语义落盘
-        // （pressed = 全量 held、released = 0），与真机五处关界实录一致。
-        // M1/T3：复位决定在捕获拍消费一次并随槽（edge 标志），commit 冲账
-        // 拍应用变换后落 recorder——每 Update 20 恰一条捕获，冲账幂等。
-        const bool edge_reset = record_edge_reset_pending_;
-        record_edge_reset_pending_ = false;
-        if (!recorder.capture_input(input, slow, edge_reset))
-            fail("Replay input recording failed");
-    };
+    if (!replay_session)
+        run->record_input = [this](const GameInput& input) {
+            // 录像 slow 事件字节（0x4484d0；回放 FPS 显示直读该流）：取最近
+            // 1s 采样窗的整数 fps，正常 60 → 恒 60 字节（slow rate 0%）。
+            // M1/T3：捕获拍采样并随槽携带——源=上一 fps 窗 slow_window_fps_
+            // （该窗只在 commit 段结算，本拍读值与拆分前 Update 20 同源同拍；
+            // 移到 commit 重算会漂移）。
+            const u8 slow = u8(std::min(255.0f, std::max(0.0f, slow_window_fps_ + 0.5f)));
+            // D-fix（0x448ec0 关首输入沿复位）：关内首帧按复位语义落盘
+            // （pressed = 全量 held、released = 0），与真机五处关界实录一致。
+            // M1/T3：复位决定在捕获拍消费一次并随槽（edge 标志），commit 冲账
+            // 拍应用变换后落 recorder——每 Update 20 恰一条捕获，冲账幂等。
+            const bool edge_reset = record_edge_reset_pending_;
+            record_edge_reset_pending_ = false;
+            if (!recorder.capture_input(input, slow, edge_reset)) fail("Replay input recording failed");
+        };
     if (replay_session) {
         int restore_player_first = 1;
-        run->playback_input = [this, restore_player=true, restore_player_first]() mutable -> const GameInput* {
+        run->playback_input = [this, restore_player = true, restore_player_first]() mutable -> const GameInput* {
             if (replay_finished) return nullptr;
 
-            if(restore_player) {
+            if (restore_player) {
                 std::string error;
-                const auto* stage=replay_cursor?replay_cursor->stage():nullptr;
-                if(!stage||!ReplaySession::restore_player_start(*stage,run->battle,error)) {
-                    fail(error.empty()?"Replay starting stage unavailable":error);return nullptr;
+                const auto* stage = replay_cursor ? replay_cursor->stage() : nullptr;
+                if (!stage || !ReplaySession::restore_player_start(*stage, run->battle, error)) {
+                    fail(error.empty() ? "Replay starting stage unavailable" : error);
+                    return nullptr;
                 }
-                restore_player=false;
+                restore_player = false;
                 restore_player_first = 1;
             }
             const u32 recorded = replay_take_input();
             if (replay_finished) return nullptr;
             replay_input.update(recorded);
             if (::th13::damage_probe_enabled)
-                std::printf("PB stage=%d f=%d first=%d rec=%u\n", progress.stage,
-                            progress.stage_frame, int(restore_player_first), recorded);
+                std::printf("PB stage=%d f=%d first=%d rec=%u\n", progress.stage, progress.stage_frame,
+                            int(restore_player_first), recorded);
             restore_player_first = 0;
             return &replay_input;
         };
     }
     if (!playfield_targets) {
-        playfield_targets = std::make_unique<PlayfieldTargets>(scheduler, animations, renderer,
-                                                              graphics, views);
+        playfield_targets = std::make_unique<PlayfieldTargets>(scheduler, animations, renderer, graphics, views);
         if (!playfield_targets->initialize(0)) return fail(playfield_targets->error);
     }
     if (display) display->playfield_active = true;
@@ -1144,12 +1107,10 @@ bool ApplicationState::begin_run() {
     // 0x416a10 播预载槽 0；port 保持关首内联播——p61/62 已过门行为）；Boss 曲
     // = 行 +0x10，按 0x42b990:215 载入预载槽 1（MSG opcode 19 经 0x43ae40(1,·)
     // 播本槽）。回放会话不进音乐（原版 0x4dc8a8&0x10 曲命令退化为停曲）。
-    static constexpr const char* kStageMusic[7] = {"th13_01", "th13_04", "th13_07",
-                                                   "th13_10", "th13_12", "th13_16",
-                                                   "th13_20"};
-    static constexpr const char* kStageBossMusic[7] = {"th13_03", "th13_06", "th13_08",
-                                                       "th13_11", "th13_15", "th13_17",
-                                                       "th13_22"};
+    static constexpr const char* kStageMusic[7] = {"th13_01", "th13_04", "th13_07", "th13_10",
+                                                   "th13_12", "th13_16", "th13_20"};
+    static constexpr const char* kStageBossMusic[7] = {"th13_03", "th13_06", "th13_08", "th13_11",
+                                                       "th13_15", "th13_17", "th13_22"};
     // Replay stages use the same stage/Boss music transitions as a live run.
     // The old port suppressed this branch whenever replay_session was true,
     // leaving replay playback silent after the title handoff.
@@ -1158,12 +1119,9 @@ bool ApplicationState::begin_run() {
         // 槽 0 必须预载：stage 2-5/7 的 MainMBossSpell → dialogRead(-3) 走
         // 0x428820 → code2(0)，读 prepared[0]；漏预载会播空/陈旧槽 0，
         // 冷启动直接 "Missing TH13 music track:" 失败（stage1 窗不暴露）。
-        if (!audio_device.queue_music(1, 0,
-                                      std::string(kStageMusic[progress.stage - 1]) + ".wav") ||
-            !audio_device.queue_music(1, 1,
-                                      std::string(kStageBossMusic[progress.stage - 1]) + ".wav") ||
-            !audio_device.queue_music(2, -1,
-                                      std::string(kStageMusic[progress.stage - 1]) + ".wav"))
+        if (!audio_device.queue_music(1, 0, std::string(kStageMusic[progress.stage - 1]) + ".wav") ||
+            !audio_device.queue_music(1, 1, std::string(kStageBossMusic[progress.stage - 1]) + ".wav") ||
+            !audio_device.queue_music(2, -1, std::string(kStageMusic[progress.stage - 1]) + ".wav"))
             return fail(audio_device.error);
     }
     // 0x42b990:70-72: entering an ordinary stage marks its played byte, not
@@ -1192,22 +1150,22 @@ bool ApplicationState::begin_record_stage() {
     reset_slow_rate();
     // 0x448ec0 关首清输入沿结构：关内 frame 0 按 pressed=held 复位语义录制。
     record_edge_reset_pending_ = true;
-    auto header = ReplayRecorder::stage_snapshot(progress, selection_player, selection_score,
-        game_random.seed(), run_player ? run_player->fixed_x : 0,
+    auto header = ReplayRecorder::stage_snapshot(
+        progress, selection_player, selection_score, game_random.seed(), run_player ? run_player->fixed_x : 0,
         run_player ? run_player->fixed_y : 51200, run_player && run_player->focus);
     // D-fix（0x4be7d8 → stage 头 +0x34）：0x449070 恢复域 22 dword 之一的
     // 点道具取得计数。原版 0x42e380:227 逐点道具 +1（FUN_00413bf0 得分尾同
     // 拍），跨关累计；stage_snapshot 尚未覆盖该偏移，在此补写快照源。
     if (header.size() >= 0x38) {
         const u32 point_items = u32(progress.point_items);
-        for (int i = 0; i < 4; ++i) header[0x34 + i] = u8(point_items >> (8 * i));
+        for (int i = 0; i < 4; ++i)
+            header[0x34 + i] = u8(point_items >> (8 * i));
     }
     // D-fix 2（符卡经过时间区 +0x70..+0xC3 预填）：0x412ee0 只写实际出场
     // 符卡的槽，其余槽在原版首关承接 be7b8 块的堆底噪声（含 +0xC0 尾
     // dword），属不可再现快照 → pin enabled 时整区 verbatim 预填；实测槽
     // 随后由 update_spell_time 的同值 pin 覆盖。pin 关闭（生产）零行为变化。
-    if (spell_time_pin_enabled_ && header.size() >= 0xC4 && progress.stage >= 1 &&
-        progress.stage <= 7) {
+    if (spell_time_pin_enabled_ && header.size() >= 0xC4 && progress.stage >= 1 && progress.stage <= 7) {
         const auto& slot = spell_time_pin_[u32(progress.stage)];
         for (int k = 0; k < 21; ++k)
             for (int b = 0; b < 4; ++b)
@@ -1229,8 +1187,7 @@ bool ApplicationState::prepare_next_stage() {
     // 恢复/装载前先收敛到本局分（be7c0 = selection_score.score）。
     // 该分支不清 be7d0(Graze)/be7c0/be7dc(最大得点)：清零只在 :79-110
     // 的 dcc30!=0（新局/Retry）分支，见下方 else 与 begin_run()。
-    if (progress.high_score < selection_score.score)
-        progress.high_score = selection_score.score;
+    if (progress.high_score < selection_score.score) progress.high_score = selection_score.score;
     stage_transition_loading = false;
     stage_transition_active = true;
     stage_startup_age = -1;
@@ -1255,10 +1212,11 @@ bool ApplicationState::prepare_next_stage() {
     // 全 exe 仅 0x441e94 一处引用（boss 世界位 +0x5bc），与字幕无关，
     // 故 0xc 路径保持 392，不改 400（改则造成 8px 视觉回归）。
     if (!transition_prayer) {
-        transition_prayer = animations.create(2, 17, -1, 0, {480,392,0});
+        transition_prayer = animations.create(2, 17, -1, 0, {480, 392, 0});
         if (!transition_prayer) return fail("Next-stage loading caption: " + animations.error);
     }
-    char name[16]; std::snprintf(name, sizeof name, "st%02d.std", progress.stage);
+    char name[16];
+    std::snprintf(name, sizeof name, "st%02d.std", progress.stage);
     const i32 bank = next_scenery_bank;
     next_scenery_bank = bank == 7 ? 26 : 7;
     // 0x42bfa0's 0xc branch retires the old battle managers on the door frame
@@ -1282,21 +1240,19 @@ bool ApplicationState::prepare_next_stage() {
     run->battle.item_manager.reset_items();
     // 00438520 destroys DAT_004c22a4, the same manager whose +0x14 pool
     // 00438ec0 spawns spirits into; reset_items covers the item pools only.
-    for (auto& spirit : run->battle.item_manager.spirits()) spirit = Spirit{};
+    for (auto& spirit : run->battle.item_manager.spirits())
+        spirit = Spirit{};
     run->presentation->release_stage();
     run->transition_wait = true;
     transition_scenery_pending = true;
     transition_scenery_bank = bank;
     transition_scenery_std = name;
     stage_assets.begin(progress.stage, &graphics,
-                       [this](const std::string& asset, std::vector<u8>& bytes) {
-                           return read(asset, bytes, false);
-                       });
+                       [this](const std::string& asset, std::vector<u8>& bytes) { return read(asset, bytes, false); });
     // 0x42b6d0 的 option 根 label3 中断（见上方门首注释）：句柄保留，
     // deferred pending=3 使本帧主链 tick 不前进计时器，卫星出生顺延一帧。
     // 0x42b6d0 已在 clear 帧（msg_stage_clear）下发；门只在尚未下发时兜底。
-    if (!run->presentation->options_hidden() &&
-        !run->presentation->hide_player_options())
+    if (!run->presentation->options_hidden() && !run->presentation->hide_player_options())
         return fail(run->presentation->error());
     if (replay_active) {
         const i32 index = ReplaySession::stage_index(replay_file, progress.stage);
@@ -1345,27 +1301,23 @@ bool ApplicationState::begin_replay_run(const u8* data, size_t size, u32 stage_i
     // 死亡/掉落按对局本体走（harness 观察口径此前靠 8 命底板维持，现按
     // 录像头恢复初值，资格对拍交给 replay 消费端）。
     if (!replay_file.decode(data, size)) return fail("Replay decode: " + replay_file.error());
-    if (stage_index >= replay_file.stages.size())
-        return fail("Replay stage index out of range");
+    if (stage_index >= replay_file.stages.size()) return fail("Replay stage index out of range");
     return begin_replay_stage(stage_index);
 }
 
 bool ApplicationState::begin_replay_stage(u32 stage_index, bool stage_transition) {
-    if (stage_index >= replay_file.stages.size())
-        return fail("Replay stage index out of range");
+    if (stage_index >= replay_file.stages.size()) return fail("Replay stage index out of range");
     const ReplayStage& stage = replay_file.stages[stage_index];
     replay_cursor = std::make_unique<ReplayInputCursor>(stage);
     replay_consumed = 0;
     replay_input = {};
     replay_finished = false;
     selected_stage = stage.number > 0 ? stage.number : 1;
-    progress.difficulty = replay_file.rank;      // 顶层头 +0x64（0x447900:199 先写序）
+    progress.difficulty = replay_file.rank;          // 顶层头 +0x64（0x447900:199 先写序）
     progress.character = replay_file.character & 3;  // 顶层头 +0x5C（:197；最终以 stage 头为准）
     // 004525b0: the replay header chooses the mode before stage restoration.
-    const bool spell_replay = replay_file.top_header.size() > 10 &&
-                              (replay_file.top_header[10] & 2u) != 0;
-    progress.run_mode_flags = (progress.run_mode_flags & ~0x30u) |
-                              (spell_replay ? 0x20u : 0u);
+    const bool spell_replay = replay_file.top_header.size() > 10 && (replay_file.top_header[10] & 2u) != 0;
+    progress.run_mode_flags = (progress.run_mode_flags & ~0x30u) | (spell_replay ? 0x20u : 0u);
     // 4525b0 requests scene0xd;43c1c0 constructs42c490(1). Replay uses
     // GameInf+74's non-recording path, including the immediate clear menu.
     progress.practice_mode = 1;
@@ -1421,8 +1373,7 @@ bool ApplicationState::apply_destination() {
             const i32 file_index = pending_replay_file;
             const i32 stage_index = pending_replay_stage_slot;
             pending_replay_file = pending_replay_stage_slot = -1;
-            if (file_index < 0 || file_index >= i32(replay_slots.size()) ||
-                !replay_slots[u32(file_index)].decoded)
+            if (file_index < 0 || file_index >= i32(replay_slots.size()) || !replay_slots[u32(file_index)].decoded)
                 return fail("Replay launch slot unavailable: " + std::to_string(file_index));
             const ReplayCatalogSlot& slot = replay_slots[u32(file_index)];
             return begin_replay_run(slot.bytes.data(), slot.bytes.size(), u32(stage_index));
@@ -1436,16 +1387,13 @@ bool ApplicationState::apply_destination() {
         return true;
     }
     if (next == i32(Destination::Ending)) {
-        if (multiplayer::session.Simulating() &&
-            !multiplayer::session.FinishWorldSimulation(true))
+        if (multiplayer::session.Simulating() && !multiplayer::session.FinishWorldSimulation(true))
             return fail("Unconfirmed multiplayer ending handoff");
         // 0x42cd40 records no-continue clears; replay sessions must not persist records.
         if (mp_seat_count < 2 && !replay_active) {
             if (progress.continues == 0)
-                files.set_cleared(progress.character & 3,
-                                  std::clamp(progress.difficulty, 0, kSaveDifficulties - 1));
-            if (progress.difficulty > 0 && progress.continues == 0)
-                files.set_extra_unlocked(progress.character & 3);
+                files.set_cleared(progress.character & 3, std::clamp(progress.difficulty, 0, kSaveDifficulties - 1));
+            if (progress.difficulty > 0 && progress.continues == 0) files.set_extra_unlocked(progress.character & 3);
         }
         // 0042c500 -> 0042bfa0 -> 00449e50 precedes 00416130's new ending bits.
         if (mp_seat_count < 2 && !files.save_score()) return fail(files.error);
@@ -1521,17 +1469,13 @@ bool ApplicationState::update_scene_pass(const GameInput& input) {
     // 的覆盖层帧不推进 player+0x1469c、也不触发 interrupt。门计数与触发
     // 条件统一走 transition_gate_player_update_runs（原生可测函数），避免
     // 门内暂停 >=30 帧让 port 在暂停中提前清掉 option 树。
-    const bool gate_player_update =
-        transition_gate_player_update_runs(environment.paused, progress.scene_flags);
+    const bool gate_player_update = transition_gate_player_update_runs(environment.paused, progress.scene_flags);
     if (transition_gate_active && stage_transition_active && !loaded_transition &&
-        transition_gate_should_interrupt(transition_gate_frames, environment.paused,
-                                         progress.scene_flags) &&
-        run && run->presentation) {
-        if (!run->presentation->interrupt_player_options())
-            return fail(run->presentation->error());
+        transition_gate_should_interrupt(transition_gate_frames, environment.paused, progress.scene_flags) && run &&
+        run->presentation) {
+        if (!run->presentation->interrupt_player_options()) return fail(run->presentation->error());
     }
-    if (stage_transition_active && !loaded_transition &&
-        !environment.paused && !(progress.scene_flags & 0x70u)) {
+    if (stage_transition_active && !loaded_transition && !environment.paused && !(progress.scene_flags & 0x70u)) {
         // 0x42b990:45 在关卡装载入口置 stage ctx +0x60 bit2；装载成功路径
         // 0x42b990:231（FUN_0043b5a0 之后）清 bit2。0x42c550:248-261 的
         // `(uVar2 & 4)==0` 门用该位挡住 FUN_0042a370 分数滚动（004be810
@@ -1552,14 +1496,12 @@ bool ApplicationState::update_scene_pass(const GameInput& input) {
                 // the original where the scenery ANM first ticks land on this
                 // frame rather than the 0042bfa0 door (see prepare_next_stage).
                 if (transition_scenery_pending) {
-                    if (!run->prepare_transition(transition_scenery_bank,
-                                                 transition_scenery_std))
+                    if (!run->prepare_transition(transition_scenery_bank, transition_scenery_std))
                         return fail(run->error);
                     transition_scenery_pending = false;
                 }
                 if (!run->start_transition()) return false;
-                progress.scene_flags =
-                    stage_loader_completed_scene_flags(progress.scene_flags);
+                progress.scene_flags = stage_loader_completed_scene_flags(progress.scene_flags);
                 stage_startup_age = 0;
             }
         } else if (stage_startup_age == 30) {
@@ -1576,33 +1518,28 @@ bool ApplicationState::update_scene_pass(const GameInput& input) {
     }
     // 门内帧计数（prepare_next_stage 当帧=0）：只在原生 player update 会跑
     // 的帧推进；暂停/覆盖层帧冻结计数。activate_next_stage 清零。
-    if (transition_gate_active && stage_transition_active && gate_player_update)
-        ++transition_gate_frames;
+    if (transition_gate_active && stage_transition_active && gate_player_update) ++transition_gate_frames;
     if (title) {
         // 标题场景已跑：0x44c0d0 的 DAT_004dcc5c&0x180 分支在此等价成立，
         // 标题线程随即经 0x46e620 卸载 sig.anm 槽 1（开场签名幕）。
         title_flow_ran = true;
         title->controls({input.held, input.pressed, input.repeated, 0});
         if (scheduler.update() < 0)
-            return fail(title->error.empty() ? title->frame.error.empty() ? animations.error
-                                                                           : title->frame.error
-                                                : title->error);
+            return fail(title->error.empty() ? title->frame.error.empty() ? animations.error : title->frame.error
+                                             : title->error);
     } else if (run) {
         const i32 previous_stage_frame = progress.stage_frame;
         run->controls(input);  // 战斗输入（Z 射击/X 炸弹/方向）：唯一实例直通 StageBattle
-        if (scheduler.update() < 0)
-            return fail(run->error.empty() ? animations.error : run->error);
+        if (scheduler.update() < 0) return fail(run->error.empty() ? animations.error : run->error);
         // 0042c550: every active non-Replay simulation tick, any play mode.
         // M1/T3：改置待冲账播放帧计数（保留 !replay_active && stage_frame
         // 推进条件）——FileStore::total_frames 内存计数镜像在 commit 头部按
         // 计数冲账（update-only 段镜像不变；同帧双 commit 幂等）。
-        if (!replay_active && progress.stage_frame != previous_stage_frame)
-            ++pending_play_frames_;
+        if (!replay_active && progress.stage_frame != previous_stage_frame) ++pending_play_frames_;
     } else if (ending) {
         // Ending runs at original Update 31; its return-6 cadence restarts
         // the pass before the late ANM chain, rather than skipping just text.
-        if (scheduler.update() < 0)
-            return fail(ending->error.empty() ? animations.error : ending->error);
+        if (scheduler.update() < 0) return fail(ending->error.empty() ? animations.error : ending->error);
         // M1/T2 解耦(b)：本分支的 select_target/clear_target（原 :1345-1347）
         // 移至 present 段头（display->draw() 之前）——设备渲染目标操作不属
         // 模拟段；restart 循环的中途 clear 无像素消费者，设备可见帧序不变。
@@ -1616,7 +1553,8 @@ bool ApplicationState::update_scene_pass(const GameInput& input) {
         ReplayRestoreLog log;
         std::string error;
         if (!ReplaySession::restore_stage(replay_file, pending_replay_stage_index,
-            {&progress, &selection_player, &selection_score, &game_random, &visual}, log, error))
+                                          {&progress, &selection_player, &selection_score, &game_random, &visual}, log,
+                                          error))
             return fail(error);
     }
     return true;
@@ -1637,8 +1575,7 @@ bool ApplicationState::update(const GameInput& input, bool lost_focus) {
     // 与原版「后续关卡向旧句柄发 label1 无作用」语义一致）。
     if (multiplayer::session.Active() && mp_transition_handle_ != run_transition.handle()) {
         if (!run_transition.adopt(mp_transition_handle_))
-            return fail(run_transition.error.empty() ? "Run transition adopt failed"
-                                                     : run_transition.error);
+            return fail(run_transition.error.empty() ? "Run transition adopt failed" : run_transition.error);
     }
     mp_transition_handle_ = run_transition.handle();
     // M1/T3：挂起槽逻辑帧身份（frames 在 commit 段 frames++ 前即本帧身份；
@@ -1658,7 +1595,8 @@ bool ApplicationState::update(const GameInput& input, bool lost_focus) {
     const bool deterministic_pause = multiplayer::session.Simulating() || mp_history_playback;
     const bool focus_pause = local_pause_allowed && lost_focus && focus_pause_enabled;
     if (run && pause) {
-        if (pause->active()) pause->controls({input.pressed, input.repeated, focus_pause});
+        if (pause->active())
+            pause->controls({input.pressed, input.repeated, focus_pause});
         else if (((local_pause_allowed || deterministic_pause) && (input.pressed & 0x100u)) || focus_pause)
             if (!pause->open(PauseEntrance::Pause)) return fail(pause->error);
     }
@@ -1674,7 +1612,8 @@ bool ApplicationState::update(const GameInput& input, bool lost_focus) {
     } while (restart_update && pending_destination < 0);
     physical_input = nullptr;
     ending_fades.erase(std::remove_if(ending_fades.begin(), ending_fades.end(),
-        [this](const auto& fade) { return !scheduler.contains(fade->update); }), ending_fades.end());
+                                      [this](const auto& fade) { return !scheduler.contains(fade->update); }),
+                       ending_fades.end());
     return true;
 }
 
@@ -1687,20 +1626,17 @@ bool ApplicationState::update(const GameInput& input, bool lost_focus) {
 // 终态下无后续消费（encode/save_replay_slot 不可达，M1-plan F4 备案）。
 bool ApplicationState::commit_pending_replay_records() {
     while (!recorder.pending_inputs.empty()) {
-        const PendingReplayRecorder::PendingInput pending =
-            recorder.pending_inputs.front();
+        const PendingReplayRecorder::PendingInput pending = recorder.pending_inputs.front();
         recorder.pending_inputs.erase(recorder.pending_inputs.begin());
         GameInput record = pending.input;
         if (pending.edge_reset) {
             record.pressed = record.held;
             record.released = 0;
         }
-        if (!recorder.stream.record(record, pending.slow))
-            return fail("Replay input recording failed");
+        if (!recorder.stream.record(record, pending.slow)) return fail("Replay input recording failed");
     }
     while (!recorder.pending_spell_times.empty()) {
-        const PendingReplayRecorder::PendingSpellTime pending =
-            recorder.pending_spell_times.front();
+        const PendingReplayRecorder::PendingSpellTime pending = recorder.pending_spell_times.front();
         recorder.pending_spell_times.erase(recorder.pending_spell_times.begin());
         if (!recorder.stream.record_spell_time(pending.index, pending.packed))
             return fail("Replay spell time array unavailable");
@@ -1729,20 +1665,17 @@ bool ApplicationState::commit_pending_file_events() {
         // R-X: confirmed MP output may persist device options, but never
         // single-player records or unlocks, including queued older events.
         if (mp_seat_count >= 2 && entry.kind != PendingFileEvent::Kind::PauseOption &&
-            entry.kind != PendingFileEvent::Kind::PersistOptions) continue;
+            entry.kind != PendingFileEvent::Kind::PersistOptions)
+            continue;
         switch (entry.kind) {
         case PendingFileEvent::Kind::SpellEvent: {
             // 原 record_spell_event 变更+save 表达式原样迁移（消息 :50-51）。
             bool changed = false;
             if (entry.spell_event.kind == SpellEventKind::Begin)
-                changed = files.record_spell_attempt(entry.character,
-                                                     entry.spell_event.state.id,
-                                                     entry.spell_event.state.name,
-                                                     entry.spell_practice);
+                changed = files.record_spell_attempt(entry.character, entry.spell_event.state.id,
+                                                     entry.spell_event.state.name, entry.spell_practice);
             else
-                changed = files.record_spell_capture(entry.character,
-                                                     entry.spell_event.state.id,
-                                                     entry.spell_practice);
+                changed = files.record_spell_capture(entry.character, entry.spell_event.state.id, entry.spell_practice);
             if (!(changed && files.save()))
                 return fail(files.error.empty() ? "Invalid spell record event" : files.error);
             break;
@@ -1750,14 +1683,12 @@ bool ApplicationState::commit_pending_file_events() {
         case PendingFileEvent::Kind::SpellPracticeScore:
             // 原 :101-102 表达式原样迁移（fail(files.error)，空文案走
             // "Application operation failed" 同原语义）。
-            if (!(files.record_spell_practice_score(entry.character, entry.spell_id,
-                                                    entry.score) && files.save()))
+            if (!(files.record_spell_practice_score(entry.character, entry.spell_id, entry.score) && files.save()))
                 return fail(files.error);
             break;
         case PendingFileEvent::Kind::StageClear:
             // 原 :110-114 表达式原样迁移；成功清 ordinary_records_dirty 同原。
-            if (!files.record_run_clear(entry.character, entry.difficulty,
-                                        entry.no_continue) || !files.save())
+            if (!files.record_run_clear(entry.character, entry.difficulty, entry.no_continue) || !files.save())
                 return fail(files.error.empty() ? "Invalid clear record" : files.error);
             ordinary_records_dirty = false;
             break;
@@ -1832,8 +1763,7 @@ void ApplicationState::wire_multiplayer_audio() {
 bool ApplicationState::commit_pending_multiplayer_audio() {
     if (!audio_device.defer_output) return true;
     auto& session = multiplayer::session;
-    const auto apply = [this, &session](
-                           const std::vector<multiplayer::Session::AudioRequest>& requests) {
+    const auto apply = [this, &session](const std::vector<multiplayer::Session::AudioRequest>& requests) {
         std::size_t applied = 0;
         for (; applied < requests.size(); ++applied) {
             const auto& request = requests[applied];
@@ -1872,8 +1802,7 @@ bool ApplicationState::commit_pending_play_frames() {
     pending_play_frames_ = 0;
     if (mp_seat_count >= 2) return true;  // R-X: MP play time is not a SP record.
     for (u32 i = 0; i < count; ++i)
-        if (!files.record_play_frame(progress.character))
-            return fail("Invalid play time record");
+        if (!files.record_play_frame(progress.character)) return fail("Invalid play time record");
     ordinary_records_dirty = true;
     return true;
 }
@@ -1901,8 +1830,7 @@ bool ApplicationState::capture_multiplayer_host_state(multiplayer::HostState& st
     fields.loading_signature = loading_signature;
     fields.loading_prayer = loading_prayer;
     fields.loading_registry = std::make_shared<AnmRegistry::SnapshotData>();
-    if (!loading_animations.registry.capture(*fields.loading_registry))
-        return fail(loading_animations.registry.error);
+    if (!loading_animations.registry.capture(*fields.loading_registry)) return fail(loading_animations.registry.error);
     fields.has_pause = pause != nullptr;
     fields.pause = pause ? pause->state : PauseState{};
     fields.pause_frame = pause ? pause->frame.capture_rollback() : PauseFrame::RollbackState{};
@@ -1966,7 +1894,10 @@ std::function<bool()> ApplicationState::capture_multiplayer_host() {
         slow_den_ = local.slow_den;
         if (!loading_animations.registry.restore(*fields.loading_registry))
             return fail(loading_animations.registry.error);
-        if (pause) { pause->state = fields.pause; pause->frame.restore_rollback(fields.pause_frame); }
+        if (pause) {
+            pause->state = fields.pause;
+            pause->frame.restore_rollback(fields.pause_frame);
+        }
         if (!restore_dialogue()) return false;
         clear_ending_windows();
         for (const auto& fade : fields.fades) {
@@ -1985,18 +1916,26 @@ void ApplicationState::queue_multiplayer_outputs() {
     auto events = std::move(pending_file_events_);
     auto pans = std::move(pending_voice_pans_);
     auto play_frames = pending_play_frames_;
-    recorder.pending_inputs.clear(); recorder.pending_spell_times.clear();
-    pending_file_events_.clear(); pending_voice_pans_.clear(); pending_play_frames_ = 0;
-    multiplayer::session.SetConfirmedOutput([this, inputs = std::move(inputs),
-        spells = std::move(spells), events = std::move(events), pans = std::move(pans), play_frames]() mutable {
-        recorder.pending_inputs.swap(inputs); recorder.pending_spell_times.swap(spells);
-        pending_file_events_.swap(events); pending_voice_pans_.swap(pans);
+    recorder.pending_inputs.clear();
+    recorder.pending_spell_times.clear();
+    pending_file_events_.clear();
+    pending_voice_pans_.clear();
+    pending_play_frames_ = 0;
+    multiplayer::session.SetConfirmedOutput([this, inputs = std::move(inputs), spells = std::move(spells),
+                                             events = std::move(events), pans = std::move(pans),
+                                             play_frames]() mutable {
+        recorder.pending_inputs.swap(inputs);
+        recorder.pending_spell_times.swap(spells);
+        pending_file_events_.swap(events);
+        pending_voice_pans_.swap(pans);
         std::swap(pending_play_frames_, play_frames);
         const bool ok = commit_pending_replay_records() && commit_pending_file_events();
         if (ok) commit_pending_voice_pans();
         const bool committed = ok && commit_pending_play_frames();
-        recorder.pending_inputs.swap(inputs); recorder.pending_spell_times.swap(spells);
-        pending_file_events_.swap(events); pending_voice_pans_.swap(pans);
+        recorder.pending_inputs.swap(inputs);
+        recorder.pending_spell_times.swap(spells);
+        pending_file_events_.swap(events);
+        pending_voice_pans_.swap(pans);
         std::swap(pending_play_frames_, play_frames);
         return committed;
     });
@@ -2035,11 +1974,9 @@ bool ApplicationState::commit(float presentation_fps) {
         if (presentation_fps > 0.0f) slow_window_time_ += 1.0 / presentation_fps;
         ++slow_window_frames_;
         if (slow_window_time_ >= 1.0) {
-            const float window_fps =
-                float(double(slow_window_frames_) / slow_window_time_);
+            const float window_fps = float(double(slow_window_frames_) / slow_window_time_);
             slow_window_fps_ = window_fps;
-            if (!environment.paused && !(progress.scene_flags & 0x14u) &&
-                !loading_waiting()) {
+            if (!environment.paused && !(progress.scene_flags & 0x14u) && !loading_waiting()) {
                 slow_budget_ += 60.0;
                 slow_actual_ += window_fps <= 57.0f ? double(window_fps) : 60.0;
                 // 0x424990:37-50：同一游戏态门内的 fps 管理器计数（+0x24/+0x2c），
@@ -2059,8 +1996,10 @@ bool ApplicationState::commit(float presentation_fps) {
     // scenery visibility and laser poses. Replay it once per logical frame,
     // in production order, before taking the next checkpoint. Displaying the
     // completed framebuffer must not run those operations again.
-    if (run && run->presentation) run->presentation->prepare_player_opacity();
-    else renderer.player_opacity.fill(255);
+    if (run && run->presentation)
+        run->presentation->prepare_player_opacity();
+    else
+        renderer.player_opacity.fill(255);
     // M5：本地席位提示（th12-mp/th17-mp 同款 LocalPlayerCue：按住 Ctrl 时
     // DOM 层在自机上方显示本地席位标签；EMSCRIPTEN 专用，原生/无头 no-op。
     // 世界坐标→屏幕：+320/+16（0x4ae9f0/0x4ae8e0）。旁观/回放由 helper
@@ -2069,12 +2008,10 @@ bool ApplicationState::commit(float presentation_fps) {
         const i32 seat = run->battle.mp_local_seat;
         if (seat >= 0 && seat < run->battle.seat_count) {
             const auto& state = run->battle.seats[size_t(seat)];
-            eagler::presentation::local_player_cue(unsigned(seat), state.x + 320.f,
-                                                   state.y + 16.f);
+            eagler::presentation::local_player_cue(unsigned(seat), state.x + 320.f, state.y + 16.f);
         }
     }
-    if (ending && (!graphics.select_target(nullptr, 0) ||
-                   !graphics.clear_target(0xff000000, nullptr)))
+    if (ending && (!graphics.select_target(nullptr, 0) || !graphics.clear_target(0xff000000, nullptr)))
         return fail(graphics.error);
     if (pause && !pause->draw_overlay(static_cast<RunSceneServices&>(*this))) return fail(pause->error);
     return display->prepare() || fail(display->error);
@@ -2089,14 +2026,15 @@ bool ApplicationState::present() {
     if (!display->present()) return fail(display->error);
     if (multiplayer::session.Simulating() && pause &&
         (pause->state.screen == PauseScreen::ExtraEnd || pause->state.screen == PauseScreen::GameOver ||
-         pause->state.screen == PauseScreen::BGameOver) && multiplayer::session.AllFramesCommitted()) {
+         pause->state.screen == PauseScreen::BGameOver) &&
+        multiplayer::session.AllFramesCommitted()) {
         multiplayer::session.FinishWorldSimulation(pause->state.screen == PauseScreen::ExtraEnd);
         if (run) run->playback_input = {};
     }
     // Resource owners stay alive until every speculative frame before the
     // handoff has retired. Repeated presents cannot consume the destination.
-    if (pending_destination >= 0 && multiplayer::session.Simulating() &&
-        !multiplayer::session.AllFramesCommitted()) return true;
+    if (pending_destination >= 0 && multiplayer::session.Simulating() && !multiplayer::session.AllFramesCommitted())
+        return true;
     if (pending_destination == i32(Destination::Run) || pending_destination == i32(Destination::Ending)) {
         if (!draw_loading(false)) return false;
         pending_load = 1;
@@ -2196,8 +2134,7 @@ bool ApplicationState::load_ending_anm(i32 slot, const std::string& name) {
 }
 
 bool ApplicationState::cue_ending_anm(i32 vm_slot, i32 bank_slot, i32 script) {
-    if (vm_slot < 0 || vm_slot >= i32(ending_anm_vms.size()))
-        return fail("Ending ANM VM slot out of range");
+    if (vm_slot < 0 || vm_slot >= i32(ending_anm_vms.size())) return fail("Ending ANM VM slot out of range");
     u32& vm = ending_anm_vms[u32(vm_slot)];
     if (!animations.retire(vm)) return fail(animations.error);
     vm = animations.create(bank_slot, script, -1, 0);
@@ -2209,7 +2146,8 @@ void ApplicationState::release_ending_anm(i32 slot) {
     // 0x4163b0：ANM 管理器槽 20-23 反装载（0x46e620）。
     animations.unload(slot);
     if (slot == 0x17) {
-        for (u32& vm : ending_anm_vms) animations.retire(vm);
+        for (u32& vm : ending_anm_vms)
+            animations.retire(vm);
     }
 }
 
@@ -2232,7 +2170,8 @@ bool ApplicationState::initialize_ending_text() {
 }
 
 void ApplicationState::release_ending_page() {
-    for (u32& vm : ending_text_vms) animations.retire(vm);
+    for (u32& vm : ending_text_vms)
+        animations.retire(vm);
 }
 
 bool ApplicationState::ending_page_reset() {
@@ -2243,19 +2182,15 @@ bool ApplicationState::ending_page_reset() {
 }
 
 bool ApplicationState::ending_page_line(i32 row, u32 color, const std::string& cp932) {
-    if (row < 0 || row >= i32(ending_text_vms.size()))
-        return fail("Ending text row out of range");
+    if (row < 0 || row >= i32(ending_text_vms.size())) return fail("Ending text row out of range");
     AnmVm* vm = animations.registry.find(ending_text_vms[u32(row)]);
-    if (!vm || !vm->resource || !vm->sprite)
-        return fail("Ending text VM unavailable");
+    if (!vm || !vm->resource || !vm->sprite) return fail("Ending text VM unavailable");
     const AnmSprite& sprite = *vm->sprite;
     const u32 handle = graphics.texture(*vm->resource, sprite.texture);
     TextureImage* target = handle ? graphics.pixels(handle) : nullptr;
-    if (!target || target->format != touhou::graphics::PixelFormat::Argb4444 ||
-        target->pitch < target->width * 2 ||
-        target->pixels.size() < size_t(target->pitch) * target->height ||
-        sprite.x < 0 || sprite.y < 0 || sprite.width != 512 || sprite.height != 20 ||
-        sprite.x + sprite.width > float(target->width) ||
+    if (!target || target->format != touhou::graphics::PixelFormat::Argb4444 || target->pitch < target->width * 2 ||
+        target->pixels.size() < size_t(target->pitch) * target->height || sprite.x < 0 || sprite.y < 0 ||
+        sprite.width != 512 || sprite.height != 20 || sprite.x + sprite.width > float(target->width) ||
         sprite.y + sprite.height > float(target->height))
         return fail("Ending text texture unavailable");
     TextureImage scratch;
@@ -2265,8 +2200,7 @@ bool ApplicationState::ending_page_line(i32 row, u32 color, const std::string& c
     scratch.packed_format = 5;
     scratch.format = touhou::graphics::PixelFormat::Argb4444;
     scratch.pixels.assign(size_t(scratch.pitch) * scratch.height, 0);
-    if (!fonts.draw_text(scratch, 0, 2, 0, color, cp932))
-        return fail(fonts.error);
+    if (!fonts.draw_text(scratch, 0, 2, 0, color, cp932)) return fail(fonts.error);
     const u32 x = u32(sprite.x), y = u32(sprite.y);
     for (u32 py = 0; py < 20; ++py) {
         u8* destination = target->pixels.data() + size_t(y + py) * target->pitch + size_t(x) * 2;
@@ -2274,17 +2208,16 @@ bool ApplicationState::ending_page_line(i32 row, u32 color, const std::string& c
         for (u32 px = 0; px < 512; ++px) {
             const float center_x = (float(px) + .5f) * 2.f - .5f;
             float sum[4] = {}, total = 0;
-            for (i32 sy = i32(std::ceil(center_y - 1.8f));
-                 sy <= i32(std::floor(center_y + 1.8f)); ++sy) {
+            for (i32 sy = i32(std::ceil(center_y - 1.8f)); sy <= i32(std::floor(center_y + 1.8f)); ++sy) {
                 const float wy = std::max(0.f, 1.f - std::fabs(float(sy) - center_y) / 1.8f);
-                for (i32 sx = i32(std::ceil(center_x - 2.f));
-                     sx <= i32(std::floor(center_x + 2.f)); ++sx) {
+                for (i32 sx = i32(std::ceil(center_x - 2.f)); sx <= i32(std::floor(center_x + 2.f)); ++sx) {
                     const float weight = wy * std::max(0.f, 1.f - std::fabs(float(sx) - center_x) / 2.f);
                     total += weight;
                     if (sx < 0 || sx >= 1024 || sy < 0 || sy >= 36) continue;
                     u16 pixel = 0;
                     std::memcpy(&pixel, scratch.pixels.data() + size_t(sy) * scratch.pitch + size_t(sx) * 2, 2);
-                    for (u32 c = 0; c < 4; ++c) sum[c] += float((pixel >> (12 - c * 4)) & 15u) * weight;
+                    for (u32 c = 0; c < 4; ++c)
+                        sum[c] += float((pixel >> (12 - c * 4)) & 15u) * weight;
                 }
             }
             u16 pixel = 0;
@@ -2303,9 +2236,7 @@ bool ApplicationState::ending_page_clear() {
     return true;
 }
 
-bool ApplicationState::request_stage6_fade() {
-    return open_game_fade(false, 200, false);
-}
+bool ApplicationState::request_stage6_fade() { return open_game_fade(false, 200, false); }
 
 bool ApplicationState::open_game_fade(bool entering, i32 duration, bool playfield_only) {
     if (!open_ending_window(entering ? 0 : 5, duration)) return false;
@@ -2320,10 +2251,8 @@ bool ApplicationState::open_game_fade(bool entering, i32 duration, bool playfiel
     return true;
 }
 
-
 bool ApplicationState::open_ending_window(i32 kind, i32 duration) {
-    if ((kind != 0 && kind != 5) || duration < 0)
-        return fail("Ending fade parameters invalid");
+    if ((kind != 0 && kind != 5) || duration < 0) return fail("Ending fade parameters invalid");
     auto fade = std::make_unique<EndingFade>();
     fade->owner = this;
     fade->kind = kind;
@@ -2337,24 +2266,20 @@ bool ApplicationState::open_ending_window(i32 kind, i32 duration) {
         if (fade.owner->environment.paused) return i32(FrameAction::Continue);
         if (fade.kind == 5) {
             if (fade.duration)
-                fade.alpha = fade.time >= fade.duration ? 255 :
-                    i32(double(fade.time) * 255.0 / double(fade.duration));
+                fade.alpha = fade.time >= fade.duration ? 255 : i32(double(fade.time) * 255.0 / double(fade.duration));
             if (fade.time >= fade.duration + 2) {
                 fade.owner->scheduler.remove(fade.draw);
                 return i32(FrameAction::Remove);
             }
         } else {
-            if (fade.duration)
-                fade.alpha = std::max(0, i32(255.0 - double(fade.time) * 255.0 /
-                                                           double(fade.duration)));
+            if (fade.duration) fade.alpha = std::max(0, i32(255.0 - double(fade.time) * 255.0 / double(fade.duration)));
             if (fade.time >= fade.duration) {
                 fade.owner->scheduler.remove(fade.draw);
                 return i32(FrameAction::Remove);
             }
         }
         // 45f430 holds its timer on GameInf bits0/2; 45ef50 does not.
-        if (!stage_loading_holds_game_fade(fade.kind, fade.owner->progress.scene_flags))
-            ++fade.time;
+        if (!stage_loading_holds_game_fade(fade.kind, fade.owner->progress.scene_flags)) ++fade.time;
         return i32(FrameAction::Continue);
     };
     item->draw.owner = item;
@@ -2373,14 +2298,18 @@ bool ApplicationState::open_ending_window(i32 kind, i32 duration) {
         pipeline.color.operation = pipeline.alpha.operation = touhou::graphics::ColorOperation::First;
         pipeline.color.first = pipeline.alpha.first = {touhou::graphics::ArgumentSource::Diffuse};
         app.graphics.set_layout(touhou::graphics::VertexLayout::ScreenColor);
-        struct Vertex { Vec3 position; float reciprocal_w; u32 color; };
+        struct Vertex {
+            Vec3 position;
+            float reciprocal_w;
+            u32 color;
+        };
         const u32 color = u32(fade.alpha) << 24;
         const float x0 = fade.playfield_only ? 128.f : 0.f;
         const float x1 = fade.playfield_only ? 512.f : 640.f;
         const float y0 = fade.playfield_only ? 16.f : 0.f;
         const float y1 = fade.playfield_only ? 464.f : 480.f;
-        const Vertex quad[] = {{{x0, y0, 0}, 1, color}, {{x1, y0, 0}, 1, color},
-                               {{x0, y1, 0}, 1, color}, {{x1, y1, 0}, 1, color}};
+        const Vertex quad[] = {
+            {{x0, y0, 0}, 1, color}, {{x1, y0, 0}, 1, color}, {{x0, y1, 0}, 1, color}, {{x1, y1, 0}, 1, color}};
         app.graphics.primitives(touhou::graphics::Topology::Strip, 2, quad, sizeof(Vertex));
         app.graphics.flush();
         pipeline.color.operation = pipeline.alpha.operation = touhou::graphics::ColorOperation::Multiply;
@@ -2388,8 +2317,7 @@ bool ApplicationState::open_ending_window(i32 kind, i32 duration) {
         pipeline.color.second = pipeline.alpha.second = {touhou::graphics::ArgumentSource::Diffuse};
         return i32(FrameAction::Continue);
     };
-    if (scheduler.add(item->update, FramePass::Update, 16) < 0 ||
-        scheduler.add(item->draw, FramePass::Draw, 75) < 0) {
+    if (scheduler.add(item->update, FramePass::Update, 16) < 0 || scheduler.add(item->draw, FramePass::Draw, 75) < 0) {
         scheduler.remove(item->update);
         scheduler.remove(item->draw);
         return fail("Ending fade registration failed");

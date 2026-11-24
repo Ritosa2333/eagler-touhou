@@ -48,7 +48,9 @@ bool PauseMenu::configure_entries() {
     // 2 重试。态 0x18（BGameOver）在 0x15030(0) 之后追加 0x15030(2)，默认
     // 光标落重试；没有续关项，不能 Continue。
     if (state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::BGameOver) {
-        menu.count=3; menu.wrapping=true; menu.disabled_count=0;
+        menu.count = 3;
+        menu.wrapping = true;
+        menu.disabled_count = 0;
         if (!state.can_save_replay && !menu.disable(1)) return false;
         menu.select(state.screen == PauseScreen::BGameOver ? 2 : 0);
         return true;
@@ -60,29 +62,28 @@ bool PauseMenu::configure_entries() {
     // a continue. PracticeEnd cannot resume.
     for (i32 entry : {2, 3}) {
         if ((entry == 2 && state.can_save_replay && !state.practice) ||
-            (entry == 3 && state.can_open_options && !state.practice && state.screen != PauseScreen::PracticeEnd)) continue;
+            (entry == 3 && state.can_open_options && !state.practice && state.screen != PauseScreen::PracticeEnd))
+            continue;
         if (!menu.disable(entry) ||
-            (((!state.practice && state.screen != PauseScreen::PracticeEnd) ||
-              state.screen == PauseScreen::GameOver) &&
-             !child(entry_script(entry), 14))) return false;
+            (((!state.practice && state.screen != PauseScreen::PracticeEnd) || state.screen == PauseScreen::GameOver) &&
+             !child(entry_script(entry), 14)))
+            return false;
     }
-    if ((state.screen == PauseScreen::PracticeEnd ||
-         (state.screen == PauseScreen::GameOver && !state.can_continue)) &&
-        (!menu.disable(0) || !child(entry_script(0), 14))) return false;
-    menu.select((state.screen == PauseScreen::PracticeEnd ||
-                 (state.screen == PauseScreen::GameOver && !state.can_continue)) ? 1 : 0);
+    if ((state.screen == PauseScreen::PracticeEnd || (state.screen == PauseScreen::GameOver && !state.can_continue)) &&
+        (!menu.disable(0) || !child(entry_script(0), 14)))
+        return false;
+    menu.select(
+        (state.screen == PauseScreen::PracticeEnd || (state.screen == PauseScreen::GameOver && !state.can_continue))
+            ? 1
+            : 0);
     return true;
 }
 
-bool PauseMenu::close() {
-    return interrupt(state.menu_animation, 1) &&
-           interrupt(state.snapshot_animation, 1);
-}
+bool PauseMenu::close() { return interrupt(state.menu_animation, 1) && interrupt(state.snapshot_animation, 1); }
 
 bool PauseMenu::open_replay_slots() {
     // 0043fd04: hide the Game Over menu tree while the replay overlay owns input.
-    if (!check(animations.pause(state.menu_animation, true), "Replay menu hide failed"))
-        return false;
+    if (!check(animations.pause(state.menu_animation, true), "Replay menu hide failed")) return false;
     state.replay_slot = 1;
     state.replay_name.clear();
     state.name_is_result = false;
@@ -98,15 +99,17 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
     switch (state.phase) {
     case 0:  // 入场延迟后展开菜单
         if (age <= 9) break;
-        if ((state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::GameOver) && state.result_needs_name) {
-            state.name_is_result=true;
+        if ((state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::GameOver) &&
+            state.result_needs_name) {
+            state.name_is_result = true;
             seed_result_name(host.last_result_name(), state.replay_name, state.name_cursor);
-            state.result_needs_name=false; phase(18); break;
+            state.result_needs_name = false;
+            phase(18);
+            break;
         }
         phase(6);
         if (!interrupt(state.menu_animation, 3, true) || !configure_entries()) return false;
-        return
-               interrupt(state.menu_animation, i32(i16(menu.cursor)) + 7);
+        return interrupt(state.menu_animation, i32(i16(menu.cursor)) + 7);
     case 6:
         if (!navigate(pressed, repeated, 7)) return false;
         if (pressed & 0x80001) {
@@ -116,11 +119,11 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
                 state.selected_action = menu.cursor == 0 ? 1 : menu.cursor == 1 ? 2 : 4;
                 if (menu.cursor == 1) return open_replay_slots();
                 if (!close()) return false;
-                phase(16); return true;
+                phase(16);
+                return true;
             }
             state.selected_action = menu.cursor;
-            if (state.screen == PauseScreen::GameOver && menu.cursor == 2)
-                return open_replay_slots();
+            if (state.screen == PauseScreen::GameOver && menu.cursor == 2) return open_replay_slots();
             if (menu.cursor == 0 || state.screen == PauseScreen::GameOver) {
                 if (menu.cursor != 2 && menu.cursor != 3 && !close()) return false;
                 phase(16);
@@ -133,8 +136,7 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
             return true;
         }
         // 43e780 state 3: R selects retry and Q selects title directly.
-        if (state.screen == PauseScreen::Pause &&
-            (pressed & (0x10000u | 0x200000u))) {
+        if (state.screen == PauseScreen::Pause && (pressed & (0x10000u | 0x200000u))) {
             state.selected_action = (pressed & 0x10000u) ? 1 : 4;
             menu.select(state.selected_action);
             if (!host.sound(7) || !close()) return false;
@@ -145,7 +147,8 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
             if (!close()) return false;
             state.selected_action = 0;
             phase(16);
-        } else if ((pressed & 0x102) && (state.screen == PauseScreen::GameOver || state.screen == PauseScreen::PracticeEnd)) {
+        } else if ((pressed & 0x102) &&
+                   (state.screen == PauseScreen::GameOver || state.screen == PauseScreen::PracticeEnd)) {
             // GameOver 与 PracticeEnd 不能用 Esc 恢复一个已经结束的对局。
             menu.select(1);
             return interrupt(state.menu_animation, 8) && host.sound(9);
@@ -163,8 +166,7 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
     case 9:
         if (!navigate(pressed, repeated, 15)) return false;
         if (pressed & 0x80001) {
-            if (!child(menu.cursor == 0 ? 130 : 131, 6) ||
-                !host.sound(menu.cursor == 0 ? 7 : 9)) return false;
+            if (!child(menu.cursor == 0 ? 130 : 131, 6) || !host.sound(menu.cursor == 0 ? 7 : 9)) return false;
             phase(10);
         } else if (pressed & 0x102) {
             if (!host.sound(9)) return false;
@@ -195,10 +197,11 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
             return open_replay_slots();
         }
         if (state.selected_action == 3) {
-            state.option_row = 0; phase(19); break;
+            state.option_row = 0;
+            phase(19);
+            break;
         }
-        if (!check(host.finish_selection(state.selected_action), "Pause selected action failed"))
-            return false;
+        if (!check(host.finish_selection(state.selected_action), "Pause selected action failed")) return false;
         if (state.selected_action == 2 || state.selected_action == 3) {
             const i32 selected = state.selected_action;
             if (!interrupt(state.menu_animation, 3, true) || !configure_entries()) return false;
@@ -209,7 +212,7 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
         }
         state.select(PauseScreen::Inactive);
         break;
-    case 17: { // 43e780 state9: select one of 25 replay slots.
+    case 17: {  // 43e780 state9: select one of 25 replay slots.
         if (age <= 9) break;
         const i32 previous_slot = state.replay_slot;
         if ((pressed | repeated) & 0x10) state.replay_slot = (state.replay_slot + 23) % 25 + 1;
@@ -219,32 +222,33 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
             if (!host.sound(7)) return false;
             seed_result_name(host.last_result_name(), state.replay_name, state.name_cursor);
             phase(18);
-        }
-        else if (pressed & 0x102) {
+        } else if (pressed & 0x102) {
             if (!host.sound(9)) return false;
-            if (state.screen == PauseScreen::ExtraEnd ||
-                state.screen == PauseScreen::BGameOver ||
+            if (state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::BGameOver ||
                 state.screen == PauseScreen::GameOver) {
                 // 0043ff97: restore the same menu and its Save Replay selection.
-                if (!check(animations.pause(state.menu_animation, false), "Replay menu restore failed"))
-                    return false;
+                if (!check(animations.pause(state.menu_animation, false), "Replay menu restore failed")) return false;
                 menu.select(state.screen == PauseScreen::GameOver ? 2 : 1);
                 if (!interrupt(state.menu_animation, 7 + menu.cursor)) return false;
-                phase(6); break;
+                phase(6);
+                break;
             }
             if (!close()) return false;
-            state.selected_action=1; phase(16);
+            state.selected_action = 1;
+            phase(16);
         }
         break;
     }
-    case 18: { // Name entry, up to eight characters.
+    case 18: {  // Name entry, up to eight characters.
         if (age <= 9) break;
         constexpr i32 count = 91;
         const i32 previous_cursor = state.name_cursor;
-        if ((pressed | repeated) & 0x10) state.name_cursor=(state.name_cursor+count-13)%count;
-        if ((pressed | repeated) & 0x20) state.name_cursor=(state.name_cursor+13)%count;
-        if ((pressed | repeated) & 0x40) state.name_cursor=(state.name_cursor+(state.name_cursor%13 == 0 ? 12 : count-1))%count;
-        if ((pressed | repeated) & 0x80) state.name_cursor=(state.name_cursor+(state.name_cursor%13 == 12 ? count-12 : 1))%count;
+        if ((pressed | repeated) & 0x10) state.name_cursor = (state.name_cursor + count - 13) % count;
+        if ((pressed | repeated) & 0x20) state.name_cursor = (state.name_cursor + 13) % count;
+        if ((pressed | repeated) & 0x40)
+            state.name_cursor = (state.name_cursor + (state.name_cursor % 13 == 0 ? 12 : count - 1)) % count;
+        if ((pressed | repeated) & 0x80)
+            state.name_cursor = (state.name_cursor + (state.name_cursor % 13 == 12 ? count - 12 : 1)) % count;
         // 光标有位移即 sound(10)：0x43fa90 态 0x13（0x4403e3 先存 +0x114 旧值，
         // 位移才 0x4403f1）/态 0x12（0x44010c）/0x43e780 态 10（0x43f0fb）三路同式。
         if (state.name_cursor != previous_cursor && !host.sound(10)) return false;
@@ -266,24 +270,26 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
                     // LAB_00440520（0x43fa90 态 0x13 END 路径）：录入完成才建
                     // 菜单脚本 142（进榜路径 open() 延迟未建）→ 态 0xf 续关菜单。
                     if (!state.menu_animation) {
-                        state.menu_animation = animations.create(
-                            state.front_bank, kGameOverMenuScript, -1, 4);
-                        if (!state.menu_animation)
-                            return check(false, animations.error.c_str());
+                        state.menu_animation = animations.create(state.front_bank, kGameOverMenuScript, -1, 4);
+                        if (!state.menu_animation) return check(false, animations.error.c_str());
                         if (auto* vm = animations.registry.find(state.menu_animation))
                             vm->visual.render_flags &= ~0xc000u;
                     }
-                    if (!host.record_result_name(state.replay_name) ||
-                        !interrupt(state.menu_animation,3,true) || !configure_entries()) return false;
-                    phase(6); break;
+                    if (!host.record_result_name(state.replay_name) || !interrupt(state.menu_animation, 3, true) ||
+                        !configure_entries())
+                        return false;
+                    phase(6);
+                    break;
                 }
-                if (!host.save_replay_slot(state.replay_slot,state.replay_name)) return false;
+                if (!host.save_replay_slot(state.replay_slot, state.replay_name)) return false;
                 phase(17);
             } else {
-                const char ch=state.name_cursor == 88 ? ' ' : kResultNameCharacters[state.name_cursor];
-                if (state.replay_name.size() < 8) state.replay_name += ch;
-                else state.replay_name[7]=ch;
-                if (state.replay_name.size() >= 8) state.name_cursor=90;
+                const char ch = state.name_cursor == 88 ? ' ' : kResultNameCharacters[state.name_cursor];
+                if (state.replay_name.size() < 8)
+                    state.replay_name += ch;
+                else
+                    state.replay_name[7] = ch;
+                if (state.replay_name.size() >= 8) state.name_cursor = 90;
                 // 字符/空格录入：三路共尾 sound(7)（0x43ff55 / 0x440174 / 0x43f162）。
                 if (!host.sound(7)) return false;
             }
@@ -298,17 +304,26 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
                 }
             } else {
                 if (!host.sound(9)) return false;
-                if (!state.replay_name.empty()) state.replay_name.pop_back();
-                else phase(17);
+                if (!state.replay_name.empty())
+                    state.replay_name.pop_back();
+                else
+                    phase(17);
             }
         }
         break;
     }
     case 19:
         if ((pressed | repeated) & 0x30) state.option_row ^= 1;
-        if ((pressed | repeated) & 0x40) { if (!host.change_option(state.option_row,-5)) return false; }
-        if ((pressed | repeated) & 0x80) { if (!host.change_option(state.option_row,5)) return false; }
-        if (pressed & (0x80001|0x102)) { if (!configure_entries()) return false; phase(6); }
+        if ((pressed | repeated) & 0x40) {
+            if (!host.change_option(state.option_row, -5)) return false;
+        }
+        if ((pressed | repeated) & 0x80) {
+            if (!host.change_option(state.option_row, 5)) return false;
+        }
+        if (pressed & (0x80001 | 0x102)) {
+            if (!configure_entries()) return false;
+            phase(6);
+        }
         break;
     }
     return true;

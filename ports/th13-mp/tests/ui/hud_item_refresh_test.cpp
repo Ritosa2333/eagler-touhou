@@ -1,9 +1,9 @@
-#include "ui_test_fixtures.hpp"
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 #include "game/GameHud.hpp"
 #include "game/ReplaySession.hpp"
 #include "game/StageBattle.hpp"
+#include "ui_test_fixtures.hpp"
 #include <cstdlib>
 #include <fstream>
 #include <memory>
@@ -26,7 +26,10 @@ struct Provider : EclResourceProvider {
         out = ecl;
         return true;
     }
-    bool animation(u32, const std::string& name) override { names->push_back(name); return true; }
+    bool animation(u32, const std::string& name) override {
+        names->push_back(name);
+        return true;
+    }
 };
 
 struct Rig : StageBattleServices {
@@ -55,8 +58,7 @@ struct Rig : StageBattleServices {
             // front.anm 29..36 / 37..44: full=label2, empty=3, pieces=7..12.
             for (u32 i = 29; i < 45; ++i) {
                 const i32 base = i < 37 ? 12 : 18;
-                scripts[i] = {sprite(base), wait(), label(2), sprite(base + 5), wait(),
-                              label(3), sprite(base), wait()};
+                scripts[i] = {sprite(base), wait(), label(2), sprite(base + 5), wait(), label(3), sprite(base), wait()};
                 for (i32 piece = 0; piece <= 5; ++piece) {
                     scripts[i].push_back(label(7 + piece));
                     scripts[i].push_back(sprite(base + piece));
@@ -80,7 +82,10 @@ struct Rig : StageBattleServices {
     bool bomb_hud(i32 bombs, i32 pieces) override { return !reject_refresh && hud.bombs(bombs, pieces); }
     bool request_game_over() override { return true; }
     bool hud_sound(i32) override { return true; }
-    void tick_animations() { for (int i = 0; i < 45; ++i) CHECK(animations.update()); }
+    void tick_animations() {
+        for (int i = 0; i < 45; ++i)
+            CHECK(animations.update());
+    }
     i32 icon(bool bomb, u32 slot) {
         auto* vm = animations.registry.find((bomb ? hud.bomb_icons : hud.life_icons)[slot]);
         CHECK(vm != nullptr);
@@ -92,16 +97,18 @@ struct Rig : StageBattleServices {
         tick_animations();
     }
 };
-}
+}  // namespace
 
 TEST(item_pickups_refresh_icons_without_recreating_the_stage) {
     auto r = std::make_unique<Rig>();
     const auto life_handles = r->hud.life_icons, bomb_handles = r->hud.bomb_icons;
     CHECK_EQ(r->icon(false, 2), 12);
-    r->collect(4); r->collect(4);
+    r->collect(4);
+    r->collect(4);
     CHECK_EQ(r->player.life_pieces, 2);
     CHECK_EQ(r->icon(false, 2), 13);  // 2/8 -> label8.
-    for (int i = 0; i < 6; ++i) r->collect(4);
+    for (int i = 0; i < 6; ++i)
+        r->collect(4);
     CHECK_EQ(r->player.extra_lives, 3);
     CHECK_EQ(r->progress.life_piece_threshold_index, 1);
     CHECK_EQ(r->icon(false, 2), 17);
@@ -111,7 +118,8 @@ TEST(item_pickups_refresh_icons_without_recreating_the_stage) {
     CHECK_EQ(r->icon(false, 3), 17);
     r->collect(5);
     CHECK_EQ(r->icon(true, 2), 19);  // 2/8 -> label8.
-    for (int i = 0; i < 3; ++i) r->collect(5);
+    for (int i = 0; i < 3; ++i)
+        r->collect(5);
     CHECK_EQ(r->player.bombs, 3);
     CHECK_EQ(r->icon(true, 2), 23);
     CHECK_EQ(r->icon(true, 3), 18);
@@ -126,21 +134,34 @@ TEST(replay_restored_stock_receives_spirit_pickup_refreshes) {
     auto r = std::make_unique<Rig>();
     ReplayFile file;
     ReplayStage stage;
-    stage.number = 1; stage.header.resize(0x70);
+    stage.number = 1;
+    stage.header.resize(0x70);
     const auto put = [&](u32 off, i32 value) { std::memcpy(stage.header.data() + off, &value, 4); };
-    put(0x1c, 1); put(0x44, 100); put(0x48, 400); put(0x4c, 100);
-    put(0x50, 2); put(0x54, 7); put(0x5c, 2); put(0x60, 7);
+    put(0x1c, 1);
+    put(0x44, 100);
+    put(0x48, 400);
+    put(0x4c, 100);
+    put(0x50, 2);
+    put(0x54, 7);
+    put(0x5c, 2);
+    put(0x60, 7);
     file.stages.push_back(stage);
-    ReplayRestoreLog log; std::string error;
-    CHECK(ReplaySession::restore_stage(file, 0,
-        {&r->progress, &r->player, &r->score, &r->battle.sim.random, &r->random}, log, error));
+    ReplayRestoreLog log;
+    std::string error;
+    CHECK(ReplaySession::restore_stage(
+        file, 0, {&r->progress, &r->player, &r->score, &r->battle.sim.random, &r->random}, log, error));
     CHECK(r->hud.reset_for_retry());
     r->tick_animations();
     CHECK_EQ(r->icon(false, 2), 16);
     CHECK_EQ(r->icon(true, 2), 23);
     for (i32 kind : {0, 2}) {
         auto& s = r->battle.item_manager.spirits()[u32(kind)];
-        s = Spirit{}; s.alive = true; s.kind = kind; s.state = 4; s.x = 0; s.y = 200;
+        s = Spirit{};
+        s.alive = true;
+        s.kind = kind;
+        s.state = 4;
+        s.x = 0;
+        s.y = 200;
         s.serial = u32(kind + 1);
     }
     CHECK(r->battle.step({}));
@@ -172,7 +193,8 @@ TEST(bomb_gain_at_the_icon_limit_preserves_inventory_without_overrunning_icons) 
     CHECK_EQ(r->player.bombs, 9);
     CHECK(r->battle.error().empty());
     CHECK(r->hud.error.empty());
-    for (u32 i = 0; i < 8; ++i) CHECK_EQ(r->icon(true, i), 23);
+    for (u32 i = 0; i < 8; ++i)
+        CHECK_EQ(r->icon(true, i), 23);
 }
 
 int main() { return th13test::run_all("HUD item refresh"); }

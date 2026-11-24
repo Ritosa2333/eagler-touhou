@@ -23,7 +23,8 @@ struct TextureSink final : DialogueTextureSink {
         image.format = touhou::graphics::PixelFormat::Argb4444;
         image.pixels.resize(size_t(image.pitch) * image.height);
         for (size_t at = 0; at < image.pixels.size(); at += 2) {
-            image.pixels[at] = 0x34; image.pixels[at + 1] = 0x12;
+            image.pixels[at] = 0x34;
+            image.pixels[at + 1] = 0x12;
         }
     }
     u32 texture(const AnmResource& resource, u32 index) override {
@@ -33,7 +34,8 @@ struct TextureSink final : DialogueTextureSink {
     }
     TextureImage* pixels(u32 handle) override { return handle == 7 ? &image : nullptr; }
     void changed(u32 handle, const std::array<u32, 4>& region) override {
-        CHECK_EQ(handle, 7u); changes.push_back(region);
+        CHECK_EQ(handle, 7u);
+        changes.push_back(region);
     }
     u16 pixel(u32 x, u32 y) const {
         u16 result;
@@ -49,8 +51,7 @@ struct Fixture {
     SpellState state;
     TextureSink sink;
     Fixture() {
-        for (const auto& item : {std::pair<i32, const char*>{0, "text.anm"},
-                                 {2, "ascii.anm"}, {8, "effect.anm"}}) {
+        for (const auto& item : {std::pair<i32, const char*>{0, "text.anm"}, {2, "ascii.anm"}, {8, "effect.anm"}}) {
             const auto bytes = asset(item.second);
             CHECK(!bytes.empty());
             CHECK(manager.load(item.first, bytes.data(), u32(bytes.size())));
@@ -68,24 +69,27 @@ struct Fixture {
     }
 };
 void mask(TextureImage& image, i32 left, i32 right) {
-    for (i32 y = 8; y < 28; ++y) for (i32 x = left; x < right; ++x) {
-        const u16 value = 0xffff;
-        std::memcpy(image.pixels.data() + size_t(y) * image.pitch + size_t(x) * 2, &value, 2);
-    }
+    for (i32 y = 8; y < 28; ++y)
+        for (i32 x = left; x < right; ++x) {
+            const u16 value = 0xffff;
+            std::memcpy(image.pixels.data() + size_t(y) * image.pitch + size_t(x) * 2, &value, 2);
+        }
 }
-}
+}  // namespace
 
 TEST(spell_name_raster_writes_real_text74_sprite_region_and_uploads_once) {
     Fixture fixture;
     i32 calls = 0;
-    CHECK(fixture.presentation.rasterize_name(fixture.sink,
-        [&](TextureImage& image, i32 x, i32 y, u32 color, const std::string& text) {
+    CHECK(fixture.presentation.rasterize_name(
+        fixture.sink, [&](TextureImage& image, i32 x, i32 y, u32 color, const std::string& text) {
             ++calls;
-            CHECK_EQ(image.width, 1024u); CHECK_EQ(image.height, 40u);
+            CHECK_EQ(image.width, 1024u);
+            CHECK_EQ(image.height, 40u);
             CHECK_EQ(image.pitch, 2048u);
             // 004135c3 -> 0046e970 (right): width320 - 8*15 = 200
             // layout pixels; 0045afcf doubles that to TextOutA x400.
-            CHECK_EQ(x, 400); CHECK_EQ(y, 2);
+            CHECK_EQ(x, 400);
+            CHECK_EQ(y, 2);
             CHECK_EQ(color, 0xffffffffu);
             CHECK(text == "synthetic CP932");
             mask(image, 8, 60);
@@ -93,56 +97,57 @@ TEST(spell_name_raster_writes_real_text74_sprite_region_and_uploads_once) {
         }));
     CHECK_EQ(calls, 1);
     CHECK_EQ(fixture.sink.changes.size(), size_t(1));
-    CHECK((fixture.sink.changes[0] == std::array<u32,4>{0,92,320,109}));
+    CHECK((fixture.sink.changes[0] == std::array<u32, 4>{0, 92, 320, 109}));
     u32 foreground = 0, outline = 0;
-    for (u32 y = 0; y < 512; ++y) for (u32 x = 0; x < 512; ++x) {
-        const u16 value = fixture.sink.pixel(x,y);
-        if (y < 92 || y >= 109 || x >= 320) {
-            CHECK_EQ(value, u16(0x1234));
-        } else if (value >> 12) {
-            if ((value & 0x0fff) == 0x0fff) ++foreground;
-            if ((value & 0x0fff) < 0x0888) ++outline;
+    for (u32 y = 0; y < 512; ++y)
+        for (u32 x = 0; x < 512; ++x) {
+            const u16 value = fixture.sink.pixel(x, y);
+            if (y < 92 || y >= 109 || x >= 320) {
+                CHECK_EQ(value, u16(0x1234));
+            } else if (value >> 12) {
+                if ((value & 0x0fff) == 0x0fff) ++foreground;
+                if ((value & 0x0fff) < 0x0888) ++outline;
+            }
         }
-    }
     CHECK(foreground > 0);
-    CHECK(outline > 0); // black border coverage survives the ARGB4444 path
-    CHECK_EQ(fixture.sink.pixel(319,108), u16(0));
+    CHECK(outline > 0);  // black border coverage survives the ARGB4444 path
+    CHECK_EQ(fixture.sink.pixel(319, 108), u16(0));
 }
 
 TEST(spell_name_production_alignment_matches_original_right_aligned_entry) {
     Fixture fixture;
     // Independent 0046e970 executions, nominal17 and sprite width320.
-    const std::pair<i32, i32> cases[] = {{12,448},{14,416},{16,384},{20,320},{32,128}};
+    const std::pair<i32, i32> cases[] = {{12, 448}, {14, 416}, {16, 384}, {20, 320}, {32, 128}};
     for (const auto& item : cases) {
         auto snapshot = fixture.presentation.snapshot();
         snapshot.name.assign(size_t(item.first), '\x81');
         fixture.presentation.sync(snapshot);
         i32 calls = 0;
         CHECK(fixture.presentation.rasterize_name(fixture.sink,
-            [&](TextureImage&, i32 x, i32 y, u32, const std::string& name) {
-                ++calls;
-                CHECK_EQ(x, item.second);
-                CHECK_EQ(y, 2);
-                CHECK_EQ(name.size(), size_t(item.first));
-                return true;
-            }));
+                                                  [&](TextureImage&, i32 x, i32 y, u32, const std::string& name) {
+                                                      ++calls;
+                                                      CHECK_EQ(x, item.second);
+                                                      CHECK_EQ(y, 2);
+                                                      CHECK_EQ(name.size(), size_t(item.first));
+                                                      return true;
+                                                  }));
         CHECK_EQ(calls, 1);
     }
 }
 
 TEST(spell_name_replacement_clears_previous_long_name_without_touching_other_text) {
     Fixture fixture;
-    CHECK(fixture.presentation.rasterize_name(fixture.sink,
-        [](TextureImage& image, i32, i32, u32, const std::string&) {
-            mask(image, 8, 180); return true;
-        }));
-    CHECK(fixture.sink.pixel(60,100) != 0);
-    CHECK(fixture.presentation.rasterize_name(fixture.sink,
-        [](TextureImage& image, i32, i32, u32, const std::string&) {
-            mask(image, 8, 20); return true;
-        }));
-    CHECK_EQ(fixture.sink.pixel(60,100), u16(0));
-    CHECK_EQ(fixture.sink.pixel(0,91), u16(0x1234));
+    CHECK(fixture.presentation.rasterize_name(fixture.sink, [](TextureImage& image, i32, i32, u32, const std::string&) {
+        mask(image, 8, 180);
+        return true;
+    }));
+    CHECK(fixture.sink.pixel(60, 100) != 0);
+    CHECK(fixture.presentation.rasterize_name(fixture.sink, [](TextureImage& image, i32, i32, u32, const std::string&) {
+        mask(image, 8, 20);
+        return true;
+    }));
+    CHECK_EQ(fixture.sink.pixel(60, 100), u16(0));
+    CHECK_EQ(fixture.sink.pixel(0, 91), u16(0x1234));
     CHECK_EQ(fixture.sink.changes.size(), size_t(2));
 }
 
@@ -150,7 +155,7 @@ TEST(spell_name_font_failure_keeps_existing_texture_and_exposes_failure) {
     Fixture fixture;
     const auto previous = fixture.sink.image.pixels;
     CHECK(!fixture.presentation.rasterize_name(fixture.sink,
-        [](TextureImage&, i32, i32, u32, const std::string&) { return false; }));
+                                               [](TextureImage&, i32, i32, u32, const std::string&) { return false; }));
     CHECK(!fixture.presentation.error.empty());
     CHECK(fixture.sink.image.pixels == previous);
     CHECK(fixture.sink.changes.empty());
@@ -160,8 +165,10 @@ TEST(spell_name_missing_texture_keeps_font_uninvoked_and_exposes_failure) {
     Fixture fixture;
     fixture.sink.available = false;
     bool called = false;
-    CHECK(!fixture.presentation.rasterize_name(fixture.sink,
-        [&](TextureImage&, i32, i32, u32, const std::string&) { called = true; return true; }));
+    CHECK(!fixture.presentation.rasterize_name(fixture.sink, [&](TextureImage&, i32, i32, u32, const std::string&) {
+        called = true;
+        return true;
+    }));
     CHECK(!called);
     CHECK(!fixture.presentation.error.empty());
     CHECK(fixture.sink.changes.empty());

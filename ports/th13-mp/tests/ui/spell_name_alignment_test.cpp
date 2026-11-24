@@ -26,14 +26,19 @@ struct Fixture {
     AnmVm vm;
     Sink sink;
     Fixture() {
-        sprite.x = 0; sprite.y = 92; sprite.width = 320; sprite.height = 17;
-        vm.resource = &resource; vm.sprite = &sprite;
+        sprite.x = 0;
+        sprite.y = 92;
+        sprite.width = 320;
+        sprite.height = 17;
+        vm.resource = &resource;
+        vm.sprite = &sprite;
     }
     // 8/6 个全角字符的替身栅格：32 scratch 像素步进、每字符 12 像素白色竖条
     // （模拟 MS Gothic 32px 固定步进），返回回调收到的 x。
     int fill(i32 chars) {
         int drawn = -1;
-        CHECK(rasterize_anm_text(vm, sink,
+        CHECK(rasterize_anm_text(
+            vm, sink,
             [&](TextureImage& image, i32 x, i32 y, u32, const std::string&) {
                 drawn = x;
                 for (i32 c = 0; c < chars; ++c)
@@ -42,11 +47,11 @@ struct Fixture {
                             const i32 px = x + c * 32 + 10 + dx;
                             if (px < 0 || px >= int(image.width)) continue;
                             const u16 value = 0xf000;
-                            std::memcpy(image.pixels.data() + size_t(yy) * image.pitch +
-                                            size_t(px) * 2, &value, 2);
+                            std::memcpy(image.pixels.data() + size_t(yy) * image.pitch + size_t(px) * 2, &value, 2);
                         }
                 return true;
-            }, 0xffffffu, std::string(size_t(chars) * 2, '\x81'), AnmTextAlignment::Right, 17));
+            },
+            0xffffffu, std::string(size_t(chars) * 2, '\x81'), AnmTextAlignment::Right, 17));
         return drawn;
     }
     int ink_start() const {

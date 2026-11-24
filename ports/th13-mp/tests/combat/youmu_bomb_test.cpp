@@ -24,28 +24,27 @@
 #include "game/YoumuBomb.hpp"
 
 #include <cmath>
-#include <cstdio>
 #include <cstdint>
+#include <cstdio>
 #include <vector>
 
-using th13::YoumuBomb;
 using th13::GameRandom;
+using th13::YoumuBomb;
 
 static int failures = 0;
-#define CHECK(cond, msg)                                          \
-    do {                                                          \
-        if (!(cond)) {                                            \
-            std::printf("FAIL %s:%d %s\n", __FILE__, __LINE__, msg); \
-            ++failures;                                           \
-        }                                                         \
+#define CHECK(cond, msg)                                                                                               \
+    do {                                                                                                               \
+        if (!(cond)) {                                                                                                 \
+            std::printf("FAIL %s:%d %s\n", __FILE__, __LINE__, msg);                                                   \
+            ++failures;                                                                                                \
+        }                                                                                                              \
     } while (0)
 
 static bool feq(float a, float b) { return a == b; }  // 逐位（同式复算）
 static bool near4(float a, float b) { return std::fabs(double(a) - double(b)) < 1e-4; }
 
 // 测试内独立复算（与 YoumuBomb.cpp 同式；python 字面量另配 near4 双保险）
-static void mirror_rect(float y, bool odd, float angle, float rs,
-                        float* cx, float* cy, float* h) {
+static void mirror_rect(float y, bool odd, float angle, float rs, float* cx, float* cy, float* h) {
     const float ap = float(double(angle) + 1.5707963705062866);
     const float dx = float(std::cos(double(ap)) * 256.0);
     const float dy = float(std::sin(double(ap)) * 256.0);
@@ -55,8 +54,7 @@ static void mirror_rect(float y, bool odd, float angle, float rs,
 }
 
 // 推进到下一次生成；*age 为下一次 step 的实参（返回后已被推进到生成帧之后）。
-static std::optional<YoumuBomb::Spawn> next_spawn(YoumuBomb& bomb, GameRandom& rng,
-                                                  int* age, int limit = 300) {
+static std::optional<YoumuBomb::Spawn> next_spawn(YoumuBomb& bomb, GameRandom& rng, int* age, int limit = 300) {
     while (*age < limit) {
         const int a = *age;
         auto sp = bomb.step(a, rng);
@@ -73,8 +71,8 @@ int main() {
     CHECK(YoumuBomb::kDamagePerRect == 30.0f, "damage 30");
     CHECK(YoumuBomb::kRectLength == 96.0f, "rect length 96");
     static_assert(sizeof(YoumuBomb::kLanes) == 11 * sizeof(float), "11 lanes");
-    CHECK(YoumuBomb::kLanes[0] == 224.0f && YoumuBomb::kLanes[4] == 64.0f &&
-          YoumuBomb::kLanes[10] == 224.0f, "lane table");
+    CHECK(YoumuBomb::kLanes[0] == 224.0f && YoumuBomb::kLanes[4] == 64.0f && YoumuBomb::kLanes[10] == 224.0f,
+          "lane table");
 
     YoumuBomb bomb;
     bomb.reset();
@@ -83,8 +81,7 @@ int main() {
     // —— A1/A2（前四个生成帧精查：轨迹 9842/9865/9886 的间隔 23/21，第四个 19） ——
     // gen_expected.py（seed=1）：y0=194.32656860351562 y1=217.71697998046875
     //   y2=321.91763305664062 y3=224.24783325195312
-    const float exp_y[4] = {194.32656860351562f, 217.71697998046875f,
-                            321.91763305664062f, 224.24783325195312f};
+    const float exp_y[4] = {194.32656860351562f, 217.71697998046875f, 321.91763305664062f, 224.24783325195312f};
     const int exp_age[4] = {0, 23, 44, 63};
     const int exp_su_draw[4] = {2, 4, 6, 8};  // 每次生成 index +2
     int age = 0;
@@ -129,10 +126,9 @@ int main() {
     CHECK(feq(r0.cx, m0x) && feq(r0.cy, m0y) && feq(r0.h, m0h), "偶槽矩形逐位");
     CHECK(feq(r1.cx, m1x) && feq(r1.cy, m1y) && feq(r1.h, m1h), "奇槽矩形逐位");
     // gen_expected.py 字面量：slot0 rs=1 cx=-75.65315246582031 cy=-50.23957824707031
-    CHECK(near4(r0.cx, -75.65315246582031f) && near4(r0.cy, -50.23957824707031f) &&
-          near4(r0.h, 128.0f), "偶槽 python 字面量");
-    CHECK(near4(r1.cx, -228.1490936279297f) && near4(r1.cy, 333.83758544921875f),
-          "奇槽 python 字面量");
+    CHECK(near4(r0.cx, -75.65315246582031f) && near4(r0.cy, -50.23957824707031f) && near4(r0.h, 128.0f),
+          "偶槽 python 字面量");
+    CHECK(near4(r1.cx, -228.1490936279297f) && near4(r1.cy, 333.83758544921875f), "奇槽 python 字面量");
 
     // —— A4 伤害（cover_count × 30，单矩形单帧一次，重叠计 2） ——
     CHECK(bomb.cover_count(r0.cx, r0.cy, 0.0f) >= 1, "中心被自身覆盖");
@@ -142,21 +138,20 @@ int main() {
     bomb.reset();
     GameRandom rng2(1);
     int age2 = 0;
-    (void)next_spawn(bomb, rng2, &age2);            // slot0 @0
+    (void)next_spawn(bomb, rng2, &age2);  // slot0 @0
     bomb.set_vm(0, true, 0.0f);
     bomb.set_vm(0, true, 0.0f);
     bomb.set_vm(0, true, 0.0f);
-    bomb.set_vm(0, true, 0.0f);                     // rs=3
-    (void)next_spawn(bomb, rng2, &age2);            // slot1 @23
+    bomb.set_vm(0, true, 0.0f);           // rs=3
+    (void)next_spawn(bomb, rng2, &age2);  // slot1 @23
     bomb.set_vm(1, false, 0.0f);
-    (void)next_spawn(bomb, rng2, &age2);            // slot2 @44
+    (void)next_spawn(bomb, rng2, &age2);  // slot2 @44
     bomb.set_vm(2, true, 0.0f);
-    bomb.set_vm(2, true, 0.0f);                     // rs=1
+    bomb.set_vm(2, true, 0.0f);  // rs=1
     const auto q0 = bomb.rect(0), q2 = bomb.rect(2);
     CHECK(feq(q0.h, 384.0f) && feq(q2.h, 128.0f), "重叠构造 rs 3/1");
     CHECK(bomb.cover_count(0.0f, 60.0f, 0.0f) == 2, "两斩重叠计 2");
-    CHECK(bomb.cover_count(0.0f, 60.0f, 0.0f) * YoumuBomb::kDamagePerRect == 60.0f,
-          "两斩重叠伤害 60");
+    CHECK(bomb.cover_count(0.0f, 60.0f, 0.0f) * YoumuBomb::kDamagePerRect == 60.0f, "两斩重叠伤害 60");
     CHECK(bomb.cover_count(1000.0f, 1000.0f, 0.0f) == 0, "远处无伤害");
 
     // —— A5 局部消弹（非全屏） ——
@@ -173,13 +168,13 @@ int main() {
         if (sp) spawn_ages.push_back(a);
     }
     // 独立期望序列（0x40cb50 倒计时 + 0x4457e0 装入 25，>8 每次 -2）
-    const std::vector<int> expected_ages = {
-        0, 23, 44, 63, 80, 95, 108, 119, 128, 135, 142, 149, 156, 163,
-        170, 177, 184, 191, 198, 205, 212, 219, 226, 233, 240, 247, 254};
+    const std::vector<int> expected_ages = {0,   23,  44,  63,  80,  95,  108, 119, 128, 135, 142, 149, 156, 163,
+                                            170, 177, 184, 191, 198, 205, 212, 219, 226, 233, 240, 247, 254};
     CHECK(int(spawn_ages.size()) == 27, "生成期恰 27 斩");
     CHECK(spawn_ages == expected_ages, "生成帧完整独立期望序列");
-    CHECK(spawn_ages.size() >= 4 && spawn_ages[0] == 0 && spawn_ages[1] == 23 &&
-          spawn_ages[2] == 44 && spawn_ages[3] == 63, "前四生成帧 0/23/44/63");
+    CHECK(spawn_ages.size() >= 4 && spawn_ages[0] == 0 && spawn_ages[1] == 23 && spawn_ages[2] == 44 &&
+              spawn_ages[3] == 63,
+          "前四生成帧 0/23/44/63");
     CHECK(int(rng3.index()) == int(spawn_ages.size()) * 2, "抽随机次数 = 生成数");
     CHECK(int(rng3.index()) == 54, "RNG index 终值 54");
     const uint32_t idx_end = rng3.index();
@@ -195,8 +190,7 @@ int main() {
         const auto sp = bomb.step(a, rng4);
         if (sp && sp->slot >= 0) born.push_back(a);
         for (int s = 0; s < YoumuBomb::kSlots; ++s) {
-            const bool vm_alive =
-                s < int(born.size()) && a - born[size_t(s)] < 16;
+            const bool vm_alive = s < int(born.size()) && a - born[size_t(s)] < 16;
             bomb.set_vm(s, vm_alive, 0.0f);
         }
         if (a == 0) {

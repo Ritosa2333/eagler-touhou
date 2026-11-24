@@ -37,7 +37,8 @@ TEST(girl_a01_lunatic_first_frame) {
     CHECK_EQ(threads.main.local_base, 0);
     // 游戏指令按序记录（500/501/404/405）。
     std::vector<th13::u16> opcodes;
-    for (const auto& call : commands.calls) opcodes.push_back(call.opcode);
+    for (const auto& call : commands.calls)
+        opcodes.push_back(call.opcode);
     CHECK((opcodes == std::vector<th13::u16>{500, 501, 404, 405}));
     // 500 setHurtbox(24.0f, 24.0f)；501 setHitbox(16.0f, 16.0f)；
     // 404 moveVel(1.1780972f, 4.0f)；405 moveVelTime(60, 1, 1.5707964f, 0.0f)。
@@ -66,7 +67,8 @@ TEST(girl_a01_expression_and_loop) {
     threads.main.commands = &commands;
     CHECK(threads.start("GirlA01", 0x08));
     // 第 0 帧 wait(60) → time=-59；第 k 帧起 time=k-60；第 60 帧执行表达式。
-    for (int frame = 0; frame < 61; ++frame) CHECK_EQ(threads.step(1.0f), 0);
+    for (int frame = 0; frame < 61; ++frame)
+        CHECK_EQ(threads.step(1.0f), 0);
     // ins_429 的参数 2 是表达式 [-9989.0f] + ([-9998.0f] / 20.0f) = 2.0 + 47.0/20 = 4.35。
     const th13test::RecordedCall* move = nullptr;
     for (const auto& call : commands.calls)
@@ -142,7 +144,8 @@ TEST(girl_a01_at_loop_and_retire) {
     CHECK_EQ(threads.step(1.0f), -1);
     // 游戏指令序列：548,600,607,602,625,604,624,609 各一次；601×3（三轮发弹）。
     std::vector<th13::u16> opcodes;
-    for (const auto& call : commands.calls) opcodes.push_back(call.opcode);
+    for (const auto& call : commands.calls)
+        opcodes.push_back(call.opcode);
     const std::vector<th13::u16> expected = {548, 600, 607, 602, 625, 604, 624, 609, 601, 601, 601};
     CHECK(opcodes == expected);
 }
@@ -150,7 +153,7 @@ TEST(girl_a01_at_loop_and_retire) {
 TEST(sync_call_and_return) {
     // 同步调用：Main 压帧调用 Callee，被调者 ret 后恢复 {SP,time,Q}。
     std::vector<th13::u8> main_script, callee_script;
-    const char callee_name[] = "Callee";           // 含 NUL 7 字节，对齐 8
+    const char callee_name[] = "Callee";  // 含 NUL 7 字节，对齐 8
     const th13::u32 name_size = 8;
     th13test::emit(main_script, 0, 42, 0, 0xff, 0, {7});  // pushi 7（调用者表达式栈遗留）
     {
@@ -160,8 +163,8 @@ TEST(sync_call_and_return) {
         tail.push_back(0);  // 名字区补齐到 8
         th13test::emit(main_script, 0, 11, 0, 0xff, 0, {name_size}, tail.data(), th13::u32(tail.size()));
     }
-    th13test::emit(main_script, 0, 23, 0, 0xff, 0, {5});  // wait(5) —— 被调者返回后执行
-    th13test::emit(main_script, 0, 10, 0, 0xff, 0, {});   // ret
+    th13test::emit(main_script, 0, 23, 0, 0xff, 0, {5});    // wait(5) —— 被调者返回后执行
+    th13test::emit(main_script, 0, 10, 0, 0xff, 0, {});     // ret
     th13test::emit(callee_script, 0, 40, 0, 0xff, 0, {4});  // stackAlloc(4)
     th13test::emit(callee_script, 0, 10, 0, 0xff, 0, {});   // ret
     auto bytes = th13test::build_scpt({{"Callee", callee_script}, {"Main", main_script}});
@@ -175,7 +178,8 @@ TEST(sync_call_and_return) {
     CHECK_NEAR(threads.main.time, -4.0, 1e-6);
     CHECK_EQ(threads.main.stack_pointer, 8);  // 遗留的 pushi 7 仍在表达式栈
     // 后续 4 帧追平时钟，第 5 帧执行尾 ret → 线程结束。
-    for (int i = 0; i < 4; ++i) CHECK_EQ(threads.step(1.0f), 0);
+    for (int i = 0; i < 4; ++i)
+        CHECK_EQ(threads.step(1.0f), 0);
     CHECK_EQ(threads.step(1.0f), -1);
 }
 
@@ -185,43 +189,43 @@ TEST(base_stack_machine_battery) {
     auto emit = [&](th13::u16 op, th13::u16 mask = 0, const std::vector<th13::u32>& args = {}, th13::u32 sadj = 0) {
         th13test::emit(script, 0, op, mask, 0xff, sadj, args);
     };
-    emit(40, 0, {28});                  // var：28 字节局部（7 槽）
+    emit(40, 0, {28});  // var：28 字节局部（7 槽）
     emit(44, 0, {th13test::bits_of(9.0f)});
     emit(44, 0, {th13test::bits_of(4.0f)});
-    emit(57);                           // divf → 2.25
-    emit(45, 1, {0});                   // setf 局部[0]
+    emit(57);          // divf → 2.25
+    emit(45, 1, {0});  // setf 局部[0]
     emit(42, 0, {7});
     emit(42, 0, {3});
-    emit(56);                           // divi → 2
+    emit(56);  // divi → 2
     emit(42, 0, {5});
-    emit(58);                           // modi 2%5 → 2
+    emit(58);  // modi 2%5 → 2
     emit(42, 0, {2});
-    emit(50);                           // addi → 2+2 = 4
-    emit(43, 1, {4});                   // seti 局部[4]
+    emit(50);          // addi → 2+2 = 4
+    emit(43, 1, {4});  // seti 局部[4]
     emit(42, 0, {7});
     emit(42, 0, {3});
-    emit(59);                           // eqi → 0
-    emit(71);                           // noti → 1
-    emit(43, 1, {24});                  // seti 局部[24]（保留栈平衡）
+    emit(59);           // eqi → 0
+    emit(71);           // noti → 1
+    emit(43, 1, {24});  // seti 局部[24]（保留栈平衡）
     emit(42, 0, {12});
     emit(42, 0, {10});
-    emit(75);                           // xor → 6
+    emit(75);  // xor → 6
     emit(42, 0, {3});
-    emit(76);                           // or → 7
-    emit(42, 0, {0xfffffffcu});         // pushi -4
-    emit(83);                           // negi → 4
-    emit(77);                           // 位与 7&4 → 4
-    emit(43, 1, {8});                   // seti 局部[8]
+    emit(76);                    // or → 7
+    emit(42, 0, {0xfffffffcu});  // pushi -4
+    emit(83);                    // negi → 4
+    emit(77);                    // 位与 7&4 → 4
+    emit(43, 1, {8});            // seti 局部[8]
     emit(44, 0, {th13test::bits_of(1.0f)});
-    emit(79);                           // sin(1.0) ≈ 0.8414710
+    emit(79);  // sin(1.0) ≈ 0.8414710
     emit(45, 1, {th13test::bits_of(12.0f)});
     emit(44, 0, {th13test::bits_of(0.5235988f)});
-    emit(80);                           // cos(π/6) ≈ 0.8660254
+    emit(80);  // cos(π/6) ≈ 0.8660254
     emit(45, 1, {th13test::bits_of(16.0f)});
     emit(44, 0, {th13test::bits_of(9.0f)});
-    emit(88);                           // sqrt(9) = 3
+    emit(88);  // sqrt(9) = 3
     emit(45, 1, {th13test::bits_of(20.0f)});
-    emit(10);                           // ret
+    emit(10);  // ret
     auto bytes = th13test::build_scpt({{"Battery", script}});
     th13::EclProgram program;
     CHECK(program.attach(bytes.data(), th13::u32(bytes.size())) == 0);
@@ -251,10 +255,9 @@ TEST(base_stack_machine_battery) {
 TEST(interpolate_channel_semantics) {
     // 指令 91：slot0（字面量）、10 帧、线性模式 0、0→10、目标 = 局部[0]（float）。
     std::vector<th13::u8> script;
-    th13test::emit(script, 0, 40, 0, 0xff, 0, {8});  // var
-    th13test::emit(script, 0, 91, 2, 0xff, 0,
-                   {0, 0, 10, 0, 0, th13test::bits_of(10.0f)});  // mask 仅参数 1（目标）
-    th13test::emit(script, 0, 23, 0, 0xff, 0, {30});  // wait(30) 让通道推进
+    th13test::emit(script, 0, 40, 0, 0xff, 0, {8});                                         // var
+    th13test::emit(script, 0, 91, 2, 0xff, 0, {0, 0, 10, 0, 0, th13test::bits_of(10.0f)});  // mask 仅参数 1（目标）
+    th13test::emit(script, 0, 23, 0, 0xff, 0, {30});                                        // wait(30) 让通道推进
     th13test::emit(script, 0, 12, 0, 0xff, 0, {0xffffffecu, 0});  // jmp 回 wait（保活，Δ=-20）
     auto bytes = th13test::build_scpt({{"Interp", script}});
     th13::EclProgram program;
@@ -268,11 +271,14 @@ TEST(interpolate_channel_semantics) {
     };
     CHECK_EQ(threads.step(1.0f), 0);  // 挂接帧：指令写起始值 0，帧尾通道步进一格 → 1.0
     CHECK_NEAR(local(), 1.0, 1e-6);
-    for (int i = 0; i < 4; ++i) CHECK_EQ(threads.step(1.0f), 0);
+    for (int i = 0; i < 4; ++i)
+        CHECK_EQ(threads.step(1.0f), 0);
     CHECK_NEAR(local(), 5.0, 1e-6);
-    for (int i = 0; i < 5; ++i) CHECK_EQ(threads.step(1.0f), 0);
+    for (int i = 0; i < 5; ++i)
+        CHECK_EQ(threads.step(1.0f), 0);
     CHECK_NEAR(local(), 10.0, 1e-6);  // 第 10 帧到终值并停（duration 归零）
-    for (int i = 0; i < 3; ++i) CHECK_EQ(threads.step(1.0f), 0);
+    for (int i = 0; i < 3; ++i)
+        CHECK_EQ(threads.step(1.0f), 0);
     CHECK_NEAR(local(), 10.0, 1e-6);
     CHECK_EQ(threads.main.interpolators[0].duration, 0);
 }
@@ -283,8 +289,8 @@ TEST(wait_uses_top_reference_without_leak) {
     std::vector<th13::u8> script;
     th13test::emit(script, 0, 42, 1, 0xff, 0, {0xffffd8f0u});  // pushi RAND(-10000)
     th13test::emit(script, 0, 42, 0, 0xff, 0, {320});
-    th13test::emit(script, 0, 58, 0, 0xff, 0, {});             // modi
-    th13test::emit(script, 0, 23, 1, 0xff, 8, {0xffffffff});   // wait 栈顶引用
+    th13test::emit(script, 0, 58, 0, 0xff, 0, {});            // modi
+    th13test::emit(script, 0, 23, 1, 0xff, 8, {0xffffffff});  // wait 栈顶引用
     th13test::emit(script, 0, 10, 0, 0xff, 0, {});
     auto bytes = th13test::build_scpt({{"WaitExpr", script}});
     th13::EclProgram program;

@@ -35,15 +35,12 @@ i32 ending_index_for(const SessionState& progress, const EndingSaveBytes& save) 
     // 真结局变体门：难度>=1 && 好结局资格(4be83c)>=3 && save[2*base+0x1b26b]&1
     //（= 0x1b26a+(2*base+1)，即标准好结局 e0(2*base+1) 的已见位）。
     const bool seen_standard = (save.read(2 * base + 1) & 1) != 0;
-    if (progress.difficulty >= 1 && progress.good_endings >= 3 && seen_standard)
-        index += 1;
+    if (progress.difficulty >= 1 && progress.good_endings >= 3 && seen_standard) index += 1;
     return index;
 }
 
-EndingScene::EndingScene(SessionState& progress, EndingPlatform& platform,
-                         bool allow_first_view_fast_forward)
-    : progress_(progress), platform_(platform),
-      allow_first_view_fast_forward_(allow_first_view_fast_forward) {}
+EndingScene::EndingScene(SessionState& progress, EndingPlatform& platform, bool allow_first_view_fast_forward)
+    : progress_(progress), platform_(platform), allow_first_view_fast_forward_(allow_first_view_fast_forward) {}
 
 void EndingScene::interp_set(Interp& it, i32 param) {
     // 0x4016c0（fild 实证：int→float 转换，非位重解释）。
@@ -92,8 +89,7 @@ std::string EndingScene::payload_cstring(const Record& r, u32 byte_offset) const
     if (byte_offset >= r.length) return {};
     const u8* start = r.payload + byte_offset;
     const u8* end = r.payload + r.length;
-    const u8* nul = static_cast<const u8*>(
-        std::memchr(start, 0, size_t(end - start)));
+    const u8* nul = static_cast<const u8*>(std::memchr(start, 0, size_t(end - start)));
     const u8* stop = nul ? nul : end;
     return std::string(reinterpret_cast<const char*>(start), size_t(stop - start));
 }
@@ -115,13 +111,11 @@ bool EndingScene::initialize() {
     {
         const u8 seen = u8(save->read(ending_index_) | 1);
         save->write(ending_index_, seen);
-        if (progress_.difficulty > 0)
-            save->write(ending_index_, u8(seen | 0x10));
+        if (progress_.difficulty > 0) save->write(ending_index_, u8(seen | 0x10));
         if (ending_index_ < 8) save->write(0x1b276 - kEndingByteBase, 1);
     }
     // ---- e##.msg 装载（0x4724c0；表 0x4bba20[idx]）----
-    message_name_ = kEndingMessages[ending_index_ >= 0 && ending_index_ < 13
-                                         ? ending_index_ : 0];
+    message_name_ = kEndingMessages[ending_index_ >= 0 && ending_index_ < 13 ? ending_index_ : 0];
     if (!platform_.read_asset(message_name_, msg_bytes_) || msg_bytes_.empty())
         return fail("Ending message unavailable: " + message_name_);
     // ---- 0x4166d0：滚屏对象初值（行 0、等待清、0x74|=1、颜色 0xffffff）----
@@ -246,10 +240,8 @@ bool EndingScene::update(const GameInput& input) {
 bool EndingScene::should_restart(const GameInput& input) const {
     // 00416632..0041666b: loading, first good-ending viewing and staff-only
     // gates are independent of op5/6's per-text waiting/skip permission.
-    if (finished_ || !error.empty() || (state_flags_ & 4u) ||
-        (scene_flags_ & 2u) || !(state_flags_ & 2u)) return false;
-    const bool held = (input.held & 0x200u) ||
-                      ((input.held & 1u) && input.repeat_age[0] >= 20);
+    if (finished_ || !error.empty() || (state_flags_ & 4u) || (scene_flags_ & 2u) || !(state_flags_ & 2u)) return false;
+    const bool held = (input.held & 0x200u) || ((input.held & 1u) && input.repeat_age[0] >= 20);
     return held && frames_ % 12 != 0;
 }
 
@@ -259,14 +251,14 @@ bool EndingScene::op_page_line(const Record& r) {
     // +0x78++。渲染面走平台近似通道；行为面保留页内行序与颜色。
     // 0x42a340 的解出含 NUL 终结字节；文本面按 C 串语义剥除。
     std::string text = msg_decrypt_text(r.payload, r.length);
-    while (!text.empty() && text.back() == '\0') text.pop_back();
+    while (!text.empty() && text.back() == '\0')
+        text.pop_back();
     if (page_lines_ == 0) {
         if (!platform_.ending_page_reset()) return fail("Ending page reset failed");
         page_text_.fill({});
     }
     page_text_[u32(page_lines_)] = text;
-    if (!platform_.ending_page_line(page_lines_, color_, text))
-        return fail("Ending page line submission failed");
+    if (!platform_.ending_page_line(page_lines_, color_, text)) return fail("Ending page line submission failed");
     page_lines_ = (page_lines_ + 1) % i32(page_text_.size());
     return true;
 }
@@ -278,8 +270,7 @@ bool EndingScene::op_page_clear() {
     return true;
 }
 
-bool EndingScene::op_text_wait(const GameInput& input, const Record& r,
-                               bool page_break) {
+bool EndingScene::op_text_wait(const GameInput& input, const Record& r, bool page_break) {
     // 0x416b9b（op5）/ 0x416c4d（op6）。+0x30 = 文本等待插值器目标值。
     if (text_wait_.target <= 0) interp_set(text_wait_, payload_i32(r, 0));
     interp_tick(text_wait_, -1.0f);
@@ -288,8 +279,8 @@ bool EndingScene::op_text_wait(const GameInput& input, const Record& r,
         interp_set(text_wait_, kNegativeWaitFallback);
     }
     // 0x460bc0(0) + 0x4016c0(0) 后推进的三路放行：
-    if ((input.pressed & (0x1u | 0x80000u)) != 0    // a) Z/Enter 按下（0x4e49fc&0x80001）
-        || text_wait_.target <= 0) {                // b) 自然到点（+0x30<=0）
+    if ((input.pressed & (0x1u | 0x80000u)) != 0  // a) Z/Enter 按下（0x4e49fc&0x80001）
+        || text_wait_.target <= 0) {              // b) 自然到点（+0x30<=0）
         if (!platform_.advance_sound()) return fail("Ending advance sound failed");
         interp_set(text_wait_, 0);
     } else {
@@ -297,9 +288,7 @@ bool EndingScene::op_text_wait(const GameInput& input, const Record& r,
         //    Ctrl(0x200) 或 Z(bit0) 持续且重复计数(0x4e4b04)>=0x14；
         //    且 +0x30 % 6 == 0。
         if ((scene_flags_ & 1u) != 0) return false;
-        const bool held_ok = (input.held & 0x200u) != 0 ||
-                             ((input.held & 0x1u) != 0 &&
-                              input.repeat_age[0] >= 0x14);
+        const bool held_ok = (input.held & 0x200u) != 0 || ((input.held & 0x1u) != 0 && input.repeat_age[0] >= 0x14);
         if (!held_ok) return false;
         if (text_wait_.target % 6 != 0) return false;
         interp_set(text_wait_, 0);
@@ -317,8 +306,7 @@ bool EndingScene::op_anm_load(const Record& r) {
     const i32 index = payload_i32(r, 0);
     const std::string name = payload_cstring(r, 4);
     if (index < 0 || index > 3) return fail("Ending ANM slot out of range");
-    if (!name.empty() && !platform_.load_ending_anm(0x14 + index, name))
-        return fail("Ending ANM load failed: " + name);
+    if (!name.empty() && !platform_.load_ending_anm(0x14 + index, name)) return fail("Ending ANM load failed: " + name);
     return true;
 }
 
@@ -330,8 +318,7 @@ bool EndingScene::op_anm_vm(const Record& r) {
     const i32 script = payload_i32(r, 2);
     if (vm_slot < 0 || vm_slot >= 24 || bank_index < 0 || bank_index > 3)
         return fail("Ending ANM cue indices out of range");
-    return platform_.cue_ending_anm(vm_slot, 0x14 + bank_index, script) ||
-           fail("Ending ANM cue failed");
+    return platform_.cue_ending_anm(vm_slot, 0x14 + bank_index, script) || fail("Ending ANM cue failed");
 }
 
 bool EndingScene::op_music(const Record& r) {
@@ -345,8 +332,8 @@ bool EndingScene::op_music(const Record& r) {
     if (slash != std::string::npos) name.erase(0, slash + 1);
     if (name.empty() || name.rfind(".wav", name.size() - 4) != std::string::npos)
         return fail("Ending music name invalid");
-    return platform_.queue_music(1, 0, name + ".wav") &&
-           platform_.queue_music(2, 0, "") && platform_.record_music_unlocked(mode);
+    return platform_.queue_music(1, 0, name + ".wav") && platform_.queue_music(2, 0, "") &&
+           platform_.record_music_unlocked(mode);
 }
 
 bool EndingScene::op_reload_next(const Record& r) {
@@ -355,8 +342,7 @@ bool EndingScene::op_reload_next(const Record& r) {
     const std::string name = payload_cstring(r);
     platform_.release_ending_page();
     std::vector<u8> bytes;
-    if (name.empty() || !platform_.read_asset(name, bytes) || bytes.size() < 8)
-        return false;
+    if (name.empty() || !platform_.read_asset(name, bytes) || bytes.size() < 8) return false;
     msg_bytes_ = std::move(bytes);
     message_name_ = name;
     msg_bytes_.resize(msg_bytes_.size() + 4, 0);
@@ -379,7 +365,8 @@ void EndingScene::teardown() {
     platform_.release_ending_page();
     page_text_.fill({});
     page_lines_ = 0;
-    for (i32 slot = 0x14; slot < 0x14 + 4; slot++) platform_.release_ending_anm(slot);
+    for (i32 slot = 0x14; slot < 0x14 + 4; slot++)
+        platform_.release_ending_anm(slot);
     msg_bytes_.clear();
     msg_bytes_.shrink_to_fit();
 }

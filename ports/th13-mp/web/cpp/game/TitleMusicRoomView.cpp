@@ -7,8 +7,8 @@ bool TitleMusicRoomView::fail(const std::string& why) {
     return false;
 }
 
-bool TitleMusicRoomView::update(const TitleState& state, const TitleMusicRoomMenu& menu,
-                                TitleMusicRoomPlatform& host, const Rasterizer& rasterize) {
+bool TitleMusicRoomView::update(const TitleState& state, const TitleMusicRoomMenu& menu, TitleMusicRoomPlatform& host,
+                                const Rasterizer& rasterize) {
     if (!error.empty()) return false;
     if (!opened) {
         // 00455574/004555e8/00455712/00455856: ascii19, title106,
@@ -28,34 +28,36 @@ bool TitleMusicRoomView::update(const TitleState& state, const TitleMusicRoomMen
             auto* vm = animations.registry.find(handle);
             if (!vm) return fail(animations.error);
             // 曲名色恒白；未听曲名 = 0x4ac930 占位 "No.%2d " + 11 全角？。
-            if (!rasterize || !rasterize(*vm, 0xffffff,
-                    host.track_heard(i) ? host.track_title(i) : host.locked_title(i),
-                    AnmTextAlignment::Left)) return fail("Music Room title rasterization failed");
-            if (!animations.interrupt(handle, i == menu.row() ? 2 : 3, true))
-                return fail(animations.error);
+            if (!rasterize ||
+                !rasterize(*vm, 0xffffff, host.track_heard(i) ? host.track_title(i) : host.locked_title(i),
+                           AnmTextAlignment::Left))
+                return fail("Music Room title rasterization failed");
+            if (!animations.interrupt(handle, i == menu.row() ? 2 : 3, true)) return fail(animations.error);
         }
         opened = true;
     }
     if (state.substate == 3 && !closing) {
-        for (u32 handle : rows) if (!animations.interrupt(handle, 1)) return fail(animations.error);
-        for (u32 handle : comments) if (!animations.interrupt(handle, 1)) return fail(animations.error);
-        if (!animations.interrupt(badge, 1) || !animations.interrupt(particles, 1))
-            return fail(animations.error);
+        for (u32 handle : rows)
+            if (!animations.interrupt(handle, 1)) return fail(animations.error);
+        for (u32 handle : comments)
+            if (!animations.interrupt(handle, 1)) return fail(animations.error);
+        if (!animations.interrupt(badge, 1) || !animations.interrupt(particles, 1)) return fail(animations.error);
         closing = true;
     }
     if (closing) return true;
-    if (menu.row() < top) top = menu.row();
-    else if (menu.row() >= top + 10) top = menu.row() - 9;
+    if (menu.row() < top)
+        top = menu.row();
+    else if (menu.row() >= top + 10)
+        top = menu.row() - 9;
     for (size_t i = 0; i < rows.size(); ++i) {
         auto* vm = animations.registry.find(rows[i]);
         if (!vm) return fail("Music Room row VM unavailable");
         const bool selected = i32(i) == menu.row();
-        vm->visual.flags = (vm->visual.flags & ~2u) |
-            (i32(i) >= top && i32(i) < top + 10 ? 2u : 0u);
+        vm->visual.flags = (vm->visual.flags & ~2u) | (i32(i) >= top && i32(i) < top + 10 ? 2u : 0u);
         const Vec3 position{selected ? 60.f : 64.f, 96.f + 20.f * float(i32(i) - top), 0};
         if (previous_row != menu.row()) {
-            vm->interpolators.position.begin(4, 0,
-                {vm->variables.position.x, vm->variables.position.y, vm->variables.position.z},
+            vm->interpolators.position.begin(
+                4, 0, {vm->variables.position.x, vm->variables.position.y, vm->variables.position.z},
                 {position.x, position.y, position.z});
             if (!animations.interrupt(rows[i], selected ? 2 : 3, true)) return fail(animations.error);
         }
@@ -72,10 +74,9 @@ bool TitleMusicRoomView::update(const TitleState& state, const TitleMusicRoomMen
     while (revealed < menu.revealed_lines()) {
         const u32 handle = comments[u32(revealed)];
         auto* vm = animations.registry.find(handle);
-        const std::string text = locked ? host.locked_comment(revealed)
-                                        : host.track_comment(menu.comment_track(), revealed);
-        if (!vm || !rasterize || !rasterize(*vm, locked ? 0x8080ffu : 0xffffffu, text,
-                                            AnmTextAlignment::Left))
+        const std::string text =
+            locked ? host.locked_comment(revealed) : host.track_comment(menu.comment_track(), revealed);
+        if (!vm || !rasterize || !rasterize(*vm, locked ? 0x8080ffu : 0xffffffu, text, AnmTextAlignment::Left))
             return fail("Music Room comment rasterization failed");
         if (!animations.interrupt(handle, 2, true)) return fail(animations.error);
         ++revealed;
@@ -84,8 +85,10 @@ bool TitleMusicRoomView::update(const TitleState& state, const TitleMusicRoomMen
 }
 
 void TitleMusicRoomView::release() {
-    for (u32& handle : rows) animations.retire(handle);
-    for (u32& handle : comments) animations.retire(handle);
+    for (u32& handle : rows)
+        animations.retire(handle);
+    for (u32& handle : comments)
+        animations.retire(handle);
     animations.retire(badge);
     animations.retire(particles);
     rows.clear();
@@ -94,4 +97,4 @@ void TitleMusicRoomView::release() {
     revealed = top = 0;
 }
 
-} // namespace th13
+}  // namespace th13

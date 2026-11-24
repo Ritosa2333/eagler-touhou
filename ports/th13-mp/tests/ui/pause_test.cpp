@@ -3,11 +3,11 @@
 // 确认非继续项经 20 帧闪烁 + Yes/No（case5/7，默认 No）、Game Over 按
 // continue_stock 门控继续（0 禁用 / >0 可用）、
 // 失焦与恢复（ui-base.md §四 Run 分支）。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
-#include "game/RunPause.hpp"
 #include "game/FrameScheduler.hpp"
+#include "game/RunPause.hpp"
 
 using namespace th13;
 using namespace th13::test;
@@ -64,7 +64,8 @@ struct PauseHarness {
     }
 
     void advance(int frames, u32 pressed = 0) {
-        for (int i = 0; i < frames; i++) frame(pressed);
+        for (int i = 0; i < frames; i++)
+            frame(pressed);
     }
 };
 }  // namespace
@@ -140,7 +141,7 @@ TEST(pause_restart_and_title_destinations) {
     harness.frame(0x20);
     harness.frame(0x20);  // ↓↓（跳过禁用槽）→ 重开(4)
     CHECK_EQ(harness.pause->state.menu.cursor, 4);
-    harness.frame(1);     // 确认 → 闪烁
+    harness.frame(1);  // 确认 → 闪烁
     harness.advance(21);
     harness.frame(0x10);  // Yes
     harness.frame(1);
@@ -160,7 +161,8 @@ TEST(game_over_disables_continue) {
     harness.advance(12);
     CHECK_EQ(harness.pause->state.menu.count, 5);
     CHECK_EQ(harness.pause->state.menu.cursor, 1);  // 落在タイトルへ（继续被禁用）
-    for (int i = 0; i < 6; i++) harness.frame(0x10);  // 充分上移也回不到 0
+    for (int i = 0; i < 6; i++)
+        harness.frame(0x10);  // 充分上移也回不到 0
     const i32 cursor = harness.pause->state.menu.cursor;
     CHECK(cursor == 1 || cursor == 4);  // 越过禁用 0 后环绕到やり直す
     harness.frame(1);
@@ -213,9 +215,9 @@ TEST(practice_end_disables_continue_and_requests_destination) {
     harness.advance(21);
     CHECK_EQ(harness.pause->state.phase, 9);
     CHECK_EQ(harness.pause->state.menu.cursor, 1);  // 默认 No
-    harness.frame(0x10);  // ↑ 选择 Yes (0)
+    harness.frame(0x10);                            // ↑ 选择 Yes (0)
     CHECK_EQ(harness.pause->state.menu.cursor, 0);
-    harness.frame(1);     // 确认 Yes
+    harness.frame(1);  // 确认 Yes
     harness.advance(21);
     harness.advance(13);
     CHECK(!harness.pause->active());

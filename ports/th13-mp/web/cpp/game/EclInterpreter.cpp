@@ -167,8 +167,10 @@ int EclContext::step(float elapsed) {
                 return;
             }
             auto* destination = integer_destination(n);
-            if (!destination) ok = false;
-            else *destination = value;
+            if (!destination)
+                ok = false;
+            else
+                *destination = value;
         };
         auto store_float = [&](u32 n, float value) {
             if (16 + n * 4 + 4 > length) {
@@ -177,308 +179,348 @@ int EclContext::step(float elapsed) {
                 return;
             }
             auto* destination = float_destination(n);
-            if (!destination) ok = false;
-            else *destination = value;
+            if (!destination)
+                ok = false;
+            else
+                *destination = value;
         };
-        if (enabled)
-            switch (op) {
-                case Op::Nop:
-                case Op::Nop22:
-                case Op::Nop30:
-                case Op::Nop31:
-                    adjust = true;
-                    break;
-                case Op::Delete:
-                    routine = instruction_offset = -1;
-                    instruction = nullptr;
-                    return -1;
-                case Op::Return: {
-                    const int result = return_from_call();
-                    if (result) return result;
-                    length = instruction->length;
-                    adjust = true;
-                    break;
+        if (enabled) switch (op) {
+            case Op::Nop:
+            case Op::Nop22:
+            case Op::Nop30:
+            case Op::Nop31:
+                adjust = true;
+                break;
+            case Op::Delete:
+                routine = instruction_offset = -1;
+                instruction = nullptr;
+                return -1;
+            case Op::Return: {
+                const int result = return_from_call();
+                if (result) return result;
+                length = instruction->length;
+                adjust = true;
+                break;
+            }
+            // 004772a0 case0xb passes the current context to00477030.
+            // The callee shares its stack and suspends the caller until ret.
+            case Op::Call:
+                const_cast<EclInstruction*>(instruction)->stack_adjust = 0;
+                if (!call_into(*this)) return -2;
+                continue;
+            case Op::CallAsync:
+            case Op::CallAsyncId: {
+                if (!threads) return fail("ECL thread host not bound");
+                i32 id = -1;
+                if (op == Op::CallAsyncId) {  // id 为名字后的内联参数（0x479480 按 id 查找）
+                    const u32 offset = instruction->argument<u32>(0) + 20;
+                    if (offset + 4 > length) return fail("Truncated ECL thread identifier");
+                    i32 literal;
+                    std::memcpy(&literal, reinterpret_cast<const u8*>(instruction) + offset, 4);
+                    if (!integer(1, literal, id, true)) return -2;
                 }
-                // 004772a0 case0xb passes the current context to00477030.
-                // The callee shares its stack and suspends the caller until ret.
-                case Op::Call:
-                    const_cast<EclInstruction*>(instruction)->stack_adjust = 0;
-                    if (!call_into(*this)) return -2;
+                if (!threads->spawn(*this, id, op == Op::CallAsyncId ? 1 : 0)) return -2;
+                break;
+            }
+            case Op::KillAsync:
+            case Op::PauseAsync:
+            case Op::ResumeAsync:
+            case Op::SetThreadState: {
+                if (!threads) return fail("ECL thread host not bound");
+                const i32 id = integer_arg(0);
+                if (auto* target = threads->find(id)) {
+                    if (op == Op::KillAsync)
+                        target->instruction_offset = -1;
+                    else if (op == Op::PauseAsync)
+                        target->thread_flags |= 1;
+                    else if (op == Op::ResumeAsync)
+                        target->thread_flags &= ~1u;
+                    else
+                        target->thread_state = integer_arg(1);
+                }
+                adjust = true;
+                break;
+            }
+            case Op::KillAllAsync:
+                if (!threads) return fail("ECL thread host not bound");
+                threads->terminate_children();
+                break;
+            // 跳转双参数：{相对本指令的 Δ, 绝对重置的 time}。
+            case Op::Jump:
+            case Op::JumpIfZero:
+            case Op::JumpIfNonzero: {
+                if (length < 24) return fail("Truncated ECL jump");
+                const bool take = op == Op::Jump ? true : (pop_int() == 0) == (op == Op::JumpIfZero);
+                if (take) {
+                    const i32 relative = instruction->argument<i32>(0), target_time = instruction->argument<i32>(1);
+                    if (!ok) return -2;
+                    instruction_offset = wrapping_add(instruction_offset, relative);
+                    time = float(target_time);
                     continue;
-                case Op::CallAsync:
-                case Op::CallAsyncId: {
-                    if (!threads) return fail("ECL thread host not bound");
-                    i32 id = -1;
-                    if (op == Op::CallAsyncId) {  // id 为名字后的内联参数（0x479480 按 id 查找）
-                        const u32 offset = instruction->argument<u32>(0) + 20;
-                        if (offset + 4 > length) return fail("Truncated ECL thread identifier");
-                        i32 literal;
-                        std::memcpy(&literal, reinterpret_cast<const u8*>(instruction) + offset, 4);
-                        if (!integer(1, literal, id, true)) return -2;
-                    }
-                    if (!threads->spawn(*this, id, op == Op::CallAsyncId ? 1 : 0)) return -2;
-                    break;
                 }
-                case Op::KillAsync:
-                case Op::PauseAsync:
-                case Op::ResumeAsync:
-                case Op::SetThreadState: {
-                    if (!threads) return fail("ECL thread host not bound");
-                    const i32 id = integer_arg(0);
-                    if (auto* target = threads->find(id)) {
-                        if (op == Op::KillAsync)
-                            target->instruction_offset = -1;
-                        else if (op == Op::PauseAsync)
-                            target->thread_flags |= 1;
-                        else if (op == Op::ResumeAsync)
-                            target->thread_flags &= ~1u;
-                        else
-                            target->thread_state = integer_arg(1);
-                    }
-                    adjust = true;
-                    break;
-                }
-                case Op::KillAllAsync:
-                    if (!threads) return fail("ECL thread host not bound");
-                    threads->terminate_children();
-                    break;
-                // 跳转双参数：{相对本指令的 Δ, 绝对重置的 time}。
-                case Op::Jump:
-                case Op::JumpIfZero:
-                case Op::JumpIfNonzero: {
-                    if (length < 24) return fail("Truncated ECL jump");
-                    const bool take = op == Op::Jump ? true : (pop_int() == 0) == (op == Op::JumpIfZero);
-                    if (take) {
-                        const i32 relative = instruction->argument<i32>(0), target_time = instruction->argument<i32>(1);
-                        if (!ok) return -2;
-                        instruction_offset = wrapping_add(instruction_offset, relative);
-                        time = float(target_time);
-                        continue;
-                    }
-                    adjust = true;
-                    break;
-                }
-                case Op::WaitInteger:
-                    time = float(time - float(integer_arg(0)));
-                    adjust = true;
-                    break;
-                case Op::WaitFloat:
-                    time = float(time - float_arg(0));
-                    adjust = true;
-                    break;
-                case Op::EnterFrame:
-                    if (!enter_frame(integer_arg(0))) ok = false;
-                    adjust = true;
-                    break;
-                case Op::LeaveFrame:
-                    if (!leave_frame()) ok = false;
-                    adjust = true;
-                    break;
-                case Op::PushInt:
-                    push_int(integer_arg(0, true));
-                    break;
-                case Op::PushFloat:
-                    push_float(float_arg(0, true));
-                    break;
-                case Op::StoreInt: {
-                    auto* destination = integer_destination(0);
-                    if (!destination) ok = false;
-                    const i32 value = pop_int();
-                    if (destination) *destination = value;
-                    break;
-                }
-                case Op::StoreFloat: {
-                    auto* destination = float_destination(0);
-                    if (!destination) ok = false;
-                    const float value = pop_float();
-                    if (destination) *destination = value;
-                    break;
-                }
+                adjust = true;
+                break;
+            }
+            case Op::WaitInteger:
+                time = float(time - float(integer_arg(0)));
+                adjust = true;
+                break;
+            case Op::WaitFloat:
+                time = float(time - float_arg(0));
+                adjust = true;
+                break;
+            case Op::EnterFrame:
+                if (!enter_frame(integer_arg(0))) ok = false;
+                adjust = true;
+                break;
+            case Op::LeaveFrame:
+                if (!leave_frame()) ok = false;
+                adjust = true;
+                break;
+            case Op::PushInt:
+                push_int(integer_arg(0, true));
+                break;
+            case Op::PushFloat:
+                push_float(float_arg(0, true));
+                break;
+            case Op::StoreInt: {
+                auto* destination = integer_destination(0);
+                if (!destination) ok = false;
+                const i32 value = pop_int();
+                if (destination) *destination = value;
+                break;
+            }
+            case Op::StoreFloat: {
+                auto* destination = float_destination(0);
+                if (!destination) ok = false;
+                const float value = pop_float();
+                if (destination) *destination = value;
+                break;
+            }
+            case Op::AddInt:
+            case Op::SubtractInt:
+            case Op::MultiplyInt:
+            case Op::DivideInt:
+            case Op::Remainder:
+            case Op::EqualInt:
+            case Op::NotEqualInt:
+            case Op::LessInt:
+            case Op::LessEqualInt:
+            case Op::GreaterInt:
+            case Op::GreaterEqualInt:
+            case Op::LogicalOr:
+            case Op::LogicalAnd:
+            case Op::Xor:
+            case Op::Or:
+            case Op::And: {
+                const i32 right = pop_int(), left = pop_int();
+                i32 value = 0;
+                switch (op) {
                 case Op::AddInt:
+                    value = wrapping_add(left, right);
+                    break;
                 case Op::SubtractInt:
+                    value = wrapping_sub(left, right);
+                    break;
                 case Op::MultiplyInt:
+                    value = wrapping_mul(left, right);
+                    break;
                 case Op::DivideInt:
                 case Op::Remainder:
+                    if (!right || (left == INT32_MIN && right == -1)) return fail("ECL integer divide error");
+                    value = op == Op::DivideInt ? left / right : left % right;
+                    break;
                 case Op::EqualInt:
+                    value = left == right;
+                    break;
                 case Op::NotEqualInt:
+                    value = left != right;
+                    break;
                 case Op::LessInt:
+                    value = left < right;
+                    break;
                 case Op::LessEqualInt:
+                    value = left <= right;
+                    break;
                 case Op::GreaterInt:
+                    value = left > right;
+                    break;
                 case Op::GreaterEqualInt:
+                    value = left >= right;
+                    break;
                 case Op::LogicalOr:
+                    value = left || right;
+                    break;
                 case Op::LogicalAnd:
+                    value = left && right;
+                    break;
                 case Op::Xor:
+                    value = left ^ right;
+                    break;
                 case Op::Or:
-                case Op::And: {
-                    const i32 right = pop_int(), left = pop_int();
-                    i32 value = 0;
-                    switch (op) {
-                        case Op::AddInt: value = wrapping_add(left, right); break;
-                        case Op::SubtractInt: value = wrapping_sub(left, right); break;
-                        case Op::MultiplyInt: value = wrapping_mul(left, right); break;
-                        case Op::DivideInt:
-                        case Op::Remainder:
-                            if (!right || (left == INT32_MIN && right == -1)) return fail("ECL integer divide error");
-                            value = op == Op::DivideInt ? left / right : left % right;
-                            break;
-                        case Op::EqualInt: value = left == right; break;
-                        case Op::NotEqualInt: value = left != right; break;
-                        case Op::LessInt: value = left < right; break;
-                        case Op::LessEqualInt: value = left <= right; break;
-                        case Op::GreaterInt: value = left > right; break;
-                        case Op::GreaterEqualInt: value = left >= right; break;
-                        case Op::LogicalOr: value = left || right; break;
-                        case Op::LogicalAnd: value = left && right; break;
-                        case Op::Xor: value = left ^ right; break;
-                        case Op::Or: value = left | right; break;
-                        default: value = left & right; break;
-                    }
-                    push_int(value);
-                    if (u16(op) <= 58) const_cast<EclInstruction*>(instruction)->stack_adjust = 0;
+                    value = left | right;
                     break;
-                }
-                case Op::AddFloat:
-                case Op::SubtractFloat:
-                case Op::MultiplyFloat:
-                case Op::DivideFloat: {
-                    const float right = pop_float(), left = pop_float();
-                    push_float(op == Op::AddFloat ? float(left + right)
-                                 : op == Op::SubtractFloat ? float(left - right)
-                                 : op == Op::MultiplyFloat ? float(left * right)
-                                                           : float(left / right));
-                    const_cast<EclInstruction*>(instruction)->stack_adjust = 0;
-                    break;
-                }
-                case Op::EqualFloat:
-                case Op::NotEqualFloat:
-                case Op::LessFloat:
-                case Op::LessEqualFloat:
-                case Op::GreaterFloat:
-                case Op::GreaterEqualFloat: {
-                    const float right = pop_float(), left = pop_float();
-                    push_int(op == Op::EqualFloat ? left == right
-                             : op == Op::NotEqualFloat ? left != right
-                             : op == Op::LessFloat ? left < right
-                             : op == Op::LessEqualFloat ? left <= right
-                             : op == Op::GreaterFloat ? left > right
-                                                       : left >= right);
-                    break;
-                }
-                case Op::NotInt: push_int(pop_int() == 0); break;
-                case Op::NotFloat: push_int(pop_float() == 0); break;
-                case Op::NegateInt: push_int(signed_bits(0u - u32(pop_int()))); break;
-                case Op::NegateFloat: push_float(float(-pop_float())); break;
-                case Op::PostDecrement: {  // $A--：压旧值，目标写回 旧值-1
-                    const i32 value = integer_arg(0);
-                    store_int(0, wrapping_add(value, -1));
-                    push_int(value);
-                    break;
-                }
-                case Op::Sin:
-                case Op::Cos:
-                case Op::StackSqrt: {
-                    const double value = double(pop_float());
-                    push_float(float(op == Op::Sin ? std::sin(value) : op == Op::Cos ? std::cos(value) : std::sqrt(value)));
-                    break;
-                }
-                // circlePos（0x479540）：角度/半径 → 目标 0/1 写 cosθ·r, sinθ·r。
-                case Op::CirclePos: {
-                    const float angle = float_arg(2), radius = float_arg(3);
-                    const float x = float(std::cos(double(angle)) * double(radius));
-                    const float y = float(std::sin(double(angle)) * double(radius));
-                    store_float(0, x);
-                    store_float(1, y);
-                    adjust = true;
-                    break;
-                }
-                case Op::ValidRad: store_float(0, normalize_angle(float_arg(0))); adjust = true; break;
-                case Op::SquareSum:
-                case Op::SquareSumRoot: {
-                    const float x = float_arg(1), y = float_arg(2);
-                    // x87「积和宽精度、和存 f32 再开方」链（三点实证 e77/e78/e80）：
-                    // s = f32(x²+y²)（积与和在 80 位精确，存和时一次舍入），
-                    // r = f32(sqrt(s))。f32 逐级舍入与全程 double 均与 oracle
-                    // 存在单 ulp 偏差，勿改。
-                    const float sum = float(double(y) * double(y) + double(x) * double(x));
-                    store_float(0, op == Op::SquareSumRoot ? float(std::sqrt(double(sum)))
-                                                           : sum);
-                    adjust = true;
-                    break;
-                }
-                case Op::GetAngle: {  // 0x4977aa 两点 atan2
-                    const float ax = float_arg(1), ay = float_arg(2), bx = float_arg(3), by = float_arg(4);
-                    store_float(0, float(std::atan2(double(float(by - ay)), double(float(bx - ax)))));
-                    adjust = true;
-                    break;
-                }
-                case Op::LinearFunc: {  // 0x4794d0 角差 wrap ±π
-                    const float from = float_arg(1), to = float_arg(2);
-                    float difference = float(to - from);
-                    if (difference > kPi)
-                        difference = float(to - float(from + kTwoPi));
-                    else if (float(from - to) > kPi)
-                        difference = float(to - float(from - kTwoPi));
-                    store_float(0, difference);
-                    adjust = true;
-                    break;
-                }
-                case Op::PointRotate: {
-                    const float x = float_arg(2), y = float_arg(3), angle = normalize_angle(float_arg(4));
-                    const float sine = float(std::sin(double(angle))), cosine = float(std::cos(double(angle)));
-                    const float rx = float(float(cosine * x) - float(sine * y));
-                    const float ry = float(float(cosine * y) + float(sine * x));
-                    store_float(0, rx);
-                    store_float(1, ry);
-                    adjust = true;
-                    break;
-                }
-                // 插值通道（0x4772a0 case 0x5b/0x5c）：参数 0=槽号、2=帧数、3=模式、
-                // 4/5=起止；目标 1 写起始值；本指令挂接到通道（帧尾取参上下文）。
-                case Op::Interpolate:
-                case Op::InterpolateHermite: {
-                    const i32 slot = integer_arg(0);
-                    if (slot < 0 || u32(slot) >= interpolators.size()) return fail("ECL interpolation slot outside context");
-                    auto& interpolation = interpolators[slot];
-                    interpolation_targets[slot] = instruction;
-                    const i32 frames = integer_arg(2), mode = integer_arg(3);
-                    const float from = float_arg(4), to = float_arg(5);
-                    interpolation.begin(frames, mode, from, to);
-                    store_float(1, from);
-                    if (op == Op::InterpolateHermite) {
-                        interpolation.control1 = float_arg(6);
-                        interpolation.control2 = float_arg(7);
-                    }
-                    adjust = true;
-                    break;
-                }
-                case Op::RandomPolar: {  // 0x472e10 两次 rand 合成环内随机点
-                    if (!random) return fail("ECL random generator not bound");
-                    const float minimum = float_arg(2), maximum = float_arg(3);
-                    const float angle = float(random->signed_unit() * kPi);
-                    const float radius = float(float(random->signed_unit() * float(maximum - minimum)) + minimum);
-                    store_float(0, float(std::cos(double(angle)) * double(radius)));
-                    store_float(1, float(std::sin(double(angle)) * double(radius)));
-                    adjust = true;
-                    break;
-                }
                 default:
-                    // 游戏指令（>93）：0 前移 / 1 让出本帧 / -1 终止 / -2 错误。
-                    // Port result1 is StageCommands' blocked519/520 result.
-                    // Retail returns-1 here and jumps478bac ->4773a3,
-                    // bypassing the time increment; interpolation still ticks.
-                    if (commands) {
-                        const int result = commands->execute(*this, u16(op));
-                        if (result == -2) return result;
-                        if (result == -1) return finish(elapsed);
-                        if (result == 1) {
-                            return finish(elapsed);
-                        }
-                        adjust = true;
-                    } else {
-                        error = "Unimplemented ECL opcode " + std::to_string(u16(op));
-                        return -2;
-                    }
+                    value = left & right;
                     break;
+                }
+                push_int(value);
+                if (u16(op) <= 58) const_cast<EclInstruction*>(instruction)->stack_adjust = 0;
+                break;
+            }
+            case Op::AddFloat:
+            case Op::SubtractFloat:
+            case Op::MultiplyFloat:
+            case Op::DivideFloat: {
+                const float right = pop_float(), left = pop_float();
+                push_float(op == Op::AddFloat        ? float(left + right)
+                           : op == Op::SubtractFloat ? float(left - right)
+                           : op == Op::MultiplyFloat ? float(left * right)
+                                                     : float(left / right));
+                const_cast<EclInstruction*>(instruction)->stack_adjust = 0;
+                break;
+            }
+            case Op::EqualFloat:
+            case Op::NotEqualFloat:
+            case Op::LessFloat:
+            case Op::LessEqualFloat:
+            case Op::GreaterFloat:
+            case Op::GreaterEqualFloat: {
+                const float right = pop_float(), left = pop_float();
+                push_int(op == Op::EqualFloat       ? left == right
+                         : op == Op::NotEqualFloat  ? left != right
+                         : op == Op::LessFloat      ? left < right
+                         : op == Op::LessEqualFloat ? left <= right
+                         : op == Op::GreaterFloat   ? left > right
+                                                    : left >= right);
+                break;
+            }
+            case Op::NotInt:
+                push_int(pop_int() == 0);
+                break;
+            case Op::NotFloat:
+                push_int(pop_float() == 0);
+                break;
+            case Op::NegateInt:
+                push_int(signed_bits(0u - u32(pop_int())));
+                break;
+            case Op::NegateFloat:
+                push_float(float(-pop_float()));
+                break;
+            case Op::PostDecrement: {  // $A--：压旧值，目标写回 旧值-1
+                const i32 value = integer_arg(0);
+                store_int(0, wrapping_add(value, -1));
+                push_int(value);
+                break;
+            }
+            case Op::Sin:
+            case Op::Cos:
+            case Op::StackSqrt: {
+                const double value = double(pop_float());
+                push_float(float(op == Op::Sin ? std::sin(value) : op == Op::Cos ? std::cos(value) : std::sqrt(value)));
+                break;
+            }
+            // circlePos（0x479540）：角度/半径 → 目标 0/1 写 cosθ·r, sinθ·r。
+            case Op::CirclePos: {
+                const float angle = float_arg(2), radius = float_arg(3);
+                const float x = float(std::cos(double(angle)) * double(radius));
+                const float y = float(std::sin(double(angle)) * double(radius));
+                store_float(0, x);
+                store_float(1, y);
+                adjust = true;
+                break;
+            }
+            case Op::ValidRad:
+                store_float(0, normalize_angle(float_arg(0)));
+                adjust = true;
+                break;
+            case Op::SquareSum:
+            case Op::SquareSumRoot: {
+                const float x = float_arg(1), y = float_arg(2);
+                // x87「积和宽精度、和存 f32 再开方」链（三点实证 e77/e78/e80）：
+                // s = f32(x²+y²)（积与和在 80 位精确，存和时一次舍入），
+                // r = f32(sqrt(s))。f32 逐级舍入与全程 double 均与 oracle
+                // 存在单 ulp 偏差，勿改。
+                const float sum = float(double(y) * double(y) + double(x) * double(x));
+                store_float(0, op == Op::SquareSumRoot ? float(std::sqrt(double(sum))) : sum);
+                adjust = true;
+                break;
+            }
+            case Op::GetAngle: {  // 0x4977aa 两点 atan2
+                const float ax = float_arg(1), ay = float_arg(2), bx = float_arg(3), by = float_arg(4);
+                store_float(0, float(std::atan2(double(float(by - ay)), double(float(bx - ax)))));
+                adjust = true;
+                break;
+            }
+            case Op::LinearFunc: {  // 0x4794d0 角差 wrap ±π
+                const float from = float_arg(1), to = float_arg(2);
+                float difference = float(to - from);
+                if (difference > kPi)
+                    difference = float(to - float(from + kTwoPi));
+                else if (float(from - to) > kPi)
+                    difference = float(to - float(from - kTwoPi));
+                store_float(0, difference);
+                adjust = true;
+                break;
+            }
+            case Op::PointRotate: {
+                const float x = float_arg(2), y = float_arg(3), angle = normalize_angle(float_arg(4));
+                const float sine = float(std::sin(double(angle))), cosine = float(std::cos(double(angle)));
+                const float rx = float(float(cosine * x) - float(sine * y));
+                const float ry = float(float(cosine * y) + float(sine * x));
+                store_float(0, rx);
+                store_float(1, ry);
+                adjust = true;
+                break;
+            }
+            // 插值通道（0x4772a0 case 0x5b/0x5c）：参数 0=槽号、2=帧数、3=模式、
+            // 4/5=起止；目标 1 写起始值；本指令挂接到通道（帧尾取参上下文）。
+            case Op::Interpolate:
+            case Op::InterpolateHermite: {
+                const i32 slot = integer_arg(0);
+                if (slot < 0 || u32(slot) >= interpolators.size())
+                    return fail("ECL interpolation slot outside context");
+                auto& interpolation = interpolators[slot];
+                interpolation_targets[slot] = instruction;
+                const i32 frames = integer_arg(2), mode = integer_arg(3);
+                const float from = float_arg(4), to = float_arg(5);
+                interpolation.begin(frames, mode, from, to);
+                store_float(1, from);
+                if (op == Op::InterpolateHermite) {
+                    interpolation.control1 = float_arg(6);
+                    interpolation.control2 = float_arg(7);
+                }
+                adjust = true;
+                break;
+            }
+            case Op::RandomPolar: {  // 0x472e10 两次 rand 合成环内随机点
+                if (!random) return fail("ECL random generator not bound");
+                const float minimum = float_arg(2), maximum = float_arg(3);
+                const float angle = float(random->signed_unit() * kPi);
+                const float radius = float(float(random->signed_unit() * float(maximum - minimum)) + minimum);
+                store_float(0, float(std::cos(double(angle)) * double(radius)));
+                store_float(1, float(std::sin(double(angle)) * double(radius)));
+                adjust = true;
+                break;
+            }
+            default:
+                // 游戏指令（>93）：0 前移 / 1 让出本帧 / -1 终止 / -2 错误。
+                // Port result1 is StageCommands' blocked519/520 result.
+                // Retail returns-1 here and jumps478bac ->4773a3,
+                // bypassing the time increment; interpolation still ticks.
+                if (commands) {
+                    const int result = commands->execute(*this, u16(op));
+                    if (result == -2) return result;
+                    if (result == -1) return finish(elapsed);
+                    if (result == 1) {
+                        return finish(elapsed);
+                    }
+                    adjust = true;
+                } else {
+                    error = "Unimplemented ECL opcode " + std::to_string(u16(op));
+                    return -2;
+                }
+                break;
             }
         if (!ok) return -2;
         // 执行成功后统一扣 stack_adjust（0x4772a0 caseD_0；难度过滤跳过的指令不扣）。

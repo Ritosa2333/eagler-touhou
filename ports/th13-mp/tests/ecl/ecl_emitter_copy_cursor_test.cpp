@@ -6,7 +6,11 @@ struct Rig {
     StageSim sim;
     StageEnemy enemy;
     EclContext context;
-    Rig() { sim.commands.sim = &sim; sim.current = &enemy; sim.interactive = true; }
+    Rig() {
+        sim.commands.sim = &sim;
+        sim.current = &enemy;
+        sim.interactive = true;
+    }
     int run(u16 op, std::initializer_list<u32> args) {
         std::vector<u8> bytes;
         th13test::emit(bytes, 0, op, 0, 255, 0, args);
@@ -35,8 +39,8 @@ TEST(stage5_copied_emitter_overwrites_delay_before_firing) {
     CHECK_EQ(r.run(611, {0, 1, 2, 1, u32(-999999), 0, 0}), 0);
     CHECK_EQ(r.run(614, {1, 0}), 0);
     for (u32 slot : {0u, 1u})
-        CHECK_EQ(r.run(611, {slot, 0, 8, 120, u32(-999999),
-                            float_to_bits(.006666667f), float_to_bits(-.017453292f)}), 0);
+        CHECK_EQ(r.run(611, {slot, 0, 8, 120, u32(-999999), float_to_bits(.006666667f), float_to_bits(-.017453292f)}),
+                 0);
     CHECK_EQ(r.enemy.et[0].ex[0].op, 2u);
     CHECK_EQ(r.enemy.et[0].ex[1].op, 8u);
     CHECK_EQ(r.enemy.et[1].ex[0].op, 8u);
@@ -49,5 +53,5 @@ TEST(stage5_copied_emitter_overwrites_delay_before_firing) {
     CHECK_EQ(r.sim.bullets[1].state, 1);
     CHECK_EQ(r.sim.bullets[1].behavior_flags, 8u);
 }
-}
+}  // namespace
 int main() { return th13test::run_all("emitter copy cursor"); }

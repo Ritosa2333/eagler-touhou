@@ -2,10 +2,9 @@
 
 namespace th13::sdl {
 
-SceneDisplay::SceneDisplay(FrameScheduler& f, AnmManager& a, AnmEnvironment& e, GraphicsDevice& g,
-                           AnmRenderer& r, ScreenViews& v, AsciiText& t, i32 ascii)
-    : scheduler(f), animations(a), environment(e), graphics(g), renderer(r), views(v), captions(t),
-      ascii_bank(ascii) {}
+SceneDisplay::SceneDisplay(FrameScheduler& f, AnmManager& a, AnmEnvironment& e, GraphicsDevice& g, AnmRenderer& r,
+                           ScreenViews& v, AsciiText& t, i32 ascii)
+    : scheduler(f), animations(a), environment(e), graphics(g), renderer(r), views(v), captions(t), ascii_bank(ascii) {}
 
 SceneDisplay::~SceneDisplay() {
     detach();
@@ -47,8 +46,7 @@ bool SceneDisplay::prepare() {
         if (!graphics.clear_target(0xff000000, nullptr)) return fail(graphics.error);
         renderer.invalidate();
         renderer.offset = {};
-        if (!views.camera(DrawCamera::Fullscreen, false))
-            return fail("Scene display full-screen camera unavailable");
+        if (!views.camera(DrawCamera::Fullscreen, false)) return fail("Scene display full-screen camera unavailable");
     }
     if (scheduler.draw() < 0) {
         if (!animation_drawing->error.empty()) return fail(animation_drawing->error);
@@ -69,8 +67,6 @@ bool SceneDisplay::present() {
     return graphics.error.empty() || fail(graphics.error);
 }
 
-bool SceneDisplay::draw() {
-    return prepare() && present();
-}
+bool SceneDisplay::draw() { return prepare() && present(); }
 
 }  // namespace th13::sdl

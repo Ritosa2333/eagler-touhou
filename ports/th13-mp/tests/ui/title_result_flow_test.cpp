@@ -1,9 +1,9 @@
 // 通关后标题结算流程回归：原版 0x44c570 case0 DAT_004dc670==3 →
 // 流程 0xe (0x454050 名前录入) → 流程 0xf (0x4549d0 回放槽保存) / 主菜单。
 // 合成 ANM 只支撑状态机与文本队列断言，不声称视觉还原。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 #include "game/TitleScene.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include <memory>
 #include <string>
@@ -19,12 +19,14 @@ std::vector<u8> result_title_fixture() {
     auto scripts = trivial_scripts(243);
     auto children = [&](i32 root, std::initializer_list<i32> ids) {
         scripts[u32(root)].clear();
-        for (i32 id : ids) scripts[u32(root)].push_back(spawn(id));
+        for (i32 id : ids)
+            scripts[u32(root)].push_back(spawn(id));
         scripts[u32(root)].push_back(wait());
         scripts[u32(root)].push_back(stop());
     };
     scripts[0].clear();
-    for (i32 id = 3; id <= 22; ++id) scripts[0].push_back(spawn(id));
+    for (i32 id = 3; id <= 22; ++id)
+        scripts[0].push_back(spawn(id));
     scripts[0].push_back(wait());
     scripts[0].push_back(stop());
     children(89, {92, 93, 91, 90});
@@ -61,10 +63,16 @@ struct ResultHost final : TitleScenePlatform {
     bool clear_current_wave() override { return true; }
     bool title_exit(i32) override { return true; }
     bool fade_out_title_music() override { return true; }
-    bool sound(i32 id) override { sounds.push_back(id); return true; }
+    bool sound(i32 id) override {
+        sounds.push_back(id);
+        return true;
+    }
     bool begin_transition(u32&) override { return false; }
     bool start_game(i32) override { return false; }
-    bool hud_text(const HudTextDraw& text) override { texts.push_back(text); return true; }
+    bool hud_text(const HudTextDraw& text) override {
+        texts.push_back(text);
+        return true;
+    }
     bool save_replay_slot(i32 slot, const std::string& name) override {
         saved_slots.push_back(slot);
         saved_names.push_back(name);
@@ -104,12 +112,8 @@ struct ResultHarness {
     ResultHarness() {
         updates[0].owner = updates[1].owner = &manager;
         updates[0].enabled = updates[1].enabled = true;
-        updates[0].run = +[](void* p) {
-            return static_cast<AnmManager*>(p)->update(true) ? 1 : 5;
-        };
-        updates[1].run = +[](void* p) {
-            return static_cast<AnmManager*>(p)->update(false) ? 1 : 5;
-        };
+        updates[0].run = +[](void* p) { return static_cast<AnmManager*>(p)->update(true) ? 1 : 5; };
+        updates[1].run = +[](void* p) { return static_cast<AnmManager*>(p)->update(false) ? 1 : 5; };
         CHECK(scheduler.add(updates[0], FramePass::Update, 9) >= 0);
         CHECK(scheduler.add(updates[1], FramePass::Update, 34) >= 0);
         CHECK(load_bank(manager, 16, result_title_fixture()));
@@ -125,7 +129,10 @@ struct ResultHarness {
         CHECK(scheduler.update() >= 0);
         CHECK(scene->error.empty());
     }
-    void advance(i32 count) { for (i32 i = 0; i < count; ++i) frame(); }
+    void advance(i32 count) {
+        for (i32 i = 0; i < count; ++i)
+            frame();
+    }
 
     // 0x454050：case0 建面 → case1 >6 帧 → case2 名字编辑。
     void enter_name_editor() {
@@ -139,7 +146,8 @@ struct ResultHarness {
     // 空白上次名：光标初值 0('A') → 输入 "AAA" → 上移回绕到 78 → 左回 END(90)。
     void type_aaa_to_end() {
         CHECK_EQ(scene->state.result_name_cursor, 0);
-        for (i32 i = 0; i < 3; ++i) frame(1);
+        for (i32 i = 0; i < 3; ++i)
+            frame(1);
         CHECK_EQ(scene->state.result_name, std::string("AAA"));
         frame(0x10);
         frame(0x40);
@@ -187,8 +195,8 @@ TEST(result_name_confirm_records_typed_name_then_returns_main_without_replay) {
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::ResultName));
     CHECK_EQ(h.scene->state.substate, 3);
     CHECK(h.scene->state.handles[107] != 0);  // case3 age<=5：面未收
-    CHECK(h.host.music.empty());  // 结算屏停留期不换曲（Player's Score 不退场）
-    h.advance(7);  // case3 age>5 才 retire + 回主菜单
+    CHECK(h.host.music.empty());              // 结算屏停留期不换曲（Player's Score 不退场）
+    h.advance(7);                             // case3 age>5 才 retire + 回主菜单
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Main));
     CHECK_EQ(h.scene->state.handles[107], 0u);
     CHECK(h.host.saved_slots.empty());
@@ -251,12 +259,10 @@ TEST(result_name_confirm_opens_replay_slots_and_saves_one_based_slot) {
     bool first_row = false, legacy_line = false, legacy_name_grid = false;
     for (const auto& text : h.host.texts) {
         if (text.text.rfind("No.", 0) == 0) ++slots;
-        if (text.text == "No.01 -------- --/--/-- --:-- ------- ------- --- ---%")
-            first_row = true;
+        if (text.text == "No.01 -------- --/--/-- --:-- ------- ------- --- ---%") first_row = true;
         if (text.text.rfind("REPLAY SLOT ", 0) == 0) legacy_line = true;
         if (text.text == "RESULT NAME") legacy_name_grid = true;
-        if (text.text == "A" && text.position.x == 212 && text.position.y == 360)
-            legacy_name_grid = true;
+        if (text.text == "A" && text.position.x == 212 && text.position.y == 360) legacy_name_grid = true;
     }
     CHECK_EQ(slots, 25);
     CHECK(first_row);
@@ -271,8 +277,8 @@ TEST(result_name_confirm_opens_replay_slots_and_saves_one_based_slot) {
     CHECK(h.scheduler.draw() >= 0);
     bool selected_row = false;
     for (const auto& text : h.host.texts)
-        if (text.text.rfind("No.04 ", 0) == 0 && text.position.x == 58 &&
-            text.position.y == 80 + 3 * 15 && text.style.color == 0xffffff00u)
+        if (text.text.rfind("No.04 ", 0) == 0 && text.position.x == 58 && text.position.y == 80 + 3 * 15 &&
+            text.style.color == 0xffffff00u)
             selected_row = true;
     CHECK(selected_row);
 
@@ -286,12 +292,9 @@ TEST(result_name_confirm_opens_replay_slots_and_saves_one_based_slot) {
     bool editor_name = false, editor_grid = false, selected_line = false;
     bool selected_named = false;
     for (const auto& text : h.host.texts) {
-        if (text.text == "AAA" && text.position.x == 112 && text.position.y == 240)
-            editor_name = true;
-        if (text.text == "A" && text.position.x == 212 && text.position.y == 360)
-            editor_grid = true;
-        if (text.text.rfind("No.04 ", 0) == 0 && text.position.x == 58 &&
-            text.position.y == 240) {
+        if (text.text == "AAA" && text.position.x == 112 && text.position.y == 240) editor_name = true;
+        if (text.text == "A" && text.position.x == 212 && text.position.y == 360) editor_grid = true;
+        if (text.text.rfind("No.04 ", 0) == 0 && text.position.x == 58 && text.position.y == 240) {
             selected_line = true;
             // 00454f90 state3：头部行读当前待存 replay 头的名字，而非空格。
             selected_named = text.text.find("AAA") != std::string::npos;
@@ -322,12 +325,12 @@ TEST(result_replay_slot_cancel_returns_main_without_saving) {
     h.host.replay_available = true;
     h.enter_name_editor();
     h.type_aaa_to_end();
-    h.frame(1);  // END → 0x454050 case3
+    h.frame(1);    // END → 0x454050 case3
     h.advance(7);  // case3 age>5 → 0xf
     h.enter_replay_slots();
     h.frame(0x100);  // X/Esc：0x4549d0 case2 → case4
     CHECK_EQ(h.scene->state.substate, 4);
-    h.advance(7);    // case4 age>5 收面
+    h.advance(7);  // case4 age>5 收面
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Main));
     CHECK(h.host.saved_slots.empty());
     CHECK(h.host.saved_names.empty());
@@ -373,7 +376,7 @@ TEST(result_slot_editor_waits_ten_frames_and_uses_original_slide) {
     h.host.replay_available = true;
     h.host.last_name = "BBB     ";
     h.enter_name_editor();
-    h.frame(1);  // END → 0x454050 case3
+    h.frame(1);    // END → 0x454050 case3
     h.advance(7);  // case3 age>5 → 0xf
     h.enter_replay_slots();
     h.frame(1);
@@ -391,10 +394,8 @@ TEST(result_slot_editor_waits_ten_frames_and_uses_original_slide) {
     CHECK(h.host.texts.size() > size_t(90));
     bool end_glyph = false, delete_glyph = false;
     for (const auto& text : h.host.texts) {
-        if (text.position.x == 410 && text.position.y == 456)
-            delete_glyph = text.text == std::string(1, char(0x7f));
-        if (text.position.x == 428 && text.position.y == 456)
-            end_glyph = text.text == std::string(1, char(0x80));
+        if (text.position.x == 410 && text.position.y == 456) delete_glyph = text.text == std::string(1, char(0x7f));
+        if (text.position.x == 428 && text.position.y == 456) end_glyph = text.text == std::string(1, char(0x80));
     }
     CHECK(delete_glyph);
     CHECK(end_glyph);

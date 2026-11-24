@@ -8,50 +8,80 @@ inline i32 read_i32(const u8* p) {
     const u32 v = u32(p[0]) | u32(p[1]) << 8 | u32(p[2]) << 16 | u32(p[3]) << 24;
     return i32(v);
 }
-void put16(std::vector<u8>& v, size_t p, u16 x) { v[p]=u8(x); v[p+1]=u8(x>>8); }
-void put32(std::vector<u8>& v, size_t p, u32 x) { for(int i=0;i<4;i++) v[p+i]=u8(x>>(8*i)); }
-void append16(std::vector<u8>& v, u16 x) { v.push_back(u8(x)); v.push_back(u8(x>>8)); }
+void put16(std::vector<u8>& v, size_t p, u16 x) {
+    v[p] = u8(x);
+    v[p + 1] = u8(x >> 8);
 }
+void put32(std::vector<u8>& v, size_t p, u32 x) {
+    for (int i = 0; i < 4; i++)
+        v[p + i] = u8(x >> (8 * i));
+}
+void append16(std::vector<u8>& v, u16 x) {
+    v.push_back(u8(x));
+    v.push_back(u8(x >> 8));
+}
+}  // namespace
 std::vector<u8> ReplayRecorder::top_snapshot(const SessionState& p) {
-    std::vector<u8> v(0x74,0);
-    put32(v,0x5c,u32(p.character)); put32(v,0x60,0); put32(v,0x64,u32(p.difficulty));
+    std::vector<u8> v(0x74, 0);
+    put32(v, 0x5c, u32(p.character));
+    put32(v, 0x60, 0);
+    put32(v, 0x64, u32(p.difficulty));
     // 00447900 stores the two replay mode bits separately from the name.
-    v[0x0a] = u8(((p.run_mode_flags >> 4) & 1u) |
-                    ((p.run_mode_flags & 0x30u) == 0x20u ? 2u : 0u));
-    put32(v,0x70,u32(p.selected_spell_id)); return v;
+    v[0x0a] = u8(((p.run_mode_flags >> 4) & 1u) | ((p.run_mode_flags & 0x30u) == 0x20u ? 2u : 0u));
+    put32(v, 0x70, u32(p.selected_spell_id));
+    return v;
 }
-std::vector<u8> ReplayRecorder::stage_snapshot(const SessionState& p,
-        const HudPlayerState& player,const HudScoreState& score,u16 seed,
-        i32 x128,i32 y128,bool focused) {
-    std::vector<u8> v(0xc4,0); put16(v,0,u16(p.stage)); put16(v,2,seed);
-    put32(v,0x0c,u32(x128)); put32(v,0x10,u32(y128));
-    put32(v,0x14,u32(p.character)); put32(v,0x1c,u32(score.score));
-    put32(v,0x20,u32(p.difficulty)); put32(v,0x24,u32(p.continues));
-    put32(v,0x2c,u32(p.graze)); put32(v,0x30,u32(p.selected_spell_id));
-    put32(v,0x38,u32(p.max_point));
+std::vector<u8> ReplayRecorder::stage_snapshot(const SessionState& p, const HudPlayerState& player,
+                                               const HudScoreState& score, u16 seed, i32 x128, i32 y128, bool focused) {
+    std::vector<u8> v(0xc4, 0);
+    put16(v, 0, u16(p.stage));
+    put16(v, 2, seed);
+    put32(v, 0x0c, u32(x128));
+    put32(v, 0x10, u32(y128));
+    put32(v, 0x14, u32(p.character));
+    put32(v, 0x1c, u32(score.score));
+    put32(v, 0x20, u32(p.difficulty));
+    put32(v, 0x24, u32(p.continues));
+    put32(v, 0x2c, u32(p.graze));
+    put32(v, 0x30, u32(p.selected_spell_id));
+    put32(v, 0x38, u32(p.max_point));
     // 42b990 writes the immutable difficulty base to DAT_004be7e0.
-    static constexpr i32 base[]={5000,10000,15000,20000,20000,100000};
-    if(p.difficulty>=0 && p.difficulty<6) put32(v,0x3c,u32(base[p.difficulty]*100));
-    put32(v,0x40,u32(p.max_point_cap));
-    put32(v,0x44,u32(player.power)); put32(v,0x48,u32(player.max_power));
-    put32(v,0x4c,u32(player.power_step)); put32(v,0x50,u32(player.extra_lives));
-    put32(v,0x54,u32(player.life_pieces)); put32(v,0x58,u32(p.life_piece_threshold_index));
-    put32(v,0x5c,u32(player.bombs)); put32(v,0x60,u32(player.bomb_pieces));
-    put32(v,0x64,u32(p.ending_points)); put32(v,0x6c,focused?1:0); return v;
+    static constexpr i32 base[] = {5000, 10000, 15000, 20000, 20000, 100000};
+    if (p.difficulty >= 0 && p.difficulty < 6) put32(v, 0x3c, u32(base[p.difficulty] * 100));
+    put32(v, 0x40, u32(p.max_point_cap));
+    put32(v, 0x44, u32(player.power));
+    put32(v, 0x48, u32(player.max_power));
+    put32(v, 0x4c, u32(player.power_step));
+    put32(v, 0x50, u32(player.extra_lives));
+    put32(v, 0x54, u32(player.life_pieces));
+    put32(v, 0x58, u32(p.life_piece_threshold_index));
+    put32(v, 0x5c, u32(player.bombs));
+    put32(v, 0x60, u32(player.bomb_pieces));
+    put32(v, 0x64, u32(p.ending_points));
+    put32(v, 0x6c, focused ? 1 : 0);
+    return v;
 }
 bool ReplayRecorder::start(const std::vector<u8>& top) {
-    if(top.size()!=0x74) return false;
-    top_=top; stages_.clear(); return true;
+    if (top.size() != 0x74) return false;
+    top_ = top;
+    stages_.clear();
+    return true;
 }
 bool ReplayRecorder::begin_stage(const std::vector<u8>& header) {
-    if(top_.size()!=0x74 || header.size()!=0xc4) return false;
-    const u16 number=u16(header[0]) | u16(header[1])<<8;
+    if (top_.size() != 0x74 || header.size() != 0xc4) return false;
+    const u16 number = u16(header[0]) | u16(header[1]) << 8;
     // 449070 owns one stage block per stage index; retry replaces that block.
-    for(auto it=stages_.begin();it!=stages_.end();++it) if(it->number==number) {
-        stages_.erase(it); break;
-    }
-    if(stages_.size()>=8) return false;
-    ReplayStage stage; stage.number=number; stage.header=header; stages_.push_back(std::move(stage)); return true;
+    for (auto it = stages_.begin(); it != stages_.end(); ++it)
+        if (it->number == number) {
+            stages_.erase(it);
+            break;
+        }
+    if (stages_.size() >= 8) return false;
+    ReplayStage stage;
+    stage.number = number;
+    stage.header = header;
+    stages_.push_back(std::move(stage));
+    return true;
 }
 bool ReplayRecorder::record_spell_time(u32 index, i32 packed) {
     // 00412ee0 writes the per-stage array at header+0x70 (21 dwords).
@@ -59,12 +89,15 @@ bool ReplayRecorder::record_spell_time(u32 index, i32 packed) {
     put32(stages_.back().header, 0x70 + index * 4, u32(packed));
     return true;
 }
-bool ReplayRecorder::record(const GameInput& input,u8 slow_rate) {
-    if(stages_.empty()) return false;
-    auto& stage=stages_.back();
-    if(stage.frame_count%30==0) stage.events.push_back(slow_rate);
-    append16(stage.input,u16(input.held)); append16(stage.input,u16(input.pressed));
-    append16(stage.input,u16(input.released)); ++stage.frame_count; return true;
+bool ReplayRecorder::record(const GameInput& input, u8 slow_rate) {
+    if (stages_.empty()) return false;
+    auto& stage = stages_.back();
+    if (stage.frame_count % 30 == 0) stage.events.push_back(slow_rate);
+    append16(stage.input, u16(input.held));
+    append16(stage.input, u16(input.pressed));
+    append16(stage.input, u16(input.released));
+    ++stage.frame_count;
+    return true;
 }
 bool ReplayRecorder::encode(std::vector<u8>& out, const std::string& name, i32 score) const {
     return encode(out, name, score, ReplaySaveMeta{});
@@ -83,7 +116,8 @@ bool ReplayRecorder::encode(std::vector<u8>& out, const std::string& name, i32 s
     // 顶层 +0x0C u64 time_t（0x4549d0:84 保存确认时 __time64 写入）。
     const std::time_t date = meta.date != 0 ? meta.date : std::time(nullptr);
     const u64 stamp = u64(date);
-    for (int i = 0; i < 8; ++i) top[0x0C + i] = u8(stamp >> (8 * i));
+    for (int i = 0; i < 8; ++i)
+        top[0x0C + i] = u8(stamp >> (8 * i));
     // +0x14 总分（0x4484d0:0x4486ea 写 DAT_004be7c0；此处由调用方给出）。
     put32(top, 0x14, u32(score));
     // +0x54 慢速率 f32（0x4486e5..0x448715）：
@@ -101,9 +135,8 @@ bool ReplayRecorder::encode(std::vector<u8>& out, const std::string& name, i32 s
             }
         }
     }
-    const float slow = den > 0.0
-        ? static_cast<float>(100.0 - static_cast<double>(static_cast<float>(num / den)) * 100.0)
-        : 0.0f;
+    const float slow =
+        den > 0.0 ? static_cast<float>(100.0 - static_cast<double>(static_cast<float>(num / den)) * 100.0) : 0.0f;
     put32(top, 0x54, float_to_bits(slow));
     // +0x58 关卡块数（0x4484d0:0x4486d9 写存在的槽计数）。
     top[0x58] = u8(stages_.size());
@@ -113,9 +146,9 @@ bool ReplayRecorder::encode(std::vector<u8>& out, const std::string& name, i32 s
     // 平流 = 顶层 0x74 + stage 块链（0x4484d0:0x448718..0x448838，槽序 = 关号升序）。
     std::vector<u8> plain = top;
     std::vector<const ReplayStage*> ordered;
-    for (const auto& stage : stages_) ordered.push_back(&stage);
-    std::sort(ordered.begin(), ordered.end(),
-              [](const auto* a, const auto* b) { return a->number < b->number; });
+    for (const auto& stage : stages_)
+        ordered.push_back(&stage);
+    std::sort(ordered.begin(), ordered.end(), [](const auto* a, const auto* b) { return a->number < b->number; });
     for (size_t i = 0; i < ordered.size(); ++i) {
         const ReplayStage& stage = *ordered[i];
         auto input = stage.input;
@@ -123,7 +156,8 @@ bool ReplayRecorder::encode(std::vector<u8>& out, const std::string& name, i32 s
         // 输入字节，无事件字节（0x4480a0 的事件只写在录制路径；补 0 会破坏
         // (帧数+29)/30 不变式且文件无法解码）。
         if (meta.append_eof && i + 1 == ordered.size()) {
-            for (int j = 0; j < 6; ++j) input.push_back(0xff);
+            for (int j = 0; j < 6; ++j)
+                input.push_back(0xff);
         }
         auto header = stage.header;
         const u32 count = u32(input.size() / 6);
@@ -141,7 +175,10 @@ bool ReplayRecorder::encode(std::vector<u8>& out, const std::string& name, i32 s
     ReplayFile::xor_encrypt(packed.data(), packed.size(), 0x5C, 0xE1, 0x400);
 
     out.assign(0x24, 0);
-    out[0] = 't'; out[1] = '1'; out[2] = '3'; out[3] = 'r';
+    out[0] = 't';
+    out[1] = '1';
+    out[2] = '3';
+    out[3] = 'r';
     put16(out, 4, 2);
     put32(out, 0x0C, u32(0x24 + packed.size()));
     put32(out, 0x10, 0x100);
@@ -156,7 +193,10 @@ bool ReplayRecorder::encode(std::vector<u8>& out, const std::string& name, i32 s
         const size_t base = out.size();
         const size_t block_len = (13 + text.size() + 3) & ~size_t(3);
         out.resize(base + block_len, 0);
-        out[base] = 'U'; out[base + 1] = 'S'; out[base + 2] = 'E'; out[base + 3] = 'R';
+        out[base] = 'U';
+        out[base + 1] = 'S';
+        out[base + 2] = 'E';
+        out[base + 3] = 'R';
         put32(out, base + 4, u32(block_len));
         out[base + 8] = flag;
         std::copy(text.begin(), text.end(), out.begin() + ptrdiff_t(base + 12));
@@ -166,11 +206,10 @@ bool ReplayRecorder::encode(std::vector<u8>& out, const std::string& name, i32 s
     // SJIS 字节取自 .rdata 原样（0x4abdc0/%s 段 0x4abdcc、0x4abdf0、0x4abe00、
     // 0x4abe0c、0x4abe2c、0x4abe38、0x4abe6c/0x4abe7c/0x4abe88/0x4abe44/0x4abe58、
     // 0x4abe9c、0x4abea8），避免源码编码层转写。
-    std::string text(
-        "\x93\x8C\x95\xFB\x90\x5F\x97\xEC\x95\x5F"      // 東方神霊廟（0x4abdc0：神=90 5F、廟=95 5F）
-        " "
-        "\x83\x8A\x83\x76\x83\x8C\x83\x43\x83\x74\x83\x40\x83\x43\x83\x8B\x8F\xEE\x95\xF1"
-        "\r\n");                                        // "%s リプレイファイル情報\r\n"
+    std::string text("\x93\x8C\x95\xFB\x90\x5F\x97\xEC\x95\x5F"  // 東方神霊廟（0x4abdc0：神=90 5F、廟=95 5F）
+                     " "
+                     "\x83\x8A\x83\x76\x83\x8C\x83\x43\x83\x74\x83\x40\x83\x43\x83\x8B\x8F\xEE\x95\xF1"
+                     "\r\n");  // "%s リプレイファイル情報\r\n"
     text += "Version ";
     text += meta.version;
     text += "\r\n";
@@ -187,14 +226,13 @@ bool ReplayRecorder::encode(std::vector<u8>& out, const std::string& name, i32 s
     localtime_r(&date, &local);
 #endif
     char line[64];
-    std::snprintf(line, sizeof line, "%02d/%02d/%02d %02d:%02d\r\n",
-                  local.tm_year % 100, local.tm_mon + 1, local.tm_mday,
-                  local.tm_hour, local.tm_min);
+    std::snprintf(line, sizeof line, "%02d/%02d/%02d %02d:%02d\r\n", local.tm_year % 100, local.tm_mon + 1,
+                  local.tm_mday, local.tm_hour, local.tm_min);
     text += "Date ";
     text += line;
     // "Chara %s"：表 0x4bb904，索引 = 顶层 +0x5C + +0x60（0x4489ee..0x4489fa）。
     static constexpr const char* kCharaTbl[8] = {
-        "Reimu  ", "Marisa ", "Sanae  ", "Youmu  ",   // 角色表 4 项（0x4ab91c/914/90c/904）
+        "Reimu  ", "Marisa ", "Sanae  ", "Youmu  ",  // 角色表 4 项（0x4ab91c/914/90c/904）
         "Easy   ", "Normal ", "Hard   ", "Lunatic",  // 表后紧邻的难度串（原版无界索引按此读）
     };
     const i32 chara = read_i32(top.data() + 0x5C);
@@ -249,8 +287,7 @@ bool ReplayRecorder::encode(std::vector<u8>& out, const std::string& name, i32 s
     append_user_block(0, text);
 
     // ---- 块 2（flag=1 コメント占位，0x448b49..0x448b5c；无 \r\n）----
-    append_user_block(1, std::string(
-        "\x83\x52\x83\x81\x83\x93\x83\x67\x82\xF0\x8F\x91\x82\xAF\x82\xDC\x82\xB7"));
+    append_user_block(1, std::string("\x83\x52\x83\x81\x83\x93\x83\x67\x82\xF0\x8F\x91\x82\xAF\x82\xDC\x82\xB7"));
     return true;
 }
-}
+}  // namespace th13

@@ -24,8 +24,7 @@ Vec3 normalize_scene_vector(Vec3 v) noexcept {
     const double z = v.z;
     const double length = std::sqrt(x * x + y * y + z * z);
     if (length == 0.0) return {};
-    return {static_cast<float>(x / length), static_cast<float>(y / length),
-            static_cast<float>(z / length)};
+    return {static_cast<float>(x / length), static_cast<float>(y / length), static_cast<float>(z / length)};
 }
 
 Matrix4 scene_look_at(Vec3 eye, Vec3 target, Vec3 up) noexcept {
@@ -60,18 +59,25 @@ Matrix4 scene_look_at(Vec3 eye, Vec3 target, Vec3 up) noexcept {
     // 注意 Wine builtin 的 D3DXVec3Normalize 在 length==0 时输出零向量
     // （0x10025F80-8D），与桩不同；该差异属上述未决项，端口与桩保持一致。
     if (zl == 0.0) zl = std::nan("");
-    zx /= zl; zy /= zl; zz /= zl;
+    zx /= zl;
+    zy /= zl;
+    zz /= zl;
     double xx = uy * zz - uz * zy, xy = uz * zx - ux * zz, xz = ux * zy - uy * zx;
     double xl = std::sqrt(xx * xx + xy * xy + xz * xz);
     if (xl == 0.0) xl = std::nan("");
-    xx /= xl; xy /= xl; xz /= xl;
+    xx /= xl;
+    xy /= xl;
+    xz /= xl;
     const double yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
     Matrix4 out;
-    out.m[0] = static_cast<float>(xx); out.m[4] = static_cast<float>(xy);
+    out.m[0] = static_cast<float>(xx);
+    out.m[4] = static_cast<float>(xy);
     out.m[8] = static_cast<float>(xz);
-    out.m[1] = static_cast<float>(yx); out.m[5] = static_cast<float>(yy);
+    out.m[1] = static_cast<float>(yx);
+    out.m[5] = static_cast<float>(yy);
     out.m[9] = static_cast<float>(yz);
-    out.m[2] = static_cast<float>(zx); out.m[6] = static_cast<float>(zy);
+    out.m[2] = static_cast<float>(zx);
+    out.m[6] = static_cast<float>(zy);
     out.m[10] = static_cast<float>(zz);
     out.m[3] = out.m[7] = out.m[11] = 0;
     out.m[12] = static_cast<float>(-(xx * ex + xy * ey + xz * ez));
@@ -93,8 +99,7 @@ Matrix4 scene_perspective(float fov, float aspect, float near_plane, float far_p
     out.m[11] = 1;
     // D3DXMatrixPerspectiveFovLH 原式 m34 = -zn*zf/(zf-zn)（oracle 桩同式）；
     // 经 -m22*zn 换算会差 1 ULP（frame-0 proj[14] 对拍实证）。
-    out.m[14] = -static_cast<float>(near_plane * far_plane /
-                                    static_cast<float>(far_plane - near_plane));
+    out.m[14] = -static_cast<float>(near_plane * far_plane / static_cast<float>(far_plane - near_plane));
     return out;
 }
 
@@ -128,8 +133,7 @@ AnmCamera stage_camera(const StageCamera& s, const GraphicsViewport& viewport) n
     // 字节级实证（近平面 30 原已一致）。aspect = 该相机视口宽高（ctx+0xd8
     // D3DVIEWPORT9 的 W/H；0x43bbc0 初始化两组视口 {0,0,640,480}/{32,16,384,448}，
     // 0x404140 绘制遍历按相机组切换——组路由语义待 battle_oracle 捕获后裁决）。
-    out.projection =
-        scene_perspective(s.fov, float(float(viewport.width) / float(viewport.height)), 30, 1800);
+    out.projection = scene_perspective(s.fov, float(float(viewport.width) / float(viewport.height)), 30, 1800);
     // 原版 0x43BB2C..0x43BB7C：x87 算 cross(direction, up) 存 f32，再调
     // IAT 0x4A22A0 = d3dx9_43.dll!D3DXVec3Normalize(edi+0x30, edi+0x30)
     // （capstone: 0x43BB7C ff15a0224a00；decomp 0043ba20.c 尾部）；

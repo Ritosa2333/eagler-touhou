@@ -1,15 +1,15 @@
 // 对局期平台服务（th15 ApplicationGame.cpp 裁剪：life_hud/bomb_hud/game_over
 // 保留，battle/敌机/符卡回调随分期接入）。
-#include "ApplicationState.hpp"
-#include "../multiplayer/Session.hpp"
 #include "../game/AnmText.hpp"
-#include "../game/RunScene.hpp"
-#include "../game/SpellPresentation.hpp"
-#include "../game/SpellElapsedTime.hpp"
 #include "../game/ResultRecord.hpp"
+#include "../game/RunScene.hpp"
+#include "../game/SpellElapsedTime.hpp"
+#include "../game/SpellPresentation.hpp"
+#include "../multiplayer/Session.hpp"
+#include "ApplicationState.hpp"
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <cstdio>
 #include <ctime>
 #ifdef __EMSCRIPTEN__
@@ -74,8 +74,7 @@ void ApplicationState::update_spell_time(bool active) {
     spell_time_packed = encode_spell_elapsed_time(end.seconds);
     // B' 注入缝（默认关闭 = 生产实时钟语义）：端到端以原 .rpy stage 头的
     // 同槽 dword 置换本局实时钟值（0x412ee0 取 QPC 实时，属保存时刻实时量）。
-    if (spell_time_pin_enabled_ && progress.stage >= 1 && progress.stage <= 7 &&
-        end.index >= 0 && end.index < 21) {
+    if (spell_time_pin_enabled_ && progress.stage >= 1 && progress.stage <= 7 && end.index >= 0 && end.index < 21) {
         spell_time_packed = spell_time_pin_[u32(progress.stage)][u32(end.index)];
     }
     if (replay_active || pending_replay_stage) {
@@ -94,8 +93,7 @@ void ApplicationState::update_spell_time(bool active) {
             std::memcpy(&stored, stage->header.data() + offset, 4);
             if (spell_time_packed_valid(stored)) spell_time_packed = stored;
         }
-    } else if (recorder.ready() &&
-               !recorder.record_spell_time(u32(end.index), spell_time_packed)) {
+    } else if (recorder.ready() && !recorder.record_spell_time(u32(end.index), spell_time_packed)) {
         fail("Replay spell time array unavailable");
     }
 }
@@ -117,9 +115,9 @@ bool ApplicationState::record_stage_clear() {
     // 0042cd40 only increments ordinary all-clear counters on stage6/Extra.
     // M1/T4：捕获拍纯判定+入队；record_run_clear+save 延至 commit 冲账
     // （帧失败档；ordinary_records_dirty 清位随冲账成功拍，序同原帧内）。
-    if (replay_active || progress.practice_mode != 0 ||
-        (progress.run_mode_flags & 0x30u) != 0 ||
-        (progress.stage != 6 && progress.stage != 7)) return true;
+    if (replay_active || progress.practice_mode != 0 || (progress.run_mode_flags & 0x30u) != 0 ||
+        (progress.stage != 6 && progress.stage != 7))
+        return true;
     PendingFileEvent entry;
     entry.kind = PendingFileEvent::Kind::StageClear;
     entry.capture_frame = recorder.capture_frame;
@@ -143,33 +141,30 @@ namespace {
 struct DeviceDialogueSink final : DialogueTextureSink {
     explicit DeviceDialogueSink(GraphicsDevice& device) : graphics(device) {}
     GraphicsDevice& graphics;
-    u32 texture(const AnmResource& resource, u32 index) override {
-        return graphics.texture(resource, index);
-    }
+    u32 texture(const AnmResource& resource, u32 index) override { return graphics.texture(resource, index); }
     TextureImage* pixels(u32 handle) override { return graphics.pixels(handle); }
-    void changed(u32 handle, const std::array<u32, 4>& region) override {
-        graphics.changed(handle, region);
-    }
+    void changed(u32 handle, const std::array<u32, 4>& region) override { graphics.changed(handle, region); }
 };
 }  // namespace
 
 bool ApplicationState::rasterize_spell_name(SpellPresentation& presentation) {
     DeviceDialogueSink sink{graphics};
-    return presentation.rasterize_name(sink,
-        [this](TextureImage& image, i32 x, i32 y, u32 color, const std::string& text) {
-            return fonts.draw_text(image, x, y, 0, color, text);
-        }) || fail(presentation.error.empty() ? fonts.error : presentation.error);
+    return presentation.rasterize_name(sink, [this](TextureImage& image, i32 x, i32 y, u32 color,
+                                                    const std::string& text) {
+        return fonts.draw_text(image, x, y, 0, color, text);
+    }) || fail(presentation.error.empty() ? fonts.error : presentation.error);
 }
 
-bool ApplicationState::rasterize_title_text(AnmVm& vm, u32 color,
-                                            const std::string& text, AnmTextAlignment alignment) {
+bool ApplicationState::rasterize_title_text(AnmVm& vm, u32 color, const std::string& text, AnmTextAlignment alignment) {
     DeviceDialogueSink sink{graphics};
     std::string error;
-    return rasterize_anm_text(vm, sink,
-        [this](TextureImage& image, i32 x, i32 y, u32 ink, const std::string& cp932) {
-            return fonts.draw_text(image, x, y, 0, ink, cp932);
-        }, color, text, alignment, 17, &error) ||
-        fail(error.empty() ? fonts.error : error);
+    return rasterize_anm_text(
+               vm, sink,
+               [this](TextureImage& image, i32 x, i32 y, u32 ink, const std::string& cp932) {
+                   return fonts.draw_text(image, x, y, 0, ink, cp932);
+               },
+               color, text, alignment, 17, &error) ||
+           fail(error.empty() ? fonts.error : error);
 }
 
 bool ApplicationState::dialogue_begin() {
@@ -177,8 +172,7 @@ bool ApplicationState::dialogue_begin() {
     // 0x1000），不等首行提交。sink 只做 graphics.texture() 查询，不写像素。
     DeviceDialogueSink sink{graphics};
     std::string error;
-    if (!dialogue_text.begin(animations, sink, error))
-        return fail("Dialogue text begin: " + error);
+    if (!dialogue_text.begin(animations, sink, error)) return fail("Dialogue text begin: " + error);
     return true;
 }
 
@@ -197,16 +191,15 @@ u64 ApplicationState::digest_dialogue_rollback() {
     return multiplayer::WorldState::digest_dialogue(dialogue_text.capture_rollback(animations, sink));
 }
 
-bool ApplicationState::dialogue_line(i32 row, const MsgLine& line, float box_x,
-                                     float box_y) {
+bool ApplicationState::dialogue_line(i32 row, const MsgLine& line, float box_x, float box_y) {
     DeviceDialogueSink sink{graphics};
     // 0x428ae0 case 0x11（429198-4291bb 反汇编）：正文样式 = (+0x178>>1)&1，
     // 即样式 0/1 = CreateFontA(0x20,400/600) 32px（0x45ac90/0x45aef0 字体表）；
     // 样式 4/5（40px）只用于 case 0xf/0x10 宣言大字。ruby 保持样式 2=15px/700。
     // FontDevice 槽位映射：样式0→槽0(32/400)、样式1→槽2(32/600)、样式2→槽4。
     const i32 body_profile = (line.text_attr & 2u) ? 2 : 0;
-    const DialogueRasterizer raster = [this, body_profile](TextureImage& image, i32 x, i32 y, bool ruby,
-                                              u32 color, const std::string& text) {
+    const DialogueRasterizer raster = [this, body_profile](TextureImage& image, i32 x, i32 y, bool ruby, u32 color,
+                                                           const std::string& text) {
         // 004282b0 sets VM+0x1c bit0x1000:0046e810 selects the
         // plain0045b1b0 path, not the outlined0045aef0 text path.
         return fonts.draw_text(image, x, y, ruby ? 4 : body_profile, color, text);
@@ -225,8 +218,7 @@ bool ApplicationState::dialogue_fade(i32 label) {
 
 bool ApplicationState::dialogue_anchor_y(float y) {
     std::string error;
-    if (!dialogue_text.set_anchor_y(animations, y, error))
-        return fail("Dialogue anchor: " + error);
+    if (!dialogue_text.set_anchor_y(animations, y, error)) return fail("Dialogue anchor: " + error);
     return true;
 }
 
@@ -243,8 +235,7 @@ bool ApplicationState::life_hud(i32 stock, i32 pieces) {
 }
 
 bool ApplicationState::bomb_hud(i32 stock, i32 pieces) {
-    return (run && run->hud.bombs(stock, pieces)) ||
-           fail(run ? run->hud.error : "Bomb HUD has no scene");
+    return (run && run->hud.bombs(stock, pieces)) || fail(run ? run->hud.error : "Bomb HUD has no scene");
 }
 
 bool ApplicationState::life_hud_seat(i32 seat, i32 lives, i32 pieces) {
@@ -252,8 +243,7 @@ bool ApplicationState::life_hud_seat(i32 seat, i32 lives, i32 pieces) {
     if (run->hud.mp_seat_count >= 2) {
         const HudPlayerState* seat_state = run->battle.seat_hud(seat);
         if (!seat_state) return fail("Multiplayer seat HUD state missing");
-        return run->hud.life_seat(seat, lives, pieces, seat_state->life_piece_threshold_index) ||
-               fail(run->hud.error);
+        return run->hud.life_seat(seat, lives, pieces, seat_state->life_piece_threshold_index) || fail(run->hud.error);
     }
     return life_hud(lives, pieces);
 }
@@ -282,8 +272,7 @@ bool ApplicationState::game_over() {
         game_over_music_cursor = audio_device.statistics().music_cursor;
     }
     const bool results_menu = mp_seat_count >= 2 || (progress.run_mode_flags & 0x30u) != 0;
-    if (!pause || !pause->open(results_menu ? PauseEntrance::BGameOver
-                                            : PauseEntrance::GameOver))
+    if (!pause || !pause->open(results_menu ? PauseEntrance::BGameOver : PauseEntrance::GameOver))
         return fail(pause ? pause->error : "Game-over menu has no owner");
     // 0043f69b/0043f6c3：覆盖层激活后即选 Player's Score（th128_08 预载槽 0
     // + 播放）；播放请求同时解除对局曲的暂停态（命令 step4 复位 music_paused）。
@@ -294,9 +283,7 @@ bool ApplicationState::request_pause() {
     return (pause && pause->open(PauseEntrance::Pause)) || fail(pause ? pause->error : "Pause has no owner");
 }
 
-bool ApplicationState::request_game_over() {
-    return game_over();
-}
+bool ApplicationState::request_game_over() { return game_over(); }
 
 bool ApplicationState::request_player_game_over() {
     // 00443240: exhausted lives in Replay (manager+10 == 1) call43e5a0;
@@ -317,8 +304,7 @@ bool ApplicationState::set_voice_pan(i32 id, float x) {
     // P3.1 defer 模式：Pan 观察随 Record 走，确认后由 Session audio_out_
     // 经 apply_request 冲账——不能再进本地挂起队（否则预测帧即触达且
     // 确认后重复应用）。单人路径保持 M1/T4 的 commit 冲账序不变。
-    if (!audio_device.defer_output)
-        pending_voice_pans_.push_back({recorder.capture_frame, id, x});
+    if (!audio_device.defer_output) pending_voice_pans_.push_back({recorder.capture_frame, id, x});
     return true;
 }
 
@@ -360,8 +346,7 @@ bool ApplicationState::request_extra_results() {
 bool ApplicationState::restart_run() {
     // A completed network run is immutable. A fresh multiplayer game starts
     // from the room, where both players agree on a new session identity.
-    if (multiplayer::session.Active() && !multiplayer::session.Simulating())
-        return return_to_title();
+    if (multiplayer::session.Active() && !multiplayer::session.Simulating()) return return_to_title();
     // Retry (0xa ordinary / 0xb practice, 0x440960 state 0x1d cursor 2) is a
     // fresh run, not the pending 0xc continuation. A pause opened while the
     // 0xc transition was active must discard that pending stage and resume
@@ -402,8 +387,7 @@ bool ApplicationState::continue_run() {
     // 驱动——defer 模式下三条请求经观察器即时冲账（apply_request），与
     // 单人路径同序同拍，不存在 seek 早于曲目应用的乱序。
     if (!game_over_music.empty() &&
-        (!audio_device.queue_music(2, -1, game_over_music) ||
-         !audio_device.finish_music_requests() ||
+        (!audio_device.queue_music(2, -1, game_over_music) || !audio_device.finish_music_requests() ||
          !audio_device.seek_music_frames(game_over_music_cursor)))
         return fail(audio_device.error);
     selection_player.extra_lives = 2;
@@ -411,12 +395,14 @@ bool ApplicationState::continue_run() {
     selection_player.bombs = 2;
     selection_player.bomb_pieces = 0;
     progress.ending_points = 200;
-    selection_player.power = selection_player.max_power < 0 ? selection_player.max_power :
-        (selection_player.power_step > 0 ? selection_player.power_step : 0);
+    selection_player.power = selection_player.max_power < 0
+                                 ? selection_player.max_power
+                                 : (selection_player.power_step > 0 ? selection_player.power_step : 0);
     // 4406f3 passes four power steps to 43d210, which caps at max_power.
     if (selection_player.power < selection_player.max_power)
-        selection_player.power = std::min(selection_player.max_power,
-            wrapping_add(selection_player.power, wrapping_mul(selection_player.power_step, 4)));
+        selection_player.power =
+            std::min(selection_player.max_power,
+                     wrapping_add(selection_player.power, wrapping_mul(selection_player.power_step, 4)));
     progress.continues = std::min(progress.continues + 1, 9);
     --progress.continue_stock;
     selection_score.score = 0;
@@ -424,7 +410,8 @@ bool ApplicationState::continue_run() {
     if (!run->hud.life(selection_player.extra_lives, selection_player.life_pieces) ||
         !run->hud.bombs(selection_player.bombs, selection_player.bomb_pieces) ||
         // 0x43fa90:548-552：continue 置 be808=200 后 0x42b030 无条件刷新。
-        !run->hud.trance_label_refresh()) return fail(run->hud.error);
+        !run->hud.trance_label_refresh())
+        return fail(run->hud.error);
     return true;
 }
 
@@ -440,13 +427,11 @@ bool ApplicationState::result_replay_save_available() const {
     return mp_seat_count < 2 && !replay_active && recorder.ready() && progress.continues == 0;
 }
 
-bool ApplicationState::result_ranking_available() const {
-    return mp_seat_count < 2;
-}
+bool ApplicationState::result_ranking_available() const { return mp_seat_count < 2; }
 
 bool ApplicationState::result_screen_data(TitleResultScreenData& out) const {
-    if (progress.character < 0 || progress.character >= kSaveCharacters ||
-        progress.difficulty < 0 || progress.difficulty >= kSaveDifficulties)
+    if (progress.character < 0 || progress.character >= kSaveCharacters || progress.difficulty < 0 ||
+        progress.difficulty >= kSaveDifficulties)
         return false;
     out = {};
     out.character = progress.character;
@@ -462,9 +447,8 @@ bool ApplicationState::result_screen_data(TitleResultScreenData& out) const {
     // TitleFrame::initialize selects ResultName only for AfterEnding reason 3;
     // other title returns must not invent a clear preview for this observer.
     const bool clear_result = !run && title &&
-        (title->state.return_reason == 3 ||
-         title->state.screen == TitleScreen::ResultName ||
-         title->state.screen == TitleScreen::ResultReplaySlot);
+                              (title->state.return_reason == 3 || title->state.screen == TitleScreen::ResultName ||
+                               title->state.screen == TitleScreen::ResultReplaySlot);
     out.current.stage = result_record_stage(clear_result, extra_results_open(), progress.stage);
     out.current.continues = progress.continues;
     out.current.timestamp = i64(std::time(nullptr));
@@ -473,13 +457,13 @@ bool ApplicationState::result_screen_data(TitleResultScreenData& out) const {
     // 与 record_result_entry 落盘共用同一表达式；原实现漏填导致预览行恒
     // 0.0%，与 END 实际记录漂移。
     out.current.progress_percent = result_slowdown_percent(slow_actual_, slow_budget_);
-    const auto& ranking = files.ordinary_records[size_t(progress.character)]
-                              .ranking[size_t(progress.difficulty)];
-    for (size_t i = 0; i < out.records.size(); ++i) out.records[i] = ranking[i];
+    const auto& ranking = files.ordinary_records[size_t(progress.character)].ranking[size_t(progress.difficulty)];
+    for (size_t i = 0; i < out.records.size(); ++i)
+        out.records[i] = ranking[i];
     // Preview the same ties-before-old insertion as FileStore::record_high_score,
     // without persisting a nameless score before the editor is confirmed.
-    if (mp_seat_count < 2 && !replay_active && progress.practice_mode == 0 &&
-        (progress.run_mode_flags & 0x30u) == 0 && selection_score.score >= 0) {
+    if (mp_seat_count < 2 && !replay_active && progress.practice_mode == 0 && (progress.run_mode_flags & 0x30u) == 0 &&
+        selection_score.score >= 0) {
         for (size_t i = 0; i < out.records.size(); ++i) {
             if (out.records[i].score > selection_score.score) continue;
             out.rank = i32(i);
@@ -503,16 +487,13 @@ bool ApplicationState::dialogue_visible(bool visible) {
     return true;
 }
 
-bool ApplicationState::save_replay() {
-    return save_replay_slot(1, "PLAYER");
-}
+bool ApplicationState::save_replay() { return save_replay_slot(1, "PLAYER"); }
 
 bool ApplicationState::save_replay_slot(i32 slot, const std::string& name) {
     return save_replay_slot(slot, name, nullptr);
 }
 
-bool ApplicationState::save_replay_slot(i32 slot, const std::string& name,
-                                        const ReplaySaveMeta* pinned) {
+bool ApplicationState::save_replay_slot(i32 slot, const std::string& name, const ReplaySaveMeta* pinned) {
     if (slot < 1 || slot > 25) return fail("Invalid replay slot");
     if (multiplayer_replay_save) {
         if (!multiplayer_replay_save(slot, name)) return fail("Multiplayer replay save failed");
@@ -525,8 +506,7 @@ bool ApplicationState::save_replay_slot(i32 slot, const std::string& name,
     if (pinned) {
         // 端到端注入：0x4484d0 保存时刻的可变字段由调用方钉住（date/slow/
         // stage_field/EOF/version），事件流与 stage 头仍来自生产录制路径。
-        if (!recorder.encode(bytes, name, selection_score.score, *pinned))
-            return fail("Replay recording unavailable");
+        if (!recorder.encode(bytes, name, selection_score.score, *pinned)) return fail("Replay recording unavailable");
     } else {
         // 生产默认（A 项）：+0x54 = fps 管理器实时计数（0x424990 +0x24/+0x2c，
         // 0x42b990 关首清零）；date=0 → encode 时刻真实时钟（0x4549d0:84）。
@@ -535,8 +515,7 @@ bool ApplicationState::save_replay_slot(i32 slot, const std::string& name,
         ReplaySaveMeta meta;
         meta.slow_numerator = slow_num_;
         meta.slow_denominator = slow_den_;
-        if (!recorder.encode(bytes, name, selection_score.score, meta))
-            return fail("Replay recording unavailable");
+        if (!recorder.encode(bytes, name, selection_score.score, meta)) return fail("Replay recording unavailable");
     }
     // 0x4484d0 写 replay/th13_NN.rpy 后，原版 0x4525b0 重扫目录即可在标题
     // Replay 菜单看到；网页版没有目录重扫，这里直接走既有 import_replay_bytes
@@ -544,13 +523,12 @@ bool ApplicationState::save_replay_slot(i32 slot, const std::string& name,
     char catalog_name[32];
     std::snprintf(catalog_name, sizeof catalog_name, "th13_%02d.rpy", slot);
     if (!import_replay_bytes(bytes.data(), bytes.size(), catalog_name))
-        return fail(replay_import_error_.empty() ? std::string("Replay catalog import failed")
-                                                 : replay_import_error_);
+        return fail(replay_import_error_.empty() ? std::string("Replay catalog import failed") : replay_import_error_);
 #ifdef __EMSCRIPTEN__
-    if (!th13_download_recorded_replay(bytes.data(), int(bytes.size()), slot))
-        return fail("Replay download failed");
+    if (!th13_download_recorded_replay(bytes.data(), int(bytes.size()), slot)) return fail("Replay download failed");
 #else
-    char filename[32]; std::snprintf(filename,sizeof filename,"th13_%02d.rpy",slot);
+    char filename[32];
+    std::snprintf(filename, sizeof filename, "th13_%02d.rpy", slot);
     FILE* file = std::fopen(filename, "wbx");
     if (!file) return fail("Replay file open failed");
     const bool written = std::fwrite(bytes.data(), 1, bytes.size(), file) == bytes.size();
@@ -565,9 +543,7 @@ bool ApplicationState::save_replay_slot(i32 slot, const std::string& name,
 
 bool ApplicationState::can_open_pause_options() const { return true; }
 bool ApplicationState::open_pause_options() { return true; }
-i32 ApplicationState::pause_option_value(i32 row) const {
-    return row == 0 ? files.bgm_volume : files.effect_volume;
-}
+i32 ApplicationState::pause_option_value(i32 row) const { return row == 0 ? files.bgm_volume : files.effect_volume; }
 bool ApplicationState::change_pause_option(i32 row, i32 delta) {
     // M1/T4：无效行原样 false（不 fail、不入队）；有效行捕获拍只入队——
     // 音量钳制读改写 + apply_volumes（设备音量写）+ save 全部延至 commit
@@ -587,15 +563,17 @@ bool ApplicationState::record_result_entry(const std::string& name, i32 stage) {
     // 拍语义）并入队；record_high_score+save_score 延至 commit 冲账（帧失败档）。
     if (replay_active || progress.practice_mode != 0) return true;
     TitlePlayerDataScore result;
-    result.score=selection_score.score; result.stage=stage;
-    result.continues=progress.continues; result.name=name;
-    result.timestamp=i64(std::time(nullptr));
+    result.score = selection_score.score;
+    result.stage = stage;
+    result.continues = progress.continues;
+    result.name = name;
+    result.timestamp = i64(std::time(nullptr));
     // 0x43d6b0:42-44：float@24 = 100 − 慢速率分子/分母×100（0x424990 累加
     // 器，关首 0x42b990 清零 → 末段值）；分母为 0（无有效帧）时记 0。
     // 与 result_screen_data 预插行共用 result_slowdown_percent（同一 slowdown
     // 字段语义，预览=落盘）。
     result.progress_percent = result_slowdown_percent(slow_actual_, slow_budget_);
-    result.available=true;
+    result.available = true;
     PendingFileEvent entry;
     entry.kind = PendingFileEvent::Kind::ResultEntry;
     entry.capture_frame = recorder.capture_frame;
@@ -614,21 +592,18 @@ bool ApplicationState::extra_results_open() const {
     return run && pause && pause->state.screen == PauseScreen::ExtraEnd;
 }
 
-std::string ApplicationState::last_result_name() const {
-    return files.last_name;
-}
+std::string ApplicationState::last_result_name() const { return files.last_name; }
 
-bool ApplicationState::record_clear_result_name(const std::string& name) {
-    return record_result_entry(name, 8);
-}
+bool ApplicationState::record_clear_result_name(const std::string& name) { return record_result_entry(name, 8); }
 
 bool ApplicationState::result_needs_name() const {
-    if (mp_seat_count >= 2 || replay_active || progress.practice_mode != 0 ||
-        (progress.run_mode_flags & 0x30u) != 0 || progress.character < 0 ||
-        progress.character >= kSaveCharacters || progress.difficulty < 0 ||
-        progress.difficulty >= kSaveDifficulties || selection_score.score < 0) return false;
+    if (mp_seat_count >= 2 || replay_active || progress.practice_mode != 0 || (progress.run_mode_flags & 0x30u) != 0 ||
+        progress.character < 0 || progress.character >= kSaveCharacters || progress.difficulty < 0 ||
+        progress.difficulty >= kSaveDifficulties || selection_score.score < 0)
+        return false;
     const auto& ranking = files.ordinary_records[size_t(progress.character)].ranking[size_t(progress.difficulty)];
-    for (const auto& entry : ranking) if (entry.score <= selection_score.score) return true;
+    for (const auto& entry : ranking)
+        if (entry.score <= selection_score.score) return true;
     return false;
 }
 
@@ -638,7 +613,8 @@ i32 ApplicationState::result_ranking(TitlePlayerDataScore rows[10]) const {
     // 同构插入预览（不落档）。
     TitleResultScreenData data;
     if (!result_screen_data(data) || data.rank < 0) return -1;
-    for (size_t i = 0; i < data.records.size(); ++i) rows[i] = data.records[i];
+    for (size_t i = 0; i < data.records.size(); ++i)
+        rows[i] = data.records[i];
     return data.rank;
 }
 

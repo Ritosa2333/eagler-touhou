@@ -1,7 +1,7 @@
 // stage1 全局变量供给（0x420380 int 视图 / 0x420d00 float 视图的行为子集）。
 // 语义依据与【待校准】清单见 docs/plans/event-contract.md；事件字段是 oracle 合同。
-#include "StageSim.hpp"
 #include "SessionState.hpp"
+#include "StageSim.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -16,14 +16,20 @@ const StageEnemy* primary_boss(const StageSim& sim) {
         if (!enemy->dead && enemy->script_id == sim.boss_slot[0]) return enemy.get();
     return nullptr;
 }
-}
+}  // namespace
 
 // ---------------- 全局变量（0x420380 int 视图 / 0x420d00 float 视图） ----------------
 
 bool StageGvars::integer(i32 id, i32& value) {
     StageSim& sim = *this->sim;
-    if(id>=-9926&&id<=-9923){value=sim.shared_integers[id+9926];return true;}
-    if(id>=-9922&&id<=-9915){value=truncate_int(sim.shared_floats[id+9922]);return true;}
+    if (id >= -9926 && id <= -9923) {
+        value = sim.shared_integers[id + 9926];
+        return true;
+    }
+    if (id >= -9922 && id <= -9915) {
+        value = truncate_int(sim.shared_floats[id + 9922]);
+        return true;
+    }
     StageEnemy* e = sim.current;
     switch (id) {
     case -10000:  // RAND（0x472c90 & 0x7fffffff）
@@ -64,21 +70,22 @@ bool StageGvars::integer(i32 id, i32& value) {
     case -9978:  // F0-F3 int 视图（ftol）
         value = e ? i32(e->f_slots[id + 9981]) : 0;
         return true;
-    case -9935: case -9934: case -9933: case -9932:  // F4-F7, 00420380.
+    case -9935:
+    case -9934:
+    case -9933:
+    case -9932:  // F4-F7, 00420380.
         value = e ? truncate_int(e->f_slots[id + 9939]) : 0;
         return true;
     case -9965: {
         // M3：最近合格玩家（R-G；查询时点 = ECL 变量求值，敌机位置基准）。
         float aim_x, aim_y;
-        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
-                           aim_x, aim_y);
+        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f, aim_x, aim_y);
         value = i32(aim_x);
         return true;
     }
     case -9964: {
         float aim_x, aim_y;
-        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
-                           aim_x, aim_y);
+        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f, aim_x, aim_y);
         value = i32(aim_y);
         return true;
     }
@@ -88,12 +95,18 @@ bool StageGvars::integer(i32 id, i32& value) {
         value = truncate_int(distance);
         return true;
     }
-    case -9943: case -9942: case -9941: case -9940: {
+    case -9943:
+    case -9942:
+    case -9941:
+    case -9940: {
         const auto* boss = primary_boss(sim);
         value = boss ? boss->i_slots[id + 9943] : 0;
         return true;
     }
-    case -9939: case -9938: case -9937: case -9936: {
+    case -9939:
+    case -9938:
+    case -9937:
+    case -9936: {
         const auto* boss = primary_boss(sim);
         value = boss ? i32(boss->f_slots[id + 9939]) : 0;
         return true;
@@ -169,9 +182,18 @@ bool StageGvars::integer(i32 id, i32& value) {
 
 bool StageGvars::floating(i32 id, float& value) {
     StageSim& sim = *this->sim;
-    if (id == -9931) { value = float(sim.last_created_enemy_id); return true; }
-    if(id>=-9926&&id<=-9923){value=float(sim.shared_integers[id+9926]);return true;}
-    if(id>=-9922&&id<=-9915){value=sim.shared_floats[id+9922];return true;}
+    if (id == -9931) {
+        value = float(sim.last_created_enemy_id);
+        return true;
+    }
+    if (id >= -9926 && id <= -9923) {
+        value = float(sim.shared_integers[id + 9926]);
+        return true;
+    }
+    if (id >= -9922 && id <= -9915) {
+        value = sim.shared_floats[id + 9922];
+        return true;
+    }
     StageEnemy* e = sim.current;
     switch (id) {
     case -10000:
@@ -201,23 +223,20 @@ bool StageGvars::floating(i32 id, float& value) {
     case -9965:
     case -9991: {
         float aim_x, aim_y;  // M3：最近合格玩家
-        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
-                           aim_x, aim_y);
+        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f, aim_x, aim_y);
         value = aim_x;
         return true;
     }
     case -9964:
     case -9990: {
         float aim_x, aim_y;
-        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
-                           aim_x, aim_y);
+        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f, aim_x, aim_y);
         value = aim_y;
         return true;
     }
-    case -9989: {  // ANGLE_PLAYER（0x443f60：自机位置指向玩家）
+    case -9989: {            // ANGLE_PLAYER（0x443f60：自机位置指向玩家）
         float aim_x, aim_y;  // M3：最近合格玩家
-        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
-                           aim_x, aim_y);
+        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f, aim_x, aim_y);
         const float dy = aim_y - (e ? e->position[1] : 0.0f);
         const float dx = aim_x - (e ? e->position[0] : 0.0f);
         if (dy == 0.0f && dx == 0.0f) {
@@ -251,7 +270,10 @@ bool StageGvars::floating(i32 id, float& value) {
     case -9978:
         value = e ? e->f_slots[id + 9981] : 0.0f;
         return true;
-    case -9935: case -9934: case -9933: case -9932:  // +0x1494..0x14a0.
+    case -9935:
+    case -9934:
+    case -9933:
+    case -9932:  // +0x1494..0x14a0.
         value = e ? e->f_slots[id + 9939] : 0.0f;
         return true;
     case -9963: {
@@ -270,10 +292,9 @@ bool StageGvars::floating(i32 id, float& value) {
     case -9958:  // 421107 reads the pre-quantization movement delta, not velocity.
         value = e ? float(std::atan2(double(e->motion_delta[1]), double(e->motion_delta[0]))) : 0.f;
         return true;
-    case -9944: {  // 00421367 -> 00423e20: current enemy to player distance.
+    case -9944: {            // 00421367 -> 00423e20: current enemy to player distance.
         float aim_x, aim_y;  // M3：最近合格玩家
-        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
-                           aim_x, aim_y);
+        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f, aim_x, aim_y);
         const double dx = double(e ? e->position[0] : 0.0f) - double(aim_x);
         const double dy = double(e ? e->position[1] : 0.0f) - double(aim_y);
         // x87 keeps the differences/products wide, then stores the squared
@@ -282,12 +303,18 @@ bool StageGvars::floating(i32 id, float& value) {
         value = float(std::sqrt(double(squared)));
         return true;
     }
-    case -9943: case -9942: case -9941: case -9940: {
+    case -9943:
+    case -9942:
+    case -9941:
+    case -9940: {
         const auto* boss = primary_boss(sim);
         value = boss ? float(boss->i_slots[id + 9943]) : 0.f;
         return true;
     }
-    case -9939: case -9938: case -9937: case -9936: {
+    case -9939:
+    case -9938:
+    case -9937:
+    case -9936: {
         const auto* boss = primary_boss(sim);
         value = boss ? boss->f_slots[id + 9939] : 0.f;
         return true;
@@ -307,7 +334,7 @@ bool StageGvars::floating(i32 id, float& value) {
     case -9957:
         value = 1.0f;
         return true;
-    case -9908: { // 00420d00 calls the same 00417e90 as the integer getter.
+    case -9908: {  // 00420d00 calls the same 00417e90 as the integer getter.
         i32 count = 0;
         integer(id, count);
         value = float(count);
@@ -323,7 +350,7 @@ bool StageGvars::floating(i32 id, float& value) {
 }
 
 i32* StageGvars::integer_destination(i32 id) {
-    if(id>=-9926&&id<=-9923)return &sim->shared_integers[id+9926];
+    if (id >= -9926 && id <= -9923) return &sim->shared_integers[id + 9926];
     StageEnemy* e = sim->current;
     if (e && id >= -9985 && id <= -9982) return &e->i_slots[id + 9985];
     if (id == -9914 && e) return &e->script_id;
@@ -337,7 +364,7 @@ i32* StageGvars::integer_destination(i32 id) {
 }
 
 float* StageGvars::float_destination(i32 id) {
-    if(id>=-9922&&id<=-9915)return &sim->shared_floats[id+9922];
+    if (id >= -9922 && id <= -9915) return &sim->shared_floats[id + 9922];
     StageEnemy* e = sim->current;
     if (e && id >= -9981 && id <= -9978) return &e->f_slots[id + 9981];
     if (e && id >= -9935 && id <= -9932) return &e->f_slots[id + 9939];

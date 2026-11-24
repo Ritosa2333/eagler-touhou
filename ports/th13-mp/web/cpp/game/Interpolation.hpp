@@ -6,8 +6,8 @@
 // 待 oracle 对照轮逐模式验证）。
 #pragma once
 
-#include "Types.hpp"
 #include "Timer.hpp"
+#include "Types.hpp"
 
 #include <array>
 
@@ -39,14 +39,12 @@ float interpolation_weight(i32 mode, float elapsed, float duration) noexcept;
 
 // ANM 插值通道族（th13 与 th15 同代的 ZUN 共享实现；算术顺序保持原版，
 // 插值改变的是碰撞/重放可见状态，不只是视效）。
-template <u32 N, bool Angle = false>
-struct FloatInterpolation {
+template <u32 N, bool Angle = false> struct FloatInterpolation {
     std::array<float, N> start{}, end{}, control1{}, control2{}, current{};
     Timer timer{0, 0, 0, 0, 0};
     i32 duration = 0, mode = 0;
 
-    void begin(i32 frames, i32 easing, const std::array<float, N>& from,
-               const std::array<float, N>& to) noexcept {
+    void begin(i32 frames, i32 easing, const std::array<float, N>& from, const std::array<float, N>& to) noexcept {
         start = from;
         end = to;
         duration = frames;
@@ -73,8 +71,7 @@ struct FloatInterpolation {
                 if constexpr (Angle) start[i] = normalize_angle(start[i]);
                 current[i] = start[i];
                 if (mode == 17) {
-                    control2[i] = static_cast<float>((Angle ? end[i] : control2[i]) +
-                                                     (Angle ? control2[i] : end[i]));
+                    control2[i] = static_cast<float>((Angle ? end[i] : control2[i]) + (Angle ? control2[i] : end[i]));
                     if constexpr (Angle) control2[i] = normalize_angle(control2[i]);
                 }
             }
@@ -98,7 +95,8 @@ struct FloatInterpolation {
                     current[i] = normalize_angle(static_cast<float>(
                         normalize_angle(static_cast<float>(
                             normalize_angle(static_cast<float>(normalize_angle(p) + normalize_angle(q))) +
-                            normalize_angle(r))) + normalize_angle(s)));
+                            normalize_angle(r))) +
+                        normalize_angle(s)));
                 else if constexpr (N == 3)
                     current[i] = i ? static_cast<float>(s + static_cast<float>(r + static_cast<float>(p + q)))
                                    : static_cast<float>(static_cast<float>(r + static_cast<float>(p + q)) + s);
@@ -113,18 +111,19 @@ struct FloatInterpolation {
             // calculation; the subsequent difference, product and sum each
             // store to f32. The old vec3 f32 chain came from an oracle run
             // whose x87 control word had not been initialized by the CRT.
-            const float weight = interpolation_weight(mode, timer.fractional,
-                                                       static_cast<float>(duration));
+            const float weight = interpolation_weight(mode, timer.fractional, static_cast<float>(duration));
             for (u32 i = 0; i < N; i++) {
                 float difference = static_cast<float>(end[i] - start[i]);
                 if constexpr (Angle) {
                     if (difference > 3.1415927410125732421875f)
-                        difference = static_cast<float>(end[i] - static_cast<float>(start[i] + 6.283185482025146484375f));
+                        difference =
+                            static_cast<float>(end[i] - static_cast<float>(start[i] + 6.283185482025146484375f));
                     else if (static_cast<float>(start[i] - end[i]) > 3.1415927410125732421875f)
-                        difference = static_cast<float>(end[i] - static_cast<float>(start[i] - 6.283185482025146484375f));
+                        difference =
+                            static_cast<float>(end[i] - static_cast<float>(start[i] - 6.283185482025146484375f));
                     difference = normalize_angle(difference);
-                    current[i] = normalize_angle(static_cast<float>(
-                        start[i] + normalize_angle(static_cast<float>(difference * weight))));
+                    current[i] = normalize_angle(
+                        static_cast<float>(start[i] + normalize_angle(static_cast<float>(difference * weight))));
                 } else {
                     current[i] = static_cast<float>(start[i] + static_cast<float>(difference * weight));
                 }
@@ -139,14 +138,12 @@ using Vec2Interpolation = FloatInterpolation<2>;
 using Vec3Interpolation = FloatInterpolation<3>;
 using AngleInterpolation = FloatInterpolation<1, true>;
 
-template <u32 N>
-struct IntegerInterpolation {
+template <u32 N> struct IntegerInterpolation {
     std::array<i32, N> start{}, end{}, control1{}, control2{}, current{};
     Timer timer{0, 0, 0, 0, 0};
     i32 duration = 0, mode = 0;
 
-    void begin(i32 frames, i32 easing, const std::array<i32, N>& from,
-               const std::array<i32, N>& to) noexcept {
+    void begin(i32 frames, i32 easing, const std::array<i32, N>& from, const std::array<i32, N>& to) noexcept {
         start = from;
         end = to;
         duration = frames;
@@ -186,12 +183,11 @@ struct IntegerInterpolation {
                 const float r = static_cast<float>(static_cast<float>(control1[i]) * h10);
                 const float s = static_cast<float>(static_cast<float>(control2[i]) * h11);
                 if constexpr (N == 1)
-                    current[i] = truncate_int(static_cast<float>(
-                        static_cast<float>(static_cast<float>(q + p) + r) + s));
+                    current[i] =
+                        truncate_int(static_cast<float>(static_cast<float>(static_cast<float>(q + p) + r) + s));
                 else
-                    current[i] = wrapping_add(wrapping_add(wrapping_add(truncate_int(p), truncate_int(q)),
-                                                          truncate_int(r)),
-                                              truncate_int(s));
+                    current[i] = wrapping_add(
+                        wrapping_add(wrapping_add(truncate_int(p), truncate_int(q)), truncate_int(r)), truncate_int(s));
             }
         } else {
             const float weight = interpolation_weight(mode, timer.fractional, static_cast<float>(duration));
@@ -200,12 +196,11 @@ struct IntegerInterpolation {
                     // 0x4662ca fimul / 0x4662cd fiadd：权重×(end-start) 与 +start
                     // 全程 x87 80-bit，0x4662d0 _ftol 只截断一次。double 在本
                     // 取值域（|start|,|end|<=255、weight 为 f32）精确等价。
-                    const double delta = static_cast<double>(wrapping_sub(end[i], start[i])) *
-                                         static_cast<double>(weight);
+                    const double delta =
+                        static_cast<double>(wrapping_sub(end[i], start[i])) * static_cast<double>(weight);
                     current[i] = truncate_int(static_cast<double>(start[i]) + delta);
                 } else {
-                    const float delta = static_cast<float>(
-                        static_cast<float>(wrapping_sub(end[i], start[i])) * weight);
+                    const float delta = static_cast<float>(static_cast<float>(wrapping_sub(end[i], start[i])) * weight);
                     current[i] = wrapping_add(start[i], truncate_int(delta));
                 }
             }

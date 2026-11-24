@@ -168,8 +168,7 @@ TEST(trance_missing_variant_and_missing_base_are_errors) {
     CHECK_EQ(missing_variant.statistics().track, 24);
     CHECK(missing_variant.trance_music(true));
     CHECK(!missing_variant.finish_music_requests());
-    CHECK(missing_variant.error.find("Missing TH13 alternate music track") !=
-          std::string::npos);
+    CHECK(missing_variant.error.find("Missing TH13 alternate music track") != std::string::npos);
 
     AudioDevice no_base;
     CHECK(no_base.initialize_effects_for_test(kAssetRoot));
@@ -232,7 +231,8 @@ TEST(music_commands_preload_play_and_fade) {
     // Case 5 fades over value*60 updates; at zero the music stops.
     CHECK(audio.queue_music(5, 1, ""));
     CHECK(audio.finish_music_requests());
-    for (int n = 0; n < 60; ++n) audio.update();
+    for (int n = 0; n < 60; ++n)
+        audio.update();
     CHECK(!has_nonzero(render(audio, 2048)));
 
     // value 0 stops immediately (0x460dd0 case 5).
@@ -253,7 +253,8 @@ TEST(music_real_asset_pcm_positive_negative_and_suspend) {
     CHECK(audio.seek_music_frames(44100));
     const auto pcm = render(audio, 4096);
     CHECK(has_nonzero(pcm));
-    for (float sample : pcm) CHECK(sample >= -1.0f && sample <= 1.0f);
+    for (float sample : pcm)
+        CHECK(sample >= -1.0f && sample <= 1.0f);
 
     // music_volume is read per mixed block (0x460dd0 case 8 / DAT_004e476c).
     audio.music_volume = 0;

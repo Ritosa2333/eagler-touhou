@@ -11,11 +11,11 @@
 // 断言口径：不查 cursor 数字，逐帧记录活立绘 VM 的 source_script/句柄/
 // visible/alpha/层桶提交；过渡帧允许交叠（原版时长），稳定帧旧树必须退场。
 // 负控：直接按旧机制（根广播双 pending）复刻切换，同一检测器必须检出残留。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
-#include "game/AnmManager.hpp"
 #include "game/AnmEnvironment.hpp"
+#include "game/AnmManager.hpp"
 #include "game/FrameScheduler.hpp"
 #include "game/Rng.hpp"
 #include "game/SessionState.hpp"
@@ -83,19 +83,14 @@ struct SwitchHarness {
     SwitchHarness() {
         updates[0].owner = updates[1].owner = &manager;
         updates[0].enabled = updates[1].enabled = true;
-        updates[0].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(true) ? 1 : 5;
-        };
-        updates[1].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(false) ? 1 : 5;
-        };
+        updates[0].run = [](void* p) { return static_cast<AnmManager*>(p)->update(true) ? 1 : 5; };
+        updates[1].run = [](void* p) { return static_cast<AnmManager*>(p)->update(false) ? 1 : 5; };
         CHECK(scheduler.add(updates[0], FramePass::Update, 9) >= 0);
         CHECK(scheduler.add(updates[1], FramePass::Update, 34) >= 0);
         std::vector<u8> title;
         CHECK(read_repo_file("artifacts/reference/raw/title.anm", title));
         CHECK(manager.load(16, title.data(), u32(title.size())));
-        menu = std::make_unique<TitleCharacterMenu>(state, progress, choice, manager, host,
-                                                    TitleSceneResources{});
+        menu = std::make_unique<TitleCharacterMenu>(state, progress, choice, manager, host, TitleSceneResources{});
     }
 
     // 直接入角色屏（生产 Difficulty→Character 由 title_state/clear 套件覆盖；
@@ -119,7 +114,8 @@ struct SwitchHarness {
     }
 
     void advance(int frames, u32 pressed = 0, u32 repeated = 0) {
-        for (int i = 0; i < frames; i++) frame(pressed, repeated);
+        for (int i = 0; i < frames; i++)
+            frame(pressed, repeated);
     }
 
     AnmVm* portrait(i32 character) {
@@ -136,8 +132,7 @@ struct SwitchHarness {
         // 原版绘制门（FUN_0046a150 / FUN_00469b10）要求 vm+0x18 bit0 与 bit1
         // 同时置位；00470030 只清 bit1，bit0/visible 保留。旧检测只看
         // visible+alpha，会把「脚本可见但绘制使能已清」误判为在绘。
-        return vm && vm->visible && (vm->visual.flags & 3u) == 3u &&
-               (vm->visual.color >> 24) != 0;
+        return vm && vm->visible && (vm->visual.flags & 3u) == 3u && (vm->visual.color >> 24) != 0;
     }
 
     PortraitFrame observe(i32 character) {
@@ -184,7 +179,7 @@ TEST(character_switch_exits_old_portrait_immediately) {
     new_log.push_back(h.observe(1));
     for (int i = 0; i < 24; i++) {
         h.frame();
-            old_log.push_back(h.observe(0));
+        old_log.push_back(h.observe(0));
         new_log.push_back(h.observe(1));
     }
     // 退场 immediate：按键帧已跳 label17（层 22）。
@@ -316,8 +311,8 @@ TEST(character_switch_keeps_uncleared_tags_hidden) {
             AnmVm* tag = h.clear_tag(c);
             CHECK(tag != nullptr);
             CHECK(!SwitchHarness::drawn(tag));
-            CHECK(tag->visible);                    // 0x470030 保留 bit0
-            CHECK_EQ(tag->visual.flags & 2u, 0u);   // 绘制使能已清
+            CHECK(tag->visible);                   // 0x470030 保留 bit0
+            CHECK_EQ(tag->visual.flags & 2u, 0u);  // 绘制使能已清
             CHECK_EQ(tag->pending_interrupt, 0);
         }
     }

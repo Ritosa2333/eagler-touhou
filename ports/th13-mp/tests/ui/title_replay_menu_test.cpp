@@ -7,13 +7,13 @@
 // 录像夹具走保存路径合成（字面量压缩 → 双趟加密 → 0x24 头容器），
 // 顶层头/stage 头字段按 0x448c40 布局（+0x0C 时刻、+0x14 分、+0x5C..0x70
 // 装备、+0x68 路线、+0x6C 续关；stage +0x1C 起始分）。
+#include "../harness/test_framework.hpp"
 #include "ui_test_fixtures.hpp"
 #include <cstdio>
-#include "../harness/test_framework.hpp"
 
-#include "game/TitleScene.hpp"
-#include "game/TitleMainMenu.hpp"
 #include "game/FrameScheduler.hpp"
+#include "game/TitleMainMenu.hpp"
+#include "game/TitleScene.hpp"
 
 #include <ctime>
 #include <memory>
@@ -50,9 +50,8 @@ std::vector<u8> literal_compress(const std::vector<u8>& plain) {
 }
 
 // 顶层头字段（0x448c40 布局）+ stage 块链。
-std::vector<u8> build_replay(i32 character, i32 rank, i32 route, i32 continues, i64 stamp,
-                             bool spell_practice, const std::vector<std::pair<i32, i32>>& stages,
-                             float slow = 0.f) {
+std::vector<u8> build_replay(i32 character, i32 rank, i32 route, i32 continues, i64 stamp, bool spell_practice,
+                             const std::vector<std::pair<i32, i32>>& stages, float slow = 0.f) {
     const u32 frames = 60;
     std::vector<u8> plain(0x74, 0);
     const char name[] = "TESTER";
@@ -156,8 +155,7 @@ struct ReplayMenuHost final : TitleScenePlatform {
     // TitleReplayPlatform
     i32 replay_count() const override { return i32(slots.size()); }
     const ReplayFile* replay_entry(i32 index) const override {
-        return index >= 0 && index < i32(slots.size()) && slots[u32(index)] ? slots[u32(index)].get()
-                                                                           : nullptr;
+        return index >= 0 && index < i32(slots.size()) && slots[u32(index)] ? slots[u32(index)].get() : nullptr;
     }
     std::string replay_filename(i32 index) const override {
         return index >= 0 && index < i32(slots.size()) ? names[u32(index)] : std::string();
@@ -182,7 +180,8 @@ struct ReplayMenuHost final : TitleScenePlatform {
 // title.anm 合成镜像（title_state_test 同款布局；104/89 平凡脚本已覆盖）。
 std::vector<u8> title_anm_fixture() {
     std::vector<std::vector<AnmIns>> scripts(243);
-    for (auto& script : scripts) script = {wait(), stop()};
+    for (auto& script : scripts)
+        script = {wait(), stop()};
     auto spawn_range = [&](i32 root, i32 first, i32 last) {
         scripts[u32(root)].clear();
         for (i32 child = first; child <= last; child++)
@@ -224,12 +223,8 @@ struct ReplayHarness {
     ReplayHarness() {
         animation_updates[0].owner = animation_updates[1].owner = &manager;
         animation_updates[0].enabled = animation_updates[1].enabled = true;
-        animation_updates[0].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(true) ? 1 : 5;
-        };
-        animation_updates[1].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(false) ? 1 : 5;
-        };
+        animation_updates[0].run = [](void* p) { return static_cast<AnmManager*>(p)->update(true) ? 1 : 5; };
+        animation_updates[1].run = [](void* p) { return static_cast<AnmManager*>(p)->update(false) ? 1 : 5; };
         CHECK(scheduler.add(animation_updates[0], FramePass::Update, 9) >= 0);
         CHECK(scheduler.add(animation_updates[1], FramePass::Update, 34) >= 0);
         CHECK(load_bank(manager, 16, title_anm_fixture()));
@@ -237,8 +232,7 @@ struct ReplayHarness {
         CHECK(load_bank(manager, 2, synthetic_anm(8, trivial_scripts(20))));
         CHECK(load_bank(manager, 19, synthetic_anm(4, trivial_scripts(4))));
         CHECK(load_bank(manager, 8, synthetic_anm(4, trivial_scripts(4))));
-        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler,
-                                             TitleSceneResources{});
+        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler, TitleSceneResources{});
         CHECK(scene->error.empty());
         scene->state.return_reason = 0;
     }
@@ -249,7 +243,8 @@ struct ReplayHarness {
         CHECK(scheduler.draw() >= 0);
     }
     void advance(int frames, u32 pressed = 0, u32 repeated = 0) {
-        for (int i = 0; i < frames; i++) frame(pressed, repeated);
+        for (int i = 0; i < frames; i++)
+            frame(pressed, repeated);
     }
     void reach_menu() {
         advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
@@ -258,7 +253,8 @@ struct ReplayHarness {
     }
     // 主菜单光标到 Replay(4)：↓ 跳过禁用 1（0→2→3→4）→ Z 确认 → 转屏。
     void enter_replay() {
-        for (int i = 0; i < 3; i++) frame(0x20);
+        for (int i = 0; i < 3; i++)
+            frame(0x20);
         CHECK_EQ(scene->state.menu.cursor, 4);
         frame(0x01);
         advance(25);
@@ -283,8 +279,8 @@ TEST(replay_menu_navigates_pages_and_returns) {
     harness.host.put(0, "th13_01.rpy", bytes);  // th13_01.rpy → 编号槽 0
     harness.reach_menu();
     harness.enter_replay();
-    CHECK(harness.scene->state.handles[104] != 0);      // s104 徽记
-    CHECK(harness.scene->state.replay_ascii_root != 0); // ascii s19 粒子根
+    CHECK(harness.scene->state.handles[104] != 0);       // s104 徽记
+    CHECK(harness.scene->state.replay_ascii_root != 0);  // ascii s19 粒子根
     CHECK(harness.scene->state.menu.cursor == 0);
     CHECK(harness.scene->error.empty());
     // 页 0 行文本：槽 0 = "No.01 <名字> <yy>/<mm>/<dd> .. <角色> <难度> <路线>"、
@@ -294,10 +290,9 @@ TEST(replay_menu_navigates_pages_and_returns) {
     const std::time_t stamp = std::time_t(kStamp);
     CHECK(localtime_r(&stamp, &broken) != nullptr);
     char expected[128];
-    std::snprintf(expected, sizeof expected,
-                  "No.01 TESTER %.2d/%.2d/%.2d %.2d:%.2d Youmu   Normal  All %2.1f%%",
-                  broken.tm_year % 100, broken.tm_mon + 1, broken.tm_mday, broken.tm_hour,
-                  broken.tm_min, double(file.slow_rate));
+    std::snprintf(expected, sizeof expected, "No.01 TESTER %.2d/%.2d/%.2d %.2d:%.2d Youmu   Normal  All %2.1f%%",
+                  broken.tm_year % 100, broken.tm_mon + 1, broken.tm_mday, broken.tm_hour, broken.tm_min,
+                  double(file.slow_rate));
     harness.host.texts.clear();
     harness.frame();
     CHECK(harness.host.texts.size() >= 25);
@@ -305,8 +300,7 @@ TEST(replay_menu_navigates_pages_and_returns) {
     CHECK_EQ(harness.host.texts[0].color, 0xffffff00u);
     CHECK_NEAR(harness.host.texts[0].position.x, 58.f, 1e-5);
     CHECK_NEAR(harness.host.texts[0].position.y, 80.f, 1e-5);
-    CHECK_EQ(harness.host.texts[1].text,
-             std::string("No.02 -------- --/--/-- --:-- ------- ------- --- ---%"));
+    CHECK_EQ(harness.host.texts[1].text, std::string("No.02 -------- --/--/-- --:-- ------- ------- --- ---%"));
     CHECK_EQ(harness.host.texts[1].color, 0xff808080u);
     CHECK_NEAR(harness.host.texts[1].position.y, 95.f, 1e-5);  // 80 + 行距 15
     // ↓ 移行（音 10）；→ 换页（页 1 全空用户行 "User …"；0x452300 用户槽 25+）。
@@ -320,8 +314,7 @@ TEST(replay_menu_navigates_pages_and_returns) {
     harness.host.texts.clear();
     harness.frame();
     CHECK(harness.host.texts.size() >= 25);
-    CHECK_EQ(harness.host.texts[0].text,
-             std::string("User  -------- --/--/-- --:-- ------- ------- --- ---%"));
+    CHECK_EQ(harness.host.texts[0].text, std::string("User  -------- --/--/-- --:-- ------- ------- --- ---%"));
     // ← 回页 0；X 逐级返回（case5 收面 → 主菜单；徽记/粒子根槽清零）。
     harness.frame(0x40);
     harness.frame(0x100);
@@ -337,8 +330,7 @@ TEST(replay_menu_navigates_pages_and_returns) {
 TEST(replay_menu_stage_select_and_launch) {
     ReplayHarness harness;
     // stages 1..3：起始分 0 / 111 / 2222；顶层最终分 24681357、续关 2。
-    const std::vector<u8> bytes =
-        build_replay(0, 1, 8, 2, kStamp, false, {{1, 0}, {2, 111}, {3, 2222}});
+    const std::vector<u8> bytes = build_replay(0, 1, 8, 2, kStamp, false, {{1, 0}, {2, 111}, {3, 2222}});
     harness.host.put(1, "th13_02.rpy", bytes);  // 编号槽 1 = 页 0 行 1
     harness.reach_menu();
     harness.enter_replay();
@@ -392,8 +384,7 @@ TEST(replay_menu_stage_select_and_launch) {
 // case4 X 回列表（光标/计数还原）；再次确认第 2 关 → start_replay 链序 1。
 TEST(replay_menu_stage_escape_returns_and_second_stage) {
     ReplayHarness harness;
-    const std::vector<u8> bytes =
-        build_replay(0, 1, 8, 0, kStamp, false, {{1, 0}, {2, 111}, {3, 2222}});
+    const std::vector<u8> bytes = build_replay(0, 1, 8, 0, kStamp, false, {{1, 0}, {2, 111}, {3, 2222}});
     harness.host.put(0, "th13_01.rpy", bytes);
     harness.reach_menu();
     harness.enter_replay();
@@ -427,14 +418,15 @@ TEST(replay_menu_import_row_and_hint_selection) {
     harness.reach_menu();
     harness.enter_replay();
     // → ×2 到页 2、↓ ×24 到行 24（末槽 74 = 导入行）。
-    for (int i = 0; i < 2; i++) harness.frame(0x80);
-    for (int i = 0; i < 24; i++) harness.frame(0x20);
+    for (int i = 0; i < 2; i++)
+        harness.frame(0x80);
+    for (int i = 0; i < 24; i++)
+        harness.frame(0x20);
     CHECK_EQ(harness.scene->state.menu.cursor, 24);
     harness.host.texts.clear();
     harness.frame();
     CHECK(harness.host.texts.size() >= 25);
-    CHECK_EQ(harness.host.texts[24].text,
-             std::string("Import  -------- --/--/-- --:-- ------- ------- --- ---%"));
+    CHECK_EQ(harness.host.texts[24].text, std::string("Import  -------- --/--/-- --:-- ------- ------- --- ---%"));
     harness.frame(0x01);
     CHECK_EQ(harness.host.request_calls, 1);
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Replay));
@@ -457,8 +449,10 @@ TEST(replay_menu_import_request_failure_stays_operable) {
     harness.host.import_error = "Replay import needs the browser runtime";
     harness.reach_menu();
     harness.enter_replay();
-    for (int i = 0; i < 2; i++) harness.frame(0x80);
-    for (int i = 0; i < 24; i++) harness.frame(0x20);
+    for (int i = 0; i < 2; i++)
+        harness.frame(0x80);
+    for (int i = 0; i < 24; i++)
+        harness.frame(0x20);
     harness.host.texts.clear();
     harness.frame(0x01);
     CHECK_EQ(harness.host.request_calls, 1);
@@ -467,8 +461,7 @@ TEST(replay_menu_import_request_failure_stays_operable) {
     harness.host.texts.clear();
     harness.frame();
     CHECK(harness.host.texts.size() >= 25);
-    CHECK_EQ(harness.host.texts[24].text,
-             std::string("Import  Replay import needs the browser runtime"));
+    CHECK_EQ(harness.host.texts[24].text, std::string("Import  Replay import needs the browser runtime"));
     CHECK(harness.scene->error.empty());
 }
 

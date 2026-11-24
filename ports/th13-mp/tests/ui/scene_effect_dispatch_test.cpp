@@ -8,9 +8,9 @@
 //   401190：idx>=8 → ret 1（退休）；seg[idx]=seg[idx-1]+(cos a·s, sin a·s)
 //   （401490 fsincos 先 cos 后 sin），s=unit()*5+4（472de0 先取），a+=rand11*PI/5（472e90
 //   回卷，472e10 后取）——RNG 每帧消耗顺序 unit→signed_unit。
-#include "ui_test_fixtures.hpp"
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/AnmEnvironment.hpp"
 #include "game/AnmManager.hpp"
@@ -26,8 +26,12 @@ using namespace th13;
 using th13test::TestFileReader;
 
 namespace {
-u32 bits(float f) { u32 x; std::memcpy(&x, &f, 4); return x; }
+u32 bits(float f) {
+    u32 x;
+    std::memcpy(&x, &f, 4);
+    return x;
 }
+}  // namespace
 
 // case334 把执行敌机的 +0x44 主位置显式交给回调（41b7ac edi+0x44）。
 TEST(scene_effect_dispatch_passes_enemy_position) {
@@ -123,7 +127,8 @@ TEST(scene_effect_kind1_trail_init_tick_retire) {
     CHECK_EQ(bits(trail.angle), bits(normalize_angle(float(angle0 + delta))));
     CHECK_EQ(trail.colors[0] >> 24, 239u);  // 已生成段 alpha −16
     // 第 2..7 次更新生成 seg2..seg7（idx→8），第 8 次更新 idx>=8 → 返回 1 退休
-    for (i32 frame = 0; frame < 6; ++frame) CHECK_EQ(trail.update(random, 1.f), 0);
+    for (i32 frame = 0; frame < 6; ++frame)
+        CHECK_EQ(trail.update(random, 1.f), 0);
     CHECK_EQ(trail.age.current, 8);
     CHECK_EQ(trail.colors[6] >> 24, 207u);  // seg6 仅在 count=7 生成 seg7 时淡出一次（223−16）
     CHECK_EQ(trail.update(random, 1.f), 1);
@@ -136,7 +141,10 @@ TEST(scene_effect_callback_contract_kind6_unchanged) {
     StageEnemy enemy;
     sim.current = &enemy;
     bool called = false;
-    sim.scene_effect = [&](i32 kind, const Vec3&) { called = kind == 6; return called; };
+    sim.scene_effect = [&](i32 kind, const Vec3&) {
+        called = kind == 6;
+        return called;
+    };
     EclContext context;
     std::vector<u8> code;
     th13test::emit(code, 0, 334, 0, 255, 0, {6});

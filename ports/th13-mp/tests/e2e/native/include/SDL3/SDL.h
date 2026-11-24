@@ -35,14 +35,26 @@ inline void* SDL_LoadFile(const char* path, size_t* size) {
     }
     std::FILE* file = std::fopen(resolved.c_str(), "rb");
     if (!file) return nullptr;
-    if (std::fseek(file, 0, SEEK_END) != 0) { std::fclose(file); return nullptr; }
+    if (std::fseek(file, 0, SEEK_END) != 0) {
+        std::fclose(file);
+        return nullptr;
+    }
     const long length = std::ftell(file);
-    if (length < 0 || std::fseek(file, 0, SEEK_SET) != 0) { std::fclose(file); return nullptr; }
+    if (length < 0 || std::fseek(file, 0, SEEK_SET) != 0) {
+        std::fclose(file);
+        return nullptr;
+    }
     void* data = std::malloc(size_t(length));
-    if (!data) { std::fclose(file); return nullptr; }
+    if (!data) {
+        std::fclose(file);
+        return nullptr;
+    }
     const size_t got = length ? std::fread(data, 1, size_t(length), file) : 0;
     std::fclose(file);
-    if (got != size_t(length)) { std::free(data); return nullptr; }
+    if (got != size_t(length)) {
+        std::free(data);
+        return nullptr;
+    }
     if (size) *size = size_t(length);
     return data;
 }
@@ -50,7 +62,9 @@ inline void* SDL_LoadFile(const char* path, size_t* size) {
 // ---- Surface 小集（SDL3 布局子集；TTF bridge 两侧同型）----
 using SDL_PixelFormat = unsigned;
 inline constexpr SDL_PixelFormat SDL_PIXELFORMAT_RGBA32 = 0x61727467u;
-struct SDL_Color { Uint8 r, g, b, a; };
+struct SDL_Color {
+    Uint8 r, g, b, a;
+};
 struct SDL_Surface {
     int flags = 0;
     SDL_PixelFormat format = SDL_PIXELFORMAT_RGBA32;
@@ -63,7 +77,10 @@ inline SDL_Surface* SDL_ConvertSurface(SDL_Surface* src, SDL_PixelFormat format)
     if (!src || src->format != format) return nullptr;  // bridge 只产 RGBA32
     SDL_Surface* out = new SDL_Surface(*src);
     out->pixels = std::malloc(size_t(src->pitch) * size_t(src->h));
-    if (!out->pixels) { delete out; return nullptr; }
+    if (!out->pixels) {
+        delete out;
+        return nullptr;
+    }
     std::memcpy(out->pixels, src->pixels, size_t(src->pitch) * size_t(src->h));
     out->refcount = 1;
     return out;

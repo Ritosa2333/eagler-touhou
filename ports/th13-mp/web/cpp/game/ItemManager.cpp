@@ -41,15 +41,12 @@ void set_item_trace(bool enabled) {
     if (!enabled) item_trace_rows.clear();
 }
 
-void set_item_trace_frame(i32 frame) {
-    item_trace_frame = frame;
-}
+void set_item_trace_frame(i32 frame) { item_trace_frame = frame; }
 
 void item_trace_note(const char* tag, i32 max_point, i32 score) {
     if (!item_trace_enabled) return;
     char row[192];
-    std::snprintf(row, sizeof row, "f=%d note=%s max_point=%d score=%d\n",
-                  item_trace_frame, tag, max_point, score);
+    std::snprintf(row, sizeof row, "f=%d note=%s max_point=%d score=%d\n", item_trace_frame, tag, max_point, score);
     item_trace_rows += row;
 }
 
@@ -66,15 +63,17 @@ std::string take_item_trace() {
 // 0x42f020 体不触 game RNG（勘误后口径：神霊的两次抽取在 spawn_value_item）。
 void ItemManager::reset_items() {
     items_ = {};
-    ordinary_free_.clear(); cancel_free_.clear();
-    for (i32 i = 0; i < 600; ++i) ordinary_free_.push_back(i);
-    for (i32 i = 600; i < kItemCapacity; ++i) cancel_free_.push_back(i);
+    ordinary_free_.clear();
+    cancel_free_.clear();
+    for (i32 i = 0; i < 600; ++i)
+        ordinary_free_.push_back(i);
+    for (i32 i = 600; i < kItemCapacity; ++i)
+        cancel_free_.push_back(i);
     cancel_total_ = cancel_wave_ = 0;
     events_.clear();
 }
 
-void ItemManager::spawn_item(float x, float y, float z, i32 kind, float angle,
-                             float speed) {
+void ItemManager::spawn_item(float x, float y, float z, i32 kind, float angle, float speed) {
     if (kind >= 10 && kind <= 14) {
         spawn_value_item(kind - 10, x, y, z, 0.5f);
         return;
@@ -126,8 +125,7 @@ void ItemManager::spawn_item(float x, float y, float z, i32 kind, float angle,
     }
 }
 
-void ItemManager::spawn_item(const float pos[3], i32 type, float angle,
-                             float speed) {
+void ItemManager::spawn_item(const float pos[3], i32 type, float angle, float speed) {
     spawn_item(pos[0], pos[1], pos[2], type, angle, speed);
 }
 
@@ -162,13 +160,11 @@ void ItemManager::retire_item(Item& item) {
 // ——经由 bind_session 读，未绑定按 0），bit1 = 2（界外反弹门）。
 // 尾部溢出（0x438ec0:124-139）：kind∉{3,4} 产件后 mgr+0x8838 计数 +1，
 // >9 时同位（未钳制 pos）补一件 kind3（base 0.5，再耗两次 RNG）。
-void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
-                                   float base_speed) {
+void ItemManager::spawn_value_item(i32 kind, float x, float y, float z, float base_speed) {
     spawn_value_item(kind, x, y, z, base_speed, true);
 }
 
-void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
-                                   float base_speed, bool sound) {
+void ItemManager::spawn_value_item(i32 kind, float x, float y, float z, float base_speed, bool sound) {
     if (sound && spirit_birth_sound) spirit_birth_sound((kind == 4 ? 1 : kind) + 0x3b, x);
     if (!random_) return;
     for (Spirit& s : spirits_) {
@@ -185,10 +181,22 @@ void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
         const u32 quadrant = id & 3u;
         float angle = 0.0f;
         switch (quadrant) {
-        case 0: GameRandom::tag(9); angle = random_->signed_unit() * kPi * 0.25f - 2.3561945f; break;
-        case 1: GameRandom::tag(9); angle = random_->signed_unit() * kPi * 0.25f + 0.7853982f; break;
-        case 2: GameRandom::tag(9); angle = random_->signed_unit() * kPi * 0.25f + 2.3561945f; break;
-        default: GameRandom::tag(9); angle = random_->signed_unit() * kPi * 0.25f - 0.7853982f; break;
+        case 0:
+            GameRandom::tag(9);
+            angle = random_->signed_unit() * kPi * 0.25f - 2.3561945f;
+            break;
+        case 1:
+            GameRandom::tag(9);
+            angle = random_->signed_unit() * kPi * 0.25f + 0.7853982f;
+            break;
+        case 2:
+            GameRandom::tag(9);
+            angle = random_->signed_unit() * kPi * 0.25f + 2.3561945f;
+            break;
+        default:
+            GameRandom::tag(9);
+            angle = random_->signed_unit() * kPi * 0.25f - 0.7853982f;
+            break;
         }
         s.angle = wrap_angle(angle);
         // 0x438ec0：[0xb]（move_speed）= u*3.5 + base；[4]（speed 目标）= 0。
@@ -209,8 +217,7 @@ void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
         // 必须在出生当帧、本帧 0x46f170 主链 walk 之前完成：链尾序决定
         // 本帧尾插子 VM 是否被 walk 二次 tick（Pn16 s05 f11697）。
         if (spirit_spawn_animation)
-            (void)spirit_spawn_animation(u32(&s - spirits_.data()), s.serial,
-                                         kind_resolved, s.flags, s.x, s.y, s.z);
+            (void)spirit_spawn_animation(u32(&s - spirits_.data()), s.serial, kind_resolved, s.flags, s.x, s.y, s.z);
         break;
     }
     // 0x438ec0:124-139：溢出窗/计数块在 256 槽扫描循环结束之后无条件执行
@@ -234,7 +241,8 @@ void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
 
 // 0x4302a0：616 etClear 转换点登记。Stage1 无人消费，先记事件留证。
 void ItemManager::on_et_clear(float x, float y, float z) {
-    (void)x; (void)y;
+    (void)x;
+    (void)y;
     (void)z;
 }
 
@@ -252,14 +260,11 @@ void ItemManager::on_et_clear(float x, float y, float z) {
 //   4 聚焦吸附追踪：同 3（速度来源 = 玩家表速/3，转态时已除）。
 //   5 待转（type9）：sprite 每帧 -1，<0 → state2（重挂 ANM 属表现层）。
 //   随后 LAB_0042e7f7 收集尾（见 collect_check：收集盒 → 吸附盒）。
-void ItemManager::update(const ItemCollector& player) {
-    update_seats(&player, 1);
-}
+void ItemManager::update(const ItemCollector& player) { update_seats(&player, 1); }
 
 // M3：最近合格席（R-I7）。平距平方严格小于比较——平局保留较小席位。
-const ItemCollector& ItemManager::pick_collector(const ItemCollector* seats, i32 seat_count,
-                                                  float x, float y,
-                                                  const ItemCollector& fallback) {
+const ItemCollector& ItemManager::pick_collector(const ItemCollector* seats, i32 seat_count, float x, float y,
+                                                 const ItemCollector& fallback) {
     const ItemCollector* best = nullptr;
     float best_d2 = 0;
     for (i32 i = 0; i < seat_count; ++i) {
@@ -280,8 +285,8 @@ i32 ItemManager::power_receiver(const ItemCollector* seats, i32 seat_count, floa
     float best_d2 = 0;
     for (i32 i = 0; i < seat_count; ++i) {
         const ItemCollector& candidate = seats[i];
-        if (!candidate.eligible || !candidate.player ||
-            candidate.player->power >= candidate.player->max_power) continue;
+        if (!candidate.eligible || !candidate.player || candidate.player->power >= candidate.player->max_power)
+            continue;
         const float dx = candidate.x - x, dy = candidate.y - y;
         const float d2 = dx * dx + dy * dy;
         if (best < 0 || d2 < best_d2) {
@@ -306,25 +311,21 @@ void ItemManager::update_seats(const ItemCollector* seats, i32 seat_count) {
     for (i32 seat = 0; seat < seat_count; ++seat) {
         const auto& candidate = seats[seat];
         has_collector |= candidate.eligible;
-        team_autocollect |= candidate.eligible && !candidate.dialog &&
-            candidate.state != 2 && candidate.state != 4 && candidate.y < 128.0f;
+        team_autocollect |= candidate.eligible && !candidate.dialog && candidate.state != 2 && candidate.state != 4 &&
+                            candidate.y < 128.0f;
     }
     cancel_wave_ = 0;  // 0x42e380:74（type9 出场延迟的每帧波数）
     for (Item& item : items_) {
         if (!item.alive) continue;
-        if (item.target_seat >= 0 || (item.state != 3 && item.state != 4))
-            item.tracking_seat = -1;
-        if (item.tracking_seat >= seat_count ||
-            (item.tracking_seat >= 0 && !seats[item.tracking_seat].eligible))
+        if (item.target_seat >= 0 || (item.state != 3 && item.state != 4)) item.tracking_seat = -1;
+        if (item.tracking_seat >= seat_count || (item.tracking_seat >= 0 && !seats[item.tracking_seat].eligible))
             item.tracking_seat = -1;
         // A gift keeps its named recipient, including while that seat is
         // temporarily unable to collect. It never becomes a broadcast drop.
-        if (item.target_seat >= 0 &&
-            (item.target_seat >= seat_count || !seats[item.target_seat].eligible)) continue;
+        if (item.target_seat >= 0 && (item.target_seat >= seat_count || !seats[item.target_seat].eligible)) continue;
         // A homing P item follows a receiver below max Power; once that
         // receiver fills up, the nearest teammate still below max takes over.
-        const bool personal_power = seat_count >= 2 && item.target_seat < 0 &&
-            is_power_item(item.type);
+        const bool personal_power = seat_count >= 2 && item.target_seat < 0 && is_power_item(item.type);
         if (personal_power && item.tracking_seat >= 0) {
             const HudPlayerState* hud = seats[item.tracking_seat].player;
             if (hud && hud->power >= hud->max_power) {
@@ -335,12 +336,12 @@ void ItemManager::update_seats(const ItemCollector* seats, i32 seat_count) {
         // Gifts retain their explicit transaction recipient. Ordinary drops
         // acquire the nearest receiver when homing starts and keep it while valid.
         const ItemCollector* chosen = item.target_seat >= 0 ? &seats[item.target_seat]
-            : item.tracking_seat >= 0 ? &seats[item.tracking_seat]
-            : &pick_collector(seats, seat_count, item.x, item.y, fallback);
+                                      : item.tracking_seat >= 0
+                                          ? &seats[item.tracking_seat]
+                                          : &pick_collector(seats, seat_count, item.x, item.y, fallback);
         const auto magnet_for = [&](const ItemCollector& collector) {
-            return !has_collector || (!team_autocollect &&
-                collector.eligible && !collector.dialog &&
-                (collector.state == 2 || collector.state == 4 || collector.y >= 128.0f));
+            return !has_collector || (!team_autocollect && collector.eligible && !collector.dialog &&
+                                      (collector.state == 2 || collector.state == 4 || collector.y >= 128.0f));
         };
         bool magnet = magnet_for(*chosen);
         // Auto-collection sends a P item to the nearest seat below max Power.
@@ -405,7 +406,7 @@ void ItemManager::update_seats(const ItemCollector* seats, i32 seat_count) {
             // state5 不进收集尾（0x42e380 的 if 臂直落下一槽）。
             --item.sprite;
             if (item.sprite < 0) item.state = 2;
-            continue; // original state5 arm bypasses the timer tail, even after switching to2
+            continue;  // original state5 arm bypasses the timer tail, even after switching to2
         }
         default:
             break;
@@ -413,9 +414,10 @@ void ItemManager::update_seats(const ItemCollector* seats, i32 seat_count) {
         if (redirected_seat_ >= 0 && item.alive)
             item.tracking_seat = redirected_seat_;
         else
-            item.tracking_seat = item.alive && item.target_seat < 0 && seat_count >= 2 &&
-                player.eligible && (item.state == 3 || item.state == 4)
-                ? i32(&player - seats) : -1;
+            item.tracking_seat = item.alive && item.target_seat < 0 && seat_count >= 2 && player.eligible &&
+                                         (item.state == 3 || item.state == 4)
+                                     ? i32(&player - seats)
+                                     : -1;
         if (item.alive && item.state != 5) {
             item.anm_frame_prev = item.anm_frame;
             item.anm_time = float(item.anm_time + (rate > .99f && rate < 1.01f ? 1.f : rate));
@@ -431,7 +433,7 @@ void ItemManager::home_step(Item& item, const ItemCollector& player) {
     float dx = player.x - item.x;
     float dy = player.y - item.y;
     float angle = (dx == 0.0f && dy == 0.0f) ? 1.5707964f
-                    : float(std::atan2(double(dy), double(dx))); // 443f60 x87 result -> f32
+                                             : float(std::atan2(double(dy), double(dx)));  // 443f60 x87 result -> f32
     angle = wrap_angle(angle);
     // 42f540 stores only after sin/cos times speed, not between them.
     item.vx = float(std::cos(double(angle)) * double(item.homing_speed));
@@ -456,20 +458,19 @@ void ItemManager::home_step(Item& item, const ItemCollector& player) {
 //   ② 未命中且 state∉{3,4}：吸附盒（聚焦持键 DAT_004e4c08&8 → +0x14704..，
 //      否则 +0x1471C..，asm 0x42ebb9）命中 → state4、追踪初速 =
 //      *(player+0x660 表+8)/3（collector.homing_speed/3）。
-void ItemManager::collect_check(Item& item, const ItemCollector& player,
-                                 const ItemCollector* seats, i32 seat_count) {
+void ItemManager::collect_check(Item& item, const ItemCollector& player, const ItemCollector* seats, i32 seat_count) {
     // 一次性静态读取：逐道具逐帧的 getenv 死调用（wasm 侧恒空）清出热路径。
     static const bool item_dbg = std::getenv("TH13_ITEM_DBG") != nullptr;
     if (item_dbg)
-        std::fprintf(stderr, "COLLECTCHK state=%d type=%d pos=(%g,%g) box=[%g,%g,%g,%g]\n",
-                     player.state, item.type, item.x, item.y, player.box[0],
-                     player.box[1], player.box[2], player.box[3]);
+        std::fprintf(stderr, "COLLECTCHK state=%d type=%d pos=(%g,%g) box=[%g,%g,%g,%g]\n", player.state, item.type,
+                     item.x, item.y, player.box[0], player.box[1], player.box[2], player.box[3]);
     if (player.state == 2 || !player.eligible) return;
     // A seat at max Power hands a P item on to the nearest teammate below max
     // instead of collecting or attracting it.
     const auto pass_power_on = [&]() {
-        if (seat_count < 2 || item.target_seat >= 0 || !is_power_item(item.type) ||
-            !player.player || player.player->power < player.player->max_power) return false;
+        if (seat_count < 2 || item.target_seat >= 0 || !is_power_item(item.type) || !player.player ||
+            player.player->power < player.player->max_power)
+            return false;
         const i32 receiver = power_receiver(seats, seat_count, item.x, item.y);
         if (receiver < 0) return false;
         item.state = 3;
@@ -477,15 +478,11 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
         redirected_seat_ = receiver;
         return true;
     };
-    if (item.x < player.box[0] || item.y < player.box[1] ||
-        item.x > player.box[2] || item.y > player.box[3]) {
+    if (item.x < player.box[0] || item.y < player.box[1] || item.x > player.box[2] || item.y > player.box[3]) {
         // 吸附盒（0x42e380:305-315）：state 3/4 已在追踪，不再触发。
         if (item.state == 3 || item.state == 4) return;
-        const std::array<float, 4>& auto_box =
-            player.focus ? player.box_auto_focus : player.box_auto;
-        if (item.x < auto_box[0] || item.y < auto_box[1] ||
-            item.x > auto_box[2] || item.y > auto_box[3])
-            return;
+        const std::array<float, 4>& auto_box = player.focus ? player.box_auto_focus : player.box_auto;
+        if (item.x < auto_box[0] || item.y < auto_box[1] || item.x > auto_box[2] || item.y > auto_box[3]) return;
         if (pass_power_on()) return;
         item.homing_speed = player.homing_speed / 3.0f;
         item.state = 4;
@@ -500,8 +497,7 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
         // the delivered resource and its HUD update.
         if (item.type == ItemExtraLife) {
             hud.extra_lives = std::min(8, hud.extra_lives + 1);
-            if (life_changed)
-                life_changed(item.target_seat, std::max(0, hud.extra_lives), hud.life_pieces);
+            if (life_changed) life_changed(item.target_seat, std::max(0, hud.extra_lives), hud.life_pieces);
         } else if (collect_power_big(hud.power_step)) {
             if (option_power_changed) option_power_changed();
             push_level_up(item);
@@ -514,15 +510,24 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
     const i32 power_multiplier = !legacy_pickup_rewards && seat_count >= 2 ? seat_count : 1;
     // P items are personal: they fall through to the single-player collectors
     // below, which credit the receiving seat (last_player_) only.
-    if (seat_count >= 2 && item.target_seat < 0 && !is_power_item(item.type) &&
-        item.type != ItemPoint && item.type != ItemSpiritDrop) {
+    if (seat_count >= 2 && item.target_seat < 0 && !is_power_item(item.type) && item.type != ItemPoint &&
+        item.type != ItemSpiritDrop) {
         ResourceGrant grant;
         switch (item.type) {
-        case ItemLifePiece: grant.life_pieces = 1; break;
-        case ItemBombPiece: grant.bomb_pieces = 2; break;
-        case ItemExtraLife: grant.lives = 1; break;
-        case ItemBomb: grant.bombs = 1; break;
-        default: break;
+        case ItemLifePiece:
+            grant.life_pieces = 1;
+            break;
+        case ItemBombPiece:
+            grant.bomb_pieces = 2;
+            break;
+        case ItemExtraLife:
+            grant.lives = 1;
+            break;
+        case ItemBomb:
+            grant.bombs = 1;
+            break;
+        default:
+            break;
         }
         grant_resources(grant, seats, seat_count);
         events_.push_back({ItemEvent::Kind::Collected, item.type, item.x, item.y});
@@ -537,19 +542,17 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
             // 0x42edc0: 跨 be7f0 档 → 0x44ad60(-1, 道具位, 0xffffff40)
             // 哨兵弹字（digit10→sprite206）。漏掉会改变 10 槽环形池的
             // 游标，使后续弹字绘制顺序与原生相反（5507 首批次序实证）。
-            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y,
-                               0xffffff40u});
+            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y, 0xffffff40u});
         }
         break;
     case 2: {  // 点（0x42e380 case2）：得分 = 显示值/10（0x413bf0）
         const i32 value = point_value(player.y, item.state == 3);
         score_state.score += value / 10;
         if (score_state.score > 999999999) score_state.score = 999999999;
-        ++point_items_;  // 0x4be7d8
+        ++point_items_;          // 0x4be7d8
         ++progress.point_items;  // 同一计数进会话态（跨关累计；stage 头 +0x34 快照源）
         events_.push_back({ItemEvent::Kind::ScorePopup, value, item.x, item.y,
-                           (player.y > 128.0f && item.state != 3)
-                               ? 0xffffffffu : 0xffffff00u});
+                           (player.y > 128.0f && item.state != 3) ? 0xffffffffu : 0xffffff00u});
         break;
     }
     case 3: {  // 大P（0x42e959）
@@ -558,16 +561,14 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
             //（显示 +20000）；popup 0x4e20（无 0x42a430 演出）。
             score_state.score += 20000 / 10;
             if (score_state.score > 999999999) score_state.score = 999999999;
-            events_.push_back({ItemEvent::Kind::ScorePopup, 20000, item.x, item.y,
-                               0xff808080u});
+            events_.push_back({ItemEvent::Kind::ScorePopup, 20000, item.x, item.y, 0xff808080u});
             events_.push_back({ItemEvent::Kind::PowerLevelUp, 0, item.x, item.y});
         }
         if (collect_power_big(hud.power_step * power_multiplier)) {
             if (option_power_changed) option_power_changed();
             push_level_up(item);
             // 0x42e959: FUN_0043d210 返回跨档 → popup -1（0xffffff40）。
-            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y,
-                               0xffffff40u});
+            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y, 0xffffff40u});
         }
         break;
     }
@@ -587,16 +588,14 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
         if (hud.power >= hud.max_power) {
             // 0042e8ca loads 004aeaf0=100.0; 0042f510 converts to raw x100.
             add_max_point(100.0f);
-            events_.push_back({ItemEvent::Kind::ScorePopup, 100, item.x, item.y,
-                               0xff40ff40u});
+            events_.push_back({ItemEvent::Kind::ScorePopup, 100, item.x, item.y, 0xff40ff40u});
             events_.push_back({ItemEvent::Kind::PowerLevelUp, 0, item.x, item.y});
         }
         if (collect_power_big(hud.power_step * power_multiplier)) {
             if (option_power_changed) option_power_changed();
             push_level_up(item);
             // 0x42e8bd: FUN_0043d210 返回跨档 → popup -1（0xffffff40）。
-            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y,
-                               0xffffff40u});
+            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y, 0xffffff40u});
         }
         break;
     }
@@ -609,10 +608,8 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
         if (score_state.score > 999999999) score_state.score = 999999999;
         if (item_trace_enabled) {
             char row[192];
-            std::snprintf(row, sizeof row,
-                          "f=%d item9 max_point=%d->%d score=%d->%d\n",
-                          item_trace_frame, trace_mp, progress.max_point,
-                          trace_sc, score_state.score);
+            std::snprintf(row, sizeof row, "f=%d item9 max_point=%d->%d score=%d->%d\n", item_trace_frame, trace_mp,
+                          progress.max_point, trace_sc, score_state.score);
             item_trace_rows += row;
         }
         break;
@@ -627,8 +624,7 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player,
 // R-I3/R-I4: this grant contains personal quantities only. Never call the
 // complete single-player collector once per seat: it also changes team score,
 // gauge and point counts. Ghosts receive bookkeeping without being revived.
-void ItemManager::grant_resources(const ResourceGrant& grant,
-                                  const ItemCollector* seats, i32 seat_count) {
+void ItemManager::grant_resources(const ResourceGrant& grant, const ItemCollector* seats, i32 seat_count) {
     bool extended = false, bomb_gained = false;
     for (i32 seat = 0; seat < seat_count; ++seat) {
         auto& hud = *seats[seat].player;
@@ -636,37 +632,44 @@ void ItemManager::grant_resources(const ResourceGrant& grant,
             hud.life_pieces += grant.life_pieces;
             while (hud.life_pieces >= life_piece_threshold(hud.life_piece_threshold_index)) {
                 hud.life_pieces -= life_piece_threshold(hud.life_piece_threshold_index++);
-                if (hud.extra_lives < 8) { ++hud.extra_lives; extended = true; }
+                if (hud.extra_lives < 8) {
+                    ++hud.extra_lives;
+                    extended = true;
+                }
             }
         }
         if (challenge) {
             hud.bombs = 0;
             hud.bomb_pieces = 0;
         } else if (grant.bomb_pieces) {
-            if (hud.bombs >= 9) hud.bomb_pieces = 0;
+            if (hud.bombs >= 9)
+                hud.bomb_pieces = 0;
             else {
                 hud.bomb_pieces += grant.bomb_pieces + (seat == grant.bonus_bomb_piece_seat);
                 if (hud.bomb_pieces > 7) {
-                    hud.bomb_pieces = 0; ++hud.bombs; bomb_gained = true;
+                    hud.bomb_pieces = 0;
+                    ++hud.bombs;
+                    bomb_gained = true;
                 }
             }
         }
         hud.extra_lives = std::min(8, hud.extra_lives + grant.lives);
-        if (!challenge && grant.bombs && hud.bombs < 9) { ++hud.bombs; bomb_gained = true; }
+        if (!challenge && grant.bombs && hud.bombs < 9) {
+            ++hud.bombs;
+            bomb_gained = true;
+        }
     }
     if (extended) events_.push_back({ItemEvent::Kind::Extend, 1, last_player_.x, last_player_.y});
     if (bomb_gained) events_.push_back({ItemEvent::Kind::BombGained, 1, last_player_.x, last_player_.y});
     // The retail HUD reads the old session address; expose seat 0 there,
     // while each seat's own threshold remains authoritative.
-    if (grant.life_pieces)
-        seats[0].progress->life_piece_threshold_index = seats[0].player->life_piece_threshold_index;
+    if (grant.life_pieces) seats[0].progress->life_piece_threshold_index = seats[0].player->life_piece_threshold_index;
     // R-I3 广播发放：每席各触发一次，携带该席权威值（幽灵席照发——
     // 团队账面奖励保留，R-I8）。仅在该类资源确实入账时触发，避免无关
     // 席位重发同标签复位图标插值。
     if ((grant.lives || grant.life_pieces) && life_changed)
         for (i32 seat = 0; seat < seat_count; ++seat)
-            life_changed(seat, std::max(0, seats[seat].player->extra_lives),
-                         seats[seat].player->life_pieces);
+            life_changed(seat, std::max(0, seats[seat].player->extra_lives), seats[seat].player->life_pieces);
     if ((grant.bombs || grant.bomb_pieces) && bombs_changed)
         for (i32 seat = 0; seat < seat_count; ++seat)
             bombs_changed(seat, seats[seat].player->bombs, seats[seat].player->bomb_pieces);
@@ -688,8 +691,7 @@ bool ItemManager::collect_power_small(i32 amount) {
     if (hud.power >= hud.max_power) {
         score_state.score += 1000;
         if (score_state.score > 999999999) score_state.score = 999999999;
-        events_.push_back({ItemEvent::Kind::ScorePopup, 10000, c.x, c.y,
-                           0xffffffffu});
+        events_.push_back({ItemEvent::Kind::ScorePopup, 10000, c.x, c.y, 0xffffffffu});
         return false;
     }
     const i32 before = hud.power;
@@ -728,8 +730,7 @@ void ItemManager::collect_life_piece(i32 amount) {
         return;
     }
     hud.life_pieces += amount;
-    while (life_piece_threshold(progress.life_piece_threshold_index) <=
-           hud.life_pieces) {
+    while (life_piece_threshold(progress.life_piece_threshold_index) <= hud.life_pieces) {
         hud.life_pieces -= life_piece_threshold(progress.life_piece_threshold_index);
         if (hud.extra_lives < 8) {
             hud.extra_lives += 1;
@@ -761,8 +762,10 @@ void ItemManager::collect_bomb_piece(i32 amount) {
     if (hud.bomb_pieces > 7) {
         hud.bomb_pieces = 0;
         hud.bombs += 1;
-        if (hud.bombs > 9) hud.bombs = 9;
-        else events_.push_back({ItemEvent::Kind::BombGained, hud.bombs, c.x, c.y});
+        if (hud.bombs > 9)
+            hud.bombs = 9;
+        else
+            events_.push_back({ItemEvent::Kind::BombGained, hud.bombs, c.x, c.y});
         if (bombs_changed) bombs_changed(0, hud.bombs, hud.bomb_pieces);
     }
     if (bombs_changed) bombs_changed(0, hud.bombs, hud.bomb_pieces);
@@ -803,14 +806,12 @@ void ItemManager::collect_trance(i32 amount) {
     const i32 before = progress.ending_points;
     trance_add(progress, amount);
     if (before / 200 != progress.ending_points / 200) {
-        events_.push_back({ItemEvent::Kind::SpiritGained,
-                           progress.ending_points / 200, last_player_.x,
-                           last_player_.y});
+        events_.push_back(
+            {ItemEvent::Kind::SpiritGained, progress.ending_points / 200, last_player_.x, last_player_.y});
     }
     // 0x43d530:33-35：每次加值后（ANM 管理器非空）都调 0x42b030，与是否
     // 跨 200 段无关；封顶 600 时也一样。
-    events_.push_back({ItemEvent::Kind::TranceGained, progress.ending_points,
-                       last_player_.x, last_player_.y});
+    events_.push_back({ItemEvent::Kind::TranceGained, progress.ending_points, last_player_.x, last_player_.y});
 }
 
 // 点值（0x42e380 case2，asm 0x42e9e5-0x42ea94 直读；A = be7dc/100）：
@@ -827,8 +828,7 @@ void ItemManager::add_max_point(float displayed_increment) {
     // then add to DAT_004be7dc and cap against DAT_004be7e4.
     SessionState& progress = *last_player_.progress;
     progress.max_point += i32(double(displayed_increment) * 100.0);
-    if (progress.max_point > progress.max_point_cap)
-        progress.max_point = progress.max_point_cap;
+    if (progress.max_point > progress.max_point_cap) progress.max_point = progress.max_point_cap;
 }
 
 i32 ItemManager::point_value(float player_y, bool homing) const {
@@ -890,9 +890,7 @@ void ItemManager::set_spirit_trance(bool active) {
     }
 }
 
-void ItemManager::update_spirits(const ItemCollector& player) {
-    update_spirits_seats(&player, 1);
-}
+void ItemManager::update_spirits(const ItemCollector& player) { update_spirits_seats(&player, 1); }
 
 // M3：神霊多席步进（R-I7：每只按最近合格席——灵界角色门按实际拾取者
 // 的角色；单元素 = 单席零变化）。
@@ -904,28 +902,24 @@ void ItemManager::update_spirits_seats(const ItemCollector* seats, i32 seat_coun
     for (Spirit& s : spirits_) {
         if (!s.alive) continue;
         if (s.state != 2 && s.state != 4) s.tracking_seat = -1;
-        if (s.tracking_seat >= seat_count ||
-            (s.tracking_seat >= 0 && !seats[s.tracking_seat].eligible))
+        if (s.tracking_seat >= seat_count || (s.tracking_seat >= 0 && !seats[s.tracking_seat].eligible))
             s.tracking_seat = -1;
-        const ItemCollector& player = s.tracking_seat >= 0 ? seats[s.tracking_seat]
-            : pick_collector(seats, seat_count, s.x, s.y, fallback);
+        const ItemCollector& player =
+            s.tracking_seat >= 0 ? seats[s.tracking_seat] : pick_collector(seats, seat_count, s.x, s.y, fallback);
         // R-I3：结算宿主跟随选中席（同道具侧）。
         last_player_ = player;
         // R-I5：角色门按实际拾取者的席位角色（-1 = 单席回落
         // progress->character——DAT_004be7b8 语义）。
         const i32 character =
-            player.character >= 0 ? player.character
-                                  : (player.progress ? player.progress->character : 0);
+            player.character >= 0 ? player.character : (player.progress ? player.progress->character : 0);
         s.anm_frame_prev = s.anm_frame;
         s.anm_time = float(s.anm_time + (rate > .99f && rate < 1.01f ? 1.f : rate));
         s.anm_frame = truncate_int(s.anm_time);
         // ① 反弹门。
-        if ((s.flags & 2u) != 0 &&
-            (s.x < -192.0f || s.x > 192.0f || s.y < 0.0f || s.y > 448.0f)) {
+        if ((s.flags & 2u) != 0 && (s.x < -192.0f || s.x > 192.0f || s.y < 0.0f || s.y > 448.0f)) {
             // 43878b–438798 also reflects at x==192 when another axis
             // has already put the spirit outside the 384x448 box.
-            if (s.x <= -192.0f || s.x >= 192.0f)
-                s.angle = wrap_angle(-s.angle - kPi);
+            if (s.x <= -192.0f || s.x >= 192.0f) s.angle = wrap_angle(-s.angle - kPi);
             if (s.y <= 0.0f || s.y >= 448.0f) s.angle = wrap_angle(-s.angle);
         }
         // ② 衰减。
@@ -944,7 +938,10 @@ void ItemManager::update_spirits_seats(const ItemCollector* seats, i32 seat_coun
             break;
         }
         case 2: {
-            if (!player.eligible) { s.move_speed = 0.0f; break; }
+            if (!player.eligible) {
+                s.move_speed = 0.0f;
+                break;
+            }
             s.angle = wrap_angle(angle_to_player(s, player));
             s.move_speed = s.speed;
             if (s.speed < 12.0f) s.speed += 0.3f;
@@ -957,7 +954,10 @@ void ItemManager::update_spirits_seats(const ItemCollector* seats, i32 seat_coun
             break;
         }
         case 4: {
-            if (!player.eligible) { s.move_speed = 0.0f; break; }
+            if (!player.eligible) {
+                s.move_speed = 0.0f;
+                break;
+            }
             s.angle = wrap_angle(angle_to_player(s, player));
             s.move_speed = s.speed;
             if (s.speed < 4.0f) s.speed += 0.05f;
@@ -973,40 +973,40 @@ void ItemManager::update_spirits_seats(const ItemCollector* seats, i32 seat_coun
         case 5:
             // 438730 ->439550: homing toward boss slot0, while a nearby
             // living player may still reclaim the spirit (30px threshold).
-            if(!player.boss_present)s.state=1;
-            else s.angle=wrap_angle(float(std::atan2(double(player.boss_y-s.y),double(player.boss_x-s.x))));
-            s.move_speed=s.speed;
-            if(s.speed<4)s.speed=float(double(s.speed)+.035f);
-            if(player.eligible && player.state!=2) {
-                const float dx=s.x-player.x,dy=s.y-player.y;
-                if(float(double(dx)*dx+double(dy)*dy)<900)s.state=2;
+            if (!player.boss_present)
+                s.state = 1;
+            else
+                s.angle = wrap_angle(float(std::atan2(double(player.boss_y - s.y), double(player.boss_x - s.x))));
+            s.move_speed = s.speed;
+            if (s.speed < 4) s.speed = float(double(s.speed) + .035f);
+            if (player.eligible && player.state != 2) {
+                const float dx = s.x - player.x, dy = s.y - player.y;
+                if (float(double(dx) * dx + double(dy) * dy) < 900) s.state = 2;
             }
             break;
         default:
             continue;
         }
-        s.tracking_seat = seat_count >= 2 && player.eligible && (s.state == 2 || s.state == 4)
-            ? i32(&player - seats) : -1;
+        s.tracking_seat =
+            seat_count >= 2 && player.eligible && (s.state == 2 || s.state == 4) ? i32(&player - seats) : -1;
         // ④⑤ 公共尾。
         if ((s.flags & 1u) == 0) {
             // `frame` exposes the last tested lifetime value. Keep explicit
             // restored/debug state writes coherent with its fractional clock.
-            if (s.frame != s.lifetime_clock.previous)
-                s.lifetime_clock.set(wrapping_add(s.frame,1));
+            if (s.frame != s.lifetime_clock.previous) s.lifetime_clock.set(wrapping_add(s.frame, 1));
             // 438730 tests lifetime before401400 at the movement tail.
             s.frame = s.lifetime_clock.current;
             if (s.frame == 480) {
                 s.flags &= ~2u;
-                s.fade_requested = true; // 00438a77: label1, consumed by ANM tick.
+                s.fade_requested = true;  // 00438a77: label1, consumed by ANM tick.
             }
             if (s.x < -224.0f || s.x > 224.0f || s.y < -32.0f || s.y > 480.0f) {
                 s.alive = false;
                 s.tracking_seat = -1;
                 continue;
             }
-            if (spirit_animation_alive &&
-                !spirit_animation_alive(u32(&s - spirits_.data()), s.serial)) {
-                s.alive = false; // 00438aca: missing ANM retires before scoring.
+            if (spirit_animation_alive && !spirit_animation_alive(u32(&s - spirits_.data()), s.serial)) {
+                s.alive = false;  // 00438aca: missing ANM retires before scoring.
                 s.tracking_seat = -1;
                 continue;
             }
@@ -1031,7 +1031,8 @@ void ItemManager::update_spirits_seats(const ItemCollector* seats, i32 seat_coun
     if (spirit_window_ > 0) {
         spirit_window_clock_.decrement(&rate);
         spirit_window_ = spirit_window_clock_.current;
-    } else spirit_overflow_ = 0;
+    } else
+        spirit_overflow_ = 0;
 }
 
 float ItemManager::angle_to_player(const Spirit& s, const ItemCollector& player) {
@@ -1052,15 +1053,13 @@ float ItemManager::angle_to_player(const Spirit& s, const ItemCollector& player)
 //     （A-A%10，无下限钳）+ score += 值/10（0x413bf0）。
 //   bit0==1（trance 期产件）：无公共 trance；kind0/2 分别给残机/灵击碎片+2；
 //     kind3 → 点值 + score（无 trance）；其余同。
-void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player,
-                                  const ItemCollector* seats, i32 seat_count) {
+void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player, const ItemCollector* seats, i32 seat_count) {
     if (!player.eligible) return;
     SessionState& progress = *player.progress;
     // R-I5：角色门按实际拾取者的席位角色（-1 = 单席回落 DAT_004be7b8）。
     const i32 character = player.character >= 0 ? player.character : progress.character;
     const bool easy_difficulty = progress.difficulty < 5;  // DAT_004be7c4 < 5
-    events_.push_back({ItemEvent::Kind::Collected,
-                       10 + s.kind, s.x, s.y});
+    events_.push_back({ItemEvent::Kind::Collected, 10 + s.kind, s.x, s.y});
     const bool spirit_trace = item_trace_enabled;
     const i32 trace_max_point = progress.max_point;
     const i32 trace_score_before = player.score->score;
@@ -1070,9 +1069,11 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player,
         // 438b5d passes EAX=1 for ordinary-born spirits; 438d09 passes
         // EAX=2 for trance-born spirits. Both invoke the same 43d330.
         if (seat_count >= 2) {
-            ResourceGrant grant; grant.life_pieces = (s.flags & 1u) == 0 ? 1 : 2;
+            ResourceGrant grant;
+            grant.life_pieces = (s.flags & 1u) == 0 ? 1 : 2;
             grant_resources(grant, seats, seat_count);
-        } else collect_life_piece((s.flags & 1u) == 0 ? 1 : 2);
+        } else
+            collect_life_piece((s.flags & 1u) == 0 ? 1 : 2);
         break;
     case 1:
         if (easy_difficulty) {
@@ -1090,7 +1091,8 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player,
             grant.bomb_pieces = doubled && legacy_pickup_rewards ? 2 : 1;
             if (doubled && !legacy_pickup_rewards) grant.bonus_bomb_piece_seat = player.seat;
             grant_resources(grant, seats, seat_count);
-        } else collect_bomb_piece((s.flags & 1u) == 0 ? 1 : 2);
+        } else
+            collect_bomb_piece((s.flags & 1u) == 0 ? 1 : 2);
         break;
     case 3: {
         if ((s.flags & 1u) == 0) collect_trance(1);
@@ -1107,10 +1109,8 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player,
     }
     if (spirit_trace) {
         char row[224];
-        std::snprintf(row, sizeof row,
-                      "f=%d spirit kind=%d flags=%u max_point=%d score=%d->%d\n",
-                      item_trace_frame, s.kind, s.flags, trace_max_point,
-                      trace_score_before, player.score->score);
+        std::snprintf(row, sizeof row, "f=%d spirit kind=%d flags=%u max_point=%d score=%d->%d\n", item_trace_frame,
+                      s.kind, s.flags, trace_max_point, trace_score_before, player.score->score);
         item_trace_rows += row;
     }
     // 0x438730 收集瞬间的 front.anm 拾取动画：普通/灵界两套脚本表
@@ -1120,10 +1120,8 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player,
     // 创建为 flags=0 尾插、layer=-1、位置=神霊位；句柄原版即丢弃（ESI=0）。
     static constexpr i32 kPickup[2][4] = {{96, 102, 99, -1}, {97, 103, 100, -1}};
     const i32 pickup_kind = s.kind >= 0 && s.kind < 4 ? s.kind : -1;
-    const i32 pickup_script =
-        pickup_kind >= 0 ? kPickup[(s.flags & 1u) ? 1 : 0][pickup_kind] : -1;
-    if (pickup_script >= 0 && spirit_pickup_effect)
-        (void)spirit_pickup_effect(pickup_script, s.x, s.y, s.z);
+    const i32 pickup_script = pickup_kind >= 0 ? kPickup[(s.flags & 1u) ? 1 : 0][pickup_kind] : -1;
+    if (pickup_script >= 0 && spirit_pickup_effect) (void)spirit_pickup_effect(pickup_script, s.x, s.y, s.z);
     s.alive = false;
 }
 

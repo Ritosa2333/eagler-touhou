@@ -19,8 +19,7 @@
 namespace th13 {
 
 namespace {
-template <typename... T>
-std::string format(const char* pattern, T... values) {
+template <typename... T> std::string format(const char* pattern, T... values) {
     char text[256];
     std::snprintf(text, sizeof(text), pattern, values...);
     return std::string(text);
@@ -35,20 +34,18 @@ u32 alpha(u32 color, u32 source) { return (color & 0xffffff) | (source & 0xff000
 std::string grouped_number(u32 value) {
     if (value < 1000) return format("%d", signed_bits(value));
     if (value < 1000000) return format("%d,%.3d", value / 1000, value % 1000);
-    if (value < 1000000000)
-        return format("%d,%.3d,%.3d", value / 1000000, (value / 1000) % 1000, value % 1000);
-    return format("%d,%.3d,%.3d,%.3d", value / 1000000000, (value / 1000000) % 1000,
-                  (value / 1000) % 1000, value % 1000);
+    if (value < 1000000000) return format("%d,%.3d,%.3d", value / 1000000, (value / 1000) % 1000, value % 1000);
+    return format("%d,%.3d,%.3d,%.3d", value / 1000000000, (value / 1000000) % 1000, (value / 1000) % 1000,
+                  value % 1000);
 }
 
 std::string score_number(u32 value, i32 last_digit) {
     if (value < 100) return format("%d", signed_bits(value * 10 + u32(last_digit)));
     if (value < 100000) return format("%d,%.2d%d", value / 100, value % 100, last_digit);
     if (value < 100000000)
-        return format("%d,%.3d,%.2d%d", (value / 100000) % 1000, (value / 100) % 1000,
-                      value % 100, last_digit);
-    return format("%d,%.3d,%.3d,%.2d%d", (value / 100000000) % 1000, (value / 100000) % 1000,
-                  (value / 100) % 1000, value % 100, last_digit);
+        return format("%d,%.3d,%.2d%d", (value / 100000) % 1000, (value / 100) % 1000, value % 100, last_digit);
+    return format("%d,%.3d,%.3d,%.2d%d", (value / 100000000) % 1000, (value / 100000) % 1000, (value / 100) % 1000,
+                  value % 100, last_digit);
 }
 
 void GameHud::update_score() {
@@ -66,10 +63,10 @@ void GameHud::update_score() {
     // 0043d650:8-12 才是 be810 = max(be810, be7c0)，两式不可混用；
     // displayed_score 即 ctx+0x144 投影，故本函数对应 0042a370 一式。
     if (progress.high_score < displayed_score) {
-        progress.run_mode_flags |= 4; // 0042a370:36 DAT_004be830 |= 4（原版依据，保留）
-        progress.high_score_extra = progress.continues; // 0042a370:37 be814 = be7c8（原版依据，保留）
+        progress.run_mode_flags |= 4;                    // 0042a370:36 DAT_004be830 |= 4（原版依据，保留）
+        progress.high_score_extra = progress.continues;  // 0042a370:37 be814 = be7c8（原版依据，保留）
         player.mode_flags |= 4;
-        progress.high_score = displayed_score; // 0042a370:38 be810 = max(be810, ctx+0x144)
+        progress.high_score = displayed_score;  // 0042a370:38 be810 = max(be810, ctx+0x144)
     }
 }
 
@@ -85,9 +82,9 @@ bool GameHud::draw_trance_countdown(HudDrawServices& services) {
     const i32 gauge = progress.ending_points;
     const bool red = gauge < 30 ? (gauge & 1) != 0 : gauge < 90 && (gauge & 7) != 0;
     style.color = red ? 0xffff0000u : 0xffffffffu;
-    const auto text = format("%.2fs",double(gauge)/60.0);
+    const auto text = format("%.2fs", double(gauge) / 60.0);
     const float x = 224.f - 5.f - 30.f * float(text.find('.'));
-    if (services.hud_text({{x,112,0},style,text})) return true;
+    if (services.hud_text({{x, 112, 0}, style, text})) return true;
     error = "Trance countdown text service failed";
     return false;
 }
@@ -103,8 +100,7 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
         clear_style.alignment = clear_style.vertical_alignment = 0;
         clear_style.shadow = true;
         clear_style.color = alpha(0xffffffffu, banner->visual.color);
-        if (!services.hud_text({{320,200,0}, clear_style,
-                               grouped_number(u32(progress.stage_clear_bonus))})) {
+        if (!services.hud_text({{320, 200, 0}, clear_style, grouped_number(u32(progress.stage_clear_bonus))})) {
             error = "Stage clear bonus text service failed";
             return false;
         }
@@ -129,8 +125,7 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
     style.color = 0xff808080;
     style.font = 4;
     style.alignment = 2;
-    if (!text(620, 44, score_number(u32(progress.high_score), progress.high_score_extra)))
-        return false;
+    if (!text(620, 44, score_number(u32(progress.high_score), progress.high_score_extra))) return false;
     // 0x427D87 mov [eax+0x19160],0xffffffff；残机/灵击沿用该色（decomp 00427910.c:151）。
     style.color = 0xffffffff;
     if (!text(620, 66, score_number(u32(displayed_score), progress.continues))) return false;
@@ -164,8 +159,7 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
                 style.font = 4;
                 style.alignment = 2;
                 style.scale = {1, 1};
-                if (!text(628, row + 17, grouped_number(u32(std::max(0, seat_player->deaths)))))
-                    return false;
+                if (!text(628, row + 17, grouped_number(u32(std::max(0, seat_player->deaths))))) return false;
             } else if (life_threshold >= 999999) {
                 style.alignment = 2;
                 if (!text(628, row + 17, "---/---")) return false;
@@ -184,13 +178,17 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
             style.scale = {1, 1};
             if (!text(540, row + 56, format("%d.", seat_player->power / seat_player->power_step))) return false;
             style.scale = {.6f, .6f};
-            if (!text(560, row + 63, format("%.2d",
-                wrapping_mul(seat_player->power % seat_player->power_step, 100) / seat_player->power_step))) return false;
+            if (!text(560, row + 63,
+                      format("%.2d", wrapping_mul(seat_player->power % seat_player->power_step, 100) /
+                                         seat_player->power_step)))
+                return false;
             style.scale = {1, 1};
             if (!text(574, row + 56, format("/%d.", seat_player->max_power / seat_player->power_step))) return false;
             style.scale = {.6f, .6f};
-            if (!text(606, row + 63, format("%.2d",
-                wrapping_mul(seat_player->max_power % seat_player->power_step, 100) / seat_player->power_step))) return false;
+            if (!text(606, row + 63,
+                      format("%.2d", wrapping_mul(seat_player->max_power % seat_player->power_step, 100) /
+                                         seat_player->power_step)))
+                return false;
         }
         // Shared artwork is relocated by enable_multiplayer; values occur once.
         const float shared = 100.f + GameHud::kMpRowPitch * float(seats->count) + 8.f;
@@ -198,63 +196,63 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
         style.alignment = 2;
         style.scale = {1, 1};
         style.color = 0xff40c0ff;
-        if (!text(620, shared,
-                  grouped_number(u32(progress.max_point / 100 - (progress.max_point / 100) % 10))))
+        if (!text(620, shared, grouped_number(u32(progress.max_point / 100 - (progress.max_point / 100) % 10))))
             return false;
         style.color = 0xffc0c0c0;
         const auto graze = grouped_number(u32(progress.graze));
         // Preserve every digit at the numeric boundary, inside the fixed HUD
         // column; normal inventories keep the original full-size numerals.
-        if (graze.size() > 12) { style.font = 5; style.scale = {.85f, .85f}; }
+        if (graze.size() > 12) {
+            style.font = 5;
+            style.scale = {.85f, .85f};
+        }
         if (!text(620, shared + 22, graze)) return false;
     } else {
-    // 残机/灵击碎片：0x427910:156-194。残机分母 = 0x4bb994[be7fc]
-    //（首命 8，0x43d330 每命递增）；灵击分母固定 8（0x427f02 push $8）。
-    // 哨兵 9999999 → "---/---"（0x427910:170/187），且残机 x 左移 7
-    //（0x427910:156-162）。此前把 max_point≥999999 当哨兵是误接线。
-    style.alignment = style.vertical_alignment = 1;
-    style.scale = {.6f, .6f};
-    const i32 life_threshold = life_piece_threshold(progress.life_piece_threshold_index);
-    const float life_x = 576.f - (life_threshold >= 100 ? 7.f : 0.f);
-    if (life_threshold >= 999999) {
-        if (!text(life_x, 122, "---/---")) return false;
-        if (!text(576, 160, "---/---")) return false;
-    } else {
-        if (!text(life_x, 122, format("%3d", player.life_pieces))) return false;
-        if (!text(life_x + 21, 122, format("/%d", life_threshold))) return false;
-        if (!text(576, 160, format("%3d", player.bomb_pieces))) return false;
-        if (!text(597, 160, format("/%d", 8))) return false;
-    }
-    // 灵力：x.xx /4.00 两段字号（整数段大字号、小数段小字号），y=216/223。
-    if (!player.power_step) {
-        error = "HUD power step is zero";
-        return false;
-    }
-    // 0x427F2E mov [esi+0x19160],0xffff8030（decomp 00427910.c:197）。
-    style.color = 0xffff8030;
-    style.scale = {1, 1};
-    if (!text(540, 216, format("%d.", player.power / player.power_step))) return false;
-    style.scale = {.6f, .6f};
-    if (!text(560, 223,
-              format("%.2d", wrapping_mul(player.power % player.power_step, 100) / player.power_step)))
-        return false;
-    style.scale = {1, 1};
-    if (!text(574, 216, format("/%d.", player.max_power / player.power_step))) return false;
-    style.scale = {.6f, .6f};
-    if (!text(606, 223, "00")) return false;
-    // 最大得点（0x4be7dc/100 的十位对齐显示）与 Graze。
-    // 0x427910:227-228 在功率段后重设 0x19184=2（右对齐）；此前沿用碎片段的
-    // 居中 1，Normal 开局 10,000 以 620 为中心溢出屏右缘（battle-f300 实证）。
-    style.alignment = 2;
-    style.scale = {1, 1};
-    // 0x42808D mov [eax+0x19160],0xff40c0ff（decomp 00427910.c:230）。
-    style.color = 0xff40c0ff;
-    if (!text(620, 238,
-              grouped_number(u32(progress.max_point / 100 - (progress.max_point / 100) % 10))))
-        return false;
-    // 0x428111 mov [edx+0x19160],0xff808080（decomp 00427910.c:241）。
-    style.color = 0xff808080;
-    if (!text(620, 260, grouped_number(u32(progress.graze)))) return false;
+        // 残机/灵击碎片：0x427910:156-194。残机分母 = 0x4bb994[be7fc]
+        //（首命 8，0x43d330 每命递增）；灵击分母固定 8（0x427f02 push $8）。
+        // 哨兵 9999999 → "---/---"（0x427910:170/187），且残机 x 左移 7
+        //（0x427910:156-162）。此前把 max_point≥999999 当哨兵是误接线。
+        style.alignment = style.vertical_alignment = 1;
+        style.scale = {.6f, .6f};
+        const i32 life_threshold = life_piece_threshold(progress.life_piece_threshold_index);
+        const float life_x = 576.f - (life_threshold >= 100 ? 7.f : 0.f);
+        if (life_threshold >= 999999) {
+            if (!text(life_x, 122, "---/---")) return false;
+            if (!text(576, 160, "---/---")) return false;
+        } else {
+            if (!text(life_x, 122, format("%3d", player.life_pieces))) return false;
+            if (!text(life_x + 21, 122, format("/%d", life_threshold))) return false;
+            if (!text(576, 160, format("%3d", player.bomb_pieces))) return false;
+            if (!text(597, 160, format("/%d", 8))) return false;
+        }
+        // 灵力：x.xx /4.00 两段字号（整数段大字号、小数段小字号），y=216/223。
+        if (!player.power_step) {
+            error = "HUD power step is zero";
+            return false;
+        }
+        // 0x427F2E mov [esi+0x19160],0xffff8030（decomp 00427910.c:197）。
+        style.color = 0xffff8030;
+        style.scale = {1, 1};
+        if (!text(540, 216, format("%d.", player.power / player.power_step))) return false;
+        style.scale = {.6f, .6f};
+        if (!text(560, 223, format("%.2d", wrapping_mul(player.power % player.power_step, 100) / player.power_step)))
+            return false;
+        style.scale = {1, 1};
+        if (!text(574, 216, format("/%d.", player.max_power / player.power_step))) return false;
+        style.scale = {.6f, .6f};
+        if (!text(606, 223, "00")) return false;
+        // 最大得点（0x4be7dc/100 的十位对齐显示）与 Graze。
+        // 0x427910:227-228 在功率段后重设 0x19184=2（右对齐）；此前沿用碎片段的
+        // 居中 1，Normal 开局 10,000 以 620 为中心溢出屏右缘（battle-f300 实证）。
+        style.alignment = 2;
+        style.scale = {1, 1};
+        // 0x42808D mov [eax+0x19160],0xff40c0ff（decomp 00427910.c:230）。
+        style.color = 0xff40c0ff;
+        if (!text(620, 238, grouped_number(u32(progress.max_point / 100 - (progress.max_point / 100) % 10))))
+            return false;
+        // 0x428111 mov [edx+0x19160],0xff808080（decomp 00427910.c:241）。
+        style.color = 0xff808080;
+        if (!text(620, 260, grouped_number(u32(progress.graze)))) return false;
     }
     // Boss 计时文本（0x427910:253-274）：'.' 与百分秒锚定数字 VM 位置
     //（ascii script2/3 dump：208/220,39）+16/-7；'.' 字体 4、百分秒 0.6 缩放。

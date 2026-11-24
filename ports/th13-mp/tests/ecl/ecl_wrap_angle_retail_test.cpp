@@ -7,7 +7,11 @@
 #include "game/StageMath.hpp"
 #include "game/StageSim.hpp"
 using namespace th13;
-u32 word(float f){u32 w;std::memcpy(&w,&f,4);return w;}
+u32 word(float f) {
+    u32 w;
+    std::memcpy(&w, &f, 4);
+    return w;
+}
 
 TEST(wrap_s5_raw_two_calls_each_34_subtractions) {
     // raw 合成角 f32=780.3973388671875（angle1 779.20556640625 + aim
@@ -38,7 +42,8 @@ TEST(wrap_identity_within_pi) {
     // 出生速度向量与旧代码逐位相同。
     const float pi_f = 3.1415927f;
     const float cases[] = {0.0f, 1.0f, -1.0f, 0.5f, -2.9f, 3.0f, pi_f, -pi_f};
-    for (float v : cases) CHECK_EQ(word(wrap_angle(v)), word(v));
+    for (float v : cases)
+        CHECK_EQ(word(wrap_angle(v)), word(v));
 }
 
 TEST(emit_et_birth_velocity_uses_raw_angle) {
@@ -47,8 +52,10 @@ TEST(emit_et_birth_velocity_uses_raw_angle) {
     // 零售出生 vel = f32(polar(raw, 0.1)) = (0.028445275500416756,
     // 0.09586900472640991)（fsincos 内部精确归约，s5-drift §2.3）；
     // 弹体 angle 字段 = wrap 后 stored = 353.14031982421875。
-    StageSim sim; sim.interactive = true;
-    StageEt et; et.reset();
+    StageSim sim;
+    sim.interactive = true;
+    StageEt et;
+    et.reset();
     et.angle1 = 779.20556640625f;
     et.speed1 = 0.1f;
     const float spawn[3] = {-100.64227294921875f, 162.38999938964844f, 0.0f};
@@ -66,8 +73,10 @@ TEST(emit_et_raw_birth_vel_settles_bit_exact_under_op4_steer) {
     // target<=-990 → 弹体 angle=stored）：零售 settled vel =
     // (0.31329917907714844, 1.0544403791427612)、speed =
     // 1.1000003814697266（0x4102b0 逐帧行为，s5-drift §2.3 实测复现）。
-    StageSim sim; sim.interactive = true;
-    StageEt et; et.reset();
+    StageSim sim;
+    sim.interactive = true;
+    StageEt et;
+    et.reset();
     et.angle1 = 779.20556640625f;
     et.speed1 = 0.1f;
     et.ex[0].op = 4;
@@ -96,8 +105,12 @@ TEST(respawn_cancel_half_step_uses_same_f32_chain_on_all_axes) {
     StageSim sim;
     sim.set_time_rate(0.9f);
     StageBullet b;
-    b.x = 1.0f; b.y = 10.0f; b.z = -3.0f;
-    b.vel[0] = 0.7f; b.vel[1] = 1.1f; b.vel[2] = 2.35f;
+    b.x = 1.0f;
+    b.y = 10.0f;
+    b.z = -3.0f;
+    b.vel[0] = 0.7f;
+    b.vel[1] = 1.1f;
+    b.vel[2] = 2.35f;
     b.state = 1;
     sim.bullets.push_back(b);
     CHECK(sim.cancel_respawn_bullets({1.0f, 10.0f, -3.0f}, 0.0f));
@@ -114,8 +127,12 @@ TEST(respawn_cancel_half_step_rate_one_unchanged) {
     // rate=1.0 时 x 新旧两式数值恒等（回归锚：常规消弹窗口零变化）。
     StageSim sim;
     StageBullet b;
-    b.x = 1.0f; b.y = 10.0f; b.z = -3.0f;
-    b.vel[0] = 0.7f; b.vel[1] = 1.1f; b.vel[2] = 2.35f;
+    b.x = 1.0f;
+    b.y = 10.0f;
+    b.z = -3.0f;
+    b.vel[0] = 0.7f;
+    b.vel[1] = 1.1f;
+    b.vel[2] = 2.35f;
     b.state = 1;
     sim.bullets.push_back(b);
     CHECK(sim.cancel_respawn_bullets({1.0f, 10.0f, -3.0f}, 0.0f));
@@ -125,4 +142,4 @@ TEST(respawn_cancel_half_step_rate_one_unchanged) {
     CHECK_EQ(word(sim.bullets[0].y), word(10.0f + 0.55f));
     CHECK_EQ(word(sim.bullets[0].z), word(-3.0f + 1.175f));
 }
-int main(){return th13test::run_all("wrap-angle/emit-et retail bits");}
+int main() { return th13test::run_all("wrap-angle/emit-et retail bits"); }

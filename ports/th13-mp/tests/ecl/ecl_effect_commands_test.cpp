@@ -25,14 +25,14 @@ namespace {
 // 文件索引 2=enemy.anm、3=st01enm.anm 与原版 ctl+0x80 表一致）。
 std::vector<u8> flip_stage_ecl() {
     std::vector<u8> main;
-    th13test::emit(main, 0, 302, 0, 0xff, 0, {3});    // anmSelect 文件 3
-    th13test::emit(main, 0, 306, 0, 0xff, 0, {0, 0}); // anmRun slot0 script0
-    th13test::emit(main, 0, 23, 0, 0xff, 0, {1});     // wait 1
-    th13test::emit(main, 0, 313, 0, 0xff, 0, {0});    // anmFlip slot0 → script 5
-    th13test::emit(main, 0, 23, 0, 0xff, 0, {1});     // wait 1
-    th13test::emit(main, 0, 316, 0, 0xff, 0, {0, 1}); // anmFlipDelta → script 6
+    th13test::emit(main, 0, 302, 0, 0xff, 0, {3});     // anmSelect 文件 3
+    th13test::emit(main, 0, 306, 0, 0xff, 0, {0, 0});  // anmRun slot0 script0
+    th13test::emit(main, 0, 23, 0, 0xff, 0, {1});      // wait 1
+    th13test::emit(main, 0, 313, 0, 0xff, 0, {0});     // anmFlip slot0 → script 5
+    th13test::emit(main, 0, 23, 0, 0xff, 0, {1});      // wait 1
+    th13test::emit(main, 0, 316, 0, 0xff, 0, {0, 1});  // anmFlipDelta → script 6
     th13test::emit(main, 0, 23, 0, 0xff, 0, {999});
-    th13test::emit(main, 0, 10, 0, 0xff, 0, {});      // return
+    th13test::emit(main, 0, 10, 0, 0xff, 0, {});  // return
     return th13test::build_scpt({{"main", main}}, {"enemy.anm", "st01enm.anm"});
 }
 
@@ -99,25 +99,23 @@ struct PresentationRig {
     bool load_real_banks(th13test::TestFileReader& reader) {
         const auto load = [&](i32 bank, const char* name) {
             std::vector<u8> bytes;
-            if (!reader.read(std::string("artifacts/reference/raw/") + name, bytes))
-                return false;
+            if (!reader.read(std::string("artifacts/reference/raw/") + name, bytes)) return false;
             return manager.load(bank, bytes.data(), u32(bytes.size()));
         };
         std::vector<u8> bytes;
         AnmResource stage;
-        if (!reader.read("artifacts/reference/raw/enemy.anm", bytes) ||
-            !stage.append(bytes.data(), u32(bytes.size()))) return false;
+        if (!reader.read("artifacts/reference/raw/enemy.anm", bytes) || !stage.append(bytes.data(), u32(bytes.size())))
+            return false;
         enemy_script_count = i32(stage.scripts.size());
         if (!reader.read("artifacts/reference/raw/st01enm.anm", bytes) ||
-            !stage.append(bytes.data(), u32(bytes.size())) ||
-            !manager.adopt(4, std::move(stage))) return false;
-        if (!load(5, "bullet.anm")) return false;   // banks.bullet
-        if (!load(6, "pl00.anm")) return false;     // banks.player
+            !stage.append(bytes.data(), u32(bytes.size())) || !manager.adopt(4, std::move(stage)))
+            return false;
+        if (!load(5, "bullet.anm")) return false;  // banks.bullet
+        if (!load(6, "pl00.anm")) return false;    // banks.player
         // effect.anm（bank 8）真实文件装载现报 "Animation template 32:
         // Animation sprite not available"——既有资源面限制，与本命令无关；
         // 本序列 file≠1 不触及 effect bank，sync 只强制 stage/bullet/player。
-        presentation = std::make_unique<StagePresentation>(
-            manager, renderer, StagePresentation::Banks{4, 5, 6, 8}, 3);
+        presentation = std::make_unique<StagePresentation>(manager, renderer, StagePresentation::Banks{4, 5, 6, 8}, 3);
         presentation->enemies_from_ecl = true;
         return true;
     }
@@ -153,10 +151,10 @@ TEST(anm_flip_commands_decode_and_submit) {
         StageBattle battle;
         provider.anim_list = &battle.sim.anim_list;
         battle.sim.anm_effects_noop = true;
-        CHECK(battle.load(provider, "st01.ecl", 1 << 3, host, progress, player,
-                          score, nullptr, "pl00a.sht"));
+        CHECK(battle.load(provider, "st01.ecl", 1 << 3, host, progress, player, score, nullptr, "pl00a.sht"));
         u32 guard = 240;
-        for (u32 i = 0; i < 120 && guard; ++i) CHECK(step_one(battle, guard));
+        for (u32 i = 0; i < 120 && guard; ++i)
+            CHECK(step_one(battle, guard));
         CHECK(battle.sim.anm_effects.empty());  // noop：不产请求
     }
 
@@ -167,14 +165,13 @@ TEST(anm_flip_commands_decode_and_submit) {
     SessionState progress;
     HudPlayerState player;
     HudScoreState score;
-        StageBattle battle;
-        provider.anim_list = &battle.sim.anim_list;
-        // 标志必须在 load 之前置位：load 期会推进首帧（root 已跑 302/306，
-        // anm_script[0] 已记录）——晚置 ecl_slot_anm 会吞掉 306 的挂接请求。
-        battle.sim.anm_effects_noop = false;
-        battle.sim.ecl_slot_anm = true;
-        CHECK(battle.load(provider, "st01.ecl", 1 << 3, host, progress, player, score,
-                          nullptr, "pl00a.sht"));
+    StageBattle battle;
+    provider.anim_list = &battle.sim.anim_list;
+    // 标志必须在 load 之前置位：load 期会推进首帧（root 已跑 302/306，
+    // anm_script[0] 已记录）——晚置 ecl_slot_anm 会吞掉 306 的挂接请求。
+    battle.sim.anm_effects_noop = false;
+    battle.sim.ecl_slot_anm = true;
+    CHECK(battle.load(provider, "st01.ecl", 1 << 3, host, progress, player, score, nullptr, "pl00a.sht"));
 
     PresentationRig rig;
     th13test::TestFileReader reader;
@@ -274,25 +271,25 @@ TEST(anm_flip_commands_decode_and_submit) {
     battle.sim.current = root;
     const auto execute = [&](u16 op, std::initializer_list<u32> args) {
         std::vector<u8> bytes;
-        th13test::emit(bytes,0,op,0,255,0,args);
+        th13test::emit(bytes, 0, op, 0, 255, 0, args);
         context.instruction = reinterpret_cast<const EclInstruction*>(bytes.data());
-        return battle.sim.commands.execute(context,op);
+        return battle.sim.commands.execute(context, op);
     };
-    CHECK_EQ(execute(303,{3,0}),0);
-    CHECK_EQ(execute(320,{3,bits_of(-1.f),bits_of(224.f)}),0);
-    CHECK_EQ(root->anm_slot_offset[3].x,-1.f);
-    CHECK_EQ(root->anm_slot_offset[3].y,224.f);
-    CHECK_EQ(root->anm_slot_offset[3].z,0.f);
-    CHECK(rig.presentation->sync(battle,0));
+    CHECK_EQ(execute(303, {3, 0}), 0);
+    CHECK_EQ(execute(320, {3, bits_of(-1.f), bits_of(224.f)}), 0);
+    CHECK_EQ(root->anm_slot_offset[3].x, -1.f);
+    CHECK_EQ(root->anm_slot_offset[3].y, 224.f);
+    CHECK_EQ(root->anm_slot_offset[3].z, 0.f);
+    CHECK(rig.presentation->sync(battle, 0));
     const AnmVm* offset_vm = rig.manager.registry.find(root->anm_slot_handle[3]);
     CHECK(offset_vm != nullptr);
     if (offset_vm) {
-        CHECK_EQ(offset_vm->visual.translation.x,root->position[0]-1.f);
-        CHECK_EQ(offset_vm->visual.translation.y,root->position[1]+224.f);
+        CHECK_EQ(offset_vm->visual.translation.x, root->position[0] - 1.f);
+        CHECK_EQ(offset_vm->visual.translation.y, root->position[1] + 224.f);
         root->flags |= 0x8000000u;
-        CHECK(rig.presentation->sync(battle,0));
-        CHECK_EQ(offset_vm->visual.translation.x,root->position[0]);
-        CHECK_EQ(offset_vm->visual.translation.y,root->position[1]);
+        CHECK(rig.presentation->sync(battle, 0));
+        CHECK_EQ(offset_vm->visual.translation.x, root->position[0]);
+        CHECK_EQ(offset_vm->visual.translation.y, root->position[1]);
     }
     battle.sim.current = nullptr;
 }

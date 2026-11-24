@@ -5,9 +5,9 @@
 //   无手柄门控（pad_present=false）不写绑定；
 //   行5 Default 回滚为宿主当前值（音7）；行6 X/Esc 放弃（音9）/
 //   Z 保存（persist + 音9）；>9 帧回 Option 并 pop 光标栈；重入重新装载。
+#include "../harness/test_framework.hpp"
 #include "ui_test_fixtures.hpp"
 #include <cstdio>
-#include "../harness/test_framework.hpp"
 
 #include "game/TitleKeyConfigMenu.hpp"
 
@@ -24,7 +24,8 @@ std::vector<u8> keyconfig_title_fixture() {
     auto scripts = trivial_scripts(90, 72);
     // title.anm root2：spawn 49-82（7 行灰/白 + 5×2 灰/白数字）。
     scripts[2].clear();
-    for (i32 child = 49; child <= 82; child++) scripts[2].push_back(spawn(child));
+    for (i32 child = 49; child <= 82; child++)
+        scripts[2].push_back(spawn(child));
     scripts[2].push_back(wait());
     scripts[2].push_back(stop());
     return synthetic_anm(72, scripts);
@@ -76,13 +77,14 @@ struct KeyConfigHarness {
         return ok;
     }
     void advance(i32 frames, u32 pressed = 0, u32 repeated = 0) {
-        for (i32 i = 0; i < frames; i++) CHECK(frame(pressed, repeated));
+        for (i32 i = 0; i < frames; i++)
+            CHECK(frame(pressed, repeated));
     }
     void reach_interactive() {
-        CHECK(frame());       // open -> substate1
+        CHECK(frame());  // open -> substate1
         advance(6);
         CHECK_EQ(state.substate, 1);
-        CHECK(frame());       // 第 7 帧 -> substate2
+        CHECK(frame());  // 第 7 帧 -> substate2
         CHECK_EQ(state.substate, 2);
     }
     AnmVm* child(i32 script) {
@@ -160,7 +162,8 @@ TEST(keyconfig_learning_ignores_missing_pad) {
 TEST(keyconfig_learning_only_on_binding_rows) {
     KeyConfigHarness h;
     h.reach_interactive();
-    for (i32 i = 0; i < 5; i++) h.frame(0x20);  // 行0 -> 5（Default）
+    for (i32 i = 0; i < 5; i++)
+        h.frame(0x20);  // 行0 -> 5（Default）
     CHECK_EQ(h.menu->row(), 5);
     h.host.buttons = 1u << 8;
     const size_t sounds = h.sounds.size();
@@ -176,8 +179,9 @@ TEST(keyconfig_default_row_reverts_to_stored_bindings) {
     CHECK(h.frame());  // 行0 = 2，行2 = 0
     CHECK_EQ(int(h.menu->bindings()[0]), 2);
     h.host.buttons = 0;
-    for (i32 i = 0; i < 5; i++) h.frame(0x20);  // 行5
-    CHECK(h.frame(0x80001));                     // Z：Default 回滚
+    for (i32 i = 0; i < 5; i++)
+        h.frame(0x20);        // 行5
+    CHECK(h.frame(0x80001));  // Z：Default 回滚
     CHECK_EQ(int(h.menu->bindings()[0]), 0);
     CHECK_EQ(int(h.menu->bindings()[2]), 2);
     CHECK(!h.sounds.empty() && h.sounds.back() == 7);
@@ -190,7 +194,8 @@ TEST(keyconfig_repeated_actions_do_not_confirm_or_cancel) {
     h.host.buttons = 1u << 7;
     CHECK(h.frame());
     h.host.buttons = 0;
-    for (i32 row = 0; row < 5; row++) CHECK(h.frame(0x20));
+    for (i32 row = 0; row < 5; row++)
+        CHECK(h.frame(0x20));
     const size_t sounds = h.sounds.size();
     CHECK(h.frame(0, 0x01));
     CHECK_EQ(int(h.menu->bindings()[0]), 7);
@@ -208,9 +213,10 @@ TEST(keyconfig_escape_on_quit_row_cancels_without_persist) {
     h.host.buttons = 1u << 4;
     CHECK(h.frame());  // 编辑行0 = 4
     h.host.buttons = 0;
-    for (i32 i = 0; i < 6; i++) h.frame(0x20);  // 行6 Quit
+    for (i32 i = 0; i < 6; i++)
+        h.frame(0x20);  // 行6 Quit
     CHECK_EQ(h.menu->row(), 6);
-    CHECK(h.frame(0x100));  // Esc：放弃
+    CHECK(h.frame(0x100));                    // Esc：放弃
     CHECK_EQ(int(h.menu->bindings()[0]), 0);  // 回滚
     CHECK(!h.sounds.empty() && h.sounds.back() == 9);
     CHECK_EQ(h.host.persists, 0);
@@ -230,7 +236,8 @@ TEST(keyconfig_end_row_saves_bindings_and_returns_to_option) {
     h.host.buttons = 1u << 7;
     CHECK(h.frame());  // 行0 = 7
     h.host.buttons = 0;
-    for (i32 i = 0; i < 6; i++) h.frame(0x20);  // 行6 End
+    for (i32 i = 0; i < 6; i++)
+        h.frame(0x20);     // 行6 End
     CHECK(h.frame(0x01));  // Z：保存 + 离屏
     CHECK_EQ(h.host.persists, 1);
     CHECK_EQ(int(h.host.persisted[0]), 7);
@@ -247,7 +254,8 @@ TEST(keyconfig_persist_failure_is_reported_but_exit_continues) {
     KeyConfigHarness h;
     h.host.persist_ok = false;
     h.reach_interactive();
-    for (i32 i = 0; i < 6; i++) h.frame(0x20);
+    for (i32 i = 0; i < 6; i++)
+        h.frame(0x20);
     CHECK(h.frame(0x01));
     CHECK(!h.menu->error.empty());  // 不假成功
     CHECK_EQ(h.host.persists, 1);

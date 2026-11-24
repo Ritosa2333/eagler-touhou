@@ -83,8 +83,10 @@ inline float normalize_angle(float angle) noexcept {
     constexpr float kPi = 3.1415927410125732421875f;
     constexpr float kTwoPi = 6.283185482025146484375f;
     angle = static_cast<float>(std::fmod(double(angle), double(kTwoPi)));
-    if (angle > kPi) angle = static_cast<float>(angle - kTwoPi);
-    else if (angle < -kPi) angle = static_cast<float>(angle + kTwoPi);
+    if (angle > kPi)
+        angle = static_cast<float>(angle - kTwoPi);
+    else if (angle < -kPi)
+        angle = static_cast<float>(angle + kTwoPi);
     return angle;
 }
 

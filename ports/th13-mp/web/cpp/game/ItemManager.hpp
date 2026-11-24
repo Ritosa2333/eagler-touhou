@@ -21,7 +21,9 @@
 
 namespace th13 {
 
-namespace multiplayer { class WorldState; }
+namespace multiplayer {
+class WorldState;
+}
 
 // 只读诊断（默认关闭）：收集事件的帧内顺序/数值快照，供浏览器探针
 // `th13_debug_item_trace*` 导出；不写任何游戏状态。
@@ -35,64 +37,64 @@ class GameRandom;
 // 道具类型 = 0x42f020 param_1（dropItems 0x417b10 产 1..14）。收集分派 =
 // 0x42e380 LAB_0042e7f7 的 switch(槽+0xBA4)。
 enum ItemType : i32 {
-    ItemPower = 1,       // 小P：0x42edc0（be7e8 += 1；满灵力 score+1000 原值）
-    ItemPoint = 2,       // 点：0x42e380 case2（高度/最大得点公式）
-    ItemBigPower = 3,    // 大P：0x43d210（满灵力 popup 20000、score+20000/10）
-    ItemLifePiece = 4,   // 残机碎片：0x43d330（0x4bb994 阈值表，满→+1 命、下标++）
-    ItemBombPiece = 5,   // 灵击碎片：0x43d480(+2)（满 8→+1 炸弹）
-    ItemExtraLife = 6,   // 1UP：0x43d2f0（直接 +1 命，上限 8）
-    ItemBomb = 7,        // 灵击：0x43d440（直接 +1 炸弹，上限 9）
-    ItemBigPowerAlt = 8, // 大P 变体：0x43d210 + 满灵力 popup 100（score+100/10）
-    ItemSpiritDrop = 9,  // 消弹灵（state5→2 上升→追踪；收集 score+10 显示、max_point+10）
-    ItemSpiritKind0 = 10, // 神霊 kind0（残机碎片灵）：0x438ec0 → 0x438730 case0
-    ItemSpiritKind1 = 11, // 神霊 kind1
-    ItemSpiritKind2 = 12, // 神霊 kind2（灵击碎片灵：0x43d480(+1)）
-    ItemSpiritKind3 = 13, // 神霊 kind3（灵界灵：0x438730 case3 = trance 累加）
-    ItemSpiritKind4 = 14, // 神霊 kind4
+    ItemPower = 1,         // 小P：0x42edc0（be7e8 += 1；满灵力 score+1000 原值）
+    ItemPoint = 2,         // 点：0x42e380 case2（高度/最大得点公式）
+    ItemBigPower = 3,      // 大P：0x43d210（满灵力 popup 20000、score+20000/10）
+    ItemLifePiece = 4,     // 残机碎片：0x43d330（0x4bb994 阈值表，满→+1 命、下标++）
+    ItemBombPiece = 5,     // 灵击碎片：0x43d480(+2)（满 8→+1 炸弹）
+    ItemExtraLife = 6,     // 1UP：0x43d2f0（直接 +1 命，上限 8）
+    ItemBomb = 7,          // 灵击：0x43d440（直接 +1 炸弹，上限 9）
+    ItemBigPowerAlt = 8,   // 大P 变体：0x43d210 + 满灵力 popup 100（score+100/10）
+    ItemSpiritDrop = 9,    // 消弹灵（state5→2 上升→追踪；收集 score+10 显示、max_point+10）
+    ItemSpiritKind0 = 10,  // 神霊 kind0（残机碎片灵）：0x438ec0 → 0x438730 case0
+    ItemSpiritKind1 = 11,  // 神霊 kind1
+    ItemSpiritKind2 = 12,  // 神霊 kind2（灵击碎片灵：0x43d480(+1)）
+    ItemSpiritKind3 = 13,  // 神霊 kind3（灵界灵：0x438730 case3 = trance 累加）
+    ItemSpiritKind4 = 14,  // 神霊 kind4
 };
 
 // 道具池槽（原版槽 +0xB58..+0xBAC 字段域；状态机 = 0x42e380）。
 struct Item {
-    i32 state = 0;  // +0xBA0：0 空 1 落下 2 上升(消弹灵) 3 追踪 4 聚焦追踪 5 待转
-    i32 type = 0;   // +0xBA4
-    i32 type2 = 0;  // +0xBA8（state5 路径写 9）
-    float x = 0, y = 0, z = 0;   // +0xB5C/+0xB60/+0xB64
-    float vx = 0, vy = 0;        // +0xB68/+0xB6C（polar(angle,speed)，0x42f540）
-    float vz = 0;                // +0xB70（出生 0）
-    float homing_speed = 0;      // +0xBAC
-    i32 sprite = 0;              // +0xBB0（state5 每帧倒计时，<0 → state2）
+    i32 state = 0;              // +0xBA0：0 空 1 落下 2 上升(消弹灵) 3 追踪 4 聚焦追踪 5 待转
+    i32 type = 0;               // +0xBA4
+    i32 type2 = 0;              // +0xBA8（state5 路径写 9）
+    float x = 0, y = 0, z = 0;  // +0xB5C/+0xB60/+0xB64
+    float vx = 0, vy = 0;       // +0xB68/+0xB6C（polar(angle,speed)，0x42f540）
+    float vz = 0;               // +0xB70（出生 0）
+    float homing_speed = 0;     // +0xBAC
+    i32 sprite = 0;             // +0xBB0（state5 每帧倒计时，<0 → state2）
     // anm 域（0x42f020 出生：+0xB78=-999999 哨兵后 -1（prev）、+0xB7C=0（frame）、
     // +0xB80=0（time）；步进 = 0x42e380 尾 [prev]=旧[frame]、[frame]+=rate）。
     // 表现层真 VM 由 Combat 侧持有；这里只保留计数域供状态机子句。
-    i32 anm_frame = 0;           // +0xB7C（出生 0）
-    i32 anm_frame_prev = -1;     // +0xB78（出生 -1）
-    float anm_time = 0;          // +0xB80（出生 0）
-    u32 flags = 0;               // +0xB88 bit0 = 已初始化
-    bool alive = false;          // state != 0 的移植侧快捷判（不回写原版域）
-    i32 target_seat = -1;        // R-I9: explicit gift recipient; ordinary drops use -1.
-    i32 tracking_seat = -1;      // R-I7: retain an eligible ordinary homing receiver.
+    i32 anm_frame = 0;        // +0xB7C（出生 0）
+    i32 anm_frame_prev = -1;  // +0xB78（出生 -1）
+    float anm_time = 0;       // +0xB80（出生 0）
+    u32 flags = 0;            // +0xB88 bit0 = 已初始化
+    bool alive = false;       // state != 0 的移植侧快捷判（不回写原版域）
+    i32 target_seat = -1;     // R-I9: explicit gift recipient; ordinary drops use -1.
+    i32 tracking_seat = -1;   // R-I7: retain an eligible ordinary homing receiver.
 };
 
 // 神霊池槽（0x438ec0 槽 +0x14 起；字段 = 0x438730 读法，float 索引 ×4）。
 struct Spirit {
-    i32 state = 0;  // [0]：0 空 1 游离 2 追踪 4 慢速追踪(左下角) 5 场景门控
-    i32 kind = 0;   // [1]（0x438ec0 param_3；==4 时落 1）
-    u32 serial = 0; // [3]: original birth counter, identifies slot reuse.
-    float speed = 0;        // [4]（目标速度，state2/4 每帧 +0.3/+0.05 封顶）
-    float move_speed = 0;   // [0xb]（位移速度快照；state1 每帧 -0.12666667）
+    i32 state = 0;              // [0]：0 空 1 游离 2 追踪 4 慢速追踪(左下角) 5 场景门控
+    i32 kind = 0;               // [1]（0x438ec0 param_3；==4 时落 1）
+    u32 serial = 0;             // [3]: original birth counter, identifies slot reuse.
+    float speed = 0;            // [4]（目标速度，state2/4 每帧 +0.3/+0.05 封顶）
+    float move_speed = 0;       // [0xb]（位移速度快照；state1 每帧 -0.12666667）
     float x = 0, y = 0, z = 0;  // [5]/[6]/[7]
-    float angle = 0;        // [0xc]
-    i32 anm_frame = 0;      // [0x1d]（出生 0；步进 = 0x438730 顶部 rate 累加）
-    i32 anm_frame_prev = 0; // [0x1c]（出生 -1）
-    float anm_time = 0;     // [0x1e]
+    float angle = 0;            // [0xc]
+    i32 anm_frame = 0;          // [0x1d]（出生 0；步进 = 0x438730 顶部 rate 累加）
+    i32 anm_frame_prev = 0;     // [0x1c]（出生 -1）
+    float anm_time = 0;         // [0x1e]
     // [0x18]：第一 VM 帧计数（出生 -1，每帧 +1）——到 480（0x1e0）时清 flags
     // bit1（0x438730:142：反弹门关、此后越界即回收）。不是倒计时寿命。
     i32 frame = -1;
     Timer lifetime_clock;
-    u32 flags = 0;          // [0x21] bit0 = kind 门、bit1 = 界外反弹门
-    bool fade_requested = false; // 00438a7c: deferred ANM label1 at frame480.
+    u32 flags = 0;                // [0x21] bit0 = kind 门、bit1 = 界外反弹门
+    bool fade_requested = false;  // 00438a7c: deferred ANM label1 at frame480.
     bool alive = false;
-    i32 tracking_seat = -1;      // R-I7: independent of spirit birth flags/kind.
+    i32 tracking_seat = -1;  // R-I7: independent of spirit birth flags/kind.
 };
 
 class ItemManager;
@@ -100,12 +102,12 @@ class ItemManager;
 // 玩家侧只读面（DAT_004c22c4 玩家结构 + 0x4be7b8 进度结构的收集域）。
 // StageBattle 每帧装配；数值域直接映射 SessionState/HudPlayerState。
 struct ItemCollector {
-    bool boss_present=false;
-    float boss_x=0,boss_y=0;
-    float x = 0, y = 0;         // 玩家 +0x5B8/+0x5BC
-    i32 state = 1;              // +0x65C（1 active / 2 dying / 4 deathbomb）
-    bool focus = false;         // DAT_004e4c08 & 8
-    bool dialog = false;        // msgmgr+0x198 != 0（对话期 0x42e380 门）
+    bool boss_present = false;
+    float boss_x = 0, boss_y = 0;
+    float x = 0, y = 0;   // 玩家 +0x5B8/+0x5BC
+    i32 state = 1;        // +0x65C（1 active / 2 dying / 4 deathbomb）
+    bool focus = false;   // DAT_004e4c08 & 8
+    bool dialog = false;  // msgmgr+0x198 != 0（对话期 0x42e380 门）
     // 追踪初速 = *(player+0x660 表 + 8)（0x42e380 state1→3 / 4 装填）。
     float homing_speed = 4.0f;
     // 收集盒（0x42e380 LAB_0042e7f7）三组，均为 {left, top, right, bottom}：
@@ -140,17 +142,17 @@ struct ItemCollector {
 // 收集/得分事件（HUD/表现层消费；原版侧写点见各条注释）。
 struct ItemEvent {
     enum class Kind : i32 {
-        Collected = 0,   // 任一道具进收集盒并被结算
-        ScorePopup = 1,  // 0x44ad60（value = 显示值，pos）
-        PowerLevelUp = 2,// 0x42edc0/0x43d210 返回真 → 0x444df0
-        FullPower = 3,   // 0x42a430（满灵力演出）
-        Extend = 4,      // 0x43d330 满碎片 +1 命（sound 0x11）
-        SpiritGained = 5,// 0x438730 → 0x43d530（灵界值累加）
-        BombGained = 6,  // 0x43d440/0x43d480 灵击 +1（sound 0x2e）
-        TranceGained = 7,// 0x43d530 每次灵界加值 → 0x42b030 无条件刷新（无音）
+        Collected = 0,     // 任一道具进收集盒并被结算
+        ScorePopup = 1,    // 0x44ad60（value = 显示值，pos）
+        PowerLevelUp = 2,  // 0x42edc0/0x43d210 返回真 → 0x444df0
+        FullPower = 3,     // 0x42a430（满灵力演出）
+        Extend = 4,        // 0x43d330 满碎片 +1 命（sound 0x11）
+        SpiritGained = 5,  // 0x438730 → 0x43d530（灵界值累加）
+        BombGained = 6,    // 0x43d440/0x43d480 灵击 +1（sound 0x2e）
+        TranceGained = 7,  // 0x43d530 每次灵界加值 → 0x42b030 无条件刷新（无音）
     };
     Kind kind = Kind::Collected;
-    i32 value = 0;          // 弹出值/灵力增量/灵界增量
+    i32 value = 0;  // 弹出值/灵力增量/灵界增量
     float x = 0, y = 0;
     u32 color = 0xffffffffu;  // 0x44ad60 第三参数（得分弹字 RGB，alpha 由绘制期距离覆盖）
 };
@@ -171,8 +173,7 @@ public:
     // （0x438ec0 体内，早于本帧 0x46f170 walk），链尾序由此确定；延迟到
     // Update 25 会让神霊 VM 落在本帧子弹相位创建物之后（Pn16 s05 f11697
     // 镜像重挂子 VM 多 tick 一帧的链形态根因）。返回 false = 表现层失败。
-    std::function<bool(u32 slot, u32 serial, i32 kind, u32 flags, float x, float y,
-                       float z)> spirit_spawn_animation;
+    std::function<bool(u32 slot, u32 serial, i32 kind, u32 flags, float x, float y, float z)> spirit_spawn_animation;
     // 42edc0/42e380 call 444df0 synchronously when collected power crosses a level.
     std::function<void()> option_power_changed;
     // 43d2f0/43d330 -> 42ae90; 43d440/43d480 -> 42af60.
@@ -186,14 +187,15 @@ public:
     static constexpr i32 kItemCapacity = 2648;
     static constexpr i32 kSpiritCapacity = 256;
 
-    explicit ItemManager(GameRandom* shared_random = nullptr)
-        : random_(shared_random) {
+    explicit ItemManager(GameRandom* shared_random = nullptr) : random_(shared_random) {
         // 413e50 pushes ascending slot addresses onto two separate heads.
-        for (i32 i = 0; i < 600; ++i) ordinary_free_.push_back(i);
-        for (i32 i = 600; i < kItemCapacity; ++i) cancel_free_.push_back(i);
+        for (i32 i = 0; i < 600; ++i)
+            ordinary_free_.push_back(i);
+        for (i32 i = 600; i < kItemCapacity; ++i)
+            cancel_free_.push_back(i);
     }
 
-    void reset_items(); // 413e50: ordinary/cancel pools; spirit manager is separate.
+    void reset_items();  // 413e50: ordinary/cancel pools; spirit manager is separate.
     bool spawn_targeted_item(float x, float y, i32 type, i32 target_seat);
 
     void bind_random(GameRandom& random) { random_ = &random; }
@@ -214,17 +216,14 @@ public:
     //   其余 → state=1；x 钳 [-192,192]；vel = polar(angle, speed)。
     // 本体（0x42f020）不触 game RNG；kind 10..14 的两次抽取在
     // spawn_value_item（0x438ec0.c:94-115，勘误：此前头注释误记「无 RNG」）。
-    void spawn_item(float x, float y, float z, i32 kind, float angle,
-                    float speed) override;
+    void spawn_item(float x, float y, float z, i32 kind, float angle, float speed) override;
 
     // 0x00438ec0 SpiritManager::spawn(mgr, kind0, kind, pos, base_speed, ~0)：
     // pos 钳 x∈[-192,192]、y∈[0,384]；每件抽 signed_unit()（serial%4 象限角
     // ±π/8 基向：0→-3π/4、1→π/4、2→3π/4、3→-π/4）与 unit()（速度 =
     // u*3.5 + base_speed），顺序先角后速（00438ec0.c:94-115）。
-    void spawn_value_item(i32 kind, float x, float y, float z,
-                          float base_speed) override;
-    void spawn_value_item(i32 kind, float x, float y, float z,
-                          float base_speed, bool sound) override;
+    void spawn_value_item(i32 kind, float x, float y, float z, float base_speed) override;
+    void spawn_value_item(i32 kind, float x, float y, float z, float base_speed, bool sound) override;
 
     // 0x4302a0：616 etClear 转换点登记（St1 未消费，登记待证面）。
     void on_et_clear(float x, float y, float z) override;
@@ -250,7 +249,7 @@ public:
     void update_spirits(const ItemCollector& player);
     // M3：神霊多席重载（同 R-I7）。
     void update_spirits_seats(const ItemCollector* seats, i32 seat_count);
-    void set_spirit_trance(bool active); // 439280/4393a0: convert all live spirits.
+    void set_spirit_trance(bool active);  // 439280/4393a0: convert all live spirits.
 
     // 0x0044ad60 的调用面：收集时产生的弹出/声音/效果事件队列（每帧排空）。
     std::vector<ItemEvent>& events() { return events_; }
@@ -289,8 +288,7 @@ public:
 
 private:
     void home_step(Item& item, const ItemCollector& player);
-    void collect_check(Item& item, const ItemCollector& player,
-                       const ItemCollector* seats, i32 seat_count);
+    void collect_check(Item& item, const ItemCollector& player, const ItemCollector* seats, i32 seat_count);
     struct ResourceGrant {
         i32 life_pieces = 0, bomb_pieces = 0;
         i32 lives = 0, bombs = 0;
@@ -300,20 +298,16 @@ private:
     // M3：最近合格席（平距平方最小，平局取小席位；全不合格回退 fallback
     // = seats[0]，与旧单席语义一致——死亡演出席仍接收，幽灵席由
     // eligible=false 排除）。
-    static const ItemCollector& pick_collector(const ItemCollector* seats, i32 seat_count,
-                                               float x, float y,
+    static const ItemCollector& pick_collector(const ItemCollector* seats, i32 seat_count, float x, float y,
                                                const ItemCollector& fallback);
     // P items (1/3/8) are personal. Their receiver is the nearest operable
     // seat below max Power; -1 when every operable seat is at max Power.
-    static bool is_power_item(i32 type) {
-        return type == ItemPower || type == ItemBigPower || type == ItemBigPowerAlt;
-    }
+    static bool is_power_item(i32 type) { return type == ItemPower || type == ItemBigPower || type == ItemBigPowerAlt; }
     static i32 power_receiver(const ItemCollector* seats, i32 seat_count, float x, float y);
     i32 redirected_seat_ = -1;
     void push_level_up(const Item& item);
     float angle_to_player(const Spirit& s, const ItemCollector& player);
-    void collect_spirit(Spirit& s, const ItemCollector& player,
-                        const ItemCollector* seats, i32 seat_count);
+    void collect_spirit(Spirit& s, const ItemCollector& player, const ItemCollector* seats, i32 seat_count);
     void add_max_point(float displayed_increment);  // 0042f510: ftol(value * 100), cap.
 
     GameRandom* random_ = nullptr;
@@ -339,7 +333,7 @@ private:
     void retire_item(Item& item);
     i32 cancel_total_ = 0;
     i32 cancel_wave_ = 0;
-    i32 point_items_ = 0;    // 0x4be7d8 点道具收集计数
+    i32 point_items_ = 0;  // 0x4be7d8 点道具收集计数
 
     // M6：结构化快照访问面（web/cpp/multiplayer/WorldState 专用——池/
     // 自由槽表/计数域全部是权威模拟量）。

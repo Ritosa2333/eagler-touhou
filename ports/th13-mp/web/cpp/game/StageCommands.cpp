@@ -2,10 +2,10 @@
 // 未实现指令一律置 sim->error 并返回 -2（harness 非零退出）——不静默吞掉契约缺口。
 #include "StageSim.hpp"
 
-#include "BulletAppearance.hpp"
 #include "AnmVm.hpp"
-#include "StageMath.hpp"
+#include "BulletAppearance.hpp"
 #include "SessionState.hpp"
+#include "StageMath.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -67,7 +67,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     // Logging receives already evaluated operands. It must never read a
     // global/random argument or alter the ECL stack on its own.
     const auto emit_move = [&](const u32* integral, std::initializer_list<float> values) {
-        sim.sink.enemy_move(e.serial,op,integral,values.begin(),u32(values.size()));
+        sim.sink.enemy_move(e.serial, op, integral, values.begin(), u32(values.size()));
     };
     // 303/306/313/316/318 槽位 VM 请求在 ECL 指令处同步冲刷（0x41fe80 /
     // 0x41b7cc：原版在解释器内 0x4243e0 建 VM 并写回 +0x120 槽句柄）。
@@ -96,17 +96,21 @@ int StageCommands::execute(EclContext& c, u16 op) {
         if (resolve_int(c, 0, file)) e.anm_file = file;
         return 0;
     }
-    case 320: { // 41b3ae: per-slot XYZ offset, Z is always zero.
-        i32 slot = 0; float x = 0, y = 0;
-        if (!resolve_int(c, 0, slot) || !resolve_float(c, 1, x) ||
-            !resolve_float(c, 2, y)) { sim.error_ = c.error; return -2; }
-        if (slot < 0 || slot >= StageEnemy::kAnimationSlots) {
-            sim.error_ = "animation offset slot"; return -2;
+    case 320: {  // 41b3ae: per-slot XYZ offset, Z is always zero.
+        i32 slot = 0;
+        float x = 0, y = 0;
+        if (!resolve_int(c, 0, slot) || !resolve_float(c, 1, x) || !resolve_float(c, 2, y)) {
+            sim.error_ = c.error;
+            return -2;
         }
-        e.anm_slot_offset[slot] = {x,y,0};
+        if (slot < 0 || slot >= StageEnemy::kAnimationSlots) {
+            sim.error_ = "animation offset slot";
+            return -2;
+        }
+        e.anm_slot_offset[slot] = {x, y, 0};
         return 0;
     }
-    case 303:   // anmScript（0x41fe80：槽位 VM 创建/清槽 + 句柄存储）
+    case 303:    // anmScript（0x41fe80：槽位 VM 创建/清槽 + 句柄存储）
     case 306: {  // anmRun（0x41b260 case3：同 303 + slot0 附加字段/主形身份）
         i32 slot = 0, script = 0;
         const bool resolved = resolve_int(c, 0, slot) && resolve_int(c, 1, script);
@@ -130,8 +134,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
             //   enemy+0x100c |= 0x200000（镜像门）。朝向判定读 inner+0x78
             //   （速度），生成首拍 mover 速度 0 → dir 0（+0x270 已在上面复位）。
             if (op == 306 && slot == 0) e.flags |= 0x200000u;
-            sim.anm_effects.push_back({e.anm_file, script, 0, 0, 0,
-                                        1, u16(op), slot, e.serial});
+            sim.anm_effects.push_back({e.anm_file, script, 0, 0, 0, 1, u16(op), slot, e.serial});
             if (!flush_anm_slots()) return -2;
         }
         if (!resolved) {
@@ -140,30 +143,35 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 317: { //41b9e7 ->46fc30: deferred interrupt, label narrowed to signed16.
-        i32 slot=0,label=0;
-        if(!resolve_int(c,0,slot)||!resolve_int(c,1,label)){sim.error_=c.error;return -2;}
-        if(slot<0||slot>=StageEnemy::kAnimationSlots){sim.error_="animation interrupt slot";return -2;}
-        label=i32(i16(u16(label)));
-        if(sim.enemy_animation_interrupt&&!sim.enemy_animation_interrupt(e,slot,label)) {
-            if(sim.error_.empty())sim.error_="Enemy animation interrupt failed";
+    case 317: {  //41b9e7 ->46fc30: deferred interrupt, label narrowed to signed16.
+        i32 slot = 0, label = 0;
+        if (!resolve_int(c, 0, slot) || !resolve_int(c, 1, label)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        if (slot < 0 || slot >= StageEnemy::kAnimationSlots) {
+            sim.error_ = "animation interrupt slot";
+            return -2;
+        }
+        label = i32(i16(u16(label)));
+        if (sim.enemy_animation_interrupt && !sim.enemy_animation_interrupt(e, slot, label)) {
+            if (sim.error_.empty()) sim.error_ = "Enemy animation interrupt failed";
             return -2;
         }
         return 0;
     }
-    case 318: { // 41b897: restore slot0 from saved26c, clear automatic turning.
+    case 318: {  // 41b897: restore slot0 from saved26c, clear automatic turning.
         e.flags &= ~0x200000u;
         e.mirror_dir = 0;
         e.anm_script[0] = e.anm_base_script;
         if (!sim.anm_effects_noop && sim.ecl_slot_anm) {
-            sim.anm_effects.push_back({e.anm_file, e.anm_base_script, 0, 0, 0,
-                                       1, u16(op), 0, e.serial});
+            sim.anm_effects.push_back({e.anm_file, e.anm_base_script, 0, 0, 0, 1, u16(op), 0, e.serial});
             if (!flush_anm_slots()) return -2;
         }
         return 0;
     }
-    case 307:   // anmAt（case4：file=arg0、script=arg1、位置=敌机 xyz、主池头入链）
-    case 308: { // anmVm（case5 → 0x4243e0：同上但位置清零 0x4243e0:22-24）
+    case 307:                                // anmAt（case4：file=arg0、script=arg1、位置=敌机 xyz、主池头入链）
+    case 308: {                              // anmVm（case5 → 0x4243e0：同上但位置清零 0x4243e0:22-24）
         if (sim.anm_effects_noop) return 0;  // 事件契约：stage1 oracle NOOP 同源
         i32 file = 0, script = 0;
         if (!resolve_int(c, 0, file) || !resolve_int(c, 1, script)) return -2;
@@ -178,12 +186,11 @@ int StageCommands::execute(EclContext& c, u16 op) {
         } else if (op == 308)
             sim.anm_effects.push_back({file, script, 0, 0, 0});
         else
-            sim.anm_effects.push_back(
-                {file, script, e.position[0], e.position[1], e.position[2]});
+            sim.anm_effects.push_back({file, script, e.position[0], e.position[1], e.position[2]});
         return 0;
     }
-    case 313:   // anmFlip（case7 @ 0x41b903）：槽 VM 重挂 script_base+5
-    case 316: { // anmFlipDelta（case0xa @ 0x41b98f）：script_base+arg1+5
+    case 313:    // anmFlip（case7 @ 0x41b903）：槽 VM 重挂 script_base+5
+    case 316: {  // anmFlipDelta（case0xa @ 0x41b98f）：script_base+arg1+5
         // 原版不读脚本参数：arg0 = slot（316 另 arg1 = delta），脚本号 =
         // 敌机+0x26c（case3/306 slot0 记录的挂接脚本，port 代理
         // e.anm_base_script）+5（316 再 +delta），文件 = 302 选定的 +0x260。
@@ -207,34 +214,63 @@ int StageCommands::execute(EclContext& c, u16 op) {
         if (sim.ecl_slot_anm && slot >= 0 && slot < StageEnemy::kAnimationSlots) {
             // +0x26c retains306's base even when303 replaces the live slot.
             const i32 base = e.anm_base_script;
-            sim.anm_effects.push_back({e.anm_file, base + delta + 5, 0, 0, 0,
-                                        1, u16(op), slot, e.serial});
+            sim.anm_effects.push_back({e.anm_file, base + delta + 5, 0, 0, 0, 1, u16(op), slot, e.serial});
             if (!flush_anm_slots()) return -2;
         }
         return 0;
     }
-    case 334: { // 41b7ac ->415650(null,kind), global scene-effect table.
-        i32 kind=0;if(!resolve_int(c,0,kind)){sim.error_=c.error;return -2;}
+    case 334: {  // 41b7ac ->415650(null,kind), global scene-effect table.
+        i32 kind = 0;
+        if (!resolve_int(c, 0, kind)) {
+            sim.error_ = c.error;
+            return -2;
+        }
         // 41b7ac: push edi+0x44（敌机 VM+0x44 主位置）→415650 [ebp+0x10]=init 401000 位置。
-        const Vec3 position{e.position[0],e.position[1],e.position[2]};
-        if(!sim.scene_effect||!sim.scene_effect(kind,position)){sim.error_="Scene effect "+std::to_string(kind)+" unavailable";return -2;}
+        const Vec3 position{e.position[0], e.position[1], e.position[2]};
+        if (!sim.scene_effect || !sim.scene_effect(kind, position)) {
+            sim.error_ = "Scene effect " + std::to_string(kind) + " unavailable";
+            return -2;
+        }
         return 0;
     }
     case 319:
-    case 325: case 326: case 327: case 328:
-    case 329: case 330: case 331: case 332: case 333: case 335: {
+    case 325:
+    case 326:
+    case 327:
+    case 328:
+    case 329:
+    case 330:
+    case 331:
+    case 332:
+    case 333:
+    case 335: {
         // 41ffb0: resolve the live animation before any mutation arguments.
         i32 slot = 0;
-        if (!resolve_int(c, 0, slot)) { sim.error_ = c.error; return -2; }
-        if (slot < 0 || slot >= StageEnemy::kAnimationSlots) { sim.error_ = "animation mutation slot"; return -2; }
+        if (!resolve_int(c, 0, slot)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        if (slot < 0 || slot >= StageEnemy::kAnimationSlots) {
+            sim.error_ = "animation mutation slot";
+            return -2;
+        }
         if (!sim.enemy_animation) return 0;
         AnmVm* vm = sim.enemy_animation(e, slot);
         if (!sim.error_.empty()) return -2;
-        if (!vm) return 0; // retail skips all remaining argument side effects
-        const auto integer = [&](u32 n) { i32 v=0;resolve_int(c,n,v);return v; };
-        const auto real = [&](u32 n) { float v=0;resolve_float(c,n,v);return v; };
+        if (!vm) return 0;  // retail skips all remaining argument side effects
+        const auto integer = [&](u32 n) {
+            i32 v = 0;
+            resolve_int(c, n, v);
+            return v;
+        };
+        const auto real = [&](u32 n) {
+            float v = 0;
+            resolve_float(c, n, v);
+            return v;
+        };
         if (op == 319) {
-            vm->variables.rotation.z = real(1); vm->visual.flags |= 4;
+            vm->variables.rotation.z = real(1);
+            vm->visual.flags |= 4;
         } else if (op == 327 || op == 331) {
             const u32 alpha = u8(integer(1));
             u32& color = op == 327 ? vm->visual.color : vm->visual.secondary_color;
@@ -243,51 +279,67 @@ int StageCommands::execute(EclContext& c, u16 op) {
             const i32 alpha = u8(integer(3)), mode = integer(2), duration = integer(1);
             auto& channel = op == 328 ? vm->interpolators.alpha : vm->interpolators.secondary_alpha;
             const u32 color = op == 328 ? vm->visual.color : vm->visual.secondary_color;
-            channel.control1 = {}; channel.control2 = {};
+            channel.control1 = {};
+            channel.control2 = {};
             channel.begin(duration, mode, {i32(color >> 24)}, {alpha});
         } else if (op == 329 || op == 335) {
             const float y = real(2), x = real(1);
             auto& scale = op == 329 ? vm->visual.scale : vm->visual.secondary_scale;
-            scale = {x,y}; vm->visual.flags |= 8;
+            scale = {x, y};
+            vm->visual.flags |= 8;
         } else if (op == 330) {
             const float y = real(4), x = real(3);
             const i32 mode = integer(2), duration = integer(1);
-            vm->interpolators.scale.begin(duration,mode,
-                                          {vm->visual.scale.x,vm->visual.scale.y},{x,y});
+            vm->interpolators.scale.begin(duration, mode, {vm->visual.scale.x, vm->visual.scale.y}, {x, y});
         } else if (op == 333) {
             // 4202a7: Y,X,slot again,mode,duration. The cached destination
             // VM interpolates from the freshly resolved source's574 XYZ.
             const float y = real(4), x = real(3);
             const i32 source_slot = integer(0);
-            if (!c.error.empty()) { sim.error_ = c.error; return -2; }
+            if (!c.error.empty()) {
+                sim.error_ = c.error;
+                return -2;
+            }
             if (source_slot < 0 || source_slot >= StageEnemy::kAnimationSlots) {
-                sim.error_ = "animation position source slot"; return -2;
+                sim.error_ = "animation position source slot";
+                return -2;
             }
             AnmVm* source = sim.enemy_animation(e, source_slot);
-            if (!source) { sim.error_ = "animation position source missing"; return -2; }
+            if (!source) {
+                sim.error_ = "animation position source missing";
+                return -2;
+            }
             const i32 mode = integer(2), duration = integer(1);
             auto& channel = vm->interpolators.position;
-            channel.control1 = {}; channel.control2 = {};
-            channel.begin(duration,mode,
-                {source->visual.translation.x,source->visual.translation.y,source->visual.translation.z},
-                {x,y,0});
+            channel.control1 = {};
+            channel.control2 = {};
+            channel.begin(duration, mode,
+                          {source->visual.translation.x, source->visual.translation.y, source->visual.translation.z},
+                          {x, y, 0});
         } else if (op == 325) {
             const u32 b = u8(integer(3)), g = u8(integer(2)), r = u8(integer(1));
-            vm->visual.color = (vm->visual.color & 0xff000000u) | b | g<<8 | r<<16;
-        } else { // 326 -> 4240c0
+            vm->visual.color = (vm->visual.color & 0xff000000u) | b | g << 8 | r << 16;
+        } else {  // 326 -> 4240c0
             const i32 r = u8(integer(3)), g = u8(integer(4)), b = u8(integer(5));
             const i32 mode = integer(2), duration = integer(1);
             const u32 color = vm->visual.color;
             auto& channel = vm->interpolators.color;
-            channel.control1 = {}; channel.control2 = {};
-            channel.begin(duration,mode,{i32(color&255),i32((color>>8)&255),i32((color>>16)&255)},
-                                        {b,g,r});
+            channel.control1 = {};
+            channel.control2 = {};
+            channel.begin(duration, mode, {i32(color & 255), i32((color >> 8) & 255), i32((color >> 16) & 255)},
+                          {b, g, r});
         }
-        if (!c.error.empty()) { sim.error_ = c.error; return -2; }
+        if (!c.error.empty()) {
+            sim.error_ = c.error;
+            return -2;
+        }
         return 0;
     }
-    case 553: { // 41b364: hit voice override at inner+3fc8
-        if (!resolve_int(c, 0, e.hit_sound)) { sim.error_ = c.error; return -2; }
+    case 553: {  // 41b364: hit voice override at inner+3fc8
+        if (!resolve_int(c, 0, e.hit_sound)) {
+            sim.error_ = c.error;
+            return -2;
+        }
         return 0;
     }
     case 554:
@@ -307,7 +359,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
             sim.error_ = c.error;
             return -2;
         }
-        emit_move(integral,{x,y});
+        emit_move(integral, {x, y});
         if (kKeep < x) m.pos[0] = x;
         if (kKeep < y) m.pos[1] = y;
         m.mode &= 0xFFFFFFF0u;
@@ -320,11 +372,10 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.position[1] = round001(e.position[1]);
         if (e.flags & 0x40000u) {
             const float hw = e.limit_half[0] * 0.5f, hh = e.limit_half[1] * 0.5f;
-            e.position[0] = std::max(e.limit_center[0] - hw,
-                                     std::min(e.position[0], e.limit_center[0] + hw));
-            e.position[1] = std::max(e.limit_center[1] - hh,
-                                     std::min(e.position[1], e.limit_center[1] + hh));
-            for (u32 i = 0; i < 3; ++i) e.vel.pos[i] = float(e.position[i] - e.pos.pos[i]);
+            e.position[0] = std::max(e.limit_center[0] - hw, std::min(e.position[0], e.limit_center[0] + hw));
+            e.position[1] = std::max(e.limit_center[1] - hh, std::min(e.position[1], e.limit_center[1] + hh));
+            for (u32 i = 0; i < 3; ++i)
+                e.vel.pos[i] = float(e.position[i] - e.pos.pos[i]);
         }
         return 0;
     }
@@ -334,7 +385,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         StageMover& m = op == 401 ? e.vel : e.pos;
         i32 dur = 0, mode = 0;
         float x = 0, y = 0;
-        if (!resolve_float(c,2,x) || !resolve_float(c,3,y) || !resolve_int(c,0,dur)) {
+        if (!resolve_float(c, 2, x) || !resolve_float(c, 3, y) || !resolve_int(c, 0, dur)) {
             sim.error_ = c.error;
             return -2;
         }
@@ -344,8 +395,11 @@ int StageCommands::execute(EclContext& c, u16 op) {
             return 0;
         }
         // 41bb..: positive duration is read a second time, before mode.
-        if (!resolve_int(c,0,dur) || !resolve_int(c,1,mode)) { sim.error_=c.error;return -2; }
-        emit_move(integral,{float(dur),float(mode),x,y});
+        if (!resolve_int(c, 0, dur) || !resolve_int(c, 1, mode)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        emit_move(integral, {float(dur), float(mode), x, y});
         if (mode == 7 || mode == 17) {  // 模式 8 归 moveBezier（425）路径
             sim.error_ = "movePosTime interpolation mode not implemented";
             return -2;
@@ -375,8 +429,8 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         // Record the operands actually consumed above. Reading RANDRAD
         // again for tracing advances game RNG and changes BossDead motion.
-        const float values[2] = {angle,speed};
-        sim.sink.enemy_move(e.serial,op,integral,values,2);
+        const float values[2] = {angle, speed};
+        sim.sink.enemy_move(e.serial, op, integral, values, 2);
         if (kKeep < angle) {
             if ((e.flags & 0x100000u) && mirrored_variant(op)) angle = mirror_angle(angle);
             m.angle = wrap_angle(angle);
@@ -393,7 +447,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         StageMover& m = (op == 405 || op == 429) ? e.vel : e.pos;  // 0x41c21f
         i32 dur = 0, mode = 0;
         float angle = 0, speed = 0;
-        if (!resolve_float(c,2,angle) || !resolve_float(c,3,speed) || !resolve_int(c,0,dur)) {
+        if (!resolve_float(c, 2, angle) || !resolve_float(c, 3, speed) || !resolve_int(c, 0, dur)) {
             sim.error_ = c.error;
             return -2;
         }
@@ -401,20 +455,26 @@ int StageCommands::execute(EclContext& c, u16 op) {
             m.polar.duration = 0;
             return 0;
         }
-        if (!resolve_int(c,1,mode)) { sim.error_=c.error;return -2; }
+        if (!resolve_int(c, 1, mode)) {
+            sim.error_ = c.error;
+            return -2;
+        }
         if (mode == 7 || mode == 8 || mode == 17) {
             sim.error_ = "moveVelTime interpolation mode not implemented";
             return -2;
         }
-        const float trace_angle=angle;
+        const float trace_angle = angle;
         if (kKeep < angle && (e.flags & 0x100000u) && mirrored_variant(op)) angle = mirror_angle(angle);
         float from_a = m.angle, from_b = m.speed;
         float to_a = kKeep < angle ? angle : m.angle;
         const float to_b = kKeep < speed ? speed : m.speed;
         shortest_arc(from_a, to_a);
         // 41c21f rereads duration after resolving the target/mode.
-        if (!resolve_int(c,0,dur)) { sim.error_=c.error;return -2; }
-        emit_move(integral,{float(dur),float(mode),trace_angle,speed});
+        if (!resolve_int(c, 0, dur)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        emit_move(integral, {float(dur), float(mode), trace_angle, speed});
         m.polar.setup(float(dur), mode, from_a, from_b, to_a, to_b);
         m.mode &= 0xFFFFFFF2u;  // 清插值挂接标志（保持其余位）
         return 0;
@@ -429,7 +489,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
             sim.error_ = c.error;
             return -2;
         }
-        emit_move(integral,{a0,a1,a2,a3});
+        emit_move(integral, {a0, a1, a2, a3});
         if ((m.mode & 0xFu) != 2) {
             m.aux[0] = m.pos[0];
             m.aux[1] = m.pos[1];
@@ -462,17 +522,21 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
     case 420:
-    case 422: { // 41c80c, case 0x1e: absolute/relative ellipse movers
+    case 422: {  // 41c80c, case 0x1e: absolute/relative ellipse movers
         const u32 integral[6] = {};
         StageMover& m = op == 420 ? e.vel : e.pos;
         float args[6] = {};
         for (u32 n = 0; n < 6; ++n) {
-            if (!resolve_float(c, n, args[n])) { sim.error_ = c.error; return -2; }
+            if (!resolve_float(c, n, args[n])) {
+                sim.error_ = c.error;
+                return -2;
+            }
         }
-        emit_move(integral,{args[0],args[1],args[2],args[3],args[4],args[5]});
+        emit_move(integral, {args[0], args[1], args[2], args[3], args[4], args[5]});
         // Retail tests mode == 2, even when replacing an existing ellipse.
         if ((m.mode & 15) != 2)
-            for (u32 n = 0; n < 3; ++n) m.aux[n] = m.pos[n];
+            for (u32 n = 0; n < 3; ++n)
+                m.aux[n] = m.pos[n];
         if (kKeep < args[0]) m.angle = wrap_angle(args[0]);
         if (kKeep < args[1]) m.speed = args[1];
         if (kKeep < args[2]) m.radius = args[2];
@@ -480,7 +544,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         if (kKeep < args[4]) m.ellipse_angle = wrap_angle(wrap_angle(args[4]));
         if (kKeep < args[5]) m.ellipse_ratio = args[5];
         m.mode = (m.mode & 0xfffffff3u) | 3u;
-        m.accumulate(); // 473a10 does not advance angle/radius
+        m.accumulate();  // 473a10 does not advance angle/radius
         for (u32 n = 0; n < 3; ++n) {
             const float delta = (e.vel.pos[n] + e.pos.pos[n]) - e.position[n];
             e.motion_delta[n] = delta;
@@ -499,16 +563,16 @@ int StageCommands::execute(EclContext& c, u16 op) {
         StageMover& m = (op == 409) ? e.vel : e.pos;
         i32 dur = 0, mode = 0;
         float speed_to = 0, radius = 0, growth = 0;
-        if (!resolve_float(c,2,speed_to) || !resolve_float(c,3,radius) ||
-            !resolve_float(c,4,growth) || !resolve_int(c,0,dur) || !resolve_int(c,1,mode)) {
+        if (!resolve_float(c, 2, speed_to) || !resolve_float(c, 3, radius) || !resolve_float(c, 4, growth) ||
+            !resolve_int(c, 0, dur) || !resolve_int(c, 1, mode)) {
             sim.error_ = c.error;
             return -2;
         }
-        emit_move(integral,{float(dur),float(mode),speed_to,radius,growth});
+        emit_move(integral, {float(dur), float(mode), speed_to, radius, growth});
         if (dur < 1) {
             m.polar.duration = 0;
             m.radial.duration = 0;
-            return 0; // 41c6b9 exits before changing circle mode/position
+            return 0;  // 41c6b9 exits before changing circle mode/position
         } else {
             if (mode == 7 || mode == 8 || mode == 17) {
                 sim.error_ = "moveCircleTime interpolation mode not implemented";
@@ -521,17 +585,19 @@ int StageCommands::execute(EclContext& c, u16 op) {
             const float to_b = kKeep < speed_to ? speed_to : m.speed;
             m.polar.setup(float(dur), mode, 0.0f, from_b, 0.0f, to_b);
         }
-        m.radial.control1={};m.radial.control2={};
-        m.radial.begin(dur,mode,{m.radius,m.growth},
-            {kKeep<radius?radius:m.radius,kKeep<growth?growth:m.growth});
+        m.radial.control1 = {};
+        m.radial.control2 = {};
+        m.radial.begin(dur, mode, {m.radius, m.growth},
+                       {kKeep < radius ? radius : m.radius, kKeep < growth ? growth : m.growth});
         m.mode = (m.mode & 0xFFFFFFF2u) | 2u;
-        m.accumulate(); // 41c780 ->473a10 ->419950, without timer advance
-        for(u32 n=0;n<3;++n) {
-            const float delta=(e.vel.pos[n]+e.pos.pos[n])-e.position[n];
-            e.motion_delta[n]=delta;
-            e.position[n]+=delta;
+        m.accumulate();  // 41c780 ->473a10 ->419950, without timer advance
+        for (u32 n = 0; n < 3; ++n) {
+            const float delta = (e.vel.pos[n] + e.pos.pos[n]) - e.position[n];
+            e.motion_delta[n] = delta;
+            e.position[n] += delta;
         }
-        e.position[0]=round001(e.position[0]);e.position[1]=round001(e.position[1]);
+        e.position[0] = round001(e.position[0]);
+        e.position[1] = round001(e.position[1]);
         return 0;
     }
     case 432:
@@ -542,7 +608,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
             sim.error_ = c.error;
             return -2;
         }
-        emit_move(integral,{float(id)});
+        emit_move(integral, {float(id)});
         StageEnemy* target = sim.find_by_script_id(id);
         StageMover& m = (op == 432) ? e.vel : e.pos;
         if (!target) {
@@ -572,13 +638,13 @@ int StageCommands::execute(EclContext& c, u16 op) {
         StageMover& m = e.vel;
         i32 dur = 0;
         float x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0;
-        if (!resolve_float(c,3,x2) || !resolve_float(c,4,y2) ||
-            !resolve_float(c,1,x1) || !resolve_float(c,2,y1) ||
-            !resolve_float(c,5,x3) || !resolve_float(c,6,y3) || !resolve_int(c,0,dur)) {
+        if (!resolve_float(c, 3, x2) || !resolve_float(c, 4, y2) || !resolve_float(c, 1, x1) ||
+            !resolve_float(c, 2, y1) || !resolve_float(c, 5, x3) || !resolve_float(c, 6, y3) ||
+            !resolve_int(c, 0, dur)) {
             sim.error_ = c.error;
             return -2;
         }
-        emit_move(integral,{float(dur),x1,y1,x2,y2,x3,y3});
+        emit_move(integral, {float(dur), x1, y1, x2, y2, x3, y3});
         m.mode &= 0xFFFFFFF0u;
         if (dur < 1) {
             m.postime.duration = 0;
@@ -638,9 +704,9 @@ int StageCommands::execute(EclContext& c, u16 op) {
             angle = (left_of_player ? third : !third) ? float(quarter + pi) : quarter;
         }
         if (e.position[1] < cy - qy) {
-            angle = angle < 0 ? -angle : angle;      // 顶带：+|a|（向下）
+            angle = angle < 0 ? -angle : angle;  // 顶带：+|a|（向下）
         } else if (e.position[1] > cy + qy) {
-            angle = angle < 0 ? angle : -angle;      // 底带：−|a|（向上）
+            angle = angle < 0 ? angle : -angle;  // 底带：−|a|（向上）
         }
         if (std::fabs(angle + 1.5707964f) < 0.05f) {
             angle = angle >= -1.5707964f ? -1.5207964f : -1.6207963f;
@@ -648,10 +714,11 @@ int StageCommands::execute(EclContext& c, u16 op) {
             angle = angle > 1.5707964f ? 1.6207963f : 1.5207964f;
         }
         // 41cdc2 draws the direction before reading mode/speed/duration.
-        if (!resolve_int(c,1,mode) || !resolve_float(c,2,speed) || !resolve_int(c,0,dur)) {
-            sim.error_=c.error;return -2;
+        if (!resolve_int(c, 1, mode) || !resolve_float(c, 2, speed) || !resolve_int(c, 0, dur)) {
+            sim.error_ = c.error;
+            return -2;
         }
-        emit_move(integral,{float(dur),float(mode),speed});
+        emit_move(integral, {float(dur), float(mode), speed});
         StageMover& m = e.vel;
         if (dur < 1) {
             m.polar.duration = 0;
@@ -670,32 +737,47 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 436:
     case 437:
     case 438:
-    case 439: { // 41bdf4: independent X/Y position interpolation
+    case 439: {  // 41bdf4: independent X/Y position interpolation
         const bool separate = op != 436 && op != 437;
-        const u32 integral[5] = {1,1,u32(separate),0,0};
+        const u32 integral[5] = {1, 1, u32(separate), 0, 0};
         StageMover& m = (op & 1) ? e.pos : e.vel;
         float x = 0, y = 0;
         i32 duration = 0, mx = 0, my = 0;
-        if (!resolve_float(c,separate?3:2,x) || !resolve_float(c,separate?4:3,y) || !resolve_int(c,0,duration)) {
-            sim.error_ = c.error; return -2;
+        if (!resolve_float(c, separate ? 3 : 2, x) || !resolve_float(c, separate ? 4 : 3, y) ||
+            !resolve_int(c, 0, duration)) {
+            sim.error_ = c.error;
+            return -2;
         }
-        if (duration < 1) { m.postime.duration = 0; return 0; }
-        const float trace_x=x,trace_y=y;
+        if (duration < 1) {
+            m.postime.duration = 0;
+            return 0;
+        }
+        const float trace_x = x, trace_y = y;
         if (op >= 436) {
             x = (e.flags & 0x100000u) ? m.pos[0] - x : m.pos[0] + x;
             y = m.pos[1] + y;
         }
         // Native resolves duration a second time after applying offsets.
-        if (!resolve_int(c,0,duration) || !resolve_int(c,1,mx) || (separate && !resolve_int(c,2,my))) {
-            sim.error_ = c.error; return -2;
+        if (!resolve_int(c, 0, duration) || !resolve_int(c, 1, mx) || (separate && !resolve_int(c, 2, my))) {
+            sim.error_ = c.error;
+            return -2;
         }
-        if (separate) emit_move(integral,{float(duration),float(mx),float(my),trace_x,trace_y});
-        else emit_move(integral,{float(duration),float(mx),trace_x,trace_y});
+        if (separate)
+            emit_move(integral, {float(duration), float(mx), float(my), trace_x, trace_y});
+        else
+            emit_move(integral, {float(duration), float(mx), trace_x, trace_y});
         auto& itp = m.postime;
-        itp.duration = float(duration); itp.elapsed = 0; itp.per_axis = separate;
+        itp.duration = float(duration);
+        itp.elapsed = 0;
+        itp.per_axis = separate;
         if (!separate) itp.mode = mx;
-        itp.axis_mode[0] = mx; itp.axis_mode[1] = my;
-        for (int i=0;i<3;++i) { itp.start[i]=m.pos[i]; itp.p1[i]=0; itp.p2[i]=0; }
+        itp.axis_mode[0] = mx;
+        itp.axis_mode[1] = my;
+        for (int i = 0; i < 3; ++i) {
+            itp.start[i] = m.pos[i];
+            itp.p1[i] = 0;
+            itp.p2[i] = 0;
+        }
         itp.target[0] = kKeep < x ? x : m.pos[0];
         itp.target[1] = kKeep < y ? y : m.pos[1];
         itp.target[2] = 0;
@@ -715,12 +797,12 @@ int StageCommands::execute(EclContext& c, u16 op) {
             e.pos.pos[i] = 0;
         }
         for (StageMover* m : {&e.vel, &e.pos}) {
-            m->speed = 0;                                // 41ba73/41ba6d
-            m->aux[0] = m->aux[1] = m->aux[2] = 0;       // 41ba7f-41bac4
-            m->mode &= 0xFFFFFFF0u;                      // 41baca/41bad0
-            m->polar.duration = 0;                       // 41bae4/41baea（0x3fc/0x44c）
-            m->postime.duration = 0;                     // 41bad8/41bade（0x340/0x3a8）
-            m->radial.duration = 0;                      // 41baf0/41baf6（0x49c/0x4e0）
+            m->speed = 0;                           // 41ba73/41ba6d
+            m->aux[0] = m->aux[1] = m->aux[2] = 0;  // 41ba7f-41bac4
+            m->mode &= 0xFFFFFFF0u;                 // 41baca/41bad0
+            m->polar.duration = 0;                  // 41bae4/41baea（0x3fc/0x44c）
+            m->postime.duration = 0;                // 41bad8/41bade（0x340/0x3a8）
+            m->radial.duration = 0;                 // 41baf0/41baf6（0x49c/0x4e0）
         }
         return 0;
     }
@@ -766,8 +848,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     }
     case 504: {  // moveLimit（0x41cd32）
         float cx = 0, cy = 0, w = 0, h = 0;
-        if (resolve_float(c, 0, cx) && resolve_float(c, 1, cy) && resolve_float(c, 2, w) &&
-            resolve_float(c, 3, h)) {
+        if (resolve_float(c, 0, cx) && resolve_float(c, 1, cy) && resolve_float(c, 2, w) && resolve_float(c, 3, h)) {
             e.flags |= 0x40000u;
             e.limit_center[0] = cx;
             e.limit_center[1] = cy;
@@ -782,7 +863,8 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.flags &= ~0x40000u;
         return 0;
     case 506: {  // dropClear（0x41b260 case 0x2c：memset +0x3F6C, 0x3c）
-        for (i32& slot2 : e.drop_extra) slot2 = 0;
+        for (i32& slot2 : e.drop_extra)
+            slot2 = 0;
         // 15 dwords end at +3fa7; main is +3f68, area starts +3fa8.
         return 0;
     }
@@ -845,7 +927,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
             sim.error_ = c.error;
             return -2;
         }
-        sim.boss_leaving=false;
+        sim.boss_leaving = false;
         if (slot >= 0 && slot < 3) {
             sim.boss_slot[slot] = e.script_id;
             e.flags |= 0x1000000u;  // 0x41d3d8：BOSS 位（525 清场豁免）
@@ -890,8 +972,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     }
     case 513:
         // Boss 第一非符锚点（§7.3）：MainBoss 创建的 "Boss" 敌机首条 513。
-        if (e.serial == sim.boss_main_serial && sim.boss_nonspell_frame < 0)
-            sim.boss_nonspell_frame = i32(sim.frame);
+        if (e.serial == sim.boss_main_serial && sim.boss_nonspell_frame < 0) sim.boss_nonspell_frame = i32(sim.frame);
         if (sim.replay_events) sim.sink.boss_op(e.serial, 513, nullptr, 0, "");
         e.age = 0;  // 0041e570: reset the enemy phase timer, not invulnerability.
         return 0;
@@ -934,8 +1015,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         // 0041e473 resolves id, arg2, then duration; preserve RNG argument order.
         i32 id = 0, duration = 0, bonus = 0;
-        if (!resolve_int(c, 0, id) || !resolve_int(c, 2, bonus) ||
-            !resolve_int(c, 1, duration)) {
+        if (!resolve_int(c, 0, id) || !resolve_int(c, 2, bonus) || !resolve_int(c, 1, duration)) {
             sim.error_ = c.error;
             return -2;
         }
@@ -944,9 +1024,9 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.spell_active = true;
         e.spell_life = i32(e.life) * 7;
         e.age = 0;  // shared caseD_33 tail: 004016c0(0) on the phase timer
-        if (!sim.emit_spell(sim.spell.begin(e.spell_id, e.spell_name, duration,
-                            sim.session ? sim.session->stage : 1, sim.diff,
-                            sim.bomb_active), e)) {
+        if (!sim.emit_spell(sim.spell.begin(e.spell_id, e.spell_name, duration, sim.session ? sim.session->stage : 1,
+                                            sim.diff, sim.bomb_active),
+                            e)) {
             if (sim.error_.empty()) sim.error_ = sim.spell.error;
             return -2;
         }
@@ -958,94 +1038,128 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.spell_id = -1;
         e.spell_name.clear();
         return 0;
-    case 323: { // 41b40c: death effect ANIM file then script
-        if(!resolve_int(c,0,e.death_effect_file)||!resolve_int(c,1,e.death_effect)) {
-            sim.error_=c.error;return -2;
+    case 323: {  // 41b40c: death effect ANIM file then script
+        if (!resolve_int(c, 0, e.death_effect_file) || !resolve_int(c, 1, e.death_effect)) {
+            sim.error_ = c.error;
+            return -2;
         }
         return 0;
     }
-    case 516: { // 41e382: synchronous sound effect
-        i32 id=0;if(!resolve_int(c,0,id)){sim.error_=c.error;return -2;}
-        if(id>=0&&sim.enemy_position_sound&&!sim.enemy_position_sound(id,e.position[0])){sim.error_="ECL sound failed";return -2;}
+    case 516: {  // 41e382: synchronous sound effect
+        i32 id = 0;
+        if (!resolve_int(c, 0, id)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        if (id >= 0 && sim.enemy_position_sound && !sim.enemy_position_sound(id, e.position[0])) {
+            sim.error_ = "ECL sound failed";
+            return -2;
+        }
         return 0;
     }
-    case 547: { // 41f242: resolve float then fstp to global4c0a28, no clamp.
+    case 547: {  // 41f242: resolve float then fstp to global4c0a28, no clamp.
         float rate = 0;
-        if (!resolve_float(c,0,rate)) { sim.error_ = c.error; return -2; }
+        if (!resolve_float(c, 0, rate)) {
+            sim.error_ = c.error;
+            return -2;
+        }
         sim.set_time_rate(rate);
         return 0;
     }
-    case 517: { // 41e3a3 ->45fa60(kind1, duration, start, end, 0), Update75
+    case 517: {  // 41e3a3 ->45fa60(kind1, duration, start, end, 0), Update75
         i32 duration = 0, start = 0, end = 0;
-        if (!resolve_int(c,2,end) || !resolve_int(c,1,start) || !resolve_int(c,0,duration)) {
-            sim.error_ = c.error; return -2;
+        if (!resolve_int(c, 2, end) || !resolve_int(c, 1, start) || !resolve_int(c, 0, duration)) {
+            sim.error_ = c.error;
+            return -2;
         }
-        if (sim.screen_shake && !sim.screen_shake(duration,start,end)) {
-            sim.error_ = "Screen shake registration failed"; return -2;
+        if (sim.screen_shake && !sim.screen_shake(duration, start, end)) {
+            sim.error_ = "Screen shake registration failed";
+            return -2;
         }
         return 0;
     }
-    case 557: { // 0041f40b ->004099a0/00405f00; far is evaluated before near.
+    case 557: {  // 0041f40b ->004099a0/00405f00; far is evaluated before near.
         i32 duration = 0, mode = 0, color = 0;
         float near_distance = 0, far_distance = 0;
-        if (!resolve_int(c,0,duration) || !resolve_int(c,1,mode) ||
-            !resolve_int(c,2,color) || !resolve_float(c,4,far_distance) ||
-            !resolve_float(c,3,near_distance)) {
-            sim.error_ = c.error; return -2;
+        if (!resolve_int(c, 0, duration) || !resolve_int(c, 1, mode) || !resolve_int(c, 2, color) ||
+            !resolve_float(c, 4, far_distance) || !resolve_float(c, 3, near_distance)) {
+            sim.error_ = c.error;
+            return -2;
         }
-        if (sim.stage_fog)
-            sim.stage_fog(duration,mode,u32(color),near_distance,far_distance);
+        if (sim.stage_fog) sim.stage_fog(duration, mode, u32(color), near_distance, far_distance);
         return 0;
     }
     case 559:
     case 638:
         return 0;  // 计时/音效/符卡/掉落等：无事件
-    case 524: { // 424310: write be824; reset be82c only when chapter changes.
+    case 524: {    // 424310: write be824; reset be82c only when chapter changes.
         i32 chapter = 0;
-        if (!resolve_int(c, 0, chapter)) { sim.error_ = c.error; return -2; }
+        if (!resolve_int(c, 0, chapter)) {
+            sim.error_ = c.error;
+            return -2;
+        }
         if (sim.session) {
             if (sim.session->chapter != chapter) sim.session->chapter_frame = 0;
             sim.session->chapter = chapter;
         }
         return 0;
     }
-    case 527: { // 41d0c2: read color, HP, index; divide by initial life (+3f50).
-        i32 color=0,index=0;float life=0;
-        if(!resolve_int(c,2,color)||!resolve_float(c,1,life)||!resolve_int(c,0,index)){
-            sim.error_=c.error;return -2;
+    case 527: {  // 41d0c2: read color, HP, index; divide by initial life (+3f50).
+        i32 color = 0, index = 0;
+        float life = 0;
+        if (!resolve_int(c, 2, color) || !resolve_float(c, 1, life) || !resolve_int(c, 0, index)) {
+            sim.error_ = c.error;
+            return -2;
         }
-        i32 boss_index=0;
-        for(i32 i=0;i<3;++i)if(sim.boss_slot[i]==e.script_id){boss_index=i;break;}
-        if(index<0||index>=4){sim.error_="Boss marker index";return -2;}
-        auto& marker=sim.boss_markers[size_t(boss_index)][size_t(index)];
-        marker.color=color;marker.ratio=life/float(e.spell_base_life);
+        i32 boss_index = 0;
+        for (i32 i = 0; i < 3; ++i)
+            if (sim.boss_slot[i] == e.script_id) {
+                boss_index = i;
+                break;
+            }
+        if (index < 0 || index >= 4) {
+            sim.error_ = "Boss marker index";
+            return -2;
+        }
+        auto& marker = sim.boss_markers[size_t(boss_index)][size_t(index)];
+        marker.color = color;
+        marker.ratio = life / float(e.spell_base_life);
         return 0;
     }
-    case 540: { // 41f1ba: stage context+15c, independent of circular HP markers.
-        if(!resolve_int(c,0,sim.boss_remaining_stars)){sim.error_=c.error;return -2;}
+    case 540: {  // 41f1ba: stage context+15c, independent of circular HP markers.
+        if (!resolve_int(c, 0, sim.boss_remaining_stars)) {
+            sim.error_ = c.error;
+            return -2;
+        }
         return 0;
     }
-    case 526: { // 41cdab: square in x87 and store enemy+4044.
-        float radius=0;if(!resolve_float(c,0,radius)){sim.error_=c.error;return -2;}
-        e.bullet_protect_radius2=float(double(radius)*double(radius));
+    case 526: {  // 41cdab: square in x87 and store enemy+4044.
+        float radius = 0;
+        if (!resolve_float(c, 0, radius)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        e.bullet_protect_radius2 = float(double(radius) * double(radius));
         return 0;
     }
-    case 560: { // 41f6ea: global bullet reflection width/height, not an effect.
+    case 560: {  // 41f6ea: global bullet reflection width/height, not an effect.
         float width = 0, height = 0;
-        if (!resolve_float(c,0,width) || !resolve_float(c,1,height)) {
-            sim.error_ = c.error; return -2;
+        if (!resolve_float(c, 0, width) || !resolve_float(c, 1, height)) {
+            sim.error_ = c.error;
+            return -2;
         }
         sim.bullet_bounce_size[0] = width;
         sim.bullet_bounce_size[1] = height;
         return 0;
     }
-    case 545: // 0041f1d4 -> 430220: clear protection then cancel all lasers.
+    case 545:  // 0041f1d4 -> 430220: clear protection then cancel all lasers.
         sim.cancel_lasers();
         return sim.error_.empty() ? 0 : -2;
-    case 556: { // 41e360 stores the inline string, consumed by41aad0
+    case 556: {  // 41e360 stores the inline string, consumed by41aad0
         const u32 length = u32(ins->argument<i32>(0));
         if (ins->length < 20 || length > u32(ins->length - 20)) {
-            sim.error_ = "setDeath string"; return -2;
+            sim.error_ = "setDeath string";
+            return -2;
         }
         const char* name = reinterpret_cast<const char*>(ins) + 20;
         e.death_routine.assign(name, strnlen(name, length));
@@ -1058,13 +1172,11 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.spell.hide_background();
         return 0;
     case 514: {  // setInterrupt（0x41e262 → 0x421880）：{id,life,time,label}
-        const bool spell_route = (sim.mode_flags & 0x30u) == 0x20u &&
-                                 (e.flags & 0x1000000u);
+        const bool spell_route = (sim.mode_flags & 0x30u) == 0x20u && (e.flags & 0x1000000u);
         i32 id = 0, t1 = 0, t2 = 0;
         // Original reads timeout, optional HP, then slot. Spell Practice does
         // not evaluate the ignored HP argument (which can consume RNG).
-        if (!resolve_int(c, 2, t2) || (!spell_route && !resolve_int(c, 1, t1)) ||
-            !resolve_int(c, 0, id)) {
+        if (!resolve_int(c, 2, t2) || (!spell_route && !resolve_int(c, 1, t1)) || !resolve_int(c, 0, id)) {
             sim.error_ = c.error;
             return -2;
         }
@@ -1107,8 +1219,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
                 sim.error_ = c.error;
                 return -2;
             }
-            if (timeout_slot >= 0 && timeout_slot < 8)
-                e.interrupts[u32(timeout_slot)].timeout_label = "BossEscape";
+            if (timeout_slot >= 0 && timeout_slot < 8) e.interrupts[u32(timeout_slot)].timeout_label = "BossEscape";
         }
         if (sim.replay_events) {
             const i32 args[3] = {id, t1, t2};
@@ -1165,8 +1276,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 519:
         // 41e407: no dialogue OR 418090(dialogue+174) != 0 passes. MSG12
         // sets that pulse; the next stage update sees it before MSG decrements.
-        return sim.dialog_host ? (sim.dialog_host->dialog_wait_released() ? 0 : 1)
-                               : sim.boss_dialog_wait();
+        return sim.dialog_host ? (sim.dialog_host->dialog_wait_released() ? 0 : 1) : sim.boss_dialog_wait();
     case 520:  // bossWait（0x41e42e）：任一 BOSS 槽存活则让出
         return sim.boss() ? 1 : 0;
     case 535: {  // diffI（0x41d439）：dest = args[1 + DIFF]
@@ -1222,26 +1332,31 @@ int StageCommands::execute(EclContext& c, u16 op) {
         // this to leave when its spawning enemy disappears.
         *dest = 0;
         for (const auto& enemy : sim.enemies)
-            if (id && enemy->script_id == id) { *dest=1;break; }
+            if (id && enemy->script_id == id) {
+                *dest = 1;
+                break;
+            }
         return 0;
     }
-    case 562: { // jump-table dense60 ->41d325: forced drops, unlike509's mode gate
+    case 562: {  // jump-table dense60 ->41d325: forced drops, unlike509's mode gate
         sim.drop_table(e);
         return 0;
     }
-    case 561: { // jump-table dense5f ->41b437: death audiovisual effects only
-        if(e.death_sound>=0 && sim.enemy_position_sound && !sim.enemy_position_sound(e.death_sound,e.position[0])) {
-            sim.error_="Enemy death sound failed";return -2;
+    case 561: {  // jump-table dense5f ->41b437: death audiovisual effects only
+        if (e.death_sound >= 0 && sim.enemy_position_sound && !sim.enemy_position_sound(e.death_sound, e.position[0])) {
+            sim.error_ = "Enemy death sound failed";
+            return -2;
         }
-        if(e.death_effect>=0 && sim.enemy_death_effect) {
+        if (e.death_effect >= 0 && sim.enemy_death_effect) {
             // 0x41aad0：参考点 = 最近一次玩家判定命中中心（enemy+0x27C/0x280）。
-            const double dx=double(e.position[0])-double(e.last_hit_position[0]);
-            const double dy=double(e.position[1])-double(e.last_hit_position[1]);
-            const float distance=float(dx*dx+dy*dy);
-            const float angle=distance>=0.040000003f?float(std::atan2(dy,dx)):-1.5707964f;
-            if(!sim.enemy_death_effect(e.death_effect_file,e.death_effect,
-                    {e.position[0],e.position[1],e.position[2]},angle)) {
-                sim.error_="Enemy death animation failed";return -2;
+            const double dx = double(e.position[0]) - double(e.last_hit_position[0]);
+            const double dy = double(e.position[1]) - double(e.last_hit_position[1]);
+            const float distance = float(dx * dx + dy * dy);
+            const float angle = distance >= 0.040000003f ? float(std::atan2(dy, dx)) : -1.5707964f;
+            if (!sim.enemy_death_effect(e.death_effect_file, e.death_effect,
+                                        {e.position[0], e.position[1], e.position[2]}, angle)) {
+                sim.error_ = "Enemy death animation failed";
+                return -2;
             }
         }
         return 0;
@@ -1261,12 +1376,10 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return fire_et(c, e);
     case 602: {
         i32 slot = 0, s1 = 0, s2 = 0;
-        if (resolve_int(c, 0, slot) && resolve_int(c, 1, s1) && resolve_int(c, 2, s2) && slot >= 0 &&
-            slot < 8) {
+        if (resolve_int(c, 0, slot) && resolve_int(c, 1, s1) && resolve_int(c, 2, s2) && slot >= 0 && slot < 8) {
             e.et[slot].sprite = u32(s1);
             e.et[slot].subtype = u32(s2);
-            if (ecl_sprite_observer)
-                ecl_sprite_observer(sim.frame, e.serial, slot, s1, s2);
+            if (ecl_sprite_observer) ecl_sprite_observer(sim.frame, e.serial, slot, s1, s2);
             return 0;
         }
         sim.error_ = "etSprite args";
@@ -1275,8 +1388,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 603: {
         i32 slot = 0;
         float x = 0, y = 0;
-        if (resolve_int(c, 0, slot) && resolve_float(c, 1, x) && resolve_float(c, 2, y) && slot >= 0 &&
-            slot < 8) {
+        if (resolve_int(c, 0, slot) && resolve_float(c, 1, x) && resolve_float(c, 2, y) && slot >= 0 && slot < 8) {
             e.et[slot].offset[0] = x;
             e.et[slot].offset[1] = y;
             return 0;
@@ -1287,8 +1399,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 604: {
         i32 slot = 0;
         float a = 0, b = 0;
-        if (resolve_int(c, 0, slot) && resolve_float(c, 1, a) && resolve_float(c, 2, b) && slot >= 0 &&
-            slot < 8) {
+        if (resolve_int(c, 0, slot) && resolve_float(c, 1, a) && resolve_float(c, 2, b) && slot >= 0 && slot < 8) {
             e.et[slot].angle1 = a;
             e.et[slot].angle2 = b;
             return 0;
@@ -1299,8 +1410,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 605: {
         i32 slot = 0;
         float a = 0, b = 0;
-        if (resolve_int(c, 0, slot) && resolve_float(c, 1, a) && resolve_float(c, 2, b) && slot >= 0 &&
-            slot < 8) {
+        if (resolve_int(c, 0, slot) && resolve_float(c, 1, a) && resolve_float(c, 2, b) && slot >= 0 && slot < 8) {
             e.et[slot].speed1 = a;
             e.et[slot].speed2 = b;
             return 0;
@@ -1310,8 +1420,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     }
     case 606: {
         i32 slot = 0, count = 0, ways = 0;
-        if (resolve_int(c, 0, slot) && resolve_int(c, 1, count) && resolve_int(c, 2, ways) &&
-            slot >= 0 && slot < 8) {
+        if (resolve_int(c, 0, slot) && resolve_int(c, 1, count) && resolve_int(c, 2, ways) && slot >= 0 && slot < 8) {
             e.et[slot].count = i16(count);
             e.et[slot].ways = i16(ways);
             return 0;
@@ -1328,19 +1437,18 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.error_ = "etAim args";
         return -2;
     }
-    case 608: { // 0041b260 case0x69: preserve sound IDs for laser descriptors.
+    case 608: {  // 0041b260 case0x69: preserve sound IDs for laser descriptors.
         i32 slot = 0;
-        if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8 ||
-            !resolve_int(c, 1, e.et[slot].sound) ||
+        if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8 || !resolve_int(c, 1, e.et[slot].sound) ||
             !resolve_int(c, 2, e.et[slot].transform_sound)) {
             sim.error_ = c.error.empty() ? "etSound args" : c.error;
             return -2;
         }
         return 0;
     }
-    case 609:   // etExSet（0x41df90）：写入 et 槽扩展行为队列
-    case 610:   // etExSet2（0x262 变体）：多两个整型参数位
-    case 611:   // etEx（0x263）：base 位改读敌机侧待写块计数
+    case 609:    // etExSet（0x41df90）：写入 et 槽扩展行为队列
+    case 610:    // etExSet2（0x262 变体）：多两个整型参数位
+    case 611:    // etEx（0x263）：base 位改读敌机侧待写块计数
     case 612: {  // etEx2（0x264）：同 611 + 两整型位
         // 0x41df90: arg0 is ALWAYS the emitter. 609/610 explicitly select
         // one of 18 queue entries; 611/612 use its append cursor. Treating
@@ -1354,7 +1462,8 @@ int StageCommands::execute(EclContext& c, u16 op) {
         const bool append = op == 611 || op == 612;
         const bool extended = op == 610 || op == 612;
         u32 argument = 1;
-        if (append) index = i32(e.et[slot].ex_next);
+        if (append)
+            index = i32(e.et[slot].ex_next);
         else if (!resolve_int(c, argument++, index)) {
             sim.error_ = c.error;
             return -2;
@@ -1393,12 +1502,11 @@ int StageCommands::execute(EclContext& c, u16 op) {
         // 0x41b260 case0x6b -> 0x411df0 + 0x430300: clear live
         // bullets/lasers, NOT the enemy's emitter configurations.
         sim.clear_bullets();
-        sim.cancel_lasers(false); // 430300 passes (1,0); protection is not reset.
+        sim.cancel_lasers(false);  // 430300 passes (1,0); protection is not reset.
         return sim.error_.empty() ? 0 : -2;
     case 614: {  // etCopy（0x41d61a）
         i32 to = 0, from = 0;
-        if (resolve_int(c, 0, to) && resolve_int(c, 1, from) && to >= 0 && to < 8 && from >= 0 &&
-            from < 8) {
+        if (resolve_int(c, 0, to) && resolve_int(c, 1, from) && to >= 0 && to < 8 && from >= 0 && from < 8) {
             // 0041d631..0041d6a9 copies the 0x380-byte emitter and its
             // two position vectors. The append cursor at enemy+0x3d70
             // is outside those blocks and remains local to the destination.
@@ -1410,7 +1518,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.error_ = "etCopy args";
         return -2;
     }
-    case 615:  // etCancel（0x4114f0(pos, radius, 1)：场内弹转换取消道具）
+    case 615:    // etCancel（0x4114f0(pos, radius, 1)：场内弹转换取消道具）
     case 616: {  // etClear（0x4114f0(pos, radius, 0) + 0x4302a0 转换点登记）
         float radius = 0;
         if (!resolve_float(c, 0, radius)) {
@@ -1421,32 +1529,37 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.cancel_lasers_radius({e.position[0], e.position[1], e.position[2]}, radius);
         return sim.error_.empty() ? 0 : -2;
     }
-    case 626: { // 41d837 ->4246f0: polar angle/radius to emitter offset XY
-        i32 slot=0;float angle=0,radius=0;
-        if(!resolve_int(c,0,slot)||!resolve_float(c,1,angle)||!resolve_float(c,2,radius)||slot<0||slot>=8){
-            sim.error_=c.error.empty()?"etOffsetRad args":c.error;return -2;
+    case 626: {  // 41d837 ->4246f0: polar angle/radius to emitter offset XY
+        i32 slot = 0;
+        float angle = 0, radius = 0;
+        if (!resolve_int(c, 0, slot) || !resolve_float(c, 1, angle) || !resolve_float(c, 2, radius) || slot < 0 ||
+            slot >= 8) {
+            sim.error_ = c.error.empty() ? "etOffsetRad args" : c.error;
+            return -2;
         }
-        polar_xy(angle,radius,e.et[slot].offset[0],e.et[slot].offset[1]);return 0;
+        polar_xy(angle, radius, e.et[slot].offset[0], e.et[slot].offset[1]);
+        return 0;
     }
     case 627: {  // etDist: emitter+0x24, consumed by fire_et's radial spawn
         i32 slot = 0;
         float distance = 0;
-        if (!resolve_int(c, 0, slot) || !resolve_float(c, 1, distance) ||
-            slot < 0 || slot >= 8) {
+        if (!resolve_int(c, 0, slot) || !resolve_float(c, 1, distance) || slot < 0 || slot >= 8) {
             sim.error_ = c.error.empty() ? "etDist args" : c.error;
             return -2;
         }
         e.et[slot].spin = distance;
         return 0;
     }
-    case 628: { //41d8e2: absolute XY and enable flag determined by X>=-990.
-        i32 slot=0;float x=0,y=0;
-        if(!resolve_int(c,0,slot)||slot<0||slot>=8||
-           !resolve_float(c,1,x)||!resolve_float(c,2,y)){
-            sim.error_=c.error.empty()?"absolute emitter offset arguments":c.error;return -2;
+    case 628: {  //41d8e2: absolute XY and enable flag determined by X>=-990.
+        i32 slot = 0;
+        float x = 0, y = 0;
+        if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8 || !resolve_float(c, 1, x) || !resolve_float(c, 2, y)) {
+            sim.error_ = c.error.empty() ? "absolute emitter offset arguments" : c.error;
+            return -2;
         }
-        e.et[slot].absolute[0]=x;e.et[slot].absolute[1]=y;
-        e.et[slot].absolute[2]=x>=-990.f?1.f:0.f;
+        e.et[slot].absolute[0] = x;
+        e.et[slot].absolute[1] = y;
+        e.et[slot].absolute[2] = x >= -990.f ? 1.f : 0.f;
         return 0;
     }
     case 624: {  // etSpeedD（0x41da32）：按 DIFF 选参
@@ -1479,14 +1592,17 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.et[slot].ways = i16(ways);
         return 0;
     }
-    case 640: { // 41e135: store the inline routine name at ex-entry +0x28
+    case 640: {  // 41e135: store the inline routine name at ex-entry +0x28
         i32 slot = 0, index = 0;
-        if (!resolve_int(c, 0, slot) || !resolve_int(c, 1, index) ||
-            slot < 0 || slot >= 8 || index < 0 || index >= 18) {
+        if (!resolve_int(c, 0, slot) || !resolve_int(c, 1, index) || slot < 0 || slot >= 8 || index < 0 ||
+            index >= 18) {
             sim.error_ = c.error.empty() ? "etExSub slot" : c.error;
             return -2;
         }
-        if (ins->length < 32) { sim.error_ = "Truncated etExSub name"; return -2; }
+        if (ins->length < 32) {
+            sim.error_ = "Truncated etExSub name";
+            return -2;
+        }
         const u32 length = ins->argument<u32>(2);
         const char* name = reinterpret_cast<const char*>(ins) + 28;
         if (!length || length > u32(ins->length - 28) || !std::memchr(name, 0, length)) {
@@ -1498,19 +1614,21 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.et[slot].ex[index].subroutine = name;
         return 0;
     }
-    case 630: { // 41f3f6: 0x421b10(arg0) → call 0x409100——STD 相机脚本
+    case 630: {  // 41f3f6: 0x421b10(arg0) → call 0x409100——STD 相机脚本
         // ins_16 标号中断：扫描 [stage+0x1c] 脚本找 opcode==16 且 arg0==id 的
         // 标号，命中则游标跳到标号后首指令、计时三槽设为目标 time（生产
         // StageScript::interrupt 同构）。st04 main/MainSub09/MainBossDebug(2)
         // 均 630(1)，对应 st04.std ins_16(1)@t=128（kind1 摇晃 → kind3）。
         // 注意：这不是 ecl-vm.md 旧记的 "callSTD"（default.ecl 函数调用）。
         i32 id = 0;
-        if (!resolve_int(c, 0, id)) { sim.error_ = c.error; return -2; }
+        if (!resolve_int(c, 0, id)) {
+            sim.error_ = c.error;
+            return -2;
+        }
         if (!sim.stage_script_interrupt) {
             // 原版 stage ctx 恒有 STD 脚本；生产仅交互模式（RunScene 接
             // StageScenery::script）持有——无头路径显式报错，不静默吞中断。
-            sim.error_ = "STD camera script unavailable for ECL630 interrupt " +
-                         std::to_string(id);
+            sim.error_ = "STD camera script unavailable for ECL630 interrupt " + std::to_string(id);
             return -2;
         }
         if (!sim.stage_script_interrupt(id)) {
@@ -1519,41 +1637,73 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 631: { // 41b32f: replace enemy manager+7c bit0, used by HUD gates.
-        i32 value=0;if(!resolve_int(c,0,value)){sim.error_=c.error;return -2;}
-        sim.boss_leaving=(value&1)!=0;return 0;
-    }
-    case 629: { // 41f344: release old mesh, reset radius16/angles, optionally create17x17.
-        float radius=0;i32 color=0;
-        e.fog.reset();
-        if(!resolve_float(c,0,radius)||!resolve_int(c,1,color)){sim.error_=c.error;return -2;}
-        if(radius>0) {
-            e.fog=std::make_unique<EnemyFog>();e.fog->target=radius;e.fog->color=u32(color);
+    case 631: {  // 41b32f: replace enemy manager+7c bit0, used by HUD gates.
+        i32 value = 0;
+        if (!resolve_int(c, 0, value)) {
+            sim.error_ = c.error;
+            return -2;
         }
-        if(sim.enemy_fog&&!sim.enemy_fog(e,true)){sim.error_="Enemy fog creation failed";return -2;}
+        sim.boss_leaving = (value & 1) != 0;
         return 0;
     }
-    case 632: case 639: {
-        i32 index=0;
-        if(!resolve_int(c,0,index)){sim.error_=c.error;return -2;}
-        if(index<0||index>6){sim.error_="Enemy function table index";return -2;}
-        e.native_function=index;e.native_function_mode=op==639?1:0;
+    case 629: {  // 41f344: release old mesh, reset radius16/angles, optionally create17x17.
+        float radius = 0;
+        i32 color = 0;
+        e.fog.reset();
+        if (!resolve_float(c, 0, radius) || !resolve_int(c, 1, color)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        if (radius > 0) {
+            e.fog = std::make_unique<EnemyFog>();
+            e.fog->target = radius;
+            e.fog->color = u32(color);
+        }
+        if (sim.enemy_fog && !sim.enemy_fog(e, true)) {
+            sim.error_ = "Enemy fog creation failed";
+            return -2;
+        }
+        return 0;
+    }
+    case 632:
+    case 639: {
+        i32 index = 0;
+        if (!resolve_int(c, 0, index)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        if (index < 0 || index > 6) {
+            sim.error_ = "Enemy function table index";
+            return -2;
+        }
+        e.native_function = index;
+        e.native_function_mode = op == 639 ? 1 : 0;
         return 0;
     }
     case 637: {
-        i32 index=0;if(!resolve_int(c,0,index)){sim.error_=c.error;return -2;}
-        return sim.invoke_enemy_function(e,index)?0:-2;
-    }
-    case 633: { // 41d183 -> table4bba18, enemy inner+40f0.
         i32 index = 0;
-        if (!resolve_int(c, 0, index)) { sim.error_ = c.error; return -2; }
-        if (index < 0 || index > 1) { sim.error_ = "Enemy damage function index"; return -2; }
+        if (!resolve_int(c, 0, index)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        return sim.invoke_enemy_function(e, index) ? 0 : -2;
+    }
+    case 633: {  // 41d183 -> table4bba18, enemy inner+40f0.
+        i32 index = 0;
+        if (!resolve_int(c, 0, index)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        if (index < 0 || index > 1) {
+            sim.error_ = "Enemy damage function index";
+            return -2;
+        }
         e.damage_function = index;
         return 0;
     }
 
     // ---------- 700/800/900/1000 族 ----------
-    case 700: { // 0041b260 case0x87 @0041e16c: writes the existing et slot.
+    case 700: {  // 0041b260 case0x87 @0041e16c: writes the existing et slot.
         i32 slot = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
             sim.error_ = c.error.empty() ? "laserNew slot" : c.error;
@@ -1573,7 +1723,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 701: { // 0041b260 case0x88 @0041e1ec: five integer stores.
+    case 701: {  // 0041b260 case0x88 @0041e1ec: five integer stores.
         i32 slot = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
             sim.error_ = c.error.empty() ? "laserTiming slot" : c.error;
@@ -1589,7 +1739,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 703: { // 0041e77a: build descriptor; 42fed0 type1 -> 433260.
+    case 703: {  // 0041e77a: build descriptor; 42fed0 type1 -> 433260.
         i32 slot = 0, id = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8 || !resolve_int(c, 1, id)) {
             sim.error_ = c.error.empty() ? "laserStOn args" : c.error;
@@ -1598,30 +1748,49 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.emit_infinite_laser(e.et[slot], e, id);
         return sim.error_.empty() ? 0 : -2;
     }
-    case 708: { // 0041edd7 -> 418300: first global ID match, zero never matches.
+    case 708: {  // 0041edd7 -> 418300: first global ID match, zero never matches.
         i32 id = 0;
-        if (!resolve_int(c, 0, id)) { sim.error_ = c.error; return -2; }
+        if (!resolve_int(c, 0, id)) {
+            sim.error_ = c.error;
+            return -2;
+        }
         if (StageLaser* laser = sim.find_laser(id)) {
             // Missing ID must not resolve arg1 (RNG/stack references have effects).
-            if (!resolve_float(c, 1, laser->angle)) { sim.error_ = c.error; return -2; }
+            if (!resolve_float(c, 1, laser->angle)) {
+                sim.error_ = c.error;
+                return -2;
+            }
         }
         return 0;
     }
     case 704:
-    case 705: { // 41ecd1/41ed2b: both float arguments are read even on ID miss.
-        i32 id=0;float x=0,y=0;
-        if(!resolve_int(c,0,id)){sim.error_=c.error;return -2;}
-        StageLaser* laser=sim.find_laser(id);
-        if(!resolve_float(c,1,x)||!resolve_float(c,2,y)){sim.error_=c.error;return -2;}
-        if(laser) {
-            if(op==704){laser->origin[0]=x;laser->origin[1]=y;laser->origin[2]=0;}
-            else if(laser->kind==StageLaser::Kind::Infinite) {
-                laser->velocity[0]=x;laser->velocity[1]=y;laser->velocity[2]=0;
+    case 705: {  // 41ecd1/41ed2b: both float arguments are read even on ID miss.
+        i32 id = 0;
+        float x = 0, y = 0;
+        if (!resolve_int(c, 0, id)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        StageLaser* laser = sim.find_laser(id);
+        if (!resolve_float(c, 1, x) || !resolve_float(c, 2, y)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        if (laser) {
+            if (op == 704) {
+                laser->origin[0] = x;
+                laser->origin[1] = y;
+                laser->origin[2] = 0;
+            } else if (laser->kind == StageLaser::Kind::Infinite) {
+                laser->velocity[0] = x;
+                laser->velocity[1] = y;
+                laser->velocity[2] = 0;
             } else {
                 // 4182b0 blindly writes +5cc/+5d0/+5d4. Those fields are
                 // angle/target length/initial length in a line descriptor.
-                laser->line_descriptor_angle=x;laser->target_length=y;
-                laser->line_initial_length=0;
+                laser->line_descriptor_angle = x;
+                laser->target_length = y;
+                laser->line_initial_length = 0;
             }
         }
         return 0;
@@ -1630,51 +1799,72 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 707:
     case 709:
     case 714: {
-        i32 id=0;
-        if(!resolve_int(c,0,id)){sim.error_=c.error;return -2;}
-        if(StageLaser* laser=sim.find_laser(id)) {
-            if(op==714) {
+        i32 id = 0;
+        if (!resolve_int(c, 0, id)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        if (StageLaser* laser = sim.find_laser(id)) {
+            if (op == 714) {
                 // Virtual+8 = 42f5d0 for both line and infinite: no-op,
                 // but its integer argument is still evaluated on an ID hit.
-                i32 value=0;if(!resolve_int(c,1,value)){sim.error_=c.error;return -2;}
-                if(laser->kind==StageLaser::Kind::Beam)
-                    laser->beam_descriptor_flags=(laser->beam_descriptor_flags&~1u)|(u32(value)&1u);
+                i32 value = 0;
+                if (!resolve_int(c, 1, value)) {
+                    sim.error_ = c.error;
+                    return -2;
+                }
+                if (laser->kind == StageLaser::Kind::Beam)
+                    laser->beam_descriptor_flags = (laser->beam_descriptor_flags & ~1u) | (u32(value) & 1u);
             } else {
-                float value=0;if(!resolve_float(c,1,value)){sim.error_=c.error;return -2;}
-                if(op==706)laser->length_speed=value; // +74; velocity unchanged
-                else if(op==707)laser->width=value;   // +70; phase target unchanged
-                else if(laser->kind==StageLaser::Kind::Infinite)laser->rotation=value;
-                else laser->target_width=value;      // +5dc: descriptor width on lines
+                float value = 0;
+                if (!resolve_float(c, 1, value)) {
+                    sim.error_ = c.error;
+                    return -2;
+                }
+                if (op == 706)
+                    laser->length_speed = value;  // +74; velocity unchanged
+                else if (op == 707)
+                    laser->width = value;  // +70; phase target unchanged
+                else if (laser->kind == StageLaser::Kind::Infinite)
+                    laser->rotation = value;
+                else
+                    laser->target_width = value;  // +5dc: descriptor width on lines
             }
         }
         return 0;
     }
-    case 710: { // 41ec89: cancel every matching node, zero its ID, then re-read arg0.
-        for(;;) {
-            i32 id=0;if(!resolve_int(c,0,id)){sim.error_=c.error;return -2;}
-            StageLaser* laser=sim.find_laser(id);
-            if(!laser)return 0;
-            if(!sim.cancel_laser(*laser))return -2;
-            laser->id=0;
+    case 710: {  // 41ec89: cancel every matching node, zero its ID, then re-read arg0.
+        for (;;) {
+            i32 id = 0;
+            if (!resolve_int(c, 0, id)) {
+                sim.error_ = c.error;
+                return -2;
+            }
+            StageLaser* laser = sim.find_laser(id);
+            if (!laser) return 0;
+            if (!sim.cancel_laser(*laser)) return -2;
+            laser->id = 0;
         }
     }
-    case 702: { // 41e5cd -> 42fed0 type0 -> 430370.
-        i32 slot=0;
-        if(!resolve_int(c,0,slot)||slot<0||slot>=8){
-            sim.error_=c.error.empty()?"line laser emitter slot":c.error;return -2;
+    case 702: {  // 41e5cd -> 42fed0 type0 -> 430370.
+        i32 slot = 0;
+        if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
+            sim.error_ = c.error.empty() ? "line laser emitter slot" : c.error;
+            return -2;
         }
-        sim.emit_line_laser(e.et[slot],e);
-        return sim.error_.empty()?0:-2;
+        sim.emit_line_laser(e.et[slot], e);
+        return sim.error_.empty() ? 0 : -2;
     }
-    case 713: { // 41eae9: 42fed0 type3, with a separately resolved ID.
-        i32 slot=0, id=0;
-        if(!resolve_int(c,0,slot)||slot<0||slot>=8||!resolve_int(c,1,id)) {
-            sim.error_=c.error.empty()?"beam laser arguments":c.error;return -2;
+    case 713: {  // 41eae9: 42fed0 type3, with a separately resolved ID.
+        i32 slot = 0, id = 0;
+        if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8 || !resolve_int(c, 1, id)) {
+            sim.error_ = c.error.empty() ? "beam laser arguments" : c.error;
+            return -2;
         }
-        sim.emit_beam_laser(e.et[slot],e,id);
-        return sim.error_.empty()?0:-2;
+        sim.emit_beam_laser(e.et[slot], e, id);
+        return sim.error_.empty() ? 0 : -2;
     }
-    case 711: { // 41eaf3 -> 42fed0 type2: laserCuOn / LaserCurveInf.
+    case 711: {  // 41eaf3 -> 42fed0 type2: laserCuOn / LaserCurveInf.
         // The retail handler snapshots the emitter exactly like the other
         // laser constructors, then creates a type-2 curve object.  Leaving
         // this as a no-op silently removes every curved laser used by the
@@ -1687,20 +1877,32 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.emit_curve_laser(e.et[slot], e);
         return sim.error_.empty() ? 0 : -2;
     }
-    case 801: { // 41b260 case97: 417f40(id), outer+1230/+1234 -> float destinations.
-        i32 id=0;
-        if(!resolve_int(c,2,id)){sim.error_=c.error;return -2;}
-        StageEnemy* source=sim.find_by_script_id(id);
-        if(!source){sim.error_="enmPosRead missing enemy "+std::to_string(id);return -2;}
-        float* x=c.float_destination(0);
-        if(!x){sim.error_=c.error;return -2;}
-        *x=source->position[0];
-        float* y=c.float_destination(1);
-        if(!y){sim.error_=c.error;return -2;}
-        *y=source->position[1];
+    case 801: {  // 41b260 case97: 417f40(id), outer+1230/+1234 -> float destinations.
+        i32 id = 0;
+        if (!resolve_int(c, 2, id)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        StageEnemy* source = sim.find_by_script_id(id);
+        if (!source) {
+            sim.error_ = "enmPosRead missing enemy " + std::to_string(id);
+            return -2;
+        }
+        float* x = c.float_destination(0);
+        if (!x) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        *x = source->position[0];
+        float* y = c.float_destination(1);
+        if (!y) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        *y = source->position[1];
         return 0;
     }
-    case 800: { // 41f5e9: 敌机 ECL 重挂（st04 Boss 相位推进）。
+    case 800: {  // 41f5e9: 敌机 ECL 重挂（st04 Boss 相位推进）。
         // 原版链：0x421b10(arg0=敌机 id，数据恒 gvar -9926) → 0x417f40 查敌
         // （id 0/空表 → null 走默认尾；未命中返回最后检视者——生产
         // find_by_script_id 同构保留）→ 0x4176c0 释放异步子线程链 →
@@ -1709,17 +1911,25 @@ int StageCommands::execute(EclContext& c, u16 op) {
         // 查到例程首指令指针写 [ctx+4]、time=0。生产同构入口 =
         // EclThreads::restart（仅调用，不改）。
         i32 id = 0;
-        if (!resolve_int(c, 0, id)) { sim.error_ = c.error; return -2; }
+        if (!resolve_int(c, 0, id)) {
+            sim.error_ = c.error;
+            return -2;
+        }
         StageEnemy* target = sim.find_by_script_id(id);
         if (!target) return 0;  // 默认尾 = 纯 ret（id 0 / 敌链空）
-        if (!target->threads) { sim.error_ = "ECL800 target threads unavailable"; return -2; }
+        if (!target->threads) {
+            sim.error_ = "ECL800 target threads unavailable";
+            return -2;
+        }
         // 内联例程名：arg1 = 含 NUL 的字节长度（st04bs 11 处实测），名区在
         // 指令 +0x18 起、4 对齐衬垫（0x41f5e9: lea ecx,[ebx+0x18]）。
-        if (ins->length < 28) { sim.error_ = "Truncated ECL800 routine name"; return -2; }
+        if (ins->length < 28) {
+            sim.error_ = "Truncated ECL800 routine name";
+            return -2;
+        }
         const u32 name_length = ins->argument<u32>(1);
         const char* name = reinterpret_cast<const char*>(ins) + 0x18;
-        if (!name_length || name_length > u32(ins->length - 0x18) ||
-            !std::memchr(name, 0, name_length)) {
+        if (!name_length || name_length > u32(ins->length - 0x18) || !std::memchr(name, 0, name_length)) {
             sim.error_ = "Invalid ECL800 routine name";
             return -2;
         }
@@ -1760,9 +1970,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
             sim.error_ = c.error;
             return -2;
         }
-        if (sim.items)
-            sim.items->spawn_value_item(kind, e.position[0], e.position[1],
-                                       e.position[2], 2.0f);
+        if (sim.items) sim.items->spawn_value_item(kind, e.position[0], e.position[1], e.position[2], 2.0f);
         return 0;
     }
     case 1001:
@@ -1773,9 +1981,12 @@ int StageCommands::execute(EclContext& c, u16 op) {
             sim.error_ = c.error;
             return -2;
         }
-        if (op == 1001) e.death_spirit_limit = value;
-        else if (op == 1002) e.death_spirit_count = value;
-        else e.damage_spirits_disabled = (value & 1) != 0;
+        if (op == 1001)
+            e.death_spirit_limit = value;
+        else if (op == 1002)
+            e.death_spirit_count = value;
+        else
+            e.damage_spirits_disabled = (value & 1) != 0;
         return 0;
     }
 
@@ -1819,8 +2030,7 @@ int StageCommands::create_enemy(EclContext& c, u16 op) {
         x = x * -1.0f;
     }
     StageSpawnArguments initial;
-    if (!resolve_postname_int(c, 3, 4, initial.score) ||
-        !resolve_postname_int(c, 4, 5, initial.drop_main)) {
+    if (!resolve_postname_int(c, 3, 4, initial.score) || !resolve_postname_int(c, 4, 5, initial.drop_main)) {
         sim.error_ = c.error;
         return -2;
     }
@@ -1864,12 +2074,11 @@ int StageCommands::fire_et(EclContext& c, StageEnemy& e) {
     sim.nearest_player(spawn[0], spawn[1], aim_px, aim_py);
     const float dy = aim_py - spawn[1];
     const float dx = aim_px - spawn[0];
-    const float aim = (dy == 0.0f && dx == 0.0f)
-                          ? 1.5707964f
-                          : float(std::atan2(static_cast<double>(dy), static_cast<double>(dx)));
-    sim.active_bullet_protect_radius2=e.bullet_protect_radius2;
+    const float aim =
+        (dy == 0.0f && dx == 0.0f) ? 1.5707964f : float(std::atan2(static_cast<double>(dy), static_cast<double>(dx)));
+    sim.active_bullet_protect_radius2 = e.bullet_protect_radius2;
     sim.emit_et(et, e.serial, u32(slot), spawn, aim);
-    sim.active_bullet_protect_radius2=0; // native601 always clears the manager field
+    sim.active_bullet_protect_radius2 = 0;  // native601 always clears the manager field
     return sim.error_.empty() ? 0 : -2;
 }
 

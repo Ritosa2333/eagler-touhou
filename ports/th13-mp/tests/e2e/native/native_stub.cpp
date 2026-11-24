@@ -24,7 +24,8 @@
 namespace touhou::sdl {
 
 State::State() {
-    for (auto& m : matrix) m[0] = m[5] = m[10] = m[15] = 1;
+    for (auto& m : matrix)
+        m[0] = m[5] = m[10] = m[15] = 1;
 }
 Renderer::Renderer(int v, Resolve r, void* o) : version(v), resolve(r), owner(o) {}
 Renderer::~Renderer() = default;
@@ -111,8 +112,7 @@ bool TTF_FontHasGlyph(TTF_Font* font, unsigned code) {
     return face->face && FT_Get_Char_Index(face->face, code) != 0;
 }
 
-bool TTF_GetGlyphMetrics(TTF_Font* font, unsigned code, int* left, int* right,
-                         int* bottom, int* top, int* advance) {
+bool TTF_GetGlyphMetrics(TTF_Font* font, unsigned code, int* left, int* right, int* bottom, int* top, int* advance) {
     if (!font) return false;
     auto* face = reinterpret_cast<Face*>(font);
     if (!face->face) return false;
@@ -148,7 +148,10 @@ SDL_Surface* TTF_RenderGlyph_Blended(TTF_Font* font, unsigned code, SDL_Color co
     surface->h = (int)bitmap.rows;
     surface->pitch = surface->w * 4;
     surface->pixels = std::calloc(1, size_t(surface->pitch) * size_t(surface->h));
-    if (!surface->pixels) { delete surface; return nullptr; }
+    if (!surface->pixels) {
+        delete surface;
+        return nullptr;
+    }
     auto* out = static_cast<unsigned char*>(surface->pixels);
     const unsigned char* src = bitmap.buffer;  // FT_PIXEL_MODE_GRAY（probe 实证 mode=2）
     for (unsigned y = 0; y < bitmap.rows; ++y) {

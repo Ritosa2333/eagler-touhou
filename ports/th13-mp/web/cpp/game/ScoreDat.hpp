@@ -100,8 +100,7 @@ public:
     static void set_progress_row_flag(u8* column, int difficulty, int stage, int which, u8 value);
 
     static std::array<u8, kPracticeNameSize> practice_name(const u8* column, int i);
-    static void set_practice_name(u8* column, int i,
-                                  const std::array<u8, kPracticeNameSize>& name);
+    static void set_practice_name(u8* column, int i, const std::array<u8, kPracticeNameSize>& name);
     static u32 practice_u32(const u8* column, int i, size_t field_offset);
     static void set_practice_u32(u8* column, int i, size_t field_offset, u32 value);
 

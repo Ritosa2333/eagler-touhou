@@ -103,8 +103,7 @@ struct Harness {
 };
 
 void near(float a, float b) {
-    if (std::abs(a - b) >= 0.001f)
-        std::printf("near actual %.9g expected %.9g\n", double(a), double(b));
+    if (std::abs(a - b) >= 0.001f) std::printf("near actual %.9g expected %.9g\n", double(a), double(b));
     CHECK(std::abs(a - b) < 0.001f);
 }
 
@@ -166,11 +165,14 @@ TEST(compositor_vm_layers_match_supervisor_assignment) {
     // script84 的层为监督者覆写（脚本默认 82→29、84→30）。port 钉住同值。
     Harness h;
     const i32 expected[] = {29, 30, 30, 20};
-    for (u32 i = 0; i < 4; ++i) CHECK_EQ(h.targets.compositor_layer(i), expected[i]);
-    CHECK(h.scheduler.update() >= 0);   // tick 后层保持监督者值
-    for (u32 i = 0; i < 4; ++i) CHECK_EQ(h.targets.compositor_layer(i), expected[i]);
+    for (u32 i = 0; i < 4; ++i)
+        CHECK_EQ(h.targets.compositor_layer(i), expected[i]);
+    CHECK(h.scheduler.update() >= 0);  // tick 后层保持监督者值
+    for (u32 i = 0; i < 4; ++i)
+        CHECK_EQ(h.targets.compositor_layer(i), expected[i]);
     CHECK(h.scheduler.draw() >= 0);
-    for (u32 i = 0; i < 4; ++i) CHECK_EQ(h.targets.compositor_layer(i), expected[i]);
+    for (u32 i = 0; i < 4; ++i)
+        CHECK_EQ(h.targets.compositor_layer(i), expected[i]);
 }
 
 TEST(stage_camera_does_not_mirror_view_y_column) {
@@ -186,9 +188,10 @@ TEST(stage_camera_does_not_mirror_view_y_column) {
     s.fov = 0.63f;
     const AnmCamera camera = stage_camera(s, {116, 2, 408, 476, 0, 1});
     const Vec3 eye{100 - 30.f, 50 + 10.f, 200 - 5.f};
-    const Matrix4 direct = scene_look_at(eye, {eye.x + s.direction.x, eye.y + s.direction.y,
-                                               eye.z + s.direction.z}, s.up);
-    for (u32 i = 0; i < 16; ++i) CHECK_EQ(camera.view.m[i], direct.m[i]);
+    const Matrix4 direct =
+        scene_look_at(eye, {eye.x + s.direction.x, eye.y + s.direction.y, eye.z + s.direction.z}, s.up);
+    for (u32 i = 0; i < 16; ++i)
+        CHECK_EQ(camera.view.m[i], direct.m[i]);
     // 正控：y 基为正（up=(0,1,0)、视线近 +z 时 view[5]≈+1；oracle f2 = '1'）。
     CHECK(camera.view.m[5] > 0.99f);
     // 视口 aspect 408/476（patch A 落地后）：proj0 = cot/aspect。
@@ -201,8 +204,8 @@ TEST(hud_strip_at_layer22_slot_50_lands_on_render_target_not_screen) {
     AnmVm strip;
     CHECK(h.manager.bind_template(strip, 0, 82));
     CHECK(h.manager.tick_instance(strip) >= 0);
-    strip.visual.flags = 7;               // bit0|bit1=可绘制，draw_mode 0（像素四边形）、锚点 0
-    strip.visual.render_flags = 0x8000;   // 无屏幕偏移位、无分辨率缩放位
+    strip.visual.flags = 7;              // bit0|bit1=可绘制，draw_mode 0（像素四边形）、锚点 0
+    strip.visual.render_flags = 0x8000;  // 无屏幕偏移位、无分辨率缩放位
     strip.visual.layer = 22;
     strip.visual.color = 0xffffffff;
     strip.visual.scale = {1, 1};
@@ -235,9 +238,7 @@ TEST(hud_strip_at_layer22_slot_50_lands_on_render_target_not_screen) {
     near(compose.vertices[1].uv.x, 512.f / 640);
     near(compose.vertices[0].position.x, 31.5f);
     near(compose.vertices[1].position.x, 415.5f);
-    const auto map = [&](float rt_x) {
-        return 31.5f + (rt_x - 128.f) / (512.f - 128.f) * (415.5f - 31.5f);
-    };
+    const auto map = [&](float rt_x) { return 31.5f + (rt_x - 128.f) / (512.f - 128.f) * (415.5f - 31.5f); };
     near(map(415.5f), 319.0f);
     near(map(512.f), 415.5f);
 }
@@ -310,9 +311,7 @@ TEST(real_schedule_draws_layer22_after_compose_on_final_screen) {
     strip->variables.position = {527.5f, 239.5f, 0};
     struct Services final : AnmDrawServices {
         ScreenViews* views = nullptr;
-        bool camera(DrawCamera index, bool refresh) override {
-            return views->camera(index, refresh);
-        }
+        bool camera(DrawCamera index, bool refresh) override { return views->camera(index, refresh); }
     } services;
     services.views = &h.views;
     AnmDrawSchedule schedule(h.scheduler, h.manager, h.renderer, h.graphics, services);
@@ -348,8 +347,8 @@ TEST(spell_name_layer20_preserves_intermediate_right_edge_before_final_crop) {
     CHECK(h.manager.update());
     name->visual.flags |= 0x100000u;
     name->visual.color = 0xffffffffu;
-    name->visual.scale = {1,1};
-    name->variables.position = {524,384,0};
+    name->visual.scale = {1, 1};
+    name->variables.position = {524, 384, 0};
     CHECK(h.scheduler.draw() >= 0);
     h.renderer.flush();
     const RecordedDraw* submission = nullptr;
@@ -369,9 +368,7 @@ TEST(distortion_layers_are_composed_once_into_opposite_render_targets) {
     struct Services final : AnmDrawServices {
         ScreenViews& views;
         explicit Services(ScreenViews& v) : views(v) {}
-        bool camera(DrawCamera index, bool refresh) override {
-            return views.camera(index, refresh);
-        }
+        bool camera(DrawCamera index, bool refresh) override { return views.camera(index, refresh); }
     } services{h.views};
     AnmDrawSchedule schedule(h.scheduler, h.manager, h.renderer, h.graphics, services);
     const auto fog = h.manager.create(0, 82, 29, 0);
@@ -385,7 +382,8 @@ TEST(distortion_layers_are_composed_once_into_opposite_render_targets) {
     std::vector<const RecordedDraw*> quads;
     for (const auto& draw : h.graphics.draws) {
         CHECK_EQ(draw.vertices.size() % 6, 0u);
-        for (size_t i = 0; i < draw.vertices.size(); i += 6) quads.push_back(&draw);
+        for (size_t i = 0; i < draw.vertices.size(); i += 6)
+            quads.push_back(&draw);
     }
     CHECK_EQ(quads.size(), 6u);
     if (quads.size() != 6) return;

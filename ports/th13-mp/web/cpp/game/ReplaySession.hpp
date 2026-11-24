@@ -41,9 +41,9 @@ struct ReplayRestoreTarget {
 
 // 恢复日志（逐位证据；fprintf 由调用方输出）。
 struct ReplayRestoreLog {
-    u16 seed = 0;            // stage 头 +0x02（game RNG；跨关时亦写 visual RNG）
-    u32 stage_number = 0;    // stage 头 +0x00
-    i32 block[22] = {};      // 头 +0x14 起 22 dword 原样值（头内偏移 +0x14+4k）
+    u16 seed = 0;          // stage 头 +0x02（game RNG；跨关时亦写 visual RNG）
+    u32 stage_number = 0;  // stage 头 +0x00
+    i32 block[22] = {};    // 头 +0x14 起 22 dword 原样值（头内偏移 +0x14+4k）
     // 22 dword 中 port 无归属字段的头内偏移（+0x14+4k）：
     //   +0x18 机体/子角色（BC；th13 副机体不换 SHT，port 无独立字段）
     //   +0x28 未定名（CC，参与坐标/旋转运算，m1-01 表）
@@ -55,20 +55,17 @@ struct ReplayRestoreLog {
 
 class ReplaySession {
 public:
-    static bool restore_player_start(const ReplayStage&,StageBattle&,std::string& error);
+    static bool restore_player_start(const ReplayStage&, StageBattle&, std::string& error);
     static i32 stage_index(const ReplayFile& file, i32 stage_number);
     // 0x447900 case1 + 0x449070 的恢复序：顶层头 +0x5C/60/64 先写、stage 头
     // 22 dword 覆盖、种子恢复。成功返回 true；缺头/缺目标返回 false（error
     // 语义由调用方 fail 承接，这里只报布尔）。
-    static bool restore_stage(const ReplayFile& file, u32 stage_index,
-                              const ReplayRestoreTarget& target, ReplayRestoreLog& log,
-                              std::string& error,
+    static bool restore_stage(const ReplayFile& file, u32 stage_index, const ReplayRestoreTarget& target,
+                              ReplayRestoreLog& log, std::string& error,
                               ReplayRestorePhase phase = ReplayRestorePhase::Transition);
     // 日志行（native/web 共用 stderr 口径；oracle 侧对照值 = stamp）。
     static void emit_log(const ReplayRestoreLog& log) {
-        std::fprintf(stderr,
-                     "R3-RESTORE stage=%u seed=%u counter=0 block=", log.stage_number,
-                     unsigned(log.seed));
+        std::fprintf(stderr, "R3-RESTORE stage=%u seed=%u counter=0 block=", log.stage_number, unsigned(log.seed));
         for (u32 k = 0; k < 22; ++k)
             std::fprintf(stderr, "%s%d", k ? "," : "", log.block[k]);
         std::fprintf(stderr, "\n");

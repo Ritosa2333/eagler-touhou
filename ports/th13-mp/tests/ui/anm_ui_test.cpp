@@ -1,7 +1,7 @@
 // ANM 句柄驱动单测：合成资源的装载/创建/中断/暂停/回收（消费 anm-pipeline
 // 工作流的 AnmManager 公共面，不测其内部实现）。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 using namespace th13;
 using namespace th13::test;
@@ -45,8 +45,14 @@ TEST(interrupt_jumps_to_label) {
     AnmHarness harness;
     // script0：label 7 → sprite 5 → park；label 9 → sprite 6 → park。
     const auto bank = synthetic_anm(8, {{
-        label(7), sprite(5), wait(), label(9), sprite(6), wait(), stop(),
-    }});
+                                           label(7),
+                                           sprite(5),
+                                           wait(),
+                                           label(9),
+                                           sprite(6),
+                                           wait(),
+                                           stop(),
+                                       }});
     CHECK(load_bank(harness.manager, 16, bank));
     const u32 handle = harness.manager.create(16, 0);
     auto* vm = harness.manager.registry.find(handle);
@@ -75,22 +81,26 @@ TEST(pause_freezes_and_resumes) {
     // 计数脚本：每 tick 位置 +1（op400 直写脚本位置，mask 寻址 10013）。
     // 简化：位置插值持续 tick，暂停后插值冻结。
     const auto bank = synthetic_anm(8, {{
-        AnmIns{407, 0, {60, 0, 100, 0, 0}, 0},  // 60 帧移到 (100,0)
-        wait(), stop(),
-    }});
+                                           AnmIns{407, 0, {60, 0, 100, 0, 0}, 0},  // 60 帧移到 (100,0)
+                                           wait(),
+                                           stop(),
+                                       }});
     CHECK(load_bank(harness.manager, 16, bank));
     const u32 handle = harness.manager.create(16, 0);
     auto* vm = harness.manager.registry.find(handle);
     CHECK(vm != nullptr);
-    for (int i = 0; i < 10; i++) CHECK(harness.manager.update(false));
+    for (int i = 0; i < 10; i++)
+        CHECK(harness.manager.update(false));
     const float moving = harness.manager.registry.find(handle)->variables.position.x;
     CHECK(moving > 0.f);
     CHECK(harness.manager.pause(handle, true));
-    for (int i = 0; i < 10; i++) CHECK(harness.manager.update(false));
+    for (int i = 0; i < 10; i++)
+        CHECK(harness.manager.update(false));
     const float frozen = harness.manager.registry.find(handle)->variables.position.x;
     CHECK_NEAR(frozen, moving, 1e-6);
     CHECK(harness.manager.pause(handle, false));
-    for (int i = 0; i < 10; i++) CHECK(harness.manager.update(false));
+    for (int i = 0; i < 10; i++)
+        CHECK(harness.manager.update(false));
     CHECK(harness.manager.registry.find(handle)->variables.position.x > frozen);
 }
 

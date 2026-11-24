@@ -15,9 +15,9 @@
 #include "GameRandom.hpp"
 #include "StageBattle.hpp"
 
-#include <memory>
 #include <deque>
 #include <map>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -27,14 +27,13 @@ class StagePresentation {
 public:
     struct Banks {
         i32 stage = 0, bullet = 0, player = 0;
-        i32 effect = 8;  // effect.anm（mgr 槽 8；ECL 文件索引 1 的特效创建源）
-        i32 spirit = 25; // 00405530: astral.anm, original resource slot25.
-        i32 front = 3;   // front.anm：0x438730 神霊拾取动画（0x4c2190+0x2a8）
+        i32 effect = 8;   // effect.anm（mgr 槽 8；ECL 文件索引 1 的特效创建源）
+        i32 spirit = 25;  // 00405530: astral.anm, original resource slot25.
+        i32 front = 3;    // front.anm：0x438730 神霊拾取动画（0x4c2190+0x2a8）
         std::array<i32, 2> teammate_player{};
     };
     // player_shot_sprite：无 .sht 会话的自机弹回退精灵（plXX.anm 内）。
-    StagePresentation(AnmManager& animations, AnmRenderer& renderer, Banks banks,
-                      i32 player_shot_sprite);
+    StagePresentation(AnmManager& animations, AnmRenderer& renderer, Banks banks, i32 player_shot_sprite);
     ~StagePresentation();
     // 帧同步（Update pass 内调用）：敌机脚本接线、弹体/自机弹/自机姿态。
     bool sync(StageBattle& battle, u32 held);
@@ -69,7 +68,7 @@ public:
     bool initialize_player_shot(PlayerShot& shot, u32 index, i32 seat = 0);
     bool tick_bullet(StageBullet& bullet, bool birth);
     bool initialize_bullet(StageBullet& bullet, i32 interrupt);
-    bool bullet_cancel(i32 script,const Vec3& position,const Vec3& displacement,bool interpolate=true);
+    bool bullet_cancel(i32 script, const Vec3& position, const Vec3& displacement, bool interpolate = true);
     // ECL 307/308 特效的指令级同步创建（0x41b510→0x4243e0：敌机 ECL 相位内
     // 模板拷贝+立即 tick。round-s15 帧序实证推翻"stage_script 相位后置"旧
     // 模型——推迟创建会使同帧多消费者的视觉 RNG 帧内顺序颠倒）。
@@ -78,13 +77,12 @@ public:
     // 0x41fe80 指令级同步语义）；kind=0 请求保留入队。交互模式下 307/308
     // 已在指令处经 ecl_effect_create 同步创建，此处 kind=0 仅覆盖无宿主
     // 与激光/StageBattle 直入队请求。
-    bool flush_ecl_animations(StageBattle& battle, StageEnemy* constructing = nullptr,
-                              bool slots_only = false);
-    bool enemy_death(i32 file,i32 script,const Vec3& position,float angle);
-    bool enemy_fog(StageEnemy&,bool reset);
+    bool flush_ecl_animations(StageBattle& battle, StageEnemy* constructing = nullptr, bool slots_only = false);
+    bool enemy_death(i32 file, i32 script, const Vec3& position, float angle);
+    bool enemy_fog(StageEnemy&, bool reset);
     void retire_enemy_fog(u32 serial);
-    u32 player_effect(i32 script,const Vec3& position,i32 layer = -1, u8 owner = 0) {
-        return create_player_effect(banks.effect,script,layer,0,position,owner);
+    u32 player_effect(i32 script, const Vec3& position, i32 layer = -1, u8 owner = 0) {
+        return create_player_effect(banks.effect, script, layer, 0, position, owner);
     }
     bool beam_hit_effect(const Vec3& position, const Vec3& displacement, float angle, i32 seat = 0);
     // 非 const：死亡演出第 3 帧消费 StageBattle::death_option_rebuild（一次性
@@ -94,9 +92,7 @@ public:
     // （与 StageBattle 的同名 phase 配对）；defer_item_side=false 时仍由
     // sync 内联，harness/单测行为不变。
     bool sync_items_phase(StageBattle& battle) { return sync_items(battle); }
-    bool sync_item_spirits_phase(StageBattle& battle) {
-        return sync_item_spirits(battle);
-    }
+    bool sync_item_spirits_phase(StageBattle& battle) { return sync_item_spirits(battle); }
     bool sync_youmu_slash(StageBattle& battle);
     bool youmu_charge_effect(i32 action, const Vec3& position, i32 seat = 0);
     bool spirit_animation_alive(u32 slot, u32 serial) const noexcept;
@@ -106,8 +102,7 @@ public:
     // 0x438ec0 出生瞬间建 VM（0x438ff9 effect.anm 0x38 先、0x43909d/
     // 0x4390be astral kind*6+1/4 后；均 layer -1、flags 0 → 0x46f3f0 尾插）。
     // astral 句柄写回 spirit_handles_[slot] 供 sync_item_spirits 复用。
-    bool spirit_spawn_animation(u32 slot, u32 serial, i32 kind, u32 flags,
-                                float x, float y, float z);
+    bool spirit_spawn_animation(u32 slot, u32 serial, i32 kind, u32 flags, float x, float y, float z);
     // true = 敌机本体 VM 由 ECL 303/306 创建入池（0x41fe80/case3 同构），
     // sync 的敌机接线/清理段跳过。默认路径（2026-10-23 基座治理整改：
     // RunScene::initialize 置 true——敌机全走 AnmManager 句柄，th15
@@ -153,15 +148,31 @@ public:
     struct SnapshotData {
         static constexpr u32 kContractVersion = 2;
         u32 version = kContractVersion;
-        struct EnemyVisualData { u32 serial = 0; i32 script = -1; bool has_vm = false; AnmVm vm; };
-        struct BulletSlotData { bool has_vm = false; i32 script = -1, color = -1, source_type = 0, source_color = 0; u32 generation = 0; bool active = false; };
-        struct ShotFadeData { u32 handle = 0, generation = 0; float x = 0, y = 0, angle = 0, drift = 0; bool sine_moving = false; i32 age = 0; StageMover sine_motion; };
+        struct EnemyVisualData {
+            u32 serial = 0;
+            i32 script = -1;
+            bool has_vm = false;
+            AnmVm vm;
+        };
+        struct BulletSlotData {
+            bool has_vm = false;
+            i32 script = -1, color = -1, source_type = 0, source_color = 0;
+            u32 generation = 0;
+            bool active = false;
+        };
+        struct ShotFadeData {
+            u32 handle = 0, generation = 0;
+            float x = 0, y = 0, angle = 0, drift = 0;
+            bool sine_moving = false;
+            i32 age = 0;
+            StageMover sine_motion;
+        };
         std::vector<const AnmVm*> embedded_identities;
         std::vector<EnemyVisualData> enemies;
         std::vector<BulletSlotData> bullets;
-        std::vector<AnmVm> bullet_vms;     // 契约 v2：仅保存存活/被外部链引用的弹槽 VM
+        std::vector<AnmVm> bullet_vms;  // 契约 v2：仅保存存活/被外部链引用的弹槽 VM
         std::vector<u32> shot_handles;
-        std::vector<AnmVm> shots;          // 回退精灵直贴 VM（script<0）
+        std::vector<AnmVm> shots;  // 回退精灵直贴 VM（script<0）
         std::vector<u32> shot_generations;
         std::vector<ShotFadeData> shot_fades;
         std::vector<u64> shot_faded_generations;  // 递增、去重的稳定快照
@@ -173,7 +184,7 @@ public:
         std::array<u32, ItemManager::kSpiritCapacity> spirit_handles{}, spirit_serials{};
         std::array<i32, ItemManager::kSpiritCapacity> spirit_scripts{};
         std::array<bool, ItemManager::kItemCapacity> item_vm_present{}, item_side_vm_present{};
-        std::vector<AnmVm> item_vms, item_side_vms;   // 按 present 下标序
+        std::vector<AnmVm> item_vms, item_side_vms;  // 按 present 下标序
         std::array<u32, YoumuBomb::kSlots> youmu_slash_handles{};
         std::vector<u32> youmu_slash_extra;
         std::array<u32, 8> option_handles{}, full_option_handles{}, bomb_orb_handles{};
@@ -196,8 +207,7 @@ public:
     bool capture_presentation(SnapshotData& out) const;
     // Recreate or reuse embedded VMs in place, populate embedded_out in slot
     // order, and record any changed addresses in remapped.
-    bool restore_presentation(const SnapshotData& source,
-                              std::unordered_map<const AnmVm*, AnmVm*>* remapped = nullptr,
+    bool restore_presentation(const SnapshotData& source, std::unordered_map<const AnmVm*, AnmVm*>* remapped = nullptr,
                               std::vector<AnmVm*>* embedded_out = nullptr);
     void poison_dead_slots_for_test();
     // M6 快照恢复：手账缓存重置（WorldState::restore 后由宿主调用）。
@@ -225,7 +235,7 @@ public:
     const AnmVm* item_side_vm(u32 slot) const { return item_side_vms_[slot].get(); }
 
 private:
-    std::unordered_map<u32,std::array<u32,16>> fog_handles_;
+    std::unordered_map<u32, std::array<u32, 16>> fog_handles_;
     struct EnemyVisual {
         u32 serial = 0;
         i32 script = -1;
@@ -266,7 +276,10 @@ private:
     //（0x4243e0 用 file_table[e.anm_file] 文件对象 + 局部脚本；append 保
     // 留文件局部 source_id，表内升序 → 回绕即文件边界）。
     const std::vector<i32>& stage_file_offsets();
-    struct ScriptTarget { i32 bank = 0; i32 script = 0; };
+    struct ScriptTarget {
+        i32 bank = 0;
+        i32 script = 0;
+    };
     ScriptTarget resolve_script_target(i32 file, i32 script);
     i32 stage_script_global(i32 file, i32 script);
     std::vector<i32> stage_file_offsets_;
@@ -274,7 +287,7 @@ private:
     struct BulletSlot {
         std::unique_ptr<AnmVm> vm;
         i32 script = -1;
-        i32 color = -1;  // 槽位当前弹色（变色即重绑 → 出生中断重放）
+        i32 color = -1;      // 槽位当前弹色（变色即重绑 → 出生中断重放）
         u32 generation = 0;  // StageBullet birth identity; survives compaction
         bool active = false;
         // 0x4120b0 精灵解析源：参数 → 表[类型].色[颜色]
@@ -325,7 +338,7 @@ private:
         float drift = 0;     // speed×0.125（0x446bf0:44 f32 乘）
         bool sine_moving = false;
         StageMover sine_motion;
-        i32 age = 0;         // 留尸帧计数；0 = 命中当帧（不惰行，仅消费中断）
+        i32 age = 0;  // 留尸帧计数；0 = 命中当帧（不惰行，仅消费中断）
     };
     std::vector<ShotFade> shot_fades_;
     // 已入留尸池的弹代（防同一死亡被重复消费：battle 向量里的死弹要到下一次
@@ -352,11 +365,9 @@ private:
     bool post_chain_update();
     StageBattle* battle_ = nullptr;  // sync 绑定；仅主链 update 钩子读取
     bool frame_synced_ = false;      // sync 完成且钩子尚未消费（暂停/覆盖层跳过）
-    u32 create_player_effect(i32 bank, i32 script, i32 layer, u32 ordering,
-                             const Vec3& position);
+    u32 create_player_effect(i32 bank, i32 script, i32 layer, u32 ordering, const Vec3& position);
     enum class EffectOpacity { Attack, Support };
-    u32 create_player_effect(i32 bank, i32 script, i32 layer, u32 ordering,
-                             const Vec3& position, u8 owner,
+    u32 create_player_effect(i32 bank, i32 script, i32 layer, u32 ordering, const Vec3& position, u8 owner,
                              EffectOpacity opacity = EffectOpacity::Attack);
     bool end_player_effect(u32& handle, bool retire);
     i32 player_script_ = -1, player_tilt_ = 0;

@@ -28,7 +28,9 @@ struct TitleManualPlatform {
     //（原版 malloc/初始化失败即释放并停留在空屏语义，由调用方记录）。
     virtual bool open_manual() { return false; }
     virtual bool update_manual(u32 pressed, u32 repeated) {
-        (void)pressed; (void)repeated; return true;
+        (void)pressed;
+        (void)repeated;
+        return true;
     }
     // 查看器 +0x128 结束位（用户翻至末页退出/关闭）。
     virtual bool manual_finished() const { return false; }
@@ -49,8 +51,7 @@ class TitleManualMenu {
 
 public:
     std::string error;
-    TitleManualMenu(TitleState& state_, TitleManualPlatform& host_)
-        : state(state_), host(host_) {}
+    TitleManualMenu(TitleState& state_, TitleManualPlatform& host_) : state(state_), host(host_) {}
     bool update(u32 pressed, u32 repeated);
 };
 

@@ -13,13 +13,10 @@ namespace th13 {
 class TitleSpellPracticeView {
 public:
     using Rasterizer = std::function<bool(AnmVm&, u32, const std::string&)>;
-    TitleSpellPracticeView(AnmManager& animations, i32 title_bank = 16)
-        : animations_(animations), bank_(title_bank) {}
+    TitleSpellPracticeView(AnmManager& animations, i32 title_bank = 16) : animations_(animations), bank_(title_bank) {}
     ~TitleSpellPracticeView();
-    bool update(const TitleSpellPracticeMenu&, const TitleSpellPracticePlatform&,
-                const Rasterizer&);
-    bool draw(const TitleSpellPracticeMenu&, const TitleSpellPracticePlatform&,
-              HudDrawServices&);
+    bool update(const TitleSpellPracticeMenu&, const TitleSpellPracticePlatform&, const Rasterizer&);
+    bool draw(const TitleSpellPracticeMenu&, const TitleSpellPracticePlatform&, HudDrawServices&);
     bool confirm(const TitleSpellPracticeMenu&);
     void release();
     std::string error;
@@ -38,8 +35,7 @@ private:
     bool create(u32&, i32 script);
     bool interrupt(u32, i32, bool immediate = false);
     bool select(u32, i32);
-    bool rebuild_names(i32 stage, i32 family, i32 character,
-                       const TitleSpellPracticePlatform&, const Rasterizer&);
+    bool rebuild_names(i32 stage, i32 family, i32 character, const TitleSpellPracticePlatform&, const Rasterizer&);
 };
 
-} // namespace th13
+}  // namespace th13

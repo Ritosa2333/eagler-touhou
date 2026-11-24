@@ -16,12 +16,12 @@
 // 难度/路线/慢速），stage 行 "%s  %.8d%d"/"%s  ---------"（0x4ac818/0x4ac7e4）。
 #pragma once
 
-#include "TitleState.hpp"
-#include "TitleMainMenu.hpp"
-#include "ReplayFile.hpp"
+#include "AnmManager.hpp"
 #include "HudDrawData.hpp"
 #include "MenuCursor.hpp"
-#include "AnmManager.hpp"
+#include "ReplayFile.hpp"
+#include "TitleMainMenu.hpp"
+#include "TitleState.hpp"
 
 #include <functional>
 #include <string>
@@ -37,8 +37,14 @@ namespace th13 {
 struct TitleReplayPlatform {
     virtual ~TitleReplayPlatform() = default;
     virtual i32 replay_count() const { return 0; }
-    virtual const ReplayFile* replay_entry(i32 index) const { (void)index; return nullptr; }
-    virtual std::string replay_filename(i32 index) const { (void)index; return {}; }
+    virtual const ReplayFile* replay_entry(i32 index) const {
+        (void)index;
+        return nullptr;
+    }
+    virtual std::string replay_filename(i32 index) const {
+        (void)index;
+        return {};
+    }
     virtual bool request_replay_file() { return false; }
     virtual std::string replay_import_error() const { return {}; }
     virtual bool start_replay(i32 file_index, i32 stage_index) {
@@ -69,8 +75,8 @@ class TitleReplayMenu {
     bool sound(i32 id);
     bool present(u32 handle) const;
     bool create_badge();
-    bool open();                 // case0：建面 + 光标恢复
-    bool confirm_file();         // case2 Z
+    bool open();          // case0：建面 + 光标恢复
+    bool confirm_file();  // case2 Z
     void consume_import_hint();
     const ReplayFile* selected_file() const;
     const ReplayStage* stage_block(const ReplayFile& file, i32 number) const;
@@ -83,8 +89,7 @@ class TitleReplayMenu {
 public:
     std::function<bool(i32)> play_sound;
     std::string error;
-    TitleReplayMenu(TitleState& state_, AnmManager& animations_, TitleReplayPlatform& host,
-                    TitleSceneResources bank)
+    TitleReplayMenu(TitleState& state_, AnmManager& animations_, TitleReplayPlatform& host, TitleSceneResources bank)
         : state(state_), animations(animations_), replay_host(host), resources(bank) {}
     // 场景提前析构（回放启动/退出）时闭合祈祷根，避免残留 VM 进入对局管理器。
     ~TitleReplayMenu();

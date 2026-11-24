@@ -6,9 +6,10 @@
 using namespace th13;
 namespace {
 void advance(SpellState& spell, i32 frames, bool bomb_active = false) {
-    for (i32 i = 0; i < frames; ++i) CHECK(spell.step(bomb_active));
+    for (i32 i = 0; i < frames; ++i)
+        CHECK(spell.step(bomb_active));
 }
-}
+}  // namespace
 
 TEST(spell_begin_end_same_ecl_turn_preserves_both_value_events) {
     SpellState spell;
@@ -27,10 +28,10 @@ TEST(spell_begin_end_same_ecl_turn_preserves_both_value_events) {
     CHECK(events[1].captured());
     CHECK_EQ(events[1].score_award, 300000);
     CHECK(!spell.state().active());
-    CHECK_EQ(spell.state().id, 2); // end does not erase original metadata
+    CHECK_EQ(spell.state().id, 2);  // end does not erase original metadata
     CHECK(!spell.end().emitted());
     spell.begin(3, "replacement", 3000, 1, 3);
-    CHECK_EQ(events[0].state.id, 2); // returned snapshots never alias live state
+    CHECK_EQ(events[0].state.id, 2);  // returned snapshots never alias live state
 }
 
 TEST(spell_hit_and_bomb_have_exact_59_60_frame_capture_boundary) {
@@ -61,7 +62,7 @@ TEST(spell_bomb_carry_in_protection_tracks_bomb_lifetime_without_breaking_captur
     spell.begin(0, "carry", 3000, 1, 0, true);
     CHECK(spell.state().flags & kSpellBombProtection);
     advance(spell, 90, true);
-    CHECK(spell.state().captured()); // a pre-existing bomb is not a new bomb event
+    CHECK(spell.state().captured());  // a pre-existing bomb is not a new bomb event
     CHECK(spell.state().flags & kSpellBombProtection);
     CHECK(spell.step(false));
     CHECK(!(spell.state().flags & kSpellBombProtection));
@@ -121,7 +122,7 @@ TEST(spell_normal_timeout_marks_routing_and_end_snapshot_even_when_uncaptured) {
     spell.phase_timeout(false);
     const SpellEvent event = spell.end();
     CHECK(event.emitted());
-    CHECK(event.state.flags & kSpellTimedOut); // sound0x45 is independent of capture
+    CHECK(event.state.flags & kSpellTimedOut);  // sound0x45 is independent of capture
     CHECK(!event.captured());
     CHECK_EQ(event.score_award, 0);
     CHECK_EQ(spell.state().flags, kSpellTimedOut);

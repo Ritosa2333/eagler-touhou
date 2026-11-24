@@ -10,7 +10,8 @@ namespace th13 {
 // successive 16-bit visual RNG values during font initialization.
 inline std::array<std::uint8_t, 256> visual_font_noise(GameRandom& visual) {
     std::array<std::uint8_t, 256> noise{};
-    for (auto& value : noise) value = std::uint8_t(visual.step16() >> 9);
+    for (auto& value : noise)
+        value = std::uint8_t(visual.step16() >> 9);
     return noise;
 }
 

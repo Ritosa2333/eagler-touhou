@@ -62,8 +62,7 @@ int main() {
     StageBattle battle;
     battle.sim.anm_effects_noop = true;
     provider.anim_list = &battle.sim.anim_list;
-    if (!battle.load(provider, "st01.ecl", 1 << 3, host, progress, player, score,
-                     nullptr, "pl03a.sht")) {
+    if (!battle.load(provider, "st01.ecl", 1 << 3, host, progress, player, score, nullptr, "pl03a.sht")) {
         std::printf("FAIL load: %s\n", battle.error().c_str());
         return 1;
     }
@@ -93,7 +92,8 @@ int main() {
         // ANM tick → set_vm(alive, rotation.z) → 下帧命中/消弹查询消费。
         // 无头测试以恒活 VM、rotation 0 仿真（寿命/冻结由 r4/bomb A7 覆盖）。
         for (int s = 0; s < YoumuBomb::kSlots; ++s)
-            if (battle.youmu_bomb_.has_anm(s)) battle.youmu_bomb_.set_vm(s, true, -0.7853981f);  // 仿真斜向斩（真源=pl03 VM ins_119 rotation.z）
+            if (battle.youmu_bomb_.has_anm(s))
+                battle.youmu_bomb_.set_vm(s, true, -0.7853981f);  // 仿真斜向斩（真源=pl03 VM ins_119 rotation.z）
         if (!battle.youmu_slash_spawns_.empty()) {
             saw_spawn = true;
             for (const auto& spawn : battle.youmu_slash_spawns_) {
@@ -108,8 +108,7 @@ int main() {
             if (enemy->serial != last_serial) continue;
             if (last_life >= 0.0f && enemy->life < last_life) {
                 const float delta = last_life - enemy->life;
-                check(delta >= 30.0f && (int(delta * 1000.0f) % 30000) == 0,
-                      "damage is 30x per frame");
+                check(delta >= 30.0f && (int(delta * 1000.0f) % 30000) == 0, "damage is 30x per frame");
                 saw_damage_frame = frame;
             }
             last_life = enemy->life;
@@ -144,7 +143,6 @@ int main() {
     check(survivors > 0, "W3 local clear leaves in-field bullets");
     check(cancelled > 0, "W3 covered bullets enter state4 (not erased)");
     check(battle.error().empty(), "W4 no battle error");
-    std::printf(failures ? "# youmu wiring: %d FAIL\n" : "# youmu wiring: all pass\n",
-                failures);
+    std::printf(failures ? "# youmu wiring: %d FAIL\n" : "# youmu wiring: all pass\n", failures);
     return failures ? 1 : 0;
 }

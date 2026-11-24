@@ -1,9 +1,9 @@
 // Practice state-machine regression: original 0x44cd10 -> 0x450fb0 ->
 // 0x451450 -> 0x451cb0. Synthetic ANM tests behavior, not visual fidelity.
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
-#include "game/TitleScene.hpp"
 #include "game/PostGameFlow.hpp"
+#include "game/TitleScene.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include <memory>
 #include <vector>
@@ -16,12 +16,14 @@ std::vector<u8> practice_title_fixture() {
     auto scripts = trivial_scripts(243);
     auto children = [&](i32 root, std::initializer_list<i32> ids) {
         scripts[u32(root)].clear();
-        for (i32 id : ids) scripts[u32(root)].push_back(spawn(id));
+        for (i32 id : ids)
+            scripts[u32(root)].push_back(spawn(id));
         scripts[u32(root)].push_back(wait());
         scripts[u32(root)].push_back(stop());
     };
     scripts[0].clear();
-    for (i32 id = 3; id <= 22; ++id) scripts[0].push_back(spawn(id));
+    for (i32 id = 3; id <= 22; ++id)
+        scripts[0].push_back(spawn(id));
     scripts[0].push_back(wait());
     scripts[0].push_back(stop());
     children(89, {92, 93, 91, 90});
@@ -47,7 +49,10 @@ struct PracticeHost final : TitleScenePlatform {
     bool clear_current_wave() override { return true; }
     bool title_exit(i32) override { return true; }
     bool fade_out_title_music() override { return true; }
-    bool sound(i32 id) override { sounds.push_back(id); return true; }
+    bool sound(i32 id) override {
+        sounds.push_back(id);
+        return true;
+    }
     // Native launch sites (0x451cb0/0x452a43/0x45786f → 0x415650 type0) create
     // the run-owned transition root on the application side; the scene only
     // delegates. Mirror that contract: the host creates the bank-8 root.
@@ -64,10 +69,12 @@ struct PracticeHost final : TitleScenePlatform {
         launched_mode = progress.run_mode_flags & 0x30u;
         return true;
     }
-    bool hud_text(const HudTextDraw& text) override { texts.push_back(text); return true; }
+    bool hud_text(const HudTextDraw& text) override {
+        texts.push_back(text);
+        return true;
+    }
     bool practice_stage_played(i32 c, i32 d, i32 s) override {
-        return c >= 0 && c < 4 && d >= 0 && d < 4 && s >= 1 && s <= 6 &&
-               (played[u32(c * 4 + d)] & (1u << (s - 1)));
+        return c >= 0 && c < 4 && d >= 0 && d < 4 && s >= 1 && s <= 6 && (played[u32(c * 4 + d)] & (1u << (s - 1)));
     }
 };
 
@@ -85,11 +92,8 @@ struct PracticeHarness {
         for (i32 i = 0; i < 2; ++i) {
             updates[u32(i)].owner = &manager;
             updates[u32(i)].enabled = true;
-            updates[u32(i)].run = i == 0 ? +[](void* p) {
-                return static_cast<AnmManager*>(p)->update(true) ? 1 : 5;
-            } : +[](void* p) {
-                return static_cast<AnmManager*>(p)->update(false) ? 1 : 5;
-            };
+            updates[u32(i)].run = i == 0 ? +[](void* p) { return static_cast<AnmManager*>(p)->update(true) ? 1 : 5; }
+                                         : +[](void* p) { return static_cast<AnmManager*>(p)->update(false) ? 1 : 5; };
             CHECK(scheduler.add(updates[u32(i)], FramePass::Update, i == 0 ? 9 : 34) >= 0);
         }
         CHECK(load_bank(manager, 16, practice_title_fixture()));
@@ -104,7 +108,10 @@ struct PracticeHarness {
         CHECK(scheduler.update() >= 0);
         CHECK(scene->error.empty());
     }
-    void advance(i32 count) { for (i32 i = 0; i < count; ++i) frame(); }
+    void advance(i32 count) {
+        for (i32 i = 0; i < count; ++i)
+            frame();
+    }
     void ready_main() {
         advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
         CHECK_EQ(i32(scene->state.screen), i32(TitleScreen::Main));
@@ -183,7 +190,8 @@ TEST(practice_stage1_launch_inherits_selected_character_rank_and_mode) {
 TEST(practice_stage6_gate_is_independent_per_character_and_rank) {
     PracticeHarness h;
     h.enter_practice(3, 1);
-    for (i32 row = 0; row < 5; ++row) h.frame(0x20);
+    for (i32 row = 0; row < 5; ++row)
+        h.frame(0x20);
     h.host.played[0 * 4 + 3] = 0x20;  // wrong character
     h.host.played[1 * 4 + 2] = 0x20;  // wrong difficulty
     h.frame(1);

@@ -6,11 +6,11 @@
 // frame 3..3329）——加速直入不跑标题线程，VM 存续整场；旧实现按 terra-udsr
 // 5 帧短窗误读成「只画到 battle frame 3」并在 frame 4 退休，是 boot-draw
 // 窗口首差的根因。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
-#include "game/GameHud.hpp"
 #include "game/FrameScheduler.hpp"
+#include "game/GameHud.hpp"
 
 #include <fstream>
 #include <vector>

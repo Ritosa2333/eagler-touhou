@@ -18,11 +18,11 @@ using touhou::graphics::VertexLayout;
 // D3DPT_* 值（TRIANGLESTRIP=5 等）：port Topology 枚举序与之一致
 // （GraphicsState.hpp Primitives 别名实证）。
 u32 d3d_primitive(Topology kind) {
-    return kind == Topology::Points ? 1u
-           : kind == Topology::Lines ? 2u
+    return kind == Topology::Points      ? 1u
+           : kind == Topology::Lines     ? 2u
            : kind == Topology::LineStrip ? 3u
            : kind == Topology::Triangles ? 4u
-           : kind == Topology::Strip ? 5u
+           : kind == Topology::Strip     ? 5u
                                          : 6u;
 }
 
@@ -31,7 +31,7 @@ u32 d3d_primitive(Topology kind) {
 // 是顶点数。strip/fan 的 0 图元特例：oracle 返回 0（不是 +1/+2）——0 图元
 // 绘制不产生顶点，port 侧必须同语义（此前 count+1/count+2 与 oracle 不同）。
 u32 d3d_vertex_count(u32 prim, u32 count) {
-    return prim == 1u ? count
+    return prim == 1u   ? count
            : prim == 2u ? count * 2u
            : prim == 3u ? (count ? count + 1u : 0u)
            : prim == 4u ? count * 3u
@@ -39,18 +39,15 @@ u32 d3d_vertex_count(u32 prim, u32 count) {
 }
 
 u32 d3d_fvf(VertexLayout layout) {
-    return layout == VertexLayout::WorldUv ? 0x102u
-           : layout == VertexLayout::WorldColorUv ? 0x142u
+    return layout == VertexLayout::WorldUv         ? 0x102u
+           : layout == VertexLayout::WorldColorUv  ? 0x142u
            : layout == VertexLayout::ScreenColorUv ? 0x144u
-           : layout == VertexLayout::ScreenColor ? 0x44u
-                                                        : 0x104u;
+           : layout == VertexLayout::ScreenColor   ? 0x44u
+                                                   : 0x104u;
 }
 
 u32 matrix_slot(MatrixKind kind) {
-    return kind == MatrixKind::World ? 0u
-           : kind == MatrixKind::View ? 1u
-           : kind == MatrixKind::Projection ? 2u
-                                            : 3u;
+    return kind == MatrixKind::World ? 0u : kind == MatrixKind::View ? 1u : kind == MatrixKind::Projection ? 2u : 3u;
 }
 
 // D3DVIEWPORT9 的 X/Y/W/H 是 DWORD 像素：oracle d3d_read_viewport 以
@@ -66,8 +63,7 @@ void append_pixel(std::string& out, u32 value) {
 
 void append_int(std::string& out, i64 value) {
     char buffer[24];
-    const int written = std::snprintf(buffer, sizeof buffer, "%lld",
-                                      static_cast<long long>(value));
+    const int written = std::snprintf(buffer, sizeof buffer, "%lld", static_cast<long long>(value));
     out.append(buffer, size_t(written > 0 ? written : 0));
 }
 
@@ -210,15 +206,12 @@ u32 DrawCapture::texture(const AnmResource& file, u32 index) {
 
 void DrawCapture::bind_texture(u32 handle) {
     bound_set_ = true;  // handle 0 ≡ SetTexture(0,0)：tex 序列化为 null
-    bound_ = handle && handle <= identities_.size() ? identities_[handle - 1]
-                                                       : Identity{};
+    bound_ = handle && handle <= identities_.size() ? identities_[handle - 1] : Identity{};
 }
 
 void DrawCapture::set_layout(VertexLayout layout) { layout_ = layout; }
 
-void DrawCapture::set_matrix(MatrixKind kind, const Matrix4& matrix) {
-    matrices_[matrix_slot(kind)] = matrix;
-}
+void DrawCapture::set_matrix(MatrixKind kind, const Matrix4& matrix) { matrices_[matrix_slot(kind)] = matrix; }
 
 void DrawCapture::append_tex(const Identity& identity) {
     line_ += "[";
@@ -307,8 +300,7 @@ void DrawCapture::emit_quad(u32 prim, u32 count, u32 stride, const void* data) {
             return value;
         };
         u32 color = 0;
-        if (attributes.diffuse < stride)
-            std::memcpy(&color, at + attributes.diffuse, 4);
+        if (attributes.diffuse < stride) std::memcpy(&color, at + attributes.diffuse, 4);
         line_ += "[";
         append_float(line_, field(0));
         line_ += ",";
@@ -380,8 +372,7 @@ void DrawCapture::emit_up(u32 prim, u32 count, u32 stride, const void* data) {
             return value;
         };
         u32 color = 0;
-        if (attributes.diffuse < stride)
-            std::memcpy(&color, at + attributes.diffuse, 4);
+        if (attributes.diffuse < stride) std::memcpy(&color, at + attributes.diffuse, 4);
         line_ += "[";
         append_float(line_, field(0));
         line_ += ",";

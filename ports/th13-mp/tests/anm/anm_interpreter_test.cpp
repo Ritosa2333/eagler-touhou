@@ -32,7 +32,7 @@ TEST(time_gate_and_order) {
 }
 
 TEST(terminator_and_opcodes_1_2) {
-    {   // op1 结束：清可见位、IP=-1、tick 返回 1（§四 结束语义）。
+    {  // op1 结束：清可见位、IP=-1、tick 返回 1（§四 结束语义）。
         std::vector<th13::u8> bytes;
         th13test::push_insn(bytes, 1, 0);
         th13test::push_terminator(bytes);
@@ -44,7 +44,7 @@ TEST(terminator_and_opcodes_1_2) {
         CHECK_EQ(vm.instruction_offset, -1);
         CHECK_EQ(vm.tick(rng), 0);  // IP=-1：休眠，不再推进
     }
-    {   // op2 停止：IP 置空、VM 存活休眠，返回 0。
+    {  // op2 停止：IP 置空、VM 存活休眠，返回 0。
         std::vector<th13::u8> bytes;
         th13test::push_insn(bytes, 2, 0);
         th13test::push_terminator(bytes);
@@ -60,26 +60,26 @@ TEST(label_scan_and_fallback) {
     // 中断标签扫描：命中 id；无命中回落 id==-1（§三/§四）。
     // 布局：op3 停等在前，标签在正常流中不可达（op3 不推进 IP 即返回）。
     std::vector<th13::u8> bytes;
-    th13test::push_insn(bytes, 3, 0);                                      // 停等中断 @0
-    th13test::push_label(bytes, -1, 0);                                    // 回落标签 @8
-    th13test::push_label(bytes, 7, 0);                                     // 目标标签 @20
-    th13test::push_insn(bytes, 402, 0, 0, {0x41100000, 0x41100000});       // scale=(9,9) @32
-    th13test::push_insn(bytes, 7, 0, 0, {});                               // 中断返回 @44
+    th13test::push_insn(bytes, 3, 0);                                 // 停等中断 @0
+    th13test::push_label(bytes, -1, 0);                               // 回落标签 @8
+    th13test::push_label(bytes, 7, 0);                                // 目标标签 @20
+    th13test::push_insn(bytes, 402, 0, 0, {0x41100000, 0x41100000});  // scale=(9,9) @32
+    th13test::push_insn(bytes, 7, 0, 0, {});                          // 中断返回 @44
     th13test::push_terminator(bytes);
     auto script = th13test::make_script(std::move(bytes));
     th13::AnmVm vm;
     CHECK(vm.bind(script));
     CHECK_EQ(vm.tick(rng), 0);
-    CHECK(vm.visual.flags & 0x4000);   // 停等
+    CHECK(vm.visual.flags & 0x4000);  // 停等
     CHECK(!vm.visible);
     CHECK_NEAR(vm.visual.scale.x, 1.0, 1e-6);  // 标签块未执行
     // 中断 label=7：保存 {time=0, IP@op3}，跳至标签后执行，op7 恢复后再次停等。
     vm.pending_interrupt = 7;
     CHECK_EQ(vm.tick(rng), 0);
     CHECK_NEAR(vm.visual.scale.x, 9.0, 1e-6);
-    CHECK_EQ(vm.timer.current, 0);     // op7 恢复保存的时间
-    CHECK(vm.visual.flags & 0x4000);   // 恢复后再次停等
-    CHECK(vm.visible);                 // 中断置可见（flags|=1），op3 不清
+    CHECK_EQ(vm.timer.current, 0);    // op7 恢复保存的时间
+    CHECK(vm.visual.flags & 0x4000);  // 恢复后再次停等
+    CHECK(vm.visible);                // 中断置可见（flags|=1），op3 不清
     // 无命中标签：回落 ins_5(-1)，同样跳转执行。
     vm.visual.scale = {1, 1};
     vm.pending_interrupt = 99;
@@ -96,7 +96,7 @@ TEST(label_scan_and_fallback) {
     CHECK_EQ(bare.tick(rng), 0);
     bare.pending_interrupt = 5;
     CHECK_EQ(bare.tick(rng), 0);
-    CHECK_EQ(bare.timer.current, 0);   // 无命中：时间冻结一帧
+    CHECK_EQ(bare.timer.current, 0);  // 无命中：时间冻结一帧
     CHECK_EQ(bare.pending_interrupt, 0);
 }
 
@@ -115,8 +115,12 @@ TEST(op6_time_rewind) {
 
 TEST(geometry_modes_th13) {
     // 几何模式号：th13 分发器实测 600→9、603→15、604→16、606→19、608→21。
-    struct Row { th13::i16 opcode; th13::u32 mode; };
-    const Row rows[] = {{600, 9}, {601, 13}, {602, 14}, {603, 15}, {604, 16}, {605, 17}, {606, 19}, {607, 20}, {608, 21}};
+    struct Row {
+        th13::i16 opcode;
+        th13::u32 mode;
+    };
+    const Row rows[] = {{600, 9},  {601, 13}, {602, 14}, {603, 15}, {604, 16},
+                        {605, 17}, {606, 19}, {607, 20}, {608, 21}};
     for (const auto& row : rows) {
         std::vector<th13::u8> bytes;
         th13test::push_insn(bytes, row.opcode, 0, 0, {4, 0x40400000});
@@ -148,8 +152,8 @@ TEST(unimplemented_opcodes_rejected) {
     // 计划 §四/§六：th13 未用的 th15 残留 opcode 显式报错。
     // 609..611 不在该列：00462450 的 >600 switch 到 0x260(608) 结束，609..611
     // 走默认 advance（见 opcodes_past_608_advance_without_error）。
-    for (th13::i16 opcode : {th13::i16(109), th13::i16(123), th13::i16(127), th13::i16(422),
-                             th13::i16(507), th13::i16(509)}) {
+    for (th13::i16 opcode :
+         {th13::i16(109), th13::i16(123), th13::i16(127), th13::i16(422), th13::i16(507), th13::i16(509)}) {
         std::vector<th13::u8> bytes;
         th13test::push_insn(bytes, opcode, 0, 0, {0, 0, 0});
         th13test::push_terminator(bytes);
@@ -215,7 +219,7 @@ TEST(rate_bit_forces_one) {
     CHECK(vm.bind(script));
     vm.visual.render_flags |= 0x100;
     CHECK_EQ(vm.tick(rng, 0.25f), 0);
-    CHECK_EQ(vm.timer.current, 1);  // 强制 +1，而非 +0.25
+    CHECK_EQ(vm.timer.current, 1);     // 强制 +1，而非 +0.25
     CHECK_EQ(vm.tick(rng, 0.25f), 0);  // time=1 执行，t2 门槛挡下
     CHECK_NEAR(vm.visual.scale.x, 5.0, 1e-6);
     th13::AnmVm plain;

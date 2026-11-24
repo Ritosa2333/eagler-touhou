@@ -28,9 +28,9 @@
 // 00450020 对灰/白两组数字都写 sprite50+d（白组被灰层覆盖，仍照原版写）。
 #pragma once
 
-#include "TitleState.hpp"
-#include "TitleMainMenu.hpp"
 #include "TitleAnimations.hpp"
+#include "TitleMainMenu.hpp"
+#include "TitleState.hpp"
 
 #include <array>
 #include <functional>
@@ -53,9 +53,7 @@ struct TitleKeyConfigPlatform {
     virtual std::array<i16, kTitleKeyConfigBindings> pad_bindings() const {
         return {0, 1, 2, 3, 4};  // 原版默认 pad 按钮序号
     }
-    virtual bool persist_pad_bindings(const std::array<i16, kTitleKeyConfigBindings>&) {
-        return false;
-    }
+    virtual bool persist_pad_bindings(const std::array<i16, kTitleKeyConfigBindings>&) { return false; }
 };
 
 // std::function 适配器（Application 接线用；未接时保持默认失败语义）。
@@ -69,8 +67,7 @@ struct TitleKeyConfigHost final : TitleKeyConfigPlatform {
     std::array<i16, kTitleKeyConfigBindings> pad_bindings() const override {
         return bindings ? bindings() : TitleKeyConfigPlatform::pad_bindings();
     }
-    bool persist_pad_bindings(
-        const std::array<i16, kTitleKeyConfigBindings>& values) override {
+    bool persist_pad_bindings(const std::array<i16, kTitleKeyConfigBindings>& values) override {
         return persist ? persist(values) : false;
     }
 };
@@ -82,24 +79,24 @@ class TitleKeyConfigMenu {
     TitleAnimations visuals;
     TitleSceneResources resources;
     std::array<i16, kTitleKeyConfigBindings> bindings_{};  // scratch +0x5a8c..
-    i32 row_ = 0;             // +0x28 光标行（0..6 环绕）
-    i32 substate_frames_ = 0; // 屏龄（>6 / >9 门）
+    i32 row_ = 0;                                          // +0x28 光标行（0..6 环绕）
+    i32 substate_frames_ = 0;                              // 屏龄（>6 / >9 门）
     bool fail(const std::string& reason);
     bool sound(i32 id);
-    bool open();                          // case0：建根/抄绑定/刷新数字
-    bool refresh_digits();                // 00450020：数字 sprite 写值
-    bool learn(i32 button);               // 004509d0：学习 + 重复交换
-    void select_row(i32 label_base);      // immediate label3 + pending label
-    void revert_bindings();               // scratch = 宿主已保存值（行5 / 取消）
-    bool leave();                         // case4：收面 + 光标栈 pop -> Option
+    bool open();                      // case0：建根/抄绑定/刷新数字
+    bool refresh_digits();            // 00450020：数字 sprite 写值
+    bool learn(i32 button);           // 004509d0：学习 + 重复交换
+    void select_row(i32 label_base);  // immediate label3 + pending label
+    void revert_bindings();           // scratch = 宿主已保存值（行5 / 取消）
+    bool leave();                     // case4：收面 + 光标栈 pop -> Option
 
 public:
     std::function<bool(i32)> play_sound;
     std::string error;
-    TitleKeyConfigMenu(TitleState& state_, AnmManager& animations_,
-                       TitleKeyConfigPlatform& host_, TitleSceneResources bank)
-        : state(state_), animations(animations_), host(host_),
-          visuals(state_, animations_, bank.title), resources(bank) {}
+    TitleKeyConfigMenu(TitleState& state_, AnmManager& animations_, TitleKeyConfigPlatform& host_,
+                       TitleSceneResources bank)
+        : state(state_), animations(animations_), host(host_), visuals(state_, animations_, bank.title),
+          resources(bank) {}
     bool update(u32 pressed, u32 repeated);
     i32 row() const { return row_; }
     const std::array<i16, kTitleKeyConfigBindings>& bindings() const { return bindings_; }

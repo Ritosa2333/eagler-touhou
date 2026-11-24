@@ -19,8 +19,8 @@ TEST(st01_container_parse) {
     CHECK(reader().read("artifacts/reference/raw/st01.ecl", bytes));
     th13::EclResource resource;
     CHECK(resource.open(bytes.data(), th13::u32(bytes.size())));
-    CHECK_EQ(resource.subroutines.size(), 59u);   // §1.1: sub_count = 0x3b
-    CHECK_EQ(resource.animations.size(), 2u);     // anim { enemy.anm; st01enm.anm }
+    CHECK_EQ(resource.subroutines.size(), 59u);  // §1.1: sub_count = 0x3b
+    CHECK_EQ(resource.animations.size(), 2u);    // anim { enemy.anm; st01enm.anm }
     CHECK_EQ(resource.animations[0], std::string("enemy.anm"));
     CHECK_EQ(resource.animations[1], std::string("st01enm.anm"));
     CHECK_EQ(resource.includes.size(), 2u);  // ecli { default.ecl; st01bs.ecl }
@@ -36,15 +36,12 @@ TEST(girl_a01_instruction_walk) {
         th13::u32 offset, time, opcode, length, mask, rank, count, adjust;
     };
     const Row rows[] = {
-        {0x3e0, 0, 40, 20, 0, 0xff, 1, 0},   {0x3f4, 0, 500, 24, 0, 0xff, 2, 0},
-        {0x40c, 0, 501, 24, 0, 0xff, 2, 0},  {0x424, 0, 404, 24, 0, 0xff, 2, 0},
-        {0x43c, 0, 405, 32, 0, 0xff, 4, 0},  {0x45c, 0, 15, 32, 0, 0xcc, 1, 0},
-        {0x47c, 0, 15, 36, 0, 0xc8, 1, 0},  {0x4a0, 0, 23, 20, 0, 0xff, 1, 0},
-        {0x4b4, 0, 44, 20, 1, 0xff, 1, 0},  {0x4c8, 0, 44, 20, 1, 0xff, 1, 0},
-        {0x4dc, 0, 44, 20, 0, 0xff, 1, 0},  {0x4f0, 0, 57, 16, 0, 0xff, 0, 0},
-        {0x500, 0, 51, 16, 0, 0xff, 0, 0},  {0x510, 0, 429, 32, 4, 0xff, 4, 8},
-        {0x530, 0, 12, 24, 0, 0xff, 2, 0},  {0x548, 0, 23, 20, 0, 0xff, 1, 0},
-        {0x55c, 0, 42, 20, 0, 0xff, 1, 0},  {0x570, 0, 14, 24, 0, 0xff, 2, 0},
+        {0x3e0, 0, 40, 20, 0, 0xff, 1, 0},  {0x3f4, 0, 500, 24, 0, 0xff, 2, 0}, {0x40c, 0, 501, 24, 0, 0xff, 2, 0},
+        {0x424, 0, 404, 24, 0, 0xff, 2, 0}, {0x43c, 0, 405, 32, 0, 0xff, 4, 0}, {0x45c, 0, 15, 32, 0, 0xcc, 1, 0},
+        {0x47c, 0, 15, 36, 0, 0xc8, 1, 0},  {0x4a0, 0, 23, 20, 0, 0xff, 1, 0},  {0x4b4, 0, 44, 20, 1, 0xff, 1, 0},
+        {0x4c8, 0, 44, 20, 1, 0xff, 1, 0},  {0x4dc, 0, 44, 20, 0, 0xff, 1, 0},  {0x4f0, 0, 57, 16, 0, 0xff, 0, 0},
+        {0x500, 0, 51, 16, 0, 0xff, 0, 0},  {0x510, 0, 429, 32, 4, 0xff, 4, 8}, {0x530, 0, 12, 24, 0, 0xff, 2, 0},
+        {0x548, 0, 23, 20, 0, 0xff, 1, 0},  {0x55c, 0, 42, 20, 0, 0xff, 1, 0},  {0x570, 0, 14, 24, 0, 0xff, 2, 0},
         {0x588, 0, 10, 16, 0, 0xff, 0, 0},
     };
     std::vector<th13::u8> bytes;
@@ -132,7 +129,7 @@ TEST(program_aggregation_and_lookup) {
     th13::EclProgram full;
     CHECK(full.attach(st01.data(), th13::u32(st01.size()), &provider) == 0);
     CHECK(full.error.empty());
-    CHECK(full.files.size() >= 3u);  // st01 + ecli 名单递归（default/st01bs 及其再包含）
+    CHECK(full.files.size() >= 3u);           // st01 + ecli 名单递归（default/st01bs 及其再包含）
     CHECK(provider.animations.size() >= 2u);  // 各文件 ANIM 名单都会挂接
     CHECK_EQ(provider.animations[0], std::string("enemy.anm"));
     CHECK_EQ(provider.animations[1], std::string("st01enm.anm"));
@@ -140,8 +137,10 @@ TEST(program_aggregation_and_lookup) {
     th13::EclResource default_resource;
     CHECK(default_resource.open(default_ecl.data(), th13::u32(default_ecl.size())));
     CHECK(!default_resource.subroutines.empty());
-    for (const auto& sub : default_resource.subroutines) CHECK(full.find_index(sub.name.c_str()) >= 0);
-    for (const auto& sub : default_resource.subroutines) CHECK(full.find(sub.name.c_str()) != nullptr);
+    for (const auto& sub : default_resource.subroutines)
+        CHECK(full.find_index(sub.name.c_str()) >= 0);
+    for (const auto& sub : default_resource.subroutines)
+        CHECK(full.find(sub.name.c_str()) != nullptr);
     // 名字表全局非降序（二分前提；跨文件同名子程序按原版注册序相邻保留）。
     for (th13::u32 i = 1; i < full.definitions.size(); ++i)
         CHECK(std::strcmp(full.subroutine(i - 1).name.c_str(), full.subroutine(i).name.c_str()) <= 0);

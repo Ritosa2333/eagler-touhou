@@ -26,7 +26,11 @@ using namespace th13;
 
 namespace {
 
-i32 bits(float value) { i32 result; std::memcpy(&result, &value, 4); return result; }
+i32 bits(float value) {
+    i32 result;
+    std::memcpy(&result, &value, 4);
+    return result;
+}
 
 struct NullGraphics final : ZunGraphics {
     touhou::graphics::PipelineState state;
@@ -60,8 +64,7 @@ struct Fixture {
         th13test::push_insn(parent_script, 3, 0);
         th13test::push_terminator(parent_script);
         // 子 VM：time0 视觉抽签后停等；age 暴露创建首 tick 与同帧链 tick。
-        th13test::push_insn(child_script, 117, 0, 3,
-                            {bits(10010.f), bits(10011.f), bits(0.5f)});
+        th13test::push_insn(child_script, 117, 0, 3, {bits(10010.f), bits(10011.f), bits(0.5f)});
         th13test::push_insn(child_script, 3, 0);
         th13test::push_terminator(child_script);
         // 自机弹脚本（plXX.anm 弹型脚本形态）：长寿命停等链节点。
@@ -158,7 +161,8 @@ TEST(tail_inserted_player_shot_lets_child_tick_same_frame) {
     if (!fixture.ready) return;
     CHECK(fixture.spawn_shot(0, 31) != 0);
     // 父在 time2 生成子：创建首 tick + 两趟链遍历后到达 time2。
-    for (int frame = 0; frame < 3 && !fixture.child(); ++frame) CHECK(fixture.chain());
+    for (int frame = 0; frame < 3 && !fixture.child(); ++frame)
+        CHECK(fixture.chain());
     AnmVm* child = fixture.child();
     CHECK(child != nullptr);
     if (!child) return;
@@ -172,7 +176,8 @@ TEST(tail_parent_without_follower_misses_same_frame_child_tick) {
     Fixture fixture;
     CHECK(fixture.ready);
     if (!fixture.ready) return;
-    for (int frame = 0; frame < 3 && !fixture.child(); ++frame) CHECK(fixture.chain());
+    for (int frame = 0; frame < 3 && !fixture.child(); ++frame)
+        CHECK(fixture.chain());
     AnmVm* child = fixture.child();
     CHECK(child != nullptr);
     if (!child) return;
@@ -209,8 +214,8 @@ TEST(presentation_installs_and_clears_the_main_chain_hook) {
     NullGraphics graphics;
     AnmRenderer renderer{graphics};
     {
-        auto presentation = std::make_unique<StagePresentation>(
-            manager, renderer, StagePresentation::Banks{4, 5, 6}, 0);
+        auto presentation =
+            std::make_unique<StagePresentation>(manager, renderer, StagePresentation::Banks{4, 5, 6}, 0);
         CHECK(manager.after_main_update != nullptr);
         CHECK(manager.update(false));
         CHECK(presentation->error().empty());

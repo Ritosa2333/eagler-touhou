@@ -14,17 +14,20 @@
 //   10030-10032  与 10010-10012 同式，但使用游戏 RNG（0x4dc324）
 // th15 另有的 10033-10035（vector）在 th13 两张读表均无 case，不设。
 #pragma once
-#include "Types.hpp"
 #include "GameRandom.hpp"
 #include "Timer.hpp"
+#include "Types.hpp"
 namespace th13 {
 struct AnmVariables {
-    i32 integers[4]{};float floats[4]{};i32 extra_integers[2]{};
-    float random_scale=1,random_angle=3.1415927410125732421875f;u32 random_bound=65536;
-    Vec3 position{},rotation{};
-    i32 integer(i32 value,GameRandom& rng)noexcept;
-    float floating(float value,GameRandom& rng)noexcept;
-    i32* integer_destination(i32* argument)noexcept;
-    float* float_destination(float* argument)noexcept;
+    i32 integers[4]{};
+    float floats[4]{};
+    i32 extra_integers[2]{};
+    float random_scale = 1, random_angle = 3.1415927410125732421875f;
+    u32 random_bound = 65536;
+    Vec3 position{}, rotation{};
+    i32 integer(i32 value, GameRandom& rng) noexcept;
+    float floating(float value, GameRandom& rng) noexcept;
+    i32* integer_destination(i32* argument) noexcept;
+    float* float_destination(float* argument) noexcept;
 };
-}
+}  // namespace th13

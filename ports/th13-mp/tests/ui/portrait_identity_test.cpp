@@ -57,14 +57,11 @@ struct Host final : RunSceneServices {
     }
     bool load(i32 bank, const std::string& name) {
         std::vector<u8> bytes;
-        const bool ok = read_asset(name, bytes) &&
-                        animations.load(bank, bytes.data(), u32(bytes.size()));
+        const bool ok = read_asset(name, bytes) && animations.load(bank, bytes.data(), u32(bytes.size()));
         if (!ok) std::printf("load %s: %s\n", name.c_str(), animations.error.c_str());
         return ok;
     }
-    bool preload_scenery_animation(i32 bank, const std::string& name) override {
-        return load(bank, name);
-    }
+    bool preload_scenery_animation(i32 bank, const std::string& name) override { return load(bank, name); }
     ZunGraphics& stage_graphics() override { return graphics; }
     bool request_pause() override { return true; }
     bool request_game_over() override { return true; }
@@ -76,7 +73,10 @@ struct Host final : RunSceneServices {
     bool camera(DrawCamera, bool) override { return true; }
     bool hud_text(const HudTextDraw&) override { return true; }
     bool queue_music(i32, i32, const std::string&) override { return true; }
-    bool dialogue_line(i32, const MsgLine&, float, float) override { ++lines; return true; }
+    bool dialogue_line(i32, const MsgLine&, float, float) override {
+        ++lines;
+        return true;
+    }
 };
 
 // 原版 ANM 文件的脚本总数（chunk 链：version@0、脚本数@6、stride@36）。
@@ -167,8 +167,8 @@ std::vector<Observation> observe(AnmManager& animations) {
     return out;
 }
 
-bool has_texture(const std::vector<Observation>& vms, const std::string& texture,
-                 i32 script = -1, bool visible = true) {
+bool has_texture(const std::vector<Observation>& vms, const std::string& texture, i32 script = -1,
+                 bool visible = true) {
     for (const auto& vm : vms) {
         if (vm.texture != texture) continue;
         if (visible && (!vm.visible || !vm.alpha)) continue;
@@ -178,8 +178,7 @@ bool has_texture(const std::vector<Observation>& vms, const std::string& texture
     return false;
 }
 
-bool has_prefix(const std::vector<Observation>& vms, const std::string& prefix,
-                bool visible = true) {
+bool has_prefix(const std::vector<Observation>& vms, const std::string& prefix, bool visible = true) {
     for (const auto& vm : vms) {
         if (vm.texture.rfind(prefix, 0) != 0) continue;
         if (visible && (!vm.visible || !vm.alpha)) continue;
@@ -212,9 +211,7 @@ struct Scene {
             if (animations.resource(bank.first)) continue;
             if (!host.load(bank.first, bank.second)) return false;
         }
-        if (!animations.resource(6) &&
-            !host.load(6, "pl0" + std::to_string(character) + ".anm"))
-            return false;
+        if (!animations.resource(6) && !host.load(6, "pl0" + std::to_string(character) + ".anm")) return false;
         if (!load_stage_assets(host.reader, stage, assets)) return false;
         AnmResource merged;
         for (const auto& name : assets.anim_list) {
@@ -229,9 +226,8 @@ struct Scene {
         if (!host.load(26, logo)) return false;
         progress.character = character;
         progress.stage = stage;
-        scene = std::make_unique<RunScene>(
-            progress, player, score, animations, renderer, env, host, scheduler,
-            StagePresentation::Banks{4, 5, 6, 8, 9}, 3, 2, 7, assets.std_name);
+        scene = std::make_unique<RunScene>(progress, player, score, animations, renderer, env, host, scheduler,
+                                           StagePresentation::Banks{4, 5, 6, 8, 9}, 3, 2, 7, assets.std_name);
         scene->battle_sht = "pl0" + std::to_string(character) + "a.sht";
         scene->hud.stage_logo_bank = 26;
         if (!scene->initialize()) {
@@ -245,7 +241,7 @@ struct Scene {
         scene.reset();
         animations.unload(4);
         animations.unload(5);
-        animations.unload(7);   // scenery bank (stXXwl.anm) must be reloaded per stage
+        animations.unload(7);  // scenery bank (stXXwl.anm) must be reloaded per stage
         animations.unload(9);
         animations.unload(26);
     }
@@ -254,8 +250,7 @@ struct Scene {
     bool play(i32 entry, int max_frames, std::vector<Observation>& seen, bool& closed) {
         scene->open_dialog(entry);
         if (!scene->dialog_active()) {
-            std::printf("stage %d entry %d open: %s\n", int(progress.stage), int(entry),
-                        scene->error.c_str());
+            std::printf("stage %d entry %d open: %s\n", int(progress.stage), int(entry), scene->error.c_str());
             return false;
         }
         GameInput& input = this->input;
@@ -264,19 +259,21 @@ struct Scene {
         progress.chapter = entry == 2 ? 4 : 6;
         closed = false;
         for (int frame = 0; frame < max_frames; ++frame) {
-            if (frame % 100 == 0) std::fprintf(stderr,"[portrait-debug] entry=%d frame=%d stage=%d\n", int(entry), frame, int(progress.stage));
+            if (frame % 100 == 0)
+                std::fprintf(stderr, "[portrait-debug] entry=%d frame=%d stage=%d\n", int(entry), frame,
+                             int(progress.stage));
             input.held = input.pressed = (frame % 30 == 0) ? 1u : 0u;
             input.duration[0] = input.held ? 1 : 0;
             // 0x4265a0 家族按优先级经调度器驱动（对话解释器在 Update 28，
             // 0x424f46/0x424f4b）；只直调 update()（任务 20）对话永不步进。
             // 与生产/run_scene 夹具同构：整帧 scheduler.update()。
             if (scheduler.update() < 0 || !scene->error.empty()) {
-                std::printf("stage %d entry %d update: %s\n", int(progress.stage),
-                            int(entry), scene->error.c_str());
+                std::printf("stage %d entry %d update: %s\n", int(progress.stage), int(entry), scene->error.c_str());
                 return false;
             }
             if (!animations.update()) return false;
-            for (const auto& vm : observe(animations)) seen.push_back(vm);
+            for (const auto& vm : observe(animations))
+                seen.push_back(vm);
             if (!scene->dialog_active()) {
                 closed = true;
                 break;

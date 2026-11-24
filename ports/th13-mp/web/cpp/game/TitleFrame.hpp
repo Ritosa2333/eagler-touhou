@@ -3,9 +3,9 @@
 // 异步文件、音频与 destination 队列。
 #pragma once
 
-#include "TitleState.hpp"
-#include "TitleMainMenu.hpp"
 #include "FrameScheduler.hpp"
+#include "TitleMainMenu.hpp"
+#include "TitleState.hpp"
 
 namespace th13 {
 
@@ -56,8 +56,7 @@ class TitleFrame {
 public:
     i32 music_age = 0;
     std::string error;
-    TitleFrame(TitleState&, SessionState&, TitleFrameServices&, FrameScheduler&,
-               AnmManager&);
+    TitleFrame(TitleState&, SessionState&, TitleFrameServices&, FrameScheduler&, AnmManager&);
     ~TitleFrame();
     void controls(const TitleFrameInput& value) noexcept { input = value; }
     bool update(const TitleFrameInput&);

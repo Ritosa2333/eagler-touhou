@@ -40,8 +40,7 @@ struct Rig {
         sim->current = &parent;
         std::vector<u8> code;
         th13test::emit(code, 0, op, 0, 255, 0,
-                       {8, 0x6c696843, 0x64, th13test::bits_of(x),
-                        th13test::bits_of(y), 400, 1000, 1});
+                       {8, 0x6c696843, 0x64, th13test::bits_of(x), th13test::bits_of(y), 400, 1000, 1});
         context.instruction = reinterpret_cast<const EclInstruction*>(code.data());
         if (sim->commands.execute(context, op) != 0) return nullptr;
         return sim->enemies.empty() ? nullptr : sim->enemies.back().get();

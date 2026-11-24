@@ -8,7 +8,10 @@ struct Host : StageBattleServices {
     bool life_hud(i32, i32) override { return true; }
     bool bomb_hud(i32, i32) override { return true; }
     bool request_game_over() override { return true; }
-    bool hud_sound(i32 sound) override { if (sound == 42) ++grazes; return true; }
+    bool hud_sound(i32 sound) override {
+        if (sound == 42) ++grazes;
+        return true;
+    }
 };
 struct Provider : EclResourceProvider {
     std::vector<u8> bytes;
@@ -19,8 +22,14 @@ struct Provider : EclResourceProvider {
         th13test::emit(body, 0, 10, 0, 255, 0, {});
         bytes = th13test::build_scpt({{"main", body}}, {"enemy.anm", "st01enm.anm"});
     }
-    bool read(const std::string&, std::vector<u8>& out) override { out = bytes; return true; }
-    bool animation(u32, const std::string& name) override { names->push_back(name); return true; }
+    bool read(const std::string&, std::vector<u8>& out) override {
+        out = bytes;
+        return true;
+    }
+    bool animation(u32, const std::string& name) override {
+        names->push_back(name);
+        return true;
+    }
 };
 struct Rig {
     Provider provider;
@@ -39,7 +48,9 @@ struct Rig {
         CHECK(battle.load(provider, "test.ecl", 2, host, progress, player, score));
         battle.sim.enemies.clear();
         battle.sim.graze_effect = [this](const Vec3& pos) {
-            ++graze_effects; last_graze = pos; return true;
+            ++graze_effects;
+            last_graze = pos;
+            return true;
         };
         battle.set_player_pos(0, 200);
         battle.player_phase = StageBattle::PlayerPhase::Active;
@@ -115,5 +126,5 @@ TEST(rotated_enemy_body_graze_uses_expanded_native_rectangle) {
     CHECK_EQ(r.progress.graze, 1);
     CHECK(r.battle.player_phase == StageBattle::PlayerPhase::Active);
 }
-}
+}  // namespace
 int main() { return th13test::run_all("enemy body graze"); }

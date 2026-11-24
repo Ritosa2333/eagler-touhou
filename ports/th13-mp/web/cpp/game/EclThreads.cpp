@@ -7,7 +7,8 @@ EclThreadsSnapshot EclThreads::snapshot() const {
     EclThreadsSnapshot out;
     out.main = main;
     out.children.reserve(children.size());
-    for (const auto& child : children) out.children.push_back(*child);
+    for (const auto& child : children)
+        out.children.push_back(*child);
     return out;
 }
 
@@ -65,7 +66,8 @@ bool EclThreads::restart(const char* name, u8 difficulty) {
     main.thread_id = -1;
     main.thread_state = 0;
     main.thread_flags &= ~1u;
-    for (auto& channel : main.interpolators) channel.duration = 0;
+    for (auto& channel : main.interpolators)
+        channel.duration = 0;
     main.interpolation_targets.fill(nullptr);
     return start(name, difficulty);
 }
@@ -95,7 +97,8 @@ EclContext* EclThreads::find(i32 id) {  // 0x479480 按 id 查线程
 }
 
 void EclThreads::terminate_children() {  // 0x4794b0 killAllAsync
-    for (auto& child : children) child->routine = child->instruction_offset = -1;
+    for (auto& child : children)
+        child->routine = child->instruction_offset = -1;
 }
 
 EclContext* EclThreads::at(u32 index) noexcept {

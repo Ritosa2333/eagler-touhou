@@ -18,17 +18,23 @@ using namespace th13;
 namespace th13 {
 using AnmRandomObserver = void (*)(const AnmVm&, i32, i32, i32, u32, u32, u32, u32, bool);
 extern AnmRandomObserver anm_random_observer;
-}
+}  // namespace th13
 namespace {
 
-i32 bits(float value) { i32 result; std::memcpy(&result, &value, 4); return result; }
+i32 bits(float value) {
+    i32 result;
+    std::memcpy(&result, &value, 4);
+    return result;
+}
 
-struct Draw { i32 frame; i32 variable; };
+struct Draw {
+    i32 frame;
+    i32 variable;
+};
 std::vector<Draw> draws;
 i32 current_frame = 0;
 
-void observe(const AnmVm&, i32 opcode, i32 variable, i32, u32 before, u32, u32 after,
-             u32, bool) {
+void observe(const AnmVm&, i32 opcode, i32 variable, i32, u32 before, u32, u32 after, u32, bool) {
     if (opcode == 117 && before != after) draws.push_back({current_frame, variable});
 }
 
@@ -128,14 +134,14 @@ TEST(missing_same_frame_chain_tick_shifts_time20_by_one) {
     const auto children = fixture.manager.registry.children(fixture.root);
     CHECK_EQ(children.size(), size_t(1));
     if (children.size() == 1) CHECK_EQ(children[0]->timer.current, 1);  // 缺主链同帧 tick
-    for (current_frame = 1; current_frame <= 25; ++current_frame) fixture.frame();
+    for (current_frame = 1; current_frame <= 25; ++current_frame)
+        fixture.frame();
     anm_random_observer = nullptr;
     CHECK_EQ(draws.size(), size_t(2));
     if (draws.size() != 2) return;
     CHECK_EQ(draws[0].frame, 0);
     CHECK_EQ(draws[1].frame, 20);
 }
-
 
 // ---- 生产链形态对照：父 VM 在 registry 主链尾插（0x46f3f0）时的同帧 tick ----
 // 正控：父之后还有尾插节点（0x46f3f0 的旧 tail 非父），子 VM 尾插后同一
@@ -269,8 +275,7 @@ struct BulletAnmFixture {
             failure = "parent creation failed: " + manager.error;
             return;
         }
-        if (with_follower &&
-            !manager.create(8, 0, -1, 0, Vec3{}, 0, false)) {
+        if (with_follower && !manager.create(8, 0, -1, 0, Vec3{}, 0, false)) {
             failure = "follower creation failed";
             return;
         }
@@ -306,8 +311,7 @@ struct BulletAnmFixture {
                 if (child) child_timer_at_spawn = child->timer.current;
             }
             for (const auto& draw : phase_draws) {
-                if (draw.first == child_handle && draw.second == 296 && draw_update < 0)
-                    draw_update = updates;
+                if (draw.first == child_handle && draw.second == 296 && draw_update < 0) draw_update = updates;
             }
             const AnmVm* child = manager.registry.find(child_handle);
             if (child && child->instruction_offset < 0) break;  // 子脚本终了
@@ -316,7 +320,6 @@ struct BulletAnmFixture {
         return spawn_update >= 0 && draw_update >= 0;
     }
 };
-
 
 TEST(reimu2406_real_bullet_anm_child_phase_with_follower) {
     // 正控：父后有尾插跟随者（原生神霊/道具形态），子生成帧拿满两次 tick
@@ -335,9 +338,8 @@ TEST(reimu2406_real_bullet_anm_child_phase_with_follower) {
     phase_manager = nullptr;
     CHECK(ok);
     if (!ok) {
-        std::printf("spawn=%d draw=%d timer=%d (%s)\n", fixture.spawn_update,
-                    fixture.draw_update, fixture.child_timer_at_spawn,
-                    fixture.failure.c_str());
+        std::printf("spawn=%d draw=%d timer=%d (%s)\n", fixture.spawn_update, fixture.draw_update,
+                    fixture.child_timer_at_spawn, fixture.failure.c_str());
         return;
     }
     CHECK_EQ(fixture.child_timer_at_spawn, 2);
@@ -361,9 +363,8 @@ TEST(reimu2406_real_bullet_anm_tail_parent_phase_late_by_one) {
     phase_manager = nullptr;
     CHECK(ok);
     if (!ok) {
-        std::printf("spawn=%d draw=%d timer=%d (%s)\n", fixture.spawn_update,
-                    fixture.draw_update, fixture.child_timer_at_spawn,
-                    fixture.failure.c_str());
+        std::printf("spawn=%d draw=%d timer=%d (%s)\n", fixture.spawn_update, fixture.draw_update,
+                    fixture.child_timer_at_spawn, fixture.failure.c_str());
         return;
     }
     CHECK_EQ(fixture.child_timer_at_spawn, 1);

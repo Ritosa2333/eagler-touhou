@@ -16,4 +16,4 @@ std::string language_texture_path(std::string_view name);
 bool apply_language_png(th13::AnmTexture& texture, const u8* bytes, u32 size);
 bool language_pack_active();
 bool read_language_file(const std::string& path, std::vector<u8>& bytes);
-}
+}  // namespace th13::sdl

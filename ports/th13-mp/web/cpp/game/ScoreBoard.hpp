@@ -19,23 +19,21 @@ constexpr i32 stage_clear_bonus(i32 stage) { return stage * 1000000; }
 // 残 = DAT_004be7f4、灵 = DAT_004be800。
 constexpr i32 all_clear_bonus(i32 difficulty, i32 lives, i32 bombs) {
     switch (difficulty) {
-        case 0:
-            return (bombs + lives * 4) * 250000;
-        case 1:
-            return (bombs + lives * 3) * 1000000;
-        case 2:
-            return lives * 5000000 + bombs * 1500000;
-        case 3:
-            return (bombs + lives * 5) * 2000000;
-        default:
-            return 0;
+    case 0:
+        return (bombs + lives * 4) * 250000;
+    case 1:
+        return (bombs + lives * 3) * 1000000;
+    case 2:
+        return lives * 5000000 + bombs * 1500000;
+    case 3:
+        return (bombs + lives * 5) * 2000000;
+    default:
+        return 0;
     }
 }
 
 // Extra（st7）通关奖（0x42cfb3-c4）：(灵 + 残×10) × 4,000,000。
-constexpr i32 extra_clear_bonus(i32 lives, i32 bombs) {
-    return (bombs + lives * 10) * 4000000;
-}
+constexpr i32 extra_clear_bonus(i32 lives, i32 bombs) { return (bombs + lives * 10) * 4000000; }
 
 // 入账：score（点值）+= bonus/10，封顶 999,999,999（64 位中间量防环绕）。
 inline u32 add_bonus_capped(u32 score, i32 bonus) {

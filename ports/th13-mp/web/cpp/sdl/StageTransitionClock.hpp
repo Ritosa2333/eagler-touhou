@@ -25,9 +25,7 @@ inline constexpr u32 kStageLoaderSceneFlag = 4u;
 
 // 装载成功帧清 bit2（0x42b990:231），其余 scene 位（0x10 覆盖层、0x4000 通关
 // 演出等）原样保留。
-inline u32 stage_loader_completed_scene_flags(u32 scene_flags) noexcept {
-    return scene_flags & ~kStageLoaderSceneFlag;
-}
+inline u32 stage_loader_completed_scene_flags(u32 scene_flags) noexcept { return scene_flags & ~kStageLoaderSceneFlag; }
 
 // 0x45f430 的计时门：kind5（port 的退场淡出；对应原版 0x409270 的 kind2，
 // 两者共用 45f430 更新体）在 GameInf+0x60 bit0/bit2 置位时冻结；kind0
@@ -43,8 +41,7 @@ inline constexpr i32 kRunPointCapTable[6] = {100000, 250000, 500000, 500000, 500
 
 // continuing=true（0xc 换关）时不做任何写入；false（新局/Retry/回放冷启动）
 // 才执行 0x42b990:103-110 的四项重置。
-inline void run_entry_reset_points(bool continuing, i32 difficulty, i32& score,
-                                   i32& max_point, i32& max_point_cap,
+inline void run_entry_reset_points(bool continuing, i32 difficulty, i32& score, i32& max_point, i32& max_point_cap,
                                    i32& graze) noexcept {
     if (continuing) return;
     score = 0;

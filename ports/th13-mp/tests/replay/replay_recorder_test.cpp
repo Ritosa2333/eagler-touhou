@@ -33,8 +33,7 @@ std::vector<u8> encode_one_stage(const SessionState& source, const std::string& 
     HudScoreState score;
     ReplayRecorder recorder;
     if (!recorder.start(ReplayRecorder::top_snapshot(source))) return {};
-    if (!recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 12345,
-                                                              -6163, 47332, true)))
+    if (!recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 12345, -6163, 47332, true)))
         return {};
     for (u32 value : held) {
         GameInput input;
@@ -67,8 +66,7 @@ struct ReplayView {
         progress.selected_spell_id = -1;
         if (spell && file.top_header.size() >= 0x74)
             std::memcpy(&progress.selected_spell_id, file.top_header.data() + 0x70, 4);
-        return ReplaySession::restore_stage(
-            file, 0, {&progress, &player, &score, &game_random, &visual}, log, error);
+        return ReplaySession::restore_stage(file, 0, {&progress, &player, &score, &game_random, &visual}, log, error);
     }
 };
 
@@ -144,8 +142,7 @@ TEST(normalize_matches_447900_branch_when_stage_card_present_without_top_bit) {
     HudScoreState score;
     ReplayRecorder recorder;
     CHECK(recorder.start(ReplayRecorder::top_snapshot(source)));
-    CHECK(recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 9, 0,
-                                                              51200, false)));
+    CHECK(recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 9, 0, 51200, false)));
     std::vector<u8> bytes;
     CHECK(recorder.encode(bytes, "ODD", 0));
     ReplayFile file;
@@ -157,8 +154,8 @@ TEST(normalize_matches_447900_branch_when_stage_card_present_without_top_bit) {
     GameRandom game_random, visual;
     ReplayRestoreLog log;
     std::string error;
-    CHECK(ReplaySession::restore_stage(file, 0,
-        {&progress, &out_player, &out_score, &game_random, &visual}, log, error));
+    CHECK(
+        ReplaySession::restore_stage(file, 0, {&progress, &out_player, &out_score, &game_random, &visual}, log, error));
     CHECK_EQ(progress.selected_spell_id, -1);
     CHECK_EQ(progress.run_mode_flags & 0x30u, 0x20u);
 }
@@ -170,8 +167,7 @@ TEST(normalize_clears_mode_when_stage_card_missing) {
     HudScoreState score;
     ReplayRecorder recorder;
     CHECK(recorder.start(ReplayRecorder::top_snapshot(source)));
-    CHECK(recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 9, 0,
-                                                              51200, false)));
+    CHECK(recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 9, 0, 51200, false)));
     std::vector<u8> bytes;
     CHECK(recorder.encode(bytes, "NOCARD", 0));
     ReplayFile file;
@@ -184,8 +180,8 @@ TEST(normalize_clears_mode_when_stage_card_missing) {
     GameRandom game_random, visual;
     ReplayRestoreLog log;
     std::string error;
-    CHECK(ReplaySession::restore_stage(file, 0,
-        {&progress, &out_player, &out_score, &game_random, &visual}, log, error));
+    CHECK(
+        ReplaySession::restore_stage(file, 0, {&progress, &out_player, &out_score, &game_random, &visual}, log, error));
     CHECK_EQ(progress.selected_spell_id, -1);
     CHECK_EQ(progress.run_mode_flags & 0x30u, 0u);
 }
@@ -197,13 +193,11 @@ TEST(retry_replaces_stage_block_without_losing_top_mode) {
     HudScoreState score;
     ReplayRecorder recorder;
     CHECK(recorder.start(ReplayRecorder::top_snapshot(source)));
-    CHECK(recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 1, 0,
-                                                              51200, false)));
+    CHECK(recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 1, 0, 51200, false)));
     GameInput input;
     input.held = 1;
     CHECK(recorder.record(input, 0));
-    CHECK(recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 2, 0,
-                                                              51200, false)));
+    CHECK(recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 2, 0, 51200, false)));
     input.held = 2;
     CHECK(recorder.record(input, 0));
     std::vector<u8> bytes;

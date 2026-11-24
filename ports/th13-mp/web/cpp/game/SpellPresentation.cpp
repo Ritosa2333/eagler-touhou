@@ -3,8 +3,8 @@
 #include "AnmText.hpp"
 
 #include <algorithm>
-#include <cstdio>
 #include <cmath>
+#include <cstdio>
 
 namespace th13 {
 
@@ -59,8 +59,7 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
         // The original does not retain either transient effect20 or the stage
         // decoration handle. Their scripts terminate them independently.
         decoration_ = 0;
-        if (event.captured() && sound && !sound(0x2e))
-            return fail("Spell card capture sound service failed");
+        if (event.captured() && sound && !sound(0x2e)) return fail("Spell card capture sound service failed");
         // 00413a60 00413ba9: timeout sound is outside the capture branch.
         if ((event.state.flags & kSpellTimedOut) && sound && !sound(0x45))
             return fail("Spell card timeout sound service failed");
@@ -74,8 +73,7 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
             if (banner_ && !animations_.retire(banner_))
                 return fail("Spell banner retire failed: " + animations_.error);
             banner_ = animations_.create(banks_.front, event.captured() ? 59 : 60, -1, 0);
-            if (!banner_)
-                return fail("Spell bonus banner animation unavailable: " + animations_.error);
+            if (!banner_) return fail("Spell bonus banner animation unavailable: " + animations_.error);
         }
         // 0x42a4e2-0x42a876（case0 捕获分支）：结算数字与捕获特效。
         // 8 个数字 VM = ascii script 4+i（0x42a54b lea eax,[edi+4]），除数
@@ -89,15 +87,15 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
         //（0x42a804 mov eax,0x5f）→ stage+0x118，stage+0x120=1。全部
         // VM 位置/anmArg 为 0、active 位 0x200、主链尾插（0x46f3f0）。
         // 显示值 = 结算瞬间的 bonus（snapshot_.current_bonus，sync 已取）。
-        if (event.captured() && animations_.resource(banks_.ascii) &&
-            animations_.resource(banks_.front)) {
+        if (event.captured() && animations_.resource(banks_.ascii) && animations_.resource(banks_.front)) {
             for (u32& handle : bonus_digits_)
                 if (handle && !animations_.retire(handle))
                     return fail("Spell bonus digit retire failed: " + animations_.error);
             if ((bonus_million_ && !animations_.retire(bonus_million_)) ||
                 (bonus_thousand_ && !animations_.retire(bonus_thousand_)))
                 return fail("Spell bonus extra retire failed: " + animations_.error);
-            for (u32& handle : bonus_digits_) handle = 0;
+            for (u32& handle : bonus_digits_)
+                handle = 0;
             bonus_million_ = bonus_thousand_ = 0;
             i32 divisor = 10000000, value = snapshot_.current_bonus;
             bool leading = true;
@@ -108,24 +106,21 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
                 bonus_digits_[i] = animations_.create(banks_.ascii, 4 + i, -1, 0);
                 AnmVm* vm = animations_.registry.find(bonus_digits_[i]);
                 if (!vm) return fail("Spell bonus digit animation unavailable");
-                if (!vm->select_sprite(270 + digit))
-                    return fail("Spell bonus digit sprite unavailable");
+                if (!vm->select_sprite(270 + digit)) return fail("Spell bonus digit sprite unavailable");
                 if (leading) vm->visual.flags &= ~2u;  // 0x470030 清 bit1
                 divisor /= 10;
             }
             if (snapshot_.current_bonus >= 1000000) {
                 bonus_million_ = animations_.create(banks_.ascii, 12, -1, 0);
                 if (auto* vm = animations_.registry.find(bonus_million_)) {
-                    if (!vm->select_sprite(284))
-                        return fail("Spell bonus separator sprite unavailable");
+                    if (!vm->select_sprite(284)) return fail("Spell bonus separator sprite unavailable");
                 } else
                     return fail("Spell bonus separator animation unavailable");
             }
             if (snapshot_.current_bonus >= 1000) {
                 bonus_thousand_ = animations_.create(banks_.ascii, 13, -1, 0);
                 if (auto* vm = animations_.registry.find(bonus_thousand_)) {
-                    if (!vm->select_sprite(284))
-                        return fail("Spell bonus separator sprite unavailable");
+                    if (!vm->select_sprite(284)) return fail("Spell bonus separator sprite unavailable");
                 } else
                     return fail("Spell bonus separator animation unavailable");
             }
@@ -135,9 +130,7 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
         // 击破时间。两支都直接覆盖 +0x118，不回收上一张卡的 95（其脚本自行终止）。
         if (animations_.resource(banks_.front)) {
             bonus_capture_effect_ = animations_.create(banks_.front, 95, -1, 0);
-            if (!bonus_capture_effect_)
-                return fail("Spell capture effect animation unavailable: " +
-                            animations_.error);
+            if (!bonus_capture_effect_) return fail("Spell capture effect animation unavailable: " + animations_.error);
         }
         flags_ &= ~(kSpellActive | kSpellBombProtection);
         snapshot_.flags = flags_;
@@ -149,8 +142,7 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
     // 装饰槽 -1 不建（0x4138df/0x4139a7 各自判 -1 跳过，EX A 行即如此）。
     // 旧实现只按舞台号硬编码 B 行：S3 中Boss 小傘（章节4）的宣言画成
     // st03enm 的 cdbg03 芳香背景——本表即修此身份错。
-    if (banks_.stage_number < 1 || banks_.stage_number > 7)
-        return fail("Spell presentation stage row out of range");
+    if (banks_.stage_number < 1 || banks_.stage_number > 7) return fail("Spell presentation stage row out of range");
     const CardBgRow& row = kCardBgRows[banks_.stage_number - 1];
     const bool use_a = chapter < 6 && row.a_bank != -1;
     const i32 cardbg_bank = use_a ? row.a_bank : row.b_bank;
@@ -163,7 +155,8 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
     if (active() && !retire_production()) return false;
     production_ = true;
     sync(event.state);
-    for (i32 i = 0; i < 3; ++i) anchor_[i] = boss_position[i];
+    for (i32 i = 0; i < 3; ++i)
+        anchor_[i] = boss_position[i];
 
     // 00413270 00413404/0041349b/00413538: these are independent roots,
     // created in this order, not three children of the stage background.
@@ -179,8 +172,7 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
     // quad 右缘 463.5、顶 34.5 = 脚本位 (144,19) + (320,16)；同帧 sprite298
     // 右缘 511.5 = 脚本 512、text74 右缘 523.5 = 脚本 524，二者均无偏移。
     // 0x466a80:32-36 对 VM+0x1c bit18 的根加 (+320,+16)（fadds 320.0/16.0）。
-    if (auto* vm = animations_.registry.find(displays_[2]))
-        vm->visual.render_flags |= 0x40000u;
+    if (auto* vm = animations_.registry.find(displays_[2])) vm->visual.render_flags |= 0x40000u;
     if (sound && !sound(0x21)) return fail("Spell card start sound service failed");
     // 0041360a: effect.anm script13. Its direct children 11/12 consume
     // duration through integer work variable2 (+0x4b4), in ECL frame units.
@@ -210,8 +202,7 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
     if (resource) {
         file_bases.push_back(0);
         for (size_t i = 1; i < resource->scripts.size(); ++i)
-            if (resource->scripts[i].source_id < resource->scripts[i - 1].source_id)
-                file_bases.push_back(i32(i));
+            if (resource->scripts[i].source_id < resource->scripts[i - 1].source_id) file_bases.push_back(i32(i));
     }
     const auto global_script = [&](i32 bank, i32 script) -> i32 {
         const size_t file = size_t(bank - 2);
@@ -239,8 +230,7 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
     }
     if (!stage_background_ || (decor_bank != -1 && !decoration_)) {
         retire_production();
-        return fail("Stage spell background animation unavailable: " +
-                    animations_.error);
+        return fail("Stage spell background animation unavailable: " + animations_.error);
     }
     return true;
 }
@@ -283,13 +273,11 @@ bool SpellPresentation::show_spirit_notice(i32 level, float x, float y, float z)
     if (level < 1 || level > 3) return true;  // 合法 level = 1..3
     const i32 script = level + 0x6b;          // 108/109/110
     // 自然结束的句柄先摘除，避免 list 无限增长；find()==null 即已收尾。
-    spirit_notices_.erase(
-        std::remove_if(spirit_notices_.begin(), spirit_notices_.end(),
-                       [this](u32 handle) { return !animations_.registry.find(handle); }),
-        spirit_notices_.end());
+    spirit_notices_.erase(std::remove_if(spirit_notices_.begin(), spirit_notices_.end(),
+                                         [this](u32 handle) { return !animations_.registry.find(handle); }),
+                          spirit_notices_.end());
     if (!animations_.resource(banks_.front)) return true;
-    const u32 handle = animations_.create(banks_.front, script, -1, 0,
-                                          Vec3{x, y - 32.f, z});
+    const u32 handle = animations_.create(banks_.front, script, -1, 0, Vec3{x, y - 32.f, z});
     if (!handle) return true;
     spirit_notices_.push_back(handle);
     spirit_notice_ = handle;
@@ -313,8 +301,7 @@ void SpellPresentation::sync(const SpellSnapshot& state) {
                 fail("Spell display visibility interrupt failed: " + animations_.error);
     }
     if ((state.flags & kSpellHiddenBackground) && background_) {
-        if (!animations_.retire(background_))
-            fail("Spell hidden background retire failed: " + animations_.error);
+        if (!animations_.retire(background_)) fail("Spell hidden background retire failed: " + animations_.error);
     }
 }
 
@@ -338,7 +325,7 @@ bool SpellPresentation::draw(HudDrawServices& services, i32 captures, i32 attemp
     if (!error.empty()) return false;
     if (!snapshot_.active()) return true;
     const auto* vm = animations_.registry.find(displays_[2]);
-    if (!vm) return true; // 00413080 missing +0x1c VM skips this numeric pass
+    if (!vm) return true;  // 00413080 missing +0x1c VM skips this numeric pass
     // 0x413080 直读（objdump，非摘要）：0x4130bc `movl $1,0x1917c(AsciiInf)`
     //（coordinate space = 1）、0x4130c2 font=2、0x4130c8 alpha=VM+0x52b；
     // 0x413231 恢复 0。坐标常量来自 .rdata 实读并原样 push 给 0x403e70：
@@ -360,8 +347,7 @@ bool SpellPresentation::draw(HudDrawServices& services, i32 captures, i32 attemp
     } else {
         std::snprintf(text, sizeof text, "$");
     }
-    if (!services.hud_text({{x, 35.0f, 0}, style, text}))
-        return fail("Spell bonus text service failed");
+    if (!services.hud_text({{x, 35.0f, 0}, style, text})) return fail("Spell bonus text service failed");
     if (captures >= 100) {
         std::snprintf(text, sizeof text, "MASTER");
     } else if (attempts >= 100) {
@@ -369,8 +355,7 @@ bool SpellPresentation::draw(HudDrawServices& services, i32 captures, i32 attemp
     } else {
         std::snprintf(text, sizeof text, "%.2d/%.2d", captures, attempts);
     }
-    if (!services.hud_text({{452.0f, 35.0f, 0}, style, text}))
-        return fail("Spell capture counter text service failed");
+    if (!services.hud_text({{452.0f, 35.0f, 0}, style, text})) return fail("Spell capture counter text service failed");
     return true;
 }
 
@@ -386,8 +371,8 @@ bool SpellPresentation::draw_capture_times(HudDrawServices& services, i32 packed
     }
     const u32 vm_alpha = effect->visual.color & 0xff000000u;
     HudTextStyle style;
-    style.font = 4;              // 0x427a77/0x4279a3
-    style.coordinate_space = 1;  // 0x4279a3/0x427a6d
+    style.font = 4;                                  // 0x427a77/0x4279a3
+    style.coordinate_space = 1;                      // 0x4279a3/0x427a6d
     style.alignment = style.vertical_alignment = 1;  // 0x4279dc/0x4279e2
     char text[32];
     // 第一对：manager+0x94 = 结束时 +0x90 active_frames（00412ee0:24-27）。
@@ -402,20 +387,17 @@ bool SpellPresentation::draw_capture_times(HudDrawServices& services, i32 packed
         // 0x427a87 前 scale 仍为 1.0（前段 0x427b?? 恢复值）；0x427ab7 才载 0.6。
         style.scale = {1.0f, 1.0f};
         std::snprintf(text, sizeof text, "%3d.", seconds);
-        if (!services.hud_text({{318.0f, 192.0f, 0}, style, text}))
-            return fail("Spell capture time service failed");
+        if (!services.hud_text({{318.0f, 192.0f, 0}, style, text})) return fail("Spell capture time service failed");
         style.scale = {0.6f, 0.6f};  // 0x4aed84 = 0.6
         std::snprintf(text, sizeof text, "%.2ds", hundredths);
-        if (!services.hud_text({{362.0f, 198.0f, 0}, style, text}))
-            return fail("Spell capture time service failed");
+        if (!services.hud_text({{362.0f, 198.0f, 0}, style, text})) return fail("Spell capture time service failed");
     }
     // 第二对：FUN_00424e20 解码 DAT_004c2178+0xa8（0x412ee0 wall-clock 打包）。
     // 校验失败（含 replay 异常哨兵 0x6ad1584）→ (999, 99)。
     {
         i32 seconds = 999, hundredths = 99;
         const i32 v = packed_time;
-        if (v / 100000 - 0x16 == ((v / 100) % 1000 + 0x3a6) % 1000 +
-                                     (v % 100 + 0x43) % 100) {
+        if (v / 100000 - 0x16 == ((v / 100) % 1000 + 0x3a6) % 1000 + (v % 100 + 0x43) % 100) {
             seconds = ((v / 100) % 1000 + 0x3a6) % 1000;
             hundredths = (v % 100 + 0x43) % 100;
         }
@@ -424,18 +406,15 @@ bool SpellPresentation::draw_capture_times(HudDrawServices& services, i32 packed
         // 0.6 only after that first output, for the centiseconds.
         style.scale = {1.f, 1.f};
         std::snprintf(text, sizeof text, "%3d.", seconds);
-        if (!services.hud_text({{318.0f, 208.0f, 0}, style, text}))
-            return fail("Spell record time service failed");
+        if (!services.hud_text({{318.0f, 208.0f, 0}, style, text})) return fail("Spell record time service failed");
         style.scale = {.6f, .6f};
         std::snprintf(text, sizeof text, "%.2ds", hundredths);
-        if (!services.hud_text({{362.0f, 214.0f, 0}, style, text}))
-            return fail("Spell record time service failed");
+        if (!services.hud_text({{362.0f, 214.0f, 0}, style, text})) return fail("Spell record time service failed");
     }
     return true;
 }
 
-bool SpellPresentation::rasterize_name(DialogueTextureSink& sink,
-                                      const NameRasterizer& rasterize) {
+bool SpellPresentation::rasterize_name(DialogueTextureSink& sink, const NameRasterizer& rasterize) {
     if (!error.empty()) return false;
     auto* vm = animations_.registry.find(displays_[1]);
     if (!production_ || !vm) return fail("Spell name display sprite unavailable");
@@ -444,12 +423,10 @@ bool SpellPresentation::rasterize_name(DialogueTextureSink& sink,
     // 0046e810 passes that layout x to 0045aef0, which doubles it for
     // TextOutA. For width320 / 16 CP932 bytes: layout192 -> scratch384.
     // Center would halve this to scratch192 and shift the name left.
-    return rasterize_anm_text(*vm, sink, rasterize, 0xffffffu, snapshot_.name,
-                              AnmTextAlignment::Right, 17, &error);
+    return rasterize_anm_text(*vm, sink, rasterize, 0xffffffu, snapshot_.name, AnmTextAlignment::Right, 17, &error);
 }
-bool SpellPresentation::begin(i32 spell_id, const std::string& name, i32 duration_frames,
-                              i32 stage_number, i32 difficulty, const float boss_position[3],
-                              const std::function<bool(i32)>& sound) {
+bool SpellPresentation::begin(i32 spell_id, const std::string& name, i32 duration_frames, i32 stage_number,
+                              i32 difficulty, const float boss_position[3], const std::function<bool(i32)>& sound) {
     if (active()) {
         // Historical diagnostic adapter contract; SpellState::begin follows
         // the original's replacement semantics on the production path.
@@ -467,7 +444,8 @@ bool SpellPresentation::begin(i32 spell_id, const std::string& name, i32 duratio
     bonus_base_ = (stage_number + difficulty) * 1000000;
     bonus_cap_ = std::min(bonus_base_, 99999999);
     duration_ = duration_frames;  // +0x88, ECL frame units
-    for (i32 i = 0; i < 3; i++) anchor_[i] = boss_position[i];
+    for (i32 i = 0; i < 3; i++)
+        anchor_[i] = boss_position[i];
     // 0x413270:158-186：背景枚 VM（合并 stage bank 的 cardbg 族），
     // 位置 = boss 快照位（+0x574.. 直写）。子 VM 时长变量由脚本族内
     // ins_500 派生，不在此旁路。
@@ -488,13 +466,11 @@ bool SpellPresentation::begin(i32 spell_id, const std::string& name, i32 duratio
     return true;
 }
 
-bool SpellPresentation::end(bool captured, bool last_spell,
-                            const std::function<bool(i32)>& sound,
+bool SpellPresentation::end(bool captured, bool last_spell, const std::function<bool(i32)>& sound,
                             const std::function<void(i32)>& add_score) {
     if (!active()) return true;  // 无卡：原版 0x413a60 头门（+0x7c bit0）
     // 0x413a60:15-27：展示/背景 VM 回收 + 活动位清。
-    if (background_ && !animations_.retire(background_))
-        error = "Spell card background retire failed";
+    if (background_ && !animations_.retire(background_)) error = "Spell card background retire failed";
     background_ = 0;
     const bool award = captured && (flags_ & 0x2u) != 0;  // bit1 未破坏（0x413a60:33）
     if (award) {
@@ -503,8 +479,7 @@ bool SpellPresentation::end(bool captured, bool last_spell,
         // 0x413a60:60：取得声 0x2e。
         if (sound && !sound(0x2e)) error = "Spell card capture sound service failed";
         // 0x413a60:64-66：最终符（bit0x80）追加声 0x45。
-        if (last_spell && sound && !sound(0x45))
-            error = "Spell card last-spell sound service failed";
+        if (last_spell && sound && !sound(0x45)) error = "Spell card last-spell sound service failed";
     }
     flags_ = 0;
     spell_id_ = -1;
@@ -519,38 +494,31 @@ void SpellPresentation::release() {
         retire_production();
         snapshot_ = {};
     }
-    if (banner_ && !animations_.retire(banner_))
-        error = "Spell banner retire failed";
+    if (banner_ && !animations_.retire(banner_)) error = "Spell banner retire failed";
     banner_ = 0;
     // 0x42a430 case2/3/4（stage ctx+0xd0）与 0x43d530 吸灵满槽提示句柄
     // 随场景卸载一并回收并清零，否则跨关残留（用户已报告换面残留意象）。
-    if (notice_ && !animations_.retire(notice_))
-        error = "Spell notice retire failed";
+    if (notice_ && !animations_.retire(notice_)) error = "Spell notice retire failed";
     notice_ = 0;
     // 0x43d530 不保存句柄，原版 VM 由脚本自然结束；端口必须在此统一回收
     // 全部仍在播的满槽提示（不能只回收最近一个），否则卸载/换关残留。
     for (u32 handle : spirit_notices_)
-        if (handle && !animations_.retire(handle))
-            error = "Spirit notice retire failed";
+        if (handle && !animations_.retire(handle)) error = "Spirit notice retire failed";
     spirit_notices_.clear();
     spirit_notice_ = 0;
     // 0x42a430 case0 的数字/分隔符/特效 VM 随场景卸载回收
     //（RunScene.cpp:264 场景析构路径）。
     for (u32& handle : bonus_digits_) {
-        if (handle && !animations_.retire(handle))
-            error = "Spell bonus digit retire failed";
+        if (handle && !animations_.retire(handle)) error = "Spell bonus digit retire failed";
         handle = 0;
     }
-    if (bonus_million_ && !animations_.retire(bonus_million_))
-        error = "Spell bonus separator retire failed";
-    if (bonus_thousand_ && !animations_.retire(bonus_thousand_))
-        error = "Spell bonus separator retire failed";
+    if (bonus_million_ && !animations_.retire(bonus_million_)) error = "Spell bonus separator retire failed";
+    if (bonus_thousand_ && !animations_.retire(bonus_thousand_)) error = "Spell bonus separator retire failed";
     if (bonus_capture_effect_ && !animations_.retire(bonus_capture_effect_))
         error = "Spell capture effect retire failed";
     bonus_million_ = bonus_thousand_ = bonus_capture_effect_ = 0;
     capture_frames_ = 0;
-    if (background_ && !animations_.retire(background_))
-        error = "Spell card background retire failed";
+    if (background_ && !animations_.retire(background_)) error = "Spell card background retire failed";
     background_ = 0;
     flags_ = 0;
 }

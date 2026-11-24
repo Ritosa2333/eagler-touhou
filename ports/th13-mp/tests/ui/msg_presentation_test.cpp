@@ -24,9 +24,7 @@ namespace {
 // 立绘可中断脚本：sprite(tag) 身份标记 + label 2/3（说话方亮暗）+
 // label 17（表情）+ 停止。身份断言经 vm->visual.sprite（创建即首 tick，
 // anm_ui_test interrupt 用例同模式；AnmVm::script 为私有不可查）。
-std::vector<AnmIns> portrait_script(i32 tag) {
-    return {sprite(tag), label(2), label(3), label(17), wait(), stop()};
-}
+std::vector<AnmIns> portrait_script(i32 tag) { return {sprite(tag), label(2), label(3), label(17), wait(), stop()}; }
 
 struct Fixture {
     GameRandom random;
@@ -39,16 +37,19 @@ struct Fixture {
     Fixture() {
         // 玩家 bank：35 个脚本（0x4c0aa0 表最大 script 34），sprite 标记 = 脚本号。
         std::vector<std::vector<AnmIns>> player_scripts;
-        for (i32 i = 0; i < 35; i++) player_scripts.push_back(portrait_script(i));
+        for (i32 i = 0; i < 35; i++)
+            player_scripts.push_back(portrait_script(i));
         player_bytes = synthetic_anm(35, player_scripts);
         CHECK(manager.load(banks.player, player_bytes.data(), u32(player_bytes.size())));
         // 舞台 bank 两个合并文件：名单序 0 = "enemy.anm"（2 脚本）、
         // 名单序 1 = "st01enm.anm"（20 脚本）→ 后者全局基号 = 2；标记 = 文件内号。
         std::vector<std::vector<AnmIns>> enemy_scripts;
-        for (i32 i = 0; i < 2; i++) enemy_scripts.push_back(portrait_script(i));
+        for (i32 i = 0; i < 2; i++)
+            enemy_scripts.push_back(portrait_script(i));
         enemy_bytes = synthetic_anm(2, enemy_scripts);
         std::vector<std::vector<AnmIns>> st01_scripts;
-        for (i32 i = 0; i < 20; i++) st01_scripts.push_back(portrait_script(i));
+        for (i32 i = 0; i < 20; i++)
+            st01_scripts.push_back(portrait_script(i));
         st01enm_bytes = synthetic_anm(20, st01_scripts);
         CHECK(stage_resource.append(enemy_bytes.data(), u32(enemy_bytes.size())));
         CHECK(stage_resource.append(st01enm_bytes.data(), u32(st01enm_bytes.size())));
@@ -56,9 +57,18 @@ struct Fixture {
     }
 
     bool read(const std::string& name, std::vector<u8>& bytes) {
-        if (name == "enemy.anm") { bytes = enemy_bytes; return true; }
-        if (name == "st01enm.anm") { bytes = st01enm_bytes; return true; }
-        if (name == "st03boss.anm") { bytes = third_bytes; return true; }
+        if (name == "enemy.anm") {
+            bytes = enemy_bytes;
+            return true;
+        }
+        if (name == "st01enm.anm") {
+            bytes = st01enm_bytes;
+            return true;
+        }
+        if (name == "st03boss.anm") {
+            bytes = third_bytes;
+            return true;
+        }
         return false;
     }
 };
@@ -161,7 +171,7 @@ TEST(msg_expression_interrupt_and_release) {
     CHECK(presentation.bind_stage_scripts(
         1, {"enemy.anm", "st01enm.anm"},
         [&](const std::string& name, std::vector<u8>& bytes) { return f.read(name, bytes); }));
-    CHECK(presentation.player_portrait(1));   // Marisa → script 34
+    CHECK(presentation.player_portrait(1));  // Marisa → script 34
     CHECK(presentation.side_portrait(0));
     // 13/14 表情（label = arg+17）与 7/8 亮暗（label 2/3）都走立即中断。
     CHECK(presentation.interrupt_player(17));
@@ -199,15 +209,17 @@ TEST(msg_opcode_23_24_deferred_label7_keeps_handles) {
     // opcode 24（fade_side）与 23（fade_player）：句柄保留、VM 仍可中断。
     CHECK(presentation.fade_side(7));
     CHECK(presentation.fade_player(7));
-    for (u32 handle : handles) CHECK(f.manager.registry.find(handle) != nullptr);
+    for (u32 handle : handles)
+        CHECK(f.manager.registry.find(handle) != nullptr);
     CHECK(f.manager.update());  // deferred label7 在下一趟 tick 消费
-    for (u32 handle : handles) CHECK(f.manager.registry.find(handle) != nullptr);
-    CHECK(presentation.interrupt_side(20));   // 表情切换仍生效（句柄在）
+    for (u32 handle : handles)
+        CHECK(f.manager.registry.find(handle) != nullptr);
+    CHECK(presentation.interrupt_side(20));  // 表情切换仍生效（句柄在）
     CHECK(presentation.interrupt_player(20));
     CHECK(presentation.error.empty());
     // opcode 5 才清右槽句柄（label1 deferred + 清）。
     presentation.release_side();
-    CHECK(presentation.interrupt_side(2));    // 空槽空转
+    CHECK(presentation.interrupt_side(2));  // 空槽空转
 }
 
 TEST(msg_missing_anim_file_fails_explicitly) {

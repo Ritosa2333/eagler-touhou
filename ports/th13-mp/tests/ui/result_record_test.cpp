@@ -3,7 +3,11 @@
 #include <cstdio>
 #include <cstring>
 using namespace th13;
-static u32 bits(float f) { u32 b; std::memcpy(&b, &f, 4); return b; }
+static u32 bits(float f) {
+    u32 b;
+    std::memcpy(&b, &f, 4);
+    return b;
+}
 int main() {
     assert(result_slowdown_percent(0, 0) == 0);
     assert(result_slowdown_percent(60, 60) == 0);
@@ -25,5 +29,6 @@ int main() {
     assert(result_record_stage(false, false, 7) == 7);
     assert(result_record_stage(false, true, 3) == 3);
     assert(result_record_stage(true, false, 6) == 8);
-    std::puts("result_record_test: PASS (clear preview, Extra clear stage, slowdown semantics, original float rounding)");
+    std::puts(
+        "result_record_test: PASS (clear preview, Extra clear stage, slowdown semantics, original float rounding)");
 }

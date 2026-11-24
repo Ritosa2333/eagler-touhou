@@ -9,12 +9,12 @@
 // bit1=0 且渲染门不通过判定，不把 bit0/AnmVm::visible 当作绘制位。
 // 夹具：131-134 子脚本含 op300（sprite 置 visible），使「隐藏/未隐藏」可判别；
 // 主链→难度(Hard=2)→角色屏路径复用 title_state_test 时序锚。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
-#include "game/TitleScene.hpp"
-#include "game/TitleMainMenu.hpp"
 #include "game/FrameScheduler.hpp"
+#include "game/TitleMainMenu.hpp"
+#include "game/TitleScene.hpp"
 
 #include <memory>
 #include <utility>
@@ -26,9 +26,7 @@ using namespace th13::test;
 namespace {
 
 // 原版绘制门：bit0（visible）与 bit1（绘制使能）同时置位才提交。
-bool drawable(const AnmVm* vm) {
-    return vm && vm->visible && (vm->visual.flags & 3u) == 3u;
-}
+bool drawable(const AnmVm* vm) { return vm && vm->visible && (vm->visual.flags & 3u) == 3u; }
 
 struct ClearHost final : TitleScenePlatform {
     AnmManager& manager;
@@ -59,7 +57,8 @@ struct ClearHost final : TitleScenePlatform {
 
 std::vector<u8> title_anm_fixture() {
     std::vector<std::vector<AnmIns>> scripts(243);
-    for (auto& script : scripts) script = {wait(), stop()};
+    for (auto& script : scripts)
+        script = {wait(), stop()};
     auto spawn_range = [&](i32 root, i32 first, i32 last) {
         scripts[u32(root)].clear();
         for (i32 child = first; child <= last; child++)
@@ -114,12 +113,8 @@ struct ClearHarness {
     ClearHarness() {
         animation_updates[0].owner = animation_updates[1].owner = &manager;
         animation_updates[0].enabled = animation_updates[1].enabled = true;
-        animation_updates[0].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(true) ? 1 : 5;
-        };
-        animation_updates[1].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(false) ? 1 : 5;
-        };
+        animation_updates[0].run = [](void* p) { return static_cast<AnmManager*>(p)->update(true) ? 1 : 5; };
+        animation_updates[1].run = [](void* p) { return static_cast<AnmManager*>(p)->update(false) ? 1 : 5; };
         CHECK(scheduler.add(animation_updates[0], FramePass::Update, 9) >= 0);
         CHECK(scheduler.add(animation_updates[1], FramePass::Update, 34) >= 0);
         CHECK(load_bank(manager, 16, title_anm_fixture()));
@@ -127,8 +122,7 @@ struct ClearHarness {
         CHECK(load_bank(manager, 2, synthetic_anm(8, trivial_scripts(20))));
         CHECK(load_bank(manager, 19, synthetic_anm(4, trivial_scripts(4))));
         CHECK(load_bank(manager, 8, synthetic_anm(4, trivial_scripts(4))));
-        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler,
-                                             TitleSceneResources{});
+        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler, TitleSceneResources{});
         CHECK(scene->error.empty());
         scene->state.return_reason = 0;
     }
@@ -139,17 +133,18 @@ struct ClearHarness {
         CHECK(scheduler.draw() >= 0);
     }
     void advance(int frames, u32 pressed = 0, u32 repeated = 0) {
-        for (int i = 0; i < frames; i++) frame(pressed, repeated);
+        for (int i = 0; i < frames; i++)
+            frame(pressed, repeated);
     }
     void reach_character_screen() {
         advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
-        frame(0x01);        // Z：開始 → 难度
+        frame(0x01);  // Z：開始 → 难度
         advance(25);
         CHECK_EQ(int(scene->state.screen), int(TitleScreen::Difficulty));
         advance(10);
-        frame(0x20);        // ↓ 到 Hard(2)
+        frame(0x20);  // ↓ 到 Hard(2)
         CHECK_EQ(scene->state.menu.cursor, 2);
-        frame(0x01);        // Z → 角色屏
+        frame(0x01);  // Z → 角色屏
         advance(20);
         CHECK_EQ(int(scene->state.screen), int(TitleScreen::Character));
         CHECK_EQ(progress.difficulty, 2);
@@ -206,7 +201,7 @@ TEST(character_clear_tag_visible_only_for_cleared_character) {
         }
     }
     harness.advance(30);
-    CHECK(drawable(harness.clear_tag(2)));          // 跨帧保持
+    CHECK(drawable(harness.clear_tag(2)));  // 跨帧保持
     CHECK(!drawable(harness.clear_tag(0)));
     CHECK((harness.clear_tag(0)->visual.flags & 2u) == 0u);
     CHECK(harness.scene->error.empty());

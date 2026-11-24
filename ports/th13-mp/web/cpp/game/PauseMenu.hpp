@@ -3,8 +3,8 @@
 // ANM 树归标题/HUD 共用的可移植管理器，平台工作显式化。
 #pragma once
 
-#include "PauseState.hpp"
 #include "AnmManager.hpp"
+#include "PauseState.hpp"
 
 namespace th13 {
 

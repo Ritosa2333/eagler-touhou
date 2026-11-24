@@ -1,8 +1,8 @@
 #pragma once
 #include "../game/Types.hpp"
+#include <functional>
 #include <memory>
 #include <string>
-#include <functional>
 
 namespace th13::sdl {
 // TH13 owns decoding and frame-channel sequencing. Browser device SFX use the
@@ -11,6 +11,7 @@ namespace th13::sdl {
 class AudioDevice {
     struct Impl;
     std::unique_ptr<Impl> impl;
+
 public:
     struct RequestObservation {
         enum class Kind { Voice, Stop, Pan, Music } kind;
@@ -88,8 +89,7 @@ public:
     bool initialize_effects_for_test(const std::string& asset_root);
     // Effects + thbgm.fmt from asset_root; music_path defaults to
     // asset_root/thbgm.ogg. Used only by PCM diagnostics with real assets.
-    bool initialize_for_test(const std::string& asset_root,
-                             const std::string& music_path = "");
+    bool initialize_for_test(const std::string& asset_root, const std::string& music_path = "");
 #endif
     bool queue_music(i32 code, i32 value, const std::string& text = "");
     bool trance_music(bool active);
@@ -111,6 +111,7 @@ public:
     // PCM tests and traces; invalid IDs return 0.
     i32 voice_pan(i32 id) const;
     i32 voice_attenuation(i32 id) const;
+
 private:
     bool queue_voice(i32 id, i32 entry);
     // P3.1 defer_output 捕获拍的同步校验（不写通道表/不作统计，error 文案
@@ -123,4 +124,4 @@ private:
     bool apply_stop(i32 id);
     bool apply_music(i32 code, i32 value, const std::string& text);
 };
-}
+}  // namespace th13::sdl

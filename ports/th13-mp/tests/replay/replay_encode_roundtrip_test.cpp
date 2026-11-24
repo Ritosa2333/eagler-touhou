@@ -50,19 +50,12 @@ struct Sample {
 };
 
 const Sample kSamples[] = {
-    {"games/replays/th13_01.rpy"},
-    {"games/replays/th13_udMy25.rpy"},
-    {"games/replays/th13_udN01.rpy"},
-    {"games/replays/th13_udPn16.rpy"},
-    {"games/replays/th13_udSr01.rpy"},
-    {"games/replays/th13_udWi11.rpy"},
-    {"games/th13/replay/th13_01.rpy"},
-    {"games/th13/replay/th13_udSr01.rpy"},
+    {"games/replays/th13_01.rpy"},     {"games/replays/th13_udMy25.rpy"},     {"games/replays/th13_udN01.rpy"},
+    {"games/replays/th13_udPn16.rpy"}, {"games/replays/th13_udSr01.rpy"},     {"games/replays/th13_udWi11.rpy"},
+    {"games/th13/replay/th13_01.rpy"}, {"games/th13/replay/th13_udSr01.rpy"},
 };
 
-u32 read_u32(const u8* p) {
-    return u32(p[0]) | u32(p[1]) << 8 | u32(p[2]) << 16 | u32(p[3]) << 24;
-}
+u32 read_u32(const u8* p) { return u32(p[0]) | u32(p[1]) << 8 | u32(p[2]) << 16 | u32(p[3]) << 24; }
 
 i32 read_i32(const u8* p) { return i32(read_u32(p)); }
 
@@ -134,7 +127,8 @@ RebuildResult rebuild_and_encode(const char* path) {
 
     // 顶层 +0x0C 原始 time_t（逐字节复刻用）。
     u64 stamp = 0;
-    for (int i = 0; i < 8; ++i) stamp |= u64(file.top_header[0x0C + i]) << (8 * i);
+    for (int i = 0; i < 8; ++i)
+        stamp |= u64(file.top_header[0x0C + i]) << (8 * i);
 
     // USER 摘要行（SJIS 文本中 ASCII 行可直接扫描）。
     const std::string summary = file.user_blocks.empty() ? std::string() : file.user_blocks[0];
@@ -201,9 +195,8 @@ RebuildResult rebuild_and_encode(const char* path) {
 TEST(encoded_replay_is_byte_identical_to_original_file) {
     for (const Sample& sample : kSamples) {
         const RebuildResult r = rebuild_and_encode(sample.path);
-        std::printf("# %-38s decoded=%d fed=%d encoded=%d size=%zu vs %zu first_diff=%zu\n",
-                    sample.path, int(r.decoded), int(r.fed), int(r.encoded), r.out_size,
-                    r.file_size, r.divergence);
+        std::printf("# %-38s decoded=%d fed=%d encoded=%d size=%zu vs %zu first_diff=%zu\n", sample.path,
+                    int(r.decoded), int(r.fed), int(r.encoded), r.out_size, r.file_size, r.divergence);
         CHECK(r.decoded);
         CHECK(r.fed);
         CHECK(r.encoded);
@@ -221,8 +214,7 @@ TEST(append_eof_roundtrips_through_decode) {
     HudScoreState score;
     ReplayRecorder recorder;
     CHECK(recorder.start(ReplayRecorder::top_snapshot(source)));
-    CHECK(recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 42, 0,
-                                                              51200, false)));
+    CHECK(recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 42, 0, 51200, false)));
     for (u32 i = 0; i < 30; ++i) {
         GameInput input;
         input.held = u32(i % 7);
@@ -234,17 +226,16 @@ TEST(append_eof_roundtrips_through_decode) {
     CHECK(recorder.encode(bytes, "EOFTEST", 100, meta));
     ReplayFile file;
     CHECK(file.decode(bytes.data(), bytes.size()));
-    CHECK_EQ(file.stages[0].frame_count, 31u);       // 30 录制帧 + 1 EOF 帧
+    CHECK_EQ(file.stages[0].frame_count, 31u);  // 30 录制帧 + 1 EOF 帧
     CHECK_EQ(u32(file.stages[0].input.size()), 31u * 6);
     CHECK_EQ(file.stages[0].events.size(), size_t(1));  // 仅帧 0 的 tick 事件
     const ReplayFrame last = file.stages[0].frame(30);
     CHECK(last.eof());
-    CHECK_EQ(file.stages[0].slow_rate(30), u8(0));   // EOF tick 无事件 → 回放侧零态
+    CHECK_EQ(file.stages[0].slow_rate(30), u8(0));  // EOF tick 无事件 → 回放侧零态
     // 不带 EOF 的同一录制（默认对话框路径）末帧不是 EOF。
     ReplayRecorder plain_recorder;
     CHECK(plain_recorder.start(ReplayRecorder::top_snapshot(source)));
-    CHECK(plain_recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 42,
-                                                                    0, 51200, false)));
+    CHECK(plain_recorder.begin_stage(ReplayRecorder::stage_snapshot(source, player, score, 42, 0, 51200, false)));
     for (u32 i = 0; i < 30; ++i) {
         GameInput input;
         input.held = u32(i % 7);

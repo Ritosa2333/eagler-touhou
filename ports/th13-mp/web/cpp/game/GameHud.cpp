@@ -22,8 +22,7 @@ constexpr u32 kOpeningSignaturePhaseTicks = 4;
 }  // namespace
 
 bool GameHud::check(bool ok) {
-    if (!ok && error.empty())
-        error = animations.error.empty() ? "HUD animation unavailable" : animations.error;
+    if (!ok && error.empty()) error = animations.error.empty() ? "HUD animation unavailable" : animations.error;
     return ok;
 }
 
@@ -113,8 +112,8 @@ bool GameHud::begin_opening_signature(bool title_flow_ran) {
 namespace {
 // 残机/灵击图标集的 interrupt 布局（0x42ae90/0x42af60；life()/life_seat()
 // 共用——MP 席位与 SP 单套仅图标集与阈值来源不同）。
-bool interrupt_life_set(GameHud& hud, AnmManager& animations, const std::array<u32, 8>& icons,
-                        i32 lives, i32 pieces, i32 threshold) {
+bool interrupt_life_set(GameHud& hud, AnmManager& animations, const std::array<u32, 8>& icons, i32 lives, i32 pieces,
+                        i32 threshold) {
     if (!icons[0]) return true;
     if (lives > 8 || lives < 0 || threshold <= 0) {
         hud.error = "HUD life values outside original limits";
@@ -122,7 +121,10 @@ bool interrupt_life_set(GameHud& hud, AnmManager& animations, const std::array<u
     }
     auto interrupt = [&](u32 handle, i32 label) {
         auto* vm = animations.registry.find(handle);
-        if (!vm) { if (hud.error.empty()) hud.error = "HUD animation unavailable"; return false; }
+        if (!vm) {
+            if (hud.error.empty()) hud.error = "HUD animation unavailable";
+            return false;
+        }
         vm->pending_interrupt = label;
         return true;
     };
@@ -138,8 +140,7 @@ bool interrupt_life_set(GameHud& hud, AnmManager& animations, const std::array<u
         if (!interrupt(icons[u32(i)], 3)) return false;
     return true;
 }
-bool interrupt_bomb_set(GameHud& hud, AnmManager& animations, const std::array<u32, 8>& icons,
-                        i32 stock, i32 pieces) {
+bool interrupt_bomb_set(GameHud& hud, AnmManager& animations, const std::array<u32, 8>& icons, i32 stock, i32 pieces) {
     if (!icons[0]) return true;
     if (stock < 0 || stock > 9) {
         hud.error = "HUD bomb stock outside original limits";
@@ -147,7 +148,10 @@ bool interrupt_bomb_set(GameHud& hud, AnmManager& animations, const std::array<u
     }
     auto interrupt = [&](u32 handle, i32 label) {
         auto* vm = animations.registry.find(handle);
-        if (!vm) { if (hud.error.empty()) hud.error = "HUD animation unavailable"; return false; }
+        if (!vm) {
+            if (hud.error.empty()) hud.error = "HUD animation unavailable";
+            return false;
+        }
         vm->pending_interrupt = label;
         return true;
     };
@@ -168,9 +172,7 @@ bool GameHud::life(i32 lives, i32 pieces) {
                               life_piece_threshold(progress.life_piece_threshold_index));
 }
 
-bool GameHud::bombs(i32 stock, i32 pieces) {
-    return interrupt_bomb_set(*this, animations, bomb_icons, stock, pieces);
-}
+bool GameHud::bombs(i32 stock, i32 pieces) { return interrupt_bomb_set(*this, animations, bomb_icons, stock, pieces); }
 
 bool GameHud::life_seat(i32 seat, i32 lives, i32 pieces, i32 threshold_index) {
     if (seat < 0 || seat >= mp_seat_count) return life(lives, pieces);
@@ -187,14 +189,12 @@ bool GameHud::life_seat(i32 seat, i32 lives, i32 pieces, i32 threshold_index) {
         }
         return true;
     }
-    return interrupt_life_set(*this, animations, icons, lives,
-                              pieces, life_piece_threshold(threshold_index));
+    return interrupt_life_set(*this, animations, icons, lives, pieces, life_piece_threshold(threshold_index));
 }
 
 bool GameHud::bombs_seat(i32 seat, i32 stock, i32 pieces) {
     if (seat <= 0 || seat >= mp_seat_count) return bombs(stock, pieces);
-    return interrupt_bomb_set(*this, animations, mp_bomb_icons[size_t(seat) - 1], stock,
-                              pieces);
+    return interrupt_bomb_set(*this, animations, mp_bomb_icons[size_t(seat) - 1], stock, pieces);
 }
 
 bool GameHud::enable_multiplayer(i32 seat_count) {
@@ -224,16 +224,14 @@ bool GameHud::enable_multiplayer(i32 seat_count) {
         auto& bomb_set = mp_bomb_icons[size_t(seat) - 1];
         if (!life_set[0] && !bomb_set[0]) {
             for (u32 i = 0; i < 8; i++) {
-                life_set[i] = create(front, i32(i) + 29, 0,
-                                     Vec3{0.f, float(seat) * kMpRowPitch, 0.f});
+                life_set[i] = create(front, i32(i) + 29, 0, Vec3{0.f, float(seat) * kMpRowPitch, 0.f});
                 auto* vm = animations.registry.find(life_set[i]);
                 if (!vm) return false;
                 vm->visual.render_flags &= ~0xc000u;
                 vm->visual.scale = {.8f, .8f};
             }
             for (u32 i = 0; i < 8; i++) {
-                bomb_set[i] = create(front, i32(i) + 37, 0,
-                                     Vec3{0.f, float(seat) * kMpRowPitch - 10.f, 0.f});
+                bomb_set[i] = create(front, i32(i) + 37, 0, Vec3{0.f, float(seat) * kMpRowPitch - 10.f, 0.f});
                 auto* vm = animations.registry.find(bomb_set[i]);
                 if (!vm) return false;
                 vm->visual.render_flags &= ~0xc000u;
@@ -244,11 +242,11 @@ bool GameHud::enable_multiplayer(i32 seat_count) {
         constexpr float dx[] = {0.f, 16.f, 0.f, 16.f, 0.f};
         constexpr float offsets[] = {0.f, 0.f, -10.f, -10.f, -66.f};
         for (size_t i = 0; i < 5; ++i) {
-            if (!mp_resource_labels[size_t(seat)-1][i])
-                mp_resource_labels[size_t(seat)-1][i] = create(front, scripts[i], 0,
-                    Vec3{dx[i], float(seat)*kMpRowPitch + offsets[i], 0.f});
-            if (!mp_resource_labels[size_t(seat)-1][i]) return false;
-            auto* label = animations.registry.find(mp_resource_labels[size_t(seat)-1][i]);
+            if (!mp_resource_labels[size_t(seat) - 1][i])
+                mp_resource_labels[size_t(seat) - 1][i] =
+                    create(front, scripts[i], 0, Vec3{dx[i], float(seat) * kMpRowPitch + offsets[i], 0.f});
+            if (!mp_resource_labels[size_t(seat) - 1][i]) return false;
+            auto* label = animations.registry.find(mp_resource_labels[size_t(seat) - 1][i]);
             if (!label) return false;
             label->visual.render_flags &= ~0xc000u;
             label->visual.scale = (i == 1 || i == 3) ? Vec2{.65f, .65f} : Vec2{1.f, 1.f};
@@ -266,7 +264,8 @@ bool GameHud::enable_multiplayer(i32 seat_count) {
                 if (auto* child = animations.registry.find_child_script(*root_vm, script, 0)) {
                     const i32 seat = (script - 19) / 2;
                     const float original_y = script <= 20 ? 132.f : script <= 22 ? 170.f : 234.f;
-                    child->visual.translation = {script <= 22 ? 43.f : 27.f, 176.f + kMpRowPitch * float(seat) - original_y, 0.f};
+                    child->visual.translation = {script <= 22 ? 43.f : 27.f,
+                                                 176.f + kMpRowPitch * float(seat) - original_y, 0.f};
                     child->visual.sprite_size.x = seat < seat_count ? 52.8f : 0.f;
                 }
             }
@@ -320,8 +319,7 @@ bool GameHud::stage_logo_title(i32 scene_destination) {
     // and op400 (512,464): the front/logo/stXXlogo.png quad drawn from frame 0.
     // Gate 00425841/0042584e/0042585b: DAT_004dcc24 != 8,
     // !(DAT_004be830 & 0x40), (DAT_004be830 & 0x30) != 0x20 (not spell practice).
-    if (scene_destination == 8 || (progress.run_mode_flags & 0x40u) ||
-        (progress.run_mode_flags & 0x30u) == 0x20u)
+    if (scene_destination == 8 || (progress.run_mode_flags & 0x40u) || (progress.run_mode_flags & 0x30u) == 0x20u)
         return true;
     // The run scene injects the bank before initialize(); the UI test harness
     // intentionally has no logo bank, so absence here is not an error.
@@ -384,8 +382,7 @@ bool GameHud::initialize(const HudEntryContext& context) {
         error = boss_hud.error;
         return false;
     }
-    if (!life(player.extra_lives, player.life_pieces) || !bombs(player.bombs, player.bomb_pieces))
-        return false;
+    if (!life(player.extra_lives, player.life_pieces) || !bombs(player.bombs, player.bomb_pieces)) return false;
     // 0x425170:291-349 block D: stage-entry logo (stXXlogo.anm script 1).
     // Native order 0x425829/0x42583c (life/bomb interrupts) precedes the
     // 0x425841 gate; life/bombs only interrupt existing VMs, but keep the
@@ -395,8 +392,7 @@ bool GameHud::initialize(const HudEntryContext& context) {
     // 425170:509-512 creates front.anm script67 only for a fresh Stage 1
     // ordinary run with no continues. The script owns its children and the
     // full 198-tick presentation lifecycle; keep no HUD-local timer/handle.
-    if (progress.stage == 1 && progress.practice_mode == 0 && progress.continues == 0 &&
-        !create(front, 67, 0))
+    if (progress.stage == 1 && progress.practice_mode == 0 && progress.continues == 0 && !create(front, 67, 0))
         return false;
     // 00425170 starts the temporary difficulty notice through label3;
     // its script moves away from the FPS corner and terminates after164 ticks.

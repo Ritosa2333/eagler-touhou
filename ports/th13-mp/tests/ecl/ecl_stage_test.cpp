@@ -26,8 +26,8 @@ TEST(stage_math_primitives) {
     CHECK_NEAR(th13::mirror_angle(0.0f), 3.1415927f, 1e-6);
     CHECK_NEAR(th13::mirror_angle(1.5707964f), 1.5707964f, 1e-6);
     // 0x497690：floor 量化 0.01（向负无穷；oracle 写断点实证 -163.783264 → -163.79）。
-    CHECK_NEAR(th13::round001(0.125f), 0.12f, 1e-9);   // floor(12.5)=12
-    CHECK_NEAR(th13::round001(0.119f), 0.11f, 1e-9);   // floor(11.9)=11
+    CHECK_NEAR(th13::round001(0.125f), 0.12f, 1e-9);  // floor(12.5)=12
+    CHECK_NEAR(th13::round001(0.119f), 0.11f, 1e-9);  // floor(11.9)=11
     CHECK_NEAR(th13::round001(-163.783264f), -163.79f, 1e-9);
     CHECK_NEAR(th13::round001(1.0f), 1.0f, 1e-9);
     // 0x473a40：mode 0 线性、1 平方、4 ease-out 平方。
@@ -67,8 +67,7 @@ TEST(stage1_sim_contract_smoke) {
     // 0x418d30 构造后计数器=1，root main 经同一 0x4183f0/0x418f40 计数器
     // 取得 serial 1（0x42c550 首帧 0042c766/0042c905），故首个 ECL 敌机
     // 从计数器取 2；native-s5 raw f0 敌链 [2,1] 实证。
-    const char* kHead =
-        "{\"frame\":0,\"seq\":0,\"type\":\"enemy_spawn\",\"enemy\":2,\"routine\":\"MapleEnemy\"";
+    const char* kHead = "{\"frame\":0,\"seq\":0,\"type\":\"enemy_spawn\",\"enemy\":2,\"routine\":\"MapleEnemy\"";
     CHECK(a.size() > std::strlen(kHead));
     CHECK(std::memcmp(a.data(), kHead, std::strlen(kHead)) == 0);
     // 逐行校验：键序与类型枚举（合同 §4）。
@@ -77,12 +76,11 @@ TEST(stage1_sim_contract_smoke) {
     bool first_line = true;
     for (size_t i = 0; i < a.size();) {
         size_t end = i;
-        while (end < a.size() && a[end] != '\n') ++end;
+        while (end < a.size() && a[end] != '\n')
+            ++end;
         std::string line(a.data() + i, end - i);
         CHECK(!line.empty());
-        const auto prefix = [&](const char* keys) {
-            return line.rfind(keys, 0) == 0;
-        };
+        const auto prefix = [&](const char* keys) { return line.rfind(keys, 0) == 0; };
         // 公共头 {"frame":N,"seq":M,"type":"..."
         CHECK(prefix("{\"frame\":"));
         const size_t type_at = line.find(",\"type\":\"");
@@ -128,13 +126,12 @@ TEST(stage1_sim_contract_smoke) {
         i = end + 1;
     }
     CHECK_EQ(u64(first.event_count()), lines);
-    CHECK(spawns > 80);      // MainFront 波次 + MBoss 族
-    CHECK(moves > 1000);     // 含 TraceEnemyPos 逐帧 433
-    CHECK(bullets > 500);    // GirlA01_at 族起
+    CHECK(spawns > 80);         // MainFront 波次 + MBoss 族
+    CHECK(moves > 1000);        // 含 TraceEnemyPos 逐帧 433
+    CHECK(bullets > 500);       // GirlA01_at 族起
     CHECK(last_frame == 3599);  // 跑满 3600 帧
-    std::printf("  stage1 冒烟：lines=%llu spawns=%llu moves=%llu bullets=%llu\n",
-                (unsigned long long)lines, (unsigned long long)spawns, (unsigned long long)moves,
-                (unsigned long long)bullets);
+    std::printf("  stage1 冒烟：lines=%llu spawns=%llu moves=%llu bullets=%llu\n", (unsigned long long)lines,
+                (unsigned long long)spawns, (unsigned long long)moves, (unsigned long long)bullets);
 }
 
 }  // namespace

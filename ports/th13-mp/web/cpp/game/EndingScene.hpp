@@ -55,8 +55,7 @@ struct EndingPlatform {
     virtual ~EndingPlatform() = default;
     // 0x4724c0 按名读 th13.dat 资产（e##.msg/staff.msg/e##.anm）。
     // 签名与 RunSceneServices::read_asset 同型（宿主单实现双接口）。
-    virtual bool read_asset(const std::string& name, std::vector<u8>& bytes,
-                            bool required = true) = 0;
+    virtual bool read_asset(const std::string& name, std::vector<u8>& bytes, bool required = true) = 0;
     // DAT_004c22cc 存档缓冲视图（结局字节区）。
     virtual EndingSaveBytes* save_bytes() = 0;
     // 0x416610 END → DAT_004dcc24 = 0x10（练习位 0x2000 时为 2——Ending 期不达）。
@@ -95,8 +94,7 @@ struct EndingPlatform {
 
 class EndingScene {
 public:
-    EndingScene(SessionState& progress, EndingPlatform& platform,
-                bool allow_first_view_fast_forward = false);
+    EndingScene(SessionState& progress, EndingPlatform& platform, bool allow_first_view_fast_forward = false);
 
     // 0x416570→0x416130：结局索引、落档位、msg 装载、滚屏对象初始化。
     // 失败（msg 读不到 = 原版 return -1 族）置 error 返回 false。
@@ -108,7 +106,7 @@ public:
     // 0x4165f0→0x4163b0 拆卸（ANM 槽释放 + 文本面收尾）。
     void teardown();
 
-    bool finished() const { return finished_; }   // END 已请求 0x10
+    bool finished() const { return finished_; }  // END 已请求 0x10
     i32 ending_index() const { return ending_index_; }
     u32 scene_flags() const { return scene_flags_; }  // 0x4c2184+0x20（跳过许可门）
     i32 line() const { return line_.target; }         // 滚屏行计数（+0x1c）
@@ -144,14 +142,14 @@ private:
     std::string payload_cstring(const Record& r, u32 byte_offset = 0) const;
 
     // op 处理器返回 false = 本帧等待（不推进记录）；true = 已处理（推进）。
-    bool op_page_line(const Record& r);      // op3（0x416a57）
-    bool op_page_clear();                    // op4（0x416b73）
+    bool op_page_line(const Record& r);  // op3（0x416a57）
+    bool op_page_clear();                // op4（0x416b73）
     bool op_text_wait(const GameInput& input, const Record& r,
-                      bool page_break);      // op5/6（0x416b9b/0x416c4d）
-    bool op_anm_load(const Record& r);       // op7（0x417144）
-    bool op_anm_vm(const Record& r);         // op8/15/16/17（0x416ce8 族）
-    bool op_music(const Record& r);          // op10（0x416f82）
-    bool op_reload_next(const Record& r);    // op12（0x416ff4）：true=成功
+                      bool page_break);    // op5/6（0x416b9b/0x416c4d）
+    bool op_anm_load(const Record& r);     // op7（0x417144）
+    bool op_anm_vm(const Record& r);       // op8/15/16/17（0x416ce8 族）
+    bool op_music(const Record& r);        // op10（0x416f82）
+    bool op_reload_next(const Record& r);  // op12（0x416ff4）：true=成功
 
     SessionState& progress_;
     EndingPlatform& platform_;
@@ -159,18 +157,18 @@ private:
 
     // ---- 0x4c2184 场景对象面 ----
     i32 ending_index_ = 0;
-    u32 scene_flags_ = 0;   // bit0=该结局首见、bit1=好结局全未见过（0x416130 置位）
-    i32 frames_ = 0;        // +0x24
+    u32 scene_flags_ = 0;  // bit0=该结局首见、bit1=好结局全未见过（0x416130 置位）
+    i32 frames_ = 0;       // +0x24
 
     // ---- 0xf0 滚屏对象面 ----
     std::vector<u8> msg_bytes_;
-    std::string message_name_;  // 当前 msg 名（0x4bba20[idx] / op12 载入名）
-    u32 record_ = 0;            // +0x54 当前记录偏移
-    Interp line_;               // +0x18/+0x1c/+0x20：滚屏行
-    Interp text_wait_;          // +0x2c/+0x30/+0x34：文本行等待
-    u32 state_flags_ = 1;       // +0x74：bit0 op11 清、bit1 op12 置、bit2 装载中
-    u32 color_ = 0x00ffffff;    // +0x7c
-    i32 page_lines_ = 0;        // +0x78 页内行计数（op6 清零）
+    std::string message_name_;              // 当前 msg 名（0x4bba20[idx] / op12 载入名）
+    u32 record_ = 0;                        // +0x54 当前记录偏移
+    Interp line_;                           // +0x18/+0x1c/+0x20：滚屏行
+    Interp text_wait_;                      // +0x2c/+0x30/+0x34：文本行等待
+    u32 state_flags_ = 1;                   // +0x74：bit0 op11 清、bit1 op12 置、bit2 装载中
+    u32 color_ = 0x00ffffff;                // +0x7c
+    i32 page_lines_ = 0;                    // +0x78 页内行计数（op6 清零）
     std::array<std::string, 5> page_text_;  // 近似渲染缓冲（原版 5 文本 VM）
 
     bool finished_ = false;

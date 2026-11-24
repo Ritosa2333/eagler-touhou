@@ -1,9 +1,9 @@
 // th13 production submission boundary; portable/sdl stays shared with th15.
 #pragma once
-#include "../game/ZunGraphics.hpp"
-#include "../game/TextureImage.hpp"
-#include "../game/SubmissionTrace.hpp"
 #include "../../../portable/sdl/Renderer.hpp"
+#include "../game/SubmissionTrace.hpp"
+#include "../game/TextureImage.hpp"
+#include "../game/ZunGraphics.hpp"
 #include <map>
 
 namespace th13::sdl {
@@ -24,6 +24,7 @@ class GraphicsDevice final : public ZunGraphics {
     static bool trace_resource(void*, u32, SubmissionTrace::Resource&);
     void submit(const RenderSubmission&);
     uint64_t capture_presents_ = 0;
+
 public:
     touhou::sdl::Renderer backend{10, resolve, this};
     static constexpr u32 screen = 1, depth = 2;
@@ -37,7 +38,9 @@ public:
     bool capture_active() const noexcept { return submission_trace.active(); }
     struct PresentationStub {
         bool enabled = false;
-        void begin() {} void finish() {} void reset() {}
+        void begin() {}
+        void finish() {}
+        void reset() {}
     } presentation;
     bool logical_drawing = false;
     bool logical_frame() const noexcept override { return logical_drawing; }
@@ -61,8 +64,8 @@ public:
     // 的 sprite76 (0,0,128,128)；目标 format 3 = RGB565。
     // 契约：source 为逻辑像素矩形（上下对称，GL 行序翻转不影响矩形本身）；
     // 目标必须是已 preload 的 RGB565 Blank 纹理，否则如实失败。
-    bool capture_region_to_texture(const AnmResource& file, u32 texture_index,
-                                   const i32 source[4], const i32 destination[4]);
+    bool capture_region_to_texture(const AnmResource& file, u32 texture_index, const i32 source[4],
+                                   const i32 destination[4]);
     void unload(const AnmResource&);
     // 预备阶段上传的纹理随 AnmResource 对象迁移到接管它的 bank（对象地址
     // 变化、纹理句柄不变）。
@@ -96,6 +99,8 @@ public:
     }
     void clear(u32 color, bool depth = true);
     void present();
-    void flush() { if (!logical_drawing) submit({RenderSubmission::Kind::Flush, backend.state}); }
+    void flush() {
+        if (!logical_drawing) submit({RenderSubmission::Kind::Flush, backend.state});
+    }
 };
-}
+}  // namespace th13::sdl

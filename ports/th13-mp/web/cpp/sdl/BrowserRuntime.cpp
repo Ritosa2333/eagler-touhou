@@ -1,32 +1,32 @@
-#include <sstream>
-#include <locale>
 #include <limits>
+#include <locale>
+#include <sstream>
 // 浏览器宿主（th15 BrowserRuntime 裁剪：EM 导出 + RAF 循环 + FrameCadence；
 // 触控/thprac/practice lab 全部裁掉，docs/plans/ui-base.md §三）。
 // 输入：SDL3 emscripten 端口把键盘事件汇入 SDL 键位态，再经
 // GameKeyboard::keyboard_keys 生成 32 位游戏掩码（KeyboardMap.inc 同代布局）。
-#include "ApplicationState.hpp"
+#include "../../../portable/input/TouchController.hpp"
+#include "../../../portable/sdl/FrameCadence.hpp"
+#include "../../../portable/sdl/FrameRateMeter.hpp"
 #include "../game/GameInput.hpp"
 #include "../game/GameKeyboard.hpp"
 #include "../game/ReplayEntityState.hpp"
-#include "../multiplayer/ReplayArchive.hpp"  // M9：多人 Replay 归档面
-#include "../multiplayer/Session.hpp"  // M7：联机会话驱动面
 #include "../multiplayer/FrameSchedule.hpp"
-#include "../multiplayer/TerminalHandoff.hpp"
-#include "../multiplayer/SpectatorJournal.hpp"  // M9：旁观接缝
-#include "../multiplayer/StageEntry.hpp"  // M9：关头延续
-#include "../multiplayer/WorldState.hpp"
 #include "../multiplayer/HostState.hpp"
-#include "../../../portable/sdl/FrameCadence.hpp"
-#include "../../../portable/sdl/FrameRateMeter.hpp"
-#include "../../../portable/input/TouchController.hpp"
+#include "../multiplayer/ReplayArchive.hpp"     // M9：多人 Replay 归档面
+#include "../multiplayer/Session.hpp"           // M7：联机会话驱动面
+#include "../multiplayer/SpectatorJournal.hpp"  // M9：旁观接缝
+#include "../multiplayer/StageEntry.hpp"        // M9：关头延续
+#include "../multiplayer/TerminalHandoff.hpp"
+#include "../multiplayer/WorldState.hpp"
+#include "ApplicationState.hpp"
 #include <eagler/input/BrowserGamepad.hpp>
 #include <eagler/replay/Workspace.hpp>  // M9/P6：回放 inspect 描述面
 
-#include <SDL3/SDL.h>
 #include <GLES3/gl3.h>
-#include <emscripten.h>
+#include <SDL3/SDL.h>
 #include <deque>
+#include <emscripten.h>
 #include <emscripten/html5.h>
 
 #include <algorithm>
@@ -44,7 +44,7 @@ extern AnmRandomObserver anm_random_observer;
 // 定义在 AnmInterpreter.cpp：当前正在 tick 的 VM（抽取站点探针上下文）。
 extern const AnmVm* anm_tick_current_vm;
 extern void (*anm_tick_observer)(const AnmVm&, float);
-}
+}  // namespace th13
 
 // clang-format off
 EM_JS(void, th13_browser_frame, (int ok, double milliseconds, unsigned ticks), {
@@ -90,20 +90,20 @@ struct LoadingWork {
     void replacing_app() {
         if (app) {
             const unsigned now = app->graphics.backend.stats.presentations;
-            retired_presentations += before == app.get() && now >= presentations
-                ? now - presentations : now;
+            retired_presentations += before == app.get() && now >= presentations ? now - presentations : now;
         }
-        before = nullptr; presentations = 0;
+        before = nullptr;
+        presentations = 0;
     }
     explicit LoadingWork(unsigned value) : source(value) {}
     int finish(int result, bool ok) const {
         const int end_stage = app ? app->progress.stage : stage;
         const unsigned after = app ? app->graphics.backend.stats.presentations : 0;
-        const unsigned submitted = retired_presentations +
+        const unsigned submitted =
+            retired_presentations +
             (app && app.get() == before && after >= presentations ? after - presentations : after);
         const double end = emscripten_get_now();
-        th13_browser_work_frame(sequence, begin, end, stage, end_stage, 2, source,
-                                0, 0, 0, submitted, -1, ok);
+        th13_browser_work_frame(sequence, begin, end, stage, end_stage, 2, source, 0, 0, 0, submitted, -1, ok);
         return result;
     }
 };
@@ -123,32 +123,28 @@ bool mp_spectator_mode = false;
 std::uint32_t mp_spectator_stage = 0;
 std::uint32_t mp_playback_frame = 0;
 std::uint32_t mp_playback_chapter = 0;  // Requested chapter label (0 = first).
-bool mp_playback_paused = false;         // 回放暂停门（mp_tick_playback）
+bool mp_playback_paused = false;        // 回放暂停门（mp_tick_playback）
 std::uint32_t mp_playback_seek_target = Netplay::INVALID_FRAME;
-unsigned mp_playback_rate = 1;           // 回放速率（帧/tick，1..8）
-void observe_anm_random(const AnmVm& vm, i32 opcode, i32 variable, i32 argument,
-                        u32 before, u32 seed_before, u32 after, u32 seed_after, bool game_stream) {
+unsigned mp_playback_rate = 1;  // 回放速率（帧/tick，1..8）
+void observe_anm_random(const AnmVm& vm, i32 opcode, i32 variable, i32 argument, u32 before, u32 seed_before, u32 after,
+                        u32 seed_after, bool game_stream) {
     if (!app || !app->run) return;
     const int frame = app->progress.stage_frame - 1;
     if (frame < anm_random_first || frame > anm_random_last) return;
-    anm_random_observations += "{\"frame\":" + std::to_string(frame) +
+    anm_random_observations +=
+        "{\"frame\":" + std::to_string(frame) +
         ",\"bank\":" + std::to_string(app->animations.resource_id(vm.resource)) +
         ",\"script\":" + std::to_string(vm.source_script) +
         ",\"handle\":" + std::to_string(app->animations.registry.handle(vm)) +
-        ",\"pc\":" + std::to_string(vm.instruction_offset) +
-        ",\"opcode\":" + std::to_string(opcode) +
-        ",\"variable\":" + std::to_string(variable) +
-        ",\"argument\":" + std::to_string(argument) +
+        ",\"pc\":" + std::to_string(vm.instruction_offset) + ",\"opcode\":" + std::to_string(opcode) +
+        ",\"variable\":" + std::to_string(variable) + ",\"argument\":" + std::to_string(argument) +
         ",\"consumed\":" + std::to_string(app->replay_consumed) +
         ",\"stage_frame\":" + std::to_string(app->progress.stage_frame) +
         ",\"sim_frame\":" + std::to_string(app->run ? app->run->battle.sim.frame : -1) +
-        ",\"vm_age\":" + std::to_string(vm.age.current) +
-        ",\"vm_timer\":" + std::to_string(vm.timer.current) +
-        ",\"vm\":" + std::to_string(reinterpret_cast<uintptr_t>(&vm)) +
-        ",\"stream\":\"" + (game_stream ? "game" : "visual") + "\"" +
-        ",\"before\":" + std::to_string(before) +
-        ",\"seed_before\":" + std::to_string(seed_before) +
-        ",\"after\":" + std::to_string(after) +
+        ",\"vm_age\":" + std::to_string(vm.age.current) + ",\"vm_timer\":" + std::to_string(vm.timer.current) +
+        ",\"vm\":" + std::to_string(reinterpret_cast<uintptr_t>(&vm)) + ",\"stream\":\"" +
+        (game_stream ? "game" : "visual") + "\"" + ",\"before\":" + std::to_string(before) +
+        ",\"seed_before\":" + std::to_string(seed_before) + ",\"after\":" + std::to_string(after) +
         ",\"seed_after\":" + std::to_string(seed_after) + "}\n";
 }
 struct Key {
@@ -180,26 +176,31 @@ void trace_applied_touch() {
     if (!app || !app->run || !session.Simulating()) return;
     const auto& touch = app->run->battle.seats[session.LocalSeat()].touch;
     session.TraceTiming("apply-touch", session.SimFrame(), touch.mode);
-    session.TraceTiming("apply-touch-xy", session.SimFrame(),
-                        timing_float_bits(touch.x), timing_float_bits(touch.y));
+    session.TraceTiming("apply-touch-xy", session.SimFrame(), timing_float_bits(touch.x), timing_float_bits(touch.y));
 }
 
 touhou::input::TouchState touch_state() {
     touhou::input::TouchState state;
     if (!app || !app->run || (app->pause && app->pause->active())) return state;
-    if (app->replay_active) { state.context = 3; return state; }
+    if (app->replay_active) {
+        state.context = 3;
+        return state;
+    }
     const auto& battle = app->run->battle;
     state.context = app->run->dialog_active() ? 2 : 1;
     state.instance = app->progress.stage;
-    const auto& player = battle.seat_count >= 2
-        ? battle.seats[size_t(battle.mp_local_seat)] : battle.player_state();
+    const auto& player = battle.seat_count >= 2 ? battle.seats[size_t(battle.mp_local_seat)] : battle.player_state();
     const bool available = !player.dead && !player.ghost;
     state.ready = available && player.phase == StagePlayerState::Phase::Active;
     state.retain_motion = available && player.phase == StagePlayerState::Phase::Deathbomb;
-    state.x = player.x; state.y = player.y;
+    state.x = player.x;
+    state.y = player.y;
     state.fast = float(player.speed_orth) / 128;
     state.slow = float(player.speed_orth_focus) / 128;
-    state.min_x = -184; state.max_x = 184; state.min_y = 32; state.max_y = 432;
+    state.min_x = -184;
+    state.max_x = 184;
+    state.min_y = 32;
+    state.max_y = 432;
     return state;
 }
 SDL_Joystick* controller = nullptr;
@@ -262,7 +263,8 @@ void initialize_controller() {
     int count = 0;
     auto* ids = SDL_GetJoysticks(&count);
     if (ids) {
-        for (int i = 0; i < count; ++i) add_controller(ids[i]);
+        for (int i = 0; i < count; ++i)
+            add_controller(ids[i]);
         SDL_free(ids);
     }
 }
@@ -286,13 +288,17 @@ u32 sample_controller(u32& raw_buttons) {
     // 方向轴/Hat采样
     if (SDL_GetNumJoystickAxes(controller) > 0) {
         const float x = float(SDL_GetJoystickAxis(controller, 0)) / 32768.f;
-        if (x < -0.5f) keys |= 0x40;       // ←
-        else if (x > 0.5f) keys |= 0x80;  // →
+        if (x < -0.5f)
+            keys |= 0x40;  // ←
+        else if (x > 0.5f)
+            keys |= 0x80;  // →
     }
     if (SDL_GetNumJoystickAxes(controller) > 1) {
         const float y = float(SDL_GetJoystickAxis(controller, 1)) / 32768.f;
-        if (y < -0.5f) keys |= 0x10;       // ↑
-        else if (y > 0.5f) keys |= 0x20;  // ↓
+        if (y < -0.5f)
+            keys |= 0x10;  // ↑
+        else if (y > 0.5f)
+            keys |= 0x20;  // ↓
     }
     if (SDL_GetNumJoystickHats(controller) > 0) {
         const auto hat = SDL_GetJoystickHat(controller, 0);
@@ -310,7 +316,9 @@ void clear_inputs() {
     gestures.cancel();
     if (app && app->run) app->run->battle.touch = {};
     for (auto& key : keyboard_map) {
-        key.hosted = false; key.managed = false; key.pending.clear();
+        key.hosted = false;
+        key.managed = false;
+        key.pending.clear();
     }
     SDL_ResetKeyboard();
     controls = {};
@@ -375,8 +383,8 @@ SampledFrame sample_input() {
             if (key.vk >= 160 && key.vk <= 165) hosted_keys[16 + (key.vk - 160) / 2] = true;
             if (key.scan == 28 || key.scan == 156) hosted_keys[13] = true;
         }
-        if (hosted || ((!live_mp_input || !key.managed) &&
-            key.native != SDL_SCANCODE_UNKNOWN && physical[key.native])) {
+        if (hosted ||
+            ((!live_mp_input || !key.managed) && key.native != SDL_SCANCODE_UNKNOWN && physical[key.native])) {
             if (key.vk < 256) keys[key.vk] = true;
             if (key.vk >= 160 && key.vk <= 165) keys[16 + (key.vk - 160) / 2] = true;  // 双 Shift 归一
             if (key.scan == 28 || key.scan == 156) keys[13] = true;                    // Enter
@@ -390,11 +398,11 @@ SampledFrame sample_input() {
     const u32 pad_keys = mapped_pad < 0 ? sample_controller(raw_buttons) : 0;
     app->raw_pad_buttons = raw_buttons;
     const auto touch = gestures.sample(touch_state(), SDL_GetTicks(), keys[16] || (pad_keys & 8),
-        keys[37] || keys[38] || keys[39] || keys[40] || (pad_keys & 0xf0));
-    for (u32 i = 0; i < 256; ++i) keys[i] = keys[i] || touch.keys[i];
+                                       keys[37] || keys[38] || keys[39] || keys[40] || (pad_keys & 0xf0));
+    for (u32 i = 0; i < 256; ++i)
+        keys[i] = keys[i] || touch.keys[i];
     sampled.touch = {touch.motion, touch.x, touch.y};
-    if (app->run && app->run->battle.seat_count < 2)
-        app->run->battle.touch = sampled.touch;
+    if (app->run && app->run->battle.seat_count < 2) app->run->battle.touch = sampled.touch;
     u32 held = keyboard_keys(keys) | pad_keys;
     // Physical input always belongs to menus, including Replay pause/end.
     // RunScene consumes recorded gameplay input only after its freeze gate;
@@ -410,8 +418,8 @@ SampledFrame sample_input() {
             multiplayer::session.TraceTiming("read-hosted-edge", frame, edge.first, edge.second);
         multiplayer::session.TraceTiming("read-hosted-physical", frame, keyboard_keys(physical_hosted_keys));
         multiplayer::session.TraceTiming("read-hosted", frame, keyboard_keys(hosted_keys));
-        multiplayer::session.TraceTiming("read-touch-xy", frame,
-            timing_float_bits(touch.x), timing_float_bits(touch.y));
+        multiplayer::session.TraceTiming("read-touch-xy", frame, timing_float_bits(touch.x),
+                                         timing_float_bits(touch.y));
     }
     lost_focus = false;
     return sampled;
@@ -419,8 +427,8 @@ SampledFrame sample_input() {
 
 bool sample_and_tick(float fps = 60.f, unsigned* simulated = nullptr) {
     if (!app) return false;
-    if (mp_room_preview && !multiplayer::session.PumpTerminal(
-            static_cast<std::uint64_t>(emscripten_get_now()))) return false;
+    if (mp_room_preview && !multiplayer::session.PumpTerminal(static_cast<std::uint64_t>(emscripten_get_now())))
+        return false;
     const SampledFrame sampled = sample_input();
     if (sampled.skip) return true;
     if (simulated) ++*simulated;
@@ -428,8 +436,7 @@ bool sample_and_tick(float fps = 60.f, unsigned* simulated = nullptr) {
     // For replay gameplay RunScene selects the frozen recorded history.
     // M1/T2：帧体三段拆分后的第一处生产接线（M7 Runtime 宿主侧驱动接口），
     // 逐操作同序 = ApplicationState::step 复合（update→commit→present）。
-    return app->update(mp_room_preview ? GameInput{} : controls,
-                       mp_room_preview ? false : sampled.focus) &&
+    return app->update(mp_room_preview ? GameInput{} : controls, mp_room_preview ? false : sampled.focus) &&
            app->commit(fps) && app->present();
 }
 
@@ -449,15 +456,12 @@ void queue_mp_work(bool received = false);
 
 // Full history consumers rebuild only the recorded root, then replay inputs.
 bool mp_restore_history_root(const multiplayer::SessionSetup& setup, unsigned stage,
-                             const multiplayer::StageEntry* entry,
-                             bool legacy_pickup_rewards = false) {
-    const std::array<th13::i32, 3> characters = {
-        th13::i32(setup.selections[0]), th13::i32(setup.selections[1]),
-        th13::i32(setup.selections[2])};
+                             const multiplayer::StageEntry* entry, bool legacy_pickup_rewards = false) {
+    const std::array<th13::i32, 3> characters = {th13::i32(setup.selections[0]), th13::i32(setup.selections[1]),
+                                                 th13::i32(setup.selections[2])};
     // Retire the previous world through its normal owner path, including a
     // seek issued while the old world is paused, loading, or showing Ending.
-    if (!app->begin_title(0) ||
-        !app->configure_multiplayer(th13::i32(setup.player_count), characters, 0)) {
+    if (!app->begin_title(0) || !app->configure_multiplayer(th13::i32(setup.player_count), characters, 0)) {
         last_error = "TH13 multiplayer replay seat configuration rejected";
         return false;
     }
@@ -486,15 +490,14 @@ bool mp_restore_history_root(const multiplayer::SessionSetup& setup, unsigned st
     app->game_random.reseed_restore(static_cast<std::uint16_t>(setup.seed));
     app->visual.reseed_restore(static_cast<std::uint16_t>(setup.seed));
     if (!app->begin_run()) {
-        last_error = app->failure.empty() ? "TH13 multiplayer replay begin_run failed"
-                                          : app->failure;
+        last_error = app->failure.empty() ? "TH13 multiplayer replay begin_run failed" : app->failure;
         return false;
     }
     if (entry) {
         std::uint16_t gameSeed = 0, visualSeed = 0;
         std::uint32_t gameIndex = 0, visualIndex = 0;
-        entry->Restore(app->run->battle, app->progress, app->run->score_view(),
-                       gameSeed, gameIndex, visualSeed, visualIndex);
+        entry->Restore(app->run->battle, app->progress, app->run->score_view(), gameSeed, gameIndex, visualSeed,
+                       visualIndex);
         app->game_random.reseed_restore(gameSeed);
         app->game_random.set_index(gameIndex);
         app->visual.reseed_restore(visualSeed);
@@ -524,14 +527,11 @@ bool mp_tick_spectator(float fps, unsigned& simulated, unsigned& attempted) {
             multiplayer::StageEntry entry;
             if (checkpoint.frame != 0 || checkpoint.stage != stage ||
                 checkpoint.game != multiplayer::SpectatorJournal::kGame ||
-                checkpoint.playerCount != setup.player_count ||
-                checkpoint.sessionId != setup.session_id ||
+                checkpoint.playerCount != setup.player_count || checkpoint.sessionId != setup.session_id ||
                 checkpoint.gameplayAbi != multiplayer::GameplayAbi(setup) ||
                 checkpoint.schema != multiplayer::SpectatorStageSchema ||
-                !multiplayer::StageEntry::Decode(checkpoint.state.data(),
-                                                 checkpoint.state.size(), entry) ||
-                entry.stage != stage || entry.chapter_frame != 0 ||
-                entry.seat_count != setup.player_count)
+                !multiplayer::StageEntry::Decode(checkpoint.state.data(), checkpoint.state.size(), entry) ||
+                entry.stage != stage || entry.chapter_frame != 0 || entry.seat_count != setup.player_count)
                 return false;
             if (!mp_restore_history_root(setup, stage, &entry)) return false;
             mp_spectator_stage = stage;
@@ -542,11 +542,8 @@ bool mp_tick_spectator(float fps, unsigned& simulated, unsigned& attempted) {
             if (!app->run) return false;
             const unsigned count = std::min<unsigned>(packet.playerCount, 3);
             auto& battle = app->run->battle;
-            const auto menu = multiplayer::InputLanes::AdvanceHistory(
-                battle, packet.inputs.data(), count);
-            app->run->playback_input = []() -> const th13::GameInput* {
-                return &app->run->battle.seat_inputs[0];
-            };
+            const auto menu = multiplayer::InputLanes::AdvanceHistory(battle, packet.inputs.data(), count);
+            app->run->playback_input = []() -> const th13::GameInput* { return &app->run->battle.seat_inputs[0]; };
             ++attempted;
             if (!app->update(menu, false) || !app->commit(fps)) return false;
             ++simulated;
@@ -554,9 +551,7 @@ bool mp_tick_spectator(float fps, unsigned& simulated, unsigned& attempted) {
         },
         [&] {
             return app->pending_load || app->pending_destination >= 0 ||
-                   std::chrono::duration<double, std::milli>(
-                       std::chrono::steady_clock::now() - begin)
-                       .count() >= 6.0;
+                   std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - begin).count() >= 6.0;
         },
         fast ? 120 : 1);
     if (!ok) {
@@ -590,11 +585,8 @@ bool mp_tick_playback(float fps, unsigned& simulated, unsigned& attempted) {
         }
         const unsigned count = archive->Setup().player_count;
         auto& battle = app->run->battle;
-        const auto menu = multiplayer::InputLanes::AdvanceHistory(
-            battle, frame->data(), count);
-        app->run->playback_input = []() -> const th13::GameInput* {
-                return &app->run->battle.seat_inputs[0];
-            };
+        const auto menu = multiplayer::InputLanes::AdvanceHistory(battle, frame->data(), count);
+        app->run->playback_input = []() -> const th13::GameInput* { return &app->run->battle.seat_inputs[0]; };
         ++attempted;
         if (!app->update(menu, false) || !app->commit(fps)) return false;
         ++mp_playback_frame;
@@ -604,11 +596,11 @@ bool mp_tick_playback(float fps, unsigned& simulated, unsigned& attempted) {
         // A transition belongs to this input frame, even in a seek/rate batch.
         // Present/apply it before consuming another input, as the live path does.
         if (app->pending_load || app->pending_destination >= 0) break;
-        if (seeking && std::chrono::duration<double, std::milli>(
-                std::chrono::steady_clock::now() - begin).count() >= 6.0) break;
+        if (seeking &&
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - begin).count() >= 6.0)
+            break;
     }
-    if (seeking && mp_playback_frame >= mp_playback_seek_target)
-        mp_playback_seek_target = Netplay::INVALID_FRAME;
+    if (seeking && mp_playback_frame >= mp_playback_seek_target) mp_playback_seek_target = Netplay::INVALID_FRAME;
     return app->present();
 }
 
@@ -619,8 +611,7 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
     if (!app) return false;
     const auto tick_started = std::chrono::steady_clock::now();
     const auto elapsed_ms = [&]() {
-        return std::chrono::duration<double, std::milli>(
-            std::chrono::steady_clock::now() - tick_started).count();
+        return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tick_started).count();
     };
     // The work budget keeps a 60 Hz display on time. When the display already
     // runs slower, the original loop spends the gap on logic frames and skips
@@ -628,8 +619,7 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
     // It never exceeds the gap: a frame that itself costs more than one tick
     // slows the game instead of scheduling an ever-longer callback.
     const double display_ms = mp_display_interval_ms > 0 ? mp_display_interval_ms : 16.7;
-    const double kMpCallbackBudgetMs = mp_slowdown_enabled
-        ? std::clamp(display_ms * .75, 11.5, 500.) : 11.5;
+    const double kMpCallbackBudgetMs = mp_slowdown_enabled ? std::clamp(display_ms * .75, 11.5, 500.) : 11.5;
     const double kMpCatchupBudgetMs = kMpCallbackBudgetMs * (8.5 / 11.5);
     constexpr unsigned kMpMaxCatchupSteps = 120;
     struct LogicalDrawReset {
@@ -652,8 +642,7 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
     // the existing present-tail handoff before capturing a subsequent input;
     // otherwise those peers can wait for a frame that will never be sent.
     const auto terminal = multiplayer::complete_terminal_handoff(*app, multiplayer::session);
-    if (terminal != multiplayer::TerminalHandoff::NotReady)
-        return terminal == multiplayer::TerminalHandoff::Finished;
+    if (terminal != multiplayer::TerminalHandoff::NotReady) return terminal == multiplayer::TerminalHandoff::Finished;
     if (!multiplayer::session.Simulating()) {
         const SampledFrame sampled = sample_input();
         if (sampled.skip) return true;
@@ -669,21 +658,20 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
     const auto capture_due_input = [&]() {
         if (!mp_schedule.owed()) return true;
         const bool correcting = multiplayer::session.Correcting();
-        const auto frontier = correcting
-            ? multiplayer::session.Runtime().CorrectionEnd()
-            : multiplayer::session.SimFrame();
+        const auto frontier =
+            correcting ? multiplayer::session.Runtime().CorrectionEnd() : multiplayer::session.SimFrame();
         const auto capture = multiplayer::session.CaptureFrame();
         // The transition still simulates confirmed inputs only. Send due inputs
         // while earlier frames wait so consecutive frames can overlap in transit.
         // After activation, the regular capture rule drains the queued inputs.
-        const bool transition = !correcting && (app->stage_transition_loading ||
-            app->stage_transition_active || app->pending_destination == i32(Destination::NextStage));
-        if (capture > frontier && (!transition ||
-            capture - frontier >= multiplayer::SessionSetup::MaxRollbackFrames)) return true;
+        const bool transition = !correcting && (app->stage_transition_loading || app->stage_transition_active ||
+                                                app->pending_destination == i32(Destination::NextStage));
+        if (capture > frontier && (!transition || capture - frontier >= multiplayer::SessionSetup::MaxRollbackFrames))
+            return true;
         const auto sampled = sample_input();
         if (sampled.skip) return true;
-        if (!multiplayer::session.CaptureLocal(sampled.held,
-                static_cast<std::uint64_t>(emscripten_get_now()), sampled.touch)) {
+        if (!multiplayer::session.CaptureLocal(sampled.held, static_cast<std::uint64_t>(emscripten_get_now()),
+                                               sampled.touch)) {
             last_error = "MP input capture rejected controls " + std::to_string(sampled.held);
             return false;
         }
@@ -698,9 +686,9 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
     mp_network_wait = false;
     while (multiplayer::session.Correcting()) {
         if (!multiplayer::CompleteConfirmedStageHandoff(
-                app->pending_destination == i32(Destination::NextStage),
-                multiplayer::session.Committed(), multiplayer::session.SimFrame(),
-                [] { return app->apply_destination(); })) return false;
+                app->pending_destination == i32(Destination::NextStage), multiplayer::session.Committed(),
+                multiplayer::session.SimFrame(), [] { return app->apply_destination(); }))
+            return false;
         // 放行有副作用（远端注入/Record/checkpoint）；停等时本 tick 不再
         // 推进，留待下一 tick（纠正输入不足——罕见）。
         if (!multiplayer::session.CanSimulate()) {
@@ -711,9 +699,8 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
         const std::uint32_t before = multiplayer::session.SimFrame();
         const std::uint32_t corr_end = multiplayer::session.Runtime().CorrectionEnd();
         const bool more_replay = before + 1 < corr_end;
-        const bool will_run_forward = !more_replay &&
-            corr_end < multiplayer::session.CaptureFrame() &&
-            elapsed_ms() < kMpCallbackBudgetMs;
+        const bool will_run_forward =
+            !more_replay && corr_end < multiplayer::session.CaptureFrame() && elapsed_ms() < kMpCallbackBudgetMs;
         trace_applied_touch();
         ++attempted;
         ++rollback;
@@ -723,13 +710,15 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
         app->graphics.logical_drawing = false;
         if (!committed) return false;
         multiplayer::session.OnFrameSimulated();
-        if (multiplayer::session.SimFrame() == before) { last_error = "MP frame did not commit"; return false; }  // 落账被拒
+        if (multiplayer::session.SimFrame() == before) {
+            last_error = "MP frame did not commit";
+            return false;
+        }  // 落账被拒
         ++simulated;
         if (app->exiting) break;
         if (multiplayer::session.Correcting() && elapsed_ms() >= kMpCallbackBudgetMs) break;
     }
-    if (multiplayer::session.Correcting() && !mp_network_wait && !mp_tasks_remaining)
-        mp_tasks_remaining = 1;
+    if (multiplayer::session.Correcting() && !mp_network_wait && !mp_tasks_remaining) mp_tasks_remaining = 1;
     // A pending handoff may have been produced by the last predicted frame.
     // Pump can still correct it, but no later frame may cross its resource epoch.
     if (app->pending_destination >= 0 && !multiplayer::session.Correcting()) {
@@ -763,21 +752,24 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
         const std::uint32_t before = multiplayer::session.SimFrame();
         // A frame hands its image to a successor only when the successor is
         // affordable: the measured step cost, not the clock, bounds a callback.
-        const bool can_run_second = steps + 1 < max_steps &&
-            (before + 1 < multiplayer::session.CaptureFrame() || mp_schedule.owed() > 0) &&
+        const bool can_run_second =
+            steps + 1 < max_steps && (before + 1 < multiplayer::session.CaptureFrame() || mp_schedule.owed() > 0) &&
             step_started_ms < kMpCatchupBudgetMs &&
             (!mp_slowdown_enabled || step_started_ms + 2. * mp_step_cost_ms <= kMpCallbackBudgetMs);
         promised = can_run_second;
         trace_applied_touch();
         ++attempted;
         if (!app->update(multiplayer::session.MenuInput(), false)) return false;
-        app->graphics.logical_drawing = can_logical_draw() &&
-            can_run_second && app->pending_load == 0 && app->pending_destination < 0;
+        app->graphics.logical_drawing =
+            can_logical_draw() && can_run_second && app->pending_load == 0 && app->pending_destination < 0;
         const bool committed = app->commit(fps);
         app->graphics.logical_drawing = false;
         if (!committed) return false;
         multiplayer::session.OnFrameSimulated();
-        if (multiplayer::session.SimFrame() == before) { last_error = "MP frame did not commit"; return false; }  // 落账被拒
+        if (multiplayer::session.SimFrame() == before) {
+            last_error = "MP frame did not commit";
+            return false;
+        }  // 落账被拒
         ++steps;
         ++simulated;
         mp_step_cost_ms += (elapsed_ms() - step_started_ms - mp_step_cost_ms) * .25;
@@ -788,9 +780,9 @@ bool mp_tick(float fps, unsigned& simulated, unsigned& attempted, unsigned& roll
     {
         auto& runtime = multiplayer::session.Runtime();
         if (!multiplayer::session.Spectator())
-            runtime.PublishSpectator(multiplayer::session.ConfirmedThrough(),
-                multiplayer::session.SimFrame() ? multiplayer::session.SimFrame() - 1
-                                               : Netplay::INVALID_FRAME);
+            runtime.PublishSpectator(multiplayer::session.ConfirmedThrough(), multiplayer::session.SimFrame()
+                                                                                  ? multiplayer::session.SimFrame() - 1
+                                                                                  : Netplay::INVALID_FRAME);
     }
     // Replay prepares the real draw state for every historical frame, but a
     // budget yield must not replace the last forward image with that history.
@@ -807,8 +799,11 @@ bool drive_one_frame(double delta, unsigned source = 0) {
     const double begin = emscripten_get_now();
     const double current_sequence = ++work_sequence;
     const int stage = app->progress.stage;
-    const int phase = suspended ? 3 : app->loading_waiting() ? 2 :
-        app->pause && app->pause->active() ? 4 : app->run ? 0 : 1;
+    const int phase = suspended                            ? 3
+                      : app->loading_waiting()             ? 2
+                      : app->pause && app->pause->active() ? 4
+                      : app->run                           ? 0
+                                                           : 1;
     const auto before_presentations = app->graphics.backend.stats.presentations;
     const auto before_restores = multiplayer::session.Restores();
     unsigned simulated = 0, attempted = 0, rollback = 0;
@@ -816,12 +811,11 @@ bool drive_one_frame(double delta, unsigned source = 0) {
     const auto finish = [&](bool result, bool ok) {
         const auto presentations = app->graphics.backend.stats.presentations - before_presentations;
         const auto after_restores = multiplayer::session.Restores();
-        const unsigned restores = after_restores >= before_restores
-            ? after_restores - before_restores : after_restores;
+        const unsigned restores = after_restores >= before_restores ? after_restores - before_restores : after_restores;
         const int end_stage = app->progress.stage;
         const double end = emscripten_get_now();
-        th13_browser_work_frame(current_sequence, begin, end, stage, end_stage,
-                                phase, source, attempted, rollback, restores, presentations, presentation_at, ok);
+        th13_browser_work_frame(current_sequence, begin, end, stage, end_stage, phase, source, attempted, rollback,
+                                restores, presentations, presentation_at, ok);
         return result;
     };
     if (suspended) {
@@ -839,8 +833,8 @@ bool drive_one_frame(double delta, unsigned source = 0) {
         app->audio_device.pump();
         return finish(true, true);
     }
-    const bool live_mp = multiplayer::session.Active() && multiplayer::session.Simulating()
-        && !multiplayer::session.Spectator() && !mp_playback_pending;
+    const bool live_mp = multiplayer::session.Active() && multiplayer::session.Simulating() &&
+                         !multiplayer::session.Spectator() && !mp_playback_pending;
     if (live_mp != frame_meter_live) {
         frame_meter_live = live_mp;
         mp_schedule.take_completed();
@@ -850,9 +844,9 @@ bool drive_one_frame(double delta, unsigned source = 0) {
     if (display_callback) last_display_callback_ms = begin;
     // 手动泵（source=3）只在显示回调停摆超过 kDisplayStaleMs 时接管呈现；
     // 异步工作泵（source=2）只花已有信用，不提交。
-    const bool presents = display_callback ||
-        (source == 3 && (last_display_callback_ms < 0 ||
-                         begin - last_display_callback_ms > kDisplayStaleMs));
+    const bool presents =
+        display_callback ||
+        (source == 3 && (last_display_callback_ms < 0 || begin - last_display_callback_ms > kDisplayStaleMs));
     if (presents) {
         sample_presentation_rate(begin);
         frame_meter.sample(live_mp ? mp_schedule.credit() : cadence.debt);
@@ -863,23 +857,24 @@ bool drive_one_frame(double delta, unsigned source = 0) {
         if (source == 1) {
             if (mp_display_last_ms >= 0) {
                 const double gap = std::min(begin - mp_display_last_ms, 1000.);
-                mp_display_interval_ms = mp_display_interval_ms > 0
-                    ? mp_display_interval_ms + (gap - mp_display_interval_ms) * .25 : gap;
+                mp_display_interval_ms =
+                    mp_display_interval_ms > 0 ? mp_display_interval_ms + (gap - mp_display_interval_ms) * .25 : gap;
             }
             mp_display_last_ms = begin;
         }
-        multiplayer::session.TraceTiming("callback", multiplayer::session.SimFrame(),
-                                        mp_schedule.owed(), source);
+        multiplayer::session.TraceTiming("callback", multiplayer::session.SimFrame(), mp_schedule.owed(), source);
         double scale = multiplayer::session.IntervalScale();
         if (!(std::isfinite(scale) && scale > 0)) scale = 1.;
         if (mp_slowdown_enabled)
             scale = std::max(scale, mp_governor.update(multiplayer::SlowdownGovernor::depth_of(
-                multiplayer::session.SimFrame(), multiplayer::session.ConfirmedThrough())));
-        if (mp_slowdown_enabled) mp_schedule.advance_gap(delta / scale);
-        else mp_schedule.advance(delta / scale);
-        multiplayer::session.TraceTiming("clock-due", multiplayer::session.SimFrame(),
-                                        mp_schedule.owed(), multiplayer::session.CaptureFrame());
-        ticks = 1; // Also service corrections and confirmations without new clock credit.
+                                        multiplayer::session.SimFrame(), multiplayer::session.ConfirmedThrough())));
+        if (mp_slowdown_enabled)
+            mp_schedule.advance_gap(delta / scale);
+        else
+            mp_schedule.advance(delta / scale);
+        multiplayer::session.TraceTiming("clock-due", multiplayer::session.SimFrame(), mp_schedule.owed(),
+                                         multiplayer::session.CaptureFrame());
+        ticks = 1;  // Also service corrections and confirmations without new clock credit.
     } else {
         ticks = cadence.advance(delta);
     }
@@ -890,7 +885,10 @@ bool drive_one_frame(double delta, unsigned source = 0) {
     for (; executed < ticks && ok; executed++) {
         ok = mp_active ? mp_tick(frame_meter.fps, simulated, attempted, rollback)
                        : sample_and_tick(frame_meter.fps, &attempted);
-        if (app->exiting || app->pending_load) { ++executed; break; }
+        if (app->exiting || app->pending_load) {
+            ++executed;
+            break;
+        }
     }
     frame_meter.frame(live_mp ? mp_schedule.take_completed() : executed);
     // The readout counts fresh frames reaching the display: a repeated
@@ -910,11 +908,10 @@ bool drive_one_frame(double delta, unsigned source = 0) {
     app->audio_device.pump();
     // MP：ticks 参数 = 本帧实际模拟帧数（追帧 + 新进度）；非 MP 保持原值
     //（cadence 逻辑 tick 数）。
-    th13_browser_frame(ok ? 1 : 0, emscripten_get_now() - begin,
-                       mp_active ? simulated : ticks);
+    th13_browser_frame(ok ? 1 : 0, emscripten_get_now() - begin, mp_active ? simulated : ticks);
     if (live_mp)
-        multiplayer::session.TraceTiming("callback-end", multiplayer::session.SimFrame(),
-                                        simulated, mp_schedule.owed());
+        multiplayer::session.TraceTiming("callback-end", multiplayer::session.SimFrame(), simulated,
+                                         mp_schedule.owed());
     if (!ok || app->exiting) running = false;
     if (live_mp) queue_mp_work();
     return finish(running, ok);
@@ -922,41 +919,42 @@ bool drive_one_frame(double delta, unsigned source = 0) {
 
 namespace {
 void queue_mp_work(bool received) {
-    if (!running || suspended || !app || app->exiting || app->pending_load ||
-        app->loading_waiting() || !multiplayer::session.Simulating() ||
-        mp_playback_pending || multiplayer::session.Spectator() || mp_work_queued ||
-        (!received && (mp_network_wait || (!mp_schedule.has_work() &&
-            !multiplayer::session.Correcting() &&
-            multiplayer::session.SimFrame() >= multiplayer::session.CaptureFrame()))) ||
-        (!received && !mp_tasks_remaining)) return;
+    if (!running || suspended || !app || app->exiting || app->pending_load || app->loading_waiting() ||
+        !multiplayer::session.Simulating() || mp_playback_pending || multiplayer::session.Spectator() ||
+        mp_work_queued ||
+        (!received && (mp_network_wait || (!mp_schedule.has_work() && !multiplayer::session.Correcting() &&
+                                           multiplayer::session.SimFrame() >= multiplayer::session.CaptureFrame()))) ||
+        (!received && !mp_tasks_remaining))
+        return;
     mp_work_queued = true;
     const auto ticket = ++mp_work_ticket;
-    multiplayer::session.TraceTiming("wake-queued", multiplayer::session.SimFrame(),
-                                    ticket, received ? 1u : 0u);
-    emscripten_async_call([](void* value) {
-        if (u32(uintptr_t(value)) != mp_work_ticket) return;
-        mp_work_queued = false;
-        if (!running || suspended || !app || app->exiting || app->pending_load ||
-            app->loading_waiting() || !multiplayer::session.Active() ||
-            !multiplayer::session.Simulating() || multiplayer::session.Spectator() ||
-            mp_playback_pending) return;
-        if (mp_tasks_remaining) --mp_tasks_remaining;
-        // Only display callbacks turn elapsed time into fresh frames: the time
-        // since the last rAF stays on the clock for the next one. This callback
-        // spends credit the display callback already earned (catch-up,
-        // corrections, confirmations), so steady-state forward frames and
-        // their input samples stay vsync-aligned.
-        drive_one_frame(0, 2);
-    }, reinterpret_cast<void*>(uintptr_t(ticket)), 0);
+    multiplayer::session.TraceTiming("wake-queued", multiplayer::session.SimFrame(), ticket, received ? 1u : 0u);
+    emscripten_async_call(
+        [](void* value) {
+            if (u32(uintptr_t(value)) != mp_work_ticket) return;
+            mp_work_queued = false;
+            if (!running || suspended || !app || app->exiting || app->pending_load || app->loading_waiting() ||
+                !multiplayer::session.Active() || !multiplayer::session.Simulating() ||
+                multiplayer::session.Spectator() || mp_playback_pending)
+                return;
+            if (mp_tasks_remaining) --mp_tasks_remaining;
+            // Only display callbacks turn elapsed time into fresh frames: the time
+            // since the last rAF stays on the clock for the next one. This callback
+            // spends credit the display callback already earned (catch-up,
+            // corrections, confirmations), so steady-state forward frames and
+            // their input samples stay vsync-aligned.
+            drive_one_frame(0, 2);
+        },
+        reinterpret_cast<void*>(uintptr_t(ticket)), 0);
 }
-}
+}  // namespace
 
 // MP 导出入口（MultiplayerExports.cpp 的 th13_mp_run_frame 转发）：页面以
 // 毫秒墙钟驱动同一帧体。running/app 未就绪返回 0。
 int mp_run_frame(double delta_ms) {
     if (!running || !app) return 0;
     if (!std::isfinite(delta_ms) || delta_ms < 0.0) return 0;
-    mp_clock.elapsed(emscripten_get_now()); // Explicit delta owns elapsed time up to now.
+    mp_clock.elapsed(emscripten_get_now());  // Explicit delta owns elapsed time up to now.
     return drive_one_frame(delta_ms / 1000.0, 3) ? 1 : 0;
 }
 
@@ -975,7 +973,10 @@ void reset_mp_accumulator() {
     mp_work_queued = false;
     mp_tasks_remaining = 0;
     mp_network_wait = false;
-    for (auto& key : keyboard_map) { key.pending.clear(); key.managed = false; }
+    for (auto& key : keyboard_map) {
+        key.pending.clear();
+        key.managed = false;
+    }
 }
 }  // namespace th13::sdl
 
@@ -1013,7 +1014,10 @@ std::vector<std::uint8_t> mp_base64_decode(const char* text) {
     for (const char* p = text; *p; ++p) {
         if (*p == '=' || *p == '\n' || *p == '\r') continue;
         const int digit = value(*p);
-        if (digit < 0) { out.clear(); return out; }
+        if (digit < 0) {
+            out.clear();
+            return out;
+        }
         buffer = buffer << 6 | digit;
         bits += 6;
         if (bits >= 8) {
@@ -1047,8 +1051,7 @@ EMSCRIPTEN_KEEPALIVE int th13_draw_startup(unsigned frames) {
         // 共享外壳的启动品牌动画期间推进装载 ANM（独立时钟），最多 120 帧。
         if (!app || running) return 0;
         for (unsigned frame = 0; frame < std::min(frames, 120u); ++frame) {
-            if (!app->loading_animations.update(false) || !app->loading_animations.update(true))
-                return 0;
+            if (!app->loading_animations.update(false) || !app->loading_animations.update(true)) return 0;
             ++app->loading_frames;
         }
         return app->render_loading();
@@ -1060,29 +1063,30 @@ EMSCRIPTEN_KEEPALIVE int th13_initialize() {
     using namespace th13::sdl;
     LoadingWork work(5);  // th13_initialize
     const int result = [&]() -> int {
-    if (running) return 1;
-    clear_inputs();
-    if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK)) {
-        last_error = SDL_GetError();
-        return 0;
-    }
-    initialize_controller();
-    if (!app || !app->platform_prepared || app->initialized) {
-        work.replacing_app();
-        app = std::make_unique<ApplicationState>();
-        app->graphics.render_scale = render_scale;
-    }
-    if (!app->initialize(true)) {
-        last_error = app->failure;
-        work.replacing_app();
-        app.reset();
-        return 0;
-    }
-    app->graphics.release_startup_branding();
-    for (auto& key : keyboard_map) key.native = SDL_GetScancodeFromName(key.sdl);
-    previous_frame = -1;
-    reset_cadence();
-    return 1;
+        if (running) return 1;
+        clear_inputs();
+        if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK)) {
+            last_error = SDL_GetError();
+            return 0;
+        }
+        initialize_controller();
+        if (!app || !app->platform_prepared || app->initialized) {
+            work.replacing_app();
+            app = std::make_unique<ApplicationState>();
+            app->graphics.render_scale = render_scale;
+        }
+        if (!app->initialize(true)) {
+            last_error = app->failure;
+            work.replacing_app();
+            app.reset();
+            return 0;
+        }
+        app->graphics.release_startup_branding();
+        for (auto& key : keyboard_map)
+            key.native = SDL_GetScancodeFromName(key.sdl);
+        previous_frame = -1;
+        reset_cadence();
+        return 1;
     }();
     return work.finish(result, result != 0);
 }
@@ -1108,9 +1112,7 @@ EMSCRIPTEN_KEEPALIVE const char* th13_error() {
 }
 
 // ?glDebug=1：每次提交后查询一次 GL 错误码，变化时写入 stderr（页面日志）。
-EMSCRIPTEN_KEEPALIVE void th13_debug_gl_checks(int enabled) {
-    sdl_gl_checks(enabled);
-}
+EMSCRIPTEN_KEEPALIVE void th13_debug_gl_checks(int enabled) { sdl_gl_checks(enabled); }
 
 EMSCRIPTEN_KEEPALIVE unsigned th13_phase() {
     using namespace th13::sdl;
@@ -1122,10 +1124,10 @@ EMSCRIPTEN_KEEPALIVE int th13_room_preview() {
     using namespace th13::sdl;
     LoadingWork work(7);  // th13_room_preview
     const int result = [&]() -> int {
-    if (running || !app || !app->initialized || !app->title || mp_started) return 0;
-    clear_inputs();
-    mp_room_preview = true;
-    return app->commit(60.f) && app->present();
+        if (running || !app || !app->initialized || !app->title || mp_started) return 0;
+        clear_inputs();
+        mp_room_preview = true;
+        return app->commit(60.f) && app->present();
     }();
     return work.finish(result, result != 0);
 }
@@ -1133,42 +1135,36 @@ EMSCRIPTEN_KEEPALIVE int th13_room_preview() {
 EMSCRIPTEN_KEEPALIVE int th13_room_return_ready() {
     using namespace th13::sdl;
     return app && mp_started && !mp_spectator_mode && !th13::multiplayer::session.Simulating() &&
-        (app->exiting || (!app->run && !app->ending && app->title &&
-                         app->title->state.screen == th13::TitleScreen::Main));
+           (app->exiting ||
+            (!app->run && !app->ending && app->title && app->title->state.screen == th13::TitleScreen::Main));
 }
 
 EMSCRIPTEN_KEEPALIVE int th13_room_return() {
     using namespace th13::sdl;
     LoadingWork work(9);  // th13_room_return
     const int result = [&]() -> int {
-    if (running || !app || !app->initialized || th13::multiplayer::session.Simulating()) return 0;
-    th13::multiplayer::session.Stop(true);
-    mp_started = false;
-    clear_inputs();
-    app->exiting = false;
-    app->pending_destination = -1;
-    if (!app->begin_title(1)) return 0;
-    mp_room_preview = true;
-    return 1;
+        if (running || !app || !app->initialized || th13::multiplayer::session.Simulating()) return 0;
+        th13::multiplayer::session.Stop(true);
+        mp_started = false;
+        clear_inputs();
+        app->exiting = false;
+        app->pending_destination = -1;
+        if (!app->begin_title(1)) return 0;
+        mp_room_preview = true;
+        return 1;
     }();
     return work.finish(result, result != 0);
 }
 
 // 只读呈现率埋点（诊断面）：每秒到达显示的新帧数，供 vsync 探针核对；
 // 不参与任何生产判定。
-EMSCRIPTEN_KEEPALIVE float th13_debug_presentation_fps() {
-    return th13::sdl::presentation_fps;
-}
+EMSCRIPTEN_KEEPALIVE float th13_debug_presentation_fps() { return th13::sdl::presentation_fps; }
 
 // 右下角 fps 文本的数据源：原作 0x424990 口径的逻辑帧率。
-EMSCRIPTEN_KEEPALIVE float th13_debug_frame_rate() {
-    return th13::sdl::frame_meter.fps;
-}
+EMSCRIPTEN_KEEPALIVE float th13_debug_frame_rate() { return th13::sdl::frame_meter.fps; }
 
 EMSCRIPTEN_KEEPALIVE unsigned th13_frame() { return th13::sdl::app ? th13::sdl::app->frames : 0; }
-EMSCRIPTEN_KEEPALIVE unsigned th13_boot_seed() {
-    return th13::sdl::app ? th13::sdl::app->boot_seed : 0;
-}
+EMSCRIPTEN_KEEPALIVE unsigned th13_boot_seed() { return th13::sdl::app ? th13::sdl::app->boot_seed : 0; }
 
 // 捕获 harness：把 FPS 文本颜色钉到原生 oracle 的实测 fps（≈0.1）。
 // 只影响 FPS 文本颜色，不参与 core/RNG/audio/游戏逻辑；生产路径不调用。
@@ -1186,9 +1182,7 @@ EMSCRIPTEN_KEEPALIVE unsigned th13_run_mode_flags() {
     return th13::sdl::app ? unsigned(th13::sdl::app->progress.run_mode_flags) : 0u;
 }
 
-EMSCRIPTEN_KEEPALIVE int th13_practice_mode() {
-    return th13::sdl::app ? th13::sdl::app->progress.practice_mode : 0;
-}
+EMSCRIPTEN_KEEPALIVE int th13_practice_mode() { return th13::sdl::app ? th13::sdl::app->progress.practice_mode : 0; }
 
 EMSCRIPTEN_KEEPALIVE const int* th13_probe_state() {
     using namespace th13::sdl;
@@ -1210,8 +1204,8 @@ EMSCRIPTEN_KEEPALIVE void th13_key(unsigned scan, unsigned down) {
             if (key.vk < 256) keys[key.vk] = true;
             if (key.vk >= 160 && key.vk <= 165) keys[16 + (key.vk - 160) / 2] = true;
             if (key.scan == 28 || key.scan == 156) keys[13] = true;
-            th13::multiplayer::session.TraceTiming("device-map",
-                th13::multiplayer::session.CaptureFrame(), th13::keyboard_keys(keys), (scan << 1) | !!down);
+            th13::multiplayer::session.TraceTiming("device-map", th13::multiplayer::session.CaptureFrame(),
+                                                   th13::keyboard_keys(keys), (scan << 1) | !!down);
         }
     }
 }
@@ -1223,8 +1217,7 @@ EMSCRIPTEN_KEEPALIVE void th13_key(unsigned scan, unsigned down) {
 // th13_key/物理采样路径——单一 GameInput 语义；seat>=1 走本接口）。
 // th13_debug_mp_seat_state：读席位玩家面（x/y/phase/invulnerable/bombs/
 // lives/power），供浏览器 case 断言逐席独立性。
-EMSCRIPTEN_KEEPALIVE int th13_debug_mp_seats(int count, int c0, int c1, int c2,
-                                            int local_seat) {
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_seats(int count, int c0, int c1, int c2, int local_seat) {
     using namespace th13::sdl;
     if (!app || !app->initialized) return 0;
     if (count != 0 && (count < 2 || count > 3)) return 0;
@@ -1237,8 +1230,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_seats(int count, int c0, int c1, int c2,
 
 EMSCRIPTEN_KEEPALIVE int th13_debug_mp_seat_input(int seat, unsigned held) {
     using namespace th13::sdl;
-    if (!app || !app->run || seat <= 0 || seat >= int(app->run->battle.seat_inputs.size()))
-        return 0;
+    if (!app || !app->run || seat <= 0 || seat >= int(app->run->battle.seat_inputs.size())) return 0;
     app->run->battle.seat_inputs[size_t(seat)].update(held);
     return 1;
 }
@@ -1248,8 +1240,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_seat_input(int seat, unsigned held) {
 EMSCRIPTEN_KEEPALIVE int th13_debug_mp_trance_slot(int value) {
     using namespace th13::sdl;
     if (!app || !app->run) return -1;
-    auto& progress = app->run->battle.sim.session ? *app->run->battle.sim.session
-                                                  : app->progress;
+    auto& progress = app->run->battle.sim.session ? *app->run->battle.sim.session : app->progress;
     if (value >= 0) progress.ending_points = value;
     return progress.ending_points;
 }
@@ -1267,11 +1258,9 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_trance_state() {
     std::snprintf(buffer, sizeof buffer,
                   "{\"mode\":%d,\"owner\":%d,\"generation\":%u,\"slot\":%d,"
                   "\"active\":%d,\"seat_count\":%d,\"ghosts\":%d}",
-                  int(battle.trance_mode), battle.trance_owner_seat,
-                  battle.trance_generation,
-                  battle.sim.session ? battle.sim.session->ending_points : 0,
-                  battle.team_trance_active() ? 1 : 0, battle.seat_count,
-                  battle.ghost_count());
+                  int(battle.trance_mode), battle.trance_owner_seat, battle.trance_generation,
+                  battle.sim.session ? battle.sim.session->ending_points : 0, battle.team_trance_active() ? 1 : 0,
+                  battle.seat_count, battle.ghost_count());
     report = buffer;
     return report.c_str();
 }
@@ -1297,11 +1286,9 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_seat_state(int seat) {
                   "\"invulnerable\":%d,\"dead\":%d,\"shots\":%zu,\"bombs\":%d,"
                   "\"extra_lives\":%d,\"power\":%d,\"character\":%d,\"seat_count\":%d,"
                   "\"ghost\":%d,\"deaths\":%d}",
-                  seat, state.x, state.y, int(state.phase), state.phase_frame,
-                  state.invulnerable, int(state.dead), state.shots.size(),
-                  hud ? hud->bombs : -1, hud ? hud->extra_lives : -1,
-                  hud ? hud->power : -1, state.character,
-                  battle.seat_count, int(state.ghost), hud ? hud->deaths : 0);
+                  seat, state.x, state.y, int(state.phase), state.phase_frame, state.invulnerable, int(state.dead),
+                  state.shots.size(), hud ? hud->bombs : -1, hud ? hud->extra_lives : -1, hud ? hud->power : -1,
+                  state.character, battle.seat_count, int(state.ghost), hud ? hud->deaths : 0);
     report = buffer;
     return report.c_str();
 }
@@ -1327,7 +1314,8 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_net_configure(const char* words_json) {
     // 简式解析：逗号分隔的十进制数（测试侧生成；非生产面）。
     const char* p = words_json;
     while (*p) {
-        while (*p == ' ' || *p == ',' || *p == '[' || *p == ']') ++p;
+        while (*p == ' ' || *p == ',' || *p == '[' || *p == ']')
+            ++p;
         if (!*p) break;
         char* end = nullptr;
         const unsigned long value = std::strtoul(p, &end, 10);
@@ -1335,8 +1323,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_net_configure(const char* words_json) {
         words.push_back(unsigned(value));
         p = end;
     }
-    if (!th13::multiplayer::session.Configure(words.data(), words.size()))
-        return 0;
+    if (!th13::multiplayer::session.Configure(words.data(), words.size())) return 0;
     // P2：新会话从零开始时间同步累积（Stop 由 Session 内部清零；此处覆盖
     // 会话间 Configure 的边界）。
     th13::sdl::reset_mp_accumulator();
@@ -1345,10 +1332,8 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_net_configure(const char* words_json) {
     // Active() 门未过——BindWorld/playback_input/音频观察器全缺）。
     if (app && app->run && app->mp_seat_count >= 2) {
         th13::multiplayer::session.capture_host = [] { return app->capture_multiplayer_host(); };
-        th13::multiplayer::session.TryBindWorld(&app->run->battle, &app->visual,
-                                                app->run->presentation.get(),
-                                                app->run.get(),
-                                                &app->mp_transition_handle_);
+        th13::multiplayer::session.TryBindWorld(&app->run->battle, &app->visual, app->run->presentation.get(),
+                                                app->run.get(), &app->mp_transition_handle_);
         app->run->playback_input = []() -> const th13::GameInput* {
             return th13::multiplayer::session.LocalDelayedInput();
         };
@@ -1379,8 +1364,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_net_ready() {
 
 EMSCRIPTEN_KEEPALIVE int th13_debug_mp_net_capture(unsigned held, double now_ms) {
     using namespace th13::sdl;
-    if (!th13::multiplayer::session.CaptureLocal(held, std::uint64_t(now_ms)))
-        return 0;
+    if (!th13::multiplayer::session.CaptureLocal(held, std::uint64_t(now_ms))) return 0;
     // 采集相位推进：本帧已采集，下一游戏帧采下一帧输入（Start 启动后
     // 每游戏帧恰一次——与回放 replay_take_input 的逐帧消费同拍）。
     th13::multiplayer::session.AdvanceCapturePhase();
@@ -1407,48 +1391,43 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_net_rollback() {
     // 实例 = Session::runtime_ 的只读镜像——本文件不直连 runtime_）。
     const auto digest_stats = th13::multiplayer::NetplayRuntime::DebugDigestStats();
     char buffer[1400];
-    std::snprintf(buffer, sizeof buffer,
-                  "{\"restores\":%u,\"resimulated\":%u,\"checkpoints\":%u,"
-                  "\"committed\":%u,\"maxDistance\":%u,\"rollback_pending\":%d,"
-                  "\"records\":%zu,\"audio_pending\":%zu,\"last_error\":%d,"
-                  "\"sfx_suppressed\":%llu,\"music_deferred\":%llu,"
-                  "\"music_dropped\":%llu,\"voice_captured\":%llu,"
-                  "\"music_captured\":%llu,\"voice_applied\":%llu,"
-                  "\"music_applied\":%llu,"
-                  "\"desync_detected\":%llu,\"digests_sent\":%llu,"
-                  "\"digests_received\":%llu,"
-                  "\"capture_us_max\":%llu,\"capture_us_sum\":%llu,"
-                  "\"capture_us_count\":%llu,"
-                  "\"restore_us_max\":%llu,\"restore_us_sum\":%llu,"
-                  "\"update_us_max\":%llu,\"update_us_sum\":%llu,"
-                  "\"update_us_count\":%llu,\"resim_us_sum\":%llu,"
-                  "\"rollback_distance_sum\":%llu,\"stall_frames\":%llu}",
-                  session.Restores(), session.Resimulated(), session.Checkpoints(),
-                  session.Committed(), session.MaxRollbackDistance(),
-                  session.HasRollbackRequest() ? 1 : 0,
-                  session.RecordCount(), session.AudioOut().size(),
-                  session.LastRollbackFailed() ? 1 : 0,
-                  static_cast<unsigned long long>(session.SfxSuppressed()),
-                  static_cast<unsigned long long>(session.MusicDeferred()),
-                  static_cast<unsigned long long>(session.MusicDropped()),
-                  static_cast<unsigned long long>(session.VoiceCaptured()),
-                  static_cast<unsigned long long>(session.MusicCaptured()),
-                  static_cast<unsigned long long>(session.VoiceApplied()),
-                  static_cast<unsigned long long>(session.MusicApplied()),
-                  static_cast<unsigned long long>(digest_stats.desync),
-                  static_cast<unsigned long long>(digest_stats.sent),
-                  static_cast<unsigned long long>(digest_stats.received),
-                  static_cast<unsigned long long>(session.CaptureUsMax()),
-                  static_cast<unsigned long long>(session.CaptureUsSum()),
-                  static_cast<unsigned long long>(session.CaptureUsCount()),
-                  static_cast<unsigned long long>(session.RestoreUsMax()),
-                  static_cast<unsigned long long>(session.RestoreUsSum()),
-                  static_cast<unsigned long long>(session.UpdateUsMax()),
-                  static_cast<unsigned long long>(session.UpdateUsSum()),
-                  static_cast<unsigned long long>(session.UpdateUsCount()),
-                  static_cast<unsigned long long>(session.ResimUsSum()),
-                  static_cast<unsigned long long>(session.RollbackDistanceSum()),
-                  static_cast<unsigned long long>(session.StallFrames()));
+    std::snprintf(
+        buffer, sizeof buffer,
+        "{\"restores\":%u,\"resimulated\":%u,\"checkpoints\":%u,"
+        "\"committed\":%u,\"maxDistance\":%u,\"rollback_pending\":%d,"
+        "\"records\":%zu,\"audio_pending\":%zu,\"last_error\":%d,"
+        "\"sfx_suppressed\":%llu,\"music_deferred\":%llu,"
+        "\"music_dropped\":%llu,\"voice_captured\":%llu,"
+        "\"music_captured\":%llu,\"voice_applied\":%llu,"
+        "\"music_applied\":%llu,"
+        "\"desync_detected\":%llu,\"digests_sent\":%llu,"
+        "\"digests_received\":%llu,"
+        "\"capture_us_max\":%llu,\"capture_us_sum\":%llu,"
+        "\"capture_us_count\":%llu,"
+        "\"restore_us_max\":%llu,\"restore_us_sum\":%llu,"
+        "\"update_us_max\":%llu,\"update_us_sum\":%llu,"
+        "\"update_us_count\":%llu,\"resim_us_sum\":%llu,"
+        "\"rollback_distance_sum\":%llu,\"stall_frames\":%llu}",
+        session.Restores(), session.Resimulated(), session.Checkpoints(), session.Committed(),
+        session.MaxRollbackDistance(), session.HasRollbackRequest() ? 1 : 0, session.RecordCount(),
+        session.AudioOut().size(), session.LastRollbackFailed() ? 1 : 0,
+        static_cast<unsigned long long>(session.SfxSuppressed()),
+        static_cast<unsigned long long>(session.MusicDeferred()),
+        static_cast<unsigned long long>(session.MusicDropped()),
+        static_cast<unsigned long long>(session.VoiceCaptured()),
+        static_cast<unsigned long long>(session.MusicCaptured()),
+        static_cast<unsigned long long>(session.VoiceApplied()),
+        static_cast<unsigned long long>(session.MusicApplied()), static_cast<unsigned long long>(digest_stats.desync),
+        static_cast<unsigned long long>(digest_stats.sent), static_cast<unsigned long long>(digest_stats.received),
+        static_cast<unsigned long long>(session.CaptureUsMax()),
+        static_cast<unsigned long long>(session.CaptureUsSum()),
+        static_cast<unsigned long long>(session.CaptureUsCount()),
+        static_cast<unsigned long long>(session.RestoreUsMax()),
+        static_cast<unsigned long long>(session.RestoreUsSum()), static_cast<unsigned long long>(session.UpdateUsMax()),
+        static_cast<unsigned long long>(session.UpdateUsSum()),
+        static_cast<unsigned long long>(session.UpdateUsCount()), static_cast<unsigned long long>(session.ResimUsSum()),
+        static_cast<unsigned long long>(session.RollbackDistanceSum()),
+        static_cast<unsigned long long>(session.StallFrames()));
     report = buffer;
     return report.c_str();
 }
@@ -1458,7 +1437,8 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_host_state() {
     static std::string report;
     th13::multiplayer::HostState state;
     report = app && app->capture_multiplayer_host_state(state)
-        ? th13::multiplayer::WorldState::diagnostic_host_detail(state) : "";
+                 ? th13::multiplayer::WorldState::diagnostic_host_detail(state)
+                 : "";
     return report.c_str();
 }
 
@@ -1473,13 +1453,13 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_net_audio() {
     const auto& audio = th13::multiplayer::session.AudioOut();
     for (size_t index = 0; index < audio.size(); ++index) {
         const auto& event = audio[index].observation;
-        const char* kind = event.kind == AudioDevice::RequestObservation::Kind::Voice ? "voice"
-                         : event.kind == AudioDevice::RequestObservation::Kind::Stop ? "stop"
-                         : event.kind == AudioDevice::RequestObservation::Kind::Pan ? "pan" : "music";
+        const char* kind = event.kind == AudioDevice::RequestObservation::Kind::Voice  ? "voice"
+                           : event.kind == AudioDevice::RequestObservation::Kind::Stop ? "stop"
+                           : event.kind == AudioDevice::RequestObservation::Kind::Pan  ? "pan"
+                                                                                       : "music";
         if (index) report += ",";
-        report += "{\"kind\":\"" + std::string(kind) + "\",\"id\":" +
-                  std::to_string(event.id) + ",\"frame\":" +
-                  std::to_string(audio[index].frame) + "}";
+        report += "{\"kind\":\"" + std::string(kind) + "\",\"id\":" + std::to_string(event.id) +
+                  ",\"frame\":" + std::to_string(audio[index].frame) + "}";
     }
     report += "]";
     return report.c_str();
@@ -1500,18 +1480,17 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_net_audio_applied() {
     bool first = true;
     for (const auto& item : applied) {
         const auto& event = item.observation;
-        const char* kind = event.kind == AudioDevice::RequestObservation::Kind::Voice ? "voice"
-                         : event.kind == AudioDevice::RequestObservation::Kind::Stop ? "stop"
-                         : event.kind == AudioDevice::RequestObservation::Kind::Pan ? "pan" : "music";
+        const char* kind = event.kind == AudioDevice::RequestObservation::Kind::Voice  ? "voice"
+                           : event.kind == AudioDevice::RequestObservation::Kind::Stop ? "stop"
+                           : event.kind == AudioDevice::RequestObservation::Kind::Pan  ? "pan"
+                                                                                       : "music";
         if (!first) report += ",";
         first = false;
-        report += "{\"frame\":" + std::to_string(item.frame) +
-                  ",\"confirmed\":" + std::to_string(item.confirmed) +
-                  ",\"kind\":\"" + std::string(kind) + "\",\"id\":" +
-                  std::to_string(event.id) + ",\"value\":" +
-                  std::to_string(event.value) + ",\"positional\":" +
-                  (event.positional ? "true" : "false") + ",\"x\":" +
-                  std::to_string(event.x) + ",\"text\":\"" + event.text + "\"}";
+        report += "{\"frame\":" + std::to_string(item.frame) + ",\"confirmed\":" + std::to_string(item.confirmed) +
+                  ",\"kind\":\"" + std::string(kind) + "\",\"id\":" + std::to_string(event.id) +
+                  ",\"value\":" + std::to_string(event.value) +
+                  ",\"positional\":" + (event.positional ? "true" : "false") + ",\"x\":" + std::to_string(event.x) +
+                  ",\"text\":\"" + event.text + "\"}";
     }
     report += "]";
     return report.c_str();
@@ -1532,12 +1511,10 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_net_state() {
                   "\"local_seat\":%u,\"players\":%u,\"can_start\":%d,"
                   "\"connected\":%d,\"simulating\":%d,\"capture_frame\":%u,"
                   "\"stretch\":%.3f,\"run_released\":%d,\"error\":\"%s\"}",
-                  session.Active() ? 1 : 0, session.SimFrame(),
-                  session.ConfirmedThrough(), unsigned(session.LocalSeat()),
-                  session.PlayerCount(), session.CanStart() ? 1 : 0,
-                  session.Connected() ? 1 : 0, session.Simulating() ? 1 : 0,
-                  session.CaptureFrame(), mp_governor.stretch(),
-                  session.RunReleased() ? 1 : 0, session.Error());
+                  session.Active() ? 1 : 0, session.SimFrame(), session.ConfirmedThrough(),
+                  unsigned(session.LocalSeat()), session.PlayerCount(), session.CanStart() ? 1 : 0,
+                  session.Connected() ? 1 : 0, session.Simulating() ? 1 : 0, session.CaptureFrame(),
+                  mp_governor.stretch(), session.RunReleased() ? 1 : 0, session.Error());
     report = buffer;
     return report.c_str();
 }
@@ -1551,9 +1528,8 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_terminal() {
                   "{\"last_simulated\":%u,\"confirmed\":%u,\"acknowledged\":%u,"
                   "\"channel_active\":%d,\"retiring\":%d,\"released\":%d,"
                   "\"spectators_settled\":%d,\"started_ms\":%llu,\"release_ms\":%llu}",
-                  t.last_simulated, t.confirmed, t.acknowledged, t.channel_active ? 1 : 0,
-                  t.retiring ? 1 : 0, t.released ? 1 : 0, t.spectators_settled ? 1 : 0,
-                  static_cast<unsigned long long>(t.started_ms),
+                  t.last_simulated, t.confirmed, t.acknowledged, t.channel_active ? 1 : 0, t.retiring ? 1 : 0,
+                  t.released ? 1 : 0, t.spectators_settled ? 1 : 0, static_cast<unsigned long long>(t.started_ms),
                   static_cast<unsigned long long>(t.release_ms));
     report = buffer;
     return report.c_str();
@@ -1572,7 +1548,7 @@ std::unique_ptr<th13::multiplayer::WorldState> mp_world_snapshot;
 // 回放游标快照（capture 时带游标的会话在 restore 同步回滚）。
 th13::multiplayer::WorldState::ReplayView mp_replay_view;
 bool mp_replay_captured = false;
-}
+}  // namespace
 
 EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_snapshot_capture() {
     using namespace th13::sdl;
@@ -1592,9 +1568,8 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_snapshot_capture() {
         replay.finished = app->replay_finished;
         replay.input = app->replay_input;  // 输入沿状态机随游标一起回滚
     }
-    if (!mp_world_snapshot->capture(app->run->battle, app->visual,
-                                     is_replay ? &replay : nullptr,
-                                     app->run->presentation.get())) {
+    if (!mp_world_snapshot->capture(app->run->battle, app->visual, is_replay ? &replay : nullptr,
+                                    app->run->presentation.get())) {
         report = "{\"ok\":0,\"error\":\"capture failed\"}";
         return report.c_str();
     }
@@ -1605,10 +1580,8 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_snapshot_capture() {
         mp_replay_captured = false;
     }
     char buffer[96];
-    std::snprintf(buffer, sizeof buffer,
-                  "{\"ok\":1,\"digest\":\"%016llx\",\"retained\":%zu}",
-                  (unsigned long long)mp_world_snapshot->digest(),
-                  mp_world_snapshot->retained_bytes());
+    std::snprintf(buffer, sizeof buffer, "{\"ok\":1,\"digest\":\"%016llx\",\"retained\":%zu}",
+                  (unsigned long long)mp_world_snapshot->digest(), mp_world_snapshot->retained_bytes());
     report = buffer;
     return report.c_str();
 }
@@ -1624,14 +1597,12 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_snapshot_restore() {
     // 下一输入帧，而不是发散后的输入帧）。
     if (mp_replay_captured && app->replay_active && app->replay_cursor) {
         app->replay_consumed = mp_replay_view.consumed;
-        app->replay_cursor->restore_cursor(mp_replay_view.cursor_index,
-                                            mp_replay_view.cursor_eof);
+        app->replay_cursor->restore_cursor(mp_replay_view.cursor_index, mp_replay_view.cursor_eof);
         app->replay_finished = mp_replay_view.finished;
         app->replay_input = mp_replay_view.input;  // 沿状态机与游标同帧回滚
     }
-    if (!mp_world_snapshot->restore(app->run->battle, app->visual,
-                                     mp_replay_captured ? &mp_replay_view : nullptr,
-                                     app->run->presentation.get())) {
+    if (!mp_world_snapshot->restore(app->run->battle, app->visual, mp_replay_captured ? &mp_replay_view : nullptr,
+                                    app->run->presentation.get())) {
         report = "{\"ok\":0,\"error\":\"restore failed\"}";
         return report.c_str();
     }
@@ -1644,12 +1615,10 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_snapshot_restore() {
     // 这里重新 capture 实时权威态取 live digest；verified=1 且与 capture
     // 报告的 digest 相等才是「restore(S) 全等」的真实证据。
     th13::multiplayer::WorldState verify;
-    const bool live_ok = verify.capture(app->run->battle, app->visual, nullptr,
-                                        app->run->presentation.get());
+    const bool live_ok = verify.capture(app->run->battle, app->visual, nullptr, app->run->presentation.get());
     char buffer[96];
     std::snprintf(buffer, sizeof buffer, "{\"ok\":1,\"digest\":\"%016llx\",\"verified\":%d}",
-                  live_ok ? (unsigned long long)verify.digest() : 0ull,
-                  live_ok ? 1 : 0);
+                  live_ok ? (unsigned long long)verify.digest() : 0ull, live_ok ? 1 : 0);
     report = buffer;
     return report.c_str();
 }
@@ -1729,15 +1698,15 @@ std::string mp_report;
 }  // namespace
 // M9/P6 跨区块状态（定义在 th13::sdl 头部匿名块）的全局面导出：
 // 本 TU 的 debug/生产导出是全局自由函数，经 using 消费同名状态。
-using th13::sdl::mp_replay_loaded;
-using th13::sdl::mp_started;
-using th13::sdl::mp_playback_pending;
-using th13::sdl::mp_spectator_mode;
-using th13::sdl::mp_playback_frame;
-using th13::sdl::mp_playback_seek_target;
 using th13::sdl::mp_playback_chapter;
+using th13::sdl::mp_playback_frame;
 using th13::sdl::mp_playback_paused;
+using th13::sdl::mp_playback_pending;
 using th13::sdl::mp_playback_rate;
+using th13::sdl::mp_playback_seek_target;
+using th13::sdl::mp_replay_loaded;
+using th13::sdl::mp_spectator_mode;
+using th13::sdl::mp_started;
 
 EMSCRIPTEN_KEEPALIVE int th13_debug_mp_replay_begin(double timestamp) {
     using namespace th13::sdl;
@@ -1762,9 +1731,8 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_replay_begin(double timestamp) {
     return mp_replay_archive->Begin(setup, std::uint64_t(timestamp)) ? 1 : 0;
 }
 
-EMSCRIPTEN_KEEPALIVE int th13_debug_mp_replay_append(unsigned frame, unsigned stage,
-                                                      unsigned held0, unsigned held1,
-                                                      unsigned held2) {
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_replay_append(unsigned frame, unsigned stage, unsigned held0, unsigned held1,
+                                                     unsigned held2) {
     using namespace th13;
     if (!mp_replay_archive) return 0;
     Netplay::FrameInput inputs[3];
@@ -1781,17 +1749,17 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_replay_stage_entry(unsigned stage) {
     using namespace th13::sdl;
     if (!app || !app->run || !mp_replay_archive) return 0;
     th13::multiplayer::StageEntry entry;
-    entry.Capture(app->run->battle, app->progress, app->run->score_view(),
-                  app->game_random.seed(), app->game_random.index(),
-                  app->visual.seed(), app->visual.index());
+    entry.Capture(app->run->battle, app->progress, app->run->score_view(), app->game_random.seed(),
+                  app->game_random.index(), app->visual.seed(), app->visual.index());
     return mp_replay_archive->AppendStageEntry(stage, entry.Encode()) ? 1 : 0;
 }
 
-EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_replay_encode(const char* name,
-                                                              unsigned score,
-                                                              unsigned completed) {
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_replay_encode(const char* name, unsigned score, unsigned completed) {
     using namespace th13::sdl;
-    if (!mp_replay_archive) { mp_report = "{\"ok\":0}"; return mp_report.c_str(); }
+    if (!mp_replay_archive) {
+        mp_report = "{\"ok\":0}";
+        return mp_report.c_str();
+    }
     std::vector<std::uint8_t> wire;
     if (!mp_replay_archive->Encode(wire, name ? name : "mp", score, completed != 0)) {
         mp_report = "{\"ok\":0}";
@@ -1821,21 +1789,25 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_replay_load(const char* b64) {
 
 EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_replay_frame(unsigned frame) {
     using namespace th13;
-    if (!mp_replay_loaded) { mp_report = "{\"ok\":0}"; return mp_report.c_str(); }
+    if (!mp_replay_loaded) {
+        mp_report = "{\"ok\":0}";
+        return mp_report.c_str();
+    }
     const auto* decoded = mp_replay_loaded->FrameAt(frame);
-    if (!decoded) { mp_report = "{\"ok\":0}"; return mp_report.c_str(); }
+    if (!decoded) {
+        mp_report = "{\"ok\":0}";
+        return mp_report.c_str();
+    }
     mp_report = "{\"ok\":1,\"held\":[" + std::to_string(decoded->at(0).buttons) + "," +
-                std::to_string(decoded->at(1).buttons) + "," +
-                std::to_string(decoded->at(2).buttons) + "]}";
+                std::to_string(decoded->at(1).buttons) + "," + std::to_string(decoded->at(2).buttons) + "]}";
     return mp_report.c_str();
 }
 
 EMSCRIPTEN_KEEPALIVE int th13_debug_mp_stage_entry_capture() {
     using namespace th13::sdl;
     if (!app || !app->run) return 0;
-    mp_stage_entry.Capture(app->run->battle, app->progress, app->run->score_view(),
-                           app->game_random.seed(), app->game_random.index(),
-                           app->visual.seed(), app->visual.index());
+    mp_stage_entry.Capture(app->run->battle, app->progress, app->run->score_view(), app->game_random.seed(),
+                           app->game_random.index(), app->visual.seed(), app->visual.index());
     mp_stage_entry_valid = true;
     return 1;
 }
@@ -1845,8 +1817,8 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_stage_entry_restore() {
     if (!app || !app->run || !mp_stage_entry_valid) return 0;
     std::uint16_t gameSeed = 0, visualSeed = 0;
     std::uint32_t gameIndex = 0, visualIndex = 0;
-    mp_stage_entry.Restore(app->run->battle, app->progress, app->run->score_view(),
-                           gameSeed, gameIndex, visualSeed, visualIndex);
+    mp_stage_entry.Restore(app->run->battle, app->progress, app->run->score_view(), gameSeed, gameIndex, visualSeed,
+                           visualIndex);
     app->game_random.reseed_restore(gameSeed);
     app->game_random.set_index(gameIndex);
     app->visual.reseed_restore(visualSeed);
@@ -1898,8 +1870,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_spectator_begin_viewing() {
     return mp_spectator.BeginViewing(setup) ? 1 : 0;
 }
 
-EMSCRIPTEN_KEEPALIVE int th13_debug_mp_spectator_record(unsigned frame, unsigned stage,
-                                                        unsigned held0, unsigned held1,
+EMSCRIPTEN_KEEPALIVE int th13_debug_mp_spectator_record(unsigned frame, unsigned stage, unsigned held0, unsigned held1,
                                                         int with_entry) {
     using namespace th13::sdl;
     if (!app || !app->run) return 0;
@@ -1911,9 +1882,8 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_spectator_record(unsigned frame, unsigned
     const std::vector<std::uint8_t>* entry = nullptr;
     if (with_entry) {
         th13::multiplayer::StageEntry capture;
-        capture.Capture(app->run->battle, app->progress, app->run->score_view(),
-                        app->game_random.seed(), app->game_random.index(),
-                        app->visual.seed(), app->visual.index());
+        capture.Capture(app->run->battle, app->progress, app->run->score_view(), app->game_random.seed(),
+                        app->game_random.index(), app->visual.seed(), app->visual.index());
         static std::vector<std::uint8_t> entryBytes;
         entryBytes = capture.Encode();
         entry = &entryBytes;
@@ -1921,8 +1891,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_spectator_record(unsigned frame, unsigned
     return mp_spectator.RecordFrame(frame, stage, inputs, count, entry) ? 1 : 0;
 }
 
-EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_spectator_publish(unsigned confirmed,
-                                                                  unsigned simulated) {
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_spectator_publish(unsigned confirmed, unsigned simulated) {
     using namespace th13;
     mp_spectator_wire.clear();
     const auto send = [&](const std::vector<std::uint8_t>& packet) {
@@ -1936,45 +1905,46 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_spectator_publish(unsigned confir
         mp_spectator_wire.insert(mp_spectator_wire.end(), packet.begin(), packet.end());
         return true;
     };
-    const auto inputsAt = [&](std::uint32_t frame,
-                              std::array<Netplay::FrameInput, 3>& out) {
+    const auto inputsAt = [&](std::uint32_t frame, std::array<Netplay::FrameInput, 3>& out) {
         // 发布端供数：从录制面取（RecordFrame 已带输入——hasInputs 路径）。
         return true;
     };
     const bool ok = mp_spectator.Publish(confirmed, simulated, inputsAt, send);
     mp_report = "{\"ok\":" + std::string(ok ? "1" : "0") +
-                ",\"published\":" + std::to_string(mp_spectator.Published()) +
-                ",\"failure\":\"" + mp_spectator.PublishFailureName() + "\"" +
-                ",\"b64\":\"" + th13::multiplayer::detail::mp_base64_encode(mp_spectator_wire.data(),
-                                                 mp_spectator_wire.size()) + "\"}";
+                ",\"published\":" + std::to_string(mp_spectator.Published()) + ",\"failure\":\"" +
+                mp_spectator.PublishFailureName() + "\"" + ",\"b64\":\"" +
+                th13::multiplayer::detail::mp_base64_encode(mp_spectator_wire.data(), mp_spectator_wire.size()) + "\"}";
     return mp_report.c_str();
 }
 
 EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_spectator_receive(const char* b64) {
     using namespace th13;
     const auto wire = th13::multiplayer::detail::mp_base64_decode(b64);
-    if (wire.empty()) { mp_report = "{\"ok\":0}"; return mp_report.c_str(); }
+    if (wire.empty()) {
+        mp_report = "{\"ok\":0}";
+        return mp_report.c_str();
+    }
     unsigned received = 0, events = 0;
     std::size_t at = 0;
     while (at + 4 <= wire.size()) {
-        const std::uint32_t length = std::uint32_t(wire[at]) |
-            std::uint32_t(wire[at + 1]) << 8 | std::uint32_t(wire[at + 2]) << 16 |
-            std::uint32_t(wire[at + 3]) << 24;
+        const std::uint32_t length = std::uint32_t(wire[at]) | std::uint32_t(wire[at + 1]) << 8 |
+                                     std::uint32_t(wire[at + 2]) << 16 | std::uint32_t(wire[at + 3]) << 24;
         at += 4;
         if (!length || at + length > wire.size()) break;
         if (Netplay::IsSpectatorStageEvent(wire.data() + at, length)) {
             Netplay::SpectatorStageEvent event;
             if (Netplay::DecodeSpectatorStageEvent(wire.data() + at, length, &event) &&
-                mp_spectator.ReceiveEvent(event)) ++events;
+                mp_spectator.ReceiveEvent(event))
+                ++events;
         } else {
             Netplay::SpectatorFramePacket packet;
             if (Netplay::DecodeSpectatorFramePacket(wire.data() + at, length, &packet) &&
-                mp_spectator.ReceiveFrame(packet)) ++received;
+                mp_spectator.ReceiveFrame(packet))
+                ++received;
         }
         at += length;
     }
-    mp_report = "{\"ok\":1,\"events\":" + std::to_string(events) +
-                ",\"frames\":" + std::to_string(received) +
+    mp_report = "{\"ok\":1,\"events\":" + std::to_string(events) + ",\"frames\":" + std::to_string(received) +
                 ",\"received\":" + std::to_string(mp_spectator.Received()) + "}";
     return mp_report.c_str();
 }
@@ -2039,8 +2009,7 @@ struct MpBenchStart {
 } mp_bench_start;
 }  // namespace
 
-EMSCRIPTEN_KEEPALIVE void th13_debug_mp_bench_start(unsigned stage, int spell_slot,
-                                                    unsigned protect_all_seats) {
+EMSCRIPTEN_KEEPALIVE void th13_debug_mp_bench_start(unsigned stage, int spell_slot, unsigned protect_all_seats) {
     mp_bench_start = {th13::i32(stage), th13::i32(spell_slot), protect_all_seats != 0};
 }
 
@@ -2094,164 +2063,153 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_start() {
     LoadingWork work(8);  // th13_mp_start
     bool waiting = false;
     const int result = [&]() -> int {
-    if (!app || !app->initialized || running) return 0;
-    auto& session = th13::multiplayer::session;
-    if (!session.Active()) {
-        last_error = "TH13 multiplayer session is not configured";
-        return 0;
-    }
-    if (mp_started) return 1;
-    // 回放模式：ReplayArchive 确认输入流直驱（无信道；本地世界重建）。
-    if (mp_playback_pending) {
-        if (!mp_start_playback()) return 0;
-        mp_started = true;
-        return 1;
-    }
-    // 观众模式：世界由 StagePlayback 重建驱动（首个 checkpoint 到达时
-    // begin_run；此前置位收流待命——不冒充可玩旁观）。
-    if (mp_spectator_mode) {
-        mp_started = true;
-        return 1;
-    }
-    if (!session.Pump(std::uint64_t(emscripten_get_now()))) {
-        last_error = session.Error();
-        return 0;
-    }
-    session.MarkLocalReady();
-    if (!session.CanStart()) {
-        // A closed READY barrier is expected; a reported session or host
-        // error is a failed call even when CanStart remains false.
-        const char* error = session.Error();
-        waiting = (!error || !*error) && last_error.empty() && app->failure.empty();
-        if (waiting) work.source = 10;  // READY polling, no world initialization
-        return 0;
-    }
-    if (!session.Start()) return 0;
-    mp_room_preview = false;
-    session.diagnostic_host = [] {
-        th13::multiplayer::HostState state;
-        return app->capture_multiplayer_host_state(state)
-            ? th13::multiplayer::WorldState::diagnostic_host_detail(state) : std::string{};
-    };
-    const auto& setup = session.Setup();
-    const std::array<th13::i32, 3> characters = {
-        th13::i32(setup.selections[0]), th13::i32(setup.selections[1]),
-        th13::i32(setup.selections[2])};
-    if (!app->configure_multiplayer(th13::i32(setup.player_count), characters,
-                                    th13::i32(setup.local_player))) {
-        last_error = "TH13 multiplayer seat configuration rejected";
-        return 0;
-    }
-    app->mp_challenge = setup.challenge;
-    app->mp_keep_bullets_on_miss = setup.keep_bullets_on_miss;
-    // 新局状态：清练习/符卡残位（start_game 的 mode 分支读 run_mode_flags）。
-    app->progress.run_mode_flags = 0;
-    app->progress.practice_mode = 0;
-    app->progress.selected_spell_id = -1;
-    const th13::i32 starting_stage = mp_bench_start.stage > 0 ? mp_bench_start.stage
-                                     : setup.difficulty == 4 ? 7 : 1;
-    app->progress.character = th13::i32(setup.selections[0]);
-    app->progress.difficulty = th13::i32(setup.difficulty);
-    if (mp_bench_start.spell_slot >= 0) {
-        const auto* card = app->spell_catalog.variant(starting_stage, mp_bench_start.spell_slot,
-                                                      th13::i32(setup.difficulty));
-        if (!card) {
-            last_error = "TH13 multiplayer bench spell card unavailable";
+        if (!app || !app->initialized || running) return 0;
+        auto& session = th13::multiplayer::session;
+        if (!session.Active()) {
+            last_error = "TH13 multiplayer session is not configured";
             return 0;
         }
-        app->progress.selected_spell_id = card->id;
-        app->progress.run_mode_flags = (app->progress.run_mode_flags & ~0x70u) | 0x20u;
-    }
-    if (!app->start_game(starting_stage)) {
-        last_error = app->failure;
-        return 0;
-    }
-    // start_game 会排队 Destination::Run；直驱 begin_run 时消费掉，避免下一
-    // 帧 apply_destination 再建一次 run（会话接线随旧 run 失效）。
-    app->pending_destination = -1;
-    app->progress.character = th13::i32(setup.selections[0]);
-    app->progress.difficulty = th13::i32(setup.difficulty);
-    app->progress.stage = app->progress.starting_stage = starting_stage;
-    app->selected_stage = starting_stage;
-    app->frames = 0;
-    // 标题动画在各客户端的时长/RNG 消耗不同：入局前用会话 seed 重置双流，
-    // 保证两端从同一 RNG 相位推进（th15_mp_start 同语义）。
-    app->game_random.reseed_restore(static_cast<std::uint16_t>(setup.seed));
-    app->visual.reseed_restore(static_cast<std::uint16_t>(setup.seed));
-    if (!app->begin_run()) {
-        last_error = app->failure.empty() ? "TH13 multiplayer begin_run failed" : app->failure;
-        return 0;
-    }
-    if (app->run) app->run->battle.protect_all_seats = mp_bench_start.protect_all_seats;
-    // P5 MP Replay 录制：frame0 前冻结会话身份；Commit 退役确认帧时追加。
-    if (!mp_replay_archive) mp_replay_archive = std::make_unique<th13::multiplayer::ReplayArchive>();
-    mp_replay_archive->Clear();
-    if (!mp_replay_archive->Begin(setup, std::uint64_t(emscripten_date_now()))) {
-        last_error = "TH13 multiplayer replay begin failed";
-        return 0;
-    }
-    mp_recorded_through = 0;
-    mp_recording = true;
-    mp_saved_slot = 0;
-    mp_saved_name.clear();
-    app->multiplayer_replay_available = [] {
-        return mp_replay_archive && mp_replay_archive->FrameCount() != 0;
-    };
-    app->multiplayer_replay_save = [](th13::i32 slot, const std::string& name) {
-        return save_mp_replay(unsigned(slot), name.c_str()) != 0;
-    };
-    session.stage_source = [] { return std::uint32_t(std::max(1, app->progress.stage)); };
-    session.confirmed_sink = [](std::uint32_t frame, std::uint32_t stage,
-                                const std::array<Netplay::FrameInput, 3>& inputs) {
-        if (!mp_recording || !mp_replay_archive) return;
-        if (frame < mp_replay_archive->FrameCount()) return;
-        if (!mp_replay_archive->Append(frame, stage, inputs.data(),
-                                       mp_replay_archive->Setup().player_count))
-            return;
-        mp_recorded_through = frame;
-    };
-    // M9/P6：观战发布记录（每执行帧；关头 Required 时捕获 StageEntry）。
-    // 无观众/非席 0 时 RecordSpectatorFrame 静默返回（发布器惰性建立）。
-    session.spectator_sink =
-        [](std::uint32_t frame, const std::array<Netplay::FrameInput, 3>& inputs) {
+        if (mp_started) return 1;
+        // 回放模式：ReplayArchive 确认输入流直驱（无信道；本地世界重建）。
+        if (mp_playback_pending) {
+            if (!mp_start_playback()) return 0;
+            mp_started = true;
+            return 1;
+        }
+        // 观众模式：世界由 StagePlayback 重建驱动（首个 checkpoint 到达时
+        // begin_run；此前置位收流待命——不冒充可玩旁观）。
+        if (mp_spectator_mode) {
+            mp_started = true;
+            return 1;
+        }
+        if (!session.Pump(std::uint64_t(emscripten_get_now()))) {
+            last_error = session.Error();
+            return 0;
+        }
+        session.MarkLocalReady();
+        if (!session.CanStart()) {
+            // A closed READY barrier is expected; a reported session or host
+            // error is a failed call even when CanStart remains false.
+            const char* error = session.Error();
+            waiting = (!error || !*error) && last_error.empty() && app->failure.empty();
+            if (waiting) work.source = 10;  // READY polling, no world initialization
+            return 0;
+        }
+        if (!session.Start()) return 0;
+        mp_room_preview = false;
+        session.diagnostic_host = [] {
+            th13::multiplayer::HostState state;
+            return app->capture_multiplayer_host_state(state)
+                       ? th13::multiplayer::WorldState::diagnostic_host_detail(state)
+                       : std::string{};
+        };
+        const auto& setup = session.Setup();
+        const std::array<th13::i32, 3> characters = {th13::i32(setup.selections[0]), th13::i32(setup.selections[1]),
+                                                     th13::i32(setup.selections[2])};
+        if (!app->configure_multiplayer(th13::i32(setup.player_count), characters, th13::i32(setup.local_player))) {
+            last_error = "TH13 multiplayer seat configuration rejected";
+            return 0;
+        }
+        app->mp_challenge = setup.challenge;
+        app->mp_keep_bullets_on_miss = setup.keep_bullets_on_miss;
+        // 新局状态：清练习/符卡残位（start_game 的 mode 分支读 run_mode_flags）。
+        app->progress.run_mode_flags = 0;
+        app->progress.practice_mode = 0;
+        app->progress.selected_spell_id = -1;
+        const th13::i32 starting_stage = mp_bench_start.stage > 0 ? mp_bench_start.stage
+                                         : setup.difficulty == 4  ? 7
+                                                                  : 1;
+        app->progress.character = th13::i32(setup.selections[0]);
+        app->progress.difficulty = th13::i32(setup.difficulty);
+        if (mp_bench_start.spell_slot >= 0) {
+            const auto* card =
+                app->spell_catalog.variant(starting_stage, mp_bench_start.spell_slot, th13::i32(setup.difficulty));
+            if (!card) {
+                last_error = "TH13 multiplayer bench spell card unavailable";
+                return 0;
+            }
+            app->progress.selected_spell_id = card->id;
+            app->progress.run_mode_flags = (app->progress.run_mode_flags & ~0x70u) | 0x20u;
+        }
+        if (!app->start_game(starting_stage)) {
+            last_error = app->failure;
+            return 0;
+        }
+        // start_game 会排队 Destination::Run；直驱 begin_run 时消费掉，避免下一
+        // 帧 apply_destination 再建一次 run（会话接线随旧 run 失效）。
+        app->pending_destination = -1;
+        app->progress.character = th13::i32(setup.selections[0]);
+        app->progress.difficulty = th13::i32(setup.difficulty);
+        app->progress.stage = app->progress.starting_stage = starting_stage;
+        app->selected_stage = starting_stage;
+        app->frames = 0;
+        // 标题动画在各客户端的时长/RNG 消耗不同：入局前用会话 seed 重置双流，
+        // 保证两端从同一 RNG 相位推进（th15_mp_start 同语义）。
+        app->game_random.reseed_restore(static_cast<std::uint16_t>(setup.seed));
+        app->visual.reseed_restore(static_cast<std::uint16_t>(setup.seed));
+        if (!app->begin_run()) {
+            last_error = app->failure.empty() ? "TH13 multiplayer begin_run failed" : app->failure;
+            return 0;
+        }
+        if (app->run) app->run->battle.protect_all_seats = mp_bench_start.protect_all_seats;
+        // P5 MP Replay 录制：frame0 前冻结会话身份；Commit 退役确认帧时追加。
+        if (!mp_replay_archive) mp_replay_archive = std::make_unique<th13::multiplayer::ReplayArchive>();
+        mp_replay_archive->Clear();
+        if (!mp_replay_archive->Begin(setup, std::uint64_t(emscripten_date_now()))) {
+            last_error = "TH13 multiplayer replay begin failed";
+            return 0;
+        }
+        mp_recorded_through = 0;
+        mp_recording = true;
+        mp_saved_slot = 0;
+        mp_saved_name.clear();
+        app->multiplayer_replay_available = [] { return mp_replay_archive && mp_replay_archive->FrameCount() != 0; };
+        app->multiplayer_replay_save = [](th13::i32 slot, const std::string& name) {
+            return save_mp_replay(unsigned(slot), name.c_str()) != 0;
+        };
+        session.stage_source = [] { return std::uint32_t(std::max(1, app->progress.stage)); };
+        session.confirmed_sink = [](std::uint32_t frame, std::uint32_t stage,
+                                    const std::array<Netplay::FrameInput, 3>& inputs) {
+            if (!mp_recording || !mp_replay_archive) return;
+            if (frame < mp_replay_archive->FrameCount()) return;
+            if (!mp_replay_archive->Append(frame, stage, inputs.data(), mp_replay_archive->Setup().player_count))
+                return;
+            mp_recorded_through = frame;
+        };
+        // M9/P6：观战发布记录（每执行帧；关头 Required 时捕获 StageEntry）。
+        // 无观众/非席 0 时 RecordSpectatorFrame 静默返回（发布器惰性建立）。
+        session.spectator_sink = [](std::uint32_t frame, const std::array<Netplay::FrameInput, 3>& inputs) {
             auto& runtime = th13::multiplayer::session.Runtime();
             if (runtime.Spectator() || runtime.SpectatorPublishFailed()) return true;
             if (!th13::sdl::app || !th13::sdl::app->run) return true;
-            const std::uint32_t stage =
-                std::uint32_t(std::max(1, th13::sdl::app->progress.stage));
+            const std::uint32_t stage = std::uint32_t(std::max(1, th13::sdl::app->progress.stage));
             const std::vector<std::uint8_t>* initializer = nullptr;
             static std::vector<std::uint8_t> entryBytes;
             if (mp_recording && mp_replay_archive && !mp_replay_archive->StageEntryAt(stage)) {
                 th13::multiplayer::StageEntry capture;
-                capture.Capture(app->run->battle, app->progress, app->run->score_view(),
-                                app->game_random.seed(), app->game_random.index(),
-                                app->visual.seed(), app->visual.index());
+                capture.Capture(app->run->battle, app->progress, app->run->score_view(), app->game_random.seed(),
+                                app->game_random.index(), app->visual.seed(), app->visual.index());
                 if (!mp_replay_archive->AppendStageEntry(stage, capture.Encode())) return false;
             }
             const auto need = runtime.SpectatorCheckpointNeeded(frame, stage);
             if (need == Netplay::SpectatorStagePublisher::CheckpointRequirement::Required) {
                 th13::multiplayer::StageEntry capture;
                 capture.Capture(th13::sdl::app->run->battle, th13::sdl::app->progress,
-                                th13::sdl::app->run->score_view(),
-                                th13::sdl::app->game_random.seed(),
-                                th13::sdl::app->game_random.index(),
-                                th13::sdl::app->visual.seed(),
+                                th13::sdl::app->run->score_view(), th13::sdl::app->game_random.seed(),
+                                th13::sdl::app->game_random.index(), th13::sdl::app->visual.seed(),
                                 th13::sdl::app->visual.index());
                 entryBytes = capture.Encode();
                 if (entryBytes.empty()) return false;  // 编码失败：退役发布线
                 initializer = &entryBytes;
-            } else if (need ==
-                       Netplay::SpectatorStagePublisher::CheckpointRequirement::
-                           MissingPredecessor) {
+            } else if (need == Netplay::SpectatorStagePublisher::CheckpointRequirement::MissingPredecessor) {
                 // 帧号断档（不可达——Session 每帧落账）：拒绝并退役。
                 return false;
             }
-            return runtime.RecordSpectatorFrame(frame, stage, inputs.data(),
-                                                th13::multiplayer::session.PlayerCount(),
+            return runtime.RecordSpectatorFrame(frame, stage, inputs.data(), th13::multiplayer::session.PlayerCount(),
                                                 initializer);
         };
-    mp_started = true;
-    return 1;
+        mp_started = true;
+        return 1;
     }();
     return work.finish(result, result != 0 || waiting);
 }
@@ -2275,8 +2233,8 @@ bool mp_start_playback() {
         last_error = "TH13 multiplayer replay stage entry is invalid";
         return false;
     }
-    if (!mp_restore_history_root(setup, stage, bytes ? &entry : nullptr,
-                                 archive->UsesLegacyPickupRewards())) return false;
+    if (!mp_restore_history_root(setup, stage, bytes ? &entry : nullptr, archive->UsesLegacyPickupRewards()))
+        return false;
     app->mp_legacy_stage_positions = archive->UsesLegacyStagePositions();
     app->mp_legacy_boss_mitigation = archive->UsesLegacyBossMitigation();
     mp_playback_frame = 0;
@@ -2293,28 +2251,28 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th13_mp_status() {
     status.fill(0);
     auto& session = th13::multiplayer::session;
     const auto& setup = session.Setup();
-    status[0] = 1;                                   // version/valid
-    status[1] = session.Active() ? 1u : 0u;          // configured
-    status[2] = session.CanStart() ? 1u : 0u;        // frame0 barrier ready
-    status[3] = session.SimFrame();                  // 桥：frame
-    status[4] = session.ConfirmedThrough();          // 桥：confirmed
+    status[0] = 1;                             // version/valid
+    status[1] = session.Active() ? 1u : 0u;    // configured
+    status[2] = session.CanStart() ? 1u : 0u;  // frame0 barrier ready
+    status[3] = session.SimFrame();            // 桥：frame
+    status[4] = session.ConfirmedThrough();    // 桥：confirmed
     status[5] = session.PlayerCount();
     status[6] = session.LocalSeat();
-    status[7] = setup.input_delay;                   // 桥：inputDelay
-    status[8] = setup.prediction_limit;              // 桥：prediction
+    status[7] = setup.input_delay;       // 桥：inputDelay
+    status[8] = setup.prediction_limit;  // 桥：prediction
     status[9] = session.Connected() ? 1u : 0u;
-    status[10] = mp_spectator_mode ? 1u : 0u;         // spectator
+    status[10] = mp_spectator_mode ? 1u : 0u;                  // spectator
     status[11] = mp_playback_pending && mp_started ? 1u : 0u;  // playback
-    status[12] = 0;                                  // generation（th13 无代）
-    status[13] = 0;                                  // retired（th13 无代）
+    status[12] = 0;                                            // generation（th13 无代）
+    status[13] = 0;                                            // retired（th13 无代）
     status[14] = mp_spectator_mode ? session.Runtime().SpectatorBacklog() : 0u;
     status[15] = session.PacketsSent();
     status[16] = session.PacketsReceived();
     status[17] = session.RepairsSent();
     status[18] = session.PacketsIgnored();
     status[19] = session.TransportOpen() ? 1u : 0u;
-    status[20] = session.RouteCode();                // 1=rtc 2=relay 0=未选
-    status[21] = 0;                                  // initial inputs ready（无此门）
+    status[20] = session.RouteCode();  // 1=rtc 2=relay 0=未选
+    status[21] = 0;                    // initial inputs ready（无此门）
     status[22] = session.Runtime().SpectatorPublishFailed() ? 1u : 0u;
     {
         const char* error = session.Error();
@@ -2345,8 +2303,7 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th13_mp_rollback_status() {
 EMSCRIPTEN_KEEPALIVE const char* th13_mp_error() {
     const char* error = th13::multiplayer::session.Error();
     if (error && *error) return error;
-    if (th13::sdl::app && !th13::sdl::app->failure.empty())
-        return th13::sdl::app->failure.c_str();
+    if (th13::sdl::app && !th13::sdl::app->failure.empty()) return th13::sdl::app->failure.c_str();
     if (!th13::sdl::last_error.empty()) return th13::sdl::last_error.c_str();
     return error ? error : "";
 }
@@ -2364,30 +2321,33 @@ EMSCRIPTEN_KEEPALIVE const char* th13_mp_diagnostic_report() {
         << ",\"exiting\":" << (app && app->exiting ? "true" : "false")
         << ",\"intervalScale\":" << th13::multiplayer::session.IntervalScale()
         << ",\"clockOwed\":" << th13::sdl::mp_schedule.owed() << '}'
-        << ",\"presentationSeat\":" << (battle ? battle->active_seat + 1 : 0)
-        << ",\"seatsAtStop\":[";
-    if (battle) for (int i = 0; i < battle->seat_count && i < 3; ++i) {
-        if (i) out << ',';
-        const auto& player = battle->seats[i];
-        out << "{\"seat\":" << i + 1 << ",\"character\":" << battle->seat_characters[i]
-            << ",\"x\":";
-        if (std::isfinite(player.x)) out << player.x; else out << "null";
-        out << ",\"y\":";
-        if (std::isfinite(player.y)) out << player.y; else out << "null";
-        out << ",\"initialized\":" << (player.initialized ? "true" : "false")
-            << ",\"ghost\":" << (player.ghost ? "true" : "false")
-            << ",\"dead\":" << (player.dead ? "true" : "false")
-            << ",\"phase\":" << int(player.phase) << ",\"held\":" << battle->seat_inputs[i].held
-            << ",\"shots\":" << player.shots.size() << ",\"power\":" << battle->seat_huds[i].power << '}';
-    }
+        << ",\"presentationSeat\":" << (battle ? battle->active_seat + 1 : 0) << ",\"seatsAtStop\":[";
+    if (battle)
+        for (int i = 0; i < battle->seat_count && i < 3; ++i) {
+            if (i) out << ',';
+            const auto& player = battle->seats[i];
+            out << "{\"seat\":" << i + 1 << ",\"character\":" << battle->seat_characters[i] << ",\"x\":";
+            if (std::isfinite(player.x))
+                out << player.x;
+            else
+                out << "null";
+            out << ",\"y\":";
+            if (std::isfinite(player.y))
+                out << player.y;
+            else
+                out << "null";
+            out << ",\"initialized\":" << (player.initialized ? "true" : "false")
+                << ",\"ghost\":" << (player.ghost ? "true" : "false")
+                << ",\"dead\":" << (player.dead ? "true" : "false") << ",\"phase\":" << int(player.phase)
+                << ",\"held\":" << battle->seat_inputs[i].held << ",\"shots\":" << player.shots.size()
+                << ",\"power\":" << battle->seat_huds[i].power << '}';
+        }
     out << "]}";
     report += out.str();
     return report.c_str();
 }
 
-EMSCRIPTEN_KEEPALIVE void th13_mp_audit(unsigned enabled) {
-    th13::multiplayer::session.SetAudit(enabled != 0);
-}
+EMSCRIPTEN_KEEPALIVE void th13_mp_audit(unsigned enabled) { th13::multiplayer::session.SetAudit(enabled != 0); }
 EMSCRIPTEN_KEEPALIVE const char* th13_mp_audit_take() {
     static std::string report;
     report = th13::multiplayer::session.TakeAuditJson();
@@ -2428,19 +2388,15 @@ EMSCRIPTEN_KEEPALIVE const char* th13_mp_spectator_state() {
 
 // th13_mp_spectator_control：暂停/继续/定位/回直播（run 身份门在
 // SpectatorStageView::Control 内校验）。
-EMSCRIPTEN_KEEPALIVE int th13_mp_spectator_control(const char* run,
-                                                   const char* action,
-                                                   unsigned frame) {
+EMSCRIPTEN_KEEPALIVE int th13_mp_spectator_control(const char* run, const char* action, unsigned frame) {
     if (!mp_spectator_mode || !run || !action) return 0;
-    return th13::multiplayer::session.Runtime().SpectatorControl(run, action,
-                                                                 frame) ? 1 : 0;
+    return th13::multiplayer::session.Runtime().SpectatorControl(run, action, frame) ? 1 : 0;
 }
 
 // th13_mp_spectator_result：观众端完整录像落地（launcher 观战结果面）。
 // bytes = relay 转发的席 0 完整档案（SpectatorReplayTransfer 已拼装）。
 // 校验 build 身份后接管本端结果（对齐 th17_mp_spectator_result 语义）。
-EMSCRIPTEN_KEEPALIVE int th13_mp_spectator_result(const unsigned char* bytes,
-                                                  unsigned size) {
+EMSCRIPTEN_KEEPALIVE int th13_mp_spectator_result(const unsigned char* bytes, unsigned size) {
     using namespace th13::sdl;
     auto& runtime = th13::multiplayer::session.Runtime();
     if (!mp_spectator_mode || !bytes || !size) return 0;
@@ -2472,22 +2428,16 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_spectator_save_replay() {
     for (const auto& segment : segments) {
         const std::vector<std::uint8_t>* initializer = nullptr;
         if (!segment.checkpoint.state.empty()) initializer = &segment.checkpoint.state;
-        if (initializer && !archive->AppendStageEntry(segment.checkpoint.stage,
-                                                      *initializer))
-            return 0;
+        if (initializer && !archive->AppendStageEntry(segment.checkpoint.stage, *initializer)) return 0;
         for (const auto& packet : segment.inputs)
-            if (!archive->Append(packet.frame, segment.checkpoint.stage,
-                                 packet.inputs.data(), packet.playerCount))
+            if (!archive->Append(packet.frame, segment.checkpoint.stage, packet.inputs.data(), packet.playerCount))
                 return 0;
     }
     std::vector<std::uint8_t> wire;
     std::uint32_t score = 0;
-    if (app) score = std::uint32_t(app->run ? app->run->score_view().score
-                                            : app->selection_score.score);
+    if (app) score = std::uint32_t(app->run ? app->run->score_view().score : app->selection_score.score);
     const std::string name = "SPECTATOR";
-    if (!archive->Encode(wire, name.c_str(), score,
-                         playback.History().Ended()))
-        return 0;
+    if (!archive->Encode(wire, name.c_str(), score, playback.History().Ended())) return 0;
     SDL_CreateDirectory("/save");
     SDL_CreateDirectory("/save/replay");
     char path[64]{}, file_name[32]{};
@@ -2509,8 +2459,7 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_spectator_save_replay() {
     const bool closed = SDL_CloseIO(file);
     if (!written || !closed) return 0;
 #ifdef __EMSCRIPTEN__
-    const bool persisted = th13_mp_persist_replay(wire.data(),
-                                                  int(wire.size()), file_name);
+    const bool persisted = th13_mp_persist_replay(wire.data(), int(wire.size()), file_name);
     return persisted ? 1 : 0;
 #else
     return 1;
@@ -2520,16 +2469,14 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_spectator_save_replay() {
 // ---- M9/P6：多人 Replay 回放观测/控制面（launcher ReplayWorkspace 消费）----
 // eagler_replay_inspect：档案描述（name/character/difficulty/score/timestamp/
 // stages）——launcher 录像列表的 description 列。
-EMSCRIPTEN_KEEPALIVE const char* eagler_replay_inspect(const unsigned char* bytes,
-                                                       unsigned size) {
+EMSCRIPTEN_KEEPALIVE const char* eagler_replay_inspect(const unsigned char* bytes, unsigned size) {
     using namespace th13::sdl;
     static std::string report;
     if (!bytes || !size) return nullptr;
     th13::multiplayer::ReplayArchive archive;
     if (!archive.Load(bytes, size)) return nullptr;
     eagler::replay::Description description;
-    description.encoded_name(archive.Name().c_str(),
-                              unsigned(archive.Name().size()));
+    description.encoded_name(archive.Name().c_str(), unsigned(archive.Name().size()));
     const auto& setup = archive.Setup();
     description.number("character", setup.selections[0]);
     if (setup.player_count >= 2 && setup.player_count <= 3) {
@@ -2546,8 +2493,7 @@ EMSCRIPTEN_KEEPALIVE const char* eagler_replay_inspect(const unsigned char* byte
     for (unsigned index = 0; index < info.chapterCount; ++index) {
         const auto stage = info.chapters[index].label;
         const auto number = stage % 8;
-        description.stage_without_score(stage, 0,
-            number == 7 ? "EXTRA" : "STAGE " + std::to_string(number));
+        description.stage_without_score(stage, 0, number == 7 ? "EXTRA" : "STAGE " + std::to_string(number));
     }
     report = description.finish();
     return report.c_str();
@@ -2560,16 +2506,14 @@ EMSCRIPTEN_KEEPALIVE const unsigned* eagler_replay_state() {
     static std::array<unsigned, 8> state{};
     state.fill(0);
     const auto* archive = mp_replay_loaded.get();
-    if (!mp_playback_pending || !mp_started || !archive || !archive->Loaded())
-        return state.data();
+    if (!mp_playback_pending || !mp_started || !archive || !archive->Loaded()) return state.data();
     state[0] = mp_playback_frame;
     state[1] = archive->FrameCount();
     state[2] = mp_playback_frame >= archive->FrameCount() ? 1u : 0u;
     state[3] = app ? unsigned(std::max(1, app->progress.stage)) : 1u;
     state[4] = mp_playback_chapter;
     for (unsigned i = 0; i < archive->Info().chapterCount; ++i)
-        if (archive->Info().chapters[i].label == mp_playback_chapter)
-            state[5] = archive->Info().chapters[i].firstFrame;
+        if (archive->Info().chapters[i].label == mp_playback_chapter) state[5] = archive->Info().chapters[i].firstFrame;
     state[6] = mp_playback_seek_target;
     state[7] = mp_playback_seek_target != Netplay::INVALID_FRAME ? 1u : 0u;
     return state.data();
@@ -2616,8 +2560,7 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_replay_seek_stage(unsigned stage) {
 // under the same per-callback budget; the nearest chapter is a UI label only.
 EMSCRIPTEN_KEEPALIVE int th13_mp_replay_seek(unsigned frame) {
     using namespace th13::sdl;
-    if (!mp_playback_pending || !mp_started || !mp_replay_loaded ||
-        frame > mp_replay_loaded->FrameCount()) return 0;
+    if (!mp_playback_pending || !mp_started || !mp_replay_loaded || frame > mp_replay_loaded->FrameCount()) return 0;
     const auto& info = mp_replay_loaded->Info();
     if (!info.chapterCount) return 0;
     unsigned chapter = info.chapters[0].label;
@@ -2635,18 +2578,17 @@ int save_mp_replay(unsigned requested_slot, const char* requested_name) {
     using namespace th13::sdl;
     // M9/P6：观战发布终局（End 事件——观众端进结果面）。保存拍即终局拍
     //（shell stop/退出走 save）；发布器未建立/已结束为无操作。
-    if (mp_started && !th13::multiplayer::session.Spectator() &&
-        !th13::multiplayer::session.Simulating())
-        th13::multiplayer::session.Runtime().FinishSpectator(
-            th13::multiplayer::session.SimFrame());
+    if (mp_started && !th13::multiplayer::session.Spectator() && !th13::multiplayer::session.Simulating())
+        th13::multiplayer::session.Runtime().FinishSpectator(th13::multiplayer::session.SimFrame());
     if (!mp_replay_archive || !mp_replay_archive->FrameCount()) return 1;  // 无录制 = 无操作
     std::vector<std::uint8_t> bytes;
     std::uint32_t score = 0;
-    if (app) score = std::uint32_t(app->run ? app->run->score_view().score
-                                            : app->selection_score.score);
+    if (app) score = std::uint32_t(app->run ? app->run->score_view().score : app->selection_score.score);
     const bool completed = th13::multiplayer::session.WorldCompleted();
-    const std::string name = requested_name ? requested_name : !mp_saved_name.empty() ? mp_saved_name :
-        mp_replay_archive->Name().empty() ? "PLAYER" : mp_replay_archive->Name();
+    const std::string name = requested_name                      ? requested_name
+                             : !mp_saved_name.empty()            ? mp_saved_name
+                             : mp_replay_archive->Name().empty() ? "PLAYER"
+                                                                 : mp_replay_archive->Name();
     if (!mp_replay_archive->Encode(bytes, name.c_str(), score, completed)) return 0;
     SDL_CreateDirectory("/save");
     SDL_CreateDirectory("/save/replay");
@@ -2673,28 +2615,25 @@ int save_mp_replay(unsigned requested_slot, const char* requested_name) {
     mp_saved_slot = unsigned(std::strtoul(file_name + 7, nullptr, 10));
     mp_saved_name = name;
 #ifdef __EMSCRIPTEN__
-    const bool persisted = th13_mp_persist_replay(
-        bytes.data(), int(bytes.size()), file_name);
+    const bool persisted = th13_mp_persist_replay(bytes.data(), int(bytes.size()), file_name);
     // M9/P6：席 0 把完整档案上载 relay（0xe9 分片）——观众端经
     // spectatorReplay 收整档（结果面/本地保存）。失败不阻断本端保存。
     if (persisted && mp_started && !th13::multiplayer::session.Spectator() &&
         th13::multiplayer::session.LocalSeat() == 0)
-        Netplay::BrowserPeerTransport::ShareSpectatorReplay(bytes.data(),
-                                                            bytes.size(), true);
+        Netplay::BrowserPeerTransport::ShareSpectatorReplay(bytes.data(), bytes.size(), true);
     return persisted ? 1 : 0;
 #else
     return 1;
 #endif
 }
 
-} // namespace
+}  // namespace
 EMSCRIPTEN_KEEPALIVE int th13_mp_replay_save() { return save_mp_replay(0, nullptr); }
 
 // Replay 载入：整档校验 + 构建身份（build[4]）比对，再按录像身份配置本地
 // 会话。M9/P6：回放驱动已接生产（start → mp_start_playback 世界重建；
 // mp_tick_playback 逐帧直驱确认输入流）。
-EMSCRIPTEN_KEEPALIVE int th13_mp_replay_load(const unsigned char* bytes, unsigned size,
-                                             const unsigned* build) {
+EMSCRIPTEN_KEEPALIVE int th13_mp_replay_load(const unsigned char* bytes, unsigned size, const unsigned* build) {
     using namespace th13::sdl;
     if (!app || !bytes || !size || !build) return 0;
     auto parsed = std::make_unique<th13::multiplayer::ReplayArchive>();
@@ -2730,29 +2669,29 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_replay_load(const unsigned char* bytes, unsigne
 EMSCRIPTEN_KEEPALIVE void th13_mp_wake() {
     using namespace th13::sdl;
     if (th13::multiplayer::session.Simulating())
-        th13::multiplayer::session.TraceTiming("wake-received",
-            th13::multiplayer::session.SimFrame(), mp_work_queued ? 1u : 0u,
-            mp_schedule.owed());
+        th13::multiplayer::session.TraceTiming("wake-received", th13::multiplayer::session.SimFrame(),
+                                               mp_work_queued ? 1u : 0u, mp_schedule.owed());
     queue_mp_work(true);
 }
 
-EMSCRIPTEN_KEEPALIVE void th13_touch_options(unsigned enabled, unsigned mode, float sensitivity,
-                                           unsigned two_finger, unsigned double_tap) {
+EMSCRIPTEN_KEEPALIVE void th13_touch_options(unsigned enabled, unsigned mode, float sensitivity, unsigned two_finger,
+                                             unsigned double_tap) {
     auto& touch = th13::sdl::gestures;
     if (touch.enabled != (enabled != 0) || touch.mode != int(mode)) touch.cancel();
-    touch.enabled = enabled != 0; touch.mode = mode <= 3 ? int(mode) : 0;
+    touch.enabled = enabled != 0;
+    touch.mode = mode <= 3 ? int(mode) : 0;
     touch.unlimited = touch.mode == 1;
     touch.sensitivity = std::isfinite(sensitivity) ? std::clamp(sensitivity, 1.f, 3.f) : 1.f;
-    touch.two_finger = two_finger != 0; touch.double_tap = double_tap != 0;
+    touch.two_finger = two_finger != 0;
+    touch.double_tap = double_tap != 0;
 }
 
-EMSCRIPTEN_KEEPALIVE void th13_touch_controls(unsigned enabled, unsigned fire, unsigned focus,
-                                            unsigned bomb, unsigned escape, float x, float y) {
+EMSCRIPTEN_KEEPALIVE void th13_touch_controls(unsigned enabled, unsigned fire, unsigned focus, unsigned bomb,
+                                              unsigned escape, float x, float y) {
     auto& touch = th13::sdl::gestures;
     if (touch.enabled != (enabled != 0)) touch.cancel();
     touch.enabled = enabled != 0;
-    touch.controls(fire != 0, focus != 0, bomb, escape,
-        std::isfinite(x) ? x : 0, std::isfinite(y) ? y : 0);
+    touch.controls(fire != 0, focus != 0, bomb, escape, std::isfinite(x) ? x : 0, std::isfinite(y) ? y : 0);
 }
 
 EMSCRIPTEN_KEEPALIVE void th13_touch(unsigned type, int id, float x, float y) {
@@ -2833,7 +2772,9 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_start() {
             previous_frame = time;
             mp_tasks_remaining = 2;
             const double elapsed = mp_clock.elapsed(emscripten_get_now());
-            return drive_one_frame(th13::multiplayer::session.Active() || mp_room_preview ? elapsed : delta, 1) ? EM_TRUE : EM_FALSE;
+            return drive_one_frame(th13::multiplayer::session.Active() || mp_room_preview ? elapsed : delta, 1)
+                       ? EM_TRUE
+                       : EM_FALSE;
         },
         reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
@@ -2842,8 +2783,7 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_start() {
 // 页面壳读取用户选择/拖放的文件后经此注入：bytes 原样交给
 // ApplicationState::import_replay_bytes（解码失败置 replay_import_error，
 // 成功落 catalog 槽并提示菜单选中）。0 = 失败（th13_error 读原因）。
-EMSCRIPTEN_KEEPALIVE int th13_replay_import(const unsigned char* data, unsigned size,
-                                            const char* name) {
+EMSCRIPTEN_KEEPALIVE int th13_replay_import(const unsigned char* data, unsigned size, const char* name) {
     using namespace th13::sdl;
     if (!app || !data || size == 0 || !name) return 0;
     return app->import_replay_bytes(data, size_t(size), std::string(name)) ? 1 : 0;
@@ -2894,12 +2834,16 @@ EMSCRIPTEN_KEEPALIVE unsigned th13_debug_replay(const char* name, unsigned stage
     // that fixed prefix from the recorded boot seed so the debug bloodline is
     // independent of how many title-gate ticks the page happened to run.
     app->visual.reseed_restore(app->boot_seed);
-    for (int step = 0; step < 256; ++step) (void)app->visual.step16();
+    for (int step = 0; step < 256; ++step)
+        (void)app->visual.step16();
     (void)app->visual.next32();
     (void)app->visual.next32();
     // Use the same loading caption path as a menu launch: 0x439ce0's task
     // (create call site 0x439ded) creates ASCII script17.
-    if (!app->draw_loading(false)) { last_error = app->failure; return 0; }
+    if (!app->draw_loading(false)) {
+        last_error = app->failure;
+        return 0;
+    }
     // [A1/A5] Original loader evidence (Unicorn boot probe, retail v1.00c):
     // the prayer tree (script17 -> children 16/15/14) is advanced by the
     // loader's own supervisor frames: create at f0, first ordinary
@@ -2914,17 +2858,17 @@ EMSCRIPTEN_KEEPALIVE unsigned th13_debug_replay(const char* name, unsigned stage
     // + 24 prayer + 20 battle frame 0 = index 304, seed 33690) stays
     // bit-identical.
     for (unsigned frame = 0; frame < th13::sdl::ApplicationState::kDebugLoadingFrames; ++frame)
-        if (!app->advance_loading_caption()) { last_error = app->failure; return 0; }
+        if (!app->advance_loading_caption()) {
+            last_error = app->failure;
+            return 0;
+        }
     if (!app->begin_replay_run(bytes.data(), bytes.size(), stage_index)) {
         last_error = app->failure;
         return 0;
     }
     clear_inputs();
     reset_cadence();
-    return app->replay_cursor ? app->replay_cursor->stage()
-                                  ? app->replay_cursor->stage()->frame_count
-                                  : 0
-                              : 0;
+    return app->replay_cursor ? app->replay_cursor->stage() ? app->replay_cursor->stage()->frame_count : 0 : 0;
 }
 
 // Debug 纹理最小复现（仅诊断面）：运行期把 staff.anm 装进全新槽 21（同一
@@ -2934,16 +2878,24 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_staff_texture() {
     using namespace th13::sdl;
     if (!app || !app->initialized) return 0;
     std::vector<th13::u8> bytes;
-    if (!app->read("staff.anm", bytes)) { last_error = "staff.anm read failed"; return 0; }
+    if (!app->read("staff.anm", bytes)) {
+        last_error = "staff.anm read failed";
+        return 0;
+    }
     if (app->animations.resource(21)) app->animations.unload(21);
     if (!app->animations.load(21, bytes.data(), th13::u32(bytes.size()))) {
-        last_error = "staff.anm load failed"; return 0;
+        last_error = "staff.anm load failed";
+        return 0;
     }
     if (!app->graphics.preload(*app->animations.resource(21))) {
-        last_error = "staff.anm preload failed"; return 0;
+        last_error = "staff.anm preload failed";
+        return 0;
     }
     const th13::u32 handle = app->animations.create(21, 5, -1, 0);
-    if (!handle) { last_error = "script5 cue failed"; return 0; }
+    if (!handle) {
+        last_error = "script5 cue failed";
+        return 0;
+    }
     return 1;
 }
 
@@ -2962,7 +2914,10 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_ending(int character, int difficulty) {
     // handoff originates from Run and therefore has no title task to retire.
     app->title.reset();
     app->pending_destination = th13::i32(Destination::Ending);
-    if (!app->apply_destination()) { last_error = app->failure; return 0; }
+    if (!app->apply_destination()) {
+        last_error = app->failure;
+        return 0;
+    }
     clear_inputs();
     reset_cadence();
     return 1;
@@ -2976,7 +2931,10 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_ending(int character, int difficulty) {
 EMSCRIPTEN_KEEPALIVE int th13_debug_game_over() {
     using namespace th13::sdl;
     if (!app || !app->initialized || !app->run) return 0;
-    if (!app->request_game_over()) { last_error = app->failure; return 0; }
+    if (!app->request_game_over()) {
+        last_error = app->failure;
+        return 0;
+    }
     return 1;
 }
 
@@ -2984,8 +2942,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_game_over() {
 // Destination::Run，随即 apply_destination → begin_run（th13_debug_ending 同式）。
 // spell_slot >= 0 时按符卡练习入口选卡（SpellCatalog 同一 variant 查表）。
 // 换关/符卡性能探针用它绕过标题菜单键序。
-EMSCRIPTEN_KEEPALIVE int th13_debug_start_run(int stage, int character, int difficulty,
-                                              int spell_slot) {
+EMSCRIPTEN_KEEPALIVE int th13_debug_start_run(int stage, int character, int difficulty, int spell_slot) {
     using namespace th13::sdl;
     if (!app || !app->initialized || app->run || th13::multiplayer::session.Active()) return 0;
     app->progress.character = character;
@@ -2995,7 +2952,10 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_start_run(int stage, int character, int diff
     app->progress.selected_spell_id = -1;
     if (spell_slot >= 0) {
         const auto* card = app->spell_catalog.variant(stage, spell_slot, difficulty);
-        if (!card) { last_error = "Spell card slot unavailable"; return 0; }
+        if (!card) {
+            last_error = "Spell card slot unavailable";
+            return 0;
+        }
         app->progress.selected_spell_id = card->id;
         app->progress.run_mode_flags = 0x20u;
     }
@@ -3016,7 +2976,10 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_stage_clear() {
     using namespace th13::sdl;
     if (!app || !app->run || app->stage_transition_active || app->stage_transition_loading) return 0;
     app->run->open_dialog(-2);
-    if (!app->run->error.empty()) { last_error = app->run->error; return 0; }
+    if (!app->run->error.empty()) {
+        last_error = app->run->error;
+        return 0;
+    }
     return 1;
 }
 
@@ -3025,16 +2988,19 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_stage_clear() {
 EMSCRIPTEN_KEEPALIVE const char* th13_debug_transition_state() {
     using namespace th13::sdl;
     static char report[256];
-    if (!app) { std::snprintf(report, sizeof report, "{\"run\":false}"); return report; }
+    if (!app) {
+        std::snprintf(report, sizeof report, "{\"run\":false}");
+        return report;
+    }
     const int clear_age = app->run && (app->run->hud.flags & 0x100u) ? app->run->hud.clear_age.current : -1;
     std::snprintf(report, sizeof report,
-        "{\"run\":%s,\"stage\":%d,\"stage_frame\":%d,\"loading\":%s,\"transition\":%s,"
-        "\"startup_age\":%d,\"clear_age\":%d,\"pending_destination\":%d,\"pending_load\":%u,"
-        "\"loading_waiting\":%s}",
-        app->run ? "true" : "false", app->progress.stage, app->progress.stage_frame,
-        app->stage_transition_loading ? "true" : "false",
-        app->stage_transition_active ? "true" : "false", app->stage_startup_age, clear_age,
-        app->pending_destination, app->pending_load, app->loading_waiting() ? "true" : "false");
+                  "{\"run\":%s,\"stage\":%d,\"stage_frame\":%d,\"loading\":%s,\"transition\":%s,"
+                  "\"startup_age\":%d,\"clear_age\":%d,\"pending_destination\":%d,\"pending_load\":%u,"
+                  "\"loading_waiting\":%s}",
+                  app->run ? "true" : "false", app->progress.stage, app->progress.stage_frame,
+                  app->stage_transition_loading ? "true" : "false", app->stage_transition_active ? "true" : "false",
+                  app->stage_startup_age, clear_age, app->pending_destination, app->pending_load,
+                  app->loading_waiting() ? "true" : "false");
     return report;
 }
 
@@ -3043,16 +3009,18 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_transition_state() {
 EMSCRIPTEN_KEEPALIVE const char* th13_debug_pause_state() {
     using namespace th13::sdl;
     static char report[512];
-    if (!app || !app->pause) { report[0] = 0; return report; }
+    if (!app || !app->pause) {
+        report[0] = 0;
+        return report;
+    }
     const auto& state = app->pause->state;
     std::snprintf(report, sizeof report,
-        "{\"screen\":%d,\"phase\":%d,\"age\":%d,\"cursor\":%d,\"menu_count\":%d,"
-        "\"can_continue\":%d,\"can_save\":%d,\"needs_name\":%d,\"name_is_result\":%d,"
-        "\"replay_slot\":%d,\"name_cursor\":%d,\"name\":\"%s\"}",
-        int(state.screen), state.phase, state.age.current, state.menu.cursor,
-        state.menu.count, int(state.can_continue), int(state.can_save_replay),
-        int(state.result_needs_name), int(state.name_is_result),
-        state.replay_slot, state.name_cursor, state.replay_name.c_str());
+                  "{\"screen\":%d,\"phase\":%d,\"age\":%d,\"cursor\":%d,\"menu_count\":%d,"
+                  "\"can_continue\":%d,\"can_save\":%d,\"needs_name\":%d,\"name_is_result\":%d,"
+                  "\"replay_slot\":%d,\"name_cursor\":%d,\"name\":\"%s\"}",
+                  int(state.screen), state.phase, state.age.current, state.menu.cursor, state.menu.count,
+                  int(state.can_continue), int(state.can_save_replay), int(state.result_needs_name),
+                  int(state.name_is_result), state.replay_slot, state.name_cursor, state.replay_name.c_str());
     return report;
 }
 
@@ -3067,10 +3035,10 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_result_state() {
     if (!app->result_screen_data(data)) return report.c_str();
     char row[256];
     std::snprintf(row, sizeof row,
-        "{\"stage\":%d,\"slowdown\":%.9g,\"score\":%d,\"rank\":%d,"
-        "\"has_run\":%s,\"slow_actual\":%.17g,\"slow_budget\":%.17g}",
-        data.current.stage, double(data.current.progress_percent), data.current.score,
-        data.rank, app->run ? "true" : "false", app->slow_actual_, app->slow_budget_);
+                  "{\"stage\":%d,\"slowdown\":%.9g,\"score\":%d,\"rank\":%d,"
+                  "\"has_run\":%s,\"slow_actual\":%.17g,\"slow_budget\":%.17g}",
+                  data.current.stage, double(data.current.progress_percent), data.current.score, data.rank,
+                  app->run ? "true" : "false", app->slow_actual_, app->slow_budget_);
     report = row;
     return report.c_str();
 }
@@ -3084,8 +3052,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_frame_present(unsigned present) {
     if (!app) return 0;
     if (!app->failure.empty()) return 0;
     if (app->loading_waiting()) {
-        if (!(app->loading_startup ? app->advance_loading(1. / 60.) : app->complete_loading()))
-            return 0;
+        if (!(app->loading_startup ? app->advance_loading(1. / 60.) : app->complete_loading())) return 0;
         return 1;
     }
     const double begin = emscripten_get_now();
@@ -3101,9 +3068,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_frame_present(unsigned present) {
 EMSCRIPTEN_KEEPALIVE int th13_debug_frame() { return th13_debug_frame_present(1); }
 
 // 回放会话帧号（已消费输入帧数；golden 游戏帧 F ↔ 消费 F+1 后的画面）。
-EMSCRIPTEN_KEEPALIVE unsigned th13_debug_replay_frame() {
-    return th13::sdl::app ? th13::sdl::app->replay_consumed : 0;
-}
+EMSCRIPTEN_KEEPALIVE unsigned th13_debug_replay_frame() { return th13::sdl::app ? th13::sdl::app->replay_consumed : 0; }
 
 // Actual cursor identity is independent of the prepared next-stage index.
 // A continuous observer can distinguish loading/activation from an input
@@ -3117,21 +3082,23 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_replay_progress() {
     int slot = -1;
     th13::u64 position = 0;
     for (size_t i = 0; i < app->replay_file.stages.size(); ++i) {
-        if (&app->replay_file.stages[i] == stage) { slot = int(i); break; }
+        if (&app->replay_file.stages[i] == stage) {
+            slot = int(i);
+            break;
+        }
         position += app->replay_file.stages[i].frame_count;
     }
     if (slot >= 0) position += cursor->frame_index();
-    report = "{\"active\":" + std::string(app->replay_active ? "true" : "false") +
+    report =
+        "{\"active\":" + std::string(app->replay_active ? "true" : "false") +
         ",\"finished\":" + (app->replay_finished ? "true" : "false") +
         ",\"cursor_valid\":" + (cursor && cursor->valid() ? "true" : "false") +
-        ",\"slot_index\":" + std::to_string(slot) +
-        ",\"slot_number\":" + std::to_string(stage ? stage->number : -1) +
+        ",\"slot_index\":" + std::to_string(slot) + ",\"slot_number\":" + std::to_string(stage ? stage->number : -1) +
         ",\"slot_frame\":" + std::to_string(cursor ? cursor->frame_index() : 0) +
         ",\"slot_frames\":" + std::to_string(stage ? stage->frame_count : 0) +
         ",\"recorded_position\":" + std::to_string(slot >= 0 ? position : 0) +
         ",\"consumed\":" + std::to_string(app->replay_consumed) +
-        ",\"current_stage\":" + std::to_string(app->progress.stage) +
-        ",\"host_frame\":" + std::to_string(app->frames) +
+        ",\"current_stage\":" + std::to_string(app->progress.stage) + ",\"host_frame\":" + std::to_string(app->frames) +
         ",\"loading\":" + (app->loading_waiting() ? "true" : "false") +
         ",\"transition\":" + (app->stage_transition_active ? "true" : "false") +
         ",\"startup_age\":" + std::to_string(app->stage_startup_age) +
@@ -3139,17 +3106,14 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_replay_progress() {
         // 屏幕由 RunPause 覆盖层接管；这三个字段把该事实暴露给持续采样器，
         // 不参与任何输入/帧推进决策。
         ",\"overlay\":" + std::to_string(app->pause ? th13::i32(app->pause->state.screen) : 0) +
-        ",\"phase\":" + std::to_string(th13_phase()) +
-        ",\"scene_flags\":" + std::to_string(app->progress.scene_flags) +
+        ",\"phase\":" + std::to_string(th13_phase()) + ",\"scene_flags\":" + std::to_string(app->progress.scene_flags) +
         ",\"environment_paused\":" + (app->environment.paused ? "true" : "false") +
         ",\"stage_frame\":" + std::to_string(app->progress.stage_frame) + "}";
     return report.c_str();
 }
 
 // 诊断开关：仅打开 0x446870/0x419a90 的伤害贡献打印，不改变任何数值。
-EMSCRIPTEN_KEEPALIVE void th13_debug_damage_probe(unsigned enabled) {
-    th13::damage_probe_enabled = enabled != 0;
-}
+EMSCRIPTEN_KEEPALIVE void th13_debug_damage_probe(unsigned enabled) { th13::damage_probe_enabled = enabled != 0; }
 
 // round-19 调试脚手架扩展：覆盖打印窗口（默认 7970..7985），
 // 不改变任何逻辑/数值。
@@ -3180,25 +3144,20 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_layer_report() {
         for (const auto* vm : vms) {
             if (!vm) continue;
             const auto* source = vm->sprite_resource ? vm->sprite_resource : vm->resource;
-            const char* texture =
-                source && !source->textures.empty() ? source->textures[0].name.c_str() : "?";
+            const char* texture = source && !source->textures.empty() ? source->textures[0].name.c_str() : "?";
             const th13::i32 sprite = vm->visual.sprite;
             const char* sprite_texture =
-                source && vm->texture_sprite()
-                    ? source->textures[vm->texture_sprite()->texture].name.c_str()
-                    : "-";
-            std::snprintf(line, sizeof line,
-                          "  script=%d sprite=%d pos=(%.0f,%.0f) flags=0x%x tex=%s/%s\n",
-                          vm->source_script, sprite, vm->visual.translation.x,
-                          vm->visual.translation.y, vm->visual.render_flags,
-                          texture, sprite_texture);
+                source && vm->texture_sprite() ? source->textures[vm->texture_sprite()->texture].name.c_str() : "-";
+            std::snprintf(line, sizeof line, "  script=%d sprite=%d pos=(%.0f,%.0f) flags=0x%x tex=%s/%s\n",
+                          vm->source_script, sprite, vm->visual.translation.x, vm->visual.translation.y,
+                          vm->visual.render_flags, texture, sprite_texture);
             report += line;
-            std::snprintf(line, sizeof line,
-                          "    visual=%08x color=%08x mode=%u scale=(%.5g,%.5g) size=(%.5g,%.5g) origin=(%.5g,%.5g,%.5g) pc=%d\n",
-                          vm->visual.flags, vm->visual.color, vm->visual.draw_mode(),
-                          vm->visual.scale.x, vm->visual.scale.y, vm->visual.sprite_size.x,
-                          vm->visual.sprite_size.y, vm->variables.position.x, vm->variables.position.y,
-                          vm->variables.position.z, vm->instruction_offset);
+            std::snprintf(
+                line, sizeof line,
+                "    visual=%08x color=%08x mode=%u scale=(%.5g,%.5g) size=(%.5g,%.5g) origin=(%.5g,%.5g,%.5g) pc=%d\n",
+                vm->visual.flags, vm->visual.color, vm->visual.draw_mode(), vm->visual.scale.x, vm->visual.scale.y,
+                vm->visual.sprite_size.x, vm->visual.sprite_size.y, vm->variables.position.x, vm->variables.position.y,
+                vm->variables.position.z, vm->instruction_offset);
             report += line;
         }
     }
@@ -3212,11 +3171,18 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_anm_state() {
     using namespace th13::sdl;
     static std::string result;
     result = "{\"schema\":\"th13-anm-state-v1\",\"vms\":[";
-    if (!app) { result += "]}"; return result.c_str(); }
-    const auto bits = [](float f) { th13::u32 value; std::memcpy(&value, &f, sizeof value); return value; };
+    if (!app) {
+        result += "]}";
+        return result.c_str();
+    }
+    const auto bits = [](float f) {
+        th13::u32 value;
+        std::memcpy(&value, &f, sizeof value);
+        return value;
+    };
     const auto vector3 = [&](const th13::Vec3& v) {
-        return "[" + std::to_string(bits(v.x)) + "," + std::to_string(bits(v.y)) + "," +
-               std::to_string(bits(v.z)) + "]";
+        return "[" + std::to_string(bits(v.x)) + "," + std::to_string(bits(v.y)) + "," + std::to_string(bits(v.z)) +
+               "]";
     };
 
     // JSON string escaping for texture identity (read-only diagnostic path).
@@ -3224,13 +3190,27 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_anm_state() {
         std::string escaped = "\"";
         for (const unsigned char value : text) {
             switch (value) {
-            case '"': escaped += "\\\""; break;
-            case '\\': escaped += "\\\\"; break;
-            case '\b': escaped += "\\b"; break;
-            case '\f': escaped += "\\f"; break;
-            case '\n': escaped += "\\n"; break;
-            case '\r': escaped += "\\r"; break;
-            case '\t': escaped += "\\t"; break;
+            case '"':
+                escaped += "\\\"";
+                break;
+            case '\\':
+                escaped += "\\\\";
+                break;
+            case '\b':
+                escaped += "\\b";
+                break;
+            case '\f':
+                escaped += "\\f";
+                break;
+            case '\n':
+                escaped += "\\n";
+                break;
+            case '\r':
+                escaped += "\\r";
+                break;
+            case '\t':
+                escaped += "\\t";
+                break;
             default:
                 if (value < 0x20) {
                     char code[7];
@@ -3256,40 +3236,35 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_anm_state() {
             const auto* texture_source = vm->sprite_resource ? vm->sprite_resource : vm->resource;
             const th13::i32 texture_index = texture_sprite ? th13::i32(texture_sprite->texture) : -1;
             const std::string texture_name =
-                texture_source && texture_index >= 0 &&
-                th13::u32(texture_index) < texture_source->textures.size()
+                texture_source && texture_index >= 0 && th13::u32(texture_index) < texture_source->textures.size()
                     ? texture_source->textures[th13::u32(texture_index)].name
                     : std::string();
             result += "{\"bank\":" + std::to_string(app->animations.resource_id(vm->resource)) +
-                ",\"script\":" + std::to_string(vm->source_script) +
-                ",\"handle\":" + std::to_string(registry.handle(*vm)) +
-                ",\"parent\":" + std::to_string(parent ? registry.handle(*parent) : 0) +
-                ",\"bucket\":" + std::to_string(bucket) +
-                ",\"layer\":" + std::to_string(vm->visual.layer) +
-                ",\"sprite\":" + std::to_string(vm->visual.sprite) +
-                ",\"color\":" + std::to_string(vm->visual.color) +
-                ",\"flags\":" + std::to_string(vm->visual.flags) +
-                ",\"render_flags\":" + std::to_string(vm->visual.render_flags) +
-                ",\"pending\":" + std::to_string(vm->pending_interrupt) +
-                ",\"pc\":" + std::to_string(vm->instruction_offset) +
-                ",\"timer_previous\":" + std::to_string(vm->timer.previous) +
-                ",\"timer_current\":" + std::to_string(vm->timer.current) +
-                ",\"timer_fraction_bits\":" + std::to_string(bits(vm->timer.fractional)) +
-                ",\"position_bits\":" + vector3(vm->variables.position) +
-                ",\"translation_bits\":" + vector3(vm->visual.translation) +
-                ",\"scale_bits\":[" + std::to_string(bits(vm->visual.scale.x)) + "," +
-                    std::to_string(bits(vm->visual.scale.y)) + "]" +
-                ",\"rotation_bits\":" + vector3(vm->variables.rotation) +
-                ",\"texture_index\":" + std::to_string(texture_index) +
-                ",\"texture_name\":" + json_string(texture_name) + "}";
+                      ",\"script\":" + std::to_string(vm->source_script) +
+                      ",\"handle\":" + std::to_string(registry.handle(*vm)) +
+                      ",\"parent\":" + std::to_string(parent ? registry.handle(*parent) : 0) +
+                      ",\"bucket\":" + std::to_string(bucket) + ",\"layer\":" + std::to_string(vm->visual.layer) +
+                      ",\"sprite\":" + std::to_string(vm->visual.sprite) +
+                      ",\"color\":" + std::to_string(vm->visual.color) +
+                      ",\"flags\":" + std::to_string(vm->visual.flags) +
+                      ",\"render_flags\":" + std::to_string(vm->visual.render_flags) +
+                      ",\"pending\":" + std::to_string(vm->pending_interrupt) +
+                      ",\"pc\":" + std::to_string(vm->instruction_offset) +
+                      ",\"timer_previous\":" + std::to_string(vm->timer.previous) +
+                      ",\"timer_current\":" + std::to_string(vm->timer.current) +
+                      ",\"timer_fraction_bits\":" + std::to_string(bits(vm->timer.fractional)) +
+                      ",\"position_bits\":" + vector3(vm->variables.position) +
+                      ",\"translation_bits\":" + vector3(vm->visual.translation) + ",\"scale_bits\":[" +
+                      std::to_string(bits(vm->visual.scale.x)) + "," + std::to_string(bits(vm->visual.scale.y)) + "]" +
+                      ",\"rotation_bits\":" + vector3(vm->variables.rotation) +
+                      ",\"texture_index\":" + std::to_string(texture_index) +
+                      ",\"texture_name\":" + json_string(texture_name) + "}";
         }
     }
     result += "]";
-    result += ",\"dialogue\":{\"entry\":" +
-              std::to_string(app->run ? app->run->dialog_entry() : -1) +
+    result += ",\"dialogue\":{\"entry\":" + std::to_string(app->run ? app->run->dialog_entry() : -1) +
               ",\"active\":" + (app->run && app->run->dialog_active() ? "true" : "false") +
-              ",\"ecl_released\":" + (app->run && app->run->dialog_wait_released() ? "true" : "false") +
-              "}}";
+              ",\"ecl_released\":" + (app->run && app->run->dialog_wait_released() ? "true" : "false") + "}}";
     return result.c_str();
 }
 
@@ -3310,9 +3285,9 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_focus_state() {
         const auto& player = battle.seats[size_t(seat)];
         if (seat) result += ',';
         std::snprintf(row, sizeof row,
-            "{\"seat\":%d,\"character\":%d,\"x\":%.6f,\"y\":%.6f,\"focus\":%s,\"phase\":%d,\"ghost\":%s}",
-            seat, player.character, double(player.x), double(player.y), player.focus ? "true" : "false",
-            int(player.phase), player.ghost ? "true" : "false");
+                      "{\"seat\":%d,\"character\":%d,\"x\":%.6f,\"y\":%.6f,\"focus\":%s,\"phase\":%d,\"ghost\":%s}",
+                      seat, player.character, double(player.x), double(player.y), player.focus ? "true" : "false",
+                      int(player.phase), player.ghost ? "true" : "false");
         result += row;
     }
     result += "],\"vms\":[";
@@ -3324,13 +3299,15 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_focus_state() {
             first = false;
             const auto* parent = vm->creation_parent;
             std::snprintf(row, sizeof row,
-                "{\"bank\":%d,\"script\":%d,\"handle\":%u,\"parent\":%u,\"owner\":%u,\"bucket\":%u,\"layer\":%u,\"sprite\":%d,\"color\":%u,\"pending\":%d,\"timer\":%d,\"position\":[%.9g,%.9g,%.9g],\"translation\":[%.9g,%.9g,%.9g]}",
-                app->animations.resource_id(vm->resource), vm->source_script, registry.handle(*vm),
-                parent ? registry.handle(*parent) : 0u, unsigned(vm->shot_effect_owner), bucket,
-                unsigned(vm->visual.layer), vm->visual.sprite, vm->visual.color,
-                vm->pending_interrupt, vm->timer.current, double(vm->variables.position.x),
-                double(vm->variables.position.y), double(vm->variables.position.z),
-                double(vm->visual.translation.x), double(vm->visual.translation.y), double(vm->visual.translation.z));
+                          "{\"bank\":%d,\"script\":%d,\"handle\":%u,\"parent\":%u,\"owner\":%u,\"bucket\":%u,\"layer\":"
+                          "%u,\"sprite\":%d,\"color\":%u,\"pending\":%d,\"timer\":%d,\"position\":[%.9g,%.9g,%.9g],"
+                          "\"translation\":[%.9g,%.9g,%.9g]}",
+                          app->animations.resource_id(vm->resource), vm->source_script, registry.handle(*vm),
+                          parent ? registry.handle(*parent) : 0u, unsigned(vm->shot_effect_owner), bucket,
+                          unsigned(vm->visual.layer), vm->visual.sprite, vm->visual.color, vm->pending_interrupt,
+                          vm->timer.current, double(vm->variables.position.x), double(vm->variables.position.y),
+                          double(vm->variables.position.z), double(vm->visual.translation.x),
+                          double(vm->visual.translation.y), double(vm->visual.translation.z));
             result += row;
         }
     }
@@ -3358,20 +3335,20 @@ void observe_rng_site(unsigned before, unsigned after) {
     const int frame = app->progress.stage_frame - 1;
     if (frame < rng_site_first || frame > rng_site_last) return;
     const th13::AnmVm* vm = th13::anm_tick_current_vm;
-    rng_site_rows += "{\"frame\":" + std::to_string(frame) +
-        ",\"before\":" + std::to_string(before) +
-        ",\"after\":" + std::to_string(after) +
-        ",\"vm\":" + (vm && vm->resource
-            ? "{\"bank\":" + std::to_string(app->animations.resource_id(vm->resource)) +
-              ",\"script\":" + std::to_string(vm->source_script) +
-              ",\"handle\":" + std::to_string(app->animations.registry.handle(*vm)) +
-              ",\"pc\":" + std::to_string(vm->instruction_offset) +
-              // ptr/t：逐弹对拍身份（弹内嵌 VM 不入 registry，handle 恒 0）；
-              // t=timer.current 区分重绑首 tick（t0 重放 body）与常规 tick。
-              ",\"ptr\":" + std::to_string(reinterpret_cast<uintptr_t>(vm)) +
-              ",\"t\":" + std::to_string(vm->timer.current) + "}" : "null") + "}\n";
+    rng_site_rows += "{\"frame\":" + std::to_string(frame) + ",\"before\":" + std::to_string(before) +
+                     ",\"after\":" + std::to_string(after) + ",\"vm\":" +
+                     (vm && vm->resource ? "{\"bank\":" + std::to_string(app->animations.resource_id(vm->resource)) +
+                                               ",\"script\":" + std::to_string(vm->source_script) +
+                                               ",\"handle\":" + std::to_string(app->animations.registry.handle(*vm)) +
+                                               ",\"pc\":" + std::to_string(vm->instruction_offset) +
+                                               // ptr/t：逐弹对拍身份（弹内嵌 VM 不入 registry，handle 恒 0）；
+                                               // t=timer.current 区分重绑首 tick（t0 重放 body）与常规 tick。
+                                               ",\"ptr\":" + std::to_string(reinterpret_cast<uintptr_t>(vm)) +
+                                               ",\"t\":" + std::to_string(vm->timer.current) + "}"
+                                         : "null") +
+                     "}\n";
 }
-}
+}  // namespace
 
 EMSCRIPTEN_KEEPALIVE void th13_debug_rng_site_observe(int first, int last) {
     rng_site_rows.clear();
@@ -3391,21 +3368,19 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_rng_site_take() {
 namespace {
 std::string opt_spawn_rows;
 int opt_spawn_first = 0, opt_spawn_last = -1;
-void observe_opt_spawn(const th13::AnmVm& parent, th13::i32 child_script,
-                       th13::u32 child_handle) {
+void observe_opt_spawn(const th13::AnmVm& parent, th13::i32 child_script, th13::u32 child_handle) {
     using namespace th13::sdl;
     if (!app) return;
     const int frame = app->progress.stage_frame - 1;
     if (frame < opt_spawn_first || frame > opt_spawn_last) return;
     const th13::i32 bank = app->animations.resource_id(parent.resource);
-    opt_spawn_rows += "{\"frame\":" + std::to_string(frame) +
-        ",\"bank\":" + std::to_string(bank) +
-        ",\"parent_script\":" + std::to_string(parent.source_script) +
-        ",\"parent_handle\":" + std::to_string(app->animations.registry.handle(parent)) +
-        ",\"child_script\":" + std::to_string(child_script) +
-        ",\"child_handle\":" + std::to_string(child_handle) + "}\n";
+    opt_spawn_rows += "{\"frame\":" + std::to_string(frame) + ",\"bank\":" + std::to_string(bank) +
+                      ",\"parent_script\":" + std::to_string(parent.source_script) +
+                      ",\"parent_handle\":" + std::to_string(app->animations.registry.handle(parent)) +
+                      ",\"child_script\":" + std::to_string(child_script) +
+                      ",\"child_handle\":" + std::to_string(child_handle) + "}\n";
 }
-}
+}  // namespace
 EMSCRIPTEN_KEEPALIVE void th13_debug_opt_spawn_observe(int first, int last) {
     opt_spawn_rows.clear();
     opt_spawn_first = first;
@@ -3427,10 +3402,9 @@ void observe_dialog(th13::i32 entry) {
     if (!app) return;
     const int frame = app->progress.stage_frame - 1;
     if (frame < dialog_first || frame > dialog_last) return;
-    dialog_rows += "{\"frame\":" + std::to_string(frame) +
-        ",\"entry\":" + std::to_string(entry) + "}\n";
+    dialog_rows += "{\"frame\":" + std::to_string(frame) + ",\"entry\":" + std::to_string(entry) + "}\n";
 }
-}
+}  // namespace
 EMSCRIPTEN_KEEPALIVE void th13_debug_dialog_observe(int first, int last) {
     dialog_rows.clear();
     dialog_first = first;
@@ -3456,19 +3430,17 @@ void observe_anm_tick(const th13::AnmVm& vm, float rate) {
     // 这些 VM 的 op120 随机 + op6 等待决定子体出生帧，是 round-16 残余
     // 相位差（妖梦 10222 / 早苗 11277 / 魔理沙 5545）的直接判据。
     const th13::i32 script = vm.source_script;
-    if (script != 166 && script != 167 && script != 40 &&
-        script != 170 && script != 171 && script != 200 && script != 201)
+    if (script != 166 && script != 167 && script != 40 && script != 170 && script != 171 && script != 200 &&
+        script != 201)
         return;
     const int frame = app->progress.stage_frame - 1;
     if (frame < anm_tick_first || frame > anm_tick_last) return;
-    anm_tick_rows += "{\"frame\":" + std::to_string(frame) +
-        ",\"script\":" + std::to_string(vm.source_script) +
-        ",\"ptr\":" + std::to_string(reinterpret_cast<uintptr_t>(&vm)) +
-        ",\"timer\":" + std::to_string(vm.timer.current) +
-        ",\"pc\":" + std::to_string(vm.instruction_offset) +
-        ",\"rate\":" + std::to_string(rate) + "}\n";
+    anm_tick_rows += "{\"frame\":" + std::to_string(frame) + ",\"script\":" + std::to_string(vm.source_script) +
+                     ",\"ptr\":" + std::to_string(reinterpret_cast<uintptr_t>(&vm)) +
+                     ",\"timer\":" + std::to_string(vm.timer.current) +
+                     ",\"pc\":" + std::to_string(vm.instruction_offset) + ",\"rate\":" + std::to_string(rate) + "}\n";
 }
-}
+}  // namespace
 
 EMSCRIPTEN_KEEPALIVE void th13_debug_anm_tick_observe(int first, int last) {
     anm_tick_rows.clear();
@@ -3494,9 +3466,7 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_anm_random_take() {
 
 // 道具/神灵收集只读诊断（默认关闭）：帧内顺序与 max_point/score 快照。
 // 不写游戏状态；由 web_replay_continuous 的 TH13_ITEM_TRACE=1 显式开启。
-EMSCRIPTEN_KEEPALIVE void th13_debug_item_trace(int enable) {
-    th13::set_item_trace(enable != 0);
-}
+EMSCRIPTEN_KEEPALIVE void th13_debug_item_trace(int enable) { th13::set_item_trace(enable != 0); }
 
 EMSCRIPTEN_KEEPALIVE const char* th13_debug_item_trace_take() {
     static std::string result;
@@ -3513,7 +3483,7 @@ namespace {
 std::string anm_chain_row;
 int anm_chain_first = 0, anm_chain_last = -1;
 bool anm_chain_enabled = false;
-}
+}  // namespace
 EMSCRIPTEN_KEEPALIVE void th13_debug_anm_chain_observe(int first, int last) {
     anm_chain_row.clear();
     anm_chain_first = first;
@@ -3535,8 +3505,7 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_anm_chain() {
     if (frame < anm_chain_first || frame > anm_chain_last) return result.c_str();
     auto& registry = app->animations.registry;
     const th13::u32 count = registry.ordered_count(false);
-    result = "{\"frame\":" + std::to_string(frame) +
-        ",\"count\":" + std::to_string(count) + ",\"nodes\":[";
+    result = "{\"frame\":" + std::to_string(frame) + ",\"count\":" + std::to_string(count) + ",\"nodes\":[";
     bool first = true;
     for (th13::u32 index = 0; index < count; ++index) {
         const th13::u32 handle = registry.ordered_handle(false, index);
@@ -3544,15 +3513,12 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_anm_chain() {
         if (!vm) continue;
         if (!first) result += ',';
         first = false;
-        result += "{\"index\":" + std::to_string(index) +
-            ",\"handle\":" + std::to_string(handle) +
+        result +=
+            "{\"index\":" + std::to_string(index) + ",\"handle\":" + std::to_string(handle) +
             ",\"bank\":" + std::to_string(app->animations.resource_id(vm->resource)) +
-            ",\"script\":" + std::to_string(vm->source_script) +
-            ",\"layer\":" + std::to_string(vm->visual.layer) +
-            ",\"pc\":" + std::to_string(vm->instruction_offset) +
-            ",\"timer\":" + std::to_string(vm->timer.current) +
-            ",\"visible\":" + (vm->visible ? "true" : "false") +
-            ",\"flags\":" + std::to_string(vm->visual.flags) +
+            ",\"script\":" + std::to_string(vm->source_script) + ",\"layer\":" + std::to_string(vm->visual.layer) +
+            ",\"pc\":" + std::to_string(vm->instruction_offset) + ",\"timer\":" + std::to_string(vm->timer.current) +
+            ",\"visible\":" + (vm->visible ? "true" : "false") + ",\"flags\":" + std::to_string(vm->visual.flags) +
             ",\"render_flags\":" + std::to_string(vm->visual.render_flags) + "}";
     }
     result += "]}\n";
@@ -3572,8 +3538,8 @@ std::string build_chain_walk_json() {
     const int frame = app->progress.stage_frame - 1;
     auto& registry = app->animations.registry;
     const th13::u32 count = registry.ordered_count(false);
-    std::string result = "{\"frame\":" + std::to_string(frame) +
-        ",\"entry\":true,\"count\":" + std::to_string(count) + ",\"nodes\":[";
+    std::string result =
+        "{\"frame\":" + std::to_string(frame) + ",\"entry\":true,\"count\":" + std::to_string(count) + ",\"nodes\":[";
     bool first = true;
     for (th13::u32 index = 0; index < count; ++index) {
         const th13::u32 handle = registry.ordered_handle(false, index);
@@ -3581,15 +3547,12 @@ std::string build_chain_walk_json() {
         if (!vm) continue;
         if (!first) result += ',';
         first = false;
-        result += "{\"index\":" + std::to_string(index) +
-            ",\"handle\":" + std::to_string(handle) +
+        result +=
+            "{\"index\":" + std::to_string(index) + ",\"handle\":" + std::to_string(handle) +
             ",\"bank\":" + std::to_string(app->animations.resource_id(vm->resource)) +
-            ",\"script\":" + std::to_string(vm->source_script) +
-            ",\"layer\":" + std::to_string(vm->visual.layer) +
-            ",\"pc\":" + std::to_string(vm->instruction_offset) +
-            ",\"timer\":" + std::to_string(vm->timer.current) +
-            ",\"visible\":" + (vm->visible ? "true" : "false") +
-            ",\"flags\":" + std::to_string(vm->visual.flags) +
+            ",\"script\":" + std::to_string(vm->source_script) + ",\"layer\":" + std::to_string(vm->visual.layer) +
+            ",\"pc\":" + std::to_string(vm->instruction_offset) + ",\"timer\":" + std::to_string(vm->timer.current) +
+            ",\"visible\":" + (vm->visible ? "true" : "false") + ",\"flags\":" + std::to_string(vm->visual.flags) +
             ",\"render_flags\":" + std::to_string(vm->visual.render_flags) + "}";
     }
     result += "]}\n";
@@ -3623,7 +3586,7 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_anm_chain_walk_take() {
 namespace {
 int bullet_queue_first = 0, bullet_queue_last = -1;
 bool bullet_queue_enabled = false;
-}
+}  // namespace
 EMSCRIPTEN_KEEPALIVE void th13_debug_bullet_queue_observe(int first, int last) {
     bullet_queue_first = first;
     bullet_queue_last = last;
@@ -3645,16 +3608,13 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_bullet_queue() {
 namespace {
 std::string ecl_sprite_rows;
 int ecl_sprite_first = 0, ecl_sprite_last = -1;
-void observe_ecl_sprite(th13::i32 frame, th13::u32 serial, th13::i32 slot,
-                        th13::i32 sprite, th13::i32 subtype) {
+void observe_ecl_sprite(th13::i32 frame, th13::u32 serial, th13::i32 slot, th13::i32 sprite, th13::i32 subtype) {
     if (frame < ecl_sprite_first || frame > ecl_sprite_last) return;
-    ecl_sprite_rows += "{\"frame\":" + std::to_string(frame) +
-        ",\"serial\":" + std::to_string(serial) +
-        ",\"slot\":" + std::to_string(slot) +
-        ",\"sprite\":" + std::to_string(sprite) +
-        ",\"subtype\":" + std::to_string(subtype) + "}\n";
+    ecl_sprite_rows += "{\"frame\":" + std::to_string(frame) + ",\"serial\":" + std::to_string(serial) +
+                       ",\"slot\":" + std::to_string(slot) + ",\"sprite\":" + std::to_string(sprite) +
+                       ",\"subtype\":" + std::to_string(subtype) + "}\n";
 }
-}
+}  // namespace
 EMSCRIPTEN_KEEPALIVE void th13_debug_ecl_sprite_observe(int first, int last) {
     ecl_sprite_rows.clear();
     ecl_sprite_first = first;
@@ -3674,16 +3634,19 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_item_report() {
     static std::string report;
     report.clear();
     if (!app || !app->run) return "";
-    auto& battle=app->run->battle;
-    report="rate="+std::to_string(battle.sim.time_rate())+"\n";
-    const auto& items=battle.item_manager.items();
-    for(size_t slot=0;slot<items.size();++slot){
-        const auto& item=items[slot];if(!item.alive)continue;
+    auto& battle = app->run->battle;
+    report = "rate=" + std::to_string(battle.sim.time_rate()) + "\n";
+    const auto& items = battle.item_manager.items();
+    for (size_t slot = 0; slot < items.size(); ++slot) {
+        const auto& item = items[slot];
+        if (!item.alive) continue;
         char row[256];
-        std::snprintf(row,sizeof row,
+        std::snprintf(
+            row, sizeof row,
             "item slot=%zu state=%d type=%d pos=(%.9g,%.9g,%.9g) velocity=(%.9g,%.9g,%.9g) homing=%.9g time=%.9g\n",
-            slot,item.state,item.type,item.x,item.y,item.z,item.vx,item.vy,item.vz,item.homing_speed,item.anm_time);
-        report+=row;
+            slot, item.state, item.type, item.x, item.y, item.z, item.vx, item.vy, item.vz, item.homing_speed,
+            item.anm_time);
+        report += row;
     }
     return report.c_str();
 }
@@ -3698,108 +3661,118 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_stage_report() {
     const auto& sim = app->run->battle.sim;
     {
         const auto& spell = sim.spell.state();
-        report += "spell id=" + std::to_string(spell.id) + " name=" +
-                  th13::cp932_to_utf8(reinterpret_cast<const th13::u8*>(spell.name.data()),
-                                      th13::u32(spell.name.size())) + " bytes=";
+        report +=
+            "spell id=" + std::to_string(spell.id) + " name=" +
+            th13::cp932_to_utf8(reinterpret_cast<const th13::u8*>(spell.name.data()), th13::u32(spell.name.size())) +
+            " bytes=";
         for (const unsigned char value : spell.name) {
-            char hex[3]; std::snprintf(hex, sizeof hex, "%02x", value); report += hex;
+            char hex[3];
+            std::snprintf(hex, sizeof hex, "%02x", value);
+            report += hex;
         }
         report += "\n";
         if (auto* text = app->animations.resource(0)) {
             const auto handle = app->graphics.texture(*text, 0);
             const auto* image = app->graphics.pixels(handle);
-            if (image) for (th13::u32 index : {0u, 1u, 9u}) {
-                if (index >= text->sprites.size()) continue;
-                const auto& sprite = text->sprites[index];
-                th13::u32 count = 0, left = image->width, right = 0;
-                for (th13::u32 y = th13::u32(sprite.y); y < sprite.y + sprite.height; ++y)
-                    for (th13::u32 x = th13::u32(sprite.x); x < sprite.x + sprite.width; ++x) {
-                        th13::u16 value = 0;
-                        std::memcpy(&value, image->pixels.data() + size_t(y) * image->pitch + x * 2, 2);
-                        if (!(value >> 12)) continue;
-                        ++count; left = std::min(left, x); right = std::max(right, x);
-                    }
-                report += "text sprite=" + std::to_string(index) + " ink=" + std::to_string(count) +
-                          " bounds=" + std::to_string(left) + "," + std::to_string(right) + "\n";
-            }
+            if (image)
+                for (th13::u32 index : {0u, 1u, 9u}) {
+                    if (index >= text->sprites.size()) continue;
+                    const auto& sprite = text->sprites[index];
+                    th13::u32 count = 0, left = image->width, right = 0;
+                    for (th13::u32 y = th13::u32(sprite.y); y < sprite.y + sprite.height; ++y)
+                        for (th13::u32 x = th13::u32(sprite.x); x < sprite.x + sprite.width; ++x) {
+                            th13::u16 value = 0;
+                            std::memcpy(&value, image->pixels.data() + size_t(y) * image->pitch + x * 2, 2);
+                            if (!(value >> 12)) continue;
+                            ++count;
+                            left = std::min(left, x);
+                            right = std::max(right, x);
+                        }
+                    report += "text sprite=" + std::to_string(index) + " ink=" + std::to_string(count) +
+                              " bounds=" + std::to_string(left) + "," + std::to_string(right) + "\n";
+                }
         }
     }
     {
         const auto& animation_random = app->animations.random_source();
         const auto& distortion_random = app->environment.game_rng;
         char line[192];
-        std::snprintf(line, sizeof line,
-            "rng game=(%u,%u) animation=(%u,%u) distortion=(%u,%u)\n",
-            sim.random.seed(), sim.random.index(), animation_random.seed(),
-            animation_random.index(), distortion_random.seed(), distortion_random.index());
+        std::snprintf(line, sizeof line, "rng game=(%u,%u) animation=(%u,%u) distortion=(%u,%u)\n", sim.random.seed(),
+                      sim.random.index(), animation_random.seed(), animation_random.index(), distortion_random.seed(),
+                      distortion_random.index());
         report += line;
     }
     for (const auto& enemy : sim.enemies) {
         if (enemy->dead) continue;
         char line[320];
         std::snprintf(line, sizeof line,
-            "  enemy id=%d serial=%u pos=(%.9g,%.9g) life=%.9g age=%.9g flags=%u invulnerable=%d spell_life=%d phase_life=%d\n",
-            enemy->script_id, enemy->serial, enemy->position[0], enemy->position[1],
-            double(enemy->life), double(enemy->age), enemy->flags, enemy->invulnerable,
-            enemy->spell_life, enemy->phase_life_remaining);
+                      "  enemy id=%d serial=%u pos=(%.9g,%.9g) life=%.9g age=%.9g flags=%u invulnerable=%d "
+                      "spell_life=%d phase_life=%d\n",
+                      enemy->script_id, enemy->serial, enemy->position[0], enemy->position[1], double(enemy->life),
+                      double(enemy->age), enemy->flags, enemy->invulnerable, enemy->spell_life,
+                      enemy->phase_life_remaining);
         report += line;
     }
     for (const auto& bullet : sim.bullets) {
         if (!bullet.alive) continue;
         char line[320];
         std::snprintf(line, sizeof line,
-            "  projectile generation=%u type=%u state=%d pos=(%.9g,%.9g) hit=(%.9g,%.9g) scale=%.9g flags=%u grazed=%d ready=%d\n",
-            bullet.generation, bullet.sprite, bullet.state, bullet.x, bullet.y,
-            bullet.hit_size[0], bullet.hit_size[1], bullet.hit_scale,
-            bullet.flags, bullet.grazed, bullet.collision_ready);
+                      "  projectile generation=%u type=%u state=%d pos=(%.9g,%.9g) hit=(%.9g,%.9g) scale=%.9g flags=%u "
+                      "grazed=%d ready=%d\n",
+                      bullet.generation, bullet.sprite, bullet.state, bullet.x, bullet.y, bullet.hit_size[0],
+                      bullet.hit_size[1], bullet.hit_scale, bullet.flags, bullet.grazed, bullet.collision_ready);
         report += line;
     }
     {
         const auto& battle = app->run->battle;
         char line[160];
-        std::snprintf(line, sizeof line, "combat player=(%.9g,%.9g) phase=%d invulnerable=%d\n",
-                      battle.player_x, battle.player_y, int(battle.player_phase), battle.invulnerable);
+        std::snprintf(line, sizeof line, "combat player=(%.9g,%.9g) phase=%d invulnerable=%d\n", battle.player_x,
+                      battle.player_y, int(battle.player_phase), battle.invulnerable);
         report += line;
-        if(battle.bomb_age>=0) {
-            report+="bomb age="+std::to_string(battle.bomb_age)+"\n";
-            for(size_t i=0;i<battle.bomb_orbs.size();++i) {
-                const auto& orb=battle.bomb_orbs[i];char row[256];
-                std::snprintf(row,sizeof row,"  orb i=%zu active=%d pos=(%.9g,%.9g) angle=%.9g speed=%.9g radius=%.9g velocity=(%.9g,%.9g) damage=%.9g\n",
-                    i,orb.active,orb.x,orb.y,orb.angle,orb.speed,orb.radius,orb.velocity_x,orb.velocity_y,orb.accumulated_damage);
-                report+=row;
+        if (battle.bomb_age >= 0) {
+            report += "bomb age=" + std::to_string(battle.bomb_age) + "\n";
+            for (size_t i = 0; i < battle.bomb_orbs.size(); ++i) {
+                const auto& orb = battle.bomb_orbs[i];
+                char row[256];
+                std::snprintf(row, sizeof row,
+                              "  orb i=%zu active=%d pos=(%.9g,%.9g) angle=%.9g speed=%.9g radius=%.9g "
+                              "velocity=(%.9g,%.9g) damage=%.9g\n",
+                              i, orb.active, orb.x, orb.y, orb.angle, orb.speed, orb.radius, orb.velocity_x,
+                              orb.velocity_y, orb.accumulated_damage);
+                report += row;
             }
         }
-        for(const auto& shot:battle.shots) {
-            if(!shot.alive)continue;
+        for (const auto& shot : battle.shots) {
+            if (!shot.alive) continue;
             char details[256];
-            std::snprintf(details,sizeof details,
-                "  player_shot gen=%u age=%d pos=(%.9g,%.9g) angle=%.9g speed=%.9g target=%u script=%d\n",
-                shot.generation,shot.age,shot.x,shot.y,shot.angle,shot.speed,shot.target_serial,shot.script);
-            report+=details;
+            std::snprintf(details, sizeof details,
+                          "  player_shot gen=%u age=%d pos=(%.9g,%.9g) angle=%.9g speed=%.9g target=%u script=%d\n",
+                          shot.generation, shot.age, shot.x, shot.y, shot.angle, shot.speed, shot.target_serial,
+                          shot.script);
+            report += details;
         }
         for (const auto& bullet : sim.bullets) {
             if (!bullet.alive) continue;
             std::snprintf(line, sizeof line,
-                          "  hazard pos=(%.9g,%.9g) velocity=(%.9g,%.9g) size=(%.9g,%.9g) flags=%u\n",
-                          bullet.x, bullet.y, bullet.vel[0], bullet.vel[1],
-                          bullet.hit_size[0], bullet.hit_size[1], bullet.flags);
+                          "  hazard pos=(%.9g,%.9g) velocity=(%.9g,%.9g) size=(%.9g,%.9g) flags=%u\n", bullet.x,
+                          bullet.y, bullet.vel[0], bullet.vel[1], bullet.hit_size[0], bullet.hit_size[1], bullet.flags);
             report += line;
             std::snprintf(line, sizeof line,
-                "    bullet gen=%u type=%u color=%u state=%d age=%d ex=%d behavior=%u bounce=%d/%d mode=%u\n",
-                bullet.generation, bullet.sprite, bullet.subtype, bullet.state,
-                bullet.state_age, bullet.ex_cursor, bullet.behavior_flags,
-                bullet.ex40_bounces, bullet.ex40_limit, bullet.ex40_mode);
+                          "    bullet gen=%u type=%u color=%u state=%d age=%d ex=%d behavior=%u bounce=%d/%d mode=%u\n",
+                          bullet.generation, bullet.sprite, bullet.subtype, bullet.state, bullet.state_age,
+                          bullet.ex_cursor, bullet.behavior_flags, bullet.ex40_bounces, bullet.ex40_limit,
+                          bullet.ex40_mode);
             report += line;
         }
     }
-    report += "lasers=" + std::to_string(sim.lasers.size()) +
-              " births=" + std::to_string(sim.laser_serial - 0x10000u) + "\n";
+    report +=
+        "lasers=" + std::to_string(sim.lasers.size()) + " births=" + std::to_string(sim.laser_serial - 0x10000u) + "\n";
     for (const auto& laser : sim.lasers) {
         char line[240];
         std::snprintf(line, sizeof line,
-            "  laser gen=%u id=%d phase=%d time=%d pos=(%.9g,%.9g) angle=%.9g length=%.9g width=%.9g\n",
-            laser.generation, laser.id, laser.phase, laser.time,
-            laser.origin[0], laser.origin[1], laser.angle, laser.length, laser.width);
+                      "  laser gen=%u id=%d phase=%d time=%d pos=(%.9g,%.9g) angle=%.9g length=%.9g width=%.9g\n",
+                      laser.generation, laser.id, laser.phase, laser.time, laser.origin[0], laser.origin[1],
+                      laser.angle, laser.length, laser.width);
         report += line;
     }
     return report.c_str();
@@ -3815,23 +3788,24 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_state_report() {
     const auto& progress = app->progress;
     const auto& player = app->selection_player;
     std::string keys;
-    constexpr std::pair<unsigned, unsigned> mapping[] = {
-        {8,16},{64,37},{16,38},{128,39},{32,40},{2,88},{1,90}};
+    constexpr std::pair<unsigned, unsigned> mapping[] = {{8, 16},  {64, 37}, {16, 38}, {128, 39},
+                                                         {32, 40}, {2, 88},  {1, 90}};
     const unsigned held = app->replay_active ? app->replay_input.held : controls.held;
-    for (const auto& pair : mapping) if (held & pair.first) {
-        if (!keys.empty()) keys += ',';
-        keys += std::to_string(pair.second);
-    }
+    for (const auto& pair : mapping)
+        if (held & pair.first) {
+            if (!keys.empty()) keys += ',';
+            keys += std::to_string(pair.second);
+        }
     std::snprintf(report, sizeof report,
-        "{\"schema\":\"th13-state-raw-v1\",\"frame\":%d,"
-        "\"player_position\":[%.9g,%.9g],\"power\":%d,\"power_step\":%d,"
-        "\"spell_id\":null,\"keys\":[%s],"
-        "\"raw_globals\":{\"004be7c0\":%d,\"004be7c8\":%d,\"004be7d0\":%d,\"004be7dc\":%d,"
-        "\"004be810\":%d,\"004be814\":%d},\"raw_enemy_manager\":null}",
-        int(app->replay_active ? app->replay_consumed : progress.stage_frame) - 1,
-        double(battle.player_x), double(battle.player_y), player.power, player.power_step,
-        keys.c_str(), app->selection_score.score, progress.continues, progress.graze, progress.max_point,
-        progress.high_score, progress.high_score_extra);
+                  "{\"schema\":\"th13-state-raw-v1\",\"frame\":%d,"
+                  "\"player_position\":[%.9g,%.9g],\"power\":%d,\"power_step\":%d,"
+                  "\"spell_id\":null,\"keys\":[%s],"
+                  "\"raw_globals\":{\"004be7c0\":%d,\"004be7c8\":%d,\"004be7d0\":%d,\"004be7dc\":%d,"
+                  "\"004be810\":%d,\"004be814\":%d},\"raw_enemy_manager\":null}",
+                  int(app->replay_active ? app->replay_consumed : progress.stage_frame) - 1, double(battle.player_x),
+                  double(battle.player_y), player.power, player.power_step, keys.c_str(), app->selection_score.score,
+                  progress.continues, progress.graze, progress.max_point, progress.high_score,
+                  progress.high_score_extra);
     return report;
 }
 
@@ -3851,38 +3825,37 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_replay_core() {
         std::memcpy(&raw, &value, sizeof raw);
         return raw;
     };
-    report = "{\"schema\":\"th13-replay-core-v2\",\"frame\":" +
-        std::to_string(int(app->replay_consumed) - 1) + ",\"stage\":" +
-        std::to_string(p.stage) + ",\"input\":{\"held\":" +
-        std::to_string(app->replay_input.held) + ",\"pressed\":" +
-        std::to_string(app->replay_input.pressed) + ",\"released\":" +
-        std::to_string(app->replay_input.released) + "},\"globals\":{";
+    report = "{\"schema\":\"th13-replay-core-v2\",\"frame\":" + std::to_string(int(app->replay_consumed) - 1) +
+             ",\"stage\":" + std::to_string(p.stage) +
+             ",\"input\":{\"held\":" + std::to_string(app->replay_input.held) +
+             ",\"pressed\":" + std::to_string(app->replay_input.pressed) +
+             ",\"released\":" + std::to_string(app->replay_input.released) + "},\"globals\":{";
     const std::pair<const char*, u32> values[] = {
-        {"004be7b8", u32(p.character)}, {"004be7c0", u32(app->selection_score.score)},
-        {"004be7c4", u32(p.difficulty)}, {"004be7c8", u32(p.continues)},
-        {"004be7d0", u32(p.graze)}, {"004be7d4", u32(p.selected_spell_id)},
-        {"004be7dc", u32(p.max_point)}, {"004be7e4", u32(p.max_point_cap)},
-        {"004be7e8", u32(h.power)}, {"004be7ec", u32(h.max_power)},
-        {"004be7f0", u32(h.power_step)}, {"004be7f4", u32(h.extra_lives)},
-        {"004be7f8", u32(h.life_pieces)}, {"004be7fc", u32(p.life_piece_threshold_index)},
-        {"004be800", u32(h.bombs)}, {"004be804", u32(h.bomb_pieces)},
-        {"004be808", u32(p.ending_points)}, {"004be810", u32(p.high_score)},
-        {"004be814", u32(p.high_score_extra)}
-    };
+        {"004be7b8", u32(p.character)},       {"004be7c0", u32(app->selection_score.score)},
+        {"004be7c4", u32(p.difficulty)},      {"004be7c8", u32(p.continues)},
+        {"004be7d0", u32(p.graze)},           {"004be7d4", u32(p.selected_spell_id)},
+        {"004be7dc", u32(p.max_point)},       {"004be7e4", u32(p.max_point_cap)},
+        {"004be7e8", u32(h.power)},           {"004be7ec", u32(h.max_power)},
+        {"004be7f0", u32(h.power_step)},      {"004be7f4", u32(h.extra_lives)},
+        {"004be7f8", u32(h.life_pieces)},     {"004be7fc", u32(p.life_piece_threshold_index)},
+        {"004be800", u32(h.bombs)},           {"004be804", u32(h.bomb_pieces)},
+        {"004be808", u32(p.ending_points)},   {"004be810", u32(p.high_score)},
+        {"004be814", u32(p.high_score_extra)}};
     bool first = true;
     for (const auto& value : values) {
         if (!first) report += ',';
         first = false;
-        report += '"'; report += value.first;
+        report += '"';
+        report += value.first;
         report += "\":" + std::to_string(value.second);
     }
     const auto& game = app->game_random;
     const auto& visual = app->animations.random_source();
     report += "},\"player\":{\"x_bits\":" + std::to_string(bits(battle.player_x)) +
-        ",\"y_bits\":" + std::to_string(bits(battle.player_y)) + "},\"rng\":{\"game_seed\":" +
-        std::to_string(game.seed()) + ",\"game_index\":" + std::to_string(game.index()) +
-        ",\"visual_seed\":" + std::to_string(visual.seed()) +
-        ",\"visual_index\":" + std::to_string(visual.index()) + "}}";
+              ",\"y_bits\":" + std::to_string(bits(battle.player_y)) +
+              "},\"rng\":{\"game_seed\":" + std::to_string(game.seed()) +
+              ",\"game_index\":" + std::to_string(game.index()) + ",\"visual_seed\":" + std::to_string(visual.seed()) +
+              ",\"visual_index\":" + std::to_string(visual.index()) + "}}";
     return report.c_str();
 }
 
@@ -3894,8 +3867,7 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_replay_entities() {
     state.frame = app->replay_active ? app->replay_consumed - 1 : app->progress.stage_frame - 1;
     report = state.json();
     report.pop_back();
-    report += ",\"boss_main_serial\":" +
-        std::to_string(app->run->battle.sim.boss_main_serial) + "}";
+    report += ",\"boss_main_serial\":" + std::to_string(app->run->battle.sim.boss_main_serial) + "}";
     return report.c_str();
 }
 
@@ -3903,8 +3875,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_mp_laser_contact(float x, float y, float rad
     const auto& app = th13::sdl::app;
     if (!app || !app->run) return 0;
     for (const auto& laser : app->run->battle.sim.lasers)
-        if (laser.active && laser.collision_enabled() &&
-            laser.player_contact(x, y, radius, radius) == 1) return 1;
+        if (laser.active && laser.collision_enabled() && laser.player_contact(x, y, radius, radius) == 1) return 1;
     return 0;
 }
 
@@ -3923,41 +3894,50 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_phase_state() {
     out.imbue(std::locale::classic());
     out.precision(std::numeric_limits<double>::max_digits10);
     const auto number = [&](double value) {
-        if (std::isfinite(value)) out << value;
-        else out << "null";
+        if (std::isfinite(value))
+            out << value;
+        else
+            out << "null";
     };
     const auto name = [&](const std::string& value) {
         static constexpr char hex[] = "0123456789abcdef";
         out << '"';
         for (size_t i = 0; i < std::min(value.size(), name_limit); ++i) {
             const auto c = static_cast<unsigned char>(value[i]);
-            if (c == '"' || c == '\\') out << '\\' << char(c);
+            if (c == '"' || c == '\\')
+                out << '\\' << char(c);
             else if (c < 0x20 || c >= 0x7f)
                 out << "\\u00" << hex[c >> 4] << hex[c & 15];
-            else out << char(c);
+            else
+                out << char(c);
         }
         out << '"';
     };
-    out << "{\"available\":true,\"stage\":" << app->progress.stage
-        << ",\"stage_frame\":" << app->progress.stage_frame
+    out << "{\"available\":true,\"stage\":" << app->progress.stage << ",\"stage_frame\":" << app->progress.stage_frame
         << ",\"sim_frame\":" << sim.frame << ",\"boss_main_serial\":" << sim.boss_main_serial
-        << ",\"enemy_count\":" << sim.enemies.size()
-        << ",\"enemy_limit\":" << enemy_limit
-        << ",\"enemies_truncated\":" << (sim.enemies.size() > enemy_limit ? "true" : "false")
-        << ",\"enemies\":[";
+        << ",\"enemy_count\":" << sim.enemies.size() << ",\"enemy_limit\":" << enemy_limit
+        << ",\"enemies_truncated\":" << (sim.enemies.size() > enemy_limit ? "true" : "false") << ",\"enemies\":[";
     for (size_t index = 0; index < std::min(sim.enemies.size(), enemy_limit); ++index) {
         if (index) out << ',';
         const auto& ptr = sim.enemies[index];
-        if (!ptr) { out << "null"; continue; }
+        if (!ptr) {
+            out << "null";
+            continue;
+        }
         const auto& enemy = *ptr;
         out << "{\"serial\":" << enemy.serial << ",\"spawn_routine\":";
         name(enemy.routine);
         out << ",\"spawn_routine_truncated\":" << (enemy.routine.size() > name_limit ? "true" : "false")
-            << ",\"life\":"; number(enemy.life);
-        out << ",\"flags\":" << enemy.flags << ",\"dead\":" << (enemy.dead ? "true" : "false")
-            << ",\"age\":"; number(enemy.age);
-        out << ",\"position\":["; number(enemy.position[0]); out << ',';
-        number(enemy.position[1]); out << ','; number(enemy.position[2]);
+            << ",\"life\":";
+        number(enemy.life);
+        out << ",\"flags\":" << enemy.flags << ",\"dead\":" << (enemy.dead ? "true" : "false") << ",\"age\":";
+        number(enemy.age);
+        out << ",\"position\":[";
+        number(enemy.position[0]);
+        out << ',';
+        number(enemy.position[1]);
+        out << ',';
+        number(enemy.position[2]);
         out << "],\"mirror_dir\":" << enemy.mirror_dir << ",\"mirror_velocity_x\":";
         number(enemy.mirror_velocity_x);
         out << ",\"anm_file\":" << enemy.anm_file << ",\"anm_base_script\":" << enemy.anm_base_script
@@ -3969,15 +3949,22 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_phase_state() {
         for (size_t i = 0; i < std::min(count, thread_limit); ++i) {
             if (i) out << ',';
             const auto* thread = enemy.threads->at(static_cast<th13::u32>(i));
-            if (!thread) { out << "null"; continue; }
+            if (!thread) {
+                out << "null";
+                continue;
+            }
             const auto* program = thread->program;
             const bool valid = program && thread->routine >= 0 && size_t(thread->routine) < program->definitions.size();
             out << "{\"index\":" << i << ",\"routine\":" << thread->routine
                 << ",\"routine_valid\":" << (valid ? "true" : "false") << ",\"routine_name\":";
-            if (valid) name(program->subroutine(static_cast<th13::u32>(thread->routine)).name);
-            else out << "null";
+            if (valid)
+                name(program->subroutine(static_cast<th13::u32>(thread->routine)).name);
+            else
+                out << "null";
             out << ",\"routine_name_truncated\":"
-                << (valid && program->subroutine(static_cast<th13::u32>(thread->routine)).name.size() > name_limit ? "true" : "false")
+                << (valid && program->subroutine(static_cast<th13::u32>(thread->routine)).name.size() > name_limit
+                        ? "true"
+                        : "false")
                 << ",\"instruction_offset\":" << thread->instruction_offset << ",\"time\":";
             number(thread->time);
             out << ",\"id\":" << thread->thread_id << ",\"state\":" << thread->thread_state
@@ -3988,11 +3975,11 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_phase_state() {
             if (i) out << ',';
             const auto handle = enemy.anm_slot_handle[i];
             const auto* vm = registry.find(handle);
-            out << "{\"index\":" << i << ",\"script\":" << enemy.anm_script[size_t(i)]
-                << ",\"handle\":" << handle << ",\"resolved\":" << (vm ? "true" : "false");
-            if (vm) out << ",\"source_script\":" << vm->source_script
-                << ",\"pending_interrupt\":" << vm->pending_interrupt
-                << ",\"timer\":" << vm->timer.current << ",\"age\":" << vm->age.current;
+            out << "{\"index\":" << i << ",\"script\":" << enemy.anm_script[size_t(i)] << ",\"handle\":" << handle
+                << ",\"resolved\":" << (vm ? "true" : "false");
+            if (vm)
+                out << ",\"source_script\":" << vm->source_script << ",\"pending_interrupt\":" << vm->pending_interrupt
+                    << ",\"timer\":" << vm->timer.current << ",\"age\":" << vm->age.current;
             out << '}';
         }
         out << "]}";
@@ -4022,13 +4009,10 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_hazards() {
         const auto& e = *slot;
         if (comma) out << ',';
         comma = true;
-        out << "{\"serial\":" << e.serial << ",\"flags\":" << e.flags
-            << ",\"life\":" << e.life
-            << ",\"dead\":false,\"body_invulnerable\":" << e.body_invulnerable
-            << ",\"x\":" << e.position[0] << ",\"y\":" << e.position[1]
-            << ",\"dx\":" << e.motion_delta[0] << ",\"dy\":" << e.motion_delta[1]
-            << ",\"width\":" << e.hitbox[0] << ",\"height\":" << e.hitbox[1]
-            << ",\"angle\":" << e.body_angle << '}';
+        out << "{\"serial\":" << e.serial << ",\"flags\":" << e.flags << ",\"life\":" << e.life
+            << ",\"dead\":false,\"body_invulnerable\":" << e.body_invulnerable << ",\"x\":" << e.position[0]
+            << ",\"y\":" << e.position[1] << ",\"dx\":" << e.motion_delta[0] << ",\"dy\":" << e.motion_delta[1]
+            << ",\"width\":" << e.hitbox[0] << ",\"height\":" << e.hitbox[1] << ",\"angle\":" << e.body_angle << '}';
     }
     out << "],\"bullets\":[";
     comma = false;
@@ -4038,11 +4022,9 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_hazards() {
         if (comma) out << ',';
         comma = true;
         out << "{\"index\":" << index << ",\"flags\":" << b.flags
-            << ",\"collision_ready\":" << (b.collision_ready ? "true" : "false")
-            << ",\"alive\":true,\"x\":" << b.x << ",\"y\":" << b.y
-            << ",\"vx\":" << b.vel[0] << ",\"vy\":" << b.vel[1]
-            << ",\"width\":" << b.hit_size[0] << ",\"height\":" << b.hit_size[1]
-            << ",\"scale\":" << b.hit_scale << '}';
+            << ",\"collision_ready\":" << (b.collision_ready ? "true" : "false") << ",\"alive\":true,\"x\":" << b.x
+            << ",\"y\":" << b.y << ",\"vx\":" << b.vel[0] << ",\"vy\":" << b.vel[1] << ",\"width\":" << b.hit_size[0]
+            << ",\"height\":" << b.hit_size[1] << ",\"scale\":" << b.hit_scale << '}';
     }
     out << "],\"items\":[";
     comma = false;
@@ -4050,8 +4032,7 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_hazards() {
         if (!item.alive) continue;
         if (comma) out << ',';
         comma = true;
-        out << "{\"kind\":" << item.type << ",\"x\":" << item.x
-            << ",\"y\":" << item.y << '}';
+        out << "{\"kind\":" << item.type << ",\"x\":" << item.x << ",\"y\":" << item.y << '}';
     }
     out << "],\"spirits\":[";
     comma = false;
@@ -4059,8 +4040,7 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_hazards() {
         if (!spirit.alive) continue;
         if (comma) out << ',';
         comma = true;
-        out << "{\"kind\":" << spirit.kind << ",\"x\":" << spirit.x
-            << ",\"y\":" << spirit.y << '}';
+        out << "{\"kind\":" << spirit.kind << ",\"x\":" << spirit.x << ",\"y\":" << spirit.y << '}';
     }
     out << "]}";
     report = out.str();
@@ -4071,28 +4051,28 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_mp_hazards() {
 EMSCRIPTEN_KEEPALIVE void th13_debug_audio_observe(unsigned enable) {
     using namespace th13::sdl;
     if (!app) return;
-    audio_observations.clear(); audio_sequence = 0;
+    audio_observations.clear();
+    audio_sequence = 0;
     app->audio_device.request_observer = {};
     if (!enable) return;
     app->audio_device.request_observer = [](const AudioDevice::RequestObservation& event) {
-        const char* kind = event.kind == AudioDevice::RequestObservation::Kind::Voice ? "voice"
-                         : event.kind == AudioDevice::RequestObservation::Kind::Stop ? "stop"
-                         : event.kind == AudioDevice::RequestObservation::Kind::Pan ? "pan" : "music";
+        const char* kind = event.kind == AudioDevice::RequestObservation::Kind::Voice  ? "voice"
+                           : event.kind == AudioDevice::RequestObservation::Kind::Stop ? "stop"
+                           : event.kind == AudioDevice::RequestObservation::Kind::Pan  ? "pan"
+                                                                                       : "music";
         unsigned x_bits;
         std::memcpy(&x_bits, &event.x, sizeof x_bits);
-        const int frame = app->replay_active ? int(app->replay_consumed) - 1
-                                             : app->progress.stage_frame - 1;
+        const int frame = app->replay_active ? int(app->replay_consumed) - 1 : app->progress.stage_frame - 1;
         // Voice 的 id 按 u32 位型输出：原生 0x460c50/0x460bc0 的 id 取
         // EDI/EDX（Unicorn 无符号），et 发射声 -1 在 native trace 中记作
         // 4294967295；stop 的 -1 是有符号语义（全停），保持 i32。
         const bool voice = event.kind == AudioDevice::RequestObservation::Kind::Voice;
-        const std::string id_text = voice ? std::to_string(unsigned(event.id))
-                                          : std::to_string(event.id);
+        const std::string id_text = voice ? std::to_string(unsigned(event.id)) : std::to_string(event.id);
         audio_observations += "{\"frame\":" + std::to_string(frame) +
-            ",\"sequence\":" + std::to_string(audio_sequence++) + ",\"kind\":\"" + kind +
-            "\",\"id\":" + id_text + ",\"value\":" +
-            std::to_string(event.value) + ",\"positional\":" + (event.positional ? "true" : "false") +
-            ",\"x_bits\":" + std::to_string(x_bits) + "}\n";
+                              ",\"sequence\":" + std::to_string(audio_sequence++) + ",\"kind\":\"" + kind +
+                              "\",\"id\":" + id_text + ",\"value\":" + std::to_string(event.value) +
+                              ",\"positional\":" + (event.positional ? "true" : "false") +
+                              ",\"x_bits\":" + std::to_string(x_bits) + "}\n";
     };
 }
 
@@ -4105,9 +4085,7 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_audio_take() {
 }
 
 // 调试直绘过滤：mask bit0..3 = 自机弹/自机/敌机/敌弹（0 = 全关，仅查看）。
-EMSCRIPTEN_KEEPALIVE void th13_debug_stage_pass(unsigned mask) {
-    th13::StagePresentation::debug_pass_mask = mask;
-}
+EMSCRIPTEN_KEEPALIVE void th13_debug_stage_pass(unsigned mask) { th13::StagePresentation::debug_pass_mask = mask; }
 
 // 调试探针：renderer.draw 计量开关（1 开 0 关；开则从零累计）。
 EMSCRIPTEN_KEEPALIVE void th13_debug_draw_probe(int enable) {
@@ -4120,9 +4098,7 @@ EMSCRIPTEN_KEEPALIVE void th13_debug_draw_probe(int enable) {
 // 替换、无 glBufferSubData 分段流式、直通顶点无重复拷贝」——Mali/Adreno
 // 真机卡顿对策的固化门禁（AGENTS.md 性能检查单）。
 EMSCRIPTEN_KEEPALIVE const unsigned* th13_debug_stats() {
-    return th13::sdl::app
-               ? reinterpret_cast<const unsigned*>(&th13::sdl::app->graphics.backend.stats)
-               : nullptr;
+    return th13::sdl::app ? reinterpret_cast<const unsigned*>(&th13::sdl::app->graphics.backend.stats) : nullptr;
 }
 
 // 排队状态快照（只读；Replay 启动链定位用）：目的地处方、装载挡板与
@@ -4132,22 +4108,20 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_pending() {
     static std::string report;
     if (!app) return "{}";
     report = "{\"pending_destination\":" + std::to_string(app->pending_destination) +
-        ",\"pending_load\":" + std::to_string(app->pending_load) +
-        ",\"loading_startup\":" + (app->loading_startup ? "true" : "false") +
-        ",\"loading_frames\":" + std::to_string(app->loading_frames) +
-        ",\"pending_replay_file\":" + std::to_string(app->pending_replay_file) +
-        ",\"pending_replay_stage_slot\":" + std::to_string(app->pending_replay_stage_slot) +
-        ",\"replay_active\":" + (app->replay_active ? "true" : "false") +
-        ",\"has_run\":" + (app->run ? "true" : "false") +
-        ",\"has_title\":" + (app->title ? "true" : "false") +
-        ",\"failure\":" + (app->failure.empty() ? "null"
-                                                : "\"" + app->failure + "\"");
+             ",\"pending_load\":" + std::to_string(app->pending_load) +
+             ",\"loading_startup\":" + (app->loading_startup ? "true" : "false") +
+             ",\"loading_frames\":" + std::to_string(app->loading_frames) +
+             ",\"pending_replay_file\":" + std::to_string(app->pending_replay_file) +
+             ",\"pending_replay_stage_slot\":" + std::to_string(app->pending_replay_stage_slot) +
+             ",\"replay_active\":" + (app->replay_active ? "true" : "false") +
+             ",\"has_run\":" + (app->run ? "true" : "false") + ",\"has_title\":" + (app->title ? "true" : "false") +
+             ",\"failure\":" + (app->failure.empty() ? "null" : "\"" + app->failure + "\"");
     if (app->title) {
         const auto& state = app->title->state;
         report += ",\"title_screen\":" + std::to_string(th13::i32(state.screen)) +
-            ",\"title_substate\":" + std::to_string(state.substate) +
-            ",\"title_age\":" + std::to_string(state.age.current) +
-            ",\"replay_index\":" + std::to_string(state.replay_index);
+                  ",\"title_substate\":" + std::to_string(state.substate) +
+                  ",\"title_age\":" + std::to_string(state.age.current) +
+                  ",\"replay_index\":" + std::to_string(state.replay_index);
     }
     report += "}";
     return report.c_str();
@@ -4160,15 +4134,13 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_draw_report() {
     const auto& probe = th13::anm_draw_probe;
     report.clear();
     char line[128];
-    std::snprintf(line, sizeof line,
-                  "calls=%u quads=%u shapes=%u strips=%u glyphs=%u other=%u\n", probe.calls,
+    std::snprintf(line, sizeof line, "calls=%u quads=%u shapes=%u strips=%u glyphs=%u other=%u\n", probe.calls,
                   probe.quads, probe.shapes_drawn, probe.strips, probe.glyphs, probe.other);
     report += line;
     for (th13::u32 i = 0; i < th13::AnmDrawProbe::kSlots; i++) {
         if (!probe.sprite_counts[i]) break;
-        std::snprintf(line, sizeof line, "  sprite=%d count=%u size=%ux%u\n",
-                      probe.sprite_ids[i], probe.sprite_counts[i], probe.sprite_sizes[i][0],
-                      probe.sprite_sizes[i][1]);
+        std::snprintf(line, sizeof line, "  sprite=%d count=%u size=%ux%u\n", probe.sprite_ids[i],
+                      probe.sprite_counts[i], probe.sprite_sizes[i][0], probe.sprite_sizes[i][1]);
         report += line;
     }
     return report.c_str();
@@ -4179,8 +4151,7 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_capture_begin(const char* path) {
     using namespace th13::sdl;
     if (!app || !path) return 0;
     if (!app->graphics.capture_begin(path)) {
-        last_error = app->graphics.error.empty() ? "draws capture open failed"
-                                                 : app->graphics.error;
+        last_error = app->graphics.error.empty() ? "draws capture open failed" : app->graphics.error;
         return 0;
     }
     return 1;
@@ -4189,7 +4160,10 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_capture_begin(const char* path) {
 // 结束捕获：关闭输出，返回已落帧数。
 EMSCRIPTEN_KEEPALIVE unsigned th13_debug_capture_end() {
     using namespace th13::sdl;
-    if (!app) { last_error = "capture end without application"; return ~0u; }
+    if (!app) {
+        last_error = "capture end without application";
+        return ~0u;
+    }
     if (!app->graphics.capture_finish()) {
         last_error = app->graphics.error;
         return ~0u;

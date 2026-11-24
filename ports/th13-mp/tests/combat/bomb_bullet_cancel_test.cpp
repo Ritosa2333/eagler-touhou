@@ -8,27 +8,34 @@
 using namespace th13;
 namespace {
 struct Items final : StageItemHost {
-    struct Spawn { float x, y, z; i32 kind; };
+    struct Spawn {
+        float x, y, z;
+        i32 kind;
+    };
     std::vector<Spawn> spawns;
-    void spawn_item(float x, float y, float z, i32 kind, float, float) override {
-        spawns.push_back({x, y, z, kind});
-    }
+    void spawn_item(float x, float y, float z, i32 kind, float, float) override { spawns.push_back({x, y, z, kind}); }
     void spawn_value_item(i32, float, float, float, float) override {}
     void on_et_clear(float, float, float) override {}
 };
-StageBullet make_bullet(float x, float y, float vx = 0.0f, float vy = 0.0f,
-                        u16 state = 1) {
+StageBullet make_bullet(float x, float y, float vx = 0.0f, float vy = 0.0f, u16 state = 1) {
     StageBullet b;
-    b.x = x; b.y = y; b.vel[0] = vx; b.vel[1] = vy;
+    b.x = x;
+    b.y = y;
+    b.vel[0] = vx;
+    b.vel[1] = vy;
     b.hit_size[0] = b.hit_size[1] = 4.0f;
-    b.sprite = 0; b.subtype = 4;  // bullet_cancel_script(0,4) = 139
+    b.sprite = 0;
+    b.subtype = 4;  // bullet_cancel_script(0,4) = 139
     b.state = state;
     return b;
 }
 }  // namespace
 
 TEST(radius_4114f0_state4_callback_half_step_and_kind9_before_move) {
-    StageSim sim; Items items; sim.items = &items; sim.set_time_rate(0.5f);
+    StageSim sim;
+    Items items;
+    sim.items = &items;
+    sim.set_time_rate(0.5f);
     int effects = 0;
     sim.stationary_cancel_effect = [&](i32 script, const Vec3& p) {
         ++effects;
@@ -68,7 +75,9 @@ TEST(radius_4114f0_ignores_protection_and_skips_non_live_states) {
 }
 
 TEST(respawn_411770_respects_protection_and_spawns_no_kind9) {
-    StageSim sim; Items items; sim.items = &items;
+    StageSim sim;
+    Items items;
+    sim.items = &items;
     sim.bullets.push_back(make_bullet(0.0f, 200.0f));
     sim.bullets.back().cancel_protection = 1;
     sim.bullets.push_back(make_bullet(0.0f, 200.0f));
@@ -79,12 +88,17 @@ TEST(respawn_411770_respects_protection_and_spawns_no_kind9) {
 }
 
 TEST(box_4119c0_state4_half_step_and_kind9_after_move) {
-    StageSim sim; Items items; sim.items = &items; sim.set_time_rate(1.0f);
+    StageSim sim;
+    Items items;
+    sim.items = &items;
+    sim.set_time_rate(1.0f);
     int effects = 0;
-    sim.stationary_cancel_effect = [&](i32, const Vec3&) { ++effects; return true; };
+    sim.stationary_cancel_effect = [&](i32, const Vec3&) {
+        ++effects;
+        return true;
+    };
     sim.bullets.push_back(make_bullet(10.0f, 200.0f, 2.0f, 0.0f));
-    sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {64.0f, 64.0f, 0.0f}, 0.0f, 0.0f, true,
-                           true);
+    sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {64.0f, 64.0f, 0.0f}, 0.0f, 0.0f, true, true);
     CHECK(sim.error().empty());
     CHECK_EQ(sim.bullets[0].state, 4u);
     CHECK_EQ(sim.bullets[0].x, 11.0f);
@@ -99,8 +113,7 @@ TEST(box_4119c0_respects_protection_world_rect_and_screen_field) {
         StageSim sim;
         sim.bullets.push_back(make_bullet(0.0f, 200.0f));
         sim.bullets.back().cancel_protection = 1;
-        sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {64.0f, 64.0f, 0.0f}, 0.0f, 0.0f,
-                               true, true);
+        sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {64.0f, 64.0f, 0.0f}, 0.0f, 0.0f, true, true);
         CHECK_EQ(sim.bullets[0].state, 1u);
     }
     // World rectangle: |dx| == half width is included; +1 is outside.
@@ -108,8 +121,7 @@ TEST(box_4119c0_respects_protection_world_rect_and_screen_field) {
         StageSim sim;
         sim.bullets.push_back(make_bullet(32.0f, 200.0f));
         sim.bullets.push_back(make_bullet(33.0f, 200.0f));
-        sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {64.0f, 64.0f, 0.0f}, 0.0f, 0.0f,
-                               true, true);
+        sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {64.0f, 64.0f, 0.0f}, 0.0f, 0.0f, true, true);
         CHECK_EQ(sim.bullets[0].state, 4u);
         CHECK_EQ(sim.bullets[1].state, 1u);
     }
@@ -120,8 +132,7 @@ TEST(box_4119c0_respects_protection_world_rect_and_screen_field) {
         sim.bullets.push_back(make_bullet(193.0f, 200.0f));
         sim.bullets.push_back(make_bullet(0.0f, 0.0f));
         sim.bullets.push_back(make_bullet(0.0f, -1.0f));
-        sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {1024.0f, 1024.0f, 0.0f}, 0.0f, 0.0f,
-                               true, true);
+        sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {1024.0f, 1024.0f, 0.0f}, 0.0f, 0.0f, true, true);
         CHECK_EQ(sim.bullets[0].state, 4u);
         CHECK_EQ(sim.bullets[1].state, 1u);
         CHECK_EQ(sim.bullets[2].state, 4u);
@@ -132,8 +143,7 @@ TEST(box_4119c0_respects_protection_world_rect_and_screen_field) {
         StageSim sim;
         sim.bullets.push_back(make_bullet(0.0f, 200.0f, 0.0f, 0.0f, 3));
         sim.bullets.push_back(make_bullet(0.0f, 200.0f, 0.0f, 0.0f, 4));
-        sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {64.0f, 64.0f, 0.0f}, 0.0f, 0.0f,
-                               true, true);
+        sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {64.0f, 64.0f, 0.0f}, 0.0f, 0.0f, true, true);
         CHECK_EQ(sim.bullets[0].state, 3u);
         CHECK_EQ(sim.bullets[1].state, 4u);
     }
@@ -143,20 +153,20 @@ TEST(box_4119c0_uses_each_bullets_scaled_radius) {
     // Original Sanae stage5 f3693: slot1978 and 1997 touch rays 3 and 4
     // with distances 3.9497 and 1.1513 outside their 320x32 rectangles.
     // The original gives both bullet types radius 4 (4119c0 +1324*+b90).
-    struct Case { Vec3 center; float angle, x, y; };
+    struct Case {
+        Vec3 center;
+        float angle, x, y;
+    };
     const Case cases[] = {
-        {{-6.43389892578125f, 126.90037536621094f, 0.f}, -0.6283185482025146f,
-         -116.40731811523438f, 231.4599609375f},
-        {{-67.54704284667969f, 126.90481567382812f, 0.f}, 0.6283185482025146f,
-         -64.23521423339844f, 108.1108169555664f},
+        {{-6.43389892578125f, 126.90037536621094f, 0.f}, -0.6283185482025146f, -116.40731811523438f, 231.4599609375f},
+        {{-67.54704284667969f, 126.90481567382812f, 0.f}, 0.6283185482025146f, -64.23521423339844f, 108.1108169555664f},
     };
     for (const auto& c : cases) {
         StageSim sim;
         sim.bullets.push_back(make_bullet(c.x, c.y));
         sim.bullets.push_back(make_bullet(c.x, c.y));
         sim.bullets.back().hit_scale = 0.f;
-        sim.cancel_bullets_box(c.center, {320.f, 32.f, 0.f}, c.angle, 0.f,
-                               false, true, true);
+        sim.cancel_bullets_box(c.center, {320.f, 32.f, 0.f}, c.angle, 0.f, false, true, true);
         CHECK_EQ(sim.bullets[0].state, 4u);
         CHECK_EQ(sim.bullets[1].state, 1u);
     }
@@ -165,19 +175,23 @@ TEST(box_4119c0_uses_each_bullets_scaled_radius) {
     screen.bullets.push_back(make_bullet(194.f, 200.f));
     screen.bullets.push_back(make_bullet(194.f, 200.f));
     screen.bullets.back().hit_scale = 0.25f;
-    screen.cancel_bullets_box({0.f, 200.f, 0.f}, {1024.f, 1024.f, 0.f}, 0.f,
-                              0.f, false, true, true);
+    screen.cancel_bullets_box({0.f, 200.f, 0.f}, {1024.f, 1024.f, 0.f}, 0.f, 0.f, false, true, true);
     CHECK_EQ(screen.bullets[0].state, 4u);
     CHECK_EQ(screen.bullets[1].state, 1u);
 }
 
 TEST(kind9_item_box_is_strict_at_playfield_edges) {
     // 0x412320: x+32 > -192, x-32 < 192, y+32 > 0, y-32 < 448.
-    struct Case { float x, y; bool spawn; };
-    const Case cases[] = {{-224.0f, 200.0f, false}, {-223.99f, 200.0f, true},
-                          {0.0f, -32.0f, false},   {0.0f, -31.99f, true}};
+    struct Case {
+        float x, y;
+        bool spawn;
+    };
+    const Case cases[] = {
+        {-224.0f, 200.0f, false}, {-223.99f, 200.0f, true}, {0.0f, -32.0f, false}, {0.0f, -31.99f, true}};
     for (const auto& c : cases) {
-        StageSim sim; Items items; sim.items = &items;
+        StageSim sim;
+        Items items;
+        sim.items = &items;
         sim.bullets.push_back(make_bullet(c.x, c.y));
         sim.cancel_bullets_radius({c.x, c.y, 0.0f}, 64.0f, true);
         CHECK_EQ(sim.bullets[0].state, 4u);
@@ -186,13 +200,13 @@ TEST(kind9_item_box_is_strict_at_playfield_edges) {
 }
 
 TEST(state4_cancel_is_idempotent_and_keeps_the_node) {
-    StageSim sim; Items items; sim.items = &items;
+    StageSim sim;
+    Items items;
+    sim.items = &items;
     sim.bullets.push_back(make_bullet(0.0f, 200.0f, 2.0f, 0.0f));
-    sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {64.0f, 64.0f, 0.0f}, 0.0f, 0.0f, true,
-                           true);
+    sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {64.0f, 64.0f, 0.0f}, 0.0f, 0.0f, true, true);
     const float x = sim.bullets[0].x;
-    sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {64.0f, 64.0f, 0.0f}, 0.0f, 0.0f, true,
-                           true);
+    sim.cancel_bullets_box({0.0f, 200.0f, 0.0f}, {64.0f, 64.0f, 0.0f}, 0.0f, 0.0f, true, true);
     CHECK_EQ(sim.bullets.size(), size_t(1));
     CHECK(sim.bullets[0].alive);
     CHECK_EQ(sim.bullets[0].x, x);

@@ -1,6 +1,6 @@
 #pragma once
 namespace touhou::sdl {
-inline constexpr const char* vertexSource=R"GLSL(#version 300 es
+inline constexpr const char* vertexSource = R"GLSL(#version 300 es
 precision highp float;
 layout(location=0) in vec4 position;
 layout(location=1) in vec4 diffuse;
@@ -38,7 +38,7 @@ void main(){
   float fog=fogMode==1?exp(-fogParams.z*z):fogMode==2?exp(-pow(fogParams.z*z,2.0)):(fogParams.y-z)/(fogParams.y-fogParams.x);
   vFog=fogEnabled?(transformed?specular.a:fog):1.0;
 })GLSL";
-inline constexpr const char* fragmentSource=R"GLSL(#version 300 es
+inline constexpr const char* fragmentSource = R"GLSL(#version 300 es
 precision highp float;
 in vec4 vColor,vSpecular;in vec2 vUV;in float vFog;
 flat in vec4 vFactor;
@@ -64,4 +64,4 @@ void main(){vec4 t=hasTexture?texture(tex,vUV):vec4(1.0);
  float scaled=gl_FragCoord.z*65536.0;
  gl_FragDepth=depth16?(floor(scaled)+floor(fract(scaled)-gl_FragCoord.z+0.5))/65535.0:gl_FragCoord.z;
 })GLSL";
-}
+}  // namespace touhou::sdl
