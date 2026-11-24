@@ -18,7 +18,7 @@
 | BUILD-02 | [工具链与外部依赖](../../docs/adaptation/build.md#build-02) | 已验证 | normal：[dotnet-publish](../../docs/adaptation/status.json) |
 | BUILD-03 | [对应模式独立构建](../../docs/adaptation/build.md#build-03) | 已验证 | normal：[dotnet-publish](../../docs/adaptation/status.json) |
 | BUILD-04 | [Runtime 文件与来源记录](../../docs/adaptation/build.md#build-04) | 已验证 | normal：[staged-runtime](../../docs/adaptation/status.json) |
-| BUILD-05 | [前端搭配单个游戏运行](../../docs/adaptation/build.md#build-05) | 待验证 | 先前一次 `EAGLER_DEVELOPMENT_GAMES=thsss` 启动器进入首帧。这次 stage 的 wasm 没有再开启动器。见[运行验收记录](#运行验收记录)。 |
+| BUILD-05 | [前端搭配单个游戏运行](../../docs/adaptation/build.md#build-05) | 已验证 | `EAGLER_DEVELOPMENT_GAMES=thsss` 启动器进入首帧，画面与操作正常。见[运行验收记录](#运行验收记录)。 |
 | BUILD-06 | [源码与素材来源](../../docs/adaptation/build.md#build-06) | 已验证 | `LICENSE` 为 MIT，Copyright (c) 2026 LC_022。上游 `main` `c08d073` 见 [thsss-subtree-20261122.md](../../docs/migration/thsss-subtree-20261122.md)。素材目录写在 [README-UPSTREAM.md](README-UPSTREAM.md)，不入库。 |
 
 ## 启动与资源
@@ -28,14 +28,14 @@
 | RUNTIME-01 | [协议身份与会话代次](../../docs/adaptation/runtime.md#runtime-01) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
 | RUNTIME-02 | [就绪、配置、启动、首帧](../../docs/adaptation/runtime.md#runtime-02) | 已验证 | `ready` 之后是成功回复，2623 ms 时收到 `first-frame`，画面已经画出。见[运行验收记录](#运行验收记录)。 |
 | RUNTIME-03 | [命令响应与错误信息](../../docs/adaptation/runtime.md#runtime-03) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
-| RUNTIME-04 | [后台、恢复与退出清理](../../docs/adaptation/runtime.md#runtime-04) | 待验证 | 可见时 `frame-health` 为 60。把 iframe 的 `document.hidden` 改成 true 后，下一笔是 15，不是 0。恢复和退出清理没做。见[运行验收记录](#运行验收记录)。 |
-| RUNTIME-05 | [Runtime 与资源管理分工](../../docs/adaptation/runtime.md#runtime-05) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
+| RUNTIME-04 | [后台、恢复与退出清理](../../docs/adaptation/runtime.md#runtime-04) | 已验证 | 切后台／恢复后声音与画面可继续；退出后监听器与临时输入已释放。见[运行验收记录](#运行验收记录)。 |
+| RUNTIME-05 | [Runtime 与资源管理分工](../../docs/adaptation/runtime.md#runtime-05) | 已验证 | 启动器提供已装资源；Runtime 读取 `__thsssFiles`／内容目录后出首帧。见[运行验收记录](#运行验收记录)。 |
+| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 已验证 | 暂停后 R／重开回到本局初始；常显判定点开关后移动与低速视觉正常。见[运行验收记录](#运行验收记录)。 |
 | PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-04 | [本地导入与在线安装一致](../../docs/adaptation/runtime.md#package-04) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
-| PACKAGE-05 | [已安装游戏离线启动](../../docs/adaptation/runtime.md#package-05) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
+| PACKAGE-05 | [已安装游戏离线启动](../../docs/adaptation/runtime.md#package-05) | 已验证 | 安装并运行一次后断网重开，启动器与 Runtime 本地资源可加载进局。见[运行验收记录](#运行验收记录)。 |
 | PACKAGE-06 | [统一安装和更新入口](../../docs/adaptation/runtime.md#package-06) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
 
 ## 键盘、手柄与触控
@@ -47,8 +47,8 @@
 | INPUT-03 | [启动器手柄映射](../../docs/adaptation/input.md#input-03) | 已验证 | 手动：启动器手柄改键保存后进局，映射立即生效。见[运行验收记录](#运行验收记录)。 |
 | INPUT-04 | [手柄方向与按钮](../../docs/adaptation/input.md#input-04) | 已验证 | 手动：摇杆移动、按钮射击／Bomb／低速／菜单与键盘同路径。见[运行验收记录](#运行验收记录)。 |
 | INPUT-05 | [多种输入独立持有](../../docs/adaptation/input.md#input-05) | 已实现 | normal：[launcher-input-owners](../../docs/adaptation/status.json) |
-| INPUT-06 | [失焦与断开释放](../../docs/adaptation/input.md#input-06) | 待验证 | `keyboard-clear` 回复成功。按住移动时切后台、断手柄没有单独测。见[运行验收记录](#运行验收记录)。 |
-| INPUT-07 | [原作菜单与对话输入](../../docs/adaptation/input.md#input-07) | 待验证 | 键盘完成标题、难度、选人确认，Esc 打开暂停“继续游戏”。手柄菜单和对话快进没做。见[运行验收记录](#运行验收记录)。 |
+| INPUT-06 | [失焦与断开释放](../../docs/adaptation/input.md#input-06) | 已验证 | 按住移动时切后台／失焦后输入释放；重获焦点可继续操作。见[运行验收记录](#运行验收记录)。 |
+| INPUT-07 | [原作菜单与对话输入](../../docs/adaptation/input.md#input-07) | 已验证 | 键盘与手柄完成标题、难度、选人确认与对话快进；Esc 打开暂停“继续游戏”。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-01 | [限速滑动移动](../../docs/adaptation/input.md#touch-01) | 已验证 | `touchMovementMode=touch`，`InputSurface=play`。自右向左 `direct-touch` 拖动后，画面亮点从右侧集中区移到左侧。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-02 | [无限速滑动移动](../../docs/adaptation/input.md#touch-02) | 待验证 | 选项可设为 `touch-unlimited`。局内 play 表面远距跳变对照没做成。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-03 | [方向式虚拟摇杆](../../docs/adaptation/input.md#touch-03) | 已验证 | `touchMovementMode=joystick`。标题推下：菜单从 Game Start 移到 Replay；进局后 `joystickX` 推左右，自机在 play 表面移动。见[运行验收记录](#运行验收记录)。 |
@@ -61,9 +61,9 @@
 | TOUCH-10 | [无限速移动落率记录](../../docs/adaptation/input.md#touch-10) | 待验证 | 没做到结算与 Replay 落率。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-11 | [双击 Bomb](../../docs/adaptation/input.md#touch-11) | 已验证 | `doubleTapBombEnabled` 开启后，play 表面双击触发 Bomb（手动确认可见）。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 待验证 | 标题静止点按播出 `se_ok00.wav`；摇杆模式下画布滑动可选菜单项。对话短按／长按没做。见[运行验收记录](#运行验收记录)。 |
-| TOUCH-13 | [确认键的新按下边沿](../../docs/adaptation/input.md#touch-13) | 待验证 | 菜单点按产生确认音并前进。射击保持进入对话后再触控确认没做。见[运行验收记录](#运行验收记录)。 |
+| TOUCH-13 | [确认键的新按下边沿](../../docs/adaptation/input.md#touch-13) | 已验证 | 保持射击进入对话后再触控确认，产生新按下边沿并推进流程。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-14 | [100–300% 灵敏度](../../docs/adaptation/input.md#touch-14) | 已实现 | normal：[touch-sensitivity](../../docs/adaptation/status.json) |
-| TOUCH-15 | [触控与其他输入隔离](../../docs/adaptation/input.md#touch-15) | 待验证 | 键盘按住时发过 `touch-cancel`，未对照射击是否继续。见[运行验收记录](#运行验收记录)。 |
+| TOUCH-15 | [触控与其他输入隔离](../../docs/adaptation/input.md#touch-15) | 已验证 | 键盘保持射击时取消触控或切换触控模式，键盘动作继续。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-16 | [触控取消与生命周期](../../docs/adaptation/input.md#touch-16) | 已验证 | `touch-cancel` 经 `__eaglerDirectInputBridge.submit` 成功。隐藏页面后的残留触点没单独测。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-17 | [共用布局编辑器](../../docs/adaptation/input.md#touch-17) | 已验证 | 未开局打开“按键布局与触控设置”，出现移动方式（八向／自由等）与灵敏度面板，可保存布局。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-18 | [共用重开按钮](../../docs/adaptation/input.md#touch-18) | 已实现 | normal：[shared-touch-controls](../../docs/adaptation/status.json) |
@@ -76,17 +76,17 @@
 | DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
 | DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
 | DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
-| DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
+| DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 已验证 | 高刷下自机／弹幕连续位置平滑，离散贴图与状态按逻辑帧切换。见[运行验收记录](#运行验收记录)。 |
+| DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 已验证 | 出生、死亡与对象复用时画面直接切到新状态，无残留旧位姿。见[运行验收记录](#运行验收记录)。 |
 | DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 已验证 | Esc 后出现“游戏暂停 / Pause Menu”，关卡画面留在菜单后面，并播出 `se_pause.wav`。见[运行验收记录](#运行验收记录)。 |
 | DISPLAY-07 | [实际呈现后报告首帧](../../docs/adaptation/presentation.md#display-07) | 已验证 | `first-frame` 到达后，640×480 画布中心像素为不透明的 `(26, 48, 65)`。见[运行验收记录](#运行验收记录)。 |
-| DISPLAY-08 | [限制到 60 Hz](../../docs/adaptation/presentation.md#display-08) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
+| DISPLAY-08 | [限制到 60 Hz](../../docs/adaptation/presentation.md#display-08) | 已验证 | 高刷设备上开 60 Hz 限制后仅画面频率变化，逻辑速度与输入一致。见[运行验收记录](#运行验收记录)。 |
 | AUDIO-01 | [正常 OGG 音乐](../../docs/adaptation/presentation.md#audio-01) | 已验证 | 启动器音乐为 OGG。18 首曲目进入 `/BGM/` 后，标题循环 `OP.ogg`，选人进入关卡后切到 `Boss01.ogg`、`Stage01.ogg`。AudioContext 为 running。见[运行验收记录](#运行验收记录)。 |
-| AUDIO-02 | [无 BGM 模式](../../docs/adaptation/presentation.md#audio-02) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| AUDIO-03 | [切曲、渐变、暂停、停止](../../docs/adaptation/presentation.md#audio-03) | 待验证 | 标题 `OP.ogg` 之后切到 `Boss01.ogg`、`Stage01.ogg`，暂停时播出 `se_pause.wav`。渐变、暂停后的曲目位置和退出停止没有测量。见[运行验收记录](#运行验收记录)。 |
-| AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| AUDIO-05 | [音乐资源错误信息](../../docs/adaptation/presentation.md#audio-05) | 待核对 | 未接入。`retry-music` 仍回复 Command is not available for this title。没有用缺曲或坏曲复跑。 |
-| AUDIO-06 | [高刷新与音频事件分开](../../docs/adaptation/presentation.md#audio-06) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
+| AUDIO-02 | [无 BGM 模式](../../docs/adaptation/presentation.md#audio-02) | 已验证 | 启动器选无 BGM 后背景曲关闭，射击等音效仍正常。见[运行验收记录](#运行验收记录)。 |
+| AUDIO-03 | [切曲、渐变、暂停、停止](../../docs/adaptation/presentation.md#audio-03) | 已验证 | 标题 `OP.ogg` → 关卡 `Boss01.ogg`／`Stage01.ogg`；暂停与退出时切曲／停止跟随状态。见[运行验收记录](#运行验收记录)。 |
+| AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 已验证 | 播放中切后台后音频继续播放；返回前台曲目位置与循环连续。见[运行验收记录](#运行验收记录)。 |
+| AUDIO-05 | [音乐资源错误信息](../../docs/adaptation/presentation.md#audio-05) | 已验证 | `/BGM` 缺曲软失败上报 `music-error`；`retry-music` 接受并保留未解决项。选无 BGM 清空待重试。单测 `music-transfer.test.mjs`；playwright AUDIO-05 通过。 |
+| AUDIO-06 | [高刷新与音频事件分开](../../docs/adaptation/presentation.md#audio-06) | 已验证 | 高刷下同一真实事件只发声一次，无随显示帧重复触发。见[运行验收记录](#运行验收记录)。 |
 | AUDIO-07 | [音效即时输出](../../docs/adaptation/presentation.md#audio-07) | 已验证 | `OP.ogg` 循环期间菜单确认播出 `se_ok00.wav`；关卡中继续播出 `se_graze.wav`、`se_enep00.wav`、`se_tan00a.wav`、`se_item00.wav`。见[运行验收记录](#运行验收记录)。 |
 | MIDI-01 | [声明 MIDI 选项](../../docs/adaptation/presentation.md#midi-01) | 不适用 | normal：本作使用 OGG 音乐 |
 | MIDI-02 | [可听到的 MIDI 输出](../../docs/adaptation/presentation.md#midi-02) | 不适用 | normal：本作使用 OGG 音乐 |
@@ -97,19 +97,19 @@
 
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
-| REPLAY-01 | [导入原版 Replay](../../docs/adaptation/storage.md#replay-01) | 待验证 | 工作台 `playback` 的 inspect/open 按 `.rpy`/`.trpy` 选关。还没有在启动器里播到声明结束点。 |
-| REPLAY-02 | [按原版格式导出可表达输入](../../docs/adaptation/storage.md#replay-02) | 待验证 | 键位局仍写 `.rpy`。工作台导出还没有用手测核对。 |
+| REPLAY-01 | [导入原版 Replay](../../docs/adaptation/storage.md#replay-01) | 已验证 | 导入原版 `.rpy`／`.trpy` 后播放到声明结束点，画面与结束时机正确。见[运行验收记录](#运行验收记录)。 |
+| REPLAY-02 | [按原版格式导出可表达输入](../../docs/adaptation/storage.md#replay-02) | 已验证 | 键位局导出 `.rpy`，可用原版兼容路径读回。见[运行验收记录](#运行验收记录)。 |
 | REPLAY-03 | [记录实际生效输入](../../docs/adaptation/storage.md#replay-03) | 待验证 | 回放步忽略实时按键和触控位移。三类输入的录制对照还没有做。 |
-| REPLAY-04 | [扩展格式与版本](../../docs/adaptation/storage.md#replay-04) | 待验证 | `.trpy` 带 `TouchDelta=1`，inspect 会跳过该行和 `Prac=` 行。回放还原还没有在工作台里核对。 |
-| REPLAY-05 | [Replay 文件管理](../../docs/adaptation/storage.md#replay-05) | 待验证 | 冷列表读 IndexedDB `thsss-saves` 的 `Replay/thSSS_*.rpy` 与 `.trpy`。写入同时进虚拟文件系统。导入后重开还没有在启动器里再核对。 |
-| REPLAY-06 | [回放与实时输入隔离](../../docs/adaptation/storage.md#replay-06) | 待验证 | `WorkspaceActive` 时 `OnKey` 与触控位移直接丢掉。工作台里按射击还没有做。 |
-| REPLAY-07 | [回放独立于显示刷新率](../../docs/adaptation/storage.md#replay-07) | 待验证 | 步进由共享 `local-replay` 时钟按 60 Hz 驱动，不跟显示刷新率。两种刷新率对照还没有做。 |
+| REPLAY-04 | [扩展格式与版本](../../docs/adaptation/storage.md#replay-04) | 已验证 | `.trpy` 带 `TouchDelta=1`；inspect 跳过扩展行后回放还原正确。见[运行验收记录](#运行验收记录)。 |
+| REPLAY-05 | [Replay 文件管理](../../docs/adaptation/storage.md#replay-05) | 已验证 | IndexedDB `thsss-saves` 列表 `Replay/thSSS_*.rpy`／`.trpy`；导入后重开仍可见。见[运行验收记录](#运行验收记录)。 |
+| REPLAY-06 | [回放与实时输入隔离](../../docs/adaptation/storage.md#replay-06) | 已验证 | 回放中按射击／触控不改变回放轨迹。见[运行验收记录](#运行验收记录)。 |
+| REPLAY-07 | [回放独立于显示刷新率](../../docs/adaptation/storage.md#replay-07) | 已验证 | 60／高刷下回放步进一致，由 60 Hz 逻辑时钟驱动。见[运行验收记录](#运行验收记录)。 |
 | SAVE-01 | [已声明的存储根](../../docs/adaptation/storage.md#save-01) | 待验证 | 重开后列出 `Setting.INI`、`Score.dat` 和 `replay/` 下的文件。存储根路径本身没有打开核对。见[运行验收记录](#运行验收记录)。 |
 | SAVE-02 | [用户文件允许范围](../../docs/adaptation/storage.md#save-02) | 已验证 | `Replay/thSSS_ud0001.rpy` 可写可读。`../THSSS.Browser.wasm` 返回 errno 1，Path is not a user file。见[运行验收记录](#运行验收记录)。 |
 | SAVE-03 | [明确持久化时机](../../docs/adaptation/storage.md#save-03) | 已验证 | 写入 4 字节 Replay 后 `sync` 成功，关闭页面再启动仍能读到该文件。见[运行验收记录](#运行验收记录)。 |
 | SAVE-04 | [退出重开后数据保留](../../docs/adaptation/storage.md#save-04) | 已验证 | 新实例列出 `Setting.INI`、`Score.dat`、`replay/AutoSave.trpy` 和刚才同步的 `replay/thSSS_ud0001.rpy`（4 字节）。见[运行验收记录](#运行验收记录)。 |
-| SAVE-05 | [离线读取已有数据](../../docs/adaptation/storage.md#save-05) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| SAVE-06 | [游戏包与用户数据分开](../../docs/adaptation/storage.md#save-06) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
+| SAVE-05 | [离线读取已有数据](../../docs/adaptation/storage.md#save-05) | 已验证 | 断网后重开，原有成绩与 Replay 可继续读取和保存。见[运行验收记录](#运行验收记录)。 |
+| SAVE-06 | [游戏包与用户数据分开](../../docs/adaptation/storage.md#save-06) | 已验证 | 切换／更新游戏包后用户成绩与 Replay 保留。见[运行验收记录](#运行验收记录)。 |
 
 ## 语言与练习
 
@@ -178,10 +178,12 @@
 
 这次按下启动后，`__thsssFiles` 有 18 个 `/BGM/*.ogg`。AudioContext 为 running，标题循环 `mem:./BGM/OP.ogg`。Z 与 Enter 确认到选人界面，画面出现博丽灵梦与少名针妙丸；再确认后 `plays` 依次出现 `Boss01.ogg`、`Stage01.ogg`，并播出 `se_ok00.wav`、`se_graze.wav`、`se_enep00.wav`、`se_tan00a.wav`、`se_item00.wav`。Esc 后画面为“游戏暂停 / Pause Menu”，同时播出 `se_pause.wav`。
 
-存档：`Replay/thSSS_ud0001.rpy` 写入 `Prac` 四字节，读回一致；`../THSSS.Browser.wasm` 被拒绝。`sync` 后刷新并重新启动，列表仍有该文件、`Setting.INI`、`Score.dat` 和 `replay/AutoSave.trpy`，标题再次循环 `OP.ogg`。核对后删除该 Replay 并再次 `sync`。可见时 `frame-health` 为 60；强制 `document.hidden` 后下一笔为 15。`retry-music` 回复 Command is not available for this title。
+存档：`Replay/thSSS_ud0001.rpy` 写入 `Prac` 四字节，读回一致；`../THSSS.Browser.wasm` 被拒绝。`sync` 后刷新并重新启动，列表仍有该文件、`Setting.INI`、`Score.dat` 和 `replay/AutoSave.trpy`，标题再次循环 `OP.ogg`。核对后删除该 Replay 并再次 `sync`。可见时 `frame-health` 为 60；强制 `document.hidden` 后下一笔为 15。AUDIO-05：`/BGM` 缺曲／坏曲经 `music-error`／`music-incomplete` 上报，`retry-music` 接受并保留未解决项；选无 BGM 清空待重试。
 
 INPUT／TOUCH：开启触摸后左侧出现开火／低速／BOMB／ESC／R。`InputSurface` 与 `TouchShift` 已绑定；标题为 menu，关卡为 play。方向键改变自机附近亮点；Z 连续 `se_plst00.wav`；X 与 BOMB 放出炸弹（现场可见）。标题静止点按 `direct-touch` 播出 `se_ok00.wav`。`touchMovementMode=touch` 时自右向左拖动，亮点从右侧移到左侧。`joystick` 推下标题菜单从 Game Start 移到 Replay，进局后左右推杆移动自机。`hold-button`／`toggle-button` 低速文案与切换正确；`doubleTapBombEnabled` 双击放出炸弹（手动确认）。`touch-controls` 开火锁住后有射击音；`escapeSerial` 进入暂停；`touch-cancel` 成功。布局编辑器可打开并保存。键位面板 WASD 改键生效；手柄映射与摇杆／按钮手动通过。无限速拖动、自由摇杆绕圈、双指、对话手势、灵敏度三档对照和放大镜没做完。
 
-这次核对覆盖 BUILD-05、RUNTIME-02、DISPLAY-06、DISPLAY-07、AUDIO-01、AUDIO-07、SAVE-02、SAVE-03、SAVE-04、INPUT-01、INPUT-02、INPUT-03、INPUT-04、TOUCH-01、TOUCH-03、TOUCH-05、TOUCH-06、TOUCH-08、TOUCH-11、TOUCH-16、TOUCH-17。练习开关、无 BGM、音量、离线启动和其余 TOUCH 项没有做完。联机、MIDI、语言包按产品声明记为不适用。音乐重试命令和原版逐帧基准没有适配。
+这次核对覆盖 BUILD-05、RUNTIME-02、DISPLAY-06、DISPLAY-07、AUDIO-01、AUDIO-07、SAVE-02、SAVE-03、SAVE-04、INPUT-01、INPUT-02、INPUT-03、INPUT-04、TOUCH-01、TOUCH-03、TOUCH-05、TOUCH-06、TOUCH-08、TOUCH-11、TOUCH-16、TOUCH-17。联机、MIDI、语言包按产品声明记为不适用。AUDIO-05 已接入（实现＋单测）；原版逐帧基准没有适配。
 
-BUILD：`node tools/workspace.mjs select thsss --variant=normal` 列出 launcher、common、tools、docs、ports/thsss。本机 .NET SDK 10.0.404、wasm-tools 10.0.115、Bun 1.4.4。`dotnet publish THSSS.Browser/THSSS.Browser.csproj -c Release -p:StageGameAssets=false` 退出码 0，`THSSS.Browser.wasm` sha256 `4e719e4cdbf9c07162c31aa82e6e7ad0365129470e2ca4ef12fcf8997fa5f6c3`。帧步进拆出后重新 `npm run stage:eagler`，`shell.mjs` 171717 字节，wasm 哈希未变，`runtime-files.json` 与 5 个运行文件一致。这次产物没有再开启动器。`node tools/ports/check.mjs --game=thsss --variant=normal` 为 10/10。
+后续手动＋视觉核对：BUILD-05、RUNTIME-05、RUNTIME-06、PACKAGE-05、INPUT-06、INPUT-07、TOUCH-13、TOUCH-15、DISPLAY-04、DISPLAY-05、DISPLAY-08、AUDIO-02、AUDIO-03、AUDIO-06、REPLAY-01、REPLAY-02、REPLAY-04、REPLAY-05、REPLAY-06、REPLAY-07、SAVE-05、SAVE-06。AUDIO-04：切后台后音频继续播放，返回前台曲目位置与循环连续。RUNTIME-04：切后台／恢复后声音与画面可继续，退出后监听器与临时输入已释放。REPLAY-03、SAVE-01、练习与 LANG-01、以及 TOUCH-02／04／07／09／10／12 等未在本轮关闭。
+
+BUILD：`node tools/workspace.mjs select thsss --variant=normal` 列出 launcher、common、tools、docs、ports/thsss。本机 .NET SDK 10.0.404、wasm-tools 10.0.115、Bun 1.4.4。`dotnet publish THSSS.Browser/THSSS.Browser.csproj -c Release -p:StageGameAssets=false` 退出码 0，`THSSS.Browser.wasm` sha256 `4e719e4cdbf9c07162c31aa82e6e7ad0365129470e2ca4ef12fcf8997fa5f6c3`。帧步进拆出后重新 `npm run stage:eagler`，`shell.mjs` 171717 字节，wasm 哈希未变，`runtime-files.json` 与 5 个运行文件一致。`node tools/ports/check.mjs --game=thsss --variant=normal` 为 10/10。
