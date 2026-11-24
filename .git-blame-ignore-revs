@@ -1,0 +1,4 @@
+# 全量排版提交：git blame 跳过它们，逐行历史保留真实的修改原因。
+# 启用：git config blame.ignoreRevsFile .git-blame-ignore-revs
+88f88d5cf08b8ff93578a908f99551249081f3e4  # th13: 全量 clang-format
+b3223ea8713a2e78dbf6d8acde6a6afc0683229e  # th13-mp: 全量 clang-format
