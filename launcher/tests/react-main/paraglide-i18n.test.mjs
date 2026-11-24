@@ -56,67 +56,42 @@ test('localized entry addresses distinguish all three published documents', () =
   assert.equal(api.localeFromPath('/site/en.html'), 'en'); assert.equal(api.localeHome('zh-CN'), './');
 });
 
-function regionalEntry({country = 'JP', url = '/site/?game=th03&q=a%20b#settings', manual, cookie = '', online = true, fetchCountry} = {}) {
-  const origin = 'https://launcher.invalid', store = new Map(), requests = [];
+function launcherEntry({url = '/site/?game=th03&q=a%20b#settings', manual, cookie = '', oldRegionalChoice} = {}) {
+  const origin = 'https://launcher.invalid', store = new Map();
   if (manual) store.set(api.UI_LOCALE_STORAGE_KEY, manual);
+  if (oldRegionalChoice) store.set('eagler-touhou-region-locale-v1', oldRegionalChoice);
   const storage = {getItem: key => store.get(key), setItem: (key, value) => store.set(key, value)};
   const document = {cookie};
   const enter = (path = url) => api.initialUiLocaleAddress({href: new URL(path, origin).href, base: '/site/',
-    storage, document, online, timeoutMs: 20, async fetchCountry(endpoint, init) {
-      requests.push([endpoint.href, init.cache, init.credentials, init.mode]);
-      return fetchCountry ? fetchCountry(endpoint, init) : new Response(country);
-    }});
-  return {enter, store, requests, document};
+    storage, document});
+  return {enter, store, document};
 }
 
-test('first visit selects the country language and keeps the URL payload intact', async () => {
-  for (const country of ['CN', 'HK', 'MO', 'TW', 'JP', 'US', 'GB', 'SG']) {
-    const expected = api.localeForCountry(country);
-    const {enter, requests, store} = regionalEntry({country});
-    const first = await enter(), second = await enter('/site/lobby.html?game=th03mp&room=1234#watch');
-    assert.equal(first?.href, expected === 'zh-CN' ? undefined : `https://launcher.invalid/site/${expected}.html?game=th03&q=a%20b#settings`);
-    assert.equal(second?.href, expected === 'zh-CN' ? undefined : `https://launcher.invalid/site/lobby.html?game=th03mp&room=1234&lang=${expected}#watch`);
-    assert.equal(expected, ['CN','HK','MO','TW'].includes(country) ? 'zh-CN' : country === 'JP' ? 'ja' : 'en');
-    assert.deepEqual(requests, [['https://launcher.invalid/site/_eagler/ui-country', 'no-store', 'omit', 'same-origin']]);
-    assert.equal(store.get(api.UI_LOCALE_STORAGE_KEY), undefined, 'automatic locale is not a manual choice');
-    store.set(api.UI_LOCALE_STORAGE_KEY, 'ja');
-    assert.equal((await enter())?.pathname, '/site/ja.html');
+test('plain entries default to Chinese for new visits and ignore old automatic choices', () => {
+  for (const oldRegionalChoice of [undefined, 'en', 'ja', 'zh-CN']) {
+    const {enter} = launcherEntry({oldRegionalChoice});
+    assert.equal(enter(), undefined);
+    assert.equal(enter('/site/index.html'), undefined);
+    assert.equal(enter('/site/lobby.html?game=th03mp&room=1234#watch'), undefined);
   }
 });
 
-test('explicit links and saved manual language never query IP location', async () => {
-  const {enter, requests} = regionalEntry({manual: 'ja', country: 'CN'});
-  assert.equal((await enter())?.pathname, '/site/ja.html');
-  assert.equal(await enter('/site/lobby.html?lang=zh-CN&room=1234'), undefined);
-  assert.equal(await enter('/site/en.html?game=th03'), undefined);
-  assert.equal(await enter('/site/ja.html'), undefined);
-  assert.equal(await enter('/site/ui-review.html'), undefined);
-  assert.deepEqual(requests, []);
+test('explicit links and saved manual languages retain their values and URL payload', () => {
+  const {enter} = launcherEntry({manual: 'ja', oldRegionalChoice: 'en'});
+  assert.equal(enter()?.href, 'https://launcher.invalid/site/ja.html?game=th03&q=a%20b#settings');
+  assert.equal(enter('/site/lobby.html?lang=zh-CN&room=1234'), undefined);
+  assert.equal(enter('/site/en.html?game=th03'), undefined);
+  assert.equal(enter('/site/ja.html'), undefined);
+  assert.equal(enter('/site/ui-review.html'), undefined);
 });
 
-test('manual language cookie overrides the old storage value and is shared across entry pages', async () => {
-  const {enter, store, requests, document} = regionalEntry({manual: 'en', cookie: `other=1; ${api.UI_LOCALE_STORAGE_KEY}=ja`});
-  assert.equal((await enter())?.pathname, '/site/ja.html');
-  assert.equal(await enter('/site/lobby.html?lang=en'), undefined);
-  assert.equal((await enter('/site/faq.html#guide'))?.href, 'https://launcher.invalid/site/faq.html?lang=ja#guide');
+test('manual language cookie overrides the old storage value and is shared across entry pages', () => {
+  const {enter, store, document} = launcherEntry({manual: 'en', cookie: `other=1; ${api.UI_LOCALE_STORAGE_KEY}=ja`});
+  assert.equal(enter()?.pathname, '/site/ja.html');
+  assert.equal(enter('/site/lobby.html?lang=en'), undefined);
+  assert.equal(enter('/site/faq.html#guide')?.href, 'https://launcher.invalid/site/faq.html?lang=ja#guide');
   assert.equal(store.get(api.UI_LOCALE_STORAGE_KEY), 'en');
-  assert.deepEqual(requests, []);
   api.saveUiLocalePreference(document, null, new URL('https://launcher.invalid/site/'), 'zh-CN');
   assert.equal(document.cookie, `${api.UI_LOCALE_STORAGE_KEY}=zh-CN; Path=/site/; Max-Age=31536000; SameSite=Lax; Secure`);
-  assert.equal(await enter('/site/lobby.html'), undefined);
-  assert.deepEqual(requests, []);
-});
-
-test('offline, unknown country, HTTP errors and timeouts keep the first English default without another lookup', async () => {
-  for (const options of [
-    {online: false}, {country: 'ZZ'}, {country: '<!doctype html>'},
-    {fetchCountry: () => new Response('JP', {status: 404})},
-    {fetchCountry: (_, {signal}) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason), {once: true}))},
-  ]) {
-    const {enter, store, requests} = regionalEntry(options);
-    assert.equal((await enter())?.pathname, '/site/en.html');
-    assert.equal((await enter())?.pathname, '/site/en.html');
-    assert.equal(store.get(api.UI_LOCALE_STORAGE_KEY), undefined);
-    assert.equal(requests.length, options.online === false ? 0 : 1);
-  }
+  assert.equal(enter('/site/lobby.html'), undefined);
 });
