@@ -10,6 +10,7 @@ import { createTouchBridge } from "./host/input/touch-bridge.mjs";
 import { installRemoteResources, installRuntimeFileSystem } from "./runtime-files.mjs";
 import { seedSettingIni } from "./host/storage/setting-ini.mjs";
 import { mountPracticePanel } from "./host/practice/practice-panel.mjs";
+import { createReplayPlayback } from "./host/replay/playback.mjs";
 
 const protocol = "eagler-touhou/1";
 const game = "thsss";
@@ -31,6 +32,7 @@ const keys = createKeyOwners((name, down) => {
 let phase = "booting";
 let starting = false;
 let runtime = null;
+let presentation = null;
 let firstFrameSent = false;
 let runtimeInfoSent = false;
 const frameStats = { frames: 0, maxGap: 0 };
@@ -72,6 +74,14 @@ function surface() {
 }
 
 const files = createFileBridge({ getRuntime: () => runtime, reply });
+const replay = createReplayPlayback({
+  getRuntime: () => runtime,
+  emit,
+  stopLoop() {
+    if (presentation) presentation.stop();
+    presentation = null;
+  },
+});
 const touch = createTouchBridge({
   keys,
   surface,
@@ -177,6 +187,14 @@ async function handle(message) {
     await files.handle(message);
     return;
   }
+  if (command === "playback") {
+    try {
+      reply(message, true, await replay.command(message));
+    } catch (err) {
+      reply(message, false, { error: String(err && err.message || err) });
+    }
+    return;
+  }
   if (command === "keyboard" || command === "keyboard-clear") {
     // When the launcher mapping port is live, remap here. Otherwise keep the
     // original raw keyboard path for standalone / pre-bridge sessions.
@@ -257,11 +275,17 @@ async function startGame() {
   starting = true;
   await seedSettingIni(runtime);
   practice.configure((runtime && runtime.options) || {});
-  await launchRuntime(runtime, {
+  const options = (runtime && runtime.options) || {};
+  if (options.replayViewer) {
+    practice.configure(Object.assign({}, options, { thpracEnabled: false, touchEnabled: false }));
+    if (runtime.host && runtime.host.SetTouchInputEnabled) runtime.host.SetTouchInputEnabled(false);
+  }
+  presentation = await launchRuntime(runtime, {
     onExit() {
       if (healthTimer) window.clearInterval(healthTimer);
       healthTimer = 0;
       keys.releaseAll();
+      replay.close();
       phase = "exited";
       emit("exit", { status: "success", code: 0 });
     },

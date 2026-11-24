@@ -116,6 +116,9 @@ try {
     "host/practice/practice-state.mjs": await text(resolve(wwwroot, "host/practice/practice-state.mjs")),
     "host/practice/practice-panel.mjs": await text(resolve(wwwroot, "host/practice/practice-panel.mjs")),
     "host/presentation/frame-step.mjs": await text(resolve(wwwroot, "host/presentation/frame-step.mjs")),
+    "host/replay/playback.mjs": await text(resolve(wwwroot, "host/replay/playback.mjs")),
+    "host/replay/describe.mjs": await text(resolve(wwwroot, "host/replay/describe.mjs")),
+    "host/replay/local-replay.mjs": await text(resolve(repo, "../../common/browser/local-replay.mjs")),
     "directory-keyboard.mjs": await text(resolve(wwwroot, "directory-keyboard.mjs")),
     "eagler-host.mjs": await text(resolve(wwwroot, "eagler-host.mjs")),
     "runtime-files.mjs": await text(resolve(wwwroot, "runtime-files.mjs")),
@@ -158,6 +161,7 @@ try {
   if (!shell.includes("runtimeEpoch")) throw new Error("bundled shell lost the navigation epoch");
   if (!shell.includes("__eaglerPrepareManagedRuntimeDataV1")) throw new Error("bundled shell lost the managed data bridge");
   if (!shell.includes("ShiftKey")) throw new Error("bundled shell lost the keyboard owner");
+  if (!shell.includes("Replay is not ready")) throw new Error("bundled shell lost the replay workspace");
   await put("shell.mjs", Buffer.from(shell, "utf8"));
 } finally {
   await rm(temp, { recursive: true, force: true });

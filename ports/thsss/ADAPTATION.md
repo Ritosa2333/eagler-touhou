@@ -97,13 +97,13 @@
 
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
-| REPLAY-01 | [导入原版 Replay](../../docs/adaptation/storage.md#replay-01) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| REPLAY-02 | [按原版格式导出可表达输入](../../docs/adaptation/storage.md#replay-02) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| REPLAY-03 | [记录实际生效输入](../../docs/adaptation/storage.md#replay-03) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| REPLAY-04 | [扩展格式与版本](../../docs/adaptation/storage.md#replay-04) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| REPLAY-05 | [Replay 文件管理](../../docs/adaptation/storage.md#replay-05) | 待验证 | 写入、读取、同步、重开后仍在，随后删除并再次同步。删除是否跨实例消失还没再打开核对。见[运行验收记录](#运行验收记录)。 |
-| REPLAY-06 | [回放与实时输入隔离](../../docs/adaptation/storage.md#replay-06) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
-| REPLAY-07 | [回放独立于显示刷新率](../../docs/adaptation/storage.md#replay-07) | 待验证 | 首帧已呈现。本项操作还没做。见[运行验收记录](#运行验收记录)。 |
+| REPLAY-01 | [导入原版 Replay](../../docs/adaptation/storage.md#replay-01) | 待验证 | 工作台 `playback` 的 inspect/open 按 `.rpy`/`.trpy` 选关。还没有在启动器里播到声明结束点。 |
+| REPLAY-02 | [按原版格式导出可表达输入](../../docs/adaptation/storage.md#replay-02) | 待验证 | 键位局仍写 `.rpy`。工作台导出还没有用手测核对。 |
+| REPLAY-03 | [记录实际生效输入](../../docs/adaptation/storage.md#replay-03) | 待验证 | 回放步忽略实时按键和触控位移。三类输入的录制对照还没有做。 |
+| REPLAY-04 | [扩展格式与版本](../../docs/adaptation/storage.md#replay-04) | 待验证 | `.trpy` 带 `TouchDelta=1`，inspect 会跳过该行和 `Prac=` 行。回放还原还没有在工作台里核对。 |
+| REPLAY-05 | [Replay 文件管理](../../docs/adaptation/storage.md#replay-05) | 待验证 | 冷列表读 IndexedDB `thsss-saves` 的 `Replay/thSSS_*.rpy` 与 `.trpy`。写入同时进虚拟文件系统。导入后重开还没有在启动器里再核对。 |
+| REPLAY-06 | [回放与实时输入隔离](../../docs/adaptation/storage.md#replay-06) | 待验证 | `WorkspaceActive` 时 `OnKey` 与触控位移直接丢掉。工作台里按射击还没有做。 |
+| REPLAY-07 | [回放独立于显示刷新率](../../docs/adaptation/storage.md#replay-07) | 待验证 | 步进由共享 `local-replay` 时钟按 60 Hz 驱动，不跟显示刷新率。两种刷新率对照还没有做。 |
 | SAVE-01 | [已声明的存储根](../../docs/adaptation/storage.md#save-01) | 待验证 | 重开后列出 `Setting.INI`、`Score.dat` 和 `replay/` 下的文件。存储根路径本身没有打开核对。见[运行验收记录](#运行验收记录)。 |
 | SAVE-02 | [用户文件允许范围](../../docs/adaptation/storage.md#save-02) | 已验证 | `Replay/thSSS_ud0001.rpy` 可写可读。`../THSSS.Browser.wasm` 返回 errno 1，Path is not a user file。见[运行验收记录](#运行验收记录)。 |
 | SAVE-03 | [明确持久化时机](../../docs/adaptation/storage.md#save-03) | 已验证 | 写入 4 字节 Replay 后 `sync` 成功，关闭页面再启动仍能读到该文件。见[运行验收记录](#运行验收记录)。 |

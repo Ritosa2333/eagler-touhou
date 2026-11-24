@@ -187,6 +187,115 @@ namespace Thsss.Browser
 			}
 		}
 
+		[UnmanagedCallersOnly(EntryPoint = "thsss_replay_inspect")]
+		public static unsafe byte* ReplayInspect(byte* path)
+		{
+			try
+			{
+				return WasmText.Alloc(GameHost.InspectReplay(WasmText.Read(path)));
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+				return WasmText.Alloc("");
+			}
+		}
+
+		[UnmanagedCallersOnly(EntryPoint = "thsss_replay_open")]
+		public static unsafe int ReplayOpen(byte* path, int stage)
+		{
+			try
+			{
+				return GameHost.OpenReplay(WasmText.Read(path), stage);
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+				return 0;
+			}
+		}
+
+		[UnmanagedCallersOnly(EntryPoint = "thsss_replay_step")]
+		public static int ReplayStep(int render)
+		{
+			try
+			{
+				return GameHost.ReplayStep(render);
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+				return 0;
+			}
+		}
+
+		[UnmanagedCallersOnly(EntryPoint = "thsss_replay_state")]
+		public static unsafe byte* ReplayState()
+		{
+			try
+			{
+				return WasmText.Alloc(GameHost.ReplayState());
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+				return WasmText.Alloc("");
+			}
+		}
+
+		[UnmanagedCallersOnly(EntryPoint = "thsss_replay_ready")]
+		public static int ReplayReady()
+		{
+			try
+			{
+				return GameHost.ReplayMenuReady();
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+				return 0;
+			}
+		}
+
+		[UnmanagedCallersOnly(EntryPoint = "thsss_replay_audio")]
+		public static void ReplayAudio(int hold)
+		{
+			try
+			{
+				GameHost.WorkspaceAudio(hold);
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+			}
+		}
+
+		[UnmanagedCallersOnly(EntryPoint = "thsss_write_user_file")]
+		public static unsafe void WriteUserFile(byte* path, byte* data)
+		{
+			try
+			{
+				GameHost.WriteUserFile(WasmText.Read(path), WasmText.Read(data));
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+			}
+		}
+
+		[UnmanagedCallersOnly(EntryPoint = "thsss_remove_user_file")]
+		public static unsafe void RemoveUserFile(byte* path)
+		{
+			try
+			{
+				GameHost.RemoveUserFile(WasmText.Read(path));
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+			}
+		}
+
 		[UnmanagedCallersOnly(EntryPoint = "thsss_on_key")]
 		public static unsafe void OnKey(byte* name, int down)
 		{

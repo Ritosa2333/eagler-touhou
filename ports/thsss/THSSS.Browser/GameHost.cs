@@ -201,16 +201,111 @@ namespace Thsss.Browser
 
 		public static int TouchShift(float dx, float dy, int unlimited)
 		{
-			if (!TouchInputEnabled || game == null)
+			if (!TouchInputEnabled || game == null || game.WorkspaceActive)
 			{
 				return 0;
 			}
 			return game.TouchShift(dx, dy, unlimited);
 		}
 
+		public static int ReplayMenuReady()
+		{
+			return game != null && game.WorkspaceMenuReady() ? 1 : 0;
+		}
+
+		public static string InspectReplay(string path)
+		{
+			return Game_Main.DescribeReplay(path);
+		}
+
+		public static int OpenReplay(string path, int stage)
+		{
+			if (game == null)
+			{
+				return 0;
+			}
+			KeyboardStateMap.Down.Clear();
+			return game.OpenWorkspaceReplay(path, stage) ? 1 : 0;
+		}
+
+		public static int ReplayStep(int render)
+		{
+			if (game == null || !game.WorkspaceActive)
+			{
+				return 0;
+			}
+			if (!game.WorkspaceEnded)
+			{
+				KeyboardStateMap.Down.Clear();
+				game.SimulateOnly();
+			}
+			if (render != 0)
+			{
+				game.DrawOnly(1f);
+			}
+			return 1;
+		}
+
+		public static string ReplayState()
+		{
+			return game == null ? "{\"frame\":0,\"total\":0,\"ended\":false,\"stage\":0,\"startStage\":0}" : game.WorkspaceStateJson();
+		}
+
+		public static void WorkspaceAudio(int hold)
+		{
+			if (game != null)
+			{
+				game.WorkspaceAudio(hold != 0);
+			}
+		}
+
+		public static void WriteUserFile(string path, string base64)
+		{
+			var relative = UserPath(path);
+			if (relative.Length == 0)
+			{
+				return;
+			}
+			var bytes = Convert.FromBase64String(base64 ?? "");
+			var native = relative.Replace('/', Path.DirectorySeparatorChar);
+			var dir = Path.GetDirectoryName(native);
+			if (!string.IsNullOrEmpty(dir))
+			{
+				Directory.CreateDirectory(dir);
+			}
+			File.WriteAllBytes(native, bytes);
+			Remember(native);
+		}
+
+		public static void RemoveUserFile(string path)
+		{
+			var relative = UserPath(path);
+			if (relative.Length == 0)
+			{
+				return;
+			}
+			var native = relative.Replace('/', Path.DirectorySeparatorChar);
+			if (File.Exists(native))
+			{
+				File.Delete(native);
+			}
+			hashes.Remove(native);
+			hashes.Remove(relative);
+		}
+
+		private static string UserPath(string path)
+		{
+			var text = (path ?? "").Replace('\\', '/').TrimStart('/');
+			if (text.Length == 0 || text.Contains("..") || text.IndexOf('/') != text.LastIndexOf('/'))
+			{
+				return "";
+			}
+			return text;
+		}
+
 		public static void OnKey(string name, int down)
 		{
-			if (game == null || game.Form_Main == null || string.IsNullOrEmpty(name))
+			if (game == null || game.Form_Main == null || string.IsNullOrEmpty(name) || game.WorkspaceActive)
 			{
 				return;
 			}

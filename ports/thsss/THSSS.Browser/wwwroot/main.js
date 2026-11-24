@@ -397,11 +397,19 @@ export async function prepareRuntime(options = {}) {
   const withText = (name, call) => {
     const ptr = keyPtr(name);
     try {
-      call(ptr);
+      return call(ptr);
     } finally {
       module._thsss_free(ptr);
     }
   };
+  const takeText = (ptr) => {
+    try {
+      return ptr && module.UTF8ToString ? module.UTF8ToString(ptr) : "";
+    } finally {
+      if (ptr) module._thsss_free(ptr);
+    }
+  };
+  const withResult = (name, call) => withText(name, (ptr) => takeText(call(ptr)));
   const host = {
     Frame: () => module._thsss_frame(),
     Simulate: () => module._thsss_simulate(),
@@ -442,6 +450,30 @@ export async function prepareRuntime(options = {}) {
       : null,
     PracticeResources: typeof module._thsss_practice_resources === "function"
       ? () => module._thsss_practice_resources()
+      : null,
+    ReplayReady: typeof module._thsss_replay_ready === "function"
+      ? () => module._thsss_replay_ready() !== 0
+      : null,
+    InspectReplay: typeof module._thsss_replay_inspect === "function"
+      ? (path) => withResult(path, (ptr) => module._thsss_replay_inspect(ptr))
+      : null,
+    OpenReplay: typeof module._thsss_replay_open === "function"
+      ? (path, stage) => withText(path, (ptr) => module._thsss_replay_open(ptr, stage | 0))
+      : null,
+    ReplayStep: typeof module._thsss_replay_step === "function"
+      ? (render) => module._thsss_replay_step(render ? 1 : 0)
+      : null,
+    ReplayState: typeof module._thsss_replay_state === "function"
+      ? () => takeText(module._thsss_replay_state())
+      : null,
+    WorkspaceAudio: typeof module._thsss_replay_audio === "function"
+      ? (hold) => module._thsss_replay_audio(hold ? 1 : 0)
+      : null,
+    WriteUserFile: typeof module._thsss_write_user_file === "function"
+      ? (path, data) => withText(path, (pathPtr) => withText(data, (dataPtr) => module._thsss_write_user_file(pathPtr, dataPtr)))
+      : null,
+    RemoveUserFile: typeof module._thsss_remove_user_file === "function"
+      ? (path) => withText(path, (ptr) => module._thsss_remove_user_file(ptr))
       : null
   };
   return {
@@ -454,10 +486,16 @@ export async function prepareRuntime(options = {}) {
     writeUserFile(path, bytes) {
       const b64 = bytesToBase64(bytes);
       saves[path] = b64;
+      if (host.WriteUserFile) {
+        try { host.WriteUserFile(path, b64); } catch (err) { console.error(err); }
+      }
       return writeSave(path, b64);
     },
     removeUserFile(path) {
       delete saves[path];
+      if (host.RemoveUserFile) {
+        try { host.RemoveUserFile(path); } catch (err) { console.error(err); }
+      }
       return removeSave(path);
     },
     flushSaves() {
