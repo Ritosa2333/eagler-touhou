@@ -1,6 +1,6 @@
 # 文档总表
 
-共 679 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 680 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -439,6 +439,7 @@
 | 历史记录 | [archive/th16-delivery-20261123/README.md](../archive/th16-delivery-20261123/README.md) | TH16 构建、性能与逐帧验收 |
 | 历史记录 | [archive/th16-delivery-20261123/build-outputs.txt](../archive/th16-delivery-20261123/build-outputs.txt) | 3f9502c4d00588ecb2bda3bae43bbb888c77164f10467ba9be247f3f05072367 2827674 web/artifacts/sdl3/th16-sdl.wasm |
 | 历史记录 | [archive/th16-development-20261123/README.md](../archive/th16-development-20261123/README.md) | TH16 源码交付来源 |
+| 历史记录 | [archive/th16-replay-parity-20261124/README.md](../archive/th16-replay-parity-20261124/README.md) | 天空璋回放一致性验证 |
 | 历史记录 | [archive/th17-3p-hud-fragments-20261106/README.md](../archive/th17-3p-hud-fragments-20261106/README.md) | TH17 三人 HUD 碎片提示 · 2026-11-06 |
 | 历史记录 | [archive/th17-anm-combat-20261107/README.md](../archive/th17-anm-combat-20261107/README.md) | TH17 普通关动画与绘制开销 · 2026-11-07 |
 | 历史记录 | [archive/th17-combat-rollback-20261106/performance-validation.md](../archive/th17-combat-rollback-20261106/performance-validation.md) | TH17 回滚分帧压测 · 2026-11-06 |
