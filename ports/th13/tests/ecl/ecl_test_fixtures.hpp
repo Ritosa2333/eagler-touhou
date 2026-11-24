@@ -8,13 +8,28 @@
 #include "game/EclResource.hpp"
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <map>
 #include <string>
 #include <vector>
 
 namespace th13test {
 using namespace th13;
+
+// "real_*" 用例把事件流交给 StageSim 的事件出口。落点统一在外层工作区的
+// artifacts/verification/th13-ecl/（目录不存在时创建），TH13_TEST_EVIDENCE_DIR
+// 可改到别处。
+inline std::string evidence_sink(const char* name) {
+    static const std::string directory = [] {
+        const char* root = std::getenv("TH13_TEST_EVIDENCE_DIR");
+        std::string path = root && *root ? root : "artifacts/verification/th13-ecl";
+        std::filesystem::create_directories(path);
+        return path;
+    }();
+    return directory + "/" + name;
+}
 
 // ---------- 仓库文件读取：从当前目录或本文件上溯定位仓库根 ----------
 class TestFileReader {

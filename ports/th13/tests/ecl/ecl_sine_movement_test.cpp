@@ -16,7 +16,7 @@ TEST(sine_modes_retain_original_weight_words_at_boundaries_and_midpoint) {
 }
 TEST(stage5_girld01_second_move_uses_sine_acceleration_not_linear) {
     StageSim sim;CHECK(sim.load("artifacts/reference/raw",
-        "artifacts/verification/stage5-hit-20261027/girld01-events.jsonl","st05.ecl"));
+        th13test::evidence_sink("girld01-events.jsonl").c_str(),"st05.ecl"));
     auto* enemy=sim.spawn_enemy("GirlD01",0,-64,1500,nullptr,false);
     CHECK(enemy);if(!enemy)return;
     bool saw=false;

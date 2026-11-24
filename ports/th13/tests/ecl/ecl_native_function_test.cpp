@@ -42,7 +42,7 @@ TEST(stage3_absorption_heals_spell_accumulator_and_excludes_movement_states) {
  CHECK_EQ(host.sounds.size(),2u);CHECK_EQ(host.sounds[0],63);CHECK_EQ(host.sounds[1],67);
 }
 TEST(extra_callback_spawns_real_enemy_and_consumes_trigger_once) {
- StageSim sim;CHECK(sim.load("artifacts/reference/raw","artifacts/verification/enemy-functions-20261027/extra-events.jsonl","st07.ecl"));StageEnemy e;e.i_slots[0]=19;sim.player_y=200;
+ StageSim sim;CHECK(sim.load("artifacts/reference/raw",th13test::evidence_sink("extra-events.jsonl").c_str(),"st07.ecl"));StageEnemy e;e.i_slots[0]=19;sim.player_y=200;
  StageBullet b;b.x=32;b.y=203.99f;b.generation=500;sim.bullets.push_back(b);b.y=204;b.generation=501;sim.bullets.push_back(b);
  const auto count=sim.enemies.size();CHECK(sim.invoke_enemy_function(e,6));CHECK(sim.error().empty());CHECK_EQ(sim.enemies.size(),count+1);
  CHECK_EQ(sim.bullets[0].native_trigger,1);CHECK_EQ(sim.bullets[0].state,3);CHECK_EQ(sim.bullets[1].native_trigger,0);
@@ -75,7 +75,7 @@ TEST(absorbed_spirit_homes_to_boss_then_returns_to_player_within_30px) {
  s.state=5;c.x=-100;c.y=300;c.boss_present=false;items.update_spirits(c);CHECK_EQ(s.state,1);
 }
 TEST(real_stage2_boss_attack_registers_and_applies_moving_wall_callback) {
- StageSim sim;CHECK(sim.load("artifacts/reference/raw","artifacts/verification/enemy-functions-20261027/stage2-events.jsonl","st02.ecl"));
+ StageSim sim;CHECK(sim.load("artifacts/reference/raw",th13test::evidence_sink("stage2-events.jsonl").c_str(),"st02.ecl"));
  StageBullet bullet;bullet.x=193;bullet.y=100;bullet.speed=4;bullet.vel[0]=4;bullet.angle=0;bullet.transform_sound=-1;
  sim.bullets.push_back(bullet);
  auto* enemy=sim.spawn_enemy("Boss2_at",0,128,1000,nullptr,false);

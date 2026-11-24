@@ -155,6 +155,8 @@ std::vector<u8> read_reference_anm(const char* name) {
     std::vector<std::string> candidates;
     if (const char* dir = std::getenv("TH13_RAW_DIR"))
         candidates.push_back(std::string(dir) + "/" + name);
+    // run.sh 的工作目录是外层工作区，原版资源在其 artifacts/ 下（与各套件其余测试一致）。
+    candidates.push_back(std::string("artifacts/reference/raw/") + name);
     candidates.push_back(std::string("../artifacts/reference/raw/") + name);
     candidates.push_back(std::string("../../../artifacts/reference/raw/") + name);
     std::vector<u8> bytes;
