@@ -54,6 +54,25 @@ static void projectile_sampling(){
     f.begin(HitboxMode::All,10,0);CHECK(!laser.update(10,209,70,false,{},&f)&&count(f,CollisionSource::Laser)==0);
 }
 
+static void vertical_projectile_contact(){
+    constexpr CollisionPoint player{208,336};
+    constexpr int marker_y=player.y+player_projectile_offset.y;
+    for(bool pellet:{false,true})for(int dy:{1,-1}){
+        const int center_offset=pellet?4:8;
+        const int first_hit=dy>0?(pellet?-8:-12):(pellet?2:8);
+        BulletCore bullets;
+        auto &shot=bullets.bullets[0];
+        shot.flag=1;
+        shot.kind=pellet?EnemyBulletRequest::Pellet:EnemyBulletRequest::Bullet16;
+        shot.position[0]={std::uint16_t((player.x+player_projectile_offset.x-center_offset)*16),
+                          std::uint16_t((marker_y+first_hit-center_offset-2*dy)*16)};
+        shot.velocity={0,dy*16};
+        CHECK(!bullets.update(0,player.x,player.y)&&shot.flag==1);
+        CHECK(bullets.update(0,player.x,player.y)&&shot.flag==2);
+        CHECK(BulletCore::pixel(shot.position[0][1])+center_offset==marker_y+first_hit);
+    }
+}
+
 static void boss_sampling(){
     CollisionFrame f;
     MeiraCore meira;MeiraCore::Hooks mh;mh.collision_display=&f;
@@ -391,7 +410,7 @@ static void v2_playback(const std::filesystem::path &assets,const std::filesyste
 
 int main(int argc,char **argv){
     CHECK(argc>=2&&argc<=4);
-    projectile_sampling();boss_sampling();render_bounds();scene_lifetime(argv[1]);player_reference_lifetime(argv[1]);
+    projectile_sampling();vertical_projectile_contact();boss_sampling();render_bounds();scene_lifetime(argv[1]);player_reference_lifetime(argv[1]);
     marisa_practice_overlay(argv[1]);marisa_contact_edges(argv[1]);
     if(argc==3){CHECK(std::string_view(argv[2])=="--timing");dense_pool_timings();}
     if(argc==4){CHECK(std::string_view(argv[2])=="--replay");v2_playback(argv[1],argv[3]);}

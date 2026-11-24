@@ -786,7 +786,29 @@ void pause_and_menu_return(const fs::path &root){
     check(play(mismatch,bytes_roundtrip(altered),no_fixture).step.status==Status::Failed);
 }
 
+bool is_focus_red(std::uint32_t rgb){
+    const int r=int((rgb>>16)&255),g=int((rgb>>8)&255),b=int(rgb&255);
+    return r-g>128&&r-b>100;
+}
+void focus_marker_appearance(){
+    constexpr int x=224,y=360;
+    constexpr auto at=[](int px,int py){return (y+py)*640+x+px;};
+    std::vector<std::uint32_t> pixels(640*400);
+    for(const auto bg:{0x20283cu,0xf8eacbu}){
+        std::fill(pixels.begin(),pixels.end(),bg);
+        draw_player_focus_point(pixels,RenderPoint::pixels(x,y));
+        check(pixels[at(0,0)]==0xffffff&&is_focus_red(pixels[at(2,0)]));
+        check(pixels[at(3,0)]!=bg&&pixels[at(4,0)]==bg&&pixels[at(3,3)]==bg);
+        for(int dy=-3;dy<=3;++dy)for(int dx=-3;dx<=3;++dx)
+            check(pixels[at(dx,dy)]==pixels[at(-dy,dx)]);
+        std::fill(pixels.begin(),pixels.end(),bg);
+        draw_player_focus_point(pixels,{x*256+128,y*256});
+        for(int dy=-3;dy<=3;++dy)for(int dx=-3;dx<=4;++dx)
+            check(pixels[at(dx,dy)]==pixels[at(1-dx,dy)]);
+    }
+}
 void focus_mode(const fs::path &root){
+    focus_marker_appearance();
     NativeReplayConfig config;config.shot=2;
     auto live=std::make_unique<EncounterScene>(load_replay_scene(root,config));
     ReplaySession session(config);
@@ -796,7 +818,6 @@ void focus_mode(const fs::path &root){
         check(step.status==Status::Running&&step.event.input==input&&recorder.record(step.event));
     };
     std::vector<std::uint32_t> pixels(640*400),without_marker(pixels.size());
-    constexpr auto white=0xffffffu,red=0xb7153du;
     const auto at=[](int x,int y){return y*640+x;};
     MotionFrame previous;
     live->capture_motion(previous);
@@ -804,9 +825,9 @@ void focus_mode(const fs::path &root){
     check(live->player.x==209&&live->player.focus_rx==1);
     const auto state=replay_state_digest(*live);
     live->render(pixels);
-    check(pixels[at(225,360)]==white&&pixels[at(222,360)]==red);
+    check(pixels[at(225,360)]==0xffffff&&is_focus_red(pixels[at(223,360)]));
     live->render(pixels,true,true,0,&previous);
-    check(pixels[at(224,360)]==white&&pixels[at(221,360)]==red);
+    check(pixels[at(224,360)]==0xffffff&&is_focus_red(pixels[at(222,360)]));
     check(replay_state_digest(*live)==state&&live->collision_snapshot()==nullptr);
     live->paused=true;live->render(pixels);
     live->player.focused=false;live->render(without_marker);

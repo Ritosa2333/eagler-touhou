@@ -6,7 +6,6 @@
 #include <limits>
 #include <optional>
 #include <span>
-#include <string_view>
 
 namespace soew {
 enum class HitboxMode { Off, Self, All };
@@ -18,20 +17,35 @@ struct CollisionPoint {
 inline constexpr CollisionPoint player_projectile_offset{16,24};
 
 inline void draw_player_focus_point(std::span<std::uint32_t> pixels,RenderPoint center){
-    // A tight red ring and white core stay readable over both dark and light terrain.
-    constexpr std::array<std::string_view,9> shape={
-        "   ###   "," ##+++## "," #+rrr+# ","#+r...r+#","#+r.W.r+#",
-        "#+r...r+#"," #+rrr+# "," ##+++## ","   ###   "};
-    blit_motion_sprite(pixels,center.offset(-4,-4),9,9,[&](int x,int y)->std::uint32_t{
-        switch(shape[y][x]){
-        case '#':return 0x281020;
-        case '+':return 0xb7153d;
-        case 'r':return 0xff697d;
-        case '.':return 0xffd9dc;
-        case 'W':return 0xffffff;
-        default:return render_clear;
+    constexpr SpriteClip clip;
+    constexpr int scale=motion_subpixels,grid=8,step=scale/grid;
+    constexpr int core=352,ring=624,edge=792; // 1.375, 2.4375 and 3.09375 px.
+    constexpr unsigned red=0xff3658,dark=0x2c0c19;
+    const int x0=RenderPoint::floor(center.x),y0=RenderPoint::floor(center.y);
+    const int left=std::max(clip.left,x0-3),right=std::min(clip.right,x0+5);
+    const int top=std::max(clip.top,y0-3),bottom=std::min(clip.bottom,y0+5);
+    // Sample concentric rings directly around the interpolated center.
+    // Unlike moving a pre-rasterized sprite, this keeps the same contour in motion.
+    for(int y=top;y<bottom;++y)for(int x=left;x<right;++x){
+        unsigned white_weight=0,red_weight=0,dark_weight=0;
+        for(int sy=0;sy<grid;++sy){
+            const int dy=y*scale-center.y+sy*step+step/2-scale/2;
+            for(int sx=0;sx<grid;++sx){
+                const int dx=x*scale-center.x+sx*step+step/2-scale/2;
+                const int d=dx*dx+dy*dy;
+                if(d<core*core)white_weight+=4;
+                else if(d<ring*ring)red_weight+=4;
+                else if(d<edge*edge)dark_weight+=3;
+            }
         }
-    });
+        const auto base_weight=256-white_weight-red_weight-dark_weight;
+        auto &dst=pixels[y*640+x];
+        const auto channel=[&](int shift){
+            return (255*white_weight+((red>>shift)&255)*red_weight+
+                ((dark>>shift)&255)*dark_weight+((dst>>shift)&255)*base_weight+128)>>8;
+        };
+        dst=(channel(16)<<16)|(channel(8)<<8)|channel(0);
+    }
 }
 
 struct CollisionAxis {
