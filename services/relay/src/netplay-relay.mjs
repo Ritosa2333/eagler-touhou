@@ -3246,6 +3246,24 @@ server.on('connection', (socket, request) => {
       }
       if(acceptTh19SpectatorPayload(roomId,runId,room,run,payload))return;
       if (acceptCooperativeSpectatorPayload(roomId, runId, room, run, payload)) return;
+      // BRO has no stage/checkpoint stream: its first live frame opens spectator
+      // admission so the backlog starts at that match frame. History stays
+      // bounded by the TH09 limits and, on overflow, live viewers keep going
+      // while late joins stop being admitted (closeTh09HistoryAdmission).
+      const broSpectator = roomId.startsWith('bromp-') && isSpectatorFrameForRoom(roomId, payload, run.playerCount);
+      if (broSpectator && !run.spectatorHistoryUnavailable) {
+        run.spectatorAdmissionOpen = true;
+        if (!run.spectatorTimeline) {
+          run.spectatorTimeline = true;
+          broadcastLobby(room);
+          for (const [id, lobby] of room.lobbyClients) {
+            if (!room.lobby.spectators.has(id) || run.admittedSpectators.has(id)) continue;
+            run.admittedSpectators.add(id);
+            run.memberIds.set(id, roomDirectory.memberIdFor(roomId, id));
+            sendLobby(lobby, { type: 'spectator-start', serial: room.lobby.startSerial, room: lobbySnapshot(room) });
+          }
+        }
+      }
       if (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0 && !run.spectatorHistoryUnavailable) return;
       const th09Stream = roomId.startsWith('th09mp-') && run.playerCount === 2;
       const ending =
@@ -3328,7 +3346,7 @@ server.on('connection', (socket, request) => {
           run.spectatorTimeline
             ? TH09_SPECTATOR_HISTORY_LIMITS
             : RELAY_LIMITS,
-          th09Stream && run.spectatorTimeline ? closeTh09HistoryAdmission : stopSpectatorStream,
+          (th09Stream || broSpectator) && run.spectatorTimeline ? closeTh09HistoryAdmission : stopSpectatorStream,
         )
       ) {
         if (run.spectatorStopped) return;

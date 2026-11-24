@@ -1,10 +1,23 @@
 import { parseMeasuredNetplayTiming } from '../../../common/contracts/netplay-timing.mjs';
 import { multiplayerConfigForProduct, multiplayerInputTimingPolicy } from '../../../common/contracts/product-catalog.mjs';
 import { COOPERATIVE_SPECTATOR_MARKERS as cooperativeProtocolMarkers } from './spectator-stages.mjs';
+// BRO publishes a per-frame bundle instead of a cooperative stage stream, so it
+// keeps its own identity byte and wire layout (ports/bossrush web/src/spectator_wire.mjs).
+// Keeping it out of COOPERATIVE_SPECTATOR_MARKERS avoids entering the E?SV stage
+// parser, which requires 2-or-3 player sessions and checkpoint semantics BRO has
+// no equivalent for.
+export const BRO_SPECTATOR_MARKER = 0x52;
+export function isBroSpectatorFrame(playerCount, payload) {
+  return !!payload && payload.length === 24 + playerCount * 12 &&
+    payload[0] === 0x45 && payload[1] === BRO_SPECTATOR_MARKER &&
+    payload[2] === 0x4e && payload[3] === 0x50 && payload[4] === 4 &&
+    payload[5] === 3 && payload[6] === playerCount && payload[7] === 0;
+}
 // Wire-format identities, not product feature switches.
 // Only the room's declared game protocol may enter its spectator backlog.
 export function isSpectatorFrameForRoom(roomId, payload, playerCount) {
   const product = roomId.split('-')[0], policy = multiplayerConfigForProduct(product);
+  if (product === 'bromp') return isBroSpectatorFrame(playerCount, payload);
   const protocol = product === 'th075mp' ? 0x50 : cooperativeProtocolMarkers[product];
   const timingPolicy = multiplayerInputTimingPolicy(policy);
   if(product==='th075mp'&&playerCount===2&&payload?.length===40&&
