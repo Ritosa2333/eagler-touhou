@@ -26,12 +26,29 @@ C++ 镜像：`web/cpp/game/Rng.hpp`（常量已锁），锚点登记于 `web/cpp
 
 ## 恢复优先级线索（按体积 × 调用密度）
 
-| 地址 | 体积 | 调用数 | 被调 | 推测 |
+| 地址 | 体积 | 调用数 | 被调 | 身份 |
 |---|---|---|---|---|
-| `0x41B260` | 17.6KB | 491 | 1 | ECL 解释器主分发（switch 密集） |
-| `0x462450` | 13.6KB | 320 | 84 | ANM VM / 管理器主循环 |
-| `0x4265A0` | 4.9KB | 94 | 0 | 独立大函数（无调用者，或为导出/回调） |
-| `0x428AE0` | 4.5KB | 149 | 1 | 子系统 update |
-| `0x44CD10`/`0x44ED70` | ~3.9KB | ~100 | 1 | 敌机/道具管理器 |
+| `0x41B260` | 17.6KB | 491 | 1 | ECL 指令主分发（经 `0x41B250` 调用） |
+| `0x462450` | 13.6KB | 320 | 84 | ANM 指令解释器 |
+| `0x4265A0` | 4.9KB | 94 | 0 | boss 血环与符卡 HUD 面（经 thunk `0x428280` 注册为 Update 任务） |
+| `0x428AE0` | 4.5KB | 149 | 1 | 对话执行器 |
+| `0x44CD10`/`0x44ED70` | ~3.9KB | ~100 | 1 | 标题主菜单（supervisor `0x44C570` case 1）与选项场景 |
 
 恢复顺序按 `docs/DEVELOPMENT.md` 行为还原节奏推进；每锚定一个子系统即在 `AddressMap.hpp` 登记。
+
+## 保真地图与地址核查
+
+- [fidelity-map.md](fidelity-map.md) 给出 C++ 单元与原版地址的对应关系、已知分歧与未决项。其中“逐文件映射”一节由脚本从源码和函数索引生成，不手写：
+
+  ```sh
+  ports/th13/tools/container.sh bash -lc \
+    'node tools/decomp/fidelity-map.mjs /work/artifacts/decomp/jp --pe /work/games/th13/th13.exe --write'
+  ```
+
+- `tools/decomp/address-check.py` 核对源码引用的每个原版地址恰是函数入口、指令边界、跳转表或数据地址；地址落在指令中间或映像之外即非零退出。需要镜像内的 capstone 与外层的 th13.exe：
+
+  ```sh
+  ports/th13/tools/container.sh bash -lc \
+    'python3 tools/decomp/address-check.py . /work/artifacts/decomp/jp /work/games/th13/th13.exe'
+  ```
+

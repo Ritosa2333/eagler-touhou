@@ -49,7 +49,7 @@ make extract   # 解包 th13ogg.7z → games/th13/，生成 SHA256 清单与版�
 
 ## 行为还原节奏
 
-每个子系统三重门：Ghidra 参考 → oracle 比对绿灯 → `node --test`。恢复顺序：
+每个子系统三重门：Ghidra 参考 → 回归摘要门禁（oracle 缺席时的主门槛）→ `node --test`。各子系统对应的原版入口、已知分歧与未决项见 [fidelity-map.md](fidelity-map.md)。恢复顺序：
 
 1. RNG 与帧计时
 2. ANM 虚拟机（动画脚本）
@@ -95,6 +95,16 @@ node portable/build-harness.mjs && node --experimental-wasi-unstable-preview1 to
 node --experimental-wasi-unstable-preview1 tools/run-harness.mjs stage1   # stage1：st01 跑 3600 帧，事件流落 web/artifacts/wasi/stage1-events.jsonl（契约见 docs/plans/event-contract.md）
 node --experimental-wasi-unstable-preview1 tools/run-harness.mjs replay games/replays/th13_udSr01.rpy   # 录像解码 + 逐帧输入注入（格式见 docs/plans/replay.md）
 ```
+
+### 一键门槛
+
+```sh
+ports/th13/tools/gate.sh            # 普通版
+ports/th13/tools/gate.sh --mp       # 多人版（套件另含 M1–M9 累计原生工作流）
+ports/th13/tools/gate.sh --browser  # 追加浏览器套件（th13-shot 镜像）
+```
+
+依次执行排版检查、WASI harness 构建、三项回归摘要（普通版）、网页运行时构建、全部套件与基线比对，任何一步回归即非零退出。
 
 ### 回归摘要门禁
 

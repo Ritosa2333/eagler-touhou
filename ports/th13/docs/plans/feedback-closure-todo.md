@@ -7,24 +7,19 @@ evidence. Unit-test success alone is not closure.
 
 ## Feedback to repair-item mapping
 
-| Case | Feedback | Owner | Classification | Required closure evidence |
+Browser tests live in `web/tests/sdl/` and run against the production page.
+
+| Case | Feedback | Owner | Status | Closure evidence |
 |---|---|---|---|---|
-| H03-1 | Loading screen's “少女祈祷中” is absent | H03 | Existing feedback; same loading/transition lifecycle gap | Cold start, restart, stage transition, and Replay entry show the original loading ANM with original create, hold, fade, and retire timing |
-| H03-2 | Each stage's opening title text is absent | H03 | Existing feedback; same stage-title presentation gap | Every stage in both six-stage Replays shows the title at the original birth frame with matching text, geometry, alpha, and lifetime |
-| H01-1 | Reimu disappears after entering any main-menu item and returning | H01 | Existing feedback; title ANM/root-child lifecycle gap | Cold start, enter/leave each available main-menu item, return to title, and repeat; Reimu and all menu rows remain visible and highlighted correctly |
-| H08-1 | In-game effects are broadly missing, including spirit absorption, Bomb, spirit-gauge gain, pause, and Power gain | H08 | Existing feedback; expand audio trigger/resource/output matrix | Each named event has original event frame, channel/volume, duplicate/stop rule, decoded PCM assertion, and audible browser playback after pause/resume |
-| H11 | Selecting Manual crashes the game | H11 | New feedback; Manual supervisor exists but the host viewer adapter is not implemented | Main-menu Manual entry opens `help.anm` plus `help_01.png` onward without terminating the app; page navigation, end/close, return, and repeated entry work |
-| H12 | Music Room text is severely mojibaked | H12 | New feedback; CP932 titles/comments are queued through the ASCII glyph path | CP932 catalog text is rasterized through the production Japanese-text texture path with original line layout, clipping, color, and lifetime |
-| H13 | In-game BGM title is absent at the lower right, including stage opening and Boss BGM switches | H13 | Existing user request; no runtime title overlay consumes the current base track | Stage and Boss switches update the title at the original frames and coordinates; `b.wav` variants, stop/fade, pause, Replay, and cross-stage restoration retain the correct displayed title |
+| H01-1 | Reimu disappears after entering any main-menu item and returning | H01 | Closed | `menu-closure.test.mjs` enters Manual and Music Room, returns to the title and repeats, with audio output; native `title_start_retires_restore_logo_root_after_menu_return`, `title_option_entry_preserves_logo_and_version_bar` |
+| H11 | Selecting Manual crashes the game | H11 | Closed | `menu-closure.test.mjs` opens the production Manual repeatedly without terminating the page |
+| H12 | Music Room text is severely mojibaked | H12 | Closed | `music-room-text-identity.test.mjs` rasterizes the production catalog through the Japanese-text texture path |
+| H08-1 | In-game effects are broadly missing (spirit absorption, Bomb, spirit-gauge gain, pause, Power gain) | H08 | Closed | `audio-events.test.mjs`: pause voice 14 at the frozen replay frame; stage-1 real replay spirit, big-power and spell matrix with PCM output |
+| H03-1 | Loading screen's “少女祈祷中” is absent | H03 | Fixed; browser-visible evidence pending | Native `anm_loading_caption_rng_test.cpp`, `loading_prayer_test.cpp`, `stage_transition_lifecycle_test.cpp`, `b_menu_prayer_rng_test.cpp`; the draw-manifest digests lock the caption's draws |
+| H03-2 | Each stage's opening title text is absent | H03 | Fixed; browser-visible evidence pending | Native `hud_test.cpp`: `stage_logo_uses_real_script_and_original_gates`, `stage_logo_fails_when_bank_is_missing` (`0x425170`) |
+| H13 | In-game BGM title is absent at the lower right | H13 | Fixed; native and browser-visible evidence pending | `GameHud::stage_music_logo`（`0x429a24`），原生测试 `tests/ui/hud_test.cpp`` |
 
-## Investigation order
+## Remaining work
 
-1. H01-1: title ANM root/child and menu-return teardown, before broader menu polish.
-2. H11: Manual host adapter and resource ownership, isolated from title-state work.
-3. H03-1/H03-2: transition submit/lifetime and stage-title ANM ownership.
-4. H12/H13: shared runtime CP932 text path, with separate state/lifetime tests.
-5. H08-1: trigger tracing and actual browser PCM/output checks.
-
-The two full Replay comparisons remain the final integration gate for H03,
-H08, H12, and H13. H01-1 and H11 additionally require menu and browser
-interaction coverage outside Replay input.
+1. H03-1 and H03-2: assert on the production page that the caption and the stage title appear at their original birth frames, then move both to Closed.
+2. H13: add a native test for `stage_music_logo` and a production-page assertion for stage and Boss BGM switches.
