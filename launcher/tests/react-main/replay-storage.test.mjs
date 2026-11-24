@@ -113,3 +113,20 @@ test('th12 multiplayer recovers only its former shared replays and does not resu
     assert.equal(await reopened.read('/savesth12/replay/th12_mp_01.rpy'),undefined);
   }finally{globalThis.indexedDB=previous;}
 });
+
+test('thsss lists keyboard and touch replays from its save database',async()=>{
+  const factory=new IDBFactory(),read=createReplayStorageReader(()=>({indexedDB:factory,keyRange:IDBKeyRange}));
+  assert.deepEqual(await read.read('thsss'),[]);
+  const db=await new Promise((ok,no)=>{const request=factory.open('thsss-saves',1);request.onupgradeneeded=()=>request.result.createObjectStore('files');request.onsuccess=()=>ok(request.result);request.onerror=()=>no(request.error);});
+  await new Promise((ok,no)=>{const tx=db.transaction('files','readwrite'),store=tx.objectStore('files');
+    store.put(btoa('rpy'),'Replay/thSSS_01.rpy');store.put(btoa('trpy'),'Replay/thSSS_02.trpy');
+    store.put(btoa('auto'),'Replay/AutoSave.rpy');store.put(btoa('score'),'Score.dat');
+    tx.oncomplete=ok;tx.onabort=()=>no(tx.error);});
+  db.close();
+  const rows=await read.read('thsss');
+  assert.deepEqual(rows.map(row=>row.path).sort(),['replay/thSSS_01.rpy','replay/thSSS_02.trpy']);
+  assert.deepEqual([...(rows.find(row=>row.path.endsWith('.trpy')).bytes)],[...Buffer.from('trpy')]);
+  const one=await read.read('thsss',{path:'replay/thSSS_01.rpy'});
+  assert.equal(one.length,1);assert.deepEqual([...one[0].bytes],[...Buffer.from('rpy')]);
+  assert.equal((await read.read('thsss',{path:'replay/thSSS_ud0001.rpy'})).length,0);
+});
