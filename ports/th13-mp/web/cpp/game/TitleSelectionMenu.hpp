@@ -67,7 +67,7 @@ public:
     std::string error;
     TitleDifficultyMenu(TitleState& s, SessionState& p, TitleSelectionSettings& settings,
                         AnmManager& a, TitleSceneResources resources)
-        : state(s), progress(p), settings(settings), visuals(s, a, resources.title, resources.ascii),
+        : state(s), progress(p), settings(settings), visuals(s, a, resources.title),
           resources(resources), animations(a) {}
     bool update(u32 pressed, u32 repeated);
 };
@@ -92,7 +92,7 @@ public:
     TitleCharacterMenu(TitleState& s, SessionState& p, TitleSelectionSettings& settings,
                        AnmManager& a, TitleMenuServices& host, TitleSceneResources resources)
         : state(s), progress(p), settings(settings), animations(a),
-          visuals(s, a, resources.title, resources.ascii), resources(resources), host(host) {}
+          visuals(s, a, resources.title), resources(resources), host(host) {}
     bool update(u32 pressed, u32 repeated);
 };
 
@@ -112,7 +112,7 @@ public:
     TitleStageMenu(TitleState& s, SessionState& p, TitleSelectionSettings& choice,
                    AnmManager& a, TitleMenuServices& h, TitleSceneResources resources)
         : state(s), progress(p), settings(choice), animations(a),
-          visuals(s, a, resources.title, resources.ascii), host(h) {}
+          visuals(s, a, resources.title), host(h) {}
     bool update(u32 pressed, u32 repeated);
     bool draw_texts(HudDrawServices&);
 };

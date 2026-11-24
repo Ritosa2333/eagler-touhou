@@ -154,7 +154,11 @@ struct Key {
     bool managed = false;
     std::deque<bool> pending;
 };
+// KeyboardMap.inc 与普通版、th15 多人版逐字节共享，只列前五个字段；pending 取默认。
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include "../../../portable/input/KeyboardMap.inc"
+#pragma GCC diagnostic pop
 
 GameInput controls;
 touhou::input::TouchController gestures;

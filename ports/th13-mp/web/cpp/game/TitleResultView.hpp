@@ -9,7 +9,7 @@
 
 namespace th13 {
 
-struct ReplayFile;
+class ReplayFile;
 std::string replay_save_slot_row(i32 slot, const ReplayFile*, bool compact);
 
 // 0x454050 case0 的 score 块读取结果 + 当前成绩插入预览。

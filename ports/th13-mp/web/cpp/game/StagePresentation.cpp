@@ -38,8 +38,6 @@ i32 ship_tilt(u32 held, float player_x, bool touch_active, const AnmVm* ship) {
     const float previous_x = ship->visual.translation.x;
     return (x > previous_x) - (x < previous_x);
 }
-// 弹体贴图基准角：贴图朝右时旋转 = 弹角（对屏检验后校准）。
-constexpr float kBulletSpriteForward = 0.0f;
 
 // 自机弹脚本是否带 id 中断标签（op5 [len12: time,mask,id32]）。0x446bf0
 // 无条件写 VM+0x4a0=1；仅当脚本确有 id1 标签（pl00.anm script 10..17 的

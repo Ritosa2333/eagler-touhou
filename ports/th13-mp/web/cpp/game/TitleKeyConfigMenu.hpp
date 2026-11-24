@@ -99,7 +99,7 @@ public:
     TitleKeyConfigMenu(TitleState& state_, AnmManager& animations_,
                        TitleKeyConfigPlatform& host_, TitleSceneResources bank)
         : state(state_), animations(animations_), host(host_),
-          visuals(state_, animations_, bank.title, bank.ascii), resources(bank) {}
+          visuals(state_, animations_, bank.title), resources(bank) {}
     bool update(u32 pressed, u32 repeated);
     i32 row() const { return row_; }
     const std::array<i16, kTitleKeyConfigBindings>& bindings() const { return bindings_; }

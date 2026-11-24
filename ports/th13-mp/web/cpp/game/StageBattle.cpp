@@ -1156,8 +1156,8 @@ void StageBattle::consume_player_shot_geometry() {
 }
 
 bool damage_probe_enabled = false;
-int damage_probe_first_frame = 7970;
-int damage_probe_last_frame = 7985;
+u32 damage_probe_first_frame = 7970;
+u32 damage_probe_last_frame = 7985;
 bool rng_probe_on = false;
 
 float StageBattle::query_enemy_damage(StageEnemy& state, float width, float height) {
@@ -2985,9 +2985,10 @@ bool StageBattle::step_transition(const GameInput& input) {
     if (seat_count >= 2) {
         seat_inputs[size_t(mp_local_seat)] = input;
         advance_mp_protection_and_ghosts();
-    if (protect_all_seats)
+    if (protect_all_seats) {
         for (i32 seat = 0; seat < seat_count; ++seat)
             seats[size_t(seat)].invulnerable = std::max(seats[size_t(seat)].invulnerable, 3);
+    }
         std::array<bool, 3> deathbomb_prepared{};
         if (!prepare_expired_deathbombs(deathbomb_prepared)) return false;
         const i32 saved_seat = active_seat;

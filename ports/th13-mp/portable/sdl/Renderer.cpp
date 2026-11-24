@@ -31,7 +31,6 @@ struct DrawStateCache {
 } drawState;
 constexpr u32 instanceStride=116;
 constexpr std::array<float,16> identity{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
-float bits(u32 n){float f;std::memcpy(&f,&n,4);return f;}
 std::array<float,4> color(u32 n){return {float(n>>16&255)/255,float(n>>8&255)/255,float(n&255)/255,float(n>>24)/255};}
 void replace(std::string& s,const std::string& a,const std::string& b){size_t p=0;while((p=s.find(a,p))!=std::string::npos){s.replace(p,a.size(),b);p+=b.size();}}
 GLuint shader(GLenum type,const std::string& source){GLuint s=glCreateShader(type);const char* p=source.c_str();glShaderSource(s,1,&p,nullptr);glCompileShader(s);GLint ok=0;glGetShaderiv(s,GL_COMPILE_STATUS,&ok);if(!ok){char log[2048];glGetShaderInfoLog(s,sizeof(log),nullptr,log);std::fprintf(stderr,"SDL shader: %s\n",log);std::abort();}return s;}
@@ -124,6 +123,8 @@ u32 Renderer::upload(Stream& s,GLenum target,const void* bytes,u32 count,u32 min
  // Replace the backing store for each submitted batch. Updating successive
  // subranges while previous draws still reference the store stalls some mobile
  // WebGL drivers. Draw order, vertex bytes and simulation are unchanged.
+ // WebGL 路径每批整体替换存储，不保留最小容量；minimum 只用于原生路径。
+ (void)minimum;
  glBufferData(target,count,bytes,GL_STREAM_DRAW);stats.bufferReplacements++;return 0;
 #else
  u32 offset=(s.used+3)&~3u;
@@ -159,7 +160,8 @@ Renderer::GPU& Renderer::surface(u32 h){
     else if(s.format==PixelFormat::Argb8332){uint16_t n;std::memcpy(&n,p+x*2,2);r=((n>>5&7)*255+3)/7;gc=((n>>2&7)*255+3)/7;b=(n&3)*85;a=n>>8;}
     else if(s.format==PixelFormat::Alpha8){r=gc=b=255;a=p[x];}else if(s.format==PixelFormat::Luminance8)r=gc=b=p[x];else{std::fprintf(stderr,"SDL texture format %u\n",u32(s.format));std::abort();}
     u8* out=pixels.data()+(y*s.width+x)*channels;out[0]=r;out[1]=gc;out[2]=b;if(!rgb)out[3]=a;
-   }format=rgb?GL_RGB:GL_RGBA;internal=s.format==PixelFormat::Rgb565?GL_RGB565:(s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555)?GL_RGB5_A1:rgb?GL_RGB8:GL_RGBA8;
+   }
+  format=rgb?GL_RGB:GL_RGBA;internal=s.format==PixelFormat::Rgb565?GL_RGB565:(s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555)?GL_RGB5_A1:rgb?GL_RGB8:GL_RGBA8;
   }
   const u32 scale=s.renderScale;
   if(scale>1){const auto logical=pixels;const u32 bytes=s.format==PixelFormat::Argb4444?2:channels;pixels.resize(size_t(s.width)*s.height*scale*scale*bytes);for(u32 y=0;y<s.height*scale;y++)for(u32 x=0;x<s.width*scale;x++)std::memcpy(pixels.data()+(size_t(y)*s.width*scale+x)*bytes,logical.data()+(size_t(y/scale)*s.width+x/scale)*bytes,bytes);}
@@ -289,7 +291,8 @@ bool Renderer::resample(u32 src,const i32* from,u32 dst,const i32* to,const floa
 void Renderer::read(u32 id){flush();auto it=surfaces.find(id);if(it==surfaces.end()||!it->second.rendered)return;auto s=resolve(owner,id);auto& g=it->second;stats.readBytes+=s.size;pixels.resize(size_t(s.width)*s.height*s.renderScale*s.renderScale*4);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glPixelStorei(GL_PACK_ALIGNMENT,1);glReadPixels(0,0,s.width*s.renderScale,s.height*s.renderScale,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
  for(u32 y=0;y<s.height;y++)for(u32 x=0;x<s.width;x++){const auto scale=s.renderScale;const auto* p=pixels.data()+((size_t(y)*scale+scale/2)*s.width*scale+x*scale+scale/2)*4;u32 r=p[0],gc=p[1],b=p[2],a=p[3];auto* out=s.data+y*s.pitch;
   if(s.format==PixelFormat::Argb8332){const uint16_t value=uint16_t((a<<8)|(((r*7+127)/255)<<5)|(((gc*7+127)/255)<<2)|((b*3+127)/255));std::memcpy(out+x*2,&value,2);}else if(s.format==PixelFormat::Bgra8||s.format==PixelFormat::Bgrx8){out+=x*4;out[0]=b;out[1]=gc;out[2]=r;out[3]=s.format==PixelFormat::Bgra8?a:255;}else if((s.format==PixelFormat::Rgb565||s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555||s.format==PixelFormat::Argb4444)){uint16_t n=s.format==PixelFormat::Argb4444?(a>>4)<<12|(r>>4)<<8|(gc>>4)<<4|(b>>4):s.format==PixelFormat::Rgb565?(r>>3)<<11|(gc>>2)<<5|(b>>3):(s.format==PixelFormat::Argb1555&&a>=128?0x8000:0)|(r>>3)<<10|(gc>>3)<<5|(b>>3);std::memcpy(out+x*2,&n,2);}else if(s.format==PixelFormat::Alpha8)out[x]=a;else if(s.format==PixelFormat::Luminance8)out[x]=r;else std::abort();
- }g.rendered=false;
+ }
+ g.rendered=false;
 }
 void Renderer::release(u32 id){flush();auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);
  // 仍引用这块渲染缓冲的绘制目标记为附着未知，下次 target() 重新附着。

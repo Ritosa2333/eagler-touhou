@@ -51,7 +51,7 @@ const sharedInclude = resolve(workspace, '../../common/include');
 const headers = headerInputs(resolve(root, 'cpp'), resolve(workspace, 'tests/harness'), sharedInclude);
 
 const compileFlags = [
-  '--target=wasm32-wasip1', '-O2', '-std=c++17',
+  '--target=wasm32-wasip1', '-O2', '-std=c++17', '-Wall', '-Wextra',
   '-fno-exceptions', '-fno-rtti',
   '-ffp-contract=off', '-DTH13_WASI_HARNESS=1', '-DTH13_DRAW_CAPTURE=1',
   '-I' + resolve(root, 'cpp'),

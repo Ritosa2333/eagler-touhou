@@ -79,7 +79,7 @@ public:
     TitleOptionsMenu(TitleState& state_, AnmManager& animations_, TitleOptionPlatform& host_,
                      TitleOptionVolumes& volumes_, TitleSceneResources bank)
         : state(state_), animations(animations_), host(host_), volumes(volumes_),
-          visuals(state_, animations_, bank.title, bank.ascii), resources(bank) {}
+          visuals(state_, animations_, bank.title), resources(bank) {}
     // 每帧驱动（TitleFrame 屏值 3 分支接线；pressed/repeated 与他屏同义）。
     bool update(u32 pressed, u32 repeated);
     i32 row() const { return row_; }             // 测试/采样点

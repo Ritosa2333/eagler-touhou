@@ -121,6 +121,8 @@ private:
         std::unique_ptr<AnmResource> resource;
         size_t appended = 0;
         bool preloaded = false;
+        Entry(std::string entry_key, std::vector<std::string> entry_files)
+            : key(std::move(entry_key)), files(std::move(entry_files)) {}
     };
 
     static bool complete(const Entry& entry) { return entry.preloaded; }

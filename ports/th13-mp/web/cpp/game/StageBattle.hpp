@@ -33,8 +33,8 @@ namespace multiplayer { class WorldState; struct StageEntry; }
 // （round-16 S5 判例帧），可由 th13_debug_damage_probe_window() 覆盖
 // （round-19 调试脚手架扩展，不改任何比较语义）。
 extern bool damage_probe_enabled;
-extern int damage_probe_first_frame;
-extern int damage_probe_last_frame;
+extern u32 damage_probe_first_frame;
+extern u32 damage_probe_last_frame;
 
 struct StageBattleServices {
     virtual ~StageBattleServices() = default;
