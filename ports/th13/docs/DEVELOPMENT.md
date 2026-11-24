@@ -13,15 +13,25 @@
 
 全工作流在标准容器内进行（本地 podman 与 GitHub Actions 共用本目录 `container/Dockerfile`，多阶段：base → tools → dev → ci / shot）。Emscripten 端口缓存经 `EM_CACHE` 落工作区卷（`.cache/emscripten`），跨容器运行复用。
 
-仓库内自带 Dockerfile，克隆 monorepo 后即可直接使用（无需外部包装）：
+仓库内自带 Dockerfile，在 monorepo 根目录构建一次：
 
 ```sh
-# 仓库根目录下：
 podman build --target dev -t th13-dev --build-arg DEV_UID=$(id -u) --build-arg DEV_GID=$(id -g) ports/th13/container
-podman run --rm --userns=keep-id -e HOME=/home/dev -it -v "$PWD:/work:Z" -w /work/eagler-touhou/ports/th13 th13-dev bash
-# 单命令（构建/测试）：
-podman run --rm --userns=keep-id -e HOME=/home/dev -v "$PWD:/work:Z" -w /work/eagler-touhou/ports/th13 th13-dev bash -lc 'node portable/build.mjs'
+podman build --target shot -t th13-shot ports/th13/container
 ```
+
+日常全部经统一入口 `tools/container.sh`，它固定挂载、用户映射与缓存目录，容器内即 `/work/eagler-touhou/ports/th13`：
+
+```sh
+# 构建与测试（th13-dev 镜像）
+TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh node portable/build.mjs
+# 多人版目录
+TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh --mp node portable/build.mjs
+# 浏览器验证（th13-shot 镜像）
+TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh --shot bash
+```
+
+外层工作区提供 `games/th13`（原版资源）与 `artifacts/`，默认取 monorepo 的上级目录；以 `TH13_` 或 `TH_` 开头的环境变量原样传入容器。
 
 工具链版本（构建时固定）：Node 22 / Emscripten 6.0.9 / wasi-sdk 34 / Ghidra 12.1.3 / Temurin JDK 21。
 
