@@ -107,6 +107,17 @@ void EclVm::push_float(float v){stack_.push_back(1);i32 bits;std::memcpy(&bits,&
 i32 EclVm::pop_int(){if(stack_.size()<2){error_=true;return 0;}i32 v=stack_.back();stack_.pop_back();i32 type=stack_.back();stack_.pop_back();if(type==1){float f;std::memcpy(&f,&v,4);return i32(f);}return v;}
 float EclVm::pop_float(){if(stack_.size()<2){error_=true;return 0;}i32 bits=stack_.back();stack_.pop_back();i32 type=stack_.back();stack_.pop_back();if(type==0)return float(bits);float v;std::memcpy(&v,&bits,4);return v;}
 i32 EclVm::var_int(i32 addr) const {
+    // 0x4fd745: the integer random variable uses the shared primary stream.
+    if(addr==-10000)return i32(AnmVm::rand_integer(true)&0x7fffffffu);
+    // 4fd98f reads EnemyInf+5168 (context+6398), the same attack
+    // level used by ECL529/570 and changed by ECL1007/1034/1035.
+    if(world_&&has_host&&(addr==-9977||addr==-9976))for(const auto& e:world_->enemies)if(e.id==host_id)
+        return i32(addr==-9977?e.x-e.previous_x:e.y-e.previous_y);
+    if(world_&&addr==-9959){
+        if(has_host)for(const auto& e:world_->enemies)if(e.id==host_id)
+            return e.attack_rank>=0?e.attack_rank:world_->difficulty;
+        return world_->difficulty;
+    }
     // 0x4fdc22..0x4fdc56: boss slot 0's second host integer.
     // Orin's dead fairies wait for this live revival signal.
     if(world_&&addr==-9942){
@@ -136,12 +147,13 @@ i32 EclVm::var_int(i32 addr) const {
     auto it=globals_.find(addr);return it!=globals_.end()?it->second:0;
 }
 float EclVm::var_float(i32 addr) const {
+    if(addr==-9959)return float(var_int(addr)); // 4fccca: same attack-level alias.
     if(addr==-9942)return float(var_int(addr)); // same alias in 0x4fc530
     // 0x4fc58e / 0x4fc5c6 / 0x4fc5aa use the same RNG at 0x5c6620 for both fields.
-    if(addr==-9999)return AnmVm::rand_unit(true);
+    if(addr==-9999){const auto before=AnmVm::random_checkpoint(true);const float value=AnmVm::rand_unit(true);if(world_&&traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"ecl-random-unit\",\"frame\":%d,\"host\":%u,\"ip\":%u,\"before\":%u,\"after\":%u,\"value\":%.9g}\n",world_->battle_frame,host_id,unsigned(ip_),before,AnmVm::random_checkpoint(true),value);return value;}
     if(addr==-9998){const auto before=AnmVm::random_checkpoint(true);const float value=AnmVm::rand_signed_unit(3.14159274101257324219f,true);if(world_&&traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"ecl-random-angle\",\"frame\":%d,\"host\":%u,\"ip\":%u,\"before\":%u,\"after\":%u,\"value\":%.9g}\n",world_->battle_frame,host_id,unsigned(ip_),before,AnmVm::random_checkpoint(true),value);return value;}
     if(addr==-9987){
-        return AnmVm::rand_signed_unit(1.f,true);
+        const auto before=AnmVm::random_checkpoint(true);const float value=AnmVm::rand_signed_unit(1.f,true);if(world_&&traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"ecl-random-signed\",\"frame\":%d,\"host\":%u,\"ip\":%u,\"before\":%u,\"after\":%u,\"value\":%.9g}\n",world_->battle_frame,host_id,unsigned(ip_),before,AnmVm::random_checkpoint(true),value);return value;
     }
     if(world_&&addr==-9896)return world_->boss_escape_result;
     if(world_&&addr==-9887)return world_->story_boss_phase;
@@ -158,6 +170,10 @@ float EclVm::var_float(i32 addr) const {
         if(addr==-9883)return world_->opponent_y;
         if(has_host)for(const auto&e:world_->enemies)if(e.id==host_id){
             if(addr==-9997)return e.x;if(addr==-9996)return e.y;
+            // 4fcafc/4fcb24: combined position minus the saved preceding
+            // position. Sanae's boss uses X displacement to trim shot angle.
+            if(addr==-9977)return e.x-e.previous_x;
+            if(addr==-9976)return e.y-e.previous_y;
             // EXE 4fcb70: context+12dc = enemy+ac, absolute-motion angle.
             // ECL404 passes enemy+90 to 40fdf0, which writes offset+1c.
             if(addr==-9971)return std::remainder(e.angle,6.28318530717958647692f);
@@ -291,6 +307,8 @@ bool EclVm::step(){
     return active;
 }
 bool EclVm::step_self(){
+    if(traceOpeningRng&&world_&&sub_>=0&&prog_>=0&&!programs_.empty())
+        std::printf("ENEMYDBG {\"event\":\"ecl-step\",\"frame\":%d,\"id\":%u,\"subIndex\":%d,\"subName\":\"%s\",\"time\":%.9g,\"ip\":%u,\"waiting\":%d,\"waitTarget\":%.9g,\"ended\":%d,\"asyncId\":%d}\n",world_->battle_frame,host_id,sub_,current_sub_name(),time_,ip_,int(waiting_),wait_target_,int(ended_),async_id_);
     if(ended_||error_||sub_<0||prog_<0||programs_.empty())return false;
     ++time_;
     if(waiting_){

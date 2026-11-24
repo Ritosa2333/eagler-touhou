@@ -1,10 +1,24 @@
 #include "GameWorld.hpp"
+#include "ChargeAttack.hpp"
+#include "ChargeGauge.hpp"
 #include "PlayerDamage.hpp"
 #include "WorldCheckpoint.hpp"
 #include "ReplayInput.hpp"
 #include <cassert>
 #include <iostream>
 int main(){
+ // Native second-round9601 still freezes ordinary fire at the C2 tail.
+ {th19::ChargeAttack attack;assert(attack.release_skill(2));
+  for(int i=0;i<70;++i)attack.tick(true);
+  assert(attack.busy_for_charge(true));attack.tick(true);
+  // Native clears the C2 busy flag before arming the next charge input.
+  assert(attack.frame==71&&!attack.firing()&&!attack.busy_for_charge(true));
+  th19::ChargeGauge gauge;gauge.tick(true,attack.busy_for_charge(true),true);
+  assert(gauge.input_primed&&gauge.charge==0);attack.tick(true);assert(attack.frame==-1);
+  gauge.tick(true,attack.busy_for_charge(true),true);assert(gauge.charge==10);
+  assert(attack.release_skill(2));for(int i=0;i<71;++i)attack.tick(false);assert(attack.frame==-1);
+ }
+
  // Player-contact cuts defer child contacts; bomb rectangles and ECL circles
  // register their children for same-tick contacts.
  for(int phase:{0,1,2,3}){
@@ -51,6 +65,130 @@ int main(){
   world.cancel_lasers_circle(0,0,640);
   assert(world.lasers[0].length==0);
   world.finish_new_lasers();assert(world.lasers[0].age==1&&world.lasers[0].length==8);
+ }
+ // Respawn's forced clear bypasses a curve lock and remains effective on update.
+ {th19::GameWorld world;world.reward_mode=2;
+  th19::InfiniteLaser laser;laser.id=1;laser.curved=true;laser.phase=2;laser.width=24;laser.cancel_lock=300;
+  std::array<th19::BulletChange,24> changes{};
+  assert(laser.curve.initialize(0,224,1.570796327f,4,32,changes));
+  world.lasers.push_back(laser);
+  world.cancel_lasers_circle(0,400,640,true,true);assert(world.lasers[0].active);
+  world.cancel_lasers_circle(0,400,640,false,true);assert(!world.lasers[0].active);
+  world.tick_wave(false,{},true);
+  assert(world.lasers.empty());
+ }
+ // Native curve+0x85c remains300 past path clock301: Bomb must respect
+ // the retained ECL lock while a forced respawn clear can bypass it.
+ {th19::GameWorld world;world.reward_mode=2;
+  th19::InfiniteLaser laser;laser.curved=true;laser.phase=2;laser.width=24;laser.cancel_lock=300;
+  std::array<th19::BulletChange,24> changes{};
+  assert(laser.curve.initialize(0,224,0,.1f,32,changes));
+  for(int i=0;i<301;++i)laser.tick();
+  assert(laser.active&&laser.cancel_lock==300);
+  world.lasers.push_back(laser);
+  world.cancel_lasers_circle(0,224,640,true,false);assert(world.lasers[0].active);
+  world.cancel_lasers_circle(0,224,640,false,true);assert(!world.lasers[0].active);
+ }
+ // Native12796: newborn curves remain clearable until their first manager visit.
+ {th19::GameWorld world;world.reward_mode=2;
+  th19::InfiniteLaser laser;laser.curved=true;laser.phase=2;laser.width=24;
+  laser.source.changes[0].flags=0x80;laser.source.changes[0].integers[0]=300;
+  assert(laser.curve.initialize(117.72f,.32f,0,.1f,26,laser.source.changes));
+  world.lasers.push_back(laser);
+  assert(world.cancel_lasers_circle(0,128,640,true,false)==26);
+  assert(!world.lasers[0].active&&world.bullet_cancels.size()==3);
+  laser.tick();assert(laser.cancel_lock==300);
+  for(int i=0;i<301;++i)laser.tick();assert(laser.cancel_lock==300);
+ }
+ // Native525270 keeps the first run in its old controller but allocates
+ // later runs with lock0 and a sealed change cursor (no parent lock replay).
+ {th19::GameWorld world;world.reward_mode=2;
+  th19::InfiniteLaser laser;laser.id=1;laser.curved=true;laser.phase=2;laser.width=24;
+  laser.cancel_lock=300;laser.curve_changes_initialized=true;
+  laser.source.changes[0].flags=0x80;laser.source.changes[0].integers[0]=300;
+  laser.curve.time=30;laser.curve.segments={{0,999999,{0,224,0,1},0,0}};
+  for(int i=0;i<21;++i)laser.curve.nodes.push_back(laser.curve.at(30.f-i));
+  world.lasers.push_back(laser);
+  world.cancel_lasers_circle(20,224,1.1f,false,false);
+  assert(world.lasers.size()==2);
+  assert(world.lasers[0].cancel_lock==300&&world.lasers[1].cancel_lock==0);
+  world.lasers[1].tick();assert(world.lasers[1].cancel_lock==0);
+  world.cancel_lasers_circle(0,224,640,true,false);
+  assert(world.lasers[0].active&&!world.lasers[1].active);
+ }
+ // Two respawn circles visit the same retired curve before manager reclaim.
+ {th19::GameWorld world;world.reward_mode=2;
+  th19::InfiniteLaser laser;laser.curved=true;laser.phase=2;laser.width=24;
+  std::array<th19::BulletChange,24> changes{};
+  assert(laser.curve.initialize(0,224,0,.1f,26,changes));world.lasers.push_back(laser);
+  assert(world.cancel_lasers_circle(0,224,640,false,true)==26);
+  assert(!world.lasers[0].active);
+  assert(world.cancel_lasers_circle(0,224,640,false,true)==26);
+  assert(world.bullet_cancels.size()==6);
+  world.tick_wave(false,{},true);assert(world.lasers.empty());
+ }
+ // Pending native first updates apply the ECL lock before player clears;
+ // late registrations defer that first update and remain initially clearable.
+ for(bool late:{false,true}){th19::GameWorld world;world.reward_mode=2;
+  th19::InfiniteLaser laser;laser.curved=true;laser.phase=2;laser.width=24;
+  laser.source.changes[0].flags=0x80;laser.source.changes[0].integers[0]=300;
+  assert(laser.curve.initialize(0,224,0,.1f,26,laser.source.changes));
+  laser.motion_frame=late?world.battle_frame+1:-1;world.lasers.push_back(laser);
+  world.advance_vs_projectiles();
+  const int hit=world.cancel_lasers_circle(0,224,640,true,true);
+  assert(hit==(late?26:0));assert(world.lasers[0].cancel_lock==(late?0:300));
+ }
+ // Native path mode2 remains iterative for a zero-change ECL609 segment.
+ // Its rounded per-tick coordinates feed curve contacts and barrier direction.
+ {th19::CurveLaserPath::Segment segment{40,120,{-138.00999450683594f,92.30998229980469f,1.5707963705062866f,3.9999983310699463f},0,0,true};
+  const auto point=th19::CurveLaserPath::sample(segment,120);
+  // MinGW32 may retain a final expression in x87 registers; compare the
+  // stored f32 fields, matching native SSE and WebAssembly state storage.
+  volatile float x=point.x,y=point.y;
+  assert(x==-138.00999450683594f&&y==412.3099670410156f);
+ }
+ // Native524070 emits global-clear feedback every3 nodes; circle cuts use10.
+ for(bool global:{false,true}){
+  th19::GameWorld world;world.reward_mode=2;
+  th19::InfiniteLaser laser;laser.curved=true;laser.phase=2;laser.width=24;
+  std::array<th19::BulletChange,24> changes{};
+  assert(laser.curve.initialize(0,224,0,.1f,26,changes));
+  world.lasers.push_back(laser);
+  if(global)world.cancel_all_lasers();else world.cancel_lasers_circle(0,224,640);
+  assert(!world.lasers[0].active);
+  assert(world.bullet_cancels.size()==(global?9u:3u));
+ }
+ // A static curve leaves native bounds before early global-clear callbacks.
+ // Its old draw cache remains visible but the pending contact sample is not.
+ {th19::GameWorld world;world.reward_mode=2;
+  th19::InfiniteLaser laser;laser.curved=true;laser.phase=2;laser.width=24;
+  laser.curve.time=196;laser.curve.segments={{0,999999,{0,224,0,1},0,0}};
+  for(int i=0;i<26;++i)laser.curve.nodes.push_back(laser.curve.at(195.f-i));
+  world.lasers.push_back(laser);world.advance_vs_projectiles();world.cancel_all_lasers();
+  assert(!world.lasers[0].active&&world.bullet_cancels.empty());
+ }
+ // Native0x4eeda0/402690: the Aura-slowed preservation timer expires
+ // at remaining0.5, whose integer timer component is already zero.
+ {th19::BulletChanges changes;auto& a=changes.actions[6];a.active=true;
+  a.record.flags=0x100;a.record.integers[0]=2;a.record.integers[1]=0;
+  float vx=0,vy=0,x=0,y=224;
+  changes.tick(vx,vy,x,y,0,400,.5f);assert(changes.preserves_bounds());
+  changes.tick(vx,vy,x,y,0,400,.5f);assert(changes.preserves_bounds());
+  changes.tick(vx,vy,x,y,0,400,.5f);assert(!changes.preserves_bounds());
+ }
+ // Respawn clears use the native current curve sample, not the draw cache.
+ // A one-node cut must address index30 and publish its every-tenth feedback;
+ // the stale cache would cut index28 and silently lose that feedback.
+ for(bool registeredOnly:{false,true}){th19::GameWorld world;world.reward_mode=2;
+  th19::InfiniteLaser laser;laser.active=true;laser.phase=2;laser.curved=true;
+  laser.age=40;laser.width=24;laser.source.color=4;laser.curve.time=120;
+  laser.curve.segments={{0,999999,{133,0,1.57079632679f,4},0,0}};
+  for(int i=0;i<33;++i)laser.curve.nodes.push_back(laser.curve.at(119.f-i));
+  world.lasers.push_back(laser);world.advance_vs_projectiles();
+  world.cancel_lasers_circle(133,364,.01f,false,registeredOnly);
+  assert(world.lasers[0].curve.nodes.size()==30);
+  assert(world.bullet_cancels.size()==1);
+  assert(std::abs(world.bullet_cancels[0].y-364)<.001f);
  }
  // Bounds retire a contact-canceled slot before its pending ANM dispatch.
  // Its replacement retains the unconsumed interrupt and spawn-release value.
@@ -115,6 +253,22 @@ int main(){
   sender.send_native_extra_credit(target,{},1,20238,false);
   assert(sender.native_extra_reserved_count==-100);
   assert(sender.native_extra_reservations.empty());
+ }
+ // Result-state Sanae EX dispatch keeps reserved slots but never constructs
+ // flights: two provisional edge draws per reservation, no duration/tangents.
+ {
+  th19::GameWorld sender,target;sender.reward_mode=2;sender.difficulty=3;
+  sender.pending_native_attack_credit=160;
+  th19::AnmVm::restore_random(123456,true);
+  for(int i=0;i<4;++i)th19::AnmVm::rand_integer(true);
+  const auto expected=th19::AnmVm::random_checkpoint(true);
+  th19::AnmVm::restore_random(123456,true);
+  assert(sender.send_native_extra_credit(target,{},2,14090,true)==2);
+  assert(sender.pending_native_attack_credit==0&&sender.native_extra_reserved_count==2);
+  assert(sender.native_extra_sequence==2&&sender.native_extra_reservations.empty());
+  assert(target.extra_flights.empty()&&th19::AnmVm::random_checkpoint(true)==expected);
+  sender.send_native_extra_credit(target,{},2,14091,true);
+  assert(sender.native_extra_reserved_count==2&&th19::AnmVm::random_checkpoint(true)==expected);
  }
  // A deferred/nondeferred feedback transition must not lose a protection
  // tick. Native admits damage on the visit after the last held visit.

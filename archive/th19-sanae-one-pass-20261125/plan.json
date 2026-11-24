@@ -1,0 +1,39 @@
+{
+  "frames": 36000,
+  "seeds": [
+    [
+      454257667,
+      1254601907
+    ],
+    [
+      490177549,
+      561713228
+    ],
+    [
+      676200148,
+      2138591441
+    ],
+    [
+      1306587904,
+      1316637156
+    ],
+    [
+      701779088,
+      632647197
+    ]
+  ],
+  "wasmSha256": "efb3e1306e4d70b4fcc1019d5af9bf0ca7bc8b7e7b9f4a4758e7222cb9dd6c78",
+  "runtime": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-rebaseline-20261123\\runtime-sanae-curve-split-graze-clock-20261125",
+  "characters": [
+    2,
+    2
+  ],
+  "matchup": "Sanae vs Sanae CPU vs CPU",
+  "selection": "Fresh cryptographic random pairs; excluded all existing plan primary and secondary values",
+  "attempt": 6,
+  "sourceChangeDuringBatch": false,
+  "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+  "observer": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\native-build\\d3d9-sanae-fp-safe.dll",
+  "previousRegression": "sanae-curve-split-graze-clock-twentysix-regression-20261125/results.json",
+  "previousDefaultResult": "sanae-default-20261123/zero-change-default36000-diagnostic-result.json"
+}

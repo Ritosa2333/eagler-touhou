@@ -114,7 +114,7 @@ def main():
         canvas = Image.new("RGB", (1944, 920), "#131925")
         draw = ImageDraw.Draw(canvas)
         frame_label = f"累计 {frame} 帧 · 第 {native_round} 轮 {native_frame} 帧" if report.get("continuous") else f"第 {frame} 帧"
-        names = {0: "灵梦", 1: "魔理沙"}
+        names = {0: "灵梦", 1: "魔理沙", 2: "东风谷早苗"}
         characters = report["fixture"]["characters"]
         matchup = " vs ".join(names.get(character, str(character)) for character in characters)
         draw.text((16, 10), f"{matchup} CPU vs CPU · {frame_label} · {status}", font=title_font, fill="white")

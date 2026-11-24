@@ -40,7 +40,18 @@ struct LaserShooter {
 };
 struct InfiniteLaser {
     u32 id=0,owner_id=0;float x=0,y=0,angle=0,length=0,width=2;
-    bool curved=false;CurveLaserPath curve;std::string curve_file;
+    bool curved=false,curve_changes_initialized=false;int curve_clear_frame=-1,curve_clear_cache_frame=-1;CurveLaserPath curve;std::string curve_file;
+    // 527bb0 reuses the prepared rectangles after a same-tick circle cut.
+    // Preserve their pre-cut sample independently of the shortened draw path.
+    std::vector<CurvePoint> curve_cut_contact_cache;
+    int curve_cut_contact_frame=-1;
+    std::vector<CurvePoint> contact_curve_nodes(int frame)const{
+        if(curve_cut_contact_frame==frame)return curve_cut_contact_cache;
+        auto result=curve.nodes;
+        if(!curve.dynamic)for(size_t i=0;i<result.size();++i)
+            result[i]=curve.at(float(curve.time)-float(i));
+        return result;
+    }
     bool straight=false,aura_slowed=false;float straight_target=0;int offscreen_grace=30,straight_bounds_grace=3,change_sounds=0;StraightLaserChanges straight_changes;
     bool fragment=false,contact_fragment=false;float travelled=0,travel_cap=0;int cancel_lock=0;
     LaserShooter source;int phase=3,clock=0,age=0;bool active=true;
@@ -101,7 +112,15 @@ struct InfiniteLaser {
     void tick(float player_x=0,float player_y=400,std::vector<InfiniteLaser>* reflected=nullptr){
         ++age;
         cut_contact.reset();
-        if(curved){active=curve.tick(width,player_x,player_y);if(curve.dynamic&&!curve.nodes.empty())angle=curve.nodes.front().angle;return;}
+        // Native applies constructor ECL changes at the first manager visit.
+        // Newborn curves remain clearable before that visit; static path locks
+        // then persist while there are no active change actions.
+        if(curved){
+            if(!curve_changes_initialized){
+                for(const auto& c:source.changes){if(!c.flags)break;if(c.flags==0x80)cancel_lock=c.integers[0];}
+                curve_changes_initialized=true;
+            }
+            active=curve.tick(width,player_x,player_y);if(curve.dynamic&&!curve.nodes.empty())angle=curve.nodes.front().angle;return;}
         if(straight){ // 0x52e0c0: grow to target, then move; optional reach cap.
             change_sounds+=straight_changes.tick(source.changes,source.speed,angle,straight_bounds_grace,cancel_lock,[&]{
                 auto children=reflections();
@@ -301,6 +320,8 @@ struct DeathChain {
     float x=0,y=0,target=32,radius=1;
     float area_x=0,area_y=0;
     int age=0,duration=30,damage=10,type=0;
+    // Registration boundary relative to SHT VMs; reading it consumes no order.
+    u32 area_order=AnmVm::next_registration;
 };
 struct ChainBulletTransit {
     float x=0,y=0,speed=0;
@@ -351,6 +372,7 @@ public:
     struct ExtraFlight {
         u32 id=0;int character=-1,age=0,duration=0,life=200,script=-1;
         float x=0,y=0,source_x=0,source_y=0,tangent_start=0,tangent_end=0;
+        bool arrival_registered=false;
         std::string sub,file;std::vector<const EclProgram*> programs;
     };
     std::vector<ExtraFlight> extra_flights;
@@ -490,6 +512,7 @@ public:
     void tick_spirit_meter();
     void advance_guarded_enemy_scripts(bool first_async_only=false);
     void advance_discharge_scripts(bool birth_only=false);
+    void prepare_sanae_extra_arrivals(float x,float y,float radius,bool result_phase=false);
     void resolve_marisa_extra_arrivals(u32 newer_than=0,bool result_phase=false,GameWorld* sender=nullptr);
     void register_native_extra_release();
     void register_marisa_extra_arrival(const std::string& sub,float x,float y,int life,
@@ -512,6 +535,7 @@ private:
     struct GrazeReward {float x,y;u32 color,laser_id;};
     std::vector<GrazeReward> laser_graze_rewards_;
     bool bullet_graze_pending_=false;
+    bool curve_motion_pending_=false;
     void tick_bullet_graze(Bullet& bullet,float px,float py,float player_radius);
     void award_graze(float x,float y,u32 color);
     void tick_graze_particles();

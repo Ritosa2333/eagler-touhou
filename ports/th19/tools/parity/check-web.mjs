@@ -119,6 +119,8 @@ const bulletDebug = [];
 const enemyDebug = [];
 let server;
 const browser = await puppeteer.launch({
+  // Keep browser scratch files beside the selected capture output (D: on Server).
+  userDataDir: resolve(directory, "browser-profile"),
   executablePath: process.env.TH19_CHROME || "C:/Program Files/Google/Chrome/Application/chrome.exe",
   headless: true, protocolTimeout: continuous || through > 18000 ? 900000 : 180000,
   args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"]

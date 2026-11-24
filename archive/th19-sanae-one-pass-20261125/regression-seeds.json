@@ -1,0 +1,774 @@
+[
+  {
+    "seed": 268922340,
+    "secondary": 2032367702,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b5\\native\\present-3njz9g28\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-BHifSp\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-BHifSp\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 1277436322,
+    "secondary": 1987539879,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b5\\native\\present-6sba4__d\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-29NYPE\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-29NYPE\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 758635173,
+    "secondary": 805900195,
+    "validation": {
+      "status": "FAIL",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": {
+        "frame": 21490,
+        "web": 969167353,
+        "original": 1651720629
+      },
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 1,
+        "records": 1,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b5\\native\\present-auq1q6sl\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-GcO4xA\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-GcO4xA\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 2135637491,
+    "secondary": 2047120701,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b5\\native\\present-ca6_0nks\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-MYxJfZ\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-MYxJfZ\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 655466650,
+    "secondary": 1771555472,
+    "validation": {
+      "status": "FAIL",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": {
+        "frame": 12580,
+        "web": 1392424128,
+        "original": 552511557
+      },
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b5\\native\\present-yvufsqpj\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-rpInmS\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-rpInmS\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 1213308226,
+    "secondary": 1693912217,
+    "validation": {
+      "status": "FAIL",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": {
+        "frame": 25517,
+        "web": 128444605,
+        "original": 1942170686
+      },
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b4\\native\\present-r8tyjo83\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-lUPWsT\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-lUPWsT\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 1781833993,
+    "secondary": 1289684682,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b4\\native\\present-eyyne1oj\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-6xtr51\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-6xtr51\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 85378130,
+    "secondary": 1571389327,
+    "validation": {
+      "status": "FAIL",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": {
+        "frame": 13580,
+        "web": 403575969,
+        "original": 2002785205
+      },
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b4\\native\\present-sqzmav3o\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-WQABcp\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-WQABcp\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 472090412,
+    "secondary": 1682147209,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b4\\native\\present-3e9l_lf_\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-dWz5YJ\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-dWz5YJ\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 616247720,
+    "secondary": 149414694,
+    "validation": {
+      "status": "FAIL",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": {
+        "frame": 13179,
+        "web": 1922782957,
+        "original": 552239355
+      },
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b4\\native\\present-y_e9qmr4\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-bv2SmP\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-bv2SmP\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 3058262,
+    "secondary": 424182232,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-default-20261123\\native-aura27775-fp-safe-full\\present-3neo0v0w\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-g14hws\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-g14hws\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 658526518,
+    "secondary": 530474903,
+    "validation": {
+      "status": "FAIL",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": {
+        "frame": 14630,
+        "web": 1181077687,
+        "original": 1100735115
+      },
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b3\\native\\present-xbcz4_f1\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-aKVjTA\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-aKVjTA\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 1833171317,
+    "secondary": 1600620489,
+    "validation": {
+      "status": "FAIL",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": {
+        "frame": 25835,
+        "web": 1993523686,
+        "original": 165541027
+      },
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 2,
+        "records": 2,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b2\\native\\present-j17kp0br\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-1cTqNC\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-1cTqNC\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 807386523,
+    "secondary": 1479034614,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b3\\native\\present-gxs3msei\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-ntoVaO\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-ntoVaO\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 1967714368,
+    "secondary": 2059125549,
+    "validation": {
+      "status": "FAIL",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": {
+        "frame": 33263,
+        "web": 851486753,
+        "original": 1370120230
+      },
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 1,
+        "records": 1,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b3\\native\\present-7vs_cldu\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-ItGhwT\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-ItGhwT\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 1287866402,
+    "secondary": 1610327330,
+    "validation": {
+      "status": "FAIL",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": {
+        "frame": 23465,
+        "web": 828286335,
+        "original": 762315128
+      },
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b3\\native\\present-_g056lo6\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-4pjeSy\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-4pjeSy\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 369343299,
+    "secondary": 1438930059,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b3\\native\\present-ouh4ttlj\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-BQ6A2o\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-BQ6A2o\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 818846801,
+    "secondary": 198762139,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b2\\native\\present-4o9ea5sb\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-gXO4aF\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-gXO4aF\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 1265830688,
+    "secondary": 1579115416,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b2\\native\\present-ki1d_pfe\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-oRtrIU\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-oRtrIU\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 2023358614,
+    "secondary": 447463274,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b2\\native\\present-zwg99aif\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-oaxR0r\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-oaxR0r\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 548621621,
+    "secondary": 1866130043,
+    "validation": {
+      "status": "FAIL",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": {
+        "frame": 10628,
+        "web": 844090337,
+        "original": 622698171
+      },
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b2\\native\\present-u64s0qqr\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-hnQTsE\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-hnQTsE\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 440028937,
+    "secondary": 404402260,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b1\\native\\present-io3ba5ib\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-QoDFxt\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-QoDFxt\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 1621350966,
+    "secondary": 1336226946,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b1\\native\\present-l2t8dg9m\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-1WGLrl\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-1WGLrl\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 2072624009,
+    "secondary": 1121541662,
+    "validation": {
+      "status": "FAIL",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": {
+        "frame": 15279,
+        "web": 1015282327,
+        "original": 2087711568
+      },
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b1\\native\\present-71ik4jbl\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-BAtvJU\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-BAtvJU\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 884620489,
+    "secondary": 571930122,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b1\\native\\present-vr77j39i\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-3iVrnX\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-3iVrnX\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  },
+  {
+    "seed": 248907997,
+    "secondary": 751352981,
+    "validation": {
+      "status": "PASS",
+      "referenceMode": "compatibility: native CPU rectangle radius normalized to zero, user confirmed previous method",
+      "capturedThrough": 36000,
+      "primaryRngDifference": null,
+      "secondaryRngDifference": null,
+      "cpuDifference": null,
+      "playerDifference": null,
+      "substantiveBulletDifferenceFrames": [],
+      "bulletAudit": {
+        "frames": 35998,
+        "through": 36000,
+        "coordinateTolerance": 0.05,
+        "differentFrames": 0,
+        "records": 0,
+        "insideFieldFrames": [],
+        "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\sanae-random-five-20261124-b1\\native\\present-r4q1tvni\\native-present.jsonl",
+        "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-GJfSng\\web-bullet-positions.jsonl"
+      },
+      "coverageOk": true,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-curve-split-graze-clock-twentysix-regression-20261125\\th19-web-GJfSng\\report.json",
+      "substantivePlayerDifference": null,
+      "browserErrors": []
+    }
+  }
+]

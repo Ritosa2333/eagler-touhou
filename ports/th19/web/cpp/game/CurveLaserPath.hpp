@@ -9,16 +9,16 @@ namespace th19 {
 // duration (integer0), speed increment and angular increment, not bullet turns.
 struct CurvePoint {float x=0,y=0,angle=0,speed=0;};
 struct CurveLaserPath {
- struct Segment {float start=0,end=999999;CurvePoint origin;float acceleration=0,turn=0;};
+ struct Segment {float start=0,end=999999;CurvePoint origin;float acceleration=0,turn=0;bool iterative=false;};
  std::vector<Segment> segments;std::vector<CurvePoint> nodes;
- int time=0,offscreen_hold=0;bool body_additive=true;
+ int time=0;bool body_additive=true;
  bool dynamic=false;int homing_duration=0,bounds_duration=0;
  float homing_speed=0,homing_offset=0,homing_response=0,head_vx=0,head_vy=0;
  // Verified525d50/5256e0/527ef0 sequence used by pl17 BossCard1_at.
  // Keep historical nodes: they must not be recomputed toward today's player position.
  static CurvePoint sample(const Segment&s,float t){
   t=std::max(0.f,t-s.start);auto p=s.origin;
-  if(s.acceleration==0&&s.turn==0){p.x+=std::cos(p.angle)*p.speed*t;p.y+=std::sin(p.angle)*p.speed*t;return p;}
+  if(!s.iterative&&s.acceleration==0&&s.turn==0){p.x+=std::cos(p.angle)*p.speed*t;p.y+=std::sin(p.angle)*p.speed*t;return p;}
   const int whole=int(t);
   for(int i=0;i<whole;++i){p.x+=std::cos(p.angle)*p.speed;p.y+=std::sin(p.angle)*p.speed;
    p.angle=std::remainder(p.angle+s.turn,6.283185307179586f);p.speed+=s.acceleration;}
@@ -31,7 +31,7 @@ struct CurveLaserPath {
  }
  bool initialize(float x,float y,float angle,float speed,int count,const std::array<BulletChange,24>&changes){
   if(count<2||count>4096)return false;
-  dynamic=false;homing_duration=bounds_duration=0;offscreen_hold=0;body_additive=true;
+  dynamic=false;homing_duration=bounds_duration=0;body_additive=true;
   for(const auto&c:changes){if(!c.flags)break;if(c.flags==0x40000002u)dynamic=true;}
   if(dynamic){
    bool found=false,bounds=false;
@@ -47,12 +47,14 @@ struct CurveLaserPath {
   }
   segments={{0,999999,{x,y,angle,speed},0,0}};
   for(const auto&c:changes){if(!c.flags)break;
-   if(c.flags==0x80){offscreen_hold=c.integers[0];continue;}
+   if(c.flags==0x80)continue; // 526411 sets the controller cancel lock, not a bounds hold.
    if(c.flags==0x100000){body_additive=c.integers[0]!=0;continue;}
    if(c.flags!=8||c.integers[1]<0||c.integers[0]<0)return false;
    const float start=float(c.integers[1]),end=start+c.integers[0];
    auto origin=at(start);segments.back().end=start;
-   segments.push_back({start,end,origin,c.floats[0],c.floats[1]});
+   // ECL609 flag8 creates native path mode2 even when both changes
+   // are zero. That mode integrates each tick; mode0 extrapolates once.
+   segments.push_back({start,end,origin,c.floats[0],c.floats[1],true});
    auto next=sample(segments.back(),end);segments.push_back({end,999999,next,0,0});
   }
   time=0;nodes.assign(count,segments.front().origin);return true;
@@ -89,9 +91,12 @@ struct CurveLaserPath {
    const bool preserved=bounds_duration>0 && time>=homing_duration && time-homing_duration+1<bounds_duration;
    ++time;return visible||time<=30||preserved;
   }
-  bool visible=false;for(size_t i=0;i<nodes.size();++i){nodes[i]=at(float(time)-i);const auto&p=nodes[i];
+  bool visible=false;for(size_t i=0;i<nodes.size();++i){nodes[i]=at(float(time)-i);
+   // 528330 culls using the current contact sample, one tick beyond this
+   // retained draw/cancellation cache (the contact pass uses time after ++).
+   const auto p=at(float(time)+1.f-float(i));
    visible|=p.x+width>-148&&p.x-width<148&&p.y+width>0&&p.y-width<448;}
-  ++time;if(offscreen_hold>0)--offscreen_hold;return visible||time<=30||offscreen_hold>0;
+  ++time;return visible||time<=30;
  }
 };
 }

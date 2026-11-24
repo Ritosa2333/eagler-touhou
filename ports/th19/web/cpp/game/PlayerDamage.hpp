@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 namespace th19 {
 // Native player state transitions: 0x545e10, 0x546320, 0x549830.
 // Timer checks precede the native timer increment. Character death-prevention
@@ -51,6 +52,8 @@ struct PlayerDamage {
   const float speed=std::max(0.f,2.f-frame*2.f/40.f);
   const float dx=std::cos(angle),dy=std::sin(angle);
   const float length=std::sqrt(dx*dx+dy*dy);
+  extern bool traceOpeningRng;
+  if(traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"player-repel-motion\",\"timer\":%d,\"angle\":%.9g,\"speed\":%.9g,\"vector\":[%.9g,%.9g,%.9g],\"position\":[%.9g,%.9g]}\n",frame,angle,speed,dx,dy,length,x,y);
   x+=int(dx/length*speed*128.f)/128.f;
   y+=int(dy/length*speed*128.f)/128.f;
  }
@@ -62,12 +65,15 @@ inline float nativeBulletContactRadius(int type){
 }
 // 549570 -> 4d44e0: rotate into the rectangle, then cross strips and rounded corners.
 inline bool nativeEnemyRectangleContact(float dx,float dy,float angle,float width,float height,float radius){
- // A newly registered beam can have zero length and still contact a circle.
- if(width<0||height<0||radius<0)return false;
+ // 0x4d44e0 does not reject signed extents. Decelerated curve nodes can
+ // retain a tiny negative length and still contact through their corners.
+ if(radius<0)return false;
  const float c=std::cos(angle),s=std::sin(angle);
  const float x=std::abs(dx*c+dy*s),y=std::abs(dy*c-dx*s),hw=width*.5f,hh=height*.5f;
  if((x<=hw+radius&&y<=hh)||(x<=hw&&y<=hh+radius))return true;
- const float ex=x-hw,ey=y-hh;return ex*ex+ey*ey<radius*radius;
+ for(float ex:{x-hw,x+hw})for(float ey:{y-hh,y+hh})
+  if(ex*ex+ey*ey<radius*radius)return true;
+ return false;
 }
 // 0x549e00 uses squared radii separately, with a strict boundary.
 inline bool nativeCircleContact(float dx,float dy,float playerRadius,float otherRadius){

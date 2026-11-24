@@ -35,6 +35,8 @@ struct PlayerBomb {
   target_radius=ch==12?400+48*initial_energy/2500.f:
       (ch==5||ch==6)?80+80*initial_energy/4000.f:128+224*initial_energy/4000.f;
   target_width=ch==12?30:16+((ch==5||ch==6)?16:32)*initial_energy/4000.f;
+  // Sanae 417ff1..418101 uses 2500 for both interpolators.
+  if(ch==2){target_radius=128+224*initial_energy/2500.f;target_width=16+32*initial_energy/2500.f;}
   if(ch==1){target_radius=16+64*initial_energy/4000.f;target_width=1;}
   if(ch==3){target_radius=32+64*initial_energy/2500.f;target_width=target_radius;}
   if(ch==8){target_radius=64+40*initial_energy/2500.f;target_width=target_radius;angle=-1.57079632679f;}

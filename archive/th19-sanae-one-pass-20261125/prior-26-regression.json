@@ -1,0 +1,8 @@
+{
+  "wasmSha256": "efb3e1306e4d70b4fcc1019d5af9bf0ca7bc8b7e7b9f4a4758e7222cb9dd6c78",
+  "passed": 26,
+  "total": 26,
+  "strictPassed": 15,
+  "framesPerSeed": 36000,
+  "kind": "Regression; not a fresh one-pass five"
+}

@@ -120,7 +120,10 @@ struct BulletChanges {
                 }
                 if(slot==6){ // 4eeda0: countdown, then native forward-corner test for subtype1.
                     a.elapsed+=time_scale;
-                    bool expires=a.elapsed>=c.integers[0];
+                    // 0x4eedd5 decrements the native GameTimer; 0x402690
+                    // tests its truncated integer. At Aura speed 0.5, a remaining
+                    // 0.5 already has integer zero and releases the bounds flag.
+                    bool expires=int(float(c.integers[0])-a.elapsed)<=0;
                     if(c.integers[1] && (x+sprite_width*.5f<=-148 || x-sprite_width*.5f>=148 ||
                        y+sprite_height*.5f<=0 || y-sprite_height*.5f>=448)){
                         bool left=false,right=false;const float hx=std::cos(angle),hy=std::sin(angle);

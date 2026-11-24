@@ -113,6 +113,7 @@ bool EclVm::game_object(const EclInstruction& ins){
                     l.y=(s.absolute_origin?s.absolute_y:e.y)+s.y+std::sin(s.angle)*s.muzzle_radius;l.angle=s.angle;
                     if(s.type==2){if(e.animation_files.size()<2)return false;l.curve_file=e.animation_files[1];}
                     if(!l.curve.initialize(l.x,l.y,s.angle,s.speed,s.warning,s.changes))return false;
+                    // ECL changes, including the cancellation lock, apply on first tick.
                     if(world_->lasers.size()<512)world_->lasers.push_back(std::move(l));
                     if(s.sound>=0)world_->sound_events.push_back(s.sound);break;}
                 case 703:{
@@ -342,6 +343,11 @@ bool EclVm::game_object(const EclInstruction& ins){
                 // 0x50be30 -> 0x508f20 -> 0x509030 advances the zero-velocity
                 // position through 0x4d4a00 before the initial ECL executes.
                 child.set_absolute_position(std::floor(x*100.f)/100.f,std::floor(y*100.f)/100.f);
+                // 0x50c540 publishes a separately rounded combined position.
+                // Keep absolute motion at the first grid value: -1.18090439
+                // becomes absolute -1.19 and combined -1.20 before initial ECL.
+                child.x=std::floor(child.x*100.f)/100.f;
+                child.y=std::floor(child.y*100.f)/100.f;
             }
             // 0x50bee7 stores spawn mirroring in status, apart from ECL cull protection.
             child.mirrored=mirror;
@@ -624,7 +630,16 @@ bool EclVm::game_object(const EclInstruction& ins){
             char name[32];std::snprintf(name,sizeof(name),"Wave%02d%s",(wave+1)/2,wave%2?"":"f");
             float x=0,y=0;
             if(has_host)for(const auto& e:world_->enemies)if(e.id==host_id){x=e.x;y=e.y;break;}
-            world_->spawn_enemy(name,x,y,0,0,0);
+            auto& controller=world_->spawn_enemy(name,x,y,0,0,0);
+            if(world_->reward_mode==2&&world_->current_wave!=0&&controller.vm){
+                // Later waves are constructed after the enemy pass; execute
+                // time zero now, then consume the next registration visit.
+                controller.vm->step();
+                // The constructor already consumed its first update flag.
+                // Next visit advances ECL once; the following visit clears
+                // the remaining registration guard (native11266/11267).
+                controller.spawn_hold=2;
+            }
             world_->current_wave=wave;++world_->wave_counts[wave];
             return true;
         }
@@ -642,6 +657,7 @@ bool EclVm::game_object(const EclInstruction& ins){
             return true;
         }
         case 1023: // native 0x40f1e0: item-generation percentage (0..500)
+            if(traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"pickup-rate-set\",\"frame\":%d,\"host\":%u,\"sub\":\"%s\",\"rate\":%d,\"fraction\":%d}\n",world_->battle_frame,host_id,current_sub_name(),param_i32(ins,0),world_->pickup_fraction);
             world_->pickup_rate=std::clamp(param_i32(ins,0),0,500);return true;
         case 1027: case 1040: // native +0x5170 kind bits; 1040 additionally marks purified
             if(has_host)for(auto& e:world_->enemies)if(e.id==host_id){world_->set_spirit_kind(e,param_i32(ins,0),ins.id==1040);break;}

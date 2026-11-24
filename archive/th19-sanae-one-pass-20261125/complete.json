@@ -1,0 +1,92 @@
+{
+  "status": "PASS",
+  "freshOnePass": true,
+  "passed": 5,
+  "total": 5,
+  "framesPerSeed": 36000,
+  "totalFrames": 180000,
+  "wasmSha256": "efb3e1306e4d70b4fcc1019d5af9bf0ca7bc8b7e7b9f4a4758e7222cb9dd6c78",
+  "gameplayFixesDuringBatch": false,
+  "coordinateTolerance": 0.05,
+  "strictPassed": 2,
+  "acceptancePolicy": "Ignore animation-only secondary RNG and coordinate differences within0.05; all gameplay, later rounds and coverage checked",
+  "previousRegression": {
+    "passed": 26,
+    "total": 26,
+    "framesPerSeed": 36000
+  },
+  "results": [
+    {
+      "seed": 454257667,
+      "secondary": 1254601907,
+      "frames": 36000,
+      "coverageOk": true,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "substantivePlayerDifference": null,
+      "bulletDifferenceFrames": 0,
+      "secondaryRngDifference": {
+        "frame": 30757,
+        "web": 1011521976,
+        "original": 633041709
+      },
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-random-five-20261125-b6\\th19-web-32vlxQ\\report.json"
+    },
+    {
+      "seed": 490177549,
+      "secondary": 561713228,
+      "frames": 36000,
+      "coverageOk": true,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "substantivePlayerDifference": null,
+      "bulletDifferenceFrames": 0,
+      "secondaryRngDifference": {
+        "frame": 32787,
+        "web": 344422425,
+        "original": 404940303
+      },
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-random-five-20261125-b6\\th19-web-tJTlch\\report.json"
+    },
+    {
+      "seed": 676200148,
+      "secondary": 2138591441,
+      "frames": 36000,
+      "coverageOk": true,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "substantivePlayerDifference": null,
+      "bulletDifferenceFrames": 0,
+      "secondaryRngDifference": null,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-random-five-20261125-b6\\th19-web-Z4MtuY\\report.json"
+    },
+    {
+      "seed": 1306587904,
+      "secondary": 1316637156,
+      "frames": 36000,
+      "coverageOk": true,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "substantivePlayerDifference": null,
+      "bulletDifferenceFrames": 0,
+      "secondaryRngDifference": {
+        "frame": 4947,
+        "web": 636252995,
+        "original": 870695837
+      },
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-random-five-20261125-b6\\th19-web-MwPxvN\\report.json"
+    },
+    {
+      "seed": 701779088,
+      "secondary": 632647197,
+      "frames": 36000,
+      "coverageOk": true,
+      "primaryRngDifference": null,
+      "cpuDifference": null,
+      "substantivePlayerDifference": null,
+      "bulletDifferenceFrames": 0,
+      "secondaryRngDifference": null,
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\web-captures-sanae-random-five-20261125-b6\\th19-web-d0NAyN\\report.json"
+    }
+  ]
+}
