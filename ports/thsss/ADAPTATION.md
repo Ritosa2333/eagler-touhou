@@ -84,7 +84,7 @@
 | AUDIO-01 | [正常 OGG 音乐](../../docs/adaptation/presentation.md#audio-01) | 已验证 | 启动器音乐为 OGG。18 首曲目进入 `/BGM/` 后，标题循环 `OP.ogg`，选人进入关卡后切到 `Boss01.ogg`、`Stage01.ogg`。AudioContext 为 running。见[运行验收记录](#运行验收记录)。 |
 | AUDIO-02 | [无 BGM 模式](../../docs/adaptation/presentation.md#audio-02) | 已验证 | 启动器选无 BGM 后背景曲关闭，射击等音效仍正常。见[运行验收记录](#运行验收记录)。 |
 | AUDIO-03 | [切曲、渐变、暂停、停止](../../docs/adaptation/presentation.md#audio-03) | 已验证 | 标题 `OP.ogg` → 关卡 `Boss01.ogg`／`Stage01.ogg`；暂停与退出时切曲／停止跟随状态。见[运行验收记录](#运行验收记录)。 |
-| AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 已验证 | 播放中切后台后音频继续播放；返回前台曲目位置与循环连续。见[运行验收记录](#运行验收记录)。 |
+| AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 已验证 | 切后台自动暂停 BGM，音效不受影响；返回前台从原游标与循环状态续播。见[运行验收记录](#运行验收记录)。 |
 | AUDIO-05 | [音乐资源错误信息](../../docs/adaptation/presentation.md#audio-05) | 已验证 | `/BGM` 缺曲软失败上报 `music-error`；`retry-music` 接受并保留未解决项。选无 BGM 清空待重试。单测 `music-transfer.test.mjs`；playwright AUDIO-05 通过。 |
 | AUDIO-06 | [高刷新与音频事件分开](../../docs/adaptation/presentation.md#audio-06) | 已验证 | 高刷下同一真实事件只发声一次，无随显示帧重复触发。见[运行验收记录](#运行验收记录)。 |
 | AUDIO-07 | [音效即时输出](../../docs/adaptation/presentation.md#audio-07) | 已验证 | `OP.ogg` 循环期间菜单确认播出 `se_ok00.wav`；关卡中继续播出 `se_graze.wav`、`se_enep00.wav`、`se_tan00a.wav`、`se_item00.wav`。见[运行验收记录](#运行验收记录)。 |
@@ -184,6 +184,6 @@ INPUT／TOUCH：开启触摸后左侧出现开火／低速／BOMB／ESC／R。`I
 
 这次核对覆盖 BUILD-05、RUNTIME-02、DISPLAY-06、DISPLAY-07、AUDIO-01、AUDIO-07、SAVE-02、SAVE-03、SAVE-04、INPUT-01、INPUT-02、INPUT-03、INPUT-04、TOUCH-01、TOUCH-03、TOUCH-05、TOUCH-06、TOUCH-08、TOUCH-11、TOUCH-16、TOUCH-17。联机、MIDI、语言包按产品声明记为不适用。AUDIO-05 已接入（实现＋单测）；原版逐帧基准没有适配。
 
-后续手动＋视觉核对：BUILD-05、RUNTIME-05、RUNTIME-06、PACKAGE-05、INPUT-06、INPUT-07、TOUCH-13、TOUCH-15、DISPLAY-04、DISPLAY-05、DISPLAY-08、AUDIO-02、AUDIO-03、AUDIO-06、REPLAY-01、REPLAY-02、REPLAY-04、REPLAY-05、REPLAY-06、REPLAY-07、SAVE-05、SAVE-06。AUDIO-04：切后台后音频继续播放，返回前台曲目位置与循环连续。RUNTIME-04：切后台／恢复后声音与画面可继续，退出后监听器与临时输入已释放。REPLAY-03、SAVE-01、练习与 LANG-01、以及 TOUCH-02／04／07／09／10／12 等未在本轮关闭。
+后续手动＋视觉核对：BUILD-05、RUNTIME-05、RUNTIME-06、PACKAGE-05、INPUT-06、INPUT-07、TOUCH-13、TOUCH-15、DISPLAY-04、DISPLAY-05、DISPLAY-08、AUDIO-02、AUDIO-03、AUDIO-06、REPLAY-01、REPLAY-02、REPLAY-04、REPLAY-05、REPLAY-06、REPLAY-07、SAVE-05、SAVE-06。AUDIO-04：切后台自动暂停 BGM，回前台从原游标续播。RUNTIME-04：切后台／恢复后声音与画面可继续，退出后监听器与临时输入已释放。REPLAY-03、SAVE-01、练习与 LANG-01、以及 TOUCH-02／04／07／09／10／12 等未在本轮关闭。
 
 BUILD：`node tools/workspace.mjs select thsss --variant=normal` 列出 launcher、common、tools、docs、ports/thsss。本机 .NET SDK 10.0.404、wasm-tools 10.0.115、Bun 1.4.4。`dotnet publish THSSS.Browser/THSSS.Browser.csproj -c Release -p:StageGameAssets=false` 退出码 0，`THSSS.Browser.wasm` sha256 `4e719e4cdbf9c07162c31aa82e6e7ad0365129470e2ca4ef12fcf8997fa5f6c3`。帧步进拆出后重新 `npm run stage:eagler`，`shell.mjs` 171717 字节，wasm 哈希未变，`runtime-files.json` 与 5 个运行文件一致。`node tools/ports/check.mjs --game=thsss --variant=normal` 为 10/10。

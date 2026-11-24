@@ -3,6 +3,7 @@ export function createAudio() {
   let nextId = 1;
   let musicLevel = 1;
   let effectsLevel = 1;
+  let pageHidden = typeof document !== "undefined" && !!document.hidden;
   const buffers = new Map();
   const voices = new Map();
   const plays = [];
@@ -29,6 +30,7 @@ export function createAudio() {
       plays: playsNow,
       failedMusic: failedMusic.slice(),
       musicFailures: failedMusic.length,
+      bgmPaused: pageHidden,
     };
   }
 
@@ -129,7 +131,9 @@ export function createAudio() {
         rec.audio = decoded;
         const waiting = rec.waiters.splice(0);
         waiting.forEach((voice) => {
-          if (voice.want) arm(voice);
+          if (!voice.want) return;
+          if (pageHidden && isMusicVoice(voice)) return;
+          arm(voice);
         });
         publish();
       })
@@ -155,6 +159,33 @@ export function createAudio() {
     const rec = bufferOf(voice.bufferId);
     const url = rec && rec.url ? rec.url : "";
     return /(?:^|\/)BGM\//i.test(url) ? "music" : "effects";
+  }
+
+  function isMusicVoice(voice) {
+    return busOf(voice) === "music";
+  }
+
+  /** Pause BGM output while the page is hidden; keep SE and voice.want/cursor. */
+  function setPageHidden(hidden) {
+    const next = !!hidden;
+    if (next === pageHidden) return;
+    pageHidden = next;
+    if (pageHidden) {
+      for (const voice of voices.values()) {
+        if (!isMusicVoice(voice) || !voice.node) continue;
+        remember(voice);
+        stopNode(voice);
+      }
+      publish();
+      return;
+    }
+    resume();
+    for (const voice of voices.values()) {
+      if (!isMusicVoice(voice) || !voice.want || voice.node) continue;
+      const rec = bufferOf(voice.bufferId);
+      if (rec && rec.audio && !rec.failed) arm(voice);
+    }
+    publish();
   }
 
   function outputGain(voice) {
@@ -339,8 +370,9 @@ export function createAudio() {
     start(id) {
       const voice = voiceOf(id);
       if (!voice) return;
-      resume();
       voice.want = true;
+      if (pageHidden && isMusicVoice(voice)) return;
+      resume();
       const rec = bufferOf(voice.bufferId);
       if (!rec || rec.failed) return;
       if (!rec.audio) {
@@ -397,6 +429,7 @@ export function createAudio() {
       musicLevel = Number.isFinite(music) ? Math.max(0, Math.min(1, music)) : 1;
       effectsLevel = Number.isFinite(effects) ? Math.max(0, Math.min(1, effects)) : 1;
       for (const voice of voices.values()) applyGain(voice);
-    }
+    },
+    setPageHidden,
   };
 }

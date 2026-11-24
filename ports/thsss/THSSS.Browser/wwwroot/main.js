@@ -393,6 +393,10 @@ export async function prepareRuntime(options = {}) {
   finishWasm("THSSS.Browser.wasm");
   window.Module = window.Module || {};
   window.Module.eaglerSetAudioLevels = (music, effects) => audioApi.setLevels(music, effects);
+  document.addEventListener("visibilitychange", () => {
+    audioApi.setPageHidden(!!document.hidden);
+  });
+  if (document.hidden) audioApi.setPageHidden(true);
   const keyPtr = (name) => module.stringToNewUTF8(name);
   const withText = (name, call) => {
     const ptr = keyPtr(name);
