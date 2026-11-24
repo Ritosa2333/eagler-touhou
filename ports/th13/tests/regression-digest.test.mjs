@@ -133,9 +133,9 @@ test('稳定性：不稳定条目不比较摘要，稳定条目变不稳定即�
   assert.equal(firstDivergence(stable, broken).stream, 'stability');
 });
 
-test('CLI 参数：默认 stride=60、draws 窗 600，非法值报错', () => {
+test('CLI 参数：默认比对金标，--write 才重生成；默认 stride=60、draws 窗 600，非法值报错', () => {
   assert.deepEqual(parseArguments([]),
-    {check: false, draws: false, stride: 60, drawsFrames: 600, drawsStages: 'first',
+    {check: false, write: false, draws: false, stride: 60, drawsFrames: 600, drawsStages: 'first',
      attempts: 1, confirmations: 2, replays: [], keep: false, help: false});
   const parsed = parseArguments(['--check', '--draws', '--stride', '1', '--replay', 'a.rpy',
                                  '--replay', 'b.rpy', '--draws-frames', '120', '--keep']);
@@ -145,6 +145,9 @@ test('CLI 参数：默认 stride=60、draws 窗 600，非法值报错', () => {
   assert.deepEqual(parsed.replays, ['a.rpy', 'b.rpy']);
   assert.equal(parsed.drawsFrames, 120);
   assert.equal(parseArguments(['--draws', '--draws-stages', 'all']).drawsStages, 'all');
+  assert.equal(parseArguments(['--draws', '--draws-stages', 'all']).write, false);
+  assert.equal(parseArguments(['--write', '--draws']).write, true);
+  assert.throws(() => parseArguments(['--check', '--write']), /mutually exclusive/);
   assert.throws(() => parseArguments(['--draws-stages', 'some']), /first or all/);
   assert.throws(() => parseArguments(['--stride', '0']), /positive integer/);
   assert.throws(() => parseArguments(['--bogus']), /unknown argument/);

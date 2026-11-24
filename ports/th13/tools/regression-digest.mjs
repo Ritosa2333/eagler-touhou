@@ -181,8 +181,9 @@ export function makeDocument({mode = 'replay', stride = 60, drawsFrames = null,
 }
 
 export function parseArguments(argv) {
-  const options = {check: false, draws: false, stride: 60, drawsFrames: 600, drawsStages: 'first',
-                   attempts: 1, confirmations: 2, replays: [], keep: false, help: false};
+  const options = {check: false, write: false, draws: false, stride: 60, drawsFrames: 600,
+                   drawsStages: 'first', attempts: 1, confirmations: 2, replays: [], keep: false,
+                   help: false};
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
     const value = () => {
@@ -192,6 +193,7 @@ export function parseArguments(argv) {
     };
     switch (arg) {
       case '--check': options.check = true; break;
+      case '--write': options.write = true; break;
       case '--draws': options.draws = true; break;
       case '--keep': options.keep = true; break;
       case '--help': case '-h': options.help = true; break;
@@ -214,6 +216,7 @@ export function parseArguments(argv) {
     throw Error('--attempts must be a positive integer');
   if (!Number.isInteger(options.confirmations) || options.confirmations < 0)
     throw Error('--confirmations must be a non-negative integer');
+  if (options.check && options.write) throw Error('--check and --write are mutually exclusive');
   return options;
 }
 
@@ -452,9 +455,14 @@ function printDivergence(diff) {
 
 function usage() {
   return [
-    'usage: node tools/regression-digest.mjs [--check] [--draws] [--replay <path> ...]',
+    'usage: node tools/regression-digest.mjs [--draws] [--replay <path> ...]',
     '                                      [--stride N] [--draws-frames N] [--draws-stages first|all]',
+    '                                      [--attempts N] [--draws-frames N] [--draws-stages first|all]',
     '                                      [--attempts N] [--confirmations N] [--keep]',
+    '       node tools/regression-digest.mjs --write [the same options]',
+    '',
+    'Without --write the digests are compared with the golden files and the first divergence',
+    'exits 1. --write regenerates the golden files from the current harness.',
   ].join('\n');
 }
 
@@ -501,7 +509,7 @@ function main(argv) {
   const goldenPath = resolve(goldenDir, mode !== 'draws' ? 'digests.json'
     : options.drawsStages === 'all' ? 'digests-draws-all.json' : 'digests-draws.json');
 
-  if (options.check) {
+  if (!options.write) {
     if (!existsSync(goldenPath)) {
       console.error(`golden missing: ${goldenPath}`);
       return 2;

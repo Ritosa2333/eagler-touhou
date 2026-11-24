@@ -140,7 +140,15 @@ node tools/regression-digest.mjs --draws --check                       # 绘制�
 node tools/regression-digest.mjs --draws --draws-stages all --check    # 绘制清单：每关前 600 帧
 ```
 
-三项合计约两分钟。工具拒绝使用旧于源码的 harness 产物；harness 运行器自带 `--no-incremental-marking`（调用方没带时重启自身），原因见 `tools/regression-digest.mjs` 文件头。输入是外层工作区的 `games/replays/*.rpy` 与 `artifacts/reference/raw/demo0..3.rpy`。只有改变模拟或绘制行为的修正才重新生成金标（去掉 `--check`），并在提交说明里写明依据。
+三项合计约两分钟。工具默认就是比对；重生成金标要显式加 `--write`，只有改变模拟或绘制行为的修正才这样做，并在提交说明里写明依据。
+
+输入是外层工作区的 `games/replays/*.rpy` 与 `artifacts/reference/raw/demo0..3.rpy`。harness 在 `TH13_DIGEST_LOG` 下逐采样帧写 `stage <s> frame <f> state <16hex> events <16hex> [draws <16hex>] stepped <0|1>`，末行是 `total`；没跑完的录像在金标里记为 `stable:false`，只保留停止点，不参与摘要比较。构建身份（wasm sha256）只作来源记录，比对不看它——门禁比较的正是不同构建。工具拒绝使用旧于源码的 harness 产物。
+
+harness 进程固定带 `--no-incremental-marking`（调用方没带时运行器重启自身）。Node 22.23 的 V8（12.4.254.21）在增量标记的栈扫描里会遍历到返回地址无效的帧，在 `CommonFrame::IterateTurbofanOptimizedFrame` 内解引用崩溃，Node 的信号处理器把它重发为 SIGSEGV。这与移植代码无关：崩溃与 `--stack-size`（200KB–15MB）和 JIT 模式无关；关掉增量标记后，叠加 `--gc-interval=500 --stress-compaction --verify-heap` 的整卷回放全部跑完、堆校验通过，原生 ASan/UBSan 构建同样全绿。
+
+### 性能测量
+
+热点以带函数名的 harness 剖析为准：`portable/build-harness.mjs` 的链接参数加 `-g`，再用 `node --cpu-prof` 采样。计时一律用交替 A/B（基线与改动版交替构建运行三轮取中位数），因为同一台机器在不同时刻的绝对耗时相差可达一倍。保留一项改动的条件：三项回归摘要不变、门槛无新增失败、交替 A/B 有实测收益。首轮结果与剖面分布见 `archive/th13-performance-20261124/README.md`（WASI harness 回放计时，不含浏览器端帧时间）。
 
 ### 网页 thprac
 
